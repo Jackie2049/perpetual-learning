@@ -12,7 +12,7 @@
 | 0 | megatron `optimizer_offload_fraction<1` 首轮 update 崩溃 (#8237) | P0 | 42 | — | **analysis-done**：根因确认（offload 无条件 `to("cpu")` 破坏 GPU FusedAdam 设备语义），patch 已拟待 GPU 验证；0 引用 PR | 2026-10-19 |
 | 1 | Triton fused kernels 在 `use_remove_padding=False` 崩溃 (#8089) | P0 | 25 | — | 0 引用 PR，未深挖 | 2026-10-19 |
 | 2 | Fused Megatron LM-head 遗留 AllGather pending (#8028) | P0 | 21 | — | 0 引用 PR，未深挖 | 2026-10-19 |
-| 3 | GMPO geo_mean 损失随 minibatch 切分变化 (#7913) | P1 | 20 | — | 0 引用 PR，未深挖 | 2026-10-19 |
+| 3 | GMPO geo_mean 损失随 minibatch 切分变化 (#7913) | P1 | 20 | — | **verified-works**：patch 复用 agg_loss seq-mean-token-sum + global_batch_info，CPU fp64 验证所有切分 rel L2=0，单 batch 无损；0 引用 PR，待授权提交 | 2026-10-19 |
 | 4 | 等长 batch 3D mRoPE position_ids 不一致 (#7899) | P1 | 16 | — | 0 引用 PR，未深挖 | 2026-10-19 |
 
 ## 已被上游他人 PR 覆盖（2026-10-19 查重核验）
