@@ -1,4 +1,4 @@
-# perpetual-learning：持续进行学习、实践、生产的自进化智能引擎
+# perpetual-learning
 
 ## 项目定位
 
