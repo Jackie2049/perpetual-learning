@@ -239,4 +239,4 @@ Long term (3-6 months):
 - verl #6765: https://github.com/verl-project/verl/pull/6765 (OptimStepParams)
 - rLLM #605: https://github.com/rllm-org/rllm/issues/605 (GRPO grouping bug)
 - Cross-framework clipping: notebook/fundamentals/cross-framework-muon-gradient-clipping-bug.md
-- DeepSpeed Muon source: notebook/projects/deepspeed-muon-optimizer-source-reading.md
+- DeepSpeed Muon source: notebook/frameworks/deepspeed-muon-optimizer-source-reading.md

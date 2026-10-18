@@ -145,12 +145,12 @@ python3 tools/algorithm_infra_knowledge_map.py cross       # Cross-framework pat
 
 ## Deep Reading References
 
-- verl V1 GRPO training loop: `notebook/projects/verl-v1-sync-ppo-trainer-grpo-training-loop-deep-reading.md`
-- verl V1 critical bugs: `notebook/projects/verl-v1-critical-bugs-issues-2026-06-20.md`
-- DeepSpeed ZeRO gradient flow + stream safety: `notebook/projects/deepspeed-zero1-2-gradient-flow-stream-safety-deep-reading.md`
-- Megatron Muon clipping: `notebook/projects/megatron-5394-chained-optimizer-muon-clipping-reading.md`
+- verl V1 GRPO training loop: `notebook/frameworks/verl-v1-sync-ppo-trainer-grpo-training-loop-deep-reading.md`
+- verl V1 critical bugs: `notebook/frameworks/verl-v1-critical-bugs-issues-2026-06-20.md`
+- DeepSpeed ZeRO gradient flow + stream safety: `notebook/frameworks/deepspeed-zero1-2-gradient-flow-stream-safety-deep-reading.md`
+- Megatron Muon clipping: `notebook/frameworks/megatron-5394-chained-optimizer-muon-clipping-reading.md`
 - GRPO singleton degeneration derivation: `notebook/fundamentals/state-lifecycle-mismatch-pattern-family-derivation.md`
-- RTX 4090 GRPO runbook: `notebook/projects/rtx4090-grpo-training-runbook.md`
+- RTX 4090 GRPO runbook: `notebook/frameworks/rtx4090-grpo-training-runbook.md`
 - Always load: `notebook/auto-memory.md`
 
 ## RTX 4090 Specific Debug

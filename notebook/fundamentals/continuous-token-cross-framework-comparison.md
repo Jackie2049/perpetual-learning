@@ -146,4 +146,4 @@ Core change: Tinker local_handler cumulative token support
 
 - verl #6779: https://github.com/verl-project/verl/pull/6779
 - rLLM #658: https://github.com/rllm-org/rllm/pull/658
-- rLLM agent research: notebook/projects/rllm-latest-developments-2026-06-agent-research.md
+- rLLM agent research: notebook/frameworks/rllm-latest-developments-2026-06-agent-research.md

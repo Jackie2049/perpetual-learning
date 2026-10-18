@@ -51,7 +51,7 @@ verl PR #6713 (DRAFT, 2026-06-12): "Megatron LoRA Adapter Export for Rollout"
   → Pack Qwen3-Omni 3D MoE LoRA into vLLM-compatible layout
   → ★★★★★★★★ 3-repo coordinated: verl #6713 + verl-omni #169 + vllm-omni #4388
   → ★★★★★★★★ But: still DRAFT → critical review issue (requires_grad non-leaf) → not production-ready!
-  → Detailed reading: notebook/projects/verl-pr6713-megatron-lora-export-reading.md
+  → Detailed reading: notebook/frameworks/verl-pr6713-megatron-lora-export-reading.md
 
 Megatron-Bridge (NeMo2):
   → LoRA in NeMo2/Megatron-Bridge → separate path from core Megatron
@@ -109,7 +109,7 @@ vLLM LoRA + quantization:
   → EP=1 (RTX 4090): passthrough → zero overhead → but can't train on Megatron backend (single GPU crash)
   → Multi-GPU training → export adapter → deploy on RTX 4090 vLLM → serving bridge viable
   → ★★★★★★★★ But: DRAFT + critical review issue → not production-ready
-  → Detailed reading: notebook/projects/verl-pr6713-megatron-lora-export-reading.md
+  → Detailed reading: notebook/frameworks/verl-pr6713-megatron-lora-export-reading.md
 
 ★★★★ verl ContinuousToken (#6720/#6721 OPEN):
   → Multi-turn agent RL → LoRA mask=[1,0,1,0,...] → action tokens only
@@ -226,9 +226,9 @@ Scenario C: OPD distillation (Qwen2.5-0.5B student)
 - Training config: notebook/fundamentals/rtx4090-grpo-training-config-card.md
 - Deployment pipeline: notebook/fundamentals/rtx4090-training-to-deployment-pipeline.md
 - Inference serving: notebook/fundamentals/rtx4090-inference-serving-checklist.md
-- rLLM GRPO guide: notebook/projects/rllm-grpo-practical-training-guide.md
+- rLLM GRPO guide: notebook/frameworks/rllm-grpo-practical-training-guide.md
 - DeepSpeed config generator: tools/deepspeed_config_generator.py
-- Megatron LoRA export: notebook/projects/verl-pr6713-megatron-lora-export-reading.md
-- Megatron Lite: notebook/projects/megatron-lite-reading.md
-- RouterReplay: notebook/projects/megatron-router-replay-source-reading.md
-- BudgetRefiner synthesis: notebook/projects/watermark-budgetrefiner-complementary-synthesis.md
+- Megatron LoRA export: notebook/frameworks/verl-pr6713-megatron-lora-export-reading.md
+- Megatron Lite: notebook/frameworks/megatron-lite-reading.md
+- RouterReplay: notebook/frameworks/megatron-router-replay-source-reading.md
+- BudgetRefiner synthesis: notebook/frameworks/watermark-budgetrefiner-complementary-synthesis.md

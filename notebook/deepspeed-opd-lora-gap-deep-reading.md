@@ -681,9 +681,9 @@ distillation on consumer GPUs.
 ### Prior deep readings:
 | File | Content |
 |------|---------|
-| `notebook/projects/deepspeed-opd-trainer-source-reading.md` | Full OPD trainer architecture (draft PR version) |
-| `notebook/projects/deepspeed-opd-lora-integration-gap-analysis.md` | ~15 LOC gap + memory budget |
-| `notebook/projects/deepspeed-autoep-gap-analysis.md` | 9 AutoEP gaps (OPD not listed there) |
+| `notebook/frameworks/deepspeed-opd-trainer-source-reading.md` | Full OPD trainer architecture (draft PR version) |
+| `notebook/frameworks/deepspeed-opd-lora-integration-gap-analysis.md` | ~15 LOC gap + memory budget |
+| `notebook/frameworks/deepspeed-autoep-gap-analysis.md` | 9 AutoEP gaps (OPD not listed there) |
 | `notebook/deepspeed-8130-zero3-frozen-params-checkpoint-deep-reading.md` | ZeRO-3 checkpoint error |
 
 ---

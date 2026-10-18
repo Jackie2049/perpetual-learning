@@ -156,5 +156,5 @@ AuthenticationMiddleware:
 - SGLang auth.py: sglang/python/sglang/srt/utils/auth.py (209 lines, full source read)
 - vLLM server_utils.py: vllm/vllm/entrypoints/serve/utils/server_utils.py (AuthenticationMiddleware)
 - vLLM LoRA serving: vllm/vllm/entrypoints/openai/models/serving.py
-- SGLang #28582 source-level reading: notebook/projects/sglang-28582-rce-security-vulnerability-reading.md
-- verl HYBRID weight sync: notebook/projects/verl-fsdp2-source-deep-reading.md (6-step flow)
+- SGLang #28582 source-level reading: notebook/frameworks/sglang-28582-rce-security-vulnerability-reading.md
+- verl HYBRID weight sync: notebook/frameworks/verl-fsdp2-source-deep-reading.md (6-step flow)

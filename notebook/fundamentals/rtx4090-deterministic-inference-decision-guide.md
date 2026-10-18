@@ -214,10 +214,10 @@ START: Need deterministic batch-invariant inference on RTX 4090 (SM89)?
 ## References
 
 - Deterministic cross-framework: notebook/fundamentals/deterministic-inference-cross-framework-comparison.md
-- SGLang deterministic: notebook/projects/sglang-deterministic-inference-source-reading.md
-- Fusion Guard PR: notebook/projects/pytorch-inductor-sm89-fusion-guard-pr-draft.md
-- Fusion Guard issue: notebook/projects/pytorch-inductor-sm89-fusion-guard-issue-draft.md
-- Triton swiglu design: notebook/projects/triton-dequant-swiglu-quant-sm89-design.md
+- SGLang deterministic: notebook/frameworks/sglang-deterministic-inference-source-reading.md
+- Fusion Guard PR: open-source/pytorch/pytorch-inductor-sm89-fusion-guard-pr-draft.md
+- Fusion Guard issue: open-source/pytorch/pytorch-inductor-sm89-fusion-guard-issue-draft.md
+- Triton swiglu design: notebook/frameworks/triton-dequant-swiglu-quant-sm89-design.md
 - GRPO decision flowchart: notebook/fundamentals/rtx4090-grpo-training-decision-flowchart.md
 - verl GRPO flow: notebook/fundamentals/verl-rtx4090-grpo-training-flow.md
-- MindIE ATB compose: notebook/projects/mindie-atb-compose-fusion-deep-reading.md
+- MindIE ATB compose: notebook/frameworks/mindie-atb-compose-fusion-deep-reading.md

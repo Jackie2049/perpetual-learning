@@ -204,8 +204,8 @@
 
 ## References
 
-- DeepSpeed kernels: notebook/projects/deepspeed-kernel-source-reading.md
-- SGLang deterministic: notebook/projects/sglang-deterministic-inference-source-reading.md
-- Fusion Guard PR: notebook/projects/pytorch-inductor-sm89-fusion-guard-pr-draft.md
-- Triton swiglu: notebook/projects/triton-dequant-swiglu-quant-sm89-design.md
+- DeepSpeed kernels: notebook/frameworks/deepspeed-kernel-source-reading.md
+- SGLang deterministic: notebook/frameworks/sglang-deterministic-inference-source-reading.md
+- Fusion Guard PR: open-source/pytorch/pytorch-inductor-sm89-fusion-guard-pr-draft.md
+- Triton swiglu: notebook/frameworks/triton-dequant-swiglu-quant-sm89-design.md
 - Deterministic comparison: notebook/fundamentals/deterministic-inference-cross-framework-comparison.md

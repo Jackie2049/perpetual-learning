@@ -346,10 +346,10 @@ Or use Qwen2.5-Math-1.5B-Instruct as teacher -- still stronger than 0.5B student
 
 ## References
 
-- DeepSpeed OPSD: PR #8027 (DRAFT OPEN) -- `notebook/projects/deepspeed-opd-trainer-source-reading.md`
+- DeepSpeed OPSD: PR #8027 (DRAFT OPEN) -- `notebook/frameworks/deepspeed-opd-trainer-source-reading.md`
 - verl OPD: PR #5041 (merged), PR #6072 VeOmni (merged), PR #6051 multi-teacher (merged), PR #6511 fused top-K kernel (merged)
-- rLLM OPD: PR #356 (On Policy Distillation) -- `notebook/projects/rllm-architecture-reading.md`, `rllm/trainer/distill/`
+- rLLM OPD: PR #356 (On Policy Distillation) -- `notebook/frameworks/rllm-architecture-reading.md`, `rllm/trainer/distill/`
 - OPSD papers: TIP (arxiv 2604.14084), PACED (arxiv 2603.11178), Beyond GRPO (arxiv 2605.12483)
 - Distillation fundamentals: `notebook/fundamentals/distillation-deep-dive.md`, `notebook/fundamentals/knowledge-distillation-theory.md`
-- verl VeOmni reading: `notebook/projects/verl-v08-veomni-flowgrpo-reading.md`
-- verl v0.8 features: `notebook/projects/verl-v0.8-features-reading.md`
+- verl VeOmni reading: `notebook/frameworks/verl-v08-veomni-flowgrpo-reading.md`
+- verl v0.8 features: `notebook/frameworks/verl-v0.8-features-reading.md`

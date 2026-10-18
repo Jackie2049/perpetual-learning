@@ -196,7 +196,7 @@ def print_issues():
         print(f"\n  {status_sym} #{issue['number']} [{issue['status']}] {issue['title']}")
         print(f"    Severity: {issue['severity']}")
         if draft:
-            print(f"    Our draft: notebook/projects/{draft}")
+            print(f"    Our draft: notebook/frameworks/{draft}")
         print(f"    URL: https://github.com/vllm-project/vllm/issues/{issue['number']}")
 
     print("\n★★★ 立即可执行的贡献:")

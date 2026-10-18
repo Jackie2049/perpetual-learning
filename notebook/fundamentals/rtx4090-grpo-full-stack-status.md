@@ -187,11 +187,11 @@ Tier 2 DeepSpeed:
 - Full stack decision guide: notebook/fundamentals/rtx4090-deterministic-inference-decision-guide.md
 - Deterministic comparison: notebook/fundamentals/deterministic-inference-cross-framework-comparison.md
 - Triton kernel comparison: notebook/fundamentals/cross-framework-triton-kernel-comparison.md
-- PR tracker: notebook/projects/seven-framework-pr-tracker.md
+- PR tracker: notebook/frameworks/seven-framework-pr-tracker.md
 - verl GRPO flow: notebook/fundamentals/verl-rtx4090-grpo-training-flow.md
 - DeepSpeed ZeRO: notebook/fundamentals/single-gpu-ddp-vs-zero-architecture-comparison.md
-- FSDP2 analysis: notebook/projects/pytorch-fsdp2-single-gpu-analysis.md
+- FSDP2 analysis: notebook/frameworks/pytorch-fsdp2-single-gpu-analysis.md
 - RTX 4090 decision: notebook/fundamentals/rtx4090-grpo-training-decision-flowchart.md
-- vLLM batch_invariant SM89 gap: notebook/projects/vllm-batch-invariant-source-reading.md
-- verl #6572 full determinism: notebook/projects/verl-6572-full-determinism-source-reading.md
-- P9 integration path: notebook/projects/p9-fusion-guard-integration-path-synthesis.md
+- vLLM batch_invariant SM89 gap: notebook/frameworks/vllm-batch-invariant-source-reading.md
+- verl #6572 full determinism: notebook/frameworks/verl-6572-full-determinism-source-reading.md
+- P9 integration path: notebook/frameworks/p9-fusion-guard-integration-path-synthesis.md

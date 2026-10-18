@@ -127,5 +127,5 @@ GRPO n=8, prefix_ratio=0.67:
 
 Sources:
 - 前序实验: notebook/fundamentals/prefix-sharing-packed-thd-rtx4090.md (纯attention PS)
-- prefix-0501项目: notebook/projects/prefix-0501-project-analysis.md
+- prefix-0501项目: notebook/frameworks/prefix-0501-project-analysis.md
 - 工具: tools/full_model_ps_benchmark_4090.py

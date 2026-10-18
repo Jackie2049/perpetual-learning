@@ -133,8 +133,8 @@ triton_dequant_swiglu_quant_prototype.py → Triton fused kernel (info/benchmark
 ## References
 
 - Deterministic inference comparison: notebook/fundamentals/deterministic-inference-cross-framework-comparison.md
-- SGLang deterministic: notebook/projects/sglang-deterministic-inference-source-reading.md
-- Fusion Guard PR: notebook/projects/pytorch-inductor-sm89-fusion-guard-pr-draft.md
-- Fusion Guard issue: notebook/projects/pytorch-inductor-sm89-fusion-guard-issue-draft.md
-- Triton swiglu: notebook/projects/triton-dequant-swiglu-quant-sm89-design.md
+- SGLang deterministic: notebook/frameworks/sglang-deterministic-inference-source-reading.md
+- Fusion Guard PR: open-source/pytorch/pytorch-inductor-sm89-fusion-guard-pr-draft.md
+- Fusion Guard issue: open-source/pytorch/pytorch-inductor-sm89-fusion-guard-issue-draft.md
+- Triton swiglu: notebook/frameworks/triton-dequant-swiglu-quant-sm89-design.md
 - verl GRPO flow: notebook/fundamentals/verl-rtx4090-grpo-training-flow.md

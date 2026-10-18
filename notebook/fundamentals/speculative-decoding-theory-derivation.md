@@ -1114,11 +1114,11 @@ verl HYBRID + speculative decoding integration:
 - `/notebook/fundamentals/speculative-decoding-algorithm-deep-dive.md` — Algorithm theory + vLLM
 - `/notebook/fundamentals/speculative-decoding-benchmark-rtx4090.md` — RTX 4090 benchmark data
 - `/notebook/fundamentals/multi-token-prediction-deep-dive.md` — MTP training + inference dual benefit
-- `/notebook/projects/vllm-spec-decode-reading.md` — vLLM V1 spec decode source reading
-- `/notebook/projects/sglang-spec-decode-reading.md` — SGLang spec decode source reading
-- `/notebook/projects/sglang-architecture.md` — SGLang architecture overview
+- `/notebook/frameworks/vllm-spec-decode-reading.md` — vLLM V1 spec decode source reading
+- `/notebook/frameworks/sglang-spec-decode-reading.md` — SGLang spec decode source reading
+- `/notebook/frameworks/sglang-architecture.md` — SGLang architecture overview
 - `/notebook/fundamentals/deepseek-v3-architecture-deep-dive.md` — DSV3 MLA+MoE+MTP
-- `/notebook/projects/dsv4-systematic-instability-pattern-synthesis.md` — DSV4 instability pattern
+- `/notebook/frameworks/dsv4-systematic-instability-pattern-synthesis.md` — DSV4 instability pattern
 
 ### 10.4 Project Tools
 

@@ -13,8 +13,8 @@ Usage:
 
 Reference:
   - tools/gpu_experiment_queue.md (priority list)
-  - notebook/projects/budgetrefiner-vllm-pr-draft.md (P10)
-  - notebook/projects/pytorch-inductor-sm89-fusion-guard-pr-draft.md (P9)
+  - open-source/vllm/budgetrefiner-vllm-pr-draft.md (P10)
+  - open-source/pytorch/pytorch-inductor-sm89-fusion-guard-pr-draft.md (P9)
 """
 
 import argparse

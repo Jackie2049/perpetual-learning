@@ -11,7 +11,7 @@
 - **数据点**: (ctx_len, d_num) → chunk_size → budget at SLO=50ms
 - **方法**: 运行 Qwen3-1.7B + 不同 decode 负载 → 测量每个配置的 ITL → 填充 lookup table
 - **预期**: d_num=0→1024, d_num=100→~768, d_num=255→~512 (需实测确认)
-- **关联PR**: BudgetRefiner SLO → vLLM upstream (notebook/projects/budgetrefiner-vllm-pr-draft.md)
+- **关联PR**: BudgetRefiner SLO → vLLM upstream (open-source/vllm/budgetrefiner-vllm-pr-draft.md)
 - **状态**: READY, 等待GPU
 
 ## P9: SM89 Batch Invariance Reproduction
@@ -20,7 +20,7 @@
 - **脚本**: `tools/sm89_batch_invariance_repro.py`
 - **配置**: 3 configs — (a) baseline torch.mean, (b) Inductor-compiled RMSNorm, (c) our fusion guard
 - **指标**: 不同 batch size 的 RMSNorm output 是否一致 (允许1e-3 tolerance)
-- **关联PR**: Inductor SM<90 Fusion Guard → PyTorch upstream (notebook/projects/pytorch-inductor-sm89-fusion-guard-pr-draft.md)
+- **关联PR**: Inductor SM<90 Fusion Guard → PyTorch upstream (open-source/pytorch/pytorch-inductor-sm89-fusion-guard-pr-draft.md)
 - **状态**: READY, 等待GPU
 
 ## P8: INT8 KV Cache Throughput Benchmark

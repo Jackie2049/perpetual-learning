@@ -64,7 +64,7 @@ Rank mapping: `global_rank = tp_rank + dp_rank * tp_size + pp_rank * tp_size * d
 
 ### 1. Tensor Parallelism (TP)
 - **Directory**: `megatron/core/tensor_parallel/`
-- **Notes**: `notebook/projects/megatron-tp-source-reading.md` + `notebook/projects/megatron-tp-communication.md`
+- **Notes**: `notebook/frameworks/megatron-tp-source-reading.md` + `notebook/frameworks/megatron-tp-communication.md`
 
 | File | Key Classes/Functions | Description |
 |------|----------------------|-------------|
@@ -89,7 +89,7 @@ Rank mapping: `global_rank = tp_rank + dp_rank * tp_size + pp_rank * tp_size * d
 
 ### 2. Pipeline Parallelism (PP)
 - **Directory**: `megatron/core/pipeline_parallel/`
-- **Notes**: `notebook/projects/megatron-pp-schedules-reading.md`
+- **Notes**: `notebook/frameworks/megatron-pp-schedules-reading.md`
 
 | File | Line | Key Functions/Classes | Description |
 |------|------|----------------------|-------------|
@@ -111,7 +111,7 @@ Rank mapping: `global_rank = tp_rank + dp_rank * tp_size + pp_rank * tp_size * d
 
 ### 3. Sequence Parallelism (SP)
 - **Directory**: `megatron/core/tensor_parallel/mappings.py` (SP primitives)
-- **Notes**: `notebook/projects/megatron-tp-source-reading.md` (Section 2)
+- **Notes**: `notebook/frameworks/megatron-tp-source-reading.md` (Section 2)
 
 SP replaces TP AllReduce with AllGather + ReduceScatter, splitting activations along sequence dim. LayerNorm/Dropout run independently on each shard. Same total communication volume as AllReduce, but activation memory saved by TP factor.
 
@@ -119,7 +119,7 @@ SP Primitives: `_ScatterToSequenceParallelRegion` (fwd: split first_dim, bwd: Al
 
 ### 4. Communication
 - **Directory**: `megatron/core/tensor_parallel/mappings.py` + `megatron/core/parallel_state.py`
-- **Notes**: `notebook/projects/megatron-tp-communication.md`
+- **Notes**: `notebook/frameworks/megatron-tp-communication.md`
 
 **Async overlap**: `CUDA_DEVICE_MAX_CONNECTIONS=1` forces NCCL ops to one stream, enabling async communication to overlap with compute. Used with `async_op=True` + `handle.wait()`.
 
@@ -129,7 +129,7 @@ SP Primitives: `_ScatterToSequenceParallelRegion` (fwd: split first_dim, bwd: Al
 
 ### 5. Optimizer + Checkpoint
 - **Directory**: `megatron/core/optimizer/`
-- **Notes**: `notebook/projects/megatron-optimizer-ckpt.md`
+- **Notes**: `notebook/frameworks/megatron-optimizer-ckpt.md`
 
 | File | Key Classes | Description |
 |------|------------|-------------|
@@ -151,7 +151,7 @@ SP Primitives: `_ScatterToSequenceParallelRegion` (fwd: split first_dim, bwd: Al
 
 ### 6. DataLoader
 - **Directory**: `megatron/core/datasets/` (16 files)
-- **Notes**: `notebook/projects/megatron-dataloader.md`
+- **Notes**: `notebook/frameworks/megatron-dataloader.md`
 
 | File | Key Classes | Description |
 |------|------------|-------------|
@@ -166,7 +166,7 @@ SP Primitives: `_ScatterToSequenceParallelRegion` (fwd: split first_dim, bwd: Al
 
 ### 7. MoE (Mixture of Experts)
 - **Directory**: `megatron/core/transformer/moe/` (13 files)
-- **Notes**: `notebook/projects/megatron-moe-architecture.md`
+- **Notes**: `notebook/frameworks/megatron-moe-architecture.md`
 
 | File | Key Classes | Description |
 |------|------------|-------------|

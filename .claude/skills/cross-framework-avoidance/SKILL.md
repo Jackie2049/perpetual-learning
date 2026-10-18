@@ -195,10 +195,10 @@ Always load:
 - `notebook/auto-memory.md`
 
 On-demand load per framework:
-- DeepSpeed: `notebook/projects/deepspeed-zero1-2-gradient-flow-stream-safety-deep-reading.md`
-- Megatron: `notebook/projects/megatron-5394-chained-optimizer-muon-clipping-reading.md`
-- vLLM: `notebook/projects/vllm-v1-architecture-critical-bugs-deep-reading.md`
-- verl: `notebook/projects/verl-v1-grpo-training-loop-architecture-deep-reading.md`
-- rLLM: `notebook/projects/rllm-latest-developments-2026-06-session3-reading.md`
-- MindIE: `notebook/projects/mindie-vllm-ascend-latest-developments-2026-06-session3-reading.md`
-- PyTorch: `notebook/projects/pytorch-fsdp2-2026-deep-reading.md`
+- DeepSpeed: `notebook/frameworks/deepspeed-zero1-2-gradient-flow-stream-safety-deep-reading.md`
+- Megatron: `notebook/frameworks/megatron-5394-chained-optimizer-muon-clipping-reading.md`
+- vLLM: `notebook/frameworks/vllm-v1-architecture-critical-bugs-deep-reading.md`
+- verl: `notebook/frameworks/verl-v1-grpo-training-loop-architecture-deep-reading.md`
+- rLLM: `notebook/frameworks/rllm-latest-developments-2026-06-session3-reading.md`
+- MindIE: `notebook/frameworks/mindie-vllm-ascend-latest-developments-2026-06-session3-reading.md`
+- PyTorch: `notebook/frameworks/pytorch-fsdp2-2026-deep-reading.md`

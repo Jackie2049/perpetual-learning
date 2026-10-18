@@ -14,8 +14,8 @@ Usage:
   python3 tools/profile_vllm_budget.py --mode all
 
 Reference:
-  - notebook/projects/budgetrefiner-vllm-pr-draft.md (PR draft)
-  - notebook/projects/budgetrefiner-vllm-contribution-plan.md (4-phase plan)
+  - open-source/vllm/budgetrefiner-vllm-pr-draft.md (PR draft)
+  - open-source/vllm/budgetrefiner-vllm-contribution-plan.md (4-phase plan)
   - MindIE/vLLM-Ascend BudgetRefiner source (95%+ GPU-generic)
 """
 

@@ -155,7 +155,7 @@ def generate_quick_ref():
     lines.append("# 7框架API速查表: DeepSpeed / Megatron-LM / vLLM / verl / MindIE / rLLM / PyTorch")
     lines.append("")
     lines.append("> 2026-06-15 | 贴身顾问实用工具 — 关键API、配置模式、一行命令")
-    lines.append("> 详细笔记见各框架 notebook/projects/ 下的阅读文件")
+    lines.append("> 详细笔记见各框架 notebook/frameworks/ 下的阅读文件")
     lines.append("")
     lines.append("## 总览")
     lines.append("")

@@ -185,4 +185,4 @@ FSDP2+compile训练           │ compile(default)              │ 1.2-1.5x
 ## 参考
 
 - 前序实验: `notebook/fundamentals/torch-compile-deep-dive.md` (纯forward/training benchmark)
-- verl架构: `notebook/projects/distributed-rl-training-verl-architecture.md` (rollout+训练分离)
+- verl架构: `notebook/frameworks/distributed-rl-training-verl-architecture.md` (rollout+训练分离)

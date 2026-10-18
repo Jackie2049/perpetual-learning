@@ -9,7 +9,7 @@
 #   bash tools/train_muon_lora_rtx4090.sh --model qwen3-1.7b --dry-run   # config only
 #   bash tools/train_muon_lora_rtx4090.sh --model qwen3-1.7b              # full training
 #
-# Reference: notebook/projects/deepspeed-muon-optimizer-source-reading.md
+# Reference: notebook/frameworks/deepspeed-muon-optimizer-source-reading.md
 
 set -e
 
@@ -216,7 +216,7 @@ if [ "$DRY_RUN" = true ]; then
     echo "  → Start with lr=0.02, muon_lr_scale=0.1 — may need tuning"
     echo "  → Muon + LoRA = natural combination — LoRA matrices are 2D"
     echo ""
-    echo "Reference: notebook/projects/deepspeed-muon-optimizer-source-reading.md"
+    echo "Reference: notebook/frameworks/deepspeed-muon-optimizer-source-reading.md"
     exit 0
 fi
 

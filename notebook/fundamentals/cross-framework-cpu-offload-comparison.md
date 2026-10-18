@@ -278,13 +278,13 @@ NOT viable: FSDP2 backend (verl)
 
 ## References
 
-- DeepSpeed #8058 ZenFlow: notebook/projects/deepspeed-8058-zenflow-native-cpu-optimizer-reading.md
-- DeepSpeed #8061 overlap_comm: notebook/projects/deepspeed-8061-overlap-comm-multi-stream-race-reading.md
-- PyTorch #187620 CPUOffloadPolicy: notebook/projects/pytorch-187620-fsdp2-partial-offload-policy-reading.md
-- verl #6512 per-unit summon: notebook/projects/verl-6512-per-unit-lora-summon-reading.md
-- verl #6468 FSDP2 leak: notebook/projects/verl-6468-fsdp2-cpu-memory-leak-reading.md
-- verl #6794 delta sync: notebook/projects/verl-6794-delta-weight-sync-reading.md
-- RTX 4090 runbook: notebook/projects/rtx4090-grpo-training-runbook.md
+- DeepSpeed #8058 ZenFlow: notebook/frameworks/deepspeed-8058-zenflow-native-cpu-optimizer-reading.md
+- DeepSpeed #8061 overlap_comm: notebook/frameworks/deepspeed-8061-overlap-comm-multi-stream-race-reading.md
+- PyTorch #187620 CPUOffloadPolicy: notebook/frameworks/pytorch-187620-fsdp2-partial-offload-policy-reading.md
+- verl #6512 per-unit summon: notebook/frameworks/verl-6512-per-unit-lora-summon-reading.md
+- verl #6468 FSDP2 leak: notebook/frameworks/verl-6468-fsdp2-cpu-memory-leak-reading.md
+- verl #6794 delta sync: notebook/frameworks/verl-6794-delta-weight-sync-reading.md
+- RTX 4090 runbook: notebook/frameworks/rtx4090-grpo-training-runbook.md
 - Algorithm→infra synthesis: notebook/synthesis/algorithm-to-infra-synthesis.md
 - CUDA stream safety: notebook/fundamentals/cuda-stream-safety-cross-framework-pattern.md
 

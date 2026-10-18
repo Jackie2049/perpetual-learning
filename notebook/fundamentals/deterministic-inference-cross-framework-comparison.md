@@ -318,16 +318,16 @@ RouterReplay (#4168):
 
 ## References
 
-- SGLang deterministic: notebook/projects/sglang-deterministic-inference-source-reading.md
-- SGLang #24459: notebook/projects/sglang-latest-developments-2026-06-agent-research.md
-- vLLM batch_invariant SM89 gap: notebook/projects/vllm-batch-invariant-source-reading.md
-- verl #6572 full determinism: notebook/projects/verl-6572-full-determinism-source-reading.md
-- P9 integration path: notebook/projects/p9-fusion-guard-integration-path-synthesis.md
-- P9 issue draft: notebook/projects/pytorch-inductor-sm89-fusion-guard-issue-draft.md
+- SGLang deterministic: notebook/frameworks/sglang-deterministic-inference-source-reading.md
+- SGLang #24459: notebook/frameworks/sglang-latest-developments-2026-06-agent-research.md
+- vLLM batch_invariant SM89 gap: notebook/frameworks/vllm-batch-invariant-source-reading.md
+- verl #6572 full determinism: notebook/frameworks/verl-6572-full-determinism-source-reading.md
+- P9 integration path: notebook/frameworks/p9-fusion-guard-integration-path-synthesis.md
+- P9 issue draft: open-source/pytorch/pytorch-inductor-sm89-fusion-guard-issue-draft.md
 - Inductor root cause: notebook/fundamentals/pytorch-inductor-sm89-fusion-reading.md
-- Triton swiglu design: notebook/projects/triton-dequant-swiglu-quant-sm89-design.md
-- DSV4 systematic instability: notebook/projects/dsv4-systematic-instability-pattern-synthesis.md
-- CUDA graph fragility: notebook/projects/vllm-cuda-graph-reading.md (Section 13)
+- Triton swiglu design: notebook/frameworks/triton-dequant-swiglu-quant-sm89-design.md
+- DSV4 systematic instability: notebook/frameworks/dsv4-systematic-instability-pattern-synthesis.md
+- CUDA graph fragility: notebook/frameworks/vllm-cuda-graph-reading.md (Section 13)
 - vLLM-Ascend batch_invariant for RL: #10034
 - verl GRPO flow: notebook/fundamentals/verl-rtx4090-grpo-training-flow.md
-- MindIE ATB compose: notebook/projects/mindie-atb-compose-fusion-deep-reading.md
+- MindIE ATB compose: notebook/frameworks/mindie-atb-compose-fusion-deep-reading.md

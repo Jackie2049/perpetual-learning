@@ -164,7 +164,7 @@ python3 tools/ppo_clip_loss_validation.py           # PPO-clip numerical validat
 python3 tools/grpo_singleton_degeneration_experiment.py  # GRPO degeneration proof
 ```
 
-Deep reading: notebook/projects/verl-v1-sync-ppo-trainer-grpo-training-loop-deep-reading.md
+Deep reading: notebook/frameworks/verl-v1-sync-ppo-trainer-grpo-training-loop-deep-reading.md
 
 Key benchmark result files in `results/`:
 - `fsdp_scaling_125m_benchmark.json` — FSDP/DDP scaling

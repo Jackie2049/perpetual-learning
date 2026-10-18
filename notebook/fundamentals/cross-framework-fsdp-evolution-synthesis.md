@@ -185,5 +185,5 @@ actor_rollout_ref:
 - verl #6512: per-unit LoRA summon (10x peak reduction)
 - verl #6699: detach memory fix (4x reduction)
 - verl #6731: CPPO bypass (18Ψ→3.8Ψ)
-- PyTorch FSDP2 analysis: notebook/projects/pytorch-fsdp2-single-gpu-analysis.md
-- RTX 4090 runbook: notebook/projects/rtx4090-grpo-training-runbook.md
+- PyTorch FSDP2 analysis: notebook/frameworks/pytorch-fsdp2-single-gpu-analysis.md
+- RTX 4090 runbook: notebook/frameworks/rtx4090-grpo-training-runbook.md

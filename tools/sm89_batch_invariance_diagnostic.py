@@ -309,7 +309,7 @@ def full_report(model="Qwen/Qwen3-1.5B"):
         "This is a genuine Tier 1-2 vLLM contribution opportunity:",
         "",
         "Tier 1 (Comment): Post detailed root cause analysis on #39096",
-        "  — Draft: notebook/projects/vllm-39096-batch-invariance-comment-draft.md",
+        "  — Draft: open-source/vllm/vllm-39096-batch-invariance-comment-draft.md",
         "  — Content: dual failure path + Inductor root cause + framework comparison",
         "",
         "Tier 2 (PR): Investigate which Inductor Triton kernels break on SM89",

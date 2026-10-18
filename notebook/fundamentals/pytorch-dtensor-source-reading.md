@@ -388,5 +388,5 @@ Sources:
 - [PyTorch Blog: Scaling with DTensor](https://pytorch.org/blog/scaling-pytorch-with-dtensor/)
 - [PyTorch DTensor Tutorial](https://pytorch.org/tutorials/advanced/dtensor.html)
 - [GitHub: pytorch/torch/distributed/tensor](https://github.com/pytorch/pytorch/tree/main/torch/distributed/tensor)
-- notebook/projects/zero3-vs-fsdp2-system-comparison.md
+- notebook/frameworks/zero3-vs-fsdp2-system-comparison.md
 - notebook/fundamentals/megatron-parallel-state-source-reading.md

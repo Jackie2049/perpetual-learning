@@ -6,7 +6,7 @@
 ★★★★★★★★★ Fuses: dequantize_activation + SwiGLU + requantize → 1 kernel launch
 ★★★★★★★★★ MoE W8A8 decode path: 6→1 kernels per expert → 48→8 total for 8 experts
 
-Reference: notebook/projects/mindie-atb-compose-fusion-deep-reading.md
+Reference: notebook/frameworks/mindie-atb-compose-fusion-deep-reading.md
 Reference: Ascend op-plugin npu_dequant_swiglu_quant host+kernel source
 
 USAGE (GPU required):

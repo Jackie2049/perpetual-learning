@@ -371,5 +371,5 @@ Sources:
 - SGLang: moe/topk.py, moe/router.py, moe/ep_moe/, moe/token_dispatcher/, state_capturer/routed_experts.py
 - Megatron-LM: moe/router.py, moe/moe_layer.py, moe/token_dispatcher.py, moe/token_dispatcher_inference.py, moe/shared_experts.py
 - verl: workers/config/engine.py, workers/engine/megatron/transformer_impl.py, models/mcore/model_initializer.py, utils/megatron_utils.py
-- notebook/projects/deepep-source-reading.md + deepep-v2-reading.md + deepep-megatron-integration-latest.md
-- notebook/projects/deepspeed-latest-developments-2026-06.md (AutoEP)
+- notebook/frameworks/deepep-source-reading.md + deepep-v2-reading.md + deepep-megatron-integration-latest.md
+- notebook/frameworks/deepspeed-latest-developments-2026-06.md (AutoEP)

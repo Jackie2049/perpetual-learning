@@ -57,7 +57,7 @@ CONTRIBUTIONS = [
         tier=Tier.TIER2_PR,
         priority=10,
         status=Status.DRAFT_READY,
-        draft_ref="notebook/projects/budgetrefiner-vllm-pr-draft.md",
+        draft_ref="open-source/vllm/budgetrefiner-vllm-pr-draft.md",
         description="Port BudgetRefiner SLO from vLLM-Ascend to standard vLLM V1. "
                     "95%+ GPU-generic. Dynamic token budget + SLO-aware scheduling + decode-first. "
                     "RTX 4090 profile_table.csv = unique contribution no other contributor has!",
@@ -79,7 +79,7 @@ CONTRIBUTIONS = [
         tier=Tier.TIER2_PR,
         priority=9,
         status=Status.DRAFT_READY,
-        draft_ref="notebook/projects/pytorch-inductor-sm89-fusion-guard-pr-draft.md",
+        draft_ref="open-source/pytorch/pytorch-inductor-sm89-fusion-guard-pr-draft.md",
         description="5-line modification to choices.py can_fuse_vertical. "
                     "Prevents vertical reduction fusion on SM<90 → keeps torch.mean "
                     "batch-invariant override effective. 5 precedents verified.",
@@ -312,7 +312,7 @@ CONTRIBUTIONS = [
         description="Root cause analysis: #8066 per-policy dtype cast → mixed dtype in "
                     "_allgather_params_coalesced → TypeError. ZeRO-2 UNAFFBECTED. "
                     "#8073 provides correct 2-line fix. 0 reviews for 2+ days → STALLED.",
-        draft_ref="notebook/projects/deepspeed-8072-8073-zero3-peft-regression-comment-draft.md",
+        draft_ref="open-source/deepspeed/deepspeed-8072-8073-zero3-peft-regression-comment-draft.md",
         next_steps=["Post root cause on #8072", "Post verification on #8073"],
         gpu_needed=False,
         unique_contribution=True,
@@ -346,7 +346,7 @@ CONTRIBUTIONS = [
         description="torch.abs() on expanded_row_idx before npu_moe_token_unpermute → "
                     "duplicate indices → NaN. 1-line fix: remove torch.abs(). "
                     "0 reviews → STALLED. Same pattern as DeepSpeed #8073.",
-        draft_ref="notebook/projects/vllm-ascend-critical-developments-2026-06-18-reading.md",
+        draft_ref="notebook/frameworks/vllm-ascend-critical-developments-2026-06-18-reading.md",
         next_steps=["Post verification comment on #10579"],
         gpu_needed=False,
         unique_contribution=True,
@@ -364,7 +364,7 @@ CONTRIBUTIONS = [
                     "(overlap_comm multi-stream race). Both are CUDA stream synchronization "
                     "issues causing silent data corruption or NaN. Pattern documented across "
                     "3 frameworks. Suggest adding record_stream to ALL multi-stream code paths.",
-        draft_ref="notebook/projects/verl-6794-delta-weight-sync-reading.md",
+        draft_ref="notebook/frameworks/verl-6794-delta-weight-sync-reading.md",
         next_steps=[
             "Post cross-framework CUDA stream safety comment on #6794",
             "Reference DeepSpeed #8061 as precedent",
@@ -385,7 +385,7 @@ CONTRIBUTIONS = [
                     "RTX 4090 workaround: MUST use FSDP1 backend + per-unit LoRA summon (#6512). "
                     "FSDP2 makes long-running GRPO (>100 steps) impossible on RTX 4090. "
                     "Host RAM monitoring recommendation for training scripts.",
-        draft_ref="notebook/projects/verl-6468-fsdp2-cpu-memory-leak-reading.md",
+        draft_ref="notebook/frameworks/verl-6468-fsdp2-cpu-memory-leak-reading.md",
         next_steps=[
             "Post FSDP2 leak RTX 4090 workaround comment on #6468",
             "Recommend FSDP1 + #6512 per-unit summon as safe alternative",

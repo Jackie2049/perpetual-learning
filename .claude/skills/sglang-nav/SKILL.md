@@ -29,7 +29,7 @@ TokenizerManager (API) → Scheduler (orchestration) → TpModelWorker (GPU exec
 
 ### 1. Scheduler (~4034 lines)
 - **File**: `sglang/python/sglang/srt/managers/scheduler.py`
-- **Notes**: `notebook/projects/sglang-scheduler-reading.md`
+- **Notes**: `notebook/frameworks/sglang-scheduler-reading.md`
 - **Key**: Mixin architecture (6 mixins), 18 sub-components, Normal/Overlap dual event loops
 - **Mixins**: DisaggregationDecode, DisaggregationPrefill, Multiplex, PP, Dllm, MlxOverlap
 
@@ -50,7 +50,7 @@ TokenizerManager (API) → Scheduler (orchestration) → TpModelWorker (GPU exec
 
 ### 5. Speculative Decoding (~7500 lines)
 - **Files**: `sglang/python/sglang/srt/speculative/` (12 core files)
-- **Notes**: `notebook/projects/sglang-spec-decode-reading.md`
+- **Notes**: `notebook/frameworks/sglang-spec-decode-reading.md`
 - **Key**: 6 algorithms(EAGLE/EAGLE3/FrozenKV/DFlash/NGRAM/Standalone) + Plugin registry(SpeculativeAlgorithm.register)
 - **Workers**: EAGLEWorkerV2 / DFlashWorkerV2 / FrozenKVMTPWorkerV2 / NGRAMWorker / StandaloneWorkerV2
 - **Flow**: Draft → Verify → DraftExtend (3-phase pipeline)

@@ -11,7 +11,7 @@ Modes:
   - gaps: Identify knowledge gaps and opportunities
   - all: Run all modes
 
-Based on: notebook/projects/ (7 framework reading notes)
+Based on: notebook/frameworks/ (7 framework reading notes)
 """
 
 import argparse

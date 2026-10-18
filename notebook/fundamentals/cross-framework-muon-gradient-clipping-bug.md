@@ -187,6 +187,6 @@ Muon:
 - DeepSpeed #8068: https://github.com/microsoft/DeepSpeed/pull/8068
 - DeepSpeed #7776: https://github.com/microsoft/DeepSpeed/pull/7776
 - Megatron #5394: https://github.com/NVIDIA/Megatron-LM/issues/5394
-- DeepSpeed Muon blockers: notebook/projects/deepspeed-v0.19.2-blockers-muon-cpu-offload-gap.md
-- Muon source reading: notebook/projects/deepspeed-muon-optimizer-source-reading.md
+- DeepSpeed Muon blockers: notebook/frameworks/deepspeed-v0.19.2-blockers-muon-cpu-offload-gap.md
+- Muon source reading: notebook/frameworks/deepspeed-muon-optimizer-source-reading.md
 - ZeRO safety checker: tools/deepspeed_zero_safety_checker.py

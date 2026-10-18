@@ -242,5 +242,5 @@ savings ≈ prompt_reuse_ratio × (prompt_len / total_len)
 - [SGLang RadixAttention Paper](https://arxiv.org/abs/2312.07104)
 - [verl PrefixGrouper](https://github.com/verl-project/verl)
 - [PagedAttention Paper (SOSP 2023)](https://arxiv.org/abs/2309.06180)
-- `notebook/projects/vllm-prefix-caching-v1.md` — vLLM V1 源码分析
-- `notebook/projects/verl-prefix-grouper.md` — verl 分组策略
+- `notebook/frameworks/vllm-prefix-caching-v1.md` — vLLM V1 源码分析
+- `notebook/frameworks/verl-prefix-grouper.md` — verl 分组策略

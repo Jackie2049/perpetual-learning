@@ -19,9 +19,9 @@ Usage:
   python3 tools/vllm_budgetrefiner_integration.py --mode all       # Show everything
 
 Reference:
-  - notebook/projects/budgetrefiner-slo-source-reading.md (58-line core logic)
-  - notebook/projects/budgetrefiner-vllm-pr-draft.md (PR draft)
-  - notebook/projects/vllm-v1-scheduler-watermark-reading.md (watermark complementary)
+  - notebook/frameworks/budgetrefiner-slo-source-reading.md (58-line core logic)
+  - open-source/vllm/budgetrefiner-vllm-pr-draft.md (PR draft)
+  - notebook/frameworks/vllm-v1-scheduler-watermark-reading.md (watermark complementary)
 """
 
 import argparse

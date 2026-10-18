@@ -153,9 +153,9 @@ verl HYBRID mode (recommended):
 - vLLM-Ascend #10684: DSA Hadamard sleep/wake corruption
 - vLLM-Ascend #10592: NPUIPC weight transfer engine
 - vLLM-Ascend #10579: MoE NaN 1-line fix
-- verl ZMQ IPC source: notebook/projects/verl-fsdp2-deep-source-reading.md
-- verl HYBRID mode: notebook/projects/verl-rtx4090-grpo-training-flow.md
-- DSV4 synthesis: notebook/projects/dsv4-systematic-instability-pattern-synthesis.md
-- DeepSpeed ZeRO source: notebook/projects/deepspeed-zero-single-gpu-source-reading.md
+- verl ZMQ IPC source: notebook/frameworks/verl-fsdp2-deep-source-reading.md
+- verl HYBRID mode: notebook/frameworks/verl-rtx4090-grpo-training-flow.md
+- DSV4 synthesis: notebook/frameworks/dsv4-systematic-instability-pattern-synthesis.md
+- DeepSpeed ZeRO source: notebook/frameworks/deepspeed-zero-single-gpu-source-reading.md
 - RouterReplay #4168: Megatron MoE router replay pattern
-- BudgetRefiner: notebook/projects/vllm-v1-scheduler-budgetrefiner-source-reading.md
+- BudgetRefiner: notebook/frameworks/vllm-v1-scheduler-budgetrefiner-source-reading.md

@@ -194,9 +194,9 @@
 ## References
 
 - BudgetRefiner SLO: notebook/fundamentals/watermark-budgetrefiner-complementary-synthesis.md
-- Fusion Guard PR: notebook/projects/pytorch-inductor-sm89-fusion-guard-pr-draft.md
-- Fusion Guard issue: notebook/projects/pytorch-inductor-sm89-fusion-guard-issue-draft.md
-- Triton swiglu: notebook/projects/triton-dequant-swiglu-quant-sm89-design.md
+- Fusion Guard PR: open-source/pytorch/pytorch-inductor-sm89-fusion-guard-pr-draft.md
+- Fusion Guard issue: open-source/pytorch/pytorch-inductor-sm89-fusion-guard-issue-draft.md
+- Triton swiglu: notebook/frameworks/triton-dequant-swiglu-quant-sm89-design.md
 - Full stack status: notebook/fundamentals/rtx4090-grpo-full-stack-status.md
-- RouterReplay design: notebook/projects/deepspeed-router-replay-equivalent-design.md
-- PR tracker: notebook/projects/seven-framework-pr-tracker.md
+- RouterReplay design: notebook/frameworks/deepspeed-router-replay-equivalent-design.md
+- PR tracker: notebook/frameworks/seven-framework-pr-tracker.md

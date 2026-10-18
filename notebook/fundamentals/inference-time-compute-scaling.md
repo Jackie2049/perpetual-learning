@@ -231,5 +231,5 @@ Sources:
 - "Scaling Laws for Inference-Time Compute" research paper (2024)
 - OpenAI o1 model strategy
 - Epoch AI analysis on inference scaling
-- notebook/projects/rtx4090-seven-framework-practical-config.md
+- notebook/frameworks/rtx4090-seven-framework-practical-config.md
 - memory/benchmark-results.md

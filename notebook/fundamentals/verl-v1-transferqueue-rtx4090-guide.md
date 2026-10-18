@@ -152,10 +152,10 @@ Step 10: actor update → LoRA forward+backward → ~2s
 
 ## 参考资料
 
-- verl V1 trainer: notebook/projects/verl-v1-trainer-architecture-reading.md
-- verl GRPO data flow: notebook/projects/verl-grpo-data-flow-reading.md
-- verl GRPO training loop: notebook/projects/verl-grpo-training-loop-internals-reading.md
-- verl reward: notebook/projects/verl-reward-integration-reading.md
-- rLLM Tinker: notebook/projects/rllm-tinker-backend-deep-reading.md
+- verl V1 trainer: notebook/frameworks/verl-v1-trainer-architecture-reading.md
+- verl GRPO data flow: notebook/frameworks/verl-grpo-data-flow-reading.md
+- verl GRPO training loop: notebook/frameworks/verl-grpo-training-loop-internals-reading.md
+- verl reward: notebook/frameworks/verl-reward-integration-reading.md
+- rLLM Tinker: notebook/frameworks/rllm-tinker-backend-deep-reading.md
 - RTX 4090 decision tree: notebook/fundamentals/rtx4090-rl-training-decision-tree.md
 - RTX 4090 ADR: notebook/fundamentals/rtx4090-architecture-decision-records.md

@@ -9,21 +9,23 @@
 ## 当前用户需求与决定
 
 - 项目首页标题使用 `perpetual-learning`，删除首页旧名称标识行。项目定位继续保留 [README.md](README.md#项目定位) 中的用户原文。
-- README.md 用于总览和对外呈现；[AGENTS.md](AGENTS.md) 为 Agent 内核；本文件记录当前工作上下文。
-- notebook/ 保留现有结构：fundamentals/ 基础知识、projects/ 项目源码、experiments/ 实验记录、roadmap.md 规划、knowledge-map.md 知识整理与总览；新增 [notebook/readme.md](notebook/readme.md)。
+- README.md 是整个项目的总览、对外呈现与用户导航，按主题、框架、成果提供快捷入口；[AGENTS.md](AGENTS.md) 为 Agent 内核；本文件记录当前工作上下文。
+- notebook/ 保留 fundamentals/ 基础知识、experiments/ 实验记录、roadmap.md 规划、knowledge-map.md 知识整理与总览；原源码学习目录改名 frameworks/，总览见 [notebook/readme.md](notebook/readme.md)。
 - tools/ 注重工具价值与复用；一次性、纯实验性和低价值重复实现归 tools/legacy/，新增 [tools/readme.md](tools/readme.md)。
-- open-source/ 保留按开源项目分类；diary/ 延续原有功能，新增 [diary/readme.md](diary/readme.md)。
+- open-source/<framework>/ 按开源项目保存贡献材料，与 notebook/frameworks/ 的源码理解分开并相互链接；diary/ 延续原有功能，入口为 [diary/readme.md](diary/readme.md)。
 
 ## 本轮进展
 
-- 首页已按上述职责重写，并说明文件组织；原知识导航迁至 notebook/readme.md，原工具导航保存在 [tools/legacy/catalog.md](tools/legacy/catalog.md)，已有笔记与代码入口可继续查找。
+- 首页已扩展为完整导航，包含技术主题、框架学习与贡献、实验、论文、工具、技能、规划、日志及目录职责。详细知识导航在 notebook/readme.md，原工具导航保存在 [tools/legacy/catalog.md](tools/legacy/catalog.md)。
+- 原源码目录 398 份材料中，366 份归入 notebook/frameworks/，32 份明确的贡献材料归入 open-source/；同步引用并建立框架和贡献索引。
+- 已核查 configs/：4 份 RTX 4090 DeepSpeed 训练配置，有生成器及实验脚本引用。新增 [配置说明](configs/readme.md)，暂保留路径，建议后续随对应实验收纳。
 - 已归档 9 个明确的一次性补丁或概念模拟脚本，源码保持不变；清单与原因见 [tools/legacy/readme.md](tools/legacy/readme.md)。其余历史工具尚未全面验收，保留原位置不代表正式推荐。
 - Agent 内核已写入目录职责和工具价值标准。完整变更记录见 [当日日志](diary/2026-10-18.md)。
 
 ## 待讨论与下一步
 
 1. 说明并确定两处 experiments 的关系：根目录当前仅有三个 GRPO 训练启动脚本，notebook/experiments/ 保存实验记录。暂不搬迁，等待用户决定是否整合。
-2. 根目录 projects/ 是之前为未来自营项目提出的建议，目前未建立；本轮不新增。notebook/projects/ 继续用于项目源码阅读。
+2. 随实验结构一并决定 configs/ 的归属，再同步迁移配置及调用路径；根目录 projects/ 暂不新增。源码学习目录已确定为 notebook/frameworks/。
 3. 按价值、使用关系和证据继续筛选历史工具，避免只按文件名批量归档。已知 inference_estimator.py 有带宽硬编码和吞吐展示问题，待修复验证。
 4. 目录职责确定后，确认持续运行入口、模型资源及 GPU/NPU 当前条件，从已有积累选择方向跑通接续循环。
 

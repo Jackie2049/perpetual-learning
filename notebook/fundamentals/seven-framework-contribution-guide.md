@@ -171,10 +171,10 @@ Phase 3 (大贡献 → 需要经验积累):
 
 ## 参考资料
 
-- vLLM PR #45157: notebook/projects/vllm-pr-45157-resubmission-draft.md
-- 7框架对比: notebook/projects/seven-framework-comparison.md
-- RTX 4090配置: notebook/projects/rtx4090-seven-framework-practical-config.md
-- RL Training Patterns: notebook/projects/rl-training-design-patterns-comparison.md
-- vLLM v0.23: notebook/projects/vllm-v0.23-new-features-reading.md
-- rLLM v0.3: notebook/projects/rllm-v0.3-terminal-rl-reading.md
-- verl GRPO loop: notebook/projects/verl-grpo-training-loop-internals-reading.md
+- vLLM PR #45157: open-source/vllm/vllm-pr-45157-resubmission-draft.md
+- 7框架对比: notebook/frameworks/seven-framework-comparison.md
+- RTX 4090配置: notebook/frameworks/rtx4090-seven-framework-practical-config.md
+- RL Training Patterns: notebook/frameworks/rl-training-design-patterns-comparison.md
+- vLLM v0.23: notebook/frameworks/vllm-v0.23-new-features-reading.md
+- rLLM v0.3: notebook/frameworks/rllm-v0.3-terminal-rl-reading.md
+- verl GRPO loop: notebook/frameworks/verl-grpo-training-loop-internals-reading.md

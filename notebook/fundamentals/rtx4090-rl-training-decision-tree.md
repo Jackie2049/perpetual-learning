@@ -292,18 +292,18 @@ Phase 6: Evaluation (CPU warm-pool)
 
 ## 参考资料
 
-- rLLM Tinker: notebook/projects/rllm-tinker-backend-deep-reading.md
-- verl GRPO: notebook/projects/verl-grpo-training-loop-internals-reading.md
-- verl Reward: notebook/projects/verl-reward-integration-reading.md
+- rLLM Tinker: notebook/frameworks/rllm-tinker-backend-deep-reading.md
+- verl GRPO: notebook/frameworks/verl-grpo-training-loop-internals-reading.md
+- verl Reward: notebook/frameworks/verl-reward-integration-reading.md
 - RTX 4090 Quick Ref: notebook/fundamentals/rtx4090-rl-training-quick-reference.md
 - RTX 4090 Config Card: notebook/fundamentals/rtx4090-grpo-training-config-card.md
-- Inference-Training: notebook/projects/inference-training-integration-pipeline-reading.md
-- Quantization Crosspoint: notebook/projects/quantization-inference-training-crosspoint-reading.md
-- RL Design Patterns: notebook/projects/rl-training-design-patterns-comparison.md
-- RTX 4090 Practical Config: notebook/projects/rtx4090-seven-framework-practical-config.md
-- ★★★ Prefix Cache Hash: notebook/projects/vllm-prefix-cache-hash-collision-reading.md
-- ★★★ GRPO Rollout Scheduler: notebook/projects/vllm-grpo-rollout-scheduler-reading.md
-- ★★★ FlashInfer Integration: notebook/projects/vllm-flashinfer-integration-reading.md
+- Inference-Training: notebook/frameworks/inference-training-integration-pipeline-reading.md
+- Quantization Crosspoint: notebook/frameworks/quantization-inference-training-crosspoint-reading.md
+- RL Design Patterns: notebook/frameworks/rl-training-design-patterns-comparison.md
+- RTX 4090 Practical Config: notebook/frameworks/rtx4090-seven-framework-practical-config.md
+- ★★★ Prefix Cache Hash: notebook/frameworks/vllm-prefix-cache-hash-collision-reading.md
+- ★★★ GRPO Rollout Scheduler: notebook/frameworks/vllm-grpo-rollout-scheduler-reading.md
+- ★★★ FlashInfer Integration: notebook/frameworks/vllm-flashinfer-integration-reading.md
 - ★★★ SM89 Compatibility: tools/sm89_compatibility_checker.py
 - ★★★ KV Cache Cost: tools/sm89_kv_cache_cost_analyzer.py
 - ★★★ Contribution Tracker: tools/vllm_contribution_tracker.py

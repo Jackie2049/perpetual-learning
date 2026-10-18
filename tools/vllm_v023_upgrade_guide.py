@@ -11,7 +11,7 @@ Modes:
   - migration: Step-by-step migration from v0.22.x to v0.23.0
   - all: All of the above combined
 
-Based on: notebook/projects/vllm-v0.23-rtx4090-impact-reading.md
+Based on: notebook/frameworks/vllm-v0.23-rtx4090-impact-reading.md
 """
 
 import argparse

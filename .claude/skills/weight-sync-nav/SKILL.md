@@ -18,9 +18,9 @@ Navigate RLHF training weight synchronization issues across 7 frameworks (verl, 
 
 ### Key Notes
 - `notebook/fundamentals/cross-framework-weight-sync-sleep-wake-comparison.md` — universal pattern
-- `notebook/projects/vllm-ascend-critical-developments-2026-06-18-reading.md` — #10684 + #10579 + #10592
-- `notebook/projects/dsv4-systematic-instability-pattern-synthesis.md` — 7 DSV4 failures + sleep/wake pattern
-- `notebook/projects/verl-worker-lifecycle-ray-weight-sync-reading.md` — verl 6-step sync lifecycle
+- `notebook/frameworks/vllm-ascend-critical-developments-2026-06-18-reading.md` — #10684 + #10579 + #10592
+- `notebook/frameworks/dsv4-systematic-instability-pattern-synthesis.md` — 7 DSV4 failures + sleep/wake pattern
+- `notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md` — verl 6-step sync lifecycle
 
 ### Critical Findings
 - ★★★★★★★★ #10684: DSA Hadamard ALL-ZERO after sleep/wake → PRIMARY: in-place mutation, SECONDARY: transfer exclusion

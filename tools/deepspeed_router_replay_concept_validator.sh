@@ -2,8 +2,8 @@
 # DeepSpeed AutoEP RouterReplay Concept Validation Script
 # ★★★★★★★★ Validates the concept: Can we implement Megatron RouterReplay in DeepSpeed's MoE?
 # ★★★★★★★★ This is a CONCEPT SCRIPT — NOT a real implementation (needs GPU for actual training)
-# Reference: notebook/projects/megatron-router-replay-source-reading.md
-# Reference: notebook/projects/deepspeed-autoep-rtx4090-moe-practical.md
+# Reference: notebook/frameworks/megatron-router-replay-source-reading.md
+# Reference: notebook/frameworks/deepspeed-autoep-rtx4090-moe-practical.md
 
 set -e
 

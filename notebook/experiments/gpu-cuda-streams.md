@@ -78,5 +78,5 @@ GEMM size: 1024x1024
 ## 相关笔记
 
 - [GPU Micro-Benchmark](gpu-microbenchmark.md) — GEMM Roofline
-- [Megatron-LM Reading](../projects/megatron-lm-reading.md) — TP/PP 实际通信模式
-- [vLLM Architecture](../projects/vllm-reading.md) — CUDA Graph 在 vLLM 中的使用
+- [Megatron-LM Reading](../frameworks/megatron-lm-reading.md) — TP/PP 实际通信模式
+- [vLLM Architecture](../frameworks/vllm-reading.md) — CUDA Graph 在 vLLM 中的使用

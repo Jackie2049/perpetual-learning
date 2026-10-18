@@ -11,7 +11,7 @@ Modes:
   - gaps: Identify knowledge gaps and suggest next study topics
   - matrix: Print the full RTX 4090 framework compatibility matrix
 
-Based on: notebook/projects/ (7 framework reading notes)
+Based on: notebook/frameworks/ (7 framework reading notes)
 """
 
 import argparse

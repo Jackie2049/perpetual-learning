@@ -168,10 +168,10 @@ Algorithm flow:
 
 ## References
 
-- CPPO algorithm: notebook/projects/verl-cppo-algorithm-reading.md
+- CPPO algorithm: notebook/frameworks/verl-cppo-algorithm-reading.md
 - GRPO training flow: notebook/fundamentals/verl-rtx4090-grpo-training-flow.md
-- GRPO runbook: notebook/projects/rtx4090-grpo-training-runbook.md
-- rLLM #605 bug: notebook/projects/rllm-605-grpo-grouping-bug-source-reading.md
-- AutoEP LoRA gap: notebook/projects/deepspeed-autoep-lora-gap-3d-tensor-reading.md
-- DeepSpeed ZeRO source: notebook/projects/deepspeed-zero-single-gpu-source-reading.md
-- Cross-framework Muon: notebook/projects/cross-framework-muon-optimizer-status-synthesis.md
+- GRPO runbook: notebook/frameworks/rtx4090-grpo-training-runbook.md
+- rLLM #605 bug: notebook/frameworks/rllm-605-grpo-grouping-bug-source-reading.md
+- AutoEP LoRA gap: notebook/frameworks/deepspeed-autoep-lora-gap-3d-tensor-reading.md
+- DeepSpeed ZeRO source: notebook/frameworks/deepspeed-zero-single-gpu-source-reading.md
+- Cross-framework Muon: notebook/frameworks/cross-framework-muon-optimizer-status-synthesis.md

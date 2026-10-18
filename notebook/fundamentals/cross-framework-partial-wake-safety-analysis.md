@@ -135,9 +135,9 @@ Bug: forward pass uses state C (stale pointer/released memory/stale cache)
 - vLLM #44395/#44483: https://github.com/vllm-project/vllm/issues/44395
 - SGLang #28676: https://github.com/sgl-project/sglang/issues/28676
 - vLLM-Ascend #10684: https://github.com/sgl-project/sglang/issues/10684 (MindIE)
-- verl sleep/wake architecture: notebook/projects/verl-rl-infra-reading.md
+- verl sleep/wake architecture: notebook/frameworks/verl-rl-infra-reading.md
 - Silent corruption pattern: notebook/fundamentals/silent-corruption-pattern-family-analysis.md
-- RTX 4090 runbook: notebook/projects/rtx4090-grpo-training-runbook.md
+- RTX 4090 runbook: notebook/frameworks/rtx4090-grpo-training-runbook.md
 
 ---
 

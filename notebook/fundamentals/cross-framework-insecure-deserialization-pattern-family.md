@@ -194,7 +194,7 @@ All 5 pattern families share a common theme: **the code's assumptions about how 
 
 ## References
 
-- vLLM-Ascend #10592: notebook/projects/vllm-ascend-10592-npuipc-weight-transfer-reading.md
+- vLLM-Ascend #10592: notebook/frameworks/vllm-ascend-10592-npuipc-weight-transfer-reading.md
 - SGLang #28582: RCE via pickle IPC
 - SGLang #28588: decompression bomb
 - OWASP A8: Insecure Deserialization

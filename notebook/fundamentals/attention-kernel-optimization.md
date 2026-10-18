@@ -255,4 +255,4 @@ vLLM 中两种实现:
 - FlashAttention-3 Blog: https://tridao.me/blog/2024/flash3/
 - FlashInfer: https://github.com/flashinfer-ai/flashinfer (MLSys 2025)
 - FlashMLA: https://github.com/deepseek-ai/FlashMLA
-- 相关笔记: [FlashAttention](flash-attention.md), [MLA](mla.md), [vLLM MLA Backend](../projects/vllm-mla-backend-reading.md)
+- 相关笔记: [FlashAttention](flash-attention.md), [MLA](mla.md), [vLLM MLA Backend](../frameworks/vllm-mla-backend-reading.md)

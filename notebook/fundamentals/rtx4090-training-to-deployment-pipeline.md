@@ -356,5 +356,5 @@ Stage 4: Serve → vLLM/SGLang
 - DeepSpeed ZeRO safety checker: tools/deepspeed_zero_safety_checker.py
 - Cross-framework safety matrix: tools/rtx4090_cross_framework_safety_matrix.py
 - OPD comparison: notebook/fundamentals/cross-framework-opd-distillation-comparison.md
-- SGLang deterministic: notebook/projects/sglang-source-reading.md (section on deterministic inference)
-- BudgetRefiner PR draft: notebook/projects/budgetrefiner-vllm-pr-draft.md
+- SGLang deterministic: notebook/frameworks/sglang-source-reading.md (section on deterministic inference)
+- BudgetRefiner PR draft: open-source/vllm/budgetrefiner-vllm-pr-draft.md

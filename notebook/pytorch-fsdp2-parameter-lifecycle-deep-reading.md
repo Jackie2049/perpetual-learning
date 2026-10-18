@@ -977,27 +977,27 @@ MUST NOT:
 Primary sources (this reading synthesizes):
   - notebook/fundamentals/pytorch-torch-distributed-internals-deep-dive.md
     -> Section 4: FSDP2 lifecycle, reshard strategies, RTX 4090 implications
-  - notebook/projects/pytorch-fsdp2-2026-deep-reading.md
+  - notebook/frameworks/pytorch-fsdp2-2026-deep-reading.md
     -> FSDP2 vs FSDP1, 3 strategies, MixedPrecisionPolicy, HSDP, prefetch, compile
-  - notebook/projects/pytorch-fsdp2-internals-reading.md
+  - notebook/frameworks/pytorch-fsdp2-internals-reading.md
     -> Source-level: fully_shard, FSDPParam, unshard/reshard, backward RS, compile integration
-  - notebook/projects/verl-7016-qwen3-moe-fsdp2-backward-deep-analysis.md
+  - notebook/frameworks/verl-7016-qwen3-moe-fsdp2-backward-deep-analysis.md
     -> MoE + FSDP2 conflict, PR #174862 fix, RTX 4090 implications
-  - notebook/projects/verl-6468-fsdp2-cpu-memory-leak-reading.md
+  - notebook/frameworks/verl-6468-fsdp2-cpu-memory-leak-reading.md
     -> CPU memory leak, leak scaling, workaround options
   - notebook/verl-weight-sync-memory-leak-6468.md
     -> 5 leak points, fix approaches, PR #7005
-  - notebook/projects/verl-fsdp2-source-deep-reading.md
+  - notebook/frameworks/verl-fsdp2-source-deep-reading.md
     -> verl FSDP2 engine source, LoRA summon, HYBRID weight sync
-  - notebook/projects/pytorch-fsdp2-single-gpu-analysis.md
+  - notebook/frameworks/pytorch-fsdp2-single-gpu-analysis.md
     -> FSDP2 dp=1 = pure overhead, CPUOffloadPolicy ALPHA, ZeRO-2+CPU_Adam
-  - notebook/projects/verl-fsdp-weight-sync-mechanism-reading.md
+  - notebook/frameworks/verl-fsdp-weight-sync-mechanism-reading.md
     -> Complete weight sync pipeline, summon mechanics, LoRA path
-  - notebook/projects/pytorch-187620-fsdp2-partial-offload-policy-reading.md
+  - notebook/frameworks/pytorch-187620-fsdp2-partial-offload-policy-reading.md
     -> PartialOffloadPolicy, dp=1 issues, RTX 4090 decision tree
   - notebook/fundamentals/cross-framework-fsdp-evolution-synthesis.md
     -> Summon/release lifecycle pattern, 3 optimization levels
-  - notebook/projects/pytorch-compile-fsdp2-integration-reading.md
+  - notebook/frameworks/pytorch-compile-fsdp2-integration-reading.md
     -> DTensor shard_dim graph breaks, 3-phase roadmap
 
 Key PyTorch source files:

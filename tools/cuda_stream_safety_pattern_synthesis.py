@@ -39,7 +39,7 @@ PATTERN_MEMBERS = [
         "pattern_class": "gradient_accumulation → multi_stream_producer → read_before_sync",
         "source_file": "deepspeed/runtime/zero/partitioned_param_coordinator.py",
         "source_lines": "average_tensor() method",
-        "reading_note": "notebook/projects/deepspeed-8061-overlap-comm-multi-stream-race-reading.md",
+        "reading_note": "notebook/frameworks/deepspeed-8061-overlap-comm-multi-stream-race-reading.md",
     },
     {
         "id": 2,
@@ -58,7 +58,7 @@ PATTERN_MEMBERS = [
         "pattern_class": "fix_pattern: track_all_producers → wait_stream_each → safe_read",
         "source_file": "deepspeed/runtime/zero/partitioned_param_coordinator.py",
         "source_lines": "IPGBucket.copy_streams addition + average_tensor() loop",
-        "reading_note": "notebook/projects/deepspeed-8080-cuda-stream-race-fix-reading.md",
+        "reading_note": "notebook/frameworks/deepspeed-8080-cuda-stream-race-fix-reading.md",
     },
     {
         "id": 3,
@@ -77,7 +77,7 @@ PATTERN_MEMBERS = [
         "pattern_class": "async_copy_on_side_stream → missing_record_stream → allocator_reclaim_before_completion",
         "source_file": "verl/checkpoint_engine/ (delta snapshot logic)",
         "source_lines": "d2h_stream.copy_() calls",
-        "reading_note": "notebook/projects/verl-6794-delta-weight-sync-deep-reading.md",
+        "reading_note": "notebook/frameworks/verl-6794-delta-weight-sync-deep-reading.md",
     },
     {
         "id": 4,
@@ -96,7 +96,7 @@ PATTERN_MEMBERS = [
         "pattern_class": "weight_free/resume → missing_stream_sync → in_flight_ops_on_freed_memory",
         "source_file": "vllm/worker/worker.py (sleep/wake methods)",
         "source_lines": "CuMemAllocator.release() and resume()",
-        "reading_note": "notebook/projects/vllm-45552-cumem-sleep-wake-stream-sync-reading.md",
+        "reading_note": "notebook/frameworks/vllm-45552-cumem-sleep-wake-stream-sync-reading.md",
     },
     {
         "id": 5,
@@ -115,7 +115,7 @@ PATTERN_MEMBERS = [
         "pattern_class": "dtype_partition_race → mismatch_in_partition_buffer → TypeError",
         "source_file": "deepspeed/runtime/zero/stage3.py",
         "source_lines": "partition_param_list() dtype handling",
-        "reading_note": "notebook/projects/deepspeed-8072-8073-zero3-peft-regression-source-code-deep-reading.md",
+        "reading_note": "notebook/frameworks/deepspeed-8072-8073-zero3-peft-regression-source-code-deep-reading.md",
     },
     {
         "id": 6,
@@ -134,7 +134,7 @@ PATTERN_MEMBERS = [
         "pattern_class": "weight_reload → cache_invalidations_missing → stale_reads_on_other_stream",
         "source_file": "sglang/srt/lora/lora_manager.py (MoE cache handling)",
         "source_lines": "update_weights() method",
-        "reading_note": "notebook/projects/sglang-28676-moe-cache-clobber-comment-draft.md",
+        "reading_note": "open-source/sglang/sglang-28676-moe-cache-clobber-comment-draft.md",
     },
     {
         "id": 7,
@@ -153,7 +153,7 @@ PATTERN_MEMBERS = [
         "pattern_class": "async_cache_swap → draft_model_read_before_sync → gradual_degradation_not_crash",
         "source_file": "sglang/srt/layers/radix_attention.py (HiCache)",
         "source_lines": "eagle_worker.py line 596: maybe_evict_swa()",
-        "reading_note": "notebook/projects/sglang-28771-eagle-accept-length-degradation-reading.md",
+        "reading_note": "notebook/frameworks/sglang-28771-eagle-accept-length-degradation-reading.md",
     },
     {
         "id": 8,
@@ -172,7 +172,7 @@ PATTERN_MEMBERS = [
         "pattern_class": "resource_leak → fd_not_closed → ulimit_exhaustion → process_crash",
         "source_file": "deepspeed/runtime/zero/offload_config.py",
         "source_lines": "swap operation fd handling",
-        "reading_note": "notebook/projects/deepspeed-8075-fd-leak-reading.md",
+        "reading_note": "notebook/frameworks/deepspeed-8075-fd-leak-reading.md",
     },
 ]
 

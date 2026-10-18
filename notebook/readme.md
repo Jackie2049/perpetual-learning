@@ -7,7 +7,7 @@
 | 位置 | 用途 |
 |---|---|
 | [fundamentals/](fundamentals/) | 基础知识、原理与方法 |
-| [projects/](projects/) | 开源项目架构与源码阅读 |
+| [frameworks/](frameworks/readme.md) | 框架架构、源码阅读与完整文件索引 |
 | [experiments/](experiments/) | 实验记录：问题、环境、方法、结果、结论和经验 |
 | [roadmap.md](roadmap.md) | 技术学习与实践规划 |
 | [knowledge-map.md](knowledge-map.md) | 知识整理、关联与整体导航 |
@@ -109,42 +109,44 @@
 - [Top-nσ](papers/top-n-sigma.md) — ACL 2025, logit 空间统计阈值, 温度稳定性 1.00x
 - [DeepSeek-V3](papers/deepseek-v3.md) — 671B/37B MoE, 辅助无关负载均衡, FP8 tile-wise, MTP, DualPipe
 
-## 项目源码阅读
+## 框架源码阅读
 
-- [vLLM V1 架构](projects/vllm-architecture.md) — V1 整体架构、Scheduler/Executor 分离、混合推理
-- [vLLM KV Transfer Connector](projects/vllm-kv-transfer-connector.md) — NIXL 连接器架构、P/D 分离、ZMQ 握手、TP 聚合
-- [vLLM V1 Scheduler 源码阅读](projects/vllm-v1-scheduler-reading.md) — 调度循环、抢占策略、KV Cache 管理、Prefix Caching 集成
-- [vLLM 投机解码源码阅读](projects/vllm-spec-decode-reading.md) — Draft-Verify、Eagle/Medusa/Ngram proposer、Rejection Sampling
-- [vLLM Prefix Caching V1](projects/vllm-prefix-caching-v1.md) — Hash chain、block 生命周期、四种 attention 缓存策略
-- [vLLM 开源贡献计划](projects/vllm-contribution-plan.md) — 11 个 good first issue 筛选和分析
-- [vLLM 贡献准备](projects/vllm-contribution-prep.md) — FlashInfer 后端分析、开发环境搭建
-- [Megatron-LM 张量并行](projects/megatron-tp-reading.md) — ColumnParallelLinear/RowParallelLinear 源码
-- [Megatron-LM TP 源码深度阅读](projects/megatron-tp-source-reading.md) — 通信原语 autograd、TP 数据流、权重分发、SP 扩展、3D 并行交互
-- [Megatron-LM 流水线并行](projects/megatron-pp-reading.md) — 1F1B 调度、气泡分析、通信 overlap
-- [verl 架构](projects/verl-architecture.md) — 三级前缀缓存（系统级+进程级+请求级）
-- [vLLM MLA Backend 源码阅读](projects/vllm-mla-backend-reading.md) — FlashMLA/FlashInfer/Triton/Cutlass MLA 后端、压缩数据流、KV Cache 格式、Backend 选择
-- [verl PrefixGrouper](projects/verl-prefix-grouper.md) — RL 训练中 prompt 复用的分组与调度
-- [vLLM V1 KV Cache Manager 源码阅读](projects/vllm-v1-kv-cache-manager-reading.md) — Block 分配/释放、6 种 Attention Manager、Prefix Caching、Coordinator 架构
-- [vLLM V1 Executor 源码阅读](projects/vllm-v1-executor-reading.md) — Executor→Worker→ModelRunner→AttentionBackend 完整执行路径、CUDA Graph、20+ Attention Backend
-- [vLLM MoE Serving 源码阅读](projects/vllm-moe-serving-reading.md) — 模块化 MoE kernel 架构、8+ All-to-All 后端、Router/Experts/Prepare-Finalize 分离
-- [verl 源码架构阅读](projects/verl-source-reading.md) — HybridFlow RL 训练框架、PPO/GRPO 循环、FSDP+混合推理引擎、Prefix Grouper
-- [verl RL Infra 架构源码阅读](projects/verl-rl-infra-reading.md) — SyncPPOTrainer、ActorRolloutRefWorker、GRPO/GAE、TransferQueue、vLLM Rollout
-- [vLLM 量化推理管线源码阅读](projects/vllm-quantization-pipeline-reading.md) — 量化方法注册表、Kernel 选择逻辑、离线/在线量化、QuantKey 系统
-- [vLLM 权重加载管线源码阅读](projects/vllm-weight-loading-reading.md) — safetensors 到 GPU 全流程、TP/PP/EP 分片、weight_loader 机制
-- [vLLM P/D 分离架构源码阅读](projects/vllm-pd-disaggregation-reading.md) — KV Connector 抽象、NIXL 实现、异步传输、异构 TP、部署配置
-- [vLLM CUDA Graph 源码阅读](projects/vllm-cuda-graph-reading.md) — FULL/PIECEWISE 模式、捕获回放流程、Attention 兼容、Breakable Graph
-- [vLLM V1 架构全景图](projects/vllm-v1-architecture-map.md) — 请求生命周期、四层架构、模块依赖关系、已学清单
-- [vLLM Sampling Pipeline 源码阅读](projects/vllm-sampling-pipeline-reading.md) — Logits 到 Token 完整管线、Top-K/P 实现、Penalty、CUDA Graph 兼容
-- [vLLM Data Parallel Serving 源码阅读](projects/vllm-data-parallel-reading.md) — DP vs TP 扩展、MoE EP、Wave 协调、DBO、Elastic EP
-- [vLLM V1 可观测性与指标体系 源码阅读](projects/vllm-observability-reading.md) — Stats 采集、Prometheus 指标、Logging、告警建议
-- [vLLM LoRA Serving 源码阅读](projects/vllm-lora-serving-reading.md) — Punica Multi-LoRA、批量 LoRA kernel、MoE+LoRA、权重管理
-- [vLLM Multi-Modal Processing 源码阅读](projects/vllm-multimodal-reading.md) — MM 数据流、EncoderRunner、Hash-based Caching、Vision Encoder 集成
-- [vLLM Structured Output 源码阅读](projects/vllm-structured-output-reading.md) — JSON/Grammar/Regex Bitmask 过滤、FSM 驱动、XGrammar 后端
-- [vLLM AsyncLLM Engine Frontend 源码阅读](projects/vllm-async-engine-frontend-reading.md) — 双进程架构、output_handler、InputProcessor/OutputProcessor、ZMQ 通信
-- [vLLM V1 Engine Core 源码阅读](projects/vllm-engine-core-reading.md) — step() 核心循环、KV Cache 初始化、Busy Loop、ZMQ 双线程、DP 扩展
-- [GRPO 实战指南](projects/grpo-practical-guide.md) — verl 框架 GRPO 训练完整流程、数据格式、配置参数、奖励函数
-- [SGLang 架构深度分析](projects/sglang-architecture.md) — RadixAttention 基数树、DSL 前端、FlashInfer 集成、vs vLLM 对比
-- [分布式训练排错指南](projects/troubleshooting-guide.md) — NCCL 超时、OOM、梯度异常等常见问题
+[按框架浏览完整索引](frameworks/readme.md) · [按项目浏览贡献材料](../open-source/README.md)
+
+- [vLLM V1 架构](frameworks/vllm-architecture.md) — V1 整体架构、Scheduler/Executor 分离、混合推理
+- [vLLM KV Transfer Connector](frameworks/vllm-kv-transfer-connector.md) — NIXL 连接器架构、P/D 分离、ZMQ 握手、TP 聚合
+- [vLLM V1 Scheduler 源码阅读](frameworks/vllm-v1-scheduler-reading.md) — 调度循环、抢占策略、KV Cache 管理、Prefix Caching 集成
+- [vLLM 投机解码源码阅读](frameworks/vllm-spec-decode-reading.md) — Draft-Verify、Eagle/Medusa/Ngram proposer、Rejection Sampling
+- [vLLM Prefix Caching V1](frameworks/vllm-prefix-caching-v1.md) — Hash chain、block 生命周期、四种 attention 缓存策略
+- [vLLM 开源贡献计划](../open-source/vllm/vllm-contribution-plan.md) — 11 个 good first issue 筛选和分析
+- [vLLM 贡献准备](../open-source/vllm/vllm-contribution-prep.md) — FlashInfer 后端分析、开发环境搭建
+- [Megatron-LM 张量并行](frameworks/megatron-tp-reading.md) — ColumnParallelLinear/RowParallelLinear 源码
+- [Megatron-LM TP 源码深度阅读](frameworks/megatron-tp-source-reading.md) — 通信原语 autograd、TP 数据流、权重分发、SP 扩展、3D 并行交互
+- [Megatron-LM 流水线并行](frameworks/megatron-pp-reading.md) — 1F1B 调度、气泡分析、通信 overlap
+- [verl 架构](frameworks/verl-architecture.md) — 三级前缀缓存（系统级+进程级+请求级）
+- [vLLM MLA Backend 源码阅读](frameworks/vllm-mla-backend-reading.md) — FlashMLA/FlashInfer/Triton/Cutlass MLA 后端、压缩数据流、KV Cache 格式、Backend 选择
+- [verl PrefixGrouper](frameworks/verl-prefix-grouper.md) — RL 训练中 prompt 复用的分组与调度
+- [vLLM V1 KV Cache Manager 源码阅读](frameworks/vllm-v1-kv-cache-manager-reading.md) — Block 分配/释放、6 种 Attention Manager、Prefix Caching、Coordinator 架构
+- [vLLM V1 Executor 源码阅读](frameworks/vllm-v1-executor-reading.md) — Executor→Worker→ModelRunner→AttentionBackend 完整执行路径、CUDA Graph、20+ Attention Backend
+- [vLLM MoE Serving 源码阅读](frameworks/vllm-moe-serving-reading.md) — 模块化 MoE kernel 架构、8+ All-to-All 后端、Router/Experts/Prepare-Finalize 分离
+- [verl 源码架构阅读](frameworks/verl-source-reading.md) — HybridFlow RL 训练框架、PPO/GRPO 循环、FSDP+混合推理引擎、Prefix Grouper
+- [verl RL Infra 架构源码阅读](frameworks/verl-rl-infra-reading.md) — SyncPPOTrainer、ActorRolloutRefWorker、GRPO/GAE、TransferQueue、vLLM Rollout
+- [vLLM 量化推理管线源码阅读](frameworks/vllm-quantization-pipeline-reading.md) — 量化方法注册表、Kernel 选择逻辑、离线/在线量化、QuantKey 系统
+- [vLLM 权重加载管线源码阅读](frameworks/vllm-weight-loading-reading.md) — safetensors 到 GPU 全流程、TP/PP/EP 分片、weight_loader 机制
+- [vLLM P/D 分离架构源码阅读](frameworks/vllm-pd-disaggregation-reading.md) — KV Connector 抽象、NIXL 实现、异步传输、异构 TP、部署配置
+- [vLLM CUDA Graph 源码阅读](frameworks/vllm-cuda-graph-reading.md) — FULL/PIECEWISE 模式、捕获回放流程、Attention 兼容、Breakable Graph
+- [vLLM V1 架构全景图](frameworks/vllm-v1-architecture-map.md) — 请求生命周期、四层架构、模块依赖关系、已学清单
+- [vLLM Sampling Pipeline 源码阅读](frameworks/vllm-sampling-pipeline-reading.md) — Logits 到 Token 完整管线、Top-K/P 实现、Penalty、CUDA Graph 兼容
+- [vLLM Data Parallel Serving 源码阅读](frameworks/vllm-data-parallel-reading.md) — DP vs TP 扩展、MoE EP、Wave 协调、DBO、Elastic EP
+- [vLLM V1 可观测性与指标体系 源码阅读](frameworks/vllm-observability-reading.md) — Stats 采集、Prometheus 指标、Logging、告警建议
+- [vLLM LoRA Serving 源码阅读](frameworks/vllm-lora-serving-reading.md) — Punica Multi-LoRA、批量 LoRA kernel、MoE+LoRA、权重管理
+- [vLLM Multi-Modal Processing 源码阅读](frameworks/vllm-multimodal-reading.md) — MM 数据流、EncoderRunner、Hash-based Caching、Vision Encoder 集成
+- [vLLM Structured Output 源码阅读](frameworks/vllm-structured-output-reading.md) — JSON/Grammar/Regex Bitmask 过滤、FSM 驱动、XGrammar 后端
+- [vLLM AsyncLLM Engine Frontend 源码阅读](frameworks/vllm-async-engine-frontend-reading.md) — 双进程架构、output_handler、InputProcessor/OutputProcessor、ZMQ 通信
+- [vLLM V1 Engine Core 源码阅读](frameworks/vllm-engine-core-reading.md) — step() 核心循环、KV Cache 初始化、Busy Loop、ZMQ 双线程、DP 扩展
+- [GRPO 实战指南](frameworks/grpo-practical-guide.md) — verl 框架 GRPO 训练完整流程、数据格式、配置参数、奖励函数
+- [SGLang 架构深度分析](frameworks/sglang-architecture.md) — RadixAttention 基数树、DSL 前端、FlashInfer 集成、vs vLLM 对比
+- [分布式训练排错指南](frameworks/troubleshooting-guide.md) — NCCL 超时、OOM、梯度异常等常见问题
 
 ## GPU 实验记录
 

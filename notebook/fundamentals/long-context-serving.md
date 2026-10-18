@@ -234,7 +234,7 @@ Mamba: SSM 无需 KV Cache
 Chunked Local: 分块局部注意力
 ```
 
-详见 [vLLM V1 Executor 源码阅读](../projects/vllm-v1-executor-reading.md)。
+详见 [vLLM V1 Executor 源码阅读](../frameworks/vllm-v1-executor-reading.md)。
 
 ## 5. 前沿方向
 
@@ -260,4 +260,4 @@ Chunked Local: 分块局部注意力
 
 - 模拟器: `tools/long_context_serving_sim.py`
 - 相关笔记: [KV Cache](kv-cache.md), [Prefix Caching](prefix-caching.md), [FlashAttention](flash-attention.md), [Continuous Batching](continuous-batching.md)
-- vLLM: [V1 Executor](../projects/vllm-v1-executor-reading.md), [KV Cache Manager](../projects/vllm-v1-kv-cache-manager-reading.md)
+- vLLM: [V1 Executor](../frameworks/vllm-v1-executor-reading.md), [KV Cache Manager](../frameworks/vllm-v1-kv-cache-manager-reading.md)

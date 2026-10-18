@@ -412,7 +412,7 @@ CONNECTIONS = {
     },
     "grpo_singleton_degeneration": {
         "name": "GRPO Singleton Group Degeneration",
-        "note": "notebook/projects/cross-framework-grpo-advantage-comparison.md",
+        "note": "notebook/frameworks/cross-framework-grpo-advantage-comparison.md",
         "connections": [
             {
                 "component": "mean=0, std=1 fallback for singleton groups",
@@ -446,7 +446,7 @@ CONNECTIONS = {
     },
     "verl_grpo_training_loop": {
         "name": "verl V1 GRPO Training Loop End-to-End",
-        "note": "notebook/projects/verl-v1-sync-ppo-trainer-grpo-training-loop-deep-reading.md",
+        "note": "notebook/frameworks/verl-v1-sync-ppo-trainer-grpo-training-loop-deep-reading.md",
         "connections": [
             {
                 "component": "10-phase training step lifecycle",
@@ -548,7 +548,7 @@ CONNECTIONS = {
     },
     "grpo_singleton": {
         "name": "GRPO Singleton Degeneration (Cross-Framework)",
-        "note": "tools/grpo_advantage_numerical_experiment.py + notebook/projects/cross-framework-grpo-advantage-comparison.md",
+        "note": "tools/grpo_advantage_numerical_experiment.py + notebook/frameworks/cross-framework-grpo-advantage-comparison.md",
         "connections": [
             {
                 "component": "gs=1 = EXACTLY REINFORCE(baseline=0)",
@@ -582,7 +582,7 @@ CONNECTIONS = {
     },
     "zero_gradient_flow": {
         "name": "ZeRO Gradient Flow & Stream Safety",
-        "note": "notebook/projects/deepspeed-zero1-2-gradient-flow-stream-safety-deep-reading.md",
+        "note": "notebook/frameworks/deepspeed-zero1-2-gradient-flow-stream-safety-deep-reading.md",
         "connections": [
             {
                 "component": "IPG bucket accumulation → reduce_scatter → average_tensor",
@@ -609,7 +609,7 @@ CONNECTIONS = {
     },
     "verl_training_loop": {
         "name": "verl V1 GRPO Training Loop Architecture",
-        "note": "notebook/projects/verl-v1-grpo-training-loop-architecture-deep-reading.md",
+        "note": "notebook/frameworks/verl-v1-grpo-training-loop-architecture-deep-reading.md",
         "connections": [
             {
                 "component": "10-phase step pipeline",
@@ -636,7 +636,7 @@ CONNECTIONS = {
     },
     "vllm_v1_bugs": {
         "name": "vLLM V1 Architecture & Critical Bugs",
-        "note": "notebook/projects/vllm-v1-architecture-critical-bugs-deep-reading.md",
+        "note": "notebook/frameworks/vllm-v1-architecture-critical-bugs-deep-reading.md",
         "connections": [
             {
                 "component": "V1 engine core: one-process-per-GPU + ZMQ IPC",
@@ -663,7 +663,7 @@ CONNECTIONS = {
     },
     "verl_v1_bugs": {
         "name": "verl V1 Critical Bugs & Issues",
-        "note": "notebook/projects/verl-v1-critical-bugs-issues-2026-06-20.md",
+        "note": "notebook/frameworks/verl-v1-critical-bugs-issues-2026-06-20.md",
         "connections": [
             {
                 "component": "#6794 delta weight sync: 4 blocking sub-issues",
@@ -744,7 +744,7 @@ CONNECTIONS = {
     },
     "rllm_v03_developments": {
         "name": "rLLM v0.3 Backend-Agnostic Architecture & GRPO Correctness",
-        "note": "notebook/projects/rllm-latest-developments-2026-06-session3-reading.md",
+        "note": "notebook/frameworks/rllm-latest-developments-2026-06-session3-reading.md",
         "connections": [
             {
                 "component": "#667 GRPO grouping fix + #663 Step.output null (double bug)",
@@ -771,7 +771,7 @@ CONNECTIONS = {
     },
     "mindie_vllm_ascend_cross_lessons": {
         "name": "MindIE/vLLM-Ascend NPU Bug Patterns → CUDA Cross-Lessons",
-        "note": "notebook/projects/mindie-vllm-ascend-latest-developments-2026-06-session3-reading.md",
+        "note": "notebook/frameworks/mindie-vllm-ascend-latest-developments-2026-06-session3-reading.md",
         "connections": [
             {
                 "component": "MoE NaN universal pattern (FP16 softmax overflow)",
@@ -927,7 +927,7 @@ CROSS_FRAMEWORK_PATTERNS = {
     },
     "storage_lifecycle": {
         "name": "Storage Lifecycle Management Pattern Family",
-        "note": "notebook/projects/storage-lifecycle-reading.md",
+        "note": "notebook/frameworks/storage-lifecycle-reading.md",
         "connections": [
             {
                 "component": "detach memory → 4x reduction",
@@ -954,7 +954,7 @@ CROSS_FRAMEWORK_PATTERNS = {
     },
     "fsdp_spmd_violation": {
         "name": "FSDP2 SPMD Violation — MoE Gradient Graph Divergence",
-        "note": "notebook/projects/verl-7016-qwen3-moe-fsdp2-backward-deep-analysis.md",
+        "note": "notebook/frameworks/verl-7016-qwen3-moe-fsdp2-backward-deep-analysis.md",
         "connections": [
             {
                 "component": "MoE router creates data-dependent gradient graphs",
@@ -1042,7 +1042,7 @@ CROSS_FRAMEWORK_PATTERNS = {
     },
     "trl_grpo": {
         "name": "TRL GRPOTrainer Implementation Architecture",
-        "note": "notebook/projects/trl-grpo-trainer-architecture-deep-reading.md",
+        "note": "notebook/frameworks/trl-grpo-trainer-architecture-deep-reading.md",
         "connections": [
             {
                 "component": "Implicit bypass mode via .detach()",
@@ -1090,7 +1090,7 @@ CROSS_FRAMEWORK_PATTERNS = {
     },
     "zero_optimization": {
         "name": "ZeRO Memory Optimization for RTX 4090",
-        "note": "notebook/projects/zenflow-zero-rtx4090-memory-guide.md",
+        "note": "notebook/frameworks/zenflow-zero-rtx4090-memory-guide.md",
         "connections": [
             {
                 "component": "ZeRO-2 vs ZeRO-3 on single GPU (dp=1)",
@@ -1131,7 +1131,7 @@ CROSS_FRAMEWORK_PATTERNS = {
     },
     "cross_framework_grpo": {
         "name": "TRL vs verl GRPO — Cross-Framework Comparative Analysis",
-        "note": "notebook/projects/trl-vs-verl-grpo-comparative-analysis.md",
+        "note": "notebook/frameworks/trl-vs-verl-grpo-comparative-analysis.md",
         "connections": [
             {
                 "component": "Bypass mode: TRL implicit vs verl explicit",
@@ -1172,7 +1172,7 @@ CROSS_FRAMEWORK_PATTERNS = {
     },
     "megatron_rl_hook": {
         "name": "Megatron RL Hook Architecture & Gradient Normalization",
-        "note": "notebook/projects/megatron-4590-rl-hook-architecture.md (TODO)",
+        "note": "notebook/frameworks/megatron-4590-rl-hook-architecture.md (TODO)",
         "connections": [
             {
                 "component": "output_processor/postprocess hook for RL",
@@ -1199,7 +1199,7 @@ CROSS_FRAMEWORK_PATTERNS = {
     },
     "autoep_folding": {
         "name": "AutoEP + AutoTP Parallel Folding Topology",
-        "note": "notebook/projects/deepspeed-autoep-autotp-folding-deep-reading.md",
+        "note": "notebook/frameworks/deepspeed-autoep-autotp-folding-deep-reading.md",
         "connections": [
             {
                 "component": "Cross-lane Expert Parallelism (EP spans DP+TP)",

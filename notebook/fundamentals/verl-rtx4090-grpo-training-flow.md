@@ -229,9 +229,9 @@ Wake-up:        KV cache reallocated
 
 ## References
 
-- verl worker lifecycle: notebook/projects/verl-worker-lifecycle-ray-weight-sync-reading.md
-- verl async rollout: notebook/projects/verl-async-rollout-architecture-deep-dive.md
-- verl GRPO core algos: notebook/projects/verl-grpo-core-algos-reading.md
-- verl GRPO source: notebook/projects/verl-grpo-source-reading.md
+- verl worker lifecycle: notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md
+- verl async rollout: notebook/frameworks/verl-async-rollout-architecture-deep-dive.md
+- verl GRPO core algos: notebook/frameworks/verl-grpo-core-algos-reading.md
+- verl GRPO source: notebook/frameworks/verl-grpo-source-reading.md
 - Single GPU comparison: notebook/fundamentals/single-gpu-ddp-vs-zero-architecture-comparison.md
-- rLLM GRPO guide: notebook/projects/rllm-grpo-practical-training-guide.md
+- rLLM GRPO guide: notebook/frameworks/rllm-grpo-practical-training-guide.md

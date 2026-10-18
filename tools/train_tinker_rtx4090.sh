@@ -10,7 +10,7 @@
 #   - bypass_mode=True DEFAULT → no ref model → save 14GB → KL=0
 #   - LossFnType={ppo, IS, cispo, dro} → multiple algorithm options
 #
-# Reference: notebook/projects/rllm-tinker-training-loop-source-reading.md
+# Reference: notebook/frameworks/rllm-tinker-training-loop-source-reading.md
 #            tools/rtx4090_grpo_config_matrix.py
 #
 # Usage:

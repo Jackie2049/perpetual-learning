@@ -1,35 +1,42 @@
-# 开源贡献挖掘
+# 开源贡献
 
-> 系统性地从主流开源仓库（verl / ROLL / pytorch / vllm / ...）发现高性价比的贡献机会，按 I×A×F/C 排序产出候选清单。
+按目标开源项目组织贡献候选、方案、补丁、验证和跟进。这里关注“准备贡献什么、推进到哪里”；[notebook/frameworks/](../notebook/frameworks/readme.md) 关注框架原理与源码理解。两类材料相互链接，同一份成果只保留一个主要位置。
 
-## 目录结构（浅层，方便手机 GitHub app 浏览）
+## 按项目浏览
 
-```
-open-source/
-├── README.md            # 本文件
-├── SOP.md               # 通用挖掘方法论（5 阶段流水线 + 评分公式）
-├── verl/                # 每个目标仓库一个目录
-│   ├── tracker.md       # 跨扫描持久追踪（候选 → PR → merged/rejected 生命周期）
-│   ├── scan-MMDD-HHMM.md # 每次扫描的完整报告（信号 + 评分 + 候选清单）
-│   └── candidate-*.md   # 进入"准备提 PR"阶段的候选详细方案
-├── vllm/                # 未来扩展
-└── roll/                # 未来扩展
-```
-
-## 与 `notebook/` 的区别
-
-| 位置 | 用途 | 产物类型 |
+| 项目 | 贡献材料 | 学习材料 |
 |---|---|---|
-| `notebook/verl-XXXX-deep-reading.md` | **理解**某个 issue/PR（学习） | 深度阅读笔记 |
-| `open-source/verl/tracker.md` | **追踪**要贡献什么（行动） | 候选生命周期表 |
-| `open-source/verl/scan-MMDD.md` | **发现**（一次性扫描快照） | 信号收集 + 评分排序 |
-| `open-source/verl/candidate-*.md` | **行动**（具体 PR 计划） | 方案 + patch + 复现 |
+| DeepSpeed | [候选、方案与记录](deepspeed/readme.md) | [源码阅读](../notebook/frameworks/readme.md#deepspeed) |
+| MoonshotAI | [候选、方案与记录](moonshot/readme.md) | — |
+| PyTorch | [候选、方案与记录](pytorch/readme.md) | [源码阅读](../notebook/frameworks/readme.md#pytorch) |
+| rLLM | [候选、方案与记录](rllm/readme.md) | [源码阅读](../notebook/frameworks/readme.md#rllm) |
+| SGLang | [候选、方案与记录](sglang/readme.md) | [源码阅读](../notebook/frameworks/readme.md#sglang) |
+| TRL | [候选、方案与记录](trl/readme.md) | [源码阅读](../notebook/frameworks/readme.md#trl) |
+| verl | [候选、方案与记录](verl/readme.md) | [源码阅读](../notebook/frameworks/readme.md#verl) |
+| vLLM | [候选、方案与记录](vllm/readme.md) | [源码阅读](../notebook/frameworks/readme.md#vllm) |
+| vLLM-Ascend | [候选、方案与记录](vllm-ascend/readme.md) | [源码阅读](../notebook/frameworks/readme.md#vllm-ascend) |
 
-一个 candidate 可以 **链接** 到 `notebook/` 里的深度阅读笔记（如果有的话），但两者不互相替代。
+## 跨项目规划与方法
 
-## 如何启动一次扫描
+- [贡献机会与能力匹配](open-source-contribution-opportunities.md)
+- [2026 年 6 月贡献行动计划](oss-contribution-action-plan-2026-06.md)
+- [贡献挖掘 SOP](SOP.md)
 
-调用 Claude Code skill `jackie-verl-pr`（verl 目标），说：
+以上计划、分数与 Issue/PR 状态均为历史记录，不能作为当前优先级或贡献成效的证明。近期工作安排见 [WORK.md](../WORK.md)。
+
+## 组织方式
+
+每个项目使用一个目录，按需要保存 tracker、扫描报告、候选方案、验证记录及草稿。已有文件保留原名，便于追溯。
+
+- 学习：框架架构、源码分析、问题原理，保存到 notebook/frameworks/。
+- 贡献：围绕具体改进的方案、补丁、评论及 PR 草稿，保存到 open-source/<framework>/。
+- 实验：复现过程与测量结论保存到 notebook/experiments/，从贡献方案链接过去。
+
+对外发布与提交按 [AGENTS.md](../AGENTS.md#执行边界) 执行。
+
+## 历史扫描流程
+
+历史流程使用 Claude Code skill `jackie-verl-pr`（本仓库未包含该技能，使用前需确认当前环境已安装），例如：
 - "扫一遍 verl"
 - "verl 有什么能做的"
 - "verl 优化点挖掘"

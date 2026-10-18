@@ -186,7 +186,7 @@ Sources:
 - DeepSeek-R1: arxiv.org/abs/2501.04869
 - DeepSeekMath (GRPO原论文): arxiv.org/abs/2402.03300
 - DPO原论文: [Rafailov et al., NeurIPS 2023](https://arxiv.org/abs/2305.18290)
-- RTX 4090 Benchmark: notebook/projects/full-model-ps-kv-injection-rtx4090.md
+- RTX 4090 Benchmark: notebook/frameworks/full-model-ps-kv-injection-rtx4090.md
 
 ## 七、RTX 4090 PCIe上的R1复现可行性
 

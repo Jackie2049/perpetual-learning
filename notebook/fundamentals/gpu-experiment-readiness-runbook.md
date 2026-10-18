@@ -75,7 +75,7 @@ python tools/sm89_batch_invariance_repro.py --config compile_graphs --verbose
 ### If Experiment Succeeds (FAIL on SM<90)
 → ★★★★★★★ Confirms Inductor Fusion Guard PR is CORRECT
 → Take data → submit PyTorch PR with exact repro + 5-line patch
-→ Update notebook/projects/pytorch-inductor-sm89-fusion-guard-pr-draft.md with results
+→ Update open-source/pytorch/pytorch-inductor-sm89-fusion-guard-pr-draft.md with results
 
 ---
 
@@ -156,7 +156,7 @@ llm = LLM(
 ### If Experiment Succeeds
 → ★★★★★★★★★★★★★★★ RTX 4090 profile_table.csv = UNIQUE vLLM contribution data!
 → Submit BudgetRefiner SLO RFC to vLLM community discussion
-→ Update notebook/projects/budgetrefiner-vllm-pr-draft.md with real data
+→ Update open-source/vllm/budgetrefiner-vllm-pr-draft.md with real data
 → This is P10 — our HIGHEST priority contribution!
 
 ---

@@ -2,7 +2,7 @@
 
 > Date: 2026-07-15 | Source: sgl-project/sglang main branch
 > Files: python/sglang/srt/speculative/ (34 files), overlap_utils.py, ragged_verify.py
-> Supersedes: notebook/projects/sglang-spec-decode-reading.md (June 4, now outdated -- spec V1 removed)
+> Supersedes: notebook/frameworks/sglang-spec-decode-reading.md (June 4, now outdated -- spec V1 removed)
 > Cross-references: sglang-31197-fused-mla-lora, vllm-46105-dflash, sglang-rolloutkv
 
 ---

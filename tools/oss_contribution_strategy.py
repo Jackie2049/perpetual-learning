@@ -356,7 +356,7 @@ def _generate_pr_steps(issue: IssueTracker) -> List[str]:
 
     if issue.contribution_type == "review_comment":
         if issue.has_review_comment_draft:
-            steps.append("Review existing draft in notebook/projects/")
+            steps.append("Review existing draft in notebook/frameworks/")
             steps.append("Get user authorization")
             steps.append("Post comment on GitHub PR/issue")
         else:

@@ -159,5 +159,5 @@ return {"model_output": model_output, ...}
 
 - verl #6698: https://github.com/verl-project/verl/issues/6698 (root cause issue)
 - verl #6699: https://github.com/verl-project/verl/pull/6699 (FSDPEngine fix, MERGED)
-- Source reading: notebook/projects/verl-6699-detach-memory-fix-reading.md
+- Source reading: notebook/frameworks/verl-6699-detach-memory-fix-reading.md
 - Engine backend safety: tools/verl_engine_backend_safety.py
