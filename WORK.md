@@ -43,7 +43,7 @@
 ## 接续入口与约束
 
 - 学习与探索：[notebook/readme.md](notebook/readme.md)、[roadmap.md](notebook/roadmap.md)、[knowledge-map.md](notebook/knowledge-map.md)。尚未选定重启后的具体课题。
-- 贡献：[open-source/README.md](open-source/README.md)、[verl tracker](open-source/verl/tracker.md)。verl 旧候选已核验作废，当前活跃为 #6690（resume offload 崩溃，诊断最充分，优先深挖）；vLLM 6 月评论草稿尚未核验当前状态。
+- 贡献：[open-source/README.md](open-source/README.md)、[verl tracker](open-source/verl/tracker.md)。verl 候选池已清零（8 候选全失效，需新扫描）；vLLM 6 月草稿已核验（3 份作废，#39096 有增量价值可精简发布，需用户授权）。
 - 本地目录仍为 rollout-infra，应用侧栏仍显示 RolloutInfra；保留现有路径与绑定。GitHub 仓库已更名为 [perpetual-learning](https://github.com/Jackie2049/perpetual-learning)。
 - 原有未跟踪文件 diary/2026-08-14.md 属于既有用户工作，保留原状，不夹带提交。
 - 历史服务器状态、访问方式和“已验证”结论按需复核，不复述凭据。
