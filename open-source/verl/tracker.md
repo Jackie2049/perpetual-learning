@@ -13,7 +13,7 @@
 | 1 | Triton fused kernels 在 `use_remove_padding=False` 崩溃 (#8089) | P0 | 25 | — | **analysis-done + patch applied**：根因=LinearCrossEntropy forward 输出扁平 [B*S] 且 5 个 triton forward 未恢复 dense 形状；patch=reshape 到 hidden.shape[:-1]（5 文件，兼容 rmpad/2D 路径）；e2e 验证待 GPU | 2026-10-19 |
 | 2 | Fused Megatron LM-head 遗留 AllGather pending (#8028) | P0 | 21 | — | **analysis-done + patch applied**：根因=fused forward 直读 output_layer.weight 跳过 DDP pre-hook，overlap 时 gather handle 滞留跨 batch；patch=patch 时保存 DDP 引用 + 消费前 finish_param_sync（守卫 dispatched）；e2e 验证待 GPU | 2026-10-19 |
 | 3 | GMPO geo_mean 损失随 minibatch 切分变化 (#7913) | P1 | 20 | — | **verified-works**：patch 复用 agg_loss seq-mean-token-sum + global_batch_info，CPU fp64 验证所有切分 rel L2=0，单 batch 无损；0 引用 PR，待授权提交 | 2026-10-19 |
-| 4 | 等长 batch 3D mRoPE position_ids 不一致 (#7899) | P1 | 16 | — | 0 引用 PR，未深挖 | 2026-10-19 |
+| 4 | 等长 batch 3D mRoPE position_ids 不一致 (#7899) | P1 | 16 | — | **verified-works**：maybe_fix_3d_position_ids 盲标 → 布局签名校验+重建（复用 nested_tensor_from_tensor_list ragged_idx=2，无组件数启发式）；本地验证检测/重建/内容保真/early-return；完整 unbind 需 torch≥2.4 | 2026-10-19 |
 
 ## 已被上游他人 PR 覆盖（2026-10-19 查重核验）
 
