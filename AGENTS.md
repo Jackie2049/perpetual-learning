@@ -1,4 +1,6 @@
-# Agent 运作指南
+# Perpetual Learning — Agent 运作指南
+
+项目名称为 **Perpetual Learning**，仓库标识为 `perpetual-learning`。历史资料中的 `rollout-infra` 为旧名称；机器上的实际目录以当前环境为准，不因品牌更名批量替换实验路径。
 
 ## 从哪里开始
 

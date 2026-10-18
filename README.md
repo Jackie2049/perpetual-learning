@@ -1,4 +1,8 @@
-# rollout-infra — 持续学习、实践、生产的自进化智能引擎
+# Perpetual Learning
+
+> 持续学习、实践、生产的自进化智能引擎。
+
+项目标识：`perpetual-learning`（原名 `rollout-infra`）。
 
 ## 项目定位
 
@@ -287,4 +291,4 @@
 
 ## GitHub
 
-https://github.com/Jackie2049/rollout-infra
+[Jackie2049/perpetual-learning](https://github.com/Jackie2049/perpetual-learning)
