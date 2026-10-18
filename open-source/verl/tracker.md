@@ -5,17 +5,24 @@
 
 ## 当前活跃
 
-**（2026-10-19 全新扫描后重建）** 扫描报告见 [scan-1019-1140.md](scan-1019-1140.md)。注意：全新 issue 认领窗口 ≈ 0-2 天，核验+验证+授权需尽快。
+**（2026-10-19 全候选复查重后）** 扫描报告见 [scan-1019-1140.md](scan-1019-1140.md)。注意：全新 issue 认领窗口 ≈ 0-1 天，且 **reporter 深挖过的 issue 大概率 reporter 本人已开 PR**（本轮 4/4 验证）。
 
 | # | 候选 | 类别 | 性价比 | PR | 状态 | 首次发现 |
 |---|---|---|---|---|---|---|
-| 0 | megatron `optimizer_offload_fraction<1` 首轮 update 崩溃 (#8237) | P0 | 42 | — | **analysis-done**：根因确认（offload 无条件 `to("cpu")` 破坏 GPU FusedAdam 设备语义），patch 已拟待 GPU 验证；0 引用 PR | 2026-10-19 |
-| 1 | Triton fused kernels 在 `use_remove_padding=False` 崩溃 (#8089) | P0 | 25 | — | **analysis-done + patch applied**：根因=LinearCrossEntropy forward 输出扁平 [B*S] 且 5 个 triton forward 未恢复 dense 形状；patch=reshape 到 hidden.shape[:-1]（5 文件，兼容 rmpad/2D 路径）；e2e 验证待 GPU | 2026-10-19 |
-| 2 | Fused Megatron LM-head 遗留 AllGather pending (#8028) | P0 | 21 | — | **analysis-done + patch applied**：根因=fused forward 直读 output_layer.weight 跳过 DDP pre-hook，overlap 时 gather handle 滞留跨 batch；patch=patch 时保存 DDP 引用 + 消费前 finish_param_sync（守卫 dispatched）；e2e 验证待 GPU | 2026-10-19 |
-| 3 | GMPO geo_mean 损失随 minibatch 切分变化 (#7913) | P1 | 20 | — | **verified-works**：patch 复用 agg_loss seq-mean-token-sum + global_batch_info，CPU fp64 验证所有切分 rel L2=0，单 batch 无损；0 引用 PR，待授权提交 | 2026-10-19 |
-| 4 | 等长 batch 3D mRoPE position_ids 不一致 (#7899) | P1 | 16 | — | **verified-works**：maybe_fix_3d_position_ids 盲标 → 布局签名校验+重建（复用 nested_tensor_from_tensor_list ragged_idx=2，无组件数启发式）；本地验证检测/重建/内容保真/early-return；完整 unbind 需 torch≥2.4 | 2026-10-19 |
+| 0 | megatron `optimizer_offload_fraction<1` 首轮 update 崩溃 (#8237) | P0 | 42 | — | **analysis-done**：根因确认（offload 无条件 `to("cpu")` 破坏 GPU FusedAdam 设备语义），patch 已拟待 GPU 验证；复查重 0 PR（唯一真实无人认领） | 2026-10-19 |
 
-## 已被上游他人 PR 覆盖（2026-10-19 查重核验）
+## 已被上游他人 PR 覆盖（2026-10-19 全候选复查重修正）
+
+**第 5 轮初查重因限流空响应误报 0 PR，10-19 复查重（pulls API 验证创建时间）纠正：以下 4 个候选的覆盖 PR 均为 issue 发布当天/次日由 reporter 本人或他人开出。本地验证材料保留作参考（fork 补丁已还原），不再提交。**
+
+| # | 候选 | 覆盖 PR（open，未合并） | 覆盖时间 |
+|---|---|---|---|
+| 3 | GMPO geo_mean 损失随 minibatch 切分变化 (#7913) | [#7916](https://github.com/verl-project/verl/pull/7916)（reporter gss10282025 本人，`[BREAKING] require minibatch normalization`，方案与我们不同：配置层强制 vs agg_loss 集成） | 同日 9-18 |
+| 4 | 等长 batch 3D mRoPE position_ids 不一致 (#7899) | [#7901](https://github.com/verl-project/verl/pull/7901)（iceflysnow，rebuild jagged layout） | 同日 9-17 |
+| 1 | Triton fused kernels `use_remove_padding=False` 崩溃 (#8089) | [#8090](https://github.com/verl-project/verl/pull/8090)（reporter kylemontgomery1 本人，triton fused output shape） | 次日 10-02 |
+| 2 | Fused Megatron LM-head 遗留 AllGather pending (#8028) | [#8029](https://github.com/verl-project/verl/pull/8029)（reporter ewan0x79 本人，publish output weights before fused kernels） | 同日 9-27 |
+
+> 注：#7916 为 BREAKING 方案（require minibatch normalization），与我们的 agg_loss 集成方案（兼容默认行为）不同；#8090 为我们的 reshape 方案同类。#8029 用 "publish output weights" 而非 finish_param_sync。均有评论空间但需按 verl 政策先确认不重复，且需用户授权。
 
 以下候选本地已验证（patch + 单测），但上游已存在他人 PR 修同一问题（均未合并）。本地 patch 与竞争实现等价或更完整，但按 verl 贡献政策「PR 描述须说明为何不重复现有 PR」，不再提交。本地材料保留在 candidate-*.md，patch 保存在 verl-pr/verl_main/（未推送任何远端）。
 
@@ -44,6 +51,9 @@
 
 ## 经验教训
 
+- **2026-10-19**：**查重输出 "None" ≠ 0 PR，必须区分限流空响应与真实零**。第 5 轮扫描时 4 个候选的 search API 返回空（限流），脚本打印 `None` 被误读为"0 个 PR，无人认领"，导致 4 个候选深挖 + 验证 + 打补丁后复查重才发现全部被 reporter 同日/次日 PR 覆盖。教训：search 返回空必须重试 + 用 pulls API 交叉验证；"无人认领"结论必须基于可解析的 JSON。
+- **2026-10-19**：**reporter 把 issue 写得很深（根因+机制链+修复方向）≈ reporter 已开或即将开 PR**。本轮 4/4：gss10282025（#7913→#7916）、iceflysnow（#7899→#7901）、ewan0x79（#8028→#8029）、kylemontgomery1（#8089→#8090）全部同日/次日出 PR。深挖前先按 reporter 名字查其 PR 列表。
+- **2026-10-19**：**verl 的覆盖 PR 多为 reporter 本人自修**（4/5），与 6-8 月的"他人抢修"模式不同；同期还出现 #8237 这类无人认领 5 天的例外。判断竞争优先级时应先看 reporter 身份与 issue 深度。
 - **2026-10-19**：**旧候选核验要把「文件是否还在 main」也查了**。#6700 指向的 main_ppo_sync.py 已从 main 删除，问题形态随重构消失——只查 issue 状态会误判为"仍开放待修"。核验顺序：issue 状态 → 引用该 issue 的 PR → **目标文件/代码路径在 main 是否存在**。
 - **2026-10-19**：**issue 里 reporter 说"打算提 PR"不等于会提**。#6690/#7146 的 reporter 都声明了意图（分别 4 个月/3 个月），最终都是别人先修（#7342）或上游根因修复（transformers）。认领声明只能降低竞争优先级，不能当作长期占位。
 - **2026-10-19**：**verl bug 候选的失效速度 ≈ 2-3 个月**。8-04 验证的候选 10 月全部失效；6-11/7-25 的 issue 到 10-19 也全部有主。verl + transformers 双活跃轨道上，"旧候选核对"的价值已耗尽，应转向全新扫描或换框架。

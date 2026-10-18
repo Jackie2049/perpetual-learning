@@ -2,7 +2,7 @@
 
 > Issue: [verl-project/verl#7899](https://github.com/verl-project/verl/issues/7899)
 > 创建 2026-09-17；0 评论；查重 2026-10-19：0 个引用 PR。关联 #6851（同崩溃，batch=1）、#7767（closed-unmerged，检测用 3/4 行启发式有缺陷）
-> 状态：**verified-works**（检测+重建逻辑本地验证通过；完整 ragged@2 unbind 需 torch≥2.4，issue 2.13 复现已证）
+> 状态：~~**verified-works**~~ → **2026-10-19 复查重纠正：同日已开 PR #7901（iceflysnow，rebuild jagged layout）**。验证材料保留，不提交。
 
 ## 0. 为什么值得做
 

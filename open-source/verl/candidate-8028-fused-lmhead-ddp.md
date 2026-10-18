@@ -2,7 +2,7 @@
 
 > Issue: [verl-project/verl#8028](https://github.com/verl-project/verl/issues/8028)
 > 创建 2026-09-27；0 评论；查重 2026-10-19：0 个引用 PR（无人认领）
-> 状态：**analysis-done + patch applied**（DDP overlap 语义分析完成，patch 已应用本地 fork；e2e 验证需 GPU + Megatron DDP overlap 环境）
+> 状态：~~**analysis-done + patch applied**~~ → **2026-10-19 复查重纠正：reporter 同日已开 PR #8029（publish output weights before fused kernels，机制相近）**。本地补丁已还原，不提交。
 
 ## 0. 为什么值得做
 

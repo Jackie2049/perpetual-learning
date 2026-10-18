@@ -2,7 +2,7 @@
 
 > Issue: [verl-project/verl#8089](https://github.com/verl-project/verl/issues/8089)
 > 创建 2026-10-01；0 评论；查重 2026-10-19：0 个引用 PR（无人认领）
-> 状态：**analysis-done + patch applied**（形状契约分析完成，5 文件补丁已应用本地 fork；e2e 验证需 GPU）
+> 状态：~~**analysis-done + patch applied**~~ → **2026-10-19 复查重纠正：reporter 次日已开 PR #8090（同类 reshape 方案）**。本地补丁已还原，不提交。
 
 ## 0. 为什么值得做
 

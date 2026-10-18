@@ -2,7 +2,7 @@
 
 > Issue: [verl-project/verl#7913](https://github.com/verl-project/verl/issues/7913)
 > 创建 2026-09-18；0 评论；查重 2026-10-19：0 个引用 PR（无人认领，但窗口仅 0-2 天，需尽快）
-> 状态：**verified-works**（patch 实现 + fp64 CPU 验证：所有切分 rel L2 = 0）
+> 状态：~~**verified-works**（patch 实现 + fp64 CPU 验证：所有切分 rel L2 = 0）~~ → **2026-10-19 复查重纠正：reporter 同日已开 PR #7916（BREAKING: require minibatch normalization，方案与我们不同）**。验证材料保留，不提交；如需发声按政策在 issue 说明差异（需用户授权）。
 
 ## 0. 为什么值得做
 
