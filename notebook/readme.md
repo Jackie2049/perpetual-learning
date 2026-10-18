@@ -105,6 +105,7 @@
 - [FlashAttention](papers/flashattention.md) — Tiling + online softmax + recomputation, O(N) 内存
 - [Chinchilla Scaling Laws](papers/chinchilla.md) — L(N,D) 最优 ~20 tok/param, 推翻 Kaplan "大模型少数据"
 - [PPO](papers/ppo.md) — L^{CLIP}, RLHF 核心算法, GRPO 简化版
+- [GMPO](papers/gmpo.md) — 几何均值抑制 ratio 离群, 论文-vs-verl 实现对照 (clip 空间语义差异发现)
 - [GPT-4](papers/gpt4.md) — 可预测扩展, RLHF 无损, RBRMs 安全
 - [Mamba](papers/mamba.md) — 选择性 SSM, 线性时间, 2.8B 匹配 GPT-J-6B
 - [Top-nσ](papers/top-n-sigma.md) — ACL 2025, logit 空间统计阈值, 温度稳定性 1.00x
