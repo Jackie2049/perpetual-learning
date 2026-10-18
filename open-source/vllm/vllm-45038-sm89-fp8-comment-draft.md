@@ -1,6 +1,6 @@
 # vLLM PR #45038 — SM89 FP8 KV Crash Comment Draft
 
-> Status: DRAFT — User should review before posting
+> Status: ~~DRAFT — User should review before posting~~ → **2026-10-19 核验：PR #45038 未合并自关（9-21），底层 issue #44879 仍 open 但有实测噪音**。草稿信息基于 v0.23（6 月），已过时；仅剩支持矩阵整理有微弱参考价值。发布需用户授权，默认不发布。
 > PR: https://github.com/vllm-project/vllm/pulls/45038
 > Title: [Bugfix] Guard compressed-tensors FP8 KV cache override on SM90+
 

@@ -1,6 +1,6 @@
 # vLLM Issue #39096 — Batch Invariance Comment Draft
 
-> Status: DRAFT — User should review before posting
+> Status: ~~DRAFT — User should review before posting~~ → **2026-10-19 核验：issue 仍 open，可发布但有重叠**。YM2132 已认领推进（7-30），现有 9 条评论覆盖大部分技术分析；本草稿的增量仅剩 GRPO/verl 训练影响 + 三机制组合框架。发布前需精简并经用户授权。
 > Issue: https://github.com/vllm-project/vllm/issues/39096
 > Title: Batch invariance breaks with torch.compile and/or CUDA graphs on SM<90
 
