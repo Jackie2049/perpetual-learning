@@ -7,6 +7,7 @@ with identical seeds and configurations for fair comparison.
 Can run on GPU (RTX 4090) or CPU.
 """
 
+from pathlib import Path
 import torch
 import numpy as np
 import json
@@ -248,7 +249,7 @@ def main():
     parser.add_argument('--device', default='cuda')
     parser.add_argument('--hidden_dim', type=int, default=64)
     parser.add_argument('--num_layers', type=int, default=2)
-    parser.add_argument('--output', default='rl_comparison_results.json')
+    parser.add_argument('--output', default=str(Path(__file__).resolve().parent.parent / "results/training/rl_comparison_results.json"))
     args = parser.parse_args()
 
     device = torch.device(args.device)
@@ -298,6 +299,7 @@ def main():
         },
         'results': all_results,
     }
+    Path(args.output).parent.mkdir(parents=True, exist_ok=True)
     with open(args.output, 'w') as f:
         json.dump(output, f, indent=2)
     print(f"\nResults saved to {args.output}")

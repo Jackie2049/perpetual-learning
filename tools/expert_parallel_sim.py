@@ -21,6 +21,7 @@ Experiments:
   5. Mixtral vs DeepSeek-V3 EP comparison
 """
 
+from pathlib import Path
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -593,9 +594,11 @@ def run_all_experiments():
   - For memory-constrained: offload cold experts, keep top-K hot
   """)
 
-    with open('expert_parallel_results.json', 'w') as f:
+    output_file = Path(__file__).resolve().parent.parent / "results/distributed/expert_parallel_results.json"
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_file, "w") as f:
         json.dump(all_results, f, indent=2, default=str)
-    print("Results saved to expert_parallel_results.json")
+    print(f"Results saved to {output_file}")
     return all_results
 
 

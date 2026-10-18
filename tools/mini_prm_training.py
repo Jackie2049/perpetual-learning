@@ -11,6 +11,7 @@ Key comparison:
 Can run on CPU or GPU.
 """
 
+from pathlib import Path
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -547,9 +548,11 @@ def main():
             'device': str(device),
         }
     }
-    with open("prm_vs_orm_results.json", "w") as f:
+    output_file = Path(__file__).resolve().parent.parent / "results/training/prm_vs_orm_results.json"
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_file, "w") as f:
         json.dump(output, f, indent=2)
-    print(f"Results saved to prm_vs_orm_results.json")
+    print(f"Results saved to {output_file}")
 
 
 if __name__ == "__main__":

@@ -11,6 +11,7 @@ Builds on the DPO pipeline (dpo_train_pipeline.py).
 Educational purpose: understand RLHF algorithms end-to-end.
 """
 
+from pathlib import Path
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -935,9 +936,11 @@ def main():
         print(f"  Peak GPU memory: {mem:.1f} MB")
         results['gpu_memory_mb'] = round(mem, 1)
 
-    with open("rlhf_grpo_results.json", "w") as f:
+    output_file = Path(__file__).resolve().parent.parent / "results/training/rlhf_grpo_results.json"
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_file, "w") as f:
         json.dump(results, f, indent=2)
-    print(f"  Results saved to rlhf_grpo_results.json")
+    print(f"  Results saved to {output_file}")
 
 
 if __name__ == "__main__":

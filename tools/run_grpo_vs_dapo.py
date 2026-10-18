@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Run GRPO vs DAPO comparison on GPU."""
 
+from pathlib import Path
 import subprocess
 import json
 import time
@@ -39,7 +40,7 @@ def run_experiment(mode, num_steps=300, n_samples=8):
 
     # Parse results
     try:
-        with open("mini_grpo_training_results.json") as f:
+        with open(Path(__file__).resolve().parent.parent / "results/training/mini_grpo_training_results.json") as f:
             data = json.load(f)
         return data
     except:
@@ -93,6 +94,8 @@ if grpo_data and dapo_data:
         'dapo_data': dapo_data,
         'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
     }
-    with open("grpo_vs_dapo_comparison.json", "w") as f:
+    output_file = Path(__file__).resolve().parent.parent / "results/training/grpo_vs_dapo_comparison.json"
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_file, "w") as f:
         json.dump(comparison, f, indent=2)
-    print(f"\nComparison saved to grpo_vs_dapo_comparison.json")
+    print(f"\nComparison saved to {output_file}")

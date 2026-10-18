@@ -145,5 +145,5 @@ $$\text{speedup} = \frac{N \times t_{compute}}{t_{compute} + t_{comm}}$$
 
 ## 数据文件
 
-- `grpo_ddp_benchmark_results.json`: 完整结果(含per-rank时间)
+- `results/distributed/grpo_ddp_benchmark_results.json`: 完整结果(含per-rank时间)
 - `tools/ddp_grpo_benchmark_4090.py`: 基准脚本(multiprocessing spawn)

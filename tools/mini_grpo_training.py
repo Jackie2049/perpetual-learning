@@ -10,6 +10,7 @@ Reward = 1 if correct, 0 otherwise.
 Can run on CPU (small model) or GPU (RTX 4090).
 """
 
+from pathlib import Path
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -932,7 +933,7 @@ def main():
     parser.add_argument('--kl_coeff', type=float, default=0.01, help='KL coefficient for DAPO mode (Dr.GRPO sequence-level)')
     parser.add_argument('--clip_lower', type=float, default=0.3, help='Lower clip epsilon for DAPO (larger = faster correction)')
     parser.add_argument('--clip_upper', type=float, default=0.2, help='Upper clip epsilon for DAPO')
-    parser.add_argument('--output', default='mini_grpo_training_results.json', help='Output results file')
+    parser.add_argument('--output', default=str(Path(__file__).resolve().parent.parent / "results/training/mini_grpo_training_results.json"), help='Output results file')
     parser.add_argument('--hidden_dim', type=int, default=64, help='Model hidden dimension (64=76K, 256=3M, 512=10M)')
     parser.add_argument('--num_layers', type=int, default=2, help='Number of transformer layers')
     args = parser.parse_args()
@@ -1241,7 +1242,8 @@ def main():
         'sft_metrics': sft_metrics_history,
     }
 
-    output_file = args.output
+    output_file = Path(args.output)
+    output_file.parent.mkdir(parents=True, exist_ok=True)
     with open(output_file, "w") as f:
         json.dump(results, f, indent=2)
     print(f"\nResults saved to {output_file}")

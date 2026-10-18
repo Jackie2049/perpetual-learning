@@ -10,6 +10,7 @@ Implements DeepSeek-V3's MTP approach:
 Reference: DeepSeek-AI, 2024, arXiv:2412.19437 (Section 2.5)
 """
 
+from pathlib import Path
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -571,9 +572,11 @@ def run_all_experiments(device='cuda'):
         elif isinstance(obj, list): return [convert(v) for v in obj]
         return obj
 
-    with open('mtp_results.json', 'w') as f:
+    output_file = Path(__file__).resolve().parent.parent / "results/architecture/mtp_results.json"
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_file, "w") as f:
         json.dump(convert(all_results), f, indent=2)
-    print("Results saved to mtp_results.json")
+    print(f"Results saved to {output_file}")
     return all_results
 
 

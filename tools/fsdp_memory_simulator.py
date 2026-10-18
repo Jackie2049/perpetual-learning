@@ -13,6 +13,7 @@ Validates against actual PyTorch FSDP memory on GPU.
 Educational purpose: understand distributed training memory tradeoffs.
 """
 
+from pathlib import Path
 import torch
 import torch.nn as nn
 import json
@@ -427,9 +428,11 @@ def main():
     - > 70B: 64-1024 GPUs with 3D parallel + ZeRO
     """)
 
-    with open("fsdp_memory_results.json", "w") as f:
+    output_file = Path(__file__).resolve().parent.parent / "results/distributed/fsdp_memory_results.json"
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_file, "w") as f:
         json.dump(results, f, indent=2, default=str)
-    print("  Results saved to fsdp_memory_results.json")
+    print(f"  Results saved to {output_file}")
 
 
 if __name__ == "__main__":

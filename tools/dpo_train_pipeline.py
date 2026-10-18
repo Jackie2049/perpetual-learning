@@ -21,6 +21,7 @@ Uses synthetic data — no model download needed.
 Educational purpose: understand alignment from first principles.
 """
 
+from pathlib import Path
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -858,9 +859,11 @@ def main():
     print(f"    Total FLOPS: {total_flops:.2e}")
     print(f"    DPO FLOPS: {dpo_flops:.2e} ({dpo_flops/total_flops*100:.1f}% of total)")
 
-    with open("dpo_train_results.json", "w") as f:
+    output_file = Path(__file__).resolve().parent.parent / "results/training/dpo_train_results.json"
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_file, "w") as f:
         json.dump(results, f, indent=2)
-    print(f"\n  Results saved to dpo_train_results.json")
+    print(f"\n  Results saved to {output_file}")
 
 
 if __name__ == "__main__":

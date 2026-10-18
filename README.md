@@ -94,6 +94,7 @@ AI 技术是探索范围，Infra 是优先方向。下面提供常用主题的�
 | [scripts/](scripts/) | 实验执行、验证与编排脚本 |
 | [configs/](configs/readme.md) | 4 份 RTX 4090 DeepSpeed 训练配置 |
 | [csrc/](csrc/) | CUDA/C++ 实现与相关验证 |
+| [results/](results/readme.md) | 按训练、分布式、算子、推理和模型架构归档的实验结果 |
 
 这些材料支撑实际运行；实验结论及复现说明应从 [notebook/experiments/](notebook/experiments/) 查阅。
 
@@ -128,9 +129,10 @@ AI 技术是探索范围，Infra 是优先方向。下面提供常用主题的�
 | [scripts/](scripts/) | 执行、验证与编排脚本 | [执行材料说明](#工具技能与执行材料) |
 | [configs/](configs/) | 历史训练配置 | [配置说明](configs/readme.md) |
 | [csrc/](csrc/) | CUDA/C++ 实现与验证 | [执行材料说明](#工具技能与执行材料) |
+| [results/](results/) | 实验原始结果 | [结果归档说明](results/readme.md) |
 | [.claude/skills/](.claude/skills/) | 已有 Agent 技能 | [技能入口](#工具技能与执行材料) |
 
-主要板块按职责组织，同一项成果维护一个主要位置，通过链接串起学习、实践与贡献。其他已有专题、环境文件和历史结果暂保留原位。
+主要板块按职责组织，同一项成果维护一个主要位置，通过链接串起学习、实践与贡献。原根目录的 26 个实验结果 JSON 已按主题归入 results/；其他已有专题与环境文件保留原位。
 
 ### 尚待整合的执行材料
 

@@ -232,4 +232,4 @@ PPO eval examples:
 ## 工具
 
 - `tools/mini_grpo_training.py`: 完整GRPO/PPO训练pipeline, 支持CPU/GPU, --mode grpo/ppo/both
-- `mini_grpo_training_results.json`: 完整训练数据
+- `results/training/mini_grpo_training_results.json`: 完整训练数据

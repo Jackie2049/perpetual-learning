@@ -126,7 +126,7 @@ PRM优势 = f(问题复杂度 × 步骤依赖性 × 错误隐蔽性)
 ## 代码
 
 - 工具: `tools/mini_prm_training.py`
-- 结果: `prm_vs_orm_results.json`
+- 结果: `results/training/prm_vs_orm_results.json`
 
 ## 改进方向
 

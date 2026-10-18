@@ -11,6 +11,7 @@ Tests on: length generalization, extrapolation, perplexity
 Runs on GPU (RTX 4090) with synthetic data.
 """
 
+from pathlib import Path
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -373,9 +374,11 @@ def main():
         mem = torch.cuda.max_memory_allocated() / 1e6
         print(f"\n  Peak GPU memory: {mem:.1f} MB")
 
-    with open("positional_encoding_results.json", "w") as f:
+    output_file = Path(__file__).resolve().parent.parent / "results/architecture/positional_encoding_results.json"
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_file, "w") as f:
         json.dump(all_results, f, indent=2)
-    print(f"\n  Results saved to positional_encoding_results.json")
+    print(f"\n  Results saved to {output_file}")
 
 
 if __name__ == "__main__":

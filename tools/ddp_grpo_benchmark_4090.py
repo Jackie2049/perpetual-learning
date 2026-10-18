@@ -5,6 +5,7 @@ Uses multiprocessing to spawn DDP processes (no torchrun needed).
 Measures: step time, throughput, memory, scaling efficiency.
 """
 
+from pathlib import Path
 import json
 import time
 import os
@@ -319,9 +320,11 @@ def main():
         "seq_len": seq_len, "n_samples": n_samples, "num_steps": num_steps, "base_batch": base_batch,
         "results": all_results,
     }
-    with open("grpo_ddp_benchmark_results.json", "w") as f:
+    output_file = Path(__file__).resolve().parent.parent / "results/distributed/grpo_ddp_benchmark_results.json"
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_file, "w") as f:
         json.dump(output, f, indent=2)
-    print(f"\nResults saved to grpo_ddp_benchmark_results.json")
+    print(f"\nResults saved to {output_file}")
 
 
 if __name__ == "__main__":

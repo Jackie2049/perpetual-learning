@@ -41,5 +41,12 @@ cutlass/
 deepep-src/
 flashinfer/
 models/
-results/
+# Keep curated experiment results; ignore other generated output.
+/results/*
+!/results/readme.md
+!/results/training/
+!/results/distributed/
+!/results/kernels/
+!/results/inference/
+!/results/architecture/
 transformer-engine/

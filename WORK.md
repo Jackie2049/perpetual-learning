@@ -16,6 +16,7 @@
 
 ## 本轮进展
 
+- 根目录 26 个实验结果 JSON 已按主题归入 results/，同步对应脚本输出、读取路径和文档引用；入口见 [结果归档说明](results/readme.md)。
 - 首页已扩展为完整导航，包含技术主题、框架学习与贡献、实验、论文、工具、技能、规划、日志及目录职责。详细知识导航在 notebook/readme.md，原工具导航保存在 [tools/legacy/catalog.md](tools/legacy/catalog.md)。
 - 原源码目录 398 份材料中，366 份归入 notebook/frameworks/，32 份明确的贡献材料归入 open-source/；同步引用并建立框架和贡献索引。
 - 已核查 configs/：4 份 RTX 4090 DeepSpeed 训练配置，有生成器及实验脚本引用。新增 [配置说明](configs/readme.md)，暂保留路径，建议后续随对应实验收纳。

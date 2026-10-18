@@ -17,6 +17,7 @@ Experiments:
 5. Reasoning task simulation — does Top-nσ really beat greedy?
 """
 
+from pathlib import Path
 import torch
 import torch.nn.functional as F
 import math
@@ -608,9 +609,11 @@ def run_all_experiments(device='cuda'):
             return [convert(v) for v in obj]
         return obj
 
-    with open('top_n_sigma_results.json', 'w') as f:
+    output_file = Path(__file__).resolve().parent.parent / "results/inference/top_n_sigma_results.json"
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_file, "w") as f:
         json.dump(convert(all_results), f, indent=2)
-    print("Results saved to top_n_sigma_results.json")
+    print(f"Results saved to {output_file}")
 
     return all_results
 
