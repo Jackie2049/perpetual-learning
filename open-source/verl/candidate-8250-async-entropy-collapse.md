@@ -55,7 +55,7 @@ GRPO 组归一优势 A=(R-μ_G)/σ_G（σ_G=0 时 verl fallback A=0）。坍塌�
 ### Q4 答案：FSDP2/fused 路径关注点
 
 - `loss_agg_mode=seq-mean-token-mean` 依赖 `global_batch_size` 元数据——确认 48×8=384 轨迹的全局计数正确（#7913 家族曾暴露 seq-mean 聚合不变量问题）；
-- **GSPO clip 0.0003/0.0004 是极端紧窗（2026-10-19 论文对照修正）**：verl GSPO 在 ratio 空间 `clamp(ratio, 1-ε_low, 1+ε_high)`（core_algos.py），0.0003/0.0004 → ratio ∈ [0.9997, 1.0003]，即 **KL 窗口 ±0.0004 nats**——比 GSPO 论文典型 ε=0.2 紧约 500 倍。后果：绝大多数 token 的 ratio 在窗外 → 梯度饱和 → **漂移后无法恢复**（解释坍塌持续而非触发）；Run C 同参数稳定说明紧窗本身不必然触发爆炸（奖励/起点不同），但显著放大对 KL/weight-sync 事件的脆弱性。geo_mean 的 clip 语义另异（log 空间 clamp），见 GMPO 论文笔记。
+- **GSPO clip 0.0003/0.0004 是极紧窗且来自 verl 官方示例默认（2026-10-19 论文对照修正）**：verl GSPO 在 ratio 空间 `clamp(ratio, 1-ε_low, 1+ε_high)`（core_algos.py），且 `examples/gspo_trainer/run_qwen3_30b_a3b_megatron.sh` 默认即 3e-4/4e-4 → ratio 窗口 1±0.0004（≈ token KL 窗口 ±0.0004 nats）。与 PPO/GSPO 常见 ε=0.2 相差 ~500 倍（GSPO 论文实验 ε 待官方代码确认）。后果：绝大多数 token 的 ratio 在窗外 → 梯度饱和 → **漂移后无法恢复**（解释坍塌持续而非触发）；Run C 同参数稳定说明紧窗本身不必然触发爆炸（奖励/起点不同）。注：geo_mean 的 clip 是 log 空间 clamp（GMPO 论文对照见 notebook/papers/gmpo.md、gspo.md 三向对照表）。
 - fused/长上下文路径先跑 teacher-forced log-probs 对齐（同 Q2.3）。
 
 ## 3. 草稿状态
