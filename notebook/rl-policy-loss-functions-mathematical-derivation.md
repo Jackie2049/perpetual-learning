@@ -211,3 +211,28 @@ where `env_loss_coef` = 0.05 (default), `obs_mask` = observation token mask
 - **10 loss functions** mathematically derived and compared
 - **6 frameworks** mapped (verl V1, rLLM, TRL, with DPPO/CISPO/GSPO as rLLM-specific)
 - **RTX 4090 recommendation**: UP-GRPO #1, CISPO #2
+
+---
+
+## 11. verl 注册损失审计（2026-10-19，main 全量）
+
+### agg_loss 覆盖唯一性（#7913 相关）
+
+当前 main `core_algos.py` 全部 13 个注册损失逐一核对：**仅 `geo_mean`（GMPO）用 `torch.mean` 绕过 `agg_loss`**——即 #7913 修复的 microbatch 切分不变性 bug 在注册表中是唯一的；其余 12 个（vanilla/dppo_tv/dppo_kl/gspo/sapo/gpg/clip_cov/kl_cov/dro/cispo/reinforce/bypass_mode）全部走 `agg_loss(..., **global_batch_info)`。
+
+### 新增损失速览（Session 10 后出现 / 未推导）
+
+| 损失 | 形式 | 备注 |
+|---|---|---|
+| **DRO**（Direct Reward Optimization） | `L = -(log π·A − ½·β·log_ratio²)`，β=policy_loss.dro_beta | 二次 log-ratio 惩罚的 REINFORCE 变体；梯度 = -A·∇log π + β·log_ratio·∇log_ratio（在线性近似下 ≈ KL 锚定的信任域正则，β↑ 限制偏离旧策略） |
+| GMPO/geo_mean | 见 [GMPO 论文笔记](papers/gmpo.md) | #7913 修复对象；clip 在 log 空间（与论文 ρ 空间不一致） |
+| SAPO | 见 [SAPO 论文笔记](papers/sapo.md) | sech² 平滑门 + 非对称温度；verl 用 sigmoid 变体 |
+| GSPO | Session 10 §6 + [GSPO 论文笔记](papers/gspo.md) | verl 示例默认 ε=3e-4 极紧窗 |
+| GPG | `L = -log π·A`（无 ratio） | AMAP-ML GPG，VisualThinker-R1 同源 |
+| clip_cov | PPO-clip + covariance（token 协方差惩罚） | kl_cov 同族 |
+| kl_cov | PPO-KL + covariance | kl_cov 同族 |
+| bypass_mode | REINFORCE/PPO-clip 二选一分发，old_log_prob=rollout_log_prob | CPPO bypass 家族（RTX 4090 会话） |
+
+### Session Stats 更新
+- **13 verl 注册损失 + 6 框架**，其中 11 个有推导/笔记覆盖（DRO 上述，GPG/clip_cov/kl_cov/bypass_mode 为速览）
+- **审计方法可复用**：核对新注册损失的 `agg_loss` 覆盖，防 geo_mean 类回归
