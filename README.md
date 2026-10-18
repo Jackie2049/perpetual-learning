@@ -1,10 +1,10 @@
 # perpetual-learning
 
-## 项目定位
+## 项目说明
 
 持续进行学习、实践、生产的自进化智能引擎，不间断地学习技术知识、积累实战经验、发掘可探索的方向、产出有价值的成果。领域为AI技术、优先关注Infra。用户驱动时，优先承接并细化用户的需求和想法；真实运行中，持续积累可复用的实战经验。上述的技术掘金、技术秘书、经验沉淀等任务有机结合，持续增强引擎能力，最终在技术视野、想法探索、实战经验、业界影响力等方面为用户的保驾护航并做出有价值的贡献
 
-## 如何运作
+## 运作机制
 
 - **技术掘金**：持续自主学习、实践和探索 AI 技术，优先关注 Infra，寻找值得深入和贡献的方向，产出笔记、工具、开源贡献、自营成果或论文。
 - **技术秘书**：优先承接用户的需求与模糊想法，通过尽调、综述、价值与风险分析、概念验证和实际执行推进目标。
@@ -12,7 +12,7 @@
 
 当前处于保留积累、整理结构与重构运作模式的阶段，持续运行尚未重启。历史笔记中的性能、验证范围、硬件状态与上游进展以原文时间和条件为准，具体工作安排见 [WORK.md](WORK.md)。
 
-## 文件组织结构
+## 文件组织
 
 这里是整个项目的统一入口：点击路径浏览文件，点击总览查看对应板块的内容导航与使用说明。
 
@@ -22,10 +22,10 @@
 | [AGENTS.md](AGENTS.md) | Agent 内核 | 工作原则、行为方式与执行边界 |
 | [WORK.md](WORK.md) | 当前工作上下文 | 当前需求、进展与下一步 |
 | [notebook/](notebook/) | 技术学习笔记 | [笔记总览](notebook/readme.md) |
-| [notebook/fundamentals/](notebook/fundamentals/) | 基础知识 | [技术主题导航](#技术知识导航) |
-| [notebook/frameworks/](notebook/frameworks/) | 框架架构与源码理解 | [框架索引](notebook/frameworks/readme.md) · [学习与贡献导航](#框架学习与开源贡献) |
-| [notebook/experiments/](notebook/experiments/) | 实验记录与结论 | [实验导航](#实验与实战经验) |
-| [notebook/papers/](notebook/papers/) | 论文阅读 | [论文索引](notebook/readme.md#论文精读) · [其他 AI 专题](#论文与其他-ai-专题) |
+| [notebook/fundamentals/](notebook/fundamentals/) | 基础知识 | [知识导航](#知识导航) |
+| [notebook/frameworks/](notebook/frameworks/) | 框架架构与源码理解 | [框架索引](notebook/frameworks/readme.md) · [主流框架 & 开源贡献](#主流框架--开源贡献) |
+| [notebook/experiments/](notebook/experiments/) | 实验记录与结论 | [上机实战](#上机实战) |
+| [notebook/papers/](notebook/papers/) | 论文阅读 | [论文索引](notebook/readme.md#论文精读) · [专题研究](#论文学习--专题研究) |
 | [notebook/roadmap.md](notebook/roadmap.md) | 学习与实践规划 | 学习路线与探索方向 |
 | [notebook/knowledge-map.md](notebook/knowledge-map.md) | 知识整理与总览 | 知识关系与整体导航 |
 | [tools/](tools/) | 可复用工具 | [工具总览](tools/readme.md) |
@@ -34,11 +34,11 @@
 | [open-source/SOP.md](open-source/SOP.md) | 贡献工作方法 | 候选发现、分析与推进流程 |
 | [diary/](diary/) | 按日期记录实际工作 | [日志总览](diary/readme.md) |
 | [experiments/](experiments/) | 训练启动脚本与实验配置 | [与实验记录的关系](#尚待整合的执行材料) |
-| [scripts/](scripts/) | 执行、验证与编排脚本 | [执行材料说明](#工具技能与执行材料) |
+| [scripts/](scripts/) | 执行、验证与编排脚本 | [执行材料说明](#工具沉淀--技能打磨) |
 | [experiments/rtx4090/configs/](experiments/rtx4090/configs/) | RTX 4090 训练配置 | [配置说明](experiments/rtx4090/configs/readme.md) |
-| [csrc/](csrc/) | CUDA/C++ 实现与验证 | [执行材料说明](#工具技能与执行材料) |
+| [csrc/](csrc/) | CUDA/C++ 实现与验证 | [执行材料说明](#工具沉淀--技能打磨) |
 | [results/](results/) | 实验原始结果 | [结果归档说明](results/readme.md) |
-| [.claude/skills/](.claude/skills/) | 已有 Agent 技能 | [技能入口](#工具技能与执行材料) |
+| [.claude/skills/](.claude/skills/) | 已有 Agent 技能 | [技能入口](#工具沉淀--技能打磨) |
 
 主要板块按职责组织，同一项成果维护一个主要位置，通过链接串起学习、实践与贡献。原根目录的 26 个实验结果 JSON 已按主题归入 results/；其他已有专题与环境文件保留原位。
 
@@ -50,7 +50,7 @@ RTX 4090 的 4 份 DeepSpeed 配置已收纳至 [experiments/rtx4090/configs/](e
 
 根目录尚无 `projects/`，目前不预建；未来有需要独立维护的自营项目时，再决定放在本仓库还是独立仓库。框架源码学习统一使用 `notebook/frameworks/`。
 
-## 技术知识导航
+## 知识导航
 
 AI 技术是探索范围，Infra 是优先方向。下面提供常用主题的直接入口；更多笔记见 [技术学习总览](notebook/readme.md) 和 [基础知识目录](notebook/fundamentals/)。
 
@@ -64,7 +64,19 @@ AI 技术是探索范围，Infra 是优先方向。下面提供常用主题的�
 | RL 与后训练 | [RLHF/GRPO Infra](notebook/fundamentals/rlhf-training-infra.md) · [优势估计](notebook/rl-advantage-estimators-mathematical-derivation.md) · [Policy Loss](notebook/rl-policy-loss-functions-mathematical-derivation.md) · [DPO](notebook/fundamentals/dpo.md) |
 | 微调与编译 | [LoRA/PEFT](notebook/fundamentals/lora-peft.md) · [torch.compile](notebook/fundamentals/torch-compile.md) · [CUDA Graphs](notebook/fundamentals/cuda-graphs.md) |
 
-## 框架学习与开源贡献
+## 上机实战
+
+实验记录保存问题、环境、方法、结果与局限；经验来自实际执行和反馈，进一步沉淀为排错方法、工具与技能。
+
+| 兴趣点 | 入口 |
+|---|---|
+| GPU 基础性能与测量方法 | [A16 基准](notebook/experiments/gpu-a16-benchmark.md) · [A16 Profiling](notebook/experiments/gpu-profiling-a16.md) · [RTX 4090 基准](notebook/experiments/rtx4090-benchmark.md) |
+| Kernel 与推理优化 | [Triton Kernels](notebook/experiments/rtx4090-triton-kernels.md) · [KV Cache 压缩](notebook/experiments/rtx4090-kv-cache-compress.md) |
+| 训练与多卡实践 | [LoRA 微调](notebook/experiments/rtx4090-lora-finetune.md) · [多卡 DDP](notebook/experiments/rtx4090-multigpu-ddp.md) · [RLHF/GRPO](notebook/experiments/rtx4090-rlhf-grpo.md) |
+| 排错与跨框架经验 | [GRPO 排错](notebook/grpo-training-debugging-guide.md) · [跨框架问题分类](notebook/cross-framework-bug-taxonomy.md) · [CUDA Stream 生命周期问题](notebook/cuda-stream-use-after-free-pattern-family.md) |
+| 完整实验记录与规划 | [实验记录目录](notebook/experiments/) · [GPU 实验计划](notebook/gpu-experiment-plan.md) |
+
+## 主流框架 & 开源贡献
 
 学习与贡献是同一条探索路径的不同产物：源码理解进入 `notebook/frameworks/`；围绕具体改进的候选、方案、补丁、Issue/PR 与评论草稿进入 `open-source/<framework>/`。贡献材料链接学习和实验证据，便于从理解继续推进到实践。
 
@@ -83,25 +95,13 @@ AI 技术是探索范围，Infra 是优先方向。下面提供常用主题的�
 
 [其他框架与跨框架专题](notebook/frameworks/readme.md#其他框架与跨框架专题) · [跨项目贡献规划](open-source/README.md#跨项目规划与方法)
 
-## 实验与实战经验
-
-实验记录保存问题、环境、方法、结果与局限；经验来自实际执行和反馈，进一步沉淀为排错方法、工具与技能。
-
-| 兴趣点 | 入口 |
-|---|---|
-| GPU 基础性能与测量方法 | [A16 基准](notebook/experiments/gpu-a16-benchmark.md) · [A16 Profiling](notebook/experiments/gpu-profiling-a16.md) · [RTX 4090 基准](notebook/experiments/rtx4090-benchmark.md) |
-| Kernel 与推理优化 | [Triton Kernels](notebook/experiments/rtx4090-triton-kernels.md) · [KV Cache 压缩](notebook/experiments/rtx4090-kv-cache-compress.md) |
-| 训练与多卡实践 | [LoRA 微调](notebook/experiments/rtx4090-lora-finetune.md) · [多卡 DDP](notebook/experiments/rtx4090-multigpu-ddp.md) · [RLHF/GRPO](notebook/experiments/rtx4090-rlhf-grpo.md) |
-| 排错与跨框架经验 | [GRPO 排错](notebook/grpo-training-debugging-guide.md) · [跨框架问题分类](notebook/cross-framework-bug-taxonomy.md) · [CUDA Stream 生命周期问题](notebook/cuda-stream-use-after-free-pattern-family.md) |
-| 完整实验记录与规划 | [实验记录目录](notebook/experiments/) · [GPU 实验计划](notebook/gpu-experiment-plan.md) |
-
-## 论文与其他 AI 专题
+## 论文学习 & 专题研究
 
 - **论文阅读**：[完整导航](notebook/readme.md#论文精读) · [Transformer](notebook/papers/attention-is-all-you-need.md) · [DeepSeek-V3](notebook/papers/deepseek-v3.md) · [DeepSeek-R1](notebook/papers/deepseek-r1-technical-report.md) · [FlashAttention](notebook/papers/flashattention.md) · [PPO](notebook/papers/ppo.md)。
 - **数学与算法理解**：[分布式训练收敛](notebook/distributed-training-convergence-theory.md) · [MoE 数学推导](notebook/moe-architecture-mathematical-derivation.md) · [GRPO 算法综合](notebook/grpo-training-algorithm-unified-synthesis.md)。
 - **扩展方向**：[多模态](notebook/fundamentals/multimodal-vlm-deep-dive.md) · [扩散模型](notebook/fundamentals/diffusion-models-deep-dive.md) · [RAG](notebook/fundamentals/rag-systems-deep-dive.md) · [可解释性](notebook/fundamentals/mechanistic-interpretability-deep-dive.md) · [模型合并](notebook/fundamentals/model-merging-theory.md) · [持续学习](notebook/fundamentals/continual-learning-deep-dive.md)。
 
-## 工具、技能与执行材料
+## 工具沉淀 & 技能打磨
 
 [tools/readme.md](tools/readme.md) 是工具入口，说明用途、复用标准及验证范围。当前可从 [GPU 监控](tools/gpu_monitor.py)、[训练配置配方](tools/training_recipe.py) 和 [Infra 速查](tools/ai_infra_cheatsheet.py) 浏览；其余历史工具仍需逐项验收。一次性、纯实验性和低价值重复脚本归入 [tools/legacy/](tools/legacy/readme.md)，原工具索引保存在 [历史目录](tools/legacy/catalog.md)。
 
@@ -117,7 +117,7 @@ AI 技术是探索范围，Infra 是优先方向。下面提供常用主题的�
 
 这些材料支撑实际运行；实验结论及复现说明应从 [notebook/experiments/](notebook/experiments/) 查阅。
 
-## 规划、进展与工作日志
+## 规划 & 进展
 
 - [WORK.md](WORK.md)：当前用户需求、工作重点、等待条件和下一步。
 - [roadmap.md](notebook/roadmap.md)：学习与实践路线；[knowledge-map.md](notebook/knowledge-map.md)：知识关系及整体导航。
