@@ -228,7 +228,7 @@ Modes: `check` (validate config), `generate` (produce safe config), `explain` (d
 
 Usage:
 ```bash
-python3 tools/deepspeed_zero_safety_checker.py --mode check --config configs/muon_lora_zero2_rtx4090.json
+python3 tools/deepspeed_zero_safety_checker.py --mode check --config experiments/rtx4090/configs/muon_lora_zero2_rtx4090.json
 python3 tools/deepspeed_zero_safety_checker.py --mode generate --scenario lora-grpo --model qwen3-1.7b
 python3 tools/deepspeed_zero_safety_checker.py --mode explain --check-name overlap_comm_compile_nan
 ```
@@ -240,7 +240,7 @@ python3 tools/deepspeed_zero_safety_checker.py --mode explain --check-name overl
 ★★★★★★★★★ CRITICAL BUG: overlap_comm + torch.compile = NaN from step 1
 ★★★★★★★★★ Root cause: average_tensor() only waits current_stream, not ALL producer streams
 ★★★★★★★★★ RTX 4090 workaround: overlap_comm=False (zero throughput penalty on single GPU, safer)
-★★★★★★★ Muon config FIXED: overlap_comm changed from true→false in configs/muon_lora_zero2_rtx4090.json
+★★★★★★★ Muon config FIXED: overlap_comm changed from true→false in experiments/rtx4090/configs/muon_lora_zero2_rtx4090.json
 ★★★★★★★ New tool: deepspeed_zero_safety_checker.py — 7 RTX 4090 config checks
 ★★★★★★★★★ Proposed upstream fix: record IPG producer streams per bucket → reduction_stream waits all
 

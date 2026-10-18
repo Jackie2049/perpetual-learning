@@ -19,14 +19,14 @@
 - 根目录 26 个实验结果 JSON 已按主题归入 results/，同步对应脚本输出、读取路径和文档引用；入口见 [结果归档说明](results/readme.md)。
 - 首页已扩展为完整导航，包含技术主题、框架学习与贡献、实验、论文、工具、技能、规划、日志及目录职责。详细知识导航在 notebook/readme.md，原工具导航保存在 [tools/legacy/catalog.md](tools/legacy/catalog.md)。
 - 原源码目录 398 份材料中，366 份归入 notebook/frameworks/，32 份明确的贡献材料归入 open-source/；同步引用并建立框架和贡献索引。
-- 已核查 configs/：4 份 RTX 4090 DeepSpeed 训练配置，有生成器及实验脚本引用。新增 [配置说明](configs/readme.md)，暂保留路径，建议后续随对应实验收纳。
+- 4 份 RTX 4090 DeepSpeed 配置已移至 [experiments/rtx4090/configs/](experiments/rtx4090/configs/readme.md)，同步生成器、检查器、脚本及文档引用，移除根目录 configs/。
 - 已归档 9 个明确的一次性补丁或概念模拟脚本，源码保持不变；清单与原因见 [tools/legacy/readme.md](tools/legacy/readme.md)。其余历史工具尚未全面验收，保留原位置不代表正式推荐。
 - Agent 内核已写入目录职责和工具价值标准。完整变更记录见 [当日日志](diary/2026-10-18.md)。
 
 ## 待讨论与下一步
 
-1. 说明并确定两处 experiments 的关系：根目录当前仅有三个 GRPO 训练启动脚本，notebook/experiments/ 保存实验记录。暂不搬迁，等待用户决定是否整合。
-2. 随实验结构一并决定 configs/ 的归属，再同步迁移配置及调用路径；根目录 projects/ 暂不新增。源码学习目录已确定为 notebook/frameworks/。
+1. 说明并确定两处 experiments 的关系：根目录当前有三个 GRPO 训练启动脚本及 RTX 4090 配置，notebook/experiments/ 保存实验记录。暂不搬迁，等待用户决定是否整合。
+2. 实验配置按所属实验收纳；继续整理其他执行材料时沿用这一原则。根目录 projects/ 暂不新增，源码学习目录为 notebook/frameworks/。
 3. 按价值、使用关系和证据继续筛选历史工具，避免只按文件名批量归档。已知 inference_estimator.py 有带宽硬编码和吞吐展示问题，待修复验证。
 4. 目录职责确定后，确认持续运行入口、模型资源及 GPU/NPU 当前条件，从已有积累选择方向跑通接续循环。
 

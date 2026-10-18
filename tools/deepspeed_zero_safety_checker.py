@@ -21,8 +21,8 @@ Modes:
   - explain: Explain specific check in detail
 
 Usage:
-  python tools/deepspeed_zero_safety_checker.py --mode check --config configs/zero2_rtx4090.json
-  python tools/deepspeed_zero_safety_checker.py --mode check --config configs/muon_lora_zero2_rtx4090.json
+  python tools/deepspeed_zero_safety_checker.py --mode check --config experiments/rtx4090/configs/lora-grpo_rtx4090.json
+  python tools/deepspeed_zero_safety_checker.py --mode check --config experiments/rtx4090/configs/muon_lora_zero2_rtx4090.json
   python tools/deepspeed_zero_safety_checker.py --mode generate --scenario lora-grpo --model qwen3-1.7b
   python tools/deepspeed_zero_safety_checker.py --mode generate --scenario moe-autoep --model qwen3-moe-a2.5b
   python tools/deepspeed_zero_safety_checker.py --mode generate --scenario opd-distill --model qwen2.5-0.5b
@@ -33,6 +33,8 @@ import argparse
 import json
 import sys
 from pathlib import Path
+
+CONFIG_DIR = Path(__file__).resolve().parents[1] / "experiments" / "rtx4090" / "configs"
 
 # ============================================================
 # RTX 4090 specs
@@ -801,7 +803,7 @@ def main():
     if args.mode == "check":
         if not args.config:
             # Try to find any DeepSpeed config in the project
-            config_files = list(Path("configs").glob("*.json"))
+            config_files = sorted(CONFIG_DIR.glob("*.json"))
             if config_files:
                 print("No --config specified. Found configs:")
                 for cf in config_files:
@@ -809,7 +811,7 @@ def main():
                 args.config = str(config_files[0])
                 print(f"Using: {args.config}")
             else:
-                print("No --config specified and no configs/ directory found.")
+                print("No --config specified and no experiments/rtx4090/configs/ directory found.")
                 print("Usage: python tools/deepspeed_zero_safety_checker.py --mode check --config <path>")
                 sys.exit(1)
 
@@ -831,7 +833,7 @@ def main():
         # Remove metadata keys for clean JSON
         clean_config = {k: v for k, v in config.items() if not k.startswith("_")}
 
-        output_path = args.output or f"configs/{args.scenario}_rtx4090.json"
+        output_path = args.output or CONFIG_DIR / f"{args.scenario}_rtx4090.json"
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
         with open(output_path, "w") as f:
             json.dump(clean_config, f, indent=2)

@@ -98,7 +98,7 @@ python3 tools/deepspeed_zero_safety_checker.py --mode check --config <path>
 
 ```bash
 # Check config for all 7 pitfalls
-python3 tools/deepspeed_zero_safety_checker.py --mode check --config configs/your_config.json
+python3 tools/deepspeed_zero_safety_checker.py --mode check --config experiments/rtx4090/configs/your_config.json
 
 # Generate safe config
 python3 tools/deepspeed_zero_safety_checker.py --mode generate --scenario lora-grpo --model qwen3-1.7b

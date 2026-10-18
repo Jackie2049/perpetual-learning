@@ -23,6 +23,8 @@ import json
 import sys
 from pathlib import Path
 
+CONFIG_DIR = Path(__file__).resolve().parents[1] / "experiments" / "rtx4090" / "configs"
+
 # ============================================================
 # Model database
 # ============================================================
@@ -303,7 +305,7 @@ def main():
                         help="Training scenario")
     parser.add_argument("--model", choices=list(MODELS.keys()),
                         help="Model name")
-    parser.add_argument("--output", help="Output file path (default: configs/<scenario>_rtx4090.json)")
+    parser.add_argument("--output", help="Output file path (default: experiments/rtx4090/configs/<scenario>_rtx4090.json)")
     parser.add_argument("--list-scenarios", action="store_true",
                         help="List all available scenarios")
     parser.add_argument("--list-models", action="store_true",
@@ -341,7 +343,7 @@ def main():
         return
 
     # Save to file
-    output_path = args.output or f"configs/{scenario_name}_rtx4090.json"
+    output_path = args.output or CONFIG_DIR / f"{scenario_name}_rtx4090.json"
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "w") as f:
         json.dump(clean_config, f, indent=2)

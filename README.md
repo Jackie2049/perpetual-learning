@@ -88,9 +88,9 @@ AI 技术是探索范围，Infra 是优先方向。下面提供常用主题的�
 
 | 执行材料 | 当前内容 |
 |---|---|
-| [experiments/](experiments/) | 3 个 GRPO 训练启动脚本 |
+| [experiments/](experiments/) | GRPO 训练启动脚本与 RTX 4090 实验配置 |
 | [scripts/](scripts/) | 实验执行、验证与编排脚本 |
-| [configs/](configs/readme.md) | 4 份 RTX 4090 DeepSpeed 训练配置 |
+| [experiments/rtx4090/configs/](experiments/rtx4090/configs/readme.md) | 4 份 RTX 4090 DeepSpeed 训练配置 |
 | [csrc/](csrc/) | CUDA/C++ 实现与相关验证 |
 | [results/](results/readme.md) | 按训练、分布式、算子、推理和模型架构归档的实验结果 |
 
@@ -123,9 +123,9 @@ AI 技术是探索范围，Infra 是优先方向。下面提供常用主题的�
 | [open-source/](open-source/) | 按目标开源项目保存贡献材料 | [各项目贡献索引](open-source/README.md#按项目浏览) |
 | [open-source/SOP.md](open-source/SOP.md) | 贡献工作方法 | 候选发现、分析与推进流程 |
 | [diary/](diary/) | 按日期记录实际工作 | [日志总览](diary/readme.md) |
-| [experiments/](experiments/) | 历史训练启动脚本 | [与实验记录的关系](#尚待整合的执行材料) |
+| [experiments/](experiments/) | 训练启动脚本与实验配置 | [与实验记录的关系](#尚待整合的执行材料) |
 | [scripts/](scripts/) | 执行、验证与编排脚本 | [执行材料说明](#工具技能与执行材料) |
-| [configs/](configs/) | 历史训练配置 | [配置说明](configs/readme.md) |
+| [experiments/rtx4090/configs/](experiments/rtx4090/configs/) | RTX 4090 训练配置 | [配置说明](experiments/rtx4090/configs/readme.md) |
 | [csrc/](csrc/) | CUDA/C++ 实现与验证 | [执行材料说明](#工具技能与执行材料) |
 | [results/](results/) | 实验原始结果 | [结果归档说明](results/readme.md) |
 | [.claude/skills/](.claude/skills/) | 已有 Agent 技能 | [技能入口](#工具技能与执行材料) |
@@ -134,9 +134,9 @@ AI 技术是探索范围，Infra 是优先方向。下面提供常用主题的�
 
 ### 尚待整合的执行材料
 
-根目录 `experiments/` 保存实验启动脚本，`notebook/experiments/` 保存实验记录，二者分别回答“怎么运行”和“运行后学到了什么”。执行材料还分散在 scripts、tools、configs 等位置，后续应围绕具体实验建立关联，再确定是否统一收纳。
+根目录 `experiments/` 保存实验启动脚本及配置，`notebook/experiments/` 保存实验记录，二者分别回答“怎么运行”和“运行后学到了什么”。执行材料还分散在 scripts、tools 等位置，后续应围绕具体实验建立关联，再确定是否统一收纳。
 
-`configs/` 当前只保存训练实验配置，文件有保留价值，但无需长期作为独立一级板块；建议随对应实验一起组织。由于脚本和笔记已有调用，暂保留路径，待实验材料结构确定后统一迁移。
+RTX 4090 的 4 份 DeepSpeed 配置已收纳至 [experiments/rtx4090/configs/](experiments/rtx4090/configs/readme.md)，相关脚本和生成器同步使用新位置。后续实验配置随对应实验组织，不再设置根目录 configs/。
 
 根目录尚无 `projects/`，目前不预建；未来有需要独立维护的自营项目时，再决定放在本仓库还是独立仓库。框架源码学习统一使用 `notebook/frameworks/`。
 

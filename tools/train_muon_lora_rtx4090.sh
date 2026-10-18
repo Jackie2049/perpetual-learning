@@ -77,8 +77,8 @@ echo ""
 # ============================================================
 
 # Create DeepSpeed config
-DS_CONFIG="$PROJECT_DIR/configs/muon_lora_zero2_rtx4090.json"
-mkdir -p "$PROJECT_DIR/configs"
+DS_CONFIG="$PROJECT_DIR/experiments/rtx4090/configs/muon_lora_zero2_rtx4090.json"
+mkdir -p "$PROJECT_DIR/experiments/rtx4090/configs"
 
 cat > "$DS_CONFIG" << 'JSONEOF'
 {
@@ -183,7 +183,7 @@ echo "============================================================"
 TRAIN_CMD="deepspeed --num_gpus=1 train.py \
     --model_name_or_path $MODEL_PATH \
     --lora_rank $LORA_RANK \
-    --lora_config_path configs/lora_rtx4090.json \
+    --lora_config_path experiments/rtx4090/configs/lora_rtx4090.json \
     --deepspeed $DS_CONFIG \
     --gradient_clipping 1.0 \
     --bf16 \

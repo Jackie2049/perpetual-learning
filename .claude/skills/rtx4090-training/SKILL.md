@@ -98,7 +98,7 @@ CRITICAL: Run `python3 tools/deepspeed_zero_safety_checker.py --mode check --con
 4. **FP8 on SM89** → Fix: Use INT8 KV (FlashInfer) or Triton FP8 (#43914), NOT compressed-tensors
 5. **bf16+fp16 both enabled** → Fix: Choose bf16 only (SM89 native)
 
-Generated safe configs: configs/lora-grpo_rtx4090.json, configs/moe-autoep_rtx4090.json, configs/opd-distill_rtx4090.json, configs/muon_lora_zero2_rtx4090.json
+Generated safe configs: experiments/rtx4090/configs/lora-grpo_rtx4090.json, experiments/rtx4090/configs/moe-autoep_rtx4090.json, experiments/rtx4090/configs/opd-distill_rtx4090.json, experiments/rtx4090/configs/muon_lora_zero2_rtx4090.json
 
 Config generator tool:
 ```

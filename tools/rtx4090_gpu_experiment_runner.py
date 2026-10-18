@@ -55,7 +55,7 @@ EXPERIMENTS = {
     "p6": {
         "name": "AutoEP MoE Smoke Test",
         "priority": "UNIQUE — ONLY framework supporting MoE on RTX 4090",
-        "script": "deepspeed --num_gpus=1 train.py --deepspeed configs/moe-autoep_rtx4090.json",
+        "script": "deepspeed --num_gpus=1 train.py --deepspeed experiments/rtx4090/configs/moe-autoep_rtx4090.json",
         "output": "autoep_moe_smoke_test.log",
         "description": "Verify Qwen3-MoE AutoEP training starts without OOM",
         "estimated_time": "10-20 min (just boot + 5 steps)",

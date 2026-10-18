@@ -41,10 +41,10 @@
 ## P6 (UNIQUE): AutoEP MoE Smoke Test
 ★★★★★★★★★ DeepSpeed AutoEP EP=1 → MoE on single GPU → ONLY framework supporting this!
 - **目的**: 验证 Qwen3-MoE AutoEP training 在 RTX 4090 上可启动不OOM
-- **脚本**: `tools/deepspeed_config_generator.py --scenario moe-autoep --model qwen3-moe --output configs/moe-autoep_rtx4090.json` → deepspeed --num_gpus=1 train.py
+- **脚本**: `tools/deepspeed_config_generator.py --scenario moe-autoep --model qwen3-moe --output experiments/rtx4090/configs/moe-autoep_rtx4090.json` → deepspeed --num_gpus=1 train.py
 - **配置**: ZeRO-2 + CPU_Adam + overlap_comm=False + gradient_clipping=1.0 + auto_ep_preset=Qwen3-MoE
 - **指标**: 是否成功启动, peak GPU memory, 训练 step time
-- **状态**: CONFIG READY (configs/moe-autoep_rtx4090.json), 等待GPU
+- **状态**: CONFIG READY (experiments/rtx4090/configs/moe-autoep_rtx4090.json), 等待GPU
 
 ## P5: Muon+LoRA Training Experiment
 ★★★★★ Muon optimizer experimental → 需要与 AdamW baseline 比较收敛

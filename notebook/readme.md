@@ -20,7 +20,7 @@
 - 笔记写清学习目标、核心理解、来源与适用版本；区分资料结论、自己的推断和已验证的事实。
 - 源码笔记链接实际代码位置与版本，贡献方案及进展放在 [open-source/](../open-source/README.md)。
 - 实验笔记说明问题、环境、命令、结果、结论及局限，并链接脚本和必要结果文件；真实实践的经验先跟随实验保存。
-- 根目录 [experiments/](../experiments/) 当前是三个训练启动脚本，与这里的实验记录用途不同；两处后续是否合并仍待讨论。
+- 根目录 [experiments/](../experiments/) 保存训练启动脚本及 [RTX 4090 配置](../experiments/rtx4090/configs/readme.md)，与这里的实验记录用途不同；两处后续是否合并仍待讨论。
 - 可复用工具见 [tools/](../tools/readme.md)，历史实验性脚本见 [tools/legacy/](../tools/legacy/readme.md)。
 
 ## 已有内容导航

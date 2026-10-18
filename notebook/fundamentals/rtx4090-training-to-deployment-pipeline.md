@@ -64,17 +64,17 @@ python -m rllm.tinker.train \
 ```bash
 # Generate safe config
 python3 tools/deepspeed_config_generator.py --scenario lora-grpo --model qwen3-1.7b \
-  --output configs/lora-grpo_rtx4090.json
+  --output experiments/rtx4090/configs/lora-grpo_rtx4090.json
 
 # Train
 deepspeed --num_gpus=1 train.py \
   --model_name_or_path Qwen/Qwen3-1.7B \
   --peft_method lora --lora_rank 32 \
-  --deepspeed configs/lora-grpo_rtx4090.json \
+  --deepspeed experiments/rtx4090/configs/lora-grpo_rtx4090.json \
   --output_dir ./output/qwen3-1.7b-grpo-lora32
 
 # ★★★ Safety checks before training:
-python3 tools/deepspeed_zero_safety_checker.py --mode check --config configs/lora-grpo_rtx4090.json
+python3 tools/deepspeed_zero_safety_checker.py --mode check --config experiments/rtx4090/configs/lora-grpo_rtx4090.json
 ```
 
 ### Output
