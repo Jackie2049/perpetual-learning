@@ -10,24 +10,45 @@
 - **技术秘书**：优先承接用户的需求与模糊想法，通过尽调、综述、价值与风险分析、概念验证和实际执行推进目标。
 - **经验沉淀**：从真实运行及其反馈中积累可复用经验，逐步转化为知识、工具和技能，增强后续工作的能力。
 
-## 项目导航
+当前处于保留积累、整理结构与重构运作模式的阶段，持续运行尚未重启。历史笔记中的性能、验证范围、硬件状态与上游进展以原文时间和条件为准，具体工作安排见 [WORK.md](WORK.md)。
 
-README 是整个项目的总入口。可以按下面的问题进入，也可以直接按技术主题或框架查找。各板块总览维护更完整的内容索引。
+## 文件组织结构
 
-| 我想了解…… | 从这里进入 |
-|---|---|
-| 引擎如何工作、遵循什么原则 | [Agent 内核](AGENTS.md) |
-| 现在在做什么、接下来推进什么 | [当前工作上下文](WORK.md) |
-| 有哪些知识积累、如何继续学习 | [笔记总览](notebook/readme.md) · [知识地图](notebook/knowledge-map.md) · [学习路线](notebook/roadmap.md) |
-| 某个框架如何实现 | [框架源码索引](notebook/frameworks/readme.md) · [下方框架导航](#框架学习与开源贡献) |
-| 有哪些可贡献的技术点、准备到哪一步 | [贡献总览](open-source/README.md) · [贡献方法](open-source/SOP.md) |
-| 做过哪些实验、得出了什么结论 | [实验记录](notebook/experiments/) · [下方实验导航](#实验与实战经验) |
-| 有什么工具可以复用 | [工具总览](tools/readme.md) · [历史脚本](tools/legacy/readme.md) |
-| 学过哪些论文与 AI 专题 | [论文导航](notebook/readme.md#论文精读) · [下方专题导航](#论文与其他-ai-专题) |
-| 积累了什么工作方法与经验 | [技能入口](#工具技能与执行材料) · [问题模式](notebook/cross-framework-bug-taxonomy.md) · [工作日志](diary/readme.md) |
-| 文件应该放在哪里 | [文件组织结构](#文件组织结构) |
+这里是整个项目的统一入口：点击路径浏览文件，点击总览查看对应板块的内容导航与使用说明。
 
-当前处于保留积累、整理结构与重构运作模式的阶段，持续运行尚未重启。历史笔记中的性能、验证范围、硬件状态与上游进展以原文时间和条件为准，具体工作安排见 WORK.md。
+| 路径 | 职责 | 总览与索引 |
+|---|---|---|
+| [README.md](README.md) | 项目总览、对外呈现与完整导航 | 本页 |
+| [AGENTS.md](AGENTS.md) | Agent 内核 | 工作原则、行为方式与执行边界 |
+| [WORK.md](WORK.md) | 当前工作上下文 | 当前需求、进展与下一步 |
+| [notebook/](notebook/) | 技术学习笔记 | [笔记总览](notebook/readme.md) |
+| [notebook/fundamentals/](notebook/fundamentals/) | 基础知识 | [技术主题导航](#技术知识导航) |
+| [notebook/frameworks/](notebook/frameworks/) | 框架架构与源码理解 | [框架索引](notebook/frameworks/readme.md) · [学习与贡献导航](#框架学习与开源贡献) |
+| [notebook/experiments/](notebook/experiments/) | 实验记录与结论 | [实验导航](#实验与实战经验) |
+| [notebook/papers/](notebook/papers/) | 论文阅读 | [论文索引](notebook/readme.md#论文精读) · [其他 AI 专题](#论文与其他-ai-专题) |
+| [notebook/roadmap.md](notebook/roadmap.md) | 学习与实践规划 | 学习路线与探索方向 |
+| [notebook/knowledge-map.md](notebook/knowledge-map.md) | 知识整理与总览 | 知识关系与整体导航 |
+| [tools/](tools/) | 可复用工具 | [工具总览](tools/readme.md) |
+| [tools/legacy/](tools/legacy/) | 一次性、纯实验性或低价值重复脚本 | [归档说明](tools/legacy/readme.md) · [历史目录](tools/legacy/catalog.md) |
+| [open-source/](open-source/) | 按目标开源项目保存贡献材料 | [各项目贡献索引](open-source/README.md#按项目浏览) |
+| [open-source/SOP.md](open-source/SOP.md) | 贡献工作方法 | 候选发现、分析与推进流程 |
+| [diary/](diary/) | 按日期记录实际工作 | [日志总览](diary/readme.md) |
+| [experiments/](experiments/) | 训练启动脚本与实验配置 | [与实验记录的关系](#尚待整合的执行材料) |
+| [scripts/](scripts/) | 执行、验证与编排脚本 | [执行材料说明](#工具技能与执行材料) |
+| [experiments/rtx4090/configs/](experiments/rtx4090/configs/) | RTX 4090 训练配置 | [配置说明](experiments/rtx4090/configs/readme.md) |
+| [csrc/](csrc/) | CUDA/C++ 实现与验证 | [执行材料说明](#工具技能与执行材料) |
+| [results/](results/) | 实验原始结果 | [结果归档说明](results/readme.md) |
+| [.claude/skills/](.claude/skills/) | 已有 Agent 技能 | [技能入口](#工具技能与执行材料) |
+
+主要板块按职责组织，同一项成果维护一个主要位置，通过链接串起学习、实践与贡献。原根目录的 26 个实验结果 JSON 已按主题归入 results/；其他已有专题与环境文件保留原位。
+
+### 尚待整合的执行材料
+
+根目录 `experiments/` 保存实验启动脚本及配置，`notebook/experiments/` 保存实验记录，二者分别回答“怎么运行”和“运行后学到了什么”。执行材料还分散在 scripts、tools 等位置，后续应围绕具体实验建立关联，再确定是否统一收纳。
+
+RTX 4090 的 4 份 DeepSpeed 配置已收纳至 [experiments/rtx4090/configs/](experiments/rtx4090/configs/readme.md)，相关脚本和生成器同步使用新位置。后续实验配置随对应实验组织，不再设置根目录 configs/。
+
+根目录尚无 `projects/`，目前不预建；未来有需要独立维护的自营项目时，再决定放在本仓库还是独立仓库。框架源码学习统一使用 `notebook/frameworks/`。
 
 ## 技术知识导航
 
@@ -101,44 +122,6 @@ AI 技术是探索范围，Infra 是优先方向。下面提供常用主题的�
 - [WORK.md](WORK.md)：当前用户需求、工作重点、等待条件和下一步。
 - [roadmap.md](notebook/roadmap.md)：学习与实践路线；[knowledge-map.md](notebook/knowledge-map.md)：知识关系及整体导航。
 - [diary/readme.md](diary/readme.md)：按日期浏览实际工作、发现、失败与成果入口。
-
-## 文件组织结构
-
-点击路径浏览文件，点击总览查看对应板块的内容导航与使用说明。
-
-| 路径 | 职责 | 总览与索引 |
-|---|---|---|
-| [README.md](README.md) | 项目总览、对外呈现与完整导航 | 本页 |
-| [AGENTS.md](AGENTS.md) | Agent 内核 | 工作原则、行为方式与执行边界 |
-| [WORK.md](WORK.md) | 当前工作上下文 | 当前需求、进展与下一步 |
-| [notebook/](notebook/) | 技术学习笔记 | [笔记总览](notebook/readme.md) |
-| [notebook/fundamentals/](notebook/fundamentals/) | 基础知识 | [技术主题导航](#技术知识导航) |
-| [notebook/frameworks/](notebook/frameworks/) | 框架架构与源码理解 | [框架索引](notebook/frameworks/readme.md) |
-| [notebook/experiments/](notebook/experiments/) | 实验记录与结论 | [实验导航](#实验与实战经验) |
-| [notebook/papers/](notebook/papers/) | 论文阅读 | [论文索引](notebook/readme.md#论文精读) |
-| [notebook/roadmap.md](notebook/roadmap.md) | 学习与实践规划 | 学习路线与探索方向 |
-| [notebook/knowledge-map.md](notebook/knowledge-map.md) | 知识整理与总览 | 知识关系与整体导航 |
-| [tools/](tools/) | 可复用工具 | [工具总览](tools/readme.md) |
-| [tools/legacy/](tools/legacy/) | 一次性、纯实验性或低价值重复脚本 | [归档说明](tools/legacy/readme.md) · [历史目录](tools/legacy/catalog.md) |
-| [open-source/](open-source/) | 按目标开源项目保存贡献材料 | [各项目贡献索引](open-source/README.md#按项目浏览) |
-| [open-source/SOP.md](open-source/SOP.md) | 贡献工作方法 | 候选发现、分析与推进流程 |
-| [diary/](diary/) | 按日期记录实际工作 | [日志总览](diary/readme.md) |
-| [experiments/](experiments/) | 训练启动脚本与实验配置 | [与实验记录的关系](#尚待整合的执行材料) |
-| [scripts/](scripts/) | 执行、验证与编排脚本 | [执行材料说明](#工具技能与执行材料) |
-| [experiments/rtx4090/configs/](experiments/rtx4090/configs/) | RTX 4090 训练配置 | [配置说明](experiments/rtx4090/configs/readme.md) |
-| [csrc/](csrc/) | CUDA/C++ 实现与验证 | [执行材料说明](#工具技能与执行材料) |
-| [results/](results/) | 实验原始结果 | [结果归档说明](results/readme.md) |
-| [.claude/skills/](.claude/skills/) | 已有 Agent 技能 | [技能入口](#工具技能与执行材料) |
-
-主要板块按职责组织，同一项成果维护一个主要位置，通过链接串起学习、实践与贡献。原根目录的 26 个实验结果 JSON 已按主题归入 results/；其他已有专题与环境文件保留原位。
-
-### 尚待整合的执行材料
-
-根目录 `experiments/` 保存实验启动脚本及配置，`notebook/experiments/` 保存实验记录，二者分别回答“怎么运行”和“运行后学到了什么”。执行材料还分散在 scripts、tools 等位置，后续应围绕具体实验建立关联，再确定是否统一收纳。
-
-RTX 4090 的 4 份 DeepSpeed 配置已收纳至 [experiments/rtx4090/configs/](experiments/rtx4090/configs/readme.md)，相关脚本和生成器同步使用新位置。后续实验配置随对应实验组织，不再设置根目录 configs/。
-
-根目录尚无 `projects/`，目前不预建；未来有需要独立维护的自营项目时，再决定放在本仓库还是独立仓库。框架源码学习统一使用 `notebook/frameworks/`。
 
 ## GitHub
 
