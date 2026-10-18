@@ -2,7 +2,7 @@
 
 > Issue: [volcengine/verl#7163](https://github.com/volcengine/verl/issues/7163)
 > 标签：bug
-> 状态：`verified-works`（signal 继承机制在 Linux fork 复现 + patch 验证）
+> 状态：~~`verified-works`（signal 继承机制在 Linux fork 复现 + patch 验证）~~ → **2026-10-19 已作废**：reporter 本人已提交 [#7164](https://github.com/verl-project/verl/pull/7164)（未合并）。本地材料保留作参考，不再提交。
 > 首次发现：2026-08-04
 > **竞争风险：低** — 0 评论、0 assignee、reporter `mikequan0425` 未认领修复
 

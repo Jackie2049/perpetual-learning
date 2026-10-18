@@ -2,7 +2,7 @@
 
 > Issue: [volcengine/verl#6830](https://github.com/volcengine/verl/issues/6830)
 > 标签：**bug + help wanted**（官方邀请社区修复）
-> 状态：`verified-works`（根因确认 + 本地复现 TypeError + patch 5 项测试全过）
+> 状态：~~`verified-works`（根因确认 + 本地复现 TypeError + patch 5 项测试全过）~~ → **2026-10-19 已作废**：上游已有 [#6845](https://github.com/verl-project/verl/pull/6845)/[#7151](https://github.com/verl-project/verl/pull/7151)/[#7588](https://github.com/verl-project/verl/pull/7588) 三个覆盖 PR（均未合并），#6845 实现与本地 patch 等价。本地材料保留作参考，不再提交。
 > 首次发现：2026-08-04
 > **竞争风险：极低** — 0 评论、0 assignee、`help wanted`（与 #7213 作者自认领不同）
 

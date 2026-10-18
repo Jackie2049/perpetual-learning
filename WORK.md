@@ -10,7 +10,7 @@
 
 - 状态：持续运行中（/loop 30m，会话级 job 486bb920，7 天后过期；退出会话后不自动恢复）。
 - 待执行的用户任务：无；当前没有已登记、等待自主运行处理的用户需求。
-- 自主探索任务：工具质量（WORK.md 待办第 3 项）起步，已完成 inference_estimator.py；下一轮从 open-source 候选核验与 roadmap 课题中选题。
+- 自主探索任务：工具质量起步已完成 inference_estimator.py；verl 旧候选核验已完成（4 个 VERIFIED-WORKS 全部被上游他人 PR 覆盖，作废不提交；3 个备选 #6690/#7146/#6700 提升为当前活跃）。
 - 下一步：见下方「待讨论与下一步」。
 - 运行范围：当前 Agent 会话；未配置进程退出后的自动唤起。
 
@@ -43,7 +43,7 @@
 ## 接续入口与约束
 
 - 学习与探索：[notebook/readme.md](notebook/readme.md)、[roadmap.md](notebook/roadmap.md)、[knowledge-map.md](notebook/knowledge-map.md)。尚未选定重启后的具体课题。
-- 贡献：[open-source/README.md](open-source/README.md)、[verl tracker](open-source/verl/tracker.md)。旧候选需核对当前上游状态与本地证据。
+- 贡献：[open-source/README.md](open-source/README.md)、[verl tracker](open-source/verl/tracker.md)。verl 旧候选已核验作废，当前活跃为 #6690（resume offload 崩溃，诊断最充分，优先深挖）；vLLM 6 月评论草稿尚未核验当前状态。
 - 本地目录仍为 rollout-infra，应用侧栏仍显示 RolloutInfra；保留现有路径与绑定。GitHub 仓库已更名为 [perpetual-learning](https://github.com/Jackie2049/perpetual-learning)。
 - 原有未跟踪文件 diary/2026-08-14.md 属于既有用户工作，保留原状，不夹带提交。
 - 历史服务器状态、访问方式和“已验证”结论按需复核，不复述凭据。

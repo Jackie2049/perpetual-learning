@@ -2,7 +2,7 @@
 
 > Issue: [volcengine/verl#6786](https://github.com/volcengine/verl/issues/6786)
 > 标签：bug
-> 状态：`verified-works`（纯逻辑复现 + even 切分 patch 4 用例验证 + merge 安全确认）
+> 状态：~~`verified-works`（纯逻辑复现 + even 切分 patch 4 用例验证 + merge 安全确认）~~ → **2026-10-19 已作废**：上游已有 [#6869](https://github.com/verl-project/verl/pull/6869)（even 切分 + 新 seqlen_balancing.py，未合并），方案与本地 patch 一致。本地材料保留作参考，不再提交。
 > 首次发现：2026-08-04
 > **竞争风险：低** — 0 评论、0 assignee、reporter `liujia-cc` 未认领修复
 
