@@ -107,6 +107,7 @@
 - [PPO](papers/ppo.md) — L^{CLIP}, RLHF 核心算法, GRPO 简化版
 - [GMPO](papers/gmpo.md) — 几何均值抑制 ratio 离群, 论文-vs-verl 实现对照 (clip 空间语义差异发现)
 - [GSPO](papers/gspo.md) — 序列级 importance ratio + 组归一优势, verl 示例 ε=3e-4 极紧窗发现
+- [SAPO](papers/sapo.md) — sech² 平滑门替代硬裁剪, 非对称温度 τ_neg>τ_pos, Qwen3-VL 实战
 - [GPT-4](papers/gpt4.md) — 可预测扩展, RLHF 无损, RBRMs 安全
 - [Mamba](papers/mamba.md) — 选择性 SSM, 线性时间, 2.8B 匹配 GPT-J-6B
 - [Top-nσ](papers/top-n-sigma.md) — ACL 2025, logit 空间统计阈值, 温度稳定性 1.00x
