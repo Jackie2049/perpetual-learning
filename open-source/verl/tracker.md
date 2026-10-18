@@ -5,7 +5,15 @@
 
 ## 当前活跃
 
-**（2026-10-19 核验后清空）** 8 个候选全部失效，见下两节。需要新候选时按 SOP 重新扫描。
+**（2026-10-19 全新扫描后重建）** 扫描报告见 [scan-1019-1140.md](scan-1019-1140.md)。注意：全新 issue 认领窗口 ≈ 0-2 天，核验+验证+授权需尽快。
+
+| # | 候选 | 类别 | 性价比 | PR | 状态 | 首次发现 |
+|---|---|---|---|---|---|---|
+| 0 | megatron `optimizer_offload_fraction<1` 首轮 update 崩溃 (#8237) | P0 | 42 | — | **analysis-done**：根因确认（offload 无条件 `to("cpu")` 破坏 GPU FusedAdam 设备语义），patch 已拟待 GPU 验证；0 引用 PR | 2026-10-19 |
+| 1 | Triton fused kernels 在 `use_remove_padding=False` 崩溃 (#8089) | P0 | 25 | — | 0 引用 PR，未深挖 | 2026-10-19 |
+| 2 | Fused Megatron LM-head 遗留 AllGather pending (#8028) | P0 | 21 | — | 0 引用 PR，未深挖 | 2026-10-19 |
+| 3 | GMPO geo_mean 损失随 minibatch 切分变化 (#7913) | P1 | 20 | — | 0 引用 PR，未深挖 | 2026-10-19 |
+| 4 | 等长 batch 3D mRoPE position_ids 不一致 (#7899) | P1 | 16 | — | 0 引用 PR，未深挖 | 2026-10-19 |
 
 ## 已被上游他人 PR 覆盖（2026-10-19 查重核验）
 
