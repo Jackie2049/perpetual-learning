@@ -1,8 +1,8 @@
 # Candidate: megatron optimizer_offload_fraction < 1 崩溃 (#8237)
 
 > Issue: [verl-project/verl#8237](https://github.com/verl-project/verl/issues/8237)
-> 标签：bug；创建 2026-10-14；0 评论；**0 个引用 PR（查重 2026-10-19 确认无人认领）**
-> 状态：`analysis-done`（根因确认，patch 方案已拟，待代码验证 + 用户授权）
+> 标签：bug；创建 2026-10-14；0 评论；**0 个引用 PR（2026-10-19 复查重确认：可解析 total_count=0，真实无人认领）**
+> 状态：`analysis-done`（根因确认 + **代码级验证完成**，patch 方案已拟，待 GPU 验证 + 用户授权）
 
 ## 0. 为什么值得做
 
@@ -66,11 +66,16 @@ for optimizer in hdo.sub_optimizers:
 
 注：`hdo.defaults` 存在性需在环境确认（`defaults` 是 HDO 构造属性，源码 `hybrid_optimizer.py` 可见）。`master_param`（use_precision_aware_optimizer）随同处理：只搬 CPU 子优化器自己的 master_param。
 
-## 4. 验证计划
+## 4. 验证
 
-1. **代码级**：本地 Megatron-LM 源码核对 HDO `defaults["cpu_optimizer_cls"]` 与 sub_optimizers 组成（fraction<1 时 GPU 子优化器是否有参）。
-2. **环境级**：有 GPU 服务器时用 verl megatron 单卡/小模型复现 fraction=0.5 崩溃 → 打 patch → 跑 2-3 步验证不再崩。当前 GPU 条件未确认，暂缓。
-3. 0.0 分支的"move 本身报错"需 reporter logs 确认触发点，patch 若未覆盖 0.0 需在 issue 说明。
+- **代码级（2026-10-19 完成，本地 Megatron-LM hybrid_optimizer.py 逐行核对）**：
+  - `sub_optimizers` 为属性（:466）：`cpu_optimizers + [gpu_optimizer]`（gpu 为 None 时仅 cpu 列表）。
+  - fraction<1 时参组划分（`_get_sub_optimizer_param_groups`：按 numel 顺序 offload 前 fraction 到 CPU pin_memory 副本）→ **cpu_optimizers 与 gpu_optimizer（GPUAdam/FusedAdam）各有参**，二者并存。✓ patch 的 `is_cpu_opt` 判定有效。
+  - fraction=1.0：gpu_optimizer=None → sub_optimizers 全为 CPU 优化器 → 现代码 no-op 移动，正常（与 issue 观察一致）。
+  - fraction=0.0：offload_threshold=0 → 全部留在 GPU，cpu_optimizers 空 → 现代码把所有 GPU 状态搬 CPU → 崩溃（0.0 具体报错点需 reporter logs；patch 侧绕开：**不搬任何状态**，ckpt save 直接处理 GPU 驻留状态——非 offload 训练本就如此，合法）。
+  - `defaults["cpu_optimizer_cls"]` 存在（:59-62 构造时写入）。✓
+  - overlap_cpu_optimizer_d2h_h2d=True 时 cpu_optimizers 为**列表**（build_cpu_optimizer_list）→ 循环语义正确。✓
+- GPU 级（待做）：有 GPU 服务器时用 verl megatron 单卡/小模型复现 fraction=0.5 崩溃 → 打 patch → 跑 2-3 步验证不再崩。当前 GPU 条件未确认，暂缓。
 
 ## 5. 备选方案（reporter 提出）
 
