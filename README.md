@@ -97,9 +97,28 @@ AI 技术是探索范围，Infra 是优先方向。下面提供常用主题的�
 
 ## 工具沉淀 & 技能打磨
 
-[tools/readme.md](tools/readme.md) 是工具入口，说明用途、复用标准及验证范围。当前可从 [GPU 监控](tools/gpu_monitor.py)、[训练配置配方](tools/training_recipe.py) 和 [Infra 速查](tools/ai_infra_cheatsheet.py) 浏览，使用方法与验证范围见工具总览。一次性、纯实验性和低价值重复脚本归入 [tools/legacy/](tools/legacy/readme.md)，原工具索引保存在 [历史目录](tools/legacy/catalog.md)。
+把实战中可复用的实现沉淀为工具，把解决问题的方法整理为 Agent 技能。
 
-已有 Agent 技能保存在 [.claude/skills/](.claude/skills/)，包括 [GPU 实验](.claude/skills/gpu-experiment/SKILL.md)、[GRPO 排错](.claude/skills/grpo-debug/SKILL.md)、[推理性能](.claude/skills/inference-perf/SKILL.md)、[分布式训练导航](.claude/skills/distributed-nav/SKILL.md)、[权重同步](.claude/skills/weight-sync-nav/SKILL.md) 等。它们记录历史工作方法，使用时需适配当前执行环境。
+### 工具
+
+| 工具 | 用途 |
+|---|---|
+| [GPU 监控](tools/gpu_monitor.py) | 采集 GPU 状态，记录与分析监控日志 |
+| [训练配置配方](tools/training_recipe.py) | 根据输入生成训练配置与启动命令 |
+| [Infra 速查](tools/ai_infra_cheatsheet.py) | 按主题查阅常用命令 |
+
+[工具总览与使用说明](tools/readme.md)
+
+### 技能
+
+| 场景 | 技能入口 |
+|---|---|
+| 实验执行 | [GPU 实验](.claude/skills/gpu-experiment/SKILL.md) · [RTX 4090 训练](.claude/skills/rtx4090-training/SKILL.md) |
+| 训练排错 | [GRPO 排错](.claude/skills/grpo-debug/SKILL.md) · [跨框架问题规避](.claude/skills/cross-framework-avoidance/SKILL.md) |
+| 推理分析 | [性能与显存估算](.claude/skills/inference-perf/SKILL.md) |
+| 分布式与通信 | [分布式训练](.claude/skills/distributed-nav/SKILL.md) · [RDMA 网络](.claude/skills/rdma-network-nav/SKILL.md) · [权重同步](.claude/skills/weight-sync-nav/SKILL.md) |
+| 源码导航 | [vLLM](.claude/skills/vllm-v1-nav/SKILL.md) · [SGLang](.claude/skills/sglang-nav/SKILL.md) · [Megatron](.claude/skills/megatron-nav/SKILL.md) |
+| 专题研究 | [可解释性](.claude/skills/interpretability-nav/SKILL.md) · [模型合并](.claude/skills/model-merging-nav/SKILL.md) |
 
 ## 规划 & 进展
 
