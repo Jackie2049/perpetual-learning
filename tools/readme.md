@@ -21,6 +21,7 @@
 | [gpu_monitor.py](gpu_monitor.py) | GPU 状态监控、CSV 日志及分析 | Python、NVIDIA nvidia-smi；本次仅检查 CLI 帮助，未连接 GPU |
 | [training_recipe.py](training_recipe.py) | 根据输入生成训练配置和启动命令 | Python；本次仅检查 CLI 帮助，生成命令仍需对应框架验证 |
 | [ai_infra_cheatsheet.py](ai_infra_cheatsheet.py) | 按主题查阅常用命令 | Python；历史命令需结合当前环境核对 |
+| [inference_estimator.py](inference_estimator.py) | LLM 推理性能估算（显存/吞吐/延迟） | Python；数值为估算，基于 50% 计算利用率与 60% 带宽利用率假设，非实测 |
 
 示例（在项目根目录执行）：
 
@@ -34,6 +35,6 @@ python3 tools/training_recipe.py --help
 - 本次将 7 个特定 issue/环境的一次性补丁脚本、2 个基于预设参数的概念模拟脚本移入 legacy，保留原内容。
 - [历史工具导航](legacy/catalog.md) 保留旧 README 的索引，方便找回已有材料。
 - 根目录其余历史脚本仍需按用途、依赖和证据逐项检查；留在原位不代表已通过上述价值标准。不要仅凭 `simulator`、`benchmark` 等文件名批量判定质量。
-- [inference_estimator.py](inference_estimator.py) 已发现单请求带宽硬编码和单流吞吐展示口径问题，修复并验证前不纳入推荐入口。
+- [inference_estimator.py](inference_estimator.py) 已修复单请求带宽硬编码（`30 GB/s` 改为按 GPU HBM 规格）和吞吐展示口径（区分最大 batch 的每步耗时、bs=1 单流吞吐、理论带宽极限），新增 `--batch` 与 h20/rtx4090 规格；已按 A100/H20/RTX 4090 多配置验证输出合理性。
 
 实验结论与实战经验记录在 [notebook/experiments/](../notebook/experiments/)，与代码互相链接。后续若将 legacy 内容升级为正式工具，需要补齐复用场景、接口和验证证据。

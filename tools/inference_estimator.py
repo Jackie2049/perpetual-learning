@@ -8,6 +8,7 @@ LLM 推理性能估算器
 用法:
     python inference_estimator.py --model llama-7b --gpu a100-80gb
     python inference_estimator.py --params 70 --hidden 8192 --layers 80 --kv-heads 8 --gpu a100-80gb
+    python inference_estimator.py --model llama-7b --gpu a100-80gb --batch 8
 """
 
 import argparse
@@ -22,8 +23,10 @@ GPU_SPECS = {
     "a100-80gb": {"memory_gb": 80, "fp16_tflops": 312, "hbm_bw_gbs": 2039, "nvlink_bw_gbs": 600},
     "h100-sxm":  {"memory_gb": 80, "fp16_tflops": 990, "hbm_bw_gbs": 3350, "nvlink_bw_gbs": 900},
     "h200":      {"memory_gb": 141, "fp16_tflops": 990, "hbm_bw_gbs": 4800, "nvlink_bw_gbs": 900},
+    "h20":       {"memory_gb": 96, "fp16_tflops": 148, "hbm_bw_gbs": 4000, "nvlink_bw_gbs": 900},
     "a16":       {"memory_gb": 16, "fp16_tflops": 14.7, "hbm_bw_gbs": 300, "nvlink_bw_gbs": 0},
     "l40s":      {"memory_gb": 48, "fp16_tflops": 362, "hbm_bw_gbs": 864, "nvlink_bw_gbs": 0},
+    "rtx4090":   {"memory_gb": 24, "fp16_tflops": 165, "hbm_bw_gbs": 1008, "nvlink_bw_gbs": 0},
 }
 
 # 模型规格
@@ -57,7 +60,8 @@ class EstimateResult:
 
     # Performance
     prefill_time_ms: float
-    decode_time_per_token_ms: float
+    decode_step_ms: float            # 最大 batch 下每步耗时（含整批 KV 读取）
+    single_stream_decode_ms: float   # bs=1 每 token 耗时（仅权重 + 单序列 KV）
     decode_bandwidth_limited_tok_s: float
 
     # Batch analysis
@@ -78,6 +82,8 @@ def estimate_inference(
     dtype: str = "fp16",
     gpu_util: float = 0.9,
     max_batch: int = 0,
+    prefill_util: float = 0.5,
+    decode_bw_util: float = 0.6,
 ) -> EstimateResult:
     """估算推理性能"""
 
@@ -107,20 +113,24 @@ def estimate_inference(
     # FLOPs ≈ 2 × params × seq_len (forward pass for each token)
     prefill_flops = 2 * params_b * 1e9 * seq_len
     prefill_flops_per_gpu = prefill_flops / num_gpus
-    # 假设 50% 峰值利用率 (attention 不完全受限于矩阵乘法)
-    prefill_time_s = prefill_flops_per_gpu / (gpu_spec["fp16_tflops"] * 1e12 * 0.5)
+    # 假设 prefill_util 峰值利用率 (attention 不完全受限于矩阵乘法)
+    prefill_time_s = prefill_flops_per_gpu / (gpu_spec["fp16_tflops"] * 1e12 * prefill_util)
     prefill_time_ms = prefill_time_s * 1000
 
     # 4. Decode 性能 (memory-bandwidth-bound)
-    # 每步读模型权重 + KV Cache
-    decode_bytes_per_step = model_memory_gb * (1024**3) + max_seq_per_batch * seq_len * kv_per_token_total
     total_bandwidth_gbs = gpu_spec["hbm_bw_gbs"] * num_gpus
-    # 假设 60% 带宽利用率
-    decode_time_s = decode_bytes_per_step / (total_bandwidth_gbs * 1e9 * 0.6)
-    decode_time_per_token_ms = decode_time_s * 1000
 
-    # 理论 decode 吞吐 (bandwidth-limited)
-    decode_bandwidth_limited = total_bandwidth_gbs * 1e9 * 0.6 / (model_memory_gb * (1024**3)) if model_memory_gb > 0 else 0
+    # 每步读取模型权重 + 整批 KV Cache（最大 batch 下的稳态吞吐口径）
+    decode_bytes_per_step = model_memory_gb * (1024**3) + max_seq_per_batch * seq_len * kv_per_token_total
+    decode_time_s = decode_bytes_per_step / (total_bandwidth_gbs * 1e9 * decode_bw_util)
+    decode_step_ms = decode_time_s * 1000
+
+    # bs=1 每 token：权重 + 单序列自身 KV（单流延迟口径）
+    single_stream_bytes = model_memory_gb * (1024**3) + seq_len * kv_per_token_total
+    single_stream_decode_ms = single_stream_bytes / (total_bandwidth_gbs * 1e9 * decode_bw_util) * 1000
+
+    # 理论 decode 吞吐 (bandwidth-limited, 仅权重读取)
+    decode_bandwidth_limited = total_bandwidth_gbs * 1e9 * decode_bw_util / (model_memory_gb * (1024**3)) if model_memory_gb > 0 else 0
 
     throughput = max_seq_per_batch / (decode_time_s) if decode_time_s > 0 else 0
 
@@ -137,7 +147,8 @@ def estimate_inference(
         max_tokens_in_kv=max_tokens_in_kv,
         max_seq_per_batch=max_seq_per_batch,
         prefill_time_ms=prefill_time_ms,
-        decode_time_per_token_ms=decode_time_per_token_ms,
+        decode_step_ms=decode_step_ms,
+        single_stream_decode_ms=single_stream_decode_ms,
         decode_bandwidth_limited_tok_s=decode_bandwidth_limited,
         max_batch_size=max_seq_per_batch,
         throughput_tok_s=throughput,
@@ -161,19 +172,18 @@ def print_result(r: EstimateResult, seq_len: int, dtype: str):
     print(f"  最大 batch:   {r.max_batch_size} (seq_len={seq_len})")
 
     print(f"\n--- 性能估算 ---")
-    print(f"  Prefill:       {r.prefill_time_ms:.1f} ms (seq_len={seq_len})")
-    print(f"  Decode:        {r.decode_time_per_token_ms:.2f} ms/token")
+    print(f"  Prefill:       {r.prefill_time_ms:.1f} ms (单请求, seq_len={seq_len})")
+    print(f"  Decode:        {r.decode_step_ms:.2f} ms/step (batch={r.max_batch_size}, 含整批 KV 读取)")
     print(f"  Decode 吞吐:   {r.throughput_tok_s:.0f} tokens/s (batch={r.max_batch_size})")
-    print(f"  单流吞吐:      {1000/r.decode_time_per_token_ms:.0f} tokens/s (bs=1, 不含KV读取)")
-    print(f"  带宽极限:      {r.decode_bandwidth_limited_tok_s:.0f} tokens/s (理论)")
+    print(f"  单流吞吐:      {1000/r.single_stream_decode_ms:.0f} tokens/s (bs=1)")
+    print(f"  带宽极限:      {r.decode_bandwidth_limited_tok_s:.0f} tokens/s (理论, 仅权重读取)")
 
     print(f"\n--- 单请求延迟 (bs=1) ---")
     prompt_len = seq_len
     gen_len = 256
-    single_decode_ms = r.model_memory_gb * (1024**3) / (30 * 1e9 * 0.6) * 1000  # approximate
-    total_ms = r.prefill_time_ms + single_decode_ms * gen_len
+    total_ms = r.prefill_time_ms + r.single_stream_decode_ms * gen_len
     print(f"  Prompt: {prompt_len} tokens → Prefill {r.prefill_time_ms:.1f} ms")
-    print(f"  Generate: {gen_len} tokens → Decode {single_decode_ms:.1f} ms × {gen_len} = {single_decode_ms*gen_len:.0f} ms")
+    print(f"  Generate: {gen_len} tokens → Decode {r.single_stream_decode_ms:.1f} ms × {gen_len} = {r.single_stream_decode_ms*gen_len:.0f} ms")
     print(f"  总延迟: {total_ms/1000:.1f} s")
 
 
@@ -183,7 +193,7 @@ def compare_gpus(model_key: str, seq_len: int = 2048):
     print(f"\n{'='*70}")
     print(f"  GPU 对比: {model_key} (seq_len={seq_len})")
     print(f"{'='*70}")
-    print(f"{'GPU':<12} {'模型/GPU':<10} {'KV可用':<10} {'最大Batch':<10} {'吞吐tok/s':<12} {'Decode ms':<10}")
+    print(f"{'GPU':<12} {'模型/GPU':<10} {'KV可用':<10} {'最大Batch':<10} {'批吞吐tok/s':<12} {'Step ms':<10}")
     print(f"{'-'*70}")
 
     for gpu_name, gpu_spec in GPU_SPECS.items():
@@ -199,7 +209,7 @@ def compare_gpus(model_key: str, seq_len: int = 2048):
             num_gpus=num_gpus,
             seq_len=seq_len,
         )
-        print(f"{gpu_name:<12} {r.model_memory_per_gpu_gb:<10.1f} {r.max_kv_cache_gb:<10.1f} {r.max_batch_size:<10} {r.throughput_tok_s:<12.0f} {r.decode_time_per_token_ms:<10.2f}")
+        print(f"{gpu_name:<12} {r.model_memory_per_gpu_gb:<10.1f} {r.max_kv_cache_gb:<10.1f} {r.max_batch_size:<10} {r.throughput_tok_s:<12.0f} {r.decode_step_ms:<10.2f}")
 
 
 def compare_models(gpu_key: str, seq_len: int = 2048):
@@ -208,7 +218,7 @@ def compare_models(gpu_key: str, seq_len: int = 2048):
     print(f"\n{'='*80}")
     print(f"  模型对比: {gpu_key} (seq_len={seq_len})")
     print(f"{'='*80}")
-    print(f"{'模型':<14} {'GPU数':<6} {'KV/token':<10} {'最大Batch':<10} {'吞吐tok/s':<12} {'Prefill ms':<10}")
+    print(f"{'模型':<14} {'GPU数':<6} {'KV/token':<10} {'最大Batch':<10} {'批吞吐tok/s':<12} {'Prefill ms':<10}")
     print(f"{'-'*80}")
 
     for model_name, model in MODEL_SPECS.items():
@@ -236,6 +246,7 @@ if __name__ == "__main__":
     parser.add_argument("--num-gpus", type=int, default=0, help="GPU 数量 (0=自动计算)")
     parser.add_argument("--seq-len", type=int, default=2048, help="序列长度")
     parser.add_argument("--dtype", default="fp16", choices=["fp16", "bf16", "fp8", "int8", "int4"])
+    parser.add_argument("--batch", type=int, default=0, help="指定 batch 大小 (0=按 KV 容量自动)")
     parser.add_argument("--compare-gpus", action="store_true", help="对比不同 GPU")
     parser.add_argument("--compare-models", action="store_true", help="对比不同模型")
 
@@ -260,7 +271,7 @@ if __name__ == "__main__":
             params_b=args.params, hidden=args.hidden, layers=args.layers,
             heads=args.heads, kv_heads=args.kv_heads or args.heads,
             vocab=args.vocab, gpu_spec=gpu_spec, num_gpus=num_gpus,
-            seq_len=args.seq_len, dtype=args.dtype,
+            seq_len=args.seq_len, dtype=args.dtype, max_batch=args.batch,
         )
         print_result(r, args.seq_len, args.dtype)
     elif args.model and args.gpu:
@@ -271,6 +282,7 @@ if __name__ == "__main__":
             params_b=model["params_b"], hidden=model["hidden"], layers=model["layers"],
             heads=model["heads"], kv_heads=model["kv_heads"], vocab=model["vocab"],
             gpu_spec=gpu_spec, num_gpus=num_gpus, seq_len=args.seq_len, dtype=args.dtype,
+            max_batch=args.batch,
         )
         print_result(r, args.seq_len, args.dtype)
     else:
