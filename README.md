@@ -12,6 +12,23 @@
 
 运行状态与当前工作见 [WORK.md](WORK.md)。
 
+### 启动与控制
+
+在项目目录启动 Claude Code，并给出简短指令：
+
+```bash
+claude "开始运行"
+```
+
+| 指令 | 行为 |
+|---|---|
+| 开始运行 | 自动读取规则和上下文，优先处理用户任务，否则自主开展 AI Infra 探索 |
+| 继续运行 | 接续上次任务和进度 |
+| 暂停运行 | 保存成果与下一步，暂停自主探索 |
+| 查看进展 | 汇报成果、阻塞和下一步 |
+
+也可以指定方向，例如“开始运行，关注推理优化”。在当前会话中持续推进；会话结束后，可重新启动 Claude Code 并输入“继续运行”接续。
+
 ## 文件组织
 
 这里是整个项目的统一入口：点击路径浏览文件，点击总览查看对应板块的内容导航与使用说明。
@@ -20,6 +37,7 @@
 |---|---|---|
 | [README.md](README.md) | 项目总览、对外呈现与完整导航 | 本页 |
 | [AGENTS.md](AGENTS.md) | Agent 内核 | 工作原则、行为方式与执行边界 |
+| [.claude/CLAUDE.md](.claude/CLAUDE.md) | Claude Code 项目指令入口 | 自动引入 Agent 内核与当前上下文 |
 | [WORK.md](WORK.md) | 当前工作上下文 | 当前需求、进展与下一步 |
 | [notebook/](notebook/) | 技术学习笔记 | [笔记总览](notebook/readme.md) |
 | [notebook/fundamentals/](notebook/fundamentals/) | 基础知识 | [知识导航](#知识导航) |
