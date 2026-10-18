@@ -10,7 +10,7 @@
 - **技术秘书**：优先承接用户的需求与模糊想法，通过尽调、综述、价值与风险分析、概念验证和实际执行推进目标。
 - **经验沉淀**：从真实运行及其反馈中积累可复用经验，逐步转化为知识、工具和技能，增强后续工作的能力。
 
-当前处于保留积累、整理结构与重构运作模式的阶段，持续运行尚未重启。历史笔记中的性能、验证范围、硬件状态与上游进展以原文时间和条件为准，具体工作安排见 [WORK.md](WORK.md)。
+运行状态与当前工作见 [WORK.md](WORK.md)。
 
 ## 文件组织
 
@@ -42,13 +42,7 @@
 | [experiments/results/](experiments/results/) | 实验原始结果 | [结果索引](experiments/results/readme.md) |
 | [.claude/skills/](.claude/skills/) | 已有 Agent 技能 | [技能入口](#工具沉淀--技能打磨) |
 
-### 文件归属原则
-
-一级目录按项目职责组织：notebook 保存知识，experiments 保存实验执行材料，tools 沉淀可复用工具，open-source 管理贡献，diary 记录工作过程。根目录保留项目说明、Agent 内核、当前上下文及必要的仓库配置。
-
-实验的源码、脚本、配置、环境与结果归入 experiments；[notebook/experiments/](notebook/experiments/) 保存实验分析与经验，两边互相链接。新实验优先按课题组织，避免再按 HTML、YML、源码、结果等文件类型扩张一级目录。外部原始资料归入 notebook/resources，分析归入对应笔记。
-
-根目录尚无 projects/，未来有需要独立维护的自营项目时，再决定放在本仓库还是独立仓库。历史工具继续按实际用途与复用价值整理。
+[experiments/](experiments/readme.md) 保存实验执行材料，[notebook/experiments/](notebook/experiments/) 保存分析与经验，通过链接关联复现过程和结论。
 
 ## 知识导航
 
@@ -86,7 +80,7 @@ AI 技术是探索范围，Infra 是优先方向。下面提供常用主题的�
 | SGLang | [源码索引](notebook/frameworks/readme.md#sglang) · [架构分析](notebook/frameworks/sglang-architecture.md) | [SGLang 贡献](open-source/sglang/readme.md) |
 | verl | [源码索引](notebook/frameworks/readme.md#verl) · [RL Infra](notebook/frameworks/verl-rl-infra-reading.md) | [verl 贡献](open-source/verl/readme.md) · [Tracker](open-source/verl/tracker.md) |
 | DeepSpeed | [源码索引](notebook/frameworks/readme.md#deepspeed) | [DeepSpeed 贡献](open-source/deepspeed/readme.md) |
-| Megatron | [源码索引](notebook/frameworks/readme.md#megatron) · [张量并行](notebook/frameworks/megatron-tp-source-reading.md) | 具体候选按后续探索形成 |
+| Megatron | [源码索引](notebook/frameworks/readme.md#megatron) · [张量并行](notebook/frameworks/megatron-tp-source-reading.md) | — |
 | PyTorch | [源码索引](notebook/frameworks/readme.md#pytorch) | [PyTorch 贡献](open-source/pytorch/readme.md) |
 | rLLM | [源码索引](notebook/frameworks/readme.md#rllm) | [rLLM 贡献](open-source/rllm/readme.md) |
 | TRL | [源码索引](notebook/frameworks/readme.md#trl) | [TRL 贡献](open-source/trl/readme.md) |
@@ -103,7 +97,7 @@ AI 技术是探索范围，Infra 是优先方向。下面提供常用主题的�
 
 ## 工具沉淀 & 技能打磨
 
-[tools/readme.md](tools/readme.md) 是工具入口，说明用途、复用标准及验证范围。当前可从 [GPU 监控](tools/gpu_monitor.py)、[训练配置配方](tools/training_recipe.py) 和 [Infra 速查](tools/ai_infra_cheatsheet.py) 浏览；其余历史工具仍需逐项验收。一次性、纯实验性和低价值重复脚本归入 [tools/legacy/](tools/legacy/readme.md)，原工具索引保存在 [历史目录](tools/legacy/catalog.md)。
+[tools/readme.md](tools/readme.md) 是工具入口，说明用途、复用标准及验证范围。当前可从 [GPU 监控](tools/gpu_monitor.py)、[训练配置配方](tools/training_recipe.py) 和 [Infra 速查](tools/ai_infra_cheatsheet.py) 浏览，使用方法与验证范围见工具总览。一次性、纯实验性和低价值重复脚本归入 [tools/legacy/](tools/legacy/readme.md)，原工具索引保存在 [历史目录](tools/legacy/catalog.md)。
 
 已有 Agent 技能保存在 [.claude/skills/](.claude/skills/)，包括 [GPU 实验](.claude/skills/gpu-experiment/SKILL.md)、[GRPO 排错](.claude/skills/grpo-debug/SKILL.md)、[推理性能](.claude/skills/inference-perf/SKILL.md)、[分布式训练导航](.claude/skills/distributed-nav/SKILL.md)、[权重同步](.claude/skills/weight-sync-nav/SKILL.md) 等。它们记录历史工作方法，使用时需适配当前执行环境。
 
