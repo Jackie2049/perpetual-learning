@@ -1,38 +1,36 @@
-# Perpetual Learning — 当前工作
+# perpetual-learning — 当前工作上下文
 
 更新时间：2026-10-18
 
 ## 当前阶段
 
-重构运作模式，为重启做准备。保留已有知识、实战资产和能力。本次工作只落地运作说明与交接入口，尚未启动持续运行或远程实验。
+保留已有知识和能力，重构运作模式及文件入口，为重启做准备。尚未启动持续运行或远程实验。
 
-## 当前用户需求
+## 当前用户需求与决定
 
-- 已实施：项目命名为 **Perpetual Learning**，GitHub 仓库更名为 [Jackie2049/perpetual-learning](https://github.com/Jackie2049/perpetual-learning)，文档、仓库简介和本地 Git origin 已同步。
-- 已确认：项目定位以 [README.md](README.md#项目定位) 中的用户原文为准；定位是内核，具体方法可随实践调整。
-- 已实施：新增 [AGENTS.md](AGENTS.md) 与本文件，明确自主探索、用户需求优先、真实经验沉淀及跨会话接续。
-- 正在讨论：现有目录如何整合，使知识、实验、工具和贡献材料各有清晰位置。用户尚未确认搬迁方案。
+- 项目首页标题使用 `perpetual-learning`，删除首页旧名称标识行。项目定位继续保留 [README.md](README.md#项目定位) 中的用户原文。
+- README.md 用于总览和对外呈现；[AGENTS.md](AGENTS.md) 为 Agent 内核；本文件记录当前工作上下文。
+- notebook/ 保留现有结构：fundamentals/ 基础知识、projects/ 项目源码、experiments/ 实验记录、roadmap.md 规划、knowledge-map.md 知识整理与总览；新增 [notebook/readme.md](notebook/readme.md)。
+- tools/ 注重工具价值与复用；一次性、纯实验性和低价值重复实现归 tools/legacy/，新增 [tools/readme.md](tools/readme.md)。
+- open-source/ 保留按开源项目分类；diary/ 延续原有功能，新增 [diary/readme.md](diary/readme.md)。
 
-## 下一步
+## 本轮进展
 
-1. 向用户说明目录职责重叠和精简建议，确定整理范围后再搬迁，保留引用与复现路径。
-2. 重启准备时确认运行入口、可用模型与资源，以及 GPU/NPU 的当前访问和使用条件。
-3. 从现有积累中选择可继续的探索，实际跑通一轮工作、经验保存和新会话接续，再开启持续运行。
+- 首页已按上述职责重写，并说明文件组织；原知识导航迁至 notebook/readme.md，原工具导航保存在 [tools/legacy/catalog.md](tools/legacy/catalog.md)，已有笔记与代码入口可继续查找。
+- 已归档 9 个明确的一次性补丁或概念模拟脚本，源码保持不变；清单与原因见 [tools/legacy/readme.md](tools/legacy/readme.md)。其余历史工具尚未全面验收，保留原位置不代表正式推荐。
+- Agent 内核已写入目录职责和工具价值标准。完整变更记录见 [当日日志](diary/2026-10-18.md)。
 
-## 自主探索入口
+## 待讨论与下一步
 
-目前未选定重启后的具体课题。以下为历史资产入口，不代表其结论、外部状态或任务仍有效：
+1. 说明并确定两处 experiments 的关系：根目录当前仅有三个 GRPO 训练启动脚本，notebook/experiments/ 保存实验记录。暂不搬迁，等待用户决定是否整合。
+2. 根目录 projects/ 是之前为未来自营项目提出的建议，目前未建立；本轮不新增。notebook/projects/ 继续用于项目源码阅读。
+3. 按价值、使用关系和证据继续筛选历史工具，避免只按文件名批量归档。已知 inference_estimator.py 有带宽硬编码和吞吐展示问题，待修复验证。
+4. 目录职责确定后，确认持续运行入口、模型资源及 GPU/NPU 当前条件，从已有积累选择方向跑通接续循环。
 
-- [知识地图](notebook/knowledge-map.md)、[历史学习路线](notebook/roadmap.md)：了解已有覆盖和研究线索。
-- [开源贡献记录](open-source/README.md)、[verl 候选追踪](open-source/verl/tracker.md)：接续前核查上游状态和本地成果。
-- [技能转化思路](notebook/roadmap/skills-conversion-plan.md)、`.claude/skills/`：了解已有经验如何进入实际执行。
-- `tools/`、`csrc/`、`experiments/`、`notebook/experiments/`：按所选问题查找并验证已有工具与实验。
+## 接续入口与约束
 
-## 接续注意
-
-- 本地工作目录仍为 `rollout-infra`，保留现有实验路径和应用绑定；应用侧栏仍显示 `RolloutInfra`，当前工具无法修改此标签，需用户在应用中手动更名。
-- 现有历史目录尚未重组；新目录方案属于讨论项。
-- 本次开始前已有未跟踪文件 `diary/2026-08-14.md`，保留原状，不夹带提交。
-- 旧文档中的服务器状态、访问方式和“已验证”结论需要按需复核；不复述其中的凭据。
-
-已完成工作的详细记录见 [2026-10-18 日志](diary/2026-10-18.md)。更新本文件时保留当前重点和下一步，历史过程放回相关记录。
+- 学习与探索：[notebook/readme.md](notebook/readme.md)、[roadmap.md](notebook/roadmap.md)、[knowledge-map.md](notebook/knowledge-map.md)。尚未选定重启后的具体课题。
+- 贡献：[open-source/README.md](open-source/README.md)、[verl tracker](open-source/verl/tracker.md)。旧候选需核对当前上游状态与本地证据。
+- 本地目录仍为 rollout-infra，应用侧栏仍显示 RolloutInfra；保留现有路径与绑定。GitHub 仓库已更名为 [perpetual-learning](https://github.com/Jackie2049/perpetual-learning)。
+- 原有未跟踪文件 diary/2026-08-14.md 属于既有用户工作，保留原状，不夹带提交。
+- 历史服务器状态、访问方式和“已验证”结论按需复核，不复述凭据。
