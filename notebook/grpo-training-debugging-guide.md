@@ -149,6 +149,28 @@ print(f"gradient norm: {total_norm.item()}")
 4. Reduce learning rate by 2-5× (typical: 1e-5 for GRPO, 3e-4 for supervised)
 ```
 
+### Async 熵爆炸 → 坍塌模式（verl #8250 案例，2026-10）
+
+**签名**：稳定期 → `rollout_corr/kl` 先涨（0.02→0.18）→ KL 爆炸（>1）→ grad_norm 爆炸（>1000）→ 熵尖峰后坍塌 → 响应长度塌到 ~200 → **grad_norm=0**。
+
+**机制链**（异步特有）：
+1. 异步 staleness：actor 与采样策略漂移 → 陈旧轨迹优势离群
+2. 离群优势 × 指数比率 → 灾难性更新（KL runaway）
+3. 坍塌后同组奖励同质化 → **σ_G=0 → 优势全 0 → 梯度全 0**（GRPO 数学必然，不是 mask 问题）
+
+**诊断**：
+```python
+# 坍塌后区分"数值死"与"管线错"：advantage 分布
+print(f"adv mean={advantages.mean()}, std={advantages.std()}, max={advantages.abs().max()}")
+# std≈0 且 grad=0 → 退化终态自洽（预期）；std>0 而 grad=0 → mask/pipeline 问题
+# 前兆：rollout_corr/kl 变化率（稳定 <0.02；爆炸前 1-2 步跳 5-10×）
+```
+
+**预防**（按有效性排序）：
+1. `use_kl_loss=true` + coef 0.001-0.01（dampener）；kl_in_reward 5e-4 在 KL>1 时形同虚设
+2. rollout_corr/kl 阈值守卫（>0.05 缩 lr/暂停），verl 无内置需外挂
+3. 教师强制 log-probs 对齐（actor vs rollout 引擎同 prompt）排除 weight-sync/cache 问题
+
 ---
 
 ## 5. Responses Never End (No EOS Token)

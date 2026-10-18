@@ -10,6 +10,7 @@
 | # | 候选 | 类别 | 性价比 | PR | 状态 | 首次发现 |
 |---|---|---|---|---|---|---|
 | 0 | megatron `optimizer_offload_fraction<1` 首轮 update 崩溃 (#8237) | P0 | 42 | — | **analysis-done**：根因确认（offload 无条件 `to("cpu")` 破坏 GPU FusedAdam 设备语义），patch 已拟待 GPU 验证；复查重 0 PR（唯一真实无人认领） | 2026-10-19 |
+| 1 | async 熵爆炸→坍塌诊断 (#8250) | 调查/评论 | 15 | — | **analysis-done**：诊断草稿完成（KL runaway 机制链 + Q3 的 σ_G=0→grad=0 数学答案 + 三层诊断法）；reporter 未认领（0 PR）；发布需授权 | 2026-10-19 |
 
 ## 已被上游他人 PR 覆盖（2026-10-19 全候选复查重修正）
 
