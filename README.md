@@ -105,31 +105,30 @@ AI 技术是探索范围，Infra 是优先方向。下面提供常用主题的�
 
 ## 文件组织结构
 
-```text
-perpetual-learning/
-├── README.md                 项目总览、对外呈现与完整导航
-├── AGENTS.md                 Agent 内核
-├── WORK.md                   当前工作上下文
-├── notebook/                 技术学习笔记
-│   ├── readme.md             笔记总览与主题导航
-│   ├── fundamentals/         基础知识
-│   ├── frameworks/           框架架构与源码理解，含 readme.md 索引
-│   ├── experiments/          实验记录与结论
-│   ├── papers/               论文阅读
-│   ├── roadmap.md            学习与实践规划
-│   └── knowledge-map.md      知识整理与总览
-├── tools/                    可复用工具，入口 readme.md
-│   └── legacy/               一次性、纯实验性或低价值重复脚本
-├── open-source/              开源贡献，入口 README.md
-│   ├── SOP.md                贡献工作方法
-│   └── <framework>/          按目标项目保存贡献材料，含 readme.md 索引
-├── diary/                    按日期记录工作，入口 readme.md
-├── experiments/              历史训练启动脚本
-├── scripts/                  执行、验证与编排脚本
-├── configs/                  历史训练配置，入口 readme.md
-├── csrc/                     CUDA/C++ 实现与验证
-└── .claude/skills/            已有 Agent 技能
-```
+点击路径浏览文件，点击总览查看对应板块的内容导航与使用说明。
+
+| 路径 | 职责 | 总览与索引 |
+|---|---|---|
+| [README.md](README.md) | 项目总览、对外呈现与完整导航 | 本页 |
+| [AGENTS.md](AGENTS.md) | Agent 内核 | 工作原则、行为方式与执行边界 |
+| [WORK.md](WORK.md) | 当前工作上下文 | 当前需求、进展与下一步 |
+| [notebook/](notebook/) | 技术学习笔记 | [笔记总览](notebook/readme.md) |
+| [notebook/fundamentals/](notebook/fundamentals/) | 基础知识 | [技术主题导航](#技术知识导航) |
+| [notebook/frameworks/](notebook/frameworks/) | 框架架构与源码理解 | [框架索引](notebook/frameworks/readme.md) |
+| [notebook/experiments/](notebook/experiments/) | 实验记录与结论 | [实验导航](#实验与实战经验) |
+| [notebook/papers/](notebook/papers/) | 论文阅读 | [论文索引](notebook/readme.md#论文精读) |
+| [notebook/roadmap.md](notebook/roadmap.md) | 学习与实践规划 | 学习路线与探索方向 |
+| [notebook/knowledge-map.md](notebook/knowledge-map.md) | 知识整理与总览 | 知识关系与整体导航 |
+| [tools/](tools/) | 可复用工具 | [工具总览](tools/readme.md) |
+| [tools/legacy/](tools/legacy/) | 一次性、纯实验性或低价值重复脚本 | [归档说明](tools/legacy/readme.md) · [历史目录](tools/legacy/catalog.md) |
+| [open-source/](open-source/) | 按目标开源项目保存贡献材料 | [各项目贡献索引](open-source/README.md#按项目浏览) |
+| [open-source/SOP.md](open-source/SOP.md) | 贡献工作方法 | 候选发现、分析与推进流程 |
+| [diary/](diary/) | 按日期记录实际工作 | [日志总览](diary/readme.md) |
+| [experiments/](experiments/) | 历史训练启动脚本 | [与实验记录的关系](#尚待整合的执行材料) |
+| [scripts/](scripts/) | 执行、验证与编排脚本 | [执行材料说明](#工具技能与执行材料) |
+| [configs/](configs/) | 历史训练配置 | [配置说明](configs/readme.md) |
+| [csrc/](csrc/) | CUDA/C++ 实现与验证 | [执行材料说明](#工具技能与执行材料) |
+| [.claude/skills/](.claude/skills/) | 已有 Agent 技能 | [技能入口](#工具技能与执行材料) |
 
 主要板块按职责组织，同一项成果维护一个主要位置，通过链接串起学习、实践与贡献。其他已有专题、环境文件和历史结果暂保留原位。
 
