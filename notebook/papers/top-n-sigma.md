@@ -152,5 +152,5 @@ n=2.0 是论文推荐值 (约 2-3% 保留率), 兼顾过滤和多样性
 ## 6. 实验文件
 
 - **工具**: `tools/top_n_sigma_benchmark.py` (6 个实验)
-- **结果**: `results/inference/top_n_sigma_results.json`
+- **结果**: `experiments/results/inference/top_n_sigma_results.json`
 - **GPU**: RTX 4090

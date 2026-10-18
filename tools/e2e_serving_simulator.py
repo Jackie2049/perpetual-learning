@@ -504,7 +504,7 @@ if __name__ == '__main__':
         results = run_scenarios()
         print_comparison_table(results)
         try:
-            with open('results/e2e_serving_simulator.json', 'w') as f:
+            with open('experiments/results/e2e_serving_simulator.json', 'w') as f:
                 json.dump(results, f, indent=2)
         except:
             with open('e2e_serving_simulator.json', 'w') as f:

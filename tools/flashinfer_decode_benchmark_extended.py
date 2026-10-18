@@ -212,10 +212,10 @@ all_results = {
     "gqa_sweep": results_gqa_sweep,
 }
 
-os.makedirs("results", exist_ok=True)
-with open("results/flashinfer_decode_extended_benchmark.json", "w") as f:
+os.makedirs("experiments/results", exist_ok=True)
+with open("experiments/results/flashinfer_decode_extended_benchmark.json", "w") as f:
     json.dump(all_results, f, indent=2)
-print(f"\nResults saved to results/flashinfer_decode_extended_benchmark.json")
+print(f"\nResults saved to experiments/results/flashinfer_decode_extended_benchmark.json")
 
 # =====================================================================
 # Summary

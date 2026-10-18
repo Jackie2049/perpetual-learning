@@ -17,7 +17,7 @@ import numpy as np
 from dataclasses import dataclass
 from typing import List, Tuple
 
-RESULTS_DIR = os.path.join(os.path.dirname(__file__), "..", "results")
+RESULTS_DIR = os.path.join(os.path.dirname(__file__), "..", "experiments/results")
 
 
 @dataclass

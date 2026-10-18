@@ -248,4 +248,4 @@ RTX 4090投机解码决策:
 **Related notes**: speculative-decoding-algorithm-deep-dive.md(理论), inference-sampling-deep-dive.md
 
 **Benchmark tool**: tools/speculative_decoding_benchmark.py (7 experiments, RTX 4090)
-**Benchmark results**: results/speculative_decoding_benchmark.json
+**Benchmark results**: experiments/results/speculative_decoding_benchmark.json

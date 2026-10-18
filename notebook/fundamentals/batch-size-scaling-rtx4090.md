@@ -103,8 +103,8 @@ source ~/anaconda3/bin/activate llm
 CUDA_VISIBLE_DEVICES=0 python -u tools/batch_size_scaling.py --model_size 76k --num_micro_steps 1000
 CUDA_VISIBLE_DEVICES=0 python -u tools/batch_size_scaling.py --model_size 2.28m --num_micro_steps 1000
 
-results/batch_size_scaling_results.json (76K)
-results/batch_size_scaling_2.28m.json (2.28M)
+experiments/results/batch_size_scaling_results.json (76K)
+experiments/results/batch_size_scaling_2.28m.json (2.28M)
 ```
 
 工具: `tools/batch_size_scaling.py`

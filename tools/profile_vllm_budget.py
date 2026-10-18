@@ -94,7 +94,7 @@ BATCH_SIZES = [1, 2, 4, 8, 16, 32]
 SEQ_LENGTHS = [256, 512, 1024, 2048, 4096]
 KV_CACHE_TYPES = ["FP16", "INT8"]
 
-OUTPUT_DIR = Path("results/profile_tables")
+OUTPUT_DIR = Path("experiments/results/profile_tables")
 CSV_FILENAME = "profile_table_rtx4090.csv"
 
 

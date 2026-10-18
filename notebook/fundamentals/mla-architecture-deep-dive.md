@@ -278,7 +278,7 @@ RTX 4090 MLA决策树:
 - [DeepSeek-V2 Paper](https://arxiv.org/abs/2405.04434)
 - [DeepSeek-V3 Technical Report](https://arxiv.org/abs/2412.19437)
 - [FlashMLA GitHub](https://github.com/deepseek-ai/FlashMLA)
-- RTX 4090 MLA benchmark: results/mla_kv_compression_simulation.json
+- RTX 4090 MLA benchmark: experiments/results/mla_kv_compression_simulation.json
 - Existing MLA theory: notebook/fundamentals/mla.md
 
 **Related notes**: mla.md(基础理论), mla-kv-compression-benchmark-rtx4090.md(实测), flashinfer-attention-deep-dive.md, inference-cost-analysis.md

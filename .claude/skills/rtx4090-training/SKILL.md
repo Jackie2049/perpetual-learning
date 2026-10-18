@@ -166,7 +166,7 @@ python3 tools/grpo_singleton_degeneration_experiment.py  # GRPO degeneration pro
 
 Deep reading: notebook/frameworks/verl-v1-sync-ppo-trainer-grpo-training-loop-deep-reading.md
 
-Key benchmark result files in `results/`:
+Key benchmark result files in `experiments/results/`:
 - `fsdp_scaling_125m_benchmark.json` — FSDP/DDP scaling
 - `lora_125m_benchmark_4090.json` — LoRA training
 - `mixed_precision_training_2.28m_4090.json` — BF16 vs FP16 vs FP32

@@ -412,9 +412,9 @@ def main():
         "quality_filtered_pct": stats['filtered']/stats['total']*100,
         "contaminated_docs": contaminated,
     }
-    with open("results/data_pipeline_simulator.json", "w") as f:
+    with open("experiments/results/data_pipeline_simulator.json", "w") as f:
         json.dump(results, f, indent=2)
-    print(f"\nResults saved to results/data_pipeline_simulator.json")
+    print(f"\nResults saved to experiments/results/data_pipeline_simulator.json")
 
 
 if __name__ == "__main__":

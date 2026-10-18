@@ -15,7 +15,7 @@ Run on partner server:
   source /jiangdingfeng/miniconda3/etc/profile.d/conda.sh
   conda activate env-rollout
   pip install -e ./trl-up-grpo
-  python scripts/grpo_smoke_test_h20.py
+  python experiments/scripts/grpo_smoke_test_h20.py
 """
 
 import os
@@ -35,10 +35,10 @@ SMOKE_TEST_CONFIG = {
     "max_completion_length": 64,
     "bf16": True,
     "seed": 42,
-    "output_dir": "/jiangdingfeng/zy/Termius/rollout/results/grpo_smoke_test",
+    "output_dir": "/jiangdingfeng/zy/Termius/rollout/experiments/results/grpo_smoke_test",
 }
 
-RESULTS_FILE = "/jiangdingfeng/zy/Termius/rollout/results/grpo_smoke_test_h20_results.json"
+RESULTS_FILE = "/jiangdingfeng/zy/Termius/rollout/experiments/results/grpo_smoke_test_h20_results.json"
 
 
 def test_grpo_trainer_instantiation():

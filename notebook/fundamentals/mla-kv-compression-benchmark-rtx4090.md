@@ -183,4 +183,4 @@ Exp 6: Capacity scaling (24GB GPU, 70% KV):
 ## 工具
 
 - `tools/mla_kv_compression_benchmark_4090.py` — 6实验MLA benchmark
-- `results/mla_kv_compression_benchmark.json` — 完整数据
+- `experiments/results/mla_kv_compression_benchmark.json` — 完整数据

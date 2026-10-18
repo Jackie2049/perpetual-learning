@@ -336,7 +336,7 @@ def main():
 
     # Save results
     output_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                              'results', 'e2e_inference_benchmark.json')
+                              'experiments/results', 'e2e_inference_benchmark.json')
     with open(output_file, 'w') as f:
         json.dump(results, f, indent=2)
     print(f"\nResults saved to {output_file}")

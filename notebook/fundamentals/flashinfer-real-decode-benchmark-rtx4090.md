@@ -180,4 +180,4 @@ RTX 4090最优配置修正 (基于实测FlashInfer数据):
 **Related notes**: flashinfer-attention-deep-dive.md(理论), inference_calculator_4090.py(计算器)
 
 **Benchmark tool**: tools/flashinfer_real_decode_benchmark.py
-**Benchmark results**: results/flashinfer_real_decode_benchmark.json
+**Benchmark results**: experiments/results/flashinfer_real_decode_benchmark.json

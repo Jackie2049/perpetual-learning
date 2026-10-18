@@ -292,6 +292,6 @@ RTX 4090推理部署核心决策矩阵:
 
 ---
 
-**综合参考**: 所有RTX 4090 benchmark数据和笔记见 notebook/fundamentals/ 和 results/
+**综合参考**: 所有RTX 4090 benchmark数据和笔记见 notebook/fundamentals/ 和 experiments/results/
 
 **Related notes**: rtx4090-pcie-decision-guide.md(训练), flashinfer-attention-deep-dive.md, kv-cache-management-deep-dive.md, quantization-pruning-theory.md, long-context-serving-deep-dive.md, rope-scaling-deep-dive.md, distillation-deep-dive.md

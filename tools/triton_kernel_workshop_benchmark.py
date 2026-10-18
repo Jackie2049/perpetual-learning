@@ -267,7 +267,7 @@ def run_all():
 if __name__ == '__main__':
     results = run_all()
     try:
-        with open('results/triton_kernel_workshop_benchmark.json', 'w') as f:
+        with open('experiments/results/triton_kernel_workshop_benchmark.json', 'w') as f:
             json.dump(results, f, indent=2, default=str)
     except:
         with open('triton_kernel_workshop_benchmark.json', 'w') as f:

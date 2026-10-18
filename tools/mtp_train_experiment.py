@@ -572,7 +572,7 @@ def run_all_experiments(device='cuda'):
         elif isinstance(obj, list): return [convert(v) for v in obj]
         return obj
 
-    output_file = Path(__file__).resolve().parent.parent / "results/architecture/mtp_results.json"
+    output_file = Path(__file__).resolve().parent.parent / "experiments/results/architecture/mtp_results.json"
     output_file.parent.mkdir(parents=True, exist_ok=True)
     with open(output_file, "w") as f:
         json.dump(convert(all_results), f, indent=2)

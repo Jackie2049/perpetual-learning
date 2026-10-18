@@ -210,7 +210,7 @@ def main():
         print(f"{strat_key:<20} | {r['final_ece']:<8} | {r['trust_distribution']['overtrust_pct']}%{' ':<5} | {r['trust_distribution']['undertrust_pct']}%{' ':<5} | {r['trust_distribution']['calibrated_pct']}%{' ':<5} | {r['recommendation']}")
 
     # Save results
-    output_file = "results/trust_calibration_results.json"
+    output_file = "experiments/results/trust_calibration_results.json"
     all_results = {}
     for model_key in RTX_4090_BENCHMARKS:
         all_results[model_key] = {}

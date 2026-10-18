@@ -67,4 +67,4 @@ GPU servers: BOTH OFFLINE (university timeout, matpool connection refused)
 - PyTorch #187653: NanDetectMode forward-pass NaN/Inf detection
 - Deep reading: notebook/frameworks/pytorch-187653-nan-detect-mode-reading.md
 - Experiment script: tools/nandetectmode_validation_experiment.py
-- Results: results/nandetectmode_validation/all_cpu_results.json
+- Results: experiments/results/nandetectmode_validation/all_cpu_results.json

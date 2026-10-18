@@ -250,7 +250,7 @@ def main():
               f"{delta:<+12.1%} {n['avg_zero_adv_pct']:<10.0f}")
 
     output_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                                'results', 'sft_degree_impact.json')
+                                'experiments/results', 'sft_degree_impact.json')
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, 'w') as f:
         json.dump(results, f, indent=2)

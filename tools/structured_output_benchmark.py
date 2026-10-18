@@ -554,7 +554,7 @@ if __name__ == '__main__':
     results = run_all_benchmarks()
 
     # Save results
-    output_file = 'results/structured_output_benchmark.json'
+    output_file = 'experiments/results/structured_output_benchmark.json'
     try:
         with open(output_file, 'w') as f:
             json.dump(results, f, indent=2)

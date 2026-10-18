@@ -297,7 +297,7 @@ def run_all_experiments():
 if __name__ == '__main__':
     results = run_all_experiments()
 
-    output_file = 'results/long_context_serving_benchmark.json'
+    output_file = 'experiments/results/long_context_serving_benchmark.json'
     try:
         with open(output_file, 'w') as f:
             json.dump(results, f, indent=2, default=str)

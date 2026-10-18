@@ -331,8 +331,8 @@ source ~/anaconda3/bin/activate llm
 CUDA_VISIBLE_DEVICES=0 python -u tools/grpo_advantage_noise_verification.py --model_size 76k
 CUDA_VISIBLE_DEVICES=0 python -u tools/grpo_advantage_noise_verification.py --model_size 2.28m
 
-results/grpo_advantage_noise_76k.json
-results/grpo_advantage_noise_2.28m.json
+experiments/results/grpo_advantage_noise_76k.json
+experiments/results/grpo_advantage_noise_2.28m.json
 ```
 
 工具: `tools/grpo_advantage_noise_verification.py`

@@ -543,9 +543,9 @@ def run_experiment():
               f"ROI={info['roi']}")
 
     # Save
-    with open("results/e2e_serving_throughput.json", "w") as f:
+    with open("experiments/results/e2e_serving_throughput.json", "w") as f:
         json.dump(results, f, indent=2)
-    print(f"\nResults saved to results/e2e_serving_throughput.json")
+    print(f"\nResults saved to experiments/results/e2e_serving_throughput.json")
 
     return results
 

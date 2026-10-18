@@ -139,4 +139,4 @@ GRPO step = 81ms分解:
 ## 工具
 
 - `tools/triton_fused_grpo_kernel.py` — Triton融合advantage kernel + 3实验benchmark
-- `results/triton_fused_grpo_kernel.json` — 完整结果数据
+- `experiments/results/triton_fused_grpo_kernel.json` — 完整结果数据

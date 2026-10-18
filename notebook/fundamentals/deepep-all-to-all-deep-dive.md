@@ -49,7 +49,7 @@ Python API (deep_ep/__init__.py)
 | **EPHandle** | `deep_ep/buffers/elastic.py` | 通信handle(路由元数据) |
 | **EventOverlap** | `deep_ep/utils/event.py` | compute-comm重叠控制 |
 | **C++ Binding** | `csrc/python_api.cpp` | pybind11注册 |
-| **JIT Backend** | `csrc/kernels/backend/api.cuh` | NCCL Gin backend |
+| **JIT Backend** | `experiments/kernels/backend/api.cuh` | NCCL Gin backend |
 | **Dispatch Kernel** | `deep_ep/impls/dispatch.cuh` | 单节点dispatch |
 | **Hybrid Dispatch** | `deep_ep/impls/hybrid_dispatch.cuh` | 多节点层次dispatch |
 | **Combine Kernel** | `deep_ep/impls/combine.cuh` | combine/reduce |
@@ -520,10 +520,10 @@ RTX 4090 MoE训练 → 多GPU PCIe → EP不可行
 | `ptx.cuh` | `deep_ep/common/` | PTX指令(TMA/mbarrier/elect) |
 | `layout.cuh` | `deep_ep/common/` | Buffer/Workspace布局 |
 | `handle.cuh` | `deep_ep/common/` | NCCLGin handle |
-| `api.cuh` | `csrc/kernels/backend/` | NCCL Gin backend API |
-| `intranode.cu` | `csrc/kernels/legacy/` | V1 NVLink kernel |
-| `internode.cu` | `csrc/kernels/legacy/` | V1 RDMA kernel |
-| `internode_ll.cu` | `csrc/kernels/legacy/` | V1低延迟RDMA kernel |
+| `api.cuh` | `experiments/kernels/backend/` | NCCL Gin backend API |
+| `intranode.cu` | `experiments/kernels/legacy/` | V1 NVLink kernel |
+| `internode.cu` | `experiments/kernels/legacy/` | V1 RDMA kernel |
+| `internode_ll.cu` | `experiments/kernels/legacy/` | V1低延迟RDMA kernel |
 
 ---
 

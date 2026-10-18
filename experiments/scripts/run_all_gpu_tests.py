@@ -6,16 +6,16 @@ Designed to run remotely via SSH on the partner server (10.26.6.88:31954).
 
 Usage:
   # Run all tests
-  python scripts/run_all_gpu_tests.py --all
+  python experiments/scripts/run_all_gpu_tests.py --all
 
   # Run specific test category
-  python scripts/run_all_gpu_tests.py --category up_grpo
-  python scripts/run_all_gpu_tests.py --category lora_nan
-  python scripts/run_all_gpu_tests.py --category cuda_race
+  python experiments/scripts/run_all_gpu_tests.py --category up_grpo
+  python experiments/scripts/run_all_gpu_tests.py --category lora_nan
+  python experiments/scripts/run_all_gpu_tests.py --category cuda_race
 
   # Run via SSH
   sshpass -p 'JDF+H200@sribd' ssh root@10.26.6.88 -p 31954 \
-    "cd /jiangdingfeng/zy/Termius/rollout && source activate env-rollout && python scripts/run_all_gpu_tests.py --all"
+    "cd /jiangdingfeng/zy/Termius/rollout && source activate env-rollout && python experiments/scripts/run_all_gpu_tests.py --all"
 """
 
 import subprocess
@@ -24,7 +24,7 @@ import json
 import time
 from pathlib import Path
 
-SCRIPTS_DIR = Path(__file__).parent
+SCRIPTS_DIR = Path(__file__).resolve().parent
 
 TEST_REGISTRY = {
     "up_grpo": {
@@ -123,7 +123,7 @@ def main():
     parser.add_argument("--all", action="store_true", help="Run all tests")
     parser.add_argument("--category", choices=list(TEST_REGISTRY.keys()), help="Run specific test")
     parser.add_argument("--check-gpu", action="store_true", help="Only check GPU availability")
-    parser.add_argument("--output", default="gpu_test_results.json", help="Output file for results")
+    parser.add_argument("--output", default=str(SCRIPTS_DIR.parent / "results/gpu_test_results.json"), help="Output file for results")
     args = parser.parse_args()
 
     if args.check_gpu:
@@ -147,7 +147,8 @@ def main():
         return
 
     # Save results
-    output_path = SCRIPTS_DIR.parent / args.output
+    output_path = Path(args.output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "w") as f:
         json.dump({"timestamp": time.strftime("%Y-%m-%d %H:%M:%S"), "results": results}, f, indent=2)
     print(f"\nResults saved to {output_path}")

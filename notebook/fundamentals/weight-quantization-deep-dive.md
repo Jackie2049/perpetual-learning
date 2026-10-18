@@ -280,4 +280,4 @@ RTX 4090量化配置决策:
 **Related notes**: quantization-pruning-theory.md, kv-cache-management-deep-dive.md, inference-cost-analysis.md
 
 **Benchmark tool**: tools/weight_quantization_benchmark.py (7 experiments, RTX 4090)
-**Benchmark results**: results/weight_quantization_benchmark.json
+**Benchmark results**: experiments/results/weight_quantization_benchmark.json

@@ -428,7 +428,7 @@ def main():
     - > 70B: 64-1024 GPUs with 3D parallel + ZeRO
     """)
 
-    output_file = Path(__file__).resolve().parent.parent / "results/distributed/fsdp_memory_results.json"
+    output_file = Path(__file__).resolve().parent.parent / "experiments/results/distributed/fsdp_memory_results.json"
     output_file.parent.mkdir(parents=True, exist_ok=True)
     with open(output_file, "w") as f:
         json.dump(results, f, indent=2, default=str)

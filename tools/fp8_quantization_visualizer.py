@@ -241,7 +241,7 @@ def generate_synthetic_training_data(num_steps=10, num_elements=100, max_val=10.
     return tensors
 
 
-def run_analysis(output_dir="results"):
+def run_analysis(output_dir="experiments/results"):
     """Run complete FP8 quantization analysis."""
     results = {}
 
@@ -342,7 +342,7 @@ def run_analysis(output_dir="results"):
 
 def main():
     parser = argparse.ArgumentParser(description="FP8 Quantization Visualizer")
-    parser.add_argument("--output", type=str, default="results")
+    parser.add_argument("--output", type=str, default="experiments/results")
     args = parser.parse_args()
     run_analysis(args.output)
 

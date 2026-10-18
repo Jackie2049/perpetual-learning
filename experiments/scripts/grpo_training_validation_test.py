@@ -11,7 +11,7 @@ import sys
 import time
 import traceback
 
-RESULTS_FILE = "/jiangdingfeng/zy/Termius/rollout/results/grpo_validation_test_results.json"
+RESULTS_FILE = "/jiangdingfeng/zy/Termius/rollout/experiments/results/grpo_validation_test_results.json"
 
 
 def main():

@@ -604,7 +604,7 @@ def main():
         print(f"\n  Peak GPU memory: {mem:.1f} MB")
         results["gpu_memory_mb"] = round(mem, 1)
 
-    output_file = Path(__file__).resolve().parent.parent / "results/training/distill_results.json"
+    output_file = Path(__file__).resolve().parent.parent / "experiments/results/training/distill_results.json"
     output_file.parent.mkdir(parents=True, exist_ok=True)
     with open(output_file, "w") as f:
         json.dump(results, f, indent=2)

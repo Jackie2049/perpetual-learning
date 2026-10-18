@@ -548,7 +548,7 @@ def main():
             'device': str(device),
         }
     }
-    output_file = Path(__file__).resolve().parent.parent / "results/training/prm_vs_orm_results.json"
+    output_file = Path(__file__).resolve().parent.parent / "experiments/results/training/prm_vs_orm_results.json"
     output_file.parent.mkdir(parents=True, exist_ok=True)
     with open(output_file, "w") as f:
         json.dump(output, f, indent=2)

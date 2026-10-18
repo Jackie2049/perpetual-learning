@@ -129,8 +129,8 @@ source ~/anaconda3/bin/activate llm
 CUDA_VISIBLE_DEVICES=0 python -u tools/activation_checkpointing_experiment.py --model_size 76k --num_steps 100
 CUDA_VISIBLE_DEVICES=0 python -u tools/activation_checkpointing_experiment.py --model_size 2.28m --num_steps 100
 
-results/activation_checkpointing_results.json
-results/activation_checkpointing_76k.json
+experiments/results/activation_checkpointing_results.json
+experiments/results/activation_checkpointing_76k.json
 ```
 
 工具: `tools/activation_checkpointing_experiment.py`

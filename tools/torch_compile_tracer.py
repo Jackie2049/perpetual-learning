@@ -384,12 +384,12 @@ def main():
         trace_backward(model, args.mode)
 
     # Save results
-    Path("results").mkdir(exist_ok=True)
+    Path("experiments/results").mkdir(exist_ok=True)
     name = f"compile_trace_{args.model}_{args.mode}"
-    with open(f"results/{name}.json", "w") as f:
+    with open(f"experiments/results/{name}.json", "w") as f:
         json.dump(result, f, indent=2)
 
-    print(f"\n  Results saved: results/{name}.json")
+    print(f"\n  Results saved: experiments/results/{name}.json")
 
 
 if __name__ == "__main__":

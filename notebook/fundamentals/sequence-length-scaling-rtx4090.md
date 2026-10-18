@@ -132,7 +132,7 @@ CUDA_VISIBLE_DEVICES=0 python -u tools/sequence_length_scaling.py --model_size 2
 # Quick forward-only scaling (up to 8192)
 # See inline Python in notebook
 
-results/sequence_length_scaling_results.json
+experiments/results/sequence_length_scaling_results.json
 ```
 
 工具: `tools/sequence_length_scaling.py`

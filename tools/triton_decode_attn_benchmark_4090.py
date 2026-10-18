@@ -443,9 +443,9 @@ def run_experiment():
         print(f"  {k}: {v}")
 
     # Save
-    with open("results/triton_decode_attn_benchmark.json", "w") as f:
+    with open("experiments/results/triton_decode_attn_benchmark.json", "w") as f:
         json.dump(results, f, indent=2)
-    print(f"\nResults saved to results/triton_decode_attn_benchmark.json")
+    print(f"\nResults saved to experiments/results/triton_decode_attn_benchmark.json")
 
     return results
 

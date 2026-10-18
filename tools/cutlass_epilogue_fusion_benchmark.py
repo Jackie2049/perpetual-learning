@@ -248,7 +248,7 @@ def run_benchmark():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output", type=str, default="results/cutlass_epilogue_fusion_benchmark.json")
+    parser.add_argument("--output", type=str, default="experiments/results/cutlass_epilogue_fusion_benchmark.json")
     args = parser.parse_args()
 
     results = run_benchmark()

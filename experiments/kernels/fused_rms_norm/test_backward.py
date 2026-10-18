@@ -13,7 +13,7 @@ import os
 os.environ["HF_HUB_OFFLINE"] = "1"
 
 import sys
-sys.path.insert(0, '/root/rollout-infra/csrc/kernels/fused_rms_norm')
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import torch
 import time
@@ -161,7 +161,7 @@ print(f"Backward correctness: {'PASS' if correctness_pass else 'FAIL'}")
 print("Next step: Implement CUDA C++ backward kernel for further speedup")
 
 # Save results
-out_path = os.path.join('/root/rollout-infra/csrc/kernels/fused_rms_norm',
+out_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                         'backward_test_results.json')
 with open(out_path, 'w') as f:
     json.dump({

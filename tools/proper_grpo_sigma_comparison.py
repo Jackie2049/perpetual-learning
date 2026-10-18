@@ -290,7 +290,7 @@ def main():
 
     # Save
     output_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                                'results', 'proper_grpo_sigma_comparison.json')
+                                'experiments/results', 'proper_grpo_sigma_comparison.json')
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, 'w') as f:
         json.dump(results, f, indent=2)

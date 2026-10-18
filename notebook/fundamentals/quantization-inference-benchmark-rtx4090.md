@@ -181,4 +181,4 @@ Q: 目标是什么?
 ## 工具
 
 - `tools/quantization_inference_benchmark_4090.py` — 5实验量化benchmark
-- `results/quantization_inference_benchmark.json` — 完整数据
+- `experiments/results/quantization_inference_benchmark.json` — 完整数据

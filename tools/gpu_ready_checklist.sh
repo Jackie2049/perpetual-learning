@@ -101,7 +101,7 @@ echo "  $SSH_CMD '$CONDA_CMD && python3 tools/profile_vllm_budget.py --mode coll
 echo "    --models Qwen3-1.7B \\"
 echo "    --seq-lens 512 1024 2048 \\"
 echo "    --batch-sizes 1 4 8 16 32 \\"
-echo "    --output results/profile_table_rtx4090.csv'"
+echo "    --output experiments/results/profile_table_rtx4090.csv'"
 log_info ""
 log_info "Estimated time: ~1-2 hours"
 log_info "After collection: validate with --mode validate"

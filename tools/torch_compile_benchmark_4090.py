@@ -357,7 +357,7 @@ def main():
 
     # Save results
     output_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                              'results', 'torch_compile_benchmark.json')
+                              'experiments/results', 'torch_compile_benchmark.json')
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
     with open(output_file, 'w') as f:
         json.dump(results, f, indent=2)

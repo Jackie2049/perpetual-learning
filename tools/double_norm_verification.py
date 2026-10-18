@@ -273,7 +273,7 @@ def main():
         print(f"\n  ✗ Hypothesis REJECTED: σ-norm still worse even without clip")
 
     output_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                                'results', 'double_norm_verification.json')
+                                'experiments/results', 'double_norm_verification.json')
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, 'w') as f:
         json.dump(results, f, indent=2)

@@ -435,7 +435,7 @@ def main():
 
     # Save results
     output_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                                'results', args.output)
+                                'experiments/results', args.output)
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     # Convert all float values to plain floats for JSON
     def convert(obj):

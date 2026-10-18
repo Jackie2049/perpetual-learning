@@ -466,7 +466,7 @@ if __name__ == '__main__':
     torch.cuda.empty_cache()
     results = run_all()
     try:
-        with open('results/kv_cache_offloading_benchmark.json', 'w') as f:
+        with open('experiments/results/kv_cache_offloading_benchmark.json', 'w') as f:
             json.dump(results, f, indent=2, default=str)
     except:
         with open('kv_cache_offloading_benchmark.json', 'w') as f:

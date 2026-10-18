@@ -115,8 +115,8 @@ vs Separate PyTorch ops:
 
 ## 文件
 
-- `csrc/kernels/fused_rms_norm/setup.py` — 编译配置
-- `csrc/kernels/fused_rms_norm/fused_rms_norm.cpp` — pybind11 绑定
-- `csrc/kernels/fused_rms_norm/fused_rms_norm_cuda.cu` — CUDA kernel 实现
-- `csrc/kernels/fused_rms_norm/fused_rms_norm_python.py` — Python wrapper + autograd
-- `csrc/kernels/fused_rms_norm/benchmark_rms_norm.py` — Benchmark 工具
+- `experiments/kernels/fused_rms_norm/setup.py` — 编译配置
+- `experiments/kernels/fused_rms_norm/fused_rms_norm.cpp` — pybind11 绑定
+- `experiments/kernels/fused_rms_norm/fused_rms_norm_cuda.cu` — CUDA kernel 实现
+- `experiments/kernels/fused_rms_norm/fused_rms_norm_python.py` — Python wrapper + autograd
+- `experiments/kernels/fused_rms_norm/benchmark_rms_norm.py` — Benchmark 工具

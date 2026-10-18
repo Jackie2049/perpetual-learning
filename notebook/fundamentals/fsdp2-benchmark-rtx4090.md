@@ -187,4 +187,4 @@ FSDP1 (monolithic API) — PyTorch 1.12+:
 ## 工具
 
 - `tools/fsdp2_benchmark_4090.py` — FSDP1/FSDP2/FSDP2+compile/DDP基准
-- `results/fsdp2_benchmark.json` — 完整实验数据
+- `experiments/results/fsdp2_benchmark.json` — 完整实验数据

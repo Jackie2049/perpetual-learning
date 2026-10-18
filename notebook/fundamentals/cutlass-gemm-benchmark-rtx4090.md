@@ -186,7 +186,7 @@ MoE优化 (per-expert memory-bound):
 ---
 
 **Sources**:
-- CUTLASS GEMM Benchmark: results/cutlass_gemm_benchmark.json
+- CUTLASS GEMM Benchmark: experiments/results/cutlass_gemm_benchmark.json
 - NVIDIA cuBLAS Documentation
 - RTX 4090 Specs: 82.58 TFLOPS FP16, 165.16 TFLOPS FP8/INT8
 

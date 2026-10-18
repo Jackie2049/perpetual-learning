@@ -364,7 +364,7 @@ def main():
         dist.destroy_process_group()
 
     output_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                                'results', 'checkpointing_fsdp_benchmark.json')
+                                'experiments/results', 'checkpointing_fsdp_benchmark.json')
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, 'w') as f:
         json.dump(all_results, f, indent=2)

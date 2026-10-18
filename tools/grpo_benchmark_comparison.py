@@ -188,7 +188,7 @@ def print_stats():
         print(f"  {stars} {cfg['framework']} — {cfg['notes']}")
 
     # Save results
-    results_dir = Path("results")
+    results_dir = Path("experiments/results")
     results_dir.mkdir(exist_ok=True)
     results_file = results_dir / "grpo_benchmark_comparison.json"
     with open(results_file, "w") as f:

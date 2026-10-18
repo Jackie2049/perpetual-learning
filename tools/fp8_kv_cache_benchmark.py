@@ -214,10 +214,10 @@ all_results = {
     "kv_results": results,
 }
 
-os.makedirs("results", exist_ok=True)
-with open("results/fp8_kv_cache_benchmark.json", "w") as f:
+os.makedirs("experiments/results", exist_ok=True)
+with open("experiments/results/fp8_kv_cache_benchmark.json", "w") as f:
     json.dump(all_results, f, indent=2)
-print(f"\nResults saved to results/fp8_kv_cache_benchmark.json")
+print(f"\nResults saved to experiments/results/fp8_kv_cache_benchmark.json")
 
 # =====================================================================
 # Summary

@@ -235,7 +235,7 @@ cd ~/rollout-infra
 source ~/anaconda3/bin/activate llm
 CUDA_VISIBLE_DEVICES=0 python -u tools/proper_grpo_sigma_comparison.py --model_size 2.28m
 
-results/proper_grpo_sigma_comparison.json
+experiments/results/proper_grpo_sigma_comparison.json
 ```
 
 工具: `tools/proper_grpo_sigma_comparison.py`
@@ -311,7 +311,7 @@ clip对两种方法都有帮助:
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 python -u tools/double_norm_verification.py --model_size 2.28m
-results/double_norm_verification.json
+experiments/results/double_norm_verification.json
 ```
 
 工具: `tools/double_norm_verification.py`

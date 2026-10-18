@@ -105,7 +105,7 @@ source ~/anaconda3/bin/activate llm
 CUDA_VISIBLE_DEVICES=0 python tools/zero_training_experiment.py --num_steps 100
 
 # 结果
-results/zero_training_results.json
+experiments/results/zero_training_results.json
 ```
 
 工具: `tools/zero_training_experiment.py`

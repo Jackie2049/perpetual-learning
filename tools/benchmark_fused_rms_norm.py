@@ -11,7 +11,7 @@ Usage:
   python tools/benchmark_fused_rms_norm.py --cuda    # On RTX 4090 (requires compiled kernel)
 
 On GPU server, first compile:
-  cd ~/rollout-infra/csrc/kernels/fused_rms_norm
+  cd ~/rollout-infra/experiments/kernels/fused_rms_norm
   python setup.py build_ext --inplace
 """
 

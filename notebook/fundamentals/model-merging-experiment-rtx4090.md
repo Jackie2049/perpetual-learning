@@ -209,7 +209,7 @@ cd ~/rollout-infra/
 source ~/anaconda3/bin/activate llm
 python tools/model_merging_experiment.py --device cuda --output model_merging_results.json
 
-# 结果保存在 results/model_merging_results.json
+# 结果保存在 experiments/results/model_merging_results.json
 ```
 
 工具: `tools/model_merging_experiment.py`

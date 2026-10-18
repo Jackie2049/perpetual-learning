@@ -10,7 +10,7 @@ Run on partner server:
   cd /jiangdingfeng/zy/Termius/rollout
   source /jiangdingfeng/miniconda3/etc/profile.d/conda.sh
   conda activate env-rollout
-  python scripts/grpo_training_runtime_test_h20.py
+  python experiments/scripts/grpo_training_runtime_test_h20.py
 """
 
 import json
@@ -19,7 +19,7 @@ import sys
 import time
 import traceback
 
-RESULTS_FILE = "/jiangdingfeng/zy/Termius/rollout/results/grpo_training_runtime_test_h20_results.json"
+RESULTS_FILE = "/jiangdingfeng/zy/Termius/rollout/experiments/results/grpo_training_runtime_test_h20_results.json"
 
 
 def make_reward_func():
@@ -61,7 +61,7 @@ def main():
 
         # GRPOConfig with UP-GRPO
         config = GRPOConfig(
-            output_dir="/jiangdingfeng/zy/Termius/rollout/results/grpo_up_test",
+            output_dir="/jiangdingfeng/zy/Termius/rollout/experiments/results/grpo_up_test",
             loss_type="up",
             num_generations=4,
             per_device_train_batch_size=4,
@@ -125,7 +125,7 @@ def main():
         dataset = load_dataset("trl-lib/tldr", split="train[:8]")
 
         config = GRPOConfig(
-            output_dir="/jiangdingfeng/zy/Termius/rollout/results/grpo_standard_test",
+            output_dir="/jiangdingfeng/zy/Termius/rollout/experiments/results/grpo_standard_test",
             loss_type="grpo",
             num_generations=4,
             per_device_train_batch_size=4,

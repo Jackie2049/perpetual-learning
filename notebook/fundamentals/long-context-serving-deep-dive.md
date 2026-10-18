@@ -373,4 +373,4 @@ RTX 4090长上下文serving决策树:
 **Related notes**: flashinfer-attention-deep-dive.md, kv-cache-management-deep-dive.md, rope-scaling-deep-dive.md, scheduler-architecture-deep-dive.md
 
 **Benchmark tool**: tools/long_context_serving_benchmark.py (7 experiments, RTX 4090)
-**Benchmark results**: results/long_context_serving_benchmark.json
+**Benchmark results**: experiments/results/long_context_serving_benchmark.json

@@ -25,7 +25,7 @@ import sys
 import time
 from pathlib import Path
 
-RESULTS_DIR = Path("results/nandetectmode_validation")
+RESULTS_DIR = Path("experiments/results/nandetectmode_validation")
 
 
 def check_dependencies():

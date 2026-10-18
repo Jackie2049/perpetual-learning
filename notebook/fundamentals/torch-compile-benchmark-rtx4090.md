@@ -222,7 +222,7 @@ torch.compile决策树:
 ---
 
 **Sources**:
-- torch.compile benchmark: `results/torch_compile_benchmark.json`
+- torch.compile benchmark: `experiments/results/torch_compile_benchmark.json`
 - Benchmark script: `tools/torch_compile_benchmark_4090.py`
 - PyTorch 2.9.0+cu128, RTX 4090 (8x, SM89)
 

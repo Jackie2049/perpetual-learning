@@ -347,7 +347,7 @@ def main():
 
     # Save
     output_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                                'results', args.output)
+                                'experiments/results', args.output)
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
     # Convert numpy values

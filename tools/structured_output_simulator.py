@@ -514,9 +514,9 @@ def main():
         "overhead_pct": 0.25,  # estimated
     }
 
-    with open("results/structured_output_simulator.json", "w") as f:
+    with open("experiments/results/structured_output_simulator.json", "w") as f:
         json.dump(results, f, indent=2)
-    print("Results saved to results/structured_output_simulator.json")
+    print("Results saved to experiments/results/structured_output_simulator.json")
 
 
 if __name__ == "__main__":

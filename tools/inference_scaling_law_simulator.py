@@ -441,7 +441,7 @@ def main():
     parser.add_argument('--batch', type=int, default=118)
     parser.add_argument('--quant', default='int4_int8kv', choices=list(QUANT_CONFIGS.keys()))
     parser.add_argument('--kv_type', default='gqa8', choices=['gqa8', 'gqa4', 'mha'])
-    parser.add_argument('--output', default='results/inference_scaling_law_simulator.json')
+    parser.add_argument('--output', default='experiments/results/inference_scaling_law_simulator.json')
     args = parser.parse_args()
 
     all_results = {}

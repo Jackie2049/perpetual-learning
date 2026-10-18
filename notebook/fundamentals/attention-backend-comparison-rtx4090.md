@@ -224,4 +224,4 @@ Q1: 计算模式?
 ## 工具
 
 - `tools/attention_backend_comparison_4090.py` — 5实验完整benchmark
-- `results/attention_backend_comparison.json` — 完整数据
+- `experiments/results/attention_backend_comparison.json` — 完整数据

@@ -859,7 +859,7 @@ def main():
     print(f"    Total FLOPS: {total_flops:.2e}")
     print(f"    DPO FLOPS: {dpo_flops:.2e} ({dpo_flops/total_flops*100:.1f}% of total)")
 
-    output_file = Path(__file__).resolve().parent.parent / "results/training/dpo_train_results.json"
+    output_file = Path(__file__).resolve().parent.parent / "experiments/results/training/dpo_train_results.json"
     output_file.parent.mkdir(parents=True, exist_ok=True)
     with open(output_file, "w") as f:
         json.dump(results, f, indent=2)

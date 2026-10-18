@@ -298,4 +298,4 @@ RTX 4090训练优化清单:
 - Gradient accumulation: micro_batch×accum=等效B → 小GPU桥梁
 - LoRA: r=8 → 99.6%参数省 → 单GPU可行
 - verl: colocation+async rollout+GRPO → RTX 4090推荐
-- FSDP benchmark: results/fsdp2_scaling_benchmark_4090.json → 0.46x灾难
+- FSDP benchmark: experiments/results/fsdp2_scaling_benchmark_4090.json → 0.46x灾难

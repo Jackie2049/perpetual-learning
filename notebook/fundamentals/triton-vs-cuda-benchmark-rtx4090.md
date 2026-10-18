@@ -215,9 +215,9 @@ FP8 GEMM:
 ---
 
 **Sources**:
-- RTX 4090 Triton vs CUDA Benchmark: results/triton_vs_cuda_benchmark.json
-- FlashInfer Benchmark: results/flashinfer_decode_extended_benchmark.json
-- CUTLASS GEMM: results/cutlass_gemm_benchmark.json
+- RTX 4090 Triton vs CUDA Benchmark: experiments/results/triton_vs_cuda_benchmark.json
+- FlashInfer Benchmark: experiments/results/flashinfer_decode_extended_benchmark.json
+- CUTLASS GEMM: experiments/results/cutlass_gemm_benchmark.json
 - Triton 3.5.0, FlashInfer 0.6.12, CUDA C++ RMSNorm (custom kernel)
 
 **Related notes**: flashinfer-attention-deep-dive.md, cuda-kernel-optimization-sm89.md, cutlass-gemm-benchmark-rtx4090.md

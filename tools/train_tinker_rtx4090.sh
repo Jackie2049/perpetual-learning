@@ -198,4 +198,4 @@ rllm train --config "$CONFIG_DIR/tinker_grpo.yaml"
 
 echo ""
 echo "Training complete!"
-echo "Check results in: results/rllm/tinker_grpo/"
+echo "Check results in: experiments/results/rllm/tinker_grpo/"

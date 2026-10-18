@@ -280,7 +280,7 @@ def generate_config():
     print("  " + eagle_cmd)
 
     # Save configs to JSON
-    config_dir = Path("results")
+    config_dir = Path("experiments/results")
     config_dir.mkdir(exist_ok=True)
 
     full_config = {
@@ -390,7 +390,7 @@ def run_benchmark():
             print(result.stderr[:500])
 
         # Save results
-        results_dir = Path("results")
+        results_dir = Path("experiments/results")
         results_dir.mkdir(exist_ok=True)
         results_file = results_dir / "rtx4090_inference_benchmark.json"
         benchmark_data = {

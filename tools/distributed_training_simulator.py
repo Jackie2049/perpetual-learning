@@ -605,9 +605,9 @@ def main():
         "elastic_efficiency_pct": sim["efficiency_pct"],
         "cap_decisions": {k: v["cap_choice"] for k, v in cap_results.items()},
     }
-    with open("results/distributed_training_simulator.json", "w") as f:
+    with open("experiments/results/distributed_training_simulator.json", "w") as f:
         json.dump(results, f, indent=2)
-    print(f"\nResults saved to results/distributed_training_simulator.json")
+    print(f"\nResults saved to experiments/results/distributed_training_simulator.json")
 
 
 if __name__ == "__main__":

@@ -341,10 +341,10 @@ TE FP8 B=1 → 不可行!
 ---
 
 **Sources**:
-- Comprehensive Inference Benchmark (RTX 4090): results/comprehensive_inference_benchmark.json
-- TE FP8 Training Benchmark: results/te_fp8_training_benchmark.json
-- FP8 GEMM Algorithm Analysis: results/fp8_gemm_algorithm_analysis.json
-- FlashInfer Extended Benchmark: results/flashinfer_decode_extended_benchmark.json
+- Comprehensive Inference Benchmark (RTX 4090): experiments/results/comprehensive_inference_benchmark.json
+- TE FP8 Training Benchmark: experiments/results/te_fp8_training_benchmark.json
+- FP8 GEMM Algorithm Analysis: experiments/results/fp8_gemm_algorithm_analysis.json
+- FlashInfer Extended Benchmark: experiments/results/flashinfer_decode_extended_benchmark.json
 - AWQ Paper: Linear, 2023
 - SmoothQuant Paper: NVIDIA, 2023
 - TransformerEngine: github.com/NVIDIA/TransformerEngine

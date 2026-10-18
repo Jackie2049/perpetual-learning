@@ -254,7 +254,7 @@ CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 torchrun --nproc_per_node=8 tools/ddp_vs_gr
 CUDA_VISIBLE_DEVICES=0,1 torchrun --nproc_per_node=2 tools/ddp_vs_gradaccum.py --mode ddp_gradaccum --world_size 2 --grad_accum_steps 4 --model_size 76k
 
 # Results
-results/ddp_vs_gradaccum_*.json
+experiments/results/ddp_vs_gradaccum_*.json
 ```
 
 工具: `tools/ddp_vs_gradaccum.py`

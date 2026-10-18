@@ -14,7 +14,7 @@ Usage:
 import json
 from pathlib import Path
 
-RESULTS_DIR = Path(__file__).parent.parent / "results"
+RESULTS_DIR = Path(__file__).parent.parent / "experiments/results"
 
 def build_comparison():
     """Build comprehensive communication primitives comparison"""

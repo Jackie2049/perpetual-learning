@@ -262,5 +262,5 @@ RTX 4090实测结论(两代kernel+v2确认):
 
 - `tools/triton_fused_qkv_projection.py` — v1 naive Triton QKV kernel + 4实验
 - `tools/triton_fused_qkv_v2.py` — v2 tl.dot() tiled Triton QKV kernel + 4实验
-- `results/triton_fused_qkv_projection.json` — v1结果数据
-- `results/triton_fused_qkv_v2.json` — v2结果数据
+- `experiments/results/triton_fused_qkv_projection.json` — v1结果数据
+- `experiments/results/triton_fused_qkv_v2.json` — v2结果数据

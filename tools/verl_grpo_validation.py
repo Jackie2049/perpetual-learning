@@ -224,12 +224,12 @@ def main():
             results["gpu"] = {"available": False}
 
     # Save results
-    Path("results").mkdir(exist_ok=True)
+    Path("experiments/results").mkdir(exist_ok=True)
     name = f"grpo_validation_{args.model_size}_lora{args.lora_rank}"
-    with open(f"results/{name}.json", "w") as f:
+    with open(f"experiments/results/{name}.json", "w") as f:
         json.dump(results, f, indent=2)
 
-    print(f"\n  Results saved: results/{name}.json")
+    print(f"\n  Results saved: experiments/results/{name}.json")
 
 
 if __name__ == "__main__":

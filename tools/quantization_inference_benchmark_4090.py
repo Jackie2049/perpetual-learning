@@ -402,9 +402,9 @@ def run_experiment():
     results["kv_cache"] = kv_results
 
     # Save results
-    with open("results/quantization_inference_benchmark.json", "w") as f:
+    with open("experiments/results/quantization_inference_benchmark.json", "w") as f:
         json.dump(results, f, indent=2)
-    print(f"\nResults saved to results/quantization_inference_benchmark.json")
+    print(f"\nResults saved to experiments/results/quantization_inference_benchmark.json")
 
     return results
 

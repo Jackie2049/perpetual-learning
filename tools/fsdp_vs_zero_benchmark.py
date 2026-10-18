@@ -230,9 +230,9 @@ if __name__ == "__main__":
     )
     # Save result
     import json
-    Path("results").mkdir(exist_ok=True)
+    Path("experiments/results").mkdir(exist_ok=True)
     name = f"lora-{args.lora_rank}-{args.compile_mode or 'eager'}-{args.model_size}"
-    with open(f"results/{name}.json", "w") as f:
+    with open(f"experiments/results/{name}.json", "w") as f:
         json.dump(result, f, indent=2)
 """
 

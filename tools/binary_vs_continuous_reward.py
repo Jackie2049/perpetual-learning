@@ -318,7 +318,7 @@ def main():
         print(f"\n  ✗ REJECTED: σ-norm still problematic even with continuous reward")
 
     output_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                                'results', 'binary_vs_continuous_reward.json')
+                                'experiments/results', 'binary_vs_continuous_reward.json')
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, 'w') as f:
         json.dump(results, f, indent=2)

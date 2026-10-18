@@ -35,13 +35,13 @@ METHODS = [
 ]
 
 OUTPUT_FILES = {
-    'grpo': 'results/grpo_unified.json',
-    'sft_grpo': 'results/sft_grpo_unified.json',
-    'dapo': 'results/dapo_unified.json',
-    'sft_dapo': 'results/sft_dapo_unified.json',
-    'ppo': 'results/ppo_unified.json',
-    'dpo': 'results/dpo_unified.json',
-    'rloo': 'results/rloo_unified.json',
+    'grpo': 'experiments/results/grpo_unified.json',
+    'sft_grpo': 'experiments/results/sft_grpo_unified.json',
+    'dapo': 'experiments/results/dapo_unified.json',
+    'sft_dapo': 'experiments/results/sft_dapo_unified.json',
+    'ppo': 'experiments/results/ppo_unified.json',
+    'dpo': 'experiments/results/dpo_unified.json',
+    'rloo': 'experiments/results/rloo_unified.json',
 }
 
 
@@ -71,7 +71,7 @@ def run_method(mode, gpu_id, params, timeout=600):
     return proc
 
 
-def analyze_results(results_dir='results'):
+def analyze_results(results_dir='experiments/results'):
     """Analyze all results and create unified comparison."""
     comparison = {}
 
@@ -176,11 +176,11 @@ if __name__ == '__main__':
 
         # Analyze
         print("\n--- Analyzing Results ---")
-        comparison = analyze_results('results')
+        comparison = analyze_results('experiments/results')
 
     elif '--analyze' in sys.argv:
         print("--- Analyzing Existing Results ---")
-        comparison = analyze_results('results')
+        comparison = analyze_results('experiments/results')
 
     else:
         print("Usage: python tools/unified_rl_comparison.py --run    (run all experiments)")

@@ -161,4 +161,4 @@ Q2: 场景?
 ## 工具
 
 - `tools/e2e_serving_throughput_simulator_4090.py` — 6实验系统级模拟器
-- `results/e2e_serving_throughput.json` — 完整数据
+- `experiments/results/e2e_serving_throughput.json` — 完整数据

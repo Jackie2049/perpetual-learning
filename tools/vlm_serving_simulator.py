@@ -524,9 +524,9 @@ def main():
         "prefix_sharing_50": kv_model.compute_prefix_sharing_concurrent(144, 400, 50, "int8_gqa8"),
         "vlm_serving_best": serving.compute_vlm_throughput(576, 400, "pixelshuffle_4x", "int8_gqa8", 50),
     }
-    with open("results/vlm_serving_simulator.json", "w") as f:
+    with open("experiments/results/vlm_serving_simulator.json", "w") as f:
         json.dump(results, f, indent=2)
-    print(f"\nResults saved to results/vlm_serving_simulator.json")
+    print(f"\nResults saved to experiments/results/vlm_serving_simulator.json")
 
 
 if __name__ == "__main__":

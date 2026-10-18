@@ -185,6 +185,6 @@ INT8 Weight Roofline Prediction (K=4096, N=14336):
 - RTX 4090实测 (cuBLAS BF16, 169.6 TFLOPS peak, 890.8 GB/s HBM)
 
 **Benchmark tool**: tools/gemm_shape_analysis.py
-**Benchmark results**: results/gemm_shape_analysis.json
+**Benchmark results**: experiments/results/gemm_shape_analysis.json
 
 **Related notes**: cutlass-gemm-benchmark-rtx4090.md(CUTLASS详细), decode-roofline(之前的roofline), triton-vs-cuda(Triton vs cuBLAS)

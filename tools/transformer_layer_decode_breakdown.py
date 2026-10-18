@@ -360,7 +360,7 @@ if __name__ == '__main__':
     torch.cuda.empty_cache()
     results = run_all()
     try:
-        with open('results/transformer_layer_decode_breakdown.json', 'w') as f:
+        with open('experiments/results/transformer_layer_decode_breakdown.json', 'w') as f:
             json.dump(results, f, indent=2, default=str)
     except:
         with open('transformer_layer_decode_breakdown.json', 'w') as f:

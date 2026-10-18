@@ -390,7 +390,7 @@ def main():
     parser.add_argument("--quant", type=str, default="bf16")
     parser.add_argument("--kv-quant", type=str, default="bf16")
     parser.add_argument("--sweep", action="store_true", help="Sweep across configs")
-    parser.add_argument("--output", type=str, default="results/roofline_analysis.json")
+    parser.add_argument("--output", type=str, default="experiments/results/roofline_analysis.json")
     args = parser.parse_args()
 
     # Model configs

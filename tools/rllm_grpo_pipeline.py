@@ -225,7 +225,7 @@ def check_gpu_environment():
     return True
 
 
-def generate_config(config_name=None, output_dir="results"):
+def generate_config(config_name=None, output_dir="experiments/results"):
     """Generate YAML config files"""
     config_name = config_name or DEFAULT_CONFIG
     cfg = RTX4090_GRPO_CONFIGS[config_name]

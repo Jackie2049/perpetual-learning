@@ -343,7 +343,7 @@ def main():
     print_results(results)
 
     # Save results
-    results_dir = Path("results")
+    results_dir = Path("experiments/results")
     results_dir.mkdir(exist_ok=True)
     output_file = results_dir / f"cuda_graph_memory_{mode}.json"
     with open(output_file, "w") as f:

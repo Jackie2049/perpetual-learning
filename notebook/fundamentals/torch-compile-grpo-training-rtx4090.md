@@ -180,7 +180,7 @@ FSDP2+compile训练           │ compile(default)              │ 1.2-1.5x
 ## 工具
 
 - `tools/torch_compile_grpo_benchmark.py` — 3实验benchmark脚本
-- `results/torch_compile_grpo_benchmark.json` — 完整结果数据
+- `experiments/results/torch_compile_grpo_benchmark.json` — 完整结果数据
 
 ## 参考
 

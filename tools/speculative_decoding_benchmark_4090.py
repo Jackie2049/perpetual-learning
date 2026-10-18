@@ -289,9 +289,9 @@ def run_experiment():
             print(f"  α={alpha}, latency_ratio={lr}: optimal K={best_K}, speedup={best_speedup:.2f}x")
 
     # Save
-    with open("results/speculative_decoding_benchmark.json", "w") as f:
+    with open("experiments/results/speculative_decoding_benchmark.json", "w") as f:
         json.dump(results, f, indent=2)
-    print(f"\nResults saved to results/speculative_decoding_benchmark.json")
+    print(f"\nResults saved to experiments/results/speculative_decoding_benchmark.json")
 
     return results
 

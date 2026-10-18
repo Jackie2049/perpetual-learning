@@ -290,7 +290,7 @@ def main():
         print_results(r, m)
 
     # Save
-    results_dir = Path("results")
+    results_dir = Path("experiments/results")
     results_dir.mkdir(exist_ok=True)
     output_file = results_dir / f"seven_framework_knowledge_graph_{mode}.json"
     with open(output_file, "w") as f:

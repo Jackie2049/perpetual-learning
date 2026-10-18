@@ -642,9 +642,9 @@ def main():
         "false_negatives": overall['stats']['false_negative'],
         "false_positives": overall['stats']['false_positive'],
     }
-    with open("results/safety_alignment_simulator.json", "w") as f:
+    with open("experiments/results/safety_alignment_simulator.json", "w") as f:
         json.dump(results, f, indent=2)
-    print(f"\nResults saved to results/safety_alignment_simulator.json")
+    print(f"\nResults saved to experiments/results/safety_alignment_simulator.json")
 
 
 if __name__ == "__main__":

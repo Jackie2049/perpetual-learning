@@ -163,7 +163,7 @@ RTX 4090训练决策树:
 ---
 
 **Sources**:
-- FSDP2 Scaling Benchmark: results/fsdp2_scaling_benchmark_4090.json
+- FSDP2 Scaling Benchmark: experiments/results/fsdp2_scaling_benchmark_4090.json
 - NCCL PCIe实测: 12 GB/s单向
 - RTX 4090 Specs: 82.58 TFLOPS BF16, 876 GB/s GEMM BW
 

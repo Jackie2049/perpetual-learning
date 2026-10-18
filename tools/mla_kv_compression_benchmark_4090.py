@@ -540,9 +540,9 @@ def run_experiment():
     results["capacity"] = capacity_results
 
     # Save
-    with open("results/mla_kv_compression_benchmark.json", "w") as f:
+    with open("experiments/results/mla_kv_compression_benchmark.json", "w") as f:
         json.dump(results, f, indent=2)
-    print(f"\nResults saved to results/mla_kv_compression_benchmark.json")
+    print(f"\nResults saved to experiments/results/mla_kv_compression_benchmark.json")
 
     return results
 

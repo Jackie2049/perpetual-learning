@@ -11,6 +11,7 @@
 | [experiments/](experiments/) | 实验记录：问题、环境、方法、结果、结论和经验 |
 | [roadmap.md](roadmap.md) | 技术学习与实践规划 |
 | [knowledge-map.md](knowledge-map.md) | 知识整理、关联与整体导航 |
+| [resources/](resources/readme.md) | 学习与调研的原始资料留档 |
 | [papers/](papers/) | 延续已有论文阅读笔记 |
 
 其余已有专题继续保留。新增内容优先归入上述已有位置，避免同一主题重复建立多个入口。
@@ -20,7 +21,7 @@
 - 笔记写清学习目标、核心理解、来源与适用版本；区分资料结论、自己的推断和已验证的事实。
 - 源码笔记链接实际代码位置与版本，贡献方案及进展放在 [open-source/](../open-source/README.md)。
 - 实验笔记说明问题、环境、命令、结果、结论及局限，并链接脚本和必要结果文件；真实实践的经验先跟随实验保存。
-- 根目录 [experiments/](../experiments/) 保存训练启动脚本及 [RTX 4090 配置](../experiments/rtx4090/configs/readme.md)，与这里的实验记录用途不同；两处后续是否合并仍待讨论。
+- [experiments/](../experiments/readme.md) 保存实验源码、脚本、配置、环境和原始结果；这里保存分析、结论与经验，两者互相链接。
 - 可复用工具见 [tools/](../tools/readme.md)，历史实验性脚本见 [tools/legacy/](../tools/legacy/readme.md)。
 
 ## 已有内容导航

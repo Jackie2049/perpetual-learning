@@ -320,7 +320,7 @@ def main():
         "seq_len": seq_len, "n_samples": n_samples, "num_steps": num_steps, "base_batch": base_batch,
         "results": all_results,
     }
-    output_file = Path(__file__).resolve().parent.parent / "results/distributed/grpo_ddp_benchmark_results.json"
+    output_file = Path(__file__).resolve().parent.parent / "experiments/results/distributed/grpo_ddp_benchmark_results.json"
     output_file.parent.mkdir(parents=True, exist_ok=True)
     with open(output_file, "w") as f:
         json.dump(output, f, indent=2)

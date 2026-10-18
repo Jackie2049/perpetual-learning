@@ -232,4 +232,4 @@ Checkpointing有价值的前提: activation占比 > 5%
 ## 工具
 
 - `tools/checkpointing_fsdp_benchmark_4090.py` — 3实验(单GPU/DDP+FSDP1+checkpointing)
-- `results/checkpointing_fsdp_benchmark.json` — 完整实验数据
+- `experiments/results/checkpointing_fsdp_benchmark.json` — 完整实验数据

@@ -475,9 +475,9 @@ def main():
         "epilogue_fusion_b1_silu": fusion.compute_fusion_savings(0.123, "silu", 1),
         "epilogue_fusion_b32_silu": fusion.compute_fusion_savings(0.030, "silu", 32),
     }
-    with open("results/cutlass_architecture_simulator.json", "w") as f:
+    with open("experiments/results/cutlass_architecture_simulator.json", "w") as f:
         json.dump(results, f, indent=2)
-    print(f"\nResults saved to results/cutlass_architecture_simulator.json")
+    print(f"\nResults saved to experiments/results/cutlass_architecture_simulator.json")
 
 
 if __name__ == "__main__":

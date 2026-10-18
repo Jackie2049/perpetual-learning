@@ -535,9 +535,9 @@ def main():
         "sampling_overhead_pct": breakdown["sampling_pct"],
         "spec_speedup_eagle": spec_overhead["speedup"],
     }
-    with open("results/inference_sampling_simulator.json", "w") as f:
+    with open("experiments/results/inference_sampling_simulator.json", "w") as f:
         json.dump(results, f, indent=2)
-    print(f"\nResults saved to results/inference_sampling_simulator.json")
+    print(f"\nResults saved to experiments/results/inference_sampling_simulator.json")
 
 
 if __name__ == "__main__":

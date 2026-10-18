@@ -447,7 +447,7 @@ def main():
                        choices=['mtp_sequential', 'mtp_independent', 'eagle', 'medusa', 'ngram', 'untrained'])
     parser.add_argument('--mtp_mode', default='sequential', choices=['sequential', 'independent'])
     parser.add_argument('--batch', type=int, default=1)
-    parser.add_argument('--output', default='results/mtp_simulator.json')
+    parser.add_argument('--output', default='experiments/results/mtp_simulator.json')
     args = parser.parse_args()
 
     all_results = {}

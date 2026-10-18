@@ -409,9 +409,9 @@ def run_experiment():
         print(f"  {scenario}: {info['recommended']} — {info['reason']}")
 
     # Save
-    with open("results/attention_backend_comparison.json", "w") as f:
+    with open("experiments/results/attention_backend_comparison.json", "w") as f:
         json.dump(results, f, indent=2)
-    print(f"\nResults saved to results/attention_backend_comparison.json")
+    print(f"\nResults saved to experiments/results/attention_backend_comparison.json")
 
     return results
 

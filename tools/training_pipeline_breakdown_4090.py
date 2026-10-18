@@ -324,9 +324,9 @@ def main():
                     print(f"    {name}: {ms:.3f}ms ({pct:.1f}%)")
 
     # Save
-    with open("results/training_pipeline_breakdown.json", "w") as f:
+    with open("experiments/results/training_pipeline_breakdown.json", "w") as f:
         json.dump(all_results, f, indent=2)
-    print(f"\nResults saved to results/training_pipeline_breakdown.json")
+    print(f"\nResults saved to experiments/results/training_pipeline_breakdown.json")
 
     # Print comparison table
     print("\n=== Prefill vs Decode Comparison ===")

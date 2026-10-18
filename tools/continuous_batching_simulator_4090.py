@@ -482,9 +482,9 @@ def run_experiment():
                   f"evictions={v.get('eviction_rate', 0):.2f}")
 
     # Save
-    with open("results/continuous_batching_simulator.json", "w") as f:
+    with open("experiments/results/continuous_batching_simulator.json", "w") as f:
         json.dump(results, f, indent=2)
-    print(f"\nResults saved to results/continuous_batching_simulator.json")
+    print(f"\nResults saved to experiments/results/continuous_batching_simulator.json")
 
     return results
 

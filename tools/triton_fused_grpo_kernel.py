@@ -508,7 +508,7 @@ def main():
                       f"step={e3[label]['median_step_ms']:.2f}ms")
 
     output_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                                'results', 'triton_fused_grpo_kernel.json')
+                                'experiments/results', 'triton_fused_grpo_kernel.json')
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, 'w') as f:
         json.dump(all_results, f, indent=2)

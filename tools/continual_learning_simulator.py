@@ -495,9 +495,9 @@ def main():
             "pure_DPO": sft_grpo.simulate_training("pure_DPO"),
         }.items()},
     }
-    with open("results/continual_learning_simulator.json", "w") as f:
+    with open("experiments/results/continual_learning_simulator.json", "w") as f:
         json.dump(results, f, indent=2)
-    print(f"\nResults saved to results/continual_learning_simulator.json")
+    print(f"\nResults saved to experiments/results/continual_learning_simulator.json")
 
 
 if __name__ == "__main__":

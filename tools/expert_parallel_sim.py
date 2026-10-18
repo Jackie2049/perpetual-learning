@@ -594,7 +594,7 @@ def run_all_experiments():
   - For memory-constrained: offload cold experts, keep top-K hot
   """)
 
-    output_file = Path(__file__).resolve().parent.parent / "results/distributed/expert_parallel_results.json"
+    output_file = Path(__file__).resolve().parent.parent / "experiments/results/distributed/expert_parallel_results.json"
     output_file.parent.mkdir(parents=True, exist_ok=True)
     with open(output_file, "w") as f:
         json.dump(all_results, f, indent=2, default=str)

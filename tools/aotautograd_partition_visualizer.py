@@ -368,8 +368,8 @@ def main():
     visualize_partition(nodes, result)
 
     # Save result
-    Path("results").mkdir(exist_ok=True)
-    with open(f"results/aotautograd_partition_{args.model}_{args.strategy}.json", "w") as f:
+    Path("experiments/results").mkdir(exist_ok=True)
+    with open(f"experiments/results/aotautograd_partition_{args.model}_{args.strategy}.json", "w") as f:
         json.dump(result, f, indent=2)
 
 

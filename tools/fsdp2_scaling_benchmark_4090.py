@@ -217,10 +217,10 @@ def main():
             "device": device_info,
             "results": results,
         }
-        os.makedirs("results", exist_ok=True)
-        with open("results/fsdp2_scaling_benchmark_4090.json", "w") as f:
+        os.makedirs("experiments/results", exist_ok=True)
+        with open("experiments/results/fsdp2_scaling_benchmark_4090.json", "w") as f:
             json.dump(all_output, f, indent=2)
-        print(f"\nResults saved to results/fsdp2_scaling_benchmark_4090.json")
+        print(f"\nResults saved to experiments/results/fsdp2_scaling_benchmark_4090.json")
 
         # Summary
         print(f"\n{'='*60}")

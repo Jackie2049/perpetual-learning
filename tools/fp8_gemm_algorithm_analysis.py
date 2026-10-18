@@ -374,8 +374,8 @@ all_results = {
     "training_analysis": training_results,
 }
 
-os.makedirs("results", exist_ok=True)
-output_path = "results/fp8_gemm_algorithm_analysis.json"
+os.makedirs("experiments/results", exist_ok=True)
+output_path = "experiments/results/fp8_gemm_algorithm_analysis.json"
 with open(output_path, "w") as f:
     json.dump(all_results, f, indent=2)
 print(f"\nResults saved to {output_path}")

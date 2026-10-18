@@ -22,7 +22,7 @@
 #   --conda-env ENV     Conda environment name (default: ai-infra)
 #   --model MODEL       Model path or HuggingFace ID (default: Qwen/Qwen2.5-7B-Instruct)
 #   --skip EXP_LIST     Comma-separated experiment numbers to skip (e.g., "3,5")
-#   --output-dir DIR    Base output directory (default: ~/workspace/rollout-infra/results)
+#   --output-dir DIR    Base output directory (default: experiments/results)
 #   --help              Show this help message
 # =============================================================================
 
@@ -51,8 +51,8 @@ GPU_DEVICE=""
 CONDA_ENV="ai-infra"
 MODEL="Qwen/Qwen2.5-7B-Instruct"
 SKIP_EXPS=""
-OUTPUT_DIR="$HOME/workspace/rollout-infra/results"
-SCRIPTS_DIR="$HOME/workspace/rollout-infra/scripts"
+SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+OUTPUT_DIR="$(cd "$SCRIPTS_DIR/.." && pwd)/results"
 HELPERS_PY="$SCRIPTS_DIR/gpu_experiment_helpers.py"
 
 # ---------------------------------------------------------------------------
@@ -69,7 +69,7 @@ usage() {
     echo "  --conda-env ENV     Conda environment (default: ai-infra)"
     echo "  --model MODEL       Model path or HF ID (default: Qwen/Qwen2.5-7B-Instruct)"
     echo "  --skip EXP_LIST     Comma-separated experiments to skip (e.g., \"3,5\")"
-    echo "  --output-dir DIR    Base output dir (default: ~/workspace/rollout-infra/results)"
+    echo "  --output-dir DIR    Base output dir (default: experiments/results)"
     echo "  --help              Show this help message"
     echo ""
     echo "Experiments:"

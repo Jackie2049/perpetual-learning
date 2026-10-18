@@ -159,10 +159,10 @@ all_results = {
     "batched_gemm_moe": results_batched,
 }
 
-os.makedirs("results", exist_ok=True)
-with open("results/cutlass_gemm_benchmark.json", "w") as f:
+os.makedirs("experiments/results", exist_ok=True)
+with open("experiments/results/cutlass_gemm_benchmark.json", "w") as f:
     json.dump(all_results, f, indent=2)
-print(f"\nResults saved to results/cutlass_gemm_benchmark.json")
+print(f"\nResults saved to experiments/results/cutlass_gemm_benchmark.json")
 
 # =====================================================================
 # Summary

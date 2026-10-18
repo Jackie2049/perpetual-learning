@@ -381,7 +381,7 @@ def run_all_experiments(device='cuda'):
         elif isinstance(obj, bool): return obj
         return obj
 
-    output_file = Path(__file__).resolve().parent.parent / "results/inference/top_n_sigma_triton_results.json"
+    output_file = Path(__file__).resolve().parent.parent / "experiments/results/inference/top_n_sigma_triton_results.json"
     output_file.parent.mkdir(parents=True, exist_ok=True)
     with open(output_file, "w") as f:
         json.dump(convert(all_results), f, indent=2)

@@ -489,7 +489,7 @@ pip install torch vllm deepspeed transformers peft pandas -i https://mirrors.ali
 ## Post-Experiment Actions
 
 ### After Each Experiment
-1. Save raw data to `results/` directory (gitignored but backed up locally)
+1. Save raw data to `experiments/results/` directory (gitignored but backed up locally)
 2. Update relevant notebook/project note with actual numbers
 3. Update diary/2026-06-XX.md with experiment results
 4. If UNIQUE contribution data → prepare PR/comment draft immediately

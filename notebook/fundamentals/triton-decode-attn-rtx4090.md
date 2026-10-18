@@ -234,5 +234,5 @@ Triton不支持batched dot product with 1D vector → 必须用element-wise ops 
 ---
 
 **工具**: `tools/triton_decode_attn_benchmark_4090.py`, `tools/triton_decode_attn_debug.py`
-**结果**: `results/triton_decode_attn_benchmark.json`
+**结果**: `experiments/results/triton_decode_attn_benchmark.json`
 **相关笔记**: `flashattention2-kernel-internals-vs-triton.md`, `flashinfer-decode-kernel-analysis.md`, `attention-backend-comparison-rtx4090.md`

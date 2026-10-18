@@ -251,7 +251,7 @@ def main():
     results = run_mode(mode)
     print_results(results)
 
-    results_dir = Path("results")
+    results_dir = Path("experiments/results")
     results_dir.mkdir(exist_ok=True)
     output_file = results_dir / f"grpo_advantage_{mode}.json"
     with open(output_file, "w") as f:

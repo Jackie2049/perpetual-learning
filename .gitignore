@@ -42,11 +42,12 @@ deepep-src/
 flashinfer/
 models/
 # Keep curated experiment results; ignore other generated output.
-/results/*
-!/results/readme.md
-!/results/training/
-!/results/distributed/
-!/results/kernels/
-!/results/inference/
-!/results/architecture/
+/experiments/results/*
+!/experiments/results/readme.md
+!/experiments/results/training/
+!/experiments/results/distributed/
+!/experiments/results/kernels/
+!/experiments/results/inference/
+!/experiments/results/architecture/
+!/experiments/results/nandetectmode_validation/
 transformer-engine/

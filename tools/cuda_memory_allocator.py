@@ -308,7 +308,7 @@ def run_all():
 if __name__ == '__main__':
     results = run_all()
     try:
-        with open('results/cuda_memory_allocator.json', 'w') as f:
+        with open('experiments/results/cuda_memory_allocator.json', 'w') as f:
             json.dump(results, f, indent=2, default=str)
     except:
         with open('cuda_memory_allocator.json', 'w') as f:

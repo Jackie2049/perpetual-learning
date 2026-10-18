@@ -374,7 +374,7 @@ def main():
         mem = torch.cuda.max_memory_allocated() / 1e6
         print(f"\n  Peak GPU memory: {mem:.1f} MB")
 
-    output_file = Path(__file__).resolve().parent.parent / "results/architecture/positional_encoding_results.json"
+    output_file = Path(__file__).resolve().parent.parent / "experiments/results/architecture/positional_encoding_results.json"
     output_file.parent.mkdir(parents=True, exist_ok=True)
     with open(output_file, "w") as f:
         json.dump(all_results, f, indent=2)

@@ -223,10 +223,10 @@ CUDA_VISIBLE_DEVICES=0 python -u tools/mixed_precision_training_benchmark.py --m
 CUDA_VISIBLE_DEVICES=0 python -u tools/mixed_precision_training_benchmark.py --model_size 2.28m --num_steps 200
 
 # Results
-results/lr_schedule_results.json
-results/lr_schedule_results_2.28m.json
-results/mixed_precision_training_results.json
-results/mixed_precision_training_2.28m.json
+experiments/results/lr_schedule_results.json
+experiments/results/lr_schedule_results_2.28m.json
+experiments/results/mixed_precision_training_results.json
+experiments/results/mixed_precision_training_2.28m.json
 ```
 
 工具: `tools/lr_schedule_experiment.py`, `tools/mixed_precision_training_benchmark.py`

@@ -439,7 +439,7 @@ def main():
     parser.add_argument("--batch-sizes", type=int, nargs="+", default=[1, 4, 8, 16, 32])
     parser.add_argument("--num-iters", type=int, default=50)
     parser.add_argument("--warmup", type=int, default=10)
-    parser.add_argument("--output", type=str, default="results/te_fp8_training_benchmark.json")
+    parser.add_argument("--output", type=str, default="experiments/results/te_fp8_training_benchmark.json")
     args = parser.parse_args()
 
     print(f"TransformerEngine FP8 Training Benchmark — RTX 4090")

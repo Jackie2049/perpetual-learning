@@ -224,7 +224,7 @@ def run_all():
 if __name__ == '__main__':
     results = run_all()
     try:
-        with open('results/gemm_shape_analysis.json', 'w') as f:
+        with open('experiments/results/gemm_shape_analysis.json', 'w') as f:
             json.dump(results, f, indent=2, default=str)
     except:
         with open('gemm_shape_analysis.json', 'w') as f:

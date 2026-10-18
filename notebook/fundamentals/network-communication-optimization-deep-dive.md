@@ -254,6 +254,6 @@ overlap定律:
 - RDMA: kernel bypass → zero copy → GPU Direct → Mellanox ConnectX
 - NixlConnector: vLLM V1 → KV transfer → NCCL/RDMA → metrics(PR #45157)
 - DeepEP V2: All-to-All → 4-6 SMs → FP8 dispatch → EventOverlap → DualPipe
-- NCCL benchmark: results/nccl_multi_gpu_benchmark.json → 2.76 GB/s AllReduce
-- PD separation: results/pd_separation_benchmark.json → PCIe KV 3% TTFT
-- Comm-compute overlap: results/comm_compute_overlap.json → 65-84% efficiency
+- NCCL benchmark: experiments/results/nccl_multi_gpu_benchmark.json → 2.76 GB/s AllReduce
+- PD separation: experiments/results/pd_separation_benchmark.json → PCIe KV 3% TTFT
+- Comm-compute overlap: experiments/results/comm_compute_overlap.json → 65-84% efficiency

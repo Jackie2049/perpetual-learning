@@ -137,7 +137,7 @@ cd ~/rollout-infra
 source ~/anaconda3/bin/activate llm
 CUDA_VISIBLE_DEVICES=0 python -u tools/noise_sigma_sweep.py --model_size 2.28m --num_steps 300
 
-results/noise_sigma_sweep_2.28m.json
+experiments/results/noise_sigma_sweep_2.28m.json
 ```
 
 工具: `tools/noise_sigma_sweep.py`

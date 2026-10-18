@@ -181,6 +181,6 @@ CPLUS_INCLUDE_PATH=...nvidia/nccl/include:...nvidia/cudnn/include \
 
 ---
 
-**数据**: `results/te_fp8_training_benchmark.json`
+**数据**: `experiments/results/te_fp8_training_benchmark.json`
 **脚本**: `tools/te_fp8_training_benchmark_4090.py`
 **相关笔记**: `transformer-engine-fp8-rtx4090.md`, `quantization-inference-rtx4090.md`

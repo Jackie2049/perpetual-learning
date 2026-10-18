@@ -251,4 +251,4 @@ FA2多一层SMEM零填充 + predicate mask → Triton只需-inf mask (更简洁)
 - CUTLASS CuTe DSL FA2: `cutlass/examples/python/CuTeDSL/cute/ampere/kernel/attention/flash_attention_v2.py`
 - SGLang FA wrapper: `sglang/python/sglang/jit_kernel/flash_attention.py`
 - Triton decode kernel: `tools/triton_decode_attn_benchmark_4090.py`
-- RTX 4090 benchmark data: `results/triton_decode_attn_benchmark.json`, `results/attention_backend_comparison.json`
+- RTX 4090 benchmark data: `experiments/results/triton_decode_attn_benchmark.json`, `experiments/results/attention_backend_comparison.json`

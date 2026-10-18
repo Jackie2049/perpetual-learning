@@ -22,7 +22,7 @@ import sys
 from pathlib import Path
 
 # Results output directory
-RESULTS_DIR = Path(__file__).parent.parent / "results"
+RESULTS_DIR = Path(__file__).parent.parent / "experiments/results"
 
 def calc_gpipe_bubble(pp, m):
     """GPipe bubble fraction: (P-1)/(P-1+M)"""

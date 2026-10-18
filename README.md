@@ -25,6 +25,7 @@
 | [notebook/fundamentals/](notebook/fundamentals/) | 基础知识 | [知识导航](#知识导航) |
 | [notebook/frameworks/](notebook/frameworks/) | 框架架构与源码理解 | [框架索引](notebook/frameworks/readme.md) · [主流框架 & 开源贡献](#主流框架--开源贡献) |
 | [notebook/experiments/](notebook/experiments/) | 实验记录与结论 | [上机实战](#上机实战) |
+| [notebook/resources/](notebook/resources/) | 学习与调研原始资料 | [资料索引](notebook/resources/readme.md) |
 | [notebook/papers/](notebook/papers/) | 论文阅读 | [论文索引](notebook/readme.md#论文精读) · [专题研究](#论文学习--专题研究) |
 | [notebook/roadmap.md](notebook/roadmap.md) | 学习与实践规划 | 学习路线与探索方向 |
 | [notebook/knowledge-map.md](notebook/knowledge-map.md) | 知识整理与总览 | 知识关系与整体导航 |
@@ -33,22 +34,21 @@
 | [open-source/](open-source/) | 按目标开源项目保存贡献材料 | [各项目贡献索引](open-source/README.md#按项目浏览) |
 | [open-source/SOP.md](open-source/SOP.md) | 贡献工作方法 | 候选发现、分析与推进流程 |
 | [diary/](diary/) | 按日期记录实际工作 | [日志总览](diary/readme.md) |
-| [experiments/](experiments/) | 训练启动脚本与实验配置 | [与实验记录的关系](#尚待整合的执行材料) |
-| [scripts/](scripts/) | 执行、验证与编排脚本 | [执行材料说明](#工具沉淀--技能打磨) |
+| [experiments/](experiments/) | 实验源码、脚本、配置、环境与结果 | [实验总览](experiments/readme.md) |
+| [experiments/scripts/](experiments/scripts/) | GPU 实验、复现与验证脚本 | [脚本索引](experiments/scripts/readme.md) |
+| [experiments/kernels/](experiments/kernels/) | 算子实验源码与基准 | [Fused RMSNorm 实验](notebook/experiments/rtx4090-fused-rmsnorm-cuda.md) |
 | [experiments/rtx4090/configs/](experiments/rtx4090/configs/) | RTX 4090 训练配置 | [配置说明](experiments/rtx4090/configs/readme.md) |
-| [csrc/](csrc/) | CUDA/C++ 实现与验证 | [执行材料说明](#工具沉淀--技能打磨) |
-| [results/](results/) | 实验原始结果 | [结果归档说明](results/readme.md) |
+| [experiments/environments/](experiments/environments/) | 历史机器的实验环境快照 | [环境说明](experiments/environments/readme.md) |
+| [experiments/results/](experiments/results/) | 实验原始结果 | [结果索引](experiments/results/readme.md) |
 | [.claude/skills/](.claude/skills/) | 已有 Agent 技能 | [技能入口](#工具沉淀--技能打磨) |
 
-主要板块按职责组织，同一项成果维护一个主要位置，通过链接串起学习、实践与贡献。原根目录的 26 个实验结果 JSON 已按主题归入 results/；其他已有专题与环境文件保留原位。
+### 文件归属原则
 
-### 尚待整合的执行材料
+一级目录按项目职责组织：notebook 保存知识，experiments 保存实验执行材料，tools 沉淀可复用工具，open-source 管理贡献，diary 记录工作过程。根目录保留项目说明、Agent 内核、当前上下文及必要的仓库配置。
 
-根目录 `experiments/` 保存实验启动脚本及配置，`notebook/experiments/` 保存实验记录，二者分别回答“怎么运行”和“运行后学到了什么”。执行材料还分散在 scripts、tools 等位置，后续应围绕具体实验建立关联，再确定是否统一收纳。
+实验的源码、脚本、配置、环境与结果归入 experiments；[notebook/experiments/](notebook/experiments/) 保存实验分析与经验，两边互相链接。新实验优先按课题组织，避免再按 HTML、YML、源码、结果等文件类型扩张一级目录。外部原始资料归入 notebook/resources，分析归入对应笔记。
 
-RTX 4090 的 4 份 DeepSpeed 配置已收纳至 [experiments/rtx4090/configs/](experiments/rtx4090/configs/readme.md)，相关脚本和生成器同步使用新位置。后续实验配置随对应实验组织，不再设置根目录 configs/。
-
-根目录尚无 `projects/`，目前不预建；未来有需要独立维护的自营项目时，再决定放在本仓库还是独立仓库。框架源码学习统一使用 `notebook/frameworks/`。
+根目录尚无 projects/，未来有需要独立维护的自营项目时，再决定放在本仓库还是独立仓库。历史工具继续按实际用途与复用价值整理。
 
 ## 知识导航
 
@@ -66,7 +66,7 @@ AI 技术是探索范围，Infra 是优先方向。下面提供常用主题的�
 
 ## 上机实战
 
-实验记录保存问题、环境、方法、结果与局限；经验来自实际执行和反馈，进一步沉淀为排错方法、工具与技能。
+实验记录保存问题、环境、方法、结果与局限；经验来自实际执行和反馈，进一步沉淀为排错方法、工具与技能。执行材料见 [实验总览](experiments/readme.md)，可以从中进入源码、验证脚本、配置、环境和原始结果。
 
 | 兴趣点 | 入口 |
 |---|---|
@@ -106,16 +106,6 @@ AI 技术是探索范围，Infra 是优先方向。下面提供常用主题的�
 [tools/readme.md](tools/readme.md) 是工具入口，说明用途、复用标准及验证范围。当前可从 [GPU 监控](tools/gpu_monitor.py)、[训练配置配方](tools/training_recipe.py) 和 [Infra 速查](tools/ai_infra_cheatsheet.py) 浏览；其余历史工具仍需逐项验收。一次性、纯实验性和低价值重复脚本归入 [tools/legacy/](tools/legacy/readme.md)，原工具索引保存在 [历史目录](tools/legacy/catalog.md)。
 
 已有 Agent 技能保存在 [.claude/skills/](.claude/skills/)，包括 [GPU 实验](.claude/skills/gpu-experiment/SKILL.md)、[GRPO 排错](.claude/skills/grpo-debug/SKILL.md)、[推理性能](.claude/skills/inference-perf/SKILL.md)、[分布式训练导航](.claude/skills/distributed-nav/SKILL.md)、[权重同步](.claude/skills/weight-sync-nav/SKILL.md) 等。它们记录历史工作方法，使用时需适配当前执行环境。
-
-| 执行材料 | 当前内容 |
-|---|---|
-| [experiments/](experiments/) | GRPO 训练启动脚本与 RTX 4090 实验配置 |
-| [scripts/](scripts/) | 实验执行、验证与编排脚本 |
-| [experiments/rtx4090/configs/](experiments/rtx4090/configs/readme.md) | 4 份 RTX 4090 DeepSpeed 训练配置 |
-| [csrc/](csrc/) | CUDA/C++ 实现与相关验证 |
-| [results/](results/readme.md) | 按训练、分布式、算子、推理和模型架构归档的实验结果 |
-
-这些材料支撑实际运行；实验结论及复现说明应从 [notebook/experiments/](notebook/experiments/) 查阅。
 
 ## 规划 & 进展
 

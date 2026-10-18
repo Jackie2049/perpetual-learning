@@ -933,7 +933,7 @@ def main():
     parser.add_argument('--kl_coeff', type=float, default=0.01, help='KL coefficient for DAPO mode (Dr.GRPO sequence-level)')
     parser.add_argument('--clip_lower', type=float, default=0.3, help='Lower clip epsilon for DAPO (larger = faster correction)')
     parser.add_argument('--clip_upper', type=float, default=0.2, help='Upper clip epsilon for DAPO')
-    parser.add_argument('--output', default=str(Path(__file__).resolve().parent.parent / "results/training/mini_grpo_training_results.json"), help='Output results file')
+    parser.add_argument('--output', default=str(Path(__file__).resolve().parent.parent / "experiments/results/training/mini_grpo_training_results.json"), help='Output results file')
     parser.add_argument('--hidden_dim', type=int, default=64, help='Model hidden dimension (64=76K, 256=3M, 512=10M)')
     parser.add_argument('--num_layers', type=int, default=2, help='Number of transformer layers')
     args = parser.parse_args()

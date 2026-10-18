@@ -418,7 +418,7 @@ if __name__ == '__main__':
     torch.cuda.empty_cache()
     results = run_all()
     try:
-        with open('results/gpu_profiling_workshop.json', 'w') as f:
+        with open('experiments/results/gpu_profiling_workshop.json', 'w') as f:
             json.dump(results, f, indent=2, default=str)
     except:
         with open('gpu_profiling_workshop.json', 'w') as f:

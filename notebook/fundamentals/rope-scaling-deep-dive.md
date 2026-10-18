@@ -317,4 +317,4 @@ RTX 4090上下文扩展决策 (7B模型):
 **Related notes**: kv-cache-management-deep-dive.md, flashinfer-attention-deep-dive.md, tokenization-deep-dive.md
 
 **Benchmark tool**: tools/rope_scaling_benchmark.py (5 experiments, RTX 4090实测)
-**Benchmark results**: results/rope_scaling_benchmark.json
+**Benchmark results**: experiments/results/rope_scaling_benchmark.json

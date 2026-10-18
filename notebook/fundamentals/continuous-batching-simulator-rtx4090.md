@@ -219,5 +219,5 @@ Simulator简化了几个关键因素:
 ---
 
 **工具**: `tools/continuous_batching_simulator_4090.py`
-**结果**: `results/continuous_batching_simulator.json`
+**结果**: `experiments/results/continuous_batching_simulator.json`
 **相关笔记**: `e2e-serving-throughput-rtx4090.md`, `vllm-v1-scheduler-deep-read.md`, `continuous-batching.md`

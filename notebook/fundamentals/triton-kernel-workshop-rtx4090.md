@@ -204,6 +204,6 @@ Sources:
 - Marlin FP8 GEMM: https://github.com/IST-DASLab/marlin
 
 **Benchmark tool**: tools/triton_kernel_workshop_benchmark.py
-**Benchmark results**: results/triton_kernel_workshop_benchmark.json
+**Benchmark results**: experiments/results/triton_kernel_workshop_benchmark.json
 
 **Related notes**: triton-vs-cuda-benchmark-rtx4090.md(之前对比), gpu-microarchitecture-sm89-sm90-sm100.md(SM89架构)

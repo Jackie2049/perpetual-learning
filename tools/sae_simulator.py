@@ -336,7 +336,7 @@ def main():
     print("• Feature steering → ActAdd → real-time control")
 
     # Save results
-    output_file = "results/sae_simulator_results.json"
+    output_file = "experiments/results/sae_simulator_results.json"
     with open(output_file, "w") as f:
         json.dump(results, f, indent=2)
     print(f"\nResults saved to {output_file}")

@@ -261,5 +261,5 @@ CUDA Graph编译时机:
 - CUTLASS: AOT编译 → BF16 GEMM → SiLU epilogue → RTX 4090实测
 - FlashInfer: AOT CUDA kernel → paged attention → 15.72x → 生产答案
 - TE FP8: C++ fused kernel → quantize+GEMM+dequant → 1.48-1.59x训练
-- torch.compile benchmark RTX 4090: results/torch_compile_benchmark.json
+- torch.compile benchmark RTX 4090: experiments/results/torch_compile_benchmark.json
 - CUDA Graph benchmark: 7B=1.05x → 不是加速 → 稳定jitter

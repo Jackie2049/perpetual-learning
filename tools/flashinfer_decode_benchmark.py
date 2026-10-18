@@ -219,8 +219,8 @@ all_results = {
     "triton_available": TRITON_AVAILABLE,
 }
 
-os.makedirs("results", exist_ok=True)
-output_path = "results/flashinfer_decode_benchmark.json"
+os.makedirs("experiments/results", exist_ok=True)
+output_path = "experiments/results/flashinfer_decode_benchmark.json"
 with open(output_path, "w") as f:
     json.dump(all_results, f, indent=2)
 print(f"\nResults saved to {output_path}")

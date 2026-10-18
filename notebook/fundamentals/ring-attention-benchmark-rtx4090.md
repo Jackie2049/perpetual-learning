@@ -264,7 +264,7 @@ Ring Attention有价值的前提条件:
 ## 工具
 
 - `tools/ring_attention_benchmark_4090.py` — 多GPU Ring Attention benchmark (4实验)
-- `results/ring_attn_P2.json` / `ring_attn_P4.json` / `ring_attn_P8.json` — 完整实验数据
+- `experiments/results/ring_attn_P2.json` / `ring_attn_P4.json` / `ring_attn_P8.json` — 完整实验数据
 
 ## 参考
 

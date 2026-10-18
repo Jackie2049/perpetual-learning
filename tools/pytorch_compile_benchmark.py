@@ -11,7 +11,7 @@ Runs on:
 Usage:
   python3 tools/pytorch_compile_benchmark.py [--device cpu|mps|cuda] [--compile]
 
-Output: CSV results + summary table saved to results/
+Output: CSV results + summary table saved to experiments/results/
 """
 
 import argparse
@@ -24,7 +24,7 @@ import torch
 import torch.nn as nn
 
 
-OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "results")
+OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "experiments/results")
 
 
 class MiniTransformer(nn.Module):

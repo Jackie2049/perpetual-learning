@@ -644,9 +644,9 @@ def main():
         "transparency_rtx4090_pct": scorer.score_model("rtx4090_local_model")["overall_percentage"],
         "governance_high_risk_cost_pct": 15,
     }
-    with open("results/ai_ethics_governance_simulator.json", "w") as f:
+    with open("experiments/results/ai_ethics_governance_simulator.json", "w") as f:
         json.dump(results, f, indent=2)
-    print(f"\nResults saved to results/ai_ethics_governance_simulator.json")
+    print(f"\nResults saved to experiments/results/ai_ethics_governance_simulator.json")
 
 
 if __name__ == "__main__":

@@ -230,7 +230,7 @@ def run_benchmark():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output", type=str, default="results/sm89_bf16_gemm_benchmark.json")
+    parser.add_argument("--output", type=str, default="experiments/results/sm89_bf16_gemm_benchmark.json")
     args = parser.parse_args()
 
     results = run_benchmark()

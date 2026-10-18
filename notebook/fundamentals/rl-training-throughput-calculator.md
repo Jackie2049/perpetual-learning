@@ -167,7 +167,7 @@ python tools/rl_training_throughput_calculator.py
 # 已在本地验证,0.7%误差
 
 # 结果
-results/rl_throughput_results.json
+experiments/results/rl_throughput_results.json
 ```
 
 工具: `tools/rl_training_throughput_calculator.py`

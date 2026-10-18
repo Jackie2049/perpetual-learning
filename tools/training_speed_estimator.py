@@ -25,7 +25,7 @@ import argparse
 import json
 from pathlib import Path
 
-RESULTS_DIR = Path(__file__).parent.parent / "results"
+RESULTS_DIR = Path(__file__).parent.parent / "experiments/results"
 
 # GPU compute throughput estimates (TFLOPS for BF16 GEMM)
 GPU_GEMM_TFLOPS = {

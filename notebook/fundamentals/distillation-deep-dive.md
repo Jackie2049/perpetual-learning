@@ -264,4 +264,4 @@ RTX 4090蒸馏决策:
 **Related notes**: quantization-pruning-theory.md, inference-cost-analysis.md, tokenization-deep-dive.md
 
 **Benchmark tool**: tools/distillation_benchmark.py (7 experiments, RTX 4090)
-**Benchmark results**: results/distillation_benchmark.json
+**Benchmark results**: experiments/results/distillation_benchmark.json

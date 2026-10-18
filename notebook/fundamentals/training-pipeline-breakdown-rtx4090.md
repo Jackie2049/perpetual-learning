@@ -176,4 +176,4 @@ Forward组件百分比 (25M decode S=1):
 ## 工具
 
 - `tools/training_pipeline_breakdown_4090.py` — 14组件分解benchmark
-- `results/training_pipeline_breakdown.json` — 完整数据
+- `experiments/results/training_pipeline_breakdown.json` — 完整数据

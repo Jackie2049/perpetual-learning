@@ -90,5 +90,5 @@ Tiny model → all precisions stable, BF16 AMP fastest (1.58x), accuracy preserv
 ## Related
 
 - BF16+FSDP benchmark: `notebook/fundamentals/fsdp2-scaling-benchmark-rtx4090.md`
-- TE FP8 training: `results/te_fp8_training_benchmark.json`
+- TE FP8 training: `experiments/results/te_fp8_training_benchmark.json`
 - LoRA benchmark: `notebook/fundamentals/lora-finetuning-benchmark-rtx4090.md`

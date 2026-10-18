@@ -384,7 +384,7 @@ def run_all():
     # Save results (only rank 0)
     if rank == 0:
         try:
-            with open('results/comm_compute_overlap.json', 'w') as f:
+            with open('experiments/results/comm_compute_overlap.json', 'w') as f:
                 json.dump(results, f, indent=2, default=str)
         except:
             with open('comm_compute_overlap.json', 'w') as f:

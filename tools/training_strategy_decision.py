@@ -21,7 +21,7 @@ import argparse
 import json
 from pathlib import Path
 
-RESULTS_DIR = Path(__file__).parent.parent / "results"
+RESULTS_DIR = Path(__file__).parent.parent / "experiments/results"
 
 def decide_strategy(gpu_count, gpu_memory_gb, interconnect, model_size_b,
                     training_type, lora_rank):

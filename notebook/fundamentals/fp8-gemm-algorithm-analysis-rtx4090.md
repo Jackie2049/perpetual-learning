@@ -116,5 +116,5 @@ This enables `torch.is_autocast_enabled()`, which bypasses the dtype check, AND 
 
 ---
 
-**Source**: `tools/fp8_gemm_algorithm_analysis.py`, `results/fp8_gemm_algorithm_analysis.json`
+**Source**: `tools/fp8_gemm_algorithm_analysis.py`, `experiments/results/fp8_gemm_algorithm_analysis.json`
 **Related**: `te-gemm-dispatch-deep-dive.md`, `transformer-engine-fp8-rtx4090.md`, `fp8-training-benchmark-rtx4090.md`

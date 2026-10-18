@@ -263,7 +263,7 @@ def main():
               f"weight_norm_ratio={dare_90.get('weight_norm_ratio', 'N/A')}")
 
     # Save results
-    output_file = "results/model_merging_simulator_results.json"
+    output_file = "experiments/results/model_merging_simulator_results.json"
     with open(output_file, "w") as f:
         json.dump(all_results, f, indent=2)
     print(f"\nResults saved to {output_file}")

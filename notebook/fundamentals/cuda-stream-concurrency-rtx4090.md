@@ -183,6 +183,6 @@ Prefill+Decode Concurrent Simulation (RTX 4090):
 - RTX 4090实测 (128 SMs, PCIe, BF16 cuBLAS)
 
 **Benchmark tool**: tools/cuda_stream_concurrency.py
-**Benchmark results**: results/cuda_stream_concurrency.json
+**Benchmark results**: experiments/results/cuda_stream_concurrency.json
 
 **Related notes**: gpu-microarchitecture-sm89-sm90-sm100.md(SM89架构), nccl-communication-deep-dive.md(PCIe带宽), torch-compile-benchmark-rtx4090.md(CUDA Graph)

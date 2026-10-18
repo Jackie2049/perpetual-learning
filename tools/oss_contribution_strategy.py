@@ -324,7 +324,7 @@ def mode_plan():
         print()
         print("  Validation Plan:")
         if issue.has_gpu_experiment:
-            print(f"    ★ GPU experiment script ready in scripts/gpu_pr_validation_experiments.sh")
+            print(f"    ★ GPU experiment script ready in experiments/scripts/gpu_pr_validation_experiments.sh")
         elif issue.needs_gpu_validation:
             print(f"    ★ Need GPU device for validation (user will provide later)")
         else:

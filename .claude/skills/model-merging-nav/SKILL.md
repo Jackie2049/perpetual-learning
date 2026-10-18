@@ -61,7 +61,7 @@ Result: Lowest interference (-0.04 vs +0.42 for arithmetic) → best for conflic
 
 - `tools/model_merging_simulator.py` — NumPy-based validation (no GPU)
 - Alpha sweep + DARE drop rate sweep + all 3 strategies comparison
-- Results: `results/model_merging_simulator_results.json`
+- Results: `experiments/results/model_merging_simulator_results.json`
 
 ## Key Notes
 

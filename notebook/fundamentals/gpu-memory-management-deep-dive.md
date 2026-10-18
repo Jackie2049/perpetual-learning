@@ -300,7 +300,7 @@ Sliding Window:
 - vLLM V1 KVCacheManager: vllm/v1/core/kv_cache_manager.py → allocate_slots+get_computed_blocks
 - vLLM V1 FreeKVCacheBlockQueue: vllm/v1/core/kv_cache_utils.py → 双向链表+O(1)
 - vLLM V1 BlockHashToBlockMap: vllm/v1/core/kv_cache_manager.py → 1:N hash→block
-- CUDA Memory Allocator 实测: results/cuda_memory_allocator.json
+- CUDA Memory Allocator 实测: experiments/results/cuda_memory_allocator.json
 - StreamingLLM: sink(4)+window(W) → 固定KV → 无限对话
 - PagedAttention: block_size=16 → 零碎片 → 按需分配
-- Swap vs Recompute: results/kv_cache_offloading_benchmark.json → swap快4-44x
+- Swap vs Recompute: experiments/results/kv_cache_offloading_benchmark.json → swap快4-44x

@@ -35,8 +35,9 @@
 - `notebook/` 保存技术学习笔记：`fundamentals/` 为基础知识，`frameworks/` 为框架架构与源码理解，`experiments/` 为实验记录，`roadmap.md` 为规划，`knowledge-map.md` 为知识整理与总览；其他已有专题继续保留。总览见 [notebook/readme.md](notebook/readme.md)。
 - `tools/` 只持续沉淀有明确复用价值的工具。先检索已有实现与成熟方案，优先复用或扩展；一次性、纯实验性或低价值重复脚本归入 `tools/legacy/`。每个工具说明使用场景、输入输出、依赖和验证范围；不能用文件数量衡量能力增长。见 [tools/readme.md](tools/readme.md)。
 - `open-source/<framework>/` 按目标开源项目分类，保存候选、贡献方案、补丁、Issue/PR 与评论草稿、验证和跟进记录；与 `notebook/frameworks/` 的源码学习通过链接关联。`diary/` 延续按日期记录的方式，见 [diary/readme.md](diary/readme.md)。
-- 根目录 `experiments/` 保存训练启动脚本与实验配置，`notebook/experiments/` 为实验记录，二者是否合并仍待讨论；根目录 `projects/` 尚未建立，不因之前的建议自行创建。
+- `experiments/` 统一保存实验源码、执行脚本、配置、环境快照和原始结果；`notebook/experiments/` 保存分析、结论和经验。新实验优先按课题组织，并互相链接，见 [实验总览](experiments/readme.md)。
 - 实验配置随对应实验组织，RTX 4090 DeepSpeed 配置在 `experiments/rtx4090/configs/`，不设置独立的根目录 configs/。新增或移动内容时同步更新调用路径、板块索引及首页相关导航。
+- 根目录按项目职责组织，不因文件类型新增 csrc、scripts、results 等一级目录；网页等原始资料放入 notebook/resources，环境快照随实验保存。整理目录时主动盘点根目录全部已跟踪内容及调用关系，不能只处理用户逐项指出的文件。未跟踪或忽略的本地源码、模型与用户工作先核查用途，保持其内容与版本管理边界。
 - 同一项成果维护一个主要位置，其他地方用链接引用，避免多份全文长期分叉。
 - `WORK.md` 只保存当前状态和接续入口：当前需求、探索重点、等待条件、下一步及相关链接。完成事项写入对应资产或 `diary/YYYY-MM-DD.md`，交接文件保持简短。
 - 每完成一项有意义的工作，在当日日志简要记录做了什么、为什么做、结果与成果位置。保留已有用户修改，不将无关文件夹带进提交。

@@ -368,7 +368,7 @@ if __name__ == '__main__':
     rank = dist.get_rank()
     if rank == 0:
         try:
-            with open('results/nccl_multi_gpu_benchmark.json', 'w') as f:
+            with open('experiments/results/nccl_multi_gpu_benchmark.json', 'w') as f:
                 json.dump(results, f, indent=2, default=str)
         except:
             with open('nccl_multi_gpu_benchmark.json', 'w') as f:

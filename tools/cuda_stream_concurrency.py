@@ -313,7 +313,7 @@ def run_all():
 if __name__ == '__main__':
     results = run_all()
     try:
-        with open('results/cuda_stream_concurrency.json', 'w') as f:
+        with open('experiments/results/cuda_stream_concurrency.json', 'w') as f:
             json.dump(results, f, indent=2, default=str)
     except:
         with open('cuda_stream_concurrency.json', 'w') as f:

@@ -517,7 +517,7 @@ def run_all_experiments():
 if __name__ == '__main__':
     results = run_all_experiments()
 
-    output_file = 'results/weight_quantization_benchmark.json'
+    output_file = 'experiments/results/weight_quantization_benchmark.json'
     try:
         with open(output_file, 'w') as f:
             json.dump(results, f, indent=2, default=str)

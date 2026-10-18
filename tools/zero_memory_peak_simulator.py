@@ -22,7 +22,7 @@ import json
 import math
 from pathlib import Path
 
-RESULTS_DIR = Path(__file__).parent.parent / "results"
+RESULTS_DIR = Path(__file__).parent.parent / "experiments/results"
 
 def simulate_memory(model_size_b, gpu_count, gpu_memory_gb, lora_rank=0):
     """

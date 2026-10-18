@@ -222,10 +222,10 @@ all_results = {
     "hbm_bandwidth": hbm_results,
 }
 
-os.makedirs("results", exist_ok=True)
-with open("results/comprehensive_inference_benchmark.json", "w") as f:
+os.makedirs("experiments/results", exist_ok=True)
+with open("experiments/results/comprehensive_inference_benchmark.json", "w") as f:
     json.dump(all_results, f, indent=2)
-print(f"\nResults saved to results/comprehensive_inference_benchmark.json")
+print(f"\nResults saved to experiments/results/comprehensive_inference_benchmark.json")
 
 # =====================================================================
 # Summary
