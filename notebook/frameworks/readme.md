@@ -64,6 +64,7 @@
 - [vLLM V1 Prefill/Decode 分离架构源码阅读](vllm-pd-disaggregation-reading.md)
 - [vLLM V1 PD Separation & KV Transfer Architecture](vllm-pd-separation-kv-transfer-architecture.md)
 - [vLLM V1 Prefix-Cache Hash Computation 深度阅读 (2026-06-15)](vllm-prefix-cache-hash-collision-reading.md)
+- [前缀缓存失效模式分类（故障分类学）](prefix-cache-failure-modes.md)
 - [vLLM V1 Prefix Caching 源码深度分析](vllm-prefix-caching-v1.md)
 - [vLLM 量化推理管线源码阅读](vllm-quantization-pipeline-reading.md)
 - [vLLM Rust Frontend (vllm-rs) 源码级深度阅读](vllm-rust-frontend-reading.md)
