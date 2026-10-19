@@ -1,8 +1,8 @@
 # Candidate: megatron optimizer_offload_fraction < 1 崩溃 (#8237)
 
 > Issue: [verl-project/verl#8237](https://github.com/verl-project/verl/issues/8237)
-> 标签：bug；创建 2026-10-14；0 评论；**0 个引用 PR（2026-10-19 复查重确认：可解析 total_count=0，真实无人认领）**
-> 状态：`analysis-done`（根因确认 + **代码级验证完成**，patch 方案已拟，待 GPU 验证 + 用户授权）
+> 标签：bug；创建 2026-10-14；**2026-10-19 已回复 + PR #8286 已发 ready-for-review**
+> 状态：**CLOSED**（根因 100% 实锤 + 修复方案 2 已 PR + issue 已回复，详见 §7 收官）
 
 ## 0. 为什么值得做
 
@@ -84,5 +84,22 @@ for optimizer in hdo.sub_optimizers:
 
 ## 6. 待办
 
-- [ ] GPU 环境验证（当前无确认可用的 GPU 服务器）
-- [ ] 用户授权后：查重（提交前）+ fork 开 PR（PR 描述按 verl CLAUDE.md：为何不重复/测试/声明 AI 协助）
+- [x] GPU 环境验证（4090 完成：机制对照/单测/e2e 全过，见 §7）
+- [x] 用户授权后：查重（无重复，与 #8235 resume 修复/#5651 feature 差异已说明）+ fork 开 PR（#8286）
+
+## 7. 收官（2026-10-19）
+
+**根因 100% 实锤**（三路证据互锁）：
+- **代码实锤**：`offload_megatron_optimizer` HDO 分支（`verl/utils/megatron_utils.py:698`）对 `hdo.sub_optimizers` 无差别 `v.to("cpu")`，把 GPU 常驻的 FusedAdam 状态搬成 CPU。load 侧（`_move_new_state_to_right_device`，两版 megatron 逐字相同）会把 GPU 半修回 cuda，所以 verl080+bf16 端到端不崩（污染瞬时）。
+- **4090 机制实证**：P1（纯 torch，双版本）证明"view 的底层存储被 `storage().resize_(0)` 释放 → `.to("cpu")` 报 `invalid argument`"；P2a（verl 真实函数 + 真实 HDO + FusedAdam + 悬空 fp32-view master_param）在 offload 行报 `CUDA error: invalid argument`（reporter 签名），修复后 PASS。污染态未经 load 进 fused step → SIGABRT/illegal memory access（独立脚本 3/3）。
+- **模型条件实证**：DeepSeek-V4-Pro 公开（HF `deepseek-ai/DeepSeek-V4-Pro`），megatron 43e45e13 多处 `mark_keep_in_fp32`（`csa.py:957` ape、`:1621` attn_sink、`hyper_connection`、`mtp.*`）；`Float16Module` 用 `convert_module_to_dtype_except_fp32_marked` 跳过它们 → fp32 参数存活 → DistributedOptimizer 对 fp32 参数走 **view shard**（distrib_optimizer.py:474）→ 悬空 → 698 行 invalid argument。bf16 参数走 clone（:453）安全。fp8/fp4 量化权重 dequantize 成 bf16，不是触发源。
+
+**修复（PR #8286，方案 2，commit df1435f）**：HDO 状态在 offload 中**完全不动**——HDO 已管理放置（fraction 部分住 CPU、GPU 半必须住 GPU），verl 只对非 HDO 优化器 offload `exp_avg/exp_avg_sq/master_param`；`offload_megatron_copy_params`（params/fp32 主 shard）与 `load_megatron_optimizer` 不变。回归测试：`test_optimizer_offload_and_load.py` 新增 HDO 用例（fraction 0.5/0.0，全 bf16 模型绕开 megatron 0.16.1 non-leaf 构造 bug，断言只盯 exp_avg/exp_avg_sq）。
+
+**验证全绿（4090，verl080_back1 + megatron 0.16.1 + TE 2.16.1）**：
+- 机制对照：buggy → offload 行 `CUDA error: invalid argument`；修复 → PASS（GPU 侧 exp_avg/exp_avg_sq 对象不变）
+- 单测：`-k "hdo or precision_aware"` → **2 passed**（非 HDO 无回归）
+- e2e 冒烟：fraction 1.0/0.5/0.0 全 exit 0（2 step）
+- pre-commit 受影响文件全绿
+
+**发布**：issue #8237 回复已发（根因 + PR，无 AI 标注，用户要求 PR/issue 均不标 AI）；PR #8286 ready-for-review。**两个环境前置 bug 与 #8237 无关**：verl_cdd9014f 丢 param_data guard 回归；megatron 0.16.1 `Float16Optimizer` KeyError + non-leaf 构造 bug。`patch-8237-offload-fraction.diff`（早期 8 行方案 1）已被实际 PR 的方案 2 取代。
