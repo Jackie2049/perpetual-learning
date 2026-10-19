@@ -53,5 +53,5 @@ J_GMPO(π_θ) = E_{q,{o_i}~π_old}  (1/G) Σ_i  { Π_{t=1}^{|o_i|} |min[ρ_{i,t}
 
 ## 延伸问题
 
-1. verl geo_mean 的 log 空间 clamp 与论文 ρ 空间 clip 在**紧窗区**（KL<0.001）行为差异可忽略，但在离群区（KL>0.1）差异显著——论文 clip 后 ratio 停在 1±ε 常数（无梯度），verl clamp 后 log ρ 停在 ±ε（exp 后 ρ 仍是常数，同样无梯度）——梯度行为一致，差异只在**阈值语义**。
+1. ~~verl geo_mean 的 log 空间 clamp 与论文 ρ 空间 clip 在**紧窗区**（KL<0.001）行为差异可忽略，但在离群区（KL>0.1）差异显著~~ → **2026-10-19 数值证明：完全等价**（experiments/scripts/verify_gmpo_clip_semantics.py）。因 `log(min(ρ,ε)) ≡ min(log ρ, log ε)`，窗口对应时前向值与梯度逐位一致（仅 torch clamp 边界点的 inclusive 约定造成测度零差异）。**真正的差异是配置语义**：同一数值在论文是 ρ 空间窗口（ε=0.4 → ρ∈[0.67,1.49]），在 verl 是 log 空间窗口（ε=0.4 → KL ±0.4 nats；ε=3e-4 → ρ∈[0.9997,1.0003]）。
 2. GSPO 的"combined ratio"（当前 token ratio × 序列几何均值 detached）是另一套设计；GMPO 的几何均值含 clip 且**不 detached**——梯度可穿过序列内所有 token（论文 Eq.6 的权重是常数，但其来源含 θ 依赖的 ρ_k；论文推导中几何均值权重按常数处理）。verl 用 `log_prob.detach()` 在 GSPO 中隔离，geo_mean 中无 detach——两者梯度路径不同，值得注意。
