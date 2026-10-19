@@ -57,3 +57,7 @@ Happy to help test on RTX 4090 when available.
 - ★★★ Only 6 comments → root cause not isolated → our analysis advances understanding
 - ★★★★ SM89 perspective is extremely scarce in vLLM community
 - ★★★ Proposed fix path is actionable → potential Tier 2 contribution later
+
+### 精简发布稿（2026-10-19 备妥，发布需授权）
+
+> 164 词英文，只含增量：①三机制组合框架（Inductor kernels / cuBLAS dispatch / CUDA-graph replay，单独禁用任一不足）；②GRPO/verl 训练影响（4090 上 enforce_eager 代价 10-20%，静默偏置奖励）。与 YM2132 现有讨论方向一致，措辞低调（"happy to help verify"）。
