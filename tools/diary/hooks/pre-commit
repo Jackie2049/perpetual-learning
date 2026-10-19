@@ -1,0 +1,2 @@
+#!/bin/sh
+exec python3 tools/diary/diary.py check

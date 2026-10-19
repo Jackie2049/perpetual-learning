@@ -18,6 +18,7 @@
 
 | 工具 | 用途 | 依赖与当前验证范围 |
 |---|---|---|
+| [日志收尾](diary/readme.md) | 自动记录真实时间与日期索引，提交前检查日志遗漏 | Python 3.9+、Git；隔离仓库测试覆盖漏记拦截、跨日、暂存区及 hook 接入 |
 | [gpu_monitor.py](gpu_monitor.py) | GPU 状态监控、CSV 日志及分析 | Python、NVIDIA nvidia-smi；本次仅检查 CLI 帮助，未连接 GPU |
 | [training_recipe.py](training_recipe.py) | 根据输入生成训练配置和启动命令 | Python；本次仅检查 CLI 帮助，生成命令仍需对应框架验证 |
 | [ai_infra_cheatsheet.py](ai_infra_cheatsheet.py) | 按主题查阅常用命令 | Python；历史命令需结合当前环境核对 |
