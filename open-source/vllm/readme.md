@@ -34,7 +34,7 @@
 
 ### 新核验（2026-10-19 追加）
 
-- **#61160 跨请求污染修复定位**（[分析](vllm-61160-crosstalk-fix-locate.md)）：0 引用 PR；维护者确认 v0.31.0 复现 / main 已修复但无人指出修复 PR。定位：**#59103**（10-06，session 截断 stale hash——多轮会话场景主修复）+ **#61174**（10-17，MTP stale 共享 block-table 行）+ **#51899**（9-30，extra_keys 域打标 = 我们 6 月 #44701 家族修复）。评论草稿待授权发布。
+- **#61160 跨请求污染修复定位**（[分析](vllm-61160-crosstalk-fix-locate.md)）：0 引用 PR；维护者确认 v0.31.0 复现 / main 已修复但无人指出修复 PR。定位：**#59103**（10-06，session 截断 stale hash——多轮会话场景主修复）+ **#61174**（10-17，MTP stale 共享 block-table 行）+ **#51899**（9-30，extra_keys 域打标 = 我们 6 月 #44701 家族修复）。**评论已发布**（2026-10-19，[#issuecomment-6258592764](https://github.com/vllm-project/vllm/issues/61160#issuecomment-6258592764)），待回应跟进。
 
 ### 扫描补充（2026-10-19）
 
