@@ -26,7 +26,7 @@ function activity(limit) { return data.diary.events.slice(0,limit).map(item=>`<l
 function overview() {
   main.innerHTML=`<div class="overview-heading"><div><div class="eyebrow"><span class="tiny-line"></span> YOUR EXPLORATION WORKSPACE</div><h1>把探索，变成你的积累<span class="title-dot">。</span></h1><p>AI 技术的持续学习、实践与生产。每一次探索，都有迹可循。</p></div><div class="snapshot-stamp">${icon('clock')}<span>记录快照 <strong>${esc(fmt(data.sourceDate))}</strong></span></div></div>
   <form id="home-search" class="search-box">${icon('search')}<input name="query" aria-label="搜索成果" placeholder="搜索笔记、实验、开源项目…" autocomplete="off"><kbd>⌘ K</kbd><button type="submit">搜索</button></form>
-  <div class="stats"><div><span>知识笔记</span><strong>${data.counts['知识笔记']}<small>篇</small></strong><span class="stat-note">学习与实践的积累</span></div><div><span>开源材料</span><strong>${data.counts['开源贡献']}<small>份</small></strong><span class="stat-note">候选、分析与贡献记录</span></div><div><span>工作日志</span><strong>${data.counts['工作日志']}<small>天</small></strong><span class="stat-note">保留过程，也保留纠正</span></div><div><span>待决事项</span><strong>${data.pending.length}<small>项</small></strong><a href="#decisions" class="stat-link">看看需要什么 ${icon('arrow')}</a></div></div>
+  <div class="stats"><a class="stat-card" href="#library?category=${encodeURIComponent('知识笔记')}"><span>知识笔记</span><strong>${data.counts['知识笔记']}<small>篇</small></strong><span class="stat-note">学习与实践的积累</span></a><a class="stat-card" href="#library?category=${encodeURIComponent('开源贡献')}"><span>开源材料</span><strong>${data.counts['开源贡献']}<small>份</small></strong><span class="stat-note">候选、分析与贡献记录</span></a><a class="stat-card" href="#diary"><span>工作日志</span><strong>${data.counts['工作日志']}<small>天</small></strong><span class="stat-note">保留过程，也保留纠正</span></a><a class="stat-card" href="#decisions"><span>待决事项</span><strong>${data.pending.length}<small>项</small></strong><span class="stat-link">看看需要什么 ${icon('arrow')}</span></a></div>
   <div class="dashboard-columns"><div class="primary-column"><div class="section-heading"><h2>值得回看的成果</h2><a href="#library">全部成果 ${icon('arrow')}</a></div>
   <article class="feature-banner"><div class="feature-copy"><span class="feature-eyebrow">本期专题 / REINFORCEMENT LEARNING</span><h2>从目标函数出发，<br>重新理解策略优化。</h2><p>论文、源码与验证相互对照，<br>把零散的理解连接成自己的知识。</p><button data-open="${data.featured[0].id}">从 GMPO 开始阅读 ${icon('arrow')}</button></div><div class="orbit" aria-hidden="true"><div class="orbit-ring r1"></div><div class="orbit-ring r2"></div><div class="orbit-core">π<span>policy</span></div><span class="orbit-label l1">GMPO</span><span class="orbit-label l2">GSPO</span><span class="orbit-label l3">SAPO</span><i class="orbit-dot d1"></i><i class="orbit-dot d2"></i></div></article>
   <div class="result-grid">${data.featured.map(card).join('')}</div></div>
@@ -53,12 +53,26 @@ function results() {
 }
 function diaryPage() {main.innerHTML=heading('探索的过程，也值得留下。','记录每项工作的收获、失败与判断变化。这里展示最新一天的实际日志。')+`<div class="diary-heading"><span class="day-badge">${esc(data.diary.date)}</span><button class="outline-button" data-open="${data.diary.id}">完整日志 ${icon('arrow')}</button><a href="#library?category=${encodeURIComponent('工作日志')}" class="text-link">历史日志 ${icon('arrow')}</a></div><section class="daily-review"><div class="section-heading"><h2>当日回看</h2><span class="subtle">来自日志原文</span></div><div class="prose">${data.diary.review}</div></section><section class="log-section"><div class="section-heading"><h2>工作时间线</h2><span class="subtle">Asia / Singapore · 最新在前</span></div><ul class="timeline full-timeline">${activity(data.diary.events.length)}</ul></section>`;}
 function decisionPage() {main.innerHTML=heading('让下一步，清楚一点。','集中回看需要发布决定或验证资源的事项。先读依据，再决定是否继续投入。')+`<div class="status-notice">${icon('clock')}<p>状态摘自对应文档的记录，更新于仓库快照。这个 demo 提供浏览入口，发布与运行操作仍在 Agent 会话中完成。</p></div><div class="decision-grid">${pendingList()}</div><div class="source-note">需要完整工作上下文？<a href="${data.repository}/blob/${data.revision}/WORK.md" target="_blank" rel="noreferrer">查看 WORK.md ↗</a></div>`;}
+function renderMath(root) {
+  if (!window.katex) return;
+  root.querySelectorAll('.arithmatex').forEach(node => {
+    const source = node.textContent.trim();
+    const inline = source.startsWith('\\(') && source.endsWith('\\)');
+    const display = source.startsWith('\\[') && source.endsWith('\\]');
+    if (!inline && !display) return;
+    window.katex.render(source.slice(2, -2), node, {
+      displayMode: display, throwOnError: false, trust: false,
+      output: 'htmlAndMathml', macros: {},
+    });
+  });
+}
 function route() {
   const [slug,search='']=(location.hash.slice(1)||'overview').split('?');page=names[slug]?slug:'overview';const params=new URLSearchParams(search);query=params.get('q')||'';category=params.get('category')||'全部';shown=30;
   if(!['全部','知识笔记','开源贡献','工作日志'].includes(category))category='全部';
   document.querySelectorAll('[data-nav]').forEach(a=>{const active=a.dataset.nav===page;a.classList.toggle('active',active);if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
   document.querySelector('#breadcrumb').textContent=names[page];document.title=names[page]+' · perpetual-learning';
   if(page==='overview')overview();else if(page==='library'||page==='saved')library();else if(page==='diary')diaryPage();else decisionPage();
+  renderMath(main);
   window.scrollTo(0,0);
 }
 let readerRequest=0;
@@ -67,7 +81,7 @@ async function read(id) {
   const request=++readerRequest;
   document.querySelector('#reader-title').textContent=lookup.get(id)?.title||'阅读成果';document.querySelector('#reader-body').innerHTML='<p class="loading">正在打开文档…</p>';document.querySelector('#reader-meta').textContent='';document.querySelector('#reader-source').removeAttribute('href');
   if(!dialog.open)dialog.showModal();
-  try {const res=await fetch('./content/'+id+'.json');if(!res.ok)throw Error('load');const doc=await res.json();if(request!==readerRequest)return;document.querySelector('#reader-source').href=doc.url;document.querySelector('#reader-meta').textContent=`记录更新 ${fmt(doc.updated)} · ${doc.path}`;document.querySelector('#reader-body').innerHTML=doc.html;document.querySelectorAll('#reader-body a:not([href^="#"])').forEach(a=>{a.target='_blank';a.rel='noreferrer';});dialog.scrollTop=0;}catch{if(request===readerRequest)document.querySelector('#reader-body').innerHTML='<p>文档暂时无法加载，请关闭后重试，或在成果库打开 GitHub 原文。</p>';}
+  try {const res=await fetch('./content/'+id+'.json');if(!res.ok)throw Error('load');const doc=await res.json();if(request!==readerRequest)return;document.querySelector('#reader-source').href=doc.url;document.querySelector('#reader-meta').textContent=`记录更新 ${fmt(doc.updated)} · ${doc.path}`;document.querySelector('#reader-body').innerHTML=doc.html;renderMath(document.querySelector('#reader-body'));document.querySelectorAll('#reader-body a:not([href^="#"])').forEach(a=>{a.target='_blank';a.rel='noreferrer';});dialog.scrollTop=0;}catch{if(request===readerRequest)document.querySelector('#reader-body').innerHTML='<p>文档暂时无法加载，请关闭后重试，或在成果库打开 GitHub 原文。</p>';}
 }
 document.querySelector('#reader-close').addEventListener('click',()=>dialog.close());
 dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close();const link=e.target.closest('a[href^="#"]');if(link){e.preventDefault();const target=dialog.querySelector('#'+CSS.escape(decodeURIComponent(link.hash.slice(1))));target?.scrollIntoView();}});
