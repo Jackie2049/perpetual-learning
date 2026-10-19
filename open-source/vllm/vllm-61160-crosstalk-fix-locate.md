@@ -28,11 +28,12 @@ reporter build = main@db9527a46（10-02），早于以下全部修复：
 
 | PR | 合并 | 机制 | 与 #61160 的对应 |
 |---|---|---|---|
-| **#51899** Tag prefix-cache extra keys by source | 09-30 | LoRA 名/cache_salt/多模态 id 混入无域标签 extra_keys → 碰撞 | 域碰撞家族（我们 6 月 #44701 分析的修复最终形态）；边界在 build 前后，需确认 db9527a46 是否含 |
-| **#59103** Drop stale block hashes when a session truncates tokens（fixes #49377） | 10-06 | 流式会话截断时 `_all_token_ids` 截到 num_computed_tokens，丢弃的最后一个采样 token 若凑成一个 hash block，该 hash 继续标识替换后的序列 → 后续 commit 到错误 key | **多轮 agent 会话（截断+续接）+ 共享前缀 = repro 场景**；ZJY0516 10-12 复测大概率命中此修复 |
-| **#61174** Clear stale shared block-table rows（Spec Decode/MTP） | 10-17 | 目标 batch 缩小后较大 MTP 解码图读 stale 共享 block-table 行 → "**padded work 访问另一请求的 cache 或 state**" | 与污染描述逐字对应（"another request's cache"）；repro 用 dspark（MTP 族）投机解码；10-17 才合，ZJY0516 测试时未含 |
+| **#51899** Tag prefix-cache extra keys by source | 09-30 | LoRA 名/cache_salt/多模态 id 混入无域标签 extra_keys → 碰撞 | 域碰撞家族（我们 6 月 #44701 分析的修复最终形态）。**2026-10-19 验证：db9527a46 已含此修复（`("lora",name,path)` 与 `("cache_salt",...)` 均在场）→ 排除**：构建已含仍复现 46/48 串号 |
+| **#59103** Drop stale block hashes when a session truncates tokens（fixes #49377） | 10-06 | 流式会话截断时 `_all_token_ids` 截到 num_computed_tokens，丢弃的最后一个采样 token 若凑成一个 hash block，该 hash 继续标识替换后的序列 → 后续 commit 到错误 key | **主修复（排除法 + 机制匹配）**：db9527a46 不含修复行（已验证）而 ZJY0516 10-12 测试时已含——时间窗完全吻合；多轮 agent 会话（截断+续接）+ 共享前缀 = repro 场景 |
+| **#61174** Clear stale shared block-table rows（Spec Decode/MTP） | 10-17 | 目标 batch 缩小后较大 MTP 解码图读 stale 共享 block-table 行 → "**padded work 访问另一请求的 cache 或 state**" | 与污染描述逐字对应（"another request's cache"）；repro 用 dspark（MTP 族）投机解码；但 10-17 才合，晚于 ZJY0516 10-12 复测 → **排除为主修复**，保留为投机解码路径补充 |
+| #60533 Fix hybrid Mamba prefix cache（从 #59826 提取） | 10-08 | Mamba prompt checkpoint 边界（P-1 cap / EAGLE block drop 双重应用） | **次要候选**：若 DSV4.1-Flash 含 Mamba 层可能相关；机制（checkpoint 边界）与"会话截断+续接"场景关联弱于 #59103；评论中可提及或省略 |
 
-**结论**：主修复很可能是 **#59103**（10-06，与多轮会话截断场景精确匹配）；#61174（10-17）覆盖投机解码/MTP 路径的同类污染；#51899（9-30）是早先的域碰撞修复。三者均应在当前 main 中。建议 reporter 用当前 main（≥10-17）重跑 canary 验证，并核对 #61229（lease 变体）是否同根因。
+**结论（2026-10-19 强化版）**：主修复 = **#59103**。推理链 = 排除法（#51899 已证在报障者构建中仍复现 → 排除；#61174 晚于维护者复测窗口 → 排除）+ 时间窗吻合（10-02 构建不含 / 10-06 合入 / 10-12 复测已修复）+ 机制匹配（会话截断 stale hash 对应多轮续接场景）。次要候选 #60533（hybrid Mamba 边界）若模型含 Mamba 层亦可能相关。建议 reporter 用当前 main（≥10-17）重跑 canary 验证；#61229（lease 变体）为独立路径。
 
 ## 3. 评论草稿（发布需用户授权）
 
