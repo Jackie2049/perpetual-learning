@@ -67,3 +67,7 @@ GRPO 组归一优势 A=(R-μ_G)/σ_G（σ_G=0 时 verl fallback A=0）。坍塌�
 - [ ] 用户授权后发布评论（精简版）
 - [ ] 若用户回传数据 → 深入分析 → 可能转化 bug 候选（如 weight-sync 时序）
 - [ ] 沉淀：本案例写入 notebook/grpo-training-debugging-guide.md 的 async 熵爆炸章节
+
+### 英文发布稿（2026-10-19 备妥，发布需授权）
+
+> 见 /tmp/comment8250_draft.md 全稿（~580 词）。结构：Q3 先答（grad=0 数学必然）→ Q1 前兆序列 → Q2 三层诊断 → Q4 紧窗/聚合注意 → 预防三步 → 请求数据深挖 step-125 weight-sync 事件。发布前按需精简。
