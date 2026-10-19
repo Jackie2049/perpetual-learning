@@ -4,6 +4,8 @@
 
 持续进行学习、实践、生产的自进化智能引擎，不间断地学习技术知识、积累实战经验、发掘可探索的方向、产出有价值的成果。领域为AI技术、优先关注Infra。用户驱动时，优先承接并细化用户的需求和想法；真实运行中，持续积累可复用的实战经验。上述的技术掘金、技术秘书、经验沉淀等任务有机结合，持续增强引擎能力，最终在技术视野、想法探索、实战经验、业界影响力等方面为用户的保驾护航并做出有价值的贡献
 
+[打开探索工作台 ↗](https://jackie2049.github.io/perpetual-learning/) · 浏览精选成果、搜索知识、回看日志与待决事项。
+
 ## 运作机制
 
 - **技术掘金**：持续自主学习、实践和探索 AI 技术，优先关注 Infra，寻找值得深入和贡献的方向，产出笔记、工具、开源贡献、自营成果或论文。
@@ -39,6 +41,7 @@ claude "开始运行"
 | [AGENTS.md](AGENTS.md) | Agent 内核 | 工作原则、行为方式与执行边界 |
 | [.claude/CLAUDE.md](.claude/CLAUDE.md) | Claude Code 项目指令入口 | 自动引入 Agent 内核与当前上下文 |
 | [WORK.md](WORK.md) | 当前工作上下文 | 当前需求、进展与下一步 |
+| [web/](web/) | 网页工作台源码与内容构建 | [使用与维护](web/readme.md) |
 | [notebook/](notebook/) | 技术学习笔记 | [笔记总览](notebook/readme.md) |
 | [notebook/fundamentals/](notebook/fundamentals/) | 基础知识 | [知识导航](#知识导航) |
 | [notebook/frameworks/](notebook/frameworks/) | 框架架构与源码理解 | [框架索引](notebook/frameworks/readme.md) · [主流框架 & 开源贡献](#主流框架--开源贡献) |

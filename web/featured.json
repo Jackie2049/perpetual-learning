@@ -1,0 +1,8 @@
+[
+  {"path":"notebook/papers/gmpo.md","title":"GMPO：从几何均值理解策略优化","description":"把论文目标、梯度推导和 verl 实现放在一起看，追踪 clip 语义的验证与纠正。","tag":"强化学习","kind":"论文学习"},
+  {"path":"notebook/frameworks/prefix-cache-failure-modes.md","title":"前缀缓存为什么会串号？","description":"将指纹错误与块归属错误分开，整理跨请求污染的机制、诊断方法和待验证问题。","tag":"推理 Infra","kind":"经验沉淀"},
+  {"path":"notebook/papers/gspo.md","title":"GSPO：从 token 走向 sequence","description":"梳理序列级优化目标，对照实现中的裁剪窗口与梯度设计。","tag":"强化学习","kind":"论文学习"},
+  {"path":"notebook/papers/sapo.md","title":"SAPO：从硬裁剪到平滑门控","description":"理解非对称温度与平滑信任域，将三种策略优化方法联系起来。","tag":"强化学习","kind":"论文学习"},
+  {"path":"open-source/vllm/vllm-61160-crosstalk-fix-locate.md","title":"vLLM 跨请求污染：寻找修复线索","description":"从问题复现与提交差异定位可能的修复，保留证据链与上游反馈入口。","tag":"开源贡献","kind":"实战调查"},
+  {"path":"tools/readme.md","title":"把实践沉淀成可复用工具","description":"浏览推理估算、GPU 监控与训练配置入口，了解各工具的用途和验证范围。","tag":"工具","kind":"工具沉淀"}
+]
