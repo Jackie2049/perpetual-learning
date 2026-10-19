@@ -46,3 +46,10 @@ reporter build = main@db9527a46（10-02），早于以下全部修复：
 
 - [ ] 用户授权后发布评论（或先核实 #59103 的 diff 细节强化证据）
 - [ ] 可选：检查 #61229 是否可归并到同一修复家族（另一潜在评论价值）
+
+## 5. 家族分离结论（2026-10-19 补充，#61229 核查）
+
+**#61229（lease 侧）与 #61160（hash/block-table 侧）是两条独立路径**：
+- #61229：NixlConnector producer 在 `kv_lease_duration` 过期后无条件释放 KV 块，consumer 读已复用块 → 静默错误。讨论已收敛（维护者 robertgshaw2-redhat 10-16 认可 "positive fix"），issue 仍 open。
+- 其修复系列与 #61160 的 3 个 PR **不重叠**：#61549（sawsa307，"Fixes #61229"，**closed unmerged**——经 KV load failure path 拒绝过期读）、#62065（open，核对 producer lease slot）、#61488/#61578/#61580（KV 校验和系列，open——系统化验证 P/D 传输）。
+- 对 #61160 评论的意义：可顺带澄清两个 crosstalk 形状根因不同，#61229 已有独立跟踪与进行中修复，避免维护者误认为重复。
