@@ -4,7 +4,7 @@
 > [Bug]: Cross-request context contamination via shared-prefix KV（NIXL P/D 分离 + DeepSeek-V4.1-Flash + dspark 投机解码）
 > 创建 2026-10-12；6 评论；查重 2026-10-19：**0 个引用 PR**（reporter 未认领；维护者 ZJY0516 确认 v0.31.0 复现、latest main 不再复现，reporter 请求指出修复 PR）
 > 类别：调查/评论型（定位修复 = 回答 issue 中的明确问题）
-> 状态：**analysis-done**（修复定位完成，评论草稿待授权发布）
+> 状态：**POSTED（2026-10-19 10:49 +08:00）** — [评论已发布](https://github.com/vllm-project/vllm/issues/61160#issuecomment-6258592764)（Jackie2049 账号，comment id 6258592764）。待 reporter/维护者回应后跟进。
 
 ## 0. 为什么值得做
 
