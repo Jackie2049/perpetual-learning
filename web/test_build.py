@@ -33,6 +33,26 @@ class RenderingTests(unittest.TestCase):
     def test_issue_number_keeps_hash(self):
         self.assertEqual(build.clean_text('**vLLM #61160**'), 'vLLM #61160')
 
+    def test_inline_and_display_math_survive_markdown_and_cleaning(self):
+        result = build.render(r'Inline $\frac{a_i}{b_i}$.' + '\n\n$$\n' + r'\sum_{i=1}^{G} x_i' + '\n$$', 'test.md', 'abc123')
+        self.assertIn('<span class="arithmatex">', result)
+        self.assertIn('<div class="arithmatex">', result)
+        self.assertIn(r'\frac{a_i}{b_i}', result)
+        self.assertIn(r'\sum_{i=1}^{G} x_i', result)
+        self.assertNotIn('<em>', result)
+
+    def test_math_inside_code_stays_code(self):
+        result = build.render('```python\n' + r'formula = "$\frac{a}{b}$"' + '\n```', 'test.md', 'abc123')
+        self.assertIn('<pre>', result)
+        self.assertNotIn('class="arithmatex"', result)
+
+    def test_table_inline_math_keeps_two_cells(self):
+        source = '| Method | Weight |\n|---|---|\n| GMPO | $' + r'\rho^{1/\lvert o_i\rvert}' + '$ |'
+        result = build.render(source, 'test.md', 'abc123')
+        self.assertEqual(result.count('<td>'), 2)
+        self.assertIn('class="arithmatex"', result)
+        self.assertIn(r'\lvert o_i\rvert', result)
+
     def test_external_and_anchor_links_survive(self):
         result = build.render('[external](https://example.org/a) [section](#section)', 'test.md', 'abc123')
         self.assertIn('href="https://example.org/a"', result)

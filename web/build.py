@@ -19,7 +19,7 @@ WEB = ROOT / 'web'
 OUT = WEB / 'dist'
 REPO = 'https://github.com/Jackie2049/perpetual-learning'
 TZ = ZoneInfo('Asia/Singapore')
-TAGS = {'p', 'br', 'hr', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'strong', 'em', 'del', 'blockquote', 'ul', 'ol', 'li', 'pre', 'code', 'a', 'table', 'thead', 'tbody', 'tr', 'th', 'td'}
+TAGS = {'p', 'br', 'hr', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'strong', 'em', 'del', 'blockquote', 'ul', 'ol', 'li', 'pre', 'code', 'a', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'span', 'div'}
 
 
 def git(*args):
@@ -45,10 +45,10 @@ def render(source, path, revision):
     lines = []
     for line in source.splitlines():
         if line.lstrip().startswith('|'):
-            line = re.sub(r'(`[^`]+`|\*\*[^\n]+?\*\*)', lambda m: re.sub(r'(?<!\\)\|', r'\\|', m[0]), line)
+            line = re.sub(r'(`[^`]+`|\*\*[^\n]+?\*\*|(?<!\\)\$(?:\\.|[^$])+?\$)', lambda m: re.sub(r'(?<!\\)\|', r'\\|', m[0]), line)
         lines.append(line)
     source = '\n'.join(lines)
-    rendered = markdown.markdown(source, extensions=['fenced_code', 'tables', 'sane_lists', 'toc'])
+    rendered = markdown.markdown(source, extensions=['fenced_code', 'tables', 'sane_lists', 'toc', 'pymdownx.arithmatex'], extension_configs={'pymdownx.arithmatex': {'generic': True}})
     def rewrite(match):
         url = match[1]
         parsed = urlsplit(url)
@@ -57,7 +57,7 @@ def render(source, path, revision):
             url = github_url(target, revision) + ('#' + parsed.fragment if parsed.fragment else '')
         return f'href="{url}"'
     rendered = re.sub(r'href="([^"]*)"', rewrite, rendered)
-    return bleach.clean(rendered, tags=TAGS, attributes={'a': ['href', 'title'], '*': ['id'], 'code': ['class']}, protocols=['https', 'http', 'mailto'], strip=True)
+    return bleach.clean(rendered, tags=TAGS, attributes={'a': ['href', 'title'], '*': ['id'], 'code': ['class'], 'span': ['class'], 'div': ['class']}, protocols=['https', 'http', 'mailto'], strip=True)
 
 
 def main():
@@ -110,6 +110,7 @@ def main():
     (OUT / 'content').mkdir(parents=True)
     for name in ['index.html', 'styles.css', 'app.js', 'favicon.svg']:
         shutil.copyfile(WEB / name, OUT / name)
+    shutil.copytree(WEB / 'vendor' / 'katex', OUT / 'vendor' / 'katex')
     (OUT / '.nojekyll').touch()
     for path in selected:
         date = git('log', '-1', '--format=%cI', revision, '--', path).strip()

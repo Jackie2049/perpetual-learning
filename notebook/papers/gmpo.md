@@ -10,22 +10,33 @@ GRPO 对 token 级奖励求**算术**平均，遇离群 importance ratio 时更�
 
 ## 目标函数（Eq. 4）
 
-```
-J_GMPO(π_θ) = E_{q,{o_i}~π_old}  (1/G) Σ_i  { Π_{t=1}^{|o_i|} |min[ρ_{i,t}(θ)·Â_i, clip(ρ_{i,t}(θ),ε_low,ε_high)·Â_i]| }^{1/|o_i|} · sgn(Â_i)
-```
+$$
+\begin{aligned}
+J_{\mathrm{GMPO}}(\pi_\theta)
+&= \mathbb{E}_{q,\{o_i\}\sim\pi_{\mathrm{old}}}
+\frac{1}{G}\sum_{i=1}^{G}
+\Biggl\{\prod_{t=1}^{\lvert o_i\rvert}
+\Bigl|\min\Bigl[
+\rho_{i,t}(\theta)\widehat{A}_i,\\
+&\qquad\operatorname{clip}\bigl(\rho_{i,t}(\theta),\epsilon_{\mathrm{low}},\epsilon_{\mathrm{high}}\bigr)\widehat{A}_i
+\Bigr]\Bigr|\Biggr\}^{1/\lvert o_i\rvert}
+\operatorname{sgn}(\widehat{A}_i).
+\end{aligned}
+$$
 
 逐 token 的 ratio ρ 与 clip 在**概率空间**进行（论文 Algorithm 1 用 epsilon=0.4），序列内做**几何均值**（log 空间乘积防数值溢出），乘序列优势 Â_i 与符号。等价变形：
 
-```
-= Â_i · (Π_t min(ρ_t, clip(ρ_t)))^{1/|o_i|}
-```
+$$
+=\widehat{A}_i\cdot
+\left(\prod_t\min\bigl(\rho_t,\operatorname{clip}(\rho_t)\bigr)\right)^{1/\lvert o_i\rvert}
+$$
 
 ## 梯度对比（Eq. 5 vs 6）——核心论点
 
 | | 每个 token 的梯度权重 |
 |---|---|
-| GRPO | **ρ_{i,t}(θ)**（自身 importance ratio）——单个离群 token 直接放大/压死梯度 |
-| GMPO | **(Π_k ρ_{i,k}(θ))^{1/|o_i|}**（全序列 ratio 的几何均值）——离群被均值吸收 |
+| GRPO | $\rho_{i,t}(\theta)$（自身 importance ratio）——单个离群 token 直接放大/压死梯度 |
+| GMPO | $\left(\prod_k\rho_{i,k}(\theta)\right)^{1/\lvert o_i\rvert}$（全序列 ratio 的几何均值）——离群被均值吸收 |
 
 两者都是 policy gradient 的加权和（权重 × Â_i × ∇log π），GMPO 权重更稳。
 
