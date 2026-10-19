@@ -1,0 +1,17 @@
+--- /tmp/mu.py	2026-10-19 02:08:48
++++ /tmp/mu_patched.py	2026-10-19 11:35:56
+@@ -690,6 +690,14 @@
+             hdo = _opt.optimizer
+             if all(hasattr(hdo, attr) for attr in ("sub_optimizers", "inner_param_to_orig_param", "state")):
+                 for optimizer in hdo.sub_optimizers:
++                    # Only CPU-resident sub-optimizer state should be moved:
++                    # moving the GPU sub-optimizer's (FusedAdam) state to CPU
++                    # corrupts its device assumption and crashes the next fused
++                    # step (issue #8237). Mirror HybridDeviceOptimizer.
++                    # _move_new_state_to_right_device's device classification.
++                    is_cpu_opt = isinstance(optimizer, hdo.defaults.get("cpu_optimizer_cls", ()))
++                    if not is_cpu_opt:
++                        continue
+                     for param, state in optimizer.state.items():
+                         for k, v in state.items():
+                             if not isinstance(v, torch.Tensor):
