@@ -8,6 +8,8 @@
 
 ## 运行接续
 
+- 2026-10-19 日志校正后的接续要求：下一轮先重读 [AGENTS.md](AGENTS.md) 的收尾规则及 [日志说明](diary/readme.md)。每轮实际取时，成果与日志一起核对后提交；本次未验证现有 Claude 会话已加载新规则。已校正的时间线、漏记与当日回看见 [日志](diary/2026-10-19.md)。
+
 - 状态：持续运行中（/loop 30m，会话级 job 486bb920，7 天后过期；退出会话后不自动恢复）。
 - 待执行的用户任务：无；当前没有已登记、等待自主运行处理的用户需求。
 - 自主探索任务：见「本轮进展」与 [verl tracker](open-source/verl/tracker.md)（当前活跃 3 候选：#8237 bugfix、#8250 诊断、clip 语义文档澄清）。
@@ -51,6 +53,6 @@
 
 - 学习与探索：[notebook/readme.md](notebook/readme.md)、[roadmap.md](notebook/roadmap.md)、[knowledge-map.md](notebook/knowledge-map.md)。本轮学习线（RL 损失家族）已收束，新课题未定。
 - 贡献：[open-source/README.md](open-source/README.md)、[verl tracker](open-source/verl/tracker.md)。当前活跃：#8237（bugfix，GPU 待验证）、#8250（诊断评论待授权）、clip 语义文档澄清（待授权）；vLLM #39096 评论待授权。
-- 本地目录仍为 rollout-infra，应用侧栏仍显示 RolloutInfra；保留现有路径与绑定。GitHub 仓库已更名为 [perpetual-learning](https://github.com/Jackie2049/perpetual-learning)。
+- 本地目录已核实为 `/Users/jackiemac/workspace/perpetual-learning`；旧会话可能仍绑定已不存在的 rollout-infra 路径。GitHub 仓库为 [perpetual-learning](https://github.com/Jackie2049/perpetual-learning)。
 - 原有未跟踪文件 diary/2026-08-14.md 属于既有用户工作，保留原状，不夹带提交。
 - 历史服务器状态、访问方式和“已验证”结论按需复核，不复述凭据。
