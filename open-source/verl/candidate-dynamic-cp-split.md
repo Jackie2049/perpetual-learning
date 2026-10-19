@@ -68,8 +68,8 @@ selected_indices = indices[start_idx:end_idx]
 
 ## 7. 评估
 
-- I=3（特定配置下崩溃，需 `len % local_dp_size != 0`；非默认路径） 
-- C=2（纯切分逻辑替换 + 单测；merge 已确认安全）
-- A=4（无认领；reporter repro 薄但给了行号；修复方向标准）
-- F=4（Megatron 路径，我们 Megatron 经验契合，纯逻辑本地可验证）
+- 影响=3（特定配置下崩溃，需 `len % local_dp_size != 0`；非默认路径）
+- 成本=2（纯切分逻辑替换 + 单测；merge 已确认安全）
+- 接受度=4（无认领；reporter repro 薄但给了行号；修复方向标准）
+- 契合度=4（Megatron 路径，我们 Megatron 经验契合，纯逻辑本地可验证）
 - **性价比 = (3×4×4)/2 = 24** —— 强候选，patch 已就绪

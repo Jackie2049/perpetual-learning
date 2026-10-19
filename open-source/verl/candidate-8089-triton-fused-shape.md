@@ -8,10 +8,10 @@
 
 | 维度 | 评估 |
 |---|---|
-| I | 5 — 官方示例脚本直接崩（`use_fused_kernels=True` + triton + `use_remove_padding=False`），首步训练前 IndexError |
-| C | 3 — 5 文件 × 2 行机械补丁，但 e2e 验证需 GPU（triton kernel） |
-| A | 5 — 明确 bugfix、无人认领、reporter 给出期望行为（对齐 torch backend） |
-| F | 3 — triton kernel 形状契约分析，中等契合 |
+| 影响 | 5 — 官方示例脚本直接崩（`use_fused_kernels=True` + triton + `use_remove_padding=False`），首步训练前 IndexError |
+| 成本 | 3 — 5 文件 × 2 行机械补丁，但 e2e 验证需 GPU（triton kernel） |
+| 接受度 | 5 — 明确 bugfix、无人认领、reporter 给出期望行为（对齐 torch backend） |
+| 契合度 | 3 — triton kernel 形状契约分析，中等契合 |
 | 分 | **25** |
 
 ## 1. Bug

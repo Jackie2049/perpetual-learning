@@ -120,8 +120,8 @@ for var_name, var_vals in var2vals.items():
 
 ## 7. 评估
 
-- I=4（validation 直接崩，阻断任何 sparse 指标的 reward 函数；正确性相关）
-- C=2（自包含 guard + 3 单测；pred 对齐是唯一小心点，已用 zip strict=True + 测试覆盖）
-- A=5（`help wanted` + 无人认领 + 报告者给了修复指引 → maintainer 想要）
-- F=4（RL 指标聚合，本地可复现）
+- 影响=4（validation 直接崩，阻断任何 sparse 指标的 reward 函数；正确性相关）
+- 成本=2（自包含 guard + 3 单测；pred 对齐是唯一小心点，已用 zip strict=True + 测试覆盖）
+- 接受度=5（`help wanted` + 无人认领 + 报告者给了修复指引 → maintainer 想要）
+- 契合度=4（RL 指标聚合，本地可复现）
 - **性价比 = (4×5×4)/2 = 40** —— 本轮最高，patch+测试已就绪，等你审阅后一起在 fork 开 PR

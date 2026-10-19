@@ -8,10 +8,10 @@
 
 | 维度 | 评估 |
 |---|---|
-| I | 4 — `ddp.overlap_param_gather=True` + fused LM-head 时第二个 batch 必挂（AssertionError，无可用 workaround 组合说明），SFT/训练主路径 |
-| C | 2 — 修复涉及 DDP 内部 bucket 语义，验证需 Megatron + 多卡 + overlap 配置（重） |
-| A | 4 — 明确 bugfix、0 竞争、reporter 给出完整机制链 |
-| F | 4 — Megatron DDP/参数通信是我们的分布式深耕区 |
+| 影响 | 4 — `ddp.overlap_param_gather=True` + fused LM-head 时第二个 batch 必挂（AssertionError，无可用 workaround 组合说明），SFT/训练主路径 |
+| 成本 | 2 — 修复涉及 DDP 内部 bucket 语义，验证需 Megatron + 多卡 + overlap 配置（重） |
+| 接受度 | 4 — 明确 bugfix、0 竞争、reporter 给出完整机制链 |
+| 契合度 | 4 — Megatron DDP/参数通信是我们的分布式深耕区 |
 | 分 | **21** |
 
 ## 1. Bug

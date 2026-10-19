@@ -8,10 +8,10 @@
 
 | 维度 | 评估 |
 |---|---|
-| I | 4 — 静默数值错误：同一 minibatch 拆成多 microbatches 时梯度系统性偏移（8 拆 1 时 rel L2=7.0，拆 3+5 时 0.64），训练语义随并行切分漂移，无报错 |
-| C | 4 — 8 行改动复用现有 `agg_loss`（entropy/kl 已在用），CPU 可验证，无需 GPU |
-| A | 4 — 明确 bugfix；关联 #5614 表明 aggregation 问题是 maintainer 关注方向 |
-| F | 5 — GMPO/geo_mean 数学推导在我们的 RL 损失深耕区 |
+| 影响 | 4 — 静默数值错误：同一 minibatch 拆成多 microbatches 时梯度系统性偏移（8 拆 1 时 rel L2=7.0，拆 3+5 时 0.64），训练语义随并行切分漂移，无报错 |
+| 成本 | 4 — 8 行改动复用现有 `agg_loss`（entropy/kl 已在用），CPU 可验证，无需 GPU |
+| 接受度 | 4 — 明确 bugfix；关联 #5614 表明 aggregation 问题是 maintainer 关注方向 |
+| 契合度 | 5 — GMPO/geo_mean 数学推导在我们的 RL 损失深耕区 |
 | 分 | **20** |
 
 ## 1. Bug

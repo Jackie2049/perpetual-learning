@@ -82,10 +82,10 @@ else:
 
 ## 6. 最终评估
 
-- I=3（错误路径资源泄漏，非正常路径 bug；severity 低，reporter 自己说）
-- C=2（mc_fd trivial）→ 若只修 mc_fd；C=4（mc_fd + 新 C++ binding）→ 完整修
-- A=4（无认领；maintainer review 慢 + 报告者分析有 gap 可能引发讨论）
-- F=3（CUDA driver 资源管理命中专长，但无硬件无法自测）
+- 影响=3（错误路径资源泄漏，非正常路径 bug；severity 低，reporter 自己说）
+- 成本=2（mc_fd trivial）→ 若只修 mc_fd；成本=4（mc_fd + 新 C++ binding）→ 完整修
+- 接受度=4（无认领；maintainer review 慢 + 报告者分析有 gap 可能引发讨论）
+- 契合度=3（CUDA driver 资源管理命中专长，但无硬件无法自测）
 
 **三种路径**：
 

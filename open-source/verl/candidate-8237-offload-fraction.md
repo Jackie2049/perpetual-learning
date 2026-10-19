@@ -8,10 +8,10 @@
 
 | 维度 | 评估 |
 |---|---|
-| I | 5 — `optimizer_offload_fraction<1` + `optimizer_offload=True` 时首轮 update 必崩（0.0 Python 崩溃 / 0.5 原生崩溃无 traceback），多节点复现（8 节点 & 64 节点 DeepSeek-V4-Pro） |
-| C | 3 — 改动 5 行（offload 设备分类），但验证需 Megatron 环境；GPU 验证成本高 |
-| A | 5 — 明确 bugfix、无人认领、reporter 给了两个可接受方向 |
-| F | 5 — offload 是我们的深耕区（#6690 pin_memory 同族） |
+| 影响 | 5 — `optimizer_offload_fraction<1` + `optimizer_offload=True` 时首轮 update 必崩（0.0 Python 崩溃 / 0.5 原生崩溃无 traceback），多节点复现（8 节点 & 64 节点 DeepSeek-V4-Pro） |
+| 成本 | 3 — 改动 5 行（offload 设备分类），但验证需 Megatron 环境；GPU 验证成本高 |
+| 接受度 | 5 — 明确 bugfix、无人认领、reporter 给了两个可接受方向 |
+| 契合度 | 5 — offload 是我们的深耕区（#6690 pin_memory 同族） |
 | 分 | **42**（本轮扫描最高） |
 
 ## 1. Bug

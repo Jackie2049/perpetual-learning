@@ -55,8 +55,8 @@ finally:
 
 ## 6. 评估
 
-- I=3（多进程数据过滤挂死，需特定配置 `filter_overlong_prompts=True + workers>1`；非默认但常见） 
-- C=2（signal 重置 wrap，~10 行 + try/finally）
-- A=4（无认领；reporter 做了详细 root-cause；修复方向标准）
-- F=4（信号处理 + 多进程，平台无关逻辑，Linux 本地可验证）
+- 影响=3（多进程数据过滤挂死，需特定配置 `filter_overlong_prompts=True + workers>1`；非默认但常见）
+- 成本=2（signal 重置 wrap，~10 行 + try/finally）
+- 接受度=4（无认领；reporter 做了详细 root-cause；修复方向标准）
+- 契合度=4（信号处理 + 多进程，平台无关逻辑，Linux 本地可验证）
 - **性价比 = (3×4×4)/2 = 24** —— 强候选，patch 已就绪
