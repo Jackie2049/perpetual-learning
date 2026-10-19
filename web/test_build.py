@@ -1,4 +1,5 @@
 import unittest
+import subprocess
 import build
 
 
@@ -52,6 +53,29 @@ class RenderingTests(unittest.TestCase):
         self.assertEqual(result.count('<td>'), 2)
         self.assertIn('class="arithmatex"', result)
         self.assertIn(r'\lvert o_i\rvert', result)
+
+    def test_gmpo_is_published_as_rendered_math(self):
+        source = (build.ROOT / 'notebook/papers/gmpo.md').read_text()
+        result = build.render(source, 'notebook/papers/gmpo.md', 'abc123')
+        self.assertEqual(result.count('class="katex"'), 4)
+        self.assertEqual(result.count('class="katex-display"'), 2)
+        self.assertNotIn('class="katex-error"', result)
+        self.assertIn('<math ', result)
+        self.assertIn('class="katex-html"', result)
+
+    def test_invalid_math_stops_the_build(self):
+        with self.assertRaises(subprocess.CalledProcessError):
+            build.render(r'$\thisCommandDoesNotExist{x}$', 'test.md', 'abc123')
+
+    def test_escaped_delimiters_and_code(self):
+        result = build.render(r'Inline \(x_i\) and `$raw$`.' + '\n\n' + r'\[x^2\]', 'test.md', 'abc123')
+        self.assertEqual(result.count('class="katex"'), 2)
+        self.assertIn('<code>$raw$</code>', result)
+
+    def test_math_cannot_inject_html(self):
+        result = build.render(r'$\text{<script>alert(1)</script>}$', 'test.md', 'abc123')
+        self.assertNotIn('<script', result)
+        self.assertIn('&lt;script&gt;', result)
 
     def test_external_and_anchor_links_survive(self):
         result = build.render('[external](https://example.org/a) [section](#section)', 'test.md', 'abc123')

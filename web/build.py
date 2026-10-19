@@ -3,6 +3,7 @@
 from datetime import datetime
 from pathlib import Path
 import hashlib
+import html
 import json
 import posixpath
 import re
@@ -39,6 +40,33 @@ def github_url(path, revision):
     return f'{REPO}/blob/{revision}/{quote(path)}'
 
 
+def render_math(markup):
+    # Sanitize repository HTML first; only trusted KaTeX output is added afterwards.
+    pattern = re.compile(r'<(span|div) class="arithmatex">(.*?)</\1>', re.S)
+    matches = list(pattern.finditer(markup))
+    if not matches:
+        return markup
+    formulas = []
+    for match in matches:
+        source = html.unescape(match[2]).strip()
+        display = match[1] == 'div'
+        opening, closing = (r'\[', r'\]') if display else (r'\(', r'\)')
+        if not source.startswith(opening) or not source.endswith(closing):
+            raise ValueError('Invalid math delimiters')
+        formulas.append({'source': source[2:-2], 'display': display})
+    result = subprocess.run(
+        ['node', str(WEB / 'render-math.cjs')], input=json.dumps(formulas),
+        text=True, capture_output=True, check=True,
+    )
+    rendered = iter(json.loads(result.stdout))
+    return pattern.sub(lambda m: f'<{m[1]} class="arithmatex">{next(rendered)}</{m[1]}>', markup)
+
+
+def asset_url(name):
+    digest = hashlib.sha256((WEB / name).read_bytes()).hexdigest()[:16]
+    return f'./{name}?v={digest}'
+
+
 def render(source, path, revision):
     # Repository notes contain math cardinalities such as |o_i| inside bold table cells.
     # Escape inline delimiters before the table parser can treat them as extra columns.
@@ -57,7 +85,8 @@ def render(source, path, revision):
             url = github_url(target, revision) + ('#' + parsed.fragment if parsed.fragment else '')
         return f'href="{url}"'
     rendered = re.sub(r'href="([^"]*)"', rewrite, rendered)
-    return bleach.clean(rendered, tags=TAGS, attributes={'a': ['href', 'title'], '*': ['id'], 'code': ['class'], 'span': ['class'], 'div': ['class']}, protocols=['https', 'http', 'mailto'], strip=True)
+    cleaned = bleach.clean(rendered, tags=TAGS, attributes={'a': ['href', 'title'], '*': ['id'], 'code': ['class'], 'span': ['class'], 'div': ['class']}, protocols=['https', 'http', 'mailto'], strip=True)
+    return render_math(cleaned)
 
 
 def main():
@@ -110,6 +139,10 @@ def main():
     (OUT / 'content').mkdir(parents=True)
     for name in ['index.html', 'styles.css', 'app.js', 'favicon.svg']:
         shutil.copyfile(WEB / name, OUT / name)
+    index = (OUT / 'index.html').read_text()
+    for name in ['app.js', 'styles.css', 'vendor/katex/katex.min.css']:
+        index = index.replace(f'./{name}', asset_url(name))
+    (OUT / 'index.html').write_text(index)
     shutil.copytree(WEB / 'vendor' / 'katex', OUT / 'vendor' / 'katex')
     (OUT / '.nojekyll').touch()
     for path in selected:
