@@ -582,4 +582,35 @@ python3 experiments/scripts/verify_deepinfer_eplb_window.py /path/to/DeepInfer
 
 窗口内存轴由local_physical改成logical，字节数为`window × layers × axis × int32字节数`，不能无条件称为免费：相对倍率为`logical/local_physical`，实际取决于EP大小与冗余数。正确归属也不保证shuffle失败时安全、各rank观测同一代映射或策略全局最优；这些不在本轮CPU路径中。
 
-源SHA256：基线EPLB `1b30c01b36cfc711281bd729ab5cbf09826b4ba22359573f46d96c10ea6e7260`；#107 EPLB `bb22f49f95bf2eca6962ebe8557ce6abeeaf24781477f5ff021d257a2253b618`；window tests `e4a3e151db8ede534a279106af54ed9f1bd32165d0f9466e16202586ce980a59`；policy `52241603827a1a1d19a395d48f5d618a7336fd1ceee631127e6782c644f736dc`；policy tests `1671e3af1cb5ac293307dc37e288efe61da416450f2d677a94163a3e28426ce5`。下一步只读追踪expert_count的实际写入、采样/清零与重排顺序，补生产者语义；不新增竞争PR或把受控映射替换说成真实权重shuffle验证。
+源SHA256：基线EPLB `1b30c01b36cfc711281bd729ab5cbf09826b4ba22359573f46d96c10ea6e7260`；#107 EPLB `bb22f49f95bf2eca6962ebe8557ce6abeeaf24781477f5ff021d257a2253b618`；window tests `e4a3e151db8ede534a279106af54ed9f1bd32165d0f9466e16202586ce980a59`；policy `52241603827a1a1d19a395d48f5d618a7336fd1ceee631127e6782c644f736dc`；policy tests `1671e3af1cb5ac293307dc37e288efe61da416450f2d677a94163a3e28426ce5`。生产者与清零语义补见下节；不新增竞争PR或把受控映射替换说成真实权重shuffle验证。
+
+## 专家计数的来源与清零时序
+
+**expert_count是每层本地物理专家的路由接收工作量，不是请求数或已接受输出token数。** 以下固定DeepInfer基线774ce244的NVIDIA路径；本机checkout为8b161497，经Git diff确认两版本deepinfer/源码无差异。没有将Ascend替代后端或任意安装版本视作同一路径。
+
+[MoE gate](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/model_executor/models/v4_modules/mlp.py#L379)把逻辑专家映射为物理副本；dispatch和mega_moe_forward都把manager.layer返回的expert_count视图传为cumulative_local_expert_recv_stats。该视图与balancer计数共享存储，不是复制出的日志。模型初始化还把已加载的MTP MoE层纳入manager；[sample](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/model_executor/models/deepseek.py#L383)在sampler调用返回后（decode可在其中提交draft层执行），才调用manager.step；这里是主机调用顺序，不是所有设备工作已完成的断言。因此不能把一行窗口等同于一个请求、固定数量token或最终accepted-token计数；main/MTP是各自的layer行，不是先混成一层。
+
+固定子模块提供更具体的含义：[DeepEP 93eb6eb dispatch](https://github.com/deepseek-ai/DeepEP/blob/93eb6eb238127e96c6d7a4a625a6dad158348509/deep_ep/include/deep_ep/impls/ep/dispatch.cuh#L93)对每个非负topk专家选择加1，而rank通知计数另做去重。一个token路由到同rank两个专家，可以贡献2次专家工作，却只贡献1次去重rank通知；EPLB的本rank统计sum(expert_count)采用前者，不是通信token去重数。普通dispatch在对齐前保留sum并atomicAdd到累计统计；[hybrid路径](https://github.com/deepseek-ai/DeepEP/blob/93eb6eb238127e96c6d7a4a625a6dad158348509/deep_ep/include/deep_ep/impls/ep/hybrid_dispatch.cuh#L269)也用未对齐count，而非aligned_count。
+
+[DeepGEMM 1fc9c66 BF16](https://github.com/deepseek-ai/DeepGEMM/blob/1fc9c66975ee322d628b3288534ca0e9ce12a64d/deep_gemm/include/deep_gemm/impls/sm100_bf16_mega_moe.cuh#L580)与[FP8/FP4](https://github.com/deepseek-ai/DeepGEMM/blob/1fc9c66975ee322d628b3288534ca0e9ce12a64d/deep_gemm/include/deep_gemm/impls/sm100_fp8_fp4_mega_moe.cuh#L644)从接收计数读num_recv_tokens，清工作区时将它累加到统计；ceil_div得到的block数另用于回收。因此所读分支的统计不含expert-alignment/block补齐数量，但这不独立证明整个gate/有效mask/图批次padding链正确。子模块只读源码，未编译或运行内核。
+
+### 窗口与负载统计是两条消费路径
+
+[balancer.step](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/model_executor/eplb/__init__.py#L131)在EP>1时依次执行重排窗口更新、负载统计、原地zero_；默认跳过NORMAL prefill重排，只是第一项提前返回，不跳过后两项。负载统计按layer对本rank专家计数求和，累计到自己的stat interval；它与重排window不是同一个窗口，不能从“没有入重排窗”推断“计数被保留到decode”或“没有进入负载统计”。
+
+| 条件 | 重排窗口 | 本地负载统计 | 计数张量 |
+|---|---|---|---|
+| EP>1，重排启用，普通decode | 入窗 | 消费当前计数 | 消费后原地清零 |
+| EP>1，NORMAL prefill且跳过重排 | 不入窗 | 仍消费 | 仍清零 |
+| EP>1，interval=0 | 重排关闭 | 仍消费 | 仍清零 |
+| EP=1 | 整个step返回 | 不消费 | step不清零，不把它误写成所有配置每步清零 |
+
+[Worker顺序](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/worker/worker.py#L115)是提交当前forward、处理前轮post_funcs、再提交当前sample/EPLB step。延迟post_func取走的是负载比率报告；窗口更新与清零已经在sample路径提交，不是等post_func才发生。普通MoE调用dispatch/combine的current_stream_wait，表示代码请求了相应流依赖；本机未验证设备完成、跨stream可见性或跨rank同代映射，不从Python先后关系推断这些性质。
+
+```bash
+python3 experiments/scripts/verify_deepinfer_eplb_window.py /path/to/DeepInfer --check-step-lifecycle
+```
+
+既有独立Python3.12.13/torch2.9.1 CPU环境新增8组原始manager/view/step/local-stats检查通过：上表4条件分别运行基线与#107；覆盖2层反向global/local索引、共享视图、先消费后原地清零。负载统计interval固定128，单次调用不触发all_gather/CPU异步拷贝；进程组为替身，不执行producer kernel、模型sample、实际重排或collective。原窗口/受控日程/26个policy CPU例也通过。至此收束EPLB身份与计数链学习，不据此提出新缺陷或竞争修复。
+
+源码SHA256：deepseek.py `881fe2839b34d191ffd50ca6d5b7b57443b43ed8d811e204e4d48164f31f613a`；mlp.py `2541bcc83b178a9e2f18b387b301d60111d6d603e18e2d31df38196b03d290dd`；model_runner.py `9e2e18d136c9e0c9f23905ff994e9d23afaa94aa7a133d425e7fc1fc069033ef`；worker.py `ad32e595d9ab289dff1a7709136431ac60dae709e9e5123ae42eb0ebf7c30cbb`；sampler.py `81205a12e860041ffa904321b852db2d048bc038bb07d494dbb78b44b522d9a9`。子模块以DeepInfer gitlink固定提交核验，不把当前main或运行环境默认为这些版本。

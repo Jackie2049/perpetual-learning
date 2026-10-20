@@ -5,6 +5,8 @@ Python 3.12+, torch and pytest required. Reads immutable Git blobs; no checkout
 edits, full DeepInfer import, GPU, distributed collectives or weight shuffle.
 Runs original PR test function bodies and selected original recording/decoding
 logic with real CPU tensors. The process group and placement change are fakes.
+Optional --check-step-lifecycle exercises real manager views/step/local stats
+below the collective flush threshold; it does not execute count-producing kernels.
 """
 import argparse
 import ast
@@ -12,6 +14,7 @@ import hashlib
 from pathlib import Path
 import subprocess
 from types import SimpleNamespace
+from typing import NamedTuple
 
 import pytest
 import torch
@@ -31,7 +34,8 @@ def load_balancer(source, envs):
     tree = ast.parse(source)
     cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == 'ExpertLoadBalancer')
     selected = [n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name in
-                ('__init__', '_update_rearrangement', '_local_physical_to_logical_map')]
+                ('__init__', 'step', '_update_load_balance_stats', '_update_rearrangement',
+                 '_local_physical_to_logical_map')]
     # Only isolate the CPU tensor decoding block; no CUDA/shuffle/all_reduce.
     rearrange = next(n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == '_rearrange_experts')
     start = next(i for i, n in enumerate(rearrange.body) if isinstance(n, ast.Assign) and
@@ -84,9 +88,56 @@ def schedule(cls, environ, forced):
         return observations
 
 
+def step_lifecycle(cls, source, environ, label):
+    tree = ast.parse(source)
+    manager_classes = [n for n in tree.body if isinstance(n, ast.ClassDef) and n.name in
+                       ('ExpertLoadBalancerLayerState', 'ExpertLoadBalancerManager')]
+    module = ast.Module(body=ast.parse('from __future__ import annotations').body + manager_classes, type_ignores=[])
+    ns = {'torch': torch, 'NamedTuple': NamedTuple}
+    exec(compile(module, '<original-eplb-manager>', 'exec'), ns)
+    cases = (('prefill_skipped_window', 2, 8, True), ('decode_record', 2, 8, False),
+             ('disabled_rearrange', 2, 0, False), ('single_rank', 1, 8, False))
+    for name, ep_size, interval, prompt in cases:
+        with pytest.MonkeyPatch.context() as monkeypatch:
+            for key, value in {
+                'DEEPINFER_EXPERT_COUNT_WINDOW_SIZE': '4' if interval else '0',
+                'DEEPINFER_EXPERT_REARRANGEMENT_STEP_INTERVAL': str(interval),
+                'DEEPINFER_REARRANGE_AFTER_PREFILL_IN_NORMAL_ENGINE': '0',
+                'DEEPINFER_MOE_LB_STAT_INTERVAL': '128',
+            }.items(): monkeypatch.setenv(key, value)
+            environ.rearm_all()
+            obj = cls(expert_weights=[[], []], num_moe_layers=2, num_logical_experts=4,
+                      num_physical_experts=8, ep_group=SimpleNamespace(size=lambda: ep_size, rank=lambda: 0),
+                      num_routed_experts=4, num_extra_experts=4, is_normal_engine=True)
+            manager = ns['ExpertLoadBalancerManager']([(obj, [1, 0])], 2)
+            first_layer = manager.layer(0)
+            assert first_layer.expert_count.data_ptr() == obj.expert_count[1].data_ptr()
+            assert first_layer.logical_count.data_ptr() == obj.logical_count[1].data_ptr()
+            obj.expert_count.copy_(torch.arange(1, obj.expert_count.numel() + 1).reshape_as(obj.expert_count))
+            first_layer.expert_count[0] += 10
+            before = obj.expert_count.clone()
+            pointer = obj.expert_count.data_ptr()
+            manager.step(prompt)
+            assert obj.expert_count.data_ptr() == pointer
+            if ep_size == 1:
+                assert torch.equal(obj.expert_count, before)
+                assert obj._load_balance_stat_index == obj._expert_count_window_index == 0
+            else:
+                assert obj.expert_count.count_nonzero() == 0 and first_layer.expert_count.count_nonzero() == 0
+                assert obj._load_balance_stat_index == 1
+                assert torch.equal(obj._local_tokens_per_step[0], before.sum(-1))
+                assert obj._expert_count_window_index == (1 if name == 'decode_record' else 0)
+                if name == 'decode_record':
+                    assert torch.equal(obj.decode_window()[0], before)
+            assert manager.take_moe_load_balance_ratio() is None  # No collective flush in these cases.
+            print(label, 'original manager/step/local stats PASS:', name)
+    return len(cases)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('source_root', type=Path)
+    parser.add_argument('--check-step-lifecycle', action='store_true')
     args = parser.parse_args()
     torch.set_default_device('cpu')
     torch.set_num_threads(1)
@@ -94,8 +145,9 @@ def main():
     env_ns = {}
     exec(compile(blob(args.source_root, HEAD, 'deepinfer/environ.py'), '<original-environ>', 'exec'), env_ns)
     environ = SimpleNamespace(**env_ns)
-    baseline = load_balancer(blob(args.source_root, BASE, EPLB), environ.envs)
-    patched = load_balancer(blob(args.source_root, HEAD, EPLB), environ.envs)
+    baseline_source, patched_source = blob(args.source_root, BASE, EPLB), blob(args.source_root, HEAD, EPLB)
+    baseline = load_balancer(baseline_source, environ.envs)
+    patched = load_balancer(patched_source, environ.envs)
     tests = ast.parse(blob(args.source_root, HEAD, 'tests/models/test_eplb_window.py'))
     # Drop only package imports to avoid DeepInfer/platform/CUDA initialization.
     tests.body = [n for n in tests.body if not (isinstance(n, ast.ImportFrom) and n.module.startswith('deepinfer'))]
@@ -159,6 +211,10 @@ def main():
     assert policy_checks == 26
     print('PASS: 3 original window test bodies, 4 controlled schedules, 1 CPU policy-input contrast,')
     print('plus 26 original policy CPU cases (decorators removed, parameter data retained).')
+    if args.check_step_lifecycle:
+        count = step_lifecycle(baseline, baseline_source, environ, 'baseline')
+        count += step_lifecycle(patched, patched_source, environ, 'pr107')
+        print(f'PASS: {count} additional original manager/view/step CPU controls; no kernels or collective flush.')
     print('No full package, distributed collectives, actual weight shuffle, accelerator or throughput validation.')
 
 
