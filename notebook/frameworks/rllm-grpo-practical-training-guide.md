@@ -894,7 +894,7 @@ rllm eval math500 \
 ★★★ `--attempts N` 执行N次独立rollout, 计算pass@k for k=1..N:
 
 ```bash
-# pass@8 评估 (GRPO最佳对齐)
+# pass@8 评估（多次尝试事件，不等同GRPO训练目标）
 rllm eval aime2024 \
     --agent math \
     --evaluator math \
@@ -924,6 +924,8 @@ Results:
 
 ★★★ pass@k公式 (Chen et al. 2021 unbiased estimator):
 `pass@k = 1 - C(n-c, k) / C(n, k)` — n=attempts, c=正确数
+
+适用1≤k≤n；同题IID Bernoulli模型下，对k次至少成功一次的概率无偏，不等同普通GRPO的训练目标。2026-10-21补充：[Bayes@N与pass@k指标边界](verl-validation-bayes-passk.md)。此处历史CLI例子未在本轮重新运行。
 
 ### 13.3 本地模型评估
 

@@ -79,13 +79,15 @@ Train on separate benchmarks (PR #635):
 
 ## 4. pass@k Evaluation — PR #649
 
+2026-10-21 数学更正：下列pass@k公式已按[HumanEval实现](https://github.com/openai/human-eval/blob/master/human_eval/evaluation.py#L13)修正，旧Kolmogorov归属与GRPO等价说法撤回；本轮未重新验证rLLM CLI／#649实现。指标与假设详见[验证指标说明](verl-validation-bayes-passk.md)。
+
 ```
 ★ ★ ★ pass@k = unbiased estimator → 多次尝试→pass率!
 
 Implementation:
   → rllm eval --attempts N → 每个task→N rollout → unbiased pass@k estimate
-  → 公式: pass@k = 1 - C(c,n) / C(c+k,n+k) → c=correct, n=total, k=attempts
-  → ★ 这是Kolmogorov的unbiased estimator → 数学保证!
+  → 公式: pass@k = 1 - C(n-c,k) / C(n,k)，1≤k≤n；c=correct, n=总采样数
+  → 同题IID Bernoulli模型下，对1-(1-p)^k无偏；不是任意相关采样的保证
 
 Modal fixes surfaced by running TB2 89×2 E2E:
   → chunked base64 uploads → Modal argv 64 KiB cap
@@ -94,9 +96,9 @@ Modal fixes surfaced by running TB2 89×2 E2E:
 
 ★ 与GRPO的关系:
   → pass@k → 多次尝试 → best-of-k → 推理scaling!
-  → GRPO rollout_n → 同prompt多response → 等价于pass@n!
-  → ★ ★ pass@k evaluation和GRPO训练是同一系统的两面!
-  → rLLM eval --attempts → 和 rllm train rollout_n → 完美对齐!
+  → GRPO rollout_n → 同prompt多response；不能只按样本数等同pass@n目标
+  → 多次采样可以共用基础设施，但评价的事件和训练损失仍须分别定义
+  → rLLM eval --attempts与train rollout_n的数值相同，不证明目标等价
 ```
 
 ## 5. rllm-swesmith Integration — PR #641
@@ -136,10 +138,10 @@ Loader/eval/oracle:
    → ★ ★ 这是2025-2026趋势 → agent RL → inference-time compute → 多步推理
    → rLLM走在最前面 → Terminus-2 harness → 完整沙盒化agent评估
 
-3. pass@k和GRPO rollout_n是同一系统两面:
-   → eval: pass@k → unbiased estimator → 多次尝试→pass率
-   → train: rollout_n → 多response → group-relative → best-of-N
-   → ★ ★ ★ 评估和训练完美对齐 → rLLM设计的一致性!
+3. 多次采样不代表训练和评价目标相同:
+   → eval: pass@k估计k次至少成功一次，需要保留独立采样等假设
+   → train: rollout_n提供group-relative训练数据，不自动变成best-of-N目标
+   → 共享采样数量与基础设施，不证明训练损失和评价事件等价
 
 4. Snapshot+warm-pool = RL训练加速关键:
    → 预构建snapshot → 无冷启动 → warm-pool pop → 无创建延迟
