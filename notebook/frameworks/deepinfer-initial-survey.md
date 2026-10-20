@@ -550,3 +550,36 @@ AST 保留 ShmRingBuffer 全类、ParallelProcessGroup.cleanup_shm_broadcast 与
 源码 SHA256：shm_broadcast.py `aa461587184bf979acb813ed6ee646665715e3eaaca286a9270a5e4ceb559006`；原测试 `f7e18b42fcc1001202d65eb5598c7e6a7170940628de06870fd2201d070d86a7`；parallel_state.py `3565b2449abff4df0df2f979061a73364886c93602218b43c2f86c70f2629801`。未运行4进程/约400MB Gloo 测试、ZMQ、进程异常死亡、跨节点或 GPU/NPU；标准库可自行启动 resource_tracker 辅助进程，不将其称为应用级多进程广播实验。
 
 **阶段判断**：正常所有者回收路径和显式引用控制在本机得到支持；已知平台/引用限制保留，不据此制造新贡献候选。DeepInfer 这段生命周期学习先收束，真正并发/设备证据不能由更多同类单进程检查替代。下一步回到 verl 的只读状态/关联 PR 核验，先查重并确认现有候选是否仍有效，再选择可推进的问题；现有待授权发布事项不自动获得新授权。
+
+## EPLB历史窗口必须保留记录时的专家身份
+
+2026-10-21 03:32心跳只读核对：main仍为`774ce244b87cc0eb8d4b94ab9f5de2ab22049f01`，开放条目API共89项、全为PR，无普通open issue；这不是无人负责的问题池。[#107](https://github.com/deepseek-ai/DeepInfer/pull/107)由syang-genai负责，open，固定head `578752f660e68c66412d4d0c08dccfc84c6724dd`。以下是该既有方案的独立CPU学习复核，不是我方新发现/修复或已发布review。另[#93](https://github.com/deepseek-ai/DeepInfer/pull/93)修复profile时临时imbalance配置恢复，与历史计数归属不是同一问题。
+
+**物理槽位不是稳定的逻辑专家ID。** [基线EPLB](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/model_executor/eplb/__init__.py#L147)每次记录本rank物理槽位计数，到重排时才用当前physical_to_logical_map解释整个窗口。重排改变槽位归属后，旧行仍需按记录时的映射归集，不能按新映射重解释。[#107的记录方法](https://github.com/syang-genai/DeepInfer/blob/578752f660e68c66412d4d0c08dccfc84c6724dd/deepinfer/model_executor/eplb/__init__.py#L150)改为入窗时scatter-add到逻辑专家轴；后续只clone/all-reduce，不再用新映射解码旧行。环形覆盖前先zero，避免新计数累加到已过期行。
+
+触发频率是条件，不是所有配置都立刻出错。构造器在启用重排时要求window_size≤interval；普通周期在两次重排间覆盖整个窗口，首次提前到1/4周期时也没有更旧布局的有效历史。NORMAL引擎启用after-prefill重排后，prefill把计数器置到interval−1，下一非prefill步可提前触发，旧布局行可能尚未覆盖。
+
+### 原始CPU张量路径与受控重排
+
+```bash
+python3 experiments/scripts/verify_deepinfer_eplb_window.py /path/to/DeepInfer
+```
+
+[脚本](../../experiments/scripts/verify_deepinfer_eplb_window.py)读取固定Git对象，不切换checkout。Python3.12.13、torch2.9.1、pytest8.4.2、NumPy2.0.2在新建独立环境运行，所有张量均为CPU；torch版本不是DeepInfer官方锁定环境。执行原始构造/记录方法与从重排方法中隔离的CPU解码块；手动替换一次合法槽位映射代表已完成的placement变化，实际_rearrange_experts/shuffle/collective由回调隔离，未执行设备重排。
+
+窗口4、interval8、EP大小2/rank0、1层、4逻辑/8物理专家的控制结果如下。原始counter使首次重排在记录2后发生；表中记录数是本夹具调用次数，不是测得的在线吞吐或时间。
+
+| 固定版本 | 触发配置 | 重排回调记录位置 | 两次历史归属检查 |
+|---|---|---|---|
+| 基线 | 普通周期，连续decode | 2、10 | 都与记录时映射一致 |
+| 基线 | prefill/decode交替，启用after-prefill | 2、4 | 第一次一致，第二次旧行被新映射误归属 |
+| #107 | 普通周期，连续decode | 2、10 | 都一致 |
+| #107 | 同一after-prefill日程 | 2、4 | 都一致 |
+
+夹具第一次回调后将本rank的槽位映射从`[0,1,2,3]`换为`[3,1,2,0]`。每次槽位计数均为`[100,1,1,1]`，故正确四行历史应是前两行expert0热、后两行expert3热；基线第二次把四行都归给expert3。把这两份输入送入未修改的[CPU rebalance策略](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/model_executor/eplb/policy.py#L73)，得到逻辑专家副本数分别为错误输入`[1,1,1,5]`、记录时oracle输入`[3,1,1,3]`。这表明所构造的统计偏差能改变策略决策，不表明线上必定振荡或吞吐损失多少。
+
+另直接执行#107的3个原始测试函数体，覆盖跨placement历史、ring覆盖和rank1切片；原始fixture使用假进程组，本轮只去掉包导入，断言不改。基线原始policy测试再通过26个CPU参数例（结构8、确定性8、边界分布4、输入不变1、贪心目标/tie5）；移除测试decorators后保留原参数数据直调，不等于完整pytest/conftest或CUDA测试通过。
+
+窗口内存轴由local_physical改成logical，字节数为`window × layers × axis × int32字节数`，不能无条件称为免费：相对倍率为`logical/local_physical`，实际取决于EP大小与冗余数。正确归属也不保证shuffle失败时安全、各rank观测同一代映射或策略全局最优；这些不在本轮CPU路径中。
+
+源SHA256：基线EPLB `1b30c01b36cfc711281bd729ab5cbf09826b4ba22359573f46d96c10ea6e7260`；#107 EPLB `bb22f49f95bf2eca6962ebe8557ce6abeeaf24781477f5ff021d257a2253b618`；window tests `e4a3e151db8ede534a279106af54ed9f1bd32165d0f9466e16202586ce980a59`；policy `52241603827a1a1d19a395d48f5d618a7336fd1ceee631127e6782c644f736dc`；policy tests `1671e3af1cb5ac293307dc37e288efe61da416450f2d677a94163a3e28426ce5`。下一步只读追踪expert_count的实际写入、采样/清零与重排顺序，补生产者语义；不新增竞争PR或把受控映射替换说成真实权重shuffle验证。
