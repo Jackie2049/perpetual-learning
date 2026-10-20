@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** 2026-10-20：HDO 修复已合并；训练诊断、截断策略、权重自检等仍处于分析或待决定阶段。
+**【进展】** 2026-10-21：#8250诊断已纠偏，clip旧RFC退回重审不可发布；#8281仍待契约/用户决定。HDO合并记录保留，不将他人报告或数值模型算作本项目训练实测。
 
 **【大白话讲明白】**
 
@@ -34,8 +34,8 @@
 | # | 候选 | 类别 | 性价比 | PR | 状态 | 首次发现 |
 |---|---|---|---|---|---|---|
 | 0 | megatron `optimizer_offload_fraction<1` 首轮 update 崩溃 (#8237) | P0 | 42 | [#8286](https://github.com/verl-project/verl/pull/8286) **MERGED** `472dd21` | **已合并**（2026-10-20）：根因 100% 实锤（无差别 `to("cpu")` 污染 GPU 半 + fp32 参数悬空 view；P1/P2a/DeepSeek 模型源码三链）；方案 2（HDO 状态在 offload 完全不动）PR，issue #8237 已回复，4090 全验证 + 外部 GB200 验证（linmuchuiyang）→ wuxibin89 approve 后 08:06 合入。详见 [candidate](candidate-8237-offload-fraction.md) | 2026-10-19 |
-| 1 | async 熵爆炸→坍塌诊断 (#8250) | 调查/评论 | 15 | — | **analysis-done**：诊断草稿完成（KL runaway 机制链 + Q3 的 σ_G=0→grad=0 数学答案 + 三层诊断法）；reporter 未认领（0 PR）；发布需授权 | 2026-10-19 |
-| 2 | geo_mean/GSPO clip 语义文档澄清 | P4 文档 | 12 | — | **evidence-complete**（2026-10-19）：分析→源码核对→数值证明三链齐。问题：verl 三损失 clip/门语义各不同（geo_mean log 空间 clamp / GSPO ratio 空间 / SAPO sigmoid 变体），同一 clip_ratio 数值多套解释；GSPO 示例默认 3e-4/4e-4 = KL ±0.0004 nats 极紧窗（#8250 案例后果）。产出形态：docstring/示例注释澄清或 issue 评论；需授权 | 2026-10-19 |
+| 1 | async熵异常与坍塌诊断 (#8250) | 调查/评论 | 重评见candidate | — | **needs-evidence**（2026-10-21）：仍open/0评论；旧“结果0必然全梯度0、优势离群必然性、同步唯一根因、紧窗导致无法恢复”撤回。报告源码+NumPy反例已补，不是训练实测；需有效奖励/优势/mask/ratio/版本数据，旧英文稿不可直接发 | 2026-10-19 |
+| 2 | geo_mean/GSPO clip语义澄清 | 文档重审 | 重评见草稿 | — | **needs-revalidation**（2026-10-21）：旧RFC撤回，不能把GSPO窗口当token KL界或仅凭中间Jacobian判目标梯度不同。论文长度归一/token变体已核对；GMPO完整目标仍待重审，不能标evidence-complete | 2026-10-19 |
 | 3 | agent loop shared cap 忽略 data.truncation 策略 (#8281) | P2 bug | ~25 | — | **analysis-done + CPU 验证**（2026-10-20）：`_cap_text_prompt_length` 无条件左截断，忽略 truncation（error/left/right/middle 全输出同后缀）；root cause 两层（agent_loop 硬编码 + RLHFDataset 从未执行 truncation 空契约）；option 1 patch（error→raise/left→后缀/right→前缀/middle→头尾）CPU 验证通过；reporter 深挖未自修（0 PR）；发布需授权。**PR 草稿已本地备好**（2026-10-20：源修复 + `test_cap_text_prompt_length.py` 单测，落地 `/Users/jackiemac/workspace/verl` 分支 `fix-8281-truncation-policy` commit `7ace28db`，patch 存 candidate 目录；真源 verbatim exec 32 断言全过，本机无 CI 需 verl CI 验证）。**2026-10-20 补充核验：存在关联旧 PR #4600**（reporter 创建 #8281 时即链接，`[SingleTurnAgentLoop] fix truncation`，同四策略方向但预 CT 重构、dirty、陈旧，非当前共享修复点）；正确修复点是共享 `_cap_text_prompt_length`，评论形态（reporter 定位为「契约讨论」）比 PR 更契合，见 [candidate](candidate-8281-agent-loop-shared-cap-vs-truncation.md) | 2026-10-20 |
 | 4 | 训练前 weight-update 自检 RFC (#8252) | RFC/评论 | ~13 | — | **assessed**（2026-10-20）：三项核心事实声明全核验成立（README 无 post-sync 验证列、tests 无 weight-checker 测试、`check_weight_update_equal` main 不存在且 delta checksum 仅线缆完整性）；reporter shiyuan680 在 verl 无 PR 记录；关键张力=唯一实现先例 #7108 stale+不可合并（RFC 却要 extend 它）；不建议我方实现（成本 3/接受度未验证/无 ray-GPU 验证），价值在 RFC 技术回复（解耦为后端无关最小钩子 + 补 scope 声明）。详见 [candidate](candidate-8252-weight-checker-rfc.md)；参与与否待授权 | 2026-10-20 |
 

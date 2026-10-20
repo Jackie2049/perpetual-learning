@@ -1,6 +1,6 @@
 # perpetual-learning — 当前工作上下文
 
-更新时间：2026-10-20
+更新时间：2026-10-21
 
 ## 当前阶段
 
@@ -9,6 +9,8 @@
 自主运行中（2026-10-19 起 18 轮 /loop 30m）。已完成：工具修复（inference_estimator.py）、verl 候选三轮核验与全新扫描（10 候选）、4 项源码级修复分析、GMPO/GSPO/SAPO 论文精读与数值证明。2026-10-20：verl 新 issue 恢复，深挖 #8281 完成（analysis-done + CPU 验证）；**#8237 offload 修复 PR #8286 已合并进 verl 主仓库**（首个 bugfix 闭环，merge `472dd21`）。详见 [当日日志](diary/2026-10-20.md)。
 
 ## 运行接续
+
+- **M1纠偏优先（2026-10-21）**：#8250的旧确定因果诊断、GSPO“论文用未归一乘积/梯度必然偏离”及clip旧RFC已撤回/退回重审，不可按旧英文稿发布。论文Eq.7/14与报告版本源码已重核，限定NumPy反例通过，非torch/autograd/训练实测。#8281仍open、已知关联#4600，不自动改方案或发布。当前入口见 [诊断](open-source/verl/candidate-8250-async-entropy-collapse.md)、[重审草稿](open-source/verl/verl-clip-semantics-rfc-draft.md)。历史“evidence-complete”等状态不覆盖此纠正。
 
 - **M1 心跳隔离接续（2026-10-20）**：为避免共享 checkout 的分支切换/日志冲突覆盖未提交成果，当前心跳使用 `/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/perpetual-learning-cp-finalize`，从远端 main 核对后继续；统一交接仍是远端 main。不要重置 `/Users/jackiemac/workspace/perpetual-learning` 或把该共享目录未推送的分支整体带入本项提交。GPU/AReaL 分工不变。
 
@@ -64,7 +66,7 @@
 D
 1. **未来一周开源技术掘金三大重点（用户 2026-10-20 定）**：**DeepInfer / verl / AReaL**。其中 DeepInfer 主研（推理框架源码深挖），verl 主贡献（续 #8281/#8250），AReaL 主实测（prompt_mean 切分敏感点）。vLLM 降为次优先级。 **这是跨主机整体分工，M1 不接管 AReaL；M5 独立推进其完整候选/PR。**
 2. **等待用户授权/资源**（长期未决，见「运行接续」5 项）——发布评论/文档、#8281 发布形态、方向调整。#8237 已收尾（PR #8286 ready + issue 已回）。
-3. **高优调研（用户 2026-10-20 定）**：**DeepInfer** 生命周期学习先收束：#54计时pair主机反例保留；#57外层监督有真实CPU对照；内层控制面是源码/替身范围。本轮复用ShmRingBuffer/PG cleanup原始方法与现有清理断言，在Python3.9/3.12真实本机映射通过；close/unlink和派生view引用责任已区分，macOS16KiB粒度对照保留，非Linux/Gloo/设备实测，不定新bug。证据见 [笔记](notebook/frameworks/deepinfer-initial-survey.md) 与既有主机脚本。下一步回到verl，只读复核#8281/#8250状态及关联覆盖，再选本机可验问题；不自动推进待授权发布、不重复抢修。M1不访问GPU，不涉及AReaL整项，任何上游发言仍须拍板。
+3. **M1当前学习/贡献复核**：verl #8250旧诊断与GSPO笔记已纠偏，clip RFC退回重审；#8281最新main共享cap仍左截断，契约/发布待决定。见上方纠偏入口。下一步独立核对GMPO论文的正负优势、clip和聚合次序，并审计旧clip脚本实际覆盖范围，不把标量恒等式当完整目标证明；只在本地修正证据，不改等待授权的上游方案。DeepInfer生命周期阶段收束，证据见 [笔记](notebook/frameworks/deepinfer-initial-survey.md)。M1不访问GPU、不涉及AReaL整项，任何上游发言仍须拍板。
 4. **AReaL prompt_mean（原 M5 单一负责项，用户 2026-10-20 恢复 VPN 后明确本会话继续）——实测已闭环**：框架跑通（gsm8k PPO smoke 128 步无错）+ 受控实测（§10.7 判据，M=2 vs 4 + 固定 M 变 P，prompt_mean 与 token_mean 行为一致：跨 M 1.301≈1.273、P-spread 1.216≈1.192）——**不构成 defect，候选修复撤销，不提 issue/PR**，作为 review 依据存档（见 [源码笔记 §10.9](notebook/frameworks/areal-architecture-source-reading.md)、[tracker](open-source/areal/tracker.md)）。Megatron GPU 对照未做（TE 硬依赖）。分工状态见 [handoff-m5](open-source/areal/handoff-m5.md) 与 WORK「运行接续」。
 
 3. 按课题逐步关联现有实验执行材料与 notebook/experiments/ 的分析记录；新增实验优先就近组织，维护双向入口。

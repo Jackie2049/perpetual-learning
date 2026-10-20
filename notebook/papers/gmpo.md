@@ -4,6 +4,8 @@
 > 精读时间：2026-10-19 · 关联：[RL 损失函数推导](rl-policy-loss-functions-mathematical-derivation.md) · [GRPO 综合](grpo-training-algorithm-unified-synthesis.md)
 > 动机：verl #7913 geo_mean 损失修复（candidate-7913）需对照论文验证实现语义。
 
+> **2026-10-21复核边界**：下文GMPO完整公式/clip等价性本轮未重审，不再作为“RFC证据完成”的依据。此前引用GSPO未归一乘积及#8250紧窗因果的说法已撤回；见 [GSPO更正](gspo.md) 与 [退回重审的草稿](../../open-source/verl/verl-clip-semantics-rfc-draft.md)。
+
 ## 一句话
 
 GRPO 对 token 级奖励求**算术**平均，遇离群 importance ratio 时更新不稳；GMPO 改求**几何**平均，同一序列内 outlier ratio 被几何均值吸收，权重更稳。
@@ -51,7 +53,7 @@ $$
 | 序列优势 Â_i | 序列优势（"只支持 sequence-level advantage"）✓ |
 | loss = -Â·geo_mean_ratio | pg_losses = -advantage·ratio ✓ |
 
-**⚠️ 发现——clip 空间不一致**：论文在 ρ 空间 clip（ε=0.4 宽窗）；verl 在 log ρ 空间 clamp（±clip_ratio）。当用户按论文语义传 ε=0.4 时，verl 得到 ρ ∈ [e^-0.4, e^0.4]=[0.67,1.49]（接近论文意图）；当传小值如 0.0004 时，ρ ∈ [0.9996, 1.0004]——**极紧窗**（见 #8250 案例：该配置使绝大多数 token 梯度饱和，漂移后无法恢复）。同一 clip_ratio 配置在 GSPO（概率空间 clamp(ratio, 1-ε_low, 1+ε_high)）与 geo_mean（log 空间 clamp）之间语义还不一致。这是潜在的贡献/文档候选点。
+**待重审的历史观察**：源码裁剪对象和配置空间需要准确说明，但不能用[#8250](https://github.com/verl-project/verl/issues/8250)证明紧窗导致无法恢复；该因果表述已撤回。小参数下log/ratio对应窗口本来接近，完整目标还须检查正负优势、裁剪与聚合的顺序，不能只凭一个标量恒等式认证等价或提出RFC。
 
 ## 对 #7913 修复的验证
 
@@ -65,4 +67,4 @@ $$
 ## 延伸问题
 
 1. ~~verl geo_mean 的 log 空间 clamp 与论文 ρ 空间 clip 在**紧窗区**（KL<0.001）行为差异可忽略，但在离群区（KL>0.1）差异显著~~ → **2026-10-19 数值证明：完全等价**（experiments/scripts/verify_gmpo_clip_semantics.py）。因 `log(min(ρ,ε)) ≡ min(log ρ, log ε)`，窗口对应时前向值与梯度逐位一致（仅 torch clamp 边界点的 inclusive 约定造成测度零差异）。**真正的差异是配置语义**：同一数值在论文是 ρ 空间窗口（ε=0.4 → ρ∈[0.67,1.49]），在 verl 是 log 空间窗口（ε=0.4 → KL ±0.4 nats；ε=3e-4 → ρ∈[0.9997,1.0003]）。
-2. GSPO 的"combined ratio"（当前 token ratio × 序列几何均值 detached）是另一套设计；GMPO 的几何均值含 clip 且**不 detached**——梯度可穿过序列内所有 token（论文 Eq.6 的权重是常数，但其来源含 θ 依赖的 ρ_k；论文推导中几何均值权重按常数处理）。verl 用 `log_prob.detach()` 在 GSPO 中隔离，geo_mean 中无 detach——两者梯度路径不同。**2026-10-19 数值证明**（experiments/scripts/verify_gspo_detach_gradient.py）：verl combined-ratio 的 Jacobian = **单位阵**（每个 token 的 ratio 梯度只含自身 log ρ_t）；论文全序列乘积的 Jacobian = **全 1 阵 × L**（每 token 梯度含所有 token 贡献）；且 verl 用**均值**（per-token KL）而论文用**求和**（总 KL）——L=64 时差 64×。verl GSPO 实际是"逐 token ratio × 常数序列权重"的 stop-gradient 变体，与论文的序列级耦合目标在梯度层面不同。
+2. **2026-10-21撤回旧GSPO比较**：GSPO论文Eq.7本身使用长度归一几何均值，Eq.14包含GSPO-token的stop-gradient。中间Jacobian不同不等于最终目标梯度不同；修正脚本在恒定序列优势/相同token均值归约的限定36组中一致，非完整训练等价证明。旧“论文求和而verl求均值、L倍差异”不成立，详见 [更正](gspo.md)。

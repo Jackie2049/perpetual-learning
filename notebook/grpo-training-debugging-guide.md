@@ -151,25 +151,13 @@ print(f"gradient norm: {total_norm.item()}")
 
 ### Async 熵爆炸 → 坍塌模式（verl #8250 案例，2026-10）
 
-**签名**：稳定期 → `rollout_corr/kl` 先涨（0.02→0.18）→ KL 爆炸（>1）→ grad_norm 爆炸（>1000）→ 熵尖峰后坍塌 → 响应长度塌到 ~200 → **grad_norm=0**。
+**2026-10-21纠正**：旧版把观测次序写成了已确证机制，并过早排除mask/管线问题；这些结论撤回。原报告的多组run并非受控消融，结果奖励为0时总奖励仍可非零且组内有差异。
 
-**机制链**（异步特有）：
-1. 异步 staleness：actor 与采样策略漂移 → 陈旧轨迹优势离群
-2. 离群优势 × 指数比率 → 灾难性更新（KL runaway）
-3. 坍塌后同组奖励同质化 → **σ_G=0 → 优势全 0 → 梯度全 0**（GRPO 数学必然，不是 mask 问题）
+`rollout_corr/kl` 在报告版本是采样token上 rollout_log_prob-old_log_prob 的masked mean，不是reference KL；具体阈值不能直接跨任务套用。标准有限、n>1、std归一GRPO有组内优势幅度界；不能断言grad爆炸必然伴随优势离群。
 
-**诊断**：
-```python
-# 坍塌后区分"数值死"与"管线错"：advantage 分布
-print(f"adv mean={advantages.mean()}, std={advantages.std()}, max={advantages.abs().max()}")
-# std≈0 且 grad=0 → 退化终态自洽（预期）；std>0 而 grad=0 → mask/pipeline 问题
-# 前兆：rollout_corr/kl 变化率（稳定 <0.02；爆炸前 1-2 步跳 5-10×）
-```
+先对齐总奖励各分项、uid/group、优势、有效mask、ratio分位数与clip方向、梯度测量位置及各模型版本。A=0只保证孤立PG项为零；A非零仍可能因clip/mask等产生零梯度，不能仅据优势std判唯一根因。
 
-**预防**（按有效性排序）：
-1. `use_kl_loss=true` + coef 0.001-0.01（dampener）；kl_in_reward 5e-4 在 KL>1 时形同虚设
-2. rollout_corr/kl 阈值守卫（>0.05 缩 lr/暂停），verl 无内置需外挂
-3. 教师强制 log-probs 对齐（actor vs rollout 引擎同 prompt）排除 weight-sync/cache 问题
+固定完整token序列和版本的actor/重载checkpoint/live rollout三路logprob对照可以缩小范围，但数值差异不唯一指向weight-sync/cache。未补证前不推荐通用KL系数或0.05守卫作为已验证治疗。见 [更新后的诊断与数值反例](../open-source/verl/candidate-8250-async-entropy-collapse.md)。
 
 ---
 

@@ -1,58 +1,32 @@
-# GSPO: Group Sequence Policy Optimization（论文精读）
+# GSPO：长度归一、token变体与梯度比较更正
 
-> [arXiv:2507.18071](https://arxiv.org/abs/2507.18071) · 2025-07
-> 精读时间：2026-10-19 · 关联：[GMPO](gmpo.md) · [GRPO 综合](grpo-training-algorithm-unified-synthesis.md) · verl #8250（GSPO 紧窗配置案例）
-> 动机：补全 GMPO/GSPO 损失家族对照；核验 verl GSPO 实现与论文语义。
+来源：[GSPO论文v2](https://arxiv.org/html/2507.18071v2)。2026-10-21复核Eq.7/14后更正；旧稿可从Git历史回看，但“论文求和、verl求均值”“detach证明实现偏离”的判断撤回。
 
-## 一句话
+## 论文实际定义
 
-GRPO 的 token 级 importance weight 有问题；GSPO 改用**序列级** importance ratio `s_i(θ) = π_θ(y|x)/π_θ_old(y|x)`——它衡量整条响应的 off-policy 程度，与序列奖励天然对齐，且是自然的 clip 对象。
-
-## 目标函数（Eq. 5-6）
-
-```
-J_GSPO(θ) = E_{x,{y_i}~π_old} (1/G) Σ_i min(s_i(θ)·Â_i, clip(s_i(θ), 1-ε, 1+ε)·Â_i)
-
-Â_i = (r(x,y_i) - mean_G) / std_G          # 组归一优势（同 GRPO）
-s_i(θ) = π_θ(y_i|x) / π_θ_old(y_i|x)       # 序列级 ratio = Π_t ρ_t
+```text
+s_i = exp(mean_valid_tokens(log π_new - log π_old))         # Eq.7
+s_i,t = stopgrad(s_i) * π_new,t / stopgrad(π_new,t)         # Eq.14
 ```
 
-- **clip 在 ratio（概率）空间**：`clip(s, 1-ε, 1+ε)`——PPO 式双面窗。
-- 序列 ratio 聚合全响应 token 的对数概率差 → 序列窗口与 token 窗口语义不同（ε 的合适量级取决于对象是 token 还是序列）。
+前者是按长度归一的几何均值，不是未归一的全序列概率乘积；后者正是论文提出的GSPO-token。不能因源码采用detach就判定与论文不符。token中间表达式的Jacobian不同，也不能跳过最终token均值归约而断言参数目标梯度不同。
 
-## 与 verl 实现对照（源码核对）
+## 限定数值对照
 
-**clip 空间：忠实**。verl GSPO（core_algos.py:1546）：
+[修正脚本](../../experiments/scripts/verify_gspo_detach_gradient.py)以显式固定基点表示stop-gradient，使用NumPy/有限差分，无torch或autograd。报告版本verl `1876b06d0a3e4e71e06230be10af14492ca8a75b` 的源码形状/hash另核对，不执行原始函数。
 
-```python
-log_seq_importance_ratio = log_prob - log_prob.detach() + negative_approx_kl_seq.detach().unsqueeze(-1)
-seq_importance_ratio = exp(clamp(log_seq_importance_ratio, max=10.0))
-pg_losses1 = -adv * seq_importance_ratio
-pg_losses2 = -adv * clamp(seq_importance_ratio, 1 - clip_ratio_low, 1 + clip_ratio_high)
-pg_losses = max(pg_losses1, pg_losses2)   # = min(s·A, clip(s)·A) 对 A 的取大等价
+```bash
+python3 experiments/scripts/verify_gspo_detach_gradient.py /path/to/verl-8250
 ```
 
-- 语义差异（设计选择）：verl 用 **token 级 combined ratio** = 当前 token ρ_t × 序列几何均值 ratio（detached）——梯度只穿过当前 token，序列部分作常数权重（代码注释 s_i,t(θ) = sg[s_i(θ)]·ρ_t/sg[ρ_t]）。论文 s_i 是全序列乘积（含 θ 依赖）。verl 变体是官方代码常见的 stop-gradient 技巧。
-- clip 语义（1±ε，ratio 空间）与论文一致 ✓。
+长度1/2/7/16、序列ratio0.5/1/2、优势-1/0/1，共36组目标值和梯度对照通过。适用条件：同一响应内优势恒定，相同有效token均值归约，避开clip拐点与源码max10数值闸门；**不证明任意token优势/掩码/额外权重/聚合方式/优化器或完整训练等价**。原脚本错误的“paper=sum”实现已替换，不能再用旧输出支持差异结论。
 
-## ⚠️ 发现：verl GSPO 示例默认 ε = 3e-4/4e-4（极紧窗）
+## clip需要分清对象与方向
 
-`examples/gspo_trainer/run_qwen3_30b_a3b_megatron.sh:24-25` 默认 `CLIP_RATIO_LOW=3e-4, CLIP_RATIO_HIGH=4e-4` → combined ratio 窗口 **1±0.0004**（≈ token KL 窗口 ±0.0004 nats）。#8250 用户配置即来自此默认。
+报告源码对序列几何均值的ratio使用下界1−0.0003、上界1+0.0004。它不是每token KL硬界；token对数变化可在均值中抵消。窗外是否截断取决于优势符号和更新方向，不能说所有窗外样本都无梯度。
 
-- 与 PPO/GSPO 常见 ε=0.2 相差 ~500 倍。
-- **论文本身实验 ε 未能在 HTML 提取确认**（开放问题）；若论文 ε 也是 ~1e-3 量级，则 verl 示例忠实；若是 0.2 量级，verl 示例就是误导性配置（#8250 案例中：紧窗 → 梯度饱和 → 漂移后无法恢复）。
-- 注：GMPO 论文 Algorithm 1 用 ε=0.4（ρ 空间宽窗）；GMPO 与 GSPO 的 clip 空间与量级各不相同。
+不能把该参数与PPO的0.2直接按数字比例解释为500倍失效，也没有证据证明它造成[#8250](https://github.com/verl-project/verl/issues/8250)坍塌；该报告另有相似配置稳定run。论文实验epsilon具体值本轮不作断言，数值边界也不是诊断阈值。
 
-## 三向 clip 语义对照（GMPO / GSPO / verl 实现）
+## 接续
 
-| 损失 | 论文 clip 对象 | 论文 clip 空间 | verl 实现 clip | 忠实度 |
-|---|---|---|---|---|
-| GMPO | token ρ | ρ 空间（ε=0.4 宽窗） | geo_mean：**log ρ 空间 clamp(±clip_ratio)** | ⚠️ 空间不一致（阈值语义随值域漂移） |
-| GSPO | 序列 s / token combined | ratio 空间（1±ε） | GSPO：ratio 空间 clamp(1±ε) | ✓ 一致 |
-| verl GSPO 示例默认 | — | — | ε=3e-4/4e-4 极紧 | ⚠️ 与 0.2 量级差 ~500×（待论文实验值确认） |
-
-## 延伸问题
-
-1. GSPO 论文实验 ε 具体值（需官方代码 repo——HTML 无链接）；verl 示例 3e-4 的来源（可能来自 GSPO 官方 codebase 的 token 级设置）。
-2. verl combined ratio 的 detach 设计 vs 论文全序列乘积：梯度路径不同，收敛行为差异未验证。
-3. #8250 案例中 GSPO 紧窗与 GMPO log 空间 clamp 并存，增加了配置语义的混淆面——值得向 verl 提文档澄清。
+训练根因仍需版本、总奖励分项、有效优势/mask与ratio观测。[诊断候选](../../open-source/verl/candidate-8250-async-entropy-collapse.md)已同步纠偏；[clip草稿](../../open-source/verl/verl-clip-semantics-rfc-draft.md)退回重审，无对外发布。

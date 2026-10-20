@@ -9,7 +9,7 @@
 
 **【价值评估】** 7 / 10 — 集中同一项目的候选、证据和进展，减少误读与重复探索；目录本身不计作上游成果。
 
-**【进展】** [HDO 修复 PR #8286](https://github.com/verl-project/verl/pull/8286)已合并，其余问题按验证范围与贡献窗口继续评估。
+**【进展】** [HDO修复PR #8286](https://github.com/verl-project/verl/pull/8286)已合并；2026-10-21复核纠正#8250/GSPO推断，旧clip RFC退回重审，不可按旧稿发布；其余事项按证据与用户决定推进。
 
 **【大白话讲明白】**
 
@@ -28,6 +28,9 @@
 
 ## 材料索引
 
+- [#8250诊断边界与待补观测](candidate-8250-async-entropy-collapse.md)
+- [clip草稿退回重审](verl-clip-semantics-rfc-draft.md)
+- [#8281截断契约（待决定）](candidate-8281-agent-loop-shared-cap-vs-truncation.md)
 - [Candidate: del_local_ckpt_after_load 不删本地 checkpoint](candidate-del-local-ckpt.md)
 - [Candidate: dynamic-cp ceil 切分致高 DP rank 空 (#6786)](candidate-dynamic-cp-split.md)
 - [Candidate: filter_overlong_prompts 多进程 SIGTERM 挂死 (#7163)](candidate-filter-sigterm.md)
