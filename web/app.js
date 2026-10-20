@@ -19,7 +19,7 @@ const names = {overview:'总览', library:'成果库', diary:'工作日志', dec
 const fmt = date => new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Singapore',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(date));
 const saveButton = (id, small=false) => `<button class="save-button ${saved.has(id)?'is-saved':''} ${small?'small':''}" data-save="${id}" aria-label="${saved.has(id)?'取消收藏':'收藏'}" aria-pressed="${saved.has(id)}">${icon('bookmark')}</button>`;
 function toast(message) { const node=document.querySelector('#toast'); node.textContent=message; node.classList.add('show'); clearTimeout(toast.timer); toast.timer=setTimeout(()=>node.classList.remove('show'),2400); }
-function heading(title, description) { return `<div class="page-heading"><div class="eyebrow">PERPETUAL LEARNING</div><h1>${title}</h1><p>${description}</p></div>`; }
+function heading(title, description) { return `<div class="page-heading"><h1>${title}</h1><p>${description}</p></div>`; }
 function card(item, i) { return `<article class="result-card"><div class="card-top"><span class="category-symbol color-${i%3}">${icon(item.tag==='工具'?'inbox':'book')}</span>${saveButton(item.id)}</div><div class="card-kind">${esc(item.kind)} <span>·</span> ${esc(item.tag)}</div><h3><button data-open="${item.id}">${esc(item.title)}</button></h3><p>${esc(item.description)}</p><button class="text-link" data-open="${item.id}">阅读成果 ${icon('arrow')}</button></article>`; }
 function pendingList(compact=false) { return data.pending.map(item=>`<article class="decision-item"><div class="decision-tag"><span>${esc(item.tag)}</span><span class="status-chip">${esc(item.label)}</span></div><button class="decision-title" data-open="${item.id}">${esc(item.title)} ${icon('arrow')}</button>${compact?'':`<p class="decision-detail">${esc(item.status)}</p><button class="text-link" data-open="${item.id}">查看详情 ${icon('arrow')}</button>`}</article>`).join('') || '<div class="empty">当前快照中没有识别到待决事项。</div>'; }
 function activity(limit) { return data.diary.events.slice(0,limit).map(item=>`<li><span class="event-time">${esc(item.time)}</span><div><button data-open="${data.diary.id}">${esc(item.title)}</button>${limit>5?`<p>${esc(item.summary)}</p>`:''}</div></li>`).join(''); }
@@ -92,7 +92,7 @@ function route() {
   const [slug,search='']=(location.hash.slice(1)||'overview').split('?');page=names[slug]?slug:'overview';const params=new URLSearchParams(search);query=params.get('q')||'';category=params.get('category')||'全部';shown=30;
   if(!['全部','知识笔记','开源贡献','工作日志'].includes(category))category='全部';
   document.querySelectorAll('[data-nav]').forEach(a=>{const active=a.dataset.nav===page;a.classList.toggle('active',active);if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
-  document.querySelector('#breadcrumb').textContent=names[page];document.title=names[page]+' · perpetual-learning';
+  document.title=names[page]+' · perpetual-learning';
   if(page==='overview')overview();else if(page==='library'||page==='saved')library();else if(page==='diary')diaryPage();else if(page==='contributions')contributionsPage();else decisionPage();
   window.scrollTo(0,0);
 }
