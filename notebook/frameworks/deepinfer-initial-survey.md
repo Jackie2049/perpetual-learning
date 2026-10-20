@@ -371,3 +371,45 @@ AST 原样提取 engine 的 prefill 激活分支与完整 `_get_so_mask`（移�
 源文件 SHA256：sampler.py `7ab3bed761ca731e5ece5b6e77da61104a5a03d6e418028149896197df1e3156`；scheduler.hpp `d2752395adfdb5867d9a15f0e68734c6b4c9c7360721461712362a04f3b27972`；engine hash 同前节。Python 3.9.6 / numpy 2.0.2，无新依赖或设备访问；计时池反例模式和原始主机时序模式均回归通过。
 
 **判断更新**：不把 SO 计数方案扩列为已证实缺陷；上一节计时 pair 的未消费引用反例仍独立成立。模型未执行 C++ schedule/process_outputs/pybind，也未跑编译线程、fork 的完整异步交错或外部服务扩展；所有未来的非活跃→活跃新路径仍须维护计数，不能把选定转移矩阵当作全系统证明。下一步核对同 PR 的借用输出数组 copy 快路，随后收束为供用户决定是否参与原 PR 讨论的证据摘要，不实现竞争修复。
+
+## PR #54 输出回收：先核实数组所有权，再讨论原生对象寿命
+
+2026-10-20 22:00 心跳继续固定 head `70381d28`；只读 API 仍 open、未合并。**纠正检查前提**：[collect_request_outputs 注释](https://github.com/deepseek-ai/DeepInfer/blob/70381d289c2b1e7c0e092a56a01a644e19fe37de/deepinfer/engine/llm_engine.py#L92) 称返回数组借用静态 vector，但 [outputs.hpp](https://github.com/deepseek-ai/DeepInfer/blob/70381d289c2b1e7c0e092a56a01a644e19fe37de/csrc/engine/outputs.hpp) 末尾实际调用 `py::array_t<uint64_t>(request_outputs.size(), request_outputs.data())`，没有 base。不能因存在静态 vector，就直接推断 Python 数组仍引用其存储。
+
+[pybind11 3.0.1 numpy.h](https://github.com/pybind/pybind11/blob/v3.0.1/include/pybind11/numpy.h#L1079) 的构造器在 ptr 非空而 base 未指定时执行 NumPy copy；count 重载也沿用该路径。DeepInfer requirements.txt 锁 pybind11=3.0.1，但 setup.py 使用 torch 扩展构建，**安装包版本不等于实际编译采用的头文件**。进一步只读检查 [PyTorch v2.13.0 子模块](https://github.com/pytorch/pytorch/tree/v2.13.0/third_party/pybind11)（DeepInfer 两种后端 requirements 均锁 torch 2.13.0）：指向 `d03662f0984f652b60e7ddce53d3868002275197`，版本宏 3.0.4；该提交的无 base 分支同样复制。本机没有构建 DeepInfer，也没有目标 wheel 的 include trace，因此仍将结论限定到这两套明确头文件，不推断任意定制编译环境。
+
+### 小型原生扩展与真正借用的对照
+
+扩展既有脚本，不修改上游或引入 torch：
+
+```bash
+python3 experiments/scripts/verify_deepinfer_zos_host_flow.py /path/to/DeepInfer-pr54 \
+  --check-output-copy --pybind-include /path/to/pybind11/include \
+  --python-include /path/to/Python/Headers
+# 本机 Apple clang 17 须额外指定 SDK 的 libc++ 搜索路径：
+# --cxx-flag=-isystem --cxx-flag=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1
+```
+
+脚本从 outputs.hpp 提取并检查**精确返回表达式**，在独立小型扩展中使用相同 static vector/clear/emplace_back/return 组合；填入的是整数身份，不是可解引用的 RequestOutput 指针。这里实际执行 C++/pybind/NumPy 构造语义，但不是完整 build_request_outputs。显式 capsule base 的借用数组作为对照，容量固定且不重新分配，避免悬空内存测试。
+
+- 不带 base 的第一次数组 `[100,101,102]`：OWNDATA=true、base=None、data 地址不同于 vector；第二次构建 `[200,201,202]` 后第一份不变，两数组不共享数据。
+- 显式 base 的借用数组起初 `[300,301,302]`：OWNDATA=false、data 地址等于 vector；下次构建后变为 `[400,401,402]`，提前 copy 的快照仍为原值。这证明测试能识别真实借用覆盖，**不是当前返回路径发生该故障**。
+- AST 原样提取 PR 的 collect_request_outputs 与 release，pool/free_deferred 回调用替身，无 clone-unpin 或 sequence 回收。分别用独立数组与显式借用数组，枚举两次输入长度0–4，每套头文件50组合；检查空输入不替换已有队列、首批 copy/多批 concatenate、存储覆盖后的值、release 后清空及下一轮重用。两套头文件均通过；当前 copy 快路没有在这些检查中出现指针值遗漏/覆盖。
+
+环境：Darwin arm64 / Python3.9.6 / numpy2.0.2 / Apple clang17。pybind11 3.0.1 commit `f5fbe867d2d26e4a0a9177a51f6e568868ad3dc8`，numpy.h SHA256 `f890749a209828190b31c7e6d809c73181916ad38c24edc9fd426be6c7c9d811`；torch 对应子模块 numpy.h SHA256 `a9bba1f0976acd7e7597daef1abd398a1e0b81213747278cffef6b325979fee1`。outputs.hpp SHA256 `9ef2f5a37dd07b03fe7fac7f92cbbf1dfc056ff4a0c0fbb9b7a384149f71bf6f`，engine hash 同前节。第一次编译缺 libc++ 头 cstddef，显式加 SDK include 后通过；python3-config 不在 PATH，改用已确认的 Python headers。隔离子模块检出最初未获取该提交，本地 fetch 后重试成功；均为测试环境/检出问题，非上游缺陷。
+
+**两层寿命不可混同**：uint64 数组拥有自己的地址值，不等于它拥有地址所指的 RequestOutput 原生对象。RequestOutputPool.release 会逐个 destroy_at 再回池，engine 仍须在调用方读完后延迟释放对象。当前实验不解引用地址、不执行真实析构/allocator，不证明全系统没有双重释放或并发问题；也不建议因此删除防御性 copy。可确认的是：在所核验头文件下，注释所述“静态 vector 覆盖返回数组”不是该构造调用的实际语义。
+
+### 本次只读核验阶段结论
+
+| 改动 | 当前证据 | 不应外推 |
+|---|---|---|
+| 计时 pair 池 | 原始主机函数 + 完成时机替身复现未消费引用被复用，对照正常 | 不是 GPU race、token 错误或收益实测 |
+| 非计时完成标记 | 三轮 decode+flush 替身中先等待再重录 | 不保证全部并发路径 |
+| SO 计数 | 选定状态转移模型无漏计，注入陈旧零能漏掩码 | 不是完整 scheduler/grammar 证明 |
+| 输出回收快路 | 两套明确 pybind 头文件的原生构造与收集分支检查通过；借用前提需纠正 | 不是原生输出池析构/目标 wheel 验证 |
+| profiler 快路 | 已读 diff，依赖私有 profiler API | 未独立运行，不能为全部性能/兼容性背书 |
+
+因此值得保留的技术讨论点是**计时 pair 所有逻辑读者消费前不能回池**；输出注释仅作可附带澄清，不扩成第二个运行时 bug。若用户决定参与原 PR，应只围绕固定 head、最小主机时序反例及限制交流，不宣称已完成设备复现、不另开竞争修复。当前未向上游发言。
+
+本轮也只读确认 [#57](https://github.com/deepseek-ai/DeepInfer/pull/57) 已有作者处理 DP launcher 按序 join 卡住及失败清理（open，head `9a52063a8a0dc86cbbce04fae034e7e037fa3881`）；其 CPU 测试结果是作者报告，未自行复核。后续转为阅读其失败传播/回收契约，不把已有人推进的主题当未认领修复。

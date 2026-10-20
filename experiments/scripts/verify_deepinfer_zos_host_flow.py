@@ -4,6 +4,9 @@ Usage: python3 experiments/scripts/verify_deepinfer_zos_host_flow.py /path/to/De
 Baseline: 8b16149741a4935e1dec8cea27853f273b374c5b.
 PR #54 event-pool model (head 70381d28): add --check-event-pool.
 PR #54 structured-output count model: add --check-so-counter.
+PR #54 output-array ownership probe: add --check-output-copy --pybind-include
+/path/to/pybind11/include [--python-include /path/to/Python/Headers].
+This mode compiles a tiny CPU extension, not DeepInfer or its output pool.
 Requires Python 3.9+ and numpy; no torch.
 Three Worker method bodies are compiled unchanged from AST, with decorators
 removed and hardware dependencies replaced by explicit doubles. Metadata
@@ -13,7 +16,13 @@ stream ordering, allocator lifetimes, kernels, or distributed correctness.
 import argparse
 import ast
 import hashlib
+import importlib.util
 import re
+import shutil
+import subprocess
+import sys
+import sysconfig
+import tempfile
 from contextlib import nullcontext
 from contextlib import contextmanager
 from collections import defaultdict
@@ -295,14 +304,133 @@ def check_so_counter(root):
     print("Scope: original Python promotion/mask bodies; mocked matcher/tensors/events; scheduler snapshot and ledger transitions modeled, not executed.")
 
 
+def check_output_copy(root, pybind_include, python_include, cxx, cxx_flags):
+    """Probe the exact return expression, not the full torch-dependent builder.
+
+    The C++ vector contains integer identities, never real RequestOutput pointers.
+    An explicit capsule-backed array is the genuinely borrowed negative control.
+    Python collect/release methods are original AST, with pools replaced by doubles.
+    """
+    engine_path = root / "deepinfer/engine/llm_engine.py"
+    outputs_path = root / "csrc/engine/outputs.hpp"
+    source = outputs_path.read_text()
+    returns = re.findall(r"return (py::array_t<uint64_t>\(request_outputs\.size\(\), request_outputs\.data\(\)\));", source)
+    assert len(returns) == 1, "reassess the builder's constructor before using this probe"
+    header = pybind_include / "pybind11/numpy.h"
+    assert header.is_file() and (python_include / "Python.h").is_file()
+    for path in (outputs_path, engine_path, header):
+        print(f"{path.name} sha256={hashlib.sha256(path.read_bytes()).hexdigest()}")
+    cls = next(n for n in ast.parse(engine_path.read_text()).body
+               if isinstance(n, ast.ClassDef) and n.name == "DeferredRelease")
+    cls.body = [n for n in cls.body if isinstance(n, ast.FunctionDef)
+                and n.name in {"collect_request_outputs", "release"}]
+    assert len(cls.body) == 2
+    future = ast.ImportFrom(module="__future__", names=[ast.alias(name="annotations")], level=0)
+    namespace = {"np": np, "free_deferred_pool_handles": lambda: None}
+    exec(compile(ast.fix_missing_locations(ast.Module(body=[future, cls], type_ignores=[])), str(engine_path), "exec"), namespace)
+
+    cpp = r'''
+#include <pybind11/pybind11.h>
+#include <pybind11/numpy.h>
+#include <cstdint>
+#include <vector>
+namespace py = pybind11;
+static std::vector<uint64_t> request_outputs(32);
+py::array_t<uint64_t> build(int count, uint64_t start, bool borrowed) {
+    if (count < 0 || count > 32) throw py::value_error("fixture capacity");
+    request_outputs.clear();
+    for (int i = 0; i < count; ++i) request_outputs.emplace_back(start + i);
+    if (borrowed) {
+        // Explicit control: static storage never reallocates, capsule does not free it.
+        auto owner = py::capsule(request_outputs.data(), [](void *) {});
+        return py::array_t<uint64_t>(request_outputs.size(), request_outputs.data(), owner);
+    }
+    return ACTUAL_RETURN;
+}
+PYBIND11_MODULE(_deepinfer_array_probe, m) {
+    m.def("build", &build);
+    m.def("storage_address", []() { return reinterpret_cast<uint64_t>(request_outputs.data()); });
+}
+'''.replace("ACTUAL_RETURN", returns[0])
+    with tempfile.TemporaryDirectory(prefix="deepinfer-array-probe-") as temp:
+        # Generated test artifact, not an edit to upstream sources.
+        fixture = Path(temp) / "probe.cpp"
+        fixture.write_text(cpp)
+        extension = Path(temp) / ("_deepinfer_array_probe" + sysconfig.get_config_var("EXT_SUFFIX"))
+        command = [cxx, "-std=c++17", "-O0", "-shared", "-fPIC", "-I" + str(pybind_include),
+                   "-I" + str(python_include), str(fixture), "-o", str(extension)]
+        if sys.platform == "darwin":
+            command.extend(["-undefined", "dynamic_lookup"])
+        command.extend(cxx_flags)
+        print("compile:", " ".join(command))
+        subprocess.run(command, check=True, timeout=60)
+        spec = importlib.util.spec_from_file_location("_deepinfer_array_probe", extension)
+        probe = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(probe)
+
+        first = probe.build(3, 100, False)
+        second = probe.build(3, 200, False)
+        assert first.flags.owndata and first.base is None
+        assert first.ctypes.data != probe.storage_address()
+        assert not np.shares_memory(first, second)
+        assert first.tolist() == [100, 101, 102]
+        borrowed = probe.build(3, 300, True)
+        snapshot = borrowed.copy()
+        probe.build(3, 400, False)
+        assert not borrowed.flags.owndata
+        assert borrowed.ctypes.data == probe.storage_address()
+        assert borrowed.tolist() == [400, 401, 402]
+        assert snapshot.tolist() == [300, 301, 302]
+        print("No-base constructor owns a copy; capsule control aliases static storage.")
+
+        cases = 0
+        for borrowed_input, n, m in product((False, True), range(5), range(5)):
+            released = []
+            collector = namespace["DeferredRelease"]()
+            collector.request_outputs_to_release = np.empty(0, dtype=np.uint64)
+            collector.sequence_metadata_to_release = []
+            collector.clone_unpins_to_release = None
+            collector.request_output_pool = NS(release=lambda a: released.append(a.tolist()))
+            expected = list(range(100, 100 + n)) + list(range(200, 200 + m))
+            for count, start in ((n, 100), (m, 200)):
+                array = probe.build(count, start, borrowed_input)
+                old = collector.request_outputs_to_release
+                collector.collect_request_outputs(array)
+                if not count:
+                    assert collector.request_outputs_to_release is old
+                elif not old.size:
+                    assert not np.shares_memory(collector.request_outputs_to_release, array)
+            probe.build(4, 900, False)  # overwrite storage before deferred release
+            assert collector.request_outputs_to_release.tolist() == expected
+            collector.release()
+            assert released == [expected] and collector.request_outputs_to_release.size == 0
+            collector.collect_request_outputs(probe.build(2, 500, borrowed_input))
+            probe.build(2, 600, False)
+            collector.release()
+            assert released[-1] == [500, 501]
+            cases += 1
+        print(f"PASS output-copy probe: {cases} owned/borrowed collection, empty/concat/release/reset cases.")
+        print("No DeepInfer build, torch, actual pointers, destructor, device or performance measurement.")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source_root", type=Path)
     modes = parser.add_mutually_exclusive_group()
     modes.add_argument("--check-event-pool", action="store_true", help="PR #54 timing-alias host model; no device execution")
     modes.add_argument("--check-so-counter", action="store_true", help="PR #54 SO upper-bound model; no grammar/device execution")
+    modes.add_argument("--check-output-copy", action="store_true", help="CPU pybind constructor probe plus original collect/release")
+    parser.add_argument("--pybind-include", type=Path)
+    parser.add_argument("--python-include", type=Path, default=Path(sysconfig.get_path("include")))
+    parser.add_argument("--cxx", default=shutil.which("c++") or "c++")
+    parser.add_argument("--cxx-flag", action="append", default=[], help="extra compiler flag, repeat as needed")
     args = parser.parse_args()
     root = args.source_root
+    if args.check_output_copy:
+        if args.pybind_include is None:
+            parser.error("--check-output-copy requires --pybind-include; use the target header version")
+        check_output_copy(root, args.pybind_include, args.python_include, args.cxx, args.cxx_flag)
+        return
     if args.check_event_pool:
         check_event_pool(root)
         return
