@@ -15,7 +15,7 @@
 | [verify_areal_prompt_mean_split.py](verify_areal_prompt_mean_split.py) | AReaL 归约契约 CPU 参考验证（标准库，无 torch）；区分外层优化步数与内层累积，含 token_mean 对照、合法 DP dummy 调度、Megatron 默认路径 P 抵消及标量 Adam 反例；非框架集成实测，见源码笔记 §10.7 |
 | [areal_prompt_mean_gpu_probe.py](areal_prompt_mean_gpu_probe.py) | 由 M5 单一维护的 AReaL GPU 探针原稿，GPU 集成待验证；M1 的离线修整仅为未应用参考 patch，见 [交接说明](../../open-source/areal/handoff-m5.md)，不要据草稿预检结果判断原稿可运行 |
 | [verify_deepinfer_seed_contract.py](verify_deepinfer_seed_contract.py) | 从指定 DeepInfer 源码提取 seed/EngineType 定义，在无 torch 环境检查 uint64 种子行为和调度默认值；打印输入 SHA256，非 sampler kernel 或模型一致性实测 |
-| [verify_deepinfer_zos_host_flow.py](verify_deepinfer_zos_host_flow.py) | 原始 Worker 主机分支替身验证；--check-event-pool 组合 #54 原始 CUDATimer/Worker/engine 计时读取，复现已完成但未消费事件被复用的计时错配，含禁用复用对照。非真实 CUDA/通信/模型/性能验证 |
+| [verify_deepinfer_zos_host_flow.py](verify_deepinfer_zos_host_flow.py) | 原始 Worker 主机分支替身验证；--check-event-pool 检查 #54 计时引用错配；--check-so-counter 用原始 Python 激活/掩码函数检查保守计数模型及漏更新故障。均非 C++ 调度、真实语法/CUDA/通信/性能验证 |
 | [verify_deepinfer_mtp_budget.py](verify_deepinfer_mtp_budget.py) | 编译原始 MTPVarlen/估时头文件，仅替换 Sequence/TORCH_CHECK 依赖；用穷举前缀 oracle 检查 token 预算、两轮置信度与反馈边界，非 GPU 分配或性能实测；需 C++17 编译器 |
 | [verify_deepinfer_yoco_visibility.py](verify_deepinfer_yoco_visibility.py) | 默认编译原始 YoCo 可见域 C++ helper；--cp-reference-only 组合上游 Python CP 索引参考，检查跨 rank 身份、padding 与绝对 key 坐标。均非完整 metadata、GPU/通信或上游 L1/L2；默认模式需 C++17 编译器 |
 

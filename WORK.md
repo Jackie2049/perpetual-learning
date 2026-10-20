@@ -64,7 +64,7 @@
 D
 1. **未来一周开源技术掘金三大重点（用户 2026-10-20 定）**：**DeepInfer / verl / AReaL**。其中 DeepInfer 主研（推理框架源码深挖），verl 主贡献（续 #8281/#8250），AReaL 主实测（prompt_mean 切分敏感点）。vLLM 降为次优先级。 **这是跨主机整体分工，M1 不接管 AReaL；M5 独立推进其完整候选/PR。**
 2. **等待用户授权/资源**（长期未决，见「运行接续」5 项）——发布评论/文档、#8281 发布形态、方向调整。#8237 已收尾（PR #8286 ready + issue 已回）。
-3. **高优调研（用户 2026-10-20 定）**：**DeepInfer**——ZOS/DSpark/YoCo/CP已有源码与隔离CPU核验；[PR #54](https://github.com/deepseek-ai/DeepInfer/pull/54)固定head 70381d28的计时pair池在“当前forward也已完成”的主机模型中出现跨轮旧引用错配，禁用复用对照正常。单独完成标记复用在三轮模型中等待顺序通过。详见 [既有笔记](notebook/frameworks/deepinfer-initial-survey.md) 与 ZOS脚本 --check-event-pool。非上游main已确认缺陷、非GPU/性能实测；作者50–140us收益未核验。下一步只读核对SO计数跨异步账本的状态转移，并判断证据是否足够参与原PR技术讨论；上游发言须用户拍板，不开竞争PR。M1不访问GPU，不涉及AReaL整项。
+3. **高优调研（用户 2026-10-20 定）**：**DeepInfer**——[PR #54](https://github.com/deepseek-ai/DeepInfer/pull/54)固定head 70381d28的计时pair旧引用错配已在主机模型复现；SO计数的保守上界模型2,394组合未见漏计，故障注入可识别漏维护，不能把SO优化也定为缺陷。详见 [笔记](notebook/frameworks/deepinfer-initial-survey.md) 与既有ZOS脚本两种检查模式。均非完整C++调度、真实grammar/GPU/性能验证，作者收益未核验。下一步核对借用输出数组copy快路，再收束为用户可决定是否参与原PR讨论的证据摘要；上游发言须拍板，不开竞争修复。M1不访问GPU，不涉及AReaL整项。
 4. **AReaL prompt_mean（原 M5 单一负责项，用户 2026-10-20 恢复 VPN 后明确本会话继续）——实测已闭环**：框架跑通（gsm8k PPO smoke 128 步无错）+ 受控实测（§10.7 判据，M=2 vs 4 + 固定 M 变 P，prompt_mean 与 token_mean 行为一致：跨 M 1.301≈1.273、P-spread 1.216≈1.192）——**不构成 defect，候选修复撤销，不提 issue/PR**，作为 review 依据存档（见 [源码笔记 §10.9](notebook/frameworks/areal-architecture-source-reading.md)、[tracker](open-source/areal/tracker.md)）。Megatron GPU 对照未做（TE 硬依赖）。分工状态见 [handoff-m5](open-source/areal/handoff-m5.md) 与 WORK「运行接续」。
 
 3. 按课题逐步关联现有实验执行材料与 notebook/experiments/ 的分析记录；新增实验优先就近组织，维护双向入口。

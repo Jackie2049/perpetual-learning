@@ -335,4 +335,39 @@ AST 保留 PR head 的 BaseTimer/CUDATimer、Worker 三个执行方法及 engine
 
 输入 SHA256：timer.py `a221628f57f8600116e73f3eb8dc173cd1585f633200137ea1f378cb2f22d78f`；worker.py `7faf0a5e29cc20647f9cc35435a3475baf7b1e955b86acdb47ce59b942733bda`；llm_engine.py `e9def731f151ff38b406ac283e330dccd6420f1de7df13e344c98d42ac970663`。环境为 Darwin / Python 3.9.6 / numpy 2.0.2。该模式限定 driver+varlen+nextn>0、有效 graph、ZOS decode；未运行 torch/CUDA、真实 event、stream、kernel、多卡或模型，不应称为 GPU race 复现。
 
-SO 计数部分已读到 schedule 统计、最后 prefill chunk 0→1 增量、sampler 快路和账本刷新；尚未对异步状态转移做穷举，不能仅凭注释确认“永不低估”。下一步先做该计数契约的主机核验，再形成是否值得参与 #54 技术讨论的证据判断；任何上游评论仍需用户拍板，不另开竞争 PR。
+SO 计数的限定状态模型及反向故障检查见下节；不能仅凭注释或该模型宣称所有异步路径“永不低估”。任何上游评论仍需用户拍板，不另开竞争 PR。
+
+## PR #54 SO 计数：需要保守上界，不要求每一刻精确相等
+
+继续固定同一 PR head `70381d28`，本轮 API 确认仍 open、未合并。`num_active_so` 在 [C++ schedule](https://github.com/deepseek-ai/DeepInfer/blob/70381d289c2b1e7c0e092a56a01a644e19fe37de/csrc/engine/scheduler.hpp#L715) 中按已选请求的 `structured_output.status > 0` 统计；[Python prefill 分支](https://github.com/deepseek-ai/DeepInfer/blob/70381d289c2b1e7c0e092a56a01a644e19fe37de/deepinfer/engine/llm_engine.py#L921) 在最后 chunk 把 metadata 的 0 改为 1 时加一；[sampler](https://github.com/deepseek-ai/DeepInfer/blob/70381d289c2b1e7c0e092a56a01a644e19fe37de/deepinfer/model_executor/layers/sampler.py#L303) 在计数非正时跳过整批 SO 处理。None 参数保留原来的逐请求扫描。
+
+记 C 为计数、A 为采样前 metadata 中 `so_status>0` 的请求数，安全快路只需非负计数满足 **C ≥ A**：C=0 才能推断 A=0。计数偏高通常只是多走处理路径，不能据此判错；计数偏低且变成零则可直接遗漏约束。尤其不需要 ledger/metadata 的**整数状态始终相同**，只需新的激活路径被计数维护覆盖。
+
+| 阶段/状态变化 | 对活跃谓词的作用 | 当前源码中的维护 |
+|---|---|---|
+| 普通请求或待激活 SO 的 0 | 非活跃 | 不计入；异步 matcher 编完后先挂接/入调度，不在当前 batch 偷加一条活跃请求 |
+| 最后 prefill chunk 的 0→1 | 新增活跃 | Python 分支同步 C+=1；没有 matcher 或状态异常则判死请求 |
+| 已活跃的 1→2 | 仍活跃 | sampler 开始跟进 token；不需要再加一 |
+| 活跃状态→-1 | 减少活跃 | 旧快照计数可能偏高，不能因此漏掉其他活跃请求 |
+| 完整前缀 fork 的初始 1 | 新请求已活跃 | fork 初始化在该请求进入后续 schedule 统计之前；不等同于给已生成快照的 batch 临时激活 |
+| ZOS 匹配行刷新 | metadata 从 ledger 重读 | refresh_for_sampling 可看到 1→2/-1；值并非必须“不变”，但这些转移不会增加活跃数量 |
+
+来源还包括 [fork 初始化](https://github.com/deepseek-ai/DeepInfer/blob/70381d289c2b1e7c0e092a56a01a644e19fe37de/csrc/engine/scheduler.hpp#L1112)、[metadata 刷新](https://github.com/deepseek-ai/DeepInfer/blob/70381d289c2b1e7c0e092a56a01a644e19fe37de/csrc/engine/sequence.hpp#L408)、[ZOS 仅刷新匹配行](https://github.com/deepseek-ai/DeepInfer/blob/70381d289c2b1e7c0e092a56a01a644e19fe37de/csrc/engine/zos.cpp#L279)、matcher builder 的 pump→on_ready 入调度链。`process_outputs` 在 SO status 数组为 None 时保留既有账本，并仍依据账本 -1 判死；不能把“本步没返回 SO 状态数组”误解成恢复为普通请求。
+
+### 原始 Python 分支检查、负面结果和故障注入
+
+扩展既有脚本而不新建贡献候选：
+
+```bash
+python3 experiments/scripts/verify_deepinfer_zos_host_flow.py /path/to/DeepInfer-pr54 --check-so-counter
+```
+
+AST 原样提取 engine 的 prefill 激活分支与完整 `_get_so_mask`（移除 sampler 装饰器）；C++ 的初始统计、账本转移和匹配刷新用**显式模型**表示，且对所依赖的 C++ 统计谓词做源码形状检查。模型取状态 {-1,0,1,2}、1–3 请求，刷新允许 `-1→-1、0→0、1→{-1,1,2}、2→{-1,2}`，组合 decode、未完 prefill、最终 prefill、缺 matcher、无 SO 参数和混合行策略；另检查 matcher 已 aborted、None metadata 和空批。
+
+2,394 个状态/策略组合通过，上界有 1,869 次严格偏高，**在这些假设内没有漏计反例**。有活跃请求时，计数路径与 None 回退路径的掩码行/状态输出相同；无活跃请求时，两者都不生成有效掩码，但偏高计数可能返回 `[-1,...]` 状态列表而旧扫描返回 None，不能宣称两者的原始返回值逐字节等同。
+
+故障注入为单条最终 prefill SO：原始分支将 status 0→1、C 0→1，实际 sampler 会处理第 0 行；只把传给 sampler 的计数故意改回陈旧的 0，则整批返回 None、漏掉该活跃行。该控制证明加一维护是必要条件，**不是当前 PR 已遗漏加一**。fixture 的 matcher 只固定接受 token/填掩码或报告 aborted，不执行真实 grammar；Tensor/Event/stream 也是假实现，所以它验证的是计数闸门和分支，不验证 xgrammar、CUDA 掩码内容、生命周期或通信。
+
+源文件 SHA256：sampler.py `7ab3bed761ca731e5ece5b6e77da61104a5a03d6e418028149896197df1e3156`；scheduler.hpp `d2752395adfdb5867d9a15f0e68734c6b4c9c7360721461712362a04f3b27972`；engine hash 同前节。Python 3.9.6 / numpy 2.0.2，无新依赖或设备访问；计时池反例模式和原始主机时序模式均回归通过。
+
+**判断更新**：不把 SO 计数方案扩列为已证实缺陷；上一节计时 pair 的未消费引用反例仍独立成立。模型未执行 C++ schedule/process_outputs/pybind，也未跑编译线程、fork 的完整异步交错或外部服务扩展；所有未来的非活跃→活跃新路径仍须维护计数，不能把选定转移矩阵当作全系统证明。下一步核对同 PR 的借用输出数组 copy 快路，随后收束为供用户决定是否参与原 PR 讨论的证据摘要，不实现竞争修复。

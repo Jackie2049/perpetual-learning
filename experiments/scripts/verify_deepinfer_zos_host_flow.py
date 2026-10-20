@@ -3,6 +3,7 @@
 Usage: python3 experiments/scripts/verify_deepinfer_zos_host_flow.py /path/to/DeepInfer
 Baseline: 8b16149741a4935e1dec8cea27853f273b374c5b.
 PR #54 event-pool model (head 70381d28): add --check-event-pool.
+PR #54 structured-output count model: add --check-so-counter.
 Requires Python 3.9+ and numpy; no torch.
 Three Worker method bodies are compiled unchanged from AST, with decorators
 removed and hardware dependencies replaced by explicit doubles. Metadata
@@ -12,9 +13,11 @@ stream ordering, allocator lifetimes, kernels, or distributed correctness.
 import argparse
 import ast
 import hashlib
+import re
 from contextlib import nullcontext
 from contextlib import contextmanager
 from collections import defaultdict
+from itertools import product
 from pathlib import Path
 from types import SimpleNamespace as NS
 
@@ -165,14 +168,146 @@ def check_event_pool(root):
     print("Not a CUDA runtime, model, performance or device-race reproduction; no upstream source changed.")
 
 
+def check_so_counter(root):
+    """Original prefill promotion and sampler bodies; scheduler/ledger are models."""
+    engine_path = root / "deepinfer/engine/llm_engine.py"
+    sampler_path = root / "deepinfer/model_executor/layers/sampler.py"
+    scheduler_path = root / "csrc/engine/scheduler.hpp"
+    # Guard the exact snapshot predicate assumed by the model, not C++ execution.
+    assert re.search(r"if\s*\(seq->structured_output\.status\s*>\s*0\)\s*\{\s*"
+                     r"scheduler_outputs\.num_active_so\s*\+=\s*1;\s*\}", scheduler_path.read_text())
+    engine = next(n for n in ast.parse(engine_path.read_text()).body
+                  if isinstance(n, ast.ClassDef) and n.name == "LLMEngine")
+    step = next(n for n in engine.body if isinstance(n, ast.FunctionDef) and n.name == "step")
+    promotion = next(n for n in ast.walk(step) if isinstance(n, ast.If)
+                     and ast.unparse(n.test) == "scheduler_outputs.prompt_run"
+                     and any(isinstance(k, ast.AugAssign) and isinstance(k.target, ast.Attribute)
+                             and k.target.attr == "num_active_so" for k in ast.walk(n)))
+    wrapper = ast.parse("def promote(scheduler_outputs, seq_metadata_list):\n    pass").body[0]
+    wrapper.body = [promotion]
+    sampler = next(n for n in ast.parse(sampler_path.read_text()).body
+                   if isinstance(n, ast.ClassDef) and n.name == "Sampler")
+    get_mask = next(n for n in sampler.body if isinstance(n, ast.FunctionDef) and n.name == "_get_so_mask")
+    get_mask.decorator_list = []
+
+    class Tensor:
+        def __init__(self, data=None, shape=None):
+            self.data = data
+            self.shape = shape
+        def cuda(self, **kwargs):
+            return self
+        def record_stream(self, stream):
+            pass
+
+    class Marker:
+        def record(self, *args):
+            pass
+
+    class Matcher:
+        def __init__(self, aborted=False):
+            self.aborted = aborted
+        def is_aborted(self):
+            return self.aborted
+        def constrained(self):
+            return True
+        def fill_vocab_mask(self, *args):
+            return True
+        def accept_token(self, token):
+            return True
+        def rollback(self, n):
+            pass
+        def set_aborted(self, reason):
+            self.aborted = True
+
+    stream = NS(wait_event=lambda *args: None)
+    def checked_zip(a, b, strict=False):
+        if strict and len(a) != len(b):
+            raise ValueError("zip length")
+        return zip(a, b)
+
+    namespace = {
+        "zip": checked_zip,
+        "SequenceStatus": NS(FINISHED_SO_FAILED="failed"),
+        "logger": NS(error=lambda *args: None, warning=lambda *args: None, exception=lambda *args: None),
+        "allocate_vocab_mask": lambda n, v, **kwargs: Tensor(shape=(n, v)),
+        "torch": NS(int32="int32", tensor=lambda data, **kwargs: Tensor(list(data)),
+                    cuda=NS(current_stream=lambda: stream, Event=Marker, Stream=lambda: stream, stream=lambda s: nullcontext())),
+    }
+    future = ast.ImportFrom(module="__future__", names=[ast.alias(name="annotations")], level=0)
+    exec(compile(ast.fix_missing_locations(ast.Module(body=[future, wrapper], type_ignores=[])), str(engine_path), "exec"), namespace)
+    exec(compile(ast.fix_missing_locations(ast.Module(body=[future, get_mask], type_ignores=[])), str(sampler_path), "exec"), namespace)
+
+    def mask(metadata, count):
+        state = NS(bitmasks_cpu=[], vocab_size=32, max_MTP_value=2, so_copy_stream=None)
+        indices, bitmasks, statuses, event = namespace["_get_so_mask"](state, metadata, count)
+        return None if indices is None else [t.data for t in indices], statuses
+
+    # C++ schedule's snapshot predicate and allowed ledger transitions are an
+    # explicit model, not an execution/proof of the C++ scheduler or pybind.
+    successors = {-1: (-1,), 0: (0,), 1: (-1, 1, 2), 2: (-1, 2)}
+    cases = overestimates = 0
+    for n in (1, 2, 3):
+        for snapshot in product((-1, 0, 1, 2), repeat=n):
+            for refreshed in product(*(successors[s] for s in snapshot)):
+                for policy in ("decode", "prompt-partial", "prompt-final", "missing-matcher", "no-so", "mixed"):
+                    metadata, seqs = [], []
+                    before = sum(s > 0 for s in snapshot)
+                    for i, status in enumerate(refreshed):
+                        request = f"r{i}"
+                        last = policy not in ("decode", "prompt-partial") and (policy != "mixed" or i % 2 == 0)
+                        so_args = None if policy == "no-so" else object()
+                        matcher = None if policy == "missing-matcher" else Matcher()
+                        metadata.append(NS(request_id=request, so_status=status, so_matcher=matcher,
+                                           is_last_prompt_chunk=last, sampling_params=NS(so_args=so_args),
+                                           last_output_token=-1 if policy == "prompt-partial" else 7,
+                                           last_accepted_token=[3], last_next_n_token=[4, 5]))
+                        seqs.append(NS(request_id=request, status="running"))
+                    output = NS(prompt_run=policy != "decode", scheduled_seqs=seqs, num_active_so=before)
+                    namespace["promote"](output, metadata)
+                    active = sum(m.so_status > 0 for m in metadata)
+                    assert output.num_active_so >= active, (snapshot, refreshed, policy)
+                    overestimates += output.num_active_so > active
+                    indices, statuses = mask(metadata, output.num_active_so)
+                    legacy_indices, legacy_statuses = mask(metadata, None)
+                    if active:
+                        assert (indices, statuses) == (legacy_indices, legacy_statuses)
+                    else:
+                        assert indices is None or not any(indices), "inactive batch unexpectedly gets masks"
+                        if statuses is not None:
+                            assert all(s <= 0 for s in statuses)
+                    cases += 1
+
+    # Sensitivity check: omission of the required 0->1 increment is unsafe.
+    item = NS(request_id="fault", so_status=0, so_matcher=Matcher(), is_last_prompt_chunk=True,
+              sampling_params=NS(so_args=object()), last_output_token=7, last_accepted_token=[], last_next_n_token=[])
+    output = NS(prompt_run=True, scheduled_seqs=[NS(request_id="fault", status="running")], num_active_so=0)
+    namespace["promote"](output, [item])
+    assert item.so_status == 1 and output.num_active_so == 1
+    assert mask([item], output.num_active_so)[0][0] == [0]
+    assert mask([item], 0) == (None, None), "fault-injected stale zero did not expose skipped mask"
+    aborted = NS(**{**vars(item), "so_matcher": Matcher(aborted=True), "so_status": 2})
+    assert mask([aborted], 1)[1] == [-1]
+    assert mask(None, 0) == mask(None, 1) == mask([], 0) == (None, None)
+    assert overestimates > 0
+    for path in (engine_path, sampler_path, scheduler_path):
+        print(f"{path.name} sha256={hashlib.sha256(path.read_bytes()).hexdigest()}")
+    print(f"PASS SO upper-bound model: {cases} cases; {overestimates} conservative overestimates; stale-zero fault skips an active mask.")
+    print("Scope: original Python promotion/mask bodies; mocked matcher/tensors/events; scheduler snapshot and ledger transitions modeled, not executed.")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source_root", type=Path)
-    parser.add_argument("--check-event-pool", action="store_true", help="PR #54 timing-alias host model; no device execution")
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument("--check-event-pool", action="store_true", help="PR #54 timing-alias host model; no device execution")
+    modes.add_argument("--check-so-counter", action="store_true", help="PR #54 SO upper-bound model; no grammar/device execution")
     args = parser.parse_args()
     root = args.source_root
     if args.check_event_pool:
         check_event_pool(root)
+        return
+    if args.check_so_counter:
+        check_so_counter(root)
         return
     log, tick = [], [0]
     env = NS(DEEPINFER_ZERO_OVERHEAD_SCHEDULING=True,
