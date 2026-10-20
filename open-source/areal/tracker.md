@@ -2,6 +2,8 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/areal-project/AReaL （蚂蚁系，2026-10-20 核验；default branch main，5.8k stars，135 open issues）
+>
+> 源码理解：[AReaL 架构与统一损失系统源码阅读](../../notebook/frameworks/areal-architecture-source-reading.md)（2026-10-20，基线 `3b93679`）。§10 补读 FSDP2 后端 batch 切分 + prompt_mean 切分敏感点。
 
 ## 当前结论（2026-10-20 首次扫描）
 
@@ -19,6 +21,7 @@
 ## 可复用经验与跨框架观察
 
 - **同 reporter 跨框架同 bug 类**：`gss10282025` 同时开了 verl [#7913](https://github.com/verl-project/verl/issues/7913)（geo_mean 随 minibatch 切分变化，我方已深挖并验证，reporter 自提 PR #7916 BREAKING）和 AReaL #1730（M2PO microbatch 不变性）。此人专注「batch 切分不应改变 update」这一类正确性问题。我方 verl geo_mean 分析（[candidate-7913-gmpo-geo-mean](../verl/candidate-7913-gmpo-geo-mean.md) 及验证脚本）的经验、方法（原 batch 分母归一、batch-wide selection）可直接迁移到 AReaL #1730 的技术回复。
+- **（2026-10-20 §10 新增）prompt_mean 归约的切分敏感点**：`_PromptMeanBatch.for_steps` 设 `step_scale = len(microbatches)/active_groups = N/G`（N=ppo_n_minibatches，G=完整 batch 有效组数），使 `prompt_mean`（默认 ppo_n_minibatches=4 时）的累计梯度随 N 线性放大（numpy 复刻实测 1×/2×/4×）。`token_mean`/`seq_mean`/`constant` 不带 step 因子、不受影响。上游无此公开讨论；测试只断言 N 个 step 梯度均值恢复 full-batch，未覆盖累加语义。**定位为「切分敏感点/待确认」，需 AReaL 真实环境对照实测**（本机无 ray/torch）。这是继 M2PO 掩码（#1730）之后 AReaL 侧第二个「batch 切分影响 update」实例，位于归约侧，与 verl #7913 同源。详见 [源码笔记 §10](../../notebook/frameworks/areal-architecture-source-reading.md)，验证脚本 [verify_areal_prompt_mean_split.py](../../experiments/scripts/verify_areal_prompt_mean_split.py)。
 - **AReaL 认领动态与 verl 相同**：#1786→#1787（分钟级）、#1730→#1732（小时级）均为 reporter 自修；老 issue 多被 assignee 认领。**深挖前先按 reporter 名查其 PR 列表**，与 verl tracker 第 5 轮教训一致。
 - **#1730 的残余评论价值**：reporter 自述 PR 仅 DP1 缓存路径、`mergeable_state=dirty`；且 issue 明确指出「select once over full batch」才是理想。若我方评论，价值在于：把 verl #7913 的「microbatch 归一化 vs batch-wide selection」权衡对照 #1730 的 opt-in 方案，指出 opt-in 未解决 selection scope 问题。低风险但需授权；目前价值中等，暂不主动发起。
 
