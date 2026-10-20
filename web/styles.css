@@ -71,3 +71,5 @@
 .project-repository p{margin:6px 0}
 .project-overview{font-size:12px;border-left:3px solid #b7d6c8;padding-left:13px;color:#536d60}
 @media(max-width:650px){.contribution-summary{padding:17px}.contribution-summary h3{font-size:15px}.project-records{gap:14px}.plain-explanation{padding:12px}}
+
+.project-heading .project-date{margin:0}.project-heading{margin-bottom:22px}

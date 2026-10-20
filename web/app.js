@@ -71,10 +71,8 @@ function contributionSummary(item) {
 }
 function contributionPanel(project) {
   const materials = project.materials.map(item => `<li>${item.readable ? `<button data-open="${item.id}">${esc(item.title)}</button>` : `<a href="${esc(item.url)}" target="_blank" rel="noreferrer">${esc(item.title)} ↗</a>`}</li>`).join('');
-  return `<section class="contribution-panel" id="project-${esc(project.slug)}" aria-labelledby="project-title-${esc(project.slug)}">
-    <div class="project-heading"><div><span class="eyebrow">OPEN SOURCE</span><h2 id="project-title-${esc(project.slug)}">${esc(project.name)}</h2></div><span class="project-count">${project.materials.length} 份材料</span></div>
-    ${project.repository?`<div class="project-repository prose">${project.repository}</div>`:''}
-    <p class="project-date">文档更新 ${esc(fmt(project.updated))}</p>
+  return `<section class="contribution-panel" id="project-${esc(project.slug)}" aria-label="${esc(project.name)}">
+    <div class="project-heading"><p class="project-date">文档更新 ${esc(fmt(project.updated))}</p><span class="project-count">${project.materials.length} 份材料</span></div>
     ${project.progress?`<div class="project-overview prose">${project.progress}</div>`:''}
     ${project.records.length?`<div class="project-records">${project.records.map(contributionSummary).join('')}</div>`:project.items.length?`<p class="project-empty">该项目抬头待负责人整理，以下保留原交接记录。</p>${project.items.map(contributionRecord).join('')}`:'<p class="project-empty">已有项目说明，尚无独立贡献记录。</p>'}
     <div class="project-actions"><button class="text-link" data-open="${project.overview.id}">项目说明 ${icon('arrow')}</button>${project.tracker?`<button class="text-link" data-open="${project.tracker.id}">候选追踪 ${icon('arrow')}</button>`:''}</div>
@@ -87,7 +85,6 @@ function contributionsPage() {
   const selected = projects.some(p=>p.slug===filter) ? filter : '';
   main.innerHTML=heading('开源贡献','按项目回看调查、验证、贡献、进展')+
     `<nav class="project-filters" aria-label="贡献项目筛选"><a href="#contributions" ${!selected?'aria-current="true"':''}>全部项目 <span>${projects.length}</span></a>${projects.map(p=>`<a href="#contributions?project=${encodeURIComponent(p.slug)}" ${selected===p.slug?'aria-current="true"':''}>${esc(p.name)}</a>`).join('')}</nav>
-    <p class="contribution-context">内容来自仓库记录，包含历史材料；上游状态以原文核验时间为准。</p>
     <div class="contribution-grid">${projects.filter(p=>!selected||p.slug===selected).map(contributionPanel).join('') || '<p class="empty">当前尚无项目记录。</p>'}</div>`;
 }
 function route() {
