@@ -58,7 +58,7 @@ function contributionRecord(item) {
 }
 function contributionSummary(item) {
   const f=item.fields;
-  return `<details class="contribution-summary" open>
+  return `<details class="contribution-summary">
     <summary class="contribution-toggle"><span class="contribution-type">${esc(item.type)}</span><h3>${esc(item.title)}</h3></summary>
     <div class="summary-content">
     <div class="summary-field"><h4>贡献点</h4><div class="prose">${f['贡献点']}</div></div>

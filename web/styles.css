@@ -49,8 +49,8 @@
 /* Document summaries are the readable source of truth, never clipped tracker excerpts. */
 .contribution-grid{grid-template-columns:1fr}
 .contribution-panel:only-child{max-width:none}
-.project-records{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;margin-top:24px;align-items:start}
-.contribution-summary{min-width:0;border:1px solid var(--line);border-radius:8px;padding:23px;background:#fff}
+.project-records{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;margin-top:24px;align-items:start}
+.contribution-summary{min-width:0;border:1px solid var(--line);border-radius:8px;padding:16px 20px;background:#fff}
 .contribution-toggle{display:flex;align-items:flex-start;gap:12px;cursor:pointer;list-style:none}
 .contribution-toggle::-webkit-details-marker{display:none}
 .contribution-toggle::after{content:"";width:7px;height:7px;border-right:1.5px solid var(--green);border-bottom:1.5px solid var(--green);transform:rotate(-45deg);flex-shrink:0;margin:9px 3px 0 0}
@@ -58,19 +58,20 @@
 .contribution-toggle:focus-visible{outline:2px solid var(--green);outline-offset:5px}
 .contribution-summary h3{font-size:17px;line-height:1.7;margin:0;overflow-wrap:anywhere;min-width:0;flex:1}
 .contribution-type{background:var(--mint);color:var(--green);border-radius:4px;padding:3px 8px;font-size:11px;line-height:20px;flex-shrink:0;max-width:38%;overflow-wrap:anywhere}
-.summary-field{margin:18px 0}
-.summary-field h4{margin:0 0 5px;font-size:11px;color:#587166;font-weight:600}
-.summary-field .prose{font-size:12px;line-height:1.95;color:#42564e}
+.summary-field{margin:12px 0}
+.summary-content>.summary-field:first-child{margin-top:4px}
+.summary-field h4{margin:0 0 3px;font-size:11px;color:#587166;font-weight:600}
+.summary-field .prose{font-size:12px;line-height:1.75;color:#42564e}
 .summary-field .prose p{margin:0}
-.plain-explanation{background:#f1f7f3;border-radius:6px;padding:14px 16px}
+.plain-explanation{background:#f1f7f3;border-radius:6px;padding:10px 14px}
 .plain-explanation .prose{font-size:13px;color:var(--ink)}
 .summary-value .prose{font-size:11px;color:var(--muted)}
-.summary-technical{border-top:1px solid var(--line);padding-top:13px}
+.summary-technical{border-top:1px solid var(--line);padding-top:10px}
 .summary-technical .prose{font-size:12px}
-.summary-read{margin-top:17px}
+.summary-read{margin-top:12px}
 .project-repository{font-size:11px;color:var(--muted)}
 .project-repository p{margin:6px 0}
 .project-overview{font-size:12px;border-left:3px solid #b7d6c8;padding-left:13px;color:#536d60}
-@media(max-width:650px){.contribution-summary{padding:17px}.contribution-summary h3{font-size:15px}.project-records{gap:14px}.plain-explanation{padding:12px}}
+@media(max-width:650px){.contribution-summary{padding:13px 15px}.contribution-summary h3{font-size:15px}.project-records{gap:10px}.plain-explanation{padding:9px 12px}}
 
 .project-heading .project-date{margin:0}.project-heading{margin-bottom:22px}
