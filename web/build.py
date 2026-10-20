@@ -36,6 +36,12 @@ def clean_text(text):
     return re.sub(r'[*`>~]', '', text).strip()
 
 
+def pending_label(status):
+    if '待补证' in status:
+        return '待补证'
+    return '待上机验证' if '待 GPU' in status else '待发布决定'
+
+
 def doc_id(path):
     return hashlib.sha256(path.encode()).hexdigest()[:16]
 
@@ -223,7 +229,7 @@ def main():
             continue
         if not re.search(r'待|需授权|需用户授权|授权|DRAFT|未发布|未提交', status):
             continue
-        pending.append({'id': doc_id(path), 'path': path, 'title': title, 'tag': tag, 'status': status, 'label': '待上机验证' if '待 GPU' in status else '待发布决定'})
+        pending.append({'id': doc_id(path), 'path': path, 'title': title, 'tag': tag, 'status': status, 'label': pending_label(status)})
     projects, project_refs = contribution_projects(paths, docs, catalog, revision)
     selected = {p for p in paths if p.startswith('open-source/') and p.endswith('.md')} | {r['path'] for r in project_refs} | {f['path'] for f in featured} | {p['path'] for p in pending} | {latest}
     # Only explicitly selected reading pages are copied. Other historical files are title-indexed and linked to GitHub.

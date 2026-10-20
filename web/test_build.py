@@ -84,6 +84,11 @@ class RenderingTests(unittest.TestCase):
 
 
 class ContributionTests(unittest.TestCase):
+    def test_pending_evidence_is_not_a_ready_publication(self):
+        self.assertEqual(build.pending_label('待补证；旧稿不可发布，发言仍需授权'), '待补证')
+        self.assertEqual(build.pending_label('待 GPU 验证'), '待上机验证')
+        self.assertEqual(build.pending_label('草稿待用户授权'), '待发布决定')
+
     def test_section_keeps_nested_content_but_excludes_history(self):
         source = '# Project\n## 当前活跃\nCurrent\n### Detail\nEvidence\n## 已过期\nOld'
         self.assertEqual(build.section_source(source, '当前活跃'), 'Current\n### Detail\nEvidence')
