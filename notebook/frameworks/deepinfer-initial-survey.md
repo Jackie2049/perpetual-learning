@@ -650,3 +650,39 @@ python3 experiments/scripts/verify_deepinfer_chunk_sizing.py /path/to/DeepInfer
 完整测试尚未运行。原始Scheduler头文件的本机syntax-only尝试先因SDK标准库搜索路径缺memory失败；显式SDK路径后，Clang仍报object_pool.hpp的dependent cast模板解析，以及Linux特有PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP/pthread_mutex_clocklock未定义。torch2.9.1 macOS有Gloo不等于官方Linux/torch2.13扩展能在本机原样编译。本轮没有改兼容层，未构建完整扩展，也未执行#108的5个原始Scheduler/Gloo测试；作者PR正文亦注明它们尚未在其机器执行。这是本机验证限制，不据此认定上游构建缺陷。
 
 本机为macOS arm64，脚本在Python3.9.6和3.12.13均通过；torch2.9.1仅用于完整头文件/Gloo可用性检查，片段执行不依赖torch。scheduler.hpp SHA256：base `c14de4d5341170227b82ddf2d146d9c6a337937885a6886237aab5a7238da5db`；#108 `63c4c02b600cf2e321f4ea6540de805d9d406d00757e461abb8d5a2271589ef3`；#95 `7a15e8cf4cb9bc6901d5361e7342406f4926ace5ca55f43faf6977cc31f4cb41`；#98 `b6f3cc0b8f38d8f9145d53ab3c3872d20745f16fcebfe969efc2203973cfe3e3`。下一步只读核对Python checkpoint入口、token坐标与cached-prefix fork调用契约，不扩写为未经完整调度验证的新修复。
+
+## Checkpoint坐标与cached prefix fork契约
+
+**Checkpoint表示序列中的绝对缓存位置；精确停在这里还依赖切分点合法和调度可推进。** 固定基线774ce244与#108 ab47ee4c；下述Python入口、benchmark及Sequence绑定在两版本未改动。2026-10-21 05:02心跳接续上一节，不把局部片段检查扩大为完整engine或fork验证。
+
+[LLMEngine.add_request](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/engine/llm_engine.py#L472)先展开图片占位符，再构造Sequence，最后直接赋值chunk_checkpoints；所读路径没有替调用方排序、去重或换算图片展开前位置。[绑定](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/csrc/engine/pybind_sequence.cpp#L126)将Python列表赋给C++ deque，num_cached_tokens对应cache.num_tokens。调度器只看队首并以checkpoint−cached算本块长度，因此递增的展开后token边界才符合逐点推进的用法；原始占位符下标或每块长度不能直接代入。Engram compressed tokenizer逐token映射、构造时断言长度相同，不把这个位置变成“压缩后更短序列”的下标。这里也不是KV block编号、CP本地行号或YoCo compact后query行号。
+
+### Benchmark如何建立可fork的前缀
+
+[benchmark](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/examples/benchmark.py#L364)设置单个绝对checkpoint后循环step，每步断言cached不超过目标；调用前cached不超过目标、循环正常退出时，两条件共同保证相等。入口未检查这个初始大小关系。它不是通用的限时等待器：没有在这个helper内检查完成/取消、等待截止时间或无进展次数；也不会自动恢复checkpoint。目标已达到时仍先写入checkpoint但不step，调用方应理解这个残留，而不是视为已经消费。
+
+正常调用由`cached_tokens=context_length−non_cached_tokens`得到目标，参数要求non_cached_tokens至少2；创建engine显式把lookahead设为`min(1, DEEPINFER_USE_NEXTN_DECODE)`。因此不能拿上一节lookahead4、尾段2的反例直接判此benchmark默认调用失败。图片模式还将目标及预期chunk边界传给[图片模板生成器](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/examples/_prompts.py#L208)，按展开后的区域放整张图片、文本补齐；容量不足会断言，不是允许任意图片跨界再由checkpoint强切。它建立了“图片不跨这些点”的输入条件，不能反过来证明通用add_request可精确满足任意图片内部checkpoint。
+
+### Fork保留的内容与重算位置
+
+[Scheduler.fork_seq](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/csrc/engine/scheduler.hpp#L1061)要求已有计算前缀、非空KV block table且不请求prompt_logprobs；复制完整token数组而非只截取缓存前缀。设源序列当前总长N、缓存数C，新分支继承`min(C,N−1)`个缓存token，至少留下末token需要处理。
+
+| 源缓存条件 | 新分支缓存与入口 |
+|---|---|
+| 0<C<N−1 | 继承C，进入waiting，继续prefill；不注入sp_token golden token |
+| C=N−1 | 继承N−1，进入prompted；golden token置为调用方传入的sp_token |
+| C=N | 缓存回退到N−1，同样进入prompted；不能套用benchmark的缓存数相等断言 |
+
+benchmark在固定长prompt的部分prefill后fork，未缓存后缀至少2，落在第一行，所以其`fork.cached == source.cached`断言与通用fork的末token保留并不冲突。复制的block table（或调用方给的blocks）会pin引用，启用state_manager时另继承并pin state_id；不等于在这个函数内复制所有物理KV内容。新schedule只设置schedulable与branch_id，没有复制源checkpoint deque；显式中间切分要求需要调用方为新分支另行表达。这些是源码契约，不是fork引用计数、COW或实际KV一致性已测试。
+
+### 原始Python helper与片段轨迹控制
+
+```bash
+python3 experiments/scripts/verify_deepinfer_chunk_sizing.py /path/to/DeepInfer --check-caller
+```
+
+复用原脚本，以AST提取未改写的prefill_cached_prefix，让替身step依次消费原始C++ sizing片段生成的缓存轨迹。新增8组为4条件×base/#108：缓存4到目标10、预算4时经过8再到10；图片[3,8)在边界8成功；目标5落在图片内时片段扩大到8、原始Python断言按预期触发；已在目标5时零次step且仍留checkpoint5。两版这4条件结果相同，不能算作#108新增失败复现。原10组成对片段控制回归通过。
+
+Python3.9.6与3.12.13均通过；新增检查不依赖torch。Sequence和engine.step仍是替身，cache推进沿用片段夹具的立即增加规则，不执行真实输出提交、fork、模型、分布式或设备。chunk学习先收束；后续只读追MTP接受数如何把乐观缓存长度提交为最终长度，不重复增加同类替身来替代完整Scheduler验证。
+
+固定源码SHA256：benchmark.py `a4e0b114b4173b9d2124cdabfedc54d3dd5cd81d269d7054c48f9bac780eb9f2`；llm_engine.py `a636d60ca5711f6b7c21e68370c3bd9c2de6fc3f4439a7429ca4f572f0edeebe`；pybind_sequence.cpp `872775774022bb27fd4b1fade37ec9f6fe9ec4c3051844206e3ec36c8103a9ce`；sequence.hpp `67ef6ea70ee31a519fd632ee2d7be4710a6d796f786cf336dd3d3f06f7fbe16b`；_prompts.py `c8025c1542b62f5bc1f5065387fead9511861a873b004718a104004959f2e1ef`。
