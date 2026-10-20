@@ -38,7 +38,7 @@ LLM (entrypoints/llm.py, vLLM 风格 offline batch API)
 
 ### 3.3 DeepSeek V4 混合注意力一体化元数据 — 模型专属的深度
 - dense 压缩层 + sparse（top-k 索引注意力）+ SWA + YoCo prefill 截断 + Engram n-gram，全在调度阶段生成**块加载计划**（`block_load_plan.cpp` 的段表 `[src_block_id,src_begin,src_end,dst_offset]`），把多层不同注意力 KV 加载统一成一次 GPU 拷贝指令。
-- **YoCo bounded replay**：模型切 prefill/consumer 双半区，consumer 层 SWA 有界截断，compact（真截行+CP 重分布）/mask（只收窄可见域）双模式，compact 布局 metadata 浅拷贝。
+- **YoCo bounded replay**：模型分 producer/consumer 两个层区（不要求各占一半），consumer 层 SWA 有界截断；compact 真截 query 行并做 CP 重分布，mask 只收窄可见域，主/索引 KV 仍有 full-source 更新分支。keep 必须覆盖 window+有效回退预算，全截 chunk 仍留占位行；上游等价测试仅比较 mask/compact 且排除抢占。详见 [窗口/布局与 CPU helper 核验](deepinfer-initial-survey.md#yoco-bounded-replay截-query不是删除全部历史-kv)。
 
 ## 4. 模型执行器要点
 

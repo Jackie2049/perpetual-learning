@@ -141,7 +141,7 @@ nextn>0 时，C++ 先从乐观 k 扣除 CPU 侧原 q；GPU 再加修正后的 q�
 - 同页说明 CPU 先选总预算、GPU 用上一轮 confidence 计算逐请求验证长度并回写 pinned buffer，与 Worker 的 correction/D2H 路径相符；这说明公开代码为何需要该同步，未证明它在任意负载都能隐藏等待。
 - 第 6–7 页使用 134-token 窗口/回退示例，当前 README 的 compact keep_tokens 为 140，且 PDF 含 VLLM_ 历史前缀。应按当前配置检查窗口和回退覆盖条件，不将 PDF 示例数字直接当作启动默认值；重放的数值等价性仍需实测。
 
-下一步：DSpark 总预算与采样位置已补下节；继续核对 SWA/YoCo bounded replay 的窗口、回退与压缩元数据契约。真实 CUDA Graph、padding、提前 EOS 与 pool 回收需要目标硬件验证。本机仍仅限源码/CPU，不据主机替身实验宣称 GPU 无空泡或无竞态。
+下一步：DSpark 总预算/采样位置及 SWA/YoCo 窗口/回退/压缩元数据契约已补后文；接续 CP compact 边界重分布和上游数值测试覆盖。真实 CUDA Graph、padding、提前 EOS 与 pool 回收需要目标硬件验证。本机仍仅限源码/CPU，不据主机替身实验宣称 GPU 无空泡或无竞态。
 
 ## DSpark：请求数、验证预算与随机采样是三个层次
 
@@ -199,3 +199,58 @@ python3 experiments/scripts/verify_deepinfer_mtp_budget.py /path/to/DeepInfer \
 ```
 
 Darwin arm64、Apple clang 17、C++17，结果 `PASS 421 checks`。其中 200 组合成累计率逐组穷举 3 条请求、每条 q=1..3 的全部 27 种合法前缀配置，独立核对预算目标与固定预算下最新率分配；另覆盖双历史缓冲、冷启动、计数约束、排序/吞吐平局、滑动窗口淘汰、等权 graph 中位数、反馈门槛/回退及斜率钳制。初次编译因找不到 algorithm 标准头失败，指定已有 SDK 目录后通过。未调用 torch、CUDA/NPU、GPU 分配 kernel 或完整 Scheduler；不验证模型接受率校准、统计无偏、设备数值、真实定时事件或性能。
+
+## YoCo bounded replay：截 query，不是删除全部历史 KV
+
+本节仍固定 `8b161497`。公开实现包含三种模式，作用在 prefill 的 consumer 层区；不能当作对任意 Transformer 输入做左截断。模型须有非空 producer/consumer 层区，入口和 Worker 还校验正 SWA window 与保留长度。
+
+| 模式 | Consumer query 行 | Consumer SWA 可见域 | 主/索引压缩 KV |
+|---|---|---|---|
+| off | 全部 | 正常滑窗（另受 state 有效下界约束） | 正常路径 |
+| mask | 全部 | 滑窗与保留后缀相交；后缀之前的行为空 | 全长上下文路径仍在 |
+| compact | 保留后缀与当前 chunk 相交的行；全截 chunk 仍留一行 | 与 mask 在相同行上的绝对 key 集一致 | 保留 full-source 分支更新，而非仅由 compact query 构造 |
+
+关键源码：[C++ 元数据](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/csrc/engine/input_metadata/prepare_tensor_input_v4.cpp#L129)、[consumer metadata view](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/model_executor/input_metadata/yoco.py#L94)、[边界层](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/model_executor/models/decoder_layer.py#L134)、[full KV 更新](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/model_executor/models/v4_modules/attn.py#L676)。边界处先保存 full metadata，并对原始 full hidden 做 attn norm；另把 query hidden/residual gather 为 compact 布局。需要 packed KV 的 consumer 层用 full hidden 投影、压缩并写入完整上下文的主/索引 KV，后续 query 路径跳过重复更新。因此减少 consumer query/MLP 计算，不意味着所有 KV 计算或存储同步缩为 keep_tokens。
+
+### 窗口、回退和默认值分开看
+
+[environ.py](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/environ.py#L128) 的 nextn 默认 5；有效回退预算 B 为 `max(显式 MAX_BACKTRACKING_TOKENS 或 0, nextn + 1)`。YoCo mode 默认 off，keep 默认 0，打开截断必须显式设置。源码在 Worker 与 C++ 双层要求 `keep >= window + B`；README 的 keep=140 是默认 V4.1 条件下的建议值，不是所有配置都安全的常数。例如 window=128、nextn=5 且未显式增加回退时 B=6，约束下限为 134；若 nextn 或显式 B 增大，下限随之增大，不能照抄 140。
+
+[cache_engine.py](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/worker/cache_engine.py#L87) 还区分 inference SWA ring（window+B）与 KV-store state ring（满足额外存储开关时，再加落盘余量及 YoCo keep）。keep 是 consumer 重放后缀，不等于推理 ring 大小或实际持久化容量。公开服务级 KV-store 仍不完整；这些布局函数不构成可用存储服务的证据。
+
+### Chunk 不可整段删除：占位行与绝对坐标
+
+令 N 为 sequence 当前总长度（重算时含已生成 token），q_start 为当前 chunk 起点，q_len 为 chunk 长度。compact 使用：
+
+```text
+clip_prefix = clamp(N - keep - q_start, 0, q_len - 1)
+keep_len = q_len - clip_prefix >= 1
+query_indices = 当前请求 full 布局基址 + [clip_prefix, q_len)
+positions = q_start + [clip_prefix, q_len)  # 不重新从零编号
+```
+
+例如 N=2000、keep=140、首 chunk=[0,1024)，目标后缀从 1860 开始，但仍保留 position=1023 的占位 query。该行 SWA 可见域为空，compact 的 store slot=-1，不写 ring；prefill 采样索引仍可定位最后一行，非最终 chunk 的采样结果随后丢弃。真正保留的后缀行也只在当前 chunk 的 ring 尾段写 SWA slot。全截 chunk 的一行是执行协议占位，不是“仍需消费一个真实输出”。
+
+对 query 的绝对位置 pos，共用 C++ helper 把可见下界设为：
+
+```text
+abs_lo = clamp(max(pos-window+1, N-keep, swa_valid_start), 0, pos+1)
+visible_keys = [abs_lo, pos]  # abs_lo=pos+1 时为空
+```
+
+`swa_valid_start` 防止零状态重算读取已清零的历史 slot，不能仅取滑窗与矩形交集。helper 再把绝对 key 分为 chunk 前历史 section1 与当前 chunk section2；compact 对 section2 基址减 clip_prefix，但绝对位置不能变。Python consumer view 用浅拷贝替换 query-aligned 字段并清空旧 attention 展开结果；未替换字段仍共享 tensor，禁止随意原地修改。CP>1 还需从 full-mirror 持有者收集保留行，再重排为新的 compact-mirror 布局，不能把全局 query_indices 直接用于本 rank 的旧局部行。
+
+### 已运行什么，仍未证明什么
+
+[CPU 检查脚本](../../experiments/scripts/verify_deepinfer_yoco_visibility.py) 只提取原始 `YocoSwaVisibility` 与 `yoco_swa_visibility` 函数体，替代 TORCH_CHECK 的消息接口后以 C++17 编译；通过 AST 复用上游 L1 的 10 种场景及解析可见域参考，再增加 200 组固定种子边界形状和 `valid_start` 的零/边界/矩形截点。结果 24,643 个 query/有效下界组合通过，包括空可见域和占位行；4,467 个保留行的 section2 绝对坐标重定位检查通过。
+
+```bash
+python3 experiments/scripts/verify_deepinfer_yoco_visibility.py /path/to/DeepInfer \
+  --cxxflag=-isystem/Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk/usr/include/c++/v1
+```
+
+环境为 Darwin arm64 / Apple clang 17；沿用已有 SDK 标准头路径，没有安装框架或依赖。C++ 文件 SHA256 `93a6b1dd533db116d2f7540c78d6bb5419bdb8c1d2063b031ab8b1a8cc138fe2`；上游 yoco_equiv.py 为 `4abe933e510b7797ada8835d57d7504dcc049834c990429316e34e937f6c0032`。本实验执行的是**可见域 helper**，clip/布局重定位由测试夹具计算；没有执行全套 C++ 元数据、pybind、pinned 分配、store-slot kernel、CP 通信或模型，不能称为上游 L1/L2 已跑通。
+
+上游 [YoCo 验证说明](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/examples/yoco/README.md) 的 L1 不加载权重，但实际 `_setup_mask_command` 仍要求可见设备以分配 pinned 内存；所以本机没有尝试完整 L1。L2 比较的是 **mask vs compact**，不是 off vs compact；两边沿同一 golden teacher-forcing 轨迹比较 logprob/top-k，且明确断言抢占数为 0。启用 DFlash 时附加 confidence 对照有首末轮覆盖限制。不能据这些测试证明自由采样、任意抢占/回退或关闭截断模式的逐位等价；llm_engine.py 还明确注明截断开启时允许抢占导致结果变化。
+
+另外两个功能边界来自源码：mask/compact 均把 prompt_logprobs 强制关闭；compact 要求 DFlash target 层全部位于 consumer 边界同一侧，并禁止 consumer 层有 Engram。它们是当前实现约束，不是可忽略的部署细节。下一步优先核验 CP compact 边界重分布的索引守恒，再检查上游测试对混长/padding 的覆盖，不在 M1 启动设备实验。

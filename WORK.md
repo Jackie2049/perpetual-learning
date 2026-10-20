@@ -59,7 +59,7 @@
 
 1. **未来一周开源技术掘金三大重点（用户 2026-10-20 定）**：**DeepInfer / verl / AReaL**。其中 DeepInfer 主研（推理框架源码深挖），verl 主贡献（续 #8281/#8250），AReaL 主实测（prompt_mean 切分敏感点）。vLLM 降为次优先级。 **这是跨主机整体分工，M1 不接管 AReaL；M5 独立推进其完整候选/PR。**
 2. **等待用户授权/资源**（长期未决，见「运行接续」5 项）——发布评论/文档、#8281 发布形态、方向调整。#8237 已收尾（PR #8286 ready + issue 已回）。
-3. **高优调研（用户 2026-10-20 定）**：**DeepInfer**——确定性、ZOS 两轮时序/remap/生命周期、10 页 Q&A 与 DSpark 总预算/采样位置已读。原始 Worker 主机替身实验、原始 MTPVarlen C++ 头文件隔离 CPU 验证通过；后者用 200 组穷举前缀对照核验预算目标，确认 best_bsz 是验证 token 总预算而非请求数。非 GPU/模型或性能实测，Q&A 低并发收益可为负。下一步 SWA/YoCo bounded replay 的窗口/回退/压缩元数据契约；CUDA Graph padding、提前 EOS 与池回收留目标硬件。当前 Darwin 仅做源码/CPU，M1 不访问 GPU。见 [deepinfer-initial-survey.md](notebook/frameworks/deepinfer-initial-survey.md)。
+3. **高优调研（用户 2026-10-20 定）**：**DeepInfer**——确定性、ZOS、Q&A、DSpark 预算/采样位置与 YoCo 窗口/回退/布局已读，相关原始主机分支/C++ helper 已做隔离 CPU 核验。YoCo compact 截 query，主/索引 KV 仍有 full-source 分支；keep 覆盖 window+有效回退预算，全截 chunk 仍留一行。上游等价测试是 mask vs compact、固定轨迹且无抢占，不能当成 off/任意抢占等价。下一步 CP compact 边界重分布的索引守恒与混长/padding 覆盖；真实设备正确性/性能未测，M1 不访问 GPU。见 [deepinfer-initial-survey.md](notebook/frameworks/deepinfer-initial-survey.md)。
 4. **M5 单一负责，M1 跳过**：AReaL prompt_mean 全项工作，含思路、代码、实测、定性与 PR，见 [M5 交接](open-source/areal/handoff-m5.md)。尚无已证实缺陷/ready PR，step_scale=1/G 仅为假设。M1 已还原在用探针，停止并行演化方案、网络探测与 GPU 操作；只有用户重新指派才恢复参与。
 3. 按课题逐步关联现有实验执行材料与 notebook/experiments/ 的分析记录；新增实验优先就近组织，维护双向入口。
 4. 维护按职责划分的一级目录；新增或整理内容时整体检查归属、引用和输出路径，避免再次堆出按文件类型划分的一级目录。根目录 projects/ 暂不新增。
