@@ -15,7 +15,7 @@ const main = document.querySelector('#main');
 const dialog = document.querySelector('#reader');
 let data, lookup, page = 'overview', query = '', category = '全部', shown = 30, saved;
 try { saved = new Set(JSON.parse(localStorage.getItem('pl:saved') || '[]')); } catch { saved = new Set(); }
-const names = {overview:'总览', library:'成果库', diary:'工作日志', decisions:'待决事项', saved:'我的收藏'};
+const names = {overview:'总览', library:'成果库', diary:'工作日志', decisions:'待决事项', contributions:'开源贡献', saved:'我的收藏'};
 const fmt = date => new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Singapore',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(date));
 const saveButton = (id, small=false) => `<button class="save-button ${saved.has(id)?'is-saved':''} ${small?'small':''}" data-save="${id}" aria-label="${saved.has(id)?'取消收藏':'收藏'}" aria-pressed="${saved.has(id)}">${icon('bookmark')}</button>`;
 function toast(message) { const node=document.querySelector('#toast'); node.textContent=message; node.classList.add('show'); clearTimeout(toast.timer); toast.timer=setTimeout(()=>node.classList.remove('show'),2400); }
@@ -53,12 +53,34 @@ function results() {
 }
 function diaryPage() {main.innerHTML=heading('探索的过程，也值得留下。','记录每项工作的收获、失败与判断变化。这里展示最新一天的实际日志。')+`<div class="diary-heading"><span class="day-badge">${esc(data.diary.date)}</span><button class="outline-button" data-open="${data.diary.id}">完整日志 ${icon('arrow')}</button><a href="#library?category=${encodeURIComponent('工作日志')}" class="text-link">历史日志 ${icon('arrow')}</a></div><section class="daily-review"><div class="section-heading"><h2>当日回看</h2><span class="subtle">来自日志原文</span></div><div class="prose">${data.diary.review}</div></section><section class="log-section"><div class="section-heading"><h2>工作时间线</h2><span class="subtle">Asia / Singapore · 最新在前</span></div><ul class="timeline full-timeline">${activity(data.diary.events.length)}</ul></section>`;}
 function decisionPage() {main.innerHTML=heading('让下一步，清楚一点。','集中回看需要发布决定或验证资源的事项。先读依据，再决定是否继续投入。')+`<div class="status-notice">${icon('clock')}<p>状态摘自对应文档的记录，更新于仓库快照。这个 demo 提供浏览入口，发布与运行操作仍在 Agent 会话中完成。</p></div><div class="decision-grid">${pendingList()}</div><div class="source-note">需要完整工作上下文？<a href="${data.repository}/blob/${data.revision}/WORK.md" target="_blank" rel="noreferrer">查看 WORK.md ↗</a></div>`;}
+function contributionRecord(item) {
+  return `<details class="contribution-record"><summary><span class="record-title">${esc(item.title)}</span><span class="record-preview">${esc(item.summary)}</span><span class="record-toggle">展开记录</span></summary><div class="prose">${item.html}</div></details>`;
+}
+function contributionPanel(project) {
+  const materials = project.materials.map(item => `<li>${item.readable ? `<button data-open="${item.id}">${esc(item.title)}</button>` : `<a href="${esc(item.url)}" target="_blank" rel="noreferrer">${esc(item.title)} ↗</a>`}</li>`).join('');
+  return `<section class="contribution-panel" id="project-${esc(project.slug)}" aria-labelledby="project-title-${esc(project.slug)}">
+    <div class="project-heading"><div><span class="eyebrow">OPEN SOURCE</span><h2 id="project-title-${esc(project.slug)}">${esc(project.name)}</h2></div><span class="project-count">${project.materials.length} 份材料</span></div>
+    <p class="project-date">${project.items.length ? '进展记录更新' : '项目索引更新'} ${esc(fmt(project.updated))}</p>
+    ${project.items.length ? `<div class="project-section-label">${esc(project.section)} · 原文摘录</div>${project.items.slice(0,3).map(contributionRecord).join('')}${project.items.length>3 ? `<details class="more-progress"><summary>其余 ${project.items.length-3} 条进展</summary>${project.items.slice(3).map(contributionRecord).join('')}</details>`:''}` : '<p class="project-empty">已有贡献材料，尚未整理独立进展摘要。</p>'}
+    <div class="project-actions"><button class="text-link" data-open="${project.source.id}">${project.items.length?'完整进展':'项目说明'} ${icon('arrow')}</button>${project.tracker && project.tracker.id!==project.source.id?`<button class="text-link" data-open="${project.tracker.id}">候选追踪 ${icon('arrow')}</button>`:''}</div>
+    <details class="project-materials"><summary>浏览项目材料 <span>${project.materials.length}</span></summary>${materials?`<ul>${materials}</ul>`:'<p>暂无独立材料。</p>'}</details>
+  </section>`;
+}
+function contributionsPage() {
+  const filter = new URLSearchParams(location.hash.split('?')[1]||'').get('project');
+  const projects = data.projects || [];
+  const selected = projects.some(p=>p.slug===filter) ? filter : '';
+  main.innerHTML=heading('开源贡献','按项目回看调查、验证、贡献与跟进。每一项进展，都能找到原始依据。')+
+    `<nav class="project-filters" aria-label="贡献项目筛选"><a href="#contributions" ${!selected?'aria-current="true"':''}>全部项目 <span>${projects.length}</span></a>${projects.map(p=>`<a href="#contributions?project=${encodeURIComponent(p.slug)}" ${selected===p.slug?'aria-current="true"':''}>${esc(p.name)}</a>`).join('')}</nav>
+    <p class="contribution-context">内容来自仓库记录，包含历史材料；上游状态以原文核验时间为准。</p>
+    <div class="contribution-grid">${projects.filter(p=>!selected||p.slug===selected).map(contributionPanel).join('') || '<p class="empty">当前尚无项目记录。</p>'}</div>`;
+}
 function route() {
   const [slug,search='']=(location.hash.slice(1)||'overview').split('?');page=names[slug]?slug:'overview';const params=new URLSearchParams(search);query=params.get('q')||'';category=params.get('category')||'全部';shown=30;
   if(!['全部','知识笔记','开源贡献','工作日志'].includes(category))category='全部';
   document.querySelectorAll('[data-nav]').forEach(a=>{const active=a.dataset.nav===page;a.classList.toggle('active',active);if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
   document.querySelector('#breadcrumb').textContent=names[page];document.title=names[page]+' · perpetual-learning';
-  if(page==='overview')overview();else if(page==='library'||page==='saved')library();else if(page==='diary')diaryPage();else decisionPage();
+  if(page==='overview')overview();else if(page==='library'||page==='saved')library();else if(page==='diary')diaryPage();else if(page==='contributions')contributionsPage();else decisionPage();
   window.scrollTo(0,0);
 }
 let readerRequest=0;
@@ -80,6 +102,6 @@ document.addEventListener('click',e=>{
 document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();if(dialog.open)dialog.close();if(page!=='library'){location.hash='library';setTimeout(()=>document.querySelector('#library-query')?.focus(),0);}else document.querySelector('#library-query')?.focus();}});
 async function boot(){
   document.querySelectorAll('[data-icon]').forEach(el=>el.innerHTML=icon(el.dataset.icon));
-  try {const res=await fetch('./data.json', {cache:'no-cache'});if(!res.ok)throw Error('data');data=await res.json();lookup=new Map([...data.library,...data.featured,...data.pending].map(x=>[x.id,x]));document.querySelector('#library-count').textContent=data.library.length;document.querySelector('#pending-count').textContent=data.pending.length;const link=document.querySelector('#snapshot-link');link.href=data.repository+'/commit/'+data.revision;link.textContent='仓库快照 '+data.revision.slice(0,7)+' · '+fmt(data.sourceDate);route();window.addEventListener('hashchange',route);}catch{main.innerHTML='<div class="empty"><h1>暂时无法读取成果</h1><p>请刷新重试，或直接浏览 GitHub 仓库。</p><a href="https://github.com/Jackie2049/perpetual-learning">打开仓库 ↗</a></div>';}
+  try {const res=await fetch('./data.json', {cache:'no-cache'});if(!res.ok)throw Error('data');data=await res.json();lookup=new Map([...data.library,...data.featured,...data.pending,...(data.projectRefs||[])].map(x=>[x.id,x]));document.querySelector('#library-count').textContent=data.library.length;document.querySelector('#pending-count').textContent=data.pending.length;const link=document.querySelector('#snapshot-link');link.href=data.repository+'/commit/'+data.revision;link.textContent='仓库快照 '+data.revision.slice(0,7)+' · '+fmt(data.sourceDate);route();window.addEventListener('hashchange',route);}catch{main.innerHTML='<div class="empty"><h1>暂时无法读取成果</h1><p>请刷新重试，或直接浏览 GitHub 仓库。</p><a href="https://github.com/Jackie2049/perpetual-learning">打开仓库 ↗</a></div>';}
 }
 boot();
