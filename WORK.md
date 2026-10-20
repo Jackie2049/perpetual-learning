@@ -1,10 +1,10 @@
 # perpetual-learning — 当前工作上下文
 
-更新时间：2026-10-19
+更新时间：2026-10-20
 
 ## 当前阶段
 
-自主运行中（2026-10-19 起 18 轮 /loop 30m）。已完成：工具修复（inference_estimator.py）、verl 候选三轮核验与全新扫描（10 候选）、4 项源码级修复分析、GMPO/GSPO/SAPO 论文精读与数值证明。详见 [当日日志](diary/2026-10-19.md)。
+自主运行中（2026-10-19 起 18 轮 /loop 30m）。已完成：工具修复（inference_estimator.py）、verl 候选三轮核验与全新扫描（10 候选）、4 项源码级修复分析、GMPO/GSPO/SAPO 论文精读与数值证明。2026-10-20：verl 新 issue 恢复，深挖 #8281 完成（analysis-done + CPU 验证）。详见 [当日日志](diary/2026-10-20.md)。
 
 ## 运行接续
 
@@ -16,8 +16,8 @@
 
 - 状态：持续运行中（/loop 30m，会话级 job 486bb920，7 天后过期；退出会话后不自动恢复）。已按新收尾规则对齐（09:35，日志收尾工具 + 提交检查生效）。
 - 待执行的用户任务：无；当前没有已登记、等待自主运行处理的用户需求。
-- 自主探索任务：见「本轮进展」与 [verl tracker](open-source/verl/tracker.md)（当前活跃 2 候选：#8250 诊断、clip 语义文档澄清；**#8237 已 CLOSED**）；vLLM 方向进行中（#61160 修复定位完成，#61229 待核查——核心 API 限流，约 10:40 后重置）。
-- **等待用户决定的事项**（均需授权/资源）：①发布 #8250 熵爆炸诊断评论；②发布 vLLM #39096 增量评论；⑤clip 语义文档澄清的发布形态。~~③ vLLM #61160 修复定位评论~~ **已发布**（2026-10-19 10:49，[comment](https://github.com/vllm-project/vllm/issues/61160#issuecomment-6258592764)），待回应跟进。**#8237 bugfix 已收尾**（2026-10-19：根因 100% 实锤 + PR [#8286](https://github.com/verl-project/verl/pull/8286) ready-for-review + issue 已回，4090 全验证；详见 [candidate](open-source/verl/candidate-8237-offload-fraction.md)）。
+- 自主探索任务：见「本轮进展」与 [verl tracker](open-source/verl/tracker.md)（当前活跃 3 候选：#8250 诊断、clip 语义文档澄清、#8281 agent loop truncation；**#8237 已收尾关闭**）；vLLM 方向进行中（#61160 评论已发布待回应，#61229 维护者已认可 positive fix 但仍 open、无确认修复 PR）。
+- **等待用户决定的事项**（均需授权/资源）：①发布 #8250 熵爆炸诊断评论；②发布 vLLM #39096 增量评论；⑤clip 语义文档澄清的发布形态；⑥#8281 的发布形态（评论 or PR，见 candidate）。~~③ vLLM #61160 修复定位评论~~ **已发布**（2026-10-19 10:49，[comment](https://github.com/vllm-project/vllm/issues/61160#issuecomment-6258592764)），待回应跟进。**#8237 bugfix 已收尾**（2026-10-19：根因 100% 实锤 + PR [#8286](https://github.com/verl-project/verl/pull/8286) ready-for-review + issue 已回，4090 全验证；详见 [candidate](open-source/verl/candidate-8237-offload-fraction.md)）。
 - 下一步：见下方「待讨论与下一步」。
 - 运行范围：当前 Agent 会话；未配置进程退出后的自动唤起。
 
@@ -47,8 +47,8 @@
 
 ## 待讨论与下一步
 
-1. **等待用户授权/资源**（长期未决，见「运行接续」4 项）——发布评论/文档、GPU 验证 #8237、方向调整。
-2. 若继续自主：verl 新 issue 近 3 天为零（10-16 后停滞）；可转向 vLLM 方向核验（6 月草稿外的机会）或框架源码深化。
+1. **等待用户授权/资源**（长期未决，见「运行接续」5 项）——发布评论/文档、#8281 发布形态、方向调整。#8237 已收尾（PR #8286 ready + issue 已回）。
+2. 若继续自主：verl 新 issue 池已恢复（10-16 起 #8261/#8281），#8281 已深挖完成（analysis-done，待发布决定）；#8261（依赖升级性能）待评估；vLLM 方向可继续核验 6 月草稿外机会或框架源码深化。
 3. 按课题逐步关联现有实验执行材料与 notebook/experiments/ 的分析记录；新增实验优先就近组织，维护双向入口。
 4. 维护按职责划分的一级目录；新增或整理内容时整体检查归属、引用和输出路径，避免再次堆出按文件类型划分的一级目录。根目录 projects/ 暂不新增。
 5. 按价值、使用关系和证据继续筛选历史工具，避免只按文件名批量归档；其余历史工具继续按同一标准检查。
@@ -56,7 +56,7 @@
 ## 接续入口与约束
 
 - 学习与探索：[notebook/readme.md](notebook/readme.md)、[roadmap.md](notebook/roadmap.md)、[knowledge-map.md](notebook/knowledge-map.md)。本轮学习线（RL 损失家族）已收束，新课题未定。
-- 贡献：[open-source/README.md](open-source/README.md)、[verl tracker](open-source/verl/tracker.md)。当前活跃：#8237（bugfix，GPU 待验证）、#8250（诊断评论待授权）、clip 语义文档澄清（待授权）；vLLM #39096 评论待授权。
+- 贡献：[open-source/README.md](open-source/README.md)、[verl tracker](open-source/verl/tracker.md)。当前活跃：#8250（诊断评论待授权）、clip 语义文档澄清（待授权）、#8281（agent loop truncation，analysis-done，待发布决定）；#8237 已收尾（PR [#8286](https://github.com/verl-project/verl/pull/8286) ready）；vLLM #39096 评论待授权。
 - 本地目录已核实为 `/Users/jackiemac/workspace/perpetual-learning`；旧会话可能仍绑定已不存在的 rollout-infra 路径。GitHub 仓库为 [perpetual-learning](https://github.com/Jackie2049/perpetual-learning)。
 - 原有未跟踪文件 diary/2026-08-14.md 属于既有用户工作，保留原状，不夹带提交。
 - 历史服务器状态、访问方式和“已验证”结论按需复核，不复述凭据。
