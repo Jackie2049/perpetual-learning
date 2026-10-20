@@ -197,49 +197,155 @@
 
 <h2 id="part3">第 3 章：核心方法</h2>
 
+<p>这一章讲 DeepInfer 区别于 vLLM/SGLang 的六项关键技术。每一项我都按「为什么要做 → 不解决会怎样 → 怎么做的（大白话）→ 换来什么好处 → 实现细节」的顺序讲，方便先抓住本质，再下钻细节。</p>
+
+<div class="callout callout-info"><strong>先给一个总背景：</strong>推理框架每天都在处理「一堆请求排队，GPU 干活」这件事。请求多了，瓶颈往往不在 GPU 算得多快，而在 <strong>CPU 调度跟不上、GPU 有空等、资源分配不均</strong>。DeepInfer 的六个方法，本质上都在解决这三类问题：<strong>①让 CPU 和 GPU 别再互相等待（3.1）；②让"猜下一个词"更聪明（3.2）；③让长上下文的高昂成本降下来（3.3/3.4）；④让多卡负载更均匀（3.5）；⑤让结果可复现（3.6）</strong>。</div>
+
 <h3>3.1 ZOS（Zero-Overhead Scheduling）零开销调度</h3>
-<p><strong>问题：</strong>推理中 CPU 调度和 GPU 计算是串行的，GPU 常等调度器。</p>
-<p><strong>解法：</strong>decode 的 post-process 延迟一个 step，与下一步 forward 在 GPU 上重叠（<code>worker.py:182-187</code>），让调度器 CPU 开销被 GPU 计算完全掩盖。</p>
-<p><strong>难点与解法：</strong>在途 seq 可能被抢占重算 + varlen 下 seqlen_q 需按上一步采样结果修正，导致 CPU 元数据滞后一步。<code>_correct_seqlens_qk</code>（<code>worker.py:191</code>）用 <code>prepare_zos_inputs</code>（<code>zos.cpp:142</code>）算 <strong>remap</strong>（本步与上步 batch 的 seq 对应关系），GPU 上用上一步 confidence rates 修正 seqlens_q/k，D2H 回读刷新采样元数据。</p>
-<p><strong>token 打包优化</strong>（<code>zos.cpp:31</code>）：无重叠时打包最终 input_ids；有重叠时只填 fresh rows，matched rows 复用上一步 GPU 输出，减少 H2D 拷贝。</p>
-<div class="diagram"><pre>
-decode step N:  Forward ──► post-process(上一步) ──► Sample ──► post-process(当前步, 存入 prev_step)
-                                  │
-decode step N+1: Forward ─────────┘  ← 上一步 post-process 与这里重叠
-</pre></div>
+
+<h4>背景：为什么要做它</h4>
+<p>推理是一个 <strong>「调度 → GPU 算 → 收尾」不断循环</strong>的过程。每一步，CPU 要先决定"这轮给哪些请求算、算几个 token"（调度），然后 GPU 才干活；GPU 算完，CPU 又要做收尾（判断每个请求该停了没、把结果整理出来）。</p>
+<p>问题在于：这些环节是<strong>串行</strong>的。GPU 算得再快，也得等 CPU 想清楚下一步做什么；CPU 在做收尾时，GPU 只能干等着。</p>
+
+<h4>问题：不解决会怎样</h4>
+<p>GPU 是全场最贵的资源，它一有空等，吞吐就掉。传统做法里，每一步的收尾（post-process）都会让 GPU <strong>白等一段 host 时间</strong>——这段等待是纯浪费。</p>
+
+<h4>方法（大白话）：ZOS 怎么解决</h4>
+<p>ZOS 的思路很简单：<strong>把"这一步的收尾"推迟到"下一步 GPU 开算"的同时去干</strong>。既然 GPU 算下一步 forward 时 CPU 反正闲着，那就让 CPU 在这个空档里做上一步的收尾。等于把「CPU 收尾」这块成本，塞进了 GPU 本来就在忙的时间段里，不让它成为额外等待。</p>
+
+<h4>效果：换来什么</h4>
+<p>GPU 不再因为等 CPU 收尾而空转，调度器的开销被 GPU 计算掩盖。吞吐/延迟有改善，尤其是 decode（逐 token 生成）阶段。</p>
+
+<h4>实现细节（详细）</h4>
+<ul>
+    <li><strong>怎么延迟</strong>：每一步里，forward 是异步提交的（源码明确标注 forward 内 <strong>不允许有 cuda synchronize</strong>，见 <code>worker.py</code>），所以 GPU 算 forward 时 host 可以回头做上一步的收尾。收尾被存成 <code>prev_step_state</code>，留到下一步才处理（<code>worker.py:182-187</code>）。</li>
+    <li><strong>难点——元数据滞后</strong>：收尾延迟后，CPU 就<strong>不知道每个请求本轮实际接受了几个 draft token</strong>（这影响下一步每个请求的 KV 位置、采样位置）。DeepInfer 的解法是：用 <code>compute_seqlens_q_by_confidence_rates</code> / <code>compute_seqlens_k_zos</code> 在 <strong>GPU 上反算</strong>出正确的长度，再拷回 CPU 修正（<code>_correct_seqlens_qk</code>，<code>worker.py:191</code>）。这是 ZOS 相对普通异步调度最独特的一步。</li>
+    <li><strong>一个省拷贝的技巧</strong>：如果本步和上一步的请求<strong>大部分相同</strong>，那些 token 的输入可以复用上一步 GPU 的输出，只填新进来的行（<code>zos.cpp:31</code>），减少 host→GPU 拷贝。</li>
+</ul>
+
+<h4>一句话</h4>
+<p><strong>ZOS = 把 CPU 收尾藏进 GPU 干活的时间里，别让 GPU 等 CPU。</strong>它不是让算子更快，而是让 CPU 和 GPU 不再互相干等。</p>
 
 <h3>3.2 DSpark / MTP 变长自适应推测解码</h3>
-<p><strong>不是固定 speculative length。</strong>Scheduler 先选定请求；<code>MTPVarlen.schedule</code>（<code>mtp_varlen.hpp:150</code>）再动态选择<strong>验证 token 总预算 total_q 和每请求验证长度</strong>，不增删请求。<code>best_bsz</code> 不是请求数；最大化的是 <code>估计接受 token / 估计耗时</code> 代理目标，不是实测吞吐保证。</p>
+
+<h4>背景：为什么要做它</h4>
+<p>大模型是<strong>一个字一个字</strong>往外蹦的，每蹦一个字都要 GPU 算一整遍模型，很慢。有个加速 trick 叫"推测解码"：让模型<strong>先猜几个字</strong>，如果猜对了就一次跳过好几个字，白赚速度。</p>
+
+<h4>问题：不解决会怎样</h4>
+<p>传统推测解码里，猜几个字、验证几个字，通常是<strong>拍脑袋定死的</strong>（比如固定猜 5 个）。但不同情况下最优值完全不同：模型对某些句子很自信（能多猜），对另一些不自信（猜了也白猜）。固定长度要么太保守（浪费加速），要么太激进（猜错重来更慢）。</p>
+
+<h4>方法（大白话）：DSpark 怎么解决</h4>
+<p>DSpark 把"猜几个字"从固定值变成<strong>每步动态决定</strong>：根据<strong>模型最近猜对的概率</strong>和<strong>最近一步 GPU 到底要花多久</strong>，实时算出「这轮总共验证多少字、给每个请求分多少」最划算。相当于一个<strong>实时在线的优化器</strong>，每步都重新算一次最优解。</p>
+
+<h4>效果：换来什么</h4>
+<p>推测解码从"固定启发式"变成"在线自适应"，在模型自信时多猜、不自信时少猜，整体吞吐更接近理论上限。</p>
+
+<h4>实现细节（详细）</h4>
 <ul>
-    <li><strong>耗时估计自适应</strong>：<code>ForwardRuntimeEstimator</code> 用双层中位数滑动窗口动态拟合 <code>slope_ms = (forward_ms - baseline) / graph_size</code>；运行时由 engine 用 CUDA event 实测喂入持续校正。</li>
-    <li><strong>接受率</strong>：MTP confidence head 逐位累乘（process_MTPInfo），N-2 轮算 best_bsz、N-1 轮贪心分配每请求 seqlen_q。</li>
-    <li><strong>DFlash 深度集成</strong>：draft 特征随主模型 CUDA graph 捕获写入 main KV cache；MTPInfoPool 跨 step 稳定存储。</li>
+    <li><strong>怎么估计"GPU 要多快"</strong>：用一个滑动窗口动态拟合每个请求的耗时斜率（<code>ForwardRuntimeEstimator</code>，<code>mtp_varlen.hpp</code>），并让引擎用 CUDA event 实测每步真实耗时、持续喂回去校正模型。</li>
+    <li><strong>怎么估计"能猜对多少"</strong>：每个 token 有个"置信度"，把所有候选字猜对的概率<strong>累乘</strong>，就得到这轮大概能跳过几个字（<code>process_MTPInfo</code>）。</li>
+    <li><strong>怎么分配</strong>：用上一轮的置信度数据，把验证预算<strong>贪心地分给猜得最准的请求</strong>。</li>
+    <li><strong>和模型深度绑定</strong>：猜测用的 draft 特征，随主模型的 CUDA graph 一起捕获写入 KV cache，避免额外开销。</li>
 </ul>
-<p><strong>价值：</strong>推测解码从"启发式"变成"在线优化问题"。</p>
+
+<h4>一句话</h4>
+<p><strong>DSpark = 让"猜几个字"变成每步实时算出来的最优值，而不是拍脑袋定死。</strong></p>
 
 <h3>3.3 V4 混合注意力一体化元数据</h3>
-<p>dense 压缩层 + sparse（top-k 索引注意力）+ SWA + YoCo + engram，全在调度阶段生成<strong>块加载计划</strong>（<code>block_load_plan.cpp</code> 的段表 <code>[src_block_id, src_begin, src_end, dst_offset]</code>），把多层不同注意力的 KV 加载统一成一次 GPU 拷贝指令。</p>
-<p><strong>价值：</strong>把"scatter/gather KV 加载"变成预编译的加载指令，减少内核发射。</p>
+
+<h4>背景：为什么要做它</h4>
+<p>DeepSeek 的 V4 模型，注意力不是一种，而是<strong>好几种混合</strong>：有压缩的、有稀疏的（只看 top-k 关键 token）、有滑窗的（只看附近 token）、还有各种缓存复用。每种都要从 KV cache 里取不同的数据。</p>
+
+<h4>问题：不解决会怎样</h4>
+<p>如果每种注意力都<strong>各取各的、运行时逐个查表</strong>，那每步都要做大量零散的"取数据"操作，内核发射次数多，GPU 被这些小操作拖慢。</p>
+
+<h4>方法（大白话）：怎么解决</h4>
+<p>把"这一步要从哪取哪些 KV、放到哪"这件事，<strong>提前在调度阶段规划好，编成一张"搬运计划表"</strong>（每一条都是"从哪块、取哪段、放到哪"）。真正执行时，GPU 照着这张表<strong>一次拷贝</strong>就把所有注意力要的数据都备好了，不用每种注意力临时想。</p>
+
+<h4>效果：换来什么</h4>
+<p>把零散的"边取边算"变成"<strong>先规划、一次搬完</strong>"，减少内核发射，让多层混合注意力在一个 step 里高效完成。</p>
+
+<h4>实现细节（详细）</h4>
+<ul>
+    <li>调度阶段生成<strong>块加载计划</strong>（<code>block_load_plan.cpp</code>），每条是 <code>[src_block_id, src_begin, src_end, dst_offset]</code> 的段表，src 为 -1 表示零填充。</li>
+    <li>dense 压缩层、sparse 索引、SWA 环形缓存、YoCo 截断，全部在这一张表里统一表达。</li>
+    <li>把"scatter/gather KV"（零散取放）变成一次 GPU 拷贝指令。</li>
+</ul>
+
+<h4>一句话</h4>
+<p><strong>V4 一体化元数据 = 把多种注意力的"取数据"提前规划成一张搬运表，一次搬完，别边算边取。</strong></p>
 
 <h3>3.4 YoCo Bounded Replay</h3>
+
+<h4>背景：为什么要做它</h4>
+<p>长文本推理时，<strong>预填充（prefill，读一遍长输入）特别贵</strong>，尤其要反复重算。YoCo 想减少这个成本。</p>
+
+<h4>问题：不解决会怎样</h4>
+<p>长上下文的 KV cache 占显存、prefill 时间长。如果每次都全量重算，成本随文本长度线性涨，很贵。</p>
+
+<h4>方法（大白话）：怎么解决</h4>
+<p>把模型切成两半：前半负责"读长输入"（prefill），后半负责"生成"（consumer）。后半生成时，它其实<strong>只需要看附近一小段滑窗</strong>，不用看完整的长历史。YoCo 就<strong>只保留这附近的一小段，把不需要的旧内容丢掉</strong>，减少后面要重算的量。</p>
+
+<h4>效果：换来什么</h4>
+<p>decoder 阶段的 prefill 工作量大幅下降（只算有界的一小段），长上下文推理更省显存、更快。</p>
+
+<h4>实现细节（详细）</h4>
 <ul>
-    <li>模型切成 <strong>prefill 半区 + consumer 半区</strong>，consumer 层 SWA 有界截断，减少 decoder prefill。</li>
-    <li><strong>compact 模式</strong>（真截行 + CP 重分布）/ <strong>mask 模式</strong>（只收窄可见域 pivots）双模式。</li>
-    <li>约束：<code>keep_tokens ≥ window_size + max_backtracking_tokens</code>。</li>
+    <li>模型按层切分：<code>n_prefill_layer</code> 之前是 prefill 半区、之后是 consumer 半区（<code>config.py</code> 由 <code>ratio==1</code> 首次出现位置决定）。</li>
+    <li>两种截断模式：<strong>compact</strong>（真把行截短成紧凑布局，CP>1 时重做 zigzag 切分）/ <strong>mask</strong>（只收窄可见域 pivots，行数不变）。</li>
+    <li>约束：保留的 token 数必须 ≥ 滑窗大小 + 最大回溯长度，否则会算错。</li>
 </ul>
+
+<h4>一句话</h4>
+<p><strong>YoCo = 生成时只看附近一小段，别把整个长历史都重算一遍。</strong></p>
 
 <h3>3.5 EPLB 运行时热重排</h3>
+
+<h4>背景：为什么要做它</h4>
+<p>DeepSeek 是 MoE（混合专家）模型，每层有几十上百个"专家"。推理时请求会<strong>偏向访问某些专家</strong>，导致有的专家忙死、有的闲死——忙死的卡就成了瓶颈。</p>
+
+<h4>问题：不解决会怎样</h4>
+<p>专家负载不均，忙的卡拖慢整体，GPU 利用率上不去。</p>
+
+<h4>方法（大白话）：怎么解决</h4>
+<p>给热门专家<strong>多做几个副本</strong>，并把专家重新分配到不同的卡上，让每张卡的活差不多。而且这个"重新分"是在<strong>运行中偷偷做的</strong>——一边给请求服务，一边把权重挪好，不停机。</p>
+
+<h4>效果：换来什么</h4>
+<p>专家负载更均衡，卡的利用率提高，吞吐提升；重排不影响正在跑的前向。</p>
+
+<h4>实现细节（详细）</h4>
 <ul>
-    <li>冗余 expert 动态分配（贪心"加副本后最大每副本负载最小"）+ 贪心跨 rank 排布。</li>
-    <li><strong>运行时 inplace 权重重排</strong>：NCCL batched P2P 或 symm_mem IPC 镜像（免通信），权重 shuffle 不影响前向执行。</li>
+    <li><strong>分配副本</strong>：贪心——每次给"加一个副本后最大每副本负载最小"的专家复制一份（<code>policy.py</code>）。</li>
+    <li><strong>跨卡排布</strong>：按历史负载，把每个专家分到使"每步最大卡负载"最小的卡。</li>
+    <li><strong>热重排不打断</strong>：用 NCCL 批量 P2P 或对称内存镜像（<code>symm_mem</code>）直接读对端权重，避免通信；权重 shuffle 时前向照常执行。</li>
 </ul>
 
+<h4>一句话</h4>
+<p><strong>EPLB = 给热门专家加副本、重新分卡，让负载平均，而且不停机偷偷重排。</strong></p>
+
 <h3>3.6 确定性采样 + batch-invariant</h3>
+
+<h4>背景：为什么要做它</h4>
+<p>推理结果想<strong>可复现</strong>——同样输入、同样参数，应该出同样结果。但 GPU 计算和采样有随机性，尤其"这轮批里有几个请求"会影响结果。</p>
+
+<h4>问题：不解决会怎样</h4>
+<p>结果不可复现，测试不稳定，也难排查 bug（换个批次就换结果，没法定位是代码问题还是随机性）。</p>
+
+<h4>方法（大白话）：怎么解决</h4>
+<p>把随机性<strong>锁到"每个请求自己"</strong>上，而不是"这轮批次"上。给每个请求一个固定种子，采样时按"这个请求 + 它生成了第几个字"来算随机数，跟批次里有多少人无关。这样批大小怎么变，同一个请求的结果都不变。</p>
+
+<h4>效果：换来什么</h4>
+<p>同一请求在任何批次下结果一致（batch-invariant），配合固定种子可完全复现。对测试、debug、缓存复用都很值。</p>
+
+<h4>实现细节（详细）</h4>
 <ul>
-    <li>RNG 用 <code>seq_seeds</code> + 位置 hash（<code>DRAFT_POS_HASH_MUL</code>）+ tag（"default"/"mtp"）分隔命名空间。</li>
-    <li>官方确定性支持条件为 batch-invariant 模式、固定请求 seed，并关闭变长 MTP 验证（<code>ENABLE_MTP_VARLEN=0</code>，仅 NVIDIA）；不能只靠固定 seed 或 batch-invariant 单项开关保证完整自由采样结果一致。本报告未进行端到端实测。</li>
+    <li>RNG 用 <code>seq_seeds</code> + 位置 hash（<code>DRAFT_POS_HASH_MUL</code>）+ tag（"default"/"mtp"）分隔命名空间，把随机性绑定到"请求+位置+用途"。</li>
+    <li>官方确定性支持条件是 batch-invariant 模式 + 固定请求 seed + 关闭变长 MTP 验证（<code>ENABLE_MTP_VARLEN=0</code>，<strong>仅 NVIDIA</strong>）；不能只靠单个开关保证完整自由采样一致。本报告未做端到端实测。</li>
     <li>结构化输出（regex/JSON/EBNF）由 xgrammar 编译、bitmask 异步 pinned 拷贝、MTP 下逐 draft 独立 mask。</li>
 </ul>
+
+<h4>一句话</h4>
+<p><strong>确定性采样 = 把随机性锁到每个请求自己身上，跟批次大小无关，结果可复现。</strong></p>
 
 <h2 id="part4">第 4 章：系统架构</h2>
 
