@@ -25,6 +25,7 @@
 
 ## 当前用户需求与决定
 
+- **高优调研项（2026-10-20）**：**DeepInfer — DeepSeek 官方推理框架**。DeepSeek 今天（10-20）开源其生产服务推理框架 `deepseek-ai/DeepInfer`（Apache-2.0，仅 2 commit、Python 234 万行 + C++ 27 万行，支持 NVIDIA SM100 + 华为 Ascend 950 NPU）。用户定为项目高优先调研项。初览笔记见 [notebook/frameworks/deepinfer-initial-survey.md](notebook/frameworks/deepinfer-initial-survey.md)；与 verl/vLLM/FlashMLA/DeepEP/Ascend 既有积累高度相关（batch-invariant、P/D 分离、MTP、MoE EPLB、NPU）。
 - **方向偏好**：用户希望近期自主运行重点跟进 verl 与 AReaL 两个 RL 训练框架（2026-10-20）。verl 已是贡献主轨道；AReaL（areal-project，蚂蚁系，合并效率 91% 为活跃社区最高）作为新增关注/潜在贡献轨道。**2026-10-20 已建立 AReaL 贡献轨道**（[readme](open-source/areal/readme.md) · [tracker](open-source/areal/tracker.md)）：首次扫描确认无未认领贡献空间（reporter 自修规律与 verl 相同），跨框架观察 #1730 M2PO microbatch 与 verl #7913 同类、同 reporter。**用户判定（2026-10-20 16:xx）：AReaL prompt_mean 切分敏感点（§10/§10.3/§10.5，双后端同源）研究价值较高，定为优先推进项；已确认 VPN 连上后做 GPU 实测（ppo_n_minibatches 2 vs 4 两后端对照）闭环**。
 - 项目名称、首页标题和仓库标识统一使用 `perpetual-learning`，删除首页旧名称标识行。项目定位继续保留 [README.md](README.md#项目说明) 中的用户原文。
 - README.md 是整个项目的总览、对外呈现与用户导航，按主题、框架、成果提供快捷入口；文件组织使用可点击的目录表，作为统一入口置于项目说明与运作机制之后，不再单设重复的“项目导航”章节。[AGENTS.md](AGENTS.md) 为 Agent 内核；本文件记录当前工作上下文。
@@ -54,7 +55,8 @@
 ## 待讨论与下一步
 
 1. **等待用户授权/资源**（长期未决，见「运行接续」5 项）——发布评论/文档、#8281 发布形态、方向调整。#8237 已收尾（PR #8286 ready + issue 已回）。
-2. **优先推进（用户 2026-10-20 判定）**：AReaL prompt_mean 切分敏感点 GPU 实测闭环——pppo_n_minibatches 2 vs 4 两后端（FSDP2/Megatron）各一组对照，确认线性放大是否构成真实 defect。**待 VPN 连接可用后配环境执行**。若确认 defect → 可提 PR；否则作为扎实 review 依据。其次是 verl：#8281 已深挖完成（analysis-done，待发布形态决定）；#8250 诊断评论、clip 语义文档澄清稿已就绪待授权；#8252 RFC 已评估（参与价值在技术回复、不建议实现）；vLLM #39096 评论待授权。verl 新 issue 池当前归零（10-19 后无新）。AReaL 无未认领空间（可复用 verl 经验作 #1730 技术回复）。
+2. **高优调研（用户 2026-10-20 定）**：**DeepInfer**（DeepSeek 官方推理框架，今日开源）——深读部署 Q&A、engine 调度器与 batch-invariant 实现，对照 vLLM/SGLang/verl/FlashMLA/DeepEP，评估 NPU（Ascend 950）+ MTP/EPLB 差异化与本地可跑性。见 [deepinfer-initial-survey.md](notebook/frameworks/deepinfer-initial-survey.md)。
+3. **优先推进（用户 2026-10-20 判定）**：AReaL prompt_mean 切分敏感点 GPU 实测闭环——pppo_n_minibatches 2 vs 4 两后端（FSDP2/Megatron）各一组对照，确认线性放大是否构成真实 defect。**待 VPN 连接可用后配环境执行**。若确认 defect → 可提 PR；否则作为扎实 review 依据。其次是 verl：#8281 已深挖完成（analysis-done，待发布形态决定）；#8250 诊断评论、clip 语义文档澄清稿已就绪待授权；#8252 RFC 已评估（参与价值在技术回复、不建议实现）；vLLM #39096 评论待授权。verl 新 issue 池当前归零（10-19 后无新）。AReaL 无未认领空间（可复用 verl 经验作 #1730 技术回复）。
 3. 按课题逐步关联现有实验执行材料与 notebook/experiments/ 的分析记录；新增实验优先就近组织，维护双向入口。
 4. 维护按职责划分的一级目录；新增或整理内容时整体检查归属、引用和输出路径，避免再次堆出按文件类型划分的一级目录。根目录 projects/ 暂不新增。
 5. 按价值、使用关系和证据继续筛选历史工具，避免只按文件名批量归档；其余历史工具继续按同一标准检查。
