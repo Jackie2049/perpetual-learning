@@ -83,5 +83,28 @@ class RenderingTests(unittest.TestCase):
         self.assertIn('href="#section"', result)
 
 
+class ContributionTests(unittest.TestCase):
+    def test_section_keeps_nested_content_but_excludes_history(self):
+        source = '# Project\n## 当前活跃\nCurrent\n### Detail\nEvidence\n## 已过期\nOld'
+        self.assertEqual(build.section_source(source, '当前活跃'), 'Current\n### Detail\nEvidence')
+        self.assertEqual(build.section_source(source, 'missing'), '')
+
+    def test_tracker_cards_keep_status_pr_and_source_links(self):
+        source = '| 候选 | PR | 状态 |\n|---|---|---|\n| Fix #12 | [#34](https://github.com/example/project/pull/34) | **已合并**，见 [验证](proof.md) |'
+        items = build.progress_items(build.render(source, 'open-source/test/tracker.md', 'abc123'))
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]['title'], 'Fix #12')
+        self.assertIn('已合并', items[0]['summary'])
+        self.assertIn('/pull/34', items[0]['html'])
+        self.assertIn('/blob/abc123/open-source/test/proof.md', items[0]['html'])
+
+    def test_handoff_keeps_negative_conclusion_and_verification_boundary(self):
+        source = '- **还不是已证实缺陷。** 尚无 PR。\n- CPU 通过，GPU 未验证。'
+        items = build.progress_items(build.render(source, 'open-source/test/handoff.md', 'abc123'))
+        self.assertEqual(len(items), 2)
+        self.assertEqual(items[0]['title'], '还不是已证实缺陷。')
+        self.assertIn('GPU 未验证', items[1]['summary'])
+
+
 if __name__ == '__main__':
     unittest.main()
