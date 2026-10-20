@@ -82,14 +82,19 @@ def _cap_text_prompt_length(self, prompt_ids: list[int]) -> list[int]:
 
 ## 竞争与窗口
 
-- issue 创建 2026-10-19，0 评论，0 引用 PR（2026-10-20 核验）。
-- reporter（Jackmeson1）深挖充分，明确把 option 1/2 决策抛给社区，**未自修**——与「reporter 深挖 ≈ reporter 已开 PR」的 4/4 模式不同，有贡献空间。
+- issue 创建 2026-10-19，0 评论（2026-10-20 核验）。
+- **reporter（Jackmeson1）深挖充分，明确把 option 1/2 决策抛给社区，未自修**——与「reporter 深挖 ≈ reporter 已开 PR」的 4/4 模式不同，有贡献空间。
+- **（2026-10-20 新增核验）存在关联旧 PR #4600**：reporter 在创建 #8281 后 6 秒内即把 #8281 交叉链接到 PR [#4600](https://github.com/verl-project/verl/pull/4600)（fabianlim，`[SingleTurnAgentLoop] fix: Take care of truncation`），并在 #4600 评论里将 #8281 表述为「current-main 契约讨论」。
+  - #4600 是同方向（四策略 left/right/middle/error）的**旧实现**：创建于 2025-12-18，早于 Continuous Token 重构（#6779/#6804 引入 `_cap_text_prompt_length`），`mergeable_state=dirty`（与 main 冲突）、引用旧 issue #2069、维护者 2026-09-21 请求 review 后仍未合并——**实际已陈旧、非当前修复点**。
+  - 当前 `SingleTurnAgentLoop.run` 已走 `ct_build_initial_tokens → _cap_text_prompt_length` 共享路径，因此 #4600 在 `run` 里再加截断会与基类 CT 路径冗余/冲突；**正确的修复点是共享的 `_cap_text_prompt_length`**（本候选的目标），覆盖 single_turn / tool_agent / 所有 CT 构建 loop，比 #4600 更通用且贴合当前架构。
+  - 含义：贡献空间仍存在，但不是「0 竞争」；reporter 把 #8281 定位为「契约讨论」而非「#4600 重复」，评论形态比 PR 更契合。#4600 是陈旧参考，不是真正的竞争者。
 - verl 认领窗口 0-2 天，已过约 1 天，若要提交需尽快授权。
 
 ## 建议发布形态
 
 可选：
-1. **comment**：给 reporter 的技术回复——确认复现、指出 RLHFDataset 层 truncation 空契约、给出 option 1 的具体 patch + error 路径的训练器行为分析。低风险、对上游有价值。
-2. **PR**：option 1 完整实现 + 单测——**已本地备好**（源修复 + `test_cap_text_prompt_length.py`，patch 见上）。发布前仍需确认 error 行为与 maintainer 方向（见决策点）。
+
+1. **comment（推荐，契合 reporter 的「契约讨论」定位）**：给 reporter 的技术回复——确认复现、指出 RLHFDataset 层 truncation 空契约、说明正确的修复点是共享的 `_cap_text_prompt_length`（而非 #4600 的旧 `run` 内逻辑，因当前架构已走 CT 共享路径）、给出 option 1 的具体 patch + error 路径训练器行为分析。低风险、对上游有价值，且不与陈旧 #4600 冲突。
+2. **PR**：option 1 完整实现 + 单测——**已本地备好**（源修复 + `test_cap_text_prompt_length.py`，patch 见上）。发布前需：①确认 error 行为与 maintainer 方向（见决策点）；②在 PR 描述中说明为何不重复现有 #4600（按 verl 贡献政策「PR 描述须说明为何不重复现有 PR」）——要点：#4600 预 CT 重构、dirty、非当前共享修复点，本 PR 覆盖 current-main 的 `_cap_text_prompt_length`。
 
 不发布评论则本地沉淀作 review/跟进依据。
