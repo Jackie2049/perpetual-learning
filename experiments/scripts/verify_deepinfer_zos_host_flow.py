@@ -7,6 +7,7 @@ PR #54 structured-output count model: add --check-so-counter.
 PR #54 output-array ownership probe: add --check-output-copy --pybind-include
 /path/to/pybind11/include [--python-include /path/to/Python/Headers].
 This mode compiles a tiny CPU extension, not DeepInfer or its output pool.
+CP lifecycle/control-plane model: add --check-worker-lifecycle (no Linux/device execution).
 Requires Python 3.9+ and numpy; no torch.
 Three Worker method bodies are compiled unchanged from AST, with decorators
 removed and hardware dependencies replaced by explicit doubles. Metadata
@@ -17,6 +18,7 @@ import argparse
 import ast
 import hashlib
 import importlib.util
+import pickle
 import re
 import shutil
 import subprocess
@@ -413,6 +415,169 @@ PYBIND11_MODULE(_deepinfer_array_probe, m) {
         print("No DeepInfer build, torch, actual pointers, destructor, device or performance measurement.")
 
 
+def check_worker_lifecycle(root):
+    """Run original control-plane bodies with in-memory ring/clock/resource doubles.
+
+    This checks ordering, dispatch and timeout forwarding, not shared-memory
+    visibility, concurrent processes, prctl, collectives or kernel cleanup.
+    """
+    base_path = root / "deepinfer/worker/base.py"
+    parallel_path = root / "deepinfer/model_executor/parallel_utils/parallel_state.py"
+    queue_path = root / "deepinfer/distributed/shm_broadcast.py"
+    trees = {}
+    for path in (base_path, parallel_path, queue_path):
+        raw = path.read_bytes()
+        trees[path] = ast.parse(raw)
+        print(f"{path.name} sha256={hashlib.sha256(raw).hexdigest()}")
+    base = next(n for n in trees[base_path].body if isinstance(n, ast.ClassDef) and n.name == "WorkerBase")
+    init = next(n for n in base.body if isinstance(n, ast.FunctionDef) and n.name == "__init__")
+    stages = [ast.unparse(n.func) for n in sorted(ast.walk(init), key=lambda n: getattr(n, "lineno", 0))
+              if isinstance(n, ast.Call) and ast.unparse(n.func) in
+              {"self._init_torch", "self.init_model", "self.init_dist", "self.start_slave_worker_loop"}]
+    assert stages == ["self._init_torch", "self.init_model", "self.init_dist", "self.start_slave_worker_loop"]
+    print("Static initializer order:", " -> ".join(stages))
+    base.body = [n for n in base.body if isinstance(n, ast.FunctionDef)
+                 and n.name in {"start_slave_worker_loop", "stop", "run_workers"}]
+    assert len(base.body) == 3
+    queue = next(n for n in trees[queue_path].body if isinstance(n, ast.ClassDef) and n.name == "MessageQueue")
+    queue.body = [n for n in queue.body if isinstance(n, ast.FunctionDef)
+                  and n.name in {"_spin_wait", "acquire_write", "acquire_read", "enqueue", "dequeue"}]
+    assert len(queue.body) == 5
+    broadcast = next(n for n in trees[parallel_path].body
+                     if isinstance(n, ast.FunctionDef) and n.name == "cp_broadcast_object")
+    trace, clock = [], NS(now=0, bound=False)
+
+    class ProbeExit(Exception):
+        pass
+
+    class ProbeBound(Exception):
+        pass
+
+    def fake_exit(code):
+        trace.append(("exit", code))
+        raise ProbeExit
+
+    def fake_yield():
+        clock.now += 1
+        if clock.bound and clock.now >= 6:
+            raise ProbeBound  # stop a default-unbounded source loop without hanging
+
+    pg = NS(cpu_cp_group=NS(size=lambda: 2), mq=None,
+            cleanup_shm_broadcast=lambda: trace.append("shm.cleanup"))
+    ns = {
+        "contextmanager": contextmanager, "pickle": pickle, "PG": pg,
+        "os": NS(_exit=fake_exit, sched_yield=fake_yield),
+        "time": NS(monotonic=lambda: clock.now),
+        "envs": NS(DEEPINFER_RINGBUFFER_WARNING_INTERVAL=2),
+        "logger": NS(debug=lambda *args: trace.append("warning-log")),
+        "signal": NS(SIGKILL=9),
+        "set_pdeathsig": lambda sig: trace.append(("pdeath-register", sig)),
+        "dist": NS(barrier=lambda: trace.append("barrier"),
+                   destroy_process_group=lambda: trace.append("dist.destroy")),
+        "userbuffer": NS(close=lambda: trace.append("userbuffer.close")),
+        "cpu_timer": NS(record=lambda *args, **kwargs: nullcontext()),
+    }
+    future = ast.ImportFrom(module="__future__", names=[ast.alias(name="annotations")], level=0)
+    module = ast.Module(body=[future, base, queue, broadcast], type_ignores=[])
+    exec(compile(ast.fix_missing_locations(module), "<DeepInfer CP control-plane AST>", "exec"), ns)
+
+    class Ring:
+        n_reader, max_chunks, max_chunk_bytes = 1, 1, 128
+
+        def __init__(self):
+            self.metadata, self.data = bytearray(2), bytearray(128)
+
+        @contextmanager
+        def get_metadata(self, index):
+            assert index == 0
+            yield memoryview(self.metadata)
+
+        @contextmanager
+        def get_data(self, index):
+            assert index == 0
+            yield memoryview(self.data)
+
+    ring = Ring()
+
+    def make_queue(writer):
+        q = ns["MessageQueue"]()
+        q._is_writer, q._is_local_reader, q._is_remote_reader = writer, not writer, False
+        q.n_local_reader, q.n_remote_reader, q.local_reader_rank = 1, 0, 0
+        q.buffer, q.current_idx = ring, 0
+        return q
+
+    writer, reader = make_queue(True), make_queue(False)
+    worker = ns["WorkerBase"]()
+    worker.is_driver_worker = True
+    worker.model_runner = NS(destroy_cuda_graphs=lambda: trace.append("graphs.destroy"))
+    worker.probe = lambda **kwargs: trace.append(("driver-method", kwargs)) or "driver-result"
+    pg.mq = writer
+    assert worker.run_workers("probe", driver_kwargs={"local": 9}, token=7) == "driver-result"
+    assert list(ring.metadata) == [1, 0]  # driver returned before reader consumed command
+    assert reader.dequeue() == ("probe", {"token": 7})
+    assert list(ring.metadata) == [1, 1]
+    assert trace == [("driver-method", {"local": 9, "token": 7})]
+    print("Dispatch: driver result precedes reader consumption; read flag is not method completion.")
+    trace.clear()
+    pg.cpu_cp_group = NS(size=lambda: 1)
+    worker.run_workers("probe", token=8)
+    assert list(ring.metadata) == [1, 1] and trace == [("driver-method", {"token": 8})]
+    pg.cpu_cp_group = NS(size=lambda: 2)
+
+    trace.clear()
+    writer.enqueue(("stop", {}))
+    pg.mq, worker.is_driver_worker = reader, False
+    try:
+        worker.start_slave_worker_loop()
+    except ProbeExit:
+        pass
+    else:
+        raise AssertionError("slave stop must leave the command loop")
+    cleanup = ["barrier", "userbuffer.close", "barrier", "graphs.destroy", "shm.cleanup", "dist.destroy"]
+    assert trace == [("pdeath-register", 9), *cleanup, ("exit", 0)]
+    trace.clear()
+    worker.is_driver_worker = True
+    worker.stop()
+    assert trace == cleanup
+    trace.clear()
+
+    def failed_close():
+        trace.append("userbuffer.close")
+        raise RuntimeError("injected close failure")
+
+    ns["userbuffer"].close = failed_close
+    try:
+        worker.stop()
+    except RuntimeError as error:
+        assert str(error) == "injected close failure"
+    else:
+        raise AssertionError("expected injected resource failure")
+    assert trace == ["barrier", "userbuffer.close"]
+    print("Stop: register before receive; two barriers precede graph/shm/dist teardown; injected error propagates.")
+
+    trace.clear()
+    ring.metadata[:] = bytes([1, 0])  # unread slot models stalled/absent consumer
+    clock.now = 0
+    try:
+        writer.enqueue("blocked", timeout=2)
+    except TimeoutError:
+        pass
+    else:
+        raise AssertionError("explicit ring timeout was not used")
+    assert clock.now == 3 and list(ring.metadata) == [1, 0]
+    trace.clear()
+    clock.now, clock.bound, pg.mq = 0, True, writer
+    try:
+        ns["cp_broadcast_object"](("stop", {}))
+    except ProbeBound:
+        pass
+    else:
+        raise AssertionError("probe must bound the default no-timeout loop")
+    assert clock.now == 6 and trace.count("warning-log") == 2
+    print("Timeout: explicit deadline raises; wrapper default keeps spinning after warning intervals (bounded by probe).")
+    print("PASS CP host-control contract. Fake ring/clock/prctl/resources; no concurrency, Linux, sockets or devices.")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source_root", type=Path)
@@ -420,12 +585,16 @@ def main():
     modes.add_argument("--check-event-pool", action="store_true", help="PR #54 timing-alias host model; no device execution")
     modes.add_argument("--check-so-counter", action="store_true", help="PR #54 SO upper-bound model; no grammar/device execution")
     modes.add_argument("--check-output-copy", action="store_true", help="CPU pybind constructor probe plus original collect/release")
+    modes.add_argument("--check-worker-lifecycle", action="store_true", help="CP control-plane AST with ring/clock/resource doubles")
     parser.add_argument("--pybind-include", type=Path)
     parser.add_argument("--python-include", type=Path, default=Path(sysconfig.get_path("include")))
     parser.add_argument("--cxx", default=shutil.which("c++") or "c++")
     parser.add_argument("--cxx-flag", action="append", default=[], help="extra compiler flag, repeat as needed")
     args = parser.parse_args()
     root = args.source_root
+    if args.check_worker_lifecycle:
+        check_worker_lifecycle(root)
+        return
     if args.check_output_copy:
         if args.pybind_include is None:
             parser.error("--check-output-copy requires --pybind-include; use the target header version")

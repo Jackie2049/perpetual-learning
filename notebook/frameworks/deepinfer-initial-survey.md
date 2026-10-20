@@ -461,3 +461,56 @@ python -m pytest -q \
 examples._launch 只管理自己创建的本地 DP 子进程。实际 [LLMEngine._init_workers](https://github.com/deepseek-ai/DeepInfer/blob/9a52063a8a0dc86cbbce04fae034e7e037fa3881/deepinfer/engine/llm_engine.py#L368) 还会为 CP rank>0 创建 daemon worker。普通 terminate 不递归终止后代，且跳过退出清理，这是 [标准库的明确边界](https://docs.python.org/3.12/library/multiprocessing.html#multiprocessing.Process.terminate)；**但也不能漏看项目已有的内层保护，直接宣称 CP 一定遗留**：WorkerBase.start_slave_worker_loop 会调用 libc prctl 设置父死 SIGKILL，正常 stop 则另有 barrier→userbuffer.close→destroy graphs/process group→非 driver os._exit 路径。
 
 这些 CP/Gloo/NCCL/Linux 父死信号和跨节点场景均未由上述 macOS 测试覆盖；第二节点用例只在一台机器设置 RANK/WORLD_SIZE。当前正面结论限于：固定 PR 修复了所复现的外层等待顺序/直接子进程收尾问题；不保证全部后代、远端 rank、初始化阶段、共享内存或设备资源清理。已有作者负责该修复，不另造竞争候选或发布 review。下一步先读内层 CP 初始化、RPC 与父死保护的注册时机，按源码与可验证范围划分故障责任，不急于作新缺陷判断。
+
+## 内层 CP 生命周期：父死保护、命令读取与执行完成是三种状态
+
+2026-10-20 23:01 心跳核对 API：main=`774ce244b87cc0eb8d4b94ab9f5de2ab22049f01`，#57 仍 open、head=`9a52063a8a0dc86cbbce04fae034e7e037fa3881`。以下内层文件在二者中 hash 相同，**不是 #57 引入的改变**。读取 engine/WorkerBase/runtime_config、parallel_state、完整 MessageQueue 相关创建/收发/关闭路径及现有共享内存测试，不访问设备。
+
+### 初始化与保护方向
+
+engine 的 `_init_workers` 为 CP rank>0 启动 daemon 子进程，在父 DP 进程内构造 CP0 driver。slave 的 WorkerBase 初始化按 `ModelRunner构造 → _init_torch → init_model → init_dist → gc → start_slave_worker_loop` 前进，**进入 loop 后第一步**才 `set_pdeathsig(SIGKILL)`，再接收命令。这里 init_model 设置环境、设备/NUMA/seed，不能把函数名误读成模型权重已经加载；实际 `load_model` 是 engine 在 `_init_workers` 返回后另发的命令，对 slave 而言在该注册之后才被取出执行。
+
+来源：[WorkerBase](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/worker/base.py#L58)、[engine 初始化](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/engine/llm_engine.py#L232)。init_dist 本身还创建进程组、MessageQueue READY 握手并初始化设备通信，不能等同于“进程一 spawn 就已受父死保护”。源码只在 loop 入口调用该 helper；没有在 helper 内补 parent PID 前后核对。
+
+[Linux 原始手册](https://man7.org/linux/man-pages/man2/PR_SET_PDEATHSIG.2const.html)明确说明，注册之后的父线程终止才触发信号，若父线程及相关 subreaper 在注册前已终止，不会补发；“父”是创建该进程的线程。因而这里存在**需另验的注册前阶段/竞态边界**，但本轮未在 Linux 或真实 worker 上复现，不能据此直接宣布 CP 泄漏或提交修复。它保护的方向是“DP parent 死亡→slave 退出”，不是“slave 死亡→DP parent 立即抛错”的反向监督协议；driver 侧是否因后端通信错误/超时退出需另看实际执行。
+
+### 命令传输不是方法完成回执
+
+[run_workers](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/worker/base.py#L290) 先广播 `(method, kwargs)`，随后在 driver 本地执行并返回本地结果；`driver_kwargs` 不发给 slave。[cp_broadcast_object](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/model_executor/parallel_utils/parallel_state.py#L17) 的 writer 路径 enqueue 后直接返回，reader 路径 dequeue 返回命令。slave loop 拿到命令之后才 getattr 调用方法。
+
+| 状态 | 具体含义 | 不能代表什么 |
+|---|---|---|
+| ring written flag=1 | 命令槽已发布 | 不代表 slave 已读取 |
+| 对应 read flag=1 | dequeue 已取出并反序列化命令，槽可在所有 reader 消费后复用 | 不代表方法执行完成或结果正确 |
+| run_workers 返回 | driver 本地方法已返回 | 不是汇总所有 slave 结果；具体方法可另用 collective 同步 |
+| sentinel ready | 外层所监督的进程退出 | 不自动表示内层所有 CP 后代都退出 |
+
+“没有控制层完成回执”不等于模型步骤没有同步：barrier、collective、设备依赖可以在具体方法内部建立更强约束。本轮不把异步传输设计本身定为 bug。
+
+### 超时不是一条覆盖所有层的总截止时间
+
+MessageQueue 的 acquire_read/write 可接 timeout，spin 中按 monotonic 检查。但 CP 包装层调用 enqueue/dequeue **未传 timeout**，所以默认 None。`DEEPINFER_RINGBUFFER_WARNING_INTERVAL` 默认60秒，只影响 debug 日志间隔，不会结束等待。`DEEPINFER_GLOO_TIMEOUT` 默认14,400秒用于初始 Gloo process group，不是这段 Python ring spin 的截止时间。
+
+另据源码，READY 的 socket.recv、overflow/remote 的 send/recv 不由 ring 的 timeout 统一覆盖；本轮没有执行 ZMQ 或验证这些通道。不能把队列 API 的一个可选 timeout 参数当成端到端故障恢复保证。来源：[MessageQueue](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/distributed/shm_broadcast.py#L285)、[环境定义](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/environ.py)。
+
+### 正常关闭依赖参与者，而强制终止不等于资源协议已完成
+
+WorkerBase.stop 原始顺序为 `barrier → userbuffer.close → barrier → destroy_cuda_graphs → cleanup_shm_broadcast → destroy_process_group → slave os._exit(0)`；driver 不走 os._exit。共享内存 cleanup 关闭本地句柄，并由 creator unlink；这与“让所有方法执行完”是不同责任。stop 的后续步骤没有逐项 finally：前面的 barrier 或 userbuffer.close 若阻塞/抛错，就不能推断图/共享内存/进程组已清理。这里是失败路径边界，不是本轮真实死锁或资源泄漏证据。
+
+### 已执行的限定主机检查
+
+扩展 [既有主机脚本](../../experiments/scripts/verify_deepinfer_zos_host_flow.py)，不另建重复实验入口：
+
+```bash
+python3 experiments/scripts/verify_deepinfer_zos_host_flow.py /path/to/DeepInfer --check-worker-lifecycle
+```
+
+AST 保留原始 slave loop/stop/run_workers、cp_broadcast_object 与 MessageQueue 五个收发/spin 方法，初始化次序仅静态检查。使用单槽 bytearray、假 monotonic/yield、假 prctl/resource/collective，**不使用真实 shared_memory、线程/进程、Linux 信号、torch 或设备**。main/base 和 #57 head 两个检出均首次通过，验证：
+
+- driver 返回时 slot 仍未读；随后实际 dequeue 将 read flag 置1，但尚未调用 remote 方法；单 CP 跳过广播。
+- loop 先调用注册替身再取 stop 命令；slave/driver 分别按完整关闭次序退出/返回；注入 userbuffer.close 异常后，仅第一 barrier/close 执行，异常传播。
+- 人为未读槽：显式 timeout=2 在第三个假时间单位抛 TimeoutError；默认包装调用在两次 debug 间隔后仍等待，由测试在第六个假时间单位主动中断，避免真卡住。合成时间不是时延测量。
+
+Python3.9.6/numpy2.0.2；源码 SHA256：base.py `40e6ca29aebd9d475eaad4b86326783f76dba2b73feaa51d86a200b7704a05ed`，parallel_state.py `3565b2449abff4df0df2f979061a73364886c93602218b43c2f86c70f2629801`，shm_broadcast.py `aa461587184bf979acb813ed6ee646665715e3eaaca286a9270a5e4ceb559006`。#54 event/SO/output-copy 与原始主机时序模式回归正常；这不将本轮模拟升级为真实通信验证。
+
+已有 `tests/distributed/test_shm_broadcast.py` 包含真实 ShmRingBuffer cleanup，以及4进程 Gloo/约400MB随机数组广播；已读测试，但本机未安装 torch，也未运行该测试。当前不需要重复创造“无人处理的故障”或改上游方案。下一步优先核验现有共享内存 close/unlink 与 memoryview 生命周期，复用现有清理断言，明确内存回收与方法执行回执的不同边界。

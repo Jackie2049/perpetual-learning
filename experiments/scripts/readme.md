@@ -16,6 +16,7 @@
 | [areal_prompt_mean_gpu_probe.py](areal_prompt_mean_gpu_probe.py) | 由 M5 单一维护的 AReaL GPU 探针原稿，GPU 集成待验证；M1 的离线修整仅为未应用参考 patch，见 [交接说明](../../open-source/areal/handoff-m5.md)，不要据草稿预检结果判断原稿可运行 |
 | [verify_deepinfer_seed_contract.py](verify_deepinfer_seed_contract.py) | 从指定 DeepInfer 源码提取 seed/EngineType 定义，在无 torch 环境检查 uint64 种子行为和调度默认值；打印输入 SHA256，非 sampler kernel 或模型一致性实测 |
 | [verify_deepinfer_zos_host_flow.py](verify_deepinfer_zos_host_flow.py) | 原始 Worker 主机替身；--check-event-pool 查 #54 计时引用错配；--check-so-counter 查 SO 上界与漏更新故障；--check-output-copy 编译小型 CPU 扩展核验 pybind 数组构造及原始收集/释放分支，需显式提供头文件。非完整 C++ 调度、真实输出池/语法/CUDA/通信/性能验证 |
+| 同上 `--check-worker-lifecycle` | 原始 CP 命令/关闭/队列方法的单槽内存与假时钟检查；区分读标记、方法完成、父死注册和 ring timeout。非 Linux prctl、实际共享内存、多进程、socket 或 collective 验证 |
 | [verify_deepinfer_mtp_budget.py](verify_deepinfer_mtp_budget.py) | 编译原始 MTPVarlen/估时头文件，仅替换 Sequence/TORCH_CHECK 依赖；用穷举前缀 oracle 检查 token 预算、两轮置信度与反馈边界，非 GPU 分配或性能实测；需 C++17 编译器 |
 | [verify_deepinfer_yoco_visibility.py](verify_deepinfer_yoco_visibility.py) | 默认编译原始 YoCo 可见域 C++ helper；--cp-reference-only 组合上游 Python CP 索引参考，检查跨 rank 身份、padding 与绝对 key 坐标。均非完整 metadata、GPU/通信或上游 L1/L2；默认模式需 C++17 编译器 |
 
