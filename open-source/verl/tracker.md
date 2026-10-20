@@ -53,6 +53,7 @@
 |---|---|---|---|
 | — | tool_parser.py 静默吞异常 | REJECTED | Phase ④ 复核：仅 3 处真静默（L404/469/527），14 处有 logger。3 行 debug 日志 + experimental/ 变动快 → 性价比 <10 不达标 |
 | 4 | veomni transformer del_local_after_load 类型标注错误 | HOLD | 单行类型标注，攒着等同文件实质改动顺带修，不单独提 |
+| 5 | [perf] pinned Transformers 慢处理长 prompt (#8261) | REJECTED | 依赖协调型：需升级 Transformers 5.12.1→5.15+，但与 pinned SGLang 0.5.20 冲突（0.5.22 需 TF 5.19+Torch 2.14）；reporter 明确"adopting processor fix without duplicating #8240 工作"、仍在等社区决策；无干净自修点，排除 |
 
 ## 经验教训
 
