@@ -45,3 +45,30 @@
 .contribution-record summary:focus-visible,.project-materials summary:focus-visible{outline:2px solid var(--green);outline-offset:4px}
 @media(max-width:1050px){.contribution-grid{grid-template-columns:1fr}}
 @media(max-width:650px){.sidebar nav{gap:0}.sidebar nav>a{padding:8px 4px;font-size:10px}.contribution-panel{padding:20px}.project-filters{gap:7px}.project-filters a{font-size:11px;padding:6px 10px}.project-heading h2{font-size:23px}}
+
+/* Document summaries are the readable source of truth, never clipped tracker excerpts. */
+.contribution-grid{grid-template-columns:1fr}
+.contribution-panel:only-child{max-width:none}
+.project-records{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-top:24px;align-items:start}
+.contribution-summary{min-width:0;border:1px solid var(--line);border-radius:8px;padding:23px;background:#fff}
+.contribution-summary h3{font-size:17px;line-height:1.7;margin:12px 0 20px;overflow-wrap:anywhere}
+.contribution-summary h3 button{text-align:left;font:inherit;padding:0}
+.summary-meta{display:flex;gap:10px;justify-content:space-between;color:var(--green);font-size:11px}
+.summary-meta span{background:var(--mint);border-radius:4px;padding:3px 8px}
+.summary-field{margin:18px 0}
+.summary-field h4{margin:0 0 5px;font-size:11px;color:#587166;font-weight:600}
+.summary-field .prose{font-size:12px;line-height:1.95;color:#42564e}
+.summary-field .prose p{margin:0}
+.plain-explanation{background:#f1f7f3;border-radius:6px;padding:14px 16px}
+.plain-explanation .prose{font-size:13px;color:var(--ink)}
+.summary-value .prose{font-size:11px;color:var(--muted)}
+.summary-technical{border-top:1px solid var(--line);padding-top:13px}
+.summary-technical>summary{cursor:pointer;font-size:12px;color:var(--green)}
+.summary-technical .prose{font-size:12px}
+.summary-technical>summary:focus-visible{outline:2px solid var(--green);outline-offset:4px}
+.summary-read{margin-top:17px}
+.project-repository{font-size:11px;color:var(--muted)}
+.project-repository p{margin:6px 0}
+.project-overview{font-size:12px;border-left:3px solid #b7d6c8;padding-left:13px;color:#536d60}
+@media(max-width:1050px){.project-records{grid-template-columns:1fr}}
+@media(max-width:650px){.contribution-summary{padding:17px}.contribution-summary h3{font-size:15px}.project-records{gap:14px}.plain-explanation{padding:12px}}
