@@ -17,6 +17,6 @@
 | [verify_deepinfer_seed_contract.py](verify_deepinfer_seed_contract.py) | 从指定 DeepInfer 源码提取 seed/EngineType 定义，在无 torch 环境检查 uint64 种子行为和调度默认值；打印输入 SHA256，非 sampler kernel 或模型一致性实测 |
 | [verify_deepinfer_zos_host_flow.py](verify_deepinfer_zos_host_flow.py) | 提取原始 Worker 主机控制流，用设备/event 替身验证延迟后处理、长度回写等待、placeholder 与 flush 分支；不执行真实 CUDA/C++ remap 或证明设备无竞态 |
 | [verify_deepinfer_mtp_budget.py](verify_deepinfer_mtp_budget.py) | 编译原始 MTPVarlen/估时头文件，仅替换 Sequence/TORCH_CHECK 依赖；用穷举前缀 oracle 检查 token 预算、两轮置信度与反馈边界，非 GPU 分配或性能实测；需 C++17 编译器 |
-| [verify_deepinfer_yoco_visibility.py](verify_deepinfer_yoco_visibility.py) | 编译原始 YoCo 可见域 C++ helper，复用上游 L1 场景/解析参考并补零状态有效下界；不执行完整 metadata、GPU 或上游 L1/L2；需 C++17 编译器 |
+| [verify_deepinfer_yoco_visibility.py](verify_deepinfer_yoco_visibility.py) | 默认编译原始 YoCo 可见域 C++ helper；--cp-reference-only 组合上游 Python CP 索引参考，检查跨 rank 身份、padding 与绝对 key 坐标。均非完整 metadata、GPU/通信或上游 L1/L2；默认模式需 C++17 编译器 |
 
 部分脚本包含历史服务器路径或会修改所安装的框架源码；这是实验代码，运行前应查看对应脚本和验证对象，不能将其视为通用巡检入口。迁移本身不表示重新完成 GPU 验证。

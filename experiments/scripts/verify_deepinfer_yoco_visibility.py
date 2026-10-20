@@ -2,13 +2,18 @@
 """Check the original YoCo C++ visibility helper, not full metadata or attention.
 
 Reuses upstream L1 case shapes/reference via AST, with an explicit valid_start
-extension for zero-state recompute. No torch, extension build, model or device.
+extension for zero-state recompute. --cp-reference-only checks composition of
+the upstream pure-Python CP index references, without C++ compilation.
+No torch, extension build, model or device.
 """
 
 import __future__
 import argparse
 import ast
+from bisect import bisect_right
+from collections import Counter
 import hashlib
+from itertools import accumulate, zip_longest
 from pathlib import Path
 import random
 import shutil
@@ -54,12 +59,100 @@ def load_upstream_reference(path):
     return module
 
 
+def check_cp_references(source):
+    path = source / "deepinfer/model_executor/layers/tilelang_ops/prepare_cp_mirror.py"
+    tree = ast.parse(path.read_text())
+    names = {"prepare_cp_mirror_ref", "yoco_cp_boundary_fused_ref", "_yoco_contrib_pad_len"}
+    nodes = [n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name in names]
+    assert len(nodes) == len(names), "CP reference definitions changed"
+
+    # Python 3.9 host compatibility: preserve the original bodies and enforce
+    # zip(strict=True) semantics in this isolated namespace.
+    def checked_zip(*iterables, strict=False):
+        sentinel = object()
+        for values in zip_longest(*iterables, fillvalue=sentinel) if strict else zip(*iterables):
+            if any(v is sentinel for v in values):
+                raise ValueError("zip() arguments have different lengths")
+            yield values
+
+    namespace = {"accumulate": accumulate, "zip": checked_zip}
+    exec(compile(ast.Module(body=nodes, type_ignores=[]), str(path), "exec", flags=__future__.annotations.compiler_flag), namespace)
+    mirror = namespace["prepare_cp_mirror_ref"]
+    boundary = namespace["yoco_cp_boundary_fused_ref"]
+    scalar = namespace["_yoco_contrib_pad_len"]
+    shapes = None
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "_YOCO_CONTRIB_SEQS" for t in node.targets):
+            # Upstream includes list repetition ([2] * 2000), not a literal.
+            allowed = (ast.List, ast.Tuple, ast.Constant, ast.BinOp, ast.Mult, ast.Load)
+            assert all(isinstance(n, allowed) for n in ast.walk(node.value)), "inspect changed shape expression"
+            shapes = eval(compile(ast.Expression(node.value), str(path), "eval"), {"__builtins__": {}})
+    assert shapes is not None, "upstream CP shape matrix changed"
+    shapes = list(shapes) + [([17] * 513, [1 if i % 2 else 17 for i in range(513)])]
+    rng = random.Random(20261020)
+    for _ in range(100):
+        sq = [rng.randint(1, 131) for _ in range(rng.randint(1, 12))]
+        shapes.append((sq, [rng.randint(1, n) for n in sq]))
+
+    def gather(values, indices):
+        return [values[i] if 0 <= i < len(values) else 0 for i in indices]
+
+    cases = moved = padded = nonzero_pad = 0
+    ratios = (1, 2, 4, 128)
+    for sq, keep in shapes:
+        sk = [n + rng.randrange(0, 257) for n in sq]
+        cu_full, cu_c = [0, *accumulate(sq)], [0, *accumulate(keep)]
+        full_ids = list(range(1, sum(sq) + 1))  # zero reserved for gather OOB
+        compact_ids = [cu_full[i] + j + 1 for i in range(len(sq)) for j in range(sq[i] - keep[i], sq[i])]
+        k_bases = {ratio: [0, *accumulate(max(1, n // ratio) for n in sk)] for ratio in ratios}
+        for cp in (1, 2, 4, 8):
+            contribs, reverse, pad_len = boundary(sq, keep, cp)
+            assert sum(map(len, contribs)) == sum(keep)
+            assert pad_len == scalar(sq, keep, cp) == max(map(len, contribs))
+            full_mirrors = [mirror(sq, sk, cp, r, ratios)[0] for r in range(cp)]
+            payloads = [gather(full_ids, indices) for indices in full_mirrors]
+            old_owner = {full_idx + 1: r for r, indices in enumerate(full_mirrors) for full_idx in indices if full_idx >= 0}
+            gathered = [v for r in range(cp) for v in gather(payloads[r], contribs[r] + [-1] * (pad_len - len(contribs[r])))]
+            assert Counter(v for v in gathered if v != 0) == Counter(compact_ids), "contrib loses/duplicates valid tokens"
+            assert gather(gathered, reverse) == compact_ids, "rank-major gather does not reconstruct compact global order"
+            for r in range(cp):
+                indices, reverse_mirror, ks, ke = mirror(keep, sk, cp, r, ratios)
+                out = gather(gathered, gather(reverse, indices))
+                assert len(out) == sum(2 * ((n + 2 * cp - 1) // (2 * cp)) for n in keep)
+                for local_row, compact_idx in enumerate(indices):
+                    if compact_idx < 0:
+                        padded += 1
+                        nonzero_pad += out[local_row] != 0
+                        continue  # padding contents intentionally not an output invariant
+                    token_id = compact_ids[compact_idx]
+                    assert out[local_row] == token_id, "boundary changes valid token identity"
+                    moved += old_owner[token_id] != r
+                    assert reverse_mirror[compact_idx] == r * len(indices) + local_row
+                    seq = bisect_right(cu_c, compact_idx) - 1
+                    offset = compact_idx - cu_c[seq]
+                    absolute_pos = sk[seq] - keep[seq] + offset
+                    for ri, ratio in enumerate(ratios):
+                        base = k_bases[ratio][seq]
+                        assert ks[ri][local_row] == base
+                        assert ke[ri][local_row] == base + (absolute_pos + 1) // ratio, "compact query lost absolute key position"
+            cases += 1
+    assert moved > 0, "matrix must require cross-rank migration"
+    assert padded > 0 and nonzero_pad > 0, "matrix must expose nonzero padding after the second gather"
+    print(f"prepare_cp_mirror.py SHA256 {hashlib.sha256(path.read_bytes()).hexdigest()}")
+    print(f"PASS CP reference composition: {cases} shape/CP cases; {moved} migrated valid rows; {padded} pad rows ({nonzero_pad} nonzero)")
+    print("Scope: original Python reference bodies + fixture gather/all-gather; not TileLang kernels, real communication, or model execution.")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source", type=Path)
     parser.add_argument("--cxx", default="clang++")
     parser.add_argument("--cxxflag", action="append", default=[])
+    parser.add_argument("--cp-reference-only", action="store_true", help="run pure-Python CP composition checks only")
     args = parser.parse_args()
+    if args.cp_reference_only:
+        check_cp_references(args.source)
+        return
     compiler = shutil.which(args.cxx)
     if not compiler:
         parser.error(f"compiler not found: {args.cxx}")

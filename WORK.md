@@ -10,6 +10,8 @@
 
 ## 运行接续
 
+- **M1 心跳隔离接续（2026-10-20）**：为避免共享 checkout 的分支切换/日志冲突覆盖未提交成果，当前心跳使用 `/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/perpetual-learning-cp-finalize`，从远端 main 核对后继续；统一交接仍是远端 main。不要重置 `/Users/jackiemac/workspace/perpetual-learning` 或把该共享目录未推送的分支整体带入本项提交。GPU/AReaL 分工不变。
+
 - 网页 demo 已上线：[探索工作台](https://jackie2049.github.io/perpetual-learning/)。只读展示仓库快照，更新内容后按 [网页维护说明](web/readme.md) 发布；当前采用 gh-pages 分支发布。2026-10-20 已同步 YoCo 研究快照 f7e572c（gh-pages 7491599），Pages 工作流 39416177554 completed/success；发布收尾记录不递归触发重建。
 
 - 文档呈现要求：评分维度直接写“影响、成本、接受度、契合度”，使用简短直观名称。成本方向已在 [SOP](open-source/SOP.md) 澄清，历史分值复用前核对。
@@ -62,7 +64,7 @@
 D
 1. **未来一周开源技术掘金三大重点（用户 2026-10-20 定）**：**DeepInfer / verl / AReaL**。其中 DeepInfer 主研（推理框架源码深挖），verl 主贡献（续 #8281/#8250），AReaL 主实测（prompt_mean 切分敏感点）。vLLM 降为次优先级。 **这是跨主机整体分工，M1 不接管 AReaL；M5 独立推进其完整候选/PR。**
 2. **等待用户授权/资源**（长期未决，见「运行接续」5 项）——发布评论/文档、#8281 发布形态、方向调整。#8237 已收尾（PR #8286 ready + issue 已回）。
-3. **高优调研（用户 2026-10-20 定）**：**DeepInfer**——确定性、ZOS、Q&A、DSpark 预算/采样位置与 YoCo 窗口/回退/布局已读，相关原始主机分支/C++ helper 已做隔离 CPU 核验。YoCo compact 截 query，主/索引 KV 仍有 full-source 分支；keep 覆盖 window+有效回退预算，全截 chunk 仍留一行。上游等价测试是 mask vs compact、固定轨迹且无抢占，不能当成 off/任意抢占等价。下一步 CP compact 边界重分布的索引守恒与混长/padding 覆盖；真实设备正确性/性能未测，M1 不访问 GPU。见 [deepinfer-initial-survey.md](notebook/frameworks/deepinfer-initial-survey.md)。
+3. **高优调研（用户 2026-10-20 定）**：**DeepInfer**——确定性、ZOS、DSpark、YoCo 与 CP compact 索引契约已有源码/隔离 CPU 核验，真实设备正确性/性能未测。CP 参考组合 424 个形状/CP 检查通过，含跨 rank token 身份、绝对 key 坐标和非零 pad；20:00 因共享日志冲突未提交的成果在 20:30 接续恢复并复验。见 [既有笔记](notebook/frameworks/deepinfer-initial-survey.md) 与 YoCo 脚本 --cp-reference-only。下一步只读扫描 DeepInfer 当前 issue/PR 并查重，优先具体失败且未认领的问题，不为测试数造候选。M1 不访问 GPU，不涉及 AReaL 整项。
 4. **AReaL prompt_mean（原 M5 单一负责项，用户 2026-10-20 恢复 VPN 后明确本会话继续）——实测已闭环**：框架跑通（gsm8k PPO smoke 128 步无错）+ 受控实测（§10.7 判据，M=2 vs 4 + 固定 M 变 P，prompt_mean 与 token_mean 行为一致：跨 M 1.301≈1.273、P-spread 1.216≈1.192）——**不构成 defect，候选修复撤销，不提 issue/PR**，作为 review 依据存档（见 [源码笔记 §10.9](notebook/frameworks/areal-architecture-source-reading.md)、[tracker](open-source/areal/tracker.md)）。Megatron GPU 对照未做（TE 硬依赖）。分工状态见 [handoff-m5](open-source/areal/handoff-m5.md) 与 WORK「运行接续」。
 
 3. 按课题逐步关联现有实验执行材料与 notebook/experiments/ 的分析记录；新增实验优先就近组织，维护双向入口。

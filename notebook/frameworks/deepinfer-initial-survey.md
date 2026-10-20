@@ -253,4 +253,38 @@ python3 experiments/scripts/verify_deepinfer_yoco_visibility.py /path/to/DeepInf
 
 上游 [YoCo 验证说明](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/examples/yoco/README.md) 的 L1 不加载权重，但实际 `_setup_mask_command` 仍要求可见设备以分配 pinned 内存；所以本机没有尝试完整 L1。L2 比较的是 **mask vs compact**，不是 off vs compact；两边沿同一 golden teacher-forcing 轨迹比较 logprob/top-k，且明确断言抢占数为 0。启用 DFlash 时附加 confidence 对照有首末轮覆盖限制。不能据这些测试证明自由采样、任意抢占/回退或关闭截断模式的逐位等价；llm_engine.py 还明确注明截断开启时允许抢占导致结果变化。
 
-另外两个功能边界来自源码：mask/compact 均把 prompt_logprobs 强制关闭；compact 要求 DFlash target 层全部位于 consumer 边界同一侧，并禁止 consumer 层有 Engram。它们是当前实现约束，不是可忽略的部署细节。下一步优先核验 CP compact 边界重分布的索引守恒，再检查上游测试对混长/padding 的覆盖，不在 M1 启动设备实验。
+另外两个功能边界来自源码：mask/compact 均把 prompt_logprobs 强制关闭；compact 要求 DFlash target 层全部位于 consumer 边界同一侧，并禁止 consumer 层有 Engram。它们是当前实现约束，不是可忽略的部署细节。CP compact 边界索引与测试覆盖已补下节；真实设备通信和模型等价仍未验证，不在 M1 启动设备实验。
+
+## CP compact 边界：先按旧归属取行，再按新归属分发
+
+同一 `8b161497` 版本的 [prepare_cp_mirror.py](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/model_executor/layers/tilelang_ops/prepare_cp_mirror.py#L126) 提供两个纯 Python 索引参考：mirror zigzag 与 YoCo boundary redistribution；CUDA/NPU kernel 在各自后端目录。Python [consumer view](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/model_executor/input_metadata/yoco.py#L130) 将二者组合，再由 [yoco_boundary_compact](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/model_executor/models/v4_modules/yoco.py#L56) 消费。
+
+每条请求的 full query 长度 q 被分成 `2*CP` 个等容量 block，单块容量 `ceil(q/(2*CP))`；rank r 持有 block r 与 `2*CP-1-r`。compact 后必须按新的 keep_len **重新分块**，旧 rank 持有的后缀行不一定仍归本 rank。以 q=40、keep=13、CP=4 为例（表内为请求内原始 query 下标）：
+
+| rank | 旧布局实际贡献的后缀 | 新 compact-mirror 应收到的行（含 pad） |
+|---|---|---|
+| 0 | 35–39 | 27, 28, pad, pad |
+| 1 | 30–34 | 29, 30, 39, pad |
+| 2 | 27–29 | 31, 32, 37, 38 |
+| 3 | 无 | 33, 34, 35, 36 |
+
+因此不能把全局 full→compact 的 query_indices 直接用于本 rank 的 full-mirror tensor。正确链为：每 rank 用 contrib_index 从旧局部 tensor 取出仍需保留的行 → 各 rank 补齐到相同 contrib_pad_len → 按 rank 顺序 all-gather → 用 gathered_reverse 把 compact 全局顺序映射到 gather 缓冲 → 用新的 mirror_cp_index 生成每 rank 的 boundary_index，再取回行。`contrib_pad_len` 是**旧 rank 实际贡献数的最大值**，不等于新布局每 rank 的 mirror_len；上例分别为 5 和 4。
+
+### 两个不应丢掉的坐标约束
+
+1. **压缩 key 范围仍按绝对位置。** compact mirror 准备函数接收 keep_lens 与原始 seq_ks，不缩短 k；原 `q_start=sk-q`，截前缀 clip 后应为 `sk-keep=q_start+clip`。对保留行 j，压缩范围终点仍是 `base + floor((sk-keep+j+1)/ratio)`。query 截短不能一起把历史 key 长度或跨请求压缩段基址截短。
+2. **pad 内容不保证是零。** [gather](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/model_executor/layers/tilelang_ops/gather.py#L25) 对越界索引填零，但 `boundary_index = gather(gathered_reverse, mirror_index)` 会把 pad 的 -1 变为索引值 0；再次 gather payload 时可能读到第一个真实 token，而不是零行。上例 rank0 的两个 pad 就可读到原 query 35。源码明确把它视为无语义 pad，并设置 `valid_token_mask = mirror_index != -1`，后续 MoE 屏蔽且采样仅取有效行。**只能要求有效行身份正确，不能要求整个 padded tensor 为零或直接把 pad 算进结果。** 这是源码约定，不是本轮发现的错误或真实设备污染复现。
+
+### 已运行的参考组合检查与覆盖缺口
+
+复用并扩展 [既有 YoCo 验证脚本](../../experiments/scripts/verify_deepinfer_yoco_visibility.py)，新增无编译/无 torch 的参考组合模式：
+
+```bash
+python3 experiments/scripts/verify_deepinfer_yoco_visibility.py /path/to/DeepInfer --cp-reference-only
+```
+
+AST 提取原始 `prepare_cp_mirror_ref`、`yoco_cp_boundary_fused_ref` 与贡献长度参考，函数体未改写；在 Python 3.9 主机只为隔离命名空间补严格 zip 行为，gather/all-gather 用整数身份标记夹具代替。复用上游 5 个 boundary 形状（含 2000 个短请求），补 513 请求混长与 100 组固定种子形状，在 CP=1/2/4/8 共 424 个形状/CP 组合中检查：贡献集合无丢失/重复、rank-major 汇集后可恢复 compact 全局顺序、各 rank 的有效行身份、反向索引和多压缩比的绝对 ks/ke。结果通过；出现 48,162 个跨 rank 迁移行，75,598 个 pad 中 25,246 个非零，确认测试实际覆盖了需要通信和不可按零解释的 pad 情况。
+
+源码文件 SHA256：`4b58b8b353be45ea0ebb917a8ddb2a2e4b1c2e2350e57d2ff0036ae4bf25b7d7`。首次夹具读取把上游 `[2] * 2000` 当纯字面量而失败；改为仅允许 list/tuple/常量/乘法的 AST 表达式后通过，非上游缺陷。20:00 的未提交成果曾因共享分支切换未留在当前文件中，20:30 接续在远端最新版本的隔离副本恢复后重新执行，结果一致；不将此前未完成发布表述成已完成。
+
+该模式只验证**上游参考的组合与索引契约**，没有执行 TileLang kernel、C++ shape 标量、真实 gather、通信顺序、valid-token mask 的设备实现或模型；不能因此判定 GPU/NPU 完全正确。当前上游 `test_prepare_cp_mirror` 覆盖多种 CP 大小/部分 rank、零长序列和混长；`test_yoco_cp_boundary_fused` 的 kernel 对照则固定 CP=4、5 个形状并覆盖全部 4 ranks，尚未在该测试矩阵中覆盖 CP=2/8。consumer view 注释中 keep_lens+原 seq_ks 的组合依赖 L2 验证，而非独立组合单测。本轮给出可复用 CPU 契约检查，**不是已找到 kernel bug 或可直接提 PR 的证据**。下一步只读查重当前 DeepInfer issue/PR，优先有具体失败证据、无人接手且本机可验证的贡献点，不为扩测试数制造候选。
