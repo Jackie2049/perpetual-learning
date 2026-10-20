@@ -24,7 +24,7 @@
 
 - **M1 心跳隔离接续（2026-10-20）**：为避免共享 checkout 的分支切换/日志冲突覆盖未提交成果，当前心跳使用 `/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/perpetual-learning-cp-finalize`，从远端 main 核对后继续；统一交接仍是远端 main。不要重置 `/Users/jackiemac/workspace/perpetual-learning` 或把该共享目录未推送的分支整体带入本项提交。GPU/AReaL 分工不变。
 
-- 网页 demo 已上线：[探索工作台](https://jackie2049.github.io/perpetual-learning/)。只读展示仓库快照，更新内容后按 [网页维护说明](web/readme.md) 发布；当前采用 gh-pages 分支发布。2026-10-21 已同步DeepInfer EPLB CPU复核快照256e4cf（gh-pages 3ba6a40），Pages 工作流39485374002成功；构建952条文档标题、74个阅读页、最新日期9条日志（含其他会话已有记录）。DeepInfer笔记来源链接与本轮快照一致、#8250仍待补证；网络发布/查询使用获准外网权限，未改代理/VPN。发布收尾记录不递归触发重建。
+- 网页 demo 已上线：[探索工作台](https://jackie2049.github.io/perpetual-learning/)。只读展示仓库快照，更新内容后按 [网页维护说明](web/readme.md) 发布；当前采用 gh-pages 分支发布。2026-10-21 已同步EPLB producer/step边界快照07d8aad（gh-pages 2b22859），Pages 工作流39489511696成功；构建952条文档标题、74个阅读页、最新日期10条日志（含其他会话已有记录）。DeepInfer笔记来源链接与本轮快照一致、#8250仍待补证；网络发布/查询使用获准外网权限，未改代理/VPN。发布收尾记录不递归触发重建。
 
 - 文档呈现要求：评分维度直接写“影响、成本、接受度、契合度”，使用简短直观名称。成本方向已在 [SOP](open-source/SOP.md) 澄清，历史分值复用前核对。
 
@@ -75,7 +75,7 @@
 1. **等待用户授权/资源**（长期未决，见「运行接续」5 项）——发布评论/文档、#8281 发布形态、方向调整。#8237 已收尾（PR #8286 ready + issue 已回）。
 1. **未来一周开源技术掘金三大重点（用户 2026-10-20 定）**：**DeepInfer / verl / AReaL**。其中 DeepInfer 主研（推理框架源码深挖），verl 主贡献（续 #8281/#8250），AReaL 主实测（prompt_mean 切分敏感点）。vLLM 降为次优先级。 **这是跨主机整体分工，M1 不接管 AReaL；M5 独立推进其完整候选/PR。**
 2. **等待用户授权/资源**（长期未决，见「运行接续」5 项）——发布评论/文档、#8281 发布形态、方向调整。#8237 已收尾（PR #8286 ready + issue 已回）。
-3. **M1当前学习/贡献复核**：V1来源、同步/快照异常及RPC等待边界阶段收束，#8250等真实配置/配对观测，不以更多替身替代根因证据；#7913不重复推进、clip旧RFC不再推进、#8281待决定。当前转回DeepInfer EPLB，见下项；不重复已收束的#54/#57/共享内存生命周期模型。M1不访问GPU、不涉及AReaL整项，任何上游发言仍须拍板。
+3. **M1当前学习/贡献复核**：V1来源、同步/快照异常及RPC等待边界阶段收束，#8250等真实配置/配对观测，不以更多替身替代根因证据；#7913不重复推进、clip旧RFC不再推进、#8281待决定。DeepInfer EPLB阶段收束，接续chunk checkpoint，见下项；不重复已收束的#54/#57/共享内存生命周期模型。M1不访问GPU、不涉及AReaL整项，任何上游发言仍须拍板。
 3. **高优调研（用户 2026-10-20 定）**：**DeepInfer**——确定性、ZOS、DSpark、YoCo/CP、生命周期与EPLB身份/producer阶段已有源码/CPU学习，设备正确性/性能未测。下一步只读核对[#108](https://github.com/deepseek-ai/DeepInfer/pull/108)的chunk checkpoint提交/复用问题及与#95/#98的覆盖关系，先核对当前head和现有测试，再判断本机可验证范围；不预设新缺陷、不竞争已有修复。见[既有笔记](notebook/frameworks/deepinfer-initial-survey.md)。M1不访问GPU/AReaL，任何上游发言仍须用户拍板。
 4. **AReaL prompt_mean（原 M5 单一负责项，用户 2026-10-20 恢复 VPN 后明确本会话继续）——实测已闭环**：框架跑通（gsm8k PPO smoke 128 步无错）+ 受控实测（§10.7 判据，M=2 vs 4 + 固定 M 变 P，prompt_mean 与 token_mean 行为一致：跨 M 1.301≈1.273、P-spread 1.216≈1.192）——**不构成 defect，候选修复撤销，不提 issue/PR**，作为 review 依据存档（见 [源码笔记 §10.10](notebook/frameworks/areal-architecture-source-reading.md)、[tracker](open-source/areal/tracker.md)）。Megatron GPU 对照未做（TE 硬依赖）。分工状态见 [handoff-m5](open-source/areal/handoff-m5.md) 与 WORK「运行接续」。
 3. 按课题逐步关联现有实验执行材料与 notebook/experiments/ 的分析记录；新增实验优先就近组织，维护双向入口。
