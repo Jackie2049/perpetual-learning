@@ -61,3 +61,40 @@ python3 experiments/scripts/verify_verl_logprob_provenance.py /path/to/verl-8250
 [脚本](../../experiments/scripts/verify_verl_logprob_provenance.py)在Python3.9.6/3.12.13、NumPy2.0.2通过7组成功路径控制：原始base bypass分支、原始separate-async路由方法，queue/base重算/actor均替身，CPU slot只存标识符。另有7类概率/元数据反例，覆盖处理差异、采样token覆盖不足、softmax平移、均值抵消、版本区间宽度、声明标签与混合版本重算。它不运行模型、vLLM、真实快照/传输或GPU，也未覆盖计算异常后的快照恢复。
 
 脚本打印输入hash。核心路由文件SHA256为trainer_base `f6c18e2056f6ae2f3fa5436ab24a97ff2c90f8d4bc59bf4f82cb20f80a77baf9`、trainer_separate_async `fb169bfe966816f18cdaaa361761b1e4dc58b577e69e7103211717ab25f70cfb`。源码与这些替身检查说明上述观测为何需要分层，不足以确定私有训练故障根因或提出修复。
+
+## 同步完成点与异常传播
+
+同一固定版本的named-tensor适配器与非naive管理器有两层成功顺序：
+
+```text
+适配器  发起receiver RPC → 发送bucket → 等待receiver future
+        → 清cache → 标记版本
+管理器  abort生成 → release cache → 建通信组 → 等待actor及rollout更新
+        → 等待finalize → resume cache → resume生成
+```
+
+`_execute_method(non_block=True)`在有server时返回future，调用方随后等待它；这里的non_block不等于“已经安装完成”。管理器在同一次ray.get前已提交actor与rollout更新，某个ref报错也不代表其他远端工作未开始或已取消。以上是调用关系，不是测得的真实并行时序。
+
+| 最后到达的阶段 | 失败后不能推定的状态 |
+|---|---|
+| bucket发送或receiver确认 | 不能推定没有部分应用，也不能推定所有shard已一致 |
+| clear cache | 后续版本调用未发生不等于参数仍是旧版；cache清理可能也只部分完成 |
+| set version | 调用报错时远端是否已赋值仍需核对，不能只看客户端异常判断版本状态 |
+| manager finalize | 已有worker可能完成更新，方法没有统一撤销先前效果 |
+| resume cache或resume生成 | 资源恢复与对外可服务是不同完成点，方法返回前的单个成功阶段不能替代全体就绪 |
+
+这些方法体中没有捕获所测异常并自动rollback/resume的补偿块；这不等于整个进程没有外层清理，也不等于缺陷。失败后继续暂停可能是在避免暴露混合权重。**不能直接把“在finally无条件resume”当修复，也不能未确认各worker状态就宣称重试幂等。** 对恢复的判断需要worker集合、目标版本、最后一次提交/确认、安装后manifest及cache代次共同支持。
+
+有两条路径不能套用上图：naive后端直接交给actor更新；delta-flush空流有仅推进版本、不发送payload和清cache的专用分支，协议意图是值未改变。后者不能只因没有传新payload就判漏同步；delta流内容与协议正确性不在此次执行范围。
+
+### 阶段化故障注入
+
+```bash
+python3 experiments/scripts/verify_verl_weight_sync_control.py /path/to/verl-8250
+```
+
+[脚本](../../experiments/scripts/verify_verl_weight_sync_control.py)提取未修改的ServerAdapter.update_weights和CheckpointEngineManager.update_weights协程体，移除框架装饰器后以标准库asyncio运行。Ray/worker、sender、接收future、cache和版本设置均为本机替身，不读取或写入设备权重。Python3.9.6与3.12.13均通过21组：10组adapter控制（3种成功条件、非法format、delta委托以及5处异常）和11组manager控制（普通/naive成功及9处异常）。
+
+注入点记录的是**调用尝试**而非成功提交。所测异常均传播到本机调用者，后续阶段未执行；fake ray.get按给定次序解析ref，仅检查管理器程序控制流。未测试真实Ray取消/并发、超时、worker死亡、通信错误语义、CUDA流完成、跨rank内容一致、外层auto_await运行模式或故障恢复。它是边界检查，不是native同步故障复现或#8250根因证据。
+
+源文件SHA256：ServerAdapter `e82e1c6782573e03c871b982eb0653801f54cb1647367a604aa8b1c5454773cb`；CheckpointEngineManager `97b51131a5770892007b7fb07264a2657fe83255b085927acd08c952a5682f64`。

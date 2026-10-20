@@ -10,6 +10,8 @@
 
 ## 运行接续
 
+- **M1同步完成点复核（2026-10-21）**：固定版本原始adapter/manager协程体21组本机替身控制与故障注入通过；发送、确认、cache、版本、finalize、resume不是一个原子提交。异常后不继续后续阶段，不等于回滚/取消/重试安全，失败后暂停也不直接判bug。见[既有笔记补充](notebook/frameworks/verl-async-logprob-provenance.md#同步完成点与异常传播)，#8250仍待补证，未改上游方案。
+
 - **M1异步观测契约（2026-10-21）**：V1 separate-async的rollout/old/current来源已追踪；bypass复制与CPU快照交换不能当独立同步验证。7组原始路由成功路径替身+7类概率/版本反例通过，版本标签≠tensor内容校验、选中token概率匹配≠完整分布/参数相同。#8250仍待补证，见[学习笔记](notebook/frameworks/verl-async-logprob-provenance.md)，不作根因或新bug定性。
 
 - **M1 #7913复核收尾（2026-10-21）**：报告版本metadata→FSDP→PG调用链已核对，3组原始主机方法替身控制+12组NumPy共享参数/显式DP平均模型通过，非native训练/patch验证。旧split的DP段误把loss当gradient、未跨rank平均，旧verified-works/空响应分母说法撤回；#7916同样agg_loss接入而非仅配置层，已存在同核心#5614/#7916，不再重复推进。见[更正记录](open-source/verl/candidate-7913-gmpo-geo-mean.md)。
@@ -69,7 +71,7 @@
 1. **等待用户授权/资源**（长期未决，见「运行接续」5 项）——发布评论/文档、#8281 发布形态、方向调整。#8237 已收尾（PR #8286 ready + issue 已回）。
 1. **未来一周开源技术掘金三大重点（用户 2026-10-20 定）**：**DeepInfer / verl / AReaL**。其中 DeepInfer 主研（推理框架源码深挖），verl 主贡献（续 #8281/#8250），AReaL 主实测（prompt_mean 切分敏感点）。vLLM 降为次优先级。 **这是跨主机整体分工，M1 不接管 AReaL；M5 独立推进其完整候选/PR。**
 2. **等待用户授权/资源**（长期未决，见「运行接续」5 项）——发布评论/文档、#8281 发布形态、方向调整。#8237 已收尾（PR #8286 ready + issue 已回）。
-3. **M1当前学习/贡献复核**：异步策略/logprob来源与最小观测契约已沉淀，#8250仍待补证；#7913已有同核心PR不重复推进、clip旧RFC不再推进、#8281待决定。下一步只读核对同步的await/清cache/设版本/resume完成点与异常传播，用替身区分声明提交和内容验证，不据此编写新修复或替reporter判根因。DeepInfer生命周期阶段收束，证据见 [笔记](notebook/frameworks/deepinfer-initial-survey.md)。M1不访问GPU、不涉及AReaL整项，任何上游发言仍须拍板。
+3. **M1当前学习/贡献复核**：异步来源/观测契约及同步阶段异常边界已沉淀，#8250仍待补证；#7913不重复推进、clip旧RFC不再推进、#8281待决定。下一步只读核对old-logprob CPU快照交换在计算异常时的恢复与外层失败语义，先区分训练终止和可继续服务的状态，不直接把异常后残留状态定bug或写修复。DeepInfer生命周期阶段收束，证据见 [笔记](notebook/frameworks/deepinfer-initial-survey.md)。M1不访问GPU、不涉及AReaL整项，任何上游发言仍须拍板。
 3. **高优调研（用户 2026-10-20 定）**：**DeepInfer**——确定性、ZOS、DSpark、YoCo 与 CP compact 索引契约已有源码/隔离 CPU 核验，真实设备正确性/性能未测。CP 参考组合424个形状/CP检查通过，含跨rank身份、绝对key坐标与非零pad；20:00受阻成果已隔离恢复复验并推送d856118。见 [既有笔记](notebook/frameworks/deepinfer-initial-survey.md)。当前REST扫描的open窗口32条全是PR，无普通issue；不当作未认领池。下一步只读核对 [DeepInfer #54](https://github.com/deepseek-ai/DeepInfer/pull/54)（head 70381d28）的event复用/ZOS生命周期与SO计数转移；作者50–140us收益未核验，不开竞争PR。M1不访问GPU，不涉及AReaL整项。
 4. **AReaL prompt_mean（原 M5 单一负责项，用户 2026-10-20 恢复 VPN 后明确本会话继续）——实测已闭环**：框架跑通（gsm8k PPO smoke 128 步无错）+ 受控实测（§10.7 判据，M=2 vs 4 + 固定 M 变 P，prompt_mean 与 token_mean 行为一致：跨 M 1.301≈1.273、P-spread 1.216≈1.192）——**不构成 defect，候选修复撤销，不提 issue/PR**，作为 review 依据存档（见 [源码笔记 §10.10](notebook/frameworks/areal-architecture-source-reading.md)、[tracker](open-source/areal/tracker.md)）。Megatron GPU 对照未做（TE 硬依赖）。分工状态见 [handoff-m5](open-source/areal/handoff-m5.md) 与 WORK「运行接续」。
 3. 按课题逐步关联现有实验执行材料与 notebook/experiments/ 的分析记录；新增实验优先就近组织，维护双向入口。
