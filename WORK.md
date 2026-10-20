@@ -16,14 +16,14 @@
 
 - 状态：持续运行中（/loop 30m，会话级 job 486bb920，7 天后过期；退出会话后不自动恢复）。已按新收尾规则对齐（09:35，日志收尾工具 + 提交检查生效）。
 - 待执行的用户任务：无；当前没有已登记、等待自主运行处理的用户需求。
-- 自主探索任务：见「本轮进展」与 [verl tracker](open-source/verl/tracker.md)（当前活跃 3 候选：#8250 诊断、clip 语义文档澄清、#8281 agent loop truncation；**#8237 已收尾关闭**）；vLLM 方向进行中（#61160 评论已发布待回应；**#61229 已核实被 #62065/#61549 认领，无竞争空间，见 [readme](open-source/vllm/readme.md) 与 [学习笔记](notebook/frameworks/vllm-nixl-lease-correctness-reading.md) 已记录**）。**#8281 PR 草稿已本地备好（2026-10-20：源修复 + 真实单测，见 [candidate](open-source/verl/candidate-8281-agent-loop-shared-cap-vs-truncation.md)，patch 存 [patches](open-source/verl/patches/8281-truncation-policy.patch)，落 `/Users/jackiemac/workspace/verl` 分支 `fix-8281-truncation-policy` commit `7ace28db`；发布仍需授权 + verl CI 验证）**。**2026-10-20 新增：#8252 评估完成（三项事实声明核验成立、#7108 stale 是移动靶、不建议我方实现、价值在 RFC 技术回复，见 [candidate](open-source/verl/candidate-8252-weight-checker-rfc.md)）**。**2026-10-20 更正：#8281 存在关联旧 PR #4600**（reporter 创建时交叉链接；陈旧、dirty、预 CT 重构，非当前修复点），发布形态倾向 comment 而非 PR，见 [candidate](open-source/verl/candidate-8281-agent-loop-shared-cap-vs-truncation.md)。
+- 自主探索任务：见「本轮进展」与 [verl tracker](open-source/verl/tracker.md)（当前活跃 3 候选：#8250 诊断、clip 语义文档澄清、#8281 agent loop truncation；**#8237 已收尾关闭**）；vLLM 方向进行中（#61160 评论已发布待回应；**#61229 已核实被 #62065/#61549 认领，无竞争空间，见 [readme](open-source/vllm/readme.md) 与 [学习笔记](notebook/frameworks/vllm-nixl-lease-correctness-reading.md) 已记录**）。**#8281 PR 草稿已本地备好（2026-10-20：源修复 + 真实单测，见 [candidate](open-source/verl/candidate-8281-agent-loop-shared-cap-vs-truncation.md)，patch 存 [patches](open-source/verl/patches/8281-truncation-policy.patch)，落 `/Users/jackiemac/workspace/verl` 分支 `fix-8281-truncation-policy` commit `7ace28db`；发布仍需授权 + verl CI 验证）**。**2026-10-20 新增：#8252 评估完成（三项事实声明核验成立、#7108 stale 是移动靶、不建议我方实现、价值在 RFC 技术回复，见 [candidate](open-source/verl/candidate-8252-weight-checker-rfc.md)）**。**2026-10-20 更正：#8281 存在关联旧 PR #4600**（reporter 创建时交叉链接；陈旧、dirty、预 CT 重构，非当前修复点），发布形态倾向 comment 而非 PR，见 [candidate](open-source/verl/candidate-8281-agent-loop-shared-cap-vs-truncation.md)。**AReaL prompt_mean 切分敏感点（§10/§10.3/§10.5）已定为首个优先实测项**：用户判定研究价值较高，待 VPN 可用后配环境做 GPU 实测（ppo_n_minibatches 2 vs 4，FSDP2/Megatron 双后端），见 [tracker](open-source/areal/tracker.md)。
 - **等待用户决定的事项**（均需授权/资源）：①发布 #8250 熵爆炸诊断评论；②发布 vLLM #39096 增量评论；⑤clip 语义文档澄清的发布形态；⑥#8281 的发布形态（评论 or PR，见 candidate）。~~③ vLLM #61160 修复定位评论~~ **已发布**（2026-10-19 10:49，[comment](https://github.com/vllm-project/vllm/issues/61160#issuecomment-6258592764)），待回应跟进。**#8237 bugfix 已合并**（2026-10-20：PR [#8286](https://github.com/verl-project/verl/pull/8286) 已合入 verl 主仓库，merge `472dd21`，wuxibin89 approve；根因实锤 + 4090 全验证 + 外部 GB200 背书；详见 [candidate](open-source/verl/candidate-8237-offload-fraction.md)）。
 - 下一步：见下方「待讨论与下一步」。
 - 运行范围：当前 Agent 会话；未配置进程退出后的自动唤起。
 
 ## 当前用户需求与决定
 
-- **方向偏好**：用户希望近期自主运行重点跟进 verl 与 AReaL 两个 RL 训练框架（2026-10-20）。verl 已是贡献主轨道；AReaL（areal-project，蚂蚁系，合并效率 91% 为活跃社区最高）作为新增关注/潜在贡献轨道。**2026-10-20 已建立 AReaL 贡献轨道**（[readme](open-source/areal/readme.md) · [tracker](open-source/areal/tracker.md)）：首次扫描确认无未认领贡献空间（reporter 自修规律与 verl 相同），跨框架观察 #1730 M2PO microbatch 与 verl #7913 同类、同 reporter。
+- **方向偏好**：用户希望近期自主运行重点跟进 verl 与 AReaL 两个 RL 训练框架（2026-10-20）。verl 已是贡献主轨道；AReaL（areal-project，蚂蚁系，合并效率 91% 为活跃社区最高）作为新增关注/潜在贡献轨道。**2026-10-20 已建立 AReaL 贡献轨道**（[readme](open-source/areal/readme.md) · [tracker](open-source/areal/tracker.md)）：首次扫描确认无未认领贡献空间（reporter 自修规律与 verl 相同），跨框架观察 #1730 M2PO microbatch 与 verl #7913 同类、同 reporter。**用户判定（2026-10-20 16:xx）：AReaL prompt_mean 切分敏感点（§10/§10.3/§10.5，双后端同源）研究价值较高，定为优先推进项；已确认 VPN 连上后做 GPU 实测（ppo_n_minibatches 2 vs 4 两后端对照）闭环**。
 - 项目名称、首页标题和仓库标识统一使用 `perpetual-learning`，删除首页旧名称标识行。项目定位继续保留 [README.md](README.md#项目说明) 中的用户原文。
 - README.md 是整个项目的总览、对外呈现与用户导航，按主题、框架、成果提供快捷入口；文件组织使用可点击的目录表，作为统一入口置于项目说明与运作机制之后，不再单设重复的“项目导航”章节。[AGENTS.md](AGENTS.md) 为 Agent 内核；本文件记录当前工作上下文。
 - README 不放内部整理计划、迁移过程或待决定事项；当前阶段与待办由本文件维护，完成过程写入 diary。
@@ -52,7 +52,7 @@
 ## 待讨论与下一步
 
 1. **等待用户授权/资源**（长期未决，见「运行接续」5 项）——发布评论/文档、#8281 发布形态、方向调整。#8237 已收尾（PR #8286 ready + issue 已回）。
-2. 若继续自主：verl 新 issue 池已恢复（10-16 起 #8261/#8281），#8281 已深挖完成（analysis-done，待发布决定）；#8261（依赖升级性能）已判定排除；**#8252 RFC（训练前 weight-update 自检）已评估为"参与价值在技术回复、不建议实现"**（待授权决定）；vLLM 方向可继续核验 6 月草稿外机会或框架源码深化。**AReaL 轨道已建立但当前无未认领空间**：可跟进 #1730（M2PO microbatch，评论价值中等、需授权）或转做 AReaL 源码精读（已补 §10/§10.3/§10.3.1/§10.3.2 忠实归一化链确认 + dummy-slot 膨胀 + 主循环闭环，frameworks 索引 AReaL 源码笔记已建立；megatron 重载点/mbridge 与 v2 各 controller 仍未读，megatron 后端归一化链已在 §10.5 对照）。
+2. **优先推进（用户 2026-10-20 判定）**：AReaL prompt_mean 切分敏感点 GPU 实测闭环——pppo_n_minibatches 2 vs 4 两后端（FSDP2/Megatron）各一组对照，确认线性放大是否构成真实 defect。**待 VPN 连接可用后配环境执行**。若确认 defect → 可提 PR；否则作为扎实 review 依据。其次是 verl：#8281 已深挖完成（analysis-done，待发布形态决定）；#8250 诊断评论、clip 语义文档澄清稿已就绪待授权；#8252 RFC 已评估（参与价值在技术回复、不建议实现）；vLLM #39096 评论待授权。verl 新 issue 池当前归零（10-19 后无新）。AReaL 无未认领空间（可复用 verl 经验作 #1730 技术回复）。
 3. 按课题逐步关联现有实验执行材料与 notebook/experiments/ 的分析记录；新增实验优先就近组织，维护双向入口。
 4. 维护按职责划分的一级目录；新增或整理内容时整体检查归属、引用和输出路径，避免再次堆出按文件类型划分的一级目录。根目录 projects/ 暂不新增。
 5. 按价值、使用关系和证据继续筛选历史工具，避免只按文件名批量归档；其余历史工具继续按同一标准检查。
