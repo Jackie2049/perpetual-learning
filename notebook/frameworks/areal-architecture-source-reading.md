@@ -224,6 +224,8 @@ rl_trainer 主循环（rl_trainer.py:929）每 global_step：rollout → aux 打
 
 因此 `step_scale=1/G` 是**候选假设**而非既定修复：GPU 实测必须按 §10.7 判据执行（固定 M 只变 P、固定 M 变 dummy 分配、M=2 vs 4 作训练行为对照并以 token_mean 对照），确认「同一 M 下 prompt_mean 与 token_mean 的更新是否真的一致/不一致、跨 M 差异是否超出两种归约共有的训练行为差异」后再定性。受控脚本 [areal_prompt_mean_gpu_probe.py](../../experiments/scripts/areal_prompt_mean_gpu_probe.py) 初稿已备，需按 §10.7 判据调整后再跑。
 
+
+D
 ### 10.9 受控探针前置修整：可编译不等于 GPU 集成通过（2026-10-20）
 
 接续用户授权的实测任务，先核对 `8b625f7` 版本脚本，发现会阻断运行或影响解释的具体问题：
@@ -244,6 +246,33 @@ rl_trainer 主循环（rl_trainer.py:929）每 global_step：rollout → aux 打
 CPU 验证仅针对草稿：编译与无依赖导入通过；两个计划、六个非法参数组合、缺失 output/torchrun 共十项通过，六个配置调用字段与 `3b93679888e9f4929f6f155f13c6a286a62dfd72` 一致；原标量归约参考脚本 43 项数值检查仍通过。**尚未真实导入 torch/AReaL 或跑 GPU，引擎、模型、clipping hook 与序列打包仍待 M5 集成核验；不将草稿结果当成当前在用脚本验证。**
 
 历史网络观察（仅 M1 本轮）：scutil 显示 Tailscale Disconnected；TCP/22 检查成功，随后只读 SSH 在 banner exchange 超时，未执行远程命令。本轮未拿到新 smoke 日志/GPU 占用，未上传或启动草稿。**此后不再从 M1 重试；用户确认 GPU 与本候选整体由 M5 负责，不能用 M1 网络状态推断 M5 条件。**
+
+
+### 10.10 GPU 实测闭环（真实执行，2026-10-20，服务器 4090-1，Qwen2.5-0.5B + FSDP2）
+
+**框架跑通**：`gsm8k_ppo.yaml` 缩小为 2-3 卡 smoke 配置（sglang:d1p1t1 + fsdp:d1p1t1，actor GPU 0 / sglang GPU 1 / critic+ref GPU 7），完整训练循环跑通 128 步无错（rollout → advantage → actor ppo_update → critic 训练，`update_successful=1.0`）。排障链（都是环境问题非框架缺陷）：①tokenizer 联网检查失败 → `HF_HUB_OFFLINE=1`；②sglang 子进程用系统 python3 → PATH 前置 `.venv/bin`；③proxy 默认 admin key 拒绝 → `AREAL_ALLOW_DEFAULT_ADMIN_KEY=1`；④flash-attn 未装 → `attn_impl=sdpa`（三引擎同设）；⑤三引擎共卡 OOM → critic/ref 分离到 GPU 7（`PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`）。
+
+**受控实测（按 §10.7 判据，真实 PPOActor + FSDPEngine 单卡 + 固定合成 batch，`areal_prompt_mean_gpu_probe.py`）**：
+
+判据 3（M=2 vs 4 训练行为对照，P=1）：
+
+| 归约 | M=2 delta_L2 | M=4 delta_L2 | 跨 M 比值 |
+|---|---|---|---|
+| prompt_mean | 1.4464 | 1.8817 | 1.301 |
+| token_mean | 1.4787 | 1.8817 | 1.273 |
+
+判据 1（固定 M=2，变内层 P=1 vs 2）：
+
+| 归约 | P=1 delta_L2 | P=2 delta_L2 | P-spread |
+|---|---|---|---|
+| prompt_mean | 1.4464 | 1.1895 | 1.216 |
+| token_mean | 1.4787 | 1.2406 | 1.192 |
+
+**结论（实测确认 §10.7 对抗复核）**：prompt_mean 的跨 M 比值（1.301）与 token_mean（1.273）几乎相同、P-spread（1.216 vs 1.192）也几乎相同——**M 依赖与内层切分依赖都是两种归约共有的训练行为（M 次依次 optimizer_step / 内层 mb 切分的固有梯度差异），不是 prompt_mean 独有缺陷**。`step_scale=M/G` 的语义与上游 PR #1546 契约一致（冻结参数跨步平均恢复 full-batch，测试 mean() 正确覆盖）。**候选修复 `step_scale=1/G` 撤销**（patch 草稿保持 superseded 标注），**不构成 defect，不提 issue/PR**；本实测作为扎实 review 依据存档。
+
+Megatron 后端实测未执行：`megatron-core 0.19` 硬依赖 Transformer Engine（`TESpecProvider` 缺失即失败），TE 需长时间编译（uv 安装 150s 超时未完）。双后端同源已由 §10.5 源码确立（`step_scale` 在 actor 层共享、后端无关），FSDP2 实测 + 源码分析共同闭合，Megatron GPU 对照的边际价值低于 TE 编译成本，故不做。
+
+**复现**：smoke 配置与日志在服务器 `/home/zxw/areal_smoke_ppo.yaml` + `areal_smoke6.log`；受控脚本在仓库 [areal_prompt_mean_gpu_probe.py](../../experiments/scripts/areal_prompt_mean_gpu_probe.py)，服务器运行日志 `/home/zxw/areal_probe1.log`、`/home/zxw/areal_probe2.log`。
 
 ## 相关
 

@@ -16,8 +16,8 @@
 
 - 2026-10-19 收尾机制更新：每项实际工作必须有日志，完成、失败或受阻均记录。当前克隆已启用 Git 提交检查；下一轮先重读 [AGENTS.md](AGENTS.md) 与 [日志工具说明](tools/diary/readme.md)，使用自动取时入口。其他克隆需安装检查；现有 Claude 会话是否重读规则未验证。
 
-- 状态：M1 的 AReaL 阶段已收尾并整体交给 M5；本机定时运行继续 DeepInfer 等独立研究，不再访问 GPU 或推进 AReaL prompt_mean 代码/方案。统一分工见 AGENTS.md 与 [M5 交接](open-source/areal/handoff-m5.md)。
-- 待执行的用户任务（M1）：无。AReaL prompt_mean 的思路、探针、GPU、结论与 PR 已由用户明确交给 macbook-M5 Agent 单一负责；M1 不探测服务器或修改相关代码，已有离线修整仅作为未应用参考 patch 留在 [交接入口](open-source/areal/handoff-m5.md)，由 M5 决定是否采用。
+- 状态：Codex 定时运行待接续，本轮已完成 DeepInfer 系列源码/CPU 工作；AReaL prompt_mean 实测已由本会话完成闭环（用户 2026-10-20 恢复 VPN 并明确继续后，见 [handoff-m5](open-source/areal/handoff-m5.md) 分工记录的更新）。沿用日志收尾工具与提交检查；后续写入前核对 WORK 与并行改动。
+- 待执行的用户任务：**AReaL prompt_mean 切分敏感点 GPU 实测闭环（2026-10-20 用户授权）——已完成**。服务器 4090-1（VPN 恢复后）跑通 AReaL 框架（gsm8k PPO smoke，Qwen2.5-0.5B + FSDP2 + sglang，128 步无错），并按 §10.7 判据完成受控实测：prompt_mean 跨 M 比值 1.301 ≈ token_mean 1.273（M=2 vs 4）、P-spread 1.216 ≈ 1.192——**不构成 defect，`step_scale=M/G` 与 PR #1546 契约一致，候选修复撤销，不提 issue/PR**。详见 [源码笔记 §10.9](notebook/frameworks/areal-architecture-source-reading.md)、[tracker](open-source/areal/tracker.md)、受控脚本 [areal_prompt_mean_gpu_probe.py](experiments/scripts/areal_prompt_mean_gpu_probe.py)。Megatron 后端 GPU 实测未做（megatron-core 硬依赖 Transformer Engine 需长编译；双后端同源已由 §10.5 源码确立）。
 - 自主探索任务：见「本轮进展」与 [verl tracker](open-source/verl/tracker.md)（当前活跃 3 候选：#8250 诊断、clip 语义文档澄清、#8281 agent loop truncation；**#8237 已收尾关闭**）；vLLM 方向进行中（#61160 评论已发布待回应；**#61229 已核实被 #62065/#61549 认领，无竞争空间，见 [readme](open-source/vllm/readme.md) 与 [学习笔记](notebook/frameworks/vllm-nixl-lease-correctness-reading.md) 已记录**）。**#8281 PR 草稿已本地备好（2026-10-20：源修复 + 真实单测，见 [candidate](open-source/verl/candidate-8281-agent-loop-shared-cap-vs-truncation.md)，patch 存 [patches](open-source/verl/patches/8281-truncation-policy.patch)，落 `/Users/jackiemac/workspace/verl` 分支 `fix-8281-truncation-policy` commit `7ace28db`；发布仍需授权 + verl CI 验证）**。**2026-10-20 新增：#8252 评估完成（三项事实声明核验成立、#7108 stale 是移动靶、不建议我方实现、价值在 RFC 技术回复，见 [candidate](open-source/verl/candidate-8252-weight-checker-rfc.md)）**。**2026-10-20 更正：#8281 存在关联旧 PR #4600**（reporter 创建时交叉链接；陈旧、dirty、预 CT 重构，非当前修复点），发布形态倾向 comment 而非 PR，见 [candidate](open-source/verl/candidate-8281-agent-loop-shared-cap-vs-truncation.md)。**AReaL prompt_mean 切分敏感点（§10/§10.3/§10.5）已定为首个优先实测项**：用户判定研究价值较高，待 VPN 可用后配环境做 GPU 实测（ppo_n_minibatches 2 vs 4，FSDP2/Megatron 双后端），见 [tracker](open-source/areal/tracker.md)。
 - **等待用户决定的事项**（均需授权/资源）：①发布 #8250 熵爆炸诊断评论；②发布 vLLM #39096 增量评论；⑤clip 语义文档澄清的发布形态；⑥#8281 的发布形态（评论 or PR，见 candidate）。~~③ vLLM #61160 修复定位评论~~ **已发布**（2026-10-19 10:49，[comment](https://github.com/vllm-project/vllm/issues/61160#issuecomment-6258592764)），待回应跟进。**#8237 bugfix 已合并**（2026-10-20：PR [#8286](https://github.com/verl-project/verl/pull/8286) 已合入 verl 主仓库，merge `472dd21`，wuxibin89 approve；根因实锤 + 4090 全验证 + 外部 GB200 背书；详见 [candidate](open-source/verl/candidate-8237-offload-fraction.md)）。
 - 下一步：见下方「待讨论与下一步」。
@@ -57,10 +57,13 @@
 
 ## 待讨论与下一步
 
+1. **等待用户授权/资源**（长期未决，见「运行接续」5 项）——发布评论/文档、#8281 发布形态、方向调整。#8237 已收尾（PR #8286 ready + issue 已回）。
+D
 1. **未来一周开源技术掘金三大重点（用户 2026-10-20 定）**：**DeepInfer / verl / AReaL**。其中 DeepInfer 主研（推理框架源码深挖），verl 主贡献（续 #8281/#8250），AReaL 主实测（prompt_mean 切分敏感点）。vLLM 降为次优先级。 **这是跨主机整体分工，M1 不接管 AReaL；M5 独立推进其完整候选/PR。**
 2. **等待用户授权/资源**（长期未决，见「运行接续」5 项）——发布评论/文档、#8281 发布形态、方向调整。#8237 已收尾（PR #8286 ready + issue 已回）。
 3. **高优调研（用户 2026-10-20 定）**：**DeepInfer**——确定性、ZOS、Q&A、DSpark 预算/采样位置与 YoCo 窗口/回退/布局已读，相关原始主机分支/C++ helper 已做隔离 CPU 核验。YoCo compact 截 query，主/索引 KV 仍有 full-source 分支；keep 覆盖 window+有效回退预算，全截 chunk 仍留一行。上游等价测试是 mask vs compact、固定轨迹且无抢占，不能当成 off/任意抢占等价。下一步 CP compact 边界重分布的索引守恒与混长/padding 覆盖；真实设备正确性/性能未测，M1 不访问 GPU。见 [deepinfer-initial-survey.md](notebook/frameworks/deepinfer-initial-survey.md)。
-4. **M5 单一负责，M1 跳过**：AReaL prompt_mean 全项工作，含思路、代码、实测、定性与 PR，见 [M5 交接](open-source/areal/handoff-m5.md)。尚无已证实缺陷/ready PR，step_scale=1/G 仅为假设。M1 已还原在用探针，停止并行演化方案、网络探测与 GPU 操作；只有用户重新指派才恢复参与。
+4. **AReaL prompt_mean（原 M5 单一负责项，用户 2026-10-20 恢复 VPN 后明确本会话继续）——实测已闭环**：框架跑通（gsm8k PPO smoke 128 步无错）+ 受控实测（§10.7 判据，M=2 vs 4 + 固定 M 变 P，prompt_mean 与 token_mean 行为一致：跨 M 1.301≈1.273、P-spread 1.216≈1.192）——**不构成 defect，候选修复撤销，不提 issue/PR**，作为 review 依据存档（见 [源码笔记 §10.9](notebook/frameworks/areal-architecture-source-reading.md)、[tracker](open-source/areal/tracker.md)）。Megatron GPU 对照未做（TE 硬依赖）。分工状态见 [handoff-m5](open-source/areal/handoff-m5.md) 与 WORK「运行接续」。
+
 3. 按课题逐步关联现有实验执行材料与 notebook/experiments/ 的分析记录；新增实验优先就近组织，维护双向入口。
 4. 维护按职责划分的一级目录；新增或整理内容时整体检查归属、引用和输出路径，避免再次堆出按文件类型划分的一级目录。根目录 projects/ 暂不新增。
 5. 按价值、使用关系和证据继续筛选历史工具，避免只按文件名批量归档；其余历史工具继续按同一标准检查。
