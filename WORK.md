@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+**2026-10-20 Codex 首次定时执行更正（优先于下方历史进展）：** AReaL prompt_mean 仍是用户指定优先研究项，但原“独有 M 放大 / dummy 膨胀 / Megatron 额外 P 倍”论证已撤回。旧脚本未模拟 token_mean 的逐步分母、追加了不合法全局 dummy 步，并遗漏 MCore 的 /P。已替换 CPU 参考验证，43 项数值比较与调度检查通过；详见 [源码笔记 §10.7](notebook/frameworks/areal-architecture-source-reading.md)。下一步 GPU 先固定外层 M 只变内层 P，再验证固定 M 的 DP/dummy 分配；M=2/4 作为训练行为对照，不以最终参数不同直接判 bug。尚无真实框架/GPU 实测。
+
 自主运行中（2026-10-19 起 18 轮 /loop 30m）。已完成：工具修复（inference_estimator.py）、verl 候选三轮核验与全新扫描（10 候选）、4 项源码级修复分析、GMPO/GSPO/SAPO 论文精读与数值证明。2026-10-20：verl 新 issue 恢复，深挖 #8281 完成（analysis-done + CPU 验证）；**#8237 offload 修复 PR #8286 已合并进 verl 主仓库**（首个 bugfix 闭环，merge `472dd21`）。详见 [当日日志](diary/2026-10-20.md)。
 
 ## 运行接续
@@ -14,12 +16,12 @@
 
 - 2026-10-19 收尾机制更新：每项实际工作必须有日志，完成、失败或受阻均记录。当前克隆已启用 Git 提交检查；下一轮先重读 [AGENTS.md](AGENTS.md) 与 [日志工具说明](tools/diary/readme.md)，使用自动取时入口。其他克隆需安装检查；现有 Claude 会话是否重读规则未验证。
 
-- 状态：持续运行中（/loop 30m，会话级 job 486bb920，7 天后过期；退出会话后不自动恢复）。已按新收尾规则对齐（09:35，日志收尾工具 + 提交检查生效）。
+- 状态：本次 Codex 手动首轮已执行，收尾后待接续；已核实 Codex 心跳任务 perpetual-learning 为 ACTIVE，每 30 分钟在当前聊天唤起。历史 Claude /loop job 486bb920 为另一会话记录，本轮未核实其存活，后续写入前检查并行改动。沿用日志收尾工具与提交检查。
 - 待执行的用户任务：无；当前没有已登记、等待自主运行处理的用户需求。
 - 自主探索任务：见「本轮进展」与 [verl tracker](open-source/verl/tracker.md)（当前活跃 3 候选：#8250 诊断、clip 语义文档澄清、#8281 agent loop truncation；**#8237 已收尾关闭**）；vLLM 方向进行中（#61160 评论已发布待回应；**#61229 已核实被 #62065/#61549 认领，无竞争空间，见 [readme](open-source/vllm/readme.md) 与 [学习笔记](notebook/frameworks/vllm-nixl-lease-correctness-reading.md) 已记录**）。**#8281 PR 草稿已本地备好（2026-10-20：源修复 + 真实单测，见 [candidate](open-source/verl/candidate-8281-agent-loop-shared-cap-vs-truncation.md)，patch 存 [patches](open-source/verl/patches/8281-truncation-policy.patch)，落 `/Users/jackiemac/workspace/verl` 分支 `fix-8281-truncation-policy` commit `7ace28db`；发布仍需授权 + verl CI 验证）**。**2026-10-20 新增：#8252 评估完成（三项事实声明核验成立、#7108 stale 是移动靶、不建议我方实现、价值在 RFC 技术回复，见 [candidate](open-source/verl/candidate-8252-weight-checker-rfc.md)）**。**2026-10-20 更正：#8281 存在关联旧 PR #4600**（reporter 创建时交叉链接；陈旧、dirty、预 CT 重构，非当前修复点），发布形态倾向 comment 而非 PR，见 [candidate](open-source/verl/candidate-8281-agent-loop-shared-cap-vs-truncation.md)。**AReaL prompt_mean 切分敏感点（§10/§10.3/§10.5）已定为首个优先实测项**：用户判定研究价值较高，待 VPN 可用后配环境做 GPU 实测（ppo_n_minibatches 2 vs 4，FSDP2/Megatron 双后端），见 [tracker](open-source/areal/tracker.md)。
 - **等待用户决定的事项**（均需授权/资源）：①发布 #8250 熵爆炸诊断评论；②发布 vLLM #39096 增量评论；⑤clip 语义文档澄清的发布形态；⑥#8281 的发布形态（评论 or PR，见 candidate）。~~③ vLLM #61160 修复定位评论~~ **已发布**（2026-10-19 10:49，[comment](https://github.com/vllm-project/vllm/issues/61160#issuecomment-6258592764)），待回应跟进。**#8237 bugfix 已合并**（2026-10-20：PR [#8286](https://github.com/verl-project/verl/pull/8286) 已合入 verl 主仓库，merge `472dd21`，wuxibin89 approve；根因实锤 + 4090 全验证 + 外部 GB200 背书；详见 [candidate](open-source/verl/candidate-8237-offload-fraction.md)）。
 - 下一步：见下方「待讨论与下一步」。
-- 运行范围：当前 Agent 会话；未配置进程退出后的自动唤起。
+- 运行范围：Codex 当前聊天 + 已保存的 30 分钟心跳任务；本地执行仍依赖应用运行及项目可访问。每轮读取本文件与 AGENTS.md 后接续。
 
 ## 当前用户需求与决定
 

@@ -1,5 +1,7 @@
 # AReaL 架构与统一损失系统源码阅读
 
+> 2026-10-20 复核更正：§10.3–10.6 的「prompt_mean 独有切分放大」「dummy 额外膨胀」与 Megatron 额外 P 因子的判断撤回，历史推导仅用于追溯，当前结论以 §10.7 为准。改变外层 optimizer step 数与改变单步内梯度累积切分，必须分别验证。
+
 > AReaL（蚂蚁系，`areal-project/AReaL`）：支持 GRPO/PPO/GSPO/SAPO/DAPO/M2PO 等众多 RL 算法、Megatron/FSDP 双训练后端的 RL 训练框架。阅读基线：上游 main `3b93679`（2026-10-20 浅克隆 depth 200）。聚焦 v1 训练栈（`rl_trainer` → `trainer/ppo` → `engine`）与统一损失/优势/归约设计；v2 服务架构为并行控制器层。
 
 ## 1. 架构总览
@@ -189,6 +191,25 @@ rl_trainer 主循环（rl_trainer.py:929）每 global_step：rollout → aux 打
 - **忠实链 = `(M/G)·Σ_all loss·w`**——M 线性放大**保留**，且 `dp_size` 与 `P`（内层 pipeline mb 数）这两个常数因子**被 /T_global 消掉**（numpy 复刻 Case 6：M=1/2/4→1×/2×/4× 精确，P=2/P=1→1.000）。
 
 **结论（升级 §10.5 缺口）**：prompt_mean 的 `step_scale=M/G` 线性放大是 **actor 层共享、跨三条归一化路径稳健**——FSDP2（`dp_size·(M/G)`）、Megatron 默认（`dp_size·(M/G)·P`）、Megatron per-token（`(M/G)`）都一样，**不是**特定 `dp_size·len(mb_list)` 乘子的产物。per-token 路径只是把常数因子换掉，切分敏感（随 M 线性）不变。实测项仍不变：真实自适应优化器是否吸收这部分绝对梯度差异，需 AReaL 环境 `ppo_n_minibatches` 2 vs 4 对照。
+
+### 10.7 对抗复核：外层优化步数与内层累积不能混同（2026-10-20 更正）
+
+**当前判断：尚无证据证明 prompt_mean 的 M/G 是缺陷，撤回此前“高置信缺陷机制”的表述。** 用户指定的研究方向继续推进，但须先修正实测判据。源码基线仍为 AReaL `3b93679888e9f4929f6f155f13c6a286a62dfd72`；本轮重新读取 loss_reduction.py、loss_aggregation.py、actor.py、data.py、FSDP train_batch 与上游测试。
+
+1. **旧脚本比较了不同归一化口径。** `token_mean_total` 始终计算全 rollout 一次总均值，从未按 M 切分；真实 TokenMean 每次 train_batch 都用该优化步自己的 token 总数作分母。均匀组、等长响应、等大小 minibatch 下，prompt_mean 与 token_mean 的每一步梯度完全相同，二者冻结参数后的梯度和都随 M 增长，非 prompt_mean 独有现象。
+2. **M 是优化步数，P 是单步内累积切分。** actor 每次 train_batch 更新参数，后续梯度在新参数处计算，故冻结参数的梯度和不是实际训练 update。改变 M=2/4 后权重不同，单独不能证明 reducer 有问题。上游 [PR #1546](https://github.com/areal-project/AReaL/pull/1546) 约定冻结参数和 mask 后跨步平均梯度恢复 full-batch prompt mean，未要求 M 次更新后参数相同；原测试的 mean() 与该契约一致。
+3. **本地 dummy 不等于额外全局空步。** data.py 的同步调度按各 rank 具体 minibatch 数与 offset/modulo 分配，避免全局 all-dummy 步；for_steps 在 DP 汇总行数后还会拒绝任何全局 rows<=0 的步骤。旧 Case 4 在 DP=1 任意追加全局空步，不是合法 AReaL 调度。DP>1 某 rank 的 dummy 对应其他 rank 的真实响应；固定全局 M 时，dummy 本身不额外乘系数。M 的变化仍是全局优化调度变化，不能从本地空位数直接推导“膨胀”。
+4. **Megatron 的 P 乘子有调度抵消。** [MCore core_v0.19.0 schedules.py](https://github.com/NVIDIA/Megatron-LM/blob/core_v0.19.0/megatron/core/pipeline_parallel/schedules.py#L293-L306) 的 forward_step_calc_loss 对非 per-token 路径除以 num_microbatches。CP=1 时，AReaL 默认路径的 P 乘子与 /P 相消，旧 Case 5 漏掉此层，不能主张 P=2 有额外 2 倍更新。DP 的 loss multiplier 也须结合实际梯度通信归约核实，局部损失公式不能直接当作最终分布式梯度。CP、per-token、MTP/MoE 的最终归约仍待独立验证。
+
+**CPU 反例验证**：[替换后的验证脚本](../../experiments/scripts/verify_areal_prompt_mean_split.py) 仅用标准库，模拟固定参数处的标量 token 导数，不导入或运行 AReaL。43 项数值比较与调度断言通过：均匀例 M=1/2/4，两归约平均梯度均为 4.5，梯度和分别 4.5/9/18；非均匀组下 prompt_mean 跨步均值均为 3.740740741；固定 M=2、P=1/2/4 的标量 FSDP/Megatron 默认路径一致（DP=CP=1）；DP counts=[1,3]/[2,2]/[1,1] 的合法调度无全局空步。零初始 moments 的标量 Adam 参考计算中，M=2/4 参数变化为 -0.019350137/-0.038374539，同一 M 下两归约一致，说明仅凭跨 M 权重差异会误报。以上是参考数值模拟，非真实 GPU 或框架集成结果。
+
+**GPU 实验判据：**
+
+- 先固定外层 M、样本、顺序、mask、group 元数据、参数与优化器状态，仅改变单步内 P；比较最终通信归约后的梯度、clipping 前后范数及一次 Adam 更新。FSDP2 与 Megatron 各做一组，先关闭 MoE/MTP、使用 DP=CP=1，再扩展并行维度。
+- 固定 M，改变 DP rank 上数据与 dummy 的分配，使用逐步全局行/token/group 参考验证，不将 dummy 数本身作为缺陷判据。
+- 用户指定的 M=2 vs 4 保留为训练行为对照：冻结参数时检查跨步平均目标符合契约，并以 token_mean 为对照；实际顺序更新观察训练轨迹，不直接要求跨 M 参数相同。保存 checkpoint、optimizer moments、有效 M、每步全局分母、P、clipping 与通信配置。
+
+复现：`python3 experiments/scripts/verify_areal_prompt_mean_split.py`。GPU 集成仍等待 VPN/已确认目标环境；不据本轮模拟提上游 issue/PR。
 
 ## 相关
 
