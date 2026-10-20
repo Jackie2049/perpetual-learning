@@ -58,16 +58,17 @@ function contributionRecord(item) {
 }
 function contributionSummary(item) {
   const f=item.fields;
-  return `<article class="contribution-summary">
-    <div class="summary-meta"><span>${esc(item.type)}</span><span>${esc(item.score)}</span></div>
-    <h3><button data-open="${item.id}">${esc(item.title)}</button></h3>
+  return `<details class="contribution-summary" open>
+    <summary class="contribution-toggle"><span class="contribution-type">${esc(item.type)}</span><h3>${esc(item.title)}</h3></summary>
+    <div class="summary-content">
     <div class="summary-field"><h4>贡献点</h4><div class="prose">${f['贡献点']}</div></div>
     <div class="summary-field summary-progress"><h4>进展</h4><div class="prose">${f['进展']}</div></div>
     <div class="summary-field plain-explanation"><h4>大白话讲明白</h4><div class="prose">${f['大白话讲明白']}</div></div>
     <div class="summary-field summary-value"><h4>价值评估</h4><div class="prose">${f['价值评估']}</div></div>
-    <details class="summary-technical"><summary>What–Why–How</summary><div class="prose">${f['What–Why–How']}</div></details>
+    <div class="summary-field summary-technical"><h4>What–Why–How</h4><div class="prose">${f['What–Why–How']}</div></div>
     <button class="text-link summary-read" data-open="${item.id}">阅读完整文档 ${icon('arrow')}</button>
-  </article>`;
+    </div>
+  </details>`;
 }
 function contributionPanel(project) {
   const materials = project.materials.map(item => `<li>${item.readable ? `<button data-open="${item.id}">${esc(item.title)}</button>` : `<a href="${esc(item.url)}" target="_blank" rel="noreferrer">${esc(item.title)} ↗</a>`}</li>`).join('');
