@@ -10,6 +10,8 @@
 
 ## 运行接续
 
+- **M1 shared-prefix packing学习（2026-10-21）**：只读已有作者#8300固定head d6dfcb28，区别旧PrefixGrouper无调用方集成与新FSDP no-padding路径；明确P−1 trunk/重复末prompt token、bottom-right分支可见域、原loss_mask分母与token压缩比非加速比。38组原始CPU布局测试通过，未执行模型/梯度/engine/FA/DP/GPU。见[笔记与复现](notebook/frameworks/verl-shared-prefix-packing.md)，旧笔记复杂度/位置保证与性能外推已纠正。后续只读对照旧PrefixGrouper gap analysis的attention-only/full-model论断与新路径，避免历史结论继续混用；不竞争实现，不补装依赖或用更多替身冒充集成。网站/GPU/AReaL分工不变。
+
 - **M1 Bayes@N身份链收束（2026-10-21）**：已读预声明清单→原生session/key→acc extra→helper链；验证UID每次重建，不是永久dataset ID或内容哈希。新增21组原始配置guard/manifest/key/helper片段控制通过，原数值回归通过；不执行完整_validate/TQ/grader。既有独立CPU环境缺原生集成依赖，未安装、未冒充作者测试。见[笔记](notebook/frameworks/verl-validation-bayes-passk.md#预声明题集与试次身份链)。本课题先收束；后续只读学习verl已有#8300 shared-prefix packing与PrefixGrouper的区别，不竞争实现、不预设性能收益。网站/GPU/AReaL分工不变。
 
 - **M1验证指标学习与纠错（2026-10-21）**：有界扫描DeepInfer最近更新12个open PR、verl最近更新8个open PR及#8250/#8281；DeepInfer main仍774ce244，verl main cd58f550，两个issue均open/0评论。转读已有作者负责的#8303 Bayes@N（head8971a9ff），不竞争实现。原始helper的682二元矩阵/682重排、10非法输入和180组有理数pass@k期望控制通过；纠正旧rLLM组合公式、错误归属和GRPO目标等价说法。见[笔记](notebook/frameworks/verl-validation-bayes-passk.md)。下一步只读追预声明cohort/session身份到helper的链，不把数值矩检查当端到端验证；网站/GPU/AReaL分工不变。

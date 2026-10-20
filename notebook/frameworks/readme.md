@@ -150,6 +150,7 @@
 - [verl PR #6713 — Megatron LoRA Adapter Export for Rollout](verl-pr6713-megatron-lora-export-reading.md)
 - [verl PrefixGrouper Gap Analysis — From Attention-Only PS to Full-Model PS](verl-prefix-grouper-gap-analysis.md)
 - [verl PrefixGrouper 源码深度阅读](verl-prefix-grouper.md)
+- [verl FSDP shared-prefix packing](verl-shared-prefix-packing.md)
 - [verl ReMax (#6340) and IcePop (#5722) Source-Level Reading](verl-remax-icepop-source-reading.md)
 - [verl Reward Integration 源码级深度阅读](verl-reward-integration-reading.md)
 - [verl RL Infra 架构源码阅读](verl-rl-infra-reading.md)

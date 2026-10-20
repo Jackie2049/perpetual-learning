@@ -1,6 +1,8 @@
 # verl PrefixGrouper 源码深度阅读
 
-> 训练侧前缀复用的核心实现 — 减少共享 prompt 的重复计算
+> 历史 PrefixGrouper 集成阅读，不是当前 FSDP engine 的启用说明。
+
+2026-10-21 核对：在 verl `cd58f550` 基线内，`forward_micro_batch_with_prefix_grouper` 仅找到定义，没有调用方。已有作者的新 PR #8300 使用另一条 FSDP no-padding 路径；分组、标签与注意力边界见[新阅读笔记](verl-shared-prefix-packing.md)。下文代码为历史示意，旧限制和性能数据不能直接外推到新实现。
 
 ## 1. 核心问题：GRPO 中的前缀冗余
 
@@ -39,7 +41,9 @@ GPU 计算:
   2. 所有 suffix 共享 prefix KV Cache
   3. 各 suffix 独立计算自己的 attention
 
-计算量从 O(G × L_prefix²) 降到 O(L_prefix² + G × L_suffix²)
+注意力交互量（忽略常数）:
+  O(G × (P² + P×R + R²)) → O(P² + G × (P×R + R²))
+  P = prefix 长度，R = suffix 长度；response 对 prefix 的注意力不能省略。
 ```
 
 ## 2. 源码分析
@@ -122,7 +126,7 @@ def build_position_ids_for_prefix_grouper(prefix_grouper):
     return position_ids
 ```
 
-**关键**：每个 suffix 的 position_ids 从 `prefix_len` 开始，确保因果性。
+**关键**：每个 suffix 的 position_ids 从 `prefix_len` 开始，保留原位置语义；因果可见域与分支隔离还依赖专用 attention/mask，单靠位置编号不能确保。
 
 ### 2.4 pg_forward()
 
@@ -188,6 +192,8 @@ PrefixGrouper 优化后:
 
 ## 4. 性能数据
 
+以下为历史摘录，原笔记未完整保留版本、硬件和复现条件，本机未重测；不是当前版本或 #8300 的性能承诺。
+
 | Context Length | Metric | PG | No PG | Speedup |
 |----------------|--------|-----|-------|---------|
 | 4K | old_log_prob | 1.31s | 1.70s | **1.30x** |
@@ -195,7 +201,7 @@ PrefixGrouper 优化后:
 | 8K | old_log_prob | 1.69s | 2.63s | **1.56x** |
 | 8K | update_actor | 5.98s | 10.18s | **1.70x** |
 
-**结论**：prompt 越长，加速越明显（prefix 冗余计算占比更大）。
+仅在这份摘录中，8K 的加速高于 4K；不能据此推导任意 prompt 越长必定越快，实际仍受 response 长度、算子与调度开销影响。
 
 ## 5. 使用限制
 
@@ -230,7 +236,7 @@ PrefixGrouper 是训练侧的 prefix 复用，与用户的前缀共享项目直�
 2. **分组关键**：通过 uid 标识相同 prompt，按 uid 分组
 3. **position_ids 特殊处理**：每个 suffix 从 prefix_len 开始编号
 4. **monkey patch 方式**：无需修改模型代码，自动 patch attention 函数
-5. **长 prompt 收益更大**：prefix 冗余占比更高
+5. **收益需测量**：长 prompt 可提高可省计算占比，但不能替代实际性能验证
 6. **外部库**：`prefix_grouper` 是独立包，可独立使用
 
 ## 参考

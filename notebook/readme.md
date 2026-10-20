@@ -130,7 +130,8 @@
 - [Megatron-LM 流水线并行](frameworks/megatron-pp-reading.md) — 1F1B 调度、气泡分析、通信 overlap
 - [verl 架构](frameworks/verl-architecture.md) — 三级前缀缓存（系统级+进程级+请求级）
 - [vLLM MLA Backend 源码阅读](frameworks/vllm-mla-backend-reading.md) — FlashMLA/FlashInfer/Triton/Cutlass MLA 后端、压缩数据流、KV Cache 格式、Backend 选择
-- [verl PrefixGrouper](frameworks/verl-prefix-grouper.md) — RL 训练中 prompt 复用的分组与调度
+- [verl shared-prefix packing](frameworks/verl-shared-prefix-packing.md) — #8300 的 FSDP 分支可见域、首响应标签、等价条件及 38 组原始 CPU 布局检查
+- [verl PrefixGrouper](frameworks/verl-prefix-grouper.md) — 历史集成；与新 engine 路径的版本边界及复杂度纠错
 - [vLLM V1 KV Cache Manager 源码阅读](frameworks/vllm-v1-kv-cache-manager-reading.md) — Block 分配/释放、6 种 Attention Manager、Prefix Caching、Coordinator 架构
 - [vLLM V1 Executor 源码阅读](frameworks/vllm-v1-executor-reading.md) — Executor→Worker→ModelRunner→AttentionBackend 完整执行路径、CUDA Graph、20+ Attention Backend
 - [vLLM MoE Serving 源码阅读](frameworks/vllm-moe-serving-reading.md) — 模块化 MoE kernel 架构、8+ All-to-All 后端、Router/Experts/Prepare-Finalize 分离
