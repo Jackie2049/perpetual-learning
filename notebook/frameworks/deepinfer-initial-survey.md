@@ -614,3 +614,39 @@ python3 experiments/scripts/verify_deepinfer_eplb_window.py /path/to/DeepInfer -
 既有独立Python3.12.13/torch2.9.1 CPU环境新增8组原始manager/view/step/local-stats检查通过：上表4条件分别运行基线与#107；覆盖2层反向global/local索引、共享视图、先消费后原地清零。负载统计interval固定128，单次调用不触发all_gather/CPU异步拷贝；进程组为替身，不执行producer kernel、模型sample、实际重排或collective。原窗口/受控日程/26个policy CPU例也通过。至此收束EPLB身份与计数链学习，不据此提出新缺陷或竞争修复。
 
 源码SHA256：deepseek.py `881fe2839b34d191ffd50ca6d5b7b57443b43ed8d811e204e4d48164f31f613a`；mlp.py `2541bcc83b178a9e2f18b387b301d60111d6d603e18e2d31df38196b03d290dd`；model_runner.py `9e2e18d136c9e0c9f23905ff994e9d23afaa94aa7a133d425e7fc1fc069033ef`；worker.py `ad32e595d9ab289dff1a7709136431ac60dae709e9e5123ae42eb0ebf7c30cbb`；sampler.py `81205a12e860041ffa904321b852db2d048bc038bb07d494dbb78b44b522d9a9`。子模块以DeepInfer gitlink固定提交核验，不把当前main或运行环境默认为这些版本。
+
+## Chunk checkpoint消费与预留尾段
+
+**切分候选不是已经接纳的调度；checkpoint的消费时机与KV资源回收是不同问题。** 2026-10-21 04:32心跳核对三个PR均open、共同base为774ce244：[#108](https://github.com/deepseek-ai/DeepInfer/pull/108)由syang-genai负责，head `ab47ee4c62ab704431db1b06a66f01c57619faef`；[#95](https://github.com/deepseek-ai/DeepInfer/pull/95)与[#98](https://github.com/deepseek-ai/DeepInfer/pull/98)由Phanthom-Mekat负责，head分别为`2a5db94adbc70f62ea205306efa677fe3331c954`、`6a934611d538bcce54434c73a886459bca36b021`。不是无人处理候选，本轮不发布review或竞争修复。
+
+| 方案 | 所改问题与交叠 |
+|---|---|
+| #95 | aborted waiting请求资源释放、state id重置、已持有KV的chunk继续推进、水位线与preemption排队 |
+| #98 | 保留上述核心，调整preempted插入位置以避开不可调度请求；两者差异不能只称为改名 |
+| #108 | 推迟checkpoint消费、区别显式checkpoint与预算分块开关、保留lookahead尾段；所测sizing/图片方法在#95/#98仍逐字同基线 |
+
+[基线_schedule_prefill](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/csrc/engine/scheduler.hpp#L460)先按预算和checkpoint选长度，立即pop checkpoint，再检查图片边界、chunked_prefill和最小lookahead；稍后break时，未接纳序列也可能已失去checkpoint。预算分块还可能留下短于lookahead的尾段，使下一尝试的seq_workload检查失败。[#108片段](https://github.com/syang-genai/DeepInfer/blob/ab47ee4c62ab704431db1b06a66f01c57619faef/csrc/engine/scheduler.hpp#L477)先只读选点，在通过长度接纳检查后消费，并缩短前块以保留尾段。这里的“提交”不是任意后续失败都能回滚的事务：检查status、KV分配、真正执行与process_outputs都还在后面。
+
+### 局部原始C++检查及其边界
+
+```bash
+python3 experiments/scripts/verify_deepinfer_chunk_sizing.py /path/to/DeepInfer
+```
+
+[脚本](../../experiments/scripts/verify_deepinfer_chunk_sizing.py)从固定Git对象提取原始sizing片段、_is_inside_image_pad_region与_adjust_chunk_size，使用Clang/C++20在本机编译运行。Sequence存储、已有调度上下文和“接纳后cached增加”是夹具，不运行真实Sequence/Scheduler；TORCH_CHECK仅替换为本地异常，忽略诊断格式化。截取到status检查/KV分配之前，不执行完整队列、内存分配、Gloo或跨rank投票。
+
+10组成对控制通过，部分关键结果如下。缓存位置序列是夹具按接纳q推进的轨迹，非真实engine实测。
+
+| 控制输入 | 基线片段 | #108片段 |
+|---|---|---|
+| prompt20、checkpoint5、chunked_prefill关闭 | 首次未接纳但丢点，重试直接20 | 先5，再20 |
+| prompt10、预算8、lookahead4 | 先8，余2导致下次检查抛错 | 先6，再10 |
+| 图片覆盖[0,8)、checkpoint4、已有请求占用预算 | 图片收缩到0后退出，点已丢 | 同样退出，但保留点 |
+| 预算全被前请求用完，未来checkpoint6 | 保留点 | 也保留点；不是旧版必败用例 |
+| 图片覆盖[3,8)、checkpoint5 | 预算够时扩大到8；预算6时收缩到3 | 相同；不保证在图片内部精确切到5 |
+
+其他控制包括多个checkpoint、普通预算分块、过短checkpoint与过短尾段。#108允许把违反lookahead的checkpoint当不存在，并在覆盖它的接纳块消费掉；图片约束也可能改变实际边界。因此“保留显式点”不等于保证每个不合法/图片内部点都能精确满足。不能把所有新增测试都算作旧版失败，或把这些局部结果当作DP挂起已复现。
+
+完整测试尚未运行。原始Scheduler头文件的本机syntax-only尝试先因SDK标准库搜索路径缺memory失败；显式SDK路径后，Clang仍报object_pool.hpp的dependent cast模板解析，以及Linux特有PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP/pthread_mutex_clocklock未定义。torch2.9.1 macOS有Gloo不等于官方Linux/torch2.13扩展能在本机原样编译。本轮没有改兼容层，未构建完整扩展，也未执行#108的5个原始Scheduler/Gloo测试；作者PR正文亦注明它们尚未在其机器执行。这是本机验证限制，不据此认定上游构建缺陷。
+
+本机为macOS arm64，脚本在Python3.9.6和3.12.13均通过；torch2.9.1仅用于完整头文件/Gloo可用性检查，片段执行不依赖torch。scheduler.hpp SHA256：base `c14de4d5341170227b82ddf2d146d9c6a337937885a6886237aab5a7238da5db`；#108 `63c4c02b600cf2e321f4ea6540de805d9d406d00757e461abb8d5a2271589ef3`；#95 `7a15e8cf4cb9bc6901d5361e7342406f4926ace5ca55f43faf6977cc31f4cb41`；#98 `b6f3cc0b8f38d8f9145d53ab3c3872d20745f16fcebfe969efc2203973cfe3e3`。下一步只读核对Python checkpoint入口、token坐标与cached-prefix fork调用契约，不扩写为未经完整调度验证的新修复。
