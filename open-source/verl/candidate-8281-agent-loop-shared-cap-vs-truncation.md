@@ -8,6 +8,8 @@
 
 **analysis-done + CPU 验证完成**（本地提取逻辑验证，非 GPU 实测）。reporter 未自修 PR（0 引用 PR），但 reporter 深挖后把「契约决策」抛给社区。发布评论/PR 需用户授权。
 
+**（2026-10-20 补充）PR 草稿已本地备好**：源修复 + 真实单测已落在 `/Users/jackiemac/workspace/verl` 分支 `fix-8281-truncation-policy`（commit `7ace28db`，基于上游 main `ddf70072`），补丁存 [patches/8281-truncation-policy.patch](patches/8281-truncation-policy.patch)。验证：真源方法 verbatim exec 32 断言全过（default/error/left/right/middle/unknown/short/middle 长度不变量）；两文件 py_compile 通过。**局限**：本机无 verl 全量依赖（ray/transformers/torch），真单测未在本机跑，需在 verl CI 验证；补丁已可应用用户 fork。
+
 ## 问题
 
 `AgentLoopBase._cap_text_prompt_length`（`verl/experimental/agent_loop/agent_loop.py:467-476`）对超长文本 prompt **无条件左截断**（保留后缀 `prompt_ids[-prompt_length:]`），忽略 `data.truncation` 策略（`error/left/right/middle`）。默认 `error` 时本应报错，却被静默截断，导致 prompt 开头指令被丢弃。
@@ -88,6 +90,6 @@ def _cap_text_prompt_length(self, prompt_ids: list[int]) -> list[int]:
 
 可选：
 1. **comment**：给 reporter 的技术回复——确认复现、指出 RLHFDataset 层 truncation 空契约、给出 option 1 的具体 patch + error 路径的训练器行为分析。低风险、对上游有价值。
-2. **PR**：option 1 完整实现 + 单测（需补 agent_loop 测试，当前无任何 `_cap_text_prompt_length` 测试）。需先确认 error 行为与 maintainer 方向。
+2. **PR**：option 1 完整实现 + 单测——**已本地备好**（源修复 + `test_cap_text_prompt_length.py`，patch 见上）。发布前仍需确认 error 行为与 maintainer 方向（见决策点）。
 
 不发布评论则本地沉淀作 review/跟进依据。
