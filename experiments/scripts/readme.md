@@ -15,7 +15,7 @@
 | [test_vllm_lora_nan_h20.py](test_vllm_lora_nan_h20.py) · [test_vllm_lora_nan_targeted_h20.py](test_vllm_lora_nan_targeted_h20.py) | vLLM LoRA NaN 复现与验证 |
 | [cuda_multi_stream_race_demo_h20.py](cuda_multi_stream_race_demo_h20.py) · [cuda_multi_stream_race_demo_v2_h20.py](cuda_multi_stream_race_demo_v2_h20.py) | CUDA 多流竞争复现 |
 | [verify_areal_prompt_mean_split.py](verify_areal_prompt_mean_split.py) | AReaL 归约契约 CPU 参考验证（标准库，无 torch）；区分外层优化步数与内层累积，含 token_mean 对照、合法 DP dummy 调度、Megatron 默认路径 P 抵消及标量 Adam 反例；非框架集成实测，见源码笔记 §10.7 |
-| [areal_prompt_mean_gpu_probe.py](areal_prompt_mean_gpu_probe.py) | 由 M5 单一维护的 AReaL GPU 探针原稿，GPU 集成待验证；M1 的离线修整仅为未应用参考 patch，见 [交接说明](../../open-source/areal/handoff-m5.md)，不要据草稿预检结果判断原稿可运行 |
+| [areal_prompt_mean_gpu_probe.py](areal_prompt_mean_gpu_probe.py) | AReaL prompt_mean GPU 受控实测（§10.7 判据：固定外层 M 只变内层 P、M=2 vs 4 训练行为对照 + token_mean 对照），真实 PPOActor+FSDPEngine 单卡 + 固定 batch，输出参数更新 delta_L2；2026-10-20 已在服务器 4090-1 实测完成（Qwen2.5-0.5B）：prompt_mean 跨 M 1.301 ≈ token_mean 1.273、P-spread 1.216 ≈ 1.192，**不构成 defect**，见源码笔记 §10.10 |
 | [verify_deepinfer_seed_contract.py](verify_deepinfer_seed_contract.py) | 从指定 DeepInfer 源码提取 seed/EngineType 定义，在无 torch 环境检查 uint64 种子行为和调度默认值；打印输入 SHA256，非 sampler kernel 或模型一致性实测 |
 | [verify_deepinfer_zos_host_flow.py](verify_deepinfer_zos_host_flow.py) | 原始 Worker 主机替身；--check-event-pool 查 #54 计时引用错配；--check-so-counter 查 SO 上界与漏更新故障；--check-output-copy 编译小型 CPU 扩展核验 pybind 数组构造及原始收集/释放分支，需显式提供头文件。非完整 C++ 调度、真实输出池/语法/CUDA/通信/性能验证 |
 | 同上 `--check-worker-lifecycle` | 原始 CP 命令/关闭/队列方法的单槽内存与假时钟检查；区分读标记、方法完成、父死注册和 ring timeout。非 Linux prctl、实际共享内存、多进程、socket 或 collective 验证 |

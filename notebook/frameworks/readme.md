@@ -174,8 +174,8 @@
 
 ## AReaL
 
-- [AReaL 架构与统一损失系统源码阅读](areal-architecture-source-reading.md)：v1 训练栈（rl_trainer → trainer/ppo → engine）、统一 `grpo_loss_fn`（PPO/SAPO/CISPO/M2PO）、归约系统与 batch 切分不变性、M2PO 掩码 local-threshold 关联 #1730、数据集只过滤不截断（对照 verl #8281）。
-- 贡献轨道（扫描、候选、认领动态）见 [AReaL 贡献追踪](../../open-source/areal/tracker.md)；近期聚焦 #1730（M2PO microbatch 不变性）与 verl #7913 的跨框架对照。
+- [AReaL 架构与统一损失系统源码阅读](areal-architecture-source-reading.md)：v1 训练栈（rl_trainer → trainer/ppo → engine）、统一 `grpo_loss_fn`（PPO/SAPO/CISPO/M2PO）、归约系统与 batch 切分不变性、M2PO 掩码 local-threshold 关联 #1730、数据集只过滤不截断（对照 verl #8281）；§10.7–10.10 记录 prompt_mean 切分敏感点从怀疑 → 对抗复核 → GPU 实测闭环（**不构成 defect，候选修复撤销**）。
+- 贡献轨道（扫描、候选、认领动态）见 [AReaL 贡献追踪](../../open-source/areal/tracker.md)；近期聚焦 #1730（M2PO microbatch 不变性）与 verl #7913 的跨框架对照；prompt_mean 实测闭环见 [源码笔记 §10.10](areal-architecture-source-reading.md)。
 
 ## SGLang
 
