@@ -57,4 +57,4 @@ python3 experiments/scripts/verify_gspo_detach_gradient.py /path/to/verl-8250
 2. 对齐rollout生成版本、old-logprob重算版本和训练update版本；同一固定token序列，比较训练actor、同checkpoint重载模型与live rollout，明确dtype/kernel/模板/采样处理差异。
 3. 获取首次异常更新前后的有限性、ratio分位数、梯度测量位置（裁剪前后）、有效样本量和同步事件；再分别控制reward、staleness、融合路径等变量。
 
-未得到数据前，不把0.05或某KL系数当通用阈值，不宣布mask、数值、同步或reward分支已排除。[clip RFC草稿](verl-clip-semantics-rfc-draft.md)同步退回重审，发布边界不变。
+未得到数据前，不把0.05或某KL系数当通用阈值，不宣布mask、数值、同步或reward分支已排除。[clip旧RFC](verl-clip-semantics-rfc-draft.md)经GMPO复核后已撤回且不再推进；本候选仍待补证，发布边界不变。

@@ -225,7 +225,7 @@ where `env_loss_coef` = 0.05 (default), `obs_mask` = observation token mask
 | 损失 | 形式 | 备注 |
 |---|---|---|
 | **DRO**（Direct Reward Optimization） | `L = -(log π·A − ½·β·log_ratio²)`，β=policy_loss.dro_beta | 二次 log-ratio 惩罚的 REINFORCE 变体；梯度 = -A·∇log π + β·log_ratio·∇log_ratio（在线性近似下 ≈ KL 锚定的信任域正则，β↑ 限制偏离旧策略） |
-| GMPO/geo_mean | 见 [GMPO 论文笔记](papers/gmpo.md) | #7913 修复对象；clip 在 log 空间（与论文 ρ 空间不一致） |
+| GMPO/geo_mean | 见 [GMPO 更正笔记](papers/gmpo.md) | 2026-10-21纠正：论文Algorithm 1也在log空间；完整符号目标仅在明确条件下对应，不再认证任意切分/完整框架等价 |
 | SAPO | 见 [SAPO 论文笔记](papers/sapo.md) | sech² 平滑门 + 非对称温度；verl 用 sigmoid 变体 |
 | GSPO | Session 10 §6 + [GSPO 论文笔记](papers/gspo.md) | verl 示例默认 ε=3e-4 极紧窗 |
 | GPG | `L = -log π·A`（无 ratio） | AMAP-ML GPG，VisualThinker-R1 同源 |

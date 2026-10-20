@@ -11,6 +11,7 @@
 | [grpo_smoke_test_h20.py](grpo_smoke_test_h20.py) · [grpo_training_runtime_test_h20.py](grpo_training_runtime_test_h20.py) · [grpo_training_validation_test.py](grpo_training_validation_test.py) | GRPO 训练与烟雾验证 |
 | [test_up_grpo_h20.py](test_up_grpo_h20.py) | UP-GRPO 损失验证 |
 | [verify_gspo_detach_gradient.py](verify_gspo_detach_gradient.py) | 修正后的GSPO/GSPO-token目标值与有限差分梯度对照；GRPO幅度界/clip方向诊断反例。需指定verl源码，打印hash/形状检查；NumPy模型不执行原torch/autograd，非完整训练或根因证明 |
+| [verify_gmpo_clip_semantics.py](verify_gmpo_clip_semantics.py) | GMPO完整序列PG的正负优势、符号clip与mask对照，含非对称窗口映射、稳定分母和外层均值边界。需指定verl源码，NumPy/有限差分模型不执行原始函数，不证明engine/DP/训练等价 |
 | [test_vllm_lora_nan_h20.py](test_vllm_lora_nan_h20.py) · [test_vllm_lora_nan_targeted_h20.py](test_vllm_lora_nan_targeted_h20.py) | vLLM LoRA NaN 复现与验证 |
 | [cuda_multi_stream_race_demo_h20.py](cuda_multi_stream_race_demo_h20.py) · [cuda_multi_stream_race_demo_v2_h20.py](cuda_multi_stream_race_demo_v2_h20.py) | CUDA 多流竞争复现 |
 | [verify_areal_prompt_mean_split.py](verify_areal_prompt_mean_split.py) | AReaL 归约契约 CPU 参考验证（标准库，无 torch）；区分外层优化步数与内层累积，含 token_mean 对照、合法 DP dummy 调度、Megatron 默认路径 P 抵消及标量 Adam 反例；非框架集成实测，见源码笔记 §10.7 |

@@ -105,7 +105,7 @@
 - [FlashAttention](papers/flashattention.md) — Tiling + online softmax + recomputation, O(N) 内存
 - [Chinchilla Scaling Laws](papers/chinchilla.md) — L(N,D) 最优 ~20 tok/param, 推翻 Kaplan "大模型少数据"
 - [PPO](papers/ppo.md) — L^{CLIP}, RLHF 核心算法, GRPO 简化版
-- [GMPO](papers/gmpo.md) — 几何均值抑制 ratio 离群, 论文-vs-verl 实现对照 (clip 空间语义差异发现)
+- [GMPO](papers/gmpo.md) — 完整符号裁剪目标与限定值/梯度对照；旧“论文与实现配置空间不同”结论撤回，非完整训练证明
 - [GSPO](papers/gspo.md) — 序列级 importance ratio + 组归一优势, verl 示例 ε=3e-4 极紧窗发现
 - [SAPO](papers/sapo.md) — sech² 平滑门替代硬裁剪, 非对称温度 τ_neg>τ_pos, Qwen3-VL 实战
 - [GPT-4](papers/gpt4.md) — 可预测扩展, RLHF 无损, RBRMs 安全

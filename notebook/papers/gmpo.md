@@ -1,70 +1,64 @@
-# GMPO: Geometric-Mean Policy Optimization（论文精读）
+# GMPO：完整裁剪目标、符号分支与旧结论更正
 
-> [arXiv:2507.20673](https://arxiv.org/abs/2507.20673) · Yuzhong Zhao et al. · 2025-07
-> 精读时间：2026-10-19 · 关联：[RL 损失函数推导](rl-policy-loss-functions-mathematical-derivation.md) · [GRPO 综合](grpo-training-algorithm-unified-synthesis.md)
-> 动机：verl #7913 geo_mean 损失修复（candidate-7913）需对照论文验证实现语义。
+来源：[论文 v1 Eq.4 / Algorithm 1](https://arxiv.org/html/2507.20673v1)；[作者代码固定提交](https://github.com/callsys/GMPO/blob/ae9cbebd8cc6b58a6db6c61cb90e4b13ff131d94/train_zero_math_gmpo.py#L675)；[verl 报告版本](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/trainer/ppo/core_algos.py#L1928)。2026-10-21 重审。关联：[损失综述](../rl-policy-loss-functions-mathematical-derivation.md)、[GSPO 更正](gspo.md)。
 
-> **2026-10-21复核边界**：下文GMPO完整公式/clip等价性本轮未重审，不再作为“RFC证据完成”的依据。此前引用GSPO未归一乘积及#8250紧窗因果的说法已撤回；见 [GSPO更正](gspo.md) 与 [退回重审的草稿](../../open-source/verl/verl-clip-semantics-rfc-draft.md)。
+**结论**：论文 Algorithm 1 本身在 log 空间裁剪，默认 epsilon=0.4 对应 exp(±0.4)，不是 1±0.4。“论文与 verl 配置空间不一致”的旧判断撤回。原脚本只比较双侧 clamp、缺优势符号与最终目标，不能支持完整等价；当前只在明确条件下建立代数对应和有限数值验证。[旧 RFC](../../open-source/verl/verl-clip-semantics-rfc-draft.md)不再独立推进，没有新上游缺陷或训练根因结论。
 
-## 一句话
+## 从完整目标推导
 
-GRPO 对 token 级奖励求**算术**平均，遇离群 importance ratio 时更新不稳；GMPO 改求**几何**平均，同一序列内 outlier ratio 被几何均值吸收，权重更稳。
+设有效 token 对数比率 $z=\log\pi_{\mathrm{new}}-\log\pi_{\mathrm{old}}$、同一响应恒定优势 A、$s=\operatorname{sign}(A)$，有效 token 数 N>0。以下均是要最小化的负收益，不含辅助损失。
 
-## 目标函数（Eq. 4）
+论文 Eq.4 先对 **r^s** 做 min/clip，再取 s 次幂与几何均值。写成 log 形式：
 
 $$
 \begin{aligned}
-J_{\mathrm{GMPO}}(\pi_\theta)
-&= \mathbb{E}_{q,\{o_i\}\sim\pi_{\mathrm{old}}}
-\frac{1}{G}\sum_{i=1}^{G}
-\Biggl\{\prod_{t=1}^{\lvert o_i\rvert}
-\Bigl|\min\Bigl[
-\rho_{i,t}(\theta)\widehat{A}_i,\\
-&\qquad\operatorname{clip}\bigl(\rho_{i,t}(\theta),\epsilon_{\mathrm{low}},\epsilon_{\mathrm{high}}\bigr)\widehat{A}_i
-\Bigr]\Bigr|\Biggr\}^{1/\lvert o_i\rvert}
-\operatorname{sgn}(\widehat{A}_i).
+\phi_{\mathrm{paper}}(z,s)&=s\min\bigl(sz,\operatorname{clamp}(sz,\log L,\log U)\bigr),\\
+\ell&=-A\exp\bigl(\operatorname{mean}_{\mathrm{valid}}\phi_{\mathrm{paper}}\bigr).
 \end{aligned}
 $$
 
-逐 token 的 ratio ρ 与 clip 在**概率空间**进行（论文 Algorithm 1 用 epsilon=0.4），序列内做**几何均值**（log 空间乘积防数值溢出），乘序列优势 Â_i 与符号。等价变形：
+这里 L/U 是 signed ratio 的阈值。Algorithm 1 取 log L=−ε、log U=ε；作者代码用相反 sign 与 max，标量优势、对称窗口下是同一代数形式。只读过该分支，未运行作者训练程序，也未验证其 batch 约束。
+
+verl 指定版本的次序不同：先 clamp **原始 z**，再乘优势 sign、取 min、乘回 sign：
 
 $$
-=\widehat{A}_i\cdot
-\left(\prod_t\min\bigl(\rho_t,\operatorname{clip}(\rho_t)\bigr)\right)^{1/\lvert o_i\rvert}
+\phi_{\mathrm{verl}}(z,s)=s\min\bigl(sz,s\operatorname{clamp}(z,-a,b)\bigr).
 $$
 
-## 梯度对比（Eq. 5 vs 6）——核心论点
+它化简为：
 
-| | 每个 token 的梯度权重 |
-|---|---|
-| GRPO | $\rho_{i,t}(\theta)$（自身 importance ratio）——单个离群 token 直接放大/压死梯度 |
-| GMPO | $\left(\prod_k\rho_{i,k}(\theta)\right)^{1/\lvert o_i\rvert}$（全序列 ratio 的几何均值）——离群被均值吸收 |
+| 优势 | phi_verl | 哪一侧被截平 |
+|---|---|---|
+| A>0 | min(z,b) | z>b；相反的低比率尾部仍有梯度 |
+| A<0 | max(z,−a) | z<−a；相反的高比率尾部仍有梯度 |
+| A=0 | 孤立 PG loss 为 0 | 不推论辅助项也为零 |
 
-两者都是 policy gradient 的加权和（权重 × Â_i × ∇log π），GMPO 权重更稳。
+因此不能把双侧 clamp 本身当完整 PG 目标，也不能说所有窗口外 token 均被裁平。各有效 token 的内部导数在未裁平侧为 loss/N，在裁平侧为 0（这里对 z 求导，非模型参数/优化器或 clip 拐点）。
 
-## 与 verl 实现对照（2026-10-19 源码核对）
+## 什么条件下对应
 
-**geo_mean（core_algos.py:1928）与论文 Eq.4 数学等价**：
+- **对称窗口 a=b=ε**：Eq.4 取 L=exp(−ε)、U=exp(ε)，Algorithm 1 与 verl 的理想化非空响应目标相同。未裁剪时，序列几何均值给响应内 token 共享权重；不是未归一全序列乘积。
+- **一般原始 ratio 窗口**：常规 PPO `min(A*r, A*clip(r, exp(-a), exp(b)))` 取绝对值后的几何均值再恢复 A 的符号，与上述 verl 理想模型对应。正负优势均须包含；旧笔记漏写了负优势分支。
+- **Eq.4 非对称 signed-ratio 窗口不可直接沿用同一 L/U**：其正优势有效上界为 U，负优势原始 ratio 下界为 1/U；verl 对应 exp(b)/exp(−a)。若 a≠b，直接套同一 signed window 会不匹配，需要依 sign 映射。例 a=.1,b=.4,A=−1,z=−.3：Eq.4 loss=.740818221，verl=.904837418。论文/作者默认是对称窗口；这只是参数映射反例，未证明实现违背其非对称配置契约，不据此报 bug。
 
-| 论文 | verl geo_mean |
-|---|---|
-| clip(ρ, ε_low, ε_high)（概率空间） | **clamp(log ρ, -clip_ratio_low, clip_ratio_high)（log 空间）** ⚠️ 语义不同 |
-| Π_t min(...) 几何均值 | exp(mean_t min-clamped log ρ)（同序 log 空间）✓ |
-| 序列优势 Â_i | 序列优势（"只支持 sequence-level advantage"）✓ |
-| loss = -Â·geo_mean_ratio | pg_losses = -advantage·ratio ✓ |
+log-ratio z 是采样 token 的对数概率差，**不是分布 KL**。上述阈值不应写成“KL ±ε nats”的硬界；与 GSPO 序列几何均值之后裁剪也不是普遍等价。
 
-**待重审的历史观察**：源码裁剪对象和配置空间需要准确说明，但不能用[#8250](https://github.com/verl-project/verl/issues/8250)证明紧窗导致无法恢复；该因果表述已撤回。小参数下log/ratio对应窗口本来接近，完整目标还须检查正负优势、裁剪与聚合的顺序，不能只凭一个标量恒等式认证等价或提出RFC。
+## 验证与边界
 
-## 对 #7913 修复的验证
+```bash
+python3 experiments/scripts/verify_gmpo_clip_semantics.py /path/to/verl-8250
+```
 
-论文目标 = prompt 级平均（1/G Σ_i …）→ verl 修复用 `agg_loss(seq-mean-token-sum)` 保证**任意 microbatch 切分下等于全 minibatch 平均**，与论文语义一致。修复后行为 = 论文目标；修复前（torch.mean 局部）在拆分时偏离论文目标。
+[脚本](../../experiments/scripts/verify_gmpo_clip_semantics.py)仅 NumPy 模型与有限差分，对输入源码做 AST 形状检查并打印 SHA256，**未执行原始 torch 函数/autograd**。Python 3.9.6 与 3.12.13、NumPy 2.0.2 均通过：
 
-## 实验结论（论文）
+- 36 组长度1/2/7/16、epsilon .0003/.2/.4、优势−2/0/1.5，含部分有限 padding，比较完整 Eq.4/Algorithm 1/verl 理想目标值、有限差分及独立分支解析导数；避开裁剪拐点。
+- 原始 ratio 非对称窗口的正负优势值/梯度对照；signed-window 不匹配及旧 clamp-only 漏项反例。
+- 有限 padding 不影响有效值；混合 token 优势不能用其均值替代论文恒定序列优势；空响应和外层平均分母控制。
 
-- 数学推理基准 Pass@1 平均 +4.1%（7B，vs GRPO）
-- 实现细节：log 空间乘积+clip；ε 典型 0.4
+verl 原代码两处 N+1e−8 稳定项使其与理想 N 分母**并非逐位严格相等**；上述样本最大值差约1.3650e−7，不能把这一观测当普适误差上界。源码哈希 `a54b6d812db4441e8b0989ae69d2c46b0a0a7b584296f73d8316f264462c37cb`。未覆盖非有限输入、任意 token 优势、rollout IS 权重、真实训练/优化器、分布式归一或模型参数梯度。
 
-## 延伸问题
+外层 `torch.mean(pg_losses)` 是响应行均值，空响应产生0但仍计入分母。局部均值直接累加不自动等于全局均值；脚本仅演示该算术事实。**不能由此认证 #7913 的完整修复**：还需核对真实 actor/engine 的 microbatch 缩放、DP 归约、全局分母和空响应政策。旧“任意切分修复后即论文目标”的无条件表述撤回，本轮未改 #7913 patch、未运行旧 split 脚本，也未改变上游竞争状态。
 
-1. ~~verl geo_mean 的 log 空间 clamp 与论文 ρ 空间 clip 在**紧窗区**（KL<0.001）行为差异可忽略，但在离群区（KL>0.1）差异显著~~ → **2026-10-19 数值证明：完全等价**（experiments/scripts/verify_gmpo_clip_semantics.py）。因 `log(min(ρ,ε)) ≡ min(log ρ, log ε)`，窗口对应时前向值与梯度逐位一致（仅 torch clamp 边界点的 inclusive 约定造成测度零差异）。**真正的差异是配置语义**：同一数值在论文是 ρ 空间窗口（ε=0.4 → ρ∈[0.67,1.49]），在 verl 是 log 空间窗口（ε=0.4 → KL ±0.4 nats；ε=3e-4 → ρ∈[0.9997,1.0003]）。
-2. **2026-10-21撤回旧GSPO比较**：GSPO论文Eq.7本身使用长度归一几何均值，Eq.14包含GSPO-token的stop-gradient。中间Jacobian不同不等于最终目标梯度不同；修正脚本在恒定序列优势/相同token均值归约的限定36组中一致，非完整训练等价证明。旧“论文求和而verl求均值、L倍差异”不成立，详见 [更正](gspo.md)。
+## 方法教训与接续
+
+原脚本多数判断只打印 allclose，未 assert；即使输出通过，也仅覆盖了 clamp，不是完整符号目标。新的回归检查必须包含最终标量损失、正负优势、有效掩码和外层分母，并明确数值稳定项与真实框架边界。下一步回查 #7913 的真实调用链，只做源码/本机证据，不承接 GPU 或 AReaL 工作。
