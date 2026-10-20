@@ -23,7 +23,7 @@
 
 ## 当前用户需求与决定
 
-- **方向偏好**：用户希望近期自主运行重点跟进 verl 与 AReaL 两个 RL 训练框架（2026-10-20）。verl 已是贡献主轨道；AReaL（areal-project，蚂蚁系，合并效率 91% 为活跃社区最高）作为新增关注/潜在贡献轨道。
+- **方向偏好**：用户希望近期自主运行重点跟进 verl 与 AReaL 两个 RL 训练框架（2026-10-20）。verl 已是贡献主轨道；AReaL（areal-project，蚂蚁系，合并效率 91% 为活跃社区最高）作为新增关注/潜在贡献轨道。**2026-10-20 已建立 AReaL 贡献轨道**（[readme](open-source/areal/readme.md) · [tracker](open-source/areal/tracker.md)）：首次扫描确认无未认领贡献空间（reporter 自修规律与 verl 相同），跨框架观察 #1730 M2PO microbatch 与 verl #7913 同类、同 reporter。
 - 项目名称、首页标题和仓库标识统一使用 `perpetual-learning`，删除首页旧名称标识行。项目定位继续保留 [README.md](README.md#项目说明) 中的用户原文。
 - README.md 是整个项目的总览、对外呈现与用户导航，按主题、框架、成果提供快捷入口；文件组织使用可点击的目录表，作为统一入口置于项目说明与运作机制之后，不再单设重复的“项目导航”章节。[AGENTS.md](AGENTS.md) 为 Agent 内核；本文件记录当前工作上下文。
 - README 不放内部整理计划、迁移过程或待决定事项；当前阶段与待办由本文件维护，完成过程写入 diary。
@@ -43,6 +43,8 @@
 - 新候选：#8250 async 熵爆炸诊断（analysis-done，草稿待授权）、clip 语义文档澄清（evidence-complete）、**#8252 训练前 weight-update 自检 RFC（assessed，三项事实核验成立，参与与否待授权）**。
 - **#8281 PR 草稿本地备好**（2026-10-20）：源修复（`_cap_text_prompt_length` 尊重 data.truncation 四策略 + unknown raise）+ 真实单测 `test_cap_text_prompt_length.py`；真源 verbatim exec 32 断言全过，两文件编译通过；patch 存 [patches/8281-truncation-policy.patch](open-source/verl/patches/8281-truncation-policy.patch)，分支 `fix-8281-truncation-policy`（7ace28db）。**发布形态倾向 comment**（reporter 定位为「契约讨论」）；存在关联旧 PR #4600（reporter 创建时交叉链接，陈旧+dirty+预 CT 重构，非当前修复点），若走 PR 需说明为何不重复 #4600。发布仍需授权 + verl CI 验证（本机无 ray/transformers/torch）。
 
+**AReaL 轨道（新建立，2026-10-20）**：首次扫描确认近期可行动 bug 全被 reporter 自修 PR 覆盖（#1786→#1787、#1730→#1732），**无未认领空间**；老 issue 多被 assignee 认领。关键跨框架观察：`gss10282025` 同时开 verl #7913（geo_mean microbatch，我方已深挖）与 AReaL #1730（M2PO microbatch 不变性），我方 verl 经验可直接迁移作 #1730 技术回复。产出 [AReaL readme](open-source/areal/readme.md) · [tracker](open-source/areal/tracker.md)，登记 README/notebook 索引。
+
 **学习与知识**：GMPO/GSPO/SAPO 三论文精读（含 verl 实现对照、三向 clip 语义对照表、非对称温度、数值证明）；损失注册表唯一性审计（geo_mean 唯一绕过 agg_loss）；DRO 推导补全；排错指南新增 async 熵爆炸章节。产出笔记 3 篇 + 验证脚本 2 个（verify_gmpo_geo_mean_split.py、verify_gmpo_clip_semantics.py）。
 
 **方法学教训**（已入库）：查重 "None" ≠ 0（限流误报）；reporter 深挖 issue ≈ reporter 已开 PR；认领声明 ≠ 会提；verl 认领窗口 0-2 天且 reporter 自修为主。
@@ -50,7 +52,7 @@
 ## 待讨论与下一步
 
 1. **等待用户授权/资源**（长期未决，见「运行接续」5 项）——发布评论/文档、#8281 发布形态、方向调整。#8237 已收尾（PR #8286 ready + issue 已回）。
-2. 若继续自主：verl 新 issue 池已恢复（10-16 起 #8261/#8281），#8281 已深挖完成（analysis-done，待发布决定）；#8261（依赖升级性能）已判定排除；**#8252 RFC（训练前 weight-update 自检）已评估为"参与价值在技术回复、不建议实现"**（待授权决定）；vLLM 方向可继续核验 6 月草稿外机会或框架源码深化。
+2. 若继续自主：verl 新 issue 池已恢复（10-16 起 #8261/#8281），#8281 已深挖完成（analysis-done，待发布决定）；#8261（依赖升级性能）已判定排除；**#8252 RFC（训练前 weight-update 自检）已评估为"参与价值在技术回复、不建议实现"**（待授权决定）；vLLM 方向可继续核验 6 月草稿外机会或框架源码深化。**AReaL 轨道已建立但当前无未认领空间**：可跟进 #1730（M2PO microbatch，评论价值中等、需授权）或转做 AReaL 源码精读（当前 frameworks 索引无 AReaL 源码笔记，是空白）。
 3. 按课题逐步关联现有实验执行材料与 notebook/experiments/ 的分析记录；新增实验优先就近组织，维护双向入口。
 4. 维护按职责划分的一级目录；新增或整理内容时整体检查归属、引用和输出路径，避免再次堆出按文件类型划分的一级目录。根目录 projects/ 暂不新增。
 5. 按价值、使用关系和证据继续筛选历史工具，避免只按文件名批量归档；其余历史工具继续按同一标准检查。
@@ -58,7 +60,7 @@
 ## 接续入口与约束
 
 - 学习与探索：[notebook/readme.md](notebook/readme.md)、[roadmap.md](notebook/roadmap.md)、[knowledge-map.md](notebook/knowledge-map.md)。本轮学习线（RL 损失家族）已收束，新课题未定。
-- 贡献：[open-source/README.md](open-source/README.md)、[verl tracker](open-source/verl/tracker.md)。当前活跃：#8250（诊断评论待授权）、clip 语义文档澄清（待授权）、#8281（agent loop truncation，analysis-done，待发布决定）；#8237 已收尾（PR [#8286](https://github.com/verl-project/verl/pull/8286) ready）；vLLM #39096 评论待授权。
+- 贡献：[open-source/README.md](open-source/README.md)、[verl tracker](open-source/verl/tracker.md)、[AReaL tracker](open-source/areal/tracker.md)。当前活跃：#8250（诊断评论待授权）、clip 语义文档澄清（待授权）、#8281（agent loop truncation，analysis-done，待发布决定）；#8237 已收尾（PR [#8286](https://github.com/verl-project/verl/pull/8286) ready）；vLLM #39096 评论待授权；AReaL 轨道已建立、无未认领空间。
 - 本地目录已核实为 `/Users/jackiemac/workspace/perpetual-learning`；旧会话可能仍绑定已不存在的 rollout-infra 路径。GitHub 仓库为 [perpetual-learning](https://github.com/Jackie2049/perpetual-learning)。
 - 原有未跟踪文件 diary/2026-08-14.md 属于既有用户工作，保留原状，不夹带提交。
 - 历史服务器状态、访问方式和“已验证”结论按需复核，不复述凭据。

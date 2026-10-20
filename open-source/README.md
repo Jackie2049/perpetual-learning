@@ -6,6 +6,7 @@
 
 | 项目 | 贡献材料 | 学习材料 |
 |---|---|---|
+| AReaL | [候选、方案与记录](areal/readme.md) · [tracker](areal/tracker.md) | [源码阅读](../notebook/frameworks/readme.md#areal) |
 | DeepSpeed | [候选、方案与记录](deepspeed/readme.md) | [源码阅读](../notebook/frameworks/readme.md#deepspeed) |
 | MoonshotAI | [候选、方案与记录](moonshot/readme.md) | — |
 | PyTorch | [候选、方案与记录](pytorch/readme.md) | [源码阅读](../notebook/frameworks/readme.md#pytorch) |

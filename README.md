@@ -100,6 +100,7 @@ AI 技术是探索范围，Infra 是优先方向。下面提供常用主题的�
 | vLLM | [源码索引](notebook/frameworks/readme.md#vllm) · [V1 架构全景](notebook/frameworks/vllm-v1-architecture-map.md) | [vLLM 贡献](open-source/vllm/readme.md) |
 | SGLang | [源码索引](notebook/frameworks/readme.md#sglang) · [架构分析](notebook/frameworks/sglang-architecture.md) | [SGLang 贡献](open-source/sglang/readme.md) |
 | verl | [源码索引](notebook/frameworks/readme.md#verl) · [RL Infra](notebook/frameworks/verl-rl-infra-reading.md) | [verl 贡献](open-source/verl/readme.md) · [Tracker](open-source/verl/tracker.md) |
+| AReaL | [源码索引](notebook/frameworks/readme.md#areal) | [AReaL 贡献](open-source/areal/readme.md) · [Tracker](open-source/areal/tracker.md) |
 | DeepSpeed | [源码索引](notebook/frameworks/readme.md#deepspeed) | [DeepSpeed 贡献](open-source/deepspeed/readme.md) |
 | Megatron | [源码索引](notebook/frameworks/readme.md#megatron) · [张量并行](notebook/frameworks/megatron-tp-source-reading.md) | — |
 | PyTorch | [源码索引](notebook/frameworks/readme.md#pytorch) | [PyTorch 贡献](open-source/pytorch/readme.md) |

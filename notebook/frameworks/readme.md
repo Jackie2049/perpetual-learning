@@ -7,6 +7,7 @@
 - [vLLM-Ascend](#vllm-ascend)
 - [vLLM](#vllm)
 - [verl](#verl)
+- [AReaL](#areal)
 - [SGLang](#sglang)
 - [DeepSpeed](#deepspeed)
 - [Megatron](#megatron)
@@ -170,6 +171,10 @@
 - [verl vs rLLM Transform Pipeline 对比 (源码级)](verl-vs-rllm-transform-comparison.md)
 - [verl Worker 生命周期与 Ray 分布式架构源码阅读](verl-worker-lifecycle-ray-weight-sync-reading.md)
 - [verl v0.8 Worker Lifecycle + vLLM Integration Source Reading](verl-worker-lifecycle-source-reading.md)
+
+## AReaL
+
+- 尚无源码精读笔记。贡献轨道（扫描、候选、认领动态）见 [AReaL 贡献追踪](../../open-source/areal/tracker.md)；近期聚焦 #1730（M2PO microbatch 不变性）与 verl #7913 的跨框架对照。
 
 ## SGLang
 
