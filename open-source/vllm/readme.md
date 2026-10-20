@@ -36,6 +36,8 @@
 
 - **#61160 跨请求污染修复定位**（[分析](vllm-61160-crosstalk-fix-locate.md)）：0 引用 PR；维护者确认 v0.31.0 复现 / main 已修复但无人指出修复 PR。定位：**#59103**（10-06，session 截断 stale hash——多轮会话场景主修复）+ **#61174**（10-17，MTP stale 共享 block-table 行）+ **#51899**（9-30，extra_keys 域打标 = 我们 6 月 #44701 家族修复）。**评论已发布**（2026-10-19，[#issuecomment-6258592764](https://github.com/vllm-project/vllm/issues/61160#issuecomment-6258592764)），待回应跟进。
 
+- **#61229 NixlConnector lease 过期无声消费跨请求 KV（2026-10-20 核验）→ 已被认领，无 PR 竞争空间**：[issue](https://github.com/vllm-project/vllm/issues/61229)（reporter binxuwang2002-lang 深度写清机制，10-16 维护者 robertgshaw2-redhat 认可 "positive fix"）。10-20 交叉验证 PR：**#62065**（OPEN，vadiklyutiy 本人，`Verify pull reads against producer lease slots`，B200 2P1D 硬件验证 fail/recompute 两态）+ **#61549**（CLOSED，sawsa307，fake-clock 单测）+ **#61578/#61488**（sawsa307，KV checksum 长线方案）。修复方向 = reporter 建议的 "transfer 末尾查 request id + verdict 送达 consumer"，已被上述 PR 完整覆盖。**结论：不再投入**（本地 6 月源码已确认无条件释放逻辑存在，但修复已在上游进行）。
+
 ### 扫描补充（2026-10-19）
 
 - **#60494（GLM-5.2-FP8 + 前缀缓存 + FP8 KV 返回空）→ 排除**：ROCm/AITER（AMD MI300X）平台——FP8 KV 家族但平台在 CUDA 经验区之外；志愿者认领但无硬件；维护者最新 main 无法复现（reporter 用 0.27.1 旧版）。不深挖。

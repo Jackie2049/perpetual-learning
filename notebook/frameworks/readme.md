@@ -52,6 +52,7 @@
 - [vLLM PR #41847: HMA-by-Default Deep Reading](vllm-hma-by-default-reading.md)
 - [vLLM INT4 Triton Fallback — Source-Level Reading Note](vllm-int4-triton-fallback-reading.md)
 - [vLLM KV Transfer / KV Connector 架构深度分析](vllm-kv-transfer-connector.md)
+- [vLLM NixlConnector lease 契约与跨请求 KV 消费正确性（#61229/#62065）](vllm-nixl-lease-correctness-reading.md)
 - [vLLM Latest Developments — June 2026 Reading](vllm-latest-developments-2026-06-reading.md)
 - [vLLM V1 LoRA Serving 源码级深度阅读](vllm-lora-serving-reading.md)
 - [vLLM MLA Attention Backend 源码阅读](vllm-mla-backend-reading.md)

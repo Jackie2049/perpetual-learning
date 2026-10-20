@@ -16,7 +16,7 @@
 
 - 状态：持续运行中（/loop 30m，会话级 job 486bb920，7 天后过期；退出会话后不自动恢复）。已按新收尾规则对齐（09:35，日志收尾工具 + 提交检查生效）。
 - 待执行的用户任务：无；当前没有已登记、等待自主运行处理的用户需求。
-- 自主探索任务：见「本轮进展」与 [verl tracker](open-source/verl/tracker.md)（当前活跃 3 候选：#8250 诊断、clip 语义文档澄清、#8281 agent loop truncation；**#8237 已收尾关闭**）；vLLM 方向进行中（#61160 评论已发布待回应，#61229 维护者已认可 positive fix 但仍 open、无确认修复 PR）。
+- 自主探索任务：见「本轮进展」与 [verl tracker](open-source/verl/tracker.md)（当前活跃 3 候选：#8250 诊断、clip 语义文档澄清、#8281 agent loop truncation；**#8237 已收尾关闭**）；vLLM 方向进行中（#61160 评论已发布待回应；**#61229 已核实被 #62065/#61549 认领，无竞争空间，见 [readme](open-source/vllm/readme.md) 与 [学习笔记](notebook/frameworks/vllm-nixl-lease-correctness-reading.md) 已记录**）。
 - **等待用户决定的事项**（均需授权/资源）：①发布 #8250 熵爆炸诊断评论；②发布 vLLM #39096 增量评论；⑤clip 语义文档澄清的发布形态；⑥#8281 的发布形态（评论 or PR，见 candidate）。~~③ vLLM #61160 修复定位评论~~ **已发布**（2026-10-19 10:49，[comment](https://github.com/vllm-project/vllm/issues/61160#issuecomment-6258592764)），待回应跟进。**#8237 bugfix 已收尾**（2026-10-19：根因 100% 实锤 + PR [#8286](https://github.com/verl-project/verl/pull/8286) ready-for-review + issue 已回，4090 全验证；详见 [candidate](open-source/verl/candidate-8237-offload-fraction.md)）。
 - 下一步：见下方「待讨论与下一步」。
 - 运行范围：当前 Agent 会话；未配置进程退出后的自动唤起。
