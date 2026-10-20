@@ -146,6 +146,76 @@ def run_dummy(gs, seq_len, dp=1):
           f"but not the numerator, so a dummy slot ~1 extra M factor\n")
 
 
+def megatron_prompt_mean_total(group_sizes, seq_len, n_mbs, rng, dp_size=1, p_inner=2):
+    """Faithful end-to-end prompt_mean gradient for the MEGATRON backend (non per-token path).
+
+    Megatron shares actor.py:600 `_PromptMeanBatch.for_steps` with FSDP2, so the SAME
+    `step_scale = len(microbatches)/active_groups = M/G` applies (loss_reduction.py:115).
+    The difference is in the engine's train_batch normalisation:
+
+      megatron_engine.py:2382  loss_multiplier = dp_size * len(mb_list)
+                                (non per_token_loss path; mb_list is this ONE ppo-minibatch
+                                 re-split into P inner pipeline micro-batches by
+                                 _prepare_mb_list, len(mb_list)=P)
+      megatron_engine.py:4328  normalize_loss(loss, local_weight, total_weight, loss_multiplier)
+                                -> scalar path loss*(local/total*multiplier)
+
+    For each of the P inner pipeline mb of one ppo-minibatch i:
+        PromptMean.aggregate = (sum loss_t*w_t)_p * step_scale / engine_weight_p
+        normalize -> (sum loss_t*w_t)_p * step_scale * dp_size * P
+        (engine_weight_p cancels; total_weight==1 as in FSDP2)
+    Summing the P inner mb (additive over sequences) and then the M ppo-minibatches:
+        grad_total = dp_size * step_scale * P * sum_all loss*w
+                  = dp_size * (M/G) * P * sum_all loss*w
+    So Megatron shares the M-linear split sensitivity with FSDP2 (step_scale=M/G),
+    and additionally multiplies the absolute scale by P (inner pipeline mb count,
+    fixed by pp_size / mb_spec, NOT by ppo_n_minibatches).
+    """
+    n_seq = sum(group_sizes)
+    mask = np.ones((n_seq, seq_len), dtype=bool)
+    loss = rng.standard_normal((n_seq, seq_len)).astype(np.float32)
+    tw, G, _ = group_token_counts(group_sizes, mask)
+    effective_n_mbs = n_mbs
+    step_scale = effective_n_mbs / G
+    idx = np.linspace(0, n_seq, n_mbs + 1).astype(int)
+    total = 0.0
+    for i in range(n_mbs):
+        lo, hi = idx[i], idx[i + 1]
+        # total_weight over this ppo-minibatch's inner mb (DP all_reduce) == 1
+        total_weight = 1.0
+        # split this ppo-minibatch into P inner pipeline micro-batches (additive)
+        inner = np.linspace(lo, hi, p_inner + 1).astype(int)
+        minibatch_sum = 0.0
+        for j in range(p_inner):
+            ilo, ihi = inner[j], inner[j + 1]
+            seg_sum = float((loss[ilo:ihi].astype(np.float32) * tw[ilo:ihi]).sum())
+            minibatch_sum += seg_sum * step_scale * dp_size * p_inner  # normalize_loss
+        total += minibatch_sum
+    return total, G
+
+
+def run_megatron(gs, seq_len, dp=1, p_inner=2):
+    """Show Megatron shares FSDP2's M-linear prompt_mean sensitivity, plus a constant P."""
+    rng0 = np.random.default_rng(0)
+    tm = token_mean_total(gs, seq_len, rng0)
+    print(f"[Megatron backend] group_sizes={gs}, seq_len={seq_len}, G={sum(1 for g in gs if g>0)}, "
+          f"dp_size={dp}, P(inner pipeline mb)= {p_inner}")
+    print(f"token_mean baseline (split-invariant): {tm:.6f}")
+    base = None
+    for n in [1, 2, 4]:
+        v, G = megatron_prompt_mean_total(gs, seq_len, n, np.random.default_rng(0), dp, p_inner)
+        if base is None:
+            base = v
+        print(f"  prompt_mean n_mbs={n}: {v:.6f}  ratio_to_n_mbs1={v/base:.4f}  (G={G})")
+    # show P scales the absolute value but not the M-ratio
+    p1 = megatron_prompt_mean_total(gs, seq_len, 4, np.random.default_rng(0), dp, 1)[0]
+    p2 = megatron_prompt_mean_total(gs, seq_len, 4, np.random.default_rng(0), dp, 2)[0]
+    print(f"  P-ratio at fixed n_mbs=4: P=2 / P=1 = {p2/p1:.3f} (theory 2.0) -> "
+          f"P is a constant absolute-scale factor, NOT a ppo split term")
+    print(f"  theory: grad_total ~ effective_n_mbs/G * dp * P * sum_all loss*w; "
+          f"M-linear sensitivity shared with FSDP2, plus constant P\n")
+
+
 # Case 1: uniform groups, DP=1  (default AReaL-style row splitting)
 run([4, 3, 2], 5)
 # Case 2: uneven groups, more sequences, verify the scaling holds regardless of cut points
@@ -155,3 +225,6 @@ run([4, 3, 2], 5, dp=2)
 # Case 4: dummy transport slots inflate step_scale's M without adding gradient
 run_dummy([4, 3, 2], 5)
 run_dummy([7, 1, 4, 5], 6, dp=2)
+# Case 5: Megatron backend shares step_scale=M/G (cross-backend); P is a constant factor
+run_megatron([4, 3, 2], 5)
+run_megatron([7, 1, 4, 5], 6, dp=2)

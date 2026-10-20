@@ -12,6 +12,6 @@
 | [test_up_grpo_h20.py](test_up_grpo_h20.py) | UP-GRPO 损失验证 |
 | [test_vllm_lora_nan_h20.py](test_vllm_lora_nan_h20.py) · [test_vllm_lora_nan_targeted_h20.py](test_vllm_lora_nan_targeted_h20.py) | vLLM LoRA NaN 复现与验证 |
 | [cuda_multi_stream_race_demo_h20.py](cuda_multi_stream_race_demo_h20.py) · [cuda_multi_stream_race_demo_v2_h20.py](cuda_multi_stream_race_demo_v2_h20.py) | CUDA 多流竞争复现 |
-| [verify_areal_prompt_mean_split.py](verify_areal_prompt_mean_split.py) | AReaL prompt_mean 归约切分敏感点验证（numpy 复刻，无 torch）；含 M 线性放大与 dummy-slot 膨胀用例 |
+| [verify_areal_prompt_mean_split.py](verify_areal_prompt_mean_split.py) | AReaL prompt_mean 归约切分敏感点验证（numpy 复刻，无 torch）；含 M 线性放大、dummy-slot 膨胀、Megatron 后端跨后端对照（Case 5）用例 |
 
 部分脚本包含历史服务器路径或会修改所安装的框架源码；这是实验代码，运行前应查看对应脚本和验证对象，不能将其视为通用巡检入口。迁移本身不表示重新完成 GPU 验证。

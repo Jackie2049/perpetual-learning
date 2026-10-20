@@ -94,7 +94,7 @@ AReaL 的归约设计是整个框架最值得学的地方，也是跨框架对�
 - **方法**：从 `rl_trainer` 入口往下追 → `actor.py` 损失 → `functional.py` 具体 surrogate → `loss_aggregation` 归约；v2/infra/dataset/api 用并行搜索代笔补齐。损失与归约是 AReaL 的正确性核心，后端（Megatron/FSDP）只是执行载体。
 - **对本项目价值**：a) 补上 frameworks 索引 AReaL 空白；b) 直接为 AReaL #1730 提供源码级依据（M2PO 掩码 local-threshold 是 batch 切分依赖的根源）；c) 为 verl #8281 提供「不截断只过滤」的另一实现参照；d) 与 GMPO/GSPO/SAPO 论文精读的 clip/门语义在 AReaL 源码里得到实现级印证。
 - **验证范围**：纯源码阅读（`3b93679` 基线），未运行 AReaL（本机无 ray/GPU/torch 全量依赖）；所有函数/行为引用均已核对该行。跨框架对照基于 verl 本地源码（前述候选）与 AReaL #1730/#1732 issue+PR（GitHub API）。
-- **未读**：`engine/megatron_engine.py` 内部（重载点、mbridge、Megatron 专属 packing）、v2 各 service 控制器内部。`fsdp_engine.py` 的 batch 切分已读（§10）；`rl_trainer.py` 主循环已读至 update/权重发布闭环（§10.3.2）。如需深入可续。
+- **未读**：`engine/megatron_engine.py` 内部（重载点、mbridge、Megatron 专属 packing，forward 段已在 §10.5 读过 `train_batch`/`_compute_logprobs_and_loss`/`_prepare_mb_list` 归一化链）、v2 各 service 控制器内部。`fsdp_engine.py` 的 batch 切分已读（§10）；`rl_trainer.py` 主循环已读至 update/权重发布闭环（§10.3.2）。如需深入可续。
 
 ## 10. FSDP2 后端的 batch 切分与 loss 归一化（2026-10-20 补读）
 
@@ -154,6 +154,22 @@ rl_trainer 主循环（rl_trainer.py:929）每 global_step：rollout → aux 打
 ### 10.4 与其他归约对照
 
 `token_mean`（无 step 因子，`Σ loss_t/Σ mask_t`，天然可加、切分不变）与 `seq_mean`（per-response 均值后平均，`_reduce_unit_means`）**不带 step_scale**，不受此影响。`constant` 为固定 divisor。**只有 `prompt_mean` 带 `step_scale=M/G`**，是唯一随 minibatch 数变化的归约模式。
+
+### 10.5 Megatron 后端对照：`step_scale=M/G` 跨后端同源 + 额外常数因子 `len(mb_list)`（2026-10-20 补）
+
+把 §10.3 的切分敏感点从「仅 FSDP2 后端确证」升级为「**跨后端（FSDP2 + Megatron）同源**」：`_PromptMeanBatch.for_steps`（loss_reduction.py:115）由 actor.py:600 在 `ppo_update` 中调用，**在后端之上（actor 层）共享**——无论 FSDP2 还是 Megatron，`step_scale = len(mb_inputs)/active_groups = M/G` 都进入 `PromptMean.aggregate`（loss_aggregation.py:108）。因此 §10.3 的「prompt_mean 随 ppo_n_minibatches（M）线性放大」在**两个后端同样成立**。
+
+**Megatron 特有的归一化差异**（`megatron_engine.py::train_batch`，非 per_token_loss 路径）：
+
+- `loss_multiplier = mpu.get_data_parallel_world_size() * len(mb_list)`（L2382），随后 `normalize_loss(loss, local_weight, total_weight, loss_multiplier)`（L4328）。这里的 `mb_list` 是 **这一个 ppo-minibatch 内部**再切成 P 个 pipeline micro-batch（`_prepare_mb_list`，`len(mb_list)=P`，P 由 `mb_spec.n_mbs` / `2*pp_size` 决定），**不是**外层 ppo 切分数 M。
+- 忠实链：每 pipeline mb 的 `PromptMean.aggregate = (Σ_t loss·w)_p·step_scale/engine_weight_p`，`normalize_loss` 后 engine_weight_p 相消、total_weight≡1，得 `(Σ_t loss·w)_p·step_scale·dp_size·P`；P 个 pipeline mb 求和（序列可加）→ `step_scale·dp_size·P·Σ_{该ppo-minibatch} loss·w`；M 个 ppo-minibatch 累加 → **`dp_size·(M/G)·P·Σ_all loss·w`**。
+
+**numpy 复刻验证**（`verify_areal_prompt_mean_split.py` Case 5，`megatron_prompt_mean_total`）：M=1/2/4 → 1×/2×/4× 线性放大（与 FSDP2 同源）；固定 n_mbs=4 下 P=2/P=1 → 2.000 精确。
+
+**结论与边界**：
+- 核心切分敏感点（随 ppo_n_minibatches 线性放大）**跨后端一致**：`step_scale=M/G` 是 actor 层共享的，与 FSDP2 §10.3 同源，与 verl #7913 / AReaL #1730 同属「batch 切分不应改变 update」问题。
+- Megatron 的 `loss_multiplier` 额外乘 `len(mb_list)=P` 是**内层常数因子**（由 pp_size / mb_spec 决定，不随 ppo_n_minibatches 变），只改变绝对尺度、不构成新的 ppo 切分敏感项；它对 token_mean/seq_mean/constant 也统一生效（补偿 MCore 的 per-microbatch 梯度平均）。
+- 仍是「切分敏感点（高置信源码级确证，缺陷定性待实测）」，非已证实 bug：真实自适应优化器是否会吸收这部分绝对梯度差异，需 AReaL 环境 `ppo_n_minibatches` 2 vs 4 对照实测（FSDP2 与 Megatron 各一组更佳）。
 
 ## 相关
 
