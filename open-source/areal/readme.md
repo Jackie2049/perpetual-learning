@@ -4,6 +4,8 @@
 > 定位：用户方向偏好的第二条 RL 训练框架轨道（verl 已为主贡献轨道）。2026-10-20 活跃度调研中 AReaL 合并效率（91%）为国内六家最高。
 > 状态与候选追踪见 [tracker.md](tracker.md)。源码/原理学习见 [notebook/frameworks/](../../notebook/frameworks/readme.md)。
 
+**负责人（2026-10-20 用户明确）**：prompt_mean 候选/PR 的思路、代码、GPU 实验、定性与发布全部由 macbook-M5 Agent 统一负责。M1 已阶段收尾，后续不并行推进此项；统一入口见 [交接说明](handoff-m5.md)。
+
 ## 贡献规范（community/CONTRIBUTING.md）
 
 - 需 **DCO 签名**：`git commit -s`（Developer Certificate of Origin）。

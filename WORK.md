@@ -16,14 +16,16 @@
 
 - 2026-10-19 收尾机制更新：每项实际工作必须有日志，完成、失败或受阻均记录。当前克隆已启用 Git 提交检查；下一轮先重读 [AGENTS.md](AGENTS.md) 与 [日志工具说明](tools/diary/readme.md)，使用自动取时入口。其他克隆需安装检查；现有 Claude 会话是否重读规则未验证。
 
-- 状态：Codex 定时运行待接续，本轮已完成 DeepInfer ZOS remap/event/回收时序、主机控制流替身实验及 10 页 Q&A；按当前聊天每 30 分钟心跳接续。后续写入前核对 WORK 与并行改动；历史 Claude /loop job 486bb920 的进程存活未核实。沿用日志收尾工具与提交检查。
-- 待执行的用户任务：**AReaL prompt_mean 切分敏感点 GPU 实测闭环（2026-10-20 用户授权）**——服务器环境已配好（fork `Jackie2049/AReaL` 已建、`/home/zxw/areal` clone `3b93679` + uv 环境 torch 2.9.1/sglang/megatron、Qwen2.5-0.5B + gsm8k 预下载、2 卡 smoke 配置），**但启动 smoke 后服务器失联（ping 不通，内网地址未走 VPN 隧道）**，实测待 VPN 通道恢复。恢复后：①查 `/home/zxw/areal_smoke.log` 确认 smoke 结果→修配置重跑跑通框架；②按 §10.7 判据做受控实测（固定 M 只变 P、固定 M 变 dummy、M=2 vs 4 训练行为对照并以 token_mean 对照，脚本 `experiments/scripts/areal_prompt_mean_gpu_probe.py` 初稿需按判据调整）；③修复候选 `step_scale=M/G→1/G` 已降级为假设（§10.7 对抗复核撤回缺陷表述，见 [源码笔记](notebook/frameworks/areal-architecture-source-reading.md) §10.8 + patch 草稿 [patches](open-source/areal/patches/)），实测后再定性，产物只落 fork（铁律）。
+- 状态：M1 的 AReaL 阶段已收尾并整体交给 M5；本机定时运行继续 DeepInfer 等独立研究，不再访问 GPU 或推进 AReaL prompt_mean 代码/方案。统一分工见 AGENTS.md 与 [M5 交接](open-source/areal/handoff-m5.md)。
+- 待执行的用户任务（M1）：无。AReaL prompt_mean 的思路、探针、GPU、结论与 PR 已由用户明确交给 macbook-M5 Agent 单一负责；M1 不探测服务器或修改相关代码，已有离线修整仅作为未应用参考 patch 留在 [交接入口](open-source/areal/handoff-m5.md)，由 M5 决定是否采用。
 - 自主探索任务：见「本轮进展」与 [verl tracker](open-source/verl/tracker.md)（当前活跃 3 候选：#8250 诊断、clip 语义文档澄清、#8281 agent loop truncation；**#8237 已收尾关闭**）；vLLM 方向进行中（#61160 评论已发布待回应；**#61229 已核实被 #62065/#61549 认领，无竞争空间，见 [readme](open-source/vllm/readme.md) 与 [学习笔记](notebook/frameworks/vllm-nixl-lease-correctness-reading.md) 已记录**）。**#8281 PR 草稿已本地备好（2026-10-20：源修复 + 真实单测，见 [candidate](open-source/verl/candidate-8281-agent-loop-shared-cap-vs-truncation.md)，patch 存 [patches](open-source/verl/patches/8281-truncation-policy.patch)，落 `/Users/jackiemac/workspace/verl` 分支 `fix-8281-truncation-policy` commit `7ace28db`；发布仍需授权 + verl CI 验证）**。**2026-10-20 新增：#8252 评估完成（三项事实声明核验成立、#7108 stale 是移动靶、不建议我方实现、价值在 RFC 技术回复，见 [candidate](open-source/verl/candidate-8252-weight-checker-rfc.md)）**。**2026-10-20 更正：#8281 存在关联旧 PR #4600**（reporter 创建时交叉链接；陈旧、dirty、预 CT 重构，非当前修复点），发布形态倾向 comment 而非 PR，见 [candidate](open-source/verl/candidate-8281-agent-loop-shared-cap-vs-truncation.md)。**AReaL prompt_mean 切分敏感点（§10/§10.3/§10.5）已定为首个优先实测项**：用户判定研究价值较高，待 VPN 可用后配环境做 GPU 实测（ppo_n_minibatches 2 vs 4，FSDP2/Megatron 双后端），见 [tracker](open-source/areal/tracker.md)。
 - **等待用户决定的事项**（均需授权/资源）：①发布 #8250 熵爆炸诊断评论；②发布 vLLM #39096 增量评论；⑤clip 语义文档澄清的发布形态；⑥#8281 的发布形态（评论 or PR，见 candidate）。~~③ vLLM #61160 修复定位评论~~ **已发布**（2026-10-19 10:49，[comment](https://github.com/vllm-project/vllm/issues/61160#issuecomment-6258592764)），待回应跟进。**#8237 bugfix 已合并**（2026-10-20：PR [#8286](https://github.com/verl-project/verl/pull/8286) 已合入 verl 主仓库，merge `472dd21`，wuxibin89 approve；根因实锤 + 4090 全验证 + 外部 GB200 背书；详见 [candidate](open-source/verl/candidate-8237-offload-fraction.md)）。
 - 下一步：见下方「待讨论与下一步」。
 - 运行范围：Codex 当前聊天 + 已保存的 30 分钟心跳任务；本地执行仍依赖应用运行及项目可访问。每轮读取本文件与 AGENTS.md 后接续。
 
 ## 当前用户需求与决定
+
+- **主机分工（2026-10-20 最新用户明确）**：所有 GPU 访问/环境/实验由 M5 Agent 负责；AReaL prompt_mean 候选/PR 整项由 M5 单一负责，M1 阶段收尾，后续定时任务不并行修改其思路、代码、实验或定性。M1 继续独立研究，只有用户重新指派或明确要求只读 review 才涉及该项。统一 [交接说明](open-source/areal/handoff-m5.md)。
 
 - **高优调研项（2026-10-20）**：**DeepInfer — DeepSeek 官方推理框架**。DeepSeek 今天（10-20）开源其生产服务推理框架 `deepseek-ai/DeepInfer`（Apache-2.0，快照 8b161497；GitHub 语言统计为字节数，非百万行，支持 NVIDIA SM100 + 华为 Ascend 950 NPU）。用户定为项目高优先调研项。初览笔记见 [notebook/frameworks/deepinfer-initial-survey.md](notebook/frameworks/deepinfer-initial-survey.md)；与 verl/vLLM/FlashMLA/DeepEP/Ascend 既有积累高度相关（batch-invariant、P/D 分离、MTP、MoE EPLB、NPU）。**用户另关注：在 DeepSeek 生态提优化 PR 能否被采纳——调研结论见 [deepseek-ecosystem-pr-adoption.md](notebook/frameworks/deepseek-ecosystem-pr-adoption.md)：外部 PR 采纳门槛高、周期长（FlashMLA open PR 平均 185 天），"修复具体 bug"比"大幅优化"更可能被合入；相对友好的是 DeepEP/DeepGEMM；综合性价比 verl/vLLM/AReaL 仍高于 DeepSeek 生态**。
 - **开源技术掘金未来一周三大重点（2026-10-20 用户定）**：**DeepInfer、verl、AReaL**。①**DeepInfer**（DeepSeek 官方推理框架，高优先调研，见上）；②**verl**（贡献主轨道，#8237 已合并，next #8281/#8250）；③**AReaL**（蚂蚁系 RL 训练，prompt_mean 切分敏感点优先实测）。三者在"技术掘金（学习+贡献）"子领域并列为周度关注对象；vLLM 降为次优先级。
@@ -55,10 +57,10 @@
 
 ## 待讨论与下一步
 
-1. **未来一周开源技术掘金三大重点（用户 2026-10-20 定）**：**DeepInfer / verl / AReaL**。其中 DeepInfer 主研（推理框架源码深挖），verl 主贡献（续 #8281/#8250），AReaL 主实测（prompt_mean 切分敏感点）。vLLM 降为次优先级。
+1. **未来一周开源技术掘金三大重点（用户 2026-10-20 定）**：**DeepInfer / verl / AReaL**。其中 DeepInfer 主研（推理框架源码深挖），verl 主贡献（续 #8281/#8250），AReaL 主实测（prompt_mean 切分敏感点）。vLLM 降为次优先级。 **这是跨主机整体分工，M1 不接管 AReaL；M5 独立推进其完整候选/PR。**
 2. **等待用户授权/资源**（长期未决，见「运行接续」5 项）——发布评论/文档、#8281 发布形态、方向调整。#8237 已收尾（PR #8286 ready + issue 已回）。
 3. **高优调研（用户 2026-10-20 定）**：**DeepInfer**——确定性、ZOS 两轮时序/remap/生命周期与 10 页 Q&A 已读；原始 Worker 主机分支在设备替身下验证通过，非设备竞态或性能实测。Q&A 表格的低并发收益可为负，不能普遍承诺加速。下一步 DSpark 总预算/收益模型、变长验证的采样位置，目标硬件上再查 CUDA Graph padding、提前 EOS 与池回收。硬件需 Linux + SM100 或 Ascend950，当前 Darwin 仅做源码/CPU。见 [deepinfer-initial-survey.md](notebook/frameworks/deepinfer-initial-survey.md)。
-4. **优先推进（用户 2026-10-20 判定）**：AReaL prompt_mean 切分敏感点 GPU 实测闭环——服务器环境已配好但 VPN 通道中断（smoke 启动后失联，内网地址未走 VPN 隧道），恢复条件见「运行接续」；**§10.7 对抗复核已撤回「prompt_mean 缺陷」高置信表述**（旧脚本口径问题：token_mean 在均匀组下梯度和同样随 M 增长；M 是优化步数非冻结参数累加；Megatron P 有调度抵消），修复候选 `step_scale=1/G` 降级为假设，实测按 §10.7 判据（固定 M 只变 P、固定 M 变 dummy、M=2 vs 4 训练行为对照 + token_mean 对照）。若实测确认与 token_mean 的差异超出共有训练行为 → 可在 fork 提 PR；否则作为扎实 review 依据。其次是 verl：#8281 已深挖完成（analysis-done，待发布形态决定）；#8250 诊断评论、clip 语义文档澄清稿已就绪待授权；#8252 RFC 已评估（参与价值在技术回复、不建议实现）；vLLM #39096 评论待授权。verl 新 issue 池当前归零（10-19 后无新）。AReaL 无未认领空间（可复用 verl 经验作 #1730 技术回复）。
+4. **M5 单一负责，M1 跳过**：AReaL prompt_mean 全项工作，含思路、代码、实测、定性与 PR，见 [M5 交接](open-source/areal/handoff-m5.md)。尚无已证实缺陷/ready PR，step_scale=1/G 仅为假设。M1 已还原在用探针，停止并行演化方案、网络探测与 GPU 操作；只有用户重新指派才恢复参与。
 3. 按课题逐步关联现有实验执行材料与 notebook/experiments/ 的分析记录；新增实验优先就近组织，维护双向入口。
 4. 维护按职责划分的一级目录；新增或整理内容时整体检查归属、引用和输出路径，避免再次堆出按文件类型划分的一级目录。根目录 projects/ 暂不新增。
 5. 按价值、使用关系和证据继续筛选历史工具，避免只按文件名批量归档；其余历史工具继续按同一标准检查。

@@ -1,0 +1,41 @@
+# AReaL prompt_mean：M5 统一接管
+
+2026-10-20 用户明确：本项的思路、代码、实验、定性与 PR 全部由 **macbook-M5 Agent 单一负责**。macbook-M1 阶段收尾，后续定时任务不再探测 GPU/SSH/VPN、不改相关脚本或演化并行方案；除非用户重新指派。
+
+## 阶段状态
+
+- **还不是已证实缺陷，也不是 ready PR。** 本轮只读查询 `Jackie2049/AReaL` 的全部状态 PR 返回空列表；本候选尚无 fork PR 链接。未向上游创建 issue/PR/评论。
+- AReaL 阅读基线 `3b93679888e9f4929f6f155f13c6a286a62dfd72`；探针 M5 原稿对应本项目 `8b625f7`。服务器环境与 smoke 为 M5 工作，M1 未取得新的 GPU 结果，不用 M1 的连通性推断 M5 的访问条件。
+- `step_scale=M/G→1/G` 仅是被降级的候选假设，**未应用、未被验证为修复**。旧 patch [patch-fix-prompt-mean-step-scale.draft](patches/patch-fix-prompt-mean-step-scale.draft) 不得当成已完成 bugfix。
+
+## 已有证据与统一判据
+
+主要技术入口：[源码笔记 §10.7–10.9](../../notebook/frameworks/areal-architecture-source-reading.md)。当前证据支持以下边界，M5 可依据实测进一步修正：
+
+- 外层 M 是真实优化步数，改变 M 后参数不同本身不证明缺陷；固定参数的平均目标、实际顺序更新与单步内累积 P 应分别观察。
+- 均匀组/等 token 的构造下，prompt_mean 和 token_mean 可形成等目标对照；非均匀组两者本来是不同目标，不能要求其更新相同。
+- 固定 M 改 P 时比较梯度与完整参数变化，记录真实 M/P、裁剪、权重与输入条件；仅有范数或跨 M 比率不足以判断方向一致性。
+- 本地 dummy 不等于额外全局空步；Megatron 内层 P 还有调度 /P 抵消。既有标量参考验证 43 项通过，均不是 GPU 集成结论。
+
+## M1 留下的参考材料
+
+[probe-preflight-m1-review.patch](patches/probe-preflight-m1-review.patch) 是**未应用、可不采用的探针修整草稿**，不是 AReaL 修复补丁。M1 已将本机在用探针恢复至交接前基线，不继续维护另一套在用脚本。
+
+该草稿的动因：旧原稿实际编译报 global MODEL 顺序错误，FinetuneSpec 导入位置不符，三条响应不能实现 M=4/P=2；范数比率自动解释、行为 logprob、dropout 与结果持久化也需核对。草稿准备了 16 响应、均匀/非均匀分组、实际 M/P 检查、配置源码字段预检、完整变化向量与首步梯度/裁剪记录。
+
+草稿离线验证：编译、无 torch 导入、10 个 CLI/计划校验用例通过；对照上述基线检查六个配置调用字段；`git apply --check` 通过。**未执行 torch/AReaL 真实导入、GPU、clipping hook 或模型打包集成**，不保证可直接运行。CPU 复制全量向量有同步与主机内存成本，不用于性能测量。
+
+M5 先看自己最新代码，只按需吸收这些检查点，不必重新实现或整份套用。若要审阅该草稿，可在隔离分支检查：
+
+```bash
+git apply --check open-source/areal/patches/probe-preflight-m1-review.patch
+```
+
+## 后续仅由 M5 推进
+
+1. 从 M5 自己的服务器会话核对 smoke 日志、当前源码/环境及空闲设备；以 M5 实际观测为准。
+2. 先跑单 case 验证配置/输入与指标，再做固定 M 改 P；分开开展 DP/dummy、Megatron 与冻结参数契约验证，未覆盖项明确保留。
+3. 用结果决定是否存在超出共有训练行为/数值误差的缺陷，之后再决定保留、修改或放弃 step_scale 假设。
+4. 产物先落用户 fork；上游 issue/评论/PR 仍须用户明确拍板。由 M5 统一记录实测证据与结论，避免两边维护相互竞争的方案。
+
+本文件为仓库交接入口；M1 未直接给不可访问的 M5 聊天发送消息，也未声称 M5 已接收或完成上述步骤。

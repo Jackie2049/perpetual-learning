@@ -224,6 +224,27 @@ rl_trainer 主循环（rl_trainer.py:929）每 global_step：rollout → aux 打
 
 因此 `step_scale=1/G` 是**候选假设**而非既定修复：GPU 实测必须按 §10.7 判据执行（固定 M 只变 P、固定 M 变 dummy 分配、M=2 vs 4 作训练行为对照并以 token_mean 对照），确认「同一 M 下 prompt_mean 与 token_mean 的更新是否真的一致/不一致、跨 M 差异是否超出两种归约共有的训练行为差异」后再定性。受控脚本 [areal_prompt_mean_gpu_probe.py](../../experiments/scripts/areal_prompt_mean_gpu_probe.py) 初稿已备，需按 §10.7 判据调整后再跑。
 
+### 10.9 受控探针前置修整：可编译不等于 GPU 集成通过（2026-10-20）
+
+接续用户授权的实测任务，先核对 `8b625f7` 版本脚本，发现会阻断运行或影响解释的具体问题：
+
+- main 在使用 MODEL 后才声明 global MODEL，`compile(..., "exec")` 实际报 SyntaxError；FinetuneSpec 也不在 cli_args，基线定义位于 api/io_struct.py。
+- 初稿只有三条响应，请求 M=4 会被调度缩减，无法形成宣称的 M=2/4 比较；部分外层 minibatch 只有一行，也无法实现请求的内层 P=2。
+- 只比较更新范数或跨 M 比率不能判断参数变化方向是否一致；非均匀 prompt/token 是不同目标，不能将其差异直接定为 reducer 缺陷。
+- 未从同一初始化策略计算行为 logprob、未显式关闭 dropout，也未确认实际 M/P，可能引入与归约无关的混杂。原先只打印结果，没有持久 JSON 或每步裁剪记录。
+
+以下仅为 M1 离线修整草稿，已保存为 [未应用参考 patch](../../open-source/areal/patches/probe-preflight-m1-review.patch)；按用户明确分工，本机在用探针已恢复至 M5 原稿基线，不继续维护并行代码。AReaL 上游源码与候选 step_scale 均未修改；后续统一由 M5 决定，见 [交接说明](../../open-source/areal/handoff-m5.md)。草稿内容：
+
+1. 使用延迟运行时导入，增加无 torch 的 `--plan --check-source /path/to/AReaL`，按源码 AST 检查六个配置构造调用的字段及当前 Git 版本；修正 FinetuneSpec 导入与 global 编译问题。该检查不导入真实配置类，不替代其运行时校验。
+2. 使用 16 响应 fixture，默认 M=2/4、P=1/2，并限制 M×P 整除响应数；实际更新次数与引擎报告的 inner_microbatches 不符则终止。balanced 为四个等大小/等 token 组，可作为两模式等目标控制；uneven 保留为不同目标的行为描述，不要求两模式相同。
+3. 每个 case 重载模型，禁用 dropout/TF32；先用相同 P=1 eval 路径算行为 logprob，再设置待测 P。记录初始权重与完整输入摘要，相同比较失配则终止。显式选择已确认空闲的单张 GPU，采用 torchrun/DP=CP=1。
+4. 记录完整参数变化向量的 L2/max-abs 差、首步梯度向量差、裁剪前后范数、实际优化步数/P、update_successful；不再用范数比率自动判 defect。CPU 全向量复制会同步设备并增加主机内存开销，**该探针不用于吞吐测量**。
+5. GPU 执行要求明确 `--output`，每完成 case 持久 JSON；不接受多进程。当前只准备 FSDP2/BF16 + FlashAttention2 路径；Megatron、DP/dummy 和冻结参数跨步平均契约未纳入此脚本，需另行验证。
+
+CPU 验证仅针对草稿：编译与无依赖导入通过；两个计划、六个非法参数组合、缺失 output/torchrun 共十项通过，六个配置调用字段与 `3b93679888e9f4929f6f155f13c6a286a62dfd72` 一致；原标量归约参考脚本 43 项数值检查仍通过。**尚未真实导入 torch/AReaL 或跑 GPU，引擎、模型、clipping hook 与序列打包仍待 M5 集成核验；不将草稿结果当成当前在用脚本验证。**
+
+历史网络观察（仅 M1 本轮）：scutil 显示 Tailscale Disconnected；TCP/22 检查成功，随后只读 SSH 在 banner exchange 超时，未执行远程命令。本轮未拿到新 smoke 日志/GPU 占用，未上传或启动草稿。**此后不再从 M1 重试；用户确认 GPU 与本候选整体由 M5 负责，不能用 M1 网络状态推断 M5 条件。**
+
 ## 相关
 
 - 贡献轨道：[AReaL 贡献追踪](../../open-source/areal/tracker.md)（#1730 M2PO 跨框架对照）

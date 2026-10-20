@@ -1,0 +1,485 @@
+diff --git a/experiments/scripts/areal_prompt_mean_gpu_probe.py b/experiments/scripts/areal_prompt_mean_gpu_probe.py
+index 4a39c01..c6e4c08 100644
+--- a/experiments/scripts/areal_prompt_mean_gpu_probe.py
++++ b/experiments/scripts/areal_prompt_mean_gpu_probe.py
+@@ -1,193 +1,309 @@
+-"""GPU probe following §10.7 criteria: is prompt_mean's update M-dependent?
+-
+-AReaL source-reading §10.7 withdrew the earlier "prompt_mean defect" claim: the
+-old numpy comparison used a different token_mean calibre (never split by M), M
+-is a real optimizer-step count (each train_batch updates params, later gradients
+-are computed at new params), and Megatron's P multiplier has a scheduling
+-cancellation.  The probe here follows §10.7's GPU criteria:
+-
+-  1. Fix outer M (ppo_n_minibatches), vary only the inner P (mb_spec
+-     n_mbs / max_tokens_per_mb); compare post-step gradients, pre/post-clip
+-     norms, and one Adam update.  FSDP2 first, DP=CP=1, no MoE/MTP.
+-  2. Fix M, vary DP rank data / dummy allocation; use stepwise global
+-     row/token/group references; never treat dummy count alone as defect.
+-  3. Keep the user's M=2 vs 4 comparison as a TRAINING-BEHAVIOUR contrast:
+-     check the frozen-parameter cross-step MEAN contract (with token_mean as
+-     control), and observe sequential-update trajectories; do NOT require
+-     cross-M parameters to be identical.
+-
+-This script runs AReaL's REAL components (PPOActor + FSDPEngine, 1 GPU) on a
+-fixed synthetic batch.  It reports:
+-
+-  - per-M, per-mode (prompt_mean vs token_mean) parameter delta L2 after one
+-    full ppo_update from the SAME init weights and SAME fixed batch;
+-  - with outer M fixed, inner P varied (mb_spec) and delta spread across P;
+-  - whether the M=2 vs M=4 delta difference for prompt_mean matches the same
+-    difference for token_mean (shared training behaviour vs reduction-specific).
+-
+-Run:
+-  CUDA_VISIBLE_DEVICES=0 torchrun --nproc-per-node=1 \
+-      areal_prompt_mean_gpu_probe.py --model <hf-or-local> \
+-      --m-values 2,4 --inner-p 1,2
+-Requires AReaL env (uv sync --extra cuda) and 1 free GPU.
++"""Prepare/run a single-GPU FSDP2 probe; never classify a defect from norm ratios.
++
++CPU checks:
++  python3 areal_prompt_mean_gpu_probe.py --plan --check-source /path/to/AReaL
++GPU execution (existing environment/model, one free selected device):
++  CUDA_VISIBLE_DEVICES=<confirmed-free-device> torchrun --standalone --nproc-per-node=1 \
++    areal_prompt_mean_gpu_probe.py --model /path/to/model --output /path/to/result.json
++
++Baseline: AReaL 3b93679888e9f4929f6f155f13c6a286a62dfd72.
++Fixed outer M / inner P comparisons use full parameter-delta vectors, first-step
++gradients, actual step/microbatch counts and pre/post-clip norms. Uniform groups
++are an equal-objective prompt_mean/token_mean control. Uneven groups are distinct
++objectives, so differences between their modes are not defect evidence.
++DP/dummy, Megatron and frozen-parameter full-rollout checks remain separate work.
++GPU runtime integration is pending until a confirmed remote device is reachable.
+ """
+ from __future__ import annotations
+
+ import argparse
++import ast
++import hashlib
++import json
++import math
+ import os
++from pathlib import Path
++import subprocess
++
++BASELINE = "3b93679888e9f4929f6f155f13c6a286a62dfd72"
++
+
+-import torch
++def integer_list(value):
++    values = [int(item) for item in value.split(",")]
++    if not values or any(item < 1 for item in values) or len(set(values)) != len(values):
++        raise argparse.ArgumentTypeError("Use distinct positive integers")
++    return values
+
+-from areal.api.cli_args import (
+-    FinetuneSpec,
+-    MicroBatchSpec,
+-    OptimizerConfig,
+-    PPOActorConfig,
+-    TrainEngineConfig,
+-)
+-from areal.trainer.ppo.actor import PPOActor
+
+-MODEL = os.environ.get("AREAL_PROBE_MODEL", "Qwen/Qwen2.5-0.5B-Instruct")
++def fixture_spec(kind):
++    sizes = [4, 4, 4, 4]
++    lengths = [[8] * size for size in sizes]
++    if kind == "uneven":
++        sizes = [3, 5, 4, 4]
++        lengths = [[4 + (group + row) % 5 for row in range(size)]
++                   for group, size in enumerate(sizes)]
++    return {"kind": kind, "group_sizes": sizes, "lengths": lengths,
++            "responses": sum(sizes), "sequence_length": 8}
+
+
+-def _groups(n_groups: int = 3, seq_len: int = 8, seed: int = 0):
+-    """Fixed synthetic prompt groups (like tests/test_prompt_mean_actor.py::_groups).
++def check_source(root):
++    """Validate imported definitions and config keyword names without dependencies."""
++    files = {"cli": root / "areal/api/cli_args.py",
++             "io": root / "areal/api/io_struct.py"}
++    classes = {}
++    for path in files.values():
++        tree = ast.parse(path.read_text())
++        classes.update({node.name: node for node in tree.body
++                        if isinstance(node, ast.ClassDef)})
++    def fields(name):
++        cls = classes[name]
++        result = {node.target.id for node in cls.body
++                  if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name)}
++        for base in cls.bases:
++            if isinstance(base, ast.Name) and base.id in classes:
++                result |= fields(base.id)
++        return result
++    calls = 0
++    for node in ast.walk(ast.parse(Path(__file__).read_text())):
++        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
++            name = node.func.id
++            if name in {"TrainEngineConfig", "PPOActorConfig", "OptimizerConfig",
++                        "MicroBatchSpec", "FinetuneSpec"}:
++                unknown = {kw.arg for kw in node.keywords if kw.arg} - fields(name)
++                if unknown:
++                    raise ValueError(f"{name}: unsupported fields {sorted(unknown)}")
++                calls += 1
++    revision = subprocess.check_output(
++        ["git", "-C", str(root), "rev-parse", "HEAD"], text=True
++    ).strip()
++    return {"revision": revision, "matches_baseline": revision == BASELINE,
++            "config_calls_checked": calls, "runtime_imports_tested": False}
+
+-    Each group is one row (one response); group sizes = [4, 3, 2] tokens per
+-    response would need real tokenization, so here we use uniform rows with
+-    distinct group ids and per-row response counts so that prompt_mean's group
+-    denominator differs from token_mean's token denominator.
+-    """
+-    rng = torch.Generator().manual_seed(seed)
++
++def make_groups(spec):
++    import torch
++    rng = torch.Generator().manual_seed(2049)
+     groups = []
+-    row = 0
+-    for length in [4, 3, 2][:n_groups]:
+-        attention_mask = torch.arange(seq_len)[None, :] < torch.tensor([length])[:, None]
+-        loss_mask = attention_mask.clone()
+-        loss_mask[:, 0] = False
+-        advantages = torch.randn(1, seq_len, generator=rng).float()
+-        groups.append(
+-            {
+-                "input_ids": torch.arange(row, row + 1)[:, None]
+-                .expand(-1, seq_len)
+-                .clone(),
+-                "attention_mask": attention_mask,
+-                "loss_mask": loss_mask,
+-                "advantages": advantages,
+-                "logprobs": torch.zeros_like(advantages),
+-                "prox_logp": torch.zeros_like(advantages),
+-                "kl_rewards": torch.zeros_like(advantages),
+-                "tot_rewards": torch.zeros_like(advantages),
+-                "rewards": torch.ones(1),
+-            }
+-        )
+-        row += 1
++    for group, lengths in enumerate(spec["lengths"]):
++        rows, width = len(lengths), spec["sequence_length"]
++        tokens = torch.randint(8, 96, (rows, width), generator=rng)
++        attention = torch.arange(width)[None, :] < torch.tensor(lengths)[:, None]
++        tokens.masked_fill_(~attention, 0)
++        # PPO data is already aligned to NEXT-token log-probabilities.
++        loss_mask = attention & (torch.arange(width)[None, :]
++                                 < torch.tensor(lengths)[:, None] - 1)
++        advantages = torch.randn(rows, width, generator=rng)
++        groups.append(dict(
++            input_ids=tokens, attention_mask=attention, loss_mask=loss_mask,
++            advantages=advantages, logprobs=torch.zeros(rows, width),
++            prox_logp=torch.zeros(rows, width), kl_rewards=torch.zeros(rows, width),
++            tot_rewards=torch.zeros(rows, width), rewards=torch.ones(rows),
++        ))
+     return groups
+
+
+-def _make_engine(model: str, seed: int, inner_p: int):
+-    """Single-GPU FSDP2 engine (dist must already be initialized)."""
+-    torch.manual_seed(seed)
+-    config = TrainEngineConfig(
+-        path=model,
+-        experiment_name="probe",
+-        trial_name="t0",
+-        backend="fsdp:d1p1t1",
+-        dtype="bfloat16",
+-        mb_spec=MicroBatchSpec(n_mbs=inner_p),  # inner P control
+-        optimizer=OptimizerConfig(
+-            type="adam",
+-            lr=1e-4,
+-            weight_decay=0.0,
+-            beta1=0.9,
+-            beta2=0.999,
+-            eps=1e-8,
+-        ),
+-    )
+-    from areal.engine.fsdp_engine import FSDPEngine
++def local(tensor):
++    return tensor.to_local() if hasattr(tensor, "to_local") else tensor
++
++
++def cpu_values(model, gradients=False):
++    values = {}
++    for name, param in model.named_parameters():
++        if param.requires_grad:
++            value = param.grad if gradients else param
++            values[name] = (None if value is None
++                            else local(value.detach()).float().cpu().clone())
++    return values
+
+-    engine = FSDPEngine(config)
+-    engine.create_process_group()
+-    engine.initialize(
+-        addr=None,
+-        ft_spec=FinetuneSpec(
+-            total_train_epochs=1,
+-            dataset_size=64,
+-            train_batch_size=16,
+-        ),
+-    )
+-    return engine
+-
+-
+-def _param_delta(engine, snapshot: dict[str, torch.Tensor]) -> float:
+-    total = 0.0
+-    n = 0
+-    for name, param in engine.model.named_parameters():
+-        if name in snapshot and param.requires_grad:
+-            total += ((param.float() - snapshot[name].float()) ** 2).sum().item()
+-            n += 1
+-    return total ** 0.5, n
+-
+-
+-def run_one(m: int, inner_p: int, mode: str, groups) -> tuple[float, int]:
+-    engine = _make_engine(MODEL, seed=0, inner_p=inner_p)
+-    snapshot = {name: p.detach().clone() for name, p in engine.model.named_parameters()}
+-    actor = PPOActor(
+-        PPOActorConfig(
+-            loss_aggregation=mode,
+-            ppo_n_minibatches=m,
+-            eps_clip=0.2,
+-            temperature=1.0,
+-            reward_scaling=1.0,
+-            reward_bias=0.0,
+-            adv_norm=None,
+-        ),
+-        engine,
+-    )
+-    actor.ppo_update(groups)
+-    delta, n = _param_delta(engine, snapshot)
+-    engine.destroy()
+-    return delta, n
++
++def norm(values):
++    return math.sqrt(sum(float(value.double().square().sum())
++                         for value in values.values() if value is not None))
++
++
++def digest(values):
++    result = hashlib.sha256()
++    for name, value in sorted(values.items()):
++        result.update(name.encode())
++        result.update(b"none" if value is None else value.contiguous().numpy().tobytes())
++    return result.hexdigest()
++
++
++def compare(left, right):
++    if left.keys() != right.keys():
++        raise ValueError("Parameter keys changed")
++    squared = maximum = 0.0
++    for name in left:
++        if (left[name] is None) != (right[name] is None):
++            raise ValueError(f"Gradient presence changed: {name}")
++        if left[name] is not None:
++            diff = left[name].double() - right[name].double()
++            squared += float(diff.square().sum())
++            maximum = max(maximum, float(diff.abs().max()))
++    difference = math.sqrt(squared)
++    reference = norm(left)
++    return {"l2_difference": difference, "max_abs_difference": maximum,
++            "reference_l2": reference,
++            "relative_l2": difference / reference if reference else None}
++
++
++def run_one(args, spec, m, p, mode):
++    import torch
++    from areal.api.io_struct import FinetuneSpec
++    from areal.api.cli_args import (MicroBatchSpec, OptimizerConfig,
++                                   PPOActorConfig, TrainEngineConfig)
++    from areal.engine.fsdp_engine import FSDPEngine
++    from areal.trainer.ppo.actor import PPOActor
++    from areal.utils import stats_tracker
++    torch.manual_seed(0)
++    engine = FSDPEngine(TrainEngineConfig(
++        path=args.model, experiment_name="prompt-mean-probe", trial_name="controlled",
++        backend="fsdp:d1", dtype=args.dtype, attn_impl="flash_attention_2",
++        disable_dropout=True, mb_spec=MicroBatchSpec(n_mbs=1),
++        optimizer=OptimizerConfig(type="adam", lr=1e-4, weight_decay=0.0,
++                                  warmup_steps=0, gradient_clipping=args.clip),
++    ))
++    process_group_created = False
++    try:
++        engine.create_process_group()
++        process_group_created = True
++        engine.initialize(None, FinetuneSpec(
++            total_train_epochs=1, dataset_size=spec["responses"] * 8,
++            train_batch_size=spec["responses"],
++        ))
++        before = cpu_values(engine.model)
++        initial_digest = digest(before)
++        actor = PPOActor(PPOActorConfig(
++            loss_aggregation=mode, ppo_n_minibatches=m, eps_clip=0.2,
++            temperature=1.0, adv_norm=None, m2_threshold=None,
++        ), engine)
++        groups = make_groups(spec)
++        # Reference probabilities always use the SAME P=1 eval path before training.
++        with torch.no_grad():
++            old_logps = actor.compute_logp(groups)
++        if old_logps is None or len(old_logps) != len(groups):
++            raise RuntimeError("Unexpected compute_logp output")
++        for group, old in zip(groups, old_logps):
++            if old.shape != group["logprobs"].shape:
++                raise RuntimeError("Log-probability alignment/shape requires review")
++            group["logprobs"] = old.detach().cpu().clone()
++            group["prox_logp"] = old.detach().cpu().clone()
++        batch_digest = digest({
++            f"{i}:{key}": value for i, group in enumerate(groups)
++            for key, value in group.items()
++        })
++        engine.config.mb_spec = MicroBatchSpec(n_mbs=p)
++        records, first_gradient = [], {}
++        optimizer_step, train_batch = engine.optimizer_step, engine.train_batch
++        def measured_step():
++            nonlocal first_gradient
++            gradients = cpu_values(engine.model, gradients=True)
++            pre_clip = norm(gradients)
++            if not first_gradient:
++                first_gradient = gradients
++            result = optimizer_step()
++            post_clip = norm(cpu_values(engine.model, gradients=True))
++            records.append({"pre_clip_l2": pre_clip, "post_clip_l2": post_clip,
++                            **{key: float(value) for key, value in result.items()}})
++            return result
++        def measured_batch(batch, **kwargs):
++            result = train_batch(batch, **kwargs)
++            records[-1]["inner_microbatches"] = int(result["num_micro_batches"])
++            return result
++        engine.optimizer_step, engine.train_batch = measured_step, measured_batch
++        actor.ppo_update(groups)
++        if len(records) != m or any(row["inner_microbatches"] != p for row in records):
++            raise RuntimeError(f"Requested M={m}/P={p} was not realized: {records}")
++        if any(not row["update_successful"] for row in records):
++            raise RuntimeError("Optimizer skipped an update")
++        after = cpu_values(engine.model)
++        deltas = {name: after[name] - before[name] for name in before}
++        summary = {"M": m, "P": p, "mode": mode, "fixture": spec["kind"],
++                   "initial_weights_sha256": initial_digest,
++                   "batch_sha256": batch_digest, "delta_l2": norm(deltas),
++                   "first_gradient_l2": norm(first_gradient), "steps": records}
++        stats_tracker.export_all(reduce_group=engine.data_parallel_group, reset=True)
++        return summary, deltas, first_gradient
++    finally:
++        if process_group_created:
++            engine.destroy()
+
+
+ def main():
+-    ap = argparse.ArgumentParser()
+-    ap.add_argument("--model", default=MODEL)
+-    ap.add_argument("--m-values", default="2,4")
+-    ap.add_argument("--inner-p", default="1,2")
+-    ap.add_argument("--loss-aggregations", default="prompt_mean,token_mean")
+-    args = ap.parse_args()
+-    global MODEL
+-    MODEL = args.model
+-    m_values = [int(x) for x in args.m_values.split(",")]
+-    inner_p = [int(x) for x in args.inner_p.split(",")]
+-    modes = args.loss_aggregations.split(",")
+-    groups = _groups()
+-
+-    print(f"model={MODEL} sweep M={m_values} innerP={inner_p} modes={modes}")
+-    print("(1) fixed-M inner-P spread (per §10.7 criterion 1):")
+-    for m in m_values:
+-        for mode in modes:
+-            spreads = []
+-            for p in inner_p:
+-                delta, n = run_one(m, p, mode, groups)
+-                spreads.append(delta)
+-                print(f"  M={m} P={p} {mode}: delta_L2={delta:.6f} ({n} params)")
+-            if len(spreads) > 1:
+-                print(f"    -> P-spread (max/min) = {max(spreads)/min(spreads):.3f}")
+-    print("(2) M=2 vs M=4 training-behaviour contrast (criterion 3):")
+-    per_mode = {}
+-    for mode in modes:
+-        deltas = []
+-        for m in m_values:
+-            delta, _ = run_one(m, inner_p[0], mode, groups)
+-            deltas.append(delta)
+-        per_mode[mode] = deltas
+-        print(f"  {mode}: M={m_values} delta_L2 = {[f'{d:.6f}' for d in deltas]}; "
+-              f"ratio={deltas[1]/deltas[0]:.3f}")
+-    print("Interpretation: if prompt_mean's cross-M ratio closely matches "
+-          "token_mean's, the M dependence is shared training behaviour, not a "
+-          "reduction-specific defect (per §10.7).")
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("--model", default=os.getenv("AREAL_PROBE_MODEL",
++                                                    "Qwen/Qwen2.5-0.5B-Instruct"))
++    parser.add_argument("--m-values", type=integer_list, default=[2, 4])
++    parser.add_argument("--inner-p", type=integer_list, default=[1, 2])
++    parser.add_argument("--fixture", choices=["balanced", "uneven"], default="balanced")
++    parser.add_argument("--dtype", choices=["bfloat16"], default="bfloat16")
++    parser.add_argument("--clip", type=float, default=1.0)
++    parser.add_argument("--output", type=Path)
++    parser.add_argument("--plan", action="store_true")
++    parser.add_argument("--check-source", type=Path)
++    args = parser.parse_args()
++    spec = fixture_spec(args.fixture)
++    if args.clip <= 0 or not math.isfinite(args.clip):
++        parser.error("--clip must be finite and positive")
++    if any(spec["responses"] % (m * p) for m in args.m_values for p in args.inner_p):
++        parser.error("Each M*P must divide the 16 responses to realize equal row splits")
++    plan = {"baseline": BASELINE, "fixture": spec, "M": args.m_values, "P": args.inner_p,
++            "dtype": args.dtype, "clip": args.clip,
++            "supported_scope": "one-GPU FSDP2, DP=CP=1; no dummy/Megatron/frozen contract",
++            "runtime_verified": False}
++    if args.check_source:
++        plan["source_check"] = check_source(args.check_source)
++    print(json.dumps(plan, indent=2))
++    if args.plan:
++        return
++    if args.output is None:
++        parser.error("GPU execution requires --output for a durable JSON result")
++    if int(os.environ.get("WORLD_SIZE", "1")) != 1:
++        parser.error("This probe supports exactly one torchrun process")
++    if any(key not in os.environ for key in ("RANK", "MASTER_ADDR", "MASTER_PORT")):
++        parser.error("GPU execution must be launched with torchrun --standalone")
++    import torch
++    if not torch.cuda.is_available():
++        raise RuntimeError("Run in the confirmed AReaL CUDA environment")
++    torch.cuda.set_device(int(os.environ.get("LOCAL_RANK", "0")))
++    torch.backends.cuda.matmul.allow_tf32 = False
++    torch.backends.cudnn.allow_tf32 = False
++    results, comparisons = [], []
++    report = {"plan": plan, "torch": torch.__version__, "runs": results,
++              "comparisons": comparisons,
++              "interpretation": "Descriptive evidence only; no automatic defect verdict"}
++    args.output.parent.mkdir(parents=True, exist_ok=True)
++    for m in args.m_values:
++        mode_baseline = None
++        for mode in ("prompt_mean", "token_mean"):
++            baseline = None
++            for p in args.inner_p:
++                summary, delta, first_gradient = run_one(args, spec, m, p, mode)
++                results.append(summary)
++                current = (summary, delta, first_gradient)
++                if baseline is None:
++                    baseline = current
++                else:
++                    if (summary["initial_weights_sha256"] != baseline[0]["initial_weights_sha256"]
++                            or summary["batch_sha256"] != baseline[0]["batch_sha256"]):
++                        raise RuntimeError("P comparison lost identical initial weights/data")
++                    comparisons.append({"kind": "fixed_M_vary_P", "M": m, "mode": mode,
++                                        "P_reference": baseline[0]["P"], "P": p,
++                                        "delta": compare(baseline[1], delta),
++                                        "first_gradient": compare(baseline[2], first_gradient)})
++                args.output.write_text(json.dumps(report, indent=2, allow_nan=False) + "\n")
++            if mode_baseline is None:
++                mode_baseline = baseline
++            elif args.fixture == "balanced":
++                if (baseline[0]["initial_weights_sha256"] != mode_baseline[0]["initial_weights_sha256"]
++                        or baseline[0]["batch_sha256"] != mode_baseline[0]["batch_sha256"]):
++                    raise RuntimeError("Mode comparison lost identical initial weights/data")
++                comparisons.append({"kind": "balanced_equal_objective_modes", "M": m,
++                                    "delta": compare(mode_baseline[1], baseline[1]),
++                                    "first_gradient": compare(mode_baseline[2], baseline[2])})
++                args.output.write_text(json.dumps(report, indent=2, allow_nan=False) + "\n")
++        del mode_baseline, baseline, current, delta, first_gradient
++    print(f"Saved descriptive results to {args.output}")
+
+
+ if __name__ == "__main__":
