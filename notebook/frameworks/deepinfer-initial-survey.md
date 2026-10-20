@@ -288,3 +288,51 @@ AST 提取原始 `prepare_cp_mirror_ref`、`yoco_cp_boundary_fused_ref` 与贡�
 源码文件 SHA256：`4b58b8b353be45ea0ebb917a8ddb2a2e4b1c2e2350e57d2ff0036ae4bf25b7d7`。首次夹具读取把上游 `[2] * 2000` 当纯字面量而失败；改为仅允许 list/tuple/常量/乘法的 AST 表达式后通过，非上游缺陷。20:00 的未提交成果曾因共享分支切换未留在当前文件中，20:30 接续在远端最新版本的隔离副本恢复后重新执行，结果一致；不将此前未完成发布表述成已完成。
 
 该模式只验证**上游参考的组合与索引契约**，没有执行 TileLang kernel、C++ shape 标量、真实 gather、通信顺序、valid-token mask 的设备实现或模型；不能因此判定 GPU/NPU 完全正确。当前上游 `test_prepare_cp_mirror` 覆盖多种 CP 大小/部分 rank、零长序列和混长；`test_yoco_cp_boundary_fused` 的 kernel 对照则固定 CP=4、5 个形状并覆盖全部 4 ranks，尚未在该测试矩阵中覆盖 CP=2/8。consumer view 注释中 keep_lens+原 seq_ks 的组合依赖 L2 验证，而非独立组合单测。本轮给出可复用 CPU 契约检查，**不是已找到 kernel bug 或可直接提 PR 的证据**。下一步只读查重当前 DeepInfer issue/PR，优先有具体失败证据、无人接手且本机可验证的贡献点，不为扩测试数制造候选。
+
+## PR #54 只读核验：事件已完成，不等于所有持有者已消费
+
+对象为 [DeepInfer #54](https://github.com/deepseek-ai/DeepInfer/pull/54)，本轮 API 确认 open、未合并，base `774ce244b87cc0eb8d4b94ab9f5de2ab22049f01`、head `70381d289c2b1e7c0e092a56a01a644e19fe37de`。**本节分析该 PR 的固定 head，不将它当作上游 main 已确认缺陷。** 已读全部 9 文件的 diff（含仓库内 OPTIMIZATION.md），另读 Worker 执行/后处理方法、完整 CUDATimer、计时回调和 SO 相关调用上下文；未读取另挂的用户附件，也未对外发 review/comment 或实现竞争补丁。
+
+PR 的四组改动是 profiler 空闲快路、计时事件池/完成标记复用、SO 活跃计数、空输出回收快路。作者宣称的 50–140us/step、SM86 单机计时/扩展测试均为作者报告，本项目没有测量或复核这些性能数据。应分别检查事件的两类用途，不能因都叫 Event 就共享同一安全论证。
+
+### 采样完成标记与计时事件池的不同持有者
+
+- `Worker._sample_end_evt`：每轮先同步/消费 prev_step_state，再在采样后重录同一个非计时标记。原始 Worker 三轮 decode+flush 的主机替身检查中，一共只创建一个标记，每次重录前上代均已 synchronize；该路径的主机顺序检查通过，未证明其他设备/并发路径全部安全。
+- `CUDATimer` 的 pair pool：`flush_out` 遍历所有记录，把已完成并读取过 elapsed_time 的 pair 放回池。可是计时器自己读完不代表 WorkerStepState 的外部持有者也读完。Worker 在当前 forward 后取走 pair 引用，随后才后处理上一轮；model_runner.post_process 的 flush 可以同时看到**当前 forward**，若它也已完成，就将其提前回池。
+
+[NVIDIA Event 文档](https://docs.nvidia.com/cuda/cuda-driver-api/cuda_driver_api/group__CUDA__EVENT.html) 明确说明事件允许重复 record，并会覆盖其先前捕获状态；query/synchronize 判断的是当前捕获的工作。故 query 成功只支持“设备工作已完成”，不能单独支持“事件句柄没有未来逻辑读者”。下述实验将这一语义显式建模，不是对真实 CUDA 的测量。
+
+### 一个合法的完成时机即可反驳“没有持有者会晚读”的论证
+
+以 F1/F2 表示 forward 计时 pair、S1 表示 sample pair，假设在下一轮 post_process 的非阻塞 flush 时，当前 forward 也已经完成（例如 CPU 被调度延迟）。源码未排除此时机。
+
+| 阶段 | 关键引用与池行为 |
+|---|---|
+| 第 1 轮 | state1 保存 F1/S1 |
+| 第 2 轮 forward 后 | state2 将持有 F2；后处理 state1 的 flush 可能把 F1、F2、S1 一起回池；回调读 state1 后，sample2 可复用 S1 |
+| 第 3 轮 forward | 可以从池取出 F2 重录，此时 state2 仍持有同一 pair，尚未进入其后处理 |
+| 随后后处理 state2 | engine 的原始 update_mtp_runtime 调用从旧引用读到 forward3 的时间，而非 forward2；后续同轮 sample 甚至可再次复用该 pair，使 state3 的 forward/sample 引用别名 |
+
+这说明当前完成标记复用与 pair 回收时机是两个问题。潜在影响是污染 DSpark 运行时估计；是否发生、频率及对吞吐/生成的实际影响仍需目标环境验证，不能从本实验推出 token 输出错误或性能必然下降。保守的可复用原则是：设备完成 **且所有逻辑读者消费完** 才能回池；本轮没有给上游实现修复或添加同步。
+
+### 原始主机函数的替身反例与对照
+
+复用 [既有 ZOS 检查脚本](../../experiments/scripts/verify_deepinfer_zos_host_flow.py)，新增：
+
+```bash
+python3 experiments/scripts/verify_deepinfer_zos_host_flow.py /path/to/DeepInfer-pr54 --check-event-pool
+```
+
+AST 保留 PR head 的 BaseTimer/CUDATimer、Worker 三个执行方法及 engine.post_process 的实际计时读取分支；Worker 装饰器移除。模型前向/采样、设备事件/完成时机、model_runner 后处理和回调环境用夹具替代，所有已提交事件在 query 时均设为完成。合成 forward 为 100/200/300ms、sample 为 10/20/30ms，数值只用于区分代际，**不是硬件时延或 benchmark**。
+
+| 轮次 | 期望 forward/sample | PR 池化后的读取 | 禁用复用的夹具对照 |
+|---|---|---|---|
+| 1 | 100 / 10 | 100 / 10 | 100 / 10 |
+| 2 | 200 / 20 | 300 / 20 | 200 / 20 |
+| 3（flush） | 300 / 30 | 30 / 30 | 300 / 30 |
+
+结果稳定复现；对照只将事件获取替换为新建 pair，其他源函数体不改，**不是上游修复已验证**。同时回归原 `8b161497` 的默认主机时序场景通过。首次夹具未带入计时分支依赖的 seq_metadata_list 绑定，产生 NameError；补上原始绑定后才得到上述反例，最初失败不是上游缺陷。
+
+输入 SHA256：timer.py `a221628f57f8600116e73f3eb8dc173cd1585f633200137ea1f378cb2f22d78f`；worker.py `7faf0a5e29cc20647f9cc35435a3475baf7b1e955b86acdb47ce59b942733bda`；llm_engine.py `e9def731f151ff38b406ac283e330dccd6420f1de7df13e344c98d42ac970663`。环境为 Darwin / Python 3.9.6 / numpy 2.0.2。该模式限定 driver+varlen+nextn>0、有效 graph、ZOS decode；未运行 torch/CUDA、真实 event、stream、kernel、多卡或模型，不应称为 GPU race 复现。
+
+SO 计数部分已读到 schedule 统计、最后 prefill chunk 0→1 增量、sampler 快路和账本刷新；尚未对异步状态转移做穷举，不能仅凭注释确认“永不低估”。下一步先做该计数契约的主机核验，再形成是否值得参与 #54 技术讨论的证据判断；任何上游评论仍需用户拍板，不另开竞争 PR。

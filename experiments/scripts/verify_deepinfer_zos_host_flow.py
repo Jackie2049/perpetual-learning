@@ -2,6 +2,7 @@
 
 Usage: python3 experiments/scripts/verify_deepinfer_zos_host_flow.py /path/to/DeepInfer
 Baseline: 8b16149741a4935e1dec8cea27853f273b374c5b.
+PR #54 event-pool model (head 70381d28): add --check-event-pool.
 Requires Python 3.9+ and numpy; no torch.
 Three Worker method bodies are compiled unchanged from AST, with decorators
 removed and hardware dependencies replaced by explicit doubles. Metadata
@@ -12,6 +13,8 @@ import argparse
 import ast
 import hashlib
 from contextlib import nullcontext
+from contextlib import contextmanager
+from collections import defaultdict
 from pathlib import Path
 from types import SimpleNamespace as NS
 
@@ -29,7 +32,7 @@ class Event:
         self.log.append(f"wait:{self.label}")
 
 
-def load_worker(path, log, env, tick):
+def load_worker(path, log, env, tick, timer=None, event_factory=None):
     source = path.read_text()
     cls = next(node for node in ast.parse(source).body
                if isinstance(node, ast.ClassDef) and node.name == "Worker")
@@ -49,18 +52,128 @@ def load_worker(path, log, env, tick):
         "WorkerStepState": NS,
         "cpu_timer": NS(record=lambda *args, **kwargs: nullcontext()),
         "cuda_graph_timer": NS(flush_out=lambda: None),
-        "cuda_timer": NS(latest_event_pair=lambda *args: None),
-        "torch": NS(cuda=NS(Event=lambda **kwargs: Event(log, tick[0]))),
+        "cuda_timer": timer if timer is not None else NS(latest_event_pair=lambda *args: None),
+        "torch": NS(cuda=NS(Event=event_factory if event_factory is not None else lambda **kwargs: Event(log, tick[0]))),
     }
     exec(compile(ast.fix_missing_locations(module), str(path), "exec"), namespace)
     print(f"worker.py sha256={hashlib.sha256(source.encode()).hexdigest()}")
     return namespace["Worker"]()
 
 
+def check_event_pool(root):
+    """PR #54 adversarial host model: current forward is already complete at flush.
+
+    Real Timer/Worker/engine timing-reader AST is retained. Device completion,
+    durations, model calls and communication are explicit test doubles.
+    """
+    timer_path = root / "deepinfer/timer.py"
+    engine_path = root / "deepinfer/engine/llm_engine.py"
+    timer_nodes = [n for n in ast.parse(timer_path.read_text()).body
+                   if isinstance(n, ast.ClassDef) and n.name in {"BaseTimer", "CUDATimer"}]
+    assert len(timer_nodes) == 2
+    engine = next(n for n in ast.parse(engine_path.read_text()).body
+                  if isinstance(n, ast.ClassDef) and n.name == "LLMEngine")
+    post = next(n for n in engine.body if isinstance(n, ast.FunctionDef) and n.name == "post_process")
+    branch = next(n for n in post.body if isinstance(n, ast.If) and "forward_events" in ast.unparse(n.test))
+    reader = ast.parse("def read_runtime(self, step_state):\n    pass").body[0]
+    seq_binding = next(n for n in post.body if isinstance(n, ast.Assign)
+                       and any(isinstance(t, ast.Name) and t.id == "seq_metadata_list" for t in n.targets))
+    reader.body = [seq_binding, branch]
+    future = ast.ImportFrom(module="__future__", names=[ast.alias(name="annotations")], level=0)
+    reader_ns = {}
+    exec(compile(ast.fix_missing_locations(ast.Module(body=[future, reader], type_ignores=[])), str(engine_path), "exec"), reader_ns)
+
+    def scenario(reuse):
+        device = NS(ms=0.0)
+        completions = []
+
+        class DeviceEvent:
+            def __init__(self, enable_timing=False):
+                self.enable_timing = enable_timing
+                self.generation = self.waited = 0
+                self.stamp = None
+                if not enable_timing:
+                    completions.append(self)
+
+            def record(self):
+                if not self.enable_timing and self.generation:
+                    assert self.waited == self.generation, "completion marker re-recorded before consumption"
+                self.generation += 1
+                self.stamp = device.ms
+
+            def query(self):
+                return True  # injected valid schedule: all submitted work has completed
+
+            def synchronize(self):
+                self.waited = self.generation
+
+            def elapsed_time(self, other):
+                return other.stamp - self.stamp
+
+        namespace = {"defaultdict": defaultdict, "contextmanager": contextmanager,
+                     "torch": NS(cuda=NS(Event=DeviceEvent))}
+        exec(compile(ast.fix_missing_locations(ast.Module(body=[future, *timer_nodes], type_ignores=[])), str(timer_path), "exec"), namespace)
+        timer = namespace["CUDATimer"]()
+        assert hasattr(timer, "_event_pool"), "this mode expects PR #54 event-pool source"
+        if not reuse:
+            # Explicit test control, not an upstream fix or a modified source body.
+            timer._acquire_event_pair = lambda: (DeviceEvent(True), DeviceEvent(True))
+        env = NS(DEEPINFER_ZERO_OVERHEAD_SCHEDULING=True, DEEPINFER_ENABLE_MTP_VARLEN=True)
+        tick = [0]
+        worker = load_worker(root / "deepinfer/worker/worker.py", [], env, tick, timer, DeviceEvent)
+        worker.is_driver_worker, worker.nextn = True, 5
+        worker.prev_step_state, worker._sample_end_evt, worker.gpu_cache = None, None, None
+        worker._correct_seqlens_qk = lambda *args: None
+        worker.maybe_gc_collect = lambda: None
+        observed = []
+
+        def forward(*args, **kwargs):
+            with timer.record("device_forward"):
+                device.ms += 100 * tick[0]
+            return NS(graph_size=8, input_metadata=None, model_output=None)
+
+        def sample(*args, **kwargs):
+            with timer.record("device_sample"):
+                device.ms += 10 * tick[0]
+            return NS(tick=tick[0])
+
+        def post_process(state):
+            reader_ns["read_runtime"](NS(scheduler=NS(update_mtp_runtime=lambda n, g, f, s: observed.append((state.sampler_output.tick, f, s)))), state)
+            return np.array([state.sampler_output.tick], dtype=np.uint64)
+
+        worker.model_runner = NS(execute_main_model=forward, execute_sample=sample,
+                                 post_process=lambda *args: timer.flush_out(non_blocking=True))
+        worker.engine_callbacks = NS(post_process_fn=post_process, pre_sampler_sync_fn=lambda *args: None)
+        scheduler = NS(num_batched_tokens=6, num_active_so=0)
+        for step in (1, 2, 3):
+            tick[0] = step
+            worker.execute_model_step(False, False, [NS(seqlen_q=1)], scheduler)
+        worker.flush_inflight_reqs()
+        assert len(completions) == 1 and completions[0].generation == completions[0].waited == 3
+        return observed
+
+    expected = [(1, 100.0, 10.0), (2, 200.0, 20.0), (3, 300.0, 30.0)]
+    pooled, fresh = scenario(True), scenario(False)
+    assert fresh == expected, ("fresh-event control failed", fresh)
+    assert pooled != expected and pooled[0] == expected[0], ("counterexample not reproduced", pooled)
+    for path in (timer_path, engine_path):
+        print(f"{path.name} sha256={hashlib.sha256(path.read_bytes()).hexdigest()}")
+    print(f"expected timing feedback: {expected}")
+    print(f"PR pooled feedback:      {pooled}")
+    print(f"reuse-disabled control:  {fresh}")
+    print("PASS: host-model counterexample reproduced; completion marker consumed before re-record in both scenarios.")
+    print("Not a CUDA runtime, model, performance or device-race reproduction; no upstream source changed.")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source_root", type=Path)
-    root = parser.parse_args().source_root
+    parser.add_argument("--check-event-pool", action="store_true", help="PR #54 timing-alias host model; no device execution")
+    args = parser.parse_args()
+    root = args.source_root
+    if args.check_event_pool:
+        check_event_pool(root)
+        return
     log, tick = [], [0]
     env = NS(DEEPINFER_ZERO_OVERHEAD_SCHEDULING=True,
              DEEPINFER_ENABLE_MTP_VARLEN=False)
