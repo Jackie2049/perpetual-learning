@@ -171,6 +171,25 @@ rl_trainer 主循环（rl_trainer.py:929）每 global_step：rollout → aux 打
 - Megatron 的 `loss_multiplier` 额外乘 `len(mb_list)=P` 是**内层常数因子**（由 pp_size / mb_spec 决定，不随 ppo_n_minibatches 变），只改变绝对尺度、不构成新的 ppo 切分敏感项；它对 token_mean/seq_mean/constant 也统一生效（补偿 MCore 的 per-microbatch 梯度平均）。
 - 仍是「切分敏感点（高置信源码级确证，缺陷定性待实测）」，非已证实 bug：真实自适应优化器是否会吸收这部分绝对梯度差异，需 AReaL 环境 `ppo_n_minibatches` 2 vs 4 对照实测（FSDP2 与 Megatron 各一组更佳）。
 
+### 10.6 Megatron 归一化实际有三条路径 + per-token 路径不抵消切分敏感（2026-10-20 补读）
+
+补读 §9「未读」的 `megatron_engine.py::train_batch`（L2325-2414）时发现：**Megatron 归一化实际是三分支**，§10.5 只覆盖了默认分支。`train_batch` 在 Step 2 依模型配置 `model_config.calculate_per_token_loss` 分流（L2348-2388）：
+
+1. **`per_token_loss=True` 且 loss_weight_fn 是 named normalizer**（`is_named_loss_normalizer`，api/loss.py:56 查 `_areal_named_loss_names`）：`loss_multiplier=1.0`，`total_token_count=compute_global_token_count(...)`，靠 `scale_named_loss_for_native` 逐 term 保自身分母。
+2. **`per_token_loss=True` 但非 named**（`elif per_token_loss`，L2364-2369）：`loss_multiplier = self._per_token_loss_multiplier(mb_list, loss_weight_fn) = T_global / W_global`（per-token 数对 weight 的 DP all-reduce 均值，L2414-2430），`total_loss_weight=None`。
+3. **`per_token_loss=False`（默认）**（L2382-2388）：`loss_multiplier = dp_size * len(mb_list)`，`total_loss_weight=compute_total_loss_weight(...)`——**这就是 §10.5 分析的分支**。
+
+**关键判定**：`PromptMean` 的 `normalizer()`/`engine_weight` 返回的是**标量 tensor（rows/global_rows）而非命名 dict**，`loss_reduction.py` 中 `_bind_prompt_mean`/`PromptMean` **未用 `@named_loss_normalizer` 装饰** → `is_named_loss_normalizer(loss_weight_fn)==False` 恒成立。因此 prompt_mean 在 Megatron 只可能走**分支 2 或 3**，从不走分支 1。
+
+**Megatron-Core 0.19.0 默认 `calculate_per_token_loss: bool = False`**（`megatron/core/transformer/transformer_config.py:277`，已按 `core_v0.19.0` tag 核验；AReaL 全仓不设该字段，pyproject 锁 `megatron-core==0.19.0`）→ **AReaL 实际默认路径就是 §10.5 的分支 3**（`dp_size·(M/G)·P·Σ_all`），§10.5 结论对默认配置成立。
+
+**per-token 路径（分支 2）不抵消切分敏感**（忠实推导 + numpy 复刻，`verify_areal_prompt_mean_split.py` Case 6）：
+- `_compute_logprobs_and_loss`（L4106）对 prompt_mean（非 named）取 `token_count = loss_mask.count_nonzero()`，`_build_per_token_loss_output`（L4330）得 `loss_numerator = loss·engine_weight·(T_global/W_global)/cp_size`；MCore `finalize_model_grads` 把 `loss_numerator` 在 DP+CP 求和后 **÷总 token 数 T_global**。
+- 代入 `loss = (Σ_t loss·w)·step_scale/engine_weight`：`loss_numerator = (Σ_t loss·w)·step_scale·(T_global/W_global)/cp_size`，`engine_weight` 相消；`/T_global` 与分子里的 `T_global` **精确相消**，每 ppo-minibatch 贡献 `(Σ_t loss·w)·step_scale / W_global_i`，其中 `W_global_i`（内层 pipeline mb 的 engine_weight 之和，DP all-reduce）≡ 1（同 §10.2 的 total_weight）。
+- **忠实链 = `(M/G)·Σ_all loss·w`**——M 线性放大**保留**，且 `dp_size` 与 `P`（内层 pipeline mb 数）这两个常数因子**被 /T_global 消掉**（numpy 复刻 Case 6：M=1/2/4→1×/2×/4× 精确，P=2/P=1→1.000）。
+
+**结论（升级 §10.5 缺口）**：prompt_mean 的 `step_scale=M/G` 线性放大是 **actor 层共享、跨三条归一化路径稳健**——FSDP2（`dp_size·(M/G)`）、Megatron 默认（`dp_size·(M/G)·P`）、Megatron per-token（`(M/G)`）都一样，**不是**特定 `dp_size·len(mb_list)` 乘子的产物。per-token 路径只是把常数因子换掉，切分敏感（随 M 线性）不变。实测项仍不变：真实自适应优化器是否吸收这部分绝对梯度差异，需 AReaL 环境 `ppo_n_minibatches` 2 vs 4 对照。
+
 ## 相关
 
 - 贡献轨道：[AReaL 贡献追踪](../../open-source/areal/tracker.md)（#1730 M2PO 跨框架对照）

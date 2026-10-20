@@ -225,6 +225,90 @@ run([4, 3, 2], 5, dp=2)
 # Case 4: dummy transport slots inflate step_scale's M without adding gradient
 run_dummy([4, 3, 2], 5)
 run_dummy([7, 1, 4, 5], 6, dp=2)
+def megatron_per_token_prompt_mean_total(group_sizes, seq_len, n_mbs, rng, dp_size=1, p_inner=2):
+    """Faithful end-to-end prompt_mean gradient for the MEGATRON *per-token-loss* path.
+
+    Traced from AReaL source (main 3b93679) + Megatron-Core 0.19.0 default
+    (`calculate_per_token_loss: bool = False`, so this is the OPT-IN path taken only
+    when a user sets calculate_per_token_loss=True in the MCore model config):
+
+      megatron_engine.py:2364-2369  elif per_token_loss:   (prompt_mean is NOT a named
+                      normalizer -> is_named_loss_normalizer(loss_weight_fn)==False)
+                        total_loss_weight = None
+                        loss_multiplier = self._per_token_loss_multiplier(...)
+                                        = T_global / W_global
+                        (per-token count over weight, all-reduced over DP; megatron_engine.py:2414)
+      megatron_engine.py:4124-4132  native_named = per_token_loss and isinstance(local_weight, dict)
+                        -> False for prompt_mean (local_weight=engine_weight is a scalar)
+                        token_count = self._per_token_count(...) = loss_mask.count_nonzero()
+      megatron_engine.py:4330      _build_per_token_loss_output(loss, engine_weight,
+                                        loss_multiplier=T_global/W_global, token_count):
+                        loss_numerator = loss * engine_weight * (T_global/W_global) / cp_size
+      MCore finalize_model_grads    sums loss_numerator over DP+CP and divides by TOTAL tokens T_global.
+
+    Per ppo-minibatch i, over its P inner pipeline mb (each cp replica has full sequences):
+        loss_numerator_p = (sum_t loss*w)_p * step_scale/engine_weight_p * engine_weight_p
+                             * (T_global_i/W_global_i) / cp_size
+        finalize:  sum_P loss_numerator_p / T_global_i
+                 = (sum_t loss*w)_p * step_scale / W_global_i     (engine_weight cancels; T cancels)
+        W_global_i = all-reduced sum of engine_weight over the inner mbs = 1 (as in FSDP2/§10.2)
+      Summing over M ppo-minibatches:
+        grad_total = step_scale * sum_all loss*w = (M/G) * sum_all loss*w
+
+    Result: the M-linear split-sensitivity (step_scale=M/G) SURVIVES the per-token path;
+    the constant factors change (no dp_size, no P) because MCore's /T_global cancels
+    the *multiplied* T_global, but the split-dependence in M is identical to FSDP2 and to
+    the Megatron default path. Closes the §10.5 "per_token_loss path unverified" gap.
+    """
+    n_seq = sum(group_sizes)
+    mask = np.ones((n_seq, seq_len), dtype=bool)
+    loss = rng.standard_normal((n_seq, seq_len)).astype(np.float32)
+    tw, G, _ = group_token_counts(group_sizes, mask)
+    effective_n_mbs = n_mbs
+    step_scale = effective_n_mbs / G
+    idx = np.linspace(0, n_seq, n_mbs + 1).astype(int)
+    total = 0.0
+    for i in range(n_mbs):
+        lo, hi = idx[i], idx[i + 1]
+        W_global_i = 1.0  # all-reduced sum of engine_weight over inner mbs (as in §10.2)
+        inner = np.linspace(lo, hi, p_inner + 1).astype(int)
+        minibatch_sum = 0.0
+        for j in range(p_inner):
+            ilo, ihi = inner[j], inner[j + 1]
+            seg_sum = float((loss[ilo:ihi].astype(np.float32) * tw[ilo:ihi]).sum())
+            # loss_numerator then /T_global by MCore; T_global cancels, W_global_i==1:
+            minibatch_sum += seg_sum * step_scale / W_global_i
+        total += minibatch_sum
+    return total, G
+
+
+def run_megatron_per_token(gs, seq_len, dp=1, p_inner=2):
+    """Show the Megatron per-token-loss path KEEPS the M-linear prompt_mean sensitivity."""
+    rng0 = np.random.default_rng(0)
+    tm = token_mean_total(gs, seq_len, rng0)
+    print(f"[Megatron per-token-loss path] group_sizes={gs}, seq_len={seq_len}, "
+          f"G={sum(1 for g in gs if g>0)}, dp_size={dp}, P(inner pipeline mb)={p_inner}")
+    print(f"token_mean baseline (split-invariant): {tm:.6f}")
+    base = None
+    for n in [1, 2, 4]:
+        v, G = megatron_per_token_prompt_mean_total(
+            gs, seq_len, n, np.random.default_rng(0), dp, p_inner
+        )
+        if base is None:
+            base = v
+        print(f"  prompt_mean n_mbs={n}: {v:.6f}  ratio_to_n_mbs1={v/base:.4f}  (G={G})")
+    # P should NOT affect the per-token result (T_global cancels; no P multiplier survives)
+    p1 = megatron_per_token_prompt_mean_total(gs, seq_len, 4, np.random.default_rng(0), dp, 1)[0]
+    p2 = megatron_per_token_prompt_mean_total(gs, seq_len, 4, np.random.default_rng(0), dp, 2)[0]
+    print(f"  P-ratio at fixed n_mbs=4: P=2 / P=1 = {p2/p1:.3f} "
+          f"(theory 1.0: per-token path cancels P via /T_global)")
+    print(f"  theory: grad_total ~ (M/G) * sum_all loss*w; M-linear sensitivity "
+          f"identical to FSDP2 & Megatron default path; constants (dp_size, P) drop out\n")
+
+
 # Case 5: Megatron backend shares step_scale=M/G (cross-backend); P is a constant factor
 run_megatron([4, 3, 2], 5)
 run_megatron([7, 1, 4, 5], 6, dp=2)
+# Case 6: Megatron per-token-loss path (calculate_per_token_loss=True, opt-in) keeps M-linear sensitivity
+run_megatron_per_token([4, 3, 2], 5)
+run_megatron_per_token([7, 1, 4, 5], 6, dp=2)
