@@ -686,3 +686,44 @@ python3 experiments/scripts/verify_deepinfer_chunk_sizing.py /path/to/DeepInfer 
 Python3.9.6与3.12.13均通过；新增检查不依赖torch。Sequence和engine.step仍是替身，cache推进沿用片段夹具的立即增加规则，不执行真实输出提交、fork、模型、分布式或设备。chunk学习先收束；后续只读追MTP接受数如何把乐观缓存长度提交为最终长度，不重复增加同类替身来替代完整Scheduler验证。
 
 固定源码SHA256：benchmark.py `a4e0b114b4173b9d2124cdabfedc54d3dd5cd81d269d7054c48f9bac780eb9f2`；llm_engine.py `a636d60ca5711f6b7c21e68370c3bd9c2de6fc3f4439a7429ca4f572f0edeebe`；pybind_sequence.cpp `872775774022bb27fd4b1fade37ec9f6fe9ec4c3051844206e3ec36c8103a9ce`；sequence.hpp `67ef6ea70ee31a519fd632ee2d7be4710a6d796f786cf336dd3d3f06f7fbe16b`；_prompts.py `c8025c1542b62f5bc1f5065387fead9511861a873b004718a104004959f2e1ef`。
+
+## MTP验证与缓存提交的计数边界
+
+**验证接受数不是最终追加数，调度预留也不是已提交缓存。** 固定774ce244源码，2026-10-21 05:32心跳接续；所读scheduler、Sequence、sampler与输出路径同本地8b161497版本。以下区分逐请求验证长度q、连续接受的draft数量a，以及停止检查后真正追加到序列的数量t；不是完整Scheduler或物理KV正确性证明。
+
+[采样finalize](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/model_executor/layers/tilelang_ops/sampler.py#L321)按请求的连续接受前缀生成flat verified token数组：未接受行置−1，并单独取第一拒绝行或最后fresh行的sampled token。last_valid_offset是final_row−ftp，即接受draft数，不包含这个最终采样token；GPU侧下一轮长度修正读取的是它。这里没有在主机上按EOS/max_tokens裁剪后的t。
+
+[主机post_process](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/engine/llm_engine.py#L717)先process_MTPInfo再process_outputs：前者发布下一轮draft、移动confidence历史；后者取本轮flat接受前缀，追加接受draft与最终采样token，并逐个检查EOS、总长和输出上限。接受向量可以长于最后实际追加的部分；seq.mtp.last_output_token也先保存最终采样token，提前停止时不必等于账本最后token。不能把这些字段当作已经向用户输出的完整序列。
+
+### 缓存账本怎样落到实际追加数
+
+[process_outputs](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/csrc/engine/scheduler.hpp#L927)先以q做一次乐观推进，保存previous_num_tokens=C；decode在追加完成后改写为C+t，而不是从已经推进的值再加t。若处理前cache为N−1、序列长N，处理后cache为N+t−1，仍留下一个末token待后续forward。这个等式依赖该初始关系及正常decode分支，不适用于任意人工注入的缓存状态。
+
+| 路径与控制输入 | 最后缓存及序列长度 |
+|---|---|
+| decode N10/C9/q4，接受2个draft再采样1个token | 先乐观13，再回填12；序列长13，t3 |
+| 同样q4，3个draft均通过，但第一个就是EOS | 接受向量仍长3，实际仅追加1个；缓存10、序列长11 |
+| 最后prefill chunk，N10/C6/q4 | cache10、输出后序列长11；不按t1回填成7 |
+| 非最后prefill chunk，N10/C0/q4 | cache4、序列长10，不追加输出，重新进入waiting |
+
+SO账本status=−1时，即使本步没有新的SO状态上报，循环也以占位0追加一次并标记FINISHED_SO_FAILED；它不是普通EOS检查路径。此处只描述序列账本，不能据此断言外部RequestOutput也返回0，后者还依赖采样mask及输出formatter的输入前提。
+
+### 在途预留与失效结果
+
+[schedule](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/csrc/engine/scheduler.hpp#L696)用cache加既有inflight加本轮q构造metadata，再按nextn+1预留本轮在途容量；实际q与这个上界可以不同。finish_inflight_step在只剩最新预留时清零，否则保留最新一轮预留。这是两轮流水线的保守记账，不是任意深度任务队列或资源事务。
+
+已经finished的请求，以及decode在途被抢占、重置后处于WAITING的请求，都跳过cache推进和token追加；flat_offset仍按该行q前移，避免下一请求读取错段。process_MTPInfo对WAITING decode也先跳过，不把已复位的process计数推进。_preempt是否允许重算还取决于stop_preempted_request与SO状态；不能把所有抢占都叫作重算。
+
+[输出formatter](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/csrc/engine/outputs.hpp#L196)用pushed_tokens_before_finish限制逐项输出，只有尚有余额时才输出最终sampled token；最后发出的项记录draft_tok/accept_tok。这两个统计字段由验证长度和接受前缀构造，并不重新等于实际追加的t，提前EOS时尤其不能据它们恢复最终序列长度。这部分为源码核对，未纳入下述C++执行。
+
+### 原始C++记账循环的限定控制
+
+```bash
+python3 experiments/scripts/verify_deepinfer_mtp_commit.py /path/to/DeepInfer
+```
+
+[脚本](../../experiments/scripts/verify_deepinfer_mtp_commit.py)从固定Git对象提取完整逐请求process_outputs循环、_check_stop、KvCacheState与SequenceScheduleState定义，Clang/C++20运行12组控制：draft接受0至3各1组，draft中EOS、输出上限、已存在SO失败各1组，两类prefill各1组，finished/重算WAITING跳行各1组，两轮预留退场1组。包含混合q2/q4时的flat offset、真实缓存/在途primitive reset，以及decode必须基于previous缓存回填的检查；第一轮即通过，Python3.9.6与3.12.13重复通过。
+
+Sequence存储、tensor访问、SO上报容器、队列和slot释放为替身，Engram映射取identity；TORCH_CHECK只检查条件、丢弃格式化参数。不编译完整扩展，不执行采样/ref/kernel、process_MTPInfo、真正_preempt、输出formatter、设备KV写入/回收或collective；也不向任意非法flat buffer输入提供安全保证。原始Worker主机控制流回归通过，仍不能替代真实事件/stream验证。下一步先核对SO失败占位与对外token身份的前提，避免把账本规则误当作API输出全链已证实，不预设新缺陷或对外提交。
+
+源码SHA256沿用前节sequence.hpp及scheduler.hpp；outputs.hpp为`9ef2f5a37dd07b03fe7fac7f92cbbf1dfc056ff4a0c0fbb9b7a384149f71bf6f`，tilelang_ops/sampler.py为`cef9d2dda13f24fed56ca9bef45fdffa883edc63208d54e1b83ead9358271304`。本机macOS arm64，无GPU/SSH/VPN操作，无AReaL变更。

@@ -26,6 +26,7 @@
 | 同上 `--check-worker-lifecycle` | 原始 CP 命令/关闭/队列方法的单槽内存与假时钟检查；区分读标记、方法完成、父死注册和 ring timeout。非 Linux prctl、实际共享内存、多进程、socket 或 collective 验证 |
 | 同上 `--check-shm-cleanup` | 原始 ShmRingBuffer/PG cleanup 与现有清理断言；真实本机映射、所有者close/unlink和派生view故障控制，仅适配torch清零。记录macOS页粒度，非完整torch/Gloo、多进程广播或设备验证 |
 | [verify_deepinfer_mtp_budget.py](verify_deepinfer_mtp_budget.py) | 编译原始 MTPVarlen/估时头文件，仅替换 Sequence/TORCH_CHECK 依赖；用穷举前缀 oracle 检查 token 预算、两轮置信度与反馈边界，非 GPU 分配或性能实测；需 C++17 编译器 |
+| [verify_deepinfer_mtp_commit.py](verify_deepinfer_mtp_commit.py) | 固定774ce244，原始process_outputs逐请求循环、_check_stop与缓存/在途状态定义的12组C++控制；覆盖接受前缀、EOS/上限、SO账本失败、prefill和失效行offset。Sequence/tensor/释放为替身，非完整Scheduler、sampler、输出formatter或物理KV/设备验证；需C++20编译器 |
 | [verify_deepinfer_yoco_visibility.py](verify_deepinfer_yoco_visibility.py) | 默认编译原始 YoCo 可见域 C++ helper；--cp-reference-only 组合上游 Python CP 索引参考，检查跨 rank 身份、padding 与绝对 key 坐标。均非完整 metadata、GPU/通信或上游 L1/L2；默认模式需 C++17 编译器 |
 
 部分脚本包含历史服务器路径或会修改所安装的框架源码；这是实验代码，运行前应查看对应脚本和验证对象，不能将其视为通用巡检入口。迁移本身不表示重新完成 GPU 验证。
