@@ -216,6 +216,8 @@ where `env_loss_coef` = 0.05 (default), `obs_mask` = observation token mask
 
 ## 11. verl 注册损失审计（2026-10-19，main 全量）
 
+> 2026-10-21更正：[GMPO调用链复核](../open-source/verl/candidate-7913-gmpo-geo-mean.md)支持固定报告版本的局部均值归约问题，但旧split脚本DP段错误，“唯一绕过agg_loss”也不等于任意切分/所有后端修复已确证。#7916与#5614已有同核心方案，不重复提交。
+
 ### agg_loss 覆盖唯一性（#7913 相关）
 
 当前 main `core_algos.py` 全部 13 个注册损失逐一核对：**仅 `geo_mean`（GMPO）用 `torch.mean` 绕过 `agg_loss`**——即 #7913 修复的 microbatch 切分不变性 bug 在注册表中是唯一的；其余 12 个（vanilla/dppo_tv/dppo_kl/gspo/sapo/gpg/clip_cov/kl_cov/dro/cispo/reinforce/bypass_mode）全部走 `agg_loss(..., **global_batch_info)`。

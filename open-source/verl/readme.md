@@ -9,7 +9,7 @@
 
 **【价值评估】** 7 / 10 — 集中同一项目的候选、证据和进展，减少误读与重复探索；目录本身不计作上游成果。
 
-**【进展】** [HDO修复PR #8286](https://github.com/verl-project/verl/pull/8286)已合并；2026-10-21复核纠正#8250/GSPO/GMPO推断，旧clip RFC撤回且不再独立推进；其余事项按证据与用户决定推进。
+**【进展】** [HDO修复PR #8286](https://github.com/verl-project/verl/pull/8286)已合并；2026-10-21复核纠正#8250/GSPO/GMPO及#7913旧验证声明，clip旧RFC不再推进，#7913已有同核心方案不重复提交；其余按证据与用户决定推进。
 
 **【大白话讲明白】**
 
@@ -29,6 +29,7 @@
 ## 材料索引
 
 - [#8250诊断边界与待补观测](candidate-8250-async-entropy-collapse.md)
+- [#7913真实调用链与旧split验证更正](candidate-7913-gmpo-geo-mean.md)
 - [clip旧RFC撤回与目标核验](verl-clip-semantics-rfc-draft.md)
 - [#8281截断契约（待决定）](candidate-8281-agent-loop-shared-cap-vs-truncation.md)
 - [Candidate: del_local_ckpt_after_load 不删本地 checkpoint](candidate-del-local-ckpt.md)

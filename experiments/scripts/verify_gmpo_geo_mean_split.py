@@ -1,154 +1,184 @@
 #!/usr/bin/env python3
+"""Pinned FSDP host-control probes + independent GMPO accumulation models.
+
+Usage: python3 verify_gmpo_geo_mean_split.py /path/to/verl-7913
+Executes only extracted original train_batch/forward_backward_batch methods
+with fake data/forward/backward/optimizer/communication. NumPy shared-parameter
+finite differences separately model the PG loss. NOT torch/autograd, real DP,
+native FSDP, model training, clipping/SGD reproduction, or patch verification.
 """
-#7913 verification: GMPO geo_mean microbatch-split invariance.
+import argparse
+import ast
+from contextlib import nullcontext
+import hashlib
+from pathlib import Path
+from types import SimpleNamespace
 
-Extracts masked_sum/masked_mean/agg_loss semantics verbatim from verl
-(verl/trainer/ppo/core_algos.py, verl/utils/torch_functional.py) and the
-geo_mean loss (pre- and post-patch), then reproduces the issue's
-experiment: one minibatch of 8 sequences vs 8 microbatches of 1.
+import numpy as np
 
-Method: autograd gradients of the accumulated microbatch losses w.r.t.
-log_prob, compared with the single-minibatch gradient (the FSDP engine
-accumulates per-microbatch backward() with no rescaling).
-"""
-
-import torch
-
-torch.manual_seed(42)
+from verify_gmpo_clip_semantics import fd_gradient, verl_model
 
 
-def masked_sum(values, mask, axis=None):
-    if mask.dtype == torch.bool:
-        mask = mask.float()
-    return (values * mask).sum(dim=axis)
+def function_at(path, name, class_name=None):
+    tree = ast.parse(path.read_text())
+    body = tree.body if class_name is None else next(
+        n.body for n in tree.body if isinstance(n, ast.ClassDef) and n.name == class_name)
+    fn = next(n for n in body if isinstance(n, ast.FunctionDef) and n.name == name)
+    return fn
 
 
-def masked_mean(values, mask, axis=None):
-    if mask.dtype == torch.bool:
-        mask = mask.float()
-    return (values * mask).sum(dim=axis) / mask.sum(dim=axis)
+def source_checks(root):
+    paths = {key: root / path for key, path in {
+        'base': 'verl/workers/engine/base.py',
+        'fsdp': 'verl/workers/engine/fsdp/transformer_impl.py',
+        'loss': 'verl/workers/utils/losses.py',
+        'core': 'verl/trainer/ppo/core_algos.py',
+        'trainer': 'verl/trainer/ppo/v1/trainer_base.py',
+        'worker': 'verl/workers/engine_workers.py',
+    }.items()}
+    for key, path in paths.items():
+        print(key, hashlib.sha256(path.read_bytes()).hexdigest())
+    fsdp = function_at(paths['fsdp'], 'forward_step', 'FSDPEngineWithLMHead')
+    assert any(isinstance(n, ast.Assign) and isinstance(n.value, ast.Call)
+               and isinstance(n.value.func, ast.Name) and n.value.func.id == 'loss_function'
+               and ast.dump(n.targets[0]) == ast.dump(ast.parse('loss, metrics = x').body[0].targets[0])
+               for n in ast.walk(fsdp))
+    assert any(isinstance(n, ast.Return) and isinstance(n.value, ast.Tuple)
+               and [e.id for e in n.value.elts if isinstance(e, ast.Name)] == ['loss', 'output']
+               for n in ast.walk(fsdp))
+    ppo = ast.unparse(function_at(paths['loss'], 'ppo_loss'))
+    assert 'config.global_batch_info[\'global_batch_size\']' in ppo
+    core = ast.unparse(function_at(paths['core'], 'compute_policy_loss_geo_mean'))
+    assert 'torch.mean(pg_losses)' in core and 'rollout_is_weights + 1e-10' in core
+    trainer = paths['trainer'].read_text()
+    assert 'ppo_mini_batch_size = ppo_mini_batch_size * self.config.actor_rollout_ref.rollout.n' in trainer
+    assert '"global_batch_size": ppo_mini_batch_size' in trainer
+    worker = paths['worker'].read_text()
+    assert 'mini_batch_size // self.engine.get_data_parallel_size()' in worker
+    return paths
 
 
-# ---- agg_loss, seq-mean-token-sum branch (verbatim from core_algos.py:1140) ----
-def agg_loss_seq_mean_token_sum(loss_mat, loss_mask, dp_size=1, global_batch_size=None):
-    """seq-mean-token-sum: token-sum per sequence, mean over global batch sequences."""
-    seq_losses = torch.sum(loss_mat * loss_mask, dim=-1)
-    seq_mask = (torch.sum(loss_mask, dim=-1) > 0).float()
-    if global_batch_size is None:
-        global_batch_size = seq_mask.sum()
-    loss = masked_sum(seq_losses, seq_mask) / global_batch_size * dp_size
-    return loss
+def extract(fn, namespace):
+    fn.decorator_list = []
+    exec(compile('from __future__ import annotations\n' + ast.unparse(fn), '<upstream-host-method>', 'exec'), namespace)
+    return namespace[fn.name]
 
 
-# ---- geo_mean pre-patch (verbatim core_algos.py:1928, simplified args) ----
-def compute_geo_mean_pre(old_log_prob, log_prob, advantages, response_mask, clip_ratio_low=0.2, clip_ratio_high=0.2,
-                        **unused):
-    negative_approx_kl = log_prob - old_log_prob
-    negative_approx_kl_clamp = torch.clamp(negative_approx_kl, -clip_ratio_low, clip_ratio_high)
-    sgn_advantage = torch.sign(advantages)
-    negative_approx_kl_min = torch.min(sgn_advantage * negative_approx_kl, sgn_advantage * negative_approx_kl_clamp)
-    negative_approx_kl_min = sgn_advantage * negative_approx_kl_min
-    response_mask_sum = response_mask.sum(dim=-1)
-    ratio = torch.exp((negative_approx_kl_min * response_mask).sum(dim=-1) / (response_mask_sum + 1e-8))
-    advantage = (advantages * response_mask).sum(dim=-1) / (response_mask_sum + 1e-8)
-    pg_losses = -advantage * ratio
-    pg_loss = torch.mean(pg_losses)  # <-- the bug: microbatch-local mean
-    return pg_loss
+def host_probe(paths, sizes):
+    trace = []
 
+    class Count:
+        def sum(self): return self
+        def to(self, device): return self
+        def item(self): return 128
 
-# ---- geo_mean post-patch: agg_loss seq-mean-token-sum with global batch info ----
-def compute_geo_mean_post(old_log_prob, log_prob, advantages, response_mask, dp_size=1, global_batch_size=None,
-                         clip_ratio_low=0.2, clip_ratio_high=0.2):
-    negative_approx_kl = log_prob - old_log_prob
-    negative_approx_kl_clamp = torch.clamp(negative_approx_kl, -clip_ratio_low, clip_ratio_high)
-    sgn_advantage = torch.sign(advantages)
-    negative_approx_kl_min = torch.min(sgn_advantage * negative_approx_kl, sgn_advantage * negative_approx_kl_clamp)
-    negative_approx_kl_min = sgn_advantage * negative_approx_kl_min
-    response_mask_sum = response_mask.sum(dim=-1)
-    ratio = torch.exp((negative_approx_kl_min * response_mask).sum(dim=-1) / (response_mask_sum + 1e-8))
-    advantage = (advantages * response_mask).sum(dim=-1) / (response_mask_sum + 1e-8)
-    pg_losses = -advantage * ratio
-    seq_has_tokens = (response_mask.sum(dim=-1) > 0).float()
-    pg_loss = agg_loss_seq_mean_token_sum(
-        loss_mat=pg_losses.unsqueeze(1),
-        loss_mask=seq_has_tokens.unsqueeze(1),
-        dp_size=dp_size,
-        global_batch_size=global_batch_size,
+    class Loss:
+        def __init__(self, tag): self.tag = tag
+        def backward(self): trace.append(('backward', self.tag))
+
+    namespace = dict(
+        nullcontext=nullcontext,
+        get_device_id=lambda: 'fake-cpu',
+        maybe_fix_3d_position_ids=lambda data: None,
+        tu=SimpleNamespace(assign_non_tensor=lambda data, **kw: data.update(kw),
+                           get_non_tensor_data=lambda data, key, default=None: data.get(key, default)),
+        torch=SimpleNamespace(distributed=SimpleNamespace(
+            all_reduce=lambda *a, **kw: None, ReduceOp=SimpleNamespace(SUM='fake-sum')),
+            profiler=SimpleNamespace(record_function=lambda name: nullcontext())),
+        prepare_micro_batches=lambda **kw: ([SimpleNamespace(tag=i, size=n) for i, n in enumerate(sizes)], None),
+        postprocess_batch_func=lambda **kw: {'metrics': {}, 'outputs': kw['output_lst']},
     )
-    return pg_loss
+    loop = extract(function_at(paths['fsdp'], 'forward_backward_batch', 'FSDPEngine'), namespace)
+    train = extract(function_at(paths['base'], 'train_batch', 'BaseEngine'), namespace)
+
+    class Engine:
+        ulysses_sequence_parallel_size = 1
+        scaler = None
+        def get_data_parallel_size(self): return 1
+        def get_data_parallel_group(self): return None
+        def _gradient_sync_context(self, **kw): return nullcontext()
+        def forward_step(self, micro_batch, **kw):
+            return Loss(micro_batch.tag), {'model_output': object()}
+        def forward_backward_batch(self, *args, **kw): return loop(self, *args, **kw)
+        def optimizer_zero_grad(self): trace.append(('zero', None))
+        def optimizer_step(self): trace.append(('step', None)); return 0.
+        def is_mp_src_rank_with_outputs(self): return False
+
+    data = {'loss_mask': Count(), 'global_batch_size': sum(sizes)}
+    result = train(Engine(), data, loss_function=None)
+    assert trace == [('zero', None)] + [('backward', i) for i in range(len(sizes))] + [('step', None)]
+    assert all('model_output' not in item for item in result['outputs'])
+    assert data['dp_size'] == 1 and data['global_batch_size'] == sum(sizes)
+    return trace
 
 
-def make_batch(bs=8, resp_len=16, dtype=torch.float64):
-    old_log_prob = torch.randn(bs, resp_len, dtype=dtype) * 0.05
-    log_prob = old_log_prob + torch.randn(bs, resp_len, dtype=dtype) * 0.1
-    advantages = torch.randn(bs, resp_len, dtype=dtype)
-    response_mask = torch.ones(bs, resp_len, dtype=dtype)
-    # give a couple sequences fewer valid tokens to exercise weighting
-    response_mask[0, -4:] = 0
-    response_mask[3, -8:] = 0
-    return old_log_prob, log_prob, advantages, response_mask
+def row_losses(theta, features, initial_z, mask, advantages, weights):
+    z = initial_z + np.einsum('blk,k->bl', features, theta)
+    losses = verl_model(z, mask, advantages, .4, .4, 1e-8)
+    if weights is not None:
+        losses *= np.exp((np.log(weights + 1e-10) * mask).sum(-1) / (mask.sum(-1) + 1e-8))
+    return losses
 
 
-def grad_wrt_logprob(fn, old_log_prob, log_prob, advantages, response_mask, **kw):
-    """Gradient of loss w.r.t. log_prob (the only 'parameter' here)."""
-    lp = log_prob.clone().requires_grad_(True)
-    loss = fn(old_log_prob, lp, advantages, response_mask, **kw)
-    loss.backward()
-    return lp.grad, loss
-
-
-def relative_l2(a, b):
-    return (a - b).norm() / b.norm()
-
-
-def run(split, fn, global_batch_size, dp_size=1, data=None):
-    """Simulate engine: per-microbatch loss, accumulate gradients (aligned by position).
-    `data` must be shared across comparisons; defaults to a fresh make_batch()."""
-    if data is None:
-        data = make_batch()
-    old_log_prob, log_prob, advantages, response_mask = data
-    total_grad = torch.zeros_like(log_prob)
-    start = 0
-    for bs in split:
-        idx = slice(start, start + bs)
-        start += bs
-        g, _ = grad_wrt_logprob(fn, old_log_prob[idx], log_prob[idx], advantages[idx], response_mask[idx],
-                                global_batch_size=global_batch_size, dp_size=dp_size)
-        total_grad[idx] += g
-    g_full, _ = grad_wrt_logprob(fn, old_log_prob, log_prob, advantages, response_mask,
-                                 global_batch_size=global_batch_size, dp_size=dp_size)
-    return total_grad, g_full
+def accumulate(losses, rank_sizes, global_size, normalized):
+    if normalized and (global_size is None or global_size <= 0):
+        raise ValueError('reference contract requires positive global_size')
+    dp = len(rank_sizes)
+    offset, rank_values = 0, []
+    for sizes in rank_sizes:
+        value = 0.
+        for size in sizes:
+            part = losses[offset:offset + size]
+            assert len(part) == size
+            value += part.sum() * dp / global_size if normalized else part.mean()
+            offset += size
+        rank_values.append(value)
+    assert offset == len(losses)
+    return np.mean(rank_values)  # explicit simulated DP gradient/value average
 
 
 def main():
-    print("== #7913 geo_mean microbatch invariance (fp64, 8 seqs, resp_len 16) ==")
-    n = 8
-    for name, fn in [("PRE-patch (torch.mean)", compute_geo_mean_pre), ("POST-patch (agg_loss seq-mean)", compute_geo_mean_post)]:
-        print(f"\n--- {name} ---")
-        data = make_batch()
-        g_full, _ = run([8], fn, global_batch_size=n, data=data)
-        for split, label in [([1] * 8, "8 microbatches of 1"),
-                             ([3, 5], "2 microbatches 3+5"),
-                             ([2, 2, 4], "3 microbatches 2+2+4")]:
-            g_split, _ = run(split, fn, global_batch_size=n, data=data)
-            print(f"  split {str(split):<16} rel L2 grad vs [8]: {relative_l2(g_split, g_full):.6e}")
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('source_root', type=Path)
+    args = parser.parse_args()
+    paths = source_checks(args.source_root)
+    for sizes in ([8], [1] * 8, [3, 5]):
+        host_probe(paths, sizes)
+    print('Original host train/loop: 3 fake-control cases PASS; no arithmetic or communication execution.')
 
-    # also check the patch preserves the exact single-batch loss value (equivalence when no split)
-    old_log_prob, log_prob, advantages, response_mask = make_batch()
-    _, loss_pre = grad_wrt_logprob(compute_geo_mean_pre, old_log_prob, log_prob, advantages, response_mask)
-    _, loss_post = grad_wrt_logprob(compute_geo_mean_post, old_log_prob, log_prob, advantages, response_mask,
-                                    global_batch_size=8, dp_size=1)
-    print(f"\nSingle-batch loss: pre={loss_pre.item():.10f} post={loss_post.item():.10f} "
-          f"(should match; relative diff {relative_l2(loss_post, loss_pre).item():.2e})")
+    rng = np.random.default_rng(7913)
+    features = rng.normal(size=(8, 5, 4)) * .1
+    initial_z = rng.normal(size=(8, 5)) * .2
+    mask = np.arange(5)[None, :] < np.array([5, 3, 4, 2, 1, 5, 0, 4])[:, None]
+    advantages = np.broadcast_to(np.array([1., -1., .5, -.5, 2., -2., .25, -.25])[:, None], mask.shape)
+    theta = np.array([.03, -.02, .01, .04])
+    z = initial_z + np.einsum('blk,k->bl', features, theta)
+    assert np.min(np.abs(np.abs(z) - .4)) > 1e-4
+    plans = [[[8]], [[1] * 8], [[3, 5]], [[2, 2, 4]], [[1, 3], [3, 1]], [[1, 1]] * 4]
+    for weighted in (False, True):
+        weights = rng.uniform(.8, 1.2, size=mask.shape) if weighted else None
+        rows = lambda t: row_losses(t, features, initial_z, mask, advantages, weights)
+        full = lambda t: rows(t).sum() / 8
+        expected_gradient = fd_gradient(full, theta)
+        for plan in plans:
+            normalized = lambda t: accumulate(rows(t), plan, 8, True)
+            local_mean = lambda t: accumulate(rows(t), plan, 8, False)
+            assert np.allclose(normalized(theta), full(theta), atol=1e-12, rtol=1e-12)
+            assert np.allclose(fd_gradient(normalized, theta), expected_gradient, atol=2e-9, rtol=2e-8)
+            relative = np.linalg.norm(fd_gradient(local_mean, theta) - expected_gradient) / np.linalg.norm(expected_gradient)
+            if plan == [[8]]: assert relative < 1e-8
+            else: assert relative > .01
+            print(f'IS={weighted} rank/micro sizes={plan} local-mean relative gradient delta={relative:.6f}')
+        # A fixed G retains fully masked rows in its denominator; excluding one changes objective.
+        assert np.isclose(rows(theta)[6], 0.)
+        assert not np.isclose(rows(theta).sum() / 7, full(theta))
+    for invalid in (None, 0):
+        try: accumulate(np.ones(8), [[3, 5]], invalid, True)
+        except ValueError: pass
+        else: raise AssertionError('invalid reference denominator accepted')
+    print('12 shared-parameter value/finite-difference cases PASS, including explicit simulated DP average.')
+    print('No native FSDP/DP, autograd, real optimizer, KL/clip update, GPU, or upstream patch verification.')
 
-    # dp>1: two ranks of 4, global_batch_size=8; FSDP averages rank grads.
-    old, logp, adv, mask = make_batch(bs=4)
-    g_r1, _ = grad_wrt_logprob(compute_geo_mean_post, old, logp, adv, mask, global_batch_size=8, dp_size=2)
-    g_r2, _ = grad_wrt_logprob(compute_geo_mean_post, old, logp, adv, mask, global_batch_size=8, dp_size=2)
-    _, g_dp1 = grad_wrt_logprob(compute_geo_mean_post, old, logp, adv, mask, global_batch_size=8, dp_size=1)
-    # same 4 sequences on one rank of a dp=2 world vs on the single rank of dp=1
-    print(f"dp=2 (rank of 4, global 8): rel L2 grad vs dp=1 same local data: {relative_l2(g_r1, g_dp1):.6e}")
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

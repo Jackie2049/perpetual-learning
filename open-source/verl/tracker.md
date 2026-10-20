@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** 2026-10-21：#8250诊断已纠偏，GMPO完整序列PG限定核验完成，clip旧RFC撤回且不再独立推进；#8281仍待契约/用户决定。HDO合并记录保留，不将他人报告或数值模型算作本项目训练实测。
+**【进展】** 2026-10-21：#7913旧DP/修复验证声明已纠正，#7916实际同样使用agg_loss，停止重复投入；#8250待补证、clip旧RFC不再推进，#8281仍待决定。HDO合并记录保留，不将数值模型算作本项目训练实测。
 
 **【大白话讲明白】**
 
@@ -48,12 +48,12 @@
 
 | # | 候选 | 覆盖 PR（open，未合并） | 覆盖时间 |
 |---|---|---|---|
-| 3 | GMPO geo_mean 损失随 minibatch 切分变化 (#7913) | [#7916](https://github.com/verl-project/verl/pull/7916)（reporter gss10282025 本人，`[BREAKING] require minibatch normalization`，方案与我们不同：配置层强制 vs agg_loss 集成） | 同日 9-18 |
+| 3 | GMPO geo_mean 损失随 minibatch 切分变化 (#7913) | [#7916](https://github.com/verl-project/verl/pull/7916)与[#5614](https://github.com/verl-project/verl/pull/5614)：2026-10-21重核均open未合并；#7916同样agg_loss接入并加正分母guard/测试，旧“配置层 vs 我方agg_loss”判断撤回。旧DP/verified-works证据不足，见[更正](candidate-7913-gmpo-geo-mean.md)，不重复提交 | 同日 9-18 |
 | 4 | 等长 batch 3D mRoPE position_ids 不一致 (#7899) | [#7901](https://github.com/verl-project/verl/pull/7901)（iceflysnow，rebuild jagged layout） | 同日 9-17 |
 | 1 | Triton fused kernels `use_remove_padding=False` 崩溃 (#8089) | [#8090](https://github.com/verl-project/verl/pull/8090)（reporter kylemontgomery1 本人，triton fused output shape） | 次日 10-02 |
 | 2 | Fused Megatron LM-head 遗留 AllGather pending (#8028) | [#8029](https://github.com/verl-project/verl/pull/8029)（reporter ewan0x79 本人，publish output weights before fused kernels） | 同日 9-27 |
 
-> 注：#7916 为 BREAKING 方案（require minibatch normalization），与我们的 agg_loss 集成方案（兼容默认行为）不同；#8090 为我们的 reshape 方案同类。#8029 用 "publish output weights" 而非 finish_param_sync。均有评论空间但需按 verl 政策先确认不重复，且需用户授权。
+> 注（2026-10-21纠正）：#7916与我方旧思路的核心同为agg_loss，不因BREAKING标题就认定实质不同；缺全局分母时的本地fallback并非可靠兼容修复。#7913不再默认存在差异评论空间。#8090/#8029的下述比较是历史记录，本轮未重核；任何发言仍须查重及用户决定。
 
 以下候选本地已验证（patch + 单测），但上游已存在他人 PR 修同一问题（均未合并）。本地 patch 与竞争实现等价或更完整，但按 verl 贡献政策「PR 描述须说明为何不重复现有 PR」，不再提交。本地材料保留在 candidate-*.md，patch 保存在 verl-pr/verl_main/（未推送任何远端）。
 
