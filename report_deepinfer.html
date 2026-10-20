@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepInfer 全面研究报告</title>
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-light: #e8f0fe;
+            --text: #202124;
+            --text-secondary: #5f6368;
+            --bg: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --border: #dadce0;
+            --code-bg: #f1f3f4;
+            --success: #34a853;
+            --warning: #fbbc04;
+            --danger: #ea4335;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: var(--text); background: var(--bg); line-height: 1.7;
+            max-width: 960px; margin: 0 auto; padding: 20px;
+        }
+        h1 { font-size: 2em; color: var(--primary); margin: 1.5em 0 0.5em; border-bottom: 3px solid var(--primary); padding-bottom: 0.3em; }
+        h2 { font-size: 1.5em; color: var(--primary); margin: 1.5em 0 0.5em; border-bottom: 1px solid var(--border); padding-bottom: 0.2em; }
+        h3 { font-size: 1.2em; color: #333; margin: 1em 0 0.5em; }
+        h4 { font-size: 1.05em; color: #444; margin: 0.8em 0 0.4em; }
+        p { margin: 0.5em 0; }
+        ul, ol { margin: 0.5em 0 0.5em 1.5em; }
+        li { margin: 0.3em 0; }
+        a { color: var(--primary); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.9em; font-family: 'SF Mono', Menlo, monospace; }
+        pre { background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 1em 0; font-size: 0.85em; line-height: 1.5; }
+        pre code { background: none; padding: 0; color: inherit; }
+        table { border-collapse: collapse; width: 100%; margin: 1em 0; font-size: 0.9em; }
+        th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+        th { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+        tr:nth-child(even) { background: var(--bg-secondary); }
+        .toc { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin: 1em 0 2em; }
+        .toc h2 { border: none; margin: 0 0 0.5em; font-size: 1.2em; }
+        .toc ul { list-style: none; margin-left: 0; }
+        .toc > ul > li { margin: 0.3em 0; }
+        .toc ul ul { margin-left: 1.5em; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75em; font-weight: 600; }
+        .badge-blue { background: var(--primary-light); color: var(--primary); }
+        .badge-green { background: #e6f4ea; color: var(--success); }
+        .badge-orange { background: #fef7e0; color: #e37400; }
+        .badge-red { background: #fce8e6; color: var(--danger); }
+        .callout { padding: 16px; border-radius: 8px; margin: 1em 0; border-left: 4px solid; }
+        .callout-info { background: var(--primary-light); border-color: var(--primary); }
+        .callout-warning { background: #fef7e0; border-color: var(--warning); }
+        .callout-tip { background: #e6f4ea; border-color: var(--success); }
+        .diagram { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin: 1em 0; overflow-x: auto; }
+        .section-nav { display: flex; gap: 8px; flex-wrap: wrap; margin: 1em 0; }
+        .section-nav a { background: var(--primary-light); color: var(--primary); padding: 6px 14px; border-radius: 20px; font-size: 0.85em; font-weight: 500; }
+        .section-nav a:hover { background: var(--primary); color: white; text-decoration: none; }
+        .meta { color: var(--text-secondary); font-size: 0.9em; margin: 0.5em 0 1em; }
+        .kbd { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: 0.85em; font-family: monospace; }
+    </style>
+</head>
+<body>
+
+<h1>🧠 DeepInfer 全面研究报告</h1>
+<div class="meta">DeepSeek 官方推理框架 · 源码精读调研 · 2026-10-20 · 版本 8b161497</div>
+
+<div class="section-nav">
+    <a href="#part0">第 0 章 · 自行讲解</a>
+    <a href="#part1">第 1 章 · 项目说明</a>
+    <a href="#part2">第 2 章 · 时间线</a>
+    <a href="#part3">第 3 章 · 核心方法</a>
+    <a href="#part4">第 4 章 · 系统架构</a>
+    <a href="#part5">第 5 章 · 硬件后端</a>
+    <a href="#part6">第 6 章 · 结论与展望</a>
+</div>
+
+<div class="toc">
+    <h2>📑 目录</h2>
+    <ul>
+        <li><a href="#part0">第 0 章：自行讲解 —— DeepInfer 到底是什么</a></li>
+        <li><a href="#part1">第 1 章：项目说明 —— 背景、定位、软硬件、Related Work</a></li>
+        <li><a href="#part2">第 2 章：时间线 —— 从算子库到完整引擎</a></li>
+        <li><a href="#part3">第 3 章：核心方法 —— ZOS / DSpark / V4 注意力 / YoCo / EPLB</a></li>
+        <li><a href="#part4">第 4 章：系统架构 —— 分层、模块、上下游</a></li>
+        <li><a href="#part5">第 5 章：硬件后端 —— GPU / NPU 双后端与解耦设计</a></li>
+        <li><a href="#part6">第 6 章：结论与展望</a></li>
+    </ul>
+</div>
+
+<h2 id="part0">第 0 章：自行讲解 —— DeepInfer 到底是什么</h2>
+
+<h3>0.1 一句话定义</h3>
+<p>DeepInfer 是 DeepSeek 把自己跑 <strong>V4.1-Flash 大规模生产推理服务的那个「引擎本体」开源了出来</strong>——但它不是"完整服务"，而是"可扩展的推理内核"。</p>
+
+<div class="callout callout-info"><strong>关键认知：</strong>DeepSeek 之前开源的 FlashMLA / DeepEP / DeepGEMM / TileLang 都是"零件"（算子库）。DeepInfer 是第一次把这些零件<strong>组装成一个完整可跑的推理引擎</strong>——调度、KV、采样、推测解码、负载均衡全部耦合在一起。但它刻意<strong>没有开源全服务</strong>：KV cache 系统、VE/Prefill/Decode 分离、跨 DP 副本负载均衡这三块因与内部基础设施耦合太深，留在内部（README 明说，知乎 Blog 讲设计）。</div>
+
+<h3>0.2 它真正解决的三件事（生产视角）</h3>
+<ul>
+    <li><strong>让自家模型跑得比别人快</strong>——深度绑定 V4.1-Flash 架构（压缩注意力、SWA、MoE、MTP），把模型特殊性榨到极致。它是"模型专用 + 深度优化"，不是通用框架。</li>
+    <li><strong>多芯片</strong>——同时支持 NVIDIA SM100 和华为 Ascend 950。这在中国 AI 生态是刚需（卡荒 + 国产化），DeepSeek 是第一个"模型厂商官方、直接支持昇腾"的推理框架。</li>
+    <li><strong>低成本高吞吐</strong>——单集群 155 万亿 tokens/天、每卡每小时 38 美金（谷价）。推理框架最终拼的是"每卡每小时产出多少价值"。</li>
+</ul>
+
+<h3>0.3 我的本质判断</h3>
+<p>与其说 DeepInfer 是"又一个 vLLM 竞品"，不如说是 <strong>DeepSeek 把自家模型的"正确推理实现"公开化</strong>。它给了三个信号：</p>
+<ul>
+    <li><span class="badge badge-blue">对使用者</span> 要私有化部署 V4.1-Flash，DeepInfer 是"官方正确路径"，不是社区适配。</li>
+    <li><span class="badge badge-blue">对研究者</span> ZOS、DSpark 变长、V4 混合注意力一体化元数据，是真正的<strong>系统论文级创新</strong>，值得单独深挖。</li>
+    <li><span class="badge badge-blue">对生态</span> DeepSeek 从"给模型"到"给模型+配套推理引擎"，把"DeepSeek 栈"闭环了。</li>
+</ul>
+<p>本报告主线即按此理解展开：<strong>"模型厂商专用推理引擎的完整技术剖析"</strong>，不是泛泛的框架对比。</p>
+
+<h2 id="part1">第 1 章：项目说明</h2>
+
+<h3>1.1 背景与动机</h3>
+<ul>
+    <li>DeepSeek 从 V3/R1 起就自研推理系统（DualPipe、DeepEP、EPLB 都服务于它）。</li>
+    <li>先开源零件（算子库），再开源引擎（DeepInfer），最后开源配套（deepseek-recipe token 编解码）。</li>
+    <li>动机：①给 V4.1-Flash 私有化部署一个"官方正确实现"；②生态卡位（多芯片 + 国产化）；③技术展示（155 万亿 tokens/天 的工程实力）。</li>
+</ul>
+
+<h3>1.2 目标与定位</h3>
+<ul>
+    <li><strong>目标</strong>：单集群最大吞吐、最低延迟，多芯片可移植。</li>
+    <li><strong>定位</strong>：模型专用的高吞吐推理引擎，非通用服务（开源版明确缺 KV / PD 分离 / 负载均衡）。</li>
+</ul>
+
+<h3>1.3 软硬件要求</h3>
+<table>
+    <tr><th>维度</th><th>要求</th></tr>
+    <tr><td>软件</td><td>Linux、GCC ≥ 13、Python 3.12、CUDA 13（NVIDIA）/ CANN 9.2（Ascend）</td></tr>
+    <tr><td>硬件</td><td>NVIDIA SM100（Blackwell）、华为 Ascend 950</td></tr>
+    <tr><td>关键依赖</td><td>torch 2.13、tilelang、xgrammar、自家 kernel 库（vendor submodule）</td></tr>
+    <tr><td>支持模型</td><td>DeepSeek-V4.1-Flash（默认 checkpoint 1017）</td></tr>
+</table>
+
+<h3>1.4 Related Work —— 与开源推理框架对比</h3>
+<p>下表从"通用性 / 模型深度 / 双后端 / 独特机制 / 开源完整性"五个维度对比：</p>
+<table>
+    <tr><th>框架</th><th>定位</th><th>模型深度</th><th>双后端</th><th>独特机制</th><th>开源完整性</th></tr>
+    <tr><td><strong>DeepInfer</strong></td><td>模型专用（V4.1-Flash）</td><td>极深（压缩注意力/YoCo/DFlash/engram）</td><td>SM100 + Ascend 950</td><td>ZOS、变长 MTP、一体化元数据</td><td>缺 KV/PD/负载均衡</td></tr>
+    <tr><td><strong>vLLM</strong></td><td>通用、社区最大</td><td>通用层适配</td><td>CUDA 为主（Ascend 社区版）</td><td>PagedAttention、连续批处理</td><td>完整服务化</td></tr>
+    <tr><td><strong>SGLang</strong></td><td>通用</td><td>通用 + 结构化输出</td><td>CUDA 为主</td><td>RadixAttention、XGrammar</td><td>完整</td></tr>
+    <tr><td><strong>MindIE</strong></td><td>昇腾官方通用</td><td>通用层适配</td><td>昇腾专用</td><td>昇腾深度优化</td><td>完整（华为栈）</td></tr>
+</table>
+<div class="callout callout-warning"><strong>长短版总结：</strong>DeepInfer 的强是"模型专用深度优化 + 双后端 + 生产级创新机制"；弱是"非通用、只支持 V4.1-Flash、开源版缺服务化组件"。</div>
+
+<h3>1.5 与自家算子库的分工</h3>
+<ul>
+    <li><strong>FlashMLA</strong>：MLA 注意力本身（flash_mla_sparse_fwd / flash_mla_with_kvcache / fused_norm_rope_attn_rope_cast）。</li>
+    <li><strong>DeepGEMM</strong>：FP8/FP4 GEMM（bf16_gemm_nt、fp8_einsum）。</li>
+    <li><strong>DeepSelect</strong>：topk（sampler 取 top-k、候选块选择）。</li>
+    <li><strong>tilelang_ops</strong>：自研内核补三者未覆盖且与自家模型强耦合的算子（压缩 KV、YoCo、DFlash、engram、HC）。</li>
+</ul>
+
+<h2 id="part2">第 2 章：时间线 —— 从算子库到完整引擎</h2>
+
+<table>
+    <tr><th>时间</th><th>事件</th><th>类型</th></tr>
+    <tr><td>2025-02</td><td>开源 FlashMLA / DeepEP / DeepGEMM / DualPipe / EPLB</td><td>算子/算法层</td></tr>
+    <tr><td>2025 年中起</td><td>算子库持续打磨（DeepEP V2/V2.5、DeepGEMM 演进）</td><td>算子层</td></tr>
+    <tr><td>2026-04</td><td>TileKernels（tilelang kernel 库）</td><td>算子层</td></tr>
+    <tr><td>2026-09</td><td>DeepSelect（DSA 稀疏注意力 TopK）、DeepJIT（xPU kernel JIT）、DeepGEMM/DeepEP-Ascend（昇腾版）</td><td>算子层 + 昇腾扩展</td></tr>
+    <tr><td>2026-09-29</td><td>deepseek-recipe（token 编解码组件）</td><td>配套层</td></tr>
+    <tr><td>2026-10-16</td><td>DeepInfer 仓库创建</td><td>引擎层</td></tr>
+    <tr><td>2026-10-20</td><td><strong>DeepInfer 正式开源</strong>（initial commit + Q&A 文档）</td><td>引擎层标志</td></tr>
+</table>
+
+<div class="callout callout-tip"><strong>关键转折：</strong>DeepInfer 是 DeepSeek 开源策略从"零件"走向"整机"的标志——从给模型 + 算子零件，到给完整可跑引擎。</div>
+
+<h2 id="part3">第 3 章：核心方法</h2>
+
+<h3>3.1 ZOS（Zero-Overhead Scheduling）零开销调度</h3>
+<p><strong>问题：</strong>推理中 CPU 调度和 GPU 计算是串行的，GPU 常等调度器。</p>
+<p><strong>解法：</strong>decode 的 post-process 延迟一个 step，与下一步 forward 在 GPU 上重叠（<code>worker.py:182-187</code>），让调度器 CPU 开销被 GPU 计算完全掩盖。</p>
+<p><strong>难点与解法：</strong>在途 seq 可能被抢占重算 + varlen 下 seqlen_q 需按上一步采样结果修正，导致 CPU 元数据滞后一步。<code>_correct_seqlens_qk</code>（<code>worker.py:191</code>）用 <code>prepare_zos_inputs</code>（<code>zos.cpp:142</code>）算 <strong>remap</strong>（本步与上步 batch 的 seq 对应关系），GPU 上用上一步 confidence rates 修正 seqlens_q/k，D2H 回读刷新采样元数据。</p>
+<p><strong>token 打包优化</strong>（<code>zos.cpp:31</code>）：无重叠时打包最终 input_ids；有重叠时只填 fresh rows，matched rows 复用上一步 GPU 输出，减少 H2D 拷贝。</p>
+<div class="diagram"><pre>
+decode step N:  Forward ──► post-process(上一步) ──► Sample ──► post-process(当前步, 存入 prev_step)
+                                  │
+decode step N+1: Forward ─────────┘  ← 上一步 post-process 与这里重叠
+</pre></div>
+
+<h3>3.2 DSpark / MTP 变长自适应推测解码</h3>
+<p><strong>不是固定 speculative length。</strong><code>MTPVarlen.schedule</code>（<code>mtp_varlen.hpp:150</code>）在<strong>每步动态选最优 batch size 和每请求 draft 数</strong>，最大化 <code>throughput = 期望接受 token / 估计耗时</code>。</p>
+<ul>
+    <li><strong>耗时估计自适应</strong>：<code>ForwardRuntimeEstimator</code> 用双层中位数滑动窗口动态拟合 <code>slope_ms = (forward_ms - baseline) / graph_size</code>；运行时由 engine 用 CUDA event 实测喂入持续校正。</li>
+    <li><strong>接受率</strong>：MTP confidence head 逐位累乘（process_MTPInfo），N-2 轮算 best_bsz、N-1 轮贪心分配每请求 seqlen_q。</li>
+    <li><strong>DFlash 深度集成</strong>：draft 特征随主模型 CUDA graph 捕获写入 main KV cache；MTPInfoPool 跨 step 稳定存储。</li>
+</ul>
+<p><strong>价值：</strong>推测解码从"启发式"变成"在线优化问题"。</p>
+
+<h3>3.3 V4 混合注意力一体化元数据</h3>
+<p>dense 压缩层 + sparse（top-k 索引注意力）+ SWA + YoCo + engram，全在调度阶段生成<strong>块加载计划</strong>（<code>block_load_plan.cpp</code> 的段表 <code>[src_block_id, src_begin, src_end, dst_offset]</code>），把多层不同注意力的 KV 加载统一成一次 GPU 拷贝指令。</p>
+<p><strong>价值：</strong>把"scatter/gather KV 加载"变成预编译的加载指令，减少内核发射。</p>
+
+<h3>3.4 YoCo Bounded Replay</h3>
+<ul>
+    <li>模型切成 <strong>prefill 半区 + consumer 半区</strong>，consumer 层 SWA 有界截断，减少 decoder prefill。</li>
+    <li><strong>compact 模式</strong>（真截行 + CP 重分布）/ <strong>mask 模式</strong>（只收窄可见域 pivots）双模式。</li>
+    <li>约束：<code>keep_tokens ≥ window_size + max_backtracking_tokens</code>。</li>
+</ul>
+
+<h3>3.5 EPLB 运行时热重排</h3>
+<ul>
+    <li>冗余 expert 动态分配（贪心"加副本后最大每副本负载最小"）+ 贪心跨 rank 排布。</li>
+    <li><strong>运行时 inplace 权重重排</strong>：NCCL batched P2P 或 symm_mem IPC 镜像（免通信），权重 shuffle 不影响前向执行。</li>
+</ul>
+
+<h3>3.6 确定性采样 + batch-invariant</h3>
+<ul>
+    <li>RNG 用 <code>seq_seeds</code> + 位置 hash（<code>DRAFT_POS_HASH_MUL</code>）+ tag（"default"/"mtp"）分隔命名空间。</li>
+    <li><code>enable_batch_invariant</code> 保证批大小变化不改变采样结果（仅 NVIDIA）。</li>
+    <li>结构化输出（regex/JSON/EBNF）由 xgrammar 编译、bitmask 异步 pinned 拷贝、MTP 下逐 draft 独立 mask。</li>
+</ul>
+
+<h2 id="part4">第 4 章：系统架构</h2>
+
+<h3>4.1 系统分层（宏观）</h3>
+<div class="diagram"><pre>
+LLM (entrypoints/llm.py, vLLM 风格 offline batch API)
+ └─ LLMEngine (engine/llm_engine.py) — Python 编排
+    ├─ Scheduler (csrc/engine/scheduler.hpp) — C++ 调度核心（GIL 释放）
+    ├─ BlockManager / state_manager — KV/状态块管理
+    ├─ MTPVarlen — DSpark 变长推测分配
+    ├─ Sequence — 序列状态机
+    └─ Worker (worker/worker.py) — 每步 Forward→PostProcess→Sample→PostProcess
+        └─ ModelRunner → DeepseekForCausalLM
+            ├─ DeepseekDecoderLayer × n（MLA / SWA / MoE）
+            ├─ DFlash（MTP 投机模块）
+            ├─ Sampler（确定性 + 结构化输出）
+            └─ EPLB（ExpertLoadBalancer）
+</pre></div>
+
+<h3>4.2 核心模块中观架构</h3>
+<ul>
+    <li><strong>Scheduler</strong>：三队列（waiting/prompted/running）、三种 EngineType（NORMAL/PROMPT/COMPLETION）、BlockManager、MTPVarlen。NORMAL 用 DP 组 ALL/ANY 双投票点 + 两轮 allreduce 统一 prefill/decode 步型。</li>
+    <li><strong>Worker</strong>：统一 prompt/decode/placeholder/ZOS 四类步型，走同一个 Forward-PostProcess-Sample 循环。</li>
+    <li><strong>ModelExecutor</strong>：FP4/FP8 混合量化加载、FlashMLA 薄封装、采样器、EPLB、tilelang_ops 分发器（cuda/asc 双后端工厂）。</li>
+    <li><strong>分布式</strong>：shm_broadcast（无锁共享内存广播）+ 并行组拓扑（World/DP/CP/EP/Engram）。</li>
+</ul>
+
+<h3>4.3 与上下游组件关系</h3>
+<ul>
+    <li><strong>上游</strong>：HF 权重（V4.1-Flash）、请求 API（vLLM 风格）。</li>
+    <li><strong>下游</strong>：FlashMLA / DeepEP / DeepGEMM / DeepSelect / TileLang kernel、vendor submodule。</li>
+    <li><strong>未开源边界</strong>：KV cache 系统、PD 分离、负载均衡（EngineType 三态 + shm_broadcast + profile_server 已为这些铺垫）。</li>
+</ul>
+
+<h2 id="part5">第 5 章：硬件后端 —— GPU / NPU 双后端与解耦设计</h2>
+
+<h3>5.1 平台抽象</h3>
+<p><code>platform.py</code> 定义 <code>PlatformEnum(GPU/NPU)</code> + 抽象基类，统一暴露：<code>tilelang_ops_backend</code>、<code>distributed_backend</code>、<code>fp8_sf_type</code>、<code>pin_host_memory</code>、<code>get_distributed_options</code>。运行时按硬件探测（<code>DEEPINFER_ACCELERATOR</code> 只是 build 开关）。</p>
+
+<h3>5.2 NVIDIA（SM100 Blackwell）特化</h3>
+<ul>
+    <li><code>tilelang_ops_backend=cuda</code>、<code>distributed_backend=nccl</code>、<code>fp8_sf_type=int32</code>。</li>
+    <li>NCCL 配置 <code>max/min_ctas = DEEPINFER_NCCL_NUM_SMS</code>（默认 32）。</li>
+    <li>独有：<code>DEEPINFER_BATCH_INVARIANT</code> 与确定性采样（仅 NVIDIA）。</li>
+</ul>
+
+<h3>5.3 Ascend（950）特化</h3>
+<ul>
+    <li><code>tilelang_ops_backend=asc</code>、<code>distributed_backend=hccl</code>、<code>fp8_sf_type=int16</code>（NPU 用 FP8 scale 是 int16，GPU 是 int32）。</li>
+    <li><code>torch_npu.transfer_to_npu</code> 映射 cuda→npu；<code>npu_ops/patch_imports.py</code> import hook 把不支持的 CUDA 算子懒重定向到 NPU 实现（DeepSelect topk 回退 torch、ViT 走 npu_fusion_attention）。</li>
+    <li>一大套环境补丁：<code>PYTORCH_NPU_ALLOC_CONF</code>、<code>TASK_QUEUE_ENABLE=0</code>、HCCL 超时参数等。</li>
+</ul>
+
+<h3>5.4 后端解耦设计</h3>
+<ul>
+    <li><strong>csrc <code>WITH_NPU</code> 宏</strong>：<code>get_default_device()</code>（kPrivateUse1 vs kCUDA）、<code>make_from_blob()</code>（NPU 走 <code>at_npu::from_blob</code>）。</li>
+    <li><strong>tilelang_ops 双后端工厂</strong>：<code>ops.py</code> 按 <code>tilelang_ops_backend</code> 动态 import <code>cuda/</code> 或 <code>asc/</code> 包，收集所有 <code>xxx_tl</code> 工厂 re-export。</li>
+    <li><strong>硬件探测中立层</strong>：<code>deep_cluster/hardware/device.py</code> 纯硬件中立，向上只暴露 accelerator 无关接口。</li>
+</ul>
+
+<div class="callout callout-tip"><strong>对 Ascend 生态的意义：</strong>DeepInfer 是首个"模型厂商官方 + 双后端（含昇腾）"的推理框架。NPU 被当作一等公民完整支持（HF 加载、HCCL 并行、IPC、profile、MoE/MTP/Engram/YoCo 全部 NPU 可用），但有降级点：sampler 的 DeepSelect topk 未就绪、ViT flash_attn 走 npu_fusion_attention、batch-invariant 仅 NVIDIA。</div>
+
+<h2 id="part6">第 6 章：结论与展望</h2>
+
+<h3>6.1 结论</h3>
+<ul>
+    <li>DeepInfer 是"模型厂商专用推理引擎"的代表作，三大创新机制（ZOS / 变长 MTP / V4 一体化元数据）值得研究。</li>
+    <li>双后端（SM100 + Ascend 950）是生态卡位，尤其对国产化意义重大。</li>
+    <li>深度绑定 V4.1-Flash，把模型特殊性榨到极致——这是它相对 vLLM/SGLang 的本质差异。</li>
+</ul>
+
+<h3>6.2 对研究的启示</h3>
+<ul>
+    <li>ZOS / 变长 MTP 有系统论文潜力。</li>
+    <li>batch-invariant / 确定性采样 的实现链可迁移到 vLLM / verl（这正是我们一路深挖的主题）。</li>
+    <li>V4 混合注意力 + YoCo 是 DeepSeek 对长上下文 + 高吞吐的新解法，无直接对照。</li>
+</ul>
+
+<h3>6.3 对 perpetual-learning 的意义</h3>
+<ul>
+    <li><strong>可深挖的技术点</strong>：ZOS 调度、变长 MTP、EPLB 热重排、确定性采样链。</li>
+    <li><strong>可借鉴的实现</strong>：块加载计划段表、cudagraph buffer 复用、对象池 + DeferredRelease。</li>
+    <li><strong>NPU 方向对照</strong>：与 vLLM-Ascend / MindIE / Ascend 生态系列对照。</li>
+</ul>
+
+<h3>6.4 局限与后续</h3>
+<ul>
+    <li>只支持 V4.1-Flash，非通用；CUDA 13 / CANN 9.2 门槛高；当前 Darwin 仅做源码/CPU。</li>
+    <li>未开源部分（KV cache / PD 分离 / 负载均衡）可能后续开放，值得跟踪。</li>
+    <li>DeepSeek 承诺"未来新模型的推理代码及优化将在 DeepInfer 中持续开源"——生态会持续演进。</li>
+</ul>
+
+<div class="meta" style="margin-top:2em">本报告基于对 DeepInfer 源码（浅克隆 8b161497）的三路并行精读（调度器/引擎、模型执行器、NPU/分布式/入口）+ 官方部署 Q&A + 配置/依赖核验。技术结论为源码静态分析，未在目标硬件实测。</div>
+
+</body>
+</html>
