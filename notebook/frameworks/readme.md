@@ -384,6 +384,7 @@
 - [MindIE Latest Developments — June 2026 Reading](mindie-latest-developments-2026-06-reading.md)
 - [MindIE Turbo DeepSeek Inference — Source-Level Analysis](mindie-turbo-deepseek-inference-source-reading.md)
 - [DeepInfer — DeepSeek 官方推理框架（高优先调研）](deepinfer-initial-survey.md)
+- [DeepSeek 开源生态活跃度与 PR 采纳调研（2026-10-20）](deepseek-ecosystem-pr-adoption.md)
 - [MindIE / vLLM-Ascend Ecosystem Deep Research](mindie-vllm-ascend-ecosystem-deep-research.md)
 - [MindIE & vLLM-Ascend Latest Developments (2026-06 Session 3 Reading)](mindie-vllm-ascend-latest-developments-2026-06-session3-reading.md)
 - [MindIE / vLLM-Ascend 生产级深度阅读](mindie-vllm-ascend-production-reading.md)
