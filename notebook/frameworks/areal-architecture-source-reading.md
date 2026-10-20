@@ -115,27 +115,29 @@ AReaL 的归约设计是整个框架最值得学的地方，也是跨框架对�
 
 - `compute_microbatch_loss_weight`（L36）：对每个 mb 调 `loss_weight_fn(mb)`，得 `local_weight`（scalar 或命名 dict）。
 - `compute_total_loss_weight`（L62）：`Σ_mb local_weight`，再 **DP all_reduce**。
-- `normalize_loss`（L111）：scalar 路径 = `loss · local_weight/total_weight`；命名路径逐项归一后求和。
+- `normalize_loss`（L111）：scalar 路径 = `loss · local_weight/total_weight · multiplier`；命名路径逐项归一后求和。**FSDP train_batch 传入 `multiplier = parallel_helper.dp_size`（fsdp_engine.py:887）**——所有归约统一乘 DP 大小（框架「DP 平均梯度 vs 求和」的全局选择，非 prompt_mean 专属，也不随 minibatch 数变）。
 
-对 `prompt_mean`，`loss_weight_fn = loss_step.loss_weight = PromptMean.normalizer() = engine_weight`。因 `Σ_mb engine_weight = Σ_mb rows/global_rows = 1`，故 **`total_weight ≡ 1`**（测试也断言 `total_weight == 1.0`），归一化退化为 `Σ_mb loss_mb · engine_weight`，其中 `loss_mb = PromptMean.aggregate = (Σ_t loss_t·w_t)·step_scale / engine_weight`，engine_weight 消去后每 mb 贡献 `step_scale·Σ_t loss_t·w_t`。
+对 `prompt_mean`，`loss_weight_fn = loss_step.loss_weight = PromptMean.normalizer() = engine_weight`。**注意 `engine_weight = rows/global_rows` 中 `global_rows` 是「该 minibatch 在 DP 全局的 response 数」，`rows` 是本 rank 该 mb 的 response 数（loss_reduction.py:200-201）——是 DP 归一化权重，不是「跨所有 mb 的 share」**。`compute_total_loss_weight` 只在**单个 minibatch 的 train_batch 内**对 engine 再切的细 mb 求和：单 rank `Σ_j rows_j/global_rows_i = R_i/global_rows_i`，DP all_reduce 后 `Σ_rank R_i^rank/global_rows_i = 1`，故 **`total_weight ≡ 1`**。归一化退化为 `Σ_mb loss_mb · engine_weight · dp_size`，其中 `loss_mb = PromptMean.aggregate = (Σ_t loss_t·w_t)·step_scale / engine_weight`，engine_weight 消去后每 mb 贡献 `step_scale·dp_size·Σ_t loss_t·w_t`。
+
+> **核验提醒**：若误读 `global_rows` 为「所有 mb 的 response 总数」（而非「该 mb 的 DP 全局数」），会误推 `total_weight = N`、与 `step_scale` 的 N 相消、得出「无切分敏感」的错误结论——这是最容易翻车的一步。逐行核对 loss_reduction.py:94-123 与 train_engine.py:62-97 后确认：`total_weight ≡ 1`，N 不抵消。
 
 ### 10.3 发现：`prompt_mean` 的 `step_scale = N/G` 切分敏感点
 
-`_PromptMeanBatch.for_steps`（loss_reduction.py:115）设 `step_scale = len(microbatches)/active_groups = N/G`，其中 **N = `ppo_n_minibatches`（actor.py:592 传入的 minibatch 数）**，G = 完整 rollout batch 的有效组数。actor.py:609-636 对每个 minibatch 依次 `train_batch`（含 `optimizer_step`）——**N 个 minibatch = N 次独立梯度更新**。
+`_PromptMeanBatch.for_steps`（loss_reduction.py:115）设 `step_scale = len(microbatches)/active_groups = M/G`，其中 **M = 传入 `for_steps` 的 mb 数**。这个 M 是 `split_training_batch_into_microbatches(data, n_mbs=ppo_n_minibatches)`（actor.py:590）**经 DP 同步后的有效 slot 数 `effective_n_mbs`（data.py:1144-1147）**——在 DP=1 时等于 `ppo_n_minibatches`，但 DP>1 时可能更大/更小，且**含 transport-dummy slot**（dummy 的 engine_weight=0、无梯度，但仍计入 M 放大 `step_scale` 分母）。G = 完整 rollout batch 的有效组数。actor.py:609-636 对每个 minibatch 依次 `train_batch`（含 `optimizer_step`）——**M 个 minibatch = M 次独立梯度更新**。
 
-**确证事实（源码 + numpy 复刻，`verify_areal_prompt_mean_split.py`）**：
+**确证事实（忠实源码归一化链 + numpy 复刻，`verify_areal_prompt_mean_split.py`）**：
 
-- `PromptMean.aggregate` 的最终累计梯度 = `(N/G)·Σ_all loss_t·w_t`，**随 N（minibatch 数）线性放大**（numpy 实测：同一数据 N=1/2/4 得 1×/2×/4×）。
-- 当 N=1 时恰等于「per-prompt-group token 均值再平均」（`test_policy_gradient_reduction_matches_definition` 期望 `33/5`，与 `(1/G)·Σ` 吻合 ✓）。
-- 测试 `test_distributed_prompt_fixed_scale_preserves_frozen_objective[requested_steps∈{2,6}]`（test_prompt_mean_actor.py:350）只断言 **N 个 step 梯度的 `mean()`** 恢复 full-batch prompt_mean（`oracle[0]/oracle[1]`），**未断言实际训练里 N 次依次 `optimizer_step` 的累加语义**，也未比较「不同 N 下 update 结果是否一致」。
+- 完整梯度链 = `Σ_mb normalize_loss(PromptMean.aggregate, engine_weight, total_weight=1, dp_size)` → `step_scale·dp_size·Σ_mb loss_t·w_t` 逐 mb，累计 = **`dp_size·(M/G)·Σ_all loss_t·w_t`**。在固定 DP 下，**随 M（minibatch 数）线性放大**（numpy 实测：M=1/2/3/4/6 得 1×/2×/3×/4×/6×，与组边界如何切割无关）。
+- 当 M=1 时恰等于「per-prompt-group token 均值再平均」（`test_policy_gradient_reduction_matches_definition` 期望 `33/5`，与 `(1/G)·Σ` 吻合 ✓）。
+- 测试 `test_distributed_prompt_fixed_scale_preserves_frozen_objective[requested_steps∈{2,6}]`（test_prompt_mean_actor.py:350）只断言 **M 个 step 梯度的 `mean()`** 恢复 full-batch prompt_mean（`oracle[0]/oracle[1]`），**未断言实际训练里 M 次依次 `optimizer_step` 的累加语义**，也未比较「不同 M 下 update 结果是否一致」。
 
-**待验证判断（需真实 AReaL 运行，本机无 ray/torch）**：`step_scale=N/G` 用**全局近似**而非 minibatch 内真实组数 `G_mb`。minibatch 按行切分、不保证组边界，故各 mb 含组数不均匀；当 `G_mb ≠ N/G` 时，prompt_mean 的 minibatch 内归一尺度偏离「按真实组数平均」。这使 **prompt_mean + `ppo_n_minibatches>1`（默认 4）下，update 随切分方式变化**——与 verl #7913 / AReaL #1730 同源的「batch 切分不应改变 update」问题，位于**归约/损失侧**（而非 M2PO 的掩码侧）。上游无此发现的公开讨论（`prompt_mean`/`step_scale` 搜索无对应 issue/PR；`step_scale` 由 PR #1546 引入，其 body 声明的语义是「K=actual steps、G/K 分母、N 步平均恢复 full-batch」，与代码 `N/G` 绑定到 `ppo_n_minibatches` 的用法存在语义偏差）。
+**已确证的切分敏感机制（忠实源码归一化链 + numpy 复刻）**：`step_scale=M/G` 用**全局近似**而非 minibatch 内真实组数 `G_mb`。minibatch 按行切分、不保证组边界，故各 mb 含组数不均匀；数值复刻显示 **prompt_mean 的累计梯度 = `dp_size·(M/G)·Σ_all loss_t·w_t` 精确随 M 线性放大（M=1/2/3/4/6 → 1×/2×/3×/4×/6×），与组边界如何切割无关**。这使 **prompt_mean + `ppo_n_minibatches>1`（默认 4）下，update 的梯度绝对尺度随 minibatch 数线性增长**——与 verl #7913 / AReaL #1730 同源的「batch 切分不应改变 update」问题，位于**归约/损失侧**（而非 M2PO 的掩码侧）。上游无此发现的公开讨论（`prompt_mean`/`step_scale` 搜索无对应 issue/PR；`step_scale` 由 PR #1546 引入，其 body 声明的语义是「K=actual steps、G/K 分母、N 步平均恢复 full-batch」，与代码 `M/G` 绑定到 DP 同步 minibatch 数的用法存在语义偏差——代码实际「N 步累加」而非「N 步平均」）。
 
-> **定位与边界**：本节为源码推导 + numpy 数值复刻，**不是 AReaL 真实环境实测**。`step_scale` 的设计意图（跨多 step 的组）与实际数据流（一个 step 覆盖全部 G 组）是否冲突、N 倍在真实优化器累加下是否构成「切分依赖缺陷」，需在 AReaL 环境用 `ppo_n_minibatches` 2 vs 4 对照实测确认。定性为「切分敏感点/待确认」，非已证实 bug。
+> **定位与边界**：本节为忠实源码推导 + numpy 数值复刻，**不是 AReaL 真实环境实测**。核心确证：完整归一化链下 prompt_mean 累计梯度随 M 线性放大（`total_weight≡1`、`loss_multiplier=dp_size` 均不抵消 M），token_mean/seq_mean/constant 不变。待实测项收敛为：**该线性放大在真实优化器（Adam 等）下是否构成「切分依赖缺陷」**——绝对梯度放大在自适应优化器下会被归一化吸收一部分，故「放大」≠「一定出错」，是否构成 defect 需在 AReaL 环境用 `ppo_n_minibatches` 2 vs 4 对照观察实际 update 差异。定性为「切分敏感点（高置信源码级确证，缺陷定性待实测）」，非已证实 bug。
 
 ### 10.4 与其他归约对照
 
-`token_mean`（无 step 因子，`Σ loss_t/Σ mask_t`，天然可加、切分不变）与 `seq_mean`（per-response 均值后平均，`_reduce_unit_means`）**不带 step_scale**，不受此影响。`constant` 为固定 divisor。**只有 `prompt_mean` 带 `step_scale=N/G`**，是唯一随 minibatch 数变化的归约模式。
+`token_mean`（无 step 因子，`Σ loss_t/Σ mask_t`，天然可加、切分不变）与 `seq_mean`（per-response 均值后平均，`_reduce_unit_means`）**不带 step_scale**，不受此影响。`constant` 为固定 divisor。**只有 `prompt_mean` 带 `step_scale=M/G`**，是唯一随 minibatch 数变化的归约模式。
 
 ## 相关
 
