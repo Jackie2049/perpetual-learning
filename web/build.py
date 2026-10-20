@@ -223,6 +223,10 @@ def main():
     (OUT / 'content').mkdir(parents=True)
     for name in ['index.html', 'styles.css', 'app.js', 'favicon.svg']:
         shutil.copyfile(WEB / name, OUT / name)
+    # Standalone research report (self-contained single page, not part of the workbench).
+    for report in ['report_deepinfer.html']:
+        if (WEB / report).exists():
+            shutil.copyfile(WEB / report, OUT / report)
     index = (OUT / 'index.html').read_text()
     for name in ['app.js', 'styles.css', 'vendor/katex/katex.min.css']:
         index = index.replace(f'./{name}', asset_url(name))
