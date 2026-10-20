@@ -36,12 +36,12 @@
 .contribution-record .prose{font-size:12px;background:#f6f9f7;padding:14px;margin-top:12px;border-radius:5px}
 .project-actions{display:flex;flex-wrap:wrap;gap:18px;margin-top:21px}
 .project-empty{font-size:12px;color:var(--muted);line-height:1.9;min-height:45px}
-.more-progress>summary,.project-materials>summary{cursor:pointer;font-size:11px;color:var(--green);padding-top:15px}
+.project-materials>summary{cursor:pointer;font-size:11px;color:var(--green);padding-top:15px}
 .project-materials{margin-top:18px;border-top:1px solid var(--line)}
 .project-materials summary span{margin-left:7px;color:var(--muted)}
 .project-materials ul{padding-left:17px;font-size:11px;line-height:1.9}
 .project-materials li{margin:10px 0;overflow-wrap:anywhere}
 .project-materials button{text-align:left;padding:0;font-size:inherit}
-.contribution-record summary:focus-visible,.project-materials summary:focus-visible,.more-progress summary:focus-visible{outline:2px solid var(--green);outline-offset:4px}
+.contribution-record summary:focus-visible,.project-materials summary:focus-visible{outline:2px solid var(--green);outline-offset:4px}
 @media(max-width:1050px){.contribution-grid{grid-template-columns:1fr}}
 @media(max-width:650px){.sidebar nav{gap:0}.sidebar nav>a{padding:8px 4px;font-size:10px}.contribution-panel{padding:20px}.project-filters{gap:7px}.project-filters a{font-size:11px;padding:6px 10px}.project-heading h2{font-size:23px}}
