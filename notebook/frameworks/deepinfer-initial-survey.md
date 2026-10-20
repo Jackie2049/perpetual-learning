@@ -413,3 +413,51 @@ python3 experiments/scripts/verify_deepinfer_zos_host_flow.py /path/to/DeepInfer
 因此值得保留的技术讨论点是**计时 pair 所有逻辑读者消费前不能回池**；输出注释仅作可附带澄清，不扩成第二个运行时 bug。若用户决定参与原 PR，应只围绕固定 head、最小主机时序反例及限制交流，不宣称已完成设备复现、不另开竞争修复。当前未向上游发言。
 
 本轮也只读确认 [#57](https://github.com/deepseek-ai/DeepInfer/pull/57) 已有作者处理 DP launcher 按序 join 卡住及失败清理（open，head `9a52063a8a0dc86cbbce04fae034e7e037fa3881`）；其 CPU 测试结果是作者报告，未自行复核。后续转为阅读其失败传播/回收契约，不把已有人推进的主题当未认领修复。
+
+## PR #57：等待任意失败，而不是按启动顺序等待退出
+
+2026-10-20 22:30 心跳只读核验 [#57](https://github.com/deepseek-ai/DeepInfer/pull/57)（仍 open、未合并），固定 base `774ce244b87cc0eb8d4b94ab9f5de2ab22049f01`、head `9a52063a8a0dc86cbbce04fae034e7e037fa3881`。已读完整两文件 diff、原始/新 [examples/_launch.py](https://github.com/deepseek-ai/DeepInfer/blob/9a52063a8a0dc86cbbce04fae034e7e037fa3881/examples/_launch.py)、[测试](https://github.com/deepseek-ai/DeepInfer/blob/9a52063a8a0dc86cbbce04fae034e7e037fa3881/tests/examples/test_launch.py) 与外层 offline/benchmark 调用、内层 engine/WorkerBase 生命周期。此处更新上节的“作者报告”边界：**已在本机独立运行其中 Python3.12 的 CPU 测试与旧实现负对照**，未复核作者 Python3.14 或仓库级 lint 报告。
+
+### 卡住的根因与已有修复的边界
+
+旧 run_dp 先 start 所有本地 DP 进程，再按列表顺序逐一无超时 join，最后才检查 exitcode。若 rank0 仍等 collective、rank1 已异常退出，父进程会一直等 rank0，连“rank1 已退出”也无法及时处理。这是监督者等待顺序的问题；不用在本机真正建立 GPU collective，也能用一个睡眠进程和一个失败进程复现。
+
+| 情形 | 旧实现 | #57 固定 head |
+|---|---|---|
+| 后启动的 rank1 先失败 | 卡在 rank0.join，尚未检查 rank1 | wait 任意 ready sentinel，join 已结束者并检查非零退出 |
+| 发现失败或主进程中断 | 没有统一 finally 清理 | finally 仅收集 pid 非空的已启动进程，先 terminate |
+| 子进程忽略 SIGTERM | 不能由旧等待链自行收尾 | 共用一个5秒 deadline，剩余存活者 kill，再 join 回收 |
+| node_rank=1，WORLD_SIZE=2，DP=4 | 错误列表用本地 enumerate 下标 | 按真实 DP rank 建字典，可报告全局 DP rank3 |
+| 启动第二个进程时抛异常 | 已启动的第一个缺少统一回收路径 | finally 仍处理已启动者，不对未启动者 join |
+
+[Python3.12 文档](https://docs.python.org/3.12/library/multiprocessing.html#multiprocessing.Process.sentinel)说明 sentinel 在进程退出后就绪，可由 connection.wait 同时等待多个进程。这里避免的是按序阻塞；失败列表只包含本次 ready 集合中的失败者，不是完整集群故障清单。共享 deadline 避免每个 rank 各等5秒，但最终 join 未指定超时，故不能把5秒称为任何 OS 状态下的退出上限。
+
+### 实际运行：复用上游测试，不另写一套“同意自己”的夹具
+
+本机 macOS15.4.1 arm64 / Python3.12.13 / pytest8.4.2，仅在隔离 venv 安装 pytest 及其依赖，无 torch、DeepInfer 安装或设备访问。head 检出不改源码/测试，直接运行：
+
+```bash
+python -m pytest -q tests/examples/test_launch.py
+# 8 passed in 2.20s；独立再次执行 8 passed in 2.23s
+```
+
+覆盖正常退出、两种失败先后、模拟第二节点的全局 rank、忽略 SIGTERM、中断、部分启动失败、单 rank 直接在父进程执行。它们使用**真实 spawn 子进程、OS 信号和 join**；worker 的“等 collective”只是 sleep，未执行通信。测试把生产5秒宽限改为0.2秒加速，不能将其耗时作为生产清理时延 benchmark。部分启动测试是真实第一个进程加第二次 start 的注入异常。
+
+独立 base 检出仅取 head 的原始测试文件，不修改旧启动器，再执行同一失败用例和成功对照：
+
+```bash
+python -m pytest -q \
+  'tests/examples/test_launch.py::test_worker_failure_reaps_siblings[0-1-2-1]' \
+  tests/examples/test_launch.py::test_successful_workers_are_joined
+# 预期负对照：1 failed, 1 passed in 15.48s
+```
+
+失败输出已含 rank1 的 intentional worker failure，但父启动器15秒仍未返回，最终触发测试自己的 TimeoutExpired；成功对照正常。测试 finally 只杀其新建 session 的进程组，未操作其他任务；事后按记录的两个测试 PID 只读查询均已不存在。负对照不是“新 PR 测试失败”。
+
+输入 SHA256：head `_launch.py` `77c69e425a26740ad401d438c00d6e0f1f5b888bad325400ed1d4fcff2699b1e`；base `_launch.py` `d19d14125140385acb62dd1bb4893569f21c99d55eb6e42add0068b713c09486`；两边测试文件相同，`d5b0a764c56a03b2ed79ae73f4b9f50ea8b27e9c0717f8f2177f4a5a89c96920`。初次定位误用了 launch.py 而实际是 _launch.py；默认 uv cache 不可访问，改为隔离临时 cache；现有3.12无pytest，另建 venv；浅克隆间取测试最初需 --update-shallow。均属检查环境/检出准备，未改测试逻辑或上游实现。
+
+### 外层 DP 清理不等于全部 GPU 进程树已经验证
+
+examples._launch 只管理自己创建的本地 DP 子进程。实际 [LLMEngine._init_workers](https://github.com/deepseek-ai/DeepInfer/blob/9a52063a8a0dc86cbbce04fae034e7e037fa3881/deepinfer/engine/llm_engine.py#L368) 还会为 CP rank>0 创建 daemon worker。普通 terminate 不递归终止后代，且跳过退出清理，这是 [标准库的明确边界](https://docs.python.org/3.12/library/multiprocessing.html#multiprocessing.Process.terminate)；**但也不能漏看项目已有的内层保护，直接宣称 CP 一定遗留**：WorkerBase.start_slave_worker_loop 会调用 libc prctl 设置父死 SIGKILL，正常 stop 则另有 barrier→userbuffer.close→destroy graphs/process group→非 driver os._exit 路径。
+
+这些 CP/Gloo/NCCL/Linux 父死信号和跨节点场景均未由上述 macOS 测试覆盖；第二节点用例只在一台机器设置 RANK/WORLD_SIZE。当前正面结论限于：固定 PR 修复了所复现的外层等待顺序/直接子进程收尾问题；不保证全部后代、远端 rank、初始化阶段、共享内存或设备资源清理。已有作者负责该修复，不另造竞争候选或发布 review。下一步先读内层 CP 初始化、RPC 与父死保护的注册时机，按源码与可验证范围划分故障责任，不急于作新缺陷判断。

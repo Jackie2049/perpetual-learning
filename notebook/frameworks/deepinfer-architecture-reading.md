@@ -73,6 +73,7 @@ LLM (entrypoints/llm.py, vLLM 风格 offline batch API)
 - 公共：tilelang 0.1.15、tile-kernels 2.1.0、xgrammar 0.2.2、safetensors、transformers 4.50、pyzmq、posix_ipc。
 - 构建：GCC≥13、Python 3.12、CUDA 13（NVIDIA）/ CANN 9.2（Ascend）；setup.py 按平台选 csrc + graph_timer；vendor 子模块按平台拉（NVIDIA: DeepSelect/FlashMLA/DeepEP/DeepGEMM；Ascend: +DeepEP/DeepGEMM-Ascend）。
 - 用户入口：`python examples/offline_inference.py --ep 8`（vLLM 风格离线 batch）；`eval/*/run.sh`（AIME/HLE/GPQA）；多进程 `_launch.py run_dp`。
+- 进程监督分为外层 DP launcher 与 engine 内层 CP worker。未合并的 #57 将外层按序 join 改为等待任意退出；本机真实 CPU 子进程回归及旧实现负对照见 [失败传播核验](deepinfer-initial-survey.md#pr-57等待任意失败而不是按启动顺序等待退出)。这不等于 CP/跨节点/设备清理已验证；内层已有父死信号保护，需按其自身生命周期理解。
 
 ## 9. 与本项目既有积累的关联（对照点）
 
