@@ -141,4 +141,61 @@ nextn>0 时，C++ 先从乐观 k 扣除 CPU 侧原 q；GPU 再加修正后的 q�
 - 同页说明 CPU 先选总预算、GPU 用上一轮 confidence 计算逐请求验证长度并回写 pinned buffer，与 Worker 的 correction/D2H 路径相符；这说明公开代码为何需要该同步，未证明它在任意负载都能隐藏等待。
 - 第 6–7 页使用 134-token 窗口/回退示例，当前 README 的 compact keep_tokens 为 140，且 PDF 含 VLLM_ 历史前缀。应按当前配置检查窗口和回退覆盖条件，不将 PDF 示例数字直接当作启动默认值；重放的数值等价性仍需实测。
 
-下一步：继续 DSpark 总预算选择与 confidence 排序的收益模型，核对变长验证如何影响随机采样位置；真实 CUDA Graph、padding、提前 EOS 与 pool 回收需要目标硬件验证。本机仍仅限源码/CPU，不据主机替身实验宣称 GPU 无空泡或无竞态。
+下一步：DSpark 总预算与采样位置已补下节；继续核对 SWA/YoCo bounded replay 的窗口、回退与压缩元数据契约。真实 CUDA Graph、padding、提前 EOS 与 pool 回收需要目标硬件验证。本机仍仅限源码/CPU，不据主机替身实验宣称 GPU 无空泡或无竞态。
+
+## DSpark：请求数、验证预算与随机采样是三个层次
+
+本节仍固定 `8b161497`，不改上游源码。关键入口为 [MTPVarlen](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/csrc/engine/mtp_varlen.hpp#L133) 和 [Scheduler 调用处](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/csrc/engine/scheduler.hpp#L644)。
+
+### 不是重新挑选请求数
+
+Scheduler 已完成请求选择、内存分配/抢占并按长度排序，才把 `scheduled` 传给 MTPVarlen。后者不增删请求，而给每条请求至少一个基础验证行，再选择额外 draft 验证行。代码变量 `best_bsz` 是 `total_q = Σ seqlens_q`，**不是请求数，也不是实际接受/输出 token 数**；候选 total_q 映射到第一个容量足够的 CUDA Graph size，三者不要混用。
+
+令 n 为已选请求数，r 为 confidence head 输出累乘后的估计接受率。把全部 r 降序排列，对每个额外验证行数 k，源码比较：
+
+```text
+expected(k) = n + sum(top-k cumulative acceptance estimates)
+Q = n + k
+graph(Q) = 性能曲线中第一个 size >= Q 的点
+time(Q) = baseline(graph) + max(0, slope) * graph + sampler_estimate(n)
+score(Q) = expected(k) / time(Q)
+```
+
+这是**调度器的吞吐代理目标**，不是真实输出长度或端到端吞吐保证。confidence 来自模型估计；EOS、抢占、通信及运行时误差等仍会改变收益。曲线为空时直接保留全部 draft，不执行最优预算选择；相同 score 保留较小 Q。固定预算下，按最新可用累计接受率给请求分配额外行；概率在 [0,1] 时累乘单调，使前缀长度选择与贪心分配相容。相等 rate 按请求在当前 scheduled 中的索引优先，不等同于全局请求 ID 公平性。
+
+### 为什么预算和分配不用同一轮 confidence
+
+头文件明确要求后续位置 confidence 不影响较早 draft 是否被验证；为此预算始终使用 N-2 轮估计，逐请求分配希望用 N-1 轮估计。CPU 缓冲区的含义随在途状态变化：
+
+| 调度/后处理计数 | CPU 预算来源 | 逐请求分配 |
+|---|---|---|
+| schedule_cnt == process_cnt | prev_accept_rates（N-2） | accept_rates（N-1） |
+| schedule_cnt == process_cnt + 1 | accept_rates（N-2） | CPU 先用旧值；ZOS GPU 再用前轮 confidence 重分配 |
+
+[process_MTPInfo](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/csrc/engine/scheduler.hpp#L1239) 负责缓冲移位和逐位 confidence 累乘；不是对各位置的原始独立 confidence 直接排序。无历史时，有 draft 信息按 1 补齐，无 draft 按 0 补齐；已预调度一轮也视为有 draft。ZOS 的 [GPU 分配参考](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/model_executor/layers/tilelang_ops/schedule_mtp_varlen.py#L34) 先 remap、对 fresh 行补零，再累乘、稳定排序。这里解释实现的因果约束，**没有证明整个自适应采样过程统计无偏**。
+
+例如两条请求各最多两个 draft：旧累计率 A=[.9,.8]、B=[.2,.1]，曲线 `(2,1ms),(3,1.1ms),(4,1.2ms),(6,3ms)` 时选 Q=4。把最新累计率改为 A=[.2,.1]、B=[.9,.8]，分配为 q=[1,3]；交换最新两行后为 [3,1]，总预算不变。只有改旧轮估计才会改变此例预算。这是合成输入的 CPU 调度结果，不是模型实测。
+
+### 耗时反馈的两个稳健统计量
+
+- forward：最近 5000 步，先按 graph size 求归一残差的中位数，每种 graph 至少 10 样本才纳入；再对各 graph 中位数等权求中位数。样本多的 graph 不会自动拥有更大权重。负 slope 截为 0，启动曲线为耗时下界。
+- sampler：每个请求数及全局分别维护最近 9 次中位数，至少 5 样本才可用；优先同请求数估计，再全局回退，否则 0。较大 sampler 固定成本可能促使预算变大以摊薄成本；较大 forward 线性成本则可能减少推测。不能仅凭 confidence 判断预算必然增减。
+
+### 采样位置没有直接使用 batch 行号
+
+[prepare_sample.cpp](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/csrc/engine/prepare_sample.cpp#L206) 的 decode 基础位置是 `seqlen_k - seqlen_q + 1`；[expand_sampling_params_ref](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/model_executor/layers/tilelang_ops/sampler.py#L55) 为验证行构造 `base_position + local_step * 10000019`，请求 seed 随 row_to_req 映射。DFlash proposal 使用基础位置 + last_valid_offset + draft 步数（从 1 开始），并通过 tag=mtp 给 seed 增加 1000000007。
+
+[fused_sample 的参考路径](https://github.com/deepseek-ai/DeepInfer/blob/8b16149741a4935e1dec8cea27853f273b374c5b/deepinfer/model_executor/layers/tilelang_ops/fused_sample.py#L208) 把自由采样、拒绝重采样、接受判定分为不同随机用途（位置乘 3 后分别用 case 0/1/2；接受判定还有独立组合方式）。这些是命名空间分隔，不是 hash 无碰撞的数学保证。按请求/位置寻址可以避免单纯换行重排引入 RNG 漂移，**不能据此推出改变验证长度后自由生成路径相同**；官方确定性配置仍要求关闭 varlen，见前文。
+
+### CPU 验证：实际头文件，而非另写算法的自证
+
+[verify_deepinfer_mtp_budget.py](../../experiments/scripts/verify_deepinfer_mtp_budget.py) 读取原始头文件，仅替换 `sequence.hpp` include 为最小 Sequence 字段替身和 TORCH_CHECK 异常替身；三个调度/估时类的函数体原样编译，未改动 DeepInfer 克隆。输入头文件 SHA256 为 `164f45db4cccd6d6909dd2846e7dfffb57754b108af679443bf4bd71ec33785a`。
+
+```bash
+python3 experiments/scripts/verify_deepinfer_mtp_budget.py /path/to/DeepInfer
+# 本机 CLT 默认标准头搜索路径不完整，显式使用已有 SDK；不安装或修改系统环境：
+python3 experiments/scripts/verify_deepinfer_mtp_budget.py /path/to/DeepInfer \
+  --cxxflag=-isystem/Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk/usr/include/c++/v1
+```
+
+Darwin arm64、Apple clang 17、C++17，结果 `PASS 421 checks`。其中 200 组合成累计率逐组穷举 3 条请求、每条 q=1..3 的全部 27 种合法前缀配置，独立核对预算目标与固定预算下最新率分配；另覆盖双历史缓冲、冷启动、计数约束、排序/吞吐平局、滑动窗口淘汰、等权 graph 中位数、反馈门槛/回退及斜率钳制。初次编译因找不到 algorithm 标准头失败，指定已有 SDK 目录后通过。未调用 torch、CUDA/NPU、GPU 分配 kernel 或完整 Scheduler；不验证模型接受率校准、统计无偏、设备数值、真实定时事件或性能。

@@ -31,7 +31,7 @@ LLM (entrypoints/llm.py, vLLM 风格 offline batch API)
 - **token 打包优化**（zos.cpp:31）：无重叠时打包最终 input_ids；有重叠时只填 fresh rows，matched rows 复用上一步 GPU 输出，减 H2D。
 
 ### 3.2 DSpark/MTP 变长自适应推测解码 — 投机解码的极致
-- 不是固定 speculative length：`MTPVarlen.schedule`（mtp_varlen.hpp:150）在**每步动态选最优 batch size 和每请求 draft 数**，最大化 `throughput = 期望接受 token / 估计耗时`。
+- 不是固定 speculative length：Scheduler 先选定请求；`MTPVarlen.schedule`（mtp_varlen.hpp:150）再动态选**验证 token 总预算 total_q 和每请求验证长度**，不增删请求。`best_bsz` 不是请求数；最大化的是 `估计接受 token / 估计耗时` 代理目标。原始 C++ 头文件的隔离 CPU 验证、两轮 confidence 因果约束及限制见 [初览笔记 DSpark 节](deepinfer-initial-survey.md#dspark请求数验证预算与随机采样是三个层次)。
 - **耗时估计自适应**：`ForwardRuntimeEstimator` 用双层中位数滑动窗口动态拟合 `slope_ms=(forward_ms-baseline)/graph_size`；运行时由 engine 用 CUDA event 实测喂入持续校正。
 - **接受率**：MTP confidence head 逐位累乘（process_MTPInfo），N-2 轮算 best_bsz、N-1 轮贪心分配每请求 seqlen_q。
 - **DFlash 深度集成**：draft 特征随主模型 CUDA graph 捕获写入 main KV cache；MTPInfoPool 跨 step 稳定存储。

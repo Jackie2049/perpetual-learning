@@ -16,5 +16,6 @@
 | [areal_prompt_mean_gpu_probe.py](areal_prompt_mean_gpu_probe.py) | 由 M5 单一维护的 AReaL GPU 探针原稿，GPU 集成待验证；M1 的离线修整仅为未应用参考 patch，见 [交接说明](../../open-source/areal/handoff-m5.md)，不要据草稿预检结果判断原稿可运行 |
 | [verify_deepinfer_seed_contract.py](verify_deepinfer_seed_contract.py) | 从指定 DeepInfer 源码提取 seed/EngineType 定义，在无 torch 环境检查 uint64 种子行为和调度默认值；打印输入 SHA256，非 sampler kernel 或模型一致性实测 |
 | [verify_deepinfer_zos_host_flow.py](verify_deepinfer_zos_host_flow.py) | 提取原始 Worker 主机控制流，用设备/event 替身验证延迟后处理、长度回写等待、placeholder 与 flush 分支；不执行真实 CUDA/C++ remap 或证明设备无竞态 |
+| [verify_deepinfer_mtp_budget.py](verify_deepinfer_mtp_budget.py) | 编译原始 MTPVarlen/估时头文件，仅替换 Sequence/TORCH_CHECK 依赖；用穷举前缀 oracle 检查 token 预算、两轮置信度与反馈边界，非 GPU 分配或性能实测；需 C++17 编译器 |
 
 部分脚本包含历史服务器路径或会修改所安装的框架源码；这是实验代码，运行前应查看对应脚本和验证对象，不能将其视为通用巡检入口。迁移本身不表示重新完成 GPU 验证。
