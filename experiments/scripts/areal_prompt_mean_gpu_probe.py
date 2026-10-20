@@ -1,29 +1,34 @@
-"""GPU probe: is prompt_mean's update sensitive to ppo_n_minibatches (M)?
+"""GPU probe following §10.7 criteria: is prompt_mean's update M-dependent?
 
-Runs AReaL's REAL training components (PPOActor + FSDPEngine on a single GPU)
-on a FIXED batch, sweeping ppo_n_minibatches in {2, 4} (and optionally {1, 3}),
-and compares the resulting parameter deltas after a full ppo_update.
+AReaL source-reading §10.7 withdrew the earlier "prompt_mean defect" claim: the
+old numpy comparison used a different token_mean calibre (never split by M), M
+is a real optimizer-step count (each train_batch updates params, later gradients
+are computed at new params), and Megatron's P multiplier has a scheduling
+cancellation.  The probe here follows §10.7's GPU criteria:
 
-Faithful chain (AReaL main 3b93679, see notebook §10.3):
-  - _PromptMeanBatch.for_steps sets step_scale = len(microbatches)/active_groups = M/G
-    (loss_reduction.py:115), shared by both backends (actor.py:600).
-  - Each of the M minibatches runs engine.train_batch -> one optimizer_step
-    (actor.py:609-636). Faithful normalisation chain:
-        grad_total = dp_size * (M/G) * sum_all loss*w
-    is EXACTLY linear in M (numpy-verified).  token_mean/seq_mean carry no step
-    factor, so they are split-invariant.
+  1. Fix outer M (ppo_n_minibatches), vary only the inner P (mb_spec
+     n_mbs / max_tokens_per_mb); compare post-step gradients, pre/post-clip
+     norms, and one Adam update.  FSDP2 first, DP=CP=1, no MoE/MTP.
+  2. Fix M, vary DP rank data / dummy allocation; use stepwise global
+     row/token/group references; never treat dummy count alone as defect.
+  3. Keep the user's M=2 vs 4 comparison as a TRAINING-BEHAVIOUR contrast:
+     check the frozen-parameter cross-step MEAN contract (with token_mean as
+     control), and observe sequential-update trajectories; do NOT require
+     cross-M parameters to be identical.
 
-Under a real adaptive optimizer (AdamW) the absolute scale is partly absorbed by
-the per-parameter normalisation, so we measure the OBSERVED parameter delta after
-one full ppo_update from identical initial weights on identical data:
+This script runs AReaL's REAL components (PPOActor + FSDPEngine, 1 GPU) on a
+fixed synthetic batch.  It reports:
 
-  M=2 vs M=4 on the SAME fixed batch and SAME init weights.
-  A split-sensitive defect => prompt_mean delta norm differs strongly across M;
-  token_mean (control) should show near-invariance.
+  - per-M, per-mode (prompt_mean vs token_mean) parameter delta L2 after one
+    full ppo_update from the SAME init weights and SAME fixed batch;
+  - with outer M fixed, inner P varied (mb_spec) and delta spread across P;
+  - whether the M=2 vs M=4 delta difference for prompt_mean matches the same
+    difference for token_mean (shared training behaviour vs reduction-specific).
 
 Run:
   CUDA_VISIBLE_DEVICES=0 torchrun --nproc-per-node=1 \
-      areal_prompt_mean_gpu_probe.py --model <hf-or-local> --m-values 2,4
+      areal_prompt_mean_gpu_probe.py --model <hf-or-local> \
+      --m-values 2,4 --inner-p 1,2
 Requires AReaL env (uv sync --extra cuda) and 1 free GPU.
 """
 from __future__ import annotations
@@ -35,7 +40,7 @@ import torch
 
 from areal.api.cli_args import (
     FinetuneSpec,
-    LossAggregationMode,  # noqa: F401  (type re-export)
+    MicroBatchSpec,
     OptimizerConfig,
     PPOActorConfig,
     TrainEngineConfig,
@@ -46,12 +51,17 @@ MODEL = os.environ.get("AREAL_PROBE_MODEL", "Qwen/Qwen2.5-0.5B-Instruct")
 
 
 def _groups(n_groups: int = 3, seq_len: int = 8, seed: int = 0):
-    """Fixed synthetic prompt groups (like tests/test_prompt_mean_actor.py::_groups)."""
+    """Fixed synthetic prompt groups (like tests/test_prompt_mean_actor.py::_groups).
+
+    Each group is one row (one response); group sizes = [4, 3, 2] tokens per
+    response would need real tokenization, so here we use uniform rows with
+    distinct group ids and per-row response counts so that prompt_mean's group
+    denominator differs from token_mean's token denominator.
+    """
     rng = torch.Generator().manual_seed(seed)
     groups = []
     row = 0
-    lengths_all = [4, 3, 2]
-    for length in lengths_all[:n_groups]:
+    for length in [4, 3, 2][:n_groups]:
         attention_mask = torch.arange(seq_len)[None, :] < torch.tensor([length])[:, None]
         loss_mask = attention_mask.clone()
         loss_mask[:, 0] = False
@@ -75,8 +85,8 @@ def _groups(n_groups: int = 3, seq_len: int = 8, seed: int = 0):
     return groups
 
 
-def _make_engine(model: str, seed: int):
-    """Create a single-GPU FSDP2 engine (dist must already be initialized)."""
+def _make_engine(model: str, seed: int, inner_p: int):
+    """Single-GPU FSDP2 engine (dist must already be initialized)."""
     torch.manual_seed(seed)
     config = TrainEngineConfig(
         path=model,
@@ -84,6 +94,7 @@ def _make_engine(model: str, seed: int):
         trial_name="t0",
         backend="fsdp:d1p1t1",
         dtype="bfloat16",
+        mb_spec=MicroBatchSpec(n_mbs=inner_p),  # inner P control
         optimizer=OptimizerConfig(
             type="adam",
             lr=1e-4,
@@ -109,7 +120,6 @@ def _make_engine(model: str, seed: int):
 
 
 def _param_delta(engine, snapshot: dict[str, torch.Tensor]) -> float:
-    """L2 norm of the parameter delta w.r.t. a snapshot."""
     total = 0.0
     n = 0
     for name, param in engine.model.named_parameters():
@@ -119,42 +129,65 @@ def _param_delta(engine, snapshot: dict[str, torch.Tensor]) -> float:
     return total ** 0.5, n
 
 
-def run_sweep(model: str, m_values: list[int], groups, loss_aggregation: str) -> None:
-    print(f"model={model} sweep={m_values} loss_aggregation={loss_aggregation}")
-    for m in m_values:
-        engine = _make_engine(model, seed=0)
-        snapshot = {
-            name: p.detach().clone() for name, p in engine.model.named_parameters()
-        }
-        actor = PPOActor(
-            PPOActorConfig(
-                loss_aggregation=loss_aggregation,
-                ppo_n_minibatches=m,
-                eps_clip=0.2,
-                temperature=1.0,
-                reward_scaling=1.0,
-                reward_bias=0.0,
-                adv_norm=None,
-            ),
-            engine,
-        )
-        # NOTE: the synthetic batch lacks keys the actor reads (e.g. rewards /
-        # original_rewards for stats logging). _log_configuration + logging paths
-        # may need `log_agent_stats=False` (default) — fine here.
-        actor.ppo_update(groups)
-        delta, n = _param_delta(engine, snapshot)
-        print(f"  M={m}: param_delta_L2={delta:.6f} over {n} params")
-        engine.destroy()
+def run_one(m: int, inner_p: int, mode: str, groups) -> tuple[float, int]:
+    engine = _make_engine(MODEL, seed=0, inner_p=inner_p)
+    snapshot = {name: p.detach().clone() for name, p in engine.model.named_parameters()}
+    actor = PPOActor(
+        PPOActorConfig(
+            loss_aggregation=mode,
+            ppo_n_minibatches=m,
+            eps_clip=0.2,
+            temperature=1.0,
+            reward_scaling=1.0,
+            reward_bias=0.0,
+            adv_norm=None,
+        ),
+        engine,
+    )
+    actor.ppo_update(groups)
+    delta, n = _param_delta(engine, snapshot)
+    engine.destroy()
+    return delta, n
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default=MODEL)
     ap.add_argument("--m-values", default="2,4")
-    ap.add_argument("--loss-aggregation", default="prompt_mean")
+    ap.add_argument("--inner-p", default="1,2")
+    ap.add_argument("--loss-aggregations", default="prompt_mean,token_mean")
     args = ap.parse_args()
+    global MODEL
+    MODEL = args.model
     m_values = [int(x) for x in args.m_values.split(",")]
-    run_sweep(args.model, m_values, _groups(), args.loss_aggregation)
+    inner_p = [int(x) for x in args.inner_p.split(",")]
+    modes = args.loss_aggregations.split(",")
+    groups = _groups()
+
+    print(f"model={MODEL} sweep M={m_values} innerP={inner_p} modes={modes}")
+    print("(1) fixed-M inner-P spread (per §10.7 criterion 1):")
+    for m in m_values:
+        for mode in modes:
+            spreads = []
+            for p in inner_p:
+                delta, n = run_one(m, p, mode, groups)
+                spreads.append(delta)
+                print(f"  M={m} P={p} {mode}: delta_L2={delta:.6f} ({n} params)")
+            if len(spreads) > 1:
+                print(f"    -> P-spread (max/min) = {max(spreads)/min(spreads):.3f}")
+    print("(2) M=2 vs M=4 training-behaviour contrast (criterion 3):")
+    per_mode = {}
+    for mode in modes:
+        deltas = []
+        for m in m_values:
+            delta, _ = run_one(m, inner_p[0], mode, groups)
+            deltas.append(delta)
+        per_mode[mode] = deltas
+        print(f"  {mode}: M={m_values} delta_L2 = {[f'{d:.6f}' for d in deltas]}; "
+              f"ratio={deltas[1]/deltas[0]:.3f}")
+    print("Interpretation: if prompt_mean's cross-M ratio closely matches "
+          "token_mean's, the M dependence is shared training behaviour, not a "
+          "reduction-specific defect (per §10.7).")
 
 
 if __name__ == "__main__":
