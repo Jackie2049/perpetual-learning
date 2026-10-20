@@ -105,6 +105,7 @@
 
 ## verl
 
+- [verl 异步训练策略版本与 logprob 对照条件](verl-async-logprob-provenance.md) — V1 separate-async的rollout/old/current来源、CPU快照路由、版本标签边界和最小观测契约；非训练根因证明
 - [RFC: Full-Model Prefix Sharing for GRPO Training Acceleration](verl-6401-rfc-full-model-ps.md)
 - [verl #6468: FSDP2 CPU Memory Leak During Weight Sync — Deep Reading](verl-6468-fsdp2-cpu-memory-leak-reading.md)
 - [verl #6512 -- Per-Unit LoRA Summon for FSDP1/FSDP2: Deep Technical Analysis](verl-6512-per-unit-lora-summon-reading.md)

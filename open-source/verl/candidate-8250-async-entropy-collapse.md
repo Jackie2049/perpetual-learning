@@ -9,7 +9,7 @@
 
 **【价值评估】** 6 / 10 — 排障路径有复用价值，但缺原始数据与受控对照，旧因果结论已撤回。
 
-**【进展】** 2026-10-21 只读复核：issue 仍 open、0评论；待补证，旧英文稿不可直接发布。已核对报告版本源码及论文、通过限定数值反例；没有确证根因、修复或训练实测，上游发言仍需用户授权。
+**【进展】** 2026-10-21待补证，旧英文稿不可直接发布；V1策略/logprob来源与最小观测契约已补，7组原始路由替身控制及7类数学反例通过，没有确证根因、修复或训练实测。上游状态见00:01核验，发言仍需用户授权。
 
 **【大白话讲明白】**
 
@@ -54,7 +54,7 @@ python3 experiments/scripts/verify_gspo_detach_gradient.py /path/to/verl-8250
 ## 建议补证顺序（待授权交流，不给固定“治愈阈值”）
 
 1. 对齐每条样本的uid/group、总奖励与所有分项、组内标准差、优势分布、有效token/mask、是否拒绝或过滤，以及clip按A正负的统计。
-2. 对齐rollout生成版本、old-logprob重算版本和训练update版本；同一固定token序列，比较训练actor、同checkpoint重载模型与live rollout，明确dtype/kernel/模板/采样处理差异。
+2. 对齐rollout生成版本、old-logprob重算版本和训练update版本；先记录bypass/解耦路径及CPU快照trigger，再比较固定完整token上下文。版本标签、采样token概率与安装后tensor内容是不同证据；同backend干净重载与live对照只能缩小范围，不唯一指向同步/cache。详见[来源映射和对照条件](../../notebook/frameworks/verl-async-logprob-provenance.md)。
 3. 获取首次异常更新前后的有限性、ratio分位数、梯度测量位置（裁剪前后）、有效样本量和同步事件；再分别控制reward、staleness、融合路径等变量。
 
 未得到数据前，不把0.05或某KL系数当通用阈值，不宣布mask、数值、同步或reward分支已排除。[clip旧RFC](verl-clip-semantics-rfc-draft.md)经GMPO复核后已撤回且不再推进；本候选仍待补证，发布边界不变。
