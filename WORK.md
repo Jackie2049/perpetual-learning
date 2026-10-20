@@ -10,6 +10,8 @@
 
 ## 运行接续
 
+- **网站发布待确认（2026-10-21 05:08）**：本轮成果218718e已推送main，本地网页构建通过（952标题、74阅读页、12条最新日期日志）。发布命令被安全审批拒绝，理由为缺少将内容公开到`https://jackie2049.github.io/perpetual-learning/`的明确授权；没有重试、绕过或更新gh-pages。网站仍以上一次已验证部署为准，用户确认公开范围后才恢复发布；后续心跳不重复尝试被拒操作，其他本地研究可继续。
+
 - **M1 checkpoint调用契约收束（2026-10-21）**：Python入口不转换checkpoint，位置按图片展开后序列的绝对缓存数；benchmark预构造不跨图片的边界、后缀至少2，部分prefill后fork与`min(C,N−1)`契约一致。原始Python helper接8组片段轨迹控制通过（含图片内部越界按预期断言），原10组成对C++检查回归通过；非真实engine/fork/设备验证。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#checkpoint坐标与cached-prefix-fork契约)。chunk学习先收束，下一步只读追MTP接受数到最终KV缓存长度的提交链，不竞争修复。
 
 - **M1 chunk sizing复核（2026-10-21）**：#108/#95/#98均open、base774ce244，head分别ab47ee4/2a5db94/6a93461。#95/#98资源推进与#108 checkpoint/lookahead并非同一修复；10组成对原始C++片段检查通过，包含旧版也通过的无预算控制和图片边界限制。完整Scheduler头文件在本机Clang/Linux pthread依赖处受阻，未跑原始Gloo测试，不改兼容层/上游方案。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#chunk-checkpoint消费与预留尾段)。下一步只读核对Python checkpoint入口/坐标与cached-prefix fork契约，不竞争已有PR。
