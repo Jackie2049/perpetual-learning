@@ -35,6 +35,12 @@ Faithful chain (traced from real source, AReaL main 3b93679):
 
 Hypothesis tested: total gradient is proportional to effective_n_mbs (split-sensitive),
 independently of how the minibatch boundaries cut across prompt groups.
+
+Additional faithful finding (Case 4): transport-dummy slots count toward step_scale's M
+(len(microbatches), loss_reduction.py:115) even though their loss_mask is zeroed
+(make_transport_dummy, data.py:886-887) and engine_weight=0, so they contribute nothing
+to the gradient but still inflate step_scale by one unit per dummy -> extra gradient
+scale proportional to the number of dummy slots in the synchronized schedule.
 """
 import numpy as np
 
@@ -96,9 +102,56 @@ def run(gs, seq_len, dp=1):
           f"token_mean independent of n_mbs\n")
 
 
+def prompt_mean_total_with_dummy(group_sizes, seq_len, n_mbs, rng, dp_size=1):
+    """Faithful prompt_mean gradient when some schedule slots are transport dummies.
+
+    Mirrors real AReaL (data.py:1176-1180): after DP sync, effective_n_mbs slots are
+    filled and the remaining slots become transport dummies. The dummy retains a
+    *zeroed* loss_mask (make_transport_dummy, data.py:886-887) and engine_weight=0
+    (loss_reduction.py:200), so it contributes 0 to the gradient numerator and 0 to
+    total_weight; but it still counts toward step_scale's M (loss_reduction.py:115).
+    """
+    n_seq = sum(group_sizes)
+    mask = np.ones((n_seq, seq_len), dtype=bool)
+    loss = rng.standard_normal((n_seq, seq_len)).astype(np.float32)
+    tw, G, _ = group_token_counts(group_sizes, mask)
+    # effective_n_mbs = real (concrete) mbs + dummy padding to a sync multiple.
+    real_mbs = n_mbs
+    # pad to a larger synchronized schedule (simulates a rank needing one extra slot)
+    effective_n_mbs = real_mbs + 1
+    step_scale = effective_n_mbs / G  # M now INCLUDES the dummy slot
+    idx = np.linspace(0, n_seq, real_mbs + 1).astype(int)
+    blocks = [(idx[i], idx[i + 1]) for i in range(real_mbs)]
+    total = 0.0
+    for (lo, hi) in blocks:
+        total_weight = 1.0
+        seg_sum = float((loss[lo:hi] * tw[lo:hi]).sum())
+        total += seg_sum * step_scale * dp_size  # dummy adds nothing to seg_sum
+    # the extra dummy slot: numerator=0 (zeroed loss_mask), contributes nothing
+    return total, effective_n_mbs, G
+
+
+def run_dummy(gs, seq_len, dp=1):
+    """Show that a dummy slot inflates step_scale (M) but contributes no gradient."""
+    rng0 = np.random.default_rng(0)
+    base, G = prompt_mean_total(gs, seq_len, 1, np.random.default_rng(0), dp)
+    print(f"[dummy-slot] group_sizes={gs}, G={G}, dp={dp}")
+    for real in [1, 2, 3]:
+        v, eff_M, Gv = prompt_mean_total_with_dummy(
+            gs, seq_len, real, np.random.default_rng(0), dp
+        )
+        print(f"  real_mbs={real} eff_M={eff_M} (1 dummy): {v:.6f}  "
+              f"ratio_to_M1={v/base:.4f}  (extra factor {(eff_M/real):.2f} from dummy)")
+    print(f"  expected: gradient = eff_M/G*dp*sum_all loss*w; dummy raises eff_M "
+          f"but not the numerator, so a dummy slot ~1 extra M factor\n")
+
+
 # Case 1: uniform groups, DP=1  (default AReaL-style row splitting)
 run([4, 3, 2], 5)
 # Case 2: uneven groups, more sequences, verify the scaling holds regardless of cut points
 run([7, 1, 4, 5], 6)
 # Case 3: DP=2 (loss_multiplier=dp_size multiplies everything; relative prompt_mean scaling in N persists)
 run([4, 3, 2], 5, dp=2)
+# Case 4: dummy transport slots inflate step_scale's M without adding gradient
+run_dummy([4, 3, 2], 5)
+run_dummy([7, 1, 4, 5], 6, dp=2)

@@ -94,7 +94,7 @@ AReaL 的归约设计是整个框架最值得学的地方，也是跨框架对�
 - **方法**：从 `rl_trainer` 入口往下追 → `actor.py` 损失 → `functional.py` 具体 surrogate → `loss_aggregation` 归约；v2/infra/dataset/api 用并行搜索代笔补齐。损失与归约是 AReaL 的正确性核心，后端（Megatron/FSDP）只是执行载体。
 - **对本项目价值**：a) 补上 frameworks 索引 AReaL 空白；b) 直接为 AReaL #1730 提供源码级依据（M2PO 掩码 local-threshold 是 batch 切分依赖的根源）；c) 为 verl #8281 提供「不截断只过滤」的另一实现参照；d) 与 GMPO/GSPO/SAPO 论文精读的 clip/门语义在 AReaL 源码里得到实现级印证。
 - **验证范围**：纯源码阅读（`3b93679` 基线），未运行 AReaL（本机无 ray/GPU/torch 全量依赖）；所有函数/行为引用均已核对该行。跨框架对照基于 verl 本地源码（前述候选）与 AReaL #1730/#1732 issue+PR（GitHub API）。
-- **未读**：`engine/megatron_engine.py` 内部（重载点、mbridge、Megatron 专属 packing）、`rl_trainer.py` 主循环细节、v2 各 service 控制器内部。`fsdp_engine.py` 的 batch 切分已读（§10）。如需深入可续。
+- **未读**：`engine/megatron_engine.py` 内部（重载点、mbridge、Megatron 专属 packing）、v2 各 service 控制器内部。`fsdp_engine.py` 的 batch 切分已读（§10）；`rl_trainer.py` 主循环已读至 update/权重发布闭环（§10.3.2）。如需深入可续。
 
 ## 10. FSDP2 后端的 batch 切分与 loss 归一化（2026-10-20 补读）
 
@@ -131,9 +131,25 @@ AReaL 的归约设计是整个框架最值得学的地方，也是跨框架对�
 - 当 M=1 时恰等于「per-prompt-group token 均值再平均」（`test_policy_gradient_reduction_matches_definition` 期望 `33/5`，与 `(1/G)·Σ` 吻合 ✓）。
 - 测试 `test_distributed_prompt_fixed_scale_preserves_frozen_objective[requested_steps∈{2,6}]`（test_prompt_mean_actor.py:350）只断言 **M 个 step 梯度的 `mean()`** 恢复 full-batch prompt_mean（`oracle[0]/oracle[1]`），**未断言实际训练里 M 次依次 `optimizer_step` 的累加语义**，也未比较「不同 M 下 update 结果是否一致」。
 
+### 10.3.1 精确化：transport-dummy slot 会进一步膨胀 `step_scale` 的 M（2026-10-20 补）
+
+`step_scale = len(microbatches)/active_groups` 里的 `len(microbatches) = effective_n_mbs`（data.py:1144-1147）。当 DP 同步需要填充 **transport-dummy slot**（某 rank 数据不足、或 `effective_n_mbs > 真实有响应的 mb 数`）时：
+
+- dummy 的 `loss_mask` 被 `zero_()`（make_transport_dummy，data.py:886-887）→ `PromptMean.aggregate` 分子 = 0（`torch.where(mask, loss, 0)` 全 0）；
+- dummy 的 `engine_weight = 0/global_rows = 0`（loss_reduction.py:200）→ 对 `total_weight`（SUM，仍 ≡1）无贡献；
+- 但 **dummy 仍计入 `step_scale` 的 M**（loss_reduction.py:115 的 `len(microbatches)` 含 dummy slot）。
+
+因此**每个 dummy slot 把 `step_scale` 的 M 抬升一个单位、却不贡献任何梯度**，等价于真实响应梯度的额外一个「虚拟 minibatch」放大因子。numpy 复刻（新增 dummy 用例，`verify_areal_prompt_mean_split.py` Case 4）实测：`real_mbs=1 + 1 dummy → 2.0×`、`real_mbs=2 + 1 dummy → 3.0×`、`real_mbs=3 + 1 dummy → 4.0×`（相对 M=1 基准）——比「随 M 线性放大」更精确：**同一次 update 内，只要存在 dummy slot，prompt_mean 梯度就被额外放大 dummy 数量个单位 M**，且与组边界切割无关、token_mean 等不受影响。
+
 **已确证的切分敏感机制（忠实源码归一化链 + numpy 复刻）**：`step_scale=M/G` 用**全局近似**而非 minibatch 内真实组数 `G_mb`。minibatch 按行切分、不保证组边界，故各 mb 含组数不均匀；数值复刻显示 **prompt_mean 的累计梯度 = `dp_size·(M/G)·Σ_all loss_t·w_t` 精确随 M 线性放大（M=1/2/3/4/6 → 1×/2×/3×/4×/6×），与组边界如何切割无关**。这使 **prompt_mean + `ppo_n_minibatches>1`（默认 4）下，update 的梯度绝对尺度随 minibatch 数线性增长**——与 verl #7913 / AReaL #1730 同源的「batch 切分不应改变 update」问题，位于**归约/损失侧**（而非 M2PO 的掩码侧）。上游无此发现的公开讨论（`prompt_mean`/`step_scale` 搜索无对应 issue/PR；`step_scale` 由 PR #1546 引入，其 body 声明的语义是「K=actual steps、G/K 分母、N 步平均恢复 full-batch」，与代码 `M/G` 绑定到 DP 同步 minibatch 数的用法存在语义偏差——代码实际「N 步累加」而非「N 步平均」）。
 
 > **定位与边界**：本节为忠实源码推导 + numpy 数值复刻，**不是 AReaL 真实环境实测**。核心确证：完整归一化链下 prompt_mean 累计梯度随 M 线性放大（`total_weight≡1`、`loss_multiplier=dp_size` 均不抵消 M），token_mean/seq_mean/constant 不变。待实测项收敛为：**该线性放大在真实优化器（Adam 等）下是否构成「切分依赖缺陷」**——绝对梯度放大在自适应优化器下会被归一化吸收一部分，故「放大」≠「一定出错」，是否构成 defect 需在 AReaL 环境用 `ppo_n_minibatches` 2 vs 4 对照观察实际 update 差异。定性为「切分敏感点（高置信源码级确证，缺陷定性待实测）」，非已证实 bug。
+
+### 10.3.2 调用链闭环（2026-10-20 补）：ppo_update 每 global_step 触发，M 次累加更新后一次 update_weights
+
+rl_trainer 主循环（rl_trainer.py:929）每 global_step：rollout → aux 打分（critic/ref/teacher）→ advantage → **`self.actor.ppo_update(adv_batch)`（L1155）** → **`update_weights`（L1232，发布新版本权重）**。`ppo_update`（actor.py:569-636）正是 §10.3 的路径：`prepare_policy_gradient_batch → split_training_batch_into_microbatches(ppo_n_minibatches) → for_steps(mb_inputs)`，随后对 M 个 minibatch 依次 `engine.train_batch`（每个含一次 `optimizer_step`）。
+
+因此切分敏感点的实际影响范围是确定的：**每次 global_step 的 `ppo_update` 内，prompt_mean 梯度被 `step_scale = M/G` 放大（M=effective_n_mbs，可能因 dummy 额外膨胀），M 次累加更新后的权重经 `update_weights` 发布到推理**——放大进入了每次发布给 rollout 的权重。默认 `ppo_n_minibatches=4` 时 M/G≈4×的绝对梯度，是否在真实自适应优化器下构成跨配置不一致的 update，是 §10.3 待实测项。
 
 ### 10.4 与其他归约对照
 
