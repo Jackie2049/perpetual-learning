@@ -383,7 +383,7 @@
 - [MindIE / CANN 9.0 / vLLM-Ascend Latest Developments Reading (June 2026)](mindie-cann-9-latest-developments-reading.md)
 - [MindIE Latest Developments — June 2026 Reading](mindie-latest-developments-2026-06-reading.md)
 - [MindIE Turbo DeepSeek Inference — Source-Level Analysis](mindie-turbo-deepseek-inference-source-reading.md)
-- [DeepInfer — DeepSeek 官方推理框架](deepinfer-initial-survey.md)：确定性链、golden 回放测试边界、服务扩展点与隔离 CPU 检查（快照 8b161497）
+- [DeepInfer — DeepSeek 官方推理框架](deepinfer-initial-survey.md)：确定性链、ZOS 两轮时序与生命周期、官方部署 Q&A、隔离 CPU 检查（快照 8b161497）
 - [DeepSeek 开源生态活跃度与 PR 采纳调研（2026-10-20）](deepseek-ecosystem-pr-adoption.md)
 - [MindIE / vLLM-Ascend Ecosystem Deep Research](mindie-vllm-ascend-ecosystem-deep-research.md)
 - [MindIE & vLLM-Ascend Latest Developments (2026-06 Session 3 Reading)](mindie-vllm-ascend-latest-developments-2026-06-session3-reading.md)
