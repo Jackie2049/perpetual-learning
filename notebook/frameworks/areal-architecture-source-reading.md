@@ -211,6 +211,19 @@ rl_trainer 主循环（rl_trainer.py:929）每 global_step：rollout → aux 打
 
 复现：`python3 experiments/scripts/verify_areal_prompt_mean_split.py`。GPU 集成仍等待 VPN/已确认目标环境；不据本轮模拟提上游 issue/PR。
 
+### 10.8 GPU 实测环境就绪 + 修复候选降级为假设（2026-10-20 补，服务器 VPN 通道中断待恢复）
+
+**环境搭建（服务器 4090-1，已完成）**：用户授权优先实测项后，服务器已配好——AReaL 上游 clone `/home/zxw/areal`（基线 `3b93679` 与本文一致），`uv sync --extra cuda` 全新环境（torch 2.9.1+cu129 / transformers 5.3.0 / sglang 0.5.10.post1 / megatron-core / ray 2.55.1，venv 13G）。verl-e2e 克隆方案放弃（verl 环境 torch 2.11 超 AReaL 上限、无 sglang，官方 pin 路径确定性最强）。空闲 GPU 0/1/7（2-6 被其他用户占用 ~22-24G）；smoke 配置 `/home/zxw/areal_smoke_ppo.yaml`（Qwen2.5-0.5B-Instruct + sglang:d1p1t1 + fsdp:d1p1t1，2 卡，1 epoch 小 batch），模型与 gsm8k 数据集已预下载。**启动 smoke 后服务器失联（ping 不通数小时，路由显示该内网地址未走 VPN 隧道）**——GPU 实测闭环待 VPN 恢复后执行。fork `Jackie2049/AReaL` 已创建，产物只落 fork（用户铁律）。
+
+**修复候选降级（依据 §10.7 对抗复核）**：本轮曾起草 `step_scale = M/G → 1/G`（loss_reduction.py:115 一行 + 测试 mean→sum 断言，patch 草稿 [patches/patch-fix-prompt-mean-step-scale.draft](../../open-source/areal/patches/patch-fix-prompt-mean-step-scale.draft)），但 §10.7 对抗复核指出其前提不成立：
+
+- 旧 numpy 口径把 `token_mean` 算成「全 rollout 一次总均值」（从未按 M 切分），而真实 TokenMean 每次 train_batch 用该步自己的 token 总数作分母——均匀组下 prompt_mean 与 token_mean 每步梯度完全相同，二者冻结参数的梯度和都随 M 增长，非 prompt_mean 独有。
+- M 是真实优化步数（每步 train_batch 后参数更新，后续梯度在新参数处计算），不是冻结参数累加；改变 M 后权重不同单独不能证明 reducer 有问题。上游 PR #1546 契约是「冻结参数+mask 跨步平均恢复 full-batch」，原测试 mean() 与该契约一致。
+- dummy 为本地概念：data.py 按 rank 具体 minibatch 数与 offset/modulo 调度避免全局 all-dummy 步；固定全局 M 时 dummy 不额外乘系数（旧 Case 4 在 DP=1 追加全局空步不是合法调度）。
+- Megatron P 乘子有调度抵消：MCore schedules.py forward_step_calc_loss 对非 per-token 路径除以 num_microbatches；CP=1 时 P 乘子与 /P 相消（旧 Case 5 漏掉这层）。
+
+因此 `step_scale=1/G` 是**候选假设**而非既定修复：GPU 实测必须按 §10.7 判据执行（固定 M 只变 P、固定 M 变 dummy 分配、M=2 vs 4 作训练行为对照并以 token_mean 对照），确认「同一 M 下 prompt_mean 与 token_mean 的更新是否真的一致/不一致、跨 M 差异是否超出两种归约共有的训练行为差异」后再定性。受控脚本 [areal_prompt_mean_gpu_probe.py](../../experiments/scripts/areal_prompt_mean_gpu_probe.py) 初稿已备，需按 §10.7 判据调整后再跑。
+
 ## 相关
 
 - 贡献轨道：[AReaL 贡献追踪](../../open-source/areal/tracker.md)（#1730 M2PO 跨框架对照）

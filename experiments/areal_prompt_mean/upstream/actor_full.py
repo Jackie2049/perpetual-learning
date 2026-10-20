@@ -1,0 +1,1725 @@
+# SPDX-License-Identifier: Apache-2.0
+
+import functools
+import math
+from contextlib import contextmanager
+from typing import Any
+
+import torch
+
+from areal.api import TrainEngine
+from areal.api.cli_args import MOPDLossConfig, PPOActorConfig, RejectionSamplingConfig
+from areal.engine.core import stage_batch_for_engine
+from areal.engine.r3.transport import (
+    clear_engine_r3_side_channel,
+    localize_r3_tensor,
+    pop_r3_tensors,
+    set_engine_r3_side_channel,
+)
+from areal.infra import TrainController
+from areal.infra.rpc.serialization import serialize_value
+from areal.trainer.mopd.loss import compose_mopd_loss
+from areal.trainer.mopd.targets import aggregate_mopd_targets
+from areal.trainer.ppo.advantage import (
+    AdvantageInputs,
+    _get_truncated_mask,
+    resolve_advantage_fn,
+    validate_advantage_result,
+)
+from areal.trainer.ppo.advantage_algorithms import (
+    _shape_advantages_with_gvpo as _shape_advantages_with_gvpo,
+)
+from areal.trainer.ppo.advantage_algorithms import (
+    _shape_advantages_with_process_weighting as _shape_advantages_with_process_weighting,
+)
+from areal.trainer.ppo.loss_reduction import (
+    PreparedLossStep,
+    prepare_policy_gradient_batch,
+)
+from areal.trainer.ppo.stats import infer_token_denominator
+from areal.utils import logging, stats_tracker
+from areal.utils.constants import (
+    PROX_APPROX_METHOD_LINEAR,
+    PROX_APPROX_METHOD_LOGLINEAR,
+    PROX_APPROX_METHOD_ROLLOUT,
+    PROX_APPROX_METHODS_ALL,
+    PROX_LOGP_METHOD_LOGLINEAR,
+    PROX_LOGP_METHOD_METRICS,
+    PROX_LOGP_METHOD_RECOMPUTE,
+    ProxLogpMethod,
+)
+from areal.utils.data import (
+    TrajBatchMeta,
+    batched_call,
+    concat_batch,
+    is_multi_modal_key,
+    split_training_batch_into_microbatches,
+)
+from areal.utils.functional import (
+    apply_rejection_sampling,
+    cispo_loss_fn,
+    ppo_actor_loss_fn,
+    sapo_loss_fn,
+)
+from areal.utils.functional.loss_aggregation import (
+    LossAggregationMode,
+    TokenMean,
+)
+from areal.utils.perf_tracer import trace_perf
+from areal.utils.stats_tracker import ReduceType
+from areal.v2.training_service.controller.controller import (
+    GatewayTrainController,
+)
+
+logger = logging.getLogger("PPOActor")
+
+
+def _group_training_metrics(
+    loss_mask: torch.Tensor,
+    group_sizes: list[int],
+    logical_group_sizes: list[int] | None = None,
+    loss_aggregation: LossAggregationMode = "token_mean",
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    batch_size = loss_mask.shape[0]
+    if any(size < 1 for size in group_sizes) or sum(group_sizes) != batch_size:
+        raise ValueError(
+            f"group_sizes must be positive and sum to batch size {batch_size}, "
+            f"got {group_sizes}"
+        )
+
+    group_starts = torch.zeros(batch_size, dtype=torch.bool, device=loss_mask.device)
+    usable_group_sizes = torch.zeros(
+        batch_size, dtype=torch.float32, device=loss_mask.device
+    )
+    group_loss_weights = torch.zeros_like(usable_group_sizes)
+    sizes = torch.tensor(group_sizes, dtype=torch.long, device=loss_mask.device)
+    ends = sizes.cumsum(0)
+    starts = ends - sizes
+    token_counts = loss_mask.reshape(batch_size, -1).sum(1, dtype=torch.float32)
+    unit_counts = (
+        token_counts if loss_aggregation == "token_mean" else (token_counts > 0).float()
+    )
+    cumulative_units = torch.nn.functional.pad(unit_counts.cumsum(0), (1, 0))
+
+    group_starts[starts] = True
+    usable_group_sizes[starts] = torch.tensor(
+        logical_group_sizes if logical_group_sizes is not None else group_sizes,
+        dtype=usable_group_sizes.dtype,
+        device=loss_mask.device,
+    )
+    weights = cumulative_units[ends] - cumulative_units[starts]
+    if loss_aggregation == "prompt_mean":
+        weights = (weights > 0).float()
+    group_loss_weights[starts] = weights
+    return group_starts, usable_group_sizes, group_loss_weights
+
+
+def _infer_prompt_lens(
+    attention_mask: torch.Tensor, loss_mask: torch.Tensor
+) -> torch.Tensor:
+    """Return the index of the first generated token for each trajectory.
+
+    ``loss_mask`` arrives rolled left by one (see ``_compute_advantages``), so it
+    marks the position that *predicts* each generated token. Undo the roll before
+    locating the first one, otherwise every prompt length comes out one short.
+    """
+    loss_mask_long = torch.roll(loss_mask.long(), shifts=1, dims=-1)
+    first_gen_idx = loss_mask_long.argmax(dim=-1)
+    has_gen = loss_mask_long.any(dim=-1)
+    return torch.where(has_gen, first_gen_idx, attention_mask.long().sum(-1))
+
+
+class PPOActor:
+    def __init__(self, config: PPOActorConfig, engine: TrainEngine):
+        self.config = config
+        self.engine = engine
+
+        self.advantage_fn = resolve_advantage_fn(config)
+
+        self.temperature = config.temperature
+
+        self.m2_threshold = config.m2_threshold
+        self._mopd_loss_config: MOPDLossConfig | None = None
+
+        # Log critical GSPO/GRPO configuration for reproducibility
+        self._log_configuration()
+
+    def configure_mopd_loss(self, config: MOPDLossConfig) -> None:
+        """Bind static MOPD loss settings once on each actor worker."""
+        if (
+            config.distillation_coefficient != 0
+            and self.config.loss_aggregation != "token_mean"
+        ):
+            raise ValueError(
+                "MOPD distillation is only supported with "
+                "loss_aggregation='token_mean'."
+            )
+        if self._mopd_loss_config is not None and self._mopd_loss_config != config:
+            raise RuntimeError("MOPD loss configuration is already bound")
+        self._mopd_loss_config = config
+
+    def _log_configuration(self):
+        """Log PPO configuration including how proximal policy is computed."""
+        config = self.config
+
+        logger.info("=" * 70)
+        logger.info("PPOActor Configuration")
+        logger.info("=" * 70)
+
+        # Log PPO mode and proximal policy computation
+        if not config.use_decoupled_loss:
+            logger.info("Mode: Standard PPO (on-policy)")
+            if config.recompute_logprob:
+                logger.info("  old_logp (π_old): RECOMPUTED from current policy")
+            else:
+                logger.info(
+                    "  old_logp (π_old): FROM INFERENCE (cached during rollout)"
+                )
+        else:
+            logger.info("Mode: Decoupled PPO (off-policy)")
+            logger.info("  log_p_behave (π_behave): FROM INFERENCE (behavior policy)")
+
+            # Log proximal policy computation method
+            method_descriptions = {
+                PROX_LOGP_METHOD_RECOMPUTE: "RECOMPUTED via forward pass (standard decoupled PPO)",
+                PROX_LOGP_METHOD_LOGLINEAR: "LOG-LINEAR APPROXIMATION (no forward pass)",
+                PROX_LOGP_METHOD_METRICS: "RECOMPUTED + APPROXIMATION METRICS (for evaluation)",
+            }
+            desc = method_descriptions.get(
+                config.prox_logp_method, f"UNKNOWN ({config.prox_logp_method})"
+            )
+            logger.info(f"  Proximal policy (π_prox): {desc}")
+
+            logger.info("  log_p_theta (π_θ): TRAINING FORWARD PASS (current policy)")
+
+            if config.rejection_sampling is not None:
+                rs = config.rejection_sampling
+                logger.info(
+                    f"  Rejection sampling: level={rs.level}, metric={rs.metric}, "
+                    f"action={rs.action}, upper={rs.upper}"
+                    + (f", lower={rs.lower}" if rs.lower is not None else "")
+                    + (f", agg={rs.agg}" if rs.level == "sequence" else "")
+                )
+
+        # Log other critical config
+        logger.info("=" * 70)
+        logger.info("Training Parameters:")
+        logger.info(
+            f"  importance_sampling_level: {getattr(config, 'importance_sampling_level', 'token')}"
+        )
+        logger.info(
+            f"  adv_norm: {config.adv_norm if config.adv_norm else 'DISABLED (None)'}"
+        )
+        logger.info(
+            f"  reward_norm: {config.reward_norm if config.reward_norm else 'DISABLED (None)'}"
+        )
+        logger.info(f"  gae_lambda: {config.gae_lambda}")
+        logger.info(f"  gae_timestep_unit: {config.gae_timestep_unit}")
+        logger.info(f"  eps_clip: {config.eps_clip}")
+        logger.info("=" * 70)
+
+    @trace_perf("ppo_actor.compute_logp", category="compute")
+    @torch.no_grad()
+    def compute_logp(self, data: list[dict[str, Any]]) -> list[torch.Tensor] | None:
+        return batched_call(self._compute_logp, data)
+
+    def _engine_r3_enabled(self) -> bool:
+        return bool(getattr(self.engine, "_r3_enabled", False))
+
+    @contextmanager
+    def _r3_side_channel(
+        self,
+        routed_experts: Any | None,
+        routing_valid: Any | None,
+    ):
+        has_r3_data = routed_experts is not None or routing_valid is not None
+        if has_r3_data:
+            if not self._engine_r3_enabled():
+                raise ValueError(
+                    "Received routed_experts but actor engine R3 replay is not enabled."
+                )
+            if routed_experts is None or routing_valid is None:
+                raise ValueError(
+                    "Both routed_experts and r3_routing_valid are required for R3."
+                )
+            set_engine_r3_side_channel(self.engine, routed_experts, routing_valid)
+        try:
+            yield
+        finally:
+            if has_r3_data:
+                clear_engine_r3_side_channel(self.engine)
+
+    def _compute_logp(self, data: dict[str, Any]) -> torch.Tensor | None:
+        stage_batch_for_engine(data, self.engine)
+        routed_experts, routing_valid = pop_r3_tensors(data)
+        r3_enabled = routed_experts is not None and routing_valid is not None
+        self.engine.eval()
+        try:
+            with self._r3_side_channel(routed_experts, routing_valid):
+                logp = self.engine.forward(
+                    input_=data,
+                    aggregate_fn=lambda xs: torch.cat(xs, dim=-1),
+                )
+                self._log_r3_rollout_train_logp_stats(
+                    train_logp=logp,
+                    data=data,
+                    r3_enabled=r3_enabled,
+                )
+                return logp
+        finally:
+            if routed_experts is not None:
+                data["routed_experts"] = routed_experts
+            if routing_valid is not None:
+                data["r3_routing_valid"] = routing_valid
+
+    def _log_r3_rollout_train_logp_stats(
+        self,
+        *,
+        train_logp: torch.Tensor | None,
+        data: dict[str, Any],
+        r3_enabled: bool,
+    ) -> None:
+        if (
+            train_logp is None
+            or "logprobs" not in data
+            or "loss_mask" not in data
+            or not torch.is_tensor(data["logprobs"])
+            or not torch.is_tensor(data["loss_mask"])
+        ):
+            return
+
+        rollout_logp = torch.roll(data["logprobs"], shifts=-1, dims=-1).to(
+            train_logp.device
+        )
+        loss_mask = torch.roll(data["loss_mask"].bool(), shifts=-1, dims=-1).to(
+            train_logp.device
+        )
+        if loss_mask.shape[-1] > 0:
+            loss_mask[..., -1] = False
+        if (
+            train_logp.shape != rollout_logp.shape
+            or train_logp.shape != loss_mask.shape
+        ):
+            logger.warning(
+                "Skipping R3 rollout/train logp metrics due to shape mismatch: "
+                f"train_logp={tuple(train_logp.shape)}, "
+                f"rollout_logp={tuple(rollout_logp.shape)}, "
+                f"loss_mask={tuple(loss_mask.shape)}."
+            )
+            return
+
+        delta = (train_logp.detach().float() - rollout_logp.detach().float()).detach()
+        with stats_tracker.scope("compute_logp"):
+            with stats_tracker.scope("r3"):
+                stats_tracker.scalar(enabled=float(r3_enabled))
+                stats_tracker.stat_compact(
+                    loss_mask,
+                    ReduceType.SUM,
+                    n_valid_tokens=torch.ones_like(delta),
+                )
+                stats_tracker.stat_compact(
+                    loss_mask,
+                    ReduceType.AVG_MIN_MAX,
+                    rollout_train_k3_kl=torch.expm1(delta) - delta,
+                    rollout_train_extreme_frac_tau2=(
+                        delta.abs() > math.log(2.0)
+                    ).float(),
+                    rollout_train_extreme_frac_tau5=(
+                        delta.abs() > math.log(5.0)
+                    ).float(),
+                    rollout_train_logp_abs_diff=delta.abs(),
+                    rollout_train_logp_sq_diff=delta.square(),
+                )
+
+    def aggregate_mopd_targets(
+        self,
+        data: list[dict[str, Any]] | None = None,
+    ) -> list[dict[str, Any]] | None:
+        """Fetch-localized teacher contributions and create actor-owned targets."""
+        return aggregate_mopd_targets(data)
+
+    def assert_mopd_runtime_topology(self) -> None:
+        """Validate the live Megatron process groups used for MOPD scoring."""
+        self.engine.assert_mopd_runtime_topology()
+
+    @trace_perf("ppo_actor.compute_advantages", category="compute")
+    def compute_advantages(
+        self,
+        data: list[dict[str, Any]],
+        *,
+        advantage_shaping_mode: str = "additive",
+        gvpo_negative_scale: float = 0.2,
+        gvpo_zero_penalty: float = 0.4,
+        gvpo_zero_eps: float = 1e-6,
+    ) -> list[dict[str, Any]]:
+        compute_fn = functools.partial(
+            self._compute_advantages,
+            advantage_shaping_mode=advantage_shaping_mode,
+            gvpo_negative_scale=gvpo_negative_scale,
+            gvpo_zero_penalty=gvpo_zero_penalty,
+            gvpo_zero_eps=gvpo_zero_eps,
+        )
+        return batched_call(compute_fn, data, pass_meta=True)
+
+    @trace_perf("ppo_actor.prepare_mopd_batch", category="compute")
+    def prepare_mopd_batch(self, data: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Align pure-distillation inputs without computing rewards or GAE."""
+        return batched_call(self._prepare_mopd_batch, data)
+
+    def _prepare_mopd_batch(self, data: dict[str, Any]) -> dict[str, Any]:
+        if self._mopd_loss_config is None:
+            raise RuntimeError("MOPD loss configuration is not bound")
+        if self._mopd_loss_config.rl_coefficient != 0:
+            raise RuntimeError("prepare_mopd_batch is only valid for pure distillation")
+        if "mopd_teacher_logp_sum" not in data:
+            raise RuntimeError("Pure MOPD distillation requires teacher targets")
+        data["input_token_loss_mask"] = data["loss_mask"].bool()
+        loss_mask = torch.roll(data["loss_mask"].float(), shifts=-1, dims=-1)
+        behavior_logp = torch.roll(data["logprobs"], shifts=-1, dims=-1)
+        data["mopd_behavior_logprobs"] = (behavior_logp * loss_mask).detach()
+        data["logprobs"] = behavior_logp * loss_mask
+        data["loss_mask"] = loss_mask
+        return data
+
+    def _compute_advantages(
+        self,
+        data: dict[str, Any],
+        meta: TrajBatchMeta | None = None,
+        *,
+        advantage_shaping_mode: str = "additive",
+        gvpo_negative_scale: float = 0.2,
+        gvpo_zero_penalty: float = 0.4,
+        gvpo_zero_eps: float = 1e-6,
+    ) -> dict[str, Any]:
+        result = self.advantage_fn(
+            AdvantageInputs(
+                data=data,
+                config=self.config,
+                meta=meta,
+                process_implementation=advantage_shaping_mode,
+                process_kwargs={
+                    "negative_scale": gvpo_negative_scale,
+                    "zero_penalty": gvpo_zero_penalty,
+                    "zero_eps": gvpo_zero_eps,
+                },
+            )
+        )
+        data.update(validate_advantage_result(result, data))
+        return data
+
+    @trace_perf("ppo_actor.ppo_update", category="compute")
+    @stats_tracker.scope_func_wrapper("ppo_actor")
+    def ppo_update(self, data: list[dict[str, Any]]) -> None:
+        batched, meta = concat_batch(data)
+        self._ppo_update(batched, meta)
+
+    def _ppo_update(
+        self, data: dict[str, Any], meta: TrajBatchMeta | None = None
+    ) -> None:
+        if self.config.loss_aggregation != "token_mean" and (
+            data.get("teacher_logp") is not None
+            or data.get("mopd_teacher_logp_sum") is not None
+            or (
+                self._mopd_loss_config is not None
+                and self._mopd_loss_config.distillation_coefficient != 0
+            )
+        ):
+            raise ValueError(
+                "Distillation is only supported with loss_aggregation='token_mean'."
+            )
+        attn_mask = data["attention_mask"]
+        loss_mask = data["loss_mask"]
+        reward_score = data["rewards"]
+        seqlens = attn_mask.sum(-1)
+
+        ########## Logging code starts ##########
+        task_reward = (
+            data["original_rewards"].float()
+            if "original_rewards" in data
+            else reward_score.float()
+        )
+        result_denominators = {
+            "correct_n_seqs": (task_reward > 0).bool(),
+            "incorrect_n_seqs": (task_reward <= 0).bool(),
+        }
+        if self.config.log_agent_stats:
+            if "begin_of_trajectory" not in data:
+                raise RuntimeError(
+                    "'begin_of_trajectory' is expected to log agent statistics"
+                )
+            if len(self.config.log_agent_stats_keys) == 0:
+                raise RuntimeError(
+                    "`log_agent_stats_keys` should not be empty when log_agent_stats=True"
+                )
+            agent_denominator = (data["begin_of_trajectory"] > 0).bool()
+            result_denominators["agent"] = agent_denominator
+        global_denominators = dict(
+            n_seqs=torch.ones_like(reward_score, dtype=torch.bool),
+            n_tokens=infer_token_denominator(data, loss_mask),
+            n_valid_tokens=loss_mask.bool(),
+            **result_denominators,
+        )
+        group_metrics = None
+        if meta is not None:
+            group_metrics = _group_training_metrics(
+                loss_mask,
+                meta.traj_group_sizes,
+                meta.logical_group_sizes,
+                self.config.loss_aggregation,
+            )
+            global_denominators["n_groups"] = group_metrics[0]
+        stats_tracker.denominator(**global_denominators)
+        stats_tracker.stat(
+            correct_seq_len=seqlens.float(), denominator="correct_n_seqs"
+        )
+        stats_tracker.stat(
+            incorrect_seq_len=seqlens.float(), denominator="incorrect_n_seqs"
+        )
+
+        pure_mopd_distillation = (
+            self._mopd_loss_config is not None
+            and self._mopd_loss_config.rl_coefficient == 0
+        )
+        if not pure_mopd_distillation:
+            stats_tracker.stat(
+                advantages=data["advantages"],
+                kl_rewards=data["kl_rewards"],
+                final_reward=data["tot_rewards"],
+                denominator="n_valid_tokens",
+            )
+            stats_tracker.stat_compact(
+                loss_mask.bool(),
+                ReduceType.AVG,
+                advantage_positive_fraction=(data["advantages"] > 0).float(),
+                advantage_negative_fraction=(data["advantages"] < 0).float(),
+                advantage_zero_fraction=(data["advantages"] == 0).float(),
+            )
+
+        prompt_lens = _infer_prompt_lens(data["attention_mask"], data["loss_mask"])
+        seq_truncated_mask = _get_truncated_mask(data, seqlens)
+        seq_stats = dict(
+            no_eos_ratios=seq_truncated_mask.float(),
+            task_reward=task_reward,
+            prompt_len=prompt_lens.float(),
+            seq_len=seqlens.float(),
+        )
+        stats_tracker.stat(**seq_stats, denominator="n_seqs")
+        if "versions" in data:
+            # Both regular advantage preprocessing and pure MOPD retain raw
+            # token-position versions. Align only the diagnostic copy here;
+            # changing proximal approximation requires separate validation.
+            metric_versions = torch.roll(data["versions"], shifts=-1, dims=-1)
+            metric_versions[..., -1] = -1
+            with stats_tracker.scope("update"):
+                _log_version_staleness_stats(
+                    metric_versions, self.engine.get_version(), loss_mask.bool()
+                )
+        if group_metrics is not None:
+            group_starts, usable_group_sizes, group_loss_weights = group_metrics
+            stats_tracker.stat(
+                usable_group_size=usable_group_sizes,
+                group_loss_weight=group_loss_weights,
+                denominator="n_groups",
+            )
+            for group_size in sorted(set(meta.logical_group_sizes)):
+                denominator = f"n_groups_size_{group_size}"
+                stats_tracker.denominator(
+                    **{denominator: group_starts & (usable_group_sizes == group_size)}
+                )
+                stats_tracker.stat(
+                    denominator=denominator,
+                    **{f"group_loss_weight_size_{group_size}": group_loss_weights},
+                )
+        scalars = dict(
+            mask_no_eos_with_zero=self.config.mask_no_eos_with_zero,
+            eps_clip=self.config.eps_clip,
+        )
+        if self.config.c_clip is not None:
+            scalars["c_clip"] = self.config.c_clip
+            scalars["use_dual_clip"] = 1
+        else:
+            scalars["use_dual_clip"] = 0
+        if self.config.rejection_sampling is not None:
+            rs = self.config.rejection_sampling
+            scalars["rs_upper"] = rs.upper
+            if rs.lower is not None:
+                scalars["rs_lower"] = rs.lower
+        stats_tracker.scalar(**scalars)
+
+        if self.config.log_agent_stats:
+            stats_tracker.stat(
+                **{k: data[k].float() for k in self.config.log_agent_stats_keys},
+                denominator="agent",
+            )
+        ########## Logging code ends ##########
+
+        # Pop keys that are no longer needed after advantage computation
+        # Note: "versions" is kept if needed for approximation/metrics in loss function
+        for key in [
+            "rewards",
+            "tot_rewards",
+            "kl_rewards",
+            "is_truncated",
+            "token_rewards",
+        ]:
+            data.pop(key, None)
+        # Megatron keeps the full batch on CPU and streams only the current
+        # microbatch to the accelerator. Stage before the outer PPO split so
+        # that split does not retain every optimizer minibatch on GPU.
+        prepared_loss = prepare_policy_gradient_batch(
+            data,
+            mode=self.config.loss_aggregation,
+            divisor=self.config.loss_aggregation_divisor,
+            group_sizes=meta.traj_group_sizes if meta is not None else None,
+        )
+        stage_batch_for_engine(data, self.engine)
+        # NOTE: calling engine.train() is critical to enabling gradient checkpointing
+        self.engine.train()
+        routed_experts, routing_valid = pop_r3_tensors(data)
+        if routed_experts is not None:
+            batch_size, seq_len = data["input_ids"].shape
+            data["_r3_row_indices"] = (
+                torch.arange(
+                    batch_size,
+                    device=data["input_ids"].device,
+                    dtype=torch.long,
+                )
+                .unsqueeze(1)
+                .expand(-1, seq_len)
+            )
+        mb_inputs = split_training_batch_into_microbatches(
+            data,
+            n_mbs=self.config.ppo_n_minibatches,
+            group=self.engine.data_parallel_group,
+        )
+        data.pop("_r3_row_indices", None)
+        r3_mb_inputs = self._split_r3_minibatches(
+            routed_experts, routing_valid, mb_inputs
+        )
+
+        loss_steps = prepared_loss.for_steps(
+            mb_inputs,
+            dp_group=self.engine.data_parallel_group,
+            device=self.engine.device,
+        )
+
+        with stats_tracker.scope("update"):
+            # Get current version for proximal approximation metrics
+            current_version = self.engine.get_version()
+            for mb, r3_mb, loss_step in zip(
+                mb_inputs, r3_mb_inputs, loss_steps, strict=True
+            ):
+                loss_fn = functools.partial(
+                    grpo_loss_fn,
+                    eps_clip=self.config.eps_clip,
+                    eps_clip_higher=self.config.eps_clip_higher,
+                    c_clip=self.config.c_clip,
+                    rejection_sampling=self.config.rejection_sampling,
+                    m2_threshold=self.m2_threshold,
+                    importance_sampling_level=self.config.importance_sampling_level,
+                    current_version=current_version,
+                    prox_logp_method=self.config.prox_logp_method,
+                    use_sapo_loss=self.config.use_sapo_loss,
+                    sapo_tau_pos=self.config.sapo_tau_pos,
+                    sapo_tau_neg=self.config.sapo_tau_neg,
+                    use_cispo_loss=self.config.use_cispo_loss,
+                    use_decoupled_loss=self.config.use_decoupled_loss,
+                    loss_step=loss_step,
+                    mopd_loss_config=self._mopd_loss_config,
+                )
+                with self._r3_side_channel(*r3_mb):
+                    train_stat = self.engine.train_batch(
+                        mb,
+                        loss_fn=loss_fn,
+                        loss_weight_fn=loss_step.loss_weight,
+                    )
+                stats_tracker.scalar(**train_stat)
+
+    def _split_r3_minibatches(
+        self,
+        routed_experts: Any | None,
+        routing_valid: Any | None,
+        mb_inputs: list[dict[str, Any]],
+    ) -> list[tuple[Any | None, Any | None]]:
+        if routed_experts is None and routing_valid is None:
+            return [(None, None) for _ in mb_inputs]
+        if routed_experts is None or routing_valid is None:
+            raise ValueError(
+                "Both routed_experts and r3_routing_valid are required for R3."
+            )
+        if not self._engine_r3_enabled():
+            raise ValueError(
+                "Received routed_experts but actor engine R3 replay is not enabled."
+            )
+
+        routed_experts = localize_r3_tensor(routed_experts)
+        routing_valid = localize_r3_tensor(routing_valid)
+        r3_mbs = []
+        for mb in mb_inputs:
+            row_indices = mb.pop("_r3_row_indices", None)
+            if mb.get("_transport_dummy") is True:
+                r3_mbs.append((None, None))
+                continue
+            if row_indices is None:
+                raise RuntimeError("R3 minibatch is missing source row indices")
+            indices = row_indices[:, 0]
+            r3_mbs.append(
+                (
+                    routed_experts[indices.to(routed_experts.device)],
+                    routing_valid[indices.to(routing_valid.device)],
+                )
+            )
+        return r3_mbs
+
+
+class PPOActorController(TrainController):
+    def configure_mopd_loss(self, config: MOPDLossConfig) -> None:
+        self._custom_function_call(
+            "configure_mopd_loss", config, rpc_meta={"broadcast": True}
+        )
+
+    def compute_logp(self, *args, **kwargs):
+        return self._custom_function_call(
+            "compute_logp", *args, rpc_meta={"broadcast": True}, **kwargs
+        )
+
+    def compute_logp_padded(self, data: list[dict[str, Any]]):
+        """Compute logp with DP/PP padding and retain dummy outputs for drain."""
+        original_size = len(data)
+        pp_size = self.parallel_strategy.pp_size
+        min_microbatches = max(
+            2 * pp_size if pp_size > 1 else 1,
+            self.config.mb_spec.n_mbs,
+        )
+        min_items_per_dp = (
+            ((min_microbatches + pp_size - 1) // pp_size)
+            * pp_size
+            * self.config.mb_spec.granularity
+        )
+        args, kwargs = self._pad_eval_dispatch_args(
+            (data,),
+            {},
+            group_size=1,
+            min_items_per_dp=min_items_per_dp,
+            items_per_dp_divisor=pp_size * self.config.mb_spec.granularity,
+            active_dummies=True,
+        )
+        results = self._custom_function_call(
+            "compute_logp", *args, rpc_meta={"broadcast": True}, **kwargs
+        )
+        if results is None:
+            return None, []
+        return results[:original_size], results[original_size:]
+
+    def compute_advantages(self, *args, **kwargs):
+        if (
+            self.train_alloc.backend != "megatron"
+            or not args
+            or not isinstance(args[0], list)
+            or not all(isinstance(item, dict) for item in args[0])
+        ):
+            return self._custom_function_call(
+                "compute_advantages", *args, rpc_meta={"broadcast": True}, **kwargs
+            )
+
+        data = args[0]
+        multi_modal_payloads = [
+            {key: value for key, value in item.items() if is_multi_modal_key(key)}
+            for item in data
+        ]
+        if not any(multi_modal_payloads):
+            return self._custom_function_call(
+                "compute_advantages", *args, rpc_meta={"broadcast": True}, **kwargs
+            )
+
+        # Advantage computation never consumes vision inputs. Keep the original
+        # RTensor references on the controller so the grouped image shards do
+        # not make an unnecessary worker round trip before ppo_update.
+        rpc_data = [
+            {key: value for key, value in item.items() if not is_multi_modal_key(key)}
+            for item in data
+        ]
+        results = self._custom_function_call(
+            "compute_advantages",
+            rpc_data,
+            *args[1:],
+            rpc_meta={"broadcast": True},
+            **kwargs,
+        )
+        if not isinstance(results, list) or len(results) != len(multi_modal_payloads):
+            raise RuntimeError(
+                "Megatron compute_advantages returned an invalid trajectory batch: "
+                f"expected {len(multi_modal_payloads)} items, got "
+                f"{type(results).__name__} of length "
+                f"{len(results) if isinstance(results, list) else 'unknown'}"
+            )
+        for result, payload in zip(results, multi_modal_payloads, strict=True):
+            if not isinstance(result, dict):
+                raise RuntimeError(
+                    "Megatron compute_advantages returned a non-dict trajectory: "
+                    f"{type(result).__name__}"
+                )
+            result.update(payload)
+        return results
+
+    def prepare_mopd_batch(self, *args, **kwargs):
+        return self._custom_function_call(
+            "prepare_mopd_batch", *args, rpc_meta={"broadcast": True}, **kwargs
+        )
+
+    def aggregate_mopd_targets(self, *args, **kwargs):
+        return self._custom_function_call(
+            "aggregate_mopd_targets",
+            *args,
+            rpc_meta={"broadcast": False},
+            **kwargs,
+        )
+
+    def assert_mopd_runtime_topology(self) -> None:
+        self._custom_function_call(
+            "assert_mopd_runtime_topology", rpc_meta={"broadcast": False}
+        )
+
+    def ppo_update(self, *args, **kwargs) -> None:
+        self._custom_function_call(
+            "ppo_update", *args, rpc_meta={"broadcast": True}, **kwargs
+        )
+
+
+class PPOActorControllerV2(GatewayTrainController):
+    def compute_logp(self, *args, **kwargs):
+        payload = {
+            "args": serialize_value(list(args)),
+            "kwargs": serialize_value(kwargs),
+        }
+        return self._gateway_post_result("/ppo/actor/compute_logp", payload)
+
+    def compute_advantages(self, *args, **kwargs):
+        multi_modal_payloads = []
+        if (
+            self.train_alloc.backend == "megatron"
+            and args
+            and isinstance(args[0], list)
+            and all(isinstance(item, dict) for item in args[0])
+        ):
+            data = args[0]
+            multi_modal_payloads = [
+                {key: value for key, value in item.items() if is_multi_modal_key(key)}
+                for item in data
+            ]
+            if any(multi_modal_payloads):
+                # Match v1: advantage computation never consumes vision data.
+                # Keep the original references here, avoiding a worker round
+                # trip and replication when the batched result is split.
+                args = (
+                    [
+                        {
+                            key: value
+                            for key, value in item.items()
+                            if not is_multi_modal_key(key)
+                        }
+                        for item in data
+                    ],
+                    *args[1:],
+                )
+        payload = {
+            "args": serialize_value(list(args)),
+            "kwargs": serialize_value(kwargs),
+        }
+        results = self._gateway_post_result("/ppo/actor/compute_advantages", payload)
+        if any(multi_modal_payloads):
+            if not isinstance(results, list) or len(results) != len(
+                multi_modal_payloads
+            ):
+                raise RuntimeError(
+                    "Megatron compute_advantages returned an invalid trajectory batch: "
+                    f"expected {len(multi_modal_payloads)} items, got "
+                    f"{type(results).__name__} of length "
+                    f"{len(results) if isinstance(results, list) else 'unknown'}"
+                )
+            for result, mm_payload in zip(results, multi_modal_payloads, strict=True):
+                if not isinstance(result, dict):
+                    raise RuntimeError(
+                        "Megatron compute_advantages returned a non-dict trajectory: "
+                        f"{type(result).__name__}"
+                    )
+                result.update(mm_payload)
+        return results
+
+    def ppo_update(self, *args, **kwargs) -> None:
+        payload = {
+            "args": serialize_value(list(args)),
+            "kwargs": serialize_value(kwargs),
+        }
+        self._gateway_post("/ppo/actor/update", payload)
+
+
+def grpo_loss_fn(
+    logprobs: torch.Tensor,
+    entropy: torch.Tensor,
+    input_data: dict,
+    eps_clip: float,
+    eps_clip_higher: float | None,
+    c_clip: float | None,
+    rejection_sampling: RejectionSamplingConfig | None = None,
+    m2_threshold: float | None = None,
+    importance_sampling_level: str = "token",
+    current_version: int | None = None,
+    prox_logp_method: str = PROX_LOGP_METHOD_RECOMPUTE,
+    use_sapo_loss: bool = False,
+    sapo_tau_pos: float = 1.0,
+    sapo_tau_neg: float = 1.05,
+    use_cispo_loss: bool = False,
+    use_decoupled_loss: bool = False,
+    loss_step: PreparedLossStep | None = None,
+    mopd_loss_config: MOPDLossConfig | None = None,
+    vocab_min_logits: torch.Tensor | None = None,
+    vocab_max_logits: torch.Tensor | None = None,
+    vocab_mean_logits: torch.Tensor | None = None,
+    vocab_norm_logits: torch.Tensor | None = None,
+):
+    """Compute loss and logging stats using the actor's assembled reduction."""
+    denominator_mask = input_data["loss_mask"].bool()
+    pg_reduction = (
+        TokenMean(denominator_mask) if loss_step is None else loss_step.bind(input_data)
+    )
+    loss_mask = denominator_mask
+    if mopd_loss_config is not None and mopd_loss_config.rl_coefficient == 0:
+        teacher_logp_sum = input_data.get("mopd_teacher_logp_sum")
+        teacher_weight_sum = input_data.get("mopd_teacher_weight_sum")
+        behavior_logp = input_data.get("mopd_behavior_logprobs")
+        if teacher_logp_sum is None or teacher_weight_sum is None:
+            raise RuntimeError("Pure MOPD distillation requires teacher targets")
+        if behavior_logp is None:
+            raise RuntimeError(
+                "MOPD targets require immutable rollout behavior log-probabilities"
+            )
+        normalization_mask = loss_mask
+        prox_logp_gt = input_data.get("prox_logp")
+        if m2_threshold is not None or rejection_sampling is not None:
+            prox_logp = _resolve_proximal_logp(
+                prox_logp_gt=prox_logp_gt,
+                prox_logp_method=prox_logp_method,
+                old_logp=input_data["logprobs"],
+                logprobs=logprobs.detach(),
+                versions=input_data.get("versions"),
+                current_version=current_version,
+            )
+            if m2_threshold is not None:
+                loss_mask = _apply_m2po_masking(
+                    input_data["logprobs"], prox_logp, loss_mask, m2_threshold
+                )
+            if rejection_sampling is not None:
+                loss_mask = apply_rejection_sampling(
+                    proximal_logprobs=prox_logp,
+                    old_logprobs=input_data["logprobs"],
+                    loss_mask=loss_mask,
+                    cu_seqlens=input_data.get("cu_seqlens"),
+                    config=rejection_sampling,
+                ).loss_mask
+        loss, mopd_stats = compose_mopd_loss(
+            logprobs.new_zeros(()),
+            config=mopd_loss_config,
+            logprobs=logprobs,
+            old_logprobs=behavior_logp,
+            teacher_logp_sum=teacher_logp_sum,
+            teacher_weight_sum=teacher_weight_sum,
+            loss_mask=loss_mask,
+            normalization_mask=normalization_mask,
+        )
+        stats_tracker.denominator(
+            n_tokens=infer_token_denominator(input_data, loss_mask),
+            n_valid_tokens=normalization_mask,
+            n_mopd_tokens=normalization_mask,
+        )
+        stats_tracker.stat(
+            mopd_loss=mopd_stats["loss_per_token"].float(),
+            mopd_reward=mopd_stats["score_reward"].float(),
+            mopd_importance_weight=mopd_stats["importance_weight"].float(),
+            mopd_teacher_weight_sum=mopd_stats["teacher_weight_sum"].float(),
+            new_logp=logprobs.detach(),
+            old_logp=behavior_logp,
+            entropy=entropy.detach().float(),
+            denominator="n_mopd_tokens",
+        )
+        stats_tracker.weighted_mean(
+            "actor_loss/avg",
+            loss,
+            pg_reduction.normalizer(),
+        )
+        return loss
+
+    old_logp = input_data["logprobs"]
+    advantages = input_data["advantages"]
+    prox_logp_gt = input_data.get("prox_logp")  # Could be None if skipped
+
+    entropy = entropy.detach()
+
+    if ProxLogpMethod(prox_logp_method) == ProxLogpMethod.REUSE_TRAIN_LOGP:
+        prox_logp_gt = logprobs.detach()
+
+    # Resolve proximal log-probabilities based on method
+    prox_logp = _resolve_proximal_logp(
+        prox_logp_gt=prox_logp_gt,
+        prox_logp_method=prox_logp_method,
+        old_logp=old_logp,
+        logprobs=logprobs.detach(),
+        versions=input_data.get("versions"),
+        current_version=current_version,
+    )
+
+    # Apply M2PO masking if threshold is set
+    if m2_threshold is not None:
+        loss_mask = _apply_m2po_masking(old_logp, prox_logp, loss_mask, m2_threshold)
+
+    # Use CISPO, SAPO, or PPO loss
+    if use_cispo_loss:
+        if use_sapo_loss:
+            raise ValueError(
+                "CISPO and SAPO are mutually exclusive surrogates. "
+                "Set at most one of use_cispo_loss / use_sapo_loss."
+            )
+        if importance_sampling_level != "token":
+            raise ValueError(
+                "CISPO only supports importance_sampling_level='token'. "
+                "Sequence-level (GSPO-style) CISPO has no published surrogate."
+            )
+        loss, stat = cispo_loss_fn(
+            logprobs=logprobs,
+            proximal_logprobs=prox_logp,
+            advantages=advantages,
+            eps_clip=eps_clip,
+            eps_clip_higher=eps_clip_higher,
+            loss_mask=loss_mask,
+            old_logprobs=old_logp,
+            rejection_sampling=rejection_sampling,
+            cu_seqlens=input_data.get("cu_seqlens"),
+            pg_reduction=pg_reduction,
+        )
+    elif use_sapo_loss:
+        if use_decoupled_loss:
+            raise ValueError(
+                "SAPO is not compatible with `use_decoupled_loss=True`. "
+                "Please set `actor.use_decoupled_loss=false` in your configuration."
+            )
+        loss, stat = sapo_loss_fn(
+            logprobs=logprobs,
+            old_logprobs=old_logp,
+            advantages=advantages,
+            tau_pos=sapo_tau_pos,
+            tau_neg=sapo_tau_neg,
+            loss_mask=loss_mask,
+            importance_sampling_level=importance_sampling_level,
+            cu_seqlens=input_data.get("cu_seqlens"),
+            pg_reduction=pg_reduction,
+        )
+    else:
+        loss, stat = ppo_actor_loss_fn(
+            logprobs=logprobs,
+            old_logprobs=old_logp,
+            advantages=advantages,
+            eps_clip=eps_clip,
+            eps_clip_higher=eps_clip_higher,
+            loss_mask=loss_mask,
+            c_clip=c_clip,
+            proximal_logprobs=prox_logp,
+            rejection_sampling=rejection_sampling,
+            importance_sampling_level=importance_sampling_level,
+            cu_seqlens=input_data.get("cu_seqlens"),
+            pg_reduction=pg_reduction,
+        )
+
+    # M2 and rejection narrow both numerators while the engine weight remains
+    # the original valid-token count. Keep both objectives on that denominator.
+    mopd_normalization_mask = denominator_mask
+    mopd_loss_mask = stat.get("behave_mask", loss_mask).bool()
+
+    # Multi-teacher on-policy distillation. Legacy single-teacher numerators
+    # retain their post-M2, pre-rejection mask; both use the original denominator.
+    teacher_logp = input_data.get("teacher_logp")
+    mopd_teacher_logp_sum = input_data.get("mopd_teacher_logp_sum")
+    rkl_stat = None
+    mopd_stats = {}
+    if teacher_logp is not None and mopd_teacher_logp_sum is not None:
+        raise ValueError(
+            "teacher_logp and mopd_teacher_logp_sum cannot both be provided"
+        )
+    if mopd_teacher_logp_sum is not None:
+        teacher_weight_sum = input_data.get("mopd_teacher_weight_sum")
+        if mopd_loss_config is None:
+            raise RuntimeError(
+                "MOPD targets require actor-local MOPDLossConfig initialization"
+            )
+        behavior_logp = input_data.get("mopd_behavior_logprobs")
+        if behavior_logp is None:
+            raise RuntimeError(
+                "MOPD targets require immutable rollout behavior log-probabilities"
+            )
+        loss, mopd_stats = compose_mopd_loss(
+            loss,
+            config=mopd_loss_config,
+            logprobs=logprobs,
+            old_logprobs=behavior_logp,
+            teacher_logp_sum=mopd_teacher_logp_sum,
+            teacher_weight_sum=teacher_weight_sum,
+            loss_mask=mopd_loss_mask,
+            normalization_mask=mopd_normalization_mask,
+        )
+        rkl_stat = mopd_stats["reverse_kl"].float()
+    elif mopd_loss_config is not None:
+        if mopd_loss_config.distillation_coefficient != 0:
+            raise RuntimeError("MOPD distillation is enabled but targets are missing")
+        loss = mopd_loss_config.rl_coefficient * loss
+    elif teacher_logp is not None:
+        rl_loss_weight = input_data.get("rl_loss_weight", 1.0)
+        distill_loss_weight = input_data.get("distill_loss_weight", 0.005)
+        teacher_logp = teacher_logp.detach()
+
+        if rl_loss_weight == 0:
+            rkl_reward = teacher_logp - logprobs.detach()
+            importance_weight = torch.exp(logprobs - old_logp)
+            rkl_weighted_term = importance_weight * rkl_reward * loss_mask
+            loss = (
+                -distill_loss_weight
+                * rkl_weighted_term.sum()
+                / denominator_mask.sum().clamp(min=1)
+            )
+            rkl_stat = -rkl_weighted_term
+        else:
+            rkl_penalty_per_token = (logprobs - teacher_logp) * loss_mask
+            rkl_penalty = rkl_penalty_per_token.sum() / denominator_mask.sum().clamp(
+                min=1
+            )
+            loss = rl_loss_weight * loss + distill_loss_weight * rkl_penalty
+            rkl_stat = rkl_penalty_per_token
+
+    # Match the engine's aggregation across microbatches and data-parallel ranks.
+    stats_tracker.weighted_mean(
+        "actor_loss/avg",
+        loss,
+        pg_reduction.normalizer(),
+    )
+
+    # Log training statistics
+    stats_tracker.denominator(
+        n_tokens=infer_token_denominator(input_data, loss_mask),
+        n_valid_tokens=loss_mask.bool(),
+        clipped_tokens=stat["clip_mask"],
+        dual_clipped_tokens=stat["dual_clip_mask"],
+    )
+
+    if rkl_stat is not None:
+        if mopd_stats:
+            stats_tracker.denominator(n_mopd_tokens=mopd_normalization_mask.bool())
+            stats_tracker.stat(
+                mopd_loss=mopd_stats["loss_per_token"].float(),
+                mopd_reward=mopd_stats["score_reward"].float(),
+                mopd_importance_weight=mopd_stats["importance_weight"].float(),
+                mopd_teacher_weight_sum=mopd_stats["teacher_weight_sum"].float(),
+                denominator="n_mopd_tokens",
+            )
+        else:
+            stats_tracker.stat(
+                rkl_loss=rkl_stat,
+                denominator="n_valid_tokens",
+            )
+
+    logp_diff = (old_logp - logprobs.detach()) * loss_mask
+    stats_tracker.stat(
+        importance_weight=stat["importance_weight"],
+        approx_kl=stat["approx_kl"],
+        new_logp=logprobs.detach(),
+        old_logp=old_logp,
+        entropy=entropy.float(),
+        actor_loss_token_mean=stat["loss"].float(),
+        clip_ratio=stat["clip_mask"].float(),
+        dual_clip_ratio=stat["dual_clip_mask"].float(),
+        logp_diff=logp_diff,
+        logp_abs_diff=logp_diff.abs(),
+        denominator="n_valid_tokens",
+    )
+
+    if "behave_imp_weight" in stat:
+        stats_tracker.denominator(unclipped_behave_tokens=stat["behave_mask"])
+        stats_tracker.stat(
+            behave_imp_weight=stat["behave_imp_weight"],
+            behave_approx_kl=stat["behave_approx_kl"],
+            denominator="unclipped_behave_tokens",
+        )
+        behave_filtered_mask = loss_mask & ~stat["behave_mask"]
+        stats_tracker.stat(
+            behave_filtered_ratio=behave_filtered_mask.float(),
+            denominator="n_valid_tokens",
+        )
+
+    if "n_valid_tokens" in stat:
+        stats_tracker.scalar(
+            n_total_tokens=stat["n_total_tokens"],
+            n_valid_tokens_in_loss=stat["n_valid_tokens"],
+            n_masked_tokens=stat["n_masked_tokens"],
+            masked_token_ratio=stat["masked_token_ratio"],
+        )
+    if "filtered_fraction" in stat:
+        stats_tracker.scalar(rs_filtered_fraction=stat["filtered_fraction"])
+
+    if vocab_min_logits is not None and vocab_max_logits is not None:
+        stats_tracker.stat(
+            vocab_min_logits=vocab_min_logits,
+            vocab_max_logits=vocab_max_logits,
+            denominator="n_tokens",
+        )
+
+    # Log SAPO-specific statistics
+    if use_sapo_loss:
+        stats_tracker.stat(
+            sapo_soft_gate=stat["sapo_soft_gate"],
+            sapo_scaled_gate_pos=stat["sapo_scaled_gate_pos"],
+            sapo_scaled_gate_neg=stat["sapo_scaled_gate_neg"],
+            denominator="n_valid_tokens",
+        )
+    else:
+        # Log clipping statistics (PPO only)
+        clip_mask = stat["clip_mask"]
+        clipped_new_logp = torch.where(clip_mask, logprobs.detach(), 0.0)
+        clipped_old_logp = torch.where(clip_mask, old_logp, 0.0)
+        stats_tracker.stat(
+            clipped_new_logp=clipped_new_logp,
+            clipped_old_logp=clipped_old_logp,
+            denominator="clipped_tokens",
+        )
+
+    # Log proximal approximation metrics
+    compute_logp_mask = stat.get("behave_mask", loss_mask)
+    _log_proximal_approximation_stats(
+        prox_logp_method=prox_logp_method,
+        prox_logp_gt=prox_logp_gt,
+        old_logp=old_logp,
+        logprobs=logprobs.detach(),
+        versions=input_data.get("versions"),
+        current_version=current_version,
+        compute_logp_mask=compute_logp_mask,
+    )
+
+    return loss
+
+
+# =============================================================================
+# Core Functions
+# =============================================================================
+
+
+def compute_prox_logp_approximations(
+    old_logp: torch.Tensor,
+    logprobs: torch.Tensor,
+    versions: torch.Tensor,
+    current_version: int,
+    method: str | None = None,
+) -> dict[str, torch.Tensor]:
+    """
+    Compute approximation(s) for proximal policy log-probabilities.
+
+    This function approximates the log-probabilities of the proximal policy (one training step
+    behind the current policy) using version-aware interpolation between the behavior policy
+    (old_logp) and current policy (logprobs). This avoids the need for an expensive forward pass
+    to compute the proximal policy's log-probabilities explicitly.
+
+    Args:
+        old_logp: log_p_behave from the rollout (behavior policy)
+        logprobs: log_p_theta from current training forward pass
+        versions: per-token policy versions from rollout (v_behave for each token)
+        current_version: current training step version (v_theta)
+        method: If specified, only compute this method. If None, compute all methods.
+
+    Returns:
+        Dictionary with approximation results. Single key if method specified, all methods otherwise.
+    """
+    # Assume proximal version is current_version - 1 (last broadcast)
+    # In AReaL, proximal policy is the last updated/broadcast policy version
+    v_proximal = current_version - 1
+
+    # Extract version information
+    v_behave = versions.float()
+    v_theta = float(current_version)
+
+    # CRITICAL: Only approximate generated tokens (version >= 0)
+    # Prompt tokens (version < 0) must NOT be approximated - they have no generation version
+    generated_tokens_mask = versions >= 0
+
+    # Compute interpolation factor alpha
+    # When v_behave == v_proximal: alpha=0 (use old_logp)
+    # When v_behave == v_theta: alpha=1 (use logprobs)
+    # For prompt tokens (version < 0): alpha=0 (no interpolation)
+    version_diff = v_theta - v_behave
+    version_gap = v_proximal - v_behave
+    # Avoid division by zero AND exclude prompt tokens
+    alpha = torch.where(
+        (version_diff > 0) & generated_tokens_mask,
+        version_gap / version_diff,
+        torch.zeros_like(v_behave),
+    )
+    alpha = torch.clamp(alpha, 0.0, 1.0)
+
+    approximations = {}
+
+    # If method is specified, only compute that one
+    # Otherwise compute all methods (for metrics comparison)
+    methods_to_compute = [method] if method else PROX_APPROX_METHODS_ALL
+
+    for m in methods_to_compute:
+        if m == PROX_APPROX_METHOD_LOGLINEAR:
+            # Method 1: Log-linear interpolation in log-space (geometric mean in probability space)
+            # log(p_prox) = (1-α)·log(p_behave) + α·log(p_theta)
+            approximations[PROX_APPROX_METHOD_LOGLINEAR] = old_logp + alpha * (
+                logprobs - old_logp
+            )
+
+        elif m == PROX_APPROX_METHOD_LINEAR:
+            # Method 2: Linear interpolation in probability space (arithmetic mean)
+            # p_prox = (1-α)·p_behave + α·p_theta
+            # Then convert back to log space: log(p_prox)
+            p_behave = torch.exp(old_logp)
+            p_theta = torch.exp(logprobs)
+            p_arithmetic = (1 - alpha) * p_behave + alpha * p_theta
+            approximations[PROX_APPROX_METHOD_LINEAR] = torch.log(p_arithmetic + 1e-10)
+
+        elif m == PROX_APPROX_METHOD_ROLLOUT:
+            # Method 3: Use behavior policy from rollout as-is (no approximation)
+            # p_prox = p_behave
+            # Used for metrics comparison
+            approximations[PROX_APPROX_METHOD_ROLLOUT] = old_logp.clone()
+
+    return approximations
+
+
+def _resolve_proximal_logp(
+    prox_logp_gt: torch.Tensor | None,
+    prox_logp_method: str,
+    old_logp: torch.Tensor,
+    logprobs: torch.Tensor,
+    versions: torch.Tensor | None,
+    current_version: int | None,
+) -> torch.Tensor:
+    """
+    Resolve the proximal policy log-probabilities based on the method.
+
+    This function determines the final proximal log-probabilities to use for PPO training,
+    either from ground truth (forward pass) or approximation methods.
+
+    Args:
+        prox_logp_gt: Ground truth proximal logp (from forward pass), or None if skipped.
+        prox_logp_method: Method to use (recompute, loglinear, metrics).
+        old_logp: Behavior policy log-probabilities.
+        logprobs: Current policy log-probabilities (should be detached).
+        versions: Per-token policy versions, or None.
+        current_version: Current training version, or None.
+
+    Returns:
+        Resolved proximal log-probabilities tensor.
+
+    Raises:
+        ValueError: If configuration is invalid (e.g., missing required data).
+        RuntimeError: If computation fails (None result, NaN, Inf).
+    """
+    prox_logp_is_none = prox_logp_gt is None
+
+    # Validate configuration when prox_logp is None
+    if prox_logp_is_none:
+        if not ProxLogpMethod(prox_logp_method).skips_forward_pass():
+            raise ValueError(
+                f"prox_logp is None but prox_logp_method='{prox_logp_method}'. "
+                "This indicates compute_logp() was skipped incorrectly."
+            )
+        if versions is None:
+            raise ValueError(
+                f"prox_logp is None with prox_logp_method='{prox_logp_method}' "
+                "but versions not available. "
+                "Cannot proceed without either ground truth or approximation."
+            )
+
+    # Determine prox_logp based on method
+    prox_logp = prox_logp_gt  # Default to ground truth (could be None)
+
+    if prox_logp_method == PROX_LOGP_METHOD_LOGLINEAR:
+        # Use loglinear approximation (must compute if prox_logp is None)
+        if prox_logp_is_none and versions is not None and current_version is not None:
+            approximations = compute_prox_logp_approximations(
+                old_logp=old_logp,
+                logprobs=logprobs,
+                versions=versions,
+                current_version=current_version,
+                method=PROX_APPROX_METHOD_LOGLINEAR,
+            )
+            prox_logp = approximations[PROX_APPROX_METHOD_LOGLINEAR]
+    elif prox_logp_method == PROX_LOGP_METHOD_METRICS:
+        # Metrics mode: use recomputed prox_logp for training,
+        # but will also compute approximation metrics later
+        pass  # Use prox_logp_gt as-is (should be recomputed)
+    # else: PROX_LOGP_METHOD_RECOMPUTE - use prox_logp_gt as-is
+
+    # Safety check: ensure we have prox_logp
+    if prox_logp is None:
+        raise RuntimeError(
+            f"prox_logp is None after handling prox_logp_method='{prox_logp_method}'. "
+            "This indicates configuration or computation error."
+        )
+
+    # Verify the value is valid
+    if torch.isnan(prox_logp).any() or torch.isinf(prox_logp).any():
+        raise RuntimeError(
+            f"prox_logp contains NaN or Inf with prox_logp_method='{prox_logp_method}'. "
+            "This indicates computation failed."
+        )
+
+    return prox_logp
+
+
+def _apply_m2po_masking(
+    old_logp: torch.Tensor,
+    prox_logp: torch.Tensor,
+    loss_mask: torch.Tensor,
+    m2_threshold: float,
+) -> torch.Tensor:
+    """
+    Apply M2PO (Second-Momentum PPO) masking to filter high-variance tokens.
+
+    M2PO filters out tokens with high second-momentum (squared difference between
+    old and proximal log-probabilities) to reduce gradient variance.
+
+    Args:
+        old_logp: Behavior policy log-probabilities.
+        prox_logp: Proximal policy log-probabilities.
+        loss_mask: Original loss mask [batch, seq_len].
+        m2_threshold: Threshold for second-momentum filtering.
+
+    Returns:
+        Updated loss mask with M2PO filtering applied.
+    """
+    delta = old_logp - prox_logp
+    m2 = delta * delta
+    mask_flat = loss_mask.view(-1)
+    m2_selected = m2.view(-1)[mask_flat]
+
+    if m2_selected.numel() == 0:
+        return loss_mask
+
+    sorted_m2, indices = torch.sort(m2_selected, descending=True)
+    restored_indices = torch.argsort(indices)
+    sorted_m2_loss_mask = _get_m2po_loss_mask(
+        sorted_m2=sorted_m2, m2_threshold=m2_threshold
+    )
+    m2_selected_mask = sorted_m2_loss_mask[restored_indices]
+
+    m2_full_flat = torch.zeros_like(
+        mask_flat, dtype=torch.bool, device=loss_mask.device
+    )
+    m2_full_flat[mask_flat] = m2_selected_mask
+
+    return m2_full_flat.view_as(loss_mask)
+
+
+def _get_m2po_loss_mask(
+    sorted_m2: torch.Tensor,
+    m2_threshold: float,
+) -> torch.Tensor:
+    """
+    Get the mask for M2PO loss based on the second-momentum threshold.
+    Mask the tokens whose second-momentum is the largest, until the average second-momentum is below the threshold.
+    """
+    n = sorted_m2.numel()
+    if n == 0:
+        return torch.ones_like(sorted_m2, dtype=torch.bool)
+
+    # Suffix sums: S[i] = sum(sorted_m2[i:])
+    suffix_sums = sorted_m2.flip(0).cumsum(0).flip(0)
+
+    # Number of elements in suffix: N[i] = n - i
+    counts = torch.arange(n, 0, -1, device=sorted_m2.device, dtype=sorted_m2.dtype)
+
+    # Average of suffix: A[i] = S[i] / N[i]
+    avg_m2_suffix = suffix_sums / counts
+
+    # Find the first index `k` where the average of the rest is below threshold.
+    below_threshold_indices = torch.where(avg_m2_suffix < m2_threshold)[0]
+
+    if len(below_threshold_indices) > 0:
+        num_to_mask = below_threshold_indices[0].item()
+    else:
+        # All suffix averages are >= threshold. Mask all but one to satisfy assertion.
+        num_to_mask = n - 1
+
+    loss_mask = torch.ones_like(sorted_m2, dtype=torch.bool)
+    if num_to_mask > 0:
+        loss_mask[:num_to_mask] = False
+
+    if loss_mask.sum() == 0:
+        raise RuntimeError("All tokens are masked out when getting the m2po loss mask.")
+
+    return loss_mask
+
+
+# =============================================================================
+# Logging Helper Functions
+# =============================================================================
+
+_EPSILON = 1e-8  # Small constant for numerical stability in relative error calculations
+
+
+def _compute_importance_weight(
+    logp_numerator: torch.Tensor,
+    logp_denominator: torch.Tensor,
+) -> torch.Tensor:
+    """Compute importance weight as exp(logp_num - logp_denom)."""
+    return torch.exp(logp_numerator - logp_denominator).float()
+
+
+def _compute_approximation_errors(
+    ground_truth: torch.Tensor,
+    approximation: torch.Tensor,
+) -> dict[str, torch.Tensor]:
+    """
+    Compute error metrics between ground truth and approximation.
+
+    Returns:
+        Dictionary with abs_error, rel_error, and squared_error tensors.
+    """
+    diff = ground_truth - approximation
+    abs_error = torch.abs(diff).float()
+    rel_error = torch.abs(diff / (torch.abs(ground_truth) + _EPSILON)).float()
+    squared_error = (diff * diff).float()
+    return {
+        "abs_error": abs_error,
+        "rel_error": rel_error,
+        "squared_error": squared_error,
+    }
+
+
+def _tensor_scalar_stats(tensor: torch.Tensor) -> dict[str, float]:
+    """
+    Compute scalar statistics (avg, max, min) for a tensor.
+
+    Args:
+        tensor: Input tensor to compute statistics on.
+
+    Returns:
+        Dictionary with avg, max, min as Python floats.
+    """
+    t = tensor.float()
+    return {
+        "avg": t.mean().item(),
+        "max": t.max().item(),
+        "min": t.min().item(),
+    }
+
+
+def _log_approximation_metrics_for_method(
+    method_name: str,
+    approx_logp: torch.Tensor,
+    old_logp: torch.Tensor,
+    logprobs: torch.Tensor,
+    prox_logp_gt: torch.Tensor | None = None,
+) -> None:
+    """
+    Log metrics for a single approximation method.
+
+    Args:
+        method_name: Name of the approximation method (e.g., "loglinear").
+        approx_logp: Approximated proximal log-probabilities.
+        old_logp: Behavior policy log-probabilities.
+        logprobs: Current policy log-probabilities.
+        prox_logp_gt: Ground truth proximal logp, or None if unavailable.
+    """
+    # Compute importance weights from approximation
+    behave_imp_weight = _compute_importance_weight(approx_logp, old_logp)
+    importance_weight = _compute_importance_weight(logprobs, approx_logp)
+
+    metrics = {
+        f"{method_name}/approx_logp": approx_logp.float(),
+        f"{method_name}/behave_imp_weight": behave_imp_weight,
+        f"{method_name}/importance_weight": importance_weight,
+    }
+
+    # Add error metrics if ground truth is available
+    if prox_logp_gt is not None:
+        # Log-probability errors
+        logp_errors = _compute_approximation_errors(prox_logp_gt, approx_logp)
+        metrics.update(
+            {
+                f"{method_name}/abs_error": logp_errors["abs_error"],
+                f"{method_name}/rel_error": logp_errors["rel_error"],
+                f"{method_name}/squared_error": logp_errors["squared_error"],
+            }
+        )
+
+        # Ground truth importance weights for comparison
+        behave_imp_weight_gt = _compute_importance_weight(prox_logp_gt, old_logp)
+        importance_weight_gt = _compute_importance_weight(logprobs, prox_logp_gt)
+
+        # Importance weight errors
+        behave_errors = _compute_approximation_errors(
+            behave_imp_weight_gt, behave_imp_weight
+        )
+        imp_errors = _compute_approximation_errors(
+            importance_weight_gt, importance_weight
+        )
+
+        metrics.update(
+            {
+                f"{method_name}/behave_imp_weight_abs_error": behave_errors[
+                    "abs_error"
+                ],
+                f"{method_name}/behave_imp_weight_rel_error": behave_errors[
+                    "rel_error"
+                ],
+                f"{method_name}/importance_weight_abs_error": imp_errors["abs_error"],
+                f"{method_name}/importance_weight_rel_error": imp_errors["rel_error"],
+            }
+        )
+
+    stats_tracker.stat(**metrics, denominator="n_valid_tokens")
+
+
+def _log_proximal_approximation_stats(
+    prox_logp_method: str,
+    prox_logp_gt: torch.Tensor | None,
+    old_logp: torch.Tensor,
+    logprobs: torch.Tensor,
+    versions: torch.Tensor | None,
+    current_version: int | None,
+    compute_logp_mask: torch.Tensor,
+) -> None:
+    """
+    Log proximal policy approximation metrics based on the method.
+
+    Args:
+        prox_logp_method: The proximal logp method being used.
+        prox_logp_gt: Ground truth proximal logp, or None if skipped.
+        old_logp: Behavior policy log-probabilities.
+        logprobs: Current policy log-probabilities (detached).
+        versions: Per-token policy versions, or None.
+        current_version: Current training version, or None.
+        compute_logp_mask: Mask for valid tokens.
+    """
+    with stats_tracker.scope("compute_logp"):
+        stats_tracker.denominator(n_valid_tokens=compute_logp_mask.bool())
+
+        # Log ground truth when available
+        if prox_logp_gt is not None:
+            stats_tracker.stat(
+                prox_logp_gt=prox_logp_gt.float(),
+                denominator="n_valid_tokens",
+            )
+
+        # Skip if versions not available
+        if versions is None or current_version is None:
+            return
+
+        if prox_logp_method == PROX_LOGP_METHOD_LOGLINEAR:
+            # Loglinear mode: log approximation without error metrics
+            approximations = compute_prox_logp_approximations(
+                old_logp=old_logp,
+                logprobs=logprobs,
+                versions=versions,
+                current_version=current_version,
+                method=PROX_APPROX_METHOD_LOGLINEAR,
+            )
+            for method_name, approx_logp in approximations.items():
+                _log_approximation_metrics_for_method(
+                    method_name=method_name,
+                    approx_logp=approx_logp,
+                    old_logp=old_logp,
+                    logprobs=logprobs,
+                    prox_logp_gt=None,  # No ground truth in loglinear mode
+                )
+
+        elif prox_logp_method == PROX_LOGP_METHOD_METRICS and prox_logp_gt is not None:
+            # Metrics mode: compute all methods with error metrics
+            approximations = compute_prox_logp_approximations(
+                old_logp=old_logp,
+                logprobs=logprobs,
+                versions=versions,
+                current_version=current_version,
+                method=None,  # Compute all methods
+            )
+            for method_name, approx_logp in approximations.items():
+                _log_approximation_metrics_for_method(
+                    method_name=method_name,
+                    approx_logp=approx_logp,
+                    old_logp=old_logp,
+                    logprobs=logprobs,
+                    prox_logp_gt=prox_logp_gt,
+                )
+
+        if logprobs is not None:
+            # Log KL divergence estimators to check for policy drift between the
+            # training-time policy (logprobs) and the inference-time policy (old_logp).
+            log_ratio = (logprobs.float() - old_logp.float()).detach()
+
+            # Implementation of different estimators for KL divergence.
+            # See: https://thinkingmachines.ai/blog/defeating-nondeterminism-in-llm-inference/#true-on-policy-rl
+            kl_div_estimator_direct = -log_ratio
+            kl_div_estimator_taylor = log_ratio**2 / 2.0
+            kl_div_estimator_dual = log_ratio.exp() - 1 - log_ratio
+
+            # Register these to TensorBoard
+            stats_tracker.stat(
+                kl_div_direct=kl_div_estimator_direct,
+                kl_div_taylor=kl_div_estimator_taylor,
+                kl_div_dual=kl_div_estimator_dual,
+                denominator="n_valid_tokens",
+            )
+
+
+def _log_version_staleness_stats(
+    versions: torch.Tensor,
+    current_version: int,
+    version_metrics_mask: torch.Tensor,
+) -> None:
+    """
+    Log sample staleness metrics based on policy versions.
+
+    Args:
+        versions: Rollout versions aligned to next-token prediction positions.
+        current_version: Last published policy version, before the PPO update.
+        version_metrics_mask: Batch loss mask before M2/rejection filtering.
+    """
+    with stats_tracker.scope("version_stats"):
+        valid_generated_mask = version_metrics_mask.bool() & (versions >= 0)
+
+        # The trainer publishes actor and rollout versions together AFTER an
+        # update. Before the next update, proximal uses that published version.
+        # Retain theta/proximal keys as aliases for checkpoint age, not an
+        # optimizer-minibatch counter.
+        v_proximal = current_version
+        v_theta = current_version
+        v_behave = versions.float()
+
+        # Retain full shapes and reduce by token count, not microbatch count.
+        # In particular, extrema must not be averaged across workers.
+        for suffix, reduction in (
+            ("avg", ReduceType.AVG),
+            ("min", ReduceType.MIN),
+            ("max", ReduceType.MAX),
+        ):
+            stats_tracker.stat_compact(
+                valid_generated_mask,
+                reduction,
+                **{
+                    f"sample_staleness_proximal_{suffix}": v_proximal - v_behave,
+                    f"sample_staleness_theta_{suffix}": v_theta - v_behave,
+                },
+            )
+        stats_tracker.stat_compact(
+            valid_generated_mask,
+            ReduceType.SUM,
+            n_valid_generated_tokens=torch.ones_like(v_behave),
+        )
+        stats_tracker.stat_compact(
+            valid_generated_mask,
+            ReduceType.AVG,
+            stale_token_fraction=(v_behave < v_proximal).float(),
+            future_token_fraction=(v_behave > v_theta).float(),
+        )
+        stats_tracker.scalar(
+            v_theta=v_theta,
+            v_proximal=v_proximal,
+        )

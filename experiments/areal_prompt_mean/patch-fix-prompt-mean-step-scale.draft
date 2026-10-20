@@ -1,0 +1,109 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jackie2049 <siyuanfu05@gmail.com>
+Date: Tue, 20 Oct 2026 00:00:00 +0800
+Subject: [PATCH] fix(trainer): drop minibatch-count factor from prompt_mean step_scale
+
+NOTE (2026-10-20, superseded-by-adversarial-recheck): this draft is a CANDIDATE
+HYPOTHESIS, not a settled fix.  notebook §10.7 (AReaL architecture reading)
+rechecked the premise and withdrew the "high-confidence defect" claim: the old
+numpy comparison used a different normalisation calibre for token_mean (never
+split by M), M is a real optimizer-step count (each train_batch updates params,
+later gradients are computed at new params, so the frozen-parameter gradient sum
+is NOT the actual training update), and upstream PR #1546's contract is the
+MEAN over steps recovering the frozen full-batch objective — which the existing
+tests already assert.  Publish only after a GPU experiment following §10.7's
+criteria (fixed M with varying inner P; fixed M with varying dummy allocation;
+M=2 vs 4 as a training-behaviour comparison with token_mean as control) decides
+whether prompt_mean's update genuinely differs from token_mean's beyond the
+shared M-dependent training behaviour.  See areal-architecture-source-reading.md
+§10.7/§10.8 for the criteria and the environment record.
+
+_PromptMeanBatch.for_steps sets `step_scale = len(microbatches) / active_groups`
+(loss_reduction.py:115).  Each of the M minibatches then runs one optimizer step
+with that scale (actor.py:609-636), so one ppo_update accumulates
+
+    grad_total = dp_size * (M/G) * sum_all loss_t*w_t
+
+which is exactly linear in the minibatch count M, and grows by one unit per
+transport-dummy slot (a dummy inflates len(microbatches) but contributes no
+gradient).  With the default ppo_n_minibatches=4 the prompt_mean gradient is
+~4x the full-batch value; prompt_mean is the only reduction whose update
+depends on the minibatch split (token_mean/seq_mean/constant are
+split-invariant).  This is the same "splitting must not change the update"
+problem class as verl #7913 / AReaL #1730, located on the reduction side.
+
+The existing tests only assert the MEAN over the M steps recovers the frozen
+full-batch objective; real training performs M SEQUENTIAL optimizer_steps,
+i.e. the SUM of the M step gradients, which the tests do not cover.
+
+Fix: drop the minibatch-count factor so one ppo_update accumulates the
+full-batch prompt_mean gradient regardless of M and of dummy slots:
+
+    step_scale = 1.0 / active_groups
+
+Numerically verified: with step_scale=1/G the accumulated gradient is
+split-invariant (M=1/2/3/4/6 -> ratio 1.000000 each), while the current
+M/G scales linearly (2.0x/4.0x).  Update the tests to assert the SUM over
+the steps (the training accumulation semantics) instead of the mean.
+
+---
+ areal/trainer/ppo/loss_reduction.py |   2 +-
+ tests/test_prompt_mean_actor.py      |  10 ++++++----
+ 2 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/areal/trainer/ppo/loss_reduction.py b/areal/trainer/ppo/loss_reduction.py
+index 0be57a9..d2ef5f1 100644
+--- a/areal/trainer/ppo/loss_reduction.py
++++ b/areal/trainer/ppo/loss_reduction.py
+@@ -112,7 +112,7 @@ class _PromptMeanBatch:
+         if any(rows <= 0 for rows in global_rows):
+             raise ValueError("Every optimizer step must contain real responses.")
+-        step_scale = len(microbatches) / active_groups
++        step_scale = 1.0 / active_groups
+         return [
+             PreparedLossStep(
+                 functools.partial(
+                     _bind_prompt_mean, step_scale=step_scale, global_rows=rows
+diff --git a/tests/test_prompt_mean_actor.py b/tests/test_prompt_mean_actor.py
+index 2f40e05..f6b1839 100644
+--- a/tests/test_prompt_mean_actor.py
++++ b/tests/test_prompt_mean_actor.py
+@@ -183,7 +183,7 @@ def test_actor_prompt_step_mean_matches_frozen_full_group_loss_and_gradient(
+         loss = (
+             sum(value * weight for value, weight in zip(losses, weights)) / total_weight
+         )
+-        expected_step = len(expected_steps) * oracle_gradient[rows].sum()
++        expected_step = oracle_gradient[rows].sum()
+         torch.testing.assert_close(loss, expected_step, rtol=1e-6, atol=1e-6)
+         if not batch["loss_mask"].any():
+             saw_zero_step = True
+             torch.testing.assert_close(loss, torch.tensor(0.0), rtol=0, atol=0)
+@@ -200,8 +200,8 @@ def test_actor_prompt_step_mean_matches_frozen_full_group_loss_and_gradient(
+-    mean_loss = torch.stack(step_losses).mean()
+-    gradient = torch.autograd.grad(mean_loss, parameter)[0]
+-    torch.testing.assert_close(mean_loss, expected_full_loss, rtol=1e-6, atol=1e-6)
++    sum_loss = torch.stack(step_losses).sum()
++    gradient = torch.autograd.grad(sum_loss, parameter)[0]
++    torch.testing.assert_close(sum_loss, expected_full_loss, rtol=1e-6, atol=1e-6)
+     torch.testing.assert_close(gradient, oracle_gradient, rtol=1e-6, atol=1e-6)
+     if requested_steps >= 4:
+         assert saw_zero_step
+@@ -325,9 +325,9 @@ def _distributed_fixed_prompt_objective(rank, rendezvous, requested_steps=6):
+-        torch.testing.assert_close(
+-            torch.stack(gradients).mean(), expected_gradient, rtol=1e-6, atol=1e-6
+-        )
+-        torch.testing.assert_close(
+-            torch.stack(losses).mean(), 1.7 * expected_gradient, rtol=1e-6, atol=1e-6
+-        )
++        torch.testing.assert_close(
++            torch.stack(gradients).sum(), expected_gradient, rtol=1e-6, atol=1e-6
++        )
++        torch.testing.assert_close(
++            torch.stack(losses).sum(), 1.7 * expected_gradient, rtol=1e-6, atol=1e-6
++        )
+         if requested_steps == 6:
+             assert saw_zero_real == (rank == 0)
+         else:
+             assert saw_fractional_weight
+-- 
+2.47.0
