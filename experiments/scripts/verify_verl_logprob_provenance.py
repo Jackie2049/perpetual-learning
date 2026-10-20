@@ -7,10 +7,15 @@ fake queue/actor/base recomputation. CPU slots hold identifiers, not tensors.
 NumPy examples are not real model logits, vLLM processing or synchronization.
 Optional --check-snapshot-failures adds 21 controller/worker/TaskRunner controls.
 Those use scalar snapshots and fake trainer/tracker/queue, not native recovery.
+Optional --check-snapshot-rpc requires Python 3.10+ and adds six wrapper controls;
+Ray actors/refs/get, TQ bridge, enums and DataProto types remain local substitutes.
 """
 import argparse
 import ast
 import hashlib
+import inspect
+from enum import Enum
+from functools import wraps
 from pathlib import Path
 import sys
 from textwrap import indent
@@ -24,6 +29,12 @@ def method(path, class_name, name='_compute_old_log_prob'):
     cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == class_name)
     fn = next(n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == name)
     fn.decorator_list = []
+    return ast.unparse(fn)
+
+
+def function(path, name):
+    tree = ast.parse(path.read_text())
+    fn = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == name)
     return ast.unparse(fn)
 
 
@@ -274,16 +285,131 @@ def entry_cleanup_controls(root):
     return count
 
 
+def snapshot_rpc_controls(root):
+    """Original register/binder/dispatcher bodies; NOT real Ray task execution."""
+    decorator = root / 'verl/single_controller/base/decorator.py'
+    ray_base = root / 'verl/single_controller/ray/base.py'
+    worker_group = root / 'verl/single_controller/base/worker_group.py'
+    worker = root / 'verl/experimental/separation/engine_workers.py'
+    for path in (decorator, ray_base, worker_group):
+        print(path.relative_to(root), 'sha256=' + hashlib.sha256(path.read_bytes()).hexdigest())
+    dispatch = Enum('Dispatch', 'ALL_TO_ALL ONE_TO_ALL')
+    execute = Enum('Execute', 'ALL RANK_ZERO')
+    # TQ bridge is deliberately not executed. Scalar slot calls have no BatchMeta.
+    ns = {'Dispatch': dispatch, 'Execute': execute, 'inspect': inspect, 'wraps': wraps,
+          'tqbridge': lambda **kw: lambda fn: fn, 'MAGIC_ATTR': 'attrs_3141562937',
+          'DataProtoFuture': type('FakeDataProtoFuture', (), {}),
+          'DataProto': type('FakeDataProto', (), {}), '_padding_size_key': '_fake_padding'}
+    for name in ('_check_dispatch_mode', '_check_execute_mode', '_materialize_futures', 'register',
+                 'dispatch_one_to_all', 'collect_all_to_all', 'get_predefined_dispatch_fn',
+                 'get_predefined_execute_fn'):
+        exec(compile('from __future__ import annotations\n' + function(decorator, name),
+                     '<original-dispatch-function>', 'exec'), ns)
+    # Verify the selected real registry entry before providing its subset namespace.
+    tree = ast.parse(decorator.read_text())
+    registry = next(n.value for n in tree.body if isinstance(n, ast.Assign) and
+                    any(isinstance(t, ast.Name) and t.id == 'DISPATCH_MODE_FN_REGISTRY' for t in n.targets))
+    one_to_all = next(v for k, v in zip(registry.keys, registry.values)
+                      if ast.unparse(k) == 'Dispatch.ONE_TO_ALL')
+    assert {ast.literal_eval(k): ast.unparse(v) for k, v in zip(one_to_all.keys, one_to_all.values)} == {
+        'dispatch_fn': 'dispatch_one_to_all', 'collect_fn': 'collect_all_to_all'}
+    ns['DISPATCH_MODE_FN_REGISTRY'] = {dispatch.ONE_TO_ALL: {
+        'dispatch_fn': ns['dispatch_one_to_all'], 'collect_fn': ns['collect_all_to_all']}}
+    exec(compile('from __future__ import annotations\n' + function(ray_base, 'func_generator'),
+                 '<original-func-generator>', 'exec'), ns)
+    group_source = 'from __future__ import annotations\nclass Group:\n' + '\n'.join(
+        indent(method(path, cls, name), '    ') for path, cls, name in (
+            (worker_group, 'WorkerGroup', '_bind_worker_method'),
+            (ray_base, 'RayWorkerGroup', 'execute_all'),
+            (ray_base, 'RayWorkerGroup', 'execute_all_async'),
+            (ray_base, 'RayWorkerGroup', '_execute_remote_single_worker')))
+    exec(compile(group_source, '<original-rpc-group-methods>', 'exec'), ns)
+    worker_tree = ast.parse(worker.read_text())
+    worker_cls = next(n for n in worker_tree.body if isinstance(n, ast.ClassDef) and n.name == 'DetachActorWorker')
+    names = ('save_model_to_cpu', 'restore_model_from_cpu', 'clear_cpu_model')
+    selected = [n for n in worker_cls.body if isinstance(n, ast.FunctionDef) and n.name in names]
+    assert len(selected) == 3
+    for fn in selected:
+        assert len(fn.decorator_list) == 1
+        assert ast.unparse(fn.decorator_list[0]) == 'register(dispatch_mode=Dispatch.ONE_TO_ALL)'
+    # Run real registration to obtain metadata; fake actors do not run the worker wrappers/bodies.
+    exec(compile('from __future__ import annotations\nclass SnapshotWorker:\n' + '\n'.join(
+        indent(ast.unparse(fn), '    ') for fn in selected), '<original-snapshot-decorators>', 'exec'), ns)
+    for name in names:
+        assert getattr(getattr(ns['SnapshotWorker'], name), ns['MAGIC_ATTR']) == {
+            'dispatch_mode': dispatch.ONE_TO_ALL, 'execute_mode': execute.ALL, 'blocking': True}
+
+    class Ref:
+        def __init__(self, rank): self.rank, self.state = rank, 'pending'
+    for scenario in (*names, 'nonblocking', 'get_failure', 'submit_failure'):
+        events, refs = [], []
+        class Remote:
+            def __init__(self, rank, name): self.rank, self.name = rank, name
+            def remote(self, *args, **kwargs):
+                events.append(('submit', self.rank, self.name, args, kwargs))
+                if scenario == 'submit_failure' and self.rank == 1:
+                    raise InjectedSnapshotFailure('submit')
+                ref = Ref(self.rank)
+                refs.append(ref)
+                return ref
+        class Actor:
+            def __init__(self, rank): self.rank = rank
+            def __getattr__(self, name): return Remote(self.rank, name)
+        def get(output):
+            events.append(('get', len(output)))
+            assert output == refs and len(output) == 3
+            # An illustrative early-failure schedule, NOT an emulation of Ray scheduling.
+            if scenario == 'get_failure':
+                output[0].state, output[1].state = 'done', 'failed'
+                raise InjectedSnapshotFailure('get')
+            for ref in output: ref.state = 'done'
+            return [None] * len(output)
+        ns['ray'] = SimpleNamespace(get=get)
+        group = ns['Group']()
+        group._workers, group.world_size = [Actor(i) for i in range(3)], 3
+        group.fused_worker_used = False
+        assert set(group._bind_worker_method(ns['SnapshotWorker'], ns['func_generator'])) == set(names)
+        name = scenario if scenario in names else 'restore_model_from_cpu'
+        call = getattr(group, name)
+        if scenario == 'nonblocking':
+            call = ns['func_generator'](group, name, ns['dispatch_one_to_all'],
+                                       ns['collect_all_to_all'], group.execute_all, False)
+        try:
+            result = call(7)
+        except InjectedSnapshotFailure as error:
+            assert str(error) == ('get' if scenario == 'get_failure' else 'submit')
+            assert scenario in ('get_failure', 'submit_failure')
+        else:
+            assert scenario not in ('get_failure', 'submit_failure')
+            assert result == (refs if scenario == 'nonblocking' else [None] * 3)
+        submissions = [e for e in events if e[0] == 'submit']
+        assert len(submissions) == (2 if scenario == 'submit_failure' else 3)
+        assert all(e[2:] == (name, (7,), {}) for e in submissions)
+        if scenario in ('nonblocking', 'submit_failure'):
+            assert all(e[0] != 'get' for e in events)
+        else:
+            assert events[-1] == ('get', 3)
+        if scenario == 'get_failure': assert [r.state for r in refs] == ['done', 'failed', 'pending']
+        if scenario == 'submit_failure': assert len(refs) == 1 and refs[0].state == 'pending'
+        print('rpc', scenario, 'PASS; fake ref states:', [r.state for r in refs])
+    print('6 additional original RPC wrapper controls PASS; no native Ray/barrier/rollback proof.')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('source_root', type=Path)
     parser.add_argument('--check-snapshot-failures', action='store_true')
+    parser.add_argument('--check-snapshot-rpc', action='store_true')
     args = parser.parse_args()
+    if args.check_snapshot_rpc and sys.version_info < (3, 10):
+        parser.error('--check-snapshot-rpc requires Python 3.10+ for original runtime union checks')
     routing_controls(args.source_root)
     counterexamples()
     if args.check_snapshot_failures:
         count = snapshot_failure_controls(args.source_root) + entry_cleanup_controls(args.source_root)
         print(f'PASS {count} additional snapshot/failure-boundary controls; no native continuation/recovery proof.')
+    if args.check_snapshot_rpc:
+        snapshot_rpc_controls(args.source_root)
     print('No native queue/actor inference, real weights, logits processor, vLLM, GPU or causal diagnosis.')
 
 

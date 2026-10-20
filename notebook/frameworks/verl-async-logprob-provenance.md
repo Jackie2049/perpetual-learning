@@ -122,4 +122,26 @@ python3 experiments/scripts/verify_verl_logprob_provenance.py /path/to/verl-8250
 
 Python3.9.6/3.12.13、NumPy2.0.2均通过新增21组：15组原始separate方法异常传播（解耦trigger 0/1/3各阶段及bypass重算异常）、2组原始worker方法分支（fsdp/fsdp2，标量保存/恢复/清理及缺key不操作）、4组原始TaskRunner方法成功/初始化失败/fit失败/fit与tracking.finish均失败控制。方法体由AST提取并去除装饰器，base重算、actor、handler、trainer、tracker与queue均替身；TaskRunner检查与快照检查分别执行，未贯通真实fit。它不证明原生快照深拷贝、跨rank一致、collective完成、真实队列关闭、Ray失败聚合或故障后的恢复/继续训练安全。
 
-新增源文件SHA256：DetachActorWorker `e6799095d8e83890806582e625a6a334cb3f6f7ae17b408673f096bb5c6d96d1`；main_ppo `270ffe0d0f5ddbc4e9af8d0f6eece5d11b1a6d6d76166603b5ebac81345dd5cc`。RPC装饰器与worker-group等待/失败聚合未在这些去装饰器检查中执行，是接续核对项；不先据此改恢复方案。
+新增源文件SHA256：DetachActorWorker `e6799095d8e83890806582e625a6a334cb3f6f7ae17b408673f096bb5c6d96d1`；main_ppo `270ffe0d0f5ddbc4e9af8d0f6eece5d11b1a6d6d76166603b5ebac81345dd5cc`。这些21组去装饰器检查没有执行RPC层，包装层另见下节。
+
+## 快照RPC等待与失败传播
+
+**默认阻塞调用不是跨rank事务，异常返回也不是全体worker已停止的回执。** 同一固定版本的三个快照方法只指定ONE_TO_ALL；[register](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/single_controller/base/decorator.py#L398)默认execute_mode=ALL、blocking=True。ONE_TO_ALL把同一个slot参数复制给全部worker；[方法绑定器](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/single_controller/base/worker_group.py#L185)读取这些元数据，生成的[调用包装器](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/single_controller/ray/base.py#L49)先execute，再ray.get整个结果列表，最后collect。execute_all虽是异步提交方法的别名，不表示这个已绑定的快照调用会直接返回refs。
+
+[execute_all_async](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/single_controller/ray/base.py#L862)逐个提交worker RPC，收集refs；ONE_TO_ALL的collect原样返回列表，没有额外校验slot、内容或跨rank状态。三个worker方法正常完成均可返回None，因此一组正常返回值不是模型内容校验。
+
+| 调用结果 | 可以据此判断与仍需核对的边界 |
+|---|---|
+| ray.get正常返回整个列表 | 这些远程调用已返回；不证明保存/恢复的tensor内容相同，缺key不操作仍可能正常返回 |
+| 提交阶段本身抛异常 | 源码循环可能只提交了前缀worker；包装器没有等待已发refs、取消或回滚的补偿块 |
+| ray.get因某任务失败而抛异常 | 不再进入collect；不能据此认定其他任务都已结束、都失败或已撤销 |
+
+[Ray官方get文档](https://docs.ray.io/en/latest/ray-core/api/doc/ray.get.html)说明，列表输入保持结果顺序，但任一关联任务报错时可立即抛异常，不等待其余任务完成；**结果顺序不是失败等待顺序**。2026-10-21所读文档标为Ray2.59.0，报告环境安装版本未知，verl只声明ray≥2.41.0；这项文档契约不能冒充reporter环境的原生复现。包装器本身没有补偿、全量异常汇总或本地get超时参数，也不排除外层系统另有超时/取消政策。
+
+```bash
+python3 experiments/scripts/verify_verl_logprob_provenance.py /path/to/verl-8250 --check-snapshot-rpc
+```
+
+可选模式要求Python≥3.10，因原始register检查含运行时类型union；实跑环境为Python3.12.13/NumPy2.0.2。6组控制执行原始注册元数据生成、参数复制/collect、方法绑定器及RayWorkerGroup提交/包装方法体：三个默认阻塞快照调用、显式非阻塞对照、get抛错、提交阶段抛错。Ray actor/ref/get、枚举、DataProto类型及TQ bridge为替身；get失败用“一个完成、一个失败、一个仍pending”的假设日程检查包装器不做补偿，不模拟Ray调度或测量真实任务状态。没有执行远端worker及其decorator inner、tensor快照、TQ转换、colocated/fused进程建立、真实异常收敛或GPU。
+
+输入SHA256：decorator `718876c4c59e9f3cdb0339185be156aeb7b6d8eb42a2a6f919a3163961634ace`；ray/base `a61952c697b6c7f8220f7cb91043e514beadc9061007c1c140acb260e6aed8c5`；worker_group `3723ad4ba93afc8b715287a1e9f8754e4915af6fd93a44e57646beb28a8591ab`。本轮将V1来源与失败边界学习阶段收束；#8250仍需要真实配置、配对观测和受控对照，不以增加替身数量替代根因证据，也不据此提出自动恢复修复。
