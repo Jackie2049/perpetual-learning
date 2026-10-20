@@ -1,4 +1,30 @@
-# Candidate: del_local_ckpt_after_load 不删本地 checkpoint
+# verl：检查加载检查点后的本地清理失效
+
+<!-- contribution-summary:start -->
+**【仓库】** [verl](https://github.com/verl-project/verl)（后训练框架）
+
+**【贡献点】** 检查加载检查点后的本地清理失效。[Issue #7213](https://github.com/verl-project/verl/issues/7213)
+
+**【类型】** 漏洞修复
+
+**【价值评估】** 3 / 10 — 可保留检查点生命周期经验，但原 issue 已关闭，当前没有明确贡献窗口。
+
+**【进展】** 历史候选已过期：tracker 在 2026-10-19 记录 [Issue #7213](https://github.com/verl-project/verl/issues/7213) 已于 8 月关闭；未记录我方实跑验证。
+
+**【大白话讲明白】**
+
+用户要求加载完成后删除本地检查点，但旧实现可能没有真的删掉。我们分析了路径、删除对象和并行进程的配合；这项旧问题已经被上游关闭，不应继续当作待修任务。
+
+**【What–Why–How】**
+
+- **What：** del_local_ckpt_after_load 的目录删除语义。
+- **Why：** 文件与目录删除接口混用，以及多进程时序，会影响清理行为。
+- **How：** 保留静态路径分析；如再次出现问题，先用当前版本复现并确认目标目录的所有权。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > Issue: [volcengine/verl#7213](https://github.com/volcengine/verl/issues/7213)
 > 状态：`verified-static`（代码追踪确认 bug + 根因；**尚未实跑复现**）

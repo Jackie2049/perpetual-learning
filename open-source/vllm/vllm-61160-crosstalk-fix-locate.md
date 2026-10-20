@@ -1,4 +1,30 @@
-# Candidate: vLLM #61160 跨请求污染的修复定位（回答 reporter 提问）
+# vLLM：追踪跨请求缓存污染的修复线索
+
+<!-- contribution-summary:start -->
+**【仓库】** [vLLM](https://github.com/vllm-project/vllm)（大模型推理框架）
+
+**【贡献点】** 追踪跨请求缓存污染的修复线索。[Issue #61160](https://github.com/vllm-project/vllm/issues/61160) · [PR #59103](https://github.com/vllm-project/vllm/pull/59103) · [PR #61174](https://github.com/vllm-project/vllm/pull/61174) · [PR #51899](https://github.com/vllm-project/vllm/pull/51899)
+
+**【类型】** 问题调查
+
+**【价值评估】** 8 / 10 — 回应社区明确问题并已发布带证据的分析；具体修复归因仍需上游反馈闭环。
+
+**【进展】** 已发布（2026-10-19）：[技术评论](https://github.com/vllm-project/vllm/issues/61160#issuecomment-6258592764)已送达，等待反馈；不是我方提交的代码修复。
+
+**【大白话讲明白】**
+
+不同用户的请求本来应该互不干扰，但错误复用缓存可能让一个请求混入另一个请求的上下文。社区发现新版本不再复现，却不知道是哪次修改修好的；我们对照提交，提供了可能相关的修复线索。
+
+**【What–Why–How】**
+
+- **What：** 共享前缀 KV 缓存跨请求污染从旧版本到 main 消失的原因。
+- **Why：** 会话截断遗留 hash、共享 block-table 行与键域标记分别可能影响隔离，需区分不同场景。
+- **How：** 将场景与三个候选修复逐一对应，并向原 issue 提供可追溯的评论；仍需报告者或维护者确认最终归因。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > Issue: [vllm-project/vllm#61160](https://github.com/vllm-project/vllm/issues/61160)
 > [Bug]: Cross-request context contamination via shared-prefix KV（NIXL P/D 分离 + DeepSeek-V4.1-Flash + dspark 投机解码）

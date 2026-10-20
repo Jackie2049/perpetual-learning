@@ -106,5 +106,52 @@ class ContributionTests(unittest.TestCase):
         self.assertIn('GPU 未验证', items[1]['summary'])
 
 
+
+class SummaryContractTests(unittest.TestCase):
+    def setUp(self):
+        self.source = (build.ROOT / 'open-source/verl/candidate-8237-offload-fraction.md').read_text()
+
+    def test_header_preserves_hdo_evidence_and_limitations(self):
+        fields = build.parse_summary(self.source)
+        self.assertIn('/pull/8286', fields['进展'])
+        self.assertIn('CPU', fields['大白话讲明白'])
+        self.assertIn('未声称吞吐提升', fields['how'])
+        self.assertEqual(fields['类型'], '漏洞修复')
+
+    def test_reject_missing_field_duplicate_block_and_old_labels(self):
+        for broken in (
+            self.source.replace('**【进展】**', '**【近况】**', 1),
+            self.source + '\n<!-- contribution-summary:start -->\n',
+            self.source.replace('**What：**', '**What｜研究什么：**', 1),
+            self.source.replace('9 / 10 —', '42 —', 1),
+        ):
+            with self.subTest(broken=broken[:80]), self.assertRaises(ValueError):
+                build.parse_summary(broken)
+
+    def test_body_cannot_impersonate_header(self):
+        with self.assertRaises(ValueError):
+            build.parse_summary('# Heading\n\n## Body\n' + self.source.partition('\n')[2])
+
+    def test_staged_check_does_not_read_unstaged_repair(self):
+        import tempfile
+        import contextlib
+        import io
+        from pathlib import Path
+        from unittest.mock import patch
+        import summary
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            subprocess.run(['git', 'init', '-q', folder], check=True)
+            target = root / 'open-source/new.md'
+            target.parent.mkdir()
+            target.write_text('# Missing header\n')
+            subprocess.run(['git', '-C', folder, 'add', '.'], check=True)
+            target.write_text(self.source)
+            with patch.object(summary, 'ROOT', root), patch('sys.argv', ['summary.py', '--staged']), contextlib.redirect_stdout(io.StringIO()):
+                with self.assertRaises(SystemExit):
+                    summary.main()
+                subprocess.run(['git', '-C', folder, 'add', '.'], check=True)
+                summary.main()
+
 if __name__ == '__main__':
     unittest.main()

@@ -1,4 +1,30 @@
-# vLLM-Ascend #10684: DSA Hadamard Sleep/Wake — Comment Draft
+# vLLM-Ascend：休眠唤醒后的 Hadamard 辅助状态丢失
+
+<!-- contribution-summary:start -->
+**【仓库】** [vLLM-Ascend](https://github.com/vllm-project/vllm-ascend)（昇腾推理适配项目）
+
+**【贡献点】** 休眠唤醒后的 Hadamard 辅助状态丢失。[Issue #10684](https://github.com/vllm-project/vllm-ascend/issues/10684)
+
+**【类型】** 漏洞诊断
+
+**【价值评估】** 5 / 10 — 可提供状态边界与验证思路，但历史推断需要适配 NPU 环境和当前源码重新核验。
+
+**【进展】** 历史审阅草稿（2026-06）：尚无本文已发布或修复已验证的记录；原文社区状态不作为当前事实。
+
+**【大白话讲明白】**
+
+推理引擎休眠时释放内存，唤醒时需要恢复的不只有模型权重。某些计算依赖的辅助矩阵若没有恢复，模型看起来启动成功，输出却可能不正常。本文分析这类状态的归属与恢复时机。
+
+**【What–Why–How】**
+
+- **What：** DSA Hadamard 类级状态在 sleep/wake 周期中的生命周期。
+- **Why：** 类变量或缓存可能引用休眠前的设备存储，权重恢复不能自动修复这些引用。
+- **How：** 检查状态初始化、释放和重建顺序，对比唤醒前后与冷启动输出；未做本轮 NPU 实测。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > 2026-06-19 | Comment draft for posting on vllm-ascend #10684
 > ★★★★★★★★ CRITICAL: DSA Hadamard class variable lost during sleep/wake → ALL-ZERO inference

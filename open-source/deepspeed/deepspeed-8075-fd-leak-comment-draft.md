@@ -1,4 +1,30 @@
-# DeepSpeed #8075: fd Leak — Comment Draft
+# DeepSpeed：异步读写错误路径的文件描述符泄漏
+
+<!-- contribution-summary:start -->
+**【仓库】** [DeepSpeed](https://github.com/deepspeedai/DeepSpeed)（分布式训练框架）
+
+**【贡献点】** 异步读写错误路径的文件描述符泄漏。[原始讨论 1](https://github.com/deepspeedai/DeepSpeed/pull/8075) · [PR #8075](https://github.com/deepspeedai/DeepSpeed/pull/8075)
+
+**【类型】** 漏洞诊断
+
+**【价值评估】** 5 / 10 — 有机制分析和可讨论的改进点，但草稿较旧、上游状态与当前版本适用性待复核。
+
+**【进展】** 历史草稿（2026-06）：未记录本文已对外发布；原文的严重程度与社区活跃状态均为当时判断，不能作为当前事实。
+
+**【大白话讲明白】**
+
+训练会反复打开文件来搬运数据。若某些结束或异常路径没有关掉句柄，长时间运行会逐渐耗尽资源。本文准备了对异步 I/O 清理路径的技术反馈。
+
+**【What–Why–How】**
+
+- **What：** deepspeed_io_handle_t::wait 的文件描述符生命周期。
+- **Why：** 等待结束并不自动等于资源释放，成功和异常路径都需要检查。
+- **How：** 追踪句柄创建、等待和释放位置，建议重复执行与故障注入测试；未记录我方长时实测。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > 2026-06-19 | Comment draft for posting on DeepSpeed #8075
 > ★★★★★★★★ CRITICAL: fd leak in deepspeed_io_handle_t::wait() → long-running GRPO training OOM

@@ -1,4 +1,30 @@
-# BudgetRefiner SLO → vLLM Upstream Contribution Plan
+# vLLM：按服务延迟目标动态安排计算预算（方案）
+
+<!-- contribution-summary:start -->
+**【仓库】** [vLLM](https://github.com/vllm-project/vllm)（大模型推理框架）
+
+**【贡献点】** 按服务延迟目标动态安排计算预算（方案）。[目标调度器](https://github.com/vllm-project/vllm/tree/main/vllm/v1/core) · [来源项目 vLLM-Ascend](https://github.com/vllm-project/vllm-ascend)
+
+**【类型】** 新特性规划
+
+**【价值评估】** 5 / 10 — 服务延迟目标有明确应用价值，但迁移方案、性能数据和当前上游空间尚未验证。
+
+**【进展】** 历史方案：BudgetRefiner 迁移与 PR 文案已规划，仍缺源码适配和 RTX 4090 profiling；没有可引用的已提交 PR。
+
+**【大白话讲明白】**
+
+推理服务不只是追求总吞吐，也希望每个用户及时收到回答。这个方案想根据剩余时间和负载调整每轮处理多少内容，让调度更关注响应期限；目前仍是需要验证的设计。
+
+**【What–Why–How】**
+
+- **What：** 将 BudgetRefiner 的服务目标感知调度思路用于 vLLM。
+- **Why：** 固定预算可能无法同时满足首 token 延迟、后续输出间隔与吞吐目标。
+- **How：** 先核对来源实现和 vLLM 调度接口，再采集延迟/吞吐基线和压力场景；不沿用旧文中未经实测的迁移比例或收益承诺。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > 2026-06-16 | vllm-project/vllm | vllm-project/vllm-ascend | BudgetRefiner | SLO-aware scheduling
 > ★★★★★★★ BudgetRefiner = vLLM-Ascend最有价值upstream贡献 → 95%+ GPU-generic → RTX 4090 profile data unique!

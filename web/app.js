@@ -56,13 +56,28 @@ function decisionPage() {main.innerHTML=heading('让下一步，清楚一点。'
 function contributionRecord(item) {
   return `<details class="contribution-record"><summary><span class="record-title">${esc(item.title)}</span><span class="record-preview">${esc(item.summary)}</span><span class="record-toggle">展开记录</span></summary><div class="prose">${item.html}</div></details>`;
 }
+function contributionSummary(item) {
+  const f=item.fields;
+  return `<article class="contribution-summary">
+    <div class="summary-meta"><span>${esc(item.type)}</span><span>${esc(item.score)}</span></div>
+    <h3><button data-open="${item.id}">${esc(item.title)}</button></h3>
+    <div class="summary-field"><h4>贡献点</h4><div class="prose">${f['贡献点']}</div></div>
+    <div class="summary-field summary-progress"><h4>进展</h4><div class="prose">${f['进展']}</div></div>
+    <div class="summary-field plain-explanation"><h4>大白话讲明白</h4><div class="prose">${f['大白话讲明白']}</div></div>
+    <div class="summary-field summary-value"><h4>价值评估</h4><div class="prose">${f['价值评估']}</div></div>
+    <details class="summary-technical"><summary>What–Why–How</summary><div class="prose">${f['What–Why–How']}</div></details>
+    <button class="text-link summary-read" data-open="${item.id}">阅读完整文档 ${icon('arrow')}</button>
+  </article>`;
+}
 function contributionPanel(project) {
   const materials = project.materials.map(item => `<li>${item.readable ? `<button data-open="${item.id}">${esc(item.title)}</button>` : `<a href="${esc(item.url)}" target="_blank" rel="noreferrer">${esc(item.title)} ↗</a>`}</li>`).join('');
   return `<section class="contribution-panel" id="project-${esc(project.slug)}" aria-labelledby="project-title-${esc(project.slug)}">
     <div class="project-heading"><div><span class="eyebrow">OPEN SOURCE</span><h2 id="project-title-${esc(project.slug)}">${esc(project.name)}</h2></div><span class="project-count">${project.materials.length} 份材料</span></div>
-    <p class="project-date">${project.items.length ? '进展记录更新' : '项目索引更新'} ${esc(fmt(project.updated))}</p>
-    ${project.items.length ? `<div class="project-section-label">${esc(project.section)} · 原文摘录</div>${project.items.map(contributionRecord).join('')}` : '<p class="project-empty">已有贡献材料，尚未整理独立进展摘要。</p>'}
-    <div class="project-actions"><button class="text-link" data-open="${project.source.id}">${project.items.length?'完整进展':'项目说明'} ${icon('arrow')}</button>${project.tracker && project.tracker.id!==project.source.id?`<button class="text-link" data-open="${project.tracker.id}">候选追踪 ${icon('arrow')}</button>`:''}</div>
+    ${project.repository?`<div class="project-repository prose">${project.repository}</div>`:''}
+    <p class="project-date">文档更新 ${esc(fmt(project.updated))}</p>
+    ${project.progress?`<div class="project-overview prose">${project.progress}</div>`:''}
+    ${project.records.length?`<div class="project-records">${project.records.map(contributionSummary).join('')}</div>`:project.items.length?`<p class="project-empty">该项目抬头待负责人整理，以下保留原交接记录。</p>${project.items.map(contributionRecord).join('')}`:'<p class="project-empty">已有项目说明，尚无独立贡献记录。</p>'}
+    <div class="project-actions"><button class="text-link" data-open="${project.overview.id}">项目说明 ${icon('arrow')}</button>${project.tracker?`<button class="text-link" data-open="${project.tracker.id}">候选追踪 ${icon('arrow')}</button>`:''}</div>
     <details class="project-materials"><summary>浏览项目材料 <span>${project.materials.length}</span></summary>${materials?`<ul>${materials}</ul>`:'<p>暂无独立材料。</p>'}</details>
   </section>`;
 }

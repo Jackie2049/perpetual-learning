@@ -1,4 +1,30 @@
-# TRL Contribution Strategy Plan
+# TRL：GRPO 训练配置与效率的贡献规划
+
+<!-- contribution-summary:start -->
+**【仓库】** [TRL](https://github.com/huggingface/trl)（后训练库）
+
+**【贡献点】** GRPO 训练配置与效率的贡献规划。[TRL](https://github.com/huggingface/trl) · [Accelerate](https://github.com/huggingface/accelerate)
+
+**【类型】** 贡献规划
+
+**【价值评估】** 5 / 10 — 可复用选题和源码入口；旧提案、性能预期与社区状态需要逐项重新核验。
+
+**【进展】** 历史规划：保留路线、准备材料和待验证假设；不代表相关功能已实现、投稿已发布或收益已测得。
+
+**【大白话讲明白】**
+
+评估 GRPO 分组、融合损失、权重同步和参数管理等潜在改进方向。 训练正确性和效率问题需要区分：某个配置不合适不一定是漏洞，推测的节省也不等于实测收益。
+
+**【What–Why–How】**
+
+- **What：** 评估 GRPO 分组、融合损失、权重同步和参数管理等潜在改进方向。
+- **Why：** 训练正确性和效率问题需要区分：某个配置不合适不一定是漏洞，推测的节省也不等于实测收益。
+- **How：** 逐项核对当前 TRL/Accelerate 接口与既有实现，选择一个可复现问题；旧文中的倍数与合并速度不作为当前事实。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 ## Strategic Context
 

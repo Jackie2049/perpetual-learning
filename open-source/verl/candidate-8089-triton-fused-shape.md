@@ -1,4 +1,30 @@
-# Candidate: Triton fused kernels 在 use_remove_padding=False 崩溃 (#8089)
+# verl：保留 padding 时融合算子输入形状不匹配
+
+<!-- contribution-summary:start -->
+**【仓库】** [verl](https://github.com/verl-project/verl)（后训练框架）
+
+**【贡献点】** 保留 padding 时融合算子输入形状不匹配。[Issue #8089](https://github.com/verl-project/verl/issues/8089) · [PR #8090](https://github.com/verl-project/verl/pull/8090)
+
+**【类型】** 漏洞修复
+
+**【价值评估】** 4 / 10 — 技术分析仍可复用，但截至记录核验已有他人方案覆盖，新增贡献空间有限。
+
+**【进展】** 停止重复投入（2026-10-19 核验）：已有 [PR #8090](https://github.com/verl-project/verl/pull/8090) 覆盖；不是我方已合并成果，当前上游状态未重新查询。
+
+**【大白话讲明白】**
+
+为了加速计算，有些算子假定输入已经去掉补齐位置。关闭去 padding 的配置后，输入形状变了，算子仍按旧形状处理就会崩溃。已有社区方案覆盖这个修复点。
+
+**【What–Why–How】**
+
+- **What：** use_remove_padding=False 与 Triton 融合路径的形状契约。
+- **Why：** 有 padding 的张量布局未转换成融合算子要求的布局。
+- **How：** 核对 reshape 前后的维度与含义；本地补丁已还原，不重复提交相同修复。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > Issue: [verl-project/verl#8089](https://github.com/verl-project/verl/issues/8089)
 > 创建 2026-10-01；0 评论；查重 2026-10-19：0 个引用 PR（无人认领）

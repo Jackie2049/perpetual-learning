@@ -1,4 +1,30 @@
-# Candidate: filter_overlong_prompts 多进程 SIGTERM 挂死 (#7163)
+# verl：数据过滤子进程在终止时挂起
+
+<!-- contribution-summary:start -->
+**【仓库】** [verl](https://github.com/verl-project/verl)（后训练框架）
+
+**【贡献点】** 数据过滤子进程在终止时挂起。[Issue #7163](https://github.com/verl-project/verl/issues/7163) · [PR #7164](https://github.com/verl-project/verl/pull/7164)
+
+**【类型】** 漏洞修复
+
+**【价值评估】** 4 / 10 — 技术分析仍可复用，但截至记录核验已有他人方案覆盖，新增贡献空间有限。
+
+**【进展】** 停止重复投入（2026-10-19 核验）：已有 [PR #7164](https://github.com/verl-project/verl/pull/7164) 覆盖；不是我方已合并成果，当前上游状态未重新查询。
+
+**【大白话讲明白】**
+
+主进程创建子进程后，子进程可能继承了不适合自己的退出处理方式。训练准备阶段一旦需要终止过滤任务，就可能卡住。报告者已提交修复，我们不再另做相同贡献。
+
+**【What–Why–How】**
+
+- **What：** filter_overlong_prompts 的多进程 SIGTERM 行为。
+- **Why：** Linux fork 继承信号处理状态，可能阻碍预期的退出流程。
+- **How：** 在 Linux 上复现继承机制并验证信号处理调整；材料保留为排障经验。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > Issue: [volcengine/verl#7163](https://github.com/volcengine/verl/issues/7163)
 > 标签：bug

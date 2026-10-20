@@ -1,6 +1,30 @@
 # 开源贡献
 
+<!-- contribution-summary:start -->
+**【仓库】** [perpetual-learning](https://github.com/Jackie2049/perpetual-learning)（AI 技术探索与贡献引擎）
+
+**【贡献点】** 开源贡献。[项目仓库](https://github.com/Jackie2049/perpetual-learning) · [文档规范](WRITING.md)
+
+**【类型】** 板块总览
+
+**【价值评估】** 8 / 10 — 统一项目导航、状态与规范，降低成果回收成本。
+
+**【进展】** 持续维护：按项目组织材料，新文档遵守 [统一抬头规范](WRITING.md)。
+
+**【大白话讲明白】**
+
+这里保存我们对开源项目做过的调查、修复草稿、验证与社区反馈。每份文档先把事情讲清楚，再提供技术细节；网页读取同一份摘要。
+
+**【What–Why–How】**
+
+- **What：** 开源贡献板块的导航与内容职责。
+- **Why：** 文件数量不等于贡献成果，需要明确问题、价值、验证范围和真实进展。
+- **How：** 按项目阅读文档，沿 Issue/PR 与实验链接追溯证据，学习笔记另见 notebook。
+<!-- contribution-summary:end -->
+
 按目标开源项目组织贡献候选、方案、补丁、验证和跟进。这里关注“准备贡献什么、推进到哪里”；[notebook/frameworks/](../notebook/frameworks/readme.md) 关注框架原理与源码理解。两类材料相互链接，同一份成果只保留一个主要位置。
+
+[文档撰写规范与模板](WRITING.md) · [抬头检查工具](../tools/contributions/readme.md)
 
 ## 按项目浏览
 

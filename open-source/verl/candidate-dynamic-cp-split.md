@@ -1,4 +1,30 @@
-# Candidate: dynamic-cp ceil 切分致高 DP rank 空 (#6786)
+# verl：上下文并行切分产生空设备分片
+
+<!-- contribution-summary:start -->
+**【仓库】** [verl](https://github.com/verl-project/verl)（后训练框架）
+
+**【贡献点】** 上下文并行切分产生空设备分片。[Issue #6786](https://github.com/verl-project/verl/issues/6786) · [PR #6869](https://github.com/verl-project/verl/pull/6869)
+
+**【类型】** 漏洞修复
+
+**【价值评估】** 4 / 10 — 技术分析仍可复用，但截至记录核验已有他人方案覆盖，新增贡献空间有限。
+
+**【进展】** 停止重复投入（2026-10-19 核验）：已有 [PR #6869](https://github.com/verl-project/verl/pull/6869) 覆盖；不是我方已合并成果，当前上游状态未重新查询。
+
+**【大白话讲明白】**
+
+把一段数据分到多张卡时，简单向上取整可能让最后几张卡分不到数据。我们验证了更均匀的切分方式；上游已经有人提交同类实现。
+
+**【What–Why–How】**
+
+- **What：** 动态上下文并行在较高 rank 上产生空分片的边界。
+- **Why：** ceil 切分未保证各 rank 都有合法数据范围。
+- **How：** 纯逻辑复现并检查均匀分配；历史 patch 与已有 PR 等价，保留测试思路。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > Issue: [volcengine/verl#6786](https://github.com/volcengine/verl/issues/6786)
 > 标签：bug

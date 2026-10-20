@@ -1,4 +1,30 @@
-# DeepSpeed #8080 Review Comment Draft
+# DeepSpeed：梯度搬运流同步修复的审阅草稿
+
+<!-- contribution-summary:start -->
+**【仓库】** [DeepSpeed](https://github.com/deepspeedai/DeepSpeed)（分布式训练框架）
+
+**【贡献点】** 梯度搬运流同步修复的审阅草稿。[原始讨论 1](https://github.com/deepspeedai/DeepSpeed/pull/8080) · [原始讨论 2](https://github.com/deepspeedai/DeepSpeed/issues/8061) · [PR #8080](https://github.com/deepspeedai/DeepSpeed/pull/8080) · [Issue #8061](https://github.com/deepspeedai/DeepSpeed/issues/8061)
+
+**【类型】** 代码审阅
+
+**【价值评估】** 5 / 10 — 有机制分析和可讨论的改进点，但草稿较旧、上游状态与当前版本适用性待复核。
+
+**【进展】** 历史草稿（2026-06）：未记录本文已对外发布；原文的严重程度与社区活跃状态均为当时判断，不能作为当前事实。
+
+**【大白话讲明白】**
+
+社区已有一份修复处理“计算读取了尚未搬完的数据”。我们整理它修复了哪条依赖、还需要哪些回归场景，供授权后反馈给维护者。
+
+**【What–Why–How】**
+
+- **What：** 针对梯度复制与计算流竞争的现有 PR 审阅。
+- **Why：** 单次跑通不足以排除异步时序问题，需要确认所有消费者都等待正确事件。
+- **How：** 对照修复的同步位置和关联问题提出测试建议；这份文档本身是未发布的审阅草稿。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > **IMPORTANT**: This is a DRAFT. User must authorize before posting to GitHub.
 > PR: https://github.com/deepspeed/DeepSpeed/pull/8080

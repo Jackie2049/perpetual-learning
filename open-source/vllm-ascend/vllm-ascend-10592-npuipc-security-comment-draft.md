@@ -1,4 +1,30 @@
-# vLLM-Ascend #10592: NPUIPC Security Bugs — Comment Draft
+# vLLM-Ascend：NPU 进程间通信的反序列化与设备边界
+
+<!-- contribution-summary:start -->
+**【仓库】** [vLLM-Ascend](https://github.com/vllm-project/vllm-ascend)（昇腾推理适配项目）
+
+**【贡献点】** NPU 进程间通信的反序列化与设备边界。[PR #10592](https://github.com/vllm-project/vllm-ascend/pull/10592)
+
+**【类型】** 安全审阅
+
+**【价值评估】** 5 / 10 — 可提供状态边界与验证思路，但历史推断需要适配 NPU 环境和当前源码重新核验。
+
+**【进展】** 历史审阅草稿（2026-06）：尚无本文已发布或修复已验证的记录；原文社区状态不作为当前事实。
+
+**【大白话讲明白】**
+
+进程间传递张量时，既要确认数据来自可信来源，也要确认它属于正确设备。草稿指出直接解析外部 pickle 数据及设备标识不匹配可能带来风险；是否可被利用还取决于接口暴露范围和信任边界。
+
+**【What–Why–How】**
+
+- **What：** NPUIPC 的 HTTP 数据解析与 UntypedStorage 设备匹配。
+- **Why：** 反序列化执行能力与底层设备归属是不同风险点，不能省略可达性与权限条件。
+- **How：** 建议审查输入来源、认证边界和设备校验；本文无已验证的远程利用或修复部署结论。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > 2026-06-19 | Comment draft for posting on vllm-ascend #10592
 > ★★★★★★★★ CRITICAL: pickle.loads RCE vulnerability on HTTP endpoint

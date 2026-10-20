@@ -1,5 +1,27 @@
 # MoonshotAI 贡献追踪
 
+<!-- contribution-summary:start -->
+**【仓库】** [MoonshotAI](https://github.com/MoonshotAI)（模型与训练推理基础设施项目）
+
+**【贡献点】** MoonshotAI 贡献追踪。[Issue #17](https://github.com/MoonshotAI/MoonEP/issues/17) · [Issue #18](https://github.com/MoonshotAI/MoonEP/issues/18)
+
+**【类型】** 候选追踪
+
+**【价值评估】** 5 / 10 — 可复用候选和资源限制；旧竞争状态需重新核验。
+
+**【进展】** 历史追踪（2026-08-04）：已登记资源泄漏与 dispatch 候选，硬件验证未完成，当前上游状态待复核。
+
+**【大白话讲明白】**
+
+这份记录把通信资源管理等具体问题与验证条件放在一起。部分问题需要特殊多卡互联设备，因此要分清能靠源码确认的部分与必须上机验证的部分。
+
+**【What–Why–How】**
+
+- **What：** MoonEP 等项目的候选与投入判断。
+- **Why：** 硬件与社区条件决定问题能否可靠验证及是否仍值得投入。
+- **How：** 恢复前先查原讨论和已有 PR，再决定验证范围；静态线索不等于实测成果。
+<!-- contribution-summary:end -->
+
 > 跨扫描持久维护。每次 SOP 启动时先读本文件。
 > 上游：https://github.com/MoonshotAI（MoonEP / FlashKDA / minitriton 等）
 > 你的 fork：`Jackie2049/MoonEP`（已有 1 commit：`792f1f6` 限制无界 lru_cache）

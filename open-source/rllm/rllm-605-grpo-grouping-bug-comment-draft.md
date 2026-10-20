@@ -1,4 +1,30 @@
-# rLLM #605 GRPO Grouping Bug — Comment Draft
+# rLLM：GRPO 分组失效的旧方案（已撤回）
+
+<!-- contribution-summary:start -->
+**【仓库】** [rLLM](https://github.com/rllm-org/rllm)（Agent 强化学习框架）
+
+**【贡献点】** GRPO 分组失效的旧方案（已撤回）。[Issue #605](https://github.com/rllm-org/rllm/issues/605)
+
+**【类型】** 漏洞诊断
+
+**【价值评估】** 2 / 10 — 保留误判与修正经验；直接删除 trajectory.name 会破坏多 Agent 用例，禁止照此执行。
+
+**【进展】** 旧方案已撤回：后续反馈指出仅按 task_id 分组不适用于多 Agent；应阅读 [v2 修正方案](rllm-605-grpo-grouping-revised-fix-v2.md)。
+
+**【大白话讲明白】**
+
+GRPO 要把可比较的多条回答放到一组。如果每组只有一个回答，就无法形成预期的组内比较。但简单把不同 Agent 的结果全混到一起也不对，因此原先“一行删掉名称”的方案被撤回。
+
+**【What–Why–How】**
+
+- **What：** task_id 与 trajectory.name 共同决定的 GRPO 分组。
+- **Why：** 组太细会失去比较对象，组太粗又会混入语义不同的 Agent 结果。
+- **How：** 保留旧推理用于追溯；新工作使用 v2 的可配置分组设计，并验证单 Agent 与多 Agent 两类场景。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > 2026-06-18 | Comment draft for posting on rLLM #605
 > ★★★★★★★★ CRITICAL: GRPO grouping by task_id:trajectory.name → group size = 1 → GRPO BROKEN!

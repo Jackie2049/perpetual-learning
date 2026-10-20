@@ -1,4 +1,30 @@
-# Candidate: process_validation_metrics 崩在 sparse reward_extra_info 的 None
+# verl：稀疏评估结果中的空值导致统计崩溃
+
+<!-- contribution-summary:start -->
+**【仓库】** [verl](https://github.com/verl-project/verl)（后训练框架）
+
+**【贡献点】** 稀疏评估结果中的空值导致统计崩溃。[Issue #6830](https://github.com/verl-project/verl/issues/6830) · [PR #6845](https://github.com/verl-project/verl/pull/6845)
+
+**【类型】** 漏洞修复
+
+**【价值评估】** 4 / 10 — 技术分析仍可复用，但截至记录核验已有他人方案覆盖，新增贡献空间有限。
+
+**【进展】** 停止重复投入（2026-10-19 核验）：已有 [PR #6845](https://github.com/verl-project/verl/pull/6845) 覆盖；不是我方已合并成果，当前上游状态未重新查询。
+
+**【大白话讲明白】**
+
+有些样本没有某项附加奖励，记录里会留下空值。统计代码把它们当数字处理就会报错。过滤空值还必须保持预测与奖励一一对应；已有多个 PR 覆盖这个问题。
+
+**【What–Why–How】**
+
+- **What：** process_validation_metrics 对稀疏 reward_extra_info 的处理。
+- **Why：** None 混入数值聚合，同时过滤不当会破坏样本对齐。
+- **How：** 本地复现并通过 5 项测试；保留过滤与对齐的检查方法，不重复提交。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > Issue: [volcengine/verl#6830](https://github.com/volcengine/verl/issues/6830)
 > 标签：**bug + help wanted**（官方邀请社区修复）

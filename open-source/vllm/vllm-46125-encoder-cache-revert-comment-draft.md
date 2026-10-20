@@ -1,4 +1,30 @@
-# vLLM #46125 Comment Draft — P6 C19: Stale Encoder/Prefix Cache After Weight Update Revert
+# vLLM：权重更新后编码器与前缀缓存失效问题
+
+<!-- contribution-summary:start -->
+**【仓库】** [vLLM](https://github.com/vllm-project/vllm)（大模型推理框架）
+
+**【贡献点】** 权重更新后编码器与前缀缓存失效问题。[PR #46125](https://github.com/vllm-project/vllm/pull/46125)
+
+**【类型】** 技术评论
+
+**【价值评估】** 3 / 10 — 能沉淀缓存与权重版本绑定经验，但目标 revert 已完成，旧评论无需再发布。
+
+**【进展】** 历史归档：2026-10-19 核验 [PR #46125](https://github.com/vllm-project/vllm/pull/46125) 已于 6 月合并；本文是针对当时问题的未发布草稿。
+
+**【大白话讲明白】**
+
+模型权重换了，之前根据旧权重计算的缓存通常不能直接继续使用。如果只更新模型却保留这些结果，就可能输出错误答案。本文从这个角度分析一次回退改动。
+
+**【What–Why–How】**
+
+- **What：** 权重更新与 encoder/prefix cache 的一致性及 revert 背景。
+- **Why：** 缓存内容依赖模型版本，更新流程若未使缓存失效就会混用新旧状态。
+- **How：** 整理更新、清理和恢复顺序及跨框架对照；保留为经验，不把别人的 revert 记成我方贡献。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > ★★★★★★★★ DRAFT — NEEDS USER AUTHORIZATION BEFORE POSTING
 > Priority: P6 (RTX 4090 RLHF critical — same pattern family as SGLang #28676, #28679, vLLM #44395)

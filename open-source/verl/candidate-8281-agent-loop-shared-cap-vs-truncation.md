@@ -1,4 +1,30 @@
-# candidate-8281-agent-loop-shared-cap-vs-truncation.md
+# verl：超长提示词截断未遵循配置策略
+
+<!-- contribution-summary:start -->
+**【仓库】** [verl](https://github.com/verl-project/verl)（后训练框架）
+
+**【贡献点】** 超长提示词截断未遵循配置策略。[Issue #8281](https://github.com/verl-project/verl/issues/8281) · [PR #4600](https://github.com/verl-project/verl/pull/4600)
+
+**【类型】** 漏洞修复
+
+**【价值评估】** 7 / 10 — 有明确行为差异和本地逻辑验证，但接口契约与完整环境验证仍待确认。
+
+**【进展】** 草稿就绪（2026-10-20）：修复及单测已在本地准备，提取源码逻辑的 32 项断言通过，尚未提交上游；需结合关联旧 PR 明确贡献形式。
+
+**【大白话讲明白】**
+
+用户可以设置提示词过长时直接报错，或从不同位置删减。这里却固定删除开头内容，可能悄悄删掉关键指令。我们准备了按配置处理的方案，但还要确认这一步和前面的数据处理各自应该负责什么。
+
+**【What–Why–How】**
+
+- **What：** Agent Loop 的共享长度限制接口是否遵循 error/left/right/middle 四种截断配置。
+- **Why：** 共享函数固定取最后若干 token，使不同配置得到同样的左截断结果。
+- **How：** 先厘清共享接口职责，再验证四策略、边界长度和异常输入；已有 CPU 提取逻辑验证，不等于完整 verl 单测或训练通过。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > 上游 issue：[#8281 [rollout] Shared prompt cap ignores documented data.truncation policies](https://github.com/verl-project/verl/issues/8281)
 > 发现时间：2026-10-20（issue 创建于 2026-10-19）

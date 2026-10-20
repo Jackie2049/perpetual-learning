@@ -1,5 +1,27 @@
 # verl 贡献追踪
 
+<!-- contribution-summary:start -->
+**【仓库】** [verl](https://github.com/verl-project/verl)（后训练框架）
+
+**【贡献点】** verl 贡献追踪。[PR #8286](https://github.com/verl-project/verl/pull/8286) · [候选目录](readme.md)
+
+**【类型】** 候选追踪
+
+**【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
+
+**【进展】** 2026-10-20：HDO 修复已合并；训练诊断、截断策略、权重自检等仍处于分析或待决定阶段。
+
+**【大白话讲明白】**
+
+这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
+
+**【What–Why–How】**
+
+- **What：** verl 候选从发现、验证到发布或放弃的状态。
+- **Why：** 社区响应快，过期结果会误导投入；本地验证成功不代表仍有贡献空间。
+- **How：** 按证据更新状态，将已合并、他人覆盖、未验证和待用户决定分别记录。
+<!-- contribution-summary:end -->
+
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
 

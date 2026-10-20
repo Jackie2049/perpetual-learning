@@ -1,4 +1,30 @@
-# DeepSpeed #8072/#8073 ZeRO-3+PEFT LoRA Regression — Comment Draft
+# DeepSpeed：ZeRO-3 与 LoRA 参数聚合的数据类型回归
+
+<!-- contribution-summary:start -->
+**【仓库】** [DeepSpeed](https://github.com/deepspeedai/DeepSpeed)（分布式训练框架）
+
+**【贡献点】** ZeRO-3 与 LoRA 参数聚合的数据类型回归。[Issue #8072](https://github.com/deepspeedai/DeepSpeed/issues/8072) · [PR #8073](https://github.com/deepspeedai/DeepSpeed/pull/8073)
+
+**【类型】** 漏洞诊断
+
+**【价值评估】** 5 / 10 — 有机制分析和可讨论的改进点，但草稿较旧、上游状态与当前版本适用性待复核。
+
+**【进展】** 历史草稿（2026-06）：未记录本文已对外发布；原文的严重程度与社区活跃状态均为当时判断，不能作为当前事实。
+
+**【大白话讲明白】**
+
+模型参数分散在不同设备上，使用时需要重新拼起来。如果发送和接收缓冲区的数据类型不一致，拼接就会报错。这份草稿讨论一项已有修复应该覆盖哪些混合精度场景。
+
+**【What–Why–How】**
+
+- **What：** ZeRO-3 与 PEFT LoRA 组合中的 all-gather dtype 契约。
+- **Why：** 按策略转换 dtype 后，输入与输出缓冲区可能不再匹配。
+- **How：** 对照关联修复 #8073，建议增加 LoRA 和混合精度覆盖；未记录我方完成完整训练回归。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > 2026-06-18 | Comment draft for DeepSpeed #8072 (bug) and #8073 (fix)
 > ★★★★★★★★ ZeRO-3+PEFT LoRA regression: TypeError from _allgather_params_coalesced dtype mismatch

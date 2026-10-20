@@ -1,4 +1,30 @@
-# Candidate: 3D mRoPE position_ids 等长 batch 的 jagged 布局反转崩溃 (#7899)
+# verl：多模态位置编码在等长批次中的布局错误
+
+<!-- contribution-summary:start -->
+**【仓库】** [verl](https://github.com/verl-project/verl)（后训练框架）
+
+**【贡献点】** 多模态位置编码在等长批次中的布局错误。[Issue #7899](https://github.com/verl-project/verl/issues/7899) · [PR #7901](https://github.com/verl-project/verl/pull/7901)
+
+**【类型】** 漏洞修复
+
+**【价值评估】** 4 / 10 — 技术分析仍可复用，但截至记录核验已有他人方案覆盖，新增贡献空间有限。
+
+**【进展】** 停止重复投入（2026-10-19 核验）：已有 [PR #7901](https://github.com/verl-project/verl/pull/7901) 覆盖；不是我方已合并成果，当前上游状态未重新查询。
+
+**【大白话讲明白】**
+
+多模态模型为图像和文本保存多组位置信息。等长样本让某种布局判断失效，后续代码就把维度看反。已有其他贡献者处理同一问题，我们保留分析供学习，不再重复提交。
+
+**【What–Why–How】**
+
+- **What：** 3D mRoPE position_ids 的 jagged 布局与等长输入。
+- **Why：** 按形状推测布局会在特殊尺寸下产生歧义。
+- **How：** 重建并验证布局；本地材料仅作参考，推进前应查看已有修复。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > Issue: [verl-project/verl#7899](https://github.com/verl-project/verl/issues/7899)
 > 创建 2026-09-17；0 评论；查重 2026-10-19：0 个引用 PR。关联 #6851（同崩溃，batch=1）、#7767（closed-unmerged，检测用 3/4 行启发式有缺陷）

@@ -31,6 +31,8 @@ class DiaryTests(unittest.TestCase):
         Path('tools/diary/hooks').mkdir(parents=True)
         shutil.copy2(SOURCE / 'diary.py', 'tools/diary/diary.py')
         shutil.copy2(SOURCE / 'hooks/pre-commit', 'tools/diary/hooks/pre-commit')
+        Path('tools/contributions').mkdir()
+        shutil.copy2(SOURCE.parent / 'contributions/summary.py', 'tools/contributions/summary.py')
         self.git('add', '.')
         self.git('commit', '-qm', 'initial fixture')
         self.now = datetime.now(diary.TZ)

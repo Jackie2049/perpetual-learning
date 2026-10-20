@@ -9,6 +9,7 @@ import posixpath
 import re
 import shutil
 import subprocess
+import sys
 from urllib.parse import quote, urlsplit
 from zoneinfo import ZoneInfo
 
@@ -20,6 +21,9 @@ WEB = ROOT / 'web'
 OUT = WEB / 'dist'
 REPO = 'https://github.com/Jackie2049/perpetual-learning'
 TZ = ZoneInfo('Asia/Singapore')
+sys.path.insert(0, str(ROOT / 'tools' / 'contributions'))
+from summary import parse_summary, LEGACY, START
+
 TAGS = {'p', 'br', 'hr', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'strong', 'em', 'del', 'blockquote', 'ul', 'ol', 'li', 'pre', 'code', 'a', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'span', 'div'}
 
 
@@ -131,13 +135,6 @@ def progress_items(markup):
 
 
 def contribution_projects(paths, docs, catalog, revision):
-    # Only source selection lives here; progress comes from committed project records.
-    sources = {
-        'verl': ('tracker.md', '当前活跃'),
-        'areal': ('handoff-m5.md', '阶段状态'),
-        'vllm': ('readme.md', '新核验'),
-        'moonshot': ('tracker.md', '当前活跃'),
-    }
     preferred = ['verl', 'areal', 'vllm']
     readmes = sorted(p for p in paths if re.fullmatch(r'open-source/[^/]+/[Rr][Ee][Aa][Dd][Mm][Ee]\.md', p))
     readmes.sort(key=lambda p: (preferred.index(p.split('/')[1]) if p.split('/')[1] in preferred else len(preferred), p))
@@ -155,19 +152,33 @@ def contribution_projects(paths, docs, catalog, revision):
             return ref
         overview = reference(readme)
         name = re.sub(r'\s*(开源贡献|贡献轨道).*$', '', overview['title'])
-        filename, section = sources.get(slug, (Path(readme).name, ''))
-        path = f'open-source/{slug}/{filename}'
-        source = reference(path)
-        excerpt = section_source(docs[path], section) if section else ''
-        if section and not excerpt:
-            raise RuntimeError(f'Missing contribution progress section: {path} / {section}')
         tracker_path = f'open-source/{slug}/tracker.md'
         tracker = reference(tracker_path) if tracker_path in paths else None
+        source = tracker or overview
         materials = [d for d in catalog if d['path'].startswith(f'open-source/{slug}/')]
+        records = []
+        for item in materials:
+            path = item['path']
+            if (path in LEGACY and START not in docs[path]) or Path(path).name == 'tracker.md':
+                continue
+            ref = reference(path)
+            fields = parse_summary(docs[path])
+            records.append({**ref, 'type': fields['类型'], 'score': fields['价值评估'].split(' — ', 1)[0],
+                            'fields': {key: render(value, path, revision) for key, value in fields.items() if key not in ('what', 'why', 'how')}})
+        records.sort(key=lambda item: (-int(item['score'].split('/')[0].strip()), item['title']))
+        # Keep source documents owned by M5 unchanged until the user authorizes migration.
+        legacy_items = []
+        if slug == 'areal' and not records:
+            handoff = 'open-source/areal/handoff-m5.md'
+            source = reference(handoff)
+            legacy_items = progress_items(render(section_source(docs[handoff], '阶段状态'), handoff, revision))
+        overview_fields = None if readme in LEGACY and START not in docs[readme] else parse_summary(docs[readme])
         projects.append({'slug': slug, 'name': name, 'overview': overview, 'source': source,
-                         'tracker': tracker, 'section': section,
-                         'updated': git('log', '-1', '--format=%cI', revision, '--', path).strip(),
-                         'items': progress_items(render(excerpt, path, revision)) if excerpt else [],
+                         'tracker': tracker, 'records': records, 'items': legacy_items,
+                         'repository': render(overview_fields['仓库'], readme, revision) if overview_fields else '',
+                         'progress': render(overview_fields['进展'], readme, revision) if overview_fields else '',
+                         'section': '阶段状态',
+                         'updated': git('log', '-1', '--format=%cI', revision, '--', f'open-source/{slug}').strip(),
                          'materials': materials})
     return projects, list(references.values())
 
@@ -193,6 +204,16 @@ def main():
     if not dates:
         raise RuntimeError('No committed diary entries found')
     latest = dates[-1]
+    for path in paths:
+        if path.startswith('open-source/') and path.endswith('.md'):
+            if path not in docs:
+                docs[path] = git('show', f'{revision}:{path}')
+            if path not in LEGACY or START in docs[path]:
+                try:
+                    parse_summary(docs[path])
+                except ValueError as error:
+                    raise ValueError(f'{path}: {error}') from error
+
     featured = json.loads((WEB / 'featured.json').read_text())
     pending_paths = [
         ('open-source/verl/candidate-8237-offload-fraction.md', '优化器卸载修复', 'verl · #8237'),
@@ -204,14 +225,14 @@ def main():
     for path, title, tag in pending_paths:
         source = docs.get(path, '')
         status_lines = re.findall(r'^>\s*(?:状态|Status|发布形态)[：:]\s*(.*)', source, re.M)
-        status = clean_text(status_lines[0]) if status_lines else ''
-        if not status or 'POSTED' in status or '评论已发布' in status:
+        status = clean_text(parse_summary(source)['进展']) if '<!-- contribution-summary:start -->' in source else (clean_text(status_lines[0]) if status_lines else '')
+        if not status or any(done in status for done in ('POSTED', '评论已发布', '已合并', '不再推进', '默认不发布')):
             continue
         if not re.search(r'待|需授权|需用户授权|授权|DRAFT', status):
             continue
         pending.append({'id': doc_id(path), 'path': path, 'title': title, 'tag': tag, 'status': status, 'label': '待上机验证' if '待 GPU' in status else '待发布决定'})
     projects, project_refs = contribution_projects(paths, docs, catalog, revision)
-    selected = {r['path'] for r in project_refs} | {f['path'] for f in featured} | {p['path'] for p in pending} | {latest}
+    selected = {p for p in paths if p.startswith('open-source/') and p.endswith('.md')} | {r['path'] for r in project_refs} | {f['path'] for f in featured} | {p['path'] for p in pending} | {latest}
     # Only explicitly selected reading pages are copied. Other historical files are title-indexed and linked to GitHub.
     for path in selected:
         if path not in paths:
@@ -235,7 +256,11 @@ def main():
     (OUT / '.nojekyll').touch()
     for path in selected:
         date = git('log', '-1', '--format=%cI', revision, '--', path).strip()
-        document = {'path': path, 'updated': date, 'url': github_url(path, revision), 'html': render(docs[path], path, revision)}
+        try:
+            markup = render(docs[path], path, revision)
+        except Exception as error:
+            raise RuntimeError(f'Cannot render {path}: {error}') from error
+        document = {'path': path, 'updated': date, 'url': github_url(path, revision), 'html': markup}
         (OUT / 'content' / (doc_id(path) + '.json')).write_text(json.dumps(document, ensure_ascii=False))
     for item in catalog:
         item['readable'] = item['path'] in selected

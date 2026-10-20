@@ -1,4 +1,30 @@
-# Candidate: MoonEP Buffer 错误路径资源泄漏 (#17)
+# MoonEP：异常路径未释放通信资源
+
+<!-- contribution-summary:start -->
+**【仓库】** [MoonshotAI](https://github.com/MoonshotAI)（模型与训练推理基础设施项目）
+
+**【贡献点】** 异常路径未释放通信资源。[Issue #17](https://github.com/MoonshotAI/MoonEP/issues/17)
+
+**【类型】** 漏洞修复
+
+**【价值评估】** 5 / 10 — 文件句柄泄漏有静态依据，但完整修复需核对 multicast 释放接口且缺少适配硬件实测。
+
+**【进展】** 静态分析完成（2026-08）：mc_fd 清理方案明确；mc_handle 的释放绑定仍待确认，无 NVSwitch SHARP 实测或已提交 PR。
+
+**【大白话讲明白】**
+
+建立多卡共享缓冲区时，需要申请文件句柄和通信资源。中途失败如果没人清理，就会把资源遗留。文件句柄可以直接保护性关闭，但另一类资源还需要确认底层释放方式，不能只加一行就宣称修完。
+
+**【What–Why–How】**
+
+- **What：** MoonEP Buffer 在 multicast 建立失败时的资源生命周期。
+- **Why：** 异常可能发生在关闭 fd 之前，或 tensor 的 deleter 接管 handle 之前。
+- **How：** 分别处理 fd 与 multicast handle；核对绑定接口和故障路径，在适配硬件上验证。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > Issue: [MoonshotAI/MoonEP#17](https://github.com/MoonshotAI/MoonEP/issues/17)
 > 状态：`verified-static`（代码追踪确认泄漏点；**mc_fd 修复方案明确，mc_handle 需进一步查 release 机制**）

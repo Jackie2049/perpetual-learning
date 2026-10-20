@@ -1,4 +1,30 @@
-# Candidate: megatron optimizer_offload_fraction < 1 崩溃 (#8237)
+# verl：修复混合优化器状态卸载导致的训练崩溃
+
+<!-- contribution-summary:start -->
+**【仓库】** [verl](https://github.com/verl-project/verl)（后训练框架）
+
+**【贡献点】** 修复混合优化器状态卸载导致的训练崩溃。[Issue #8237](https://github.com/verl-project/verl/issues/8237) · [PR #8286](https://github.com/verl-project/verl/pull/8286)
+
+**【类型】** 漏洞修复
+
+**【价值评估】** 9 / 10 — 真实训练故障已复现，修复、回归测试及上游合并形成闭环；尚无长期大规模验证。
+
+**【进展】** 已合并：[PR #8286](https://github.com/verl-project/verl/pull/8286) 于 2026-10-20 合入；RTX 4090 机制复现、2 项单测及三种卸载比例各两步训练通过。
+
+**【大白话讲明白】**
+
+训练除了模型参数，还要保存优化器的辅助数据。HDO 会把这些数据按比例分配到 CPU 和 GPU；verl 切换训练阶段时又把应该留在 GPU 的部分搬到 CPU，破坏了原来的安排，可能直接崩溃。修复让 verl 尊重 HDO 的状态分配。
+
+**【What–Why–How】**
+
+- **What：** HybridDeviceOptimizer（HDO，混合设备优化器）与 verl 阶段切换卸载逻辑的兼容性：部分 CPU 卸载时，状态搬运或后续更新失败。
+- **Why：** 无差别搬运破坏 GPU 子优化器的设备要求；特定参数布局下，还会访问底层存储已释放的张量。
+- **How：** 实际合入方案是在 offload_megatron_optimizer 中跳过 HDO 状态；普通优化器逻辑保持原样。新增 HDO 回归测试，未声称吞吐提升。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > Issue: [verl-project/verl#8237](https://github.com/verl-project/verl/issues/8237)
 > 标签：bug；创建 2026-10-14；**2026-10-19 已回复 + PR #8286 已发 ready-for-review**

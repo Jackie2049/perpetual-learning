@@ -1,4 +1,30 @@
-# vLLM Issue #39096 — Batch Invariance Comment Draft
+# vLLM：批次变化导致输出差异的训练影响分析
+
+<!-- contribution-summary:start -->
+**【仓库】** [vLLM](https://github.com/vllm-project/vllm)（大模型推理框架）
+
+**【贡献点】** 批次变化导致输出差异的训练影响分析。[Issue #39096](https://github.com/vllm-project/vllm/issues/39096)
+
+**【类型】** 技术评论
+
+**【价值评估】** 6 / 10 — 与强化学习采样一致性相关，但多数机制已被讨论，贡献应聚焦新增信息。
+
+**【进展】** 待决定（2026-10-19 核验）：[Issue #39096](https://github.com/vllm-project/vllm/issues/39096) 已有认领与讨论；草稿需精简为 GRPO/verl 影响与机制组合分析，尚未发布。
+
+**【大白话讲明白】**
+
+同一个问题单独运行，和混在一批其他问题里运行，答案可能出现差异。对强化学习来说，这会干扰对模型变化的判断。我们想补充这种差异对训练的影响，而不是重复已有的推理端讨论。
+
+**【What–Why–How】**
+
+- **What：** 编译、CUDA Graph 和算子选择共同影响的 batch invariance。
+- **Why：** 浮点归约顺序和内核配置会随 batch 改变；多条路径可能叠加，不能只关闭一个选项就断言问题消失。
+- **How：** 将当前草稿与已有讨论逐条去重，保留训练影响与可检验的对照建议；历史代码与性能数字需重新核验。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > Status: ~~DRAFT — User should review before posting~~ → **2026-10-19 核验：issue 仍 open，可发布但有重叠**。YM2132 已认领推进（7-30），现有 9 条评论覆盖大部分技术分析；本草稿的增量仅剩 GRPO/verl 训练影响 + 三机制组合框架。发布前需精简并经用户授权。
 > Issue: https://github.com/vllm-project/vllm/issues/39096

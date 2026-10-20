@@ -1,4 +1,30 @@
-# Candidate: veomni transformer `del_local_after_load` 类型标注错误
+# verl：修正检查点清理开关的类型标注
+
+<!-- contribution-summary:start -->
+**【仓库】** [verl](https://github.com/verl-project/verl)（后训练框架）
+
+**【贡献点】** 修正检查点清理开关的类型标注。[源码目录](https://github.com/verl-project/verl/tree/main/verl/workers/engine/veomni)
+
+**【类型】** 代码维护
+
+**【价值评估】** 2 / 10 — 静态类型一致性问题，运行时影响小，不作为单独 PR。
+
+**【进展】** 暂缓：已确认 bool 开关被标成 int，等待相关文件的实质改动一起修正。
+
+**【大白话讲明白】**
+
+一个开关实际接受“是或否”，代码提示却写成了整数。程序通常仍能运行，但会误导阅读者和静态检查工具。这属于可以顺手修的小问题。
+
+**【What–Why–How】**
+
+- **What：** VeOmni load_checkpoint 中 del_local_after_load 的类型契约。
+- **Why：** 该处 int 标注与 True 默认值及其他后端 bool 声明不一致。
+- **How：** 与其他后端签名对齐为 bool；本项仅静态核验，不需要虚构 GPU 结果。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > 状态：`verified-static`（类型标注错误确认；纯静态，无需上机）
 > 首次发现：2026-08-03

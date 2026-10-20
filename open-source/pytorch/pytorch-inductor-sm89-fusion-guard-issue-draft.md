@@ -1,4 +1,30 @@
-# PyTorch Issue Draft — SM<90 Batch-Dependent Numerical Results from Inductor Reduction Fusion
+# PyTorch：编译器融合是否破坏批次无关的数值结果（问题草稿）
+
+<!-- contribution-summary:start -->
+**【仓库】** [PyTorch](https://github.com/pytorch/pytorch)（张量计算与深度学习框架）
+
+**【贡献点】** 编译器融合是否破坏批次无关的数值结果（问题草稿）。[Issue #39096](https://github.com/vllm-project/vllm/issues/39096) · [Issue #185814](https://github.com/pytorch/pytorch/issues/185814)
+
+**【类型】** 问题报告
+
+**【价值评估】** 5 / 10 — 问题影响推理一致性，但限制融合的适用范围、数值改善及性能代价都缺少完整验证。
+
+**【进展】** 历史草稿：拟议融合保护条件尚需 GPU 验证与当前版本查重，未记录已提交 PyTorch Issue/PR；不是已证实的通用修复。
+
+**【大白话讲明白】**
+
+同一个请求和不同数量的其他请求一起运行，结果可能略有差异。草稿怀疑编译器把多个计算合并后改变了归约顺序，建议对某些 GPU 限制融合；这也可能损失性能，因此还不能直接采用。
+
+**【What–Why–How】**
+
+- **What：** Inductor 归约融合与 SM<90 GPU 上 batch-dependent 数值行为的关联。
+- **Why：** 并行归约顺序与算法选择会影响浮点结果，但不能仅凭相关现象确认唯一根因。
+- **How：** 先做最小复现与 eager/compile、融合开关、不同 batch 的对照，再评估保护条件及性能回归。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > ★★★★★★★★ PRE-STEP before submitting PR: file issue first
 > ★★★★★★★★ This issue documents the root cause and proposes a 5-line fix

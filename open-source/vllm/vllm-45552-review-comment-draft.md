@@ -1,4 +1,30 @@
-# vLLM #45552 Review Comment Draft
+# vLLM：休眠唤醒与 CUDA 流同步审阅（历史）
+
+<!-- contribution-summary:start -->
+**【仓库】** [vLLM](https://github.com/vllm-project/vllm)（大模型推理框架）
+
+**【贡献点】** 休眠唤醒与 CUDA 流同步审阅（历史）。[PR #45552](https://github.com/vllm-project/vllm/pull/45552)
+
+**【类型】** 代码审阅
+
+**【价值评估】** 3 / 10 — 异步内存生命周期经验有复用价值，但原 PR 已关闭，原草稿不再有发布对象。
+
+**【进展】** 不再推进：2026-10-19 项目核验记录 [PR #45552](https://github.com/vllm-project/vllm/pull/45552) 未合并关闭；本文为历史审阅材料。
+
+**【大白话讲明白】**
+
+引擎释放或恢复显存前，需要确认其他计算流不会继续使用旧内存。否则模型看似正常唤醒，后台计算仍可能读写失效位置。本文梳理这种同步边界。
+
+**【What–Why–How】**
+
+- **What：** cumem sleep/wake 与未完成 CUDA 工作之间的关系。
+- **Why：** 默认流和非默认流的执行顺序不能仅靠主机代码顺序推断。
+- **How：** 保留生产者、消费者与释放时机的核对方法；若推进新修复，需要当前版本的并发复现与回归测试。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > **IMPORTANT**: This is a DRAFT. User must authorize before posting to GitHub.
 > Issue: https://github.com/vllm-project/vllm/issues/45552

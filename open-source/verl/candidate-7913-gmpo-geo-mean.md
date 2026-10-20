@@ -1,4 +1,30 @@
-# Candidate: GMPO geo_mean 损失随 minibatch 切分变化 (#7913)
+# verl：GMPO 损失随小批次切分变化
+
+<!-- contribution-summary:start -->
+**【仓库】** [verl](https://github.com/verl-project/verl)（后训练框架）
+
+**【贡献点】** GMPO 损失随小批次切分变化。[Issue #7913](https://github.com/verl-project/verl/issues/7913) · [PR #7916](https://github.com/verl-project/verl/pull/7916)
+
+**【类型】** 漏洞修复
+
+**【价值评估】** 4 / 10 — 技术分析仍可复用，但截至记录核验已有他人方案覆盖，新增贡献空间有限。
+
+**【进展】** 停止重复投入（2026-10-19 核验）：已有 [PR #7916](https://github.com/verl-project/verl/pull/7916) 覆盖；不是我方已合并成果，当前上游状态未重新查询。
+
+**【大白话讲明白】**
+
+同一批训练样本拆成几份计算，理想情况下不应仅因切分就改变同一目标的梯度。我们研究损失归一化是否使用了正确的全局分母，并做了 CPU 对照；社区已存在另一种修复方案。
+
+**【What–Why–How】**
+
+- **What：** geo_mean 损失在 minibatch 切分下的归一化一致性。
+- **Why：** 每个小批次单独归一化可能改变总体权重。
+- **How：** 本地 fp64 梯度对照验证各切分相符；与上游配置层方案有差异，但不据此重复提交。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > Issue: [verl-project/verl#7913](https://github.com/verl-project/verl/issues/7913)
 > 创建 2026-09-18；0 评论；查重 2026-10-19：0 个引用 PR（无人认领，但窗口仅 0-2 天，需尽快）

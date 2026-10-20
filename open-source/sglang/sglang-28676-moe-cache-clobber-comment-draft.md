@@ -1,4 +1,30 @@
-# SGLang #28676 MoE Cache Clobber — Comment Draft
+# SGLang：权重重载后的 MoE 辅助缓存失配
+
+<!-- contribution-summary:start -->
+**【仓库】** [SGLang](https://github.com/sgl-project/sglang)（大模型推理框架）
+
+**【贡献点】** 权重重载后的 MoE 辅助缓存失配。[PR #28676](https://github.com/sgl-project/sglang/pull/28676)
+
+**【类型】** 漏洞诊断
+
+**【价值评估】** 5 / 10 — 权重与辅助缓存一致性有跨框架价值，但草稿的误差量级和现状需重新验证。
+
+**【进展】** 历史评论草稿（2026-06-19）：已整理重载路径分析，未记录本文已发布或在本机验证修复。
+
+**【大白话讲明白】**
+
+模型换了一套新权重，推理时使用的某些预处理缓存却可能被覆盖或没有正确重建。这样即使权重加载成功，计算仍可能不对。本文讨论如何让两者一起更新。
+
+**【What–Why–How】**
+
+- **What：** MoE shuffle/cache 在强化学习权重重载后的有效性。
+- **Why：** 辅助缓存依赖权重或布局，不能脱离其对应版本独立存活。
+- **How：** 追踪重载前后的缓存生成与使用，建议对比重载后的输出和全新进程；原文量级不是本轮实测。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > 2026-06-19 | Comment draft for posting on SGLang #28676
 > ★★★★★★★★ CRITICAL: MoE shuffle cache clobbered on RL weight reload → 64x accuracy blowup

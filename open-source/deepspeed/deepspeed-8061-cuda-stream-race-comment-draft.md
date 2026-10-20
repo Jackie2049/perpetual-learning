@@ -1,4 +1,30 @@
-# DeepSpeed #8061: CUDA Stream Data Race — Comment Draft
+# DeepSpeed：梯度通信与计算流之间的数据竞争
+
+<!-- contribution-summary:start -->
+**【仓库】** [DeepSpeed](https://github.com/deepspeedai/DeepSpeed)（分布式训练框架）
+
+**【贡献点】** 梯度通信与计算流之间的数据竞争。[原始讨论 1](https://github.com/deepspeedai/DeepSpeed/issues/8061) · [Issue #8061](https://github.com/deepspeedai/DeepSpeed/issues/8061) · [PR #8080](https://github.com/deepspeedai/DeepSpeed/pull/8080)
+
+**【类型】** 漏洞诊断
+
+**【价值评估】** 5 / 10 — 有机制分析和可讨论的改进点，但草稿较旧、上游状态与当前版本适用性待复核。
+
+**【进展】** 历史草稿（2026-06）：未记录本文已对外发布；原文的严重程度与社区活跃状态均为当时判断，不能作为当前事实。
+
+**【大白话讲明白】**
+
+训练为了提速，会让数据搬运和计算同时进行。如果搬运还没完成，计算就开始读取数据，结果可能出现 NaN。旧草稿分析了这种时序问题，但本文不是新的 GPU 复现报告。
+
+**【What–Why–How】**
+
+- **What：** overlap_comm 与编译路径下梯度 bucket 的跨 CUDA stream 依赖。
+- **Why：** 缺少明确的完成事件或等待关系时，消费者可能读到未写完的数据。
+- **How：** 根据原始分析定位生产者与消费者，建议以事件同步和最小复现验证；阅读后续 #8080 草稿了解关联修复。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > 2026-06-19 | Comment draft for posting on DeepSpeed #8061
 > ★★★★★★★★ CRITICAL: overlap_comm=True + torch.compile → NaN on single GPU

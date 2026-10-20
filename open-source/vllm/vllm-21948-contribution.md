@@ -1,4 +1,30 @@
-# vLLM Contribution Plan: Issue #21948
+# vLLM：补齐多回答并行采样的参数测试
+
+<!-- contribution-summary:start -->
+**【仓库】** [vLLM](https://github.com/vllm-project/vllm)（大模型推理框架）
+
+**【贡献点】** 补齐多回答并行采样的参数测试。[Issue #21948](https://github.com/vllm-project/vllm/issues/21948)
+
+**【类型】** 测试改进
+
+**【价值评估】** 5 / 10 — 边界测试可防止参数组合回归；旧问题当前状态与测试缺口待核对。
+
+**【进展】** 历史准备材料：已规划 n>1 的测试场景，未记录测试贡献已提交或合并。
+
+**【大白话讲明白】**
+
+同一个提示词可以一次生成多个回答。某些参数在只生成一个回答时正常，生成多个时却可能组合出错。我们准备围绕这些组合补测试，先保证行为符合接口约定。
+
+**【What–Why–How】**
+
+- **What：** 并行采样 n>1 与相关采样参数的兼容性。
+- **Why：** 单回答测试不能覆盖多回答的返回结构、数量与约束。
+- **How：** 对照 issue 复现输入，补参数化测试和错误提示断言；先重新核对现有测试避免重复。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > Parallel Sampling Parameter Tests for n>1
 > Issue: https://github.com/vllm-project/vllm/issues/21948

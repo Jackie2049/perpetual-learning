@@ -1,4 +1,30 @@
-# DeepSpeed #8068: Gradient Clipping Default — Comment Draft
+# DeepSpeed：梯度裁剪默认值与训练稳定性
+
+<!-- contribution-summary:start -->
+**【仓库】** [DeepSpeed](https://github.com/deepspeedai/DeepSpeed)（分布式训练框架）
+
+**【贡献点】** 梯度裁剪默认值与训练稳定性。[原始讨论 1](https://github.com/deepspeedai/DeepSpeed/pull/8068) · [PR #8068](https://github.com/deepspeedai/DeepSpeed/pull/8068)
+
+**【类型】** 配置改进
+
+**【价值评估】** 5 / 10 — 有机制分析和可讨论的改进点，但草稿较旧、上游状态与当前版本适用性待复核。
+
+**【进展】** 历史草稿（2026-06）：未记录本文已对外发布；原文的严重程度与社区活跃状态均为当时判断，不能作为当前事实。
+
+**【大白话讲明白】**
+
+用户以为训练会限制过大的梯度，但默认配置可能根本没有打开这层保护。本文讨论如何把默认行为说清楚；是否应该改变默认值，还要兼顾已有用户配置。
+
+**【What–Why–How】**
+
+- **What：** gradient_clipping 默认值为 0 时的语义及 GRPO 使用风险。
+- **Why：** 关闭裁剪不一定是代码漏洞，但用户预期与实际行为不一致可能放大不稳定更新。
+- **How：** 核对配置继承和说明，准备默认值/提示建议；没有在本文证明裁剪能解决所有训练坍塌。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > 2026-06-19 | Comment draft for posting on DeepSpeed #8068
 > ★★★★★★★★ CRITICAL: gradient_clipping default 0 → silently unclipped GRPO → training instability

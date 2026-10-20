@@ -1,4 +1,30 @@
-# vLLM-Ascend #10579: MoE NaN — Review Comment Draft (UPDATED Session 3)
+# vLLM-Ascend：MoE 非数值输出的索引与精度分析
+
+<!-- contribution-summary:start -->
+**【仓库】** [vLLM-Ascend](https://github.com/vllm-project/vllm-ascend)（昇腾推理适配项目）
+
+**【贡献点】** MoE 非数值输出的索引与精度分析。[PR #10579](https://github.com/vllm-project/vllm-ascend/pull/10579)
+
+**【类型】** 漏洞诊断
+
+**【价值评估】** 5 / 10 — 可提供状态边界与验证思路，但历史推断需要适配 NPU 环境和当前源码重新核验。
+
+**【进展】** 历史审阅草稿（2026-06）：尚无本文已发布或修复已验证的记录；原文社区状态不作为当前事实。
+
+**【大白话讲明白】**
+
+MoE 模型需要选择专家并计算权重。如果专家编号被错误转换，或者低精度计算溢出，结果可能变成 NaN。草稿把这两类机制分开讨论，不能把所有异常归为同一个原因。
+
+**【What–Why–How】**
+
+- **What：** 专家索引变换和 FP16 softmax 溢出两条候选机制。
+- **Why：** 索引语义错误与数值范围不足需要不同的复现和修复判据。
+- **How：** 分别检查编号、概率范围及 FP32 对照；原文推论尚需当前 NPU 环境验证。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > 2026-06-20 (Session 3 update) | Comment draft for posting on vllm-ascend #10579
 > ★★★★★★★★ TWO bug patterns identified: (1) torch.abs() index semantics + (2) FP16 softmax overflow

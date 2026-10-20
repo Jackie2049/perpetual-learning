@@ -1,4 +1,30 @@
-# verl #6401 Technical Comment Draft
+# verl：共享提示词前缀的训练计算复用评论草稿
+
+<!-- contribution-summary:start -->
+**【仓库】** [verl](https://github.com/verl-project/verl)（后训练框架）
+
+**【贡献点】** 共享提示词前缀的训练计算复用评论草稿。[Issue #6401](https://github.com/verl-project/verl/issues/6401) · [PR #4368](https://github.com/verl-project/verl/pull/4368)
+
+**【类型】** 技术评论
+
+**【价值评估】** 6 / 10 — 能够解释现有分组与真正共享注意力之间的差距；具体实现及收益未验证。
+
+**【进展】** 历史分析/草稿：已阅读 PrefixGrouper 并整理差距，未记录本文对应评论发布或共享注意力实现完成。
+
+**【大白话讲明白】**
+
+同一个问题生成多个回答时，开头的提示词相同，重复计算这部分会浪费资源。把这些样本分到一起只完成了第一步，还需要底层计算真正复用前缀，才能获得预期收益。
+
+**【What–Why–How】**
+
+- **What：** 现有 PrefixGrouper 与前缀树共享注意力 RFC 的差距。
+- **Why：** 分组、数据布局和注意力内核的复用是不同层次，不能把分组直接视为性能优化完成。
+- **How：** 对照现有分组、掩码和内核接口提出分阶段方案；性能收益需要后续实测。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > Draft of a technical comment to post on github.com/volcengine/verl/issues/6401
 

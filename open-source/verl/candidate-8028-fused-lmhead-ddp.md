@@ -1,4 +1,30 @@
-# Candidate: Fused Megatron LM-head 遗留 AllGather pending (#8028)
+# verl：融合输出层遗留参数通信状态
+
+<!-- contribution-summary:start -->
+**【仓库】** [verl](https://github.com/verl-project/verl)（后训练框架）
+
+**【贡献点】** 融合输出层遗留参数通信状态。[Issue #8028](https://github.com/verl-project/verl/issues/8028) · [PR #8029](https://github.com/verl-project/verl/pull/8029)
+
+**【类型】** 漏洞修复
+
+**【价值评估】** 4 / 10 — 技术分析仍可复用，但截至记录核验已有他人方案覆盖，新增贡献空间有限。
+
+**【进展】** 停止重复投入（2026-10-19 核验）：已有 [PR #8029](https://github.com/verl-project/verl/pull/8029) 覆盖；不是我方已合并成果，当前上游状态未重新查询。
+
+**【大白话讲明白】**
+
+训练会提前从其他设备取来参数。融合计算绕开某些正常流程后，通信状态可能没有按预期收尾，影响后续步骤。我们定位了这条路径，但已有他人的修复在处理。
+
+**【What–Why–How】**
+
+- **What：** 融合 Megatron LM-head 与参数 AllGather 生命周期的衔接。
+- **Why：** 融合路径与常规路径维护通信状态的方式不同。
+- **How：** 对照参数发布和同步顺序；本地补丁已还原，后续以已有 PR 为讨论入口。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > Issue: [verl-project/verl#8028](https://github.com/verl-project/verl/issues/8028)
 > 创建 2026-09-27；0 评论；查重 2026-10-19：0 个引用 PR（无人认领）

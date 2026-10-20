@@ -1,4 +1,30 @@
-# vLLM PR #45038 — SM89 FP8 KV Crash Comment Draft
+# vLLM：SM89 显卡上的 FP8 KV 配置兼容性
+
+<!-- contribution-summary:start -->
+**【仓库】** [vLLM](https://github.com/vllm-project/vllm)（大模型推理框架）
+
+**【贡献点】** SM89 显卡上的 FP8 KV 配置兼容性。[PR #45038](https://github.com/vllm-project/vllm/pull/45038) · [Issue #44879](https://github.com/vllm-project/vllm/issues/44879)
+
+**【类型】** 兼容性分析
+
+**【价值评估】** 3 / 10 — 有支持矩阵参考价值，但旧版本材料与已关闭 PR 限制了可直接采用性。
+
+**【进展】** 默认不发布：2026-10-19 核验 [PR #45038](https://github.com/vllm-project/vllm/pull/45038) 未合并关闭；底层 [Issue #44879](https://github.com/vllm-project/vllm/issues/44879) 当时仍开放，本文信息基于较旧版本。
+
+**【大白话讲明白】**
+
+模型支持某种量化，不代表所有显卡上的 KV 缓存算子都支持同样格式。错误地自动覆盖缓存类型可能让计算崩溃。这里讨论怎样把显卡能力与配置选择对齐。
+
+**【What–Why–How】**
+
+- **What：** compressed-tensors 对 FP8 KV cache 配置的覆盖及 SM89 支持范围。
+- **Why：** 模型量化信息、GPU 架构和注意力内核支持并非同一个条件。
+- **How：** 先重新建立当前版本支持矩阵，再核对报错路径；历史草稿不能作为已通过的兼容性补丁。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > Status: ~~DRAFT — User should review before posting~~ → **2026-10-19 核验：PR #45038 未合并自关（9-21），底层 issue #44879 仍 open 但有实测噪音**。草稿信息基于 v0.23（6 月），已过时；仅剩支持矩阵整理有微弱参考价值。发布需用户授权，默认不发布。
 > PR: https://github.com/vllm-project/vllm/pulls/45038

@@ -1,4 +1,30 @@
-# Candidate: 训练前 weight-update 自检 RFC（后端无关层）(#8252)
+# verl：评估训练前权重同步自检方案
+
+<!-- contribution-summary:start -->
+**【仓库】** [verl](https://github.com/verl-project/verl)（后训练框架）
+
+**【贡献点】** 评估训练前权重同步自检方案。[Issue #8252](https://github.com/verl-project/verl/issues/8252) · [PR #7108](https://github.com/verl-project/verl/pull/7108)
+
+**【类型】** RFC 评估
+
+**【价值评估】** 6 / 10 — 可帮助明确校验范围与后端接口；实现成本和验证条件不支持直接开工。
+
+**【进展】** 评估完成（2026-10-20）：已核对自检缺口及已有方案；建议优先提供技术反馈，参与与发布待用户决定。
+
+**【大白话讲明白】**
+
+训练端更新了模型，不代表负责生成答案的引擎一定收到正确权重。这个提议想在训练前做一次检查。我们关注检查能证明什么：启动前没有正在处理的请求，所以启动检查通过也不能保证训练中每次同步都安全。
+
+**【What–Why–How】**
+
+- **What：** 训练前沿真实权重更新路径执行端到端自检的 RFC。
+- **Why：** 不同后端的切片和布局不能简单直接比较；启动阶段和运行阶段的请求状态也不同。
+- **How：** 建议抽出后端无关的最小校验接口，并明确自检覆盖范围；关联旧实现需重新评估，未实现或验证完整功能。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > Issue: [verl-project/verl#8252](https://github.com/verl-project/verl/issues/8252)
 > 创建 2026-10-15；[RFC]（功能提议，非 bug）；0 评论；reporter shiyuan680 **在 verl 无任何 PR 记录**（查重 2026-10-20）

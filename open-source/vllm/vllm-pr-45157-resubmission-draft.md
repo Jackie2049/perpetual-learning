@@ -1,4 +1,30 @@
-# vLLM PR #45157 Resubmission Draft
+# vLLM：补清 KV 传输指标的聚合与日志流程
+
+<!-- contribution-summary:start -->
+**【仓库】** [vLLM](https://github.com/vllm-project/vllm)（大模型推理框架）
+
+**【贡献点】** 补清 KV 传输指标的聚合与日志流程。[PR #45157](https://github.com/vllm-project/vllm/pull/45157) · [PR #45494](https://github.com/vllm-project/vllm/pull/45494) · [Issue #41230](https://github.com/vllm-project/vllm/issues/41230)
+
+**【类型】** 文档改进
+
+**【价值评估】** 4 / 10 — 能降低指标误读，但既有文档 PR 已覆盖大部分内容，需要先核对剩余缺口。
+
+**【进展】** 历史重提草稿：原 [PR #45157](https://github.com/vllm-project/vllm/pull/45157) 已关闭；当时发现 [PR #45494](https://github.com/vllm-project/vllm/pull/45494) 覆盖同文件，因此未直接竞争提交，当前状态待复核。
+
+**【大白话讲明白】**
+
+一次数据传输的记录，要经过收集、累计、汇总和清零，才变成日志里的一行数字。如果不知道在哪一步合并了多张卡的数据，就容易算重或误读吞吐。这里准备补齐整条流程的说明。
+
+**【What–Why–How】**
+
+- **What：** KVConnectorLogging 的 observe→aggregate→reduce→log/reset 文档。
+- **Why：** 单个方法注释不足以说明跨设备与跨时间窗口的统计口径。
+- **How：** 对照已有 PR，只补仍缺少的类级流程与方法契约；没有新的授权不对外评论或重提。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > Status: DRAFT — Do NOT submit as competing PR with #45494 (same files)
 > Strategy: Comment on #45494 suggesting class-level docstring addition, then submit follow-up after merge

@@ -1,4 +1,30 @@
-# OSS Contribution Action Plan — June 2026
+# 2026 年 6 月开源贡献行动计划（历史）
+
+<!-- contribution-summary:start -->
+**【仓库】** [perpetual-learning](https://github.com/Jackie2049/perpetual-learning)（AI 技术探索与贡献引擎）
+
+**【贡献点】** 2026 年 6 月开源贡献行动计划（历史）。[贡献总览](README.md)
+
+**【类型】** 贡献规划
+
+**【价值评估】** 5 / 10 — 可复用选题和源码入口；旧提案、性能预期与社区状态需要逐项重新核验。
+
+**【进展】** 历史规划：保留路线、准备材料和待验证假设；不代表相关功能已实现、投稿已发布或收益已测得。
+
+**【大白话讲明白】**
+
+记录从学习笔记走向实际开源参与的历史路线和候选顺序。 历史计划中的自评分、紧急程度和进度不能自动沿用到现在。
+
+**【What–Why–How】**
+
+- **What：** 记录从学习笔记走向实际开源参与的历史路线和候选顺序。
+- **Why：** 历史计划中的自评分、紧急程度和进度不能自动沿用到现在。
+- **How：** 保留当时任务与依赖关系，恢复工作时以当前 WORK、tracker 及用户授权重新确定下一步。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > Created: 2026-06-20 | Priority: ★★★★★★★★ CRITICAL for OSS score (currently 4/10)
 > Goal: Push OSS contribution score from 4/10 → 6/10 with executed contributions

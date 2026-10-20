@@ -1,4 +1,30 @@
-# vLLM 开源贡献准备 — 源码定位
+# vLLM：指标文档与 FlashInfer 接口的源码准备
+
+<!-- contribution-summary:start -->
+**【仓库】** [vLLM](https://github.com/vllm-project/vllm)（大模型推理框架）
+
+**【贡献点】** 指标文档与 FlashInfer 接口的源码准备。[Issue #41230](https://github.com/vllm-project/vllm/issues/41230) · [Issue #31414](https://github.com/vllm-project/vllm/issues/31414)
+
+**【类型】** 贡献规划
+
+**【价值评估】** 5 / 10 — 可复用选题和源码入口；旧提案、性能预期与社区状态需要逐项重新核验。
+
+**【进展】** 历史规划：保留路线、准备材料和待验证假设；不代表相关功能已实现、投稿已发布或收益已测得。
+
+**【大白话讲明白】**
+
+定位 KV 传输指标的含义，以及 FlashInfer 兼容层的分散调用点。 不了解真实代码路径就改文档或统一接口，可能写错口径或破坏后端分派。
+
+**【What–Why–How】**
+
+- **What：** 定位 KV 传输指标的含义，以及 FlashInfer 兼容层的分散调用点。
+- **Why：** 不了解真实代码路径就改文档或统一接口，可能写错口径或破坏后端分派。
+- **How：** 沿指标收集到日志的路径核对，再梳理导入层次和已有兼容函数；本文记录准备工作，不代表重构完成。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > 针对已识别的 good first issues，深入定位相关代码
 

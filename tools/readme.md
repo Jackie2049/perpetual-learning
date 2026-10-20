@@ -39,3 +39,7 @@ python3 tools/training_recipe.py --help
 - [inference_estimator.py](inference_estimator.py) 已修复单请求带宽硬编码（`30 GB/s` 改为按 GPU HBM 规格）和吞吐展示口径（区分最大 batch 的每步耗时、bs=1 单流吞吐、理论带宽极限），新增 `--batch` 与 h20/rtx4090 规格；已按 A100/H20/RTX 4090 多配置验证输出合理性。
 
 实验结论与实战经验记录在 [notebook/experiments/](../notebook/experiments/)，与代码互相链接。后续若将 legacy 内容升级为正式工具，需要补齐复用场景、接口和验证证据。
+
+## 开源文档抬头检查
+
+[contributions/](contributions/readme.md)：校验统一抬头、链接及评分格式，网页构建复用同一解析器；提交时检查暂存内容。

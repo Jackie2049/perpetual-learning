@@ -1,4 +1,30 @@
-# vLLM Issue #44701 — Comment Draft
+# vLLM：前缀缓存附加键的域冲突分析（历史草稿）
+
+<!-- contribution-summary:start -->
+**【仓库】** [vLLM](https://github.com/vllm-project/vllm)（大模型推理框架）
+
+**【贡献点】** 前缀缓存附加键的域冲突分析（历史草稿）。[Issue #44701](https://github.com/vllm-project/vllm/issues/44701) · [PR #44706](https://github.com/vllm-project/vllm/pull/44706)
+
+**【类型】** 漏洞诊断
+
+**【价值评估】** 3 / 10 — 缓存隔离原则可复用，但原讨论对象已关闭，没有继续发布该草稿的明确窗口。
+
+**【进展】** 不再推进：2026-10-19 核验 [Issue #44701](https://github.com/vllm-project/vllm/issues/44701) 与 [PR #44706](https://github.com/vllm-project/vllm/pull/44706) 均已关闭，关联 PR 未合并；保留历史分析。
+
+**【大白话讲明白】**
+
+缓存会给已有计算做标记，方便后续复用。如果不同用途的标记没有区分所属类别，可能被误认成同一种输入，导致复用了不该复用的内容。
+
+**【What–Why–How】**
+
+- **What：** LoRA 名称与 cache_salt 等 extra-key 之间的域隔离。
+- **Why：** 相同值用于不同语义字段时，缺少域标签可能造成键歧义。
+- **How：** 从缓存键编码和测试角度保留诊断经验；如再次出现同类问题，基于当前实现重新复现。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > Status: DRAFT — User should review before posting
 > Issue: https://github.com/vllm-project/vllm/issues/44701

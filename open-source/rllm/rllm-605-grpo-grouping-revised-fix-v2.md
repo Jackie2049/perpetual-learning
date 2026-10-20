@@ -1,4 +1,30 @@
-# rLLM #605 GRPO Grouping Bug — Revised Fix Proposal (v2)
+# rLLM：兼顾单 Agent 与多 Agent 的 GRPO 分组方案
+
+<!-- contribution-summary:start -->
+**【仓库】** [rLLM](https://github.com/rllm-org/rllm)（Agent 强化学习框架）
+
+**【贡献点】** 兼顾单 Agent 与多 Agent 的 GRPO 分组方案。[Issue #605](https://github.com/rllm-org/rllm/issues/605)
+
+**【类型】** 设计改进
+
+**【价值评估】** 6 / 10 — 吸收了旧方案反例，能够明确配置语义；仍需完整实现和两类用例验证。
+
+**【进展】** 修订草稿（2026-06-19）：根据维护者反馈提出可配置 grouping_mode；本文未记录方案已合入。
+
+**【大白话讲明白】**
+
+不同任务需要不同的比较组：有时按同一个问题归组，有时还必须区分执行任务的 Agent。这个修订让用户明确选择分组规则，避免修好单 Agent 场景却破坏多 Agent 场景。
+
+**【What–Why–How】**
+
+- **What：** TransformConfig 中可配置的 GRPO grouping_mode。
+- **Why：** 仅移除 trajectory.name 不能同时满足单 Agent 和多 Agent 的语义。
+- **How：** 明确默认兼容行为，按配置选择分组键并增加回归场景；旧方案作为反例保留。
+<!-- contribution-summary:end -->
+
+## 详细记录
+
+> 以下保留原始分析与历史进展；当前结论见上方速览。
 
 > 2026-06-19 | Revised after maintainer jeffreysijuntan feedback
 > ★★★★★★★★ V1 fix (remove trajectory.name from grouping key) was INCORRECT — breaks multi-agent use case
