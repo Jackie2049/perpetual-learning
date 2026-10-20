@@ -26,7 +26,7 @@
 
 - **M1 心跳隔离接续（2026-10-20）**：为避免共享 checkout 的分支切换/日志冲突覆盖未提交成果，当前心跳使用 `/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/perpetual-learning-cp-finalize`，从远端 main 核对后继续；统一交接仍是远端 main。不要重置 `/Users/jackiemac/workspace/perpetual-learning` 或把该共享目录未推送的分支整体带入本项提交。GPU/AReaL 分工不变。
 
-- 网页 demo 已上线：[探索工作台](https://jackie2049.github.io/perpetual-learning/)。只读展示仓库快照，更新内容后按 [网页维护说明](web/readme.md) 发布；当前采用 gh-pages 分支发布。2026-10-21 已同步EPLB producer/step边界快照07d8aad（gh-pages 2b22859），Pages 工作流39489511696成功；构建952条文档标题、74个阅读页、最新日期10条日志（含其他会话已有记录）。DeepInfer笔记来源链接与本轮快照一致、#8250仍待补证；网络发布/查询使用获准外网权限，未改代理/VPN。发布收尾记录不递归触发重建。
+- 网页 demo 已上线：[探索工作台](https://jackie2049.github.io/perpetual-learning/)。只读展示仓库快照，更新内容后按 [网页维护说明](web/readme.md) 发布；当前采用 gh-pages 分支发布。2026-10-21 已同步chunk sizing限定复核快照4d9dd6c（gh-pages f5d19b8），Pages 工作流39493927012成功；构建952条文档标题、74个阅读页、最新日期11条日志（含其他会话已有记录）。DeepInfer笔记来源链接与本轮快照一致、#8250仍待补证；网络发布/查询使用获准外网权限，未改代理/VPN。发布收尾记录不递归触发重建。
 
 - 文档呈现要求：评分维度直接写“影响、成本、接受度、契合度”，使用简短直观名称。成本方向已在 [SOP](open-source/SOP.md) 澄清，历史分值复用前核对。
 
