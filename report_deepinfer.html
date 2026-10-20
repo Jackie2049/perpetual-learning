@@ -185,7 +185,7 @@ decode step N+1: Forward ─────────┘  ← 上一步 post-proc
 </pre></div>
 
 <h3>3.2 DSpark / MTP 变长自适应推测解码</h3>
-<p><strong>不是固定 speculative length。</strong><code>MTPVarlen.schedule</code>（<code>mtp_varlen.hpp:150</code>）在<strong>每步动态选最优 batch size 和每请求 draft 数</strong>，最大化 <code>throughput = 期望接受 token / 估计耗时</code>。</p>
+<p><strong>不是固定 speculative length。</strong>Scheduler 先选定请求；<code>MTPVarlen.schedule</code>（<code>mtp_varlen.hpp:150</code>）再动态选择<strong>验证 token 总预算 total_q 和每请求验证长度</strong>，不增删请求。<code>best_bsz</code> 不是请求数；最大化的是 <code>估计接受 token / 估计耗时</code> 代理目标，不是实测吞吐保证。</p>
 <ul>
     <li><strong>耗时估计自适应</strong>：<code>ForwardRuntimeEstimator</code> 用双层中位数滑动窗口动态拟合 <code>slope_ms = (forward_ms - baseline) / graph_size</code>；运行时由 engine 用 CUDA event 实测喂入持续校正。</li>
     <li><strong>接受率</strong>：MTP confidence head 逐位累乘（process_MTPInfo），N-2 轮算 best_bsz、N-1 轮贪心分配每请求 seqlen_q。</li>
@@ -213,7 +213,7 @@ decode step N+1: Forward ─────────┘  ← 上一步 post-proc
 <h3>3.6 确定性采样 + batch-invariant</h3>
 <ul>
     <li>RNG 用 <code>seq_seeds</code> + 位置 hash（<code>DRAFT_POS_HASH_MUL</code>）+ tag（"default"/"mtp"）分隔命名空间。</li>
-    <li><code>enable_batch_invariant</code> 保证批大小变化不改变采样结果（仅 NVIDIA）。</li>
+    <li>官方确定性支持条件为 batch-invariant 模式、固定请求 seed，并关闭变长 MTP 验证（<code>ENABLE_MTP_VARLEN=0</code>，仅 NVIDIA）；不能只靠固定 seed 或 batch-invariant 单项开关保证完整自由采样结果一致。本报告未进行端到端实测。</li>
     <li>结构化输出（regex/JSON/EBNF）由 xgrammar 编译、bitmask 异步 pinned 拷贝、MTP 下逐 draft 独立 mask。</li>
 </ul>
 

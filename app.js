@@ -61,7 +61,7 @@ function contributionPanel(project) {
   return `<section class="contribution-panel" id="project-${esc(project.slug)}" aria-labelledby="project-title-${esc(project.slug)}">
     <div class="project-heading"><div><span class="eyebrow">OPEN SOURCE</span><h2 id="project-title-${esc(project.slug)}">${esc(project.name)}</h2></div><span class="project-count">${project.materials.length} 份材料</span></div>
     <p class="project-date">${project.items.length ? '进展记录更新' : '项目索引更新'} ${esc(fmt(project.updated))}</p>
-    ${project.items.length ? `<div class="project-section-label">${esc(project.section)} · 原文摘录</div>${project.items.slice(0,3).map(contributionRecord).join('')}${project.items.length>3 ? `<details class="more-progress"><summary>其余 ${project.items.length-3} 条进展</summary>${project.items.slice(3).map(contributionRecord).join('')}</details>`:''}` : '<p class="project-empty">已有贡献材料，尚未整理独立进展摘要。</p>'}
+    ${project.items.length ? `<div class="project-section-label">${esc(project.section)} · 原文摘录</div>${project.items.map(contributionRecord).join('')}` : '<p class="project-empty">已有贡献材料，尚未整理独立进展摘要。</p>'}
     <div class="project-actions"><button class="text-link" data-open="${project.source.id}">${project.items.length?'完整进展':'项目说明'} ${icon('arrow')}</button>${project.tracker && project.tracker.id!==project.source.id?`<button class="text-link" data-open="${project.tracker.id}">候选追踪 ${icon('arrow')}</button>`:''}</div>
     <details class="project-materials"><summary>浏览项目材料 <span>${project.materials.length}</span></summary>${materials?`<ul>${materials}</ul>`:'<p>暂无独立材料。</p>'}</details>
   </section>`;
@@ -70,7 +70,7 @@ function contributionsPage() {
   const filter = new URLSearchParams(location.hash.split('?')[1]||'').get('project');
   const projects = data.projects || [];
   const selected = projects.some(p=>p.slug===filter) ? filter : '';
-  main.innerHTML=heading('开源贡献','按项目回看调查、验证、贡献与跟进。每一项进展，都能找到原始依据。')+
+  main.innerHTML=heading('开源贡献','按项目回看调查、验证、贡献、进展')+
     `<nav class="project-filters" aria-label="贡献项目筛选"><a href="#contributions" ${!selected?'aria-current="true"':''}>全部项目 <span>${projects.length}</span></a>${projects.map(p=>`<a href="#contributions?project=${encodeURIComponent(p.slug)}" ${selected===p.slug?'aria-current="true"':''}>${esc(p.name)}</a>`).join('')}</nav>
     <p class="contribution-context">内容来自仓库记录，包含历史材料；上游状态以原文核验时间为准。</p>
     <div class="contribution-grid">${projects.filter(p=>!selected||p.slug===selected).map(contributionPanel).join('') || '<p class="empty">当前尚无项目记录。</p>'}</div>`;
