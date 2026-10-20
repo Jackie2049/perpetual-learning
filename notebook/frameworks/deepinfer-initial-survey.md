@@ -727,3 +727,40 @@ python3 experiments/scripts/verify_deepinfer_mtp_commit.py /path/to/DeepInfer
 Sequence存储、tensor访问、SO上报容器、队列和slot释放为替身，Engram映射取identity；TORCH_CHECK只检查条件、丢弃格式化参数。不编译完整扩展，不执行采样/ref/kernel、process_MTPInfo、真正_preempt、输出formatter、设备KV写入/回收或collective；也不向任意非法flat buffer输入提供安全保证。原始Worker主机控制流回归通过，仍不能替代真实事件/stream验证。下一步先核对SO失败占位与对外token身份的前提，避免把账本规则误当作API输出全链已证实，不预设新缺陷或对外提交。
 
 源码SHA256沿用前节sequence.hpp及scheduler.hpp；outputs.hpp为`9ef2f5a37dd07b03fe7fac7f92cbbf1dfc056ff4a0c0fbb9b7a384149f71bf6f`，tilelang_ops/sampler.py为`cef9d2dda13f24fed56ca9bef45fdffa883edc63208d54e1b83ead9358271304`。本机macOS arm64，无GPU/SSH/VPN操作，无AReaL变更。
+
+## SO失败状态与输出token身份
+
+**序列账本的失败占位0不是统一的对外失败token。** 固定774ce244，2026-10-21 06:02心跳接续；局部原始C++循环组合在注入的采样payload下显示：SO失败分支向Sequence追加0，但formatter仍从接受draft或最终sampled token取对外token，同时保留失败结束标记。这是有条件的主机契约差异，不是完整engine可达性、线上复现或已定性的缺陷；也未确认失败响应必须满足“token等于账本占位”的外部规范。
+
+### 失败状态与采样输入分别传播
+
+[_get_so_mask](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/model_executor/layers/sampler.py#L301)在全部metadata状态非正时返回None状态数组；活跃SO的matcher缺失或已aborted时，把该行状态置−1且不为它填mask索引，混合batch仍处理健康行。它返回的是mask/状态，不在这个函数里将sampled/verified token数组统一改成0。[forward](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/model_executor/layers/sampler.py#L133)继续走采样并把so_status放进结果；token内容仍需由真实采样路径决定，不能由这里的状态数组直接推断。
+
+process_outputs收到新的−1报告时更新账本；本步状态数组为None也不会清除既有失败状态。进入失败分支后追加0、pushed=1；进入函数前已经finished则走更早的跳过分支、pushed=0，两种状态不可混同。最后prefill的激活异常也会直接置Sequence finished，不能把它当作所有SO失败都进入占位分支的证据。
+
+### 原始formatter怎样选择失败输出
+
+[formatter](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/csrc/engine/outputs.hpp#L196)根据pushed限制输出数量，但从传入的accepted/main数组选token，没有根据SO失败把它替换为序列末尾0。8组局部组合检查的关键结果如下；采样payload是显式注入，不是模型产生。
+
+| 条件 | Sequence本轮追加 | formatter输出 |
+|---|---|---|
+| 健康decode，接受21/22、main99 | 21/22/99 | 21/22/99，正常对照 |
+| 接受前缀首项EOS11 | 11 | 11，finished；accept_tok仍可为4，不等于追加1 |
+| SO账本已失败，接受21/22、main99 | 0 | 21，finished且带SO失败原因 |
+| SO账本已失败，无接受draft，main99 | 0 | 99，包含q1无MTP控制 |
+| 本步新报告SO失败，原账本健康 | 0 | 21，同样保留失败原因 |
+| 所测decode进入循环前已finished | 无 | 无逐请求输出项；不推广到ignored_seqs等其他路径 |
+
+另一组输出上限控制也保持普通token身份一致。原始RequestOutput对象保留finished及`xgrammar runtime errors or timeout`原因，不是把失败伪装为成功；但[离线LLM._run_engine](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/entrypoints/llm.py#L168)会先收集每项，decode_sequence开启时直接把其token_id交给tokenizer，并没有在这里按失败原因过滤。错误结果是否该暴露这些token仍是API语义问题；自定义在线服务并未由该离线入口覆盖。
+
+### 限定执行与阶段结论
+
+```bash
+python3 experiments/scripts/verify_deepinfer_mtp_commit.py /path/to/DeepInfer --check-output-identity
+```
+
+复用前节脚本，保留原始formatter逐请求循环、RequestOutput与finish reason定义；将c10 optional适配为std::optional、原对象池替换为heap持有者，tensor访问和Sequence仍为替身。不执行完整formatter的tensor/shape入口、ignored分支、真实池或pybind。新增8组native formatter/提交控制，另以原始Python方法体执行4组SO mask控制与2组离线收集控制，Python3.9.6和3.12.13均通过；原12组C++记账控制回归通过。
+
+SO mask的设备/tensor/matcher为替身，离线入口的engine/clone/tokenizer也是替身；两部分未与真实采样或服务连接，未生成grammar、GPU mask或模型token。结论收束为“不能用账本占位0代表API输出token”。不据此开新候选或竞争修复，不在此基础上反复增加替身充当完整复现；若后续考虑贡献，需先确认错误响应语义、真实失败payload与既有PR覆盖。后续回到有界上游变化核对，选择未重复课题。
+
+新增固定源码SHA256：Python sampler.py `81205a12e860041ffa904321b852db2d048bc038bb07d494dbb78b44b522d9a9`；entrypoints/llm.py `069a5333d9f47047ccc87584792627dfa6eee9cf93bdc046107cbd0218a6bada`。其余沿用前节；没有改上游源码、AReaL或GPU环境。

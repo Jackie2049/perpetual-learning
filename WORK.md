@@ -10,6 +10,8 @@
 
 ## 运行接续
 
+- **M1 SO失败输出边界收束（2026-10-21）**：账本占位0不等于统一API失败token；注入payload下原始formatter可返回draft/main token并保留失败原因。新增8组native formatter/提交、4组原始SO mask及2组离线收集控制通过，原12组记账回归通过；不是完整engine采样可达性、真实grammar/设备或已定性缺陷。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#so失败状态与输出token身份)。不新增候选/竞争修复；后续做有界DeepInfer/verl上游变化核对，选未重复课题，不继续堆替身代替完整复现。网站待授权、GPU/AReaL单一M5分工不变。
+
 - **M1 MTP提交链（2026-10-21）**：验证长度q、接受draft数a与停止后追加数t已拆开；decode从previous缓存C回填C+t，prefill不走这个回填。12组原始C++逐请求循环/缓存与在途状态控制通过，Worker主机回归通过；Sequence/tensor/释放为替身，非sampler/formatter/物理KV或设备证明。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#mtp验证与缓存提交的计数边界)。下一步只读核对SO失败账本占位与对外token身份的前提，不预设新缺陷或竞争修复；网站待授权状态不变，不重试发布。
 
 - **网站发布待确认（2026-10-21 05:08）**：本轮成果218718e已推送main，本地网页构建通过（952标题、74阅读页、12条最新日期日志）。发布命令被安全审批拒绝，理由为缺少将内容公开到`https://jackie2049.github.io/perpetual-learning/`的明确授权；没有重试、绕过或更新gh-pages。网站仍以上一次已验证部署为准，用户确认公开范围后才恢复发布；后续心跳不重复尝试被拒操作，其他本地研究可继续。
@@ -84,7 +86,7 @@
 1. **未来一周开源技术掘金三大重点（用户 2026-10-20 定）**：**DeepInfer / verl / AReaL**。其中 DeepInfer 主研（推理框架源码深挖），verl 主贡献（续 #8281/#8250），AReaL 主实测（prompt_mean 切分敏感点）。vLLM 降为次优先级。 **这是跨主机整体分工，M1 不接管 AReaL；M5 独立推进其完整候选/PR。**
 2. **等待用户授权/资源**（长期未决，见「运行接续」5 项）——发布评论/文档、#8281 发布形态、方向调整。#8237 已收尾（PR #8286 ready + issue 已回）。
 3. **M1当前学习/贡献复核**：V1来源、同步/快照异常及RPC等待边界阶段收束，#8250等真实配置/配对观测，不以更多替身替代根因证据；#7913不重复推进、clip旧RFC不再推进、#8281待决定。DeepInfer EPLB阶段收束，接续chunk checkpoint，见下项；不重复已收束的#54/#57/共享内存生命周期模型。M1不访问GPU、不涉及AReaL整项，任何上游发言仍须拍板。
-3. **高优调研（用户 2026-10-20 定）**：**DeepInfer**——确定性、ZOS、DSpark、YoCo/CP、生命周期、EPLB、chunk/cached-prefix与MTP缓存提交已有源码/限定CPU学习，完整扩展/设备正确性与性能未测。MTP逐请求循环12组C++控制及Worker主机回归通过，验证统计不等于最终追加数。下一步只读核对SO失败账本占位与对外token身份的输入前提，不由局部循环推断API全链，不堆同类替身替代完整验证；见[笔记](notebook/frameworks/deepinfer-initial-survey.md#mtp验证与缓存提交的计数边界)。不预设新缺陷、不竞争已有修复；M1不访问GPU/AReaL，任何上游发言仍须用户拍板。
+3. **高优调研（用户 2026-10-20 定）**：**DeepInfer**——确定性、ZOS、DSpark、YoCo/CP、生命周期、EPLB、chunk/cached-prefix、MTP缓存提交与SO失败输出边界已有源码/限定CPU学习，完整扩展/设备正确性与性能未测。账本0不能直接当对外失败token，局部条件差异不定性新bug，见[笔记](notebook/frameworks/deepinfer-initial-survey.md#so失败状态与输出token身份)。下一步做有界DeepInfer/verl上游变化核对，选择未重复课题；不继续增加同类替身代替真实失败payload、错误响应语义与既有PR覆盖核验。不预设新缺陷、不竞争已有修复；M1不访问GPU/AReaL，任何上游发言仍须用户拍板。
 4. **AReaL prompt_mean（原 M5 单一负责项，用户 2026-10-20 恢复 VPN 后明确本会话继续）——实测已闭环**：框架跑通（gsm8k PPO smoke 128 步无错）+ 受控实测（§10.7 判据，M=2 vs 4 + 固定 M 变 P，prompt_mean 与 token_mean 行为一致：跨 M 1.301≈1.273、P-spread 1.216≈1.192）——**不构成 defect，候选修复撤销，不提 issue/PR**，作为 review 依据存档（见 [源码笔记 §10.10](notebook/frameworks/areal-architecture-source-reading.md)、[tracker](open-source/areal/tracker.md)）。Megatron GPU 对照未做（TE 硬依赖）。分工状态见 [handoff-m5](open-source/areal/handoff-m5.md) 与 WORK「运行接续」。
 3. 按课题逐步关联现有实验执行材料与 notebook/experiments/ 的分析记录；新增实验优先就近组织，维护双向入口。
 4. 维护按职责划分的一级目录；新增或整理内容时整体检查归属、引用和输出路径，避免再次堆出按文件类型划分的一级目录。根目录 projects/ 暂不新增。
