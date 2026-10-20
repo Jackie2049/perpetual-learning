@@ -65,3 +65,37 @@ python3.12 experiments/scripts/verify_validation_estimands.py /path/to/verl-sour
 [脚本](../../experiments/scripts/verify_validation_estimands.py)从固定Git对象AST提取未改写的原始helper，不导入完整verl。Python3.12.13/NumPy2.0.2执行682个M,N各1至3的全部二元矩阵，与Fraction精确后验矩比较，绝对容差1e−14；另做682次保留trial身份的逆序到达控制和10组非法输入拒绝。独立Bernoulli模型以有理数验证180组组合估计期望；不是执行HumanEval、rLLM、原始trainer测试或真实模型采样。
 
 同总成功数但不同逐题分布、不同N的排序反例均通过。没有运行作者的108测试、完整CPU CI、TQ/Ray、训练或GPU；也未复现论文的经验收敛／排名收益。源码SHA256：metric_utils.py `f3aabf26b0de5ecb98df4a0821c8938a247980e955aa42dc7701029568da1a7a`。下一步如继续，只读追预声明题目/trial身份如何到达helper，不能由数值正确推断端到端cohort正确。
+
+## 预声明题集与试次身份链
+
+**完整观测清单必须先于生成结果，而不是从幸存结果反推分母。** 固定同一#8303 head，2026-10-21 07:03心跳接续。以下为源码链与选定片段控制，不是原生验证管道通过。
+
+| 阶段 | 身份与检查 |
+|---|---|
+| [构造与验证入口](https://github.com/verl-project/verl/blob/8971a9ff7666dd2584484d3c8f042d3da4162457/verl/trainer/ppo/v1/trainer_base.py#L1034) | 配置guard在callback/replay构造前调用，_validate再次调用；只接受所支持的同步、采样、agent、grader与正整数N |
+| 生成前建清单 | 每batch按prompt行生成新UUID，记录(source,uid)→N，跨batch累计；拒绝重复身份和不支持的逐题agent/N覆盖，然后才提交TQ与generate |
+| [原生session与写入](https://github.com/verl-project/verl/blob/8971a9ff7666dd2584484d3c8f042d3da4162457/verl/trainer/ppo/v1/agent_loop_tq.py#L111) | _run_prompt按range(n)分配session_id，postprocess按uid_session_output_index写key；所读常规结果/Exception路径等待兄弟任务settle再报组终态，不作任意取消/进程退出保证 |
+| 收集结果 | 原有逻辑先按session选最高output index；Bayes路径进一步要求最终key后缀0、UID匹配、session为十进制整数，再保留trial ID |
+| 指标入口 | 原始helper对预声明题目检查每个trial恰好一次、范围0到N−1且acc为观测0/1；在旧补零逻辑前执行 |
+
+UUID在每次_validate中重新生成，不是永久dataset ID或prompt内容哈希；“固定题集”是数据内容与实验设计条件，不能由UUID本身保证。key用rsplit从右拆两个分隔符，UID含下划线也不必被错误切碎。字符串不同的session如01与1解析成同一个整数，最终重复trial检查仍会拒绝。
+
+[naive grader](https://github.com/verl-project/verl/blob/8971a9ff7666dd2584484d3c8f042d3da4162457/verl/experimental/reward_loop/reward_manager/naive.py)返回dict时保留score与acc等extra字段；标量结果则把score用作acc。_compute_score将reward_extra_info写入最终输出，TQ序列化后_validate收集；缺失的extra项在列表中补None，不等于已经观测到错误0。Bayes开启时由helper拒绝不完整／非二元acc，不能用连续score代替二元acc；关闭时原有缺失session补零策略仍是另一条语义路径。
+
+### 失败发生在哪个阶段
+
+前置配置／清单检查可在提交生成前拒绝不支持的实验；结果key检查发生在生成和读回之后。最终helper还位于每batch的kv_clear以及验证日志／可选dump之后，因此“检查失败”不等于全程没有副作用或有事务回滚。这里描述调用位置，没有注入真实队列故障或认证失败后恢复。
+
+完整清单和一致ID是必要的观测结构，不是答案真实性、prompt归属、grader正确性或IID的证明。若key与存储UID一同被错误改写，单靠二者互相比较也不验证其内容。不能把这个原则边界直接称为本PR缺陷；它没有承诺对任意自定义组件做内容溯源认证。
+
+### 选定原始片段控制
+
+```bash
+python3.12 experiments/scripts/verify_validation_estimands.py /path/to/verl-source --check-identity
+```
+
+新增21组控制保留原始_check_bayes_at_n_config，以及_validate中“UID已生成之后的manifest块”和最终key解析块，再接原始helper。覆盖支持／关闭选项、7类不支持配置、合法清单与4类非法batch、带下划线UID的逆序结果、4类非法key、重复数字session和整题缺失。使用属性字典配置替身；不运行构造函数、UUID生成、完整_validate、最终output去重、agent、TQ、grader、cleanup或日志。原682矩阵／重排、10非法输入、180期望检查均回归通过。
+
+本机Python3.12.13/NumPy2.0.2，无新增依赖。既有独立torch CPU环境有torch，但缺hydra、omegaconf、tensordict、transfer_queue、ray与transformers；未安装或尝试宣称作者完整原生测试已通过。阶段收束为“数值矩与身份清单是不同证据层”，不继续堆同类替身替代原生管道，后续转读其他框架课题。
+
+新增SHA256：trainer_base.py `6ab352b220cd2eec7f71315f5850a44f8eb3e4d39750c497cb3b6ef049a0e597`；agent_loop_tq.py `255ca2dd6b6149afca8a25df6f1dcd92874cd7a2e3ac503dd88309377ea6eea5`；naive.py `85a7a6872e2c9684c1252393755c8fe39d8fdf9393608c98cacd025821ba1d51`。

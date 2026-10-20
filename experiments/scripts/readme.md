@@ -15,7 +15,7 @@
 | [verify_gmpo_geo_mean_split.py](verify_gmpo_geo_mean_split.py) | 指定#7913报告源码，执行原始train/累积主机方法的替身控制检查；独立NumPy共享参数模型显式模拟DP平均/IS权重/固定全局分母。非真实forward/backward、optimizer、DP或上游patch验证；旧手写torch DP段错误已撤回 |
 | [verify_verl_logprob_provenance.py](verify_verl_logprob_provenance.py) | 指定V1报告源码，7组成功路由+7类反例；`--check-snapshot-failures`查21组快照/退出边界；`--check-snapshot-rpc`（Python≥3.10）查6组原始注册/绑定/提交包装逻辑。actor/ref/get/TQ等均替身，不验证原生模型、快照、Ray调度、vLLM或恢复安全 |
 | [verify_verl_weight_sync_control.py](verify_verl_weight_sync_control.py) | 原始ServerAdapter/CheckpointEngineManager协程体的21组本机控制与故障注入，检查发送/确认/cache/版本/finalize/resume先后；移除框架装饰器，Ray/权重/通信均替身，不证明回滚、取消、恢复或重试安全 |
-| [verify_validation_estimands.py](verify_validation_estimands.py) | 固定#8303源码AST执行原始Bayes@N helper，对682二元矩阵查精确后验矩及保留trial身份的逆序控制；10组非法输入、180组有理数pass@k期望检查。Python3.10+/NumPy，非完整trainer、会话管道、真实IID或模型/设备验证 |
+| [verify_validation_estimands.py](verify_validation_estimands.py) | 固定#8303源码AST执行原始Bayes@N helper，对682二元矩阵查精确后验矩及保留trial身份的逆序控制；10组非法输入、180组有理数pass@k期望检查。`--check-identity`另查21组原始配置guard/manifest/key片段。Python3.10+/NumPy，配置替身，非完整trainer/会话/grader管道、真实IID或模型/设备验证 |
 | [test_vllm_lora_nan_h20.py](test_vllm_lora_nan_h20.py) · [test_vllm_lora_nan_targeted_h20.py](test_vllm_lora_nan_targeted_h20.py) | vLLM LoRA NaN 复现与验证 |
 | [cuda_multi_stream_race_demo_h20.py](cuda_multi_stream_race_demo_h20.py) · [cuda_multi_stream_race_demo_v2_h20.py](cuda_multi_stream_race_demo_v2_h20.py) | CUDA 多流竞争复现 |
 | [verify_areal_prompt_mean_split.py](verify_areal_prompt_mean_split.py) | AReaL 归约契约 CPU 参考验证（标准库，无 torch）；区分外层优化步数与内层累积，含 token_mean 对照、合法 DP dummy 调度、Megatron 默认路径 P 抵消及标量 Adam 反例；非框架集成实测，见源码笔记 §10.7 |
