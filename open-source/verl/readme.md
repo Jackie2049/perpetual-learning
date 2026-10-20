@@ -11,6 +11,7 @@
 - [Candidate: filter_overlong_prompts 多进程 SIGTERM 挂死 (#7163)](candidate-filter-sigterm.md)
 - [Candidate: tool_parser.py 静默吞异常](candidate-tool-parser-silent-except.md)
 - [Candidate: process_validation_metrics 崩在 sparse reward_extra_info 的 None](candidate-validation-metrics-none.md)
+- [Candidate: 训练前 weight-update 自检 RFC（#8252）](candidate-8252-weight-checker-rfc.md)
 - [Candidate: veomni transformer `del_local_after_load` 类型标注错误](candidate-veomni-type-annotation.md)
 - [verl 扫描报告 — 2026-08-03 18:14](scan-0803-1814.md)
 - [verl + 跨仓库扫描报告 — 2026-08-04 10:16](scan-0804-1016.md)
