@@ -80,7 +80,7 @@
 <div class="toc">
     <h2>📑 目录</h2>
     <ul>
-        <li><a href="#part0">第 0 章：自行讲解 —— DeepInfer 到底是什么</a></li>
+        <li><a href="#part0">第 0 章：自行讲解 —— DeepInfer 到底是什么（含 Take Away 核心洞见）</a></li>
         <li><a href="#part1">第 1 章：项目说明 —— 背景、定位、软硬件、Related Work</a></li>
         <li><a href="#part2">第 2 章：时间线 —— 从算子库到完整引擎</a></li>
         <li><a href="#part3">第 3 章：核心方法 —— ZOS / DSpark / V4 注意力 / YoCo / EPLB</a></li>
@@ -112,6 +112,30 @@
     <li><span class="badge badge-blue">对生态</span> DeepSeek 从"给模型"到"给模型+配套推理引擎"，把"DeepSeek 栈"闭环了。</li>
 </ul>
 <p>本报告主线即按此理解展开：<strong>"模型厂商专用推理引擎的完整技术剖析"</strong>，不是泛泛的框架对比。</p>
+
+<h3>0.4 Take Away —— 可迁移的核心知识点</h3>
+<p>以下是从 DeepInfer 里提炼的<strong>通用洞见</strong>，即使忘掉这个项目和报告本身，也依然有用：</p>
+
+<h4>① 吞吐的天花板在"调度-执行重叠"，不在单算子</h4>
+<p>ZOS 的本质不是某个 kernel 快，而是<strong>让 CPU 调度完全被 GPU 计算掩盖</strong>。对任何推理/训练引擎，把"决策"和"执行"解耦重叠，往往比优化单个算子的收益更大。这是"系统优化"和"kernel 优化"的分水岭。</p>
+
+<h4>② 推测解码应从"启发式"升级为"在线优化"</h4>
+<p>固定的 speculative length 是拍脑袋。DeepInfer 把它变成<strong>每步在线解一个最大化问题</strong>（吞吐 = 期望接受 token / 估计耗时），用运行时实测的耗时模型动态调 batch 和 draft 数。任何有代价的"投机"决策，都可以套用"在线目标优化"的思路。</p>
+
+<h4>③ "模型专用"和"通用框架"是两种值得并存的设计哲学</h4>
+<p>通用框架（vLLM/SGLang）靠生态广度赢；模型专用引擎（DeepInfer）靠把模型特殊性榨到极致赢。判断一个系统时，先分清它是"适配所有模型"还是"为一个模型量身定做"——两者的优化目标和评判标准完全不同。</p>
+
+<h4>④ "预编译数据搬运计划"比"运行时逐个查表"更高效</h4>
+<p>块加载计划（<code>block_load_plan</code>）把 KV 的 scatter/gather 预先编码成一段表（<code>[src_block, begin, end, dst]</code>），运行时一次拷贝完成。凡是"同一类搬运反复发生"的场景，都值得先做编译/规划，把运行时的工作变成查一条指令。</p>
+
+<h4>⑤ 确定性和"batch-invariant"是多层约束，不是单个开关</h4>
+<p>DeepInfer 的确定性跨 kernel（确定性算法）、通信（限制归约路径）、采样（位置哈希 RNG）三层。判断一个系统是否"可复现"，不能只看有没有固定随机种子，要看它是否把确定性当<strong>跨层不变量</strong>在设计。</p>
+
+<h4>⑥ 运行时负载均衡，不应打断前向执行</h4>
+<p>EPLB 在权重 shuffle 时用对称内存镜像/NCCL P2P，使"重排专家"不打断模型前向。任何需要运行时重分配资源的系统，"热重排而不停机"都是关键工程指标。</p>
+
+<h4>⑦ 开源贡献的采纳规律：公司内部驱动 vs 社区驱动</h4>
+<p>DeepSeek 生态是"公司内部批量 release"式维护，外部 PR 周期长（FlashMLA open PR 平均 185 天）；verl/vLLM/AReaL 是社区驱动、外部 PR 采纳高。选贡献目标时，先判断项目是"公司护城河"还是"公共设施"——后者对个人贡献者友好得多。</p>
 
 <h2 id="part1">第 1 章：项目说明</h2>
 
