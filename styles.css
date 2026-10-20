@@ -49,7 +49,7 @@
 /* Document summaries are the readable source of truth, never clipped tracker excerpts. */
 .contribution-grid{grid-template-columns:1fr}
 .contribution-panel:only-child{max-width:none}
-.project-records{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-top:24px;align-items:start}
+.project-records{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;margin-top:24px;align-items:start}
 .contribution-summary{min-width:0;border:1px solid var(--line);border-radius:8px;padding:23px;background:#fff}
 .contribution-summary h3{font-size:17px;line-height:1.7;margin:12px 0 20px;overflow-wrap:anywhere}
 .contribution-summary h3 button{text-align:left;font:inherit;padding:0}
@@ -70,5 +70,4 @@
 .project-repository{font-size:11px;color:var(--muted)}
 .project-repository p{margin:6px 0}
 .project-overview{font-size:12px;border-left:3px solid #b7d6c8;padding-left:13px;color:#536d60}
-@media(max-width:1050px){.project-records{grid-template-columns:1fr}}
 @media(max-width:650px){.contribution-summary{padding:17px}.contribution-summary h3{font-size:15px}.project-records{gap:14px}.plain-explanation{padding:12px}}
