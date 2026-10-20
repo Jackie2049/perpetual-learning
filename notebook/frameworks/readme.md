@@ -393,6 +393,7 @@
 - [Quantization + Inference + Training 交叉点 — RTX 4090终极路径](quantization-inference-training-crosspoint-reading.md)
 - [7框架 RL Training Design Patterns 综合对比](rl-training-design-patterns-comparison.md)
 - [RLHF/GRPO 训练基础设施 2026 技术全景](rlhf-training-infra-2026.md)
+- [RL 框架社区活跃度统计（2026-10-20 快照）](rl-framework-activity-survey-2026-10.md)
 - [RTX 4090 GRPO Training Runbook — Complete Step-by-Step Guide](rtx4090-grpo-training-runbook.md)
 - [RTX 4090 GRPO Trust Region对比: GRPO vs DPPO vs CPPO vs Tinker bypass](rtx4090-grpo-trust-region-comparison.md)
 - [7框架 RTX 4090 实战配置清单](rtx4090-seven-framework-practical-config.md)
