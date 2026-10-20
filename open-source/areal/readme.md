@@ -1,5 +1,30 @@
 # AReaL 贡献轨道
 
+<!-- contribution-summary:start -->
+**【仓库】** [AReaL](https://github.com/areal-project/AReaL)（强化学习后训练框架）
+
+**【贡献点】** 汇总 AReaL 的贡献线索、实测结论与环境入口；重点核对 [PR #1546](https://github.com/areal-project/AReaL/pull/1546) 引入的 prompt_mean 契约。
+
+**【类型】** 项目总览 / 研究归档
+
+**【价值评估】** 7 / 10 — 汇集已有否定结论与可复现实战入口，减少重复投入；不是已落地的代码贡献。
+
+**【进展】** 据 2026-10-20 [实测记录 §10.10](../../notebook/frameworks/areal-architecture-source-reading.md)，框架已跑通，受控结果未支持 prompt_mean 独有缺陷，候选修复撤销，不提 Issue/PR；Megatron GPU 与多卡 DP 对照未做。
+
+**【大白话讲明白】**
+
+强化学习训练会把一批回答分成若干次更新。之前怀疑，按提示词平均损失的方式会因切分而错误放大更新；已有实测记录认为，另一种按 token 平均的方法也出现相近变化，因此撤销了这项修复候选。这里保存的是排除错误方向的证据和复现实战经验，不是已合并的漏洞修复。
+
+**【What–Why–How】**
+
+- **What：** AReaL 强化学习训练框架的贡献轨道，以及 prompt_mean 候选的已有验证结果。
+- **Why：** 源码中看似异常的缩放不一定是训练缺陷，需要结合更新契约与对照实验判断。
+- **How：** 通过 [追踪记录](tracker.md)、[实测记录 §10.10](../../notebook/frameworks/areal-architecture-source-reading.md) 与 [交接说明](handoff-m5.md) 回看依据；保留现有负责人和实验范围。
+<!-- contribution-summary:end -->
+
+## 详细记录
+> 下方保留原始记录；后续结论与依据入口见上方抬头。
+
 > 上游：[areal-project/AReaL](https://github.com/areal-project/AReaL)（蚂蚁系，2026-10 核验仓库名；2026-10-20 快照 5.8k stars、135 open issues）
 > 定位：用户方向偏好的第二条 RL 训练框架轨道（verl 已为主贡献轨道）。2026-10-20 活跃度调研中 AReaL 合并效率（91%）为国内六家最高。
 > 状态与候选追踪见 [tracker.md](tracker.md)。源码/原理学习见 [notebook/frameworks/](../../notebook/frameworks/readme.md)。

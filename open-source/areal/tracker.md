@@ -1,5 +1,30 @@
 # AReaL 贡献追踪
 
+<!-- contribution-summary:start -->
+**【仓库】** [AReaL](https://github.com/areal-project/AReaL)（强化学习后训练框架）
+
+**【贡献点】** 追踪已被他人认领的 [M2PO Issue #1730](https://github.com/areal-project/AReaL/issues/1730) / [PR #1732](https://github.com/areal-project/AReaL/pull/1732)，以及已撤销的 prompt_mean 修复候选；关联 [PR #1546](https://github.com/areal-project/AReaL/pull/1546)。
+
+**【类型】** 候选追踪 / 验证归档
+
+**【价值评估】** 7 / 10 — 保留认领状态与候选撤销依据，避免重复开发或误报；未形成新的上游代码贡献。
+
+**【进展】** 据 2026-10-20 [实测记录 §10.10](../../notebook/frameworks/areal-architecture-source-reading.md)，框架已跑通，受控结果未支持 prompt_mean 独有缺陷，候选修复撤销，不提 Issue/PR；Megatron GPU 与多卡 DP 对照未做。
+
+**【大白话讲明白】**
+
+强化学习训练会把一批回答分成若干次更新。之前怀疑，按提示词平均损失的方式会因切分而错误放大更新；已有实测记录认为，另一种按 token 平均的方法也出现相近变化，因此撤销了这项修复候选。这里保存的是排除错误方向的证据和复现实战经验，不是已合并的漏洞修复。
+
+**【What–Why–How】**
+
+- **What：** 社区候选的认领状态与 prompt_mean 从怀疑到撤销的证据链。
+- **Why：** 已有 PR 覆盖的事项不应重复投入；数值差异本身不能直接证明程序有错。
+- **How：** 保留各轮扫描与修正记录，以 [实测记录 §10.10](../../notebook/frameworks/areal-architecture-source-reading.md) 的已有结论说明当前阶段；未覆盖项不扩大为已验证。
+<!-- contribution-summary:end -->
+
+## 详细记录
+> 下方保留原始记录；后续结论与依据入口见上方抬头。
+
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/areal-project/AReaL （蚂蚁系，2026-10-20 核验；default branch main，5.8k stars，135 open issues）
 >

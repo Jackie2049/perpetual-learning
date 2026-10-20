@@ -87,4 +87,4 @@ GitHub Pages 从 Markdown 抬头直接读取仓库、贡献点、类型、价值
 
 执行 `python3 tools/contributions/summary.py` 检查工作区，提交 hook 用 `--staged` 检查实际暂存内容；网页构建检查已提交快照。语法通过不能证明事实正确或表达合格，作者需读者视角复核。
 
-当前迁移边界：AReaL 的既有 `readme.md`、`tracker.md`、`handoff-m5.md` 由 M5 负责，自动审批拒绝本轮改写，暂保留原样；不豁免未来新增文档。其余存量文档按本规范整改。
+存量 Markdown 均已按本规范整理，新增与更新文档执行同一检查。版式整理不改变既有技术判断、负责人或实验范围。

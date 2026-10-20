@@ -1,5 +1,30 @@
 # AReaL prompt_mean：M5 统一接管
 
+<!-- contribution-summary:start -->
+**【仓库】** [AReaL](https://github.com/areal-project/AReaL)（强化学习后训练框架）
+
+**【贡献点】** 保留 prompt_mean 的 M5 单一负责人交接与证据入口；核对 [PR #1546](https://github.com/areal-project/AReaL/pull/1546) 的损失归约契约，最新结果见 [实测记录 §10.10](../../notebook/frameworks/areal-architecture-source-reading.md)。
+
+**【类型】** 交接说明 / 验证归档
+
+**【价值评估】** 7 / 10 — 明确负责人、假设与证据边界，可避免重复实验和把旧草稿误当成有效修复。
+
+**【进展】** 据 2026-10-20 [实测记录 §10.10](../../notebook/frameworks/areal-architecture-source-reading.md)，框架已跑通，受控结果未支持 prompt_mean 独有缺陷，候选修复撤销，不提 Issue/PR；Megatron GPU 与多卡 DP 对照未做。
+
+**【大白话讲明白】**
+
+强化学习训练会把一批回答分成若干次更新。之前怀疑，按提示词平均损失的方式会因切分而错误放大更新；已有实测记录认为，另一种按 token 平均的方法也出现相近变化，因此撤销了这项修复候选。这里保存的是排除错误方向的证据和复现实战经验，不是已合并的漏洞修复。
+
+**【What–Why–How】**
+
+- **What：** prompt_mean 候选的责任边界、历史交接与最新实测记录入口。
+- **Why：** 正文保留交接时的待验证状态，读者需要先知道候选已有后续结论，不能继续沿旧假设当作已证实缺陷推进。
+- **How：** 优先阅读 [实测记录 §10.10](../../notebook/frameworks/areal-architecture-source-reading.md) 与 [当前追踪](tracker.md)；下方保留原交接正文和未应用参考补丁，不修改技术方案、实验或分工。
+<!-- contribution-summary:end -->
+
+## 详细记录
+> 下方保留原始记录；后续结论与依据入口见上方抬头。
+
 2026-10-20 用户明确：本项的思路、代码、实验、定性与 PR 全部由 **macbook-M5 Agent 单一负责**。macbook-M1 阶段收尾，后续定时任务不再探测 GPU/SSH/VPN、不改相关脚本或演化并行方案；除非用户重新指派。
 
 ## 阶段状态

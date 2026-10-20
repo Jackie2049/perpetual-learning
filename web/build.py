@@ -22,7 +22,7 @@ OUT = WEB / 'dist'
 REPO = 'https://github.com/Jackie2049/perpetual-learning'
 TZ = ZoneInfo('Asia/Singapore')
 sys.path.insert(0, str(ROOT / 'tools' / 'contributions'))
-from summary import parse_summary, LEGACY, START
+from summary import parse_summary, START
 
 TAGS = {'p', 'br', 'hr', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'strong', 'em', 'del', 'blockquote', 'ul', 'ol', 'li', 'pre', 'code', 'a', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'span', 'div'}
 
@@ -159,24 +159,18 @@ def contribution_projects(paths, docs, catalog, revision):
         records = []
         for item in materials:
             path = item['path']
-            if (path in LEGACY and START not in docs[path]) or Path(path).name == 'tracker.md':
+            if Path(path).name == 'tracker.md':
                 continue
             ref = reference(path)
             fields = parse_summary(docs[path])
             records.append({**ref, 'type': fields['类型'], 'score': fields['价值评估'].split(' — ', 1)[0],
                             'fields': {key: render(value, path, revision) for key, value in fields.items() if key not in ('what', 'why', 'how')}})
         records.sort(key=lambda item: (-int(item['score'].split('/')[0].strip()), item['title']))
-        # Keep source documents owned by M5 unchanged until the user authorizes migration.
-        legacy_items = []
-        if slug == 'areal' and not records:
-            handoff = 'open-source/areal/handoff-m5.md'
-            source = reference(handoff)
-            legacy_items = progress_items(render(section_source(docs[handoff], '阶段状态'), handoff, revision))
-        overview_fields = None if readme in LEGACY and START not in docs[readme] else parse_summary(docs[readme])
+        overview_fields = parse_summary(docs[readme])
         projects.append({'slug': slug, 'name': name, 'overview': overview, 'source': source,
-                         'tracker': tracker, 'records': records, 'items': legacy_items,
-                         'repository': render(overview_fields['仓库'], readme, revision) if overview_fields else '',
-                         'progress': render(overview_fields['进展'], readme, revision) if overview_fields else '',
+                         'tracker': tracker, 'records': records, 'items': [],
+                         'repository': render(overview_fields['仓库'], readme, revision),
+                         'progress': render(overview_fields['进展'], readme, revision),
                          'section': '阶段状态',
                          'updated': git('log', '-1', '--format=%cI', revision, '--', f'open-source/{slug}').strip(),
                          'materials': materials})
@@ -208,11 +202,10 @@ def main():
         if path.startswith('open-source/') and path.endswith('.md'):
             if path not in docs:
                 docs[path] = git('show', f'{revision}:{path}')
-            if path not in LEGACY or START in docs[path]:
-                try:
-                    parse_summary(docs[path])
-                except ValueError as error:
-                    raise ValueError(f'{path}: {error}') from error
+            try:
+                parse_summary(docs[path])
+            except ValueError as error:
+                raise ValueError(f'{path}: {error}') from error
 
     featured = json.loads((WEB / 'featured.json').read_text())
     pending_paths = [
@@ -228,7 +221,7 @@ def main():
         status = clean_text(parse_summary(source)['进展']) if '<!-- contribution-summary:start -->' in source else (clean_text(status_lines[0]) if status_lines else '')
         if not status or any(done in status for done in ('POSTED', '评论已发布', '已合并', '不再推进', '默认不发布')):
             continue
-        if not re.search(r'待|需授权|需用户授权|授权|DRAFT', status):
+        if not re.search(r'待|需授权|需用户授权|授权|DRAFT|未发布|未提交', status):
             continue
         pending.append({'id': doc_id(path), 'path': path, 'title': title, 'tag': tag, 'status': status, 'label': '待上机验证' if '待 GPU' in status else '待发布决定'})
     projects, project_refs = contribution_projects(paths, docs, catalog, revision)

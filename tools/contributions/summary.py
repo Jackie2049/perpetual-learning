@@ -7,13 +7,6 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[2]
 FIELDS = ('仓库', '贡献点', '类型', '价值评估', '进展', '大白话讲明白', 'What–Why–How')
-# Owner boundary: these existing M5 documents await explicit header-only authorization.
-# New AReaL files are still required to follow WRITING.md. Never silently exempt a folder.
-LEGACY = frozenset({
-    'open-source/areal/readme.md',
-    'open-source/areal/tracker.md',
-    'open-source/areal/handoff-m5.md',
-})
 START = '<!-- contribution-summary:start -->'
 END = '<!-- contribution-summary:end -->'
 
@@ -61,14 +54,11 @@ def main():
     args = parser.parse_args()
     paths = (git('diff', '--cached', '--name-only', '--diff-filter=ACMR', '--', 'open-source')
              if args.staged else git('ls-files', '--', 'open-source')).splitlines()
-    errors, count, skipped = [], 0, []
+    errors, count = [], 0
     for path in paths:
         if not path.endswith('.md'):
             continue
         source = git('show', ':' + path) if args.staged else (ROOT / path).read_text()
-        if path in LEGACY and START not in source:
-            skipped.append(path)
-            continue
         try:
             parse_summary(source)
             count += 1
@@ -76,8 +66,6 @@ def main():
             errors.append(f'{path}: {error}')
     for error in errors:
         print(error)
-    if skipped:
-        print('保留原样（M5 文档，抬头整改待授权）：' + '、'.join(skipped))
     if errors:
         raise SystemExit(1)
     print(f'开源文档抬头检查通过：{count} 份')
