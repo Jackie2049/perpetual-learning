@@ -5,21 +5,24 @@ Usage: python3 verify_verl_logprob_provenance.py /path/to/verl-8250
 Executes original base bypass branch and separate-async routing method with
 fake queue/actor/base recomputation. CPU slots hold identifiers, not tensors.
 NumPy examples are not real model logits, vLLM processing or synchronization.
+Optional --check-snapshot-failures adds 21 controller/worker/TaskRunner controls.
+Those use scalar snapshots and fake trainer/tracker/queue, not native recovery.
 """
 import argparse
 import ast
 import hashlib
 from pathlib import Path
+import sys
 from textwrap import indent
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 
 import numpy as np
 
 
-def method(path, class_name):
+def method(path, class_name, name='_compute_old_log_prob'):
     tree = ast.parse(path.read_text())
     cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == class_name)
-    fn = next(n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == '_compute_old_log_prob')
+    fn = next(n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == name)
     fn.decorator_list = []
     return ast.unparse(fn)
 
@@ -125,12 +128,162 @@ def counterexamples():
     print('mean cancellation, interval span, administrative labels and mixed-version recomputation.')
 
 
+class InjectedSnapshotFailure(RuntimeError):
+    pass
+
+
+def snapshot_failure_controls(root):
+    separate = root / 'verl/trainer/ppo/v1/trainer_separate_async.py'
+    worker = root / 'verl/experimental/separation/engine_workers.py'
+    entry = root / 'verl/trainer/main_ppo.py'
+    for path in (separate, worker, entry):
+        print(path.name, 'sha256=' + hashlib.sha256(path.read_bytes()).hexdigest())
+
+    class Base:
+        def _compute_old_log_prob(self, batch, metrics):
+            self.actor_rollout_wg.event('compute')
+            return batch
+
+    ns = {'Base': Base}
+    exec(compile('from __future__ import annotations\nclass Probe(Base):\n' + indent(
+        method(separate, 'PPOTrainerSeparateAsync'), '    '), '<original-snapshot-routing>', 'exec'), ns)
+    count = 0
+    for bypass in (False, True):
+        for trigger in (0, 1, 3):
+            failures = ['compute'] if bypass else (['save', 'compute'] if trigger == 0 else
+                                                   ['save', 'restore_old', 'compute', 'restore_current', 'clear'])
+            for failure in failures:
+                events, slots = [], {0: 10}
+                actor = SimpleNamespace(current=10 + trigger)
+                def event(name):
+                    events.append(name)
+                    if name == failure:
+                        raise InjectedSnapshotFailure(name)
+                def save(slot):
+                    event('save')
+                    slots[slot] = actor.current
+                def restore(slot):
+                    event('restore_old' if slot == 0 else 'restore_current')
+                    actor.current = slots[slot]
+                def clear(slot):
+                    event('clear')
+                    del slots[slot]
+                actor.event, actor.save_model_to_cpu = event, save
+                actor.restore_model_from_cpu, actor.clear_cpu_model = restore, clear
+                probe = ns['Probe']()
+                probe.actor_rollout_wg = actor
+                probe.config = SimpleNamespace(algorithm={'rollout_correction': {'bypass_mode': bypass}})
+                probe.local_trigger_step = trigger
+                try:
+                    probe._compute_old_log_prob(object(), {})
+                except InjectedSnapshotFailure as error:
+                    assert str(error) == failure and events[-1] == failure
+                else:
+                    raise AssertionError('injected failure was swallowed')
+                expected = ['compute'] if bypass else (['save', 'compute'] if trigger == 0 else
+                                                       ['save', 'restore_old', 'compute', 'restore_current', 'clear'])
+                assert events == expected[:expected.index(failure) + 1]
+                # Fake operations fail BEFORE their own mutation. Native partial effects unknown.
+                old_remains = not bypass and trigger > 0 and failure in ('compute', 'restore_current')
+                assert actor.current == (10 if old_remains else 10 + trigger)
+                if not bypass and trigger > 0:
+                    assert (trigger in slots) == (failure != 'save')
+                print(f'snapshot bypass={bypass} trigger={trigger} fail={failure}: events={events}, fake_current={actor.current}')
+                count += 1
+
+    ns = {}
+    for name in ('save_model_to_cpu', 'restore_model_from_cpu', 'clear_cpu_model'):
+        exec(compile('from __future__ import annotations\n' + method(worker, 'DetachActorWorker', name),
+                     '<original-detach-worker>', 'exec'), ns)
+    for strategy in ('fsdp', 'fsdp2'):
+        module = SimpleNamespace(value=11)
+        def copy(model): return (model.value, 'fake-spec') if strategy == 'fsdp2' else model.value
+        def restore(model, saved, *spec):
+            assert spec == (('fake-spec',) if strategy == 'fsdp2' else ())
+            model.value = saved
+        obj = SimpleNamespace(config=SimpleNamespace(actor=SimpleNamespace(strategy=strategy)),
+                              actor=SimpleNamespace(engine=SimpleNamespace(module=module)),
+                              copy_handler=copy, restore_handler=restore)
+        ns['save_model_to_cpu'](obj, 0)
+        module.value = 12
+        ns['restore_model_from_cpu'](obj, 0)
+        assert module.value == 11
+        ns['clear_cpu_model'](obj, 0)
+        assert obj.cpu_saved_models == {}
+        module.value = 13
+        ns['restore_model_from_cpu'](obj, 0)  # Existing dictionary, missing key: no-op.
+        assert module.value == 13 and obj.cpu_saved_models == {}
+        count += 1
+    print(f'{count} snapshot/worker controls PASS; worker handlers and snapshots are scalar fakes.')
+    return count
+
+
+def entry_cleanup_controls(root):
+    path = root / 'verl/trainer/main_ppo.py'
+    source = method(path, 'TaskRunnerV1', 'run')
+    count = 0
+    for failure in (None, 'fit', 'init', 'fit+finish'):
+        events = []
+        tq = ModuleType('transfer_queue')
+        tq.init = lambda config: events.append('tq.init')
+        tq.close = lambda: events.append('tq.close')
+        def finish(exit_code):
+            events.append(('finish', exit_code))
+            if failure == 'fit+finish':
+                raise InjectedSnapshotFailure('finish')
+        class Trainer:
+            def __init__(self, config): self.logger = SimpleNamespace(finish=finish)
+            def init(self):
+                events.append('trainer.init')
+                if failure == 'init': raise InjectedSnapshotFailure('init')
+            def fit(self, manager):
+                events.append('fit')
+                if failure in ('fit', 'fit+finish'): raise InjectedSnapshotFailure('fit')
+        modules = {'transfer_queue': tq}
+        for name in ('verl', 'verl.trainer', 'verl.trainer.ppo', 'verl.trainer.ppo.v1'):
+            modules[name] = ModuleType(name)
+            modules[name].__path__ = []
+        modules['verl.trainer.ppo.v1'].get_trainer_cls = lambda mode: Trainer
+        previous = {name: sys.modules.get(name) for name in modules}
+        namespace = {'configure_verl_logging': lambda: None, 'pprint': lambda *a: None,
+                     'OmegaConf': SimpleNamespace(to_container=lambda *a, **kw: {}, resolve=lambda *a: None)}
+        exec(compile('from __future__ import annotations\n' + source, '<original-task-runner>', 'exec'), namespace)
+        runner = SimpleNamespace(trainer=None, agent_loop_manager=object(),
+                                 init_agent_loop_manager=lambda: events.append('agent.init'))
+        config = SimpleNamespace(trainer=SimpleNamespace(v1=SimpleNamespace(trainer_mode='separate_async')),
+                                 transfer_queue=SimpleNamespace(enable=False))
+        sys.modules.update(modules)
+        try:
+            try:
+                namespace['run'](runner, config)
+            except InjectedSnapshotFailure as error:
+                assert failure is not None
+                assert str(error) == ('finish' if failure == 'fit+finish' else failure)
+            else:
+                assert failure is None
+        finally:
+            for name, old in previous.items():
+                if old is None: sys.modules.pop(name, None)
+                else: sys.modules[name] = old
+        expected = ['tq.init', 'trainer.init']
+        if failure != 'init': expected += ['agent.init', 'fit']
+        expected += [('finish', 0 if failure is None else 1), 'tq.close']
+        assert events == expected
+        count += 1
+    print('4 original TaskRunner success/failure/finally controls PASS; tracker/queue/trainer are fakes.')
+    return count
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('source_root', type=Path)
+    parser.add_argument('--check-snapshot-failures', action='store_true')
     args = parser.parse_args()
     routing_controls(args.source_root)
     counterexamples()
+    if args.check_snapshot_failures:
+        count = snapshot_failure_controls(args.source_root) + entry_cleanup_controls(args.source_root)
+        print(f'PASS {count} additional snapshot/failure-boundary controls; no native continuation/recovery proof.')
     print('No native queue/actor inference, real weights, logits processor, vLLM, GPU or causal diagnosis.')
 
 

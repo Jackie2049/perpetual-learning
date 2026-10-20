@@ -58,7 +58,7 @@ rollout配置[默认logprobs_mode](https://github.com/verl-project/verl/blob/187
 python3 experiments/scripts/verify_verl_logprob_provenance.py /path/to/verl-8250
 ```
 
-[脚本](../../experiments/scripts/verify_verl_logprob_provenance.py)在Python3.9.6/3.12.13、NumPy2.0.2通过7组成功路径控制：原始base bypass分支、原始separate-async路由方法，queue/base重算/actor均替身，CPU slot只存标识符。另有7类概率/元数据反例，覆盖处理差异、采样token覆盖不足、softmax平移、均值抵消、版本区间宽度、声明标签与混合版本重算。它不运行模型、vLLM、真实快照/传输或GPU，也未覆盖计算异常后的快照恢复。
+[脚本](../../experiments/scripts/verify_verl_logprob_provenance.py)默认模式在Python3.9.6/3.12.13、NumPy2.0.2通过7组成功路径控制：原始base bypass分支、原始separate-async路由方法，queue/base重算/actor均替身，CPU slot只存标识符。另有7类概率/元数据反例，覆盖处理差异、采样token覆盖不足、softmax平移、均值抵消、版本区间宽度、声明标签与混合版本重算。它不运行模型、vLLM、真实快照/传输或GPU；可选异常检查见下节。
 
 脚本打印输入hash。核心路由文件SHA256为trainer_base `f6c18e2056f6ae2f3fa5436ab24a97ff2c90f8d4bc59bf4f82cb20f80a77baf9`、trainer_separate_async `fb169bfe966816f18cdaaa361761b1e4dc58b577e69e7103211717ab25f70cfb`。源码与这些替身检查说明上述观测为何需要分层，不足以确定私有训练故障根因或提出修复。
 
@@ -98,3 +98,28 @@ python3 experiments/scripts/verify_verl_weight_sync_control.py /path/to/verl-825
 注入点记录的是**调用尝试**而非成功提交。所测异常均传播到本机调用者，后续阶段未执行；fake ray.get按给定次序解析ref，仅检查管理器程序控制流。未测试真实Ray取消/并发、超时、worker死亡、通信错误语义、CUDA流完成、跨rank内容一致、外层auto_await运行模式或故障恢复。它是边界检查，不是native同步故障复现或#8250根因证据。
 
 源文件SHA256：ServerAdapter `e82e1c6782573e03c871b982eb0653801f54cb1647367a604aa8b1c5454773cb`；CheckpointEngineManager `97b51131a5770892007b7fb07264a2657fe83255b085927acd08c952a5682f64`。
+
+## CPU快照交换异常与训练退出
+
+**方法未恢复当前权重，不等于默认训练会带着旧权重继续运行。** 同一固定版本的separate-async覆盖方法没有围绕重算设置恢复用的try/finally；当trigger≥1、恢复slot 0已经成功而base重算抛出异常时，后面的恢复当前快照与清理临时slot均不会由该方法执行。这是源码控制流边界，不是#8250故障复现。
+
+下表使用标量actor替身：每次故障在该操作自身修改状态前抛出，先前已完成的操作保留效果。真实RPC/设备操作可能先部分修改再失败，不能套用这些标量状态。
+
+| 注入位置 | 替身中保留的状态与未执行步骤 |
+|---|---|
+| trigger=0，保存后重算失败 | actor仍为本周期π_old；没有后续交换步骤 |
+| trigger≥1，恢复slot 0后重算失败 | actor为π_old，当前快照仍在临时slot；未恢复当前、未清slot |
+| trigger≥1，恢复当前失败 | 本替身仍为π_old、临时slot尚在；真实恢复是否部分完成未知 |
+| trigger≥1，清临时slot失败 | 本替身已恢复当前权重，但临时slot仍在；不能由清理异常反推权重未恢复 |
+
+V1 separate-async实际选用的[DetachActorWorker快照方法](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/experimental/separation/engine_workers.py#L123)还要求核对slot前置条件：**当cpu_saved_models字典已经存在但指定key缺失时，restore直接返回，不调用restore_handler。** 因而“方法正常返回”本身不是快照已安装的独立校验；正常调用序列是否会丢失key尚未证明，不能据此报新bug。fsdp2/veomni还将保存的state与global_spec分别传给handler，其他策略直接传保存值；本轮没有执行这些原生tensor helper。
+
+外层语义不同：[PPOTrainer.fit](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/trainer/ppo/v1/trainer_base.py#L426)没有在该step周围吞掉异常并重试；重算失败使本次调用无法继续到后续actor update。[TaskRunnerV1.run](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/trainer/main_ppo.py#L133)在finally中结束tracking（失败exit_code=1），再以嵌套finally关闭TransferQueue，即使tracking.finish自身失败也会尝试close。**这些清理不是模型/slot回滚。** 默认这次fit/run调用退出；不据此推断Ray actor必定销毁、外部调度不重启，或私有调用者不捕获异常复用actor。后几项未检查，若要支持继续服务/重试，需另定义状态核验与恢复契约。
+
+```bash
+python3 experiments/scripts/verify_verl_logprob_provenance.py /path/to/verl-8250 --check-snapshot-failures
+```
+
+Python3.9.6/3.12.13、NumPy2.0.2均通过新增21组：15组原始separate方法异常传播（解耦trigger 0/1/3各阶段及bypass重算异常）、2组原始worker方法分支（fsdp/fsdp2，标量保存/恢复/清理及缺key不操作）、4组原始TaskRunner方法成功/初始化失败/fit失败/fit与tracking.finish均失败控制。方法体由AST提取并去除装饰器，base重算、actor、handler、trainer、tracker与queue均替身；TaskRunner检查与快照检查分别执行，未贯通真实fit。它不证明原生快照深拷贝、跨rank一致、collective完成、真实队列关闭、Ray失败聚合或故障后的恢复/继续训练安全。
+
+新增源文件SHA256：DetachActorWorker `e6799095d8e83890806582e625a6a334cb3f6f7ae17b408673f096bb5c6d96d1`；main_ppo `270ffe0d0f5ddbc4e9af8d0f6eece5d11b1a6d6d76166603b5ebac81345dd5cc`。RPC装饰器与worker-group等待/失败聚合未在这些去装饰器检查中执行，是接续核对项；不先据此改恢复方案。

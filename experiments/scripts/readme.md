@@ -13,7 +13,7 @@
 | [verify_gspo_detach_gradient.py](verify_gspo_detach_gradient.py) | 修正后的GSPO/GSPO-token目标值与有限差分梯度对照；GRPO幅度界/clip方向诊断反例。需指定verl源码，打印hash/形状检查；NumPy模型不执行原torch/autograd，非完整训练或根因证明 |
 | [verify_gmpo_clip_semantics.py](verify_gmpo_clip_semantics.py) | GMPO完整序列PG的正负优势、符号clip与mask对照，含非对称窗口映射、稳定分母和外层均值边界。需指定verl源码，NumPy/有限差分模型不执行原始函数，不证明engine/DP/训练等价 |
 | [verify_gmpo_geo_mean_split.py](verify_gmpo_geo_mean_split.py) | 指定#7913报告源码，执行原始train/累积主机方法的替身控制检查；独立NumPy共享参数模型显式模拟DP平均/IS权重/固定全局分母。非真实forward/backward、optimizer、DP或上游patch验证；旧手写torch DP段错误已撤回 |
-| [verify_verl_logprob_provenance.py](verify_verl_logprob_provenance.py) | 指定V1报告源码，原始bypass/CPU快照路由成功路径替身检查；概率处理、样本覆盖、版本标签与混合策略重算的NumPy反例。slot仅标识符，无真实模型/快照/同步/vLLM或异常恢复验证 |
+| [verify_verl_logprob_provenance.py](verify_verl_logprob_provenance.py) | 指定V1报告源码，7组原始bypass/快照路由成功检查+7类NumPy/元数据反例；可选`--check-snapshot-failures`再查21组快照异常、worker缺key及TaskRunner退出/清理边界。slot/handler/trainer/queue均替身，不验证原生模型、快照、RPC、vLLM或恢复安全 |
 | [verify_verl_weight_sync_control.py](verify_verl_weight_sync_control.py) | 原始ServerAdapter/CheckpointEngineManager协程体的21组本机控制与故障注入，检查发送/确认/cache/版本/finalize/resume先后；移除框架装饰器，Ray/权重/通信均替身，不证明回滚、取消、恢复或重试安全 |
 | [test_vllm_lora_nan_h20.py](test_vllm_lora_nan_h20.py) · [test_vllm_lora_nan_targeted_h20.py](test_vllm_lora_nan_targeted_h20.py) | vLLM LoRA NaN 复现与验证 |
 | [cuda_multi_stream_race_demo_h20.py](cuda_multi_stream_race_demo_h20.py) · [cuda_multi_stream_race_demo_v2_h20.py](cuda_multi_stream_race_demo_v2_h20.py) | CUDA 多流竞争复现 |
