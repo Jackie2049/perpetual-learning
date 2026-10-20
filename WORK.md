@@ -64,7 +64,7 @@
 D
 1. **未来一周开源技术掘金三大重点（用户 2026-10-20 定）**：**DeepInfer / verl / AReaL**。其中 DeepInfer 主研（推理框架源码深挖），verl 主贡献（续 #8281/#8250），AReaL 主实测（prompt_mean 切分敏感点）。vLLM 降为次优先级。 **这是跨主机整体分工，M1 不接管 AReaL；M5 独立推进其完整候选/PR。**
 2. **等待用户授权/资源**（长期未决，见「运行接续」5 项）——发布评论/文档、#8281 发布形态、方向调整。#8237 已收尾（PR #8286 ready + issue 已回）。
-3. **高优调研（用户 2026-10-20 定）**：**DeepInfer**——[#54](https://github.com/deepseek-ai/DeepInfer/pull/54)计时pair主机反例保留；[#57](https://github.com/deepseek-ai/DeepInfer/pull/57)外层监督有真实CPU回归/旧实现负对照。内层CP控制面已厘清：父死保护在init_dist后、loop取命令前注册；ring读标记不等于方法完成，包装层默认未传timeout，60秒仅debug日志；正常stop需参与者共同执行。main774ce24与#57内层源码相同，AST/单槽/假时钟检查均通过，非Linux/shared_memory/通信/设备实测，注册前边界未复现，不定新bug。证据见 [笔记](notebook/frameworks/deepinfer-initial-survey.md) 与既有主机脚本。下一步复用现有ShmRingBuffer清理断言，核对close/unlink与memoryview寿命；不另造竞争修复，上游发言须拍板。M1不访问GPU，不涉及AReaL整项。
+3. **高优调研（用户 2026-10-20 定）**：**DeepInfer** 生命周期学习先收束：#54计时pair主机反例保留；#57外层监督有真实CPU对照；内层控制面是源码/替身范围。本轮复用ShmRingBuffer/PG cleanup原始方法与现有清理断言，在Python3.9/3.12真实本机映射通过；close/unlink和派生view引用责任已区分，macOS16KiB粒度对照保留，非Linux/Gloo/设备实测，不定新bug。证据见 [笔记](notebook/frameworks/deepinfer-initial-survey.md) 与既有主机脚本。下一步回到verl，只读复核#8281/#8250状态及关联覆盖，再选本机可验问题；不自动推进待授权发布、不重复抢修。M1不访问GPU，不涉及AReaL整项，任何上游发言仍须拍板。
 4. **AReaL prompt_mean（原 M5 单一负责项，用户 2026-10-20 恢复 VPN 后明确本会话继续）——实测已闭环**：框架跑通（gsm8k PPO smoke 128 步无错）+ 受控实测（§10.7 判据，M=2 vs 4 + 固定 M 变 P，prompt_mean 与 token_mean 行为一致：跨 M 1.301≈1.273、P-spread 1.216≈1.192）——**不构成 defect，候选修复撤销，不提 issue/PR**，作为 review 依据存档（见 [源码笔记 §10.9](notebook/frameworks/areal-architecture-source-reading.md)、[tracker](open-source/areal/tracker.md)）。Megatron GPU 对照未做（TE 硬依赖）。分工状态见 [handoff-m5](open-source/areal/handoff-m5.md) 与 WORK「运行接续」。
 
 3. 按课题逐步关联现有实验执行材料与 notebook/experiments/ 的分析记录；新增实验优先就近组织，维护双向入口。

@@ -8,6 +8,8 @@ PR #54 output-array ownership probe: add --check-output-copy --pybind-include
 /path/to/pybind11/include [--python-include /path/to/Python/Headers].
 This mode compiles a tiny CPU extension, not DeepInfer or its output pool.
 CP lifecycle/control-plane model: add --check-worker-lifecycle (no Linux/device execution).
+Native shared-memory cleanup: add --check-shm-cleanup (torch zero-fill adapter;
+not the full upstream Gloo/ZMQ test suite).
 Requires Python 3.9+ and numpy; no torch.
 Three Worker method bodies are compiled unchanged from AST, with decorators
 removed and hardware dependencies replaced by explicit doubles. Metadata
@@ -18,6 +20,7 @@ import argparse
 import ast
 import hashlib
 import importlib.util
+import mmap
 import pickle
 import re
 import shutil
@@ -27,10 +30,14 @@ import sysconfig
 import tempfile
 from contextlib import nullcontext
 from contextlib import contextmanager
+from contextlib import suppress
 from collections import defaultdict
 from itertools import product
+from multiprocessing import shared_memory
 from pathlib import Path
 from types import SimpleNamespace as NS
+from unittest import TestCase
+from unittest.mock import patch
 
 import numpy as np
 
@@ -578,6 +585,130 @@ def check_worker_lifecycle(root):
     print("PASS CP host-control contract. Fake ring/clock/prctl/resources; no concurrency, Linux, sockets or devices.")
 
 
+def check_shm_cleanup(root):
+    """Original ring/PG cleanup plus original cleanup assertions on real OS shm.
+
+    Only torch.frombuffer(...).fill_(0) is adapted to numpy for initialization.
+    Native handles are tracked solely to clean this probe's own segments on error.
+    """
+    ring_path = root / "deepinfer/distributed/shm_broadcast.py"
+    test_path = root / "tests/distributed/test_shm_broadcast.py"
+    pg_path = root / "deepinfer/model_executor/parallel_utils/parallel_state.py"
+    trees = {}
+    for path in (ring_path, test_path, pg_path):
+        raw = path.read_bytes()
+        trees[path] = ast.parse(raw)
+        print(f"{path.name} sha256={hashlib.sha256(raw).hexdigest()}")
+    ring_class = next(n for n in trees[ring_path].body
+                      if isinstance(n, ast.ClassDef) and n.name == "ShmRingBuffer")
+    cleanup_test = next(n for n in trees[test_path].body
+                        if isinstance(n, ast.FunctionDef) and n.name == "test_shm_ring_buffer_cleanup")
+    cleanup_test.decorator_list = []
+    pg_class = next(n for n in trees[pg_path].body
+                    if isinstance(n, ast.ClassDef) and n.name == "ParallelProcessGroup")
+    pg_class.body = [n for n in pg_class.body if isinstance(n, ast.FunctionDef)
+                     and n.name == "cleanup_shm_broadcast"]
+    assert len(pg_class.body) == 1
+    handles = []
+
+    def tracked_shm(*args, **kwargs):
+        handle = shared_memory.SharedMemory(*args, **kwargs)
+        handles.append((handle, kwargs.get("create", False)))
+        if not kwargs.get("create", False):
+            print(f"Attached native mapping size={handle.size}")
+        return handle
+
+    ns = {
+        "contextmanager": contextmanager, "suppress": suppress, "patch": patch,
+        "shared_memory": NS(SharedMemory=tracked_shm),
+        "torch": NS(uint8=np.uint8, frombuffer=lambda buffer, dtype:
+                    NS(fill_=np.frombuffer(buffer, dtype=dtype).fill)),
+        "pytest": NS(raises=TestCase().assertRaises),
+    }
+    future = ast.ImportFrom(module="__future__", names=[ast.alias(name="annotations")], level=0)
+    module = ast.Module(body=[future, ring_class, pg_class, cleanup_test], type_ignores=[])
+    exec(compile(ast.fix_missing_locations(module), "<DeepInfer native shm cleanup AST>", "exec"), ns)
+    ring_type, pg_type = ns["ShmRingBuffer"], ns["ParallelProcessGroup"]
+    escaped = None
+    try:
+        for already_unlinked in (False, True):
+            ns["test_shm_ring_buffer_cleanup"](already_unlinked)
+        print("Original cleanup assertions: normal and already-unlinked cases pass; double destructor tolerated.")
+        # macOS rounds native shm sizes to a page on attach. Match that size
+        # rather than editing the upstream exact-size assertion to force a pass.
+        owner = ring_type(1, mmap.PAGESIZE - 2, 1)
+        print(f"Attachment fixture: requested={owner.total_bytes_of_buffer}, page={mmap.PAGESIZE}")
+        name = owner.shared_memory.name
+        peer = ring_type(*owner.handle())
+        with owner.get_metadata(0) as metadata:
+            assert bytes(metadata) == bytes(2)
+        with TestCase().assertRaises(ValueError):
+            len(metadata)
+        with owner.get_data(0) as view:
+            view[:4] = b"ring"
+        with TestCase().assertRaises(ValueError):
+            len(view)  # original yielded view is released by its context manager
+        with peer.get_data(0) as peer_view:
+            assert bytes(peer_view[:4]) == b"ring"
+        peer_pg = pg_type()
+        peer_pg.mq = NS(buffer=peer)
+        peer_pg.cleanup_shm_broadcast()
+        peer_pg.cleanup_shm_broadcast()
+        assert peer_pg.mq is None and peer.shared_memory.buf is None
+        reopened = ring_type(*owner.handle())  # closing the noncreator did not unlink
+        reopened.__del__()
+        owner_pg = pg_type()
+        owner_pg.mq = NS(buffer=owner)
+        owner_pg.cleanup_shm_broadcast()
+        owner_pg.cleanup_shm_broadcast()
+        assert owner_pg.mq is None and owner.shared_memory.buf is None
+        with TestCase().assertRaises(FileNotFoundError):
+            tracked_shm(name=name)
+        print("Real mappings: peer sees data; noncreator close preserves name; creator cleanup removes it; PG repeat is a no-op.")
+
+        retained = ring_type(1, 32, 1)
+        retained_name = retained.shared_memory.name
+        if retained.shared_memory.size != retained.total_bytes_of_buffer:
+            print(f"Native granularity: requested={retained.total_bytes_of_buffer}, mapped={retained.shared_memory.size}")
+            with TestCase().assertRaises(AssertionError):
+                ring_type(*retained.handle())
+            print("Unaligned attachment rejects exact-size assertion on this platform; aligned fixture is separate.")
+        with retained.get_data(0) as view:
+            view[:4] = b"hold"
+            escaped = view[:4]  # deliberate additional export, unlike ordinary scoped use
+            copied = bytes(view[:4])
+        assert bytes(escaped) == copied == b"hold"
+        with TestCase().assertRaises(BufferError):
+            retained.__del__()
+        # close failed before unlink; prove only the name of this probe's own segment exists.
+        with patch("multiprocessing.resource_tracker.register", lambda *args, **kwargs: None):
+            observer = tracked_shm(name=retained_name)
+        observer.close()
+        escaped.release()
+        escaped = None
+        retained.__del__()
+        retained.__del__()
+        assert copied == b"hold"  # detached bytes do not keep a shared-memory export alive
+        with TestCase().assertRaises(FileNotFoundError):
+            tracked_shm(name=retained_name)
+        print("Retained derived view: close raises BufferError; releasing export permits retry; detached bytes remain valid.")
+    finally:
+        if escaped is not None:
+            escaped.release()
+        for handle, creator in reversed(handles):
+            handle.close()
+            if creator:
+                with suppress(FileNotFoundError):
+                    handle.unlink()
+    creators = [h for h, creator in handles if creator]
+    assert all(h.buf is None for h, _ in handles)
+    for handle in creators:
+        with TestCase().assertRaises(FileNotFoundError):
+            shared_memory.SharedMemory(name=handle.name)
+    print(f"PASS native shm lifetime checks; {len(creators)} probe-created segments closed/unlinked.")
+    print("Real local mappings, but no worker/Gloo/ZMQ/concurrent-process or device validation; no upstream patch.")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source_root", type=Path)
@@ -586,12 +717,16 @@ def main():
     modes.add_argument("--check-so-counter", action="store_true", help="PR #54 SO upper-bound model; no grammar/device execution")
     modes.add_argument("--check-output-copy", action="store_true", help="CPU pybind constructor probe plus original collect/release")
     modes.add_argument("--check-worker-lifecycle", action="store_true", help="CP control-plane AST with ring/clock/resource doubles")
+    modes.add_argument("--check-shm-cleanup", action="store_true", help="original ring/cleanup assertions on native local shared memory")
     parser.add_argument("--pybind-include", type=Path)
     parser.add_argument("--python-include", type=Path, default=Path(sysconfig.get_path("include")))
     parser.add_argument("--cxx", default=shutil.which("c++") or "c++")
     parser.add_argument("--cxx-flag", action="append", default=[], help="extra compiler flag, repeat as needed")
     args = parser.parse_args()
     root = args.source_root
+    if args.check_shm_cleanup:
+        check_shm_cleanup(root)
+        return
     if args.check_worker_lifecycle:
         check_worker_lifecycle(root)
         return

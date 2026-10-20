@@ -514,3 +514,39 @@ AST 保留原始 slave loop/stop/run_workers、cp_broadcast_object 与 MessageQu
 Python3.9.6/numpy2.0.2；源码 SHA256：base.py `40e6ca29aebd9d475eaad4b86326783f76dba2b73feaa51d86a200b7704a05ed`，parallel_state.py `3565b2449abff4df0df2f979061a73364886c93602218b43c2f86c70f2629801`，shm_broadcast.py `aa461587184bf979acb813ed6ee646665715e3eaaca286a9270a5e4ceb559006`。#54 event/SO/output-copy 与原始主机时序模式回归正常；这不将本轮模拟升级为真实通信验证。
 
 已有 `tests/distributed/test_shm_broadcast.py` 包含真实 ShmRingBuffer cleanup，以及4进程 Gloo/约400MB随机数组广播；已读测试，但本机未安装 torch，也未运行该测试。当前不需要重复创造“无人处理的故障”或改上游方案。下一步优先核验现有共享内存 close/unlink 与 memoryview 生命周期，复用现有清理断言，明确内存回收与方法执行回执的不同边界。
+
+## 共享内存回收：真实本机映射与引用寿命检查
+
+2026-10-20 23:31 心跳核对 main 仍为 `774ce244b87cc0eb8d4b94ab9f5de2ab22049f01`。本轮将上节的 bytearray 替身边界往前推进一小步：运行原始 ShmRingBuffer、PG cleanup 方法和已有 cleanup 测试的两组断言，使用**本机真实 SharedMemory/映射**，不导入完整 DeepInfer/torch。它不是上游完整 pytest/Gloo 套件通过，也不是 Linux/GPU 验证。
+
+### 原始方法、适配点与运行方式
+
+扩展 [既有主机检查脚本](../../experiments/scripts/verify_deepinfer_zos_host_flow.py)：
+
+```bash
+python3 experiments/scripts/verify_deepinfer_zos_host_flow.py /path/to/DeepInfer --check-shm-cleanup
+```
+
+AST 保留 ShmRingBuffer 全类、ParallelProcessGroup.cleanup_shm_broadcast 与 `test_shm_ring_buffer_cleanup` 函数体，仅移除测试 decorators。metadata 初始化的 `torch.frombuffer(...).fill_(0)` 换成 NumPy 同 buffer 的 fill 适配，pytest.raises 由 unittest.assertRaises 绑定；无源码断言改写。SharedMemory 构造包装只记录本次获得的真实句柄，finally 关闭它们、仅 unlink 本次 creator 创建的段，并核对名称已不可再打开。
+
+环境：macOS15.4.1 arm64；Python3.9.6 和隔离 Python3.12.13 各通过完整模式，均 numpy2.0.2；3.12 沿用本轮之前的隔离 CPU venv，仅新增 NumPy，无 torch/设备依赖。每轮创建4个小段，均完成关闭/名称移除检查，无 resource_tracker 泄漏警告。默认沙箱首次 shm_open 被拒，未创建段；获准本机 IPC 访问后再执行，不将权限错误计为上游失败。
+
+### 已确认的几种不同责任
+
+| 检查 | 本机结果 | 证据边界 |
+|---|---|---|
+| 原始 cleanup 正常/预先 unlink 两例 | 直接调用两次 __del__ 均通过，buf=None、名称不可再开 | 使用原测试断言，不含真实 Gloo 广播 |
+| creator 与非 creator 两个映射 | peer 可见 `ring` 数据；peer PG cleanup 只 close，名称仍可附着；creator cleanup 后名称消失 | 同一进程内多映射，无并发/内存排序证明 |
+| PG cleanup 重复调用 | 第一次设 mq=None，后续 no-op | 不等于任意失败位置都幂等；未测已有外部 unlink 时的 PG 异常 |
+| get_data/get_metadata 普通 context | 退出后原始 yielded view 已 release，访问它抛 ValueError | 不保证调用方没有另存派生 view/数组 |
+| 人为保留一个派生 memoryview | 原始 __del__ 的 close 抛 BufferError，名称仍存在；释放派生 view 后重试清理成功；独立 bytes 副本仍可读 | 故障控制是本实验主动持有的额外引用，不是已找到线上引用逃逸 |
+
+[Python shared_memory 文档](https://docs.python.org/3.12/library/multiprocessing.shared_memory.html)区分关闭本实例访问与移除共享段；[memoryview.release](https://docs.python.org/3.12/library/stdtypes.html#memoryview.release)用于释放视图持有的导出引用。故“读标记已设置”“Python 变量出了 with”“共享段已 unlink”“所有映射已关闭”不能互换。本轮没有把派生引用阻止 close 定性为上游 bug，也没有改变所有者/回收方案。
+
+### 先记录平台差异，再调整夹具，不删除断言
+
+首次扩展试验在 owner 请求68字节、peer 附着时触发原始 `shared_memory.size == total_bytes_of_buffer` 断言。检查后发现本机页大小16,384字节；最终模式保留一个请求34字节、实际映射16,384字节的负对照，确认同一 exact-size 断言拒绝该附着。用于所有权/重复清理的独立正向夹具改为**总大小恰好一页**，源码和断言不改，附着映射均为16,384字节。这符合标准库说明的“实际共享块可能因平台页大小大于请求值”，不把 macOS 小尺寸夹具不适配推断为目标 Linux 的部署故障。
+
+源码 SHA256：shm_broadcast.py `aa461587184bf979acb813ed6ee646665715e3eaaca286a9270a5e4ceb559006`；原测试 `f7e18b42fcc1001202d65eb5598c7e6a7170940628de06870fd2201d070d86a7`；parallel_state.py `3565b2449abff4df0df2f979061a73364886c93602218b43c2f86c70f2629801`。未运行4进程/约400MB Gloo 测试、ZMQ、进程异常死亡、跨节点或 GPU/NPU；标准库可自行启动 resource_tracker 辅助进程，不将其称为应用级多进程广播实验。
+
+**阶段判断**：正常所有者回收路径和显式引用控制在本机得到支持；已知平台/引用限制保留，不据此制造新贡献候选。DeepInfer 这段生命周期学习先收束，真正并发/设备证据不能由更多同类单进程检查替代。下一步回到 verl 的只读状态/关联 PR 核验，先查重并确认现有候选是否仍有效，再选择可推进的问题；现有待授权发布事项不自动获得新授权。
