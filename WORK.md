@@ -100,6 +100,7 @@
 
 1. **等待用户授权/资源**（长期未决，见「运行接续」5 项）——发布评论/文档、#8281 发布形态、方向调整。#8237 已收尾（PR #8286 ready + issue 已回）。
 1. **未来一周开源技术掘金三大重点（用户 2026-10-20 定）**：**DeepInfer / verl / AReaL**。其中 DeepInfer 主研（推理框架源码深挖），verl 主贡献（续 #8281/#8250），AReaL 主实测（prompt_mean 切分敏感点）。vLLM 降为次优先级。 **这是跨主机整体分工，M1 不接管 AReaL；M5 独立推进其完整候选/PR。**
+   - **DeepInfer 平民版（魔改适配非旗舰硬件）专题（2026-10-20 用户立项，跟踪项）**：评估能否把 DeepInfer 从"仅 SM100/Ascend950"改造成适配 4090/A100/H100/910C。**结论（中期，源码+替代方案调研）：Python 算子抽象层后端无关，堵点在 flash_mla/deep_gemm/deep_ep 三个 Blackwell/A5-only kernel 包 + 一个架构检查 + tilelang 需重编译。** H100 最容易、4090 可行、A100 最费、910C 属跨代移植难。详见 [专题笔记](notebook/frameworks/deepinfer-civilian-port.md)。下一步：等目标硬件后建"移植冒烟"（换 Triton MLA + 放宽架构检查跑通 offline_inference）；完成后作为新章节插入 DeepInfer 研究报告。
 2. **等待用户授权/资源**（长期未决，见「运行接续」5 项）——发布评论/文档、#8281 发布形态、方向调整。#8237 已收尾（PR #8286 ready + issue 已回）。
 3. **M1当前学习/贡献复核**：V1来源/失败边界、#8303指标与#8300布局学习收束；#8250等真实配对观测，#7913不重复，#8281待决定。clip旧RFC和PrefixGrouper full-model旧RFC均已撤回，不发布后者评论草稿。DeepInfer参数、decode曲线缓存与#122 profiling关闭学习收束，下一步只读已有#127 Ascend/NUMA测试及对应拓扑/绑核边界，先核版本与依赖，不改本机affinity、不探测设备或服务器、不竞争实现。M1不访问GPU、不涉及AReaL整项，任何上游发言仍须拍板。
 3. **高优调研（用户 2026-10-20 定）**：**DeepInfer**——确定性、ZOS、DSpark、YoCo/CP、生命周期、EPLB、chunk/cached-prefix、MTP缓存提交与SO失败输出边界已有源码/限定CPU学习，完整扩展/设备正确性与性能未测。账本0不能直接当对外失败token，局部条件差异不定性新bug，见[笔记](notebook/frameworks/deepinfer-initial-survey.md#so失败状态与输出token身份)。下一步做有界DeepInfer/verl上游变化核对，选择未重复课题；不继续增加同类替身代替真实失败payload、错误响应语义与既有PR覆盖核验。不预设新缺陷、不竞争已有修复；M1不访问GPU/AReaL，任何上游发言仍须用户拍板。
