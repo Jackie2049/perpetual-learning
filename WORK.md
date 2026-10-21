@@ -12,6 +12,8 @@
 
 ## 运行接续
 
+- **M1 新版阶段tracing学习收束（2026-10-21）**：有界核对DeepInfer最近10个/verl6个open PR，转读#8315 head4d6b3eb/base619c397d（merge-basecd58f550）。4文件AST/内存compile、11方法去新增decorator后AST一致；未跑logger/原测试/engine。见[笔记](notebook/frameworks/verl-async-logprob-provenance.md#新版阶段-tracing-与证据关联)。区间可含no-op，sender结束非receiver安装/显存字节证明，metric_log按callable分派而非容错；rl-insight#206读取已merge非安装能力证明。真实同步/设备条件补入[原M5条目](experiments/handoff-m5.md#verl-异步策略一致性补证)，不另开实验/默认采用/改#8250方案。本题收束，后续可只读DeepInfer新#184 draft长度环境变量生效/记录一致性，不启动推理；GPU/AReaL和网站边界不变。
+
 - **M1 模型路径入口收束（2026-10-21）**：只读已有#182 heada9baf680/base9bd9cf2。AST选原resolver/常量，两版各12组真实临时目录/SDK导入拦截观察符合预期，候选另1组合成缺包控制通过。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#模型路径选择与下载来源)。新非空覆盖优先/空串回退；非目录进入Hub分支，config存在非checkpoint完整；正值白名单不同于#177。无SDK/下载/缓存/模型/硬件执行，不新增M5任务。本题收束，后续有界核对上游后选未重复CPU/源码问题，不继续堆下载替身或干预M5移植；GPU/AReaL和网站边界不变。
 
 - **M1 AIME提取评分收束（2026-10-21）**：有界核对DeepInfer最近8个/verl6个open PR，转读已有新#178 headddd3fa4/base9bd9cf2。原21测试（含3真实rule CLI）base11过10预期失败、候选全过；3原函数控制确认只按小写字面闭合标签分界，不是通用思考解析器。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#aime-思考区与规则评分)。修复可减少规则错拒/误收；默认LLM judge与输入链未改，不外推模型得分。未加载模型/设备/外部judge，不新增M5任务。本题收束，后续可只读新#182模型下载路径/缓存身份，先核副作用，不下载或调用远端服务；GPU/AReaL和网站边界不变。

@@ -62,6 +62,10 @@ SGLang 旧#8132路径接续（同一任务，不另排队）：见[分桶与失�
 
 M1 已撤回确定因果诊断。已有数值、路由与异常控制未运行模型、原生权重同步或真实训练；没有证明 sync/cache、mask、reward 或数值路径是哪一个根因。
 
+可选观测入口（不另排队、不默认采用）：已有[verl #8315](https://github.com/verl-project/verl/pull/8315)，2026-10-21读取open，head `4d6b3eb8606e24c1d70d648e92a1114129ec6c62`、目标base619c397d、merge-basecd58f550，见[阶段tracing边界](../notebook/frameworks/verl-async-logprob-provenance.md#新版阶段-tracing-与证据关联)。M1仅4模块语法/11方法去decorator后AST一致检查，未运行rl-insight或引擎。它记录rank update_weight与actor memory阶段，但no-op也可有区间，sender返回非全体应用证明，未新增显存字节/参数身份校验。真实同步/设备观测由M5在既有任务条件满足时独立决定，非接单记录。
+
+若已有获准的匹配观测环境，可先固定verl/rl-insight实际提交、包路径、版本及metric_log callable分派，核对rank/actor lane与同步step关联、是否实际执行/异常，并保留独立显存与安装证据。缺后端、需要新增数据外发或会改变原报告环境时先记待条件；不为这项参考自动升级环境、部署服务、重跑长训练或上传私有payload，阶段图不能替代下述配对观测。
+
 M5 最小下一步：先判断是否有获准使用的对应配置、完整 token/mask、checkpoint/版本身份和实际环境；条件齐备后按既有观测契约采集训练 actor、干净重载、live rollout 的配对观测，明确 raw/processed 概率与采样处理，保留逐 token 残差及重复基线。需要同步证据时区分发送、接收、应用、cache、版本标记及恢复生成；不由单个版本号或均值接近零认证一致。
 
 停止条件：缺私有材料/配对身份就记录“待资料”，不启动原报告的长训练，也不以公共 toy 或另一模型称已复现 #8250。对照有差异只能缩小范围；没有原始观测前，不设计新的修复、不发布旧诊断稿或承诺治愈阈值。完成标准是可追溯的配对证据，或明确缺失材料清单。

@@ -145,3 +145,40 @@ python3 experiments/scripts/verify_verl_logprob_provenance.py /path/to/verl-8250
 可选模式要求Python≥3.10，因原始register检查含运行时类型union；实跑环境为Python3.12.13/NumPy2.0.2。6组控制执行原始注册元数据生成、参数复制/collect、方法绑定器及RayWorkerGroup提交/包装方法体：三个默认阻塞快照调用、显式非阻塞对照、get抛错、提交阶段抛错。Ray actor/ref/get、枚举、DataProto类型及TQ bridge为替身；get失败用“一个完成、一个失败、一个仍pending”的假设日程检查包装器不做补偿，不模拟Ray调度或测量真实任务状态。没有执行远端worker及其decorator inner、tensor快照、TQ转换、colocated/fused进程建立、真实异常收敛或GPU。
 
 输入SHA256：decorator `718876c4c59e9f3cdb0339185be156aeb7b6d8eb42a2a6f919a3163961634ace`；ray/base `a61952c697b6c7f8220f7cb91043e514beadc9061007c1c140acb260e6aed8c5`；worker_group `3723ad4ba93afc8b715287a1e9f8754e4915af6fd93a44e57646beb28a8591ab`。本轮将V1来源与失败边界学习阶段收束；#8250仍需要真实配置、配对观测和受控对照，不以增加替身数量替代根因证据，也不据此提出自动恢复修复。
+
+## 新版阶段 tracing 与证据关联
+
+2026-10-21 读取已有 [verl #8315](https://github.com/verl-project/verl/pull/8315)，open、作者mengchengTang，head `4d6b3eb8606e24c1d70d648e92a1114129ec6c62`、目标base `619c397dc9917fed278b6e47c52a6620aef05466`、共同祖先 `cd58f550fb1c4f5a3fe29da38e6f0002ec462fd3`。这是新版观测入口，不是前文1876b06d报告环境已有的能力，也不是#8250修复。**阶段被记录，不能单独证明阶段成功、设备完成或参数内容一致。**
+
+### 区间究竟包住什么
+
+[trace_state_decorator](https://github.com/verl-project/verl/blob/4d6b3eb8606e24c1d70d648e92a1114129ec6c62/verl/utils/tracking.py)只接受async方法；调用时先检查 `VERL_RL_INSIGHT_ENABLE == "1"`，关闭时直接await原方法，开启时计算lane并在trace_state上下文内await整个方法。它没有向context传递method参数、global_steps、request身份、权重hash或返回值。异常状态如何呈现还取决于实际rl-insight后端，不能只凭这个wrapper断言成功或失败标签完整。
+
+| 新状态 | lane与覆盖范围 | 不能单独证明 |
+|---|---|---|
+| update_weight | 每训练rank的self.rank；位于register内层，包住worker方法 | controller提交/排队总时延、所有receiver安装完成、全rank一致 |
+| vLLM/SGLang的wake_up、sleep | Ray actor name，与生成阶段使用相同actor lane | 真正发生了内存操作；方法内仍可提前返回或跳过某种mode |
+| clear/release/resume_kv_cache | 同一server lane，包住原异步方法 | cache代次一致、实际释放字节数、模型参数已应用 |
+
+例如非node_rank0、free_cache_engine关闭、部分colocated/standalone路径会在原方法内返回或跳过；装饰器在这些判断之前进入，所以短状态也可能只是no-op调用。vLLM release路径仍是sleep后只wake weights，SGLang则按tags调用memory occupation接口；同名阶段不意味着两个backend执行相同操作。
+
+[update_weights](https://github.com/verl-project/verl/blob/4d6b3eb8606e24c1d70d648e92a1114129ec6c62/verl/workers/engine_workers.py)的非naive分支等待本rank的send_weights并可offload后返回；接收端应用/finalize/cache恢复仍须按实际checkpoint engine链追踪。naive分支的同步/barrier也来自原方法，不能把它推广到所有模式。该PR没有新增显存采样、参数manifest、逐token对照或为tracing专设的设备完成事件；“memory stages”是阶段名，不是显存字节测量。
+
+### 标量 API 与开启成本
+
+新log先检查实际模块的metric_log是否callable：可用时保留 `reward/mean` 这样的名字并传int(step)；否则只走旧metric_gauge，名字中的斜杠改下划线，且不双写。[rl-insight #206](https://github.com/verl-project/rl-insight/pull/206)在本轮API读取时已合并，但不能由此推断某台机器安装的包包含该API。版本号和API能力须分别记录。
+
+这个能力判断不是容错协议：metric_log存在但调用出错时，代码没有自动改投gauge。开启trace后的lane求值、初始化和context进入也在原方法之前，wrapper没有用异常隔离来保证监控失败时照常执行。因此“11个函数体未改”不等于“开启监控完全不影响控制流”；本轮没有运行后端或验证开销/故障语义。
+
+### 本轮核验与真机接续
+
+共同祖先PR diff只有4文件、73增4删，没有新增配套测试。M1完整读取新增wrapper/标量分派、11处接线及对应原方法；Python3.9.6下4份完整源码AST解析和内存compile通过。另将两版方法的装饰器列表清空后比较AST，11个async方法的参数/函数体/返回注解与共同祖先相同，并核对每项新增一个装饰器。没有exec这些源码、导入verl/Ray/torch/rl-insight，既有CPU测试也未复跑；不将语法或AST一致性称为运行版本兼容、集成或性能验收。
+
+复查对象为tracking.py、engine_workers.py和两份async server。可用 `git diff cd58f550...4d6b3eb8 -- <四文件>` 定位变更；以 `git show <head>:<path>` 获取字节，ast.parse后compile但不exec。比较11方法时只清decorator_list，再对ast.dump(include_attributes=False)核相等，不移除或改写函数体。SHA256依次为：
+
+- tracking.py：`c22afac06ddac8d6ddba4c3aa5a5ae4ad0d20170fddb4f6ac6756e2884f075f9`
+- engine_workers.py：`2f6dd946a4989460ca64ae2f8de576fb278a32b529ac19b0bb80be3a2acdd79b`
+- vllm_async_server.py：`b9694ff07d776395349159b68934e4e991a0e6027691af8f97feb690a21f236d`
+- async_sglang_server.py：`57729bfebce2507fb271e28cc5c7cd4073afb8a5ecc31ec87b8815a4c8b9c354`
+
+涉及真实权重/显存/生成的后续检查已补入[原M5补证条目](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不另开任务或默认采用PR。保留分支/配置、rank/actor与step关联、异常/no-op标记及独立显存/安装证据；若缺获准监控环境或要新增数据外发，先记录条件，不启动服务或改变原报告版本。M1没有访问服务器，也没有新的连接失败实测。
