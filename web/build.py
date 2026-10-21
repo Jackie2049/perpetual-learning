@@ -25,6 +25,8 @@ sys.path.insert(0, str(ROOT / 'tools' / 'contributions'))
 from summary import parse_summary, START
 
 TAGS = {'p', 'br', 'hr', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'strong', 'em', 'del', 'blockquote', 'ul', 'ol', 'li', 'pre', 'code', 'a', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'span', 'div'}
+# A progress text mentioning one of these markers near its start means the item is finished/withdrawn and no longer actionable.
+CLOSED_PATTERN = re.compile(r'已合并|已放弃|不再推进|停止重复投入|历史候选已过期|默认不发布|历史归档|已拒绝|withdrawn|not-pursued', re.I)
 
 
 def git(*args):
@@ -169,9 +171,13 @@ def contribution_projects(paths, docs, catalog, revision):
                 continue
             ref = reference(path)
             fields = parse_summary(docs[path])
+            progress_plain = html.unescape(plain_html(fields['进展']))
+            closed = bool(CLOSED_PATTERN.search(progress_plain[:60]))
             records.append({**ref, 'type': fields['类型'], 'score': fields['价值评估'].split(' — ', 1)[0],
+                            'closed': closed,
                             'fields': {key: render(value, path, revision) for key, value in fields.items() if key not in ('what', 'why', 'how')}})
-        records.sort(key=lambda item: (-int(item['score'].split('/')[0].strip()), item['title']))
+        # Actionable records first (score desc); closed ones after, folded by the frontend.
+        records.sort(key=lambda item: (item['closed'], -int(item['score'].split('/')[0].strip()), item['title']))
         overview_fields = parse_summary(docs[readme])
         projects.append({'slug': slug, 'name': name, 'overview': overview, 'source': source,
                          'tracker': tracker, 'records': records, 'items': [],
