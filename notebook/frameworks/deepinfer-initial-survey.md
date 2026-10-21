@@ -584,6 +584,51 @@ python3 experiments/scripts/verify_deepinfer_eplb_window.py /path/to/DeepInfer
 
 源SHA256：基线EPLB `1b30c01b36cfc711281bd729ab5cbf09826b4ba22359573f46d96c10ea6e7260`；#107 EPLB `bb22f49f95bf2eca6962ebe8557ce6abeeaf24781477f5ff021d257a2253b618`；window tests `e4a3e151db8ede534a279106af54ed9f1bd32165d0f9466e16202586ce980a59`；policy `52241603827a1a1d19a395d48f5d618a7336fd1ceee631127e6782c644f736dc`；policy tests `1671e3af1cb5ac293307dc37e288efe61da416450f2d677a94163a3e28426ce5`。生产者与清零语义补见下节；不新增竞争PR或把受控映射替换说成真实权重shuffle验证。
 
+## EPLB 相同热点负载下的副本分配
+
+正确记录历史，并不保证后续副本分配正确处理并列热点。[PR #191](https://github.com/deepseek-ai/DeepInfer/pull/191)（2026-10-21读取open，作者cyanseek）处理的是 policy 层的并列选择，与上文 #107 的历史身份是两项独立条件。固定 head `090e942c4c4365d9d0e38b41483b92452bd7a10f`，base及实际merge-base均为 `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`；真正PR只改policy与原测试，两文件49增3删。与更早774ce244比较时出现的vendor/构建差异不是本PR改动。
+
+### 浮点扰动不能保证打破并列
+
+旧 [policy](https://github.com/deepseek-ai/DeepInfer/blob/9bd9cf243fc53ef9afbf8f04d391d989117d6ab9/deepinfer/model_executor/eplb/policy.py)先给专家计数加 `expert_id * 1e-4`，注释要求每副本score互不相同。但FP32在5000和65536处均将 expert1/2 的微小差异舍掉。两个热点相等时，复制任一热点一次仍留下另一个最大值，所有候选主成本相同，`argmin`选最小编号0；复制空闲0不降低成本，下一轮又重复选择0。
+
+原CPU函数的合成历史结果如下；256专家一行中仅expert1/2为5000，其余均0。每个逻辑专家起始已有1份，表中为最终副本数：
+
+| 历史与物理布局 | 基线 | #191候选 |
+|---|---|---|
+| 单步 `[0,5000,5000,0]`，6物理槽，local=1（不排rank） | `[3,1,1,1]` | `[1,2,2,1]` |
+| 256逻辑/288物理，local=36（运行CPU排布） | 前四项`[33,1,1,1]`，其余1 | 前四项`[1,17,17,1]`，其余1 |
+
+这不是单纯改变同分编号：连续复制可使“本轮都不降峰值”的选择在后续产生不同结果。更一般地，给浮点数加极小编号偏移，既不保证唯一，也没有直接表达想要的次级目标。
+
+### 先比较峰值成本 再比较每副本负载
+
+[候选](https://github.com/deepseek-ai/DeepInfer/blob/090e942c4c4365d9d0e38b41483b92452bd7a10f/deepinfer/model_executor/eplb/policy.py)移除扰动，逐层逐轮按以下顺序选一个专家：
+
+1. 对每个候选，计算“给它加一份后，各历史step最大每副本负载之和”，取最低成本候选。
+2. 仅在浮点成本相等的候选内，优先当前历史总量/副本数最高者。
+3. 次级负载仍相等，`argmax`保留最小专家编号。
+
+原两步/两层测试还覆盖主成本优先：层0历史为 `[0,5000,5000,0]`、`[0,0,0,3000]`，给expert3复制可将成本8000降到6500；两个5000热点虽然历史总量更高，也不能胜过它。层1为对称输入，最终两层副本数分别 `[1,1,1,2]`、`[1,2,1,1]`。该例基线也通过，不能把所有新增测试都记为旧版失败。
+
+此顺序仍是每次加一份的贪心策略，不保证最终副本数或跨rank排布的全局最优。次级筛选按实际浮点成本精确相等，下面的小整数有理数对照不认证任意规模/任意dtype的舍入行为。
+
+### 原测试 CPU 参数例与有理数对照
+
+复用[原EPLB脚本](../../experiments/scripts/verify_deepinfer_eplb_window.py)的 `--tied-allocation-only`。完整原torch-only policy在内存执行；测试仅去除DeepInfer包导入和decorators，原函数体、断言及参数数据不变，CPU设备显式传入。不执行原fixture的CUDA可用性探测、不收集conftest或启动pytest；因此结果应称**原测试体的32个CPU参数例**，不是完整44项CPU/CUDA pytest通过。
+
+Python3.12.13 / torch2.9.1 / pytest8.4.2，真实CPU张量：候选 **32过**，基线 **27过、5个预期AssertionError**。失败为两种load×两种dtype的4个并列热点输入，以及256/288布局的1例；结构、确定性、原分布、输入不变、排布目标与主成本优先均通过。5个失败逐项核对，不修改上游断言/xfail。这里的local=36验证的是CPU映射计算及双向表一致，不是设备权重搬移。
+
+独立有理数检查逐轮暴力枚举每个专家，按 `(峰值成本, -每副本总负载, 编号)` 比较：两步×三专家、计数属于`{0,5000}`的全部64份历史，每份加6副本。候选int32与FP32共 **128组**的最终副本数及每轮选择序列都一致。oracle不调用候选的score/max/scatter捷径；它验证约定的贪心选择，不枚举全局最优布局。全零历史仍按最小编号取舍，不能称修复强制均匀分配所有输入。
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 python experiments/scripts/verify_deepinfer_eplb_window.py /path/to/DeepInfer --tied-allocation-only
+```
+
+旧窗口/清零模式也回归通过：3原测试体、4受控日程、26个原policy CPU例、8组manager生命周期控制保持原结果。新模式不执行这些manager/进程组替身。未导入完整DeepInfer、运行collective/真实shuffle/模型或设备；作者另报的GPU测试及四进程Gloo结果不是本项目复跑，也不推导吞吐收益。本课题CPU算法核对已收束，不新增M5硬件任务、不应用补丁或竞争上游修复。
+
+SHA256：base policy `52241603827a1a1d19a395d48f5d618a7336fd1ceee631127e6782c644f736dc`；候选policy `6ef4f170289f131d3302329a1929d60574ce61b2f5d5fe2c6bfc8f1659878e16`；候选原测试 `33a37a0e13cb70e7468e2e757075fd290006c4c5d5967be7b7ae048acfb21dec`。
+
 ## 专家计数的来源与清零时序
 
 **expert_count是每层本地物理专家的路由接收工作量，不是请求数或已接受输出token数。** 以下固定DeepInfer基线774ce244的NVIDIA路径；本机checkout为8b161497，经Git diff确认两版本deepinfer/源码无差异。没有将Ascend替代后端或任意安装版本视作同一路径。

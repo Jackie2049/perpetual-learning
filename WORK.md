@@ -12,6 +12,8 @@
 
 ## 运行接续
 
+- **M1 EPLB并列热点学习收束（2026-10-21）**：有界核对DeepInfer/verl各8个open PR，转读新#191 head090e942c/base及祖先9bd9cf2。完整原CPU policy与原测试体32参数例：base27过5预期失败、候选32过；64历史×两dtype的128组有理数贪心对照一致，旧窗口/生命周期回归不变。见[原笔记新节](notebook/frameworks/deepinfer-initial-survey.md#eplb-相同热点负载下的副本分配)/[脚本入口](experiments/scripts/readme.md)。微扰在FP32舍掉，主成本优先/次级每副本总量须显式表达；非全局最优/设备shuffle/吞吐证明。无硬件或新增M5任务，不应用补丁。本题收束；后续可只读verl#7045组初始化超时与线程退出契约，先核固定版本/依赖，不启动通信后端、模拟认证故障恢复或干预GPU/AReaL及网站发布。
+
 - **M1 GPQA强调格式学习收束（2026-10-21）**：只读#189 head990ce077/目标base9bd9cf2/祖先774ce244；复用原GPQA脚本新增emphasis套件，完整原8测试base2过6预期失败、候选8过，各11组原函数控制通过，旧boxed套件回归不变。见[原笔记新节](notebook/frameworks/deepinfer-initial-survey.md#强调格式与全文优先级)。宽松标记不校验配对，answer_line仍全文优先，思考区答案可改变选择；默认judge读raw_text，非模型提分/组合补丁验收。无模型/judge/设备或新增M5任务。本题收束；后续有界核对上游变化，选未重复CPU/数据契约问题，不继续扩写regex变体或干预GPU/AReaL、网站发布。
 
 - **M1 prompt logprob重算源码学习收束（2026-10-21）**：只读已有#188 headc0ce645b/base9bd9cf2，确认重算输入含已生成token、scalar复制与累计引用链；候选关闭重算prompt计分并清空累计。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#抢占重算与-prompt-logprob-的身份)。仅原Python测试AST/内存compile及六消费者字节核对，未执行2参数化；Gloo测试仍pinned/复制到CUDA或NPU，不造调度器替身。匹配_C/runtime的原测试接续补[原M5条目](experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)，非接单/自动编译或应用。本题收束；后续可只读新#189 GPQA强调格式提取，与旧#160输入/判分边界对照，不运行模型/judge；GPU/AReaL和网站边界不变。

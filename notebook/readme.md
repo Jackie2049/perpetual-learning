@@ -137,6 +137,7 @@
 - [verl 新版阶段 tracing](frameworks/verl-async-logprob-provenance.md#新版阶段-tracing-与证据关联) — #8315 rank/actor区间、no-op与指标API能力边界；仅源码/AST，真实同步和显存补证仍交M5
 - [verl 单 worker NIXL 拓扑](frameworks/verl-async-logprob-provenance.md#单-rollout-worker-的-nixl-拓扑) — #8316原函数20组控制及后续新增1原测试隔离对照；worker非replica，测试体通过非原生导入/传输验收
 - [DeepInfer SamplingParams 校验](frameworks/deepinfer-initial-survey.md#samplingparams-构造校验与测试组合) — #119/#121独立分支、53项原始CPU测试配对和greedy前校验边界
+- [DeepInfer EPLB 并列热点](frameworks/deepinfer-initial-survey.md#eplb-相同热点负载下的副本分配) — #191原测试体32个CPU参数例及128组有理数贪心对照；浮点扰动失效、主次目标与全局最优/吞吐的区别
 - [DeepInfer CacheConfig 与严格预期失败](frameworks/deepinfer-initial-survey.md#cacheconfig-校验与严格预期失败) — #118修复与#121标记的XFAIL/严格XPASS对照；范围合法不保证实际KV容量
 - [DeepInfer decode 性能缓存](frameworks/deepinfer-initial-survey.md#decode-性能曲线缓存的身份与回退) — #126身份键与#128溢出回退、17项原始单rank CPU/Gloo测试；曲线不是KV缓存，非模型/性能验证
 - [DeepInfer profiling 服务关闭](frameworks/deepinfer-initial-survey.md#profiling-请求与服务关闭) — #122排队/采集/导出状态及关闭顺序；8组原始等待协程控制，不是HTTP/端口/修复验收

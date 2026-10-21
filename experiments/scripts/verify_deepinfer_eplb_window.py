@@ -7,10 +7,16 @@ Runs original PR test function bodies and selected original recording/decoding
 logic with real CPU tensors. The process group and placement change are fakes.
 Optional --check-step-lifecycle exercises real manager views/step/local stats
 below the collective flush threshold; it does not execute count-producing kernels.
+--tied-allocation-only instead checks #191's original CPU policy test bodies
+against base/fix and an independent exact-rational greedy oracle, with no fixtures
+evaluated, device discovery, window/manager substitution or weight shuffle.
 """
 import argparse
 import ast
 import hashlib
+from itertools import product
+from fractions import Fraction
+import os
 from pathlib import Path
 import subprocess
 from types import SimpleNamespace
@@ -22,12 +28,103 @@ import torch
 BASE = '774ce244b87cc0eb8d4b94ab9f5de2ab22049f01'
 HEAD = '578752f660e68c66412d4d0c08dccfc84c6724dd'
 EPLB = 'deepinfer/model_executor/eplb/__init__.py'
+TIED_BASE = '9bd9cf243fc53ef9afbf8f04d391d989117d6ab9'
+TIED_HEAD = '090e942c4c4365d9d0e38b41483b92452bd7a10f'
 
 
 def blob(root, revision, path):
-    data = subprocess.check_output(['git', 'show', f'{revision}:{path}'], cwd=root)
+    data = subprocess.check_output(['git', 'show', f'{revision}:{path}'], cwd=root,
+                                   env={**os.environ, 'GIT_NO_LAZY_FETCH': '1'})
     print(revision[:7], path, 'sha256=' + hashlib.sha256(data).hexdigest())
     return data.decode()
+
+
+def rational_allocation(history, extras):
+    """Brute-force each greedy choice, not a global placement optimum."""
+    counts = [1] * len(history[0])
+    choices = []
+    for _ in range(extras):
+        costs = []
+        for expert in range(len(counts)):
+            cost = sum(max(Fraction(load, counts[j] + int(j == expert))
+                           for j, load in enumerate(step)) for step in history)
+            total_load = Fraction(sum(step[expert] for step in history), counts[expert])
+            costs.append((cost, -total_load, expert))
+        selected = min(costs)[2]
+        counts[selected] += 1
+        choices.append(selected)
+    return counts, choices
+
+
+def tied_allocation(root):
+    """Retain upstream functions/assertions/parameter data; omit decorators only."""
+    source = blob(root, TIED_HEAD, 'tests/models/test_eplb_policy.py')
+    original = ast.parse(source)
+    tree = ast.parse(source)
+    tree.body = [n for n in tree.body if not
+                 (isinstance(n, ast.ImportFrom) and n.module.startswith('deepinfer'))]
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef):
+            node.decorator_list = []  # In particular, do not evaluate CUDA availability.
+    device = torch.device('cpu')
+    policies = {}
+    for label, revision in (('base', TIED_BASE), ('fix', TIED_HEAD)):
+        ns = {}
+        exec(compile(blob(root, revision, 'deepinfer/model_executor/eplb/policy.py'),
+                     '<original-cpu-policy-' + label + '>', 'exec'), ns)
+        policies[label] = ns['rebalance_experts_global']
+        exec(compile(tree, '<original-policy-test-bodies>', 'exec'), ns)
+        calls = []
+        for case in ns['CASES']:
+            for name in ('test_rebalance_experts_global_structure', 'test_rebalance_experts_global_deterministic'):
+                calls.append((name, case))
+        distributions = next(n for n in original.body if isinstance(n, ast.FunctionDef) and
+                             n.name == 'test_rebalance_experts_global_edge_distributions')
+        for distribution in ast.literal_eval(distributions.decorator_list[0].args[1]):
+            calls.append((distributions.name, (distribution,)))
+        calls.append(('test_rebalance_does_not_modify_history', (device,)))
+        tied = next(n for n in original.body if isinstance(n, ast.FunctionDef) and
+                    n.name == 'test_rebalance_replicates_tied_hot_experts')
+        params = {ast.literal_eval(d.args[0]): eval(compile(ast.Expression(d.args[1]), '<original-test-params>', 'eval'), ns)
+                  for d in tied.decorator_list if isinstance(d, ast.Call)}
+        for dtype, load in product(params['dtype'], params['load']):
+            calls.append((tied.name, (load, dtype, device)))
+        for name in ('test_rebalance_tied_hot_experts_with_placement',
+                     'test_rebalance_prefers_lower_peak_cost_over_tie_break_load'):
+            calls.append((name, (device,)))
+        objective = next(n for n in original.body if isinstance(n, ast.FunctionDef) and
+                         n.name == 'test_batch_greedy_objective_and_ties')
+        for case in ast.literal_eval(objective.decorator_list[0].args[1]):
+            calls.append((objective.name, (*case, device)))
+        assert len(calls) == 32
+        failures = []
+        for name, args in calls:
+            try:
+                ns[name](*args)
+            except AssertionError:
+                failures.append(name)
+        expected = ([tied.name] * 4 + ['test_rebalance_tied_hot_experts_with_placement']) if label == 'base' else []
+        assert failures == expected, (label, failures)
+        print(label, 'original CPU bodies:', len(calls) - len(failures), 'passed;', len(failures), 'expected failures', failures)
+        for physical, local in ((6, 1), (288, 36)):
+            history = torch.zeros((1, 1, 4 if physical == 6 else 256), dtype=torch.int32)
+            history[..., 1:3] = 5000
+            counts = ns['rebalance_experts_global'](history, physical, local)[2][0]
+            print(label, 'physical/local', physical, local, 'first four replica counts', counts[:4].tolist())
+    checks = 0
+    for values in product((0, 5000), repeat=6):
+        history = [list(values[:3]), list(values[3:])]
+        expected_counts, expected_choices = rational_allocation(history, 6)
+        for dtype in (torch.int32, torch.float32):
+            physical, _, counts = policies['fix'](torch.tensor(history, dtype=dtype).unsqueeze(1), 9, 1)
+            assert counts.tolist() == [expected_counts]
+            assert physical[0, 3:].tolist() == expected_choices
+            checks += 1
+    for load in (5000, 65536):
+        scores = torch.tensor([0, load, load, 0], dtype=torch.int32) + torch.arange(4) * 1e-4
+        assert scores[1] == scores[2]
+        print('FP32 perturbation rounds to tie at', load, ':', scores.tolist())
+    print('PASS:', checks, 'CPU dtype/history comparisons to exact greedy oracle; no global-optimality or device claim.')
 
 
 def load_balancer(source, envs):
@@ -138,10 +235,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('source_root', type=Path)
     parser.add_argument('--check-step-lifecycle', action='store_true')
+    parser.add_argument('--tied-allocation-only', action='store_true')
     args = parser.parse_args()
     torch.set_default_device('cpu')
     torch.set_num_threads(1)
     print('Python/torch CPU:', __import__('sys').version.split()[0], torch.__version__)
+    if args.tied_allocation_only:
+        assert not args.check_step_lifecycle, 'Choose either tied allocation or window lifecycle checks'
+        tied_allocation(args.source_root)
+        return
     env_ns = {}
     exec(compile(blob(args.source_root, HEAD, 'deepinfer/environ.py'), '<original-environ>', 'exec'), env_ns)
     environ = SimpleNamespace(**env_ns)
