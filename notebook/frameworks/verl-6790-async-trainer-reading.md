@@ -1,5 +1,7 @@
 # verl PR #6790: Separate Async Trainer with Switch+Offload Strategies — Source-Level Reading
 
+2026-10-22 补充：[局部更新的指标聚合](#局部更新的指标聚合)固定于 verl `1876b06d`，区分日志归约与实际计时接线。下方 #6790 的架构、PR 状态及性能判断是 2026-06-18 历史阅读，不属于本次 CPU 验证范围。
+
 > 2026-06-18 | MERGED | Author: Begunner | +17/-16 | 2 files changed
 > ★★★★★★★★ CRITICAL: This PR removes the NotImplementedError barrier — separate_async trainer is NOW RUNNABLE
 > ★★★★★★★★ Hybrid engine can now DYNAMICALLY switch between trainer/rollout modes (switch_to_trainer / switch_to_rollout)
@@ -626,6 +628,51 @@ A COLOCATED-only trainer variant (separate process, same placement group, no wei
 | **verl HYBRID sleep/wake** | sleep_level=1/2 — the offload strategy for hybrid replicas |
 
 ---
+
+## 局部更新的指标聚合
+
+一个 `global_step` 内的多次局部更新不意味着所有日志值都求平均。固定版本的 [`MetricsAggregator`](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/trainer/ppo/v1/utils.py) 先查精确规则，再按指标名选择归约；多数指标按样本数加权，并非按 token 数加权。这只改变日志汇总，不证明优化器采用了同样的损失归约。
+
+| 指标 | 当前汇总规则 |
+|---|---|
+| off-policy、filter_groups、rollout_failure 等明确列出的淘汰计数 | 求和；training 和 validation 名称均有精确规则 |
+| training/global_step、training/rollout_probs_diff_valid，以及 lr 或以 /lr、_lr 结尾的名称 | 取最后一次记录的标量 |
+| timing_s、timing_per_token_ms | 求和 |
+| 其他含 max 或 min 的名称 | 分别取最大或最小；max 检查先于 min、sum、mean |
+| 其他含 sum、total 的名称 | 求和 |
+| mean、avg 或无特殊名称 | 按该 key 出现时的 sample_count 加权；总权重为 0 时退回算术平均 |
+| off_policy/evicted_samples_staleness/mean | 均值权重优先采用同次报告的淘汰数，而非保留的 batch 大小 |
+| 特定 DAPO 奖励分布字典 | 按奖励值累计 count，保留字典，不作为普通标量丢弃 |
+
+缺席的 key 不补零，也不把该次样本数加入其分母。`global_seqlen/minmax_diff` 在 min/max 都存在时重新用全局 max 减 min，而不是沿用每次差值的最大值。Python `bool` 被忽略，单元素 `torch.bool` Tensor 却会经 `.item()` 转成浮点数；“忽略布尔值”不能泛化到所有载体。多元素 Tensor 和普通非特例字典不进入标量汇总。
+
+名称就是这层接口的一部分。例如合成 key `custom/max_entropy/mean` 仍命中 max，不会因为尾部有 mean 就加权；这不是对现有生产 key 的缺陷报告。新增日志应先核对归约规则与分母，不能只凭指标标签认定统计量含义。
+
+### 比率合并与真实计时接线
+
+合成两次生成：第一次 1 个样本、100 个 response token、100 ms；第二次 3 个样本、3 个 response token、9 ms。原 `compute_timing_metrics` 得到局部每 token 耗时 1 和 3 ms/token。把这两个值交给聚合器，会得到 `timing_per_token_ms/gen=4`；改用默认均值 key 则按样本得到 2.5。两者都不等于合并的 `109/103≈1.058252` ms/token。比率合并需要保留分子、分母，而不是随意选一种平均。[原计时公式](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/trainer/ppo/metric_utils.py)
+
+但这不能直接定性 V1 训练器的正式计时日志有误。[`trainer_base.py`](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/trainer/ppo/v1/trainer_base.py) 的实际顺序是：
+
+1. `step` 创建聚合器，`prepare_metrics` 以默认 0 权重加入；每次 `_step_once` 返回后，用非 padding tag 数作为 `sample_count`，再汇总局部 `iter_metrics`。
+2. 多次更新共用 `timing_raw`；计时器的 [`_timer`](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/utils/profiler/performance.py) 对同名阶段累加秒数，`step` 合并各次 batch 的 keys/tags 后返回。
+3. 训练循环随后调用 `_compute_metrics`，重取合并 batch 并执行 `compute_timing_metrics`。gen 的分母是 response token，其他受支持阶段是 prompt 加 response token；该次调用不经过前面的局部指标聚合器。
+
+这里的计时函数使用完整 `batch`，另一些数据指标使用过滤后的 `metrics_batch`，不要把 `sample_count` 与 token 分母统一解释成“有效样本数”。上述接线只是固定版本源码核对，不是 TransferQueue、padding、计时设备同步或实际吞吐的运行验收。helper 接受任意同名输入的行为，与训练器正式生成该指标的路径必须分别取证。
+
+### CPU 复查范围
+
+[原 19 项测试](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/tests/trainer/ppo/v1/test_metrics_aggregator_on_cpu.py)经 pytest 全部通过，包括样本加权、淘汰数权重、计数求和、末值、缺 key、Tensor/布尔过滤、reset、全局极差重算以及 DAPO 分布字典累计。另 5 组观察通过：全零权重回退、混合 0/正权重、上述比率合并、布尔载体区别、自定义名称优先级。零权重例 `[1,3]` 分别得到算术均值 2，以及权重 `[0,3]` 时的 3。
+
+复查入口：[实验脚本](../../experiments/scripts/verify_verl_metrics_aggregator.py)。Python 3.12.13、torch 2.9.1、NumPy 2.0.2、pytest 8.4.2；运行命令：
+
+```bash
+python experiments/scripts/verify_verl_metrics_aggregator.py /path/to/verl
+```
+
+脚本从固定 Git 对象选取完整原聚合类、DAPO key 常量和两个原计时函数，注解延后；完整加载原测试模块，包壳只提供这些真实定义，不运行 ReplayBuffer。pytest 隔离 conftest/插件/cache 并限定收集目录；比率例以结构化小对象提供 `batch` 中的真实 CPU 长度 Tensor，并非真实 DataProto。没有运行 trainer/logger、Ray、进程组、模型或 GPU/NPU，也不构成训练/性能或补丁验收。
+
+源码 SHA256：聚合模块 `a0168e86b2ee0872eb5f896d58cfa342e7c9687d7e098c8b4624fe691748412c`，原测试 `5dbeac03bda63b86b7498a4e1504660c4e6c3141ec021aa326e66aca3bcbcdd2`，计时模块 `d857834a6593301ad932ce2fd2e41e781ee140d0f1dafcfe157b97a0625e847f`。官方 API 与本地聚合模块 Git blob 同为 `e9dec3134a3c70b945e6abd03cd5b6e5924fce2e`。
 
 ## Key Findings Summary
 
