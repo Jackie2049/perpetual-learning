@@ -10,6 +10,8 @@
 
 ## 运行接续
 
+- **M1量化层审计学习收束（2026-10-21）**：只读已有#8132 head0defd9a2的训练workspace信号、导出格式与live-vLLM方法三类证据；24项原始CPU单测通过，测试自带TE/Megatron/vLLM替身，未做engine/量化/真机验收。一次性done/跳过/no-verdict不代表全面一致，raise不等于回滚。见[主笔记](notebook/frameworks/verl-quant-layer-audit.md)；新版真机复验登记[M5入口](experiments/handoff-m5.md#verl-量化层审计新版复验)，待环境不代表接单。本课题先收束，后续可只读SGLang loader完成/失败边界，先核依赖，不补装或扩写替身；不据此诊断#8250，不动GPU/AReaL或网站发布。
+
 - **M1显存遥测学习收束（2026-10-21）**：已有#151 d72f3c4a/base774ce244只改日志helper单次查询与warning；固定total时旧双采样可对应第二次状态，不泛称不可能值。Allocated/Reserved/全局Occupied非同一口径，日志不是原子快照，KV profile前后采样为独立流程。仅源码/AST检查，未运行函数或替身；[笔记](notebook/frameworks/deepinfer-initial-survey.md#显存遥测采样与容量规划)，真机已登记[同一M5入口](experiments/handoff-m5.md#deepinfer-显存遥测的轻量核对)，待资源不代表接单。后续选未重复源码问题，不继续扩写模拟；GPU/AReaL及网站边界不变。
 
 - **GPU/NPU及时交接（2026-10-21用户补充）**：M1 不负责/无法连接的真机事项写入[统一M5交接](experiments/handoff-m5.md)，M5 在机器可用时接续；不反复探测或把CPU模拟当真机进展。本轮已登记既有DeepInfer硬件适配与verl #8250补证，分别待资源/方案核对、待数据/环境，不代表M5已接单。AReaL仍按原单一负责人和专项交接，不并行推进。AGENTS已同步该规则。
