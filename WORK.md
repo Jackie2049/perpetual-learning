@@ -12,6 +12,8 @@
 
 ## 运行接续
 
+- **M1 掩码数值学习收束（2026-10-22）**：固定verl1876b06d，官方API/本地blob490ffc1b；原4函数/原3参数例及20组真实CPU前向/反向/no_grad对照通过。见[原算法笔记](notebook/frameworks/verl-grpo-core-algos-reading.md#掩码统计与梯度的数值边界)/[复查](experiments/scripts/verify_verl_masked_stats.py)。masked_mean已where过滤无效NaN/Inf，但先square/center后mask可有限前向而NaN梯度；白化也不清所有槽。GAE/RF++所读白化在no_grad，不能据局部requires_grad反例定性训练缺陷；预清理仅对照，不改实现/补丁。无模型/设备或新增M5任务。本题收束；后续另选源码/CPU问题，不继续堆mask/限流或重开collator/UID，GPU/AReaL、#8313及网站边界不变。
+
 - **M1 奖励限流学习收束（2026-10-22）**：固定verl1876b06d/API及本地blob3707ed20，原桶/loop helper与完整测试模块，直接await原16方法及2取消对照通过，真实锁/时钟/sleep不改。见[原奖励笔记](notebook/frameworks/verl-reward-integration-reading.md#进程配额与取消边界)/[复查](experiments/scripts/verify_verl_token_bucket.py)。撤回旧“class-level跨节点统一限速”，仅进程内；大请求预扣负余额取消不退款，普通路径未扣；评分timeout不含限流/并发排队。manager/Ray作用域仅源码核对，非API/分布式实测，不改实现或新增M5任务。本题收束；后续另选CPU/源码问题，不继续扩写限流替身或重开UID/collator，GPU/AReaL、#8313及网站边界不变。
 
 - **M1 RL拼批学习收束（2026-10-22）**：固定verl1876b06d，官方API/本地模块blob同aad0655b；原collator/1原测试体及7组真实CPU DataLoader检查通过。见[原数据流笔记](notebook/frameworks/verl-grpo-data-flow-reading.md#拼批中的形状与引用)/[复查](experiments/scripts/verify_verl_collate.py)。fromiter保留一维对象边界，不深拷贝或统一校验键/类型；缺字段/混类型可先产生短列，DataProto后置首维检查仅源码核对，不称全管道接受或标准训练缺陷。0worker不pin，无设备；新#193 0731/EP8参考入口补原M5适配条目，非采用/新增队列。本题收束；下轮选择其他CPU/源码问题，不继续堆collator或UID替身，不干预GPU/AReaL、#8313及网站边界。

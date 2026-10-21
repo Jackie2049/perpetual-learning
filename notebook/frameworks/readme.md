@@ -138,7 +138,7 @@
 - [verl FSDP2 Engine Deep Source Reading — Beyond PR Descriptions](verl-fsdp2-source-deep-reading.md)
 - [verl Fully-Async Policy 源码级深度阅读](verl-fully-async-policy-reading.md)
 - [verl GRPO bypass_mode + TransferQueue + Detach Metrics + Weight Sync 源码级深度阅读](verl-grpo-bypass-mode-reading.md)
-- [verl GRPO Training Core Algorithms — core_algos.py 源码深度阅读](verl-grpo-core-algos-reading.md)
+- [verl GRPO Training Core Algorithms — core_algos.py 源码深度阅读](verl-grpo-core-algos-reading.md)：补[掩码统计与梯度](verl-grpo-core-algos-reading.md#掩码统计与梯度的数值边界)，原3参数例/20组CPU对照；有限前向非梯度保证，no_grad调用范围另核。
 - [verl GRPO End-to-End Data Flow 源码级阅读](verl-grpo-data-flow-reading.md)：补[拼批形状与引用](verl-grpo-data-flow-reading.md#拼批中的形状与引用)，原1测试体/7组CPU DataLoader检查；对象边界不等于深拷贝/字段校验。
 - [verl GRPO 内存泄漏与 detach_metrics 修复 — RTX 4090关键分析](verl-grpo-detach-metrics-rtx4090-reading.md)
 - [verl GRPO 源码深度阅读](verl-grpo-source-reading.md)：新增[UID均衡前提](verl-grpo-source-reading.md#连续-uid-与等样本组的前提)，原3个CPU测试体与22组控制；连续段聚合、等段数不自动保证等行分发。
