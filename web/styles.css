@@ -106,38 +106,87 @@
 body.theme-dark .sidebar .theme-toggle{color:#cfcfcf}
 body.theme-dark .sidebar .theme-toggle:hover{color:#ffffff}
 
-/* Dark "black & white" theme, VSCode-like surfaces. Accent stays the site green, brightened for dark ground. */
-body.theme-dark{--bg:#161616;--white:#1f1f1f;--ink:#e6e6e6;--muted:#9a9a9a;--line:#2e2e2e;--green:#56b6a2;--mint:#24352e;--sidebar-bg:#181818;background:var(--bg);color:var(--ink)}
-body.theme-dark .stats,body.theme-dark .panel,body.theme-dark .result-card,body.theme-dark .library-row,body.theme-dark .contribution-panel,body.theme-dark .contribution-summary,body.theme-dark .daily-review,body.theme-dark .decision-grid .decision-item{background:var(--white)}
-body.theme-dark .summary-field h4{color:#8fa89b}
-body.theme-dark .feature-banner{background:#0d231d}
-body.theme-dark .search-box,body.theme-dark .outline-button,body.theme-dark .project-filters a{background:var(--white)}
-body.theme-dark dialog{background:var(--white)}
-body.theme-dark .project-filters a[aria-current]{background:var(--green);color:#0f1f1a}
-body.theme-dark .search-box:focus-within{border-color:#3f6257;box-shadow:0 0 0 3px #1d2b26}
-body.theme-dark .filters button.active{background:#24352e;color:#7fd4b8}
-body.theme-dark .result-card:hover{border-color:#3a4a42}
-body.theme-dark .category-symbol{background:#24352e;color:#7fc0a8}
+/* Dark "black & white" theme, VSCode Dark Modern style: neutral greys + blue accent, no residual greens. */
+body.theme-dark{--bg:#181818;--white:#1f1f1f;--ink:#cccccc;--muted:#9d9d9d;--line:#2b2b2b;--green:#4daafc;--mint:#20303b;--sidebar-bg:#181818;background:var(--bg);color:var(--ink)}
+body.theme-dark .stats,body.theme-dark .panel,body.theme-dark .result-card,body.theme-dark .library-row,body.theme-dark .contribution-panel,body.theme-dark .contribution-summary,body.theme-dark .daily-review,body.theme-dark .decision-grid .decision-item{background:var(--white);border-color:#2b2b2b}
+body.theme-dark .result-card:hover{border-color:#3c3c3c;transform:none}
+body.theme-dark .result-card,body.theme-dark .contribution-summary{box-shadow:0 1px 0 #0000004d}
+body.theme-dark .eyebrow{color:#8b8b8b}
+body.theme-dark .tiny-line{background:#3c78c2}
+body.theme-dark .title-dot{color:#4daafc}
+body.theme-dark .section-heading>a{color:#8a8a8a}
+body.theme-dark .stat-link,body.theme-dark .text-link{color:#4daafc}
+body.theme-dark .prose a{color:#4daafc;text-decoration-color:#2b4a66}
+body.theme-dark .row-category,body.theme-dark .external,body.theme-dark .subtle,body.theme-dark .result-count,body.theme-dark .panel-intro,body.theme-dark .date-label,body.theme-dark .note{color:#8a8a8a}
+body.theme-dark .day-badge{color:#a8b8c4}
+body.theme-dark .full-timeline button{color:#c8c8c8}
+body.theme-dark .timeline button{color:#9a9a9a}
+body.theme-dark .event-time{color:#8a8a8a}
+body.theme-dark .timeline li:before{background:var(--line)}
+body.theme-dark .event-time:after{background:#3c78c2;border-color:var(--bg)}
+body.theme-dark .decision-item{border-bottom-color:#242424}
+body.theme-dark .decision-title svg{color:#7a7a7a}
+body.theme-dark .panel-footer{color:#8a8a8a}
+body.theme-dark .source-note{color:#8a8a8a}
+body.theme-dark .daily-review .prose>p:first-child{color:#8a8a8a}
+body.theme-dark .card-kind{color:#8a8a8a}
+body.theme-dark .card-kind span{color:#5a5a5a}
+body.theme-dark .result-card>p,body.theme-dark .library-row p{color:#9a9a9a}
+body.theme-dark .library-row h2{color:var(--ink)}
+body.theme-dark .save-button{color:#5a5a5a}
+body.theme-dark .save-button:hover{background:#2a2a2a}
+body.theme-dark .save-button.is-saved{color:#4daafc}
+body.theme-dark .save-button.is-saved svg{fill:#1c3050}
+body.theme-dark .category-symbol{background:#26313d;color:#7aa5cc}
 body.theme-dark .color-1{background:#252a3d;color:#8f9cc7}
 body.theme-dark .color-2{background:#2f2839;color:#ab97c4}
-body.theme-dark .save-button:hover{background:#263229}
-body.theme-dark .save-button.is-saved svg{fill:#2a4a3e}
-body.theme-dark .library-icon{background:#243230}
-body.theme-dark .count-label,body.theme-dark .status-chip{background:#38301f;color:#c8a86a}
-body.theme-dark .status-notice{background:#1e2b24;border-color:#2e3c34;color:#8fae9d}
-body.theme-dark .empty{background:transparent}
-body.theme-dark .plain-explanation{background:#22332c}
+body.theme-dark .library-icon{background:#26313d;color:#7aa5cc}
+body.theme-dark .empty{background:transparent;border-color:#333}
+body.theme-dark .empty>span svg{color:#6e7681}
+body.theme-dark .empty p{color:var(--muted)}
+body.theme-dark .search-box,body.theme-dark .outline-button,body.theme-dark .project-filters a{background:var(--white);border-color:#333}
+body.theme-dark dialog{background:var(--white)}
+body.theme-dark .search-box:focus-within{border-color:#0078d4;box-shadow:0 0 0 3px #0078d438}
+body.theme-dark .search-box>button{border-left-color:#333}
+body.theme-dark .filters button{color:#9d9d9d}
+body.theme-dark .filters button:hover{color:#ccc}
+body.theme-dark .filters button.active{background:#0078d4;color:#ffffff}
+body.theme-dark .project-filters a[aria-current]{background:#0078d4;border-color:#0078d4;color:#ffffff}
+body.theme-dark .count-label,body.theme-dark .status-chip{background:#2d2d2d;color:#b8b8b8}
+body.theme-dark .status-notice{background:#202020;border-color:#333;color:#9a9a9a}
+body.theme-dark .plain-explanation{background:#252526}
 body.theme-dark .plain-explanation .prose{color:var(--ink)}
-body.theme-dark .summary-field .prose{color:#b9c5bd}
+body.theme-dark .summary-field h4{color:#8a8a8a}
+body.theme-dark .summary-field .prose{color:#b8b8b8}
+body.theme-dark .contribution-type{background:#20303b;color:#6cb2f5}
+body.theme-dark .project-count{background:#20303b;color:#6cb2f5}
+body.theme-dark .contribution-toggle::after{border-color:#4daafc}
 body.theme-dark .contribution-record .prose{background:#242424}
-body.theme-dark .project-overview{border-left-color:#3f6257;color:#9db4a9}
-body.theme-dark .daily-review .prose{color:#93a59a}
-body.theme-dark .prose pre{background:#191919}
-body.theme-dark .prose code{background:#2a2a2a}
-body.theme-dark .prose pre code{background:none}
-body.theme-dark .prose blockquote{background:#212121;border-left-color:#3f6257;color:#a8b5ad}
+body.theme-dark .project-overview{border-left-color:#3c78c2;color:#a8b8c4}
+body.theme-dark .project-overview .overview-label{color:#6cb2f5}
+body.theme-dark .daily-review .prose{color:#9a9a9a}
+body.theme-dark .prose pre{background:#141414;border:1px solid #2b2b2b}
+body.theme-dark .prose code{background:#2d2d2d;color:#d7ba7d}
+body.theme-dark .prose pre code{background:none;color:inherit}
+body.theme-dark .prose td,body.theme-dark .prose th{border-color:#333}
 body.theme-dark .prose th{background:#262626}
+body.theme-dark .prose blockquote{background:#212121;border-left-color:#3c78c2;color:#9aa5ad}
 body.theme-dark .reader-toolbar{background:var(--white)}
+body.theme-dark #reader-close,body.theme-dark #reader-meta{color:#8a8a8a}
 body.theme-dark #toast{background:#3a3a3a;color:#e6e6e6}
 body.theme-dark .skip{background:var(--white);color:var(--ink)}
-body.theme-dark .secondary-column .note{color:#8a968f}
+body.theme-dark .secondary-column .note{color:#8a8a8a}
+body.theme-dark .feature-banner{background:#252526}
+body.theme-dark .feature-eyebrow{color:#8a95a0}
+body.theme-dark .feature-banner h2{color:#f0f0f0}
+body.theme-dark .feature-banner p{color:#9aa5ad}
+body.theme-dark .feature-banner button{color:#6cb2f5}
+body.theme-dark .orbit-ring{border-color:#3a3f45}
+body.theme-dark .orbit-ring.r2{border-color:#2e2e2e}
+body.theme-dark .orbit-core{color:#c8d8e8}
+body.theme-dark .orbit-core span{color:#7a8b96}
+body.theme-dark .orbit-label{background:#2d2d2d;border-color:#404040;color:#9db4c4}
+body.theme-dark .orbit-dot{background:#5a9fd4}
+body.theme-dark .orbit-dot.d2{background:#4a6a8a}
+body.theme-dark .sidebar .sidebar-bottom>a{color:#9a9a9a}
+body.theme-dark .sidebar .sidebar-bottom>a:hover{color:#ffffff}
