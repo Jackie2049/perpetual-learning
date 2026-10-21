@@ -13,6 +13,7 @@
 ## 运行接续
 
 - **M5 DeepInfer 4090 移植冒烟第一段（2026-10-21 算力任务）**：4090-1 连通可用（GPU 0/1/7 空闲，/home 99% 剩 109G）；昇腾 vLLM-Ascend-A3（192.168.13.174）ping/SSH 均超时，**昇腾 VPN 掉线，已报告用户待恢复**。独立克隆 `/home/zxw/deepinfer-civilian`（HEAD 774ce244 全子模块）+ conda 环境 `deepinfer-smoke`（py3.12 + torch 2.13.0+cu129 + gcc13）。真机确认：`get_bf16_tflops_limit` 抛 unknown GPU type（堵点5）；官方 cu132 wheel 与驱动 12.9 不匹配（新增堵点，须降 cu129）；FlashMLA 需 NVCC13.1/sm100a（堵点1）；llm_engine 导入缺 deep_ep（堵点3）。**csrc `deepinfer._C` 已用 gcc13+cu129 编译并导入成功（首个可移植真机证据）**。见[专题笔记](notebook/frameworks/deepinfer-civilian-port.md#4090-真机验证2026-10-21m5-服务器-4090-1-实测)与[日志](diary/2026-10-21.md)。下一步：替换 deep_ep/deep_gemm/deep_select/flash_mla import + 放宽架构检查后尝试实例化 LLMEngine；完整 offline_inference 需 V4 权重与 EP 配置，价值判断待用户确认。
+- **M1量化层审计学习收束（2026-10-21）**：只读已有#8132 head0defd9a2的训练workspace信号、导出格式与live-vLLM方法三类证据；24项原始CPU单测通过，测试自带TE/Megatron/vLLM替身，未做engine/量化/真机验收。一次性done/跳过/no-verdict不代表全面一致，raise不等于回滚。见[主笔记](notebook/frameworks/verl-quant-layer-audit.md)；新版真机复验登记[M5入口](experiments/handoff-m5.md#verl-量化层审计新版复验)，待环境不代表接单。本课题先收束，后续可只读SGLang loader完成/失败边界，先核依赖，不补装或扩写替身；不据此诊断#8250，不动GPU/AReaL或网站发布。
 
 - **M1显存遥测学习收束（2026-10-21）**：已有#151 d72f3c4a/base774ce244只改日志helper单次查询与warning；固定total时旧双采样可对应第二次状态，不泛称不可能值。Allocated/Reserved/全局Occupied非同一口径，日志不是原子快照，KV profile前后采样为独立流程。仅源码/AST检查，未运行函数或替身；[笔记](notebook/frameworks/deepinfer-initial-survey.md#显存遥测采样与容量规划)，真机已登记[同一M5入口](experiments/handoff-m5.md#deepinfer-显存遥测的轻量核对)，待资源不代表接单。后续选未重复源码问题，不继续扩写模拟；GPU/AReaL及网站边界不变。
 

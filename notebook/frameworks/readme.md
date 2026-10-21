@@ -105,6 +105,8 @@
 
 ## verl
 
+- [verl 训练与 rollout 的量化层审计](verl-quant-layer-audit.md) — #8132三类证据、一次性判定与24项原始CPU单测；引擎/真机复验待M5。
+
 - [verl 异步训练策略版本与 logprob 对照条件](verl-async-logprob-provenance.md) — V1 separate-async的rollout/old/current来源、CPU快照路由、版本标签边界和最小观测契约；非训练根因证明
 - [verl Full Model Prefix Sharing 旧 RFC 已撤回](verl-6401-rfc-full-model-ps.md)
 - [verl #6468: FSDP2 CPU Memory Leak During Weight Sync — Deep Reading](verl-6468-fsdp2-cpu-memory-leak-reading.md)
