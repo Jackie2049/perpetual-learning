@@ -12,6 +12,8 @@
 
 ## 运行接续
 
+- **M1 host cache边界学习收束（2026-10-22）**：已有DeepInfer#144 heade1f71ecd/base及祖先774ce244，8文件715行新增。完整读cache/copy kernel/原3测试，见[原笔记](notebook/frameworks/deepinfer-initial-survey.md#host-cache-的可复用边界)：复用须KV/state/replay相交，size_bytes不含pinned state池/16份GPU staging；原3GPU测试替换state/Sequence，不认证真实SWA或新binding。仅4文件AST/内存compile，3例表为源码推导，未跑测试/设备/替身。原CUDA入口与预算/原生恢复缺口及时补[原M5条目](experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)，待匹配条件非接单、不另排队/采用。本题收束；后续有界核对变化再另选源码/CPU课题，不继续堆缓存/PD替身或自动开展#147/#197服务；GPU/AReaL、#8313及网站边界不变。
+
 - **M1 PD队列所有权学习收束（2026-10-22）**：新DeepInfer#195 head229c58c3/base及祖先9bd9cf2，三文件21行新增。见[原笔记](notebook/frameworks/deepinfer-initial-survey.md#pd-队列交接与资源释放)：移出finished归还MTP槽、不释放KV/state；入队三元数据前提不认证传输完成，非forked无clone，主机vector reserve非块分配。仅完整stub AST/内存compile、两声明及源码链核对，无_C/原生队列/设备。缺口与最小观测及时补[原M5条目](experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)，待匹配环境不代表接单，不另排队/采用或打断原任务。本题收束；后续有界核对变化再选其他CPU/源码问题，不造PD替身或自动扩展#197服务实现；GPU/AReaL、#8313及网站边界不变。
 
 - **M1 LR步数与恢复学习收束（2026-10-22）**：固定verl1876b06d/API及本地blob同490ffc1b，两个原构造器/真实CPU SGD与LambdaLR，四轨迹、两内存恢复和一步覆写对照全过。见[原训练循环笔记](notebook/frameworks/verl-grpo-training-loop-internals-reading.md#学习率步数与恢复条件)/[复查](experiments/scripts/verify_verl_lr_schedule.py)。FSDP报告推进后LR，worker末mini-batch才tick，接线仅读；相同配置恢复轨迹一致，T10改18加载后LR虽相同，下一tick便分叉，state不保存原函数闭包。超horizon余弦回升不是标准trainer超额复现。无原上游测试/模型/worker/设备/磁盘恢复或新M5任务。本题收束；后续有界核对变化再另选源码/CPU课题，不继续堆调度/恢复变体或重开指标/计时；GPU/AReaL、#8313及网站边界不变。

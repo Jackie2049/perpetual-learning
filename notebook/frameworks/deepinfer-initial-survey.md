@@ -1,6 +1,6 @@
 # DeepInfer — DeepSeek 官方推理框架（高优先调研）
 
-近期补充：[PD 队列交接与资源释放](#pd-队列交接与资源释放)，固定 #195 的队列接口、三项元数据前提及块/state 所有权；源码契约不等于传输完成或原生扩展已可用。
+近期补充：[host cache 的可复用边界](#host-cache-的可复用边界)与[PD 队列交接与资源释放](#pd-队列交接与资源释放)，分别核对 KV/state/replay 交点、内存预算和队列所有权；源码契约不等于原生恢复或设备性能验收。
 
 > 状态：**调研进行中**（2026-10-20 建立）。仓库 `deepseek-ai/DeepInfer`，Apache-2.0。
 > 用户定为本项目高优先调研项（2026-10-20）。
@@ -1786,3 +1786,43 @@ SHA256：sequence.hpp base `67ef6ea70ee31a519fd632ee2d7be4710a6d796f786cf336dd3d
 本机 Python 3.12.13 只对完整 `engine.pyi` 做 AST 解析/内存 compile，并核对 Scheduler 中两个声明存在；没有 exec stub、导入 torch/deepinfer/_C、编译 C++ 或运行原生队列/设备。三层文件文本一致与 Python 语法通过，不认证已安装扩展具备对应 ABI。此处没有新建调度器替身或实验工具。固定版本可用 `git show 229c58c:deepinfer/_C/engine.pyi` 和 `git diff 9bd9cf2...229c58c -- csrc/engine/scheduler.hpp` 复查。
 
 缺少的原生验证与停止条件已补[原 M5 交接](../../experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)，由其在匹配环境和既有优先级下独立决定；不自动应用候选、切环境或部署服务。SHA256：scheduler.hpp `c5e4a8662de1bd31220a903d4fc5dc29c15c03eb0529d324b780605fee87b141`；pybind_scheduler.cpp `705a5e36f6ef8443098a5d0fd3ec5c033bd2b7dda9fdf5c8dbaf50ed1a4bb567`；engine.pyi `993da41582b93d6293f958357ead4861c84c961aea5d6de9e7f057ba264eb499`。
+
+## Host cache 的可复用边界
+
+2026-10-22 深读已有 [#144 host-memory prefix cache](https://github.com/deepseek-ai/DeepInfer/pull/144)，读取仍 open、作者 kzjeef，固定 head `e1f71ecdf8f1e53224bf44eee6989dee9de5f28a`、base/共同祖先 `774ce244b87cc0eb8d4b94ab9f5de2ab22049f01`；8 文件共新增 715 行。本节是完整 host cache/拷贝实现与原测试的源码核对，不是本项目真机复跑或对候选的采用决定。
+
+### KV 命中还要与状态和重算后缀相交
+
+[`HostPrefixCache`](https://github.com/deepseek-ai/DeepInfer/blob/e1f71ecdf8f1e53224bf44eee6989dee9de5f28a/deepinfer/hicache/host_cache.py) 维护两个独立 LRU 池：完整 KV 页，以及特定边界的 SWA stored-region 状态。hash 链逐页包含前缀 hash 与该页 int32 token 字节；state 也用对应的完整前缀 hash 定位。查找从第一页走到首个缺失或尚未 ready 的页，不能绕过中间缺页复用后面几页。
+
+设 prompt 长度为 L、块大小为 B、必须重算的后缀为 K，初始上限为 `floor((L-K)/B)*B`。它先与连续 KV 匹配长度取小，再逐块后退，直到找到 ready 的对应 state；最小命中长度是 2B。因而命中的不只是 KV 页，还必须有可恢复状态，并给 bounded replay 留下后缀。
+
+以下用 B=128、K=140 按源码公式推导，**不是运行测试**；还假设对应页均 ready、GPU 分配能够成功：
+
+| 新 prompt 长度 | 连续 KV 匹配 | replay 上限 | 已有 state 边界 | 最终复用 |
+|---|---|---|---|---|
+| 1000 | 896 | 768 | 896、768、640、512 | 768 |
+| 1000 | 896 | 768 | 只有 896 | 0，没有上限内的 state |
+| 1500 | 896 | 1280 | 896 | 896 |
+
+仅存原 prompt 最末边界的 state，可能无法服务短 follow-up。实现默认尝试保存最后 4 个边界，但还要求边界不早于 `seq_len - ring_slack`；不能从 lookback=4 推断必有 4 份可用状态。state 池按容量尽力保留最近边界，KV 池与 state 池独立淘汰，页仍在也可能因 state 已被淘汰而无法复用。decode 新生成 token 本身不在 decode 结束时写入 host cache，要在后续成为 prompt 并完成 prefill 后才存入。
+
+### 页池预算不是总内存预算
+
+`size_bytes` 仅决定 `floor(size_bytes/page_bytes)` 个 KV 页；另外还分配 `num_state_slots*state_bytes` 的 pinned host state 池。固定 host 池的 payload 字节数为两者之和，而不是只有 `size_bytes`。首次 store 才懒分配池和 JIT kernel，但配置所表示的这些成本并未消失。
+
+还需单独计入默认 16 个、每个 `state_bytes` 的 GPU staging，以及 page-id Tensor、hash/索引等元数据。staging 是本候选新增的临时设备存储，engine 已有的 GPU KV/state 池则是另一份成本；不能把所有 GPU 池再算作 host cache 新增量，也不能漏掉 staging。容量规划必须按实际 page/state 尺寸算，不能直接把 KV 页预算当总 pinned memory 上限。
+
+### 复用返回值与拷贝完成不同
+
+正常 miss 返回 0；找到可复用前缀但 `try_allocate_seq` 暂时返回 False 时返回 −1，供调用方稍后重试；正值 b 表示已排入 KV/state 拷贝并设置 cached token 计数，不是 CPU 已同步完成的通知。`poll` 在 CUDA event 完成后才减少传输引用并标 ready；LRU 淘汰跳过 refs 非零或尚未 ready 的条目。正值 hit token 计数是逻辑复用量，不直接证明节省了等量时间或达到某个 TTFT。
+
+[`page_copy.cu`](https://github.com/deepseek-ai/DeepInfer/blob/e1f71ecdf8f1e53224bf44eee6989dee9de5f28a/deepinfer/hicache/page_copy.cu) 当前明确使用 CUDA page-id Tensor、UVA pinned host 指针与当前 CUDA stream。staging 循环复用和消费顺序依赖同 stream 安排；“host-memory”不等于 CPU-only，也不是 NPU 实现证据。接入还要求 compact bounded replay、额外 state 存储开关及 engine cache layout 已初始化。
+
+### 原测试验证了什么
+
+完整读[原 190 行测试](https://github.com/deepseek-ai/DeepInfer/blob/e1f71ecdf8f1e53224bf44eee6989dee9de5f28a/tests/hicache/test_host_cache.py)，有 3 项：匹配/边界回退与字节恢复、容量/LRU、GPU 分配不足的 deferral。它们使用一个 CUDA 设备和真实 page-copy kernel，但 engine/scheduler/Sequence 是替身，真实 state slice/load kernel 被简单 copy 替换。因此，即使原测试通过，也不认证真实 SWA 布局重建、模型输出或新 `_C.Sequence.block_table` binding——FakeSeq 已自带 Python list 属性。
+
+原生 engine 使用新增只读 `block_table` binding，仍要核对重建后的实际扩展身份。作者另报 GB300 模型/服务实验，不能与这 3 项逻辑测试或本项目记录合并为同一证据。本机仅以 Python 3.12.13 对 host_cache.py、kernels.py、原测试及 engine.pyi 四文件做完整 AST/内存 compile，确认有 3 个原测试函数；**没有运行 3 项测试**，也未 exec 模块、导入 torch/deepinfer、JIT、调用设备或构造 CPU 调度替身。
+
+运行缺口、池预算及原始入口已补[同一 M5 交接](../../experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)，不另排队或自动编译/切环境。源码 SHA256：host_cache.py `93fd32250bfda286d3064325bfe55253e48223725ba62f95ab77254fa82ca7cd`；原测试 `03aecfa74f76d731867120c26e79ecb3d71fa7b34b30f42388a4570cd5f23e3c`；page_copy.cu `311e85599445cbebed4aae894cfb833caa205809b57d9f28b40eed7b80298d48`。
