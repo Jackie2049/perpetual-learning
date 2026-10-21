@@ -496,7 +496,7 @@ class RemoteRewardManager(RewardManagerBase):
 @register_manager_legacy("rate_limited")
 class RateLimitedRewardManager(RewardManagerBase):
     # ★★★ 三层限速: concurrency + RPM + TPM
-    # ★ 全局class-level → 所有worker共享 → 跨节点统一限速!
+    # class-level只在同一进程共享，不自动跨Ray actor/节点共享配额
 
     # Layer 1: Concurrency → asyncio.Semaphore(max_concurrent)
     # Layer 2: RPM → AsyncTokenBucket(max_rpm / 60 tokens/sec)
@@ -520,7 +520,34 @@ class RateLimitedRewardManager(RewardManagerBase):
         return {"reward_score": reward, "reward_extra_info": reward_extra_info}
 ```
 
-**★★★ 适用场景**: LLM-as-judge → 外部API → 速率限制 → 3层保护 → 防止API限速/超限
+**适用场景**：外部API奖励的进程内准入控制；全局API key配额仍须结合worker数量与服务方计量方式判断，不能由三层本地限流推断不会超限。
+
+#### 进程配额与取消边界
+
+2026-10-22 固定官方提交 `1876b06d0a3e4e71e06230be10af14492ca8a75b`，核对[原 limited.py](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/experimental/reward_loop/reward_manager/limited.py)。原文“所有worker共享、跨节点统一限速”的笔记表述已纠正：`_rpm_limiter/_tpm_limiter/_semaphore` 是普通Python类属性，只有同一进程内的该类实例共享。[RewardLoopManager](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/experimental/reward_loop/reward_loop.py)创建多个Ray actor，各actor在自身初始化路径加载manager；没有在这些类属性上建立跨进程共享服务。若N个独立worker各用同一数值R，不能把它当总计R的共享配额，内建桶的合计长期准入能力可能接近N倍。这里是源码作用域推断，未运行Ray集群或请求外部API。
+
+`asyncio.Lock` 保护同一事件循环的协程竞争，不是操作系统线程锁，也不是跨进程锁。[Python官方说明](https://docs.python.org/3.12/library/asyncio-sync.html)明确这类原语不具备线程安全保证。原桶文档的thread-safe措辞，以及名为 `test_thread_safety_with_lock` 的测试，都不能扩大该保证；后者实际只用 asyncio.gather 启动协程。
+
+manager将RPM/TPM除60作为每秒补充率，同时把桶容量设为这个**一秒额度**，不是整分钟额度；初始桶满。它允许短时突发，按时间连续补充，不是服务方任意滚动60秒窗口、账单token或实际请求完成数的精确计量。TPM每次扣的是配置估值 estimated_tokens_per_request，不会在评分返回后按真实usage结算。首次class初始化还会固定本进程的限流器，后续改变RPM/TPM仅警告并忽略，不能当动态重配置。
+
+两个 acquire 分支对取消有不同含义：
+
+| 请求 | 不足令牌时如何等待 | 本机取消后的状态 |
+|---|---|---|
+| 不超过桶容量 | 释放锁，睡眠后重新判断，成功时才扣款 | 未扣本次请求费用；保留当时已计算的非负余额 |
+| 超过桶容量 | 锁内先扣整笔成负余额，释放锁后等待欠额补足 | 没有refund分支，预扣负余额保留 |
+
+本机真实事件循环对照使用 rate=1、capacity=1：普通路径先耗尽1，再等待另1并取消，余额为微小非负补充量；超容量请求5在第一次sleep前把余额设为−4，取消后仍为−4。后续acquire会按经过的时间补充，这不是永久卡死；但“请求已取消且尚未调用评分API”不等于“本地预算已退还”。未据此改变扣款策略或定性为新的上游缺陷，是否应退款须先明确业务准入契约。
+
+run_single的顺序是 `decode → RPM → TPM → semaphore → wait_for(score)`。timeout只限制最后评分等待，不包含前面的decode、令牌桶或并发队列等待；失败评分也没有统一退还已消费RPM/TPM。async with会释放已进入的并发槽，不代表撤销令牌消费或远端计算。该manager顺序与配置行为是源码核对，没有用替身manager冒充完整请求验证。
+
+[复查脚本](../../experiments/scripts/verify_verl_token_bucket.py)AST选择完整原AsyncTokenBucket和原get_event_loop，完整加载[原测试模块](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/tests/experimental/reward_loop/test_async_token_bucket_on_cpu.py)，逐项直接await原16个测试方法，全部通过；原装饰器、断言、时间窗和0.5/1/4秒等睡眠未改。另2组取消观察通过。没有fake clock或缩短sleep；“直接await测试体”不是完整pytest、跨线程安全或manager集成验收。
+
+```bash
+python experiments/scripts/verify_verl_token_bucket.py /path/to/verl
+```
+
+Python3.12.13、pytest8.4.2，无torch/Ray/模型/API/设备依赖。原manager集成测试需要DataProto、tokenizer及其他依赖，本轮未运行。官方API/本地limited.py Git blob同 `3707ed20e5ab2b8ee2db854d8a344803a26b39cb`；SHA256：limited模块 `62ea50e918f2ea1bd2df250ef3cd02564bc02fe8d567f53727f4c538d3751d65`，原测试 `6ed7dadeafdccbc64976b46d67843f2877444802df85afe9dcf650e6eb80445f`，原helper模块 `1f70a9ac05b4a6f92a3ad2486bee17ac9721a9568e7e72b17e76172a60a7751b`。本项修正知识范围，不改上游实现、创建候选或新增M5硬件任务。
 
 ### 5.8 全Registry清单 ★★
 

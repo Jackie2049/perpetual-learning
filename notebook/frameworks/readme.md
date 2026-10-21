@@ -157,7 +157,7 @@
 - [verl PrefixGrouper 源码深度阅读](verl-prefix-grouper.md)
 - [verl FSDP shared-prefix packing](verl-shared-prefix-packing.md)
 - [verl ReMax (#6340) and IcePop (#5722) Source-Level Reading](verl-remax-icepop-source-reading.md)
-- [verl Reward Integration 源码级深度阅读](verl-reward-integration-reading.md)
+- [verl Reward Integration 源码级深度阅读](verl-reward-integration-reading.md)：纠正[进程配额与取消边界](verl-reward-integration-reading.md#进程配额与取消边界)，class-level非跨节点共享；原16协程测试体/2取消对照，评分timeout不包排队。
 - [verl RL Infra 架构源码阅读](verl-rl-infra-reading.md)
 - [verl RL Training Pipeline 深度阅读](verl-rl-training-pipeline.md)
 - [verl SGLang PD Disaggregation — Prefill-Decode分离架构深度分析](verl-sglang-pd-disaggregation-reading.md)
