@@ -1,5 +1,7 @@
 # DeepInfer — DeepSeek 官方推理框架（高优先调研）
 
+近期补充：[PD 队列交接与资源释放](#pd-队列交接与资源释放)，固定 #195 的队列接口、三项元数据前提及块/state 所有权；源码契约不等于传输完成或原生扩展已可用。
+
 > 状态：**调研进行中**（2026-10-20 建立）。仓库 `deepseek-ai/DeepInfer`，Apache-2.0。
 > 用户定为本项目高优先调研项（2026-10-20）。
 > 已于 2026-10-20 读取源码快照 `8b16149741a4935e1dec8cea27853f273b374c5b` 及 10 页部署 Q&A，补确定性链、ZOS 时序和服务边界；CPU 执行隔离 seed/EngineType 定义与 Worker 主机分支，未运行模型/GPU/NPU。
@@ -1756,3 +1758,31 @@ benchmark.profile_memory仍使用args.tracing_path及带trace_stem/phase的文�
 本机Python3.12.13仅对原测试完整AST解析/内存compile，确认1函数×2参数值，**不是2项测试通过**；未导入torch/deepinfer或调用_C。匹配原生环境后的最小入口是 `python -m pytest -q tests/engine/test_prompt_logprobs_recompute.py`，条件和停止边界已补[原M5条目](../../experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)，不自动应用、编译或诱发真实服务抢占。
 
 SHA256：sequence.hpp base `67ef6ea70ee31a519fd632ee2d7be4710a6d796f786cf336dd3d3f06f7fbe16b`、head `7fd9448c5a408e904124ff8ab8015201e20c84b09d4eee8428ffe8c22f62b3e8`；原测试 `51fb80d53bb7b100e18974a1528d8f187a40aeb92783ab1bde4449bbcc607424`。复查用固定Git对象读取上述文件；语法检查compile但不exec原测试，长度公式不作为修复实测。
+
+## PD 队列交接与资源释放
+
+2026-10-22 读取新增 [#195](https://github.com/deepseek-ai/DeepInfer/pull/195)，open、作者 kzjeef，固定 head `229c58c326f3f3ba98959240f84c1c88029baa96`、base/共同祖先 `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`。真正 PR 仅三个文件、21 行新增：一个入队方法、两个 Python binding 及对应 stub，无新增测试文件。它提供 PD 调用入口，不实现跨主机 KV/state 传输。
+
+**从队列移出、归还 MTP 槽、释放 KV/state 是不同操作。** [`scheduler.hpp`](https://github.com/deepseek-ai/DeepInfer/blob/229c58c326f3f3ba98959240f84c1c88029baa96/csrc/engine/scheduler.hpp) 的当前契约如下：
+
+| 操作 | 实际动作 | 不能据此认定的事情 |
+|---|---|---|
+| `free_finished_seqs` | 查 running 中 `is_finished()` 的请求，归还其 MTP info slot，返回同一批 Sequence 指针并从 running 移除 | 没有释放 KV block/SWA state；也不是清空 waiting/prompted 或销毁所有 Sequence 引用 |
+| `free_seq` | 持 BlockManager/StateManager 锁，经 `free_seq_nolock` 归还 MTP slot、state block、KV blocks，清空 block table | 不是跨设备数据已导出或远端已接收的确认 |
+| `add_prompted_sequence` | 接收同一 Sequence，更新时间、预留主机向量容量，加入 `(seq, false)` 的 prompted 项 | 不分配/复制 GPU KV，不克隆 state，不等待传输完成；`false` 不是 finished 标志，而是不走 forked clone 路径 |
+
+`free_finished_seqs` 是已有 C++ 方法，本次只将它暴露给 Python；不应将原有行为记成新释放算法。`release_mtp_info_slot` 归还槽位并清理该请求的槽标记，KV/state 保留正是允许调用方先导出数据、再显式释放的接口安排，不是据此发现内存泄漏。
+
+新增入队方法只在自身入口检查三项条件：`status == WAITING`、block table 非空、`cache.num_tokens == get_len() - 1`。其约定是序列已有 prompt 加首个生成 token，除末 token 外的 KV 已计算；同一组整数条件并不认证实际 KV 字节、SWA state 内容、block 所属 manager 或拷贝事件完成。完成这些准备是调用方前提，不能伪造计数满足断言后反指标准链路正确性有缺陷。
+
+`reserve_output_tokens` 仅对原 token/压缩 token 的主机 vector 调用 reserve；block table 的 reserve 也只是 vector 容量，不是 BlockManager 分配。后续 `_schedule_decode` 才把 WAITING 变为 RUNNING、分配 MTP info slot，并将非 forked 项直接接纳；相邻 forked 分支则另克隆 state/末块。这两种入队身份不能混用。[Sequence 定义](https://github.com/deepseek-ai/DeepInfer/blob/229c58c326f3f3ba98959240f84c1c88029baa96/csrc/engine/sequence.hpp)
+
+标准 [`LLMEngine.pre_sampler_sync`](https://github.com/deepseek-ai/DeepInfer/blob/229c58c326f3f3ba98959240f84c1c88029baa96/deepinfer/engine/llm_engine.py) 对 NORMAL/COMPLETION 的 finished 项调用 `finalize_seq`，默认实现继续调用 `scheduler.free_seq`；PROMPT 不走该默认分支。同一文件的 `do_copy_state` 明示只下发 GPU 拷贝、消费方需同步。因此，自定义 PD 路径需要明确“何时可读出”和“何时可释放”，不能仅由方法名推断所有权已转移，也不能把这一小 PR 当成并发/取消/跨主机故障安全保证。
+
+### 原生验证与主机检查的边界
+
+作者在 [PR 正文](https://github.com/deepseek-ai/DeepInfer/pull/195) 报告用于 [#197 PD server](https://github.com/deepseek-ai/DeepInfer/pull/197)，在 4+4 GB300 上与单引擎输出 token 一致，并在 B200 重建 binding。正文称该服务叠加 #144/#147；这不是本项目复跑或完整消费者审计，也不外推到 4090/NPU。另初查 [#144 host cache](https://github.com/deepseek-ai/DeepInfer/pull/144) 的正文、8 文件列表及固定 head `e1f71ecdf8f1e53224bf44eee6989dee9de5f28a`，未复跑其中依赖真实 copy kernel 的测试或认可其性能数字。
+
+本机 Python 3.12.13 只对完整 `engine.pyi` 做 AST 解析/内存 compile，并核对 Scheduler 中两个声明存在；没有 exec stub、导入 torch/deepinfer/_C、编译 C++ 或运行原生队列/设备。三层文件文本一致与 Python 语法通过，不认证已安装扩展具备对应 ABI。此处没有新建调度器替身或实验工具。固定版本可用 `git show 229c58c:deepinfer/_C/engine.pyi` 和 `git diff 9bd9cf2...229c58c -- csrc/engine/scheduler.hpp` 复查。
+
+缺少的原生验证与停止条件已补[原 M5 交接](../../experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)，由其在匹配环境和既有优先级下独立决定；不自动应用候选、切环境或部署服务。SHA256：scheduler.hpp `c5e4a8662de1bd31220a903d4fc5dc29c15c03eb0529d324b780605fee87b141`；pybind_scheduler.cpp `705a5e36f6ef8443098a5d0fd3ec5c033bd2b7dda9fdf5c8dbaf50ed1a4bb567`；engine.pyi `993da41582b93d6293f958357ead4861c84c961aea5d6de9e7f057ba264eb499`。

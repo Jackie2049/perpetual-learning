@@ -169,6 +169,7 @@
 - [DeepInfer 共享池句柄身份](frameworks/deepinfer-initial-survey.md#共享池句柄的分配身份与视图寿命) — #187原9项真实CPU共享存储/fork测试；代际拒绝旧句柄，不撤销已返回视图
 - [DeepInfer 内存快照路径](frameworks/deepinfer-initial-survey.md#内存快照的输出路径与目录创建) — #183原路径/目录12组控制；默认迁移、空串与失败传播，非设备采集验证
 - [DeepInfer 重算与 prompt logprob](frameworks/deepinfer-initial-survey.md#抢占重算与-prompt-logprob-的身份) — #188重算历史非原始prompt；仅源码/语法，原2参数化需匹配_C与设备runtime，已交M5参考
+- [DeepInfer PD 队列与资源](frameworks/deepinfer-initial-survey.md#pd-队列交接与资源释放) — #195移出请求、MTP槽归还、KV/state释放分开；3项入队检查不认证拷贝完成，stub语法不等于原生binding可用
 - [PrefixGrouper 计算范围纠错](frameworks/verl-prefix-grouper-gap-analysis.md) — 原生 grouped input 也节省前缀逐 token 运算；撤回 attention-only 缺口和非等价微基准收益外推
 - [verl PrefixGrouper](frameworks/verl-prefix-grouper.md) — 历史集成；与新 engine 路径的版本边界及复杂度纠错
 - [vLLM V1 KV Cache Manager 源码阅读](frameworks/vllm-v1-kv-cache-manager-reading.md) — Block 分配/释放、6 种 Attention Manager、Prefix Caching、Coordinator 架构

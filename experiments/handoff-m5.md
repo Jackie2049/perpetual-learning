@@ -34,6 +34,8 @@ M1 已有的[发现层 CPU 检查](../notebook/frameworks/deepinfer-initial-surv
 
 抢占状态参考（同一条目，不另排队/改移植方案）：[#188](https://github.com/deepseek-ai/DeepInfer/pull/188)，2026-10-21读取open，head `c0ce645b1a5166e835c1e59fb389c334d1baa4db`、base `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`。M1仅[源码与测试语法核对](../notebook/frameworks/deepinfer-initial-survey.md#抢占重算与-prompt-logprob-的身份)，作者两项原生plain/chunked测试也未报告运行；Gloo并不去除prepare_sampler_inputs中的pinned/CUDA或PrivateUse1拷贝。若M5已有匹配此head的_C和获准设备runtime，可独立决定在隔离进程跑tests/engine/test_prompt_logprobs_recompute.py，记录构建/import身份、首次prompt计数与重算selected indices/flag/空输出、EOS及块回收。原fixture注入logprob/采样值，不需权重；通过也不是模型概率/性能或ZOS/CP验收。若需新编译/切环境、runtime不匹配或影响现有任务，先记待条件，不为本参考强制重编、加载模型或在真实服务耗尽KV。未启动或接单，既有M5优先级不变。
 
+PD 原生接口参考（2026-10-22，不另排队/采用方案）：新增 [#195](https://github.com/deepseek-ai/DeepInfer/pull/195)，head `229c58c326f3f3ba98959240f84c1c88029baa96`、base/祖先 `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`，仅3文件21行新增。目的为今后评估PD入口时核对队列与资源所有权；[M1源码结论](../notebook/frameworks/deepinfer-initial-survey.md#pd-队列交接与资源释放)：移出finished只归还MTP槽，KV/state留待显式free；入队三项元数据检查不认证传输完成，非forked项不克隆。M1仅完整stub AST/内存compile与声明检查，无_C/原生测试，本PR无新增测试文件；作者GB300/B200报告不是本机证据。若M5今后确需采用且已有匹配head的_C/runtime，可先核实际binding/import身份，再以最小原生序列记录队列、MTP槽、KV/state占用及导出完成后显式释放的顺序，不把计数合法当数据已到达。缺口是匹配build、设备及实际拷贝完成证据；若需重编/切环境、传输同步协议不明确、资源不足或影响原任务，先记录待条件，不自动编译、下载权重、启动#197或并行改方案。原优先级与停止条件不变，记录不代表M5已接单。
+
 M5 最小下一步：先按实际硬件查已有方案和精确 head，读清依赖、权重格式、显存及其原始测试入口；核对通过后只选一个可隔离、可停止的小范围兼容检查，再决定是否具备 offline inference 条件。保留初始失败点与配置；不要直接按旧专题的“换三个包/放宽检查”当成已验证操作，也不要先覆盖已有环境。
 
 停止条件：没有匹配硬件、内存/数据预算不成立、测试入口不明确或需扩大范围时，记录原因和下一项缺口，不自动下载巨量权重、改写移植方案或进行长时间编译。完成标准是目标配置下可复现的实测记录或明确阻塞，不是必须产出性能数字。
