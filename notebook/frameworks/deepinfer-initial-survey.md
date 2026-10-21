@@ -764,3 +764,65 @@ python3 experiments/scripts/verify_deepinfer_mtp_commit.py /path/to/DeepInfer --
 SO mask的设备/tensor/matcher为替身，离线入口的engine/clone/tokenizer也是替身；两部分未与真实采样或服务连接，未生成grammar、GPU mask或模型token。结论收束为“不能用账本占位0代表API输出token”。不据此开新候选或竞争修复，不在此基础上反复增加替身充当完整复现；若后续考虑贡献，需先确认错误响应语义、真实失败payload与既有PR覆盖。后续回到有界上游变化核对，选择未重复课题。
 
 新增固定源码SHA256：Python sampler.py `81205a12e860041ffa904321b852db2d048bc038bb07d494dbb78b44b522d9a9`；entrypoints/llm.py `069a5333d9f47047ccc87584792627dfa6eee9cf93bdc046107cbd0218a6bada`。其余沿用前节；没有改上游源码、AReaL或GPU环境。
+
+## SamplingParams 构造校验与测试组合
+
+2026-10-21 只读 [PR #119](https://github.com/deepseek-ai/DeepInfer/pull/119) 与 [PR #121](https://github.com/deepseek-ai/DeepInfer/pull/121)，读取时均 open，作者均为 akash6murali。固定公共基线 `774ce244b87cc0eb8d4b94ab9f5de2ab22049f01`，实现 head `bc668873e5520aa309c709a9b4bfc2935519779a`，测试 head `2afdb3d2d8ed1fb3a83a0169485aa25d281196e8`。这是已有作者方案的学习，不是我方候选或完整 PR 验收。
+
+### 实现改动与测试依赖
+
+#119 改 `sampling_params.py`，#121 只新增两个测试文件，不包含 #119 的实现。不能把两个 open 分支当作已经合并的一套代码。对同一份原始 SamplingParams 测试分别提供不同实现后，本机结果如下：
+
+| 实现来源 | `max_tokens=0` | `logprobs=True` | 53 项原始测试 |
+|---|---|---|---|
+| 固定基线 | 校验前改为 1 | 兼容参数被丢弃，不发警告 | 51 通过，2 项预期失败 |
+| #119 固定 head | 删除改写，由已有范围检查抛 ValueError | 发出 DeprecationWarning，仍无该开关的功能 | 53 全部通过 |
+
+两个基线失败恰是 `test_zero_raises` 和 `test_logprobs_true_emits_deprecation_warning`。PR 正文标称 47 项，但固定测试文件在本次 collector 中实际是 53 项。表格不是完整 #121 测试集或上游 CI 结论：本轮未执行 config 文件、原生包初始化或上游 conftest。
+
+警告是行为提示，不是自动启用 logprob。`top_logprobs` 控制请求的 top-k 返回数量；不能把弃用 `logprobs` 理解成新增返回通道。DeprecationWarning 的可见性还取决于应用的过滤策略，发出不代表任意调用环境默认显示，见 [Python warning 文档](https://docs.python.org/3/library/warnings.html#warning-categories)。
+
+### 校验在 greedy 改写之前
+
+[构造器](https://github.com/deepseek-ai/DeepInfer/blob/bc668873e5520aa309c709a9b4bfc2935519779a/deepinfer/sampling_params.py)先保存参数、生成或归一化 seed，再执行 `_verify_args()`，最后才处理 `temperature < 1e−5`。因此：
+
+- 温度为零且 top-p/top-k 合法时，温度改为 `SAMPLING_EPS`、top-p 改 1、top-k 改 −1；并非把最终保存温度设为零。
+- 温度为零也不能绕过 `top_k=0` 或 `top_p=0` 的检查；它们在 greedy 改写前就被拒绝。
+- 温度恰为 EPS 不满足严格小于条件，不覆盖 top-p/top-k。是否最终表现为确定性 greedy，仍须按实际 sampler 后端理解，不能仅凭保存的温度认证设备输出。
+
+seed 的 `None` 随机发生在构造时，整数先截断为 uint64；原 seed 范围检查不是拒绝任意超范围原始整数的保证。离线 `LLM._add_request` 会 deepcopy 已构造参数，不重新生成 seed。已有 seed/确定性边界见前面的[固定种子说明](#源码核验确定性是跨层约束)。
+
+### Python 构造器不是完整输入模式
+
+这两个实现都保留同样的局部比较检查：temperature 只检查负值，top-p 用 `(0,1]` 的组合比较，top-k/max_tokens/top_logprobs 检查数值范围，没有统一的有限数与精确类型验证。额外 8 组本机观察在两个实现中一致：
+
+| 输入 | Python 构造结果 |
+|---|---|
+| `temperature=0, top_k=0` | ValueError |
+| `temperature=0, top_p=0` | ValueError |
+| `top_p=NaN` | ValueError |
+| `temperature=NaN` 或 `+Inf` | 接受 |
+| `top_k=1.5` | 接受 |
+| `max_tokens=1.5` | 接受 |
+| `top_logprobs=0.5` | 接受 |
+
+“接受”仅指该 Python 构造完成，不表示参数可被完整引擎或 kernel 正确消费。[C++ SamplingScalars 与 StoppingCriteria](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/csrc/engine/sequence.hpp)仍会对 Python 属性执行 double/int/uint64 转换；[prepare_sample.cpp](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/csrc/engine/prepare_sample.cpp)再填设备输入。这里没有运行 pybind 转换或 sampler，因此不推断具体下游异常、截断规则或新的可行动缺陷，也不扩写作者修复。
+
+### 字段保存不等于字段效果验证
+
+原测试对 `so_args` 和 `golden_token_ids` 只验证保存。grammar schema、trigger/bound 约束在其他组件才消费，这些构造测试不能证明结构化输出生效。
+
+`golden_token_ids` 也不能理解成只记录对比分数而绝不影响输出：源码中 `LLMEngine.add_request` 将其传入 Sequence，prefill 的 `_prefill_golden_gen` 在采样后调用 `_update_golden_tokens`，后者用非 −1 的 golden 值替换 sample result，再查其 logprob。这个覆盖与前面的概率计算是不同阶段；本轮只读该路径，没有执行完整 golden 生成、MTP 或设备逻辑。来源见固定基线 [llm_engine.py](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/engine/llm_engine.py) 与 [sampler.py](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/model_executor/layers/sampler.py)。
+
+### 本机复现范围
+
+[脚本](../../experiments/scripts/verify_deepinfer_sampling_params.py)原样执行固定 Git blob 的 `sampling_params.py` 与 #121 的 `test_sampling_params.py`。只将 `deepinfer` 包根设为空命名空间，避免触发硬件探测和扩展初始化；参数实现和测试体没有 AST 修改、torch/验证规则替身或源码补丁。通过 pytest collector adapter 收集原测试模块，关闭第三方插件自动加载、上游 conftest 和 pytest cache。诊断路径由 linecache 提供，源码 checkout 中没有写入虚拟测试文件。
+
+```bash
+python experiments/scripts/verify_deepinfer_sampling_params.py /path/to/DeepInfer --implementation base
+python experiments/scripts/verify_deepinfer_sampling_params.py /path/to/DeepInfer --implementation pr119
+```
+
+Python 3.12.13、torch 2.9.1、pytest 8.4.2，CPU。baseline 的两项 pytest failure 被脚本按具体 nodeid 核对为预期对照，未标 xfail、未修改测试；#119 的 53 项全过。各自额外 8 组构造边界检查通过。没有运行 #121 的 CacheConfig/ParallelConfig/SchedulerConfig 测试、完整包/CI、C++ 绑定、模型或 GPU/NPU，也未认证测试正文所称的所有覆盖范围。
+
+SHA256：基线 SamplingParams `f800034efdebe1b21620660a51fa9122d3d7f138d8e60cd738f33d643c3116f8`；#119 SamplingParams `b2de2bf36c32add1808824cddb05191bf5d45979efd6b0b14579d6c74ad46f04`；#121 原始测试 `c56598760b78ac163a01882d0bb975dec0c9eec9f32911ed0bc9bfd8ffec6c51`。

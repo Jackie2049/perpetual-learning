@@ -10,6 +10,8 @@
 
 ## 运行接续
 
+- **M1 SamplingParams输入边界（2026-10-21）**：已有同作者#119实现/#121测试均open，head bc668873/2afdb3d2、base774ce244。原始测试实际53项：baseline51过/2预期失败，#119全过；各8组构造边界观察通过。只隔离包根、原样执行参数和测试，不是完整包/CI/绑定/引擎。明确greedy改写前校验、NaN温度/小数整数字段能过Python不代表下游有效，golden字段保存不证明只读评估效果。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#samplingparams-构造校验与测试组合)。本项收束；下一步只读CacheConfig #118与#121的strict-xfail契约，先核依赖、不补装设备包、不竞争修复。网站/GPU/AReaL分工不变。
+
 - **M1 PrefixGrouper历史误判收束（2026-10-21）**：原生库1accedc0+verl #4368 merge d6bc6296的5组CPU输入检查通过，证明旧PG也先合并输入，不是“只省attention不省MLP”。不均匀分组可使有效token24→20但矩形行数24→28；不宣称性能。旧0.99x是自写attention计时，2.46x模拟缺prefix KV，训练模拟也无共享图/同损失，2.5倍缺口及旧RFC已撤回。见[更正与源码证据](notebook/frameworks/verl-prefix-grouper-gap-analysis.md)。不更改历史计时逻辑、不重跑GPU；下一步转回DeepInfer，先读已有#119 SamplingParams与#121参数测试的输入验证边界，不竞争实现。网站/GPU/AReaL分工不变。
 
 - **M1 shared-prefix packing学习（2026-10-21）**：只读已有作者#8300固定head d6dfcb28，区别旧PrefixGrouper无调用方集成与新FSDP no-padding路径；明确P−1 trunk/重复末prompt token、bottom-right分支可见域、原loss_mask分母与token压缩比非加速比。38组原始CPU布局测试通过，未执行模型/梯度/engine/FA/DP/GPU。见[笔记与复现](notebook/frameworks/verl-shared-prefix-packing.md)，旧笔记复杂度/位置保证与性能外推已纠正。后续只读对照旧PrefixGrouper gap analysis的attention-only/full-model论断与新路径，避免历史结论继续混用；不竞争实现，不补装依赖或用更多替身冒充集成。网站/GPU/AReaL分工不变。
@@ -93,7 +95,7 @@
 1. **等待用户授权/资源**（长期未决，见「运行接续」5 项）——发布评论/文档、#8281 发布形态、方向调整。#8237 已收尾（PR #8286 ready + issue 已回）。
 1. **未来一周开源技术掘金三大重点（用户 2026-10-20 定）**：**DeepInfer / verl / AReaL**。其中 DeepInfer 主研（推理框架源码深挖），verl 主贡献（续 #8281/#8250），AReaL 主实测（prompt_mean 切分敏感点）。vLLM 降为次优先级。 **这是跨主机整体分工，M1 不接管 AReaL；M5 独立推进其完整候选/PR。**
 2. **等待用户授权/资源**（长期未决，见「运行接续」5 项）——发布评论/文档、#8281 发布形态、方向调整。#8237 已收尾（PR #8286 ready + issue 已回）。
-3. **M1当前学习/贡献复核**：V1来源/失败边界、#8303指标与#8300布局学习收束；#8250等真实配对观测，#7913不重复，#8281待决定。clip旧RFC和PrefixGrouper full-model旧RFC均已撤回，不发布后者评论草稿。接续DeepInfer已有#119 SamplingParams/#121参数测试的输入验证边界，先只读、不竞争实现；已收束课题不再堆替身冒充集成。M1不访问GPU、不涉及AReaL整项，任何上游发言仍须拍板。
+3. **M1当前学习/贡献复核**：V1来源/失败边界、#8303指标与#8300布局学习收束；#8250等真实配对观测，#7913不重复，#8281待决定。clip旧RFC和PrefixGrouper full-model旧RFC均已撤回，不发布后者评论草稿。DeepInfer #119/#121 SamplingParams构造测试限定复核收束，下一步读#118 CacheConfig与strict-xfail契约，不竞争实现；已收束课题不再堆替身冒充集成。M1不访问GPU、不涉及AReaL整项，任何上游发言仍须拍板。
 3. **高优调研（用户 2026-10-20 定）**：**DeepInfer**——确定性、ZOS、DSpark、YoCo/CP、生命周期、EPLB、chunk/cached-prefix、MTP缓存提交与SO失败输出边界已有源码/限定CPU学习，完整扩展/设备正确性与性能未测。账本0不能直接当对外失败token，局部条件差异不定性新bug，见[笔记](notebook/frameworks/deepinfer-initial-survey.md#so失败状态与输出token身份)。下一步做有界DeepInfer/verl上游变化核对，选择未重复课题；不继续增加同类替身代替真实失败payload、错误响应语义与既有PR覆盖核验。不预设新缺陷、不竞争已有修复；M1不访问GPU/AReaL，任何上游发言仍须用户拍板。
 4. **AReaL prompt_mean（原 M5 单一负责项，用户 2026-10-20 恢复 VPN 后明确本会话继续）——实测已闭环**：框架跑通（gsm8k PPO smoke 128 步无错）+ 受控实测（§10.7 判据，M=2 vs 4 + 固定 M 变 P，prompt_mean 与 token_mean 行为一致：跨 M 1.301≈1.273、P-spread 1.216≈1.192）——**不构成 defect，候选修复撤销，不提 issue/PR**，作为 review 依据存档（见 [源码笔记 §10.10](notebook/frameworks/areal-architecture-source-reading.md)、[tracker](open-source/areal/tracker.md)）。Megatron GPU 对照未做（TE 硬依赖）。分工状态见 [handoff-m5](open-source/areal/handoff-m5.md) 与 WORK「运行接续」。
 3. 按课题逐步关联现有实验执行材料与 notebook/experiments/ 的分析记录；新增实验优先就近组织，维护双向入口。
