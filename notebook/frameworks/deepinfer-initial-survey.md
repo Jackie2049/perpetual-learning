@@ -1250,3 +1250,46 @@ git archive 62e386fe9ee1ab7bfff409d164cc577e72612fbe eval examples/_config.py de
 `expected_rollouts` 同列为1/1/3，实际均为1。这个完整性标记是相对 `build_records` 选出的题集，不是“覆盖原始数据文件全部题目”，也不是认证CLI参数合法。#169预防新生成入口的非正limit，但不会自动清洗历史meta；复评分数须同时保留选题配置和任务身份。合成答案得到的得分不是模型准确率，也未复跑真实数据或默认LLM judge。
 
 SHA256：run_eval base `5f1fd6d70da0a15858b53a4724e79501e85f5cbd889ae117ec383b4981f66fc5`，head `c043a19b05ccc608e0d63a07a401bf9948e42f012669b046ac2641dd2e45058c`；原测试 `366420f48b98d508e2d55f56c964be457b712326a5ba85470dd90d062b7d5237`；实际scorer `af3755cd5c0a1bb050296b03999773d6aead6360e197234b1bd8438fbcb293a4`。本题未启动engine、模型或GPU/NPU，没有新增M5真机任务；已有作者负责，不竞争实现或向上游发言。
+
+## EngineType 的源码一致性测试
+
+2026-10-21 核对已有 [#164](https://github.com/deepseek-ai/DeepInfer/pull/164)，读取时open、作者world-executed，head `d73c0f06cab34867f9d8b146346885ee513aacf3`、目标base `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`、共同祖先 `774ce244b87cc0eb8d4b94ab9f5de2ab22049f01`。真正PR差异只有新增41行测试；两端直接diff里的vendor/build变化属于分支差异，不是本PR修改。两份生产枚举相对共同祖先未变，当前都是 NORMAL=0、PROMPT=1、COMPLETION=2。
+
+### 整数在语言边界的含义
+
+[Python枚举](https://github.com/deepseek-ai/DeepInfer/blob/d73c0f06cab34867f9d8b146346885ee513aacf3/deepinfer/engine/engine_type.py)用NORMAL=0与两个auto()定义编号；[LLMEngine](https://github.com/deepseek-ai/DeepInfer/blob/d73c0f06cab34867f9d8b146346885ee513aacf3/deepinfer/engine/llm_engine.py#L252)将 `.value` 写进scheduler_config。[C++构造器](https://github.com/deepseek-ai/DeepInfer/blob/d73c0f06cab34867f9d8b146346885ee513aacf3/csrc/engine/scheduler.hpp#L100)把该属性先cast<int>、再static_cast<EngineType>，不是按Python成员名查表。两边编号若独立漂移，同一整数就可能改变调度含义；当前不是已发生的错配。
+
+[原始测试](https://github.com/deepseek-ai/DeepInfer/blob/d73c0f06cab34867f9d8b146346885ee513aacf3/tests/engine/test_engine_type_consistency.py)从头文件匹配 `enum class EngineType : int {…};`，再用 `(\w+)\s*=\s*(-?\d+)` 提取显式十进制赋值，组成字典与Python枚举迭代结果比较。没有解析到块或任何成员时显式失败；不是无条件跳过。这个检查不导入_C，也不比较运行中扩展的实际定义，不能证明“当前源码与已安装二进制同版”。
+
+### 原测试与解析范围
+
+Python3.12.13、pytest8.4.2，固定Git对象原样展开包初始化、attrdict、environ、engine_type、头文件、测试与pyproject。真实包导入，未用包根或枚举替身；显式设置DEEPINFER_ACCELERATOR=nvidia，避免初始化中的自动发现分支。禁用外部pytest插件/conftest、字节码和缓存，原测试 **1 passed**，原ci/ci_npu标记由原pyproject注册；这不是在两种设备CI中各跑了一遍。
+
+另对原 `cpp_engine_types` 和测试函数执行8组本地合成头文件输入，只将测试的HEADER路径指向输入文件，不改正则、断言或Python枚举。每份输入保留完整枚举壳，除表列变动外仍为0/1/2：
+
+| 输入变动 | 原测试结果 | 对解析范围的说明 |
+|---|---|---|
+| PROMPT=7 | 拒绝 | 捕获显式十进制改号 |
+| 枚举名改OtherType | 拒绝 | 块定位失败不静默跳过 |
+| 块内无成员 | 拒绝 | 空解析结果有保护 |
+| 删除COMPLETION | 拒绝 | 字典成员缺失可见 |
+| PROMPT=1 + 4 | 通过，仍读为1 | 只匹配表达式的数字前缀，不计算其值 |
+| NORMAL=0x9 | 通过，仍读为0 | 不解析十六进制完整字面量 |
+| COMPLETION后新增隐式EXTRA | 通过，未读EXTRA | 不枚举无等号成员 |
+| 块内新增注释 // FUTURE = 8, | 拒绝，多读FUTURE | 未先移除注释，会有假阳性 |
+
+这些是合成输入下原解析器的真实结果，不是C++编译或调度运行结果，也不表示当前头文件存在这些写法。该测试适合当前显式十进制、无赋值式注释的约定；它不是C++语义解析器。语法约定一旦改变，须重新审视测试，不能将“块存在且非空”外推为“所有未来成员都能正确读取”。本轮不竞争作者实现或提交上游评论。
+
+### 复查入口
+
+在含固定对象的DeepInfer仓库中，用已有Python3.12及pytest复跑原测试，不安装DeepInfer、不构建扩展：
+
+```bash
+task_enum="$(mktemp -d)"
+git archive d73c0f06cab34867f9d8b146346885ee513aacf3 deepinfer/__init__.py deepinfer/attrdict.py deepinfer/environ.py deepinfer/engine/__init__.py deepinfer/engine/engine_type.py csrc/engine/scheduler.hpp tests/engine/test_engine_type_consistency.py pyproject.toml | tar -x -C "$task_enum"
+(cd "$task_enum" && DEEPINFER_ACCELERATOR=nvidia PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1 python -m pytest --noconftest -p no:cacheprovider -q tests/engine/test_engine_type_consistency.py)
+```
+
+输入控制通过runpy加载同一原测试，将函数globals中的HEADER临时换成合成文件Path，调用原测试并记录AssertionError；结束后恢复原路径、再次检查通过。父进程确认模块来自临时树，且torch、deepinfer._C、deep_cluster、openai、huggingface_hub均未导入。未调用硬件发现、启动engine或编译C++；本题是源码测试的范围学习，不新增M5真机任务。
+
+SHA256：原测试 `89c9a4aa221f4adc8cfd61b16fe95cec3862141f835089651c4af4987464cac1`；Python枚举 `9933d83f500e3cc14c5fef0dd2fbe5c5170dbbf24df217376b0a55c4fb4ab48c`；头文件 `c14de4d5341170227b82ddf2d146d9c6a337937885a6886237aab5a7238da5db`。三种引擎的默认异步调度行为仍见前文种子/EngineType隔离检查，不将本项当成运行时ABI或调度语义验收。

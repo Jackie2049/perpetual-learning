@@ -12,6 +12,8 @@
 
 ## 运行接续
 
+- **M1 EngineType测试范围收束（2026-10-21）**：只读已有#164 head d73c0f06/base9bd9cf2，按merge-base774ce244确认只有新增41行测试。原样包导入原测试1过；8组原解析器合成输入确认改十进制/缺块/缺成员可拒绝，表达式/十六进制/隐式新增可能漏过，注释赋值可能误报。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#enginetype-的源码一致性测试)。当前两份定义仍0/1/2，无已知线上错配；源码匹配不验证已安装_C。无硬件发现/扩展编译/模型，不新增真机任务。本题收束，后续有界核对DeepInfer/verl变化再选未重复问题，不继续堆变体或竞争实现；GPU/AReaL与网站边界不变。
+
 - **M1 评测limit边界收束（2026-10-21）**：有限核对DeepInfer最近8个/verl 6个open PR，转读已有#169 head62e386f/base9bd9cf2。原样临时源码候选5原测试全过；基线4导入级测试1过3预期失败，主动排除会进入main的子进程用例。三题合成数据运行原rule scorer：meta.limit0/1均期望1题且完整，省略limit期望3题则缺2题；覆盖相对选定题集，入口校验不清洗旧meta。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#评测-limit-与题集覆盖)。本题收束，无engine/模型/设备/外部judge，不新增真机任务。后续可只读#164跨语言EngineType漂移测试，先核版本，不编译扩展或探测GPU；GPU/AReaL与网站边界不变。
 
 - **M1 新旧SGLang refit覆盖对照（2026-10-21）**：#8306 open/head1beb355已不同于上一列表457aa56；#8132仍0defd9a。完整读三个新helper及接线，增加FP4/dense存储copy-back但不继承旧审计/guard/probe，FQN/marker不同；merge-base5a8dd519的8文件PR diff无配套测试，不把目标分支独有offload测试差异误记为本PR删除。见[同一笔记](notebook/frameworks/verl-quant-layer-audit.md#新旧-sglang-refit-路线的覆盖关系)与[M5原条目](experiments/handoff-m5.md#verl-量化层审计新版复验)，先选一路线不自动合并/采用。M1仅三模块AST/内存compile通过，未跑loader/模型/GPU；作者Blackwell观测非本项目结果。本项收束，后续选其他未重复源码问题，不扩写替身认证兼容；GPU/AReaL与网站发布边界不变。
