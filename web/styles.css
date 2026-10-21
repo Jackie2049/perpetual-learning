@@ -75,3 +75,24 @@
 @media(max-width:650px){.contribution-summary{padding:13px 15px}.contribution-summary h3{font-size:15px}.project-records{gap:10px}.plain-explanation{padding:9px 12px}}
 
 .project-heading .project-date{margin:0}.project-heading{margin-bottom:22px}
+
+/* Sidebar uses a dark surface so the reading area stays light and framed. */
+.sidebar{background:#0f1e18;border-right-color:#1e352c;color:#d7e4dc}
+.sidebar .brand{color:#f0f6f2}
+.sidebar .workspace-label{color:#648074}
+.sidebar nav>a{color:#9db4a9}
+.sidebar nav>a:hover{background:rgba(255,255,255,.05);color:#e9f2ed}
+.sidebar nav>a.active{background:#1c3a2e;color:#a4dcc0}
+.sidebar .nav-count{background:rgba(255,255,255,.09);color:#9db4a9}
+.sidebar .active .nav-count{background:#2a5240;color:#c2e8d2}
+.sidebar .sidebar-divider{background:#20372d}
+.sidebar .sidebar-caption{color:#5d7869}
+.sidebar .topic-link{color:#8aa397}
+.sidebar .topic-link:hover{color:#e9f2ed}
+.sidebar .square-dot{background:#5f9b7f}
+.sidebar .sidebar-bottom{color:#8aa397}
+.sidebar .sidebar-bottom p{color:#5d7869}
+.sidebar .sidebar-bottom>a{border-top-color:#20372d;color:#a3b8ac}
+.sidebar .sidebar-bottom>a:hover{color:#e9f2ed}
+.sidebar a:focus-visible,.sidebar button:focus-visible{outline-color:#8fd0b4}
+.sidebar nav>a.active:hover{background:#1c3a2e;color:#a4dcc0}
