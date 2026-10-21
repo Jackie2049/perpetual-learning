@@ -1293,3 +1293,46 @@ git archive d73c0f06cab34867f9d8b146346885ee513aacf3 deepinfer/__init__.py deepi
 输入控制通过runpy加载同一原测试，将函数globals中的HEADER临时换成合成文件Path，调用原测试并记录AssertionError；结束后恢复原路径、再次检查通过。父进程确认模块来自临时树，且torch、deepinfer._C、deep_cluster、openai、huggingface_hub均未导入。未调用硬件发现、启动engine或编译C++；本题是源码测试的范围学习，不新增M5真机任务。
 
 SHA256：原测试 `89c9a4aa221f4adc8cfd61b16fe95cec3862141f835089651c4af4987464cac1`；Python枚举 `9933d83f500e3cc14c5fef0dd2fbe5c5170dbbf24df217376b0a55c4fb4ab48c`；头文件 `c14de4d5341170227b82ddf2d146d9c6a337937885a6886237aab5a7238da5db`。三种引擎的默认异步调度行为仍见前文种子/EngineType隔离检查，不将本项当成运行时ABI或调度语义验收。
+
+## 布尔环境变量的解析与缓存
+
+2026-10-21 核对已有 [#177](https://github.com/deepseek-ai/DeepInfer/pull/177)，读取时open、作者173787247；head `0d8c518c8dab46d248ab3b48cb774b7515a2536d`，目标base `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`、共同祖先 `774ce244b87cc0eb8d4b94ab9f5de2ab22049f01`。PR只修改_bool并新增24项测试。**让布尔字符串更宽容，不等于严格验证配置、实时重读环境变量或统一所有字段的解析方式。**
+
+### 关闭值的含义
+
+旧 [_bool](https://github.com/deepseek-ai/DeepInfer/blob/9bd9cf243fc53ef9afbf8f04d391d989117d6ab9/deepinfer/environ.py)只将 `0`、空串、`false`、`False` 判为假；候选先strip/lower，再与 `0`、空串、`false`、`off`、`no` 比较。其他字符串仍为真，不是白名单验证。
+
+原始[24项测试](https://github.com/deepseek-ai/DeepInfer/blob/0d8c518c8dab46d248ab3b48cb774b7515a2536d/tests/test_environ.py)在本机Python3.12.13/pytest8.4.2成对复现：base **18过、6项预期失败**，候选 **24全过**；失败恰为 `FALSE`、`false `、` 0 `、`off`、`no`、`NO`。测试源码、断言及包导入均未改写，不用xfail掩盖失败。补充实际原函数/descriptor控制：
+
+| 输入或条件 | base | 候选 |
+|---|---|---|
+| _bool("flase")，拼错false | true | true |
+| _bool("   ")，仅空白 | true | false |
+| _bool(None, " OFF ")，未设时采用此default | true | false |
+| _str(" x ") | 保留空白 | 保留空白 |
+| YoCo的choice字段设为" OFF " | ValueError | ValueError |
+| ENGRAM_FORCE_GPU_STORAGE="false"，accelerator字符串为ascend | true | true |
+
+最后一行来自原复合表达式 `_bool(v) or envs.DEEPINFER_ACCELERATOR == "ascend"`，不是普通布尔字段；字符串条件可以强制开启。控制只改隔离进程的环境变量、读取配置，不加载Ascend平台或设备。不能看到某个`false`最终仍为真，就直接认定解析修复失效；还须查调用方的组合逻辑。
+
+### 首次读取后缓存
+
+[EnvVar.__get__](https://github.com/deepseek-ai/DeepInfer/blob/0d8c518c8dab46d248ab3b48cb774b7515a2536d/deepinfer/environ.py)读取os.getenv并用setattr将解析结果写到envs类上；之后普通属性访问直接得到缓存。`rearm(name)`把原descriptor放回，下一次读取才重新解析；`rearm_all()`恢复所有descriptor，不会在调用时立即解析全部字段。
+
+两版原descriptor实际执行了同一顺序：BATCH_INVARIANT设`1`并rearm后读取为真；把环境改`FALSE`但不rearm，仍为真；rearm后base仍真、候选为假；再改`1`但不rearm，各保留前值；rearm_all后都读为真；删除环境并rearm后都读为默认假。choice非法值抛错附变量名，且没有把失败值缓存为字符串。此处没有并发修改控制，因此不推断rearm与多线程读之间的原子性。
+
+[EngineArgs.__post_init__](https://github.com/deepseek-ai/DeepInfer/blob/0d8c518c8dab46d248ab3b48cb774b7515a2536d/deepinfer/engine/arg_utils.py#L48)对ZERO_OVERHEAD_SCHEDULING和USE_MULTIMODAL_POOL使用setdefault并显式rearm，说明“字段缺省”和“重读时机”各有调用方约定；本轮只读该入口，没有实例化EngineArgs或模型配置。环境变更还须在正确进程、正确读取阶段发生，不能将_bool修复当作热更新机制。
+
+### 复查入口与范围
+
+从已有固定Git对象原样展开最小导入树及原pyproject，不安装或构建DeepInfer：
+
+```bash
+task_bool="$(mktemp -d)"
+git archive 0d8c518c8dab46d248ab3b48cb774b7515a2536d deepinfer/__init__.py deepinfer/attrdict.py deepinfer/environ.py tests/test_environ.py pyproject.toml | tar -x -C "$task_bool"
+(cd "$task_bool" && DEEPINFER_ACCELERATOR=nvidia PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1 python -m pytest --noconftest -p no:cacheprovider -q tests/test_environ.py)
+```
+
+基线取base的包文件与pyproject，配同一候选测试，预期pytest退出1。显式accelerator仅为避开包初始化的自动发现，禁用外部plugins/conftest、字节码与缓存。补充控制断言实际模块来自临时树，torch、deepinfer._C、deep_cluster、模型下载器及judge客户端未导入。没有设备/推理/数值行为实测；作者在PR报告的GPU测试不是本项目复跑结果。本题不需要新增M5真机任务，也不向上游发言或竞争作者修复。
+
+SHA256：environ.py base `fe2c531989c419f0b51b169a07f5ed826dcec7f95c0c5bc3a351805923c4f218`、候选 `7c80d5b942c69e8611f9e2d906ab2b21f50f31cf410f7fabf9dbc124fd6ff618`；同一原测试 `c73d3c27a83011a511f14ccccf345ef79cfa52d270958027f9966f667eb5e4bc`。

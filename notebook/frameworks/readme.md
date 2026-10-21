@@ -393,6 +393,7 @@
 - [DeepInfer GPQA 答案提取与判分](deepinfer-initial-survey.md#gpqa-答案提取与最终判分)：#160原始测试base4过3预期失败/fix7过；各9组原函数控制，不外推默认judge或准确率收益。
 - [DeepInfer limit 与题集覆盖](deepinfer-initial-survey.md#评测-limit-与题集覆盖)：#169候选原5测试全过，基线3项导入预期失败；原scorer检查选定题集，非全数据认证。
 - [DeepInfer EngineType 一致性](deepinfer-initial-survey.md#enginetype-的源码一致性测试)：#164原测试通过，8组输入说明十进制/注释/表达式边界；非运行时ABI检查。
+- [DeepInfer 布尔环境变量](deepinfer-initial-survey.md#布尔环境变量的解析与缓存)：#177原24测试成对复现；大小写/空白修复不等于严格配置验证或热更新。
 - [DeepInfer 架构源码调研（2026-10-20 综合精读）](deepinfer-architecture-reading.md)：调度器/引擎、模型执行器、NPU/分布式/入口三路精读
 - [DeepSeek 开源生态活跃度与 PR 采纳调研（2026-10-20）](deepseek-ecosystem-pr-adoption.md)
 - [MindIE / vLLM-Ascend Ecosystem Deep Research](mindie-vllm-ascend-ecosystem-deep-research.md)
