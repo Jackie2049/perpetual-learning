@@ -158,6 +158,7 @@
 - [vLLM V1 Engine Core 源码阅读](frameworks/vllm-engine-core-reading.md) — step() 核心循环、KV Cache 初始化、Busy Loop、ZMQ 双线程、DP 扩展
 - [GRPO 实战指南](frameworks/grpo-practical-guide.md) — verl 框架 GRPO 训练完整流程、数据格式、配置参数、奖励函数
 - [SGLang 架构深度分析](frameworks/sglang-architecture.md) — RadixAttention 基数树、DSL 前端、FlashInfer 集成、vs vLLM 对比
+- [DeepInfer 平民版（魔改适配非旗舰硬件）可行性](frameworks/deepinfer-civilian-port.md) — DeepInfer 对 Blackwell/Ascend950 的依赖堵点、替换方案、4090/A100/H100/910C 分层可行性
 - [分布式训练排错指南](frameworks/troubleshooting-guide.md) — NCCL 超时、OOM、梯度异常等常见问题
 
 ## GPU 实验记录
