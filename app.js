@@ -10,6 +10,7 @@ const paths = {
   github: '<path d="M9 19c-5 1-5-2-7-2m14 4v-3.5a3 3 0 0 0-1-2.4c3-.4 6-1.4 6-6a4.6 4.6 0 0 0-1.3-3.2A4.3 4.3 0 0 0 19.5 3S18.4 2.6 16 4a13 13 0 0 0-7 0C6.6 2.6 5.5 3 5.5 3a4.3 4.3 0 0 0-.2 2.9A4.6 4.6 0 0 0 4 9.1c0 4.6 3 5.6 6 6a3 3 0 0 0-1 2.4V21"/>',
   moon: '<path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"/>',
   sun: '<circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M19.1 4.9l-1.8 1.8M6.7 17.3l-1.8 1.8"/>',
+  auto: '<path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M19.1 4.9l-1.8 1.8M6.7 17.3l-1.8 1.8"/><circle cx="17.5" cy="8.5" r="2.2"/>',
 };
 const icon = name => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.book}</svg>`;
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -116,19 +117,37 @@ document.addEventListener('click',e=>{
   const filter=e.target.closest('[data-filter]');if(filter){category=filter.dataset.filter;shown=30;updateSearchURL();document.querySelectorAll('[data-filter]').forEach(b=>{b.classList.toggle('active',b===filter);b.setAttribute('aria-pressed',b===filter);});results();}
 });
 document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();if(dialog.open)dialog.close();if(page!=='library'){location.hash='library';setTimeout(()=>document.querySelector('#library-query')?.focus(),0);}else document.querySelector('#library-query')?.focus();}});
-document.addEventListener('click',e=>{if(!e.target.closest('#theme-toggle'))return;const dark=!document.body.classList.contains('theme-dark');try{localStorage.setItem(THEME_KEY,dark?'dark':'light')}catch{}applyTheme(dark?'dark':'light');});
+/* Light / dark / system theme cycle, persisted per browser. */
+const THEME_KEY='pl:theme';
+const THEME_ORDER=['light','dark','auto'];
+const THEME_META={
+  light:{icon:'sun',label:'切换到暗色主题'},
+  dark:{icon:'moon',label:'切换到跟随系统'},
+  auto:{icon:'auto',label:'切换到亮色主题'},
+};
+const THEME_DARK=window.matchMedia('(prefers-color-scheme: dark)');
+function applyTheme(t){
+  const dark=t==='dark'||(t==='auto'&&THEME_DARK.matches);
+  document.body.classList.toggle('theme-dark',dark);
+  const meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.setAttribute('content',dark?'#181818':'#f5f7f8');
+  const b=document.querySelector('#theme-toggle');
+  if(b){
+    b.setAttribute('aria-label',THEME_META[t].label);
+    b.setAttribute('data-theme',t);
+    b.classList.add('switching');
+    b.innerHTML=`<span class="theme-icon">${icon(THEME_META[t].icon)}</span>`;
+    // force reflow so the transition replays, then drop the switching class
+    void b.offsetWidth;
+    b.classList.remove('switching');
+  }
+}
+function initTheme(){let t='light';try{t=localStorage.getItem(THEME_KEY)||'light'}catch{}if(!THEME_ORDER.includes(t))t='light';applyTheme(t);}
+document.addEventListener('click',e=>{if(!e.target.closest('#theme-toggle'))return;let cur='light';try{cur=localStorage.getItem(THEME_KEY)||'light'}catch{}const next=THEME_ORDER[(THEME_ORDER.indexOf(cur)+1)%THEME_ORDER.length];try{localStorage.setItem(THEME_KEY,next)}catch{}applyTheme(next);});
+THEME_DARK.addEventListener('change',()=>{let cur='light';try{cur=localStorage.getItem(THEME_KEY)||'light'}catch{}if(cur==='auto')applyTheme('auto');});
+initTheme();
 async function boot(){
   document.querySelectorAll('[data-icon]').forEach(el=>el.innerHTML=icon(el.dataset.icon));
   try {const res=await fetch('./data.json', {cache:'no-cache'});if(!res.ok)throw Error('data');data=await res.json();lookup=new Map([...data.library,...data.featured,...data.pending,...(data.projectRefs||[])].map(x=>[x.id,x]));document.querySelector('#library-count').textContent=data.library.length;document.querySelector('#pending-count').textContent=data.pending.length;const link=document.querySelector('#snapshot-link');link.href=data.repository+'/commit/'+data.revision;link.textContent='仓库快照 '+data.revision.slice(0,7)+' · '+fmt(data.sourceDate);route();window.addEventListener('hashchange',route);}catch{main.innerHTML='<div class="empty"><h1>暂时无法读取成果</h1><p>请刷新重试，或直接浏览 GitHub 仓库。</p><a href="https://github.com/Jackie2049/perpetual-learning">打开仓库 ↗</a></div>';}
 }
-/* Light (green sidebar) vs dark (VSCode-like) theme toggle, persisted per browser. */
-const THEME_KEY='pl:theme';
-function applyTheme(t){
-  const dark=t==='dark';
-  document.body.classList.toggle('theme-dark',dark);
-  const b=document.querySelector('#theme-toggle');
-  if(b){b.innerHTML=`<span data-icon="${dark?'sun':'moon'}"></span><span>${dark?'默认主题':'黑白主题'}</span>`;b.setAttribute('aria-label',dark?'切换回默认主题':'切换黑白主题');}
-}
-function initTheme(){let t='light';try{t=localStorage.getItem(THEME_KEY)||'light'}catch{}applyTheme(t);}
-initTheme();
 boot();
