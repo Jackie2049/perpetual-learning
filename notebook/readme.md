@@ -28,6 +28,8 @@
 
 以下目录从原项目 README 迁入，保留已有知识入口。摘要中的版本、性能数字和进度属于历史记录，使用前需核对原文及适用条件；本次整理没有重新验证这些结论。
 
+- [verl 新版 CT tokenizer 回退](frameworks/verl-6779-continuous-token-agentic-rollout-reading.md#11-新版自动选择与-tokenizer-能力回退) — #8311原172项CPU对照；模型架构不认证ChatML协议，成功回退不认证多轮边界。
+
 ## 规划与路线
 
 - [学习路线图](roadmap.md) — Phase 1-5 学习计划，从分布式训练到 vLLM 开源贡献

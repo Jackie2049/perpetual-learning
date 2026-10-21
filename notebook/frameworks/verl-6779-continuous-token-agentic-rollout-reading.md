@@ -1,5 +1,7 @@
 # verl PR #6779 — Continuous Token for Agentic Rollout (Multi-Turn Tokenization Builder)
 
+> 版本提示：下方主体是2026-06-19的#6779历史阅读。2026-10-21核对的#8311源码已采用根model_type精确注册表，AgentLoop以CT作为唯一tokenization路径；旧“默认关闭”和模型名启发式选择不适用于该新版。新增CPU验证与回退边界见[第11节](#11-新版自动选择与-tokenizer-能力回退)。
+
 > 2026-06-19 | verl-project/verl | PR #6779 | gxlvera | OPEN | +3413/-36 | 20 files
 > RFC: #6719 (Continuous Token Support for Multi-Turn AgentLoop Rollout)
 > Previous stacked PRs: #6720 (builder core), #6721 (agent loop integration) — now unified into #6779
@@ -919,3 +921,27 @@ Well-architected with clear separation of concerns:
 | verl #6512 | Per-unit LoRA summon | Different layer (FSDP params), no interaction |
 | verl V1 trainer | Architecture | register_trainer pattern — CT is rollout-side, compatible |
 | DeepSpeed #8061 | NaN bug | overlap_comm+compile — different bug class |
+
+## 11. 新版自动选择与 tokenizer 能力回退
+
+2026-10-21核对已有[#8311](https://github.com/verl-project/verl/pull/8311)，读取时open、作者kahlun；head `9fc9e2646e4543c3cba1eef8f490622499583911`，目标base `cd58f550fb1c4f5a3fe29da38e6f0002ec462fd3`，共同祖先 `5b550b0c3dad8c7bb7aab834a3fe195f8cdfc517`。**模型架构、聊天token协议和多轮模板边界是三项不同契约。** 作者举R1-Distill-Qwen的qwen2架构/非ChatML tokenizer为例，本机没有下载该真实tokenizer。
+
+### 新版选择规则与回退范围
+
+当前[工厂](https://github.com/verl-project/verl/blob/9fc9e2646e4543c3cba1eef8f490622499583911/verl/utils/tokenizer/continuous_token_wiring.py)只按根config.model_type精确匹配家族，不再拼接仓库路径/名字猜测。未知类型选通用text/VL；这不等于已知架构的tokenizer一定满足对应专用builder。候选在以下条件全部满足时，警告并改用默认ContinuousTokenBuilder：auto选择、解析为QWEN/QWEN25/QWEN3/QWEN35、无图像processor、require_token_id判im_end不可用。显式选择不被回退，图像processor存在时也不走这一新分支。
+
+[require_token_id](https://github.com/verl-project/verl/blob/9fc9e2646e4543c3cba1eef8f490622499583911/verl/utils/tokenizer/continuous_token.py)原有None、负数/非int、非单元素列表检查；候选额外拒绝“其他token映射到unk_token_id”，包括先解包的一元素列表，但允许请求unk token本身。该helper被多个builder使用，严格化不只影响auto Qwen。它仍是ID可用性检查，不是完整词表、模板协议或语义认证。
+
+[当前AgentLoop构造](https://github.com/verl-project/verl/blob/9fc9e2646e4543c3cba1eef8f490622499583911/verl/experimental/agent_loop/agent_loop.py#L261)直接创建builder并传入hf_model_type/processor；源码注明CT已是唯一tokenization路径。上文旧enable开关及name/path启发式仅属#6779历史版本，不能用来推断本次故障是否可达。
+
+### 原CPU测试对照
+
+Python3.12.13/pytest8.4.2，候选原172测试全过；同一测试配共同祖先实现为 **169过、3项预期失败**：缺im_end自动选择仍报错、unk映射仍选Qwen而非默认、单元素unk列表不拒绝。五个新增测试中的显式Qwen缺token拒绝和unk自身合法两项，基线也通过。有效Qwen原测试继续插入缺失换行，不能将回退理解为移除全部家族边界处理。
+
+测试保留原合成tokenizer/processor、参数化和断言；四个原叶模块完整加载，chat_template仅原函数配延迟类型注解，不加载缺失的Transformers类型依赖。未改函数体或提供tokenizer新替身。完整范围、hash、复查命令见[实验记录](../../experiments/verl-ct-fallback/readme.md)。这是原CPU suite的隔离执行，不是全verl、真实HF tokenizer或GPU训练验收。
+
+### 不再报错不等于模板等价
+
+默认builder仍会渲染synthetic prefix/full上下文并检查token前缀相等，再取suffix；非前缀稳定模板在原测试中仍被拒绝。其默认merge只是拼接runtime与新增token，并不会自动推导任意模型缺失的边界标记。因此“构造成功”“synthetic suffix可取”“真实多轮轨迹边界正确”不能互换；训练中未再抛required-token错误也不单独证明后者。
+
+作者报告真实R1 tokenizer CPU检查及A100一/双卡两步训练，并明确未验证R1-Distill多轮精确边界；这些是作者结果，不是本项目或M5实测。本题以CPU选择/校验证据收束，不新增M5设备任务，不自动采用补丁或演化竞争实现。

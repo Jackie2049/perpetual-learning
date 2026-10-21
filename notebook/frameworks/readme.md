@@ -117,6 +117,7 @@
 - [verl #6717 — Tinker Training Worker Primitives Source Reading](verl-6717-tinker-training-worker-reading.md)
 - [verl #6765 — Per-Step Optimizer Overrides (OptimStepParams) Reading](verl-6765-optim-step-params-reading.md)
 - [verl PR #6779 — Continuous Token for Agentic Rollout (Multi-Turn Tokenization Builder)](verl-6779-continuous-token-agentic-rollout-reading.md)
+- [verl 新版 CT tokenizer 回退](verl-6779-continuous-token-agentic-rollout-reading.md#11-新版自动选择与-tokenizer-能力回退)：#8311原172项CPU对照，架构/标记存在性与真实多轮边界分开；旧开关和名称启发式不沿用。
 - [verl #6782 — LoRA Rank=64 Breaks EOS in vLLM Rollout Reading](verl-6782-lora-rank-breaks-eos-reading.md)
 - [verl #6786: Dynamic Context Parallel (DCP) Batch Split Bug Deep Reading](verl-6786-dynamic-cp-batch-split-bug-reading.md)
 - [verl PR #6790: Separate Async Trainer with Switch+Offload Strategies — Source-Level Reading](verl-6790-async-trainer-reading.md)

@@ -12,6 +12,8 @@
 
 ## 运行接续
 
+- **M1 CT tokenizer选择学习收束（2026-10-21）**：有限核对verl最近10个open PR，转读已有#8311 head9fc9e264、目标basecd58f550/祖先5b550b0c。原172项CPU测试隔离对照候选全过、祖先169过3预期失败，原合成tokenizer/processor未换。见[笔记新版节](notebook/frameworks/verl-6779-continuous-token-agentic-rollout-reading.md#11-新版自动选择与-tokenizer-能力回退)/[复查](experiments/verl-ct-fallback/readme.md)。auto Qwen缺im_end才回退，显式/VL不吞错，成功构造不认证R1多轮边界；旧#6779默认关闭/名称猜测已加历史提示。未下载真实tokenizer或跑AgentLoop/设备，不新增M5任务/应用补丁。本题收束；下轮可有界核对已有新#8316单rollout-worker的checkpoint拓扑，先读配置/CPU可验证范围，不启动传输或修改M5工作；GPU/AReaL和网站边界不变。
+
 - **M1 内存快照路径学习收束（2026-10-21）**：只读已有#183 head1ff0fee/base9bd9cf2，原路径/建目录AST及原环境描述器12组控制符合预期；默认从cwd/tracing迁/tmp/tracing，空串落cwd/tracing，普通文件父路径仍抛错。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#内存快照的输出路径与目录创建)。未调用dump/Worker或设备，非显存预算修复；真快照仅补[原M5条目](experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)可选参考，不开启采集/应用补丁/新开实验。本题收束，后续有界核对上游，优先选未重复的verl CPU数据/调度问题，不继续累加路径替身；GPU/AReaL和网站边界不变。
 
 - **M1 共享池分配身份学习收束（2026-10-21）**：有界核对DeepInfer最近10个/verl6个open PR，转读新#187 head5c2bb462/base9bd9cf2。隔离原池类、原9测试不改断言，真实CPU共享存储/fork，base1过8预期失败、候选9过；设备pin/unpin仍为原fixture no-op。另1项实视图控制证明代际不撤销已返回别名，free锁内校验不等于整个使用期租约。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#共享池句柄的分配身份与视图寿命)/[复查](experiments/deepinfer-pool-generations/readme.md)。未运行多模态/设备，不新增M5任务或应用补丁。本题收束；后续可只读已有#183 profiler输出路径的创建/环境覆盖，先核版本与副作用，不启用profiler或设备；GPU/AReaL和网站边界不变。
