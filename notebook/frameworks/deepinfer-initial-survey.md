@@ -970,3 +970,41 @@ Python 3.12.13。两版本 `_wait` AST 相同，各 4 组控制通过：已完�
 作者的 [15 项关闭测试](https://github.com/deepseek-ai/DeepInfer/blob/8c5f5759b53dd7d003927db57af50563cdaa1d37/tests/engine/test_profile_shutdown.py)涉及真实 uvicorn/FastAPI、端口重用与部分真实 CPU profiler；部分异常和线程检查采用测试替身，engine-close 使用轻量对象，作者也注明完整引擎未初始化。本机现有环境缺 FastAPI、uvicorn、pydantic，未安装、未复跑该组测试或启动服务。因此以上 8 组等待控制不是 #122 修复或完整生命周期验收。
 
 SHA256：profile_server.py base `3225a073cbde24d598df2a9bff195574ba6d98bc9fe4a1b0c0a338fcecc54afa`，head `c524b7e7d3ab629f588e2bc2a7e8c61afde2497709c71abbe0e95acb453cc456`；作者测试 `d8ec1f6e5bb9caf3d3134d1f1ee9d348d431c85321ece9741d77888981968da3`。
+
+## Ascend 发现与 NUMA 查询边界
+
+设备发现、可见编号重映射、NUMA 查询和实际绑核是不同步骤。已有作者 ErnestW2019 的 [PR #127](https://github.com/deepseek-ai/DeepInfer/pull/127)只新增 12 项 CPU 测试，没有改生产实现；2026-10-21 读取时 open，base `774ce244b87cc0eb8d4b94ab9f5de2ab22049f01`、head `f9dec70d38d81838133e22b3208f43bfc9e40030`。测试用临时文件和符号链接模拟 sysfs/dev，不需要 NPU，但也不认证真实设备布局。
+
+### 发现列表与可见编号
+
+[ascend.py](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deep_cluster/hardware/ascend.py)优先枚举符合命名规则的 ubcore 项：先按 `udmaN` 数值排序，再按 controller/die/entity 排序；跳过缺少 `ub_totalues` 或其值为零的项。设备元组包含 entry 名称、解析符号链接得到的 physical ID 和原始 NUMA 元数据。存在有效 ubcore 结果就不与 `/dev/davinciN` 合并；没有结果才退到按数值排序的设备节点，后者 NUMA 为 −1。发现设备不等于有可用 NUMA 元数据。
+
+[device.py](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deep_cluster/hardware/device.py)在同时存在 Ascend/NVIDIA 标记时优先 Ascend。物理数量来自发现，可见列表则读取对应环境变量；未设置时生成 `0..count−1`，空串或 `-1` 表示没有可见设备。`physical_device_id(local_rank)` 查可见列表并去除该字段外围空白，不是把 local_rank 当作物理编号。
+
+原测试在只有两个合成设备时把可见字符串设为 `4,5`，验证的是列表解析和字符串取值，不是证明设备 4/5 存在。`visible_device_count` 对列表长度与物理数量取 min，也不是逐个 ID 的合法性校验。不能从这些断言推出任意可见列表都能成功初始化运行时。
+
+### 原始 NUMA 值不一定是查询结果
+
+`ascend.device_numa_node(index)` 的 index 指发现列表中的设备序号。真实 `_root == Path('/')` 时优先调用 `npu-smi info -t topo -i 0`，结合 `lscpu` 的物理核分组，以 CPU affinity 的交集选择节点；相关失败后才走发现列表元数据。合成 `_root` 直接跳过这个命令分支，所以测试不是生产拓扑探测的完全等价替代。
+
+元数据回退对负值抛错，否则返回 `(raw_numa // 2) * 2 + index % 2`。因此测试中两个设备都写 raw NUMA 3，查询结果却分别为 2、3。该断言固定了当前偶奇规则，不证明任意型号/NUMA 布局都符合这个规则。
+
+[topology.which_numa](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deep_cluster/topology/bind.py)接收的是可见序号，先经 `physical_device_id` 重映射再查节点。在两个同为 raw 3 的合成设备上，设 `ASCEND_RT_VISIBLE_DEVICES=1,0` 后，`which_numa(0/1)` 返回 3/2；直接 `device_numa_node(0)` 仍为 2。这两个 API 的编号语义不能互换。
+
+### 查询节点不等于完成绑定
+
+`which_numa` 不调用绑核；`bind_numa` 才经 libnuma 设置进程 CPU affinity 与 MPOL_BIND 内存策略，并以返回码表示失败。`set_cpu_affinity` 又是单独的 psutil 路径。固定版本 Worker 的 `_bind_numa` 会调用查询与绑定，并对异常记录降级警告；原 #127 测试没有执行这条 Worker 路径，也没有验证绑定返回值、操作系统权限或内存实际落位。
+
+#127 提到的 [#56](https://github.com/deepseek-ai/DeepInfer/pull/56)、[#58](https://github.com/deepseek-ai/DeepInfer/pull/58)、[#60](https://github.com/deepseek-ai/DeepInfer/pull/60)读取时均 open，分别涉及可见窗口越界、同问题的 offset 后重分组方案和 vendor/Biren 发现；它们不是 #127 已经包含的修复。#58 正文也已承认与 #56 重复并建议优先后者。这里仅区分既有工作的边界，不另开竞争候选或替维护者选择 offset 语义。
+
+### 原始测试与限定执行
+
+[复现脚本](../../experiments/scripts/verify_deepinfer_ascend_discovery.py)先核对 checkout 的完整 `deep_cluster` 与 base 无 diff/未跟踪修改，再正常导入原始模块、原样加载 #127 完整测试文件。原 autouse cache-clear fixture、pytest 临时目录、文件和符号链接均真实执行；仅用 collector adapter 隔离无关 conftest/第三方插件，没有 AST 切片或设备发现替身。源树 checkout 为 `8b161497`，该目录与固定 base 相同，未改源码。
+
+```bash
+python experiments/scripts/verify_deepinfer_ascend_discovery.py /path/to/DeepInfer
+```
+
+M1、Python 3.12.13、pytest 8.4.2：12 项原始测试全部通过；另 2 组独立控制通过，分别检查反向可见列表的查询映射、空列表下物理数量仍为 2 但可见查询被拒。后两组不计入原作者测试数。`_environ` 或子进程临时环境只作用于合成根；导入 Ascend 模块会按原代码读取一次本机 `/dev/davinci_manager` 存在标志，但测试不使用该标志作硬件结论。没有运行 npu-smi/lscpu、加载 libnuma/NVML、修改 affinity、导入 torch/torch_npu 或访问服务器，没有设备/内存绑定、kernel 或吞吐验证。
+
+SHA256：ascend.py `f0fb8df71efba56541bb07ed6fb7d75237bd2689be668d861f3b8c4ad032da26`，device.py `d305c2e5994a5c8a3d59cae22aa3ed8db0941c0279577888d02e188c7cb4b591`，bind.py `325fa9827b0d601c80a3e6d169ddf734375a715b720de1839636f5f7affb8894`；原始测试 `550ca6755afdf34462ce778dbba4c87b91f195a50eeb6721aae3746f79e25f5d`。

@@ -10,6 +10,8 @@
 
 ## 运行接续
 
+- **M1 Ascend发现/NUMA边界收束（2026-10-21）**：已有#127 f9dec70d只加测试，完整原模块/原12项测试及2组独立可见编号控制通过，未导入torch。合成_root跳过npu-smi/lscpu生产分支，physical index与visible ordinal不同，查到NUMA≠实际绑核/内存落位。关联#56/#58/#60均已有作者且open，不竞争实现。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#ascend-发现与-numa-查询边界)。后续只读#60 vendor registry/Biren发现与运行时支持的边界，先核版本，不加载设备运行时、修改affinity或探测服务器。网站/GPU/AReaL分工不变。
+
 - **M1 profiling关闭链收束（2026-10-21）**：只读已有#122 head8c5f5759/base774ce244，区分排队取消、采集中断与已提交导出排空；5秒uvicorn参数非整个close时限，engine线程启停是调用契约。两版本相同_wait原协程各4组真实asyncio/Future控制通过，不是修复验收。现有环境缺HTTP依赖，作者15测试未复跑，未补装或启动服务。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#profiling-请求与服务关闭)。后续只读已有#127 Ascend/NUMA测试及对应拓扑/绑核边界，先查版本/依赖，不改本机affinity、不探测服务器、不竞争实现。网站/GPU/AReaL分工不变。
 
 - **M1 decode性能缓存收束（2026-10-21）**：有界扫描DeepInfer最近更新12个/verl 8个open PR，转读已有#126 4622836f与#128 4e679e90。完整原始模块/测试、真实临时JSON和单rank CPU/Gloo：身份修复9过（base5过4预期失败），溢出修复8过（base8预期OverflowError）。曲线非KV内容，新增hash字段≠完整环境指纹，单rank≠跨rank故障安全或性能验证。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#decode-性能曲线缓存的身份与回退)。后续只读学习已有#122 profiling HTTP server关闭生命周期，先核来源/依赖，不启动服务、设备或竞争实现。网站/GPU/AReaL分工不变。
@@ -101,7 +103,7 @@
 1. **等待用户授权/资源**（长期未决，见「运行接续」5 项）——发布评论/文档、#8281 发布形态、方向调整。#8237 已收尾（PR #8286 ready + issue 已回）。
 1. **未来一周开源技术掘金三大重点（用户 2026-10-20 定）**：**DeepInfer / verl / AReaL**。其中 DeepInfer 主研（推理框架源码深挖），verl 主贡献（续 #8281/#8250），AReaL 主实测（prompt_mean 切分敏感点）。vLLM 降为次优先级。 **这是跨主机整体分工，M1 不接管 AReaL；M5 独立推进其完整候选/PR。**
 2. **等待用户授权/资源**（长期未决，见「运行接续」5 项）——发布评论/文档、#8281 发布形态、方向调整。#8237 已收尾（PR #8286 ready + issue 已回）。
-3. **M1当前学习/贡献复核**：V1来源/失败边界、#8303指标与#8300布局学习收束；#8250等真实配对观测，#7913不重复，#8281待决定。clip旧RFC和PrefixGrouper full-model旧RFC均已撤回，不发布后者评论草稿。DeepInfer参数、decode曲线缓存与#122 profiling关闭学习收束，下一步只读已有#127 Ascend/NUMA测试及对应拓扑/绑核边界，先核版本与依赖，不改本机affinity、不探测设备或服务器、不竞争实现。M1不访问GPU、不涉及AReaL整项，任何上游发言仍须拍板。
+3. **M1当前学习/贡献复核**：V1来源/失败边界、#8303指标与#8300布局学习收束；#8250等真实配对观测，#7913不重复，#8281待决定。clip旧RFC和PrefixGrouper full-model旧RFC均已撤回，不发布后者评论草稿。DeepInfer参数、decode曲线、profiling及#127 Ascend/NUMA限定学习收束，下一步只读已有#60 vendor registry/Biren发现与运行时支持的边界，先核版本，不加载设备运行时、不改affinity或探测服务器，不竞争已有实现。M1不访问GPU、不涉及AReaL整项，任何上游发言仍须拍板。
 3. **高优调研（用户 2026-10-20 定）**：**DeepInfer**——确定性、ZOS、DSpark、YoCo/CP、生命周期、EPLB、chunk/cached-prefix、MTP缓存提交与SO失败输出边界已有源码/限定CPU学习，完整扩展/设备正确性与性能未测。账本0不能直接当对外失败token，局部条件差异不定性新bug，见[笔记](notebook/frameworks/deepinfer-initial-survey.md#so失败状态与输出token身份)。下一步做有界DeepInfer/verl上游变化核对，选择未重复课题；不继续增加同类替身代替真实失败payload、错误响应语义与既有PR覆盖核验。不预设新缺陷、不竞争已有修复；M1不访问GPU/AReaL，任何上游发言仍须用户拍板。
 4. **AReaL prompt_mean（原 M5 单一负责项，用户 2026-10-20 恢复 VPN 后明确本会话继续）——实测已闭环**：框架跑通（gsm8k PPO smoke 128 步无错）+ 受控实测（§10.7 判据，M=2 vs 4 + 固定 M 变 P，prompt_mean 与 token_mean 行为一致：跨 M 1.301≈1.273、P-spread 1.216≈1.192）——**不构成 defect，候选修复撤销，不提 issue/PR**，作为 review 依据存档（见 [源码笔记 §10.10](notebook/frameworks/areal-architecture-source-reading.md)、[tracker](open-source/areal/tracker.md)）。Megatron GPU 对照未做（TE 硬依赖）。分工状态见 [handoff-m5](open-source/areal/handoff-m5.md) 与 WORK「运行接续」。
 3. 按课题逐步关联现有实验执行材料与 notebook/experiments/ 的分析记录；新增实验优先就近组织，维护双向入口。
