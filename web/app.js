@@ -63,7 +63,7 @@ function contributionRecord(item) {
 function contributionSummary(item) {
   const f=item.fields;
   return `<details class="contribution-summary${item.closed?' closed':''}">
-    <summary class="contribution-toggle"><span class="contribution-type">${esc(item.type)}</span><h3>${esc(item.title)}</h3></summary>
+    <summary class="contribution-toggle"><span class="contribution-score">${esc(String(item.score).replace(/\s+/g, ''))}</span><span class="contribution-type">${esc(item.type)}</span><h3>${esc(item.title)}</h3></summary>
     <div class="summary-content">
     <div class="summary-field"><h4>贡献点</h4><div class="prose">${f['贡献点']}</div></div>
     <div class="summary-field summary-progress"><h4>进展</h4><div class="prose">${f['进展']}</div></div>

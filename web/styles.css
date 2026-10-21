@@ -58,6 +58,7 @@
 .contribution-toggle:focus-visible{outline:2px solid var(--green);outline-offset:5px}
 .contribution-summary h3{font-size:17px;line-height:1.7;margin:0;overflow-wrap:anywhere;min-width:0;flex:1}
 .contribution-type{background:var(--mint);color:var(--green);border-radius:4px;padding:3px 8px;font-size:11px;line-height:20px;flex-shrink:0;max-width:38%;overflow-wrap:anywhere}
+.contribution-score{background:var(--mint);color:var(--green);border-radius:4px;padding:3px 7px;font-size:11px;line-height:20px;flex-shrink:0;font-weight:600;font-variant-numeric:tabular-nums;min-width:38px;text-align:center}
 .summary-field{margin:12px 0}
 .summary-content>.summary-field:first-child{margin-top:4px}
 .summary-field h4{margin:0 0 3px;font-size:11px;color:#587166;font-weight:600}
@@ -90,10 +91,12 @@
 .closed-group .closed-list{display:grid;gap:14px}
 .contribution-summary.closed{opacity:.72;background:#fbfcfb}
 .contribution-summary.closed .contribution-type{background:#eef1ef;color:#6d7d74}
+.contribution-summary.closed .contribution-score{background:#eef1ef;color:#6d7d74}
 body.theme-dark .closed-group>summary span{background:#2d2d2d;color:#9a9a9a}
 body.theme-dark .closed-group>summary em{color:#6e6e6e}
 body.theme-dark .contribution-summary.closed{background:#1c1c1c;opacity:.8}
 body.theme-dark .contribution-summary.closed .contribution-type{background:#2d2d2d;color:#9a9a9a}
+body.theme-dark .contribution-summary.closed .contribution-score{background:#2d2d2d;color:#9a9a9a}
 
 /* Sidebar uses a dark surface so the reading area stays light and framed.
    Final palette chosen by the user from the live color bar (2026-10-21). */
@@ -177,6 +180,7 @@ body.theme-dark .plain-explanation .prose{color:var(--ink)}
 body.theme-dark .summary-field h4{color:#8a8a8a}
 body.theme-dark .summary-field .prose{color:#b8b8b8}
 body.theme-dark .contribution-type{background:#20303b;color:#6cb2f5}
+body.theme-dark .contribution-score{background:#20303b;color:#6cb2f5}
 body.theme-dark .project-count{background:#20303b;color:#6cb2f5}
 body.theme-dark .contribution-toggle::after{border-color:#4daafc}
 body.theme-dark .contribution-record .prose{background:#242424}
