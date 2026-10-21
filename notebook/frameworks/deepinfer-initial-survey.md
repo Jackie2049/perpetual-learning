@@ -875,3 +875,53 @@ Python 3.12.13、pytest 8.4.2，9 个原始用例的三种对照均与表格吻�
 没有执行 #121 的 ParallelConfig/SchedulerConfig、完整配置模块/上游 CI、model profile、分布式归约、KV 分配或 GPU/NPU；没有调整其测试标记、实现或上游状态。可复现对象须预先存在，Git lazy fetch 继续关闭。
 
 SHA256：基线 `config.py` 为 `df67b1e66c1f528e69885e3d4bcb6e2ce130261981dd26017b04ea57eee2daec`，#118 为 `5d7f66c3847ca98283d3d02c9cbb2d7b6e2c4ef52b721065db3c89021f0f9d6c`，#121 `test_config.py` 为 `d3b37a20f15bca1512ba246668810511346b3f2852f6e4906aeb6d349532f522`。
+
+## Decode 性能曲线缓存的身份与回退
+
+2026-10-21 在有界上游窗口中转读已有作者 RichealYoung 的 [PR #126](https://github.com/deepseek-ai/DeepInfer/pull/126) 与 [PR #128](https://github.com/deepseek-ai/DeepInfer/pull/128)。读取时均 open，公共 base `774ce244b87cc0eb8d4b94ab9f5de2ab22049f01`；#126 head `4622836fa04acf074845feb27448fabf50a85401`，#128 head `4e679e904f5ffee7b410eecb5340f50c0e8a97b6`。两份修复独立比较，不是我方实现、完整集成验收或性能提升证明。
+
+### 缓存的是毫秒曲线而不是 KV 内容
+
+`DecodePerfCache` 保存 `(graph batch size, milliseconds)` 列表。`ModelRunner.profile_decode_perf()` 命中时直接返回该列表；未命中时才重放 graph 测量。`WorkerBase.warm_up_model()` 中 graph capture 位于这次读取之前，命中曲线不等于跳过模型加载、KV 分配或 graph capture。
+
+缓存曲线会交给 scheduler，参与[前述 MTP 验证预算的吞吐代理目标](#dspark请求数验证预算与随机采样是三个层次)。它既不是模型参数缓存，也不是 prompt 的 KV 内容缓存；曲线身份不匹配不能自动等同于生成 token 错误，本轮没有验证其吞吐影响。
+
+### 身份键与坏文件处理是两层检查
+
+基线 hash 输入包含单位 `ms`、model 字符串、batch_sizes，以及 DP/CP/EP 大小；排序后的 JSON 被 SHA256 哈希。#126 增加 batch-invariant 模式、Engram parallel size 与 engine type 的名称，避免这些设置变更仍命中原曲线。改回原配置可以重新命中原曲线。
+
+新增字段改变键，旧文件成为 miss，不是在原键下转换旧数据；未过清理期限的旧文件可能继续存在。哈希绑定的是所列输入，不是 checkpoint 内容或完整软件/硬件指纹，不能仅因采用 SHA256 就认证曲线适用于任意当前运行环境。
+
+读取先按文件名中的 hash、时间戳、TTL 和非 `.tmp` 状态筛选，再从较新候选开始读取 JSON、转换类型、核对 batch-size 列表。新候选损坏但错误被捕获时，会尝试较老候选；都不可用才返回 miss。#128 补 `OverflowError`：`1e309` 等文本可被 Python JSON 读取成无穷，随后 `int(batch_size)` 抛出的错误原先不在 except 中。补捕获后，该文件能走同样的回退路径。
+
+这不等于统一验证所有数值。批次身份检查与延迟是否有限/为正仍是不同条件；不能把补一个转换异常称为完整数据模式验证。两项 PR 也不覆盖任意 I/O 故障或所有异常种类。
+
+### 文件完成与广播完成不是同一件事
+
+写入使用唯一名称的 `.tmp` 文件，JSON 写完后 flush/fsync，再 `os.replace` 到终名；读取跳过 `.tmp`。这提供了该路径的文件完成约定，本轮没有注入磁盘、rename 或并发清理故障，不扩大为任意文件系统的崩溃安全保证。
+
+读取仅由进程组 rank 0 清理目录、挑选文件，随后通过 `broadcast_object_list` 分发命中曲线或 `None`。基线的溢出在 rank 0 到达广播前发生；补捕获将该特定输入带回正常分发路径，但单 rank 测试不能证明其他 rank 的等待/取消行为或跨进程故障终止安全。
+
+### 原始测试与本机执行范围
+
+[复现脚本](../../experiments/scripts/verify_deepinfer_decode_cache.py)通过 Git import loader 正常导入完整原始 Python 模块，只把 `decode_perf_cache.py` 按所选 PR 覆盖，其余来自 base；原始测试和共享 `_clean_env` fixture 原样加载，后者显式作为 pytest 插件注册。没有缓存类、ParallelConfig、环境描述器、文件 I/O 或通信替身；仅有收集/导入适配器，未修改上游源码。
+
+| 原测试来源 | 固定基线结果 | 对应修复 head 结果 |
+|---|---|---|
+| #126 身份测试 9 项 | 5 通过，4 预期失败 | 9 通过 |
+| #128 溢出测试 8 项 | 8 项均为预期 OverflowError | 8 通过 |
+
+身份对照覆盖原先已区分的 model、batch_sizes、DP/CP/EP，以及新增的 Engram、engine type、batch-invariant 双向变化。溢出对照覆盖正负 `1e309`、正负 Infinity，并分别检查有旧有效曲线与没有旧曲线时的回退。真实 JSON 文件均位于 pytest 新建的临时缓存目录，不读取或清理用户已有缓存。
+
+```bash
+python experiments/scripts/verify_deepinfer_decode_cache.py /path/to/DeepInfer --suite identity --implementation base
+python experiments/scripts/verify_deepinfer_decode_cache.py /path/to/DeepInfer --suite identity --implementation patched
+python experiments/scripts/verify_deepinfer_decode_cache.py /path/to/DeepInfer --suite overflow --implementation base
+python experiments/scripts/verify_deepinfer_decode_cache.py /path/to/DeepInfer --suite overflow --implementation patched
+```
+
+环境是 M1、Python 3.12.13、torch 2.9.1、pytest 8.4.2，真实 CPU/Gloo。首次在沙箱内 Gloo 初始化中止（退出 134），测试尚未执行；一次获准在本机 loopback 的 10 秒超时初始化成功，之后原测试在相同本机权限下完成。脚本需可用的本地 Gloo socket 权限，不能只凭 `is_gloo_available()` 认定可运行。
+
+每个原 fixture 都是 `world_size=1`，没有执行作者另述的双 rank smoke test。脚本临时设置 accelerator 为 `nvidia` 只为选择包路径标签、避免硬件发现，不表示本机有 NVIDIA/GPU 支持，也不初始化设备；Gloo 明确绑定本机 loopback。没有安装依赖、模型权重、graph replay 或 GPU/NPU 测试，没有测延迟/吞吐。原 pytest 的预期基线失败与退出码均保留并被核对，不当成修复分支的通过数。
+
+固定缓存源码 SHA256：base `472ff10a43df0e4b5b91becb51b13e651df62ca928032c2752c39df99f40e55e`；#126 `979dcb48771e33c55c3d8a28860abb7d25fb0315ee10a8cfeb68bb4256414568`；#128 `f4c2c1756cfbb3f49e18e6c934acc888830451d7b8c7cbe5c1636b4005badd3a`。源码入口：[缓存读写](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/worker/decode_perf_cache.py)、[profile 调用](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/worker/model_runner.py)、[warmup 顺序](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/worker/base.py)。

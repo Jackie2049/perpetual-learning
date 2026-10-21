@@ -10,6 +10,8 @@
 
 ## 运行接续
 
+- **M1 decode性能缓存收束（2026-10-21）**：有界扫描DeepInfer最近更新12个/verl 8个open PR，转读已有#126 4622836f与#128 4e679e90。完整原始模块/测试、真实临时JSON和单rank CPU/Gloo：身份修复9过（base5过4预期失败），溢出修复8过（base8预期OverflowError）。曲线非KV内容，新增hash字段≠完整环境指纹，单rank≠跨rank故障安全或性能验证。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#decode-性能曲线缓存的身份与回退)。后续只读学习已有#122 profiling HTTP server关闭生命周期，先核来源/依赖，不启动服务、设备或竞争实现。网站/GPU/AReaL分工不变。
+
 - **M1 CacheConfig与strict-xfail收束（2026-10-21）**：#118 c78146bf/#121 2afdb3d2仍open。AST选原CacheConfig与9原测试、不加载torch/模型配置：base7过2XFAIL；#118保留原标记7过2严格XPASS（pytest退出1），`--runxfail`9过。只核测试约定，不改标记或作者方案。profiling还要扣模型峰值/state，构造合法不保KV容量；已有后续零block显式错误路径，未跑设备。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#cacheconfig-校验与严格预期失败)。参数课题先收束，后续有界核对DeepInfer/verl上游变化再选未重复问题，不继续凑配置替身。网站/GPU/AReaL分工不变。
 
 - **M1 SamplingParams输入边界（2026-10-21）**：已有同作者#119实现/#121测试均open，head bc668873/2afdb3d2、base774ce244。原始测试实际53项：baseline51过/2预期失败，#119全过；各8组构造边界观察通过。只隔离包根、原样执行参数和测试，不是完整包/CI/绑定/引擎。明确greedy改写前校验、NaN温度/小数整数字段能过Python不代表下游有效，golden字段保存不证明只读评估效果。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#samplingparams-构造校验与测试组合)。本项收束；下一步只读CacheConfig #118与#121的strict-xfail契约，先核依赖、不补装设备包、不竞争修复。网站/GPU/AReaL分工不变。
@@ -97,7 +99,7 @@
 1. **等待用户授权/资源**（长期未决，见「运行接续」5 项）——发布评论/文档、#8281 发布形态、方向调整。#8237 已收尾（PR #8286 ready + issue 已回）。
 1. **未来一周开源技术掘金三大重点（用户 2026-10-20 定）**：**DeepInfer / verl / AReaL**。其中 DeepInfer 主研（推理框架源码深挖），verl 主贡献（续 #8281/#8250），AReaL 主实测（prompt_mean 切分敏感点）。vLLM 降为次优先级。 **这是跨主机整体分工，M1 不接管 AReaL；M5 独立推进其完整候选/PR。**
 2. **等待用户授权/资源**（长期未决，见「运行接续」5 项）——发布评论/文档、#8281 发布形态、方向调整。#8237 已收尾（PR #8286 ready + issue 已回）。
-3. **M1当前学习/贡献复核**：V1来源/失败边界、#8303指标与#8300布局学习收束；#8250等真实配对观测，#7913不重复，#8281待决定。clip旧RFC和PrefixGrouper full-model旧RFC均已撤回，不发布后者评论草稿。DeepInfer #119/#121 SamplingParams与#118 CacheConfig/strict-xfail限定复核收束，接续有界核对DeepInfer/verl上游变化再选未重复课题，不竞争实现、不凑配置替身冒充集成。M1不访问GPU、不涉及AReaL整项，任何上游发言仍须拍板。
+3. **M1当前学习/贡献复核**：V1来源/失败边界、#8303指标与#8300布局学习收束；#8250等真实配对观测，#7913不重复，#8281待决定。clip旧RFC和PrefixGrouper full-model旧RFC均已撤回，不发布后者评论草稿。DeepInfer参数/strict-xfail与#126/#128 decode曲线缓存限定复核收束，下一步只读已有#122 profiling HTTP server关闭生命周期，先核来源与依赖，不启动服务或设备，不竞争实现、不凑替身冒充集成。M1不访问GPU、不涉及AReaL整项，任何上游发言仍须拍板。
 3. **高优调研（用户 2026-10-20 定）**：**DeepInfer**——确定性、ZOS、DSpark、YoCo/CP、生命周期、EPLB、chunk/cached-prefix、MTP缓存提交与SO失败输出边界已有源码/限定CPU学习，完整扩展/设备正确性与性能未测。账本0不能直接当对外失败token，局部条件差异不定性新bug，见[笔记](notebook/frameworks/deepinfer-initial-survey.md#so失败状态与输出token身份)。下一步做有界DeepInfer/verl上游变化核对，选择未重复课题；不继续增加同类替身代替真实失败payload、错误响应语义与既有PR覆盖核验。不预设新缺陷、不竞争已有修复；M1不访问GPU/AReaL，任何上游发言仍须用户拍板。
 4. **AReaL prompt_mean（原 M5 单一负责项，用户 2026-10-20 恢复 VPN 后明确本会话继续）——实测已闭环**：框架跑通（gsm8k PPO smoke 128 步无错）+ 受控实测（§10.7 判据，M=2 vs 4 + 固定 M 变 P，prompt_mean 与 token_mean 行为一致：跨 M 1.301≈1.273、P-spread 1.216≈1.192）——**不构成 defect，候选修复撤销，不提 issue/PR**，作为 review 依据存档（见 [源码笔记 §10.10](notebook/frameworks/areal-architecture-source-reading.md)、[tracker](open-source/areal/tracker.md)）。Megatron GPU 对照未做（TE 硬依赖）。分工状态见 [handoff-m5](open-source/areal/handoff-m5.md) 与 WORK「运行接续」。
 3. 按课题逐步关联现有实验执行材料与 notebook/experiments/ 的分析记录；新增实验优先就近组织，维护双向入口。
