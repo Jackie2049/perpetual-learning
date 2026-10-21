@@ -62,7 +62,7 @@ function contributionRecord(item) {
 }
 function contributionSummary(item) {
   const f=item.fields;
-  return `<details class="contribution-summary">
+  return `<details class="contribution-summary${item.closed?' closed':''}">
     <summary class="contribution-toggle"><span class="contribution-type">${esc(item.type)}</span><h3>${esc(item.title)}</h3></summary>
     <div class="summary-content">
     <div class="summary-field"><h4>贡献点</h4><div class="prose">${f['贡献点']}</div></div>
@@ -76,10 +76,13 @@ function contributionSummary(item) {
 }
 function contributionPanel(project) {
   const materials = project.materials.map(item => `<li>${item.readable ? `<button data-open="${item.id}">${esc(item.title)}</button>` : `<a href="${esc(item.url)}" target="_blank" rel="noreferrer">${esc(item.title)} ↗</a>`}</li>`).join('');
+  const openRecords = project.records.filter(r=>!r.closed);
+  const closedRecords = project.records.filter(r=>r.closed);
+  const closedGroup = closedRecords.length?`<details class="closed-group"><summary>已闭环记录 <span>${closedRecords.length}</span><em>已合并、放弃或不再推进的事项，保留完整证据链</em></summary><div class="closed-list">${closedRecords.map(contributionSummary).join('')}</div></details>`:'';
   return `<section class="contribution-panel" id="project-${esc(project.slug)}" aria-label="${esc(project.name)}">
     <div class="project-heading"><p class="project-date">更新时间：${esc(fmtFull(project.updated))}</p><span class="project-count">${project.materials.length} 份材料</span></div>
     ${project.progress?`<div class="project-overview prose"><span class="overview-label">最新进展：</span>${project.progress}</div>`:''}
-    ${project.records.length?`<div class="project-records">${project.records.map(contributionSummary).join('')}</div>`:project.items.length?`<p class="project-empty">该项目抬头待负责人整理，以下保留原交接记录。</p>${project.items.map(contributionRecord).join('')}`:'<p class="project-empty">已有项目说明，尚无独立贡献记录。</p>'}
+    ${project.records.length?`<div class="project-records">${openRecords.map(contributionSummary).join('')}${closedGroup}</div>`:project.items.length?`<p class="project-empty">该项目抬头待负责人整理，以下保留原交接记录。</p>${project.items.map(contributionRecord).join('')}`:'<p class="project-empty">已有项目说明，尚无独立贡献记录。</p>'}
     <div class="project-actions"><button class="text-link" data-open="${project.overview.id}">项目说明 ${icon('arrow')}</button>${project.tracker?`<button class="text-link" data-open="${project.tracker.id}">候选追踪 ${icon('arrow')}</button>`:''}</div>
     <details class="project-materials"><summary>浏览项目材料 <span>${project.materials.length}</span></summary>${materials?`<ul>${materials}</ul>`:'<p>暂无独立材料。</p>'}</details>
   </section>`;

@@ -78,6 +78,23 @@
 
 .project-heading .project-date{margin:0}.project-heading{margin-bottom:22px}
 
+/* Closed items fold into a trailing group and read as archive, not as next actions. */
+.closed-group{margin-top:20px;border-top:1px solid var(--line)}
+.closed-group>summary{display:flex;align-items:center;gap:9px;cursor:pointer;list-style:none;padding:15px 2px;font-size:12px;color:var(--muted)}
+.closed-group>summary::-webkit-details-marker{display:none}
+.closed-group>summary::before{content:'';width:7px;height:7px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(-45deg);flex-shrink:0}
+.closed-group[open]>summary::before{transform:rotate(45deg)}
+.closed-group>summary:focus-visible{outline:2px solid var(--green);outline-offset:4px;border-radius:4px}
+.closed-group>summary span{background:#eef1ef;color:#6d7d74;border-radius:4px;padding:1px 7px;font-size:10px;font-weight:600}
+.closed-group>summary em{font-style:normal;color:#a5b0ab;font-size:11px;margin-left:auto}
+.closed-group .closed-list{display:grid;gap:14px}
+.contribution-summary.closed{opacity:.72;background:#fbfcfb}
+.contribution-summary.closed .contribution-type{background:#eef1ef;color:#6d7d74}
+body.theme-dark .closed-group>summary span{background:#2d2d2d;color:#9a9a9a}
+body.theme-dark .closed-group>summary em{color:#6e6e6e}
+body.theme-dark .contribution-summary.closed{background:#1c1c1c;opacity:.8}
+body.theme-dark .contribution-summary.closed .contribution-type{background:#2d2d2d;color:#9a9a9a}
+
 /* Sidebar uses a dark surface so the reading area stays light and framed.
    Final palette chosen by the user from the live color bar (2026-10-21). */
 :root{--sidebar-bg:#1d574d;--sidebar-fg:#9db4a9;--sidebar-active-bg:#ffffff;--sidebar-active-fg:#000000}
