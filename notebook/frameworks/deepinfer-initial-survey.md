@@ -1206,3 +1206,47 @@ python experiments/scripts/verify_deepinfer_gpqa.py /path/to/DeepInfer --revisio
 ```
 
 SHA256：bench base `329611f34d5f138229b6f85407f8b63c7c38fd3c1b95f5115d965462ab3a7dda`，head `68e925d24fd5d6dec7f5f27bf69fb40d46eae792ec76ecfd45f2bf4f55dad9d0`；原测试 `094032f2e4ae67da6116af1eba858a3265b8e4545c3857bc1e50075ccf89ae8f`。共用io/初始化hash由脚本另打印。未下载数据、调用模型/外部judge或重算历史得分，本题不需要新增 M5 GPU/NPU 任务；已有作者负责，不竞争修复或向上游发言。
+
+## 评测 limit 与题集覆盖
+
+2026-10-21 核对已有 [#169](https://github.com/deepseek-ai/DeepInfer/pull/169)，读取时open、作者qingzhai；base `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`，head `62e386fe9ee1ab7bfff409d164cc577e72612fbe`。该PR只在 [run_eval.py](https://github.com/deepseek-ai/DeepInfer/blob/62e386fe9ee1ab7bfff409d164cc577e72612fbe/eval/run_eval.py) 的 argparse 层增加正整数校验，不修改benchmark或scoring。**入口拒绝非法预算，与报告中的题集完整性，是两个不同保证。**
+
+### 零题预算为何会变成一题
+
+原始 `build_records` 在 append 一条之后才检查 `len(records) >= limit`。用三条本机合成GPQA题记录执行原函数，`limit=[None,0,-1,1,2,5]` 对应记录数 `[3,1,1,1,2,3]`。所以 `--limit 0` 既不是“全量”也不是“空题集”；合法全量入口是省略该参数，让它保持 None。
+
+候选 `_positive_limit` 先用 `int(value)` 转换，再拒绝小于1的值，并交给argparse以退出码2报告。它在调用 `main()` 之前结束；原 `main()` 会创建输出目录、写meta、清理旧raw文件并调度生成。这里不运行基线的非法limit生成CLI来证明失败，避免进入这些副作用和engine路径。直接调用benchmark builder或重读旧meta不经过此CLI校验，PR也没有宣称修复它们。
+
+### 原始测试与安全对照
+
+从固定Git对象用 `git archive` 原样展开两份临时源码：eval、examples/_config.py、deep_cluster、deepinfer/__init__.py及候选79行[原始测试](https://github.com/deepseek-ai/DeepInfer/blob/62e386fe9ee1ab7bfff409d164cc577e72612fbe/tests/eval/test_eval_limit_arg.py)。没有改源码、fixture或断言，也不构造parser/设备替身。先读实际导入链，确认 `_config` 只定义延迟模型/设备调用；验证导入来自临时固定源码，且父进程未导入torch、DeepInfer、模型下载器或judge客户端。
+
+Python3.12.13/pytest8.4.2，本机结果：
+
+- 候选原5项测试 **全过**：0/−1/−42各拒绝，正数3与默认None保持，真实子进程CLI的limit0退出2且不创建输出目录。
+- 基线只运行4项导入级测试：**1过、3项预期失败、1项明确排除**；排除的是会进入基线 `main()` 的子进程用例。失败原因为非正数没有抛SystemExit，不是使用xfail隐藏失败。
+- 禁用外部pytest插件、conftest、字节码与pytest缓存；隔离配置下出现ci/ci_npu两个未知mark警告，保留原标记，不将其当成NPU执行或测试跳过。
+
+在含固定对象的DeepInfer仓库中，候选测试可按原样复查（python需已有pytest，不安装DeepInfer）：
+
+```bash
+task_fix="$(mktemp -d)"
+git archive 62e386fe9ee1ab7bfff409d164cc577e72612fbe eval examples/_config.py deep_cluster deepinfer/__init__.py tests/eval/test_eval_limit_arg.py | tar -x -C "$task_fix"
+(cd "$task_fix" && PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1 python -m pytest --noconftest -p no:cacheprovider -q tests/eval/test_eval_limit_arg.py)
+```
+
+基线另取base源码、配同一候选测试，仅加 `-k 'not rejection_happens_before_any_run_artifact'`，预期pytest退出1；不要直接将候选整套生成CLI测试套到基线上运行。
+
+### 实际 rule scoring 的覆盖条件
+
+另运行固定head的原始 `eval/score.py --judge rule --out-dir <case>`，而不是手写覆盖率公式：三条合成JSONL题记录分别为t0/t1/t2，question为占位文本，answer为A/B/C；唯一raw记录为 `{task_id:t0, sample_idx:0, raw_text:"ANSWER: A", finish_reason:"stop"}`，meta设bench=gpqa、n_sample=1、data_file指向该本地文件。只切换meta.limit，得到真实summary文件并逐字段assert：
+
+| meta.limit | expected_tasks | num_tasks | coverage_complete |
+|---|---:|---:|---|
+| 0（模拟历史非法元数据） | 1 | 1 | true |
+| 1（合法子集） | 1 | 1 | true |
+| 省略（全量） | 3 | 1 | false，明确缺两题 |
+
+`expected_rollouts` 同列为1/1/3，实际均为1。这个完整性标记是相对 `build_records` 选出的题集，不是“覆盖原始数据文件全部题目”，也不是认证CLI参数合法。#169预防新生成入口的非正limit，但不会自动清洗历史meta；复评分数须同时保留选题配置和任务身份。合成答案得到的得分不是模型准确率，也未复跑真实数据或默认LLM judge。
+
+SHA256：run_eval base `5f1fd6d70da0a15858b53a4724e79501e85f5cbd889ae117ec383b4981f66fc5`，head `c043a19b05ccc608e0d63a07a401bf9948e42f012669b046ac2641dd2e45058c`；原测试 `366420f48b98d508e2d55f56c964be457b712326a5ba85470dd90d062b7d5237`；实际scorer `af3755cd5c0a1bb050296b03999773d6aead6360e197234b1bd8438fbcb293a4`。本题未启动engine、模型或GPU/NPU，没有新增M5真机任务；已有作者负责，不竞争实现或向上游发言。

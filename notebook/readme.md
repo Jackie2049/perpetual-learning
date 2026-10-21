@@ -142,6 +142,7 @@
 - [DeepInfer 消息信任边界](frameworks/deepinfer-initial-survey.md#共享内存消息与反序列化信任边界) — #158仍保留pickle；注释/扫描抑制非协议修复，CP本地调用与通用remote分支分开，非漏洞复现
 - [DeepInfer vendor wheel 身份](frameworks/deepinfer-initial-survey.md#vendor-wheel-的本次产物与安装身份) — #159本次构建/安装选择与兼容性分开；Shell语法及PEP440排序核对，非原生构建验收
 - [DeepInfer GPQA 提取与判分](frameworks/deepinfer-initial-survey.md#gpqa-答案提取与最终判分) — #160原始7项CPU测试成对复现；大小写/路径优先级与默认LLM judge覆盖规则结果的区别
+- [DeepInfer 评测题集覆盖](frameworks/deepinfer-initial-survey.md#评测-limit-与题集覆盖) — #169原5项CPU测试与原scorer三组本地JSONL控制；正limit入口不等于历史元数据或全数据覆盖认证
 - [PrefixGrouper 计算范围纠错](frameworks/verl-prefix-grouper-gap-analysis.md) — 原生 grouped input 也节省前缀逐 token 运算；撤回 attention-only 缺口和非等价微基准收益外推
 - [verl PrefixGrouper](frameworks/verl-prefix-grouper.md) — 历史集成；与新 engine 路径的版本边界及复杂度纠错
 - [vLLM V1 KV Cache Manager 源码阅读](frameworks/vllm-v1-kv-cache-manager-reading.md) — Block 分配/释放、6 种 Attention Manager、Prefix Caching、Coordinator 架构
