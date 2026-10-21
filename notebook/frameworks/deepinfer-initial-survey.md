@@ -1457,3 +1457,44 @@ git archive ddd3fa468f9773b49660025c6812cff06070547d eval tests/__init__.py test
 基线另取base的eval、tests/__init__.py、pyproject，配同一候选测试再执行，预期10失败。禁用外部plugins、上游conftest、字节码与缓存；原ci/ci_npu标记不代表设备CI。父进程确认bench来自固定临时树，torch/deepinfer/requests/openai/datasets/common.judge未导入；score可能打印临时树无完整仓库布局的定位警告，但仅读本地meta所指数据，不回退下载或启动引擎。本题不新增M5真机任务，不竞争作者修复或向上游发言。
 
 SHA256：bench base `9f7fe427bf0377735e299d90a79445f4ca39cb06ac97397a5e4a94ef442789a6`、候选 `f477011dbe7f69a5f1bad12877e06729c60bde7768cda3542f6208b685b7b1a4`；原测试 `2749ec819272fac9104dcc6b771aeb4d8e9e572442d28da43c20b87aa7b8c4e1`；score.py `af3755cd5c0a1bb050296b03999773d6aead6360e197234b1bd8438fbcb293a4`。
+
+## 模型路径选择与下载来源
+
+2026-10-21 核对已有 [#182](https://github.com/deepseek-ai/DeepInfer/pull/182)，读取时open、作者tastelikefeet；head `a9baf6803c96284322e2ab95a11a91d269138b99`，base及共同祖先 `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`。它在示例共享配置中增加ModelScope下载来源和新环境变量名，保留HF默认来源。**下载来源选择、本地路径存在、checkpoint完整和模型可运行是不同保证。**
+
+### 覆盖顺序与本地边界
+
+[resolve_model_path](https://github.com/deepseek-ai/DeepInfer/blob/a9baf6803c96284322e2ab95a11a91d269138b99/examples/_config.py)仅在输入字符串等于DEFAULT_MODEL_NAME时采用环境覆盖，依次取非空DEEPINFER_MODEL_DIR、旧DEEPINFER_HF_MODEL_DIR；新值为空串会回退旧值，并非只要新变量存在就优先。随后expanduser：现有目录直接检查config.json并返回resolve后的绝对路径，非目录才进入下载分支。
+
+Python3.12.13，两版原函数各执行12组路径/路由观察。AST只选原DEFAULT_MODEL_NAME和resolve_model_path，接真实os/Path；不导入_config的硬件定义或执行create_llm。以下A/B为本轮新建临时目录，各含config.json；A文件故意不是合法JSON且没有权重，B仅为空JSON，分别用于证明此层只检查文件存在。远端分支均在SDK导入处被guard拦住：
+
+| 输入条件 | base | 候选 |
+|---|---|---|
+| 显式现有目录A | 返回A | 返回A |
+| A且下载flag为" TRUE " | 返回A，不导入SDK | 同左 |
+| 现有空目录，缺config.json | 本地FileNotFoundError | 同左 |
+| 默认ID，新变量B、旧变量A | A | B |
+| 默认ID，新变量空串、旧变量A | A | A |
+| 默认ID，仅新变量B | 进入HF导入分支 | 返回B |
+| 显式目录A、两个覆盖变量均为B | A | A |
+| 非默认ID synthetic/other、两个覆盖变量均为B | HF导入分支 | 同左 |
+| 不存在的本地样式路径 | HF导入分支 | 同左 |
+| 现有普通文件，不是目录 | HF导入分支 | 同左 |
+| 非默认ID，flag=" TRUE " | HF导入分支 | ModelScope导入分支 |
+| 非默认ID，flag="2" | HF导入分支 | HF导入分支 |
+
+因此“配置了本地路径”不自动等于禁止联网：目录不存在或把文件误作目录时会进入下载路径，实际SDK如何处理该字符串本轮未运行。相反，现有目录缺config.json是在本地拒绝，不会再尝试补下载。原文档“显式model_name不被覆盖”应按非默认字符串理解；函数只接收字符串，无法区分调用方未指定默认ID与显式传入同一默认ID，两者都会应用环境覆盖。
+
+### 开关和产物身份
+
+新flag单独采用strip/lower后的正值白名单 `1/true/yes/on`；其他值选HF。这与前文#177的“未知非空值仍真”不是同一解析契约，不能将某一类环境变量的布尔规则推广到全部入口。另以导入guard主动制造ModelScope缺包，原函数抛出带安装提示的ImportError并保留cause，没有静默回退HF；这是合成缺依赖控制，不是实际SDK安装/缺包检测或下载验收。
+
+候选只调用所选SDK的 `snapshot_download(model_name)`，此处未传revision或校验权重hash；目录校验也不解析JSON、检查safetensors或架构。这个入口本身不能证明跨Hub同名模型的文件相同或缓存完整。作者报告的真实下载test plan不是本机复跑结果；本轮没有导入任何下载SDK、读取凭据、安装依赖或写入SDK缓存。
+
+### 复查范围
+
+原函数完整代码位于上述固定blob，可用 `git show <revision>:examples/_config.py` 复查，输入hash如下。控制读取Git对象时禁用lazy fetch；将AST中的常量赋值与函数节点原样compile/exec，仅提供os、Path，不改函数体。真实文件布局为A/config.json（非JSON占位）、B/config.json（{}）、empty/、not-a-directory普通文件和不存在路径；只在子进程设置三个DEEPINFER变量，不改变用户配置。
+
+路由guard使用sys.meta_path在huggingface_hub/modelscope导入时抛自定义异常，从未提供snapshot_download替身或假下载返回路径；另用audit hook禁止socket操作。候选缺依赖一例改抛ModuleNotFoundError，核原函数生成的ImportError消息/cause。两版各12组全部符合预期，候选另1组缺依赖控制通过；不称原作者测试或SDK集成验证。最终确认torch/deepinfer/deep_cluster及两下载SDK均未导入。
+
+SHA256：完整_config.py base `a671d83fa5becac257722e67facec2f33743a1263e0b2e6355dcdb00984f4f42`、候选 `a6e4e482ff0620f212378b7990e4055a400780cba2798b3859cd049d5646a4ea`。本题是路径契约学习，无真实下载/缓存/模型/设备结果，不新增M5真机任务，不竞争作者实现或向上游发言。

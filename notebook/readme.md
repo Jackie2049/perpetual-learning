@@ -148,6 +148,7 @@
 - [DeepInfer sweep 数据与推荐](frameworks/deepinfer-initial-survey.md#sweep-推荐的数据选择与计量口径) — #176原10测试与真实CLI/JSONL控制；最后可用点不代表最新尝试成功或扫描完整，接受率假设非实测
 - [DeepInfer 关闭错误与清理](frameworks/deepinfer-initial-survey.md#关闭失败后的独立清理与一次性标志) — #175三个原方法/13原断言隔离对照；Mock资源，closed是不重放标志而非释放完成
 - [DeepInfer AIME 思考区评分](frameworks/deepinfer-initial-survey.md#aime-思考区与规则评分) — #178原21测试base11过10预期失败/fix全过；真实rule CLI合成用例，提取修复非模型提分
+- [DeepInfer 模型路径与下载来源](frameworks/deepinfer-initial-survey.md#模型路径选择与下载来源) — #182两版各12组原函数路径/导入拦截控制；本地路径、SDK选择与checkpoint完整性分开，未下载
 - [PrefixGrouper 计算范围纠错](frameworks/verl-prefix-grouper-gap-analysis.md) — 原生 grouped input 也节省前缀逐 token 运算；撤回 attention-only 缺口和非等价微基准收益外推
 - [verl PrefixGrouper](frameworks/verl-prefix-grouper.md) — 历史集成；与新 engine 路径的版本边界及复杂度纠错
 - [vLLM V1 KV Cache Manager 源码阅读](frameworks/vllm-v1-kv-cache-manager-reading.md) — Block 分配/释放、6 种 Attention Manager、Prefix Caching、Coordinator 架构

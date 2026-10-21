@@ -12,6 +12,8 @@
 
 ## 运行接续
 
+- **M1 模型路径入口收束（2026-10-21）**：只读已有#182 heada9baf680/base9bd9cf2。AST选原resolver/常量，两版各12组真实临时目录/SDK导入拦截观察符合预期，候选另1组合成缺包控制通过。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#模型路径选择与下载来源)。新非空覆盖优先/空串回退；非目录进入Hub分支，config存在非checkpoint完整；正值白名单不同于#177。无SDK/下载/缓存/模型/硬件执行，不新增M5任务。本题收束，后续有界核对上游后选未重复CPU/源码问题，不继续堆下载替身或干预M5移植；GPU/AReaL和网站边界不变。
+
 - **M1 AIME提取评分收束（2026-10-21）**：有界核对DeepInfer最近8个/verl6个open PR，转读已有新#178 headddd3fa4/base9bd9cf2。原21测试（含3真实rule CLI）base11过10预期失败、候选全过；3原函数控制确认只按小写字面闭合标签分界，不是通用思考解析器。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#aime-思考区与规则评分)。修复可减少规则错拒/误收；默认LLM judge与输入链未改，不外推模型得分。未加载模型/设备/外部judge，不新增M5任务。本题收束，后续可只读新#182模型下载路径/缓存身份，先核副作用，不下载或调用远端服务；GPU/AReaL和网站边界不变。
 
 - **M1 关闭错误处理收束（2026-10-21）**：只读已有#175 head1dc73e9/base9bd9cf2；AST选原close/__del__/_run_workers，接原Mock fixtures/13原断言，base3过10预期失败、候选13过；明确排除1真实子进程清理用例。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#关闭失败后的独立清理与一次性标志)与[实验](experiments/deepinfer-close/readme.md)。closed先置真防重放，不是清理成功/重试/超时/CP初始化回滚；#122独立。无模型/设备/线程，不新增M5任务。本题收束，后续有界核对DeepInfer/verl变化再选未重复问题，不继续扩写关闭替身代替资源证据；GPU/AReaL和网站边界不变。
