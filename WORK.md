@@ -10,6 +10,8 @@
 
 ## 运行接续
 
+- **M1显存遥测学习收束（2026-10-21）**：已有#151 d72f3c4a/base774ce244只改日志helper单次查询与warning；固定total时旧双采样可对应第二次状态，不泛称不可能值。Allocated/Reserved/全局Occupied非同一口径，日志不是原子快照，KV profile前后采样为独立流程。仅源码/AST检查，未运行函数或替身；[笔记](notebook/frameworks/deepinfer-initial-survey.md#显存遥测采样与容量规划)，真机已登记[同一M5入口](experiments/handoff-m5.md#deepinfer-显存遥测的轻量核对)，待资源不代表接单。后续选未重复源码问题，不继续扩写模拟；GPU/AReaL及网站边界不变。
+
 - **GPU/NPU及时交接（2026-10-21用户补充）**：M1 不负责/无法连接的真机事项写入[统一M5交接](experiments/handoff-m5.md)，M5 在机器可用时接续；不反复探测或把CPU模拟当真机进展。本轮已登记既有DeepInfer硬件适配与verl #8250补证，分别待资源/方案核对、待数据/环境，不代表M5已接单。AReaL仍按原单一负责人和专项交接，不并行推进。AGENTS已同步该规则。
 
 - **M1 vendor发现/执行边界收束（2026-10-21）**：已有#60 1f299c27原10项测试通过，复用脚本加vendor模式从Git完整导入；原Ascend12+2回归通过。固定_BACKENDS元组/Protocol不是动态插件，Biren发现不接通platform、扩展标签、setup或vendor build；BF16峰值仍显式未配置。已有#59/#63文档覆盖后续讨论，不竞争实现。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#vendor-registry-与模型运行支持)。本课题收束，下一步有界核对DeepInfer/verl变化再选未重复问题，不扩写模拟或干预并行移植专题；不加载运行时、GPU/AReaL与网站边界不变。

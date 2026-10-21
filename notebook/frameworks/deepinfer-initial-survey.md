@@ -1052,3 +1052,39 @@ M1、Python 3.12.13、pytest 8.4.2，10 项原始测试通过。合成目录覆�
 没有导入 torch/torch_npu、加载设备 runtime/NVML/libnuma、执行拓扑 CLI、修改 affinity、编译或运行模型/collective/kernel，也未验证作者报告的 8 卡 Biren166M 结果。原 Ascend 模块导入仍仅计算一次本机 device-manager 存在标志，不用于支持结论；临时文件、环境映射均限于合成测试。以上结果不认证 backend 通用兼容、模型正确性或性能。
 
 SHA256：vendor.py `02cd28193b1a757be24ab4bc59444fff4ad1da9ef45dc207f066d7a41e3e52c1`；biren.py `e2ffcb99ebd33775ae51dff993242d268d9c33f887b2eefd49e585a1166c4973`；device.py `9320a2702d0aab7e3e1e034a83cdc5ef203dcce2c4b3227275922f63082830ce`；原测试 `232f6d31e928b90754e1e0c3cc676256b52847390d40f6d4d55ad2a167f2d572`。
+
+## 显存遥测采样与容量规划
+
+设备显存占用、PyTorch allocator 占用和 KV 容量预算是不同口径。已有作者 ErnestW2019 的 [PR #151](https://github.com/deepseek-ai/DeepInfer/pull/151)只改日志 helper 的查询和告警；2026-10-21 读取时 open，base `774ce244b87cc0eb8d4b94ab9f5de2ab22049f01`、head `d72f3c4a7d1cfc1bd337adb03dd1319973b084d4`。作者未执行 GPU runtime 验证，本机也没有执行设备 API。
+
+### 一次查询改善的是什么
+
+基线 `get_occupied_gpu_memory()` 正常路径计算 `total(t1) − free(t2)`，要调用两次 `mem_get_info()`；#151 从同一次返回解包 `(free, total)` 后相减。一次查询消除冗余调用并让两个字段来自同一个 API 返回，但不能泛化成“旧结果必然不对应任何真实状态”：若设备和总容量稳定，旧结果就是第二次采样对应的 occupied。仅因 free 变化，不能推出旧结果一定错误；本轮也没有观测到重配置、驱动异常或不一致样本。
+
+查询异常在两版本都回退为数字 0；#151 额外发 warning，使失败可从日志辨认。返回值本身仍不能区分“成功读取 0”和“查询失败”，不能把修复后的 0 自动当成空闲设备。它没有新增 unknown/status 返回字段，也没有让所有异常成为调用方失败。
+
+### 日志中的三个显存口径
+
+按 [PyTorch 2.9 mem_get_info](https://docs.pytorch.org/docs/2.9/generated/torch.cuda.memory.mem_get_info.html)，不传 device 时查当前设备的全局 free/total，而非只统计本进程 tensor。其他进程和非 PyTorch 分配也可能影响这个口径。
+
+| 日志字段 | 对应含义 |
+|---|---|
+| Allocated | 当前 tensor 占用；见 [memory_allocated](https://docs.pytorch.org/docs/2.9/generated/torch.cuda.memory.memory_allocated.html) |
+| Reserved | caching allocator 管理的显存；见 [memory_reserved](https://docs.pytorch.org/docs/2.9/generated/torch.cuda.memory.memory_reserved.html) |
+| Occupied | 此 helper 的设备全局 total−free，不等于本进程 tensor 用量 |
+
+固定源码 [`show_gpu_memory_stats`](https://github.com/deepseek-ai/DeepInfer/blob/d72f3c4a7d1cfc1bd337adb03dd1319973b084d4/deepinfer/utils.py)还分别取当前/峰值 allocator 数字及设备容量；#151 不会让整条日志成为原子快照，跨字段差值也不能无条件解释为精确的“非 torch 占用”。NPU 经 `transfer_to_npu` 重映射 `torch.cuda.*` 是另一运行环境，本轮未认证其 API 和 CUDA 语义完全相同。
+
+### 不要把日志修复当成 KV 预算修复
+
+[`CacheEngine.allocate_gpu_cache`](https://github.com/deepseek-ai/DeepInfer/blob/d72f3c4a7d1cfc1bd337adb03dd1319973b084d4/deepinfer/worker/cache_engine.py)在 gc/empty_cache 之后、实际分配之前调用这条日志。固定源树中 helper 通过该日志被使用，没有把其回退 0 送入 block 数规划。
+
+[`WorkerBase.profile_num_available_blocks`](https://github.com/deepseek-ai/DeepInfer/blob/d72f3c4a7d1cfc1bd337adb03dd1319973b084d4/deepinfer/worker/base.py)另行在模型 profile 前后读取显存，并结合 torch 峰值、非 torch 占用和 state 预留预算计算 blocks，见[前述容量边界](#cacheconfig-校验与严格预期失败)。这里两个采样是为了观测不同阶段，不是本 helper 中可直接合并的重复查询；#151 未改该流程，也不证明避免 OOM 或增加可用 KV。
+
+### 本轮证据与真机交接
+
+仅解析固定 Git blob 的 AST：基线有 2 个 `torch.cuda.mem_get_info` 调用点/0 个 warning，head 为 1/1；没有执行函数、构造 torch/logger 替身、导入 torch 或模拟 GPU 样本。正常路径次数来自源码，不是测得的驱动调用轨迹；异常早退也未实测。utils.py/worker/cache 文件在本机 checkout `8b161497` 与 base 无 diff，源树未修改。
+
+真机查询及日志行为已登记到 [M5 交接](../../experiments/handoff-m5.md#deepinfer-显存遥测的轻量核对)。M5 有合适环境时可作独立的小范围核对，不必为日志 helper 启动完整模型；没有制造驱动故障或改已运行训练来触发 warning 的要求。此处不宣称修复实测通过或性能收益。
+
+utils.py SHA256：base `8a0049b98ea6f7ef98555ad8b38b9e8dac2292c0d2a89c2090bbdb5e5ee7295a`，head `db14bca1ddc8ad3e9a5ae0f99b8aeb1b9ebebf3c2262eb2e0837b06988c73258`。
