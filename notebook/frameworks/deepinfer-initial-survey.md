@@ -1585,3 +1585,31 @@ Python3.12.13，AST原样选取dump分支中的路径赋值/makedirs节点及dum
 benchmark.profile_memory仍使用args.tracing_path及带trace_stem/phase的文件名，并在dump后停止memory history；本PR不改该入口。初始化方法中的history启动、profile_run、显存采样/预算计算及后续all_reduce也未变。文件冲突、权限、磁盘、真实dump兼容性和异步/多进程影响不能由本轮目录控制认证；没有运行CUDA/NPU接口或诱发真实profile失败。
 
 实际快照若以后成为M5已有诊断需要，见[原交接条目的可选参考](../../experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)，不自动启用、应用补丁或新开实验。SHA256：worker/base.py base `40e6ca29aebd9d475eaad4b86326783f76dba2b73feaa51d86a200b7704a05ed`、候选 `1b0e9d3778a927f84f3680a2ae7d728bcad41541354f12fd9c582ed3b8b54ef7`；两版environ.py `fe2c531989c419f0b51b169a07f5ed826dcec7f95c0c5bc3a351805923c4f218`。
+
+## 抢占重算与 prompt logprob 的身份
+
+2026-10-21核对已有[#188](https://github.com/deepseek-ai/DeepInfer/pull/188)，读取时open、the-wayee，head `c0ce645b1a5166e835c1e59fb389c334d1baa4db`、base/共同祖先 `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`；两文件147增0删，含138行测试。**用于重建KV缓存的prefill输入可以包含已生成token，但这些token并未因此变成用户原始prompt。** 本轮只做源码链与Python测试语法核对，未编译扩展或执行原测试。
+
+### 为什么旧状态会重复计数
+
+[Scheduler._preempt](https://github.com/deepseek-ai/DeepInfer/blob/c0ce645b1a5166e835c1e59fb389c334d1baa4db/csrc/engine/scheduler.hpp#L766)只接受RUNNING序列；stop_preempted_request开启或SO不支持重算时直接结束，否则reset后放回waiting。原生offline LLM默认stop_preempted_request=False。prompt在途序列不在running中；Worker在prompt步当场post-process，model_runner先累计prompt logprobs，随后scheduler处理输出并将完成prefill的序列加入running。这是候选选择“不再计算原始prompt分数”的时序前提，不是对任意重启/迁移恢复协议的保证。
+
+旧Sequence重算只复位cache/schedule/MTP，保留generation中的采样标志和累计列表。[SequenceMetadata](https://github.com/deepseek-ai/DeepInfer/blob/c0ce645b1a5166e835c1e59fb389c334d1baa4db/csrc/engine/sequence.hpp)在prefill时将prompt_tokens指向完整get_token_ids，而非只截原始prompt；采样标志按值复制generation.sampling，累计prompt_logprobs则引用原generation状态。
+
+[prepare_sample](https://github.com/deepseek-ai/DeepInfer/blob/c0ce645b1a5166e835c1e59fb389c334d1baa4db/csrc/engine/prepare_sample.cpp)按 `seqlen_q - int(is_last_prompt_chunk())` 选择prompt分数位置；[update_prompt_logprobs](https://github.com/deepseek-ai/DeepInfer/blob/c0ce645b1a5166e835c1e59fb389c334d1baa4db/csrc/engine/process_output.hpp)将每chunk结果追加到已有列表，最后chunk才返回累计副本。在完整覆盖历史的条件下，首次原prompt长P产生P−1项；已有O个生成token后重算，会再追加P+O−1项，旧累计共2P+O−2。P=3、O=1对应2+3=5；这是源码长度推导，不是实测概率或线上重现。
+
+### 关闭计算与清空累计是不同动作
+
+候选增加GenerationState.reset_for_recompute，同时将need_prompt_logprobs置False、reset累计optional，并接入Sequence总reset。新metadata复制清除后的scalar，prepare不再选prompt位置；sampler按selected_prompt_indices决定是否计算，关闭请求返回None，update遇None返回空列表而不再累计。Python原sampling_params对象并未整体改写，真正消费的是这份scalar/准备输入链。
+
+单独清空旧列表仍会为重算历史中的生成token求分，语义仍不对；关闭后续计算与清理旧状态不能混为“删除重复列表”。本PR没有改这些生产/消费方法，本轮核对prepare_sample.cpp、process_output.hpp、cuda_utils.hpp、scheduler.hpp、model_runner.py、worker.py六份辅助源码在base/head逐字相同；没有用替身构造调度器、模型或概率。
+
+### 原测试需要什么环境
+
+[原测试](https://github.com/deepseek-ai/DeepInfer/blob/c0ce645b1a5166e835c1e59fb389c334d1baa4db/tests/engine/test_prompt_logprobs_recompute.py)参数化plain/chunked两种prefill：断言首次P=3下发2项，额外resident占满原BlockManager触发抢占，重算后selected_prompt_indices=None、enabled=False、返回[[]]，最终token含EOS。测试用真实_C Scheduler/BlockManager、单rank Gloo，但logprob值与采样token由测试helper/手工张量注入，MTP/ZOS均关闭；即便通过，也不认证真实模型数值、性能、CP或异步重算。
+
+作者正文明确未构建/运行。尤其 **Gloo不等于纯CPU执行**：prepare_sampler_inputs会分配pinned输入，并将selected indices等复制到get_default_device；[cuda_utils.hpp](https://github.com/deepseek-ai/DeepInfer/blob/c0ce645b1a5166e835c1e59fb389c334d1baa4db/csrc/cuda_utils.hpp#L27)在WITH_NPU时返回PrivateUse1，否则为CUDA，根conftest也没有将它替换成CPU。因此需要匹配_C构建及设备runtime，不能只凭测试说明的CPU/Gloo称其可在无设备环境运行。
+
+本机Python3.12.13仅对原测试完整AST解析/内存compile，确认1函数×2参数值，**不是2项测试通过**；未导入torch/deepinfer或调用_C。匹配原生环境后的最小入口是 `python -m pytest -q tests/engine/test_prompt_logprobs_recompute.py`，条件和停止边界已补[原M5条目](../../experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)，不自动应用、编译或诱发真实服务抢占。
+
+SHA256：sequence.hpp base `67ef6ea70ee31a519fd632ee2d7be4710a6d796f786cf336dd3d3f06f7fbe16b`、head `7fd9448c5a408e904124ff8ab8015201e20c84b09d4eee8428ffe8c22f62b3e8`；原测试 `51fb80d53bb7b100e18974a1528d8f187a40aeb92783ab1bde4449bbcc607424`。复查用固定Git对象读取上述文件；语法检查compile但不exec原测试，长度公式不作为修复实测。
