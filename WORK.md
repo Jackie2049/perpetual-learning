@@ -4,11 +4,15 @@
 
 ## 当前阶段
 
+**2026-10-21 M5 算力任务（本会话）**：接手用户指派的 GPU/NPU 算力工作。4090 服务器连通可用，完成 DeepInfer 平民版移植冒烟第一段——真机确认架构检查/kernel 包/torch 驱动三类堵点，csrc `deepinfer._C` 在 4090 上编译并导入成功。昇腾 910C 侧 VPN 掉线待用户恢复。详见[运行接续](#运行接续)与[专题笔记](notebook/frameworks/deepinfer-civilian-port.md#4090-真机验证2026-10-21m5-服务器-4090-1-实测)。
+
 **2026-10-20 Codex 首次定时执行更正（优先于下方历史进展）：** AReaL prompt_mean 仍是用户指定优先研究项，但原“独有 M 放大 / dummy 膨胀 / Megatron 额外 P 倍”论证已撤回。旧脚本未模拟 token_mean 的逐步分母、追加了不合法全局 dummy 步，并遗漏 MCore 的 /P。已替换 CPU 参考验证，43 项数值比较与调度检查通过；详见 [源码笔记 §10.7](notebook/frameworks/areal-architecture-source-reading.md)。下一步 GPU 先固定外层 M 只变内层 P，再验证固定 M 的 DP/dummy 分配；M=2/4 作为训练行为对照，不以最终参数不同直接判 bug。尚无真实框架/GPU 实测。
 
 自主运行中（2026-10-19 起 18 轮 /loop 30m）。已完成：工具修复（inference_estimator.py）、verl 候选三轮核验与全新扫描（10 候选）、4 项源码级修复分析、GMPO/GSPO/SAPO 论文精读与数值证明。2026-10-20：verl 新 issue 恢复，深挖 #8281 完成（analysis-done + CPU 验证）；**#8237 offload 修复 PR #8286 已合并进 verl 主仓库**（首个 bugfix 闭环，merge `472dd21`）。详见 [当日日志](diary/2026-10-20.md)。
 
 ## 运行接续
+
+- **M5 DeepInfer 4090 移植冒烟第一段（2026-10-21 算力任务）**：4090-1 连通可用（GPU 0/1/7 空闲，/home 99% 剩 109G）；昇腾 vLLM-Ascend-A3（192.168.13.174）ping/SSH 均超时，**昇腾 VPN 掉线，已报告用户待恢复**。独立克隆 `/home/zxw/deepinfer-civilian`（HEAD 774ce244 全子模块）+ conda 环境 `deepinfer-smoke`（py3.12 + torch 2.13.0+cu129 + gcc13）。真机确认：`get_bf16_tflops_limit` 抛 unknown GPU type（堵点5）；官方 cu132 wheel 与驱动 12.9 不匹配（新增堵点，须降 cu129）；FlashMLA 需 NVCC13.1/sm100a（堵点1）；llm_engine 导入缺 deep_ep（堵点3）。**csrc `deepinfer._C` 已用 gcc13+cu129 编译并导入成功（首个可移植真机证据）**。见[专题笔记](notebook/frameworks/deepinfer-civilian-port.md#4090-真机验证2026-10-21m5-服务器-4090-1-实测)与[日志](diary/2026-10-21.md)。下一步：替换 deep_ep/deep_gemm/deep_select/flash_mla import + 放宽架构检查后尝试实例化 LLMEngine；完整 offline_inference 需 V4 权重与 EP 配置，价值判断待用户确认。
 
 - **M1显存遥测学习收束（2026-10-21）**：已有#151 d72f3c4a/base774ce244只改日志helper单次查询与warning；固定total时旧双采样可对应第二次状态，不泛称不可能值。Allocated/Reserved/全局Occupied非同一口径，日志不是原子快照，KV profile前后采样为独立流程。仅源码/AST检查，未运行函数或替身；[笔记](notebook/frameworks/deepinfer-initial-survey.md#显存遥测采样与容量规划)，真机已登记[同一M5入口](experiments/handoff-m5.md#deepinfer-显存遥测的轻量核对)，待资源不代表接单。后续选未重复源码问题，不继续扩写模拟；GPU/AReaL及网站边界不变。
 

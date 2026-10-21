@@ -99,12 +99,34 @@
 3. 在目标机重编译 93 个 tilelang kernel。
 4. 处理 fp8 量化在无 block-fp8 硬件上的降级（普通 fp8 或 bf16 反量化）。
 
+## 4090 真机验证（2026-10-21，M5 服务器 4090-1 实测）
+
+> 用户指派 GPU/NPU 算力任务后，在服务器 `4090-1`（8×RTX 4090 SM89，CUDA 12.8 工具链，驱动 575.57/CUDA 12.9）上对上述静态分析做了第一步实测。**当前进度：堵点 1/2/3/5 已有真机或源码级确认；csrc C++ 引擎（`deepinfer._C`）在 4090 上编译并导入成功；完整离线推理跑通仍需替换三个 kernel 包。** 独立克隆 `/home/zxw/deepinfer-civilian`（HEAD `774ce244`，含全部 vendor 子模块，16 个全部初始化），独立 conda 环境 `deepinfer-smoke`（Python 3.12.15 + torch 2.13.0+cu129 + gcc 13 来自 conda-forge）。
+
+### 实测结果
+
+1. **堵点 5（架构硬门槛）真机确认**：在 4090 上运行
+   `get_bf16_tflops_limit()` 抛 `RuntimeError: unknown GPU type`（`accelerator_kind=nvidia`、`num_gpus=8`、`is_sm_major_10=False`）。引擎初始化 `llm_engine.py:304` 会在这里停下。
+2. **新增堵点：官方锁定的 torch wheel 与 4090 服务器驱动不匹配**（静态分析未覆盖）：
+   `requirements-nvidia.txt` 锁 `torch==2.13.0+cu132`；服务器驱动 575.57 只到 CUDA 12.9，cu132 wheel 初始化报 `RuntimeError: The NVIDIA driver on your system is too old (found version 12090)`。**改用 `torch==2.13.0+cu129` 后在 4090 上 CUDA 正常**（`capability (8,9)`，matmul 通过）。平民移植时必须下调 torch 的 cu 号，或升级驱动。
+3. **堵点 1/2/3（kernel 包）真机与源码确认**：
+   - FlashMLA：`setup.py` 硬编码 `CUDA_ARCHS = ["sm_100a", "sm_103a"]`；本机编译直接断言失败 `Compiling the kernels requires NVCC 13.1 or higher`。4090 无解。
+   - `deepinfer.engine.llm_engine` 导入即 `ModuleNotFoundError: No module named 'deep_ep'`（`parallel_state.py:4` 顶层 import）。`deep_gemm` 在 `linear.py:3`、`mlp.py:14`、`attn.py:11` 等 10+ 处顶层 import，`deep_select` 在 sampler 顶层 import。
+   - tilelang kernel（`tilelang_ops/`，含 `ops.norm_tl` 等）为运行时 JIT 编译，按目标 SM 生成 PTX，跨架构本身可行，仍需在 4090 上编译。
+4. **csrc C++ 引擎移植可行性验证（本专题新进展）**：`setup.py` 的 `deepinfer._C` 扩展（`csrc/engine/*`、pybind、graph_timer 等 C++/CUDA 源码，**不依赖 Blackwell 特性**）在 4090 上用 **gcc 13（conda-forge）+ CUDA 12.8 + torch cu129** 一次编译通过，`_C.cpython-312-x86_64-linux-gnu.so`（14.8MB）可导入，导出 `cuda_utils / engine / graph_timer`。系统 gcc 11 因缺 `<format>`（C++20）编译失败，需 GCC ≥ 13（与 README 要求一致）。
+5. **环境搭建要点（可复现）**：
+   - 系统 `python3` 为 3.10 且无 pip/ensurepip → 用 miniconda 建 `deepinfer-smoke`（Python 3.12）。
+   - torch cu129 与 cu132 两套 nvidia wheel 混装会导致 `libnvJitLink.so.12` 符号冲突（`__nvJitLinkGetErrorLogSize_12_9`）与 `libcusparseLt/libnccl/libcudnn` 缺失——需卸载 cu13 系并 `--force-reinstall --no-deps` 重装 cu12 系各 wheel。
+   - 运行需设 `LD_LIBRARY_PATH` 包含 torch/lib + `nvidia/*/lib`（**conda 的 nvjitlink 须在系统 `/usr/local/cuda-12.8/lib64` 之前**，否则解析到缺 12_9 符号的旧库）。
+
+### 下一步（移植冒烟第二段）
+
+- 替换 `deep_ep / deep_gemm / deep_select / flash_mla` 四个顶层 import（`parallel_state.py`、`userbuffer.py`、`linear.py`、`mlp.py`、`attn.py`、`sampler.py` 等），用 Triton/Cutlass 替代，放宽 `get_bf16_tflops_limit` 后尝试实例化 LLMEngine。
+- 在 4090 上编译 tilelang kernel（观察 93 个 kernel 的实际编译结果）。
+- 完整 `examples/offline_inference.py` 需要 V4 模型权重与 EP 配置，工程量超出本轮；价值判断（vs 直接用 vLLM）仍待用户确认。
+
 ## 未验证项 / 下一步
 
-- 这些是源码静态分析 + 线上替代方案调研；**未在 4090/A100/H100/910C 上实际编译运行**。
-- 下一步（等待目标硬件后）：
-  1. 建一个最小"移植冒烟"：把 attention_backend/linear/mlp 换成 Triton 版，跑通 `examples/offline_inference.py`。
-  2. 验证 tilelang 93 个 kernel 在目标 SM 能否编译通过。
-  3. 实测 bf16 回退后的正确性（与 Blackwell 输出对比）。
-  4. 结论确认后，作为新章节插入 DeepInfer 研究报告。
+- 其余静态分析部分（昇腾 910C 跨代移植、A100 反量化回退）仍未真机验证；需对应硬件。
+- 完整移植冒烟（替换 kernel 包 + 跑通 `offline_inference.py`）未完成，见上节下一步。
 - 本专题存在一个价值判断待用户确认：DeepInfer 平民版的技术价值 vs 直接用 vLLM/SGLang 跑 DeepSeek-V4（vLLM 已原生支持 MLA + fp8，工程量远小）。**倾向**：若目标是"在普通卡上跑 DeepSeek-V4"，vLLM 是更务实的路径；DeepInfer 平民版的价值主要在"验证 DeepInfer 的 ZOS/EPLB/DSpark 等系统设计能否平移到普通硬件"，属于研究价值而非工程价值。
