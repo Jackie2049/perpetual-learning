@@ -925,3 +925,48 @@ python experiments/scripts/verify_deepinfer_decode_cache.py /path/to/DeepInfer -
 每个原 fixture 都是 `world_size=1`，没有执行作者另述的双 rank smoke test。脚本临时设置 accelerator 为 `nvidia` 只为选择包路径标签、避免硬件发现，不表示本机有 NVIDIA/GPU 支持，也不初始化设备；Gloo 明确绑定本机 loopback。没有安装依赖、模型权重、graph replay 或 GPU/NPU 测试，没有测延迟/吞吐。原 pytest 的预期基线失败与退出码均保留并被核对，不当成修复分支的通过数。
 
 固定缓存源码 SHA256：base `472ff10a43df0e4b5b91becb51b13e651df62ca928032c2752c39df99f40e55e`；#126 `979dcb48771e33c55c3d8a28860abb7d25fb0315ee10a8cfeb68bb4256414568`；#128 `f4c2c1756cfbb3f49e18e6c934acc888830451d7b8c7cbe5c1636b4005badd3a`。源码入口：[缓存读写](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/worker/decode_perf_cache.py)、[profile 调用](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/worker/model_runner.py)、[warmup 顺序](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/worker/base.py)。
+
+## Profiling 请求与服务关闭
+
+运行时 `/profile` 采集和前节 decode 性能曲线缓存是两套机制。前者通过 HTTP 投递请求，由 engine 线程启停 torch profiler，再由 I/O 线程导出 trace；不能用曲线缓存测试认证这条关闭链。
+
+2026-10-21 阅读已有作者 RichealYoung 的 [PR #122](https://github.com/deepseek-ai/DeepInfer/pull/122)，当时 open；base `774ce244b87cc0eb8d4b94ab9f5de2ab22049f01`，head `8c5f5759b53dd7d003927db57af50563cdaa1d37`。基线没有保存 uvicorn server/thread/socket 的关闭句柄，`LLMEngine.close()` 也不清理 manager。作者报告同进程重建 engine 时端口被旧服务占用；本机未复现端口症状。
+
+### 单槽交接不等于单个采集
+
+HTTP 协程先在线程池建目录，再写 `_pending_req` 槽位、置 `_req_ready` 信号。engine 在 `step()` 开始取走请求并清信号，接着用 `Future.set_running_or_notify_cancel()` 争取执行权。排队时槽位满会返回 409；取走后槽位空了，若上一采集仍活跃，另由 `_profiler is not None` 返回 409。这是两层拒绝条件，不是槽位始终占到采集结束。
+
+默认 pickup 等待 30 秒，接手后的宽限期再等 600 秒。`asyncio.wait_for` 超时会取消其包装 Future，但底层 `concurrent.futures.Future` 已进入 running 就不能被 `cancel()` 停掉；相关语义见 [Python wait_for](https://docs.python.org/3.12/library/asyncio-task.html#asyncio.wait_for) 与 [Future 执行权](https://docs.python.org/3.12/library/concurrent.futures.html#concurrent.futures.Future.set_running_or_notify_cancel)。因此同是 503，含义仍不同：
+
+| 所处阶段 | 等待结束后的含义 |
+|---|---|
+| 尚未接手，pickup 超时取消成功 | engine 后续争取执行权失败，不启动该请求 |
+| 已接手，completion 也超时 | HTTP 不再等；采集可以继续，不是停止确认 |
+| #122 中关闭时仍在排队或采集中 | 返回 shutting-down，关闭路径另行停止活动 profiler |
+| 已采完且导出任务已提交 | #122 等任务完成，不一概改成 503；作者测试预期可返回 200 |
+
+`_finish()` 产生 `_PendingTrace` 后，真正提交 `export` 的是 HTTP 协程。completion 超时后没有这个等待者继续提交导出，不等于 profiler 从未运行；也不能把“已产生 trace 结果对象”与“导出已提交/文件已写完”混为一个完成点。
+
+### 关闭先停止接纳再释放资源
+
+[#122 的 manager 实现](https://github.com/deepseek-ai/DeepInfer/blob/8c5f5759b53dd7d003927db57af50563cdaa1d37/deepinfer/engine/profile_server.py)先在 `_request_lock` 下置 `_closed`、取走排队槽位并清信号。HTTP handler 入口检查关闭状态，建目录的 await 之后又在同一锁下检查，避免目录操作期间关闭后重新投递请求。只有 event loop 内没有 await 的连续赋值，不能代替与 engine 关闭线程之间的协调。
+
+随后关闭路径给未取消的排队请求及未完成的采集请求回 503，摘掉并停止活动 profiler；停止异常记日志后继续 HTTP 清理。再设置 uvicorn `should_exit`、join HTTP 线程、关闭 socket、清理句柄，最后 `ThreadPoolExecutor.shutdown(wait=True)` 等已经提交的 I/O 任务完成。这是“拒绝新工作并排空既有工作”，不是清空线程池或取消所有导出；[Python executor 文档](https://docs.python.org/3.12/library/concurrent.futures.html#concurrent.futures.Executor.shutdown)也区分 wait 与 cancel_futures。
+
+`LLMEngine.close()` 新增 manager 清理，位于 stats logger、SO builder 与 worker stop 之前。manager 的 stop 要在启停 profiler 的 engine 线程执行是源码注明的调用契约；该方法没有线程身份断言，不能由幂等标志推出任意线程调用都安全，也不能把 `_closed=True` 当成全部资源已经释放。
+
+`timeout_graceful_shutdown=5` 只传给 uvicorn；随后 `thread.join()` 没有超时，I/O pool 又以 wait=True 排空，profiler.stop 也在此前执行。因此从源码不能推出整个 engine close 最多 5 秒。这里是完成条件的区别，不是本机已复现的死锁或新缺陷。
+
+### 本机验证只覆盖等待协议
+
+[小范围复现](../../experiments/scripts/verify_deepinfer_profile_wait.py)从两版本 AST 选择原始 `_Reply`、`_ProfileRequest` 和未改写的 `_wait`，以真实 asyncio/Future 执行。省略 manager 初始化和模块硬件/HTTP 依赖，延后类型注解；pickup/completion 全局时限缩为 0.01/0.05 秒，仅为控制验证，不测生产时延。
+
+```bash
+python experiments/scripts/verify_deepinfer_profile_wait.py /path/to/DeepInfer
+```
+
+Python 3.12.13。两版本 `_wait` AST 相同，各 4 组控制通过：已完成立即取回、未接手超时后取消、已接手后完成、两段等待都超时后底层 Future 仍 running 且可稍后完成。没有 Future、event loop 或服务替身；没有导入 torch，也没有执行 manager.close、HTTP handler、profiler 或 engine。
+
+作者的 [15 项关闭测试](https://github.com/deepseek-ai/DeepInfer/blob/8c5f5759b53dd7d003927db57af50563cdaa1d37/tests/engine/test_profile_shutdown.py)涉及真实 uvicorn/FastAPI、端口重用与部分真实 CPU profiler；部分异常和线程检查采用测试替身，engine-close 使用轻量对象，作者也注明完整引擎未初始化。本机现有环境缺 FastAPI、uvicorn、pydantic，未安装、未复跑该组测试或启动服务。因此以上 8 组等待控制不是 #122 修复或完整生命周期验收。
+
+SHA256：profile_server.py base `3225a073cbde24d598df2a9bff195574ba6d98bc9fe4a1b0c0a338fcecc54afa`，head `c524b7e7d3ab629f588e2bc2a7e8c61afde2497709c71abbe0e95acb453cc456`；作者测试 `d8ec1f6e5bb9caf3d3134d1f1ee9d348d431c85321ece9741d77888981968da3`。
