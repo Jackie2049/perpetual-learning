@@ -134,7 +134,7 @@
 - [vLLM MLA Backend 源码阅读](frameworks/vllm-mla-backend-reading.md) — FlashMLA/FlashInfer/Triton/Cutlass MLA 后端、压缩数据流、KV Cache 格式、Backend 选择
 - [verl shared-prefix packing](frameworks/verl-shared-prefix-packing.md) — #8300 的 FSDP 分支可见域、首响应标签、等价条件及 38 组原始 CPU 布局检查
 - [verl 量化层审计与 refit](frameworks/verl-quant-layer-audit.md) — #8132三类证据/24项CPU审计单测；与新#8306的格式、存储和保护覆盖对照，不能混用分支证据
-- [verl 新版阶段 tracing](frameworks/verl-async-logprob-provenance.md#新版阶段-tracing-与证据关联) — #8315 rank/actor区间、no-op与指标API能力边界；仅源码/AST，真实同步和显存补证仍交M5
+- [verl 新版阶段 tracing](frameworks/verl-async-logprob-provenance.md#新版阶段-tracing-与证据关联) — #8315原12项日志测试三版本对照，前后head均过但生产lane不同；Mock调用不认证后端显示/真实同步，M5原条目已同步版本
 - [verl 单 worker NIXL 拓扑](frameworks/verl-async-logprob-provenance.md#单-rollout-worker-的-nixl-拓扑) — #8316原函数20组控制及后续新增1原测试隔离对照；worker非replica，测试体通过非原生导入/传输验收
 - [verl 组初始化等待超时](frameworks/verl-async-logprob-provenance.md#组初始化的等待超时与任务退出) — #7045当前控制端head、12组原参数检查；等待上限不等于全链路截止、RPC取消或资源回收，真机条件补M5原条目
 - [DeepInfer SamplingParams 校验](frameworks/deepinfer-initial-survey.md#samplingparams-构造校验与测试组合) — #119/#121独立分支、53项原始CPU测试配对和greedy前校验边界

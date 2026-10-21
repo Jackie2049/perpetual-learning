@@ -12,6 +12,8 @@
 
 ## 运行接续
 
+- **M1 tracing新原测试核对收束（2026-10-22）**：有限核对verl10/DeepInfer6个open PR，发现#8315 head0cea1396，仅比4d6b3eb8新增65行原测试和worker lane整数→rank_字符串；当前目标basef2923cbf/祖先cd58f550。见[原笔记新节](notebook/frameworks/verl-async-logprob-provenance.md#新版原测试与实际接线)/[复查](experiments/verl-rl-insight/readme.md)。原12项日志测试隔离原类/保留Mock客户端：前后head均12过，祖先7过5预期失败；实际原lane表达式int2→str rank_2，说明logger测试不认证生产接线。无真实后端/显示/设备验收，版本补原M5条目不另排队/部署。本题收束；后续有界核对新变化或选未重复CPU数据课题，不继续堆日志替身，GPU/AReaL、#8313待负责人及网站边界不变。
+
 - **M1 prompt cap只读核验收束（2026-10-22）**：有界核对DeepInfer8/verl16个open PR，确认用户账号已有#8313 head80ee82bd/base及祖先954bd28f，非M1本轮创建。原方法两版各24组观察，候选middle在正上限1把10token变11（[-0:]取全列表）；原11项测试缺该边界，本机无OmegaConf/Ray未跑pytest。见[候选新证据](open-source/verl/candidate-8281-agent-loop-shared-cap-vs-truncation.md#当前候选的最小正上限反例)，历史草稿/测试全过说法已限定范围，tracker/索引同步。未改上游PR、用户分支或已有patch/验证脚本，修正与对外review待负责人决定，无GPU/M5新任务。本题收束；后续选其他未重复CPU/源码问题，不自动推进PR修复或重复扩写截断变体，GPU/AReaL和网站边界不变。
 
 - **M1 组初始化等待学习收束（2026-10-22）**：只读#7045 head6f458f6d/目标base3f9d4c0d/祖先220e9039，3文件246增2删；当前无新增worker超时线程，NCCL文件未改。见[原同步笔记](notebook/frameworks/verl-async-logprob-provenance.md#组初始化的等待超时与任务退出)。12组原resolver控制与三模块语法通过；无Ray，未跑原15项/cluster。新预算只包init refs的ray.get，不包prepare/分派/传输，非法值检查也在RPC分派后；无取消/回滚/同组重试。新版真机退出/释放条件补[原M5事项](experiments/handoff-m5.md#verl-异步策略一致性补证)，旧da00403 GPU结果不挪用，不另排队/采用。本题收束；后续有界核对上游变化再选未重复CPU/数据问题，不继续扩写等待替身，GPU/AReaL及网站边界不变。

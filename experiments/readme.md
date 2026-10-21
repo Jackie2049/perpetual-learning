@@ -10,6 +10,7 @@
 | [deepinfer-close/](deepinfer-close/readme.md) | #175原关闭方法与13项原测试的隔离控制流对照，资源为Mock | [关闭失败与一次性标志](../notebook/frameworks/deepinfer-initial-survey.md#关闭失败后的独立清理与一次性标志) |
 | [deepinfer-pool-generations/](deepinfer-pool-generations/readme.md) | #187原9测试的真实CPU共享存储/fork对照，另1项保留视图控制；pin/unpin为no-op | [分配身份与视图寿命](../notebook/frameworks/deepinfer-initial-survey.md#共享池句柄的分配身份与视图寿命) |
 | [verl-ct-fallback/](verl-ct-fallback/readme.md) | #8311原172项CPU测试的隔离对照；原合成tokenizer/processor，不下载模型 | [新版选择与回退](../notebook/frameworks/verl-6779-continuous-token-agentic-rollout-reading.md#11-新版自动选择与-tokenizer-能力回退) |
+| [verl-rl-insight/](verl-rl-insight/readme.md) | #8315原12项日志测试三版本隔离对照，原Mock客户端；另核实际worker lane表达式 | [日志测试与真实接线](../notebook/frameworks/verl-async-logprob-provenance.md#新版原测试与实际接线) |
 | [verl-nixl-topology/](verl-nixl-topology/readme.md) | #8316两版各20组CPU控制及后续1原测试隔离对照；无原生导入/传输 | [单worker拓扑](../notebook/frameworks/verl-async-logprob-provenance.md#单-rollout-worker-的-nixl-拓扑) |
 | [kernels/fused_rms_norm/](kernels/fused_rms_norm/) | Fused RMSNorm CUDA/C++ 实现、Python 接口、测试及基准 | [算子实验记录](../notebook/experiments/rtx4090-fused-rmsnorm-cuda.md) |
 | [scripts/](scripts/readme.md) | GPU 实验、故障复现及贡献验证脚本 | [GRPO 排错](../notebook/grpo-training-debugging-guide.md) |

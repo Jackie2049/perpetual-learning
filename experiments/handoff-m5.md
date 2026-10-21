@@ -72,6 +72,8 @@ M1 已撤回确定因果诊断。已有数值、路由与异常控制未运行�
 
 若已有获准的匹配观测环境，可先固定verl/rl-insight实际提交、包路径、版本及metric_log callable分派，核对rank/actor lane与同步step关联、是否实际执行/异常，并保留独立显存与安装证据。缺后端、需要新增数据外发或会改变原报告环境时先记待条件；不为这项参考自动升级环境、部署服务、重跑长训练或上传私有payload，阶段图不能替代下述配对观测。
 
+2026-10-22版本补充（同一参考不另排队）：#8315当前head `0cea139623cc8913d2241d21223df5682474041c`、目标basef2923cbf/祖先cd58f550，仅比前head新增65行CPU测试及worker lane整数→rank_字符串。M1隔离原类/原12项日志测试：前后head均12过，祖先7过5预期失败；另核原生产lambda为int2→str rank_2。客户端为原Mock，未跑真实后端/接收/时间线查询；已有原测试不能认证生产接线或GPU同步。若M5原条件满足且独立选用，按实际head核lane类型、step及后端接收/显示，仍不新增监控部署或实验任务，也不把通过Mock测试当#8250根因证据。
+
 可选NIXL拓扑参考（同一事项，不另排队）：[#8316](https://github.com/verl-project/verl/pull/8316)，2026-10-21读取open，head `3a60b8710f8e1001110820f7a14cd0e71d9d5e07`、目标basef2923cbf/祖先619c397d。[M1原拓扑及纯断言检查](../notebook/frameworks/verl-async-logprob-provenance.md#单-rollout-worker-的-nixl-拓扑)每版20组：旧R=1长度失败、候选全过，未prepare/注册/连接/传输。只有已有获准观测实际选择NIXL且恰为单rollout checkpoint worker时，M5独立决定是否核对此候选，先固定安装版本、backend、actor/rollout worker数和metadata顺序，再分开记录建组、传输、应用及恢复点；并非一个replica就必为R=1。不为此新建网络/下载模型、强制改backend或重跑训练，缺匹配资源就记未测；没有证据表明#8250使用该backend或由此导致。
 
 版本补充：#8316后续head `c2d800e71cdc4c7295b1e12e60bad82dd2fb637b`只新增1项原CPU测试，实现未变。M1隔离运行原测试体：基线失败、新版通过；没有原生导入/pytest收集或NIXL传输验收。无需另开资源任务，后续若选用仍以当时实际head和上述条件为准。

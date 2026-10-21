@@ -108,7 +108,7 @@
 - [verl 训练与 rollout 的量化层审计](verl-quant-layer-audit.md) — #8132审计/24项CPU单测及新#8306 refit覆盖对照；loader/marker与测试证据不可混用，真机待M5。
 
 - [verl 异步训练策略版本与 logprob 对照条件](verl-async-logprob-provenance.md) — V1 separate-async的rollout/old/current来源、CPU快照路由、版本标签边界和最小观测契约；非训练根因证明
-- [verl 新版同步阶段 tracing](verl-async-logprob-provenance.md#新版阶段-tracing-与证据关联) — #8315区间不等于成功/设备完成；no-op、sender完成与API能力分派，真机补原M5条目。
+- [verl 新版同步阶段 tracing](verl-async-logprob-provenance.md#新版阶段-tracing-与证据关联) — #8315新head原12项日志测试与实际lane表达式对照；helper通过不认证生产接线/后端显示，保留no-op和真实同步边界。
 - [verl 单 worker NIXL 拓扑](verl-async-logprob-provenance.md#单-rollout-worker-的-nixl-拓扑) — #8316两版各20组控制，后续head补1原测试并隔离对照；on_cpu不保证无原生导入依赖，非同步验收。
 - [verl Full Model Prefix Sharing 旧 RFC 已撤回](verl-6401-rfc-full-model-ps.md)
 - [verl #6468: FSDP2 CPU Memory Leak During Weight Sync — Deep Reading](verl-6468-fsdp2-cpu-memory-leak-reading.md)

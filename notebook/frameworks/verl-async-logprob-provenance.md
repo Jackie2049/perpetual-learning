@@ -150,13 +150,15 @@ python3 experiments/scripts/verify_verl_logprob_provenance.py /path/to/verl-8250
 
 2026-10-21 读取已有 [verl #8315](https://github.com/verl-project/verl/pull/8315)，open、作者mengchengTang，head `4d6b3eb8606e24c1d70d648e92a1114129ec6c62`、目标base `619c397dc9917fed278b6e47c52a6620aef05466`、共同祖先 `cd58f550fb1c4f5a3fe29da38e6f0002ec462fd3`。这是新版观测入口，不是前文1876b06d报告环境已有的能力，也不是#8250修复。**阶段被记录，不能单独证明阶段成功、设备完成或参数内容一致。**
 
+**2026-10-22版本更新**：PR仍open，head已到 `0cea139623cc8913d2241d21223df5682474041c`，目标base `f2923cbf154731918b1e36db8c567433f349fede`，共同祖先不变。相对前head仅新增65行原CPU测试、将update_weight实际lane改为字符串；tracking/两个server实现未变。当前真正PR为5文件138增4删，下方首轮“无新增测试”只描述旧head。新增实跑范围见[新版原测试与实际接线](#新版原测试与实际接线)。
+
 ### 区间究竟包住什么
 
 [trace_state_decorator](https://github.com/verl-project/verl/blob/4d6b3eb8606e24c1d70d648e92a1114129ec6c62/verl/utils/tracking.py)只接受async方法；调用时先检查 `VERL_RL_INSIGHT_ENABLE == "1"`，关闭时直接await原方法，开启时计算lane并在trace_state上下文内await整个方法。它没有向context传递method参数、global_steps、request身份、权重hash或返回值。异常状态如何呈现还取决于实际rl-insight后端，不能只凭这个wrapper断言成功或失败标签完整。
 
 | 新状态 | lane与覆盖范围 | 不能单独证明 |
 |---|---|---|
-| update_weight | 每训练rank的self.rank；位于register内层，包住worker方法 | controller提交/排队总时延、所有receiver安装完成、全rank一致 |
+| update_weight | 旧head为self.rank整数，当前为rank_加rank的字符串；位于register内层，包住worker方法 | controller提交/排队总时延、所有receiver安装完成、全rank一致 |
 | vLLM/SGLang的wake_up、sleep | Ray actor name，与生成阶段使用相同actor lane | 真正发生了内存操作；方法内仍可提前返回或跳过某种mode |
 | clear/release/resume_kv_cache | 同一server lane，包住原异步方法 | cache代次一致、实际释放字节数、模型参数已应用 |
 
@@ -172,7 +174,7 @@ python3 experiments/scripts/verify_verl_logprob_provenance.py /path/to/verl-8250
 
 ### 本轮核验与真机接续
 
-共同祖先PR diff只有4文件、73增4删，没有新增配套测试。M1完整读取新增wrapper/标量分派、11处接线及对应原方法；Python3.9.6下4份完整源码AST解析和内存compile通过。另将两版方法的装饰器列表清空后比较AST，11个async方法的参数/函数体/返回注解与共同祖先相同，并核对每项新增一个装饰器。没有exec这些源码、导入verl/Ray/torch/rl-insight，既有CPU测试也未复跑；不将语法或AST一致性称为运行版本兼容、集成或性能验收。
+首轮4d6b3eb8相对共同祖先的PR diff只有4文件、73增4删，没有新增配套测试。M1完整读取新增wrapper/标量分派、11处接线及对应原方法；Python3.9.6下4份完整源码AST解析和内存compile通过。另将两版方法的装饰器列表清空后比较AST，11个async方法的参数/函数体/返回注解与共同祖先相同，并核对每项新增一个装饰器。首轮没有exec这些源码或复跑CPU测试；这段仅保留旧版本静态核验范围，当前测试结果如下。
 
 复查对象为tracking.py、engine_workers.py和两份async server。可用 `git diff cd58f550...4d6b3eb8 -- <四文件>` 定位变更；以 `git show <head>:<path>` 获取字节，ast.parse后compile但不exec。比较11方法时只清decorator_list，再对ast.dump(include_attributes=False)核相等，不移除或改写函数体。SHA256依次为：
 
@@ -182,6 +184,24 @@ python3 experiments/scripts/verify_verl_logprob_provenance.py /path/to/verl-8250
 - async_sglang_server.py：`57729bfebce2507fb271e28cc5c7cd4073afb8a5ecc31ec87b8815a4c8b9c354`
 
 涉及真实权重/显存/生成的后续检查已补入[原M5补证条目](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不另开任务或默认采用PR。保留分支/配置、rank/actor与step关联、异常/no-op标记及独立显存/安装证据；若缺获准监控环境或要新增数据外发，先记录条件，不启动服务或改变原报告版本。M1没有访问服务器，也没有新的连接失败实测。
+
+### 新版原测试与实际接线
+
+当前[原日志测试文件](https://github.com/verl-project/verl/blob/0cea139623cc8913d2241d21223df5682474041c/tests/utils/test_rl_insight_logger_on_cpu.py)共有12项，新增5项覆盖带step的metric_log，以及async decorator的动态lane、固定lane、关闭时不求lane、拒绝sync函数。Mock客户端把metric_log显式设None，再按测试启用MagicMock，避免“属性不存在但Mock自动生成callable”的假能力判断。
+
+[三版本复查](../../experiments/verl-rl-insight/readme.md)在Python3.12.13/pytest8.4.2下，完整原RLInsightLogger/RolloutTraceConfig类经AST隔离执行，完整原测试模块保留fixture/断言；跳过的是包根、tracking其余后端与无关依赖导入。客户端为原测试MagicMock，没有运行rl-insight、Ray、服务或设备。
+
+| 实现版本配当前原测试 | 结果 | 实际worker的lane（rank=2） |
+|---|---|---|
+| 祖先cd58f550 | 7过、5预期失败 | 尚无本decorator |
+| 前head4d6b3eb8 | 12过 | 整数2 |
+| 当前head0cea1396 | 12过 | 字符串rank_2 |
+
+原测试中的Worker自行定义字符串lambda，因此即使生产接线仍传整数，logger suite也能全过。另直接执行两份engine_workers中**原lane表达式**得到上表差异，没有构造worker或执行update_weights。作者说明时间线查询需要非空字符串，当前接线与此约定相符；本机没有执行真实后端查询，不能把这项源码检查说成时间线显示已修好。
+
+这区分了三层：helper正确处理传入lane、生产调用点传入正确身份、后端接收/关联/显示该身份。12项测试只验证前一层和Mock API调用。已有16协程lazy-init例也仅在同一事件循环内计数，不能外推跨线程/进程安全。旧“区间可含no-op、sender返回非receiver完成、开启监控可能改变异常路径”的边界保持不变；新增测试不使它变成真实同步或GPU验收。
+
+当前tracking SHA256仍为上列`c22afac0…`；engine_workers为 `7166ff29e71eb101031ce88aa22feb32f0d960a5e795af0e8116f37aff757ec1`，原测试为 `874a695c536517254d666dc5b42a7309993a7f86d33e654ec7fbf66c6de58cf3`。详细命令、原类隔离方式、输入hash及首次网络审计误伤asyncio本地socketpair后的修正见[实验记录](../../experiments/verl-rl-insight/readme.md)。原M5条目只同步新版/验证范围，不另开任务或默认部署监控。
 
 ## 单 rollout worker 的 NIXL 拓扑
 
