@@ -26,6 +26,8 @@ M1 已有的[发现层 CPU 检查](../notebook/frameworks/deepinfer-initial-surv
 
 构建/安装身份参考（不另起移植任务）：已有 [#159](https://github.com/deepseek-ai/DeepInfer/pull/159)，2026-10-21读取open，base `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`、head `80c73344ce880ec39ddda475decd3c9f488df2d3`，隔离本次wheel并按精确路径强制重装。M1只做[源码/语法与版本排序核对](../notebook/frameworks/deepinfer-initial-survey.md#vendor-wheel-的本次产物与安装身份)，未复跑作者8项安装测试或原生编译；不自动应用补丁。M5在既有获准操作需要安装时，可独立核对子模块提交、工具链、wheel文件/hash、解释器及import路径；产物身份不解决硬件/ABI堵点，构建阶段失败保护也不代表pip失败可整体回滚。
 
+参数参考（同一条目，不新增实验或前置条件）：已有[#184](https://github.com/deepseek-ai/DeepInfer/pull/184)，2026-10-21读取open，head `0e80d7c835ab1f022b1e3949414aebfa5ee1dc14`、base `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`。M1仅做[20组原表达式/环境读取观察](../notebook/frameworks/deepinfer-initial-survey.md#lookahead-与-draft-长度的不同入口)：旧lookahead=1不表示Worker/DFlash nextn也为1；改为环境值还改变prefill最低工作量/准入门槛。若M5日后独立选用该候选且已有获准的匹配引擎环境，可固定nextn，分开记录有效CacheConfig.lookahead、Worker/DFlash nextn、最终prefill q及实际draft/接受数量，关注短prompt/剩余chunk/checkpoint尾部低于lookahead的实际处理。不自动应用、重启或下载权重，不强加测试矩阵；条件不符则注明未测，不代表M5已接单或候选已验收。
+
 M5 最小下一步：先按实际硬件查已有方案和精确 head，读清依赖、权重格式、显存及其原始测试入口；核对通过后只选一个可隔离、可停止的小范围兼容检查，再决定是否具备 offline inference 条件。保留初始失败点与配置；不要直接按旧专题的“换三个包/放宽检查”当成已验证操作，也不要先覆盖已有环境。
 
 停止条件：没有匹配硬件、内存/数据预算不成立、测试入口不明确或需扩大范围时，记录原因和下一项缺口，不自动下载巨量权重、改写移植方案或进行长时间编译。完成标准是目标配置下可复现的实测记录或明确阻塞，不是必须产出性能数字。

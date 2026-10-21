@@ -12,6 +12,8 @@
 
 ## 运行接续
 
+- **M1 lookahead入口学习收束（2026-10-21）**：只读已有#184 head0e80d7c/base9bd9cf2，2示例原关键字表达式/原envs共20组观察符合预期；旧lookahead=1与nextn=5并存，不能称实际draft被限1。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#lookahead-与-draft-长度的不同入口)。候选还改变prefill最低工作量/准入门槛，未运行Scheduler/模型或验证可达性/性能；可选边界补入[原M5条目](experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)，不另起实验、应用补丁或改移植方案。本题收束，后续有界核对上游再选未重复CPU/源码问题，不以替身代替真实调度证据；GPU/AReaL和网站边界不变。
+
 - **M1 新版阶段tracing学习收束（2026-10-21）**：有界核对DeepInfer最近10个/verl6个open PR，转读#8315 head4d6b3eb/base619c397d（merge-basecd58f550）。4文件AST/内存compile、11方法去新增decorator后AST一致；未跑logger/原测试/engine。见[笔记](notebook/frameworks/verl-async-logprob-provenance.md#新版阶段-tracing-与证据关联)。区间可含no-op，sender结束非receiver安装/显存字节证明，metric_log按callable分派而非容错；rl-insight#206读取已merge非安装能力证明。真实同步/设备条件补入[原M5条目](experiments/handoff-m5.md#verl-异步策略一致性补证)，不另开实验/默认采用/改#8250方案。本题收束，后续可只读DeepInfer新#184 draft长度环境变量生效/记录一致性，不启动推理；GPU/AReaL和网站边界不变。
 
 - **M1 模型路径入口收束（2026-10-21）**：只读已有#182 heada9baf680/base9bd9cf2。AST选原resolver/常量，两版各12组真实临时目录/SDK导入拦截观察符合预期，候选另1组合成缺包控制通过。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#模型路径选择与下载来源)。新非空覆盖优先/空串回退；非目录进入Hub分支，config存在非checkpoint完整；正值白名单不同于#177。无SDK/下载/缓存/模型/硬件执行，不新增M5任务。本题收束，后续有界核对上游后选未重复CPU/源码问题，不继续堆下载替身或干预M5移植；GPU/AReaL和网站边界不变。

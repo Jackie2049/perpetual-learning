@@ -399,6 +399,7 @@
 - [DeepInfer 关闭错误处理](deepinfer-initial-survey.md#关闭失败后的独立清理与一次性标志)：#175原方法隔离base3过10预期失败/fix13过，1真实进程用例未跑；非资源释放证明。
 - [DeepInfer AIME 规则评分](deepinfer-initial-survey.md#aime-思考区与规则评分)：#178原21测试含3项真实CLI，字面思考分界/原raw保留与默认LLM判分分开。
 - [DeepInfer 模型路径入口](deepinfer-initial-survey.md#模型路径选择与下载来源)：#182本地路径/新旧环境变量优先级与Hub导入路由；非真实下载、缓存或模型验证。
+- [DeepInfer lookahead 与 draft 入口](deepinfer-initial-survey.md#lookahead-与-draft-长度的不同入口)：#184原表达式/环境20组观察；独立nextn链与prefill门槛，非真实调度或推理验收。
 - [DeepInfer 架构源码调研（2026-10-20 综合精读）](deepinfer-architecture-reading.md)：调度器/引擎、模型执行器、NPU/分布式/入口三路精读
 - [DeepSeek 开源生态活跃度与 PR 采纳调研（2026-10-20）](deepseek-ecosystem-pr-adoption.md)
 - [MindIE / vLLM-Ascend Ecosystem Deep Research](mindie-vllm-ascend-ecosystem-deep-research.md)

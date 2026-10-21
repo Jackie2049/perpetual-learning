@@ -1498,3 +1498,37 @@ Python3.12.13，两版原函数各执行12组路径/路由观察。AST只选原D
 路由guard使用sys.meta_path在huggingface_hub/modelscope导入时抛自定义异常，从未提供snapshot_download替身或假下载返回路径；另用audit hook禁止socket操作。候选缺依赖一例改抛ModuleNotFoundError，核原函数生成的ImportError消息/cause。两版各12组全部符合预期，候选另1组缺依赖控制通过；不称原作者测试或SDK集成验证。最终确认torch/deepinfer/deep_cluster及两下载SDK均未导入。
 
 SHA256：完整_config.py base `a671d83fa5becac257722e67facec2f33743a1263e0b2e6355dcdb00984f4f42`、候选 `a6e4e482ff0620f212378b7990e4055a400780cba2798b3859cd049d5646a4ea`。本题是路径契约学习，无真实下载/缓存/模型/设备结果，不新增M5真机任务，不竞争作者实现或向上游发言。
+
+## Lookahead 与 draft 长度的不同入口
+
+2026-10-21 只读核对已有 [#184](https://github.com/deepseek-ai/DeepInfer/pull/184)，读取时open、作者akauncle；head `0e80d7c835ab1f022b1e3949414aebfa5ee1dc14`，base/共同祖先 `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`。只改两个示例各一行，无新增测试。作者将问题描述为draft长度被限1；源码证据只足以确认 **lookahead参数被限1，不能据此说实际draft上限也是1**。
+
+### 同一环境值的两条消费链
+
+[offline_inference.py](https://github.com/deepseek-ai/DeepInfer/blob/0e80d7c835ab1f022b1e3949414aebfa5ee1dc14/examples/offline_inference.py)与[benchmark.py](https://github.com/deepseek-ai/DeepInfer/blob/0e80d7c835ab1f022b1e3949414aebfa5ee1dc14/examples/benchmark.py)将 `min(1, int(os.getenv("DEEPINFER_USE_NEXTN_DECODE", "5")))` 改为不取min的int读取。该值经EngineArgs、CacheConfig传给C++ Scheduler的lookahead_tokens字段。
+
+另一条链独立读取同名环境变量：Worker/ModelRunner的nextn、DFlash的max_MTP_value，以及[C++ get_nextn_from_env](https://github.com/deepseek-ai/DeepInfer/blob/0e80d7c835ab1f022b1e3949414aebfa5ee1dc14/csrc/engine/utils.hpp)（默认5）。[Scheduler](https://github.com/deepseek-ai/DeepInfer/blob/0e80d7c835ab1f022b1e3949414aebfa5ee1dc14/csrc/engine/scheduler.hpp)另设nextn=max(0, env读取)，decode的max_seqlen_q使用nextn+1；[DFlash](https://github.com/deepseek-ai/DeepInfer/blob/0e80d7c835ab1f022b1e3949414aebfa5ee1dc14/deepinfer/model_executor/models/mtp/dflash.py)用max_MTP_value设置block大小及draft循环。PR未修改这些消费者，不能将lookahead与nextn混为一项配置。
+
+Python3.12.13下，AST原样选取每个示例create_llm调用的lookahead_tokens表达式，只提供os执行；另原样加载两版完全相同的environ.py，不执行包初始化，逐次rearm后读原envs。2版本×2文件×5输入共 **20组表达式/环境观察** 符合预期（两文件结果相同）：
+
+| 环境值 | base lookahead | 候选 lookahead | 两版原envs nextn |
+|---|---:|---:|---:|
+| 未设置 | 1 | 5 | 5 |
+| 0 | 0 | 0 | 0 |
+| 1 | 1 | 1 | 1 |
+| 3 | 1 | 3 | 3 |
+| 5 | 1 | 5 | 5 |
+
+这是本轮自建有限输入控制，不是20项作者测试，也没有执行Worker、DFlash或C++读取器。特别是旧示例的lookahead=1与环境nextn=5可同时存在；benchmark记录nextn=5本身不构成记录错误，因为两者语义不同。实际生成、验证、接受与提交长度仍须分别观测，参见[既有MTP计数边界](#mtp验证与缓存提交的计数边界)。
+
+### 改变的是哪些门槛
+
+Scheduler prefill路径在非prefix hit分支断言 `cache.num_tokens == 0 || cache.num_tokens >= lookahead_tokens`、`seq_workload >= lookahead_tokens`；chunk/checkpoint/图片调整后，若 `seqlen_q < max(lookahead_tokens, 1)` 则break。因此把1改5还会收紧最低工作量/调度准入，而非单纯设置draft数量。
+
+例如对假设的seq_workload=2，>=1与>=5的谓词结果不同；这只是源码条件推理，**不是已构造可达的真实Scheduler失败、挂起或性能回退**。短prompt、剩余chunk或checkpoint尾部能否走到该条件、如何继续，仍须按完整引擎配置判断。现有test_batch_invariant/test_kl/test_sampler模型测试仍传min(1, case.use_nextn_decode)，PR未改它们，本机也未运行；不能用它们认证候选安全或旧策略正确。
+
+### 复查与未测范围
+
+固定Git对象以GIT_NO_LAZY_FETCH=1读取，AST只执行原关键字表达式，原environ.py完整compile/exec于独立ModuleType；没有create_llm、调度器、模型或设备替身。检查确认torch/deepinfer/deep_cluster未导入；四份消费者scheduler.hpp/utils.hpp/worker.py/dflash.py在base/head逐字相同。未安装依赖、启动引擎、编译扩展或做吞吐测试。真实边界只作为[原M5条目的可选参考](../../experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)，不另起任务、自动采用或改变移植方案。
+
+输入SHA256（完整示例文件）：offline base `7392a46c7b5c4cc6d0b47d6a818c4be79f12e95a015d14243a9023af2a95ca88`、head `412a2202b16e1c8a4732dd69cb8f1abad7a90a062edaef9f4a960fe704d82817`；benchmark base `a4e0b114b4173b9d2124cdabfedc54d3dd5cd81d269d7054c48f9bac780eb9f2`、head `1d893f8afd58d9f5a2698bf7ac24fefd73d6c8d3480de0eb54802bbfb384aa76`。未变scheduler.hpp `c14de4d5341170227b82ddf2d146d9c6a337937885a6886237aab5a7238da5db`；dflash.py `12ebfb9c793062844d40e0fab17164d5365d965c318f8b9f0f4adf51b3afb684`。
