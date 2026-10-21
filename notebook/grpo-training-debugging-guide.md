@@ -11,7 +11,7 @@
 ```
 GRPO Training Issue → Which symptom?
 
-1. Loss = 0, no learning         → Section 2 (REINFORCE degeneration)
+1. Loss/advantages near zero     → Section 2 (grouped rewards and actual updates)
 2. NaN in loss/advantages         → Section 3 (NaN diagnosis)
 3. Loss spikes wildly             → Section 4 (gradient explosion)
 4. Responses never end (no EOS)   → Section 5 (EOS token bug)
@@ -23,7 +23,7 @@ GRPO Training Issue → Which symptom?
 
 ---
 
-## 2. Loss = 0, No Learning (REINFORCE Degeneration)
+## 2. Loss Values and Zero Advantages
 
 ### Symptoms
 - Loss stays at 0.0 throughout training
@@ -32,30 +32,31 @@ GRPO Training Issue → Which symptom?
 
 ### Root Cause
 ```
-group_size = 1 (or all rewards in group identical)
-→ σ_G = 0 → A = (R - μ)/0 → fallback: A = 0
-→ No learning signal → model doesn't change
+For a multi-sample group (n >= 2), identical finite outcome scores
+→ centered scores = 0 → A = 0 / (0 + epsilon) = 0
+→ that group's GRPO policy-gradient advantage is zero
+
+Singleton groups are a separate implementation case, not the same condition.
 ```
 
 ### Diagnosis
 ```python
 # Check: print advantage statistics
 print(f"advantages mean={advantages.mean()}, std={advantages.std()}")
-# If std=0 → degeneration!
+# std=0 alone is insufficient: a constant nonzero advantage also has zero std.
 print(f"group_size={len(rewards_per_group)}")
-# If gs=1 → REINFORCE degeneration
+# Check actual UID counts and reward/advantage values before diagnosing.
 ```
 
 ### Fix
 ```
-★★★ MUST: group_size ≥ 4 for GRPO (≥ 8 for MoE)
-★★★ MUST: shaped rewards (not flat outcome rewards) → reward variance within groups
-★★★ MUST: NEVER set group_size = 1
-
-If you must use gs=1:
-  → Use REINFORCE (A=R) instead of GRPO → but high variance!
-  → Better: use REINFORCE++BL (A=R-μ) with gs≥2
+Inspect groups with n >= 2: are their total rewards actually distinguishable?
+Check reward parsing, UID grouping and response masks before changing rollout.n.
+Choose sampling count/reward design against the task and budget, not a universal
+"n >= 4" or "MoE n >= 8" rule derived from this implementation.
 ```
+
+2026-10-22 更正：固定verl `1876b06d` 的loop/vectorized GRPO都把singleton设为mean=0、std=1。默认标准化时优势为 `score/(1+epsilon)`，关闭std归一化时为score，再按response_mask广播；不是自动归零，也不发生该分支的除零。原4组等价性测试及12组双实现CPU对照见[源码证据](frameworks/verl-grpo-core-algos-reading.md#单样本与同分组的不同回退)。旧“NEVER n=1、n≥4/8是硬门槛”的结论撤回。是否能有效学习仍需任务/训练证据，非零优势或loss标量为零都不能单独判定参数是否更新。
 
 ---
 
@@ -81,9 +82,10 @@ If you must use gs=1:
    → Multi-stream race → stale data → NaN
    → Fix: overlap_comm = False for dp=1
 
-4. Zero variance in GRPO (★ same as Section 2)
-   → σ=0 → division by zero → NaN
-   → Fix: group_size ≥ 4
+4. Check group statistics and non-finite inputs (see Section 2)
+   → default GRPO uses epsilon and explicit singleton fallback
+   → equal finite rewards in an n>=2 group give zero advantage, not automatic NaN
+   → inspect the first non-finite value and actual estimator before changing group size
 
 5. FP16 model dtype (★ overflow in activations)
    → BF16 range = FP32 range, FP16 range = [-65504, 65504]
@@ -111,7 +113,7 @@ if math.isnan(loss_val):
 2. gradient_clipping = 1.0 (prevents gradient explosion)
 3. overlap_comm = False (prevents stream race)
 4. bf16 model dtype (prevents activation overflow)
-5. group_size ≥ 4 (prevents σ=0 degeneration)
+5. Validate UID/reward/mask statistics; group size alone is not a universal NaN fix
 ```
 
 ---
@@ -350,7 +352,7 @@ compute-sanitizer --tool memcheck python train.py
 4. Shaped rewards (★★★★★ Not flat outcome rewards)
    → Per-token or per-feature rewards → more granular signal
 
-5. group_size ≥ 8 (★★★★★★★★ More samples → better group statistics)
+5. Choose rollout.n against reward statistics and sampling budget; no universal threshold is established here
 ```
 
 ---
@@ -359,7 +361,7 @@ compute-sanitizer --tool memcheck python train.py
 
 ```
 Before training:
-  ★ group_size ≥ 4 (≥ 8 for MoE)
+  ★ Check UID counts, reward differences and masks; no universal group_size>=4/8 requirement (Section 2)
   ★ gradient_clipping = 1.0 (NOT 0.0!)
   ★ overlap_comm = False
   ★ ZeRO-2 + cpu_adam (NOT ZeRO-3)

@@ -165,26 +165,9 @@ Policy loss:
 
 ## 8. RTX 4090 GRPO Advantage Recommendation
 
-### Primary: GRPO (group_size ≥ 8)
-- Bounded magnitude → safe for single GPU training
-- No self-bias → correct gradient direction
-- Group normalization → natural ranking-based learning
+2026-10-22 更正：本节旧的固定采样数推荐及“gs=1必退化、无学习信号”规则撤回，不再作为4090或MoE的通用配置依据。[固定verl的CPU证据](frameworks/verl-grpo-core-algos-reading.md#单样本与同分组的不同回退)表明，loop/vectorized GRPO对singleton采用mean=0/std=1，而非自动中心化归零；默认优势约为原reward，多样本同分组才为零。
 
-### Secondary: RLOO (group_size ≥ 4)
-- Preserves reward magnitude → more gradient signal
-- Leave-one-out → no self-bias
-- Good when reward scale varies significantly across tasks
-
-### Avoid:
-- REINFORCE (gs=1): degeneration, no learning signal
-- REINFORCE++BL with gs=1: A=0 always (mean=R for single trajectory)
-
-### Key rule:
-```
-★★★★★★★★ ALWAYS use group_size ≥ 4 for GRPO
-★★★★★★★★ ALWAYS use group_size ≥ 8 for MoE models (more variance in rewards)
-★★★★★★★★ NEVER set group_size = 1 (REINFORCE degeneration)
-```
+本轮没有训练对比，不能由局部非零优势推断收敛、质量、方差优劣或推荐rollout.n；也没有重新验证RLOO/RF++baseline或其他框架的全部边界。选择估计器与采样数应结合实际实现、组奖励差异、预算和训练证据，不把理论简式等同于实现的所有分支。
 
 ---
 

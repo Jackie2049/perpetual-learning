@@ -58,7 +58,7 @@ def compute_grpo_outcome_advantage(token_level_rewards, response_mask, index, ..
 ```
 
 **关键细节**:
-- 单样本group(len=1): μ=0, σ=1 → advantage=score本身 → 无group normalization
+- 单样本group(len=1): μ=0、σ=1；默认advantage=score/(1+epsilon)，关闭std归一化为score，见[两实现CPU核对](verl-grpo-core-algos-reading.md#单样本与同分组的不同回退)
 - outcome reward = token_level_rewards.sum(dim=-1) → 只关心最终结果,不是per-token
 - advantage broadcast: 每个token获得相同advantage → 乘response_mask
 

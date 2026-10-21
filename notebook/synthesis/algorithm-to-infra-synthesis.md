@@ -37,7 +37,9 @@ $$\text{Mathematical Theory} \xrightarrow{\text{implementation}} \text{Framework
 | **Score function trick** | $\nabla J = \mathbb{E}[r \cdot \nabla \log \pi]$ | All frameworks compute log_probs | rLLM #663 Step.output was None → ALL rewards=0.0 | MUST verify reward computation not silently zero |
 | **CPPO position-weighted trust** | $\text{clip}(r_i, 1-\epsilon \cdot w_t)$ where $w_t$ decreases with position | verl #6731 CPPO implementation | CPPO prevents prefix drift | CPPO+bypass = RTX 4090 #1 BEST training approach |
 | **Gradient clipping** | $\|\nabla\|_2 \leq C$ — prevents gradient explosion | DeepSpeed #8068 gradient_clipping default | Default 0→1.0 → MUST set explicitly! | ALWAYS set gradient_clipping: 1.0 |
-| **Group size** | Must have ≥2 samples per group for normalization | rLLM #605 groups by trajectory.uid | Group size 1 → σ=0 → division by zero → BROKEN | MUST verify group_size ≥ 2 per prompt |
+| **Group size** | Within-group comparison needs multiple samples; singleton behavior depends on fallback | Verify the selected estimator and UID counts | Do not infer division by zero from n=1 alone; fixed verl has mean=0/std=1 fallback | [Check versioned singleton evidence](../frameworks/verl-grpo-core-algos-reading.md#单样本与同分组的不同回退) before diagnosing |
+
+2026-10-22 范围纠正：上表旧“group size 1必除零/BROKEN”的通用推断撤回。verl `1876b06d` 的loop/vectorized均保留近似原reward的singleton优势；不能用未带epsilon/fallback的简式直接定性实现。rLLM等历史案例需各自版本证据，本轮未重新复核，也未证明通用采样数门槛或训练收益。
 
 ★★★★★★★★★ **Key insight**: GRPO's mathematical requirements (group normalization, reference KL, gradient clipping) create EXACT specifications for what framework implementations MUST provide. When implementations deviate from the math → bugs.
 

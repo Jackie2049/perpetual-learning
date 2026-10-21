@@ -55,7 +55,7 @@ advantages = scores.unsqueeze(-1) * response_mask
 **关键设计决策**:
 1. **Outcome-only**: `scores = rewards.sum()` → 只看最终reward, 不区分哪个token贡献
 2. **组归一化**: `(r_i - μ_group) / σ_group` → 同prompt的n个response互为baseline
-3. **单样本组特殊处理**: `len(id2score)==1 → mean=0, std=1` → 单样本时advantage=原reward
+3. **单样本组特殊处理**: `len(id2score[idx])==1 → mean=0, std=1`；默认优势为score/(1+epsilon)，关闭std归一化为score，不是自动归零，见下节
 4. **Dr.GRPO选项**: `norm_adv_by_std_in_grpo=False` → 不除std → 更保守(防止过度归一化)
 
 ### 3. GRPO_VECTORIZED (行334)
@@ -67,7 +67,35 @@ mean_g, std_g, _ = group_mean_std(scores, g, eps=0.0)
 scalars = (scores - mean_g[g]) / (std_g[g] + epsilon)
 ```
 
-**优化**: Python循环→torch向量操作 → 大batch显著加速
+**实现变化**：Python循环改为torch向量操作；数值等价与实际吞吐需分开验证，本轮只核数值。
+
+### 单样本与同分组的不同回退
+
+**singleton不是多样本同分组。** 2026-10-22 固定官方提交 `1876b06d0a3e4e71e06230be10af14492ca8a75b`，[loop GRPO与vectorized GRPO](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/trainer/ppo/core_algos.py)都支持同一UID只有一条样本时的mean=0、std=1回退。vectorized分支由[原group_mean_std](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/utils/groupwise.py)实现同样回退；多样本组则按无偏样本标准差归一化。
+
+本机对照显式epsilon=1e-6；下表是每行的有效token优势，实际输出还乘response_mask：
+
+| 同一UID的score | 默认标准化 | 关闭std归一化 |
+|---|---|---|
+| 单样本2 | 约1.999998 | 2 |
+| 单样本−3 | 约−2.999997 | −3 |
+| 单样本0 | 0 | 0 |
+| 两样本[4,4] | [0,0] | [0,0] |
+| 两样本[1,3] | 约[−0.707106,0.707106] | [−1,1] |
+
+单样本没有组内互为baseline的比较，代码采用近似原奖励的回退；它不是标准中心化公式在n=1上的直接计算结果。多样本同分时分子为零，默认epsilon使结果为零，而不是“0/0必得NaN”。也不能从 `advantages.std()==0` 推出所有优势为零：常数非零向量同样标准差为零。诊断应分开检查组内样本数、reward差异、有效mask、优势绝对值及真实梯度/参数变化。
+
+这纠正了[排错指南](../grpo-training-debugging-guide.md#2-loss-values-and-zero-advantages)原来的“n=1必退化、禁止n=1、必须n≥4或MoE≥8”表述。实现没有给出这些统一硬门槛；本轮也没有比较采样成本、训练收敛或模型质量，不能把保留非零优势解释为n=1必然有效学习。关闭std归一化仍保留多样本组的均值中心化，不是统一把所有组变成原奖励。
+
+[复查脚本](../../experiments/scripts/verify_verl_grpo_groups.py)AST选择完整原enum/registry/注册装饰器、两个estimator及四个groupwise helper，保留原函数体/装饰器，延后注解求值以省略无关配置依赖。原helper始终收到显式CPU device，未导入设备发现模块或调用get_device_name。原测试的低方差1例和随机等价性3参数例直接调用全过；随机helper明确保证每组至少两样本，因此还需额外singleton对照，不能把原随机覆盖当作已测n=1。
+
+额外6种布局（正/负/零singleton、同分pair、有差异pair、三类组混合）×标准化开/关，共12组双实现CPU检查通过，同时核输出/returns、有效mask及no_grad结果；没有模型或训练替身。三个原随机例最大绝对差约2.38e−7、2.38e−7、4.77e−7，是给定容差内等价，不是逐位一致或性能证明。
+
+```bash
+python experiments/scripts/verify_verl_grpo_groups.py /path/to/verl
+```
+
+Python3.12.13、torch2.9.1、NumPy2.0.2、pytest8.4.2；非完整pytest、训练、loss/optimizer或DP/GPU验收。官方API/本地Git blob：core_algos `9d08b8461a0f95d25f348c566358360bbfb72ece`、groupwise `84e79ac903082c913f479f3cea6eed54941e9c16`。SHA256依次 `a54b6d812db4441e8b0989ae69d2c46b0a0a7b584296f73d8316f264462c37cb`、`409403d0002ff0d1fd1c41812163b1cfa52a52248677aab00e6ffcf3b937b442`；原测试模块 `0a60e917589ab91646989f0a8616f810fea0dc70047d2b8c13914f4977f5569c`。只纠正知识与诊断规则，不改上游算法或新增M5任务。
 
 ### 4. GDPO (组奖励解耦归一化, 行361)
 

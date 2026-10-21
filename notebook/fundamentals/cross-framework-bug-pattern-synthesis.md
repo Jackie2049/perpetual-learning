@@ -42,7 +42,8 @@ Universal fix exists for EACH pattern class → applicable to ALL frameworks
 
 ```
 Pattern frequency distribution:
-  3-framework patterns: stream_safety, muon_clipping, singleton_degeneration
+  Historical 3-framework classification (not revalidated here): stream_safety, muon_clipping
+  singleton_degeneration cross-framework classification withdrawn; see Section 6
   2-framework patterns: moe_fp16_nan, lora_distortion
   1-framework patterns: batch_invariance, hook_dispatch (but validated across systems)
 
@@ -135,34 +136,13 @@ Universal fix:
 
 ---
 
-## 6. Universal Fix #4: REINFORCE Degeneration (★★★★★★★★ 3-framework)
+## 6. Group Reward Statistics and Singleton Fallback
 
-```
-Pattern:
-  group_size = 1 → all rewards in group identical → σ = 0
-  GRPO: A = (R - μ) / σ → A = 0/0 → fallback: A = 0 → no learning signal
-  REINFORCE: A = R → high variance → noisy gradient direction
+2026-10-22 更正：旧的“跨框架普适退化/Universal fix”结论撤回。[固定verl `1876b06d` 的两实现CPU核对](../frameworks/verl-grpo-core-algos-reading.md#单样本与同分组的不同回退)显示，singleton采用mean=0/std=1，默认返回score/(1+epsilon)，不是必然零优势；多样本同分组则因中心化分子为零而返回零。
 
-Manifestations:
-  rLLM #605: grouping_key="prompt" → gs=1 for some groups → σ=0 → A=0
-  rLLM #663: same pattern, different trigger
-  verl: group_size=1 → no advantage variance → no learning
-  TRL: same mathematical issue in GRPOTrainer
+未经epsilon/fallback限定的0/0推导不能直接证明实现缺陷。旧rLLM #605/#663、TRL等案例本轮未逐项重新复核，不沿用为“三框架共同根因”的证据。正确接续是先核版本、实际UID分组和估计器的边界处理，再检查奖励是否有区分度。
 
-★★★★★★★★ Mathematical proof:
-  σ_G = sqrt(Σ(R_i - μ)^2 / G) = 0 when all R_i identical
-  A_i = (R_i - μ) / σ_G → division by zero → NaN or fallback to 0
-  → NO gradient signal → NO learning → training stuck
-
-  Also: random-init models → uniform token distribution → identical rewards → σ≈0
-  → GRPO CANNOT learn from random initialization → pretrained model REQUIRED
-
-Universal fix:
-  group_size ≥ 4 for GRPO (≥ 8 for sparse MoE)
-  shaped rewards (not flat outcome rewards) → reward variance within groups
-  NEVER set group_size = 1 for GRPO
-  If gs=1 is needed: use REINFORCE (A=R) instead → but high variance
-```
+本节同时撤回“必须n≥4/8”与“随机初始化模型绝不可能用GRPO学习”的普遍断言；本轮没有采样/训练实验支持它们。非零优势也不是收敛或质量证明，不能据CPU回退行为自动选择rollout.n或承诺训练收益。
 
 ---
 
@@ -271,7 +251,7 @@ From all 7 pattern classes, we derive 5 universal engineering principles:
   → Loss scaling: FP32 loss scale (BF16 model, FP32 optimizer)
 
 ★★★★★★★★★ Principle 4: ALWAYS ensure variance in learning signal
-  → group_size ≥ 4 for GRPO (σ > 0 → A ≠ 0)
+  → inspect actual UID counts, reward differences and estimator fallback; no universal n threshold
   → shaped rewards (not flat outcomes) → reward variance
   → temperature ≥ 0.7 during rollout (diverse responses)
 
