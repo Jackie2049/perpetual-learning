@@ -87,13 +87,11 @@
 .closed-group[open]>summary::before{transform:rotate(45deg)}
 .closed-group>summary:focus-visible{outline:2px solid var(--green);outline-offset:4px;border-radius:4px}
 .closed-group>summary span{background:#eef1ef;color:#6d7d74;border-radius:4px;padding:1px 7px;font-size:10px;font-weight:600}
-.closed-group>summary em{font-style:normal;color:#a5b0ab;font-size:11px;margin-left:auto}
 .closed-group .closed-list{display:grid;gap:14px}
 .contribution-summary.closed{opacity:.72;background:#fbfcfb}
 .contribution-summary.closed .contribution-type{background:#eef1ef;color:#6d7d74}
 .contribution-summary.closed .contribution-score{background:#eef1ef;color:#6d7d74}
 body.theme-dark .closed-group>summary span{background:#2d2d2d;color:#9a9a9a}
-body.theme-dark .closed-group>summary em{color:#6e6e6e}
 body.theme-dark .contribution-summary.closed{background:#1c1c1c;opacity:.8}
 body.theme-dark .contribution-summary.closed .contribution-type{background:#2d2d2d;color:#9a9a9a}
 body.theme-dark .contribution-summary.closed .contribution-score{background:#2d2d2d;color:#9a9a9a}
