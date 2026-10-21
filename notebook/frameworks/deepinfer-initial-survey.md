@@ -1171,3 +1171,38 @@ SHA256：脚本base `2256ec58231a8e5267ff2403a7c4915d450083c2c731a4480b4d4485705
 ### M5 接续时保留什么
 
 [同一硬件交接入口](../../experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)记录此项已有方案，是否采用由 M5 按当前移植任务独立决定，不自动应用或覆盖环境。若后续获准构建/安装，应同时记录子模块提交、工具链、wheel 文件/hash、解释器/安装元数据与实际 import 路径，再把原生算子可用性独立列证据。M5 已有 `_C` 编译导入结果不等于四个 vendor 都已可用，也不证明采用过此 PR。
+
+## GPQA 答案提取与最终判分
+
+2026-10-21 核对已有 [PR #160](https://github.com/deepseek-ai/DeepInfer/pull/160)，读取时 open，作者 ccl125；base `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`，head `4bda76dda5b9158380f2b89eecad68fa4d1614e4`。改动只为 [GPQA bench](https://github.com/deepseek-ai/DeepInfer/blob/4bda76dda5b9158380f2b89eecad68fa4d1614e4/eval/gpqa/bench.py#L111) 的 `_BOXED_RE` 加 `re.I`，让 `\boxed{d}` 不再漏掉；普通字母回退仍区分大小写。**这是提取规则修正，不是模型能力提升，也不是完整 benchmark 重跑。**
+
+### 先选提取路径，再选该路径最后一个匹配
+
+`extract_answer_with_source` 按 `answer_line → boxed → tail_letter → none` 优先；前两类在全文查找，回退字母才取最后一个 `</think>` 之后的文本，或没有该标记时的末400字符。各类内部取最后一个匹配，但不是在所有类中取文本位置最后的答案。
+
+| 输入 | 基线 | 候选 | 保留的约定 |
+|---|---|---|---|
+| `\boxed{d}` | none | D / boxed | 规范化返回大写 |
+| `\boxed{A} then \boxed{b}` | A / boxed | B / boxed | 新接受的小写可改变最后匹配，不仅补空结果 |
+| `ANSWER: A` 后接 `\boxed{d}` | A / answer_line | 相同 | answer_line 优先于 boxed |
+| 普通文本 `a choice.` | none | 相同 | 不将冠词 a 新解释为选项 A |
+| `\BOXED{d}` | none | D / boxed | `re.I` 作用于整个表达式，也接受宏名大小写 |
+
+dataset `_normalize_row` 原本已接受小写 boxed，保存的 gold 可能仍为小写；`is_correct` 对 pred/gold 都转大写比较。原始 `build_records → score_rollout` 的独立控制证实 gold=d 与 ANSWER:D 可判正确，不能把内部大小写未统一另定为缺陷。这里的 question 仅用占位文本，没有加载 GPQA 数据或发送问题。
+
+### 规则正确与 judge 正确不是同一字段
+
+固定 head 的 [score.py 默认设置](https://github.com/deepseek-ai/DeepInfer/blob/4bda76dda5b9158380f2b89eecad68fa4d1614e4/eval/score.py#L23)对 GPQA 的 `auto` 选择 LLM judge。先调用 `bench.score_rollout`，随后 [judge 分支](https://github.com/deepseek-ai/DeepInfer/blob/4bda76dda5b9158380f2b89eecad68fa4d1614e4/eval/score.py#L75)将原结果放入 `rule_correct`，用 judge verdict 覆盖最终 `correct`；显式 rule 模式保留规则判分。此处只读调用片段，没有执行 score CLI 或外部 judge。因此本修正可改变 pred/extract_source/规则结果，不能直接声称默认最终准确率提高多少；即便规则模式，也需要同一批真实输出配对比较，不能用一个合成答案外推分数收益。
+
+### 原始 CPU 测试的成对复现
+
+[复现脚本](../../experiments/scripts/verify_deepinfer_gpqa.py)从固定 Git 对象完整执行原 `common` 初始化、`common.io`、GPQA bench 与候选 [43行原始测试](https://github.com/deepseek-ai/DeepInfer/blob/4bda76dda5b9158380f2b89eecad68fa4d1614e4/tests/eval/test_gpqa_boxed_case.py)，不做 AST 提取或替换 parser。gpqa 按原布局作为 namespace 包，测试模块经 collector 适配预加载到内存；原 fixture、参数化和断言保持不变，禁用 conftest、外部 pytest 插件与缓存。不是按原仓库安装后跑完整 pytest/评测流水线。
+
+Python3.12.13 / pytest8.4.2：基线 **4 passed / 3 expected failures**，失败为小写boxed、最后小写boxed与小写boxed规则得分；候选 **7 passed**。基线原 pytest 退出1由脚本检查为预期，不改 xfail 或掩盖任意失败。两版另各9组原函数控制通过，包括优先级、宏名大小写、普通文本、全角冒号与 gold 归一；没有模型、数据加载、engine、judge客户端或设备替身，也未导入 torch/DeepInfer/openai/datasets。
+
+```bash
+python experiments/scripts/verify_deepinfer_gpqa.py /path/to/DeepInfer --revision base
+python experiments/scripts/verify_deepinfer_gpqa.py /path/to/DeepInfer --revision fix
+```
+
+SHA256：bench base `329611f34d5f138229b6f85407f8b63c7c38fd3c1b95f5115d965462ab3a7dda`，head `68e925d24fd5d6dec7f5f27bf69fb40d46eae792ec76ecfd45f2bf4f55dad9d0`；原测试 `094032f2e4ae67da6116af1eba858a3265b8e4545c3857bc1e50075ccf89ae8f`。共用io/初始化hash由脚本另打印。未下载数据、调用模型/外部judge或重算历史得分，本题不需要新增 M5 GPU/NPU 任务；已有作者负责，不竞争修复或向上游发言。

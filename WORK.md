@@ -12,6 +12,8 @@
 
 ## 运行接续
 
+- **M1 GPQA提取学习收束（2026-10-21）**：有限核对DeepInfer/verl最近更新各8个open PR，转读已有#160 head4bda76d/base9bd9cf2。完整bench/io与原7项测试：base4过3预期失败、fix7过，各9组原函数控制通过，无parser替身。answer_line优先非全文最后答案，普通小写回退不放宽；固定score.py auto GPQA默认LLM judge覆盖correct，故不外推分数收益。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#gpqa-答案提取与最终判分)与脚本。本题收束，无数据/模型/judge/设备执行，不新增真机任务；后续可只读新#8306与旧量化refit路线的覆盖关系，先核作者/版本，不并行改代码或自动采用。GPU/AReaL与网站发布边界不变。
+
 - **M1 vendor wheel身份学习收束（2026-10-21）**：只读已有#159 head80c7334/base9bd9cf2，区分本次wheel、pip选中、导入身份与原生可运行。两版bash -n通过，packaging26.3实测aaaa222<ffff111；未构建/安装或复跑作者8项fixture测试。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#vendor-wheel-的本次产物与安装身份)，同一[M5硬件入口](experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)加版本/观测参考并按其已有_C真机记录纠正旧“无结果”状态，不代表采用PR、不自动应用。课题收束，后续有界核对上游变化再选未重复问题，不继续堆构建替身或干预M5移植/GPU/AReaL；网站发布边界不变。
 
 - **M1 消息信任边界学习收束（2026-10-21）**：有限核对DeepInfer最近更新10个/verl 8个open PR，转读已有#158 head94d1f69/base9bd9cf2。标题称替换pickle，实际仍为1 dumps/3 loads，只加io/注释/nosec；移除新增import后AST相同，不是安全修复验收。CP工厂配全local，通用remote分支≠当前公网暴露，均不替代部署信任证据。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#共享内存消息与反序列化信任边界)。本轮仅源码/AST，不执行pickle/网络/设备，不新增GPU任务；课题收束，后续可只读#159 vendor wheel构建产物选择边界，不运行构建/安装或介入M5移植。GPU/AReaL与网站发布规则不变。
