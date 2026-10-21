@@ -139,6 +139,7 @@
 - [DeepInfer Ascend 发现与 NUMA](frameworks/deepinfer-initial-survey.md#ascend-发现与-numa-查询边界) — #127原始12项CPU测试与2组可见编号控制；合成根跳过真实CLI，查询不等于绑核
 - [DeepInfer vendor registry 边界](frameworks/deepinfer-initial-survey.md#vendor-registry-与模型运行支持) — #60原始10项合成目录测试，固定vendor列表与platform/build分开；识别Biren不等于模型支持
 - [DeepInfer 显存遥测](frameworks/deepinfer-initial-survey.md#显存遥测采样与容量规划) — #151单次查询/warning、allocator与全局口径及KV规划的区别；仅源码核对，真机交M5
+- [DeepInfer 消息信任边界](frameworks/deepinfer-initial-survey.md#共享内存消息与反序列化信任边界) — #158仍保留pickle；注释/扫描抑制非协议修复，CP本地调用与通用remote分支分开，非漏洞复现
 - [PrefixGrouper 计算范围纠错](frameworks/verl-prefix-grouper-gap-analysis.md) — 原生 grouped input 也节省前缀逐 token 运算；撤回 attention-only 缺口和非等价微基准收益外推
 - [verl PrefixGrouper](frameworks/verl-prefix-grouper.md) — 历史集成；与新 engine 路径的版本边界及复杂度纠错
 - [vLLM V1 KV Cache Manager 源码阅读](frameworks/vllm-v1-kv-cache-manager-reading.md) — Block 分配/释放、6 种 Attention Manager、Prefix Caching、Coordinator 架构

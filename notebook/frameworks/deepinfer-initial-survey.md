@@ -1088,3 +1088,41 @@ SHA256：vendor.py `02cd28193b1a757be24ab4bc59444fff4ad1da9ef45dc207f066d7a41e3e
 真机查询及日志行为已登记到 [M5 交接](../../experiments/handoff-m5.md#deepinfer-显存遥测的轻量核对)。M5 有合适环境时可作独立的小范围核对，不必为日志 helper 启动完整模型；没有制造驱动故障或改已运行训练来触发 warning 的要求。此处不宣称修复实测通过或性能收益。
 
 utils.py SHA256：base `8a0049b98ea6f7ef98555ad8b38b9e8dac2292c0d2a89c2090bbdb5e5ee7295a`，head `db14bca1ddc8ad3e9a5ae0f99b8aeb1b9ebebf3c2262eb2e0837b06988c73258`。
+
+## 共享内存消息与反序列化信任边界
+
+2026-10-21 只读已有 [PR #158](https://github.com/deepseek-ai/DeepInfer/pull/158)，读取时 open，作者 anupamme；base `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`，head `94d1f69332a2472e6c76766369340568467d5d8b`。标题是替换不安全 pickle，正文建议 JSON、承认没有可展示的利用路径且未自动验证；**当前 diff 实际没有替换序列化器**。这是信任边界学习，不是漏洞认定、修复验收或竞争方案。
+
+### 抑制扫描与改变协议是两件事
+
+改动仅涉及 `shm_broadcast.py`：新增未使用的 `import io`，为原 `pickle.dumps(..., protocol=pickle.HIGHEST_PROTOCOL)` 增加“同作业可信进程、本地 shared memory/loopback”的注释与 `# nosec B301`。没有改 reader 的三个 `pickle.loads`，也没有加入 schema、鉴权、完整性校验或受限反序列化。扫描器是否采纳该抑制标记，本轮未运行确认。
+
+固定 Git blob 的完整 AST 对照：两版均 1 处 `pickle.dumps`、3 处 `pickle.loads`；从候选 AST 移除新增 `import io`，忽略位置属性后与 base 完全相同。注释/扫描抑制本就不进入 AST，所以这能核实收发逻辑没有改变，**不能证明部署安全或运行时完全等价**（新增 import 仍是实际差异）。检查用 Python 3.9.6 的 ast/subprocess/hashlib，未导入 DeepInfer/torch、未执行这些函数或任何 pickle 数据。
+
+可先复查完整差异，再按上述规则比较 AST；Git 对象已存在时无须联网或检出：
+
+```bash
+git diff 9bd9cf243fc53ef9afbf8f04d391d989117d6ab9 94d1f69332a2472e6c76766369340568467d5d8b -- deepinfer/distributed/shm_broadcast.py
+```
+
+源码 SHA256：base `aa461587184bf979acb813ed6ee646665715e3eaaca286a9270a5e4ceb559006`；head `e969a9d4131e176c722d52384695685ed181f3b6a10e6a1c2f4b9c4075131094`。旧回收/引用寿命检查不能替代这里的安全判断。
+
+### 本地 CP 路径与通用队列能力
+
+[MessageQueue 收发](https://github.com/deepseek-ai/DeepInfer/blob/94d1f69332a2472e6c76766369340568467d5d8b/deepinfer/distributed/shm_broadcast.py#L390)实际有三条 reader 路径，均使用 pickle：
+
+| 路径 | 数据从哪里取 | 信任不能仅由什么保证 |
+|---|---|---|
+| 本地小消息 | shared-memory ring，首字节指示未 overflow | ring written/read flag 只协调槽位，不认证写入者 |
+| 本地 overflow | loopback XPUB/SUB socket | loopback 地址不等于操作系统账户/进程隔离策略 |
+| remote reader | handle 指定远端地址，writer 有 remote reader 时绑定通配 TCP 地址 | 代码里有网络分支，不等于已经暴露到公网或允许任意客户端注入 |
+
+这里须区分抽象能力与实际调用：[CP 初始化](https://github.com/deepseek-ai/DeepInfer/blob/94d1f69332a2472e6c76766369340568467d5d8b/deepinfer/model_executor/parallel_utils/parallel_state.py#L122)调用 `create_from_process_group`，后者明确假设 group 不跨节点，并把所有 reader 配成 local。故通用类的 remote 分支不能拿来证明当前 CP 部署走远端；反过来，只读 CP 调用也不能为类的所有使用方式认证“payload 永不来自不可信源”。XPUB/SUB 的方向同样不能误读为任意连接者可直接向反序列化入口提交数据。
+
+[Worker 命令链](https://github.com/deepseek-ai/DeepInfer/blob/94d1f69332a2472e6c76766369340568467d5d8b/deepinfer/worker/base.py#L290)广播 `(method, kwargs)`，slave 在 dequeue 之后调用 `getattr(self, method)(**kwargs)`。这是作业内有权限的控制通道，不是通用不可信请求 API；若发送者或载荷可被篡改，改用 JSON 也不会自动补上命令授权。保留对象类型/张量元数据的替代协议需要另行定义消息 schema 和兼容语义，不是直接换一个 dumps 函数即可完成。
+
+### 安全结论需要部署条件
+
+[Python 官方 pickle 文档](https://docs.python.org/3.12/library/pickle.html)明确要求只反序列化可信且未被篡改的数据；JSON 默认不能直接承载任意自定义 Python 对象。用 pickle 的静态模式提示值得审查，但不能单凭它宣称可利用漏洞；“同一作业可信”也应当是经过确认的部署前提，而不是注释新增的安全机制。
+
+需要确认的是进程/用户/容器隔离、共享内存与 handle 的访问权限、网络可达性及参与者身份，而不是在生产 worker 上试恶意载荷。本轮没有读取实际服务器配置、打开 socket/SharedMemory、运行广播测试或构造攻击数据，因此不报告真实暴露、修复效果或扫描通过。该学习本身不需要 GPU/NPU，不新增 M5 真机任务，也不干预其移植环境；若用户以后要求部署审计，应先另定目标和授权范围。

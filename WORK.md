@@ -12,6 +12,8 @@
 
 ## 运行接续
 
+- **M1 消息信任边界学习收束（2026-10-21）**：有限核对DeepInfer最近更新10个/verl 8个open PR，转读已有#158 head94d1f69/base9bd9cf2。标题称替换pickle，实际仍为1 dumps/3 loads，只加io/注释/nosec；移除新增import后AST相同，不是安全修复验收。CP工厂配全local，通用remote分支≠当前公网暴露，均不替代部署信任证据。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#共享内存消息与反序列化信任边界)。本轮仅源码/AST，不执行pickle/网络/设备，不新增GPU任务；课题收束，后续可只读#159 vendor wheel构建产物选择边界，不运行构建/安装或介入M5移植。GPU/AReaL与网站发布规则不变。
+
 - **M1 SGLang refit边界收束（2026-10-21）**：#8132仍open/head0defd9a2，完整只读MXFP8 loader/数值helper及分桶接线和选定原测试。逐请求预检不是整轮事务，异常清理只恢复暂存scale指针；finalize可能跳过抽样probe，shape/dtype与graph存储身份也须分开。见[同一笔记](notebook/frameworks/verl-quant-layer-audit.md#sglang-分桶加载与失败清理)，[原M5条目](experiments/handoff-m5.md#verl-量化层审计新版复验)已补最小观测范围，待匹配环境非接单。本轮仅源码/依赖检查，未跑loader/设备或新增替身；本课题收束，后续有界核对上游变化再选未重复问题，不推进#8250修复、GPU/AReaL或网站发布。
 
 - **M5 DeepInfer 4090 移植冒烟第一段（2026-10-21 算力任务）**：4090-1 连通可用（GPU 0/1/7 空闲，/home 99% 剩 109G）；昇腾 vLLM-Ascend-A3（192.168.13.174）ping/SSH 均超时，**昇腾 VPN 掉线，已报告用户待恢复**。独立克隆 `/home/zxw/deepinfer-civilian`（HEAD 774ce244 全子模块）+ conda 环境 `deepinfer-smoke`（py3.12 + torch 2.13.0+cu129 + gcc13）。真机确认：`get_bf16_tflops_limit` 抛 unknown GPU type（堵点5）；官方 cu132 wheel 与驱动 12.9 不匹配（新增堵点，须降 cu129）；FlashMLA 需 NVCC13.1/sm100a（堵点1）；llm_engine 导入缺 deep_ep（堵点3）。**csrc `deepinfer._C` 已用 gcc13+cu129 编译并导入成功（首个可移植真机证据）**。见[专题笔记](notebook/frameworks/deepinfer-civilian-port.md#4090-真机验证2026-10-21m5-服务器-4090-1-实测)与[日志](diary/2026-10-21.md)。下一步：替换 deep_ep/deep_gemm/deep_select/flash_mla import + 放宽架构检查后尝试实例化 LLMEngine；完整 offline_inference 需 V4 权重与 EP 配置，价值判断待用户确认。
