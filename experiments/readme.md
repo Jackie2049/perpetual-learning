@@ -8,6 +8,7 @@
 |---|---|---|
 | [handoff-m5.md](handoff-m5.md) | 需要 GPU/NPU 的事项交接、资源/数据前提及停止条件；M5 可用时接续 | 对应主笔记和原始实测结果就近回写 |
 | [deepinfer-close/](deepinfer-close/readme.md) | #175原关闭方法与13项原测试的隔离控制流对照，资源为Mock | [关闭失败与一次性标志](../notebook/frameworks/deepinfer-initial-survey.md#关闭失败后的独立清理与一次性标志) |
+| [deepinfer-pool-generations/](deepinfer-pool-generations/readme.md) | #187原9测试的真实CPU共享存储/fork对照，另1项保留视图控制；pin/unpin为no-op | [分配身份与视图寿命](../notebook/frameworks/deepinfer-initial-survey.md#共享池句柄的分配身份与视图寿命) |
 | [kernels/fused_rms_norm/](kernels/fused_rms_norm/) | Fused RMSNorm CUDA/C++ 实现、Python 接口、测试及基准 | [算子实验记录](../notebook/experiments/rtx4090-fused-rmsnorm-cuda.md) |
 | [scripts/](scripts/readme.md) | GPU 实验、故障复现及贡献验证脚本 | [GRPO 排错](../notebook/grpo-training-debugging-guide.md) |
 | [rtx4090/configs/](rtx4090/configs/readme.md) | RTX 4090 DeepSpeed 训练配置 | [训练技巧](../notebook/experiments/rtx4090-training-techniques.md) |

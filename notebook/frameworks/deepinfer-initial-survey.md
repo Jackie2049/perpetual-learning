@@ -1532,3 +1532,27 @@ Scheduler prefill路径在非prefix hit分支断言 `cache.num_tokens == 0 || ca
 固定Git对象以GIT_NO_LAZY_FETCH=1读取，AST只执行原关键字表达式，原environ.py完整compile/exec于独立ModuleType；没有create_llm、调度器、模型或设备替身。检查确认torch/deepinfer/deep_cluster未导入；四份消费者scheduler.hpp/utils.hpp/worker.py/dflash.py在base/head逐字相同。未安装依赖、启动引擎、编译扩展或做吞吐测试。真实边界只作为[原M5条目的可选参考](../../experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)，不另起任务、自动采用或改变移植方案。
 
 输入SHA256（完整示例文件）：offline base `7392a46c7b5c4cc6d0b47d6a818c4be79f12e95a015d14243a9023af2a95ca88`、head `412a2202b16e1c8a4732dd69cb8f1abad7a90a062edaef9f4a960fe704d82817`；benchmark base `a4e0b114b4173b9d2124cdabfedc54d3dd5cd81d269d7054c48f9bac780eb9f2`、head `1d893f8afd58d9f5a2698bf7ac24fefd73d6c8d3480de0eb54802bbfb384aa76`。未变scheduler.hpp `c14de4d5341170227b82ddf2d146d9c6a337937885a6886237aab5a7238da5db`；dflash.py `12ebfb9c793062844d40e0fab17164d5365d965c318f8b9f0f4adf51b3afb684`。
+
+## 共享池句柄的分配身份与视图寿命
+
+2026-10-21 核对已有 [#187](https://github.com/deepseek-ai/DeepInfer/pull/187)，读取时open、作者he-yufeng；head `5c2bb4625506e5cec761eb5a7f08f4336ab45bd7`，base/共同祖先 `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`。**块坐标相同不代表同一次分配；拒绝旧句柄也不等于撤销已返回的零拷贝视图。** 这与[前文共享映射回收](#共享内存回收真实本机映射与引用寿命检查)是不同层次：前者管分配身份，后者管映射与引用寿命。
+
+### 坐标复用为何需要代际
+
+旧BlockHandle只含block_id、offset、nbytes。一次free后再alloc同尺寸可以复用相同元数据节点和坐标，形成ABA：位置看起来没变，分配对象却已更换。另一个池也可能产生相同三元组。仅查当前state/offset/size无法区分这些身份。
+
+[候选shared_memory.py](https://github.com/deepseek-ai/DeepInfer/blob/5c2bb4625506e5cec761eb5a7f08f4336ab45bd7/deepinfer/shared_memory.py)给句柄增加generation和owner。每次alloc在锁内递增共享int64计数、写节点代际；owner取本池共享段名称。fork继承同池身份，计数和元数据仍共享，因此子进程的新分配可让父进程的旧句柄失效。这里owner表示池身份，不是用户权限或“哪个调用方应负责释放”的所有权证明。
+
+free把完整校验放到池锁内，避免校验与锁获取之间复用后误释放；两个getter仍是在返回视图前校验，并未建立贯穿视图使用期的锁或租约。数据结构不再接受旧三参数构造；本固定提交中仅alloc两处分支直接构造BlockHandle，可信队列/pickle会携带新字段，不能据此推断跨版本旧句柄兼容。
+
+### 原测试对照与实际视图
+
+macOS15.4.1 arm64，Python3.12.13/torch2.9.1，运行[9项原测试](https://github.com/deepseek-ai/DeepInfer/blob/5c2bb4625506e5cec761eb5a7f08f4336ab45bd7/tests/test_shared_pool_generations.py)：**base 1过8失败，候选9过**。六项旧/跨池句柄入口和一项fork旧句柄在base未抛异常，代际唯一性用例缺generation；可信pickle往返两版均过。原断言/fixture不改，真实共享内存、torch共享元数据及单子进程fork执行，仅设备pin/unpin用原fixture no-op。隔离加载方式、失败输出类别、固定hash与命令见[复查实验](../../experiments/deepinfer-pool-generations/readme.md)，不是完整包/设备CI通过。
+
+另1项自建控制保留旧get_buffer_slice返回值，在free/同尺寸复用后填新视图；旧视图能读到新值，且经旧视图写入会改变新内容。**代际阻止的是再次拿旧句柄调用入口，不会追踪或失效此前返回的Tensor别名。** 这是主动持有引用的本机控制，不代表已在正常多模态路径找到引用逃逸或真实并发故障。
+
+### 调用方仍负责使用结束
+
+[multimodal_processor.fetch](https://github.com/deepseek-ai/DeepInfer/blob/5c2bb4625506e5cec761eb5a7f08f4336ab45bd7/deepinfer/ve/multimodal_processor.py)在父进程由句柄重建tensor，同时保留handle字段标记待归还资源；[schema.py](https://github.com/deepseek-ai/DeepInfer/blob/5c2bb4625506e5cec761eb5a7f08f4336ab45bd7/deepinfer/ve/schema.py)正常路径取走handle、记录H2D事件，再由engine的pre_sampler_sync等待事件后free。上述调用方文件在本PR中未改。代际检查不替代这条“使用结束再复用”的时序；本机未导入schema（含设备Event）或运行设备传输，不以CPU结果认证异步拷贝寿命。
+
+本轮CPU身份问题收束，不新增M5设备任务或演化并行修复；已有作者方案不自动应用。设备及AReaL继续按原分工，进一步多模态集成仅在未来明确需要且资源匹配时由M5决定。
