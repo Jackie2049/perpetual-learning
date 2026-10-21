@@ -187,6 +187,8 @@ python3 experiments/scripts/verify_verl_logprob_provenance.py /path/to/verl-8250
 
 2026-10-21核对已有[#8316](https://github.com/verl-project/verl/pull/8316)，读取时open、rafiw，head `3a60b8710f8e1001110820f7a14cd0e71d9d5e07`、目标base `f2923cbf154731918b1e36db8c567433f349fede`、共同祖先 `619c397dc9917fed278b6e47c52a6620aef05466`。真正PR只改一行切片，未提交测试文件；正文勾选“新增单测”不能替代固定diff证据。这里验证的是**拓扑参数契约，不是权重同步完成**，也不说明#8250实际使用了此backend或故障由它造成。
 
+**后续版本更新**：同日核对head已变为 `c2d800e71cdc4c7295b1e12e60bad82dd2fb637b`，仅比上述首轮head新增28行[原单测](https://github.com/verl-project/verl/blob/c2d800e71cdc4c7295b1e12e60bad82dd2fb637b/tests/checkpoint_engine/test_nixl_checkpoint_engine_on_cpu.py)，两份实现文件逐字未变，共同祖先及目标base不变。当前PR已含测试；上段“未提交测试”只描述旧固定head，不再作为当前覆盖判断。
+
 ### 单元素切片与链尾
 
 [build_topology](https://github.com/verl-project/verl/blob/3a60b8710f8e1001110820f7a14cd0e71d9d5e07/verl/checkpoint_engine/nixl_checkpoint_engine.py#L289)将A个actor、R个rollout的metadata组织成链。有效通信rank为actor[0]的0及rollout的1到R，world_size=R+1；其余actor rank=-1、不连前后邻居。链关系为 `actor[0] → rollout[0] → … → rollout[R-1] → None`，不是所有A+R个worker都加入通信链。
@@ -200,3 +202,9 @@ Python3.12.13，保留原classmethod、原manager两组长度断言及init_proce
 [manager](https://github.com/verl-project/verl/blob/3a60b8710f8e1001110820f7a14cd0e71d9d5e07/verl/checkpoint_engine/base.py#L422)在真实调用中先prepare并收集actor/rollout metadata，再构造拓扑、检查每字段长度，最后才分派init_process_group。NIXL prepare还涉及buffer分配/注册和agent身份；这些本机均未执行。update_weights把各replica.workers展平成临时rollout worker group，所以R是该组world_size，不能直接等同replica数。
 
 固定版本既有NIXL correctness用例为2 trainer/6 rollout，带temporary skip，含Ray/模型/原生backend；本机未运行，也不把device=cpu参数当成纯Python测试。列表长度及端点通过后，buffer、连接、传输、权重应用/finalize与恢复生成仍是独立完成点。若M5已有诊断确需单worker NIXL，可参考[原交接条目](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不另排队、自动采用补丁或变动既有环境。
+
+### 新增原单测的执行范围
+
+新增测试只构造字符串metadata `["trainer", "rollout"]`，A=R=1，断言prev为[trainer]、next为[None]。复用原脚本的 `--upstream-case`，AST原样执行这一测试函数及其两个断言，类壳只承载原build_topology。Python3.9.6及3.12.13两环境均为基线1项预期AssertionError、新head 1项通过；不是扩写新模拟或把旧20组控制改称原测试。原测试SHA256 `699eb471d14bb946d47cd794416a23c04ee60a44b3ac206d2dafb8146e91541c`。
+
+该文件顶层直接导入nixl_checkpoint_engine，而后者仍急切导入cupy、nixl、Ray、torch、ZMQ。本机跳过了整模块导入与pytest收集，没有安装/探测这些运行时。因此这里只确认原测试体对纯拓扑方法的回归能力，不能由文件名on_cpu或本次隔离通过推断无原生依赖的CPU CI可收集。新增测试仍不覆盖多worker、真实agent元数据或权重传输；原有M5交接边界不扩大。

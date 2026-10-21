@@ -12,6 +12,8 @@
 
 ## 运行接续
 
+- **M1 NIXL原测试补入核对（2026-10-21）**：有界核对verl10个/DeepInfer8个open PR，发现#8316 head更新c2d800e7，仅比3a60b871新增28行1原单测、实现未变。原函数/两断言隔离执行，Python3.9.6/3.12.13均基线预期失败、新head通过；on_cpu仍直接导入原生后端，本机未做模块导入/pytest收集。见[原笔记补充](notebook/frameworks/verl-async-logprob-provenance.md#新增原单测的执行范围)/[同一脚本](experiments/verl-nixl-topology/readme.md#后续新增原测试)。旧“无测试文件”已标明仅适用旧head，原M5条目只补版本、不增加任务或通信模拟。本题收束；后续可读新DeepInfer#188抢占重算的prompt logprob身份，先核数据与状态契约，不运行engine/设备；GPU/AReaL和网站边界不变。
+
 - **M1 单worker NIXL拓扑学习收束（2026-10-21）**：只读已有#8316 head3a60b871/目标basef2923cbf/祖先619c397d，真正PR只1行、无测试文件。原拓扑/manager长度与init纯端点断言，两版各20组合成metadata控制：旧16过4个R=1预期失败、候选20过，16个R≥2输出一致。见[笔记](notebook/frameworks/verl-async-logprob-provenance.md#单-rollout-worker-的-nixl-拓扑)/[复查](experiments/verl-nixl-topology/readme.md)。worker非replica、active world=R+1，不是传输/安装证明；真实NIXL仅补原M5条目参考，不诊断#8250/改backend/新开任务。本题收束；后续有界核对上游再选未重复CPU/数据问题，不继续扩写通信替身；GPU/AReaL和网站边界不变。
 
 - **M1 CT tokenizer选择学习收束（2026-10-21）**：有限核对verl最近10个open PR，转读已有#8311 head9fc9e264、目标basecd58f550/祖先5b550b0c。原172项CPU测试隔离对照候选全过、祖先169过3预期失败，原合成tokenizer/processor未换。见[笔记新版节](notebook/frameworks/verl-6779-continuous-token-agentic-rollout-reading.md#11-新版自动选择与-tokenizer-能力回退)/[复查](experiments/verl-ct-fallback/readme.md)。auto Qwen缺im_end才回退，显式/VL不吞错，成功构造不认证R1多轮边界；旧#6779默认关闭/名称猜测已加历史提示。未下载真实tokenizer或跑AgentLoop/设备，不新增M5任务/应用补丁。本题收束；下轮可有界核对已有新#8316单rollout-worker的checkpoint拓扑，先读配置/CPU可验证范围，不启动传输或修改M5工作；GPU/AReaL和网站边界不变。

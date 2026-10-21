@@ -9,6 +9,7 @@ from types import SimpleNamespace
 
 BASE = "619c397dc9917fed278b6e47c52a6620aef05466"
 HEAD = "3a60b8710f8e1001110820f7a14cd0e71d9d5e07"
+TEST_HEAD = "c2d800e71cdc4c7295b1e12e60bad82dd2fb637b"
 
 
 def main():
@@ -26,6 +27,29 @@ def main():
 
     def block(nodes):
         return compile(ast.fix_missing_locations(ast.Module(body=nodes, type_ignores=[])), "original-guard", "exec")
+
+    if "--upstream-case" in sys.argv[2:]:
+        tests = read(TEST_HEAD, "tests/checkpoint_engine/test_nixl_checkpoint_engine_on_cpu.py")
+        functions = [n for n in tests.body if isinstance(n, ast.FunctionDef)]
+        assert len(functions) == 1 and functions[0].name == "test_build_topology_with_single_rollout_worker"
+        for revision in (BASE, TEST_HEAD):
+            tree = read(revision, "verl/checkpoint_engine/nixl_checkpoint_engine.py")
+            topology = method(tree, "NIXLCheckpointEngine", "build_topology")
+            shell = ast.ClassDef(name="NIXLCheckpointEngine", bases=[], keywords=[],
+                                 body=[topology], decorator_list=[])
+            scope = {}
+            exec(block([shell, functions[0]]), scope)
+            try:
+                scope[functions[0].name]()
+            except AssertionError:
+                assert revision == BASE
+                print(revision[:8], "1 original test body: expected assertion failure")
+            else:
+                assert revision == TEST_HEAD
+                print(revision[:8], "1 original test body: passed")
+        assert all(name not in sys.modules for name in ("torch", "ray", "nixl", "cupy", "zmq", "verl"))
+        print("Original function/2 asserts unchanged; native module import and pytest collection not executed")
+        return
 
     manager = method(read(HEAD, "verl/checkpoint_engine/base.py"), "CheckpointEngineManager", "build_process_group")
     guards = [n for n in manager.body if isinstance(n, ast.For) and len(n.body) == 1

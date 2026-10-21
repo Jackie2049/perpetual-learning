@@ -25,6 +25,18 @@ R=1的旧next列表长A+2，错误为 `rollout_kwargs[next_agent_metadata] must 
 
 PR正文勾选新增单测，但固定head实际diff没有测试文件。既有test_correctness_on_gpu.py中的NIXL用例为2 trainer/6 rollout、并有temporary skip标记，且device=cpu仍需NIXL/Ray环境；本机未解除skip或运行它。拓扑长度/端点正确不认证网络、buffer注册、数据传输、应用或同步后恢复生成。
 
+## 后续新增原测试
+
+同日读取的新head `c2d800e71cdc4c7295b1e12e60bad82dd2fb637b`仅比首轮head新增28行tests/checkpoint_engine/test_nixl_checkpoint_engine_on_cpu.py；实现逐字未变。当前PR已含这一测试，上段“没有测试文件”仅适用首轮3a60b871。脚本默认模式继续固定旧版矩阵，以保留原复查结果；新增模式执行新head的原测试函数：
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python experiments/verl-nixl-topology/verify.py /path/to/verl --upstream-case
+```
+
+原函数及两个断言不改，AST选择函数并提供只承载原classmethod的类壳，跳过顶层后端import。A=R=1、原字符串metadata：基线测试体1项预期失败，新head1项通过；Python3.9.6/3.12.13均相同。模式检查预期负对照后退出0，不代表基线通过，也不等于完整pytest或模块导入验收。测试SHA256 `699eb471d14bb946d47cd794416a23c04ee60a44b3ac206d2dafb8146e91541c`。
+
+原文件直接导入NIXL实现，仍需其cupy/nixl/Ray/torch/ZMQ依赖可导入；本机没有安装或执行这些导入。on_cpu表示测试逻辑没有设备操作，不自动意味着测试收集无原生依赖。新测试只检查两个邻居字段，不覆盖原矩阵所有rank/world_size或真实通信；不新增M5任务。
+
 ## 输入校验
 
 SHA256：nixl实现基线 `5ba0aa3ecb41ef71849f9919d2e291defa2b78be7e29a3a640ddc25602493a71`、head `eefe6a3fc0f69e0b091edca67736bda288265b8a3411b9feb04de064d52a87da`；manager base.py `97b51131a5770892007b7fb07264a2657fe83255b085927acd08c952a5682f64`。没有导入torch/ray/nixl/cupy/zmq/verl，未应用上游补丁；真实传输仅在M5已有任务确需该backend且资源匹配时独立决定，不据此诊断#8250。
