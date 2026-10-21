@@ -2,6 +2,8 @@
 
 > 2026-06-07 | 4实验: Training step time, Memory, n_samples throughput, Prefix ratio sweep
 
+**2026-10-21 实验范围更正，优先于下文历史解释**：自写训练脚本的 reuser 只做 suffix forward/backward，没有 prefix KV 或共享前缀梯度路径；provider/reuser 分别做 CE 均值，也不是原始批次同一损失。1.59x 等仅保留为历史模拟计时，不是等价 GRPO/PG 训练的收益下界。固定乘0.76的1.87x/1.8–2.0x预估撤回；原始数字未在本机重新运行。见[源码核对及更正](../frameworks/verl-prefix-grouper-gap-analysis.md)。
+
 ## 核心发现: Training PS加速 < Forward-only PS加速
 
 | 模式 | GRPO n=4, 75% prefix | 说明 |
@@ -27,7 +29,7 @@
 | GPU利用率 | 低(小batch反复启动) | 高(大batch packed format) |
 | Speedup | **1.59x** (下界) | 预估 **1.8-2.0x** (接近forward-only比例) |
 
-**结论**: 本benchmark的1.59x是PS training加速的下界。真实实现(packed THD + KV injection + shared backward)可达1.8-2.0x。
+**更正**：1.59x来自非等价训练模拟，不是正确共享实现的性能下界，也不支持1.8–2.0x保证。
 
 ## 一、Exp1: Training Step Time (n=4, 75% prefix)
 
@@ -124,28 +126,22 @@ Peak Memory ~20GB:
 ### Training PS Speedup公式
 
 ```
-training_speedup ≈ forward_speedup × (forward_time_ratio)
-                  ≈ forward_speedup × 0.76
-
-forward_time_ratio ≈ forward / (forward + backward + optimizer)
-                  ≈ 40% / (40% + 55% + 5%) ≈ 0.67
-
-实测: 1.59 / 2.08 = 0.76 ✓
+更正后的时间份额模型（f+b+o=1，先忽略新增开销）:
+  step_speedup = 1 / (f/S_forward + b/S_backward + o)
+单配置比值1.59/2.08不能作为其他配置的固定换算因子。
 ```
 
 ### GRPO Training PS实用估算
 
 ```
 GRPO n=4, prefix_ratio=0.67 (典型):
-  Forward-only: 1.91x → Training: 1.91 × 0.76 = 1.45x
-  实测: 1.46x ✓
+  旧1.91×0.76=1.45推算撤回，历史模拟1.46不验证等价训练。
 
 GRPO n=8, prefix_ratio=0.67 (理想):
-  Forward-only: 2.46x → Training: 2.46 × 0.76 = 1.87x
-  预估: 1.87x (未测, OOM限制)
+  旧2.46×0.76=1.87推算撤回，未建立有效训练比较。
 
 Real PS (packed THD + KV injection):
-  Training: 预估 1.8-2.0x → 单pass减少overhead → 效率提升
+  需要同样本、同损失与完整共享梯度的真实实现测量，不给预估范围。
 ```
 
 ### 对prefix-0501项目的启示

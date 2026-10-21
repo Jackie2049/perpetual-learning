@@ -2,6 +2,8 @@
 
 > 2026-06-07 | 5个实验: KV Injection, GRPO Savings, Qwen3.6 GQA, Packed vs Unpacked, Prefix-Last Restore
 
+**2026-10-21 实验范围更正，优先于下文历史解释**：这是自写 SDPA 微基准，不是原生 PrefixGrouper/verl。Exp2 基线算 n 份 suffix query，PS 只算 n−1 份且未计 provider attention；计时含随机分配，默认非 causal，没有输出等价或 HBM 流量验证。因此下文 0.99x 等数字不能作为 PG 性能、memory-bound 因果或真实共享收益的证据，固定架构外推撤回。原表保留作历史记录，本机未重跑 GPU。见[源码核对及更正](../frameworks/verl-prefix-grouper-gap-analysis.md)。
+
 ## 一、KV Injection Overhead (GQA 32:4, B=8)
 
 | prefix_len | suffix | total | compute节省% | time节省% | speedup |

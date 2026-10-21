@@ -192,7 +192,7 @@ PrefixGrouper 优化后:
 
 ## 4. 性能数据
 
-以下为历史摘录，原笔记未完整保留版本、硬件和复现条件，本机未重测；不是当前版本或 #8300 的性能承诺。
+以下为原集成作者报告的历史结果。2026-10-21 从[固定 merge 的说明](https://github.com/verl-project/verl/blob/d6bc62964d06588b0728122a1d2414b098165295/examples/prefix_grouper/README.md)找回条件：Qwen3-4B、4×H800、rollout.n=4；本机未重测，不是当前版本或 #8300 的性能承诺。自写attention微基准的0.99x不是这条原生PG基线，旧“attention-only”的架构误判见[更正](verl-prefix-grouper-gap-analysis.md)。
 
 | Context Length | Metric | PG | No PG | Speedup |
 |----------------|--------|-----|-------|---------|

@@ -2,6 +2,8 @@
 
 > 2026-06-07 | 5实验: 全模型PS加速验证, MLP主导性, GRPO savings, Qwen3.6 Hybrid, prefix_ratio sweep
 
+**2026-10-21 实验设计更正，优先于下文历史解释**：MiniTransformer 的 reuser 只处理 suffix，没有 prefix KV 注入，full/provider/reuser 输入还分别随机生成；hybrid 是简化投影，不是原生 DeltaNet。因此 2.46x 等数字只是不同计算任务的历史计时，不能证明等价 prefix sharing、训练加速或 PG 优化缺口。旧“91.2%未被PG节省”和 Magi 差额归因撤回，原表保留，本机未重跑 GPU。见[源码核对及更正](../frameworks/verl-prefix-grouper-gap-analysis.md)。
+
 ## 核心发现: 全模型PS加速 vs 纯attention PS
 
 | 层级 | GRPO n=8 | 说明 |
@@ -58,7 +60,7 @@
 1. **GRPO n=8: 2.46x加速!** — 与纯attention的0.99x形成鲜明对比
 2. **efficiency >100%**: time_savings > compute_savings → PS不仅省compute还省memory traffic(减少MLP中间tensor大小)
 3. **n=2效率82%**: kernel launch/小GEMM效率低 → n≥4后效率接近100%
-4. **n=16: 2.75x**: 理论极限约1.67x(n→∞) → 但实际因为PS减少整体forward长度 → 加速更显著
+4. **理论行数比更正**：P=512、R=256 且成本严格正比行数时，n→∞ 的比值为 `(P+R)/R=3`，不是旧文的1.67；该简化成本模型不是性能上限证明，也不能使不等价模拟成为有效 benchmark。
 
 ## 四、Exp4: Qwen3.6 Hybrid PS (16层, 4 full attn + 12 DeltaNet)
 
@@ -111,18 +113,20 @@
 
 ### 对verl #6401贡献的启示
 
-- **Magi Attention ~3x**: 本实测n=8时2.46x → Magi的3x来自更优的tree+sparse → 差距0.54x来自attention稀疏化(对18%中的2%优化) → 有限!
+- **Magi 对比撤回**：不能将不同来源的3x与此非等价模拟2.46x相减，更不能把差额归因为attention稀疏化。
 - **最优先改进**: 不是attention稀疏化 → 而是**优化MLP compute**(比如fused MLP kernel, gradient checkpointing for prefix portion)
 - **DeltaNet PS同样重要**: 不是只有full attn层受益 → DeltaNet的in_proj+out_proj也是compute-bound
 
 ### 实用公式
 
 ```
-full_model_speedup = 1 / (1/B + (B-1)/B × suffix_ratio)
+仅在成本严格正比有效token行数、忽略attention/聚集/调度开销时:
+ideal_token_cost_ratio = 1 / (1/B + (B-1)/B × suffix_ratio)
                     ≈ B / (1 + (B-1) × suffix_ratio)
 
 GRPO n=8, prefix_ratio=0.67:
-  speedup = 8 / (1 + 7 × 0.33) = 8 / 3.31 = 2.42x  → 实测2.46x ✓
+  ideal_token_cost_ratio = 8 / (1 + 7 × 0.33) = 8 / 3.31 ≈ 2.42
+  这不是速度保证；2.46x的非等价模拟不能验证该性能模型。
 ```
 
 Sources:

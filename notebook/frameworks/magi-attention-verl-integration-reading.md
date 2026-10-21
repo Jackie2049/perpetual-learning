@@ -462,96 +462,11 @@ for idx, mb in zip(batch_idx_list, micro_batches):
 
 ---
 
-## 7. ★★★ 关键分析: Attention-Only vs Full-Model PS
+## 7. 共享范围与性能对比更正
 
-### 7.1 MAGI/PR#6689 = Attention-Only PS
+2026-10-21：本节原先把 PrefixGrouper 错称为 attention-only，并把自写微基准0.99x与不等价的suffix-only模拟2.46x相比。旧PG也先合并输入，不能据此判断MAGI额外节省了PG重复的MLP。相关性能缺口、硬件差异归因和本项目RFC均已[撤回](verl-prefix-grouper-gap-analysis.md)。
 
-**MAGI PR #6689的prefix sharing仅发生在attention层**:
-- Flat layout `[prefix | leaf_0 | ... | leaf_{n-1}]` → 只在attention中共享prefix KV
-- **MLP层**: prefix token仍然被每个leaf的hidden state经过 → 没有跳过prefix MLP计算
-- **QKV projection**: prefix token的QKV仍需要计算 → 只是在attention中共享KV
-
-### 7.2 为什么Attention-Only PS不够
-
-我们的RFC (verl-6401-rfc-full-model-ps.md) 的核心发现:
-
-| 方案 | Speedup | 原因 |
-|------|---------|------|
-| Attention-only PS (PrefixGrouper) | **0.99x** (长序列!) | MLP=68% per-layer time, 不省MLP = 不省时间 |
-| Full-model PS (Two-pass) | **2.46x** (n=4, 75% prefix) | prefix MLP只算一次 + suffix只算suffix MLP |
-
-★ ★★ **0.99x = 实际没有加速!** 对于长序列, attention-only PS几乎无效, 因为:
-- Attention只占 ~32% 的per-layer时间
-- MLP占 ~68% → prefix MLP重复n次 → 0.99x说明attention节省被其他开销吞没
-
-### 7.3 MAGI PR的RFC数据 vs 我们的数据对比
-
-**PR #6689 RFC (#6401) 的实验结果** (H20, TP=4):
-
-| Dataset | Backend | Speedup | Memory |
-|---------|---------|---------|--------|
-| shallow tree (50% prefix) | MAGI vs FA3 mbs=2 | **1.68x** (6.7s→3.97s) | 86GB vs 77GB |
-| deep tree (69% compute saved) | MAGI vs FA3 | **3.02x** fwd | FA3 OOM at 16k |
-
-**我们的RFC数据** (RTX 4090, 单GPU):
-| 方案 | Speedup |
-|------|---------|
-| Attention-only PS | **0.99x** |
-| Full-model PS (n=4, 75%) | **2.46x** fwd, 1.59x training |
-| Full-model PS (n=8, 87.5%) | **3.55x** fwd, 2.68x training |
-
-### 7.4 ★★★ 为什么数据差异巨大?
-
-**H20 3x vs RTX 4090 0.99x 的关键区别**:
-
-1. **TP=4 vs 单GPU**: H20用TP=4 → 多GPU → communication overhead大 → MAGI节省的attention compute更显著(因为TP communication是attention的一部分)
-2. **微批次大小**: H20 mbs=2 vs mbs=4 → MAGI允许更大mbs→更多prefix sharing → 更省token
-3. **FA3 baseline**: H20的FA3 baseline较慢 → MAGI相对提升更大
-4. **单GPU RTX 4090**: 无TP communication → attention占比低 → attention-only PS几乎无效
-
-★ ★★ **核心结论**: MAGI PR #6689的加速主要来自 **flat layout省token → 允许更大mbs → 省GPU memory** 和 **CP dispatch负载均衡** → 不是纯粹的attention计算节省
-
-实际上, MAGI的speedup = **token deduplication省compute** (prefix token只算一次forward) + **memory节省** (允许更大batch) + **CP负载均衡** → 综合效果
-
-### 7.5 MAGI PR实际上也省了prefix的forward compute
-
-仔细看: flat layout `[prefix | leaf_0 | ... | leaf_{n-1}]` → prefix token只出现一次 → **整个模型(包括MLP!)只计算prefix一次**
-
-★ ★★ 等一下! 这比PrefixGrouper更全面!
-
-- **PrefixGrouper (#4368)**: 在model forward内部, 只patch `ALL_ATTENTION_FUNCTIONS` → 只省attention compute → prefix MLP仍然重复
-- **MAGI PR #6689**: flat layout → prefix token只在input出现一次 → 整个model forward只过prefix一次 → **包括MLP也只算一次!**
-
-★ ★★ ★ **MAGI PR = Full-Model PS (单次forward版)!** 但与我们的Two-pass PS不同:
-
-| 方案 | Prefix处理 | Suffix处理 | Gradient Flow |
-|------|-----------|-----------|---------------|
-| **MAGI PR** | prefix只算1次forward | suffix也1次forward (flat layout) | ★ 数学等价 (独立forward等价) |
-| **Two-pass PS** | Provider算prefix → 存KV/state | Reuser只算suffix → inject KV | ★ 数学等价 (验证cos_sim=1.0) |
-| **PrefixGrouper** | prefix重复n次forward | 但attention KV共享 | ✗ prefix MLP重复n次 |
-
-### 7.6 ★★★ 修正: MAGI PR IS Full-Model PS!
-
-重新审视: MAGI的flat layout `[prefix | leaf_0 | ... | leaf_{n-1}]` 意味着:
-- Input: prefix token只出现1次
-- Forward: 整个transformer过一遍 → prefix的QKV projection + attention + MLP全部只算1次
-- ★ 但prefix token的hidden state只输出1份 → leaf token的attention可以读到prefix KV → 但prefix hidden state无法分别送给不同leaf
-
-**关键区别**: MAGI PR = **单次forward full-model PS** vs 我们的RFC = **Two-pass full-model PS**
-
-| | MAGI PR (单次flat) | Two-pass PS (我们的RFC) |
-|---|---|---|
-| Forward次数 | 1次 (flat layout) | 2次 (Provider + Reuser) |
-| Prefix MLP | 只算1次 ✓ | 只算1次 ✓ |
-| Gradient flow | 数学等价 (hidden state共享) | 数学等价 (KV inject) |
-| DeltaNet支持 | 需要special handling | ★ 两pass天然支持 |
-| Long prefix | prefix hidden state只一份 → 所有leaf共享同一份 → 正确! | Provider存KV → Reuser注入 → 正确! |
-| Memory | prefix KV只一份 → 省内存 ✓ | KV存储需要额外buffer |
-| Implementation复杂度 | flat layout + attention mask | 两pass + KV inject + state inject |
-
-★ ★★ **两者数学等价但实现路径不同**: MAGI用flat layout + block mask → 单次forward → 更简洁; Two-pass用KV/state injection → 两次forward → 支持DeltaNet等需要中间状态的模型
-
----
+输入去重可影响整个逐token计算路径，attention接口名称不能决定其范围；还要追踪进入模型的实际行数、重组位置和padding。对MAGI PR的具体backend、树形布局、梯度、LoRA或hybrid兼容性仍须固定版本分别验证。本轮不重新核验其上游状态、H20性能或实现，不以PG的5组CPU输入检查认证MAGI。
 
 ## 8. Trie检测算法深度分析
 
@@ -672,37 +587,11 @@ actor_rollout_ref.rollout:
 
 ---
 
-## 11. ★★★ MAGI PR vs PrefixGrouper vs Two-pass PS 对比
+## 11. PrefixGrouper 与其他共享方案的比较边界
 
-| | PrefixGrouper (#4368) | MAGI PR (#6689) | Two-pass PS (RFC) |
-|---|---|---|---|
-| **PS范围** | Attention-only | ★ Full-model (flat) | ★ Full-model (KV inject) |
-| **Backend** | FSDP only | Megatron only | 任意 (FlashInfer/FA3) |
-| **Forward次数** | n次 (prefix重复) | ★ 1次 (flat layout) | 2次 (Provider+Reuser) |
-| **Prefix compute** | 重复n次 | ★ 只算1次 | ★ 只算1次 |
-| **Memory节省** | KV共享 (MLP仍重复) | ★ prefix只1份hidden+KV | KV存储额外buffer |
-| **DeltaNet** | ✗ | 需special handling | ★ 两pass天然支持 |
-| **Multi-level tree** | ✗ 单层 | ★ ★ 任意深度trie | 需要扩展 |
-| **Gradient等价** | ✓ (attn only) | ★ ✓ (数学等价) | ★ ✓ (cos_sim=1.0验证) |
-| **MBS负载均衡** | ✗ | ★ DFS trie order + flat token budget | 需要设计 |
-| **OLB backend** | ✗ | ★ configurable (magi/flex/fa3) | 需要设计 |
-| **Fallback** | ✗ | ★ ★ 自动fallback to FA3 | 自动fallback |
-| **RTX 4090** | ✗ (FSDP only) | ★ flex可用 | ★ FlashInfer可用 |
-| **LoRA兼容** | ✓ (attn patch) | 需要验证 | 需要验证 |
+旧比较表的“PG重复n次前缀”“不省MLP”“FSDP所以RTX4090不可用”和“两pass天然支持DeltaNet”均不再采用。PG原生输入在组内合并，矩形padding可能抵消行数节省；硬件支持、递归状态注入与梯度等价则需各自证据，不能从backend名或forward次数推出。
 
-### 11.1 ★★★ 关键结论
-
-1. **MAGI PR > PrefixGrouper**: flat layout = full-model PS → 省MLP compute → 远优于attention-only
-
-2. **MAGI PR ≈ Two-pass PS**: 数学等价, 只是实现路径不同 (flat mask vs KV inject)
-
-3. **MAGI PR的优势**: multi-level tree (任意深度) + DFS负载均衡 + configurable backend
-
-4. **Two-pass PS的优势**: DeltaNet/SSM支持 + KV inject更灵活 + 不需要flat mask
-
-5. ★ ★★ **两者互补**: MAGI PR的trie检测 + DFS分组 → 可直接用于Two-pass PS的planner → 不需要重写trie
-
----
+本项目两pass RFC已撤回；不继续凭其非等价模拟数值给MAGI/PG排序。树深度、调度和attention后端仍是可比较维度，但本轮不提供新的MAGI验收结论。最新PG证据见[计算范围更正](verl-prefix-grouper-gap-analysis.md)。
 
 ## 12. 风险与限制
 

@@ -8,6 +8,8 @@
 
 旧[阅读笔记](verl-prefix-grouper.md)描述的是 `prefix_grouper` 外部库和旧 actor 集成。在上述 base 对 `forward_micro_batch_with_prefix_grouper` 做 `git grep`，verl 内只找到函数定义；不能把那篇笔记当作当前 FSDP engine 的启用说明。
 
+旧路径也会在模型入口前合并共享前缀，不能称为“只省 attention、不省 MLP”。新旧差别在布局与集成条件，不是首次让全模型共享前缀；原生 CPU 输入证据和旧性能论证撤回见[更正](verl-prefix-grouper-gap-analysis.md)。
+
 | 方面 | 旧笔记所描述的集成 | #8300 固定 head |
 |---|---|---|
 | 路径 | `trainer/ppo/prefix_grouper_utils.py` | `workers/engine/fsdp/transformer_impl.py` |

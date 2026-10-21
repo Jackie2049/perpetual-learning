@@ -1,4 +1,10 @@
-"""Full-Model Prefix-Sharing Benchmark — RTX 4090
+"""Historical suffix-only compute simulation — NOT equivalent prefix sharing.
+
+2026-10-21 scope correction: suffix branches do not receive prefix KV; full and
+PS inputs are independently random. Hybrid layers are simplified projections,
+not native DeltaNet state injection. Timings cannot prove a PG performance gap
+or equivalent training speedup. Logic preserved, not repaired or GPU-retested.
+See notebook/frameworks/verl-prefix-grouper-gap-analysis.md.
 
 5 experiments measuring prefix-sharing savings at the FULL MODEL level:
   Exp1: Full Transformer forward — PS vs no-PS (7B model simulation)

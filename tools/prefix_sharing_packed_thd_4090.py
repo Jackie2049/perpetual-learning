@@ -1,4 +1,10 @@
-"""Prefix Sharing Packed THD Micro-Benchmark — RTX 4090
+"""Historical Prefix Sharing attention micro-benchmark — not a verl/PG benchmark.
+
+2026-10-21 scope correction: Exp2 times random allocation and compares n suffix
+queries with n-1; provider attention is excluded and default SDPA is noncausal.
+No native PrefixGrouper, output equivalence, or HBM profiling is performed.
+Do not use its timings as a PG baseline or to infer a full-model speedup gap.
+See notebook/frameworks/verl-prefix-grouper-gap-analysis.md. Logic preserved.
 
 5 experiments simulating the prefix-sharing architecture from prefix-0501 project:
   Exp1: Packed THD KV injection overhead (provider KV store -> reuser KV inject)

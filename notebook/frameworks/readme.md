@@ -106,7 +106,7 @@
 ## verl
 
 - [verl 异步训练策略版本与 logprob 对照条件](verl-async-logprob-provenance.md) — V1 separate-async的rollout/old/current来源、CPU快照路由、版本标签边界和最小观测契约；非训练根因证明
-- [RFC: Full-Model Prefix Sharing for GRPO Training Acceleration](verl-6401-rfc-full-model-ps.md)
+- [verl Full Model Prefix Sharing 旧 RFC 已撤回](verl-6401-rfc-full-model-ps.md)
 - [verl #6468: FSDP2 CPU Memory Leak During Weight Sync — Deep Reading](verl-6468-fsdp2-cpu-memory-leak-reading.md)
 - [verl #6512 -- Per-Unit LoRA Summon for FSDP1/FSDP2: Deep Technical Analysis](verl-6512-per-unit-lora-summon-reading.md)
 - [verl #6572 Full Determinism vLLM Rollout — Source-Level Reading](verl-6572-full-determinism-source-reading.md)
@@ -148,7 +148,7 @@
 - [verl v0.8 Registered Policy Loss Catalog — Source-Level](verl-policy-loss-catalog-source-reading.md)
 - [verl PPO vs GRPO 训练Loop对比](verl-ppo-vs-grpo-training-loop-comparison.md)
 - [verl PR #6713 — Megatron LoRA Adapter Export for Rollout](verl-pr6713-megatron-lora-export-reading.md)
-- [verl PrefixGrouper Gap Analysis — From Attention-Only PS to Full-Model PS](verl-prefix-grouper-gap-analysis.md)
+- [verl PrefixGrouper 计算范围与旧性能论证更正](verl-prefix-grouper-gap-analysis.md)
 - [verl PrefixGrouper 源码深度阅读](verl-prefix-grouper.md)
 - [verl FSDP shared-prefix packing](verl-shared-prefix-packing.md)
 - [verl ReMax (#6340) and IcePop (#5722) Source-Level Reading](verl-remax-icepop-source-reading.md)

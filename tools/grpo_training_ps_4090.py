@@ -1,4 +1,9 @@
-"""GRPO Training Throughput with Prefix-Sharing — RTX 4090
+"""Historical suffix-only training simulation — NOT equivalent GRPO/PG training.
+
+2026-10-21 correction: reusers receive no prefix KV/shared prefix graph, and
+provider/reuser CE means do not reproduce the original batch loss. Timings are
+not a valid PS speedup lower bound; forward speedup times 0.76 is not a general
+training-speed formula. Logic preserved, no GPU rerun. See the gap-analysis note.
 
 4 experiments measuring real GRPO training throughput:
   Exp1: Training step time (forward+backward) with PS vs no-PS

@@ -118,9 +118,9 @@ prefix_logits = compute_logits(prefix_hidden_states)  # 从provider hidden_state
 
 ## 四、verl集成路径
 
-### Phase 1: PrefixGrouper改进 (最易, 建议先做)
+### Phase 1 旧 PrefixGrouper 改进计划已撤回
 
-当前PrefixGrouper只拦截attention层 → **2.5x gap来自MLP**
+2026-10-21 更正：旧PG先合并输入，不能因attention接入而称它不省MLP；0.99x与2.46x又来自非等价微基准，不构成2.5倍缺口。本阶段“添加MLP skip”的论证和优先级撤回，见[源码与原生CPU证据](verl-prefix-grouper-gap-analysis.md)。以下为不再执行的历史示意，不是修复方案。
 
 **改进方向**: 在`pg_forward()`中增加MLP层skip:
 ```python
@@ -133,8 +133,7 @@ def pg_forward(self, attn_func, Q, K, V):
 # 但这需要model-level修改 → 不能仅monkey-patch attention
 ```
 
-**挑战**: verl用vLLM/SGLang做rollout → 模型forward在serving引擎内部 →
-monkey-patch难以修改模型forward逻辑 → **需要FSDP backend的model-level支持**
+**训练与rollout须分开**：vLLM/SGLang的生成前向不等于FSDP训练前向；不能用serving引擎所在位置论证训练MLP不可修改。后续旧阶段方案也不因这份历史设计而自动恢复推进。
 
 ### Phase 2: Full-Model PS (核心贡献)
 

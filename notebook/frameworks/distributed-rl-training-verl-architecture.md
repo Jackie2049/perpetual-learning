@@ -184,8 +184,8 @@ TP=4, PP=2, DP=2:
 ### 当前PrefixGrouper (PR #4368已merge)
 
 - **位置**: `prefix_grouper_utils.py` → monkey-patch `ALL_ATTENTION_FUNCTIONS`
-- **机制**: 只拦截attention层 → Provider正常forward → Reuser用padded prefix做forward
-- **局限**: MLP/QKV_proj无节省 → 0.99x加速(长序列) vs full-model 2.46x
+- **机制更正（2026-10-21）**：先在模型入口合并每组prompt和responses，attention内部解组/重组；前缀逐token运算也不按原样本数重复，矩形padding另算。
+- **旧性能结论撤回**：0.99x非原生PG，2.46x模拟缺prefix KV，两者不构成full-model缺口；见[源码及CPU输入证据](verl-prefix-grouper-gap-analysis.md)。本节后续两pass方案是历史提案，不是已验证集成计划。
 
 ### Full-Model PS集成方案
 
@@ -218,9 +218,7 @@ Training阶段: 使用full-model PS → Provider+Reuser模式
 
 ### 实际集成步骤 (verl #6401)
 
-1. **Phase 1**: PrefixGrouper改进 → 加MLP层skip → 预估1.87x training speedup
-2. **Phase 2**: Magi Attention backend → prefix tree + sparse attention
-3. **Phase 3**: Full-model PS → model-level修改 → 2.5x forward speedup
+原三阶段推进与1.87x/2.5x收益预估已撤回，不能据此实施或投稿。已有作者#8300采用新的FSDP no-padding路径，见[限定阅读](verl-shared-prefix-packing.md)，不属于本项目旧提案成果。
 
 **关键**: verl的hybrid engine架构天然支持PS → sleep释放rollout权重 → actor训练用PS → wake恢复rollout
 
