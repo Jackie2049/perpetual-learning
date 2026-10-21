@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** 2026-10-21：#8250补充V1策略/logprob来源与最小观测契约，仍待补证、不判根因；#7913旧验证已纠正并停止重复投入，clip旧RFC不再推进，#8281仍待决定。不将替身/数值模型算作训练实测。
+**【进展】** 2026-10-22：只读确认#8281已有用户账号的[PR #8313](https://github.com/verl-project/verl/pull/8313)，独立方法检查发现middle/cap=1违例，未改PR；#8250仍待补证，#7913及clip旧RFC不重复推进。不将隔离方法或数值检查算作训练实测。
 
 **【大白话讲明白】**
 
@@ -35,7 +35,7 @@
 |---|---|---|---|---|---|---|
 | 0 | megatron `optimizer_offload_fraction<1` 首轮 update 崩溃 (#8237) | P0 | 42 | [#8286](https://github.com/verl-project/verl/pull/8286) **MERGED** `472dd21` | **已合并**（2026-10-20）：根因 100% 实锤（无差别 `to("cpu")` 污染 GPU 半 + fp32 参数悬空 view；P1/P2a/DeepSeek 模型源码三链）；方案 2（HDO 状态在 offload 完全不动）PR，issue #8237 已回复，4090 全验证 + 外部 GB200 验证（linmuchuiyang）→ wuxibin89 approve 后 08:06 合入。详见 [candidate](candidate-8237-offload-fraction.md) | 2026-10-19 |
 | 1 | async熵异常与坍塌诊断 (#8250) | 调查/评论 | 重评见candidate | — | **needs-evidence**（2026-10-21）：仍open/0评论；旧“结果0必然全梯度0、优势离群必然性、同步唯一根因、紧窗导致无法恢复”撤回。报告源码+NumPy反例已补，不是训练实测；需有效奖励/优势/mask/ratio/版本数据，旧英文稿不可直接发 | 2026-10-19 |
-| 3 | agent loop shared cap 忽略 data.truncation 策略 (#8281) | P2 bug | ~25 | — | **analysis-done + CPU 验证**（2026-10-20）：`_cap_text_prompt_length` 无条件左截断，忽略 truncation（error/left/right/middle 全输出同后缀）；root cause 两层（agent_loop 硬编码 + RLHFDataset 从未执行 truncation 空契约）；option 1 patch（error→raise/left→后缀/right→前缀/middle→头尾）CPU 验证通过；reporter 深挖未自修（0 PR）；发布需授权。**PR 草稿已本地备好**（2026-10-20：源修复 + `test_cap_text_prompt_length.py` 单测，落地 `/Users/jackiemac/workspace/verl` 分支 `fix-8281-truncation-policy` commit `7ace28db`，patch 存 candidate 目录；真源 verbatim exec 32 断言全过，本机无 CI 需 verl CI 验证）。**2026-10-20 补充核验：存在关联旧 PR #4600**（reporter 创建 #8281 时即链接，`[SingleTurnAgentLoop] fix truncation`，同四策略方向但预 CT 重构、dirty、陈旧，非当前共享修复点）；正确修复点是共享 `_cap_text_prompt_length`，评论形态（reporter 定位为「契约讨论」）比 PR 更契合，见 [candidate](candidate-8281-agent-loop-shared-cap-vs-truncation.md) | 2026-10-20 |
+| 3 | agent loop shared cap 忽略data.truncation（#8281） | P2 bug | ~25 | [#8313](https://github.com/verl-project/verl/pull/8313) | **open，需核对边界**（2026-10-22）：head80ee82bd/base954bd28f，用户账号已发布，M1仅只读；原方法middle/cap=1将10token变11，两版各24组输入观察，原11项pytest未跑。未改PR/分支/补丁，旧草稿验证仅指定长度；见[candidate](candidate-8281-agent-loop-shared-cap-vs-truncation.md#当前候选的最小正上限反例)，修正与对外行动待负责人决定 | 2026-10-20 |
 | 4 | 训练前 weight-update 自检 RFC (#8252) | RFC/评论 | ~13 | — | **assessed**（2026-10-20）：三项核心事实声明全核验成立（README 无 post-sync 验证列、tests 无 weight-checker 测试、`check_weight_update_equal` main 不存在且 delta checksum 仅线缆完整性）；reporter shiyuan680 在 verl 无 PR 记录；关键张力=唯一实现先例 #7108 stale+不可合并（RFC 却要 extend 它）；不建议我方实现（成本 3/接受度未验证/无 ray-GPU 验证），价值在 RFC 技术回复（解耦为后端无关最小钩子 + 补 scope 声明）。详见 [candidate](candidate-8252-weight-checker-rfc.md)；参与与否待授权 | 2026-10-20 |
 
 ## 本地论证撤回，不再独立推进

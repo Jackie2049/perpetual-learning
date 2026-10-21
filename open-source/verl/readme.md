@@ -31,7 +31,7 @@
 - [#8250诊断边界与待补观测](candidate-8250-async-entropy-collapse.md)
 - [#7913真实调用链与旧split验证更正](candidate-7913-gmpo-geo-mean.md)
 - [clip旧RFC撤回与目标核验](verl-clip-semantics-rfc-draft.md)
-- [#8281截断契约（待决定）](candidate-8281-agent-loop-shared-cap-vs-truncation.md)
+- [#8281截断契约与#8313最小长度反例](candidate-8281-agent-loop-shared-cap-vs-truncation.md) — PR已存在；middle/cap=1原方法违例已记录，未改PR/补丁，修正待负责人决定
 - [Candidate: del_local_ckpt_after_load 不删本地 checkpoint](candidate-del-local-ckpt.md)
 - [Candidate: dynamic-cp ceil 切分致高 DP rank 空 (#6786)](candidate-dynamic-cp-split.md)
 - [Candidate: filter_overlong_prompts 多进程 SIGTERM 挂死 (#7163)](candidate-filter-sigterm.md)
