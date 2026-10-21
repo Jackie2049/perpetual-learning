@@ -10,6 +10,8 @@
 
 ## 运行接续
 
+- **M1 vendor发现/执行边界收束（2026-10-21）**：已有#60 1f299c27原10项测试通过，复用脚本加vendor模式从Git完整导入；原Ascend12+2回归通过。固定_BACKENDS元组/Protocol不是动态插件，Biren发现不接通platform、扩展标签、setup或vendor build；BF16峰值仍显式未配置。已有#59/#63文档覆盖后续讨论，不竞争实现。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#vendor-registry-与模型运行支持)。本课题收束，下一步有界核对DeepInfer/verl变化再选未重复问题，不扩写模拟或干预并行移植专题；不加载运行时、GPU/AReaL与网站边界不变。
+
 - **M1 Ascend发现/NUMA边界收束（2026-10-21）**：已有#127 f9dec70d只加测试，完整原模块/原12项测试及2组独立可见编号控制通过，未导入torch。合成_root跳过npu-smi/lscpu生产分支，physical index与visible ordinal不同，查到NUMA≠实际绑核/内存落位。关联#56/#58/#60均已有作者且open，不竞争实现。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#ascend-发现与-numa-查询边界)。后续只读#60 vendor registry/Biren发现与运行时支持的边界，先核版本，不加载设备运行时、修改affinity或探测服务器。网站/GPU/AReaL分工不变。
 
 - **M1 profiling关闭链收束（2026-10-21）**：只读已有#122 head8c5f5759/base774ce244，区分排队取消、采集中断与已提交导出排空；5秒uvicorn参数非整个close时限，engine线程启停是调用契约。两版本相同_wait原协程各4组真实asyncio/Future控制通过，不是修复验收。现有环境缺HTTP依赖，作者15测试未复跑，未补装或启动服务。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#profiling-请求与服务关闭)。后续只读已有#127 Ascend/NUMA测试及对应拓扑/绑核边界，先查版本/依赖，不改本机affinity、不探测服务器、不竞争实现。网站/GPU/AReaL分工不变。
@@ -104,7 +106,7 @@
 1. **未来一周开源技术掘金三大重点（用户 2026-10-20 定）**：**DeepInfer / verl / AReaL**。其中 DeepInfer 主研（推理框架源码深挖），verl 主贡献（续 #8281/#8250），AReaL 主实测（prompt_mean 切分敏感点）。vLLM 降为次优先级。 **这是跨主机整体分工，M1 不接管 AReaL；M5 独立推进其完整候选/PR。**
    - **DeepInfer 平民版（魔改适配非旗舰硬件）专题（2026-10-20 用户立项，跟踪项）**：评估能否把 DeepInfer 从"仅 SM100/Ascend950"改造成适配 4090/A100/H100/910C。**结论（中期，源码+替代方案调研）：Python 算子抽象层后端无关，堵点在 flash_mla/deep_gemm/deep_ep 三个 Blackwell/A5-only kernel 包 + 一个架构检查 + tilelang 需重编译。** H100 最容易、4090 可行、A100 最费、910C 属跨代移植难。详见 [专题笔记](notebook/frameworks/deepinfer-civilian-port.md)。下一步：等目标硬件后建"移植冒烟"（换 Triton MLA + 放宽架构检查跑通 offline_inference）；完成后作为新章节插入 DeepInfer 研究报告。
 2. **等待用户授权/资源**（长期未决，见「运行接续」5 项）——发布评论/文档、#8281 发布形态、方向调整。#8237 已收尾（PR #8286 ready + issue 已回）。
-3. **M1当前学习/贡献复核**：V1来源/失败边界、#8303指标与#8300布局学习收束；#8250等真实配对观测，#7913不重复，#8281待决定。clip旧RFC和PrefixGrouper full-model旧RFC均已撤回，不发布后者评论草稿。DeepInfer参数、decode曲线、profiling及#127 Ascend/NUMA限定学习收束，下一步只读已有#60 vendor registry/Biren发现与运行时支持的边界，先核版本，不加载设备运行时、不改affinity或探测服务器，不竞争已有实现。M1不访问GPU、不涉及AReaL整项，任何上游发言仍须拍板。
+3. **M1当前学习/贡献复核**：V1来源/失败边界、#8303指标与#8300布局学习收束；#8250等真实配对观测，#7913不重复，#8281待决定。clip旧RFC和PrefixGrouper full-model旧RFC均已撤回，不发布后者评论草稿。DeepInfer参数、decode曲线、profiling、Ascend/NUMA与#60 vendor发现限定学习收束，后续有界核对DeepInfer/verl变化再选未重复问题，不继续凑模拟或竞争已有实现，不改并行移植专题。M1不访问GPU、不涉及AReaL整项、不加载设备运行时或改affinity，任何上游发言仍须拍板。
 3. **高优调研（用户 2026-10-20 定）**：**DeepInfer**——确定性、ZOS、DSpark、YoCo/CP、生命周期、EPLB、chunk/cached-prefix、MTP缓存提交与SO失败输出边界已有源码/限定CPU学习，完整扩展/设备正确性与性能未测。账本0不能直接当对外失败token，局部条件差异不定性新bug，见[笔记](notebook/frameworks/deepinfer-initial-survey.md#so失败状态与输出token身份)。下一步做有界DeepInfer/verl上游变化核对，选择未重复课题；不继续增加同类替身代替真实失败payload、错误响应语义与既有PR覆盖核验。不预设新缺陷、不竞争已有修复；M1不访问GPU/AReaL，任何上游发言仍须用户拍板。
 4. **AReaL prompt_mean（原 M5 单一负责项，用户 2026-10-20 恢复 VPN 后明确本会话继续）——实测已闭环**：框架跑通（gsm8k PPO smoke 128 步无错）+ 受控实测（§10.7 判据，M=2 vs 4 + 固定 M 变 P，prompt_mean 与 token_mean 行为一致：跨 M 1.301≈1.273、P-spread 1.216≈1.192）——**不构成 defect，候选修复撤销，不提 issue/PR**，作为 review 依据存档（见 [源码笔记 §10.10](notebook/frameworks/areal-architecture-source-reading.md)、[tracker](open-source/areal/tracker.md)）。Megatron GPU 对照未做（TE 硬依赖）。分工状态见 [handoff-m5](open-source/areal/handoff-m5.md) 与 WORK「运行接续」。
 3. 按课题逐步关联现有实验执行材料与 notebook/experiments/ 的分析记录；新增实验优先就近组织，维护双向入口。

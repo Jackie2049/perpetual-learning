@@ -1008,3 +1008,47 @@ python experiments/scripts/verify_deepinfer_ascend_discovery.py /path/to/DeepInf
 M1、Python 3.12.13、pytest 8.4.2：12 项原始测试全部通过；另 2 组独立控制通过，分别检查反向可见列表的查询映射、空列表下物理数量仍为 2 但可见查询被拒。后两组不计入原作者测试数。`_environ` 或子进程临时环境只作用于合成根；导入 Ascend 模块会按原代码读取一次本机 `/dev/davinci_manager` 存在标志，但测试不使用该标志作硬件结论。没有运行 npu-smi/lscpu、加载 libnuma/NVML、修改 affinity、导入 torch/torch_npu 或访问服务器，没有设备/内存绑定、kernel 或吞吐验证。
 
 SHA256：ascend.py `f0fb8df71efba56541bb07ed6fb7d75237bd2689be668d861f3b8c4ad032da26`，device.py `d305c2e5994a5c8a3d59cae22aa3ed8db0941c0279577888d02e188c7cb4b591`，bind.py `325fa9827b0d601c80a3e6d169ddf734375a715b720de1839636f5f7affb8894`；原始测试 `550ca6755afdf34462ce778dbba4c87b91f195a50eeb6721aae3746f79e25f5d`。
+
+## Vendor registry 与模型运行支持
+
+硬件发现 backend 不是模型执行 backend。已有作者 Dashener2 的 [PR #60](https://github.com/deepseek-ai/DeepInfer/pull/60)把发现层分派集中为 vendor 列表并添加 Biren；2026-10-21 读取时 open，base `774ce244b87cc0eb8d4b94ab9f5de2ab22049f01`，head `1f299c270bc21ffafb51d14ac1c160a4a350333c`。作者明确只交付发现/拓扑阶段，平台、构建、算子与推理验证另行推进。
+
+### Registry 仍是显式成员列表
+
+[`VendorBackend`](https://github.com/deepseek-ai/DeepInfer/blob/1f299c270bc21ffafb51d14ac1c160a4a350333c/deep_cluster/hardware/vendor.py)是结构化类型协议，要求 vendor 名称、可见设备环境变量、可用性、物理数量、NUMA 和 BF16 算力函数。没有运行时协议验证或动态插件加载接口；[`device.py`](https://github.com/deepseek-ai/DeepInfer/blob/1f299c270bc21ffafb51d14ac1c160a4a350333c/deep_cluster/hardware/device.py)的 `_BACKENDS` 是 `(ascend, nvidia, biren)` 固定元组，按顺序检测首个可用 backend，CPU 是无匹配的回退。类型 `cast` 不会验证硬件支持。
+
+相较多处 if 分派，这集中了一层成员与操作约定；新增 vendor 仍需显式纳入成员列表，不能把它描述成第三方包安装后自动注册的完整扩展机制。
+
+### Biren 发现与算力配置的边界
+
+[`biren.py`](https://github.com/deepseek-ai/DeepInfer/blob/1f299c270bc21ffafb51d14ac1c160a4a350333c/deep_cluster/hardware/biren.py)按数值排序 `card_N`，先查 `/sys/class/biren`，没有项才退到 `/dev/biren`，可见列表使用 `SUPA_VISIBLE_DEVICES`。NUMA 依次查 entry/device、entry 自身和解析符号链接后父目录的 `numa_node`，接受非负值；只有设备节点但没有元数据仍不能查询节点。这里固定的是序号/元数据查找，不是设备 runtime 初始化。
+
+`bf16_tflops_limit()` 显式抛 `not configured`，没有从设备名字猜峰值。engine 初始化的 StatsLogger 路径仍调用 `get_bf16_tflops_limit() * 2`，其值用于 MFU 分母；它不是 kernel 选择或精度能力的证明。补一个峰值数不会同时补齐运行时与算子，也不保证整个初始化已可达。
+
+### 发现层之外仍有独立入口
+
+以下入口在 #60 中均未修改；对应固定源码见 [platform.py](https://github.com/deepseek-ai/DeepInfer/blob/1f299c270bc21ffafb51d14ac1c160a4a350333c/deepinfer/platform.py)、[包根](https://github.com/deepseek-ai/DeepInfer/blob/1f299c270bc21ffafb51d14ac1c160a4a350333c/deepinfer/__init__.py)、[setup.py](https://github.com/deepseek-ai/DeepInfer/blob/1f299c270bc21ffafb51d14ac1c160a4a350333c/setup.py)与 [vendor 构建脚本](https://github.com/deepseek-ai/DeepInfer/blob/1f299c270bc21ffafb51d14ac1c160a4a350333c/scripts/build_vendor.sh)。这是源码边界核对，未调用这些入口或尝试构建。
+
+| 层次 | #60 固定版本的行为 |
+|---|---|
+| 硬件发现 | 可以分派到 Biren，返回数量/可见列表/NUMA |
+| Python platform | Enum 仍只有 GPU/NPU；非 ascend 名称仍选择 PlatformGPU，其执行配置为 CUDA/NCCL |
+| 扩展路径标签 | 包根只接受 nvidia/ascend，其他标签回退 nvidia |
+| 本体扩展构建 | setup 只用是否 ascend 区分 NPU/CUDA，没有独立 SUPA 分支 |
+| vendor 算子构建 | shell case 仅接受 nvidia/ascend，其他名字报 unsupported |
+
+所以返回 `accelerator_kind() == 'biren'` 不能推出 `PlatformBiren`、SUPA/SCCL、扩展或 FlashMLA/DeepGEMM/DeepEP 已接通。相关缺口已有 [#59 Biren RFC](https://github.com/deepseek-ai/DeepInfer/pull/59)与 [#63 platform/build RFC](https://github.com/deepseek-ai/DeepInfer/pull/63)讨论，读取时均 open，且均是文档方案，不是完整执行层实现。#59 报告的 API 差异与设备环境仍属作者观测，本机没有 SUPA 验证；#63 所列调用次数也未在本轮重新统计，不作为移植成本估计。
+
+### 原始测试与验证范围
+
+[复现脚本](../../experiments/scripts/verify_deepinfer_ascend_discovery.py)复用上节入口，增加 `--suite vendor`。通过 Git import loader 正常执行 #60 完整原始 `deep_cluster` 模块和完整 [test_hardware.py](https://github.com/deepseek-ai/DeepInfer/blob/1f299c270bc21ffafb51d14ac1c160a4a350333c/tests/deep_cluster/test_hardware.py)，不覆盖源码 checkout、不切片或重写测试体；collector 隔离无关 conftest 和第三方插件。
+
+```bash
+python experiments/scripts/verify_deepinfer_ascend_discovery.py /path/to/DeepInfer --suite vendor
+```
+
+M1、Python 3.12.13、pytest 8.4.2，10 项原始测试通过。合成目录覆盖 CPU/NVIDIA/Ascend/Biren 的发现、可见设备及 NUMA，验证 Biren 缺峰值时显式报错；其中 NVIDIA capability 与 machine 使用原测试 monkeypatch，不是实际 NVML/硬件峰值测量。此前默认 Ascend 12 项原测试与 2 组独立查询控制回归通过。
+
+没有导入 torch/torch_npu、加载设备 runtime/NVML/libnuma、执行拓扑 CLI、修改 affinity、编译或运行模型/collective/kernel，也未验证作者报告的 8 卡 Biren166M 结果。原 Ascend 模块导入仍仅计算一次本机 device-manager 存在标志，不用于支持结论；临时文件、环境映射均限于合成测试。以上结果不认证 backend 通用兼容、模型正确性或性能。
+
+SHA256：vendor.py `02cd28193b1a757be24ab4bc59444fff4ad1da9ef45dc207f066d7a41e3e52c1`；biren.py `e2ffcb99ebd33775ae51dff993242d268d9c33f887b2eefd49e585a1166c4973`；device.py `9320a2702d0aab7e3e1e034a83cdc5ef203dcce2c4b3227275922f63082830ce`；原测试 `232f6d31e928b90754e1e0c3cc676256b52847390d40f6d4d55ad2a167f2d572`。
