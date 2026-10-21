@@ -208,3 +208,78 @@ Python3.12.13，保留原classmethod、原manager两组长度断言及init_proce
 新增测试只构造字符串metadata `["trainer", "rollout"]`，A=R=1，断言prev为[trainer]、next为[None]。复用原脚本的 `--upstream-case`，AST原样执行这一测试函数及其两个断言，类壳只承载原build_topology。Python3.9.6及3.12.13两环境均为基线1项预期AssertionError、新head 1项通过；不是扩写新模拟或把旧20组控制改称原测试。原测试SHA256 `699eb471d14bb946d47cd794416a23c04ee60a44b3ac206d2dafb8146e91541c`。
 
 该文件顶层直接导入nixl_checkpoint_engine，而后者仍急切导入cupy、nixl、Ray、torch、ZMQ。本机跳过了整模块导入与pytest收集，没有安装/探测这些运行时。因此这里只确认原测试体对纯拓扑方法的回归能力，不能由文件名on_cpu或本次隔离通过推断无原生依赖的CPU CI可收集。新增测试仍不覆盖多worker、真实agent元数据或权重传输；原有M5交接边界不扩大。
+
+## 组初始化的等待超时与任务退出
+
+[verl #7045](https://github.com/verl-project/verl/pull/7045)是控制端等待的保护栏，不是 #6967 原生挂起的根因修复。2026-10-22读取open、作者aryanyadav0402，固定head `6f458f6d49076c647a42c00d240b5eaa7449fdb7`、目标base `3f9d4c0d32cc20c7ec31c8137e91bb5673ce9e5e`，实际merge-base `220e9039902c6db56860e2afd659803dc34ec005`。真正diff三文件246增2删：新增97行helper、144行测试，以及manager接线。**当前head没有新增worker超时线程**；NCCL实现相对祖先逐字不变，不能混用旧worker侧版本的验证。
+
+### 哪一段等待受到约束
+
+[build_process_group](https://github.com/verl-project/verl/blob/6f458f6d49076c647a42c00d240b5eaa7449fdb7/verl/checkpoint_engine/base.py#L388)先prepare并取metadata，再构造/检查拓扑，最后分派actor和rollout两组init，拼接refs后交给新helper。其覆盖并不是整个weight sync的截止时间：
+
+| 阶段 | 固定head的等待方式与边界 |
+|---|---|
+| abort请求、release KV | 在update_weights中先于建组；不受新helper计时 |
+| prepare与metadata收集 | 仍是无显式timeout的ray.get |
+| 构造拓扑、分派init RPC | 在进入helper之前；不受其ray.get超时约束 |
+| 等actor与rollout的init结果 | 同一refs列表，一次ray.get，默认600秒 |
+| 传权重、finalize、恢复KV/生成 | 仍为各自调用；不受这个组初始化timeout覆盖 |
+
+`update_weights`每次非naive同步都调用建组；即便NCCL默认复用已存在group，init方法仍可能执行连接/barrier。因而新等待边界不只存在于第一次同步，也不由manager限定为NCCL backend；naive路径提前返回。这里是调用范围，不认证所有backend都做相同初始化或必定能在预算内结束。
+
+### 停止等待不等于取消或回滚
+
+[wait_for_group_init](https://github.com/verl-project/verl/blob/6f458f6d49076c647a42c00d240b5eaa7449fdb7/verl/checkpoint_engine/_group_init.py)只解析预算并调用 `ray.get(refs, timeout=...)`，将GetTimeoutError转成带原异常cause的CheckpointEngineInitError；其他异常不在该except中处理。没有cancel、kill、重试或补偿。当前 [Ray get文档](https://docs.ray.io/en/latest/ray-core/api/doc/ray.get.html)将timeout定义为等待上限；[cancel是独立API](https://docs.ray.io/en/latest/ray-core/api/doc/ray.cancel.html)，行为还依任务/Actor执行模型而异。读取的文档为Ray2.59.0，不代表原报告或本项目已安装此版本。
+
+超时异常沿manager当前方法向外传播，方法内没有finally继续finalize或恢复KV/生成；此前的abort/release动作不能据异常自动视为撤销。这说明必须区分“调用者获知失败”与“远程操作停止、资源释放、可重新开始”，不证明本次已观察到资源泄漏，也不提出在原group上重试的方案。PR选择由外层launcher结束作业；其正文报告的2×A100清理/新进程恢复针对旧head `da00403`，并明确当前控制端head复验待做，不能挪用为本版本验收。
+
+### 参数合法性与检查时机
+
+`_resolve_timeout_s`优先显式timeout_s，否则每次读`VERL_CKPT_ENGINE_INIT_TIMEOUT_S`，缺省600；转换成float后要求有限且大于0。原函数的12组纯CPU控制如下，Python3.12.13，仅AST隔离该函数和两常量，math/os为真实标准库：
+
+| 输入 | 结果 |
+|---|---|
+| 不传参数、环境未设 | 600.0 |
+| 不传参数、环境为12.5 | 12.5 |
+| 显式5.0、环境为ten | 5.0，显式值优先 |
+| 环境0 / −1 / inf / nan / ten | 5组均抛ValueError，消息指向环境变量 |
+| 显式0 / −1 / inf / nan | 4组均抛ValueError，消息指向timeout_s |
+
+拒绝发生在helper的ray.get之前，但manager先求值参数、分派两组init RPC才进入helper。因此“非法值不开始等待”不等于“非法配置在任何建组副作用前失败”。本轮只核源码求值顺序，没有分派RPC来制造该场景。
+
+原15项测试中13项使用mock ray.get，另2项在本地Ray集群上以stand-in worker groups分别阻塞actor/rollout。作者的测试入口能覆盖接线，不是真NCCL挂起复现。本机独立CPU环境没有Ray，未补装、未运行这15项、完整helper或base模块导入；三原文件仅AST/内存compile通过。没有启动本地cluster、定时线程、通信、模型或设备，也不用更多Ray替身认证取消/恢复。
+
+下面从固定Git对象复查相同12组参数控制（Python≥3.10；在含该对象的verl仓库中，不导入Ray）：
+
+```bash
+GIT_NO_LAZY_FETCH=1 python - <<'PY'
+import ast, math, os, subprocess
+from unittest.mock import patch
+rev = "6f458f6d49076c647a42c00d240b5eaa7449fdb7"
+tree = ast.parse(subprocess.check_output(["git", "show", rev + ":verl/checkpoint_engine/_group_init.py"]))
+nodes = [n for n in tree.body if
+         isinstance(n, ast.FunctionDef) and n.name == "_resolve_timeout_s" or
+         isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id in
+             ("INIT_TIMEOUT_ENV", "DEFAULT_INIT_TIMEOUT_S") for t in n.targets)]
+ns = {"math": math, "os": os}
+exec(compile(ast.Module(body=nodes, type_ignores=[]), "<original-resolver>", "exec"), ns)
+resolve, key = ns["_resolve_timeout_s"], ns["INIT_TIMEOUT_ENV"]
+with patch.dict(os.environ):
+    os.environ.pop(key, None)
+    assert resolve(None) == 600.0
+    os.environ[key] = "12.5"
+    assert resolve(None) == 12.5
+    os.environ[key] = "ten"
+    assert resolve(5.0) == 5.0
+    for is_env, values in ((True, ("0", "-1", "inf", "nan", "ten")),
+                           (False, (0.0, -1.0, float("inf"), float("nan")))):
+        for value in values:
+            if is_env: os.environ[key] = value
+            try: resolve(None if is_env else value)
+            except ValueError as error: assert (key if is_env else "timeout_s") in str(error)
+            else: raise AssertionError(value)
+print("12 original pure-resolver controls passed; no Ray integration")
+PY
+```
+
+SHA256：helper `ce401095e0d8d9c9711144dbe429aa62298faab431c57235a8f293edbb1724cb`；base.py `a86b084bdd68fe3dd6a91587147bd2e80c51b455863f6fe344a1623addf3c4a9`；原测试 `a5afc6997fd7473a25a4c1864d5444b0dab1a8b7ea0855abb75376628ed8eb78`；NCCL文件 `cc36e7a53579d60a76cb6ee811ca464dcddffdbc233a94c1af777f6f124a5eef`。当前版本的真机退出/释放/恢复条件仅补[原M5事项](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不另排队或默认应用，不将此保护栏当#8250根因或训练恢复证明。

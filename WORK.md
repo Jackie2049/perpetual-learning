@@ -1,6 +1,6 @@
 # perpetual-learning — 当前工作上下文
 
-更新时间：2026-10-21
+更新时间：2026-10-22
 
 ## 当前阶段
 
@@ -11,6 +11,8 @@
 自主运行中（2026-10-19 起 18 轮 /loop 30m）。已完成：工具修复（inference_estimator.py）、verl 候选三轮核验与全新扫描（10 候选）、4 项源码级修复分析、GMPO/GSPO/SAPO 论文精读与数值证明。2026-10-20：verl 新 issue 恢复，深挖 #8281 完成（analysis-done + CPU 验证）；**#8237 offload 修复 PR #8286 已合并进 verl 主仓库**（首个 bugfix 闭环，merge `472dd21`）。详见 [当日日志](diary/2026-10-20.md)。
 
 ## 运行接续
+
+- **M1 组初始化等待学习收束（2026-10-22）**：只读#7045 head6f458f6d/目标base3f9d4c0d/祖先220e9039，3文件246增2删；当前无新增worker超时线程，NCCL文件未改。见[原同步笔记](notebook/frameworks/verl-async-logprob-provenance.md#组初始化的等待超时与任务退出)。12组原resolver控制与三模块语法通过；无Ray，未跑原15项/cluster。新预算只包init refs的ray.get，不包prepare/分派/传输，非法值检查也在RPC分派后；无取消/回滚/同组重试。新版真机退出/释放条件补[原M5事项](experiments/handoff-m5.md#verl-异步策略一致性补证)，旧da00403 GPU结果不挪用，不另排队/采用。本题收束；后续有界核对上游变化再选未重复CPU/数据问题，不继续扩写等待替身，GPU/AReaL及网站边界不变。
 
 - **M1 EPLB并列热点学习收束（2026-10-21）**：有界核对DeepInfer/verl各8个open PR，转读新#191 head090e942c/base及祖先9bd9cf2。完整原CPU policy与原测试体32参数例：base27过5预期失败、候选32过；64历史×两dtype的128组有理数贪心对照一致，旧窗口/生命周期回归不变。见[原笔记新节](notebook/frameworks/deepinfer-initial-survey.md#eplb-相同热点负载下的副本分配)/[脚本入口](experiments/scripts/readme.md)。微扰在FP32舍掉，主成本优先/次级每副本总量须显式表达；非全局最优/设备shuffle/吞吐证明。无硬件或新增M5任务，不应用补丁。本题收束；后续可只读verl#7045组初始化超时与线程退出契约，先核固定版本/依赖，不启动通信后端、模拟认证故障恢复或干预GPU/AReaL及网站发布。
 
