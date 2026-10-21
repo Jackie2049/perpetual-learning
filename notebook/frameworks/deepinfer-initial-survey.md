@@ -1381,3 +1381,41 @@ git archive 5a02312b68d635e032f36315d975bc0e236fff75 examples/sweep/analysis exa
 本机补充控制确认模块来自固定临时源码，deepinfer/torch/deep_cluster/模型下载器/judge未导入；真实CLI仅读新建scratch JSONL、向stdout输出。未运行sweep/benchmark/绘图、访问设备、改上游实现或测吞吐；不新增M5真机任务，也不竞争作者方案。
 
 SHA256：loader `a59c5b9353a684ba3b874d47276bc36ffdcb83adae1ac5d4d2a3b9db849de209`；metrics `c1194277a7bb36d087324562d5e75024adbee1c82cce3c90d882104c8fe0a1b8`；recommend `90fc87dcfbdcb2788a8583ed1034e40d5779a12e046d4abb5faa5bbda5948397`；原测试 `f2081fe5222d494a145a7fbb111ccba30ef2c3033bfa28ad29c29dcdc7a1e46b`。
+
+## 关闭失败后的独立清理与一次性标志
+
+2026-10-21 核对已有 [#175](https://github.com/deepseek-ai/DeepInfer/pull/175)，读取时open、作者yalishiduozhang，head `1dc73e9e8bb8d6099a50b163b9fc3a8351c955f2`、目标base `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`。共同祖先为 `8b16149741a4935e1dec8cea27853f273b374c5b`，该文件从祖先到目标base无变化；真正PR只改关闭实现并新增测试。它改变LLMEngine关闭时的异常处理：**closed表示不再重放关闭，不表示所有资源已释放。** 与前文#122的profiling HTTP生命周期是独立改动，不能把两套测试结果合并成完整关闭保证。
+
+### 执行顺序和错误归属
+
+基线在stats logger后顺序调用SO builder、workers、multimodal，最后才设closed。builder/worker抛错会跳过后续清理，closed仍假；析构再次close又可能重放已失败的分布式关闭。
+
+[候选close](https://github.com/deepseek-ai/DeepInfer/blob/1dc73e9e8bb8d6099a50b163b9fc3a8351c955f2/deepinfer/engine/llm_engine.py)先用getattr处理缺失closed，再立即置真；stats仍在suppress(Exception)内。其余已初始化资源按builder→worker→multimodal建立回调列表；每次捕获BaseException，保留首个错误、后续错误记日志，循环结束后抛首错。第二次close直接返回，不尝试修复或重试失败资源。
+
+| 情况 | 候选语义 |
+|---|---|
+| builder或worker抛RuntimeError/KeyboardInterrupt | 捕获后继续后续回调，最终抛首个错误 |
+| 多个回调抛错 | 首错保留；后续错误记日志，不替换首错 |
+| stats抛普通Exception | 原有策略仍是忽略，不作为待重抛首错 |
+| stats抛KeyboardInterrupt等BaseException | 不在此处suppress(Exception)范围内；源码不能保证继续后续回调 |
+| 资源属性不存在或为None | 可跳过；有driver_worker才调用worker stop |
+| 析构调用close | 只抑制普通Exception，不覆盖所有BaseException |
+
+前三类回调异常和部分初始化由下述隔离控制覆盖；stats的BaseException范围来自源码，不是新增实测。循环是同步调用：如果某一步不返回，异常收集不会让后续资源自动开始清理。这里没有总关闭时限、并发close协调或失败回滚协议。
+
+[_init_workers](https://github.com/deepseek-ai/DeepInfer/blob/1dc73e9e8bb8d6099a50b163b9fc3a8351c955f2/deepinfer/engine/llm_engine.py)先启动非driver CP子进程，之后才赋driver_worker；缺driver时跳过stop并不等于回收了先前已启动的CP进程。作者明确排除这类初始化回滚及永不返回的collective恢复，本轮不扩大方案或另行认领修复。
+
+### 隔离原方法与原断言
+
+完整llm_engine模块在顶层导入torch、_C及模型/平台依赖。本机不加载它；[复查实验](../../experiments/deepinfer-close/readme.md)从固定Git对象AST选择原close、__del__、_run_workers三个方法，省略其他类成员/重依赖导入，接标准库suppress与logging logger。原测试只移除引擎模块import，注入上述类；保留原fixtures、Mock、装饰器和断言。这是隔离控制流检查，不是完整包或真实资源关闭测试。
+
+Python3.12.13/pytest8.4.2：同一候选[原测试](https://github.com/deepseek-ai/DeepInfer/blob/1dc73e9e8bb8d6099a50b163b9fc3a8351c955f2/tests/engine/test_engine_close.py)的13项参数化用例，base **3过、10项预期失败**，候选 **13全过**。明确deselect另1项启动本地sleep进程并terminate/wait的用例，未声称完成该真实进程清理验证。基线失败项为六种stage/exception组合、多失败、两种部分初始化和析构抑制；pytest退出1原样核对，不加xfail。基线另有unraisable析构警告及退出时异常输出，未过滤；它们来自Mock故障控制，不是GPU进程或设备泄漏观测。
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python experiments/deepinfer-close/verify.py /path/to/DeepInfer --implementation base
+PYTHONDONTWRITEBYTECODE=1 python experiments/deepinfer-close/verify.py /path/to/DeepInfer --implementation pr175
+```
+
+脚本逐项核对预期失败身份和13次调用数，禁用lazy fetch、上游conftest、外部pytest插件与缓存；输入hash及pytest结果打印到终端。没有构造完整engine、启动工作线程/测试sleep进程、执行真实stop或访问GPU/NPU，未验证共享池清空、CP退出或分布式终止；本题不新增M5真机任务，也不把回调被调用等同资源已回收。
+
+SHA256：llm_engine.py base `a636d60ca5711f6b7c21e68370c3bd9c2de6fc3f4439a7429ca4f572f0edeebe`、候选 `2b7d345882e0c72ff785d973f3d8f1895244dc56734a7e8bd9ca6796ac24cb1e`；同一原测试 `eaac160e1a9399608b02151216fd71e9a5096798be8fefaca98371f3f7af93b6`。

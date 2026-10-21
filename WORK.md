@@ -12,6 +12,8 @@
 
 ## 运行接续
 
+- **M1 关闭错误处理收束（2026-10-21）**：只读已有#175 head1dc73e9/base9bd9cf2；AST选原close/__del__/_run_workers，接原Mock fixtures/13原断言，base3过10预期失败、候选13过；明确排除1真实子进程清理用例。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#关闭失败后的独立清理与一次性标志)与[实验](experiments/deepinfer-close/readme.md)。closed先置真防重放，不是清理成功/重试/超时/CP初始化回滚；#122独立。无模型/设备/线程，不新增M5任务。本题收束，后续有界核对DeepInfer/verl变化再选未重复问题，不继续扩写关闭替身代替资源证据；GPU/AReaL和网站边界不变。
+
 - **M1 sweep推荐边界收束（2026-10-21）**：只读已有#176 head5a02312/base9bd9cf2，原10测试通过；合成JSONL及真实CLI确认最后可用旧点可跨过后续缺指标尝试，去重先于配置比较，字段存在非schema完整。decode重算吞吐，共用τ改变数值不改fixture排名；VARLEN默认a1也拒绝。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#sweep-推荐的数据选择与计量口径)。未运行sweep/engine/绘图或设备，不新增M5任务。本题收束，后续可只读新#175关闭错误下独立清理的顺序与失败传播，先核版本/依赖，不启动线程/模型或回改既有方案；GPU/AReaL和网站边界不变。
 
 - **M1 布尔配置解析收束（2026-10-21）**：有界核对DeepInfer最近10个open PR，转读新#177 head0d8c518/base9bd9cf2。原24测试base18过6预期失败、候选全过；原descriptor实测缓存/rearm顺序、未知flase仍真、非bool字段不统一规范化、ENGRAM复合强制条件。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#布尔环境变量的解析与缓存)。未加载平台/设备，无GPU或推理效果验收、不新增M5任务；本题收束。后续可只读新#176 sweep JSONL排序/推荐如何处理缺失和失败记录，先核版本与输入副作用，不启动sweep/engine；GPU/AReaL和网站边界不变。
