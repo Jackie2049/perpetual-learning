@@ -12,6 +12,8 @@
 
 ## 运行接续
 
+- **M1 RL拼批学习收束（2026-10-22）**：固定verl1876b06d，官方API/本地模块blob同aad0655b；原collator/1原测试体及7组真实CPU DataLoader检查通过。见[原数据流笔记](notebook/frameworks/verl-grpo-data-flow-reading.md#拼批中的形状与引用)/[复查](experiments/scripts/verify_verl_collate.py)。fromiter保留一维对象边界，不深拷贝或统一校验键/类型；缺字段/混类型可先产生短列，DataProto后置首维检查仅源码核对，不称全管道接受或标准训练缺陷。0worker不pin，无设备；新#193 0731/EP8参考入口补原M5适配条目，非采用/新增队列。本题收束；下轮选择其他CPU/源码问题，不继续堆collator或UID替身，不干预GPU/AReaL、#8313及网站边界。
+
 - **M1 UID组均衡学习收束（2026-10-22）**：固定verl1876b06d，官方API/本地blob同3ffb4f28；原4个完整函数、原3个CPU测试体直接调用通过，另18组正常布局+4组边界。见[原GRPO笔记](notebook/frameworks/verl-grpo-source-reading.md#连续-uid-与等样本组的前提)/[复查脚本](experiments/scripts/verify_verl_uid_balancing.py)。helper按连续段而非全局UID聚合，等段数须结合固定rollout.n才等行；正常入口UUID+interleave repeat构造所需布局，不把自定义非法输入直接定性trainer缺陷。无完整pytest/DataProto/dispatch/设备或新M5任务。本题收束；后续选其他CPU数据问题，不继续堆分组替身或自动修改训练实现，GPU/AReaL、#8313和网站边界不变。
 
 - **M1 种子输入校验学习收束（2026-10-22）**：只读已有#154 head d42acdde/base及祖先774ce244，原5项CPU测试基线3过2预期失败、候选全过，各16组构造观察。见[原SamplingParams笔记](notebook/frameworks/deepinfer-initial-survey.md#种子归一化前的负值校验)/[同一脚本](experiments/scripts/verify_deepinfer_sampling_params.py)。负数须在掩码前拒绝；错误类型旧版已拒绝，只缺信息，非负超大整数仍回绕、bool仍接受。旧#119/#118模式回归通过，无设备/新增M5任务。本题收束；后续有界核对上游后选其他CPU数据问题，不扩写seed替身或自动组合独立PR；GPU/AReaL、#8313待负责人和网站边界不变。

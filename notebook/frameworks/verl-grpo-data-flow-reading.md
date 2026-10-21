@@ -222,6 +222,30 @@ Step 7: actor update → ppo_loss(losses.py:57-)
   → effective mini-batch = ppo_mini_batch * rollout_n
 ```
 
+### 拼批中的形状与引用
+
+**RL collator 保留每条样本的 Python 对象边界，不承担完整字段校验或深拷贝。** 2026-10-22 固定官方提交 `1876b06d0a3e4e71e06230be10af14492ca8a75b` 的 [`collate_fn`](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/utils/dataset/rl_dataset.py)：tensor 列用 `torch.stack` 增加 batch 维，非 tensor 列用 `np.fromiter(..., dtype=object)` 建立一维数组，不把内层列表长度当作新维度。
+
+两条 `raw_prompt_ids` 都长2时，直接 `np.array([[1,2],[3,4]], dtype=object)` 仍得到 `(2,2)`；指定 object 不会阻止 NumPy 展开矩形结构。原 collator 则得到 `(2,)`，每个元素仍是原来的 list。变长列表、messages 的 list[dict]、reward_model 的 dict 各占一个 batch 槽，不需要为拼批而统一内层长度。不同形状的 tensor 则在 stack 抛 RuntimeError。
+
+| 层次 | 本机行为 | 含义 |
+|---|---|---|
+| 非 tensor 外层数组 | 等长/变长列表均为一维 object 数组 | 保持样本边界，不是模型可直接消费的二维 tensor |
+| 单进程内层对象 | 修改源 messages 字典，拼批结果同步变化 | 数组容器是新的，内层对象没有深拷贝 |
+| tensor 堆叠 | 修改源 tensor，已堆叠结果不变 | stack 输出存储独立 |
+
+字段一致性是另一项契约。两条样本只有第二条含 `optional` 时，输出该列长度1，不会在第一条位置补 None。同一字段一条是 tensor、另一条是 Python list 时，两套容器各收一条；返回的 `{**tensors, **non_tensors}` 让非 tensor 列覆盖同名 tensor 列，结果也只有一行。这些是违反一致字段约定的局部观察，不是正常 RLHFDataset 的训练故障复现。自定义 dataset/collator 应明确每条样本的键集合、同字段类别与 tensor 形状；缺值若要占据 batch 槽，须明确保存为值而非省略字段。
+
+[`RayPPOTrainer._create_dataloader`](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/trainer/ppo/ray_trainer.py)默认使用该 collator，训练循环随后用 DataProto.from_single_dict 包装结果。[DataProto.check_consistency](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/protocol.py)在同时有 tensor batch 与非 tensor 列时检查各列首维等于 batch size。因此保留2行 ids、只有1行 optional 的输入，不能由“collate 成功”推出“整个数据管道接受”。后置检查仅作源码核对，未构造完整 DataProto；它也不是每个字段语义的完整模式校验。
+
+[复查脚本](../../experiments/scripts/verify_verl_collate.py)AST 选择完整原 collate_fn 和[原测试](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/tests/utils/dataset/test_rl_collate_fn_on_cpu.py)，直接调用1个原测试体通过。另用真实 torch.utils.data.DataLoader、合成 list 数据集，`num_workers=0 / pin_memory=False / shuffle=False` 执行7组检查：等长列表、变长列表、普通非 tensor 值、引用/存储差别、缺字段、类型冲突、不同形状 tensor，均符合上述结果。对象身份结论仅适用于这个同进程条件，不外推 worker 序列化或进程间共享。
+
+```bash
+python experiments/scripts/verify_verl_collate.py /path/to/verl
+```
+
+Python 3.12.13、torch 2.9.1、NumPy 2.0.2；非完整 pytest，未导入 RLHFDataset/verl 根包或执行下载、tokenizer、StatefulDataLoader、DataProto、训练与设备路径。官方API和本地模块 Git blob 均为 `aad0655b9d97037cbd7a5ee4d4f45a4bfec0040e`；模块 SHA256 `8571ff8527a0a8c5aa0951f248052e3ea7a8386cc236c1324c81e764d5b1ff65`，原测试 `f2816d4c441937e74f303124dfc99b11bd35b96af674f9e97891aa01eb2c66cf`。
+
 ## 6. LoRA Integration in GRPO
 
 ```
