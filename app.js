@@ -78,7 +78,7 @@ function contributionPanel(project) {
   const materials = project.materials.map(item => `<li>${item.readable ? `<button data-open="${item.id}">${esc(item.title)}</button>` : `<a href="${esc(item.url)}" target="_blank" rel="noreferrer">${esc(item.title)} ↗</a>`}</li>`).join('');
   const openRecords = project.records.filter(r=>!r.closed);
   const closedRecords = project.records.filter(r=>r.closed);
-  const closedGroup = closedRecords.length?`<details class="closed-group"><summary>已闭环记录 <span>${closedRecords.length}</span><em>已合并、放弃或不再推进的事项，保留完整证据链</em></summary><div class="closed-list">${closedRecords.map(contributionSummary).join('')}</div></details>`:'';
+  const closedGroup = closedRecords.length?`<details class="closed-group"><summary>历史记录 <span>${closedRecords.length}</span></summary><div class="closed-list">${closedRecords.map(contributionSummary).join('')}</div></details>`:'';
   return `<section class="contribution-panel" id="project-${esc(project.slug)}" aria-label="${esc(project.name)}">
     <div class="project-heading"><p class="project-date">更新时间：${esc(fmtFull(project.updated))}</p><span class="project-count">${project.materials.length} 份材料</span></div>
     ${project.progress?`<div class="project-overview prose"><span class="overview-label">最新进展：</span>${project.progress}</div>`:''}
