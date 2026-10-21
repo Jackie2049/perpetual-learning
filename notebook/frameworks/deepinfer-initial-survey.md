@@ -1556,3 +1556,32 @@ macOS15.4.1 arm64，Python3.12.13/torch2.9.1，运行[9项原测试](https://git
 [multimodal_processor.fetch](https://github.com/deepseek-ai/DeepInfer/blob/5c2bb4625506e5cec761eb5a7f08f4336ab45bd7/deepinfer/ve/multimodal_processor.py)在父进程由句柄重建tensor，同时保留handle字段标记待归还资源；[schema.py](https://github.com/deepseek-ai/DeepInfer/blob/5c2bb4625506e5cec761eb5a7f08f4336ab45bd7/deepinfer/ve/schema.py)正常路径取走handle、记录H2D事件，再由engine的pre_sampler_sync等待事件后free。上述调用方文件在本PR中未改。代际检查不替代这条“使用结束再复用”的时序；本机未导入schema（含设备Event）或运行设备传输，不以CPU结果认证异步拷贝寿命。
 
 本轮CPU身份问题收束，不新增M5设备任务或演化并行修复；已有作者方案不自动应用。设备及AReaL继续按原分工，进一步多模态集成仅在未来明确需要且资源匹配时由M5决定。
+
+## 内存快照的输出路径与目录创建
+
+2026-10-21 核对已有 [#183](https://github.com/deepseek-ai/DeepInfer/pull/183)，读取时open、作者290433788；head `1ff0fee2e2445fbf17ecf37701598404bd670117`，base/共同祖先 `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`。仅worker/base.py一文件5增1删，无新增测试。它让初始化内存profile的快照目录可配置并预先创建，**不是显存预算算法或快照采集器的修改**。
+
+### 默认位置与显式覆盖
+
+[profile_num_available_blocks](https://github.com/deepseek-ai/DeepInfer/blob/1ff0fee2e2445fbf17ecf37701598404bd670117/deepinfer/worker/base.py)仍仅在ENABLE_MEMORY_TRACING开启且PG.get_rank()==0时dump。旧路径固定为 `./tracing/profile_run_memory_snapshot.pickle`；候选取 `os.path.join(envs.DEEPINFER_TORCH_PROFILER_DIR, "tracing")`，makedirs(exist_ok=True)后传相同文件名。[原环境描述器](https://github.com/deepseek-ai/DeepInfer/blob/1ff0fee2e2445fbf17ecf37701598404bd670117/deepinfer/environ.py)默认/tmp，因此默认产物位置随候选迁到/tmp/tracing，而非只给旧目录补mkdir。
+
+Python3.12.13，AST原样选取dump分支中的路径赋值/makedirs节点及dump的路径参数，原environ.py独立加载、逐次rearm；不执行分支guard、Worker或dump调用。每版6组共 **12组自建路径/目录控制** 符合预期。各例使用新临时cwd；默认值仅计算路径，未创建或触碰/tmp/tracing，也没有写任何快照。
+
+| 环境值或布局 | base | 候选 |
+|---|---|---|
+| 未设变量，仅计算路径 | ./tracing/文件名 | /tmp/tracing/文件名 |
+| 新的绝对目录P | 忽略P，不建目录 | 建P/tracing，使用其下文件名 |
+| 相对目录relative/nested | 仍用./tracing | 建cwd下relative/nested/tracing |
+| 空字符串 | 仍用./tracing | 建cwd下tracing，不回退/tmp |
+| 已有existing/tracing目录 | 不使用该覆盖 | exist_ok复用，使用其下文件名 |
+| 覆盖父路径中含普通文件 | 忽略覆盖，本层不检查 | makedirs抛NotADirectoryError |
+
+此表旧版不建目录不是已运行旧CUDA接口失败；候选目录存在也不代表快照已成功写出。目录控制使用真实文件系统，无torch/deepinfer/deep_cluster导入、设备或文件写入替身。复查可从 `git show <固定revision>:deepinfer/worker/base.py` 选择WorkerBase.profile_num_available_blocks中含_dump_snapshot的If，运行其最后dump语句前的原节点，再单独eval最后调用的args[0]；默认例跳过makedirs，其他五例在新临时cwd执行。原环境模块逐字相同，完整加载它而不导入包。
+
+### 与其他 profiling 入口的区别
+
+[HTTP profile入口](https://github.com/deepseek-ai/DeepInfer/blob/1ff0fee2e2445fbf17ecf37701598404bd670117/deepinfer/engine/profile_server.py)按请求output_dir或环境值直接建输出目录，并捕获OSError回400；本候选额外追加tracing子目录，当前方法没有捕获目录/dump异常，也没有独立按任务命名。两者共用根目录配置，不是完全相同的路径/失败协议。空环境字符串在此候选中成为相对tracing，不宜假定所有入口均按“空值即默认”处理。
+
+benchmark.profile_memory仍使用args.tracing_path及带trace_stem/phase的文件名，并在dump后停止memory history；本PR不改该入口。初始化方法中的history启动、profile_run、显存采样/预算计算及后续all_reduce也未变。文件冲突、权限、磁盘、真实dump兼容性和异步/多进程影响不能由本轮目录控制认证；没有运行CUDA/NPU接口或诱发真实profile失败。
+
+实际快照若以后成为M5已有诊断需要，见[原交接条目的可选参考](../../experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)，不自动启用、应用补丁或新开实验。SHA256：worker/base.py base `40e6ca29aebd9d475eaad4b86326783f76dba2b73feaa51d86a200b7704a05ed`、候选 `1b0e9d3778a927f84f3680a2ae7d728bcad41541354f12fd9c582ed3b8b54ef7`；两版environ.py `fe2c531989c419f0b51b169a07f5ed826dcec7f95c0c5bc3a351805923c4f218`。

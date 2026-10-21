@@ -28,6 +28,8 @@ M1 已有的[发现层 CPU 检查](../notebook/frameworks/deepinfer-initial-surv
 
 参数参考（同一条目，不新增实验或前置条件）：已有[#184](https://github.com/deepseek-ai/DeepInfer/pull/184)，2026-10-21读取open，head `0e80d7c835ab1f022b1e3949414aebfa5ee1dc14`、base `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`。M1仅做[20组原表达式/环境读取观察](../notebook/frameworks/deepinfer-initial-survey.md#lookahead-与-draft-长度的不同入口)：旧lookahead=1不表示Worker/DFlash nextn也为1；改为环境值还改变prefill最低工作量/准入门槛。若M5日后独立选用该候选且已有获准的匹配引擎环境，可固定nextn，分开记录有效CacheConfig.lookahead、Worker/DFlash nextn、最终prefill q及实际draft/接受数量，关注短prompt/剩余chunk/checkpoint尾部低于lookahead的实际处理。不自动应用、重启或下载权重，不强加测试矩阵；条件不符则注明未测，不代表M5已接单或候选已验收。
 
+快照路径参考（不新增任务/前置条件）：已有[#183](https://github.com/deepseek-ai/DeepInfer/pull/183)，2026-10-21读取open，head `1ff0fee2e2445fbf17ecf37701598404bd670117`、base `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`。[M1仅12组路径/目录控制](../notebook/frameworks/deepinfer-initial-survey.md#内存快照的输出路径与目录创建)，未调用CUDA/NPU快照。若M5已有获准诊断确需该产物且匹配runtime，独立决定是否选用，先固定提交、cwd、有效根目录/开关和rank，使用独立可写目录核实际文件及异常；没有runtime/空间/权限就记未测，不为路径验证加载模型、打断任务或强制开启采集，不向仓库上传原始快照。默认路径迁到/tmp/tracing，空串为相对tracing，固定文件名并非任务隔离；此项不代表已接单/采集成功。
+
 M5 最小下一步：先按实际硬件查已有方案和精确 head，读清依赖、权重格式、显存及其原始测试入口；核对通过后只选一个可隔离、可停止的小范围兼容检查，再决定是否具备 offline inference 条件。保留初始失败点与配置；不要直接按旧专题的“换三个包/放宽检查”当成已验证操作，也不要先覆盖已有环境。
 
 停止条件：没有匹配硬件、内存/数据预算不成立、测试入口不明确或需扩大范围时，记录原因和下一项缺口，不自动下载巨量权重、改写移植方案或进行长时间编译。完成标准是目标配置下可复现的实测记录或明确阻塞，不是必须产出性能数字。
