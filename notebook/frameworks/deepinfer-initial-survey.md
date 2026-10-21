@@ -1126,3 +1126,48 @@ git diff 9bd9cf243fc53ef9afbf8f04d391d989117d6ab9 94d1f69332a2472e6c767663693405
 [Python 官方 pickle 文档](https://docs.python.org/3.12/library/pickle.html)明确要求只反序列化可信且未被篡改的数据；JSON 默认不能直接承载任意自定义 Python 对象。用 pickle 的静态模式提示值得审查，但不能单凭它宣称可利用漏洞；“同一作业可信”也应当是经过确认的部署前提，而不是注释新增的安全机制。
 
 需要确认的是进程/用户/容器隔离、共享内存与 handle 的访问权限、网络可达性及参与者身份，而不是在生产 worker 上试恶意载荷。本轮没有读取实际服务器配置、打开 socket/SharedMemory、运行广播测试或构造攻击数据，因此不报告真实暴露、修复效果或扫描通过。该学习本身不需要 GPU/NPU，不新增 M5 真机任务，也不干预其移植环境；若用户以后要求部署审计，应先另定目标和授权范围。
+
+## Vendor wheel 的本次产物与安装身份
+
+2026-10-21 只读已有 [PR #159](https://github.com/deepseek-ai/DeepInfer/pull/159)，open，作者 DaoyuanLi2816；base `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`、head `80c73344ce880ec39ddda475decd3c9f488df2d3`。完整读取两版 [build_vendor.sh](https://github.com/deepseek-ai/DeepInfer/blob/80c73344ce880ec39ddda475decd3c9f488df2d3/scripts/build_vendor.sh)、178行[原测试](https://github.com/deepseek-ai/DeepInfer/blob/80c73344ce880ec39ddda475decd3c9f488df2d3/tests/test_vendor_build.py)及 Makefile 调用。核心区别：**构建完成、安装选中本次文件、导入本次算子、目标设备实际可运行，是四个不同完成点。**
+
+### 包名和版本号不能替代产物身份
+
+基线把四个 vendor 的 wheel 都输出到共享目录，安装时以包名配合 `--find-links` 查找。这里既有“已经安装的版本满足要求而不替换”，也有“缓存候选不对应这次源码”的可能；目录里存在新文件并不表示 pip 选中了它。
+
+[PyPA 版本规范](https://packaging.python.org/en/latest/specifications/version-specifiers/#local-version-identifiers)规定 local version 的含字母片段按字典序比较，不按 Git 拓扑或提交时间。Python 3.12.13 / packaging 26.3 的原库 `Version` 比较实测：`1.0.0+aaaa222 < 1.0.0+ffff111`；前者即使人为标作“后来源码”，版本排序仍较低。同版本重编译的不同字节也不能靠版本相等关系区分。此检查没有构建 wheel 或运行 pip。
+
+### 候选脚本改变的是安装选择
+
+候选先将 wheel 目录转为绝对路径，再在其中创建本次 `.build-*` 临时目录，每个 vendor 独立输出；`nullglob` 后要求各目录恰好一个 wheel。四项全部完成才将产物复制入缓存，随后安装的是临时目录中收集的精确路径，而不是重新扫描缓存。
+
+| 机制 | 针对的混淆 | 仍不保证 |
+|---|---|---|
+| 独立目录且单产物 | 本轮与旧缓存文件混在一起 | wheel 内部包名/源码/ABI 必然正确 |
+| 精确 wheel 路径 | 按包名解析时选到其他候选 | 同版本已安装内容必然会更新 |
+| `--force-reinstall` | 即使版本相同也重新安装 | 原生扩展能在目标驱动/硬件上运行 |
+| 所有构建成功后才安装 | 后一 vendor 构建失败时误装前面部分产物 | pip 阶段失败自动恢复全部旧包 |
+
+[pip 官方选项说明](https://pip.pypa.io/en/stable/cli/pip_install/#cmdoption-force-reinstall)支持上述重装语义；`--no-deps` 不安装依赖，`--no-index` 不查询包索引。它们没有自动固定或修复已有 torch/CUDA/CANN 依赖。脚本前半仍会初始化子模块、执行各 setup.py，不能把安装阶段的 `--no-index` 解释成整个构建工作流离线或无网络。
+
+NVIDIA/Ascend 的 vendor 集合、DeepSelect/FlashMLA target 环境变量与 NVIDIA DeepGEMM 的 `DG_FORCE_BUILD=1` 保持不变；Makefile 两个 vendor 入口共用此脚本。缓存默认只按 accelerator/机器架构分目录，不是完整工具链、驱动、torch ABI 或源码指纹；同一路径名不构成兼容性证据。
+
+### 失败清理不是整体回滚
+
+`set -e` 与 EXIT trap 负责常规失败退出和临时目录清理。所有 wheel 收集完才执行 `cp`，因此作者测试的构建失败发生在复制/安装之前；不能将其外推为复制中途或 pip 安装失败也具有事务性。脚本没有备份/恢复整个安装环境；EXIT trap 也不是 SIGKILL、系统断电等所有退出场景的清理保证。
+
+作者报告 Linux/Python3.12 的8项测试：2组 accelerator 下同版本重建/较低local版本、4组旧缓存初装/相对路径组合、2组退出失败/无wheel。fixture 用自制纯Python wheel 替代原生编译，运行真实脚本/pip并导入 REVISION；它不是 CUDA/Ascend kernel 验收。当前测试没有单独注入“多于一个wheel”或 pip 安装阶段失败，不能由单产物 guard 的源码反称这些故障均已实测。
+
+本机仅做两版 `bash -n`，Bash 3.2.57 均通过；这是语法检查，不执行脚本命令。没有复跑8项安装测试，也没有建 venv、安装 wheel、编译算子或改变 M5 环境。可复查命令（在含相应对象的 DeepInfer Git 仓库中）：
+
+```bash
+git show 9bd9cf243fc53ef9afbf8f04d391d989117d6ab9:scripts/build_vendor.sh | bash -n
+git show 80c73344ce880ec39ddda475decd3c9f488df2d3:scripts/build_vendor.sh | bash -n
+python -c 'from packaging.version import Version; assert Version("1.0.0+aaaa222") < Version("1.0.0+ffff111")'
+```
+
+SHA256：脚本base `2256ec58231a8e5267ff2403a7c4915d450083c2c731a4480b4d4485705e7571`；head `d46a8834163357c1c4ae97e340b9a0eafd2284555d388a6de8b2927936751d8d`；原测试 `bf56efbbd07da426303a6f14dca135e3aa0bdfbda64bfbaae4f000f731c06b0d`。
+
+### M5 接续时保留什么
+
+[同一硬件交接入口](../../experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)记录此项已有方案，是否采用由 M5 按当前移植任务独立决定，不自动应用或覆盖环境。若后续获准构建/安装，应同时记录子模块提交、工具链、wheel 文件/hash、解释器/安装元数据与实际 import 路径，再把原生算子可用性独立列证据。M5 已有 `_C` 编译导入结果不等于四个 vendor 都已可用，也不证明采用过此 PR。

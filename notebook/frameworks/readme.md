@@ -389,6 +389,7 @@
 - [MindIE Turbo DeepSeek Inference — Source-Level Analysis](mindie-turbo-deepseek-inference-source-reading.md)
 - [DeepInfer — DeepSeek 官方推理框架](deepinfer-initial-survey.md)：确定性链、ZOS 两轮时序与生命周期、官方部署 Q&A、隔离 CPU 检查（快照 8b161497）
 - [DeepInfer 消息与反序列化信任边界](deepinfer-initial-survey.md#共享内存消息与反序列化信任边界)：#158 AST对照；pickle协议未变，CP本地路径与remote能力分开，不定性可利用漏洞。
+- [DeepInfer vendor wheel 产物身份](deepinfer-initial-survey.md#vendor-wheel-的本次产物与安装身份)：#159隔离目录/精确路径/强制重装，安装身份与原生兼容性分开；未运行构建安装。
 - [DeepInfer 架构源码调研（2026-10-20 综合精读）](deepinfer-architecture-reading.md)：调度器/引擎、模型执行器、NPU/分布式/入口三路精读
 - [DeepSeek 开源生态活跃度与 PR 采纳调研（2026-10-20）](deepseek-ecosystem-pr-adoption.md)
 - [MindIE / vLLM-Ascend Ecosystem Deep Research](mindie-vllm-ascend-ecosystem-deep-research.md)

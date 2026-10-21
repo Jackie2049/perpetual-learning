@@ -12,6 +12,8 @@
 
 ## 运行接续
 
+- **M1 vendor wheel身份学习收束（2026-10-21）**：只读已有#159 head80c7334/base9bd9cf2，区分本次wheel、pip选中、导入身份与原生可运行。两版bash -n通过，packaging26.3实测aaaa222<ffff111；未构建/安装或复跑作者8项fixture测试。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#vendor-wheel-的本次产物与安装身份)，同一[M5硬件入口](experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)加版本/观测参考并按其已有_C真机记录纠正旧“无结果”状态，不代表采用PR、不自动应用。课题收束，后续有界核对上游变化再选未重复问题，不继续堆构建替身或干预M5移植/GPU/AReaL；网站发布边界不变。
+
 - **M1 消息信任边界学习收束（2026-10-21）**：有限核对DeepInfer最近更新10个/verl 8个open PR，转读已有#158 head94d1f69/base9bd9cf2。标题称替换pickle，实际仍为1 dumps/3 loads，只加io/注释/nosec；移除新增import后AST相同，不是安全修复验收。CP工厂配全local，通用remote分支≠当前公网暴露，均不替代部署信任证据。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#共享内存消息与反序列化信任边界)。本轮仅源码/AST，不执行pickle/网络/设备，不新增GPU任务；课题收束，后续可只读#159 vendor wheel构建产物选择边界，不运行构建/安装或介入M5移植。GPU/AReaL与网站发布规则不变。
 
 - **M1 SGLang refit边界收束（2026-10-21）**：#8132仍open/head0defd9a2，完整只读MXFP8 loader/数值helper及分桶接线和选定原测试。逐请求预检不是整轮事务，异常清理只恢复暂存scale指针；finalize可能跳过抽样probe，shape/dtype与graph存储身份也须分开。见[同一笔记](notebook/frameworks/verl-quant-layer-audit.md#sglang-分桶加载与失败清理)，[原M5条目](experiments/handoff-m5.md#verl-量化层审计新版复验)已补最小观测范围，待匹配环境非接单。本轮仅源码/依赖检查，未跑loader/设备或新增替身；本课题收束，后续有界核对上游变化再选未重复问题，不推进#8250修复、GPU/AReaL或网站发布。
