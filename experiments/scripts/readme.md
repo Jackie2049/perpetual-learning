@@ -24,6 +24,7 @@
 | [verify_verl_token_bucket.py](verify_verl_token_bucket.py) | 固定1876b06d原AsyncTokenBucket/原loop helper，完整加载原测试模块并直接await16测试方法，另2取消观察；真实时钟/锁/sleep不改。Python3.10+/pytest，无torch/Ray/API；非完整pytest、manager/跨线程/分布式配额验收 |
 | [verify_verl_masked_stats.py](verify_verl_masked_stats.py) | 固定1876b06d原4个统计函数/原3参数例，20组FP32/64、NaN/Inf前向/反向及no_grad白化对照；有限标量不认证梯度/所有输出槽。Python3.10+/CPU torch/pytest；预清理仅诊断控制，非训练/estimator或补丁验收 |
 | [verify_verl_grpo_groups.py](verify_verl_grpo_groups.py) | 固定1876b06d两个原GRPO估计器/原groupwise helper，4原等价性例及12组双实现控制；singleton fallback不等于同分pair。Python3.10+/CPU torch/NumPy/pytest，注解延后/显式CPU；非完整pytest、训练收敛、模型/DP或rollout.n推荐 |
+| [verify_verl_kl_plus.py](verify_verl_kl_plus.py) | 固定1876b06d原KL函数/6原测试例，12组前向与局部梯度+2有限差分对照；k3+数值clamp不限制k2反向。Python3.10+/CPU torch/pytest，非完整pytest、统计无偏性、PPO loss/模型/设备或训练收益验证 |
 | [test_vllm_lora_nan_h20.py](test_vllm_lora_nan_h20.py) · [test_vllm_lora_nan_targeted_h20.py](test_vllm_lora_nan_targeted_h20.py) | vLLM LoRA NaN 复现与验证 |
 | [cuda_multi_stream_race_demo_h20.py](cuda_multi_stream_race_demo_h20.py) · [cuda_multi_stream_race_demo_v2_h20.py](cuda_multi_stream_race_demo_v2_h20.py) | CUDA 多流竞争复现 |
 | [verify_areal_prompt_mean_split.py](verify_areal_prompt_mean_split.py) | AReaL 归约契约 CPU 参考验证（标准库，无 torch）；区分外层优化步数与内层累积，含 token_mean 对照、合法 DP dummy 调度、Megatron 默认路径 P 抵消及标量 Adam 反例；非框架集成实测，见源码笔记 §10.7 |

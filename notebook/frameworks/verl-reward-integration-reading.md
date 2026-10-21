@@ -336,15 +336,15 @@ GRPO默认: use_kl_in_reward=False + use_kl_loss=True → KL只在loss端
 
 KL-in-reward (apply_kl_penalty, ray_trainer.py:76-115):
   token_level_rewards = token_level_scores - beta * kld
-  → reward端减KL → 直接影响advantage → 更强的约束
+  → reward端减KL → 改变送给advantage估计器的奖励
 
 KL-in-loss (默认):
   total_loss = pg_loss + kl_loss_coef * KL(pi || pi_ref) - entropy_coef * H
-  → loss端加KL → 不影响reward → 更温和的约束
-  → kl_loss_coef=0.001 (default) → 很小的KL约束
+  → loss端加KL → 单独的可微正则项，不直接改写reward
+  → kl_loss_coef=0.001为这里的历史配置示例，不是实际梯度大小保证
 ```
 
-**★★ RTX 4090推荐**: KL-in-loss → 不需要额外ref forward → bypass_mode时零forward开销!
+2026-10-22 更正：仅凭reward/loss的位置不能判定约束更强或更温和；还取决于系数、KL模式、采样/归约与调用图。KL-in-loss也不自动省去ref开销：固定版本的PPO loss显式读取ref_log_prob，它必须由具体路径提供，不能把bypass名称当作零forward成本保证。[KL前向与反向核对](verl-grpo-core-algos-reading.md#kl-前向值与反向规则)中k3+显示值虽受clamp，局部梯度仍走k2；日志值或小系数均不能单独认证实际梯度强弱。本轮未运行完整ref/model路径或比较两种配置的训练收益，旧“无额外ref forward/零开销”推荐撤回。
 
 ## 5. RewardManager 详细分析 ★★
 

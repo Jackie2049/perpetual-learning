@@ -239,6 +239,37 @@ pg_losses = where(A < 0, clip_pg_losses2, clip_pg_losses1)
 
 **关键**: `dp_size`参数 → 确保FSDP/Megatron DP下loss等价 → 分布式一致性
 
+### KL 前向值与反向规则
+
+**`k3+` 的前向截断不是梯度截断。** 2026-10-22 固定官方提交 `1876b06d0a3e4e71e06230be10af14492ca8a75b`，[kl_penalty](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/trainer/ppo/core_algos.py)先剥掉模式名末尾的 `+`，得到原模式前向值F；然后用下面的straight-through组合返回结果。令d=logprob−ref_logprob：
+
+```python
+B = 0.5 * d.square()
+result = B - B.detach() + F.detach()
+```
+
+返回数值仍为F，反向却只经过B；对可微logprob的局部导数是d，而非F的数学导数。若ref_logprob也设为可微，其局部导数为−d；实际ref是否固定须按调用处确认，不能用这个控制例推断模型接线。
+
+k3在未触发保护时的前向为 `exp(-d)+d-1`；源码先把−d截到[−20,20]，再把结果截到[−10,10]。原k3通过这些clamp求导，k3+则将整个前向分支detach。真实FP64标量对照如下：
+
+| d | k3与k3+前向值 | k3对logprob的梯度 | k3+对logprob的梯度 |
+|---|---|---|---|
+| 0.5 | 约0.106531 | 约0.393469 | 0.5 |
+| 30 | 10 | 0 | 30 |
+| −30 | 10 | 0 | −30 |
+
+因此日志KL看起来被限制在10，不能证明实际正则梯度同样被限制。对k3+的显示值做中心有限差分，d=0.5时约0.393469、d=30时为0，与autograd的0.5/30不同；这是显式替换反向的设计结果，不是本轮发现了autograd数值错误。原测试也覆盖k1+/kl+/abs+/low_var_kl+的前向与各自base一致，不能把所有模式的 `+` 理解成统一前向k2。
+
+实际[PPO loss接线](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/workers/utils/losses.py)从config.kl_loss_type选helper，读当前log_prob和data中的ref_log_prob，归约后乘kl_loss_coef加入policy_loss；记录的kl_loss仍是前向数值。完整模型梯度还受coef、mask/归约和logprob到参数的链式导数影响，本轮没有运行这些集成或判断训练稳定性。reward端则用old_log_probs/ref_log_prob的helper数值改写奖励；若不沿该helper反向，名字带 `+` 不会凭空改变同输入的前向奖励。
+
+[复查脚本](../../experiments/scripts/verify_verl_kl_plus.py)AST选择完整原两个KL函数和原测试，保留函数体/装饰器/断言，直接调用原5个前向参数例与1个梯度例，全过。另d为±0.5/±30、模式k1+/k3+/abs+共12组前向/双输入局部梯度检查，以及2组k3+有限差分对照通过。没有用手写helper替代原实现，有限差分也没有被当作straight-through反向的正确性标准。
+
+```bash
+python experiments/scripts/verify_verl_kl_plus.py /path/to/verl
+```
+
+Python3.12.13、torch2.9.1、pytest8.4.2；非完整pytest、PPO loss/optimizer、模型/DP或设备验证，也未检验KL估计器的统计无偏性、配置优劣或收敛效果。官方API/本地core_algos Git blob为 `9d08b8461a0f95d25f348c566358360bbfb72ece`，losses.py为 `ebaa4e4d8b759db980f62bf96f83be305f54847e`。core模块SHA256 `a54b6d812db4441e8b0989ae69d2c46b0a0a7b584296f73d8316f264462c37cb`，原测试模块 `0a60e917589ab91646989f0a8616f810fea0dc70047d2b8c13914f4977f5569c`。本题只澄清数值/梯度与接线，不改算法或新增M5任务。
+
 ### 掩码统计与梯度的数值边界
 
 **统计量有限、所有输出槽有限、梯度有限是三个不同条件。** 2026-10-22 固定官方提交 `1876b06d0a3e4e71e06230be10af14492ca8a75b`，[`masked_sum/mean`](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/utils/torch_functional.py)已使用 `torch.where(mask.bool(), values, 0)`，再乘mask求和。因此不能笼统说“masked mean用零乘NaN，必然污染前向”：该版本会先移除mask外的NaN/Inf。mask内的非有限值仍会传播，不应被无条件隐藏。

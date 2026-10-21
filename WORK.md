@@ -12,6 +12,8 @@
 
 ## 运行接续
 
+- **M1 KL straight-through学习收束（2026-10-22）**：固定verl1876b06d/API及本地core/losses同版，原2函数/6原测试例与12局部梯度+2有限差分对照通过。见[原算法笔记](notebook/frameworks/verl-grpo-core-algos-reading.md#kl-前向值与反向规则)/[复查](experiments/scripts/verify_verl_kl_plus.py)。k3+保留k3截断前向、走k2反向，d=30数值10而局部梯度30；不能从日志clamp判梯度已限幅。PPO接线仅源码核对，并纠正奖励笔记“loss端更温和/无ref forward开销”泛化；未验证统计无偏性/训练/设备，不改实现或新增M5任务。本题收束；后续另选源码/CPU问题，不继续累加KL/分组/mask替身，GPU/AReaL、#8313及网站边界不变。
+
 - **M1 GRPO组回退纠正收束（2026-10-22）**：固定verl1876b06d/API及本地core/groupwise同版，两个原估计器/原registry/helper，4原等价性例及12组双实现CPU控制通过。见[原算法笔记](notebook/frameworks/verl-grpo-core-algos-reading.md#单样本与同分组的不同回退)/[复查](experiments/scripts/verify_verl_grpo_groups.py)。singleton mean0/std1，默认score/(1+eps)，非自动归零；多样本同分才零优势。已撤回排错指南“n=1必退化/必须n≥4或MoE≥8”及同分必NaN说法；非零优势不认证训练有效，未推荐n或跑模型/DP/设备。显式CPU不触发发现，无新M5任务。本题收束；后续选其他源码/CPU课题，不继续累加分组/mask替身，GPU/AReaL、#8313及网站边界不变。
 
 - **M1 掩码数值学习收束（2026-10-22）**：固定verl1876b06d，官方API/本地blob490ffc1b；原4函数/原3参数例及20组真实CPU前向/反向/no_grad对照通过。见[原算法笔记](notebook/frameworks/verl-grpo-core-algos-reading.md#掩码统计与梯度的数值边界)/[复查](experiments/scripts/verify_verl_masked_stats.py)。masked_mean已where过滤无效NaN/Inf，但先square/center后mask可有限前向而NaN梯度；白化也不清所有槽。GAE/RF++所读白化在no_grad，不能据局部requires_grad反例定性训练缺陷；预清理仅对照，不改实现/补丁。无模型/设备或新增M5任务。本题收束；后续另选源码/CPU问题，不继续堆mask/限流或重开collator/UID，GPU/AReaL、#8313及网站边界不变。
