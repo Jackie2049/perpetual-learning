@@ -1419,3 +1419,41 @@ PYTHONDONTWRITEBYTECODE=1 python experiments/deepinfer-close/verify.py /path/to/
 脚本逐项核对预期失败身份和13次调用数，禁用lazy fetch、上游conftest、外部pytest插件与缓存；输入hash及pytest结果打印到终端。没有构造完整engine、启动工作线程/测试sleep进程、执行真实stop或访问GPU/NPU，未验证共享池清空、CP退出或分布式终止；本题不新增M5真机任务，也不把回调被调用等同资源已回收。
 
 SHA256：llm_engine.py base `a636d60ca5711f6b7c21e68370c3bd9c2de6fc3f4439a7429ca4f572f0edeebe`、候选 `2b7d345882e0c72ff785d973f3d8f1895244dc56734a7e8bd9ca6796ac24cb1e`；同一原测试 `eaac160e1a9399608b02151216fd71e9a5096798be8fefaca98371f3f7af93b6`。
+
+## AIME 思考区与规则评分
+
+2026-10-21 核对已有 [#178](https://github.com/deepseek-ai/DeepInfer/pull/178)，读取时open、作者LZC-BELIEVER；head `ddd3fa468f9773b49660025c6812cff06070547d`，base及共同祖先 `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`。它把AIME的boxed搜索从全文改到最后一个字面量 `</think>` 之后，使其与已有数字回退的分界一致。**这是评分提取修复，既可能减少错拒，也可能减少误收，不是模型能力提升。**
+
+### 同一输出可以导致两种相反误判
+
+原[bench.py](https://github.com/deepseek-ai/DeepInfer/blob/ddd3fa468f9773b49660025c6812cff06070547d/eval/aime/bench.py)优先提取最后一个可解析boxed内容；旧实现会先看到思考区的框，即使终答已在闭合标签之后。原[测试](https://github.com/deepseek-ai/DeepInfer/blob/ddd3fa468f9773b49660025c6812cff06070547d/tests/eval/test_aime_thinking.py)用本地合成题集、meta和raw文件执行真实 `score.py --judge rule`，在本机得到：
+
+| 合成输出与gold | base Pass@1 | 候选 Pass@1 |
+|---|---:|---:|
+| 思考区boxed17，终答42，gold42 | 0 | 1 |
+| 思考区boxed17，终答42，gold17 | 1 | 0 |
+| 思考区boxed17，终答boxed42，gold42 | 1 | 1 |
+
+第一、二行旧pred为17/boxed，候选为42/tail_number。三组CLI均真实写出summary/scored文件、检查coverage_complete与raw_text保留；这是单题合成评分，不是AIME实测分数。函数级测试也核对score_rollout不修改原rollout。
+
+Python3.12.13/pytest8.4.2，21项原测试在base **11过、10项预期失败**，候选 **21全过**。其中16项提取、2项score_rollout、3项真实子进程CLI，均保留原参数化/断言；没有parser、judge或模型替身。6项提取、2项score_rollout和2项CLI构成基线失败，pytest退出1原样保留，不用xfail。
+
+### 字面分界与最终判分
+
+修复没有解析HTML/XML或校验思考区结构。另3组原函数检查确认：`<think>Try \boxed{17}` 未闭合时仍提取17/boxed；`<think>Try \boxed{17}</THINK>42` 大写闭合也仍提取17/boxed；`draft \boxed{17}</think>42` 即使没有起始标签，也会按字面闭合提取42/tail_number。多个闭合标签取最后一个；无闭合时boxed仍搜全文，数字回退仍只搜最后400字符。
+
+[score.py](https://github.com/deepseek-ai/DeepInfer/blob/ddd3fa468f9773b49660025c6812cff06070547d/eval/score.py)的auto对AIME默认选择LLM judge，它以raw_text经[truncate_output](https://github.com/deepseek-ai/DeepInfer/blob/ddd3fa468f9773b49660025c6812cff06070547d/eval/common/judge.py#L167)处理后的文本独立判分，再将原规则结果存rule_correct、用judge_correct覆盖correct。该helper取最后闭合标签后的末10段/4000字符；这两份文件在本PR中未变。因此可推断本次只改规则提取及相关诊断，不会通过改变pred直接改变LLM的输入；没有运行外部judge来验证其判分稳定性。
+
+### 复查入口
+
+从固定对象原样展开eval、原测试和pyproject；测试的tmp_path只在新scratch中生成合成文件，score写入也限于该目录。没有run_eval调用、数据下载或已有评分文件覆盖。
+
+```bash
+task_aime="$(mktemp -d)"
+git archive ddd3fa468f9773b49660025c6812cff06070547d eval tests/__init__.py tests/eval/test_aime_thinking.py pyproject.toml | tar -x -C "$task_aime"
+(cd "$task_aime" && PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1 python -m pytest --noconftest -p no:cacheprovider -q tests/eval/test_aime_thinking.py)
+```
+
+基线另取base的eval、tests/__init__.py、pyproject，配同一候选测试再执行，预期10失败。禁用外部plugins、上游conftest、字节码与缓存；原ci/ci_npu标记不代表设备CI。父进程确认bench来自固定临时树，torch/deepinfer/requests/openai/datasets/common.judge未导入；score可能打印临时树无完整仓库布局的定位警告，但仅读本地meta所指数据，不回退下载或启动引擎。本题不新增M5真机任务，不竞争作者修复或向上游发言。
+
+SHA256：bench base `9f7fe427bf0377735e299d90a79445f4ca39cb06ac97397a5e4a94ef442789a6`、候选 `f477011dbe7f69a5f1bad12877e06729c60bde7768cda3542f6208b685b7b1a4`；原测试 `2749ec819272fac9104dcc6b771aeb4d8e9e572442d28da43c20b87aa7b8c4e1`；score.py `af3755cd5c0a1bb050296b03999773d6aead6360e197234b1bd8438fbcb293a4`。

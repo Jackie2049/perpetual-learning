@@ -396,6 +396,7 @@
 - [DeepInfer 布尔环境变量](deepinfer-initial-survey.md#布尔环境变量的解析与缓存)：#177原24测试成对复现；大小写/空白修复不等于严格配置验证或热更新。
 - [DeepInfer sweep 排名](deepinfer-initial-survey.md#sweep-推荐的数据选择与计量口径)：#176原10测试通过；去重后配置检查、缺指标旧点保留、τ计量和VARLEN边界。
 - [DeepInfer 关闭错误处理](deepinfer-initial-survey.md#关闭失败后的独立清理与一次性标志)：#175原方法隔离base3过10预期失败/fix13过，1真实进程用例未跑；非资源释放证明。
+- [DeepInfer AIME 规则评分](deepinfer-initial-survey.md#aime-思考区与规则评分)：#178原21测试含3项真实CLI，字面思考分界/原raw保留与默认LLM判分分开。
 - [DeepInfer 架构源码调研（2026-10-20 综合精读）](deepinfer-architecture-reading.md)：调度器/引擎、模型执行器、NPU/分布式/入口三路精读
 - [DeepSeek 开源生态活跃度与 PR 采纳调研（2026-10-20）](deepseek-ecosystem-pr-adoption.md)
 - [MindIE / vLLM-Ascend Ecosystem Deep Research](mindie-vllm-ascend-ecosystem-deep-research.md)
