@@ -135,6 +135,7 @@
 - [verl shared-prefix packing](frameworks/verl-shared-prefix-packing.md) — #8300 的 FSDP 分支可见域、首响应标签、等价条件及 38 组原始 CPU 布局检查
 - [verl 量化层审计与 refit](frameworks/verl-quant-layer-audit.md) — #8132三类证据/24项CPU审计单测；与新#8306的格式、存储和保护覆盖对照，不能混用分支证据
 - [verl 新版阶段 tracing](frameworks/verl-async-logprob-provenance.md#新版阶段-tracing-与证据关联) — #8315 rank/actor区间、no-op与指标API能力边界；仅源码/AST，真实同步和显存补证仍交M5
+- [verl 单 worker NIXL 拓扑](frameworks/verl-async-logprob-provenance.md#单-rollout-worker-的-nixl-拓扑) — #8316两版各20组原函数/纯断言控制；worker非replica，建组参数正确非传输成功
 - [DeepInfer SamplingParams 校验](frameworks/deepinfer-initial-survey.md#samplingparams-构造校验与测试组合) — #119/#121独立分支、53项原始CPU测试配对和greedy前校验边界
 - [DeepInfer CacheConfig 与严格预期失败](frameworks/deepinfer-initial-survey.md#cacheconfig-校验与严格预期失败) — #118修复与#121标记的XFAIL/严格XPASS对照；范围合法不保证实际KV容量
 - [DeepInfer decode 性能缓存](frameworks/deepinfer-initial-survey.md#decode-性能曲线缓存的身份与回退) — #126身份键与#128溢出回退、17项原始单rank CPU/Gloo测试；曲线不是KV缓存，非模型/性能验证

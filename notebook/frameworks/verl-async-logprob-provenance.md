@@ -182,3 +182,21 @@ python3 experiments/scripts/verify_verl_logprob_provenance.py /path/to/verl-8250
 - async_sglang_server.py：`57729bfebce2507fb271e28cc5c7cd4073afb8a5ecc31ec87b8815a4c8b9c354`
 
 涉及真实权重/显存/生成的后续检查已补入[原M5补证条目](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不另开任务或默认采用PR。保留分支/配置、rank/actor与step关联、异常/no-op标记及独立显存/安装证据；若缺获准监控环境或要新增数据外发，先记录条件，不启动服务或改变原报告版本。M1没有访问服务器，也没有新的连接失败实测。
+
+## 单 rollout worker 的 NIXL 拓扑
+
+2026-10-21核对已有[#8316](https://github.com/verl-project/verl/pull/8316)，读取时open、rafiw，head `3a60b8710f8e1001110820f7a14cd0e71d9d5e07`、目标base `f2923cbf154731918b1e36db8c567433f349fede`、共同祖先 `619c397dc9917fed278b6e47c52a6620aef05466`。真正PR只改一行切片，未提交测试文件；正文勾选“新增单测”不能替代固定diff证据。这里验证的是**拓扑参数契约，不是权重同步完成**，也不说明#8250实际使用了此backend或故障由它造成。
+
+### 单元素切片与链尾
+
+[build_topology](https://github.com/verl-project/verl/blob/3a60b8710f8e1001110820f7a14cd0e71d9d5e07/verl/checkpoint_engine/nixl_checkpoint_engine.py#L289)将A个actor、R个rollout的metadata组织成链。有效通信rank为actor[0]的0及rollout的1到R，world_size=R+1；其余actor rank=-1、不连前后邻居。链关系为 `actor[0] → rollout[0] → … → rollout[R-1] → None`，不是所有A+R个worker都加入通信链。
+
+rollout的next原式为 `metadata[-R + 1:] + [None]`。R=1时起点为0而不是“列表末尾之后”，因此返回整个metadata加None，长A+2；候选改为 `metadata[len(metadata)-R+1:] + [None]`，此时从len(metadata)切起，只得[None]。对满足metadata长度A+R且A/R均正的R≥2，两种起点表示同一位置。
+
+### CPU证据与真实调用阶段
+
+Python3.12.13，保留原classmethod、原manager两组长度断言及init_process_group的纯端点检查，A=1/2/4/8、R=1/2/3/4/8每版20组。基线16组过、4个R=1触发原 `rollout_kwargs[next_agent_metadata] must have length of 1`；候选20组全过，16个多rollout场景的完整输出与旧版相同。另按链关系检查rank/prev/next，没有新造NIXL agent或网络替身。方法、输入hash和[复查脚本](../../experiments/verl-nixl-topology/readme.md)保留；这是自建合成metadata控制，不是作者原始测试或完整manager执行。
+
+[manager](https://github.com/verl-project/verl/blob/3a60b8710f8e1001110820f7a14cd0e71d9d5e07/verl/checkpoint_engine/base.py#L422)在真实调用中先prepare并收集actor/rollout metadata，再构造拓扑、检查每字段长度，最后才分派init_process_group。NIXL prepare还涉及buffer分配/注册和agent身份；这些本机均未执行。update_weights把各replica.workers展平成临时rollout worker group，所以R是该组world_size，不能直接等同replica数。
+
+固定版本既有NIXL correctness用例为2 trainer/6 rollout，带temporary skip，含Ray/模型/原生backend；本机未运行，也不把device=cpu参数当成纯Python测试。列表长度及端点通过后，buffer、连接、传输、权重应用/finalize与恢复生成仍是独立完成点。若M5已有诊断确需单worker NIXL，可参考[原交接条目](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不另排队、自动采用补丁或变动既有环境。

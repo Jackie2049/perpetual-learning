@@ -70,6 +70,8 @@ M1 已撤回确定因果诊断。已有数值、路由与异常控制未运行�
 
 若已有获准的匹配观测环境，可先固定verl/rl-insight实际提交、包路径、版本及metric_log callable分派，核对rank/actor lane与同步step关联、是否实际执行/异常，并保留独立显存与安装证据。缺后端、需要新增数据外发或会改变原报告环境时先记待条件；不为这项参考自动升级环境、部署服务、重跑长训练或上传私有payload，阶段图不能替代下述配对观测。
 
+可选NIXL拓扑参考（同一事项，不另排队）：[#8316](https://github.com/verl-project/verl/pull/8316)，2026-10-21读取open，head `3a60b8710f8e1001110820f7a14cd0e71d9d5e07`、目标basef2923cbf/祖先619c397d。[M1原拓扑及纯断言检查](../notebook/frameworks/verl-async-logprob-provenance.md#单-rollout-worker-的-nixl-拓扑)每版20组：旧R=1长度失败、候选全过，未prepare/注册/连接/传输。只有已有获准观测实际选择NIXL且恰为单rollout checkpoint worker时，M5独立决定是否核对此候选，先固定安装版本、backend、actor/rollout worker数和metadata顺序，再分开记录建组、传输、应用及恢复点；并非一个replica就必为R=1。不为此新建网络/下载模型、强制改backend或重跑训练，缺匹配资源就记未测；没有证据表明#8250使用该backend或由此导致。
+
 M5 最小下一步：先判断是否有获准使用的对应配置、完整 token/mask、checkpoint/版本身份和实际环境；条件齐备后按既有观测契约采集训练 actor、干净重载、live rollout 的配对观测，明确 raw/processed 概率与采样处理，保留逐 token 残差及重复基线。需要同步证据时区分发送、接收、应用、cache、版本标记及恢复生成；不由单个版本号或均值接近零认证一致。
 
 停止条件：缺私有材料/配对身份就记录“待资料”，不启动原报告的长训练，也不以公共 toy 或另一模型称已复现 #8250。对照有差异只能缩小范围；没有原始观测前，不设计新的修复、不发布旧诊断稿或承诺治愈阈值。完成标准是可追溯的配对证据，或明确缺失材料清单。
