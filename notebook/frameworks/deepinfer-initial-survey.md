@@ -823,6 +823,55 @@ python experiments/scripts/verify_deepinfer_sampling_params.py /path/to/DeepInfe
 python experiments/scripts/verify_deepinfer_sampling_params.py /path/to/DeepInfer --implementation pr119
 ```
 
-Python 3.12.13、torch 2.9.1、pytest 8.4.2，CPU。baseline 的两项 pytest failure 被脚本按具体 nodeid 核对为预期对照，未标 xfail、未修改测试；#119 的 53 项全过。各自额外 8 组构造边界检查通过。没有运行 #121 的 CacheConfig/ParallelConfig/SchedulerConfig 测试、完整包/CI、C++ 绑定、模型或 GPU/NPU，也未认证测试正文所称的所有覆盖范围。
+Python 3.12.13、torch 2.9.1、pytest 8.4.2，CPU。baseline 的两项 pytest failure 被脚本按具体 nodeid 核对为预期对照，未标 xfail、未修改测试；#119 的 53 项全过。各自额外 8 组构造边界检查通过。本节 SamplingParams 对照没有运行 #121 的配置测试、完整包/CI、C++ 绑定、模型或 GPU/NPU，也未认证测试正文所称的所有覆盖范围；CacheConfig 的独立限定检查见下一节。
 
 SHA256：基线 SamplingParams `f800034efdebe1b21620660a51fa9122d3d7f138d8e60cd738f33d643c3116f8`；#119 SamplingParams `b2de2bf36c32add1808824cddb05191bf5d45979efd6b0b14579d6c74ad46f04`；#121 原始测试 `c56598760b78ac163a01882d0bb975dec0c9eec9f32911ed0bc9bfd8ffec6c51`。
+
+## CacheConfig 校验与严格预期失败
+
+2026-10-21 接续已有作者 akash6murali 的 [PR #118](https://github.com/deepseek-ai/DeepInfer/pull/118) 与 [PR #121](https://github.com/deepseek-ai/DeepInfer/pull/121)，读取时均 open；公共 base `774ce244b87cc0eb8d4b94ab9f5de2ab22049f01`，实现 head `c78146bfb1cef7ec94326a51b84b1d968aef7d3f`，测试 head 仍为 `2afdb3d2d8ed1fb3a83a0169485aa25d281196e8`。本节只是配置类与测试约定的限定学习，不是我方修复或真实显存验证。
+
+### 两个分支组合后需要更新测试预期
+
+#118 只在 `CacheConfig._verify_args()` 增加 `gpu_memory_utilization <= 0` 的 ValueError，另把上限错误文字改为允许等于 1。有效普通数值范围是 `(0,1]`；这不是对任意 Python 类型或非有限数的完整模式校验。
+
+#121 的 `TestCacheConfig` 有 9 个用例，其中零和负利用率的两项带无条件 `xfail(strict=True)`。它们在基线确实因“未抛 ValueError”失败；原 pytest 将其记为 XFAIL，测试会话仍成功。修复后断言通过，却因为原标记还在而成为严格 XPASS，pytest 返回失败。这是过期预期的信号，不能当作修复破坏了范围检查。
+
+| 固定实现与运行方式 | 普通通过 | XFAIL | 严格 XPASS | pytest 退出码 |
+|---|---:|---:|---:|---:|
+| 基线，保留原标记 | 7 | 2 | 0 | 0 |
+| #118，保留原标记 | 7 | 0 | 2 | 1 |
+| #118，`--runxfail` | 9 | 0 | 0 | 0 |
+
+`--runxfail` 是 pytest 的诊断选项，使测试按没有 xfail 标记处理，不是修改或删除上游装饰器，也不代表正式集成已更新标记。以上语义见 [pytest strict 参数](https://docs.pytest.org/en/stable/how-to/skipping.html#strict-parameter)与[忽略 xfail](https://docs.pytest.org/en/stable/how-to/skipping.html#ignoring-xfail)。本机对照保留原始标记；没有为让输出全绿而修改测试或作者分支。
+
+### 利用率检查不是缓存容量保证
+
+构造器只是存入 block_size、利用率和 lookahead，缓存容量、每块字节数与 state 槽数等字段此时仍是 `None`。9 个用例验证了范围与字段存储，并没有分配显存。
+
+固定基线 [WorkerBase.profile_num_available_blocks](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/worker/base.py)先做模型 profile，计算峰值 torch 分配与非 torch 占用，再扣除状态存储及 copy buffer。单 worker 归约前的主要关系为：
+
+```text
+available = total_gpu_memory × utilization − peak_allocated_memory − state_size
+local_blocks = max(int(available // cache_block_size), 0)
+```
+
+因此一个合法但太小的正利用率仍可能没有可用 block；等于 1 也不等于把整块显存都留给 KV。这个参数参与总预算计算，不是先承诺某个固定数量的 KV 字节。
+
+后续 [LLMEngine._init_cache](https://github.com/deepseek-ai/DeepInfer/blob/774ce244b87cc0eb8d4b94ab9f5de2ab22049f01/deepinfer/engine/llm_engine.py)对最终 `num_gpu_blocks <= 0` 显式抛出 `No available memory for the cache blocks`，并另查 runtime model length 是否超过容量，之后才调用 cache 初始化。不能把 PR 正文中提及的除零或深层异常当成本机已复现症状，也不能由范围检查通过推出 profile、跨 rank 容量或真实分配成功。本轮这些路径仅作源码阅读，没有调用设备 API 或模拟完整内存调度。
+
+### 原始类与测试的限定执行
+
+复用[上节脚本](../../experiments/scripts/verify_deepinfer_sampling_params.py)，新增 `--suite cache`。Cache 模式只 AST 选择原始 `CacheConfig` 与原始 `TestCacheConfig`，保留完整类体和 xfail 装饰器，注入真实 pytest 与原始配置类；没有修改 guard，没有环境、模型配置或内存 profiler 替身。省略未用的 module imports，因此没有加载 `ModelConfig` 的配置读取依赖、完整 deepinfer 包或 torch。
+
+```bash
+python experiments/scripts/verify_deepinfer_sampling_params.py /path/to/DeepInfer --suite cache --implementation base
+python experiments/scripts/verify_deepinfer_sampling_params.py /path/to/DeepInfer --suite cache --implementation pr118
+python experiments/scripts/verify_deepinfer_sampling_params.py /path/to/DeepInfer --suite cache --implementation pr118 --runxfail
+```
+
+Python 3.12.13、pytest 8.4.2，9 个原始用例的三种对照均与表格吻合。脚本按 nodeid、XFAIL 的 `DID NOT RAISE` 原因、严格 XPASS 标志及原 pytest 退出码核对，再将“预期对照完成”作为脚本成功；不要把脚本退出 0 误读为中间那次原 pytest 全绿。SamplingParams 的 53 项 #119 原始测试回归通过。
+
+没有执行 #121 的 ParallelConfig/SchedulerConfig、完整配置模块/上游 CI、model profile、分布式归约、KV 分配或 GPU/NPU；没有调整其测试标记、实现或上游状态。可复现对象须预先存在，Git lazy fetch 继续关闭。
+
+SHA256：基线 `config.py` 为 `df67b1e66c1f528e69885e3d4bcb6e2ce130261981dd26017b04ea57eee2daec`，#118 为 `5d7f66c3847ca98283d3d02c9cbb2d7b6e2c4ef52b721065db3c89021f0f9d6c`，#121 `test_config.py` 为 `d3b37a20f15bca1512ba246668810511346b3f2852f6e4906aeb6d349532f522`。
