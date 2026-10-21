@@ -127,8 +127,39 @@ gen_batch_output = gen_batch.repeat(repeat_times=rollout_n, interleave=True)
 ```python
 get_group_balanced_partitions()  # 按 uid 分组
 ```
-- Karmarkar-Karp 分区算法保持 uid 组完整
+- 开启 `use_prefix_grouper` 且 batch 有 UID 时走组级分区；UID 连续、每组固定 `rollout.n` 是保持组完整并等行分发的前提，详见下节
 - 训练时 PrefixGrouper (可选) 进一步合并前缀
+
+### 连续 UID 与等样本组的前提
+
+**组级均衡不是按 UID 全局聚合，也不独立保证每个 rank 的样本数相等。** 固定官方提交 `1876b06d0a3e4e71e06230be10af14492ca8a75b`，[`get_group_balanced_partitions`](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/utils/seqlen_balancing.py)逐项比较当前 UID 和上一项，仅把相邻相同值组成一个段，再对段的 workload 做 Karmarkar-Karp 分区。相同 UID 若在不相邻的位置重现，会被当作不同段，而非用字典合并。
+
+组 workload 是组内各样本 `24576*L + L²` 的和，不是先把整组长度相加再平方。`equal_size=True` 约束的是每个分区的**段数**。因此调用方需要同时维护三个条件：
+
+- 每个 UID 只占一个连续段；否则同一 UID 可以分散到不同输出分区。
+- 每段含相同数量的样本；否则等段数不等于等行数。
+- 段数至少为 DP 数，且能被 DP 数整除；原 helper/分区器会对这两项作断言。
+
+原函数的两个 CPU 边界观察说明了区别，不是标准训练路径的故障复现：
+
+| 输入前提 | 原 helper 输出 | 后续解释 |
+|---|---|---|
+| 长度全1，UID为 `[0,1,0,1]` | 索引分区 `[[0,3],[1,2]]` | 两个UID都跨分区，因输入不连续 |
+| 长度全1，UID段大小 `[1,1,1,5]`，2个分区 | `[[0,3,4,5,6,7],[1,2]]` | 每区2段，但样本数为6/2；拼平后等分成4/4行，会切开UID3 |
+
+第二行的4/4切分只是对返回索引的 Python 列表演示，没有运行 DataProto 或远程分发。它揭示复合契约：helper 的输出组完整，不能在任意不同的后续切分边界下继续保持完整。
+
+[`RayPPOTrainer._balance_batch`](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/trainer/ppo/ray_trainer.py)在 `use_prefix_grouper` 开启且有 UID 时调用该 helper，并检查不同 UID 数能被 DP 数整除；它没有在这里全局排序或校验每个 UID 的行数。之后将分区索引拼平、`batch.reorder`，再由[DP dispatch](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/single_controller/base/decorator.py)调用 DataProto.chunk 等行切分。默认普通长度均衡分支则直接对样本分区，不能把组完整当作所有 GRPO 运行的保证。
+
+同一固定版本的正常训练入口先为每个 prompt 生成唯一 UUID，然后两次用 `repeat(..., interleave=True)` 对齐 prompt 与 response。[DataProto.repeat](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/protocol.py)对非 tensor UID 使用 `np.repeat`，构造每个 UID 连续且固定 `rollout.n` 行的布局；在此布局保持不变时，等段数也就是等行数。本轮没有发现该标准入口主动引入上述非法布局；自定义重排、过滤或可变组大小接入时，须重新检查这些前提，不能据边界输入直接宣布 trainer 有 bug。
+
+2026-10-22 本机复查：[脚本](../../experiments/scripts/verify_verl_uid_balancing.py)从固定 Git blob AST 选择四个完整原函数，保留函数体/注解/装饰器，使用真实 CPU torch/heapq，包壳仅绕过 verl 根初始化。直接调用[原测试文件](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/tests/utils/test_seqlen_balancing.py)的3个 group 测试函数体，全部通过；另18组连续等大小控制覆盖组数4/8、每组1/2/3、分区数1/2/4，并检查索引完整、UID不跨区、行数相等。上述两个反例及段数不可整除/不足的两个断言共4组边界观察符合预期。
+
+```bash
+python experiments/scripts/verify_verl_uid_balancing.py /path/to/verl
+```
+
+Python 3.12.13、torch 2.9.1；不是原文件的完整 pytest、DataProto/rollout/trainer/dispatch、DP通信或性能测试。官方API与本地源码 Git blob 均为 `3ffb4f28c9bc251ad2d8b7f670e4917b0004831d`；实现 SHA256 `f0536d757a8c8eb1a15d63e7174a8995ebbf180481845576f1817ee6020b4902`，原测试 `658fb094f2edb2fe6914ded167e4b18aba3543d5b5410a93a2816622a7b9c48d`。本项只澄清输入与切分契约，不改源码、不新开贡献候选或 M5 硬件任务。
 
 ## 6. GRPO vs PPO 在 verl 中的实际差异
 

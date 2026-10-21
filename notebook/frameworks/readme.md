@@ -141,7 +141,7 @@
 - [verl GRPO Training Core Algorithms — core_algos.py 源码深度阅读](verl-grpo-core-algos-reading.md)
 - [verl GRPO End-to-End Data Flow 源码级阅读](verl-grpo-data-flow-reading.md)
 - [verl GRPO 内存泄漏与 detach_metrics 修复 — RTX 4090关键分析](verl-grpo-detach-metrics-rtx4090-reading.md)
-- [verl GRPO 源码深度阅读](verl-grpo-source-reading.md)
+- [verl GRPO 源码深度阅读](verl-grpo-source-reading.md)：新增[UID均衡前提](verl-grpo-source-reading.md#连续-uid-与等样本组的前提)，原3个CPU测试体与22组控制；连续段聚合、等段数不自动保证等行分发。
 - [verl GRPO Training Loop Internals — Source Code Level Deep Reading](verl-grpo-training-loop-internals-reading.md)
 - [verl HYBRID Sleep/Wake Architecture — Source Reading](verl-hybrid-sleep-wake-architecture-reading.md)
 - [verl Latest Developments — June 2026 Comprehensive Reading](verl-latest-developments-2026-06-reading.md)
