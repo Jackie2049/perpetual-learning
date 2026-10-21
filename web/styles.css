@@ -83,15 +83,15 @@
 :root{--sidebar-bg:#1d574d;--sidebar-fg:#9db4a9;--sidebar-active-bg:#ffffff;--sidebar-active-fg:#000000}
 .sidebar{background:var(--sidebar-bg);border-right-color:#1e352c;border-right-color:color-mix(in srgb,var(--sidebar-fg) 20%,var(--sidebar-bg));color:#d7e4dc;color:color-mix(in srgb,var(--sidebar-fg) 40%,#e8f1ec)}
 .sidebar .brand{color:#f0f6f2}
-.sidebar nav>a{color:#9db4a9;color:var(--sidebar-fg)}
-.sidebar nav>a:hover{background:rgba(255,255,255,.05);background:color-mix(in srgb,var(--sidebar-fg) 10%,transparent);color:#e9f2ed;color:color-mix(in srgb,var(--sidebar-fg) 35%,#ffffff)}
+.sidebar nav>a{color:#9db4a9;color:#f4f9f6;font-weight:600}
+.sidebar nav>a:hover{background:rgba(255,255,255,.05);background:color-mix(in srgb,#ffffff 10%,transparent);color:#e9f2ed;color:#ffffff}
 .sidebar nav>a.active{background:#1c3a2e;background:var(--sidebar-active-bg);color:#a4dcc0;color:var(--sidebar-active-fg)}
-.sidebar .nav-count{background:rgba(255,255,255,.09);background:color-mix(in srgb,var(--sidebar-fg) 14%,transparent);color:#9db4a9;color:var(--sidebar-fg)}
+.sidebar .nav-count{background:rgba(255,255,255,.09);background:color-mix(in srgb,#ffffff 14%,transparent);color:#9db4a9;color:#f4f9f6}
 .sidebar .active .nav-count{background:#2a5240;background:color-mix(in srgb,var(--sidebar-active-fg) 22%,var(--sidebar-active-bg));color:#c2e8d2;color:var(--sidebar-active-fg)}
 .sidebar .sidebar-divider{background:#20372d;background:color-mix(in srgb,var(--sidebar-fg) 16%,var(--sidebar-bg))}
-.sidebar .sidebar-caption{color:#5d7869;color:color-mix(in srgb,var(--sidebar-fg) 55%,var(--sidebar-bg))}
-.sidebar .topic-link{color:#8aa397;color:color-mix(in srgb,var(--sidebar-fg) 85%,var(--sidebar-bg))}
-.sidebar .topic-link:hover{color:#e9f2ed;color:color-mix(in srgb,var(--sidebar-fg) 35%,#ffffff)}
+.sidebar .sidebar-caption{color:#5d7869;color:rgba(255,255,255,.82);font-weight:600}
+.sidebar .topic-link{color:#8aa397;color:#f4f9f6;font-weight:600}
+.sidebar .topic-link:hover{color:#e9f2ed;color:#ffffff}
 .sidebar .sidebar-bottom{color:#8aa397;color:color-mix(in srgb,var(--sidebar-fg) 85%,var(--sidebar-bg))}
 .sidebar .sidebar-bottom>a{border-top-color:#20372d;border-top-color:color-mix(in srgb,var(--sidebar-fg) 16%,var(--sidebar-bg));color:#a3b8ac;color:color-mix(in srgb,var(--sidebar-fg) 90%,var(--sidebar-bg))}
 .sidebar .sidebar-bottom>a:hover{color:#e9f2ed;color:color-mix(in srgb,var(--sidebar-fg) 35%,#ffffff)}
