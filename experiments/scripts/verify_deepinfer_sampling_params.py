@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Run pinned PR #121 SamplingParams or CacheConfig tests against related fixes.
+"""Run pinned PR #121 parameter/config tests or PR #154 seed tests.
 
-Python >=3.10 and pytest; sampling mode also uses CPU torch. Reads fixed Git objects, never checks out or
+Python >=3.10 and pytest; sampling/seed modes also use CPU torch. Reads fixed Git objects, never checks out or
 patches upstream. Loads the original standalone sampling module and test module;
 only the package root is a namespace shell, avoiding hardware/platform imports.
 Uses a pytest collector adapter, no upstream conftest or third-party plugins.
@@ -20,12 +20,14 @@ import sys
 from types import ModuleType
 
 os.environ["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] = "1"
+sys.dont_write_bytecode = True
 import pytest
 
 BASE = "774ce244b87cc0eb8d4b94ab9f5de2ab22049f01"
 PATCH = "bc668873e5520aa309c709a9b4bfc2935519779a"
 CACHE_PATCH = "c78146bfb1cef7ec94326a51b84b1d968aef7d3f"
 TESTS = "2afdb3d2d8ed1fb3a83a0169485aa25d281196e8"
+SEED_PATCH = "d42acdde324375a4c460a30423251c54b4b2336d"
 
 
 def load(root, revision, path, name, select=None, namespace=None):
@@ -72,14 +74,38 @@ def boundaries(cls):
     print("8 constructor boundary observations passed; acceptance is NOT engine validity", flush=True)
 
 
+def seed_boundaries(cls, patched):
+    """16 additional constructor observations, not an RNG-quality test."""
+    class IntSubclass(int):
+        pass
+
+    positive = [0, 1, 2**64 - 1, 2**64, 2**64 + 5, 2**128 + 9,
+                False, True, IntSubclass(7)]
+    for value in positive:
+        result = cls(seq_seed=value).seq_seed
+        assert type(result) is int and result == value % 2**64
+    for value in [-1, -(2**64), -(2**64) + 5, -(2**128)]:
+        if patched:
+            with pytest.raises(ValueError, match="seq_seed"):
+                cls(seq_seed=value)
+        else:
+            assert cls(seq_seed=value).seq_seed == value % 2**64
+    for value in ["42", 1.5, b"42"]:
+        with pytest.raises(TypeError) as error:
+            cls(seq_seed=value)
+        assert ("seq_seed" in str(error.value)) == patched
+    print("16 seed observations passed: nonnegative modulo/bool/int subclass, negative, wrong type", flush=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source_repo", type=Path)
-    parser.add_argument("--suite", choices=("sampling", "cache"), default="sampling")
-    parser.add_argument("--implementation", choices=("base", "pr119", "pr118"), required=True)
+    parser.add_argument("--suite", choices=("sampling", "cache", "seed"), default="sampling")
+    parser.add_argument("--implementation", choices=("base", "pr119", "pr118", "pr154"), required=True)
     parser.add_argument("--runxfail", action="store_true", help="Cache PR #118 only: ignore xfail markers via pytest")
     args = parser.parse_args()
-    allowed = ("base", "pr119") if args.suite == "sampling" else ("base", "pr118")
+    allowed = {"sampling": ("base", "pr119"), "cache": ("base", "pr118"),
+               "seed": ("base", "pr154")}[args.suite]
     if args.implementation not in allowed or (args.runxfail and (args.suite, args.implementation) != ("cache", "pr118")):
         parser.error("implementation/suite/runxfail combination not supported")
     root = args.source_repo.resolve()
@@ -87,12 +113,16 @@ def main():
     package = ModuleType("deepinfer")
     package.__path__ = []
     sys.modules["deepinfer"] = package
-    if args.suite == "sampling":
-        revision = BASE if args.implementation == "base" else PATCH
+    if args.suite in ("sampling", "seed"):
+        revision = BASE if args.implementation == "base" else (SEED_PATCH if args.suite == "seed" else PATCH)
         implementation = load(root, revision, "deepinfer/sampling_params.py", "deepinfer.sampling_params")
         package.sampling_params = implementation
-        tests = load(root, TESTS, "tests/test_sampling_params.py", "_original_sampling_tests")
-        boundaries(implementation.SamplingParams)
+        if args.suite == "seed":
+            tests = load(root, SEED_PATCH, "tests/engine/test_sampling_params.py", "_original_seed_tests")
+            seed_boundaries(implementation.SamplingParams, args.implementation == "pr154")
+        else:
+            tests = load(root, TESTS, "tests/test_sampling_params.py", "_original_sampling_tests")
+            boundaries(implementation.SamplingParams)
     else:
         revision = BASE if args.implementation == "base" else CACHE_PATCH
         implementation = load(root, revision, "deepinfer/config.py", "_original_cache_config", ["CacheConfig"])
@@ -111,6 +141,7 @@ def main():
             self.xfailed = set()
             self.xfail_missing_guard = set()
             self.strict_xpass = set()
+            self.failure_reasons = {}
             self.calls = 0
 
         def pytest_pycollect_makemodule(self, module_path, parent):
@@ -122,6 +153,7 @@ def main():
                 self.calls += 1
                 if report.failed:
                     self.failed.add(report.nodeid.split("::", 1)[1])
+                    self.failure_reasons[report.nodeid.split("::", 1)[1]] = str(report.longrepr)
                     if "[XPASS(strict)]" in str(report.longrepr):
                         self.strict_xpass.add(report.nodeid.split("::", 1)[1])
                 elif report.skipped and hasattr(report, "wasxfail"):
@@ -143,6 +175,12 @@ def main():
         if args.implementation == "base":
             expected = {"TestMaxTokens::test_zero_raises",
                         "TestLogprobsDeprecation::test_logprobs_true_emits_deprecation_warning"}
+    elif args.suite == "seed":
+        total = 5
+        if args.implementation == "base":
+            expected = {"test_seq_seed_negative_raises", "test_seq_seed_wrong_type_raises"}
+            assert "DID NOT RAISE" in adapter.failure_reasons.get("test_seq_seed_negative_raises", "")
+            assert "Regex pattern did not match" in adapter.failure_reasons.get("test_seq_seed_wrong_type_raises", "")
     else:
         total = 9
         marked = {"TestCacheConfig::test_zero_utilization_raises", "TestCacheConfig::test_negative_utilization_raises"}

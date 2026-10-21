@@ -872,6 +872,34 @@ Python 3.12.13、torch 2.9.1、pytest 8.4.2，CPU。baseline 的两项 pytest fa
 
 SHA256：基线 SamplingParams `f800034efdebe1b21620660a51fa9122d3d7f138d8e60cd738f33d643c3116f8`；#119 SamplingParams `b2de2bf36c32add1808824cddb05191bf5d45979efd6b0b14579d6c74ad46f04`；#121 原始测试 `c56598760b78ac163a01882d0bb975dec0c9eec9f32911ed0bc9bfd8ffec6c51`。
 
+### 种子归一化前的负值校验
+
+**丢失符号的归一化会让后置范围检查失效。** 基线先执行 `seed & (2**64-1)`，再检查保存值是否属于 uint64。因而 `-1` 变成 `2**64-1`，`-2**64` 变成 0，检查已无法辨认原始负数。[PR #154](https://github.com/deepseek-ai/DeepInfer/pull/154) 将负值检查移到掩码之前，同时给已有 TypeError 添加字段名；不是新加了错误类型拒绝能力，也不是改为拒绝所有 uint64 范围外的原始整数。
+
+2026-10-22 只读时 PR open、作者 world-executed；固定 head `d42acdde324375a4c460a30423251c54b4b2336d`，目标 base 与 merge-base 都是 `774ce244b87cc0eb8d4b94ab9f5de2ab22049f01`，两文件 41 增 3 删。它不包含上节 #119 的 max_tokens / logprobs 改动，不能把两个独立分支当作组合实现。
+
+| 输入 | 基线 | #154 固定 head |
+|---|---|---|
+| `-1`、`-2**64` 等负整数 | 取模后接受 | ValueError |
+| `0` 至 `2**64-1` | 保留 | 保留 |
+| `2**64+5` | 5 | 5 |
+| `False`、`True`、普通 int 子类 | 接受并得到 int | 同左 |
+| 字符串、浮点数、bytes | 无信息的 TypeError | 含 seq_seed 的 TypeError |
+| `None` | random.getrandbits(64) | 同左 |
+
+本机原样执行[候选原始 5 项测试](https://github.com/deepseek-ai/DeepInfer/blob/d42acdde324375a4c460a30423251c54b4b2336d/tests/engine/test_sampling_params.py)，基线 3 过 2 失败，候选 5 过。基线负值项是 `DID NOT RAISE`，错误类型项则是异常消息正则不匹配；不能把后者记成基线接受了字符串。原 None 测试只检查结果范围，不检验随机质量或多次调用一定不同。
+
+复用[同一脚本](../../experiments/scripts/verify_deepinfer_sampling_params.py)新增 seed 模式，完整加载原参数模块和原测试，包根空壳只跳过框架初始化；没有改原测试、标 xfail 或用自制参数实现替代。额外每版 16 组构造观察覆盖 9 个非负整数/布尔/int 子类、4 个负数、3 个错误类型，确认上表差异。包装脚本核对两个失败 nodeid、失败原因与原 pytest 退出 1 后退出 0，代表对照符合预期，不代表基线 pytest 全绿。
+
+```bash
+python experiments/scripts/verify_deepinfer_sampling_params.py /path/to/DeepInfer --suite seed --implementation base
+python experiments/scripts/verify_deepinfer_sampling_params.py /path/to/DeepInfer --suite seed --implementation pr154
+```
+
+环境仍为 Python 3.12.13、torch 2.9.1、pytest 8.4.2，禁用原 conftest、第三方插件、cache 与字节码写入。#119 原 53 项和 #118 配置模式 `--runxfail` 原 9 项回归通过。参数归一化正确不认证 C++ seed 转换、设备随机流、batch-invariant 或模型输出可复现；本轮只验证 Python 输入契约，无需新增 M5 设备任务。
+
+SHA256：#154 参数模块 `eb0d88fb25e715add25485dfd4b9a65c38611415e74318dbc7cfe12ea00006bf`；原测试 `cffd3eed14f5fa3868b6023866f47377a6832f0c6877771819aac992fd4f8d57`；基线模块同上节。
+
 ## CacheConfig 校验与严格预期失败
 
 2026-10-21 接续已有作者 akash6murali 的 [PR #118](https://github.com/deepseek-ai/DeepInfer/pull/118) 与 [PR #121](https://github.com/deepseek-ai/DeepInfer/pull/121)，读取时均 open；公共 base `774ce244b87cc0eb8d4b94ab9f5de2ab22049f01`，实现 head `c78146bfb1cef7ec94326a51b84b1d968aef7d3f`，测试 head 仍为 `2afdb3d2d8ed1fb3a83a0169485aa25d281196e8`。本节只是配置类与测试约定的限定学习，不是我方修复或真实显存验证。

@@ -2,7 +2,7 @@
 
 GPU/NPU 的访问、环境与实验由 macbook-M5 Agent 负责。M1 遇到需要真机的事项在此记录，M5 机器可用时按原有任务优先级接续，不中断已有实验。本页是待接续入口，不代表 M5 已接受、服务器已在线或任务已启动。
 
-更新日期：2026-10-21。M1 本轮按分工未尝试连接服务器，硬件与可用性未核验；没有新的连接失败实测。AReaL prompt_mean 整项保持 M5 单一负责，继续以[原交接](../open-source/areal/handoff-m5.md)为准，本页不重新打开或演化该方案。
+更新日期：2026-10-22。M1 本轮按分工未尝试连接服务器，硬件与可用性未核验；没有新的连接失败实测。AReaL prompt_mean 整项保持 M5 单一负责，继续以[原交接](../open-source/areal/handoff-m5.md)为准，本页不重新打开或演化该方案。
 
 ## 接续与回写
 
@@ -23,6 +23,8 @@ GPU/NPU 的访问、环境与实验由 macbook-M5 Agent 负责。M1 遇到需要
 - [#152 Ascend 910B RFC](https://github.com/deepseek-ai/DeepInfer/pull/152)，head `7da92dd58fb7c952b7b781d09506b97f52baa881`。这是设计文档，明确不声称 runtime 支持，且关联 #143 的 910C 阶段；不能把内存估算或转换器复用当作全模型可运行证明。910B 也不是 910C 的同一目标。
 
 M1 已有的[发现层 CPU 检查](../notebook/frameworks/deepinfer-initial-survey.md#vendor-registry-与模型运行支持)只覆盖合成目录、身份/分派；不证明目标卡 kernel、量化、通信、graph 或内存可用。这些上游方案已有作者，本项目不竞争实现，本窗口也不是完整查重。
+
+2026-10-22 新方案入口（仅补参考，不另排队）：[#192 A2 eager text runner](https://github.com/deepseek-ai/DeepInfer/pull/192)，读取 open、作者 Liuchenbing-2026，head `19ba026deca68936ef18b9e370ad6fd812ed0088`，base `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`。作者报告在910B4-1上用真实W4A8权重完成40层prefill/decode及一个算术样例/EOS；正文明确是单设备实验路径，不接生产scheduler/graph/distributed，关闭vision/MTP，INT4解包为INT8 GEMM，非模型质量/长上下文/吞吐证明。M1仅核API正文及版本，未审16文件实现、复跑CPU/设备测试或认证镜像可用性；也不能外推910C兼容。由M5在原适配任务中独立决定是否值得核对，不自动采用、下载权重、切环境或打断既有任务；已有最小下一步/停止条件不变。
 
 构建/安装身份参考（不另起移植任务）：已有 [#159](https://github.com/deepseek-ai/DeepInfer/pull/159)，2026-10-21读取open，base `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`、head `80c73344ce880ec39ddda475decd3c9f488df2d3`，隔离本次wheel并按精确路径强制重装。M1只做[源码/语法与版本排序核对](../notebook/frameworks/deepinfer-initial-survey.md#vendor-wheel-的本次产物与安装身份)，未复跑作者8项安装测试或原生编译；不自动应用补丁。M5在既有获准操作需要安装时，可独立核对子模块提交、工具链、wheel文件/hash、解释器及import路径；产物身份不解决硬件/ABI堵点，构建阶段失败保护也不代表pip失败可整体回滚。
 
