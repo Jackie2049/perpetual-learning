@@ -145,6 +145,7 @@
 - [DeepInfer 评测题集覆盖](frameworks/deepinfer-initial-survey.md#评测-limit-与题集覆盖) — #169原5项CPU测试与原scorer三组本地JSONL控制；正limit入口不等于历史元数据或全数据覆盖认证
 - [DeepInfer 跨语言枚举测试](frameworks/deepinfer-initial-survey.md#enginetype-的源码一致性测试) — #164原测试与8组输入控制；显式十进制文本一致性不等于C++语义或已安装扩展同版
 - [DeepInfer 布尔配置与缓存](frameworks/deepinfer-initial-survey.md#布尔环境变量的解析与缓存) — #177原24测试base18过6预期失败/fix全过；宽松未知值、descriptor重读与复合字段须分开
+- [DeepInfer sweep 数据与推荐](frameworks/deepinfer-initial-survey.md#sweep-推荐的数据选择与计量口径) — #176原10测试与真实CLI/JSONL控制；最后可用点不代表最新尝试成功或扫描完整，接受率假设非实测
 - [PrefixGrouper 计算范围纠错](frameworks/verl-prefix-grouper-gap-analysis.md) — 原生 grouped input 也节省前缀逐 token 运算；撤回 attention-only 缺口和非等价微基准收益外推
 - [verl PrefixGrouper](frameworks/verl-prefix-grouper.md) — 历史集成；与新 engine 路径的版本边界及复杂度纠错
 - [vLLM V1 KV Cache Manager 源码阅读](frameworks/vllm-v1-kv-cache-manager-reading.md) — Block 分配/释放、6 种 Attention Manager、Prefix Caching、Coordinator 架构

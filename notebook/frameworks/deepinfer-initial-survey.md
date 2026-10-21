@@ -1336,3 +1336,48 @@ git archive 0d8c518c8dab46d248ab3b48cb774b7515a2536d deepinfer/__init__.py deepi
 基线取base的包文件与pyproject，配同一候选测试，预期pytest退出1。显式accelerator仅为避开包初始化的自动发现，禁用外部plugins/conftest、字节码与缓存。补充控制断言实际模块来自临时树，torch、deepinfer._C、deep_cluster、模型下载器及judge客户端未导入。没有设备/推理/数值行为实测；作者在PR报告的GPU测试不是本项目复跑结果。本题不需要新增M5真机任务，也不向上游发言或竞争作者修复。
 
 SHA256：environ.py base `fe2c531989c419f0b51b169a07f5ed826dcec7f95c0c5bc3a351805923c4f218`、候选 `7c80d5b942c69e8611f9e2d906ab2b21f50f31cf410f7fabf9dbc124fd6ff618`；同一原测试 `c73d3c27a83011a511f14ccccf345ef79cfa52d270958027f9966f667eb5e4bc`。
+
+## Sweep 推荐的数据选择与计量口径
+
+2026-10-21 核对已有 [#176](https://github.com/deepseek-ai/DeepInfer/pull/176)，读取时open、作者YidaWeng，head `5a02312b68d635e032f36315d975bc0e236fff75`、base及共同祖先 `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`。新增纯Python分析器，只读results.jsonl并打印推荐，不重新运行benchmark。**推荐是文件内最后可用记录的排名，不是最新尝试成功、扫描完整或真实最优配置的证明。**
+
+### 最后可用记录与最新尝试
+
+[load_points](https://github.com/deepseek-ai/DeepInfer/blob/5a02312b68d635e032f36315d975bc0e236fff75/examples/sweep/analysis/load.py)先跳过缺模式吞吐字段的行，再按扫描参数值覆盖旧行，最后才比较保留点的FIXED_FIELDS。空白行跳过，JSON语法错附文件/行号报错；没有可用点则拒绝。排序依据参数值，不是时间戳。
+
+Python3.12.13/pytest8.4.2，原始10项[测试](https://github.com/deepseek-ai/DeepInfer/blob/5a02312b68d635e032f36315d975bc0e236fff75/tests/examples/test_sweep_analysis.py)全部通过，涵盖decode/prefill与CLI函数。另以实际本地合成JSONL调用原loader/recommend，并用真实CLI执行第一项：
+
+| 输入控制 | 原分析器观测 |
+|---|---|
+| 同一请求数8：先有sps10/吞吐80，再有无吞吐字段记录 | 保留旧记录，CLI仍成功推荐8、吞吐80 |
+| 同一扫描值8，前后model_name不同且都有指标 | 只剩新记录，旧配置差异已被去重消除 |
+| 仅有decode_num_requests=8与吞吐字段80 | loader接受；recommend缺nextn时报KeyError |
+| 请求8/16，sps10/9，nextn5、cp1，原吞吐99999/null，dp_size1/2 | loader接受，重算吞吐480/864，推荐16；dp_size不在一致性清单 |
+| 第2行为非法JSON | 拒绝，并报告第2行 |
+| mtp_varlen=true、使用默认draft_acceptance=1.0 | recommend仍拒绝，不是设1.0即可支持 |
+
+第一项的两行共同配置为model_name=synthetic、ep_size=cp=1、context_length32、nextn0、mtp_varlen=false、num_extra_experts0；旧行含decode_num_requests8、decode_avg_sps10、decode_tokens_per_s_per_gpu80，新行同参数但无最后两个指标。这里的缺指标是合成输入，不是一次真实GPU失败。loader的“usable”只表示存在吞吐字段，并不验证全部派生字段、数值有限性或完整环境身份；固定字段全缺时get返回None也可一致，不能把兼容旧记录的策略当成全schema验证。
+
+生产端 [benchmark.py](https://github.com/deepseek-ai/DeepInfer/blob/5a02312b68d635e032f36315d975bc0e236fff75/examples/benchmark.py) 的measure函数在无flush-clean窗口时返回空dict，最终仍可追加配置行；这不等于进程失败。[run_sweep.sh](https://github.com/deepseek-ai/DeepInfer/blob/5a02312b68d635e032f36315d975bc0e236fff75/examples/sweep/run_sweep.sh)则另用FAILED记录非零退出，并阻止本次自动出图。独立analyze不读取这个shell状态、尝试清单或错误日志，因此可能从旧成功点继续给推荐。解读结果时须另保留预期扫描值、每次退出状态、时间/版本与原始日志。
+
+### 推荐所用的量
+
+[metrics.py](https://github.com/deepseek-ai/DeepInfer/blob/5a02312b68d635e032f36315d975bc0e236fff75/examples/sweep/analysis/metrics.py)对decode用 `τ=1+nextn×a`，每用户速度为 `avg_SPS×τ`，每GPU吞吐为 `avg_SPS×requests×τ/cp`，不是直接信任文件里的吞吐值；该字段只是载入门槛。a默认1是满接受假设，并非从JSONL估计的接受率。prefill则使用原吞吐字段和窗口秒数/步数，encoder用原吞吐字段及平均batch耗时。
+
+[recommend.py](https://github.com/deepseek-ai/DeepInfer/blob/5a02312b68d635e032f36315d975bc0e236fff75/examples/sweep/analysis/recommend.py)分别最大化吞吐、交互速度或两轴归一化后的几何平均。balanced不是延迟SLA，也不保证一定选曲线内部拐点。原decode fixture在a=0/0.5/1下实测推荐均为throughput→128、latency→8、balanced→32：nextn固定且所有点共用a时，τ是两轴共同正比例因子，单轴次序及归一化balanced分数均不变。这不是接受率校准或性能对照。
+
+mtp_varlen数据在原decode_tau中无条件拒绝，沿用[plot_pareto.py](https://github.com/deepseek-ai/DeepInfer/blob/5a02312b68d635e032f36315d975bc0e236fff75/examples/sweep/plot_pareto.py)不重复折算的边界；CLI帮助“must be 1.0 when mtp_varlen=1”不能解读为该模式已可用。报告也不分析stage/EP/KV瓶颈，作者将其留作后续工作。
+
+### 复查与范围
+
+只原样展开分析代码、fixtures、测试与原配置；包含空的tests/__init__.py，避免tests/examples包被当成顶层examples而遮住生产namespace。没有源码、fixture或断言替身。
+
+```bash
+task_sweep="$(mktemp -d)"
+git archive 5a02312b68d635e032f36315d975bc0e236fff75 examples/sweep/analysis examples/sweep/analyze.py tests/__init__.py tests/examples pyproject.toml | tar -x -C "$task_sweep"
+(cd "$task_sweep" && PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1 python -m pytest --noconftest -p no:cacheprovider -q tests/examples/test_sweep_analysis.py)
+```
+
+本机补充控制确认模块来自固定临时源码，deepinfer/torch/deep_cluster/模型下载器/judge未导入；真实CLI仅读新建scratch JSONL、向stdout输出。未运行sweep/benchmark/绘图、访问设备、改上游实现或测吞吐；不新增M5真机任务，也不竞争作者方案。
+
+SHA256：loader `a59c5b9353a684ba3b874d47276bc36ffdcb83adae1ac5d4d2a3b9db849de209`；metrics `c1194277a7bb36d087324562d5e75024adbee1c82cce3c90d882104c8fe0a1b8`；recommend `90fc87dcfbdcb2788a8583ed1034e40d5779a12e046d4abb5faa5bbda5948397`；原测试 `f2081fe5222d494a145a7fbb111ccba30ef2c3033bfa28ad29c29dcdc7a1e46b`。
