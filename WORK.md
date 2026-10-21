@@ -10,6 +10,8 @@
 
 ## 运行接续
 
+- **GPU/NPU及时交接（2026-10-21用户补充）**：M1 不负责/无法连接的真机事项写入[统一M5交接](experiments/handoff-m5.md)，M5 在机器可用时接续；不反复探测或把CPU模拟当真机进展。本轮已登记既有DeepInfer硬件适配与verl #8250补证，分别待资源/方案核对、待数据/环境，不代表M5已接单。AReaL仍按原单一负责人和专项交接，不并行推进。AGENTS已同步该规则。
+
 - **M1 vendor发现/执行边界收束（2026-10-21）**：已有#60 1f299c27原10项测试通过，复用脚本加vendor模式从Git完整导入；原Ascend12+2回归通过。固定_BACKENDS元组/Protocol不是动态插件，Biren发现不接通platform、扩展标签、setup或vendor build；BF16峰值仍显式未配置。已有#59/#63文档覆盖后续讨论，不竞争实现。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#vendor-registry-与模型运行支持)。本课题收束，下一步有界核对DeepInfer/verl变化再选未重复问题，不扩写模拟或干预并行移植专题；不加载运行时、GPU/AReaL与网站边界不变。
 
 - **M1 Ascend发现/NUMA边界收束（2026-10-21）**：已有#127 f9dec70d只加测试，完整原模块/原12项测试及2组独立可见编号控制通过，未导入torch。合成_root跳过npu-smi/lscpu生产分支，physical index与visible ordinal不同，查到NUMA≠实际绑核/内存落位。关联#56/#58/#60均已有作者且open，不竞争实现。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#ascend-发现与-numa-查询边界)。后续只读#60 vendor registry/Biren发现与运行时支持的边界，先核版本，不加载设备运行时、修改affinity或探测服务器。网站/GPU/AReaL分工不变。
