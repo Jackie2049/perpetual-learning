@@ -79,8 +79,8 @@
 .project-heading .project-date{margin:0}.project-heading{margin-bottom:22px}
 
 /* Sidebar uses a dark surface so the reading area stays light and framed.
-   The four variables below are mutated live by the temporary palette bar; bake final values here later. */
-:root{--sidebar-bg:#0f1e18;--sidebar-fg:#9db4a9;--sidebar-active-bg:#1c3a2e;--sidebar-active-fg:#a4dcc0}
+   Final palette chosen by the user from the live color bar (2026-10-21). */
+:root{--sidebar-bg:#1d574d;--sidebar-fg:#9db4a9;--sidebar-active-bg:#ffffff;--sidebar-active-fg:#000000}
 .sidebar{background:var(--sidebar-bg);border-right-color:#1e352c;border-right-color:color-mix(in srgb,var(--sidebar-fg) 20%,var(--sidebar-bg));color:#d7e4dc;color:color-mix(in srgb,var(--sidebar-fg) 40%,#e8f1ec)}
 .sidebar .brand{color:#f0f6f2}
 .sidebar nav>a{color:#9db4a9;color:var(--sidebar-fg)}
@@ -97,16 +97,3 @@
 .sidebar .sidebar-bottom>a:hover{color:#e9f2ed;color:color-mix(in srgb,var(--sidebar-fg) 35%,#ffffff)}
 .sidebar a:focus-visible,.sidebar button:focus-visible{outline-color:#8fd0b4;outline-color:var(--sidebar-active-fg)}
 .sidebar nav>a.active:hover{background:#1c3a2e;background:var(--sidebar-active-bg);color:#a4dcc0;color:var(--sidebar-active-fg)}
-
-/* Temporary palette debug bar — remove together with initPalette() in app.js once colors are finalized. */
-.palette-bar{position:fixed;inset:0 0 auto 0;z-index:40;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:8px 16px;background:rgba(255,255,255,.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);font-size:12px;color:var(--ink)}
-.palette-bar strong{font-size:12px;letter-spacing:.5px}
-.palette-bar label{display:flex;align-items:center;gap:6px;color:#51626b}
-.palette-bar input[type=color]{width:30px;height:24px;border:1px solid var(--line);border-radius:5px;padding:1px;background:#fff;cursor:pointer}
-.palette-presets{display:flex;gap:6px;align-items:center}
-.palette-presets button{width:22px;height:22px;border-radius:50%;border:1px solid rgba(0,0,0,.15);padding:0}
-.palette-bar>button{border:1px solid #dce4e0;background:#fff;border-radius:6px;padding:5px 10px;font-size:11px;color:#51626b}
-.palette-bar>button:hover{color:var(--green);border-color:#b9d2c7}
-body.palette-open .sidebar{top:52px;height:calc(100dvh - 52px)}
-body.palette-open .shell{margin-top:52px}
-@media(max-width:650px){body.palette-open{padding-top:52px}body.palette-open .sidebar{top:auto;height:auto}body.palette-open .shell{margin-top:0}.palette-bar{gap:9px;padding:7px 10px}}

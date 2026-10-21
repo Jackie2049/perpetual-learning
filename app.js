@@ -118,46 +118,4 @@ async function boot(){
   document.querySelectorAll('[data-icon]').forEach(el=>el.innerHTML=icon(el.dataset.icon));
   try {const res=await fetch('./data.json', {cache:'no-cache'});if(!res.ok)throw Error('data');data=await res.json();lookup=new Map([...data.library,...data.featured,...data.pending,...(data.projectRefs||[])].map(x=>[x.id,x]));document.querySelector('#library-count').textContent=data.library.length;document.querySelector('#pending-count').textContent=data.pending.length;const link=document.querySelector('#snapshot-link');link.href=data.repository+'/commit/'+data.revision;link.textContent='仓库快照 '+data.revision.slice(0,7)+' · '+fmt(data.sourceDate);route();window.addEventListener('hashchange',route);}catch{main.innerHTML='<div class="empty"><h1>暂时无法读取成果</h1><p>请刷新重试，或直接浏览 GitHub 仓库。</p><a href="https://github.com/Jackie2049/perpetual-learning">打开仓库 ↗</a></div>';}
 }
-/* Temporary palette debug bar for the dark sidebar — remove together with its CSS block once colors are finalized. */
-const PALETTE_KEY='pl:sidebar-palette';
-const PALETTE_DEFAULTS={bg:'#0f1e18',fg:'#9db4a9',ab:'#1c3a2e',af:'#a4dcc0'};
-const PALETTE_PRESETS=[
-  {name:'现状 · 深绿黑',bg:'#0f1e18',fg:'#9db4a9',ab:'#1c3a2e',af:'#a4dcc0'},
-  {name:'稍浅 · 苔绿',bg:'#1d332a',fg:'#a9c0b3',ab:'#315544',af:'#c6ecd3'},
-  {name:'石墨 · 灰蓝',bg:'#242b30',fg:'#a4b2ba',ab:'#3a4f5a',af:'#c2dde4'},
-  {name:'深海 · 蓝',bg:'#15223a',fg:'#a3b3cc',ab:'#2a4570',af:'#bcd5f2'},
-  {name:'暖炭 · 棕',bg:'#28211a',fg:'#b8a892',ab:'#48392c',af:'#e2cba8'},
-  {name:'紫夜 · 藤',bg:'#221d33',fg:'#ab9fc6',ab:'#3b3160',af:'#d3c8f0'},
-];
-function applyPalette(p){const s=document.documentElement.style;s.setProperty('--sidebar-bg',p.bg);s.setProperty('--sidebar-fg',p.fg);s.setProperty('--sidebar-active-bg',p.ab);s.setProperty('--sidebar-active-fg',p.af);}
-function initPalette(){
-  let pal={...PALETTE_DEFAULTS};
-  try{Object.assign(pal,JSON.parse(localStorage.getItem(PALETTE_KEY)||'{}'))}catch{}
-  applyPalette(pal);
-  const bar=document.createElement('div');
-  bar.className='palette-bar';bar.setAttribute('role','toolbar');bar.setAttribute('aria-label','侧栏配色调试');
-  bar.innerHTML=`<strong>侧栏配色</strong>
-  <label>底色 <input type="color" data-pal="bg" value="${pal.bg}"></label>
-  <label>文字 <input type="color" data-pal="fg" value="${pal.fg}"></label>
-  <label>高亮底 <input type="color" data-pal="ab" value="${pal.ab}"></label>
-  <label>高亮字 <input type="color" data-pal="af" value="${pal.af}"></label>
-  <span class="palette-presets" aria-label="预设搭配">${PALETTE_PRESETS.map((c,i)=>`<button type="button" data-preset="${i}" title="${c.name}" aria-label="预设：${c.name}" style="background:linear-gradient(135deg, ${c.bg} 50%, ${c.ab} 50%)"></button>`).join('')}</span>
-  <button type="button" id="palette-reset">恢复默认</button>
-  <button type="button" id="palette-copy">复制配置</button>`;
-  document.body.prepend(bar);
-  document.body.classList.add('palette-open');
-  const save=()=>{try{localStorage.setItem(PALETTE_KEY,JSON.stringify(pal))}catch{}};
-  bar.addEventListener('input',e=>{const k=e.target?.dataset?.pal;if(!k)return;pal[k]=e.target.value;applyPalette(pal);save();});
-  bar.addEventListener('click',e=>{
-    const preset=e.target.closest('[data-preset]');
-    if(preset){Object.assign(pal,PALETTE_PRESETS[+preset.dataset.preset]);applyPalette(pal);save();bar.querySelectorAll('input[data-pal]').forEach(i=>i.value=pal[i.dataset.pal]);return;}
-    if(e.target.id==='palette-reset'){Object.assign(pal,PALETTE_DEFAULTS);applyPalette(pal);save();bar.querySelectorAll('input[data-pal]').forEach(i=>i.value=pal[i.dataset.pal]);toast('已恢复默认配色');return;}
-    if(e.target.id==='palette-copy'){
-      const text=`--sidebar-bg: ${pal.bg}; --sidebar-fg: ${pal.fg}; --sidebar-active-bg: ${pal.ab}; --sidebar-active-fg: ${pal.af};`;
-      if(navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(()=>toast('配色已复制，发给 Agent 即可固化'),()=>toast(text));
-      else toast(text);
-    }
-  });
-}
-initPalette();
 boot();
