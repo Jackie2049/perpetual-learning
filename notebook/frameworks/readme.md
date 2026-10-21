@@ -105,7 +105,7 @@
 
 ## verl
 
-- [verl 训练与 rollout 的量化层审计](verl-quant-layer-audit.md) — #8132三类证据与24项CPU单测；SGLang分桶清理、图存储和抽样自检边界，真机待M5。
+- [verl 训练与 rollout 的量化层审计](verl-quant-layer-audit.md) — #8132审计/24项CPU单测及新#8306 refit覆盖对照；loader/marker与测试证据不可混用，真机待M5。
 
 - [verl 异步训练策略版本与 logprob 对照条件](verl-async-logprob-provenance.md) — V1 separate-async的rollout/old/current来源、CPU快照路由、版本标签边界和最小观测契约；非训练根因证明
 - [verl Full Model Prefix Sharing 旧 RFC 已撤回](verl-6401-rfc-full-model-ps.md)

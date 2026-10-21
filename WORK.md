@@ -12,6 +12,8 @@
 
 ## 运行接续
 
+- **M1 新旧SGLang refit覆盖对照（2026-10-21）**：#8306 open/head1beb355已不同于上一列表457aa56；#8132仍0defd9a。完整读三个新helper及接线，增加FP4/dense存储copy-back但不继承旧审计/guard/probe，FQN/marker不同；merge-base5a8dd519的8文件PR diff无配套测试，不把目标分支独有offload测试差异误记为本PR删除。见[同一笔记](notebook/frameworks/verl-quant-layer-audit.md#新旧-sglang-refit-路线的覆盖关系)与[M5原条目](experiments/handoff-m5.md#verl-量化层审计新版复验)，先选一路线不自动合并/采用。M1仅三模块AST/内存compile通过，未跑loader/模型/GPU；作者Blackwell观测非本项目结果。本项收束，后续选其他未重复源码问题，不扩写替身认证兼容；GPU/AReaL与网站发布边界不变。
+
 - **M1 GPQA提取学习收束（2026-10-21）**：有限核对DeepInfer/verl最近更新各8个open PR，转读已有#160 head4bda76d/base9bd9cf2。完整bench/io与原7项测试：base4过3预期失败、fix7过，各9组原函数控制通过，无parser替身。answer_line优先非全文最后答案，普通小写回退不放宽；固定score.py auto GPQA默认LLM judge覆盖correct，故不外推分数收益。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#gpqa-答案提取与最终判分)与脚本。本题收束，无数据/模型/judge/设备执行，不新增真机任务；后续可只读新#8306与旧量化refit路线的覆盖关系，先核作者/版本，不并行改代码或自动采用。GPU/AReaL与网站发布边界不变。
 
 - **M1 vendor wheel身份学习收束（2026-10-21）**：只读已有#159 head80c7334/base9bd9cf2，区分本次wheel、pip选中、导入身份与原生可运行。两版bash -n通过，packaging26.3实测aaaa222<ffff111；未构建/安装或复跑作者8项fixture测试。见[笔记](notebook/frameworks/deepinfer-initial-survey.md#vendor-wheel-的本次产物与安装身份)，同一[M5硬件入口](experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)加版本/观测参考并按其已有_C真机记录纠正旧“无结果”状态，不代表采用PR、不自动应用。课题收束，后续有界核对上游变化再选未重复问题，不继续堆构建替身或干预M5移植/GPU/AReaL；网站发布边界不变。

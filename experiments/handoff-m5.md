@@ -42,13 +42,15 @@ M5 最小下一步：先按实际硬件查已有方案和精确 head，读清依
 
 ## verl 量化层审计新版复验
 
-状态：待 M5 核对匹配硬件/软件栈，尚无当前新版真机结果，不代表已接单；不作为其他任务的前置条件。
+状态：待 M5 核对匹配硬件/软件栈，本项目尚无下述新版路线的真机复验；#8306作者另有Blackwell观测，不是M5结果。该项不代表已接单，也不作为其他任务的前置条件。
 
 来源：[源码与24项CPU单测](../notebook/frameworks/verl-quant-layer-audit.md)、已有 [#8132](https://github.com/verl-project/verl/pull/8132)，2026-10-21读取时open，head `0defd9a231cb876ce56812611b0afb3b2b25831a`，base `cd58f550fb1c4f5a3fe29da38e6f0002ec462fd3`。第7部分依赖前序量化堆叠且按#8287重做；不能盲目只cherry-pick审计。作者旧B200/ModelOpt观察不是新版验收；M1只运行作者自带替身的CPU单元测试，没有真实TE/compressor/engine。
 
-最小下一步：先核实际设备是否支持目标TE FP8路径、依赖/模型/格式是否匹配及是否已有作者新结果；固定完整提交与安装版本，不覆盖已有环境或打断工作。条件齐备后，使用获准的最小模型/配置，真实FP8 forward后做一次权重导出/同步，保留训练workspace/marker、导出格式与引擎方法的证据、实际route、checked/skipped/unresolved及no-verdict状态。非colocated路径不能声称完成同样的live-vLLM复查，SGLang guard另列执行范围。
+旧#8132审计路线的最小下一步：先核实际设备是否支持目标TE FP8路径、依赖/模型/格式是否匹配及是否已有作者新结果；固定完整提交与安装版本，不覆盖已有环境或打断工作。条件齐备后，使用获准的最小模型/配置，真实FP8 forward后做一次权重导出/同步，保留训练workspace/marker、导出格式与引擎方法的证据、实际route、checked/skipped/unresolved及no-verdict状态。非colocated路径不能声称完成同样的live-vLLM复查，SGLang guard另列执行范围。
 
-SGLang 接续补充（同一任务，不另排队）：见[分桶与失败边界](../notebook/frameworks/verl-quant-layer-audit.md#sglang-分桶加载与失败清理)。若实际选择该后端，先核 native MXFP8 路由/版本，再记录每 bucket 与 finalize 完成点、实际 dense/MoE backend、暂存/回绑及 graph 使用范围；保留 `VERL_MXFP8_REFIT_CHECK`/阈值、probe 层/expert、误差或明确 skipped 原因。恢复 scale 指针不是恢复旧参数，正常 finalize 也不代表所有 probe 执行；不诱发生产故障或在失败后未经状态核验直接续训。源码已有 dense fallback 存储重绑 TODO，按实际路径注明未测项，不把 MoE 检查外推全部 backend。
+SGLang 旧#8132路径接续（同一任务，不另排队）：见[分桶与失败边界](../notebook/frameworks/verl-quant-layer-audit.md#sglang-分桶加载与失败清理)。若实际选择该路径，先核 native MXFP8 路由/版本，再记录每 bucket 与 finalize 完成点、实际 dense/MoE backend、暂存/回绑及 graph 使用范围；保留 `VERL_MXFP8_REFIT_CHECK`/阈值、probe 层/expert、误差或明确 skipped 原因。恢复 scale 指针不是恢复旧参数，正常 finalize 也不代表所有 probe 执行；不诱发生产故障或在失败后未经状态核验直接续训。旧路线源码已有 dense fallback 存储重绑 TODO，按实际路径注明未测项，不把 MoE 检查外推全部 backend。
+
+新重叠路线核对：[#8306](https://github.com/verl-project/verl/pull/8306)，2026-10-21读取open、wuxibin89，固定head `1beb35554a763d18ed76fcbefaac1b224eaa1eeb`，目标base `cd58f550fb1c4f5a3fe29da38e6f0002ec462fd3`（merge-base `5a8dd519ab32bfd36d2509a137f830ba79e89c54`）。见[覆盖对照](../notebook/frameworks/verl-quant-layer-audit.md#新旧-sglang-refit-路线的覆盖关系)：增加FP4 routed-expert与dense存储copy-back，拒绝custom refit delta_flush，但未接入旧审计/guard/数值probe，不能搬用旧测试结果。M1仅源码/语法核对，没有loader或真机执行；作者报告Blackwell/Qwen3.5-35B-A3B EP8/TP2默认graph观测，无新增配套CPU测试。M5已有4090不等于匹配该验证资源。接手时先重核当前head/作者状态、安装SGLang版本，独立选一条路线并固定config/exporter/loader/marker/backend；不自动拼接、应用补丁或同时开两套实验，不把“恢复live storage”当旧参数回滚。
 
 停止条件：无匹配设备/TE/引擎或模型授权就写待资源/资料，不大规模下载或长训练，不用fake workspace替代真机验收。完成标准是明确版本与路由的可追溯结果或阻塞；选层相符不等于数值相同、回滚安全或#8250根因，不能凭此发布修复/PR。
 
