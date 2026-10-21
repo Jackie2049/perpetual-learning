@@ -15,8 +15,9 @@ const main = document.querySelector('#main');
 const dialog = document.querySelector('#reader');
 let data, lookup, page = 'overview', query = '', category = '全部', shown = 30, saved;
 try { saved = new Set(JSON.parse(localStorage.getItem('pl:saved') || '[]')); } catch { saved = new Set(); }
-const names = {overview:'总览', library:'成果库', diary:'工作日志', decisions:'待决事项', contributions:'开源贡献', saved:'我的收藏'};
+const names = {overview:'总览', library:'成果库', diary:'工作日志', decisions:'待决事项', contributions:'开源贡献', saved:'收藏夹'};
 const fmt = date => new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Singapore',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(date));
+const fmtFull = date => new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Singapore',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(date));
 const saveButton = (id, small=false) => `<button class="save-button ${saved.has(id)?'is-saved':''} ${small?'small':''}" data-save="${id}" aria-label="${saved.has(id)?'取消收藏':'收藏'}" aria-pressed="${saved.has(id)}">${icon('bookmark')}</button>`;
 function toast(message) { const node=document.querySelector('#toast'); node.textContent=message; node.classList.add('show'); clearTimeout(toast.timer); toast.timer=setTimeout(()=>node.classList.remove('show'),2400); }
 function heading(title, description) { return `<div class="page-heading"><h1>${title}</h1><p>${description}</p></div>`; }
@@ -73,8 +74,8 @@ function contributionSummary(item) {
 function contributionPanel(project) {
   const materials = project.materials.map(item => `<li>${item.readable ? `<button data-open="${item.id}">${esc(item.title)}</button>` : `<a href="${esc(item.url)}" target="_blank" rel="noreferrer">${esc(item.title)} ↗</a>`}</li>`).join('');
   return `<section class="contribution-panel" id="project-${esc(project.slug)}" aria-label="${esc(project.name)}">
-    <div class="project-heading"><p class="project-date">文档更新 ${esc(fmt(project.updated))}</p><span class="project-count">${project.materials.length} 份材料</span></div>
-    ${project.progress?`<div class="project-overview prose">${project.progress}</div>`:''}
+    <div class="project-heading"><p class="project-date">更新时间：${esc(fmtFull(project.updated))}</p><span class="project-count">${project.materials.length} 份材料</span></div>
+    ${project.progress?`<div class="project-overview prose"><span class="overview-label">最新进展：</span>${project.progress}</div>`:''}
     ${project.records.length?`<div class="project-records">${project.records.map(contributionSummary).join('')}</div>`:project.items.length?`<p class="project-empty">该项目抬头待负责人整理，以下保留原交接记录。</p>${project.items.map(contributionRecord).join('')}`:'<p class="project-empty">已有项目说明，尚无独立贡献记录。</p>'}
     <div class="project-actions"><button class="text-link" data-open="${project.overview.id}">项目说明 ${icon('arrow')}</button>${project.tracker?`<button class="text-link" data-open="${project.tracker.id}">候选追踪 ${icon('arrow')}</button>`:''}</div>
     <details class="project-materials"><summary>浏览项目材料 <span>${project.materials.length}</span></summary>${materials?`<ul>${materials}</ul>`:'<p>暂无独立材料。</p>'}</details>
@@ -84,7 +85,7 @@ function contributionsPage() {
   const filter = new URLSearchParams(location.hash.split('?')[1]||'').get('project');
   const projects = data.projects || [];
   const selected = projects.some(p=>p.slug===filter) ? filter : '';
-  main.innerHTML=heading('开源贡献','按项目回看调查、验证、贡献、进展')+
+  main.innerHTML=heading('开源贡献','按项目回看调研、验证、贡献、进展')+
     `<nav class="project-filters" aria-label="贡献项目筛选"><a href="#contributions" ${!selected?'aria-current="true"':''}>全部项目 <span>${projects.length}</span></a>${projects.map(p=>`<a href="#contributions?project=${encodeURIComponent(p.slug)}" ${selected===p.slug?'aria-current="true"':''}>${esc(p.name)}</a>`).join('')}</nav>
     <div class="contribution-grid">${projects.filter(p=>!selected||p.slug===selected).map(contributionPanel).join('') || '<p class="empty">当前尚无项目记录。</p>'}</div>`;
 }
