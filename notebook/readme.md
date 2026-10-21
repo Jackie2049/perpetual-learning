@@ -145,7 +145,7 @@
 - [DeepInfer 显存遥测](frameworks/deepinfer-initial-survey.md#显存遥测采样与容量规划) — #151单次查询/warning、allocator与全局口径及KV规划的区别；仅源码核对，真机交M5
 - [DeepInfer 消息信任边界](frameworks/deepinfer-initial-survey.md#共享内存消息与反序列化信任边界) — #158仍保留pickle；注释/扫描抑制非协议修复，CP本地调用与通用remote分支分开，非漏洞复现
 - [DeepInfer vendor wheel 身份](frameworks/deepinfer-initial-survey.md#vendor-wheel-的本次产物与安装身份) — #159本次构建/安装选择与兼容性分开；Shell语法及PEP440排序核对，非原生构建验收
-- [DeepInfer GPQA 提取与判分](frameworks/deepinfer-initial-survey.md#gpqa-答案提取与最终判分) — #160原始7项CPU测试成对复现；大小写/路径优先级与默认LLM judge覆盖规则结果的区别
+- [DeepInfer GPQA 提取与判分](frameworks/deepinfer-initial-survey.md#gpqa-答案提取与最终判分) — #160原7项与[#189强调格式](frameworks/deepinfer-initial-survey.md#强调格式与全文优先级)原8项CPU对照；宽松匹配、全文优先级与默认LLM judge不等于模型提分
 - [DeepInfer 评测题集覆盖](frameworks/deepinfer-initial-survey.md#评测-limit-与题集覆盖) — #169原5项CPU测试与原scorer三组本地JSONL控制；正limit入口不等于历史元数据或全数据覆盖认证
 - [DeepInfer 跨语言枚举测试](frameworks/deepinfer-initial-survey.md#enginetype-的源码一致性测试) — #164原测试与8组输入控制；显式十进制文本一致性不等于C++语义或已安装扩展同版
 - [DeepInfer 布尔配置与缓存](frameworks/deepinfer-initial-survey.md#布尔环境变量的解析与缓存) — #177原24测试base18过6预期失败/fix全过；宽松未知值、descriptor重读与复合字段须分开

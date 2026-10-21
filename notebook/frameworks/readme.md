@@ -393,7 +393,7 @@
 - [DeepInfer — DeepSeek 官方推理框架](deepinfer-initial-survey.md)：确定性链、ZOS 两轮时序与生命周期、官方部署 Q&A、隔离 CPU 检查（快照 8b161497）
 - [DeepInfer 消息与反序列化信任边界](deepinfer-initial-survey.md#共享内存消息与反序列化信任边界)：#158 AST对照；pickle协议未变，CP本地路径与remote能力分开，不定性可利用漏洞。
 - [DeepInfer vendor wheel 产物身份](deepinfer-initial-survey.md#vendor-wheel-的本次产物与安装身份)：#159隔离目录/精确路径/强制重装，安装身份与原生兼容性分开；未运行构建安装。
-- [DeepInfer GPQA 答案提取与判分](deepinfer-initial-survey.md#gpqa-答案提取与最终判分)：#160原始测试base4过3预期失败/fix7过；各9组原函数控制，不外推默认judge或准确率收益。
+- [DeepInfer GPQA 答案提取与判分](deepinfer-initial-survey.md#gpqa-答案提取与最终判分)：#160原7项、[#189强调格式](deepinfer-initial-survey.md#强调格式与全文优先级)原8项成对CPU测试；后者base2过6预期失败/fix8过，各11组控制，保留全文优先级与默认judge的判分边界。
 - [DeepInfer limit 与题集覆盖](deepinfer-initial-survey.md#评测-limit-与题集覆盖)：#169候选原5测试全过，基线3项导入预期失败；原scorer检查选定题集，非全数据认证。
 - [DeepInfer EngineType 一致性](deepinfer-initial-survey.md#enginetype-的源码一致性测试)：#164原测试通过，8组输入说明十进制/注释/表达式边界；非运行时ABI检查。
 - [DeepInfer 布尔环境变量](deepinfer-initial-survey.md#布尔环境变量的解析与缓存)：#177原24测试成对复现；大小写/空白修复不等于严格配置验证或热更新。

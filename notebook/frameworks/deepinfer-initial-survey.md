@@ -1207,6 +1207,40 @@ python experiments/scripts/verify_deepinfer_gpqa.py /path/to/DeepInfer --revisio
 
 SHA256：bench base `329611f34d5f138229b6f85407f8b63c7c38fd3c1b95f5115d965462ab3a7dda`，head `68e925d24fd5d6dec7f5f27bf69fb40d46eae792ec76ecfd45f2bf4f55dad9d0`；原测试 `094032f2e4ae67da6116af1eba858a3265b8e4545c3857bc1e50075ccf89ae8f`。共用io/初始化hash由脚本另打印。未下载数据、调用模型/外部judge或重算历史得分，本题不需要新增 M5 GPU/NPU 任务；已有作者负责，不竞争修复或向上游发言。
 
+### 强调格式与全文优先级
+
+2026-10-21 的 [PR #189](https://github.com/deepseek-ai/DeepInfer/pull/189)（读取时 open，作者 Aling33）只放宽 `_ANSWER_LINE_RE`，接受 `**ANSWER: C**`、`ANSWER: **C**` 等强调格式，避免后文干扰字母覆盖答案。head `990ce077054d397b28fbf95c019f0f6e82ee90e8`，目标 base `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`；真正共同祖先为 `774ce244b87cc0eb8d4b94ab9f5de2ab22049f01`。PR 从祖先仅改 bench 与新增测试两文件，44增1删；相关 bench/common/score 源码在祖先与目标 base 间相同，可用同一 base 做提取对照。
+
+[新表达式](https://github.com/deepseek-ai/DeepInfer/blob/990ce077054d397b28fbf95c019f0f6e82ee90e8/eval/gpqa/bench.py)把可选的双星号/双下划线放在 ANSWER 与冒号周围，并将选项之后的 Unicode `\b` 换成 `(?![A-Za-z0-9])`。这是宽松的答案行识别，不是 Markdown 解析器：不校验标记配对、闭合括号或整行结束；单星号仍不接受，ASCII 字母/数字仍被排除，但下划线和非 ASCII 字母不再被该边界排除。
+
+下表为原 `extract_answer_with_source` 的合成输入；`\n` 表示实际换行。每格为选项 / 来源：
+
+| 输入 | 基线 | #189 候选 |
+|---|---|---|
+| `**ANSWER: C** because B is wrong` | B / tail_letter | C / answer_line |
+| `**ANSWER: C__ because B is wrong` | B / tail_letter | C / answer_line |
+| `*ANSWER: C* because B is wrong` | B / tail_letter | 相同 |
+| `ANSWER: C_suffix then B` 或 `ANSWER: C字 then B` | B / tail_letter | C / answer_line |
+| `**ANSWER: C2** then B` | B / tail_letter | 相同 |
+| `<think>\n**ANSWER: A**\n</think>\nFinal B` | B / tail_letter | A / answer_line |
+| `**ANSWER: C**\nANSWER: B` | B / answer_line | 相同 |
+| `\boxed{d}` | none | 相同，未包含 #160 |
+
+`answer_line → boxed → tail_letter` 的优先级没有变；前两类仍搜索全文，仅 tail 路径截去思考区。因此放宽匹配也可能改变答案选择，而不只是修正来源标签。思考区例子说明现存优先级的相互作用，不是线上错误复现；#189 与 #160、思考区方案的文字关联不等于组合后的集成测试，不能自动合并补丁。
+
+复用[同一脚本](../../experiments/scripts/verify_deepinfer_gpqa.py)新增 `--suite emphasis`，完整执行固定源码与候选[40行原测试](https://github.com/deepseek-ai/DeepInfer/blob/990ce077054d397b28fbf95c019f0f6e82ee90e8/tests/eval/test_gpqa_extract.py)，导入/collector 隔离方式同上。Python3.12.13 / pytest8.4.2：基线 **2 passed / 6 项预期失败**，候选 **8 passed**；失败来自强调格式提取参数化与强调答案规则判分。原 pytest 基线退出1，包装脚本核对失败集合后退出0，没有改为 xfail。
+
+两版另各 **11 组控制**通过：表中9个提取输入（下划线与中文为两个输入），以及同一强调C/干扰B文本分别配人工 gold=C、gold=B 的两个原 `score_rollout` 调用。后者规则正确性从 false/true 换为 true/false，说明规则变化不是单调增分；不是 GPQA 真题或模型输出测量。旧默认 boxed 套件也回归：base4过3预期失败、候选7过，各9组控制通过，CLI 默认不变。
+
+```bash
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1 python experiments/scripts/verify_deepinfer_gpqa.py /path/to/DeepInfer --suite emphasis --revision base
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1 python experiments/scripts/verify_deepinfer_gpqa.py /path/to/DeepInfer --suite emphasis --revision fix
+```
+
+固定版本 [score.py](https://github.com/deepseek-ai/DeepInfer/blob/990ce077054d397b28fbf95c019f0f6e82ee90e8/eval/score.py)仍默认 GPQA 使用 LLM judge；judge 输入是截断后的 raw_text，而非提取的 pred，并以 verdict 覆盖 correct、另存 rule_correct。上述结果只验证文本提取/规则路径，未运行 judge、数据集、模型或设备，不认证默认最终准确率。本题无需新增 M5 算力任务。
+
+SHA256：bench base `329611f34d5f138229b6f85407f8b63c7c38fd3c1b95f5115d965462ab3a7dda`，#189 head `8032579ef4f868a7962f9d62f2957a118179044450d8db01862d3f045cddd5d8`；原测试 `819cc01a952dce1ba453d4bd325ca2ae19ce4141ef063ea61938f17e82b33f5e`。完整 common 初始化 `5384bfdb2df380b6557cc7a71d16891415bccaa87699406e236f752c6415389f`，io `cfeacd6f06570bcf0649b9a14557f0a8e6adbb61fa1b976edafd9d49e57c2d79`，两版相同。
+
 ## 评测 limit 与题集覆盖
 
 2026-10-21 核对已有 [#169](https://github.com/deepseek-ai/DeepInfer/pull/169)，读取时open、作者qingzhai；base `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`，head `62e386fe9ee1ab7bfff409d164cc577e72612fbe`。该PR只在 [run_eval.py](https://github.com/deepseek-ai/DeepInfer/blob/62e386fe9ee1ab7bfff409d164cc577e72612fbe/eval/run_eval.py) 的 argparse 层增加正整数校验，不修改benchmark或scoring。**入口拒绝非法预算，与报告中的题集完整性，是两个不同保证。**
