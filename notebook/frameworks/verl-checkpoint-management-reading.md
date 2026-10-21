@@ -3,6 +3,8 @@
 > 2026-06-15 | 源码: verl/utils/checkpoint/ + verl/checkpoint_engine/ + verl/model_merger/ + verl/trainer/ppo/ray_trainer.py
 > 核心: 2层架构(CheckpointManager→磁盘持久化+CheckpointEngineManager→实时权重同步); FSDP每rank独立shard+HF export(rank0 gather); Megatron dist_ckpt+async save; CheckpointEngineManager 5后端(naive/NCCL/NIXL/Kimi/Mooncake/HCCL); FSDPModelMerger离线合并→HF; GRPO只存actor+dataloader→省critic
 
+2026-10-22 补充：[保留目录与完整恢复的边界](#保留目录与完整恢复的边界)固定于 verl `1876b06d`。`max_ckpt_to_keep=1` 保存前保留旧目录，成功登记后才删旧；目录保留、保存完成通知与可恢复性是不同保证。下方早期架构段落的版本和行号不自动更新为本次验证范围。
+
 ## 1. Checkpoint 2层架构
 
 ```
@@ -145,11 +147,11 @@ ray_trainer.py (974-1108):
   1. actor_rollout_wg.save_checkpoint(actor_local_path, ...)
   2. critic_wg.save_checkpoint(critic_local_path, ...) → only if use_critic!
   3. torch.save(self.train_dataloader.state_dict(), data.pt)
-  4. latest_checkpointed_iteration.txt → atomic write
+  4. latest_checkpointed_iteration.txt → 同步路径直接open("w")/write；async路径交给worker finalize
 
 ★ ★ GRPO只保存:
-  → actor checkpoint + dataloader state → 无critic → 省50%存储!
-  → PPO保存: actor + critic + dataloader → 3倍存储!
+  → actor checkpoint + dataloader state → 无critic
+  → PPO额外保存critic；实际存储比例取决于模型、优化器及save_contents，不能固定算50%或3倍
 
 ★ ★ _load_checkpoint() (1043-1108):
   1. 读取latest_checkpointed_iteration.txt → step number
@@ -164,6 +166,36 @@ ray_trainer.py (974-1108):
   → "auto" → 找最新checkpoint
   → "resume_path" → 指定路径
 ```
+
+### 保留目录与完整恢复的边界
+
+`max_ckpt_to_keep` 控制已登记目录的淘汰，不是保存事务或磁盘容量上限。`BaseCheckpointManager` 将“保存前腾位置”和“成功后登记”拆开，避免上限为 1 时提前删掉唯一旧目录。[固定版本源码](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/utils/checkpoint/checkpoint_manager.py)
+
+| 上限 | 保存前 `ensure_checkpoint_capacity` | 成功后 `register_checkpoint` |
+|---|---|---|
+| 1 | 不删除旧目录 | 加入新路径后删除超出的旧目录，只跟踪新目录 |
+| 2 及以上 | 已登记数达到上限时，先裁到上限减 1 | 加入新路径，再裁掉超限部分 |
+| 0 | 不删除 | 继续记录所有路径，不按数量删除 |
+
+因此，上限为 1 的保存过程中可以同时存在旧目录与正在写入的新目录，需要相应磁盘余量。路径列表从当前 manager 的空列表开始，并非磁盘目录扫描；删除使用 `shutil.rmtree(..., ignore_errors=True)`，列表裁短也不认证磁盘删除已经成功。
+
+`register_checkpoint` 的前提是调用方已完成保存；它不检查模型分片、优化器、manifest 或恢复结果。不能绕过前提，手动登记一个空路径，再据此判定标准保存流程丢失数据。实际接线须与保留 helper 分开看：
+
+- [FSDP manager](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/utils/checkpoint/fsdp_checkpoint_manager.py)：rank 0 在保存前调用容量清理，在保存流程尾部登记；这些 helper 不是 trainer 的 actor、critic、dataloader 整轮联合提交。
+- [Megatron manager](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/utils/checkpoint/megatron_checkpoint_manager.py)：同步路径先清理，async 路径跳过保存前清理。`_dispatch_finalize` 将回调挂到最后一个 async request，并将所有请求入队；`_finalize_save` 按 manifest、可选 HDFS copy、async rank 0 tracker、登记保留策略的顺序执行。这是源码中的完成通知安排，不是本机对 Megatron 队列、跨 rank 故障或存储持久化的验收。
+- [Trainer](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/trainer/ppo/ray_trainer.py)：写完 `data.pt` 后，同步路径以 `open(..., "w")` 和 `write` 更新 tracker；actor async 时跳过该更新，由 worker finalize 写入。尽管注释有 `for atomic usage`，这两处写 tracker 都不是临时文件加原子替换；不能据此称整个 checkpoint 保存具备崩溃原子性，也未由此复现恢复故障。
+
+**CPU 复查**：[原 5 项清理测试](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/tests/utils/ckpt/test_checkpoint_cleanup_on_cpu.py)全部通过，覆盖上限 1 的保存前保留、保存后删除、上限 2 预清理、0 不限量、连续三轮上限 1。测试创建的内容只有 `checkpoint.txt`，不含模型分片。原 fixture 自带空 model/optimizer 及 rank/world-size monkeypatch；没有初始化进程组。
+
+复现使用[实验脚本](../../experiments/scripts/verify_verl_checkpoint_retention.py)，Python 3.12.13、torch 2.9.1、NumPy 2.0.2、pytest 8.4.2：
+
+```bash
+python experiments/scripts/verify_verl_checkpoint_retention.py /path/to/verl
+```
+
+脚本从固定 Git 对象选择完整原 `BaseCheckpointManager` 类、延后注解求值并提供真实标准库/torch/NumPy，完整加载原测试模块，由 pytest 执行 5 项原测试及 fixture。包根、框架导入、conftest/外部插件和缓存被隔离；收集限定到脚本目录。临时目录与删除审计限制在本次新建 scratch，退出时清理。未调用 RNG/设备方法或 FSDP/Megatron save/load，不属于完整包、真实 checkpoint 恢复或断电/进程崩溃测试。
+
+源文件 SHA256：manager `be4fa702f0fab63dfb1d482716d31bc13a3b8f5129adbbd61872a169b07cbbc6`；原测试 `30f2df35a31c6eeb21db737557336c9178bb4b69a5427a44621121eaa4a18a18`。
 
 ## 6. FSDP2 / DTensor Checkpoint
 

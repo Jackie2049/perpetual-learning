@@ -128,7 +128,7 @@
 - [verl #7016 Deep Analysis — Qwen3-MoE FSDP2 Backward Failure](verl-7016-qwen3-moe-fsdp2-backward-deep-analysis.md)
 - [verl (HybridFlow) 架构深度分析](verl-architecture.md)
 - [verl Async Rollout Architecture Deep Dive — vLLM/SGLang Integration](verl-async-rollout-architecture-deep-dive.md)
-- [verl Checkpoint Management 源码级深度阅读](verl-checkpoint-management-reading.md)
+- [verl Checkpoint Management 源码级深度阅读](verl-checkpoint-management-reading.md)：[保留目录与完整恢复](verl-checkpoint-management-reading.md#保留目录与完整恢复的边界)，5原清理测试通过；上限1先保旧再登记，目录/成功通知/可恢复性分开，纠正tracker原子写入及固定存储比例说法。
 - [verl ContinuousToken Agent Loop (#6720/#6721 open) — Multi-Turn RL](verl-continuous-token-agent-loop-reading.md)
 - [verl CPPO Algorithm (PR #6731) — 深度阅读](verl-cppo-algorithm-reading.md)
 - [verl CPPO Async Trainer Incompatibility — Source-Level Analysis](verl-cppo-async-trainer-incompatibility-source-reading.md)
