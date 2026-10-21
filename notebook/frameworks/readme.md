@@ -395,6 +395,7 @@
 - [DeepInfer EPLB 并列热点分配](deepinfer-initial-survey.md#eplb-相同热点负载下的副本分配)：#191原测试体32个CPU参数例，候选全过/基线27过5预期失败；128组有理数贪心对照，非全局最优或设备shuffle验收。
 - [DeepInfer 消息与反序列化信任边界](deepinfer-initial-survey.md#共享内存消息与反序列化信任边界)：#158 AST对照；pickle协议未变，CP本地路径与remote能力分开，不定性可利用漏洞。
 - [DeepInfer vendor wheel 产物身份](deepinfer-initial-survey.md#vendor-wheel-的本次产物与安装身份)：#159隔离目录/精确路径/强制重装，安装身份与原生兼容性分开；未运行构建安装。
+- [DeepInfer checkpoint 布局与gate up顺序](deepinfer-initial-survey.md#checkpoint-布局预检与-gate-up-顺序)：#153原55项CPU文件测试及每版4个真实装载；形状相同可装反，预检接受不等于所有加载路径可执行。
 - [DeepInfer GPQA 答案提取与判分](deepinfer-initial-survey.md#gpqa-答案提取与最终判分)：#160原7项、[#189强调格式](deepinfer-initial-survey.md#强调格式与全文优先级)原8项成对CPU测试；后者base2过6预期失败/fix8过，各11组控制，保留全文优先级与默认judge的判分边界。
 - [DeepInfer limit 与题集覆盖](deepinfer-initial-survey.md#评测-limit-与题集覆盖)：#169候选原5测试全过，基线3项导入预期失败；原scorer检查选定题集，非全数据认证。
 - [DeepInfer EngineType 一致性](deepinfer-initial-survey.md#enginetype-的源码一致性测试)：#164原测试通过，8组输入说明十进制/注释/表达式边界；非运行时ABI检查。

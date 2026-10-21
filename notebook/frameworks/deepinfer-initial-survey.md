@@ -1217,6 +1217,42 @@ SHA256：脚本base `2256ec58231a8e5267ff2403a7c4915d450083c2c731a4480b4d4485705
 
 [同一硬件交接入口](../../experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)记录此项已有方案，是否采用由 M5 按当前移植任务独立决定，不自动应用或覆盖环境。若后续获准构建/安装，应同时记录子模块提交、工具链、wheel 文件/hash、解释器/安装元数据与实际 import 路径，再把原生算子可用性独立列证据。M5 已有 `_C` 编译导入结果不等于四个 vendor 都已可用，也不证明采用过此 PR。
 
+## Checkpoint 布局预检与 gate up 顺序
+
+**形状相同、覆盖完整，不代表张量半块的语义顺序正确。** 2026-10-22核对已有[#153](https://github.com/deepseek-ai/DeepInfer/pull/153)，open/draft、作者liuyinchu；head `c2bbb61623c5120364faa879829feabb6d709434`，base/共同祖先 `774ce244b87cc0eb8d4b94ab9f5de2ab22049f01`，真正PR三文件456增19删。这是既有作者方案的CPU复查，不是本项目新提出的修复。
+
+### 先规范化排序键 再保留真实名字读取
+
+HF的共享专家w1（gate）与w3（up）都映射到同一linear1参数，原loader按coverage.tensors给出的顺序沿dim0拼接。基线直接按原始名字排序；若w1有`model.`而w3没有，字面排序把`layers...w3`放在`model.layers...w1`之前。两块都是32×64 BF16时，合并形状仍是64×64，形状校验无法识别交换。
+
+[候选build_coverage](https://github.com/deepseek-ai/DeepInfer/blob/c2bbb61623c5120364faa879829feabb6d709434/deepinfer/hugging_face/weights.py#L88)只将排序key改成去掉可选model.前缀的名字，coverage仍保存原始名字用于实际shard查找。规范化的是排序依据，不是覆盖掉checkpoint原名字或允许重复别名。原prepare_hf_coverage另拒绝规范化后重复的index条目；这些预检与顺序修正不能相互替代。
+
+每版另4组真实CPU装载控制：两份safetensors分别存w1=2、w3=7的32×64矩阵，调用原build_coverage、validate_hf_shapes和load_covered_params，检查装入参数的前后半全部元素。
+
+| w1与w3的可选前缀 | 基线装载 | 候选装载 |
+|---|---|---|
+| 都无 / 都有model. | 2在前、7在后 | 相同 |
+| 仅w1有model. | **7在前、2在后**，形状检查仍通过 | 2在前、7在后 |
+| 仅w3有model. | 2在前、7在后 | 相同 |
+
+这里已实际读小文件、复制真实CPU参数，不是仅比较名字或手写cat模拟。原suite的顺序测试在基线coverage断言处已失败、未进入后续加载，因此这4组单独计数，不把原测试未执行的部分算成证据。
+
+### 预检检查布局 不提供回滚事务
+
+[validate_hf_shapes](https://github.com/deepseek-ai/DeepInfer/blob/c2bbb61623c5120364faa879829feabb6d709434/deepinfer/hugging_face/loading.py#L86)扩展为读取safetensors header的shape/dtype：普通FP8核sf期望布局；packed FP4专家核字节权重、int16/int32 scale对应的字节几何及所有global expert；Engram核global rows、scale及本地row_start。已知w1/w3组要求两半各自等形，不仅总尺寸正确；普通无此语义的concat仍可2+6合并为8，不能一概强制等半。
+
+Header-only原测试包装真实safe_open，只允许get_shape/get_dtype，禁止取slice数据/get_tensor及_TensorReader.read；候选通过说明**这个预检函数**只读元数据，不是整个加载过程不读payload。[标准load_hf_checkpoint](https://github.com/deepseek-ai/DeepInfer/blob/c2bbb61623c5120364faa879829feabb6d709434/deepinfer/model_executor/model_loader.py#L136)先核参数覆盖、预检再调用数据加载；直接调用load_covered_params并不自动执行预检，后续I/O/复制失败也没有整体回滚承诺。
+
+预检允许Engram scale在独立shard的原用例通过，但原_load_engram_tables仍断言weight/scale同shard。可验证的header布局不等于该加载路径可执行；原生专家位置、kernel、设备资源与模型输出也需各自证据。当前CPU测试不要求为这些未测范围新增M5实验，已有移植优先级不变。
+
+### 原始文件与 CPU 对照
+
+[固定复查](../../experiments/deepinfer-hf-shapes/readme.md)完整执行原logger、names、parameters、weights、loading及366行原测试；只用包壳避开框架根初始化，没有AST裁剪函数/更换reader。Python3.12.13 / torch2.9.1 / safetensors0.8.0 / pytest8.4.2，候选 **55过**；base **22过、33项预期失败**（32项未拒绝布局、1项覆盖顺序）。原参数化、header guard和断言保持不变，禁用conftest/外部插件/cache，基线pytest退出1由包装脚本检查，不改xfail。
+
+另各4组装载为上表的前缀矩阵。原测试真实恢复了普通FP8非单位scale与Engram padding，但没有实际专家分配/设备权重重排或完整model_loader执行；本项目未复跑作者额外700+700 stress，也未做GPU/NPU验证。无模型下载、原生扩展/quant kernel、collective或全模型推理，不能外推性能或任意checkpoint都能载入。
+
+SHA256：候选loading `1a273325339961f111c7679b94a8ca3752a83814148752ca1fef5bc2effba8ac`，weights `503a2ceaeb72d0b746b442edb73dc0c34cda4c1366e872ae578a2d9a7335268d`；原测试 `714ba4b30ba2b5d43e9437e8adc43221428cc12a9b6ac59951c0a534e4859063`。完整基线/未改辅助文件hash由脚本打印，依赖隔离和命令见实验入口；不自动应用候选或向上游发言。
+
 ## GPQA 答案提取与最终判分
 
 2026-10-21 核对已有 [PR #160](https://github.com/deepseek-ai/DeepInfer/pull/160)，读取时 open，作者 ccl125；base `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`，head `4bda76dda5b9158380f2b89eecad68fa4d1614e4`。改动只为 [GPQA bench](https://github.com/deepseek-ai/DeepInfer/blob/4bda76dda5b9158380f2b89eecad68fa4d1614e4/eval/gpqa/bench.py#L111) 的 `_BOXED_RE` 加 `re.I`，让 `\boxed{d}` 不再漏掉；普通字母回退仍区分大小写。**这是提取规则修正，不是模型能力提升，也不是完整 benchmark 重跑。**
