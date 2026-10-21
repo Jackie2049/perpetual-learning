@@ -4,6 +4,8 @@
 > 阅读: 2026-06-15
 > 重点关注: GRPO training step, compute_advantage → ppo_loss 数据变换链, CoreActorRolloutRefWorker.update_policy(), LoRA adapter管理, RewardManager, bypass_mode
 
+2026-10-22 补充：[学习率步数与恢复条件](#学习率步数与恢复条件)固定于 verl `1876b06d` / torch 2.9.1，区分 optimizer 更新、scheduler 推进及日志值；原文其他 June 阅读结论不自动成为本次验证范围。
+
 ---
 
 ## 1. GRPO Training Step 全流程 (两代 Trainer)
@@ -365,6 +367,43 @@ def train_batch(self, data: TensorDict):
         output["metrics"]["lr"] = lr
     return self._postprocess_output(output).cpu()
 ```
+
+### 学习率步数与恢复条件
+
+固定版本的 [FSDP engine](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/workers/engine/fsdp/transformer_impl.py) 先 `scheduler.step()`，再返回 `get_last_lr()[0]`，只报告第一个参数组。因此这个日志值是调度推进后的 LR，不是刚完成的 optimizer 更新所用的 LR。[TrainingWorker](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/workers/engine_workers.py) 在一次 `train_mini_batch` 调用的最后一个 mini-batch 结束后才触发该推进；一次调用内的多个 optimizer 更新不等于多个 scheduler tick。其他 backend 或 Tinker 显式调用不能据此一概而论。
+
+`LambdaLR` 构造本身会计算索引 0 的 LR，但这不是已做了一次 optimizer 更新。以 base LR=1、warmup=2 的真实 CPU SGD 为例，按 optimizer 更新后再推进 scheduler 的顺序，得到：
+
+| 时点 | constant | cosine 总步数 6 下限比例 0.2 默认半周期 |
+|---|---|---|
+| 构造后，尚未做 optimizer 更新 | 0 | 0 |
+| 更新 1 完成后 | 0.5 | 0.5 |
+| 更新 2 完成后 | 1 | 1 |
+| 更新 6 完成后 | 1 | 0.2 |
+| 人为继续到更新 10 后 | 1 | 1 |
+
+第一次更新实际用 LR=0，完成后返回的 0.5 是下一次更新可用的值。cosine 的 `zero_indexed_step=False` 会把函数内部索引加 1：本例构造时 LR 已为 0.5，更新 5 后到 0.2。FSDP builder 仅对 cosine 传该字段，constant 构造器没有对应开关。[两个原调度构造器](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/utils/torch_functional.py)
+
+cosine helper 没有把 progress 截在 1，超过指定总步数仍继续余弦，故上表会回升；这是人为超出原 horizon 的行为观察，不是证明标准 trainer 超额执行。`num_cycles=1` 本来就是一个完整周期，本例在第 6 次推进后返回 1，而非下限。延长训练时不能只把旧调度无限续跑，也不能假定任意 cycles 都单调下降。
+
+**恢复的是计数和状态，不是普通函数闭包。** 两个原 helper 返回的 `LambdaLR` 使用嵌套普通函数，调度参数留在各自函数闭包中；cosine 包括 warmup、总步数、下限和 cycles。PyTorch 2.9 明确说明函数或 lambda 本身不存入 scheduler state，且应同时保存/加载 optimizer 状态。[官方 LambdaLR 文档](https://docs.pytorch.org/docs/2.9/generated/torch.optim.lr_scheduler.LambdaLR.html)
+
+CPU 内存恢复对照采用 cosine warmup=2、总步数 10、下限 0.2、SGD momentum=0.9，在更新 4 后保存参数、optimizer 和 scheduler 字典。先构造新 optimizer/scheduler，再加载两份状态与参数：
+
+- **原配置重建**：后续 5 次更新的使用 LR、推进后 LR、参数值以及最终 momentum 全部与不中断运行一致。
+- **只将总步数改成 18**：加载后的 `last_epoch=4` 和报告 LR 仍为原来的约 0.882843；第一次恢复更新也相同，但该次更新后的 LR 变成约 0.932588，而原曲线为约 0.753073，第二次更新的参数便分叉。state 中 `lr_lambdas=[None]`，没有原总步数；只查看加载后 LR 会漏掉这种差异。
+
+这不是恢复损坏复现，而是更换配置的受控对照。若目标是续接同一轨迹，需要保留构造调度的配置、参数组及实际 tick 约定；若要延长 horizon 或改曲线，应明确当作新的调度决定，而不是认为 load 自动恢复了旧函数。
+
+另外，直接将 optimizer 当前 LR 改成 0.4 可以让该次 CPU SGD 更新用 0.4，但随后的 warmup tick 返回 0.5，`base_lrs` 仍为 `[1.0]`。这是普通 optimizer/LambdaLR 的观察，不是对 [OptimStepParams](verl-6765-optim-step-params-reading.md) worker 接口的集成测试；当前 LR 赋值不等于重设 scheduler 基准。
+
+复查入口：[实验脚本](../../experiments/scripts/verify_verl_lr_schedule.py)，Python 3.12.13 / torch 2.9.1：
+
+```bash
+python experiments/scripts/verify_verl_lr_schedule.py /path/to/verl
+```
+
+脚本从固定 Git 对象 AST 选取两个完整原构造器、延后注解，使用真实 `SGD` / `LambdaLR`、一个 CPU FP64 标量及恒定梯度；四条完整 LR 轨迹、两组恢复和一步覆写对照均通过。没有执行上游原配置测试、worker/FSDP/Tinker、模型训练、磁盘 checkpoint 或设备，不验证训练收敛/性能。恢复字典仅在内存中 deepcopy。官方 API 与本地源模块 blob 同 `490ffc1baf246a452faad82ac3f00f448303ba81`；源文件 SHA256 `9855e101c19b64c90d1f07bf47ce3e628751afe979b40d2b863ae6d16aa4cee1`。
 
 ### 3.5 Loss Function注入
 

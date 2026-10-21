@@ -143,7 +143,7 @@
 - [verl GRPO End-to-End Data Flow 源码级阅读](verl-grpo-data-flow-reading.md)：补[拼批形状与引用](verl-grpo-data-flow-reading.md#拼批中的形状与引用)，原1测试体/7组CPU DataLoader检查；对象边界不等于深拷贝/字段校验。
 - [verl GRPO 内存泄漏与 detach_metrics 修复 — RTX 4090关键分析](verl-grpo-detach-metrics-rtx4090-reading.md)
 - [verl GRPO 源码深度阅读](verl-grpo-source-reading.md)：新增[UID均衡前提](verl-grpo-source-reading.md#连续-uid-与等样本组的前提)，原3个CPU测试体与22组控制；连续段聚合、等段数不自动保证等行分发。
-- [verl GRPO Training Loop Internals — Source Code Level Deep Reading](verl-grpo-training-loop-internals-reading.md)
+- [verl GRPO Training Loop Internals — Source Code Level Deep Reading](verl-grpo-training-loop-internals-reading.md)：补[学习率步数与恢复](verl-grpo-training-loop-internals-reading.md#学习率步数与恢复条件)，真实CPU optimizer四轨迹/两恢复/一步覆写；日志是推进后LR，state不保存原函数闭包，非训练或worker集成验收。
 - [verl HYBRID Sleep/Wake Architecture — Source Reading](verl-hybrid-sleep-wake-architecture-reading.md)
 - [verl Latest Developments — June 2026 Comprehensive Reading](verl-latest-developments-2026-06-reading.md)
 - [verl MAGI Prefix-Tree KV Dedup (#6689 draft) + Pluggable Router (#6712 open)](verl-magi-prefix-tree-reading.md)
