@@ -134,6 +134,12 @@ M5 最小下一步：先判断是否有获准使用的对应配置、完整 toke
 
 停止条件：缺私有材料/配对身份就记录“待资料”，不启动原报告的长训练，也不以公共 toy 或另一模型称已复现 #8250。对照有差异只能缩小范围；没有原始观测前，不设计新的修复、不发布旧诊断稿或承诺治愈阈值。完成标准是可追溯的配对证据，或明确缺失材料清单。
 
+## verl TransferQueue 启动资源参考
+
+状态：只留日后独立选题参考，不加入自动训练队列或代表接单。已有[#8340](https://github.com/verl-project/verl/pull/8340)，head `881fb96937f5ddfae5d894bb9a48538d1b049e1e`、base/祖先dc709afb；作者CPU/Ray复现使用TransferQueue `5fe4e49fe74aef544fe54da1fbeabf0b36d497eb`及Ray2.59.0。[M1原3配置测试/四类generated配对](../notebook/frameworks/verl-transferqueue-worker-lifecycle-deep-reading.md)通过，未运行Ray/tq.init。目的为区分U+1逻辑CPU基础预留、实际硬亲和节点和其他actor配额；不是设备离线或GPU性能结论。
+
+若M5已有获准TQ环境且恰需启动诊断，先固定verl/TQ/Ray版本与实际backend，核trainer.nnodes、最终U、候选alive节点/required_node_resource、逐节点可调度CPU及其他会话占用，再独立决定是否需要无模型的隔离CPU复现；保留actor状态、初始化完成/退出、命名控制器是否复用和清理证据。缺匹配环境/授权、需新集群部署/资源/模型或影响原任务即停记未测，不造生产PENDING、不全局ray stop、不自动应用候选或拉起训练。GPU/NPU和AReaL/#8313/#523原分工不变。
+
 ## verl Megatron 重算回收参考
 
 状态：待M5独立选题与匹配环境，非新增必跑队列，不打断现有任务。[#8338](https://github.com/verl-project/verl/pull/8338)固定head `c099b0179cfa70987b7b75e5b1c9b685d39c4d5c`、目标base dc709afb/共同祖先 `d1390eea0c94467d4ae1387eeda9e2f78f8d73ea`；[M1源码/CPU入口](../notebook/fundamentals/gradient-checkpointing.md#重算叶子与共享存储)仅原两条清理语句的4组CPU所有权/梯度/延后反向控制和3文件compile，无完整patch、原5项GPU测试或显存/stream验收。

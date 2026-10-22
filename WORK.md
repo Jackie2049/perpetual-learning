@@ -30,6 +30,8 @@
 
 ## 运行接续
 
+- **M1 TQ启动资源学习收束（2026-10-23）**：同步无新增后有界读verl12/UniRL8候选，选新#8340 head881fb969/base祖先dc709afb；[原TQ笔记](notebook/frameworks/verl-transferqueue-worker-lifecycle-deep-reading.md)/[脚本](experiments/scripts/verify_verl_tq_config.py)。真实Hydra原3例/四类generated配对通过；仅原helper AST，未导入Ray/torch/TQ，不认证启动。固定TQ5fe4e49源码核U+1基础逻辑CPU、alive节点硬亲和、无界启动等待与key容量；默认2×nnodes非容量预检。纠正旧笔记把数据面当权重同步、GPU零拷贝/1ms/固定4090预算等无依据推导，保留worker分层与相关入口，历史Git可查。2变更Python仅compile，原M5新增单条可选CPU/Ray启动参考，不部署/改其专项。本题收束，下轮另选非配置默认值/启动数量/调度替身的小变体问题；GPU/AReaL/#8313/#523边界不变。
+
 - **M1分桶失败传播学习收束（2026-10-23）**：先快进M5状态c01ff45；有界查10项verl更新，选择刚更新的#7366 head48d91130/base祖先dc709afb，见[原worker笔记新节](notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#分桶接收失败与退出)/[复查脚本](experiments/scripts/verify_verl_bucketed_transfer.py)。完整原8项CPU测试沙箱外两次全过（真实ZMQ/SHM进程与原socket替身范围分开），首跑权限失败已记；另真实ZMQ poll显示asyncio截止不能提前打断同步等待。逐ACK预算非整轮截止/回滚，delta路径未接用户timeout，成功CPU例未核tensor值。6变更Python仅compile，GPU/NPU/vLLM缺口补原M5同步参考，不应用/改上游，不认定#8250根因。本题收束，下轮另选非ACK/超时/进程替身的小变体问题；GPU/AReaL/#8313/#523边界不变。
 
 - **M1重算存储所有权学习收束（2026-10-23）**：先快进M5状态11776df；读#8338 headc099b017/目标dc709afb、实际祖先d1390eea（ahead1/behind8），见[原重算笔记](notebook/fundamentals/gradient-checkpointing.md#重算叶子与共享存储)/[脚本](experiments/scripts/verify_recompute_leaf_storage.py)。4组真实CPU控制：resize截断全部storage别名但numel可仍非零；原候选梯度tuple/清理循环两语句保留输入别名、返回grad及延后反向，非完整MCore patch。3文件compile，原5项CUDA/显存/stream未跑，没把作者H800/MTP报告当本项目。旧Megatron data释放表述收窄，GPU缺口单条补原交接，待M5选题不另开训练/应用方案。本题收束，后续另选非storage回收/叶子引用/checkpoint替身问题；GPU/AReaL/#8313/#523边界不变。

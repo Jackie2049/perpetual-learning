@@ -194,6 +194,7 @@
 - [vLLM MoE Serving 源码阅读](frameworks/vllm-moe-serving-reading.md) — 模块化 MoE kernel 架构、8+ All-to-All 后端、Router/Experts/Prepare-Finalize 分离
 - [verl 源码架构阅读](frameworks/verl-source-reading.md) — HybridFlow RL 训练框架、PPO/GRPO 循环、FSDP+混合推理引擎、Prefix Grouper
 - [verl RL Infra 架构源码阅读](frameworks/verl-rl-infra-reading.md) — SyncPPOTrainer、ActorRolloutRefWorker、GRPO/GAE、TransferQueue、vLLM Rollout
+- [verl TransferQueue 数据面与启动资源](frameworks/verl-transferqueue-worker-lifecycle-deep-reading.md) — #8340按nnodes填默认单元数；3原配置测试/4组generated配对，不认证Ray启动。数据字段与权重同步分开，旧零拷贝/性能推导撤回
 - [verl 教师生成与蒸馏目标](frameworks/verl-veomni-opd-source-reading.md#教师生成与蒸馏目标) — #8335整批来源选择、生成/软标签评分分开；教师prefix不是纯学生on-policy，16文件仅语法与源码核对
 - [vLLM 量化推理管线源码阅读](frameworks/vllm-quantization-pipeline-reading.md) — 量化方法注册表、Kernel 选择逻辑、离线/在线量化、QuantKey 系统
 - [vLLM 权重加载管线源码阅读](frameworks/vllm-weight-loading-reading.md) — safetensors 到 GPU 全流程、TP/PP/EP 分片、weight_loader 机制
