@@ -6,7 +6,7 @@
 >
 > 源码基线：`deepseek-ai/DeepInfer` commit `8b16149`（本地 clone `/Users/jackiemac/workspace/DeepInfer`）。
 >
-> 状态：**堵点定位完成 + 替代方案调研完成 + 两段 4090 真机冒烟（import 链全通、csrc `_C` 编译成功、发现 tilelang PDL 硬堵点）。下一步：完整移植需 Triton/Cutlass 替换四 kernel 包 + 43 个 tilelang kernel 去 PDL 改写，价值判断待用户确认。** 本专题完成后将作为新章节插入 DeepInfer 研究报告。
+> 状态：**堵点定位完成 + 替代方案调研完成 + 两段 4090 真机冒烟（import 链全通、csrc `_C` 编译成功、发现 tilelang PDL 硬堵点）。2026-10-22 续：PDL 机制源码级定位（tilelang 编译期硬检查、无配置可关）+ 5 个 kernel 文本级去 PDL 后 SM89 编译/数值验证全过（改写是机械工程）。下一步：完整移植需 Triton/Cutlass 替换四 kernel 包 + 43 个 tilelang kernel 去 PDL 改写 + V4 权重，价值判断待用户确认。** 本专题完成后将作为新章节插入 DeepInfer 研究报告。
 
 ## 结论先行
 
@@ -136,6 +136,16 @@
 3. **新堵点（静态分析未覆盖）：43 个 cuda tilelang kernel 文件全部显式使用 PDL**（`T.pdl_sync`/`T.pdl_trigger`，29 文件 28 个用到）。PDL 是 Hopper+（SM90+）硬件特性，SM89 上 `norm_tl` 编译抛 `PDL is not supported`。**修正本节静态结论「tilelang kernel 跨架构本身可行、只需重编译」——多数 kernel 需去 PDL 改写，不是简单重编译。**
 4. **LLMEngine 实例化停在数据前提**：`ModelConfig` 只接受架构 `DeepseekV41ForCausalLM`（config 需含 `vl_aligner`）；服务器无 V4 权重（Qwen2.5-0.5B 抛 `Unsupported HF architecture 'Qwen2ForCausalLM'`）。与「未验证项」一致：完整实例化需 V4 权重 + EP 配置，价值判断待用户确认。
 5. **昇腾 910C 仍未连接**（2026-10-22 昇腾 VPN 100% 丢包，待用户恢复）。
+
+### 第二段续：PDL 机制深挖与去 PDL 改写探针（2026-10-22，M5）
+
+> 在第二段结论基础上，把「43 个 kernel 去 PDL 改写」从定性推进到真机可验证的工程结论。材料见 [experiments/deepinfer-civilian-port-stage2](../../experiments/deepinfer-civilian-port-stage2/readme.md)（`pdlfree-variants/`、`probe_norm_pdlfree.py`、`probe_kernels_compile.py`）。
+
+1. **堵点根因在 tilelang 编译管线，无配置可关**：`tilelang/cuda/pipeline.py:244` 固定调用 `MarkCudaSyncCalls(have_pdl(target))`；`contrib/nvcc.py` 的 `have_pdl()` 只在 compute capability major ≥ 9（Hopper+）返回 True。SM89 下 `src/cuda/transform/lower_pdl.cc:44` 只要发现 `pdl_sync`/`pdl_trigger` 就 `ICHECK` 抛 `PDL is not supported`。**编译期硬检查。**
+2. **语义映射 → 改写是机械性的**：`pdl_sync` 标记 `kHasGridSync`（grid 同步），`pdl_trigger` 标记 `kHasTriggerLaunch`（允许下游 kernel PDL 提前启动）。顺序 launch 语义下：`pdl_trigger` 可安全删除（下游本就要等前一个 kernel 完成），`pdl_sync` 用已验证可行的 `T.sync_grid()` 替代。
+3. **用量**：28/30 个 cuda tilelang kernel 源文件用 PDL，共 56 处 `pdl_sync` + 8 处 `pdl_trigger`（另 `vendor/DeepGEMM/third-party/tilelang_ops/swiglu_apply_weight_to_fp8.py` 1 处）。少数（如 `state_cache.py`）按数据规模条件启用，已有非 PDL 路径。
+4. **单 kernel 真机验证（PASS）**：`norm` kernel 文本级替换（`pdl_sync→sync_grid`、`pdl_trigger→pass`）后在 SM89 编译 5.3s，B=2/S=128/d=64 fp16 与 torch RMSNorm 对照 **max abs err = 0.0、0% mismatch**（注意多 batch 须 `xdim=3`，`xdim=2` 只写 batch 0）。另 4 个 kernel（kv_index_cat / dflash_input_store / load_kv_index / fused_sample）最小参数编译全过（2.3–9.7s）。**「去 PDL 改写」是机械工程而非科学障碍。**
+5. **未覆盖边界**：数值对照仅 norm；其余 4 个只验证编译；`pdl_trigger` 删除失去 kernel 间重叠（性能影响未测）；43 个 kernel 的其余参数组合未逐个验证。
 
 ### 第二段结论
 

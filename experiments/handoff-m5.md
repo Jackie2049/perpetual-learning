@@ -25,7 +25,7 @@ GPU/NPU 的访问、环境与实验由 macbook-M5 Agent 负责。M1 遇到需要
 
 ## DeepInfer 硬件适配核对与最小冒烟
 
-状态：M5 已完成第二段 4090 真机验证（2026-10-22），见[专题结果](../notebook/frameworks/deepinfer-civilian-port.md#移植冒烟第二段2026-10-22m5-服务器-4090-1-实测)与[实验材料](deepinfer-civilian-port-stage2/readme.md)：基线774ce244下四 kernel 包 stub + 架构检查放宽后 **llm_engine 等 20 个核心模块 import 全通**；tilelang 0.1.15 支持 SM89（saxpy/sync_grid 编译运行 OK）但 **43 个 cuda tilelang kernel 全部显式使用 PDL（Hopper+ 专属），SM89 编译抛 PDL is not supported——需逐个去 PDL 改写**；LLMEngine 实例化停在数据前提（需 V4 架构 config/权重）。昇腾侧 VPN 2026-10-22 掉线（100% 丢包）待用户恢复，SSH 密钥亦未配置。此处依据M5回写同步，不是M1新连接或重复实测；后续以M5专项接续为准。
+状态：M5 已完成第二段 4090 真机验证（2026-10-22），见[专题结果](../notebook/frameworks/deepinfer-civilian-port.md#移植冒烟第二段2026-10-22m5-服务器-4090-1-实测)与[实验材料](deepinfer-civilian-port-stage2/readme.md)：基线774ce244下四 kernel 包 stub + 架构检查放宽后 **llm_engine 等 20 个核心模块 import 全通**；tilelang 0.1.15 支持 SM89（saxpy/sync_grid 编译运行 OK）但 **43 个 cuda tilelang kernel 全部显式使用 PDL（Hopper+ 专属），SM89 编译抛 PDL is not supported——需逐个去 PDL 改写**；LLMEngine 实例化停在数据前提（需 V4 架构 config/权重）。**2026-10-22 续（M5）**：PDL 堵点源码级定位——根因在 tilelang 编译管线 `MarkCudaSyncCalls(have_pdl(target))`（`contrib/nvcc.py` 仅 SM90+ 返回 True，`lower_pdl.cc:44` 在 SM89 遇 `pdl_sync`/`pdl_trigger` 即 `ICHECK` 抛错，无配置可关）；语义映射确认 `pdl_trigger` 可安全删除、`pdl_sync` 用 `T.sync_grid()` 替代（顺序 launch 语义）；**5 个真实 kernel 文本级去 PDL 后 SM89 编译全过，其中 norm 与 torch RMSNorm 数值对照 max err=0.0（PASS）**——「去 PDL 改写」是机械工程（28/30 源文件、56 处 pdl_sync+8 处 pdl_trigger），代价是失去 kernel 间 PDL 重叠（性能未测）。昇腾侧 VPN 2026-10-22 掉线（100% 丢包）待用户恢复，SSH 密钥亦未配置。此处依据M5回写同步，不是M1新连接或重复实测；后续以M5专项接续为准。
 
 目的：接续项目已有[平民版专题](../notebook/frameworks/deepinfer-civilian-port.md)的硬件适配与编译验证，不是在另一台机器另起移植实现。原专题基线 `8b16149741a4935e1dec8cea27853f273b374c5b` 只代表静态研究；其可行性分层不能直接当实际支持矩阵。
 

@@ -33,3 +33,21 @@
 - stub 保证 import 链通过，**不代表** kernel 可用或 DeepInfer 能在 4090 上跑推理；真实替换需 Triton/Cutlass 实现 + 43 个 tilelang kernel 去 PDL 改写。
 - 未尝试 V4 权重下载（数据前提 + 磁盘 99% 只剩 109G），昇腾 910C 侧 VPN 掉线未连接。
 - 本实验未改 DeepInfer 源码（patch 仅一处 `device.py` 就地放宽，属本地 fork 冒烟用，非上游改动）。
+
+## PDL 机制深挖与去 PDL 改写探针（2026-10-22 续，M5）
+
+接续上述第 3/4 点，把"43 个 kernel 去 PDL 改写"从定性描述推进到可验证的工程结论：
+
+### 机制（tilelang 0.1.15 源码级确认）
+
+- **堵点根因在 tilelang 而非 DeepInfer**：`tilelang/cuda/pipeline.py:244` 在编译管线固定调用 `MarkCudaSyncCalls(have_pdl(target))`；`contrib/nvcc.py:660` 的 `have_pdl()` 只在 compute capability **major ≥ 9**（SM90+ Hopper）返回 True。SM89（4090）下 `MarkCudaSyncCalls`（`src/cuda/transform/lower_pdl.cc:44`）只要在 kernel 里发现 `pdl_sync`/`pdl_trigger` 调用就 `ICHECK` 抛 `"PDL is not supported"`。**这是编译期硬检查，无 pass_config 可关**（`TL_DISABLE_DATA_RACE_CHECK` 等配置不涉及 PDL）。
+- **语义映射**：`pdl_sync` 被标记为 `kHasGridSync`（grid 级同步），`pdl_trigger` 被标记为 `kHasTriggerLaunch`（允许下游 kernel 通过 programmatic dependent launch 提前启动，Hopper+ 硬件特性）。**在顺序 launch（非 PDL）语义下：`pdl_trigger` 可安全删除**（下游 kernel 本来就等前一个 kernel 完成），**`pdl_sync` 用 `T.sync_grid()` 替代**（第二段已验证 SM89 可编译运行）——改写是机械性的。
+- **用量**：28/30 个 `tilelang_ops/cuda/*.py` 源文件用 PDL，共 **56 处 `pdl_sync` + 8 处 `pdl_trigger`**（含 `vendor/DeepGEMM/third-party/tilelang_ops/swiglu_apply_weight_to_fp8.py` 1 处）。少数 kernel（如 `state_cache.py`）的 PDL 是按数据规模条件启用的（`block_size*feature_dim >= 65536`），本身已有非 PDL 路径；多数是无条件显式调用。
+
+### 单 kernel 改写可行性（真机验证）
+
+- **方法**：服务器 cuda 包目录生成 `<name>_pdlfree.py`（`sed` 文本替换 `T.pdl_sync()`→`T.sync_grid()`、`T.pdl_trigger()`→`pass`，不改原文件），直接导入编译运行。
+- **norm（完整数值对照，PASS）**：`norm_pdlfree.py` 在 SM89 编译 5.3s；B=2, S=128, d=64 fp16 输入，`xdim=3` 下与 torch `x/rsqrt(mean(x²)+eps)·w` 对照 **max abs err = 0.0，0% mismatch，y_origin==y**。注意 `xdim=2` 时 kernel 只写 batch 0（`bb=0`），多 batch 必须 `xdim=3`——第一版探针因此误报 50% mismatch，非 PDL 语义问题。
+- **另 4 个 kernel 编译全通过**：`kv_index_cat_tl`（3.6s）、`dflash_input_store_tl`（2.3s）、`load_kv_index_tl`（2.5s）、`fused_sample_tl`（9.7s）——均最小构造参数，SM89 编译 OK。**"去 PDL 改写"是机械工程而非科学障碍**。
+- 5 个 PDL-free 变体存本目录 `pdlfree-variants/`；探针脚本 `probe_norm_pdlfree.py`（含 torch 对照）、`probe_kernels_compile.py`。
+- 边界：数值对照仅 norm 一个 kernel 做了；其余 4 个只验证编译未跑数值；`pdl_trigger` 删除在顺序 launch 语义下安全（下游 kernel 正常等待），但**失去 PDL 的 kernel 间重叠优化**（性能影响未测）；未逐个验证 43 个 kernel 的全部参数组合。
