@@ -312,7 +312,7 @@ class NIXLCheckpointEngine:
 class BucketedWeightSender:
     # ZMQ IPC socket: ipc:///tmp/rl-colocate-zmq-...sock
     # 主路径: CUDA IPC handles (torch.multiprocessing.reductions.reduce_tensor)
-    #   → tensor留在GPU → 进程间共享GPU内存 → 无拷贝!
+    #   → handle共享源GPU存储；装入目标模型是否复制由callback决定，不是全链路零拷贝保证
     # 备选: Shared memory (Ascend NPU → IPC不支持)
 
     # Bucketed: 多个weight打包成bucket_size buffer → 减少ZMQ消息次数
@@ -321,6 +321,8 @@ class BucketedWeightSender:
 class BucketedWeightReceiver:
     # 接收ZMQ消息 → 从CUDA IPC handle重建tensor → 写入vLLM模型
 ```
+
+新版失败传播与ACK边界见[分桶接收失败与退出](#分桶接收失败与退出)，不以发送函数返回代替模型安装/恢复验收。
 
 ### Weight Sync对比
 
@@ -550,7 +552,54 @@ RTX 4090 24GB, 7B模型:
 
 ---
 
+## 分桶接收失败与退出
+
+2026-10-23核对已有[verl #7366](https://github.com/verl-project/verl/pull/7366)，读取时open、非draft，head `48d91130abff6b6704aadac3f382e0c3d344de93`，目标base及共同祖先 `dc709afb7a74fd2645640a4e5f2fdf40166b4fbb`，ahead2/behind0，11文件424增33删。它给接收异常增加错误ACK、给发送端逐次ACK等待加上限，不是权重事务或自动恢复实现；上文六月架构概述不作为当前性能测量。
+
+### ACK 等待的范围
+
+[完整协议实现](https://github.com/verl-project/verl/blob/48d91130abff6b6704aadac3f382e0c3d344de93/verl/workers/rollout/vllm_rollout/bucketed_weight_transfer.py)把以下四处原裸recv改为同一个同步`_receive_ack`，先poll再recv：
+
+| ACK阶段 | 发起条件 | 收到成功ACK代表什么 |
+|---|---|---|
+| buffer initialization | 发送共享buffer信息或设备IPC handle | 接收端重建buffer，尚未装模型 |
+| intermediate bucket | 下一个tensor放不下，先冲刷当前bucket | 当前callback返回且设备synchronize返回 |
+| oversized tensor | 非SHM路径单tensor大于bucket | 该直接IPC tensor的callback和同步返回；SHM仍拒绝超大tensor |
+| final bucket | 迭代结束，包含空权重流 | 最后callback和接收端清理走到末尾ACK；非全rank/模型状态认证 |
+
+接收端在初始化、metadata解码/视图构造、callback及其后同步抛`Exception`时，尝试NOBLOCK发送`error:异常类型: 消息`，except分支再raise；外层finally清理仍可能另失败。发送端将错误ACK内容转成RuntimeError。错误发送本身遇ZMQError只告警，硬退出/对端丢失也可能没有错误ACK，所以**超时是错误文本未送达时的退路，不是所有异常均能原样送达的保证**。成功响应只检查是否有error前缀，没有新增权重manifest、内容hash或版本验证。
+
+最终成功ACK仍延后到receiver清理末尾，以免sender抢先回收通信buffer。两端新设LINGER=0；[libzmq文档](https://libzmq.readthedocs.io/en/latest/zmq_setsockopt.html#zmq-linger-set-linger-period-for-socket-shutdown)规定这会在close时丢弃未送达消息，不能把close等同交付。receiver的SHM close若因活跃view抛BufferError则只warning，清理函数名也不是所有引用已消失的证明。
+
+[配置及调用点](https://github.com/verl-project/verl/blob/48d91130abff6b6704aadac3f382e0c3d344de93/verl/workers/rollout/vllm_rollout/vllm_rollout.py)需要区分配置值、实际调用与等待范围：
+
+- `rollout.checkpoint_engine.update_weights_ack_timeout_seconds`默认30，dataclass要求正且有限，普通named_tensors路径取`int(seconds*1000)`传给sender；sender仅检查ms大于0。因此小于1ms的正值仍可能在截断为0后被拒绝，并非所有正有限配置都可用。
+- 该head的delta_flush路径另建sender但没传新配置，仍取构造器默认30000ms，不能称整个vLLM adapter都遵循用户设定值。
+- 每次ACK重新用完整预算；buffer分配/同步、权重生成、send、receiver等待新请求、外层Ray future及cache恢复均未获得整轮截止时间。超时不取消远端callback，不恢复已经写入的权重，也不提供原地重试契约。
+
+### 原 CPU 测试与事件循环观察
+
+[复查脚本](../../experiments/scripts/verify_verl_bucketed_transfer.py)从固定Git对象解包完整生产模块和完整原`test_bucketed_weight_transfer_on_cpu.py`，不改函数/断言。为避免导入verl根包、Ray和自动设备发现，启动时仅给包根及四个device入口提供显式CPU facade；原测试自身还替换同步/empty_cache、IPC能力和sender的iterator helper。因此这是**真实本机ZMQ与共享内存协议测试，不是原生verl包导入、设备同步或vLLM集成**。
+
+M1 macOS，Python3.12.13、torch2.9.1、pytest8.4.2、pyzmq27.1.0/libzmq4.3.5：原8例在沙箱外连续两次全过（9.99s、9.94s，仅执行耗时）。其中3例是recv-only/timeout/解码故障socket替身控制；5例是真实spawn进程、IPC socket及SHM，覆盖成功、初始化失败、空流最终callback失败、首个中间bucket callback失败和最终ACK前peer退出，均执行原socket路径与共享段不存在断言。成功例只断言收到名称，没有核tensor值；它们不认证权重数值正确或模型安装完整。
+
+首跑沙箱内3过5失败：torch_shm_manager被Operation not permitted拒绝，其余进程等待未完成；获准本机IPC后保持源码/断言不变复跑，不将权限失败定性为协议缺陷。pyzmq只安装在临时target，未改现有venv。另对该PR全部6个变更Python模块仅做AST/compile；配置原测试及旧accelerator测试文件未执行。
+
+脚本另用真实inproc REQ/REP请求但不回复，调用原`_receive_ack(150ms)`：10ms asyncio tick实际延后约156.8ms，20ms `asyncio.wait_for`未能提前打断，同步poll结束后先得到原RuntimeError。**async_send_weights声明为async，不代表ACK等待让出事件循环**；这里只证明本机控制流，不外推生产调度延迟或设备性能。复现需本机IPC/共享内存权限，且本地Git中已有固定对象：
+
+```bash
+# 使用已有Python3.12+/torch/pytest环境；pyzmq也可用环境现有版本并记录版本。
+bwt_deps="$(mktemp -d)"
+python -m pip install --target "$bwt_deps" --only-binary=:all: pyzmq==27.1.0
+python -B experiments/scripts/verify_verl_bucketed_transfer.py /path/to/verl-git --deps "$bwt_deps"
+```
+
+输入SHA256：协议模块`58d8198dd6ce3c5743d560d7064820c96b11b9f947475670afd4bf7b518ee954`；原CPU测试`0aaf5ba03e4c75a21556d482d2bce71db0b3cdd4b806cda4b80334e2505c0130`；base…head完整patch `dc67cbc8251489035df1d101d3b910ac25df17bd0da8fb6385c9924d3f316268`。
+
+CUDA IPC、NPU的host→device拷贝、真实vLLM callback/多rank及故障后资源释放仍未测；[作者说明](https://github.com/verl-project/verl/pull/7366)也未声称CUDA或完整vLLM验证。条件补[原M5同步交接](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，仅供日后独立选题，不应用候选、故障注入生产或据此诊断#8250。
+
 Sources:
+
 - verl/single_controller/base/worker_group.py — WorkerGroup基类
 - verl/single_controller/ray/base.py — RayWorkerGroup + ResourcePoolManager + PlacementGroup
 - verl/single_controller/base/decorator.py — Dispatch + @register装饰器
