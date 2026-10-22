@@ -42,6 +42,7 @@
 - [ZeRO 优化器](fundamentals/zero-optimizer.md) — ZeRO 1/2/3 原理、显存公式、适用场景
 - [FSDP 全分片数据并行](fundamentals/fsdp.md) — FlattenParameter、Sharding 策略、Prefetching、verl FSDP 实践
 - [混合精度训练](fundamentals/mixed-precision.md) — FP16/BF16/FP8、Loss Scaling、Tensor Core 利用
+  - [AMP跳步与学习率计数](fundamentals/mixed-precision.md#amp-跳步与学习率计数) — 真实CPU GradScaler区分梯度检查、优化器调用与scheduler；多优化器可部分更新，非GPU/融合优化器或框架训练验收
 - [AdamW缺失与零梯度](fundamentals/adamw-optimizer-deep-dive.md#缺失梯度与零梯度) — 真实CPU optimizer/autograd：None跳过参数与本参数步数，零梯度仍推进动量/衰减；动态冻结须核旧grad，非分布式或性能验收
 - [梯度检查点](fundamentals/gradient-checkpointing.md#重计算的随机数与可变状态) — 真实CPU重算对照：默认元数据检查不认证梯度一致，Torch RNG不覆盖外部随机源，early-stop可能跳过末尾副作用；非显存/性能或FSDP验收
 - [NCCL 通信库](fundamentals/nccl.md) — Ring/Tree AllReduce、调优参数、网络拓扑

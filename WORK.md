@@ -24,6 +24,8 @@
 
 ## 运行接续
 
+- **M1 AMP跳步学习收束（2026-10-23）**：main同步无新增，转向真实CPU基础行为；见[原混合精度笔记](notebook/fundamentals/mixed-precision.md#amp-跳步与学习率计数)/[脚本](experiments/scripts/verify_amp_step_clock.py)。torch2.9.1 GradScaler("cpu")的两scheduler轨迹、AdamW inf/NaN跳步恢复、loss/grad两向控制与双优化器两顺序通过：跳步不自动暂停scheduler，None返回非状态，scale全局回退非每优化器失败。更正原AMP固定dtype/存储简化、增长计数与BF16不溢出说法；无autocast/FP16溢出、融合或框架故障定性、设备或新M5任务。本题收束，后续另选非AMP跳步/调度计数/optimizer替身问题；GPU/AReaL/#8313/#523边界不变。
+
 - **M1新版MXFP8检查核对收束（2026-10-23）**：先同步M5状态87d0bf2，完成其原量化交接待M1读取项；见[原笔记](notebook/frameworks/verl-quant-layer-audit.md#新版运行期检查与指标哨兵)/[复查](experiments/scripts/verify_verl_quant_sentinel.py)。#8327 heada2012b59/祖先d1390eea，作者明确替代旧拆分、基于#8306/#8308；三检查默认warn非硬拒绝，CPU完整原sentinel20参数例+5边界通过，无框架/torch/设备导入，23文件仅compile。缺指标/重复step计数及配置失败缓存disabled不当健康证明；作者cf32 B200补报与旧网页状态分开，不当本项目验收。原M5条目已更新、不另排队/拼接/部署。本题收束，后续另选非量化sentinel/监控或refit替身问题；GPU/AReaL/#8313/#523边界不变。
 
 - **M1 Omni原生IPC学习收束（2026-10-22）**：先快进M5状态b0f2de8，不接手专项；读UniRL#617 head19f26396/祖先6624b28a（目标base3ecbbc32，ahead4/behind36），见[原调研](notebook/frameworks/unirl-survey.md#omni-原生-ipc-的副本与导出边界)/[脚本](experiments/scripts/verify_unirl_export_metadata.py)。全rank仍需物化/交换handle，Omni逐卡TP1发布；结构hash非内容，发布序号非optimizer版本，失败停止重建非回滚。完整原helper的6meta/2CPU视图/3形状拒绝通过，8模块compile，无CUDA导出/IPC/模型，不外推作者2×140GiB卡报告。缺口补原M5参考，不部署或另排训练。本题收束，后续另选非IPC副本/导出schema/通信替身问题；GPU/AReaL/#8313/#523边界不变。
