@@ -24,6 +24,8 @@
 
 ## 运行接续
 
+- **M1异步监控契约学习收束（2026-10-22）**：main同步无新增，读UniRL#620 headf404c902/祖先0397ddb6（目标base6fd82cba，ahead4/behind19）；见[原调研](notebook/frameworks/unirl-survey.md#异步快照与指标消费)。区分任务/组/根、pre_sync与step_end、ready版本lag和准入前headroom；drain共用基线非持久日志确认，slot占用非设备利用率。6完整模块仅compile，无pool/模型/日志/设备运行，不把作者500记录报告当本机结果。原M5条目只留日后async选题参考、不另排训练。本题收束，后续另选非监控/计数/队列替身问题；GPU/AReaL/#8313及外部写入边界不变。
+
 - **M1缓存后缀因果对齐学习收束（2026-10-22）**：main同步无新提交，设备CI候选只读后不接手，转向旧Q=1建议的适用边界；见[原FlashAttention笔记](notebook/fundamentals/flash-attention.md#缓存后缀的因果对齐)/[真实CPU脚本](experiments/scripts/verify_sdpa_suffix_alignment.py)。torch2.9.1 MATH/FP64两组均值控制、四布局输出与Q/K/V局部梯度匹配全因果对应后缀；左上/无mask各有错位，容量7/有效5即使补valid也不能修复错误偏移。只执行CPU算子及bias CPU物化，不跑自动设备分派/模型/引擎/性能。收窄原四篇Q=1“必须无mask”及将调用错位说成kernel数学错的表述，详细结果集中一处；无新真机任务。本题收束，后续另选非因果mask/位置容量/注意力替身问题，GPU/AReaL/#8313边界不变。
 
 - **M1 TempFlow分支学习收束（2026-10-22）**：main同步无新提交，读已有UniRL#552 headef9cb362/base祖先6fd82cba（23文件含Flash/replay前置）；见[原调研](notebook/frameworks/unirl-survey.md#tempflow-分支共享与逐行时间索引)。每步组覆盖全部prompt，4seed×6branch×3组=72行/prompt、仍每组完整10步；共享x_T非缓存前缀计算。先(step,prompt)优势后合并，真实j留per-row字段，槽0非第0步；逐行replay/噪声权重及配方replay锚点仅读。原完整noise模块CPU48测试键/再生/逆序/seed控制通过，9模块compile，无trainer/模型/replay/loss/parity或GPU运行，不加替身。缺口补[原M5 UniRL参考](experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不自动部署或另排训练；本题收束，后续另选非分支时间轴/初始噪声/归约替身问题，GPU/AReaL/#8313边界不变。

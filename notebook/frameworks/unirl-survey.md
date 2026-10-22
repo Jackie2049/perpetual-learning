@@ -622,6 +622,59 @@ noise.py、noise_recipe、trainer.diffusion、TempFlow/PerSample GRPO、PerSampl
 
 PR未提交所述外部harness；作者40项CPU/早期8×L40S smoke与5a1eff0的fp32 parity报告均非本机结果，且正文明确最新API/replay修改未重跑GPU。其原生批形状latent阈值未过、统一microbatch=4后才逐位匹配的观测，也不能外推默认bf16或训练等价。真机缺口补[原M5 UniRL参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不自动选用、部署配方或新增训练队列；本题以分支与时间轴契约学习收束。
 
+## 异步快照与指标消费
+
+**先分清状态、事件和采样时刻，再解释异步曲线。** 2026-10-22只读[#620](https://github.com/Tencent-Hunyuan/UniRL/pull/620)，读取时open、未合并，固定head `f404c9024c00bbf8a5d05315153444cee894865a`。API目标base为`6fd82cba13f52f394747832344039408699ea378`，官方compare共同祖先为`0397ddb6a6fc0c9ccdc3508c0bee0e687000bca7`，ahead4/behind19；按共同祖先核对才是7文件228增9删，不把落后主线的历史差异算作本PR修改。新增接口不代表此版已部署，也不是训练通过证据。
+
+### 队列深度不是一种单位
+
+[RolloutPool.snapshot](https://github.com/Tencent-Hunyuan/UniRL/blob/f404c9024c00bbf8a5d05315153444cee894865a/unirl/rollout/manager/dispatch.py)在condition锁内复制本地值，不probe handle、不resolve或发RPC；[manager.snapshot](https://github.com/Tencent-Hunyuan/UniRL/blob/f404c9024c00bbf8a5d05315153444cee894865a/unirl/rollout/manager/rollout.py)随后读取driver持有的ready/pending状态。应在driver操作之间读取；只有pool部分加锁，不是集群全局原子快照。closed/failed会拒绝读取，后台错误可能因此较早暴露，不是“监控永不影响报错时机”。
+
+| 字段 | 本地计数点 | 不能当成 |
+| --- | --- | --- |
+| queued_tasks | 尚在派发队列 | 已在设备运行的工作 |
+| launch_reserved_tasks | 已出队、尚未登记返回handle；调用可能已经发出 | 尚未发出任何远端调用 |
+| running_tasks | 已登记、尚未被后台观察为ready的handle | 精确的GPU执行中数量 |
+| completed_unrouted_tasks | 后台已观察ready，driver尚未取走 | 已resolve、组装、过滤且可训练的样本 |
+| ready_groups / pending_roots | 已组装的逻辑组 / 尚未齐全的terminal sibling根 | 同一种任务数、chunk数或token数 |
+
+native AR/DiT每个任务提交一个prompt树，所以trainer日志用prompts命名；agentic任务则是轨迹，不能把通用manager所有计数一律解释成唯一prompt数。slot_occupancy=(running+reserved)/sum(capacities)，是本地逻辑slot占用比，不是GPU利用率；capacity也不是trainer的max_inflight准入预算。
+
+### lag 与横轴各有自己的时刻
+
+[CompleteGroups.oldest_output_version](https://github.com/Tencent-Hunyuan/UniRL/blob/f404c9024c00bbf8a5d05315153444cee894865a/unirl/rollout/manager/buffers.py)只取ready存储中generated Part的最小版本；不覆盖queued/running/completed-unrouted。trainer以`train_version - oldest`生成max_ready_lag_updates，单位为optimizer update，不是秒、rollout轮数或所有在途工作最大lag。没有generated Part则为None；[同版logger](https://github.com/Tencent-Hunyuan/UniRL/blob/f404c9024c00bbf8a5d05315153444cee894865a/unirl/utils/wandb_logger.py)跳过None，缺点不能补成0或沿用上个值。
+
+[共享async循环](https://github.com/Tencent-Hunyuan/UniRL/blob/f404c9024c00bbf8a5d05315153444cee894865a/unirl/trainer/async_rollout.py)在本批训练、增加optimizer版本及reset transport后取pre_sync，再按需quiesce/finish/publish/resubmit，随后取step_end；即使本步不需sync，两个名字仍分别是这两个采样点。pre_sync才记录reserved/running/unrouted/occupancy，step_end不记录这些字段，不是把它们写成零。两份状态一起通过log_rollout(step=rollout_id+1)发送到rollout/async/*，绑定rollout/step；不是两次设备采样或optimizer-step横轴。记录发生在eval/save之前，因此不能由该点认证后续eval/checkpoint成功。
+
+collect/refill的三个headroom分别来自容量、freshness、hard boundary，扣除outstanding后换算为prompt，实际新准入取三者最小值、整批提交。日志保存的是**这次提交前**计算的余量，而非提交后的剩余容量；任一项为0足以禁止新准入，不能只凭slot空闲判断调度停滞。新表达式与原min预算再扣outstanding在正batch_size和batch对齐前提下代数等价，源码变化不是放宽准入策略的证据。
+
+### 增量只有一个消费者
+
+snapshot保留累计事件；drain_metrics计算“当前累计−共享baseline”后推进baseline，初值为0。额外观察者应读snapshot：两个drain调用者不各有独立窗口。连续无事件时delta为0，不能据此判断生命周期总数为0；计数随新manager重置，checkpoint不恢复。
+
+launch计handle登记，complete计观察ready，resolve仍可能失败；dropped_groups只计成功complete-buffer过滤移除的逻辑组，既不专指staleness，也不包括所有incomplete-root丢弃。carried计成功quiesce返回任务，finished计成功finish的输入，均是事件而非去重样本。baseline在成功读取时已更新，先于logger调用；logger还会吞下记录异常并warning，所以不是W&B持久化确认后才消费的可靠事件队列。此为源码契约，不是本机注入日志失败的复现，也未据此提出修复。
+
+### 证据范围
+
+本机Python3.9.6仅对manager __init__/buffers/dispatch/rollout、trainer.async_rollout及utils.wandb_logger共6完整模块内存compile通过；没有导入或执行它们，没有构造假handle/训练包壳、启动后台pool、Ray、模型、设备或W&B。最小复查（Git对象须已在本地）：
+
+```bash
+GIT_NO_LAZY_FETCH=1 python3 -B - /path/to/UniRL-git <<'PY'
+import subprocess, sys
+head = 'f404c9024c00bbf8a5d05315153444cee894865a'
+paths = ['rollout/manager/__init__.py', 'rollout/manager/buffers.py',
+         'rollout/manager/dispatch.py', 'rollout/manager/rollout.py',
+         'trainer/async_rollout.py', 'utils/wandb_logger.py']
+for path in paths:
+    src = subprocess.check_output(['git', '-C', sys.argv[1], 'show', f'{head}:unirl/{path}'])
+    compile(src, path, 'exec')
+PY
+```
+
+head SHA256：dispatch.py `2515cab5013f1645f7e441b28833627a766ef0b61f83a6fcc6bb8cbc9112e707`；rollout.py `25e9701e0525ed4c2cdb7b1cd0d9e6ce0c074a7a8730abbc7f1ca9ce94739db2`；async_rollout.py `b1769c6a4fb3333d472e55672dc60c5a12e12c56cbf1456e2996f799e78e5a04`。作者正文的CPU mock检查及5次100-rollout/400-update、500条W&B记录均为作者报告，PR未提交该harness，本机未复跑；报告中没有staleness drop，不用平滑曲线认证全部过滤路径。
+
+本题以监控契约学习收束，不新建CPU替身或GPU实验队列。若M5日后独立选择匹配的async真机任务，只在[原UniRL参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)保留观测入口；缺环境或不属原任务则维持未测，不为指标说明部署训练。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。
