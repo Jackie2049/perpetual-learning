@@ -723,6 +723,53 @@ head SHA256：dispatch.py `2515cab5013f1645f7e441b28833627a766ef0b61f83a6fcc6bb8
 
 本题以监控契约学习收束，不新建CPU替身或GPU实验队列。若M5日后独立选择匹配的async真机任务，只在[原UniRL参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)保留观测入口；缺环境或不属原任务则维持未测，不为指标说明部署训练。
 
+## Omni 原生 IPC 的副本与导出边界
+
+**训练rank的集体参与、向哪个rollout副本发权重、权重内容是否正确，是三个不同问题。** 2026-10-22只读[#617](https://github.com/Tencent-Hunyuan/UniRL/pull/617)，读取时open、未合并，固定head `19f263968deecdecd26cebe8966f8ba012a5575d`；API目标base为`3ecbbc32b2fc373ba30b9842032552e041e84b12`，官方compare祖先`6624b28aab3299d116ae1e3d90aaa14926676911`（ahead4/behind36）。按祖先核16文件454增92删，研究范围是Qwen-Image全参数训练与vLLM-Omni原生IPC接线，不把落后主线的差异当本PR改动。
+
+### 每卡副本不是共享 TP 引擎
+
+[IPCWeightSync](https://github.com/Tencent-Hunyuan/UniRL/blob/19f263968deecdecd26cebe8966f8ba012a5575d/unirl/distributed/weight_sync/full/ipc.py)以rollout的rank_local_weight_transfer选择发布者；[Omni engine](https://github.com/Tencent-Hunyuan/UniRL/blob/19f263968deecdecd26cebe8966f8ba012a5575d/unirl/rollout/engine/vllm_omni/engine.py)声明该标志。两种拓扑不能混读：
+
+| 接收布局 | 训练端参与 | 发布者与接收者 |
+| --- | --- | --- |
+| 本候选Omni：每训练卡一个独立TP1副本 | 所有训练rank物化参数、交换IPC handle并做错误共识 | 每rank向自己卡上的副本发布；本地fanout须为1 |
+| 原共享vLLM TP引擎 | 仍需所有训练rank参与上述工作 | rank0负责发布，接收fanout与训练world匹配 |
+
+[VLLMNativeIPCTrainerEngine](https://github.com/Tencent-Hunyuan/UniRL/blob/19f263968deecdecd26cebe8966f8ba012a5575d/unirl/distributed/weight_sync/transfer/vllm_native_engine.py)的is_sender控制init/start/finish客户端动作，不把其他rank排除在_send_planned_packed之外。因此“只让rank0调用整个sync”会违反这条物化/collective接线；不能由只有一个发布者推导只有一个参与者。
+
+原生路径先核同节点、每actor一个CUDA可见设备、物理UUID与接收worker按TP rank排序的UUID对应。[Omni backend](https://github.com/Tencent-Hunyuan/UniRL/blob/19f263968deecdecd26cebe8966f8ba012a5575d/unirl/rollout/engine/vllm_omni/backends/native.py)还要求恰好一个启用WTE的diffusion stage。supports_native_weight_transfer只报告发现WTE配置，不认证资源、UUID或reload实现就绪。这里是同节点CUDA IPC，不是跨节点或NPU传输支持。
+
+### 元数据规则与真实数据物化分开
+
+[peft_merge.py](https://github.com/Tencent-Hunyuan/UniRL/blob/19f263968deecdecd26cebe8966f8ba012a5575d/unirl/utils/peft_merge.py)抽出_base_state_dict与_iter_rollout_tensor_views，让raw_state_dict_metadata和实际raw/merged导出使用相同的embedding过滤与packed-expert命名/切片规则。metadata用全局shape创建meta tensor；wire dtype只改浮点字段，整数buffer保留原dtype。tie_word_embeddings=True按配置跳过精确名称lm_head.weight，不在此验证真实模型绑定关系。
+
+共享模块也覆盖Qwen MoE packed专家布局：gate_up为[E,2I,H]，每expert前I行作gate、后I行作up，down为[E,H,I]。这是共享导出模块的规则，不表示Qwen-Image是MoE。metadata和CPU视图不需CUDA；实际_iter_rollout_tensors仍调用_to_full_tensor，其中有.cuda及DTensor redistribute，不能用meta检查冒充数据导出parity。
+
+本机以完整原模块执行两个窄接口，见[固定Git对象复查脚本](../../experiments/scripts/verify_unirl_export_metadata.py)。手写真实nn.Module状态布局含embedding/head及浮点/整数buffer，不是Qwen模型：tied开关×wire dtype(None/fp32/bf16)共6组，名称顺序、shape、meta设备与dtype全部通过，整数count始终int64。另对实际CPU arange张量[E=2,I=3,H=4]核gate/up的4片与down的2片，值/名称/形状及共享storage通过；奇数gate宽、与I不符的gate宽/down宽三种输入均拒绝。没有替换原函数或模拟通信，也没有运行raw_state_dict/merged_state_dict/CUDA导出。
+
+```bash
+python -B experiments/scripts/verify_unirl_export_metadata.py /path/to/UniRL-git
+```
+
+Python3.12.13/torch2.9.1（git `5811a8d7da873dd699ff6687092c225caffcf1bb`）；原模块SHA256 `e03bf04d38966e548bf0a0f742260dc805cf29ec96270e5ffe3eb8526abc8798`，脚本校验此hash并禁止Git隐式拉取。8个修改的完整Python模块另经Python3.9.6内存compile通过；只有上述元数据/CPU视图接口实际执行，没有DTensor进程组、PEFT、Ray、vLLM、模型forward/reload或设备发现。
+
+### 发布完成不是内容一致或事务提交
+
+[structural_manifest](https://github.com/Tencent-Hunyuan/UniRL/blob/19f263968deecdecd26cebe8966f8ba012a5575d/unirl/distributed/weight_sync/transfer/vllm_native_protocol.py)哈希有序的name/shape/dtype/numel/nbytes，不读张量payload；相同fingerprint不是参数值逐字节相等。发送端按schema验证实际流，各训练rank比对结构manifest；Omni检查RPC报告的失败，再做rank共识。上游layerwise reload和CUDA同步由配套Omni实现负责，本轮没有复审或运行该外部实现，不能把本仓库返回检查当内容回读。
+
+IPC内部_next_model_version从1起、成功发布后递增，是发布序号；[DiffusionTrainer](https://github.com/Tencent-Hunyuan/UniRL/blob/19f263968deecdecd26cebe8966f8ba012a5575d/unirl/trainer/diffusion.py)另外读取optimizer step count，sync/push正常返回后才调用rollout.set_version用于生成标记。每轮多次optimizer update时，两者不必相等，不能把header序号直接当optimizer版本。
+
+失败可能已经部分覆写接收权重；失败共识后的poison/shutdown是停止使用并重建运行时，不是回滚到旧权重。Omni保留level-1 sleep，以免仅更新transformer却丢掉未发布的冻结text encoder/VAE；这也要求主机RAM留备份余量。原生preflight检查最大单tensor不超buffer，并用3×buffer+按名字估计的最大layer+headroom核空闲显存；不是全模型训练峰值或任意显卡容量保证。boot还默认设置VLLM_ALLOW_INSECURE_SERIALIZATION=1以传递pickled IPC handle，这条控制链应处于可信环境，不能当成不可信HTTP输入的安全认证。
+
+### 配方与作者实测范围
+
+新增YAML的1x1覆盖LoRA为null、cpu_offload=false、256MiB IPC buffer；1x2再指定两FSDP rank、colocate及train_resident。只读defaults/override，不宣称本机已完成Hydra组合或单卡运行。原生Omni路径限一个diffusion WTE stage和每卡TP1副本，不能外推AR、多WTE stage、量化或rollout TP>1。
+
+作者报告UniRL此head搭配Omni `8607b97ea5`（[配套PR #7686](https://github.com/vllm-project/vllm-omni/pull/7686)）、vLLM0.31/torch2.13，在两张约140GiB的L20X上跑tiny/full×RPC/HTTP四个短实验：三optimizer step、每副本两次publication、版本[0,1,2]；tiny审77个source tensor、full只审3个选定tensor。HTTP只覆盖生产WTE控制请求，生成仍native，不是通用HTTP生成backend或服务CLI验收。上述报告不是本机结果，也不认证收敛；1x1配方未独立GPU验收，GPU发布失败注入未跑。作者CPU/Gloo/PEFT harness未入仓库，不能记作本机或上游已提交单测。
+
+真实接线/权重及失败关闭缺口记[原M5 UniRL参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不部署配套分支、下载模型或新排训练。本题以副本/元数据边界学习收束，不继续造IPC替身。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。

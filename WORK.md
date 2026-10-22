@@ -24,6 +24,8 @@
 
 ## 运行接续
 
+- **M1 Omni原生IPC学习收束（2026-10-22）**：先快进M5状态b0f2de8，不接手专项；读UniRL#617 head19f26396/祖先6624b28a（目标base3ecbbc32，ahead4/behind36），见[原调研](notebook/frameworks/unirl-survey.md#omni-原生-ipc-的副本与导出边界)/[脚本](experiments/scripts/verify_unirl_export_metadata.py)。全rank仍需物化/交换handle，Omni逐卡TP1发布；结构hash非内容，发布序号非optimizer版本，失败停止重建非回滚。完整原helper的6meta/2CPU视图/3形状拒绝通过，8模块compile，无CUDA导出/IPC/模型，不外推作者2×140GiB卡报告。缺口补原M5参考，不部署或另排训练。本题收束，后续另选非IPC副本/导出schema/通信替身问题；GPU/AReaL/#8313/#523边界不变。
+
 - **M1 AdamW缺失梯度学习收束（2026-10-22）**：先快进M5的37c2f01及其#523候选，不改该代码/方案；见[原AdamW笔记](notebook/fundamentals/adamw-optimizer-deep-dive.md#缺失梯度与零梯度)/[CPU脚本](experiments/scripts/verify_adamw_missing_grad.py)。真实torch2.9.1 FP64 AdamW/autograd：None跳过参数及step，已有零grad仍有动量/衰减；False不为原None建grad，动态冻结不清旧grad。三步公式与Adam零wd控制通过；更正bias correction、lr衰减关系、实现顺序/内存算术及原GRPO clip/自然梯度混淆，历史性能未复验不泛化。无设备/新M5任务。本题收束，后续另选非缺失grad/冻结/optimizer替身问题；GPU/AReaL/#8313和M5专项边界不变。
 
 - **M1奖励加载生命周期学习收束（2026-10-22）**：先快进M5真机结果3950b30，不改其移植；读UniRL#621 head27cb4930/base祖先6fd82cba，7文件40新增，见[原调研](notebook/frameworks/unirl-survey.md#奖励能力校验与模型加载)。local叶子先构造校验、服务末尾load，非首次评分懒加载；能力声明非依赖/权重认证，_loaded非回滚或并发保证，managed子进程仍在构造启动。两版各6完整模块compile、6边界文件blob未变，无resolver/模型/子进程/设备执行；作者fake harness42/42非本机结果。缺口只补原M5参考不另排任务。本题收束，后续另选非奖励加载/构造副作用替身问题；GPU/AReaL/#8313边界不变。

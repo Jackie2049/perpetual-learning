@@ -117,6 +117,7 @@
   - [TempFlow分支与逐行时间](unirl-survey.md#tempflow-分支共享与逐行时间索引)：#552共用x_T不复用前缀计算，分步算优势后合并，槽0非真实j=0；仅原噪声模块CPU控制/9模块compile，非replay/loss或训练验收。
   - [异步快照与指标消费](unirl-survey.md#异步快照与指标消费)：#620状态单位/采样点与单消费者增量；slot占用非GPU利用率，ready lag缺值非0，仅源码/6模块compile。
   - [奖励能力与模型加载](unirl-survey.md#奖励能力校验与模型加载)：#621将本地模型物化延后到服务校验之后；非按请求懒加载/资源事务，managed子进程仍在构造时启动，仅源码与两版语法核对。
+  - [Omni原生IPC副本与导出](unirl-survey.md#omni-原生-ipc-的副本与导出边界)：#617全rank物化、逐卡TP1发布；结构hash非内容校验。原元数据/CPU视图检查通过，非CUDA导出/IPC或Qwen模型验收。
 
 ## verl
 
