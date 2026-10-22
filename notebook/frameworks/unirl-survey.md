@@ -524,6 +524,50 @@ PY
 
 SHA256：conditions.py `59d217094b12f23bd09dd434ea3009ad4f2db16004447d886c766624f1eb1206`；packing.py `ae1693dc89e6523ac5a19cfb458058fab3a58bada75228722e7feefe05f8cc19`；diffusion.py `c9bc12117fa8babc041ee451576cdc47baffb795bb40ec3fd9465969891a26c9`；pipeline.py `7164e4d552338ed344e8a0244426758cb905b5c9c3f229239ea08323b2fd0efa`。真机缺口仅补[原M5 UniRL入口](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)：先等producer/条件时间语义就绪并独立选型，当前不启用、不另开硬件任务，也不修改已有作者的方案。
 
+## 设备资源与通信后端的分层边界
+
+**资源预约、进程可见性、实际设备与通信组不是同一个承诺。** 2026-10-22只读[#623](https://github.com/Tencent-Hunyuan/UniRL/pull/623)：当轮API状态为closed、merged=false，关闭于09:39:42Z；不是已合入的支持声明。固定head `c1477a030cda826b6befd2e6e787ef64f67e41dd`，实际父提交/官方compare merge-base `c6d4b11b24743fe1e933b61192f9d49558f7171e`，仅3文件46增7删、无新增测试。API目标base为 `6fd82cba13f52f394747832344039408699ea378`，两侧ahead1/behind59；不能把目标分支至head的两点diff当作本PR改动。本地浅克隆起初找不到merge-base，已用官方compare/commit parent核定并获取父对象，不据失败猜版本。
+
+### 四层分别核对
+
+| 层次 | 固定head中的行为 | 不能由此推出 |
+| --- | --- | --- |
+| Ray资源预约 | placement group仍按每设备`GPU:1`与CPU bundle、STRICT_PACK预约 | actor的`num_gpus=0`不等于无GPU资源需求或CPU集群可跑 |
+| Actor可见性 | `_spawn_worker`无平台分支地将num_gpus改0；从driver的CUDA_VISIBLE_DEVICES列表按全局device_id选一个值注入 | bundle_index不是物理卡身份；全局索引超列表长度不注入，不能认证多节点映射 |
+| Torch设备选择 | cuda可用时，单个纯数字ID且小于device_count则pin该ID，否则pin0；设置`cuda:<pin>` | 回退0不是正确分卡的验证；仍用cuda命名空间，不代表原生NPU支持 |
+| Tensor传输组 | 先建显式ProcessGroupNCCL/eager connect；任意Exception转`init_process_group(backend="eccl")`并取WORLD | 不等于自动选择任意硬件后端，也不保证默认组生命周期无冲突 |
+
+具体见[device_pool.py](https://github.com/Tencent-Hunyuan/UniRL/blob/c1477a030cda826b6befd2e6e787ef64f67e41dd/unirl/distributed/group/device_pool.py)、[worker.py](https://github.com/Tencent-Hunyuan/UniRL/blob/c1477a030cda826b6befd2e6e787ef64f67e41dd/unirl/distributed/group/worker.py)与[store.py](https://github.com/Tencent-Hunyuan/UniRL/blob/c1477a030cda826b6befd2e6e787ef64f67e41dd/unirl/distributed/tensor/backend/colocate_store/store.py)。[Ray资源文档](https://docs.ray.io/en/latest/ray-core/scheduling/resources.html)区分逻辑资源与物理使用，[placement group文档](https://docs.ray.io/en/latest/ray-core/scheduling/placement-group.html)说明bundle预约，[加速器文档](https://docs.ray.io/en/latest/ray-core/scheduling/accelerators.html)说明资源请求及环境变量分配。它们解释API职责，不是对作者GCU栈或本PR的认证。
+
+设备编号的源码推演例：若单值CVD="2"被运行时重映射为仅1张可见卡，判断得到pin0；若运行时忽略该mask且报告8张，则得到pin2。空/多值/非数字（如UUID）或越界也走0。这只是条件分支推导，M1没有调用is_available/device_count/set_device，没有证明具体插件遵守哪种语义。原注释称NVIDIA等价，但改动没有NVIDIA豁免分支，回归仍需独立证据。
+
+### 回退还改变了组的所有权
+
+`Worker.setup_global_pg → transport.setup_transfer → TensorStore.setup_global_pg`为这条传输组接线。显式NCCL对象失败后改初始化进程默认组，不只是换一个局部变量的后端。[PyTorch初始化文档](https://docs.pytorch.org/docs/2.14/distributed.html#torch.distributed.init_process_group)明确该API初始化默认进程组；[第三方后端文档](https://docs.pytorch.org/docs/2.14/distributed.html#third-party-backends)要求插件注册并由实现决定能力。文档版本用于解释语义，非作者环境版本。需要实际栈确认eccl已注册、默认组是否已有持有者、rank/world与销毁职责；宽泛异常也可能来自非厂商原因，源码没有在except中显式清理已部分创建的NCCL对象。这些是未核条件，不是已复现的故障或修复建议。
+
+send/recv按`hasattr(group, "send"/"recv")`选择成员方法，否则调用`dist.send/recv(..., group=group)`；不是按后端名选择。取到WORLD也可能仍走成员方法，方法存在不认证P2P可用。原put仍按tensor.is_cuda决定本地设备存储或ray.put，不能单凭新增eccl外推原生NPU高速传输。
+
+作者正文报告8张燧原GCU L600上GRPO 10/10 rollout、曲线形态及NVIDIA等价检查，未附可复跑命令/配置/原始日志；本机没有复验，不能转称4090、昇腾或跨节点结果。PR关闭原因未知，不据merge_commit_sha字段推断合并，也不自动采用、修改或对外评论。
+
+### 本机范围与复查
+
+Python3.12.13仅标准库，对父/head各3个完整模块内存compile，共6次通过。没有导入UniRL/Ray/torch、执行构造器、模拟设备/通信成功或运行原测试；这是语法与源码证据，非设备、训练或NVIDIA回归验收。最小静态复查（Git对象须已在本地，禁止隐式拉取）：
+
+```bash
+GIT_NO_LAZY_FETCH=1 python3 -B - /path/to/UniRL-git <<'PY'
+import subprocess, sys
+for rev in ['c6d4b11b24743fe1e933b61192f9d49558f7171e',
+            'c1477a030cda826b6befd2e6e787ef64f67e41dd']:
+    for path in ['unirl/distributed/group/device_pool.py',
+                 'unirl/distributed/group/worker.py',
+                 'unirl/distributed/tensor/backend/colocate_store/store.py']:
+        src = subprocess.check_output(['git', '-C', sys.argv[1], 'show', f'{rev}:{path}'])
+        compile(src, f'{rev}:{path}', 'exec')
+PY
+```
+
+head SHA256：device_pool.py `eeb37485a54a1c8b4d9aaa07f3fad7db20c72916433fb2189a61d331651dc543`；worker.py `2f2c2577b8649ee9836006503d748826c42505067432995b470d0b5c94eeb189`；store.py `c19fef9e947de74a2d8ff61508d25221cbad6995e8f806f82cf090f60b1ebcc2`。真机缺口记入[原M5 UniRL参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不另开硬件队列。本题以分层契约学习收束，不继续造设备/通信替身。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。

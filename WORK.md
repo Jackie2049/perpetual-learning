@@ -24,6 +24,8 @@
 
 ## 运行接续
 
+- **M1设备/后端分层学习收束（2026-10-22）**：只读UniRL#623（当轮closed、未合并），headc1477a03/实际父c6d4b11b，3文件46增7删；见[原调研](notebook/frameworks/unirl-survey.md#设备资源与通信后端的分层边界)。actor零GPU请求不取消PG预约，CVD可见性与逻辑编号分开，宽异常转eccl默认WORLD非通用硬件适配；目标主线历史差异不冒算PR修改。两版各3完整模块compile通过，无导入/设备/通信或NVIDIA回归。真机缺口补[原M5 UniRL参考](experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不另排队、应用关闭候选或更改M5环境。本题收束，后续另选非设备pin/通信替身新问题；GPU/AReaL/#8313与外部写入边界不变。
+
 - **M1关键帧条件学习收束（2026-10-22）**：只读UniRL#584 head55a3cad3/baseaccba010（祖先c7c6b8c0），6文件125增22删；见[原调研](notebook/frameworks/unirl-survey.md#关键帧条件的数据身份与功能就绪)。关键帧fp32 noised rows/anchors/未padding tags随样本传到generate/replay/NFT forward，只返回target velocity；混合批空条目不能漏成缺项，shape对齐非数据身份。9模块compile、条件时间AST/文本pipeline字节未变静态核对通过，无parity/loss/模型执行；producer未接、scalar/vector条件timestep未改，README禁止启FL2VA。缺口及时补[原M5 UniRL入口](experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，先待功能前提，不开设备任务/改作者方案。本题收束，后续另选非条件槽/关键帧/UID/归约替身新问题；GPU/AReaL/#8313与外部写入边界不变。
 
 - **M1 V1可变行调度学习收束（2026-10-22）**：只读新verl#8201 heade891fd81/base18cfb748（祖先2035f58d），V1按源UID数定义优化mini-batch，GCD prompt单元逐个补行，global_mini_batch_sizes原样传worker；见[原GRPO笔记](notebook/frameworks/verl-grpo-source-reading.md#v1-源-prompt-单位与可变轨迹行)。同UID同全局优化批非同DP rank，旧PrefixGrouper helper AST未改，不混用同卡约束。12项原纯配置/layout检查与8模块compile通过，原测试/TQ/controller/worker/设备未跑；缺依赖不加stub，未外推32卡旧benchmark。真机缺口补[M5待条件参考](experiments/handoff-m5.md#verl-v1-可变行布局参考)，不另排队/采用/开训练。本题收束，后续另选非UID/微批/归约替身问题；GPU/AReaL/#8313与外部主仓库边界不变，main正常同步。
