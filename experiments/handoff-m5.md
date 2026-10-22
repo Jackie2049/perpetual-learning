@@ -52,6 +52,8 @@ PD 原生接口参考（2026-10-22，不另排队/采用方案）：新增 [#195
 
 Host cache 参考（2026-10-22，沿原条目、不另排队）：已有[#144](https://github.com/deepseek-ai/DeepInfer/pull/144)，head `e1f71ecdf8f1e53224bf44eee6989dee9de5f28a`、base/祖先 `774ce244b87cc0eb8d4b94ab9f5de2ab22049f01`。[M1完整源码核对](../notebook/frameworks/deepinfer-initial-survey.md#host-cache-的可复用边界)：KV命中还要与ready state/replay上限相交，size_bytes只管KV页，另计pinned state池及默认16份GPU staging。目的为今后评估缓存时核对预算/恢复证据，不改变移植方案；M1仅4文件AST/内存compile，未跑原3项GPU测试。若M5独立决定采用且已有兼容CUDA/编译链，可先核固定池和staging预算，再运行原入口 `python -m pytest -q tests/hicache/test_host_cache.py`；它用真实copy kernel但FakeSeq/替换state kernel，不验证新block_table binding或真实SWA/模型恢复。原生接入仍缺匹配head的_C、compact/额外state配置与实际state/replay证据，不能外推4090/NPU兼容。需重编、额外权重/内存预算、新平台移植或影响原任务时，先记待条件，不自动JIT、下载、切环境或启动服务；作者性能报告非本项目结果，记录不代表接单。
 
+聊天封装参考（2026-10-22，非新部署任务）：已有[#147](https://github.com/deepseek-ai/DeepInfer/pull/147)，head `aaf1e62c9eab1ce5bd260a594dfaea613760e89f`、base `774ce244b87cc0eb8d4b94ab9f5de2ab22049f01`，见[M1源码阅读](../notebook/frameworks/deepinfer-initial-survey.md#聊天服务的亲和路由与完成口径)。目的为将来评估服务时区分亲和路由、真实cache命中、前端完成和客户端交付；M1仅8项原纯affinity控制与语法检查，未启动HTTP/engine/设备。缺口是匹配_C/模型/DP+EP运行环境、获准端口及host-cache预算；作者4×GB300结果不能外推4090/NPU。只有M5独立决定研究服务、已有可用获准引擎时，才考虑最小文本请求，保留固定提交、rank、编码fallback、engine reason/响应reason、usage和客户端完成证据；原A/B是先bypass后cache、TTFT按首个非空content，不当首次冷缓存或完整协议验收。需新编译/权重/服务部署、条件不匹配或影响原任务就停止并记待条件，不自动运行server.sh、启端口、改变移植方案或另排队；原优先级不变，记录不代表接单。
+
 M5 最小下一步：先按实际硬件查已有方案和精确 head，读清依赖、权重格式、显存及其原始测试入口；核对通过后只选一个可隔离、可停止的小范围兼容检查，再决定是否具备 offline inference 条件。保留初始失败点与配置；不要直接按旧专题的“换三个包/放宽检查”当成已验证操作，也不要先覆盖已有环境。
 
 停止条件：没有匹配硬件、内存/数据预算不成立、测试入口不明确或需扩大范围时，记录原因和下一项缺口，不自动下载巨量权重、改写移植方案或进行长时间编译。完成标准是目标配置下可复现的实测记录或明确阻塞，不是必须产出性能数字。

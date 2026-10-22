@@ -1961,3 +1961,52 @@ PY
 M1 只对config/layers/engine/fp8/model五个完整原模块内存compile，执行标准库config与整数预算；未导入torch/deepinfer/safetensors、分配池或调用probe。作者CPU harness在PR外，未复跑，也没有真实FP8 GEMM、推理质量/cache性能或SM89验证。五文件SHA256依次为 `ae80dcfdec2f2f36171f0de41709858139b4890d668d0e0491103bae18c18453`、`65344b9c1313f2de564c8d805358ebd6b41f90822c2d4c10794b058ae08f5bb3`、`22c2979928aa2f27cee07dd7558fd1142f57f4389363815bf83a177f25b0dc52`、`77e6785add71f0574e50b9d652f82f70149164a51edfae221e0226c06e5886e0`、`a1bb68dd3d81971537b646db22d883bb00dc27f80556558556cb10773f2d608e`。
 
 新线索补[原M5适配条目](../../experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)，先决定研究目标是否包含Sage；仍只做V4.1则不适用。未获准选择新模型、准备权重与匹配环境前停止，不自动下载/切环境或改M5去PDL方案。SM120/32GB报告不能外推SM89/24GB已支持。
+
+## 聊天服务的亲和路由与完成口径
+
+**同一 rank、引擎完成、前端读完和客户端收到完整响应，是不同的状态。** 2026-10-22 只读已有 [#147](https://github.com/deepseek-ai/DeepInfer/pull/147)，读取时open，固定head `aaf1e62c9eab1ce5bd260a594dfaea613760e89f`、base `774ce244b87cc0eb8d4b94ab9f5de2ab22049f01`；4个新增文件695行，无新增测试文件。本节分析最小聊天封装，不启动服务、不扩展之前的cache预算或关闭流程探针，也不将标题中的兼容性当作完整接口认证。
+
+### 亲和键不是会话身份
+
+[`affinity_key` 与 `submit`](https://github.com/deepseek-ai/DeepInfer/blob/aaf1e62c9eab1ce5bd260a594dfaea613760e89f/serve/openai_server.py#L343)取第一条user消息：列表content拼接各dict的text，截取前4096个Python字符，再UTF-8编码后SHA1；默认用digest前4字节的小端整数模dp选rank。没有user才返回None并退到least-loaded；空user得到空串digest，仍走亲和分支。更改system、tools或后续轮次不会改这个键，前4096字符相同的不同请求也会共用它。
+
+这能把共享首问的多轮轨迹留在同一rank，以利用每rank独立的host cache；**不认证对话相同、prompt相同或必有缓存命中**。实际复用还由[原cache页哈希与state/replay约束](#host-cache-的可复用边界)决定。亲和分支不参考load，没有“热点过重自动迁移”的路径；least-loaded则按前端未release请求数选rank，平手选编号最小者，不是按token、KV或预计算量调度。`max_num_seqs`传给每rank引擎，不能由此推断前端已有全局请求数/队列硬限额。
+
+本机Python3.12.13只执行原完整Frontend类AST中的静态affinity_key，未调用构造器或其他方法，8个标准库控制通过：无user、普通文本hash、多轮稳定、system变化、文本块拼接且忽略图片URL、截断后缀相同、4096个汉字按字符截断、空user仍有键。不是HTTP/submit/缓存测试，也没有替代tokenizer或engine。最小复查例，要求本地已有固定Git对象：
+
+```bash
+python3 -B - /path/to/DeepInfer-git <<'PY'
+import ast, hashlib, subprocess, sys
+src = subprocess.check_output(['git', '-C', sys.argv[1], 'show',
+    'aaf1e62c9eab1ce5bd260a594dfaea613760e89f:serve/openai_server.py'])
+cls = next(n for n in ast.parse(src).body
+           if isinstance(n, ast.ClassDef) and n.name == 'Frontend')
+future = ast.ImportFrom(module='__future__', names=[ast.alias(name='annotations')], level=0)
+tree = ast.fix_missing_locations(ast.Module(body=[future, cls], type_ignores=[]))
+ns = {'hashlib': hashlib}
+exec(compile(tree, 'original-Frontend-class', 'exec'), ns)
+key = ns['Frontend'].affinity_key
+body = lambda text: {'messages': [{'role': 'user', 'content': text}]}
+assert key(body('x' * 4096 + 'a')) == key(body('x' * 4096 + 'b'))
+assert key(body('')) is not None and key({'messages': []}) is None
+PY
+```
+
+### 输出完成不等于交付确认
+
+[`tokens` 与响应生成器](https://github.com/deepseek-ai/DeepInfer/blob/aaf1e62c9eab1ce5bd260a594dfaea613760e89f/serve/openai_server.py#L450)收到finished后，按detok.num_tokens是否达到裁剪后的max_tokens返回length或stop；engine传来的reason虽然跨队列送到此处，却未用于返回值。因此响应原因是前端归类，不是引擎原因原样保留。detokenizer每次add先增加计数，遇EOS才返回空文本；usage/completion_tokens按消费的token事件计数，不等于可见文字的token数。
+
+| 字段或标志 | 固定版本实际记账点 | 不应解释成 |
+|---|---|---|
+| requests / 每rank load | submit建立owner和stream并准备入队；release才减load | 当前GPU正在执行的序列数 |
+| finished / done | 前端tokens迭代正常耗尽后done=True，release增加finished | 客户端已收到usage及DONE或完整JSON |
+| aborted | 迭代未正常耗尽时release，向rank发送abort消息 | 引擎已确认取消并释放资源 |
+| prompt_tokens / completion_tokens | 前者在submit前按编码长度累加；后者消费token事件时累加 | 实际prefill计算量、已送达客户端的token数 |
+
+SSE的done=True位于usage与DONE之前；其含义是引擎输出已读完，而非后续网络写出已确认。error事件抛RuntimeError并走finally；模块虽初始化errors计数，未见更新分支，不能用errors_total为0证明没有请求错误。这些是源码口径，不是故障/断连实测。
+
+[`render_prompt`](https://github.com/deepseek-ai/DeepInfer/blob/aaf1e62c9eab1ce5bd260a594dfaea613760e89f/serve/openai_server.py#L318)优先调用checkpoint的encoding.py；失败时增加encode_fallbacks，改为手拼角色标记/工具JSON。请求继续不意味着渲染语义不变。tools作为prompt输入不等于输出已解析为tool_calls，PR正文明确只返回plain content；模块开头“无跨请求cache”的旧说明也不能覆盖实际的可选hicache导入分支。
+
+[`check_prefix_cache.py`](https://github.com/deepseek-ai/DeepInfer/blob/aaf1e62c9eab1ce5bd260a594dfaea613760e89f/serve/check_prefix_cache.py)对同一轮先bypass再cache、temperature=0/seed=1，比较文本和第一个非空content到达时间；角色空chunk不计TTFT。这是串行、有先后状态的A/B入口，不保证测到首次冷缓存、完整服务协议或模型质量。作者报告4×GB300、V4.1-Flash-1017、AgentX并发1–16零请求错误，非本项目或4090/NPU实测。
+
+本机还对两个完整Python文件内存compile、server.sh仅bash -n通过；不执行模块级main、requests、FastAPI、tokenizer、进程/线程、模型或设备。没有安装依赖、运行原A/B入口或声称异常路径已验证；临时控制不新增永久harness。源码SHA256：openai_server.py `41ff805a032f172efad0d050e9b479220b789553f924517385bc57c743a535ee`；check_prefix_cache.py `b70460bb03a80df77327230a6bde8869b83b04f4fd90f6fd920ac5a56c0dc9b4`；server.sh `0c0811bebffcdb5621f76327d5563f3ceb1f0bd5e7d9d55b0839fa7a70b8af3f`。硬件侧仅补[原M5入口](../../experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)的待条件参考，不另排队、采用PR或启动服务；此题收束，不继续堆网络/队列替身。
