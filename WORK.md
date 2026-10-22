@@ -12,6 +12,8 @@
 
 ## 运行接续
 
+- **M1 UniRL SFT游标学习收束（2026-10-22）**：固定6fd82cba，真实原DataSource/JSONL，无假类/方法摘取，仅tensor包壳跳过Ray transport初始化。跨epoch peek/commit/恢复、20批shuffle开关直读对照、身份拒绝/legacy警告与eval隔离通过，见[原调研](notebook/frameworks/unirl-survey.md#sft-预取与数据消费游标)/[复查资产](experiments/unirl-sft-cursor/readme.md)。peek不消费下一批，但trainer在train_step前get/commit当前批，非optimizer成功协议；接线仅源码，无完整训练/设备或新M5事项。本题收束；后续选UniRL其他源码/类型问题，不堆游标/恢复故障替身或自动修改实现；GPU/AReaL、#8313及网站边界不变。
+
 - **M1 UniRL稀疏SDE学习收束（2026-10-22）**：官方main仍6fd82cba，原require/sampling/index_schedule正常导入，无包壳/AST摘取/torch。64rollout id、56前半段三索引组合及空/首尾/默认/非法计数控制通过，见[原调研新节](notebook/frameworks/unirl-survey.md#稀疏-sde-与轨迹状态位置)。T16选S3不删去噪迭代；邻接端点+终态仅源码预期5～7位置，非latent/显存实测。None与[]解析优先级不同，标准trainer先解析；stage/FlowGRPO接线仅读。原M5条目只补有效索引/字段形状参考，不新排队或运行。本题收束；后续优先UniRL其他类型/配置问题，不堆SDE索引/RNG变体或自动改实现；GPU/AReaL、#8313及网站边界不变。
 
 - **M1 UniRL首次架构阅读收束（2026-10-22）**：先快进同步M5新增高优UniRL调研4015059，再只读clone官方main6fd82cba。见[原调研源码节](notebook/frameworks/unirl-survey.md#ar-与-diffusion-的源码统一边界)：独立AR/diffusion各自trainer，HI3则共享bundle/backend，两路backward汇同次update；Sample保留P→PN→PNM，M=1共享AR优势。原依赖方向guard与4核心文件AST/compile通过，无训练模块/设备执行。配方flat注释与driver两层接线不一致，未定性engine已正确；HI3双引擎每节点≥8设备/资源及身份观测条件及时记[原M5交接页](experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，非接单/自动运行或租算力。不改上游、M5环境、AReaL/#8313或网站。本轮架构初读收束；后续优先UniRL未重复类型/配置问题，不堆训练替身或由源码外推普通卡支持。

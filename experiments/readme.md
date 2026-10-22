@@ -7,6 +7,7 @@
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
 | [handoff-m5.md](handoff-m5.md) | 需要 GPU/NPU 的事项交接、资源/数据前提及停止条件；M5 可用时接续 | 对应主笔记和原始实测结果就近回写 |
+| [unirl-sft-cursor/](unirl-sft-cursor/readme.md) | 原SFT DataSource/真实JSONL的预取、消费游标、身份与eval隔离；未运行trainer/optimizer | [消费不等于参数更新](../notebook/frameworks/unirl-survey.md#sft-预取与数据消费游标) |
 | [deepinfer-close/](deepinfer-close/readme.md) | #175原关闭方法与13项原测试的隔离控制流对照，资源为Mock | [关闭失败与一次性标志](../notebook/frameworks/deepinfer-initial-survey.md#关闭失败后的独立清理与一次性标志) |
 | [deepinfer-pool-generations/](deepinfer-pool-generations/readme.md) | #187原9测试的真实CPU共享存储/fork对照，另1项保留视图控制；pin/unpin为no-op | [分配身份与视图寿命](../notebook/frameworks/deepinfer-initial-survey.md#共享池句柄的分配身份与视图寿命) |
 | [deepinfer-hf-shapes/](deepinfer-hf-shapes/readme.md) | #153原55项真实CPU safetensors对照，另各4组原加载器前缀/值顺序控制 | [布局预检与gate up顺序](../notebook/frameworks/deepinfer-initial-survey.md#checkpoint-布局预检与-gate-up-顺序) |

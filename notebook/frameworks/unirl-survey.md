@@ -169,6 +169,37 @@ PY
 
 三原文件 SHA256 分别为 require `d30f89e77ff72e9dddaaf8b8f0ab403790b3e2984fbd6afea28f6bcc60177238`、sampling `95325713e5f9d426ef56a2b84c0d7a2f701f0cd7c3a0f7f76b728d420a4f9ddc`、index_schedule `4a313b44df9275b8e470a1dd1226d3b835e5170eb4a707ab162c269fe307f3c4`。上面的核心复查及额外首尾/空/全步端点、0/全池和非法计数控制均通过；这是自编原模块检查，不是上游原测试。未执行 stage、engine、latent 构造、replay/backward 或性能/显存实验；位置数量不能外推节省比例、跨引擎数值一致或质量。需要真机时沿用 [M5 原条目](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不新增必跑矩阵。
 
+## SFT 预取与数据消费游标
+
+**预取下一批不推进消费游标，但消费当前批也不等于 optimizer 已成功更新。** 2026-10-22 固定 `6fd82cba13f52f394747832344039408699ea378`，用真实 JSONL 读取原 [`SupervisedDataSource`](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/data/sft.py#L216)验证了前半句；后半句来自 trainer 调用顺序，不是模型故障实测。
+
+`get_samples` 立即推进 epoch/position；`peek_next_batch` 暂时取出下一批与取完后的状态，再恢复公开游标，将结果留在 pending；`commit_peeked_batch` 才安装 pending 状态。state_dict 不保存 pending 内容，因此在预取后、commit 前记录状态，恢复时会重新读到该批，而不是跳过去。
+
+5行训练数据 r0～r4、batch_size3、shuffle=False 的实测：
+
+| 操作 | 取得的样本 | 公开 epoch / position |
+|---|---|---|
+| 直读第一批 | r0,r1,r2 | 0 / 3 |
+| peek 下一批 | r3,r4,r0 | 仍0 / 3 |
+| commit pending | 同一批 r3,r4,r0 | 1 / 1 |
+| 从 peek 后保存的状态另建 DataSource 恢复再读 | r3,r4,r0 | 1 / 1 |
+
+原实现对 pending 时再次 get、再次 peek，以及无 pending 的 commit 都抛 RuntimeError。shuffle=False/True 各10批与不预取的直读序列、游标逐批一致，跨越多个epoch，全局 Python random 状态不变；这是原数据源本地随机顺序的检查，不是分布式采样验收。
+
+恢复还检查训练 manifest 的文件字节 SHA256 与 seed/shuffle。相同5行数量但内容变更、seed变更或shuffle变更，都被原 load_state_dict 拒绝；不是只核数据集长度。缺 fingerprint 的 legacy 状态则发警告后允许恢复，不能把兼容接受当身份已验证。另用3行验证集得到2+1两批，未改变训练游标或既有 pending。
+
+[`SFTTrainer.train`](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/trainer/sft.py#L201)先 get／commit 当前批，再 peek 下一批，然后才执行 train_step；循环没有按 result.optimizer_updates 回退数据游标。prefetch 的目的是准备下一批并保持保存游标指向已消费数据，不是 optimizer 提交协议。异常中断、非有限梯度跳步或“模型和游标共同恢复到同一步”仍需完整路径证据；本轮不将单个数据源控制说成 exactly-once 训练。
+
+[复查源码与只读夹具](../../experiments/unirl-sft-cursor/readme.md)保存于本项目，不修改 UniRL：
+
+```bash
+python -B experiments/unirl-sft-cursor/verify.py /path/to/UniRL
+```
+
+Python3.12.13 / torch2.9.1，真实原 dataset/normalizer/Batch/DataSource。仅跳过 tensor 包初始化器中与本题无关的 Ray transport 汇总导入，未替换这些类或摘取方法。全部观察通过，不是上游原测试；无 trainer/worker预取、模型、optimizer、磁盘 checkpoint 或设备执行。本题不新增M5真机事项。
+
+完整源文件 SHA256：data/sft.py `45dc13244d15a0168919e48e33f126b6c9f259f02587007f4adcbc2c24ed782c`；trainer/sft.py `de66b86676f81422a832ce560942fd22e239b2052a00059b685631661ea3d2c9`。后者仅读取，没有执行；脚本也核对这两个hash，以免不同源码混用结果。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。
