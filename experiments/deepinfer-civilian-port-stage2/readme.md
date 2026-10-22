@@ -67,3 +67,16 @@
 **fused_sample 是 43 个 kernel 里最复杂的**（两级 launch + LSE streaming 归约 + `lse_workspace` 跨 launch 共享 + 2 处 PDL trigger 删除 + 2 处 pdl_sync→sync_grid），数值精确对照通过，说明去 PDL 后的跨 launch 依赖在顺序语义下正确保持。`lse_workspace` 语义澄清：`lse1=-max(logit)`（原始 logit 未缩放）、`lse0=-log(Σ exp((logit-max)/t))`，由 `logprobs=(logit+lse1)/t+lse0 = log_softmax(logit/t)` 推导核对——初版探针参考算错（把 max/lse 按缩放后 logit 算），修正后 err=0.0，非 kernel 问题。
 
 边界（延续）：数值对照覆盖 5 个 kernel 的选定参数组合（stride/形状按真实 wrapper 约定，如 kv_index_cat 输出 stride pad 到 4 的倍数）；其余 38 个 kernel 仍只静态确认 PDL 用量（28/30 文件、56+8 处调用）；`fused_sample` 的采样分支只验证了 candidate 合法性，未对照分布（自定义 RNG 与 torch 不同）；性能影响未测。
+
+### 全量改写编译扫查：43/43 kernel 全部 SM89 编译通过（2026-10-22 三续，M5）
+
+把上一节的"其余 38 个只静态确认"推进为**全量真机编译验证**：28 个 PDL 源文件的 **43 个 `_tl` 工厂全部生成 `_pdlfree` 变体（文本级 sed，不改原文件），在 SM89 (4090) 编译通过**，`scan_pdlfree_all.py`：
+
+- **覆盖**：28/28 个 PDL 文件、43/43 个 `_tl` 工厂（AST 枚举，含 `fused_transform` 21 参数全 kwonly、`load_paged_kv_cache`/`store_kv_cache` 需 `KVCacheFormat` 常量、`state_cache` 条件启用分支 `block_size_inference*feature_dim=64*1024=65536≥65536` 走 enable 路径——条件 PDL 在启用时也真实编译 `T.sync_grid()`）。
+- **结果**：**43/43 OK**（串行跑完；新编译 2.2–12.1s，`candidate_block_max` 最慢 12.1s；5 个已数值验证的 kernel 命中 tilelang 缓存 0.0–0.9s）。
+- **替换计数核对**：sed 替换 `T.pdl_sync()`→`T.sync_grid()` 后各文件 `sync_grid` 计数与改写前 `pdl_sync` 调用计数逐一相等（合计 51 处）；`T.pdl_trigger()`→`pass` 8 处均为独立语句（`if ... : T.pdl_trigger()` 块内），替换后语法/语义安全。变体文件 `grep pdl_sync|pdl_trigger` 仅剩 `enable_pdl_sync` 变量名，无调用残留。
+- 28 个变体存本目录 `pdlfree-variants/`（原 5 个与服务器 5/5 字节一致，新 23 个从服务器拉回）；扫查脚本与完整日志（含每个 kernel 的 TileLang 编译起止时间）见 `scan_pdlfree_all.py` / `scan_pdlfree_all.log`。
+
+**结论升级**：从「5 个 kernel 编译+数值、38 个静态确认」提升为「**43 个 kernel 全量文本级改写 + SM89 编译全过**」——「去 PDL 改写」的工程量（28 文件、51+8 处调用）与可机械性在真实硬件上全量实证，PDL 不是 4090 移植的唯一/隐藏障碍（至少编译层）。数值语义保持仍以 5 个 kernel 的对照为证据，其余 38 个的数值语义未逐一对照（若继续完整移植需逐个补）。
+
+边界（三续）：编译扫查使用各工厂的最小合法参数（含 `fused_transform` 无 norm/rope/cast 的最简路径、`load/store_kv_cache` 用 V41_FORMAT e4m3 布局）；未遍历全部参数组合与量化布局变体；`state_cache` 条件分支用 enable 参数覆盖，disable 路径（无 sync_grid）本就无需改写；vendor swiglu（DeepGEMM 第三方包，非 DeepInfer 主包 import 链）1 处 `pdl_sync` 未在本次扫查（其用 `@tilelang.jit` 装饰、依赖 deep_gemm，深潜包外）；性能影响仍未测。

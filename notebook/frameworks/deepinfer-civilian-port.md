@@ -6,7 +6,7 @@
 >
 > 源码基线：`deepseek-ai/DeepInfer` commit `8b16149`（本地 clone `/Users/jackiemac/workspace/DeepInfer`）。
 >
-> 状态：**堵点定位完成 + 替代方案调研完成 + 两段 4090 真机冒烟（import 链全通、csrc `_C` 编译成功、发现 tilelang PDL 硬堵点）。2026-10-22 续：PDL 机制源码级定位（tilelang 编译期硬检查、无配置可关）+ 5 个 kernel 文本级去 PDL 后 SM89 编译/数值验证全过（改写是机械工程且语义保持）。下一步：完整移植需 Triton/Cutlass 替换四 kernel 包 + 43 个 tilelang kernel 去 PDL 改写 + V4 权重，价值判断待用户确认。** 本专题完成后将作为新章节插入 DeepInfer 研究报告。
+> 状态：**堵点定位完成 + 替代方案调研完成 + 两段 4090 真机冒烟（import 链全通、csrc `_C` 编译成功、发现 tilelang PDL 硬堵点）。2026-10-22 续：PDL 机制源码级定位（tilelang 编译期硬检查、无配置可关）+ 5 个 kernel 文本级去 PDL 后 SM89 编译/数值验证全过（改写是机械工程且语义保持）。三续：43/43 个 `_tl` 工厂全量去 PDL 改写后 SM89 编译全过（含条件启用分支），工程量全量实证。下一步：完整移植需 Triton/Cutlass 替换四 kernel 包 + 数值语义逐 kernel 补全 + V4 权重，价值判断待用户确认。** 本专题完成后将作为新章节插入 DeepInfer 研究报告。
 
 ## 结论先行
 
@@ -146,7 +146,8 @@
 3. **用量**：28/30 个 cuda tilelang kernel 源文件用 PDL，共 56 处 `pdl_sync` + 8 处 `pdl_trigger`（另 `vendor/DeepGEMM/third-party/tilelang_ops/swiglu_apply_weight_to_fp8.py` 1 处）。少数（如 `state_cache.py`）按数据规模条件启用，已有非 PDL 路径。
 4. **单 kernel 真机验证（PASS）**：`norm` kernel 文本级替换（`pdl_sync→sync_grid`、`pdl_trigger→pass`）后在 SM89 编译 5.3s，B=2/S=128/d=64 fp16 与 torch RMSNorm 对照 **max abs err = 0.0、0% mismatch**（注意多 batch 须 `xdim=3`，`xdim=2` 只写 batch 0）。另 4 个 kernel（kv_index_cat / dflash_input_store / load_kv_index / fused_sample）最小参数编译全过（2.3–9.7s）。**「去 PDL 改写」是机械工程而非科学障碍。**
 5. **数值对照扩展（再续，5/5 PASS）**：`probe_pdlfree_numeric.py` 给其余 4 个 kernel 补数值对照（torch 参考）——`kv_index_cat` 拷贝+偏移加 eq、`load_kv_index` 索引展开 eq、`dflash_input_store` hc_mult=1 拷贝 / hc_mult=2 均值 max err=0.0、`fused_sample`（43 个中最复杂：两级 launch + LSE streaming 归约 + lse_workspace 跨 launch 共享）logprobs vs `log_softmax(logits/t)` max err=1e-6、lse0/lse1 err=0.0、candidate 合法。**去 PDL 后的跨 launch 依赖在顺序语义下数值保持**，改写从「能编译」推进到「语义保持」。
-6. **未覆盖边界**：数值对照覆盖 5 个 kernel 的选定参数组合；其余 38 个 kernel 仍只静态确认 PDL 用量；`fused_sample` 采样分支只查 candidate 合法性未对照分布（自定义 RNG）；`pdl_trigger` 删除失去 kernel 间重叠（性能影响未测）。
+6. **全量改写编译扫查（三续，43/43 编译全过）**：`scan_pdlfree_all.py` 对 28/28 个 PDL 文件、43/43 个 `_tl` 工厂全部生成 `_pdlfree` 变体并在 SM89 编译——**全部 OK**（新编译 2.2–12.1s，`candidate_block_max` 最慢 12.1s；5 个已数值验证 kernel 命中缓存）。覆盖含 `fused_transform`（21 参数全 kwonly）、`load_paged_kv_cache`/`store_kv_cache`（需 `KVCacheFormat` 常量）、`state_cache` 条件启用分支（64×1024=65536 触发 enable，条件 PDL 在启用时真实编译 `T.sync_grid()`）。替换计数核对：`sync_grid` 与改写前 `pdl_sync` 调用计数逐一相等（合计 51 处）、`pdl_trigger`→`pass` 8 处均为独立语句；变体文件无 PDL 调用残留（仅剩 `enable_pdl_sync` 变量名）。**「去 PDL 改写」工程量与可机械性在真实硬件上全量实证，PDL 不是 4090 移植编译层的隐藏障碍。**
+7. **未覆盖边界**：数值对照覆盖 5 个 kernel 的选定参数组合；其余 38 个 kernel 编译全过但数值语义未逐一对照（若继续完整移植需逐个补）；编译扫查用最小合法参数，未遍历全部参数组合/量化布局变体；`fused_sample` 采样分支只查 candidate 合法性未对照分布（自定义 RNG）；`pdl_trigger` 删除失去 kernel 间重叠（性能影响未测）；vendor swiglu（DeepGEMM 第三方包，非 DeepInfer 主包 import 链）未在扫查。
 
 ### 第二段结论
 
