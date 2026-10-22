@@ -171,3 +171,12 @@ def _cap_text_prompt_length(self, prompt_ids: list[int]) -> list[int]:
 2. **PR**：option 1 完整实现 + 单测——**已本地备好**（源修复 + `test_cap_text_prompt_length.py`，patch 见上）。发布前需：①确认 error 行为与 maintainer 方向（见决策点）；②在 PR 描述中说明为何不重复现有 #4600（按 verl 贡献政策「PR 描述须说明为何不重复现有 PR」）——要点：#4600 预 CT 重构、dirty、非当前共享修复点，本 PR 覆盖 current-main 的 `_cap_text_prompt_length`。
 
 不发布评论则本地沉淀作 review/跟进依据。
+
+## Follow-up：middle/cap=1 的 -0 反例修复（2026-10-22）
+
+在 PR #8313（head `80ee82bd`）当前源码上核验发现并起草了修复 patch：[patches/8281-middle-cap1-fix.patch](patches/8281-middle-cap1-fix.patch)。
+
+- **反例**：`middle` 分支 `prompt_ids[:head] + prompt_ids[-(prompt_length-head):]` 在 `prompt_length=1` 时 `head=1`、尾段预算 0，Python `-0==0` 使 `prompt_ids[-0:]` 取整个列表——10 token 输入变成 11 token 输出（复现：`[0,0,1,2,3,4,5,6,7,8,9]`），违反上限。原测试 middle 只覆盖 cap 4/5/6。
+- **修复**：尾段改用正向切片 `prompt_ids[len(prompt_ids) - (prompt_length - head):]`（尾段预算 0 时 `list[len:]` 为空列表，天然正确）。已验证 cap=1..7 全部遵守上限、head+tail 语义与原始 cap≥2 完全一致；left/right/error 不受影响。
+- **验证**：`git apply --check` 通过、应用后与修复版逐字节一致；测试补 `test_middle_cap1_does_not_extend_prompt`（cap=1 输入 10 token 断言输出 `[0]`）。
+- **发布形态**：作为 PR #8313 的 follow-up（直接补进 `fix-8281-truncation-policy` 分支或独立小 PR），需用户授权；未对上游做任何写操作。

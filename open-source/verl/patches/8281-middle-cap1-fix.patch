@@ -1,0 +1,65 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jackie2049 <jackie2049@foxmail.com>
+Date: Thu, 22 Oct 2026 00:00:00 +0800
+Subject: [PATCH] fix(agent_loop): middle truncation at cap=1 must not extend the prompt
+
+Follow-up to PR #8313 (fix for #8281).  In `_cap_text_prompt_length` the
+`middle` branch computes
+
+    head = (prompt_length + 1) // 2
+    return prompt_ids[:head] + prompt_ids[-(prompt_length - head):]
+
+When `prompt_length == 1` this yields `head = 1` and a tail budget of `0`,
+and Python's `-0 == 0` makes `prompt_ids[-0:]` slice the ENTIRE list instead
+of an empty tail.  A 10-token input therefore becomes 11 tokens, violating the
+prompt cap (reproduced: middle(list(range(10)), 1) == [0,0,1,2,3,4,5,6,7,8,9]).
+
+The existing test parametrization covers middle only for caps 4/5/6, so the
+cap-1 boundary was untested.
+
+Fix: replace the negative-index tail slice with a forward slice computed from
+the list length, which is naturally empty when the tail budget is 0 and keeps
+the exact same head+tail semantics for every cap >= 2 (verified on the PR head
+source lines 496-498).
+
+---
+ verl/experimental/agent_loop/agent_loop.py              |  2 +-
+ tests/experimental/agent_loop/test_cap_text_prompt_length.py | 12 ++++++++++++
+ 2 files changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/verl/experimental/agent_loop/agent_loop.py b/verl/experimental/agent_loop/agent_loop.py
+--- a/verl/experimental/agent_loop/agent_loop.py
++++ b/verl/experimental/agent_loop/agent_loop.py
+@@ -496,7 +496,7 @@ class AgentLoopBase:
+                 prompt_length,
+             )
+             head = (prompt_length + 1) // 2
+-            return prompt_ids[:head] + prompt_ids[-(prompt_length - head):]
++            return prompt_ids[:head] + prompt_ids[len(prompt_ids) - (prompt_length - head):]
+         # ``error`` (default): fail loudly, mirroring the multimodal ValueError path above.
+         raise ValueError(
+             f"Prompt of {len(prompt_ids)} tokens exceeds rollout.prompt_length={prompt_length}; "
+diff --git a/tests/experimental/agent_loop/test_cap_text_prompt_length.py b/tests/experimental/agent_loop/test_cap_text_prompt_length.py
+--- a/tests/experimental/agent_loop/test_cap_text_prompt_length.py
++++ b/tests/experimental/agent_loop/test_cap_text_prompt_length.py
+@@ -90,6 +90,18 @@ def test_middle_keeps_head_and_tail(prompt_length: int):
+     assert out == out[: (prompt_length + 1) // 2] + list(range(10))[-(prompt_length - (prompt_length + 1) // 2) :]
+ 
+ 
++def test_middle_cap1_does_not_extend_prompt():
++    """Regression: at cap=1 the old tail slice ``[-(0):]`` selected the whole list.
++
++    Python's ``-0 == 0`` made ``prompt_ids[-0:]`` return every token, so a 10-token
++    input became 11 tokens instead of being capped to a single token.
++    """
++    loop = _make_loop(1, "middle")
++    out = loop._cap_text_prompt_length(list(range(10)))
++    assert len(out) == 1
++    assert out == [0]
++
++
+ def test_unknown_policy_raises():
+     """An unrecognized ``truncation`` value must not silently fall back to slicing."""
+     loop = _make_loop(4, "banana")
+-- 
+2.47.0
