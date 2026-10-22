@@ -1,0 +1,11 @@
+2026-10-22 09:18:20  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_kv_index_cat` with `out_idx=None`
+2026-10-22 09:18:22  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_kv_index_cat`
+[PASS] kv_index_cat  kv_index eq=True, kv_ca eq=True
+[PASS] load_kv_index  full eq=True (n=41, index_length=32, block_size=0)
+[PASS] dflash_input_store hc_mult=1  n_embed=1024, max abs err=0.00000
+2026-10-22 09:18:23  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_dflash_input_store` with `out_idx=None`
+2026-10-22 09:18:24  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_dflash_input_store`
+[PASS] dflash_input_store hc_mult=2  n_embed=1024, max abs err=0.00000
+[PASS] fused_sample  logprobs max err=0.000001 (ref=log_softmax(x/0.9)), cand in [0,V)=True, lse0 err=0.000000, lse1 err=0.000000, run 0.0s
+============================================================
+TOTAL: 5/5 PASS; FAIL: []

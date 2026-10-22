@@ -1,0 +1,7 @@
+compiled in 0.4s
+max abs err vs torch: 0.00000  (fp16 精度下应 <~0.01)
+mismatch ratio: 0.00%
+y_origin == y: True
+batch 0: max err 0.00000
+batch 1: max err 0.00000
+RESULT: PASS

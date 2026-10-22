@@ -99,3 +99,30 @@
 **证据**：`probe_kv_cache_pdlfree.py`（monkeypatch + 全矩阵驱动，`KV_PROBE_VARIANT=pdlfree|nosync` 切换）、`probe_kv_cache_pdlfree.log`（pdlfree 20/20+10 FAIL）、`probe_kv_cache_nosync.log`（nosync 60/60）、`pdlfree-variants/load_paged_kv_cache_nosync.py` / `store_kv_cache_nosync.py`（删除 sync 的变体）。
 
 **边界**：数值对照=上游测试矩阵（布局/形状/量化覆盖广，但每 kernel 单次编译后多 token 数复用同一 kernel，不覆盖全部参数组合）；cooperative-launch 上限值是 4090（128 SM）实测，其他 SM 数设备需重测；`nosync` 删除仅对「等待前序 kernel」型 pdl_sync 安全（load/store 注释明确）；其余 41 个 kernel 的 pdl_sync 属于哪种类型、能否安全删除未逐个核对（多数同为依赖 launch 产生的前序数据，需按注释/数据流逐一确认）；性能影响（PDL 重叠）仍未测。
+
+### 全量 nosync 改写验证：43/43 编译 + 7 kernel 数值保持（2026-10-22 五续，M5）
+
+**任务**：把四续「依赖型 pdl_sync 应删除而非替换 sync_grid」的结论从 2 个 kernel 推广到全部 43 个 kernel——对 28 个 PDL 源文件的全部调用点做语义分类，生成全量 nosync 变体，验证删除改写在编译与数值两个层面都对。
+
+**方法**：
+1. **语义分类（静态）**：拉回 28 个 PDL 源文件（`pdl-sources/`），逐处核对全部 **55 处 `T.pdl_sync()` + 8 处 `T.pdl_trigger()`** 的上下文：
+   - 全部 55 处 `pdl_sync` 均位于 kernel 开头（紧随 `T.Kernel(...)` 与片段分配之后），等待的是前序 launch 写入的全局数据（如 `load_segments`/`slot_mapping`/`cu_lens`/`lse_workspace`/计数器）——**依赖型**，顺序 launch 下由 stream 顺序天然保证；
+   - 8 处 `pdl_trigger` 均在 kernel 内循环/分支尾部「提前释放下一个 launch」（如 fused_sample 的 `# Release the next launch before the final block reduction`、fused_transform/norm/kv_index_cat 的末尾）——顺序 launch 下无重叠收益，删除等价；
+   - **没有任何一处 pdl_sync 是「同一 launch 内跨 block 数据通信」型**（那才需要 sync_grid）。`sampler.py` 甚至注释明示上游刻意「without a cooperative grid barrier that would prevent PDL launches」——上游自己都避免 cooperative barrier。
+2. **生成 nosync 变体**：`gen_nosync_variants.py` 从源文件文本级删除 `T.pdl_sync()` 行（若删后块空则补 `pass`）、`T.pdl_trigger()` → `pass`，AST 语法校验 + 残留检查，生成 28 个 `*_nosync.py`。替换计数与三续 pdlfree 逐一对齐：**51 处 pdl_sync 删除 = 三续 51 处 sync_grid 替换的对应位置（除 load/store 两处四续已验证）**，8 处 pdl_trigger 均保留 pass 占位。
+3. **43/43 编译扫查**：`scan_nosync_all.py`（复用 scan_pdlfree_all.py 的 43 工厂 CASE，模块后缀 `_nosync`）在 4090-1 SM89 全量编译——**43/43 OK**（首次约 2 分 20 秒；重跑命中 tilelang 缓存秒级完成，第二次 43/43 OK 确认可复现）。
+4. **数值验证**：`probe_nosync_numeric.py`（probe_pdlfree_numeric.py 的 nosync 版）给其余 4 个 kernel 补数值对照；`probe_norm_nosync.py` 重跑 norm（此前仅 pdlfree 版验证）。
+
+**结果**：
+- **43/43 nosync 变体 SM89 编译全过**（含 fused_transform 全 kwonly、load/store KVCacheFormat、state_cache 条件启用分支、fused_sample 两级 launch）。
+- **7 个 kernel nosync 数值语义保持**：
+  - norm：B2/S128/d64 fp16 vs torch RMSNorm **max err=0.0、0% mismatch**（多 batch xdim=3）；
+  - kv_index_cat：拷贝+偏移加 **eq**；load_kv_index：索引展开 **eq**；dflash_input_store hc_mult=1/2 **max err=0.0**；
+  - fused_sample（最复杂：两级 launch + lse_workspace 跨 launch 共享）：logprobs vs `log_softmax(logits/0.9)` **max err=1e-6**、lse0/lse1 err=0.0、candidate 合法；
+  - load/store_kv_cache：四续 nosync **全矩阵 60/60 PASS**（含 67890 大用例）。
+
+**结论**：「去 PDL 改写」的正确形式确定——**全部 51 处 pdl_sync 均为依赖型，删除（nosync）而非替换 sync_grid**；三续的 sync_grid 替换（51 处）是「可编译但引入 cooperative-launch 运行期上限」的次优改写，四续大 grid 失败已证伪其通用性。改写规则收敛为：`pdl_trigger` → 删除（pass）；`pdl_sync`（依赖 launch 前序数据）→ 删除；仅「同一 launch 内跨 block 通信」才考虑 sync_grid（本项目 43 个 kernel 无此用例，且需注意 grid 上限）。
+
+**证据**：`pdl-sources/`（28 个 PDL 源文件副本）、`gen_nosync_variants.py`、`pdlfree-variants-nosync/`（28 个 nosync 变体，与服务器逐字节一致）、`scan_nosync_all.py` + `scan_nosync_all.log`（43/43 OK）、`probe_nosync_numeric.py` + `probe_nosync_numeric.log`（5/5 PASS）、`probe_norm_nosync.py` + `probe_norm_nosync.log`（max err 0.0）。
+
+**边界**：静态分类依据注释与数据流（依赖 launch 产物的全局 buffer），未对每个 kernel 做「删除后仍保持正确」的数值证明——数值保持只覆盖 7 个代表性 kernel（norm、kv_index_cat、load_kv_index、dflash_input_store、fused_sample、load_paged_kv_cache、store_kv_cache），其余 36 个仅编译全过 + 依赖型分类；无一处是网格内同步型的判断基于源码核对，若移植完整实现需逐个补上游测试矩阵数值对照；性能影响（PDL 重叠）仍未测；未改 DeepInfer 上游源码（变体为未跟踪新文件）。
