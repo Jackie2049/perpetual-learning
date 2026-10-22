@@ -10,6 +10,9 @@ below the collective flush threshold; it does not execute count-producing kernel
 --tied-allocation-only instead checks #191's original CPU policy test bodies
 against base/fix and an independent exact-rational greedy oracle, with no fixtures
 evaluated, device discovery, window/manager substitution or weight shuffle.
+--peak-gain-only checks #212's original tests with pytest against main/#191/#212.
+Only the device fixture's collection is narrowed to CPU before execution; no
+availability probe is evaluated. Policy and test assertions remain unchanged.
 """
 import argparse
 import ast
@@ -19,6 +22,8 @@ from fractions import Fraction
 import os
 from pathlib import Path
 import subprocess
+import sys
+import types
 from types import SimpleNamespace
 from typing import NamedTuple
 
@@ -30,6 +35,7 @@ HEAD = '578752f660e68c66412d4d0c08dccfc84c6724dd'
 EPLB = 'deepinfer/model_executor/eplb/__init__.py'
 TIED_BASE = '9bd9cf243fc53ef9afbf8f04d391d989117d6ab9'
 TIED_HEAD = '090e942c4c4365d9d0e38b41483b92452bd7a10f'
+PEAK_HEAD = '3b950ebc0b66fd507ecdff02ef3193136b2fa5b9'
 
 
 def blob(root, revision, path):
@@ -125,6 +131,91 @@ def tied_allocation(root):
         assert scores[1] == scores[2]
         print('FP32 perturbation rounds to tie at', load, ':', scores.tolist())
     print('PASS:', checks, 'CPU dtype/history comparisons to exact greedy oracle; no global-optimality or device claim.')
+
+
+def peak_gain(root):
+    """Original pytest assertions and fixture, restricted to explicit CPU collection."""
+    from collections import Counter
+    os.environ['PYTEST_DISABLE_PLUGIN_AUTOLOAD'] = '1'
+    path = 'tests/models/test_eplb_policy.py'
+    source = blob(root, PEAK_HEAD, path)
+    tree = ast.parse(source)
+    fixture = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'policy_device')
+    # The original decorator evaluates CUDA availability during module import.
+    # Select CPU explicitly instead; preserve the fixture body and every test.
+    fixture.decorator_list = ast.parse('@pytest.fixture(params=["cpu"])\ndef selected(): pass').body[0].decorator_list
+    ast.fix_missing_locations(tree)
+    failures_expected = {
+        'main': Counter(test_rebalance_replicates_hot_experts_on_a_peak_plateau=2,
+                        test_rebalance_hot_replicas_remain_consistent_after_placement=1,
+                        test_rebalance_preserves_small_gains_in_long_histories=2,
+                        test_rebalance_replica_choices_match_exact_greedy_costs=1),
+        'pr191': Counter(test_rebalance_preserves_small_gains_in_long_histories=2),
+        'pr212': Counter(),
+    }
+    for label, revision in (('main', TIED_BASE), ('pr191', TIED_HEAD), ('pr212', PEAK_HEAD)):
+        policy_name = 'deepinfer.model_executor.eplb.policy'
+        policy = types.ModuleType(policy_name)
+        policy_source = blob(root, revision, 'deepinfer/model_executor/eplb/policy.py')
+        exec(compile(policy_source, '<original-policy-' + label + '>', 'exec'), policy.__dict__)
+        sys.modules[policy_name] = policy  # Avoid executing the parent package/DeepEP imports.
+        tests = types.ModuleType('_original_peak_tests_' + label)
+        tests.__file__ = str(Path(__file__).resolve())
+        exec(compile(tree, path, 'exec'), tests.__dict__)
+        sys.modules[tests.__name__] = tests
+
+        class OriginalTests(pytest.Module):
+            def _getobj(self):
+                return tests
+
+        class Reports:
+            passed = 0
+            failed = Counter()
+            skipped = 0
+            exception_types = Counter()
+
+            def pytest_pycollect_makemodule(self, module_path, parent):
+                if module_path == Path(__file__).resolve():
+                    return OriginalTests.from_parent(parent, path=module_path)
+
+            def pytest_runtest_logreport(self, report):
+                if report.when == 'call':
+                    if report.passed:
+                        self.passed += 1
+                    elif report.failed:
+                        self.failed[report.nodeid.rsplit('::', 1)[-1].split('[', 1)[0]] += 1
+                if report.skipped:
+                    self.skipped += 1
+
+            def pytest_runtest_makereport(self, item, call):
+                if call.when == 'call' and call.excinfo is not None:
+                    self.exception_types[call.excinfo.typename] += 1
+
+        reports = Reports()
+        code = pytest.main(['-q', '--tb=no', '--noconftest', '-p', 'no:cacheprovider',
+                            '-o', 'markers=ci: upstream CPU marker\nci_npu: upstream platform marker',
+                            str(Path(__file__).resolve())], plugins=[reports])
+        expected = failures_expected[label]
+        assert reports.failed == expected and reports.skipped == 0, (label, reports.failed, reports.skipped)
+        assert reports.exception_types == Counter(AssertionError=sum(expected.values()))
+        assert reports.passed + sum(reports.failed.values()) == 32
+        assert int(code) == (1 if expected else 0), (label, code)
+        print(label, reports.passed, 'passed;', sum(reports.failed.values()),
+              'expected assertion failures:', dict(reports.failed), flush=True)
+        for dtype in (torch.int32, torch.float32):
+            tokens = torch.zeros((1000, 1, 4), dtype=dtype)
+            tokens[:-1, :, 1:3] = 32768
+            tokens[-1, :, 3] = 1
+            print(label, str(dtype), 'long-history replica counts',
+                  policy.rebalance_experts_global(tokens, 5, 1)[2].tolist(), flush=True)
+
+    exact = [Fraction(999 * 32768 + 1)] * 3 + [Fraction(999 * 32768) + Fraction(1, 2)]
+    rounded = torch.tensor([float(cost) for cost in exact], dtype=torch.float32)
+    assert rounded.unique().numel() == 1
+    print('exact long-history candidate costs', [str(cost) for cost in exact],
+          'FP32 costs', rounded.tolist())
+    print('Original #212 oracle covers 729 two-step histories and 6 successive greedy choices each.')
+    print('CPU collection only; no CUDA fixture/probe, package root, manager, kernel, shuffle or throughput test.')
 
 
 def load_balancer(source, envs):
@@ -236,10 +327,15 @@ def main():
     parser.add_argument('source_root', type=Path)
     parser.add_argument('--check-step-lifecycle', action='store_true')
     parser.add_argument('--tied-allocation-only', action='store_true')
+    parser.add_argument('--peak-gain-only', action='store_true')
     args = parser.parse_args()
     torch.set_default_device('cpu')
     torch.set_num_threads(1)
     print('Python/torch CPU:', __import__('sys').version.split()[0], torch.__version__)
+    if args.peak_gain_only:
+        assert not args.check_step_lifecycle and not args.tied_allocation_only, 'Choose one isolated policy check'
+        peak_gain(args.source_root)
+        return
     if args.tied_allocation_only:
         assert not args.check_step_lifecycle, 'Choose either tied allocation or window lifecycle checks'
         tied_allocation(args.source_root)

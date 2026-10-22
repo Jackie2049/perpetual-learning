@@ -158,7 +158,7 @@
 - [verl 组初始化等待超时](frameworks/verl-async-logprob-provenance.md#组初始化的等待超时与任务退出) — #7045当前控制端head、12组原参数检查；等待上限不等于全链路截止、RPC取消或资源回收，真机条件补M5原条目
 - [verl 分桶接收失败与退出](frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#分桶接收失败与退出) — #7366原8项CPU测试两次通过；真实进程ZMQ/SHM，不是设备/vLLM验收。逐ACK预算、阻塞poll、取消与回滚须分开
 - [DeepInfer SamplingParams 校验](frameworks/deepinfer-initial-survey.md#samplingparams-构造校验与测试组合) — #119/#121原53项配对；[#154种子校验](frameworks/deepinfer-initial-survey.md#种子归一化前的负值校验)原5项/16组控制，负数拒绝与uint64回绕分开
-- [DeepInfer EPLB 并列热点](frameworks/deepinfer-initial-survey.md#eplb-相同热点负载下的副本分配) — #191原测试体32个CPU参数例及128组有理数贪心对照；浮点扰动失效、主次目标与全局最优/吞吐的区别
+- [DeepInfer EPLB 副本分配与精度](frameworks/deepinfer-initial-survey.md#eplb-相同热点负载下的副本分配) — #191并列热点及[#212长历史收益](frameworks/deepinfer-initial-survey.md#长历史的公共基线与峰值下降量)；三版本原32项CPU pytest对照，公共基线吞掉0.5收益，非全局最优/设备或吞吐验收
 - [DeepInfer CacheConfig 与严格预期失败](frameworks/deepinfer-initial-survey.md#cacheconfig-校验与严格预期失败) — #118修复与#121标记的XFAIL/严格XPASS对照；范围合法不保证实际KV容量
 - [DeepInfer decode 性能缓存](frameworks/deepinfer-initial-survey.md#decode-性能曲线缓存的身份与回退) — #126身份键与#128溢出回退、17项原始单rank CPU/Gloo测试；曲线不是KV缓存，非模型/性能验证
 - [DeepInfer profiling 服务关闭](frameworks/deepinfer-initial-survey.md#profiling-请求与服务关闭) — #122排队/采集/导出状态及关闭顺序；8组原始等待协程控制，不是HTTP/端口/修复验收

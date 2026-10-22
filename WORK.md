@@ -30,6 +30,8 @@
 
 ## 运行接续
 
+- **M1 EPLB长历史精度学习收束（2026-10-23）**：快进M5状态f794c04后，接续其#212独立学习线索；固定head3b950ebc/base祖先9bd9cf24，见[原EPLB笔记新节](notebook/frameworks/deepinfer-initial-survey.md#长历史的公共基线与峰值下降量)/[同一脚本](experiments/scripts/verify_deepinfer_eplb_window.py)。#212原32项CPU pytest对照main26过6断言失败/#191 30过2失败/#212全过；显式CPU fixture，无设备探测/窗口或manager替身。长历史绝对成本FP32丢0.5收益，下降量比较保留；729历史×6贪心oracle非全局最优/任意数值认证。旧#191模式及128组对照回归不变；不拼接两候选、不改M5移植或对外发布，设备/重排缺口只补原交接参考。本题收束，后续另选非EPLB同分/历史精度小变体问题；GPU/AReaL/#8313/#523分工不变。
+
 - **M1外部KV版本盐学习收束（2026-10-23）**：先快进M5并发合并c1f1b1c，保留其03:07状态与新登记#212线索；读#8323 head4e93e476/目标16ec093c、祖先f2923cbf（ahead2/behind3），见[原缓存失效笔记新节](notebook/frameworks/prefix-cache-failure-modes.md#权重版本与外部缓存)。区分进程namespace/step、请求过门后取盐、逻辑不匹配与物理删除/安装认证；manager只拒缺失step非全路径版本唯一性保证，PD/connector有硬前提。作者三份GPU用例主要改标签测缓存，没有写另一组权重，HiCache one-off另列。11完整Python仅compile，无原CPU/设备套件或新引擎替身/依赖安装，缺口补原M5参考，不应用/部署或诊断#8250。本题收束，下轮另选非salt命名/准入门/缓存替身问题；M5登记#212可作尚未读取的独立学习线索，GPU/AReaL/#8313/#523边界不变。
 
 - **M1 TQ启动资源学习收束（2026-10-23）**：同步无新增后有界读verl12/UniRL8候选，选新#8340 head881fb969/base祖先dc709afb；[原TQ笔记](notebook/frameworks/verl-transferqueue-worker-lifecycle-deep-reading.md)/[脚本](experiments/scripts/verify_verl_tq_config.py)。真实Hydra原3例/四类generated配对通过；仅原helper AST，未导入Ray/torch/TQ，不认证启动。固定TQ5fe4e49源码核U+1基础逻辑CPU、alive节点硬亲和、无界启动等待与key容量；默认2×nnodes非容量预检。纠正旧笔记把数据面当权重同步、GPU零拷贝/1ms/固定4090预算等无依据推导，保留worker分层与相关入口，历史Git可查。2变更Python仅compile，原M5新增单条可选CPU/Ray启动参考，不部署/改其专项。本题收束，下轮另选非配置默认值/启动数量/调度替身的小变体问题；GPU/AReaL/#8313/#523边界不变。

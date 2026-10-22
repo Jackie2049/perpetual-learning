@@ -421,7 +421,7 @@
 - [DeepInfer PD 队列交接](deepinfer-initial-survey.md#pd-队列交接与资源释放)：#195移出finished不释放KV/state，入队前提不认证数据已到达；仅源码/stub语法，匹配_C与设备证据交原M5入口。
 - [DeepInfer host cache 可复用边界](deepinfer-initial-survey.md#host-cache-的可复用边界)：#144的KV/state/replay交点与两池预算；原3测试需真CUDA copy但替换state/Sequence，不认证实际SWA或binding，本机未跑GPU。
 - [verl 组初始化等待与退出](verl-async-logprob-provenance.md#组初始化的等待超时与任务退出)：#7045控制端等待与prepare/退出边界，12组原参数控制；无Ray运行，旧head GPU结果不认证当前版本。
-- [DeepInfer EPLB 并列热点分配](deepinfer-initial-survey.md#eplb-相同热点负载下的副本分配)：#191原测试体32个CPU参数例，候选全过/基线27过5预期失败；128组有理数贪心对照，非全局最优或设备shuffle验收。
+- [DeepInfer EPLB 副本分配与精度](deepinfer-initial-survey.md#eplb-相同热点负载下的副本分配)：#191并列热点及[#212长历史收益](deepinfer-initial-survey.md#长历史的公共基线与峰值下降量)；原32项CPU pytest对照main26过/#191 30过/#212全过，含729历史贪心oracle，非全局最优或设备shuffle验收。
 - [DeepInfer 种子输入校验](deepinfer-initial-survey.md#种子归一化前的负值校验)：#154原5测试基线3过2预期失败/候选全过；负数须在掩码前拒绝，仍保留非负超大整数回绕与bool接受，非设备确定性验证。
 - [DeepInfer 消息与反序列化信任边界](deepinfer-initial-survey.md#共享内存消息与反序列化信任边界)：#158 AST对照；pickle协议未变，CP本地路径与remote能力分开，不定性可利用漏洞。
 - [DeepInfer vendor wheel 产物身份](deepinfer-initial-survey.md#vendor-wheel-的本次产物与安装身份)：#159隔离目录/精确路径/强制重装，安装身份与原生兼容性分开；未运行构建安装。

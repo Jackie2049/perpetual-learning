@@ -631,6 +631,36 @@ PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 python experiments
 
 SHA256：base policy `52241603827a1a1d19a395d48f5d618a7336fd1ceee631127e6782c644f736dc`；候选policy `6ef4f170289f131d3302329a1929d60574ce61b2f5d5fe2c6bfc8f1659878e16`；候选原测试 `33a37a0e13cb70e7468e2e757075fd290006c4c5d5967be7b7ae048acfb21dec`。
 
+### 长历史的公共基线与峰值下降量
+
+**显式次级目标修复并列热点，却不保证浮点主成本保留严格优劣。** [#212](https://github.com/deepseek-ai/DeepInfer/pull/212)（2026-10-23读取open draft）进一步改用每次复制带来的峰值下降量。固定head `3b950ebc0b66fd507ecdff02ef3193136b2fa5b9`，目标base与实际祖先均为 `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`，ahead1/behind0；仅policy和测试两文件82增10删。它覆盖#191的并列问题及新增精度反例，不是把两个候选自动叠加。
+
+原[长历史测试](https://github.com/deepseek-ai/DeepInfer/blob/3b950ebc0b66fd507ecdff02ef3193136b2fa5b9/tests/models/test_eplb_policy.py)有1000步、1层、4专家：前999步均为`[0,32768,32768,0]`，末步为`[0,0,0,1]`，起始各1副本，只加1份。给expert0/1/2复制，精确主成本均为32735233；给expert3复制则为32735232.5，严格改善0.5。但四个绝对成本转为FP32均是32735232，#191便按次级总负载选expert1。历史来自合成输入，不能据此推定默认线上窗口一定达到该条件。
+
+固定一轮副本数`n`，记每步当前峰值为`p[t] = max_e load[t,e]/n[e]`。候选`j`的成本为`C[j] = sum_t p_after_adding_j[t]`，下降量为`G[j] = sum_t (p[t] - p_after_adding_j[t])`。在非负负载和精确算术下，所有候选共享`sum_t p[t]`，最大化G等价于最小化C；浮点中先加上巨大公共基线再比较，却可能丢失小差异。[候选policy](https://github.com/deepseek-ai/DeepInfer/blob/3b950ebc0b66fd507ecdff02ef3193136b2fa5b9/deepinfer/model_executor/eplb/policy.py)利用只有唯一峰值专家的新增副本可能降低当步峰值这一性质，以max/scatter累计下降量，不把公共基线加入候选比较。在上述输入，前999步均贡献0，末步仅expert3贡献0.5，因而选中它。
+
+筛选顺序仍是最大下降量、最大当前历史总负载/副本数、最小编号；仍为逐份贪心，不保证全局最优。新增算法没有改`_batch_greedy_indices`的跨rank排布目标，也没有改用FP64。输入已经丢失的信息、每步相减及其他浮点归约仍有精度边界；[PyTorch数值说明](https://docs.pytorch.org/docs/2.9/notes/numerical_accuracy.html)也不保证数学等价表达式或CPU/GPU得到逐位相同结果。
+
+#### 三版本的原测试 CPU 对照
+
+复用[同一脚本](../../experiments/scripts/verify_deepinfer_eplb_window.py)的`--peak-gain-only`，Python3.12.13 / torch2.9.1 / pytest8.4.2，真实CPU张量。固定#212完整原测试和每版完整torch-only policy；只将`policy_device`的fixture decorator改为显式`params=["cpu"]`，避免原CUDA可用性表达式被执行，保留fixture函数体、其他参数化及全部断言。预加载叶子policy模块绕过DeepInfer父包，pytest关闭conftest及外部插件自动加载；不使用窗口、manager或设备运算替身。
+
+| 固定policy版本 | #212原测试CPU结果 | 长历史最终副本数 int32与FP32相同 |
+|---|---|---|
+| main `9bd9cf2` | 26过、6个预期AssertionError | `[2,1,1,1]` |
+| #191 `090e942` | 30过、2个预期AssertionError | `[1,2,1,1]` |
+| #212 `3b950eb` | 32全过 | `[1,1,1,2]` |
+
+main失败为并列热点2例、排布后热点1例、长历史两dtype及有理数oracle1例；#191仅长历史两例失败。脚本核对失败身份、异常类型和退出码，不改断言或标xfail。原oracle以Fraction直接枚举`{0,1,5000}`的全部729份两步三专家历史，每份核对连续6次贪心选择及映射；它没有搜索全局最优，且不是任意范围/全部dtype证明。另回归旧`--tied-allocation-only`，仍为#191原测试体32过/base27过5失败、128组有理数对照一致，不能把两套不同输入的“32项”混为同一套。
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python experiments/scripts/verify_deepinfer_eplb_window.py /path/to/DeepInfer --peak-gain-only
+```
+
+这是32个显式CPU参数例，没有收集CUDA项或运行设备探测；不是“44项原套件加12硬件skip”。权重shuffle、collective、完整模型和吞吐均不在结果内；若M5今后原任务确需采用此policy，设备dtype/归约和真实重排证据仍须独立确认，不为本次算法学习新增硬件队列或改移植方案。
+
+新增SHA256：#212 policy `b3bc8c4bf9b7c5cdbc5844897f123fe820dcd99c6c62ff834a1d31b108916969`；原测试 `be0398947d1780bd1bf2933b93c93534987fd9d31c2901d42410e49ed740fcec`。main/#191 policy身份同上节。
+
 ## 专家计数的来源与清零时序
 
 **expert_count是每层本地物理专家的路由接收工作量，不是请求数或已接受输出token数。** 以下固定DeepInfer基线774ce244的NVIDIA路径；本机checkout为8b161497，经Git diff确认两版本deepinfer/源码无差异。没有将Ascend替代后端或任意安装版本视作同一路径。
