@@ -13,6 +13,8 @@ GPU/NPU 的访问、环境与实验由 macbook-M5 Agent 负责。M1 遇到需要
 
 ## UniRL 联合路径的资源与身份边界
 
+AR熵参考（2026-10-23，不新增训练队列）：已有[#563](https://github.com/Tencent-Hunyuan/UniRL/pull/563)读取open，head`00e5597f6ff6de639d7997a2ea21266d688e9f72`、base/祖先`94e8f26b8768a3695b5985c2fa072e07d9dbfa0d`；[M1原调研](../notebook/frameworks/unirl-survey.md#全词表条件熵与有效-token-汇总)原LM-head/Linear夹具20组CPU局部梯度及纯指标聚合控制通过，11模块仅compile，无完整Qwen/replay/TrainStack/设备执行。作者另报Qwen3-0.6B `c1899de289a04d12100db370d81485cdf75e47ca`的A100/真实FSDP-Ray一次更新，外部harness非本机复跑。若M5今后已有获准匹配AR选题，可最小核同一响应/模型版本/T/mask下启闭监控的logp和梯度，再核真实DP分片/TP-SP副本的sum/count及rank返回；重复update计观察次数，greedy时T=1熵不当采样器熵。缺匹配权重/后端/mesh或需新部署/下载、干预专项即保留未测并停止，不自动应用、启训练或把此项认定#8250根因；记录非接单。
+
 原始block权重参考（2026-10-23，非新增训练任务）：已有[#593](https://github.com/Tencent-Hunyuan/UniRL/pull/593)为open draft，head`da8d285ac529c2f06819bf3a098e3cc657ae6618`、base/祖先`2d9e57fdee65ea69254fdb958d3fca9ce4872661`；[M1源码/CPU数学控制](../notebook/frameworks/unirl-survey.md#原始-block-权重训练与冻结外围)区分冻结外围与no_grad、原非重入helper、优化器参数过滤，未执行H3/FSDP/TrainStack/replay/恢复。作者原checkpoint `MiniMaxAI/MiniMax-H3@42ed227ee7df40d41602854ae760620d6eb651fe`的8×H100 80GB/256×384/124帧/10步/FP32 masters/resident VAE首次反向仍OOM，尚无成功原模型更新。若M5今后独立选择此方向，先核授权权重、精确配方/后端与训练峰值预算，再决定是否有条件做一次更新及固定状态恢复；需新权重/编译/扩卡/租用/offload设计或影响原专项则记录待条件并停止，不把CPU夹具、加载/生成成功或LoRA历史收益当本路线验收。不自动应用候选或改资源方案，本参考不表示接单。
 
 状态：待资源匹配与M5选题，非已接手或即时执行任务；不打断既有GPU/AReaL工作。目的：后续若获准推进UniRL真机，区分driver样本树接线与实际engine行为，避免把模板注释或静态源码当实测。

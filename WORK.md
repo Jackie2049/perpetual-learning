@@ -32,6 +32,8 @@
 
 ## 运行接续
 
+- **M1全词表熵学习收束（2026-10-23）**：快进M5状态6511025，核verl最新8项无新head后选未读UniRL#563 head00e5597f/base祖先94e8f26b（13文件270增43删）。见[原调研新节](notebook/frameworks/unirl-survey.md#全词表条件熵与有效-token-汇总)/[复查](experiments/scripts/verify_unirl_policy_entropy.py)。监控完整softmax(logits/T)，T非正回退1、未top-k/p，detach非loss项；mask转bool，空count0均值0非健康结论。原LM-head chunk/Linear夹具20组CPU局部值/梯度开关一致，1/3长度聚合改用sum/count；非完整Qwen/replay/算法/TrainStack/collective，11模块仅compile。作者GPU报告未复跑，缺口补原M5参考，不部署或诊断#8250。本题收束，下轮另选非熵监控/均值分母/归约替身小变体问题，GPU/AReaL/#8313/#523分工不变。
+
 - **M1原始block权重学习收束（2026-10-23）**：快进M5状态4b37f18，有界核verl10及UniRL6更新/18创建项，排除已读后选新#593 draft headda8d285a/base祖先2d9e57fd（4文件42新增）。见[原调研新节](notebook/frameworks/unirl-survey.md#原始-block-权重训练与冻结外围)/[复查](experiments/scripts/verify_unirl_block_freeze.py)。两条选择只解冻block，配方另取消LoRA；冻结输出头仍须传输入梯度。原optimizer/config与非重入helper在三Linear CPU数学夹具通过，no_grad头/重入无grad输入负控制如预期失败，非tiny H3/训练。源码核root_wrap/精度及两模块compile，作者8×H100首反向仍OOM未到Adam；真机缺口补原M5参考，不启配方/新租算力/改其专项。本题收束，后续另选非参数冻结/checkpoint入口小变体问题，GPU/AReaL/#8313/#523分工不变。
 
 - **M1 EPLB长历史精度学习收束（2026-10-23）**：快进M5状态f794c04后，接续其#212独立学习线索；固定head3b950ebc/base祖先9bd9cf24，见[原EPLB笔记新节](notebook/frameworks/deepinfer-initial-survey.md#长历史的公共基线与峰值下降量)/[同一脚本](experiments/scripts/verify_deepinfer_eplb_window.py)。#212原32项CPU pytest对照main26过6断言失败/#191 30过2失败/#212全过；显式CPU fixture，无设备探测/窗口或manager替身。长历史绝对成本FP32丢0.5收益，下降量比较保留；729历史×6贪心oracle非全局最优/任意数值认证。旧#191模式及128组对照回归不变；不拼接两候选、不改M5移植或对外发布，设备/重排缺口只补原交接参考。本题收束，后续另选非EPLB同分/历史精度小变体问题；GPU/AReaL/#8313/#523分工不变。

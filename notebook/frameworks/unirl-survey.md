@@ -816,6 +816,44 @@ python -B experiments/scripts/verify_unirl_block_freeze.py /path/to/UniRL
 
 源SHA256：bundle `9d7681dda134e5a38c1bd0b20c07330193ace5d93104250a9d542e92c847e0cc`；config `f84ce6b98089e73f49016b22a977f5b002192e1220f32df6c9d644c7a3b80864`；optimizer `a0f0fcf664da5049c1f3652d2e5f3fe1e469e721ea91c0b613294374f4a5da05`；wrap `0a0a6ec9f587b2ce7fe26f8bc759ca3a701ff1b9b67e769e19b476120ca5a915`。
 
+## 全词表条件熵与有效 token 汇总
+
+**一次采样的负log-prob不是该位置的全词表熵，微批均值的均值也未必是全局token均值。** [#563](https://github.com/Tencent-Hunyuan/UniRL/pull/563)（2026-10-23读取open）新增可选AR熵监控。固定head `00e5597f6ff6de639d7997a2ea21266d688e9f72`、base/实际祖先 `94e8f26b8768a3695b5985c2fa072e07d9dbfa0d`，ahead3/behind0；13文件270增43删，无提交测试。本节是已有方案的源码学习，不是本项目新增修复或对熵坍塌故障的定性。
+
+### 监控哪个分布
+
+[Qwen3 replay](https://github.com/Tencent-Hunyuan/UniRL/blob/00e5597f6ff6de639d7997a2ea21266d688e9f72/unirl/models/qwen3/ar.py)在原LM-head分块内对输出先`.float()`再除以温度，求`p = softmax(logits/T)`，以`sum(entr(p))`计算完整词表条件熵，单位nats。`entr(0)=0`可处理softmax下溢的零概率，不需用`0*log(0)`；这不修复非有限logits。[PyTorch entr定义](https://docs.pytorch.org/docs/2.9/special.html#torch.special.entr)
+
+正温度沿用sampling_temperature，否则回退T=1；没有应用top-k/top-p截断。因此greedy rollout时该指标可以非零，它不是确定性采样器的熵。对二元`p=(.9,.1)`，条件熵约0.325083，而采到第一项的surprisal仅0.105361；只有在同一分布下取适当期望时，二者才有熵的关系，不能把单次选择或另一rollout分布的样本均值直接当完整词表求和。
+
+`_categorical_entropy`使用`no_grad`，结果detach后作为`ReplayResult.entropy`返回；原log-prob仍走训练图，`ReplayResult.logits`不因此被填充。GRPO/GSPO/DPPO/DRPO/CPPO/PPO的`monitor_entropy`默认false，开启才请求额外字段，不添加entropy loss。仅输出每token标量不等于没有词表临时量：每块仍多做全词表softmax/entr，开销与词表、块形状及后端有关，不能外推作者短序列时延为普遍零成本。外层replay及其chunk checkpoint循环本机未执行。
+
+### 分母是有效位置的观察次数
+
+[原metric helper](https://github.com/Tencent-Hunyuan/UniRL/blob/00e5597f6ff6de639d7997a2ea21266d688e9f72/unirl/algorithms/base.py)接收packed response entropy，对`loss_mask`转bool筛位置；None表示全部位置，包含实际存在的EOS。mask不是软权重：非零浮点值也转True。prompt/padding由replay布局排除，tool等位置由原mask控制，不能把helper视为独立核验数据身份的入口。
+
+每个微批保留`policy_entropy_sum`及`policy_entropy_count`，mean为sum/count；空响应或全False mask的sum/count均0，mean用0占位，不表示观察到确定性策略。masked_fill去掉非活跃NaN/Inf，活跃NaN仍传播，不是健康认证或异常修复。[原聚合器](https://github.com/Tencent-Hunyuan/UniRL/blob/00e5597f6ff6de639d7997a2ea21266d688e9f72/unirl/utils/metrics.py)仅对这两个键求和并重算mean，其他普通数值键仍按原均值规则处理。
+
+本机合成微批共用4词表：一枚位置在前两项均匀，熵ln2；另三枚位置全词表均匀，熵ln4。对同样的两份字典，旧通用聚合器等权mean为1.039720774；新聚合器sum=4.852030277、count=4，token mean为1.213007569，分层聚合一致。这是给旧/新聚合函数同样新增指标字典的对照，不代表base原本已有此熵监控入口或完整训练bug已复现。
+
+`TrainStack`在微批结束后以两次stack/tolist搬回sum/count，再交原backend的loss-reduction mesh求和；当rank_info存在时，仅TP rank0、SP rank0且pipeline最后阶段贡献，其他副本置零。CPU字典检查不认证真实mesh/副本去重。跨optimizer updates汇总时，同一数据位置在不同策略版本下会再次计数：结果是各次条件熵观察的加权平均，不是唯一语料token计数，也不是平均策略分布的熵。
+
+### 本机局部复查与真机范围
+
+[复查脚本](../../experiments/scripts/verify_unirl_policy_entropy.py)固定本地Git对象、禁止隐式fetch；Python3.12.13 / torch2.9.1，全部显式CPU。AST原样选择两个LM-head chunk函数、原温度赋值、entropy和metric helper；完整原ReplayResult与base/head metrics模块执行。LM-head采用声明的Linear数学夹具，不伪装Qwen backbone，不运行含CUDA探测的外层forward或补模型替身。
+
+- FP32/BF16 × T=-2/0/.5/1/2 × flat/padded两种chunk形状，共20组：监控开关前后log-prob、输入及Linear参数局部梯度逐位相同，entropy为detach FP32；另对实际head输出的FP64全词表参考，以atol/rtol=3e-7核对。
+- mask转bool、detach、空/全masked归零、活跃NaN传播、类型/缺字段/两类形状错误的4项拒绝均符合原helper；未更改断言或soft-fail。
+- 1/3长度微批的加权与分层聚合结果如上；11个改动Python完整模块仅内存compile，不把这项检查当成六种完整算法或原作者测试通过。
+
+```bash
+python -B experiments/scripts/verify_unirl_policy_entropy.py /path/to/UniRL
+```
+
+两次执行一致。没有Qwen模型、packed/padded外层replay、checkpoint循环、loss/optimizer、FSDP/TrainStack/Ray、TP/SP/DP collective或GPU/NPU运行，也未安装依赖。作者另报tiny L4、Qwen3-0.6B单/双A100与Ray/FSDP一次更新证据，原harness在仓库外；这些不是本项目复跑，也不覆盖ARTrainer的完整rollout/reward/sync循环或VeOmni。后续真机核对仅补[原M5参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不部署候选或把它当#8250根因诊断。
+
+SHA256：Qwen3 ar `49557b0cf37b0823940307531f99efa2505242411492b2fe506f5f14387e5972`；metric helper所在base `da4a741a0315c0ad8f530c7952593c8bade2bdaffffcb9e68730af527d306b30`；新metrics `2897870ce27577033b2d7963df9dbc71178fef3a523b53924d786172ae585626`，旧metrics `f19ac2211065ea4927927648a3ec108ecb5b1b7bd7e8f1d3b73dd3ef198beab9`。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。

@@ -120,6 +120,7 @@
   - [奖励能力与模型加载](unirl-survey.md#奖励能力校验与模型加载)：#621将本地模型物化延后到服务校验之后；非按请求懒加载/资源事务，managed子进程仍在构造时启动，仅源码与两版语法核对。
   - [Omni原生IPC副本与导出](unirl-survey.md#omni-原生-ipc-的副本与导出边界)：#617全rank物化、逐卡TP1发布；结构hash非内容校验。原元数据/CPU视图检查通过，非CUDA导出/IPC或Qwen模型验收。
   - [原始block权重与冻结外围](unirl-survey.md#原始-block-权重训练与冻结外围)：#593保持分片/混合精度边界；冻结头仍传输入梯度，原optimizer与非重入helper的CPU数学控制通过，作者8×H100首反向仍OOM，非H3训练验收。
+  - [全词表熵与有效token汇总](unirl-survey.md#全词表条件熵与有效-token-汇总)：#563 replay条件熵非采样器熵/entropy loss；20组原LM-head局部CPU梯度与加权聚合控制，非Qwen/分布式验收。
 
 ## verl
 
