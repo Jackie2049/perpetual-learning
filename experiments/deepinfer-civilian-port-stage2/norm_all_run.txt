@@ -1,0 +1,16 @@
+.........s.....................s........................................ [ 16%]
+.....................................................................s.. [ 33%]
+...................s.................................................... [ 50%]
+........................................................................ [ 67%]
+........................................................................ [ 83%]
+....................................sssssssssssssssssssssssssssssssss    [100%]
+=============================== warnings summary ===============================
+deepinfer/model_executor/layers/tilelang_ops/norm.py: 942 warnings
+  /home/zxw/miniconda3/envs/deepinfer-smoke/lib/python3.12/site-packages/tilelang/language/tir/op.py:404: DeprecationWarning: T.reinterpret(dtype, value) is deprecated, use reinterpret(value, dtype) instead
+    deprecated_warning("T.reinterpret(dtype, value)", "reinterpret(value, dtype)")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== GPU Memory Auto-Classification ========================
+429 test(s) have no GPU memory profile and were conservatively classified as large_gpu_mem (Stage 2).
+Run pytest with '--refresh-mem' to measure and record their actual GPU memory usage.
+392 passed, 37 skipped, 942 warnings in 63.03s (0:01:03)

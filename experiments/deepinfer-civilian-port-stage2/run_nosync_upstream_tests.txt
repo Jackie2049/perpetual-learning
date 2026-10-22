@@ -1,0 +1,82 @@
+device=NVIDIA GeForce RTX 4090 capability=(8, 9)
+patched 43 ops.<x>_tl -> nosync variants
+
+==== FAILED 列表（67 项）====
+FAILED deepinfer/model_executor/layers/tilelang_ops/candidate_blocks.py::test_candidate_block_max[6777-8]
+FAILED deepinfer/model_executor/layers/tilelang_ops/candidate_blocks.py::test_candidate_block_max[6777-16]
+FAILED deepinfer/model_executor/layers/tilelang_ops/fused_transform.py::test_fused_norm_rope_hadamard_cast_store_kvcache[norm-bf16-out-h128-d512-sn73728-n2333]
+FAILED deepinfer/model_executor/layers/tilelang_ops/fused_transform.py::test_fused_norm_rope_hadamard_cast_store_kvcache[norm-rope-bf16-out-h128-d512-r64-sn73728-n32769]
+FAILED deepinfer/model_executor/layers/tilelang_ops/fused_transform.py::test_fused_norm_rope_hadamard_cast_store_kvcache[norm-rope-e4m3-g32-sf-ue8m0-e4m3-main-b64-return-norm-h1-d512-r64-cbs279840-n8193]
+FAILED deepinfer/model_executor/layers/tilelang_ops/fused_transform.py::test_fused_norm_rope_hadamard_cast_store_kvcache[norm-rope-e2m1-g16-sf-e4m3-e2m1-main-b128-return-norm-h1-d512-r64-n8193]
+FAILED deepinfer/model_executor/layers/tilelang_ops/fused_transform.py::test_fused_norm_rope_hadamard_cast_store_kvcache[norm-rope-e2m1-g16-sf-e4m3-e2m1-main-b64-return-norm-h1-d512-r64-n8193]
+FAILED deepinfer/model_executor/layers/tilelang_ops/fused_transform.py::test_fused_norm_rope_hadamard_cast_store_kvcache[norm-rope-e4m3-g32-sf-ue8m0-e4m3-main-b128-continuous-slots-return-norm-h1-d512-r64-2d-n8193]
+FAILED deepinfer/model_executor/layers/tilelang_ops/fused_transform.py::test_fused_norm_rope_hadamard_cast_store_kvcache[norm-rope-e4m3-g32-sf-ue8m0-e4m3-main-b128-cross-page-slots-return-norm-h1-d512-r64-2d-n8193]
+FAILED deepinfer/model_executor/layers/tilelang_ops/fused_transform.py::test_fused_norm_rope_hadamard_cast_store_kvcache[norm-rope-e4m3-g32-sf-ue8m0-e4m3-main-b128-invalid-slots-return-norm-h1-d512-r64-2d-n8193]
+FAILED deepinfer/model_executor/layers/tilelang_ops/fused_transform.py::test_fused_norm_rope_hadamard_cast_store_kvcache[norm-rope-e2m1-g16-sf-e4m3-e2m1-main-b128-continuous-slots-return-norm-h1-d512-r64-2d-n8193]
+FAILED deepinfer/model_executor/layers/tilelang_ops/fused_transform.py::test_fused_norm_rope_hadamard_cast_store_kvcache[norm-rope-e2m1-g16-sf-e4m3-e2m1-main-b128-cross-page-slots-return-norm-h1-d512-r64-2d-n8193]
+FAILED deepinfer/model_executor/layers/tilelang_ops/fused_transform.py::test_fused_norm_rope_hadamard_cast_store_kvcache[norm-rope-e2m1-g16-sf-e4m3-e2m1-main-b128-invalid-slots-return-norm-h1-d512-r64-2d-n8193]
+FAILED deepinfer/model_executor/layers/tilelang_ops/gather.py::test_gather[False-False-262144-8192-262144]
+FAILED deepinfer/model_executor/layers/tilelang_ops/gather.py::test_gather[False-False-131072-14336-131072]
+FAILED deepinfer/model_executor/layers/tilelang_ops/gather.py::test_gather[False-False-129280-14336-16384]
+FAILED deepinfer/model_executor/layers/tilelang_ops/gather.py::test_gather[False-True-262144-4096-262144]
+FAILED deepinfer/model_executor/layers/tilelang_ops/gather.py::test_gather[False-True-65536-8192-65536]
+FAILED deepinfer/model_executor/layers/tilelang_ops/gather.py::test_gather[False-True-262144-8192-262144]
+FAILED deepinfer/model_executor/layers/tilelang_ops/gather.py::test_gather[False-True-131072-3584-131072]
+FAILED deepinfer/model_executor/layers/tilelang_ops/gather.py::test_gather[False-True-131072-14336-131072]
+FAILED deepinfer/model_executor/layers/tilelang_ops/gather.py::test_gather[False-True-129280-14336-16384]
+FAILED deepinfer/model_executor/layers/tilelang_ops/gather.py::test_gather[True-False-262144-8192-262144]
+FAILED deepinfer/model_executor/layers/tilelang_ops/gather.py::test_gather[True-False-131072-3584-131072]
+FAILED deepinfer/model_executor/layers/tilelang_ops/gather.py::test_gather[True-False-131072-14336-131072]
+FAILED deepinfer/model_executor/layers/tilelang_ops/gather.py::test_gather[True-False-129280-14336-16384]
+FAILED deepinfer/model_executor/layers/tilelang_ops/gather.py::test_gather[True-True-131072-2048-131072]
+FAILED deepinfer/model_executor/layers/tilelang_ops/gather.py::test_gather[True-True-262144-8192-262144]
+FAILED deepinfer/model_executor/layers/tilelang_ops/gather.py::test_gather[True-True-131072-3584-131072]
+FAILED deepinfer/model_executor/layers/tilelang_ops/gather.py::test_gather[True-True-131072-14336-131072]
+FAILED deepinfer/model_executor/layers/tilelang_ops/gather.py::test_gather[True-True-129280-14336-16384]
+FAILED deepinfer/model_executor/layers/tilelang_ops/norm.py::test_norm[4096-True-npc128r]
+FAILED deepinfer/model_executor/layers/tilelang_ops/norm.py::test_norm[4096-True-npc128rp]
+FAILED deepinfer/model_executor/layers/tilelang_ops/norm.py::test_norm[4096-True-npc128c]
+FAILED deepinfer/model_executor/layers/tilelang_ops/norm.py::test_norm[4096-True-npc128cr]
+FAILED deepinfer/model_executor/layers/tilelang_ops/norm.py::test_norm[4096-True-npc128crp]
+FAILED deepinfer/model_executor/layers/tilelang_ops/norm.py::test_norm[4096-True-npc32crp-bf16out]
+FAILED deepinfer/model_executor/layers/tilelang_ops/norm.py::test_norm[4096-True-npc128crp-bf16out]
+FAILED deepinfer/model_executor/layers/tilelang_ops/norm.py::test_norm[4096-True-npc32rp-bf16out-buf]
+FAILED deepinfer/model_executor/layers/tilelang_ops/norm.py::test_norm[4096-True-npc32rp-shared16-bf16out-buf]
+FAILED deepinfer/model_executor/layers/tilelang_ops/norm.py::test_norm[4096-True-npc32rp-shared192-bf16out-buf]
+FAILED deepinfer/model_executor/layers/tilelang_ops/norm.py::test_norm[4096-True-npc32crp-shared16-bf16out-buf]
+FAILED deepinfer/model_executor/layers/tilelang_ops/norm.py::test_norm[4096-True-npc32crp-shared192-bf16out-buf]
+FAILED deepinfer/model_executor/layers/tilelang_ops/norm.py::test_norm[4096-True-npc32r-shared16-bf16out-buf]
+FAILED deepinfer/model_executor/layers/tilelang_ops/norm.py::test_norm[4096-True-npc32r-shared192-bf16out-buf]
+FAILED deepinfer/model_executor/layers/tilelang_ops/norm.py::test_norm[5120-False-bf16]
+FAILED deepinfer/model_executor/layers/tilelang_ops/norm.py::test_norm[5120-False-bf16-bf16out]
+FAILED deepinfer/model_executor/layers/tilelang_ops/norm.py::test_norm[5120-False-bf16-buf]
+FAILED deepinfer/model_executor/layers/tilelang_ops/norm.py::test_norm[5120-False-npc32]
+FAILED deepinfer/model_executor/layers/tilelang_ops/norm.py::test_norm[5120-False-npc32r]
+FAILED deepinfer/model_executor/layers/tilelang_ops/norm.py::test_norm[5120-False-npc32rp]
+FAILED deepinfer/model_executor/layers/tilelang_ops/norm.py::test_norm[5120-False-npc32crp]
+FAILED deepinfer/model_executor/layers/tilelang_ops/norm.py::test_norm[5120-False-npc128]
+FAILED deepinfer/model_executor/layers/tilelang_ops/norm.py::test_norm[5120-False-npc128r]
+FAILED deepinfer/model_executor/layers/tilelang_ops/norm.py::test_norm[5120-False-npc128rp]
+FAILED deepinfer/model_executor/layers/tilelang_ops/norm.py::test_norm[5120-False-npc128c]
+FAILED deepinfer/model_executor/layers/tilelang_ops/norm.py::test_norm[5120-False-npc128cr]
+FAILED deepinfer/model_executor/layers/tilelang_ops/norm.py::test_norm[5120-False-npc128crp]
+FAILED deepinfer/model_executor/layers/tilelang_ops/random_sampling.py::test_random_sampling[sparse-129280-4096]
+FAILED deepinfer/model_executor/layers/tilelang_ops/random_sampling.py::test_random_sampling_tiny_prob
+FAILED deepinfer/model_executor/layers/tilelang_ops/random_sampling.py::test_random_sampling_batch_invariant[129280-4096]
+FAILED deepinfer/model_executor/layers/tilelang_ops/sampler.py::test_remap_draft_topk[256-64]
+FAILED deepinfer/model_executor/layers/tilelang_ops/sampler.py::test_remap_draft_topk[256-1024]
+FAILED deepinfer/model_executor/layers/tilelang_ops/sampler.py::test_remap_draft_topk[256-4096]
+FAILED deepinfer/model_executor/layers/tilelang_ops/sampler.py::test_remap_draft_topk[1536-64]
+FAILED deepinfer/model_executor/layers/tilelang_ops/sampler.py::test_remap_draft_topk[1536-1024]
+FAILED deepinfer/model_executor/layers/tilelang_ops/sampler.py::test_remap_draft_topk[1536-4096]
+
+67 failed, 1134 passed, 4 skipped, 469 deselected, 1418 warnings in 2366.22s (0:39:26)
+
+==== 代表性 OOM ====
+E       torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 3.31 GiB. GPU 0 has a total capacity of 23.52 GiB of which 2.36 GiB is free. Including non-PyTorch memory, this process has 21.15 GiB memory in use. Of the allocated memory 20.69 GiB is allocated by PyTorch, and 17.95 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)
+
+==== 代表性 AssertionError ====
+E           AssertionError: assert False
+
+==== 代表性 InternalError ====
+E   tvm.error.InternalError: Failed to set the allowed dynamic shared memory size to 103424

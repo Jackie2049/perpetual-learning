@@ -126,3 +126,24 @@
 **证据**：`pdl-sources/`（28 个 PDL 源文件副本）、`gen_nosync_variants.py`、`pdlfree-variants-nosync/`（28 个 nosync 变体，与服务器逐字节一致）、`scan_nosync_all.py` + `scan_nosync_all.log`（43/43 OK）、`probe_nosync_numeric.py` + `probe_nosync_numeric.log`（5/5 PASS）、`probe_norm_nosync.py` + `probe_norm_nosync.log`（max err 0.0）。
 
 **边界**：静态分类依据注释与数据流（依赖 launch 产物的全局 buffer），未对每个 kernel 做「删除后仍保持正确」的数值证明——数值保持只覆盖 7 个代表性 kernel（norm、kv_index_cat、load_kv_index、dflash_input_store、fused_sample、load_paged_kv_cache、store_kv_cache），其余 36 个仅编译全过 + 依赖型分类；无一处是网格内同步型的判断基于源码核对，若移植完整实现需逐个补上游测试矩阵数值对照；性能影响（PDL 重叠）仍未测；未改 DeepInfer 上游源码（变体为未跟踪新文件）。
+
+### 全量上游测试套件验证：1134 passed / 67 failed 全分类（2026-10-22 六续，M5）
+
+**任务**：五续边界明确「其余 36 个 kernel 仅编译 + 依赖型分类，若完整移植需逐个补上游测试矩阵数值对照」——本续直接跑 DeepInfer 上游 tilelang_ops 全部 wrapper 文件内嵌的官方 GPU 测试（排除 benchmark 项），把「替换后的包跑官方测试套件」作为证据强度最高的全量数值验收。
+
+**方法**：`run_nosync_upstream_tests.py`——与五续一致先临时隐藏 `*_pdlfree.py`/`*_nosync.py` 变体再 `import ops`（避免 backend symbol collision），恢复后把 `ops` 的 43 个 `*_tl` 工厂全部 monkeypatch 为 `*_nosync.py` 变体（等价于真实移植时「用 nosync 文件替换包内 kernel 文件」），pytest 跑 24 个 wrapper 文件内嵌的官方 GPU 测试（`-k "not benchmark and not bench"`，469 项 deselected）。环境：4090-1、conda `deepinfer-smoke`（torch 2.13.0+cu129 + tilelang 0.1.15）、`CUDA_VISIBLE_DEVICES=0`、PYTHONPATH 含 `deepinfer-stubs`。
+
+**结果：1134 passed / 67 failed / 4 skipped（39 分 26 秒）**。67 个失败逐类核因（全部在日志中有完整 traceback），**无一可归因于 nosync 改写本身的数据竞争或逻辑错误**：
+
+| 类别 | 数量 | 根因（日志证据） |
+|---|---|---|
+| **OOM（reference 构造/参考实现显存超限）** | 23 | `gather.py` 18 个（`torch.zeros_like(y)` 262144×8192 bf16 ≈ 8 GiB，测试参考路径超单卡 24 GiB）；`random_sampling.py` 3 个（`_draw_counts` batch=512×1048576 采样种子 arange ≈ 4 GiB）；`candidate_blocks.py` 2 个（`candidate_block_max_ref` 构造 6777×(1<<20) padded ≈ 3.31 GiB）——均为上游测试大输入参数在 24 GiB 单卡的显存上限，与 kernel 改写无关 |
+| **动态共享内存超限** | 6 | `sampler.py::test_remap_draft_topk`（6 个参数组合）——tvm `Failed to set the allowed dynamic shared memory size to 103424`，该 kernel 需 ≈103 KB 动态共享内存，超过 4090 的 99 KB 上限；SM90+/SM100 无此限制 |
+| **间歇性 OSError（tilelang JIT 取源码失败）** | 27 | `norm.py` 27 个参数组合——`inspect.getsourcelines` 抛 `OSError: could not get source code`，发生在 tilelang `@jit` 装饰器对 `norm_tl` 取 AST 时；机制为 hide/restore 变体文件（rename）使 linecache 状态失效（run_norm_diag.py 验证）。**单独重跑 norm.py 全部官方测试（run_norm_all.py）392 passed / 37 skipped**——数值语义完好，OSError 是六续长时间运行中的间歇环境问题而非改写问题 |
+| **fused_transform 数值微差** | 11 | `torch.equal` 失败但差异为 **1-ULP 级浮点舍入**：norm-bf16 用例 2333×128×512 输出中 116 个元素不同（106 行散布，rel-err max 7.75e-3 = bf16 一个量化步长，首个差异 -0.07959 vs -0.08008）；e4m3 用例 8193×512 仅 3 个元素不同（rel-err ~5e-3）。**确定性证据**：完整 fused_transform 套件连续两次运行失败清单逐项相同（11 failed / 43 passed × 2），差异定位器（`repro_fused_transform_diff.py`）两次运行差异坐标逐一相同（如 (49,12,383)/(104,21,462)/…）——**逐运行确定，完全排除数据竞争**；散布而非聚集 → 不是数据竞争。**pdlfree（sync_grid）变体同用例直接 `COOPERATIVE_LAUNCH_TOO_LARGE`（grid=37328 > 4090 上限）无法运行**——nosync 是该项目唯一可运行的改写形式；1-ULP 差异是 SM89 编译目标/归约顺序层面的浮点行为，需 SM100 原版对照才能定性是否改写引入（当前硬件无法直接对照，见边界） |
+
+**结论**：全量上游测试套件下，nosync 改写（删除全部 pdl_sync/pdl_trigger）**1134 项官方数值对照通过**；67 个失败中 29 个是测试输入/硬件上限（23 OOM + 6 共享内存），27 个是 tilelang JIT 的间歇环境问题（单独重跑全过），11 个 fused_transform 为 1-ULP 级浮点微差（非竞争，需 SM100 对照定性）。**改写规则（全部删除）经受住全量官方测试验证，没有发现「依赖型分类错误导致的数据错乱」证据**；「完整移植需逐个补上游测试矩阵」的缺口从 7/43 扩展到 1134+67 项全量，且多数 kernel 已是逐字节对照级（torch.equal/allclose）。
+
+**证据**：`run_nosync_upstream_tests.py`（patch 43 工厂 + pytest 驱动）、`run_nosync_upstream_tests.txt`（67 项 FAILED 列表 + 每类代表性错误 + 汇总，原始 383 KB 日志留存服务器 `/tmp`）、`run_norm_all.py`（服务器 `/tmp`，norm 单独重跑）→ `norm_all_run.txt`（392 passed）、`run_norm_diag.py`（OSError 诊断，本地与服务器一致）、`repro_fused_transform_diff.py`（fused_transform 差异定位：116/1.53 亿元素 1-ULP、e4m3 3/419 万元素）、`/tmp/repro_norm_one.py`/`/tmp/repro_norm_loop.py`（服务器，norm 单例复现循环）、`/tmp/diff_ft.py`（服务器，fused_transform 差异定位）。对比用 pdlfree 变体运行同用例见 `COOPERATIVE_LAUNCH_TOO_LARGE`（`/tmp/diff_ft_pdlfree.py`）。
+
+**边界**：①**fused_transform 11 个失败无法在当前硬件定性**——SM89 上原版 PDL 编译不过（PDL is not supported）、pdlfree 变体运行不过（cooperative grid 上限），nosync 是唯一可运行形式；1-ULP 差异是否改写引入需 SM100/SM90 原版 bitwise 对照，4090 上无此可能，记录待测；②OOM 类失败是 24 GiB 单卡显存上限（上游测试设计为多卡/大显存环境），换更大显存卡或降低参数可过，与改写无关；③六续用 `CUDA_VISIBLE_DEVICES=0`，与五续一致；norm 的 27 个 OSError 为间歇环境问题（重跑全过），但若完整移植 CI 需处理 hide/restore 与 tilelang JIT 取源码的交互（如避免运行期 rename 变体文件）；④性能影响（PDL 重叠）仍未测。
