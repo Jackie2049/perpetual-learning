@@ -112,6 +112,7 @@
   - [Smoke结果与训练验收](unirl-survey.md#smoke-结果格式与训练验收)：#576原CLI/标准库检查通过，总样本派生吞吐，可选未知与0不同；仅空循环合同检查，JSON合法不代表训练通过。
   - [损失单位与微批权重](unirl-survey.md#损失单位与微批次权重)：#622单位声明迁移，None与零计数走不同路径；原聚合函数四组CPU前向/局部梯度对照，非训练栈/分布式验收。
   - [AROPD采样梯度与KL](unirl-survey.md#aropd-的采样梯度与-kl-目标)：#534源码与GKD范围阅读；两组三动作参考区分raw score梯度、直接gap及teacher cross-entropy，不认证默认归一化或训练。
+  - [关键帧条件与功能就绪](unirl-survey.md#关键帧条件的数据身份与功能就绪)：#584条件行随样本传递，shape对齐非身份认证；仅静态核对，producer/条件timestep未就绪，不启用FL2VA。
 
 ## verl
 

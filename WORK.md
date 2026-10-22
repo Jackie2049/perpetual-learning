@@ -24,6 +24,8 @@
 
 ## 运行接续
 
+- **M1关键帧条件学习收束（2026-10-22）**：只读UniRL#584 head55a3cad3/baseaccba010（祖先c7c6b8c0），6文件125增22删；见[原调研](notebook/frameworks/unirl-survey.md#关键帧条件的数据身份与功能就绪)。关键帧fp32 noised rows/anchors/未padding tags随样本传到generate/replay/NFT forward，只返回target velocity；混合批空条目不能漏成缺项，shape对齐非数据身份。9模块compile、条件时间AST/文本pipeline字节未变静态核对通过，无parity/loss/模型执行；producer未接、scalar/vector条件timestep未改，README禁止启FL2VA。缺口及时补[原M5 UniRL入口](experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，先待功能前提，不开设备任务/改作者方案。本题收束，后续另选非条件槽/关键帧/UID/归约替身新问题；GPU/AReaL/#8313与外部写入边界不变。
+
 - **M1 V1可变行调度学习收束（2026-10-22）**：只读新verl#8201 heade891fd81/base18cfb748（祖先2035f58d），V1按源UID数定义优化mini-batch，GCD prompt单元逐个补行，global_mini_batch_sizes原样传worker；见[原GRPO笔记](notebook/frameworks/verl-grpo-source-reading.md#v1-源-prompt-单位与可变轨迹行)。同UID同全局优化批非同DP rank，旧PrefixGrouper helper AST未改，不混用同卡约束。12项原纯配置/layout检查与8模块compile通过，原测试/TQ/controller/worker/设备未跑；缺依赖不加stub，未外推32卡旧benchmark。真机缺口补[M5待条件参考](experiments/handoff-m5.md#verl-v1-可变行布局参考)，不另排队/采用/开训练。本题收束，后续另选非UID/微批/归约替身问题；GPU/AReaL/#8313与外部主仓库边界不变，main正常同步。
 
 - **M1 ModelOpt忽略学习收束（2026-10-22）**：同步M5的251920b及新候选/部署说明d1e8353/d28d673，不改其方案。只读新verl#8329 head5c7e2d2e/base16ec093c（祖先f2923cbf），仅3行生产新增；见[原量化笔记](notebook/frameworks/verl-quant-layer-audit.md#modelopt-模块忽略与子量化器)。原helper两版各11组名称集合+空列表通过，4模块compile；缺ModelOpt/CT，不运行原34或加stub。key.*关闭后代且保留直接叶子，alias非通用翻译；refit字节相等不证明actor无fake quant。原测试/作者H100报告分开，真机缺口补[原M5量化条目](experiments/handoff-m5.md#verl-量化层审计新版复验)，不另排队/应用/开训练。本题收束，后续选择非ignore/量化替身新问题；GPU/AReaL/#8313边界不变，正常同步main、无手动网站构建或部署。

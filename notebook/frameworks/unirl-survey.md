@@ -464,6 +464,66 @@ Python3.12.13 / torch2.9.1，显式 CPU，无包壳、模型或依赖安装。**
 
 作者报告的6×H20训练早于该 head 的 anchor/单位接线 rebase，正文明确未在 rebase 后复跑 GPU；其 CPU harness 也有模型 forward 替身，不当作本机结果。此处只保存理论限定与学习证据，不改上游、发布审查结论/候选、启动 teacher 实验或新增 M5 必跑事项。
 
+## 关键帧条件的数据身份与功能就绪
+
+**rollout和replay读到同一份条件数据，是概率比较的前提之一；消费接口存在却不等于关键帧生成功能已能启用。** 2026-10-22只读已有[#584](https://github.com/Tencent-Hunyuan/UniRL/pull/584)，读取时open，固定head `55a3cad3e934cb0e637d8f3cf1c37d2a91886891`、目标base `accba01082115534e8b60d849e7276a636eba269`、merge-base `c7c6b8c0e0c60db7205d9b81fdafca778c747ece`。6文件125增22删，全部在MiniMax-H3模型包，无提交测试文件。FL2VA指首帧、末帧或首末帧条件的视频/音频生成；本候选仅实现路线图的消费端step1a。
+
+### 条件行不等于原始图像或目标轨迹
+
+[`MiniMaxH3KeyframeCondition`](https://github.com/Tencent-Hunyuan/UniRL/blob/55a3cad3e934cb0e637d8f3cf1c37d2a91886891/unirl/models/minimax_h3/conditions.py)按样本保存3个对齐列表：已经加噪的fp32 rows、anchors和未padding的text_token_tags。rows不是待读取的图片路径，也不由replay重新编码/抽噪。模型latent通道24、patch为(1,2,2)，故每行宽96；rows_per_frame由目标画布latent高宽除patch尺寸后相乘。
+
+| 样本/批形态 | keyframes表示 | 必须保留的边界 |
+|---|---|---|
+| 纯文本生成批 | 全批keyframes=None | 使用原t2va布局 |
+| 带关键帧的混合批中的文本样本 | anchors=()、fp32 rows形状[0,96]、全text tags | 是一个空条目，不是省略该样本 |
+| 首帧或末帧条件 | anchors=(first,)或(last,)，rows为[R,96] | 标签长度对应去padding后的文本 |
+| 首末帧条件 | anchors=(first,last)，rows为[2R,96] | 顺序和每样本对应关系不能只靠形状推定 |
+
+R表示rows_per_frame。[build_layout](https://github.com/Tencent-Hunyuan/UniRL/blob/55a3cad3e934cb0e637d8f3cf1c37d2a91886891/unirl/models/minimax_h3/packing.py)核对batch-1、合法anchor元组、long型0/1 tags及长度、fp32 rows形状；空anchors必须全text tag。条件容器另核3列表等长，以及keyframes样本数等于text样本数。它们是结构检查，不认证某行确属对应rollout样本、图像内容或随机噪声。
+
+通用[Batch拼接](https://github.com/Tencent-Hunyuan/UniRL/blob/55a3cad3e934cb0e637d8f3cf1c37d2a91886891/unirl/distributed/tensor/batch.py)对字典key取并集后递归处理：其他项已有值时，非零行项缺少key会报错；零行项可以缺省。这项保护来自已合入的通用规则，不是本PR重新实现。否则将3份关键帧条目与4份文本行对齐，后续样本可能整体错位。混合批要为每个真实样本提供条目，不能用“这个样本没有关键帧”作为删掉一项的理由。
+
+`trim_text_padding`改用dataclasses.replace，仅替换text字段、保留keyframes等槽，避免重建只含text的容器时丢条件。tags本来就应未padding，不能跟着已padding文本长度生成。保留字段并不让可变tensor/list成为不可变快照；运输/切片/训练对齐还需保证实际payload没有被换样本或转低精度，结构guard不是字节身份校验。
+
+### 条件参与前向但不变成待评分目标
+
+三个入口generate、replay和predict_noise_at_step都经相同的[`predict_noise`](https://github.com/Tencent-Hunyuan/UniRL/blob/55a3cad3e934cb0e637d8f3cf1c37d2a91886891/unirl/models/minimax_h3/diffusion.py)：将携带rows stack后搬到目标device，放在video_sample前，再调用transformer；返回时裁掉前面的condition video velocity，只将target video/audio送回下游。NFT的clean latents则由segment末态video/audio打包，不把条件行附到目标上。本轮未执行NFT loss，不能由forward形状正确推断训练正确。
+
+联合音视频replay还要求segment.aux_latents，不能只凭视频轨迹和关键帧恢复整个前向。在[batched replay](https://github.com/Tencent-Hunyuan/UniRL/blob/55a3cad3e934cb0e637d8f3cf1c37d2a91886891/unirl/models/types/batched_replay.py)中，多step tile通过 `type(conditions).concat([conditions] * S)`复制条件，再送predict_av_noise；因此条件数据和目标状态的sample/step排列必须一起核对，不能只对最终log-prob均值。
+
+直观地，比较同一转移的条件概率时，分子与分母需要对应同一已实现的条件c；若训练时重抽条件噪声得到c'，它就不再只是“在相同输入上换一套策略参数”。这是条件身份的解释，不是本轮对某个SDE核或NFT目标的数学/数值验收。README所述diffusers/vLLM-Omni噪声与第二帧resize差异，是作者的实现对照；本机未审这两条外部生成路径。
+
+### 仍有两个启用前提
+
+固定head的[pipeline.generate](https://github.com/Tencent-Hunyuan/UniRL/blob/55a3cad3e934cb0e637d8f3cf1c37d2a91886891/unirl/models/minimax_h3/pipeline.py)仍仅构造 `MiniMaxH3Conditions(text=...)`，与目标base逐字节相同；它没有本PR所需的keyframe编码、conditioner prompt和数据producer。类型导出/下游接线不能算实际用户请求已到达关键帧路径。
+
+`row_timestep_plan`的base/head AST也相同：标量分支将condition_video_timestep设为target video_t=1−sigma；向量分支先将所有行填video_t，再只改audio target列。两条分支都未给条件帧独立的近clean timestep。[候选README](https://github.com/Tencent-Hunyuan/UniRL/blob/55a3cad3e934cb0e637d8f3cf1c37d2a91886891/unirl/models/minimax_h3/README.md)明确尚需step2的max(1−sigma,0.999)条件时间，之前禁止recipe启用FL2VA。即使合成条件在rollout/replay之间保持一致，也只说明这条实现的一致性，不说明已等价发布模型的条件语义。
+
+作者报告外部一次性harness的合成条件parity、tiny随机transformer及CPU/MPS往返；harness未提交，本轮无法复跑。作者也明确没有实际producer、NFT loss或GPU/FSDP验证。这些报告不当本项目结果，也不以“205通过”或t2va兼容声称真实关键帧训练已就绪。
+
+M1只做源码学习和静态检查：Python3.12.13对5个改动Python文件及pipeline/config/Batch/batched_replay共9个完整模块内存compile；核row_timestep_plan AST未变、pipeline字节未变且仅一个text条件构造点，均通过。没有导入torch/UniRL、实例化条件/变换器、复跑parity或loss、使用MPS/GPU/NPU，未增加容器/模型替身或永久一次性工具。
+
+复查静态入口（只compile不执行，须本地已有Git对象）：
+
+```bash
+python3 -B - /path/to/UniRL-git <<'PY'
+import ast, subprocess, sys
+head, base = '55a3cad3e934cb0e637d8f3cf1c37d2a91886891', 'accba01082115534e8b60d849e7276a636eba269'
+def src(rev, name):
+    return subprocess.check_output(['git', '-C', sys.argv[1], 'show',
+                                   f'{rev}:unirl/models/minimax_h3/{name}.py'])
+for name in ['conditions', 'packing', 'diffusion', 'pipeline']:
+    compile(src(head, name), name, 'exec')
+def plan(rev):
+    return next(n for n in ast.parse(src(rev, 'packing')).body
+                if isinstance(n, ast.FunctionDef) and n.name == 'row_timestep_plan')
+assert ast.dump(plan(head)) == ast.dump(plan(base))
+assert src(head, 'pipeline') == src(base, 'pipeline')
+PY
+```
+
+SHA256：conditions.py `59d217094b12f23bd09dd434ea3009ad4f2db16004447d886c766624f1eb1206`；packing.py `ae1693dc89e6523ac5a19cfb458058fab3a58bada75228722e7feefe05f8cc19`；diffusion.py `c9bc12117fa8babc041ee451576cdc47baffb795bb40ec3fd9465969891a26c9`；pipeline.py `7164e4d552338ed344e8a0244426758cb905b5c9c3f229239ea08323b2fd0efa`。真机缺口仅补[原M5 UniRL入口](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)：先等producer/条件时间语义就绪并独立选型，当前不启用、不另开硬件任务，也不修改已有作者的方案。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。
