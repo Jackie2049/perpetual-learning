@@ -204,6 +204,45 @@ FA3 针对 H100 的三大特性：
 - **中间存储**: 标准 N=16K 时需要 ~32GB, Flash = 0（零中间矩阵!）
 - **Block size 不影响精度**: online softmax 数值等价与 block size 无关
 
+## 缓存后缀的因果对齐
+
+**K/V均合法可见时，单token后缀可不加mask；这不能外推多token后缀，调用mask错位也不是kernel数学错误。** 此处补充2026-10-22的CPU算子验证，与上文历史GPU性能表分开。
+
+[PyTorch 2.9 SDPA文档](https://docs.pytorch.org/docs/2.9/generated/torch.nn.functional.scaled_dot_product_attention.html)将非方阵`is_causal=True`定义为左上对齐，布尔attn_mask的True表示允许参与注意力。假设已有2个prefix token，本次query对应绝对位置2、3、4，K/V含位置0..4：正确可见域要按key_position≤query_position建立，而不是把这三个query重新当成位置0、1、2。
+
+令Q/K全0、V的每个值等于key位置，注意力就是可见值的均值。真实CPU SDPA得到：
+
+| 3行query对应位置 | 左上is_causal=True | 不加mask | 按绝对位置对齐 |
+| --- | --- | --- | --- |
+| 2 | 0 | 2 | 1 |
+| 3 | 0.5 | 2 | 1.5 |
+| 4 | 1 | 2 | 2 |
+
+左上三角少看了prefix；全部放行则前两行看到了本次suffix里尚不可见的未来key。若只保留最后一个query（位置4），且K/V恰好都是它允许访问的历史及当前token，没有padding或其他可见性限制，不加mask才与该行的因果注意力等价。这是旧Q=1 benchmark的适用条件，不能升级成“decode必须关闭causal”或“SDPA/FA2不能正确decode”。
+
+[causal_lower_right文档](https://docs.pytorch.org/docs/2.9/generated/torch.nn.attention.bias.causal_lower_right.html)提供对角偏移S−L的右下对齐bias。对本例3×5，它与绝对位置mask相同；前提是query正好对齐有效K/V的末尾。**物理容量不是有效序列长度**：若K/V张量有7槽但只有前5个有效，按3×7右下对齐再屏蔽padding，首行仍会错误地放行全部5个有效key。本机得到[2,2,2]，正确结果仍是[1,1.5,2]；仅补一个key-valid mask并不能修复已算错的query偏移。
+
+调用方应使用真实位置与有效长度，例如以下是单样本的布尔mask构造；实际batch的每条序列还需自己的长度/位置元数据：
+
+```python
+query_pos = torch.arange(2, 5, device='cpu')
+key_pos = torch.arange(7, device='cpu')
+valid_key = key_pos < 5
+allowed = (key_pos[None, :] <= query_pos[:, None]) & valid_key[None, :]
+output = F.scaled_dot_product_attention(q, k, v, attn_mask=allowed,
+                                       is_causal=False, dropout_p=0.0)
+```
+
+这里只解决连续、同一序列的suffix位置关系；窗口、packed多序列、树状验证、分页槽与逻辑位置的映射仍须各自满足可见性契约，不能只从L/S两个shape推出通用正确mask。
+
+复现：[verify_sdpa_suffix_alignment.py](../../experiments/scripts/verify_sdpa_suffix_alignment.py)，Python3.12.13 / torch2.9.1（git `5811a8d7da873dd699ff6687092c225caffcf1bb`）、CPU float64、MATH后端、dropout_p=0。两组可见均值控制及(prefix,suffix)=(4,1)/(2,3)/(0,5)/(3,2)四布局均通过；显式mask的输出与完整因果注意力相应后缀相同，Q/K/V输入局部梯度也在rtol=1e−11、atol=1e−12内匹配，四例输出最大误差实际为0。这不是跨backend逐位保证或真实KV引擎/模型训练等价证明。
+
+脚本只把官方CausalBias的私有`_materialize(cpu)`用于对照已读源码定义，未调用其自动后端分派；应用示例不依赖该私有API。所有tensor与generator显式CPU，无设备发现、GPU/NPU/MPS、模型/缓存分配器替身或显存/吞吐测量；不复跑或认证历史GPU速度数据，也不新增M5真机任务。
+
+```bash
+python -B experiments/scripts/verify_sdpa_suffix_alignment.py
+```
+
 ## 参考
 
 - [FlashAttention-1](https://arxiv.org/abs/2205.14135) (NeurIPS 2022)

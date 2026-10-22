@@ -7,7 +7,7 @@
 │  Correctness: Triton vs Naive cos_sim=1.000000 ✅       │
 │  Triton vs SDPA(no causal) cos_sim=1.0 ✅               │
 │  Triton vs SDPA(causal=True) cos_sim≈0.02 ⚠️           │
-│  → SDPA is_causal=True 对Q=1是错误的!                   │
+│  → 该缓存后缀与SDPA左上causal对齐不匹配                │
 │                                                         │
 │  Speed: Triton 2-3x慢 vs SDPA                          │
 │  GQA: Triton慢但75-87.5% KV内存省                      │
@@ -31,13 +31,13 @@ Triton vs SDPA(is_causal=False): cos_sim = 1.0
 
 Triton kernel与数学上正确的naive实现完全匹配! cos_sim=1.0验证了online softmax算法的正确性。
 
-### 1.2 SDPA is_causal=True对Decode Q=1的错误
+### 1.2 缓存后缀与左上因果对齐的区别
 
-Benchmark中Triton vs SDPA(is_causal=True)的cos_sim只有0.02-0.09, 但这不是Triton的bug — **是SDPA的causal mask对Q=1的错误应用**!
+Benchmark中Triton vs SDPA(is_causal=True)的cos_sim只有0.02-0.09；这里是该缓存后缀调用与SDPA左上对齐语义不匹配，不是SDPA或FA2 kernel的数学错误。2026-10-22的[CPU位置/容量/梯度对照](flash-attention.md#缓存后缀的因果对齐)说明了单token和多token后缀的不同边界；下方GPU数值是原历史记录，未在本轮复跑。
 
 **根因**:
 - SDPA `is_causal=True` 将Q视为position 0 → causal mask限制Q只能看到K[0]
-- 但decode场景中Q应该在position S → 可以看到所有K[0..S-1]
+- 若K/V有效逻辑位置为0..S−1且Q对应末尾S−1，它可以看到这些有效K；另有padding/窗口限制时还需相应屏蔽
 - 实测确认:
 
 ```
@@ -46,7 +46,7 @@ Triton[0,0,0,:8]:                 tensor([0.0020, 0.8076, -0.5591, ...]) ← 正
 Naive[0,0,0,:8]:                  tensor([0.0020, 0.8076, -0.5591, ...]) ← 与Triton完全一致!
 ```
 
-**结论**: Decode(Q=1)必须使用`is_causal=False`或专用decode kernel!
+**结论**：Q=1且K/V全部都是该query允许访问的有效历史/当前token时，不加mask可行；有padding/窗口限制仍要屏蔽，多token suffix还需带prefix偏移的因果mask，不能一律关闭causal。
 
 ### 1.3 Padding Mask Bug修复
 

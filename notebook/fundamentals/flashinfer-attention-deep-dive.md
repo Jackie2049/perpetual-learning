@@ -7,13 +7,13 @@
 ## 0. 为什么FlashInfer是推理attention的生产答案?
 
 **3层原因**:
-1. **架构正确性**: decode(Q=1)的position处理正确 → SDPA `is_causal=True`对decode是错误的
+1. **缓存位置处理**：需区分完整prefill和缓存suffix；SDPA左上causal与该Q=1 benchmark后缀不匹配，不代表算子不支持正确decode，见[CPU对齐核对](flash-attention.md#缓存后缀的因果对齐)。
 2. **性能优化**: cp.async pipeline + online softmax state + warp协作 → 比Triton/SDPA快
 3. **工程集成**: paged KV cache + GQA native + batch decode → 完整服务于推理框架
 
 | Backend | 正确性(decode) | 性能(RTX 4090) | GQA | Paged KV | 生产使用 |
 |---------|---------------|----------------|-----|----------|---------|
-| SDPA | ❌(is_causal=True错) | 基准 | ❌(需expand) | ❌ | PyTorch训练 |
+| SDPA | 需按真实位置指定mask | 基准 | ❌(需expand，历史配置) | ❌ | PyTorch训练 |
 | Triton custom | ✅(我们修复) | 2-3x慢于SDPA | ✅ | ❌ | 教育用途 |
 | FlashAttention-2 | ✅(prefill) | 快(prefill) | ✅ | ❌ | 训练 |
 | **FlashInfer** | **✅** | **最快(decode)** | **✅** | **✅** | **vLLM/SGLang** |
@@ -350,8 +350,8 @@ SGLang → FlashInfer作为primary attention backend:
 ### 6.3 为什么SDPA不适合推理?
 
 **3个关键问题**:
-1. **is_causal=True对decode错误**: Q被视为position 0 → causal mask限制Q只能看K[0]
-   - 正确: decode Q在position S → 可以看到所有K[0..S-1]
+1. **左上causal不自动补缓存位置偏移**：本例Q=1缓存后缀若用is_causal=True，只看K[0]；这不是SDPA本身的数学错误，多token后缀也不能一律无mask，见[适用条件](flash-attention.md#缓存后缀的因果对齐)。
+   - 本例条件：Q对应有效K/V逻辑末尾S−1，允许看K[0..S−1]；额外padding/窗口限制仍需屏蔽
    - FlashInfer: 不使用SDPA的is_causal → 自己的AttentionVariant处理mask
 
 2. **GQA需要expand KV**: SDPA要求num_qo_heads = num_kv_heads → GQA需要expand
@@ -398,7 +398,7 @@ SGLang → FlashInfer作为primary attention backend:
 **SDPA为什么这么慢**:
 1. **GQA expand**: KV从5→20 heads → KV带宽×4 → memory-bound瓶颈加剧
 2. **per-request**: 每个请求单独处理 → 无batching
-3. **is_causal=False**: 正确但expand开销巨大
+3. **本例无mask的适用条件**：Q=1且所有K/V都合法可见；多token或padding另核mask。expand开销为原benchmark结论，本轮未重测。
 
 ### 7.3 Sequence Length Sweep实测 (RTX 4090, GQA-5, B=16)
 

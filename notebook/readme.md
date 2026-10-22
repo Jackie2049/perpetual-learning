@@ -58,7 +58,7 @@
 - [CUDA 编程基础](fundamentals/cuda-basics.md) — 线程层次、内存模型、流、Tensor Core
 - [Triton 编程](fundamentals/triton-programming.md) — OpenAI Triton：kernel、autotune、GEMM、FlashAttention
 - [torch.compile 与 Inductor](fundamentals/torch-compile.md) — Dynamo 图捕获、Triton 代码生成、CUDA Graphs 集成
-- [FlashAttention](fundamentals/flash-attention.md) — 1/2/3 深度解析，tiling、online softmax、IO 复杂度
+- [FlashAttention](fundamentals/flash-attention.md) — 1/2/3原理；[缓存后缀因果对齐](fundamentals/flash-attention.md#缓存后缀的因果对齐)的真实CPU SDPA输出/局部梯度对照，单token无mask条件不能外推多token或padding容量，非GPU性能验收
 - [Attention Kernel 优化](fundamentals/attention-kernel-optimization.md) — FlashAttention-3/4、FlashInfer、FlashMLA 对比与选型
 - [RoPE 旋转位置编码](fundamentals/rope.md) — 数学推导、四种实现、五种长度扩展方法、推理优化
 - [KV Cache 深度解析](fundamentals/kv-cache.md) — 显存估算、PagedAttention、GQA/MQA、Prefix Caching、量化

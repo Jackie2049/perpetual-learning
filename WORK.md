@@ -24,6 +24,8 @@
 
 ## 运行接续
 
+- **M1缓存后缀因果对齐学习收束（2026-10-22）**：main同步无新提交，设备CI候选只读后不接手，转向旧Q=1建议的适用边界；见[原FlashAttention笔记](notebook/fundamentals/flash-attention.md#缓存后缀的因果对齐)/[真实CPU脚本](experiments/scripts/verify_sdpa_suffix_alignment.py)。torch2.9.1 MATH/FP64两组均值控制、四布局输出与Q/K/V局部梯度匹配全因果对应后缀；左上/无mask各有错位，容量7/有效5即使补valid也不能修复错误偏移。只执行CPU算子及bias CPU物化，不跑自动设备分派/模型/引擎/性能。收窄原四篇Q=1“必须无mask”及将调用错位说成kernel数学错的表述，详细结果集中一处；无新真机任务。本题收束，后续另选非因果mask/位置容量/注意力替身问题，GPU/AReaL/#8313边界不变。
+
 - **M1 TempFlow分支学习收束（2026-10-22）**：main同步无新提交，读已有UniRL#552 headef9cb362/base祖先6fd82cba（23文件含Flash/replay前置）；见[原调研](notebook/frameworks/unirl-survey.md#tempflow-分支共享与逐行时间索引)。每步组覆盖全部prompt，4seed×6branch×3组=72行/prompt、仍每组完整10步；共享x_T非缓存前缀计算。先(step,prompt)优势后合并，真实j留per-row字段，槽0非第0步；逐行replay/噪声权重及配方replay锚点仅读。原完整noise模块CPU48测试键/再生/逆序/seed控制通过，9模块compile，无trainer/模型/replay/loss/parity或GPU运行，不加替身。缺口补[原M5 UniRL参考](experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不自动部署或另排训练；本题收束，后续另选非分支时间轴/初始噪声/归约替身问题，GPU/AReaL/#8313边界不变。
 
 - **M1抢占结束交接学习收束（2026-10-22）**：同步main无新提交，有界读UniRL6/verl5/DeepInfer5候选后选新#211 head4432ebe4/base祖先9bd9cf24；见[原调研](notebook/frameworks/deepinfer-initial-survey.md#抢占在途结果的执行代次与结束交接)。epoch分类先于inflight/MTP计数；PCR默认关闭，开启后仅恢复PREEMPTED结果到首终止点，pending finalize仍计unfinished，下一schedule交接；重复拒绝非事务幂等，PCR关仍有其他修改。4完整Python/stub compile、原测试8函数/11组合仅静态计数，无_C/原生执行或模型收益；不加调度器替身。缺口补[原M5参考](experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)，匹配build先于设备条件，不另排队/启PCR或改移植。本题收束，后续另选非抢占epoch/终止提交/队列替身问题；GPU/AReaL/#8313与外部写入边界不变。

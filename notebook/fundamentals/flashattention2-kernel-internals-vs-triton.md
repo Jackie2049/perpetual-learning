@@ -151,7 +151,7 @@ sQ_layout_atom = make_composed_layout(
 1. **Q tile padding浪费**: m_block_size=128 → 每CTA处理128行Q → decode只有1行 → 127行零计算但仍消耗线程资源
 2. **HMMA矩阵太小**: QK^T = [1×S] → MMA [128×128] tile中只有1行有用 → tensor core利用率<1%
 3. **Kernel启动+layout转换**: FA2需要(BNHd) layout → 从(BHNd)转换 → 额外memcpy
-4. **Causal mask错误**: `is_causal=True`限制Q到position 0 → **数学错误**(我们实测确认: cos_sim=0.02-0.09)
+4. **缓存位置与调用mask错位**：SDPA的is_causal=True左上对齐与此后缀不匹配，历史cos_sim=0.02-0.09不能证明FA2 kernel数学错误；[CPU契约对照](flash-attention.md#缓存后缀的因果对齐)区分单token、多token与padding容量。
 5. **Overhead叠加**: 128线程处理1行Q → 线程浪费 + softmax quad reduce处理127个-inf → overhead
 
 ### 2.2 为什么Triton Decode也慢
@@ -200,7 +200,7 @@ Prefill (Sq > 1)?
   │
   ├─ No → Decode (Sq = 1)?
           │
-          ├─ Research/Debug → SDPA (is_causal=False! Q=1不应causal)
+          ├─ Research/Debug → SDPA (本例Q=1且KV全合法时可不加mask)
           ├─ Simple Math → SDPA math backend (最快)
           ├─ Production → FlashInfer decode kernel
           │                (cooperative + native GQA + paged KV)
@@ -240,7 +240,7 @@ FA2多一层SMEM零填充 + predicate mask → Triton只需-inf mask (更简洁)
 1. **Online softmax算法是通用的**: FA2/Triton/FlashInfer都用相同的running max+sum → 数学等价
 2. **FA2 Prefill vs Decode**: prefill用HMMA tile → 高效; decode用同一kernel → 灾难(Q太小)
 3. **Decode必须专用kernel**: FA2 "通用"kernel不适合decode → FlashInfer专为此设计
-4. **SDPA is_causal=True对Q=1错误**: causal mask把Q限制到position 0 → 生产中必须用is_causal=False或专用kernel
+4. **按位置建立因果可见域**：单token且K/V全合法时可无mask，多token后缀要保留带prefix偏移的三角关系；不能将该benchmark外推为生产中必须关闭causal，见[对齐条件](flash-attention.md#缓存后缀的因果对齐)。
 5. **Quad reduction = butterfly shuffle**: FA2 softmax和我们的CUDA RMSNorm用相同的warp shuffle技术
 6. **Register pipeline是FA2速度关键**: smem→reg与MMA重叠 → 数据搬运零开销 → Triton无此能力
 7. **Cooperative batching是decode性能关键**: 多Q共享KV load → FlashInfer的核心创新

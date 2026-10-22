@@ -103,11 +103,13 @@ RTX 4090推理硬件参数:
 
 ## 3. Attention Backend决策树
 
+因果对齐更正（2026-10-22）：以下历史benchmark中的Q=1差异是调用mask与缓存位置不匹配，不是SDPA/FA2 kernel数学错误，不能据此排除其decode正确性；单token/多token/padding条件见[CPU对照](flash-attention.md#缓存后缀的因果对齐)。本轮未复核下面的GPU性能或选型结论。
+
 ```
 Attention Backend选择:
 
   → SDPA(PyTorch默认): 不适合推理!
-    → → is_causal=True对decode(Q=1)错误 → 只看position 0 → 结果错误!
+    → → 该Q=1缓存后缀与SDPA左上causal错位 → 需按真实位置选择mask
     → → → 无paged KV → 无GQA优化 → 无prefix caching → 不推荐!
 
   → FlashInfer: **推理attention生产答案!**
@@ -119,7 +121,7 @@ Attention Backend选择:
     → → 教育用途 → 学习attention kernel → 但不推荐部署
 
   → FlashAttention-2/3: 不适合decode!
-    → → FA-2 decode: layout转换+Q=1错误 → 3-34x慢+结果错误
+    → → FA-2 decode: layout/速度为历史测量；Q=1的调用mask错位不等于kernel错误
     → → → FA-3: Hopper专用(SM90) → RTX 4090不支持 → 不推荐!
 
     → → → → **RTX 4090最优: FlashInfer → 15.72x → 生产级 → 推荐!**
