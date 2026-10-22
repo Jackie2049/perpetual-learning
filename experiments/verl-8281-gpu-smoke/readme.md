@@ -42,4 +42,6 @@
 2. 正向 e2e 冒烟：grpo + ToolAgentLoop + Qwen2.5-0.5B + gsm8k agent 数据，`total_training_steps=2` **两 step 全过**（step1 30.8s / step2 4.5s，`num_turns=2`，`prompt_length 104-120` 未超 cap），日志末尾 `SMOKE COMPLETED OK`（`/tmp/smoke_8281_latest2.log`）。
 3. 负向验证：`max_prompt_length=32` 时默认 `error` 策略仍 **fail-loudly**，`ValueError: Prompt of 118 tokens exceeds rollout.prompt_length=32; configured data.truncation='error' which does not truncate...`（`/tmp/smoke_8281_neg_latest.log`，进程以 1 退出为预期）。
 
+**二次复跑（用户要求确保）**：核对三文件 SHA256 与上次一致后重跑——CPU `12 passed`（5.16s）；GPU 正向 2/2 step（37s，`SMOKE COMPLETED OK`，`/tmp/smoke_8281_verify_pos.log`）；GPU 负向 `ValueError: Prompt of 120 tokens exceeds rollout.prompt_length=32...`（exit 1 预期，`/tmp/smoke_8281_verify_neg.log`）。三项与首次结果一致。
+
 **范围**：验证的是 fork 分支最新 commit 的内容；未重开 PR、未评论上游。`left/right/middle` 真实训练行为仍未逐一跑（单测覆盖）；cap=1 修复仅单测覆盖（cap=1 在实际训练中默认 512 下不可达）。服务器 `/home/zxw/verl-pt-impr` 的包替换为整包同步，若后续其他会话在该树做过本地改动需从 `verl.bak-20261022` 核对。
