@@ -49,6 +49,43 @@ optimizer.load_state_dict(ckpt['optimizer_state_dict'])
 torch.cuda.set_rng_state(ckpt['rng_state'])
 ```
 
+### 状态字典与独立快照
+
+`model.state_dict()` 不是冻结的一刻：默认返回的 Tensor 已脱离 autograd，但仍与参数、持久 buffer 共享存储；重新包一层 `dict` 不会复制这些存储。这是 [PyTorch 2.9 的接口契约](https://docs.pytorch.org/docs/2.9/generated/torch.nn.Module.html#torch.nn.Module.state_dict)。官方[保存教程](https://docs.pytorch.org/tutorials/beginner/saving_loading_models.html)也提醒，保留最佳模型状态时应复制或及时序列化，而非只暂存字典引用。
+
+2026-10-22 本机用 Python 3.12.13 / torch 2.9.1 做了[真实 CPU 对照](../../experiments/scripts/verify_state_dict_snapshot.py)：单个 FP64 参数初值1，持久 int64 buffer `seen=0`，SGD 的 lr=0.1、momentum=0.9，手动给梯度1后取状态，再给梯度2更新。不是模型 forward/backward 或训练效果测试。
+
+| 第一轮后保留的对象 | 第二轮后的 weight / seen | 是否保留第一轮值 |
+|---|---|---|
+| 原 `state_dict()` | 0.61 / 2 | 否，共享存储 |
+| `dict(state)`、逐值 `detach()` | 0.61 / 2 | 否，只换容器或 Tensor 包装 |
+| 逐值 `.cpu()`（输入已在 CPU） | 0.61 / 2 | 否，没有跨设备复制 |
+| `copy.deepcopy(state)` | 0.9 / 1 | 是，本例独立存储 |
+| 逐 Tensor `clone()` | 0.9 / 1 | 是，本例独立存储 |
+| 第二轮前已完成 `torch.save` 的 BytesIO，之后再加载 | 0.9 / 1 | 是，序列化先于后续修改 |
+
+检查不仅比较数值，也核对存储指针：原参数与状态值不是同一个 Python 对象，但指针相同；深拷贝/clone/加载后的值与活参数指针不同。优化器同样要看内部 Tensor：`optimizer.state_dict()` 的 SGD 动量与活状态共享存储，第二轮由1变2.9；深拷贝和已完成的序列化仍是1。这是本例 SGD 行为，不推定所有自定义优化器都相同。
+
+容器操作与原地改写也不同：给浅拷贝字典的 `weight` 键重新赋一个99，不会替换模型参数；对原状态的 `seen` 原地加10，却会把活 buffer 从2改成12。`requires_grad=False` 不代表只读或拥有独立存储。
+
+因此，上方立即同步 `torch.save({...}, path)` 的例子不因这里的别名证据自动失效。需要警惕的是把活字典留到后面、或交给延迟任务后继续更新；完整 checkpoint 还要处理优化器等嵌套状态。逐值 clone 只适用于这里全为 Tensor 的平坦例子，不能当通用复制器：模块 metadata、custom extra state、嵌套结构和共享存储拓扑需另核。
+
+复查（项目根目录，需 Python 3.10+ 和 torch；本轮无安装）：
+
+```bash
+python experiments/scripts/verify_state_dict_snapshot.py
+```
+
+脚本打印版本及原方法文本 SHA256，本轮 torch git 为 `5811a8d7da873dd699ff6687092c225caffcf1bb`：
+
+```text
+Module.state_dict          8cac9a6b14cc6a45fab450de5c5caf516a6d904ea6606ded408f00386018f1f9
+Module._save_to_state_dict 8ed57d3b17ba0959d7144c77de0aefda92e895329059c27b06b102716f73f756
+Optimizer.state_dict      32626b5dd54af43bf30882883bf278c720f3a7cc99159475b920ef09eec236c8
+```
+
+全部观察通过；这是自己的受控实验，不是上游原测试。只保存/加载自己生成的内存 payload，`weights_only=True`、`map_location="cpu"`；无磁盘 checkpoint、线程、设备探测、分布式保存或完整恢复验证。完成序列化后继续更新的证据，不认证并发 staging 一致性、CUDA 流同步、崩溃原子性或 fsync；这些没有在本轮执行，也不据此调整框架实现。
+
 ### 2.2 显存占用
 
 ```
@@ -170,6 +207,8 @@ def async_save(state_dict, path):
 # 方法 2: 使用 torch.distributed.checkpoint 的异步写入
 # (Megatron-LM 支持)
 ```
+
+这里的手写例子只处理平坦 Tensor 字典，且复制在启动写盘线程之前完成；不能直接用于嵌套优化器状态。已在 CPU 的 Tensor 仅调用 `.cpu()` 不会隔离存储，所以例子中的 `clone()` 不能因此省略，见[CPU 对照](#状态字典与独立快照)。本轮没有运行该线程示例或验证 GPU 多流 staging、一致时刻快照与后台异常传播。
 
 ### 4.3 内存考量
 
