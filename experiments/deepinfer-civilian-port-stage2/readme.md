@@ -51,3 +51,19 @@
 - **另 4 个 kernel 编译全通过**：`kv_index_cat_tl`（3.6s）、`dflash_input_store_tl`（2.3s）、`load_kv_index_tl`（2.5s）、`fused_sample_tl`（9.7s）——均最小构造参数，SM89 编译 OK。**"去 PDL 改写"是机械工程而非科学障碍**。
 - 5 个 PDL-free 变体存本目录 `pdlfree-variants/`；探针脚本 `probe_norm_pdlfree.py`（含 torch 对照）、`probe_kernels_compile.py`。
 - 边界：数值对照仅 norm 一个 kernel 做了；其余 4 个只验证编译未跑数值；`pdl_trigger` 删除在顺序 launch 语义下安全（下游 kernel 正常等待），但**失去 PDL 的 kernel 间重叠优化**（性能影响未测）；未逐个验证 43 个 kernel 的全部参数组合。
+
+### 数值对照扩展（2026-10-22 再续，M5）
+
+把上一节的"其余 4 个只验证编译"补上数值对照——**5 个去 PDL 变体全部数值 PASS**，`probe_pdlfree_numeric.py`：
+
+| kernel | 对照 | 结果 |
+|---|---|---|
+| `kv_index_cat_tl` | 拷贝 kv_index + 非 -1 的 kv_ca_index 加 total_k+total_k_swa（torch 参考） | eq=True / eq=True |
+| `load_kv_index_tl` | (offset,len) 展开为索引行，block_size=0 连续模式、列≥len 填 -1（torch 参考） | full eq=True |
+| `dflash_input_store_tl` hc_mult=1 | 直接拷贝（torch 参考） | max err=0.0 |
+| `dflash_input_store_tl` hc_mult=2 | 按 hc_mult 均值（torch 参考） | max err=0.0 |
+| `fused_sample_tl` | logprobs vs torch `log_softmax(logits/0.9)`、lse_workspace vs 推导参考、candidate 合法性 | logprobs max err=1e-6, lse0/lse1 err=0.0, cand in [0,V)=True |
+
+**fused_sample 是 43 个 kernel 里最复杂的**（两级 launch + LSE streaming 归约 + `lse_workspace` 跨 launch 共享 + 2 处 PDL trigger 删除 + 2 处 pdl_sync→sync_grid），数值精确对照通过，说明去 PDL 后的跨 launch 依赖在顺序语义下正确保持。`lse_workspace` 语义澄清：`lse1=-max(logit)`（原始 logit 未缩放）、`lse0=-log(Σ exp((logit-max)/t))`，由 `logprobs=(logit+lse1)/t+lse0 = log_softmax(logit/t)` 推导核对——初版探针参考算错（把 max/lse 按缩放后 logit 算），修正后 err=0.0，非 kernel 问题。
+
+边界（延续）：数值对照覆盖 5 个 kernel 的选定参数组合（stride/形状按真实 wrapper 约定，如 kv_index_cat 输出 stride pad 到 4 的倍数）；其余 38 个 kernel 仍只静态确认 PDL 用量（28/30 文件、56+8 处调用）；`fused_sample` 的采样分支只验证了 candidate 合法性，未对照分布（自定义 RNG 与 torch 不同）；性能影响未测。

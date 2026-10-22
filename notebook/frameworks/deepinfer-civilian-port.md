@@ -6,7 +6,7 @@
 >
 > 源码基线：`deepseek-ai/DeepInfer` commit `8b16149`（本地 clone `/Users/jackiemac/workspace/DeepInfer`）。
 >
-> 状态：**堵点定位完成 + 替代方案调研完成 + 两段 4090 真机冒烟（import 链全通、csrc `_C` 编译成功、发现 tilelang PDL 硬堵点）。2026-10-22 续：PDL 机制源码级定位（tilelang 编译期硬检查、无配置可关）+ 5 个 kernel 文本级去 PDL 后 SM89 编译/数值验证全过（改写是机械工程）。下一步：完整移植需 Triton/Cutlass 替换四 kernel 包 + 43 个 tilelang kernel 去 PDL 改写 + V4 权重，价值判断待用户确认。** 本专题完成后将作为新章节插入 DeepInfer 研究报告。
+> 状态：**堵点定位完成 + 替代方案调研完成 + 两段 4090 真机冒烟（import 链全通、csrc `_C` 编译成功、发现 tilelang PDL 硬堵点）。2026-10-22 续：PDL 机制源码级定位（tilelang 编译期硬检查、无配置可关）+ 5 个 kernel 文本级去 PDL 后 SM89 编译/数值验证全过（改写是机械工程且语义保持）。下一步：完整移植需 Triton/Cutlass 替换四 kernel 包 + 43 个 tilelang kernel 去 PDL 改写 + V4 权重，价值判断待用户确认。** 本专题完成后将作为新章节插入 DeepInfer 研究报告。
 
 ## 结论先行
 
@@ -145,7 +145,8 @@
 2. **语义映射 → 改写是机械性的**：`pdl_sync` 标记 `kHasGridSync`（grid 同步），`pdl_trigger` 标记 `kHasTriggerLaunch`（允许下游 kernel PDL 提前启动）。顺序 launch 语义下：`pdl_trigger` 可安全删除（下游本就要等前一个 kernel 完成），`pdl_sync` 用已验证可行的 `T.sync_grid()` 替代。
 3. **用量**：28/30 个 cuda tilelang kernel 源文件用 PDL，共 56 处 `pdl_sync` + 8 处 `pdl_trigger`（另 `vendor/DeepGEMM/third-party/tilelang_ops/swiglu_apply_weight_to_fp8.py` 1 处）。少数（如 `state_cache.py`）按数据规模条件启用，已有非 PDL 路径。
 4. **单 kernel 真机验证（PASS）**：`norm` kernel 文本级替换（`pdl_sync→sync_grid`、`pdl_trigger→pass`）后在 SM89 编译 5.3s，B=2/S=128/d=64 fp16 与 torch RMSNorm 对照 **max abs err = 0.0、0% mismatch**（注意多 batch 须 `xdim=3`，`xdim=2` 只写 batch 0）。另 4 个 kernel（kv_index_cat / dflash_input_store / load_kv_index / fused_sample）最小参数编译全过（2.3–9.7s）。**「去 PDL 改写」是机械工程而非科学障碍。**
-5. **未覆盖边界**：数值对照仅 norm；其余 4 个只验证编译；`pdl_trigger` 删除失去 kernel 间重叠（性能影响未测）；43 个 kernel 的其余参数组合未逐个验证。
+5. **数值对照扩展（再续，5/5 PASS）**：`probe_pdlfree_numeric.py` 给其余 4 个 kernel 补数值对照（torch 参考）——`kv_index_cat` 拷贝+偏移加 eq、`load_kv_index` 索引展开 eq、`dflash_input_store` hc_mult=1 拷贝 / hc_mult=2 均值 max err=0.0、`fused_sample`（43 个中最复杂：两级 launch + LSE streaming 归约 + lse_workspace 跨 launch 共享）logprobs vs `log_softmax(logits/t)` max err=1e-6、lse0/lse1 err=0.0、candidate 合法。**去 PDL 后的跨 launch 依赖在顺序语义下数值保持**，改写从「能编译」推进到「语义保持」。
+6. **未覆盖边界**：数值对照覆盖 5 个 kernel 的选定参数组合；其余 38 个 kernel 仍只静态确认 PDL 用量；`fused_sample` 采样分支只查 candidate 合法性未对照分布（自定义 RNG）；`pdl_trigger` 删除失去 kernel 间重叠（性能影响未测）。
 
 ### 第二段结论
 
