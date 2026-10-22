@@ -200,6 +200,36 @@ Python3.12.13 / torch2.9.1，真实原 dataset/normalizer/Batch/DataSource。仅
 
 完整源文件 SHA256：data/sft.py `45dc13244d15a0168919e48e33f126b6c9f259f02587007f4adcbc2c24ed782c`；trainer/sft.py `de66b86676f81422a832ce560942fd22e239b2052a00059b685631661ea3d2c9`。后者仅读取，没有执行；脚本也核对这两个hash，以免不同源码混用结果。
 
+## Packed 文本的样本轴与 token 轴
+
+**packed 文本按 token 存储，重排却按样本选择；零 token 的样本仍是一行。** 固定 `6fd82cba13f52f394747832344039408699ea378`，2026-10-22 在真实 CPU 上运行原 [`TextSegment`](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/types/segments/text.py)和 [`Batch`](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/distributed/tensor/batch.py)，没有重写方法或用容器替身替代。
+
+`TextSegment` 的 tokens/log_probs/loss_mask 是 PACKED 字段，平坦轴长度为各样本 token 数之和；status 是 CONCAT 字段，按样本行排列。`pack` 将每个 packed 字段的逐样本 tensor 列表拼成一维 tensor，同时建立 `[N+1]` 的 cu_seqlens，lengths 由相邻 offset 差得到。正确构造不只需要一个平坦 tokens 数组，还要保存样本边界。
+
+三行长度 `[2,0,3]` 的实际结果：
+
+| 操作 | 样本数 | tokens | cu_seqlens |
+|---|---|---|---|
+| pack | 3 | 100,101,300,301,302 | 0,2,2,5 |
+| select `[2,0,2]` | 3 | 300,301,302,100,101,300,301,302 | 0,3,5,8 |
+| slice `[1:3]` | 2 | 300,301,302 | 0,0,3 |
+
+`select` 可重排、重复或选择空集；它按原 offsets 取每行 token 段，再重建 offsets，而非对平坦 token 直接应用样本索引。`slice` 同时截 token 范围并将 offset 起点归零。concat 时后续 offsets 要加上之前的 token 总数，不是样本数；相邻切片拼回后，tokens、log_probs、mask、status 和边界均应恢复。重复选择也真实重复 payload，不是共享前缀压缩。
+
+[复查脚本](../../experiments/scripts/verify_unirl_packed_text.py)用4种三行布局 `[2,0,3]`、`[0,0,0]`、`[1,2,1]`、`[0,1,0]`，逐字段核数值、dtype、长度和 offsets：36次选择（含permutation/重复/空集/CPU索引tensor）、40次合法连续切片、16个concat切点与4次chunk拼回全部通过。另在不提供 status 时，3个零长度 tensor 仍得到 batch_size3、cu `[0,0,0,0]`；零 token 行不能据 token 总数丢掉。
+
+入口保护也有范围：pack 拒绝直接传已打包 Tensor，并要求不同 PACKED 字段的逐行长度一致；3行chunk(2)拒绝不能均分；故意绕过pack、又没有offset的普通构造对象不能执行packed slice。4项拒绝控制符合预期；不是说pack校验了所有字段语义，也不将违反构造前提的输入称作正常训练缺陷。
+
+[`ARSupervisedTrackBuilder.build`](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/train/sft/track_builder.py#L316)确实用 TextSegment.pack 构建 tokens/mask，token-budget planner 最终调用 part.select(perm)。这两处仅源码接线核对；本轮没有执行 Part、planner、tokenizer、attention mask、TensorRef transport、模型前后向或训练，因此不从容器一致性外推注意力隔离、prefix共享、梯度等价或性能。
+
+```bash
+python -B experiments/scripts/verify_unirl_packed_text.py /path/to/UniRL
+```
+
+Python3.12.13 / torch2.9.1；只用一个真实__path__包壳跳过 tensor 包初始化器的 Ray transport 汇总导入，其余原类按源码加载。无Ray/Hydra/OmegaConf/worker-local transport导入、设备发现或环境安装。这是自编原容器检查，不是上游原测试；本题不新增M5硬件事项。
+
+脚本核对完整文件SHA256：batch.py `a33122410e68c2295631bbc3e70ce4b69ba41081da7ed49abd06774640676e3c`；segments/base.py `f7b9ce0a6ae77bcdbde81a93b43096bdfe975368234753ef74ab6191d794ff32`；segments/text.py `9f58114b40f3949eea70fba0692fb96b746e3e47af0c94c7db99e314cf237b34`。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。

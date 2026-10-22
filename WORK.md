@@ -12,6 +12,8 @@
 
 ## 运行接续
 
+- **M1 UniRL packed文本学习收束（2026-10-22）**：固定6fd82cba，原TextSegment/Batch真实CPU四布局，36选择/40切片/16拼接切点/4分片往返及4保护全过；无status的三行零token仍由cu保留batch3。见[原调研](notebook/frameworks/unirl-survey.md#packed-文本的样本轴与-token-轴)/[复查](experiments/scripts/verify_unirl_packed_text.py)。样本索引必须联动token段及offset，不等于索引平坦token。仅tensor包壳跳过Ray初始化，无方法摘取/假类；builder/planner接线仅读，无Part/transport/attention/模型或新M5事项。本题收束；后续选其他UniRL源码问题，不堆空行/packed变体或自动修改实现，GPU/AReaL、#8313及网站边界不变。
+
 - **M1 UniRL SFT游标学习收束（2026-10-22）**：固定6fd82cba，真实原DataSource/JSONL，无假类/方法摘取，仅tensor包壳跳过Ray transport初始化。跨epoch peek/commit/恢复、20批shuffle开关直读对照、身份拒绝/legacy警告与eval隔离通过，见[原调研](notebook/frameworks/unirl-survey.md#sft-预取与数据消费游标)/[复查资产](experiments/unirl-sft-cursor/readme.md)。peek不消费下一批，但trainer在train_step前get/commit当前批，非optimizer成功协议；接线仅源码，无完整训练/设备或新M5事项。本题收束；后续选UniRL其他源码/类型问题，不堆游标/恢复故障替身或自动修改实现；GPU/AReaL、#8313及网站边界不变。
 
 - **M1 UniRL稀疏SDE学习收束（2026-10-22）**：官方main仍6fd82cba，原require/sampling/index_schedule正常导入，无包壳/AST摘取/torch。64rollout id、56前半段三索引组合及空/首尾/默认/非法计数控制通过，见[原调研新节](notebook/frameworks/unirl-survey.md#稀疏-sde-与轨迹状态位置)。T16选S3不删去噪迭代；邻接端点+终态仅源码预期5～7位置，非latent/显存实测。None与[]解析优先级不同，标准trainer先解析；stage/FlowGRPO接线仅读。原M5条目只补有效索引/字段形状参考，不新排队或运行。本题收束；后续优先UniRL其他类型/配置问题，不堆SDE索引/RNG变体或自动改实现；GPU/AReaL、#8313及网站边界不变。

@@ -106,7 +106,7 @@
 
 ## UniRL
 
-- [UniRL 与 RL 训练抽象](unirl-survey.md#ar-与-diffusion-的源码统一边界)：固定6fd82cba，HI3联合更新/稀疏SDE及[SFT消费游标](unirl-survey.md#sft-预取与数据消费游标)；原DataSource真实JSONL跨epoch/20批对照，预取commit非optimizer提交，非训练实测。
+- [UniRL 与 RL 训练抽象](unirl-survey.md#ar-与-diffusion-的源码统一边界)：固定6fd82cba；HI3/SDE/SFT与[packed文本样本轴](unirl-survey.md#packed-文本的样本轴与-token-轴)，原TextSegment/Batch四布局CPU对照，零token行保留边界；非模型/attention验收。
 
 ## verl
 
