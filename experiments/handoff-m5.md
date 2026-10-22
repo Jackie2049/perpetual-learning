@@ -106,7 +106,7 @@ M5 最小下一步：先判断是否有获准使用的对应配置、完整 toke
 
 ## verl #8281 超长 prompt 截断修复 —— GPU e2e 训练冒烟
 
-状态：M1 已本地完成修复 + CPU 单测验证；PR 已建（#8313）。用户 2026-10-22 明确要求交 M5 在 GPU 上跑一次 verl e2e 训练作冒烟测试，心里更有底。**这是用户指派的真机验证任务**，优先级按 M5 既有任务顺序；本记录不代表 M5 已接单或服务器已在线。
+状态：**M5 已完成 GPU e2e 冒烟（2026-10-22，4090-1），正向跑通 + 负向 fail-loudly 均验证**，本条目回写完成。详见下方 M5 实测记录。
 
 任务背景：`_cap_text_prompt_length` 无条件左截断、忽略 `data.truncation` 四策略。修复让它遵循 `error/left/right/middle`（`error` 时 fail-loudly）。
 
@@ -114,17 +114,19 @@ M5 最小下一步：先判断是否有获准使用的对应配置、完整 toke
 - **改动**（仅 2 文件，129 增 / 3 删）：
   - `verl/experimental/agent_loop/agent_loop.py`：`_cap_text_prompt_length` 遵循 `data.truncation`。
   - `tests/experimental/agent_loop/test_cap_text_prompt_length.py`：CPU-only 单测，11 项（M1 本地 Python 3.12.13 venv 全过；修复前对照验证失败，证明测试有效）。
-- **本地验证范围**：M1 已跑 `test_cap_text_prompt_length.py` 11 项通过；**未跑 verl 完整 e2e 训练**（本机无 GPU）。
 
-给 M5 的验证目标：在 GPU（如 4090-1）上用**本 PR 的 patch 分支**跑一个 **verl e2e 训练冒烟**（小模型、少量 step），确认：
-1. 正常训练路径不因该改动报错/退化（agent_loop 默认 `error` 策略，prompt 不超长时不应触发截断/raise）。
-2. 若可配置，验证 `data.truncation` 不同策略在真实训练中行为符合预期。
-3. 保留版本、命令、配置、原始日志/失败、真实执行范围。
+**M5 实测（2026-10-22，4090-1，用户指派的 GPU 冒烟）**：
+- 环境：服务器 4090-1（GPU 0）+ conda `verl-e2e`（ray 2.59.0 + torch 2.11.0+cu128 + transformers 5.8.1 + vllm 0.22.1），editable 源码 `/home/zxw/verl-pt-impr`。
+- 部署：GitHub 从服务器直连超时（TLS 截断），无法拉 fork 分支；改为**从 M5 本机 `gh pr diff` 取 PR #8313 完整 diff（154 行）**，与本地 patch [8281-truncation-policy.patch](../open-source/verl/patches/8281-truncation-policy.patch) 核对实际改动行**完全一致**，`patch -p1` 干净应用到服务器源码（hunk 偏移 -60 行仅因 base 版本不同）。应用后 `_cap_text_prompt_length` 即 PR 修复版本。
+- 单测：`test_cap_text_prompt_length.py` 11 项在服务器全过（5.08s）。
+- **正向冒烟**：grpo + ToolAgentLoop + Qwen2.5-0.5B（HF 缓存）+ gsm8k tool_agent 数据（16 train/4 test，预处理脚本生成），单 GPU、`trainer.total_training_steps=2`、`max_prompt_length=512`（prompt 实际 111-120 token 远低于 cap）→ **2 个 global step 全部跑通**（step1 35.5s / step2 9.6s，num_turns=2，无截断无 raise），日志末尾 `SMOKE COMPLETED OK`。正常训练路径未因改动退化。
+- **负向验证**（关键验收）：同样配置但 `max_prompt_length=32`（prompt 118/120 token 必超长）→ 默认 `error` 策略 **fail-loudly**：`ValueError: Prompt of 118 tokens exceeds rollout.prompt_length=32; configured data.truncation='error' which does not truncate. Increase rollout.prompt_length or set data.truncation to 'left'/'right'/'middle'`。修复前该路径是静默左截断；训练终止为预期行为。`left/right/middle` 三策略的真实训练行为未逐一跑（单测已覆盖策略分支，冒烟确认 error 契约即可）。
+- 脚本：`/tmp/smoke_8281.py`、`/tmp/smoke_8281_neg.py`、`/tmp/make_gsm8k_agent.py`（服务器）；日志 `/tmp/smoke_8281.log`、`/tmp/smoke_8281_neg.log`。
+- 边界：未改上游/PR/用户分支，未在 GitHub 上做任何操作（取 diff 为只读）；验证用的源码是 PR 内容的等价应用，非严格 git 分支 checkout（服务器无法访问 GitHub）；`left/right/middle` 仅单测覆盖。
 
-注意事项：
-- 用我们的 fork 分支 `fix-8281-truncation-policy`（已含修复 + 单测），非上游 main。
-- 冒烟测试目标小、低成本（小模型、少 step），不启动长训练。
-- 任何对上游发言/提交仍按用户原授权边界，交接不增加对外操作权限。
-- 若 GPU/环境条件不足，记录"待资源/待资料"及恢复条件，不强行启动。
+给 M5 的验证目标（原）：
+1. 正常训练路径不因该改动报错/退化 → **已验证通过**（正向冒烟 2 step）。
+2. 若可配置，验证 `data.truncation` 不同策略在真实训练中行为符合预期 → **error 策略真实训练 fail-loudly 已验证**；left/right/middle 由单测覆盖。
+3. 保留版本、命令、配置、原始日志/失败、真实执行范围 → 见上方实测记录。
 
-停止条件：完成标准是有可追溯的 e2e 冒烟结果（正常跑通 + 记录版本/命令/日志），或明确缺失条件清单（缺 GPU/环境/模型授权等）。
+停止条件：完成标准是有可追溯的 e2e 冒烟结果（正常跑通 + 记录版本/命令/日志），或明确缺失条件清单（缺 GPU/环境/模型授权等）。——**已完成**。

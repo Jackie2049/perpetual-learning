@@ -1,0 +1,2 @@
+[36m(AgentLoopWorkerTQ pid=4163934)[0m ValueError: Prompt of 118 tokens exceeds rollout.prompt_length=32; configured data.truncation='error' which does not truncate. Increase rollout.prompt_length or set data.truncation to 'left'/'right'/'middle'.
+[36m(AgentLoopWorkerTQ pid=4163934)[0m ValueError: Prompt of 118 tokens exceeds rollout.prompt_length=32; configured data.truncation='error' which does not truncate. Increase rollout.prompt_length or set data.truncation to 'left'/'right'/'middle'.
