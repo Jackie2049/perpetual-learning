@@ -9,7 +9,7 @@
 
 **【价值评估】** 7 / 10 — 有明确行为差异和本地逻辑验证，但接口契约与完整环境验证仍待确认。
 
-**【进展】** 2026-10-22只读确认已有Jackie2049作者的[PR #8313](https://github.com/verl-project/verl/pull/8313)，open/head80ee82bd；原方法隔离检查发现middle在cap=1时将10 token变成11。证据已留存，原11项pytest未复跑，M1未改PR、用户分支或补丁，后续修正/对外行动待负责人决定。
+**【进展】** 2026-10-22：[PR #8313](https://github.com/verl-project/verl/pull/8313) 已由用户关闭（待 review）；middle/cap=1 的 `-0` 反例已在用户风格基础上修复并推送到 fork 分支 `fix-8281-truncation-policy`（head `6db4b38d`，远端已确认）。最新分支 CPU 单测 **12 passed**（含 cap=1 回归），GPU e2e 冒烟在 4090-1 复验通过（正向 2 step + `error` 策略 fail-loudly）。重开 PR 与 issue 回复仍需用户决定。
 
 **【大白话讲明白】**
 
@@ -179,5 +179,5 @@ def _cap_text_prompt_length(self, prompt_ids: list[int]) -> list[int]:
 - **反例**：`middle` 分支 `prompt_ids[:head] + prompt_ids[-(prompt_length-head):]` 在 `prompt_length=1` 时 `head=1`、尾段预算 0，Python `-0==0` 使 `prompt_ids[-0:]` 取整个列表——10 token 输入变成 11 token 输出（复现：`[0,0,1,2,3,4,5,6,7,8,9]`），违反上限。原测试 middle 只覆盖 cap 4/5/6。
 - **修复**（遵循用户风格，`tail_length` 命名与 `truncation_policy` 一致）：尾段改用正向切片 `prompt_ids[len(prompt_ids) - tail_length:]`（尾段预算 0 时 `list[len:]` 为空列表，天然正确）。已验证 cap=1..7 全部遵守上限、head+tail 语义与原始 cap≥2 完全一致；left/right/error 不受影响。
 - **CPU 测试（12 项全过）**：原 11 项 + 新增 `test_middle_cap1_does_not_extend_prompt`，在服务器 4090-1 `verl-e2e` 环境重跑 **12 passed**（5.05s）；**对照验证**——还原旧 middle 行后 cap=1 测试失败（证明测试有效），恢复修复后通过。
-- **状态**：PR #8313 已由用户主动关闭（「Closing: not yet reviewed/approved. Will reopen when the fix has been reviewed and approved」，10-22 07:07Z）；修复已 commit 到 fork 分支 `fix-8281-truncation-policy`（`872bc281` 用户风格 + `6db4b38d` 漏洞修复），待用户决定重开 PR 时机。
+- **状态**：PR #8313 已由用户主动关闭（「Closing: not yet reviewed/approved. Will reopen when the fix has been reviewed and approved」，10-22 07:07Z）；修复已 commit 并**推送到 fork 分支** `fix-8281-truncation-policy`（`872bc281` 用户风格 + `6db4b38d` 漏洞修复，远端 head 已确认 `6db4b38d`）。**最新分支复验（2026-10-22）**：CPU 单测 12 passed；4090-1 上 GPU e2e 正向 2 step 全过 + `error` 策略 fail-loudly，见 [GPU 冒烟记录](../../experiments/verl-8281-gpu-smoke/readme.md#2026-10-22-最新分支复验872bc281--6db4b38d含-middlecap1-修复)。待用户决定重开 PR 时机。
 - **issue #8281 回复草稿**：[draft-8281-issue-reply.md](draft-8281-issue-reply.md)（技术确认 + 修复进展 + middle/cap=1 边界说明 + error 训练器行为契约问题），发布需用户授权。

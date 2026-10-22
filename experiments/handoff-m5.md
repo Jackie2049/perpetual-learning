@@ -130,3 +130,8 @@ M5 最小下一步：先判断是否有获准使用的对应配置、完整 toke
 3. 保留版本、命令、配置、原始日志/失败、真实执行范围 → 见上方实测记录。
 
 停止条件：完成标准是有可追溯的 e2e 冒烟结果（正常跑通 + 记录版本/命令/日志），或明确缺失条件清单（缺 GPU/环境/模型授权等）。——**已完成**。
+
+**最新分支复验（2026-10-22，用户要求推送并确保测试通过）**：
+- fork 分支远端 head 已确认 `6db4b38d`（`872bc281` 用户风格 + `6db4b38d` middle/cap=1 修复）；PR #8313 仍 CLOSED（head 停在 `80ee82bd`），未重开、未评论上游。
+- **服务器源码树已修一致**：`/home/zxw/verl-pt-impr` 原为 10-14 包快照，只打补丁替换了 10-21 的 `agent_loop.py`，导致 `build_initial_tokens(..., mm_inputs_out=...)` 与旧 `continuous_token.py` 不兼容（`TypeError`，与截断修复无关）。已把完整 `verl/` 包同步为本地 `HEAD`（`954bd28f` + 两 commit），旧包备份 `verl.bak-20261022`。**后续在该树工作前先核对该备份，避免覆盖其他会话的本地改动。**
+- 复验结果：CPU 单测 **12 passed**；GPU 正向 2 step（30.8s / 4.5s，num_turns=2）`SMOKE COMPLETED OK`；负向 `max_prompt_length=32` → `ValueError` fail-loudly。日志 `/tmp/smoke_8281_latest2.log`、`/tmp/smoke_8281_neg_latest.log`。详见 [实验记录](verl-8281-gpu-smoke/readme.md#2026-10-22-最新分支复验872bc281--6db4b38d含-middlecap1-修复)。
