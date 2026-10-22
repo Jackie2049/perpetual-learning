@@ -377,6 +377,50 @@ PY
 
 SHA256：schema `760bcc3bb262907eebc1600045b5f83b770c717027d97ea43f4f88eff608a17c`；CLI `cc42e43ca953c871042daf829ca3ce5c500067e40def2c388a71fc7d2a048aac`；复用 run_id helper `e8038f48a11f2ac48e1958acc4b07fb8a4be98a2a5eb523a7aa7ffd9de148a82`。没有向 UniRL 提交 harness、采用候选或启动训练，此项不新增 M5 硬件任务。真实性能比较仍需对应模型/算法、负载、硬件、奖励与测量窗口；格式统一不能替代这些条件。
 
+## 损失单位与微批次权重
+
+**平均 loss 必须同时说明单位与窗口。** [已有 PR #622](https://github.com/Tencent-Hunyuan/UniRL/pull/622)将单位声明移到 `StageAlgorithm.loss_units(part)`，训练栈不再从 algorithm 的属性猜测单位；固定 head `9dded4e2fd92732dd9de40252a4ae5b342b164e0`、base `6fd82cba13f52f394747832344039408699ea378`，四文件 53 增/34 删。这是 #580 第一阶段接口迁移：微批缩放仍为 `w × G / D`，不是引入新的 token 目标，也没有将 `LossNorm` 传入每个算法的 backward 接口。
+
+### None 与零计数
+
+基类在 token-mean 时要求 TextSegment，按 packed cu_seqlens 对 loss_mask 做累计和差分，得到每行有效 token 数；没有 mask 时回退 lengths。其他模式返回 None。训练栈随后分两路：
+
+| `loss_units` 结果 | 微批权重与归约 | 约束 |
+|---|---|---|
+| None | 微批行数 / 本 update 行数；本 helper 不做单位 all-reduce | 表示 sample share，不是无监督或跳过训练 |
+| 计数 tensor | w 是该微批有效单位数，D 是全局单位总数，G 是梯度平均 world；权重 w×G/D | 要求 SP size=1；不能把 G 随意替成总卡数 |
+| tensor 全为0 | 仍进入计数路径；全局 D≤0 时返回零权重与该 D | 不能将“本 rank 无 token”改成 None，否则 collective 分支可能不一致 |
+
+`LossNorm(denominator, grad_world)` 在 helper 内保存 D/G，不执行归约或认证单位。backend 的 `all_reduce_loss_sums` 与 `gradient_average_world_size` 使用同一 FSDP mesh；G 用于抵消梯度平均，因此分布式下单个 rank 的 scale 不必加总为1。自定义 `loss_units` 必须在所有 DP rank 一致返回 None 或都返回计数，这是文档前提，不是本轮证明的自动一致性检查。
+
+原 single/unified stack 没有在该 PR 中改动：TrainStack 对全局零 token update 抛错；unified 单路为零时保留零 scale 及警告，由另一轨道继续。这是源码接线，不是本机执行过的 optimizer 行为。[算法基类](https://github.com/Tencent-Hunyuan/UniRL/blob/9dded4e2fd92732dd9de40252a4ae5b342b164e0/unirl/algorithms/base.py)、[缩放 helper](https://github.com/Tencent-Hunyuan/UniRL/blob/9dded4e2fd92732dd9de40252a4ae5b342b164e0/unirl/train/stack/loss_scale.py)、[训练约定](https://github.com/Tencent-Hunyuan/UniRL/blob/9dded4e2fd92732dd9de40252a4ae5b342b164e0/unirl/train/readme.md)。
+
+### 本机聚合函数对照
+
+2026-10-22 用原 `aggregate_token_losses` 和真实 CPU autograd 核对两种局部归约。合成 packed 行长 `[2,3]`，loss 为 `[2,999 | 4,6,8]`，999 所在槽始终被掩码；horizon=1。两个版本的原聚合函数 AST 相同，本轮没有执行新 `loss_units` 或 `resolve_loss_scales`。
+
+| 每行有效 token 数 | 归约目标 | 原函数整批 loss | 两个单行微批的手动权重 |
+|---|---|---|---|
+| 1、3 | token-mean | 5 | 1/4、3/4 |
+| 1、3 | seq-mean-token-mean | 4 | 1/2、1/2 |
+| 0、3 | token-mean | 6 | 0、1 |
+| 0、3 | seq-mean-token-mean | 3 | 1/2、1/2 |
+
+四组重组的前向值及对 loss 输入的梯度均与整批相同；第一组 token 梯度为 `[1/4,0,1/4,1/4,1/4]`，seq 梯度为 `[1/2,0,1/6,1/6,1/6]`。完全掩码的序列在 seq-mean 下贡献0但仍占一行，不能从分母删除。把 token-mean 的微批误乘等行数份额，会得到另一个目标，不能用“都是 mean”解释为等价。
+
+窗口也有独立语义：single stack 的 accumulation window 逐 Part 求缩放，再乘1/M，因此平均各 Part 的 token mean，而不是把全部 Part 拼成一个 token 分母。例如有效计数1、3的两 Part 均值为2、6时，Part 平均为4，全 token 平均为5；这是现有文档规定的窗口目标，不据差值定性缺陷。本轮没有运行 accumulation stack。
+
+复查（Python3.12.13 / torch2.9.1，显式 CPU）：
+
+```bash
+git -C /path/to/UniRL fetch origin pull/622/head
+python -B experiments/scripts/verify_unirl_loss_reduction.py /path/to/UniRL
+```
+
+[脚本](../../experiments/scripts/verify_unirl_loss_reduction.py)完整执行原 loss_agg 词汇模块，AST 仅选择完整原聚合函数、延后注解，无包壳/假 backend。微批权重是显式单进程算术，不是假装运行生产缩放器。打印完整源码 SHA256：head base.py `f586474992dee187755ae47f431a90dc4857180fa1b1aa01dd8b27e2f59a4f1a`，loss_scale.py `d627ea261f0867d46335a1264622911913ff1d684450b7333aaf0dc67209f13c`，loss_agg.py `8049957fa4ecbf2086afab6e066fa1beeb9d35bdabebfd3d8890f7ee078ecd3f`。
+
+本机环境缺 Ray/Hydra/OmegaConf/Pillow，未补装或导入训练栈，未复跑作者报告的双 rank Gloo/FSDP2 gate、80,640 组差分或 AROPD。这里确认局部目标差异和固定源码路径，不认证候选所有输入 bit-identical、分布式归约、模型梯度或训练收益；不自动采用或新增 M5 必跑事项。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。

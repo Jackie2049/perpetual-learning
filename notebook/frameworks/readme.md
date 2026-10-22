@@ -110,6 +110,7 @@
   - [Token预算与update成员](unirl-survey.md#token-预算与-update-成员)：原Part/planner单进程CPU对照，dense/sum代价不同；超预算单样本仍独占批，无长度则回退数量规划。非显存或分布式训练保证。
   - [EMA衰减与时机](unirl-survey.md#ema-衰减方向与更新时机)：原模块正常导入，CPU mirror核对旧影子权重、延后复制与单层异常恢复；后端计数仅源码，非训练/导出验收。
   - [Smoke结果与训练验收](unirl-survey.md#smoke-结果格式与训练验收)：#576原CLI/标准库检查通过，总样本派生吞吐，可选未知与0不同；仅空循环合同检查，JSON合法不代表训练通过。
+  - [损失单位与微批权重](unirl-survey.md#损失单位与微批次权重)：#622单位声明迁移，None与零计数走不同路径；原聚合函数四组CPU前向/局部梯度对照，非训练栈/分布式验收。
 
 ## verl
 

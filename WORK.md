@@ -16,6 +16,8 @@
 
 ## 运行接续
 
+- **M1 UniRL损失单位学习收束（2026-10-22）**：已有#622 head9dded4e2/base6fd82cba，将loss_units声明移入算法，w×G/D公式不变；None是sample share、零tensor仍走collective，跨rank None选择须一致。见[原调研](notebook/frameworks/unirl-survey.md#损失单位与微批次权重)/[复查](experiments/scripts/verify_unirl_loss_reduction.py)。原聚合函数两版AST相同，四组真实CPU前向/输入梯度通过；token有效1/3得5而seq均值得4，首行全掩码得6/3。新method/helper、FSDP/Gloo gate/accumulation仅读源码，未跑生产栈或作者矩阵，无新依赖/硬件事项或上游修改。本题收束，后续选非归约/mask/微批变体的源码问题；GPU/AReaL、#8313与网站边界不变。
+
 - **M1 UniRL smoke格式学习收束（2026-10-22）**：先快进同步M5的9fc4586去PDL真机探针，不改其移植工作。只读已有#576 heada6ed0ec8/base6fd82cba，六个原文件临时归档正常导入；Python3.12.13 -S原CLI及标准库检查通过，samples3×measured4=12，warmup不计，缺失可选字段不补0，同名写入拒绝且旧文件不变。见[原调研](notebook/frameworks/unirl-survey.md#smoke-结果格式与训练验收)。schema允许0样本/无success字段，CLI只计时空循环，非训练/性能验收；无永久新harness/依赖或M5任务，上游未改。本题收束，后续选其他源码问题，不堆schema/文件故障替身；GPU/AReaL、#8313与网站边界不变。
 
 - **M1 ReMax基线概念更正收束（2026-10-22）**：只读已有#8310 head5faa0989/basecd58f550，核心源码未变；完整原注册/估计器/贪心参数helper的CPU检查通过，奖励1/4与外部基线2得优势−1/2，误换sampled最大值4则−3/0。见[原笔记](notebook/frameworks/verl-remax-icepop-source-reading.md#v1-贪心会话与-sampled-最大值)/[复查](experiments/scripts/verify_verl_remax_baseline.py)。V1额外remaxbase会话、最终output index及TQ回填仅读源码，原14测试缺依赖未跑，不是解码/训练验收。纠正通用算法笔记max说法并撤回零方差、单样本完美及硬件最优推荐；无新依赖/硬件任务，不应用候选或改上游。本题收束，下一轮选未重复源码问题，不堆基线/TQ替身；GPU/AReaL、#8313与网站边界不变。

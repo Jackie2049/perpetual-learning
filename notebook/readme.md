@@ -202,6 +202,7 @@
   - [Token预算与update成员](frameworks/unirl-survey.md#token-预算与-update-成员) — 原CPU planner保留update成员；预算不拒绝超长单样本，无长度会回退数量规划，非显存保证
   - [EMA衰减与时机](frameworks/unirl-survey.md#ema-衰减方向与更新时机) — decay乘旧影子，零值复制live；原CPU mirror/回调/上下文控制，非optimizer或训练验收
   - [Smoke结果与训练验收](frameworks/unirl-survey.md#smoke-结果格式与训练验收) — #576原空循环CLI核对总样本、可选字段、同名文件保护；统一JSON不是训练或性能验收
+  - [损失单位与微批权重](frameworks/unirl-survey.md#损失单位与微批次权重) — #622接口迁移，token/seq目标与None/零计数不同；四组原函数CPU前向及局部梯度检查，非FSDP验收
 - [DeepInfer 平民版（魔改适配非旗舰硬件）可行性](frameworks/deepinfer-civilian-port.md) — DeepInfer 对 Blackwell/Ascend950 的依赖堵点、替换方案、4090/A100/H100/910C 分层可行性；2026-10-21 已补 4090 真机验证（csrc `_C` 编译导入成功、架构检查与 kernel 包堵点实测确认）
 - [分布式训练排错指南](frameworks/troubleshooting-guide.md) — NCCL 超时、OOM、梯度异常等常见问题
 
