@@ -4,6 +4,7 @@
 
 | 入口 | 用途 |
 |---|---|
+| [verify_unirl_rollout_correction.py](verify_unirl_rollout_correction.py) | 固定#557原校正if分支+原clip/reducer：36组CPU值/局部梯度对照，detach、裁剪顺序、分母、安全限幅和micro ESS控制。Python3.12+/torch/本地Git对象，属性容器仅供张量字段；非完整GRPO、base/head禁用路径等价、anchor生命周期、模型/训练或设备验收，见[主笔记](../../notebook/frameworks/unirl-survey.md#replay-锚点与-rollout-采样校正) |
 | [verify_unirl_policy_entropy.py](verify_unirl_policy_entropy.py) | 固定#563原LM-head chunk/entropy/metric helper及完整ReplayResult/两版metrics，Linear夹具CPU20组FP32/BF16温度/形状局部梯度对照，mask/拒绝和加权聚合控制；11模块仅compile。Python3.12+/torch及本地Git对象，无完整Qwen/replay/TrainStack/collective或设备验收，见[主笔记](../../notebook/frameworks/unirl-survey.md#全词表条件熵与有效-token-汇总) |
 | [verify_unirl_block_freeze.py](verify_unirl_block_freeze.py) | 固定#593原两条参数选择、完整原optimizer/config及原checkpoint helper AST；三Linear数学夹具的CPU梯度/一次AdamW/非重入与no_grad、重入负控制。Python3.12+/torch与本地Git对象，不是tiny H3或FSDP/TrainStack/replay/恢复/硬件验收，见[主笔记](../../notebook/frameworks/unirl-survey.md#原始-block-权重训练与冻结外围) |
 | [verify_verl_tq_config.py](verify_verl_tq_config.py) | 固定#8340原helper AST/完整原3项pytest，真实Hydra合成配置；四类generated的base/head配对。需本地Git、Python3.12+/pytest/Hydra/OmegaConf，--deps可复用临时target；不导入Ray/torch/TQ或构造调度器替身，非启动/容量验收，见[主笔记](../../notebook/frameworks/verl-transferqueue-worker-lifecycle-deep-reading.md) |

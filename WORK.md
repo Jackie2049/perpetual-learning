@@ -34,6 +34,8 @@
 
 ## 运行接续
 
+- **M1 rollout校正学习收束（2026-10-23）**：快进M5状态0ef17f9，核verl最新6项无新head后选未读UniRL#557 head300170e9/base祖先852c0454（2文件46新增）。见[原调研新节](notebook/frameworks/unirl-survey.md#replay-锚点与-rollout-采样校正)/[复查](experiments/scripts/verify_unirl_rollout_correction.py)。PPO new/old裁剪后才乘冻结old/behavior token权重，不改原分母，micro ESS非全局；原if片段+clip/reducer的36组CPU值/局部梯度及顺序/安全限幅反例通过，非完整GRPO/disabled路径等价/anchor生命周期。作者在线小fixture无校正收益证明，高LR关闭校正pilot不挪为分支或#8250因果；缺口补原M5参考，不启训练/改#523专项。本题收束，下轮另选非token IS/cap/ESS替身小变体问题；GPU/AReaL/#8313/#523分工不变。
+
 - **M1有界补样学习收束（2026-10-23）**：快进M5状态40e14bf，核UniRL6更新无新head后选未读#562 heade8cd33da/base祖先772fd7c5（7文件207增15删）。见[原调研新节](notebook/frameworks/unirl-survey.md#有界动态采样与数据游标)。筛整组有限精确非同分，K含首批、每次取完整B组，surplus丢弃；耗尽在训练前抛错不回滚生成/数据消费。保存已消费批数非随机生成状态，失败前未新增保存路径；LoRA重推/backup与游标是独立前提。两版各5模块仅compile，无trainer/Sample/transport/恢复或设备执行、不加替身；当前head只有作者外部CPU报告，GPU属旧10e57c6，缺口补原M5参考不部署/重开版本修复。本题收束，下轮另选非补样预算/游标/筛选替身小变体问题；GPU/AReaL/#8313/#523分工不变。
 
 - **M1全词表熵学习收束（2026-10-23）**：快进M5状态6511025，核verl最新8项无新head后选未读UniRL#563 head00e5597f/base祖先94e8f26b（13文件270增43删）。见[原调研新节](notebook/frameworks/unirl-survey.md#全词表条件熵与有效-token-汇总)/[复查](experiments/scripts/verify_unirl_policy_entropy.py)。监控完整softmax(logits/T)，T非正回退1、未top-k/p，detach非loss项；mask转bool，空count0均值0非健康结论。原LM-head chunk/Linear夹具20组CPU局部值/梯度开关一致，1/3长度聚合改用sum/count；非完整Qwen/replay/算法/TrainStack/collective，11模块仅compile。作者GPU报告未复跑，缺口补原M5参考，不部署或诊断#8250。本题收束，下轮另选非熵监控/均值分母/归约替身小变体问题，GPU/AReaL/#8313/#523分工不变。

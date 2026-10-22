@@ -122,6 +122,7 @@
   - [原始block权重与冻结外围](unirl-survey.md#原始-block-权重训练与冻结外围)：#593保持分片/混合精度边界；冻结头仍传输入梯度，原optimizer与非重入helper的CPU数学控制通过，作者8×H100首反向仍OOM，非H3训练验收。
   - [全词表熵与有效token汇总](unirl-survey.md#全词表条件熵与有效-token-汇总)：#563 replay条件熵非采样器熵/entropy loss；20组原LM-head局部CPU梯度与加权聚合控制，非Qwen/分布式验收。
   - [有界动态采样与游标](unirl-survey.md#有界动态采样与数据游标)：#562筛完整有限非同分组，预算含首批/耗尽不回滚；游标非随机生成恢复。仅源码与两版语法，旧GPU证据不迁为新head验收。
+  - [Replay锚点与采样校正](unirl-survey.md#replay-锚点与-rollout-采样校正)：#557 PPO裁剪后乘冻结token权重，不改分母；36组原片段CPU值/梯度控制及ESS反例，非完整算法/anchor或学习收益验收。
 
 ## verl
 

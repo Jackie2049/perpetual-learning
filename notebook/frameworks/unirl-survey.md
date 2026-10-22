@@ -895,6 +895,42 @@ git show e8cd33daa6067a0da69466f24cc6f1bbd3a082bc:unirl/trainer/ar.py | python3 
 
 Head SHA256：ARTrainer `068fbc203478e7dff538cc24f3d23e2a2cdce05e77eaeb578935f44208df4c0c`；trainer/base.py `a2de136a3b2ad01a6d36e3164b7b691b6401285e0e8a5010a29a4a6a2337e07c`；validation `ba9be8d0bcd2fd3b4c1bf354e0b05fe0b7cefe7b6f33790e148db422be345fd6`。
 
+## Replay 锚点与 rollout 采样校正
+
+**PPO裁剪的策略变化与rollout采样分布的差异是两种比率，先裁剪再加权不能随意合成一个比率。** [#557](https://github.com/Tencent-Hunyuan/UniRL/pull/557)（2026-10-23读取open）为AR GRPO增加默认关闭的token校正。固定head `300170e99209f26908d637971b3146d2ac7f98ff`、base/实际祖先 `852c0454a6cb63592b2582358f88623870848df1`，ahead2/behind0；仅GRPO与README两文件46行新增，无提交测试。这里不修改anchor生命周期或判断M5的#523专项。
+
+### 两个比率的位置
+
+[原GRPO路径](https://github.com/Tencent-Hunyuan/UniRL/blob/300170e99209f26908d637971b3146d2ac7f98ff/unirl/algorithms/grpo.py)以冻结replay anchor `old`计算`r = exp(new_logp - old_logp)`，先形成原PPO clipped token loss。新增分支再乘以冻结的`w = exp(min(clamp(old_logp - rollout_logp, -20, 20), log(cap)))`。启用要求`old_logp_source='replay'`、有限正cap及已保存rollout log-prob；默认None不进入新增分支。它不重新采样，也没有把PPO裁剪范围改成cap。
+
+若未裁剪/限幅，两比率相乘可形式上约去old，但实际目标有PPO clipping和权重cap，顺序不交换。本机单token正优势控制令当前策略等于anchor、anchor/behavior比率3、cap2、PPO上界1.4：原顺序loss=-2、对当前log-prob梯度=-2；改成直接对behavior做PPO clipping则loss=-1.4、梯度0。后者不是同一目标，也不是本项目提出的替代实现。
+
+新增权重计算显式detach，因此不会通过这个乘数向old或behavior回传梯度；完整PPO仍依赖old为冻结输入，这不能反过来证明prepare_segment或跨update锚点生命周期正确。权重截断引入偏差，且此式不修复tokenization、温度、top-k/p支持集不匹配；不是序列IS、拒绝采样或所有状态分布差异的无偏修复。
+
+### 分母和诊断保留什么含义
+
+[原reducer](https://github.com/Tencent-Hunyuan/UniRL/blob/300170e99209f26908d637971b3146d2ac7f98ff/unirl/algorithms/base.py)的三种模式未变。权重乘token损失后仍按原mask计数、逐序列均值或horizon归约，不除以权重之和。本机两枚单位损失乘`[1,2]`后token-mean=1.5，不是自归一化IS的1。
+
+权重采用FP32 anchor操作数，先做[-20,20]安全限幅再做cap。极端差值的权重因此有安全地板/天花板；`rollout_is_clipped_fraction`比较的是安全限幅后的log_weights和log(cap)，不是所有原始差值饱和的计数。构造器允许任何有限正cap，并未要求cap≥1：相同anchor/behavior在cap2时权重1，在cap.5时权重.5，不能无条件称同策略总是单位权重。这些是实现范围核对，不推荐极端cap或推断精度收益。
+
+新增mean/max、clip fraction及ESS只描述当前micro的active权重；有限输入的全masked micro给这四项0。归约仍沿用mask数值，不认证任意非二值/非有限mask。归一化ESS公式为`(sum w)^2/(count*sum w²)`；两个micro分别有`[1,1]`和`[2,2]`时，各自ESS fraction均1，拼接tensor的值却为0.9。平均两个micro的1不能冒充全局ESS，本机未运行分布式聚合。
+
+### 本机局部 CPU 对照
+
+[复查脚本](../../experiments/scripts/verify_unirl_rollout_correction.py)固定本地Git对象，Python3.12.13 / torch2.9.1、显式CPU。执行完整原loss-mode模块、AST原样选取的clip/active-token/reducer三个函数，以及GRPO新增完整校正if分支。仅两个属性容器提供cap和保存的behavior/mask张量，不冒充TextSegment、GRPO或stage；new/old等是声明的数学输入，不执行prepare_segment或完整compute_loss_and_backward。
+
+36组值/当前log-prob局部梯度对照通过：三种reducer×无/部分/全零mask×None/.5/1/2四种cap，含非对称PPO裁剪，参考权重用独立Python标量计算，atol/rtol=2e-7。另核新增乘数对两anchor操作数detach、两比率顺序反例、原分母、同策略两cap、±100差值安全限幅及micro ESS反例。最终脚本重复通过；None控制只验证局部数学，不称完整base/head disabled路径逐位等价。
+
+```bash
+python -B experiments/scripts/verify_unirl_rollout_correction.py /path/to/UniRL
+```
+
+三个输入模块均做编译检查，完整GRPO/base模块不执行；base.py与loss_agg.py的base/head Git blob相同。没有完整GRPO构造/输入guard测试、模型/replay、optimizer、FSDP/TrainStack、transport、anchor冻结/恢复或设备执行，没有安装依赖/探测服务器。
+
+作者外部harness另报83项CPU检查、单独Gloo、Qwen3-0.6B单/双L40S及100轮在线小算术实验，本项目未复跑。[PR最新正文](https://github.com/Tencent-Hunyuan/UniRL/pull/557)的受控单seed报告中，recipe LR=1e-6时启闭均未坍塌，最终held-out avg@4为关闭0.9375、cap2为0.796875，且cap2未实际截断token；不证明校正提升效果，也不能证明普遍有害。较高LR=1e-5的坍塌pilot发生在关闭校正时，不得归因为这个可选分支或挪为#8250诊断。真机核对仅补[原M5参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不启训练或改anchor专项。
+
+SHA256：GRPO `31531e0edc1301ce5f80012499ae89d6266715dfac871aaea266b5b2ef3d87c7`；base.py `326291439342130064abb865a5ef69fb5a49475edb65f040d38e0db39edfae52`；loss_agg.py `8049957fa4ecbf2086afab6e066fa1beeb9d35bdabebfd3d8890f7ee078ecd3f`。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。
