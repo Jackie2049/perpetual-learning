@@ -854,6 +854,47 @@ python -B experiments/scripts/verify_unirl_policy_entropy.py /path/to/UniRL
 
 SHA256：Qwen3 ar `49557b0cf37b0823940307531f99efa2505242411492b2fe506f5f14387e5972`；metric helper所在base `da4a741a0315c0ad8f530c7952593c8bade2bdaffffcb9e68730af527d306b30`；新metrics `2897870ce27577033b2d7963df9dbc71178fef3a523b53924d786172ae585626`，旧metrics `f19ac2211065ea4927927648a3ec108ecb5b1b7bd7e8f1d3b73dd3ef198beab9`。
 
+## 有界动态采样与数据游标
+
+**补样预算限制生成批次数，不保证找到足够有效组；恢复数据位置也不等于恢复随机生成。** [#562](https://github.com/Tencent-Hunyuan/UniRL/pull/562)（2026-10-23读取open）为同步AR GRPO增加可选动态采样。固定head `e8cd33daa6067a0da69466f24cc6f1bbd3a082bc`、base及实际祖先 `772fd7c50ec8221a032179aeec8320df935b3abf`，ahead2/behind0，7文件207增15删，无提交测试。它只是筛组/补样这一片，不是完整DAPO recipe或学习收益证明。
+
+### 筛选整个组而非单条正确答案
+
+[ARTrainer](https://github.com/Tencent-Hunyuan/UniRL/blob/e8cd33daa6067a0da69466f24cc6f1bbd3a082bc/unirl/trainer/ar.py)先generate并由原reward服务评分，再读取最终`part.rewards`。一组必须包含预期全部siblings，reward全部有限且至少一个值与首项精确不等才保留。它不检查“正确/错误”标签，也没有epsilon或最低方差阈值：全对同分与全错同分都可丢弃；连续reward只要存在可表示差异便可通过。仅核源码，没有把手写奖励数组控制当作原Sample/Part或trainer测试。
+
+保留前`batch_size`个有效整组。即使中途已够数，仍统计该生成批的其余组；多余有效组丢弃，不缓存在下一次update。优势在最终拼好完整训练批之后才计算。`unfiltered_reward_mean`包含所有生成组中的有限reward，连被整体拒绝的非有限组内的有限成员也会进入这个指标；通常训练reward则只看保留组。过滤提高训练reward均值不能直接当作策略改进，需与独立评测和真实生成成本分开。
+
+### 批数上限和失败边界
+
+配置`dynamic_sampling_max_batches=K`的0表示关闭，正整数K**包含初始批**，不是首批之外再补K次。每次不足都重新取完整`batch_size=B`输入组，而不是只取缺少的数量；正常完成的K批至多生成`K×B`组、`K×B×siblings`条completion。这是源码计数推导，不是吞吐或显存实测；预算不限制单次调用耗时，远程切片可能保留整批backing storage，不能理解成内存字节硬上限。
+
+| 数量 | 在本路径中的含义 |
+|---|---|
+| generated_batches | 本次训练批实际生成并评分的整批数，包含首批 |
+| generated_groups / valid_group_fraction | 所有已评分组及其有效比例，包含最终丢弃的surplus |
+| batch_size | 每次生成的输入组数，也是训练前必须凑齐的保留组数 |
+| data_batches_consumed | 跨训练轮次累计的数据源取批次数，不是optimizer step数 |
+
+耗尽K批会抛错，调用栈尚未进入优势计算及`stack.train_track`，不会拿残缺批继续该次训练；但已消费的数据、生成/评分及sleep/wake成本不回滚。主训练循环finally做日志/runtime清理，正常checkpoint保存位于成功train_step之后，预算失败没有新增“保存当前消费游标”的路径。因此恢复依据已有checkpoint的游标，而不是失败现场最新内存计数。
+
+### 游标恢复与策略驻留是不同状态
+
+新增driver metadata保存`data_batches`及`batch_size`，恢复时对新建数据源重复调用get_samples跳过这些批次。带此字段的checkpoint要求动态采样仍启用且batch_size相同；这里未校验K相同、数据集revision或随机生成状态。只有重建相同seed/数据读取流等前提成立，批次计数才对应同样输入请求；不是序列化数据源全部内部状态或保证同样completion。refill另以`d<已消费批数>:<sid>`命名空间区分再次访问的数据行，不是内容哈希或永久dataset ID。[原保存/恢复路径](https://github.com/Tencent-Hunyuan/UniRL/blob/e8cd33daa6067a0da69466f24cc6f1bbd3a082bc/unirl/trainer/base.py)
+
+同一采样批的refill不抽取更新后的训练权重；仅首次attempt按原sync条件同步，后续如有已staged的LoRA adapter便在wake后重推，以应对sleep释放adapter。SGLang memory saver启用时，配置guard要求weight CPU backup；明确字段优先于engine_kwargs。该检查位于需要rollout sleep的构造分支、支持识别的SGLang配置内，不认证引擎实际保存了同一权重。两类生命周期都需真实后端证据，不能用游标正确替代。[原配置guard](https://github.com/Tencent-Hunyuan/UniRL/blob/e8cd33daa6067a0da69466f24cc6f1bbd3a082bc/unirl/config/validation.py)
+
+### 当前验证范围
+
+本机仅源码及base/head各5个完整Python模块的AST/内存compile通过；没有导入trainer/Hydra/Ray、运行Sample筛选/concat、TensorRef transport、备份/重推、训练或checkpoint恢复，也没有设备/服务器探测、新依赖或trainer替身。单文件语法核对可复现为：
+
+```bash
+git show e8cd33daa6067a0da69466f24cc6f1bbd3a082bc:unirl/trainer/ar.py | python3 -c 'import sys; compile(sys.stdin.read(), "ar.py", "exec")'
+```
+
+当前API正文明确区分版本：作者在e8cd33d报告39项CPU、TensorRef/adapter和配置组合检查，harness在仓库外；GPU full/LoRA/恢复/预算耗尽报告属于旧10e57c6，不是新版刷新后的GPU复跑。历史两L40S/Qwen3-0.6B的小型算术任务含受控reward路径，不能作当前head的端到端验收、数值GPU parity、收敛或吞吐证明。网页抓取仍停在旧正文，不据缓存页覆盖API的版本限定。真机缺口补[原M5入口](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不部署该配方、重开vLLM版本问题或改M5专项。
+
+Head SHA256：ARTrainer `068fbc203478e7dff538cc24f3d23e2a2cdce05e77eaeb578935f44208df4c0c`；trainer/base.py `a2de136a3b2ad01a6d36e3164b7b691b6401285e0e8a5010a29a4a6a2337e07c`；validation `ba9be8d0bcd2fd3b4c1bf354e0b05fe0b7cefe7b6f33790e148db422be345fd6`。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。
