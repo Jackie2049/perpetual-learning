@@ -211,6 +211,7 @@
   - [AROPD采样梯度与KL](frameworks/unirl-survey.md#aropd-的采样梯度与-kl-目标) — #534 raw score公式的固定前缀参考；teacher log-prob目标不能省去entropy项，非原算法/模型验收
   - [关键帧条件与功能就绪](frameworks/unirl-survey.md#关键帧条件的数据身份与功能就绪) — #584携带fp32条件行并只返回target velocity；producer/条件时间仍待接，源码/静态检查不等于FL2VA可启用
   - [设备资源与通信后端](frameworks/unirl-survey.md#设备资源与通信后端的分层边界) — #623已关闭未合并；资源预约/可见性/设备编号/默认通信组分开，仅两版三模块compile，不认证GPU或NPU支持
+  - [TempFlow分支与逐行时间](frameworks/unirl-survey.md#tempflow-分支共享与逐行时间索引) — #552同seed共享x_T不等于缓存前缀计算；每行真实j与合并槽分开，仅噪声helper CPU控制，非模型/训练验收
 - [DeepInfer 平民版（魔改适配非旗舰硬件）可行性](frameworks/deepinfer-civilian-port.md) — DeepInfer 对 Blackwell/Ascend950 的依赖堵点、替换方案、4090/A100/H100/910C 分层可行性；2026-10-21 已补 4090 真机验证（csrc `_C` 编译导入成功、架构检查与 kernel 包堵点实测确认）
 - [分布式训练排错指南](frameworks/troubleshooting-guide.md) — NCCL 超时、OOM、梯度异常等常见问题
 

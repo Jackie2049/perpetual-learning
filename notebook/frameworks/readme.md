@@ -114,6 +114,7 @@
   - [AROPD采样梯度与KL](unirl-survey.md#aropd-的采样梯度与-kl-目标)：#534源码与GKD范围阅读；两组三动作参考区分raw score梯度、直接gap及teacher cross-entropy，不认证默认归一化或训练。
   - [关键帧条件与功能就绪](unirl-survey.md#关键帧条件的数据身份与功能就绪)：#584条件行随样本传递，shape对齐非身份认证；仅静态核对，producer/条件timestep未就绪，不启用FL2VA。
   - [设备资源与通信后端](unirl-survey.md#设备资源与通信后端的分层边界)：已关闭未合并#623；actor零GPU请求不取消PG预约，CVD编号与eccl默认组各需核验，仅源码/compile，不是跨硬件支持。
+  - [TempFlow分支与逐行时间](unirl-survey.md#tempflow-分支共享与逐行时间索引)：#552共用x_T不复用前缀计算，分步算优势后合并，槽0非真实j=0；仅原噪声模块CPU控制/9模块compile，非replay/loss或训练验收。
 
 ## verl
 

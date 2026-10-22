@@ -568,6 +568,60 @@ PY
 
 head SHA256：device_pool.py `eeb37485a54a1c8b4d9aaa07f3fad7db20c72916433fb2189a61d331651dc543`；worker.py `2f2c2577b8649ee9836006503d748826c42505067432995b470d0b5c94eeb189`；store.py `c19fef9e947de74a2d8ff61508d25221cbad6995e8f806f82cf090f60b1ebcc2`。真机缺口记入[原M5 UniRL参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不另开硬件队列。本题以分层契约学习收束，不继续造设备/通信替身。
 
+## TempFlow 分支共享与逐行时间索引
+
+**共享确定性前缀的输入，不等于复用前缀计算；合并存储槽，也不等于合并实际时间。** 2026-10-22只读[#552](https://github.com/Tencent-Hunyuan/UniRL/pull/552)，当轮open、未合并，固定head `ef9cb362ee8f92f1dcae6ec474075ed922ef994d`、base/官方compare共同祖先 `6fd82cba13f52f394747832344039408699ea378`，ahead17/behind0，23文件1367增62删。差异包含#546/#589的Flash-GRPO及replay前置工作，不全算作TempFlow独有实现。以下解释此候选的接线，不认证与论文/官方实现等价。
+
+### 共用初始噪声但仍重复完整生成
+
+[trainer._build_branch_request_samples](https://github.com/Tencent-Hunyuan/UniRL/blob/ef9cb362ee8f92f1dcae6ec474075ed922ef994d/unirl/trainer/diffusion.py)为每个选中的步j建立一次包含全部prompt的请求，固定`sde_indices=[j]`。生成sample_id带步组序号和分支序号以保持唯一；init_noise_group_id则只带prompt父ID和seed序号，使同seed的6分支、不同步组使用同一初始噪声键。它是当前输入批次内的共享，不据此承诺跨rollout、批形状或引擎逐位轨迹一致。
+
+这些显式键通过[NoiseRecipe.from_sample](https://github.com/Tencent-Hunyuan/UniRL/blob/ef9cb362ee8f92f1dcae6ec474075ed922ef994d/unirl/types/noise_recipe.py)优先于init_same_noise的默认分组；[SD3Pipeline](https://github.com/Tencent-Hunyuan/UniRL/blob/ef9cb362ee8f92f1dcae6ec474075ed922ef994d/unirl/models/sd3/pipeline.py)再生CPU fp32 x_T并送diffuse。因此不能因继承配方init_same_noise=false就推断此分支路径没有共享x_T；缺driver latent shape时trainer反而拒绝branched布局。
+
+[SD3 diffuse](https://github.com/Tencent-Hunyuan/UniRL/blob/ef9cb362ee8f92f1dcae6ec474075ed922ef994d/unirl/models/sd3/diffusion.py)仍遍历全部T步，仅j的eta非零，其余为ODE步。分支前相同输入沿相同确定性路径是设计目标，但每组重新调用generate；源码没有在这里将前缀算一次后缓存给所有步组。减少训练的随机转移数量，不等于只做一次模型前向或缩短为一步图像生成。
+
+固定[配方](https://github.com/Tencent-Hunyuan/UniRL/blob/ef9cb362ee8f92f1dcae6ec474075ed922ef994d/examples/diffusion/sd3/sd3_tempflowgrpo.yaml)继承10步SD3.5-M生成，24样本/prompt=4种子×6分支，候选分支步为0..8，每rollout轮转选3步。按源码计数，步组依次为[0,1,2]、[3,4,5]、[6,7,8]，每prompt产生72行；全9步组则216行。batch_size=16时，每个步组384行、三组共1152行；这是逻辑行数，不是并发峰值、显存、调用耗时或训练收益。池排除最后去噪步，候选还检查其存储形状与早期步组不兼容。
+
+### 先组内算优势再保存每行的真实步号
+
+trainer逐步组完成reward/advantage后才合并生成frontier，不复制共享的root前缀。配方advantage_group=prompt、adv_use_global_std=false，所以每个(step,prompt)的24行一起归一化，不跨步组比较奖励；可选seed分组则以连续6行为一组。共享初始seed和优势分组是不同选择，不能把默认配方称为“每seed单独归一化”。这里只核原Part.compute_advantages及trainer接线，未运行组内奖励计算。
+
+合并前的`_stamp_sde_index_per_sample`把每行潜变量固定为以下存储槽，同时单独保存真实j：
+
+| 合并后的字段 | 含义 | 消费方式 |
+| --- | --- | --- |
+| latents[:,0/1/2] | 本行分支前、本行分支后、终态 | 固定槽位置，不是所有行共有的全局去噪时间 |
+| sde_index_per_sample | 每行原来的j | 按j/j+1取完整sigma表中的两项 |
+| indices=0,1,2与sde_indices=[0] | 合并布局的槽/单转移元数据 | 不能由这个0推出所有行都在去噪第0步 |
+
+[PerSampleStepReplayMixin](https://github.com/Tencent-Hunyuan/UniRL/blob/ef9cb362ee8f92f1dcae6ec474075ed922ef994d/unirl/models/types/per_sample_replay.py)据每行j取sigma/sigma_next，用槽0/1重算该转移，返回log_probs[N,1]；不会用共享latents_at(j)解释合并后的槽。它还在replay端init_schedule，不能假设该rank已跑过生成。step_index=0这个调用参数也不代替逐行sigma。
+
+[PerSampleStepGRPO](https://github.com/Tencent-Hunyuan/UniRL/blob/ef9cb362ee8f92f1dcae6ec474075ed922ef994d/unirl/algorithms/per_sample_grpo.py)取每行旧logp首槽，clip优势后算clipped ratio loss；[TempFlowGRPO.row_weights](https://github.com/Tencent-Hunyuan/UniRL/blob/ef9cb362ee8f92f1dcae6ec474075ed922ef994d/unirl/algorithms/tempflowgrpo.py)再乘weight_scale×FlowSDEStrategy.transition_std（配方weight_scale=2.25），后者含std_dev_t×sqrt(−dt)，不是只用扩散系数或一个统一步权重。构造要求beta=0、eta>0及支持逐行索引的FlowSDE stage；async trainer明确拒绝此布局。配方的old_logp_source继承sd3_trainside的replay，并非类默认rollout；本轮没有执行anchor准备、loss或backward。
+
+### 本机仅验证原噪声模块
+
+Python3.12.13 / torch2.9.1，将固定Git blob的完整`unirl/sde/noise.py`原样载入独立命名空间，无方法摘取、包壳或模型替身。该文件与base的blob相同，是复用的基础模块，不是本PR修复验证。向regen_initial_noise显式输入2个prompt×4个seed×6个分支的48个测试键、latent_shape=(2,3)、CPU fp32/base_seed42：三次再生相同，同seed六行相同，测试中的不同seed/prompt不同；逆序输入对应逆序输出，改base_seed会改变输出，CPU全局RNG状态未变。这些键是控制输入，不是实际执行trainer生成的Sample，也不证明去噪前缀/branch logp或loss parity。
+
+最小复查（对象须已在本地，模块第三方依赖仅torch；本例只调用CPU噪声函数）：
+
+```bash
+GIT_NO_LAZY_FETCH=1 python -B - /path/to/UniRL-git <<'PY'
+import subprocess, sys, torch
+head = 'ef9cb362ee8f92f1dcae6ec474075ed922ef994d'
+src = subprocess.check_output(['git', '-C', sys.argv[1], 'show', f'{head}:unirl/sde/noise.py'])
+ns = {'__name__': 'tempflow_original_noise'}
+exec(compile(src, 'unirl/sde/noise.py', 'exec'), ns)
+keys = ['p::seed0'] * 6 + ['p::seed1'] * 6
+x = ns['regen_initial_noise'](keys, 42, (2, 3), torch.device('cpu'))
+assert torch.equal(x[:6], x[0].expand(6, 2, 3))
+assert not torch.equal(x[0], x[6])
+PY
+```
+
+noise.py、noise_recipe、trainer.diffusion、TempFlow/PerSample GRPO、PerSampleReplay、SD3 diffusion/pipeline及Sample共9完整模块内存compile通过，其余模块不执行。noise.py SHA256 `694a81dcf17cf2ff1c5de13399dcc5d721bc02c100394620acc845a9b7b1830c`；trainer.diffusion.py `55dc251e5f707af2501c16e76d892efd65794f60efb0207855c397a12e2d5458`；per_sample_replay.py `bbf5b6358c65c3aa047312ce8a5c9fbab9945d90240286a52286ad1f50a4c6f3`。
+
+PR未提交所述外部harness；作者40项CPU/早期8×L40S smoke与5a1eff0的fp32 parity报告均非本机结果，且正文明确最新API/replay修改未重跑GPU。其原生批形状latent阈值未过、统一microbatch=4后才逐位匹配的观测，也不能外推默认bf16或训练等价。真机缺口补[原M5 UniRL参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不自动选用、部署配方或新增训练队列；本题以分支与时间轴契约学习收束。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。
