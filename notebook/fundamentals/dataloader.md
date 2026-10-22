@@ -2,6 +2,8 @@
 
 > 训练中的数据加载瓶颈 — 为什么 GPU 在等数据
 
+2026-10-22 补充：[分布式采样的补齐与丢弃](#分布式采样的补齐与丢弃)，以 torch 2.9.1 的真实 CPU sampler/loader 核对样本覆盖和评测分母；本轮不测 I/O、预取或训练吞吐，下方原有性能概述不是本次基准结果。
+
 ## 1. 问题：数据加载成为瓶颈
 
 ```
@@ -213,6 +215,47 @@ WebDataset: 样本打包到 tar 文件
   - 天然支持 streaming
 ```
 
+## 分布式采样的补齐与丢弃
+
+`DistributedSampler.drop_last` 处理“数据集长度能否被 rank 数整除”，DataLoader 的 `drop_last` 则由 BatchSampler 处理“本 rank 的样本能否组成完整 batch”。前者为 False 时会复制索引补齐，而不是创建带无效标记的空样本；后者不知道哪些索引是复制来的。[PyTorch 2.9 官方契约](https://docs.pytorch.org/docs/2.9/data.html#torch.utils.data.distributed.DistributedSampler)
+
+### 两个开关不能互相替代
+
+真实 CPU 对照使用 10 个样本（ID 0–9）、3 个 rank、每 rank batch size=2、`shuffle=False`。明确指定每个 sampler 的 `num_replicas/rank`，在同一进程依次枚举；DataLoader 为 `num_workers=0 / pin_memory=False`。下表是实际读取结果，不是手写分片模拟：
+
+| sampler drop_last | loader drop_last | 总读取次数 | 不同 ID 数 | 结果 |
+|---|---|---|---|---|
+| False | False | 12 | 10 | 0 和 1 各读两次 |
+| False | True | 12 | 10 | 每 rank 已有完整两批，重复仍保留 |
+| True | False | 9 | 9 | 丢掉 ID 9，各 rank 保留最后一个单样本 batch |
+| True | True | 6 | 6 | 每 rank 再丢一个尾样本，最终缺 ID 6–9 |
+
+补齐后的 rank 索引分别是 `[0,3,6,9]`、`[1,4,7,0]`、`[2,5,8,1]`。开 sampler 丢弃后变成 `[0,3,6]`、`[1,4,7]`、`[2,5,8]`；再开 loader 丢弃，各自只读前两个。对这个配置，loader 开关无法去重；两个开关同时打开也不保证“只丢一个样本”。
+
+一般地，每 rank 的 sampler 长度在不丢弃时为 `ceil(N/R)`，丢弃时为 `floor(N/R)`。若 loader 还丢尾，则每 rank 实际读取 `B*floor(sampler长度/B)` 条。这是两个独立的取整层次；shuffle=True 时补齐或截掉的是当次排列的头/尾，不必仍是上述 ID。
+
+小数据也有明显边界：N=2、R=4 时，保留 sampler 尾部得到 `[0]`、`[1]`、`[0]`、`[1]`；sampler 丢尾则所有 rank 都为空。即使 sampler 补齐，B=2 且 loader 丢尾也会让所有 loader 为空。本机均通过真实类读取核对。
+
+### 评测分母要保留原始样本身份
+
+合成二元评分只让 ID 0 得 1，其余得 0。原始 10 个样本的均值是 1/10；默认补齐后，ID 0 被读两次，即使正确按所有输出的 sum/count 汇总，也得到 2/12=1/6。这里的问题不是各 rank 均值怎么平均，而是原始样本被重新加权。
+
+若目标是原数据集逐样本均值，需要追踪原始 ID、补齐项和有效性约定，不能仅凭各 rank 等长、loader 设置或最终标量推断无重复/无遗漏。训练有意重复与评测完整覆盖也不是同一目标；具体去重、掩码或采样方案还要满足执行端的 collective/步数契约，不在此给出通用替换。本轮没有诊断或修改 verl、DeepInfer 的评测管道。
+
+### epoch 控制与复现范围
+
+另外用 N=12、R=3、共同 seed=17 核对 shuffle：同一 epoch 重复枚举得到相同顺序；`set_epoch(1)` 后排列改变；改回 epoch 0 能复现最初顺序。两轮都恰好覆盖全部 12 个 ID。应在创建每轮 loader iterator 前设置各 rank 的同一 epoch；只增加外层循环计数不会自动改变 sampler 的 epoch。这个对照不认证数据增强随机性或断点续训。[官方 epoch 约定](https://docs.pytorch.org/docs/2.9/data.html#torch.utils.data.distributed.DistributedSampler)
+
+复查入口：[实验脚本](../../experiments/scripts/verify_distributed_sampler_tail.py)，Python 3.12.13 / torch 2.9.1：
+
+```bash
+python experiments/scripts/verify_distributed_sampler_tail.py
+```
+
+四种主配置、小数据三种边界、合成均值和 epoch 对照全部通过，使用真实 `DistributedSampler`、`BatchSampler` 与 `DataLoader`；不是上游原测试或多 rank 进程实测。未初始化进程组、启动 worker/collective/DDP、运行模型、设备或 I/O 性能测试，也不新增 M5 硬件任务。
+
+运行时 torch git 为 `5811a8d7da873dd699ff6687092c225caffcf1bb`。按 `inspect.getsource` 取得的完整类文本 SHA256：DistributedSampler `725ae8b532bd36ebd6035eaca1f0a3f380d432fa3fdd6c3cf8cb9ad66c5ae24a`，BatchSampler `6bad7b88e69b07178ade438773b0030a23d86ca036ad8f11a8c044cf4876c593`；指纹是类文本而非整个源文件。
+
 ## 7. 学习要点
 
 1. **Prefetch 是最基本的优化** — 多 worker + pin_memory + prefetch_factor
@@ -220,7 +263,7 @@ WebDataset: 样本打包到 tar 文件
 3. **Streaming 用于超大数据集** — 边下载边训练
 4. **Megatron 的二进制格式** — 预处理 + mmap + 索引，最高效
 5. **分布式 FS 上要避免小文件** — 用 tar/WebDataset 打包
-6. **I/O 和计算可以完全重叠** — 正确配置后数据加载不再是瓶颈
+6. **重叠效果需要测量** — 预取能否隐藏 I/O 等待取决于具体管道，不能仅靠配置保证消除数据加载瓶颈
 
 ## 参考
 

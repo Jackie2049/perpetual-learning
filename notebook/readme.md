@@ -51,7 +51,7 @@
 - [序列并行](fundamentals/sequence-parallelism.md) — DeepSpeed Ulysses、Ring Attention、USP 统一框架
 - [Ray 分布式框架](fundamentals/ray-framework.md) — Actor/Task 模型、Placement Group、RLHF 调度
 - [分布式 Checkpoint](fundamentals/checkpoint.md) — 分片保存、异步 IO、mmap 加速加载
-- [DataLoader 优化](fundamentals/dataloader.md) — Prefetch、mmap、WebDataset 流式加载
+- [DataLoader 优化](fundamentals/dataloader.md) — Prefetch、mmap、WebDataset；新增[分布式补齐与丢弃](fundamentals/dataloader.md#分布式采样的补齐与丢弃)，真实CPU两层drop_last/均值/epoch对照，等长不等于无重复或覆盖完整
 
 ## GPU 编程与优化
 

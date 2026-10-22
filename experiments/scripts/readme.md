@@ -28,6 +28,7 @@
 | [verify_verl_checkpoint_retention.py](verify_verl_checkpoint_retention.py) | 固定1876b06d完整原manager类/5原清理测试与fixture，真实临时目录、删除限本轮scratch；上限1先保旧后登记删旧，非模型保存/恢复、分布式或崩溃原子性验证。Python3.10+/CPU torch/NumPy/pytest |
 | [verify_verl_metrics_aggregator.py](verify_verl_metrics_aggregator.py) | 固定1876b06d原V1聚合类/19原pytest测试、两个原计时函数及5组CPU观察；样本/淘汰数权重、命名规则与比率分母分开。结构batch非DataProto，非trainer/logger/性能或设备验收；Python3.10+/torch/NumPy/pytest |
 | [verify_verl_lr_schedule.py](verify_verl_lr_schedule.py) | 固定1876b06d两个原LR构造器，真实CPU SGD/LambdaLR的4轨迹、2内存恢复及1覆写对照；使用/推进后LR、闭包配置与状态分开。Python3.10+/torch；非原上游测试、worker/FSDP/Tinker、磁盘恢复或训练验收 |
+| [verify_distributed_sampler_tail.py](verify_distributed_sampler_tail.py) | 真实CPU DistributedSampler/DataLoader的两层drop_last、补齐重复、覆盖/均值和epoch对照；显式枚举rank，无进程组/worker/DDP/训练。Python3.10+/torch，打印版本及类文本hash，不是上游原测试 |
 | [test_vllm_lora_nan_h20.py](test_vllm_lora_nan_h20.py) · [test_vllm_lora_nan_targeted_h20.py](test_vllm_lora_nan_targeted_h20.py) | vLLM LoRA NaN 复现与验证 |
 | [cuda_multi_stream_race_demo_h20.py](cuda_multi_stream_race_demo_h20.py) · [cuda_multi_stream_race_demo_v2_h20.py](cuda_multi_stream_race_demo_v2_h20.py) | CUDA 多流竞争复现 |
 | [verify_areal_prompt_mean_split.py](verify_areal_prompt_mean_split.py) | AReaL 归约契约 CPU 参考验证（标准库，无 torch）；区分外层优化步数与内层累积，含 token_mean 对照、合法 DP dummy 调度、Megatron 默认路径 P 抵消及标量 Adam 反例；非框架集成实测，见源码笔记 §10.7 |

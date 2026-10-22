@@ -12,6 +12,8 @@
 
 ## 运行接续
 
+- **M1 分布式采样尾部学习收束（2026-10-22）**：torch2.9.1/官方2.9契约，真实CPU sampler/loader四组合、小数据和epoch对照全过，见[原DataLoader笔记](notebook/fundamentals/dataloader.md#分布式采样的补齐与丢弃)/[复查](experiments/scripts/verify_distributed_sampler_tail.py)。N10/R3/B2仅loader drop仍12条10ID含重复，两层drop只剩6ID；合成评分1/10变1/6，等长/正确sum-count不认证原样本分母。显式rank单进程、0worker不pin，无进程组/DDP/框架评测或性能验收，无新M5任务。旧I/O配置必消瓶颈断言改为需测量。本题收束；后续有界核对变化再选未重复CPU/源码问题，不堆drop_last/epoch变体或自动改框架策略；GPU/AReaL、#8313及网站边界不变。
+
 - **M1 host cache边界学习收束（2026-10-22）**：已有DeepInfer#144 heade1f71ecd/base及祖先774ce244，8文件715行新增。完整读cache/copy kernel/原3测试，见[原笔记](notebook/frameworks/deepinfer-initial-survey.md#host-cache-的可复用边界)：复用须KV/state/replay相交，size_bytes不含pinned state池/16份GPU staging；原3GPU测试替换state/Sequence，不认证真实SWA或新binding。仅4文件AST/内存compile，3例表为源码推导，未跑测试/设备/替身。原CUDA入口与预算/原生恢复缺口及时补[原M5条目](experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)，待匹配条件非接单、不另排队/采用。本题收束；后续有界核对变化再另选源码/CPU课题，不继续堆缓存/PD替身或自动开展#147/#197服务；GPU/AReaL、#8313及网站边界不变。
 
 - **M1 PD队列所有权学习收束（2026-10-22）**：新DeepInfer#195 head229c58c3/base及祖先9bd9cf2，三文件21行新增。见[原笔记](notebook/frameworks/deepinfer-initial-survey.md#pd-队列交接与资源释放)：移出finished归还MTP槽、不释放KV/state；入队三元数据前提不认证传输完成，非forked无clone，主机vector reserve非块分配。仅完整stub AST/内存compile、两声明及源码链核对，无_C/原生队列/设备。缺口与最小观测及时补[原M5条目](experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)，待匹配环境不代表接单，不另排队/采用或打断原任务。本题收束；后续有界核对变化再选其他CPU/源码问题，不造PD替身或自动扩展#197服务实现；GPU/AReaL、#8313及网站边界不变。
