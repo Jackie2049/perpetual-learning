@@ -230,6 +230,37 @@ Python3.12.13 / torch2.9.1；只用一个真实__path__包壳跳过 tensor 包�
 
 脚本核对完整文件SHA256：batch.py `a33122410e68c2295631bbc3e70ce4b69ba41081da7ed49abd06774640676e3c`；segments/base.py `f7b9ce0a6ae77bcdbde81a93b43096bdfe975368234753ef74ab6191d794ff32`；segments/text.py `9f58114b40f3949eea70fba0692fb96b746e3e47af0c94c7db99e314cf237b34`。
 
+## 按域奖励的零分与失败标志
+
+**0 分、评分失败与不适用的分量是三种不同状态。** 2026-10-22 固定 `6fd82cba13f52f394747832344039408699ea378`，在真实 CPU 上直接调用原 [`PerDomainRewardScorer`](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/reward/local/per_domain.py)，配两个原 MCExactMatch 配置：graded_format_reward=True 与 require_answer_tag=True。它们用正则计算，不加载模型权重；successes 表示评分是否成功，不是答案是否正确。
+
+四行有效请求得到以下原始响应；graded/strict 是本次配置的域名称，不是训练阶段：
+
+| 行 / 域 | 生成文本（标准答案） | 主奖励 | successes | graded 分量 | strict 分量 |
+|---|---|---|---|---|---|
+| 0 / graded | A（A） | 0.5 | True | 0.5 | NaN |
+| 1 / strict | A（A） | 0 | True | NaN | 0 |
+| 2 / strict | `<answer>B</answer>`（B） | 1 | True | NaN | 1 |
+| 3 / graded | `<answer>D</answer>`（D） | 1 | True | 1 | NaN |
+
+严格配置下没有 answer 标签，得 0 分仍是成功评分。另加 unknown 域或缺 domain 的行，主奖励保留初始化的 0，但 successes=False，errors 说明没有配置对应 scorer；所有域分量均为 NaN。不能只看主奖励把失败解释成正常低分。路由器按域选取原请求行，再把响应散回原位置；排列 `[3,0,2,1]`、重复选择 `[3,1,3,0]`、空批和整体缺 metadata 的控制均通过。
+
+分量的 NaN 则表示该域未为这一行评分，不应随意补 0 后平均。直接运行原 [`_tensor_stats`](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/utils/wandb_metrics.py)：它过滤非有限值，四行有效请求的 graded 均值为 0.75，strict 为 0.5；故意先补 0 的对照分别变为 0.375、0.25。全 NaN 输入返回空统计。源码中的 rollout component 日志调用此 helper，但本轮仅执行 helper，没有运行 WandB、Part 汇总或训练日志链路。
+
+**这不是可直接接入文本训练的配方。** 当前 router 的 preferred_input_kind 固定为 image，内层 MC scorer 是 text。本轮直接构造合法的文本 RewardRequest，验证的是 backend 路由契约；标准 [`RewardService.score_and_attach`](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/reward/service.py)在调用 backend 前先要求 frontier 含所需生成模态，因此不能由本轮推出它接受 text-only frontier。服务源码还在收到响应后对 False successes 抛错，不是静默把未映射域的占位 0 用于训练；这不等于宣称它拒绝任意 NaN。以上服务接线仅读源码，未导入或执行。
+
+[复查脚本](../../experiments/scripts/verify_unirl_domain_rewards.py)保存在本项目，不修改 UniRL：
+
+```bash
+python -B experiments/scripts/verify_unirl_domain_rewards.py /path/to/UniRL /path/to/pillow-deps
+```
+
+Python3.12.13 / torch2.9.1 / Pillow12.0.0。本机原 CPU 环境缺 Pillow，使用 uv --target 仅安装到临时目录 `/tmp/perpetual-unirl-reward.D8w73Z/deps`；未修改原 venv。复现时需自行提供 torch/Pillow，已有 Pillow 可省略第二参数，脚本不会自动安装。Pillow 仅为原类型导入依赖，未构造图像或加载奖励模型。
+
+两个真实 __path__ 包壳分别跳过 tensor 包的 Ray transport 汇总初始化和 local reward 包的重型模型 scorer 汇总初始化；其余 Batch/Texts/Request/Response/router/MC 类及统计 helper 均从原模块加载，无摘取方法或假 scorer。MC 的空 _load_model 方法会由原构造器调用，model 保持 None；base_device 参数也不代表执行过设备加载。无 Ray/Hydra/OmegaConf/Transformers、服务/HTTP、设备发现、trainer、反向或 GPU/NPU 执行。这是自编原模块控制，不是上游原测试；不据此定性训练缺陷或新增 M5 必跑事项。
+
+脚本锁定七个完整源文件 SHA256（包括仅读的 service.py）。关键 hash：per_domain.py `6aca28149c4dcc48b3f8e29e74ef7195daa997aa833daac778618d4f3b2b73f8`；mc_exact_match.py `452413e2c7db3cf722fd3a887f660a61e5a13513f015a539f103b0a32d1cf526`；wandb_metrics.py `e92b9c40ebab4b78759ad15e36db4a833f853f6b122db4e395577966cc150648`。本题收束，不堆 NaN/路由变体，也不将组件统计等同于服务验收。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。

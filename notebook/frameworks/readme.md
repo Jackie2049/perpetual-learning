@@ -106,7 +106,7 @@
 
 ## UniRL
 
-- [UniRL 与 RL 训练抽象](unirl-survey.md#ar-与-diffusion-的源码统一边界)：固定6fd82cba；HI3/SDE/SFT与[packed文本样本轴](unirl-survey.md#packed-文本的样本轴与-token-轴)，原TextSegment/Batch四布局CPU对照，零token行保留边界；非模型/attention验收。
+- [UniRL 与 RL 训练抽象](unirl-survey.md#ar-与-diffusion-的源码统一边界)：固定6fd82cba；HI3/SDE/SFT、packed文本双轴与[按域奖励](unirl-survey.md#按域奖励的零分与失败标志)。原CPU路由区分零分/失败/非适用NaN，统计过滤非有限值；router的image输入限制与服务失败检查仅读，非训练验收。
 
 ## verl
 

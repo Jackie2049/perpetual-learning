@@ -12,6 +12,8 @@
 
 ## 运行接续
 
+- **M1 UniRL按域奖励学习收束（2026-10-22）**：固定6fd82cba，原router/两无模型MC配置/统计helper真实CPU控制通过，见[原调研](notebook/frameworks/unirl-survey.md#按域奖励的零分与失败标志)/[复查](experiments/scripts/verify_unirl_domain_rewards.py)。正常0分可success=True，未知域0分为False/error，非适用分量NaN不计域均值；不可混同。router固定image输入，文本直接Request不证明标准Service接线，服务False检查仅源码。Pillow12仅临时target安装，原环境/上游未改；无训练、设备或新M5事项。本题收束，后续选其他UniRL源码问题，不堆NaN/路由变体或自动修实现；GPU/AReaL、#8313及网站边界不变。
+
 - **M1 UniRL packed文本学习收束（2026-10-22）**：固定6fd82cba，原TextSegment/Batch真实CPU四布局，36选择/40切片/16拼接切点/4分片往返及4保护全过；无status的三行零token仍由cu保留batch3。见[原调研](notebook/frameworks/unirl-survey.md#packed-文本的样本轴与-token-轴)/[复查](experiments/scripts/verify_unirl_packed_text.py)。样本索引必须联动token段及offset，不等于索引平坦token。仅tensor包壳跳过Ray初始化，无方法摘取/假类；builder/planner接线仅读，无Part/transport/attention/模型或新M5事项。本题收束；后续选其他UniRL源码问题，不堆空行/packed变体或自动修改实现，GPU/AReaL、#8313及网站边界不变。
 
 - **M1 UniRL SFT游标学习收束（2026-10-22）**：固定6fd82cba，真实原DataSource/JSONL，无假类/方法摘取，仅tensor包壳跳过Ray transport初始化。跨epoch peek/commit/恢复、20批shuffle开关直读对照、身份拒绝/legacy警告与eval隔离通过，见[原调研](notebook/frameworks/unirl-survey.md#sft-预取与数据消费游标)/[复查资产](experiments/unirl-sft-cursor/readme.md)。peek不消费下一批，但trainer在train_step前get/commit当前批，非optimizer成功协议；接线仅源码，无完整训练/设备或新M5事项。本题收束；后续选UniRL其他源码/类型问题，不堆游标/恢复故障替身或自动修改实现；GPU/AReaL、#8313及网站边界不变。

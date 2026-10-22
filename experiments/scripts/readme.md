@@ -32,6 +32,7 @@
 | [verify_state_dict_snapshot.py](verify_state_dict_snapshot.py) | 真实CPU参数、持久buffer与SGD动量的存储别名；浅拷贝/detach/cpu与deepcopy/clone/已完成BytesIO序列化对照。Python3.10+/torch，打印版本/原方法hash；非上游原测试、磁盘恢复、并发staging或设备验证 |
 | [verify_verl_rollout_completeness.py](verify_verl_rollout_completeness.py) | 固定#6641完整原ReplayBuffer/helper，原7项候选通过/旧版4项拒绝检查预期失败，另5边界；保留原FakeKVBatchMeta。Python3.10+/NumPy/pytest，另2项manager/TensorDict未选，不运行poll线程/Ray/TQ/训练/设备 |
 | [verify_unirl_packed_text.py](verify_unirl_packed_text.py) | 固定6fd82cba原TextSegment/Batch真实CPU pack/select/slice/concat/chunk；4布局含零token行，逐字段核值/dtype/offset与4入口保护。Python3.12/torch；仅tensor包壳跳过Ray transport，非原测试、Part/planner/模型或设备验收 |
+| [verify_unirl_domain_rewards.py](verify_unirl_domain_rewards.py) | 固定6fd82cba原按域路由/两个无模型MC配置与有限统计helper；零分/失败/非适用NaN、重排/重复/空批控制。Python3.12/torch/Pillow（可第二参数给隔离依赖）；两包壳跳过汇总初始化，非原测试、服务接线/训练或设备验收 |
 | [test_vllm_lora_nan_h20.py](test_vllm_lora_nan_h20.py) · [test_vllm_lora_nan_targeted_h20.py](test_vllm_lora_nan_targeted_h20.py) | vLLM LoRA NaN 复现与验证 |
 | [cuda_multi_stream_race_demo_h20.py](cuda_multi_stream_race_demo_h20.py) · [cuda_multi_stream_race_demo_v2_h20.py](cuda_multi_stream_race_demo_v2_h20.py) | CUDA 多流竞争复现 |
 | [verify_areal_prompt_mean_split.py](verify_areal_prompt_mean_split.py) | AReaL 归约契约 CPU 参考验证（标准库，无 torch）；区分外层优化步数与内层累积，含 token_mean 对照、合法 DP dummy 调度、Megatron 默认路径 P 抵消及标量 Adam 反例；非框架集成实测，见源码笔记 §10.7 |
