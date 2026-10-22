@@ -968,6 +968,48 @@ W大于1的构造guard要求精确GRPO类、`old_logp_source=rollout`和cache fl
 
 作者另报外部CPU harness及L40S/A100小模型验证，不是本项目复跑。A100恢复/重叠测试对应`9b68dc9f1b5158eb0c528a57aac7203476312cb1`，不是当前合并头；延迟工具的计时对照生成token数量不同，不能当普遍加速比或学习收益。TransferQueue集成、DCP恢复和长训练仍未验证。真机条件补[原M5参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不部署候选、不改其anchor或AReaL专项。
 
+## 空响应的反向通信与零梯度更新
+
+**没有监督贡献，不等于可以独自跳过通信；梯度为零，也不等于参数不动。** [#598](https://github.com/Tencent-Hunyuan/UniRL/pull/598)（2026-10-23读取open draft）针对部分DP rank收到空AR响应的情况，固定head `fa0c306378a6b4f8cfd6c8abcf8bd342d8ce1f73`、base/实际祖先 `6c828f5ed81649153315d996f0f597e8808ff144`，ahead1/behind0；6文件42增7删，无提交测试。本节关注反向图与更新语义，不重复[packed样本轴](#packed-文本的样本轴与-token-轴)的布局检查。
+
+### 为什么局部空行不能直接跳过
+
+[#581](https://github.com/Tencent-Hunyuan/UniRL/issues/581)报告原算法遇零token会在replay之前返回，GSPO/PPO也有replay后全mask提前返回。若只有某个rank这样做，其余rank仍进入FSDP参数all-gather/梯度reduce-scatter，调用序列可能失配；各rank都有相同micro数量不代表各自实际执行相同collective。最后一个micro尤其重要：早先反向若延迟同步，最后一次反向正是待累积梯度的同步点。
+
+[训练输入对齐](https://github.com/Tencent-Hunyuan/UniRL/blob/fa0c306378a6b4f8cfd6c8abcf8bd342d8ce1f73/unirl/train/stack/base.py)在设备搬运、planner和anchor准备前，为零长度TextSegment行插入token 0，同时对已有的七个packed字段补零并重建offset；缺loss_mask时先给原token填1，占位位置保持0。这是原地修改训练segment，不是生成了一个真实completion或增加sample数。placeholder只为进入replay，不能把其长度当有效监督token，也不能借此补齐缺segment/缺logp等不完整输入。eval不传`training=True`，不走该补齐路径。
+
+### 零损失仍须连到对应输出
+
+[GSPO](https://github.com/Tencent-Hunyuan/UniRL/blob/fa0c306378a6b4f8cfd6c8abcf8bd342d8ce1f73/unirl/algorithms/gspo.py)在无valid sequence时，对`new_logp.sum()*0`执行backward；[PPO](https://github.com/Tencent-Hunyuan/UniRL/blob/fa0c306378a6b4f8cfd6c8abcf8bd342d8ce1f73/unirl/algorithms/ppo.py)则把`new_logp`和`new_values`都连入零损失。两者返回loss0、有效数量0，但`has_backward=True`。独立创建一个常量0，或只触及policy输出，都不能代替对实际所需输出图的反向。这里也不把乘0视为NaN/Inf清理器；本机控制仅用有限输出。
+
+[单栈](https://github.com/Tencent-Hunyuan/UniRL/blob/fa0c306378a6b4f8cfd6c8abcf8bd342d8ce1f73/unirl/train/stack/single.py)逐micro设置grad-sync，并检查启用deferred sync时最后micro是否真的backward；只是关掉报错不能补出缺失同步。[全局有效数量](https://github.com/Tencent-Hunyuan/UniRL/blob/fa0c306378a6b4f8cfd6c8abcf8bd342d8ce1f73/unirl/train/stack/loss_scale.py)仍独立于这次图连接：单栈token-mean全局为0时在算法前拒绝；unified允许AR一轨有效token为0，另一轨继续。GSPO走sample-share，现全空也会零梯度并step，不能泛化为所有全空批都step或都skip。
+
+### 零梯度和没有梯度
+
+PyTorch明确区分`.grad=None`与零张量：前者对应参数不参加这次optimizer处理，后者仍执行该参数的更新规则。[zero_grad文档](https://docs.pytorch.org/docs/2.9/generated/torch.optim.Optimizer.zero_grad.html)
+
+本机FP64普通优化器控制均从参数2开始，lr0.1。warm表示先用梯度1更新一次，再比较下一次None与零梯度：
+
+| 优化器与已有状态 | 下一次grad=None | 下一次grad=0 |
+| --- | --- | --- |
+| AdamW，weight_decay0.1，无历史 | 参数2，无参数step状态 | 参数1.98，参数step1 |
+| 同一AdamW，已有一次更新 | 保持约1.880000001，step1 | 约1.794194177，step2，历史moment继续演化 |
+| SGD，momentum0.9、无decay，已有一次更新 | 保持1.9 | 1.81，来自历史momentum |
+
+因此全mask回合的“数据损失贡献为0”，并不承诺无参数变化、无优化器状态变化或等价于删掉该次更新。对已累积有效梯度的最后micro，零贡献反向还可承担同步工作，不能用上表的孤立参数实验替代累积窗口验收。
+
+### 本机与作者验证分开
+
+[复查脚本](../../experiments/scripts/verify_unirl_empty_backward.py)从固定Git对象AST提取原AlgorithmStepResult及GSPO/PPO各自全mask的完整if分支，包装后直接给有限CPU张量图，不构造假stage或trainer。base/head×两算法×1/4输出共8组：base没有梯度，head给所触及叶子分配零梯度，PPO含两输出；policy-only反例中独立critic仍为None。另6组真实torch optimizer控制得到上表，Python3.12.13/torch2.9.1，显式CPU。复现命令：
+
+```bash
+python -B experiments/scripts/verify_unirl_empty_backward.py /path/to/UniRL-git
+```
+
+两版各5个改动Python模块仅compile通过。没有执行padding helper、完整算法/replay、归一化、TrainStack、accumulation、FSDP/Gloo/NCCL或设备任务。head GSPO SHA256 `d53ab94ef99af6390873d171f5387c6ee373adf873f8dd44a5a1dc1c11c1a055`；PPO `9403798c110a961b0d6f2cfa8adc786a4d24e145648658734fb3f4256d5aa003`。
+
+作者外部harness报告两rank CPU复现及2×H100的14项小型FP64线性模型通信/梯度检查，并非本项目复跑、预训练模型或真实recipe验收；完整HI3/BAGEL和多rank CUDA PPO仍未测。原issue已有该draft覆盖，不另开同题修复；实际collective/最后micro与optimizer状态缺口补[原M5参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不应用候选或干预其专项。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。

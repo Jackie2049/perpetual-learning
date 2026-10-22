@@ -36,6 +36,8 @@
 
 ## 运行接续
 
+- **M1空响应反向学习收束（2026-10-23）**：快进M5状态0e61691，有界核UniRL最新30创建项后读未完成#598 draft headfa0c3063/base祖先6c828f5e（6文件42增7删）。见[原调研新节](notebook/frameworks/unirl-survey.md#空响应的反向通信与零梯度更新)/[复查](experiments/scripts/verify_unirl_empty_backward.py)。局部零token跳过会失配FSDP调用，占位replay与GSPO/PPO零损失输出图反向各司其职；最后micro需承接deferred sync，全局token-mean零数保护仍在。仅8组原if分支有限CPU图对照、双输出反例及6组普通optimizer控制，零梯度仍可decay/momentum更新；非完整算法/padding/FSDP验收，两版5模块仅compile。作者H100 tiny模型不作本项目/真实recipe结果，缺口补原M5参考，不应用或重开已覆盖#581。本题收束，下轮另选非空行/零梯度/通信替身小变体问题；GPU/AReaL/#8313/#523分工不变。
+
 - **M1回合续跑学习收束（2026-10-23）**：快进M5状态76ebc90，UniRL最新6更新无新head，另读未完成#558 head76a3c755/base祖先852c0454（12文件266增57删）。见[原调研新节](notebook/frameworks/unirl-survey.md#回合边界续跑与行为版本)。完整generate/tool/observe后才暂停，Sample承载续跑状态，不是token中断或工具exactly-once；逐turn保存行为logp/版本，W计训练批而版本计optimizer update。同卡暂停训练、分卡才重叠；窗口最后训练前排空、消费后释放transport，再保存。仅源码/两版各7模块compile，无agent/manager/训练或设备执行；作者A100报告属旧9b68dc9f，当前head不搬用。缺口补原M5参考、不部署/拼#557或改anchor专项。本题收束，下轮另选非turn暂停/窗口计数/状态机替身小变体问题；GPU/AReaL/#8313/#523分工不变。
 
 - **M1 rollout校正学习收束（2026-10-23）**：快进M5状态0ef17f9，核verl最新6项无新head后选未读UniRL#557 head300170e9/base祖先852c0454（2文件46新增）。见[原调研新节](notebook/frameworks/unirl-survey.md#replay-锚点与-rollout-采样校正)/[复查](experiments/scripts/verify_unirl_rollout_correction.py)。PPO new/old裁剪后才乘冻结old/behavior token权重，不改原分母，micro ESS非全局；原if片段+clip/reducer的36组CPU值/局部梯度及顺序/安全限幅反例通过，非完整GRPO/disabled路径等价/anchor生命周期。作者在线小fixture无校正收益证明，高LR关闭校正pilot不挪为分支或#8250因果；缺口补原M5参考，不启训练/改#523专项。本题收束，下轮另选非token IS/cap/ESS替身小变体问题；GPU/AReaL/#8313/#523分工不变。
