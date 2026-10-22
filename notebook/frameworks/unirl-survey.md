@@ -290,6 +290,37 @@ Python3.12.13 / torch2.9.1 / Pillow12.0.0，复用上一节隔离 Pillow 依赖�
 
 脚本锁定七个完整源文件 hash，包括仅读的训练接线。packed.py SHA256 `b5f2789f768cbdb7d766bebb5c1d9feb316dbe32db52637e3683e8e6dc8fe70f`，types.py `d9278a269104724a63abae6eceedde694ad92b1016c415f1b88ed087dcb3e8be`；其他见脚本。超预算独占批符合原实现说明，不据此提出缺陷或自动改规划策略。
 
+## EMA 衰减方向与更新时机
+
+**EMA 的 decay 乘旧影子，更新频率与传入的计数同样影响结果。** 2026-10-22 固定 `6fd82cba13f52f394747832344039408699ea378`，原 [`EMA`](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/train/ema.py)执行 `shadow = decay × shadow + (1-decay) × live`，decay≤0 时直接复制 live。不能把小 decay 解释成“只混入少量新参数”；例如 EmaLoraConfig 默认0.001，对应新参数权重0.999，但何时混入还取决于 timing。
+
+原 make_decay_fn 对 full EMA 使用 `min((1+t)/(10+t), target_decay)`，不是从第一步就固定用 target。target=0.5 时，t=0/1/10/100 分别为0.1、2/11、0.5、0.5。LoRA 配置另有 constant、linear 和 warmup：本次 uprate=0.1、uphold=0.5、flat_steps=2 的 warmup 在 t=0/1/2 都为0，t=3为0.1，t=7为0.5；零衰减阶段会复制当前参数，不是暂停 EMA。
+
+CPU 对照使用原 inject_mirror 与一个仅含两元素可训练参数的 nn.Module，手动赋值模拟参数变化，没有执行 optimizer。初始 live 从 `[2,4]` 改为 `[3,5]` 后才执行原 apply_deferred_ops，影子复制到 `[3,5]`，说明初始复制是延后回调，不是在注册 shadow 时立即完成。原 mirror 只为 requires_grad 参数创建影子；本例冻结参数与 buffer 不在配对中，不能将它理解成完整 module 状态副本。
+
+两份 mirror 从相同影子 `[3,5]` 开始，live 先后手动改为 `[13,25]`、`[23,45]`；均使用 full target=0.5：
+
+| timing | 实际调用 | 最终 shadow |
+|---|---|---|
+| optimizer_step | step(0)，step(1) | `[21,41]` |
+| rollout_end | 两次 step 无效，之后 on_rollout_end(2) | `[18,35]` |
+
+第一路 decay 依次0.1、2/11，第二路只混合一次且用t=2的0.25；差异既来自混合次数，也来自计数。反向时机的调用不会更新，另用原 constant decay=0 验证 shadow 直接变为 live `[23,45]`。这些是 EMA 本体的实测，不是两次真实 optimizer 更新或完整 rollout。
+
+[`BaseTrainBackend`](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/train/backend/base_backend.py)源码中，grad_norm 有限时先 optimizer.step / scheduler.step，再以尚未递增的 _optimizer_step_count 调 EMA.step，随后计数加1；on_rollout_end 则传当前已提交计数。grad_norm 非有限时提前返回，不执行该次 optimizer/EMA.step 或计数递增。因此训练步时机与 rollout-end 时机不是同一个 t 定义；这里仅核对后端调用顺序，没有导入后端或制造梯度故障。
+
+原 full mirror 的 use_shadow 用数据存储交换而非重新绑定 Parameter 对象，finally 再交换恢复。单层 CPU 上下文内主动抛异常后，live/影子数值、data_ptr 和 Parameter 身份均恢复，requires_grad 未改变、梯度仍为空。这不认证嵌套/并发使用、PEFT 双适配器切换或远端导出。
+
+[复查脚本](../../experiments/scripts/verify_unirl_ema.py)：
+
+```bash
+python -B experiments/scripts/verify_unirl_ema.py /path/to/UniRL
+```
+
+Python3.12.13 / torch2.9.1，全部原模块正常导入，无包壳、方法摘取或假 Shadow；真实 inject_mirror 返回原 Shadow，原 local_view 直接处理普通 CPU Tensor。四类衰减、延后复制、两种时机、零衰减及异常退出恢复控制通过。这是自编原模块检查，不是上游原测试；无新依赖安装、预训练权重、forward/backward、optimizer、LoRA 注入、DTensor/FSDP、设备发现或 GPU/NPU 运行，不新增 M5 必跑事项。
+
+脚本核对五个完整源文件 SHA256，包括仅读的 backend。ema.py `b4b057cd565780b467c56d0ca8032a48c0e5b5366702fbd11cf2f06c9654701b`，configs.py `18dcc241700eeaf83f6e1aa9cc3a73519350c60c83d1c1631f7a8c574e29e03e`；其余见脚本。此处解释实现契约，不推荐衰减值，也不由局部 CPU 结果判断训练质量。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。
