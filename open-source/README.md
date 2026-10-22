@@ -37,6 +37,7 @@
 | rLLM | [候选、方案与记录](rllm/readme.md) | [源码阅读](../notebook/frameworks/readme.md#rllm) |
 | SGLang | [候选、方案与记录](sglang/readme.md) | [源码阅读](../notebook/frameworks/readme.md#sglang) |
 | TRL | [候选、方案与记录](trl/readme.md) | [源码阅读](../notebook/frameworks/readme.md#trl) |
+| UniRL | [候选、方案与记录](unirl/readme.md) · [tracker](unirl/tracker.md) | [源码阅读](../notebook/frameworks/readme.md#unirl) |
 | verl | [候选、方案与记录](verl/readme.md) | [源码阅读](../notebook/frameworks/readme.md#verl) |
 | vLLM | [候选、方案与记录](vllm/readme.md) | [源码阅读](../notebook/frameworks/readme.md#vllm) |
 | vLLM-Ascend | [候选、方案与记录](vllm-ascend/readme.md) | [源码阅读](../notebook/frameworks/readme.md#vllm-ascend) |
