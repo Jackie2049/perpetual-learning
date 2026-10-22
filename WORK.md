@@ -24,6 +24,8 @@
 
 ## 运行接续
 
+- **M1激活重算状态学习收束（2026-10-22）**：main同步无新增后，沿UniRL非重入checkpoint接线转向真实CPU语义；见[原基础笔记](notebook/fundamentals/gradient-checkpointing.md#重计算的随机数与可变状态)/[脚本](experiments/scripts/verify_activation_recompute_state.py)。torch2.9.1 eager对照：Torch RNG保留时dropout前向/梯度/终态相同，关闭或外部Python RNG则不同；同元数据闭包改值梯度8/16→12/24且不报错，改shape会拒绝；early-stop入口/末尾2/1非完整重跑。更正原逐层重算n+1倍全网与选择性比完全更省/普遍最优简写。UniRL缓存映射快照仅读，非框架故障/FSDP/compile/性能或设备证明，无新真机待办。本题收束，后续另选非RNG/重算副作用替身问题，GPU/AReaL/#8313边界不变。
+
 - **M1设备/后端分层学习收束（2026-10-22）**：只读UniRL#623（当轮closed、未合并），headc1477a03/实际父c6d4b11b，3文件46增7删；见[原调研](notebook/frameworks/unirl-survey.md#设备资源与通信后端的分层边界)。actor零GPU请求不取消PG预约，CVD可见性与逻辑编号分开，宽异常转eccl默认WORLD非通用硬件适配；目标主线历史差异不冒算PR修改。两版各3完整模块compile通过，无导入/设备/通信或NVIDIA回归。真机缺口补[原M5 UniRL参考](experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不另排队、应用关闭候选或更改M5环境。本题收束，后续另选非设备pin/通信替身新问题；GPU/AReaL/#8313与外部写入边界不变。
 
 - **M1关键帧条件学习收束（2026-10-22）**：只读UniRL#584 head55a3cad3/baseaccba010（祖先c7c6b8c0），6文件125增22删；见[原调研](notebook/frameworks/unirl-survey.md#关键帧条件的数据身份与功能就绪)。关键帧fp32 noised rows/anchors/未padding tags随样本传到generate/replay/NFT forward，只返回target velocity；混合批空条目不能漏成缺项，shape对齐非数据身份。9模块compile、条件时间AST/文本pipeline字节未变静态核对通过，无parity/loss/模型执行；producer未接、scalar/vector条件timestep未改，README禁止启FL2VA。缺口及时补[原M5 UniRL入口](experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，先待功能前提，不开设备任务/改作者方案。本题收束，后续另选非条件槽/关键帧/UID/归约替身新问题；GPU/AReaL/#8313与外部写入边界不变。

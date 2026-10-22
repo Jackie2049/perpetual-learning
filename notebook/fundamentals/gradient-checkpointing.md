@@ -1,6 +1,6 @@
 # Gradient Checkpointing / Activation Recomputation
 
-> 用计算换显存 — 从 O(n) 激活到 O(sqrt(n))
+> 用重计算减少保存的激活；均匀链式模型的分段策略可达到 O(sqrt(n))，不代表任意逐层 wrapper 的复杂度。
 
 ## 1. 核心问题：激活值的显存占用
 
@@ -49,30 +49,30 @@ h = hidden dimension
   前向: [A1] → A2 → [A3] → A4 → [A5] → A6 → Loss
   保存: A1, A3, A5              ← 只保存检查点
   反向时:
-    需要A6: 从A5重算 → A6 ← 用完释放
-    需要A4: 从A3重算 → A4, A5 → A6 ← 用完释放
-    需要A2: 从A1重算 → A2, A3 → A4 ← 用完释放
+    需要A6: 从A5重算末段 → A6 ← 用完释放
+    需要A4: 从A3重算本段 → A4 ← 用完释放
+    需要A2: 从A1重算本段 → A2 ← 用完释放
   显存: O(sqrt(n)) 激活
   计算: ~2x 前向 (多一次重计算)
 ```
 
 ### 2.2 数学分析
 
-对于 n 层网络：
+以下是等成本链式网络的示意，不是 PyTorch wrapper 的通用显存公式。将 n 层均匀分成 k 段，保存段边界并在反向重建一段，空间由边界约 k 与段内临时值约 n/k 两部分组成：
 
-| 策略 | 保存的激活 | 重计算次数 | 总计算量 |
-|------|-----------|-----------|---------|
-| 无 checkpointing | n | 0 | 1x |
-| 保存 sqrt(n) 个检查点 | sqrt(n) | sqrt(n) | 2x |
-| 每层都 checkpoint | 0 (或 1) | n | n+1 x |
+| 策略 | 主要激活空间示意 | 额外前向工作 |
+|------|-----------|-----------|
+| 无 checkpointing | O(n) | 无 |
+| 均匀 k 段 | O(k+n/k) | 约一次全网前向 |
+| 每层各自 checkpoint | 仍保存各层输入边界，不能写成0 | 单次反向、非嵌套时各包层约额外一次前向，不是n次全网前向 |
 
-**最优策略**：保存 sqrt(n) 个检查点，以 O(sqrt(n)) 显存换取 2x 计算。
+在这一简化分段模型中，k约sqrt(n)平衡两项；[Chen等论文](https://arxiv.org/abs/1604.06174)给出O(sqrt(n))空间与额外一次前向的算法，也讨论更深的时间空间权衡，因此不是所有策略的绝对最优。这里“2x”若使用，仅指原前向加重算前向，不是包含反向、通信的训练总耗时。
 
 ### 2.3 显存节省公式
 
 ```
 无 checkpointing: Memory_act = n × (每层激活大小)
-标准 checkpointing: Memory_act = sqrt(n) × (每层激活大小) + sqrt(n) × (每段重计算)
+均匀k段的示意: Memory_act ≈ (k + n/k) × (每层等效激活大小)
 
 节省因子: 从 n 降到 ~2×sqrt(n)
 对于 32 层: 从 32x 降到 ~11.3x → 节省约 65%
@@ -105,7 +105,7 @@ Dropout mask:
 保存 MLP 中间激活、LayerNorm 输出等
 
 收益:
-  - 显存节省: 比全 checkpointing 更多 (因为保存的是较小的部分)
+  - 显存节省: 只丢弃选中算子的中间值，不保证比完全重算节省更多
   - 计算开销: 比全 checkpointing 更少 (只重计算 attention)
 ```
 
@@ -117,7 +117,7 @@ Dropout mask:
 | 标准 (sqrt(n) 检查点) | O(sqrt(n)) | ~1x | 中 |
 | 选择性 (只重算 attention) | O(n) 但常数小 | ~0.2x | 高 |
 
-**实践推荐**：长序列 (s > 4K) 时用选择性重计算，短序列时可以不用。
+选择性策略取决于实际算子、attention实现与剩余显存，不能仅用s>4K决定。[Megatron论文](https://arxiv.org/abs/2205.05198)报告特定大模型配置的收益，不是所有硬件/配方的比例保证。
 
 ## 4. Megatron-LM 中的实现
 
@@ -147,7 +147,7 @@ def custom_forward(layer, x):
     return layer(x)
 
 # 使用 checkpoint
-output = checkpoint(custom_forward, layer, input_tensor)
+output = checkpoint(custom_forward, layer, input_tensor, use_reentrant=False)
 ```
 
 ### 4.3 Megatron 的 Pipeline Parallel 交互
@@ -196,6 +196,8 @@ ZeRO 分区参数和优化器状态:
 
 ## 6. 性能影响
 
+以下为原笔记未附模型、设备、版本和复现命令的示意数字，不作为本项目实测或选型依据。实际收益需要在目标配置测量；本轮CPU正确性对照不验证这些比例。
+
 ### 6.1 吞吐量影响
 
 ```
@@ -212,7 +214,7 @@ ZeRO 分区参数和优化器状态:
   显存: 需要最多
 ```
 
-### 6.2 实际测量 (参考数据)
+### 6.2 历史示意数据
 
 | 配置 | 显存 (GB) | 吞吐量 (tokens/s) |
 |------|----------|-------------------|
@@ -220,14 +222,42 @@ ZeRO 分区参数和优化器状态:
 | 选择性 | 50 | 9200 |
 | 完全 | 35 | 7500 |
 
+## 重计算的随机数与可变状态
+
+**默认重算检查不是梯度等价检查，重算也不是事务回滚。** [PyTorch 2.9文档](https://docs.pytorch.org/docs/2.9/checkpoint.html)说明，非重入版本的default检查比较保存/重算张量的shape、dtype和device，不比较值；默认保留Torch CPU与一种推断设备类型的RNG状态，不涵盖任意外部状态。若反向期间函数行为改变，可能静默得到不同梯度。
+
+2026-10-22在Python3.12.13 / torch2.9.1（git `5811a8d7da873dd699ff6687092c225caffcf1bb`）上，直接调用真实`checkpoint(use_reentrant=False)`与CPU autograd。以下均为自编eager控制例，不是UniRL原测试：
+
+| 控制 | 实际观察 | 解释 |
+| --- | --- | --- |
+| CPU dropout，保留Torch RNG | checkpoint与直算前向、输入梯度、反向后CPU RNG状态逐位一致 | 覆盖了本例的随机源与计算，不是任意模型等价证明 |
+| 同例关闭preserve_rng_state | 原前向仍一致，梯度与反向后CPU RNG状态不同 | 只对最初loss或输出不足以核重算 |
+| 闭包中的Python `random.Random`，保留Torch RNG | 原前向一致，梯度和该generator终态不同 | Torch RNG保护没有管理这个外部随机源 |
+| 闭包系数在前向后由2改3 | default检查未报错；直算/不变重算梯度[8,16]，改变后[12,24] | 张量元数据相同不代表计算所用的值相同 |
+| 重算改变保存张量形状2×2→4 | 抛CheckpointError（metadata不匹配） | 此guard能发现这类结构变化，并非完全无检查 |
+| 函数入口/末尾计数 | early_stop=True为2/1，False为2/2；两者梯度一致 | 非重入重算可在最后一个所需张量生成后提前退出 |
+
+系数例为`y=(x*s)^2`、x=[1,2]，前向s=2。普通前向图保存2x，梯度是8x；重算在s=3时重建成3x，但原图乘法的局部常数仍为2，于是得到2×3x×2=12x。它甚至不是简单地对整段“换成s=3”求导。默认检查通过，只说明本例没有触发保存张量的结构不匹配。
+
+因此，重算区域应避免依赖会变化的闭包/全局值；缓存映射、模块buffer、随机generator或计数器若会改变，需要按实际调用语义处理，不能假设checkpoint自动复制/恢复所有对象。提前停止也使函数末尾副作用不可靠；关闭early_stop只能让本例完整执行，不能修复外部随机数或可变状态问题。
+
+UniRL固定`6fd82cba13f52f394747832344039408699ea378`的[FSDP包装](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/train/backend/fsdp/wrap.py)使用非重入checkpoint，并为具有key_cache/value_cache的特定对象复制映射：调用时留一份，前向/重算每次再复制。源码注释依赖BAGEL替换各层条目而非原地修改已有K/V张量；这不是tensor存储深拷贝或任意kwargs快照承诺。本轮仅读此接线，没有执行该wrapper、BAGEL、FSDP、torch.compile或设备路径，不据CPU例诊断框架bug，也不新增真机任务。
+
+复现资产：[verify_activation_recompute_state.py](../../experiments/scripts/verify_activation_recompute_state.py)。只创建显式CPU tensor，仅给CPU default_generator设种子，无设备发现、模型/环境替身或新依赖。打印实现版本及checkpoint源码SHA256；本轮为 `431b229da53972d79bed7e5dbfb6ace2922fff30192ea103208f484e59490f23`。未测显存/耗时，不能据此沿用或更新上文历史性能数字。
+
+```bash
+python -B experiments/scripts/verify_activation_recompute_state.py
+```
+
 ## 7. 学习要点
 
 1. **核心权衡**：用计算换显存 — 重计算 vs 存储
-2. **sqrt(n) 策略**是最优 — O(sqrt(n)) 显存，2x 计算
-3. **选择性重计算**是工程最优 — 只重算 attention scores (s² 相关)
+2. **sqrt(n) 分段**是简化均匀链的一个平衡点，不是所有wrapper的复杂度或训练耗时保证
+3. **选择性重计算**只丢弃部分中间值，收益取决于算子实现，不保证比完全重算更省显存
 4. **Megatron 的分层策略** — warmup 时部分 checkpoint，steady state 完整保存
 5. **与 ZeRO 互补** — ZeRO 处理参数/优化器，checkpointing 处理激活
-6. **长序列训练的必需品** — s=128K 时激活可达数百 GB
+6. **长序列会放大激活压力** — 是否重算与具体收益取决于batch、attention实现、精度和分片配置
+7. **重算语义需稳定** — 默认元数据检查不认证梯度相等；Torch RNG、外部随机源和可变状态分别核对
 
 ## 参考
 

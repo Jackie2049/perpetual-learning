@@ -42,7 +42,7 @@
 - [ZeRO 优化器](fundamentals/zero-optimizer.md) — ZeRO 1/2/3 原理、显存公式、适用场景
 - [FSDP 全分片数据并行](fundamentals/fsdp.md) — FlattenParameter、Sharding 策略、Prefetching、verl FSDP 实践
 - [混合精度训练](fundamentals/mixed-precision.md) — FP16/BF16/FP8、Loss Scaling、Tensor Core 利用
-- [梯度检查点](fundamentals/gradient-checkpointing.md) — 激活重计算策略，用计算换显存
+- [梯度检查点](fundamentals/gradient-checkpointing.md#重计算的随机数与可变状态) — 真实CPU重算对照：默认元数据检查不认证梯度一致，Torch RNG不覆盖外部随机源，early-stop可能跳过末尾副作用；非显存/性能或FSDP验收
 - [NCCL 通信库](fundamentals/nccl.md) — Ring/Tree AllReduce、调优参数、网络拓扑
 - [RDMA 高性能网络](fundamentals/rdma-networking.md) — InfiniBand/RoCE/iWARP、GPUDirect RDMA、NCCL 调优、实战排错
 - [CUDA 编程基础](fundamentals/cuda-programming-basics.md) — Grid/Block/Thread、内存层次、Coalesced Access、Occupancy、Roofline Model

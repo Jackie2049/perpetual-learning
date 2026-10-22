@@ -4,6 +4,7 @@
 
 | 入口 | 用途 |
 |---|---|
+| [verify_activation_recompute_state.py](verify_activation_recompute_state.py) | torch2.9.1真实CPU eager checkpoint/autograd对照：Torch与外部RNG、同元数据不同梯度、形状拒绝及early-stop副作用；无设备发现/FSDP/compile或显存吞吐结论，见[主笔记](../../notebook/fundamentals/gradient-checkpointing.md#重计算的随机数与可变状态) |
 | [run_all_gpu_tests.py](run_all_gpu_tests.py) | 按类别运行已有 GPU 验证，默认结果写入 experiments/results/ |
 | [gpu_pr_validation_experiments.sh](gpu_pr_validation_experiments.sh) | DeepSpeed、GRPO、vLLM、SGLang、verl 等验证实验的编排 |
 | [gpu_experiment_helpers.py](gpu_experiment_helpers.py) | 这些验证脚本共用的设备、计时和结果保存辅助函数 |
