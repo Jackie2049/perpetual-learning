@@ -4,6 +4,7 @@
 
 | 入口 | 用途 |
 |---|---|
+| [verify_adamw_missing_grad.py](verify_adamw_missing_grad.py) | torch2.9.1真实CPU AdamW/Adam与autograd：None/零梯度、条件计算图、动态冻结旧grad；三步公式控制核bias correction与衰减顺序。无设备发现/AMP/分布式或性能验收，见[主笔记](../../notebook/fundamentals/adamw-optimizer-deep-dive.md#缺失梯度与零梯度) |
 | [verify_sdpa_suffix_alignment.py](verify_sdpa_suffix_alignment.py) | torch2.9.1真实CPU MATH注意力：缓存后缀位置、物理容量与有效长度分开；两组均值控制/四布局输出及Q/K/V局部梯度对照。无设备发现/自动bias分派或kernel性能验收，见[主笔记](../../notebook/fundamentals/flash-attention.md#缓存后缀的因果对齐) |
 | [verify_activation_recompute_state.py](verify_activation_recompute_state.py) | torch2.9.1真实CPU eager checkpoint/autograd对照：Torch与外部RNG、同元数据不同梯度、形状拒绝及early-stop副作用；无设备发现/FSDP/compile或显存吞吐结论，见[主笔记](../../notebook/fundamentals/gradient-checkpointing.md#重计算的随机数与可变状态) |
 | [run_all_gpu_tests.py](run_all_gpu_tests.py) | 按类别运行已有 GPU 验证，默认结果写入 experiments/results/ |
