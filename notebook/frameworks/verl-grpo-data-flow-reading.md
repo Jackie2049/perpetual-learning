@@ -246,6 +246,43 @@ python experiments/scripts/verify_verl_collate.py /path/to/verl
 
 Python 3.12.13、torch 2.9.1、NumPy 2.0.2；非完整 pytest，未导入 RLHFDataset/verl 根包或执行下载、tokenizer、StatefulDataLoader、DataProto、训练与设备路径。官方API和本地模块 Git blob 均为 `aad0655b9d97037cbd7a5ee4d4f45a4bfec0040e`；模块 SHA256 `8571ff8527a0a8c5aa0951f248052e3ea7a8386cc236c1324c81e764d5b1ff65`，原测试 `f2816d4c441937e74f303124dfc99b11bd35b96af674f9e97891aa01eb2c66cf`。
 
+### Rollout 完整性与会话计数
+
+**成功输出行数不等于独立 rollout 会话数。** 一个 agent-loop 会话可以产出多行；同一 prompt 需要两个会话时，只有 `prompt_a_0_0`、`prompt_a_0_1` 两行，仍然缺少第二个会话。2026-10-22 读取的 [verl #6641](https://github.com/verl-project/verl/pull/6641) 为 `main_ppo_sync` 增加终态检查，目标是在组不完整时拒绝返回部分数据，而不是改变 GRPO 算法。
+
+固定 head `9e4e85da050cc1cbf156cd8c9d89217c68c4ea66`，API 目标 base `3f9d4c0d32cc20c7ec31c8137e91bb5673ce9e5e`，实际共同祖先 `8911f243022aac3558ec7fa8e444cc960ea8d93c`；真正 PR 两文件273增9删。以下对照以共同祖先为旧版，不把目标分支的其他更新混入修复差异。
+
+[`AgentLoopManagerTQ.generate_sequences`](https://github.com/verl-project/verl/blob/9e4e85da050cc1cbf156cd8c9d89217c68c4ea66/verl/trainer/main_ppo_sync.py#L555)分派前给每个根 prompt 保存 `expected_rollouts`：逐 prompt 的 `__rollout_n__` 优先，否则区分训练 n 与验证 n。worker 的 `_run_prompt` 等待本 prompt 的会话 gather 后写 `finished`，捕获异常则写 `failure`；输出为空的 postprocess 不写成功子行。ReplayBuffer 的 add 按字段合并 marker，因此后来的状态更新不会自行移除先前的期望数。这条 manager→worker→轮询链只作源码核对。
+
+[`ReplayBuffer.sample`](https://github.com/verl-project/verl/blob/9e4e85da050cc1cbf156cd8c9d89217c68c4ea66/verl/trainer/main_ppo_sync.py#L300)仅检查目标 partition/step：有 `running` 就继续轮询；全部不再 running 后，拒绝任何 `failure`，并对带期望数的 finished 根比较独立成功 session 数。key 用 `rsplit("_", 2)` 分开 UID/session/index，保留带下划线的 UID，以 set 去重 session，而不是数输出行。
+
+| 原测试中的根与子行 | 旧版 | 新版 |
+|---|---|---|
+| 期望2会话，0号两行、1号一行 | 源码推导：返回3行 | 原测试：返回3行，并携带根 marker |
+| 根 failure，已有一行成功输出 | 返回部分结果 | RuntimeError，是否有期望数都拒绝 |
+| 根 finished，期望2、只有0号一行 | 返回部分结果 | RuntimeError，expected 2 / got 1 |
+| 根 finished，期望2、只有0号两行 | 返回2行 | 同样拒绝，独立会话仍只有1 |
+
+根 marker 生命周期也属于完整性条件：新版将根 key 放在 `KVBatchMeta.extra_info["rollout_root_keys"]`，cleanup helper 合并子行与根并去重。训练/验证最终清理调用该 helper，防止同一步的多批验证被旧 marker 污染。原测试实际覆盖 helper 的 key 列表、ReplayBuffer.remove 及同 step 两批验证；没有运行真实 TQ 的删除操作。
+
+这里的 fail closed 有明确范围。源码先等待 running 结束才报告失败，没有新增超时、取消或回滚；一个挂住的会话仍可能阻止返回。另5个本机控制输入确认：expected2但零输出被拒绝；finished 缺期望数仍走旧行为且不收集该根；成功 session 超过期望值仍接受（比较是 `<`，非 `!=`）；无根的成功行仍接受；expected0 可返回空批，另一步的 failure 不影响本步。这些控制说明它是带 marker 的数量下界护栏，不是任意元数据的完整验证器；不据构造输入定性正常入口存在新的训练缺陷。
+
+**CPU 复查范围**：[脚本](../../experiments/scripts/verify_verl_rollout_completeness.py)从固定 Git 对象原样隔离完整 ReplayBuffer 和三个新 helper，选择[原测试文件](https://github.com/verl-project/verl/blob/9e4e85da050cc1cbf156cd8c9d89217c68c4ea66/tests/trainer/test_main_ppo_sync_replay_buffer_on_cpu.py)中的7个 replay-buffer 测试、原 fixture 和 FakeKVBatchMeta，保留原断言。pytest 执行候选7过；旧版只选4个拒绝行为的原测试，全部以 DID NOT RAISE 预期失败，脚本核对失败集合/阶段/原因及退出1后成功退出。另5个控制全过。并未把新 cleanup helper 混入旧版。
+
+```bash
+python experiments/scripts/verify_verl_rollout_completeness.py /path/to/verl
+```
+
+Python 3.12.13、NumPy 2.0.2、pytest 8.4.2；此环境缺 TensorDict/Ray/TQ/OmegaConf，未安装。另2个 manager/TensorDict 原测试未选取，不用字典替身冒充原9项全过。AST 排除框架 imports、延后注解求值，禁用 conftest/外部插件/cache/字节码及 Git lazy fetch。原 fixture 用 `__new__` 初始化锁与本地字典，不启动 ReplayBuffer 轮询线程；因此7项证明的是原方法对测试元数据的行为，不是 manager、真实服务、训练统计或设备实测。
+
+完整文件 SHA256：
+
+```text
+共同祖先 main_ppo_sync.py  0cc6a1427253c962e7aa4ac88d634ee349325387dda32c3270d6012300730370
+候选 main_ppo_sync.py      975b4b93337324f080ffdd6e97bf5b9489046a0974518d43edf0817c8afe482a
+候选原测试                ac80178e95d410dd2f1c78246d6f48834487bdf2215d88b2e10c7b14ced35478
+```
+
 ## 6. LoRA Integration in GRPO
 
 ```

@@ -135,6 +135,7 @@
 - [verl shared-prefix packing](frameworks/verl-shared-prefix-packing.md) — #8300 的 FSDP 分支可见域、首响应标签、等价条件及 38 组原始 CPU 布局检查
 - [verl UID 分组均衡](frameworks/verl-grpo-source-reading.md#连续-uid-与等样本组的前提) — 连续UID、固定每组样本数与DP等行切分的复合契约；原3个CPU测试体及22组控制，非标准trainer故障复现
 - [verl 拼批形状与对象引用](frameworks/verl-grpo-data-flow-reading.md#拼批中的形状与引用) — 原collator/1原测试体与7组CPU DataLoader检查；一维对象边界不等于深拷贝或字段校验
+- [verl Rollout 完整性](frameworks/verl-grpo-data-flow-reading.md#rollout-完整性与会话计数) — #6641原7项replay测试候选通过/旧版4项拒绝检查预期失败；多输出行不等于多会话，数量护栏非超时、取消或服务恢复
 - [verl 奖励限流与取消](frameworks/verl-reward-integration-reading.md#进程配额与取消边界) — 原16协程测试体/2取消对照；类属性不是跨节点配额，超容量预扣不自动退款，timeout不包排队
 - [verl 掩码统计与梯度](frameworks/verl-grpo-core-algos-reading.md#掩码统计与梯度的数值边界) — 原3参数例/20组CPU对照；mean过滤无效NaN不代表方差梯度或白化全部槽位有限，非训练故障定性
 - [verl 单样本组回退](frameworks/verl-grpo-core-algos-reading.md#单样本与同分组的不同回退) — 原4等价性例/12组双实现控制；singleton保留近似原奖励，撤回排错指南n=1必退化与n≥4/8硬规则，非训练收益证明

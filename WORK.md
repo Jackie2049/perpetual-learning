@@ -12,6 +12,8 @@
 
 ## 运行接续
 
+- **M1 Rollout完整性学习收束（2026-10-22）**：新更新verl#6641 head9e4e85da/目标base3f9d4c0d/祖先8911f243。原ReplayBuffer与helper、原7项CPU测试候选通过，祖先4项拒绝检查DID NOT RAISE预期失败，另5边界通过。见[原数据流笔记](notebook/frameworks/verl-grpo-data-flow-reading.md#rollout-完整性与会话计数)/[复查](experiments/scripts/verify_verl_rollout_completeness.py)。同会话多行不补缺失会话，先等running结束再报终态错；数量下界非超时/取消/恢复。原FakeKVBatchMeta，另2项manager/TensorDict未选，无真实TQ/poll线程/训练/设备或新M5任务。本题收束；后续有界核对变化再选其他CPU/源码问题，不堆失败队列替身或自动采用/修复PR；GPU/AReaL、#8313及网站边界不变。
+
 - **M1 状态快照学习收束（2026-10-22）**：torch2.9.1真实CPU参数/buffer/SGD与BytesIO对照全过，见[原Checkpoint笔记](notebook/fundamentals/checkpoint.md#状态字典与独立快照)/[复查](experiments/scripts/verify_state_dict_snapshot.py)。原字典/浅拷贝/detach/CPU上的cpu共享存储；deepcopy/clone与更新前已完成序列化保留旧值，优化器动量亦有别名。不是立即同步save故障证据；无磁盘/并发staging/设备/完整恢复或新M5任务。本题收束；后续有界核对变化再选未重复CPU/源码问题，不堆快照/恢复变体或自动修改框架。GPU/AReaL、#8313及网站边界不变。
 
 - **M1 分布式采样尾部学习收束（2026-10-22）**：torch2.9.1/官方2.9契约，真实CPU sampler/loader四组合、小数据和epoch对照全过，见[原DataLoader笔记](notebook/fundamentals/dataloader.md#分布式采样的补齐与丢弃)/[复查](experiments/scripts/verify_distributed_sampler_tail.py)。N10/R3/B2仅loader drop仍12条10ID含重复，两层drop只剩6ID；合成评分1/10变1/6，等长/正确sum-count不认证原样本分母。显式rank单进程、0worker不pin，无进程组/DDP/框架评测或性能验收，无新M5任务。旧I/O配置必消瓶颈断言改为需测量。本题收束；后续有界核对变化再选未重复CPU/源码问题，不堆drop_last/epoch变体或自动改框架策略；GPU/AReaL、#8313及网站边界不变。

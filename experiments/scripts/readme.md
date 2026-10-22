@@ -30,6 +30,7 @@
 | [verify_verl_lr_schedule.py](verify_verl_lr_schedule.py) | 固定1876b06d两个原LR构造器，真实CPU SGD/LambdaLR的4轨迹、2内存恢复及1覆写对照；使用/推进后LR、闭包配置与状态分开。Python3.10+/torch；非原上游测试、worker/FSDP/Tinker、磁盘恢复或训练验收 |
 | [verify_distributed_sampler_tail.py](verify_distributed_sampler_tail.py) | 真实CPU DistributedSampler/DataLoader的两层drop_last、补齐重复、覆盖/均值和epoch对照；显式枚举rank，无进程组/worker/DDP/训练。Python3.10+/torch，打印版本及类文本hash，不是上游原测试 |
 | [verify_state_dict_snapshot.py](verify_state_dict_snapshot.py) | 真实CPU参数、持久buffer与SGD动量的存储别名；浅拷贝/detach/cpu与deepcopy/clone/已完成BytesIO序列化对照。Python3.10+/torch，打印版本/原方法hash；非上游原测试、磁盘恢复、并发staging或设备验证 |
+| [verify_verl_rollout_completeness.py](verify_verl_rollout_completeness.py) | 固定#6641完整原ReplayBuffer/helper，原7项候选通过/旧版4项拒绝检查预期失败，另5边界；保留原FakeKVBatchMeta。Python3.10+/NumPy/pytest，另2项manager/TensorDict未选，不运行poll线程/Ray/TQ/训练/设备 |
 | [test_vllm_lora_nan_h20.py](test_vllm_lora_nan_h20.py) · [test_vllm_lora_nan_targeted_h20.py](test_vllm_lora_nan_targeted_h20.py) | vLLM LoRA NaN 复现与验证 |
 | [cuda_multi_stream_race_demo_h20.py](cuda_multi_stream_race_demo_h20.py) · [cuda_multi_stream_race_demo_v2_h20.py](cuda_multi_stream_race_demo_v2_h20.py) | CUDA 多流竞争复现 |
 | [verify_areal_prompt_mean_split.py](verify_areal_prompt_mean_split.py) | AReaL 归约契约 CPU 参考验证（标准库，无 torch）；区分外层优化步数与内层累积，含 token_mean 对照、合法 DP dummy 调度、Megatron 默认路径 P 抵消及标量 Adam 反例；非框架集成实测，见源码笔记 §10.7 |

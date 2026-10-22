@@ -140,7 +140,7 @@
 - [verl GRPO bypass_mode + TransferQueue + Detach Metrics + Weight Sync 源码级深度阅读](verl-grpo-bypass-mode-reading.md)
 - [verl GRPO Training Core Algorithms — core_algos.py 源码深度阅读](verl-grpo-core-algos-reading.md)：[掩码统计与梯度](verl-grpo-core-algos-reading.md#掩码统计与梯度的数值边界)及[单样本组回退](verl-grpo-core-algos-reading.md#单样本与同分组的不同回退)；区分有限值/梯度、singleton/同分pair，保留CPU复查范围。
 - [verl KL 前向值与反向规则](verl-grpo-core-algos-reading.md#kl-前向值与反向规则)：k3+值受clamp而梯度走k2，6原测试例及14组CPU对照；日志值不代表梯度限幅，非完整训练验收。
-- [verl GRPO End-to-End Data Flow 源码级阅读](verl-grpo-data-flow-reading.md)：补[拼批形状与引用](verl-grpo-data-flow-reading.md#拼批中的形状与引用)，原1测试体/7组CPU DataLoader检查；对象边界不等于深拷贝/字段校验。
+- [verl GRPO End-to-End Data Flow 源码级阅读](verl-grpo-data-flow-reading.md)：[拼批形状与引用](verl-grpo-data-flow-reading.md#拼批中的形状与引用)及[Rollout完整性](verl-grpo-data-flow-reading.md#rollout-完整性与会话计数)；#6641原7项replay测试候选通过、旧版4项预期失败，区分输出行与会话，非TQ/训练验收。
 - [verl GRPO 内存泄漏与 detach_metrics 修复 — RTX 4090关键分析](verl-grpo-detach-metrics-rtx4090-reading.md)
 - [verl GRPO 源码深度阅读](verl-grpo-source-reading.md)：新增[UID均衡前提](verl-grpo-source-reading.md#连续-uid-与等样本组的前提)，原3个CPU测试体与22组控制；连续段聚合、等段数不自动保证等行分发。
 - [verl GRPO Training Loop Internals — Source Code Level Deep Reading](verl-grpo-training-loop-internals-reading.md)：补[学习率步数与恢复](verl-grpo-training-loop-internals-reading.md#学习率步数与恢复条件)，真实CPU optimizer四轨迹/两恢复/一步覆写；日志是推进后LR，state不保存原函数闭包，非训练或worker集成验收。
