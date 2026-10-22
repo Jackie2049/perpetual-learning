@@ -1856,3 +1856,33 @@ python -B experiments/scripts/verify_deepinfer_passk.py /path/to/DeepInfer-git
 Python3.12.13 / pytest8.4.2，其他为标准库，无新依赖；复现前须在本地 Git 中已有上述 head/base 对象。未导入 torch、deepinfer、score.py 或模型/服务，没有真实采样、judge、数据集、设备发现或 GPU/NPU 运行；不新增 M5 必跑事项，也不改上游或重开已有作者的测试方案。
 
 SHA256：passk.py `aee51e7d444205c49cbcef815e62dd918b9d98726a04e1c388c8a2695869c7f7`；原测试 `fdee5510f2f3dd8f6bed3e4c5d8c35f051187773edd65ca85a4ce4030d6b5600`；仅读 score.py `af3755cd5c0a1bb050296b03999773d6aead6360e197234b1bd8438fbcb293a4`。本题收束为“估计量、题目覆盖与评分链是不同证据”，不由合成分数外推模型能力或完整评测可靠性。
+
+## Golden token 入场校验与 prompt 占位符
+
+**prompt 能容纳图像占位符，不代表 forced output 也能使用词表外 ID。** 2026-10-22 核对已有 [#209](https://github.com/deepseek-ai/DeepInfer/pull/209)，固定 head `bb289c50d1ad9dc61d08efefaa27fc2660d1358a`、base `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`。候选在 [`LLMEngine.add_request`](https://github.com/deepseek-ai/DeepInfer/blob/bb289c50d1ad9dc61d08efefaa27fc2660d1358a/deepinfer/engine/llm_engine.py)将 dict 转成 SamplingParams 后，按当前 model_config 的 vocab_size 检查 golden_token_ids；非法值抛 ValueError，早于多模态 prompt 处理、Sequence 构造和 grammar 编译/提交，enqueue=False 也不绕过。
+
+原测试以 vocab_size=16、合法 prompt `[0,2]` 检查整数 ID：
+
+| golden 输入 | 候选行为 | 原测试覆盖 |
+|---|---|---|
+| None、空列表、−1 | 接受；−1保留正常采样 | enqueue开关 |
+| 0、15、含−1的边界组合 | 原值传给Sequence | enqueue开关与Mock调度调用 |
+| −2、16、18、2³¹−1 | ValueError | dict/对象 × enqueue开关，共16例 |
+| 构造后追加16 | 入场时再次拒绝 | 对象可变性控制 |
+| golden18配图像prompt占位符18 | 先拒绝golden，不调用多模态处理/grammar/Sequence | 1项顺序控制 |
+
+SamplingParams 构造不掌握模型词表，也没有在构造时验证 golden 的词表范围；将检查放在 add_request 能使用实际模型配置，并覆盖构造后修改的列表。源码中 prompt 的范围则是普通文本 `[0,vocab_size)`，带多模态数据时扩到 `vocab_size + ImageTokenOffset.NUM_SPECIAL`；golden 的−1哨兵不适用于 prompt。候选没有把图像占位符纳入输出词表，也不是通用 token 类型/整个请求 schema 校验。
+
+golden 不是只读测试标签。[原 sampler](https://github.com/deepseek-ai/DeepInfer/blob/bb289c50d1ad9dc61d08efefaa27fc2660d1358a/deepinfer/model_executor/layers/sampler.py)以非−1值覆盖采样结果并查 logprob；[Scheduler::map_engram](https://github.com/deepseek-ai/DeepInfer/blob/bb289c50d1ad9dc61d08efefaa27fc2660d1358a/csrc/engine/scheduler.hpp#L187)在表非空时直接用 token_id 索引，注释要求调用方保证范围。因此入场检查有真实下游约束背景；本轮未执行 sampler、Engram、C++扩展或故障注入，不把源码风险说成已复现设备崩溃。
+
+候选原30项测试在 CPU 隔离 harness 下全过；同一原测试对base为12过、18项因 DID NOT RAISE ValueError 预期失败。新增的16项整数拒绝、提前拒绝顺序和构造后修改检查解释了18项差异；不是单靠测试数量推断修复覆盖所有路径。
+
+[复查脚本](../../experiments/scripts/verify_deepinfer_golden_admission.py)保留完整原 LLMEngine class AST，未改写方法；但省略原模块加速器导入，以包/模块容器和显式依赖加载它，cpu_timer 装饰器为 identity stub。SamplingParams、EngineType、ImageTokenOffset 是完整原模块；原测试 fixture 用 __new__ 绕过引擎构造，保留原 Sequence/调度/多模态 Mock，closed=True使析构不启动清理工作。实际仅调用入场路径，不是正常导入/实例化整个引擎成功，ci_npu标记也不代表执行了NPU测试。
+
+```bash
+python -B experiments/scripts/verify_deepinfer_golden_admission.py /path/to/DeepInfer-git
+```
+
+Python3.12.13 / NumPy2.0.2 / pytest8.4.2 / torch2.9.1，后者供原 SamplingParams 的iinfo使用，无新安装或设备发现。复现需本地已有固定head/base Git对象；脚本仅将原测试归档到临时目录，两版各在独立子进程运行pytest，隔离项目配置/第三方插件/缓存，并校验预期失败原因。无真实Sequence、worker、模型、grammar、GPU/NPU或推理质量/性能验证；不采用/修改上游候选，也不新增M5必跑事项。
+
+SHA256：llm_engine.py候选 `c50f82abf9735940442eb7658ab77f7d1897cf84f67ceb7d5928eb8f1e70199e`、base `a636d60ca5711f6b7c21e68370c3bd9c2de6fc3f4439a7429ca4f572f0edeebe`；原测试 `8a784c02e341fd8f57193a5459f948b03aa462067285a9586a9f707b81e6a675`；sampling_params.py `f800034efdebe1b21620660a51fa9122d3d7f138d8e60cd738f33d643c3116f8`。本题收束为入场范围/顺序的CPU证据，不扩写采样或设备替身。

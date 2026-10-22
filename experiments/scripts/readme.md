@@ -36,6 +36,7 @@
 | [verify_unirl_token_budget.py](verify_unirl_token_budget.py) | 固定6fd82cba原Part/TokenBudgetPlanner单进程CPU；dense/sum、超预算单样本、update成员/字段对齐、无长度数量回退及配置拒绝。Python3.12/torch/Pillow；两包壳跳过汇总初始化，未改同步函数，无collective/模型/训练/显存验收 |
 | [verify_unirl_ema.py](verify_unirl_ema.py) | 固定6fd82cba原配置/EMA/inject_mirror/deferred回调，微小CPU参数核衰减方向、更新时机、复制与异常上下文恢复。Python3.12/torch，正常导入无包壳；非原测试、optimizer/LoRA/FSDP/训练或设备验收 |
 | [verify_deepinfer_passk.py](verify_deepinfer_passk.py) | 固定DeepInfer#207 Git对象隔离执行原16项pytest，生产代码与base相同；不齐样本min(k,n)、回答/题目均值与分母三组对照。Python3.12/pytest及标准库，无torch/judge/CLI/采样或设备验收 |
+| [verify_deepinfer_golden_admission.py](verify_deepinfer_golden_admission.py) | 固定#209完整原LLMEngine类AST的CPU导入harness，原30pytest候选全过/base12过18预期失败；原Mock保留、timer为空装饰器。Python3.12/NumPy/torch/pytest，非正常引擎导入/实例化、真实Sequence/Engram/采样或设备验证 |
 | [test_vllm_lora_nan_h20.py](test_vllm_lora_nan_h20.py) · [test_vllm_lora_nan_targeted_h20.py](test_vllm_lora_nan_targeted_h20.py) | vLLM LoRA NaN 复现与验证 |
 | [cuda_multi_stream_race_demo_h20.py](cuda_multi_stream_race_demo_h20.py) · [cuda_multi_stream_race_demo_v2_h20.py](cuda_multi_stream_race_demo_v2_h20.py) | CUDA 多流竞争复现 |
 | [verify_areal_prompt_mean_split.py](verify_areal_prompt_mean_split.py) | AReaL 归约契约 CPU 参考验证（标准库，无 torch）；区分外层优化步数与内层累积，含 token_mean 对照、合法 DP dummy 调度、Megatron 默认路径 P 抵消及标量 Adam 反例；非框架集成实测，见源码笔记 §10.7 |
