@@ -58,11 +58,11 @@ M5 最小下一步：先按实际硬件查已有方案和精确 head，读清依
 
 ## DeepInfer 显存遥测的轻量核对
 
-状态：待 M5 按可用资源安排；独立小范围检查，不是上面移植/模型实验的前置条件，也不代表已接单。
+状态：**M5 已完成（2026-10-22，4090-1）**，见[实验材料](deepinfer-mem-telemetry/readme.md)：真机核对 `get_occupied_gpu_memory` base/head（#151）与 `show_gpu_memory_stats`——两次调用稳定时 base 即第二次采样对应 occupied（base==head==412286976）；Allocated/Reserved/Occupied 三口径语义不同（del 后 0.000/1.000/1.445 GiB）；异常路径 base 静默返 0、head 返 0 并发 warning；base/head utils.py SHA256 与 M1 记录逐字节一致；真实 import 独立进程验证通过。原条目前提不变：M1 只核源码，作者未做 GPU runtime 验证——本项补真机行为证据，不构成对 #151 的验收/评论（已有作者，不竞争实现）。
 
-来源：[遥测笔记](../notebook/frameworks/deepinfer-initial-survey.md#显存遥测采样与容量规划)、已有 [#151](https://github.com/deepseek-ai/DeepInfer/pull/151)，2026-10-21读取时open，base `774ce244b87cc0eb8d4b94ab9f5de2ab22049f01`、head `d72f3c4a7d1cfc1bd337adb03dd1319973b084d4`。只改单次查询/warning，作者也未做GPU runtime验证。M1仅核源码/AST，未执行设备API或替身测试；不预设旧查询在稳定total时必错，或此项能修复KV规划/OOM。
+来源：[遥测笔记](../notebook/frameworks/deepinfer-initial-survey.md#显存遥测采样与容量规划)、已有 [#151](https://github.com/deepseek-ai/DeepInfer/pull/151)，2026-10-21 读取时open，base `774ce244b87cc0eb8d4b94ab9f5de2ab22049f01`、head `d72f3c4a7d1cfc1bd337adb03dd1319973b084d4`。只改单次查询/warning，作者也未做GPU runtime验证。M1仅核源码/AST，未执行设备API或替身测试；不预设旧查询在稳定total时必错，或此项能修复KV规划/OOM。
 
-最小下一步：M5先核对目标设备、可见编号与实际torch/backend版本，在独立进程/既有可用环境中核对正常mem_get_info及helper返回和日志。若隔离导入helper，须记录方式并保持原函数体；不为验证日志加载权重或编译整套DeepInfer。保留free/total对应的采样身份与时序，不用后一次查询的结果强求前一次值相等；NPU重映射语义另行标明，不能从CUDA结果外推。
+最小下一步（已完成）：M5先核对目标设备、可见编号与实际torch/backend版本，在独立进程/既有可用环境中核对正常mem_get_info及helper返回和日志。若隔离导入helper，须记录方式并保持原函数体；不为验证日志加载权重或编译整套DeepInfer。保留free/total对应的采样身份与时序，不用后一次查询的结果强求前一次值相等；NPU重映射语义另行标明，不能从CUDA结果外推。
 
 停止条件：无合适runtime或需打断现有任务就记待资源，不诱发驱动故障、不强制错误device或修改训练来触发告警，不要求必须补真实异常分支。回写实际命令/版本/日志与未测路径，不把单次正常读取称为原子全局快照、完整日志集成或性能验证。
 
