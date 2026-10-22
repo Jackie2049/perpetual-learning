@@ -421,6 +421,49 @@ python -B experiments/scripts/verify_unirl_loss_reduction.py /path/to/UniRL
 
 本机环境缺 Ray/Hydra/OmegaConf/Pillow，未补装或导入训练栈，未复跑作者报告的双 rank Gloo/FSDP2 gate、80,640 组差分或 AROPD。这里确认局部目标差异和固定源码路径，不认证候选所有输入 bit-identical、分布式归约、模型梯度或训练收益；不自动采用或新增 M5 必跑事项。
 
+## AROPD 的采样梯度与 KL 目标
+
+[已有 PR #534](https://github.com/Tencent-Hunyuan/UniRL/pull/534)新增 AR 端 on-policy distillation：teacher 评价 student 自己生成的 token，再将 teacher/student 的 log-prob 差作为冻结权重。固定 head `1962740c4aabe104c2528d0a79ed853c52d05046`、base `0fe4f99dc2384a022fe0c8472aec889c216d3c07`；本节区分源码机制和固定前缀下的数学，不把采样 surrogate 的值直接当作 KL。
+
+### Teacher 与 student 的接线
+
+[`AROPD`](https://github.com/Tencent-Hunyuan/UniRL/blob/1962740c4aabe104c2528d0a79ed853c52d05046/unirl/algorithms/aropd.py)要求注入 backend，并在同一模型上找到命名的 teacher adapter。配方是同 backbone/tokenizer 的可训练 default LoRA 加 frozen teacher LoRA，不是任意远程大模型 teacher 服务。`prepare_segment` 在 no_grad 与 adapter_active 上下文内 replay，将结果 detach 到 CPU 的 packed `teacher_log_probs`；anchor contract 按训练微批几何准备并恢复行序。teacher forward、adapter 冻结及实际输出身份这里只读源码，未运行 PEFT/模型。
+
+student 的旧 log-prob 来自 `segment.log_probs`，新 log-prob 来自当前 replay；raw gap 是 `sg(teacher_logp-old_logp)`，只有 new_logp 接收梯度。代码声明无需奖励优势、单 teacher、同步路径与不支持 multi-update；配方 num_updates_per_batch=1，teacher replay 温度取 sampling.temperature。一次 update 的声明本身不证明实际 rollout/replay 概率逐位相等，代码另记录 drift 指标。
+
+默认 `normalize_gap=true` 还对当前微批 gap 做中心化/除标准差（元素数>1才做），指标保存 raw gap。本节的恒等式仅讨论 **raw gap**，不能据此认证默认 z-score 的无偏性；普通 baseline 的零期望论证要求其相对于当前动作独立，不能不加条件套到动作相关权重或样本自身统计量。
+
+### 固定前缀的梯度恒等式
+
+令 student 分布 p=softmax(z)，teacher 分布 q 冻结，所有动作概率为正、旧新 student 相同，不改变温度或采样支持；这里把前缀当固定输入。reverse KL 为 `K=Σ p·(log p−log q)`，其梯度为 `E_p[(log p−log q)∇log p]`。对应最小化 surrogate 是 `L=−sg(log q−log p_old)·log p_new`；两者**期望梯度**相同，不要求标量值相同。
+
+与它不同，冻结抽样权重后直接微分 `log p−log q` 只剩 score，其期望 `Σp∇log p=0`；有限 batch 仍可能有非零采样噪声。这不表示 KD 普遍无效：完整词汇分布 KL 的梯度正是这里的比较基准。另一个不同目标是 teacher cross-entropy `C=−E_p log q`；`K=C−H(p)`，少了 student entropy 项便不是同一个梯度。固定候选 README 将最大化 E_p log q 与 raw gap 式连写、把 student log-prob 称为 control variate，这个等同关系不能直接沿用。
+
+这也要区分原论文的范围：[GKD §3 式2、4](https://arxiv.org/html/2306.13649v3#S3)在 student 生成的前缀上比较 teacher/student 的 token 分布，并明确不反传外层序列抽样过程；它允许不同 divergence。on-policy 描述数据来自谁，不自动证明某个 sampled-token、归一化或完整轨迹目标都彼此等价。
+
+### 本机精确枚举
+
+2026-10-22 用自编 CPU torch FP64 参考，完整枚举三个动作，不实际抽样。p=[0.2,0.3,0.5]、q=[0.7,0.2,0.1]，对 student logits 的梯度如下：
+
+| 计算图 | 梯度 |
+|---|---|
+| 完整 reverse KL | `[−0.385714,−0.081102,0.466816]` |
+| raw score surrogate 的精确期望 | 同上 |
+| 直接 gap，冻结抽样权重 | `[0,0,0]`（浮点误差内） |
+| teacher cross-entropy，保留 p 的梯度 | `[−0.269757,−0.028806,0.298563]` |
+
+KL=0.675806，而 surrogate 值约−0.300991：负 distill surrogate 不是负 KL 的证据。再令 q=p，reverse KL/raw surrogate 的梯度均为0，但 teacher cross-entropy 梯度为 `[0.115957,0.052296,−0.168253]`，仍会改变已匹配的分布。两例均核对 `∇C+∇(Σp logp)=∇K`，且原始 KL 的中心有限差分与 autograd 一致。
+
+[参考脚本](../../experiments/scripts/verify_aropd_score_gradient.py)：
+
+```bash
+python -B experiments/scripts/verify_aropd_score_gradient.py
+```
+
+Python3.12.13 / torch2.9.1，显式 CPU，无包壳、模型或依赖安装。**这是自编参考数学，不是执行原 AROPD，也不是作者测试**；没有证明多步轨迹梯度、默认 gap normalization、off-policy correction、PEFT/FSDP 或训练收益。源码/配方 SHA256 分别为 `c96283715000b9979f84b0d1712c542fb7140575e4997a493ac3a3110e221795` / `4664747d7123e874bfb13d61ee5526880344becc54f5427dbcbe2e25f27305d6`，推导 README 为 `6214d59d75759899dfea09bd2df500c24d10d18223a24e9daaef70d7f7db35e9`。
+
+作者报告的6×H20训练早于该 head 的 anchor/单位接线 rebase，正文明确未在 rebase 后复跑 GPU；其 CPU harness 也有模型 forward 替身，不当作本机结果。此处只保存理论限定与学习证据，不改上游、发布审查结论/候选、启动 teacher 实验或新增 M5 必跑事项。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。

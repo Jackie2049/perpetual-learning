@@ -37,6 +37,7 @@
 | [verify_unirl_token_budget.py](verify_unirl_token_budget.py) | 固定6fd82cba原Part/TokenBudgetPlanner单进程CPU；dense/sum、超预算单样本、update成员/字段对齐、无长度数量回退及配置拒绝。Python3.12/torch/Pillow；两包壳跳过汇总初始化，未改同步函数，无collective/模型/训练/显存验收 |
 | [verify_unirl_ema.py](verify_unirl_ema.py) | 固定6fd82cba原配置/EMA/inject_mirror/deferred回调，微小CPU参数核衰减方向、更新时机、复制与异常上下文恢复。Python3.12/torch，正常导入无包壳；非原测试、optimizer/LoRA/FSDP/训练或设备验收 |
 | [verify_unirl_loss_reduction.py](verify_unirl_loss_reduction.py) | 固定#622，原词汇模块与完整原聚合函数AST，四组CPU前向/输入梯度重组；token/seq目标、全掩码行分母不同。Python3.10+/torch；显式单进程微批权重，非loss_units/resolve_loss_scales、原测试、FSDP或训练验收 |
+| [verify_aropd_score_gradient.py](verify_aropd_score_gradient.py) | 自编三动作精确期望/FP64 autograd与有限差分，区分raw score、reverse KL、直接gap与teacher cross-entropy。Python3.10+/CPU torch；固定前缀、p_old=p_new，不执行UniRL/默认gap归一化、轨迹或模型训练 |
 | [verify_deepinfer_passk.py](verify_deepinfer_passk.py) | 固定DeepInfer#207 Git对象隔离执行原16项pytest，生产代码与base相同；不齐样本min(k,n)、回答/题目均值与分母三组对照。Python3.12/pytest及标准库，无torch/judge/CLI/采样或设备验收 |
 | [verify_deepinfer_golden_admission.py](verify_deepinfer_golden_admission.py) | 固定#209完整原LLMEngine类AST的CPU导入harness，原30pytest候选全过/base12过18预期失败；原Mock保留、timer为空装饰器。Python3.12/NumPy/torch/pytest，非正常引擎导入/实例化、真实Sequence/Engram/采样或设备验证 |
 | [verify_deepinfer_image_spans.py](verify_deepinfer_image_spans.py) | 固定#208完整原MM类AST/原common模块，原12pytest候选全过/base8过4预期失败，两版各4缓存端点；原图像长度查表保留，仅AST读schema常量不执行CUDA Event。Python3.12/NumPy/torch/pytest，非worker/VE/缓存命中或设备验证 |

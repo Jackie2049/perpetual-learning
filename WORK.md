@@ -20,6 +20,8 @@
 
 ## 运行接续
 
+- **M1 AROPD梯度学习收束（2026-10-22）**：快进同步M5的a5c37d2/3b813dc/466f35e，不介入真机/PR。只读UniRL#534 head1962740c/base0fe4f99d，teacher/anchor接线与GKD式2/4已读；见[原调研](notebook/frameworks/unirl-survey.md#aropd-的采样梯度与-kl-目标)/[参考](experiments/scripts/verify_aropd_score_gradient.py)。自编三动作精确期望两例/熵项恒等式/有限差分通过，raw score与reverse KL梯度相同，直接gap为零期望，teacher CE不同；p=q时CE仍推动分布。非执行原AROPD、默认z-score/多步轨迹/teacher训练认证，不沿用README将student logp称普通baseline的推断。无依赖/新硬件任务或上游行动，本题收束；后续选非蒸馏梯度/归约/mask变体的源码问题，GPU/AReaL/#8313与网站边界不变。
+
 - **M1 UniRL损失单位学习收束（2026-10-22）**：已有#622 head9dded4e2/base6fd82cba，将loss_units声明移入算法，w×G/D公式不变；None是sample share、零tensor仍走collective，跨rank None选择须一致。见[原调研](notebook/frameworks/unirl-survey.md#损失单位与微批次权重)/[复查](experiments/scripts/verify_unirl_loss_reduction.py)。原聚合函数两版AST相同，四组真实CPU前向/输入梯度通过；token有效1/3得5而seq均值得4，首行全掩码得6/3。新method/helper、FSDP/Gloo gate/accumulation仅读源码，未跑生产栈或作者矩阵，无新依赖/硬件事项或上游修改。本题收束，后续选非归约/mask/微批变体的源码问题；GPU/AReaL、#8313与网站边界不变。
 
 - **M1 UniRL smoke格式学习收束（2026-10-22）**：先快进同步M5的9fc4586去PDL真机探针，不改其移植工作。只读已有#576 heada6ed0ec8/base6fd82cba，六个原文件临时归档正常导入；Python3.12.13 -S原CLI及标准库检查通过，samples3×measured4=12，warmup不计，缺失可选字段不补0，同名写入拒绝且旧文件不变。见[原调研](notebook/frameworks/unirl-survey.md#smoke-结果格式与训练验收)。schema允许0样本/无success字段，CLI只计时空循环，非训练/性能验收；无永久新harness/依赖或M5任务，上游未改。本题收束，后续选其他源码问题，不堆schema/文件故障替身；GPU/AReaL、#8313与网站边界不变。
