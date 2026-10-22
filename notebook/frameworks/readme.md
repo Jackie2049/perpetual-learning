@@ -6,6 +6,7 @@
 
 - [vLLM-Ascend](#vllm-ascend)
 - [vLLM](#vllm)
+- [UniRL](#unirl)
 - [verl](#verl)
 - [AReaL](#areal)
 - [SGLang](#sglang)
@@ -102,6 +103,10 @@
 - [vLLM V1 Sleep/Wake Mechanism Deep Reading — CuMemAllocator, LoRA, KV Cache](vllm-v1-sleep-wake-cumemallocator-deep-reading.md)
 - [vLLM V1 Triton Attention Backend 源码分析](vllm-v1-triton-attention-reading.md)
 - [vLLM 权重加载管线源码阅读](vllm-weight-loading-reading.md)
+
+## UniRL
+
+- [UniRL 与 RL 训练抽象](unirl-survey.md#ar-与-diffusion-的源码统一边界)：用户新增高优框架，固定6fd82cba；独立AR/diffusion trainer与HI3联合样本树/共享backend边界，原静态依赖guard通过，非训练实测。
 
 ## verl
 
