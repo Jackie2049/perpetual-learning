@@ -164,7 +164,7 @@
 - [verl PrefixGrouper 计算范围与旧性能论证更正](verl-prefix-grouper-gap-analysis.md)
 - [verl PrefixGrouper 源码深度阅读](verl-prefix-grouper.md)
 - [verl FSDP shared-prefix packing](verl-shared-prefix-packing.md)
-- [verl ReMax (#6340) and IcePop (#5722) Source-Level Reading](verl-remax-icepop-source-reading.md)
+- [verl ReMax (#6340) and IcePop (#5722) Source-Level Reading](verl-remax-icepop-source-reading.md)：补[#8310 V1基线来源](verl-remax-icepop-source-reading.md#v1-贪心会话与-sampled-最大值)，额外贪心会话非sampled最大值；原核心CPU对照通过，撤回零方差/硬件最优推荐，非完整trainer验收。
 - [verl Reward Integration 源码级深度阅读](verl-reward-integration-reading.md)：纠正[进程配额与取消边界](verl-reward-integration-reading.md#进程配额与取消边界)，class-level非跨节点共享；原16协程测试体/2取消对照，评分timeout不包排队。
 - [verl RL Infra 架构源码阅读](verl-rl-infra-reading.md)
 - [verl RL Training Pipeline 深度阅读](verl-rl-training-pipeline.md)

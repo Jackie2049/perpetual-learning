@@ -139,6 +139,7 @@
 - [verl 奖励限流与取消](frameworks/verl-reward-integration-reading.md#进程配额与取消边界) — 原16协程测试体/2取消对照；类属性不是跨节点配额，超容量预扣不自动退款，timeout不包排队
 - [verl 掩码统计与梯度](frameworks/verl-grpo-core-algos-reading.md#掩码统计与梯度的数值边界) — 原3参数例/20组CPU对照；mean过滤无效NaN不代表方差梯度或白化全部槽位有限，非训练故障定性
 - [verl 单样本组回退](frameworks/verl-grpo-core-algos-reading.md#单样本与同分组的不同回退) — 原4等价性例/12组双实现控制；singleton保留近似原奖励，撤回排错指南n=1必退化与n≥4/8硬规则，非训练收益证明
+- [verl ReMax 贪心基线](frameworks/verl-remax-icepop-source-reading.md#v1-贪心会话与-sampled-最大值) — #8310额外贪心会话非sampled最大值；核心CPU对照区分advantages/returns，撤回零方差和4090最优推荐，非解码/训练验收
 - [verl KL 前向与反向](frameworks/verl-grpo-core-algos-reading.md#kl-前向值与反向规则) — k3+数值clamp非梯度clamp；6原例/14组CPU对照，有限差分与straight-through反向须区分
 - [verl checkpoint 保留与恢复](frameworks/verl-checkpoint-management-reading.md#保留目录与完整恢复的边界) — 原5清理测试通过；上限1保存前不删旧，登记成功不认证整轮可恢复，tracker直接写入非原子替换
 - [verl 局部更新指标聚合](frameworks/verl-6790-async-trainer-reading.md#局部更新的指标聚合) — 原19项pytest及5组CPU观察；日志加权/求和/末值依key而定，比率求和不是整轮平均，正式计时路径另算

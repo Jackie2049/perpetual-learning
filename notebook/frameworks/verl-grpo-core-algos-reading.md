@@ -117,9 +117,11 @@ A = Σ_k A_k  # 维度间解耦
 ### 6. REMAX (行732)
 
 ```python
-# 在当前策略上重新采样 → 用最优response的reward作为baseline
-# baseline = max(reward from current policy)
+# 每个prompt额外贪心生成的响应奖励作为外部baseline；不是sampled最大值
+# advantage = outcome reward-to-go - greedy_reward * response_mask
 ```
+
+2026-10-22 已核对 #8310：核心公式未改，新增 V1 贪心会话与基线回填；[来源、CPU反例与验证边界](verl-remax-icepop-source-reading.md#v1-贪心会话与-sampled-最大值)。逐 token 贪心不保证序列概率或奖励全局最优。
 
 ### 7. GPG (直接策略梯度, 行768)
 

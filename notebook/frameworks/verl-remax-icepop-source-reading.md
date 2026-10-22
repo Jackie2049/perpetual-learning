@@ -1,7 +1,7 @@
 # verl ReMax (#6340) and IcePop (#5722) Source-Level Reading
 
 > 2026-06-16 | verl-project/verl | PR #6340 (merged) + PR #5722 (merged) | Source-level deep analysis
-> ★★★★★ Two critical merged algorithms that directly impact RTX 4090 GRPO training
+> 2026-10-22 更正：ReMax 使用额外贪心响应的奖励，不是 sampled 最大值；原“奖励最优、零方差、单样本完美、4090 最佳配置”结论撤回。当前 V1 来源与 CPU 验证见[新增节](#v1-贪心会话与-sampled-最大值)。下方 main_ppo_sync 路径是历史阅读，不是当前运行配方；IcePop 部分本轮未复核。
 
 ## Part I: ReMax Algorithm (#6340) — Source-Level Analysis
 
@@ -28,12 +28,12 @@ def compute_remax_outcome_advantage(
 - `returns[t] = sum(token_level_rewards[t:end])` — cumulative reward from token t to end
 - `advantages[t] = returns[t] - greedy_baseline` — per-token advantage subtracting greedy reward
 - The greedy baseline is a **single scalar** per sequence, broadcast to all tokens via `unsqueeze(-1)`
-- This is fundamentally different from GRPO where baseline = group_mean (statistical), vs ReMax where baseline = greedy_response_reward (deterministic)
+- ReMax receives an external greedy-response reward; it does not compute a group mean or maximum internally.
 
 ★★★★★★★ Key difference from GRPO:
 - GRPO: `advantage = (r_i - mu_group) / sigma_group` — relative to OTHER sampled responses
-- ReMax: `advantage = r_i - greedy_reward` — relative to the BEST POSSIBLE response under current policy
-- ReMax baseline has **zero variance** (deterministic greedy sampling) — no group statistics needed
+- ReMax: `advantage = r_i - greedy_reward` for terminal outcome reward — relative to the greedy response, not the highest-reward response.
+- No group statistics are needed, but this does not establish zero baseline variance across prompts, policy updates, reward randomness or execution backends, nor an estimator variance ranking.
 - ReMax advantage captures: "How much better is this sampled response than what the model would choose greedily?"
 
 ★★★★★★★ Critical: `reward_baselines` shape is `(batch_size,)`, NOT `(batch_size, seq_length)`
@@ -53,9 +53,9 @@ def apply_greedy_sampling_params(params: dict[str, Any]) -> None:
 ```
 
 ★★★★★★★ This is how the greedy baseline is computed:
-- `temperature=0` forces deterministic (greedy) token selection
+- `temperature=0` requests greedy token selection; this parameter change alone does not prove backend determinism.
 - `top_p=1.0` and `top_k=-1` remove all sampling constraints
-- The greedy response is the model's **argmax** sequence — the single best path
+- Greedy chooses a highest-probability token at each step; it need not maximize joint sequence probability or the reward function.
 - Its total reward serves as the per-prompt baseline
 
 ★★★★★★★ Why this works: Under temperature=0, the model picks the single highest-probability token at each step. This gives the "model's best guess" for each prompt. Any sampled response that scores higher than this greedy baseline has positive advantage (good), any that scores lower has negative advantage (bad).
@@ -87,7 +87,7 @@ if self.config.algorithm.adv_estimator == AdvantageEstimator.REMAX:
 - Baseline uids are prefixed with `"remax_baseline_"` — distinguish from sampled trajectories
 - `__do_sample__=False` triggers `apply_greedy_sampling_params()` in AgentLoopWorkerTQ
 - `__rollout_n__=1` means exactly one greedy trajectory per prompt
-- The rollout engine processes both in one call — no separate inference needed
+- A combined dispatch still generates an extra greedy trajectory per prompt; it is not free inference or selection among the existing sampled responses.
 
 ★★★★★★★ Why single-batch is important (ray_trainer.py line 1451-1454 comment):
 ```
@@ -107,48 +107,19 @@ engines in an invalid state for multi-turn agent workloads.
 3. Extracts `rm_scores.sum(dim=-1)` — total outcome reward for each baseline
 4. Matches each sampled trajectory's uid to its corresponding baseline uid
 5. Writes `reward_baselines` tensor back to TransferQueue for sampled keys
-6. Cleans up all baseline data from TransferQueue (no lingering KV cache)
+6. Cleans up baseline records from TransferQueue; this is not proof of GPU KV-cache reclamation.
 
 ★★★★★★★ Critical observations:
-- Baseline data is **extracted, matched to sampled, then cleaned up** — no lingering baseline trajectory in KV
+- Baseline data is extracted, matched to sampled, then removed from the queue; queue metadata and engine KV ownership are separate.
 - The greedy baseline reward = `rm_scores.sum(dim=-1)` — total outcome reward (not token-level)
 - For multi-output agent loops: only the **final output** per baseline is used (highest index)
 - The `removeprefix("remax_baseline_")` maps `"remax_baseline_<uid>"` back to `<uid>` for matching
 
-### 5. ★★★★★ ReMax + use_kl_in_reward Interaction
+### 5. KL 与硬件配置：撤回旧推荐
 
-★★★★★★★ When `use_kl_in_reward=True` (standard PPO/GRPO KL penalty mode):
-- KL penalty is applied BEFORE advantage computation
-- `token_level_rewards = token_level_scores - beta * kl_divergence`
-- ReMax then computes: `advantages = returns(token_level_rewards) - greedy_baseline`
-- **PROBLEM**: The greedy baseline was computed with raw reward (no KL penalty), but sampled rewards have KL subtracted
-- This creates an **inconsistency**: baseline is from raw reward, advantages use KL-penalized reward
-- ★★★★★★★ ReMax canonical requires ref model for KL → NOT compatible with bypass_mode!
+固定 #8310 的基线提取使用原始 `rm_scores.sum(-1)`，而核心估计器接收的是外层传入的 `token_level_rewards`。是否加入 KL、采用何种 policy loss、reference 路径及其显存，需要分别核对实际配置与调用方。两者奖励口径不同本身不能证明策略梯度有偏，也不能推出必须关闭 KL-in-reward。
 
-★★★★★★★ When `use_kl_in_reward=False` (bypass_mode semantics):
-- No KL penalty in reward
-- `token_level_rewards = token_level_scores` (raw reward, no modification)
-- ReMax computes: `advantages = returns(raw_reward) - greedy_baseline`
-- Both sampled and baseline use raw reward → **consistent baseline**
-- ★★★★★★★ This is the **correct** ReMax configuration for RTX 4090
-
-★★★★★★★ ReMax + bypass_mode = RTX 4090 optimal ReMax config:
-```yaml
-algorithm:
-  adv_estimator: remax
-  use_kl_in_reward: false    # MUST — keep baseline consistent
-actor_rollout_ref:
-  rollout:
-    n: 4-8                    # sampled responses per prompt
-  actor:
-    use_kl_loss: true          # KL in loss, not reward
-    kl_loss_coef: 0.05
-```
-
-★★★★★★★ ReMax requires ref model for `use_kl_in_reward=True`:
-- The `apply_kl_penalty()` function uses `ref_log_prob` — needs reference model
-- ★★★★★★ In bypass_mode: KL penalty is zero — no ref model needed — consistent baseline
-- ★★★★★ Without bypass: ref model needed → adds 14GB → RTX 4090 NOT feasible
+本轮未执行 KL、reference forward 或训练；撤回原 `use_kl_in_reward=false` 的 MUST、`n=4–8`/`kl_loss_coef=0.05` 最优推荐以及固定 14GB/4090 不可行判断。bypass、是否使用 reference 与 KL-in-reward 不是同一个开关；已有[KL 阅读更正](verl-reward-integration-reading.md#45-kl-in-reward-vs-kl-in-loss)，此处不另造硬件配方。
 
 ### 6. ★★★★★ AdvantageEstimator enum and registry path
 
@@ -182,16 +153,15 @@ if "reward_baselines" in data.batch:  # KEY: ReMax needs reward_baselines
 
 | Aspect | GRPO | ReMax | PPO (GAE) |
 |--------|------|-------|-----------|
-| Baseline | `mean(group_rewards)` (statistical) | `greedy_response_reward` (deterministic) | `V(s)` (learned) |
-| Variance | Medium (group std) | ★★★★★ Lowest (zero-variance baseline) | Low (learned) |
+| Baseline | `mean(group_rewards)` (statistical) | Extra greedy-response reward | `V(s)` (learned) |
+| Variance | Not ranked by this reading | Not ranked by this reading | Not ranked by this reading |
 | Needs Critic | No | No | Yes (V network) |
-| Needs Ref Model | Optional (bypass) | Optional (bypass) | Yes (KL) |
-| RTX 4090 Memory | ~18GB (actor+ref bypass) | ★★★★★ ~18GB (actor only, bypass) | ~28GB (actor+critic+ref) |
+| Reference / memory | Depends on objective, model and execution configuration; not measured | Same boundary | Same boundary |
 | Extra Rollout Cost | None | +1 greedy per prompt (n+1 total) | None |
-| Advantage Type | Outcome-only (scalar per response) | Outcome-only (scalar per response) | Token-level (GAE residual) |
-| Group Dependency | Needs n>=4 for normalization | ★★★★★ Works with n=1 (baseline independent) | No group needed |
+| Advantage Type | Outcome reward broadcast over response | Outcome reward-to-go minus greedy baseline | Token-level (GAE residual) |
+| Group Dependency | Singleton fallback differs from equal-score groups | External baseline permits one sampled response plus one greedy response | No group needed |
 
-★★★★★★★ ReMax uniqueness: The ONLY advantage estimator that works perfectly with n=1 (single sample per prompt), because the baseline is external (greedy) rather than group-dependent. GRPO with n=1 degenerates to advantage=raw_reward (no normalization).
+One sampled response plus an external greedy baseline can produce a ReMax advantage. This is neither a unique ability nor a convergence guarantee. The pinned GRPO implementation has a singleton fallback retaining approximately raw reward, not the equal-score multi-sample zero-advantage behavior; see [original CPU evidence](verl-grpo-core-algos-reading.md#单样本与同分组的不同回退). No hard `n>=4` rule follows from these functions.
 
 ### 8. ★★★★★ Source File Summary for ReMax
 
@@ -205,6 +175,39 @@ if "reward_baselines" in data.batch:  # KEY: ReMax needs reward_baselines
 | `verl/trainer/ppo/ray_trainer.py` | 1450-1494 | ReMax in async trainer — combined batch generation |
 | `verl/trainer/ppo/ray_trainer.py` | 185-280 | `compute_advantage()` — dispatches to ReMax estimator |
 | `verl/trainer/config/algorithm.py` | 101 | `REMAX="remax"` — enum in AlgoConfig |
+
+## V1 贪心会话与 sampled 最大值
+
+2026-10-22 只读 [已有 PR #8310](https://github.com/verl-project/verl/pull/8310)，固定 head `5faa09894b386768976176fecbad9eb72dfda11c`、base `cd58f550fb1c4f5a3fe29da38e6f0002ec462fd3`。`core_algos.py` 两版字节相同；本次新增的是 V1 sync 中的基线生成与回填，不是把核心公式改成 best-of-N。
+
+### 源码接线
+
+1. `trainer_base.py` 给 ReMax prompt 设置 `__remax_baseline__`。worker 在原来 n 个 sampled session 之外，额外创建 `remaxbase` 贪心 session；验证路径不创建这个额外 session。`apply_greedy_sampling_params` 设置 temperature=0、top_p=1、top_k=−1。
+2. 各 session 完成后进入奖励处理；`_extract_remax_baselines` 按 UID 匹配贪心 session 的奖励，多输出时选择**最大 output index**，不是最大 reward。其 `rm_scores.sum(-1)` 成为该 prompt 各 sampled 行的 `reward_baselines`。
+3. 基线记录从 TQ 清除，不作为 sampled 训练行。缺少基线的 UID 会被剔除；全无基线/无可保留 sampled 行会报错。该处理会影响保留题集，不能把它说成所有输入题都训练成功。
+4. `_compute_advantage` 取出 `reward_baselines` 交给核心函数；ray trainer 增加缺失字段的显式诊断。`advantages` 减去基线，但返回的 `returns` **没有减基线**。
+
+来源：[worker](https://github.com/verl-project/verl/blob/5faa09894b386768976176fecbad9eb72dfda11c/verl/trainer/ppo/v1/agent_loop_tq.py)、[trainer](https://github.com/verl-project/verl/blob/5faa09894b386768976176fecbad9eb72dfda11c/verl/trainer/ppo/v1/trainer_base.py)、[core](https://github.com/verl-project/verl/blob/5faa09894b386768976176fecbad9eb72dfda11c/verl/trainer/ppo/core_algos.py)。同一 prompt group 的源码意图是共享当前权重；本轮没有验证实际 engine 的参数版本、并发调度或 GPU KV 回收。启动 guard 限定 sync，拒绝启用 DAPO filter_groups、skip.rollout_tq；自定义 manager 要声明 `supports_remax_baseline`。这些是固定候选的范围，不代表当前所有 trainer 都支持。
+
+### 本机 CPU 结果与复查
+
+使用两个右 padding 合成响应，长度分别 2、3，只有末个有效 token 得 outcome 奖励；**基线 2 是合成外部输入，不是本机生成/打分的贪心响应**。
+
+| sampled outcome | 外部基线 | 有效 token 的 ReMax advantage | 如果误用 sampled max=4 |
+|---|---|---|---|
+| 1 | 2 | −1 | −3 |
+| 4 | 2 | 2 | 0 |
+
+原函数返回的 `returns` 分别是 `[1,1,0,0]`、`[4,4,4,0]`，padding 优势为零，输出在 no_grad 下不跟踪梯度。原贪心参数 helper 也通过 CPU 字典改写核对；这不执行解码或证明确定性。这个对照足以反驳旧“baseline=max(sampled reward)”描述，不评价训练收益。
+
+```bash
+git -C /path/to/verl fetch https://github.com/verl-project/verl.git pull/8310/head
+python experiments/scripts/verify_verl_remax_baseline.py /path/to/verl
+```
+
+[复查脚本](../../experiments/scripts/verify_verl_remax_baseline.py)从 Git 对象选完整原 enum/registry/装饰器、估计器和贪心参数函数，保留函数体，仅延后注解求值；Python 3.12.13、torch 2.9.1、显式 CPU，通过两次数值调用与参数检查。固定 core SHA256 `369b614f239f237a04a38a40b1877cd6fd14aa7bd5f9ff4fe4d7758b682a6948`、worker `04f8cc14e9556c48a01d22cb7b0437521b41e15adb9fdbdb1bce8c82950c908d`；脚本另核 trainer/ray trainer/原测试文件 hash，禁止 lazy fetch，不改检出。
+
+本机缺 omegaconf、hydra、tensordict、ray、transfer_queue、transformers，未安装、未运行原 `test_remax_v1_on_cpu.py` 的 14 项测试，也没有构造 TQ/trainer 替身。本节接线与 guard 是静态阅读。作者在 PR 正文报告的 A100 单卡/双卡短训练不是本机验证；未验证多轮、学习曲线或性能。本题作为源码概念更正收束，不新增硬件排队、不应用候选或竞争实现。
 
 ---
 
@@ -476,7 +479,12 @@ metrics["rollout_is_oob_ratio"] = verl_F.masked_mean(oob_mask.float(), response_
 
 ---
 
-## Part III: ★★★★★ RTX 4090 GRPO — Combined Impact Analysis
+## Part III: 历史组合设想（已撤回推荐）
+
+2026-10-22 更正：本节旧组合配方、方差排序、显存/性能数字和 GSM8k 对比没有匹配版本、模型配置与测量证据，**整体不再作为推荐或事实依据**。为保留历史上下文，原文留在下方；其中 MUST、最优、零额外计算、bypass 自动省 reference、18/32GB、1–3% 与算法排名均已撤回，不据此启动实验。ReMax 每 prompt 额外一次贪心生成并非零计算；本轮只核对前述核心函数与 V1 静态接线，不认证 IcePop 的理论或组合效果。
+
+<details>
+<summary>已撤回的历史原文，仅供追溯</summary>
 
 ### 1. ★★★★★★★ ReMax + IcePop Combination for RTX 4090
 
@@ -550,6 +558,8 @@ algorithm:
 - **Math/reasoning**: verl ReMax+bypass_ppo_clip → greedy baseline → lowest variance → GSM8k 97 vs 89
 - **Maximum precision**: verl ReMax+IcePop+bypass_pg → greedy + IS correction → theoretically strongest
 - **Long CoT (4k+)**: verl CPPO+bypass → prefix-weighted trust region → prevents drift
+
+</details>
 
 ## References
 - PR #6340: ReMax algorithm (merged) — https://github.com/verl-project/verl/pull/6340

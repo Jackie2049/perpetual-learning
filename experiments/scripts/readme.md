@@ -24,6 +24,7 @@
 | [verify_verl_token_bucket.py](verify_verl_token_bucket.py) | 固定1876b06d原AsyncTokenBucket/原loop helper，完整加载原测试模块并直接await16测试方法，另2取消观察；真实时钟/锁/sleep不改。Python3.10+/pytest，无torch/Ray/API；非完整pytest、manager/跨线程/分布式配额验收 |
 | [verify_verl_masked_stats.py](verify_verl_masked_stats.py) | 固定1876b06d原4个统计函数/原3参数例，20组FP32/64、NaN/Inf前向/反向及no_grad白化对照；有限标量不认证梯度/所有输出槽。Python3.10+/CPU torch/pytest；预清理仅诊断控制，非训练/estimator或补丁验收 |
 | [verify_verl_grpo_groups.py](verify_verl_grpo_groups.py) | 固定1876b06d两个原GRPO估计器/原groupwise helper，4原等价性例及12组双实现控制；singleton fallback不等于同分pair。Python3.10+/CPU torch/NumPy/pytest，注解延后/显式CPU；非完整pytest、训练收敛、模型/DP或rollout.n推荐 |
+| [verify_verl_remax_baseline.py](verify_verl_remax_baseline.py) | 固定#8310 head5faa0989，完整原注册/估计器/贪心参数函数AST；两次CPU数值调用区分外部贪心基线与sampled最大值，returns不减基线。Python3.10+/torch；非原14测试、V1/TQ、解码/训练或设备验收 |
 | [verify_verl_kl_plus.py](verify_verl_kl_plus.py) | 固定1876b06d原KL函数/6原测试例，12组前向与局部梯度+2有限差分对照；k3+数值clamp不限制k2反向。Python3.10+/CPU torch/pytest，非完整pytest、统计无偏性、PPO loss/模型/设备或训练收益验证 |
 | [verify_verl_checkpoint_retention.py](verify_verl_checkpoint_retention.py) | 固定1876b06d完整原manager类/5原清理测试与fixture，真实临时目录、删除限本轮scratch；上限1先保旧后登记删旧，非模型保存/恢复、分布式或崩溃原子性验证。Python3.10+/CPU torch/NumPy/pytest |
 | [verify_verl_metrics_aggregator.py](verify_verl_metrics_aggregator.py) | 固定1876b06d原V1聚合类/19原pytest测试、两个原计时函数及5组CPU观察；样本/淘汰数权重、命名规则与比率分母分开。结构batch非DataProto，非trainer/logger/性能或设备验收；Python3.10+/torch/NumPy/pytest |
