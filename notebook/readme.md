@@ -213,6 +213,7 @@
   - [设备资源与通信后端](frameworks/unirl-survey.md#设备资源与通信后端的分层边界) — #623已关闭未合并；资源预约/可见性/设备编号/默认通信组分开，仅两版三模块compile，不认证GPU或NPU支持
   - [TempFlow分支与逐行时间](frameworks/unirl-survey.md#tempflow-分支共享与逐行时间索引) — #552同seed共享x_T不等于缓存前缀计算；每行真实j与合并槽分开，仅噪声helper CPU控制，非模型/训练验收
   - [异步快照与指标消费](frameworks/unirl-survey.md#异步快照与指标消费) — #620的状态、事件与采样时刻分开；增量单消费者，ready lag缺值不补0，源码/语法检查非训练验收
+  - [奖励能力与模型加载](frameworks/unirl-survey.md#奖励能力校验与模型加载) — #621先校验再物化本地模型，但声明不认证checkpoint可用，失败不自动回滚；managed-process不在延迟范围，仅静态核对
 - [DeepInfer 平民版（魔改适配非旗舰硬件）可行性](frameworks/deepinfer-civilian-port.md) — DeepInfer 对 Blackwell/Ascend950 的依赖堵点、替换方案、4090/A100/H100/910C 分层可行性；2026-10-21 已补 4090 真机验证（csrc `_C` 编译导入成功、架构检查与 kernel 包堵点实测确认）
 - [分布式训练排错指南](frameworks/troubleshooting-guide.md) — NCCL 超时、OOM、梯度异常等常见问题
 

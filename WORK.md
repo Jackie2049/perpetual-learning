@@ -24,6 +24,8 @@
 
 ## 运行接续
 
+- **M1奖励加载生命周期学习收束（2026-10-22）**：先快进M5真机结果3950b30，不改其移植；读UniRL#621 head27cb4930/base祖先6fd82cba，7文件40新增，见[原调研](notebook/frameworks/unirl-survey.md#奖励能力校验与模型加载)。local叶子先构造校验、服务末尾load，非首次评分懒加载；能力声明非依赖/权重认证，_loaded非回滚或并发保证，managed子进程仍在构造启动。两版各6完整模块compile、6边界文件blob未变，无resolver/模型/子进程/设备执行；作者fake harness42/42非本机结果。缺口只补原M5参考不另排任务。本题收束，后续另选非奖励加载/构造副作用替身问题；GPU/AReaL/#8313边界不变。
+
 - **M1异步监控契约学习收束（2026-10-22）**：main同步无新增，读UniRL#620 headf404c902/祖先0397ddb6（目标base6fd82cba，ahead4/behind19）；见[原调研](notebook/frameworks/unirl-survey.md#异步快照与指标消费)。区分任务/组/根、pre_sync与step_end、ready版本lag和准入前headroom；drain共用基线非持久日志确认，slot占用非设备利用率。6完整模块仅compile，无pool/模型/日志/设备运行，不把作者500记录报告当本机结果。原M5条目只留日后async选题参考、不另排训练。本题收束，后续另选非监控/计数/队列替身问题；GPU/AReaL/#8313及外部写入边界不变。
 
 - **M1缓存后缀因果对齐学习收束（2026-10-22）**：main同步无新提交，设备CI候选只读后不接手，转向旧Q=1建议的适用边界；见[原FlashAttention笔记](notebook/fundamentals/flash-attention.md#缓存后缀的因果对齐)/[真实CPU脚本](experiments/scripts/verify_sdpa_suffix_alignment.py)。torch2.9.1 MATH/FP64两组均值控制、四布局输出与Q/K/V局部梯度匹配全因果对应后缀；左上/无mask各有错位，容量7/有效5即使补valid也不能修复错误偏移。只执行CPU算子及bias CPU物化，不跑自动设备分派/模型/引擎/性能。收窄原四篇Q=1“必须无mask”及将调用错位说成kernel数学错的表述，详细结果集中一处；无新真机任务。本题收束，后续另选非因果mask/位置容量/注意力替身问题，GPU/AReaL/#8313边界不变。
