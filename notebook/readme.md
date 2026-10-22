@@ -147,6 +147,7 @@
 - [verl 局部更新指标聚合](frameworks/verl-6790-async-trainer-reading.md#局部更新的指标聚合) — 原19项pytest及5组CPU观察；日志加权/求和/末值依key而定，比率求和不是整轮平均，正式计时路径另算
 - [verl 学习率步数与恢复](frameworks/verl-grpo-training-loop-internals-reading.md#学习率步数与恢复条件) — 原构造器/真实CPU optimizer四轨迹、两恢复与一步覆写；推进后LR不等于刚使用LR，加载状态不重建原调度闭包
 - [verl 量化层审计与 refit](frameworks/verl-quant-layer-audit.md) — #8132三类证据/24项CPU审计单测；与新#8306的格式、存储和保护覆盖对照，不能混用分支证据
+  - [新版检查与指标哨兵](frameworks/verl-quant-layer-audit.md#新版运行期检查与指标哨兵) — #8327关系/默认warn与硬拒绝分开；原纯Python20例及5控制通过，缓存disabled与缺指标不当健康证明
 - [verl ModelOpt模块忽略](frameworks/verl-quant-layer-audit.md#modelopt-模块忽略与子量化器) — #8329模块名与子量化器名分层；两版原helper名称控制通过，未执行真实量化，权重加载相等不认证actor forward精度
 - [verl 新版阶段 tracing](frameworks/verl-async-logprob-provenance.md#新版阶段-tracing-与证据关联) — #8315原12项日志测试三版本对照，前后head均过但生产lane不同；Mock调用不认证后端显示/真实同步，M5原条目已同步版本
 - [verl 单 worker NIXL 拓扑](frameworks/verl-async-logprob-provenance.md#单-rollout-worker-的-nixl-拓扑) — #8316原函数20组控制及后续新增1原测试隔离对照；worker非replica，测试体通过非原生导入/传输验收

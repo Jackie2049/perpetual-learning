@@ -4,6 +4,7 @@
 
 | 入口 | 用途 |
 |---|---|
+| [verify_verl_quant_sentinel.py](verify_verl_quant_sentinel.py) | 固定#8327完整原纯Python sentinel/原测试：20参数例和5边界控制；阻断框架/torch导入，无包壳或引擎stub。需pytest/本地Git对象，不运行其他量化测试或设备，见[主笔记](../../notebook/frameworks/verl-quant-layer-audit.md#新版运行期检查与指标哨兵) |
 | [verify_unirl_export_metadata.py](verify_unirl_export_metadata.py) | 固定#617完整原peft_merge模块：6组meta名称/shape/dtype与CPU packed视图/3形状拒绝检查；需本地Git对象与torch，无隐式fetch。手写状态布局非Qwen模型，未执行CUDA导出/DTensor collectives/PEFT或IPC，见[原调研](../../notebook/frameworks/unirl-survey.md#omni-原生-ipc-的副本与导出边界) |
 | [verify_adamw_missing_grad.py](verify_adamw_missing_grad.py) | torch2.9.1真实CPU AdamW/Adam与autograd：None/零梯度、条件计算图、动态冻结旧grad；三步公式控制核bias correction与衰减顺序。无设备发现/AMP/分布式或性能验收，见[主笔记](../../notebook/fundamentals/adamw-optimizer-deep-dive.md#缺失梯度与零梯度) |
 | [verify_sdpa_suffix_alignment.py](verify_sdpa_suffix_alignment.py) | torch2.9.1真实CPU MATH注意力：缓存后缀位置、物理容量与有效长度分开；两组均值控制/四布局输出及Q/K/V局部梯度对照。无设备发现/自动bias分派或kernel性能验收，见[主笔记](../../notebook/fundamentals/flash-attention.md#缓存后缀的因果对齐) |

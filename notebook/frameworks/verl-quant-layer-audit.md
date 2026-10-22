@@ -2,6 +2,8 @@
 
 2026-10-21，M1 只读学习已有作者的 [PR #8132](https://github.com/verl-project/verl/pull/8132)。核心收获：**配置一致、导出格式一致、引擎实际选层一致是不同证据；选层一致仍不等于权重数值或 logprob 一致。** 本文不是新缺陷报告或竞争实现。
 
+2026-10-23接续：[新版运行期检查](#新版运行期检查与指标哨兵)核对#8327对旧拆分的替代关系及#8306之上的保护；本机只运行其纯Python指标哨兵测试。下方旧#8132/#8306分析保留固定版本范围，不作为新版缺少相同功能的证据。
+
 ## 版本与问题
 
 读取时 PR open，作者 wengeezhang；固定 head `0defd9a231cb876ce56812611b0afb3b2b25831a`，base `cd58f550fb1c4f5a3fe29da38e6f0002ec462fd3`。这是量化支持堆叠的第 7 部分，依赖前序 PR，并按 #8287 的导出接口重做；整个 PR diff 包含前序提交，不能全算作本次审计新增代码。
@@ -183,3 +185,47 @@ PY
 固定head的[GPU单测workflow](https://github.com/verl-project/verl/blob/5c7e2d2ed49bd9f448043883d96b6e191e187e95/.github/workflows/gpu_unit_tests.yml)排除`*on_cpu.py`；改名让文件进入该收集范围，并不保证任务实际触发、依赖存在或测试通过。新增BF16例未显式将tensor送到CUDA，文件名本身也不是每个断言都在GPU执行的证据。
 
 M1 Python3.12.13只执行两版完整原helper AST及标准库名称控制，对两版modelopt.py和原测试文件共4模块内存compile通过；未导入torch/ModelOpt/compressed-tensors、运行原pytest、量化器、梯度或设备。已有环境find_spec确认缺modelopt/compressed_tensors，不补装、不以stub替代真实mtq；临时控制不新增永久一次性工具。SHA256：生产base `8ef392c4592728c77cd693d0762564ee74b5c2f7867ac83fc2aad151f3801e9e`、head `c926b4987e48c5e487865c62046de0547bff75cb551bbd50691a3d16129b1828`；测试base `27987bd731b460fb69d13e67bcabb58b041caba1ee80255fed6b7591f1fd8c1f`、head `76ccbb40aa951c1695b1912ccb520d4be5f42fa6bd1608afa3d1b56137382b9b`。真实行为缺口补[原M5量化条目](../../experiments/handoff-m5.md#verl-量化层审计新版复验)，不另排队/应用或开展H100训练；本题收束，不据此诊断#8250或扩写量化器替身。
+
+## 新版运行期检查与指标哨兵
+
+**告警、选层判定、抽样kernel自检和拒绝不支持配置不是同一层保证。** 2026-10-23接续M5登记的[#8327](https://github.com/verl-project/verl/pull/8327)，读取open、未合并，固定head `a2012b598e2e5eabc9a79847ed0a245dc73bc478`、目标base `d707198afbe5d699173cd27e60ff3f9221ce5a09`，官方compare祖先`d1390eea0c94467d4ae1387eeda9e2f78f8d73ea`（ahead7/behind1），24文件4442增7删。作者明确它基于#8287/#8306/#8308，替代旧拆分#8128/#8130/#8131/#8132；不是将旧审计和另一作者#8306手工拼接的许可。旧版测试不能直接算作新版回归。
+
+### 保护范围与默认行为
+
+| 机制 | 新候选的观察或处理 | 不能据此认证 |
+| --- | --- | --- |
+| vLLM BF16 MoE重载修复 | 量化模型中未量化MoE也重新做kernel prep，包括同shape的gate/up换序 | 仅shape相等不证明布局语义相同；本机未跑真实runner |
+| SGLang硬拒绝 | delta+任意量化，以及已改布局的BF16 MoE，在对应写入前拒绝 | 不因关闭告警就支持这些配置，也不回滚已完成的旧bucket |
+| post-sync self-check | 每次sync后，对选中的小dense层/一个expert调用kernel，与canonical反量化参考比较 | 不是全层/全expert检查，更不是CUDA graph replay验证 |
+| quant-layer audit | TE层级信号→导出格式；vLLM另复查接收方法，SGLang逐bucket比dtype类别 | 一次选层判定不认证每步数值；unknown/no verdict不算匹配 |
+| quant sentinel | 从现有步级指标发现非有限差值、异常KL、近乎全截断 | 不能区分合法难题/随机模型与量化故障，也不定位根因 |
+
+接线见[vLLM refit](https://github.com/verl-project/verl/blob/a2012b598e2e5eabc9a79847ed0a245dc73bc478/verl/utils/vllm/vllm_quant_utils.py)、[unquantized MoE重派生](https://github.com/verl-project/verl/blob/a2012b598e2e5eabc9a79847ed0a245dc73bc478/verl/utils/vllm/vllm_unquant_utils.py)、[SGLang loader](https://github.com/verl-project/verl/blob/a2012b598e2e5eabc9a79847ed0a245dc73bc478/verl/utils/sglang/sglang_quant_utils.py)与[候选Checks文档](https://github.com/verl-project/verl/blob/a2012b598e2e5eabc9a79847ed0a245dc73bc478/docs/low_precision/mxfp8.md)。这是关键函数/调用点的源码对照，不是完整审查24文件或运行量化后端。
+
+三项可观测检查各有独立环境开关：VERL_MXFP8_REFIT_CHECK、VERL_QUANT_LAYER_AUDIT、VERL_QUANT_SENTINEL，默认均warn，发现问题后日志记录并继续；raise才对各自发现的问题抛错，0关闭该检查。硬拒绝配置是另外的代码路径。SGLang check_sync_matches_engine在model.load_weights之前比较高精度/量化类别，但默认warn仍会继续写入；不能把“写入前检查”改述为“默认拒绝不匹配”。
+
+[refit helper](https://github.com/verl-project/verl/blob/a2012b598e2e5eabc9a79847ed0a245dc73bc478/verl/utils/mxfp8_refit_check.py)对一般probe执行异常仍warning并返回NaN，故raise也不代表每种backend都完成了probe。[auditor](https://github.com/verl-project/verl/blob/a2012b598e2e5eabc9a79847ed0a245dc73bc478/verl/utils/quant_layer_audit.py)仍等完整消费导出流、等TE信号后做一次判定；无信号可终止为no verdict，引擎复查也只请求一次。异常发生前可能已更新部分权重，以上机制均不提供同步事务或参数回滚。
+
+### 指标哨兵的输入与缓存
+
+[quant_sentinel.py](https://github.com/verl-project/verl/blob/a2012b598e2e5eabc9a79847ed0a245dc73bc478/verl/utils/quant_sentinel.py)仅用标准库。它按structured rollout.quantization的linear/moe/config_file或本地config.json的native量化声明启用；空的结构化配置对象不代表量化，远程模型路径不会在这里下载配置。没有识别到量化就不检查，不能从沉默反推模型健康。
+
+三条规则是：有效比较存在时diff_mean非有限；KL非有限或严格大于阈值（默认1.0）；clip_ratio≥0.999达到连续观测次数（默认2）。ignore_eos或clip_steps=0只关截断规则，另外两条仍在。阈值是告警策略，不是健康模型的普适分界。缺少或不可转为float的指标不会产生该项判定；空metrics不等于通过健康检查。
+
+连续计数按收到的clip指标推进，step只用于消息，不去重或检查编号相邻。CPU控制中，step1的clip=1、step2缺clip、step3的clip=1仍触发；重复step7两次也触发。正常trainer一次一调用的路径不因此构成故障，但额外监控消费者不能假定标签会自动防重复。源码在收到可转float的clip后，以clip≥0.999递增、否则归零；缺项不进入该分支。
+
+trainer hook首次构造后缓存sentinel；解析环境阈值/配置抛错时，会警告并缓存disabled实例，即使请求raise。CPU控制先给非法KL阈值、再修正环境，缓存实例仍关闭。应保留实际enabled/mode与配置失败日志，不只保存环境变量字符串。[V0调用点](https://github.com/verl-project/verl/blob/a2012b598e2e5eabc9a79847ed0a245dc73bc478/verl/trainer/ppo/ray_trainer.py)位于步级指标汇总，前面已经可能执行actor update、save和权重同步；此处raise不是生成前拦截或当前步撤销。[V1](https://github.com/verl-project/verl/blob/a2012b598e2e5eabc9a79847ed0a245dc73bc478/verl/trainer/ppo/v1/trainer_base.py)也接入指标组装，本轮未执行任一trainer。
+
+### 本机测试与作者报告分开
+
+[复查脚本](../../experiments/scripts/verify_verl_quant_sentinel.py)完整加载原sentinel和原测试，不摘取方法、不改断言，通过pytest collector保留原fixture/参数化：16函数展开20例，全部通过；另5组边界控制通过。预加载精确模块名并设置阻断导入器，拒绝verl父包、torch、Ray/vLLM/SGLang/CT/TE；没有package shell或引擎stub。原tmp_path测试只在自己的临时目录写config.json。执行环境Python3.12.13/pytest8.4.2，不运行上游conftest或外部pytest插件。
+
+```bash
+python -B experiments/scripts/verify_verl_quant_sentinel.py /path/to/verl-git
+```
+
+原模块SHA256 `7e2ac00ca4ae8671c6ec2361c6ec957ddfcb9785e70f98d7a5e62a04aa63255f`，原测试`747dd52b7c274ed6677ff394c07670c55e56d78c6ebee5c8e90c357a747333b1`。全部23个修改Python生产/测试文件另只做AST与内存compile；没有执行另外五套CPU测试、审计类、加载器、量化器、kernel、训练或设备发现。作者六文件合计150通过包含CT与所需引擎替身，不等于本机20例覆盖整个PR。
+
+当前API正文已追加cf32f6ae在1×B200上的vLLM/SGLang正常与scale故意破坏对照，以及带entropy bonus使权重实际变化的短跑；head a2012b59相对cf32f6ae只有两行文档图变动。旧网页正文仅述#8314硬件的状态不能覆盖这次补报。结果仍是作者报告，不是本项目验收或任意卡兼容证明；作者也另列主线vLLM BF16 expert默认backend拒绝、SGLang ignore前缀/精确匹配分歧，均未在本PR修复。
+
+真机接续更新[原M5量化条目](../../experiments/handoff-m5.md#verl-量化层审计新版复验)，不新增队列、拼接路线或改变其环境。本题完成新版关系与sentinel范围核对；其余数值/graph/实际backend仍按匹配资源和独立选型保留未测。
