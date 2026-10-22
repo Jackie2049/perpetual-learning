@@ -261,6 +261,35 @@ Python3.12.13 / torch2.9.1 / Pillow12.0.0。本机原 CPU 环境缺 Pillow，使
 
 脚本锁定七个完整源文件 SHA256（包括仅读的 service.py）。关键 hash：per_domain.py `6aca28149c4dcc48b3f8e29e74ef7195daa997aa833daac778618d4f3b2b73f8`；mc_exact_match.py `452413e2c7db3cf722fd3a887f660a61e5a13513f015a539f103b0a32d1cf526`；wandb_metrics.py `e92b9c40ebab4b78759ad15e36db4a833f853f6b122db4e395577966cc150648`。本题收束，不堆 NaN/路由变体，也不将组件统计等同于服务验收。
 
+## Token 预算与 update 成员
+
+**token_budget 约束拼批代价，不是显存保证，也不是逐样本截断上限。** 固定 `6fd82cba13f52f394747832344039408699ea378`，2026-10-22 用原 [`TokenBudgetPlanner`](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/train/stack/planner/packed.py)、Part、TextSegment 与 TextTokenCondition 做单进程 CPU 检查。规划器先按 num_updates 等分原行，再在每份内按总长度降序 first-fit 拼批，最后用 part.select 重排。原行不能被搬到另一份 update 来改善装箱；总行数不能整除 update 数时直接拒绝。
+
+两种代价模型不能混用。sum 是各样本 `(prompt + response)` 之和；dense 是 `(max(prompt) + max(response)) × 样本数`。两行长度分别为 `(8,1)`、`(1,8)` 时，sum 为18，dense 为32，不是“每行总长最大值9再乘2”。预算18下，前者可同批，后者不可。这里是规划器的代价估计，不是 attention kernel 的实际分配量。
+
+8行的 `(prompt,response)` 为 `[(8,1),(1,8),(2,2),(20,1),(1,8),(8,1),(2,2),(1,20)]`，num_updates=2、预算18。原条件 attention_mask 给出 prompt 长度，原 packed segment 给出 response 长度；实际输出如下：
+
+| 代价模型 | 第一次 update 的原行分组 | 第二次 update 的原行分组 | 各微批代价 |
+|---|---|---|---|
+| sum | `[3] [0,1] [2]` | `[7] [4,5] [6]` | 21,18,4 / 21,18,4 |
+| dense | `[3] [0] [1] [2]` | `[7] [4] [5] [6]` | 21,9,9,4 / 21,9,9,4 |
+
+21-token 单样本仍被放进独立微批。first_fit_decreasing 只在尝试加入已有微批时检查预算，找不到位置就新建单样本批，不切割或拒绝超预算样本。因此“配置预算18”不能推出每批代价≤18，更不能推出不会 OOM。两种模型下原 sample_ids、文本、metadata、prompt 条件与 response tokens 均按相同排列对齐，每行只出现一次，原 Part 不被重排修改。
+
+有有效逐样本长度时，将 micro_batch_size 从1改999不改变本例 token 规划。若 segment 不提供长度，planner 则警告并回退原 CountPlanner：本例8行、两次update、micro_batch_size3得到 `[0:3,3:4]` 与 `[4:7,7:8]`，此时不再按 token 预算拼批。读取配置名还不够，须确认实际输入提供了哪种长度。
+
+[`_sync_micro_count`](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/train/stack/planner/packed.py#L93)在多进程组内用 MAX 对齐微批数量，必要时调用 balance_into_k；本次真实调用的是未初始化 process group 的原 no-op 分支，没有替换同步函数或启动通信。此处数量对齐不证明跨 rank 预算或梯度等价。[`TrainStack`](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/train/stack/single.py#L322)将外层 plan 分别交给 _run_update；实际 optimizer_step 还取决于 backward 等条件，计划两份不等于实测完成两次更新。这段训练接线仅核源码。
+
+[复查脚本](../../experiments/scripts/verify_unirl_token_budget.py)：
+
+```bash
+python -B experiments/scripts/verify_unirl_token_budget.py /path/to/UniRL /path/to/pillow-deps
+```
+
+Python3.12.13 / torch2.9.1 / Pillow12.0.0，复用上一节隔离 Pillow 依赖，无新安装。脚本使用真实路径包壳，仅跳过 tensor 包的 Ray transport 汇总初始化和 stack 包的训练模块汇总初始化；原 planner 包、Part 与条件/segment 均正常加载，无假类、方法摘取或规划器改写。两种分批、成员/字段对齐、数量回退及三项配置拒绝控制通过；这是自编原模块检查，不是上游原测试。没有模型、训练、通信 collective、设备发现或吞吐/显存测量，不新增 M5 必跑事项。
+
+脚本锁定七个完整源文件 hash，包括仅读的训练接线。packed.py SHA256 `b5f2789f768cbdb7d766bebb5c1d9feb316dbe32db52637e3683e8e6dc8fe70f`，types.py `d9278a269104724a63abae6eceedde694ad92b1016c415f1b88ed087dcb3e8be`；其他见脚本。超预算独占批符合原实现说明，不据此提出缺陷或自动改规划策略。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。
