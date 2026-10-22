@@ -112,6 +112,8 @@ ModelOpt忽略规则参考（2026-10-22，同一量化入口不另排队）：�
 
 M1 已撤回确定因果诊断。已有数值、路由与异常控制未运行模型、原生权重同步或真实训练；没有证明 sync/cache、mask、reward 或数值路径是哪一个根因。
 
+教师生成参考（2026-10-23，不新增训练队列）：draft [#8335](https://github.com/verl-project/verl/pull/8335)，head `8029bfb5fc5b8b6034704f9c062610613f1bf05c`、base/祖先 `fb55b9288560f0c7bf380c1c1c3b45ea170538b0`；[M1源码核对](../notebook/frameworks/verl-veomni-opd-source-reading.md#教师生成与蒸馏目标)仅16模块compile/3文件字节及2方法AST未变，无原测试/模型运行。按submission选择student或teacher，教师生成后仍另行软top-k评分，非纯学生on-policy；hard guard不认证文档所有不支持组合和tokenizer匹配。作者8×H200/17更新/48validation报告非本项目或4090验收。仅当M5日后独立选择这条同步V1/vLLM/单教师/纯文本监督蒸馏且已有获准依赖、权重与匹配词表/资源，才考虑固定source/step、生成和评分两请求、真实padding/版本标签、恢复后的选择及validation来自学生的有界观测；缺依赖或资源、需新模型/部署/预算或影响原任务则停止并记未测，不自动装环境、下载、应用draft或凑8卡。此参考不代表接单，与#8250无已证因果；既有GPU/AReaL/#8313/#523分工不变。
+
 输出头语义参考（2026-10-23，非新增训练任务）：已有[#7991](https://github.com/verl-project/verl/pull/7991)，head `b145ec9b405ca93092c45b5f9e7995fb4604dbd2`、base/祖先 `dc709afb7a74fd2645640a4e5f2fdf40166b4fbb`，[M1阅读](../notebook/frameworks/verl-fused-output-softcap.md)核通用fused分支拒绝真值softcap，非实现softcap或完整初始化回滚。完整原torch输出头36组CPU语义对照/FP64误差已记录；原24HF配置测试因缺Transformers未跑，首先是CPU导入依赖缺口，不是GPU不在线。仅当M5日后原有获准模型工作恰好涉及此语义时，独立核模型/text config、原forward、backend与temperature，对齐同hidden/label后再决定是否需要设备输出/梯度检查；缺匹配环境/权重或需影响原任务就停，不自动应用、下载或另排训练。没有证据表明#8250使用受影响模型/路径，不能据此重开因果诊断；此参考不代表接单。
 
 可选观测入口（不另排队、不默认采用）：已有[verl #8315](https://github.com/verl-project/verl/pull/8315)，2026-10-21读取open，head `4d6b3eb8606e24c1d70d648e92a1114129ec6c62`、目标base619c397d、merge-basecd58f550，见[阶段tracing边界](../notebook/frameworks/verl-async-logprob-provenance.md#新版阶段-tracing-与证据关联)。M1仅4模块语法/11方法去decorator后AST一致检查，未运行rl-insight或引擎。它记录rank update_weight与actor memory阶段，但no-op也可有区间，sender返回非全体应用证明，未新增显存字节/参数身份校验。真实同步/设备观测由M5在既有任务条件满足时独立决定，非接单记录。
