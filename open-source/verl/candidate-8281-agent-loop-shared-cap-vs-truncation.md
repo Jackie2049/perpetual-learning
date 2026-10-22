@@ -172,11 +172,12 @@ def _cap_text_prompt_length(self, prompt_ids: list[int]) -> list[int]:
 
 不发布评论则本地沉淀作 review/跟进依据。
 
-## Follow-up：middle/cap=1 的 -0 反例修复（2026-10-22）
+## Follow-up：middle/cap=1 的 -0 反例修复（2026-10-22，已完成并验证）
 
-在 PR #8313（head `80ee82bd`）当前源码上核验发现并起草了修复 patch：[patches/8281-middle-cap1-fix.patch](patches/8281-middle-cap1-fix.patch)。
+在 PR #8313（head `80ee82bd`）当前源码上核验发现并修复了 middle/cap=1 的 `-0` 反例。**用户 2026-10-22 先 review 并改写了代码风格**（commit `872bc281`，变量 `truncation`→`truncation_policy`、docstring 契约说明、日志措辞 left/right/middle-truncating），随后本会话**在用户风格基础上补上漏洞**（commit `6db4b38d`，DCO 签名，落 fork 分支 `fix-8281-truncation-policy`）。
 
 - **反例**：`middle` 分支 `prompt_ids[:head] + prompt_ids[-(prompt_length-head):]` 在 `prompt_length=1` 时 `head=1`、尾段预算 0，Python `-0==0` 使 `prompt_ids[-0:]` 取整个列表——10 token 输入变成 11 token 输出（复现：`[0,0,1,2,3,4,5,6,7,8,9]`），违反上限。原测试 middle 只覆盖 cap 4/5/6。
-- **修复**：尾段改用正向切片 `prompt_ids[len(prompt_ids) - (prompt_length - head):]`（尾段预算 0 时 `list[len:]` 为空列表，天然正确）。已验证 cap=1..7 全部遵守上限、head+tail 语义与原始 cap≥2 完全一致；left/right/error 不受影响。
-- **验证**：`git apply --check` 通过、应用后与修复版逐字节一致；测试补 `test_middle_cap1_does_not_extend_prompt`（cap=1 输入 10 token 断言输出 `[0]`）。
-- **发布形态**：作为 PR #8313 的 follow-up（直接补进 `fix-8281-truncation-policy` 分支或独立小 PR），需用户授权；未对上游做任何写操作。
+- **修复**（遵循用户风格，`tail_length` 命名与 `truncation_policy` 一致）：尾段改用正向切片 `prompt_ids[len(prompt_ids) - tail_length:]`（尾段预算 0 时 `list[len:]` 为空列表，天然正确）。已验证 cap=1..7 全部遵守上限、head+tail 语义与原始 cap≥2 完全一致；left/right/error 不受影响。
+- **CPU 测试（12 项全过）**：原 11 项 + 新增 `test_middle_cap1_does_not_extend_prompt`，在服务器 4090-1 `verl-e2e` 环境重跑 **12 passed**（5.05s）；**对照验证**——还原旧 middle 行后 cap=1 测试失败（证明测试有效），恢复修复后通过。
+- **状态**：PR #8313 已由用户主动关闭（「Closing: not yet reviewed/approved. Will reopen when the fix has been reviewed and approved」，10-22 07:07Z）；修复已 commit 到 fork 分支 `fix-8281-truncation-policy`（`872bc281` 用户风格 + `6db4b38d` 漏洞修复），待用户决定重开 PR 时机。
+- **issue #8281 回复草稿**：[draft-8281-issue-reply.md](draft-8281-issue-reply.md)（技术确认 + 修复进展 + middle/cap=1 边界说明 + error 训练器行为契约问题），发布需用户授权。
