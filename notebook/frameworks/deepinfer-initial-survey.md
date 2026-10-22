@@ -1,6 +1,6 @@
 # DeepInfer — DeepSeek 官方推理框架（高优先调研）
 
-近期补充：[host cache 的可复用边界](#host-cache-的可复用边界)与[PD 队列交接与资源释放](#pd-队列交接与资源释放)，分别核对 KV/state/replay 交点、内存预算和队列所有权；源码契约不等于原生恢复或设备性能验收。
+近期补充：[Sage FP8分层装载](#sage-fp8-分层装载与独立引擎)区分新模型专用路径与V4.1移植；另见[host cache](#host-cache-的可复用边界)与[PD 队列交接](#pd-队列交接与资源释放)。源码/预算核对不等于设备验收。
 
 > 状态：**调研进行中**（2026-10-20 建立）。仓库 `deepseek-ai/DeepInfer`，Apache-2.0。
 > 用户定为本项目高优先调研项（2026-10-20）。
@@ -1919,3 +1919,45 @@ python -B experiments/scripts/verify_deepinfer_image_spans.py /path/to/DeepInfer
 Python3.12.13 / NumPy2.0.2 / pytest8.4.2，原common模块另导入torch2.9.1，无新安装。脚本保留完整原MultimodalProcessor类AST，以显式包/模块容器省略加速器导入；common为完整原模块，RAW_IMAGE_KEYS只从原schema AST读常量，不执行其模块级CUDA Event，也不提供事件shim。原测试保持__new__绕构造和查表估算器；正常pytest执行原12项，两版另各4个端点控制。非正常处理器初始化、worker/真实图像估算、VE编码、共享池、缓存引擎或GPU/NPU验证，不新增M5必跑事项。
 
 脚本锁定五个完整文件hash并核common/schema两版相同：multimodal_processor.py候选 `5a544b357b4761659dcbd5a49c170a2d3ac8f224e5ba34787cc7bed2babf7314`、base `f6b0e03a9138eddead7adfe424d4818a937c5ffbac2bff07d27dc96dd20d75cb`；原测试 `f72dee2beab198bfdb6b7487cea33aebcfffb9143077b546879c9db369498c0a`，其他见脚本。此题收束为数据坐标与局部修改顺序的证据，不自动采用PR或推导推理质量/传输性能。
+
+## Sage FP8 分层装载与独立引擎
+
+2026-10-22 只读 [已有 #210](https://github.com/deepseek-ai/DeepInfer/pull/210)，固定 head `2a421f129809852b7b001c1e3b3f1b4f04f06156`、base `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`。单 RTX 5090 对应 **Sage-A1.5-FP8 专用、单序列、文本离线路径**，不是 DeepSeek V4.1 在普通单卡运行的证据，也不代替 M5 的 V4.1 去 PDL/原生组件移植。
+
+### 新路径与分层存储
+
+[`SageLLM`](https://github.com/deepseek-ai/DeepInfer/blob/2a421f129809852b7b001c1e3b3f1b4f04f06156/deepinfer/model_executor/models/sage_a15/engine.py)复用 tokenizer、SamplingParams、日志及离线 API 形状，使用新 SageTextConfig/SageModel/SageCache。它不经过 V4.1 Worker/ModelRunner/CacheEngine、C++ paged scheduler、MLA、MTP、Engram 或 DFlash；registry 新增架构名称不等于这些组件已支持 Sage。模型是 Qwen3.5-MoE 的 full attention/Gated DeltaNet 混合结构，本轮关注装载，不认证算子数学。
+
+| 层次 | 固定候选的处理 | 保留的条件 |
+|---|---|---|
+| routed experts | 主机 FP8权重+BF16 scales；GPU 有界全局 LRU，miss 时拷入空槽或逐出最旧槽 | 主机池大小不是进程峰值 RAM |
+| GPU expert pool | `min(requested GiB, max(0, free−6 GiB))`；OOM 时缩小 cap | 6 GiB余量不保证后续权重/激活一定装下 |
+| 非专家与状态 | embedding/lm_head/其余语言权重驻GPU，连续BF16 KV及conv/recurrent state | 没有分页KV、KV量化或多请求调度 |
+| compute | 真实 `_scaled_mm` probe 后选FP8，失败转BF16 dequant compute | FP8存储不等于原生FP8计算，fallback不保证4090兼容 |
+
+初始化直接调用 torch.cuda.set_device；BF16 fallback 仍是 CUDA 引擎中的计算模式，不是可在 M1 上运行的 CPU 模式。checkpoint scales 保持原数值，activation 按 token 动态量化；per-channel `_scaled_mm` 也不是 V4.1 的 DeepGEMM block-scaled 路径。[专家池](https://github.com/deepseek-ai/DeepInfer/blob/2a421f129809852b7b001c1e3b3f1b4f04f06156/deepinfer/model_executor/models/sage_a15/layers.py)、[FP8 helper](https://github.com/deepseek-ai/DeepInfer/blob/2a421f129809852b7b001c1e3b3f1b4f04f06156/deepinfer/model_executor/models/sage_a15/fp8.py)。
+
+### 预算与作者观测
+
+本机执行完整标准库 config.py、实例化默认类，没有读取实际 checkpoint 配置。默认40层×256专家、hidden=2048、intermediate=512；每专家 `3×512×2048 + 2×(2×512+2048) = 3,151,872` 字节，全部10,240专家为32,275,169,280字节，即 **30.05859375 GiB**。cache_gb 实际按2^30换算；14 GiB理论上限为4,769槽。报告称4,770槽，本轮只确认当前head默认维度的整数算式，真实配置、空闲内存及OOM回退后的cap未测。
+
+最小算术复查，无 torch/硬件查询：
+
+```bash
+python3 - <<'PY'
+layers, experts, hidden, inter = 40, 256, 2048, 512
+per_expert = 3 * inter * hidden + 2 * (2 * inter + hidden)
+print(per_expert, layers * experts * per_expert / 2**30)
+print((14 * 2**30) // per_expert)
+PY
+```
+
+[作者报告](https://github.com/deepseek-ai/DeepInfer/blob/2a421f129809852b7b001c1e3b3f1b4f04f06156/docs/sage_a15_fp8_adaptation.md)来自5090 D 32GB/SM120、torch2.13+cu130/WSL、约85 GiB可用主机RAM，指定权重revision `b442b0c6a66c8e845c5ded85bc129eb4a44f32fc`。18.32 GiB峰值、重复32-token greedy和FP8/BF16-dequant logits观测均非本项目结果；BF16诊断仍使用同套已量化权重，不是原始未量化模型质量对照。真实EOS、256K/YaRN、vision/MTP及性能调优未完成，重复greedy也不证明跨设备/负载普遍确定。
+
+重复请求复用同一llm/store；扩展脚本对累计计数取差值、未清空LRU，低miss/零H2D有warm-cache条件，不能把它的TTFT当冷启动。CPU池为pageable tensors、没有专用pinned staging/streams，不由 non_blocking=True 推出传输重叠。入口要求现成本地checkpoint，本机没有下载作者约39GB的权重。
+
+### 本机范围与 M5 接续
+
+M1 只对config/layers/engine/fp8/model五个完整原模块内存compile，执行标准库config与整数预算；未导入torch/deepinfer/safetensors、分配池或调用probe。作者CPU harness在PR外，未复跑，也没有真实FP8 GEMM、推理质量/cache性能或SM89验证。五文件SHA256依次为 `ae80dcfdec2f2f36171f0de41709858139b4890d668d0e0491103bae18c18453`、`65344b9c1313f2de564c8d805358ebd6b41f90822c2d4c10794b058ae08f5bb3`、`22c2979928aa2f27cee07dd7558fd1142f57f4389363815bf83a177f25b0dc52`、`77e6785add71f0574e50b9d652f82f70149164a51edfae221e0226c06e5886e0`、`a1bb68dd3d81971537b646db22d883bb00dc27f80556558556cb10773f2d608e`。
+
+新线索补[原M5适配条目](../../experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)，先决定研究目标是否包含Sage；仍只做V4.1则不适用。未获准选择新模型、准备权重与匹配环境前停止，不自动下载/切环境或改M5去PDL方案。SM120/32GB报告不能外推SM89/24GB已支持。

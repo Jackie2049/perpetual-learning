@@ -425,6 +425,7 @@
 - [DeepInfer Pass@k 分母](deepinfer-initial-survey.md#passk-的不齐样本与题目分母)：#207原16项pytest全过，生产代码未变；min(k,n)、按题/按回答平均、缺题与外层覆盖警告分开。
 - [DeepInfer golden token 入场](deepinfer-initial-survey.md#golden-token-入场校验与-prompt-占位符)：#209原30项CPU-harness测试候选全过/base18预期失败；输出词表与prompt图像占位符分开，非原生引擎/设备验收。
 - [DeepInfer 图像区间与缓存前缀](deepinfer-initial-survey.md#图像展开区间与缓存前缀)：#208原12项CPU隔离测试及两版各4端点；完整图像才剥离binary，成功改写字典与失败前校验分开，非VE/IPC/命中验收。
+- [DeepInfer Sage FP8分层装载](deepinfer-initial-survey.md#sage-fp8-分层装载与独立引擎)：#210主机专家池/GPU LRU的新模型独立路径，非V4.1单卡移植；五模块语法/默认预算核对，真机参考补原M5条目。
 - [DeepInfer 架构源码调研（2026-10-20 综合精读）](deepinfer-architecture-reading.md)：调度器/引擎、模型执行器、NPU/分布式/入口三路精读
 - [DeepSeek 开源生态活跃度与 PR 采纳调研（2026-10-20）](deepseek-ecosystem-pr-adoption.md)
 - [MindIE / vLLM-Ascend Ecosystem Deep Research](mindie-vllm-ascend-ecosystem-deep-research.md)

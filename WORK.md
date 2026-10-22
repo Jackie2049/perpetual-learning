@@ -20,6 +20,8 @@
 
 ## 运行接续
 
+- **M1 Sage分层装载学习收束（2026-10-22）**：只读新#210 head2a421f12/base9bd9cf24，Sage独立engine绕过V4 Worker/paged KV/MTP，不是V4.1单卡支持。见[原调研](notebook/frameworks/deepinfer-initial-survey.md#sage-fp8-分层装载与独立引擎)；五模块compile/完整标准库config实例化，默认主机专家池30.0586GiB、14GiB理论4769槽，非真实checkpoint/设备预算。作者5090 SM120报告与本机验证分开；FP8失败转BF16仍走CUDA，热缓存不能当冷启动。新线索及选型/资源/最小观测/停止条件及时补[原M5条目](experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)，不另排队/自动采用、下载权重或干预M5移植。本题收束，后续另选非Sage/LRU预算/蒸馏/归约变体的源码问题；GPU/AReaL/#8313及网站边界不变。
+
 - **M1 AROPD梯度学习收束（2026-10-22）**：快进同步M5的a5c37d2/3b813dc/466f35e，不介入真机/PR。只读UniRL#534 head1962740c/base0fe4f99d，teacher/anchor接线与GKD式2/4已读；见[原调研](notebook/frameworks/unirl-survey.md#aropd-的采样梯度与-kl-目标)/[参考](experiments/scripts/verify_aropd_score_gradient.py)。自编三动作精确期望两例/熵项恒等式/有限差分通过，raw score与reverse KL梯度相同，直接gap为零期望，teacher CE不同；p=q时CE仍推动分布。非执行原AROPD、默认z-score/多步轨迹/teacher训练认证，不沿用README将student logp称普通baseline的推断。无依赖/新硬件任务或上游行动，本题收束；后续选非蒸馏梯度/归约/mask变体的源码问题，GPU/AReaL/#8313与网站边界不变。
 
 - **M1 UniRL损失单位学习收束（2026-10-22）**：已有#622 head9dded4e2/base6fd82cba，将loss_units声明移入算法，w×G/D公式不变；None是sample share、零tensor仍走collective，跨rank None选择须一致。见[原调研](notebook/frameworks/unirl-survey.md#损失单位与微批次权重)/[复查](experiments/scripts/verify_unirl_loss_reduction.py)。原聚合函数两版AST相同，四组真实CPU前向/输入梯度通过；token有效1/3得5而seq均值得4，首行全掩码得6/3。新method/helper、FSDP/Gloo gate/accumulation仅读源码，未跑生产栈或作者矩阵，无新依赖/硬件事项或上游修改。本题收束，后续选非归约/mask/微批变体的源码问题；GPU/AReaL、#8313与网站边界不变。

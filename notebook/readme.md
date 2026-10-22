@@ -176,6 +176,7 @@
 - [DeepInfer Pass@k 分母](frameworks/deepinfer-initial-survey.md#passk-的不齐样本与题目分母) — #207原16项pytest，样本不足时用min(k,n)，score与Pass@1分母不同；外层覆盖/判分仅源码
 - [DeepInfer golden token 入场](frameworks/deepinfer-initial-survey.md#golden-token-入场校验与-prompt-占位符) — #209输出词表校验早于Sequence/多模态处理；原30项CPU隔离测试，非完整引擎或Engram验证
 - [DeepInfer 图像区间与缓存前缀](frameworks/deepinfer-initial-survey.md#图像展开区间与缓存前缀) — #208原12测试，span按展开后坐标，整图覆盖才剥离binary；计数拒绝与正常字典改写分开，非设备验证
+- [DeepInfer Sage FP8分层装载](frameworks/deepinfer-initial-survey.md#sage-fp8-分层装载与独立引擎) — #210主机专家池/GPU LRU与新引擎；仅源码/默认预算，不外推V4.1或4090支持，条件补原M5入口
 - [PrefixGrouper 计算范围纠错](frameworks/verl-prefix-grouper-gap-analysis.md) — 原生 grouped input 也节省前缀逐 token 运算；撤回 attention-only 缺口和非等价微基准收益外推
 - [verl PrefixGrouper](frameworks/verl-prefix-grouper.md) — 历史集成；与新 engine 路径的版本边界及复杂度纠错
 - [vLLM V1 KV Cache Manager 源码阅读](frameworks/vllm-v1-kv-cache-manager-reading.md) — Block 分配/释放、6 种 Attention Manager、Prefix Caching、Coordinator 架构
