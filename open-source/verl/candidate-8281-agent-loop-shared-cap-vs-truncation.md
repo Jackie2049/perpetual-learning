@@ -181,3 +181,16 @@ def _cap_text_prompt_length(self, prompt_ids: list[int]) -> list[int]:
 - **CPU 测试（12 项全过）**：原 11 项 + 新增 `test_middle_cap1_does_not_extend_prompt`，在服务器 4090-1 `verl-e2e` 环境重跑 **12 passed**（5.05s）；**对照验证**——还原旧 middle 行后 cap=1 测试失败（证明测试有效），恢复修复后通过。
 - **状态**：PR #8313 已由用户主动关闭（「Closing: not yet reviewed/approved. Will reopen when the fix has been reviewed and approved」，10-22 07:07Z）；修复已 commit 并**推送到 fork 分支** `fix-8281-truncation-policy`（`872bc281` 用户风格 + `6db4b38d` 漏洞修复，远端 head 已确认 `6db4b38d`）。**最新分支复验（2026-10-22）**：CPU 单测 12 passed；4090-1 上 GPU e2e 正向 2 step 全过 + `error` 策略 fail-loudly，见 [GPU 冒烟记录](../../experiments/verl-8281-gpu-smoke/readme.md#2026-10-22-最新分支复验872bc281--6db4b38d含-middlecap1-修复)。待用户决定重开 PR 时机。
 - **issue #8281 回复草稿**：[draft-8281-issue-reply.md](draft-8281-issue-reply.md)（技术确认 + 修复进展 + middle/cap=1 边界说明 + error 训练器行为契约问题），发布需用户授权。
+
+### 2026-10-22 维护者 review 闭环（dajiaohuang / Wu Shuwen）
+
+PR #8313 重开后，维护者 **dajiaohuang（Wu Shuwen，NUS/TikTok 实习）** 提交 review：指出 `RolloutConfig.__post_init__` 未强制 `prompt_length > 0`，`left` 分支 `prompt_ids[-prompt_length:]` 在 cap=0 时 `-0` 取整表、cap 失效——与本 PR middle/cap=1 同族，但触发点是配置校验缺口。
+
+**回应与修复**（commit `d0ca3be1`，DCO，已推送 fork 分支）：
+- `RolloutConfig.__post_init__` 增加 `prompt_length <= 0 → ValueError` 校验（采纳维护者建议的「validate > 0」选项）
+- `left` 分支改正向切片 `prompt_ids[len(prompt_ids) - prompt_length:]`（cap=0 时空尾，与 middle 修复风格统一，双保险）
+- 回归测试：`RolloutConfig(prompt_length=0/-1)` 抛错；`left` cap=0 返回空尾
+- **设计决策**：`response_length` 不校验——0 是 skip/rollout_skip.py 的合法「不限」语义，加校验会破坏现有配置
+- 验证：**15 CPU tests passed**（13 cap + 2 config）；对照验证移除校验后 config 测试 `DID NOT RAISE` 失败、还原后通过
+
+**已回复维护者**（PR comment [6342081989](https://github.com/verl-project/verl/pull/8313#issuecomment-6342081989)）说明修复与 response_length 决策。PR head 现为 `d0ca3be1`，CI 待重跑。
