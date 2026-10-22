@@ -24,6 +24,8 @@
 
 ## 运行接续
 
+- **M1抢占结束交接学习收束（2026-10-22）**：同步main无新提交，有界读UniRL6/verl5/DeepInfer5候选后选新#211 head4432ebe4/base祖先9bd9cf24；见[原调研](notebook/frameworks/deepinfer-initial-survey.md#抢占在途结果的执行代次与结束交接)。epoch分类先于inflight/MTP计数；PCR默认关闭，开启后仅恢复PREEMPTED结果到首终止点，pending finalize仍计unfinished，下一schedule交接；重复拒绝非事务幂等，PCR关仍有其他修改。4完整Python/stub compile、原测试8函数/11组合仅静态计数，无_C/原生执行或模型收益；不加调度器替身。缺口补[原M5参考](experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)，匹配build先于设备条件，不另排队/启PCR或改移植。本题收束，后续另选非抢占epoch/终止提交/队列替身问题；GPU/AReaL/#8313与外部写入边界不变。
+
 - **M1激活重算状态学习收束（2026-10-22）**：main同步无新增后，沿UniRL非重入checkpoint接线转向真实CPU语义；见[原基础笔记](notebook/fundamentals/gradient-checkpointing.md#重计算的随机数与可变状态)/[脚本](experiments/scripts/verify_activation_recompute_state.py)。torch2.9.1 eager对照：Torch RNG保留时dropout前向/梯度/终态相同，关闭或外部Python RNG则不同；同元数据闭包改值梯度8/16→12/24且不报错，改shape会拒绝；early-stop入口/末尾2/1非完整重跑。更正原逐层重算n+1倍全网与选择性比完全更省/普遍最优简写。UniRL缓存映射快照仅读，非框架故障/FSDP/compile/性能或设备证明，无新真机待办。本题收束，后续另选非RNG/重算副作用替身问题，GPU/AReaL/#8313边界不变。
 
 - **M1设备/后端分层学习收束（2026-10-22）**：只读UniRL#623（当轮closed、未合并），headc1477a03/实际父c6d4b11b，3文件46增7删；见[原调研](notebook/frameworks/unirl-survey.md#设备资源与通信后端的分层边界)。actor零GPU请求不取消PG预约，CVD可见性与逻辑编号分开，宽异常转eccl默认WORLD非通用硬件适配；目标主线历史差异不冒算PR修改。两版各3完整模块compile通过，无导入/设备/通信或NVIDIA回归。真机缺口补[原M5 UniRL参考](experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不另排队、应用关闭候选或更改M5环境。本题收束，后续另选非设备pin/通信替身新问题；GPU/AReaL/#8313与外部写入边界不变。

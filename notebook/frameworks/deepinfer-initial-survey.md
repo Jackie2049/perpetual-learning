@@ -1962,6 +1962,60 @@ M1 只对config/layers/engine/fp8/model五个完整原模块内存compile，执�
 
 新线索补[原M5适配条目](../../experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)，先决定研究目标是否包含Sage；仍只做V4.1则不适用。未获准选择新模型、准备权重与匹配环境前停止，不自动下载/切环境或改M5去PDL方案。SM120/32GB报告不能外推SM89/24GB已支持。
 
+## 抢占在途结果的执行代次与结束交接
+
+**同一请求的旧结果，不一定属于它当前的执行；已生成终止token，也不等于完成了结束交接。** 2026-10-22只读新[#211](https://github.com/deepseek-ai/DeepInfer/pull/211)，当轮open、未合并；固定head `4432ebe41efd6c6cb263ddfc619ccb3e87883ff7`、base/三提交祖先 `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`，7文件439增22删。它研究ZOS下抢占前在途decode结果的接收，不是[#188](#抢占重算与-prompt-logprob-的身份)的prompt计分身份修复，也不是减少抢占次数的准入策略。
+
+### 先识别代次再更新计数
+
+ZOS可先为下一步schedule，再处理上一步结果。[_preempt](https://github.com/deepseek-ai/DeepInfer/blob/4432ebe41efd6c6cb263ddfc619ccb3e87883ff7/csrc/engine/scheduler.hpp)在重算路径复位cache/inflight/MTP状态、令exec_epoch加1，将请求放回WAITING，并释放资源。SchedulerOutputs保存调度当时的epoch；不能只看后来可能已经改变的WAITING/RUNNING状态判断结果归属。
+
+| 分类 | 固定head判据 | 处理方式 |
+| --- | --- | --- |
+| CURRENT | 保存epoch等于当前epoch | 继续正常计数、cache推进及token提交 |
+| PREEMPTED | 非prompt步，旧epoch+1等于当前epoch，且重算后的schedule_cnt仍为0 | 默认丢弃；PCR开启时仅尝试接收能终止请求的结果 |
+| STALE | 其余不匹配情况，包括请求已重新调度 | 丢弃并累计stale计数，不推进新执行的inflight/cache/token |
+
+`process_outputs`将分类放在`finish_inflight_step`之前；`process_MTPInfo`也先分类，再增加process_cnt。前者丢弃某行时仍按该行q推进accepted-token平坦缓冲区偏移，避免下一请求错读。作者说明当前引擎最多保留一个未处理decode step，STALE/重复处理是防误用检查，不能据防护分支反推生产中已出现任意乱序结果。
+
+每个SchedulerOutputs另有两枚一次性标志，分别拒绝重复process_MTPInfo/process_outputs；标志在入口即设置。这是拒绝重入/重复记账，不是重复调用可成功的幂等接口，也没有由此建立中途异常的事务回滚或重试协议。
+
+### 可选恢复只接收首个终止点之前的前缀
+
+DEEPINFER_PCR默认关闭，C++ Scheduler构造时读取。**开关只控制终止结果恢复**，epoch、重复处理保护与释放state_id后置为−1的改动仍存在，不能将PCR=0称为整个patch未生效或零额外开销。
+
+开启时，`_complete_preempted`还要求序列仍WAITING（abort优先）；先收集连续已接受draft（到−1截止）及main token，以共享`_stop_status`逐个预演长度。沿用原规则：非ignore_eos的EOS、总长度`> max_model_len`、输出长度`== max_tokens`。没有终止点就返回0，不追加任何本步token，继续原重算路径；有终止点才按以下顺序提交：
+
+1. 要求请求还在waiting，且block_table为空、state_id=−1、MTP info_slot=0；移出waiting。
+2. 追加到首个终止token为止，更新压缩token并设结束状态；不恢复已经释放的KV/state，也不接收终止点之后的main/draft。
+3. 清空旧prev_confidence_raw，将请求放入pcr_completed；当步由原[outputs.hpp](https://github.com/deepseek-ai/DeepInfer/blob/4432ebe41efd6c6cb263ddfc619ccb3e87883ff7/csrc/engine/outputs.hpp)按pushed数量输出token及最后一项的stop/length，不带失去归属的旧confidence。
+4. pcr_completed计入unfinished；下一次schedule无论prefill/decode/空步都移交到finished_seqs并清空待交接列表。原[引擎pre_sampler_sync/finalize_seq](https://github.com/deepseek-ai/DeepInfer/blob/4432ebe41efd6c6cb263ddfc619ccb3e87883ff7/deepinfer/engine/llm_engine.py)在NORMAL/COMPLETION路径处理结束项，最终free_seq。state_id清为−1使已释放槽不被再次归还，但不代替整个结束协议的验证。
+
+因此，“请求已结束”和“引擎还有结束项需处理”可以同时成立；把pending finalize排除在unfinished之外，循环便可能先退出。这里还没有证明客户端交付或任意异步多步乱序安全。实际样本在[Worker._post_process_step](https://github.com/deepseek-ai/DeepInfer/blob/4432ebe41efd6c6cb263ddfc619ccb3e87883ff7/deepinfer/worker/worker.py)等待sample_end_evt后才进入后处理；epoch检查不能替代设备事件/缓冲区生命周期的正确性。
+
+### 原测试与本机证据范围
+
+[新增测试](https://github.com/deepseek-ai/DeepInfer/blob/4432ebe41efd6c6cb263ddfc619ccb3e87883ff7/tests/engine/test_preemption_recovery.py)有8个test函数、11个参数组合，使用真实_C Scheduler/BlockManager/输出池、单rank Gloo和手工采样张量，覆盖重复释放、重复处理、重调度后旧EOS、PCR开关/EOS/max_tokens、draft首停、无停继续重算、abort优先及prefill收尾。它不是模型采样测试；作者报告CPU可跑。11项不等于已覆盖所有停止条件/并发/设备或性能。
+
+作者另报告合成调度工作负载，避免的重算prefill token比例随上下文长度为约0.05%～0.77%，约1%运行反而增加重算；提前结束改变后续准入，所以局部省一次重算不保证全局单调获益。正文明确没有生产模型端到端数据，单消费卡的独立stream控制也不认证多卡/生产kernel；不将scheduler步数、合成token计数或小模型计时权重换算成实际吞吐提升。
+
+本机仅Python3.12.13标准库对environ.py、engine.pyi、原测试与原llm_engine.py四完整文件内存compile，并静态数出8/11；C++仅读精确diff及相关调用方，未编译。当前CPU环境没有deepinfer package spec，因缺匹配_C而未收集/执行原11测试，没有为此造调度器/池替身或安装/编译引擎。此缺口不等于原测试必须有GPU；源码/语法检查也不能当候选验收。
+
+静态复查入口（Git对象须已在本地）：
+
+```bash
+GIT_NO_LAZY_FETCH=1 python3 -B - /path/to/DeepInfer-git <<'PY'
+import subprocess, sys
+head = '4432ebe41efd6c6cb263ddfc619ccb3e87883ff7'
+for path in ['deepinfer/environ.py', 'deepinfer/_C/engine.pyi',
+             'tests/engine/test_preemption_recovery.py', 'deepinfer/engine/llm_engine.py']:
+    src = subprocess.check_output(['git', '-C', sys.argv[1], 'show', f'{head}:{path}'])
+    compile(src, path, 'exec')
+PY
+```
+
+SHA256：scheduler.hpp `a3e696def84a5b00738be75861161d4f7f2d275dc0298dec85dec381b62e72c1`；原测试 `dd8ac8da1c54ddbc918a91620547919b31a62af0684b15c8d0ada41a8ac1db48`。匹配原生构建与真实ZOS事件/输出的缺口仅补[原M5参考](../../experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)，不另排队、应用候选或改变移植方案；本题以执行身份与结束交接学习收束。
+
 ## 聊天服务的亲和路由与完成口径
 
 **同一 rank、引擎完成、前端读完和客户端收到完整响应，是不同的状态。** 2026-10-22 只读已有 [#147](https://github.com/deepseek-ai/DeepInfer/pull/147)，读取时open，固定head `aaf1e62c9eab1ce5bd260a594dfaea613760e89f`、base `774ce244b87cc0eb8d4b94ab9f5de2ab22049f01`；4个新增文件695行，无新增测试文件。本节分析最小聊天封装，不启动服务、不扩展之前的cache预算或关闭流程探针，也不将标题中的兼容性当作完整接口认证。
