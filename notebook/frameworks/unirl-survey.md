@@ -111,6 +111,64 @@ types/sample.py         04c7a8caa840953e16fea401676ad30f4f1080fdf494fcf1daf095a1
 
 HI3 双引擎构造器明确要求每节点至少8设备，batch_size 为 num_devices 的正倍数；这不是已完成的资源测量，也不能外推为所有 UniRL 路径都至少8卡。此配方的真实两层 rollout、共享参数更新与同步均未执行，资源条件已记入 [M5 接续](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不据安装说明给单4090或昇腾承诺支持。
 
+## 稀疏 SDE 与轨迹状态位置
+
+**选3个 SDE 转移，不是只做3步去噪，也不是只保存3份 latent。** 2026-10-22 沿用固定 `6fd82cba13f52f394747832344039408699ea378`，直接正常导入原 [`types/sampling.py`](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/types/sampling.py)、[`sde/index_schedule.py`](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/sde/index_schedule.py)及 require 模块。无 AST 摘取、包壳或替身；这些 leaf 模块只需标准库和 NumPy，本轮没有导入 torch/Ray/Hydra/OmegaConf。
+
+与 HI3 配方相同，设总步数16、`timestep_fraction=[0,0.5]`、`num_sde_steps=3`。AllSDEScheduler 的候选池是半开区间 `[0,8)`，每个 rollout id 经独立 NumPy generator 无放回选3个。64个 id 的原函数输出均满足范围/数量/去重，逆序重查完全一致，NumPy 全局 RNG 状态未变；不要求不同 id 必选不同集合。当前 NumPy 2.0.2 下 rollout0 选 `[4,5,7]`。
+
+`DiffusionSamplingParams.get_sde_indices` 的优先级是**显式列表（包括空列表）→ scheduler → 全部 num_inference_steps**。因此省略列表和 scheduler 时得到0至15；显式 `[]` 即使配了 scheduler 也返回空，`[1,2]` 则返回该列表。AllSDEScheduler 本身不设 num_sde_steps 时返回过滤池的全部8步，设0返回空；原构造器拒绝负数或超过池容量的请求。这是 helper 的解析契约，不是说直接传原始 None 给 stage 也会全选。
+
+标准 [`DiffusionTrainer._build_request_sample`](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/trainer/diffusion.py#L687)先解析列表，再以 `dataclasses.replace(..., sde_indices=..., scheduler=None)` 固定到本 rollout；unified trainer 同样如此。HI3 与 SD3 的 `diffuse` 则读这个已解析列表，在 `for i in range(T)` 中逐步设 `step_eta = params.eta if i in sde_set else 0.0`。所以源码仍有全部 T 次去噪迭代，非选中步走 eta0；这不等于声称恰好 T 次模型前向或量化了运行时间。
+
+原 `compute_trajectory_positions` 给每个选中转移 i 保留相邻位置 i 和 i+1，再排序去重。HI3/SD3 采样循环还显式 `needed.add(T)`，保证最终状态可用于后续解码。下表端点列为原 helper 实测，最后一列仅按这条源码规则推导，未生成任何 latent：
+
+| SDE 索引（T=16） | helper 端点 | 加终态后的预期位置数 |
+|---|---|---|
+| `[]` | `[]` | 1，仅位置16 |
+| `[0,1,2]` | `[0,1,2,3]` | 5，包括16 |
+| `[0,2,4]` | `[0,1,2,3,4,5]` | 7，包括16 |
+| `[14,15]` | `[14,15,16]` | 3，终态不重复 |
+| 全部0至15 | 全部0至16 | 17 |
+
+穷举前半段8步的全部56种三索引组合，原 helper 端点均与独立集合表达式 `S ∪ {i+1}` 一致；加终态后5/6/7个位置分别有6/30/20组。原因是相邻转移共享中间状态，不能把存储位置数固定写成 SDE 数或2倍 SDE 数。[LatentSegment](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/types/segments/latent.py)也分开保存完整 sigma 表、状态位置 indices 与 sde_indices，三者不是同一轴。
+
+空选择不是“自动继续原 FlowGRPO 训练”：[`FlowGRPO.compute_loss_and_backward`](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/algorithms/flowgrpo.py#L116)对空 sde_indices 直接报告 has_backward=False；有选择时仍要求实际 transition logprob／replay 契约匹配。这里只核源码，没有执行 algorithm 或以索引个数保证 logprob 张量可用。
+
+核心复查命令（在固定 UniRL 源码根目录，Python3.12.13 / NumPy2.0.2，无安装）：
+
+```bash
+python -B - <<'PY'
+from collections import Counter
+from itertools import combinations
+import sys
+import numpy as np
+from unirl.types.sampling import DiffusionSamplingParams, compute_trajectory_positions
+from unirl.sde.index_schedule import AllSDEScheduler
+sched = AllSDEScheduler(16, [0,0.5], 3)
+params = DiffusionSamplingParams(num_inference_steps=16, scheduler=sched)
+before = np.random.get_state()
+chosen = {i: params.get_sde_indices(i) for i in range(64)}
+assert all(len(s)==3 and s==sorted(set(s)) and set(s)<=set(range(8)) for s in chosen.values())
+assert all(params.get_sde_indices(i)==chosen[i] for i in reversed(range(64)))
+after = np.random.get_state()
+assert before[0]==after[0] and np.array_equal(before[1],after[1]) and before[2:]==after[2:]
+assert DiffusionSamplingParams(num_inference_steps=16).get_sde_indices(0)==list(range(16))
+assert DiffusionSamplingParams(sde_indices=[], scheduler=sched).get_sde_indices(0)==[]
+assert DiffusionSamplingParams(sde_indices=[1,2], scheduler=sched).get_sde_indices(0)==[1,2]
+hist = Counter()
+for group in combinations(range(8),3):
+    ends = compute_trajectory_positions(set(group),16)
+    assert ends==sorted(set(group)|{i+1 for i in group})
+    hist[len(set(ends)|{16})] += 1  # consumer 的 +T 规则，非执行采样
+assert hist=={5:6,6:30,7:20}
+assert not any(n in sys.modules for n in ('torch','ray','hydra','omegaconf'))
+print(chosen[0], dict(sorted(hist.items())))
+PY
+```
+
+三原文件 SHA256 分别为 require `d30f89e77ff72e9dddaaf8b8f0ab403790b3e2984fbd6afea28f6bcc60177238`、sampling `95325713e5f9d426ef56a2b84c0d7a2f701f0cd7c3a0f7f76b728d420a4f9ddc`、index_schedule `4a313b44df9275b8e470a1dd1226d3b835e5170eb4a707ab162c269fe307f3c4`。上面的核心复查及额外首尾/空/全步端点、0/全池和非法计数控制均通过；这是自编原模块检查，不是上游原测试。未执行 stage、engine、latent 构造、replay/backward 或性能/显存实验；位置数量不能外推节省比例、跨引擎数值一致或质量。需要真机时沿用 [M5 原条目](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不新增必跑矩阵。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。

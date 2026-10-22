@@ -12,6 +12,8 @@
 
 ## 运行接续
 
+- **M1 UniRL稀疏SDE学习收束（2026-10-22）**：官方main仍6fd82cba，原require/sampling/index_schedule正常导入，无包壳/AST摘取/torch。64rollout id、56前半段三索引组合及空/首尾/默认/非法计数控制通过，见[原调研新节](notebook/frameworks/unirl-survey.md#稀疏-sde-与轨迹状态位置)。T16选S3不删去噪迭代；邻接端点+终态仅源码预期5～7位置，非latent/显存实测。None与[]解析优先级不同，标准trainer先解析；stage/FlowGRPO接线仅读。原M5条目只补有效索引/字段形状参考，不新排队或运行。本题收束；后续优先UniRL其他类型/配置问题，不堆SDE索引/RNG变体或自动改实现；GPU/AReaL、#8313及网站边界不变。
+
 - **M1 UniRL首次架构阅读收束（2026-10-22）**：先快进同步M5新增高优UniRL调研4015059，再只读clone官方main6fd82cba。见[原调研源码节](notebook/frameworks/unirl-survey.md#ar-与-diffusion-的源码统一边界)：独立AR/diffusion各自trainer，HI3则共享bundle/backend，两路backward汇同次update；Sample保留P→PN→PNM，M=1共享AR优势。原依赖方向guard与4核心文件AST/compile通过，无训练模块/设备执行。配方flat注释与driver两层接线不一致，未定性engine已正确；HI3双引擎每节点≥8设备/资源及身份观测条件及时记[原M5交接页](experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，非接单/自动运行或租算力。不改上游、M5环境、AReaL/#8313或网站。本轮架构初读收束；后续优先UniRL未重复类型/配置问题，不堆训练替身或由源码外推普通卡支持。
 
 - **M1 Rollout完整性学习收束（2026-10-22）**：新更新verl#6641 head9e4e85da/目标base3f9d4c0d/祖先8911f243。原ReplayBuffer与helper、原7项CPU测试候选通过，祖先4项拒绝检查DID NOT RAISE预期失败，另5边界通过。见[原数据流笔记](notebook/frameworks/verl-grpo-data-flow-reading.md#rollout-完整性与会话计数)/[复查](experiments/scripts/verify_verl_rollout_completeness.py)。同会话多行不补缺失会话，先等running结束再报终态错；数量下界非超时/取消/恢复。原FakeKVBatchMeta，另2项manager/TensorDict未选，无真实TQ/poll线程/训练/设备或新M5任务。本题收束；后续有界核对变化再选其他CPU/源码问题，不堆失败队列替身或自动采用/修复PR；GPU/AReaL、#8313及网站边界不变。

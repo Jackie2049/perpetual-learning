@@ -106,7 +106,7 @@
 
 ## UniRL
 
-- [UniRL 与 RL 训练抽象](unirl-survey.md#ar-与-diffusion-的源码统一边界)：用户新增高优框架，固定6fd82cba；独立AR/diffusion trainer与HI3联合样本树/共享backend边界，原静态依赖guard通过，非训练实测。
+- [UniRL 与 RL 训练抽象](unirl-survey.md#ar-与-diffusion-的源码统一边界)：固定6fd82cba，独立trainer/HI3联合更新；[稀疏SDE端点](unirl-survey.md#稀疏-sde-与轨迹状态位置)原模块64调度/56组合通过，状态位置与随机转移数分开，非模型/显存实测。
 
 ## verl
 
