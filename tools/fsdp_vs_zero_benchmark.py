@@ -343,11 +343,20 @@ def check_gpu_available() -> bool:
 def check_remote_gpu() -> bool:
     """检查远程GPU服务器是否在线"""
     servers = [
-        ("University", "sshpass -p 'adspzxw123' ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 zxw@219.223.198.62 echo online"),
+        ("University", "ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 zxw@219.223.198.62 echo online"),
         ("Matpool", "ssh -p 28959 -o ConnectTimeout=5 root@hz-t3.matpool.com echo online"),
     ]
-    for name, cmd in servers:
+    for name, cmd_template in servers:
         try:
+            if name == "University":
+                password = os.environ.get("UNIVERSITY_SSH_PASSWORD")
+                if not password:
+                    print(f"  {name} server: OFFLINE (UNIVERSITY_SSH_PASSWORD environment variable not set)")
+                    continue
+                cmd = f"sshpass -p '{password}' {cmd_template}"
+            else:
+                cmd = cmd_template
+
             result = subprocess.run(cmd, shell=True, capture_output=True, timeout=10)
             if result.returncode == 0:
                 print(f"  {name} server: ONLINE")

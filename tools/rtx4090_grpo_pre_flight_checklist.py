@@ -74,8 +74,7 @@ def check_system():
 
     # Check ulimit
     try:
-        ulimit_output = subprocess.run(["ulimit", "-n"], capture_output=True, text=True, shell=True)
-        fd_limit_str = subprocess.run(["bash", "-c", "ulimit -n"], capture_output=True, text=True).stdout.strip()
+        fd_limit_str = subprocess.run(["ulimit", "-n"], capture_output=True, text=True).stdout.strip()
         if fd_limit_str == "unlimited":
             results.append({"rule": "D15", "status": "PASS", "detail": f"fd limit = unlimited >= 65536"})
         else:
@@ -607,19 +606,27 @@ def run_mode_full():
     print(f"{'='*60}")
 
     servers = [
-        ("University server", "sshpass -p 'adspzxw123' ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 zxw@219.223.198.62 hostname"),
-        ("Matpool server", "ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -p 28959 root@hz-t3.matpool.com hostname"),
+        ("University server", ["ssh", "-o", "StrictHostKeyChecking=no", "-o", "ConnectTimeout=10", "zxw@219.223.198.62", "hostname"], os.environ.get("UNIVERSITY_SERVER_PASSWORD")),
+        ("Matpool server", ["ssh", "-o", "StrictHostKeyChecking=no", "-o", "ConnectTimeout=10", "-p", "28959", "root@hz-t3.matpool.com", "hostname"], None),
     ]
 
-    for name, cmd in servers:
+    for name, cmd_args, password in servers:
         try:
-            result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=15)
+            if password:
+                # Use sshpass for password-based authentication if password is provided
+                full_cmd = ["sshpass", "-p", password] + cmd_args
+            else:
+                full_cmd = cmd_args
+            
+            result = subprocess.run(full_cmd, capture_output=True, text=True, timeout=15)
             if result.returncode == 0:
                 print(f"  ✅ {name}: ONLINE ({result.stdout.strip()})")
             else:
                 print(f"  ❌ {name}: OFFLINE")
         except subprocess.TimeoutExpired:
             print(f"  ❌ {name}: TIMEOUT (offline)")
+        except FileNotFoundError:
+            print(f"  ❌ {name}: ERROR (ssh or sshpass not found. Ensure they are installed and in PATH.)")
         except Exception as e:
             print(f"  ❌ {name}: ERROR ({e})")
 
