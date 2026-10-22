@@ -38,14 +38,16 @@ python3 -m http.server 8765 --directory web/dist --bind 127.0.0.1
 
 ## 发布
 
-使用 [publish.py](publish.py) 将生成结果发布到独立的 `gh-pages` 分支；main 仅维护源码。仓库 Pages 来源设为该分支根目录，GitHub 自带 Pages 部署负责上线。
+**自动部署已启用**：仓库根 [`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) 在**每次 push 到 main 时自动**执行 `web/build.py` 生成 `web/dist`，并推送到 `gh-pages` 分支；仓库 Pages 来源设为该分支根目录，GitHub 自带 Pages 部署负责上线。**日常归档后推送 main 即可，无需手动发布。**
+
+保留手动入口：[publish.py](publish.py) 仍可手动将当前 main 快照发布到 `gh-pages` 分支（核对 HEAD 与远端 main 一致，临时目录生成发布提交，不切换分支、不强推，已有 gh-pages 分支须带本工具生成标记）。
 
 ```bash
-# 先提交并推送内容和网页源码，再使用已安装构建依赖的 Python：
+# 手动触发（一般不需要，workflow 已自动处理）：
 /tmp/perpetual-learning-web/bin/python web/publish.py
 ```
 
-发布器核对 HEAD 与远端 main 一致，在临时目录生成发布提交，不切换当前工作分支，不强推。已有 gh-pages 分支必须带本工具的生成标记才允许更新。没有配置定时同步；更新网页需运行上述命令。
+自动部署注意：`web/build.py` 依赖 `bleach`、`markdown`、`pymdown-extensions`（`pymdownx.arithmatex`），公式排版用 vendored katex（`web/vendor/katex`），无需 npm install；workflow 用 `fetch-depth: 0` 保留完整 git 历史供 `build.py` 读取提交信息。
 
 
 页面使用相对资源路径和 hash 导航，适用于仓库子路径。渲染 Markdown 时移除脚本和不安全链接；历史资料的验证范围和外部状态按原记录理解。
