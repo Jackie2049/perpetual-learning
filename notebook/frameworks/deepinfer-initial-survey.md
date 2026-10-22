@@ -1886,3 +1886,36 @@ python -B experiments/scripts/verify_deepinfer_golden_admission.py /path/to/Deep
 Python3.12.13 / NumPy2.0.2 / pytest8.4.2 / torch2.9.1，后者供原 SamplingParams 的iinfo使用，无新安装或设备发现。复现需本地已有固定head/base Git对象；脚本仅将原测试归档到临时目录，两版各在独立子进程运行pytest，隔离项目配置/第三方插件/缓存，并校验预期失败原因。无真实Sequence、worker、模型、grammar、GPU/NPU或推理质量/性能验证；不采用/修改上游候选，也不新增M5必跑事项。
 
 SHA256：llm_engine.py候选 `c50f82abf9735940442eb7658ab77f7d1897cf84f67ceb7d5928eb8f1e70199e`、base `a636d60ca5711f6b7c21e68370c3bd9c2de6fc3f4439a7429ca4f572f0edeebe`；原测试 `8a784c02e341fd8f57193a5459f948b03aa462067285a9586a9f707b81e6a675`；sampling_params.py `f800034efdebe1b21620660a51fa9122d3d7f138d8e60cd738f33d643c3116f8`。本题收束为入场范围/顺序的CPU证据，不扩写采样或设备替身。
+
+## 图像展开区间与缓存前缀
+
+**图像占位符展开后的坐标，决定哪些图像字节可从待传数据中剥离；缓存碰到图像开头还不够。** 2026-10-22 核对已有 [#208](https://github.com/deepseek-ai/DeepInfer/pull/208)，固定 head `1e262f2b3aa508e0cb348d94662da36907363bda`、base `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`。本节以原 [`MultimodalProcessor`](https://github.com/deepseek-ai/DeepInfer/blob/1e262f2b3aa508e0cb348d94662da36907363bda/deepinfer/ve/multimodal_processor.py)的CPU数据变换为范围，不延伸上一节的输出ID校验或设备移植。
+
+overwrite_prompt 将每个占位符展开为一个 IMAGE token 加若干 PAD，记录 image_spans 的 `(start,count)`，坐标属于**展开后的**序列。原测试用尺寸到长度的查表替身，令两图各占3和2 token：`[1,H,2,H,3]` 变为 `[1,I,P,P,2,I,P,3]`，span为 `(1,3)`、`(5,2)`，即半开区间 `[1,4)`、`[5,7)`。这些长度来自测试配置，不是运行真实图像分辨率估算器。
+
+成功返回新的int32 token数组，不改调用方原数组；但 multi_modal_data 不是只读输入：它写入原 SegmentInput/ImageInput/TextLengthInput，并移除 image_sizes/image_bytes 原始键。图像 binary 此时只是转入对应 ImageInput，并非已编码、上传或释放。
+
+原缓存剥离 helper 按顺序数出满足 `start+count <= num_cached_tokens` 的前缀图像，将它们的 binary 设为None，并写 _num_cached_images。两版各补四个精确端点CPU对照，结果一致：
+
+| 给定缓存前缀长度 | 第一图binary | 第二图binary | 缓存图像数 |
+|---|---|---|---|
+| 3 | 保留 | 保留 | 0，第一图尚未完整覆盖 |
+| 4 | None | 保留 | 1，恰好覆盖第一图终点 |
+| 6 | None | 保留 | 1，第二图仅部分覆盖 |
+| 7 | None | None | 2，恰好覆盖第二图终点 |
+
+这只是消费给定缓存长度的原helper，不是实际KV命中实验。binary=None表示该字段不再持有原字节，不保证对象已回收或显存已释放；原 add 会入worker队列，后续编码、IPC和scheduler状态并未在这些测试中运行。两个原名称以test_add开头的测试，实际也只调用缓存helper。
+
+#208新增的是改写前的计数检查：非空image_bytes必须与image_sizes等长；提供的图像不能多于占位符。原12项pytest候选全过，base8过4预期失败（3项DID NOT RAISE ValueError，1项旧IndexError）。四种拒绝覆盖多图少占位符、无占位符仍给图、字节列表过短/过长，并验证拒绝后原字典不变；不等于任意处理异常都有回滚。
+
+规则并非严格要求三者无条件相等：缺省或空image_bytes仍允许，ImageInput.binary为None，不说明随后一定能获得像素；占位符多于图片时，旧的log error并将多余占位符当文本的行为仍保留。缓存区间和剥离逻辑没有被该PR修改，原展开/复制/相邻图像及整图/半图缓存测试是回归证据，不能都记成新增修复。
+
+[复查脚本](../../experiments/scripts/verify_deepinfer_image_spans.py)：
+
+```bash
+python -B experiments/scripts/verify_deepinfer_image_spans.py /path/to/DeepInfer-git
+```
+
+Python3.12.13 / NumPy2.0.2 / pytest8.4.2，原common模块另导入torch2.9.1，无新安装。脚本保留完整原MultimodalProcessor类AST，以显式包/模块容器省略加速器导入；common为完整原模块，RAW_IMAGE_KEYS只从原schema AST读常量，不执行其模块级CUDA Event，也不提供事件shim。原测试保持__new__绕构造和查表估算器；正常pytest执行原12项，两版另各4个端点控制。非正常处理器初始化、worker/真实图像估算、VE编码、共享池、缓存引擎或GPU/NPU验证，不新增M5必跑事项。
+
+脚本锁定五个完整文件hash并核common/schema两版相同：multimodal_processor.py候选 `5a544b357b4761659dcbd5a49c170a2d3ac8f224e5ba34787cc7bed2babf7314`、base `f6b0e03a9138eddead7adfe424d4818a937c5ffbac2bff07d27dc96dd20d75cb`；原测试 `f72dee2beab198bfdb6b7487cea33aebcfffb9143077b546879c9db369498c0a`，其他见脚本。此题收束为数据坐标与局部修改顺序的证据，不自动采用PR或推导推理质量/传输性能。
