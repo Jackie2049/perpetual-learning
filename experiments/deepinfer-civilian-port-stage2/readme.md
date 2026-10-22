@@ -147,3 +147,13 @@
 **证据**：`run_nosync_upstream_tests.py`（patch 43 工厂 + pytest 驱动）、`run_nosync_upstream_tests.txt`（67 项 FAILED 列表 + 每类代表性错误 + 汇总，原始 383 KB 日志留存服务器 `/tmp`）、`run_norm_all.py`（服务器 `/tmp`，norm 单独重跑）→ `norm_all_run.txt`（392 passed）、`run_norm_diag.py`（OSError 诊断，本地与服务器一致）、`repro_fused_transform_diff.py`（fused_transform 差异定位：116/1.53 亿元素 1-ULP、e4m3 3/419 万元素）、`/tmp/repro_norm_one.py`/`/tmp/repro_norm_loop.py`（服务器，norm 单例复现循环）、`/tmp/diff_ft.py`（服务器，fused_transform 差异定位）。对比用 pdlfree 变体运行同用例见 `COOPERATIVE_LAUNCH_TOO_LARGE`（`/tmp/diff_ft_pdlfree.py`）。
 
 **边界**：①**fused_transform 11 个失败无法在当前硬件定性**——SM89 上原版 PDL 编译不过（PDL is not supported）、pdlfree 变体运行不过（cooperative grid 上限），nosync 是唯一可运行形式；1-ULP 差异是否改写引入需 SM100/SM90 原版 bitwise 对照，4090 上无此可能，记录待测；②OOM 类失败是 24 GiB 单卡显存上限（上游测试设计为多卡/大显存环境），换更大显存卡或降低参数可过，与改写无关；③六续用 `CUDA_VISIBLE_DEVICES=0`，与五续一致；norm 的 27 个 OSError 为间歇环境问题（重跑全过），但若完整移植 CI 需处理 hide/restore 与 tilelang JIT 取源码的交互（如避免运行期 rename 变体文件）；④性能影响（PDL 重叠）仍未测。
+
+### 六续交叉复验（独立重跑，GPU 7，2026-10-22）
+
+上方 1134/67 全分类之后，本机定时轮在 **GPU 7**（`CUDA_VISIBLE_DEVICES=7`，与上方 GPU 0 错开）用同一 `run_nosync_upstream_tests.py` 独立重跑一遍作为交叉验证：**1163 passed / 38 failed / 4 skipped（505.67s）**。失败类别与上方完全同构——**21 OOM**（gather 16 + random_sampling 3 + candidate_block_max 2 + fused_transform 1，均为大输入参考实现分配超 24 GiB 单卡）、**6 TVM-SMEM**（remap_draft_topk 动态共享内存 103 KB > 4090 上限）、**11 fused_transform `torch.equal` 数值微差**（10 NUM + 1 OOM）。两轮差异仅在 norm：本轮 **27 个 norm OSError 未复现**（1163-1134=29 = norm 27 + 2 个 OOM 边界），进一步佐证 norm OSError 是 hide/restore rename 与 tilelang JIT 取源码交互的**间歇环境问题**（并行会话单独重跑 norm 392 passed，本轮全量也未触发）。
+
+fused_transform 差异本轮追加更大规模确定性证据（`probe_ft_diff2.py`）：**norm-rope-bf16 n=32769 用例两遍同 seed 复验 `n_diff=1803/2147549184（0.0001%）`、差异位置、max_err=0.0625（bf16 约 8 ULP）两次完全一致**——`deterministic(same n_diff)=True`，配合并行会话的 (49,12,383) 等坐标逐一相同，**再次排除数据竞争**。pdlfree 对照本轮测 fused_transform 得 grid=(32769,1,1) 恒超 4090 cooperative-launch 上限（与并行会话 grid=37328 同一结论）——nosync 是唯一可运行改写形式。
+
+结论与上方一致：38 失败全部归因于环境/平台（OOM 显存、tilelang SM89 smem）与 fused_transform 确定性 bf16 尾差，**无一指向 nosync 删除引入的同步/数据缺陷**；改写规则在两次独立全量运行下保持成立。
+
+**证据**：`nosync_upstream_tests.log`（本轮 GPU 7 完整 505s 日志）、`probe_ft_diff2.py`/`probe_ft_diff2.log`（n=32769 两遍确定性复验 1803/1803）。

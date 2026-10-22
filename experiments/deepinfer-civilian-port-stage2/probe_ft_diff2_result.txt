@@ -1,0 +1,7 @@
+case=norm-rope-bf16-out-h128-d512-r64-sn73728 n=32769 total=2147549184
+run1: n_diff=1803 (0.0001%) max_err=0.0625 mean=3.19977e-09
+run2: n_diff=1803 (0.0001%) max_err=0.0625 mean=3.19977e-09
+deterministic(same n_diff): True; first8 same: True
+run1 first8: [4329924, 4329925, 4755551, 5243938, 5737454, 5982349, 7062116, 13783179] lastdim(512): [452, 453, 95, 34, 494, 141, 100, 139]
+run1 diff errs: max=0.0625 min=9.53674e-07 mean=0.00381124
+run1 errs>=0.01: 115 >=0.02: 25 >=0.06: 1
