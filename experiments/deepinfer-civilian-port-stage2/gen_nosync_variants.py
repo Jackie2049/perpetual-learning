@@ -9,19 +9,8 @@ import re
 import sys
 from pathlib import Path
 
-def resolve_path(arg_index, default_path):
-    """Resolves a path from sys.argv, ensuring it's within a safe base directory."""
-    if len(sys.argv) > arg_index:
-        # Sanitize input to prevent path traversal
-        user_input = sys.argv[arg_index]
-        if ".." in user_input or user_input.startswith("/"):
-            raise ValueError(f"Invalid path input: {user_input}. Path traversal is not allowed.")
-        return Path(__file__).parent / user_input
-    return default_path
-
-SRC = resolve_path(1, Path(__file__).parent / "pdl-sources")
-OUT = resolve_path(2, Path(__file__).parent / "pdlfree-variants-nosync")
-
+SRC = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).parent / "pdl-sources"
+OUT = Path(sys.argv[2]) if len(sys.argv) > 2 else Path(__file__).parent / "pdlfree-variants-nosync"
 OUT.mkdir(parents=True, exist_ok=True)
 
 SYNC_RE = re.compile(r"^\s*T\.pdl_sync\(\)\s*$")

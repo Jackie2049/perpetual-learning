@@ -95,7 +95,8 @@ def main():
         expected = {f"test_close_attempts_other_resources_after_failure[{error}-{stage}]"
                     for error in ("RuntimeError", "KeyboardInterrupt")
                     for stage in ("builder", "workers", "multimodal")}
-        expected.update({"test_close_before_driver_initialization[False]",
+        expected.update({"test_close_preserves_first_error_when_multiple_resources_fail",
+                         "test_close_before_driver_initialization[False]",
                          "test_close_before_driver_initialization[True]",
                          "test_destructor_suppresses_shutdown_error"})
     assert adapter.calls == 13, adapter.calls
