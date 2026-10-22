@@ -1010,6 +1010,43 @@ python -B experiments/scripts/verify_unirl_empty_backward.py /path/to/UniRL-git
 
 作者外部harness报告两rank CPU复现及2×H100的14项小型FP64线性模型通信/梯度检查，并非本项目复跑、预训练模型或真实recipe验收；完整HI3/BAGEL和多rank CUDA PPO仍未测。原issue已有该draft覆盖，不另开同题修复；实际collective/最后micro与optimizer状态缺口补[原M5参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不应用候选或干预其专项。
 
+## 冻结教师路由与调用方状态恢复
+
+**切回default不等于恢复调用方，冻结参数也不等于关闭梯度记录。** [#519](https://github.com/Tencent-Hunyuan/UniRL/pull/519)（2026-10-23读取open）收窄为冻结教师adapter的状态保护，不声称修复main已有的普通DiffusionOPD路由。固定head `fd1ca404804dc2cc0b395bd0aa5765c012104d9a`、base及实际祖先 `ff1d3a6b2a8070ba31d5e74ac02c0e965762569c`，ahead5/behind0；2文件35增12删，无提交测试。这里不是行为策略anchor生命周期、教师checkpoint或完整D2集成的实现。
+
+### 路由和梯度开关是两类状态
+
+[PEFT 0.20的set_adapter](https://github.com/huggingface/peft/blob/v0.20.0/src/peft/tuners/tuners_utils.py)遍历adapter banks，除选择活动adapter外，还按活动名称及inference_mode设置trainability，默认会使活动adapter可训练。因此“切到已冻结的教师”这一步本身可能改梯度开关，调用上下文必须管理副作用。
+
+[UniRL adapter_active](https://github.com/Tencent-Hunyuan/UniRL/blob/fd1ca404804dc2cc0b395bd0aa5765c012104d9a/unirl/train/lora.py)现在先拒绝default、不存在的教师及名称匹配参数中仍可训练的教师，而不是替调用方静默冻结。然后保存每个LoraLayer的完整`active_adapters`列表，以及全部模型参数原来的`requires_grad`。切换成功后立即恢复原梯度开关，在保持教师路由的同时不改变调用方的可训练集合；退出时先恢复逐层选择，再恢复梯度开关，避免恢复路由再次覆盖开关。旧实现退出后一律激活default并强制其可训练，无法保留逐层不同选择或调用方的额外冻结。
+
+| 状态 | 负责的行为 | 此上下文的范围 |
+| --- | --- | --- |
+| active_adapters | 本次forward使用哪个adapter | 保存并恢复逐层列表 |
+| requires_grad | 参数是否参与求导 | 保存并恢复所有原参数的开关 |
+| no_grad | 当前执行是否记录反向图 | 调用方负责，不由切换自动提供 |
+| model.training | dropout等模块的训练模式 | 不在此上下文管理范围内 |
+
+### 切换失败与恢复失败要分开
+
+切换动作移入try内部，所以某层切换抛错、前面若干层已改变时，也会进入finally尝试恢复；正文replay抛错同样如此。恢复路由另包一层finally，即使某次恢复`set_adapter`抛错，仍会尝试还原参数梯度开关。**这不是无条件的原子回滚**：恢复某层本身失败时，逐层循环可能中断，不能承诺其后各层选择均已恢复。这是按源码控制流界定范围，不是本机故障注入结果或新增修复候选。
+
+快照保存的是已有参数对象和布尔开关，不保存参数值、optimizer状态、RNG或外部资源，也没有为并发调用加锁。移除旧`trainable=`关键字是调用接口变化；不能将本次收窄解释成支持任意交错activation-checkpoint重算。重算发生时使用的路由状态，不能仅靠早先退出时恢复正确来认证。
+
+### 调用方与adapter banks
+
+[DiffusionOPD.prepare_part](https://github.com/Tencent-Hunyuan/UniRL/blob/fd1ca404804dc2cc0b395bd0aa5765c012104d9a/unirl/algorithms/diffusionopd.py)先按单一domain选择teacher，在`torch.no_grad()`与`adapter_active`内replay；退出上下文后再把teacher transition means detach到CPU。no_grad和路由保护分别承担不同职责，普通路由正确不代表所有异常退出都恢复原状态。
+
+adapter枚举与梯度设置改为遍历`adapter_layer_names`，不再只看lora_A/B；对bank元素调用`requires_grad_`，可覆盖Module与Parameter两种存储。[PEFT LoraLayer](https://github.com/huggingface/peft/blob/v0.20.0/src/peft/tuners/lora/layer.py)的embedding banks是ParameterDict，不能假定元素都有`.weight`。这不等于embedding-only教师checkpoint加载已打通：同版frozen loader的covered/权重映射仍以lora_A/B为范围，DoRA等也另有拒绝规则。
+
+### 源码身份与验证范围
+
+本机现有CPU环境缺PEFT、Transformers和Diffusers，未安装依赖或构造adapter替身。仅完整差异/方法阅读、base/head各一份lora.py语法检查，以及作者publication `5390b5afd3041b59f691f9a07b367f37eb24b0b0`与当前head的lora.py/diffusionopd.py语法和AST比较，均无模块导入或运行。
+
+publication与head的六个切换/枚举/名称解析helper及`DiffusionOPD.prepare_part` AST相同；但两份完整文件的blob不同，后续提交还调整了构造器与frozen injection等主线代码。作者报告的真实PEFT CPU异常路径与质量检查绑定到publication源码身份，不作当前整个head的重新执行，更不作GPU/训练/同步或恢复验收。网页缓存旧正文不覆盖本轮API的收窄描述。
+
+SHA256：head lora.py `5233713e1ec325f3218e592a3f6bca6eb89669d3ac126289194b4067ea1801d9`，base lora.py `ebfa9c52c54a29dcb3cda2fd88cba6427d80fe1c94ffdf8a189a8d8d7f9b16fc`；head diffusionopd.py `12ea1270d375cc3180eacb0a4d8a4585ed1009f5bb37810bd87a509640d68469`。真实PEFT/模型缺口补[原M5参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不部署候选或改其anchor/AReaL专项。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。
