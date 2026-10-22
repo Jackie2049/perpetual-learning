@@ -30,7 +30,7 @@ UniRL 仓库当前 **73+ open issues**，其中大量是带 `help wanted` 标签
 
 | 候选 | 类型 | 状态（2026-10-22） | 可做性 | 备注 |
 |---|---|---|---|---|
-| [#523](https://github.com/Tencent-Hunyuan/UniRL/issues/523) unified stack 跳过 anchor freeze/prepare_part | 跨栈契约 bug | **OPEN · 无 assignee · 无 PR** | **推荐**（结构修复纯 CPU 可验证） | 前置 #406/#495 已 merged；完整验收需 GPU。见 [candidate-523](candidate-523-anchor-lifecycle.md) |
+| [#523](https://github.com/Tencent-Hunyuan/UniRL/issues/523) unified stack 跳过 anchor freeze/prepare_part | 跨栈契约 bug | **OPEN · 无 assignee · 无 PR** | **修复已推 fork**：[fix-523-anchor-lifecycle @ 04101ad5](https://github.com/Jackie2049/UniRL/tree/fix-523-anchor-lifecycle)（base 6fd82cba，unified.py +8/-2）；CPU 单测 3 项 + AST 断言通过；**待用户审阅授权后再向上游开 PR**（铁律）；replay 完整验收需 GPU。见 [candidate-523](candidate-523-anchor-lifecycle.md) |
 | [#567](https://github.com/Tencent-Hunyuan/UniRL/issues/567) cosmos3 H20 cuBLAS workaround 被错版本 gate | 配置/验证型 | **OPEN · 无 assignee** | 需 H20 GPU（调查型） | 二选一：删死代码 或 放宽版本 gate，需实机验证 |
 | [#581](https://github.com/Tencent-Hunyuan/UniRL/issues/581) FSDP2 0-token micro collective mismatch | bug | **OPEN · 无 assignee** | 可做但已上 #580 路线 | reporter 给了完整 CPU repro；issue 说明 #580 phase 3 会修，宜与 #580 owner 沟通或作为其一部分 |
 | [#419](https://github.com/Tencent-Hunyuan/UniRL/issues/419) monitor-only rewards | enhancement/help wanted | **已 assign GoDiao** | 已认领 | 非我方空间 |
