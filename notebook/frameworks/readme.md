@@ -68,6 +68,7 @@
 - [vLLM V1 PD Separation & KV Transfer Architecture](vllm-pd-separation-kv-transfer-architecture.md)
 - [vLLM V1 Prefix-Cache Hash Computation 深度阅读 (2026-06-15)](vllm-prefix-cache-hash-collision-reading.md)
 - [前缀缓存失效模式分类（故障分类学）](prefix-cache-failure-modes.md)
+  - [权重版本与外部缓存](prefix-cache-failure-modes.md#权重版本与外部缓存) — verl#8323的namespace/step、暂停门及连接器前提；逻辑不匹配非删除，标签命中测试非真实权重更新验收，11模块仅语法核对。
 - [vLLM V1 Prefix Caching 源码深度分析](vllm-prefix-caching-v1.md)
 - [vLLM 量化推理管线源码阅读](vllm-quantization-pipeline-reading.md)
 - [vLLM Rust Frontend (vllm-rs) 源码级深度阅读](vllm-rust-frontend-reading.md)

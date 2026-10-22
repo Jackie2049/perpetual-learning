@@ -130,6 +130,8 @@ M1 已撤回确定因果诊断。已有数值、路由与异常控制未运行�
 
 分桶失败传播参考（2026-10-23，同一事项不另排队）：已有[#7366](https://github.com/verl-project/verl/pull/7366)，head `48d91130abff6b6704aadac3f382e0c3d344de93`、base/祖先 `dc709afb7a74fd2645640a4e5f2fdf40166b4fbb`，见[M1原8项CPU复查](../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#分桶接收失败与退出)。真实ZMQ/SHM进程测试两次通过，但设备入口为CPU facade；无CUDA IPC、NPU或vLLM实测，成功例只核名称不核tensor值。目的为日后同步诊断区分错误ACK、逐次超时、外层RPC退出与部分权重状态，非#8250根因证据。若M5独立选题且已有匹配获准环境，先固定torch/pyzmq/backend及named_tensors或delta路径、有效ms值，再决定运行原`tests/utils/test_bucketed_weight_transfer.py`的适用用例，分别保留pass/skip、值校验、异常/资源退出证据；真实callback恢复需独立进程，不在原训练注入故障或超时后盲目续用。缺软件栈/模型/设备、需新部署编译或影响原任务就停止并记未测；不自动应用、修改其方案、拉起训练或认定接单。
 
+外部KV版本盐参考（2026-10-23，同一事项不另排队）：[#8323](https://github.com/verl-project/verl/pull/8323)，head `4e93e4761ddde2ea5bf9d3032b86b6c3844126fd`、目标base16ec093c/祖先f2923cbf，[M1源码阅读](../notebook/frameworks/prefix-cache-failure-modes.md#权重版本与外部缓存)仅11完整模块compile，原CPU/设备套件未跑。默认reset不变；salt要求namespace/step真正区分权重且store保留带盐key，旧条目依eviction回收，非安装认证或回滚。作者单卡三后端GPU用例实际改标签/测命中，没有传入另一组权重；HiCache file旧KV复用报告为另行one-off，不挪为本项目。若M5日后独立选择且已有匹配获准环境，先固定backend/connector实现及软件版本、run namespace/真实权重身份、step、门和外部层，再决定是否跑适用原测试；须把标签/冷热命中与真实安装后配对输出分开，保留pass/skip和store eviction/容量条件。缺依赖/外层资源/模型授权、需新部署或影响原任务即停记未测，不拼接其他缓存候选、不自动切salt、全局清共享store、照搬CI的全局ray stop、下载模型或启动训练，也不认定#8250由此导致；此参考不代表接单。
+
 M5 最小下一步：先判断是否有获准使用的对应配置、完整 token/mask、checkpoint/版本身份和实际环境；条件齐备后按既有观测契约采集训练 actor、干净重载、live rollout 的配对观测，明确 raw/processed 概率与采样处理，保留逐 token 残差及重复基线。需要同步证据时区分发送、接收、应用、cache、版本标记及恢复生成；不由单个版本号或均值接近零认证一致。
 
 停止条件：缺私有材料/配对身份就记录“待资料”，不启动原报告的长训练，也不以公共 toy 或另一模型称已复现 #8250。对照有差异只能缩小范围；没有原始观测前，不设计新的修复、不发布旧诊断稿或承诺治愈阈值。完成标准是可追溯的配对证据，或明确缺失材料清单。

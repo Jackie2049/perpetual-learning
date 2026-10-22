@@ -68,6 +68,7 @@
 - [KV Cache 量化](fundamentals/kv-cache-quantization.md) — FP8/INT8/INT4/2-bit 量化对比、KIVI/KVQuant、vLL8 实践、组合优化
 - [Multi-head Latent Attention](fundamentals/mla.md) — DeepSeek-V2 MLA 低秩 KV 压缩、解耦 RoPE、矩阵吸收、93.3% KV Cache 减少
 - [Prefix Caching 深度对比](fundamentals/prefix-caching.md) — vLLM Hash vs SGLang Radix vs verl Group、收益量化
+- [权重版本与外部缓存](frameworks/prefix-cache-failure-modes.md#权重版本与外部缓存) — verl#8323命名隔离、删除、安装证明分开；三后端接线/原测试范围，未执行CPU套件或设备。
 - [GPU 显存优化](fundamentals/gpu-memory-optimization.md) — 训练显存估算公式、OOM 排查、ZeRO、碎片化
 - [GPU 内存分配器](fundamentals/gpu-memory-allocator.md) — PyTorch Caching Allocator、vLLM Paged Memory、碎片化分析
 - [CUDA Graphs](fundamentals/cuda-graphs.md) — 推理场景 kernel launch 开销优化，录制重放机制
