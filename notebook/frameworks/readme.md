@@ -116,6 +116,7 @@
 ## verl
 
 - [verl 训练与 rollout 的量化层审计](verl-quant-layer-audit.md) — #8132审计/24项CPU单测及新#8306 refit覆盖对照；loader/marker与测试证据不可混用，真机待M5。
+- [verl ModelOpt模块忽略](verl-quant-layer-audit.md#modelopt-模块忽略与子量化器) — #8329保留直接叶子并扩展模块后代；两版各11组名称集合控制，非ModelOpt/原34测试或训练验证。
 
 - [verl 异步训练策略版本与 logprob 对照条件](verl-async-logprob-provenance.md) — V1 separate-async的rollout/old/current来源、CPU快照路由、版本标签边界和最小观测契约；非训练根因证明
 - [verl 新版同步阶段 tracing](verl-async-logprob-provenance.md#新版阶段-tracing-与证据关联) — #8315新head原12项日志测试与实际lane表达式对照；helper通过不认证生产接线/后端显示，保留no-op和真实同步边界。

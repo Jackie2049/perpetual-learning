@@ -130,3 +130,56 @@ python experiments/scripts/verify_verl_quant_layer_audit.py /path/to/verl-git
 量化层审计补充的是“选层/格式”的可观测性；[策略来源笔记](verl-async-logprob-provenance.md)讨论的权重身份、raw/processed 概率与配对 token 仍需独立证据。这里的 Megatron/TE 量化路径不能直接解释 #8250 私有 FSDP2 异步训练退化，也没有推出新修复。
 
 两条固定路线的真机接续统一登记 [M5 真机交接](../../experiments/handoff-m5.md#verl-量化层审计新版复验)，先选版本路线，再记录分桶/finalize、实际 backend、graph，以及该路线实际具备的 guard/probe 覆盖。状态是待匹配环境，不代表已接单。M1 的本项源码学习收束，不探测服务器、不竞争已有 PR、不改 AReaL，不能用更多替身替代缺失的真机证据。
+
+## ModelOpt 模块忽略与子量化器
+
+**权重导出并正确加载，不保证 actor forward 已按要求跳过 fake quantization。** 2026-10-22 只读已有 [#8329](https://github.com/verl-project/verl/pull/8329)，作者LZC-BELIEVER，读取时open。固定head `5c7e2d2ed49bd9f448043883d96b6e191e187e95`、目标base `16ec093cc4a235c603c29aed1f2c4e9f551fab48`、merge-base `f2923cbf154731918b1e36db8c567433f349fede`；真正PR diff为2文件66增5删：生产helper新增3行，另一项是测试扩充及cpu→gpu文件改名。不是#8132的审计实现或#8306的refit路线更新，不能自动叠加或借用其验证。
+
+### 模块名和量化器名属于不同层次
+
+[`_ignore_patterns_to_quant_cfg`](https://github.com/verl-project/verl/blob/5c7e2d2ed49bd9f448043883d96b6e191e187e95/verl/utils/qat/modelopt.py#L281)旧版只追加 `{"quantizer_name": key, "enable": False}`。给模块模式 `*self_attention.linear_proj`，实际叶子名却是 `...linear_proj.input_quantizer` 和 `...linear_proj.weight_quantizer`，后缀使旧模式不能匹配。候选保留原规则，再追加 `key + ".*"`；点号使精确结尾in_proj_a不会顺带选择in_proj_ab，而不是粗略追加星号。
+
+[ModelOpt 0.44.0 官方消费代码](https://github.com/NVIDIA/Model-Optimizer/blob/c897fbeaaff66d53d61033f107885b7c5432f235/modelopt/torch/quantization/conversion.py)按列表顺序应用规则，后匹配项可覆盖前项；只对TensorQuantizer/SequentialQuantizer匹配名称，并使用fnmatch，另有专家名称归一化。只有enable=False而没有cfg的规则切换启用状态，不重写其他数值属性。verl将ignore_cfg放在preset/default规则之后，因而它能覆盖前面的enable；不是修改一份未被消费的配置字符串。
+
+本机两版原helper配标准库fnmatch的名称选择对照如下，输入为合成名称，不构造量化器：
+
+| 用户模式 | base选择 | head选择 | 范围 |
+|---|---|---|---|
+| `projection` / `projectio?` | 无 | projection的input、weight | 模块模式扩到后代 |
+| `projection.*` | 两个叶子 | 两个叶子 | 已有通配用法不变 |
+| `projection.weight_quantizer` | 仅weight | 仅weight | 保留直接叶子规则，input不被关闭 |
+| `*linear_attn.in_proj_a` | 无 | 仅in_proj_a的两个叶子 | in_proj_ab不被选中 |
+| `*self_attention.linear_proj` | 无 | 对应两个叶子 | 实际Megatron模块名 |
+
+每版共11组精确选择集合控制及空列表检查通过，另覆盖 `*input_quantizer`、3个旧alias和一个未映射名称。alias字典只对完整pattern相等时替换：`lm_head`→`*output_layer*`、`*mlp.gate`→`*router*`、`*self_attn*`→`*self_attention*`。它不是任意HF→Megatron名字翻译器；例如 `*self_attn.o_proj`不会自动变成 `*self_attention.linear_proj`。actor使用glob，rollout示例使用显式re:正则，必须对应到同一层，不能照抄同一字符串就认为两边选层相同。`.*`可匹配更深后代，也不是“只允许一层”的路径解析器。
+
+最小原helper复查（本地须已有固定Git对象；这里只展示模块边界与直接叶子两组）：
+
+```bash
+python3 -B - /path/to/verl-git <<'PY'
+import ast, fnmatch, subprocess, sys
+for rev in ['16ec093cc4a235c603c29aed1f2c4e9f551fab48',
+            '5c7e2d2ed49bd9f448043883d96b6e191e187e95']:
+    src = subprocess.check_output(['git', '-C', sys.argv[1], 'show',
+                                   rev + ':verl/utils/qat/modelopt.py'])
+    f = next(n for n in ast.parse(src).body if isinstance(n, ast.FunctionDef)
+             and n.name == '_ignore_patterns_to_quant_cfg')
+    ns = {}
+    exec(compile(ast.Module(body=[f], type_ignores=[]), 'original-helper', 'exec'), ns)
+    for pattern in ['projection', 'projection.weight_quantizer']:
+        rules = ns[f.name]([pattern])
+        print(rev[:8], pattern, [n for n in ['projection.input_quantizer',
+              'projection.weight_quantizer', 'projection_extra.weight_quantizer']
+              if any(fnmatch.fnmatch(n, r['quantizer_name']) for r in rules)])
+PY
+```
+
+### 配置检查与真实行为证据
+
+[原测试](https://github.com/verl-project/verl/blob/5c7e2d2ed49bd9f448043883d96b6e191e187e95/tests/utils/test_modelopt_mxfp8_on_gpu.py)不再只断言配置末尾出现ignore字符串，而是调用真实mtq.quantize后检查两个叶子的is_enabled、兄弟隔离、直接叶子模式、alias和原preset未变；BF16例要求forward、weight.grad和input.grad与未量化参考精确相等。关闭量化器不等于冻结该层参数。这些是原测试的行为要求，本机未执行它们。
+
+作者PR正文报告ModelOpt0.44.0、compressed-tensors0.17/0.18两环境各34项通过；H100/Qwen3-0.6B、单seed、两臂各10步GRPO中，被忽略28层的56个启用量化器变成0，首层QDQ误差由0.0859375到0，参数仍逐步更新。与此同时，选定首层导出BF16与vLLM实际加载权重在**修复前后均11/11相等**。这说明字节refit检查与actor计算精度可以给出不同层面的答案，不能只凭前者认证forward一致。作者未把不同轨迹的reward/K3均值当改进证明，也未跑多GPU、MXFP8端到端或Qwen3.5/GDN；这些都是作者报告，不是本项目真机结果或当前head全栈验收。
+
+固定head的[GPU单测workflow](https://github.com/verl-project/verl/blob/5c7e2d2ed49bd9f448043883d96b6e191e187e95/.github/workflows/gpu_unit_tests.yml)排除`*on_cpu.py`；改名让文件进入该收集范围，并不保证任务实际触发、依赖存在或测试通过。新增BF16例未显式将tensor送到CUDA，文件名本身也不是每个断言都在GPU执行的证据。
+
+M1 Python3.12.13只执行两版完整原helper AST及标准库名称控制，对两版modelopt.py和原测试文件共4模块内存compile通过；未导入torch/ModelOpt/compressed-tensors、运行原pytest、量化器、梯度或设备。已有环境find_spec确认缺modelopt/compressed_tensors，不补装、不以stub替代真实mtq；临时控制不新增永久一次性工具。SHA256：生产base `8ef392c4592728c77cd693d0762564ee74b5c2f7867ac83fc2aad151f3801e9e`、head `c926b4987e48c5e487865c62046de0547bff75cb551bbd50691a3d16129b1828`；测试base `27987bd731b460fb69d13e67bcabb58b041caba1ee80255fed6b7591f1fd8c1f`、head `76ccbb40aa951c1695b1912ccb520d4be5f42fa6bd1608afa3d1b56137382b9b`。真实行为缺口补[原M5量化条目](../../experiments/handoff-m5.md#verl-量化层审计新版复验)，不另排队/应用或开展H100训练；本题收束，不据此诊断#8250或扩写量化器替身。

@@ -24,6 +24,8 @@
 
 ## 运行接续
 
+- **M1 ModelOpt忽略学习收束（2026-10-22）**：同步M5的251920b及新候选/部署说明d1e8353/d28d673，不改其方案。只读新verl#8329 head5c7e2d2e/base16ec093c（祖先f2923cbf），仅3行生产新增；见[原量化笔记](notebook/frameworks/verl-quant-layer-audit.md#modelopt-模块忽略与子量化器)。原helper两版各11组名称集合+空列表通过，4模块compile；缺ModelOpt/CT，不运行原34或加stub。key.*关闭后代且保留直接叶子，alias非通用翻译；refit字节相等不证明actor无fake quant。原测试/作者H100报告分开，真机缺口补[原M5量化条目](experiments/handoff-m5.md#verl-量化层审计新版复验)，不另排队/应用/开训练。本题收束，后续选择非ignore/量化替身新问题；GPU/AReaL/#8313边界不变，正常同步main、无手动网站构建或部署。
+
 - **M1聊天封装学习收束（2026-10-22）**：只读已有DeepInfer#147 headaaf1e62c/base774ce244，首问前4096字符亲和不认证会话/命中，完成原因由消费计数推导、非engine reason原样返回；见[原调研](notebook/frameworks/deepinfer-initial-survey.md#聊天服务的亲和路由与完成口径)。8项原纯affinity函数控制、两Python compile/bash -n通过，其余接线仅读源码，未启动HTTP/进程/模型/设备。前端读完、客户端收到、abort发送与资源确认分开，零errors指标不能认证无错。真机缺口及时补[原M5条目](experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)，不另排队/启服务/改移植；本题收束，后续选择非亲和/网络/完成记账替身的新问题，GPU/AReaL/#8313及网站边界不变。
 
 - **M1 Sage分层装载学习收束（2026-10-22）**：只读新#210 head2a421f12/base9bd9cf24，Sage独立engine绕过V4 Worker/paged KV/MTP，不是V4.1单卡支持。见[原调研](notebook/frameworks/deepinfer-initial-survey.md#sage-fp8-分层装载与独立引擎)；五模块compile/完整标准库config实例化，默认主机专家池30.0586GiB、14GiB理论4769槽，非真实checkpoint/设备预算。作者5090 SM120报告与本机验证分开；FP8失败转BF16仍走CUDA，热缓存不能当冷启动。新线索及选型/资源/最小观测/停止条件及时补[原M5条目](experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)，不另排队/自动采用、下载权重或干预M5移植。本题收束，后续另选非Sage/LRU预算/蒸馏/归约变体的源码问题；GPU/AReaL/#8313及网站边界不变。
