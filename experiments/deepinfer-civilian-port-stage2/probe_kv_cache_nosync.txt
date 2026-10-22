@@ -1,0 +1,105 @@
+device=NVIDIA GeForce RTX 4090 capability=(8, 9)
+monkeypatched ops: load=tilelang.jit store=tilelang.jit
+load cases: 30, store cases: 30
+2026-10-22 08:54:13  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_load_paged_kv_cache` with `out_idx=None`
+2026-10-22 08:54:15  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_load_paged_kv_cache`
+PASS load V41, main/swa kv.|64|1|short
+PASS load V41, main/swa kv.|64|233|short
+PASS load V41, main/swa kv.|64|67890|short
+2026-10-22 08:54:16  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_load_paged_kv_cache` with `out_idx=None`
+2026-10-22 08:54:18  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_load_paged_kv_cache`
+PASS load V41, main/swa kv.|133|1|short
+PASS load V41, main/swa kv.|133|233|short
+PASS load V41, main/swa kv.|133|67890|short
+2026-10-22 08:54:18  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_load_paged_kv_cache` with `out_idx=None`
+2026-10-22 08:54:20  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_load_paged_kv_cache`
+PASS load V41, FP4 main kv.|64|1|short
+PASS load V41, FP4 main kv.|64|233|short
+PASS load V41, FP4 main kv.|64|67890|short
+2026-10-22 08:54:21  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_load_paged_kv_cache` with `out_idx=None`
+2026-10-22 08:54:23  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_load_paged_kv_cache`
+PASS load V41, FP4 main kv.|133|1|short
+PASS load V41, FP4 main kv.|133|233|short
+PASS load V41, FP4 main kv.|133|67890|short
+2026-10-22 08:54:24  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_load_paged_kv_cache` with `out_idx=None`
+2026-10-22 08:54:25  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_load_paged_kv_cache`
+PASS load V4/V41, index kv.|32|1|short
+PASS load V4/V41, index kv.|32|233|short
+PASS load V4/V41, index kv.|32|67890|short
+2026-10-22 08:54:26  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_load_paged_kv_cache` with `out_idx=None`
+2026-10-22 08:54:28  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_load_paged_kv_cache`
+PASS load V4/V41, index kv.|64|1|short
+PASS load V4/V41, index kv.|64|233|short
+PASS load V4/V41, index kv.|64|67890|short
+2026-10-22 08:54:28  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_load_paged_kv_cache` with `out_idx=None`
+2026-10-22 08:54:30  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_load_paged_kv_cache`
+PASS load V4, per token fp32 s|32|1|short
+PASS load V4, per token fp32 s|32|233|short
+PASS load V4, per token fp32 s|32|67890|short
+2026-10-22 08:54:31  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_load_paged_kv_cache` with `out_idx=None`
+2026-10-22 08:54:32  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_load_paged_kv_cache`
+PASS load V4, per token fp32 s|64|1|short
+PASS load V4, per token fp32 s|64|233|short
+PASS load V4, per token fp32 s|64|67890|short
+2026-10-22 08:54:33  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_load_paged_kv_cache` with `out_idx=None`
+2026-10-22 08:54:35  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_load_paged_kv_cache`
+PASS load V41, index kv.|32|1|short
+PASS load V41, index kv.|32|233|short
+PASS load V41, index kv.|32|67890|short
+2026-10-22 08:54:35  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_load_paged_kv_cache` with `out_idx=None`
+2026-10-22 08:54:37  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_load_paged_kv_cache`
+PASS load V41, index kv.|64|1|short
+PASS load V41, index kv.|64|233|short
+PASS load V41, index kv.|64|67890|short
+2026-10-22 08:54:38  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_store_kv_cache` with `out_idx=None`
+2026-10-22 08:54:40  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_store_kv_cache`
+PASS store V41, main/swa kv.|64|1|random_invalid
+PASS store V41, main/swa kv.|64|233|random_invalid
+PASS store V41, main/swa kv.|64|67890|random_invalid
+2026-10-22 08:54:41  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_store_kv_cache` with `out_idx=None`
+2026-10-22 08:54:43  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_store_kv_cache`
+PASS store V41, main/swa kv.|133|1|random_invalid
+PASS store V41, main/swa kv.|133|233|random_invalid
+PASS store V41, main/swa kv.|133|67890|random_invalid
+2026-10-22 08:54:44  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_store_kv_cache` with `out_idx=None`
+2026-10-22 08:54:46  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_store_kv_cache`
+PASS store V41, FP4 main kv.|64|1|random_invalid
+PASS store V41, FP4 main kv.|64|233|random_invalid
+PASS store V41, FP4 main kv.|64|67890|random_invalid
+2026-10-22 08:54:48  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_store_kv_cache` with `out_idx=None`
+2026-10-22 08:54:50  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_store_kv_cache`
+PASS store V41, FP4 main kv.|133|1|random_invalid
+PASS store V41, FP4 main kv.|133|233|random_invalid
+PASS store V41, FP4 main kv.|133|67890|random_invalid
+2026-10-22 08:54:52  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_store_kv_cache` with `out_idx=None`
+2026-10-22 08:54:54  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_store_kv_cache`
+PASS store V4/V41, index kv.|32|1|random_invalid
+PASS store V4/V41, index kv.|32|233|random_invalid
+PASS store V4/V41, index kv.|32|67890|random_invalid
+2026-10-22 08:54:55  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_store_kv_cache` with `out_idx=None`
+2026-10-22 08:54:57  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_store_kv_cache`
+PASS store V4/V41, index kv.|64|1|random_invalid
+PASS store V4/V41, index kv.|64|233|random_invalid
+PASS store V4/V41, index kv.|64|67890|random_invalid
+2026-10-22 08:54:58  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_store_kv_cache` with `out_idx=None`
+2026-10-22 08:55:00  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_store_kv_cache`
+PASS store V4, per token fp32 s|32|1|random_invalid
+PASS store V4, per token fp32 s|32|233|random_invalid
+PASS store V4, per token fp32 s|32|67890|random_invalid
+2026-10-22 08:55:01  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_store_kv_cache` with `out_idx=None`
+2026-10-22 08:55:03  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_store_kv_cache`
+PASS store V4, per token fp32 s|64|1|random_invalid
+PASS store V4, per token fp32 s|64|233|random_invalid
+PASS store V4, per token fp32 s|64|67890|random_invalid
+2026-10-22 08:55:04  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_store_kv_cache` with `out_idx=None`
+2026-10-22 08:55:06  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_store_kv_cache`
+PASS store V41, index kv.|32|1|random_invalid
+PASS store V41, index kv.|32|233|random_invalid
+PASS store V41, index kv.|32|67890|random_invalid
+2026-10-22 08:55:06  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_store_kv_cache` with `out_idx=None`
+2026-10-22 08:55:09  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_store_kv_cache`
+PASS store V41, index kv.|64|1|random_invalid
+PASS store V41, index kv.|64|233|random_invalid
+PASS store V41, index kv.|64|67890|random_invalid
+== load: 30/30 passed ==
+== store: 30/30 passed ==

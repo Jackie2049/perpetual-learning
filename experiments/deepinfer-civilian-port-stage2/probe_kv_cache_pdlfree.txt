@@ -1,0 +1,163 @@
+device=NVIDIA GeForce RTX 4090 capability=(8, 9)
+monkeypatched ops: load=tilelang.jit store=tilelang.jit
+load cases: 30, store cases: 30
+2026-10-22 08:48:34  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `per_token_cast_kernel` with `out_idx=None`
+2026-10-22 08:48:36  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `per_token_cast_kernel`
+PASS load V41, main/swa kv.|64|1|short
+PASS load V41, main/swa kv.|64|233|short
+FAIL load V41, main/swa kv.|64|67890|short: InternalError: CUDALaunch Error: CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE
+ grid=(1900,2,1),  block=(256,1,1) dyn_smem_bytes=0
+
+2026-10-22 08:48:39  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_load_paged_kv_cache` with `out_idx=None`
+2026-10-22 08:48:42  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_load_paged_kv_cache`
+PASS load V41, main/swa kv.|133|1|short
+PASS load V41, main/swa kv.|133|233|short
+FAIL load V41, main/swa kv.|133|67890|short: InternalError: CUDALaunch Error: CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE
+ grid=(944,5,1),  block=(256,1,1) dyn_smem_bytes=0
+
+2026-10-22 08:48:43  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_load_paged_kv_cache` with `out_idx=None`
+2026-10-22 08:48:45  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_load_paged_kv_cache`
+PASS load V41, FP4 main kv.|64|1|short
+PASS load V41, FP4 main kv.|64|233|short
+FAIL load V41, FP4 main kv.|64|67890|short: InternalError: CUDALaunch Error: CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE
+ grid=(1900,2,1),  block=(256,1,1) dyn_smem_bytes=0
+
+2026-10-22 08:48:46  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_load_paged_kv_cache` with `out_idx=None`
+2026-10-22 08:48:49  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_load_paged_kv_cache`
+PASS load V41, FP4 main kv.|133|1|short
+PASS load V41, FP4 main kv.|133|233|short
+FAIL load V41, FP4 main kv.|133|67890|short: InternalError: CUDALaunch Error: CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE
+ grid=(944,5,1),  block=(256,1,1) dyn_smem_bytes=0
+
+2026-10-22 08:48:50  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `per_token_cast_kernel` with `out_idx=None`
+2026-10-22 08:48:52  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `per_token_cast_kernel`
+2026-10-22 08:48:53  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_load_paged_kv_cache` with `out_idx=None`
+2026-10-22 08:48:56  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_load_paged_kv_cache`
+2026-10-22 08:48:56  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `cast_back_kernel` with `out_idx=None`
+2026-10-22 08:48:58  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `cast_back_kernel`
+PASS load V4/V41, index kv.|32|1|short
+PASS load V4/V41, index kv.|32|233|short
+FAIL load V4/V41, index kv.|32|67890|short: InternalError: CUDALaunch Error: CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE
+ grid=(3714,1,1),  block=(256,1,1) dyn_smem_bytes=0
+
+2026-10-22 08:48:59  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_load_paged_kv_cache` with `out_idx=None`
+2026-10-22 08:49:02  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_load_paged_kv_cache`
+PASS load V4/V41, index kv.|64|1|short
+PASS load V4/V41, index kv.|64|233|short
+FAIL load V4/V41, index kv.|64|67890|short: InternalError: CUDALaunch Error: CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE
+ grid=(1900,1,1),  block=(256,1,1) dyn_smem_bytes=0
+
+2026-10-22 08:49:02  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `per_token_cast_kernel` with `out_idx=None`
+2026-10-22 08:49:04  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `per_token_cast_kernel`
+2026-10-22 08:49:05  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_load_paged_kv_cache` with `out_idx=None`
+2026-10-22 08:49:07  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_load_paged_kv_cache`
+2026-10-22 08:49:08  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `cast_back_kernel` with `out_idx=None`
+2026-10-22 08:49:10  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `cast_back_kernel`
+PASS load V4, per token fp32 s|32|1|short
+PASS load V4, per token fp32 s|32|233|short
+FAIL load V4, per token fp32 s|32|67890|short: InternalError: CUDALaunch Error: CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE
+ grid=(3714,1,1),  block=(128,1,1) dyn_smem_bytes=0
+
+2026-10-22 08:49:10  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_load_paged_kv_cache` with `out_idx=None`
+2026-10-22 08:49:13  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_load_paged_kv_cache`
+PASS load V4, per token fp32 s|64|1|short
+PASS load V4, per token fp32 s|64|233|short
+FAIL load V4, per token fp32 s|64|67890|short: InternalError: CUDALaunch Error: CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE
+ grid=(1900,1,1),  block=(256,1,1) dyn_smem_bytes=0
+
+2026-10-22 08:49:13  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `per_token_cast_kernel` with `out_idx=None`
+2026-10-22 08:49:15  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `per_token_cast_kernel`
+2026-10-22 08:49:16  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_load_paged_kv_cache` with `out_idx=None`
+2026-10-22 08:49:18  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_load_paged_kv_cache`
+2026-10-22 08:49:19  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `cast_back_kernel` with `out_idx=None`
+2026-10-22 08:49:21  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `cast_back_kernel`
+PASS load V41, index kv.|32|1|short
+PASS load V41, index kv.|32|233|short
+FAIL load V41, index kv.|32|67890|short: InternalError: CUDALaunch Error: CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE
+ grid=(3714,1,1),  block=(128,1,1) dyn_smem_bytes=0
+
+2026-10-22 08:49:21  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_load_paged_kv_cache` with `out_idx=None`
+2026-10-22 08:49:24  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_load_paged_kv_cache`
+PASS load V41, index kv.|64|1|short
+PASS load V41, index kv.|64|233|short
+FAIL load V41, index kv.|64|67890|short: InternalError: CUDALaunch Error: CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE
+ grid=(1900,1,1),  block=(256,1,1) dyn_smem_bytes=0
+
+2026-10-22 08:49:25  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `per_token_cast_kernel` with `out_idx=None`
+2026-10-22 08:49:26  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `per_token_cast_kernel`
+PASS store V41, main/swa kv.|64|1|random_invalid
+PASS store V41, main/swa kv.|64|233|random_invalid
+FAIL store V41, main/swa kv.|64|67890|random_invalid: InternalError: CUDALaunch Error: CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE
+ grid=(8487,1,1),  block=(64,1,1) dyn_smem_bytes=0
+
+2026-10-22 08:49:27  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_store_kv_cache` with `out_idx=None`
+2026-10-22 08:49:30  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_store_kv_cache`
+PASS store V41, main/swa kv.|133|1|random_invalid
+PASS store V41, main/swa kv.|133|233|random_invalid
+FAIL store V41, main/swa kv.|133|67890|random_invalid: InternalError: CUDALaunch Error: CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE
+ grid=(8487,1,1),  block=(64,1,1) dyn_smem_bytes=0
+
+2026-10-22 08:49:31  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_store_kv_cache` with `out_idx=None`
+2026-10-22 08:49:34  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_store_kv_cache`
+PASS store V41, FP4 main kv.|64|1|random_invalid
+PASS store V41, FP4 main kv.|64|233|random_invalid
+FAIL store V41, FP4 main kv.|64|67890|random_invalid: InternalError: CUDALaunch Error: CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE
+ grid=(8487,1,1),  block=(64,1,1) dyn_smem_bytes=0
+
+2026-10-22 08:49:36  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_store_kv_cache` with `out_idx=None`
+2026-10-22 08:49:39  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_store_kv_cache`
+PASS store V41, FP4 main kv.|133|1|random_invalid
+PASS store V41, FP4 main kv.|133|233|random_invalid
+FAIL store V41, FP4 main kv.|133|67890|random_invalid: InternalError: CUDALaunch Error: CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE
+ grid=(8487,1,1),  block=(64,1,1) dyn_smem_bytes=0
+
+2026-10-22 08:49:41  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `per_token_cast_kernel` with `out_idx=None`
+2026-10-22 08:49:43  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `per_token_cast_kernel`
+2026-10-22 08:49:44  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_store_kv_cache` with `out_idx=None`
+2026-10-22 08:49:47  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_store_kv_cache`
+PASS store V4/V41, index kv.|32|1|random_invalid
+PASS store V4/V41, index kv.|32|233|random_invalid
+FAIL store V4/V41, index kv.|32|67890|random_invalid: InternalError: CUDALaunch Error: CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE
+ grid=(4244,1,1),  block=(64,1,1) dyn_smem_bytes=0
+
+2026-10-22 08:49:48  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_store_kv_cache` with `out_idx=None`
+2026-10-22 08:49:51  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_store_kv_cache`
+PASS store V4/V41, index kv.|64|1|random_invalid
+PASS store V4/V41, index kv.|64|233|random_invalid
+FAIL store V4/V41, index kv.|64|67890|random_invalid: InternalError: CUDALaunch Error: CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE
+ grid=(4244,1,1),  block=(64,1,1) dyn_smem_bytes=0
+
+2026-10-22 08:49:52  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `per_token_cast_kernel` with `out_idx=None`
+2026-10-22 08:49:54  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `per_token_cast_kernel`
+2026-10-22 08:49:54  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_store_kv_cache` with `out_idx=None`
+2026-10-22 08:49:57  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_store_kv_cache`
+PASS store V4, per token fp32 s|32|1|random_invalid
+PASS store V4, per token fp32 s|32|233|random_invalid
+FAIL store V4, per token fp32 s|32|67890|random_invalid: InternalError: CUDALaunch Error: CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE
+ grid=(4244,1,1),  block=(64,1,1) dyn_smem_bytes=0
+
+2026-10-22 08:49:58  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_store_kv_cache` with `out_idx=None`
+2026-10-22 08:50:01  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_store_kv_cache`
+PASS store V4, per token fp32 s|64|1|random_invalid
+PASS store V4, per token fp32 s|64|233|random_invalid
+FAIL store V4, per token fp32 s|64|67890|random_invalid: InternalError: CUDALaunch Error: CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE
+ grid=(4244,1,1),  block=(64,1,1) dyn_smem_bytes=0
+
+2026-10-22 08:50:02  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `per_token_cast_kernel` with `out_idx=None`
+2026-10-22 08:50:03  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `per_token_cast_kernel`
+2026-10-22 08:50:04  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_store_kv_cache` with `out_idx=None`
+2026-10-22 08:50:07  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_store_kv_cache`
+PASS store V41, index kv.|32|1|random_invalid
+PASS store V41, index kv.|32|233|random_invalid
+FAIL store V41, index kv.|32|67890|random_invalid: InternalError: CUDALaunch Error: CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE
+ grid=(4244,1,1),  block=(64,1,1) dyn_smem_bytes=0
+
+2026-10-22 08:50:07  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:137): TileLang begins to compile kernel `_store_kv_cache` with `out_idx=None`
+2026-10-22 08:50:10  [TileLang:tilelang.jit.kernel:INFO] (kernel.py:145): TileLang completes to compile kernel `_store_kv_cache`
+PASS store V41, index kv.|64|1|random_invalid
+PASS store V41, index kv.|64|233|random_invalid
+FAIL store V41, index kv.|64|67890|random_invalid: InternalError: CUDALaunch Error: CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE
+ grid=(4244,1,1),  block=(64,1,1) dyn_smem_bytes=0
+
+== load: 20/30 passed ==
+== store: 20/30 passed ==

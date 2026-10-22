@@ -80,3 +80,22 @@
 **结论升级**：从「5 个 kernel 编译+数值、38 个静态确认」提升为「**43 个 kernel 全量文本级改写 + SM89 编译全过**」——「去 PDL 改写」的工程量（28 文件、51+8 处调用）与可机械性在真实硬件上全量实证，PDL 不是 4090 移植的唯一/隐藏障碍（至少编译层）。数值语义保持仍以 5 个 kernel 的对照为证据，其余 38 个的数值语义未逐一对照（若继续完整移植需逐个补）。
 
 边界（三续）：编译扫查使用各工厂的最小合法参数（含 `fused_transform` 无 norm/rope/cast 的最简路径、`load/store_kv_cache` 用 V41_FORMAT e4m3 布局）；未遍历全部参数组合与量化布局变体；`state_cache` 条件分支用 enable 参数覆盖，disable 路径（无 sync_grid）本就无需改写；vendor swiglu（DeepGEMM 第三方包，非 DeepInfer 主包 import 链）1 处 `pdl_sync` 未在本次扫查（其用 `@tilelang.jit` 装饰、依赖 deep_gemm，深潜包外）；性能影响仍未测。
+
+### load/store_kv_cache 全矩阵数值验证 + sync_grid grid 上限发现（2026-10-22 四续，M5）
+
+**任务**：把 43 个 kernel 中每请求必经的 KV 缓存存取两个 kernel（`load_paged_kv_cache_tl` / `store_kv_cache_tl`，编译扫查只用了最小参数）推进为**全矩阵数值验证**，并检查上游自带测试矩阵是否在去 PDL 变体下全过。
+
+**方法（复用上游测试而非自写参考）**：DeepInfer 上游 wrapper（`tilelang_ops/load_paged_kv_cache.py` / `store_kv_cache.py`）自带 GPU 测试函数 `test_load_paged_kv_cache` / `test_store_cache`，内部与 torch 参考实现（`load_paged_kv_cache_ref` / `store_kv_cache_ref` + `ref_cast_to_bf16`/`ref_cast_from_bf16`）逐字节对照。探针 `probe_kv_cache_pdlfree.py`：
+1. 临时隐藏 cuda 包内 `*_pdlfree.py`（**ops 模块遍历 backend 包所有模块、重导出 `*_tl` 工厂，变体与原件并存会 `backend symbol collision` 断言失败**——本身即移植要点：变体不能留在 backend 包内，需替换原文件或放包外）；
+2. `import ops` 后恢复隐藏文件，用 `importlib.util.spec_from_file_location` 按包内模块名加载变体（保持相对导入可用），monkeypatch `ops.load_paged_kv_cache_tl` / `ops.store_kv_cache_tl` 指向变体；
+3. 直接调用上游原始测试函数（`__wrapped__` 不可用则用原函数），跑完整用例矩阵：**5 布局 × 2 block_size × 3 token 数**（V41 e4m3 / V41 FP4 / FP4 index / FP8-fp32-sf index / MXFP8 index；block_size 64/133 或 32/64；num_tokens 1/233/67890）+ store 的 random_invalid 三次 update（负值、幅度扫描、全零量化）。
+
+**结果 A：pdlfree 变体（pdl_sync→sync_grid）小用例 20/20 PASS，大用例 10/10 FAIL**：
+- **小用例全过**：load 10/10 + store 10/10（1 与 233 token，全部 5 布局 × block_size）——`torch.equal`/`allclose` 逐字节对照 PASS，含 e4m3/fp4/ue8m0 量化、token_interleaved、index/main/SWA 布局、跨页、canary 保护（store 三次 update 后 backing 逐字节相等）。**这两个 kernel 的数值语义在去 PDL 改写后保持（小输入）**。
+- **大用例全 FAIL**：67890 token 时 `InternalError: CUDALaunch Error: CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE`（load grid=3714/1900、store grid=4244）。**新发现：tilelang `sync_grid()`（codegen_cuda.cc:3008 生成 `cooperative_groups::this_grid().sync()`）要求 cooperative launch（`cuLaunchCooperativeKernel`），grid 必须全部 block 同时驻留——4090（128 SM、每 SM 约 8-16 block）上限约 1024-4096 grid。67890 token 的 segment/block 数超限直接启动失败；上游 PDL 版本（`cudaGridDependencySynchronize`）无此驻留限制**。**这是 sync_grid 替代引入的新硬边界（运行期而非编译期），编译扫查（最小参数、小 grid）未暴露。**
+
+**结果 B：nosync 变体（删除而非替换 pdl_sync）全矩阵 60/60 PASS**：把 `pdl_sync` 直接删除（连 sync_grid 都不放）生成 `*_nosync.py` 后重跑同一矩阵——**load 30/30 + store 30/30 全过，含全部 67890 大用例**。语义依据：这两个 kernel 的 `pdl_sync` 注释明确是「wait for dependency launch to produce load_segments/slot_mapping」——**顺序 launch（非 PDL）下前序 kernel 由 stream 顺序天然保证完成，同步不需要**；删除后无 cooperative-launch 限制。**结论修正：对「等待前序 kernel 数据」型的 pdl_sync（此类是多数），正确去 PDL 改写是删除而非替换成 sync_grid**；sync_grid 只适用于 kernel 内部 grid 级数据依赖（同一 launch 内跨 block 通信）的情形。
+
+**证据**：`probe_kv_cache_pdlfree.py`（monkeypatch + 全矩阵驱动，`KV_PROBE_VARIANT=pdlfree|nosync` 切换）、`probe_kv_cache_pdlfree.log`（pdlfree 20/20+10 FAIL）、`probe_kv_cache_nosync.log`（nosync 60/60）、`pdlfree-variants/load_paged_kv_cache_nosync.py` / `store_kv_cache_nosync.py`（删除 sync 的变体）。
+
+**边界**：数值对照=上游测试矩阵（布局/形状/量化覆盖广，但每 kernel 单次编译后多 token 数复用同一 kernel，不覆盖全部参数组合）；cooperative-launch 上限值是 4090（128 SM）实测，其他 SM 数设备需重测；`nosync` 删除仅对「等待前序 kernel」型 pdl_sync 安全（load/store 注释明确）；其余 41 个 kernel 的 pdl_sync 属于哪种类型、能否安全删除未逐个核对（多数同为依赖 launch 产生的前序数据，需按注释/数据流逐一确认）；性能影响（PDL 重叠）仍未测。
