@@ -103,3 +103,28 @@ M1 已撤回确定因果诊断。已有数值、路由与异常控制未运行�
 M5 最小下一步：先判断是否有获准使用的对应配置、完整 token/mask、checkpoint/版本身份和实际环境；条件齐备后按既有观测契约采集训练 actor、干净重载、live rollout 的配对观测，明确 raw/processed 概率与采样处理，保留逐 token 残差及重复基线。需要同步证据时区分发送、接收、应用、cache、版本标记及恢复生成；不由单个版本号或均值接近零认证一致。
 
 停止条件：缺私有材料/配对身份就记录“待资料”，不启动原报告的长训练，也不以公共 toy 或另一模型称已复现 #8250。对照有差异只能缩小范围；没有原始观测前，不设计新的修复、不发布旧诊断稿或承诺治愈阈值。完成标准是可追溯的配对证据，或明确缺失材料清单。
+
+## verl #8281 超长 prompt 截断修复 —— GPU e2e 训练冒烟
+
+状态：M1 已本地完成修复 + CPU 单测验证；PR 已建（#8313）。用户 2026-10-22 明确要求交 M5 在 GPU 上跑一次 verl e2e 训练作冒烟测试，心里更有底。**这是用户指派的真机验证任务**，优先级按 M5 既有任务顺序；本记录不代表 M5 已接单或服务器已在线。
+
+任务背景：`_cap_text_prompt_length` 无条件左截断、忽略 `data.truncation` 四策略。修复让它遵循 `error/left/right/middle`（`error` 时 fail-loudly）。
+
+- **PR**：[verl #8313](https://github.com/verl-project/verl/pull/8313)，head 分支 `Jackie2049:fix-8281-truncation-policy`（fork `Jackie2049/verl`），base 上游 verl main。
+- **改动**（仅 2 文件，129 增 / 3 删）：
+  - `verl/experimental/agent_loop/agent_loop.py`：`_cap_text_prompt_length` 遵循 `data.truncation`。
+  - `tests/experimental/agent_loop/test_cap_text_prompt_length.py`：CPU-only 单测，11 项（M1 本地 Python 3.12.13 venv 全过；修复前对照验证失败，证明测试有效）。
+- **本地验证范围**：M1 已跑 `test_cap_text_prompt_length.py` 11 项通过；**未跑 verl 完整 e2e 训练**（本机无 GPU）。
+
+给 M5 的验证目标：在 GPU（如 4090-1）上用**本 PR 的 patch 分支**跑一个 **verl e2e 训练冒烟**（小模型、少量 step），确认：
+1. 正常训练路径不因该改动报错/退化（agent_loop 默认 `error` 策略，prompt 不超长时不应触发截断/raise）。
+2. 若可配置，验证 `data.truncation` 不同策略在真实训练中行为符合预期。
+3. 保留版本、命令、配置、原始日志/失败、真实执行范围。
+
+注意事项：
+- 用我们的 fork 分支 `fix-8281-truncation-policy`（已含修复 + 单测），非上游 main。
+- 冒烟测试目标小、低成本（小模型、少 step），不启动长训练。
+- 任何对上游发言/提交仍按用户原授权边界，交接不增加对外操作权限。
+- 若 GPU/环境条件不足，记录"待资源/待资料"及恢复条件，不强行启动。
+
+停止条件：完成标准是有可追溯的 e2e 冒烟结果（正常跑通 + 记录版本/命令/日志），或明确缺失条件清单（缺 GPU/环境/模型授权等）。
