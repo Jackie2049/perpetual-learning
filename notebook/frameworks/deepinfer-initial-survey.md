@@ -1826,3 +1826,33 @@ SHA256：sequence.hpp base `67ef6ea70ee31a519fd632ee2d7be4710a6d796f786cf336dd3d
 原生 engine 使用新增只读 `block_table` binding，仍要核对重建后的实际扩展身份。作者另报 GB300 模型/服务实验，不能与这 3 项逻辑测试或本项目记录合并为同一证据。本机仅以 Python 3.12.13 对 host_cache.py、kernels.py、原测试及 engine.pyi 四文件做完整 AST/内存 compile，确认有 3 个原测试函数；**没有运行 3 项测试**，也未 exec 模块、导入 torch/deepinfer、JIT、调用设备或构造 CPU 调度替身。
 
 运行缺口、池预算及原始入口已补[同一 M5 交接](../../experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)，不另排队或自动编译/切环境。源码 SHA256：host_cache.py `93fd32250bfda286d3064325bfe55253e48223725ba62f95ab77254fa82ca7cd`；原测试 `03aecfa74f76d731867120c26e79ecb3d71fa7b34b30f42388a4570cd5f23e3c`；page_copy.cu `311e85599445cbebed4aae894cfb833caa205809b57d9f28b40eed7b80298d48`。
+
+## Pass@k 的不齐样本与题目分母
+
+**保留少样本题目，不等于按原定 k 评测，也不等于补回完全缺失的题目。** 2026-10-22 核对已有 [#207](https://github.com/deepseek-ai/DeepInfer/pull/207)，固定 head `6e4c8eeb30f53e87c18569e198a2cf2e6baad5ac`、base `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`。它仅新增57行原测试，未修改生产代码；本机隔离执行原16项 pytest 全过，不是修复前后差异。
+
+原 [`pass_at_k_by_task`](https://github.com/deepseek-ai/DeepInfer/blob/6e4c8eeb30f53e87c18569e198a2cf2e6baad5ac/eval/common/passk.py)按结果行的 task_id 分组，对每题调用 estimator(n,c,min(k,n))，再按题平均。组合公式与 IID 条件见[已有指标笔记](verl-validation-bayes-passk.md#passk的组合估计与旧笔记纠正)；这里重点是实际分母和 k 的裁剪，而非重新验证一个采样模型。
+
+原测试的三题合成数据，要求 k=4 时：
+
+| 题目 | 实际回答数 n | 正确数 c | 实际使用的 k | 该题值 |
+|---|---|---|---|---|
+| full | 4 | 1 | 4 | 1 |
+| short_correct | 2 | 1 | 2 | 1 |
+| short_wrong | 1 | 0 | 1 | 0 |
+
+最终 Pass@2、Pass@3、Pass@4 分别为1/2、7/12、2/3；若只保留 full，Pass@4 会变为1。这里是该例对照，不保证删除少样本题总向同一方向改变分数。对于 n<k 的题，标签虽仍叫 Pass@k，实际混入的是各题不同 min(k,n) 的估计；不能将它当成所有题统一尝试 k 次的无偏估计。
+
+同7行数据中，summarize 的 score 为2/7（按回答平均），Pass@1 为1/4（按题平均）。两者在每题回答数相同时相等，样本数不齐时不必相等；不同并非单凭数值就能判归约错误。原 print_report 已提示这种情况。
+
+summarize 从已有行构造题集，n_sample=4 只是报告字段及默认 k 列表的输入，不会生成缺失观测。另传 extra.expected_tasks=4 时，num_tasks 仍为3、Pass@4仍为2/3；完全没有行的第四题无法由该 helper 留在平均分母。空结果 helper 返回零题/零分，但外层 [`score_run`](https://github.com/deepseek-ai/DeepInfer/blob/6e4c8eeb30f53e87c18569e198a2cf2e6baad5ac/eval/score.py)明确拒绝全空，并对不完整覆盖发警告、写 coverage_complete=False。外层还按(task_id,sample_idx)去重输入，不能据 helper 的输入局限断言整条评测静默漏题；这些外层接线仅核源码，未运行 judge/CLI。
+
+[复查脚本](../../experiments/scripts/verify_deepinfer_passk.py)从固定 Git 对象归档原 passk.py、common 包入口和原测试到一次性临时目录，正常 pytest 收集16项，不摘取方法或替换评分函数；隔离项目配置、禁用第三方插件与缓存。随后直接加载原完整模块，核对 score/Pass@1，并补完整题过滤、额外题数与空输入三组对照。生产 passk.py 与 score.py 均核对和 base 字节相同，未另跑一遍相同基线冒充修复验证。
+
+```bash
+python -B experiments/scripts/verify_deepinfer_passk.py /path/to/DeepInfer-git
+```
+
+Python3.12.13 / pytest8.4.2，其他为标准库，无新依赖；复现前须在本地 Git 中已有上述 head/base 对象。未导入 torch、deepinfer、score.py 或模型/服务，没有真实采样、judge、数据集、设备发现或 GPU/NPU 运行；不新增 M5 必跑事项，也不改上游或重开已有作者的测试方案。
+
+SHA256：passk.py `aee51e7d444205c49cbcef815e62dd918b9d98726a04e1c388c8a2695869c7f7`；原测试 `fdee5510f2f3dd8f6bed3e4c5d8c35f051187773edd65ca85a4ce4030d6b5600`；仅读 score.py `af3755cd5c0a1bb050296b03999773d6aead6360e197234b1bd8438fbcb293a4`。本题收束为“估计量、题目覆盖与评分链是不同证据”，不由合成分数外推模型能力或完整评测可靠性。

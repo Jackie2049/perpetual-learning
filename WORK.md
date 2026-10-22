@@ -12,6 +12,8 @@
 
 ## 运行接续
 
+- **M1 DeepInfer Pass@k学习收束（2026-10-22）**：先快进同步另一侧33a7245的#8281/#8313真机交接，不并行修改；有界读三框架各5个更新PR后选已有#207 head6e4c8eeb/base9bd9cf24，仅新增测试、生产代码未变。原16项pytest与三组汇总对照通过，见[原调研](notebook/frameworks/deepinfer-initial-survey.md#passk-的不齐样本与题目分母)/[复查](experiments/scripts/verify_deepinfer_passk.py)。min(k,n)保留少样本题但非统一k；7行score2/7、按题Pass1=1/4，完全缺题不在helper分母；score_run空拒绝/覆盖警告仅源码，非端到端缺陷定性。无torch/模型/judge/设备或新M5事项，上游未改。本题收束，后续选非Pass@k/分母/EMA/packed/路由新问题，不堆统计/清单变体；GPU/AReaL及网站边界不变。
+
 - **M1 UniRL EMA学习收束（2026-10-22）**：官方main仍6fd82cba，原EMA/config/mirror/deferred回调正常导入，真实微小CPU参数控制通过，见[原调研](notebook/frameworks/unirl-survey.md#ema-衰减方向与更新时机)/[复查](experiments/scripts/verify_unirl_ema.py)。decay乘旧影子、0复制；同live序列step两次与rollout末一次得[21,41]/[18,35]，计数/频率均有影响。只镜像可训练参数，单层异常上下文恢复存储/身份；backend提交计数接线仅读。无包壳/安装/optimizer/训练/设备或新M5事项，上游未改。本题收束，后续有界核对新变化并选非EMA/packed/预算/路由问题，不堆状态/时机变体或自动改实现；GPU/AReaL、#8313及网站边界不变。
 
 - **M1 UniRL token预算学习收束（2026-10-22）**：官方main仍6fd82cba，原Part/TokenBudgetPlanner真实单进程CPU通过，见[原调研](notebook/frameworks/unirl-survey.md#token-预算与-update-成员)/[复查](experiments/scripts/verify_unirl_token_budget.py)。先等分update再各自拼批；dense分别取prompt/response最大值，sum不同；预算18仍接纳21-token独占批，无长度则警告回退数量规划。原同步未替换，仅未初始化组no-op分支，无collective/训练/显存或新M5事项。Pillow复用临时target无新安装；上游/环境未改。本题收束，后续选非packed/预算/路由的新源码问题，不堆planner变体或自动改策略；GPU/AReaL、#8313及网站边界不变。
