@@ -121,6 +121,8 @@
 
 ## verl
 
+- [verl 融合输出头与logit softcap](verl-fused-output-softcap.md) — #7991通用guard不是softcap实现；完整原torch输出头36组语义对照，保留FP64参考误差，原24配置测试未跑。
+
 - [verl 训练与 rollout 的量化层审计](verl-quant-layer-audit.md) — #8132审计/24项CPU单测及新#8306 refit覆盖对照；loader/marker与测试证据不可混用，真机待M5。
 - [verl ModelOpt模块忽略](verl-quant-layer-audit.md#modelopt-模块忽略与子量化器) — #8329保留直接叶子并扩展模块后代；两版各11组名称集合控制，非ModelOpt/原34测试或训练验证。
 - [新版MXFP8检查与指标哨兵](verl-quant-layer-audit.md#新版运行期检查与指标哨兵) — #8327替代旧拆分、基于#8306；默认warn不拦截。原20参数例/5边界通过，仅纯Python sentinel，非量化或kernel验收。
@@ -195,6 +197,7 @@
 - [verl V1 Trainer Architecture 源码级深度阅读](verl-v1-trainer-architecture-reading.md)
 - [verl V1 Unified Trainer Architecture — Reading Note](verl-v1-unified-trainer-architecture-reading.md)
 - [verl VeOmni OPD (On-Policy Distillation) Engine — Source-Level Analysis](verl-veomni-opd-source-reading.md)
+  - [教师生成与蒸馏目标](verl-veomni-opd-source-reading.md#教师生成与蒸馏目标) — #8335按submission选生成方、另取teacher软标签；只支持受限同步V1，源码/16文件语法核对，未跑原测试或设备。
 - [verl vs rLLM Transform Pipeline 对比 (源码级)](verl-vs-rllm-transform-comparison.md)
 - [verl Worker 生命周期与 Ray 分布式架构源码阅读](verl-worker-lifecycle-ray-weight-sync-reading.md)
 - [verl v0.8 Worker Lifecycle + vLLM Integration Source Reading](verl-worker-lifecycle-source-reading.md)
