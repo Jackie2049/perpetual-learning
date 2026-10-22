@@ -4,6 +4,7 @@
 
 | 入口 | 用途 |
 |---|---|
+| [verify_recompute_leaf_storage.py](verify_recompute_leaf_storage.py) | 固定verl#8338原梯度tuple赋值/清理循环两语句，4组真实CPU storage/返回grad/延后反向控制；破坏resize只读元数据，不解引用失效别名。需本地Git对象/torch，非完整MCore patch或原5项CUDA测试，见[主笔记](../../notebook/fundamentals/gradient-checkpointing.md#重算叶子与共享存储) |
 | [verify_verl_fused_softcap.py](verify_verl_fused_softcap.py) | 固定#7991完整原torch输出头：CPU 36组raw/softcap前向及VJP对照，量化FP64误差而不调宽冒称全过；9模块语法检查。需本地Git对象/torch，无Liger/FlashAttention/模型/设备；原24HF配置测试未跑，见[主笔记](../../notebook/frameworks/verl-fused-output-softcap.md) |
 | [verify_amp_step_clock.py](verify_amp_step_clock.py) | torch2.9.1真实CPU GradScaler/SGD/AdamW：跳步与scheduler计数、loss/gradient检查对象及多优化器独立更新；两轨迹、两跳步恢复、两向控制、两调用顺序。无autocast/FP16溢出或设备验证，见[主笔记](../../notebook/fundamentals/mixed-precision.md#amp-跳步与学习率计数) |
 | [verify_verl_quant_sentinel.py](verify_verl_quant_sentinel.py) | 固定#8327完整原纯Python sentinel/原测试：20参数例和5边界控制；阻断框架/torch导入，无包壳或引擎stub。需pytest/本地Git对象，不运行其他量化测试或设备，见[主笔记](../../notebook/frameworks/verl-quant-layer-audit.md#新版运行期检查与指标哨兵) |

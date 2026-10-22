@@ -366,12 +366,14 @@ Interleaved气泡 = 2*(PP-1)/(M*VP)
 
 ### Deallocate Output Tensor (line 157-188)
 
+这里的data重绑定是特定调度生命周期操作：放弃当前tensor对大存储的引用，不保证其他持有者已释放该存储。不能与 `untyped_storage().resize_(0)` 混同；[重算叶子与共享存储的CPU对照](../fundamentals/gradient-checkpointing.md#重算叶子与共享存储)展示两者对别名的不同影响，不是本节pipeline/自定义backward的验证。
+
 ```python
 def deallocate_output_tensor(out, deallocate_pipeline_outputs=False):
     if out is None or not deallocate_pipeline_outputs:
         return
     # 只保留grad_fn → autograd graph跨stage
-    # 释放实际data → 省[seq,batch,hidden]大小的内存!
+    # 放弃out对原data的引用；能否释放取决于其他持有者
     out.data = torch.empty((1,), device=out.device, dtype=out.dtype)
     # 断言: out._base is None → 不能是view!
 ```

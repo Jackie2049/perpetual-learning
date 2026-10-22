@@ -2,6 +2,8 @@
 
 > 用重计算减少保存的激活；均匀链式模型的分段策略可达到 O(sqrt(n))，不代表任意逐层 wrapper 的复杂度。
 
+2026-10-23补充：[重算叶子与共享存储](#重算叶子与共享存储)核verl #8338的回收语义；CPU存储/梯度控制与Megatron原GPU测试分开，不更新上文历史显存或性能结论。
+
 ## 1. 核心问题：激活值的显存占用
 
 训练时，前向传播的中间激活需要保存在显存中，用于反向传播计算梯度。
@@ -248,6 +250,54 @@ UniRL固定`6fd82cba13f52f394747832344039408699ea378`的[FSDP包装](https://git
 ```bash
 python -B experiments/scripts/verify_activation_recompute_state.py
 ```
+
+## 重算叶子与共享存储
+
+`detach()`切断当前计算图关系，不会复制底层存储。[PyTorch 2.9契约](https://docs.pytorch.org/docs/2.9/generated/torch.Tensor.detach.html)明确它与源tensor共享storage。因此，“当前重算段已完成反向”不等于该输入的所有别名都已无人使用；直接缩小storage会影响其他保存者，而不仅是当前叶子。
+
+### 固定源码与修改范围
+
+verl [#8338](https://github.com/verl-project/verl/pull/8338)在2026-10-23读取为open，head `c099b0179cfa70987b7b75e5b1c9b685d39c4d5c`。目标base为 `dc709afb7a74fd2645640a4e5f2fdf40166b4fbb`，共同祖先却是 `d1390eea0c94467d4ae1387eeda9e2f78f8d73ea`，相对目标ahead1/behind8；按祖先三点diff才是实际3文件200增34删，不能把目标主线差异算入候选。
+
+[`apply_patch_megatron_recomputation_backward`](https://github.com/verl-project/verl/blob/c099b0179cfa70987b7b75e5b1c9b685d39c4d5c/verl/models/mcore/patch.py#L627)仍替换MCore的整个CheckpointFunction.backward。旧版本在每段重算反向后clone返回梯度，再将detached输入及其grad的storage缩为0；只对闭包中名为MultiTokenPredictionLayer的对象跳过回收。这个特判不表达共享输入、普通view或后续反向的实际所有权。
+
+候选先把 `.grad` tensor放入返回tuple，再对需要梯度的detached叶子执行：
+
+```python
+t.grad = None
+t.data = t.new_empty(0)
+```
+
+这改变叶子自己的data引用而不截断原storage；其他tensor仍引用的输入数据可以继续存在。返回tuple也持有原梯度tensor，因此删除叶子的grad属性不等于销毁返回梯度；候选据此去掉返回梯度的clone、MTP名称特判和record_stream调用。后两项的CUDA生命周期正确性不能只从CPU别名控制推出。
+
+### 真实 CPU 控制
+
+[复查脚本](../../experiments/scripts/verify_recompute_leaf_storage.py)仅AST选择原候选的**梯度tuple赋值与清理for循环两条语句**。它不导入MCore、不安装patch、不构造替身CheckpointFunction，也不把原GPU测试改成CPU。Python3.12.13 / torch2.9.1、显式CPU FP64下：
+
+| 控制 | 实际观察 |
+|---|---|
+| 自有base、view及detach共用storage，对detach resize为0 | 三者storage均0 bytes，numel仍是6/4/6；此后只读元数据，不读取已失效的数据 |
+| 原梯度、返回别名与独立clone，对原梯度storage resize为0 | 返回别名同样失效，clone仍保存四个2；不解引用失效别名 |
+| 对view的detached叶子做真实反向，再执行原候选两语句 | 叶子numel=0、grad=None；返回值仍是原grad对象，值为[12,18,24,30]，源数据/其他别名的48-byte存储不变 |
+| 不需要梯度的tensor进入同一原循环 | 不改变其data引用、形状或值，返回梯度None |
+
+第三组还在清理前构造一条稍后才反向的真实图：`source=3*p`、`delayed_loss=sum(source*w)`，p=[1..6]、w全为2。清理detached view叶子后，延后反向仍得到p梯度全6、w梯度[3,6,9,12,15,18]。这里检查了真实autograd读取尚存base，不是模拟checkpoint段，也没有测CPU allocator/RSS或证明漏占内存已释放。
+
+```bash
+python experiments/scripts/verify_recompute_leaf_storage.py /path/to/verl
+```
+
+脚本读取固定本地Git对象且禁用lazy fetch，打印源码指纹。head完整patch文件SHA256为 `d7774a5be90e831fc208b300c944f62ec8696d0b45160cf8c89fcd64d61e85f6`，两语句AST指纹 `21a15f3efe0637ff1fe860e2ea66826ac69d2eedc1fa7029222d6aa047d3fec9`；祖先/head patch及head原测试共3次完整文件AST/内存compile通过。
+
+`.data`会绕过正常autograd变更检查，不能将这段特定生命周期清理推广成一般训练/任意保存图的内存优化方法。其他Python变量若指向同一个tensor对象，也会看到它变空；独立tensor对象持有原storage才是上表所说的“其他别名”。能保留输入不代表可以再次反向已清空的叶子。
+
+### GPU 证据与交接
+
+作者的5项[原GPU测试](https://github.com/verl-project/verl/blob/c099b0179cfa70987b7b75e5b1c9b685d39c4d5c/tests/models/test_mcore_recompute_reclaim.py)直接使用MCore CheckpointFunction，覆盖持久图、清理后输入、跨段共享、context传递和后续反向读取view的base，并与不checkpoint的链比较梯度。测试模块有CUDA可用性检查、CUDA分配/同步及memory_allocated采样；本机未导入或运行它们。CPU脚本的4组控制不是这5项原测试。
+
+作者另报告MCore0.18.0/torch2.11/H800的小型GPTModel MoE内存floor从736.56降至608.56MiB，保持旧resize路径的回收量；dense floor不变，并报告8卡48项MTP回归。均为外部报告，不是本项目结果，也不认证原mHC+MTP完整训练或Qwen3-30B-A3B配置；作者明确这两条端到端路径未覆盖。
+
+原测试中若stock MCore已不再保留输入，leak例会skip，不能只看总退出码称回收修复已验证。作者将留存归因于MoE dispatcher持有routing probs及重算图，但本机未观察真实dispatcher、CUDA allocator、跨stream释放、PP/TP或分布式保存激活。真机恢复条件见[M5重算参考](../../experiments/handoff-m5.md#verl-megatron-重算回收参考)，不自动采用候选或修改既有环境。
 
 ## 7. 学习要点
 

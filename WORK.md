@@ -28,6 +28,8 @@
 
 ## 运行接续
 
+- **M1重算存储所有权学习收束（2026-10-23）**：先快进M5状态11776df；读#8338 headc099b017/目标dc709afb、实际祖先d1390eea（ahead1/behind8），见[原重算笔记](notebook/fundamentals/gradient-checkpointing.md#重算叶子与共享存储)/[脚本](experiments/scripts/verify_recompute_leaf_storage.py)。4组真实CPU控制：resize截断全部storage别名但numel可仍非零；原候选梯度tuple/清理循环两语句保留输入别名、返回grad及延后反向，非完整MCore patch。3文件compile，原5项CUDA/显存/stream未跑，没把作者H800/MTP报告当本项目。旧Megatron data释放表述收窄，GPU缺口单条补原交接，待M5选题不另开训练/应用方案。本题收束，后续另选非storage回收/叶子引用/checkpoint替身问题；GPU/AReaL/#8313/#523边界不变。
+
 - **M1教师生成蒸馏学习收束（2026-10-23）**：main同步无新增，读#8335 draft head8029bfb5/base祖先fb55b928，见[原OPD笔记新节](notebook/frameworks/verl-veomni-opd-source-reading.md#教师生成与蒸馏目标)。submission级生成选择非逐例混合；完成后另取teacher软targets，学生监督forward_kl_topk，非教师概率PPO或纯学生on-policy。区分硬拒绝、运行时检查与文档未认证组合；teacher-only无student staleness非零lag。16完整Python仅compile，3文件字节/2方法AST未变；缺OmegaConf/TensorDict未跑原测试，不加替身。作者8卡报告与本机分开，原M5入口补参考不另排训练/部署draft或定性#8250。本题收束，后续另选非教师来源/随机selector/监控替身问题；GPU/AReaL/#8313/#523边界不变。
 
 - **M1 fused输出头softcap学习收束（2026-10-23）**：先快进M5状态5d2ba3f，有界读verl8/UniRL6候选，选#7991 headb145ec9b/base祖先dc709afb；见[专题](notebook/frameworks/verl-fused-output-softcap.md)/[脚本](experiments/scripts/verify_verl_fused_softcap.py)。7行生产guard只拒绝通用分支，非softcap实现或整个初始化回滚。完整原torch模块36组CPU前向/VJP语义分离对照通过，但raw对FP64仅28/36组四类绝对误差≤2e-5，hidden梯度max1.61e-4如实保留；9模块compile，缺HF未跑原24测试，不造配置替身。真机参考补原M5一致性入口，不另排队/部署/定性#8250或改专项。本题收束，后续另选非输出头softcap/数值阈值替身问题；GPU/AReaL/#8313/#523边界不变。

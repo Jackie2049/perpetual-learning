@@ -121,6 +121,8 @@
 
 ## verl
 
+- [重算叶子与共享存储](../fundamentals/gradient-checkpointing.md#重算叶子与共享存储) — #8338放弃叶子引用与截断storage分开；4组CPU控制只执行原清理两语句，非MCore/CUDA回归或显存测量。
+
 - [verl 融合输出头与logit softcap](verl-fused-output-softcap.md) — #7991通用guard不是softcap实现；完整原torch输出头36组语义对照，保留FP64参考误差，原24配置测试未跑。
 
 - [verl 训练与 rollout 的量化层审计](verl-quant-layer-audit.md) — #8132审计/24项CPU单测及新#8306 refit覆盖对照；loader/marker与测试证据不可混用，真机待M5。

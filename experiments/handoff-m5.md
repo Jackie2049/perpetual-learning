@@ -132,6 +132,12 @@ M5 最小下一步：先判断是否有获准使用的对应配置、完整 toke
 
 停止条件：缺私有材料/配对身份就记录“待资料”，不启动原报告的长训练，也不以公共 toy 或另一模型称已复现 #8250。对照有差异只能缩小范围；没有原始观测前，不设计新的修复、不发布旧诊断稿或承诺治愈阈值。完成标准是可追溯的配对证据，或明确缺失材料清单。
 
+## verl Megatron 重算回收参考
+
+状态：待M5独立选题与匹配环境，非新增必跑队列，不打断现有任务。[#8338](https://github.com/verl-project/verl/pull/8338)固定head `c099b0179cfa70987b7b75e5b1c9b685d39c4d5c`、目标base dc709afb/共同祖先 `d1390eea0c94467d4ae1387eeda9e2f78f8d73ea`；[M1源码/CPU入口](../notebook/fundamentals/gradient-checkpointing.md#重算叶子与共享存储)仅原两条清理语句的4组CPU所有权/梯度/延后反向控制和3文件compile，无完整patch、原5项GPU测试或显存/stream验收。
+
+目的：若后续已有获准Megatron全重算工作，区分叶子引用留存与共享storage被截断，不能据MTP名字特判认证普通共享输入安全。缺口是匹配MCore/PyTorch/CUDA版本、原测试真实执行/skip、显存floor/peak与释放时序；作者0.18.0/torch2.11/H800和8卡MTP报告不外推不同MCore/后端或4090环境。只有M5独立选择且已有兼容获准环境时，才考虑隔离进程运行 `tests/models/test_mcore_recompute_reclaim.py`，保留5项具体结果/skip、梯度与stock对照；实际模型回收及跨stream/分布式条件另行判断，不按作者矩阵自动追加训练。缺依赖、需新编译/切环境/模型/预算或影响其他任务即停并记未测，不自动改环境、应用patch或在原训练制造非法访存；AReaL/#8313/#523及移植专项边界不变，本条不代表接单。
+
 ## verl V1 可变行布局参考
 
 状态：待选型/匹配依赖，只保存本轮新线索，不加入自动训练队列或作为原任务前置条件，不代表M5接单。已有[#8201](https://github.com/verl-project/verl/pull/8201)，head `e891fd814e24c0b2d0c70a47e234f75a63d10ad6`、base `18cfb74852a053a27dcf301d3318a093be81b628`；[M1源码阅读](../notebook/frameworks/verl-grpo-source-reading.md#v1-源-prompt-单位与可变轨迹行)仅12项原纯配置/layout控制、8模块compile，未跑原测试/TQ/设备。目的为将来采用V1多输出或部分成功保留时，核对源UID计步与实际行边界，而不是诊断#8250或修改#8313。
