@@ -219,6 +219,7 @@
   - [全词表熵与有效token汇总](frameworks/unirl-survey.md#全词表条件熵与有效-token-汇总) — #563条件熵非单次负logp，sum/count而非均值的均值；20组原chunk局部CPU梯度对照，非完整replay/训练
   - [有界动态采样与游标](frameworks/unirl-survey.md#有界动态采样与数据游标) — #562批数预算包含首批，失败前已消费数据；保存读取游标非随机生成复现，仅源码/语法，不搬用旧GPU结果
   - [Replay锚点与采样校正](frameworks/unirl-survey.md#replay-锚点与-rollout-采样校正) — #557两个比率不交换clipping顺序；原片段36组CPU值/梯度对照，非完整训练或收益结论
+  - [回合续跑与行为版本](frameworks/unirl-survey.md#回合边界续跑与行为版本) — #558保存观察后暂停，逐turn保留行为logp；窗口训练批与optimizer版本分开，排空后仍须等消费完再释放buffer，仅源码/语法
   - [Smoke结果与训练验收](frameworks/unirl-survey.md#smoke-结果格式与训练验收) — #576原空循环CLI核对总样本、可选字段、同名文件保护；统一JSON不是训练或性能验收
   - [损失单位与微批权重](frameworks/unirl-survey.md#损失单位与微批次权重) — #622接口迁移，token/seq目标与None/零计数不同；四组原函数CPU前向及局部梯度检查，非FSDP验收
   - [AROPD采样梯度与KL](frameworks/unirl-survey.md#aropd-的采样梯度与-kl-目标) — #534 raw score公式的固定前缀参考；teacher log-prob目标不能省去entropy项，非原算法/模型验收

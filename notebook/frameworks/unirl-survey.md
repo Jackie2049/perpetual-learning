@@ -931,6 +931,43 @@ python -B experiments/scripts/verify_unirl_rollout_correction.py /path/to/UniRL
 
 SHA256：GRPO `31531e0edc1301ce5f80012499ae89d6266715dfac871aaea266b5b2ef3d87c7`；base.py `326291439342130064abb865a5ef69fb5a49475edb65f040d38e0db39edfae52`；loss_agg.py `8049957fa4ecbf2086afab6e066fa1beeb9d35bdabebfd3d8890f7ee078ecd3f`。
 
+## 回合边界续跑与行为版本
+
+**多轮 agent 可以在不同回合使用不同策略，但暂停点必须保留工具观察，训练也必须保留每个回合自己的行为 log-prob。** [#558](https://github.com/Tencent-Hunyuan/UniRL/pull/558)（2026-10-23读取open）增加有界 agentic partial rollout。固定head `76a3c755210728bf03dcaaaeefe41187472d1dbb`、base及实际祖先 `852c0454a6cb63592b2582358f88623870848df1`，ahead3/behind0；12文件266增57删，无提交测试。它是回合边界续跑，不是中断一次生成的token流。
+
+### 暂停点与环境状态
+
+[ToolAgentHarness](https://github.com/Tencent-Hunyuan/UniRL/blob/76a3c755210728bf03dcaaaeefe41187472d1dbb/unirl/rollout/harness/tool_agent.py)在每轮开始检查暂停，包括首轮生成之前；已有回合须执行完`generate → env.step → observe`才到下一个暂停点。恢复时跳过`env.reset`，从Sample保存的观察继续，已生成回合计入`max_turns`。这条正常续跑路径不重做先前工具调用，但不是故障重放或外部副作用的exactly-once保证。
+
+[ToolEnvironment](https://github.com/Tencent-Hunyuan/UniRL/blob/76a3c755210728bf03dcaaaeefe41187472d1dbb/unirl/rollout/env/tool_environment.py)仅在没有`StatefulTool`时声明支持续跑；worker本地session不能随意迁移。自定义环境同样须保证Sample包含所需状态，且每次harness退出的`close`不使续跑失效。[RolloutManager](https://github.com/Tencent-Hunyuan/UniRL/blob/76a3c755210728bf03dcaaaeefe41187472d1dbb/unirl/rollout/manager/rollout.py)的quiesce先停发任务、设置暂停标志，再drain当前工作；权重同步要求无queued/in-flight工作。因此慢生成或工具调用会推迟下一次发布，window不是墙钟截止时间。
+
+### 窗口与执行重叠
+
+[AgenticTrainer](https://github.com/Tencent-Hunyuan/UniRL/blob/76a3c755210728bf03dcaaaeefe41187472d1dbb/unirl/trainer/agentic.py)默认`rollout_window_size=1`，维持barrier。W大于1时，窗口开始一次准入最多`B×W`个root prompt（B为batch_size），每个再展开siblings；每次收集B个完整组用于训练，窗口内不持续补新root。窗口还会被save/final边界缩短，不是无限流式调度。
+
+| 布局 | 收齐当前训练批后 | 下次发布前 |
+| --- | --- | --- |
+| 同卡 colocated | quiesce未完成轨迹，rollout sleep后训练 | wake、同步、重新提交carry |
+| 分卡 separate | 剩余rollout可与训练重叠 | quiesce后同步，再续跑 |
+
+分卡配置按`train_fraction`切训练/rollout资源，使用NCCLWeightSync；同卡要求TensorWeightSync。[新配方](https://github.com/Tencent-Hunyuan/UniRL/blob/76a3c755210728bf03dcaaaeefe41187472d1dbb/examples/deep_research/deep_research_async.yaml)取0.5和W=2，并关闭rollout memory saver及CPU backup。配方存在不证明当前机器的资源、引擎或通信已匹配。
+
+### 每个回合的行为身份
+
+W大于1的构造guard要求精确GRPO类、`old_logp_source=rollout`和cache flush。训练前逐个generated Part检查行为版本存在且不晚于当前训练版本，并要求保存的segment log-prob；原版本复制到每行`metadata.behavior_version`，再清除待拼接Part的单一`output_version`。这样混合策略轨迹不会被伪装成一个统一发布版本，原行为log-prob仍作GRPO分母。版本标签只记录来源，不证明真实参数安装内容。此模式与上一节#557的replay-anchor前提不同，不能直接叠加两候选。
+
+`_train_version`从backend optimizer step count恢复，并按`result.optimizer_updates`递增。`agent/max_behavior_lag`在`stack.train_track`返回后、driver递增版本之前，用原轨迹版本计算；它不是本批更新完成后的lag。W数训练批，行为版本数optimizer update，不能把W直接当版本差上限；分卡时`_carried`已重新提交，`carried_trajectories`也不等于manager全部未完成轨迹数。
+
+### 排空与checkpoint
+
+窗口最后一批在训练前要求`_carried`及manager均空，最后一次训练消费完远程视图后才reset transport buffers，然后进入保存路径。**生产者排空与消费者读完是两个条件**，不能只见无in-flight就提前释放训练输入。save硬边界不携带未完成trajectory；恢复时重建数据源并跳过已训练批，依赖同样的读取流，不是保存进程中任意暂停点或恢复工具副作用。
+
+### 验证范围
+
+本机仅阅读完整差异和相关原方法，并以Python3.9的`compile`检查两版各7个改动Python模块；不导入模块，无manager/harness/训练或设备执行，未新增替身脚本。head的trainer SHA256为`294f87d21a6e48c1a69db5d6c8feeb71e705cd9cf18172ddfbe88da3b897b130`，harness为`df6b23ebc40d317ae694f4eb7ee84136f1701ed680518825347832e7dd4c1f5e`。
+
+作者另报外部CPU harness及L40S/A100小模型验证，不是本项目复跑。A100恢复/重叠测试对应`9b68dc9f1b5158eb0c528a57aac7203476312cb1`，不是当前合并头；延迟工具的计时对照生成token数量不同，不能当普遍加速比或学习收益。TransferQueue集成、DCP恢复和长训练仍未验证。真机条件补[原M5参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不部署候选、不改其anchor或AReaL专项。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。
