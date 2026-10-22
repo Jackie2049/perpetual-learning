@@ -116,6 +116,7 @@
   - [设备资源与通信后端](unirl-survey.md#设备资源与通信后端的分层边界)：已关闭未合并#623；actor零GPU请求不取消PG预约，CVD编号与eccl默认组各需核验，仅源码/compile，不是跨硬件支持。
   - [TempFlow分支与逐行时间](unirl-survey.md#tempflow-分支共享与逐行时间索引)：#552共用x_T不复用前缀计算，分步算优势后合并，槽0非真实j=0；仅原噪声模块CPU控制/9模块compile，非replay/loss或训练验收。
   - [异步快照与指标消费](unirl-survey.md#异步快照与指标消费)：#620状态单位/采样点与单消费者增量；slot占用非GPU利用率，ready lag缺值非0，仅源码/6模块compile。
+  - [奖励能力与模型加载](unirl-survey.md#奖励能力校验与模型加载)：#621将本地模型物化延后到服务校验之后；非按请求懒加载/资源事务，managed子进程仍在构造时启动，仅源码与两版语法核对。
 
 ## verl
 

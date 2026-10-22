@@ -261,6 +261,54 @@ Python3.12.13 / torch2.9.1 / Pillow12.0.0。本机原 CPU 环境缺 Pillow，使
 
 脚本锁定七个完整源文件 SHA256（包括仅读的 service.py）。关键 hash：per_domain.py `6aca28149c4dcc48b3f8e29e74ef7195daa997aa833daac778618d4f3b2b73f8`；mc_exact_match.py `452413e2c7db3cf722fd3a887f660a61e5a13513f015a539f103b0a32d1cf526`；wandb_metrics.py `e92b9c40ebab4b78759ad15e36db4a833f853f6b122db4e395577966cc150648`。本题收束，不堆 NaN/路由变体，也不将组件统计等同于服务验收。
 
+## 奖励能力校验与模型加载
+
+**配置能声明一种评分能力，不等于模型已能加载；把加载延后，也不等于整个构造过程没有副作用。** 2026-10-22只读[#621](https://github.com/Tencent-Hunyuan/UniRL/pull/621)，读取时open、未合并，固定head `27cb49307fc89dd60331f86d23cadb2e8cc4b0cb`、base及官方compare祖先`6fd82cba13f52f394747832344039408699ea378`（ahead1/behind0），7文件40行新增。它将本地reward的模型物化从叶子构造器移到服务层校验之后，不修改奖励公式或配置项。
+
+### 递归构造为何让校验太晚
+
+[Worker._resolve_init_kwargs](https://github.com/Tencent-Hunyuan/UniRL/blob/27cb49307fc89dd60331f86d23cadb2e8cc4b0cb/unirl/distributed/group/worker.py)先递归构造字典的children，最后调用该层_target_。T2AV是文本到音视频；其组合scorer需要至少一个正权重分量连接prompt与video。旧版ImageBind(mode=audio_video)+CLAP会先在两个叶子的构造器调用_load_model，再由T2AVCompositeScorer拒绝缺少prompt-video能力的组合。缺依赖时，甚至会先遇到模型导入错误，而到不了组合配置错误。这是错误发现顺序，不是原校验条件不存在。
+
+| 阶段 | base中的顺序 | 候选中的顺序 |
+| --- | --- | --- |
+| 构造本地叶子 | 保存配置并调用_load_model | 保存配置，model/processor为None、_loaded=False |
+| 构造组合与服务 | 此时叶子模型已尝试加载，再校验 | 先校验组合能力，再校验服务输入种类及截断配置 |
+| 物化模型 | 已在叶子构造器发生 | RewardService末尾调用backend.load，组合逐个转发给叶子 |
+
+变化见[LocalRewardBackend](https://github.com/Tencent-Hunyuan/UniRL/blob/27cb49307fc89dd60331f86d23cadb2e8cc4b0cb/unirl/reward/local/base.py)与[RewardService](https://github.com/Tencent-Hunyuan/UniRL/blob/27cb49307fc89dd60331f86d23cadb2e8cc4b0cb/unirl/reward/service.py)。这不是首次compute_rewards时自动懒加载：直接构造local scorer的脚本须显式load；服务构造成功返回前仍执行load。T2AV、PerDomain、Video三个wrapper新增转发，基类load本身是no-op，自定义组合不能靠继承自动遍历孩子。
+
+### 能力声明的适用范围
+
+[ImageBind.covers_prompt_video](https://github.com/Tencent-Hunyuan/UniRL/blob/27cb49307fc89dd60331f86d23cadb2e8cc4b0cb/unirl/reward/local/imagebind.py)按mode及text_video权重判断，[VideoAlign](https://github.com/Tencent-Hunyuan/UniRL/blob/27cb49307fc89dd60331f86d23cadb2e8cc4b0cb/unirl/reward/local/videoalign.py)按ta_coef>0判断，均不需要先有模型对象。但RewardService只对实现PromptVideoReward协议的backend检查该声明；它不是任意奖励模型语义、checkpoint、依赖或评分质量的通用验证器。preferred_input_kind属于image/video/text也只验证种类名，实际frontier是否包含该模态仍在score_and_attach检查。
+
+服务层require_prompt_video=False只跳过服务自己的检查，不撤销[T2AV构造器](https://github.com/Tencent-Hunyuan/UniRL/blob/27cb49307fc89dd60331f86d23cadb2e8cc4b0cb/unirl/reward/local/t2av_composite.py)的正权重prompt-video要求。组合load遍历所有配置的孩子，既不按当前domain按需加载，也不跳过零权重项；延迟到统一时点不等于按实际请求节省模型内存。
+
+### 成功标志不是资源事务
+
+LocalRewardBackend在_load_model正常返回后才置_loaded=True；后续顺序load可直接返回。这个标志不能由model is not None替代：无权重的MCExactMatch也有空_load_model。onload只把已有model移回device，不承担首次加载；offload也不清除_loaded。源码没有并发load锁，也没有失败自动回滚：某孩子已加载、后一个抛错时，组合循环不撤销前一个；失败叶子的False只说明未成功返回，不证明中途分配已释放。它提供重试入口，不是整图加载的原子性保证。
+
+本PR不改变[ManagedScorerProcessBackend](https://github.com/Tencent-Hunyuan/UniRL/blob/27cb49307fc89dd60331f86d23cadb2e8cc4b0cb/unirl/reward/managed_process.py)：其构造器仍_start_child，创建监听socket/日志并Popen，等待子进程health达到预期状态，然后才返回；load继承no-op。纯RemoteRewardBackend构造HTTP session、模型在外部服务；不能从“本进程没有model”推出“配置拒绝前没有启动子进程或远端工作”。本地叶子构造的resolve_device也仍可能查询CUDA可用性；这里延后的是_load_model，不是所有设备相关操作。这些文件与base的Git blob相同，是范围边界而非本PR新增行为。
+
+### 验证范围与复查
+
+本机Python3.9.6只对6个修改的完整Python模块在base/head各做内存compile，共12次通过；另核worker、managed_process、remote、ImageBind、VideoAlign、device六文件Git blob前后相同。未导入奖励包、执行resolver/构造器/load、启动子进程/HTTP或探测设备，也未制造新模型替身。最小语法复查（对象须已在本地）：
+
+```bash
+GIT_NO_LAZY_FETCH=1 python3 -B - /path/to/UniRL-git <<'PY'
+import subprocess, sys
+for rev in ['6fd82cba13f52f394747832344039408699ea378',
+            '27cb49307fc89dd60331f86d23cadb2e8cc4b0cb']:
+    for path in ['base.py', 'local/base.py', 'local/per_domain.py',
+                 'local/t2av_composite.py', 'local/video.py', 'service.py']:
+        src = subprocess.check_output(['git', '-C', sys.argv[1], 'show', f'{rev}:unirl/reward/{path}'])
+        compile(src, path, 'exec')
+PY
+```
+
+head SHA256：local/base.py `b977c2075fa417c17a2f09e1dfa3c159ad1e2382977c112adf8f36955706d221`；service.py `4284399e73f5e01c6e8be65770b10acdfe6bbde3f2d80651b0b5a63762469cd2`。作者报告两种resolver的CPU harness基线24/42、候选42/42，所有_load_model都替换为fake，harness未提交；这是构造顺序/转发的作者证据，不是实际checkpoint加载或本机验证。有效ltx2配方在两版都通过，作者也明确它只是回归检查，不是修复区分项。
+
+本题以初始化生命周期学习收束；真实依赖/权重及失败后的资源状态留[原M5参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，只在其未来独立选择匹配reward任务时考虑，不为本题新增加载或训练任务。
+
 ## Token 预算与 update 成员
 
 **token_budget 约束拼批代价，不是显存保证，也不是逐样本截断上限。** 固定 `6fd82cba13f52f394747832344039408699ea378`，2026-10-22 用原 [`TokenBudgetPlanner`](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/train/stack/planner/packed.py)、Part、TextSegment 与 TextTokenCondition 做单进程 CPU 检查。规划器先按 num_updates 等分原行，再在每份内按总长度降序 first-fit 拼批，最后用 part.select 重排。原行不能被搬到另一份 update 来改善装箱；总行数不能整除 update 数时直接拒绝。
