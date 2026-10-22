@@ -9,7 +9,7 @@
 
 **【价值评估】** 7 / 10 — 明确的源码契约缺口 + 当前可做窗口（前置 #406/#495 已 merged）+ 纯 CPU 可验证结构修复；但 shipped 配方当前不受影响、完整验收需 GPU 对照 replay-sourced anchor。
 
-**【进展】** 2026-10-22 贡献扫描：确认 main `6fd82cba` 上 `UnifiedModelTrainStack.train_track` 只调 `prepare_segment_anchors`、缺 eval/freeze/prepare_part/train，而 `TrainStack._prepare_for_training`（single.py:272-277）四步齐全；基类 `prepare_part` 默认 no-op，PPO/DiffusionOPD override。issue 无 assignee、无对应 PR；前置 #406/#495 已 merged（排序前提已满足）。
+**【进展】** 2026-10-22 贡献扫描：确认 main `6fd82cba` 上 `UnifiedModelTrainStack.train_track` 只调 `prepare_segment_anchors`、缺 eval/freeze/prepare_part/train，而 `TrainStack._prepare_for_training`（single.py:272-277）四步齐全；基类 `prepare_part` 默认 no-op，PPO/DiffusionOPD override。issue 无 assignee、无对应 PR；前置 #406/#495 已 merged（排序前提已满足）。**2026-10-22 修复已写 + CPU 验证通过**：在 `train_track` 把两处 `prepare_segment_anchors` 包进 `eval → freeze(ar,image)+prepare_part → train` 生命周期（复刻 single.py，finally 恢复 train）。CPU 逻辑单测 3 项全过（eval/freeze/prepare/train 顺序、prepare 抛异常仍恢复 train、no-op prepare_part 兼容 shipped 配方）+ 真实文件 AST 断言通过。patch 存 [523-lifecycle-fix.patch](523-lifecycle-fix.patch)。**推送待网络恢复**：git→GitHub 通道当前不稳、Jackie2049 fork 尚未创建，届时推到 fork（不碰主仓库）并在 fork 跑完整真实单测；结构修复不需 GPU。
 
 **【大白话讲明白】**
 
