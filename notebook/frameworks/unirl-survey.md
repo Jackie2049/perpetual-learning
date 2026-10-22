@@ -321,6 +321,62 @@ Python3.12.13 / torch2.9.1，全部原模块正常导入，无包壳、方法摘
 
 脚本核对五个完整源文件 SHA256，包括仅读的 backend。ema.py `b4b057cd565780b467c56d0ca8032a48c0e5b5366702fbd11cf2f06c9654701b`，configs.py `18dcc241700eeaf83f6e1aa9cc3a73519350c60c83d1c1631f7a8c574e29e03e`；其余见脚本。此处解释实现契约，不推荐衰减值，也不由局部 CPU 结果判断训练质量。
 
+## Smoke 结果格式与训练验收
+
+UniRL [已有 PR #576](https://github.com/Tencent-Hunyuan/UniRL/pull/576)把 benchmark 结果统一为 schema v1，但它的 `smoke-synthetic` **只测 Python 空循环，不运行训练**。固定 head `a6ed0ec8899f353e33ed1d9ad364bdb560a0f179`、base `6fd82cba13f52f394747832344039408699ea378`，四文件新增 240 行；生产训练、奖励、评测代码没有改动。候选中的 `BenchmarkResult` 实际调用方只有这个 smoke CLI，README 对 rollout/reward/train producers 的描述是接入方式，不是三路已接通的证据。
+
+### 样本计数与可选字段
+
+[`benchmark_result.py`](https://github.com/Tencent-Hunyuan/UniRL/blob/a6ed0ec8899f353e33ed1d9ad364bdb560a0f179/unirl/utils/benchmark_result.py)接收调用方声明的环境、负载和计时，再由 `samples / wall_clock_s` 派生吞吐；它不探测或认证这些声明。`started_at` 要求带时区，输出转 UTC；JSON 顶层键顺序固定，phases 名称排序。
+
+| 字段或操作 | 固定候选的行为 | 解释 |
+|---|---|---|
+| `workload.samples` | 总测量样本数，不是每迭代数量 | CLI 的 samples=3、measured=4 得 12；warmup=2 不计入 |
+| `wall_clock_s` | 必须正且有限；吞吐不能单独填写 | 合成 12 样本 / 3 秒得到 4 samples/s，只验证公式 |
+| `torch=None` | 保留为 JSON null | 不把版本未知补成空字符串或某个版本 |
+| memory/phases 未提供 | 对应键省略 | 不等于实测为 0；显式 `peak_memory_bytes=0` 保留 |
+| `phases_s` | 复制后用只读 mapping 保存 | 后续修改传入字典不改变记录；不自动测量阶段 |
+| 同一路径再次写入 | `open("x")` 报 FileExistsError | 旧文件保持原字节，不证明断电原子性/持久性 |
+
+schema 允许 samples=0，此时吞吐为 0；CLI 则额外要求每迭代样本数为正。结果没有 success/status 字段，数值校验也不检查模型质量、收敛、checkpoint 或 GPU 正确性，不能把“JSON 可写”汇总成“训练通过”。`outputs/benchmark/` 与评测的 `benchmarks_results/` 分离；schema_version 是格式版本，不是模型或代码身份哈希。
+
+### CPU 核对与最小复查
+
+2026-10-22 使用 Python 3.12.13，将六个所需原文件从固定 Git 对象原样归档到独立临时目录，正常导入，无 AST 摘取、包壳或假类。`-S -B` 隐去 site-packages 并禁写 bytecode；本机另一个环境装有 torch，这里 `torch=null` 只代表该进程查不到其发行元数据，**不是整台机器没有 torch**。没有安装依赖、导入 torch/Ray 或发现设备。
+
+原 CLI 以 samples=3、warmup=2、measured=4 执行，输出 `smoke-synthetic`、total samples=12、正墙钟时间，吞吐精确等于 12/该时间；这里只报告合同检查，不引用空循环速度作为性能。再次运行同 ID 返回 FileExistsError、文件原字节不变；measured=0 返回 argparse 退出码 2，旧文件仍不变。
+
+直接调用原 schema 另核对 UTC、键序、可选缺省/显式 0、phase 输入快照、0 样本记录，以及六项拒绝：bool 样本数、0 measured、0/NaN 墙钟、Inf phase、负显存。均符合上述规则。这是自编检查；作者在 PR 正文报告的 19 项临时 harness 未提交，也没有被当作本轮运行过的原测试。
+
+最小 CLI 复查（使用支持该候选的 Python 3.12；需要已有 Git 克隆）：
+
+```bash
+git -C /path/to/UniRL fetch origin pull/576/head
+schema_scratch=$(mktemp -d /tmp/unirl-schema.XXXXXX)
+git -C /path/to/UniRL archive a6ed0ec8899f353e33ed1d9ad364bdb560a0f179 \
+  unirl/__init__.py unirl/utils/__init__.py unirl/utils/run_id.py \
+  unirl/utils/benchmark_result.py benchmarks/__init__.py \
+  benchmarks/speed_benchmarks/benchmark_smoke.py | tar -x -C "$schema_scratch"
+cd "$schema_scratch"
+UNIRL_RUN_ID=smoke-contract python3.12 -S -B -m benchmarks.speed_benchmarks.benchmark_smoke \
+  --samples 3 --warmup-iterations 2 --measured-iterations 4 --out results
+python3.12 -S -B - <<'PY'
+import json
+from pathlib import Path
+data = json.loads(Path('results/smoke-contract.json').read_bytes())
+assert data['benchmark'] == 'smoke-synthetic'
+assert data['workload'] == {'samples': 12, 'warmup_iterations': 2, 'measured_iterations': 4}
+assert data['environment']['torch'] is None
+metrics = data['metrics']
+assert metrics['wall_clock_s'] > 0
+assert metrics['samples_per_second'] == 12 / metrics['wall_clock_s']
+assert set(metrics) == {'wall_clock_s', 'samples_per_second'}
+print('schema/CPU-loop check only, not training or UniRL performance')
+PY
+```
+
+SHA256：schema `760bcc3bb262907eebc1600045b5f83b770c717027d97ea43f4f88eff608a17c`；CLI `cc42e43ca953c871042daf829ca3ce5c500067e40def2c388a71fc7d2a048aac`；复用 run_id helper `e8038f48a11f2ac48e1958acc4b07fb8a4be98a2a5eb523a7aa7ffd9de148a82`。没有向 UniRL 提交 harness、采用候选或启动训练，此项不新增 M5 硬件任务。真实性能比较仍需对应模型/算法、负载、硬件、奖励与测量窗口；格式统一不能替代这些条件。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。

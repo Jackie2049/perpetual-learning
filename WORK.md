@@ -16,6 +16,8 @@
 
 ## 运行接续
 
+- **M1 UniRL smoke格式学习收束（2026-10-22）**：先快进同步M5的9fc4586去PDL真机探针，不改其移植工作。只读已有#576 heada6ed0ec8/base6fd82cba，六个原文件临时归档正常导入；Python3.12.13 -S原CLI及标准库检查通过，samples3×measured4=12，warmup不计，缺失可选字段不补0，同名写入拒绝且旧文件不变。见[原调研](notebook/frameworks/unirl-survey.md#smoke-结果格式与训练验收)。schema允许0样本/无success字段，CLI只计时空循环，非训练/性能验收；无永久新harness/依赖或M5任务，上游未改。本题收束，后续选其他源码问题，不堆schema/文件故障替身；GPU/AReaL、#8313与网站边界不变。
+
 - **M1 ReMax基线概念更正收束（2026-10-22）**：只读已有#8310 head5faa0989/basecd58f550，核心源码未变；完整原注册/估计器/贪心参数helper的CPU检查通过，奖励1/4与外部基线2得优势−1/2，误换sampled最大值4则−3/0。见[原笔记](notebook/frameworks/verl-remax-icepop-source-reading.md#v1-贪心会话与-sampled-最大值)/[复查](experiments/scripts/verify_verl_remax_baseline.py)。V1额外remaxbase会话、最终output index及TQ回填仅读源码，原14测试缺依赖未跑，不是解码/训练验收。纠正通用算法笔记max说法并撤回零方差、单样本完美及硬件最优推荐；无新依赖/硬件任务，不应用候选或改上游。本题收束，下一轮选未重复源码问题，不堆基线/TQ替身；GPU/AReaL、#8313与网站边界不变。
 
 - **M1 DeepInfer图像span学习收束（2026-10-22）**：已有#208 head1e262f2b/base9bd9cf24，完整原MM类AST/原common、原查表fixture，12pytest候选全过/base8过4预期失败，两版各4精确端点通过；见[原调研](notebook/frameworks/deepinfer-initial-survey.md#图像展开区间与缓存前缀)/[复查](experiments/scripts/verify_deepinfer_image_spans.py)。span用展开后[start,end)，缓存长度到整图终点才binary=None，非实测命中/释放。成功改写字典移除原始键，新增计数拒绝先于改写；空bytes允许，多占位符旧回退仍保留，非全面严格配对。未执行schema CUDA Event/事件shim、构造器/worker/VE或设备，无新M5事项/环境变更，上游未改。本题收束，后续选非MM/span/输入校验/Pass@k/EMA/packed/路由新问题，不堆缓存边界或schema替身；GPU/AReaL、#8313及网站边界不变。

@@ -109,6 +109,7 @@
 - [UniRL 与 RL 训练抽象](unirl-survey.md#ar-与-diffusion-的源码统一边界)：固定6fd82cba；HI3/SDE/SFT、packed文本双轴与[按域奖励](unirl-survey.md#按域奖励的零分与失败标志)。原CPU路由区分零分/失败/非适用NaN，统计过滤非有限值；router的image输入限制与服务失败检查仅读，非训练验收。
   - [Token预算与update成员](unirl-survey.md#token-预算与-update-成员)：原Part/planner单进程CPU对照，dense/sum代价不同；超预算单样本仍独占批，无长度则回退数量规划。非显存或分布式训练保证。
   - [EMA衰减与时机](unirl-survey.md#ema-衰减方向与更新时机)：原模块正常导入，CPU mirror核对旧影子权重、延后复制与单层异常恢复；后端计数仅源码，非训练/导出验收。
+  - [Smoke结果与训练验收](unirl-survey.md#smoke-结果格式与训练验收)：#576原CLI/标准库检查通过，总样本派生吞吐，可选未知与0不同；仅空循环合同检查，JSON合法不代表训练通过。
 
 ## verl
 
