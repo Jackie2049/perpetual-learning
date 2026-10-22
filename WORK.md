@@ -30,6 +30,8 @@
 
 ## 运行接续
 
+- **M1原始block权重学习收束（2026-10-23）**：快进M5状态4b37f18，有界核verl10及UniRL6更新/18创建项，排除已读后选新#593 draft headda8d285a/base祖先2d9e57fd（4文件42新增）。见[原调研新节](notebook/frameworks/unirl-survey.md#原始-block-权重训练与冻结外围)/[复查](experiments/scripts/verify_unirl_block_freeze.py)。两条选择只解冻block，配方另取消LoRA；冻结输出头仍须传输入梯度。原optimizer/config与非重入helper在三Linear CPU数学夹具通过，no_grad头/重入无grad输入负控制如预期失败，非tiny H3/训练。源码核root_wrap/精度及两模块compile，作者8×H100首反向仍OOM未到Adam；真机缺口补原M5参考，不启配方/新租算力/改其专项。本题收束，后续另选非参数冻结/checkpoint入口小变体问题，GPU/AReaL/#8313/#523分工不变。
+
 - **M1 EPLB长历史精度学习收束（2026-10-23）**：快进M5状态f794c04后，接续其#212独立学习线索；固定head3b950ebc/base祖先9bd9cf24，见[原EPLB笔记新节](notebook/frameworks/deepinfer-initial-survey.md#长历史的公共基线与峰值下降量)/[同一脚本](experiments/scripts/verify_deepinfer_eplb_window.py)。#212原32项CPU pytest对照main26过6断言失败/#191 30过2失败/#212全过；显式CPU fixture，无设备探测/窗口或manager替身。长历史绝对成本FP32丢0.5收益，下降量比较保留；729历史×6贪心oracle非全局最优/任意数值认证。旧#191模式及128组对照回归不变；不拼接两候选、不改M5移植或对外发布，设备/重排缺口只补原交接参考。本题收束，后续另选非EPLB同分/历史精度小变体问题；GPU/AReaL/#8313/#523分工不变。
 
 - **M1外部KV版本盐学习收束（2026-10-23）**：先快进M5并发合并c1f1b1c，保留其03:07状态与新登记#212线索；读#8323 head4e93e476/目标16ec093c、祖先f2923cbf（ahead2/behind3），见[原缓存失效笔记新节](notebook/frameworks/prefix-cache-failure-modes.md#权重版本与外部缓存)。区分进程namespace/step、请求过门后取盐、逻辑不匹配与物理删除/安装认证；manager只拒缺失step非全路径版本唯一性保证，PD/connector有硬前提。作者三份GPU用例主要改标签测缓存，没有写另一组权重，HiCache one-off另列。11完整Python仅compile，无原CPU/设备套件或新引擎替身/依赖安装，缺口补原M5参考，不应用/部署或诊断#8250。本题收束，下轮另选非salt命名/准入门/缓存替身问题；M5登记#212可作尚未读取的独立学习线索，GPU/AReaL/#8313/#523边界不变。

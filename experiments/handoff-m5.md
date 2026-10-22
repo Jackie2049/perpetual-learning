@@ -13,6 +13,8 @@ GPU/NPU 的访问、环境与实验由 macbook-M5 Agent 负责。M1 遇到需要
 
 ## UniRL 联合路径的资源与身份边界
 
+原始block权重参考（2026-10-23，非新增训练任务）：已有[#593](https://github.com/Tencent-Hunyuan/UniRL/pull/593)为open draft，head`da8d285ac529c2f06819bf3a098e3cc657ae6618`、base/祖先`2d9e57fdee65ea69254fdb958d3fca9ce4872661`；[M1源码/CPU数学控制](../notebook/frameworks/unirl-survey.md#原始-block-权重训练与冻结外围)区分冻结外围与no_grad、原非重入helper、优化器参数过滤，未执行H3/FSDP/TrainStack/replay/恢复。作者原checkpoint `MiniMaxAI/MiniMax-H3@42ed227ee7df40d41602854ae760620d6eb651fe`的8×H100 80GB/256×384/124帧/10步/FP32 masters/resident VAE首次反向仍OOM，尚无成功原模型更新。若M5今后独立选择此方向，先核授权权重、精确配方/后端与训练峰值预算，再决定是否有条件做一次更新及固定状态恢复；需新权重/编译/扩卡/租用/offload设计或影响原专项则记录待条件并停止，不把CPU夹具、加载/生成成功或LoRA历史收益当本路线验收。不自动应用候选或改资源方案，本参考不表示接单。
+
 状态：待资源匹配与M5选题，非已接手或即时执行任务；不打断既有GPU/AReaL工作。目的：后续若获准推进UniRL真机，区分driver样本树接线与实际engine行为，避免把模板注释或静态源码当实测。
 
 固定官方main `6fd82cba13f52f394747832344039408699ea378`，[M1源码入口与证据](../notebook/frameworks/unirl-survey.md#ar-与-diffusion-的源码统一边界)。M1仅原静态依赖guard与4文件AST/compile通过，无训练包导入/设备探测。HI3 driver构造P→P×N→P×N×M，但同版配方旧注释仍称平坦对；没有用CPU替身替代真实engine验收。

@@ -215,6 +215,7 @@
 - [UniRL 调研（腾讯统一多模态 RL）](frameworks/unirl-survey.md) — 统一训练抽象、稀疏SDE、SFT游标、packed文本双轴与[按域奖励](frameworks/unirl-survey.md#按域奖励的零分与失败标志)；原CPU路由/统计区分零分、失败和非适用NaN，非服务或训练验收
   - [Token预算与update成员](frameworks/unirl-survey.md#token-预算与-update-成员) — 原CPU planner保留update成员；预算不拒绝超长单样本，无长度会回退数量规划，非显存保证
   - [EMA衰减与时机](frameworks/unirl-survey.md#ema-衰减方向与更新时机) — decay乘旧影子，零值复制live；原CPU mirror/回调/上下文控制，非optimizer或训练验收
+  - [原始block权重与冻结外围](frameworks/unirl-survey.md#原始-block-权重训练与冻结外围) — #593参数冻结不切输入梯度；原optimizer/checkpoint helper的CPU数学控制，非H3训练，作者8×H100首次反向仍OOM
   - [Smoke结果与训练验收](frameworks/unirl-survey.md#smoke-结果格式与训练验收) — #576原空循环CLI核对总样本、可选字段、同名文件保护；统一JSON不是训练或性能验收
   - [损失单位与微批权重](frameworks/unirl-survey.md#损失单位与微批次权重) — #622接口迁移，token/seq目标与None/零计数不同；四组原函数CPU前向及局部梯度检查，非FSDP验收
   - [AROPD采样梯度与KL](frameworks/unirl-survey.md#aropd-的采样梯度与-kl-目标) — #534 raw score公式的固定前缀参考；teacher log-prob目标不能省去entropy项，非原算法/模型验收

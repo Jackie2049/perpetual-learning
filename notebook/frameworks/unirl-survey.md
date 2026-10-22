@@ -770,6 +770,52 @@ IPC内部_next_model_version从1起、成功发布后递增，是发布序号；
 
 真实接线/权重及失败关闭缺口记[原M5 UniRL参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不部署配套分支、下载模型或新排训练。本题以副本/元数据边界学习收束，不继续造IPC替身。
 
+## 原始 block 权重训练与冻结外围
+
+**冻结参数不等于切断该模块的输入梯度，也不等于整个模型已经能训练。** [#593](https://github.com/Tencent-Hunyuan/UniRL/pull/593)（2026-10-23读取open draft）为MiniMax-H3增加原始`transformer_blocks`权重训练。固定head `da8d285ac529c2f06819bf3a098e3cc657ae6618`、base及实际祖先 `2d9e57fdee65ea69254fdb958d3fca9ce4872661`，ahead3/behind0；四文件仅新增42行，无已提交测试。它不是全transformer微调，也不是LoRA方案的新名字。
+
+### 参数选择与原分片布局
+
+[bundle](https://github.com/Tencent-Hunyuan/UniRL/blob/da8d285ac529c2f06819bf3a098e3cc657ae6618/unirl/models/minimax_h3/bundle.py)在meta/eager两条transformer构造分支之后、backend包装之前执行：
+
+```python
+if config.full_finetune_blocks:
+    transformer.requires_grad_(False)
+    transformer.transformer_blocks.requires_grad_(True)
+```
+
+因此text refiner、输入/输出投影和timestep模块保持冻结，只有block子树的原参数可训练；text encoder及两个VAE沿用原冻结路径。默认false只是不执行新增选择，不代表自动构造LoRA。[新配方](https://github.com/Tencent-Hunyuan/UniRL/blob/da8d285ac529c2f06819bf3a098e3cc657ae6618/examples/diffusion/minimax_h3/minimax_h3_t2va_trainside_blocks.yaml)同时设true和`backend.lora_cfg: null`：后者单独取消backend的adapter注入，不能只把bundle开关当成对所有LoRA/EMA配置的互斥保护。
+
+继承配方只wrap `MiniMaxH3TransformerBlock`，保留`root_wrap:false`、`cast_forward_inputs:false`、BF16计算与FP32 trainable masters。外围投影/timestep原有混合精度不由root统一转换。[原fsdp_wrap](https://github.com/Tencent-Hunyuan/UniRL/blob/da8d285ac529c2f06819bf3a098e3cc657ae6618/unirl/train/backend/fsdp/wrap.py)在默认进程组已初始化且world_size>1时，拒绝仍可训练却不属于DTensor分片组的参数；冻结外围解决这项布局前提，但不证明collective、权重装载或完整反向正确。`trainable_module()`仍返回整个transformer；原优化器另以`requires_grad`过滤参数，不按返回模块的名字推定所有权重可训练。
+
+### 冻结输出头仍要传递梯度
+
+固定[vendor前向](https://github.com/Tencent-Hunyuan/UniRL/blob/da8d285ac529c2f06819bf3a098e3cc657ae6618/unirl/models/minimax_h3/vendor/transformer_minimax_h3.py)在block之后仍执行`norm_out`、视频/音频输出投影和行选择，没有为冻结头插入`no_grad`。冻结叶子参数只是不为它积累参数梯度；只要输入需要梯度，这些运算仍能把链式法则传回block。直接把整个冻结输出头放进`no_grad`会切断这条链，不能作为等价省显存办法。`train()/eval()`控制的模块行为又是另一件事，新增两条选择语句没有切换模式。[PyTorch 2.9 autograd说明](https://docs.pytorch.org/docs/2.9/notes/autograd.html#locally-disabling-gradient-computation)
+
+这还关联首个block的checkpoint：冻结输入投影且原输入不求导时，输入activation可以没有`requires_grad`，但block参数仍需训练。原FSDP checkpoint helper用`use_reentrant=False`，不要求输入中先有需梯度tensor；重入版本有这项要求。[PyTorch checkpoint说明](https://docs.pytorch.org/docs/2.9/checkpoint.html) 这是原helper已有行为，不是本PR新增修复或本项目提出的替代方案。
+
+### 本机 CPU 控制与作者真机边界
+
+[复查脚本](../../experiments/scripts/verify_unirl_block_freeze.py)固定Git对象，无隐式fetch；Python3.12.13 / torch2.9.1，显式CPU FP64。只将原选择条件/两语句应用到声明的三Linear数学夹具，输入2、外围权重3/7、block权重5，不是tiny H3。完整原`OptimizerConfig`与optimizer模块正常执行，预加载叶子模块绕过UniRL父包；checkpoint仅取原两个helper的AST，未执行FSDP wrapper。
+
+| 控制 | 实际结果 |
+|---|---|
+| 开关关闭与开启 | 关闭保留三份可训练参数；开启仅保留block，Parameter身份与train模式不变 |
+| 冻结外围的正常前向/反向 | 输出210，block梯度42，与全可训练参考一致；外围grad为None |
+| 原optimizer factory及一次AdamW | lr=.01、weight_decay=.1，只有block进入参数组/状态，5更新为4.985000000002381，外围仍3/7 |
+| 输出头改用no_grad的负控制 | 输出无反向图，backward按预期拒绝，block没有梯度 |
+| 原非重入helper与重入负控制 | 前者保留梯度42；后者在本例无需梯度输入时告警并失去反向图 |
+
+```bash
+python -B experiments/scripts/verify_unirl_block_freeze.py /path/to/UniRL
+```
+
+两次执行结果一致。修改的两个完整Python模块另仅内存compile；optim、FSDP wrap和vendor transformer的base/head Git blob逐项相同。冻结不保证外围激活/反向计算免费，也不证明实际H3参数规模、混合精度、meta物化、LoRA默认输出、FSDP/TrainStack、replay、恢复或学习质量。这里没有运行原H3或作者外部harness、安装新依赖、设备探测/模型加载。
+
+作者报告tiny H3参数选择、CPU/Gloo FSDP/TrainStack更新与恢复成功，但harness和原始日志在仓库外，本项目未复跑。[PR正文及新增README](https://github.com/Tencent-Hunyuan/UniRL/pull/593)明确：原checkpoint `MiniMaxAI/MiniMax-H3@42ed227ee7df40d41602854ae760620d6eb651fe`在8×H100 80GB、256×384/124帧、10 CPSSDE步、FP32 masters及resident VAE条件下能load/generate，首次backward仍OOM；开启expandable segments的后一次也未到Adam，报告75.94GiB allocated与1.43GiB reserved-but-unallocated。16卡更新验证待完成，不能把LoRA配方历史收益或加载成功挪为原始block权重训练成功，更不能外推4090可跑。真机前提补[原M5入口](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不自动启配方、扩大卡数或演化offload方案。
+
+源SHA256：bundle `9d7681dda134e5a38c1bd0b20c07330193ace5d93104250a9d542e92c847e0cc`；config `f84ce6b98089e73f49016b22a977f5b002192e1220f32df6c9d644c7a3b80864`；optimizer `a0f0fcf664da5049c1f3652d2e5f3fe1e469e721ea91c0b613294374f4a5da05`；wrap `0a0a6ec9f587b2ce7fe26f8bc759ca3a701ff1b9b67e769e19b476120ca5a915`。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。
