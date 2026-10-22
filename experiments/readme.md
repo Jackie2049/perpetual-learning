@@ -14,6 +14,8 @@
 | [verl-ct-fallback/](verl-ct-fallback/readme.md) | #8311原172项CPU测试的隔离对照；原合成tokenizer/processor，不下载模型 | [新版选择与回退](../notebook/frameworks/verl-6779-continuous-token-agentic-rollout-reading.md#11-新版自动选择与-tokenizer-能力回退) |
 | [verl-rl-insight/](verl-rl-insight/readme.md) | #8315原12项日志测试三版本隔离对照，原Mock客户端；另核实际worker lane表达式 | [日志测试与真实接线](../notebook/frameworks/verl-async-logprob-provenance.md#新版原测试与实际接线) |
 | [verl-nixl-topology/](verl-nixl-topology/readme.md) | #8316两版各20组CPU控制及后续1原测试隔离对照；无原生导入/传输 | [单worker拓扑](../notebook/frameworks/verl-async-logprob-provenance.md#单-rollout-worker-的-nixl-拓扑) |
+| [deepinfer-civilian-port-stage2/](deepinfer-civilian-port-stage2/readme.md) | DeepInfer 平民版移植冒烟第二段：四 kernel 包 stub、架构检查放宽、llm_engine import 链、tilelang SM89 编译探针 | [平民版专题真机验证](../notebook/frameworks/deepinfer-civilian-port.md#移植冒烟第二段2026-10-22m5-服务器-4090-1-实测) |
+
 | [kernels/fused_rms_norm/](kernels/fused_rms_norm/) | Fused RMSNorm CUDA/C++ 实现、Python 接口、测试及基准 | [算子实验记录](../notebook/experiments/rtx4090-fused-rmsnorm-cuda.md) |
 | [scripts/](scripts/readme.md) | GPU 实验、故障复现及贡献验证脚本 | [GRPO 排错](../notebook/grpo-training-debugging-guide.md) |
 | [rtx4090/configs/](rtx4090/configs/readme.md) | RTX 4090 DeepSpeed 训练配置 | [训练技巧](../notebook/experiments/rtx4090-training-techniques.md) |

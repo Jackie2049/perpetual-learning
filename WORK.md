@@ -4,13 +4,20 @@
 
 ## 当前阶段
 
-**2026-10-21 M5 算力任务（本会话）**：接手用户指派的 GPU/NPU 算力工作。4090 服务器连通可用，完成 DeepInfer 平民版移植冒烟第一段——真机确认架构检查/kernel 包/torch 驱动三类堵点，csrc `deepinfer._C` 在 4090 上编译并导入成功。昇腾 910C 侧 VPN 掉线待用户恢复。详见[运行接续](#运行接续)与[专题笔记](notebook/frameworks/deepinfer-civilian-port.md#4090-真机验证2026-10-21m5-服务器-4090-1-实测)。
+**2026-10-22 M5 算力任务（本会话）**：4090-1 连通可用，完成 DeepInfer 平民版移植冒烟第二段——四 kernel 包 stub + 放宽架构检查后 **llm_engine import 链 20 模块全通**；tilelang 0.1.15 本身支持 SM89（saxpy/sync_grid 编译运行 OK），但 **43 个 cuda tilelang kernel 全部显式使用 PDL（Hopper+ 专属），SM89 编译即抛 PDL is not supported**，修正专题"tilelang 只需重编译"结论；LLMEngine 实例化停在数据前提（需 V4 架构 config）。昇腾 910C VPN 掉线（100% 丢包）待用户恢复。详见[运行接续](#运行接续)与[专题笔记](notebook/frameworks/deepinfer-civilian-port.md#移植冒烟第二段2026-10-22m5-服务器-4090-1-实测)。
+
+**2026-10-21 M5 算力任务（上会话）**：接手用户指派的 GPU/NPU 算力工作。4090 服务器连通可用，完成 DeepInfer 平民版移植冒烟第一段——真机确认架构检查/kernel 包/torch 驱动三类堵点，csrc `deepinfer._C` 在 4090 上编译并导入成功。昇腾 910C 侧 VPN 掉线待用户恢复。详见[运行接续](#运行接续)与[专题笔记](notebook/frameworks/deepinfer-civilian-port.md#4090-真机验证2026-10-21m5-服务器-4090-1-实测)。
 
 **2026-10-20 Codex 首次定时执行更正（优先于下方历史进展）：** AReaL prompt_mean 仍是用户指定优先研究项，但原“独有 M 放大 / dummy 膨胀 / Megatron 额外 P 倍”论证已撤回。旧脚本未模拟 token_mean 的逐步分母、追加了不合法全局 dummy 步，并遗漏 MCore 的 /P。已替换 CPU 参考验证，43 项数值比较与调度检查通过；详见 [源码笔记 §10.7](notebook/frameworks/areal-architecture-source-reading.md)。下一步 GPU 先固定外层 M 只变内层 P，再验证固定 M 的 DP/dummy 分配；M=2/4 作为训练行为对照，不以最终参数不同直接判 bug。尚无真实框架/GPU 实测。
 
 自主运行中（2026-10-19 起 18 轮 /loop 30m）。已完成：工具修复（inference_estimator.py）、verl 候选三轮核验与全新扫描（10 候选）、4 项源码级修复分析、GMPO/GSPO/SAPO 论文精读与数值证明。2026-10-20：verl 新 issue 恢复，深挖 #8281 完成（analysis-done + CPU 验证）；**#8237 offload 修复 PR #8286 已合并进 verl 主仓库**（首个 bugfix 闭环，merge `472dd21`）。详见 [当日日志](diary/2026-10-20.md)。
 
 ## 运行接续
+
+- **M5 DeepInfer 4090 移植冒烟第二段（2026-10-22 算力任务）**：4090-1 连通可用（GPU 0/1/7 空闲，/home 99% 剩 109G）。四 kernel 包最小 stub（`/home/zxw/deepinfer-stubs`，PYTHONPATH 注入，不改源码）+ 就地放宽 `get_bf16_tflops_limit`（SM89→82）+ conda gcc13 libstdc++ 前置 + 装 pytest（tilelang_ops 运行时混入测试依赖）后，**llm_engine 等 20 个核心模块 import 全通**。tilelang 0.1.15 在 SM89 上 saxpy/sync_grid 编译运行 OK；**但 43 个 cuda tilelang kernel 文件全部显式使用 PDL（T.pdl_sync/pdl_trigger，Hopper+ 专属），norm_tl 编译抛 PDL is not supported——新硬堵点，需逐个去 PDL 改写（sync_grid 路径已验证可行）**。LLMEngine 实例化停在数据前提：ModelConfig 只接受 `DeepseekV41ForCausalLM`（V4 多模态 config），服务器无 V4 权重。见[专题笔记](notebook/frameworks/deepinfer-civilian-port.md#移植冒烟第二段2026-10-22m5-服务器-4090-1-实测)与实验材料 [experiments/deepinfer-civilian-port-stage2](experiments/deepinfer-civilian-port-stage2/readme.md)。**昇腾 910C VPN 掉线（192.168.13.174 100% 丢包），待用户恢复。** 下一步：价值判断待用户确认（vLLM 更务实 vs 验证 ZOS/EPLB 可移植性的研究价值）；若继续，完整移植需 Triton/Cutlass 替换四 kernel 包 + 43 个 tilelang kernel 去 PDL 改写 + V4 权重。
+
+- **M5 DeepInfer 4090 移植冒烟第一段（2026-10-21 算力任务）**：4090-1 连通可用（GPU 0/1/7 空闲，/home 99% 剩 109G）；昇腾 vLLM-Ascend-A3（192.168.13.174）ping/SSH 均超时，**昇腾 VPN 掉线，已报告用户待恢复**。独立克隆 `/home/zxw/deepinfer-civilian`（HEAD 774ce244 全子模块）+ conda 环境 `deepinfer-smoke`（py3.12 + torch 2.13.0+cu129 + gcc13）。真机确认：`get_bf16_tflops_limit` 抛 unknown GPU type（堵点5）；官方 cu132 wheel 与驱动 12.9 不匹配（新增堵点，须降 cu129）；FlashMLA 需 NVCC13.1/sm100a（堵点1）；llm_engine 导入缺 deep_ep（堵点3）。**csrc `deepinfer._C` 已用 gcc13+cu129 编译并导入成功（首个可移植真机证据）**。见[专题笔记](notebook/frameworks/deepinfer-civilian-port.md#4090-真机验证2026-10-21m5-服务器-4090-1-实测)与[日志](diary/2026-10-21.md)。下一步：替换 deep_ep/deep_gemm/deep_select/flash_mla import + 放宽架构检查后尝试实例化 LLMEngine；完整 offline_inference 需 V4 权重与 EP 配置，价值判断待用户确认。
+
 
 - **M1 DeepInfer Pass@k学习收束（2026-10-22）**：先快进同步另一侧33a7245的#8281/#8313真机交接，不并行修改；有界读三框架各5个更新PR后选已有#207 head6e4c8eeb/base9bd9cf24，仅新增测试、生产代码未变。原16项pytest与三组汇总对照通过，见[原调研](notebook/frameworks/deepinfer-initial-survey.md#passk-的不齐样本与题目分母)/[复查](experiments/scripts/verify_deepinfer_passk.py)。min(k,n)保留少样本题但非统一k；7行score2/7、按题Pass1=1/4，完全缺题不在helper分母；score_run空拒绝/覆盖警告仅源码，非端到端缺陷定性。无torch/模型/judge/设备或新M5事项，上游未改。本题收束，后续选非Pass@k/分母/EMA/packed/路由新问题，不堆统计/清单变体；GPU/AReaL及网站边界不变。
 

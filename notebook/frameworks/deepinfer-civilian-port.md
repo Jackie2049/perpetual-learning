@@ -6,7 +6,7 @@
 >
 > 源码基线：`deepseek-ai/DeepInfer` commit `8b16149`（本地 clone `/Users/jackiemac/workspace/DeepInfer`）。
 >
-> 状态：**堵点定位完成 + 替代方案调研完成（中期结论）。下一步：写实验设计 / 等待目标硬件后实际编译验证。** 本专题完成后将作为新章节插入 DeepInfer 研究报告。
+> 状态：**堵点定位完成 + 替代方案调研完成 + 两段 4090 真机冒烟（import 链全通、csrc `_C` 编译成功、发现 tilelang PDL 硬堵点）。下一步：完整移植需 Triton/Cutlass 替换四 kernel 包 + 43 个 tilelang kernel 去 PDL 改写，价值判断待用户确认。** 本专题完成后将作为新章节插入 DeepInfer 研究报告。
 
 ## 结论先行
 
@@ -124,6 +124,23 @@
 - 替换 `deep_ep / deep_gemm / deep_select / flash_mla` 四个顶层 import（`parallel_state.py`、`userbuffer.py`、`linear.py`、`mlp.py`、`attn.py`、`sampler.py` 等），用 Triton/Cutlass 替代，放宽 `get_bf16_tflops_limit` 后尝试实例化 LLMEngine。
 - 在 4090 上编译 tilelang kernel（观察 93 个 kernel 的实际编译结果）。
 - 完整 `examples/offline_inference.py` 需要 V4 模型权重与 EP 配置，工程量超出本轮；价值判断（vs 直接用 vLLM）仍待用户确认。
+
+## 移植冒烟第二段（2026-10-22，M5 服务器 4090-1 实测）
+
+> 延续第一段既定下一步，用最小 stub 替换四个 kernel 包 + 放宽架构检查，验证 llm_engine import 链与 tilelang kernel 的 SM89 编译可行性。实验材料与复现见 [experiments/deepinfer-civilian-port-stage2](../../experiments/deepinfer-civilian-port-stage2/readme.md)。
+
+### 第二段实测结果
+
+1. **llm_engine import 链全通**：20 个核心模块（llm_engine / arg_utils / profile_server / parallel_state / sampler / attention_backend / linear / model_loader / models / v4_modules / worker / sequence / sampling_params）经 stub 全部导入成功，0 失败。前置修复三处：`get_bf16_tflops_limit` 加非 Blackwell 分支（SM89→82，只影响 StatsLogger 统计）；tilelang_ops 运行时模块顶层混入的 `import pytest`（装 pytest）；conda gcc13 libstdc++ 前置（否则 `_C` 缺 GLIBCXX_3.4.31）。
+2. **tilelang 0.1.15 本身支持 SM89**：最小 saxpy kernel 1.5s 编译、运行误差 0；`T.sync_grid()` 2.4s 编译运行 OK。
+3. **新堵点（静态分析未覆盖）：43 个 cuda tilelang kernel 文件全部显式使用 PDL**（`T.pdl_sync`/`T.pdl_trigger`，29 文件 28 个用到）。PDL 是 Hopper+（SM90+）硬件特性，SM89 上 `norm_tl` 编译抛 `PDL is not supported`。**修正本节静态结论「tilelang kernel 跨架构本身可行、只需重编译」——多数 kernel 需去 PDL 改写，不是简单重编译。**
+4. **LLMEngine 实例化停在数据前提**：`ModelConfig` 只接受架构 `DeepseekV41ForCausalLM`（config 需含 `vl_aligner`）；服务器无 V4 权重（Qwen2.5-0.5B 抛 `Unsupported HF architecture 'Qwen2ForCausalLM'`）。与「未验证项」一致：完整实例化需 V4 权重 + EP 配置，价值判断待用户确认。
+5. **昇腾 910C 仍未连接**（2026-10-22 昇腾 VPN 100% 丢包，待用户恢复）。
+
+### 第二段结论
+
+- **平民移植可行性分层修正**：Python 层 import 堵点已全部用 stub 打通（证明 import 链可移植）；真正的新硬堵点在 **tilelang kernel 的 PDL 依赖**——43 个 kernel 需逐个改写为 sync_grid/普通同步（路径已验证可行，工程量大）。加上第一段的 FlashMLA/DeepGEMM/DeepEP 替换，4090 平民版仍是「可做但工作量很大」的工程，研究价值（验证 ZOS/EPLB/DSpark 平移到普通硬件）高于工程价值（直接用 vLLM 更务实）。
+- 本段未改 DeepInfer 上游源码（patch 仅就地放宽 `device.py` 一处，属本地冒烟用）。
 
 ## 未验证项 / 下一步
 
