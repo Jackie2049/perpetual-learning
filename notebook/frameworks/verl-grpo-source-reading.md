@@ -132,6 +132,8 @@ get_group_balanced_partitions()  # 按 uid 分组
 
 ### 连续 UID 与等样本组的前提
 
+本节是下述固定版本的PrefixGrouper/legacy分区契约；新候选#8201的V1按源UID定义优化mini-batch，是[另一条布局路径](#v1-源-prompt-单位与可变轨迹行)，不应把两者的同卡/同批保证混用。
+
 **组级均衡不是按 UID 全局聚合，也不独立保证每个 rank 的样本数相等。** 固定官方提交 `1876b06d0a3e4e71e06230be10af14492ca8a75b`，[`get_group_balanced_partitions`](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/utils/seqlen_balancing.py)逐项比较当前 UID 和上一项，仅把相邻相同值组成一个段，再对段的 workload 做 Karmarkar-Karp 分区。相同 UID 若在不相邻的位置重现，会被当作不同段，而非用字典合并。
 
 组 workload 是组内各样本 `24576*L + L²` 的和，不是先把整组长度相加再平方。`equal_size=True` 约束的是每个分区的**段数**。因此调用方需要同时维护三个条件：
@@ -379,8 +381,67 @@ IS weights可选: `pg_losses * rollout_is_weights`
 ## 18. Balance Batch & Dynamic BSZ
 
 ```python
-# trainer.balance_batch=True → 重新分配数据跨DP ranks → 等化valid token counts
+# trainer.balance_batch=True → 按估算workload重排跨DP数据，不保证valid token数完全相等
 # → 改变data order但uid-based advantage不受影响
 
-# use_dynamic_bsz=True → 调整per-GPU micro-batch size → 防variable-length OOM
+# use_dynamic_bsz=True → 按预算调整micro-batch；不是任意长度/状态下不OOM的保证
 ```
+
+### V1 源 prompt 单位与可变轨迹行
+
+**同一UID属于同一个全局优化mini-batch，不等于该UID的轨迹全在同一DP rank。** 2026-10-22 只读已有 [#8201](https://github.com/verl-project/verl/pull/8201)，读取时open，固定head `e891fd814e24c0b2d0c70a47e234f75a63d10ad6`、目标base `18cfb74852a053a27dcf301d3318a093be81b628`、merge-base `2035f58dcb06d8cad4caee107b30f4045d724367`。14文件830增113删；本节限定新版V1布局与消费链，不复核全部算法/损失归约或性能。旧group helper在该base/head的AST相同，候选不是自动修复此前PrefixGrouper同卡共享的所有前提。
+
+#### 从源 prompt 到实际行数
+
+新版[配置文档](https://github.com/verl-project/verl/blob/e891fd814e24c0b2d0c70a47e234f75a63d10ad6/docs/examples/config.rst)将V1的ppo_mini_batch_size解释为源prompt/UID数量，不再用固定rollout.n推导实际行数。多输出session或保留部分成功轨迹，都可能令每UID贡献不同数量的训练行；legacy trainer仍维持原有行数契约，不能把V1语义直接套到旧路径。
+
+[`PPOTrainer._balance_batch`](https://github.com/verl-project/verl/blob/e891fd814e24c0b2d0c70a47e234f75a63d10ad6/verl/trainer/ppo/v1/trainer_base.py#L1649)用key.rsplit("_",2)去掉session/output尾部后按UID字典全局聚合，保留首次出现顺序，必要时在控制端shuffle整组。每个active模型要求现存UID数能整除其ppo_mini_batch_size；公共单元的prompt数为actor/critic这些配置值的GCD，**不乘rollout.n**。它只从已有key建组，不负责补回完全没有轨迹行的prompt；失败保留与replay取样仍是前置契约。
+
+每单元单独补行：动态batching只需DP整除；静态路径取各active阶段所需global micro-batch行倍数的LCM，包括actor/ref logprob、critic forward/train及actor train。不能先把所有轨迹合起来补齐，再任意切回prompt mini-batch。源码padding模板是128-token合成行、response/loss mask为0并标is_padding，不是额外的真实轨迹；本节不以此认证全栈归约不受padding影响。
+
+[原V1测试](https://github.com/verl-project/verl/blob/e891fd814e24c0b2d0c70a47e234f75a63d10ad6/tests/trainer/ppo/v1/test_minibatching_on_cpu.py)给8个UID的输出数 `[2,1,3,2,1,4,2,3]`，actor每批4个prompt、critic每批2个、DP=2、动态batching。其布局期望是：
+
+| 单元UID | 真实行数 | 单元补行 | 单元global行数 |
+|---|---|---|---|
+| p0 p1 | 3 | 1 | 4 |
+| p2 p3 | 5 | 1 | 6 |
+| p4 p5 | 5 | 1 | 6 |
+| p6 p7 | 5 | 1 | 6 |
+
+18条真实行变成22条布局行。`_get_global_mini_batch_sizes`将相邻单元合并，actor得到 `[10,12]`、critic得到 `[4,6,6,6]`；每epoch分别计划2/4次mini-batch调用，不因原本rollout.n=2却实际输出18行而改成按固定行数切分。M1仅以该layout为输入执行原coalescer核对这两个列表，未执行测试中的StubTrainer、KVBatchMeta或替身padding。
+
+#### 排列和 worker 必须共享边界
+
+每单元内部按单行workload分区，同一UID可分到不同rank；结果按rank拼接，但每rank内部按单元顺序累积share。每单元行数已经DP整除，worker就能从各rank对应位置取回同一个global mini-batch。轻重交错排序也只在当前单元当前rank的share内，不能跨边界重排；这不是PrefixGrouper的同UID同rank算法，也不保证每个micro-batch计算量相同。
+
+控制端将可变行边界保存为 `global_mini_batch_sizes`。[TrainingWorker](https://github.com/verl-project/verl/blob/e891fd814e24c0b2d0c70a47e234f75a63d10ad6/verl/workers/engine_workers.py#L244)拒绝同时给固定mini_batch_size/num_mini_batch，并要求每个global大小可被DP整除；除DP后传给[可变迭代器](https://github.com/verl-project/verl/blob/e891fd814e24c0b2d0c70a47e234f75a63d10ad6/verl/utils/tensordict_utils.py#L615)，后者验证正值与总行数，每个epoch重用相同边界。每次train_batch携带实际含padding的global_batch_size；update_lr_scheduler只在整个调用的最后一次迭代置True，不能直接用mini-batch个数当LR scheduler步数。这里只核接线，未跑optimizer/调度器。
+
+V1在shuffle=true且ppo_epochs>1时直接拒绝，而不是静默退化；shuffle=true/epoch=1在控制端打散UID后，worker不再shuffle行。多epoch且shuffle=false仍允许。legacy路径对多epoch worker shuffle回退到whole-batch均衡，行为不同，不能混用一条规则解释两条trainer。
+
+#### 本机检查的范围
+
+Python3.12.13仅标准库执行原完整 `get_uid_balance_unit_size`、`validate_minibatching_config` 及原staticmethod `_get_global_mini_batch_sizes` 的AST：4种active模型组合GCD、2种layout合并/2种拒绝、2种合法/2种非法shuffle配置，共12项通过。SimpleNamespace只承载输入字段，不实现OmegaConf/TransferQueue/TensorDict；没有调用controller、worker或旧分区器。另8个完整模块内存compile通过；base/head旧group helper AST相同。缺omegaconf、tensordict、transfer_queue，未补装、扩写替身或运行原测试矩阵。
+
+最小原coalescer复查（本地须已有固定Git对象）：
+
+```bash
+python3 -B - /path/to/verl-git <<'PY'
+import ast, subprocess, sys
+from types import SimpleNamespace
+src = subprocess.check_output(['git', '-C', sys.argv[1], 'show',
+    'e891fd814e24c0b2d0c70a47e234f75a63d10ad6:verl/trainer/ppo/v1/trainer_base.py'])
+cls = next(n for n in ast.parse(src).body if isinstance(n, ast.ClassDef) and n.name == 'PPOTrainer')
+f = next(n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == '_get_global_mini_batch_sizes')
+future = ast.ImportFrom(module='__future__', names=[ast.alias(name='annotations')], level=0)
+shell = ast.ClassDef(name='LayoutOnly', bases=[], keywords=[], body=[f], decorator_list=[])
+tree = ast.fix_missing_locations(ast.Module(body=[future, shell], type_ignores=[]))
+ns = {'_MINIBATCH_LAYOUT_KEY': '_minibatch_layout'}
+exec(compile(tree, 'original-layout-helper', 'exec'), ns)
+batch = SimpleNamespace(extra_info={'_minibatch_layout':
+    {'unit_prompt_count': 2, 'unit_global_sizes': [4, 6, 6, 6]}})
+assert ns['LayoutOnly']._get_global_mini_batch_sizes(batch, 4) == [10, 12]
+assert ns['LayoutOnly']._get_global_mini_batch_sizes(batch, 2) == [4, 6, 6, 6]
+PY
+```
+
+SHA256：utils.py `122d3f7af27a24bd63d5f1afeb849be7687abb9497422cfcb560926c3e72db0b`；trainer_base.py `22cd73dc3c86586b9defa40c37130ccda95ff3e8db9101d0b74f682c35c6ea04`；原V1测试 `94e1ffcadd1ed5c494718fa18f6ed3a209d42726912379b0026051e16b6cb6d9`；worker测试 `0e965c532331a3536fcc2d9c92af9926c97d9272898a850b2bf7623e995f0eaf`。作者正文报告组合测试32过/10跳过，以及既有32卡Qwen3-30B-A3B均衡benchmark；后者不专门验证新版可变输出调度，本机均未复跑。没有TQ服务、真实数据重排/DP dispatch、padding入库、梯度归约或GPU/NPU/性能验证。此题收束为新单位与边界传递的源码证据；[M5待条件参考](../../experiments/handoff-m5.md#verl-v1-可变行布局参考)不代表采用候选或接单，不修改上游/M5专项。

@@ -154,6 +154,7 @@
 - [verl GRPO End-to-End Data Flow 源码级阅读](verl-grpo-data-flow-reading.md)：[拼批形状与引用](verl-grpo-data-flow-reading.md#拼批中的形状与引用)及[Rollout完整性](verl-grpo-data-flow-reading.md#rollout-完整性与会话计数)；#6641原7项replay测试候选通过、旧版4项预期失败，区分输出行与会话，非TQ/训练验收。
 - [verl GRPO 内存泄漏与 detach_metrics 修复 — RTX 4090关键分析](verl-grpo-detach-metrics-rtx4090-reading.md)
 - [verl GRPO 源码深度阅读](verl-grpo-source-reading.md)：新增[UID均衡前提](verl-grpo-source-reading.md#连续-uid-与等样本组的前提)，原3个CPU测试体与22组控制；连续段聚合、等段数不自动保证等行分发。
+- [verl V1源prompt与可变行](verl-grpo-source-reading.md#v1-源-prompt-单位与可变轨迹行)：#8201新单位/GCD单元/worker可变边界，UID同批不保证同rank；12项原纯helper检查，未跑控制端或训练栈。
 - [verl GRPO Training Loop Internals — Source Code Level Deep Reading](verl-grpo-training-loop-internals-reading.md)：补[学习率步数与恢复](verl-grpo-training-loop-internals-reading.md#学习率步数与恢复条件)，真实CPU optimizer四轨迹/两恢复/一步覆写；日志是推进后LR，state不保存原函数闭包，非训练或worker集成验收。
 - [verl HYBRID Sleep/Wake Architecture — Source Reading](verl-hybrid-sleep-wake-architecture-reading.md)
 - [verl Latest Developments — June 2026 Comprehensive Reading](verl-latest-developments-2026-06-reading.md)

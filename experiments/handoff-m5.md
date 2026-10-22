@@ -110,6 +110,12 @@ M5 最小下一步：先判断是否有获准使用的对应配置、完整 toke
 
 停止条件：缺私有材料/配对身份就记录“待资料”，不启动原报告的长训练，也不以公共 toy 或另一模型称已复现 #8250。对照有差异只能缩小范围；没有原始观测前，不设计新的修复、不发布旧诊断稿或承诺治愈阈值。完成标准是可追溯的配对证据，或明确缺失材料清单。
 
+## verl V1 可变行布局参考
+
+状态：待选型/匹配依赖，只保存本轮新线索，不加入自动训练队列或作为原任务前置条件，不代表M5接单。已有[#8201](https://github.com/verl-project/verl/pull/8201)，head `e891fd814e24c0b2d0c70a47e234f75a63d10ad6`、base `18cfb74852a053a27dcf301d3318a093be81b628`；[M1源码阅读](../notebook/frameworks/verl-grpo-source-reading.md#v1-源-prompt-单位与可变轨迹行)仅12项原纯配置/layout控制、8模块compile，未跑原测试/TQ/设备。目的为将来采用V1多输出或部分成功保留时，核对源UID计步与实际行边界，而不是诊断#8250或修改#8313。
+
+缺口：匹配固定head的TQ/TensorDict/OmegaConf依赖及实际DP运行环境；作者32卡旧均衡benchmark不验证新版可变输出链。仅在M5独立选择此方向且已有获准环境时，先跑原 `tests/trainer/ppo/v1/test_minibatching_on_cpu.py` 与 `tests/workers/test_engine_workers_mini_batch_trace_on_cpu.py`，区分测试内StubTrainer/padding/engine替身；真实路径再核UID键格式、单元padding、各rank对应global_mini_batch_sizes、每epoch调用数和实际optimizer/LR步数，不把helper或替身通过当端到端。缺环境、需新模型/服务/编译、资源或扩大训练预算就停并记录，不自动安装、切环境、部署TQ、应用PR或拉起32卡benchmark；M5原任务优先级不变。
+
 ## verl #8281 超长 prompt 截断修复 —— GPU e2e 训练冒烟
 
 状态：**M5 已完成 GPU e2e 冒烟（2026-10-22，4090-1），正向跑通 + 负向 fail-loudly 均验证**，本条目回写完成。详见下方 M5 实测记录。

@@ -24,6 +24,8 @@
 
 ## 运行接续
 
+- **M1 V1可变行调度学习收束（2026-10-22）**：只读新verl#8201 heade891fd81/base18cfb748（祖先2035f58d），V1按源UID数定义优化mini-batch，GCD prompt单元逐个补行，global_mini_batch_sizes原样传worker；见[原GRPO笔记](notebook/frameworks/verl-grpo-source-reading.md#v1-源-prompt-单位与可变轨迹行)。同UID同全局优化批非同DP rank，旧PrefixGrouper helper AST未改，不混用同卡约束。12项原纯配置/layout检查与8模块compile通过，原测试/TQ/controller/worker/设备未跑；缺依赖不加stub，未外推32卡旧benchmark。真机缺口补[M5待条件参考](experiments/handoff-m5.md#verl-v1-可变行布局参考)，不另排队/采用/开训练。本题收束，后续另选非UID/微批/归约替身问题；GPU/AReaL/#8313与外部主仓库边界不变，main正常同步。
+
 - **M1 ModelOpt忽略学习收束（2026-10-22）**：同步M5的251920b及新候选/部署说明d1e8353/d28d673，不改其方案。只读新verl#8329 head5c7e2d2e/base16ec093c（祖先f2923cbf），仅3行生产新增；见[原量化笔记](notebook/frameworks/verl-quant-layer-audit.md#modelopt-模块忽略与子量化器)。原helper两版各11组名称集合+空列表通过，4模块compile；缺ModelOpt/CT，不运行原34或加stub。key.*关闭后代且保留直接叶子，alias非通用翻译；refit字节相等不证明actor无fake quant。原测试/作者H100报告分开，真机缺口补[原M5量化条目](experiments/handoff-m5.md#verl-量化层审计新版复验)，不另排队/应用/开训练。本题收束，后续选择非ignore/量化替身新问题；GPU/AReaL/#8313边界不变，正常同步main、无手动网站构建或部署。
 
 - **M1聊天封装学习收束（2026-10-22）**：只读已有DeepInfer#147 headaaf1e62c/base774ce244，首问前4096字符亲和不认证会话/命中，完成原因由消费计数推导、非engine reason原样返回；见[原调研](notebook/frameworks/deepinfer-initial-survey.md#聊天服务的亲和路由与完成口径)。8项原纯affinity函数控制、两Python compile/bash -n通过，其余接线仅读源码，未启动HTTP/进程/模型/设备。前端读完、客户端收到、abort发送与资源确认分开，零errors指标不能认证无错。真机缺口及时补[原M5条目](experiments/handoff-m5.md#deepinfer-硬件适配核对与最小冒烟)，不另排队/启服务/改移植；本题收束，后续选择非亲和/网络/完成记账替身的新问题，GPU/AReaL/#8313及网站边界不变。
