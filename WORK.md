@@ -24,6 +24,8 @@
 
 ## 运行接续
 
+- **M1 fused输出头softcap学习收束（2026-10-23）**：先快进M5状态5d2ba3f，有界读verl8/UniRL6候选，选#7991 headb145ec9b/base祖先dc709afb；见[专题](notebook/frameworks/verl-fused-output-softcap.md)/[脚本](experiments/scripts/verify_verl_fused_softcap.py)。7行生产guard只拒绝通用分支，非softcap实现或整个初始化回滚。完整原torch模块36组CPU前向/VJP语义分离对照通过，但raw对FP64仅28/36组四类绝对误差≤2e-5，hidden梯度max1.61e-4如实保留；9模块compile，缺HF未跑原24测试，不造配置替身。真机参考补原M5一致性入口，不另排队/部署/定性#8250或改专项。本题收束，后续另选非输出头softcap/数值阈值替身问题；GPU/AReaL/#8313/#523边界不变。
+
 - **M1 AMP跳步学习收束（2026-10-23）**：main同步无新增，转向真实CPU基础行为；见[原混合精度笔记](notebook/fundamentals/mixed-precision.md#amp-跳步与学习率计数)/[脚本](experiments/scripts/verify_amp_step_clock.py)。torch2.9.1 GradScaler("cpu")的两scheduler轨迹、AdamW inf/NaN跳步恢复、loss/grad两向控制与双优化器两顺序通过：跳步不自动暂停scheduler，None返回非状态，scale全局回退非每优化器失败。更正原AMP固定dtype/存储简化、增长计数与BF16不溢出说法；无autocast/FP16溢出、融合或框架故障定性、设备或新M5任务。本题收束，后续另选非AMP跳步/调度计数/optimizer替身问题；GPU/AReaL/#8313/#523边界不变。
 
 - **M1新版MXFP8检查核对收束（2026-10-23）**：先同步M5状态87d0bf2，完成其原量化交接待M1读取项；见[原笔记](notebook/frameworks/verl-quant-layer-audit.md#新版运行期检查与指标哨兵)/[复查](experiments/scripts/verify_verl_quant_sentinel.py)。#8327 heada2012b59/祖先d1390eea，作者明确替代旧拆分、基于#8306/#8308；三检查默认warn非硬拒绝，CPU完整原sentinel20参数例+5边界通过，无框架/torch/设备导入，23文件仅compile。缺指标/重复step计数及配置失败缓存disabled不当健康证明；作者cf32 B200补报与旧网页状态分开，不当本项目验收。原M5条目已更新、不另排队/拼接/部署。本题收束，后续另选非量化sentinel/监控或refit替身问题；GPU/AReaL/#8313/#523边界不变。

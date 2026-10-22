@@ -112,6 +112,8 @@ ModelOpt忽略规则参考（2026-10-22，同一量化入口不另排队）：�
 
 M1 已撤回确定因果诊断。已有数值、路由与异常控制未运行模型、原生权重同步或真实训练；没有证明 sync/cache、mask、reward 或数值路径是哪一个根因。
 
+输出头语义参考（2026-10-23，非新增训练任务）：已有[#7991](https://github.com/verl-project/verl/pull/7991)，head `b145ec9b405ca93092c45b5f9e7995fb4604dbd2`、base/祖先 `dc709afb7a74fd2645640a4e5f2fdf40166b4fbb`，[M1阅读](../notebook/frameworks/verl-fused-output-softcap.md)核通用fused分支拒绝真值softcap，非实现softcap或完整初始化回滚。完整原torch输出头36组CPU语义对照/FP64误差已记录；原24HF配置测试因缺Transformers未跑，首先是CPU导入依赖缺口，不是GPU不在线。仅当M5日后原有获准模型工作恰好涉及此语义时，独立核模型/text config、原forward、backend与temperature，对齐同hidden/label后再决定是否需要设备输出/梯度检查；缺匹配环境/权重或需影响原任务就停，不自动应用、下载或另排训练。没有证据表明#8250使用受影响模型/路径，不能据此重开因果诊断；此参考不代表接单。
+
 可选观测入口（不另排队、不默认采用）：已有[verl #8315](https://github.com/verl-project/verl/pull/8315)，2026-10-21读取open，head `4d6b3eb8606e24c1d70d648e92a1114129ec6c62`、目标base619c397d、merge-basecd58f550，见[阶段tracing边界](../notebook/frameworks/verl-async-logprob-provenance.md#新版阶段-tracing-与证据关联)。M1仅4模块语法/11方法去decorator后AST一致检查，未运行rl-insight或引擎。它记录rank update_weight与actor memory阶段，但no-op也可有区间，sender返回非全体应用证明，未新增显存字节/参数身份校验。真实同步/设备观测由M5在既有任务条件满足时独立决定，非接单记录。
 
 若已有获准的匹配观测环境，可先固定verl/rl-insight实际提交、包路径、版本及metric_log callable分派，核对rank/actor lane与同步step关联、是否实际执行/异常，并保留独立显存与安装证据。缺后端、需要新增数据外发或会改变原报告环境时先记待条件；不为这项参考自动升级环境、部署服务、重跑长训练或上传私有payload，阶段图不能替代下述配对观测。
