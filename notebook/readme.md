@@ -137,6 +137,7 @@
 - [verl 架构](frameworks/verl-architecture.md) — 三级前缀缓存（系统级+进程级+请求级）
 - [verl 异步奖励补齐](frameworks/verl-reward-integration-reading.md#异步奖励的补齐边界) — #8101原构造/消费片段的CPU几何对照；mask总数正确仍可读错response，恢复长度也可能增加应有惩罚，非完整worker/TQ验收
 - [verl DeepEP 环境边界](frameworks/verl-architecture.md#deepep-的包解析与动态库加载) — #8354 Python包/系统NVSHMEM/dispatcher分层；4份TOML与17份YAML静态一致，不等于镜像、import或通信验收
+- [verl 模型缓存与临时目录](frameworks/verl-architecture.md#只读模型缓存与测试临时目录) — #8343 原路径赋值与真实 pytest 两用例控制；隔离输出不扩大配额，CI 锁配置不等于外部消费者验收
 - [verl 文件系统权重同步](verl-v1-checkpoint-engines-deep-reading.md#文件系统权重同步的发布与清理) — #8355原safetensors/复制/CPU接收本地验证；临时文件非完整恢复状态，索引最后复制非事务，撤回旧4090后端和固定内存结论
 - [verl LoRA 主机暂存](verl-v1-checkpoint-engines-deep-reading.md#lora-分桶接收的主机存储所有权) — #8352原暂存语句CPU存储控制；每桶一个块仍须累计整个adapter，逐tensor复制及锁页/loader另有条件，非IPC或加速验收
 - [vLLM MLA Backend 源码阅读](frameworks/vllm-mla-backend-reading.md) — FlashMLA/FlashInfer/Triton/Cutlass MLA 后端、压缩数据流、KV Cache 格式、Backend 选择

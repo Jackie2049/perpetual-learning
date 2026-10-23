@@ -4,6 +4,8 @@
 
 2026-10-23 接续：[DeepEP 环境边界](#deepep-的包解析与动态库加载)核对固定候选版本的依赖、镜像和验证层级；其余历史架构概括不作为当前后端支持清单。
 
+2026-10-24 接续：[只读模型缓存与测试临时目录](#只读模型缓存与测试临时目录)区分模型输入、生成 checkpoint、配置锁和临时文件系统选择；真实 pytest 目录控制不等于引擎或设备验收。
+
 ## 1. 整体架构
 
 verl 是一个面向 RL 训练（PPO/GRPO 等）的分布式框架，核心设计理念：
@@ -345,6 +347,32 @@ verl 的三级前缀缓存机制直接对应 prefix-sharing 的核心需求：
 | 训练通信 | 文档声明 native Megatron 路线及独立 ref 配置 | dispatch/combine 数值、拓扑支持、吞吐或完整训练 |
 
 本机复用现有 Python3.12.13/PyYAML6.0.3 读取固定 Git 对象；lock 的 package records 除新增 deep-ep 与更新 verl 自身记录外，其余完整记录不变。17份 `.yml` 的新旧文本逐份比较仅上述标签替换；不把整个 `.github` 都宣称已执行或验证。未运行 uv lock/sync、构建/拉取镜像、下载 wheel、导入 native 包或发现设备，复现代码留[当日日志](../../diary/2026-10-23.md)。真实加载/通信缺口沿[原 M5 参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不为此升级环境或新排实验。
+
+## 只读模型缓存与测试临时目录
+
+**生成 checkpoint 不应与预置模型共用输出目录；用例隔离和文件系统容量又是两层问题。** [verl #8343](https://github.com/verl-project/verl/pull/8343) 同时调整测试输出位置和 Ascend CI 环境。2026-10-24 读取为 OPEN、非 draft，作者 lxb007981；固定 head `37f7d0c6b5389bcfd06a455188359c092194ae80`、base/祖先 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，ahead1/behind0，2文件13增2删。已有作者实现，不另写竞争补丁。
+
+### 输入模型与生成模型分开
+
+[model_ascend.yml](https://github.com/verl-project/verl/blob/37f7d0c6b5389bcfd06a455188359c092194ae80/.github/workflows/model_ascend.yml) 的 Prepare weights 将 `~/models` 链到 `/root/.cache/modelscope/hub/models`。旧 `test_critic_engine` 把生成模型写到 `~/models/test_model`，因此输出会跟随这个 symlink 进入模型缓存；`fsdp`、`fsdp2` 两个参数化用例还共用同一目的路径。普通可写缓存中未必报错，但固定输出名仍不提供用例隔离。
+
+[test_engine.py](https://github.com/verl-project/verl/blob/37f7d0c6b5389bcfd06a455188359c092194ae80/tests/models/test_engine.py#L259) 改成 `str(tmp_path / "test_model")`。`create_value_model` 的输入仍由 `get_test_language_model` 选择；模型、tokenizer、config 的三个 `save_pretrained` 调用使用新输出目录。改变的是生成产物，不是移动或复制预置模型缓存。该 Python 测试改动不限定 Ascend，其他运行该测试的平台也会获得 fixture 隔离。
+
+### 三种路径设置各有范围
+
+| 设置 | 控制的内容 | 不提供的保证 |
+| --- | --- | --- |
+| `tmp_path / "test_model"` | 每个参数化测试各自的输出路径 | 临时文件系统有足够容量，或训练引擎能运行 |
+| 步骤级 `PYTEST_DEBUG_TEMPROOT=/root/.cache/temp` | 该 model_engine 步骤的 pytest 临时目录根，避免默认走 `/tmp` | 扩大配额、目录在目标容器可写；也不覆盖前一个直接 `torchrun` 的 checkpoint 步骤 |
+| 工作流级 `MEGATRON_CONFIG_LOCK_DIR` | 声明锁目录为 `/root/.cache/temp/megatron-config-locks` | 所用外部模块确实按此创建/获取锁，或锁实现正确 |
+
+固定 head 全仓搜索只在5个工作流找到锁变量，verl Python 源码中未见其消费者；FSDP2 job 另声明 `VERL_USE_EXTERNAL_MODULES=megatron_adaptor`。因此这里能确认 CI 配置意图，不能据此认证镜像内外部适配层的运行行为。新增 CANN 文件与 `npu-smi` 步骤提供诊断信息，也不替代测试结果。
+
+### 本地目录控制
+
+本机 Python3.12.13、pytest9.1.1、PyYAML6.0.3，复用现有环境。静态解析 YAML 并核对上述变量作用位置；新旧 `test_engine.py` 均通过 `compile`。从两版原测试 AST 仅取 `value_model_path` 赋值，放入真实 pytest 的两个参数化用例执行，并在新临时目录写入/读回小文本文件：2 passed。两项旧输出都解析到同一个模拟缓存路径，新输出分别处于指定临时根下的两个独立测试目录，模拟缓存保持空目录。
+
+这个 CPU 控制验证路径计算、symlink 解析和 pytest fixture 行为，不是原 verl 测试、模型序列化、真实只读挂载或 `/tmp` 配额故障复现；未导入 verl、启动 Ray 或执行设备命令。[复现代码与命令](../../diary/2026-10-24.md)保存在当日日志，不新增永久工具或硬件排队事项。这里可复用的排错顺序是先明确每种文件的所有者与生命周期，再分别检查隔离路径、实际挂载/权限/容量及锁消费者，不能用一个“换目录”结论覆盖全部层级。
 
 ## 参考
 
