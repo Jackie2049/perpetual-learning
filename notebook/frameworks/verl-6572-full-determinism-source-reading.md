@@ -40,6 +40,41 @@ FSDP默认不开batch_invariant，打开时拒绝use_fused_kernels，因为后�
 
 ---
 
+## 二维低精度 logprob 的分块预算
+
+[verl #8351](https://github.com/verl-project/verl/pull/8351)优化的是原logprobs_from_logits_v2的二维低精度分支，不是#8026的FP32 sampler公式或完整训练确定性。2026-10-23读取open、非draft，作者aoshen02；固定head `285e2dd83d131a324b440ed5464c0dc61e3cf0b4`，base及共同祖先 `a4b9354968705a441fb7da7367924b15b902e771`，ahead2/behind0，两文件78增6删。已有作者实现，不竞争或自动应用。
+
+### 哪一条路径被分块
+
+[dispatcher](https://github.com/verl-project/verl/blob/285e2dd83d131a324b440ed5464c0dc61e3cf0b4/verl/utils/torch_functional.py)只有在未选择flash-attn CE、且NPU CE也不可用时才调v2；`VERL_DISABLE_FLASH_ATTN_CE=1`排除的是flash分支，不会强制覆盖NPU分支。本轮没有执行dispatcher或设备发现。
+
+原v2对非FP32/64输入沿首轴循环。remove-padding的logits若为`[tokens,vocab]`，原来每token一次log_softmax；候选在二维分支用split按行分块，原FP32/64公式和其他维数分支的AST保持不变。新labels形状检查也只放在这个二维分支，不是全函数通用校验。
+
+默认目标预算为32 MiB，块行数为 `max(1, budget // (vocab * element_size))`。它约束单块log_softmax输出的目标大小，不是整体峰值内存上限；当一行就超过预算时仍处理一行。词表151936、BF16时默认约110行/块。`.split()`可以只产生一个输入拆分节点，但整张反向图仍有每块的log-softmax/gather节点，不能读成整个backward只有一个节点。
+
+### CPU 移植测试与反向保存量
+
+[复用脚本](../../experiments/scripts/verify_verl_sampler_logprobs.py)新增`--row-chunk-pr`，完整原v2函数和[三个原测试定义](https://github.com/verl-project/verl/blob/285e2dd83d131a324b440ed5464c0dc61e3cf0b4/tests/utils/test_torch_functional.py)经AST隔离，方法体/断言不改；测试的get_device_name显式绑定cpu，不调用原设备helper。16个参数例覆盖BF16/FP16、连续/转置布局，以及单块、不整除、每块一行、大词表：本机输出和梯度的int16原始位检查全部通过。另一个原计数测试在head通过（64×1000只调用一次）；base在最后的调用次数断言预期失败，确认为64个逐token调用。base没有新预算常量，未把其16参数例宣称为全部对照失败。
+
+补充控制固定CPU BF16、37×1000、head预算改为8192字节（4行/块），两版输出/局部梯度逐位相同。saved_tensors_hooks按storage去重记录词表宽张量，并检查实际反向图：
+
+| 版本 | log-softmax调用及反向节点数 | 最大保存词表storage | 去重保存词表storage合计 |
+|---|---|---|---|
+| base逐行 | 37 | 2000字节 | 74000字节 |
+| head分块 | 10 | 8000字节 | 74000字节 |
+
+head还含一个SplitBackward0和一个CatBackward0，并非只有一个反向节点。此处字节数是选定保存张量的逻辑storage量，不是CPU RSS、CUDA allocated/reserved峰值或全部图元数据。分块减少调用/节点，不自动消除所有块为反向保存的输出；不能把32 MiB预算解释为整个actor更新只多32 MiB。另一个CPU控制确认二维BF16的错误labels形状抛明确ValueError。
+
+Python3.12.13/torch2.9.1/pytest8.4.2，无新依赖；新模式重复一致，原#8026默认模式的四原测试体及三组控制回归通过。不是原生pytest收集、完整torch_functional suite、引擎或设备验收；本机逐位一致也不外推其他后端/构建。作者GB300、torch2.15 nightly的17项及性能/显存表均是外部报告，本项目没有GPU计时或峰值测量。真机条件仅补[原M5参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不启开关、装kernel或新排训练。
+
+```bash
+python -B experiments/scripts/verify_verl_sampler_logprobs.py /path/to/verl-with-8351-objects --row-chunk-pr
+# 旧#8026模式与原固定对象保持独立
+python -B experiments/scripts/verify_verl_sampler_logprobs.py /path/to/verl-with-8026-objects
+```
+
+base/head torch_functional SHA256分别为 `bc7ff798e2f5c06e0121668490739814efc519ff66d4d7dd7c8fc40b4840eb03` / `7df3880cb74ff2577e92208708e310f6bfaae17fc453747604980b0237e8f3ed`，原head测试 `bd4599baddd1d7082def66cc84068bbbb24edf86cfabd3bac63b7f561541f2e2`；完整patch `41f33d8e3b59ed8c0d79025c0728efeeed398b02ce11f24f3ea9476578ab15df`。两版两个完整Python模块另AST/内存compile，共四份。
+
 ## 1. 5-Layer Determinism Architecture
 
 ```
