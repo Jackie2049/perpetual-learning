@@ -43,8 +43,9 @@ def main():
     )
     print(f"=== [3] outputs={len(outs)} ===", flush=True)
     for i, out in enumerate(outs):
-        print(f"[sample {i}] tokens={len(out)} text={out.text!r}", flush=True)
-        print(f"[sample {i}] token_ids={[t.token_id for t in out]}", flush=True)
+        # generate() returns a plain str for the mock path (no structured decode);
+        # content is meaningless (random init weights) — the chain executing is the point.
+        print(f"[sample {i}] type={type(out).__name__} text={out!r}", flush=True)
     print("=== [4] chain PASS ===", flush=True)
     llm.close()
 

@@ -46,6 +46,19 @@ index ca31b1c..a1a18ac 100644
                  for k in set(p.__dict__.keys()) - set(materialized_p.__dict__.keys()) - {"sf"}:
                      setattr(materialized_p, k, getattr(p, k))
                  setattr(m, pn, materialized_p)
+diff --git a/deepinfer/model_executor/models/v4_modules/mlp.py b/deepinfer/model_executor/models/v4_modules/mlp.py
+index e056539..98d8955 100644
+--- a/deepinfer/model_executor/models/v4_modules/mlp.py
++++ b/deepinfer/model_executor/models/v4_modules/mlp.py
+@@ -52,7 +52,7 @@ def process_moe_weight(
+     fp8_block_size = get_fp8_casting_granularity()
+     n, k = deepinfer_w.shape[1:]
+     src_sf: torch.Tensor = src_w.sf
+-    assert src_sf.shape == (n_experts * (k // fp8_block_size), n // fp8_block_size)
++    assert src_sf.shape == (n_experts * (k // fp8_block_size), n // fp8_block_size), f"{src_sf.shape=} {n_experts=} {k=} {n=}"
+     deepinfer_sf = src_sf.view(n_experts, k // fp8_block_size, n // fp8_block_size).mT.contiguous()
+     src_sf.untyped_storage().resize_(0)
+ 
 diff --git a/deepinfer/model_executor/parallel_utils/parallel_state.py b/deepinfer/model_executor/parallel_utils/parallel_state.py
 index ec015d0..2cbff9e 100644
 --- a/deepinfer/model_executor/parallel_utils/parallel_state.py

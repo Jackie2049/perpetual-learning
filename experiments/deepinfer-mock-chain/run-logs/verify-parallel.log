@@ -1,0 +1,83 @@
+[INFO 10-23 05:40:22 llm_engine.py:165] Initializing an LLM engine with config: (engine_type=NORMAL, model='/home/zxw/deepinfer-mock', tokenizer='/home/zxw/deepinfer-mock', revision=None, tokenizer_revision=None, trust_remote_code=False, dtype=torch.bfloat16, max_seq_len=256, load_format=dummy, context_parallel_size=1, expert_parallel_size=1, data_parallel_rank=0, stop_preempted_request=False, max_num_batched_tokens=2048, max_num_seqs=16, chunked_prefill=False, zero_overhead_scheduling=True, use_multimodal_pool=False, seed=0
+The tokenizer class you load from this checkpoint is not the same type as the class this function is called from. It may result in unexpected tokenization. 
+The tokenizer class you load from this checkpoint is 'PreTrainedTokenizerFast'. 
+The class this function is called from is 'LlamaTokenizerFast'.
+[INFO 10-23 05:40:23 tokenizer.py:73] Configured HF tokenizer BOS/PAD and multimodal token policy: add_bos_token=False -> True (BOS id 0); PAD EOS alias -> <｜▁pad▁｜> (id 2); register 21 multimodal placeholders (ids 129280-129300)
+[INFO 10-23 05:40:23 multimodal_processor.py:74] model image token: '<｜deepseek_image｜>' (id=129264)
+[INFO 10-23 05:40:23 multimodal_processor.py:81] multi_modal processor_name='rl_mm_processor_20260707'
+[INFO 10-23 05:40:23 llm_engine.py:369] _init_workers start
+[INFO 10-23 05:40:23 llm_engine.py:396] _init_workers: non-driver workers started
+[INFO 10-23 05:40:23 worker.py:71] init Worker
+[INFO 10-23 05:40:23 multimodal_processor.py:191] multimodal processor: visible_index=0 bind_cpus=[56, 57, 58, 59, 60, 61, 62] smt_ratio=2
+[INFO 10-23 05:40:23 cuda_graph_runner.py:75] cuda_graph_batch_sizes=[1, 2, 4, 8, 16]
+[INFO 10-23 05:40:23 multimodal_processor.py:193] multimodal processor: torch.set_num_threads = 2
+[INFO 10-23 05:40:23 multimodal_processor.py:196] launch multimodal processor process, pid: 596424
+[INFO 10-23 05:40:23 base.py:113] Worker::init_model start
+[INFO 10-23 05:40:23 utils.py:148] bind_cpu gpu_id: 0, cpus: [0, 1, 2, 3, 4, 5, 6].
+[INFO 10-23 05:40:23 base.py:115] Worker::init_model done
+[INFO 10-23 05:40:23 base.py:116] Worker::init_dist start
+[INFO 10-23 05:40:23 base.py:331] Init dist (RANK 0 / 1) cp_rank=0 rank=0 tcp://localhost:23505 cuda_visible_devices='0'
+[INFO 10-23 05:40:23 base.py:341] After init_dist
+[INFO 10-23 05:40:23 parallel_state.py:213] init_parallel_groups start
+[INFO 10-23 05:40:23 parallel_state.py:187] init_device_groups: all_reduce on size 1 backend nccl
+[INFO 10-23 05:40:23 parallel_state.py:194] init_device_groups: skip size-1 group
+[INFO 10-23 05:40:23 parallel_state.py:239] init_parallel_groups done: RANK 0, WORLD 0/1, GPU 0
+[INFO 10-23 05:40:23 base.py:344] After init_parallel_groups
+[INFO 10-23 05:40:23 base.py:118] Worker::init_dist done
+[INFO 10-23 05:40:23 llm_engine.py:414] _init_workers done
+[INFO 10-23 05:40:23 base.py:204] RANK0 start loading model
+[INFO 10-23 05:40:23 deepseek.py:452] Loading weights from /home/zxw/deepinfer-mock ...
+[INFO 10-23 05:40:23 deepseek.py:460] FP8 block size: 32; Routed experts fp4: True; Main KV: FP4; Indexer QK: FP4
+[INFO 10-23 05:40:23 builder.py:129] V41Builder: built 4 modules (n_layer=2, nextn_predict=0)
+[INFO 10-23 05:40:23 weights.py:54] HF load phase plan_build: 0.121s, allocated=0.77 GiB, peak=0.77 GiB, reserved=0.78 GiB
+[INFO 10-23 05:40:23 weights.py:54] HF load phase materialize: 0.040s, allocated=0.83 GiB, peak=0.84 GiB, reserved=0.87 GiB
+[INFO 10-23 05:40:23 weights.py:54] HF load phase engram_preallocate: 0.000s, allocated=0.83 GiB, peak=0.84 GiB, reserved=0.87 GiB
+[INFO 10-23 05:40:23 weights.py:54] HF load phase checkpoint: 0.000s, allocated=0.83 GiB, peak=0.84 GiB, reserved=0.87 GiB
+[INFO 10-23 05:40:23 decoder_layer.py:78] YOCO config: n_prefill_layer=0, n_layer=2
+[INFO 10-23 05:40:23 mlp.py:219] self.activation_type='swiglu', self.swiglu_clamp_value=10.0
+[INFO 10-23 05:40:23 deepseek.py:365] EPLB initialized with 1 homogeneous layout group(s)
+[INFO 10-23 05:40:23 deepseek.py:413] DeepseekForCausalLM::allocate_userbuffer start
+[INFO 10-23 05:40:23 userbuffer.py:223] Created DeepGEMM 0.00 GiB SymmetricBuffer, (EP 0/1), spec=_SymBufferSpec(group=<torch.distributed.distributed_c10d.ProcessGroup object at 0x7f1361736d30>, num_experts=1, num_max_tokens_per_rank=2048, num_topk=1, hidden=128, intermediate_hidden=0, num_shared_experts=0, mma_type='fp8xfp4', activation='swiglu')
+[INFO 10-23 05:40:23 deepseek.py:442] DeepseekForCausalLM::allocate_userbuffer done
+[INFO 10-23 05:40:23 deepseek_vl.py:34] Load vision encoder and vision-language aligner in DeepseekVLForCausalLM.
+[INFO 10-23 05:40:23 weights.py:54] HF load phase runtime_adapt: 0.028s, allocated=0.83 GiB, peak=0.84 GiB, reserved=0.87 GiB
+[INFO 10-23 05:40:23 weights.py:54] HF load phase total: 0.189s, allocated=0.83 GiB, peak=0.84 GiB, reserved=0.87 GiB
+[INFO 10-23 05:40:23 deepseek.py:525] Memory allocated: builder=0.833 GiB, deepinfer=0.833 GiB.
+[INFO 10-23 05:40:23 base.py:209] RANK0 loading model costs 0.19s
+[INFO 10-23 05:40:23 llm_engine.py:242] load_model done.
+[INFO 10-23 05:40:23 model_runner.py:504] Allocating temporary kvcache for profile run: num_blocks=18
+[INFO 10-23 05:40:23 cache_engine.py:633] layer_id=0: swa=True, sparse=True, kv_compress_ratio=1
+[INFO 10-23 05:40:23 cache_engine.py:633] layer_id=1: swa=True, sparse=True, kv_compress_ratio=1
+[INFO 10-23 05:40:23 cache_engine.py:922] layout=[(0, 0, 45568)], state_size_to_disk=0
+[INFO 10-23 05:40:24 cache_engine.py:929] RANK 0 Before allocating KVCache; GPU Allocated 0.833/0.833 GiB, GPU Reserved 0.865/0.865 GiB, GPU Occupied 1.310/23.516 GiB, CPU Memory 39.27/503.53 GiB, RSS 39.06 GiB
+[INFO 10-23 05:40:24 cache_engine.py:935] self.num_gpu_blocks=18, block_shape=(46080,), padding_bytes=512(1.11%)
+[info 10-23 05:40:24.189149 /home/zxw/deepinfer-civilian/csrc/cuda_utils.cpp:81] cuMemAlloc: allocated CUDA memory of size 829440 at 0x7f133b400000
+[INFO 10-23 05:40:24 cache_engine.py:941] kvcache block shape: torch.Size([46080]), type: torch.uint8, size: 45 KiB
+[INFO 10-23 05:40:24 cache_engine.py:944] kvcache size: 0.001 GiB, num_gpu_blocks: 18, tokens_per_block: 128
+[INFO 10-23 05:40:24 cache_engine.py:954] State size: 0.002557039260864258 GiB, shape: (20, 137280)
+[info 10-23 05:40:24.189714 /home/zxw/deepinfer-civilian/csrc/cuda_utils.cpp:81] cuMemAlloc: allocated CUDA memory of size 2745600 at 0x7f133b600000
+/home/zxw/miniconda3/envs/deepinfer-smoke/lib/python3.12/site-packages/torch/cuda/__init__.py:1333: UserWarning: Synchronization debug mode is a prototype feature and does not yet detect all synchronizing operations (Triggered internally at /__w/pytorch/pytorch/torch/csrc/cuda/Module.cpp:1028.)
+  torch._C._cuda_set_sync_debug_mode(debug_mode)
+[info 10-23 05:40:26.484883 /home/zxw/deepinfer-civilian/csrc/cuda_utils.cpp:69] cuMemFree: freed CUDA memory at 0x7f133b400000
+[info 10-23 05:40:26.485057 /home/zxw/deepinfer-civilian/csrc/cuda_utils.cpp:69] cuMemFree: freed CUDA memory at 0x7f133b600000
+[INFO 10-23 05:40:26 base.py:250] Memory profiling results: duration=2.53 seconds, total_gpu_memory=23.52GiB, initial_memory_usage=1.31GiB, initial_torch_memory=0.83GiB, peak_torch_memory=2.40GiB, memory_usage_post_profile=1.32GiB, non_torch_memory=0.48GiB, state_size=0.01GiB, kv_cache_size=6.52GiB, gpu_memory_utilization=0.40.
+[INFO 10-23 05:40:26 llm_engine.py:439] RANK 0, # GPU blocks: 151856
+[INFO 10-23 05:40:26 cache_engine.py:922] layout=[(0, 0, 45568)], state_size_to_disk=0
+[INFO 10-23 05:40:26 cache_engine.py:929] RANK 0 Before allocating KVCache; GPU Allocated 0.841/2.404 GiB, GPU Reserved 0.865/2.533 GiB, GPU Occupied 1.577/23.516 GiB, CPU Memory 39.78/503.53 GiB, RSS 39.59 GiB
+[INFO 10-23 05:40:26 cache_engine.py:935] self.num_gpu_blocks=151856, block_shape=(46080,), padding_bytes=512(1.11%)
+[info 10-23 05:40:26.803930 /home/zxw/deepinfer-civilian/csrc/cuda_utils.cpp:81] cuMemAlloc: allocated CUDA memory of size 6997524480 at 0x7f1178000000
+[INFO 10-23 05:40:26 cache_engine.py:941] kvcache block shape: torch.Size([46080]), type: torch.uint8, size: 45 KiB
+[INFO 10-23 05:40:26 cache_engine.py:944] kvcache size: 6.517 GiB, num_gpu_blocks: 151856, tokens_per_block: 128
+[INFO 10-23 05:40:26 cache_engine.py:954] State size: 0.002557039260864258 GiB, shape: (20, 137280)
+[info 10-23 05:40:26.804545 /home/zxw/deepinfer-civilian/csrc/cuda_utils.cpp:81] cuMemAlloc: allocated CUDA memory of size 2745600 at 0x7f1319200000
+[INFO 10-23 05:40:26 llm_engine.py:456] init_cache_engine done.
+2026-10-23 05:40:26  [TileLang:tilelang.language.eager.builder:WARNING] (prepare_decode_metadata.py:134): Return value `[None]` (<class 'list'>) is unused and will be discarded.
+2026-10-23 05:40:26  [TileLang:tilelang.language.eager.builder:WARNING] (prepare_decode_metadata.py:136): Return value `[]` (<class 'list'>) is unused and will be discarded.
+2026-10-23 05:40:26  [TileLang:tilelang.language.eager.builder:WARNING] (prepare_decode_metadata.py:152): Return value `[None]` (<class 'list'>) is unused and will be discarded.
+[INFO 10-23 05:40:27 model_runner.py:529] All graph capturing finished in 0.6s.
+[INFO 10-23 05:40:27 llm_engine.py:458] warm_up_model done.
+[INFO 10-23 05:40:27 llm_engine.py:246] init_cache done.
+[INFO 10-23 05:40:27 llm_engine.py:262] init block_manager, (cache_config.num_gpu_blocks, cache_config.bytes_per_block, cache_config.num_state_seqs, cache_config.bytes_of_state_per_seqs)=(151856, 46080, 20, 137280)
+[INFO 10-23 05:40:27 llm_engine.py:275] init Scheduler done.
+[INFO 10-23 05:40:27 llm_engine.py:290] init all done.
+OUTPUT: 的事儿 referral渗透 Sloan制造的 rigurede
