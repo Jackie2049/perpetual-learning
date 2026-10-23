@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 benchmark口径学习收束（2026-10-24）**：快进f01cf08→e48d7d4保留M5进展；读#588完整公开报告及固定两框架计时源。见[原调研](notebook/frameworks/unirl-survey.md#原生配置比较与训练计时)：公开五行复算摘要一致，完整训练+0.782%而非错配actor-only的+33.672%；逐步相加后取median与加各median不同。固定源prompt哈希匹配，不认证实际Parquet/模型资产；native配置不是精度匹配，五连续步不是独立重复。未获取原始日志/完整配置或复跑作者helper、性能/设备，无新优化候选、上游写入、专项改动或M5队列。复现留当日日志；下轮转独立问题或实质反馈，不重复此组算术/哈希或为其直接启动benchmark。
+
 - **M1 内部Pipe协议学习收束（2026-10-24）**：初同步6a463aa无新增；verl最新6PR无独立新变化。#567编号搜索命中已合并#568，全文/API与当前源码确认其明确不处理H20问题，blocked不变。转核固定main6fd82cba内部Pipe，见[原调研](notebook/frameworks/unirl-survey.md#内部-pipe-的版本字段与请求身份)：完整原runtime两helper、八组真实spawn/Pipe九条消息控制，重复/跳号/bool ID及坏command拒绝；未知命令仅过信封，版本字段不解释。driver请求/状态机与命令分派仅源码，其他HTTP/IPC版本仍在。无torch/vLLM/Ray/设备导入或专项/上游写入、新M5队列。复现留当日日志；下轮选独立当前问题或实质反馈，不堆更多信封夹具、重复旧H20门控或据清理标题解除硬件阻塞。
 
 - **M1 惰性潜变量引用后续收束（2026-10-24）**：本轮从f2e5e56同步无新提交；核#563/#545/#589正文与提交，其中#589在合并main后有两项实质修复。见[原调研](notebook/frameworks/unirl-survey.md#逐行步号与潜变量引用保留)：三版原stamping方法×三布局，旧版拒绝TensorRef二维索引、中间版未hydrate共享indices，最终版仅读三整数、保留latent对象；原LatentSegment concat无latent读取，显式hydrate后CPU值一致。handle及sample前沿为夹具，非远端传输/完整trainer或模型验收。#563四项核心AST比较相同、统计段迁至single，不重跑旧20组；#545仅核API和作者新CPU报告，未重跑720/64控制。记录及复现见当日日志；不改专项、不访问GPU、不写上游或新排M5队列。下轮转独立当前缺口或实质反馈，不重复这组迁移/fixture，不将旧GPU证据搬给新head。

@@ -233,6 +233,7 @@
 - [GRPO 实战指南](frameworks/grpo-practical-guide.md) — verl 框架 GRPO 训练完整流程、数据格式、配置参数、奖励函数
 - [SGLang 架构深度分析](frameworks/sglang-architecture.md) — RadixAttention 基数树、DSL 前端、FlashInfer 集成、vs vLLM 对比
 - [UniRL 调研（腾讯统一多模态 RL）](frameworks/unirl-survey.md) — 统一训练抽象、稀疏SDE、SFT游标、packed文本双轴与[按域奖励](frameworks/unirl-survey.md#按域奖励的零分与失败标志)；原CPU路由/统计区分零分、失败和非适用NaN，非服务或训练验收
+  - [原生配置与训练计时](frameworks/unirl-survey.md#原生配置比较与训练计时) — #588公开五行复算/固定prompt哈希匹配；完整训练须含重算，近似耗时不等于精度/学习等价，非性能复测
   - [内部Pipe请求身份](frameworks/unirl-survey.md#内部-pipe-的版本字段与请求身份) — #568合并范围与#567硬件问题分开；原runtime八组真实spawn/Pipe控制，信封合法不等于命令执行或跨版本兼容，非完整引擎验收
   - [Judge回复与失败状态](frameworks/unirl-survey.md#judge-回复解析与失败状态) — 原方法七组本地Response控制；关键词非语义、协议外文本不重试、请求失败可零分且上层仍标成功，非真实服务或训练验收
   - [离线embedding身份与发布](frameworks/unirl-survey.md#离线-embedding-的身份与索引发布) — 原store真实CPU文件往返/rename失败恢复；coverage只查key，resume字符串非权重内容身份，不是编码或共享存储验收

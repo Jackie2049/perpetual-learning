@@ -431,6 +431,27 @@ PY
 
 SHA256：schema `760bcc3bb262907eebc1600045b5f83b770c717027d97ea43f4f88eff608a17c`；CLI `cc42e43ca953c871042daf829ca3ce5c500067e40def2c388a71fc7d2a048aac`；复用 run_id helper `e8038f48a11f2ac48e1958acc4b07fb8a4be98a2a5eb523a7aa7ffd9de148a82`。没有向 UniRL 提交 harness、采用候选或启动训练，此项不新增 M5 硬件任务。真实性能比较仍需对应模型/算法、负载、硬件、奖励与测量窗口；格式统一不能替代这些条件。
 
+## 原生配置比较与训练计时
+
+**比较完整训练时间，必须在两边都计入旧策略重算；接近的步耗时也不代表精度或学习等价。** [#588原报告](https://github.com/Tencent-Hunyuan/UniRL/issues/588)记录2026-10-12的MiniMax-H3 T2VA Flow-GRPO：UniRL固定`0fe4f99dc2384a022fe0c8472aec889c216d3c07`，veRL-Omni固定`756ebcefe837b13086c78687e987cf32352df471`，分别在不同物理8×H20节点运行，排除一步warmup后各取五步。它不是当前main的性能结论，也不是本项目设备实验。
+
+2026-10-24用Python标准库复算报告公开的step2–6原浮点行，得到：
+
+| 计时口径 | UniRL 秒 | veRL-Omni 秒 | UniRL相对耗时 |
+| --- | ---: | ---: | ---: |
+| step中位数 | 1522.119 | 1527.570 | −0.357% |
+| step均值 | 1525.729 | 1526.838 | −0.073% |
+| 含old-log-prob重算的训练中位数 | 1098.744 | 1090.215 | +0.782% |
+| 错配：完整训练对actor update中位数 | 1098.744 | 821.971 | +33.672%，不能作性能结论 |
+
+[固定veRL计时源码](https://github.com/verl-project/verl-omni/blob/756ebcefe837b13086c78687e987cf32352df471/verl_omni/trainer/diffusion/v1/trainer_base.py#L468)将`old_log_prob`与`update_actor`分开；[UniRL phase包装](https://github.com/Tencent-Hunyuan/UniRL/blob/0fe4f99dc2384a022fe0c8472aec889c216d3c07/unirl/utils/wandb_logger.py#L140)计整个`stack.train_track`，其内含[anchor准备与更新](https://github.com/Tencent-Hunyuan/UniRL/blob/0fe4f99dc2384a022fe0c8472aec889c216d3c07/unirl/train/stack/base.py#L309)。因此先逐步求veRL两阶段之和，再取中位数；1090.215269不等于两个阶段中位数之和1090.493823。该归并补齐主要重算项，不认证两个区间的全部子阶段相同。step timer也不是进程启动到退出的总墙钟，veRL driver的gen含等待生成/奖励，不能当纯GPU采样时间，或再叠加各worker耗时。
+
+报告的“native configuration”指框架各自执行/精度路径，**不是不改默认配方，更不是单因素比较**。两边都声明8 prompt×16样本、10个CPS转移，但UniRL为FP32 master/BF16 compute、GPU reward、trainside，veRL为BF16 LoRA、CPU reward及参数/optimizer offload、vLLM-Omni；attention、初始化/RNG及轨迹/logp路径也不同。作者尝试的veRL FP32-LoRA路径因dtype错误未完成，已排除，不能把失败配置混入完成跑分。五个连续测量步不是五次独立重复，更不能因小百分比便判定统计等价。
+
+按固定[PickScore文本](https://github.com/Tencent-Hunyuan/UniRL/blob/0fe4f99dc2384a022fe0c8472aec889c216d3c07/datasets/pickscore/train.txt)的strip、去空、保序去重、取首64条，再取首48条并保留末尾换行，重建SHA256 `6f1323912724fed9e4a99cced25d9bc8713eb71ece26d78ad0125b9587511362`，与报告一致。这确认公开选取规则可复现，不认证私有Parquet、checkpoint内容或实际训练输入；未取得原始日志/解析配置，作者20项分析helper测试未复跑。报告还明确veRL末步来自console补证、UniRL外层launcher非零退出，不能一律抹成完整launcher成功。
+
+本机只做公开数值算术、固定文本哈希和两边计时源码核对，复现见[当日日志](../../diary/2026-10-24.md)；没有性能实测、训练/显著性检验或设备探测。现有证据不支持据此提出“UniRL慢33%”的优化，也不支持精度匹配、质量、收敛或未来main等价；不另排重复硬件任务。
+
 ## 损失单位与微批次权重
 
 **平均 loss 必须同时说明单位与窗口。** [已有 PR #622](https://github.com/Tencent-Hunyuan/UniRL/pull/622)将单位声明移到 `StageAlgorithm.loss_units(part)`，训练栈不再从 algorithm 的属性猜测单位；固定 head `9dded4e2fd92732dd9de40252a4ae5b342b164e0`、base `6fd82cba13f52f394747832344039408699ea378`，四文件 53 增/34 删。这是 #580 第一阶段接口迁移：微批缩放仍为 `w × G / D`，不是引入新的 token 目标，也没有将 `LossNorm` 传入每个算法的 backward 接口。
