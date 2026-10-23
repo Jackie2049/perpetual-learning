@@ -4,6 +4,8 @@
 
 2026-10-24 接续：[离线 embedding 的身份与索引发布](#离线-embedding-的身份与索引发布)以原store模块和真实CPU safetensors区分键覆盖、读取、resume元数据与训练身份；单次rename失败控制不是断电或共享存储验收。
 
+2026-10-24 接续：[Judge 回复解析与失败状态](#judge-回复解析与失败状态)核原评分方法的七组本地响应控制；关键词匹配非语义判断，异常零分也不自动形成失败标志，非真实服务或训练验收。
+
 > 目标：调研腾讯 `Tencent-Hunyuan/UniRL`——是否开源、支持哪些硬件加速器、社区活跃度、**外部 PR 合入可能性**（用户核心关切：社区提的 PR 他们是否接受，还是只自己开发）。
 >
 > 调研时间：2026-10-22（GitHub API 实时核验）。
@@ -1438,6 +1440,36 @@ writer先写 `embeddings_N.safetensors`，再写 `index.json.tmp`，最后 `os.r
 本机Python3.12.13、torch2.14.1、safetensors0.8.0，复用现有环境，完整执行原store/require/dtypes模块，包入口用空壳隔离，vendor只绑定原layer=50常量；未载入模型。真实小张量文件控制两次结果一致：3个不同原始prompt、两片、变长BF16逐值读回；resume对另一model字符串和dtype各拒绝一次；仅改index的model/dtype后reader仍读回原BF16；复制index到缺分片目录，coverage通过而get拒绝。
 
 在原writer中仅将 `os.replace` 注入一次OSError，真实分片和tmp索引已写、旧index字节不变。新建resume writer只看到原3项，重写未登记的下一片后，原3项和新第4项均能读回。这个控制说明本地单writer在该发布点失败可恢复，不是所有中断点、并发writer、NFS/CephFS或断电验证。没有运行CLI、模型编码、原作者harness、GPU/MPS或训练parity；[完整复现与源码hash](../../diary/2026-10-24.md)留日志，不新增永久工具或M5任务。使用缓存时应分别确定模型身份、键覆盖、制品可读性和数值比较范围，不将它们压成一个“验证通过”。
+
+## Judge 回复解析与失败状态
+
+**判错、协议外回复与请求失败可得到相同的0分，但不是相同事件。** 固定当前主线 `6fd82cba13f52f394747832344039408699ea378` 的 [LLMJudgeRewardScorer](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/reward/local/llm_judge.py)，默认prompt要求只回 `correct` 或 `incorrect`。实现却对整段lowercase文本先搜负向regex、再搜正向regex；它没有抽取“最终裁决”字段，也不是自然语言否定解析器。
+
+### 原方法的本地控制
+
+Python3.12.13、requests2.34.2，执行原 `_judge_one` 完整方法及原prompt/regex常量。属性袋只提供默认配置值，不执行scorer构造或真实配置组合；以真实 `requests.Response` 执行json和raise_for_status，唯一transport替身是 `requests.post`，不发送HTTP或读取API key。七项断言通过：
+
+| 本地响应 | 分数 | transport替身调用数 |
+| --- | --- | --- |
+| `correct` | 1 | 1 |
+| `incorrect` | 0 | 1 |
+| `This is not the correct answer.` | 1 | 1 |
+| `I cannot judge.` | 0 | 1 |
+| `At first I thought incorrect. Final verdict: correct.` | 0 | 1 |
+| HTTP200、choices空列表 | 0 | 3 |
+| HTTP503 | 0 | 3 |
+
+负向regex识别相邻 `not correct` / `not equivalent` 等形式，但不识别 `not the correct`；正向 `correct` 因而命中。任何负向命中又优先于整个字符串中的正向词。无法识别的正常JSON回复直接返回0，不触发重试；循环内HTTP/JSON/字段访问异常才重试，`max_retries=3` 表示共三次尝试。表中次数不是真实服务请求，也未测试网络超时；每次post有独立timeout，不是对整批设统一deadline。
+
+长回复偏离默认单词要求，因此这些反例证明的是当前解析边界，不直接证明上游应接受任意自然语言或应该换成哪个regex。修改之前需要先确定严格verdict、显式字段或宽松文本哪一种协议，以及协议外回复与服务失败是否保留独立状态；继续追加否定词并不能完整解决自然语言范围。
+
+### 零分如何进入本地响应
+
+源码中缺少metadata.answer时直接记0而不请求judge；上述重试耗尽也在 `_judge_one` 内吞掉并返回0。[LocalRewardBackend.compute_rewards](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/reward/local/base.py)随后对返回列表统一生成 `successes=True`、`errors=None`。这里是调用链阅读，没有运行RewardRequest/RewardResponse、服务网关或RewardStack，不能把方法内0分当作框架已经标记失败并过滤。
+
+也不能泛化成“所有错误都不会中止训练”：prompt_template.format发生在try循环前，构造时缺endpoint另会抛错。当前代码在循环内的异常转零是显式策略；改变它会影响已有奖励语义，应与解析协议一起评估，不能仅凭HTTP503替身就宣称训练修复完成。
+
+本轮没有调用任何judge endpoint、真实LLM、重试计时、模型或GPU/NPU，也没有复跑社区harness。公开关键词尽调未核实到专门的解析修复，但空检索不证明没有重叠工作；[#416](https://github.com/Tencent-Hunyuan/UniRL/issues/416)的可选provider文档议题不是解析规则许可。不新增provider/正则补丁、硬件队列或对外发布；[原方法复现、输出和hash](../../diary/2026-10-24.md)留日志，不升格永久工具。后续只有协议或具体协作范围明确后才评估贡献，不继续堆近义句测试。
 
 ## 下一步
 
