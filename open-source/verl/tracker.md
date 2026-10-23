@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** 2026-10-22：只读确认#8281已有用户账号的[PR #8313](https://github.com/verl-project/verl/pull/8313)，独立方法检查发现middle/cap=1违例，未改PR；#8250仍待补证，#7913及clip旧RFC不重复推进。不将隔离方法或数值检查算作训练实测。
+**【进展】** 2026-10-23 只读确认[我方 #8313](https://github.com/verl-project/verl/pull/8313)仍 OPEN，head `2079ab0e`，等待维护者 review；既有 M5 修复/验收沿用下表，本轮未复测或改 PR。新核两条 CPU 线索均已有覆盖 PR（#8174→#8175、#7771→#7785），#8334 也已有作者 draft #8335，见[覆盖核对](#近期候选覆盖核对)；不新增竞争实现。#8250 仍待证据，#7913/clip 旧 RFC 不重开。
 
 **【大白话讲明白】**
 
@@ -31,7 +31,7 @@
 
 **（2026-10-20 更新）** verl 新 issue 池恢复（10-16/10-19 共 3 个：#8261 perf、#8265 问卷非 bug、#8281 bug）。#8281 深挖完成（analysis-done + CPU 验证），登记为第 3 个活跃候选。
 
-**（2026-10-23 扫描补充）** 10-22 以来新增 3 个 0 评论 RFC：#8324 Modern Megatron integration、#8334 teacher-generated rollouts（on-policy distillation）、#8342 VeOmni 端到端低精度训练——均为大 feature 方向（非 bug 修复 PR），仅登记监控，未评估贡献空间；**无新 bug 候选**。UniRL 侧 10-22 扫描后无新 issue。
+**（2026-10-23 扫描补充）** 原扫描仅登记 #8324 Modern Megatron integration、#8334 teacher-generated rollouts 和 #8342 VeOmni 端到端低精度训练。后续已确认 [#8334](https://github.com/verl-project/verl/issues/8334)有作者的 [draft #8335](https://github.com/verl-project/verl/pull/8335)，不再列为“尚未查明归属”；#8324/#8342 本轮未全面评估，不由 0 评论推断实现空缺。
 
 | # | 候选 | 类别 | 性价比 | PR | 状态 | 首次发现 |
 |---|---|---|---|---|---|---|
@@ -39,6 +39,18 @@
 | 1 | async熵异常与坍塌诊断 (#8250) | 调查/评论 | 重评见candidate | — | **needs-evidence**（2026-10-21）：仍open/0评论；旧“结果0必然全梯度0、优势离群必然性、同步唯一根因、紧窗导致无法恢复”撤回。报告源码+NumPy反例已补，不是训练实测；需有效奖励/优势/mask/ratio/版本数据，旧英文稿不可直接发 | 2026-10-19 |
 | 3 | agent loop shared cap 忽略data.truncation（#8281） | P2 bug | ~25 | [#8313](https://github.com/verl-project/verl/pull/8313) | **open，等维护者 re-review**（2026-10-23）：head `2079ab0e`（fork `Jackie2049:fix-8281-truncation-policy`，4 文件），维护者 dajiaohuang review 意见已闭环（`d0ca3be1` RolloutConfig 校验 prompt_length>0 + left cap=0 正向切片，15 CPU tests；`2079ab0e` 注释精简），已回 PR 评论；middle/cap=1 反例已修复；CI 仅 CodeRabbit+CLA 过（正式测试 CI 需维护者触发），blocked 实质=等 review，无我方代码欠账；GPU e2e 冒烟已完成。见[candidate](candidate-8281-agent-loop-shared-cap-vs-truncation.md#当前候选的最小正上限反例) | 2026-10-20 |
 | 4 | 训练前 weight-update 自检 RFC (#8252) | RFC/评论 | ~13 | — | **assessed**（2026-10-20）：三项核心事实声明全核验成立（README 无 post-sync 验证列、tests 无 weight-checker 测试、`check_weight_update_equal` main 不存在且 delta checksum 仅线缆完整性）；reporter shiyuan680 在 verl 无 PR 记录；关键张力=唯一实现先例 #7108 stale+不可合并（RFC 却要 extend 它）；不建议我方实现（成本 3/接受度未验证/无 ray-GPU 验证），价值在 RFC 技术回复（解耦为后端无关最小钩子 + 补 scope 声明）。详见 [candidate](candidate-8252-weight-checker-rfc.md)；参与与否待授权 | 2026-10-20 |
+
+## 近期候选覆盖核对
+
+2026-10-23 本轮读取前两项 issue 正文与全部评论（均为 0），按编号和短关键词查开放 PR，再读真正相关 PR 正文并核 API 状态/head；#8334 沿用当日已核正文，另重核关联 PR 状态。这里判断的是**是否已有覆盖工作**，不是验证补丁完整正确、CI 通过或可合并。
+
+| 问题 | 覆盖证据 | 本项目处理 |
+|---|---|---|
+| [#8174 call-based 代码奖励](https://github.com/verl-project/verl/issues/8174) | 报告者 prabhu-gopal 的 [#8175](https://github.com/verl-project/verl/pull/8175) OPEN/non-draft，head `569c875e10d6e2bc55b96ef78cda5ae32e627e9f`；正文同时声明处理 APPS/TACO 参数列表与 JSON-line 字符串，以及逐例重测保留 fn_name | 两个问题均已有声明覆盖，不只按 issue 标题把 fn_name 漏失另立新修复；未执行代码评分器、下载数据或复跑作者 6 项 CPU/30 题报告 |
+| [#7771 padding 稀释序列诊断](https://github.com/verl-project/verl/issues/7771) | 另一贡献者 rrrxxx0510 的 [#7785](https://github.com/verl-project/verl/pull/7785) OPEN/non-draft，head `7ffe2fa4a4f5581c27e09b8f2e438e3b61d8e7ee`；正文明确 Fixes #7771，仅调整全 mask 行的 per-sequence 指标 | 不是新空缺，不把指标修复解读为 IS/RS、loss 或模型质量修复；未复跑 reporter 的 52 项或 PR 作者的 31 项测试 |
+| [#8334 teacher-generated rollout](https://github.com/verl-project/verl/issues/8334) | 同一作者 lbaolin 的 [#8335](https://github.com/verl-project/verl/pull/8335) OPEN/draft，head `8029bfb5fc5b8b6034704f9c062610613f1bf05c` | 延续已核归属，不重复实现；draft 仍待 placement/callback 反馈，不把作者 GPU 报告当本项目验收 |
+
+本轮未验证主线问题是否仍可复现、两份候选代码的全部边界或测试充分性；不新增 fork 补丁、Issue/PR/评论、依赖或 M5 算力事项。关键词搜索还命中其他 prime_code 工作，不能据同文件名就当同一问题；#8175 正文将 #8022 的“第十例后失败”与自身两项修复分开，本轮未独立复核 #8022 的当前状态或正确性。
 
 ## 本地论证撤回，不再独立推进
 
@@ -82,7 +94,7 @@
 | — | tool_parser.py 静默吞异常 | REJECTED | Phase ④ 复核：仅 3 处真静默（L404/469/527），14 处有 logger。3 行 debug 日志 + experimental/ 变动快 → 性价比 <10 不达标 |
 | 4 | veomni transformer del_local_after_load 类型标注错误 | HOLD | 单行类型标注，攒着等同文件实质改动顺带修，不单独提 |
 | 5 | [perf] pinned Transformers 慢处理长 prompt (#8261) | REJECTED | 依赖协调型：需升级 Transformers 5.12.1→5.15+，但与 pinned SGLang 0.5.20 冲突（0.5.22 需 TF 5.19+Torch 2.14）；reporter 明确"adopting processor fix without duplicating #8240 工作"、仍在等社区决策；无干净自修点，排除 |
-| 6 | prime_math reward 误判：区间括号/100x/1/100x/差一/大整数给满分，正确等式给 0 (#8346) | REJECTED | reporter 自修（2026-10-23 核实）：[PR #8347](https://github.com/verl-project/verl/pull/8347) OPEN、REVIEW_REQUIRED，新增 135 行测试（ground truth 取自 PRIME-RL/Eurus-2-RL-Data 真实数据行），覆盖区间括号/100x·1/100x·差一/>2^53 整数精度/百分号四类；测试充分无 review 空隙。修复点 `prime_math/__init__.py`（_str_is_int/_normalize）+ `grader.py`（is_digit），纯 CPU |
+| 6 | prime_math reward 误判：区间括号/100x/1/100x/差一/大整数给满分，正确等式给 0 (#8346) | REJECTED | reporter 自修（2026-10-23 核实）：[PR #8347](https://github.com/verl-project/verl/pull/8347) OPEN、REVIEW_REQUIRED，新增 135 行测试（ground truth 取自 PRIME-RL/Eurus-2-RL-Data 真实数据行），覆盖区间括号/100x·1/100x·差一/>2^53 整数精度/百分号四类；已有作者实现与测试，不另开竞争修复；测试数不能认证全部判分边界。修复点 `prime_math/__init__.py`（_str_is_int/_normalize）+ `grader.py`（is_digit），纯 CPU |
 
 ## 经验教训
 
