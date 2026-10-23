@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 SFT加载器边界学习收束（2026-10-23）**：快进M5状态ec20abe/67c83af，DeepInfer mock demo留给M5。已有verl#7402 headb7d1f36e/目标3f9d4c0d/祖先09ac3725，读原handler/两fit/作者测试，见[原checkpoint专题](notebook/frameworks/verl-checkpoint-management-reading.md#sft-epoch-边界与加载器状态)/[复查](experiments/scripts/verify_verl_sft_loader_resume.py)。真实torchdata0.11.0 CPU的2迭代状态+8原方法控制两次通过：最后batch未观察StopIteration恢复0批，确认结束则4批；新元数据同长度边界修复，legacy/变长只回退，相同批数不检测数据身份。仅独立work安装torchdata，不改原环境；无完整handler/fit/作者24测试、引擎或设备验收，无新M5事项/上游行动。下轮另选未覆盖源码/实际缺口，跳过epoch/游标恢复变体；GPU、AReaL、#8313/#523及DeepInfer demo分工不变。
+
 - **M1 UniRL候选尽调收束（2026-10-23）**：同步无新提交后核两项目近况，设备CI/#8327与M5专项不接手，已有verl#7402仍作者在推。深核UniRL#458/#529正文/评论、关键词搜索与完整一页开放PR清单，结果见[原tracker](open-source/unirl/tracker.md#补充尽调与派发边界)。#529虽无assignee但MciG-ggg公开准备实现，不竞争；6fd82cba异步AR提交完整root树、Agentic展开K任务，不能笼统认定pool散开所有siblings或100%缓存命中。#458是设计债、PE空袋有擦除语义，不写通用deep-merge小修复。只读尽调，无代码/模型/缓存或设备执行、无M5新队列与上游行动。下轮优先新issue/实际独立缺口，别重复无assignee=无人做或继续调度/控制袋替身，GPU/AReaL/#8313/#523分工不变。
 
 - **M1 actor/logprob一致性学习收束（2026-10-23）**：快进M5状态1ebaa40，有界核两项目候选，设备CI和M5量化专项不接手，读未覆盖verl#8026 head6a7110b4/目标dc709afb、祖先831c5d86（ahead6/behind4，16文件406增7删）。见[原确定性笔记](notebook/frameworks/verl-6572-full-determinism-source-reading.md#actor-前向与-logprob-公式的一致性)/[复查](experiments/scripts/verify_verl_sampler_logprobs.py)。原4数学测试体/3补充CPU控制通过，FP32同logits两公式31/50数值不同；checkpoint保输入引用非保存完整词表输出。仅真实CPU数学，13模块compile，无vLLM/引擎/模型或GPU；撤回旧P9完整确定性和固定吞吐推论。作者H20前向对齐不认证反向，缺口补原M5可选参考不部署。下轮优先未覆盖issue机会，跳过公式/ULP/保存引用替身小变体，GPU/AReaL/#8313/#523分工不变。

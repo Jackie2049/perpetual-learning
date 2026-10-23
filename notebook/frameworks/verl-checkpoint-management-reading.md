@@ -197,6 +197,50 @@ python experiments/scripts/verify_verl_checkpoint_retention.py /path/to/verl
 
 源文件 SHA256：manager `be4fa702f0fab63dfb1d482716d31bc13a3b8f5129adbbd61872a169b07cbbc6`；原测试 `30f2df35a31c6eeb21db737557336c9178bb4b69a5427a44621121eaa4a18a18`。
 
+### SFT epoch 边界与加载器状态
+
+取到最后一批数据，不等于迭代器已经观察到`StopIteration`。[verl #7402](https://github.com/verl-project/verl/pull/7402)处理的正是这个差别：SFT从下一epoch开始训练，却恢复了尚停在上一epoch末尾的加载器状态，第一次遍历可能没有任何batch。已有作者ai-yang负责该修复，本项目只核验数据流，不另做竞争实现。
+
+2026-10-23 API核对为open、未合并；固定head `b7d1f36e446da4caeb85a7f9d770daa416a9e76f`，目标base `3f9d4c0d32cc20c7ec31c8137e91bb5673ce9e5e`，实际祖先 `09ac37258ea66b0cb69b2738eec3074ea4e7261c`（ahead4/behind149）。相对祖先5文件322增5删，不把目标分支的149个提交算进修复范围。
+
+#### 最后一批与结束确认
+
+本机Python3.12.13、torch2.9.1、torchdata0.11.0的真实CPU对照：8条数据、batch2、单副本显式rank的DistributedSampler、shuffle/seed0、两层drop_last、0worker且不pin。取完4批后立即保存，与再请求一次、确认结束后保存，恢复到新加载器并设置epoch1，结果不同：
+
+| 保存时机 | 恢复后第一次遍历 |
+|---|---|
+| 最后一批已返回，尚未观察到StopIteration | 0批 |
+| 已观察到StopIteration | 4批，顺序`[5,4] [2,6] [7,3] [1,0]` |
+
+这两个快照在该版torchdata中的私有字段`_iterator_finished`分别是False/True。它解释本次现象，不应作为跨版本的公共API约定；不能笼统说“任何耗尽快照都会丢掉下一epoch”。
+
+#### 边界修复需要旧长度
+
+[原CheckpointHandler](https://github.com/verl-project/verl/blob/b7d1f36e446da4caeb85a7f9d770daa416a9e76f/verl/utils/checkpoint/checkpoint_handler.py)将保存时的`len(train_dataloader)`写入原`data_<dp_rank>.pt`字典的`_verl_steps_per_epoch`，加载时先取出，才把剩余状态交给torchdata。只有保存/当前长度相等且为正，恢复step也为正且整除该长度时，才跳过加载器状态、使用新迭代器。中途位置正常恢复；长度变化或缺元数据时警告，并按原生语义恢复，不猜测新边界。
+
+[复查脚本](../../experiments/scripts/verify_verl_sft_loader_resume.py)提取祖先/head未改写的原加载方法及原日志helper，使用真实加载器、采样器与torch.save/load临时文件；只用属性容器提供self的loader/rank字段，不构造引擎。以下8组自编控制两次执行一致；前六组保存时均尚未观察到StopIteration，保存epoch长度为4。
+
+| 控制 | step / 当前epoch批数 | 祖先→head返回批数 | 边界 |
+|---|---|---|---|
+| 新元数据、相同长度的边界 | 4 / 4 | 0→4 | 修复目标 |
+| 新元数据、相同长度的中途 | 2 / 4 | 2→2 | 保留游标 |
+| 新元数据、epoch缩短（batch4） | 2 / 2 | 1→1 | 不用新长度猜边界 |
+| 新元数据、epoch变长（batch1） | 4 / 8 | 0→0 | 回退不保证补全下一轮 |
+| legacy无元数据、中途 | 2 / 4 | 2→2 | 兼容旧位置 |
+| legacy无元数据、边界 | 4 / 4 | 0→0 | 旧空迭代行为未修复 |
+| 新元数据、已观察到结束 | 4 / 4 | 4→4 | 原生行为本已开始下一轮 |
+| 新元数据、长度相同但数据ID全部加100 | 4 / 4 | 0→4 | 不检测数据身份变化 |
+
+基线对照也读取带新增键的字典：该版torchdata容忍额外键；另有不带该键的legacy对照。这不是基线save格式已包含元数据。改变batch大小的结果只是该固定原生加载器的回退现象，不认证更换数据或拓扑后的精确恢复。相同batch数更不代表同一份数据。
+
+#### 完成保护与验证范围
+
+两份SFT `fit()`源码在`resume_global_step >= total_training_steps`时立即返回，早于tracker、sampler设置和batch遍历；但构造trainer及初次加载引擎checkpoint在fit之前，不能据此宣称完成任务不会加载模型。当前修复没有新增sidecar、配置校验异常或checkpoint发布顺序保证。
+
+本机执行的是2个原生迭代状态控制及8组原方法数据流控制，并非原生verl导入、完整handler构造、Ray/SPMD调度或fit/模型/optimizer恢复。作者在同head报告的24项测试（12个checkpoint例、12个fit例，torch2.11.0+cpu/Ray2.56.1，含引擎/同步替身）与本机结果分开；本机未收集执行那24项。作者也明确没有重跑分布式/GPU、HDFS和异步finalize，旧实现的GPU报告不移作当前证明。本题是CPU加载器学习，不为未执行的完整训练另排M5任务，也不改上游实现。
+
+复现：`python -B experiments/scripts/verify_verl_sft_loader_resume.py /path/to/verl-git --deps /path/to/torchdata-target`，需要上述固定Git对象、torch及torchdata0.11.0。本次仅将torchdata用`uv pip install --target ... --no-deps torchdata==0.11.0`装入独立work目录，未修改复用的torch环境。原handler SHA256：祖先`3b547c2b97e01b7587866053b4aa624d81b8cdd9d75fff20a97420690206a896`、head`676cf43c504922e610e88d236f0afcc5b4a449b63de1893616dee96a384960e8`；原日志helper模块`64d8556b0d6acc667a5be2dd43908111c9e58aae58d779ee9b02f0f28e2b42f7`。脚本打印hash并禁止隐式Git fetch。
+
 ## 6. FSDP2 / DTensor Checkpoint
 
 ```
