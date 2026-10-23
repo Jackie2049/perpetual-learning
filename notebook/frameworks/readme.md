@@ -130,6 +130,7 @@
   - [Tokenizer实例修补与批量生成](unirl-survey.md#tokenizer-实例修补与批量生成边界)：#544保留原batch helper、实例局部wrapper；结构guard非版本认证，CPU tokenizer字段对照非GPU/logp parity，配方仍B1。
   - [样本观测的行上限与数据搬运](unirl-survey.md#样本观测的行上限与数据搬运)：#597原CPU行谱系/音频与JSONL/WAV六组控制；每Part前缀非整轮/字节上限，best-effort非原子归档，无trainer/远程搬运实测。
   - [行级奖励派发与分组身份](unirl-survey.md#行级奖励派发与分组身份)：#517原Sample/RewardRequest及4 helper、5组CPU控制；重建单行谱系改变scorer组身份，原序回贴非分数/远程搬运或性能认证。
+  - [异步计时窗口与性能比较](unirl-survey.md#异步计时窗口与性能比较)：#539同名step time扩大区间，phase计主机调用，eval/save仍排除；8模块编译和3原计时器/窗口控制，不搬用作者W&B跑次。
   - [离线回放与结果隔离](unirl-survey.md#离线回放的到达契约与结果隔离)：#487到达时刻非前序完成依赖；原stdlib模块对照作者fork，两个已知来源guard修正但合法JSON不变，合成数据契约执行不作simulator/保真度证明。
   - [常驻与流式规划账本](unirl-survey.md#常驻与流式-block-的规划账本)：#486排他账本、共同rank计划与驻留上限分开，原stdlib planner180候选算术对照；latency_optimal可能不可行，max-phase非整步延迟，不作offload/性能验收。
   - [Prompt组边界与前向分块](unirl-survey.md#prompt-组边界与前向分块)：#485校验连续整组/对齐子组，不改FBS或无分块路径；原helper16,400有界布局对照，x_T身份不等于完整轨迹一致，非引擎/模型验收。

@@ -1289,6 +1289,27 @@ python3.12 -B experiments/scripts/verify_unirl_reward_rows.py /path/to/UniRL /pa
 
 首次因部分克隆缺少 trainer blob 停止，补取固定源码后离线重跑通过；没有更换函数实现。head `diffusion.py` SHA256 `cdb2d5ba64f034b51ef940f7032bb34d073c61fbb1cbd71bec4ff4c4eb937949`，`service.py` 为 `679be52255e2cbfdd455bacc63ca85df610953130a872db416053cea91e10f7b`。真实奖励后端与派发条件见[原 M5 可选参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不自动采用候选、凑 32 卡或新增训练任务。
 
+## 异步计时窗口与性能比较
+
+2026-10-23 阅读已有 [#539](https://github.com/Tencent-Hunyuan/UniRL/pull/539)（#455 的计时部分），读取时 open/non-draft，head `89fdd083a4cefd090e0d46fa37da37abe185d850`、目标 base 与共同祖先 `9e14d007b48ad6ecabe06df1ec4691d69492ebb1`，ahead 4 / behind 0，5 文件 90 增 53 删。它补足异步 AR/diffusion 绕过同步 `train_step` wrapper 后缺失的计时，不是调度优化或新贡献候选。
+
+旧版在 `_advantage_and_train` 内生成 `step_time_s`，发生在本轮必要的权重发布之前。新版将整轮关键工作置于 `async_step_timing`：收集、评分、训练及其指标/进度记录之后，按边界要求 quiesce、完成 carry、发布权重并按需 resubmit，检查最终队列为空；随后读取 total 并 `log_perf`，最后才 eval/save。因此同名 `perf/step_time_s` 的区间扩大，按该字段计算 samples/s 时分母也改变，不能把曲线变慢直接归因于性能退化。它仍不包含 eval/save、初始同步与初始评估、结束时 manager.close；不是整次运行的摊销墙钟。
+
+| phase 名 | 被包装的调用 | 解释边界 |
+| --- | --- | --- |
+| rollout_collect_wait | manager.collect | 等待/收集本批可用组，不是每行完整生成时间 |
+| reward | reward.score_and_attach | 调用方观测的评分耗时 |
+| train | stack.train_track | 训练调用区间，不是单个 optimizer update 的设备时间 |
+| quiesce | manager.quiesce | 发布边界的收敛调用 |
+| carry_finish | manager.finish | 对已有 carry 的补完调用 |
+| weight_sync | manager.sync_weights | 权重发布调用区间 |
+
+异步没有 `generate` phase，因为生成与训练重叠；不能用 `step_time - train_time` 或 phase 总和倒推出隐藏生成耗时、GPU利用率或重叠率。未包装的准入、组装、检查和日志等也在 total 区间，phase 不是完整排他的设备时间分解。包装器仅在调用返回时用 `time.perf_counter` 计主机墙钟，没有 CUDA event 或显式设备同步；是否已经等到远端设备完成，须另核真实 RPC/后端语义。
+
+`PhaseTimer` 两版 AST 相同：同名 phase 累加，异常退出也在 `finally` 记录；`async_step_timing` 的 `finally` 只清除 trainer 的活动 timer，不冻结返回对象。`total()` 每次都是当前主机时钟减构造时间，新循环在窗口后紧接着读它，所以总时长截至**读取点**，不能把 context 退出当成缓存的精确终点。窗口内异常会清除活动 timer，但控制流跳过后面的 `log_perf`，本改动不是失败轮次完整遥测。窗口外已包装的方法不计 phase；缺少某 phase 也不能自动补成零。
+
+计时经 `log_perf(step=rollout_id+1)` 写到 `rollout/step` 横轴，不是新增 optimizer 步。作者报告 Qwen3-4B/SGLang 的异步 100 rollouts/400 updates 和同步 32/128 的 W&B 核验；本机只做两版各四个完整 Python 模块编译、`PhaseTimer` AST 同一性及 3 组真实标准库控制（phase 累加/异常、正常窗口清理与 total 继续取时、异常窗口清理），没有假训练循环/时钟，也未执行 wrapper 安装、trainer、Ray、W&B 或设备。复现代码与 hash 见[当日日志](../../diary/2026-10-23.md)；不新增一次性工具。真实跑次比较的前提补[原 M5 参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不启动新训练或自动合并 #620 等指标分支。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。
