@@ -2,6 +2,8 @@
 
 > 基于 verl 源码的架构阅读笔记，重点关注 RL 训练框架设计、vLLM 集成和前缀缓存机制
 
+2026-10-23 接续：[DeepEP 环境边界](#deepep-的包解析与动态库加载)核对固定候选版本的依赖、镜像和验证层级；其余历史架构概括不作为当前后端支持清单。
+
 ## 1. 整体架构
 
 verl 是一个面向 RL 训练（PPO/GRPO 等）的分布式框架，核心设计理念：
@@ -314,6 +316,35 @@ verl 的三级前缀缓存机制直接对应 prefix-sharing 的核心需求：
 1. 研究 `prefix_grouper_utils.py` 的具体实现
 2. 分析 vLLM 的 prefix caching 与 verl 的集成方式
 3. 理解 Prompt 结构如何影响三级缓存的命中率
+
+## DeepEP 的包解析与动态库加载
+
+**能解析出 Python 包、能加载原生库、能完成通信是三种不同结果。** [#8354](https://github.com/verl-project/verl/pull/8354) 为 native Megatron DeepEP 补包和镜像依赖，2026-10-23 读取 OPEN、API draft=false；正文仍称需 GPU 验证和人工审阅，不能只凭非 draft 状态判定已经可用。作者 ETOgaosion 已实现，本项目不另写竞争补丁。固定 head `137438a62f5ab994487e62b1417c8e2f9b8ed307`、base 及祖先 `a4b9354968705a441fb7da7367924b15b902e771`，ahead4/behind0；22 文件98增39删。
+
+### Python 环境和系统库分开提供
+
+[pyproject.toml](https://github.com/verl-project/verl/blob/137438a62f5ab994487e62b1417c8e2f9b8ed307/pyproject.toml)将 `deep-ep==1.2.1` 加入 `megatron` extra，经 `tool.uv.sources` 定向到 Torch2.13/CUDA13 的显式 wheelhouse；其他包不因此全改走该索引。包发行名是 `deep-ep`，导入名是 `deep_ep`。单装 NVSHMEM 不会创建这个 Python 模块。
+
+该包的 dependency-metadata 显式设置 `requires-dist=[]`，由核心/Megatron 栈承担 torch、numpy、einops 与 nvidia-ml-py 等依赖，避免另一 pynvml 发行包争用模块。这是重定义解析元数据，不是 wheel 本身没有依赖或扩展 ABI 已验证；环境组合是否真的提供可用依赖仍属运行期问题。
+
+[uv.lock](https://github.com/verl-project/verl/blob/137438a62f5ab994487e62b1417c8e2f9b8ed307/uv.lock)列出 x86_64/aarch64 × cp311/cp312 四个 wheel URL，但项目的 uv resolution environments 限定 Linux、Python≥3.12、两种 CPU 架构。列有 cp311 文件不等于本项目承诺 Python3.11 支持；aarch64 也是 CPU 平台标签，不是 GPU 型号或跨节点拓扑认证。这四项 lock 记录没有 hash 字段，本轮只核配置文本和路径，未下载核制品字节或 wheel ELF。
+
+[Dockerfile](https://github.com/verl-project/verl/blob/137438a62f5ab994487e62b1417c8e2f9b8ed307/docker/Dockerfile.uv.cu130)另在系统 Python 3.12 路径安装 NVSHMEM3.4.5，设置 `NVSHMEM_DIR`、host库无版本 symlink、ld.so.conf、ldconfig 与 LD_LIBRARY_PATH，使动态加载不依赖每个 uv venv 恰好带同一路径。作者报告检查过 cp312 x86_64 wheel 的 `libnvshmem_host.so.3` 依赖和 RUNPATH；这是作者制品检查，不是本机实测。
+
+系统 NCCL Debian pin 改为 `2.28.9-1+cuda13.0`，锁中的 runtime wheel 仍是2.29.7。源码有意将 base 开发库与训练环境的 runtime wheels 分开；不能据 Debian 后缀不同就判安装失败，也不能据注释分层就认定进程最终加载的是哪一个版本。实际链接/加载路径、ABI及多进程库选择要在目标镜像中查证。
+
+### 配置选择不是通信验收
+
+[安装文档](https://github.com/verl-project/verl/blob/137438a62f5ab994487e62b1417c8e2f9b8ed307/docs/start/install.rst)示例经 `moe_token_dispatcher_type=flex`、`moe_enable_deepep=True`、`moe_flex_dispatcher_backend=deepep` 和 EP group 选择训练端路线。独立 reference model 需要自己的配置；镜像中装有包不代表 trainer 实际使用该 dispatcher，更不代表推理引擎的 DeepEP 或内部 FlashComm adapter 被启用。
+
+| 层级 | 本轮能确认的内容 | 尚不能据此确认 |
+| --- | --- | --- |
+| 原文件解析 | 两版 pyproject/lock 共4份 TOML 可解析，新增 DeepEP 及 Megatron 路由一致 | uv solver 结果、包下载或安装成功 |
+| 镜像与 CI 声明 | NVSHMEM 同为3.4.5；17份变更工作流 YAML 可解析，正文仅 dev4→dev5 替换 | dev5 镜像已发布、CI 已运行通过或容器可启动 |
+| 原生加载 | 源码配置了系统库路径；作者另有 wheel 检查报告 | 实际 import、ELF 解析、加载到的库版本 |
+| 训练通信 | 文档声明 native Megatron 路线及独立 ref 配置 | dispatch/combine 数值、拓扑支持、吞吐或完整训练 |
+
+本机复用现有 Python3.12.13/PyYAML6.0.3 读取固定 Git 对象；lock 的 package records 除新增 deep-ep 与更新 verl 自身记录外，其余完整记录不变。17份 `.yml` 的新旧文本逐份比较仅上述标签替换；不把整个 `.github` 都宣称已执行或验证。未运行 uv lock/sync、构建/拉取镜像、下载 wheel、导入 native 包或发现设备，复现代码留[当日日志](../../diary/2026-10-23.md)。真实加载/通信缺口沿[原 M5 参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不为此升级环境或新排实验。
 
 ## 参考
 
