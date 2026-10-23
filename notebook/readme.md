@@ -153,6 +153,7 @@
 - [verl KL 前向与反向](frameworks/verl-grpo-core-algos-reading.md#kl-前向值与反向规则) — k3+数值clamp非梯度clamp；6原例/14组CPU对照，有限差分与straight-through反向须区分
 - [verl checkpoint 保留与恢复](frameworks/verl-checkpoint-management-reading.md#保留目录与完整恢复的边界) — 原5清理测试通过；上限1保存前不删旧，登记成功不认证整轮可恢复，tracker直接写入非原子替换
 - [verl SFT epoch 与加载器恢复](frameworks/verl-checkpoint-management-reading.md#sft-epoch-边界与加载器状态) — #7402原方法、2个原生迭代状态及8组真实CPU数据流控制；最后一批与结束确认不同，legacy回退非边界修复
+- [verl LoRA-only键完整性](frameworks/verl-checkpoint-management-reading.md#lora-only-的键完整性与加载副作用) — #8350原分支八组真实CPU控制；缺adapter被拒绝不等模型回滚，也不认证base权重身份，非原17项或FSDP恢复验收
 - [verl 复制分片存储隔离](frameworks/verl-checkpoint-management-reading.md#复制分片的存储隔离) — #7503原3测试体base2过1预期失败/head全过；共享view非重叠，输出占用下降不认证合并峰值或重复key根因
 - [verl 局部更新指标聚合](frameworks/verl-6790-async-trainer-reading.md#局部更新的指标聚合) — 原19项pytest及5组CPU观察；日志加权/求和/末值依key而定，比率求和不是整轮平均，正式计时路径另算
 - [verl 会话水位与未消费组上限](frameworks/verl-6790-async-trainer-reading.md#会话水位与未消费组上限) — #8203准入单位与采样/训练释放分开；组额度非逐样本陈旧度或TQ总内存上限，仅源码/语法及4个原schema参数例

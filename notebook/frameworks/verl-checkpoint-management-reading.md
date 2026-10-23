@@ -65,6 +65,112 @@ rank 0 always saves:
   ShardedStateDictConfig(offload_to_cpu=True) → CPU加载→避免GPU OOM!
 ```
 
+### LoRA only 的键完整性与加载副作用
+
+LoRA-only恢复可以缺少冻结基座权重，不能因此忽略缺失的adapter张量。[verl #8350](https://github.com/verl-project/verl/pull/8350)补的是这层区别，而不是完整恢复事务。2026-10-23读取open、非draft、作者aoshen02；固定head `19b89e7100c06d7731247545274b117887ad8d38`，base及共同祖先 `a4b9354968705a441fb7da7367924b15b902e771`，ahead1/behind0，两文件29增1删。已有作者实现，不另开竞争修复，也不把候选当主干行为。
+
+原[键判定](https://github.com/verl-project/verl/blob/a4b9354968705a441fb7da7367924b15b902e771/verl/utils/checkpoint/checkpoint_manager.py)要求字典非空、所有键均包含 `lora_` 或 `.adapter_`。进入该分支后，[FSDP manager](https://github.com/verl-project/verl/blob/19b89e7100c06d7731247545274b117887ad8d38/verl/utils/checkpoint/fsdp_checkpoint_manager.py)用strict=False加载模型：原来只拒绝unexpected_keys，候选再从missing_keys中过滤adapter键并拒绝。检查依赖load_state_dict返回的诊断；返回None时按空missing列表处理，不独立重算键清单。遗漏的base键仍允许，键名规则也不是任意PEFT格式或基座身份认证。
+
+模型的load_state_dict先执行，结果检查在后，optimizer和extra/RNG的加载又在模型之后。因此拒绝缺键能阻止本次调用继续恢复后续状态，却不撤销已经写进模型的张量。这是恢复失败后的对象状态边界，不是另一个待补rollback缺陷；不能捕获异常后就假设对象仍为干净初值。
+
+#### 真实 CPU 小模块的对照
+
+从两版原load_checkpoint中取出完整的LoRA判定if/else分支，保留原分支体；原静态键判定和日志函数也原样执行。仅用属性容器提供model/rank/判定函数，model为真实torch.nn.Module，包含base、lora_A、lora_B三个1×1 Linear，无FakeFSDP/PEFT。每次初值base=99、A=B=7，输入adapter值A=0.5、B=0.3：
+
+| 输入 | base版本 | PR head | 执行后的模型 |
+|---|---|---|---|
+| 完整adapter键，不含base | 接受 | 接受 | base仍99，A=0.5、B=0.3 |
+| 缺lora_B | 接受 | missing adapter keys的ValueError | 两版均已把A写为0.5，B仍7 |
+| 多出lora_C键 | unexpected keys的ValueError | 同左 | 两版均已写A=0.5、B=0.3 |
+| 完整state，包含base=42 | 接受，走默认严格加载 | 同左 | base=42，A=0.5、B=0.3 |
+
+两版各四组、合计八组CPU控制两次一致。第一行也说明：adapter键齐全不证明加载到正确基座；LoRA-only文件不提供这份base权重。lora_train_meta.json中的r/alpha/task_type并非基座内容hash，也不代替完整adapter键检查。
+
+Python3.12.13/torch2.9.1，复用已有CPU环境，无新增依赖。没有运行完整manager、torch.load文件读取、FSDP/DTensor、优化器/RNG、跨rank通信或训练。作者[原17项测试](https://github.com/verl-project/verl/blob/19b89e7100c06d7731247545274b117887ad8d38/tests/checkpoint_engine/test_fsdp_lora_only_checkpoint_on_cpu.py)使用FakeFSDP/PEFT并修改missing_keys返回，本机只读源码并做完整模块compile，没有复跑该套件，不能把八组控制叫作原17项通过。另两版各两个完整变更Python文件AST/内存compile，共四份。
+
+base/head manager SHA256分别为 `ff5aa26224081af3937155f19561629e8e1da69bf290ec2fc67953dd4704ff22` / `5c494485f1d9a91d7da1282a9c33a21e6b7cc8aedf39f8d0bbf9821bd3614714`，原head测试 `1966b702ed7658970a2a93cf8ace161c1c0e5ce724885549e0cc3935a444c40d`；完整patch `a7e68e89145ffb78128f42702caeb75c18c85210f2450231de1f0f5011780a2f`。实际分片/PEFT恢复条件仅补[原M5参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不自动应用候选、下载模型或启动恢复实验。
+
+以下复查仅需Python3.12+/torch及含固定对象的verl Git仓库；不新建永久实验工具：
+
+<!-- lora-key-control:start -->
+```bash
+python3.12 -B - /path/to/verl-git <<'PY'
+import ast
+import hashlib
+import logging
+import os
+import subprocess
+import sys
+from types import SimpleNamespace
+
+import torch
+
+BASE = "a4b9354968705a441fb7da7367924b15b902e771"
+HEAD = "19b89e7100c06d7731247545274b117887ad8d38"
+ROOT = sys.argv[1]
+PATH = "verl/utils/checkpoint/fsdp_checkpoint_manager.py"
+
+
+def source(rev, path):
+    data = subprocess.check_output(["git", "-C", ROOT, "show", rev + ":" + path],
+                                   env=dict(os.environ, GIT_NO_LAZY_FETCH="1"))
+    print(rev[:8], path, hashlib.sha256(data).hexdigest())
+    return ast.parse(data)
+
+
+predicate_tree = source(BASE, "verl/utils/checkpoint/checkpoint_manager.py")
+base_class = next(n for n in predicate_tree.body if isinstance(n, ast.ClassDef) and n.name == "BaseCheckpointManager")
+predicate = next(n for n in base_class.body if isinstance(n, ast.FunctionDef) and n.name == "is_lora_only_state_dict")
+shell = ast.parse("class Predicate: pass")
+shell.body[0].body = [predicate]
+ns = {}
+exec(compile(ast.fix_missing_locations(shell), "<original-predicate>", "exec"), ns)
+log_tree = source(BASE, "verl/utils/logger/aggregate_logger.py")
+log = next(n for n in log_tree.body if isinstance(n, ast.FunctionDef) and n.name == "log_with_rank")
+ns["logging"] = logging
+exec(compile(ast.Module(body=[log], type_ignores=[]), "<original-logger>", "exec"), ns)
+logger = logging.getLogger("lora-key-control")
+assert torch.get_default_device().type == "cpu"
+print("Python", sys.version.split()[0], "torch", torch.__version__)
+
+for rev in (BASE, HEAD):
+    tree = source(rev, PATH)
+    cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "FSDPCheckpointManager")
+    method = next(n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == "load_checkpoint")
+    branches = [n for n in ast.walk(method) if isinstance(n, ast.If) and isinstance(n.test, ast.Call)
+                and isinstance(n.test.func, ast.Attribute) and n.test.func.attr == "is_lora_only_state_dict"]
+    assert len(branches) == 1
+    wrapper = ast.parse("def apply_state(self, model_state_dict, remote_model_path, logger): pass")
+    wrapper.body[0].body = branches
+    exec(compile(ast.fix_missing_locations(wrapper), "<original-load-branch>", "exec"), ns)
+    for case in ("complete_adapter", "missing_adapter", "unexpected_adapter", "full_state"):
+        model = torch.nn.Module()
+        for name, value in (("base", 99.0), ("lora_A", 7.0), ("lora_B", 7.0)):
+            layer = torch.nn.Linear(1, 1, bias=False, device="cpu")
+            layer.weight.data.fill_(value)
+            model.add_module(name, layer)
+        state = {"lora_A.weight": torch.tensor([[0.5]]), "lora_B.weight": torch.tensor([[0.3]])}
+        if case == "missing_adapter": state.pop("lora_B.weight")
+        if case == "unexpected_adapter": state["lora_C.weight"] = torch.tensor([[0.9]])
+        if case == "full_state": state["base.weight"] = torch.tensor([[42.0]])
+        owner = SimpleNamespace(model=model, rank=0, is_lora_only_state_dict=ns["Predicate"].is_lora_only_state_dict)
+        error = None
+        try:
+            ns["apply_state"](owner, state, "<in-memory-state>", logger)
+        except ValueError as caught:
+            error = str(caught)
+        expected_error = case == "unexpected_adapter" or (case == "missing_adapter" and rev == HEAD)
+        assert (error is not None) == expected_error
+        if error: assert ("unexpected keys" if case == "unexpected_adapter" else "missing adapter keys") in error
+        for name, expected in (("base", 42.0 if case == "full_state" else 99.0),
+                               ("lora_A", 0.5), ("lora_B", 7.0 if case == "missing_adapter" else 0.3)):
+            torch.testing.assert_close(getattr(model, name).weight, torch.tensor([[expected]]))
+        print(rev[:8], case, "ValueError" if error else "accepted", "A=0.5; B=" + ("7" if case == "missing_adapter" else "0.3"))
+print("8 original-branch CPU controls passed; no FSDP, checkpoint I/O, optimizer or training.")
+PY
+```
+<!-- lora-key-control:end -->
+
 ## 3. MegatronCheckpointManager — Dist Checkpoint + Async Save
 
 ```
@@ -351,10 +457,11 @@ model_merger/fsdp_model_merger.py (35-):
    → merger: ThreadPoolExecutor + torch.cat → 离线合并 → HF format → vLLM直接用
    → 这是训练→推理的完整pipeline → 训练checkpoint → merge → vLLM serve → 闭环!
 
-8. LoRA checkpoint → lora_train_meta.json → adapter独立管理!
-   → 训练: collect_lora_params() → 只保存adapter → 极小(~2.6GB for 7B r=16)
-   → 合并: lora_train_meta.json → PEFT config → merge adapter into base → or keep separate
-   → 部署: LoRA merge → vLLM serve → or vLLM dynamic LoRA loading → 两种路径!
+8. LoRA-only checkpoint需要区分adapter和基座身份
+   → 固定a4b93549：save_lora_only且模型有LoRA时，按adapter键规则过滤保存
+   → r/alpha/task_type元数据不是base权重hash或恢复完整性证明
+   → #8350拒绝缺adapter键，但检查发生在模型写入后，不保证回滚
+   → 实际大小取决于目标层/结构/dtype，不沿用旧段未测的固定GB数字
 ```
 
 ---
