@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** 2026-10-23 23:07 轮只读确认[我方 #8313](https://github.com/verl-project/verl/pull/8313)仍 OPEN，head `2079ab0e` 等维护者 approve，**新增社区成员 Jackmeson1 四条实质审查意见已全部核验属实**（测试命名零 CI 覆盖、middle 分法差异、断言自引用、trainer 级 error 语义），改进补丁与回复要点已备好待用户授权，见 [draft-8313-review-reply](draft-8313-review-reply.md)。2026-10-24 续核 #8122 只有防御 guard、#8000 已重开且 SFT/RL 各有在途 PR，见[部分覆盖与当前状态](#部分覆盖与当前状态)；不把 guard 当根因修复，也不重复实现。#8250 仍待证据，#7913/clip 旧 RFC 不重开。
+**【进展】** 2026-10-23 23:07 轮只读确认[我方 #8313](https://github.com/verl-project/verl/pull/8313)仍 OPEN，head `2079ab0e` 等维护者 approve，**新增社区成员 Jackmeson1 四条实质审查意见已全部核验属实**（测试命名零 CI 覆盖、middle 分法差异、断言自引用、trainer 级 error 语义），改进补丁与回复要点已备好待用户授权，见 [draft-8313-review-reply](draft-8313-review-reply.md)。2026-10-24 续核 [部分覆盖与当前状态](#部分覆盖与当前状态)及[资源默认与更新调度](#资源默认与更新调度)：防御 guard、已有实现、待定契约分开，不据空 assignee 或未搜到精确选项认领。#8250 仍待证据，#7913/clip 旧 RFC 不重开。
 
 **【大白话讲明白】**
 
@@ -74,6 +74,17 @@
 | [#8000 Megatron SFT 异步保存](https://github.com/verl-project/verl/issues/8000) | 唯一旧评论称准备关闭，但当前 API 是 `state=open/state_reason=reopened/closed_at=null`。同报告者 ewan0x79 的 [#8003](https://github.com/verl-project/verl/pull/8003) OPEN/non-draft，head `7bd75a88a5d2acfa723f15ac299fd6ee074faba9`，声明覆盖 SFT queue progress、完成后发布和退出 drain；同作者 [#8056](https://github.com/verl-project/verl/pull/8056) OPEN/non-draft，head `ce5aec5948a6f8981cb6086987aa13e0d8d518fb`，声明叠在 #8003 上处理 RL actor/critic、tracker 与 retention | 不按旧评论标成已关闭/撤回，也不把两个 PR 当相互竞争或完全独立差异。已有作者推进，不重写 queue/drain；声明完成范围与真实 save/restore 验收分开 |
 
 #8122 的初帖把 guard 称为修复，后续已明确收窄，不能只引用首段“根因”。#8003 正文另将 epoch-boundary 数据游标问题归于 #7974；本轮未核该 PR，不扩大成“恢复训练全部正确”。#8056 作者报告的 GPU 运行是回移到 verl0.8 的改动，不是当前 head 的原生训练验收；其25项CPU报告也未在本项目复跑。这里没有执行 jagged tensor/分布式保存、评分器、原测试或设备，也未逐行复审候选代码，不新增 GPU/NPU 问题或 M5 队列。后续只有出现可核实的独立缺口或协作需求才重新判断，不用更多替身堆出“修复已证实”。
+
+### 资源默认与更新调度
+
+2026-10-24 读取两条 issue 的完整正文、全部评论（分别2条、1条），按编号与配置关键词检索 PR，再读取相关 PR 正文/API。**默认资源策略、固定更新次数、UID 分组和损失分母是不同契约；已有工作也不代表问题已完全解决。**
+
+| 线索 | 已核实的公开信息 | 本项目处理 |
+| --- | --- | --- |
+| [#7398 TransferQueue 默认单元数](https://github.com/verl-project/verl/issues/7398) | 同报告者 nataliekung 已有 OPEN/non-draft [#8340](https://github.com/verl-project/verl/pull/8340)，head `881fb96937f5ddfae5d894bb9a48538d1b049e1e`。正文声明 null 时在初始化前解析为 `2 * trainer.nnodes`，保留显式值，新增 Hydra 3项测试及生成配置；另一作者 liuhao-labs 的旧 [#7525](https://github.com/verl-project/verl/pull/7525)是 CLOSED/unmerged，不是已合入修复 | 由现有作者推进，不重写同一默认。报告者[更正](https://github.com/verl-project/verl/issues/7398#issuecomment-6347916344)：最初1节点/16CPU是算例，后来另做 Ray2.59.0/TransferQueue5fe4e49 CPU-only复现；不能把初帖算例说成完整训练卡住实测，也不能把按节点数取默认等同于CPU资源准入或有界初始化 |
+| [#8099 多输出固定更新次数](https://github.com/verl-project/verl/issues/8099) | 报告者 luyuzhe111 已发布下游实现，限定 V1 actor-only、无distillation、`seq-mean-token-sum`；eteluna 已[公开说明有原型](https://github.com/verl-project/verl/issues/8099#issuecomment-6254265298)，涉及静态micro-batch倍数、padding分布、拒绝shuffle，损失分母仍待定。[#8201](https://github.com/verl-project/verl/pull/8201) OPEN/non-draft，FZYsheep、head `bb057a8c0cedabacadeafc3b1d1b9318d1b59517`，正文声明V1按UID分组与分单元padding/均衡；[#6025](https://github.com/verl-project/verl/pull/6025) OPEN/non-draft，guillemgt、head `e827294d97d5020e17c9b0cd8681e75e5bdbe2aa`，面向旧同步trainer分组 | 不据 `fixed_count` PR关键词搜索空结果认定无人实现，也不标成 #8201 已完整解决 RFC。固定配置步数与按实际materialized UID分组不同；#8201只有每个prompt产生轨迹或启用失败组refill等条件下才维持原定步数。保持同UID不跨步、每步分母选真实行或配置rollout数，也不能互相替代 |
+
+#8340 作者报告3项配置测试和上述CPU复现；#8201作者报告26 passed/10 skipped，#6025作者称做过多输出训练，本项目均未复跑或逐行复审。旧#7525正文还提醒恢复checkpoint须保留原storage-unit数，这属于旧方案的兼容说明，不当作新PR已完成恢复验收。这里不判断三种batching方案谁的训练质量更好，也不搬用RFC中的MigrationBench收益数字；本轮不执行Ray/TQ/训练、创建补丁、对外评论或新增M5任务。只有出现独立缺口、具体协作或契约决策才重新投入。
 
 ## 本地论证撤回，不再独立推进
 
