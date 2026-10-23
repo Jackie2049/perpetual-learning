@@ -9,7 +9,7 @@
 
 **【价值评估】** 7 / 10 — 明确的源码契约缺口 + 当前可做窗口（前置 #406/#495 已 merged）+ 纯 CPU 可验证结构修复；但 shipped 配方当前不受影响、完整验收需 GPU 对照 replay-sourced anchor。
 
-**【进展】** 2026-10-22 贡献扫描：确认 main `6fd82cba` 上 `UnifiedModelTrainStack.train_track` 只调 `prepare_segment_anchors`、缺 eval/freeze/prepare_part/train，而 `TrainStack._prepare_for_training`（single.py:272-277）四步齐全；基类 `prepare_part` 默认 no-op，PPO/DiffusionOPD override。issue 无 assignee、无对应 PR；前置 #406/#495 已 merged（排序前提已满足）。**2026-10-22 修复已写 + CPU 验证通过 + 已推 fork**：在 `train_track` 把两处 `prepare_segment_anchors` 包进 `eval → freeze(ar,image)+prepare_part → train` 生命周期（复刻 single.py，finally 恢复 train）。CPU 逻辑单测 3 项全过（eval/freeze/prepare/train 顺序、prepare 抛异常仍恢复 train、no-op prepare_part 兼容 shipped 配方）+ 真实文件 AST 断言通过。patch 存 [523-lifecycle-fix.patch](523-lifecycle-fix.patch)。**已推送 fork 分支 [fix-523-anchor-lifecycle @ 04101ad5](https://github.com/Jackie2049/UniRL/tree/fix-523-anchor-lifecycle)**（base 上游 main `6fd82cba`，仅 unified.py +8/-2；因 git 协议不通改经 GitHub REST API 构造 blob→树→提交→分支，内容与本地验证版逐字节一致）。**PR 已建在用户 fork 上供审阅：[Jackie2049/UniRL#1](https://github.com/Jackie2049/UniRL/pull/1)**（base=fork main `6fd82cba`，head=fix-523-anchor-lifecycle `04101ad5`，1 文件 +8/-2；PR 描述含问题/修复/行为边界/验证与 replay 验收缺口，可直接复用为上游 PR 描述）。主仓库（Tencent-Hunyuan/UniRL）仍未开 issue/PR——向上游提交需用户明确授权。结构修复不需 GPU；**2026-10-23 replay GPU 验收已登记 [M5 交接](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)（参考性质、非接单，含最小对照阶梯）**。
+**【进展】** 2026-10-22 贡献扫描：确认 main `6fd82cba` 上 `UnifiedModelTrainStack.train_track` 只调 `prepare_segment_anchors`、缺 eval/freeze/prepare_part/train，而 `TrainStack._prepare_for_training`（single.py:272-277）四步齐全；基类 `prepare_part` 默认 no-op，PPO/DiffusionOPD override。issue 无 assignee、无对应 PR；前置 #406/#495 已 merged（排序前提已满足）。**2026-10-22 修复已写 + CPU 验证通过 + 已推 fork**：在 `train_track` 把两处 `prepare_segment_anchors` 包进 `eval → freeze(ar,image)+prepare_part → train` 生命周期（复刻 single.py，finally 恢复 train）。CPU 逻辑单测 3 项全过（eval/freeze/prepare/train 顺序、prepare 抛异常仍恢复 train、no-op prepare_part 兼容 shipped 配方）+ 真实文件 AST 断言通过。patch 存 [523-lifecycle-fix.patch](523-lifecycle-fix.patch)。**已推送 fork 分支 [fix-523-anchor-lifecycle @ 04101ad5](https://github.com/Jackie2049/UniRL/tree/fix-523-anchor-lifecycle)**（base 上游 main `6fd82cba`，仅 unified.py +8/-2；因 git 协议不通改经 GitHub REST API 构造 blob→树→提交→分支，内容与本地验证版逐字节一致）。**PR 已建在用户 fork 上供审阅：[Jackie2049/UniRL#1](https://github.com/Jackie2049/UniRL/pull/1)**（base=fork main `6fd82cba`，head=fix-523-anchor-lifecycle `04101ad5`，1 文件 +8/-2；PR 描述含问题/修复/行为边界/验证与 replay 验收缺口，可直接复用为上游 PR 描述）。主仓库（Tencent-Hunyuan/UniRL）仍未开 issue/PR——向上游提交需用户明确授权。**2026-10-23 用户审阅并认可方案设计与代码实现**；测试验证与 e2e 训练冒烟已作为**正式任务指派 M5 闭环**（[handoff 专设小节](../../experiments/handoff-m5.md)）：L0 真实模块生命周期冒烟（CPU 可做，含补丁三重字节校验）+ L1 e2e 可行性判定、正向回归与 replay 数值验收设计；结构修复本身不需 GPU。
 
 **【大白话讲明白】**
 
@@ -72,7 +72,7 @@ UniRL 有两条训练栈：单模型栈每次训练前会把模型切到"推理�
 ## 验证范围（M1 当前可做 / 需 GPU）
 
 - **纯 CPU 可验证**：结构修复本身——写 CPU 小模型 harness，对照 unified stack 修复前后是否调用 `prepare_part`、`model.eval()/train()`、以及在 PPO/DiffusionOPD 下不再跳过钩子。
-- **需 GPU（M5/后续）**：replay-sourced anchor 的 live comparison、真实训练 loss 对照——已登记 [M5 交接](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)（2026-10-23，参考性质、非接单；含最小对照阶梯：shipped 配方回归 → replay 配方 first-update ratio/clip fraction/loss 对照）。
+- **需 GPU（M5/后续）**：replay-sourced anchor 的 live comparison、真实训练 loss 对照——**2026-10-23 已作为正式任务指派 M5**（[handoff 专设小节](../../experiments/handoff-m5.md)：L1 e2e 可行性判定（shipped 统一配方需 ≥8 设备/32 设备 + 大模型权重，先判资源）→ 正向回归（打补丁 vs 不打补丁 rollout-sourced 逐指标一致）→ replay 数值验收（视统一算法对 recomputes_anchor 的支持而定）。
 
 ## 前置与风险
 

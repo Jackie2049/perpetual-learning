@@ -63,7 +63,36 @@ TempFlow分支参考（2026-10-22，非新增训练任务）：[#552](https://gi
 
 Omni原生IPC参考（非新增训练任务）：[#617](https://github.com/Tencent-Hunyuan/UniRL/pull/617)head `19f263968deecdecd26cebe8966f8ba012a5575d`，[M1阅读/原helper CPU范围](../notebook/frameworks/unirl-survey.md#omni-原生-ipc-的副本与导出边界)只覆盖meta/视图、8模块compile，无CUDA导出/IPC/模型。若M5日后独立选择该路线，先核配套Omni WTE（作者测试8607b97ea5）、授权模型/依赖、同节点每卡TP1副本及UUID、CPU offload关闭下的显存与sleep备份RAM；不继承HI3至少8卡，也不因1x1 YAML存在就认定4090可跑。最小观察分开记schema、实际权重内容、publication序号/optimizer版本与失败后的运行时关闭；结构hash不认证内容，失败不回滚，控制链含pickle需可信。缺现有匹配环境/资源或需安装配套分支、下载权重、打断原任务就停留未测，不自动部署/启训练或增加必跑矩阵。
 
-#523 锚生命周期修复的 replay 对照参考（2026-10-23，非新增训练任务）：结构修复已落 fork 分支 [fix-523-anchor-lifecycle @ `04101ad5`](https://github.com/Jackie2049/UniRL/tree/fix-523-anchor-lifecycle)（base 上游 main `6fd82cba`，仅 `unirl/train/stack/unified.py` +8/-2，fork 内 [PR #1](https://github.com/Jackie2049/UniRL/pull/1) 待用户审阅；补丁随项目仓库保存 [523-lifecycle-fix.patch](../open-source/unirl/523-lifecycle-fix.patch)，服务器 GitHub 直连不稳时从项目仓库取，勿混用其他版本）。[M1 验证边界](../open-source/unirl/candidate-523-anchor-lifecycle.md)：提取逻辑 3 项 CPU 单测 + 真实文件 AST 断言，未导入 unirl 训练包、未跑真实 stack。修复内容：unified stack 的 train_track 现在按 single stack 同序执行 `eval() → prepare_segment_anchors(ar/image) → algorithm.prepare_part → train()`（finally 兜底恢复 train）。若 M5 后续在获准匹配环境推进 UniRL 且选到 replay 路线，最小对照阶梯：①回归——任一 shipped rollout-sourced unified 配方（GRPO/FlowGRPO/BagelFlowUniGRPO）应用补丁前后行为不变（三者均不 override prepare_part、基类 no-op，且 rollout-sourced 时锚不跑 model forward，理论零差异，实测确认）；②replay 对照——`old_logp_source: replay` 的 unified 配方（shipped 示例均为 rollout-sourced，replay 需自建最小配置）记录 first-update ratio、clip fraction、loss curve：修复前锚在 `train()` 模式计算（dropout 等未关）、修复后在 `eval()` 模式冻结，与 single stack 对齐——这是 #523 的核心数值验收。资源边界沿用本节：HI3 构造器每节点 ≥8 设备、Bagel/HI3 权重授权与 4090 24 GiB 显存适配未核验、vllm 与 sglang extra 不混装；无匹配资源就记录"待资源"并停，不下载权重、不装环境、不启长训练，也不为本条新租算力。两步都需要可跑的真实环境，不把 CPU 提取逻辑结果当回归或数值证据。本条不代表 M5 接单，不授权任何上游 issue/评论/PR（fork PR #1 审阅与上游动作由用户决定）。
+#523 锚生命周期修复（2026-10-23）：用户已审阅并认可 fork PR [#1](https://github.com/Jackie2049/UniRL/pull/1) 的方案设计与代码实现，测试验证与 e2e 冒烟已升级为**正式指派任务**，见下方专设小节「UniRL #523 unified 栈锚生命周期修复 —— 测试设计与冒烟」；本节其余 UniRL 参考条目不变。
+
+## UniRL #523 unified 栈锚生命周期修复 —— 测试设计与冒烟（2026-10-23 用户指派，交 M5 闭环）
+
+**任务来源与边界**：用户 2026-10-23 审阅 fork PR [Jackie2049/UniRL#1](https://github.com/Jackie2049/UniRL/pull/1)（base=fork main，未涉上游）后明确：方案设计和代码实现都没问题，设计好测试验证方式与 e2e 训练冒烟，交 M5 测试闭环。本条为指派任务，不再是参考条目；对上游 Tencent-Hunyuan/UniRL 仍无任何操作权限，结果回写本页 + [candidate-523](../open-source/unirl/candidate-523-anchor-lifecycle.md) + diary。
+
+**修复内容**（一句话）：`UnifiedModelTrainStack.train_track` 补齐 single 栈四步生命周期 `eval() → prepare_segment_anchors(ar) → prepare_part(ar) → prepare_segment_anchors(image) → prepare_part(image) → train()`（try/finally 兜底恢复 train），仅 `unirl/train/stack/unified.py` +8/-2。M1 已做提取逻辑级验证（3 项单测 + 真实文件 AST 断言）；本任务升级为真实模块与真实环境验证。
+
+**物料与字节校验（第一步，必须先做）**：
+- 补丁唯一来源：项目仓库 [523-lifecycle-fix.patch](../open-source/unirl/523-lifecycle-fix.patch)（sha256 `c39d25b9d4419810ac86258664db152c4253be4ebb654616c01d8cf5c94409d3`）；服务器 GitHub 直连不稳时同步项目仓库取用，勿从其他分支/来源拼凑。
+- 校验方法：对 pristine 上游 main `6fd82cba` 的 `unirl/` 应用补丁（`patch -p1`），然后 `unirl/train/stack/unified.py` 应满足：sha256 = `9a55deabdf1821acbfb57d36bb1377418a4880a652c8a28dd7e89163e541a4e3`、git blob = `2cced46552f98e8d44cf57df9f91d46945902f33`（后者与 fork head `04101ad5` 的 blob 一致，M1 已预核）。任一不符即停，勿手改凑数。
+
+**L0 真实模块生命周期冒烟（CPU/单卡即可，核心交付，不依赖大模型权重）**：
+把 M1 的"提取逻辑 exec"升级为**真实模块验证**——从打补丁后的真实 `unirl.train.stack.unified` 取 `train_track` 方法体（绑定到替身 self 或最小构造的真实类实例），协作者用替身：
+- `fsdp_backend.model`：小 nn.Module（如单层 Linear），包装记录 `eval()`/`train()` 调用序列；
+- ar/image 两个算法三种替身：(a) 不 override `prepare_part` 且 `recomputes_anchor=False`（复刻 shipped GRPO/FlowGRPO/BagelFlowUniGRPO 语义）；(b) 记录型 `prepare_part`（复刻 PPO/DiffusionOPD override 语义）；(c) `prepare_part` 抛异常的失败替身；
+- `prepare_segment_anchors` 用真实函数（anchor.py）；Part/Plan 等构造依赖过重时允许最小替身，逐项记录哪些是替身。
+- 断言：① 调用序 = eval → freeze(ar) → prepare_part(ar) → freeze(image) → prepare_part(image) → train；② (c) 抛异常后 `train()` 仍被恢复且异常上抛；③ (a) 两个 part 原样返回（shipped 配方零行为变化的模块级证据）；④ (b) 两个算法的 `prepare_part` 各被调恰一次。
+- 记录：Python/torch 版本、命令、完整输出。不需要下载任何模型权重。
+
+**L1 e2e 统一训练冒烟（先做可行性判定，大概率待资源）**：
+shipped 统一配方的真实门槛（源码核实 2026-10-23）：`bagel_trainside_unigrpo.yaml` 要 num_devices=32 多机 + BAGEL-7B-MoT 权重 + fp32 master；`hi3_it2i.yaml`/`hi3_vllmomni*.yaml` 要 num_devices=8 + HunyuanImage-3.0-Instruct（MoE，权重体量远超单卡 24 GiB）。**注意 `hi3_trainside_t2i.yaml` 自带头部注释明确 "No AR rollout, no AR algorithm, no unified two-track stack"——不是统一栈载体**；`examples/pe/*replay*` 全走单模型栈（TrainStack 本来就正确），对本修复无验证意义。
+L1 前置判定：服务器能否整段占用 ≥8 卡 + 是否有获准的 Bagel/HI3 权重与存储。任一不满足 → 记录"待资源/待权重"及恢复条件即停；不下载未授权权重、不为 L1 新租算力、不打断其他会话任务（14:37 定时轮记录 GPU 0/1/7 仍被占满）。
+若条件满足，按序执行：
+1. **正向回归（shipped rollout-sourced）**：任一统一配方按其注释的最小化改法（batch/steps 调小）跑 2 个 global step，打补丁 vs 不打补丁各一遍，逐指标对比 loss / first-update ratio / clip fraction——rollout-sourced 理论零差异，容差内 PASS；出现差异先排查 nondeterminism/版本漂移再上报。
+2. **生命周期观测**：e2e 里确认 eval→train 切换真实发生（临时调试日志或 profiler 区间核对，结束时还原，不改语义）。
+3. **replay 数值验收（核心验收，视算法支持而定）**：翻 `old_logp_source: replay` 前先核对该统一算法是否支持（`recomputes_anchor` 语义与配置管道；shipped 统一算法均为 rollout-sourced，replay 需自建最小配置）。支持则对照打补丁前后 first-update ratio / clip fraction / loss curve（修复前锚在 `train()` 模式算、修复后 `eval()` 冻结——#523 的核心数值差异点）；不支持则记录"该路径需算法改动、超出本修复范围"，不自行改算法凑验收。
+4. 负向路径由 L0 替身 (c) 覆盖，e2e 不必人为注入故障。
+
+**停止条件**：L0 完成且 L1 判定为"待资源/待权重"即构成可回写的闭环；不得为凑 L1 而放宽物料校验、混装 vllm/sglang extra、或用单栈配方冒充统一栈验证。
 
 ## DeepInfer 硬件适配核对与最小冒烟
 

@@ -9,7 +9,7 @@
 
 **【价值评估】** 7 / 10 — 甄别"未认领、无 PR、可落地"的开放空间，避免重复投入已有人认领的 RFC。
 
-**【进展】** #523 已有我方 fork PR 供审阅，GPU 验收沿用[M5交接](../../experiments/handoff-m5.md)，#567 仍待匹配 H20 条件。2026-10-23 补充尽调：[#529](https://github.com/Tencent-Hunyuan/UniRL/issues/529#issuecomment-6340056553)虽无assignee但已有公开认领意向，不并行实现；[#458](https://github.com/Tencent-Hunyuan/UniRL/issues/458)是控制字段所有权设计议题，不当成通用deep-merge小修复。未新增可直接发布的补丁，详见[边界核对](#补充尽调与派发边界)。
+**【进展】** #523 已有我方 fork PR 供审阅，GPU 验收沿用[M5交接](../../experiments/handoff-m5.md)，#567 仍待匹配 H20 条件。2026-10-23 补充尽调：[#529](https://github.com/Tencent-Hunyuan/UniRL/issues/529#issuecomment-6340056553)虽无assignee但已有公开认领意向，不并行实现；[#458](https://github.com/Tencent-Hunyuan/UniRL/issues/458)是控制字段所有权设计议题，不当成通用deep-merge小修复。未新增可直接发布的补丁，详见[边界核对](#补充尽调与派发边界)。同日用户审阅并认可 #523 方案设计与代码实现，**测试验证 + e2e 冒烟已升级为正式任务指派 M5**（handoff 专设小节：L0 真实模块冒烟 + L1 e2e 回归/replay 设计）。
 
 **【大白话讲明白】**
 
@@ -30,7 +30,7 @@ UniRL 仓库当前 **73+ open issues**，其中大量是带 `help wanted` 标签
 
 | 候选 | 类型 | 状态（2026-10-22） | 可做性 | 备注 |
 |---|---|---|---|---|
-| [#523](https://github.com/Tencent-Hunyuan/UniRL/issues/523) unified stack 跳过 anchor freeze/prepare_part | 跨栈契约 bug | **OPEN · 无 assignee · 无 PR** | **修复已推 fork + PR 已建（fork 内）**：[Jackie2049/UniRL#1](https://github.com/Jackie2049/UniRL/pull/1)（fix-523-anchor-lifecycle @ 04101ad5，base fork main 6fd82cba，unified.py +8/-2）；CPU 单测 3 项 + AST 断言通过；**待用户在 fork PR 上审阅，认可后再向上游开 PR**（铁律）；replay 完整验收需 GPU——已登记 [M5 交接](../../experiments/handoff-m5.md)（参考性质、非接单）。见 [candidate-523](candidate-523-anchor-lifecycle.md) |
+| [#523](https://github.com/Tencent-Hunyuan/UniRL/issues/523) unified stack 跳过 anchor freeze/prepare_part | 跨栈契约 bug | **OPEN · 无 assignee · 无 PR** | **用户已认可方案与实现**（2026-10-23；fork 内 [Jackie2049/UniRL#1](https://github.com/Jackie2049/UniRL/pull/1)：fix-523-anchor-lifecycle @ 04101ad5，base fork main 6fd82cba，unified.py +8/-2；CPU 单测 3 项 + AST 断言通过）；**测试验证 + e2e 冒烟已指派 [M5 闭环](../../experiments/handoff-m5.md)**（L0 真实模块冒烟 + L1 e2e 回归/replay）；上游 PR 待用户授权后再开（铁律）。见 [candidate-523](candidate-523-anchor-lifecycle.md) |
 | [#567](https://github.com/Tencent-Hunyuan/UniRL/issues/567) cosmos3 H20 cuBLAS workaround 被错版本 gate | 配置/验证型 | **OPEN · 无 assignee** | **blocked-on-H20**（2026-10-23） | reporter 明确两个分支（删死代码 vs 放宽 gate）都要在 H20+pinned torch 2.13/cu130 实机对照（loss + cublasGemmEx 探针）才能定；我们与 M5（4090）均无 H20，写 PR 即投机，整项挂起不推进 |
 | [#581](https://github.com/Tencent-Hunyuan/UniRL/issues/581) FSDP2 0-token micro collective mismatch | bug | **OPEN · 无 assignee** | 可做但已上 #580 路线 | reporter 给了完整 CPU repro；issue 说明 #580 phase 3 会修，宜与 #580 owner 沟通或作为其一部分 |
 | [#419](https://github.com/Tencent-Hunyuan/UniRL/issues/419) monitor-only rewards | enhancement/help wanted | **已 assign GoDiao** | 已认领 | 非我方空间 |
