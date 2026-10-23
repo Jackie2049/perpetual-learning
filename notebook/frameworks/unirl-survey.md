@@ -1,5 +1,7 @@
 # UniRL — 腾讯统一多模态 RL 框架调研
 
+2026-10-24 接续：[教师指纹与控制器失败传播](#教师指纹与控制器失败传播)区分已返回异常、权重内容不一致和读取卡住；固定主线6fd82cba，仅原指纹函数CPU控制，不是Ray/Gloo或训练验收。
+
 > 目标：调研腾讯 `Tencent-Hunyuan/UniRL`——是否开源、支持哪些硬件加速器、社区活跃度、**外部 PR 合入可能性**（用户核心关切：社区提的 PR 他们是否接受，还是只自己开发）。
 >
 > 调研时间：2026-10-22（GitHub API 实时核验）。
@@ -1383,6 +1385,30 @@ FlowGRPO 多块时拼接 detached 新旧 logp 后重新计算完整 ratio 指标
 [`TrainStack._run_update`](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/train/stack/single.py)在整次更新前 zero_grad，遍历 micro 后才尝试 optimizer_step。它按 `do_optimizer_step and i==last_micro` 设置 grad-sync；[backend setter](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/train/backend/base_backend.py)只在延期同步启用等条件满足时切 FSDP2 flags。不能把作者“额外 backward 增加 reduce-scatter”的特定跑次描述泛化为每个 chunk 必有通信；必须连同 backend、defer_grad_sync 与所在 micro 一起观测。
 
 本轮 5 个完整主线模块 compile，仅执行四个纯函数 AST 和小张量聚合；没有运行 replay mixin、FlowGRPO/FlowDPPO、reference-KL、TrainStack 或设备。#465 原报告的一张4090、S4/micro1、FP32 梯度误差/峰值与 BF16 偏差属于当时作者版本，不能搬为当前 main 的实测结果。真实几何、ratio/梯度及通信缺口记[原 M5 可选参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，缺现成获准匹配配方就保留未测，不新增训练或重新实现已合并功能。
+
+## 教师指纹与控制器失败传播
+
+**检测到异常、检测到内容不同，以及让卡住的读取结束，是三个不同保证。** [#515](https://github.com/Tencent-Hunyuan/UniRL/issues/515) 的原帖担心一个 rank 读教师失败、其他 rank 进入 collective 后控制器等到超时；但维护者[后续说明](https://github.com/Tencent-Hunyuan/UniRL/issues/515#issuecomment-6138540697)指出，当前 actor 构造链已有 #258 的 fail-fast collector。该 issue 已派给 inaniloquentee，其后续 [#575](https://github.com/Tencent-Hunyuan/UniRL/pull/575) 收窄为权重指纹一致性，于2026-10-13 05:37:27 UTC 合并，merge `6c828f5ed81649153315d996f0f597e8808ff144`；不是尚无人处理的原始挂起修复。
+
+### 控制器传播的是已经返回的失败
+
+固定主线 `6fd82cba13f52f394747832344039408699ea378`：[remote_hydra](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/trainer/hydra.py)进入 placement.remote；[GroupHandle 构造](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/distributed/group/handle.py)把各 worker 的 add_remote refs 交给 get_actor_results。backend 的[_inject_structural](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/train/backend/base_backend.py)在 LoRA 结构注入时调用 FrozenAdapters.inject，而不是控制器外单独执行的文件读取。
+
+[get_actor_results](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/distributed/group/ray_utils.py)每次 ray.wait 一个完成结果，用 ref→rank 映射保持最终返回顺序。某个 ready ref 的 ray.get 抛异常时，立即尝试 mark_poisoned、对 pending refs 调用 `ray.cancel(force=False)`，然后重新抛原异常；不先等待所有 rank 成功。poison 失败会记录日志，取消也是 best-effort，运行中的 actor 可能继续执行。这不是 collective 自己已恢复、其他 rank 已退出或旧资源已释放的证明。
+
+构造处没有显式传 timeout，collector 默认 None。一个读取一直不返回、也不抛错的 ref 不会凭空变成失败结果；若所有 pending 都无结果，collector 没有“快速异常”可传播。显式 timeout 的分支抛 GetTimeoutError，但该分支本身不调用上述 poison/cancel helper，不能由超时返回推导远端任务已被终止。完整驱动退出和资源回收另有生命周期，不从这两个函数单独认证。
+
+### 指纹比较发生在读取之后
+
+当前 [FrozenAdapters.inject](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/train/lora.py)逐教师完成本地读取、结构校验和 deferred-load 注册后返回 hash；有教师时才 all_gather_object 比较整份 name→hash 字典，不一致则渲染各 rank 字典并拒绝继续。它不是为读取错误新增共识层，也不为文件系统/Hub 下载加超时；卡在 gather 之前的读取仍未被这层解决。没有教师时跳过该 gather，是源码分支，不是本机分布式运行结果。
+
+`_weights_sha256` 对排序后的 key、dtype、shape 与 tensor bytes 求 hash，先 detach、CPU、contiguous，因此文件编码与原 tensor stride 不决定指纹。它描述读入的权重，不包括任意 PEFT 配置、基座模型、Hub 提交身份、RNG或可用性。后续 `_load_frozen_adapter` 用 `broadcast_from_rank0=False` 让各 rank 从自己的权重副本加载 shard，所以检查内容一致有意义；hash 一致仍不是已经完成 materialize、正确安装或 forward 相同的证明。
+
+### 本机只验证纯指纹函数
+
+Python3.12.13/torch2.9.1，执行当前原 `_weights_sha256` 的完整函数 AST，6组真实CPU小张量控制通过：字典插入顺序和相同值的非连续布局不改变 hash；改一个值、dtype、shape 或 key 都改变 hash。样本 digest `aa15b9a280dfbf32b820988104f268fe6120c7d448bade77e549a8cbbce2f5bc`。这是函数的有限输入控制，不是密码学碰撞证明或跨 rank 实验。
+
+5个完整当前模块仅 compile（lora、ray_utils、handle、hydra、base_backend）；未导入 UniRL/PEFT/Ray、启动进程组或设备、执行注入/gather/取消/驱动退出。作者 #575 报告的双进程Gloo、真实Ray异常传播及更早版本H100 smoke不计为本项目结果。复现代码与源码hash留[当日日志](../../diary/2026-10-24.md)，不另造分布式替身、不复跑旧硬件报告或新增M5任务；读取卡住的契约若将来要改，须先确认负责人、允许的超时/终止语义及实际环境，而不是直接套一层collective。
 
 ## 下一步
 

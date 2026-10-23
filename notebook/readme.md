@@ -247,6 +247,7 @@
   - [异步计时窗口与性能比较](frameworks/unirl-survey.md#异步计时窗口与性能比较) — #539把必要权重发布纳入step time，collect非完整生成，主机phase非GPU分解；8模块编译/3标准库控制，无训练或吞吐验收
   - [空响应的反向与更新](frameworks/unirl-survey.md#空响应的反向通信与零梯度更新) — #598局部无监督仍需匹配FSDP调用；原零损失分支8组CPU图检查，零梯度仍可受momentum/decay更新，非通信验收
   - [冻结教师与状态恢复](frameworks/unirl-survey.md#冻结教师路由与调用方状态恢复) — #519逐层路由与全部梯度开关分别恢复，no_grad仍由调用方负责；恢复动作失败非原子回滚，仅源码/语法，非PEFT实测
+  - [教师指纹与失败传播](frameworks/unirl-survey.md#教师指纹与控制器失败传播) — #515后续已澄清/#575已合并；ready异常、内容不同与读取卡住分开，原hash函数6组CPU控制，非Ray/Gloo或训练验收
   - [离线回放与结果隔离](frameworks/unirl-survey.md#离线回放的到达契约与结果隔离) — #487 observed与dependency到达分开；两类上游错误接受在作者fork拒绝，完整原stdlib模块对照，非模拟器或性能验收
   - [常驻与流式规划账本](frameworks/unirl-survey.md#常驻与流式-block-的规划账本) — #486无驻留上限就保守计全部streamed；原planner180候选CPU算术对照，可行性/最大卸载目标非执行器或性能验收
   - [Prompt组边界与前向分块](frameworks/unirl-survey.md#prompt-组边界与前向分块) — #485允许对齐子组跨forward，原helper16,400有界布局对照；校验不修调度，固定FBS开关parity非更换FBS后的轨迹一致
