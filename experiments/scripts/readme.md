@@ -4,6 +4,7 @@
 
 | 入口 | 用途 |
 |---|---|
+| [verify_unirl_offload_plan.py](verify_unirl_offload_plan.py) | 固定#486完整原stdlib planner，36组synthetic配置/180候选账本对照，另核node预算、缺phase、fixed/alias及目标/字段语义。Python3.9+/本地Git对象；非校准profile、FSDP/执行器、显存或性能验收，见[主笔记](../../notebook/frameworks/unirl-survey.md#常驻与流式-block-的规划账本) |
 | [verify_unirl_trace_contract.py](verify_unirl_trace_contract.py) | 固定#487与作者fork九行guard的完整原stdlib schema/converter对照：两类已知错误接受→拒绝、合法JSON不变，另核到达/依赖/ID/结果隔离。Python3.9+/本地Git对象，无新依赖；synthetic仅数据契约，不是捕获/模拟器/性能验收，见[主笔记](../../notebook/frameworks/unirl-survey.md#离线回放的到达契约与结果隔离) |
 | [verify_unirl_empty_backward.py](verify_unirl_empty_backward.py) | 固定#598两版原GSPO/PPO全mask if分支，8组有限CPU图比较及双输出反例；另6组普通AdamW/SGD控制区分零梯度与None。Python3.12+/torch/本地Git对象，非完整算法/replay、padding、归一化、FSDP或设备验收，见[主笔记](../../notebook/frameworks/unirl-survey.md#空响应的反向通信与零梯度更新) |
 | [verify_unirl_rollout_correction.py](verify_unirl_rollout_correction.py) | 固定#557原校正if分支+原clip/reducer：36组CPU值/局部梯度对照，detach、裁剪顺序、分母、安全限幅和micro ESS控制。Python3.12+/torch/本地Git对象，属性容器仅供张量字段；非完整GRPO、base/head禁用路径等价、anchor生命周期、模型/训练或设备验收，见[主笔记](../../notebook/frameworks/unirl-survey.md#replay-锚点与-rollout-采样校正) |

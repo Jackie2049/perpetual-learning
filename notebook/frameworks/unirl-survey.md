@@ -1089,6 +1089,52 @@ python3 -B experiments/scripts/verify_unirl_trace_contract.py /path/to/UniRL-git
 
 这是原数据契约执行，不是原作者全部外部测试、捕获hook、runner或模拟时序验收。最新API另指向作者独立fork runner与CPU profile smoke，不能移作本机或上游head结果；真实匹配GPU执行与模拟的保真度仍未测。本题不产生加速比、H100/H20/4090准确性或训练结论。真实capture/profile/版本匹配条件补[原M5参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不安装模拟器、租算力、启训练或改其专项。
 
+## 常驻与流式 block 的规划账本
+
+**可行的卸载计划不是已实现的执行器，内存账本恒等也不是预测精度。** [#486](https://github.com/Tencent-Hunyuan/UniRL/pull/486)（2026-10-23读取open）新增纯stdlib placement planner和测量契约，固定head `57cec429b5978d7da4bfd5f751764c0fd5da4c06`、目标base `b5079be170635afd87acc83873a18d2fb2114732`，实际祖先 `f8d95462837df00188dab1376e19347b43996307`，ahead1/behind15；2文件586行新增，无提交测试。它不安装offload策略、不移动参数，也不读取checkpoint。
+
+### 排他账本与执行器能力
+
+[原规划器](https://github.com/Tencent-Hunyuan/UniRL/blob/57cec429b5978d7da4bfd5f751764c0fd5da4c06/unirl/train/backend/fsdp/offload_plan.py)对每个phase/rank计算：排除所有block参数后的phase高水位，加root/fixed、该phase的常驻block、streamed staging与headroom。每个block的staging为shard+full+cast三种存储角色之和。[测量契约](https://github.com/Tencent-Hunyuan/UniRL/blob/57cec429b5978d7da4bfd5f751764c0fd5da4c06/unirl/train/backend/fsdp/README.md)要求compute时间排除transfer等待；否则先将参数或等待计入profile、再由planner加一次，会重复计费。数值类型通过不证明采集者真的做到了排除。
+
+`live_streamed_bound=None`时，所有streamed block都计为同时live。只有执行器已验证同时物化上限，才能按最大的若干block算staging；不能因希望双缓冲，就把原生FSDP的生命周期替换成“两块在场”。本机合成block staging为`[30,60,90,120]B`，root7、phase基线13、headroom5，五种resident前缀k得到：
+
+| k | 保守None上限 | 声明live上限2 |
+| --- | ---: | ---: |
+| 0 | 325 | 235 |
+| 1 | 325 | 265 |
+| 2 | 325 | 325 |
+| 3 | 325 | 325 |
+| 4 | 325 | 325 |
+
+保守模型里resident与streamed只是同一笔总存储改标签，单靠GPU预算不能挑出节省显存的部分后缀。右列是声明能力条件下的模型结果，不是真实两槽执行器或显存测量；容量、stall限制和host预算可以互相冲突。
+
+### 共同计划与目标函数
+
+枚举的是所有rank共用的调用顺序前缀resident、后缀streamed，不是任意子集的全局最优放置。每rank预算分别约束，同节点host则将各rank基线和offloaded shard需求相加；double_buffer再使host shard项翻倍。fixed保持常驻，alias跨切分边界会拒绝。没有候选满足时返回INFEASIBLE及原因，不自动回退全常驻。
+
+选择目标是`max_offloaded_suffix`：按k从小到大取第一个可行项，**不是选最快可行项**。本机每phase四块各compute10ms、transfer3ms的合成例中，k0有3ms暴露等待，k1可隐藏等待；250B预算下上表右列只有k0可行，仍选k0。`latency_optimal_k=1`来自包括不可行项的另一次最小值搜索，不能绕过预算直接采用。预算270B再要求stall0，才选k1部分后缀。
+
+### 按计算式解读预测字段
+
+串行copy/compute双时间线在transfer完成后才允许该块计算，不把transfer开始当ready。profile应提供互不重计的compute、transfer、startup和collective成本；当前纯模型不认证真实copy lane、通信竞争或生命周期。
+
+源码的`predicted_total_ms`是rank×phase预测值的最大值，不是四phase相加的完整训练步时间。`transfer_busy_ms`当前取`compute_free-startup_ms`，也不是复制时长之和：上述合成k0中它为43ms，而四次copy时长之和仅12ms，`no_compute_transfer_ms`为3ms。字段名不能直接换算DMA利用率、PCIe带宽或端到端加速比。
+
+rollout、replay_backward、optimizer、transition中完全没有测量的phase会使所有候选拒绝；不能从另一个phase外推transition。本版missing检查以各rank phase的并集为依据，采集者仍需保证逐rank、逐block成本完整及排他口径，接受的profile不自动等于完整实测。
+
+### 原模块CPU控制与作者证据
+
+[复查脚本](../../experiments/scripts/verify_unirl_offload_plan.py)执行固定版完整原模块，在Python3.9.6用36组明确标注synthetic的profile/capability配置，对180个候选的GPU/host账本、stall、max-phase时间、可行性与选择做独立算术对照，全部通过。另核node-sum/double-buffer、紧rank预算、缺transition全拒、fixed/alias及确定性JSON；两次结果一致。没有torch/Ray/vLLM/SGLang导入、模型或设备张量分配、设备执行及新依赖。
+
+```bash
+python3 -B experiments/scripts/verify_unirl_offload_plan.py /path/to/UniRL-git
+```
+
+原模块SHA256 `d695e765f614d22a4e294e7df99d96b66a0a85f45692bc3abe2fcd7765370902`。这是planner算术和拒绝路径验证，不是profile校准、FSDP数值、真实驻留上限、显存回收或性能验收。
+
+作者另报2×H100小型残差MLP的FSDP能力对照和随机权重SD3组件测量；前者非完整RL recipe，后者transition未测、profile被拒。all-resident账本delta0仅是构造恒等，不能作预测准确性；planner对执行器误差、稳态性能仍未验证。真机资源/profile/执行器前提补[原M5参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不部署planner、不启offload/训练或改其专项。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。

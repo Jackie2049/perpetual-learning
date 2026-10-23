@@ -40,6 +40,8 @@
 
 ## 运行接续
 
+- **M1常驻/流式规划学习收束（2026-10-23）**：快进M5状态cd888ea，读#486 head57cec429/目标b5079be1、祖先f8d95462（ahead1/behind15，2文件586新增）。见[原调研新节](notebook/frameworks/unirl-survey.md#常驻与流式-block-的规划账本)/[复查](experiments/scripts/verify_unirl_offload_plan.py)。排他账本与live bound需真实profile/执行器保证，None保守计全部streamed；共同计划目标最大卸载非最快，latency_optimal可能不可行，max-phase/transfer_busy字段不当整步延迟/DMA时长。完整原stdlib planner36组synthetic配置/180候选算术对照及node/fixed/alias/缺phase控制通过，非校准/FSDP/显存/性能验收；作者H100能力与未测transition组件profile不挪为新执行器收益。缺口补原M5参考不部署。本题收束，下轮另选非ledger预算/驻留上限/模拟时序小变体问题；GPU/AReaL/#8313/#523分工不变。
+
 - **M1离线回放契约学习收束（2026-10-23）**：快进M5状态49d9861，读#487 heade8779559/目标b5079be1、祖先f8d95462（ahead1/behind15，4文件567新增）及作者fork draft #1修正4ad73720。见[原调研新节](notebook/frameworks/unirl-survey.md#离线回放的到达契约与结果隔离)/[复查](experiments/scripts/verify_unirl_trace_contract.py)。两版完整原stdlib模块实跑：错误manifest/incomplete dependency在上游接受、fork拒绝，合法JSON相同；另核origin/同刻顺序、显式零等待、依赖/ID/结果键隔离。synthetic契约非真实capture/runner/simulator或性能验证，不重复已公开九行修复，真机profile匹配条件补原M5参考不部署。本题收束，下轮另选非trace字段/guard/模拟到达小变体问题；GPU/AReaL/#8313/#523分工不变。
 
 - **M1冻结教师路由学习收束（2026-10-23）**：快进M5状态f032161，读未完成#519 headfd1ca404/base祖先ff1d3a6b（2文件35增12删、ahead5）。见[原调研新节](notebook/frameworks/unirl-survey.md#冻结教师路由与调用方状态恢复)。set_adapter会改trainability；保存逐层选择和全部requires_grad，切换进入try且恢复flags另有finally，非恢复失败时的原子回滚；no_grad仍由调用方负责，不是main普通路由bug。六helper及prepare_part AST与作者publication5390b5af相同，但完整模块不同，旧报告不作当前head重跑；本机缺PEFT等仅源码/语法，无模型/替身/设备执行，缺口补原M5参考不部署或改#523专项。本题收束，下轮另选非adapter异常状态/重算替身小变体问题；GPU/AReaL/#8313/#523分工不变。
