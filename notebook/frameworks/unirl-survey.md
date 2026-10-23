@@ -1269,6 +1269,26 @@ wrapper赋给`tokenizer.apply_general_template`，没有写回tokenizer类；mar
 
 固定源码可用`git diff 4fb0b1f7b291f3cd5010597b85d41ed44659ef40...d41122e97e1ab631328c86baad00250c406d2b17 -- unirl/models/hunyuan_image3/compat.py unirl/models/hunyuan_image3/text_embed.py`复查。head SHA256：compat `1ddc093e2b606acbb1a698b95bc85cf9c0da3f603b7d80f70e8cbb7c3107e0fb`、text_embed `446930c6ba85af42b93c7f97737f5325bef644c9c2ba9cd281d8403dd0f2608c`。
 
+## 行级奖励派发与分组身份
+
+2026-10-23 阅读已有 [#517](https://github.com/Tencent-Hunyuan/UniRL/pull/517)，open/non-draft，head `fca5a55a0e5b30d108289f7394a7c50850593bf2`、目标 base 与共同祖先 `7a5303647d0c1ec27807124f70939cbb8edde6e9`（ahead 1 / behind 0，2 文件 76 增 10 删）。它为 DiffusionTrainer 增加显式 `reward_dispatch: row`，默认仍为 `prompt_tree`；已有维护者实现，不另立贡献候选。
+
+原 `DP_SCATTER` 按完整 root 树拆 Sample，奖励 DP 数须整除 prompt 数。若 8 个 prompt 各生成 8 行，按行评分有 64 个单位，可分给 32 个奖励 DP rank，而按整棵树不能这样分。`_reward_row_view` 没有直接丢掉树结构：它按每个 frontier leaf 的路径为每一层选择对应祖先，把叶路径的 `/` 换成 `:` 作为新 root，再给后续层追加 `/0`。每个生成行成为独立 root 的完整单分支链，原两 root/六 leaf 例子的每一层都变为六行。祖先行的重复不代表深复制、零拷贝或物理搬运成本已消失。
+
+内容与身份是两套契约。原 `_build_reward_request` 仍通过 `Sample.turns()` 对齐初始提示、最近的 generation prompt 和非文本 conditioning，通过 `root_metadata()` 带入原始记录；重建后这些内容可相同。但 scorer 接收的 `sample_ids` 与 `group_ids` 变为单行谱系，原本同 prompt 的 siblings 不再共用原组身份。依赖组内比较、原 group ID 缓存或跨行状态的 scorer 应保留默认模式，不能因文本/媒体相同就视为等价。
+
+评分后 `_attach_row_rewards` 要求返回 frontier ID 列表与预期的单行 ID **顺序和身份都相同**，再把 `rewards` 和 `component_rewards` 贴到原 frontier，保留原祖先 Parts 和生成内容。它不将评分服务返回的整份 Sample 替换训练输入，也不凭 ID 检查认证分数计算正确。train/eval 入口都改走 `_score`；默认分支仍直接 `score_and_attach(sample)`，本轮只核源码，没有执行 trainer。
+
+放宽的仅是奖励几何。原 helper 在 row 模式检查 `(batch_size × samples_per_prompt) % reward_dp_size == 0`，rollout 仍须完整 prompt-tree 整除（调用方明确不要求时例外）。更外层训练校验还检查正值、训练 DP 和每批更新数；只通过这个局部 helper 不代表整份配方可运行。#378 的 32-GPU H3 配方是作者首个预期使用者，不是此主机数据转换对所有模型的硬件最低要求。
+
+[复查脚本](../../experiments/scripts/verify_unirl_reward_rows.py)以 Python 3.12.13、torch 2.9.1、Pillow 12.0.0 运行两次，5 组 CPU 控制通过：原 Sample/Part 的 2→6 root 重建；乱序三层链的原 RewardRequest 提示/生成文本/条件图像/metadata 一致且 ID 改变；原 slice/concat 后合成奖励标签回贴、原祖先与输入不变；反向拼接分片被拒；8×8、reward DP32/48 与 rollout DP32 的几何边界。没有原上游测试集，标签由夹具生成，不是模型 scorer 输出。完整原类型模块载入，只在 tensor 包汇总初始化隔离 Ray transport；四个完整原 helper 以 AST 执行，未运行 RewardService、远程 dispatch、trainer、packed segment 搬运、TensorRef hydration、Hydra 组合、GPU 或吞吐实验。两版两个变更 Python 文件另做语法编译。
+
+```bash
+python3.12 -B experiments/scripts/verify_unirl_reward_rows.py /path/to/UniRL /path/to/Pillow-target
+```
+
+首次因部分克隆缺少 trainer blob 停止，补取固定源码后离线重跑通过；没有更换函数实现。head `diffusion.py` SHA256 `cdb2d5ba64f034b51ef940f7032bb34d073c61fbb1cbd71bec4ff4c4eb937949`，`service.py` 为 `679be52255e2cbfdd455bacc63ca85df610953130a872db416053cea91e10f7b`。真实奖励后端与派发条件见[原 M5 可选参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不自动采用候选、凑 32 卡或新增训练任务。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。

@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1行级奖励派发学习收束（2026-10-23）**：同步无新增，UniRL当日无新建开放issue，有限核最新30PR/20未指派需求后读未覆盖#517（已有维护者实现不竞争）。固定headfca5a55a/base祖先7a530364（ahead1，2文件76增10删），见[原调研](notebook/frameworks/unirl-survey.md#行级奖励派发与分组身份)/[复查](experiments/scripts/verify_unirl_reward_rows.py)。原类型+4 AST helper的5组CPU控制两次通过：保祖先内容但scorer组身份改变、顺序身份回贴、奖励DP不替代rollout/训练约束。先补缺失固定blob后成功，不换实现；合成标签非真实scorer、无完整trainer/service/dispatch/packed/TensorRef/设备。GPU缺口补原M5可选参考，不排32卡/应用候选/改#523；下轮另选独立缺口，不堆row重排/ID/分片替身。GPU/AReaL/#8313及DeepInfer分工不变。
+
 - **M1初始化buffer精度学习收束（2026-10-23）**：同步无新提交，verl最新12开放PR有界核对后读未深入#8154/#8189（已有修复不竞争）。固定head4e830c72/base祖先1d367a4f（ahead2，3文件118增3删），见[原FSDP专题](notebook/frameworks/verl-fsdp2-source-deep-reading.md#参数转换与缓冲区精度)/[复查](experiments/scripts/verify_verl_param_cast.py)。原6测试体及4组真实CPU控制：保留buffer初值非重建舍入值、全FP32或keep-list/训练状态迁移，原转换call对照非完整_build_module。torch2.9.1，不导入HF/FSDP或设备发现；旧版缺helper不虚造base六例统计。FSDP1/2 policy不同仅源码，真实模型/logp条件补原M5可选参考，不新排队/自动应用。下轮另选独立缺口，不堆dtype/buffer/别名替身；GPU/AReaL/#8313/#523和DeepInfer分工不变。
 
 - **M1 Prime评分协议学习收束（2026-10-23）**：有界核verl最新35开放issue，#8216已有报告者#8217（另#8262关闭未合并），不竞争。固定headfe9ff514/base祖先2035f58d（ahead1，2文件67增），见[原奖励专题](notebook/frameworks/verl-reward-integration-reading.md#prime-进程池的结果协议与失败范围)/[复查](experiments/scripts/verify_verl_prime_pool.py)。原3函数/原event-loop helper和完整原测试模块，真实macOS spawn/ProcessPoolExecutor：原4例base3过1预期KeyError/head全过，另base1/head5控制；worker异常逐行零，结果解析异常的整批回退仅源码，元数据不传播、NaN不拦。撤回旧“超时自动立即kill/CPU最优”推断；无manager/DataProto/300秒超时/训练验收，独立tmp轻依赖，不新增GPU/M5任务。下轮另选独立缺口，不堆评分协议/坏值/超时替身；GPU/AReaL/#8313/#523及DeepInfer分工不变。

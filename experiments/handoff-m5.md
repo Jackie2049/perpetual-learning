@@ -13,6 +13,8 @@ GPU/NPU 的访问、环境与实验由 macbook-M5 Agent 负责。M1 遇到需要
 
 ## UniRL 联合路径的资源与身份边界
 
+行级奖励派发参考（2026-10-23，非新增训练队列）：已有 [#517](https://github.com/Tencent-Hunyuan/UniRL/pull/517) head `fca5a55a0e5b30d108289f7394a7c50850593bf2`、base/祖先 `7a5303647d0c1ec27807124f70939cbb8edde6e9`；[M1 原类型与4 helper](../notebook/frameworks/unirl-survey.md#行级奖励派发与分组身份)5组CPU控制通过，分数为夹具标签，无真实服务/dispatch/模型或设备。若M5日后独立选择且已有获准匹配DiffusionTrainer/奖励后端，先确认scorer是否依赖原group身份，再核真实DP分片/聚合顺序、prompt/conditioning/metadata与packed或引用数据的对应及回贴；分开记录奖励计算与搬运成本。无匹配权重/依赖/资源、需下载部署/扩卡或影响专项就停止记未测，不自动切row、采用#378/32卡配方、拼接其他PR或改#523专项，此参考非接单。
+
 HI3 tokenizer参考（2026-10-23，非新增算力队列）：已有非draft[#544](https://github.com/Tencent-Hunyuan/UniRL/pull/544)head`d41122e97e1ab631328c86baad00250c406d2b17`、base/祖先`4fb0b1f7b291f3cd5010597b85d41ed44659ef40`；[M1阅读](../notebook/frameworks/unirl-survey.md#tokenizer-实例修补与批量生成边界)仅两版共4模块语法/AST身份检查，无真实tokenizer/模型执行。作者20CPU例绑定checkpoint`2ec2c78bee7d4b94157341fba86c4c2c7b1858b2`，GPU生成/token-logp parity尚未验，配方仍FBS1。若M5日后已有获准匹配HI3资源且独立选择此修复，先重核checkpoint源码/签名与shim是否仍需，最小记录各行ID/token/real_pos/sections与CFG对应关系，再核短生成、ragged mask/RoPE/KV写入及token/logp；行数不替代身份。缺授权权重/匹配资源、需新下载/部署或影响专项即保留未测停止，不直接提高FBS、不拼接#300或改变#523任务；参考非接单。
 
 样本观测参考（2026-10-23，非新增算力队列）：draft[#597](https://github.com/Tencent-Hunyuan/UniRL/pull/597)head`d507c4dc1e10db427cadff4d6e29482801a12065`、base/祖先`6c828f5ed81649153315d996f0f597e8808ff144`；[M1学习](../notebook/frameworks/unirl-survey.md#样本观测的行上限与数据搬运)仅原CPU Sample/音频/本地sink六组控制，无trainer/远程hydrate/W&B/模型执行。作者H100小模型短训非Omni/HI3原配方或多节点driver RSS验收。若M5日后已有获准匹配UniRL任务并独立选择该draft，最小记录选中ID/祖先文本/reward、实际TensorRef块与hydrate字节、driver RSS和本地输出失败后的训练更新；先固定模型/配方及transport版本，关闭不必要的数据外发。缺授权权重、匹配多卡/transport/存储或需新增下载部署、影响专项即保留未测停止，不为本参考启动70/169GB模型或新增必跑矩阵；参考非接单，不改#523/AReaL。
