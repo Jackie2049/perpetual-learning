@@ -75,6 +75,8 @@ Omni原生IPC参考（非新增训练任务）：[#617](https://github.com/Tence
 
 **任务来源与边界**：用户 2026-10-23 审阅 fork PR [Jackie2049/UniRL#1](https://github.com/Jackie2049/UniRL/pull/1)（base=fork main，未涉上游）后明确：方案设计和代码实现都没问题，设计好测试验证方式与 e2e 训练冒烟，交 M5 测试闭环。本条为指派任务，不再是参考条目；对上游 Tencent-Hunyuan/UniRL 仍无任何操作权限，结果回写本页 + [candidate-523](../open-source/unirl/candidate-523-anchor-lifecycle.md) + diary。
 
+**执行顺序澄清（2026-10-23 傍晚补，回应"无空闲卡跑不了"的判定）**：L0 **零 GPU 依赖**——真实模块 + 替身协作者在 CPU 即可执行，与本轮或任何时点的空闲卡数无关，**不得因 L1 资源判定未过而搁置 L0**；本机 Python/torch 可用即可开始。L1 才受"≥8 卡同时空闲 + 获准权重"约束（17:07 轮判定：GPU 0/1/7 空闲但仅 3 卡、2-6 被他人 VLLM 占用，不满足）——该判定对 L0 不适用。
+
 **修复内容**（一句话）：`UnifiedModelTrainStack.train_track` 补齐 single 栈四步生命周期 `eval() → prepare_segment_anchors(ar) → prepare_part(ar) → prepare_segment_anchors(image) → prepare_part(image) → train()`（try/finally 兜底恢复 train），仅 `unirl/train/stack/unified.py` +8/-2。M1 已做提取逻辑级验证（3 项单测 + 真实文件 AST 断言）；本任务升级为真实模块与真实环境验证。
 
 **物料与字节校验（第一步，必须先做；M5 已于 2026-10-23 真机完成）**：
@@ -92,6 +94,7 @@ Omni原生IPC参考（非新增训练任务）：[#617](https://github.com/Tence
 **L1 e2e 统一训练冒烟（先做可行性判定，大概率待资源）**：
 shipped 统一配方的真实门槛（源码核实 2026-10-23）：`bagel_trainside_unigrpo.yaml` 要 num_devices=32 多机 + BAGEL-7B-MoT 权重 + fp32 master；`hi3_it2i.yaml`/`hi3_vllmomni*.yaml` 要 num_devices=8 + HunyuanImage-3.0-Instruct（MoE，权重体量远超单卡 24 GiB）。**注意 `hi3_trainside_t2i.yaml` 自带头部注释明确 "No AR rollout, no AR algorithm, no unified two-track stack"——不是统一栈载体**；`examples/pe/*replay*` 全走单模型栈（TrainStack 本来就正确），对本修复无验证意义。
 L1 前置判定：服务器能否整段占用 ≥8 卡 + 是否有获准的 Bagel/HI3 权重与存储。任一不满足 → 记录"待资源/待权重"及恢复条件即停；不下载未授权权重、不为 L1 新租算力、不打断其他会话任务（14:37 定时轮记录 GPU 0/1/7 仍被占满）。
+**为什么不能用"小模型 + 少数几张卡"替代 L1**（2026-10-23 补）：统一栈算法与"AR+扩散双部件"模型结构强耦合（共享骨干、图像 VAE latent、mRoPE 等），上游没有 tiny 统一模型、也没有 tests/ harness；自建随机权重小模型等于自造验证台，rollout 引擎链路还要为它单独打通，工程量不小且生命周期断言价值与 L0 重叠（L0 的替身控制更精确）。shipped 配方回归与 replay 数值验收只有真实权重才有意义；且即便只看显存，14B 级全参训练的 AdamW 状态（fp32 master + m + v ≈ 12 字节/参数 ≈ 168 GiB）在 3×24 GiB 上放不下——这正是 bagel 配方要求 32 设备的原因。故 L1 维持"待 ≥8 卡 + 获准权重"，不降级为小模型替代。
 若条件满足，按序执行：
 1. **正向回归（shipped rollout-sourced）**：任一统一配方按其注释的最小化改法（batch/steps 调小）跑 2 个 global step，打补丁 vs 不打补丁各一遍，逐指标对比 loss / first-update ratio / clip fraction——rollout-sourced 理论零差异，容差内 PASS；出现差异先排查 nondeterminism/版本漂移再上报。
 2. **生命周期观测**：e2e 里确认 eval→train 切换真实发生（临时调试日志或 profiler 区间核对，结束时还原，不改语义）。
