@@ -1,6 +1,6 @@
 # verl Reward Integration 源码级深度阅读
 
-2026-10-23 补充：[数学奖励的分层判分与精度边界](#数学奖励的分层判分与精度边界)固定于未合并PR #8347，仅覆盖CPU字符串判分；[Prime 进程池的结果协议与失败范围](#prime-进程池的结果协议与失败范围)用 #8217 原测试核对真实 CPU 进程池，不是训练验收。下方2026-06其余架构与硬件建议不属于这两次复查范围。
+2026-10-23 补充：[沙箱运行器注册与执行边界](#沙箱运行器注册与执行边界)固定于未合并 #8345，14 个原 runner 用例仅验证本地契约；[数学奖励的分层判分与精度边界](#数学奖励的分层判分与精度边界)固定于未合并 #8347，仅覆盖 CPU 字符串判分；[Prime 进程池的结果协议与失败范围](#prime-进程池的结果协议与失败范围)用 #8217 原测试核对真实 CPU 进程池。其余 2026-06 架构与硬件建议不属于这些复查范围。
 
 > 2026-06-15 | 源码: verl/trainer/ppo/reward.py + ray_trainer.py + workers/reward_manager/ + experimental/reward_loop/ + core_algos.py + utils/reward_score/
 > 核心: 两层架构(legacy RewardManager + experimental RewardLoop) → 3 reward路径(rule/DisRM/GenRM) → outcome reward=最后token非零 → GRPO group-relative → colocate RM sleep/wake → RTX 4090=rule-based唯一可行
@@ -740,6 +740,39 @@ def default_compute_score(data_source, solution_str, ground_truth, extra_info=No
 **★★ 已支持的数据集**: GSM8k, MATH, MATH-500, math_dapo, AIME, numina系列, codecontests/apps/codeforces/taco, geo3k, searchR1系列
 
 **★★ Sandbox Fusion**: 代码任务 → 需要执行代码 → sandbox_fusion_url → 云端代码执行 → concurrent_semaphore控制并发
+
+这条旧概括描述 HTTP 服务路径；下面的 #8345 候选还允许包注册的本地 runner，并非所有代码奖励都必须是云端服务。
+
+## 沙箱运行器注册与执行边界
+
+2026-10-23 阅读已有 [#8345](https://github.com/verl-project/verl/pull/8345)，OPEN/non-draft、作者 danbugs，固定 head `72ccdb6d242302157251a8d2e59943d9bd9ea113`、目标 base 与共同祖先 `d430157d15516d89e0cc853fd10fcd21d9234c44`，ahead 1 / behind 0，9 文件 476 增 12 删。它给既有 sandbox_fusion 评分流程增加 runner 派发点，不是新评分算法或我方贡献候选；也不是默认已安装、已合并的沙箱后端。
+
+### 注册与 URL 路由
+
+[`sandbox_runner_scheme`](https://github.com/verl-project/verl/blob/72ccdb6d242302157251a8d2e59943d9bd9ea113/verl/utils/reward_score/sandbox_fusion/utils.py)按自身规则解释 URL：自定义 scheme 转小写，支持 my_box 等非标准 URI scheme；http/https 及 http+unix 等扩展、无 scheme 的地址继续走服务路径。自定义 runner 收到 strip 后的原 URL，以及按关键字传入的 code/stdin、compile/run timeout、memory limit 和 language。自定义语言由 runner 决定，不受 HTTP 服务语言表限制。
+
+注册表是**每进程的 Python 状态**。`verl.__init__` 的 entry-point 加载受 `VERL_USE_EXTERNAL_PLUGINS` 控制，或可由显式外部模块触发注册；驱动侧装好包不等于每个实际 reward 进程都已注册。注册拒绝非 callable 和 coroutine function；相同对象可重复注册，同模块对象可按重载语义替换，不同模块争用同 scheme 则记录冲突、warning，并在 lookup 时拒绝，而非静默选最后一个。模块名判据不是包来源、代码身份或安全认证。
+
+### 预检、逐例错误与执行责任
+
+| 边界 | 原实现行为 | 不能据此声称 |
+|---|---|---|
+| manager 启动预检 | 在无 custom reward function、配置 sandbox URL 的分支查本进程 runner，再创建 semaphore | 所有自定义 reward/远端 worker 都提前验证成功 |
+| 找不到或冲突 | lookup 抛 ValueError；逐例 API 包装将它变成错误，整条详细信息每 scheme 只记首次 | 每次错误都能靠日志看到完整环境原因 |
+| runner 抛异常 | 按 scheme/异常类型只首次记 traceback，各次仍返回错误 | 后续没有 traceback 就代表成功，或失败已被自动恢复 |
+| runner 返回值 | 检查 `(dict-or-None, str-or-None)` 二元组及至少一个真值；空 error 归 None，后续复用状态/输出判分 | 已深度验证响应 schema、真正运行过程序或建立了安全隔离 |
+
+`_process_single_case` 继续把包装层错误映射为 `api_error` / -1，成功回复再按既有 stdout/状态协议判分。注册不是执行沙箱的实现：runner 自己负责代码隔离、线程安全、语言支持与资源限制。`call_sandbox_api` 直接同步调用 runner，没有替它加超时中断；`check_correctness` 的线程池也不会因传入 run_timeout 自动杀掉阻塞 runner。HTTP 的请求 timeout/504 重试逻辑不能直接套到这个分支。
+
+[`load_reward_manager`](https://github.com/verl-project/verl/blob/72ccdb6d242302157251a8d2e59943d9bd9ea113/verl/trainer/ppo/reward.py)的启动检查只覆盖它所在进程与特定默认评分分支；测试通过不能升级成真实 plugin entry-point 已加载、每个 Ray worker 环境一致或全部自定义 reward 接线正确。这里没有把进程内注册表/锁或所传 semaphore 当成集群全局配额。
+
+### 原测试复跑范围
+
+Python 3.12.13、pytest 9.1.1、requests 2.34.2 的已有隔离环境，两次运行均为 **14 passed / 16 deselected**。选中原新增 runner 测试：关键字派发与大小写/空白、echo 结果通过原 check_correctness 得到 True/False、缺失与冲突、异常/畸形返回、空 error、runner 自定语言、注册校验，以及 HTTP scheme 的 7 个参数例。echo/报错 runner 均是作者夹具，未执行 code 字符串。HTTP scheme 测试只核路由分类，不是实际 HTTP 请求验收。
+
+完整原 utils、包入口和测试文件均从固定 Git 对象载入，未改函数/测试体；只用空根包壳隔离 verl 根初始化及其 Ray/设备/entry-point 副作用。原测试自己的 fixture/mock 保留，另阻断 requests.post，实际未发 HTTP。16 个未选项包括 11 个真实服务用例、4 个旧 unit 用例和 1 个 manager 启动预检，**不是把它们算作通过或 skip**；未用假 manager 代替启动链。两版 5 个变更 Python 文件共 10 模块另做 compile。基础 CPU 环境缺 requests 后复用已有环境，没有安装新包。
+
+复现 harness 与 git archive 命令留[当日日志](../../diary/2026-10-23.md)，不新增永久工具。原 utils SHA256 `173c605ff7e51310f44592b754844cbe3ba3cc72b6055ea742a54a873c5c257a`，原测试 `272cc64036092074bf8b4f15e6064a83f31fe3a9f7f5238cb433e85029d06584`。PR 作者报告的 19 passed/11 skipped、真实 Hyperlight 0.1.0 micro-VM 4/4 不是本机结果；本轮没有安装插件、加载 entry-point、部署服务或验证安全性/真实超时/训练。这里没有新增 GPU/NPU 验证需求，不为未测服务或 micro-VM 自动排 M5 任务。
 
 ## 8. 配置体系 ★★
 
