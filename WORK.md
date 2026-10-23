@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 actor/logprob一致性学习收束（2026-10-23）**：快进M5状态1ebaa40，有界核两项目候选，设备CI和M5量化专项不接手，读未覆盖verl#8026 head6a7110b4/目标dc709afb、祖先831c5d86（ahead6/behind4，16文件406增7删）。见[原确定性笔记](notebook/frameworks/verl-6572-full-determinism-source-reading.md#actor-前向与-logprob-公式的一致性)/[复查](experiments/scripts/verify_verl_sampler_logprobs.py)。原4数学测试体/3补充CPU控制通过，FP32同logits两公式31/50数值不同；checkpoint保输入引用非保存完整词表输出。仅真实CPU数学，13模块compile，无vLLM/引擎/模型或GPU；撤回旧P9完整确定性和固定吞吐推论。作者H20前向对齐不认证反向，缺口补原M5可选参考不部署。下轮优先未覆盖issue机会，跳过公式/ULP/保存引用替身小变体，GPU/AReaL/#8313/#523分工不变。
+
 - **M1多教师周期学习收束（2026-10-23）**：快进M5进展b923f0d，UniRL开放issue有界查重后排除#507（无assignee/PR但报告者已表明自做）等线索；读新draft#624 head375c2273/base祖先6fd82cba，A3独立边界0142d612后15文件316增31删，完整diff含#534前置18文件693增32删。见[原专题](notebook/frameworks/unirl-survey.md#多教师周期与恢复身份)。完整域周期后一次正常更新，100rollout/2域是50周期；恢复路由JSON、教师内容hash、数据快进和rollout/DP seed分层，单文件replace非checkpoint事务。仅前置10/head11模块AST/compile，无行为替身或作者双A100复跑，normalized-gap恢复作者亦未另验。缺口补原M5可选参考，不部署draft/竞争实现或介入#523。下轮优先两个项目未覆盖issue机会，跳过周期计数/seed/归约替身小变体，GPU/AReaL/#8313/#523分工不变。
 
 - **M1离线合并存储学习收束（2026-10-23）**：同步两周UniRL/verl聚焦及M5 fork审阅进展6ff7fb0，不接手专项；读已有verl#7503 heade2d9f145/目标3f9d4c0d、祖先8df88be7（ahead2/behind89，2文件104增1删）。见[原checkpoint专题](notebook/frameworks/verl-checkpoint-management-reading.md#复制分片的存储隔离)/[复查](experiments/scripts/verify_verl_merger_storage.py)。原3测试体base2过1预期失败/head3过，四组真实CPU控制确认clone隔离存储、BF16转换可保别名；只计输出2048→16字节，保留源时2048→2064，非合并峰值。无原生导入/完整CLI/HF保存或#6259重复key复现；已有作者覆盖，不新开竞争候选/算力任务，无新依赖。下轮优先UniRL/verl未覆盖issue机会，跳过存储/字段/分段替身小变体及GPU/AReaL/#8313/#523专项。
