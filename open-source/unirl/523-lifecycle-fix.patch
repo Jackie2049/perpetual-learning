@@ -1,14 +1,11 @@
 --- unified.orig.py	2026-10-22 21:46:13
 +++ src/stack/unified.py	2026-10-22 21:45:13
-@@ -214,8 +214,17 @@
+@@ -214,8 +214,14 @@
  
          profiler = self._train_step_profiler if profile_mode() == "train" else None
          with profiler.record("train_track") if profiler is not None else nullcontext():
 -            prepare_segment_anchors(self.ar_algorithm, ar_part, ar_steps, order=ar_order)
 -            prepare_segment_anchors(self.image_algorithm, image_part, image_steps, order=image_order)
-+            # Freeze both parts' anchors under the same model mode as TrainStack._prepare_for_training
-+            # (single.py), so the shared backbone is in eval() while pi_old is frozen and both
-+            # algorithms' prepare_part hooks run. Restore train() even if prepare raises.
 +            self.fsdp_backend.model.eval()
 +            try:
 +                prepare_segment_anchors(self.ar_algorithm, ar_part, ar_steps, order=ar_order)

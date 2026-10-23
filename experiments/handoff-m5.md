@@ -65,17 +65,19 @@ TempFlow分支参考（2026-10-22，非新增训练任务）：[#552](https://gi
 
 Omni原生IPC参考（非新增训练任务）：[#617](https://github.com/Tencent-Hunyuan/UniRL/pull/617)head `19f263968deecdecd26cebe8966f8ba012a5575d`，[M1阅读/原helper CPU范围](../notebook/frameworks/unirl-survey.md#omni-原生-ipc-的副本与导出边界)只覆盖meta/视图、8模块compile，无CUDA导出/IPC/模型。若M5日后独立选择该路线，先核配套Omni WTE（作者测试8607b97ea5）、授权模型/依赖、同节点每卡TP1副本及UUID、CPU offload关闭下的显存与sleep备份RAM；不继承HI3至少8卡，也不因1x1 YAML存在就认定4090可跑。最小观察分开记schema、实际权重内容、publication序号/optimizer版本与失败后的运行时关闭；结构hash不认证内容，失败不回滚，控制链含pickle需可信。缺现有匹配环境/资源或需安装配套分支、下载权重、打断原任务就停留未测，不自动部署/启训练或增加必跑矩阵。
 
-#523 锚生命周期修复（2026-10-23）：用户已审阅并认可 fork PR [#1](https://github.com/Jackie2049/UniRL/pull/1) 的方案设计与代码实现，测试验证与 e2e 冒烟已升级为**正式指派任务**，见下方专设小节「UniRL #523 unified 栈锚生命周期修复 —— 测试设计与冒烟」；本节其余 UniRL 参考条目不变。
+#523 锚生命周期修复（2026-10-23）：用户已审阅并认可 fork PR [#1](https://github.com/Jackie2049/UniRL/pull/1) 的方案设计与代码实现，测试验证与 e2e 冒烟已升级为**正式指派任务**，见下方专设小节「UniRL #523 unified 栈锚生命周期修复 —— 测试设计与冒烟」；本节其余 UniRL 参考条目不变。**✅ M5 已闭环 L0 并判定 L1（2026-10-23，本会话）**：L0 真实模块冒烟四项断言全过（含 pristine 对照），L1 判定「待资源/待权重」——详见专设小节下方完成记录与 [实验材料](../experiments/unirl-523-l0/readme.md)。
 
 ## UniRL #523 unified 栈锚生命周期修复 —— 测试设计与冒烟（2026-10-23 用户指派，交 M5 闭环）
+
+**✅ M5 完成记录（2026-10-23 本会话，4090-1）**：**L0 真实模块生命周期冒烟完成**——真实 `unirl.train.stack.unified`（上游 main `6fd82cba` + 修正补丁，指纹已核）取 `train_track.__wrapped__` 真实方法体绑定替身 self，`prepare_segment_anchors` 用真实 anchor.py 函数，替身逐项记录（fsdp_backend.model 为真实 torch Linear 包装、算法三种变体、sample/Part/planner/`_train_one_step` 最小替身）；**四项断言全过**：①调用序 eval→freeze(ar)→prepare_part(ar)→freeze(image)→prepare_part(image)→train、②(c) 抛异常后 train() 由 finally 恢复且异常上抛、③(a) 两个 part 原样返回（同一对象流入 _train_one_step）、④(b) 两个 prepare_part 各调恰一次；**pristine 对照**（同脚本指向未打补丁树）确认旧代码无 eval/train/prepare_part、四项 patched 断言全部失败、失败替身永不触发——断言有区分度。环境 Python 3.12.15 / torch 2.11.0+cu128（verl-e2e）；日志 `l0_patched.log`/`l0_pristine.log`，脚本与细节见 [experiments/unirl-523-l0](../experiments/unirl-523-l0/readme.md)。**L1 判定：待资源/待权重**——GPU 仅 0/1/7 空闲（3 卡，2–6 他人 VLLM 占用），无法整段占用 ≥8 卡（hi3 需 8 / bagel 需 32 多机），Bagel/HI3 权重未授权未下载（HI3 MoE 远超单卡 24 GiB，磁盘剩 149G）；恢复条件 = ≥8 卡同时空闲 + 获准权重与存储，满足后按下方四步执行。已按停止条件停（未下载未授权权重、未为 L1 新租算力、未打断其他会话）。
 
 **任务来源与边界**：用户 2026-10-23 审阅 fork PR [Jackie2049/UniRL#1](https://github.com/Jackie2049/UniRL/pull/1)（base=fork main，未涉上游）后明确：方案设计和代码实现都没问题，设计好测试验证方式与 e2e 训练冒烟，交 M5 测试闭环。本条为指派任务，不再是参考条目；对上游 Tencent-Hunyuan/UniRL 仍无任何操作权限，结果回写本页 + [candidate-523](../open-source/unirl/candidate-523-anchor-lifecycle.md) + diary。
 
 **修复内容**（一句话）：`UnifiedModelTrainStack.train_track` 补齐 single 栈四步生命周期 `eval() → prepare_segment_anchors(ar) → prepare_part(ar) → prepare_segment_anchors(image) → prepare_part(image) → train()`（try/finally 兜底恢复 train），仅 `unirl/train/stack/unified.py` +8/-2。M1 已做提取逻辑级验证（3 项单测 + 真实文件 AST 断言）；本任务升级为真实模块与真实环境验证。
 
-**物料与字节校验（第一步，必须先做）**：
-- 补丁唯一来源：项目仓库 [523-lifecycle-fix.patch](../open-source/unirl/523-lifecycle-fix.patch)（sha256 `c39d25b9d4419810ac86258664db152c4253be4ebb654616c01d8cf5c94409d3`）；服务器 GitHub 直连不稳时同步项目仓库取用，勿从其他分支/来源拼凑。
-- 校验方法：对 pristine 上游 main `6fd82cba` 的 `unirl/` 应用补丁（`patch -p1`），然后 `unirl/train/stack/unified.py` 应满足：sha256 = `9a55deabdf1821acbfb57d36bb1377418a4880a652c8a28dd7e89163e541a4e3`、git blob = `2cced46552f98e8d44cf57df9f91d46945902f33`（后者与 fork head `04101ad5` 的 blob 一致，M1 已预核）。任一不符即停，勿手改凑数。
+**物料与字节校验（第一步，必须先做；M5 已于 2026-10-23 真机完成）**：
+- 补丁唯一来源：项目仓库 [523-lifecycle-fix.patch](../open-source/unirl/523-lifecycle-fix.patch)（sha256 `a2d2437bd0ef429fcd62bf3d381862048cf388fcd461f6d297aedaa17b03ec0c`；**2026-10-23 M5 已修正为与 fork 一致版**——原补丁含 3 行注释、应用到 pristine 得 blob `1814dd43` ≠ 验收指纹，fork `04101ad5`（用户已认可）提交无注释、blob `2cced465` 与验收指纹一致，权威版本是 fork；已去注释修正并重新核验）；服务器 GitHub 直连不稳时同步项目仓库取用，勿从其他分支/来源拼凑。
+- 校验方法：对 pristine 上游 main `6fd82cba` 的 `unirl/` 应用补丁（`patch -p1`），然后 `unirl/train/stack/unified.py` 应满足：sha256 = `9a55deabdf1821acbfb57d36bb1377418a4880a652c8a28dd7e89163e541a4e3`、git blob = `2cced46552f98e8d44cf57df9f91d46945902f33`（后者与 fork head `04101ad5` 的 blob 一致，M1 已预核，**M5 已在服务器双向复核通过**）。任一不符即停，勿手改凑数。
 
 **L0 真实模块生命周期冒烟（CPU/单卡即可，核心交付，不依赖大模型权重）**：
 把 M1 的"提取逻辑 exec"升级为**真实模块验证**——从打补丁后的真实 `unirl.train.stack.unified` 取 `train_track` 方法体（绑定到替身 self 或最小构造的真实类实例），协作者用替身：
