@@ -1,5 +1,7 @@
 # verl Reward Integration 源码级深度阅读
 
+2026-10-23 补充：[数学奖励的分层判分与精度边界](#数学奖励的分层判分与精度边界)固定于未合并PR #8347，仅覆盖CPU字符串判分。下方2026-06的架构与硬件建议不属于这次复查范围。
+
 > 2026-06-15 | 源码: verl/trainer/ppo/reward.py + ray_trainer.py + workers/reward_manager/ + experimental/reward_loop/ + core_algos.py + utils/reward_score/
 > 核心: 两层架构(legacy RewardManager + experimental RewardLoop) → 3 reward路径(rule/DisRM/GenRM) → outcome reward=最后token非零 → GRPO group-relative → colocate RM sleep/wake → RTX 4090=rule-based唯一可行
 
@@ -943,6 +945,46 @@ algorithm:
 7. **★★★ Dr.GRPO**: norm_adv_by_std_in_grpo=False → 不除σ_g → 防止小group梯度消失 → RTX 4090推荐
 
 8. **★★★ RTX 4090唯一可行路径**: rule-based + outcome reward + GRPO_VECTORIZED + Dr.GRPO → 纯CPU reward → 单GPU训练+推理
+
+## 数学奖励的分层判分与精度边界
+
+奖励函数能返回分数，不代表它保留了题目要求的数学语义。[Issue #8346](https://github.com/verl-project/verl/issues/8346)报告prime_math会接受错误区间括号、100倍/百分之一数值与大整数差1，又拒绝部分原样回填的方程。报告者jimmy-holdout已提交[#8347](https://github.com/verl-project/verl/pull/8347)，本项目做独立CPU复查，不另开竞争实现。2026-10-23读取open、非draft，head `7f34e0188697b89ec0def7ce243633ba4076b707`、目标base `bfff4d90b911f412a0856abecffc15eeafb78977`、实际祖先 `d430157d15516d89e0cc853fd10fcd21d9234c44`（ahead1/behind1）。四文件185增3删，其中三份生产源码50增3删；脚本断言祖先与目标base的这三份源码完全一致。
+
+### 前段拒绝不是最终否决
+
+`default_compute_score`将六类numina数据源路由到prime_math。它先提取答案、调用`grade_answer`；只有该函数接受才直接返回，否则继续`math_equal`。因此，前段的严格整数或区间检查失败，不会阻止更宽松的后段重新给满分。
+
+原CPU路径对`22501`/gold `22500`得到：祖先`grade_answer=False`、`math_equal=True`、最终1；候选为False/False/0。只测试前段或只读其中“整数精确匹配”的注释，无法发现最终奖励的误接受。后备判分不是“保留前段所有拒绝条件”的单调增强。
+
+### 修复了哪些表示
+
+[候选grader](https://github.com/verl-project/verl/blob/7f34e0188697b89ec0def7ce243633ba4076b707/verl/utils/reward_score/prime_math/grader.py)在去除括号比较内容前，先对区间形状检查端点括号序列；无穷端点的方/圆括号则归一为开口，Unicode∞也被统一。它是现有字符串判分路径的限定保护，不是任意区间/集合语法的完整解析器。
+
+百分比转换先保留哪一侧带`%`，再决定候选值方向；无百分号的普通数不再默认接受100倍与百分之一。兼容策略仍允许gold `83\%`匹配`83`或`0.83`，而不是把所有无单位数字强制改成唯一数学表示。
+
+整数字面量（可带正负号或零小数尾）在三处归一/比较中使用Python int，避免超过2^53时先经float丢掉相邻整数的差异。**这不保护所有等值写法**：科学计数法仍走旧float路径。本机候选中`9.007199254740993e15`对gold `9007199254740992`仍得1；这是作者已明确列出的表示范围，不是本项目新发现的回归。非整数decimal保留1e-4相对容差，`348.69`对`348.68`仍得1；舍入金标与精确整数不能混为一种匹配政策。
+
+### 保留下来的信息损失
+
+本机两版中，原样boxed的`x - \sqrt{3}y + 2 = 0`仍得0：`match_answer`先取boxed内容，再按最后一个等号裁成`0`，丢掉方程。短左侧另有旧归一规则，`q = 2`对gold `m = 2`仍得1。不能简单改为“看到等号就比较两份归一化字符串”：变量名、单位与函数调用也需要保留，报告者已用反例说明该方向另需规格和测试。
+
+路径之间也可能抵消局部保护。直接`math_equal(A \leftarrow B, A \rightarrow B)`为False，但完整路由仍得1，因为更早的MATH normalizer用普通substring replacement去掉`\left`/`\right`，将两个箭头命令都损为`arrow`。新helper避免误删箭头的5项测试，只证明这个helper所在后备路径，不证明整个组合判分器已保持箭头语义。
+
+### 原测试与本机范围
+
+[复查脚本](../../experiments/scripts/verify_verl_prime_math.py)从固定Git对象加载完整原评分、路由、归一化、timeout及依赖模块，仅跳过verl/utils包初始化；原测试体和参数不改写，逐项直接调用，不是pytest原生收集。
+
+| 原参数组 | 祖先 | 候选 |
+|---|---|---|
+| 24项目标修复 | 0过/24预期失败 | 24过 |
+| 35项保持行为 | 35过 | 35过 |
+| 5项后备箭头检查 | 4过/1预期失败 | 5过 |
+
+合计祖先39过25预期失败、候选64过，另7组范围控制通过，两次执行一致。环境为Python3.12.13、SymPy1.14.0、pytest8.4.2、torch2.9.1，pylatexenc2.10与antlr4-runtime4.9.3仅装在独立work target，未修改复用环境。子进程显式用fork运行原multiprocessing timeout，与Linux式CPU上下文一致，不是macOS默认spawn验收；timeout/parser未替换，也未叠加另一个#7437修复。脚本仅喂固定良性字面量，不把原eval/SymPy parser当作不可信输入的安全沙箱。
+
+复现：`python -B experiments/scripts/verify_verl_prime_math.py /path/to/verl-git --deps /path/to/parser-target`。没有下载Eurus数据、复跑作者1024行/变体统计、运行完整reward manager/模型或RL训练；CPU判分结果不等于奖励分布、优化收益或训练安全验收。本题不需要GPU，不新排M5任务，也不自动采用/发布上游补丁。
+
+原测试SHA256 `559f06fc8beb1e4914e1b13817a3cd6c6a0f56f325fd9214f4d9197524805564`；head评分入口`aea08d3e8c7e4fb06b8be07503257c1df54ba95b94d189ab86df7c630cb02740`、grader `461964b772e133095aedcfc84671abd9d184018b6734c97a50063133330d4720`、normalizer `b8acad2a1382307e08c233b3e3cb7747a38fc09460818414c3c07aded3c9f9d8`。脚本输出祖先/head hash并禁止隐式Git fetch。
 
 ## 源码文件索引
 

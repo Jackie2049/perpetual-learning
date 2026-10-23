@@ -4,6 +4,7 @@
 
 | 入口 | 用途 |
 |---|---|
+| [verify_verl_prime_math.py](verify_verl_prime_math.py) | 固定#8347完整原CPU判分/路由及64原参数例：祖先39过25预期失败/head64过，另7范围控制两次一致。Python3.12+/pytest/SymPy1.14/torch/numpy，--deps指定pylatexenc2.10+antlr4-runtime4.9.3 target；仅跳过根包初始化、原timeout用进程内fork，非原生pytest/macOS spawn/全数据集/训练或安全验收，见[主笔记](../../notebook/frameworks/verl-reward-integration-reading.md#数学奖励的分层判分与精度边界) |
 | [verify_unirl_sample_records.py](verify_unirl_sample_records.py) | 固定#597完整原Sample/record/preview/dump模块，6组真实CPU谱系、cap、音频、JSONL/WAV及本地失败控制；11改动模块compile。Python3.12+/torch/Pillow，参数为本地Git对象仓库和Pillow target；仅tensor包汇总跳过Ray，非trainer/TensorRef搬运/W&B/PyAV/模型或作者harness验收，见[主笔记](../../notebook/frameworks/unirl-survey.md#样本观测的行上限与数据搬运) |
 | [verify_verl_sft_loader_resume.py](verify_verl_sft_loader_resume.py) | 固定#7402祖先/head原加载方法和原log helper；2个真实torchdata迭代状态、8组真实CPU保存/加载控制，两次一致。Python3.12+/torch/固定Git对象，--deps指定独立torchdata0.11.0 target；属性容器提供self字段，非原生verl/作者24项/Ray/SPMD/fit或模型恢复验收，见[主笔记](../../notebook/frameworks/verl-checkpoint-management-reading.md#sft-epoch-边界与加载器状态) |
 | [verify_verl_sampler_logprobs.py](verify_verl_sampler_logprobs.py) | 固定#8026原sampler/chunk/v2函数及4个原CPU测试体，真实torch2.9.1值/局部梯度/checkpoint保存张量检查；3组补充公式差异、兼容flag/输入引用及词表支持控制。Python3.12+/torch/本地Git对象，不导入引擎/vLLM或探测设备，非原生pytest/模型batch-invariant验收，见[主笔记](../../notebook/frameworks/verl-6572-full-determinism-source-reading.md#actor-前向与-logprob-公式的一致性) |

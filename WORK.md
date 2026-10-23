@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1数学奖励复查收束（2026-10-23）**：同步无新提交，两项目各10新创建项中发现verl#8346及同作者修复#8347，不竞争。固定head7f34e018/目标bfff4d90/祖先d430157d（ahead1/behind1，4文件185增3删），见[原奖励专题](notebook/frameworks/verl-reward-integration-reading.md#数学奖励的分层判分与精度边界)/[复查](experiments/scripts/verify_verl_prime_math.py)。原完整CPU路由/判分的64参数例祖先39过25预期失败、head64过，7范围控制两次一致；前段拒绝不阻止后备接受，整数字面量修复非科学计数精度/方程提取全解，局部箭头检查非完整评分语义。独立work仅装两固定parser依赖，进程内fork执行原timeout，无函数替换/原生pytest/全数据集或训练验收，无GPU需求/新M5事项/上游写入。下轮另选实际独立缺口，不堆数值/括号/提取regex变体；GPU、AReaL、#8313/#523和DeepInfer demo分工不变。
+
 - **M1流式准入学习收束（2026-10-23）**：同步无新提交；UniRL#419公开评论确认已由维护者转派GoDiao，不竞争。新读verl#8203 draft headb6880198/base祖先18cfb748（ahead22，39文件3310增2152删），见[原异步专题](notebook/frameworks/verl-6790-async-trainer-reading.md#会话水位与未消费组上限)。水位数未结束会话、cap数未消费组，采样归还组额度早于训练轨迹清理；非严格个体陈旧度/TQ总内存界，COUNT也可维护淘汰/补发。仅23模块AST/compile、4个原schema参数例直接调用，预算表为手算，无Ray/TQ/调度替身或设备实测。GPU e2e作者仍TODO，条件补原M5可选参考，不自动采用draft/升级#8250环境或排矩阵。下轮另选实际独立缺口，不堆水位/故障/恢复替身；GPU、AReaL、#8313/#523及DeepInfer demo分工不变。
 
 - **M1样本观测学习收束（2026-10-23）**：同步无新提交，有界核UniRL/verl新创建项后选未读UniRL#597 draft headd507c4dc/base祖先6c828f5e（ahead3，16文件400增235删），见[原调研](notebook/frameworks/unirl-survey.md#样本观测的行上限与数据搬运)/[复查](experiments/scripts/verify_unirl_sample_records.py)。原完整CPU Sample/record/preview/dump模块六组两次通过，11模块compile；乱序谱系对齐、每Part cap2产生总4条、音频JSONL/WAV读回和失败返回。条数上限非字节/RSS，best-effort可留孤立媒体；首次坏链在构造器拒绝，未绕校验。只tensor汇总跳过Ray，无新安装/trainer/远程搬运/W&B/模型执行；作者H100与Omni/HI3缺口分开，补原M5可选参考不部署/新排队。已有作者不竞争，上游未写。下轮另选实际独立缺口，不堆记录格式/文件失败替身；GPU、AReaL、#8313/#523和DeepInfer demo分工不变。

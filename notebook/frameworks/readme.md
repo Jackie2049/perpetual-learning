@@ -199,6 +199,7 @@
 - [verl FSDP shared-prefix packing](verl-shared-prefix-packing.md)
 - [verl ReMax (#6340) and IcePop (#5722) Source-Level Reading](verl-remax-icepop-source-reading.md)：补[#8310 V1基线来源](verl-remax-icepop-source-reading.md#v1-贪心会话与-sampled-最大值)，额外贪心会话非sampled最大值；原核心CPU对照通过，撤回零方差/硬件最优推荐，非完整trainer验收。
 - [verl Reward Integration 源码级深度阅读](verl-reward-integration-reading.md)：纠正[进程配额与取消边界](verl-reward-integration-reading.md#进程配额与取消边界)，class-level非跨节点共享；原16协程测试体/2取消对照，评分timeout不包排队。
+- [verl 数学奖励的分层与精度](verl-reward-integration-reading.md#数学奖励的分层判分与精度边界)：#8347原64参数例与7范围控制；前段拒绝不是最终否决，局部箭头保护不认证组合判分，科学计数/方程仍有旧边界，无GPU需求。
 - [verl RL Infra 架构源码阅读](verl-rl-infra-reading.md)
 - [verl RL Training Pipeline 深度阅读](verl-rl-training-pipeline.md)
 - [verl SGLang PD Disaggregation — Prefill-Decode分离架构深度分析](verl-sglang-pd-disaggregation-reading.md)
