@@ -2,6 +2,8 @@
 
 2026-10-24 接续：[教师指纹与控制器失败传播](#教师指纹与控制器失败传播)区分已返回异常、权重内容不一致和读取卡住；固定主线6fd82cba，仅原指纹函数CPU控制，不是Ray/Gloo或训练验收。
 
+2026-10-24 接续：[离线 embedding 的身份与索引发布](#离线-embedding-的身份与索引发布)以原store模块和真实CPU safetensors区分键覆盖、读取、resume元数据与训练身份；单次rename失败控制不是断电或共享存储验收。
+
 > 目标：调研腾讯 `Tencent-Hunyuan/UniRL`——是否开源、支持哪些硬件加速器、社区活跃度、**外部 PR 合入可能性**（用户核心关切：社区提的 PR 他们是否接受，还是只自己开发）。
 >
 > 调研时间：2026-10-22（GitHub API 实时核验）。
@@ -1409,6 +1411,33 @@ FlowGRPO 多块时拼接 detached 新旧 logp 后重新计算完整 ratio 指标
 Python3.12.13/torch2.9.1，执行当前原 `_weights_sha256` 的完整函数 AST，6组真实CPU小张量控制通过：字典插入顺序和相同值的非连续布局不改变 hash；改一个值、dtype、shape 或 key 都改变 hash。样本 digest `aa15b9a280dfbf32b820988104f268fe6120c7d448bade77e549a8cbbce2f5bc`。这是函数的有限输入控制，不是密码学碰撞证明或跨 rank 实验。
 
 5个完整当前模块仅 compile（lora、ray_utils、handle、hydra、base_backend）；未导入 UniRL/PEFT/Ray、启动进程组或设备、执行注入/gather/取消/驱动退出。作者 #575 报告的双进程Gloo、真实Ray异常传播及更早版本H100 smoke不计为本项目结果。复现代码与源码hash留[当日日志](../../diary/2026-10-24.md)，不另造分布式替身、不复跑旧硬件报告或新增M5任务；读取卡住的契约若将来要改，须先确认负责人、允许的超时/终止语义及实际环境，而不是直接套一层collective。
+
+## 离线 embedding 的身份与索引发布
+
+**缓存中存在prompt key、能读到tensor，以及tensor来自正确编码器，是三层不同保证。** 固定当前主线 `6fd82cba13f52f394747832344039408699ea378`，GitHub API与本地一致；这里阅读的是已合入 [#513](https://github.com/Tencent-Hunyuan/UniRL/pull/513) 后的当前代码，不重复上一轮RFC合并状态尽调，也不据此宣布新bug。
+
+### 哪些身份被检查
+
+[offline_text_embed.py](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/models/minimax_h3/offline_text_embed.py)的 `compute_prompt_key` 对原始UTF-8字符串做SHA-256并截16位十六进制，**不strip**；`prompt`和` prompt `是不同key，不能将RFC中的示例归一化方式当成当前实现。
+
+| 入口 | 检查内容 | 不能单独证明 |
+| --- | --- | --- |
+| reader `from_dir` | schema/extractor/target_layer/feature_dim四个结构字段 | 与当前训练encoder checkpoint/revision及dtype一致；读者不接收这些expected参数 |
+| `verify_coverage_or_raise` | 每个prompt的key在index.entries中 | 分片存在、可解析、含目标tensor或tensor内容正确 |
+| reader `get` | 分片存在、safetensors取key、tensor为二维 | 第二维及dtype符合当前运行目标、数值与实时编码一致 |
+| writer `resume` | 四结构字段加model_checkpoint字符串和dtype字符串 | 同一路径下权重/processor/tokenizer内容未变；index没有权重内容hash |
+
+writer `add`另检查 `[L,5120]` 和目标dtype，不能与reader入口的保证混用。[Bundle.from_config](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/models/minimax_h3/bundle.py)传给store的只有cache路径；随后跳过文本编码器加载。[text_embed.embed](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/models/minimax_h3/text_embed.py)将读到的tensor转到运行device/dtype，这种cast不是来源身份认证。
+
+[CLI](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/tools/precompute_minimax_h3.py)的 `--check-coverage` 走上述键检查；`--check-parity` 用本次extractor重算前若干prompt并allclose，帮助检查写读往返，不是自动对照trainside编码器配置。CLI帮助已明确此边界，不能以这些限定检查推导线上训练必然一致。
+
+### 分片先写与索引发布
+
+writer先写 `embeddings_N.safetensors`，再写 `index.json.tmp`，最后 `os.replace` 发布index；`resume`以已发布index的shards数量选择下一编号。文件未在索引登记不等于可直接被reader发现。CLI正常异常展开时的finally会close，不能把它当SIGKILL、掉电或跨节点持久性保证；代码没有将分片与索引组成带fsync的多文件事务。
+
+本机Python3.12.13、torch2.14.1、safetensors0.8.0，复用现有环境，完整执行原store/require/dtypes模块，包入口用空壳隔离，vendor只绑定原layer=50常量；未载入模型。真实小张量文件控制两次结果一致：3个不同原始prompt、两片、变长BF16逐值读回；resume对另一model字符串和dtype各拒绝一次；仅改index的model/dtype后reader仍读回原BF16；复制index到缺分片目录，coverage通过而get拒绝。
+
+在原writer中仅将 `os.replace` 注入一次OSError，真实分片和tmp索引已写、旧index字节不变。新建resume writer只看到原3项，重写未登记的下一片后，原3项和新第4项均能读回。这个控制说明本地单writer在该发布点失败可恢复，不是所有中断点、并发writer、NFS/CephFS或断电验证。没有运行CLI、模型编码、原作者harness、GPU/MPS或训练parity；[完整复现与源码hash](../../diary/2026-10-24.md)留日志，不新增永久工具或M5任务。使用缓存时应分别确定模型身份、键覆盖、制品可读性和数值比较范围，不将它们压成一个“验证通过”。
 
 ## 下一步
 
