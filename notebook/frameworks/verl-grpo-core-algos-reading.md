@@ -83,7 +83,7 @@ scalars = (scores - mean_g[g]) / (std_g[g] + epsilon)
 | 两样本[4,4] | [0,0] | [0,0] |
 | 两样本[1,3] | 约[−0.707106,0.707106] | [−1,1] |
 
-单样本没有组内互为baseline的比较，代码采用近似原奖励的回退；它不是标准中心化公式在n=1上的直接计算结果。多样本同分时分子为零，默认epsilon使结果为零，而不是“0/0必得NaN”。也不能从 `advantages.std()==0` 推出所有优势为零：常数非零向量同样标准差为零。诊断应分开检查组内样本数、reward差异、有效mask、优势绝对值及真实梯度/参数变化。
+单样本没有组内互为baseline的比较，代码采用近似原奖励的回退；它不是标准中心化公式在n=1上的直接计算结果。表中整数同分pair确实返回零，但不能推广成任意小数/组规模都逐位为零：浮点求均值可能留下残差，再被近零std放大，见下方2026-10-23补充。默认epsilon避免直接以零作分母，不认证零分子或“同分必NaN”。也不能从 `advantages.std()==0` 推出所有优势为零：常数非零向量同样标准差为零。诊断应分开检查组内样本数、reward差异、有效mask、优势绝对值及真实梯度/参数变化。
 
 这纠正了[排错指南](../grpo-training-debugging-guide.md#2-loss-values-and-zero-advantages)原来的“n=1必退化、禁止n=1、必须n≥4或MoE≥8”表述。实现没有给出这些统一硬门槛；本轮也没有比较采样成本、训练收敛或模型质量，不能把保留非零优势解释为n=1必然有效学习。关闭std归一化仍保留多样本组的均值中心化，不是统一把所有组变成原奖励。
 
@@ -96,6 +96,30 @@ python experiments/scripts/verify_verl_grpo_groups.py /path/to/verl
 ```
 
 Python3.12.13、torch2.9.1、NumPy2.0.2、pytest8.4.2；非完整pytest、训练、loss/optimizer或DP/GPU验收。官方API/本地Git blob：core_algos `9d08b8461a0f95d25f348c566358360bbfb72ece`、groupwise `84e79ac903082c913f479f3cea6eed54941e9c16`。SHA256依次 `a54b6d812db4441e8b0989ae69d2c46b0a0a7b584296f73d8316f264462c37cb`、`409403d0002ff0d1fd1c41812163b1cfa52a52248677aab00e6ffcf3b937b442`；原测试模块 `0a60e917589ab91646989f0a8616f810fea0dc70047d2b8c13914f4977f5569c`。只纠正知识与诊断规则，不改上游算法或新增M5任务。
+
+### 同分小数奖励的舍入残差
+
+2026-10-23 新 draft [#8349](https://github.com/verl-project/verl/pull/8349) 为已存在的两条 GRPO 路径补精确同分处理，固定 head `0e3c3e3667fc9764c6d0e554c2feb9a904d7519e`、目标 base 与共同祖先 `a4b9354968705a441fb7da7367924b15b902e771`（ahead 1 / behind 0，2 文件 67 增 3 删）。这补充了上节的数值范围，不撤回 singleton 的 mean0/std1 结论；已有作者实现，不另开竞争修复。
+
+数学上 `r−mean(r)=0`，但 FP32 归约未必把一组相同小数求回原数值。残差即便只有一个 ulp，除以 `std+1e-6` 后也可不再微小。以下是本机 torch2.9.1 CPU、每行单token奖励、默认std归一化的观测，不是各硬件上的固定值：
+
+| 组内每行奖励与数量 | base loop | base vectorized | head 两实现 |
+| --- | --- | --- | --- |
+| 0.3 × 16 | 0 | 0 | 0 |
+| 0.7 × 64 | 0 | −0.2937158942 | 0 |
+| 0.9 × 64 | 0 | −0.3481845260 | 0 |
+
+作者在其CPU报告0.3×16两实现约+0.0289，本机该例是零；归约/构建差异决定具体反例，不能机械照抄作者数字，也不能据一个布局碰巧为零否定其他布局的残差。旧pair4/4控制和“两个实现容差内等价”的测试均不能认证所有同分组严格归零。
+
+loop候选在组大小>1且 `scores_tensor == scores_tensor[0]` 全成立时，直接用原score作mean、std=1；vectorized候选保留原统计，另按每组min/max精确相等且count>1把scalars置零，再乘response_mask。比较对象是每行 `token_level_rewards.sum(-1)` 后的score，不是逐token原奖励或近同分阈值。singleton不满足count>1，仍保留原回退；非同分组不应因这项保护被抹平。`group_mean_std` 本身没有修改，新增scatter/主机布尔判断的设备开销没有测量。
+
+[同一复查脚本](../../experiments/scripts/verify_verl_grpo_groups.py)新增 `--uniform-pr`，两次CPU结果一致：原新增15个reward×group_size参数例加1个混组例，base **3过、13项预期失败**，head **16过**；每个同分原例内部再遍历两个实现与std开关。原低方差测试在两版通过，正/负singleton在两种std模式、两实现也保持原约定。原历史模式在有1876b06d对象的源码仓库回归，4原例/12组控制仍通过；初次误用不含该历史对象的另一克隆失败，未换版本冒充回归。原函数/装饰器及原测试体AST执行，未原生收集作者39项/20项套件，也没有policy loss、梯度、optimizer、DP/GPU、训练或性能验收；不推断 #8250 根因或修复后训练收益，不新增M5任务。
+
+```bash
+python3.12 -B experiments/scripts/verify_verl_grpo_groups.py /path/to/verl --uniform-pr
+```
+
+本机 Python3.12.13 / torch2.9.1 / NumPy2.0.2 / pytest8.4.2，无新依赖。core_algos SHA256 base `369b614f239f237a04a38a40b1877cd6fd14aa7bd5f9ff4fe4d7758b682a6948` / head `7cde90331de52f4185d9a831244fcef70261c95d0c9166a2ac88a62f541e87fd`；新原测试模块 `44a9f1ecce251736bdf0620841f8d8e35527b32c750482d3f7db12a7bce5d78d`。这是CPU估计器数值范围的纠正，draft未自动采用。
 
 ### 4. GDPO (组奖励解耦归一化, 行361)
 

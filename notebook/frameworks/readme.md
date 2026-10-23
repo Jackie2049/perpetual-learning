@@ -182,6 +182,7 @@
 - [verl Fully-Async Policy 源码级深度阅读](verl-fully-async-policy-reading.md)
 - [verl GRPO bypass_mode + TransferQueue + Detach Metrics + Weight Sync 源码级深度阅读](verl-grpo-bypass-mode-reading.md)
 - [verl GRPO Training Core Algorithms — core_algos.py 源码深度阅读](verl-grpo-core-algos-reading.md)：[掩码统计与梯度](verl-grpo-core-algos-reading.md#掩码统计与梯度的数值边界)及[单样本组回退](verl-grpo-core-algos-reading.md#单样本与同分组的不同回退)；区分有限值/梯度、singleton/同分pair，保留CPU复查范围。
+- [verl 同分小数奖励的舍入残差](verl-grpo-core-algos-reading.md#同分小数奖励的舍入残差)：新draft#8349原16参数例及低方差/singleton控制，更正“同分必精确零”的泛化，复用原脚本、不另开竞争修复或训练。
 - [verl KL 前向值与反向规则](verl-grpo-core-algos-reading.md#kl-前向值与反向规则)：k3+值受clamp而梯度走k2，6原测试例及14组CPU对照；日志值不代表梯度限幅，非完整训练验收。
 - [verl GRPO End-to-End Data Flow 源码级阅读](verl-grpo-data-flow-reading.md)：[拼批形状与引用](verl-grpo-data-flow-reading.md#拼批中的形状与引用)及[Rollout完整性](verl-grpo-data-flow-reading.md#rollout-完整性与会话计数)；#6641原7项replay测试候选通过、旧版4项预期失败，区分输出行与会话，非TQ/训练验收。
 - [verl GRPO 内存泄漏与 detach_metrics 修复 — RTX 4090关键分析](verl-grpo-detach-metrics-rtx4090-reading.md)

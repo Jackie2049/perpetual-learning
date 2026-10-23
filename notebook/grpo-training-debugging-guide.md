@@ -60,6 +60,8 @@ Choose sampling count/reward design against the task and budget, not a universal
 
 ---
 
+2026-10-23 补充：多样本同分也须检查实际优势数值，不能把数学上分子为零当作旧FP32实现的精确保证。新draft #8349的[CPU对照](frameworks/verl-grpo-core-algos-reading.md#同分小数奖励的舍入残差)中，同分小数的大组可出现常数非零优势；这不改变上面的singleton约定，也不是 #8250 训练因果诊断。
+
 ## 3. NaN in Loss/Advantages
 
 ### Symptoms
