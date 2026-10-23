@@ -3,6 +3,8 @@
 > 2026-06-15 | 源码: verl/experimental/fully_async_policy/ + verl/trainer/ppo/rollout_corr_helper.py
 > 核心: 3 Ray actors(FullyAsyncRollouter+FullyAsyncTrainer+MessageQueue)→continuous streaming generation→independent training→staleness_threshold+IS/RS correction→partial_rollout resume→gen_batch_size=1→vs sync=sequential→RTX 4090单GPU只能sync
 
+2026-10-24 接续：[续跑的累计长度上下限](#续跑的累计长度上下限)核对固定候选代码与原测试协程；下方6月架构与设备选型概括为历史记录，本轮不将其认证为当前支持清单。
+
 ## 1. Fully-Async Policy 三组件架构
 
 ```
@@ -282,7 +284,35 @@ FullyAsyncTaskRunner (orchestrator)
 
 ---
 
-Sources:
+## 续跑的累计长度上下限
+
+**一条响应的长度预算跨中断累计，最小长度也不能在每次续跑时重新起算。** [verl #8356](https://github.com/verl-project/verl/pull/8356) 修正 `FullyAsyncLLMServerClient.generate` 的下限传递。2026-10-24 读取为 OPEN、非 draft，作者 linyueqian；固定 head `cd99daf82e4ce52afd1fe02eb47956f0cb381626`，base/祖先 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，ahead1/behind0，2文件105行新增。已有作者推进，不另开竞争补丁。
+
+### 累计响应和单次尝试的预算
+
+[原生成循环](https://github.com/verl-project/verl/blob/cd99daf82e4ce52afd1fe02eb47956f0cb381626/verl/workers/rollout/llm_server.py#L219)将每段返回的token追加到 `final_output.token_ids`，续跑时将原prompt与累计生成token一起发送。设原始上限为 `M`、下限为 `m`、累计生成数为 `s`，下一次尝试的上限为 `M-s`，下限应为 `max(0, min(m-s, M-s))`。若 `s>=M`，循环直接以 length 结束，不再发送这一预算。
+
+旧版只收缩上限，仍把完整 `m` 传给每次尝试：既可能出现下限大于剩余上限的非法请求，也可能在尚未越界时强制生成超出原先最低要求的token。候选在改写局部sampling字典前保存原始上下限，再按累计 `s` 计算；不是从已经收缩的下限再次扣累计量。原字典的浅复制已存在于base，不能将“不改调用者字典”算成本PR新增修复。
+
+| 原始参数和中断点 | 旧版下一次参数 | 候选下一次参数 |
+| --- | --- | --- |
+| min_tokens=5、max_tokens=6，已生成3 | min=5、max=3 | min=2、max=3 |
+| min_new_tokens=5、max_new_tokens=6，已生成3 | min=5、max=3 | min=2、max=3 |
+| min_tokens=2、max_tokens=8，已生成3 | min=2、max=5 | min=0、max=5 |
+| 只有max_tokens=4，已生成1 | 不补下限、max=3 | 不补下限、max=3 |
+
+下限是“至少还要生成多少”的约束，不是最终输出恰好多少token的承诺。修复只在能确定累计上限的分支更新已有下限；正的配置 `response_length` 可沿base已有逻辑补上限。它不负责第一次请求的通用参数校验、别名冲突或服务端停止语义，也不改变跨权重版本续跑的训练校正。
+
+### 原测试协程的隔离执行
+
+本机复用 Python3.12.13、NumPy2.5.4、Pydantic2.14.1、pytest9.1.1。环境缺少 pytest-asyncio，未安装新依赖，也未报告完整pytest套件通过。提取两版完整 `LLMServerClient` / `FullyAsyncLLMServerClient` 类体，去掉追踪decorator并延迟注解；沿用原 `TokenOutput` Pydantic类和 `normalize_token_ids` 函数。原测试模块只移除verl导入、绑定这些对象，四个原测试协程通过 `asyncio.run` 和真实 `pytest.MonkeyPatch` 直接执行；作者原有的脚本化base.generate与零等待sleep保持不变。
+
+base三项原断言失败、无下限控制通过；head四项原断言均通过，与上表一致。三个完整原模块各两版共6份内存compile通过，head测试文件另compile。首次隔离执行因Pydantic的延迟注解未解析而失败，补 `model_rebuild(_types_namespace=scope)` 后完成；这是加载壳修正，不是上游缺陷。[完整执行壳与输出](../../diary/2026-10-24.md)留在当日日志，不新增永久工具。
+
+这里没有运行追踪wrapper、Ray/负载均衡、真实vLLM/SGLang、EOS或设备；脚本化片段不验证后端确实按下限停止，也不验证权重切换的数值一致性。作者另报告51项pytest通过，不能替代本项目上述限定的四协程结果。本轮问题位于CPU客户端预算计算，不增加硬件排队任务，不改M5专项。
+
+## 历史来源
+
 - verl/experimental/fully_async_policy/fully_async_rollouter.py (FullyAsyncRollouter)
 - verl/experimental/fully_async_policy/fully_async_trainer.py (FullyAsyncTrainer)
 - verl/experimental/fully_async_policy/fully_async_main.py (TaskRunner orchestrator)
