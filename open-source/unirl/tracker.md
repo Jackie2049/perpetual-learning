@@ -9,7 +9,7 @@
 
 **【价值评估】** 7 / 10 — 甄别"未认领、无 PR、可落地"的开放空间，避免重复投入已有人认领的 RFC。
 
-**【进展】** #523 的我方 fork PR 已获用户认可，测试与 e2e 正式指派 M5；M5 已闭环 L0（四项断言 + pristine 对照），L1 仍待 ≥8 卡及获准权重/存储，见[M5交接](../../experiments/handoff-m5.md)。#567 待匹配 H20；#470/#481/#484已有作者或验证条件。2026-10-24 续核 #515 的维护者澄清与已合并 #575，不沿过时原帖另写错误共识，见[边界核对](#补充尽调与派发边界)。
+**【进展】** #523 的我方 fork PR 已获用户认可，测试与 e2e 正式指派 M5；M5 已闭环 L0（四项断言 + pristine 对照），L1 仍待 ≥8 卡及获准权重/存储，见[M5交接](../../experiments/handoff-m5.md)。#567 待匹配 H20；#470/#481/#484已有作者或验证条件。2026-10-24 续核 #515 的[维护者澄清](#补充尽调与派发边界)及 #450/#537 的[已合并分项](#开放-rfc-的已合并分项)，不把开放 RFC 当无人实现，也不将分项合并当全部完成。
 
 **【大白话讲明白】**
 
@@ -66,6 +66,19 @@ UniRL 仓库当前 **73+ open issues**，其中大量是带 `help wanted` 标签
 | [#484 离线模拟接入](https://github.com/Tencent-Hunyuan/UniRL/issues/484) | 0z5a 已有开放非 draft [#487](https://github.com/Tencent-Hunyuan/UniRL/pull/487)，head 仍 `e8779559d2ceb441c062f603f90e7fd31370e69b`。维护者早期在 [RFC](https://github.com/Tencent-Hunyuan/UniRL/issues/484#issuecomment-5757256238)及 [PR](https://github.com/Tencent-Hunyuan/UniRL/pull/487#issuecomment-5757256603)要求匹配 H20 校准数据；PR 后续正文由作者称已获准用 H100 验证，本轮读到的两条 PR 评论未包含该许可原文 | 保留两者的时间和来源，既不宣称永久只准 H20，也不认证 H100 许可。匹配的真实 capture/后端版本/profile 与硬件对比仍未完成，作者的 CPU profile smoke 不等于保真度验收；不抢做 runner 或另排硬件任务 |
 
 #487 仍是 schema/converter，不含作者 fork draft 的 guard 或 runner；已有[本机契约验证](../../notebook/frameworks/unirl-survey.md#离线回放的到达契约与结果隔离)不重复运行。本轮没有执行模型、评分器、模拟器或设备测试，没有修改上游或发布评论；三个题目都不进入 M1 实现队列。只有负责人或范围发生实质变化，或收到明确协作需求，才重新判断贡献空间。
+
+## 开放 RFC 的已合并分项
+
+2026-10-24 读取 [#450](https://github.com/Tencent-Hunyuan/UniRL/issues/450) 全文/全部3评论与 [#537](https://github.com/Tencent-Hunyuan/UniRL/issues/537) 全文（0评论），再按编号检索并读下表PR完整正文/API。两个RFC仍OPEN、无assignee，但这些分项已经 `merged=true`，不是仅有关闭状态。
+
+| RFC 分项 | 合并事实与作者声明范围 | 本项目处理 |
+| --- | --- | --- |
+| #450 H3离线文本embedding | 同报告者 BeatSeat 的 [#513](https://github.com/Tencent-Hunyuan/UniRL/pull/513)，2026-09-26合并 `c01c4e92`；H3专用safetensors分片、独立CLI、`text_embed_cache_path` 跳过32B加载、carried condition优先及未padding查表 | 不另写pipeline bypass、skip-TE或同一缓存工具。正文限定H3和当前单样本forward，不覆盖其他encoder/VAE/reward；合并不证明32B跳过加载、数值parity及训练在本项目已验收 |
+| #537 module3 布局与首更新告警 | 同报告者 nussejzz 的 [#548](https://github.com/Tencent-Hunyuan/UniRL/pull/548)，2026-10-14合并 `0fbf3ad0`；vLLM-Omni BAGEL重建路径比较布局，`first_update_ratio_tol` 为可选告警 | 布局检查不是数值等价证明；正文说明ratio指标仅DP rank0、各rank各自告警，不称全局聚合；带carried contexts的路径不作该布局比较 |
+| #537 module1 每组画布 | 同作者 [#549](https://github.com/Tencent-Hunyuan/UniRL/pull/549)，2026-10-14合并 `2c19e14e`；vLLM-Omni BAGEL图像/FlowGRPO，按行metadata画布分连续run调用，存储padding后replay裁回 | 不是所有模型/算法、视频或ragged segment已支持；正文明确不含跨rank调度，不因能混画布就声称长尾已解决 |
+| #537 module4a it2i sibling打包 | 同作者 [#550](https://github.com/Tencent-Hunyuan/UniRL/pull/550)，2026-10-14合并 `f6044285`；两个CFG scale均≤1时按同组连续run打包，micro可切group，x_T按row寻址 | 不重写同一打包；CFG>1、trainside BAGEL dense batching和Qwen-Image prompt去重不在该PR范围。剩余路线也不因此认定无人做或自动接手 |
+
+#537原文把单位表、owner/ring/steal调度列为module2；以上合并事实不能证明该模块完成，也不能证明如今尚无其他实现。#513与#548/#549/#550中的CPU harness、H20训练和性能数字均为作者报告，本轮未复跑、未逐行审查或核当前main运行行为；不把合并状态搬成本机训练/内存收益。这里仅作贡献范围尽调，无候选源码执行、依赖或上游写入，不新增M5硬件任务。只有独立缺口、明确协作或范围实质变化出现时才重判投入。
 
 ## 已认领/已覆盖，不重复推进
 
