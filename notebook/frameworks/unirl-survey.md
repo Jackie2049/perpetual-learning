@@ -1349,6 +1349,41 @@ python3.12 -B experiments/scripts/verify_unirl_post_window.py /path/to/UniRL
 
 脚本固定 Git 对象、禁 lazy fetch，并打印载入源码 SHA256；关键 head runtime 为 `1f26e564758b40112c7feecda926fec3cc8bfcc3898a1e9b47c629ef85b927cb`，kernels 为 `784a0a223d8d82c4414d474ed0382ba8f9eedb766dfc9474a91826682bf90b1c`。本轮未运行动态 shift/diffusers 分支、原 156 例参考 harness、SD3 stage/replay、Hydra 或训练。PR 正文的参考误差 ≤4e-7、8×L40S 六次 rollout 的时间及平均 replay-logp 误差 1.4e-5 均是**作者报告**，不是本项目结果；作者也明确未做 reward-vs-wallclock 训练对比。真实模型证据缺口只补[原 M5 可选参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不自动采用候选、加载权重或启动训练。
 
+## Replay 分块与反向更新边界
+
+2026-10-23 核对 [#615 replay 架构 RFC](https://github.com/Tencent-Hunyuan/UniRL/issues/615)及实际主线。其状态表仍把 [#465](https://github.com/Tencent-Hunyuan/UniRL/pull/465)列作开放实现，但 API 已确认它于 2026-10-18 合并，merge commit 为 `3ecbbc32b2fc373ba30b9842032552e041e84b12`。当前 main `6fd82cba13f52f394747832344039408699ea378` 经 API compare 在该提交之后 5 commit；本地浅克隆的祖先查询不作为反证。以下以当前主线源码为准，不将已合并设计重新当贡献空缺。
+
+### Forward 批形状与反向时机
+
+[`BatchedStepReplayMixin.replay_steps`](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/models/types/batched_replay.py)按 `batch_replay_steps`、目标步数和 SDE strategy 决定组装方式：合并时按 step-major 拼为 `[C×B,...]`，否则按目标步逐个 forward，再把 logp/means 拼回 `[B,C,...]`。它不在内部 backward；串行 forward 返回的多份结果仍共同连到调用方的损失图。因此“小 forward”与“及时释放每块反向保存的中间量”不是同一个优化。
+
+当前 [FlowGRPO](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/algorithms/flowgrpo.py)和 [FlowDPPO](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/algorithms/flowdppo.py)用 `timestep_chunk_size` 切目标 SDE 列表，每块 replay 后立即 backward，再请求下一块。设目标步数 S=8，单流 mixin 的行为可分为：
+
+| batch_replay_steps | timestep_chunk_size | 算法一次 replay 的范围 | backward 边界 |
+|---|---|---|---|
+| False | None | 8 个逐步 forward，再返回整组结果 | 整组一次 |
+| True | None | 符合 SDE 条件时合成 8B 行 | 整组一次 |
+| False | 2 | 每块两个逐步 forward | 每块一次 |
+| True | 2 | 符合条件时每块合成 2B 行 | 每块一次 |
+
+表中是源码请求/拼接形状，不是实测模型调用、吞吐或峰值；不外推为 CFG、joint A/V、Navit packed 或 per-sample replay 的完整执行矩阵。分块使每块 backward 可以释放该块保存的反向中间量，但 rollout latents、参数/梯度、anchor、输出数据和通信缓冲并不随之全部消失；不是以 k 定义的总显存硬上限。
+
+### 尾块权重和指标汇总
+
+每块的原 loss 为 `[B,C]` 元素均值，backward 乘 `loss_scale × C/S`，报告的 raw loss 则累加 `chunk_loss.detach() × C/S`。在每个 chunk 使用相同 B、每步输出和可分离目标相同的前提下，这是整张 `[B,S]` 均值的分解；不能推广成任意算法、随机/跨样本层或任意不同批形状下的逐比特等价。尤其 S=5、k=2 时权重应为 2/5、2/5、1/5，不是每块 1/3。当前算法不会在块间 optimizer.step，优势也由输入提供，不在每块重新组内归一化。
+
+FlowGRPO 多块时拼接 detached 新旧 logp 后重新计算完整 ratio 指标；FlowDPPO 对可平均的指标按步数加权，std 重算全量 ratio，min/max 取各块极值。std 不是各块 std 的加权平均。保存 detached `[B,S]` logp 用于指标不保留模型反向图，但仍占数据存储，不能把“图释放”读成“全量指标数据也已删除”。
+
+本机只做两个损失聚合控制：从原 base.py 完整提取 `grpo_clip_loss`、`select_active_tokens`、`slice_step_chunks` 和 validator，torch 2.9.1 / CPU / FP64，固定 2×5 合成 logp 与正负优势，两次结果一致。完整均值与正确加权块的 loss 均为 `-0.16236533560257804`，输入 logp 梯度最大差 0；错误等块权重的 loss 为 `-0.1651367206401591`、梯度最大差 `0.06666666666666665`。全量 ratio std 为 `0.1564756634067121`，按步数平均的块 std 为 `0.15847379215833968`。这是原元素损失的直接 autograd，不是完整算法、模型 replay、BF16/AdamW、FSDP 通信或学习收益验收；没有替身 stage/trainer。复现完整代码和校验值留在[当日日志](../../diary/2026-10-23.md)，不新增永久实验工具。
+
+### Anchor 几何和通信条件
+
+两算法的 replay anchor 与训练使用同一 `slice_step_chunks`。FlowGRPO 的 no_grad anchor 在拼接后转 CPU；FlowDPPO 逐块将 logp/means 转 CPU再拼接，且 rollout-sourced logp 模式仍需 replay means 供 KL-ADV。匹配 chunk 形状消除一项 anchor/训练几何差异，但 no_grad、同权重或同形状均不能单独证明真实模型 ratio=1。当前 guard 要求开启 batched replay 时使用 replay anchor；这不是所有 dtype、随机状态和内核的数值认证。
+
+[`TrainStack._run_update`](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/train/stack/single.py)在整次更新前 zero_grad，遍历 micro 后才尝试 optimizer_step。它按 `do_optimizer_step and i==last_micro` 设置 grad-sync；[backend setter](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/train/backend/base_backend.py)只在延期同步启用等条件满足时切 FSDP2 flags。不能把作者“额外 backward 增加 reduce-scatter”的特定跑次描述泛化为每个 chunk 必有通信；必须连同 backend、defer_grad_sync 与所在 micro 一起观测。
+
+本轮 5 个完整主线模块 compile，仅执行四个纯函数 AST 和小张量聚合；没有运行 replay mixin、FlowGRPO/FlowDPPO、reference-KL、TrainStack 或设备。#465 原报告的一张4090、S4/micro1、FP32 梯度误差/峰值与 BF16 偏差属于当时作者版本，不能搬为当前 main 的实测结果。真实几何、ratio/梯度及通信缺口记[原 M5 可选参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，缺现成获准匹配配方就保留未测，不新增训练或重新实现已合并功能。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。

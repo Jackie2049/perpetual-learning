@@ -107,6 +107,8 @@
 
 ## UniRL
 
+Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反向更新边界)区分stage拼接、算法及时backward与外层optimizer；#465已合并，当前主线尾块按C/S加权，std全量重算。两个原元素损失CPU控制非模型/显存/FSDP验收，不新增永久工具。
+
 尾段积分补读：[SDE 窗口后的压缩积分](unirl-survey.md#sde-窗口后的压缩积分尾段)区分保留的窗口出口、尾点数与总NFE；#545原纯模块720日程/64小张量CPU控制，两次一致。r=1非逐比特日程保证，示例另改窗口停留；非Flow SDE/logp、模型或训练收益验收。
 
 - [UniRL 与 RL 训练抽象](unirl-survey.md#ar-与-diffusion-的源码统一边界)：固定6fd82cba；HI3/SDE/SFT、packed文本双轴与[按域奖励](unirl-survey.md#按域奖励的零分与失败标志)。原CPU路由区分零分/失败/非适用NaN，统计过滤非有限值；router的image输入限制与服务失败检查仅读，非训练验收。

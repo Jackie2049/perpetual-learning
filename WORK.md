@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 Replay分块阅读收束（2026-10-23）**：先同步无新增，写WORK/日志前快进M5 5970b2f并保留记录，不执行其设备操作。有限尽调#522作者自做、#570四选一待指导，不据空assignee认领；#615状态表旧，API确认#465已10-18合并且main6fd82cba在merge3ecbbc32后5提交（本地浅历史不可反推未合并）。见[原UniRL调研](notebook/frameworks/unirl-survey.md#replay-分块与反向更新边界)：stage小forward仍返回合并图，算法按C/S逐块backward，optimizer在外层；anchor同chunk几何不保证ratio逐比特1，每块backward也非必有reduce-scatter。5完整模块compile，原四纯函数的2×5 FP64聚合控制两次一致：加权loss/局部梯度同全量、等块权重反例/std非可平均；非stage/算法/FSDP/显存验收。复现留当日日志，不新增永久工具；原M5参考仅补既有获准观测条件，不采用新配置/开训练/改专项。下轮优先独立UniRL/verl贡献缺口，不堆chunk权重/图计数/假stage变体；GPU/AReaL/#8313/#523/DeepInfer分工不变。
+
 - **M1文件系统权重同步学习收束（2026-10-23）**：先同步无新增，收尾在写WORK/日志前正常快进M5 cf40a98；最新#8334正文及公开PR列表确认已有同作者draft#8335，不认领。读已有#8355 head7d981cde、目标basea4b93549、共同祖先2bc6ac46（ahead5/behind43，6文件311增42删），见[原checkpoint engine专题](notebook/verl-v1-checkpoint-engines-deep-reading.md#文件系统权重同步的发布与清理)/[复查](experiments/scripts/verify_verl_filesystem_export.py)。原export/filesystem模块真实CPU safetensors/原copy+receiver两次通过，三独立顺序writer输出2/1/1分片、读回7张量；8模块compile。index-last非事务/完整恢复、未跑send/collective/FUSE/server安装；复用已有safe环境未安装新包。撤回旧4090仅naive、固定4GiB、同进程共享存储及24/28GiB fit推断，跨笔记更新用途边界。真机仅补原M5可选参考，不部署挂载/采用候选/排训练/改专项。本题收束，下轮找独立UniRL/verl贡献缺口，不堆分片/文件失败/伪manager变体；GPU/AReaL/#8313/#523/DeepInfer分工不变。
 
 - **M1压缩积分尾段学习收束（2026-10-23）**：先同步无新增，收尾正常快进M5记录5e6f7fb并保留全部接续，不执行其设备操作；UniRL #473重核正文/4评论，虽无assignee但已明确归贡献者和维护者，不竞争。读已有#545 head7c56ed05/base祖先c6d4b11b（ahead1，8文件222增10删），见[原调研](notebook/frameworks/unirl-survey.md#sde-窗口后的压缩积分尾段)/[CPU复查](experiments/scripts/verify_unirl_post_window.py)。完整原纯模块720静态日程/64小张量求解控制两次一致、12模块compile；σ出口保留、尾点数非尾段NFE，r1网格非逐比特相同，示例另改窗口停留25→20。DPM2前缀/合成向量场非Flow SDE、SD3/logp/参考harness或训练收益；真实模型缺口仅补原M5可选参考，不采用候选/排训练/改其专项。本题收束，下轮优先独立UniRL/verl贡献缺口，不堆尾段步数/网格/求解器替身；GPU/AReaL/#8313/#523/DeepInfer分工不变。
