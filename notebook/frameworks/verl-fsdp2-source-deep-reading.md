@@ -1,5 +1,25 @@
 # verl FSDP2 Engine Deep Source Reading — Beyond PR Descriptions
 
+2026-10-23 补充：[参数转换与缓冲区精度](#参数转换与缓冲区精度)固定于 #8189，用原 CPU 测试与原转换语句区分初始化数值和存储 dtype；本节之后的 2026-06 分析未在此次重核。
+
+## 参数转换与缓冲区精度
+
+[#8154](https://github.com/verl-project/verl/issues/8154) 指出，显式 BF16 加载后再调用 `module.to(torch_dtype)`，会连模型以 FP32 构造的 RoPE 频率 buffer 一起舍入。报告者提供的三模型、九条固定 token 轨迹、四条件 CUDA replay 属外部证据，不能当本项目训练结果。已有 [#8189](https://github.com/verl-project/verl/pull/8189) 修复，读取时 open/non-draft：head `4e830c72bd0eb2b0d6ecfbd4c2c4144040637324`、目标 base 与共同祖先 `1d367a4f459a43768f76312c0d3430a99ec46b8c`，ahead 2 / behind 0，3 文件 118 增 3 删；不另开竞争候选。
+
+新 helper `cast_module_params_to_dtype` 遍历 `module.parameters()`，只对 dtype 不同的浮点或复数参数赋值 `param.data.to(dtype)`，不遍历 buffer。这样保留的是**调用前的 buffer 数值和 dtype**，不是一律将 buffer 升成 FP32，更不是重建 canonical RoPE。原测试中的 `inv_freq` 从 FP32 经 BF16 再升回 FP32，最大频率绝对误差为 `9.765475988388062e-05`；之后再调用 helper 也仍保留舍入值。正确的先后关系是避免破坏初始值，不能靠后来标签变回 FP32 来认证精度恢复。
+
+在固定 `_build_module` 中，转换位于 HF/value 模型加载、Liger/forward patch 之后，gradient-checkpointing 开启之前。显式 `model_dtype` 与后续 mixed-precision policy 是不同边界：`None` 时训练加载 dtype 选择 FP32，forward-only 选择 BF16；FSDP1 把 `buffer_dtype` 交给 `MixedPrecision`，而此处 FSDP2 的 `MixedPrecisionPolicy` 只传 param/reduce dtype 与输入 cast，不能把 FSDP1 的 buffer 参数原封不动当作 FSDP2 行为保证。这些是调用点源码核对，不是 FSDP 运行验证。
+
+参数身份、存储内容与训练状态也应分开：原测试确认两个模块绑定同一个 `Parameter` 时身份仍保持，meta 参数可转换，整数参数/buffer 不变。helper 本身不看 `requires_grad` 或 HF `_keep_in_fp32_modules` 名单，因此冻结 FP32 参数仍转换；这不是实现 FP32 参数例外的完整策略。对已经带 FP32 `.grad` 的参数调用它，参数可变 BF16 而 `.grad` 保持原对象/FP32。该控制说明它不是训练中途的梯度/optimizer 状态迁移器，不把初始化路径里没有出现的状态当作新缺陷，也不自动拼接相关 keep-list PR #7165。
+
+[复查脚本](../../experiments/scripts/verify_verl_param_cast.py)在 Python 3.12.13、torch 2.9.1、显式 CPU 默认设备下运行两次，原 6 个测试体均通过；测试覆盖 buffer 精度、浮点参数、meta 参数、整数、绑定参数身份及旧 blanket cast 反例。另 4 组控制核对原 base/head 转换调用、已有低精度 buffer、冻结/keep-list 属性以及已有梯度。完整 head `torch_dtypes.py` 与原测试模块执行，仅跳过根包初始化；两版 engine 只做语法及提取出的原转换语句执行，没有运行 `_build_module`、HF RoPE、FSDP 包装、真实模型或 logp。旧版没有新 helper，基线验证限于原 cast 语句对照。
+
+```bash
+/path/to/python3.12 -B experiments/scripts/verify_verl_param_cast.py /path/to/verl
+```
+
+真实 FSDP/model 的数值边界保留在[原 M5 策略一致性参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)：仅在日后独立选题且资源已匹配时核同权重、同 token/position 的 buffer 与 logp；不因 CPU 通过直接部署补丁、拼接 PR 或开启训练。
+
 > 2026-06-18 | Source-level analysis | verl/fsdp_utils.py + engine_workers.py + rollout_corr_helper.py + bucketed_weight_transfer.py
 > ★★★★★★★★ Going beyond PR-level analysis to actual implementation understanding
 > ★★★★★★★★ 6 key implementation findings with RTX 4090 implications

@@ -176,6 +176,7 @@
 - [verl DataProto 数据流架构源码阅读](verl-dataproto-data-flow-reading.md)
 - [verl FSDP Weight Sync Mechanism: Source Code Analysis](verl-fsdp-weight-sync-mechanism-reading.md)
 - [verl FSDP2 Engine Deep Source Reading — Beyond PR Descriptions](verl-fsdp2-source-deep-reading.md)
+- [verl 参数转换与缓冲区精度](verl-fsdp2-source-deep-reading.md#参数转换与缓冲区精度)：#8189 原 6 CPU 测试体及 4 组控制；保留 buffer 不是修复既有舍入或迁移训练状态，原转换调用非完整 FSDP 验收。
 - [verl Fully-Async Policy 源码级深度阅读](verl-fully-async-policy-reading.md)
 - [verl GRPO bypass_mode + TransferQueue + Detach Metrics + Weight Sync 源码级深度阅读](verl-grpo-bypass-mode-reading.md)
 - [verl GRPO Training Core Algorithms — core_algos.py 源码深度阅读](verl-grpo-core-algos-reading.md)：[掩码统计与梯度](verl-grpo-core-algos-reading.md#掩码统计与梯度的数值边界)及[单样本组回退](verl-grpo-core-algos-reading.md#单样本与同分组的不同回退)；区分有限值/梯度、singleton/同分pair，保留CPU复查范围。
