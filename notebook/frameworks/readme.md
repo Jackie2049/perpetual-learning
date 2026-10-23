@@ -139,6 +139,8 @@
 
 ## verl
 
+- [verl 文件系统权重同步](../verl-v1-checkpoint-engines-deep-reading.md#文件系统权重同步的发布与清理)：#8355原导出/复制/CPU接收控制两次通过，三独立writer覆盖分片，index-last非原子事务；撤回4090仅naive、固定4GiB与同进程共享存储推断。非collective/FUSE或GPU验收。
+
 - [重算叶子与共享存储](../fundamentals/gradient-checkpointing.md#重算叶子与共享存储) — #8338放弃叶子引用与截断storage分开；4组CPU控制只执行原清理两语句，非MCore/CUDA回归或显存测量。
 
 - [verl 融合输出头与logit softcap](verl-fused-output-softcap.md) — #7991通用guard不是softcap实现；完整原torch输出头36组语义对照，保留FP64参考误差，原24配置测试未跑。

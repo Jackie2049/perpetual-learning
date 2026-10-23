@@ -7,6 +7,8 @@
 
 ## 1. Checkpoint 2层架构
 
+2026-10-23 补充：[文件系统权重同步候选 #8355](../verl-v1-checkpoint-engines-deep-reading.md#文件系统权重同步的发布与清理)说明两层应按用途而非“是否写文件”区分。临时 safetensors 在 rollout 加载后删除，不含完整恢复状态；原 helper/receiver 的本地 I/O 控制不认证共享挂载或 server 安装。下方后端数量和早期代码仍按原日期理解。
+
 ```
 ★ ★ verl checkpoint = 2层系统!
 
@@ -21,7 +23,7 @@ Layer 2: CheckpointEngineManager → 实时权重同步
   → 不是磁盘checkpoint → 是live weight sync!
 
 ★ 关键: CheckpointManager = 保存到磁盘 → 恢复训练 → 持久化
-  CheckpointEngineManager = 训练→rollout权重同步 → 不写磁盘 → 实时!
+  CheckpointEngineManager = 训练→rollout权重同步 → 非训练恢复协议；传输可经内存/网络或临时文件
 ```
 
 ## 2. FSDPCheckpointManager — Per-Rank Sharded Save/Load

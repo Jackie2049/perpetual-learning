@@ -4,6 +4,50 @@
 **Source**: volcengine/verl main branch
 **Focus**: 6 checkpoint engine architecture, naive engine for RTX 4090 dp=1, weight sync interaction with GRPO training
 
+2026-10-23 修订：原六后端描述是 7 月历史快照，不是当前后端清单或硬件支持矩阵。下文撤回“4090/dp=1 只能 naive”“所有分布式引擎固定增加 4 GiB”“同进程就共享模型权重”的推断；没有本项目显存/性能测量支持这些结论。新读的 [#8355](https://github.com/verl-project/verl/pull/8355) 是**尚未合并的文件系统传输候选**，不是推荐立即采用的稳定后端。
+
+## 文件系统权重同步的发布与清理
+
+[#8355](https://github.com/verl-project/verl/pull/8355) 读取时 OPEN/non-draft，作者 wdl339 已实现，不另开竞争方案。固定 head `7d981cde954fce079d8c973379738d6e8c258ac2`、目标 base `a4b9354968705a441fb7da7367924b15b902e771`，共同祖先 `2bc6ac46043e31855cea194236ff7548c91817c8`，head ahead 5 / behind 43；三点 diff 为 6 文件 311 增 42 删，不能把目标 base 当直接祖先。
+
+### 文件是传输介质而非恢复状态
+
+`CheckpointEngine` 按用途是 trainer→rollout 的权重同步，不是“绝不落盘”的承诺。[FileSystemCheckpointEngine](https://github.com/verl-project/verl/blob/7d981cde954fce079d8c973379738d6e8c258ac2/verl/checkpoint_engine/filesystem_checkpoint_engine.py) 将当前权重导出到共享挂载的 `global_step_<n>`，加载完成后删除；不保存 optimizer、scheduler、RNG、数据游标或完整恢复元数据。HF safetensors 格式本身不把临时传输变成可恢复训练 checkpoint。配置要求所有节点可访问的**挂载路径**，构造器拒绝 `hdfs://...` 等 URI，不是内置 HDFS 客户端。
+
+| 顺序 | 原实现动作 | 所依赖的条件 |
+|---|---|---|
+| 1 | 每个 actor rank 消费相同权重流，按相同规则切 shard | 名称、次序、shape、dtype 及过滤规则必须一致；不减少原参数流的 collective |
+| 2 | shard_index % num_writers 的拥有者写本地临时文件，再顺序复制到共享路径 | 非拥有者仍遍历全部输入和边界；distributed_write=False 也不让其他 rank 提前退出流 |
+| 3 | actor barrier 后由 master 复制 index | barrier 前各 writer 的复制必须已完成；跨客户端可见性仍取决于实际挂载 |
+| 4 | manager 等 actor export 返回后才 abort rollout、释放 KV，再调用 rollout 加载 | 文件准备阶段可继续生成，不等于加载阶段无暂停或无 KV 生命周期 |
+| 5 | manager 等加载 RPC 返回，再 finalize，然后恢复 KV/生成 | 接收生成器读回不等于 server 已正确安装模型；完整确认链另需实测 |
+
+[`export_hf_safetensors`](https://github.com/verl-project/verl/blob/7d981cde954fce079d8c973379738d6e8c258ac2/verl/utils/checkpoint/hf_safetensors.py) 对拥有的 tensor 做 CPU copy，避免参数迭代器复用缓冲区后覆盖已收集的值；可选 FP32→目标 dtype 并保留指定名字的 dtype，排除 tied alias 的名字由调用方提供。FSDP manager 复用该 helper，但仍仅 rank0 写、其他 rank drain；本轮没有执行真实 FSDP 导出或认证模型 tied-key 推导。
+
+每个 tensor 是不可拆的 shard 成员，`max_shard_bytes` 约束已有 shard 的拼入判断，不是序列化文件大小、单个超大 tensor 或总 host/GPU 内存的硬上限。每个 writer 的本地 index 都描述**完整权重映射**，其中许多 shard 不在该 writer 的临时目录；只在所有 shard 汇合之后才能当完整模型使用。
+
+### 索引最后发布不是原子事务
+
+`_copy_file` 用 `open(dst, "wb")` 和顺序 copy，index 也如此，并非 rename/replace 提交点；源码没有 fsync、内容 checksum、run UUID、自动重试或失败目录回收协议。正常 manager 路径等发送 RPC 完成才要求接收，因此不能仅凭“index 非原子写”就定性健康流程存在竞态；也不能把这一路径当成对任意外部观察者、断电、FUSE 缓存或同 step 重入的事务保证。版本目录名只含 global_steps，多作业隔离与失败重试若要支持，需先界定契约，不能自动提出/发布修复。
+
+receiver 直接读 index 后按唯一文件名逐 shard 打开并 yield tensor，没有轮询缺文件或校验内容 hash；`finalize` 只在 master 且 exported_dir 已记录时删该目录，清理 OSError 记 warning 后清空记录。这是传输文件生命周期，不是保留历史版本的恢复策略。
+
+### 本地文件验证范围
+
+[复查脚本](../experiments/scripts/verify_verl_filesystem_export.py)复用已有 Python 3.12.13 / torch 2.14.1 / safetensors 0.8.0 环境，两次一致通过真实 CPU safetensors 写入/打开/复制/读回：
+
+- 复用可变缓冲区的 8 条输入，过滤 alias 后 7 tensor；BF16 转换及 p4/int64 保留正确，输出 payload 共 104 字节，四 shard 为 24/24/40/16 字节。40 字节 tensor 未按 24 字节预算拆分，实际文件另含格式头；原缓冲最终改成 999 不影响已保存数据。
+- 三次**独立、顺序的本地 writer 调用**输出 2/1/1 个互不重叠 shard，各 index 相同、全部输入被消费；用原复制函数汇合后，原 receiver CPU 读回 7 tensor 的值/dtype 完全相同。它们不是三个并行 rank，没有 collective 或共享挂载验证。
+- 缺 index 与 index 已有但 shard 全缺的目录均抛 FileNotFoundError；空流只写空 index。直接控制 exported_dir 字段时，非 master finalize 不删、master 只删指定临时版本、其他目录保留；URI 被拒。这不是 manager 完成链或故障恢复验收。
+
+完整原 exporter 和 filesystem 模块执行；仅原 base 的 Registry/ABC 两类用 AST 隔离 Ray/worker 导入，get_device_name 显式绑定 cpu。未调用 send_weights、barrier、manager、FSDP、server adapter、GPU/NPU 或 HDFS/FUSE；8 个变更模块版本另做 compile（已有文件为祖先/head，新文件仅 head）。默认环境缺 safetensors 后直接复用已有隔离环境，未安装新包、未改变其内容。
+
+```bash
+python3.12 -B experiments/scripts/verify_verl_filesystem_export.py /path/to/verl
+```
+
+脚本固定对象、禁 lazy fetch 并打印 SHA256；helper 为 `ac8e8060aacb19d5cfa3465cb382d4f33b6823da8be8fb2be1490624881bebbe`，filesystem 模块为 `f903ccdb598cd5208be2e0113584f2555c76363814d24af3bb1d671a88b9ca6e`。作者报告 A100/FSDP/vLLM/HDFS-FUSE、4+4 与 16+16 卡、两种 writer 模式的训练/验证及清理，属于作者证据，不是本机结果；未从图表提取或外推性能。真实挂载可见性、rank 流一致性和 server 加载确认仅补[原 M5 可选参考](../experiments/handoff-m5.md#verl-异步策略一致性补证)，不部署新挂载/环境或启动训练。
+
 ---
 
 ## 1. Architecture Overview
@@ -69,11 +113,11 @@ Default backend is `"naive"` -- this is the **colocated (in-process) weight pass
 
 ## 2. The 6 Checkpoint Engines: Detailed Analysis
 
-### 2.1 naive (ColocatedCheckpointEngine) -- BEST for RTX 4090 dp=1
+### 2.1 naive (ColocatedCheckpointEngine) for a colocated process
 
 **Class**: `ColocatedCheckpointEngine` registered as `"naive"`
 
-**How it works**: This engine is a **zero-overhead, in-process weight generator**. It does NOT use any distributed communication library (no NCCL, no RDMA, no ZMQ). When actor and rollout are **colocated on the same GPU**, weights are simply passed through as a Python generator object:
+**How it works**: This engine passes a weight generator within the colocated process. Its pass-through method does not itself create a transport group or send/receive bucket. That does not remove collectives in the parameter generator, device copies or memory required by the rollout loader:
 
 ```python
 class ColocatedCheckpointEngine(CheckpointEngine):
@@ -87,21 +131,12 @@ class ColocatedCheckpointEngine(CheckpointEngine):
 
 **Key properties**:
 - `prepare()`, `init_process_group()`, `finalize()`, `build_topology()` all raise `NotImplementedError` -- no distributed setup needed
-- Zero additional GPU memory overhead (no send_buf/recv_buf allocation)
-- Zero network/IPC overhead
+- No dedicated send_buf/recv_buf allocation in this pass-through object; not a zero-memory guarantee for the update
+- No transport operation in the pass-through itself; the surrounding generator/loader must be examined separately
 - Asynchronous but trivially so (just a generator reference)
 - Only works when actor and rollout are in the **same process** (colocated)
 
-**Why it is BEST for RTX 4090 dp=1**:
-1. **No additional memory**: All other engines allocate 2 * bucket_size bytes of GPU memory for send_buf and recv_buf. With `update_weights_bucket_megabytes=2048`, that is **4 GiB** of extra GPU memory overhead! On a 24 GiB RTX 4090, that is 16.7% of total memory wasted on transfer buffers.
-2. **No NCCL process group**: NCCL initialization on dp=1 has overhead and can cause issues (see DeepSpeed #8061 overlap_comm data race pattern).
-3. **No ZMQ/RDMA**: No additional CPU threads, no IPC sockets, no RDMA registration.
-4. **Fastest possible**: Direct generator yield is O(1) overhead. The actual weight copy happens in the rollout's `update_weights()` method, which uses direct CUDA operations on the same GPU.
-
-**RTX 4090 memory budget impact**:
-- With naive: 0 bytes additional overhead. All 24 GiB available for model, KV cache, activations.
-- With NCCL/nixl/mooncake: 2 * bucket_size = 2 * 2048 MiB = 4 GiB overhead (send_buf + recv_buf).
-- With kimi_ckpt_engine: Additional CPU offload + RDMA registration overhead.
+**Placement and capacity**: A colocated trainer can use this reference-sharing interface. GPU model name or dp=1 alone does not establish placement, memory fit or fastest performance. For a transport that actually allocates two device buckets of B bytes in one process, their payload is 2B; B=2 GiB gives 4 GiB. This conditional calculation is neither every rank's allocation nor a measurement of the entire update. A filesystem candidate has a different host/staging cost model.
 
 ### 2.2 nccl (NCCLCheckpointEngine) -- NVIDIA GPU Off-Policy
 
@@ -129,7 +164,7 @@ Actor side:
 6. Rollout receives in recv_buf, yields tensors from send_buf, pipelines next bucket
 
 **Key properties**:
-- `bucket_size`: Default 2048 MiB. Memory overhead = 2 * bucket_size on each process (send_buf + recv_buf)
+- `bucket_size`: Historical default 2048 MiB. Two allocated buffers of that size contribute 2B of payload; inspect sender/receiver roles rather than assuming both buffers exist in every process. This is not the full update peak.
 - Uses **cupy** on master rank to avoid PyTorch expandable_segments memory registration conflict
 - `rebuild_group`: Optional rebuild of NCCL group per update (for elastic scaling)
 - `rollout_dtype`: Cast weights to target dtype (default bf16)
@@ -471,15 +506,17 @@ All network engines use **double-buffering** (send_buf + recv_buf swap):
 4. When transfer completes, previous send_buf (now recv_buf) is ready for next bucket
 5. Pipeline: transfer bucket N while filling bucket N+1
 
-This reduces total transfer time by overlapping compute and communication, but costs 2 * bucket_size GPU memory.
+Double buffering permits overlap in the design; no measured total-time reduction is established here. When both B-sized device buffers are allocated, their payload is 2B, separate from other live memory.
 
 ---
 
 ## 6. Engine Comparison Summary
 
+Historical transport/bucket sketches below are not a current support or peak-memory matrix. The 2B entries describe two B-sized buffers where actually allocated, not a universal per-rank charge; roles, versions and surrounding gather/loader allocations must be checked separately.
+
 | Engine | Backend | Topology | Hardware | Elastic | Memory Overhead | Best For |
 |--------|---------|----------|----------|---------|-----------------|----------|
-| **naive** | torch.distributed (in-process) | all_gather (same process) | NVIDIA/AMD/Ascend | NA | **0 bytes** | **RTX 4090 dp=1 colocated GRPO** |
+| **naive** | Generator pass-through | Same-process reference | Loader-dependent | NA | No dedicated transport bucket | Colocated actor/rollout |
 | **nccl** | NCCL broadcast + ZMQ PUB/SUB | Star (rank 0 -> all) | NVIDIA GPU | Low (rebuild_group) | 2 * bucket_size | Multi-GPU off-policy, fixed cluster |
 | **hccl** | HCCL broadcast + ZMQ PUB/SUB | Star (rank 0 -> all) | Ascend NPU | Low (rebuild_group) | 2 * bucket_size | Ascend NPU off-policy |
 | **nixl** | NIXL P2P ring | Ring (rank 0 -> 1 -> 2 -> ... -> N) | Multi-backend | **High** (dynamic ring) | 2 * bucket_size | Elastic rollout, fault tolerance, heterogeneous hardware |
@@ -499,23 +536,9 @@ This reduces total transfer time by overlapping compute and communication, but c
 
 ## 7. RTX 4090 dp=1 Recommendations
 
-### 7.1 MUST USE naive Backend
+### 7.1 Match backend to placement before hardware
 
-For RTX 4090 dp=1 GRPO training, the **naive (ColocatedCheckpointEngine) is the ONLY viable choice**:
-
-1. **Zero memory overhead**: No send_buf/recv_buf allocation. On 24 GiB GPU, every byte counts.
-2. **Colocated architecture**: Actor and rollout share the same GPU process. Sync trainer (`trainer_mode="sync"`) is the optimal mode.
-3. **No distributed overhead**: No NCCL initialization, no process groups, no ZMQ/RDMA threads.
-4. **Direct weight pass-through**: Generator reference is O(1) overhead. The actual weight copy is done by the rollout server adapter (vLLM/SGLang) using optimized CUDA operations.
-
-**Why NOT use NCCL/nixl/mooncake on RTX 4090 dp=1**:
-- `separate_async` trainer mode requires dp>=2 and nnodes>0. The code explicitly asserts:
-  ```python
-  assert config.actor_rollout_ref.rollout.checkpoint_engine.backend != "naive"
-  assert config.actor_rollout_ref.rollout.nnodes > 0
-  ```
-- Even if you could use NCCL on dp=1, it would allocate 4 GiB for buffers (16.7% of total memory).
-- NCCL broadcast on single GPU is meaningless -- there is only one receiver.
+The earlier “ONLY viable” claim is withdrawn. `backend != "naive"` and `rollout.nnodes > 0` are not proofs that training DP must be at least two or that a GPU model cannot use a separated transport. A single physical GPU, actor DP=1 and one rollout worker are different resource statements. Naive needs the colocated pass-through path; a separate layout needs a compatible transport and enough independently accounted resources. No RTX 4090 fit or performance test is established here.
 
 ### 7.2 Config Recommendation
 
@@ -523,28 +546,17 @@ For RTX 4090 dp=1 GRPO training, the **naive (ColocatedCheckpointEngine) is the 
 actor_rollout_ref:
   rollout:
     checkpoint_engine:
-      backend: naive            # MUST be naive for dp=1
+      backend: naive            # historical colocated example, not a dp=1 hardware rule
       update_weights_bucket_megabytes: 2048  # irrelevant for naive, but keep default
 
 trainer:
   v1:
-    trainer_mode: sync          # MUST be sync for dp=1 colocated
+    trainer_mode: sync          # historical example, not a measured optimum
 ```
 
-### 7.3 Memory Budget Analysis (naive vs nccl)
+### 7.3 Memory accounting requires phase and allocation evidence
 
-For a 7B bf16 model (~14 GiB parameters) on RTX 4090 (24 GiB):
-
-| Component | naive (GiB) | nccl (GiB) |
-|-----------|-------------|------------|
-| Model weights (actor) | ~14 | ~14 |
-| Model weights (rollout, resident during generation) | ~14 (shared process) | ~14 (separate process) |
-| KV cache | ~2-4 | ~2-4 |
-| Training activations | ~4-6 | ~4-6 |
-| **Checkpoint engine buffers** | **0** | **4** (2*2 GiB) |
-| **Total** | ~24 (tight fit) | ~28 (OOM!) |
-
-With naive, actor and rollout are colocated in the same process. The weight sync is a generator reference transfer, not a GPU buffer copy. This means during generation, both actor weights and KV cache share the same process, and during training, weights are offloaded/sleep'd and the same GPU memory is reused.
+The old ~24/~28 GiB fit/OOM table is withdrawn: it combined unmeasured estimates and treated same-process placement as model storage sharing. Account actor parameters/master/optimizer, rollout weights, KV, activations, transient gather/cast and transport allocations at their actual overlapping phases. A generator reference alone neither aliases model storage nor eliminates loader copies. Bucket payload arithmetic is not the full allocator peak; no fixed 7B fit claim follows.
 
 ### 7.4 Weight Sync Flow on RTX 4090 (naive)
 
@@ -672,21 +684,13 @@ Before instantiation, `import_external_libs()` imports this module, which can re
 
 ## 10. Key Findings and RTX 4090 Implications
 
-### 10.1 Naive is the Only Viable RTX 4090 Backend
+### 10.1 Backend compatibility follows placement and implementation
 
-- The naive engine has **zero memory overhead** vs 4 GiB overhead for all distributed engines
-- RTX 4090 dp=1 MUST use sync trainer mode, which requires colocated actor+rollout
-- Colocated architecture = naive backend is the natural and optimal choice
-- The `separate_async` trainer explicitly **asserts backend != "naive"**, confirming that separate async is not viable on dp=1
+Naive is a colocated generator interface, not a hardware exclusivity rule. Separate actor/rollout paths require their own supported transport and resource checks. The open filesystem proposal illustrates a different transport design; it is not proof that any tested training configuration fits a single 24 GiB card.
 
 ### 10.2 Weight Sync Memory Budget is Critical
 
-On RTX 4090 24 GiB:
-- Model weights (7B bf16): ~14 GiB
-- KV cache (generation): ~2-4 GiB
-- Training activations: ~4-6 GiB
-- Checkpoint engine buffers: 0 (naive) or 4 GiB (nccl/nixl/mooncake)
-- The naive engine's zero overhead makes the difference between viable and OOM
+Transport bucket size is one input, not a measured process peak. The earlier fixed weight/KV/activation sum and “naive determines viable vs OOM” conclusion are withdrawn; see section 7.3 for the required accounting boundary.
 
 ### 10.3 Sleep/Wake Architecture Matters
 
