@@ -4,6 +4,7 @@
 
 | 入口 | 用途 |
 |---|---|
+| [verify_verl_lora_host_staging.py](verify_verl_lora_host_staging.py) | 固定 #8352 两版原暂存语句与字典赋值 AST，真实 CPU tensor 核 shape/cast/源覆盖/多桶存储/后备分支与引用寿命，两次一致；3 模块版本 compile。Python3.10+/torch/已在本地的 Git 对象，pin=False；非完整 callback、原 pytest、IPC/vLLM/锁页/GPU或性能验收，见[主笔记](../../notebook/verl-v1-checkpoint-engines-deep-reading.md#lora-分桶接收的主机存储所有权) |
 | [verify_verl_filesystem_export.py](verify_verl_filesystem_export.py) | 固定#8355完整原export/filesystem模块，原Registry/ABC AST隔离；真实CPU safetensors/可变buffer/三独立顺序writer/原copy+receiver和清理方法控制，两次一致，8模块compile。Python3.12+/torch/safetensors，本地Git；仅device绑定cpu，无send/collective/manager/FSDP/FUSE或设备验收，见[主笔记](../../notebook/verl-v1-checkpoint-engines-deep-reading.md#文件系统权重同步的发布与清理) |
 | [verify_unirl_post_window.py](verify_unirl_post_window.py) | 固定#545完整原sampling/runtime/kernels/require纯模块，720静态日程及64小张量求解控制两次一致；原DPM2作前缀、局部一阶尾段对照Euler，12模块compile。Python3.12+/torch/本地Git对象，无diffusers/Flow SDE/logp、原参考harness、模型/引擎或训练验收，见[主笔记](../../notebook/frameworks/unirl-survey.md#sde-窗口后的压缩积分尾段) |
 | [verify_unirl_reward_rows.py](verify_unirl_reward_rows.py) | 固定 #517，完整原Sample/Part/RewardRequest类型和4个AST helper；5组真实CPU谱系/图像条件/元数据、slice+concat合成分数回贴、乱序拒绝及几何控制。Python3.12+/torch/Pillow，两个参数为源码Git仓库与Pillow target；不导入Ray/完整trainer或service，不跑远程dispatch/评分模型/packed segment/设备，见[主笔记](../../notebook/frameworks/unirl-survey.md#行级奖励派发与分组身份) |

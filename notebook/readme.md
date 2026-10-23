@@ -136,6 +136,7 @@
 - [Megatron-LM 流水线并行](frameworks/megatron-pp-reading.md) — 1F1B 调度、气泡分析、通信 overlap
 - [verl 架构](frameworks/verl-architecture.md) — 三级前缀缓存（系统级+进程级+请求级）
 - [verl 文件系统权重同步](verl-v1-checkpoint-engines-deep-reading.md#文件系统权重同步的发布与清理) — #8355原safetensors/复制/CPU接收本地验证；临时文件非完整恢复状态，索引最后复制非事务，撤回旧4090后端和固定内存结论
+- [verl LoRA 主机暂存](verl-v1-checkpoint-engines-deep-reading.md#lora-分桶接收的主机存储所有权) — #8352原暂存语句CPU存储控制；每桶一个块仍须累计整个adapter，逐tensor复制及锁页/loader另有条件，非IPC或加速验收
 - [vLLM MLA Backend 源码阅读](frameworks/vllm-mla-backend-reading.md) — FlashMLA/FlashInfer/Triton/Cutlass MLA 后端、压缩数据流、KV Cache 格式、Backend 选择
 - [verl shared-prefix packing](frameworks/verl-shared-prefix-packing.md) — #8300 的 FSDP 分支可见域、首响应标签、等价条件及 38 组原始 CPU 布局检查
 - [verl UID 分组均衡](frameworks/verl-grpo-source-reading.md#连续-uid-与等样本组的前提) — 连续UID、固定每组样本数与DP等行切分的复合契约；原3个CPU测试体及22组控制，非标准trainer故障复现

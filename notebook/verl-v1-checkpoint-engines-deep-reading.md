@@ -6,6 +6,43 @@
 
 2026-10-23 修订：原六后端描述是 7 月历史快照，不是当前后端清单或硬件支持矩阵。下文撤回“4090/dp=1 只能 naive”“所有分布式引擎固定增加 4 GiB”“同进程就共享模型权重”的推断；没有本项目显存/性能测量支持这些结论。新读的 [#8355](https://github.com/verl-project/verl/pull/8355) 是**尚未合并的文件系统传输候选**，不是推荐立即采用的稳定后端。
 
+## LoRA 分桶接收的主机存储所有权
+
+**一个 bucket 一个主机块，不等于整个 adapter 只留一个块；复制次数减少，也不等于没有转换或同步。** [#8352](https://github.com/verl-project/verl/pull/8352) 由 aoshen02 实现，2026-10-23 22:35:08 +08:00 已合并为 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，不是我方贡献。固定测试 head `7b9b25a551eb8cded7d0dda0c6b8437bb720b796`，base 及共同祖先 `a4b9354968705a441fb7da7367924b15b902e771`，ahead 5 / behind 0；仅 utils.py 22 增 5 删，无新增测试。合并后的 utils.py 与 bucketed_weight_transfer.py 均与该 head 完全相同，未外推至之后的 main。
+
+### 从借用视图到自有副本
+
+[接收器](https://github.com/verl-project/verl/blob/7b9b25a551eb8cded7d0dda0c6b8437bb720b796/verl/workers/rollout/vllm_rollout/bucketed_weight_transfer.py)通常将 bucket 的字节切片重新 view 成张量，callback 不能把这些可复用缓冲区的视图直接留给长期持有者。LoRA 路径先收齐所有 bucket，最后才调用一次 `_update_weights`/`add_lora`；普通 base 权重仍逐 bucket 安装。receiver 在 callback 后同步设备，再确认非末桶；末桶确认放在清理缓冲区之后。本轮没有执行这条 IPC/确认链。
+
+[候选暂存分支](https://github.com/verl-project/verl/blob/7b9b25a551eb8cded7d0dda0c6b8437bb720b796/verl/workers/rollout/vllm_rollout/utils.py)在 `peft_config` 非空且 `base_sync_done=True` 时，从 vLLM 的 `lora_manager.lora_config` 读取目标 dtype；只有它是 `torch.dtype` 才走新布局。每个非空 bucket 创建 `sum(numel)` 个目标元素的 CPU block，按原张量元素数 split，再逐 tensor `copy_(tensor.reshape(-1))`，最后恢复原 shape。这里统一的是**存储分配**，不是一次大 D2H 传输：仍有逐 tensor 的 copy/cast，`copy_` 也未传 `non_blocking=True`。普通字节视图通常连续；不能仅凭 `reshape` 一词承诺任意输入都无临时副本。
+
+所有 bucket 的视图汇入同一个字典，等末桶才交给 loader，因此先前 block 仍被视图持有。`_update_weights` 从第二次逐 tensor clone 改为 `dict(weights)`，新字典仍指向同一批 tensor；callback 清空原字典不使另一个持有者的 tensor 失效。这是所有权约束，不是 adapter 校验、加载事务或失败回滚协议。
+
+### dtype 与锁页条件
+
+有效 dtype 路径直接转换到目标表示，FP32→BF16 等转换不是原值逐比特保留。缺配置或 dtype 仍为字符串时，callback 回退到逐 tensor clone，保留输入 dtype；但 `_update_weights` 的第二次 clone 仍已去除，不能把“后备路径”理解成完全相同的旧复制成本。
+
+锁页由 vLLM 的 `is_pin_memory_available()` 决定，不是无条件分配。作者将收益建立在后续 loader 的 CPU/dtype 转换和 pin 操作可复用已有张量这一条件上。本机只确认真实 CPU `.to('cpu', 同dtype)` 返回同一对象，**没有分配锁页内存、运行 vLLM loader 或认证其版本行为**。改变目标 dtype 的转换和需要额外布局的下游消费者仍须按实际版本检查。
+
+### CPU 存储控制
+
+[复查脚本](../experiments/scripts/verify_verl_lora_host_staging.py)从两版原 utils.py 提取 callback 中的暂存语句和 `_update_weights` 首个字典赋值，原 AST 不改写；未执行完整 callback、worker 或原 pytest。Python 3.12.13、torch 2.9.1、`pin_memory=False`，两次结果一致：
+
+| 小张量输入与路径 | 非空 tensor 的去重存储块数 | 存储 payload 字节 |
+| --- | --- | --- |
+| 10 个 FP32 元素分成两 tensor，base 首次 clone | 2 | 40 |
+| 相同输入，head 目标 BF16 | 1 | 20 |
+| head 再收 3 个元素的第二 bucket，保留首桶 | 2 | 26 |
+| head 目标为字符串 `auto`，走后备 clone | 2 | 40 |
+
+这些是存储 payload，不含 allocator、Python 对象、锁页成本或进程峰值，也不是原 GPU 双 clone 链的性能对比。控制确认 shape/目标转换、源缓冲覆盖后副本不变、同 dtype CPU to 的对象身份、多桶累计、空 bucket、合成非连续/scalar 输入，以及浅字典复制后原字典 clear 不破坏持有值。base/head 完整 utils.py 与 head 完整 receiver 共 3 个模块版本仅 compile，无包导入或设备发现。
+
+```bash
+python -B experiments/scripts/verify_verl_lora_host_staging.py /path/to/verl-git
+```
+
+utils.py SHA256：base `3f46d1b054374da5bf348202a37b723a91a6807a9aa6046fe59fa587ad4133cf`，head `71e6e1480d79df2681b9c66419ee6c51daec87a47743b7430fcb21c59733b79f`；receiver `b835c242156f2644532d675ff68937215529a33d8fc5d34f23f0d76dfcec1f31`。作者的 GB300 接收侧微基准和 28+5 既有用例不计为本项目结果，作者也未测 live-vLLM 端到端同步。真实 D2H/pin/loader 与整轮内存边界仅补[原 M5 可选参考](../experiments/handoff-m5.md#verl-异步策略一致性补证)，不部署候选、排新训练或改既有专项。
+
 ## 文件系统权重同步的发布与清理
 
 [#8355](https://github.com/verl-project/verl/pull/8355) 读取时 OPEN/non-draft，作者 wdl339 已实现，不另开竞争方案。固定 head `7d981cde954fce079d8c973379738d6e8c258ac2`、目标 base `a4b9354968705a441fb7da7367924b15b902e771`，共同祖先 `2bc6ac46043e31855cea194236ff7548c91817c8`，head ahead 5 / behind 43；三点 diff 为 6 文件 311 增 42 删，不能把目标 base 当直接祖先。
@@ -704,7 +741,7 @@ The sleep/wake lifecycle for naive backend:
 For LoRA GRPO on RTX 4090:
 - First step: base weight sync (full model weights transferred)
 - Subsequent steps: LoRA adapter sync only (sleep_level=1, base weights stay resident)
-- This reduces weight sync payload by ~80x (only adapter deltas, not full model)
+- The adapter-only payload is smaller by a model/rank/module/dtype-dependent ratio; the earlier fixed ~80x estimate was not measured here and is withdrawn. Transfer bytes do not determine receiver allocation count or the full synchronization latency.
 - The naive engine handles this seamlessly via `base_sync_done` flag in `update_weights()`
 
 ### 10.5 PR #7041 OOM Fix Confirms Memory Pressure
