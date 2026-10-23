@@ -153,6 +153,8 @@ ModelOpt忽略规则参考（2026-10-22，同一量化入口不另排队）：�
 
 ## verl 异步策略一致性补证
 
+流式准入参考（2026-10-23，非新增训练队列）：已有draft[#8203](https://github.com/verl-project/verl/pull/8203)head`b6880198eadd813272290fb1c98ba15e42317071`、base/祖先`18cfb74852a053a27dcf301d3318a093be81b628`；[M1源码阅读](../notebook/frameworks/verl-6790-async-trainer-reading.md#会话水位与未消费组上限)仅23模块AST/compile及4原schema参数例，无actor/Ray/TQ/设备验收，作者GPU e2e仍TODO。若M5将来已有获准匹配V1/TransferQueue选题并独立选用此破坏性draft，最小分别记录会话槽、pending/running/terminal组、已采样在训轨迹字节与实际行为版本；比较同负载准入与训练节奏，不用水位/组数代替TQ/GPU峰值或因果证据。缺原私有数据/模型、匹配后端/资源或需升级部署、干预专项即保留未测停止；不自动套补丁、改#8250环境或新增必跑矩阵，记录不代表接单。
+
 状态：待数据与运行环境核对；不是 GPU 空闲后即可复现原报告的任务。
 
 入口：[当前诊断边界](../open-source/verl/candidate-8250-async-entropy-collapse.md)、[策略来源与最小观测契约](../notebook/frameworks/verl-async-logprob-provenance.md)、[Issue #8250](https://github.com/verl-project/verl/issues/8250)。2026-10-21 API 读取仍 open、0 评论；没有复查全仓库修复覆盖。报告版本 `1876b06d0a3e4e71e06230be10af14492ca8a75b` 外加私有修改，私有数据/模型不可由项目公开材料还原，实际 vLLM 安装版本仍未知。

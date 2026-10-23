@@ -158,6 +158,7 @@
 - [verl #6782 — LoRA Rank=64 Breaks EOS in vLLM Rollout Reading](verl-6782-lora-rank-breaks-eos-reading.md)
 - [verl #6786: Dynamic Context Parallel (DCP) Batch Split Bug Deep Reading](verl-6786-dynamic-cp-batch-split-bug-reading.md)
 - [verl PR #6790: Separate Async Trainer with Switch+Offload Strategies — Source-Level Reading](verl-6790-async-trainer-reading.md)：新增[局部指标聚合](verl-6790-async-trainer-reading.md#局部更新的指标聚合)，19原测试/5组CPU观察；样本权重不等于token分母，正式计时后置计算，不由helper反例断言trainer缺陷。
+- [verl 会话水位与未消费组上限](verl-6790-async-trainer-reading.md#会话水位与未消费组上限)：#8203会话计数与组额度共同准入，COUNT也维护库存；采样归还组额度早于轨迹释放，非内存/严格陈旧度保证。本机23模块语法、4个原schema参数例，无actor/TQ实测。
 - [verl PR #6791 — DSv4/GLM5/KimiK2.5 via Megatron Lite 深度阅读](verl-6791-dsv4-megatron-lite-reading.md)
 - [verl #6794 — Delta Weight Sync Deep Reading (Extended Analysis)](verl-6794-delta-weight-sync-deep-reading.md)
 - [verl #6794 — Delta Weight Sync (Bytewise Diff Encoding)](verl-6794-delta-weight-sync-reading.md)

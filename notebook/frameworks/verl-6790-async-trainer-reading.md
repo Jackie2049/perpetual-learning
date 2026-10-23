@@ -2,6 +2,8 @@
 
 2026-10-22 补充：[局部更新的指标聚合](#局部更新的指标聚合)固定于 verl `1876b06d`，区分日志归约与实际计时接线。下方 #6790 的架构、PR 状态及性能判断是 2026-06-18 历史阅读，不属于本次 CPU 验证范围。
 
+2026-10-23 补充：[会话水位与未消费组上限](#会话水位与未消费组上限)分析未合并draft #8203的准入单位与资源释放；旧warmup与进程内ReplayBuffer说明不自动适用于这条新路径。
+
 > 2026-06-18 | MERGED | Author: Begunner | +17/-16 | 2 files changed
 > ★★★★★★★★ CRITICAL: This PR removes the NotImplementedError barrier — separate_async trainer is NOW RUNNABLE
 > ★★★★★★★★ Hybrid engine can now DYNAMICALLY switch between trainer/rollout modes (switch_to_trainer / switch_to_rollout)
@@ -673,6 +675,46 @@ python experiments/scripts/verify_verl_metrics_aggregator.py /path/to/verl
 脚本从固定 Git 对象选取完整原聚合类、DAPO key 常量和两个原计时函数，注解延后；完整加载原测试模块，包壳只提供这些真实定义，不运行 ReplayBuffer。pytest 隔离 conftest/插件/cache 并限定收集目录；比率例以结构化小对象提供 `batch` 中的真实 CPU 长度 Tensor，并非真实 DataProto。没有运行 trainer/logger、Ray、进程组、模型或 GPU/NPU，也不构成训练/性能或补丁验收。
 
 源码 SHA256：聚合模块 `a0168e86b2ee0872eb5f896d58cfa342e7c9687d7e098c8b4624fe691748412c`，原测试 `5dbeac03bda63b86b7498a4e1504660c4e6c3141ec021aa326e66aca3bcbcdd2`，计时模块 `d857834a6593301ad932ce2fd2e41e781ee140d0f1dafcfe157b97a0625e847f`。官方 API 与本地聚合模块 Git blob 同为 `e9dec3134a3c70b945e6abd03cd5b6e5924fce2e`。
+
+## 会话水位与未消费组上限
+
+保持rollout忙碌与限制积压是两个不同的控制目标。[verl #8203](https://github.com/verl-project/verl/pull/8203)将V1的数据加载、TQ控制平面与AgentLoopManager迁到独立Ray actor，用会话水位补新prompt，再以未消费组数限制积压。2026-10-23读取open/draft、作者Begunner；固定head `b6880198eadd813272290fb1c98ba15e42317071`、目标base及实际祖先 `18cfb74852a053a27dcf301d3318a093be81b628`（ahead22/behind0），39文件3310增2152删。这是已有作者的破坏性重构，不是可直接套用的性能补丁。
+
+### 两个上限的计数单位
+
+[StreamingDataloaderAsync](https://github.com/verl-project/verl/blob/b6880198eadd813272290fb1c98ba15e42317071/verl/trainer/ppo/v1/streaming_dataloader.py)按固定训练fanout `n`计算：目标会话数为`round(watermark_batches × train_batch_size × n)`；pending组占n槽，running组占`n − 已结束会话数`，finished/failure组不占运行槽。会话finished与failure都算释放一槽，不是只统计成功轨迹，也不是必须等整个GRPO组完成才补新prompt。
+
+另外，`separate_async.max_outstanding_batches`换算成prompt组数；pending、running以及尚未采样/淘汰的finished/failure组都计入。补发prompt数是`floor(max(0, 目标会话数 − 未结束会话数) / n)`与剩余组额度的较小值。async拒绝训练时改变单个prompt的n，避免按默认fanout补发却用另一种数量占槽；补发仍是一整组prompt，不发送半组来填最后几个槽。
+
+下面只按原公式手算，不是actor实测：n=2、目标8会话，快照含1个pending、1个running及3个finished组；running的两个会话中已完成1个。因此未结束会话为3，未消费组为5，空闲槽为5。
+
+| 未消费组上限 | 会话水位允许补发 | 组额度允许补发 | 最终新prompt数 |
+|---|---|---|---|
+| 5组 | 2组 | 0组 | 0 |
+| 6组 | 2组 | 1组 | 1 |
+| 禁用 | 2组 | 不限 | 2 |
+
+即使补2组也只新增4会话，剩1槽不能独立接半个prompt。相反，组额度已满时，即使没有满水位也会停补。配置要求组上限的batch数不小于watermark_batches；`colocate_async`不设置该组上限，不能把separate模式的约束推广到所有模式。
+
+### 组数不等于陈旧度或内存
+
+运行中长尾组仍只占自己的剩余会话槽，其他组可继续被消费和补发。因此有限未消费组数不严格限定每一组跨过的模型版本数；文档中“接近若干step”是稳态解释，不是逐样本定理。原`drop`策略只淘汰过期finished组；`wait`在pending/running组的`global_steps − prompt_global_steps + 1 >= threshold`时阻止采样。持续补水位与threshold=1的wait组合会一直阻塞，当前初始化明确拒绝，不能以降低积压上限替代该校验。prompt派发跨度与轨迹实际min/max行为版本也不是同一指标。
+
+采样时`_materialize_batch`先移除prompt和session marker，并同步本轮内存快照，从而立即归还组额度；trajectory keys由trainer完成训练并读取后续指标数据后另行清理。**已采样、尚在训练的轨迹不再计入未消费组上限。** 该上限能约束某一类积压，但不是TQ全部key、token字节、GPU KV或系统峰值内存的统一上限。
+
+### 单协调循环与会话结束标记
+
+actor在一轮中复用一次TQ元数据快照，处理终态淘汰与请求，再补水位；原生`_clear_groups`/`_materialize_batch`同时修正本地集合，避免同轮补发继续按旧组数计算。COUNT/WAIT虽不消费训练组，也会进入维护路径并触发淘汰/补发，所以`count_sampleable`不是对系统无副作用的纯查询。validation暂停train维护，load完成前也有门控；“独立actor”不等于所有模式/phase都永不停歇地产生rollout。
+
+[AgentLoopWorkerTQ](https://github.com/verl-project/verl/blob/b6880198eadd813272290fb1c98ba15e42317071/verl/trainer/ppo/v1/agent_loop_tq.py)在每个会话的轨迹写入settle后才发布finished标记；prompt终态又等待全部siblings settle，避免失败组被清理后还有兄弟继续写。manager轮转小批派发的起始worker，避免每次都从worker0开始。这些是源码顺序，不认证真实跨进程故障、取消、传输或负载均衡收益。新的key/tag协议区分prompt、session、trajectory，UID不得含下划线；标准数据入口生成UUID，不把协议前提误写成任意外部字符串已被校验。
+
+### 本机证据与接续范围
+
+本机只对23个新增/修改Python模块执行AST/compile，并从固定Git对象完整加载原`tq_schema.py`及原48行schema测试模块，跳过verl包初始化后直接调用4个参数例，全部通过；未运行pytest收集、流式actor、TQ、Ray或任何模型。schema结果只覆盖key归属/解析及普通字符串tag，不能认证上面的协调和容量设计。可在匹配完整环境用`python -m pytest -q tests/trainer/ppo/v1/test_tq_schema_on_cpu.py`复查原测试；本机隔离调用不等同于这条命令或actor/sampling大套件通过。本轮不为源码手算新建调度器替身或一次性工具。
+
+作者正文仅写CPU unit tests，未给通过数量；GPU e2e的colocate_async+swe-rebench仍为TODO，未据此推断吞吐、陈旧度或训练收益。真实计数/内存/行为版本条件记入[原M5可选参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不自动升级原报告环境、套用draft或把它归因为#8250。
+
+原SHA256：streaming_dataloader `9a50ea881cd0de5ccb74887224d780ce749f6cdf13016358aa4bbf720f09d90f`、agent_loop_tq `323686bc5a480c8e37439366cb87fe18cc1658d313c97a25c5df999946f4a5ff`、tq_schema `0940a334e4754090f5b114ecf231c70c2b43a457ae0dc507fc5d028ea0ca50eb`、原schema测试 `40bc68e8c5cc7106e3f9936d47460c2b608ccd6e76b12a4e78035ffd565a6c09`。
 
 ## Key Findings Summary
 
