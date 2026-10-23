@@ -224,6 +224,7 @@
   - [冻结教师与状态恢复](frameworks/unirl-survey.md#冻结教师路由与调用方状态恢复) — #519逐层路由与全部梯度开关分别恢复，no_grad仍由调用方负责；恢复动作失败非原子回滚，仅源码/语法，非PEFT实测
   - [离线回放与结果隔离](frameworks/unirl-survey.md#离线回放的到达契约与结果隔离) — #487 observed与dependency到达分开；两类上游错误接受在作者fork拒绝，完整原stdlib模块对照，非模拟器或性能验收
   - [常驻与流式规划账本](frameworks/unirl-survey.md#常驻与流式-block-的规划账本) — #486无驻留上限就保守计全部streamed；原planner180候选CPU算术对照，可行性/最大卸载目标非执行器或性能验收
+  - [Prompt组边界与前向分块](frameworks/unirl-survey.md#prompt-组边界与前向分块) — #485允许对齐子组跨forward，原helper16,400有界布局对照；校验不修调度，固定FBS开关parity非更换FBS后的轨迹一致
   - [Smoke结果与训练验收](frameworks/unirl-survey.md#smoke-结果格式与训练验收) — #576原空循环CLI核对总样本、可选字段、同名文件保护；统一JSON不是训练或性能验收
   - [损失单位与微批权重](frameworks/unirl-survey.md#损失单位与微批次权重) — #622接口迁移，token/seq目标与None/零计数不同；四组原函数CPU前向及局部梯度检查，非FSDP验收
   - [AROPD采样梯度与KL](frameworks/unirl-survey.md#aropd-的采样梯度与-kl-目标) — #534 raw score公式的固定前缀参考；teacher log-prob目标不能省去entropy项，非原算法/模型验收

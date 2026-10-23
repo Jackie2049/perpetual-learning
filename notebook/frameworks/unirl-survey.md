@@ -1135,6 +1135,48 @@ python3 -B experiments/scripts/verify_unirl_offload_plan.py /path/to/UniRL-git
 
 作者另报2×H100小型残差MLP的FSDP能力对照和随机权重SD3组件测量；前者非完整RL recipe，后者transition未测、profile被拒。all-resident账本delta0仅是构造恒等，不能作预测准确性；planner对执行器误差、稳态性能仍未验证。真机资源/profile/执行器前提补[原M5参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不部署planner、不启offload/训练或改其专项。
 
+## Prompt 组边界与前向分块
+
+**完整组上计算优势，不要求所有siblings挤在同一个forward；共享初始噪声，也不保证改chunk大小后轨迹完全相同。** [#485](https://github.com/Tencent-Hunyuan/UniRL/pull/485)（2026-10-23读取open）将原whole-group shape bucketing收窄为默认关闭的`validate_group_boundaries`，固定head `9e36cf99eea03e9e2f6035976ac97c1a70759f9e`、base/实际祖先 `772fd7c50ec8221a032179aeec8320df935b3abf`，ahead5/behind0；8文件130增10删，无提交测试。它只检查既有固定分块，不改变FBS、行序或生成调度。
+
+### 允许整组或对齐的等大子组
+
+[原helper](https://github.com/Tencent-Hunyuan/UniRL/blob/9e36cf99eea03e9e2f6035976ac97c1a70759f9e/unirl/rollout/engine/trainside/plan.py)先要求同一个group ID只出现一个连续run。组不大于FBS时须完全落在一个chunk内；更大的组须从chunk边界开始，组长为FBS的整数倍。校验接受后返回None，不重新分桶或放大内存容量。
+
+| 布局 | FBS | 原helper结果 |
+| --- | ---: | --- |
+| 单组16行 | 4、8或1 | 允许跨多个完整chunk |
+| 单组16行 | 6 | 拒绝不等大尾子组 |
+| A2行后B3行 | 4 | B跨边界，拒绝 |
+| A、B、A | 64 | group重现，helper拒绝 |
+| A2、B2、C4 | 4 | 接受，不要求不同组等长 |
+
+这不是预期fan-out数、组内容身份、异构geometry或优势公式的校验。FBS按行限制每次调用，不能当显存字节上限；为满足“一组一个forward”而强制放大FBS会改变原本用小批控制峰值的调度。
+
+### 实际引擎何时调用校验
+
+[TrainsideRolloutEngine.generate](https://github.com/Tencent-Hunyuan/UniRL/blob/9e36cf99eea03e9e2f6035976ac97c1a70759f9e/unirl/rollout/engine/trainside/engine.py)只在`bs > FBS`且开关为真时调用helper。FBS未设或一批已放得下时直接单次generate，因此表中A/B/A、FBS64的helper拒绝不能写成该引擎路径实际拒绝。开关不是全路径的组身份保护。
+
+实际分块仍按原始行连续slice，每次与同一批input Parts组成Sample，最后按顺序concat frontier再供下游reward/组优势使用。校验位于锁内、eval/no_grad的try范围内，在首个pipeline.generate之前；普通校验异常会经过finally恢复原训练模式，但此前sigma等准备不等于全部输入状态回滚。本机没有运行这条引擎异常路径。
+
+只要设置FBS，引擎就另行拒绝含多个gen Part的Sample，避免每个chunk重跑内部stage却只保存frontier；这个保护独立于本次是否实际切成多个chunk。故新开关不是对组合多stage采样或异构调度的扩展。
+
+### 噪声身份与轨迹复现
+
+[NoiseRecipe.from_sample](https://github.com/Tencent-Hunyuan/UniRL/blob/9e36cf99eea03e9e2f6035976ac97c1a70759f9e/unirl/types/noise_recipe.py)在driver recipe启用时优先使用显式noise keys，否则在init_same_noise下选group IDs，普通路径选sample IDs；已有initial_latents可直接返回，需要再生且有shape/key时才按seed与身份构造x_T。[共享噪声原语](https://github.com/Tencent-Hunyuan/UniRL/blob/9e36cf99eea03e9e2f6035976ac97c1a70759f9e/unirl/sde/noise.py)使用每组派生seed，不把chunk号作为种子。这里是x_T身份契约，不能扩展为每一步随机数分配也相同。
+
+同版[引擎README](https://github.com/Tencent-Hunyuan/UniRL/blob/9e36cf99eea03e9e2f6035976ac97c1a70759f9e/unirl/rollout/engine/trainside/README.md)区分SD3全局SDE RNG与采用逐sample/step generator的管线。改变FBS可能重排行与去噪步消费全局随机序列的先后；低精度批形状也可能改变末位数值。禁用driver x_T且不共享噪声时，初始噪声自身也可能依赖分块。因此“固定FBS下开关校验前后parity”与“更换FBS后样本完全一致”不是同一个命题。
+
+### 有界原函数对照
+
+[复查脚本](../../experiments/scripts/verify_unirl_group_chunks.py)执行完整原plan.py，用独立的“列出实际chunk再计各组占用”oracle，对0～7行、3种ID、FBS1～5的16,400种布局逐一比较：953接受，其余拒绝，全部一致。另核6个大组几何及小组straddle/交错/mixed-group控制，接受/拒绝均不修改输入。两次执行一致，Python3.9.6，未导入torch/Ray/vLLM/SGLang；两版engine及head NoiseRecipe仅compile，无Sample/Part、RNG、模型、引擎parity或设备执行。
+
+```bash
+python3 -B experiments/scripts/verify_unirl_group_chunks.py /path/to/UniRL-git
+```
+
+head helper SHA256 `2bc079e42da5e4949754f68079c2645fa4a0ab95054ac5b3656aca831ca4fee0`；engine `0a8b9d7df2ad8378c1dd1bfd13f28da256c7123dcff1bb213f9b83a0361a250c`。此有限枚举不证明任意输入/引擎或模型行为。作者当前报告的77项CPU引擎parity对应merge fc50ac2，后续改错误消息另报随机布局对照；H100测试属旧683c320，未在当前head复跑。本项目不将这些结果移作实测，也不推训练/显存/吞吐收益。匹配配方与真实模型缺口补[原M5参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不改变FBS、启用开关或部署候选。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。

@@ -40,6 +40,8 @@
 
 ## 运行接续
 
+- **M1组边界分块学习收束（2026-10-23）**：快进M5状态9c19393，读#485 head9e36cf99/base祖先772fd7c5（ahead5，8文件130增10删）。见[原调研新节](notebook/frameworks/unirl-survey.md#prompt-组边界与前向分块)/[复查](experiments/scripts/verify_unirl_group_chunks.py)。组优势需要重组全组不等于同forward；默认关闭的校验仅在实际chunk分支检查连续整组/对齐子组，不改FBS或调度。x_T按身份seed不保证换FBS后全局SDE RNG/低精度轨迹相同。原stdlib helper16,400有界布局及大组控制通过，engine/NoiseRecipe仅compile，非引擎parity/模型/显存或吞吐验收；旧H100与当前CPU作者证据分开。缺口补原M5参考不启配方。本题收束，下轮另选非组布局/FBS/噪声替身小变体问题；M5新登记verl#8341可作未读独立线索，GPU/AReaL/#8313/#523分工不变。
+
 - **M1常驻/流式规划学习收束（2026-10-23）**：快进M5状态cd888ea，读#486 head57cec429/目标b5079be1、祖先f8d95462（ahead1/behind15，2文件586新增）。见[原调研新节](notebook/frameworks/unirl-survey.md#常驻与流式-block-的规划账本)/[复查](experiments/scripts/verify_unirl_offload_plan.py)。排他账本与live bound需真实profile/执行器保证，None保守计全部streamed；共同计划目标最大卸载非最快，latency_optimal可能不可行，max-phase/transfer_busy字段不当整步延迟/DMA时长。完整原stdlib planner36组synthetic配置/180候选算术对照及node/fixed/alias/缺phase控制通过，非校准/FSDP/显存/性能验收；作者H100能力与未测transition组件profile不挪为新执行器收益。缺口补原M5参考不部署。本题收束，下轮另选非ledger预算/驻留上限/模拟时序小变体问题；GPU/AReaL/#8313/#523分工不变。
 
 - **M1离线回放契约学习收束（2026-10-23）**：快进M5状态49d9861，读#487 heade8779559/目标b5079be1、祖先f8d95462（ahead1/behind15，4文件567新增）及作者fork draft #1修正4ad73720。见[原调研新节](notebook/frameworks/unirl-survey.md#离线回放的到达契约与结果隔离)/[复查](experiments/scripts/verify_unirl_trace_contract.py)。两版完整原stdlib模块实跑：错误manifest/incomplete dependency在上游接受、fork拒绝，合法JSON相同；另核origin/同刻顺序、显式零等待、依赖/ID/结果键隔离。synthetic契约非真实capture/runner/simulator或性能验证，不重复已公开九行修复，真机profile匹配条件补原M5参考不部署。本题收束，下轮另选非trace字段/guard/模拟到达小变体问题；GPU/AReaL/#8313/#523分工不变。
