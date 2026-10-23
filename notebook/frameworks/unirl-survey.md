@@ -1514,6 +1514,24 @@ Python3.12.13、requests2.34.2，执行原 `_judge_one` 完整方法及原prompt
 
 本轮没有调用任何judge endpoint、真实LLM、重试计时、模型或GPU/NPU，也没有复跑社区harness。公开关键词尽调未核实到专门的解析修复，但空检索不证明没有重叠工作；[#416](https://github.com/Tencent-Hunyuan/UniRL/issues/416)的可选provider文档议题不是解析规则许可。不新增provider/正则补丁、硬件队列或对外发布；[原方法复现、输出和hash](../../diary/2026-10-24.md)留日志，不升格永久工具。后续只有协议或具体协作范围明确后才评估贡献，不继续堆近义句测试。
 
+## 内部 Pipe 的版本字段与请求身份
+
+**去掉一个恒定版本号，不等于去掉消息校验，也不等于其他协议不再需要版本。** [#568](https://github.com/Tencent-Hunyuan/UniRL/pull/568)于2026-10-12合并，merge `6624b28aab3299d116ae1e3d90aaa14926676911`；它删除vLLM内部driver/runtime重复的`protocol_version=1`，另清理两个模型的过期版本guard。PR明确把Cosmos3的H20问题留给[#567](https://github.com/Tencent-Hunyuan/UniRL/issues/567)，不是其硬件修复。2026-10-24核对的源码固定主线`6fd82cba13f52f394747832344039408699ea378`，当前接收/发送函数已名为`recv_request`与`send_response`，driver集中在`request`方法，不直接沿用历史PR中的私有函数名。
+
+[driver](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/rollout/engine/vllm/engine.py)用spawn创建同checkout的子进程及双向Pipe；这是内部进程树的控制通道，不是可独立部署、协商schema的HTTP服务。版本常量删除后，仍有以下不同层的检查：
+
+| 层次 | 当前检查 | 本机证据 |
+| --- | --- | --- |
+| runtime信封 | dict、精确int且等于last+1的request_id、非空字符串command | 原函数与真实spawn/Pipe执行 |
+| runtime启动与命令分派 | 首命令必须startup；未知非空命令在分派中报错 | 源码路径，不是本机LLM运行 |
+| driver回复与连接状态 | reply id/command匹配、ok为bool、有result及命令对应结果形状；异常时按连接状态处理 | 原request源码，未执行状态机/销毁 |
+
+[接收器](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/rollout/engine/vllm/runtime.py)拒绝bool作为request_id，即使Python中bool是int子类；它只要求command非空，不负责命令白名单。额外的`protocol_version=999`当前会随请求被接收，但回复不带此字段：这是该内部信封不再解释版本，而不是跨版本兼容性已获认证。[奖励HTTP客户端](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/reward/remote.py)仍发送并校验字符串版本`"1"`；[原生权重IPC header](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/distributed/weight_sync/transfer/vllm_native_protocol.py)仍检查自身的`VLLM_NATIVE_PROTOCOL_VERSION`及transport，两者不能随内部Pipe字段一起删除。
+
+Python3.12.13仅标准库，完整原runtime模块加载但不调用`engine_process_main`：8组独立spawn/Pipe、共9条请求，连续id1/2及额外版本字段按原函数往返；非dict、重复id、跳号、bool id、空command、非字符串command六项均由原接收器抛ProtocolError；未知非空command通过信封层。错误分类回复与成功echo内容由夹具生成，不是runtime主循环的实际错误处理或命令执行。没有导入torch/vLLM/Ray，未执行driver构造、request状态机、模型、权重发布或设备。复现代码见[当日日志](../../diary/2026-10-24.md)；不据此提出重复清理或放宽H20 gate。
+
+完整runtime SHA256为`66e7aa74a3f442d2b44b094c614124e4b0c91e5e137a09f901ab5216f7dc59fb`，driver为`48218188b8009e9c80b22f48bbe5bf40a247dbd4f7caf63baa55c3ecf2ca9b3c`。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。
