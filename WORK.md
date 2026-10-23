@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 tokenizer兼容层学习收束（2026-10-23）**：快进M5状态0828b0c，盘点UniRL最新50开放issue后核#520/#567/#414，均已有负责人/实现或硬件前提，不竞争。读#544 headd41122e9/base祖先4fb0b1f7（ahead6，3文件48增8删），见[原调研](notebook/frameworks/unirl-survey.md#tokenizer-实例修补与批量生成边界)。实例wrapper保留原批量helper，签名参数筛选非checkpoint revision认证，tokens行数guard非字段/生成正确性。本机只两版4模块compile和AST改动身份核对，无真实tokenizer/作者20CPU例/模型或设备；不造假类/下载权重，未取到checkpoint源码只用报告与PR归因。GPU缺口补原M5可选参考，不提高FBS/新排队/改#523等专项。下轮另选独立缺口，不堆tokenizer签名/拼批替身或反复盘点同批issue。
+
 - **M1日志检查误报修复收束（2026-10-23）**：快进M5的DeepInfer mock完成/独立复验记录至5538beb，不改其代码。针对13:08真实提交曾把围栏中Python调用误报为链接，给[日志工具](tools/diary/readme.md)补顶层反引号/波浪号围栏过滤及7个测试方法；旧版真实hook拒绝复现、修复后通过，正文坏链接与其他门槛不放松。仅标准库、限定围栏范围，不扩成完整Markdown解析器或改历史日志。收尾后回到UniRL/verl独立问题，勿反复扩展日志格式边界；GPU、AReaL、#8313/#523和DeepInfer专项分工不变。
 
 - **M1数学奖励复查收束（2026-10-23）**：同步无新提交，两项目各10新创建项中发现verl#8346及同作者修复#8347，不竞争。固定head7f34e018/目标bfff4d90/祖先d430157d（ahead1/behind1，4文件185增3删），见[原奖励专题](notebook/frameworks/verl-reward-integration-reading.md#数学奖励的分层判分与精度边界)/[复查](experiments/scripts/verify_verl_prime_math.py)。原完整CPU路由/判分的64参数例祖先39过25预期失败、head64过，7范围控制两次一致；前段拒绝不阻止后备接受，整数字面量修复非科学计数精度/方程提取全解，局部箭头检查非完整评分语义。独立work仅装两固定parser依赖，进程内fork执行原timeout，无函数替换/原生pytest/全数据集或训练验收，无GPU需求/新M5事项/上游写入。下轮另选实际独立缺口，不堆数值/括号/提取regex变体；GPU、AReaL、#8313/#523和DeepInfer demo分工不变。

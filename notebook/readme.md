@@ -227,6 +227,7 @@
   - [Replay锚点与采样校正](frameworks/unirl-survey.md#replay-锚点与-rollout-采样校正) — #557两个比率不交换clipping顺序；原片段36组CPU值/梯度对照，非完整训练或收益结论
   - [回合续跑与行为版本](frameworks/unirl-survey.md#回合边界续跑与行为版本) — #558保存观察后暂停，逐turn保留行为logp；窗口训练批与optimizer版本分开，排空后仍须等消费完再释放buffer，仅源码/语法
   - [多教师周期与恢复身份](frameworks/unirl-survey.md#多教师周期与恢复身份) — #624完整域周期后更新，rollout数非update数；周期路由JSON、教师内容hash、数据快进与生成RNG分层，仅源码/语法，作者双A100结果非本机验收
+  - [Tokenizer实例修补与批量生成](frameworks/unirl-survey.md#tokenizer-实例修补与批量生成边界) — #544签名筛选非revision白名单，行数guard非逐字段/真实生成验收；本机仅两版语法与AST对照，作者20例单列
   - [样本观测的行上限与数据搬运](frameworks/unirl-survey.md#样本观测的行上限与数据搬运) — #597原CPU Sample/本地sink六组控制；每Part上限非全局条数或字节上限，谱系对齐与best-effort文件输出分开
   - [空响应的反向与更新](frameworks/unirl-survey.md#空响应的反向通信与零梯度更新) — #598局部无监督仍需匹配FSDP调用；原零损失分支8组CPU图检查，零梯度仍可受momentum/decay更新，非通信验收
   - [冻结教师与状态恢复](frameworks/unirl-survey.md#冻结教师路由与调用方状态恢复) — #519逐层路由与全部梯度开关分别恢复，no_grad仍由调用方负责；恢复动作失败非原子回滚，仅源码/语法，非PEFT实测

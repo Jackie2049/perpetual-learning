@@ -1247,6 +1247,28 @@ BaseTrainer对**每个生成Part**应用同一个上限，两个Part各限2条�
 
 原模块SHA256：sample_record `a52d819e057fca021025e9b3ed140ad6cd166026d701c02d6aacb538e0ba21b0`、media_preview `2bd1aba6fbcac008094ca15e51c9782b71adef3e152d8e0fb5be55e3c5240725`、sample_dump `52e9bfce9c976dfd02603a2fafa545213331f930fa2ef799c5ff9f908bfe705a`；脚本打印hash并禁止隐式Git fetch。
 
+## Tokenizer 实例修补与批量生成边界
+
+接口返回足够的行，与这些行能正确进入真实生成，是不同保证。UniRL [#520](https://github.com/Tencent-Hunyuan/UniRL/issues/520)报告HI3 Instruct checkpoint的batchify只编码首个样本；该项已指派ruiling-smartbear，已有非draft修复[#544](https://github.com/Tencent-Hunyuan/UniRL/pull/544)，不作为我方竞争候选。2026-10-23固定open head `d41122e97e1ab631328c86baad00250c406d2b17`、目标base及实际祖先 `4fb0b1f7b291f3cd5010597b85d41ed44659ef40`（ahead6/behind0），3文件48增8删。
+
+### 在批量入口修补而非重写拼批
+
+报告指出，checkpoint将一个`prompt_list`元素与多份逐样本kwargs交给`batch_gen_infer`，后者zip后只处理首份。已有#543先加入`len(prompts) × cfg_factor`的行数保护，避免悄悄继续；#544则为每份message list提供一个prompt占位，仍委托原`batch_gen_infer`负责批量padding、CFG与输出组合，不另写逐行编码后拼接的替代器。
+
+[repair_hi3_tokenizer_batchify](https://github.com/Tencent-Hunyuan/UniRL/blob/d41122e97e1ab631328c86baad00250c406d2b17/unirl/models/hunyuan_image3/compat.py)捕获实例上原bound method，通过`signature.bind`及defaults解释调用参数；非batchify分支原样调用原方法，batchify分支剥离外层message_list/batchify/cfg_factor/uncond_p后构造逐样本kwargs，要求messages非空且各元素为list。传给批量helper的`infer_fn`是捕获的原方法，不是新wrapper，避免递归进入同一修补分支。
+
+wrapper赋给`tokenizer.apply_general_template`，没有写回tokenizer类；marker避免同实例重复包装。[调用点](https://github.com/Tencent-Hunyuan/UniRL/blob/d41122e97e1ab631328c86baad00250c406d2b17/unirl/models/hunyuan_image3/text_embed.py)位于HI3 stage实际编码之前、已有backend修复之后，不是全框架替换所有tokenizer。**但结构筛选不是版本认证**：helper只检查两个方法可调用、是否已有marker及四个参数名，不检查类名、源码hash或checkpoint revision。README记录的`2ec2c78bee7d4b94157341fba86c4c2c7b1858b2`是已知缺陷版本，不是函数运行时的硬白名单；升级checkpoint时仍需重核并决定移除。
+
+### 行数保护与真实生成
+
+保留的guard只核`output.tokens.shape[0] == len(batch_prompt) × cfg_factor`，并不逐字段认证token内容、顺序、`real_pos`、sections、mask或KV写入位置。标准gen-image stage的cfg布尔值只产生1/2因子，作者底层tokenizer测试另覆盖因子3；两者不能混作相同入口的支持矩阵。
+
+作者报告使用指定checkpoint的真实tokenizer做20个CPU例，对照上游一行修正的全部输出字段，覆盖文本、图像条件、图像生成、B1/3和CFG1/2/3；临时harness未入库。这是作者证据，不是本机复跑。真实模型GPU生成、token/logp parity仍未运行，配方继续固定`forward_batch_size: 1`。不能由主机tokenizer通过就直接放宽批量，尤其不能用行数正确代替ragged attention/RoPE/KV以及CFG条件对应关系的验证。
+
+本机仅对base/head的compat.py与text_embed.py共4个完整模块AST/compile；两份已有compat函数体AST不变，stage5个方法中只有_apply_chat_template增加一次repair调用，去掉该新增调用后方法体AST与base相同。这些同一性检查只限定代码改动位置，不保证调用链行为等价；没有导入transformers、加载真实tokenizer、执行作者20例或模型/设备，也未用假tokenizer替代。真实资源及最小观测记[原M5可选参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不新排必跑任务/下载大模型、自动应用候选或拼接重叠#300方案。
+
+固定源码可用`git diff 4fb0b1f7b291f3cd5010597b85d41ed44659ef40...d41122e97e1ab631328c86baad00250c406d2b17 -- unirl/models/hunyuan_image3/compat.py unirl/models/hunyuan_image3/text_embed.py`复查。head SHA256：compat `1ddc093e2b606acbb1a698b95bc85cf9c0da3f603b7d80f70e8cbb7c3107e0fb`、text_embed `446930c6ba85af42b93c7f97737f5325bef644c9c2ba9cd281d8403dd0f2608c`。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。
