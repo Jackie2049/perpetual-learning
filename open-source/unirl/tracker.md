@@ -9,7 +9,7 @@
 
 **【价值评估】** 7 / 10 — 甄别"未认领、无 PR、可落地"的开放空间，避免重复投入已有人认领的 RFC。
 
-**【进展】** #523 的我方 fork PR 已获用户认可，测试与 e2e 正式指派 M5；M5 已闭环 L0（四项断言 + pristine 对照），L1 仍待 ≥8 卡及获准权重/存储，见[M5交接](../../experiments/handoff-m5.md)。#567 待匹配 H20；#470/#481/#484已有作者或验证条件。2026-10-24 续核 #515 的[维护者澄清](#补充尽调与派发边界)、#450/#537 的[已合并分项](#开放-rfc-的已合并分项)及 #433/#416 的[需求边界](#标题占位与第三方接入边界)，不据开放状态认领，也不将分项合并当全部完成。
+**【进展】** #523 的我方 fork PR 已获用户认可，测试与 e2e 正式指派 M5；M5 已闭环 L0（四项断言 + pristine 对照），L1 仍待 ≥8 卡及获准权重/存储，见[M5交接](../../experiments/handoff-m5.md)。#567 待匹配 H20；#470/#481/#484已有作者或验证条件。2026-10-24 已核 #515 的[维护者澄清](#补充尽调与派发边界)、#450/#537 的[已合并分项](#开放-rfc-的已合并分项)、#433/#416 的[需求边界](#标题占位与第三方接入边界)及[TP同步后续](#旧-tp-限制与后续实现)，不据开放或关闭状态认领/判断功能就绪。
 
 **【大白话讲明白】**
 
@@ -90,6 +90,18 @@ UniRL 仓库当前 **73+ open issues**，其中大量是带 `help wanted` 标签
 | [#416 OrcaRouter](https://github.com/Tencent-Hunyuan/UniRL/issues/416) | armyluki-wq代表服务方提出可选judge接入，正文称未实施/未测试；CjhHa1的[唯一评论](https://github.com/Tencent-Hunyuan/UniRL/issues/416#issuecomment-5570052334)已邀请该提议者提交，优先docs+config example，保留自托管judge默认、不加runtime依赖、不改训练/rollout，只有请求形状需要时再讨论代码。OrcaRouter关键词PR检索无结果 | 已有公开推进邀请，不另抢写provider。维护者认可方向不等于接入已完成或接口兼容已验证，更不是本项目购买服务、发送prompt/凭据或对外发布的授权 |
 
 本轮未调用第三方endpoint、打开账户、处理API key、改CI/配置或执行候选测试；不为需求占位造实现，不将服务方的模型/缓存/计费能力陈述当独立验证，也不新增M5任务。仅当出现具体范围、协作要求或独立可复现问题时再判断投入，不反复查询这两个无变化题目。
+
+## 旧 TP 限制与后续实现
+
+2026-10-24 读取 [#170](https://github.com/Tencent-Hunyuan/UniRL/issues/170) / [#190](https://github.com/Tencent-Hunyuan/UniRL/issues/190) 全文及全部1/5评论、[#222](https://github.com/Tencent-Hunyuan/UniRL/issues/222)全文/唯一评论，查相关PR并读下表正文/API。两个旧问题仍OPEN/无assignee，不代表它们描述的TP=1限制至今原样存在。
+
+| 后续 | 可核实的事实 | 判断边界 |
+| --- | --- | --- |
+| #222 node-local TP=n设计 | bbbearxyz沿#190提出；当前CLOSED，维护者[明确说明](https://github.com/Tencent-Hunyuan/UniRL/issues/222#issuecomment-5945619875)TP与full-weight sync已沿#217后续实现而被取代，未覆盖多engine-per-node等缺口可另提 | 不将RFC关闭写成“设计被否定”或“全部验收通过”，也不据旧#190邀请另写整套方案 |
+| [#226 SGLang TP/EP全权重同步](https://github.com/Tencent-Hunyuan/UniRL/pull/226) | NancyFyong，2026-08-01合并 `73a3c58e`；正文限定SGLang HTTP后端、全权重tensor/NCCL路径，native TP>1当时fail-fast，LoRA/通用IPC/diffusion及driver兼容shim不在此项范围 | 不再声称“所有SGLang colocate rollout永远仅TP1”，也不外推native、LoRA或所有驱动组合已支持。作者8×H20 smoke固定在 `5e116e5e`，另有更早 `f76dbfd` 数值对照；API head为 `f4eb838a`，不同版本不混记成当前head本机验收 |
+| [#318 引擎中立TP placement](https://github.com/Tencent-Hunyuan/UniRL/pull/318) | haonan3，CLOSED但 `merged=false/merge_commit_sha=null`，head `b8133becd7e9b3491067c51eb8c1f546f837260f`；正文提Handle-owned RolloutParallelContext与DP2×TP4，GPU smoke尚缺，评论为空 | 不是已合入的通用placement实现。关键词检索只命中本PR不足以证明后续绝无同类实现；作者CPU拓扑harness也不等于目标GPU部署验收 |
+
+本轮仅核社区声明和合并事实，未逐行检查当前main、执行作者CPU/设备测试、改变CVD/启动器或准备新TP补丁。旧问题、特定合并版本及当前运行能力分开；不据作者历史H20环境安排本项目GPU实验或修改M5队列。只有具体当前版本的独立缺口与协作范围明确时，再判断贡献，而非反复追旧帖状态。
 
 ## 已认领/已覆盖，不重复推进
 
