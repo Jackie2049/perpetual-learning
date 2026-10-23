@@ -1310,6 +1310,45 @@ python3.12 -B experiments/scripts/verify_unirl_reward_rows.py /path/to/UniRL /pa
 
 计时经 `log_perf(step=rollout_id+1)` 写到 `rollout/step` 横轴，不是新增 optimizer 步。作者报告 Qwen3-4B/SGLang 的异步 100 rollouts/400 updates 和同步 32/128 的 W&B 核验；本机只做两版各四个完整 Python 模块编译、`PhaseTimer` AST 同一性及 3 组真实标准库控制（phase 累加/异常、正常窗口清理与 total 继续取时、异常窗口清理），没有假训练循环/时钟，也未执行 wrapper 安装、trainer、Ray、W&B 或设备。复现代码与 hash 见[当日日志](../../diary/2026-10-23.md)；不新增一次性工具。真实跑次比较的前提补[原 M5 参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不启动新训练或自动合并 #620 等指标分支。
 
+## SDE 窗口后的压缩积分尾段
+
+2026-10-23 阅读已有 [#545 MixGRPO-Flash](https://github.com/Tencent-Hunyuan/UniRL/pull/545)，open/non-draft，作者 ruiling-smartbear 已实现 [#516](https://github.com/Tencent-Hunyuan/UniRL/issues/516)，不另开竞争方案。固定 head `7c56ed05d46f50bf01a36ba6e36dbbb4114b48f8`、目标 base 与共同祖先 `c6d4b11b24743fe1e933b61192f9d49558f7171e`，ahead 1 / behind 0，8 文件 222 增 10 删。**滑动 SDE 窗口与窗口后的 ODE 压缩是两个开关**：只改变窗口停留/衰减策略，并没有减少尾段积分的模型求值。
+
+### 保留的是哪个边界
+
+令原积分步数为 T，最后一个 SDE 步的零基索引为 w，压缩比例为 r。候选的步数为 `K = w + max(floor((T-w)r), 2)`；若 `w=T-1`，直接保留原 T 步。这里的最少 2 指**尾段 σ 点数**，不是两次尾段模型求值：窗口内 0…w 共 w+1 步，尾段还有 K-w-1 步，总共 K 步。只留一个尾点不能同时保留窗口出口与到达 σ=0。
+
+[`compute_post_window_sigma`](https://github.com/Tencent-Hunyuan/UniRL/blob/7c56ed05d46f50bf01a36ba6e36dbbb4114b48f8/unirl/sde/runtime.py)先取 `full[:w+1]`，再拼从 `full[w+1]` 对应的未移位时间到 0 重新采样、施加 shift 的尾段。静态分支因此保留到 **σ[w+1]**，包括最后一次 SDE 转移的终点；不是从 σ[w] 直接跳到新网格。压缩后张量长度 K+1。r=1 时网格数学上回到原日程，但重新 linspace 的舍入不保证逐比特相同。
+
+| T | 末个 SDE 索引 w | r | 推得总步数 K | 边界解释 |
+|---|---|---|---|---|
+| 25 | 3 | 0.4 / 0.2 | 11 / 7 | SDE 窗口 [0,4)，其后压缩 |
+| 10 | 3 / 6 / 9 | 0.4 | 5 / 8 / 10 | 对应作者 0…3 / 3…6 / 6…9 的末索引，不把 6 当排他上界 |
+
+表中是原函数返回的积分步数，结合 SD3 的逐步调用路径理解为 NFE 预算，**本机没有观测模型调用或测时间**。r 并不是整次 rollout 的加速倍数；窗口越晚，保留的前缀越长，末窗口不再节省步数。
+
+[`PostWindowDPMStrategy`](https://github.com/Tencent-Hunyuan/UniRL/blob/7c56ed05d46f50bf01a36ba6e36dbbb4114b48f8/unirl/sde/kernels.py)在 `index<=w` 时调用原策略并记录每一步 `x0 = sample - σ×noise_pred`；其后改用确定性 DPM-Solver++。记录包含窗口之前的前缀，二阶历史不只来自第一个尾段点。`init_schedule` 重置包装器历史并传递给 base；尾段返回的 log_prob/mean 为 None。保留的窗口 σ 与原策略调用，不能单独证明真实模型 replay log-prob 相同，仍需对应模型、条件、精度与轨迹验证。
+
+### 开关接线与比较口径
+
+[`PostWindowODE`](https://github.com/Tencent-Hunyuan/UniRL/blob/7c56ed05d46f50bf01a36ba6e36dbbb4114b48f8/unirl/types/sampling.py)只接受 order 1/2 与有限的 `0<r<=1`，默认 sampling 字段为 None。SD3 stage 显式支持；有非空 SDE 集合时才构造压缩步数和包装器，空集合沿全日程。trainside 按 diffusion stages 的支持标志放行；`ensure_sample_sigmas` 的能力拒绝在“已有显式 sigmas 就返回”之前，不能靠预填张量绕过其他 stage/server engine 的检查。这些接线仅源码核对和完整模块语法编译，没有构造替身 pipeline 来冒充执行。
+
+新 [`sd3_mixgrpo_flash.yaml`](https://github.com/Tencent-Hunyuan/UniRL/blob/7c56ed05d46f50bf01a36ba6e36dbbb4114b48f8/examples/diffusion/sd3/sd3_mixgrpo_flash.yaml)还把 `iters_per_window` 从继承配方的 25 改为 20，并更换日志标签。直接比较两份默认配方不是仅改变尾段求解器的单因素实验；观察 reward-vs-wallclock 时须另固定窗口调度、更新量、数据、模型及其余配置。不能将这个 SD3 opt-in 外推为 Qwen/FLUX、全部动态 shift 模型或 server engine 已支持。
+
+### 本机数值检查与仍缺的证据
+
+[复查脚本](../../experiments/scripts/verify_unirl_post_window.py)在 Python 3.12.13 / torch 2.9.1 的 CPU 环境两次运行一致：
+
+- 720 组静态日程：T 为 2/3/10/25/50、所有合法 w、r 为 .02/.2/.4/1、shift 为 1/3。与祖先原完整 runtime 对照未启用日程；检查步数、前缀到 σ[w+1] 逐比特不变、严格递减、有限及末点 0。r=1 的最大 σ 差为 `1.1920928955078125e-7`。
+- 64 组小张量求解控制，每组初始化并完整运行两次：原 DPM2 作为前缀 base，候选包装器作尾段，向量场为夹具 `0.2*x + 0.01*(index+1)`。检查前缀与独立原 DPM2 相同、保存的 x0/历史计数、所有结果有限和重置后结果相同；一阶尾段每个局部转移对照 Euler，最大差 `5.960464477539063e-8`。**前缀不是 Flow SDE，既没有随机 SDE/log-prob，也不是 SD3 模型或原作者测试。** 该控制不认证完整 Euler 轨迹、二阶精度/收敛阶或 MixGRPO 参考实现 parity。
+- 两版 6 个变更 Python 文件共 12 个完整模块 compile；七个既有 DPM 定义 AST 相同。完整原 sampling/runtime/kernels/require 模块载入，空包壳只隔离无关根初始化，没有替换数学函数、安装 diffusers/模型或导入 trainer/engine。
+
+```bash
+python3.12 -B experiments/scripts/verify_unirl_post_window.py /path/to/UniRL
+```
+
+脚本固定 Git 对象、禁 lazy fetch，并打印载入源码 SHA256；关键 head runtime 为 `1f26e564758b40112c7feecda926fec3cc8bfcc3898a1e9b47c629ef85b927cb`，kernels 为 `784a0a223d8d82c4414d474ed0382ba8f9eedb766dfc9474a91826682bf90b1c`。本轮未运行动态 shift/diffusers 分支、原 156 例参考 harness、SD3 stage/replay、Hydra 或训练。PR 正文的参考误差 ≤4e-7、8×L40S 六次 rollout 的时间及平均 replay-logp 误差 1.4e-5 均是**作者报告**，不是本项目结果；作者也明确未做 reward-vs-wallclock 训练对比。真实模型证据缺口只补[原 M5 可选参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不自动采用候选、加载权重或启动训练。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。

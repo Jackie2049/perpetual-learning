@@ -13,6 +13,8 @@ GPU/NPU 的访问、环境与实验由 macbook-M5 Agent 负责。M1 遇到需要
 
 ## UniRL 联合路径的资源与身份边界
 
+压缩积分参考（2026-10-23，非新增训练队列）：已有[#545](https://github.com/Tencent-Hunyuan/UniRL/pull/545) head `7c56ed05d46f50bf01a36ba6e36dbbb4114b48f8`、base/祖先 `c6d4b11b24743fe1e933b61192f9d49558f7171e`；[M1原纯模块](../notebook/frameworks/unirl-survey.md#sde-窗口后的压缩积分尾段)仅720静态日程/64合成向量场小张量控制、12模块compile，无Flow SDE/logp、SD3或训练验收。若M5日后独立选择且已有获准匹配SD3任务，需先固定模型/条件/精度/seed与完整配置、记录实际SDE索引及σ出口、模型调用和窗口轨迹/logp；示例另把iters_per_window从25改20，NFE减少不等于reward-vs-wallclock提高，作者L40S报告非本项目。无现成匹配环境/权重/资源、需新下载部署或影响专项即保留未测，不启动新训练、不拼其他PR或改#523/AReaL；参考非接单。
+
 异步计时参考（2026-10-23，非新增训练队列）：已有 [#539](https://github.com/Tencent-Hunyuan/UniRL/pull/539) head `89fdd083a4cefd090e0d46fa37da37abe185d850`、base/祖先 `9e14d007b48ad6ecabe06df1ec4691d69492ebb1`；[M1窗口核对](../notebook/frameworks/unirl-survey.md#异步计时窗口与性能比较)仅8模块编译/3标准库原timer控制，无trainer/Ray/W&B/设备。若M5日后已有获准匹配异步跑次且独立选用，先固定计时版本、rollout/update横轴与sync/eval/save边界，核实际publication完成点及phase覆盖；主机调用耗时、设备时间与全运行摊销分别记录。缺匹配模型/后端或现成观测、需部署/启动新训练或影响专项就停止记未测，不由旧新同名曲线判退化、不用collect等待反推GPU重叠、不自动拼#620或改#523，本参考非接单。
 
 行级奖励派发参考（2026-10-23，非新增训练队列）：已有 [#517](https://github.com/Tencent-Hunyuan/UniRL/pull/517) head `fca5a55a0e5b30d108289f7394a7c50850593bf2`、base/祖先 `7a5303647d0c1ec27807124f70939cbb8edde6e9`；[M1 原类型与4 helper](../notebook/frameworks/unirl-survey.md#行级奖励派发与分组身份)5组CPU控制通过，分数为夹具标签，无真实服务/dispatch/模型或设备。若M5日后独立选择且已有获准匹配DiffusionTrainer/奖励后端，先确认scorer是否依赖原group身份，再核真实DP分片/聚合顺序、prompt/conditioning/metadata与packed或引用数据的对应及回贴；分开记录奖励计算与搬运成本。无匹配权重/依赖/资源、需下载部署/扩卡或影响专项就停止记未测，不自动切row、采用#378/32卡配方、拼接其他PR或改#523专项，此参考非接单。

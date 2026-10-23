@@ -226,6 +226,7 @@
 - [GRPO 实战指南](frameworks/grpo-practical-guide.md) — verl 框架 GRPO 训练完整流程、数据格式、配置参数、奖励函数
 - [SGLang 架构深度分析](frameworks/sglang-architecture.md) — RadixAttention 基数树、DSL 前端、FlashInfer 集成、vs vLLM 对比
 - [UniRL 调研（腾讯统一多模态 RL）](frameworks/unirl-survey.md) — 统一训练抽象、稀疏SDE、SFT游标、packed文本双轴与[按域奖励](frameworks/unirl-survey.md#按域奖励的零分与失败标志)；原CPU路由/统计区分零分、失败和非适用NaN，非服务或训练验收
+  - [窗口后的压缩积分](frameworks/unirl-survey.md#sde-窗口后的压缩积分尾段) — #545原纯模块720静态日程/64小张量CPU控制；保留窗口出口，尾点数非尾段调用数，非参考harness/Flow SDE或训练收益验收
   - [Token预算与update成员](frameworks/unirl-survey.md#token-预算与-update-成员) — 原CPU planner保留update成员；预算不拒绝超长单样本，无长度会回退数量规划，非显存保证
   - [EMA衰减与时机](frameworks/unirl-survey.md#ema-衰减方向与更新时机) — decay乘旧影子，零值复制live；原CPU mirror/回调/上下文控制，非optimizer或训练验收
   - [原始block权重与冻结外围](frameworks/unirl-survey.md#原始-block-权重训练与冻结外围) — #593参数冻结不切输入梯度；原optimizer/checkpoint helper的CPU数学控制，非H3训练，作者8×H100首次反向仍OOM
