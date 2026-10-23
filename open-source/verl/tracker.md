@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** 2026-10-23 23:07 轮只读确认[我方 #8313](https://github.com/verl-project/verl/pull/8313)仍 OPEN，head `2079ab0e` 等维护者 approve，**新增社区成员 Jackmeson1 四条实质审查意见已全部核验属实**（测试命名零 CI 覆盖、middle 分法差异、断言自引用、trainer 级 error 语义），改进补丁与回复要点已备好待用户授权，见 [draft-8313-review-reply](draft-8313-review-reply.md)。既有 #8174/#7771/#8334 与续核 #8123/#8076/#7953 均已有覆盖 PR，见[覆盖核对](#近期候选覆盖核对)；本轮不新增竞争实现或认证作者测试。#8250 仍待证据，#7913/clip 旧 RFC 不重开。
+**【进展】** 2026-10-23 23:07 轮只读确认[我方 #8313](https://github.com/verl-project/verl/pull/8313)仍 OPEN，head `2079ab0e` 等维护者 approve，**新增社区成员 Jackmeson1 四条实质审查意见已全部核验属实**（测试命名零 CI 覆盖、middle 分法差异、断言自引用、trainer 级 error 语义），改进补丁与回复要点已备好待用户授权，见 [draft-8313-review-reply](draft-8313-review-reply.md)。2026-10-24 续核 #8122 只有防御 guard、#8000 已重开且 SFT/RL 各有在途 PR，见[部分覆盖与当前状态](#部分覆盖与当前状态)；不把 guard 当根因修复，也不重复实现。#8250 仍待证据，#7913/clip 旧 RFC 不重开。
 
 **【大白话讲明白】**
 
@@ -63,6 +63,17 @@
 | [#7953 Megatron 调度器恢复](https://github.com/verl-project/verl/issues/7953) | 同报告者 YeonwooSung 的 [#7954](https://github.com/verl-project/verl/pull/7954)，head `53e632859898a248f89c8dd7e9abbf56e2248944`；正文声明两处加载恢复已有 scheduler state，flag 仍选择超参数来源并保留缺状态的严格断言；文档区分 Megatron optimizer 与 FSDP extra 的存放位置 | 不把报告者已说明的“extra与optimizer差异”另立相同修复。作者manager测试 mock底层加载，明确未验真实LR续接及Megatron-FSDP第二路径；缺验收不等于我方可重复提交实现 |
 
 #8076 报告者只主动提出告警/文档选项，不代表另一作者的功能方案没有覆盖它。编号检索也命中不相关的已关闭 #7596，不能把所有搜索命中都当修复证据；上表以对应正文的明确关联为准。没有执行评分器、FSDP/manager、原测试或设备，没有本轮主线复现，也不为作者已列明的真实环境缺口另排 M5 队列；仅在出现具体协作需求、范围或状态实质变化后重新判断。
+
+### 部分覆盖与当前状态
+
+2026-10-24 读取两条 issue 全文、各自全部1条评论，再查编号引用 PR 并读完整正文/API。**旧评论不覆盖当前状态，存在关联 PR 也不等于整个问题已解决。**
+
+| 线索 | 已核实的公开信息 | 本项目处理 |
+| --- | --- | --- |
+| [#8122 教师 jagged tensor 崩溃](https://github.com/verl-project/verl/issues/8122) | 同报告者 NGDBZ 的 [#8125](https://github.com/verl-project/verl/pull/8125) OPEN/non-draft，head `abc5cb9e5fa8cdf07ff5c1c86eb3190b18d4c644`，仅添加 is_nested guard；作者[更新](https://github.com/verl-project/verl/issues/8122#issuecomment-6029901088)和 PR 正文均明确：加 guard 后仍复现相同崩溃，深层原因未定 | guard 已有人做，不另提；不能把同一异常字符串、短 split sizes 或关闭 balance_batch 后越过旧失败步当作合成 padding 的因果证明。不建议据此普遍关闭均衡，也不直接认领尚未定位的根因 |
+| [#8000 Megatron SFT 异步保存](https://github.com/verl-project/verl/issues/8000) | 唯一旧评论称准备关闭，但当前 API 是 `state=open/state_reason=reopened/closed_at=null`。同报告者 ewan0x79 的 [#8003](https://github.com/verl-project/verl/pull/8003) OPEN/non-draft，head `7bd75a88a5d2acfa723f15ac299fd6ee074faba9`，声明覆盖 SFT queue progress、完成后发布和退出 drain；同作者 [#8056](https://github.com/verl-project/verl/pull/8056) OPEN/non-draft，head `ce5aec5948a6f8981cb6086987aa13e0d8d518fb`，声明叠在 #8003 上处理 RL actor/critic、tracker 与 retention | 不按旧评论标成已关闭/撤回，也不把两个 PR 当相互竞争或完全独立差异。已有作者推进，不重写 queue/drain；声明完成范围与真实 save/restore 验收分开 |
+
+#8122 的初帖把 guard 称为修复，后续已明确收窄，不能只引用首段“根因”。#8003 正文另将 epoch-boundary 数据游标问题归于 #7974；本轮未核该 PR，不扩大成“恢复训练全部正确”。#8056 作者报告的 GPU 运行是回移到 verl0.8 的改动，不是当前 head 的原生训练验收；其25项CPU报告也未在本项目复跑。这里没有执行 jagged tensor/分布式保存、评分器、原测试或设备，也未逐行复审候选代码，不新增 GPU/NPU 问题或 M5 队列。后续只有出现可核实的独立缺口或协作需求才重新判断，不用更多替身堆出“修复已证实”。
 
 ## 本地论证撤回，不再独立推进
 
