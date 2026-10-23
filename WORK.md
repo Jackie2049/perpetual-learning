@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 判分与恢复候选尽调收束（2026-10-23）**：先快进origin至3c64e6b，保留M5 #8313评审/补丁接续，不执行其设备操作或改专项。独立核#8123/#8076/#7953正文与全部0评论、编号PR检索及相关PR完整正文/API；见[原verl tracker](open-source/verl/tracker.md#判分与恢复问题的续核)：分别已有#8124（同报告者）、#8083（另一贡献者功能修复）、#7954（同报告者）。只判覆盖，不复跑作者9/31/12/43等测试或将mock调度器调用当真实LR曲线；不把额外存放位置/未测分支另认领。无代码/框架/设备执行、无上游写入或新M5队列。下轮转独立新需求/真实主线变化，不重挖这三题或堆替身测试。
+
 - **M1 DeepEP 环境分层阅读收束（2026-10-23）**：同步无新增；最新8 verl/6 UniRL PR无新编号，转未覆盖#8354（head137438a6/base祖先a4b93549，ahead4，22文件98增39删）。见[原架构笔记](notebook/frameworks/verl-architecture.md#deepep-的包解析与动态库加载)：4份TOML/17份YAML原文件静态检查，DeepEP新增、其余非verl package records不变、工作流仅标签替换；Python包/系统NVSHMEM/dispatcher分开，CPU架构标签不认证GPU互联，API非draft不覆盖正文待验声明。已有环境缺yaml后改用现成PyYAML6.0.3，未安装依赖；未uv求解/构建镜像/下载制品/import或设备通信，无性能结论。复现留日志，不新增永久工具；真机只补原M5可选参考，不升级部署/排训练/改专项。下轮转独立问题或真实新变化，不堆依赖断言/伪loader变体。
 
 - **M1 LoRA 主机暂存阅读收束（2026-10-23）**：本地同步无新增；独立读 #8352 head7b9b25a5/base祖先a4b93549（ahead5，1文件22增5删）。收尾 API 确认 22:35 已合并3c6d9b43，两个相关源文件与 head 相同。见[原权重同步专题](notebook/verl-v1-checkpoint-engines-deep-reading.md#lora-分桶接收的主机存储所有权)/[CPU复查](experiments/scripts/verify_verl_lora_host_staging.py)：原暂存语句及浅字典赋值的真实CPU控制两次一致，首桶10元素目标BF16为1块20B、加第二桶后2块26B，非整adapter单块/峰值。3模块compile，无完整callback/IPC/pin/vLLM/原pytest或设备/性能验收，作者GB300数字不纳本机；旧固定80倍payload推断撤回。真机缺口只补原M5可选参考，不升级部署/开训练/改专项。本题收束，下轮转独立UniRL/verl问题或真实新变化，不堆bucket/异常/伪receiver变体。
