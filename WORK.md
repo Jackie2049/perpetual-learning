@@ -297,6 +297,8 @@
 
 ## 当前用户需求与决定
 
+- **两周技术掘金聚焦（2026-10-23 用户明确）**：**UniRL 与 verl 是最近两周技术掘金的重点对象**——两周内技术掘金精力聚焦到这两个开源项目，**重点寻找提出 issue 和 PR 的机会**。**铁律：用户审批之前不能在主仓库上提交**（任何 issue/PR/评论/上游行动均需用户拍板；候选先在本地/fork 准备，见 [AGENTS.md](AGENTS.md#执行边界)）。现状：verl 主贡献轨道（#8313 已 OPEN 待维护者 approve、#8250 待补证）；UniRL 贡献轨道已建立（未认领候选 [#523](open-source/unirl/candidate-523-anchor-lifecycle.md)，fork 分支 `fix-523-anchor-lifecycle` 已备，**待用户审批后决定是否提 PR/issue**）。技术掘金精力优先分配给这两个项目；DeepInfer 降为常规关注（其 PR 采纳门槛高，见下）。
+
 - **主机分工（2026-10-20 最新用户明确）**：所有 GPU 访问/环境/实验由 M5 Agent 负责；AReaL prompt_mean 候选/PR 整项由 M5 单一负责，M1 阶段收尾，后续定时任务不并行修改其思路、代码、实验或定性。M1 继续独立研究，只有用户重新指派或明确要求只读 review 才涉及该项。统一 [交接说明](open-source/areal/handoff-m5.md)。
 
 - **高优调研项（2026-10-20）**：**DeepInfer — DeepSeek 官方推理框架**。DeepSeek 今天（10-20）开源其生产服务推理框架 `deepseek-ai/DeepInfer`（Apache-2.0，快照 8b161497；GitHub 语言统计为字节数，非百万行，支持 NVIDIA SM100 + 华为 Ascend 950 NPU）。用户定为项目高优先调研项。初览笔记见 [notebook/frameworks/deepinfer-initial-survey.md](notebook/frameworks/deepinfer-initial-survey.md)；与 verl/vLLM/FlashMLA/DeepEP/Ascend 既有积累高度相关（batch-invariant、P/D 分离、MTP、MoE EPLB、NPU）。**用户另关注：在 DeepSeek 生态提优化 PR 能否被采纳——调研结论见 [deepseek-ecosystem-pr-adoption.md](notebook/frameworks/deepseek-ecosystem-pr-adoption.md)：外部 PR 采纳门槛高、周期长（FlashMLA open PR 平均 185 天），"修复具体 bug"比"大幅优化"更可能被合入；相对友好的是 DeepEP/DeepGEMM；综合性价比 verl/vLLM/AReaL 仍高于 DeepSeek 生态**。
@@ -329,6 +331,8 @@
 **方法学教训**（已入库）：查重 "None" ≠ 0（限流误报）；reporter 深挖 issue ≈ reporter 已开 PR；认领声明 ≠ 会提；verl 认领窗口 0-2 天且 reporter 自修为主。
 
 ## 待讨论与下一步
+
+0. **两周技术掘金聚焦（用户 2026-10-23 定，最高优先级）**：**UniRL + verl**——精力聚焦找 issue/PR 机会。verl：主贡献轨道，#8313 已 OPEN（等维护者 approve，无新动作）；#8250 待补证；持续扫描新候选。UniRL：贡献轨道已建（[tracker](open-source/unirl/tracker.md)），未认领候选 #523 fork 分支已备好（[candidate](open-source/unirl/candidate-523-anchor-lifecycle.md)）——**下一步做完整评估/验证，达到可发布标准后交用户审批**（铁律：主仓库行动需用户拍板）。DeepInfer 降为常规关注。
 
 1. **等待用户授权/资源**（长期未决，见「运行接续」5 项）——发布评论/文档、#8281 发布形态、方向调整。#8237 已收尾（PR #8286 ready + issue 已回）。
 1. **未来一周开源技术掘金三大重点（用户 2026-10-20 定）**：**DeepInfer / verl / AReaL**。其中 DeepInfer 主研（推理框架源码深挖），verl 主贡献（续 #8281/#8250），AReaL 主实测（prompt_mean 切分敏感点）。vLLM 降为次优先级。 **这是跨主机整体分工，M1 不接管 AReaL；M5 独立推进其完整候选/PR。**

@@ -33,4 +33,4 @@
 
 ## 定位
 
-UniRL 是用户指定的技术掘金**两周最高优先**方向（方向 = 扫描可贡献的 PR/issue）。硬件仅 NVIDIA，与 DeepInfer（Ascend）不重叠。学习轨道见 [unirl-survey](../../notebook/frameworks/unirl-survey.md)；本目录为贡献轨道。
+UniRL 与 verl 是用户指定的技术掘金**最近两周最高优先**方向（2026-10-23 用户明确：两周内精力聚焦这两个开源项目，重点寻找提出 issue/PR 的机会）。**铁律：用户审批之前不能在主仓库上提交**（任何 issue/PR/评论/上游行动均需用户拍板；候选先在本地/fork 准备，见 [AGENTS.md](../../AGENTS.md#执行边界)）。硬件仅 NVIDIA，与 DeepInfer（Ascend）不重叠。学习轨道见 [unirl-survey](../../notebook/frameworks/unirl-survey.md)；本目录为贡献轨道。
