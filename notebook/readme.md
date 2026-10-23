@@ -156,6 +156,7 @@
 - [verl 新版阶段 tracing](frameworks/verl-async-logprob-provenance.md#新版阶段-tracing-与证据关联) — #8315原12项日志测试三版本对照，前后head均过但生产lane不同；Mock调用不认证后端显示/真实同步，M5原条目已同步版本
 - [verl 单 worker NIXL 拓扑](frameworks/verl-async-logprob-provenance.md#单-rollout-worker-的-nixl-拓扑) — #8316原函数20组控制及后续新增1原测试隔离对照；worker非replica，测试体通过非原生导入/传输验收
 - [verl 组初始化等待超时](frameworks/verl-async-logprob-provenance.md#组初始化的等待超时与任务退出) — #7045当前控制端head、12组原参数检查；等待上限不等于全链路截止、RPC取消或资源回收，真机条件补M5原条目
+- [verl Resume扩展字段](frameworks/verl-async-logprob-provenance.md#resume-返回值与扩展字段合并) — #8341原2测试体base丢字段/head通过；最后出现值覆盖非逐token拼接，3组补充CPU控制，非真实backend/AgentLoop验收
 - [verl 分桶接收失败与退出](frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#分桶接收失败与退出) — #7366原8项CPU测试两次通过；真实进程ZMQ/SHM，不是设备/vLLM验收。逐ACK预算、阻塞poll、取消与回滚须分开
 - [DeepInfer SamplingParams 校验](frameworks/deepinfer-initial-survey.md#samplingparams-构造校验与测试组合) — #119/#121原53项配对；[#154种子校验](frameworks/deepinfer-initial-survey.md#种子归一化前的负值校验)原5项/16组控制，负数拒绝与uint64回绕分开
 - [DeepInfer EPLB 副本分配与精度](frameworks/deepinfer-initial-survey.md#eplb-相同热点负载下的副本分配) — #191并列热点及[#212长历史收益](frameworks/deepinfer-initial-survey.md#长历史的公共基线与峰值下降量)；三版本原32项CPU pytest对照，公共基线吞掉0.5收益，非全局最优/设备或吞吐验收

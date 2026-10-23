@@ -4,6 +4,7 @@
 
 | 入口 | 用途 |
 |---|---|
+| [verify_verl_extra_fields.py](verify_verl_extra_fields.py) | 固定#8341原TokenOutput/normalizer/两客户端类及2个未改测试体；base均丢text/head通过，另3组缺键/浅替换/调用隔离控制。Python3.12+/numpy/pytest，--deps指定独立Pydantic2 target，本地Git对象；包壳与作者base.generate替身非原生导入、完整49项或后端验收，见[主笔记](../../notebook/frameworks/verl-async-logprob-provenance.md#resume-返回值与扩展字段合并) |
 | [verify_unirl_group_chunks.py](verify_unirl_group_chunks.py) | 固定#485完整原stdlib helper，16,400有界布局对照chunk占用oracle与大组/straddle控制；两版engine及NoiseRecipe仅compile。Python3.9+/本地Git对象，无Sample/Part/RNG/模型或引擎parity验收，见[主笔记](../../notebook/frameworks/unirl-survey.md#prompt-组边界与前向分块) |
 | [verify_unirl_offload_plan.py](verify_unirl_offload_plan.py) | 固定#486完整原stdlib planner，36组synthetic配置/180候选账本对照，另核node预算、缺phase、fixed/alias及目标/字段语义。Python3.9+/本地Git对象；非校准profile、FSDP/执行器、显存或性能验收，见[主笔记](../../notebook/frameworks/unirl-survey.md#常驻与流式-block-的规划账本) |
 | [verify_unirl_trace_contract.py](verify_unirl_trace_contract.py) | 固定#487与作者fork九行guard的完整原stdlib schema/converter对照：两类已知错误接受→拒绝、合法JSON不变，另核到达/依赖/ID/结果隔离。Python3.9+/本地Git对象，无新依赖；synthetic仅数据契约，不是捕获/模拟器/性能验收，见[主笔记](../../notebook/frameworks/unirl-survey.md#离线回放的到达契约与结果隔离) |

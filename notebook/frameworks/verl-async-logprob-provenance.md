@@ -303,3 +303,38 @@ PY
 ```
 
 SHA256：helper `ce401095e0d8d9c9711144dbe429aa62298faab431c57235a8f293edbb1724cb`；base.py `a86b084bdd68fe3dd6a91587147bd2e80c51b455863f6fe344a1623addf3c4a9`；原测试 `a5afc6997fd7473a25a4c1864d5444b0dab1a8b7ea0855abb75376628ed8eb78`；NCCL文件 `cc36e7a53579d60a76cb6ee811ca464dcddffdbc233a94c1af777f6f124a5eef`。当前版本的真机退出/释放/恢复条件仅补[原M5事项](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不另排队或默认应用，不将此保护栏当#8250根因或训练恢复证明。
+
+## Resume 返回值与扩展字段合并
+
+FullyAsyncLLMServerClient会重建一个TokenOutput来累计分段生成结果；因此，即使只调用后端一次，也不能只复制预先认识的字段。[verl #8341](https://github.com/verl-project/verl/pull/8341)补上backend自定义extra_fields的传递。2026-10-23读取open、非draft，作者linyueqian；固定head `0cede26bf2c0d7433af0cba5c2c38ce278e6b07e`，base及实际祖先 `dc709afb7a74fd2645640a4e5f2fdf40166b4fbb`，ahead1/behind0。两文件117增0删，其中客户端17行、CPU测试100行；不是权重同步或#8250训练修复。
+
+### 字段保留与序列对齐
+
+[原generate实现](https://github.com/verl-project/verl/blob/0cede26bf2c0d7433af0cba5c2c38ce278e6b07e/verl/workers/rollout/llm_server.py)新增逐键赋值，但排除已有专门合并规则的七个extra_fields键。几类值不能用同一种“取最新”概括：
+
+| 字段 | 分段返回时的规则 |
+|---|---|
+| 其他extra_fields，如text、multi_modal_output | 最后一次**出现该键**的值覆盖；后续缺键保留旧值，显式None也会覆盖 |
+| response_topk_ids、response_topk_log_probs、response_support_complete | 专门按生成段拼接；有top-k而缺support证明的段补False，不用通用覆盖 |
+| num_cached_tokens | 保留首次非None报告；不是各次cache hit求和，首段缺失时可能来自后段 |
+| global_steps、min_global_steps、max_global_steps | 专门维护末段值、首次非None值、末段值；名字不意味着对任意乱序版本做数值min/max |
+| TokenOutput的token_ids、log_probs、routed_experts、num_preempted | 原有字段各自累计；路由后续只追加新token对应后缀，抢占数求和，不走extra_fields循环 |
+
+通用循环直接赋值，不递归合并或深拷贝。例如首段`nested={a:1}`、次段`nested={b:2}`得到后者，不会自动合成两个键。首段text被保留也不说明它描述整段累计token；若某backend返回增量音频、逐token标记或嵌套payload，producer与consumer仍须约定其作用范围。保留字段解决“丢失”，不替任意字段实现序列拼接、完整性证明或RPC序列化协议。
+
+### 原测试体的 CPU 对照
+
+[复查脚本](../../experiments/scripts/verify_verl_extra_fields.py)从固定Git对象提取完整原TokenOutput、normalize_token_ids和两客户端类，仅去掉generate的tracing decorator，包壳绕过原生verl导入。使用真实Pydantic、NumPy和pytest.MonkeyPatch，执行[作者新增的两个未改测试体](https://github.com/verl-project/verl/blob/0cede26bf2c0d7433af0cba5c2c38ce278e6b07e/tests/workers/rollout/test_llm_server_extra_fields_on_cpu.py)；base.generate和sleep替身沿用作者fixture，不连接后端。
+
+- 单次返回：基线在读取text时KeyError；head保留text及2×3 NumPy多模态值，global_steps为3。
+- aborted后resume：基线同样丢text；head得到token `[101,102,103]`，text为second，only_first保留，top-k三行拼接，cache为2，版本3→4。
+- 三组补充控制：缺键与显式None不同；nested整项替换且本地payload保留对象引用；同一客户端的独立下一次请求不继承自定义字段。两次运行结果一致，后一次将下一请求控制强化为复用同一客户端。
+
+环境为Python3.12.13、NumPy2.0.2、pytest8.4.2、Pydantic2.14.1。Pydantic及依赖装在独立work target，不改原venv。没有torch/Ray导入、原生pytest收集或AgentLoop/引擎运行；作者正文报告的四文件49项通过不是本机结果。这个对照检验字段合并，不认证实际多模态生成、远程payload传输或训练效果。
+
+```bash
+# 已有Python环境需含numpy/pytest；deps为独立Pydantic2安装目录。
+python -B experiments/scripts/verify_verl_extra_fields.py /path/to/verl-git --deps /path/to/pydantic-target
+```
+
+SHA256：head客户端 `1ef9a84c10e11f7f15d89e79450f5d578b9585acf8b974ad5b96b1459da3febe`，base客户端 `a31a51faf3bc7a877628eff52917cb442b1d3e17ae5249a7f3cdbc9282a45e96`，原测试 `a2cc81ea48d96176c0d10f66c686935ceadd83796ba27ac4d676ba6246495aab`；脚本逐次打印schema/normalizer哈希供复核。真实backend→客户端→AgentLoop消费的条件补[原M5参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不另排队、自动采用候选或重开#8250因果判断。
