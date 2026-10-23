@@ -676,6 +676,24 @@ noise.py、noise_recipe、trainer.diffusion、TempFlow/PerSample GRPO、PerSampl
 
 PR未提交所述外部harness；作者40项CPU/早期8×L40S smoke与5a1eff0的fp32 parity报告均非本机结果，且正文明确最新API/replay修改未重跑GPU。其原生批形状latent阈值未过、统一microbatch=4后才逐位匹配的观测，也不能外推默认bf16或训练等价。真机缺口补[原M5 UniRL参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不自动选用、部署配方或新增训练队列；本题以分支与时间轴契约学习收束。
 
+### 逐行步号与潜变量引用保留
+
+2026-10-24，[前置PR #589](https://github.com/Tencent-Hunyuan/UniRL/pull/589)更新到`ede4429a2af244fbc932820686b551647fdc1960`，base `6fd82cba13f52f394747832344039408699ea378`，8文件345增32删。它在合并main的`a86f5ca8d27ea4e4d4adaf521a5b5c6892178539`之后，新增[保留潜变量句柄](https://github.com/Tencent-Hunyuan/UniRL/commit/87e68f407ece2750e16e6d44a678c2ab0c178a95)及[先hydrate共享索引](https://github.com/Tencent-Hunyuan/UniRL/commit/ede4429a2af244fbc932820686b551647fdc1960)两项修复。此处是#589的新代码，不把它自动套到上面固定的#552版本，也不把前置工作当作完整FlashGRPO loss/kernel。
+
+新的`_stamp_sde_index_per_sample`要求生成端**已经**按`[j, j+1, T]`存好三槽潜变量：检查`latents.shape[1]==3`及`hydrate(indices).tolist()`后，只把共享indices改为`[0,1,2]`、sde_indices改为`[0]`，保留原latents对象。`sde_index_per_sample`继续逐行记录真实j，sampling params的共享sde_indices清空以支持后续拼接。driver不能将TensorRef当作完整torch.Tensor使用；形状元数据可读，不代表它支持二维索引、比较、`tolist`或`torch.stack`。
+
+Python3.12.13 / torch2.14.1，完整原TensorRef/Batch/LatentSegment/DiffusionSamplingParams及本地hydrate模块加载；AST只提取三提交的完整stamping方法。frontier/sample为属性夹具，handle为显式计数的CPU本地协议夹具，不是远端handle。三种布局对照如下：
+
+| 潜变量与共享indices | 合并main后 | 保留引用修复后 | 最终head |
+| --- | --- | --- | --- |
+| 两者均为CPU tensor | 通过，但重建latents | 通过，保留原对象 | 通过，保留原对象 |
+| latents为TensorRef，indices为tensor | tuple索引NotImplementedError | 通过，无潜变量读取 | 保持通过 |
+| 两者均为TensorRef | 比较得到bool后调用nonzero报错 | TensorRef无tolist报错 | 通过，仅indices handle读取一次（三个整数） |
+
+两个step组j=2/5、各两行的原`LatentSegment.concat`得到四行，真实步号为`[2,2,5,5]`，原latent handles保留且读取计数仍0；随后显式`hydrate`才各读一次，结果与两份原CPU潜变量拼接逐值完全一致。错误步终点、错误总步数及两槽布局均被最终方法拒绝，无潜变量读取。该方法先写逐行步号再校验，不宣称拒绝具有事务回滚保证。
+
+复现代码见[当日日志](../../diary/2026-10-24.md)；没有Sample/Part concat、完整trainer、实际Ray/远端传输、模型replay或GPU运行。作者另报真实TensorRef stamp/concat及20项CPU replay检查，本机没有复跑其harness；PR明确本次未重跑GPU，旧#546 Wan结果不覆盖当前head。已有作者修复，不另开重复补丁或新硬件队列。三版trainer SHA256依次为`39bcc77c4d66f39da510eb938aa8385c856f557fe04af338c5555e375a1d49e3`、`58e38d6c15968aa826d3ab8334a5cef211110307e7faf36c47d6fdb21a2e34f8`、`40eceb30fd4e0221d18c4e7db93db41d70ad71d6e6764e5c7cc1f0c02beaee17`。
+
 ## 异步快照与指标消费
 
 **先分清状态、事件和采样时刻，再解释异步曲线。** 2026-10-22只读[#620](https://github.com/Tencent-Hunyuan/UniRL/pull/620)，读取时open、未合并，固定head `f404c9024c00bbf8a5d05315153444cee894865a`。API目标base为`6fd82cba13f52f394747832344039408699ea378`，官方compare共同祖先为`0397ddb6a6fc0c9ccdc3508c0bee0e687000bca7`，ahead4/behind19；按共同祖先核对才是7文件228增9删，不把落后主线的历史差异算作本PR修改。新增接口不代表此版已部署，也不是训练通过证据。
@@ -861,6 +879,12 @@ python -B experiments/scripts/verify_unirl_policy_entropy.py /path/to/UniRL
 两次执行一致。没有Qwen模型、packed/padded外层replay、checkpoint循环、loss/optimizer、FSDP/TrainStack/Ray、TP/SP/DP collective或GPU/NPU运行，也未安装依赖。作者另报tiny L4、Qwen3-0.6B单/双A100与Ray/FSDP一次更新证据，原harness在仓库外；这些不是本项目复跑，也不覆盖ARTrainer的完整rollout/reward/sync循环或VeOmni。后续真机核对仅补[原M5参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不部署候选或把它当#8250根因诊断。
 
 SHA256：Qwen3 ar `49557b0cf37b0823940307531f99efa2505242411492b2fe506f5f14387e5972`；metric helper所在base `da4a741a0315c0ad8f530c7952593c8bade2bdaffffcb9e68730af527d306b30`；新metrics `2897870ce27577033b2d7963df9dbc71178fef3a523b53924d786172ae585626`，旧metrics `f19ac2211065ea4927927648a3ec108ecb5b1b7bd7e8f1d3b73dd3ef198beab9`。
+
+### 单阶段拆分后的熵统计接线
+
+2026-10-24，[#563](https://github.com/Tencent-Hunyuan/UniRL/pull/563)仍open/non-draft，head更新为`d2f0a489211200f5655e755b3337f875ab7144c4`，base `6fd82cba13f52f394747832344039408699ea378`。`4f6ebd80`合并旧head与main，末提交仅整理三个算法的导入顺序；对当前base仍为13文件270增43删。旧`unirl/train/stack/base.py`中的熵实体化、聚合与副本过滤/reduce段迁至`unirl/train/stack/single.py`。
+
+AST比较确认该完整统计段、`policy_entropy_metrics`、`_categorical_entropy`和完整`ReplayResult`与原固定head相同；这是限定源码结构比较，不认证整个replay/算法/TrainStack等价。旧20组数值控制与脚本仍锁原版本，本轮未重跑。作者本次另报六算法loss/梯度、拆分后单栈实体化及两rank Gloo检查，且明确未重跑GPU；历史A100/L4证据不迁移为新head验收。
 
 ## 有界动态采样与数据游标
 

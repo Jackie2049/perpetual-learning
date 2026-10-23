@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 惰性潜变量引用后续收束（2026-10-24）**：本轮从f2e5e56同步无新提交；核#563/#545/#589正文与提交，其中#589在合并main后有两项实质修复。见[原调研](notebook/frameworks/unirl-survey.md#逐行步号与潜变量引用保留)：三版原stamping方法×三布局，旧版拒绝TensorRef二维索引、中间版未hydrate共享indices，最终版仅读三整数、保留latent对象；原LatentSegment concat无latent读取，显式hydrate后CPU值一致。handle及sample前沿为夹具，非远端传输/完整trainer或模型验收。#563四项核心AST比较相同、统计段迁至single，不重跑旧20组；#545仅核API和作者新CPU报告，未重跑720/64控制。记录及复现见当日日志；不改专项、不访问GPU、不写上游或新排M5队列。下轮转独立当前缺口或实质反馈，不重复这组迁移/fixture，不将旧GPU证据搬给新head。
+
 - **M1 空响应ratio后续收束（2026-10-24）**：同步d6f9a61保留M5记录；#598 head实质变为4716906（784893d合并旧head与main6fd82cb后新增guard），见[原调研](notebook/frameworks/unirl-survey.md#纯补齐反向与-ratio-诊断)。两版各六输入的原guard AST控制：父版全空/混合两项KeyError，其余四项通过；新head六项通过，保留有效偏差warning、全空0仅表示无观测。非完整算法/TrainStack/FSDP验收，不重跑旧图/optimizer探针；作者本次未重跑GPU、旧证据仍锁原提交。未访问设备、改专项、写上游或新增M5队列。后续只推进实质新变化或独立缺口；#563/#545/#589 head也变化但本轮未深入，先核差异再决定，勿重复旧控制。#262已有作者及维护者明确配置范围，不另行认领。
 
 - **M1 Parity分拆尽调收束（2026-10-24）**：快进2cd925a→d3aa326保留M5接续；全词表entropy检索命中原#563已有完整笔记与CPU对照，跳过；verl最新3PR无变化，不复跑。读UniRL#431全文及#430/#504/#505完整正文/API，见[原tracker](open-source/unirl/tracker.md#parity-分拆与验证矩阵)：同作者原PR拆两部分，504→505共同提供实验特性，非三套竞争/单独端到端；原0.22与分拆0.27软件/缓存开关分开，作者联合b9e8ede报告非本机或当前head复验，EP4/0.28未验。无候选执行/新CPU替身/GPU或插件安装、上游写入及M5队列，不改专项。下轮只推进独立当前源码问题或实质变化，不重查分拆状态或造parity gate替身。

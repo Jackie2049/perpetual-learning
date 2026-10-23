@@ -260,7 +260,7 @@
   - [AROPD采样梯度与KL](frameworks/unirl-survey.md#aropd-的采样梯度与-kl-目标) — #534 raw score公式的固定前缀参考；teacher log-prob目标不能省去entropy项，非原算法/模型验收
   - [关键帧条件与功能就绪](frameworks/unirl-survey.md#关键帧条件的数据身份与功能就绪) — #584携带fp32条件行并只返回target velocity；producer/条件时间仍待接，源码/静态检查不等于FL2VA可启用
   - [设备资源与通信后端](frameworks/unirl-survey.md#设备资源与通信后端的分层边界) — #623已关闭未合并；资源预约/可见性/设备编号/默认通信组分开，仅两版三模块compile，不认证GPU或NPU支持
-  - [TempFlow分支与逐行时间](frameworks/unirl-survey.md#tempflow-分支共享与逐行时间索引) — #552同seed共享x_T不等于缓存前缀计算；每行真实j与合并槽分开，仅噪声helper CPU控制，非模型/训练验收
+  - [TempFlow分支与逐行时间](frameworks/unirl-survey.md#tempflow-分支共享与逐行时间索引) — #552共享x_T不等于缓存前缀；[#589引用保留后续](frameworks/unirl-survey.md#逐行步号与潜变量引用保留)三版原方法/原容器CPU控制，只读索引、保留潜变量句柄，非远程传输或模型验收
   - [异步快照与指标消费](frameworks/unirl-survey.md#异步快照与指标消费) — #620的状态、事件与采样时刻分开；增量单消费者，ready lag缺值不补0，源码/语法检查非训练验收
   - [奖励能力与模型加载](frameworks/unirl-survey.md#奖励能力校验与模型加载) — #621先校验再物化本地模型，但声明不认证checkpoint可用，失败不自动回滚；managed-process不在延迟范围，仅静态核对
   - [Omni原生IPC副本与导出](frameworks/unirl-survey.md#omni-原生-ipc-的副本与导出边界) — #617区分全rank参与、逐卡副本与内容一致；原meta/CPU视图规则通过，非真实IPC/模型或普通卡容量保证
