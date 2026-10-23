@@ -1,0 +1,43 @@
+diff --git a/tests/experimental/agent_loop/test_cap_text_prompt_length.py b/tests/experimental/agent_loop/test_cap_text_prompt_length_on_cpu.py
+similarity index 85%
+rename from tests/experimental/agent_loop/test_cap_text_prompt_length.py
+rename to tests/experimental/agent_loop/test_cap_text_prompt_length_on_cpu.py
+index 3219929..8643bea 100644
+--- a/tests/experimental/agent_loop/test_cap_text_prompt_length.py
++++ b/tests/experimental/agent_loop/test_cap_text_prompt_length_on_cpu.py
+@@ -85,16 +85,27 @@ def test_right_keeps_head():
+     assert loop._cap_text_prompt_length([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]) == [0, 1, 2, 3]
+ 
+ 
+-@pytest.mark.parametrize("prompt_length", [4, 5, 6])
+-def test_middle_keeps_head_and_tail(prompt_length: int):
+-    """``middle`` truncation keeps head+tail of roughly half each side."""
++@pytest.mark.parametrize(
++    "prompt_length,expected",
++    [
++        (1, [0]),
++        (2, [0, 9]),
++        (3, [0, 1, 9]),
++        (4, [0, 1, 8, 9]),
++        (5, [0, 1, 2, 8, 9]),
++        (6, [0, 1, 2, 7, 8, 9]),
++    ],
++)
++def test_middle_keeps_head_and_tail(prompt_length: int, expected: list[int]):
++    """``middle`` truncation keeps head+tail halves with explicit expected output.
++
++    The head half takes the extra token on odd caps: ``(prompt_length + 1) // 2``.
++    This documents the exact boundary behavior for every cap 1..6 so that a wrong
++    interior slice cannot pass by re-deriving the expectation from the output.
++    """
+     loop = _make_loop(prompt_length, "middle")
+     out = loop._cap_text_prompt_length(list(range(10)))
+-    assert len(out) == prompt_length, f"middle should preserve the cap length: {out}"
+-    assert out[0] == 0, f"head must be preserved: {out}"
+-    assert out[-1] == 9, f"tail must be preserved: {out}"
+-    # head+tail halves partition the original sequence with no duplication.
+-    assert out == out[: (prompt_length + 1) // 2] + list(range(10))[-(prompt_length - (prompt_length + 1) // 2) :]
++    assert out == expected
+ 
+ 
+ def test_middle_cap1_does_not_extend_prompt():
