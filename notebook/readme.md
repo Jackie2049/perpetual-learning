@@ -141,6 +141,7 @@
 - [verl V1源prompt与可变行](frameworks/verl-grpo-source-reading.md#v1-源-prompt-单位与可变轨迹行) — #8201按UID计优化批、逐单元补行并传worker边界；同批非同rank，仅12项原纯helper检查，非TQ/训练验收
 - [verl 拼批形状与对象引用](frameworks/verl-grpo-data-flow-reading.md#拼批中的形状与引用) — 原collator/1原测试体与7组CPU DataLoader检查；一维对象边界不等于深拷贝或字段校验
 - [verl Rollout 完整性](frameworks/verl-grpo-data-flow-reading.md#rollout-完整性与会话计数) — #6641原7项replay测试候选通过/旧版4项拒绝检查预期失败；多输出行不等于多会话，数量护栏非超时、取消或服务恢复
+- [verl PF PPO重采样身份](frameworks/verl-grpo-data-flow-reading.md#pf-ppo-重采样与原-key-回写) — #7957原四测试三版本对照，内部行一致不等原key对齐；旧mask切片可与新行长度不同，非真实队列或训练验收
 - [verl 奖励限流与取消](frameworks/verl-reward-integration-reading.md#进程配额与取消边界) — 原16协程测试体/2取消对照；类属性不是跨节点配额，超容量预扣不自动退款，timeout不包排队
 - [verl Prime 评分结果与失败范围](frameworks/verl-reward-integration-reading.md#prime-进程池的结果协议与失败范围) — #8217 原测试 base 3 过 1 预期失败/head 4 过，真实 spawn/进程池区分按行失败与结果解析整批回退；非 manager/训练或超时验收
 - [verl 参数转换与缓冲区精度](frameworks/verl-fsdp2-source-deep-reading.md#参数转换与缓冲区精度) — #8189 原 6 CPU 测试体与 4 组控制，区分保留初值、FP32 标签和训练状态迁移；未运行真实 RoPE/model/FSDP

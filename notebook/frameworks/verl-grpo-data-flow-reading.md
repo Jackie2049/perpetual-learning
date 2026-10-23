@@ -283,6 +283,42 @@ Python 3.12.13、NumPy 2.0.2、pytest 8.4.2；此环境缺 TensorDict/Ray/TQ/Ome
 候选原测试                ac80178e95d410dd2f1c78246d6f48834487bdf2215d88b2e10c7b14ced35478
 ```
 
+### PF PPO 重采样与原 key 回写
+
+整行内部一致，不代表它仍属于输入位置上的那个样本。[verl #7956](https://github.com/verl-project/verl/issues/7956)报告的V1 GAE路径正是这一差别：PF-PPO有放回重采样整个DataProto，而V1只把部分计算结果写回原key。已有报告者的[#7957](https://github.com/verl-project/verl/pull/7957)选择拒绝该组合，并未实现V1重采样支持；不另做竞争修复。
+
+2026-10-23读取PR open、非draft，作者YeonwooSung；固定head `1eb80e2212f24a5b71ca113c3e42797734961e7d`、目标base `3f9d4c0d32cc20c7ec31c8137e91bb5673ce9e5e`、实际祖先 `23a341e361e18063b4ec53e1f7cc4eae68f102cf`，相对目标ahead2/behind6。真正diff五文件133增4删。另核官方main为 `a4b9354968705a441fb7da7367924b15b902e771`，不能将未合并的拒绝行为写成主干现状。
+
+#### 重采样必须携带的身份
+
+原[compute_pf_ppo_reweight_data](https://github.com/verl-project/verl/blob/a4b9354968705a441fb7da7367924b15b902e771/verl/trainer/ppo/core_algos.py)从token_level_scores的逐行总分生成权重，`torch.multinomial(..., replacement=True)`取得新行索引；所有batch张量、non_tensor_batch数组以及长度等于batch_size的meta_info列表都按该索引取值。它是选择/重复整行，不是给每个token损失乘一个IS系数。
+
+[legacy compute_advantage](https://github.com/verl-project/verl/blob/a4b9354968705a441fb7da7367924b15b902e771/verl/trainer/ppo/ray_trainer.py)先计算GAE，再在GAE分支中调用该重采样函数，返回整个新DataProto。原[V1 helper](https://github.com/verl-project/verl/blob/a4b9354968705a441fb7da7367924b15b902e771/verl/trainer/ppo/v1/utils.py)将非GRPO estimator委托给它，因此不是“V1忽略use_pf_ppo”。问题出在[V1调用者](https://github.com/verl-project/verl/blob/a4b9354968705a441fb7da7367924b15b902e771/verl/trainer/ppo/v1/trainer_base.py)仍持有原batch.keys和重采样前的nested response_mask；之后只把advantages/returns等字段转换并回写，而响应和logprob没有随之重采样。
+
+本机补充控制用原helper、真实DataProto/TensorDict及原[response_to_nested](https://github.com/verl-project/verl/blob/a4b9354968705a441fb7da7367924b15b902e771/verl/workers/utils/padding.py)执行，B=8、T=4、seed=0：
+
+| 新行位置 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+|---|---|---|---|---|---|---|---|---|
+| 实际来源行 | 7 | 7 | 6 | 7 | 6 | 7 | 4 | 5 |
+| 原位置响应长度 | 1 | 2 | 3 | 4 | 1 | 2 | 3 | 4 |
+| 来源行响应长度 | 4 | 4 | 3 | 4 | 3 | 4 | 1 | 2 |
+
+返回的每个张量、UID和行级metadata都与来源索引一致，原输入未被重采样函数改写。但将新行送入原切片函数并传旧mask，得到的是表中原位置响应长度，而非来源长度；函数不核对样本身份。有放回采样还会重复来源7，不能把它当普通一对一置换：若未来真支持V1，重复样本引用、key消费、响应/logprob与长度的共同身份都需定义。本控制没有调用kv_batch_put，不声称观测到真实队列覆盖或完整训练错配。
+
+#### 拒绝的时机与 CPU 验证
+
+#7957只在 `adv_estimator=gae` 且use_pf_ppo为真时，从V1优势helper抛NotImplementedError；legacy整批路径不变，非GAE原本不进入PF-PPO分支，也不因开关为真就获得这项算法。保护发生在第一次优势计算，而非启动校验；此前rollout等成本仍可能发生。一个trainer.use_v1配置值不能替代实际调用路径判断。
+
+[复查脚本](../../experiments/scripts/verify_verl_pf_ppo_identity.py)对祖先、PR head、上述main分别执行[同一份原四测试](https://github.com/verl-project/verl/blob/1eb80e2212f24a5b71ca113c3e42797734961e7d/tests/trainer/test_pf_ppo_v1_on_cpu.py)，保留测试字节和断言。重复运行结果一致：祖先和main各3过、拒绝用例以DID NOT RAISE预期失败；head四项全过。补充的一组身份/长度控制也重复通过，不算进原四项。原用例验证重采样、拒绝、关闭开关时保持行序、legacy仍重采样，并非作者所报其他文件合计九项的复跑。
+
+环境复用 `/private/tmp/verl-8281-venv/bin/python`：Python3.12.13、torch2.14.1、NumPy2.5.4、TensorDict0.15.2、OmegaConf2.3.1、pytest9.1.1，无新增依赖。完整原DataProto类、四个序列化函数、原枚举/注册器、GAE/PF函数、四个masked统计函数及两层优势函数经AST隔离；原方法体和算法不改，延后注解求值，跳过包初始化及框架导入。DataProto显式使用原numpy序列化路径，不走设备发现；张量均在CPU。没有原生verl/测试conftest导入、Ray/TQ、trainer/critic/actor或训练运行，也没有TQ替身。
+
+```bash
+python3.12 -B experiments/scripts/verify_verl_pf_ppo_identity.py /path/to/verl-git
+```
+
+脚本按版本打印完整来源SHA。原测试SHA256 `26cd9277a15613ffc181b092e6bc46418b5cb22d8b8e4e96c3fcb6e2800a67ae`；三版protocol均为 `8d69430131e9e894a6c7aea673d489e19e44117b1bc573085a6db521b38c6792`，head V1 utils为 `9b82466e08c9d59fd280882c4e440e462d5ea42607181a59727950ca3d48cceb`；完整PR patch为 `14e71a8528d85d73cf7cb043d8ae412ba4fda4799c0f8c915f2f752ab8f4623a`。变更Python另做祖先2份/head3份完整AST/内存compile。CPU数据契约可在本机核实，不因此新增M5算力任务或推断训练收益；现有GPU/AReaL/#8313/#523专项不变。
+
 ## 6. LoRA Integration in GRPO
 
 ```

@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 PF-PPO身份契约学习收束（2026-10-23）**：同步无新增，有界核UniRL/verl开放需求，#7952已有#7955、#7956已有报告者#7957，不竞争。固定#7957 head1eb80e22/目标3f9d4c0d/祖先23a341e3（ahead2/behind6，5文件133增4删），另核main a4b93549，见[原数据流专题](notebook/frameworks/verl-grpo-data-flow-reading.md#pf-ppo-重采样与原-key-回写)/[复查](experiments/scripts/verify_verl_pf_ppo_identity.py)。原四CPU测试祖先/main各3过1预期失败、head全过，多次一致；真实DataProto/TensorDict+原函数AST，另一组身份/长度切片控制显示有放回非普通置换、旧mask不等来源长度。无Ray/TQ或假队列、原生导入/完整trainer/训练，保护在优势阶段非启动、非V1支持实现；复用旧CPU环境，无新依赖或M5算力事项。本题收束，下轮回到独立贡献缺口，避免继续行ID/重排/切片替身小变体；GPU/AReaL/#8313/#523及DeepInfer分工不变。
+
 - **M1 Bypass配置时机学习收束（2026-10-23）**：快进M5磁盘记录9d0ac01，只读已有作者#8348 head4b3b9f84/base祖先a4b93549（ahead2，9文件375增87删），见[原概率专题](notebook/frameworks/verl-async-logprob-provenance.md#bypass-字段替换与-worker-的-loss-配置)/[复查](experiments/scripts/verify_verl_bypass_config.py)。old字段替换不等远端loss切换；四构造器提前配置，默认切换/显式保留/冲突拒绝分开。真实OmegaConf原19配置例两次通过，5张量例deselect、base无新helper不虚造红绿；15完整Python仅compile，无Hydra合成/worker/Ray/loss/引擎。修正旧FSDP笔记无测量显存比与低staleness充分性，真实worker/归约/entropy条件补原M5可选参考，不应用候选/排训练/重开#8250。本题收束，待下一次接续选独立UniRL/verl问题，不堆配置镜像/阈值/启动替身变体；GPU/AReaL/#8313/#523及DeepInfer分工不变。
 
 - **M1同分舍入纠正收束（2026-10-23）**：快进M5状态01f7480，verl最新6PR出现新draft#8349，优先核其对旧知识影响，#8122已有#8125且作者明确guard非完整根因未继续。固定head0e3c3e36/base祖先a4b93549（ahead1，2文件67增3删），见[原算法专题](notebook/frameworks/verl-grpo-core-algos-reading.md#同分小数奖励的舍入残差)。原16新参数例两次base3过13预期失败/head全过，低方差与singleton控制均过；本机0.3×16为零但0.7/0.9×64 vec约−0.294/−0.348，别照搬作者所有数字。修正旧“任意同分精确零”，保留singleton约定；复用原脚本--uniform-pr，历史4例/12控制在正确旧对象克隆回归。无新依赖/模型/训练/GPU/性能或M5任务，不应用draft/竞争实现/诊断#8250。下轮另选独立问题，不堆同分小数/epsilon变体；GPU/AReaL/#8313/#523及DeepInfer分工不变。
