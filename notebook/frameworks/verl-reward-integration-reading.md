@@ -1,9 +1,47 @@
 # verl Reward Integration 源码级深度阅读
 
+2026-10-24 补充：[异步奖励的补齐边界](#异步奖励的补齐边界)用 #8101 原张量构造与消费者片段核对末条 response 的读取长度；仅 CPU 几何对照，不是完整 worker/TQ 或训练验收。
+
 2026-10-23 补充：[沙箱运行器注册与执行边界](#沙箱运行器注册与执行边界)固定于未合并 #8345，14 个原 runner 用例仅验证本地契约；[数学奖励的分层判分与精度边界](#数学奖励的分层判分与精度边界)固定于未合并 #8347，仅覆盖 CPU 字符串判分；[Prime 进程池的结果协议与失败范围](#prime-进程池的结果协议与失败范围)用 #8217 原测试核对真实 CPU 进程池。其余 2026-06 架构与硬件建议不属于这些复查范围。
 
 > 2026-06-15 | 源码: verl/trainer/ppo/reward.py + ray_trainer.py + workers/reward_manager/ + experimental/reward_loop/ + core_algos.py + utils/reward_score/
 > 核心: 两层架构(legacy RewardManager + experimental RewardLoop) → 3 reward路径(rule/DisRM/GenRM) → outcome reward=最后token非零 → GRPO group-relative → colocate RM sleep/wake → RTX 4090=rule-based唯一可行
+
+## 异步奖励的补齐边界
+
+**mask 的有效 token 总数正确，不代表消费者从尾部截取时能找到正确的 response。** [#8101](https://github.com/verl-project/verl/pull/8101) 修复多输出 trajectory 的异步评分输入，2026-10-24 读取 OPEN、API draft=false，作者 zupengwang 已实现；正文仍保留待人工亲自复跑的说明，状态字段不认证测试或就绪程度。本机固定 head `a58b1d2b9bbc465d89910de583f8a30aa7dc917e`，base/祖先 `8718ca30a3f002f93b7c4fd99b9b2506718681bc`，ahead1/behind0；3文件229增4删，不另开竞争修复。
+
+### 生产与消费必须共用同一条边界
+
+旧 [_compute_score](https://github.com/verl-project/verl/blob/8718ca30a3f002f93b7c4fd99b9b2506718681bc/verl/experimental/agent_loop/agent_loop.py)先把每条 `prompt + response` 紧凑拼接，再分别对 prompts、responses、input_ids 和 attention_mask 做右侧 pad_sequence。这些张量各自取不同的最大宽度：`max(P+R)` 不一定等于 `max(P)+max(R)`，即使偶然相等，也不保证 response 起点一致。
+
+[DAPO run_single](https://github.com/verl-project/verl/blob/a58b1d2b9bbc465d89910de583f8a30aa7dc917e/verl/experimental/reward_loop/reward_manager/dapo.py)先取最后一条输出，以 responses 的列宽 R 截取 attention_mask 最后 R 列，求和后再从 response_ids 开头取这么多 token。mask 错位会把 prompt 计入 response，或把答案挤到 tail 窗口之前；padding token 是否被 tokenizer 当特殊符号忽略，不能修正错误的长度惩罚。
+
+[候选构造](https://github.com/verl-project/verl/blob/a58b1d2b9bbc465d89910de583f8a30aa7dc917e/verl/experimental/agent_loop/agent_loop.py)先用原 `_pad_token_ids` 将每条 prompt 左补到 max(P)、response 右补到 max(R)，再拼 IDs 与对应的两个 attention mask。所有输出共享 prompt/response 分界，之后 pad_sequence 不再改变该边界。`prompt_len`/`response_len` 元数据仍来自原列表长度；不能靠保存了正确长度字段，就认为忽略它们的消费者也会自动正确。
+
+### CPU 几何对照
+
+[复查脚本](../../experiments/scripts/verify_verl_reward_padding.py)使用真实本地 WordLevel/PreTrainedTokenizerFast，无模型或词表下载；token0是普通 `LEAK`，pad=3。它提取两版原 `_pad_token_ids`、张量构造和四个 pad_sequence 表达式，另执行 DAPO 原四个长度/切片赋值及长度惩罚分支。字段容器只供 self/output/data_item 属性，没有完整 callback、DataProto、TQ、Ray 或 reward manager 实例。
+
+| trajectory 的 (P,R) | base 末条推得长度 | head 长度 | input_ids 宽度 base→head | DAPO 长度惩罚 base→head |
+| --- | --- | --- | --- | --- |
+| (3,5), (9,2) | 5，解码含3个 LEAK | 2 | 11→14 | -0.5→0 |
+| (10,2), (1,6) | 1，只留下首个答案 token | 6 | 12→16 | 0→-0.75 |
+| (3,2), (3,2) | 2 | 2 | 5→5 | 0→0 |
+
+惩罚配置固定 max_resp_len=7、buffer_len=4、factor=1：预期免罚长度为3。第二行的 -0.75 是长度恢复后按配置得到的惩罚，不是修复使所有 reward 更高。表中只改变几何与读取，不证明任务答案质量、RL 收敛或真实性能。
+
+Python3.12.13、torch2.14.1、Transformers5.20.2、tokenizers0.23.3，三组两版本控制运行两次一致，head 另断言 `input_ids == cat(prompts,responses)`。本机没有执行位置ID、多模态处理、Naive/DisRM完整路径、precomputed分支、评分器异常或原作者12项pytest；两个完整 agent_loop.py 与 head dapo.py 共3个模块版本仅 compile。原作者7失败/5通过→12通过、相邻53通过及13项fixture错误均不是本机结果。
+
+```bash
+HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 python -B experiments/scripts/verify_verl_reward_padding.py /path/to/verl-git
+```
+
+### attention mask 不等于训练 response mask
+
+候选对 response_ids 的 attention mask 仍把观测内容视为有效 token；不会按训练用 `response_mask` 删除工具观察。真实 token0也不能当 padding 丢弃。这里解决的是评分输入边界，不改变作者约定的“评分看完整 response、默认 manager 取末条输出”语义；本机控制只覆盖表中纯文本数据。
+
+代价是拼接宽度可从 max(P+R) 增到 max(P)+max(R)，额外临时补齐不能被称作性能收益或内存硬上限。缺少完整异步框架与真实后端验收仍留为未测；本题没有新增 GPU/NPU 问题，不另排 M5 硬件队列、切环境或改 AReaL/#8313/#523/DeepInfer 专项。
 
 ## 1. 系统架构概览: 两层奖励系统 ★★
 

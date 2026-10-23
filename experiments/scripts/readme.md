@@ -4,6 +4,7 @@
 
 | 入口 | 用途 |
 |---|---|
+| [verify_verl_reward_padding.py](verify_verl_reward_padding.py) | 固定#8101两版原padding helper/张量构造与4个pad表达式、DAPO长度切片/惩罚AST；真实CPU本地tokenizer三组两版本对照两次一致，3模块版本compile。Python3.12+/torch/Transformers/tokenizers/本地Git；无DataProto/TQ/Ray/位置ID、多模态、原pytest或设备验收，见[主笔记](../../notebook/frameworks/verl-reward-integration-reading.md#异步奖励的补齐边界) |
 | [verify_verl_lora_host_staging.py](verify_verl_lora_host_staging.py) | 固定 #8352 两版原暂存语句与字典赋值 AST，真实 CPU tensor 核 shape/cast/源覆盖/多桶存储/后备分支与引用寿命，两次一致；3 模块版本 compile。Python3.10+/torch/已在本地的 Git 对象，pin=False；非完整 callback、原 pytest、IPC/vLLM/锁页/GPU或性能验收，见[主笔记](../../notebook/verl-v1-checkpoint-engines-deep-reading.md#lora-分桶接收的主机存储所有权) |
 | [verify_verl_filesystem_export.py](verify_verl_filesystem_export.py) | 固定#8355完整原export/filesystem模块，原Registry/ABC AST隔离；真实CPU safetensors/可变buffer/三独立顺序writer/原copy+receiver和清理方法控制，两次一致，8模块compile。Python3.12+/torch/safetensors，本地Git；仅device绑定cpu，无send/collective/manager/FSDP/FUSE或设备验收，见[主笔记](../../notebook/verl-v1-checkpoint-engines-deep-reading.md#文件系统权重同步的发布与清理) |
 | [verify_unirl_post_window.py](verify_unirl_post_window.py) | 固定#545完整原sampling/runtime/kernels/require纯模块，720静态日程及64小张量求解控制两次一致；原DPM2作前缀、局部一阶尾段对照Euler，12模块compile。Python3.12+/torch/本地Git对象，无diffusers/Flow SDE/logp、原参考harness、模型/引擎或训练验收，见[主笔记](../../notebook/frameworks/unirl-survey.md#sde-窗口后的压缩积分尾段) |

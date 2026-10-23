@@ -1,8 +1,10 @@
 # perpetual-learning — 当前工作上下文
 
-更新时间：2026-10-23
+更新时间：2026-10-24
 
 ## 当前阶段
+
+- **M1 异步奖励补齐阅读收束（2026-10-24）**：先快进59c6fb3保留M5记录，不执行设备操作/改专项。按updated排序发现未覆盖#8101（head a58b1d2b/base祖先8718ca30，ahead1，3文件229增4删），见[原奖励专题](notebook/frameworks/verl-reward-integration-reading.md#异步奖励的补齐边界)/[复查](experiments/scripts/verify_verl_reward_padding.py)。原padding helper/构造片段+消费者长度/惩罚AST用真实本地tokenizer CPU两次对照：旧末条2→误读5、6→误读1，head恢复2/6但宽度11→14和12→16；3完整模块compile。非完整_compute_score/DataProto/TQ/manager/位置ID/多模态或原12项测试验收，作者数字不搬本机，无新GPU问题/不排M5队列。已有作者不竞争；下轮转独立问题或真实新变化，不堆padding例、假manager或评分性能推断。
 
 **2026-10-23 M5 定时轮次状态核对（23:37，本会话）**：4090-1 连通可用（**GPU 0/1/7 空闲**，各 1 MiB、0% util——root 探针本轮未跑，不干预；2-6 仍被 liyaowei VLLM 占用 21728-22450 MiB，3-6 号 util 100%（DISBench 检索活跃），/home 93% 剩 **533G**——磁盘梳理成果保持）；昇腾 910C VPN 仍掉线（100% 丢包）**第 9 天**，SSH 密钥未配置，待用户恢复（本会话无 Feishu 绑定，VPN 恢复请求无法经 ReplyToChannel 送达，已在最终消息呈现）。gh 确认 verl PR #8313 无变化：OPEN、head `2079ab0e`、MERGEABLE、mergeStateStatus BLOCKED（REVIEW_REQUIRED，等 approve）；评论/审查无新增（仍为 10-23 14:30Z Jackmeson1 四条已核验属实的评审，改进补丁与回复要点草稿已备好，改 PR/回评论均待用户授权，本轮未动）——无待办动作。**上游动态：verl main 仍 `3c6d9b4` #8352 无新合并、open PR 最新仍 #8355（无新编号）；DeepInfer main 仍 `9bd9cf2` 无新合并、open PR 最新仍 #218；UniRL main 仍 `6fd82cb` 无新合并、open PR 最新仍 #624**——均无算力行动项。**UniRL #523 状态沿用上轮判定：L0 已完成，L1 待资源/待权重**（恢复条件 = ≥8 卡同时空闲 + 获准权重与存储，本轮 GPU 0/1/7 空闲但仅 3 卡、2-6 仍被占，无法整段 ≥8 卡）。**真实权重下载路径**仍待用户拍板（17:42 实测 V4.1-Flash 48 片 510.3GB，533G 剩约 23G 无余量；二批清理约 110G+ 或核验其他路径）。其余 handoff 算力条目阻塞条件不变（DeepInfer 适配/#151/#8281/mock 已完成；UniRL HI3 / verl 量化审计 / #8250 待条件；完整移植价值判断与昇腾 VPN 待用户决定/恢复；fused_transform ULP 待 SM100），**本轮无可自动推进算力事项**。本地已 fast-forward 同步 origin/main（3c64e6b→417b963，吸收并行 M1「核对判分与恢复问题的已有修复归属」学习提交，仅 CPU 参考与交接增补，未执行其环境操作）。详见 [当日日志](diary/2026-10-23.md#2338--m5-定时轮-2337例行算力上游核对)。
 
