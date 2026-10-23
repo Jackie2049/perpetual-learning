@@ -1047,6 +1047,48 @@ publication与head的六个切换/枚举/名称解析helper及`DiffusionOPD.prep
 
 SHA256：head lora.py `5233713e1ec325f3218e592a3f6bca6eb89669d3ac126289194b4067ea1801d9`，base lora.py `ebfa9c52c54a29dcb3cda2fd88cba6427d80fe1c94ffdf8a189a8d8d7f9b16fc`；head diffusionopd.py `12ea1270d375cc3180eacb0a4d8a4585ed1009f5bb37810bd87a509640d68469`。真实PEFT/模型缺口补[原M5参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不部署候选或改其anchor/AReaL专项。
 
+## 离线回放的到达契约与结果隔离
+
+**记录下来的提交时间，与“前序请求完成后才可提交”是两种不同输入；格式合法也不等于捕获完整或性能预测准确。** [#487](https://github.com/Tencent-Hunyuan/UniRL/pull/487)（2026-10-23读取open）仅新增experimental离线schema/converter，固定head `e8779559d2ceb441c062f603f90e7fd31370e69b`，目标base `b5079be170635afd87acc83873a18d2fb2114732`，实际祖先 `f8d95462837df00188dab1376e19347b43996307`，ahead1/behind15；4文件567行新增，无提交测试或runner。这里的replay是工作负载回放，不是训练前向重算log-prob。
+
+### 到达时间与前序依赖
+
+[原转换器](https://github.com/Tencent-Hunyuan/UniRL/blob/e8779559d2ceb441c062f603f90e7fd31370e69b/experimental/aisim/convert.py)的open-loop保留记录的arrival，统一减去最小offset并在sidecar记录origin；不添加session、wait_for或推算工具等待。本机输入到达`[100,100,130]ms`得到`[0,0,30]ms`，相同到达按原输入顺序，不按request_id字典序重新排序。
+
+dependency路径则输出前序ID加明确的external delay，首轮没有前序时用窗口release offset。外部等待不能由相邻submit差反推：那个差还可能含前序服务与排队时间；如果换了后端，前序完成时刻本就应重新变化。未知delay必须报错，真正0等待必须显式写0。本机首轮release7ms、次轮wait_for前序且delay0，分别输出arrival7与tool_wait0，次轮不同时带observed arrival。
+
+group/trajectory ID不自动代表collector barrier或trajectory slot。dependency sidecar明确将两者标为`not_modelled`；仅有依赖边不能推导训练采样窗口的准入、排空或组尾完成行为。
+
+### 来源与测量结果分开
+
+[原schema](https://github.com/Tencent-Hunyuan/UniRL/blob/e8779559d2ceb441c062f603f90e7fd31370e69b/experimental/aisim/schema.py)分manifest、workload与MeasuredResult，converter不接收MeasuredResult参数。workload包含给定input/output token长度：这是固定负载条件，不是在预测生成文本或输出长度。测量的完成/首token/服务耗时只供报告；用它们作预测输入会把待验证答案提前送给预测器。
+
+`assert_no_outcome_leakage`检查转换后每行顶层已知结果键，`result_sidecar`标记report_only；这不是任意嵌套数据的通用信息流证明。测量校验要求每个request恰好一条结果，拒绝缺失、重复和未知ID；ID覆盖不证明时钟边界、真实捕获或参数内容可信。manifest中版本/硬件/profile等来源字段也仍需由捕获过程核实，非填非空字符串即可认证。
+
+### 上游head与作者后续guard
+
+通用`Manifest.validate`允许不同replay_contract和complete/partial/incomplete状态，必须由具体转换入口再检查用途。上游to_open_loop已有用途与incomplete保护，to_dependency缺这两项。作者已在[现有fork draft #1](https://github.com/0z5a/UniRL/pull/1)修正，固定 `4ad73720989c8b7c9229da4ecabd9ee654e67dc4`直接接在上游head后，仅9行新增；不重复实现或另开同题贡献。
+
+| 输入 | 上游e8779559本机结果 | 作者fork 4ad73720本机结果 |
+| --- | --- | --- |
+| observed manifest配dependency请求 | 错误接受 | 拒绝 |
+| incomplete dependency capture | 错误接受 | 拒绝 |
+| complete dependency capture | 正常转换 | 正常转换，输出JSON与上游相同 |
+
+不能把fork拒绝行为写成当前上游已有，也不能把partial与incomplete合并成一个状态。schema及guard只拒绝不支持的窗口，不负责重试执行或故障恢复；不应删除失败请求后把剩余部分改称完整捕获。
+
+### 原模块CPU验证与性能边界
+
+[复查脚本](../../experiments/scripts/verify_unirl_trace_contract.py)在Python3.9.6运行两版完整原schema/convert模块，只为experimental父包提供命名空间，无函数摘取、假schema或模拟器。用明确标注synthetic的请求验证上述三组对照、open-loop原点/同刻顺序、混用拒绝、显式零等待与缺失等待、未知前序/环、JSONL往返、测量ID覆盖及已知结果键泄漏拒绝。两次结果一致，未导入torch/Ray/vLLM/SGLang/AISimulate或安装依赖。
+
+```bash
+python3 -B experiments/scripts/verify_unirl_trace_contract.py /path/to/UniRL-git
+```
+
+两版schema SHA256均为`11fb135496a1ad4b046a691d8c9811bd145101bbf89b83bac089d7fba449406c`；上游convert为`1e2a2f8513eb7337f13f76d20588b727667d026248bdeb10372584d3b15b3704`，fork为`32889b6d94a452e903e91c0dd0f1d9b8fd6e5b3799efad62b3689b3f81c5da26`。
+
+这是原数据契约执行，不是原作者全部外部测试、捕获hook、runner或模拟时序验收。最新API另指向作者独立fork runner与CPU profile smoke，不能移作本机或上游head结果；真实匹配GPU执行与模拟的保真度仍未测。本题不产生加速比、H100/H20/4090准确性或训练结论。真实capture/profile/版本匹配条件补[原M5参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不安装模拟器、租算力、启训练或改其专项。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。

@@ -126,6 +126,7 @@
   - [回合续跑与行为版本](unirl-survey.md#回合边界续跑与行为版本)：#558完整turn后暂停，状态随Sample续跑；W计训练批、版本计optimizer update，排空与消费完成分开，仅两版7模块语法/源码，非agent或训练验收。
   - [空响应的反向与更新](unirl-survey.md#空响应的反向通信与零梯度更新)：#598区分占位replay、输出图反向与optimizer处理；8组原分支CPU图比较及6组普通优化器控制，零梯度不等于None，非padding/FSDP或训练验收。
   - [冻结教师与状态恢复](unirl-survey.md#冻结教师路由与调用方状态恢复)：#519切换会改变trainability，退出不一律default；no_grad与路由管理分开，partial-switch保护非恢复动作绝不失败，仅源码/语法及限定AST身份比较。
+  - [离线回放与结果隔离](unirl-survey.md#离线回放的到达契约与结果隔离)：#487到达时刻非前序完成依赖；原stdlib模块对照作者fork，两个已知来源guard修正但合法JSON不变，合成数据契约执行不作simulator/保真度证明。
 
 ## verl
 

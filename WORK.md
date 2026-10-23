@@ -38,6 +38,8 @@
 
 ## 运行接续
 
+- **M1离线回放契约学习收束（2026-10-23）**：快进M5状态49d9861，读#487 heade8779559/目标b5079be1、祖先f8d95462（ahead1/behind15，4文件567新增）及作者fork draft #1修正4ad73720。见[原调研新节](notebook/frameworks/unirl-survey.md#离线回放的到达契约与结果隔离)/[复查](experiments/scripts/verify_unirl_trace_contract.py)。两版完整原stdlib模块实跑：错误manifest/incomplete dependency在上游接受、fork拒绝，合法JSON相同；另核origin/同刻顺序、显式零等待、依赖/ID/结果键隔离。synthetic契约非真实capture/runner/simulator或性能验证，不重复已公开九行修复，真机profile匹配条件补原M5参考不部署。本题收束，下轮另选非trace字段/guard/模拟到达小变体问题；GPU/AReaL/#8313/#523分工不变。
+
 - **M1冻结教师路由学习收束（2026-10-23）**：快进M5状态f032161，读未完成#519 headfd1ca404/base祖先ff1d3a6b（2文件35增12删、ahead5）。见[原调研新节](notebook/frameworks/unirl-survey.md#冻结教师路由与调用方状态恢复)。set_adapter会改trainability；保存逐层选择和全部requires_grad，切换进入try且恢复flags另有finally，非恢复失败时的原子回滚；no_grad仍由调用方负责，不是main普通路由bug。六helper及prepare_part AST与作者publication5390b5af相同，但完整模块不同，旧报告不作当前head重跑；本机缺PEFT等仅源码/语法，无模型/替身/设备执行，缺口补原M5参考不部署或改#523专项。本题收束，下轮另选非adapter异常状态/重算替身小变体问题；GPU/AReaL/#8313/#523分工不变。
 
 - **M1空响应反向学习收束（2026-10-23）**：快进M5状态0e61691，有界核UniRL最新30创建项后读未完成#598 draft headfa0c3063/base祖先6c828f5e（6文件42增7删）。见[原调研新节](notebook/frameworks/unirl-survey.md#空响应的反向通信与零梯度更新)/[复查](experiments/scripts/verify_unirl_empty_backward.py)。局部零token跳过会失配FSDP调用，占位replay与GSPO/PPO零损失输出图反向各司其职；最后micro需承接deferred sync，全局token-mean零数保护仍在。仅8组原if分支有限CPU图对照、双输出反例及6组普通optimizer控制，零梯度仍可decay/momentum更新；非完整算法/padding/FSDP验收，两版5模块仅compile。作者H100 tiny模型不作本项目/真实recipe结果，缺口补原M5参考，不应用或重开已覆盖#581。本题收束，下轮另选非空行/零梯度/通信替身小变体问题；GPU/AReaL/#8313/#523分工不变。
