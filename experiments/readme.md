@@ -16,6 +16,7 @@
 | [verl-nixl-topology/](verl-nixl-topology/readme.md) | #8316两版各20组CPU控制及后续1原测试隔离对照；无原生导入/传输 | [单worker拓扑](../notebook/frameworks/verl-async-logprob-provenance.md#单-rollout-worker-的-nixl-拓扑) |
 | [deepinfer-civilian-port-stage2/](deepinfer-civilian-port-stage2/readme.md) | DeepInfer 平民版移植冒烟第二段：四 kernel 包 stub、架构检查放宽、llm_engine import 链、tilelang SM89 编译探针；去 PDL 改写（5 数值 + 43 编译 + load/store 全矩阵 60/60 nosync + sync_grid 上限发现） | [平民版专题真机验证](../notebook/frameworks/deepinfer-civilian-port.md#移植冒烟第二段2026-10-22m5-服务器-4090-1-实测) |
 | [deepinfer-mem-telemetry/](deepinfer-mem-telemetry/readme.md) | #151 显存遥测 helper 真机核对：base/head 单次查询语义、Allocated/Reserved/Occupied 三口径、异常回退 | [显存遥测采样与容量规划](../notebook/frameworks/deepinfer-initial-survey.md#显存遥测采样与容量规划) |
+| [deepinfer-mock-chain/](deepinfer-mock-chain/readme.md) | DeepInfer mock 权重链路真机跑通（M5 定时，✅ 完成）：dummy 权重跑通 LLMEngine 初始化 + CUDA graph 捕获 + prefill/decode 全链路，generate 返回随机文本；四 stub torch fallback + 结构堵点打通，最终复现命令见 readme | [handoff-m5 mock 条目](handoff-m5.md#deepinfer-mock-权重链路跑通2026-10-23-用户授权推进除真实权重环节) |
 | [verl-8281-gpu-smoke/](verl-8281-gpu-smoke/readme.md) | verl #8281 修复（PR #8313）GPU e2e 训练冒烟：正向 2 step 跑通 + 超长 prompt error 策略 fail-loudly | [handoff-m5 #8281 条目](handoff-m5.md#verl-8281-超长-prompt-截断修复--gpu-e2e-训练冒烟) |
 
 | [kernels/fused_rms_norm/](kernels/fused_rms_norm/) | Fused RMSNorm CUDA/C++ 实现、Python 接口、测试及基准 | [算子实验记录](../notebook/experiments/rtx4090-fused-rmsnorm-cuda.md) |

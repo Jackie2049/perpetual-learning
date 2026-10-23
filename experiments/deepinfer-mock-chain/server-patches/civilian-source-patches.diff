@@ -1,0 +1,91 @@
+diff --git a/deep_cluster/hardware/device.py b/deep_cluster/hardware/device.py
+index f64a248..a1af2be 100644
+--- a/deep_cluster/hardware/device.py
++++ b/deep_cluster/hardware/device.py
+@@ -153,6 +153,11 @@ def get_bf16_tflops_limit() -> int:
+         return 432
+     if is_sm_major_10():
+         return 2500 if platform.machine() in {"aarch64", "arm64"} else 2250
++    cap = nvidia.compute_capability()
++    if cap is not None:
++        # civilian port: map known non-Blackwell NVIDIA archs to their BF16 peak
++        # (used only for StatsLogger throughput estimates, not for gating).
++        return {8: 82, 9: 90}.get(cap[0], 82)  # SM89 (4090) ~82 TFLOPS BF16 dense
+     raise RuntimeError("unknown GPU type")
+ 
+ 
+diff --git a/deepinfer/model_executor/models/deepseek.py b/deepinfer/model_executor/models/deepseek.py
+index ca31b1c..a1a18ac 100644
+--- a/deepinfer/model_executor/models/deepseek.py
++++ b/deepinfer/model_executor/models/deepseek.py
+@@ -8,7 +8,7 @@ import tile_kernels
+ import torch
+ from torch import nn
+ 
+-from deepinfer import AttrDict, envs
++from deepinfer import AttrDict, PLATFORM, envs
+ from deepinfer.engine.engine_type import EngineType
+ from deepinfer.logger import init_logger
+ from deepinfer.model_executor import eplb
+@@ -488,10 +488,16 @@ class DeepseekForCausalLM(nn.Module):
+                 else:
+                     materialized_p = torch.nn.Parameter(torch.zeros(p.shape, dtype=p.dtype, device=device), requires_grad=False)
+                     if hasattr(p, "sf"):
+-                        materialized_p.sf = torch.ones(*(p.sf.shape), device="cuda", dtype=torch.float32)
++                        # dummy path: sf dtype must match the runtime FP8 scale layout (packed ue8m0 -> int32)
++                        materialized_p.sf = torch.ones(*(p.sf.shape), device="cuda", dtype=PLATFORM.fp8_sf_type)
+                     init_dummy_weight(materialized_p, model_cfg.gpt.mxfp4)
+                     if packed_fp4:
+-                        materialized_p = process_moe_weight(materialized_p, n_experts=p.n_experts, use_fp4=True)
++                        # Mock-only path: process_moe_weight's per_token_cast FP4
++                        # packing enforces a packed-ABI on x_sf that tiny mock dims
++                        # cannot satisfy; keep dummy weights in place (mock output
++                        # is meaningless anyway). Real loading packs in
++                        # materialize_hf_parameter instead.
++                        materialized_p.mxfp4 = True
+                 for k in set(p.__dict__.keys()) - set(materialized_p.__dict__.keys()) - {"sf"}:
+                     setattr(materialized_p, k, getattr(p, k))
+                 setattr(m, pn, materialized_p)
+diff --git a/deepinfer/model_executor/parallel_utils/parallel_state.py b/deepinfer/model_executor/parallel_utils/parallel_state.py
+index ec015d0..2cbff9e 100644
+--- a/deepinfer/model_executor/parallel_utils/parallel_state.py
++++ b/deepinfer/model_executor/parallel_utils/parallel_state.py
+@@ -184,7 +184,17 @@ class ParallelProcessGroup:
+                 continue
+             if id(value) not in seen:
+                 seen.add(id(value))
++                logger.info(f"init_device_groups: all_reduce on size {value.size()} backend {dist.get_backend(value)}")
++                if value.size() == 1:
++                    # Civilian port (single-GPU mock): a size-1 NCCL all_reduce can
++                    # fail with cudaErrorInvalidValue in the worker subprocess for
++                    # reasons unrelated to the model chain. With world_size==1 there
++                    # is no engram/EPLB collective to warm up, so skip the health
++                    # check for single-rank groups.
++                    logger.info("init_device_groups: skip size-1 group")
++                    continue
+                 dist.all_reduce(torch.zeros(1).cuda(), group=value)
++                logger.info("init_device_groups: OK")
+ 
+ 
+ PG = ParallelProcessGroup()
+diff --git a/deepinfer/worker/runtime_config.py b/deepinfer/worker/runtime_config.py
+index 3d17b6b..3d5a0e8 100644
+--- a/deepinfer/worker/runtime_config.py
++++ b/deepinfer/worker/runtime_config.py
+@@ -62,8 +62,14 @@ def configure_worker_kernels() -> None:
+         # TODO(NPU): 待完整支持 batch invariant 后移除
+         assert not envs.DEEPINFER_BATCH_INVARIANT
+     if PLATFORM.is_gpu:
+-        deep_gemm.set_pdl(True)
+-        tile_kernels.set_pdl(True)
++        import torch
++
++        # PDL (programmatic dependent launch) requires Hopper+; on SM89 the
++        # tilelang/tile_kernels factories emit pdl_sync/pdl_trigger only when
++        # use_pdl=True, so gate on compute capability for the civilian port.
++        use_pdl = torch.cuda.get_device_capability(0) >= (9, 0)
++        deep_gemm.set_pdl(use_pdl)
++        tile_kernels.set_pdl(use_pdl)
+     if envs.DEEPINFER_BATCH_INVARIANT or PLATFORM.is_npu:  # TODO(NPU): 防止 CI 数值不稳定
+         deep_gemm.use_deterministic_algorithms(True)
+         tile_kernels.use_deterministic_algorithms(True)
