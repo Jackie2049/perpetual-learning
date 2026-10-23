@@ -9,11 +9,11 @@
 
 **【价值评估】** 7 / 10 — 甄别"未认领、无 PR、可落地"的开放空间，避免重复投入已有人认领的 RFC。
 
-**【进展】** #523 的我方 fork PR 已获用户认可，测试与 e2e 正式指派 M5；M5 已闭环 L0（四项断言 + pristine 对照），L1 仍待 ≥8 卡及获准权重/存储，见[M5交接](../../experiments/handoff-m5.md)。#567 待匹配 H20；2026-10-23 尽调排除 #529（已有公开实现意向）和 #473（评论已明确分工），#458 保留为设计议题，不新增竞争或投机补丁，详见[边界核对](#补充尽调与派发边界)。
+**【进展】** #523 的我方 fork PR 已获用户认可，测试与 e2e 正式指派 M5；M5 已闭环 L0（四项断言 + pristine 对照），L1 仍待 ≥8 卡及获准权重/存储，见[M5交接](../../experiments/handoff-m5.md)。#567 待匹配 H20；2026-10-23 续核 #470/#481/#484，分别已有作者部分实现、明确派发或待匹配验证条件，不新增竞争补丁，见[RFC 归属与验证条件](#rfc-归属与验证条件)。
 
 **【大白话讲明白】**
 
-这张表记录 UniRL 上哪些问题还没人做、能做什么、以及哪些其实已被人认领（避免白费功夫）。当前最值得做的是修一个训练栈一致性 bug（#523），其他多数热门 RFC 都已被社区抢先认领。
+这张表区分尚有贡献空间、已有负责人、只覆盖部分需求和缺验证条件的问题。训练栈一致性修复（#523）已经交给 M5 单一推进，不是 M1 的待认领任务；其他线索也要读正文、评论及对应补丁，不能只看 assignee 是否为空。
 
 **【What–Why–How】**
 
@@ -54,6 +54,18 @@ UniRL 仓库当前 **73+ open issues**，其中大量是带 `help wanted` 标签
 
 #473本轮读取正文与全部4条评论；上表只判贡献归属，没有重跑报告者19-check真实包harness或SD3回归。贡献者评论提到#413/#474已覆盖部分清理及上游vllm-omni#8196待复审，属于当时报告；本轮未重核这些PR的当前状态，不据此自动退休passthrough或移除仍有独立用途的stage-0 gate，也不新增M5必跑矩阵。另读已有[#545](https://github.com/Tencent-Hunyuan/UniRL/pull/545)做[压缩积分学习](../../notebook/frameworks/unirl-survey.md#sde-窗口后的压缩积分尾段)，作者已有实现，CPU控制不转为我方贡献认领。
 
+## RFC 归属与验证条件
+
+2026-10-23 续核下面三条开放 RFC 的完整正文、全部评论、编号引用的开放 PR 检索结果及相关 PR 正文。**部分实现、负责人归属和验证许可是不同结论。** 本表仅用于选题，不认证补丁正确性或作者的实验数字。
+
+| 线索 | 已核实的社区状态 | 本项目处理 |
+| --- | --- | --- |
+| [#470 多参考图像与 DyRef](https://github.com/Tencent-Hunyuan/UniRL/issues/470) | 无 assignee、0 评论，但报告者 Ideny42 明确计划实现，并已有同作者开放非 draft [#478](https://github.com/Tencent-Hunyuan/UniRL/pull/478)，head `33756c23ec20da7c338602c07a0dce7c1738f187`；正文只覆盖 DyRef 数据、Qwen-Image-Edit-2511 和 FLUX.2 Klein 训练路径，不关闭 HI3/BAGEL/Qwen3-Omni/Janus-Pro 项。依赖 [#417](https://github.com/Tencent-Hunyuan/UniRL/pull/417) 仍 open、未合并 | 不把空 assignee 当无人做，也不把 #478 写成整个 RFC 已完成；其余模型是原作者声明的后续范围，不能直接认作我方空缺 |
+| [#481 agentic 内存与上下文预算](https://github.com/Tencent-Hunyuan/UniRL/issues/481) | assignees 为 celve、Dayuxiaoshui；CjhHa1 [评论](https://github.com/Tencent-Hunyuan/UniRL/issues/481#issuecomment-5713801099)明确支持拆分 recipe、缺 flag 保护、context budget 和文档，并要求 recipe 修好后重测工作集/KV 池比值 R，再决定是否做 HiCache/Mooncake。编号引用的开放 PR 检索无结果，不推导尚无实现 | 已派发，不接手缺 flag 或确定性 4xx 的小补丁；单 H20 的报告不能变成本机测量或通用 0.88 内存配置，也不启动 host-tier 集成 |
+| [#484 离线模拟接入](https://github.com/Tencent-Hunyuan/UniRL/issues/484) | 0z5a 已有开放非 draft [#487](https://github.com/Tencent-Hunyuan/UniRL/pull/487)，head 仍 `e8779559d2ceb441c062f603f90e7fd31370e69b`。维护者早期在 [RFC](https://github.com/Tencent-Hunyuan/UniRL/issues/484#issuecomment-5757256238)及 [PR](https://github.com/Tencent-Hunyuan/UniRL/pull/487#issuecomment-5757256603)要求匹配 H20 校准数据；PR 后续正文由作者称已获准用 H100 验证，本轮读到的两条 PR 评论未包含该许可原文 | 保留两者的时间和来源，既不宣称永久只准 H20，也不认证 H100 许可。匹配的真实 capture/后端版本/profile 与硬件对比仍未完成，作者的 CPU profile smoke 不等于保真度验收；不抢做 runner 或另排硬件任务 |
+
+#487 仍是 schema/converter，不含作者 fork draft 的 guard 或 runner；已有[本机契约验证](../../notebook/frameworks/unirl-survey.md#离线回放的到达契约与结果隔离)不重复运行。本轮没有执行模型、评分器、模拟器或设备测试，没有修改上游或发布评论；三个题目都不进入 M1 实现队列。只有负责人或范围发生实质变化，或收到明确协作需求，才重新判断贡献空间。
+
 ## 已认领/已覆盖，不重复推进
 
 - #368 RFC on-policy distillation——维护者列出 Open 项（D3/D4/D5、A3…）等认领，D2 已 assign，contribution 门槛高（P0/P1 多为大 feature）。
@@ -62,5 +74,5 @@ UniRL 仓库当前 **73+ open issues**，其中大量是带 `help wanted` 标签
 
 ## 决策待定
 
-- #523 是本次最可落地的候选。建议方向：先在 issue 留言表明意向并做 CPU 结构修复 + 验证，再考虑是否提 PR（对外提交按用户授权）。
+- #523 已有获认可的 fork 实现，由 M5 接续验证与发布判断；M1 不再留言认领、重写方案或并行测试。外部主仓库行动仍须用户授权。
 - #567/#581 需 GPU 或需协调 #580，标为"后续/需沟通"，不作为优先。
