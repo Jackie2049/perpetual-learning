@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1日志检查误报修复收束（2026-10-23）**：快进M5的DeepInfer mock完成/独立复验记录至5538beb，不改其代码。针对13:08真实提交曾把围栏中Python调用误报为链接，给[日志工具](tools/diary/readme.md)补顶层反引号/波浪号围栏过滤及7个测试方法；旧版真实hook拒绝复现、修复后通过，正文坏链接与其他门槛不放松。仅标准库、限定围栏范围，不扩成完整Markdown解析器或改历史日志。收尾后回到UniRL/verl独立问题，勿反复扩展日志格式边界；GPU、AReaL、#8313/#523和DeepInfer专项分工不变。
+
 - **M1数学奖励复查收束（2026-10-23）**：同步无新提交，两项目各10新创建项中发现verl#8346及同作者修复#8347，不竞争。固定head7f34e018/目标bfff4d90/祖先d430157d（ahead1/behind1，4文件185增3删），见[原奖励专题](notebook/frameworks/verl-reward-integration-reading.md#数学奖励的分层判分与精度边界)/[复查](experiments/scripts/verify_verl_prime_math.py)。原完整CPU路由/判分的64参数例祖先39过25预期失败、head64过，7范围控制两次一致；前段拒绝不阻止后备接受，整数字面量修复非科学计数精度/方程提取全解，局部箭头检查非完整评分语义。独立work仅装两固定parser依赖，进程内fork执行原timeout，无函数替换/原生pytest/全数据集或训练验收，无GPU需求/新M5事项/上游写入。下轮另选实际独立缺口，不堆数值/括号/提取regex变体；GPU、AReaL、#8313/#523和DeepInfer demo分工不变。
 
 - **2026-10-23 M5 定时轮次 DeepInfer mock 权重链路完成（13:07 轮 + 并行 13:40 轮）**：4090-1 连通可用（GPU 0/1/7 空闲，2-6 他人 VLLM 占用，/home 99% 剩 109G）。承接用户授权任务（10-23：先 mock 权重跑通、再真实权重，除下载环节外授权 M5）：**链路已完整跑通**——LLMEngine 初始化（含 CUDA graph 捕获）+ prefill/decode 全链路真实执行，`generate` 返回随机文本（mock 权重无意义为预期；两轮独立 PASS：并行会话 GPU 0 token id 输入路径、本会话 GPU 7 文本提示路径 `vocab_size=130000` + stub NaN 净化，输出 `'unch旅游景区 Ballet sama imaginationcheid谧-random'`，EXIT=0）。结构性堵点全部打通：PDL 按算力门控、28 cuda kernel 应用 nosync 变体、`init_device_groups` size-1 NCCL 检查跳过、`DEEPINFER_USE_MULTIMODAL_POOL=0`、mock config 字段补齐（qk_rope_head_dim=64/q_lora_rank%128/index_head_dim=128/n_shared_experts=0/vocab 1000→130000）、四 stub 落 torch fallback（mega_moe/mqa/paged 向量化 graph-safe + NaN 净化）。详见 [实验材料](experiments/deepinfer-mock-chain/readme.md) 与 [handoff-m5](experiments/handoff-m5.md#deepinfer-mock-权重链路跑通2026-10-23-用户授权推进除真实权重环节)。**真实权重环节**（300GB/磁盘剩 109G/hf-mirror 慢）仍待用户决策磁盘清理/下载路径，不归本条目。昇腾 VPN 仍掉线（第 8→9 天）待用户恢复。

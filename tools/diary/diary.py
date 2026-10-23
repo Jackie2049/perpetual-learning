@@ -33,6 +33,22 @@ def entries(text):
     return result
 
 
+def without_fenced_code(text):
+    prose, fence = [], None
+    for line in text.splitlines(keepends=True):
+        marker = re.fullmatch(r' {0,3}(`{3,}|~{3,})(.*)', line.rstrip('\r\n'))
+        if fence is not None:
+            if (marker and marker[1][0] == fence[0] and len(marker[1]) >= fence[1]
+                    and not marker[2].strip()):
+                fence = None
+            continue
+        if marker and (marker[1][0] == '~' or '`' not in marker[2]):
+            fence = (marker[1][0], len(marker[1]))
+        else:
+            prose.append(line)
+    return ''.join(prose)
+
+
 def append(title, body):
     title, body = title.strip(), body.strip()
     if not title or '\n' in title or not body or re.search(r'^## ', body, re.M):
@@ -81,7 +97,7 @@ def check(now=None):
                 continue
             if f']({day_match[1]}.md)' not in overview:
                 raise ValueError(f'{name} 尚未进入已暂存的 diary/readme.md 索引。')
-            for target in re.findall(r'\]\(([^\s)]+)\)', body):
+            for target in re.findall(r'\]\(([^\s)]+)\)', without_fenced_code(body)):
                 url = urlsplit(target)
                 if url.scheme or url.netloc or not url.path:
                     continue

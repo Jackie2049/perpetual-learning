@@ -98,6 +98,29 @@ class DiaryTests(unittest.TestCase):
         self.git('add', 'new.md')
         diary.check()
 
+    def test_fenced_code_is_not_checked_as_links(self):
+        self.record('复现命令：\n\n```python\ntests["check"](key)\n[示例](../not-a-result.md)\n```\n\n'
+                    '证据：[成果](../asset.md)。')
+        self.git('add', 'diary')
+        diary.check()
+
+    def test_link_after_fenced_code_is_still_checked(self):
+        self.record('```python\nprint("ok")\n```\n\n结果：[遗漏成果](../missing.md)。')
+        self.git('add', 'diary')
+        with self.assertRaisesRegex(ValueError, '链接目标'):
+            diary.check()
+
+    def test_real_hook_accepts_fenced_python_call(self):
+        diary.install()
+        record = self.record('复现：\n\n```python\ntests["check"](key)\n```\n\n结果：[成果](../asset.md)。')
+        self.git('add', 'diary')
+        self.git('commit', '-qm', 'record code example')
+        record.write_text(record.read_text() + '\n补充结果：[遗漏](../missing.md)。\n')
+        self.git('add', 'diary')
+        result = self.git('commit', '-qm', 'must reject real missing link', ok=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('链接目标', result.stderr)
+
     def test_previous_day_allowed_but_old_log_not_enough(self):
         yesterday = self.now - timedelta(days=1)
         p = Path(f'diary/{yesterday:%Y-%m-%d}.md')
@@ -160,6 +183,34 @@ class DiaryTests(unittest.TestCase):
         self.record()
         self.git('add', 'diary')
         self.git('commit', '-qm', 'recorded work')
+
+
+class FenceTests(unittest.TestCase):
+    def test_fence_kinds_indentation_and_longer_closers(self):
+        for opening, closing in [('```python', '```'), ('~~~sh', '~~~~'), ('   ````py', '   `````')]:
+            with self.subTest(opening=opening):
+                text = f'before\n{opening}\n[example](missing)\n{closing}\nafter\n'
+                prose = diary.without_fenced_code(text)
+                self.assertIn('before', prose)
+                self.assertIn('after', prose)
+                self.assertNotIn('missing', prose)
+
+    def test_short_or_other_kind_fence_does_not_close(self):
+        text = '````py\n```\n~~~\n````not-a-close\n[example](missing)\n````\n[real](asset.md)\n'
+        prose = diary.without_fenced_code(text)
+        self.assertNotIn('missing', prose)
+        self.assertIn('[real](asset.md)', prose)
+
+    def test_unclosed_fence_hides_only_remaining_code(self):
+        text = '[real](asset.md)\n```py\n[example](missing)\n'
+        prose = diary.without_fenced_code(text)
+        self.assertIn('[real](asset.md)', prose)
+        self.assertNotIn('missing', prose)
+
+    def test_non_fence_and_backtick_info_remain_prose(self):
+        for text in ['`` text [real](missing)\n', '```py`info\n[real](missing)\n']:
+            with self.subTest(text=text):
+                self.assertEqual(diary.without_fenced_code(text), text)
 
 
 if __name__ == '__main__':
