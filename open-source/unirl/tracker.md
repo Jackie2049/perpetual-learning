@@ -9,7 +9,7 @@
 
 **【价值评估】** 7 / 10 — 甄别"未认领、无 PR、可落地"的开放空间，避免重复投入已有人认领的 RFC。
 
-**【进展】** #523 的我方 fork PR 已获用户认可，测试与 e2e 正式指派 M5；M5 已闭环 L0（四项断言 + pristine 对照），L1 仍待 ≥8 卡及获准权重/存储，见[M5交接](../../experiments/handoff-m5.md)。#567 待匹配 H20；#470/#481/#484已有作者或验证条件。2026-10-24 已核 #515 的[维护者澄清](#补充尽调与派发边界)、#450/#537 的[已合并分项](#开放-rfc-的已合并分项)、#433/#416 的[需求边界](#标题占位与第三方接入边界)及[TP同步后续](#旧-tp-限制与后续实现)，不据开放或关闭状态认领/判断功能就绪。
+**【进展】** #523 的我方 fork PR 已获用户认可，测试与 e2e 正式指派 M5；M5 已闭环 L0（四项断言 + pristine 对照），L1 仍待 ≥8 卡及获准权重/存储，见[M5交接](../../experiments/handoff-m5.md)。#567 待匹配 H20；#470/#481/#484已有作者或验证条件。2026-10-24 已核 #515 的[维护者澄清](#补充尽调与派发边界)、#450/#537 的[已合并分项](#开放-rfc-的已合并分项)、[需求边界](#标题占位与第三方接入边界)、[TP后续](#旧-tp-限制与后续实现)及[parity分拆](#parity-分拆与验证矩阵)，不据状态或单个相等标志认领/判断功能就绪。
 
 **【大白话讲明白】**
 
@@ -102,6 +102,20 @@ UniRL 仓库当前 **73+ open issues**，其中大量是带 `help wanted` 标签
 | [#318 引擎中立TP placement](https://github.com/Tencent-Hunyuan/UniRL/pull/318) | haonan3，CLOSED但 `merged=false/merge_commit_sha=null`，head `b8133becd7e9b3491067c51eb8c1f546f837260f`；正文提Handle-owned RolloutParallelContext与DP2×TP4，GPU smoke尚缺，评论为空 | 不是已合入的通用placement实现。关键词检索只命中本PR不足以证明后续绝无同类实现；作者CPU拓扑harness也不等于目标GPU部署验收 |
 
 本轮仅核社区声明和合并事实，未逐行检查当前main、执行作者CPU/设备测试、改变CVD/启动器或准备新TP补丁。旧问题、特定合并版本及当前运行能力分开；不据作者历史H20环境安排本项目GPU实验或修改M5队列。只有具体当前版本的独立缺口与协作范围明确时，再判断贡献，而非反复追旧帖状态。
+
+## Parity 分拆与验证矩阵
+
+2026-10-24 读 [#431](https://github.com/Tencent-Hunyuan/UniRL/issues/431) 全文（OPEN/无assignee/0评论），按编号与parity plugin查PR，再读以下完整正文/API。三PR均同作者cboss6、OPEN/non-draft；原PR和分拆PR不是三份竞争实现。
+
+| PR | 当前head与声明范围 | 投入边界 |
+| --- | --- | --- |
+| [#430 原大PR](https://github.com/Tencent-Hunyuan/UniRL/pull/430) | `b7c06feebebc4abbdac69a88976d69ad321ca404`；正文已说明分成#504/#505，原报告为Torch2.11/vLLM0.22、prefix cache和chunked prefill开启 | 保留历史证据，不把原分支与替代分支一起采用，也不搬其开关组合到分拆版 |
+| [#504 rollout插件](https://github.com/Tencent-Hunyuan/UniRL/pull/504) | `310e8b946290fcefcf368f88af5be33981be8b86`；vLLM插件/数值provider/reload生命周期，不含训练gate、core/recipe | 单独安装不等于完整训练parity。专用进程、版本与私有符号要求不能被“默认关闭”替代；进程内切flag也不等于卸载patch |
+| [#505 训练接线与验证](https://github.com/Tencent-Hunyuan/UniRL/pull/505) | `b93896c3350397632ed9742228b2f337233874f7`；训练adapter、exact gate与初始/更新后两阶段artifact，依赖#504，正文要求按504→505顺序采用 | 不重写gate/provider或另开同范围验证脚本；这两部分共同实现同一实验特性，不能各自计成一份独立端到端验收 |
+
+分拆版作者报告的联合集成提交为 `b9e8ede407d3bb0c0dd47a773c1074527c988e04`：4×H20、Qwen3-30B-A3B固定revision、FSDP4+direct vLLM TP4、Torch2.13/vLLM0.27、BF16 compute及FP32 selected-token logp，prefix cache/chunked prefill关闭。作者称初始及更新后reload各32768 token精确相等，并称两branch合并tree等于该提交；本轮未对源码tree或本地artifact逐字节验证，也未复跑任何CPU/GPU测试。
+
+该报告仅限定selected-token FP32前向logp，不认证梯度/optimizer逐位相同或任意模型/软件栈可移植。RFC中EP4/DeepEP等预期与分拆正文明确“尚未验证”分开；vLLM0.28也在分拆版未验证范围。作者报告的版本、开关和阶段不能与#430旧配置拼接，更不能当成本项目结果或当前main已合并功能。这里不新增M5设备队列，不安装/启用插件或发布上游；有独立缺口或明确协作后才继续。
 
 ## 已认领/已覆盖，不重复推进
 
