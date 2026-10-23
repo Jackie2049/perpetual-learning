@@ -13,6 +13,8 @@ GPU/NPU 的访问、环境与实验由 macbook-M5 Agent 负责。M1 遇到需要
 
 ## UniRL 联合路径的资源与身份边界
 
+样本观测参考（2026-10-23，非新增算力队列）：draft[#597](https://github.com/Tencent-Hunyuan/UniRL/pull/597)head`d507c4dc1e10db427cadff4d6e29482801a12065`、base/祖先`6c828f5ed81649153315d996f0f597e8808ff144`；[M1学习](../notebook/frameworks/unirl-survey.md#样本观测的行上限与数据搬运)仅原CPU Sample/音频/本地sink六组控制，无trainer/远程hydrate/W&B/模型执行。作者H100小模型短训非Omni/HI3原配方或多节点driver RSS验收。若M5日后已有获准匹配UniRL任务并独立选择该draft，最小记录选中ID/祖先文本/reward、实际TensorRef块与hydrate字节、driver RSS和本地输出失败后的训练更新；先固定模型/配方及transport版本，关闭不必要的数据外发。缺授权权重、匹配多卡/transport/存储或需新增下载部署、影响专项即保留未测停止，不为本参考启动70/169GB模型或新增必跑矩阵；参考非接单，不改#523/AReaL。
+
 多教师周期参考（2026-10-23，非新增训练队列）：新draft[#624](https://github.com/Tencent-Hunyuan/UniRL/pull/624)head`375c2273ed5b0ef89d3075350ba96ba2bcdb31eb`，A3独立边界`0142d612fbd824c9a47d3f6446a4b914a04eb1c3`、目标base/祖先`6fd82cba13f52f394747832344039408699ea378`；[M1阅读](../notebook/frameworks/unirl-survey.md#多教师周期与恢复身份)仅10/11完整模块AST/compile，无作者CPU/GPU harness或真实模型执行。作者2×A100/Qwen3-4B-Base合成教师结果非本项目，normalized-gap恢复仍未另验。若日后M5已有获准匹配多教师选题并独立选用，需固定教师内容hash、数据内容/顺序、周期/DP布局、dropout及kernel设置，最小先核完整周期连续/恢复的样本与domain、token/logp、教师冻结、学生和Adam状态；JSON路由相同不替代内容/持久化核验。缺现成匹配环境/授权权重、需新部署/下载或影响专项就停留未测，不启draft配方、不拼接改#523/AReaL或新增必跑矩阵；参考非接单。
 
 Trainside组边界参考（2026-10-23，非新增算力队列）：[#485](https://github.com/Tencent-Hunyuan/UniRL/pull/485)head`9e36cf99eea03e9e2f6035976ac97c1a70759f9e`、base/祖先`772fd7c50ec8221a032179aeec8320df935b3abf`；[M1原helper控制](../notebook/frameworks/unirl-survey.md#prompt-组边界与前向分块)仅16,400有界布局与大组几何CPU对照，两版engine/NoiseRecipe仅compile，无Sample/Part、RNG、模型或设备执行。作者H100属旧683c320非当前head复跑。若M5日后已有获准匹配diffusion选题，可保持FBS/seed/recipe不变，最小核开关前后调用行序/组ID、初始噪声、轨迹/logp及组优势；更换FBS另列为RNG/批形状实验，不混为flag parity。缺匹配模型/环境或需新部署/下载、影响专项即保留未测停止，不放大FBS、不启开关/训练或新排矩阵，本参考非接单。

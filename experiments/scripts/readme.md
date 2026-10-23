@@ -4,6 +4,7 @@
 
 | 入口 | 用途 |
 |---|---|
+| [verify_unirl_sample_records.py](verify_unirl_sample_records.py) | 固定#597完整原Sample/record/preview/dump模块，6组真实CPU谱系、cap、音频、JSONL/WAV及本地失败控制；11改动模块compile。Python3.12+/torch/Pillow，参数为本地Git对象仓库和Pillow target；仅tensor包汇总跳过Ray，非trainer/TensorRef搬运/W&B/PyAV/模型或作者harness验收，见[主笔记](../../notebook/frameworks/unirl-survey.md#样本观测的行上限与数据搬运) |
 | [verify_verl_sft_loader_resume.py](verify_verl_sft_loader_resume.py) | 固定#7402祖先/head原加载方法和原log helper；2个真实torchdata迭代状态、8组真实CPU保存/加载控制，两次一致。Python3.12+/torch/固定Git对象，--deps指定独立torchdata0.11.0 target；属性容器提供self字段，非原生verl/作者24项/Ray/SPMD/fit或模型恢复验收，见[主笔记](../../notebook/frameworks/verl-checkpoint-management-reading.md#sft-epoch-边界与加载器状态) |
 | [verify_verl_sampler_logprobs.py](verify_verl_sampler_logprobs.py) | 固定#8026原sampler/chunk/v2函数及4个原CPU测试体，真实torch2.9.1值/局部梯度/checkpoint保存张量检查；3组补充公式差异、兼容flag/输入引用及词表支持控制。Python3.12+/torch/本地Git对象，不导入引擎/vLLM或探测设备，非原生pytest/模型batch-invariant验收，见[主笔记](../../notebook/frameworks/verl-6572-full-determinism-source-reading.md#actor-前向与-logprob-公式的一致性) |
 | [verify_verl_merger_storage.py](verify_verl_merger_storage.py) | 固定#7503原merger类/三个原测试体，真实torch2.9.1 CPU placements及四组保存/加载、dtype、storage字节和分支控制；基线2过1预期失败/head全过。Python3.12+/torch/本地Git对象；object基类隔离HF导入，非原生pytest、DTensor/完整CLI、HF保存或峰值测量，见[主笔记](../../notebook/frameworks/verl-checkpoint-management-reading.md#复制分片的存储隔离) |

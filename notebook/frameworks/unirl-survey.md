@@ -1213,6 +1213,40 @@ Qwen3禁用cuDNN SDPA的时机从第一次replay前移到stage构造，避免首
 
 真实周期/恢复条件仅记入[原M5可选参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不自动应用draft、下载教师/模型或排训练。此为源码契约学习，已有作者覆盖，不新增竞争PR或改动M5专项。
 
+## 样本观测的行上限与数据搬运
+
+样本观测需要同时限制输出、保留谱系、避免干扰训练，三个要求不能由一个`max_items`替代。UniRL draft [#597](https://github.com/Tencent-Hunyuan/UniRL/pull/597)以共享SampleRecord接通W&B和独立本地输出，已有作者ruiling-smartbear负责；这里核验其数据契约，不另做竞争实现。2026-10-23 API读取open/draft，固定head `d507c4dc1e10db427cadff4d6e29482801a12065`、目标main快照及实际祖先 `6c828f5ed81649153315d996f0f597e8808ff144`（ahead3/behind0），16文件400增235删；不是当前已合入能力。
+
+### 先选生成行 再找祖先
+
+[build_sample_records](https://github.com/Tencent-Hunyuan/UniRL/blob/d507c4dc1e10db427cadff4d6e29482801a12065/unirl/types/sample_record.py)先取当前生成Part的前K个sample_id，再用原祖先Parts与这个小frontier构造Sample，通过conditioning_at按parent ID回溯。它不是用当前行号整除fanout来猜prompt或recaption。CPU对照将root设为A/B，recaption行排成B1/A0/B0/A1，输出排成A1/B0/A0/B1；前两条仍得到`prompt A + recap A1 + reward1`、`prompt B + recap B0 + reward10`。
+
+BaseTrainer对**每个生成Part**应用同一个上限，两个Part各限2条会形成4条记录，而非整轮共2条。固定前缀也不是随机抽样或全体质量估计；eval只观察每套评测首个scored chunk，奖励指标仍另按整套汇总。root_id、group_id和sample_id保留各自层级，不能把多个生成阶段的记录当同一批独立样本。
+
+原Sample构造器会先拒绝缺失parent的链；本机非法输入也在此失败。记录构建器另有malformed-lineage警告回退，但该保护不代表正常构造器允许坏链，不绕过构造器制造一个“框架接受”的反例。
+
+### 条数限制不等于字节限制
+
+[媒体预览](https://github.com/Tencent-Hunyuan/UniRL/blob/d507c4dc1e10db427cadff4d6e29482801a12065/unirl/types/media_preview.py)从选中行扩展到TensorRef块边界后才hydrate；一个块覆盖多行时会额外实体化未展示行，块端点不能映射到样本累计长度时保守回退整个Part。这是源码路径，不是本机远程流量测量。resident CPU音频只验证前2条预览及原训练primitive身份/值不变，不外推driver RSS或通信峰值。
+
+上限按行而非字符、时长或字节计算，本地文本与metadata原样进入JSON；小K不能自动保证短文本、小视频或敏感内容已脱敏。rollout观测完成或跳过后，finally清空生成Part的decoded primitives、primitive_metadata和preview；这里不清理训练segment/reward，也没有调用transport释放接口。评测phase不走该清理分支。
+
+### 双输出与尽力而为的持久化
+
+`logging.sample_dump_dir`可在W&B关闭时独立工作；训练从step1开始按media_log_interval取样，eval由eval_interval节奏控制。正常路径中逐Part记录构建、W&B记录输出、本地dump各有异常捕获；这不是任意trainer错误或进程故障的恢复协议。旧非空顶层dump_dir及ROLLOUT_DUMP_DIR/ROLLOUT_DUMP_N会在创建worker前报迁移提示，不是悄悄忽略。
+
+[本地sink](https://github.com/Tencent-Hunyuan/UniRL/blob/d507c4dc1e10db427cadff4d6e29482801a12065/unirl/utils/sample_dump.py)先逐个保存媒体，最后写`<phase>/step_<n:06d>/samples.jsonl`。真实CPU对照确认：WAV为8kHz/单声道/16bit PCM，3与4个采样点可逐字节读回；同step重观测会替换索引，却不清理上次多出的WAV；metadata不能JSON序列化时函数警告返回，但已写WAV可留下而没有索引。这符合best-effort定位，不作为训练checkpoint或原子归档保证，也不据此另提事务化修复。
+
+### CPU复查与真实配方边界
+
+[复查脚本](../../experiments/scripts/verify_unirl_sample_records.py)从固定Git对象加载完整原模块，仅替换tensor包汇总初始化、重新导出原Batch/ref符号以跳过Ray transport；没有方法摘取或假Sample/media类。Python3.12.13、torch2.9.1、Pillow12.0.0（复用旧临时target，无新安装）下，6组控制两次通过：乱序谱系/每Part上限、四种cap、原构造器拒坏链、resident音频、JSONL/WAV读回与重写、路径/JSON失败返回。11个改动Python模块compile通过。复现：`python -B experiments/scripts/verify_unirl_sample_records.py /path/to/UniRL-git /path/to/Pillow-target`。
+
+这些是原CPU容器与本地文件控制，不运行BaseTrainer、TensorRef搬运、W&B/PyAV或模型训练，也没有作者未提交的11+5组临时harness。本机首次坏链夹具在Sample构造时就被拒绝，改为验证原拒绝行为后通过；没有关闭校验或修改候选来“跑通”。
+
+作者另报告H100上的SD3.5/Qwen3/PE三次短训与媒体契约；训练属于`b784cb8`，最终head仅在pyproject/requirements加入soundfile依赖及README说明（Git核为3文件4增1删），最终媒体契约单独报告。原Omni/HI3配方及多节点driver RSS仍未验证；小模型或合成CUDA媒体不等同于这些结果。需要的真实资源/最小观测已补[原M5可选参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不排新必跑任务或自动部署draft。
+
+原模块SHA256：sample_record `a52d819e057fca021025e9b3ed140ad6cd166026d701c02d6aacb538e0ba21b0`、media_preview `2bd1aba6fbcac008094ca15e51c9782b71adef3e152d8e0fb5be55e3c5240725`、sample_dump `52e9bfce9c976dfd02603a2fafa545213331f930fa2ef799c5ff9f908bfe705a`；脚本打印hash并禁止隐式Git fetch。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。
