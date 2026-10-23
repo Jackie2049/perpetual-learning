@@ -241,6 +241,33 @@ model_merger/fsdp_model_merger.py (35-):
 ★ LoRA: lora_train_meta.json → 重建PEFT config → 分离adapter和base weights
 ```
 
+### 复制分片的存储隔离
+
+离线合并中的`Replicate()`表示取一个副本的值，不自动表示返回值拥有独立存储。[verl #7503](https://github.com/verl-project/verl/pull/7503)将该分支的`return tensors[0]`改为`.clone()`；2026-10-23读取open，作者amanyagami，固定head `e2d9f145d9176f8a0763bb3cd43ed430a4ca6d8b`、目标base `3f9d4c0d32cc20c7ec31c8137e91bb5673ce9e5e`、实际祖先 `8df88be746801b6d87c42e15f9a5a0ec1d5eeeae`（ahead2/behind89），两文件104增1删。当前版本只改变复制分支，已撤去此前广泛拒绝共享storage的guard；不能把旧版guard或目标分支的其他变更算进本候选。
+
+[原函数](https://github.com/verl-project/verl/blob/e2d9f145d9176f8a0763bb3cd43ed430a4ca6d8b/verl/model_merger/fsdp_model_merger.py)处理的是已从DTensor取出的普通Tensor。`Shard(dim)`仍cat，`Partial()`仍不支持；复制分支仍只选首副本，clone不比较各rank值是否一致。它隔离的是存储所有权，不验证原checkpoint、模型权重绑定或HF文件键完整性。HF保存前另有显式`drop_tied_target_keys`路径，不能仅凭相同storage地址就把两个key判为错误重复。公开评审提出的plain-tensor分支是另一条路径，未给出实际共享storage的checkpoint复现；不把它自动扩张为已证实残余缺陷或另开修复。
+
+#### 共享存储不等于重叠元素
+
+一个缓冲的前四个元素和随后四个元素是两个不重叠view：`data_ptr()`不同，`untyped_storage().data_ptr()`相同。旧分支让输出继续引用源缓冲；更改首view会改源对应元素，但不会改第二view。新分支clone后，两输出与源缓冲各自独立。实际loader的`.bfloat16()`也有条件：输入已是BF16时可原样返回，FP32转BF16会新分配，不能假定所有输入都以相同方式保留别名。
+
+[CPU复查](../../experiments/scripts/verify_verl_merger_storage.py)使用torch2.9.1的真实Tensor和Replicate/Shard/Partial，从固定对象提取整个原merger类，以object替代HF依赖基类，仅调用不读self的合并方法；作者三个测试函数体保持不变。基线2项通过、独立storage断言预期失败；head3项通过。另四组控制覆盖真实torch.save/load的BF16共享view往返、dtype转换、存储字节与源持有者、首副本/Partial规则，两次执行一致。没有原生verl导入、pytest收集、DTensor构造/进程组、完整merger CLI或HF保存；作者19项全套报告不是本机结果。
+
+#### 输出占用与合并峰值
+
+1024元素的BF16源缓冲共2048字节，两段各4元素的输出合计只有16字节有效值。对唯一storage去重计数得到：
+
+| 仍可达的Tensor集合 | 基线共享view | head独立clone |
+|---|---|---|
+| 只计两个输出 | 2048字节 | 16字节 |
+| 源view也仍被持有 | 2048字节 | 2064字节 |
+
+这是实际storage.nbytes的CPU对照，不是RSS、allocator回收或峰值测量。clone可以避免**输出自身**长期保留整个源缓冲，却需要复制时的新分配；完整CLI还要结合源对象何时释放、并行加载、dtype转换和保存阶段判断峰值，不能由第一行直接断言整个合并峰值更低。
+
+[原报告#6259](https://github.com/verl-project/verl/issues/6259)是64卡训练后离线转换出现跨safetensors文件的重复key；作者及公开评审已收窄根因声明。当前CPU控制只证明存储隔离，不复现原文件症状，也不把不同key共享storage等同于文件key重复。已有作者修复覆盖，不新增竞争PR；完整转换首先需要匹配checkpoint及Transformers/HF依赖，离线核验本身不要求重跑64卡训练，不因此新增M5算力任务。
+
+复现：`python -B experiments/scripts/verify_verl_merger_storage.py /path/to/verl-git`，需Python3.12+/torch及本地固定Git对象，无新增依赖。脚本另断言目标base的合并方法AST与祖先相同，完整模块并不相同。原merger SHA256：base `2ae5f3f7fc95871b08a2e185def4f1a5cec09164579cd15eeb2314cb73ef1f0f`、head `29be8e51f7e6bc36a062ff0dbb7a9feb27186a1c3b6cba432c6d8661e0f4d1e1`；原测试 `890253f9060f545948bb9e87cdb8e7bf6d4d8665965bc29e0348db2ac0703c1f`。
+
 ## 8. 关键设计洞察
 
 ```

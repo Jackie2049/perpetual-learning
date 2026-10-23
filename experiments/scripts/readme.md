@@ -4,6 +4,7 @@
 
 | 入口 | 用途 |
 |---|---|
+| [verify_verl_merger_storage.py](verify_verl_merger_storage.py) | 固定#7503原merger类/三个原测试体，真实torch2.9.1 CPU placements及四组保存/加载、dtype、storage字节和分支控制；基线2过1预期失败/head全过。Python3.12+/torch/本地Git对象；object基类隔离HF导入，非原生pytest、DTensor/完整CLI、HF保存或峰值测量，见[主笔记](../../notebook/frameworks/verl-checkpoint-management-reading.md#复制分片的存储隔离) |
 | [verify_verl_extra_fields.py](verify_verl_extra_fields.py) | 固定#8341原TokenOutput/normalizer/两客户端类及2个未改测试体；base均丢text/head通过，另3组缺键/浅替换/调用隔离控制。Python3.12+/numpy/pytest，--deps指定独立Pydantic2 target，本地Git对象；包壳与作者base.generate替身非原生导入、完整49项或后端验收，见[主笔记](../../notebook/frameworks/verl-async-logprob-provenance.md#resume-返回值与扩展字段合并) |
 | [verify_unirl_group_chunks.py](verify_unirl_group_chunks.py) | 固定#485完整原stdlib helper，16,400有界布局对照chunk占用oracle与大组/straddle控制；两版engine及NoiseRecipe仅compile。Python3.9+/本地Git对象，无Sample/Part/RNG/模型或引擎parity验收，见[主笔记](../../notebook/frameworks/unirl-survey.md#prompt-组边界与前向分块) |
 | [verify_unirl_offload_plan.py](verify_unirl_offload_plan.py) | 固定#486完整原stdlib planner，36组synthetic配置/180候选账本对照，另核node预算、缺phase、fixed/alias及目标/字段语义。Python3.9+/本地Git对象；非校准profile、FSDP/执行器、显存或性能验收，见[主笔记](../../notebook/frameworks/unirl-survey.md#常驻与流式-block-的规划账本) |
