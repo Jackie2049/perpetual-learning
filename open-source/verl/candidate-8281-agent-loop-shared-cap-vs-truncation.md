@@ -193,4 +193,4 @@ PR #8313 重开后，维护者 **dajiaohuang（Wu Shuwen，NUS/TikTok 实习）*
 - **设计决策**：`response_length` 不校验——0 是 skip/rollout_skip.py 的合法「不限」语义，加校验会破坏现有配置
 - 验证：**15 CPU tests passed**（13 cap + 2 config）；对照验证移除校验后 config 测试 `DID NOT RAISE` 失败、还原后通过
 
-**已回复维护者**（PR comment [6342081989](https://github.com/verl-project/verl/pull/8313#issuecomment-6342081989)）说明修复与 response_length 决策。**注释精简**（用户指出 rollout.py 校验段注释冗余，代码自解释）——commit `2079ab0e` 删除 6 行冗余注释（config 测试 2 passed 复验）。PR head 现为 `2079ab0e`，CI 待重跑。
+**已回复维护者**（PR comment [6342081989](https://github.com/verl-project/verl/pull/8313#issuecomment-6342081989)）说明修复与 response_length 决策。**注释精简**（用户指出 rollout.py 校验段注释冗余，代码自解释）——commit `2079ab0e` 删除 6 行冗余注释（config 测试 2 passed 复验）。PR head 现为 `2079ab0e`。**2026-10-23 CI 核验**：PR 检查仅 CodeRabbit（pass）与 CLA（pass），正式测试 CI 未运行（外部 PR 需维护者触发）；`mergeable_state=blocked` 实质为等待维护者 re-review + 分支保护，非代码冲突（非 dirty），我方无待办。

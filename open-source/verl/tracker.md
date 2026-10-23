@@ -31,11 +31,13 @@
 
 **（2026-10-20 更新）** verl 新 issue 池恢复（10-16/10-19 共 3 个：#8261 perf、#8265 问卷非 bug、#8281 bug）。#8281 深挖完成（analysis-done + CPU 验证），登记为第 3 个活跃候选。
 
+**（2026-10-23 扫描补充）** 10-22 以来新增 3 个 0 评论 RFC：#8324 Modern Megatron integration、#8334 teacher-generated rollouts（on-policy distillation）、#8342 VeOmni 端到端低精度训练——均为大 feature 方向（非 bug 修复 PR），仅登记监控，未评估贡献空间；**无新 bug 候选**。UniRL 侧 10-22 扫描后无新 issue。
+
 | # | 候选 | 类别 | 性价比 | PR | 状态 | 首次发现 |
 |---|---|---|---|---|---|---|
 | 0 | megatron `optimizer_offload_fraction<1` 首轮 update 崩溃 (#8237) | P0 | 42 | [#8286](https://github.com/verl-project/verl/pull/8286) **MERGED** `472dd21` | **已合并**（2026-10-20）：根因 100% 实锤（无差别 `to("cpu")` 污染 GPU 半 + fp32 参数悬空 view；P1/P2a/DeepSeek 模型源码三链）；方案 2（HDO 状态在 offload 完全不动）PR，issue #8237 已回复，4090 全验证 + 外部 GB200 验证（linmuchuiyang）→ wuxibin89 approve 后 08:06 合入。详见 [candidate](candidate-8237-offload-fraction.md) | 2026-10-19 |
 | 1 | async熵异常与坍塌诊断 (#8250) | 调查/评论 | 重评见candidate | — | **needs-evidence**（2026-10-21）：仍open/0评论；旧“结果0必然全梯度0、优势离群必然性、同步唯一根因、紧窗导致无法恢复”撤回。报告源码+NumPy反例已补，不是训练实测；需有效奖励/优势/mask/ratio/版本数据，旧英文稿不可直接发 | 2026-10-19 |
-| 3 | agent loop shared cap 忽略data.truncation（#8281） | P2 bug | ~25 | [#8313](https://github.com/verl-project/verl/pull/8313) | **open，需核对边界**（2026-10-22）：head80ee82bd/base954bd28f，用户账号已发布，M1仅只读；原方法middle/cap=1将10token变11，两版各24组输入观察，原11项pytest未跑。未改PR/分支/补丁，旧草稿验证仅指定长度；见[candidate](candidate-8281-agent-loop-shared-cap-vs-truncation.md#当前候选的最小正上限反例)，修正与对外行动待负责人决定 | 2026-10-20 |
+| 3 | agent loop shared cap 忽略data.truncation（#8281） | P2 bug | ~25 | [#8313](https://github.com/verl-project/verl/pull/8313) | **open，等维护者 re-review**（2026-10-23）：head `2079ab0e`（fork `Jackie2049:fix-8281-truncation-policy`，4 文件），维护者 dajiaohuang review 意见已闭环（`d0ca3be1` RolloutConfig 校验 prompt_length>0 + left cap=0 正向切片，15 CPU tests；`2079ab0e` 注释精简），已回 PR 评论；middle/cap=1 反例已修复；CI 仅 CodeRabbit+CLA 过（正式测试 CI 需维护者触发），blocked 实质=等 review，无我方代码欠账；GPU e2e 冒烟已完成。见[candidate](candidate-8281-agent-loop-shared-cap-vs-truncation.md#当前候选的最小正上限反例) | 2026-10-20 |
 | 4 | 训练前 weight-update 自检 RFC (#8252) | RFC/评论 | ~13 | — | **assessed**（2026-10-20）：三项核心事实声明全核验成立（README 无 post-sync 验证列、tests 无 weight-checker 测试、`check_weight_update_equal` main 不存在且 delta checksum 仅线缆完整性）；reporter shiyuan680 在 verl 无 PR 记录；关键张力=唯一实现先例 #7108 stale+不可合并（RFC 却要 extend 它）；不建议我方实现（成本 3/接受度未验证/无 ray-GPU 验证），价值在 RFC 技术回复（解耦为后端无关最小钩子 + 补 scope 声明）。详见 [candidate](candidate-8252-weight-checker-rfc.md)；参与与否待授权 | 2026-10-20 |
 
 ## 本地论证撤回，不再独立推进
