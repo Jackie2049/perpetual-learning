@@ -135,6 +135,7 @@
 - [Megatron-LM TP 源码深度阅读](frameworks/megatron-tp-source-reading.md) — 通信原语 autograd、TP 数据流、权重分发、SP 扩展、3D 并行交互
 - [Megatron-LM 流水线并行](frameworks/megatron-pp-reading.md) — 1F1B 调度、气泡分析、通信 overlap
 - [verl 架构](frameworks/verl-architecture.md) — 三级前缀缓存（系统级+进程级+请求级）
+- [verl DeepEP 环境边界](frameworks/verl-architecture.md#deepep-的包解析与动态库加载) — #8354 Python包/系统NVSHMEM/dispatcher分层；4份TOML与17份YAML静态一致，不等于镜像、import或通信验收
 - [verl 文件系统权重同步](verl-v1-checkpoint-engines-deep-reading.md#文件系统权重同步的发布与清理) — #8355原safetensors/复制/CPU接收本地验证；临时文件非完整恢复状态，索引最后复制非事务，撤回旧4090后端和固定内存结论
 - [verl LoRA 主机暂存](verl-v1-checkpoint-engines-deep-reading.md#lora-分桶接收的主机存储所有权) — #8352原暂存语句CPU存储控制；每桶一个块仍须累计整个adapter，逐tensor复制及锁页/loader另有条件，非IPC或加速验收
 - [vLLM MLA Backend 源码阅读](frameworks/vllm-mla-backend-reading.md) — FlashMLA/FlashInfer/Triton/Cutlass MLA 后端、压缩数据流、KV Cache 格式、Backend 选择
