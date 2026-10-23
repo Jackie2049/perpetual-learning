@@ -1,6 +1,6 @@
 # verl Reward Integration 源码级深度阅读
 
-2026-10-23 补充：[数学奖励的分层判分与精度边界](#数学奖励的分层判分与精度边界)固定于未合并PR #8347，仅覆盖CPU字符串判分。下方2026-06的架构与硬件建议不属于这次复查范围。
+2026-10-23 补充：[数学奖励的分层判分与精度边界](#数学奖励的分层判分与精度边界)固定于未合并PR #8347，仅覆盖CPU字符串判分；[Prime 进程池的结果协议与失败范围](#prime-进程池的结果协议与失败范围)用 #8217 原测试核对真实 CPU 进程池，不是训练验收。下方2026-06其余架构与硬件建议不属于这两次复查范围。
 
 > 2026-06-15 | 源码: verl/trainer/ppo/reward.py + ray_trainer.py + workers/reward_manager/ + experimental/reward_loop/ + core_algos.py + utils/reward_score/
 > 核心: 两层架构(legacy RewardManager + experimental RewardLoop) → 3 reward路径(rule/DisRM/GenRM) → outcome reward=最后token非零 → GRPO group-relative → colocate RM sleep/wake → RTX 4090=rule-based唯一可行
@@ -419,30 +419,29 @@ class DAPORewardManager(AbstractRewardManager):
 
 **★★ DAPO overlong penalty**: 防止模型生成过长response → 惩罚线性增长 → reward=score+overlong_penalty
 
-### 5.4 PrimeRewardManager — prime.py:103-189
+### 5.4 PrimeRewardManager
 
-```python
-@register("prime")
-class PrimeRewardManager(AbstractRewardManager):
-    def verify(self, data):
-        # ★★★ 异步并行: ProcessPoolExecutor + asyncio.gather!
-        scores = run_reward_scoring(
-            self.compute_score,
-            completions=sequences_str,
-            references=ground_truth,
-            tasks=data_sources,
-            extra_info=extra_info,
-            num_processes=64,  # ★ 64个进程并行!
-        )
-        # timeout=300s → 超时=0分 → 进程自动kill
+#### Prime 进程池的结果协议与失败范围
 
-    def __call__(self, data, ...):
-        scores = self.verify(data)
-        for i in range(len(data)):
-            reward_tensor[i, valid_response_length[i].item() - 1] = scores[i]
+固定 [#8217](https://github.com/verl-project/verl/pull/8217) head `fe9ff514507e6f7a68cf927b2213ad8d8d2501ff`、目标 base 与共同祖先 `2035f58dcb06d8cad4caee107b30f4045d724367`（ahead 1 / behind 0，2 文件新增 67 行）。[#8216](https://github.com/verl-project/verl/issues/8216) 的字典返回问题由报告者自己修复；同题 [#8262](https://github.com/verl-project/verl/pull/8262) 已关闭且未合并，不另立竞争候选。这不是 `prime_math` 字符串判分问题，而是评分函数返回后如何转成数值的问题。
+
+调用链为 `verify → run_reward_scoring → parallel_compute_score_async → single_compute_score`。最内层将同步 scorer 送入真实 `ProcessPoolExecutor`，以 `asyncio.wait_for` 等待；普通评分异常与等待超时在这里捕获并返回 `None`。`gather` 保持输入顺序，回收后把 `None` 转成该行的 `0.0`，所以一条 scorer 抛错不必抹掉其他行。默认 helper 和 `verify` 使用 `max_workers=64`，是进程数上限，不是每批必定启动 64 个进程，更不能由此判断比其他 manager 更快。
+
+结果解析发生在上述 worker 异常处理之外。旧版接受数值或取 `result[0]`，字典因此抛 `KeyError: 0`；#8217 增加 `isinstance(result, dict)` 后取 `float(result["score"])`，保留原数值和 tuple 路径。该修复只提取标量，`acc`、`pred` 等元数据不在这里传播；`verify` 写入的 `data.batch["acc"]` 是这些标量分数，不是字典的 `acc` 字段。
+
+两层失败范围必须区分：scorer 抛错按行归零；结果解析抛错则逃出 helper，被 `verify` 的广泛异常回退变成整批零。候选中缺少 `score` 的字典或不可转 float 的值仍会逃出解析，`NaN` 可原样成为分数；这是本次控制输入的范围观察，不把违反结果契约的输入直接宣称为新的上游缺陷。整批回退在 [固定版本 manager 源码](https://github.com/verl-project/verl/blob/fe9ff514507e6f7a68cf927b2213ad8d8d2501ff/verl/workers/reward_manager/prime.py) 中核对，本机未构造 DataProto/tokenizer 执行 `verify`。
+
+300 秒是 `single_compute_score` 对提交 future 的等待预算，含在池中排队的等待，不是整个批次含清理的硬截止。清理位于 `gather` 退出后的 `finally`：遍历池的私有 `_processes`，尝试 `terminate`、逐个等待最多 5 秒，再尝试 `kill`，清理异常会忽略；随后仍退出 executor 上下文。不能把它描述成“某行超时立即杀掉对应进程”或“所有情形都在 300 秒内返回”。本轮只观察正常短任务的真实子进程清理，没有运行 300 秒超时、死循环或破损池测试。
+
+[CPU 复查脚本](../../experiments/scripts/verify_verl_prime_pool.py)在 Python 3.12.13、psutil 7.2.2、pytest 8.4.2 的独立临时环境，用 macOS 原生 `spawn` 和真实进程池，两次运行结果一致：原 4 个测试体在 base 为 3 过、字典例预期 `KeyError: 0`，head 全过；base 的混合成功/失败行控制通过，head 的 5 组控制分别核对成功行保留、字典混合顺序、缺键、坏值和非有限值。三个原评分函数及原 `get_event_loop` 完整 AST 原样执行，原测试模块完整载入；绕过包初始化、Ray/torch 和 manager 类，不替换 executor、psutil、时钟或 scorer 超时实现。直接调用原测试体，不是原生 pytest 收集或作者声称的全目录 22 项。无需 GPU 或新增 M5 实验。
+
+```bash
+uv venv --python /path/to/python3.12 /tmp/prime-pool-check
+uv pip install --python /tmp/prime-pool-check/bin/python psutil==7.2.2 pytest==8.4.2
+/tmp/prime-pool-check/bin/python -B experiments/scripts/verify_verl_prime_pool.py /path/to/verl
 ```
 
-**★★★ PRIME特点**: ProcessPoolExecutor(64进程) + async + timeout → CPU密集型reward的最优选择!
+两版 `prime.py` SHA-256 分别为 `e30e34ca239ddb629b009eb30eee017c55ca4fdf37f9f797da1d4611239371a4`、`bf33317ac9f65636fd90ddd9d1dd4e32618dc3c3c686d4d1d5592a976a020399`；`ray_utils.py` 相同为 `1f70a9ac05b4a6f92a3ad2486bee17ac9721a9568e7e72b17e76172a60a7751b`。完整两版模块与原测试另做语法编译；不由局部成功推出训练奖励、进程故障恢复或性能结论。
 
 ### 5.5 Experimental NaiveRewardManager — reward_loop/naive.py:24-99
 

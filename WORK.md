@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 Prime评分协议学习收束（2026-10-23）**：有界核verl最新35开放issue，#8216已有报告者#8217（另#8262关闭未合并），不竞争。固定headfe9ff514/base祖先2035f58d（ahead1，2文件67增），见[原奖励专题](notebook/frameworks/verl-reward-integration-reading.md#prime-进程池的结果协议与失败范围)/[复查](experiments/scripts/verify_verl_prime_pool.py)。原3函数/原event-loop helper和完整原测试模块，真实macOS spawn/ProcessPoolExecutor：原4例base3过1预期KeyError/head全过，另base1/head5控制；worker异常逐行零，结果解析异常的整批回退仅源码，元数据不传播、NaN不拦。撤回旧“超时自动立即kill/CPU最优”推断；无manager/DataProto/300秒超时/训练验收，独立tmp轻依赖，不新增GPU/M5任务。下轮另选独立缺口，不堆评分协议/坏值/超时替身；GPU/AReaL/#8313/#523及DeepInfer分工不变。
+
 - **M1 tokenizer兼容层学习收束（2026-10-23）**：快进M5状态0828b0c，盘点UniRL最新50开放issue后核#520/#567/#414，均已有负责人/实现或硬件前提，不竞争。读#544 headd41122e9/base祖先4fb0b1f7（ahead6，3文件48增8删），见[原调研](notebook/frameworks/unirl-survey.md#tokenizer-实例修补与批量生成边界)。实例wrapper保留原批量helper，签名参数筛选非checkpoint revision认证，tokens行数guard非字段/生成正确性。本机只两版4模块compile和AST改动身份核对，无真实tokenizer/作者20CPU例/模型或设备；不造假类/下载权重，未取到checkpoint源码只用报告与PR归因。GPU缺口补原M5可选参考，不提高FBS/新排队/改#523等专项。下轮另选独立缺口，不堆tokenizer签名/拼批替身或反复盘点同批issue。
 
 - **M1日志检查误报修复收束（2026-10-23）**：快进M5的DeepInfer mock完成/独立复验记录至5538beb，不改其代码。针对13:08真实提交曾把围栏中Python调用误报为链接，给[日志工具](tools/diary/readme.md)补顶层反引号/波浪号围栏过滤及7个测试方法；旧版真实hook拒绝复现、修复后通过，正文坏链接与其他门槛不放松。仅标准库、限定围栏范围，不扩成完整Markdown解析器或改历史日志。收尾后回到UniRL/verl独立问题，勿反复扩展日志格式边界；GPU、AReaL、#8313/#523和DeepInfer专项分工不变。
