@@ -9,7 +9,7 @@
 
 **【价值评估】** 7 / 10 — 甄别"未认领、无 PR、可落地"的开放空间，避免重复投入已有人认领的 RFC。
 
-**【进展】** 2026-10-22 首次扫描 73+ open issues + open PRs：锁定未认领候选 #523（unified stack 跳过 anchor freeze/prepare_part，纯 CPU 可验证）；#567 需 H20 GPU、#581 已上 #580 路线为次要；热门 RFC #419/#423/#453/#520/#368 已被社区认领，不重复推进。**2026-10-23**：#523 replay GPU 验收已登记 [M5 交接](../../experiments/handoff-m5.md)（参考性质、非接单）；#567 确认 blocked——取舍需 H20 实机验证，我们与 M5（4090）均无 H20，不写投机 PR；复扫无新 issue。
+**【进展】** #523 已有我方 fork PR 供审阅，GPU 验收沿用[M5交接](../../experiments/handoff-m5.md)，#567 仍待匹配 H20 条件。2026-10-23 补充尽调：[#529](https://github.com/Tencent-Hunyuan/UniRL/issues/529#issuecomment-6340056553)虽无assignee但已有公开认领意向，不并行实现；[#458](https://github.com/Tencent-Hunyuan/UniRL/issues/458)是控制字段所有权设计议题，不当成通用deep-merge小修复。未新增可直接发布的补丁，详见[边界核对](#补充尽调与派发边界)。
 
 **【大白话讲明白】**
 
@@ -37,6 +37,19 @@ UniRL 仓库当前 **73+ open issues**，其中大量是带 `help wanted` 标签
 | [#423](https://github.com/Tencent-Hunyuan/UniRL/issues/423) 复合奖励能力预检 | enhancement/help wanted | **已 assign GBX-Max1220，有 PR #621** | 已认领 | 非我方空间 |
 | [#453](https://github.com/Tencent-Hunyuan/UniRL/issues/453) 主仓库文档社区刷新 | documentation/help wanted | **已 assign 6 人，WIP** | 已认领 | 非我方空间 |
 | [#520](https://github.com/Tencent-Hunyuan/UniRL/issues/520) batched chat-template tokenization bug | bug | **已 assign ruiling-smartbear，关联 PR #544** | 已认领 | 非我方空间 |
+
+## 补充尽调与派发边界
+
+2026-10-23只读核对#458/#529正文、全部评论及开放PR清单；关键词affinity/sibling/control/overlay未发现标题明确覆盖的开放PR，**不等于确认没有重叠工作**。编号全文检索还会命中不相关PR，须回到具体需求、评论与源码。固定源码为`6fd82cba13f52f394747832344039408699ea378`，未修改上游。
+
+| 线索 | 可核实的现状 | 本项目处理 |
+|---|---|---|
+| [#529 sibling affinity](https://github.com/Tencent-Hunyuan/UniRL/issues/529) | 无assignee；MciG-ggg已[公开表示准备实现](https://github.com/Tencent-Hunyuan/UniRL/issues/529#issuecomment-6340056553)初版RolloutManager group_packing，尚非维护者正式指派 | 暂不竞争；接续前先核贡献者进展和实际路径，不据空assignee认领 |
+| [#458 Part.control](https://github.com/Tencent-Hunyuan/UniRL/issues/458) | 无assignee、0评论；问题正文明确是设计债而非#263用户回归 | 设计方向待确认，不创建通用deep-merge补丁或声称可发布；须先确定每hop所有权、显式继承/替换/清除及兼容范围 |
+
+#529的派发粒度不能一概而论：[AsyncARTrainer](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/trainer/async_ar.py)沿ARTrainer构造fork后的完整请求，再由async循环按`Sample.split()`拆成root树提交；[Sample.split](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/types/sample.py)保留该root的所有children。相反，[AgenticTrainer._collect_groups](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/trainer/agentic.py)将每个prompt重复K次成为独立任务。pool按任务计一个slot，并不在内部拆K个row。因此“普通异步AR的K个siblings必被pool散到K个worker”不能直接由most-free策略推出；同worker也不保证KV已就绪、命中100%或吞吐提高。同步DP_SCATTER、engine内部执行及session续跑须另核，见[原单位说明](../../notebook/frameworks/unirl-survey.md#队列深度不是一种单位)。
+
+#458同样不能只凭浅合并就认定bug：[prepare_input_sample](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/trainer/base.py)顶层覆盖，而PE显式传空ar/chat袋以擦除父输入控制；无条件deep merge会保留本来要清掉的字段。单个字典算法无法替代跨trainer/engine的所有权设计。本轮只做源码和社区状态尽调，无执行、性能/缓存验证、认领或对外操作，不为这两个线索排M5实验。
 
 ## 已认领/已覆盖，不重复推进
 

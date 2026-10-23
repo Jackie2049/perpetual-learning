@@ -688,6 +688,8 @@ PR未提交所述外部harness；作者40项CPU/早期8×L40S smoke与5a1eff0的
 
 native AR/DiT每个任务提交一个prompt树，所以trainer日志用prompts命名；agentic任务则是轨迹，不能把通用manager所有计数一律解释成唯一prompt数。slot_occupancy=(running+reserved)/sum(capacities)，是本地逻辑slot占用比，不是GPU利用率；capacity也不是trainer的max_inflight准入预算。
 
+2026-10-23对[#529](https://github.com/Tencent-Hunyuan/UniRL/issues/529)的[候选尽调](../../open-source/unirl/tracker.md#补充尽调与派发边界)补核固定主线6fd82cba：异步AR先fork再按root树split，Agentic则显式展开K份独立任务，pool一次slot对应整个task。“most-free必把任意GRPO siblings拆散”不由前者推出；同worker也不自动保证KV就绪或100%命中。本轮未执行pool、Sample、engine或缓存实验，且已有贡献者公开表达实现意向，不新增并行方案。
+
 ### lag 与横轴各有自己的时刻
 
 [CompleteGroups.oldest_output_version](https://github.com/Tencent-Hunyuan/UniRL/blob/f404c9024c00bbf8a5d05315153444cee894865a/unirl/rollout/manager/buffers.py)只取ready存储中generated Part的最小版本；不覆盖queued/running/completed-unrouted。trainer以`train_version - oldest`生成max_ready_lag_updates，单位为optimizer update，不是秒、rollout轮数或所有在途工作最大lag。没有generated Part则为None；[同版logger](https://github.com/Tencent-Hunyuan/UniRL/blob/f404c9024c00bbf8a5d05315153444cee894865a/unirl/utils/wandb_logger.py)跳过None，缺点不能补成0或沿用上个值。
