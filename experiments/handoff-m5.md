@@ -102,6 +102,25 @@ M5 最小下一步：先按实际硬件查已有方案和精确 head，读清依
 
 2026-10-22 另一个参考入口（不另排队）：[#193 V4-Flash-0731 EP8 runner](https://github.com/deepseek-ai/DeepInfer/pull/193)，读取open、wangzhao-11a，head `a87157392233938be508170f44790b76c2a0510c`，base `9bd9cf243fc53ef9afbf8f04d391d989117d6ab9`。作者报告8×910B4-1、真实W8A8权重、43层的短生成，并列出输出逆RoPE和逐head无权重RMSNorm的修正经验；这是0731参考路径，不是#192的4.1单卡配置或生产engine支持。每token重算全序列、无paged KV，稀疏indexer未接入，不能外推吞吐/910C兼容。M1只核正文/版本，未审实现或复跑；供M5在原任务独立判断，不自动应用、下载权重/切环境、采用作者命令或打断现有实验，原停止条件不变。
 
+## DeepInfer mock 权重链路跑通（2026-10-23 用户授权推进，除真实权重环节）
+
+用户目标（2026-10-23 明确）：**demo 级（能正常推理即可）**，先造 mock 权重跑通链路，调通后再上真实权重调精度。除「真实权重下载」环节外，其他环节授权 M5 定时任务推进闭环；本条目为交接。
+
+**背景与架构结论（2026-10-23 M1 已核实源码）**：DeepInfer 的 L1 调度（LLMEngine/Scheduler/Worker）是框架侧不耦合模型，但 L2 缓存（MLA 布局）、L3 模型执行（v4_modules/decoder_layer/HC）、L4 算子（deep_gemm/deep_ep/flash_mla）全部深度绑定 DeepSeek-V4.1——**不是通用模型框架**。`ModelRegistry._MODELS` 只有 `DeepseekV41ForCausalLM` 一项；`load_hf_model_config` 强制 `model_type=deepseek_v41` + fp8/fp4 量化 + text_config/vl_aligner。**Qwen 等小模型无法直接适配**（需整套 dense 后端，工程量等于移植半个 vLLM）。
+
+**mock 方案可行性（源码级确认）**：
+- `DeepseekForCausalLM.load_model` 的 `skip_load=True` 走 `HFCoverage()`（不读权重文件），`build_model_on_meta` 随机初始化——**支持纯 mock**
+- `load_processor_config` 只读 config.json（要求 `model_type=deepseek_v41` + `vision_config` 几何字段），不需要真实权重
+- 因此只需**一个伪造的 config.json**（V4.1 完整结构 + 极小尺寸），指向本地任意目录即可
+
+**M5 执行步骤**：
+1. **拉 config 模板**：从 hf-mirror 拉真实 `deepseek-ai/DeepSeek-V4.1-Flash-1017` 的 config.json（KB 级，即使慢也只需一次）作结构模板；同时拉 processor_config.json / tokenizer.json（小文件）
+2. **构造 mock 模型目录**：`/home/zxw/deepinfer-mock/` 放伪造 config.json——保留 V4.1 全部字段结构（model_type/architectures/dtype/quantization_config/text_config 全部字段/vision_config/vl_aligner 相关），**尺寸调极小**（num_hidden_layers=2、hidden_size=128、vocab_size=1000、num_attention_heads 按比例、moe 专家数=1、num_nextn_predict_layers=0 等）；`_assert_supported` 要求 hidden_act=silu / attention_bias=false / attention_dropout=0 / num_key_value_heads=1 / dtype=bfloat16
+3. **跑通 LLMEngine 初始化 + prefill/decode**：`skip_load=True`，验证 L1 调度 + L2 缓存分配 + L3 前向 + 采样器全链路；预期输出随机 token（无意义但链路通）
+4. **记录**：版本、命令、config 全文、日志、失败点；与 stage2 的 43/43 编译 + 1134 测试衔接
+
+**边界与停止条件**：mock 只验证「链路能跑」，输出无意义；「真实推理出文本」仍需真实权重（约 300GB，磁盘剩 109G + hf-mirror 慢，待用户决策磁盘清理/下载路径——**真实权重环节不归本条目**）。mock config 若有字段缺失/校验失败，逐项补齐 `load_hf_model_config` 的取值字段即可；不下载巨量权重、不编译整套 DeepInfer、不打断现有任务。
+
 ## DeepInfer 显存遥测的轻量核对
 
 状态：**M5 已完成（2026-10-22，4090-1）**，见[实验材料](deepinfer-mem-telemetry/readme.md)：真机核对 `get_occupied_gpu_memory` base/head（#151）与 `show_gpu_memory_stats`——两次调用稳定时 base 即第二次采样对应 occupied（base==head==412286976）；Allocated/Reserved/Occupied 三口径语义不同（del 后 0.000/1.000/1.445 GiB）；异常路径 base 静默返 0、head 返 0 并发 warning；base/head utils.py SHA256 与 M1 记录逐字节一致；真实 import 独立进程验证通过。原条目前提不变：M1 只核源码，作者未做 GPU runtime 验证——本项补真机行为证据，不构成对 #151 的验收/评论（已有作者，不竞争实现）。
