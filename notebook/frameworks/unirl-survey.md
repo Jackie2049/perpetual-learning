@@ -1177,6 +1177,40 @@ python3 -B experiments/scripts/verify_unirl_group_chunks.py /path/to/UniRL-git
 
 head helper SHA256 `2bc079e42da5e4949754f68079c2645fa4a0ab95054ac5b3656aca831ca4fee0`；engine `0a8b9d7df2ad8378c1dd1bfd13f28da256c7123dcff1bb213f9b83a0361a250c`。此有限枚举不证明任意输入/引擎或模型行为。作者当前报告的77项CPU引擎parity对应merge fc50ac2，后续改错误消息另报随机布局对照；H100测试属旧683c320，未在当前head复跑。本项目不将这些结果移作实测，也不推训练/显存/吞吐收益。匹配配方与真实模型缺口补[原M5参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不改变FBS、启用开关或部署候选。
 
+## 多教师周期与恢复身份
+
+多教师OPD不是把一个batch交给所有教师后平均logits。新草稿[#624](https://github.com/Tencent-Hunyuan/UniRL/pull/624)让每次rollout只含一个域、路由到该域的冻结LoRA教师，再把完整域周期交给现有TrainStack。2026-10-23读取open/draft、head `375c2273ed5b0ef89d3075350ba96ba2bcdb31eb`，base/祖先 `6fd82cba13f52f394747832344039408699ea378`。GitHub总diff18文件693增32删，包含#534前置；作者指定的A3独立边界是 `0142d612fbd824c9a47d3f6446a4b914a04eb1c3`，其后仅15文件316增31删。不能把前置AROPD目标重算成多教师新增实现。
+
+### 一个周期才是更新边界
+
+[ARTrainer](https://github.com/Tencent-Hunyuan/UniRL/blob/375c2273ed5b0ef89d3075350ba96ba2bcdb31eb/unirl/trainer/ar.py)要求`accumulate_rollouts`等于域数；仅同步trainside、每batch一次update、不支持TransferQueue。数据源按声明顺序round-robin，每批只带一个域。trainer先完成周期中所有rollout，再传tuple给TrainStack；每个Part在micro replay前按domain选择教师，混域、漏域和重复域不能凑成合法周期。
+
+现有窗口训练先zero_grad，中间Part不step、最后Part才走正常有梯度时的optimizer step，各域梯度权重为`1/域数`。所以目标是**等域加权的域内token均值**，不是所有域有效token拼成一个全局均值；也不是每个教师训练一次学生。此处只核接线，不复跑归约、anchor生命周期或M5的#523方案。
+
+两域时，rollout 0/1组成第一个周期，2/3组成第二个；`num_rollouts=100`是100个rollout，即50个周期，而非100次更新。日志和checkpoint使用周期末的rollout号；`checkpoint-20`对应完成20个rollout。总rollout数、正save/eval间隔须能被周期长度整除，恢复起点也不能落在半周期。`train_step`拒绝不完整窗口，不提供从中间一个域接着累加未保存梯度的恢复模式。
+
+### 路由记录与教师内容校验分层
+
+`ar_teacher_cycle.json`记录域到adapter名称的映射、有序域列表、data seed、rollout seed、batch size和设备数。恢复先读取并逐项比较，缺记录直接失败，不匹配在backend.load前拒绝；随后再核恢复rollout位置是否对齐周期。
+
+这份记录不是教师权重文件的内容哈希，也不是完整配方签名。[FrozenAdapters](https://github.com/Tencent-Hunyuan/UniRL/blob/375c2273ed5b0ef89d3075350ba96ba2bcdb31eb/unirl/train/lora.py)和backend承担另一层内容校验：正常checkpoint中的frozen adapter哈希与当前内容不同时拒绝；旧元数据缺失或空记录在该helper中不加约束。不能将周期JSON里的同名映射直接当成教师内容相同，也不能由这份JSON推断数据文件内容已被hash锁定。
+
+周期记录在模型checkpoint调用之后以临时文件加replace发布。这是单文件替换，不把模型、优化器、trainer_state和周期JSON合成一个崩溃原子事务；缺周期记录时的恢复拒绝与整套checkpoint的持久化验收要分开。
+
+### 快进数据与重建生成随机数
+
+恢复重新按data seed构建各域DataLoader，然后按已完成rollout数调用get_samples快进；不重跑旧模型生成。新的trainside seed为`base_seed + rollout_id × dp_size + dp_rank`，在fork_rng范围内设置Torch CPU/当前CUDA生成器，并在退出时恢复调用方Torch RNG。这个键依赖rollout位置和DP布局，不是按sample_id跨任意切分保持不变的逐样本seed，不能与#507的Omni请求seed契约混用。
+
+Qwen3禁用cuDNN SDPA的时机从第一次replay前移到stage构造，避免首次生成与恢复生成使用不同设置。这里是源码改动，不是本机对CUDA确定性或NaN的验证。数据游标相同、生成RNG相同、参数/Adam状态和完整训练轨迹相同是不同保证；作者也要求匹配数据、确定性kernel和零dropout。
+
+### 作者报告与本机范围
+
+作者报告固定于同一head：2×A100 80GB、Qwen3-4B-Base及两个合成SFT教师；4个连续update与2+restore+2在token/logp、学生参数及Adam状态一致，raw/normalized gap各跑32次update，但normalized-gap恢复未另验。报告是训练内合成对齐检查，不是held-out质量或生产benchmark；人类完整diff审阅checkbox仍未勾选，不在此判定候选ready。
+
+本机仅对A3边界前10个、head11个相关完整Python模块做AST/compile，无import或执行；没有复跑作者36项CPU行为、12项startup或GPU harness（均未提交）。不增加任务周期/RNG/训练栈替身去填补这些缺口。head trainer SHA256 `08627af30b621de72c7a148a730fbb8af4b33fe292b6ba018f3547130dbf5cb9`、engine `393d316c7c68340f94e780813de526d12b35fac4b6a00ff92bfd60be4d948f68`、多教师算法 `e707b39215ad6b5cd487911b745378939c3aaed0dc9406d4db915ddb58850e6a`。
+
+真实周期/恢复条件仅记入[原M5可选参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不自动应用draft、下载教师/模型或排训练。此为源码契约学习，已有作者覆盖，不新增竞争PR或改动M5专项。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。

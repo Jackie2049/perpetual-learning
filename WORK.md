@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1多教师周期学习收束（2026-10-23）**：快进M5进展b923f0d，UniRL开放issue有界查重后排除#507（无assignee/PR但报告者已表明自做）等线索；读新draft#624 head375c2273/base祖先6fd82cba，A3独立边界0142d612后15文件316增31删，完整diff含#534前置18文件693增32删。见[原专题](notebook/frameworks/unirl-survey.md#多教师周期与恢复身份)。完整域周期后一次正常更新，100rollout/2域是50周期；恢复路由JSON、教师内容hash、数据快进和rollout/DP seed分层，单文件replace非checkpoint事务。仅前置10/head11模块AST/compile，无行为替身或作者双A100复跑，normalized-gap恢复作者亦未另验。缺口补原M5可选参考，不部署draft/竞争实现或介入#523。下轮优先两个项目未覆盖issue机会，跳过周期计数/seed/归约替身小变体，GPU/AReaL/#8313/#523分工不变。
+
 - **M1离线合并存储学习收束（2026-10-23）**：同步两周UniRL/verl聚焦及M5 fork审阅进展6ff7fb0，不接手专项；读已有verl#7503 heade2d9f145/目标3f9d4c0d、祖先8df88be7（ahead2/behind89，2文件104增1删）。见[原checkpoint专题](notebook/frameworks/verl-checkpoint-management-reading.md#复制分片的存储隔离)/[复查](experiments/scripts/verify_verl_merger_storage.py)。原3测试体base2过1预期失败/head3过，四组真实CPU控制确认clone隔离存储、BF16转换可保别名；只计输出2048→16字节，保留源时2048→2064，非合并峰值。无原生导入/完整CLI/HF保存或#6259重复key复现；已有作者覆盖，不新开竞争候选/算力任务，无新依赖。下轮优先UniRL/verl未覆盖issue机会，跳过存储/字段/分段替身小变体及GPU/AReaL/#8313/#523专项。
 
 - **M1 Resume扩展字段学习收束（2026-10-23）**：只读新verl#8341 head0cede26b/base祖先dc709afb（ahead1，两文件117增），见[原异步专题](notebook/frameworks/verl-async-logprob-provenance.md#resume-返回值与扩展字段合并)/[复查](experiments/scripts/verify_verl_extra_fields.py)。重建TokenOutput连单次返回也会丢任意字段；新增最后出现值覆盖，非递归/逐token合并，专门top-k/cache/版本规则不变。真实Pydantic及原两测试体base均KeyError/head均过，3补充控制通过；独立轻依赖target，无原生导入/作者完整49项或真实backend/AgentLoop。缺口仅补原M5可选参考，不排训练、不改上游。本题收束，下轮另选非字段合并/分段替身小变体问题；GPU/AReaL/#8313/#523分工不变。
