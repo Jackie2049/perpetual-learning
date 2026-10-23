@@ -1018,6 +1018,25 @@ python -B experiments/scripts/verify_unirl_empty_backward.py /path/to/UniRL-git
 
 作者外部harness报告两rank CPU复现及2×H100的14项小型FP64线性模型通信/梯度检查，并非本项目复跑、预训练模型或真实recipe验收；完整HI3/BAGEL和多rank CUDA PPO仍未测。原issue已有该draft覆盖，不另开同题修复；实际collective/最后micro与optimizer状态缺口补[原M5参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不应用候选或干预其专项。
 
+### 纯补齐反向与 ratio 诊断
+
+2026-10-24，[#598](https://github.com/Tencent-Hunyuan/UniRL/pull/598)仍为open draft，新head为`471690694c51f3070e012276429585fcae877a4e`，base为`6fd82cba13f52f394747832344039408699ea378`，6文件48增8删。它不是单纯rebase：父提交`784893d10c01ab21fdf2e33fbd7cec18123bf80f`合并旧head `fa0c306`与main，随后[新增guard修复](https://github.com/Tencent-Hunyuan/UniRL/commit/471690694c51f3070e012276429585fcae877a4e)。上面的旧版图与optimizer控制仍只对应原固定版本，旧复查脚本不改指向。
+
+空GSPO/PPO micro返回`has_backward=True`、有效数量0、`metrics={}`。旧`_guard_first_update_ratio`仅按`has_backward`筛选，便会读取不存在的`ratio_min`而抛`KeyError`；通信需要的反向与有效样本的统计资格不能共用一个布尔值。[新guard](https://github.com/Tencent-Hunyuan/UniRL/blob/471690694c51f3070e012276429585fcae877a4e/unirl/train/stack/single.py)额外要求`num_steps_or_tokens > 0`，并给`max`设置`default=0.0`：混合窗口保留有效micro的最坏偏差，全空窗口的偏差记0。这个0表示没有纳入ratio诊断的有效micro，**不是测得策略与anchor完全一致**。它也没有撤销零贡献backward或更改optimizer step。
+
+Python3.12.13上，AST提取父/新提交的完整原guard方法，给本地dataclass结果及micro属性fixture，分别执行六种输入：
+
+| 输入与开关 | 父提交 | 新提交 |
+| --- | --- | --- |
+| 全空，guard开启 | `KeyError: ratio_min` | 偏差0，无warning |
+| 空与有效混合，有效ratio范围0.8–1.1，tol0.1 | `KeyError: ratio_min` | 偏差约0.2，warning一次 |
+| 仅上述有效micro | 偏差约0.2，warning一次 | 保持一致 |
+| guard关闭、整体无反向、忽略无反向micro（三项） | 均通过 | 均通过 |
+
+新提交六项均通过，原metrics保持且输入结果未被原地修改；父提交两项预期异常、四项控制通过。仅隔离执行该原方法，logger记录调用，不构造TrainStack或完整GSPO/PPO/FSDP训练；复现代码见[当日日志](../../diary/2026-10-24.md)。父/新完整`single.py` SHA256分别为`aee263c3ee0e8d02ef1f039e655c0632779e2205d9dc0b1a0df5f8a2b5de01f0`、`e8c8578114b958b2cffb6514a9621416bc7cca28abdf2a44ff96fc684c8420c4`。
+
+作者PR正文为此次同步另报packed padding、七算法零贡献、两rank CPU FSDP deferred-window及GSPO/PPO ratio回归通过，且明确未重跑GPU；此前H100结果仍绑定旧提交。已有作者修复，不另起同题补丁或增加硬件交接任务。
+
 ## 冻结教师路由与调用方状态恢复
 
 **切回default不等于恢复调用方，冻结参数也不等于关闭梯度记录。** [#519](https://github.com/Tencent-Hunyuan/UniRL/pull/519)（2026-10-23读取open）收窄为冻结教师adapter的状态保护，不声称修复main已有的普通DiffusionOPD路由。固定head `fd1ca404804dc2cc0b395bd0aa5765c012104d9a`、base及实际祖先 `ff1d3a6b2a8070ba31d5e74ac02c0e965762569c`，ahead5/behind0；2文件35增12删，无提交测试。这里不是行为策略anchor生命周期、教师checkpoint或完整D2集成的实现。
