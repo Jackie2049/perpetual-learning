@@ -197,6 +197,8 @@ ModelOpt忽略规则参考（2026-10-22，同一量化入口不另排队）：�
 
 ## verl 异步策略一致性补证
 
+Bypass配置参考（2026-10-23，非新增训练队列）：已有[#8348](https://github.com/verl-project/verl/pull/8348) head `4b3b9f84078f83fe5f485e7d8bccf8c1ddbba349`、base/祖先 `a4b9354968705a441fb7da7367924b15b902e771`；[M1原19配置例](../notebook/frameworks/verl-async-logprob-provenance.md#bypass-字段替换与-worker-的-loss-配置)两次通过，真实OmegaConf但仅4函数AST隔离，5个padding张量例未跑，无worker/Ray/FSDP/训练。若M5日后已有获准匹配bypass选题且独立采用，最小先核创建前配置与worker实际loss/校正镜像，再区分batch的old/rollout字段相等和真正的IS/RS执行；padding-only统计、跨rank归约及entropy反向需另核实际后端。作者4GPU短跑非本项目验收；缺匹配环境/授权权重、需下载部署或影响专项即记未测停止，不自动应用或开训练，不认作#8250根因。本记录不是接单，不改AReaL/#8313/#523/DeepInfer任务。
+
 初始化 buffer 精度参考（2026-10-23，非新增训练队列）：已有 [#8189](https://github.com/verl-project/verl/pull/8189) head `4e830c72bd0eb2b0d6ecfbd4c2c4144040637324`、base/祖先 `1d367a4f459a43768f76312c0d3430a99ec46b8c`；[M1 原6测试体与4组CPU控制](../notebook/frameworks/verl-fsdp2-source-deep-reading.md#参数转换与缓冲区精度)确认只转换参数可避免破坏新鲜FP32 buffer，不重建已舍入值或处理完整keep-list/训练状态。无HF RoPE/FSDP/model执行，#8154作者CUDA固定token replay不是本项目结果。若M5日后独立选择此边界且已有获准权重/匹配后端，可先固定HF/torch/engine版本及model_dtype、FSDP1/2策略，记录构造后/转换后/包装后buffer实际值，再在同权重/token/position下比较logp与恢复控制；不先启长训练。缺授权模型/匹配环境、需下载部署或干预专项就停止记未测，不自动应用、拼接#7165/量化方案或认定#8250根因，本参考非接单。
 
 流式准入参考（2026-10-23，非新增训练队列）：已有draft[#8203](https://github.com/verl-project/verl/pull/8203)head`b6880198eadd813272290fb1c98ba15e42317071`、base/祖先`18cfb74852a053a27dcf301d3318a093be81b628`；[M1源码阅读](../notebook/frameworks/verl-6790-async-trainer-reading.md#会话水位与未消费组上限)仅23模块AST/compile及4原schema参数例，无actor/Ray/TQ/设备验收，作者GPU e2e仍TODO。若M5将来已有获准匹配V1/TransferQueue选题并独立选用此破坏性draft，最小分别记录会话槽、pending/running/terminal组、已采样在训轨迹字节与实际行为版本；比较同负载准入与训练节奏，不用水位/组数代替TQ/GPU峰值或因果证据。缺原私有数据/模型、匹配后端/资源或需升级部署、干预专项即保留未测停止；不自动套补丁、改#8250环境或新增必跑矩阵，记录不代表接单。

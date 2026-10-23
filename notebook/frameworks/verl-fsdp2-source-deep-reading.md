@@ -137,35 +137,11 @@ def layered_summon_lora_params(fsdp_module) -> OrderedDict:
 
 ---
 
-## 4. Bypass Mode: Zero-Cost Log Prob Substitution
+## 4. Bypass 概率锚点与 loss 配置
 
-```
-★★★★★★★★★ verl/trainer/ppo/rollout_corr_helper.py:1131 — bypass mode implementation:
+将 `rollout_log_probs` 写入 `old_log_probs` 能跳过独立old概率重算，但不自动改变已经创建的actor worker的loss配置。2026-10-23核对已有[#8348](https://github.com/verl-project/verl/pull/8348)后，完整配置时机、原19项CPU用例和固定版本见[主笔记](verl-async-logprob-provenance.md#bypass-字段替换与-worker-的-loss-配置)。候选在worker创建前选择默认bypass loss，显式其他loss则保留并拒绝不生效的校正选项；不是所有bypass配置都运行同一loss。
 
-    # Use rollout log probs as old log probs (zero-cost substitution)
-    batch.batch["old_log_probs"] = batch.batch["rollout_log_probs"]
-
-★★★★★★★★★ FINDING: bypass_mode is literally a 1-line substitution!
-  → old_log_probs = rollout_log_probs → skip expensive actor forward pass
-  → No recomputation needed → saves entire old_log_prob computation step
-  → 18Ψ → 3.8Ψ memory reduction (no second forward pass storing activations)
-
-★★★★★★★★★ BUT: it's not just the substitution — the infrastructure matters:
-  → compute_policy_loss_bypass_mode() (core_algos.py:2351-2407):
-    → Supports REINFORCE + PPO-clip via loss_type config
-    → IS weight computation: w = π_current / π_rollout
-    → For PPO-clip: ratio r = π_current / π_rollout (IS implicit in ratio)
-    → For REINFORCE: explicit IS weight w (NOT double-counting)
-  → rejection_mask computation for stale samples
-  → rollout_correction config for IS weight clipping
-
-★★★★★★★★★ Semantics (IMPORTANT):
-  → Bypass mode = 2 policies: π_rollout + π_θ
-  → Decoupled mode = 3 policies: π_rollout + π_old + π_θ
-  → Bypass skips π_old → π_rollout serves as both rollout AND old anchor
-  → ★★★★★★★★ This is mathematically valid when π_rollout ≈ π_old (staleness low)
-  → #6778 staleness drop/wait → ensures π_rollout ≈ π_old → bypass valid!
-```
+两策略/三策略的区分描述概率锚点数量，不是正确性的充分条件。staleness drop/wait限制版本距离，不能保证参数、分布或logprob数值接近；还需核对实际配置、概率口径和同步内容。撤回旧段没有测量依据的 `18Ψ → 3.8Ψ` 显存比例，以及“低staleness确保bypass有效”的推断。当前CPU配置测试不提供显存、训练收益或真实worker验收。
 
 ---
 

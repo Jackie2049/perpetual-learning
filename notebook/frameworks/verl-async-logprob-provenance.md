@@ -17,6 +17,42 @@
 
 [separate-async覆盖方法](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/trainer/ppo/v1/trainer_separate_async.py#L187)在local_trigger_step=0时保存CPU slot 0；后续trigger保存当前actor、恢复slot 0计算old，再恢复当前actor并清理临时slot。它是在同一actor上交换快照，不是另起独立冻结模型。[step循环](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/trainer/ppo/v1/trainer_base.py#L547)允许一个parameter_sync_step周期内多次本地更新，因此发布版本单位也不能直接当作optimizer step数。
 
+## Bypass 字段替换与 worker 的 loss 配置
+
+`old_log_probs = rollout_log_probs` 只选择概率锚点，不自动决定远端 actor 使用哪一个 loss。[verl #8348](https://github.com/verl-project/verl/pull/8348)将 loss 配置从训练循环移到 worker 创建之前，修复的是配置传递时机，不是权重同步。2026-10-23读取 open、非draft、作者 aoshen02；固定 head `4b3b9f84078f83fe5f485e7d8bccf8c1ddbba349`、base及共同祖先 `a4b9354968705a441fb7da7367924b15b902e771`，ahead2/behind0，9文件375增87删。上节旧版概率来源分析仍限定于原固定版本；本节不将新PR当成已合并行为或 #8250 根因。
+
+### 配置先于创建生效
+
+旧 [apply_bypass_mode](https://github.com/verl-project/verl/blob/a4b9354968705a441fb7da7367924b15b902e771/verl/trainer/ppo/rollout_corr_helper.py)一面替换 batch 字段，一面修改 trainer 持有的 policy_loss。worker 已经用配置创建后，修改 driver 的对象不等于更新远端副本。候选把这两件事分开：`configure_bypass_mode(config)` 在构造阶段处理 loss，`apply_bypass_mode(batch)` 只检查 rollout_log_probs 存在并替换 old_log_probs。
+
+[legacy trainer](https://github.com/verl-project/verl/blob/4b3b9f84078f83fe5f485e7d8bccf8c1ddbba349/verl/trainer/ppo/ray_trainer.py)、[V1 base](https://github.com/verl-project/verl/blob/4b3b9f84078f83fe5f485e7d8bccf8c1ddbba349/verl/trainer/ppo/v1/trainer_base.py)、[experimental fully async](https://github.com/verl-project/verl/blob/4b3b9f84078f83fe5f485e7d8bccf8c1ddbba349/verl/experimental/fully_async_policy/fully_async_trainer.py)及[one step off policy](https://github.com/verl-project/verl/blob/4b3b9f84078f83fe5f485e7d8bccf8c1ddbba349/verl/experimental/one_step_off_policy/ray_trainer.py)各新增一次构造器调用。V1在后续init→_setup中才把 actor_rollout_ref 交给 RayClassWithInitArgs、spawn worker并init_model；这条源码顺序解释了为何应早配，而不构成真实RPC序列化/worker启动验收。
+
+### 默认选择与显式选择
+
+[原配置函数](https://github.com/verl-project/verl/blob/4b3b9f84078f83fe5f485e7d8bccf8c1ddbba349/verl/trainer/ppo/rollout_corr_helper.py)只在 algorithm 的 bypass_mode 为真时行动：
+
+| 输入 | 处理 |
+|---|---|
+| 默认vanilla或已显式bypass_mode | 设为bypass_mode，并将algorithm.rollout_correction复制到actor policy_loss |
+| 显式其他loss，如gspo | 保留该loss；old仍采用rollout概率，但不因此获得bypass loss的IS/RS语义 |
+| 其他loss同时要求IS、RS、score_centering或reinforce | 抛ValueError，避免选项被静默忽略 |
+| 已有actor侧校正镜像 | 按镜像中出现的键检查一致；阈值按启用模式解析后比较，不只比较字符串 |
+| IS batch normalize搭配Megatron PP大于1或dynamic CP | 提前拒绝；不是实现了这些并行组合 |
+
+因此 `2.0` 与字符串 `"2.0"` 可等价；k1 RS标量2与范围 `0.5_2.0` 也可等价。未启用对应IS/RS时，阈值比较返回None，不代表所有原始配置字节相同。源码对PP/动态CP的理由分别是只有末stage计算loss、样本副本数可变；本轮只验证配置拒绝，没有制造collective挂起或验证设备计数。
+
+### 原配置测试的 CPU 范围
+
+[复查脚本](../../experiments/scripts/verify_verl_bypass_config.py)使用真实OmegaConf2.3.1、pytest8.4.2、Python3.12.13。四个完整原函数经AST隔离执行，未导入原helper的torch/Ray依赖；[原测试模块](https://github.com/verl-project/verl/blob/4b3b9f84078f83fe5f485e7d8bccf8c1ddbba349/tests/trainer/ppo/test_bypass_mode_config_on_cpu.py)字节未改，pytest选择其19个配置参数例，明确deselect另5个padding-only张量/loss例。两次结果均19过、5未运行：5个loss选择、8个拒绝、6个镜像接受用例。测试以struct=True的DictConfig模拟Hydra的结构限制，但没有实际Hydra合成。base没有新configure函数，不虚造“base19例失败”的统计。
+
+```bash
+python3.12 -B experiments/scripts/verify_verl_bypass_config.py /path/to/verl-git --deps /path/to/omegaconf-target
+```
+
+本机复用既有CPU解释器与 `/private/tmp/perpetual-tq-config-ybC7aP/deps`，没有安装新依赖。另对变更Python源码做base7份/head8份完整AST/内存compile。head helper SHA256 `bfe5de2a25311db1236e323fcd1753fa763326622a3e41307d81613b14e56c08`，base helper `763158342551bc4077805a8a009d959a7a2043c4d43b772fe6045f4a40932f3e`，原测试 `aec35fb58bda99c2ff7c33c210cbefbe8f9d710190b4af236042fceb7c1faa6d`；完整patch `856b5a4c6067b682dfcf4ab7daaaf59340994b78ac9764aa3ce54f213c9b5ff5`。
+
+PR还修改padding-only统计与[FSDP entropy反向开关](https://github.com/verl-project/verl/blob/4b3b9f84078f83fe5f485e7d8bccf8c1ddbba349/verl/workers/engine/fsdp/transformer_impl.py)。19例没有执行loss、空rank归约、entropy梯度或引擎；作者正文的24项、其他102项以及4GPU短训练报告均为外部结果，不能合并进本机通过数或推出性能/收敛结论。真实worker收到的配置及实际选中loss，才是下一层证据；条件已补[原M5参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不自动应用候选或增加训练队列。
+
 ## 版本标签说明什么
 
 [vLLM server](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/workers/rollout/vllm_rollout/vllm_async_server.py#L689)在生成返回处附加self.global_steps；[客户端](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/workers/rollout/llm_server.py#L281)拼接中断后续写的token/log_probs，记录首末返回版本。版本正常单调时，它们形成生成区间；**不是逐token权重清单或tensor内容校验**。多turn和agent重写后的token/mask边界还须一同保留。

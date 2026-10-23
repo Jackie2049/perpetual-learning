@@ -146,6 +146,7 @@
 - [新版MXFP8检查与指标哨兵](verl-quant-layer-audit.md#新版运行期检查与指标哨兵) — #8327替代旧拆分、基于#8306；默认warn不拦截。原20参数例/5边界通过，仅纯Python sentinel，非量化或kernel验收。
 
 - [verl 异步训练策略版本与 logprob 对照条件](verl-async-logprob-provenance.md) — V1 separate-async的rollout/old/current来源、CPU快照路由、版本标签边界和最小观测契约；非训练根因证明
+- [verl Bypass字段与worker配置](verl-async-logprob-provenance.md#bypass-字段替换与-worker-的-loss-配置) — #8348原19配置例通过；概率锚点替换不等于远端loss切换，提前配置/显式loss保留/冲突拒绝，非worker或训练验收。
 - [verl 新版同步阶段 tracing](verl-async-logprob-provenance.md#新版阶段-tracing-与证据关联) — #8315新head原12项日志测试与实际lane表达式对照；helper通过不认证生产接线/后端显示，保留no-op和真实同步边界。
 - [verl 单 worker NIXL 拓扑](verl-async-logprob-provenance.md#单-rollout-worker-的-nixl-拓扑) — #8316两版各20组控制，后续head补1原测试并隔离对照；on_cpu不保证无原生导入依赖，非同步验收。
 - [verl Resume扩展字段](verl-async-logprob-provenance.md#resume-返回值与扩展字段合并) — #8341原2测试体隔离对照，首次非None cache/分段top-k与通用最后出现值分开；未跑原生导入或后端。
