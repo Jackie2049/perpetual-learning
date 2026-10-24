@@ -1618,6 +1618,37 @@ Python3.12.13仅标准库，完整原runtime模块加载但不调用`engine_proc
 
 完整runtime SHA256为`66e7aa74a3f442d2b44b094c614124e4b0c91e5e137a09f901ab5216f7dc59fb`，driver为`48218188b8009e9c80b22f48bbe5bf40a247dbd4f7caf63baa55c3ecf2ca9b3c`。
 
+## 监控奖励的目标隔离与失败契约
+
+**小权重不是只监控，零权重也不是跨聚合方式的监控契约。** [#419](https://github.com/Tencent-Hunyuan/UniRL/issues/419)已于2026-10-20明确转派GoDiao，继续由社区作者负责。本节只解释当前主线`6fd82cba13f52f394747832344039408699ea378`的行为，不另写实现或认领需求。
+
+### 聚合系数与组内标准化
+
+当前[远程奖励解析器](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/reward/remote.py#L366)把所有`required_rewards`放入分量明细与聚合列表。`weighted_sum`实际是除以总权重的加权平均；`mean/min/max`完全不看权重。issue里的历史`_aggregate_scores`片段已内联到`_parse_score_response`，不能按旧函数名判断当前实现。
+
+在原解析方法的两样本控制中，两项主奖励均为0.5，探针分别0和1，权重为`1,1,1e-6`：
+
+| 聚合方式 | 两条聚合奖励 | 探针权重改成0后 |
+| --- | --- | --- |
+| weighted_sum | 0.499999750000125 / 0.500000249999875 | 两条均0.5 |
+| mean | 1/3 / 2/3 | 不变 |
+| min | 0 / 0.5 | 不变 |
+| max | 0.5 / 1 | 不变 |
+
+因此，当前`weighted_sum`确实能用零权重消除该分量的数值贡献，同时保留明细；问题不宜表述成“任何方式都不能零权重”。但它既不防止切换聚合器后探针进入目标，也没有声明哪些分量是监控项。
+
+此外，原生[Part.compute_advantages](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/types/sample.py#L245)按组计算`(reward-mean)/(std+1e-8)`，并转成FP32。上述`1e-6`控制经过真实Sample fork的两兄弟Part，中心化值为`±2.3841858e-7`，标准化优势却约为`±0.95974535`；两项主奖励相同，组内差异完全来自探针。零权重时优势为0；在同一0.5偏置控制中改用`1e-9`，差异因FP32舍入消失，优势也为0。结论是**优势尺度取决于组内主奖励方差、epsilon及数值精度，不能只用探针系数保证可忽略**，不是所有小权重都会被放大。当前[diffusion调用方](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/trainer/diffusion.py#L870)在需要优势时调用该归一化；这里没有执行训练损失或测量参数更新。
+
+### 不参与目标仍可参与失败判定
+
+零权重探针若缺失或返回NaN，原解析器仍给该样本`successes=False`；即使另外两项使聚合数值保持0.5，也不代表样本有效。[RewardService](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/reward/service.py#L125)在附加奖励之前检查失败标志并抛错。`raise_on_failure=False`是后端异常时返回失败响应，不是让这个service忽略失败的开关。
+
+这与维护者在[#419的设计回复](https://github.com/Tencent-Hunyuan/UniRL/issues/419#issuecomment-5573395257)一致：拟议`monitor_rewards`仍属于`required_rewards`、仍须评分且有限，只从目标聚合及总权重排除；全部分量均为监控项应在配置构造时拒绝。10月后续接手方案还选择拒绝监控名与显式权重冲突。**这些是已确定的需求，不是当前RemoteRewardSpec已提供的字段。** “与目标隔离”“探针可用”“自动停止训练”是三项不同能力，不能从第一项推导另外两项。
+
+### 本机验证范围
+
+Python3.12.13/torch2.14.1 CPU，执行固定版三个完整原解析方法和原Sample/Part、Batch/ref、RewardResponse模块；只跳过tensor包聚合入口里的Ray导出。输入JSON、解析器配置属性为本地夹具，未构造HTTP后端、调用服务、运行评分模型、完整trainer/loss/optimizer或设备。上层失败处理为源码追踪，不是服务实测；五模块通过compile。初次harness漏传原Sample.fork必需的sampling_params，补为原DiffusionSamplingParams后通过，不归因为上游错误。[完整复现与hash](../../diary/2026-10-24.md)留日志，无新增永久工具或M5硬件任务。
+
 ## 音频奖励配方的评估协议与后续反证
 
 **早期曲线上升、训练无NaN，不等于同一配方能稳定走到终点。** [#475](https://github.com/Tencent-Hunyuan/UniRL/pull/475)在2026-10-24读取仍open/non-draft，head `555ebb29472b4767dcd20874d771cdbb5318ed91`，base/祖先 `1a0ddbfd414c580beabff5f8eef5226aba891d67`（ahead21/behind0），13文件835增46删。该项已有作者及社区复跑，本节核对证据和源码边界，不是本项目训练结果或新稳定化方案。
