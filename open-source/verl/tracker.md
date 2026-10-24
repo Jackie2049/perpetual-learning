@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[SFT验证分母](#sft-验证尾批的已有修复)：#7467当前head原16测试体CPU通过，补位有效计数与token加权分开，不当模型或真实DP验收、不另实现。[数据子集接线](#数据子集与验证入口的已有修复)反馈仍只留本地待用户审视，无对外发布。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[critic配置接线](#critic-批处理配置的已有修复)：#7465原六测试体CPU通过，YAML插值与直接构造默认值分开，不当完整后端验收、不另实现。[数据子集接线](#数据子集与验证入口的已有修复)反馈仍只留本地待用户审视，无对外发布。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## Critic 批处理配置的已有修复
+
+2026-10-25读取[#7462](https://github.com/verl-project/verl/issues/7462)全文／0评论，编号与critic batching查重见同报告者已有[#7465](https://github.com/verl-project/verl/pull/7465)，OPEN／非draft／未合并，无普通／行内评论；head2609808d、实际父提交／祖先23a341e3，API目标base3f9d4c0d，十文件160增4删。当前范围仅v0／V1，不含已弃用separation，不另认领。
+
+见[原架构专题](../../notebook/frameworks/verl-architecture.md#critic-批处理配置如何进入引擎)：真实原配置类AST与六原测试体CPU通过，四份generated YAML仅取批处理字段核插值；直接构造仍保留infer默认32768，显式None才回退forward。worker仅为batch缺失键注入engine默认值，外层字段正确不证明实际调用值。没有完整Hydra／backend／训练，不应用候选或新增M5任务／专项改动；任何上游评论／issue／PR及既有PR的fork head推送仍逐项待用户明确同意。
 
 ## SFT 验证尾批的已有修复
 

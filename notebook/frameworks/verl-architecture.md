@@ -408,6 +408,36 @@ Python3.12.13、真实OmegaConf2.3.1，完整加载候选`verl/utils/config.py`�
 
 #7540评论称两个报告版本的蒸馏实现无diff，并建议固定实际响应IDs及teacher/student logprobs再比较。本轮未独立重做该跨版本diff或训练；相同seed不等于相同采样输入，这个配置修复也不证明原loss差异消失。若M5以后在已有获准工作中遇到相同问题，先记录请求/有效后端与固定响应、路由、logprobs和mask身份，再决定是否需要数值A/B，见[原一致性参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)。缺匹配资源或需新部署/模型下载即记未测，不自动迁移V1、切后端或新增训练队列，不改专项。
 
+## Critic 批处理配置如何进入引擎
+
+**配置必须传到消费者读取的位置，声明字段和默认值本身不保证生效。** [#7462](https://github.com/verl-project/verl/issues/7462)报告 critic 转为裸 `TrainingWorker` 后漏传动态批处理开关和 micro-batch 大小，V1 还把推理 token 预算写到训练预算。已有同报告者 [#7465](https://github.com/verl-project/verl/pull/7465)，2026-10-25 核对 OPEN、非 draft、未合并，head `2609808db4847d0ff0a45b1866e46749afd2f002`；实际父提交／共同祖先 `23a341e361e18063b4ec53e1f7cc4eae68f102cf`，不是 API 目标 base `3f9d4c0d`。十文件160增4删，不另实现。
+
+### 外层配置与消费者默认值
+
+[`TrainingWorker`](https://github.com/verl-project/verl/blob/2609808db4847d0ff0a45b1866e46749afd2f002/verl/workers/engine_workers.py)读取 `config.engine_config`；train／infer 分别用训练／推理预算与 micro-batch 大小，将它们作为 batch 元数据的默认值注入。**batch 已带同名键时不覆盖**，所以 engine 配置正确仍不证明每次调用都采用这些值。
+
+以静态批处理、训练 micro=4、训练预算4096、显式推理预算2048为输入，执行祖先两条原赋值语句，真实配置类所得值如下。这里没有运行 trainer 方法或 worker。
+
+| 接线 | 动态开关 | 训练／推理 micro | 训练／推理 token 预算 |
+| --- | --- | --- | --- |
+| 原 v0 两条赋值 | True | None／None | 4096／2048 |
+| 原 V1 两条赋值 | True | None／None | 2048／2048 |
+| 候选 helper，显式推理 micro=2 | False | 4／2 | 4096／2048 |
+
+[`apply_engine_batching`](https://github.com/verl-project/verl/blob/2609808db4847d0ff0a45b1866e46749afd2f002/verl/workers/config/critic.py)统一复制五项，推理 micro 优先显式 infer、其次 forward、最后训练 micro；推理 token 优先非 None 的 infer，再取 forward。动态路径拒绝缺失 token 预算，静态路径拒绝缺失每 GPU micro；弃用的全局 micro 不能直接代替。此处检查 None，不是全部取值合法性、显存容量或后端支持认证。当前原测试名虽含 V1，测试体只调用 helper；v0／V1 两个调用点由源码核对，已弃用 separation 路径不在当前补丁范围。
+
+### YAML 插值与直接构造的区别
+
+候选在公共 [`critic.yaml`](https://github.com/verl-project/verl/blob/2609808db4847d0ff0a45b1866e46749afd2f002/verl/trainer/config/critic/critic.yaml)加入 `ppo_infer_max_token_len_per_gpu: ${.forward_max_token_len_per_gpu}`，DP 配置另让 infer micro 跟随 forward micro。真实 OmegaConf 读取四份完整 generated YAML，仅覆盖并取出批处理字段，再送入原基础 CriticConfig／EngineConfig，得到：训练 micro=4、训练预算4096、forward预算2048时，四份的推理预算均为2048；DP 显式 forward micro=2 时推理 micro=2，Megatron／TorchTitan／VeOmni 三份均为4。显式 infer预算1024则优先于 forward2048。这是字段插值和基础类接线，不是 Hydra 完整组合或四种后端实例化。
+
+直接 `CriticConfig(forward_max_token_len_per_gpu=2048, …)` 不会继承 YAML 插值；未指定 infer 时，它的 dataclass 默认仍是32768，helper保留32768；显式 `ppo_infer_max_token_len_per_gpu=None` 才回退到2048。两种入口的默认语义不同，不能把“forward 参数改了”直接等同于“推理预算改了”，也不据此另认领修复。
+
+### CPU 验证范围
+
+Python3.12.13／OmegaConf2.3.1／pytest9.1.1，原 BaseConfig、CheckpointConfig、ProfilerConfig、OptimizerConfig、EngineRouterReplayConfig、EngineConfig、CriticConfig 七个完整类 AST 原样载入，仅延迟类型注解以避开未用 HFModelConfig 导入，不实例化模型或伪造配置类。原测试模块 imports／断言不改，逐个直接执行六个原测试体，全通过；覆盖静态／动态复制、训练与推理预算分离、micro 回退及两种缺失字段拒绝。不是原生 pytest 收集或完整框架导入。[复现方式与版本](../../diary/2026-10-25.md)留日志；worker／切分模块与两个 trainer 只核源码和语法，无训练、设备或模型下载。
+
+本题收束为配置接线知识，不应用候选、不新增校验器或 M5 算力任务。后续排查同类问题，依次核 YAML 解析值、dataclass 默认、engine 有效字段与 batch 是否显式覆盖；不要从外层配置推导实际执行，更不能从本轮 CPU 结果推导训练收益。
+
 ## 参考
 
 - [verl GitHub](https://github.com/volcengine/verl)
