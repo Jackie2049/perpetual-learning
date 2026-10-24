@@ -466,6 +466,35 @@ Python3.12.13／OmegaConf2.3.1／pytest9.1.1，原 BaseConfig、CheckpointConfig
 
 本地可审阅反馈：明确 meta 前置断言的对象身份及依赖版本，区分构造时已断开与 `to_empty` 导致断开；保留物化后梯度正负对照。仅留项目内，不替作者改测试、评论或推送已有 PR head。原作者使用 torch2.11／Transformers5.9 的 GPU 与内存数据不移作本机结果；其30B修复后训练停滞仍未归因，本轮不复跑、不下结论或新增 M5 队列。[版本、命令与 hash](../../diary/2026-10-25.md)留日志，五份源码语法通过不等于完整 FSDP／offload／内存验收。
 
+## TRL 包装器的打包边界探测
+
+**能转交参数，不等于外层签名显式声明了底层能力。** [#7931](https://github.com/verl-project/verl/issues/7931)针对 TRL value-head critic：FSDP只检查外层 `forward` 是否含 `cu_seqlens`，而该包装器通过 `**kwargs` 转交给底层，导致已支持边界的 patched Qwen3.5仍得不到两个边界参数。报告者 liruiluo 已有 [#7932](https://github.com/verl-project/verl/pull/7932)，2026-10-25核对 OPEN／非draft／未合并，head `918c80b0ca9a3d659dc58e21f3c3ea1ffb312aec`、父提交／实际共同祖先 `3efe38c759c14622fd1b2c9e3679f2d02f86bdac`，两文件288新增；API目标base `3f9d4c0d`不是候选已包含的主线，不另实现。
+
+### 只检查已知透明包装器
+
+固定候选的 [`load_valuehead_model`](https://github.com/verl-project/verl/blob/918c80b0ca9a3d659dc58e21f3c3ea1ffb312aec/verl/utils/model.py)先尝试原生token分类模型，再走可选TRL fallback；不能把这个问题泛化为所有Qwen3.5 critic。受影响条件为 remove-padding、多个独立样本打包、外层为TRL value head且底层patched模型支持边界；不要求SP大于1。原input builder只有在 `pass_packed_cu_seqlens` 为True时传两边界，补齐槽位还追加最终offset。Qwen3.5线性分支从kwargs取显式边界，不能用position_ids重置直接替代这条接口。
+
+候选保留显式签名优先；仅在value_model、类名及TRL命名空间匹配时尝试可选导入，再要求**导入类对象与实例精确同类，绑定forward就是该类forward**，才检查 `pretrained_model.forward` 的显式能力。名称／命名空间只是避免无关导入的前置过滤，不是最终可信依据；未知包装器、子类、同名伪装或实例替换forward不因此获准。继续调用原value-head包装器，不绕过value计算，也不把任意 `**kwargs` 视为支持所有参数。此处为源码范围，非安全沙箱保证。
+
+### 升级版本不等于修复接口
+
+本机从官方annotated tags解析到commit，读取完整源文件，定义原forward方法但不调用模型体；真实 `inspect.signature` 与AST核对结果如下。前三份方法AST完全相同，均把kwargs交给 `self.pretrained_model`；这不是已安装TRL的实参转发测试。
+
+| TRL版本 | 固定commit前缀 | wrapper显式含cu_seqlens | 原PPO/value-head源码 |
+| --- | --- | --- | --- |
+| 0.27.0 | 17acd61f | 否 | 存在 |
+| 0.28.0 | 49ef3342 | 否 | 存在 |
+| 1.12.0 | 59c4a8e1 | 否 | 存在 |
+| 1.13.0 | 3d9261f1 | 不适用 | 完整715项Git tree无原路径 |
+
+前三版的包装器签名不会仅因升级而让旧探测变True；底层Qwen原normal forward的AST则明确声明cu_seqlens。官方 [TRL #7020](https://github.com/huggingface/trl/pull/7020)已合并，移除PPO及value-head模块；1.13.0不属于保留原fallback接口的直接升级修复。固定verl候选FSDP extra仍钉TRL0.27.0，本轮没有改pin、安装TRL或提出替代实现。
+
+### 源码证据与模型隔离分开
+
+Python3.12.13、仅标准库与只读GitHub API，三份原方法定义／签名及四份verl文件语法核对完成。[复现、完整commit与hash](../../diary/2026-10-25.md)留日志。本机缺TRL／PEFT，未导入其完整类、执行候选可选导入分支、原35／53例或另造recording模型。作者原测试stub了分布式初始化与FSDP wrapping；其已安装TRL forward配tiny recorder的边界对象／梯度测试支持接口路由，不等于真实Qwen线性注意力的样本隔离、SP／kernel或训练收益。
+
+本题收束为包装器能力与依赖版本知识。真实checkpoint数值隔离仍是另一层证据，不以源码或包装器测试补齐，也不为已有作者修复自动新增M5队列；不改模型kernel／训练专项或对上游发布。
+
 ## 参考
 
 - [verl GitHub](https://github.com/volcengine/verl)

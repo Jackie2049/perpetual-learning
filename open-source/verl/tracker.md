@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[KL-Cov选词范围](#kl-cov-选词范围的已有修复)：#7830原五纯CPU例通过，相同配额仍可能选不同位置，不当完整worker／DP验收、不另实现。[共享参数加载](#共享参数加载的已有修复)与数据子集接线的反馈仅留项目内，无上游发布。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[TRL边界探测](#trl-边界探测的已有修复)：#7932已有作者，三版原方法AST／签名与1.13模块移除已核，不当原测试或模型隔离验收、不另实现。[共享参数加载](#共享参数加载的已有修复)与数据子集接线的反馈仅留项目内，无上游发布。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## TRL 边界探测的已有修复
+
+2026-10-25读取[#7931](https://github.com/verl-project/verl/issues/7931)全文／全部两评论，编号与cu_seqlens查重见报告者已有[#7932](https://github.com/verl-project/verl/pull/7932)，OPEN／非draft／未合并，0普通／行内评论；head918c80b0、父提交／祖先3efe38c7，API目标base3f9d4c0d，两文件288新增。其他delta-kernel／Ulysses候选不替代此wrapper探测修复，不另开发。
+
+见[原架构专题](../../notebook/frameworks/verl-architecture.md#trl-包装器的打包边界探测)：精确类身份及类绑定forward后才查底层能力，不把任意kwargs当支持。独立核TRL0.27／0.28／1.12原forward AST相同且显式签名均不含cu_seqlens，1.13完整tree及官方移除PR确认原模块不存在；升级不是直接补救。本机仅源码／签名／四文件语法，不执行TRL、作者35／53测试、model或kernel；无候选应用／M5新队列或专项改动，上游任何动作及PR-head推送仍逐项待用户明确同意。
 
 ## KL-Cov 选词范围的已有修复
 

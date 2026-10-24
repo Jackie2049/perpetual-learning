@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 TRL边界探测学习收束（2026-10-25）**：起始8288eb0干净，#7931已有#7932 head918c80b0／祖先3efe38c7，不另实现。见[原架构专题](notebook/frameworks/verl-architecture.md#trl-包装器的打包边界探测)：原TRL0.27／0.28／1.12 forward AST相同、显式cu_seqlens皆缺，1.13完整tree确认移除原模块；精确已知类探测不等于任意kwargs支持。仅标准库源码／签名和四模块语法，无TRL／PEFT安装、原35／53例或模型／kernel验收，未新增M5队列／改专项或上游动作；下轮转独立实际需求，不造wrapper／版本／转发替身矩阵或擅改依赖pin。
+
 - **M1 KL-Cov选词范围学习收束（2026-10-25）**：起始5508804干净，收束前快进M5的fb6e8a0、完整保留06:40日志。#7829已有#7830 head79a7af1c／祖先6fc912f0，不另实现。见[原算法专题](notebook/frameworks/verl-grpo-core-algos-reading.md#kl-cov-的选词范围与微批切分)：原五纯CPU例通过；同样选2个仍会换位置，原loss／agg统一分母后只有传整批mask切片才恢复logp输入梯度。未跑作者worker夹具／RNG／Gloo／模型或GPU，不把额外前向与DP交换当性能收益；无M5新队列／专项或上游动作。下轮转独立实际需求，不堆quota／选词／微批合成矩阵或另写竞争修复。
 
 - **M1共享参数加载学习收束（2026-10-25）**：从31395ae快进M5日志9736ff5，无专项改动。#7834已有#7835 head93f5328f／祖先a9f29851，不另实现。见[原架构专题](notebook/frameworks/verl-architecture.md#meta-加载后的共享参数与梯度)：真实tiny Llama原四CPU用例通过；同loss但未重绑梯度不同，meta零地址判据对明确untied模型假阳性。Accelerate构造与原生torch meta的身份变化分开，反馈仅留项目内待用户审视，不评论／改PR。无完整FSDP／内存验收或M5新队列；下轮转独立实际需求，不堆alias／meta／假rank矩阵或另写共享参数修复。
