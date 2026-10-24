@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[工具schema保真](#工具-schema-约束的已有修复)：#7505已有#7523，原回归体CPU对照支持保真，不等于schema合法性或执行校验；不另实现。[数据子集接线](#数据子集与验证入口的已有修复)反馈仍只留本地待用户审视，无对外发布。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[SFT验证分母](#sft-验证尾批的已有修复)：#7467当前head原16测试体CPU通过，补位有效计数与token加权分开，不当模型或真实DP验收、不另实现。[数据子集接线](#数据子集与验证入口的已有修复)反馈仍只留本地待用户审视，无对外发布。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## SFT 验证尾批的已有修复
+
+2026-10-25读取[#7464](https://github.com/verl-project/verl/issues/7464)全文／0评论，编号及SFT drop_last validation查重均见同报告者已有[#7467](https://github.com/verl-project/verl/pull/7467)，OPEN／非draft／未合并。固定head87dc0d00、实际祖先a9f29851，API目标base3f9d4c0d，五文件625增38删；当前第三提交已从样本权重改token权重，不沿用旧LGTM／正文旧概述或认领重复修复。
+
+见[原数据流专题](../../notebook/frameworks/verl-dataproto-data-flow-reading.md#sft-验证的尾批与-token-分母)：完整原helper／collator／TensorDict及原16测试体CPU通过，真实sampler重复索引本例多计3token，零mask补位有效数为55；显式NLL token加权约1.0385、样本加权1.8，非模型测量。原静态micro切分函数AST隔离、逻辑rank依次执行，无完整trainer／动态打包／设备通信，七份语法检查不等于后端验收。无新M5任务／专项改动、候选应用或上游写入，任何外部可见评论／PR及PR-head推送仍逐项待用户明确同意。
 
 ## 工具 schema 约束的已有修复
 

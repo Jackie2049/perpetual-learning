@@ -273,6 +273,37 @@ rLLM多步RL(prefix-merge):
 这不是总payload、RSS、共享内存或训练峰值；实际字段和dtype须按运行路径测量。
 ```
 
+## SFT 验证的尾批与 token 分母
+
+**保留验证尾批、消除采样重复、使用正确的指标分母，是三个条件。** [#7464](https://github.com/verl-project/verl/issues/7464)报告两条SFT入口将验证集按训练大batch且drop_last=True读取，小集合可能零batch，随后空均值成为NaN。已有同报告者的[#7467](https://github.com/verl-project/verl/pull/7467)，本项目只核现有方案，不另写修复。2026-10-25读取OPEN、非draft、未合并，head `87dc0d0071d3868ae86bcbf245ba9fbd88e2927a`；API目标base `3f9d4c0d32cc20c7ec31c8137e91bb5673ce9e5e`，实际共同祖先 `a9f2985159536a607211dcac730d3f5d55028950`，5文件625增38删。
+
+### 不丢尾批不等于没有重复
+
+旧主线 `3c6d9b43b67c74ec343d77874cd8fa6e841523da` 的SFT验证sampler和loader均drop_last=True。原CPU测试的200行、batch256、单副本显式rank得到零batch；独立torch空张量mean为NaN。候选的batch来自正数val_batch_size，否则全验证集；micro_batch_size_per_gpu仍用于引擎切分，不成为默认loader batch。null、0、负数都按全量处理。
+
+单改为 DistributedSampler(drop_last=False) 会补重复索引，而非自动产生“无权重的空位”。真实CPU对照以10行、4个显式rank、shuffle=False，每行i的loss-mask token数为i+1，得到：
+
+| 构造 | 四个rank的行索引／补位 | 有效token总数 |
+| --- | --- | --- |
+| 普通DistributedSampler | [0,4,8]、[1,5,9]、[2,6,0]、[3,7,1] | 58，头两行被重复计数 |
+| 原候选LossMaskedPaddedDataset及loader | 先将数据集补到12槽位，补位行loss mask为0 | 55，与10个真实行一致 |
+
+这保证的是有效loss计数，不是补位行免于前向或没有计算／显存开销。SPMD的loader已按真实DP分片，后续只需满足每rank静态micro-batch倍数；Ray driver持整批，送worker前还要满足真实DP分派倍数。候选将这两个补位位置分开；静态模式的行倍数为DP×micro_batch_size_per_gpu，动态模式只要求DP。这里不据一个helper通过认证真实worker分派、动态token打包或任意并行布局。
+
+### token 均值不能按样本数重新平均
+
+原 [sft_loss](https://github.com/verl-project/verl/blob/87dc0d0071d3868ae86bcbf245ba9fbd88e2927a/verl/workers/utils/losses.py#L28)使用loss-mask token总数作分母；FSDP路径会跨DP求和batch_num_tokens。因此，在引擎返回该批全局每token NLL的前提下，跨batch应算Σ(lossᵦ×tokensᵦ)/Σtokensᵦ，而不是样本均值或batch均值。
+
+原测试的显式NLL夹具：三个batch分别20／20／1000个有效token，批内每token NLL为2／2／1，样本数2／2／1。原reduce函数得token加权1080/1040≈1.0384615；误用样本数得1.8，等权平均batch则约1.6666667。这是已给定NLL的汇总对照，不是模型输出或验证质量测量。原SPMD接线用本地token数与已全局归约的每批loss构造分子／分母，再作SUM；Ray端使用整批token数。局部数学不代替实际collective验收。
+
+### 本机执行的范围
+
+Python3.12.13／torch2.14.1、torchdata0.11.0、TensorDict0.15.2、pytest9.1.1，复用现有CPU环境、无安装。完整原TensorDict工具／collator／sft_val_utils和原测试模块保持字节不改，仅空父包隔离框架初始化；完整原prepare_micro_batches函数经AST隔离，原测试只走静态切分，避免导入设备发现模块。原16测试体直接调用两次全过，覆盖200行尾批、1319行／8个逻辑rank、零mask补位、静态整除、分母与汇总；这些rank在单进程依次枚举，没有进程组或真实设备通信。
+
+原测试名中的“end-to-end”仅串联本地加载器与数学；其_per_token_nll是作者明确的stand-in，没有执行模型、实际sft_loss的因果mask移位、完整trainer或engine。因此不记为原生pytest／训练／收敛验收，也不凭所有测试通过宣布任意padding模式与后端正确。七份完整源码快照另过AST／内存compile；候选正文开头仍有旧“sample-weighted”概述，当前第三提交的生产代码／原测试已改为token权重，不能沿用早轮LGTM或旧摘要。
+
+输入、命令及hash见[当日日志](../../diary/2026-10-25.md)。这是CPU数据流学习，不新增M5硬件队列、不升级／应用候选或补写竞争方案，不改已有专项；任何社区写操作仍待用户逐项明确同意。
+
 ## 10. 关键设计洞察
 
 ```

@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 SFT验证分母学习收束（2026-10-25）**：起始803371a干净，#7464已有#7467 head87dc0d00、祖先a9f29851，不另实现。见[原数据流专题](notebook/frameworks/verl-dataproto-data-flow-reading.md#sft-验证的尾批与-token-分母)：完整原helper／collator／TensorDict及16原测试体CPU两次通过，普通sampler补齐本例计58token，零mask补位保留真实55；显式NLL的token／样本加权约1.0385／1.8，不将stand-in当模型输出。静态切分原函数AST隔离，逻辑rank依次枚举无collective，七份语法检查；无M5新队列／环境／专项或上游动作。下轮转独立实际需求，不堆尾批／padding／假rank矩阵或据CPU通过扩大并行支持。
+
 - **M1工具schema边界学习收束（2026-10-25）**：起始4101149干净，#7505已有#7523、关闭#7766未合并，不另实现。见[原工具专题](notebook/frameworks/verl-6779-continuous-token-agentic-rollout-reading.md#13-工具-schema-保真与执行校验)：两版完整模块接真实Pydantic，原1测试体主线失败／候选通过；extra保真不认证任意schema、元schema合法或调用参数。无副作用echo显示越界值／错误类型仍可进入FunctionTool.call，未知参数由Python签名拒绝，非完整loop／安全漏洞定性。五份语法检查，无GPU缺口／M5新队列或专项改动、无上游写入；下轮转独立需求，不堆schema字段／坏参数矩阵或另写校验器。
 
 - **M1数据子集身份学习收束（2026-10-25）**：起始f6b7a4f干净、首fetch无新增；#7816／#7824已有#7819／#8141，不另实现。见[原checkpoint专题](notebook/frameworks/verl-checkpoint-management-reading.md#rl-数据子集与恢复身份)：真实Parquet／JSONL／torchdata接原类／函数，两候选各5原测试体通过，基线分别2过2断言失败（常量项不运行）／4过1失败。固定种子非内容校验；#8141原四调用表达式确认V1进入新分支，三个旧入口漏is_train=False，局部接线反馈留本地待用户审视，不发评论／改PR。七份语法检查，无原生包／trainer／模型恢复，无GPU缺口或新M5队列、无专项修改；下轮转独立实际需求，不堆seed／游标／替身矩阵或另写竞争修复。
