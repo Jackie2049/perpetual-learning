@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1日志覆盖保全（2026-10-24）**：同步发现c6e4d05将当日日志从96条缩至4条（5增3566删）；保留唯一新增22:35原记录与其待用户决定状态，恢复17ccb79全部96条和当日回看。没有回退PR决定或改M5专项；本地hook无法阻止其他写入端覆盖，尚未根治。详见[当日日志](diary/2026-10-24.md)；下轮转UniRL/verl独立实际问题，继续在合并前检查异常删改。
+
 - **M1 checkpoint能力与发布学习收束（2026-10-24）**：起始b324c29干净、同步无新增；#7952已有#7955配置保护，不另认领。见[原checkpoint专题](notebook/frameworks/verl-checkpoint-management-reading.md#异步保存能力与恢复指针)/[tracker](open-source/verl/tracker.md#异步-checkpoint-的能力与发布)：b8c1aa6a真实祖先23a341e3，旧DCP#4311 headf0411c95 behind1148，future/完成日志不等于tracker发布或可直接开白名单。原查找helper五组真实文件系统控制+原一方法通过，空目录有tracker可被找到、非整数tracker抛错，非模型/ActorConfig或FSDP/DCP验收；四份compile。未测条件记M5，无自动合并/保存schema/新训练或专项改动；下轮转独立需求/实质反馈，不堆空目录/假future矩阵或重复旧保留测试。
 
 - **M1数学评分池恢复学习收束（2026-10-24）**：起始a054be3干净、同步无新增；#8011已有ChdDongyang的#8015，不另认领。见[原奖励专题](notebook/frameworks/verl-reward-integration-reading.md#数学评分池的恢复与错误信号)/[tracker](open-source/verl/tracker.md#数学评分池的故障恢复)：固定0c4c3d40/base6093e007，base模块同main3c6d9b4。真实math-verify0.9/CPU spawn接原七测试（仅import调整）两次7过；base3控制过、死亡/超时留池两原例失败。身份重置/一次重试不等于所有交错安全，超时返回float仍无上层timeout信号；非完整manager/训练。依赖仅临时target、子进程已收尾，无GPU缺口或M5新队列，不改专项/采用补丁/对外动作；下轮转独立需求或实质反馈，不堆sleep/并发矩阵或重复原数学判分测试。
