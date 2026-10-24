@@ -293,6 +293,8 @@ M5 最小下一步：先判断是否有获准使用的对应配置、完整 toke
 
 ## verl 训练 checkpoint 发布参考
 
+Megatron调度恢复参考（2026-10-25，复用本入口非新队列）：[#7954](https://github.com/verl-project/verl/pull/7954) head53e63285/base fbb4b3a8已覆盖两处加载门控；[M1官方scheduler/真实CPU SGD六控制](../notebook/frameworks/verl-checkpoint-management-reading.md#megatron-调度进度与超参数恢复)不运行manager或分布式恢复。若M5已有获准匹配checkpoint工作且独立选用，固定实际MCore、普通或Megatron-FSDP路径、load_contents及新scheduler初始计数，分开记录flag/全局超参数、恢复num_steps、各参数组max_lr/min_lr/当前LR与下一次更新；原实现加载为增量，勿对已推进对象重复加载来验证冷恢复。普通SGD组覆盖反例不是Megatron分组bug证明，须核实际optimizer payload/组身份及完整恢复次序。缺资源/模型依赖授权、需部署下载或影响专项则停止记未测，不应用/改schema/重复加载生产对象或新增训练；任何上游可见写入及PR head推送仍须用户对动作明确同意。
+
 状态：仅条件参考，不代表接单或新增训练队列。目的为将来已有获准checkpoint工作中区分异步数据完成、发布tracker与冷恢复完整状态。已有[#7955](https://github.com/verl-project/verl/pull/7955) headb8c1aa6a仅加actor配置保护；[#4311](https://github.com/verl-project/verl/pull/4311)旧headf0411c95与目标base已明显分叉，其DCP完成日志非当前PPO发布接线。[M1原专题](../notebook/frameworks/verl-checkpoint-management-reading.md#异步保存能力与恢复指针)仅查找helper五组真实文件系统控制+原一方法及四份compile，无实际保存/加载、FSDP/DCP或设备执行。
 
 缺口为匹配完整后端/依赖/已有模型和同一actor、critic（若启用）、dataloader状态。若M5日后独立选用公开实现且已有获准匹配工作，先固定完整提交/配置、谁承担tracker发布与退出drain，再按既有范围核完整保存后冷恢复同一步状态，记录失败传播、manifest/文件与恢复出的训练进度；路径存在、future完成或rank0日志均不单独当验收。缺资源/实现、需新模型/部署升级、改保存schema或影响专项即记未测停止，不自动合并#4311、扩大白名单、删checkpoint或在现有训练注入故障。任何上游回复/issue/PR及fork PR-head推送仍须用户对具体动作逐项明确同意，交接不增加权限。

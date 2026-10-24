@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1调度恢复契约学习收束（2026-10-25）**：起始48e228d干净，快进52cb305保全M5记录。已有#7954不重复修复；见[原checkpoint专题](notebook/frameworks/verl-checkpoint-management-reading.md#megatron-调度进度与超参数恢复)：flag选择超参数而非丢计数，官方MCore0.19.2 scheduler接真实CPU SGD六控制通过；加载计数为增量，实际LR还受恢复后的组字段影响，后者非Megatron分组回归证明。八份语法检查，未跑原manager mock测试/分布式恢复；条件补M5原checkpoint入口，无新队列/环境/专项修改或上游动作。下轮转独立实际需求，不堆LR曲线/重复load/参数组替身矩阵或重跑原AMP计数题。
+
 - **M1 Megatron权重就绪学习收束（2026-10-25）**：起始f40e823干净，收尾同步19416a9保全M5新日志/状态。#8324迁移已有fork原型不展开；沿既有#8029核[融合消费边界](notebook/frameworks/verl-fused-output-softcap.md#megatron-融合权重的就绪与调度)：参数handle完成、下一桶派发权和hidden gather分开，weak owner/graph跳过不是无条件就绪保证。原23项CPU生命周期测试通过，作者DDP/Work替身及torch数学非实通信；九份语法检查不代替GPU。仅条件补M5原输出头参考，不另实现/部署/新排队或改专项；下轮转独立实际需求，不堆bucket/graph/假DDP矩阵或自动展开大型原生迁移。
 
 - **M1数学表达式边界学习收束（2026-10-25）**：起始8ed6395干净，快进11a230e/49ff359保全M5新增。#8346/#8347原误判题已覆盖不复跑；转读#7603已有#7607/#7701，见[原奖励专题](notebook/frameworks/verl-reward-integration-reading.md#数学表达式的语法与资源边界)：AST节点限制不等于数值类型、literal_eval不保留一般算式、局部限额非完整worker沙箱。原8个良性方法与小输入/单元素矩阵两次CPU一致，无攻击/耗尽/训练或设备执行；不另实现/叠补丁/新排M5队列。下轮转独立需求，不堆语法绕过/算式变体、放大资源控制或重跑已有区间数值题；任何上游动作仍逐项待用户明确同意。

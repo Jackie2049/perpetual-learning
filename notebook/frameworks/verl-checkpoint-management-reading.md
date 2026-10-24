@@ -7,6 +7,40 @@
 
 2026-10-24补充：[异步保存能力与恢复指针](#异步保存能力与恢复指针)核对#7955及旧DCP候选#4311；原查找函数的一例测试与五组真实文件系统控制说明“找到目录”并不验收恢复内容，异步写入能力也不自动提供tracker发布。
 
+2026-10-25补充：[Megatron 调度进度与超参数恢复](#megatron-调度进度与超参数恢复)用官方调度器和真实CPU optimizer区分进度、超参数来源与参数组覆盖；六组控制不等于完整分布式checkpoint恢复。
+
+## Megatron 调度进度与超参数恢复
+
+恢复训练时，继续到哪一步与使用哪套调度超参数是两个问题。[#7953](https://github.com/verl-project/verl/issues/7953)已有报告者的[#7954](https://github.com/verl-project/verl/pull/7954)，2026-10-25读取open、非draft；固定head `53e632859898a248f89c8dd7e9abbf56e2248944`，base及实际祖先 `fbb4b3a8bf636f290c9c59fc346f756849e9c241`，5文件111增16删。不另开竞争修复。
+
+候选在Megatron普通dist checkpoint与Megatron-FSDP两条加载路径中，只要payload包含scheduler且对象存在，就调用 `load_state_dict`；开启 `use_checkpoint_opt_param_scheduler` 时仍要求payload必须有该字段。两处仍嵌在 `should_load_optimizer` 内，不是改成从extra恢复；FSDP的存储位置不能直接套给Megatron。[构造接线](https://github.com/verl-project/verl/blob/53e632859898a248f89c8dd7e9abbf56e2248944/verl/utils/megatron/optimizer.py)把该flag与其逻辑反值分别传给官方scheduler的use-checkpoint和override选项，正常推进方法则调用 `step(1)`。
+
+### 选择超参数不应丢掉计数
+
+官方MCore0.19.2固定提交 `4b4acac9a1d28ea6829c8d4f566d75698a21249d` 的[完整调度器](https://github.com/NVIDIA/Megatron-LM/blob/4b4acac9a1d28ea6829c8d4f566d75698a21249d/megatron/core/optimizer_param_scheduler.py)由 `_check_and_set` 选择其管理的超参数，而 `num_steps` 在外部经 `step(increment=...)` 恢复。这里不能把flag理解为“False就不加载”。
+
+本机采用warmup 2、总长10的线性调度，min/init LR为0、constant WD为0.1；数值1和2只为易核算的控制值，不是训练超参数建议。旧scheduler的max LR=1，在计数4保存；新对象max LR=2，从计数0开始。真实CPU SGD参数组、原scheduler和 `torch.save/load(weights_only=True)` 得到：
+
+| 恢复方式 | 恢复后计数 | 恢复后全局max LR | 参数组当前LR | 再推进1后的LR |
+|---|---|---|---|---|
+| use-checkpoint=True | 4 | 1 | 0.75 | 0.625 |
+| use-checkpoint=False、override=True | 4 | 2 | 1.5 | 1.25 |
+| 不调用load | 0 | 2 | 0 | 1.0，此时计数仅为1 |
+
+前两行的下一步分别与对应超参数下的连续调度一致。另将两flag均设False、当前与保存max LR不同，会在超参数检查时抛AssertionError；这不是verl默认配对，因为verl会同时传入互补的override标志。
+
+### 新对象与参数组也是恢复条件
+
+该版本的加载通过增加计数，而不是无条件赋值。本例先恢复到4并推进到5，再对同对象加载保存计数4，结果为9、LR为0.25；不能把它当幂等的“重新设回第4步”接口。冷恢复应核新对象初值，不能只检查checkpoint里存在num_steps。
+
+全局超参数也不是实际LR的唯一来源。原 `get_lr` 优先读取optimizer参数组的 `max_lr/min_lr`，再回退scheduler的全局字段。有限反例中，旧SGD组保存max_lr=1，新对象配置2，按候选顺序先恢复optimizer组、再恢复scheduler并保留当前全局超参数后，全局max_lr仍为2，但参数组max_lr被恢复为1，计数4时实际LR为0.75。**这是普通SGD附加字段的真实状态控制，不是已证明Megatron分布式optimizer存在同一分组回归**；它说明完整验收需同时观察参数组与全局值。[PyTorch加载文档](https://docs.pytorch.org/docs/2.14/generated/torch.optim.Optimizer.load_state_dict.html)也提示初始化和状态加载次序会影响恢复后的学习率，不能跨scheduler实现照搬次序。
+
+### 验证范围与接续
+
+Python3.12.13／torch2.14.1，六组有限控制通过。官方scheduler、rank日志和Slurm环境helper三个原模块完整执行；仅用包壳和utils重导出连接原日志函数，不是原生导入整个MCore包。没有假scheduler或optimizer；真实torch临时状态文件已自动清理，但没有执行SGD更新、模型、Megatron optimizer、manager load或分布式保存恢复。五份候选相关Python另做AST/compile，连同三个官方模块共八份语法检查；一次性harness留工作目录，复现输入与hash见[日志](../../diary/2026-10-25.md)。
+
+作者原manager测试mock底层checkpoint加载和scheduler对象，仅检查调用payload；本轮未复跑其43/57测试报告，也未执行Megatron-FSDP第二路径。真实完整后端的进度、参数组、下一次更新、optimizer/RNG与数据位置一致性仅补入[M5原checkpoint参考](../../experiments/handoff-m5.md#verl-训练-checkpoint-发布参考)，不新增训练队列或自动应用候选；上游写入及已建PR的fork head推送仍逐项待用户明确同意。
+
 ## 1. Checkpoint 2层架构
 
 2026-10-23 补充：[文件系统权重同步候选 #8355](../verl-v1-checkpoint-engines-deep-reading.md#文件系统权重同步的发布与清理)说明两层应按用途而非“是否写文件”区分。临时 safetensors 在 rollout 加载后删除，不含完整恢复状态；原 helper/receiver 的本地 I/O 控制不认证共享挂载或 server 安装。下方后端数量和早期代码仍按原日期理解。

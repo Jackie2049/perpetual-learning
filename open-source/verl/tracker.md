@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[Megatron权重就绪](#megatron-融合消费的已有修复)：#8029原23项CPU生命周期测试通过，等待与派发职责分开，非真实通信验收，不另实现。[数学表达式](#数学表达式解析的已有方案)、[QAT mask](#qat-mask-默认与后端契约)等学习保留各自范围，不搬作者硬件或安全报告。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[调度恢复契约](#megatron-调度恢复的已有修复)：#7954已有覆盖，官方scheduler接真实CPU SGD六控制不等于完整恢复，不另实现。[权重就绪](#megatron-融合消费的已有修复)、[数学表达式](#数学表达式解析的已有方案)等学习保留各自范围，不搬作者硬件或安全报告。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## Megatron 调度恢复的已有修复
+
+2026-10-25读取[#7953](https://github.com/verl-project/verl/issues/7953)全文/0评论、已有同报告者[#7954](https://github.com/verl-project/verl/pull/7954)全文及相关加载/构造接线。两条开放PR查重查询均仅该覆盖；head53e63285、base/祖先fbb4b3a8，open、非draft，不另认领。见[原checkpoint专题](../../notebook/frameworks/verl-checkpoint-management-reading.md#megatron-调度进度与超参数恢复)：两manager入口恢复仍受should_load_optimizer控制，flag选择受管理的超参数来源，不应据默认False丢进度。
+
+官方MCore0.19.2三个完整原模块以轻量导入接线执行，真实CPU SGD及torch状态文件六控制通过；进度恢复、不同超参数、重复load增量与参数组覆盖各有范围，SGD组反例不定性Megatron bug。五相关候选模块仅compile，未复跑作者43/57 manager mock测试或Megatron-FSDP恢复；条件补[M5原checkpoint入口](../../experiments/handoff-m5.md#verl-训练-checkpoint-发布参考)，不应用、新排训练或改专项，任何上游动作仍逐项待用户明确同意。
 
 ## Megatron 融合消费的已有修复
 
