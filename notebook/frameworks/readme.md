@@ -135,6 +135,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
   - [多教师周期与恢复身份](unirl-survey.md#多教师周期与恢复身份)：#624以完整域周期累计，路由记录非内容hash、seed非完整轨迹证明；前置后独立diff与作者双A100报告分开，本机仅10/11模块语法。
   - [Tokenizer实例修补与批量生成](unirl-survey.md#tokenizer-实例修补与批量生成边界)：#544保留原batch helper、实例局部wrapper；结构guard非版本认证，CPU tokenizer字段对照非GPU/logp parity，配方仍B1。
   - [样本观测的行上限与数据搬运](unirl-survey.md#样本观测的行上限与数据搬运)：#597原CPU行谱系/音频与JSONL/WAV六组控制；每Part前缀非整轮/字节上限，best-effort非原子归档，无trainer/远程搬运实测。
+  - [样本观察拆分与音频通道](unirl-survey.md#样本观察拆分与音频通道)：新#628基础/#597接线沿用同一作者，三布局输入表达式/原WAV函数控制非W&B或新版trainer验收，旧GPU结果不迁移。
   - [行级奖励派发与分组身份](unirl-survey.md#行级奖励派发与分组身份)：#517原Sample/RewardRequest及4 helper、5组CPU控制；重建单行谱系改变scorer组身份，原序回贴非分数/远程搬运或性能认证。
   - [异步计时窗口与性能比较](unirl-survey.md#异步计时窗口与性能比较)：#539同名step time扩大区间，phase计主机调用，eval/save仍排除；8模块编译和3原计时器/窗口控制，不搬用作者W&B跑次。
   - [离线回放与结果隔离](unirl-survey.md#离线回放的到达契约与结果隔离)：#487到达时刻非前序完成依赖；原stdlib模块对照作者fork，两个已知来源guard修正但合法JSON不变，合成数据契约执行不作simulator/保真度证明。

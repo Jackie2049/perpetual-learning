@@ -1,5 +1,7 @@
 # UniRL — 腾讯统一多模态 RL 框架调研
 
+2026-10-24 接续：[样本观察拆分与音频通道](#样本观察拆分与音频通道)核#628基础层和#597接线层的新版本；原WAV函数及W&B输入表达式的CPU控制，不将旧GPU报告搬到新head。
+
 2026-10-24 接续：[VeOmni 生成代码的 mask 接口边界](#veomni-生成代码的-mask-接口边界)核#627固定依赖的不兼容及上游已有调整；参数绑定成功不等于因果mask或EP训练验收。
 
 2026-10-24 接续：[教师指纹与控制器失败传播](#教师指纹与控制器失败传播)区分已返回异常、权重内容不一致和读取卡住；固定主线6fd82cba，仅原指纹函数CPU控制，不是Ray/Gloo或训练验收。
@@ -1433,6 +1435,26 @@ BaseTrainer对**每个生成Part**应用同一个上限，两个Part各限2条�
 作者另报告H100上的SD3.5/Qwen3/PE三次短训与媒体契约；训练属于`b784cb8`，最终head仅在pyproject/requirements加入soundfile依赖及README说明（Git核为3文件4增1删），最终媒体契约单独报告。原Omni/HI3配方及多节点driver RSS仍未验证；小模型或合成CUDA媒体不等同于这些结果。需要的真实资源/最小观测已补[原M5可选参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不排新必跑任务或自动部署draft。
 
 原模块SHA256：sample_record `a52d819e057fca021025e9b3ed140ad6cd166026d701c02d6aacb538e0ba21b0`、media_preview `2bd1aba6fbcac008094ca15e51c9782b71adef3e152d8e0fb5be55e3c5240725`、sample_dump `52e9bfce9c976dfd02603a2fafa545213331f930fa2ef799c5ff9f908bfe705a`；脚本打印hash并禁止隐式Git fetch。
+
+### 样本观察拆分与音频通道
+
+2026-10-24作者将[#591](https://github.com/Tencent-Hunyuan/UniRL/issues/591)的已有实现拆成draft [#628](https://github.com/Tencent-Hunyuan/UniRL/pull/628)基础层与draft [#597](https://github.com/Tencent-Hunyuan/UniRL/pull/597)接线层，均OPEN，仍由ruiling-smartbear负责。固定基础head`94304dfabd9c2f1419e3d672aca73fc842b62126`，接线head`e5961d7edd375b4ec3acda1766cf5134b49625da`，两者API目标base及与其共同祖先均为`6fd82cba13f52f394747832344039408699ea378`。#628只改依赖、types文档/preview/record和两个sink文件，没有trainer调用点改动；#597相对该基础的文件diff为11文件141增193删，不是第二套竞争实现，也不表示两项已合并。
+
+三个基础文件在两head字节相同，`log_sample_records`方法AST也相同。相对原`d507c4d`，media_preview和sample_dump仍逐字节相同，sample_record只有docstring指向变化；但logger及trainer接线有新变更，所以旧六组CPU控制与作者旧GPU结果不能认证新版整体。当前#597正文还将新CPU适配、原Mac合成边界、旧H100短训分别列出；原Omni/HI3模型与多节点RSS缺口仍在。
+
+**独立音频传入SDK的数组布局，与原生音频容器、WAV交错PCM和视频复用，是不同边界。** 新[W&B音频入口](https://github.com/Tencent-Hunyuan/UniRL/blob/94304dfabd9c2f1419e3d672aca73fc842b62126/unirl/utils/wandb_logger.py)在2维且首轴为1或2时先转置，再`.numpy()`；旧代码直接`.numpy()`。[本地WAV sink](https://github.com/Tencent-Hunyuan/UniRL/blob/94304dfabd9c2f1419e3d672aca73fc842b62126/unirl/utils/sample_dump.py)原本就把channel-first输入转为`[L,C]`，写16bit PCM。不能将SDK接受一个数组当成其时长、通道或声音内容正确。
+
+本机Python3.12.13/torch2.14.1，以6个采样点、8kHz和左右不同的数值核对三种布局。只摘取原MediaItem/SampleRecord dataclass定义、原sink函数完整体，以及两版`wandb.Audio`的第一个参数表达式；不导入训练框架，也没有假W&B对象。原函数实际写WAV，再用标准库wave逐值读回：
+
+| 输入张量 | 旧W&B输入数组 | 新W&B输入数组 | 本地WAV读回 |
+| --- | --- | --- | --- |
+| `[6]` | `[6]` | `[6]` | 6帧×1声道 |
+| `[1,6]` | `[1,6]` | `[6,1]` | 6帧×1声道 |
+| `[2,6]` | `[2,6]` | `[6,2]` | 6帧×2声道 |
+
+三项的新数组逐值符合预期，PCM通道顺序与转换后数值一致，输入张量未变。这里只观察传给SDK之前的数组，未运行`wandb.Audio`、上传、音频听感或PyAV复用；本机W&B/soundfile/PyAV均未安装。视频路径另有mono扩为stereo的normalize helper，不能将本次独立音频结果当该路径验收，也不扩大到任意通道数或短轴歧义。
+
+[脚本、hash与命令](../../diary/2026-10-24.md)留日志，不重跑旧谱系/cap/失败矩阵，不新增永久harness或音频修复。原[M5样本观察参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)仅更新两head与证据范围，作者新CPU报告及旧GPU短训仍各绑原版本；不因新编号重复排Omni/HI3训练或改专项。
 
 ## Tokenizer 实例修补与批量生成边界
 

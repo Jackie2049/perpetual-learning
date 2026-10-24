@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1样本观察新拆分学习收束（2026-10-24）**：起始4442b9e无新增，收尾快进8a39b6d保留M5记录；#628基础head94304dfa与#597接线head e5961d7e均draft，非新空缺。见[原调研](notebook/frameworks/unirl-survey.md#样本观察拆分与音频通道)/[tracker](open-source/unirl/tracker.md#样本观察的基础层与接线层)：三基础文件字节及log_sample_records AST相同；新独立音频输入转置，与未变WAV sink边界分开。原定义/函数/表达式摘取接真实CPU张量与wave，三布局的数组/PCM顺序通过，非W&B/PyAV/完整模块或trainer验收；旧CPU/GPU报告不迁新版。原M5参考只更新head与范围，不新增矩阵/实现或改专项；下轮转独立需求/实质反馈，不重跑旧cap/谱系矩阵或堆音频形状。
+
 - **M1后端配置权威来源学习收束（2026-10-24）**：同步88e8775无新增；#7540已有#7597，固定head96ad10eb/祖先9ac85640，API目标3f9d4c0非已含主线（ahead1/behind24）。见[原架构笔记](notebook/frameworks/verl-architecture.md#fsdp-后端配置的权威来源)/[tracker](open-source/verl/tracker.md#后端选择与蒸馏数值观察)：V1 raw冲突guard、类级合法性与engine覆盖分层；原完整config模块+真实OmegaConf七组拒绝/接受不改raw值，非Hydra/构造或engine验证。当前五文件范围不沿用旧21-launcher描述；配置修复不解释OPD loss差异。缺口补原M5一致性参考，无新矩阵/迁移/专项修改；下轮转独立需求或实质反馈，不堆配置替身、复跑旧矩阵或认领同题。
 
 - **M1 fused head生命周期学习收束（2026-10-24）**：同步54437cc无新增；#8091已有#8096（62172693非draft）/#8097（2d4ad53c draft），不竞争。见[原输出头专题](notebook/frameworks/verl-fused-output-softcap.md#独立分片-head-的执行与梯度归属)/[tracker](open-source/verl/tracker.md#fsdp-head-生命周期的替代方案)：注册FSDP pre/post与显式聚合/Partial梯度/独立head同步是不同设计，不能叠加或以普通CPU数学认证。13次compile/源码核对，无原测试/FSDP/通信/模型执行，作者144case及替代方案报告不搬本机。缺口补原M5输出头参考，无新矩阵/依赖部署/专项修改；下轮转独立实际需求或实质反馈，不复跑softcap旧矩阵或造假FSDP生命周期。
