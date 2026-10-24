@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 Bypass新版范围续核（2026-10-24）**：同步cd2875a无新增；verl前20 PR发现#8348实质head变化，选其旧4b3b9f84→新2b4940df，见[原专题](notebook/frameworks/verl-async-logprob-provenance.md#当前-head-的范围收窄)。新head删旧测试、冲突/镜像与PP/动态CP guard，撤回FSDP entropy改动；原19测试不能认证新版。原函数两版×五组OmegaConf配置确认旧拒绝组合现接受，仅配置行为，非worker/张量统计或并行通信支持。新版本回写M5原参考，不替作者补guard、排训练或重开#8250；下轮转独立实质变化/需求，不堆旧配置控制或引用旧head保证当前行为。
+
 - **M1 IPC边界学习收束（2026-10-24）**：同步47962bd无新增，UniRL前35 PR无新head；转未覆盖已有作者#494，见[原调研](notebook/frameworks/unirl-survey.md#原生-ipc-的共识门与物化边界)。source/chunk门意图分开；追producer发现raw项内仍可逐expert DTensor重分布，故不能据raw末端标记/作者替身认证全部通信边界。仅base/head/main四模块及两测试14次语法/AST检查；未跑原8项、DTensor/通信或GPU，不判已复现死锁或另写方案。真机条件补原M5参考，非新队列；下轮转独立真实缺口/实质反馈，不堆gate/通信替身、回改M5代码或将旧head套当前producer。
 
 - **M1 权重自检评估纠正（2026-10-24）**：同步ddf321f无新增，最新verl PR无变化；转#8252完整正文/两评论发现旧“0评论/无维护者回应/无验证机制”过时，已纠正[candidate](open-source/verl/candidate-8252-weight-checker-rfc.md#现有验证能力与当前判断)及tracker。见[原概率专题](notebook/frameworks/verl-async-logprob-provenance.md#现成-logprob-对照与权重自检)：现成脚本真实同步后生成并由Megatron重算，但非独立基线下破坏/恢复；原metric/判定CPU控制显示稀疏大残差可低于均值门槛、退出只看末轮。不是模型/refit实测或新上游缺陷，不重核#7108旧可合并性或另写checker。真机入口补M5原条件参考，非新训练队列；下轮转独立实际缺口/实质反馈，不堆阈值/轮次替身或改专项、发布旧RFC草稿。
