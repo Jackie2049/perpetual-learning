@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责；四条社区评审已核验，补丁与回复待用户授权，见[原草稿](draft-8313-review-reply.md)。2026-10-24续核[部分覆盖与状态](#部分覆盖与当前状态)、[资源默认与调度](#资源默认与更新调度)、[VeOmni低精度路线](#veomni-端到端低精度路线)及[图片payload](#图片payload的既有修复)：已有作者、局部保证与完整验收分开，不据空检索认领。[#8252评估](candidate-8252-weight-checker-rfc.md#现有验证能力与当前判断)已纠正旧“无回应/无验证”，不另实现；#8250仍待证据，#7913/clip旧RFC不重开。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责；四条社区评审已核验，补丁与回复待用户授权，见[原草稿](draft-8313-review-reply.md)。2026-10-24续核[Prime新旧同题PR](#prime字典评分的重复覆盖)、[部分覆盖与状态](#部分覆盖与当前状态)、[VeOmni路线](#veomni-端到端低精度路线)及[图片payload](#图片payload的既有修复)：已有作者、局部保证与完整验收分开，不据新编号或空检索认领。[#8252评估](candidate-8252-weight-checker-rfc.md#现有验证能力与当前判断)已纠正旧“无回应/无验证”，不另实现；#8250仍待证据，#7913/clip旧RFC不重开。
 
 **【大白话讲明白】**
 
@@ -97,6 +97,12 @@
 2026-10-24读[#7391](https://github.com/verl-project/verl/issues/7391)完整正文和唯一评论，确认同报告者leooop-al已开非draft [#7400](https://github.com/verl-project/verl/pull/7400)，读取时OPEN、head`dc721cfd3cbd4e18f49763f029d498519c74eb91`。编号/图片bytes语义查重同时命中其他传输方案，不能将所有命中当同一修复；#7400完整正文及两文件diff明确限定dataset侧，不改AgentLoop/DataProto/actor派发。
 
 见[原数据流笔记](../../notebook/frameworks/verl-dataproto-data-flow-reading.md#图片字节与解码对象的生命周期)：真实Pillow配原方法/原五例，候选通过、祖先和当前main仅清理例失败；这不是完整pytest或RSS证据。已有作者覆盖字典浅拷贝/pop bytes/解码copy，不另写或发布同一补丁，也不将未处理的完整raw_prompt传输自动当我方新候选。#7391的path-only外部内存对照不认证#7400仍保留PIL的方案；旧本地“零拷贝/开销可忽略”及230KB算例已在原笔记纠正。无Ray/模型/设备执行或新M5任务，后续按具体协作/实质反馈再判断。
+
+### Prime字典评分的重复覆盖
+
+2026-10-24核[#8216](https://github.com/verl-project/verl/issues/8216)正文/0评论及编号查重，已有[#8217](https://github.com/verl-project/verl/pull/8217)、新[#8358](https://github.com/verl-project/verl/pull/8358)均OPEN/unmerged；旧#8262检索仍closed，不替作者提交、关闭或评论任何PR。新作者liangqianxing的head052e2fe8与报告者Virtuoso461旧headfe9ff514的完整生产文件仅注释/docstring差异，去docstring后AST相同；各自base的prime.py逐字节相同。见[原奖励笔记](../../notebook/frameworks/verl-reward-integration-reading.md#新编号与已有修复)。
+
+新PR两函数测试增加manager写回位置的范围，使用固定tokenizer/恒定scorer，不能当真实判分器或全训练验收。本机没有运行新测试或复跑旧进程池；旧4例spawn证据不升格为新manager结果。新PR的两条评论为CLA/评审机器人、reviews API空，机器人“可合并”摘要不替代查重/维护者决定。本轮保留重复覆盖结论，不新增候选、补丁或M5硬件队列。
 
 ## 本地论证撤回，不再独立推进
 

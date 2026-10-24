@@ -481,6 +481,16 @@ uv pip install --python /tmp/prime-pool-check/bin/python psutil==7.2.2 pytest==8
 
 两版 `prime.py` SHA-256 分别为 `e30e34ca239ddb629b009eb30eee017c55ca4fdf37f9f797da1d4611239371a4`、`bf33317ac9f65636fd90ddd9d1dd4e32618dc3c3c686d4d1d5592a976a020399`；`ray_utils.py` 相同为 `1f70a9ac05b4a6f92a3ad2486bee17ac9721a9568e7e72b17e76172a60a7751b`。完整两版模块与原测试另做语法编译；不由局部成功推出训练奖励、进程故障恢复或性能结论。
 
+#### 新编号与已有修复
+
+**新PR编号不代表出现新的独立修复。** 2026-10-24核对[#8358](https://github.com/verl-project/verl/pull/8358)，liangqianxing、head`052e2fe87beef900a15fa5979142a09627bcece4`、base`3c6d9b43b67c74ec343d77874cd8fa6e841523da`，2文件114增0删。它和报告者Virtuoso461的[#8217](https://github.com/verl-project/verl/pull/8217)均OPEN、未合并，都明确修同一个[#8216](https://github.com/verl-project/verl/issues/8216)；不能把前者视为无人认领的新机会，也不能把两个开放候选写成主线已修复。
+
+直接比较完整`prime.py`，#8358相对#8217仅新增helper的docstring、删除字典分支旁两行注释。两模块AST去除docstring后完全相同；旧base2035f58与新base3c6d9b4的该文件也逐字节相同。这是静态计算语句对照，不是跨依赖版本的运行验收或整个PR等价证明，docstring和测试本身确实不同。
+
+#8358的两个新测试函数分别检查dict/tuple/float的helper结果，以及manager将字典score写到最后有效response token、其他token为0并写入`data.batch['acc']`。manager例使用原测试的固定字符串tokenizer替身和恒定score=1，不执行真实math_dapo/rlla判分；源码中acc仍来自标量scores，不因返回字典含acc就单独传播该字段。这个测试也没有覆盖按行异常、解析整批回退或超时清理，不能用“新增manager测试”替代这些具体边界。
+
+本机只读取两个完整生产模块和新测试、完成AST/字节对照及三模块compile；没有运行新测试、构造DataProto/manager/tokenizer、重跑旧进程池控制或训练。上节旧#8217的真实spawn结果保留其原版本和范围，不升格为#8358的manager验收。已有作者覆盖，本轮不另写补丁、发布重复提醒或将机器人合并建议当查重结论；[来源、hash与复核代码](../../diary/2026-10-24.md)留日志，无GPU需求或新M5任务。
+
 ### 5.5 Experimental NaiveRewardManager — reward_loop/naive.py:24-99
 
 ```python

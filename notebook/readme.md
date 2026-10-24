@@ -150,7 +150,7 @@
 - [verl PF PPO重采样身份](frameworks/verl-grpo-data-flow-reading.md#pf-ppo-重采样与原-key-回写) — #7957原四测试三版本对照，内部行一致不等原key对齐；旧mask切片可与新行长度不同，非真实队列或训练验收
 - [verl 二维logprob分块](frameworks/verl-6572-full-determinism-source-reading.md#二维低精度-logprob-的分块预算) — #8351原17测试体绑定cpu通过；单块预算非反向总保存量或CUDA峰值，复用原脚本，不新增训练
 - [verl 奖励限流与取消](frameworks/verl-reward-integration-reading.md#进程配额与取消边界) — 原16协程测试体/2取消对照；类属性不是跨节点配额，超容量预扣不自动退款，timeout不包排队
-- [verl Prime 评分结果与失败范围](frameworks/verl-reward-integration-reading.md#prime-进程池的结果协议与失败范围) — #8217 原测试 base 3 过 1 预期失败/head 4 过，真实 spawn/进程池区分按行失败与结果解析整批回退；非 manager/训练或超时验收
+- [verl Prime 评分结果与失败范围](frameworks/verl-reward-integration-reading.md#prime-进程池的结果协议与失败范围) — #8217旧原4例/真实spawn；[新#8358同题对照](frameworks/verl-reward-integration-reading.md#新编号与已有修复)仅注释/docstring差异、计算AST相同，测试范围不同，不重复验证或当新候选
 - [verl 沙箱运行器派发](frameworks/verl-reward-integration-reading.md#沙箱运行器注册与执行边界) — #8345原14用例通过/16未选；包注册不等于代码隔离，传入timeout不等于强制终止，非entry-point/服务或安全验收
 - [verl 参数转换与缓冲区精度](frameworks/verl-fsdp2-source-deep-reading.md#参数转换与缓冲区精度) — #8189 原 6 CPU 测试体与 4 组控制，区分保留初值、FP32 标签和训练状态迁移；未运行真实 RoPE/model/FSDP
 - [verl 数学奖励的分层与精度](frameworks/verl-reward-integration-reading.md#数学奖励的分层判分与精度边界) — #8347原64参数例候选全过/祖先25预期失败；7组控制区分后备接受、整数字面量、科学计数法及方程提取，非数据集或训练验收

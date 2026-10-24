@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 Prime新编号查重收束（2026-10-24）**：同步1cc8c94无新增；M5登记新#8358实际与仍OPEN/unmerged的#8217同修#8216。见[原奖励笔记](notebook/frameworks/verl-reward-integration-reading.md#新编号与已有修复)/[tracker](open-source/verl/tracker.md#prime字典评分的重复覆盖)：完整prime.py仅注释/docstring差异、去docstring后AST相同，旧/新base该文件字节相同；新两函数测试有manager写回覆盖但非真实判分/训练。本轮仅源码/AST/compile，无新测试或旧进程池复跑，不另写补丁/发重复提醒/排M5任务，不改专项。下轮转独立需求或实质行为变化，不据新编号重复研究原dict分支、结果格式矩阵或静默归零已知边界。
+
 - **M1路由新反馈接续收束（2026-10-24）**：同步4890f7f无新增；#529新增07:24Z评论将候选范围提议收窄Agentic siblings，仍待社区定策略。见[原调研](notebook/frameworks/unirl-survey.md#路由策略与基准入口)/[tracker](open-source/unirl/tracker.md#补充尽调与派发边界)：固定main6fd82cba源码证实同步AR绕pool、async AR完整root树一task、Agentic siblings各task，普通turn本地inner不重派；carried work另有manager入口，不能扩大为全生命周期黏着保证。原同步配方测不到仅改pool的效果；亲和/命中/吞吐分开，无pool/harness/缓存或设备执行，原M5条件参考已补但无新队列，不改专项/演化竞争路由。下轮转独立实际需求或实质反馈，不堆路由/cache替身或无变化状态扫描。
 
 - **M1图片payload生命周期学习收束（2026-10-24）**：同步25d927d无新增，#7391已有同报告者#7400不竞争；固定head dc721cfd/祖先09ac3725而非目标3f9d4c0。见[原数据流笔记](notebook/frameworks/verl-dataproto-data-flow-reading.md#图片字节与解码对象的生命周期)：原方法AST载体接真实Pillow/原五例，候选5过、祖先和main3c6d9b4各4过/清理断言失败；bytes输出、源字典、解码流与仍保留的PIL分开。纠正原零拷贝/开销忽略概括和230KB错误算例，五张量明确dtype合480KiB，非进程内存。无完整dataset/processor/Ray/RSS/训练或设备执行，不改M5专项/新排队；下轮转独立需求或实质反馈，不堆图片格式/序列化替身或借path-only外部结果认证本候选内存收益。
