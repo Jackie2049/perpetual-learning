@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责；四条社区评审已核验，补丁与回复待用户授权，见[原草稿](draft-8313-review-reply.md)。2026-10-24完成[数学评分池恢复](#数学评分池的故障恢复)的真实CPU对照：已有#8015，原七测试两次通过，超时默认分仍不等于故障标注。[R3层选择](#r3-路由传输的阶段选择)与[DSA依赖](#dsa-依赖与有效输入范围)仅在各自证据范围收束；不重复认领或升格为训练验收。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责；四条社区评审已核验，补丁与回复待用户授权，见[原草稿](draft-8313-review-reply.md)。2026-10-24补充[异步checkpoint能力与发布](#异步-checkpoint-的能力与发布)：已有#7955保护，旧DCP路线不能代替tracker发布协议；原文件系统控制非完整恢复。[数学评分池](#数学评分池的故障恢复)原七测试真实CPU两次通过，超时默认分仍不等于故障标注；不重复认领或升格为训练验收。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## 异步 checkpoint 的能力与发布
+
+2026-10-24读[#7952](https://github.com/verl-project/verl/issues/7952)及唯一评论；同报告者已有[#7955](https://github.com/verl-project/verl/pull/7955)（headb8c1aa6a、祖先23a341e3、ahead1/behind6），不另实现。见[原checkpoint专题](../../notebook/frameworks/verl-checkpoint-management-reading.md#异步保存能力与恢复指针)：配置白名单是拒绝尚不支持的组合，不是非Megatron异步保存；[#4311](https://github.com/verl-project/verl/pull/4311)旧head f0411c95与目标base相差1148提交，其DCP future/完成日志不提供当前trainer所需tracker发布，不能直接改白名单宣称集成安全。
+
+本机只运行原查找helper的五个真实文件系统控制与原一项测试方法，确认空目录可被找到但不认证内容完整；未执行ActorConfig构造/原14项、FSDP/DCP保存/恢复或训练。条件留[原项目M5参考](../../experiments/handoff-m5.md#verl-训练-checkpoint-发布参考)，不新增训练队列、合并两方案或发布新补丁；上游任何可见动作须用户逐项授权。
 
 ## 数学评分池的故障恢复
 

@@ -281,6 +281,12 @@ M5 最小下一步：先判断是否有获准使用的对应配置、完整 toke
 
 停止条件：缺私有材料/配对身份就记录“待资料”，不启动原报告的长训练，也不以公共 toy 或另一模型称已复现 #8250。对照有差异只能缩小范围；没有原始观测前，不设计新的修复、不发布旧诊断稿或承诺治愈阈值。完成标准是可追溯的配对证据，或明确缺失材料清单。
 
+## verl 训练 checkpoint 发布参考
+
+状态：仅条件参考，不代表接单或新增训练队列。目的为将来已有获准checkpoint工作中区分异步数据完成、发布tracker与冷恢复完整状态。已有[#7955](https://github.com/verl-project/verl/pull/7955) headb8c1aa6a仅加actor配置保护；[#4311](https://github.com/verl-project/verl/pull/4311)旧headf0411c95与目标base已明显分叉，其DCP完成日志非当前PPO发布接线。[M1原专题](../notebook/frameworks/verl-checkpoint-management-reading.md#异步保存能力与恢复指针)仅查找helper五组真实文件系统控制+原一方法及四份compile，无实际保存/加载、FSDP/DCP或设备执行。
+
+缺口为匹配完整后端/依赖/已有模型和同一actor、critic（若启用）、dataloader状态。若M5日后独立选用公开实现且已有获准匹配工作，先固定完整提交/配置、谁承担tracker发布与退出drain，再按既有范围核完整保存后冷恢复同一步状态，记录失败传播、manifest/文件与恢复出的训练进度；路径存在、future完成或rank0日志均不单独当验收。缺资源/实现、需新模型/部署升级、改保存schema或影响专项即记未测停止，不自动合并#4311、扩大白名单、删checkpoint或在现有训练注入故障。任何上游回复/issue/PR及fork PR-head推送仍须用户对具体动作逐项明确同意，交接不增加权限。
+
 ## verl TransferQueue 启动资源参考
 
 路由层选择参考（2026-10-24，复用TQ入口，非新增训练队列）：[#8160](https://github.com/verl-project/verl/issues/8160)报告者已有内部实现；[M1固定main3c6d9b4源码学习](../notebook/frameworks/verl-transferqueue-worker-lifecycle-deep-reading.md#路由记录的层选择与全局坐标)只四模块AST/compile，无TQ/模型/通信。若M5日后已有获准匹配Megatron R3+PP工作且独立选用公开实现，先核实际schema、样本键/token顺序、全局层号及真实model router归属；CP/SP布局、末token占位与全层padding完成点另列，不用shape/均值指标认证身份。作者16节点结果不外推本机；缺公开patch、匹配环境/模型/资源，需部署/新schema或影响专项就停记未测，不另写切片映射、改生产数据或启动PP矩阵。任何上游回复/PR/PR-head推送（含fork）须逐项获用户明确同意，交接不代表接单或增加权限。

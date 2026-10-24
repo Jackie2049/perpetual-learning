@@ -5,6 +5,8 @@
 
 2026-10-22 补充：[保留目录与完整恢复的边界](#保留目录与完整恢复的边界)固定于 verl `1876b06d`。`max_ckpt_to_keep=1` 保存前保留旧目录，成功登记后才删旧；目录保留、保存完成通知与可恢复性是不同保证。下方早期架构段落的版本和行号不自动更新为本次验证范围。
 
+2026-10-24补充：[异步保存能力与恢复指针](#异步保存能力与恢复指针)核对#7955及旧DCP候选#4311；原查找函数的一例测试与五组真实文件系统控制说明“找到目录”并不验收恢复内容，异步写入能力也不自动提供tracker发布。
+
 ## 1. Checkpoint 2层架构
 
 2026-10-23 补充：[文件系统权重同步候选 #8355](../verl-v1-checkpoint-engines-deep-reading.md#文件系统权重同步的发布与清理)说明两层应按用途而非“是否写文件”区分。临时 safetensors 在 rollout 加载后删除，不含完整恢复状态；原 helper/receiver 的本地 I/O 控制不认证共享挂载或 server 安装。下方后端数量和早期代码仍按原日期理解。
@@ -255,7 +257,7 @@ ray_trainer.py (974-1108):
   1. actor_rollout_wg.save_checkpoint(actor_local_path, ...)
   2. critic_wg.save_checkpoint(critic_local_path, ...) → only if use_critic!
   3. torch.save(self.train_dataloader.state_dict(), data.pt)
-  4. latest_checkpointed_iteration.txt → 同步路径直接open("w")/write；async路径交给worker finalize
+  4. latest_checkpointed_iteration.txt → 同步路径直接open("w")/write；async只跳过trainer写入，需有实际backend finalize承接（见下节，不是所有backend都已支持）
 
 ★ ★ GRPO只保存:
   → actor checkpoint + dataloader state → 无critic
@@ -274,6 +276,28 @@ ray_trainer.py (974-1108):
   → "auto" → 找最新checkpoint
   → "resume_path" → 指定路径
 ```
+
+### 异步保存能力与恢复指针
+
+**保存出文件、异步请求完成、发布恢复入口和恢复出完整训练状态，是不同保证。** [#7952](https://github.com/verl-project/verl/issues/7952)报告非Megatron后端开启actor async_save后，trainer跳过恢复指针写入而后端没有承接；已有同报告者YeonwooSung的[#7955](https://github.com/verl-project/verl/pull/7955)，不另开修复。2026-10-24读取issue全文/唯一评论及两份候选正文，#7955与下述#4311均open/non-draft、未合并。
+
+#### 当前保护针对配置能力
+
+#7955固定head `b8c1aa6a076ba38e1710ce0e8e1a2adb7f554e9b`，API目标base `3f9d4c0d32cc20c7ec31c8137e91bb5673ce9e5e`，实际祖先`23a341e361e18063b4ec53e1f7cc4eae68f102cf`（ahead1/behind6）。真正PR范围三文件84增1删，不把目标base当已包含的主线。[ActorConfig保护](https://github.com/verl-project/verl/blob/b8c1aa6a076ba38e1710ce0e8e1a2adb7f554e9b/verl/workers/config/actor.py)在post_init中读checkpoint.get(async_save)，只允许白名单megatron；它没有实现非Megatron异步保存，也不修改trainer发布协议。critic flag不在本项保护中，不能说所有保存配置均已校验。
+
+固定主线`3c6d9b43b67c74ec343d77874cd8fa6e841523da`的[v0 trainer](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/ppo/ray_trainer.py)和[V1 trainer](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/ppo/v1/trainer_base.py)仍按actor async_save跳过自己写tracker；同步路径直接open写文本，不是临时文件+rename式原子发布。[Megatron manager](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/utils/checkpoint/megatron_checkpoint_manager.py)确有async队列finalize和rank0 tracker写入，但这段actor侧逻辑的存在，不能单独认证critic、dataloader、远端副本及退出阶段都形成了同一个完整快照。本轮没有执行这些保存流程。
+
+#### 旧DCP候选不能直接替代发布协议
+
+[#4311](https://github.com/verl-project/verl/pull/4311)head `f0411c956ee5ae91070cc378115b434a357dcc9c`，API目标base同为3f9d4c0，官方compare祖先却是`f9d6198684f86112451d25c3227f185b1249973b`（ahead1/behind1148）。其八文件512增94删是旧分支改动，不是当前主线已完成的集成。不能按PR编号/正文“支持FSDP async”就从#7955白名单增加一个名字。
+
+该head的[FSDP manager](https://github.com/verl-project/verl/blob/f0411c956ee5ae91070cc378115b434a357dcc9c/verl/utils/checkpoint/fsdp_checkpoint_manager.py)保存DCP future，开始下一次保存时可等待先前future；完成日志线程等待结果并记录成功/异常。这里未写latest_checkpointed_iteration，八文件改动也没有PPO trainer发布接线。**日志线程等待完成不是恢复指针发布者。** 这不是对整个旧PR的完整review或当前训练故障复现；只说明若将来整合到当前trainer，仍须明确谁在所有必要状态就绪后发布、如何传播失败以及退出如何drain，不能以DCP有async API代替这些契约。
+
+#### 查找入口只检查指针和路径
+
+主线[find_latest_ckpt_path](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/utils/checkpoint/checkpoint_manager.py)读取tracker中的整数并检查拼出的路径是否存在，不扫描global_step目录选择最大值，也不验证模型/optimizer/extra/data.pt、manifest或checksum。M1用原两helper AST接真实os/torch，在真实临时目录做五组控制：path=None→None；目录在但指针缺失→None；指针3+空global_step_3→返回该路径；指针4+对应目录缺失→None；非整数指针→ValueError。最后一种不是静默“从头开始”，不能与缺指针情形混写。
+
+另从#7955原测试类摘取`test_missing_tracker_makes_auto_resume_start_from_scratch`完整原方法，绑定原helper及真实unittest/临时目录，一项通过。它只证明发现入口，不是实际恢复模型或完整ActorConfig测试。Python3.12.13/torch2.14.1，无distributed初始化、trainer、Ray、FSDP/DCP或checkpoint数据保存/加载；四个相关原模块另仅AST/compile，作者14测试/5 subtests不是本机结果。版本与hash留[当日日志](../../diary/2026-10-24.md)，实际整合条件留[M5参考](../../experiments/handoff-m5.md#verl-训练-checkpoint-发布参考)，不新增实验队列、应用候选或对外发布。
 
 ### 保留目录与完整恢复的边界
 
