@@ -1618,6 +1618,36 @@ Python3.12.13仅标准库，完整原runtime模块加载但不调用`engine_proc
 
 完整runtime SHA256为`66e7aa74a3f442d2b44b094c614124e4b0c91e5e137a09f901ab5216f7dc59fb`，driver为`48218188b8009e9c80b22f48bbe5bf40a247dbd4f7caf63baa55c3ecf2ca9b3c`。
 
+## 视频 VAE 分片的状态协商与复本
+
+**拆分解码计算，不等于拆分最终视频的驻留，也不自动构成通用故障恢复。** [#469](https://github.com/Tencent-Hunyuan/UniRL/pull/469)在2026-10-24读取仍为open draft，head `363d5bacf71113d147dd08ec28f733b1b8ab76fb`；API base `f989c03825f187607bcbe6eaf6178909b798b43f`，实际共同祖先 `c21940d802ab9993ab87d7112615899653e7b989`，ahead 6 / behind 1。已有作者在带原生H3 Ulysses支持的fork上开发，本节限定源码契约，不是新修复或候选验收。
+
+### 生效依赖与两次汇总
+
+开关 `video_decode_shard_across_sp` 默认false；关闭或未取得SP组时，[helper](https://github.com/Tencent-Hunyuan/UniRL/blob/363d5bacf71113d147dd08ec28f733b1b8ab76fb/unirl/models/minimax_h3/vae.py)直接走原 `vae.decode`。开启时检查distributed/VeOmni状态、组大小和组内rank；状态未初始化只对指定ValueError文本回退，不吞任意异常。固定主线 `6fd82cba13f52f394747832344039408699ea378`及候选的[SP注册入口](https://github.com/Tencent-Hunyuan/UniRL/blob/363d5bacf71113d147dd08ec28f733b1b8ab76fb/unirl/train/backend/veomni/sp/diffusion/models/__init__.py)均仅导入flux2/qwen_image/sd3/wan，没有H3边界适配器。标准backend请求不支持的SP>1会报缺边界spec，不能说配置自动降到1；常规H3 SP1路径才沿用原解码。作者的fork性能不是当前主线现成能力。
+
+所需SP前提满足时，各rank已有相同的完整latent序列；提案按clip编号round-robin分配 `_decode_clip`，不是每rank各处理不同sample。
+
+| 阶段 | 所有rank的动作 | 保证与前提 |
+| --- | --- | --- |
+| 本地decode与检查 | 捕获异常，清空失败rank的local结果；检查5维、同rank等形状和dtype | 错误先记下，不在此处单独退出 |
+| 状态汇总 | all-gather固定7个int64，包含ok、是否有clip及5维shape | 无clip的rank仍参与；共同发现失败或跨rank不同shape，在payload汇总前抛错 |
+| payload汇总与复原 | 填充ceil(chunks/world)个clip的等形slab，all-gather后按编号复原 | 每rank得到全部clip并执行blend/concat；要求共同chunk数、dtype/device及可用通信组 |
+
+7个clip/SP8时，第8个rank没有本地decoder工作，却仍交换状态及填充slab，最终也持有全部clip。计算冗余减少不意味着最终视频或通信缓冲按SP度缩小。probe不核对latent内容或chunk数；一致拒绝依赖所有rank都能到达并完成相同的状态collective。组发现失败、状态分配失败、后续slab分配/通信故障或进程消失不在本地decode的try内，不能推广成任意故障都不会挂住。
+
+### 私有算法与公开包装
+
+固定head的[vendor实现](https://github.com/Tencent-Hunyuan/UniRL/blob/363d5bacf71113d147dd08ec28f733b1b8ab76fb/unirl/models/minimax_h3/vendor/autoencoder_kl_minimax_h3.py)与API base、固定main的文件字节相同。本机Python3.9.6仅静态检查：将self改名为vae后，原 `_decode` 的几何/补齐8个语句、每clip内部blend循环，以及循环后拼接/裁尾AST均与候选对应段相同。三项检查、三个候选Python文件加vendor共四模块compile通过；不是执行解码后的数值parity。
+
+分片helper复用的是私有 `_decode` 算法，而非公开 `decode` 包装。后者带forward hook，且 `use_slicing && batch>1` 时逐sample解码；分片路径直接调用 `_decode_clip`，未复制这两项包装行为。空间tiling仍在原 `_decode_clip` 内。内层AST相同不能认证所有batch布局、offload hook或未来revendor版本；作者报告主要配方的forward batch为1。
+
+### 作者证据的比较对象
+
+[PR报告](https://github.com/Tencent-Hunyuan/UniRL/pull/469)给出8×H20、768²×124、固定SP8的开关对照：video decode/sample 51.47→8.22秒，整步3536.2→2160.7秒，峰值显存两臂相同。作者另报真实VAE三seed输出逐值相同，以及32个完整视频hash与各rank一致。相同reward mean不足以替代全视频比较，因为该报告的VideoPickScore只取中间帧。
+
+[后续150轮报告](https://github.com/Tencent-Hunyuan/UniRL/pull/469#issuecomment-5742687138)比较SP1/DP8与SP8/DP1，并降至192²×124；两臂均完成、无hang，是该fork配置的存活/稳定性证据，不是纯decoder因果对照，因为DP拓扑也变了。作者CPU Gloo异常注入和真实GPU结果均未在本项目复跑；本机没有导入torch/模型、启动进程组或复制假VAE验证。[当日日志](../../diary/2026-10-24.md)保留复现和源码hash，真机条件补[原M5参考入口](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)。尚缺主线H3 SP前提，不据草案新增必跑矩阵、部署环境或竞争实现。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。

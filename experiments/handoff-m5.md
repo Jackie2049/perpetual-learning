@@ -13,6 +13,8 @@ GPU/NPU 的访问、环境与实验由 macbook-M5 Agent 负责。M1 遇到需要
 
 ## UniRL 联合路径的资源与身份边界
 
+视频VAE分片参考（2026-10-24，待前置条件，非新增训练队列）：已有draft[#469](https://github.com/Tencent-Hunyuan/UniRL/pull/469) head`363d5bacf71113d147dd08ec28f733b1b8ab76fb`，作者性能基于额外支持H3 Ulysses的fork；固定main6fd82cba及候选均无H3 SP边界适配器。[M1阅读](../notebook/frameworks/unirl-survey.md#视频-vae-分片的状态协商与复本)仅原vendor字节/三项AST比较及四模块compile，无decode/collective/设备。若M5以后独立选择且已有获准匹配SP实现、权重和资源，先固定整个fork/SP/vendor及batch/hook布局，只在同SP拓扑内比较flag off/on的全部视频、逐rank结果、解码/整步时间和峰值显存；SP1/DP8对SP8/DP1不作decoder因果结论。缺匹配SP前提或需新下载/部署、影响专项即保留未测停止，不为本参考开发H3 SP、启大模型或新增故障矩阵，不改#523/AReaL；参考不表示接单。
+
 Replay分块参考（2026-10-23，非新增训练队列）：[#465](https://github.com/Tencent-Hunyuan/UniRL/pull/465)已于10-18合并，当前main固定 `6fd82cba13f52f394747832344039408699ea378`；[M1阅读](../notebook/frameworks/unirl-survey.md#replay-分块与反向更新边界)仅5模块compile/两个原元素损失CPU聚合控制，无stage/算法/TrainStack/FSDP执行。若M5以后独立选择且已有获准匹配diffusion观测，先固定模型/精度/条件/随机状态与anchor权重、实际chunk列表/末块及batch形状；分开核ratio/梯度/更新、反向保存量与保留trajectory/anchor、defer_grad_sync和各micro的通信。#465旧4090报告不是当前main验收；缺现成配方/权重/资源或需新部署训练、影响专项即保留未测，不修改#523/AReaL或堆替身验证，参考非接单。
 
 压缩积分参考（2026-10-23，非新增训练队列）：已有[#545](https://github.com/Tencent-Hunyuan/UniRL/pull/545) head `7c56ed05d46f50bf01a36ba6e36dbbb4114b48f8`、base/祖先 `c6d4b11b24743fe1e933b61192f9d49558f7171e`；[M1原纯模块](../notebook/frameworks/unirl-survey.md#sde-窗口后的压缩积分尾段)仅720静态日程/64合成向量场小张量控制、12模块compile，无Flow SDE/logp、SD3或训练验收。若M5日后独立选择且已有获准匹配SD3任务，需先固定模型/条件/精度/seed与完整配置、记录实际SDE索引及σ出口、模型调用和窗口轨迹/logp；示例另把iters_per_window从25改20，NFE减少不等于reward-vs-wallclock提高，作者L40S报告非本项目。无现成匹配环境/权重/资源、需新下载部署或影响专项即保留未测，不启动新训练、不拼其他PR或改#523/AReaL；参考非接单。
