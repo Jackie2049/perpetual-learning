@@ -1618,6 +1618,32 @@ Python3.12.13仅标准库，完整原runtime模块加载但不调用`engine_proc
 
 完整runtime SHA256为`66e7aa74a3f442d2b44b094c614124e4b0c91e5e137a09f901ab5216f7dc59fb`，driver为`48218188b8009e9c80b22f48bbe5bf40a247dbd4f7caf63baa55c3ecf2ca9b3c`。
 
+## 评估尾批的补齐与计分成员
+
+**让调度批次整齐，与决定哪些真实样本计入均值，是两件事。** [#464](https://github.com/Tencent-Hunyuan/UniRL/pull/464)在2026-10-24读取仍open/non-draft，head `91e96bd5e3b0794c76822e67c31a9053cc757e0d`，API base `c21940d802ab9993ab87d7112615899653e7b989`，实际共同祖先 `79d1e8ab14c027d99cffe253121e965bac7d1587`（ahead3/behind2），4文件59增46删。已有作者处理，不另写竞争修复。
+
+祖先的PE/Unified `_eval_pass` 用 `usable=n-n%chunk or n` 决定循环范围；13个prompt、chunk8只会评前8个，改chunk4则前12个。候选保留真实prompt数，按需复制最后一棵输入树补齐，再在累计奖励时剔除pad对应的尾部叶子。补齐样本依然进入generate和score，不是免费占位或由scorer跳过。
+
+| 调用入口 | 补齐条件与单位 | 累计范围 |
+| --- | --- | --- |
+| PE/Unified `_eval_pass` | n>chunk才调用helper，multiple为max(1,训练batch_size)；n≤chunk原样发送 | 每chunk只累积n_real×fanout个前缀奖励 |
+| AR evaluate | 每个eval batch按lcm(rollout_dp,reward_dp)补齐，两者先max(1,dp) | 只累积真实prompt数×fanout个前缀奖励 |
+| 共享pad_eval_inputs | 正整数multiple下，已整除含0时原对象返回；否则复制末棵树、映射全部层ID并concat | 不执行生成、评分或过滤 |
+
+[helper](https://github.com/Tencent-Hunyuan/UniRL/blob/91e96bd5e3b0794c76822e67c31a9053cc757e0d/unirl/trainer/base.py)不是简单复制文本：`Sample.slice`按完整root tree切片，新根命名为 `<last>:eval-pad:i`，每层保留原ID后缀，文本和metadata随原类型concat。这个名称模式不等于对任意数据ID都保证无碰撞，后续fork仍要求唯一ID。helper支持多层输入不扩大具体trainer的输入能力；[PE请求准备](https://github.com/Tencent-Hunyuan/UniRL/blob/91e96bd5e3b0794c76822e67c31a9053cc757e0d/unirl/trainer/pe.py)仍传 `require_single_input_part=True`。
+
+### 原类型与原聚合片段的 CPU 控制
+
+Python3.12.13/torch2.14.1，固定head完整Sample/Part、Batch/ref、primitives/sampling等叶模块执行；tensor包聚合入口仅跳过Ray transport初始化并重导出原Batch/ref。原样执行pad helper、prepare helper、PE dispatch赋值与非None奖励聚合块；没有执行完整trainer或构造替身engine/scorer。
+
+- 原生13棵两层输入树补到16棵，三个新根及其 `/0` 子层ID、末棵文本与metadata对应，原输入仍13棵；已整除对象保持identity，空Sample返回0棵。另以原prepare helper确认PE单Part条件会拒绝两层输入。
+- 聚合控制改用单输入Part；原生2×3 fork产生每root六个叶子。两个8-root块合计96个dispatch叶子，奖励是按root编号0..12和pad=999构造的身份夹具；原聚合片段仅累计78个真实叶子，均值6，pad不污染均值。原PE赋值对3-root集合保持未补齐。
+- 尾块应有48奖励，删一个变47由原count guard拒绝。另用合法的 `Sample.select` 故意把三个pad root移到前面，仍48叶子，原片段接受数量但前30项均值变602.8而非真实尾部均值10；这是明确违反保序前提的对照，不是观测到真实引擎重排。
+
+因此 `roots×fanout` 检查保证数量，不认证root身份或顺序。prefix trim还要求生成/评分保持root次序及每root相邻的固定fanout；`total_samples_per_prompt`取各模态乘积，并不执行引擎来证明实际返回满足它。奖励为None时不进入count guard，最终分母max(1,count)也不证明存在有效观测。这些边界不能据本轮夹具认定框架已坏或需要另一种修复。
+
+作者报告的原Sample/完整评估harness、4090真实dispatch以及旧AR helper等价矩阵均未在本项目复跑。[复现与源码hash](../../diary/2026-10-24.md)留日志，非真实奖励/模型、DP gather、TensorRef传输、完整eval/请求builder或checkpoint选择验收。真机最小观测条件补[原M5参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不新增必跑矩阵、启动评估或修改专项。采用候选时应先固定真实评估集合、计分成员及实际DP顺序，不将“补齐整批”当作“评估语义完整验证”。
+
 ## 激活卸载的保存对象与包装顺序
 
 **激活卸载改变反向所需张量的保存方式，不是权重/优化器卸载，也不保证更快。** 2026-10-24读取[#626](https://github.com/Tencent-Hunyuan/UniRL/pull/626)仍open draft，作者ruiling-smartbear，head `fb2b4bacda31fd395a93bc96820d31b723390985`，base/祖先 `6fd82cba13f52f394747832344039408699ea378`（ahead1/behind0），6文件92增19删。[#625](https://github.com/Tencent-Hunyuan/UniRL/issues/625)已由此实现覆盖，不另起竞争方案。

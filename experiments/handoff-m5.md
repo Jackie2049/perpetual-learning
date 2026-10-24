@@ -13,6 +13,8 @@ GPU/NPU 的访问、环境与实验由 macbook-M5 Agent 负责。M1 遇到需要
 
 ## UniRL 联合路径的资源与身份边界
 
+评估尾批参考（2026-10-24，非新增算力队列）：已有[#464](https://github.com/Tencent-Hunyuan/UniRL/pull/464) head`91e96bd5e3b0794c76822e67c31a9053cc757e0d`、实际祖先79d1e8ab；[M1原类型控制](../notebook/frameworks/unirl-survey.md#评估尾批的补齐与计分成员)只执行Sample树/helper与PE聚合片段，奖励为身份夹具，无真实生成/评分/DP gather或模型。若M5日后已有获准匹配PE/Unified评估且独立选用，先固定评估数据ID/顺序、chunk、fanout、DP布局与完整head，最小记录每真实root及其后代计分次数、pad排除位置、每scorer有效count/mean和传输后顺序；pad仍消耗生成/评分，不因count相等认证身份。PE要求单输入Part，短于chunk不补齐；作者4090报告非本机复跑。缺匹配权重/环境/资源、需新下载部署或影响专项即记未测停止，不启评估/另写修复或新增矩阵，不改#523/AReaL，参考非接单。
+
 激活卸载参考（2026-10-24，待匹配配方，非新增训练队列）：已有draft[#626](https://github.com/Tencent-Hunyuan/UniRL/pull/626) head`fb2b4bacda31fd395a93bc96820d31b723390985`、base/祖先6fd82cba；[M1原回调控制](../notebook/frameworks/unirl-survey.md#激活卸载的保存对象与包装顺序)仅torch2.14.1/CPU FP64八组算子与包装观察，保存副本dtype保持/stride可变；非外层FSDP/VeOmni、EP、compile或传输验收。作者torch2.13/H100的synthetic组合与随机初始化Qwen3报告非本项目；完整VeOmni MoE基线已被依赖签名阻塞。若M5日后独立选择且已有获准匹配模型/后端/内存资源，先固定同一checkpoint几何、dtype、ac_wrap_order和整个依赖版本，再核flag开关的loss/梯度更新、模型及optimizer恢复/导出名、GPU峰值/host RSS与step时间。无现成配方、需新下载部署/升级依赖或影响专项即记未测停止；不由CPU保存元素数估GPU收益、不自动启flag或新增必跑矩阵，不改#523/AReaL，参考非接单。
 
 视频VAE分片参考（2026-10-24，待前置条件，非新增训练队列）：已有draft[#469](https://github.com/Tencent-Hunyuan/UniRL/pull/469) head`363d5bacf71113d147dd08ec28f733b1b8ab76fb`，作者性能基于额外支持H3 Ulysses的fork；固定main6fd82cba及候选均无H3 SP边界适配器。[M1阅读](../notebook/frameworks/unirl-survey.md#视频-vae-分片的状态协商与复本)仅原vendor字节/三项AST比较及四模块compile，无decode/collective/设备。若M5以后独立选择且已有获准匹配SP实现、权重和资源，先固定整个fork/SP/vendor及batch/hook布局，只在同SP拓扑内比较flag off/on的全部视频、逐rank结果、解码/整步时间和峰值显存；SP1/DP8对SP8/DP1不作decoder因果结论。缺匹配SP前提或需新下载/部署、影响专项即保留未测停止，不为本参考开发H3 SP、启大模型或新增故障矩阵，不改#523/AReaL；参考不表示接单。

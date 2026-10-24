@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 评估尾批学习收束（2026-10-24）**：同步6e7f8d8无新增，UniRL6/verl6最新head无新变化，转未覆盖已有作者#464；见[原调研](notebook/frameworks/unirl-survey.md#评估尾批的补齐与计分成员)。原Sample树13→16保留两层身份/内容，PE原prepare仍拒多输入Part；单输入原2×3 fork及聚合片段累计78真实叶子/mean6、拒47对48错数；等数刻意重排只作保序前提反例，非实引擎发现。pad仍生成评分，仅不计均值；PE短集合原样、AR按DP lcm不同。无完整_eval_pass/模型/服务/DP/设备，真机条件补M5原参考，非新队列；不改专项或写上游。下轮转独立当前缺口/实质反馈，不堆补齐/奖励顺序夹具、不竞争已有修复或重跑作者harness。
+
 - **M1 激活卸载学习收束（2026-10-24）**：同步84c9590无新增，读已有作者draft#626及#625完整正文/六文件变更；见[原调研](notebook/frameworks/unirl-survey.md#激活卸载的保存对象与包装顺序)。原wrap callback/helper/factory接真实torch2.14.1 CPU八组，开启offload时无AC保存参数/输入/中间值，配AC仅输入；输出及两梯度一致，dtype保留但输入stride改变，原参数身份/state key保持。非外层FSDP/VeOmni、EP/compile/optimizer恢复或传输/显存验收；修正本地旧sentinel假设和提升函数缺_ckpt问题，不据此判上游故障。真机条件补原M5参考，非新训练队列；不改专项、不写上游/开发竞争方案。下轮转独立当前缺口或实质反馈，不堆保存hook/CPU算子变体或复跑作者硬件矩阵。
 
 - **M1 指标元数据学习收束（2026-10-24）**：同步59320d1无新增；有界核40个UniRL/8个verl PR，发现新#626/#8357，选后者及明确重叠#8315，不新写修复。见[原同步笔记](notebook/frameworks/verl-async-logprob-provenance.md#gauge-元数据与训练步存储)：原完整logger类→固定SDK四emit函数/原push类的四分支控制，gauge新标签到sink仍为字符串、不自动转global_step；metric_log为trace属性，两路径分开。client状态和捕获sink为夹具，无构造/init、真实exporter/服务/Prometheus/存储或设备；不重复旧12测试。未改专项、写上游或新增GPU队列，复现留日志；下轮转独立当前缺口或实质反馈，不堆指标/标签替身、不盲叠两PR或据新编号认领已有工作。
