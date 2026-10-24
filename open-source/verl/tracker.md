@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责；四条社区评审已核验，补丁与回复待用户授权，见[原草稿](draft-8313-review-reply.md)。2026-10-24补充[异步checkpoint能力与发布](#异步-checkpoint-的能力与发布)：已有#7955保护，旧DCP路线不能代替tracker发布协议；原文件系统控制非完整恢复。[数学评分池](#数学评分池的故障恢复)原七测试真实CPU两次通过，超时默认分仍不等于故障标注；不重复认领或升格为训练验收。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-24补充[代码判分格式与逐例接线](#代码判分的格式与逐例接线)：#8360/#8175原测试接三版真实CPU，字典参数与部分分数分别揭示不同缺口，不另认领。[checkpoint发布](#异步-checkpoint-的能力与发布)和[数学评分池](#数学评分池的故障恢复)仍按各自范围收束，不升格为训练验收。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## 代码判分的格式与逐例接线
+
+2026-10-24读取[#8174](https://github.com/verl-project/verl/issues/8174)全文/0评论与新[#8360](https://github.com/verl-project/verl/pull/8360)（af4f9a3b、base/祖先3c6d9b4）及已有[#8175](https://github.com/verl-project/verl/pull/8175)（569c875e、base/祖先fc72e2f），两者open/non-draft、未合并。编号检索已见两个覆盖，不另开实现。见[原奖励专题](../../notebook/frameworks/verl-reward-integration-reading.md#代码判分的格式与逐例接线)：两原测试共8项接三版完整评分模块、真实Manager/Process，原imports/断言不改；main3过5失败、#8175七过一失败、#8360六过两失败。#8360仍缺逐例fn_name保留，#8175仍改写native字典参数，不能以同标题或满分正确解判等价。
+
+当前#8360另三真实echo控制确认普通文本catch与数字形文本JSON解码不同；需明确编码schema，不新增猜测式修复。初次sandbox socket拒绝不计回归，放行后才比较；祖先包空壳隔离不是完整verl初始化/数据集或训练验收。只保存本地学习，无候选补丁、M5硬件队列或上游写入，任何外部可见动作仍待用户逐项授权。
 
 ## 异步 checkpoint 的能力与发布
 

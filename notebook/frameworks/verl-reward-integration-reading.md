@@ -1,5 +1,7 @@
 # verl Reward Integration 源码级深度阅读
 
+2026-10-24补充：[代码判分的格式与逐例接线](#代码判分的格式与逐例接线)比较#8360/#8175原测试：两候选在部分分数和字典参数上各有不同覆盖，不能以“支持APPS”互相替代。
+
 2026-10-24补充：[数学评分池的恢复与错误信号](#数学评分池的恢复与错误信号)用真实math-verify及spawn进程核对#8015：旧版进程死亡/超时留池反例成立，候选原七测试两次通过；超时回默认分仍不等于上层可识别超时。
 
 2026-10-24 补充：[异步奖励的补齐边界](#异步奖励的补齐边界)用 #8101 原张量构造与消费者片段核对末条 response 的读取长度；仅 CPU 几何对照，不是完整 worker/TQ 或训练验收。
@@ -8,6 +10,36 @@
 
 > 2026-06-15 | 源码: verl/trainer/ppo/reward.py + ray_trainer.py + workers/reward_manager/ + experimental/reward_loop/ + core_algos.py + utils/reward_score/
 > 核心: 两层架构(legacy RewardManager + experimental RewardLoop) → 3 reward路径(rule/DisRM/GenRM) → outcome reward=最后token非零 → GRPO group-relative → colocate RM sleep/wake → RTX 4090=rule-based唯一可行
+
+## 代码判分的格式与逐例接线
+
+**能读懂测试数据，不代表逐例评分仍在调用同一个函数。** [#8174](https://github.com/verl-project/verl/issues/8174)已有报告者prabhu-gopal的[#8175](https://github.com/verl-project/verl/pull/8175)；新[#8360](https://github.com/verl-project/verl/pull/8360)由liangqianxing实现。2026-10-24两PR均open/non-draft、未合并，属于已有覆盖工作，不另认领。#8360固定head`af4f9a3b2aca145c7944a116701dcde480f966be`、base/祖先`3c6d9b43b67c74ec343d77874cd8fa6e841523da`，2文件114增23删；#8175固定head`569c875e10d6e2bc55b96ef78cda5ae32e627e9f`、base/祖先`fc72e2f384212470868a9928b62baedb9bcc3ff0`，3文件62增3删。两base的prime_code目录同字节，比较不混入其他主线变化。
+
+### 数据格式与函数身份是两条链
+
+无sandbox URL时，默认apps/taco/codecontests/codeforces入口调用prime_code并启用continuous。底层run_test按fn_name是否存在区分函数调用与stdin程序；完整批次全通过可直接返回1，只有出现失败才进入逐例重测。因此“正确解满分”不会检验重测时的函数身份。
+
+[#8175评分入口](https://github.com/verl-project/verl/blob/569c875e10d6e2bc55b96ef78cda5ae32e627e9f/verl/utils/reward_score/prime_code/__init__.py)在重建单例时保留fn_name。#8360只改[底层格式处理](https://github.com/verl-project/verl/blob/af4f9a3b2aca145c7944a116701dcde480f966be/verl/utils/reward_score/prime_code/testing_util.py)，入口与main同字节，仍丢fn_name；部分正确的add会被按stdin重测而不是函数调用，两个布局的2/3样例均得0。
+
+反过来，#8175保留了旧的整数字典键恢复逻辑：第一个参数是字典时，可把整个参数列表改成仅含该字典的一项。#8360把这段转换限定于JSON-line路径，native列表中的`[{"1":5}, "1"]`可保留键类型和第二参数；原lookup测试在#8175得[-1]、在#8360通过。不能只用两个分支的总通过数决定全面优劣，或据此直接叠加补丁。
+
+### 三版原测试的真实CPU对照
+
+M1 macOS、Python3.12.13、NumPy2.5.4、pytest9.1.1。每版完整复制五个原模块（默认评分分派、import_utils、prime_code入口/utils/testing_util），保留原包名；仅verl及verl.utils两级祖先初始化替换为空壳以避免框架初始化。两份原测试的imports、fixture、参数与断言均不改，真实multiprocessing Manager/Process执行已检查的add/greet/lookup代码，不使用假评分器或AST重写方法。
+
+| 固定代码 | #8175原6项 | #8360原2项 | 失败点 |
+| --- | --- | --- | --- |
+| main 3c6d9b4 | 3过3失败 | 0过2失败 | native列表与逐例接线 |
+| #8175 569c875e | 6过 | 1过1失败 | 新测试最后的字典参数断言 |
+| #8360 af4f9a3b | 4过2失败 | 2过 | 两布局的部分分数断言 |
+
+首次sandbox运行因Manager Unix socket bind被拒而受阻，结果不计为代码回归；获得本地执行权限后，才得到表中可比较结果。三次session收尾均0活动子进程。五模块×三版及两测试均与固定Git bytes精确相等；命令、hash及环境边界见[当日日志](../../diary/2026-10-24.md)。这不是完整verl初始化、Ray/奖励manager、数据集抽样或训练验收；报告者30题与机器人review不计作本机结果。
+
+### JSON可解析不代表输出类型明确
+
+固定#8360对JSON-line输入的字符串expected尝试json.loads，解析失败才保原文。真实echo控制中，原生`hello world`无法解析JSON而保留，评分通过；原生数字形文本`3`可解析成整数，返回字符串的echo反而判错；将expected写为JSON字符串文本`"3"`才通过。三个控制只说明当前格式契约，不宣称JSON编码的数值输出本来就应按文本处理。
+
+同样的字节`3`既能表示原生文本，也能表示JSON整数；只看输入是字符串、或expected是否可被json.loads，不足以无歧义区分二者。#8360已有机器人评审提及字符串问题，但旧评审的普通文本异常已被当前catch改变，不能照抄为当前失败。应先明确数据schema/编码约定再决定实现，不用更多类型猜测改判分。本轮不改候选、发布回复或新增GPU/M5队列；现有reliability_guard本身也明示不是安全沙箱，不能把这些受控算术用例外推为可安全执行任意模型代码。
 
 ## 数学评分池的恢复与错误信号
 

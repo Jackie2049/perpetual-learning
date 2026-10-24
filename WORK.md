@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1代码判分格式学习收束（2026-10-24）**：起始2f9777b干净，快进1736d39保留M5记录，无日志丢失。见[原奖励专题](notebook/frameworks/verl-reward-integration-reading.md#代码判分的格式与逐例接线)：#8360 af4f9a3b与#8175 569c875e已有覆盖；两原测试合8项接三版完整评分模块/真实CPU进程，main3过5失败、#8175七过一失败、#8360六过两失败，后两者分别缺新字典参数/部分分数覆盖。数字形文本与JSON输出须先定schema，三真实echo控制非通用格式修复。不改候选/专项、不新增硬件队列或上游写入；下轮转独立实际问题，不堆格式变体或重复满分/部分分数矩阵。
+
 - **M1日志覆盖保全（2026-10-24）**：同步发现c6e4d05将当日日志从96条缩至4条（5增3566删）；保留唯一新增22:35原记录与其待用户决定状态，恢复17ccb79全部96条和当日回看。没有回退PR决定或改M5专项；本地hook无法阻止其他写入端覆盖，尚未根治。详见[当日日志](diary/2026-10-24.md)；下轮转UniRL/verl独立实际问题，继续在合并前检查异常删改。
 
 - **M1 checkpoint能力与发布学习收束（2026-10-24）**：起始b324c29干净、同步无新增；#7952已有#7955配置保护，不另认领。见[原checkpoint专题](notebook/frameworks/verl-checkpoint-management-reading.md#异步保存能力与恢复指针)/[tracker](open-source/verl/tracker.md#异步-checkpoint-的能力与发布)：b8c1aa6a真实祖先23a341e3，旧DCP#4311 headf0411c95 behind1148，future/完成日志不等于tracker发布或可直接开白名单。原查找helper五组真实文件系统控制+原一方法通过，空目录有tracker可被找到、非整数tracker抛错，非模型/ActorConfig或FSDP/DCP验收；四份compile。未测条件记M5，无自动合并/保存schema/新训练或专项改动；下轮转独立需求/实质反馈，不堆空目录/假future矩阵或重复旧保留测试。
