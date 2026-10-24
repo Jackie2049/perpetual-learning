@@ -176,7 +176,7 @@
   - [Gauge元数据与训练步存储](frameworks/verl-async-logprob-provenance.md#gauge-元数据与训练步存储) — #8357原logger到固定SDK原push路由四分支控制；step标签非global_step记录，sink边界保留不等于后端已存储，非服务/设备验收
 - [verl 单 worker NIXL 拓扑](frameworks/verl-async-logprob-provenance.md#单-rollout-worker-的-nixl-拓扑) — #8316原函数20组控制及后续新增1原测试隔离对照；worker非replica，测试体通过非原生导入/传输验收
 - [verl 组初始化等待超时](frameworks/verl-async-logprob-provenance.md#组初始化的等待超时与任务退出) — #7045当前控制端head、12组原参数检查；等待上限不等于全链路截止、RPC取消或资源回收，真机条件补M5原条目
-- [verl Resume扩展字段](frameworks/verl-async-logprob-provenance.md#resume-返回值与扩展字段合并) — #8341原2测试体base丢字段/head通过；最后出现值覆盖非逐token拼接，3组补充CPU控制，非真实backend/AgentLoop验收
+- [verl Resume扩展字段](frameworks/verl-async-logprob-provenance.md#resume-返回值与扩展字段合并) — #8341新版三推测计数按attempt求和；仅新增2原测试体旧/新对照，原统计函数显示率相同仍可丢计数，非后端/AgentLoop验收；旧字段测试保留历史
 - [verl Bypass字段与worker配置](frameworks/verl-async-logprob-provenance.md#bypass-字段替换与-worker-的-loss-配置) — #8348新head删除冲突/镜像/PP与动态CP guard及旧测试；两版五组OmegaConf输入确认保证收窄、接受范围扩大，旧19例不作新版认证，非worker/训练验收
 - [verl 分桶接收失败与退出](frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#分桶接收失败与退出) — #7366原8项CPU测试两次通过；真实进程ZMQ/SHM，不是设备/vLLM验收。逐ACK预算、阻塞poll、取消与回滚须分开
 - [DeepInfer SamplingParams 校验](frameworks/deepinfer-initial-survey.md#samplingparams-构造校验与测试组合) — #119/#121原53项配对；[#154种子校验](frameworks/deepinfer-initial-survey.md#种子归一化前的负值校验)原5项/16组控制，负数拒绝与uint64回绕分开

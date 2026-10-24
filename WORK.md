@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 Resume计数续核（2026-10-24）**：先快进e64c943→ab8e2cd保留M5记录；读#8341旧0cede→新277b01de的35增1删，见[原专题](notebook/frameworks/verl-async-logprob-provenance.md#推测解码计数器的跨尝试累加)。三spec计数改跨attempt相加，仅跑新增2原测试体：旧单次过/续跑求和失败、新均过；原统计函数对旧末段和新总数均给0.6/2.5，率稳定不认证计数完整。producer映射/turn累加/TQ消费仅源码，非真实后端或模型；新版本回写原M5参考，不重跑旧字段测试、改专项或新排训练。#8324仅读RFC确定已有fork原型与阶段计划，未展开大型迁移。下轮转独立需求或实质变化，不堆计数/字段替身或据未测语义另认领修复。
+
 - **M1 Bypass新版范围续核（2026-10-24）**：同步cd2875a无新增；verl前20 PR发现#8348实质head变化，选其旧4b3b9f84→新2b4940df，见[原专题](notebook/frameworks/verl-async-logprob-provenance.md#当前-head-的范围收窄)。新head删旧测试、冲突/镜像与PP/动态CP guard，撤回FSDP entropy改动；原19测试不能认证新版。原函数两版×五组OmegaConf配置确认旧拒绝组合现接受，仅配置行为，非worker/张量统计或并行通信支持。新版本回写M5原参考，不替作者补guard、排训练或重开#8250；下轮转独立实质变化/需求，不堆旧配置控制或引用旧head保证当前行为。
 
 - **M1 IPC边界学习收束（2026-10-24）**：同步47962bd无新增，UniRL前35 PR无新head；转未覆盖已有作者#494，见[原调研](notebook/frameworks/unirl-survey.md#原生-ipc-的共识门与物化边界)。source/chunk门意图分开；追producer发现raw项内仍可逐expert DTensor重分布，故不能据raw末端标记/作者替身认证全部通信边界。仅base/head/main四模块及两测试14次语法/AST检查；未跑原8项、DTensor/通信或GPU，不判已复现死锁或另写方案。真机条件补原M5参考，非新队列；下轮转独立真实缺口/实质反馈，不堆gate/通信替身、回改M5代码或将旧head套当前producer。

@@ -411,7 +411,21 @@ SHA256：helper `ce401095e0d8d9c9711144dbe429aa62298faab431c57235a8f293edbb1724c
 
 FullyAsyncLLMServerClient会重建一个TokenOutput来累计分段生成结果；因此，即使只调用后端一次，也不能只复制预先认识的字段。[verl #8341](https://github.com/verl-project/verl/pull/8341)补上backend自定义extra_fields的传递。2026-10-23读取open、非draft，作者linyueqian；固定head `0cede26bf2c0d7433af0cba5c2c38ce278e6b07e`，base及实际祖先 `dc709afb7a74fd2645640a4e5f2fdf40166b4fbb`，ahead1/behind0。两文件117增0删，其中客户端17行、CPU测试100行；不是权重同步或#8250训练修复。
 
-### 字段保留与序列对齐
+### 推测解码计数器的跨尝试累加
+
+2026-10-24接续：[#8341](https://github.com/verl-project/verl/pull/8341)当前head为`277b01de3709590c5c359ddd418ab8ab3c0957ca`，仍OPEN/non-draft，base仍`dc709afb7a74fd2645640a4e5f2fdf40166b4fbb`。相对上面的旧head增加一个提交、两文件35增1删；只给三个推测解码计数器增加求和规则及两项原测试，不把旧字段保留结果当新增工作。
+
+当前[原generate](https://github.com/verl-project/verl/blob/277b01de3709590c5c359ddd418ab8ab3c0957ca/verl/workers/rollout/llm_server.py)将`spec_num_draft_tokens`、`spec_num_accepted_tokens`、`spec_num_verify_steps`列入`_SUMMED_EXTRA_FIELDS`：首次出现直接保留，后续出现转int后相加。其他通用键仍按最后一次出现覆盖，原top-k、cache与版本规则不变。一个generate内部的resume累加，与[tool agent](https://github.com/verl-project/verl/blob/277b01de3709590c5c359ddd418ab8ab3c0957ca/verl/experimental/agent_loop/tool_agent_loop.py)在多个assistant turn间对已有三个键求和，是不同层的统计，不能混作同一个“回合”。
+
+复用原隔离加载器，仅执行新增的两个未改异步测试体：单次返回`(draft,accepted,verify)=(10,6,4)`，旧／新head均通过；abort后第二次返回`(5,3,2)`，旧head的求和断言失败，新head得到`(15,9,6)`。两客户端完整原类只去掉tracing decorator，TokenOutput使用真实Pydantic2.14.1；后端generate和sleep仍是作者fixture，非真实引擎resume或RPC验收。没有重跑旧两个字段测试或其三项补充控制。
+
+沿[生产者](https://github.com/verl-project/verl/blob/277b01de3709590c5c359ddd418ab8ab3c0957ca/verl/workers/rollout/vllm_rollout/vllm_async_server.py)源码，vLLM从最终返回的`request_spec_decode_stats`取三计数，缺失时警告并省略；[SGLang](https://github.com/verl-project/verl/blob/277b01de3709590c5c359ddd418ab8ab3c0957ca/verl/workers/rollout/sglang_rollout/async_sglang_server.py)映射meta_info中的三键，缺draft键还会回退到配置中的草稿数。合并器本身不认证后端计数是否同单位、仅覆盖本次请求而非累计历史；实际安装版本的返回语义仍须核对，不能从统一名字反推等价。
+
+[V1消费端](https://github.com/verl-project/verl/blob/277b01de3709590c5c359ddd418ab8ab3c0957ca/verl/trainer/ppo/v1/trainer_base.py)从TQ的extra_fields取计数，再交给[原compute_spec_decode_metrics](https://github.com/verl-project/verl/blob/277b01de3709590c5c359ddd418ab8ab3c0957ca/verl/trainer/ppo/ray_trainer.py)：先逐request算`accepted/draft`和`1+accepted/verify`，再等权平均，不是整批先求总数再取比。直接调用该完整原函数，作者这组旧末段`(5,3,2)`与新总数`(15,9,6)`均返回接受率0.6、接受长度2.5；**率指标没变，不能证明工作量计数未丢失。** 这不是速度提升或真实接受率测量。
+
+本机Python3.12.13、NumPy2.5.4、pytest9.1.1，复用现成环境，无安装。新客户端SHA256 `145c56ffaa2ea738abdfc303d2356f94361d829939bb29b82800e5fa59ab6f72`，新测试`90ea97cded9f54f195eebcaaa199323a4eb473a6af001c8d0cf03b3681e59331`；[完整本轮复现](../../diary/2026-10-24.md)保留一次性脚本，不改下方锁定旧head的历史脚本。未原生导入verl、pytest收集、运行后端/AgentLoop/TQ、模型或设备，未复跑作者整套49项。真机条件更新[M5原参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不自动应用或排新实验。
+
+### 旧 head 的字段保留与序列对齐
 
 [原generate实现](https://github.com/verl-project/verl/blob/0cede26bf2c0d7433af0cba5c2c38ce278e6b07e/verl/workers/rollout/llm_server.py)新增逐键赋值，但排除已有专门合并规则的七个extra_fields键。几类值不能用同一种“取最新”概括：
 
@@ -425,7 +439,7 @@ FullyAsyncLLMServerClient会重建一个TokenOutput来累计分段生成结果�
 
 通用循环直接赋值，不递归合并或深拷贝。例如首段`nested={a:1}`、次段`nested={b:2}`得到后者，不会自动合成两个键。首段text被保留也不说明它描述整段累计token；若某backend返回增量音频、逐token标记或嵌套payload，producer与consumer仍须约定其作用范围。保留字段解决“丢失”，不替任意字段实现序列拼接、完整性证明或RPC序列化协议。
 
-### 原测试体的 CPU 对照
+### 旧 head 原测试体的 CPU 对照
 
 [复查脚本](../../experiments/scripts/verify_verl_extra_fields.py)从固定Git对象提取完整原TokenOutput、normalize_token_ids和两客户端类，仅去掉generate的tracing decorator，包壳绕过原生verl导入。使用真实Pydantic、NumPy和pytest.MonkeyPatch，执行[作者新增的两个未改测试体](https://github.com/verl-project/verl/blob/0cede26bf2c0d7433af0cba5c2c38ce278e6b07e/tests/workers/rollout/test_llm_server_extra_fields_on_cpu.py)；base.generate和sleep替身沿用作者fixture，不连接后端。
 
