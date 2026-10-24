@@ -2,6 +2,8 @@
 
 > 2026-06-07 | 2487行源码分析: 14种Advantage Estimator + 10种Policy Loss + 注册表架构
 
+2026-10-25接续：[KL-Cov 的选词范围](#kl-cov-的选词范围与微批切分)说明批处理切分如何改变选择性惩罚；以下早期算法数量和行号保留历史含义，不作当前版本清单。
+
 ## 核心架构: 注册表式扩展
 
 ### 双注册表系统
@@ -229,6 +231,28 @@ pg_losses = where(A < 0, clip_pg_losses2, clip_pg_losses1)
 
 ### 8. KL-Cov (行1840) — KL+协方差双约束
 
+#### KL-Cov 的选词范围与微批切分
+
+**统一归约分母，不能自动修复跨样本选词范围。** [#7829](https://github.com/verl-project/verl/issues/7829)报告每个 microbatch 各自计算均值、协方差和 top-k，因而改变切分就会改变惩罚目标。已有报告者 gss10282025 的 [#7830](https://github.com/verl-project/verl/pull/7830)，2026-10-25核对 OPEN／非draft／未合并，head `79a7af1c7ddd77e7c188943c0fab526047631af2`、父提交／实际共同祖先 `6fc912f07d225d7c96708ab081ef2e6b00db74d7`；API目标base `3f9d4c0d`不是候选已包含的主线。八文件531增26删。旧[#7828](https://github.com/verl-project/verl/pull/7828)关闭未合并、head相同，不另实现；另一[#6538](https://github.com/verl-project/verl/pull/6538)处理ratio稳定性，不替代选词范围修复。
+
+[`compute_kl_cov_mask`](https://github.com/verl-project/verl/blob/79a7af1c7ddd77e7c188943c0fab526047631af2/verl/trainer/ppo/core_algos.py)只对有效token计算 `(A-mean(A))*(logp-mean(logp))`，选 `max(1, int(N*ratio))` 个最大值；空有效集返回全False。原测试用8192 token、ratio0.0002，整批选1个，切成八块后每块至少1个，共8个。修正取整数量仍不足够：各块的均值与候选集合也不同。
+
+候选在FSDP／FSDP2 actor的每个 optimizer minibatch 前额外执行一次 no-grad 当前策略前向，汇集DP组的有效advantage／logp到CPU，统一选择后按rank与microbatch切回mask。`prepare_batch_fn`在训练上下文内、engine.train_batch之前执行，每次更新／后续PPO epoch重新计算；源码用fork_rng恢复额外前向消耗的随机流。distillation-only跳过，预计算副本禁用teacher top-k loss；原PPO损失仍保留entropy、reference KL和importance weights。这是额外前向与数据交换，不是免费提升吞吐。其他engine或直接调用者若不传mask，仍保留局部选择。
+
+本机真实CPU运行原纯测试模块三个函数／五个参数例，全通过：1对8配额、三种ratio下padding／非连续输入／空集，以及整批预计算与直接调用的loss和logp梯度一致。配置为十一原dataclass类AST，数学为原mask／loss／agg_loss及masked_sum／mean，类体和函数不改、仅延迟类型注解；原测试imports／assert不改但直接调用，不称原生pytest收集或完整verl导入。
+
+补充一个**配额已相同**的FP64夹具：两行各3 token，advantages=`[[-4,4,1],[-.2,.1,.3]]`，logp=`[[-4,-.2,-2],[-2.2,-1.9,-2]]`，old=logp−0.1，ratio=1/3、惩罚系数0.8。整批和两块都选2个，但整批扁平索引为`[0,1]`，局部为`[0,3]`。统一分母为6、逐块loss相加，结果如下；这是输入logp的梯度，不是模型参数更新。
+
+| 调用方式 | 选词范围 | logp梯度前四项 |
+| --- | --- | --- |
+| 祖先整批 | 整批 | 0.870114，−0.603447，−0.184195，0.036839 |
+| 祖先切两块／候选不传mask切两块 | 各块 | 0.870114，−0.736781，−0.184195，0.170172 |
+| 候选传整批mask的对应切片 | 整批 | 与祖先整批assert_close |
+
+三路loss均约−0.194367516948463，差异仅浮点归约末位，因为每个被选token的当前abs(logp−old)都是0.1；相同标量值没有暴露惩罚位置变化。候选DP helper的dp_group=None单进程路径也与整批mask一致，未运行collective。这个例子支持先固定统计与选择域、再讨论归一化，不证明完整模型或随机前向的切分不变性。
+
+完整worker原测试使用作者的可微CPU engine夹具、worker壳与真实PPO损失，含两Gloo rank；作者25／87项报告不能挪作本机结果。本轮该模块及两个生产接线文件仅compile，未执行worker、RNG恢复、Gloo／FSDP或GPU，也未复跑issue固定GPU实验。[复现与hash](../../diary/2026-10-25.md)留日志。本题收束为算法知识，不应用补丁、另写选词器或新增M5算力任务。
+
 ### 9. Geo-Mean (行1920) — 几何均值ratio
 
 ```python
@@ -349,7 +373,7 @@ GRPO n=8 → 同prompt采样8个response → prefix共享:
 ### core_algos.py对PS的影响
 
 1. **advantage计算不受PS影响**: GRPO advantage = (r - μ_group)/σ_group → 在reward计算之后 → PS只影响rollout阶段
-2. **policy loss不受PS影响**: ratio = π_new/π_old → 与forward方式无关
+2. **policy loss 的条件**：只有有效输入、归一化及跨样本选词范围都保持一致，才可讨论切分等价；[KL-Cov例](#kl-cov-的选词范围与微批切分)表明仅ratio公式相同不足保证目标不变，不能据此前向分组方式直接推导等价。
 3. **KL penalty**: `r(x,y) - β KL(π_new || π_ref)` → ref_log_prob需要独立计算 → **但ref_in_actor=True可以省一个模型**
 
 ### verl #6401贡献机会

@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[共享参数加载](#共享参数加载的已有修复)：#7835原四个CPU用例通过，但meta地址前置断言可假阳性；真实小模型补核参数身份与梯度，非完整FSDP验收。该反馈与[数据子集接线](#数据子集与验证入口的已有修复)均仅留项目内，无上游发布。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[KL-Cov选词范围](#kl-cov-选词范围的已有修复)：#7830原五纯CPU例通过，相同配额仍可能选不同位置，不当完整worker／DP验收、不另实现。[共享参数加载](#共享参数加载的已有修复)与数据子集接线的反馈仅留项目内，无上游发布。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## KL-Cov 选词范围的已有修复
+
+2026-10-25读取[#7829](https://github.com/verl-project/verl/issues/7829)全文／0评论，编号与kl_cov查重见报告者已有[#7830](https://github.com/verl-project/verl/pull/7830)，OPEN／非draft／未合并、0普通／行内评论；head79a7af1c、父提交／祖先6fc912f0，API目标base3f9d4c0d，八文件531增26删。旧[#7828](https://github.com/verl-project/verl/pull/7828)关闭未合并且同head；[#6538](https://github.com/verl-project/verl/pull/6538)是ratio稳定性方向，不另开发。
+
+见[原算法专题](../../notebook/frameworks/verl-grpo-core-algos-reading.md#kl-cov-的选词范围与微批切分)：原五纯CPU例通过、真实原配置与函数AST，配额1对8及相同配额仍选不同位置分开；固定整批mask切片后输入logp梯度与整批一致。仅单进程helper，不复跑作者worker壳／Gloo／模型或GPU，额外前向与DP数据交换只有源码证据，不冒充性能收益。无候选应用／M5新队列或专项改动，上游任何动作及PR-head推送仍逐项待用户明确同意。
 
 ## 共享参数加载的已有修复
 
