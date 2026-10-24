@@ -4,6 +4,8 @@
 
 2026-10-23接续：[新版运行期检查](#新版运行期检查与指标哨兵)核对#8327对旧拆分的替代关系及#8306之上的保护；本机只运行其纯Python指标哨兵测试。下方旧#8132/#8306分析保留固定版本范围，不作为新版缺少相同功能的证据。
 
+2026-10-24补充：[VeOmni计算与通信边界](#veomni-低精度计算与通信边界)区分端到端RFC、已合并的ReduceScatter接线及torchao版本限制；通信微基准收益不能直接外推actor更新速度。
+
 ## 版本与问题
 
 读取时 PR open，作者 wengeezhang；固定 head `0defd9a231cb876ce56812611b0afb3b2b25831a`，base `cd58f550fb1c4f5a3fe29da38e6f0002ec462fd3`。这是量化支持堆叠的第 7 部分，依赖前序 PR，并按 #8287 的导出接口重做；整个 PR diff 包含前序提交，不能全算作本次审计新增代码。
@@ -229,3 +231,32 @@ python -B experiments/scripts/verify_verl_quant_sentinel.py /path/to/verl-git
 当前API正文已追加cf32f6ae在1×B200上的vLLM/SGLang正常与scale故意破坏对照，以及带entropy bonus使权重实际变化的短跑；head a2012b59相对cf32f6ae只有两行文档图变动。旧网页正文仅述#8314硬件的状态不能覆盖这次补报。结果仍是作者报告，不是本项目验收或任意卡兼容证明；作者也另列主线vLLM BF16 expert默认backend拒绝、SGLang ignore前缀/精确匹配分歧，均未在本PR修复。
 
 真机接续更新[原M5量化条目](../../experiments/handoff-m5.md#verl-量化层审计新版复验)，不新增队列、拼接路线或改变其环境。本题完成新版关系与sentinel范围核对；其余数值/graph/实际backend仍按匹配资源和独立选型保留未测。
+
+## VeOmni 低精度计算与通信边界
+
+**低精度计算、参数通信、梯度通信和rollout量化不能用一个开关或一组性能数字互相认证。** [verl #8342](https://github.com/verl-project/verl/issues/8342)提出FSDP2加torchao、模型中保留分片FP32主权重的端到端路线；作者amenomori已有本地原型，完整实现仍待推进。2026-10-24读取完整RFC及唯一评论：维护者wuxibin89建议先向VeOmni提出RFC，尚不是维护者已批准的接口分工或验收矩阵。不据无assignee或未搜到编号关联PR另认领。
+
+### 各工作流的完成边界
+
+| 工作流 | 当前实现或RFC要求 | 不能由此推出 |
+| --- | --- | --- |
+| 训练计算 | RFC拟按引擎选择BF16、float8 tensorwise/rowwise或MXFP8；转换放在FSDP包装前 | 存在fake-quant或低位权重格式，就实际执行了对应低精度GEMM |
+| 参数AllGather | RFC要求在聚集前量化FP32分片，并处理payload与scale；MXFP8需专门集成 | 更换linear计算wrapper就自动缩小AllGather通信 |
+| 梯度ReduceScatter | 已合并的[#8330](https://github.com/verl-project/verl/pull/8330)暴露默认关闭的节点内BF16传输，FP32累加与输出；VeOmni判定可用分组 | 参数AllGather或HSDP副本AllReduce也变成低精度，或所有拓扑都走该路径 |
+| QAT与rollout格式 | RFC分别包含原生VeOmni QAT、torchao NVFP4/MXFP4 fake-quant，并要求checkpoint/resume及export/refit闭环 | QAT的部署格式、scale和模块覆盖已与真实rollout一致，或整体训练更快 |
+
+[#8186父路线图](https://github.com/verl-project/verl/issues/8186)的8条完整评论显示，共同量化配置已有贡献者提案及撤回记录，低精度通信也已有amenomori推进；不把规划表中的未勾选项当作没人做。#8342要求保留现有ReduceScatter选项和默认FSDP策略，其示例`low_precision`块是拟议配置，不是可以直接复制到当前主线的已发布API。
+
+### 已合并的梯度通信接线
+
+#8330于2026-10-22T07:03:51Z合并为`fb55b9288560f0c7bf380c1c1c3b45ea170538b0`；固定主线`3c6d9b43b67c74ec343d77874cd8fa6e841523da`在它之后8个提交。[当前配置](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/config/engine/veomni.yaml)的`low_precision_reduce_scatter_comm`默认false；[engine](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/workers/engine/veomni/transformer_impl.py)将其直接传给`build_parallelize_model`。同一构造路径在mixed_precision启用时先按float32加载模型，再调用VeOmni并行化和优化器builder；这是源码调用顺序，不是本机观察到的分片dtype或更新结果。当前extra依赖固定`veomni==0.1.12`，不能沿用旧checkout的0.1.11描述现行环境。
+
+底层[VeOmni #1167](https://github.com/ByteDance-Seed/VeOmni/pull/1167)已合并为`019b1c0276f0fee6175413367910c0a649593131`。其正文说明节点内低精度all-to-all后本地FP32求和，跨节点RS回退原生，副本AllReduce和参数AllGather保持原路径；额外临时缓冲和实际拓扑会影响收益。这里核对了正文与verl接线，未逐行审查底层通信实现。
+
+性能证据也要按层级分开：#1167作者在两节点、每节点8张H100上报告64–1024MiB区间的本地RS延迟下降11.9–14.8%；#8330作者在2张H200 NVL、428M参数Qwen3、长度512的actor更新中却没有观察到加速，低精度两次中位数130.853/119.163ms，原生两次117.023/118.891ms，且保留显存更高。后者只报告波动，不给稳定减速比例；不同模型、硬件和计时范围不支持据此定位原因。#8330的GPU结果还属于删除兼容/forward-only guard前的旧实现，最终树只报告CPU回归与hooks，未重跑CUDA。以上均为作者报告，不是本项目实测。
+
+### torchao 配置限制与接续
+
+RFC引用的[torchao v0.18.0原配置](https://github.com/pytorch/ao/blob/v0.18.0/torchao/float8/config.py)中，`Float8LinearConfig.__post_init__`在weight的scaling_granularity不是TENSORWISE时，断言不得启用`enable_fsdp_float8_all_gather`；标准ROWWISE配方将weight设为AXISWISE。因此“rowwise计算+float8 AllGather”在这个具体接口/版本不是任意可组合选项。这不证明其他版本或独立MXFP8接口同样受限，也不能以关闭guard替代后端集成。
+
+本轮为RFC、API状态和源码学习：没有安装/import torchao或VeOmni、运行配置构造/原测试、通信、量化kernel或模型。后续只有明确的协作范围或实质接口变动才重新评估贡献；[原M5参考](../../experiments/handoff-m5.md#verl-量化层审计新版复验)仅补证据层级，不新排训练/通信矩阵，不把CPU配置检查当端到端验收。[检索与来源](../../diary/2026-10-24.md)保留日志。

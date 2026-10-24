@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 VeOmni低精度路线尽调收束（2026-10-24）**：同步5e6857d无新增；#8342完整RFC/1评论、#8186全8评论及相邻实现表明作者已有原型，维护者建议先向VeOmni讨论，不认领。见[原量化笔记](notebook/frameworks/verl-quant-layer-audit.md#veomni-低精度计算与通信边界)/[tracker](open-source/verl/tracker.md#veomni-端到端低精度路线)：主线3c6d9b4已含#8330默认off梯度RS接线，非参数AG/低精度GEMM；torchao0.18标准rowwise/float8 AG有源码guard。作者通信微基准加速与actor无加速、旧GPU与最终树CPU证据分开。本轮仅资料/源码，无框架/量化/通信执行，补原M5条件参考不排新队列。下轮转独立实际需求或实质接口变化，不堆配置替身、另写统一量化方案或重复种子/补样控制。
+
 - **M1 AR种子入口学习收束（2026-10-24）**：同步21faa6e无新增，#507报告者自做仍不竞争；核前置#474已9/24合并而非待land，当前Omni两AR kwargs仍未读ar.seed。见[原调研](notebook/frameworks/unirl-survey.md#ar-种子配置与逐样本请求)：原生Sample/两完整原解析器六组CPU入口，SGLang显式seed需确定性路径；该路径seed=None默认42，seeded n1与组fanout3分开。参数/接线不认证采样、engine RNG或多副本独立，无hash小变体/采样器替身。条件补M5原参考，不改专项或新排多节点实验；下轮转独立实际缺口/实质反馈，不围绕旧种子矩阵继续堆控制或抢做#507。
 
 - **M1 Resume计数续核（2026-10-24）**：先快进e64c943→ab8e2cd保留M5记录；读#8341旧0cede→新277b01de的35增1删，见[原专题](notebook/frameworks/verl-async-logprob-provenance.md#推测解码计数器的跨尝试累加)。三spec计数改跨attempt相加，仅跑新增2原测试体：旧单次过/续跑求和失败、新均过；原统计函数对旧末段和新总数均给0.6/2.5，率稳定不认证计数完整。producer映射/turn累加/TQ消费仅源码，非真实后端或模型；新版本回写原M5参考，不重跑旧字段测试、改专项或新排训练。#8324仅读RFC确定已有fork原型与阶段计划，未展开大型迁移。下轮转独立需求或实质变化，不堆计数/字段替身或据未测语义另认领修复。

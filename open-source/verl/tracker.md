@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** 2026-10-23 23:07 轮只读确认[我方 #8313](https://github.com/verl-project/verl/pull/8313)仍 OPEN，head `2079ab0e` 等维护者 approve，**新增社区成员 Jackmeson1 四条实质审查意见已全部核验属实**（测试命名零 CI 覆盖、middle 分法差异、断言自引用、trainer 级 error 语义），改进补丁与回复要点已备好待用户授权，见 [draft-8313-review-reply](draft-8313-review-reply.md)。2026-10-24 续核 [部分覆盖与当前状态](#部分覆盖与当前状态)及[资源默认与更新调度](#资源默认与更新调度)：防御 guard、已有实现、待定契约分开，不据空 assignee 或未搜到精确选项认领。[#8252评估](candidate-8252-weight-checker-rfc.md#现有验证能力与当前判断)已纠正旧“无回应/无验证”表述：现成log-prob对照与内容自检分开，不另实现。#8250 仍待证据，#7913/clip 旧 RFC 不重开。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责；四条社区评审已核验，补丁与回复待用户授权，见[原草稿](draft-8313-review-reply.md)。2026-10-24续核[部分覆盖与状态](#部分覆盖与当前状态)、[资源默认与调度](#资源默认与更新调度)及[VeOmni低精度路线](#veomni-端到端低精度路线)：已有作者、待定接口、已合并梯度通信与端到端支持分开，不据空检索认领。[#8252评估](candidate-8252-weight-checker-rfc.md#现有验证能力与当前判断)已纠正旧“无回应/无验证”，不另实现；#8250仍待证据，#7913/clip旧RFC不重开。
 
 **【大白话讲明白】**
 
@@ -31,7 +31,7 @@
 
 **（2026-10-20 更新）** verl 新 issue 池恢复（10-16/10-19 共 3 个：#8261 perf、#8265 问卷非 bug、#8281 bug）。#8281 深挖完成（analysis-done + CPU 验证），登记为第 3 个活跃候选。
 
-**（2026-10-23 扫描补充）** 原扫描仅登记 #8324 Modern Megatron integration、#8334 teacher-generated rollouts 和 #8342 VeOmni 端到端低精度训练。后续已确认 [#8334](https://github.com/verl-project/verl/issues/8334)有作者的 [draft #8335](https://github.com/verl-project/verl/pull/8335)，不再列为“尚未查明归属”；#8324/#8342 本轮未全面评估，不由 0 评论推断实现空缺。
+**（2026-10-23 扫描补充，10-24接续）** 原扫描仅登记 #8324 Modern Megatron integration、#8334 teacher-generated rollouts 和 #8342 VeOmni 端到端低精度训练。后续已确认 [#8334](https://github.com/verl-project/verl/issues/8334)有作者的 [draft #8335](https://github.com/verl-project/verl/pull/8335)，不再列为“尚未查明归属”；#8324仅读RFC确认已有fork原型，不展开大型迁移。[#8342后续尽调](#veomni-端到端低精度路线)确认作者已有原型、维护者要求先在VeOmni讨论，不作未认领候选。
 
 | # | 候选 | 类别 | 性价比 | PR | 状态 | 首次发现 |
 |---|---|---|---|---|---|---|
@@ -85,6 +85,12 @@
 | [#8099 多输出固定更新次数](https://github.com/verl-project/verl/issues/8099) | 报告者 luyuzhe111 已发布下游实现，限定 V1 actor-only、无distillation、`seq-mean-token-sum`；eteluna 已[公开说明有原型](https://github.com/verl-project/verl/issues/8099#issuecomment-6254265298)，涉及静态micro-batch倍数、padding分布、拒绝shuffle，损失分母仍待定。[#8201](https://github.com/verl-project/verl/pull/8201) OPEN/non-draft，FZYsheep、head `bb057a8c0cedabacadeafc3b1d1b9318d1b59517`，正文声明V1按UID分组与分单元padding/均衡；[#6025](https://github.com/verl-project/verl/pull/6025) OPEN/non-draft，guillemgt、head `e827294d97d5020e17c9b0cd8681e75e5bdbe2aa`，面向旧同步trainer分组 | 不据 `fixed_count` PR关键词搜索空结果认定无人实现，也不标成 #8201 已完整解决 RFC。固定配置步数与按实际materialized UID分组不同；#8201只有每个prompt产生轨迹或启用失败组refill等条件下才维持原定步数。保持同UID不跨步、每步分母选真实行或配置rollout数，也不能互相替代 |
 
 #8340 作者报告3项配置测试和上述CPU复现；#8201作者报告26 passed/10 skipped，#6025作者称做过多输出训练，本项目均未复跑或逐行复审。旧#7525正文还提醒恢复checkpoint须保留原storage-unit数，这属于旧方案的兼容说明，不当作新PR已完成恢复验收。这里不判断三种batching方案谁的训练质量更好，也不搬用RFC中的MigrationBench收益数字；本轮不执行Ray/TQ/训练、创建补丁、对外评论或新增M5任务。只有出现独立缺口、具体协作或契约决策才重新投入。
+
+### VeOmni 端到端低精度路线
+
+2026-10-24读[#8342](https://github.com/verl-project/verl/issues/8342)完整正文及唯一评论、[#8186](https://github.com/verl-project/verl/issues/8186)父路线图及全部8评论。amenomori已提出本地原型及分阶段实现，wuxibin89建议先向VeOmni开RFC；配置、后端归属与验收矩阵仍需维护者确认。正确仓库名下编号PR检索为空、VeOmni的torchao搜索只命中无关issue，均不证明无人推进；旧`repo:volcengine/verl`搜索返回422，已改用`repo:verl-project/verl`成功重查，不将请求失败记作0结果。
+
+见[原量化笔记](../../notebook/frameworks/verl-quant-layer-audit.md#veomni-低精度计算与通信边界)：[#8330](https://github.com/verl-project/verl/pull/8330)已合并，仅接线节点内低精度梯度RS，不是参数AllGather或全部E2E计算；作者H100通信收益与H200 actor无加速报告分开，最终树未重跑CUDA。torchao v0.18.0原源码确有限制标准rowwise与float8 AllGather的guard，不能靠新配置名消除它。不另写统一配置、通信hook或QAT方案；只有明确协作需求/接口变化才重新评估。无本机量化、通信或训练结果，无上游写入，真机条件只补原M5量化参考而不另排队。
 
 ## 本地论证撤回，不再独立推进
 
