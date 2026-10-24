@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1多轮SFT上下文学习收束（2026-10-24）**：起始同步e36c5ac无新增，收尾快进8699389保留M5记录；#7807已有akushonkamen的#8197，不竞争。见[原多轮分词专题](notebook/frameworks/verl-6779-continuous-token-agentic-rollout-reading.md#12-多轮-sft-的上下文与监督边界)/[tracker](open-source/verl/tracker.md#多轮-sft-的已有修复)：固定head65195c85/base1d367a4，生产base与main3c6d9b4同字节；上下文、token前缀、整段IDs、loss mask四层分开。三版生产模块与新增测试共四次compile/源码核对，缺测试tokenizer资产，不搬作者2+4通过或把推理现象定性训练因果。无框架/训练/设备执行、新M5队列或专项修改；下轮转独立需求/实质反馈，不堆合成模板、重复工具轮次或另实现SFT/CT方案。
+
 - **M1 Prime新编号查重收束（2026-10-24）**：同步1cc8c94无新增；M5登记新#8358实际与仍OPEN/unmerged的#8217同修#8216。见[原奖励笔记](notebook/frameworks/verl-reward-integration-reading.md#新编号与已有修复)/[tracker](open-source/verl/tracker.md#prime字典评分的重复覆盖)：完整prime.py仅注释/docstring差异、去docstring后AST相同，旧/新base该文件字节相同；新两函数测试有manager写回覆盖但非真实判分/训练。本轮仅源码/AST/compile，无新测试或旧进程池复跑，不另写补丁/发重复提醒/排M5任务，不改专项。下轮转独立需求或实质行为变化，不据新编号重复研究原dict分支、结果格式矩阵或静默归零已知边界。
 
 - **M1路由新反馈接续收束（2026-10-24）**：同步4890f7f无新增；#529新增07:24Z评论将候选范围提议收窄Agentic siblings，仍待社区定策略。见[原调研](notebook/frameworks/unirl-survey.md#路由策略与基准入口)/[tracker](open-source/unirl/tracker.md#补充尽调与派发边界)：固定main6fd82cba源码证实同步AR绕pool、async AR完整root树一task、Agentic siblings各task，普通turn本地inner不重派；carried work另有manager入口，不能扩大为全生命周期黏着保证。原同步配方测不到仅改pool的效果；亲和/命中/吞吐分开，无pool/harness/缓存或设备执行，原M5条件参考已补但无新队列，不改专项/演化竞争路由。下轮转独立实际需求或实质反馈，不堆路由/cache替身或无变化状态扫描。
