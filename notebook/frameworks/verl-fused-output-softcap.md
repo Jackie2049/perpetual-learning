@@ -1,8 +1,42 @@
 # verl 融合输出头与 logit softcap
 
+2026-10-25接续：[Megatron 融合权重的就绪与调度](#megatron-融合权重的就绪与调度)说明直接读取参数会绕过DDP前向钩子。#8029原23项CPU生命周期测试通过，不是实通信或融合kernel验收；FSDP注册方法、Megatron bucket就绪和softcap数学仍是不同问题。
+
 2026-10-24 接续：[独立分片 head 的执行与梯度归属](#独立分片-head-的执行与梯度归属)讨论FSDP生命周期；它与下方softcap数学语义是两个独立问题，旧36组CPU结果不验证分布式修复。
 
 通用 fused output head 直接消费hidden states和输出权重，绕过模型原始forward中的输出处理，因此必须保留原模型对logits的变换。省去 `c*tanh(z/c)` 不只是更换计算精度，会改变 log-prob、熵和梯度。verl [#7991](https://github.com/verl-project/verl/pull/7991)选择在不支持时拒绝通用 fused 路径，而不是补上 softcap kernel。
+
+## Megatron 融合权重的就绪与调度
+
+融合输出头读取 `weight`，不一定调用该参数所属模块的 `forward`。计算公式即使正确，也可能绕过分片参数的准备时机。[#8028](https://github.com/verl-project/verl/issues/8028)报告的链条是：decoder预取输出权重的AllGather，融合LM-head跳过output_layer前钩子，遗留handle；下一批再次派发时触发断言。原故障来自作者下游MCore0.16.2/H20配置，不能写成本机或当前主线GPU复现。
+
+报告者已有[#8029](https://github.com/verl-project/verl/pull/8029)，2026-10-25读取open、非draft、未合并；固定head `99b6f0223892a13f699bcbadcf95a25b6e942891`、实际祖先 `4b26c788d41ce932ce7706c5ee8e249ab52f4c51`（API目标base另为263653e7），7文件769增1删。head锁文件声明MCore0.19.2、Bridge0.6.2、TE2.16.1，不是本机安装证明。[Modern Megatron RFC #8324](https://github.com/verl-project/verl/issues/8324)也把参数就绪列作原生契约，并要求复用这项已有工作；本轮不展开其大型迁移或fork原型。
+
+### 完成参数通信与派发下一桶
+
+官方MCore0.19.2固定提交 `4b4acac9a1d28ea6829c8d4f566d75698a21249d` 的[DDP前钩子](https://github.com/NVIDIA/Megatron-LM/blob/4b4acac9a1d28ea6829c8d4f566d75698a21249d/megatron/core/distributed/distributed_data_parallel.py)调用所属bucket的 `finish_param_sync`，并由align或optimizer overlap设置是否禁止预取下一桶。[bucket实现](https://github.com/NVIDIA/Megatron-LM/blob/4b4acac9a1d28ea6829c8d4f566d75698a21249d/megatron/core/distributed/param_and_grad_buffer.py)在非force派发前要求handle为空；完成方法必要时启动本桶，等待后清handle，还可能派发下一桶。`finish_grad_sync`重置dispatch标志，不代替参数handle的完成边界。因此不能把“等待一个handle”与“可以自己启动下一次collective”视为同一职责。
+
+候选[兼容回调](https://github.com/verl-project/verl/blob/99b6f0223892a13f699bcbadcf95a25b6e942891/verl/utils/megatron/param_sync.py)按实际DDP拥有者的策略处理，而不是无条件强制同步所有桶：
+
+| 状态 | 兼容回调行为 | 所保留的职责边界 |
+|---|---|---|
+| 已派发且handle为空 | 直接返回 | 同一参数桶本轮不用重复完成 |
+| DDP拥有前钩子调度 | 优先调用其finish helper；旧接口沿align／optimizer overlap决定下一桶预取 | 复用拥有者策略，不另造调度规则 |
+| 外部调度且已有handle | 完成现有通信，禁止下一桶派发 | 不替外部schedule启动或预取 |
+| 外部调度且无handle | 不派发 | 不能凭回调返回就认定参数已准备好 |
+| CUDA graph capture或旧owner已释放 | 不由此发起新通信 | 跳过不等于已经验证图内就绪或参数新鲜度 |
+
+注册发生在普通／layer-wise DDP包装完成之后，参数对应真实bucket；同桶共用回调，以weakref指向DDP和bucket，避免参数长期保留旧通信缓冲。重新包装会先移除旧兼容标记，关闭overlap时不再注册；不在DDP参数buffer中的冻结参数不标记。若原生回调能力存在则优先使用，兼容层不能据此宣称当前旧版也有原生API：上述官方0.19.2的 `core/utils.py` 中没有该两项名称。
+
+候选的[两个融合消费入口](https://github.com/verl-project/verl/blob/99b6f0223892a13f699bcbadcf95a25b6e942891/verl/models/mcore/model_forward_fused.py)在调用 `linear_cross_entropy` 前对实际权重调用就绪helper。原生processor优先使用传入的tied `output_weight`，否则选output_layer.weight；legacy分支也处理共享embedding。hidden states的sequence-parallel gather不能替代权重bucket的完成，它们服务不同tensor。这里不是FSDP的 `register_fsdp_forward_method`，也不是修改softcap或LM-head梯度公式。
+
+### 原 CPU 测试证明的范围
+
+固定head的[原CPU文件](https://github.com/verl-project/verl/blob/99b6f0223892a13f699bcbadcf95a25b6e942891/tests/utils/megatron/test_param_sync_on_cpu.py)未经修改，pytest原生收集23项全部通过。它加载完整候选helper，使用作者自己的假DDP／bucket／Work和graph状态替身；Work在wait时复制小CPU权重，consumer通过AST读取原函数体，但融合数学以普通torch算式代替。覆盖调度策略、native能力优先、weakref回收、重新包装，以及native/legacy×tied/untied三步输出和梯度；无就绪负控制也仅在这套生命周期模型里显示旧权重和下一次派发失败。不是主线真实DDP故障复现，更不是23项真实AllGather测试。
+
+本机Python3.12.13／torch2.14.1 CPU／pytest9.1.1，无依赖安装；六份候选Python及三份官方源码共九份AST/compile通过。模型测试里的事件顺序断言仅读，未执行该完整模型测试或分布式脚本。作者另报基线4b26c788上的tiny Qwen3 BF16、2–4 H20、四次optimizer更新及若干TP/PP/packed组合数值完全一致；VPP未覆盖，legacy和可选native API只有CPU覆盖。这些是作者报告，不是本项目硬件结果或全部平台验收。
+
+[M5原输出头参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)只补已有获准匹配Megatron工作的版本、实际消费参数、bucket拥有者和调度条件，不自动采用补丁或新增训练队列；上游评论、PR及其fork head推送仍逐项待用户明确同意。复现命令与hash见[当日日志](../../diary/2026-10-25.md)。
 
 ## 固定版本
 

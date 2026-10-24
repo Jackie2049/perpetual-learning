@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[数学表达式边界](#数学表达式解析的已有方案)：#7607/#7701已有覆盖，原8个良性方法及小输入CPU对照不等于完整安全认证，不另实现。[QAT mask](#qat-mask-默认与后端契约)、[代码判分](#代码判分的格式与逐例接线)等学习保留各自范围，不搬用作者硬件或安全报告。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[Megatron权重就绪](#megatron-融合消费的已有修复)：#8029原23项CPU生命周期测试通过，等待与派发职责分开，非真实通信验收，不另实现。[数学表达式](#数学表达式解析的已有方案)、[QAT mask](#qat-mask-默认与后端契约)等学习保留各自范围，不搬作者硬件或安全报告。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## Megatron 融合消费的已有修复
+
+2026-10-25读取[#8324](https://github.com/verl-project/verl/issues/8324)全文/0评论，已有fork原型及分阶段迁移，不展开竞争迁移。沿其前置[#8028](https://github.com/verl-project/verl/issues/8028)全文/0评论核已有同报告者[#8029](https://github.com/verl-project/verl/pull/8029)：open、非draft、未合并，head99b6f022、祖先4b26c788（API base263653e7），编号检索仅该覆盖，不把关键词空结果当无人负责。见[原输出头专题](../../notebook/frameworks/verl-fused-output-softcap.md#megatron-融合权重的就绪与调度)：直接读取权重会绕过模块前钩子，handle排空、下一桶派发权、hidden gather及graph阶段各有边界。
+
+原CPU文件未改、pytest原生收集23项通过；作者fake DDP/Work/graph与CPU替代融合数学不认证真实MCore通信或Triton。官方MCore0.19.2预钩子/bucket/API源码另核，六候选加三官方模块九份语法检查；作者2–4H20报告非本机结果，VPP未覆盖。条件补[M5原输出头入口](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不应用、拼接FSDP方案或新排队，不改专项；任何上游评论、PR及已建PR的fork head推送仍逐项待用户明确同意。
 
 ## 数学表达式解析的已有方案
 
