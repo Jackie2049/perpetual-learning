@@ -2,6 +2,8 @@
 
 > 版本提示：下方主体是2026-06-19的#6779历史阅读。2026-10-21核对的#8311源码已采用根model_type精确注册表，AgentLoop以CT作为唯一tokenization路径；旧“默认关闭”和模型名启发式选择不适用于该新版。新增CPU验证与回退边界见[第11节](#11-新版自动选择与-tokenizer-能力回退)。
 
+2026-10-24 接续：[多轮 SFT 的上下文与监督边界](#12-多轮-sft-的上下文与监督边界)区分离线模板渲染、前缀稳定和loss mask；SFT候选不等于AgentLoop运行时token保留方案。
+
 > 2026-06-19 | verl-project/verl | PR #6779 | gxlvera | OPEN | +3413/-36 | 20 files
 > RFC: #6719 (Continuous Token Support for Multi-Turn AgentLoop Rollout)
 > Previous stacked PRs: #6720 (builder core), #6721 (agent loop integration) — now unified into #6779
@@ -945,3 +947,21 @@ Python3.12.13/pytest8.4.2，候选原172测试全过；同一测试配共同祖�
 默认builder仍会渲染synthetic prefix/full上下文并检查token前缀相等，再取suffix；非前缀稳定模板在原测试中仍被拒绝。其默认merge只是拼接runtime与新增token，并不会自动推导任意模型缺失的边界标记。因此“构造成功”“synthetic suffix可取”“真实多轮轨迹边界正确”不能互换；训练中未再抛required-token错误也不单独证明后者。
 
 作者报告真实R1 tokenizer CPU检查及A100一/双卡两步训练，并明确未验证R1-Distill多轮精确边界；这些是作者结果，不是本项目或M5实测。本题以CPU选择/校验证据收束，不新增M5设备任务，不自动采用补丁或演化竞争实现。
+
+## 12. 多轮 SFT 的上下文与监督边界
+
+**完整上下文渲染、可安全截取增量、监督哪些token，是三项不同保证。** [#7807](https://github.com/verl-project/verl/issues/7807)报告Qwen3多轮SFT逐消息渲染时丢失`reasoning_content`对应的think块；已有akushonkamen的非draft修复[#8197](https://github.com/verl-project/verl/pull/8197)，2026-10-24读取为OPEN/unmerged。固定head `65195c8557d47a2c43774f31ee2f35f6325c7745`、base/祖先 `1d367a4f459a43768f76312c0d3430a99ec46b8c`，ahead1/behind0，两文件254增17删。该生产模块在base与当轮main `3c6d9b43b67c74ec343d77874cd8fa6e841523da`字节相同；这不代表两棵完整代码树相同。已有作者推进，不另认领。
+
+### 候选如何保留上下文
+
+[原方法](https://github.com/verl-project/verl/blob/65195c8557d47a2c43774f31ee2f35f6325c7745/verl/utils/dataset/multiturn_sft_dataset.py#L185)只在四条件同时满足时采用上下文分支：没有processor、非第0条、当前role为assistant、整段对话有任意非空`reasoning_content`。因此不要求当前assistant自己携带reasoning，也不按模型名选择。令`P_i = tokenize(template(messages[:i]))`，候选取`P_(i+1)[len(P_i):]`作为当前增量；两次渲染均带tools和相同thinking参数。其他角色及VLM仍走旧逐消息路径，tools首条限定移入该分支，后续按system prompt长度裁去模板前缀。
+
+安全截取要求`P_i`确实是`P_(i+1)`的token前缀。候选遇到长度不足或前缀不等时仅告警，仍按长度切，不会改写已拼好的历史，也没有通用边界修复。每个局部前缀成立还不能替代整段拼接检查，因为非assistant消息沿用另一条渲染路径。原`sanity_check`方法在base/head的AST相同：比较完整拼接IDs与整段一次渲染；默认不等则抛错，开启`ignore_input_ids_mismatch`只是改为告警，不会修复token。这里是算法适用条件，不是已经在真实Qwen3 tokenizer上证实的新失败案例。
+
+### token 一致不等于监督策略正确
+
+候选保留旧loss mask规则：assistant增量先全1，再屏蔽固定长度generation prompt；其他role全0。整段IDs完全相同只验证序列，不单独验证哪些think、tool call、final answer参与损失。新增[原测试](https://github.com/verl-project/verl/blob/65195c8557d47a2c43774f31ee2f35f6325c7745/tests/utils/dataset/test_multiturn_sft_qwen3_reasoning_on_cpu.py)为system→user→assistant reasoning/tool call→tool→assistant final五条消息，除整段IDs相等外，还检查监督文本含两个think块、reasoning/tool call/final，tool结果位于非监督文本。另一Qwen2.5例比较旧路径IDs及loss mask。这比只关掉sanity_check更强，但该fixture只有一次工具调用、没有第二轮user；两例不证明任意模板、跨user历史重写、VLM或完整训练行为。
+
+作者报告Transformers5.12.1、torch2.14.1、macOS ARM的两项新增测试由1失败/1通过转为2通过，以及4项既有测试通过；这是作者结果。本机未找到测试要求的`~/models/Qwen`或默认HF缓存，只对三版生产模块和候选测试文件做四次compile，并核对上述方法/原测试源码，未下载模型或使用假tokenizer替代。Issue中的推理时final落进reasoning是报告者观察，不能由本轮源码分析建立训练因果关系。
+
+离线SFT要恢复静态消息的模板表示；上文AgentLoop则须保留真正生成过的runtime token及对应logprob/action mask，二者不能互作验收。[复查命令与文件hash](../../diary/2026-10-24.md)留日志。本项以源码学习收束，不新增M5硬件事项、竞争补丁或上游评论；后续仅在具体用户数据或实质社区反馈出现时重开，不用更多合成模板扩大保证。

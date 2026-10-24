@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责；四条社区评审已核验，补丁与回复待用户授权，见[原草稿](draft-8313-review-reply.md)。2026-10-24续核[Prime新旧同题PR](#prime字典评分的重复覆盖)、[部分覆盖与状态](#部分覆盖与当前状态)、[VeOmni路线](#veomni-端到端低精度路线)及[图片payload](#图片payload的既有修复)：已有作者、局部保证与完整验收分开，不据新编号或空检索认领。[#8252评估](candidate-8252-weight-checker-rfc.md#现有验证能力与当前判断)已纠正旧“无回应/无验证”，不另实现；#8250仍待证据，#7913/clip旧RFC不重开。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责；四条社区评审已核验，补丁与回复待用户授权，见[原草稿](draft-8313-review-reply.md)。2026-10-24续核[多轮SFT](#多轮-sft-的已有修复)、[Prime新旧同题PR](#prime字典评分的重复覆盖)、[部分覆盖与状态](#部分覆盖与当前状态)、[VeOmni路线](#veomni-端到端低精度路线)及[图片payload](#图片payload的既有修复)：已有作者、局部保证与完整验收分开，不据新编号或空检索认领。[#8252评估](candidate-8252-weight-checker-rfc.md#现有验证能力与当前判断)已纠正旧“无回应/无验证”，不另实现；#8250仍待证据，#7913/clip旧RFC不重开。
 
 **【大白话讲明白】**
 
@@ -103,6 +103,12 @@
 2026-10-24核[#8216](https://github.com/verl-project/verl/issues/8216)正文/0评论及编号查重，已有[#8217](https://github.com/verl-project/verl/pull/8217)、新[#8358](https://github.com/verl-project/verl/pull/8358)均OPEN/unmerged；旧#8262检索仍closed，不替作者提交、关闭或评论任何PR。新作者liangqianxing的head052e2fe8与报告者Virtuoso461旧headfe9ff514的完整生产文件仅注释/docstring差异，去docstring后AST相同；各自base的prime.py逐字节相同。见[原奖励笔记](../../notebook/frameworks/verl-reward-integration-reading.md#新编号与已有修复)。
 
 新PR两函数测试增加manager写回位置的范围，使用固定tokenizer/恒定scorer，不能当真实判分器或全训练验收。本机没有运行新测试或复跑旧进程池；旧4例spawn证据不升格为新manager结果。新PR的两条评论为CLA/评审机器人、reviews API空，机器人“可合并”摘要不替代查重/维护者决定。本轮保留重复覆盖结论，不新增候选、补丁或M5硬件队列。
+
+### 多轮 SFT 的已有修复
+
+2026-10-24读取[#7807](https://github.com/verl-project/verl/issues/7807)全文及唯一认领评论，编号查重命中akushonkamen的非draft [#8197](https://github.com/verl-project/verl/pull/8197)，OPEN/unmerged、head`65195c8557d47a2c43774f31ee2f35f6325c7745`。完整正文、两文件diff和两条评论已读；机器人“Code Review Failed”没有具体代码意见，不能当补丁缺陷证据，也不根据CLA提示代作者操作。
+
+见[原多轮分词专题](../../notebook/frameworks/verl-6779-continuous-token-agentic-rollout-reading.md#12-多轮-sft-的上下文与监督边界)：text-only reasoning会话的assistant改用上下文差分，前缀不等仅告警，原整段sanity_check及忽略开关不变；新增Qwen3例检查IDs与监督内容，Qwen2.5例比较旧路径，但只有一段五消息fixture。本机四次compile及源码核对，不搬用作者2+4测试通过报告、不将推理异常建立为训练因果或拿SFT补丁验收runtime CT。不另开发/发布修复，不新增M5任务；具体数据或实质反馈出现后再判断。
 
 ## 本地论证撤回，不再独立推进
 
