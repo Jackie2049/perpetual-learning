@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[QAT mask 默认](#qat-mask-默认与后端契约)：#8361已有作者，默认策略、packed接口与部署kernel分开；七份语法检查非后端验收，不另实现。[代码判分](#代码判分的格式与逐例接线)、[checkpoint发布](#异步-checkpoint-的能力与发布)和[数学评分池](#数学评分池的故障恢复)各保留原验证范围。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[数学表达式边界](#数学表达式解析的已有方案)：#7607/#7701已有覆盖，原8个良性方法及小输入CPU对照不等于完整安全认证，不另实现。[QAT mask](#qat-mask-默认与后端契约)、[代码判分](#代码判分的格式与逐例接线)等学习保留各自范围，不搬用作者硬件或安全报告。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## 数学表达式解析的已有方案
+
+2026-10-25读取[#7603](https://github.com/verl-project/verl/issues/7603)正文/唯一评论、[#7607](https://github.com/verl-project/verl/pull/7607)和[#7701](https://github.com/verl-project/verl/pull/7701)完整正文/两份diff，PR review comments均0；两项open、非draft、未合并，不认领第三种实现。固定head分别b7d469f6、752c6ebe，祖先分别ea532913、4eff9ae3；旧grader均与主线3c6d9b4同字节。见[原奖励专题](../../notebook/frameworks/verl-reward-integration-reading.md#数学表达式的语法与资源边界)：递归求值与节点检查/编译的语言不同，list内算式与literal_eval的兼容不同，局部整数限额也不是完整worker预算。
+
+两个候选各4个原良性方法共8方法通过，另有限helper/原math_equal CPU控制两次一致；不运行攻击、状态投毒或耗尽载荷，不搬作者完整安全套件报告。#7701 helper接受bool/string/位移并不证明这些输入得分；单元素矩阵的分数算式差异才明确到达math_equal返回值。本轮不合并/采用或对外提醒，不改专项、不新排M5任务；如需上游评论、PR或其fork head更新，仍须用户对具体动作明确同意。
 
 ## QAT mask 默认与后端契约
 

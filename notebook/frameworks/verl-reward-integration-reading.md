@@ -1,5 +1,7 @@
 # verl Reward Integration 源码级深度阅读
 
+2026-10-25补充：[数学表达式的语法与资源边界](#数学表达式的语法与资源边界)比较两项已有eval替换方案：限制可执行语法、保持答案兼容和限制资源是不同要求。只做原方法及良性输入CPU对照，不运行攻击或耗尽载荷。
+
 2026-10-24补充：[代码判分的格式与逐例接线](#代码判分的格式与逐例接线)比较#8360/#8175原测试：两候选在部分分数和字典参数上各有不同覆盖，不能以“支持APPS”互相替代。
 
 2026-10-24补充：[数学评分池的恢复与错误信号](#数学评分池的恢复与错误信号)用真实math-verify及spawn进程核对#8015：旧版进程死亡/超时留池反例成立，候选原七测试两次通过；超时回默认分仍不等于上层可识别超时。
@@ -10,6 +12,44 @@
 
 > 2026-06-15 | 源码: verl/trainer/ppo/reward.py + ray_trainer.py + workers/reward_manager/ + experimental/reward_loop/ + core_algos.py + utils/reward_score/
 > 核心: 两层架构(legacy RewardManager + experimental RewardLoop) → 3 reward路径(rule/DisRM/GenRM) → outcome reward=最后token非零 → GRPO group-relative → colocate RM sleep/wake → RTX 4090=rule-based唯一可行
+
+## 数学表达式的语法与资源边界
+
+奖励判分器应把模型答案当数据；替换通用 `eval` 后，也必须明确哪些表示仍应接受、结果是什么类型，以及资源预算在哪里生效。[#7603](https://github.com/verl-project/verl/issues/7603)的两个执行位置已有[#7607](https://github.com/verl-project/verl/pull/7607)和[#7701](https://github.com/verl-project/verl/pull/7701)覆盖，2026-10-25读取均open、非draft、未合并，不另开竞争修复。它们独立于[#8347](https://github.com/verl-project/verl/pull/8347)的区间/数值正确性保护，不能拿那一项的64个参数例认证解析安全，也不能自动叠加补丁。
+
+固定版本：#7607 head `b7d469f63b8d369d289918fcc482e59e687d2622`、实际祖先 `ea53291385ce764019a2b40733605f21d8317583`，两文件327增4删；#7701 head `752c6ebe10ee4d6b4c370dab33c20d91e638f28e`、实际祖先 `4eff9ae30a23b59554758fa0ca93940605ae5cdf`，两文件99增4删。两PR的API目标base为3f9d4c0，并非上述实际祖先；两祖先的grader与本轮对照主线 `3c6d9b43b67c74ec343d77874cd8fa6e841523da` 同字节。
+
+### 语法白名单与结果类型
+
+[#7607的递归求值器](https://github.com/verl-project/verl/blob/b7d469f63b8d369d289918fcc482e59e687d2622/verl/utils/reward_score/prime_math/grader.py)明确选择数值常量、部分运算符和list/tuple，并拒绝bool；pi替换与矩阵解析共用它。[#7701的节点检查](https://github.com/verl-project/verl/blob/752c6ebe10ee4d6b4c370dab33c20d91e638f28e/verl/utils/reward_score/prime_math/grader.py)检查AST节点类别，再用空builtins执行编译结果；它没有检查Constant的值类型，运算符集合还来自整个operator/unaryop子类集合。因而“只允许某些节点”不等于“结果只可能是数值”。小规模原helper对照如下：
+
+| 良性输入 | #7607 | #7701 |
+|---|---|---|
+| `1+2*3` | int 7 | int 7 |
+| `[1/2, 3]` | list `[0.5, 3]` | ValueError |
+| `True` | ValueError | bool True |
+| `'ab'*3` | ValueError | str ababab |
+| `1<<2` | ValueError | int 4 |
+
+这张表只说明helper接收的语言和结果类型不同，不表示上述非数值输入能拿到完整评分器的分数。两项方案对普通 `2\pi` 都得到约6.283185307；不含pi的 `1+2*3` 在 `handle_pi` 中仍原样返回，不是所有答案都会进入算术求值。
+
+### 矩阵字面量与矩阵内算式
+
+#7701矩阵分支使用 `ast.literal_eval`，不是它的算术helper。该标准库函数接受字面量及容器，而不承诺执行一般算式。[Python 3.12 文档](https://docs.python.org/3.12/library/ast.html#ast.literal_eval)还明确提示，它不执行通用Python代码并不等于没有内存、栈或CPU耗尽风险，不能当不可信输入的资源沙箱。
+
+完整原 `grader.math_equal` 的三个单元素矩阵对照中，主线与#7607都接受 `[1]` 对pmatrix中的1、`[1/2]` 对pmatrix中的0.5，并拒绝 `[1]` 对9；#7701分别为True、False、False。分数表达式的差异到达了后备判分返回值，不只是内部parser的输出差异。这里只覆盖单元素形式，不声称任意多行矩阵兼容或完整 `default_compute_score` 奖励路由等价。
+
+### 资源限制与完整 worker 隔离
+
+#7607新增字符数、递归节点/深度、指数和中间整数位数限制；#7701所读helper没有对应显式限额。本机以很小的 `2**1025` 控制确认前者按指数策略拒绝，后者得到1026位整数；这不是性能或耗尽实验。两者对 `1e309` 均可得到float inf，因此“数值类型”还不等于“有限数值”。
+
+这些局部限额也不能直接称为整个worker的资源预算。#7607允许list经过算术运算，本机 `[1]*3` 得到三项列表；其位数检查只针对int，源码没有给此处容器结果的元素数量设同样上限。这里仅用三项输入核对行为，没有放大分配或构造拒绝服务载荷。两方案也仍保留后续SymPy解析、比较与原timeout路径；修改两个eval位置不等于已经建立独立进程、逐样本状态隔离或整个判分器的安全边界。
+
+### 本机验证范围
+
+Python3.12.13、SymPy1.14.0、pytest8.4.2，复用已有pylatexenc2.10/antlr4-runtime4.9.3 target，无新增安装。三个独立进程从固定Git对象加载完整原grader、prime_math入口、normalizer、路由及原timeout依赖，仅跳过verl/utils父包初始化。每个候选各直接调用四个原良性测试方法，共8方法通过；另做上述八种helper输入、三版各三项矩阵和两项pi控制，两次结果一致。没有pytest原生收集或复跑作者完整安全/攻击套件，也没有执行命令注入、文件载荷、状态投毒或耗尽测试；原timeout使用进程内显式fork，不认证macOS默认spawn。
+
+[日志](../../diary/2026-10-25.md)保留原方法名、输入和hash；一次性harness留工作目录，不新增永久工具。结论是三个独立审查问题：语法是否受限、答案表示是否兼容、资源与状态是否隔离。不能以某一项通过替代另两项；本项不需GPU，不向M5新增任务，也不应用任一候选或做未经用户同意的上游动作。
 
 ## 代码判分的格式与逐例接线
 
