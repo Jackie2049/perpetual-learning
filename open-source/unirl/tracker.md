@@ -9,7 +9,7 @@
 
 **【价值评估】** 7 / 10 — 甄别"未认领、无 PR、可落地"的开放空间，避免重复投入已有人认领的 RFC。
 
-**【进展】** #523 的我方 fork PR 已获用户认可，测试与 e2e 正式指派 M5；M5 已闭环 L0（四项断言 + pristine 对照），L1 仍待 ≥8 卡及获准权重/存储，见[M5交接](../../experiments/handoff-m5.md)。#567 待匹配 H20；#470/#481/#484已有作者或验证条件。2026-10-24续核[#529新反馈与路径](#补充尽调与派发边界)，同步AR基准不经过拟改pool，普通Agentic回合不重复派发；另有#515澄清、#450/#537[合并分项](#开放-rfc-的已合并分项)及[parity分拆](#parity-分拆与验证矩阵)。不据空assignee、单个相等标志或错位基准认领/认证功能。
+**【进展】** #523 的我方 fork PR 已获用户认可，测试与 e2e 正式指派 M5；M5 已闭环 L0（四项断言 + pristine 对照），L1 仍待 ≥8 卡及获准权重/存储，见[M5交接](../../experiments/handoff-m5.md)。#567 待匹配 H20；#470/#481/#484已有作者或验证条件。2026-10-24续核[#627依赖接口](#veomni-mask-接口的已有调整)及[#529新反馈与路径](#补充尽调与派发边界)：前者已有上游调整、UniRL训练待验，后者同步AR基准不经过拟改pool。不据空assignee、参数绑定成功或错位基准认领/认证功能；#450/#537的[合并分项](#开放-rfc-的已合并分项)与整个RFC仍分开。
 
 **【大白话讲明白】**
 
@@ -56,6 +56,12 @@ UniRL 仓库当前 **73+ open issues**，其中大量是带 `help wanted` 标签
 #458同样不能只凭浅合并就认定bug：[prepare_input_sample](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/trainer/base.py)顶层覆盖，而PE显式传空ar/chat袋以擦除父输入控制；无条件deep merge会保留本来要清掉的字段。单个字典算法无法替代跨trainer/engine的所有权设计。本轮只做源码和社区状态尽调，无执行、性能/缓存验证、认领或对外操作，不为这两个线索排M5实验。
 
 #473本轮读取正文与全部4条评论；上表只判贡献归属，没有重跑报告者19-check真实包harness或SD3回归。贡献者评论提到#413/#474已覆盖部分清理及上游vllm-omni#8196待复审，属于当时报告；本轮未重核这些PR的当前状态，不据此自动退休passthrough或移除仍有独立用途的stage-0 gate，也不新增M5必跑矩阵。另读已有[#545](https://github.com/Tencent-Hunyuan/UniRL/pull/545)做[压缩积分学习](../../notebook/frameworks/unirl-survey.md#sde-窗口后的压缩积分尾段)，作者已有实现，CPU控制不转为我方贡献认领。
+
+## VeOmni mask 接口的已有调整
+
+2026-10-24读[#627](https://github.com/Tencent-Hunyuan/UniRL/issues/627)完整正文/0评论，编号PR检索0结果，Qwen3/mask搜索命中多个相关但非明确修复事项，不能据此宣布无人推进。报告者ruiling-smartbear已从#626验证中分离此基线问题；依赖上游[#774](https://github.com/ByteDance-Seed/VeOmni/pull/774)已合并，v0.1.12配置/生成产物含接口调整，不另提交吞参补丁或自动升级UniRL。
+
+见[原调研](../../notebook/frameworks/unirl-survey.md#veomni-生成代码的-mask-接口边界)：固定0.1.11配置/产物对HF5.12.1两mask签名均绑定失败，#774配置及0.1.12配置/产物绑定接受；六份compile与AST派生签名绑定不是mask或EP执行。选择性导入仍显式加载被选Qwen3-MoE，包能导入不认证前向。缺口补原M5激活卸载参考，不另排矩阵、改#523或开上游评论。
 
 ## RFC 归属与验证条件
 

@@ -1,5 +1,7 @@
 # UniRL — 腾讯统一多模态 RL 框架调研
 
+2026-10-24 接续：[VeOmni 生成代码的 mask 接口边界](#veomni-生成代码的-mask-接口边界)核#627固定依赖的不兼容及上游已有调整；参数绑定成功不等于因果mask或EP训练验收。
+
 2026-10-24 接续：[教师指纹与控制器失败传播](#教师指纹与控制器失败传播)区分已返回异常、权重内容不一致和读取卡住；固定主线6fd82cba，仅原指纹函数CPU控制，不是Ray/Gloo或训练验收。
 
 2026-10-24 接续：[离线 embedding 的身份与索引发布](#离线-embedding-的身份与索引发布)以原store模块和真实CPU safetensors区分键覆盖、读取、resume元数据与训练身份；单次rename失败控制不是断电或共享存储验收。
@@ -1844,6 +1846,24 @@ Python3.12.13/torch2.14.1，torch git `5c4886908584029761b579af026dcfb627c84070`
 [PR报告](https://github.com/Tencent-Hunyuan/UniRL/pull/469)给出8×H20、768²×124、固定SP8的开关对照：video decode/sample 51.47→8.22秒，整步3536.2→2160.7秒，峰值显存两臂相同。作者另报真实VAE三seed输出逐值相同，以及32个完整视频hash与各rank一致。相同reward mean不足以替代全视频比较，因为该报告的VideoPickScore只取中间帧。
 
 [后续150轮报告](https://github.com/Tencent-Hunyuan/UniRL/pull/469#issuecomment-5742687138)比较SP1/DP8与SP8/DP1，并降至192²×124；两臂均完成、无hang，是该fork配置的存活/稳定性证据，不是纯decoder因果对照，因为DP拓扑也变了。作者CPU Gloo异常注入和真实GPU结果均未在本项目复跑；本机没有导入torch/模型、启动进程组或复制假VAE验证。[当日日志](../../diary/2026-10-24.md)保留复现和源码hash，真机条件补[原M5参考入口](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)。尚缺主线H3 SP前提，不据草案新增必跑矩阵、部署环境或竞争实现。
+
+## VeOmni 生成代码的 mask 接口边界
+
+**包能解析或导入，不代表按另一版Transformers生成的模型能前向。** [#627](https://github.com/Tencent-Hunyuan/UniRL/issues/627)由ruiling-smartbear在[#626](https://github.com/Tencent-Hunyuan/UniRL/pull/626)验证中独立登记，2026-10-24读取OPEN、0评论：作者报告4×H100、EP2×FSDP2、activation offload关闭时，首次前向因`create_causal_mask`不接受`cache_position`失败，不能归因于卸载flag。本机未访问其Modal作业或执行训练。
+
+固定UniRL main `6fd82cba13f52f394747832344039408699ea378`的[依赖](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/pyproject.toml)为Transformers `>=5.12,<5.13`、Linux VeOmni extra `==0.1.11`，vLLM extra另精确钉5.12.1。[Qwen3-MoE bundle](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/models/qwen3_moe/bundle.py)显式调用`ensure_qwen3_moe_installed`，shim随后导入该VeOmni模型。选择性导入避免全模型zoo执行，但不消除被选择模型的接口依赖。
+
+### 生成配置与生成产物
+
+VeOmni官方v0.1.11 `f90b3dc6fbb0ce693745223cc7a94064123dbf4d`的[生成配置](https://github.com/ByteDance-Seed/VeOmni/blob/f90b3dc6fbb0ce693745223cc7a94064123dbf4d/veomni/models/transformers/qwen3_moe/qwen3_moe_gpu_patch_gen_config.py#L238)及[GPU产物](https://github.com/ByteDance-Seed/VeOmni/blob/f90b3dc6fbb0ce693745223cc7a94064123dbf4d/veomni/models/transformers/qwen3_moe/generated/patched_modeling_qwen3_moe_gpu.py#L606)均传六个关键字给`mask_function`，含`cache_position`；按sliding_window选择全量或滑窗函数。Transformers v5.12.1对应`ddb849abe009d1089e6c691bfc897f27211c663c`的[两个实际签名](https://github.com/huggingface/transformers/blob/ddb849abe009d1089e6c691bfc897f27211c663c/src/transformers/masking_utils.py#L893)都没有该参数或`**kwargs`；残留docstring仍列deprecated参数，不能代替签名。
+
+VeOmni [#774](https://github.com/ByteDance-Seed/VeOmni/pull/774)已于2026-05-29合并为`2d36580b80a6579f95a5318c83939844aee93fb2`，升级至Transformers5.9并调整生成配置，Qwen3-MoE的mask调用不再传该关键字。官方v0.1.12 `fd99abfda9ef4d9d485f0dae14841de88d30963d`的同一配置和GPU产物也都移除了它。已有接口调整不等于UniRL整体升级安全；并行化、模型输出、选择性导入及实际安装制品仍须联合核验。#774作者的A100测试不是UniRL5.12.1验收，不另写竞争吞参shim或自动升级依赖。
+
+### 本机确认的调用边界
+
+本机Python3标准库读取固定官方源码并compile六份文件；从HF AST构造`inspect.Signature`，用VeOmni原调用AST的关键字名做bind，不执行函数体。0.1.11配置/产物各对两函数均因`cache_position`拒绝；#774合并配置、0.1.12配置/产物各对两函数均接受。首次直接搜索`create_causal_mask(`未命中，是因为实际经`mask_function`调用，不是没有调用；补齐0.1.12产物后结果一致。[命令与hash](../../diary/2026-10-24.md)留日志。
+
+HF预处理由cache的`get_seq_length/get_mask_sizes`推导偏移/长度，无cache则从输入或attention_mask推导，并有position_ids的packed-sequence检测。签名接受不认证这些数值行为、VeOmni自定义attention或EP更新；这里未运行mask、导入依赖、加载模型、升级环境或执行设备，也不删除模型其他位置仍使用的cache_position。真机缺口补[原M5激活卸载参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，先恢复offload关闭的匹配基线，再谈卸载比较，不改#523/AReaL或新增必跑矩阵。
 
 ## 下一步
 

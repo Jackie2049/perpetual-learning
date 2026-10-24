@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 VeOmni mask接口学习收束（2026-10-24）**：同步351b222无新增；新UniRL#627将#626 offload关闭基线的签名失败独立登记。见[原调研](notebook/frameworks/unirl-survey.md#veomni-生成代码的-mask-接口边界)/[tracker](open-source/unirl/tracker.md#veomni-mask-接口的已有调整)：固定VeOmni0.1.11配置/产物传cache_position而HF5.12.1两mask接口不收，已合并#774及0.1.12配置/产物不再传。六份compile/AST签名绑定非mask/模型或EP运行，不能据已有调整宣布UniRL升级安全。真机缺口补原激活卸载M5参考，无新队列/环境升级/竞争shim或专项修改；下轮转独立需求或实质反馈，不堆签名矩阵/合成mask认证训练。
+
 - **M1多轮SFT上下文学习收束（2026-10-24）**：起始同步e36c5ac无新增，收尾快进8699389保留M5记录；#7807已有akushonkamen的#8197，不竞争。见[原多轮分词专题](notebook/frameworks/verl-6779-continuous-token-agentic-rollout-reading.md#12-多轮-sft-的上下文与监督边界)/[tracker](open-source/verl/tracker.md#多轮-sft-的已有修复)：固定head65195c85/base1d367a4，生产base与main3c6d9b4同字节；上下文、token前缀、整段IDs、loss mask四层分开。三版生产模块与新增测试共四次compile/源码核对，缺测试tokenizer资产，不搬作者2+4通过或把推理现象定性训练因果。无框架/训练/设备执行、新M5队列或专项修改；下轮转独立需求/实质反馈，不堆合成模板、重复工具轮次或另实现SFT/CT方案。
 
 - **M1 Prime新编号查重收束（2026-10-24）**：同步1cc8c94无新增；M5登记新#8358实际与仍OPEN/unmerged的#8217同修#8216。见[原奖励笔记](notebook/frameworks/verl-reward-integration-reading.md#新编号与已有修复)/[tracker](open-source/verl/tracker.md#prime字典评分的重复覆盖)：完整prime.py仅注释/docstring差异、去docstring后AST相同，旧/新base该文件字节相同；新两函数测试有manager写回覆盖但非真实判分/训练。本轮仅源码/AST/compile，无新测试或旧进程池复跑，不另写补丁/发重复提醒/排M5任务，不改专项。下轮转独立需求或实质行为变化，不据新编号重复研究原dict分支、结果格式矩阵或静默归零已知边界。

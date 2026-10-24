@@ -13,6 +13,8 @@ GPU/NPU 的访问、环境与实验由 macbook-M5 Agent 负责。M1 遇到需要
 
 ## UniRL 联合路径的资源与身份边界
 
+激活卸载基线补充（2026-10-24，同一参考，不另排队）：[#627](https://github.com/Tencent-Hunyuan/UniRL/issues/627)报告offload关闭的4×H100 EP2×FSDP2也被mask接口阻塞；[M1核对](../notebook/frameworks/unirl-survey.md#veomni-生成代码的-mask-接口边界)固定UniRL6fd82cba、VeOmni0.1.11 tag f90b3dc6、HF5.12.1 ddb849ab，仅源码/参数绑定。VeOmni已合并#774，0.1.12 tag fd99abfd的配置与GPU产物均不再传cache_position，但不是UniRL整体升级验收。M5若日后已有获准匹配模型/环境/资源且独立接续，先记录实际wheel/source与完整依赖，核因果mask（含该配方实际padding/packed/滑窗分支）及offload关闭的最小EP更新，再决定是否比较卸载。缺权重/资源、需新部署下载升级或影响专项即记未测停止；不自动升VeOmni/降Transformers、照搬#774全栈或写通用吞参shim，不改#523/AReaL，不代表已接单。
+
 路由基准参考（2026-10-24，非新增实验队列）：[#529新反馈](https://github.com/Tencent-Hunyuan/UniRL/issues/529#issuecomment-6381413964)及[M1固定main6fd82cba源码学习](../notebook/frameworks/unirl-survey.md#路由策略与基准入口)确认原同步AR配方不经过RolloutPool；异步AR整树一个task、Agentic siblings独立task，普通工具turn仍在本地inner内，不等于所有重提交都黏着。无pool/引擎/cache或硬件执行。只有M5日后独立选择且已有获准匹配Agentic工作，先核真实请求确经目标pool、记录root/trajectory到launcher，再按既有范围分别观察cache/prefill、完成吞吐与尾延迟；不借同步配方或同worker标志认证收益。缺环境/数据/资源、需新部署下载或影响专项即记未测停止，不另写packing/session方案、不启动新矩阵，参考非接单。
 
 AR种子参考（2026-10-24，非新增采样/多节点实验队列）：[#507](https://github.com/Tencent-Hunyuan/UniRL/issues/507)报告者已表明自行实现，前置[#474](https://github.com/Tencent-Hunyuan/UniRL/pull/474)已合并；[M1当前main6fd82cba入口学习](../notebook/frameworks/unirl-survey.md#ar-种子配置与逐样本请求)仅原生Sample/两完整解析模块六组CPU控制及调用方源码，无RNG/模型或引擎运行。若M5已有获准匹配AR观测且独立选用，先核backend实际版本、显式请求seed与engine seed、稳定sample_id、SGLang确定性入口及seeded n=1的wire展开；Omni AR与diffusion seed分开记录。再按既有范围决定是否需配对生成证据，不以输入种子相同认证输出或副本独立。缺匹配环境/权重/资源、需下载部署或影响专项即记未测停止，不复跑作者H20 probe、改报告者方案或自动开多节点/新矩阵；参考非接单，不改变M5单一负责的专项。
