@@ -1,14 +1,17 @@
-# verl PR #8313 评审回应补丁（aligned 版，2026-10-24）
+# verl PR #8313 评审回应补丁（aligned 终版，2026-10-24）
 #
-# 相对 PR head 2079ab0e。三点回应：
-#   ① 测试改名 *_on_cpu.py（CI 收集， maintainer 拍板中）
-#   ② middle 分法对齐 torch_functional.postprocess_data（cap>=2 逐 token 一致，
-#      奇数余量给尾）；cap=1 时 head 半段将为空，保留首个 token 维持 prompt
-#      开头身份（postprocess_data 公式在该点退化为仅留尾 token）——对 reviewer
-#      如实说明这一个 token 的偏差，若维护者要求严格一致可一行改回。
-#   ③ middle 测试改为 caps 1-6 显式期望，消除自引用断言。
-# M1 提取逻辑验证全过（对齐对照/长度不变量/无 -0 回归/其他策略不变）；
-# 正式 pytest 于 M5 服务器 verl-e2e 环境复跑。
+# 相对 PR head 2079ab0e。遵从 reviewer 两点建议（用户核定方向）：
+#   ② middle 对齐 torch_functional.postprocess_data：head = max(1, prompt_length // 2)，
+#      cap>=2 与 postprocess_data 逐 token 一致（奇数余量给尾）；cap=1 head 半段将为空，
+#      保留首个 token 维持 prompt 开头身份（此一 token 偏差在 docstring 与回复中如实说明，
+#      维护者要求严格一致时可一行改回）。
+#   ③ middle 测试改为 caps 1-6 显式期望（assert out == expected），消除自引用断言。
+#   ① 不含文件改名——是否加 _on_cpu 后缀进 CI 由 maintainer 拍板（回复中 @wuxibin89）。
+# 验证（M1 本地 Python 3.12.13 + torch 2.14.1 真实 pytest）：
+#   - 18 passed（cap 16 + config 2）；
+#   - 负向对照 1：回退旧公式 (L+1)//2 → 恰 cap=3/5 两条失败（区分两种语义）；
+#   - 负向对照 2：注入尾部偏移一位 bug → 7 条 middle 测试全失败（旧自引用断言下多可通过）；
+#   - 复原后 18 passed。GPU 测试不适用（纯 CPU 逻辑）。
 
 diff --git a/verl/experimental/agent_loop/agent_loop.py b/verl/experimental/agent_loop/agent_loop.py
 index 10e628e..77d9f86 100644
@@ -37,10 +40,10 @@ index 10e628e..77d9f86 100644
              return prompt_ids[:head] + prompt_ids[len(prompt_ids) - tail_length:]
  
 
-diff --git a/tests/experimental/agent_loop/test_cap_text_prompt_length.py b/tests/experimental/agent_loop/test_cap_text_prompt_length_on_cpu.py
+diff --git a/tests/experimental/agent_loop/test_cap_text_prompt_length.py b/tests/experimental/agent_loop/test_cap_text_prompt_length.py
 index 3219929..cddb027 100644
 --- a/tests/experimental/agent_loop/test_cap_text_prompt_length.py
-+++ b/tests/experimental/agent_loop/test_cap_text_prompt_length_on_cpu.py
++++ b/tests/experimental/agent_loop/test_cap_text_prompt_length.py
 @@ -85,16 +85,29 @@ def test_right_keeps_head():
      assert loop._cap_text_prompt_length([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]) == [0, 1, 2, 3]
  
