@@ -965,3 +965,37 @@ Python3.12.13/pytest8.4.2，候选原172测试全过；同一测试配共同祖�
 作者报告Transformers5.12.1、torch2.14.1、macOS ARM的两项新增测试由1失败/1通过转为2通过，以及4项既有测试通过；这是作者结果。本机未找到测试要求的`~/models/Qwen`或默认HF缓存，只对三版生产模块和候选测试文件做四次compile，并核对上述方法/原测试源码，未下载模型或使用假tokenizer替代。Issue中的推理时final落进reasoning是报告者观察，不能由本轮源码分析建立训练因果关系。
 
 离线SFT要恢复静态消息的模板表示；上文AgentLoop则须保留真正生成过的runtime token及对应logprob/action mask，二者不能互作验收。[复查命令与文件hash](../../diary/2026-10-24.md)留日志。本项以源码学习收束，不新增M5硬件事项、竞争补丁或上游评论；后续仅在具体用户数据或实质社区反馈出现时重开，不用更多合成模板扩大保证。
+
+## 13. 工具 schema 保真与执行校验
+
+**把约束传给模型，不等于执行工具时校验这些约束。** [#7505](https://github.com/verl-project/verl/issues/7505)报告 minimum、maximum、additionalProperties 在 Pydantic carrier 往返中被丢弃，影响模型看到的工具描述；已有作者YZJF的[#7523](https://github.com/verl-project/verl/pull/7523)处理保真，不是新增运行时参数校验。2026-10-25读取该PR仍OPEN、非draft、未合并；另一重叠[#7766](https://github.com/verl-project/verl/pull/7766)为CLOSED但merged=false，不能当修复已进入主线。
+
+固定候选head `d7f5e73bf6af967a323dd8ac5e06f182795b75d4`，API目标base `3f9d4c0d32cc20c7ec31c8137e91bb5673ce9e5e`；本地浅历史无法求出共同祖先，改按直接父提交 `1dda039b9c6311889a9c9a26040677e1254814f9` 核对两文件20增4删，不将父提交冒充与浮动base的merge-base。固定主线 `3c6d9b43b67c74ec343d77874cd8fa6e841523da` 的schemas.py与该父提交字节相同，function_tool.py又与候选相同，适合隔离carrier变化。
+
+### 保留字段与接受任意 schema 不同
+
+生产改动是在 property 和 parameters 两个carrier设 `ConfigDict(extra="allow")`。[Pydantic官方说明](https://pydantic.dev/docs/validation/latest/concepts/models/#extra-data)区分默认忽略extra与保留extra，保留本身不为未声明字段赋予JSON Schema语义。ToolAgentLoop和RL dataset渲染工具都用 `model_dump(exclude_unset=True, exclude_none=True)`；省略exclude_unset时，未显式提供的strict=False等默认值也会写入，不能只比较普通dump就把默认字段误判为约束再次丢失。
+
+本机Python3.12.13／Pydantic2.14.1、jsonschema4.26.0、Transformers5.20.2，无新依赖。两版完整原schemas.py／function_tool.py实际执行，只用空父包隔离框架初始化；不是Pydantic或函数调用替身。原 `test_explicit_schema_dict_override_skips_inference` 测试体直接调用，另以显式小schema核对，两次结果一致：
+
+| 有限CPU对照 | 主线 | 候选 |
+| --- | --- | --- |
+| 原显式schema回归测试体 | AssertionError | 通过 |
+| 含integer范围、array items／pattern的schema，用rollout dump往返 | 约束丢失，不相等 | 与输入完全相等 |
+| 同一输入用普通exclude_none dump，未提供strict | 写入strict=False，不相等 | 同样不相等，非保真回归 |
+| property仅anyOf组合、无type，Draft202012元schema检查通过 | carrier报type缺失 | 仍报type缺失 |
+| maximum写成字符串，元schema检查拒绝 | carrier接受后丢掉该键 | carrier接受并原样保留 |
+
+`anyOf`无共同type是[标准JSON Schema组合](https://json-schema.org/understanding-json-schema/reference/combining#anyOf)的合法表达，但本例不据此声称任何远端OpenAI兼容服务必须支持它。两个carrier仍有自己的必填形状；extra保真既不使它成为任意JSON Schema容器，也不认证schema本身合法。后两行是接口边界，不是该保真PR引入的新失败或恶意输入安全认证。
+
+### 解析成功与参数有效不同
+
+纯函数 `echo(value: int): return value` 使用显式schema注册，声明integer、0≤value≤128、required=[value]、additionalProperties=False。独立的真实Draft202012Validator拒绝以下三个参数；两版原JSON对象parser却均返回decode_error=False，再交给原FunctionTool.call：
+
+- `{"value":129}`返回129；它是可解码的对象，但数值超过声明上限。
+- `{"value":"not-an-int"}`返回该字符串；Python类型提示本身不做运行时类型检查。
+- `{"value":1,"extra":2}`抛TypeError，来自Python签名不接受extra，不是additionalProperties校验器。
+
+调用均为无副作用的本地回显，没有读文件、网络或执行模型输出代码。原 [FunctionTool.call](https://github.com/verl-project/verl/blob/d7f5e73bf6af967a323dd8ac5e06f182795b75d4/verl/tools/function_tool.py#L60)同步函数走asyncio.to_thread，直接按kwargs调用；[ToolAgentLoop的函数工具分支](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/experimental/agent_loop/tool_agent_loop.py#L444)另检查工具名、JSON解码及捕获异常。这里仅阅读后者、未执行完整loop，不能从回显控制推定所有BaseTool或用户工具都没有自身校验，也不能把捕获异常当成拒绝所有语义无效参数。
+
+保真、schema合法性、调用参数校验须分别命名，不能从其中一层通过推另一层。五份源码快照另过完整AST／内存compile；原测试体不是原生pytest／完整tools套件。命令、输入和hash留[当日日志](../../diary/2026-10-25.md)，本题CPU范围足够，不排新M5任务、不下载模型／扩写校验器／应用候选或新增竞争修复；任何社区写操作仍逐项待用户明确同意。

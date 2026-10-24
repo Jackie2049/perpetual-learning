@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[数据子集身份](#数据子集与验证入口的已有修复)：#7819／#8141已有作者，两候选各5原测试体CPU通过；#8141三个旧入口漏接验证分支，原调用表达式证据与反馈留本地待用户审视，不对外发布。[采样支持域](#采样概率口径的已有方案)等学习保留原范围。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[工具schema保真](#工具-schema-约束的已有修复)：#7505已有#7523，原回归体CPU对照支持保真，不等于schema合法性或执行校验；不另实现。[数据子集接线](#数据子集与验证入口的已有修复)反馈仍只留本地待用户审视，无对外发布。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## 工具 schema 约束的已有修复
+
+2026-10-25读取[#7505](https://github.com/verl-project/verl/issues/7505)全文／0评论，编号与tool schema短关键词查重确认YZJF已有非draft [#7523](https://github.com/verl-project/verl/pull/7523)，OPEN／未合并、headd7f5e73b；直接父提交1dda039b下两文件20增4删，API目标base3f9d4c0d不能冒充本地未求出的共同祖先。另一[#7766](https://github.com/verl-project/verl/pull/7766)关闭但未合并，不作主线已有修复或无人负责。
+
+见[原工具专题](../../notebook/frameworks/verl-6779-continuous-token-agentic-rollout-reading.md#13-工具-schema-保真与执行校验)：完整原schema／function_tool接真实Pydantic及无副作用调用，原1回归体主线AssertionError、候选通过；约束保真、元schema合法性、JSON解码与Python参数调用分层，extra=allow不承诺任意schema或运行时校验。五份源码快照语法通过，未运行原生pytest／AgentLoop／工具服务或安全攻击，不搬关闭PR的设备测试报告。本题不需M5新队列、不应用候选／另写校验器或改专项，任何上游评论／PR及PR-head推送仍逐项待用户明确同意。
 
 ## 数据子集与验证入口的已有修复
 

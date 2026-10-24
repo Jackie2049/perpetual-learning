@@ -180,6 +180,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [verl PR #6779 — Continuous Token for Agentic Rollout (Multi-Turn Tokenization Builder)](verl-6779-continuous-token-agentic-rollout-reading.md)
 - [verl 新版 CT tokenizer 回退](verl-6779-continuous-token-agentic-rollout-reading.md#11-新版自动选择与-tokenizer-能力回退)：#8311原172项CPU对照，架构/标记存在性与真实多轮边界分开；旧开关和名称启发式不沿用。
 - [verl 多轮 SFT 的上下文与监督边界](verl-6779-continuous-token-agentic-rollout-reading.md#12-多轮-sft-的上下文与监督边界)：#7807已有#8197；前缀稳定、整段IDs与loss mask分开，四次compile非真实tokenizer或训练验收，不与运行时CT混用。
+- [verl 工具schema保真与执行校验](verl-6779-continuous-token-agentic-rollout-reading.md#13-工具-schema-保真与执行校验)：#7505已有#7523；原回归体与真实Pydantic／无副作用调用分清extra保留、schema合法性和参数校验，非完整AgentLoop或安全认证，不另实现。
 - [verl #6782 — LoRA Rank=64 Breaks EOS in vLLM Rollout Reading](verl-6782-lora-rank-breaks-eos-reading.md)
 - [verl #6786: Dynamic Context Parallel (DCP) Batch Split Bug Deep Reading](verl-6786-dynamic-cp-batch-split-bug-reading.md)
 - [verl PR #6790: Separate Async Trainer with Switch+Offload Strategies — Source-Level Reading](verl-6790-async-trainer-reading.md)：新增[局部指标聚合](verl-6790-async-trainer-reading.md#局部更新的指标聚合)，19原测试/5组CPU观察；样本权重不等于token分母，正式计时后置计算，不由helper反例断言trainer缺陷。
