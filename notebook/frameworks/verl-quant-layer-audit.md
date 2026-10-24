@@ -2,7 +2,7 @@
 
 2026-10-21，M1 只读学习已有作者的 [PR #8132](https://github.com/verl-project/verl/pull/8132)。核心收获：**配置一致、导出格式一致、引擎实际选层一致是不同证据；选层一致仍不等于权重数值或 logprob 一致。** 本文不是新缺陷报告或竞争实现。
 
-2026-10-23接续：[新版运行期检查](#新版运行期检查与指标哨兵)核对#8327对旧拆分的替代关系及#8306之上的保护；本机只运行其纯Python指标哨兵测试。下方旧#8132/#8306分析保留固定版本范围，不作为新版缺少相同功能的证据。
+2026-10-24接续：[写入前检查与失败握手](#写入前检查与失败握手)说明#8327新版将引擎格式检查前移，以及失败后排空IPC握手的边界；本轮只做源码与语法核对。此前[新版运行期检查](#新版运行期检查与指标哨兵)的纯Python哨兵结果属于旧head，不迁移为新版本验收。旧#8132/#8306分析也保留各自固定版本范围。
 
 2026-10-24补充：[VeOmni计算与通信边界](#veomni-低精度计算与通信边界)区分端到端RFC、已合并的ReduceScatter接线及torchao版本限制；通信微基准收益不能直接外推actor更新速度。
 
@@ -231,6 +231,32 @@ python -B experiments/scripts/verify_verl_quant_sentinel.py /path/to/verl-git
 当前API正文已追加cf32f6ae在1×B200上的vLLM/SGLang正常与scale故意破坏对照，以及带entropy bonus使权重实际变化的短跑；head a2012b59相对cf32f6ae只有两行文档图变动。旧网页正文仅述#8314硬件的状态不能覆盖这次补报。结果仍是作者报告，不是本项目验收或任意卡兼容证明；作者也另列主线vLLM BF16 expert默认backend拒绝、SGLang ignore前缀/精确匹配分歧，均未在本PR修复。
 
 真机接续更新[原M5量化条目](../../experiments/handoff-m5.md#verl-量化层审计新版复验)，不新增队列、拼接路线或改变其环境。本题完成新版关系与sentinel范围核对；其余数值/graph/实际backend仍按匹配资源和独立选型保留未测。
+
+## 写入前检查与失败握手
+
+**格式检查前移，缩小了错误写入范围；它没有把权重同步变成可回滚事务。** [#8327](https://github.com/verl-project/verl/pull/8327)在2026-10-24读取仍open，head `ba2852ec76e3a11cc90fc0883ffd70416c831661`、API目标base仍`d707198afbe5d699173cd27e60ff3f9221ce5a09`。相对上节旧head `a2012b598e2e5eabc9a79847ed0a245dc73bc478`，20文件1091增603删，已非只有文档更新。以下是新增公共检查、两引擎接线及IPC接收顺序的局部学习，不是完整PR review。
+
+### 检查位置与开关变化
+
+旧vLLM路径在训练侧判定后，向引擎询问模块的quant method；新版[SyncFormatCheck](https://github.com/verl-project/verl/blob/ba2852ec76e3a11cc90fc0883ffd70416c831661/verl/utils/quant_sync_format_check.py)在引擎进程中读取当前桶将写入的参数dtype。训练与导出仍由`TrainExportAudit`独立比较；引擎侧现在不必等待TE训练信号。两部分共用`VERL_QUANT_LAYER_AUDIT`。旧SGLang格式guard挂在`VERL_MXFP8_REFIT_CHECK`下的描述不适用于新版；后者继续控制数值自检，不能只保留一个旧开关字符串判断覆盖。
+
+公共检查将BF16、FP16、FP32归为高精度，其余dtype归另一类，只判断两类是否相同，不核对具体FP8格式、scale、位宽、布局或内容。它只收`weight`、`weight_packed`及两种融合expert叶子；scale不参与，未解析名称累计为`unmapped`而非通过。默认warn记录后继续写，raise在当前桶写入前抛错，0关闭。
+
+[vLLM名称解析](https://github.com/verl-project/verl/blob/ba2852ec76e3a11cc90fc0883ffd70416c831661/verl/utils/vllm/vllm_sync_format_check.py)处理HF mapper、融合projection、MoE holder与LoRA wrapper；PP缺失层不判断。`is_checkpoint_fp8_serialized=False`的在线量化路径直接跳过，因为它本来就接收高精度输入。[SGLang解析与接线](https://github.com/verl-project/verl/blob/ba2852ec76e3a11cc90fc0883ffd70416c831661/verl/utils/sglang/sglang_sync_format_check.py)在MXFP8/MXFP4/NVFP4专用refit loader内生效，不能外推未走该loader的FP8 blockwise路径。vLLM这里检查main model，虽另有drafter加载调用，也不能把检查覆盖扩大为drafter。
+
+### 完成一次检查与完成一次更新
+
+检查器驻留于model：`begin_sync`清除未完成轮的计数，每桶检查，正常后处理/finalize后`end_sync`标记finished；只有结束过且至少见到一桶才停止后续检查。这依赖后续同步格式保持不变的设计前提，不是每次更新内容认证。warn模式即使发现不一致，完整走到end也会finished；finished意为首轮检查流程结束，不等于一致或安全。失败后重新计数，也不恢复旧权重。
+
+新版[vLLM IPC接线](https://github.com/verl-project/verl/blob/ba2852ec76e3a11cc90fc0883ffd70416c831661/verl/workers/rollout/vllm_rollout/utils.py)把逐桶回调的普通`Exception`暂存，后续回调直接返回；接收器完成后再抛原异常，跳过正常后处理与`end_sync`。这避免回调异常直接截断ACK链。不是所有故障都走该路径：准备阶段、接收器自身和设备同步异常不在这个回调catch内，`BaseException`中断也不捕获。
+
+[真实接收器](https://github.com/verl-project/verl/blob/ba2852ec76e3a11cc90fc0883ffd70416c831661/verl/workers/rollout/vllm_rollout/bucketed_weight_transfer.py)仍逐桶接收metadata、重建tensor/view并同步设备；非末桶随后ACK，末桶在清理buffer后ACK。因此“后续桶不加载”不是“不接收、不物化、无传输成本”。此前成功桶已经可能改写参数，失败桶的prepare阶段也已发生；排空握手不提供参数回滚或可直接续训保证。
+
+### 新版本的证据范围
+
+作者正文把B200结果固定在`cf32f6ae`，明确其后的引擎检查迁移、probe skip告警及review修正尚未重跑硬件。当前七文件161项CPU通过是作者报告；[新增格式测试](https://github.com/verl-project/verl/blob/ba2852ec76e3a11cc90fc0883ffd70416c831661/tests/utils/test_quant_sync_format_check_on_cpu.py)使用形似引擎的torch模块，[IPC测试](https://github.com/verl-project/verl/blob/ba2852ec76e3a11cc90fc0883ffd70416c831661/tests/workers/rollout/test_vllm_weight_update_utils_on_cpu.py)用ScriptedReceiver/FakeFormatCheck计ACK，不能据此宣布真实ZMQ/CUDA链路验收。
+
+本机仅对七份相关生产文件和两份上述测试做AST/内存compile，共9份通过；未执行这些原测试或运行引擎、通信、设备。源码还显示sentinel新增`response_length/max`与配置cap条件，避免V1等长短回答因clip_ratio=1误报；缺cap或max时仍回退旧条件，空字符串override也改为继续查native量化声明。上节旧20例/5控制的结果不覆盖这些变化，本轮不重复旧矩阵或构造假引擎。复现范围与hash见[当日日志](../../diary/2026-10-24.md)，后续条件只更新[原M5量化入口](../../experiments/handoff-m5.md#verl-量化层审计新版复验)。
 
 ## VeOmni 低精度计算与通信边界
 

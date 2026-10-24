@@ -154,6 +154,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [verl 训练与 rollout 的量化层审计](verl-quant-layer-audit.md) — #8132审计/24项CPU单测及新#8306 refit覆盖对照；loader/marker与测试证据不可混用，真机待M5。
 - [verl ModelOpt模块忽略](verl-quant-layer-audit.md#modelopt-模块忽略与子量化器) — #8329保留直接叶子并扩展模块后代；两版各11组名称集合控制，非ModelOpt/原34测试或训练验证。
 - [新版MXFP8检查与指标哨兵](verl-quant-layer-audit.md#新版运行期检查与指标哨兵) — #8327替代旧拆分、基于#8306；默认warn不拦截。原20参数例/5边界通过，仅纯Python sentinel，非量化或kernel验收。
+- [量化写入前检查与失败握手](verl-quant-layer-audit.md#写入前检查与失败握手) — #8327新head把格式检查移到引擎逐桶写入前；完成ACK不等于回滚，首轮finished不等于通过。九份语法检查非引擎或通信验收，旧GPU/CPU报告不迁移。
 
 - [verl 异步训练策略版本与 logprob 对照条件](verl-async-logprob-provenance.md) — V1 separate-async的rollout/old/current来源、CPU快照路由、版本标签边界和最小观测契约；非训练根因证明
 - [verl Bypass字段与worker配置](verl-async-logprob-provenance.md#bypass-字段替换与-worker-的-loss-配置) — #8348原19配置例通过；概率锚点替换不等于远端loss切换，提前配置/显式loss保留/冲突拒绝，非worker或训练验收。
