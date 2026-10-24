@@ -235,6 +235,7 @@
 - [GRPO 实战指南](frameworks/grpo-practical-guide.md) — verl 框架 GRPO 训练完整流程、数据格式、配置参数、奖励函数
 - [SGLang 架构深度分析](frameworks/sglang-architecture.md) — RadixAttention 基数树、DSL 前端、FlashInfer 集成、vs vLLM 对比
 - [UniRL 调研（腾讯统一多模态 RL）](frameworks/unirl-survey.md) — 统一训练抽象、稀疏SDE、SFT游标、packed文本双轴与[按域奖励](frameworks/unirl-survey.md#按域奖励的零分与失败标志)；原CPU路由/统计区分零分、失败和非适用NaN，非服务或训练验收
+  - [AR种子与请求规划](frameworks/unirl-survey.md#ar-种子配置与逐样本请求) — #474已合并不等于#507完成；原生Sample/完整原解析器六组CPU入口控制，SGLang有确定性前提、n=1不减组fanout，非采样或复现验收
   - [IPC共识门与物化边界](frameworks/unirl-survey.md#原生-ipc-的共识门与物化边界) — #494区分source/chunk门；raw项可含逐expert DTensor重分布，边界覆盖须核真实producer，14次静态检查非通信/死锁验收
   - [监控奖励与目标隔离](frameworks/unirl-survey.md#监控奖励的目标隔离与失败契约) — #419已由社区接手；原解析/Part CPU控制表明小权重可经标准化成近单位优势，零权重仅适用于weighted_sum，失败契约不随之消失，非训练实测
   - [音频奖励与后续反证](frameworks/unirl-survey.md#音频奖励配方的评估协议与后续反证) — #475正文与社区同head晚期退化分开；原YAML/八模块静态核对，音频policy权重不自动改变KL，不是训练或质量复测

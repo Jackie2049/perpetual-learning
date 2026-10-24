@@ -1631,6 +1631,35 @@ Python3.12.13、requests2.34.2，执行原 `_judge_one` 完整方法及原prompt
 
 本轮没有调用任何judge endpoint、真实LLM、重试计时、模型或GPU/NPU，也没有复跑社区harness。公开关键词尽调未核实到专门的解析修复，但空检索不证明没有重叠工作；[#416](https://github.com/Tencent-Hunyuan/UniRL/issues/416)的可选provider文档议题不是解析规则许可。不新增provider/正则补丁、硬件队列或对外发布；[原方法复现、输出和hash](../../diary/2026-10-24.md)留日志，不升格永久工具。后续只有协议或具体协作范围明确后才评估贡献，不继续堆近义句测试。
 
+## AR 种子配置与逐样本请求
+
+**种子字段存在、请求携带种子、真实生成可复现，是三层证据。** [#507](https://github.com/Tencent-Hunyuan/UniRL/issues/507)报告Omni AR忽略显式seed及多副本初始RNG相关，报告者已表示自行提交修复，不因无assignee或编号PR检索为空认领。前置[#474](https://github.com/Tencent-Hunyuan/UniRL/pull/474)实际上已于2026-09-24合并为`67d33392254822556734fd3df76aaa668c52ee47`，删除用os.urandom补每请求seed的patch；它不等于完成#507的两项接线。本节固定当前main `6fd82cba13f52f394747832344039408699ea378`。
+
+### 当前解析器的入口前提
+
+[ARSamplingParams](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/types/sampling.py)默认seed=None。[SGLang原解析器](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/rollout/engine/sglang/utils/sampling.py)只有`enable_deterministic_inference is True`或`rl_on_policy_target is not None`才走确定性请求规划；显式seed却没启用这一路径会抛ValueError。启用路径但未设seed，则以42作为派生基准。不能把旧报告的“SGLang honor seed”理解为任何配置下设置seed就可运行。
+
+Python3.12.13/torch2.14.1 CPU，使用完整原Sample/Part与ARSamplingParams构造2个prompt、各fork3个兄弟，再直接调用两个完整原参数模块，得到以下六组入口行为；config属性为本地夹具：
+
+| 解析器与输入 | 每payload的n | 派生基准seed | 组fanout |
+| --- | --- | --- | --- |
+| SGLang，seed=None，未启用确定性路径 | 3 | None | 3 |
+| SGLang，seed=17，未启用确定性路径 | 拒绝 | — | — |
+| SGLang，seed=17，启用确定性路径 | 1 | 17 | 3 |
+| SGLang，seed=None，启用确定性路径 | 1 | 42 | 3 |
+| direct vLLM，seed=None | 3 | None | 3 |
+| direct vLLM，seed=17 | 1 | 17 | 3 |
+
+因此`n=1`不是把GRPO组减为一个样本。按[共享TextLMAdapter](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/rollout/engine/sglang/adapters/text.py)源码，有基准seed时按fanout展开请求，使每个叶子sample_id对应一个payload；无基准seed时保留每父prompt的n>1。`derive_sampling_seed`由base_seed与稳定sample_id派生，不使用当前排序或分片号；这个性质属于种子输入，不自动认证采样输出对任意batch、版本或调度不变。[direct-vLLM driver](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/rollout/engine/vllm/engine.py)复用该adapter，再把sampling_seed改名为seed，runtime交给原生SamplingParams；它没有沿用SGLang的确定性开关前提。
+
+### Omni 接线与引擎副本分开
+
+当前[HI3 AR StageSampling](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/rollout/engine/vllm_omni/adapters/hi3.py)仍只传temperature/top_p/top_k/max_tokens/logprobs；[Qwen3-Omni](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/rollout/engine/vllm_omni/adapters/qwen3_omni.py)另带可选stop_token_ids，但这两处AR参数构造都不读取ar.seed。HI3文件里另有diffusion的seed和`seed_from_sample_id`，不能因全文搜到seed就认为AR已接通。
+
+另一问题是引擎初始化：[UnifiedModelTrainer](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/trainer/unified_model.py)确有多引擎创建循环，r用于设备位置与AR/DiT分配；该循环未按r注入AR引擎seed。这不证明所有外部配置都用同一个seed，也不能将请求seed支持当成副本seed策略已经落实。
+
+#474作者报告H20单卡、vLLM/Omni0.28 sampler探针64行得到55种token，重设Torch/CUDA seed可复现整批，**这是作者的sampler级结果，不是本机或多副本模型验收**。本机没有构造adapter/tokenizer/引擎、build wire或提交请求，未执行RNG采样、旧探针、模型、Ray/DP、GPU/NPU或输出确定性测试。原Sample依赖加载只绕过tensor聚合入口的Ray导出；两个参数模块完整代码以独立模块名加载，不执行SGLang包的引擎注册入口。六个相关调用方模块只compile。[完整复现/hash](../../diary/2026-10-24.md)留日志；真机前提补[原M5条件参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不补种子方案、开多节点训练或竞争报告者工作。
+
 ## 内部 Pipe 的版本字段与请求身份
 
 **去掉一个恒定版本号，不等于去掉消息校验，也不等于其他协议不再需要版本。** [#568](https://github.com/Tencent-Hunyuan/UniRL/pull/568)于2026-10-12合并，merge `6624b28aab3299d116ae1e3d90aaa14926676911`；它删除vLLM内部driver/runtime重复的`protocol_version=1`，另清理两个模型的过期版本guard。PR明确把Cosmos3的H20问题留给[#567](https://github.com/Tencent-Hunyuan/UniRL/issues/567)，不是其硬件修复。2026-10-24核对的源码固定主线`6fd82cba13f52f394747832344039408699ea378`，当前接收/发送函数已名为`recv_request`与`send_response`，driver集中在`request`方法，不直接沿用历史PR中的私有函数名。
