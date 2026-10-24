@@ -195,12 +195,16 @@ PR #8313 重开后，维护者 **dajiaohuang（Wu Shuwen，NUS/TikTok 实习）*
 
 **已回复维护者**（PR comment [6342081989](https://github.com/verl-project/verl/pull/8313#issuecomment-6342081989)）说明修复与 response_length 决策。**注释精简**（用户指出 rollout.py 校验段注释冗余，代码自解释）——commit `2079ab0e` 删除 6 行冗余注释（config 测试 2 passed 复验）。PR head 现为 `2079ab0e`。**2026-10-23 CI 核验**：PR 检查仅 CodeRabbit（pass）与 CLA（pass），正式测试 CI 未运行（外部 PR 需维护者触发）；`mergeable_state=blocked` 实质为等待维护者 re-review + 分支保护，非代码冲突（非 dirty），我方无待办。
 
-### 2026-10-23 reporter review 闭环（Jackmeson1 三点全部采纳）
+### 2026-10-23 reporter review 响应（Jackmeson1 三点）——**已撤回（2026-10-24 用户决定）**
 
-PR 重开 + issue 回复后，reporter Jackmeson1 对 PR 做了三点高质量 review（10-23 14:30Z），全部采纳并实施（commit `eecd8975`，DCO，已推送 fork 分支）：
+PR 重开 + issue 回复后，reporter Jackmeson1 对 PR 做了三点高质量 review（10-23 14:30Z）。M1 当日全部采纳并实施（commit `eecd8975`：测试改名 on_cpu、middle 对齐 postprocess_data、显式期望列表、error 契约文档化）并回复；**用户 2026-10-24 决定撤回该响应**——用户要先自行 review 后再定，不应由 M1 直接修改/回复。
 
-1. **测试文件改名** → `test_cap_text_prompt_length_on_cpu.py`（CPU workflow 只收集 `*_on_cpu.py`；原名会被 vLLM/SGLang 目录级 pytest 收集而其 path filter 覆盖生产代码改动）。
-2. **middle 切分对齐 `postprocess_data`**：`head = prompt_length // 2`（奇数 cap 余量给尾，helper 一致）——**顺带从语义上消解了 cap=1 的 `-0` 边界**（head=0、尾预算=1，期望 `[9]`）。测试改为 **显式期望列表 cap 1–6**（原断言用 out 自身构造期望，错误结果 `[0,7,7,8,9]` 也能通过——reporter 发现的弱断言）。
-3. **训练器 error 契约澄清**（源码核实）：V1 `agent_loop_tq` 捕获 per-group 异常标 `failure`；**sync 模式失败组默认仍可采样、缺失轨迹 downstream padding**（refill 是 opt-in `sync_refill_failed_groups=True`）；async 模式 evict+refill。**`error` 不中止 V1 训练**——它把「静默截断的正确性隐患」转为「有账目可查的组级失败」。sync 默认值是否翻转属维护者决策，已文档化进 PR 描述。
+**撤回操作（全部完成）**：
+1. PR 回复评论 6383577598 已删除。
+2. PR 描述已恢复至撤回前版本（含 middle cap=1 边界修复 + 12 passed，与 head `2079ab0e` 一致）。
+3. fork 分支 `fix-8281-truncation-policy` force push 回 `2079ab0e`（eecd8975 保留于 fork 备份分支 `backup/8281-review-fixes-eecd8975`）。
+4. 服务器验证环境还原至 `2079ab0e` 状态（agent_loop `(cap+1)//2` + 旧名测试文件，13 passed 确认）。
 
-PR 描述已全面更新（middle 对齐、边界修复、error 契约、18 passed）。回复 Jackmeson1（PR comment [6383577598](https://github.com/verl-project/verl/pull/8313#issuecomment-6383577598)）。服务器 verl-e2e 重跑 **18 passed**。PR head 现为 `eecd8975`，CI 待触发。
+**Jackmeson1 三点内容存档**（供用户 review 参考）：①测试改名 on_cpu（CI 收集）；②middle 切分应与 `postprocess_data` 对齐（extra token 给尾，cap=1 期望 [9]），且原测试断言用输出自身构造期望属弱断言，建议 cap 1-6 显式期望列表；③V1 error 行为契约——agent_loop_tq 捕获 per-group 异常标 failure，sync 模式失败组默认仍可采样、缺失轨迹 downstream padding（refill opt-in），async evict+refill，`error` 不中止训练——PR 应澄清该契约。
+
+**当前状态**：PR #8313 OPEN、head `2079ab0e`、REVIEW_REQUIRED；reporter 三点意见未回应（等用户 review 后决策——采纳、部分采纳或另行讨论）。
