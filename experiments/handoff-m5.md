@@ -283,6 +283,8 @@ M5 最小下一步：先判断是否有获准使用的对应配置、完整 toke
 
 ## verl TransferQueue 启动资源参考
 
+路由层选择参考（2026-10-24，复用TQ入口，非新增训练队列）：[#8160](https://github.com/verl-project/verl/issues/8160)报告者已有内部实现；[M1固定main3c6d9b4源码学习](../notebook/frameworks/verl-transferqueue-worker-lifecycle-deep-reading.md#路由记录的层选择与全局坐标)只四模块AST/compile，无TQ/模型/通信。若M5日后已有获准匹配Megatron R3+PP工作且独立选用公开实现，先核实际schema、样本键/token顺序、全局层号及真实model router归属；CP/SP布局、末token占位与全层padding完成点另列，不用shape/均值指标认证身份。作者16节点结果不外推本机；缺公开patch、匹配环境/模型/资源，需部署/新schema或影响专项就停记未测，不另写切片映射、改生产数据或启动PP矩阵。任何上游回复/PR/PR-head推送（含fork）须逐项获用户明确同意，交接不代表接单或增加权限。
+
 状态：只留日后独立选题参考，不加入自动训练队列或代表接单。已有[#8340](https://github.com/verl-project/verl/pull/8340)，head `881fb96937f5ddfae5d894bb9a48538d1b049e1e`、base/祖先dc709afb；作者CPU/Ray复现使用TransferQueue `5fe4e49fe74aef544fe54da1fbeabf0b36d497eb`及Ray2.59.0。[M1原3配置测试/四类generated配对](../notebook/frameworks/verl-transferqueue-worker-lifecycle-deep-reading.md)通过，未运行Ray/tq.init。目的为区分U+1逻辑CPU基础预留、实际硬亲和节点和其他actor配额；不是设备离线或GPU性能结论。
 
 若M5已有获准TQ环境且恰需启动诊断，先固定verl/TQ/Ray版本与实际backend，核trainer.nnodes、最终U、候选alive节点/required_node_resource、逐节点可调度CPU及其他会话占用，再独立决定是否需要无模型的隔离CPU复现；保留actor状态、初始化完成/退出、命名控制器是否复用和清理证据。缺匹配环境/授权、需新集群部署/资源/模型或影响原任务即停记未测，不造生产PENDING、不全局ray stop、不自动应用候选或拉起训练。GPU/NPU和AReaL/#8313/#523原分工不变。

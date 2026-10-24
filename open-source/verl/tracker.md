@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责；四条社区评审已核验，补丁与回复待用户授权，见[原草稿](draft-8313-review-reply.md)。2026-10-24新增[DSA依赖边界](#dsa-依赖与有效输入范围)，官方已有kernel修复、升级兼容仍待决策；续核[后端选择与蒸馏观察](#后端选择与蒸馏数值观察)、[FSDP head替代方案](#fsdp-head-生命周期的替代方案)、[多轮SFT](#多轮-sft-的已有修复)及[Prime同题PR](#prime字典评分的重复覆盖)：已有作者、局部配置/执行保证与完整验收分开，不据新编号或空检索认领。[#8252评估](candidate-8252-weight-checker-rfc.md#现有验证能力与当前判断)已纠正旧“无回应/无验证”，不另实现；#8250仍待证据，#7913/clip旧RFC不重开。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责；四条社区评审已核验，补丁与回复待用户授权，见[原草稿](draft-8313-review-reply.md)。2026-10-24补充[R3路由层选择](#r3-路由传输的阶段选择)，报告者已有内部实现、仅做架构学习；新增[DSA依赖边界](#dsa-依赖与有效输入范围)，官方已有kernel修复、升级兼容仍待决策；续核[后端选择与蒸馏观察](#后端选择与蒸馏数值观察)、[FSDP head替代方案](#fsdp-head-生命周期的替代方案)、[多轮SFT](#多轮-sft-的已有修复)及[Prime同题PR](#prime字典评分的重复覆盖)：已有作者、局部配置/执行保证与完整验收分开，不据新编号或空检索认领。[#8252评估](candidate-8252-weight-checker-rfc.md#现有验证能力与当前判断)已纠正旧“无回应/无验证”，不另实现；#8250仍待证据，#7913/clip旧RFC不重开。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## R3 路由传输的阶段选择
+
+2026-10-24读[#8160](https://github.com/verl-project/verl/issues/8160)全文（open/0评论）；报告者weiziyoung已有内部patch、计划提交PR，不另认领。见[原TQ专题](../../notebook/frameworks/verl-transferqueue-worker-lifecycle-deep-reading.md#路由记录的层选择与全局坐标)：固定main3c6d9b4中bridge未按PP切字段内部层维，Megatron主路径按真实模型router的全局层号消费；局部紧凑张量不自动等价，VPP/非均匀布局、R2/R3及CP/SP需分开。四份AST/compile不是原测试/传输或作者128GPU报告复跑；有限编号/关键词检索未命中开放关联PR，不表示无人负责。
+
+目前只保存架构学习与[原M5条件参考](../../experiments/handoff-m5.md#verl-transferqueue-启动资源参考)，不开发新split/concat方案或自动迁移数据schema，不新增PP训练队列。若有实质公开实现或明确协作需求再核范围；上游回复/issue/PR及fork PR-head推送均须用户逐项明确同意。
 
 ## DSA 依赖与有效输入范围
 

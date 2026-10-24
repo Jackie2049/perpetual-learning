@@ -49,6 +49,32 @@ verl的`tq.init`位于其训练try/finally之前；若初始化本身未完成�
 
 模型权重走另一条控制链：[CheckpointEngine](https://github.com/verl-project/verl/blob/881fb96937f5ddfae5d894bb9a48538d1b049e1e/verl/checkpoint_engine/base.py)。naive的ColocatedCheckpointEngine保存/消费参数generator，其他backend可使用独立通信组；vLLM adapter还有分桶IPC通路。发送、接收、应用、cache恢复与版本标签仍是不同完成点，见[worker同步笔记](verl-worker-lifecycle-ray-weight-sync-reading.md#分桶接收失败与退出)和[一致性边界](verl-async-logprob-provenance.md)。
 
+## 路由记录的层选择与全局坐标
+
+**减少拉取的层数，需要同时保留消费者理解的层号；不能只把全局张量切小。** [#8160](https://github.com/verl-project/verl/issues/8160)提出将R3的`routed_experts`按层存成独立TQ字段，只获取当前流水线阶段需要的层。2026-10-24读取issue为open、0评论，报告者weiziyoung明确已有内部运行时patch并计划提交PR；这是已有贡献方向，不据未搜到关联开放PR另认领。本节固定主线`3c6d9b43b67c74ec343d77874cd8fa6e841523da`，不是对未公开patch的审查。
+
+### 字段选择发生在取数之前
+
+[register装饰器](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/single_controller/base/decorator.py)接入`tqbridge`；后者在调用原worker前将元数据变成实际TensorDict。[KV元数据转换](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/utils/transferqueue_utils.py)能先按`fields`调用`select_fields`，但`_async_meta_to_realdata`本身只是把传入元数据交给`async_get_data`，没有PP层区间选择。若元数据仍包含一个覆盖全部层的`routed_experts`字段，这个桥接层不会自动把字段内部的层维切窄；在已取出的TensorDict上切片也不能追回此次网络字节。
+
+这说明“字段级过滤”与“张量维度切片”是不同接口。提案先把层拆成字段，才有机会在取数前表达所需层；固定宽度层名是其保证排序的约定，不是当前bridge自动解析层号的功能。字段选中还须保持相同样本键、token顺序、dtype和层名到全局层号的映射，不能以拼回后的shape正确代替身份正确。本文没有运行TQ存储或核定实际wire字节。
+
+### 当前消费者不只依赖阶段偏移
+
+[Megatron forward](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/workers/engine/megatron/transformer_impl.py)在R3模式先对每条序列补齐可能缺失的末token路由，再构造replay mask，并向`set_router_replay_data`传入实际`unwrapped_model`。普通末token占位是token轴对齐，不是为缺失层提供映射。
+
+[replay消费者](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/utils/megatron/router_replay_utils.py)先按THD/BSHD、量化对齐与CP布局预处理，随后将整个层维的路由tensor搬到设备并做sequence-parallel scatter，再转成层优先。层数等于`tf_config.num_layers`时按全局层下标读，否则按MoE层序号读。有model参数的主路径遍历该模型真实router的`layer_number-1`，不是仅按全局router实例列表或固定`rank×L/PP`截取。直接交一个紧凑的局部层tensor，可能进入另一种索引解释，出现漏覆盖错误或错配；必须明确保留全局坐标或显式映射，不能把“更小”当作语义等价。
+
+无model的兼容路径才通过本地offset/end及router列表分配目标。层数helper还处理自定义pipeline layout、不均匀首尾阶段、embedding/loss占位与VPP；因此“每阶段拥有均匀连续的L/PP层”只是受限布局。提案已选择VPP、非均匀等情况回退，当前源码不能代替这些fallback的实现与验证。
+
+提案把恢复全层宽度放在SP scatter之后，意图避免把不消费的层提前搬运/处理；当前主线没有这项优化。层轴裁剪、token轴ragged/CP/SP重排、专家ID位宽是三个不同维度：改一维不能认证其他维未错。也不能把R3路径结论直接迁移到仅含MoE层的R2或其他后端。
+
+### 性能报告与本项目范围
+
+作者报告48层、TP4×PP4×CP8、16节点/128GPU配置中，单元fan-in由157GB降至39GB，`timing_s/ref`从94.6秒降至65.7秒；这是内部patch与特定栈的结果。12/48层说明路由payload约四分之一的来源，不代表整批所有字段、全部网络/H2D字节或整步时间都降四分之三。均值logprob差和grad norm接近也不是逐token路由、loss与梯度完全相等的证明。
+
+M1只阅读issue、有限编号/关键词PR检索及上述调用点，对bridge、router工具、Megatron engine与register四个原模块做AST/内存compile；没有执行原测试、worker、TQ、Megatron、collective、路由或性能实验，不造PP/TQ替身来验证尚未公开的patch。版本/hash留[当日日志](../../diary/2026-10-24.md)；需要匹配资源的后续条件补[原TQ交接](../../experiments/handoff-m5.md#verl-transferqueue-启动资源参考)，不新增训练队列或竞争实现。对外协作仍须用户逐项授权。
+
 ## 配置验证范围与复现
 
 [复查脚本](../../experiments/scripts/verify_verl_tq_config.py)固定base/head Git对象，用真实Hydra合成完整配置树；只AST执行原`set_default_tq_storage_units`，将该helper暴露给完整原测试模块，跳过main_ppo其余导入和Ray装饰器。没有改原测试体或用dict替代DictConfig，也没有导入torch、Ray、TransferQueue或构造调度器替身。

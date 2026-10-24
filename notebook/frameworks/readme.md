@@ -231,6 +231,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [verl 源码架构阅读](verl-source-reading.md)
 - [verl Tinker Worker Primitives (PR #6717) — 源码级深度阅读](verl-tinker-worker-primitives-reading.md)
 - [verl TransferQueue 数据交换与启动资源](verl-transferqueue-worker-lifecycle-deep-reading.md) — #8340原3配置测试/四类generated配对；逻辑CPU预算非物理容量，撤回旧TQ即权重同步/全链路GPU零拷贝与性能外推。
+- [R3路由记录的层选择与全局坐标](verl-transferqueue-worker-lifecycle-deep-reading.md#路由记录的层选择与全局坐标) — #8160已有内部实现；取数前字段过滤、全局层号及CP/SP token布局分开，不能仅切窄tensor；四模块语法检查非传输或吞吐验收。
 - [verl x vLLM MRv2 Interaction: RTX 4090 GRPO Training Impact](verl-v0.23-mrv2-interaction-reading.md)
 - [verl v0.8.0 Features 源码级深度阅读](verl-v0.8-features-reading.md)
 - [verl v0.8 VeOmni OPD + FlowGRPO — Analysis](verl-v08-veomni-flowgrpo-reading.md)

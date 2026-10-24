@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 R3路由层选择学习收束（2026-10-24）**：起始743e531同步无新增；#8160已有weiziyoung内部patch/拟提PR，非无人认领。见[原TQ专题](notebook/frameworks/verl-transferqueue-worker-lifecycle-deep-reading.md#路由记录的层选择与全局坐标)/[tracker](open-source/verl/tracker.md#r3-路由传输的阶段选择)：取数前字段选择与tensor内层维裁剪分开，当前model路径按真实router全局层号读，不只按offset；CP/SP token轴及R2/R3语义独立。四原模块AST/compile非TQ/collective/路由或性能验证，作者157→39GB不等于整批/整步收益。条件补原M5 TQ入口，不造替身/竞争split方案或新增训练；下轮转独立需求/实质反馈，不堆层切片矩阵或重跑既有采样校正。
+
 - **M1 DSA依赖边界学习收束（2026-10-24）**：同步03046da→dc46974仅追加，历史保全；转读#8238全文/两评论，官方#407已合并且1.27源码含奇数标量回退，不另写kernel修复。见[原DSV4专题](notebook/frameworks/verl-6791-dsv4-megatron-lite-reading.md#dsa-奇数输出与依赖版本)/[tracker](open-source/verl/tracker.md#dsa-依赖与有效输入范围)：压缩KV宽度与每行valid lengths分开，旧assert需选中向量2，不是任意奇数；main锁1.26/DSL4.6.2不等于实际安装，历史1.24.1足够说明已限定。三模块AST/compile和锁解析非kernel/GPU/全依赖升级验证；条件记M5，无自动部署/模型或新队列。有限检索不宣布无人负责，任何上游可见动作仍逐项待用户同意；下轮转独立需求/实质反馈，不堆奇偶矩阵/假kernel或重复已测GRPO。
 
 - **M1日志保全与检查器修补（2026-10-24）**：本轮同步65a2a8c→fdffb89后发现日记被缩成两条，优先按58b0d20恢复全部84个历史条目，保留最新19:51授权铁律及19:49撤回记录；恢复历史不恢复任何已撤回对外动作。扩展[原日志工具](tools/diary/readme.md)拒绝“新增正文同时移除旧条目”、清空旧正文及日期文件删除/改名，允许原正文一对一改标题；仅本克隆hook已核实，不承诺远程或其他克隆拦截，同标题非空改写仍需人工判断。最新上游边界已重读：任何可见回复/改PR及其fork head推送须逐项明确同意，自有本仓库正常推送不变。未改专项或开展GPU/SSH；后续转独立技术问题，不反复做相同状态扫描。
