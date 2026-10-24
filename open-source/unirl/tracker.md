@@ -9,7 +9,7 @@
 
 **【价值评估】** 7 / 10 — 甄别"未认领、无 PR、可落地"的开放空间，避免重复投入已有人认领的 RFC。
 
-**【进展】** #523 的我方 fork PR 已获用户认可，测试与 e2e 正式指派 M5；M5 已闭环 L0（四项断言 + pristine 对照），L1 仍待 ≥8 卡及获准权重/存储，见[M5交接](../../experiments/handoff-m5.md)。#567 待匹配 H20；#470/#481/#484已有作者或验证条件。2026-10-24 已核 #515 的[维护者澄清](#补充尽调与派发边界)、#450/#537 的[已合并分项](#开放-rfc-的已合并分项)、[需求边界](#标题占位与第三方接入边界)、[TP后续](#旧-tp-限制与后续实现)及[parity分拆](#parity-分拆与验证矩阵)，不据状态或单个相等标志认领/判断功能就绪。
+**【进展】** #523 的我方 fork PR 已获用户认可，测试与 e2e 正式指派 M5；M5 已闭环 L0（四项断言 + pristine 对照），L1 仍待 ≥8 卡及获准权重/存储，见[M5交接](../../experiments/handoff-m5.md)。#567 待匹配 H20；#470/#481/#484已有作者或验证条件。2026-10-24续核[#529新反馈与路径](#补充尽调与派发边界)，同步AR基准不经过拟改pool，普通Agentic回合不重复派发；另有#515澄清、#450/#537[合并分项](#开放-rfc-的已合并分项)及[parity分拆](#parity-分拆与验证矩阵)。不据空assignee、单个相等标志或错位基准认领/认证功能。
 
 **【大白话讲明白】**
 
@@ -44,12 +44,14 @@ UniRL 仓库当前 **73+ open issues**，其中大量是带 `help wanted` 标签
 
 | 线索 | 可核实的现状 | 本项目处理 |
 |---|---|---|
-| [#529 sibling affinity](https://github.com/Tencent-Hunyuan/UniRL/issues/529) | 无assignee；MciG-ggg已[公开表示准备实现](https://github.com/Tencent-Hunyuan/UniRL/issues/529#issuecomment-6340056553)初版RolloutManager group_packing，尚非维护者正式指派 | 暂不竞争；接续前先核贡献者进展和实际路径，不据空assignee认领 |
+| [#529 sibling affinity](https://github.com/Tencent-Hunyuan/UniRL/issues/529) | 无assignee；MciG-ggg在[10-24新反馈](https://github.com/Tencent-Hunyuan/UniRL/issues/529#issuecomment-6381413964)建议先定Agentic siblings范围/严格或软亲和，并指出同步基准不经过pool；仍待讨论，不是已获指派或已实现 | 暂不竞争；按当前实际路径判断范围，不据空assignee或原RFC错误前提接单 |
 | [#458 Part.control](https://github.com/Tencent-Hunyuan/UniRL/issues/458) | 无assignee、0评论；问题正文明确是设计债而非#263用户回归 | 设计方向待确认，不创建通用deep-merge补丁或声称可发布；须先确定每hop所有权、显式继承/替换/清除及兼容范围 |
 | [#473 vLLM/Omni 补丁清理](https://github.com/Tencent-Hunyuan/UniRL/issues/473) | 2026-10-23重核仍OPEN/无assignee，但维护者已[明确分工](https://github.com/Tencent-Hunyuan/UniRL/issues/473#issuecomment-5945617113)：幂等与DiT委派、同步Omni透传归MinhaoLi0318；HI3版本gate与MoE workspace key留维护者 | 不把空assignee当空缺，不升级环境/删shim或另开竞争PR；贡献者[10-03回报](https://github.com/Tencent-Hunyuan/UniRL/issues/473#issuecomment-5966804614)的stub身份检查不是当前真实0.28组合验收 |
 | [#515 冻结教师读取失败](https://github.com/Tencent-Hunyuan/UniRL/issues/515) | 2026-10-24核正文/全部3评论，已assign inaniloquentee；维护者[澄清](https://github.com/Tencent-Hunyuan/UniRL/issues/515#issuecomment-6138540697)当前启动链已有fail-fast。作者[#575](https://github.com/Tencent-Hunyuan/UniRL/pull/575)于10-13合并，实际收窄为各rank教师权重hash一致性，不是为原报告新增错误共识 | 不据原帖另开修复；异常返回、内容分歧和读取不返回是不同问题，后者不因#575合并而解决。见[当前源码范围](../../notebook/frameworks/unirl-survey.md#教师指纹与控制器失败传播)，本机仅纯hash函数CPU控制，不是Ray/Gloo或教师训练验收，不新增M5队列 |
 
-#529的派发粒度不能一概而论：[AsyncARTrainer](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/trainer/async_ar.py)沿ARTrainer构造fork后的完整请求，再由async循环按`Sample.split()`拆成root树提交；[Sample.split](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/types/sample.py)保留该root的所有children。相反，[AgenticTrainer._collect_groups](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/trainer/agentic.py)将每个prompt重复K次成为独立任务。pool按任务计一个slot，并不在内部拆K个row。因此“普通异步AR的K个siblings必被pool散到K个worker”不能直接由most-free策略推出；同worker也不保证KV已就绪、命中100%或吞吐提高。同步DP_SCATTER、engine内部执行及session续跑须另核，见[原单位说明](../../notebook/frameworks/unirl-survey.md#队列深度不是一种单位)。
+#529的派发粒度不能一概而论：[AsyncARTrainer](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/trainer/async_ar.py)沿ARTrainer构造fork后的完整请求，再由async循环按`Sample.split()`拆成root树提交；[Sample.split](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/types/sample.py)保留该root的所有children。相反，[AgenticTrainer._collect_groups](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/trainer/agentic.py)将每个prompt重复K次成为独立任务。pool按任务计一个slot，并不在内部拆K个row。因此“普通异步AR的K个siblings必被pool散到K个worker”不能直接由most-free策略推出；同worker也不保证KV已就绪、命中100%或吞吐提高，见[原单位说明](../../notebook/frameworks/unirl-survey.md#队列深度不是一种单位)。
+
+2026-10-24按新增第4评论接续[完整路径核对](../../notebook/frameworks/unirl-survey.md#路由策略与基准入口)：同步AR的DP_SCATTER按root树分片并绕过pool；原同步SGLang配方不能测仅改pool的效果。普通工具turn在本地harness内复用inner.generate，ruiling-smartbear已收回其session-affinity认领前提；这不保证manager重新提交的carried work终身留在原worker。MciG-ggg仍愿在范围/策略明确后实现，不另开发packing、session映射或发布评论；只留原M5条件参考，不启动缓存基准。
 
 #458同样不能只凭浅合并就认定bug：[prepare_input_sample](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/trainer/base.py)顶层覆盖，而PE显式传空ar/chat袋以擦除父输入控制；无条件deep merge会保留本来要清掉的字段。单个字典算法无法替代跨trainer/engine的所有权设计。本轮只做源码和社区状态尽调，无执行、性能/缓存验证、认领或对外操作，不为这两个线索排M5实验。
 

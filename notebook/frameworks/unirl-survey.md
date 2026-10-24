@@ -800,6 +800,25 @@ native AR/DiT每个任务提交一个prompt树，所以trainer日志用prompts�
 
 2026-10-23对[#529](https://github.com/Tencent-Hunyuan/UniRL/issues/529)的[候选尽调](../../open-source/unirl/tracker.md#补充尽调与派发边界)补核固定主线6fd82cba：异步AR先fork再按root树split，Agentic则显式展开K份独立任务，pool一次slot对应整个task。“most-free必把任意GRPO siblings拆散”不由前者推出；同worker也不自动保证KV就绪或100%命中。本轮未执行pool、Sample、engine或缓存实验，且已有贡献者公开表达实现意向，不新增并行方案。
 
+### 路由策略与基准入口
+
+**基准必须实际经过被改动的调度器，缓存命中也不能替代吞吐与尾延迟。** [#529在2026-10-24的新反馈](https://github.com/Tencent-Hunyuan/UniRL/issues/529#issuecomment-6381413964)建议将首轮范围收窄到Agentic siblings，并指出原RFC指定的同步AR配方不会经过RolloutPool。这是贡献者MciG-ggg提出的范围讨论，尚非维护者批准的策略或性能结果。固定main仍为`6fd82cba13f52f394747832344039408699ea378`。
+
+| 路径 | 当前派发单位与调用链 | 修改RolloutPool能验证什么 |
+| --- | --- | --- |
+| 同步AR | ARTrainer直接调用rollout.generate；SGLang声明DP_SCATTER，经pytree_chunk→Batch.chunk→Sample.slice按完整root树分片 | 此路径不经过pool，原同步基准不能观测pool改动效果 |
+| 异步AR | ARTrainer先fork K个siblings，共享async循环再按root树split，一个完整树提交为一个task | pool已不把该task内K个siblings分给不同launcher；不能按K条独立task解释slot负载 |
+| Agentic siblings | AgenticTrainer把每个root重复K次并分别submit | most-free确可将这些独立轨迹分到不同launcher；收益仍取决于前缀复用与负载 |
+| 单条Agentic普通回合 | 一个generate中运行本地harness，policy绑定inner.generate，工具后仍调用该绑定 | 工具回合本身不重新进入manager，不能据原RFC断言每回合频繁跨worker迁移 |
+
+[同步入口](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/train_ar.py)明确构造ARTrainer；原`qwen3_grpo_4b_base_dapo_sglang.yaml`运行说明使用这个入口。因此即使测出该配方tok/s变化，也不能直接归因于只改pool的group_packing。[async提交](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/trainer/async_rollout.py)、[Agentic提交](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/trainer/agentic.py)以及[pool选择launcher](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/rollout/manager/dispatch.py)分别决定任务粒度和负载单位，不是算法名GRPO决定走哪个调度器。
+
+[AgenticRolloutEngine](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/rollout/engine/agentic/engine.py)构造本地inner，HarnessContext保存其generate绑定；[ToolAgentHarness](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/rollout/harness/tool_agent.py)在同一次run内循环generate/env.step/observe。ruiling-smartbear也已[收回此前普通回合需要session路由的判断](https://github.com/Tencent-Hunyuan/UniRL/issues/529#issuecomment-6376664385)。这不提供全生命周期黏着保证：manager的quiesce/finish及async权重发布会处理carried任务，不能从普通turn链推定重新提交、故障重试或跨版本一定仍用同一worker；本轮也没有证明这些场景必须增加新的映射方案。
+
+同worker只是位置条件，不保证前缀KV已完成、仍驻留或命中100%；集中siblings也可能降低调度弹性，使较慢工具调用拖长尾部。后续若明确选此题，应先证实真实Agentic请求进入目标pool并记录分派，再分别观察cache/prefill、完成吞吐和尾延迟，而非沿用不经过pool的同步配方认证效果。严格packing或软亲和仍待社区定范围，不在本地演化竞争调度器。
+
+本轮只核正文/全部4评论和上述源码，不运行pool/Handle/harness、模拟worker/cache或做GPU/NPU测量。[M5原条件参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)只补基准前提，不新增硬件队列；[完整接续证据](../../diary/2026-10-24.md)留日志。旧原生Sample/指标控制不作为本轮路由或缓存验收。
+
 ### lag 与横轴各有自己的时刻
 
 [CompleteGroups.oldest_output_version](https://github.com/Tencent-Hunyuan/UniRL/blob/f404c9024c00bbf8a5d05315153444cee894865a/unirl/rollout/manager/buffers.py)只取ready存储中generated Part的最小版本；不覆盖queued/running/completed-unrouted。trainer以`train_version - oldest`生成max_ready_lag_updates，单位为optimizer update，不是秒、rollout轮数或所有在途工作最大lag。没有generated Part则为None；[同版logger](https://github.com/Tencent-Hunyuan/UniRL/blob/f404c9024c00bbf8a5d05315153444cee894865a/unirl/utils/wandb_logger.py)跳过None，缺点不能补成0或沿用上个值。

@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1路由新反馈接续收束（2026-10-24）**：同步4890f7f无新增；#529新增07:24Z评论将候选范围提议收窄Agentic siblings，仍待社区定策略。见[原调研](notebook/frameworks/unirl-survey.md#路由策略与基准入口)/[tracker](open-source/unirl/tracker.md#补充尽调与派发边界)：固定main6fd82cba源码证实同步AR绕pool、async AR完整root树一task、Agentic siblings各task，普通turn本地inner不重派；carried work另有manager入口，不能扩大为全生命周期黏着保证。原同步配方测不到仅改pool的效果；亲和/命中/吞吐分开，无pool/harness/缓存或设备执行，原M5条件参考已补但无新队列，不改专项/演化竞争路由。下轮转独立实际需求或实质反馈，不堆路由/cache替身或无变化状态扫描。
+
 - **M1图片payload生命周期学习收束（2026-10-24）**：同步25d927d无新增，#7391已有同报告者#7400不竞争；固定head dc721cfd/祖先09ac3725而非目标3f9d4c0。见[原数据流笔记](notebook/frameworks/verl-dataproto-data-flow-reading.md#图片字节与解码对象的生命周期)：原方法AST载体接真实Pillow/原五例，候选5过、祖先和main3c6d9b4各4过/清理断言失败；bytes输出、源字典、解码流与仍保留的PIL分开。纠正原零拷贝/开销忽略概括和230KB错误算例，五张量明确dtype合480KiB，非进程内存。无完整dataset/processor/Ray/RSS/训练或设备执行，不改M5专项/新排队；下轮转独立需求或实质反馈，不堆图片格式/序列化替身或借path-only外部结果认证本候选内存收益。
 
 - **M1 VeOmni低精度路线尽调收束（2026-10-24）**：同步5e6857d无新增；#8342完整RFC/1评论、#8186全8评论及相邻实现表明作者已有原型，维护者建议先向VeOmni讨论，不认领。见[原量化笔记](notebook/frameworks/verl-quant-layer-audit.md#veomni-低精度计算与通信边界)/[tracker](open-source/verl/tracker.md#veomni-端到端低精度路线)：主线3c6d9b4已含#8330默认off梯度RS接线，非参数AG/低精度GEMM；torchao0.18标准rowwise/float8 AG有源码guard。作者通信微基准加速与actor无加速、旧GPU与最终树CPU证据分开。本轮仅资料/源码，无框架/量化/通信执行，补原M5条件参考不排新队列。下轮转独立实际需求或实质接口变化，不堆配置替身、另写统一量化方案或重复种子/补样控制。

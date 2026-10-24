@@ -13,6 +13,8 @@ GPU/NPU 的访问、环境与实验由 macbook-M5 Agent 负责。M1 遇到需要
 
 ## UniRL 联合路径的资源与身份边界
 
+路由基准参考（2026-10-24，非新增实验队列）：[#529新反馈](https://github.com/Tencent-Hunyuan/UniRL/issues/529#issuecomment-6381413964)及[M1固定main6fd82cba源码学习](../notebook/frameworks/unirl-survey.md#路由策略与基准入口)确认原同步AR配方不经过RolloutPool；异步AR整树一个task、Agentic siblings独立task，普通工具turn仍在本地inner内，不等于所有重提交都黏着。无pool/引擎/cache或硬件执行。只有M5日后独立选择且已有获准匹配Agentic工作，先核真实请求确经目标pool、记录root/trajectory到launcher，再按既有范围分别观察cache/prefill、完成吞吐与尾延迟；不借同步配方或同worker标志认证收益。缺环境/数据/资源、需新部署下载或影响专项即记未测停止，不另写packing/session方案、不启动新矩阵，参考非接单。
+
 AR种子参考（2026-10-24，非新增采样/多节点实验队列）：[#507](https://github.com/Tencent-Hunyuan/UniRL/issues/507)报告者已表明自行实现，前置[#474](https://github.com/Tencent-Hunyuan/UniRL/pull/474)已合并；[M1当前main6fd82cba入口学习](../notebook/frameworks/unirl-survey.md#ar-种子配置与逐样本请求)仅原生Sample/两完整解析模块六组CPU控制及调用方源码，无RNG/模型或引擎运行。若M5已有获准匹配AR观测且独立选用，先核backend实际版本、显式请求seed与engine seed、稳定sample_id、SGLang确定性入口及seeded n=1的wire展开；Omni AR与diffusion seed分开记录。再按既有范围决定是否需配对生成证据，不以输入种子相同认证输出或副本独立。缺匹配环境/权重/资源、需下载部署或影响专项即记未测停止，不复跑作者H20 probe、改报告者方案或自动开多节点/新矩阵；参考非接单，不改变M5单一负责的专项。
 
 vLLM native TP-IPC边界参考（2026-10-24，非新增实验队列，与Omni逐卡TP1副本分开）：已有[#494](https://github.com/Tencent-Hunyuan/UniRL/pull/494) head `0832ea6b382bbd1ee024c171343794bf1cf1bdef`、base/祖先 `a77575acaaf3ed54386b866747dda2a22d5b6b0c`；[M1源码学习](../notebook/frameworks/unirl-survey.md#原生-ipc-的共识门与物化边界)仅14次AST/compile，未执行作者8项替身或任何通信。若M5日后已有获准匹配Qwen3-MoE全参、FSDP2、同节点actor/rollout UUID及native vLLM环境且独立选用，先记录实际DTensor slice类型/placements、每次redistribute与source/chunk控制门顺序；raw项末尾不自动证明覆盖逐expert通信。再按需要有界核实际发布/退出及存储释放，正常发布与失败停止分开。缺匹配软件/设备/权重、需部署下载或影响专项则记未测停止，不在现有训练注入错误、破坏权重、自动应用候选或并行改门设计；本参考非接单，不影响#523/AReaL/8313及DeepInfer优先级。
