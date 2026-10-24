@@ -267,6 +267,25 @@ Python3.12.13 / torch2.9.1 / Pillow12.0.0。本机原 CPU 环境缺 Pillow，使
 
 脚本锁定七个完整源文件 SHA256（包括仅读的 service.py）。关键 hash：per_domain.py `6aca28149c4dcc48b3f8e29e74ef7195daa997aa833daac778618d4f3b2b73f8`；mc_exact_match.py `452413e2c7db3cf722fd3a887f660a61e5a13513f015a539f103b0a32d1cf526`；wandb_metrics.py `e92b9c40ebab4b78759ad15e36db4a833f853f6b122db4e395577966cc150648`。本题收束，不堆 NaN/路由变体，也不将组件统计等同于服务验收。
 
+## 可选提示与模式必需条件
+
+**字段可以缺省，不代表每种评分都能缺它；某种评分需要文本，也不代表共享入口应强制所有模式提供文本。** [#497](https://github.com/Tencent-Hunyuan/UniRL/pull/497)将`RewardBackend.prompts()`从缺所选prompt返回`[]`改为抛ValueError，并删LLMJudge的一处空串回退。2026-10-24读取仍open/non-draft，head `104aad6e1f3cae2bd4461db6d59e99015e394415`、base/实际祖先 `c8af5d699c81fb02a0086e34b342b1efacc7d431`，三文件9增2删。[维护者10-19评论](https://github.com/Tencent-Hunyuan/UniRL/pull/497#issuecomment-6259340578)明确不倾向按现状合入：现有数据源已有文本祖先、全局加固会影响ImageBind非文本模式，且未完整处理变成死分支的下游回退。open状态不能当作方案已获认可。
+
+固定主线`6fd82cba13f52f394747832344039408699ea378`的[RewardRequest](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/types/reward.py)允许original/generation prompt分别为None，但所有**已提供**字段须同行数。[RewardService](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/reward/service.py)遇文本turn才填这两种语义；[ImageBind原方法](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/reward/local/imagebind.py)则无条件先取prompts，再计算need_text。其默认audio_video模式不使用文本嵌入。因此“取prompt”不能自动解释为“该模式必须使用prompt”；这里是原调用路径的推论，不是已运行ImageBind模型的回归报告。
+
+Python3.12.13 / torch2.14.1 / Pillow13.0.0，在原生CPU Audios、Videos和RewardRequest上，AST提取base、候选head、当前main的完整`prompts`方法，各给同一组六输入；self只提供prompt_source，不构造后端或模型：
+
+| 请求与选择 | base与当前main | 候选head |
+| --- | --- | --- |
+| 合法一行音视频、无任何prompt；选original或generation（两项） | `[]` | ValueError |
+| 两种prompt都在；分别选择original/generation（两项） | 返回对应文本 | 保持一致 |
+| 只有original，却选generation | `[]`，不跨语义回退 | ValueError |
+| generation存在，文本为`""` | `[""]` | `[""]` |
+
+另给一行媒体、两行generation prompt，原RewardRequest在构造时就拒绝。候选检查的是None，不是空字符串、批大小或评分质量；已有长度校验也不保证模式所需模态齐全。输入契约控制与源码路径合起来支持维护者指出的兼容性风险，但不证明候选在所有配方可达，也未穷尽核验所有内置数据源。
+
+复现代码见[当日日志](../../diary/2026-10-24.md)。原类型正常导入，仅跳过tensor包的Ray transport聚合初始化；没有执行ImageBind构造/预处理/模型、RewardService、Hydra或远端评分，也未复跑作者所述全路径检查。已有作者与明确评审意见，不另起竞争的prompt校验/回退修复或新硬件任务。head base.py SHA256为`89bcb5ba33d094a6ab5258175f4d74db8b846e608867391c6ba4318d1eccb833`；主线ImageBind为`ff1bdc783e85c505bff25e857834aae256d8d929c4ff8680d28c68edb55b8c0c`。
+
 ## 奖励能力校验与模型加载
 
 **配置能声明一种评分能力，不等于模型已能加载；把加载延后，也不等于整个构造过程没有副作用。** 2026-10-22只读[#621](https://github.com/Tencent-Hunyuan/UniRL/pull/621)，读取时open、未合并，固定head `27cb49307fc89dd60331f86d23cadb2e8cc4b0cb`、base及官方compare祖先`6fd82cba13f52f394747832344039408699ea378`（ahead1/behind0），7文件40行新增。它将本地reward的模型物化从叶子构造器移到服务层校验之后，不修改奖励公式或配置项。
