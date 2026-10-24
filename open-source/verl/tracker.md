@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[TRL边界探测](#trl-边界探测的已有修复)：#7932已有作者，三版原方法AST／签名与1.13模块移除已核，不当原测试或模型隔离验收、不另实现。[共享参数加载](#共享参数加载的已有修复)与数据子集接线的反馈仅留项目内，无上游发布。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[多语言分词](#多语言分词的官方修复与验证范围)：#49116类路由修复已合并，toy BPE与真实AutoTokenizer核本地行为，非公开checkpoint或训练质量验收、不改pin。[共享参数加载](#共享参数加载的已有修复)与数据子集接线的反馈仅留项目内，无上游发布。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## 多语言分词的官方修复与验证范围
+
+2026-10-25读取[#8030](https://github.com/verl-project/verl/issues/8030)及唯一评论，编号查重无verl PR；问题在Transformers，已有官方[#49116](https://github.com/huggingface/transformers/pull/49116)合并（a4fe1d5b），不是关闭未合并的[#49077](https://github.com/huggingface/transformers/pull/49077)regex kwarg方案。读官方#49066及全部三评论，另核#49114／#49341仍OPEN未合并；不据未发布候选重写verl tokenizer。
+
+见[原数据流专题](../../notebook/frameworks/verl-dataproto-data-flow-reading.md#多语言预分词与类路由)：TF5.20.2／tokenizers0.23.3真实本地toy BPE，三句组合标记文本round-trip均正常但IDs有别；已知qwen3_5 model_type时，显式Qwen2声明仍经Auto纠正并与原backend一致。不把issue的5.20.1具体衍生checkpoint反馈泛化到全部显式声明，也不以本例否认其具体结果；无公开checkpoint／原Hub测试／actor-rollout或训练质量验收。未改全局pin、安装依赖或新增M5队列，上游任何动作及PR-head推送仍逐项待用户明确同意。
 
 ## TRL 边界探测的已有修复
 

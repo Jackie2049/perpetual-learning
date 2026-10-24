@@ -331,6 +331,35 @@ Python3.12.13／torch2.14.1、torchdata0.11.0、TensorDict0.15.2、pytest9.1.1�
    → 如长文本prompt → 可能需要分chunk传递meta
 ```
 
+## 多语言预分词与类路由
+
+**文本能往返解码、训练与rollout的IDs相同，都不能独自证明与checkpoint分词约定一致。** [verl #8030](https://github.com/verl-project/verl/issues/8030)关联Qwen新版本的组合标记问题。固定verl main `3c6d9b43`仍钉Transformers5.12.1、SGLang0.5.20；原 `hf_tokenizer`调用AutoTokenizer后主要校正pad，没有自建多语言regex修复。本轮不改pin或运行引擎。
+
+### 已合并修复选择类而非修改 Qwen2 默认规则
+
+2026-10-25核对官方 [Transformers #49066](https://github.com/huggingface/transformers/issues/49066)已关闭；最初读取kwargs里regex的 [#49077](https://github.com/huggingface/transformers/pull/49077)关闭**未合并**，不能当作当前修复。实际已合并的是 [#49116](https://github.com/huggingface/transformers/pull/49116)，merge `a4fe1d5bde6fd245899d9b0486d2dc25b76f90c7`：为部分Qwen model_type补注册映射，并加入“Hub声明类不正确”的例外集合，使AutoTokenizer可选择Qwen3_5Tokenizer。它没有把所有Qwen2Tokenizer的默认regex改成新规则，避免影响旧checkpoint的约定。
+
+固定TF5.12.1 `ddb849abe009d1089e6c691bfc897f27211c663c`的Qwen2默认regex不含Unicode `\p{M}`；本机TF5.20.2的同一默认值仍相同。refined规则把组合标记纳入字母连续段并从符号段排除。类别路由、实例内预分词规则、BPE词表／merge与最终IDs是不同层，不能只比JSON是否相同或token数量。
+
+### 真实 CPU tokenizer 的局部对照
+
+Python3.12.13／Transformers5.20.2／tokenizers0.23.3，离线使用真实Rust预分词／BPE与AutoTokenizer。本地toy BPE只在以下四句上训练、vocab_size400、ByteLevel初始字母表、NFC；不含Qwen checkpoint文件或权重，也不是预训练词表复现。先按refined规则保存tokenizer.json，配置声明 `tokenizer_class=Qwen2Tokenizer`、`model_type=qwen3_5`。
+
+| 输入 | 旧／refined预分词片段数 | 直接Qwen2与原toy backend IDs相同 |
+| --- | --- | --- |
+| สวัสดีครับ | 4／1 | 否 |
+| नमस्ते दुनिया | 7／2 | 否 |
+| مُحَمَّد | 5／1 | 否 |
+| hello world | 2／2 | 是 |
+
+表中是**预分词片段数，不是模型token数**。四句均能在两路径decode回原文；组合标记三句的完整ID列表却不同。直接Qwen2即使给refined kwarg仍保留旧默认，save_pretrained会把其旧pattern序列化；原toy文件继续保留refined。这只证明本地对象与保存路径，不冒充报告中的公开衍生checkpoint污染范围。
+
+同一fixture的AutoTokenizer真实加载结果为Qwen3_5Tokenizer，四句IDs均与原toy backend一致，保留refined规则。说明在**本机版本及已知qwen3_5 model_type、无auto_map的条件下，显式Qwen2声明本身并不会阻止类纠正**。官方issue末条评论称5.20.1某衍生checkpoint仍受影响，本轮未读取该checkpoint或运行5.20.1，不能反驳其具体结果；也不能据该评论泛化“显式类名总是优先”。应核实际model_type、auto_map、最终类及ID行为，而不是只看类名字符串。
+
+官方 [#49114](https://github.com/huggingface/transformers/pull/49114)的regex透传与 [#49341](https://github.com/huggingface/transformers/pull/49341)的行为告警仍OPEN／未合并，前者不当现行实现，后者不当全部Unicode输入的完备检测。没有重复开发或发表反馈。
+
+[脚本与hash](../../diary/2026-10-25.md)保留版本／fixture条件。本轮没有重装5.12.1、复跑上游Hub集成用例、读取公共checkpoint tokenizer资产、运行actor／rollout或测训练质量；toy BPE结果不能量化多语言能力下降或推导统一升级安全。若未来排查真实工作，应同时核checkpoint原IDs与实际两端IDs；只修训练进程中的对象不自动修复rollout独立进程。本题知识收束，不新增M5算力任务或改专项。
+
 ## 图片字节与解码对象的生命周期
 
 **从返回字典删掉压缩bytes、断开解码流、释放整个多模态payload，是三件不同的事。** [#7391](https://github.com/verl-project/verl/issues/7391)的同报告者leooop-al已有非draft修复[#7400](https://github.com/verl-project/verl/pull/7400)，2026-10-24读取仍OPEN。固定head `dc721cfd3cbd4e18f49763f029d498519c74eb91`、目标base `3f9d4c0d32cc20c7ec31c8137e91bb5673ce9e5e`，实际祖先`09ac37258ea66b0cb69b2738eec3074ea4e7261c`，ahead1/behind149，2文件25增1删。不能把目标base当成候选已包含的主线，也不另提相同修复。
