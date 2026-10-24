@@ -20,6 +20,7 @@ Reference:
 import argparse
 import json
 import os
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -28,7 +29,7 @@ EXPERIMENTS = {
     "p10": {
         "name": "BudgetRefiner SLO Profile Data Collection",
         "priority": "UNIQUE — NO other vLLM contributor has RTX 4090 data",
-        "script": "tools/profile_vllm_budget.py --mode collect",
+        "script": ["python3", "tools/profile_vllm_budget.py", "--mode", "collect"],
         "output": "profile_table_rtx4090.csv",
         "description": "Collect (ctx_len, d_num) → chunk_size data for BudgetRefiner lookup table",
         "estimated_time": "2-4 hours",
@@ -37,7 +38,7 @@ EXPERIMENTS = {
     "p9": {
         "name": "SM89 Batch Invariance Reproduction",
         "priority": "CRITICAL — validates Fusion Guard PR root cause",
-        "script": "tools/sm89_batch_invariance_repro.py",
+        "script": ["python3", "tools/sm89_batch_invariance_repro.py"],
         "output": "batch_invariance_results.json",
         "description": "Reproduce batch-dependent RMSNorm output on SM89 with 3 configs",
         "estimated_time": "30-60 min",
@@ -46,7 +47,7 @@ EXPERIMENTS = {
     "p8": {
         "name": "INT8 KV Cache Throughput Benchmark",
         "priority": "CONFIG — INT8 vs BF16 KV throughput measurement",
-        "script": "tools/sm89_kv_cache_cost_analyzer.py --benchmark",
+        "script": ["python3", "tools/sm89_kv_cache_cost_analyzer.py", "--benchmark"],
         "output": "int8_kv_benchmark.json",
         "description": "Measure INT8 KV throughput vs BF16 on RTX 4090",
         "estimated_time": "30 min",
@@ -55,7 +56,7 @@ EXPERIMENTS = {
     "p6": {
         "name": "AutoEP MoE Smoke Test",
         "priority": "UNIQUE — ONLY framework supporting MoE on RTX 4090",
-        "script": "deepspeed --num_gpus=1 train.py --deepspeed experiments/rtx4090/configs/moe-autoep_rtx4090.json",
+        "script": ["deepspeed", "--num_gpus=1", "train.py", "--deepspeed", "experiments/rtx4090/configs/moe-autoep_rtx4090.json"],
         "output": "autoep_moe_smoke_test.log",
         "description": "Verify Qwen3-MoE AutoEP training starts without OOM",
         "estimated_time": "10-20 min (just boot + 5 steps)",
@@ -151,7 +152,7 @@ def run_experiment(exp_id):
         print("GPU required but not available — skipping")
         return False
 
-    print(f"\nCommand: {exp['script']}")
+    print(f"\nCommand: {' '.join(exp['script'])}")
     print(f"Output: {exp['output']}")
     print(f"\n★★★★★ STARTING EXPERIMENT — DO NOT INTERRUPT GPU WORK ★★★★★")
 
@@ -159,16 +160,36 @@ def run_experiment(exp_id):
     start = time.time()
 
     # Run the actual script
-    result = os.system(exp["script"])
+    try:
+        result = subprocess.run(exp["script"], check=True, capture_output=True, text=True)
+        print(result.stdout)
+        if result.stderr:
+            print(result.stderr)
+        success = True
+        exit_code = 0
+    except subprocess.CalledProcessError as e:
+        print(f"Command failed with exit code {e.returncode}")
+        print(f"Stdout:\n{e.stdout}")
+        print(f"Stderr:\n{e.stderr}")
+        success = False
+        exit_code = e.returncode
+    except FileNotFoundError:
+        print(f"Error: Command '{exp['script'][0]}' not found. Ensure it's in your PATH.")
+        success = False
+        exit_code = 127 # Command not found exit code
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        success = False
+        exit_code = 1
+
     elapsed = time.time() - start
 
-    success = result == 0
     print(f"\n{'='*60}")
     if success:
         print(f"★★★★★ COMPLETED in {elapsed:.0f}s ★★★★★")
         print(f"Output saved to: {exp['output']}")
     else:
-        print(f"★★★ FAILED (exit code {result}) in {elapsed:.0f}s ★★★")
+        print(f"★★★ FAILED (exit code {exit_code}) in {elapsed:.0f}s ★★★")
     print(f"{'='*60}")
 
     return success
@@ -236,7 +257,7 @@ def main():
             print(f"\n  {exp_id}: {exp['name']}")
             print(f"    Priority: {exp['priority']}")
             print(f"    Time: {exp['estimated_time']}")
-            print(f"    Script: {exp['script']}")
+            print(f"    Script: {' '.join(exp['script'])}")
             print(f"    Output: {exp['output']}")
         return
 
