@@ -53,6 +53,32 @@ python3.12 -B experiments/scripts/verify_verl_bypass_config.py /path/to/verl-git
 
 PR还修改padding-only统计与[FSDP entropy反向开关](https://github.com/verl-project/verl/blob/4b3b9f84078f83fe5f485e7d8bccf8c1ddbba349/verl/workers/engine/fsdp/transformer_impl.py)。19例没有执行loss、空rank归约、entropy梯度或引擎；作者正文的24项、其他102项以及4GPU短训练报告均为外部结果，不能合并进本机通过数或推出性能/收敛结论。真实worker收到的配置及实际选中loss，才是下一层证据；条件已补[原M5参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不自动应用候选或增加训练队列。
 
+## 现成 logprob 对照与权重自检
+
+**verl 已有功能对照脚本，但通过平均 log-prob 门槛不等于认证权重内容。** [#8252](https://github.com/verl-project/verl/issues/8252)在2026-10-20收到[维护者回复](https://github.com/verl-project/verl/issues/8252#issuecomment-6286585440)，指向`scripts/rollout_logprob_diff.py`和QAT文档；10-21报告者继续解释其期望的slime式自检。旧评估里的“0评论、维护者未回应、今天无验证机制”不再成立。以下固定当前主线`3c6d9b43b67c74ec343d77874cd8fa6e841523da`，不改变前文旧版separate-async的适用范围。
+
+### 真实更新之后比较所生成的 token
+
+[脚本](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/scripts/rollout_logprob_diff.py)创建Megatron actor与vLLM/SGLang rollout、调用`init_model`，再经`CheckpointEngineManager.update_weights()`执行初次同步。默认8 prompt各生成4条，actor对这些真实response重算`old_log_probs`，与rollout记录的概率比较；不是bypass复制。它会配置量化/QAT/R3，但具体是否启用取决于参数。`--refit-rounds`默认1，额外轮次先再次同步、再重新生成和重算；循环本身不做optimizer更新，也不固定各轮生成token相同。
+
+这能暴露所选配置和轨迹上的训练／推理数值差异，却没有RFC要求的独立已知正确runtime基线、主动破坏及恢复比较。尤其[QAT文档](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/docs/low_precision/qat.md)描述rollout从dummy权重启动后refit，不能未经核对就把首次push前的引擎张量视为同checkpoint参考。文档中Hopper/Blackwell的测量是上游报告，不是本项目复测；相同checkpoint的不同计算后端也允许非零数值差异。
+
+### 指标报告与退出条件不同
+
+原[compute_offpolicy_metrics](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/ppo/rollout_corr_helper.py#L904)计算`d=old_log_prob-rollout_log_prob`，`k3_kl`是有效response token上`exp(d)-d-1`的均值。它不是逐词表精确KL或逐张量比较。脚本还报告最大绝对残差，但最终退出只检查`kl/k3_kl`有限及`k3_kl < --max-k3-kl`（默认0.01）；等于阈值也失败。多轮时保留`refit_runs`数组供检查，退出判定使用最后一轮，不自动要求每轮过门槛。
+
+Python3.12.13/torch2.14.1 CPU FP64，三个完整原函数（metric、masked_sum、masked_mean）及原汇总／判定语句的局部控制：
+
+| 显式输入控制 | k3_kl | 最大绝对残差 | 原默认判定 |
+| --- | --- | --- | --- |
+| 1000 token逐项相同 | 0 | 0 | 通过 |
+| 全1000 token的d=0.2 | 0.02140275816 | 0.2 | 失败 |
+| 仅1/1000 token的d=1，其余0 | 0.0007182818285 | 1 | 通过 |
+
+再把第二行作为早轮、第一行作为末轮交给原汇总／判定语句，数组仍保留早轮超阈值，退出却通过。这里的log-prob和轮次字典都是显式夹具，没有执行模型或refit；用来解释平均与最后一轮门槛，不据此宣称上游真实运行有异常或提出竞争修复。
+
+两类检查应分别命名：功能对照回答“在这些输入、token和概率处理下有多大差异”；破坏再恢复的内容自检回答“覆盖的runtime张量能否沿真实更新路径恢复参考内容”。后者也受参考来源、覆盖张量/replica及量化容差限制，不能认证未来每次发布或有在飞请求时的生命周期。完整脚本、CLI/Hydra、Ray、DataProto、actor、引擎与硬件均未在本机执行；三模块compile及[完整复现/hash](../../diary/2026-10-24.md)留日志，不新建永久工具。若M5既有匹配观测需要，见[原交接参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不自动启跑或排新矩阵。
+
 ## 版本标签说明什么
 
 [vLLM server](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/workers/rollout/vllm_rollout/vllm_async_server.py#L689)在生成返回处附加self.global_steps；[客户端](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/workers/rollout/llm_server.py#L281)拼接中断后续写的token/log_probs，记录首末返回版本。版本正常单调时，它们形成生成区间；**不是逐token权重清单或tensor内容校验**。多turn和agent重写后的token/mask边界还须一同保留。

@@ -171,6 +171,7 @@
 - [verl 量化层审计与 refit](frameworks/verl-quant-layer-audit.md) — #8132三类证据/24项CPU审计单测；与新#8306的格式、存储和保护覆盖对照，不能混用分支证据
   - [新版检查与指标哨兵](frameworks/verl-quant-layer-audit.md#新版运行期检查与指标哨兵) — #8327关系/默认warn与硬拒绝分开；原纯Python20例及5控制通过，缓存disabled与缺指标不当健康证明
 - [verl ModelOpt模块忽略](frameworks/verl-quant-layer-audit.md#modelopt-模块忽略与子量化器) — #8329模块名与子量化器名分层；两版原helper名称控制通过，未执行真实量化，权重加载相等不认证actor forward精度
+- [verl 现成logprob对照与权重自检](frameworks/verl-async-logprob-provenance.md#现成-logprob-对照与权重自检) — #8252已有维护者回应；原metric/退出片段CPU控制区分平均及末轮门槛与内容恢复保证，非模型/同步实测，不另起检查器
 - [verl 新版阶段 tracing](frameworks/verl-async-logprob-provenance.md#新版阶段-tracing-与证据关联) — #8315原12项日志测试三版本对照，前后head均过但生产lane不同；Mock调用不认证后端显示/真实同步，M5原条目已同步版本
   - [Gauge元数据与训练步存储](frameworks/verl-async-logprob-provenance.md#gauge-元数据与训练步存储) — #8357原logger到固定SDK原push路由四分支控制；step标签非global_step记录，sink边界保留不等于后端已存储，非服务/设备验收
 - [verl 单 worker NIXL 拓扑](frameworks/verl-async-logprob-provenance.md#单-rollout-worker-的-nixl-拓扑) — #8316原函数20组控制及后续新增1原测试隔离对照；worker非replica，测试体通过非原生导入/传输验收
