@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 音频配方证据学习收束（2026-10-24）**：同步ad137ee无新增，最新UniRL6/verl6无变化；#8216/#8261/#8299已有研究/作者，跳过旧控制。转未覆盖#475完整正文/三评论与固定配方源码，见[原调研](notebook/frameworks/unirl-survey.md#音频奖励配方的评估协议与后续反证)：社区同head晚期退化和beta0.04反证不能被旧成功报告覆盖，训练10/评估30步不同于正文4步协议；audio-only policy不改联合latent KL。三YAML raw/默认beta AST与八模块compile，仅静态，不是Hydra/模型/训练或质量复验。反证/真机前提补M5原参考，非新训练队列；不改专项或写上游。下轮转独立当前缺口/实质反馈，不复跑旧候选、堆CLAP算术/模拟曲线或并行调稳定器。
+
 - **M1 评估尾批学习收束（2026-10-24）**：同步6e7f8d8无新增，UniRL6/verl6最新head无新变化，转未覆盖已有作者#464；见[原调研](notebook/frameworks/unirl-survey.md#评估尾批的补齐与计分成员)。原Sample树13→16保留两层身份/内容，PE原prepare仍拒多输入Part；单输入原2×3 fork及聚合片段累计78真实叶子/mean6、拒47对48错数；等数刻意重排只作保序前提反例，非实引擎发现。pad仍生成评分，仅不计均值；PE短集合原样、AR按DP lcm不同。无完整_eval_pass/模型/服务/DP/设备，真机条件补M5原参考，非新队列；不改专项或写上游。下轮转独立当前缺口/实质反馈，不堆补齐/奖励顺序夹具、不竞争已有修复或重跑作者harness。
 
 - **M1 激活卸载学习收束（2026-10-24）**：同步84c9590无新增，读已有作者draft#626及#625完整正文/六文件变更；见[原调研](notebook/frameworks/unirl-survey.md#激活卸载的保存对象与包装顺序)。原wrap callback/helper/factory接真实torch2.14.1 CPU八组，开启offload时无AC保存参数/输入/中间值，配AC仅输入；输出及两梯度一致，dtype保留但输入stride改变，原参数身份/state key保持。非外层FSDP/VeOmni、EP/compile/optimizer恢复或传输/显存验收；修正本地旧sentinel假设和提升函数缺_ckpt问题，不据此判上游故障。真机条件补原M5参考，非新训练队列；不改专项、不写上游/开发竞争方案。下轮转独立当前缺口或实质反馈，不堆保存hook/CPU算子变体或复跑作者硬件矩阵。

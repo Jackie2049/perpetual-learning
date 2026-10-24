@@ -1618,6 +1618,36 @@ Python3.12.13仅标准库，完整原runtime模块加载但不调用`engine_proc
 
 完整runtime SHA256为`66e7aa74a3f442d2b44b094c614124e4b0c91e5e137a09f901ab5216f7dc59fb`，driver为`48218188b8009e9c80b22f48bbe5bf40a247dbd4f7caf63baa55c3ecf2ca9b3c`。
 
+## 音频奖励配方的评估协议与后续反证
+
+**早期曲线上升、训练无NaN，不等于同一配方能稳定走到终点。** [#475](https://github.com/Tencent-Hunyuan/UniRL/pull/475)在2026-10-24读取仍open/non-draft，head `555ebb29472b4767dcd20874d771cdbb5318ed91`，base/祖先 `1a0ddbfd414c580beabff5f8eef5226aba891d67`（ahead21/behind0），13文件835增46删。该项已有作者及社区复跑，本节核对证据和源码边界，不是本项目训练结果或新稳定化方案。
+
+### 当前配方与不同报告
+
+固定[CLAP-only YAML](https://github.com/Tencent-Hunyuan/UniRL/blob/555ebb29472b4767dcd20874d771cdbb5318ed91/examples/diffusion/ltx2/ltx2_3_t2av_clap_trainside.yaml)为8设备、8 prompt×8 samples、100轮、训练10去噪步/eta0.7/256×384；评估每20轮取8 prompt×1 sample、30步/eta0/512×768。LoRA rank32/alpha256，每批2次更新，常数LR1e-4、无warmup、clip0.005；YAML未写beta，原FlowGRPO默认0。正文若干较早结果使用不同生成/评估几何，不能混为同一条可比曲线。
+
+| 来源 | 报告的评估协议 | 报告结果 |
+| --- | --- | --- |
+| PR正文的ODE sweep | 32固定prompt×4 samples，4步，256×384 | retained recipe的composite从−0.1784到−0.0433 |
+| [9月27日社区复跑](https://github.com/Tencent-Hunyuan/UniRL/pull/475#issuecomment-5853845270)，明确555ebb29 | 8 prompt×1 sample，30步，512×768，eta0；报告按prompt固定噪声 | seed42从0.182升至@60的0.484，@100为−0.183；seed43也晚期退化 |
+| [同协议beta0.04跟进](https://github.com/Tencent-Hunyuan/UniRL/pull/475#issuecomment-5854847366) | 仅加beta，其他沿seed42复跑 | @100为−0.276；该系数没有阻止报告中的退化 |
+
+社区还报告训练rollout奖励同步下降、梯度/ratio spread先升高，而无NaN/OOM/retry。这里保留的是反对“当前CLAP-only配方已稳定验收”的证据，不独立认证实际曲线、统计显著性、听感质量或根因。早期成功评论不能覆盖后续配方变更；8样本评估也不能当完整AudioCaps质量benchmark。没有读取W&B原始history、下载媒体或复跑任何训练。
+
+### 三种不同的音频目标
+
+[CLAP源码](https://github.com/Tencent-Hunyuan/UniRL/blob/555ebb29472b4767dcd20874d771cdbb5318ed91/unirl/reward/local/clap.py)的base奖励是matched cosine加retrieval margin，unit weights时为 `2×matched−hardest_negative`，不是百分比或单个cosine。event-grounded overlay另加事件coverage并启用RMS归一化，AST overlay再加独立分类器项；目标和预处理都变了，不能把该变体较好的终点仅归因为同一奖励下的稳定器。
+
+[LTX2的log-prob混合](https://github.com/Tencent-Hunyuan/UniRL/blob/555ebb29472b4767dcd20874d771cdbb5318ed91/unirl/models/ltx2/diffusion.py)在权重None时按latent元素数混合，显式w时为 `(1−w)logp_video+w logp_audio`。本配方w=1仅说明policy ratio采用音频项，不是视频分支不生成、视频参数/质量不受影响或联合模型解耦。
+
+同文件replay把video/audio的prev_sample_means拼接；[reference KL](https://github.com/Tencent-Hunyuan/UniRL/blob/555ebb29472b4767dcd20874d771cdbb5318ed91/unirl/algorithms/base.py)按拼接张量的所有latent维求mean，没有读取上述audio权重。启用beta不自动变成音频等权KL，音频贡献仍随latent几何变化。社区将更新幅度/缺乏约束视为可能原因并建议进一步试验，但“alpha与更新次数相乘约8倍”不是对真实Adam更新的精确推导，KL未奏效也不证明KL无用；本轮不据此设计或应用另一套修复。
+
+### 本机仅做静态配方核对
+
+Python3.12.13/PyYAML6.0.3直接safe_load三份原YAML，核上述显式标量、defaults链与overlay字段，并以AST核FlowGRPO默认beta0；这不是Hydra组合/插值解析或实例化。8个改动Python模块仅内存compile通过，无torch/Transformers/Hydra/UniRL导入、数据转换器、CLAP/AST或模型执行。固定clap.py SHA256为 `cd0d04c18fe0af251339eaeceff25bb94cbefe76f7ce95617191434cfe2eb324`，与社区声称复跑的前缀一致，但hash相同不认证远端部署或运行记录。
+
+[复现与完整指纹](../../diary/2026-10-24.md)留日志，真机条件与后续反证补[原M5参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)。暂不把现成100轮配方作为已稳定方案推荐或自动启用；没有新增GPU矩阵、采用社区调参、改#523/AReaL或对外发布。若未来独立选择此方向，先明确同版配方、数据、checkpoint和评估协议，再决定质量与稳定性判据，不由一条无错误退出记录替代它们。
+
 ## 评估尾批的补齐与计分成员
 
 **让调度批次整齐，与决定哪些真实样本计入均值，是两件事。** [#464](https://github.com/Tencent-Hunyuan/UniRL/pull/464)在2026-10-24读取仍open/non-draft，head `91e96bd5e3b0794c76822e67c31a9053cc757e0d`，API base `c21940d802ab9993ab87d7112615899653e7b989`，实际共同祖先 `79d1e8ab14c027d99cffe253121e965bac7d1587`（ahead3/behind2），4文件59增46删。已有作者处理，不另写竞争修复。
