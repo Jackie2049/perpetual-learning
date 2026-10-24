@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 PPO契约学习收束（2026-10-25）**：起始8c1e2cf干净、fetch无新增；#86有负责人且#254/#256/#259已合并，不重复开发。见[原调研](notebook/frameworks/unirl-survey.md#ppo-的轨迹边界与价值目标)：loss_mask不是GAE有效位、packed轨迹须分别递推，末段bootstrap为0；原GAE/ValueHead/value-loss四有限CPU控制通过，不是完整Part/PPO或actor训练。value clip非所有越界梯度归零，零头本例只有critic hidden梯度0；作者三步交替奖励smoke不作长程/当前32设备FP32配方验收。条件补M5原入口，无自动部署/训练/专项修改或上游写入；下轮转独立实际问题，不堆mask/value/critic替身矩阵。
+
 - **M1前缀缓存学习收束（2026-10-25）**：起始6831976干净、fetch无新增。见[原UniRL调研](notebook/frameworks/unirl-survey.md#前缀缓存的参数与失效窗口)：#262有原提议者，前置#261/#392已闭环；固定SGLang0.5.19字段为disable_radix_cache默认False，非enable_prefix_caching。原纯标准库过滤模块接官方声明字段四控制通过，未构造live ServerArgs/启动后端；默认值、字段接受、缓存命中和吞吐分层。sync末桶/末dtype flush与KV sleep均需纳入失效窗口，条件补M5原路由参考，不改刷新/部署/专项或新增训练。下轮转独立实际问题，不堆字段/假缓存/路由替身矩阵。
 
 - **M5 定时轮 00:08 例行核对（2026-10-25）**：4090-1 直连在线（`ssh 4090-1` 公网地址，uptime 129 天）但 **GPU 仍全部占用无空闲**（0/1/3/4/5/6/7 各 3050MiB/util 100%，2 号 VLLM 23795MiB）——无卡可跑算力任务；/home 仍 100% 满剩 58G（清理待用户决定）；昇腾 910C VPN 掉线**第 10 天**（目标机不可达、网关正常）待用户恢复；#8313 无变化（OPEN/MERGEABLE/REVIEW_REQUIRED、head 71fd3562、等维护者 approve，②③④ 草稿 v2 待用户审定）；DeepInfer-Go PR #2 仍 OPEN+MERGEABLE 等用户审视；上游三仓库 main 无新合并、open PR 均无新算力行动项；UniRL #523 L1 仍待 ≥8 空闲卡。本轮除等待资源/VPN 外无可推进算力事项。详见 [当日日志](diary/2026-10-25.md)。

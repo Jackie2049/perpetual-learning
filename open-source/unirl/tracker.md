@@ -9,7 +9,7 @@
 
 **【价值评估】** 7 / 10 — 甄别"未认领、无 PR、可落地"的开放空间，避免重复投入已有人认领的 RFC。
 
-**【进展】** #523 的我方 fork PR 已获用户认可，测试与 e2e 正式指派 M5；M5 已闭环 L0（四项断言 + pristine 对照），L1 仍待 ≥8 卡及获准权重/存储，见[M5交接](../../experiments/handoff-m5.md)。#567 待匹配 H20；#470/#481/#484已有作者或验证条件。2026-10-25补[前缀缓存参数与失效窗口](#前缀缓存的配置前置与观测)：#392已解决静默丢参，原过滤函数四控制不是boot/命中验收；[视频时间条件](#视频时间条件的已有修复)、[样本观察拆分](#样本观察的基础层与接线层)和[路由基准](#补充尽调与派发边界)仍各按原范围，不据局部控制认领或认证训练。
+**【进展】** #523 的我方 fork PR 已获用户认可，测试与 e2e 正式指派 M5；M5 已闭环 L0（四项断言 + pristine 对照），L1 仍待 ≥8 卡及获准权重/存储，见[M5交接](../../experiments/handoff-m5.md)。#567 待匹配 H20；#470/#481/#484已有作者或验证条件。2026-10-25补[PPO已有分项与验收边界](#ppo-分项的实现与验收)：#86三PR已合并，四组有限CPU控制非完整trainer或曲线；[缓存参数](#前缀缓存的配置前置与观测)、[视频时间条件](#视频时间条件的已有修复)和[路由基准](#补充尽调与派发边界)仍各按原范围，不据局部控制认领或认证训练。
 
 **【大白话讲明白】**
 
@@ -56,6 +56,12 @@ UniRL 仓库当前 **73+ open issues**，其中大量是带 `help wanted` 标签
 #458同样不能只凭浅合并就认定bug：[prepare_input_sample](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/trainer/base.py)顶层覆盖，而PE显式传空ar/chat袋以擦除父输入控制；无条件deep merge会保留本来要清掉的字段。单个字典算法无法替代跨trainer/engine的所有权设计。本轮只做源码和社区状态尽调，无执行、性能/缓存验证、认领或对外操作，不为这两个线索排M5实验。
 
 #473本轮读取正文与全部4条评论；上表只判贡献归属，没有重跑报告者19-check真实包harness或SD3回归。贡献者评论提到#413/#474已覆盖部分清理及上游vllm-omni#8196待复审，属于当时报告；本轮未重核这些PR的当前状态，不据此自动退休passthrough或移除仍有独立用途的stage-0 gate，也不新增M5必跑矩阵。另读已有[#545](https://github.com/Tencent-Hunyuan/UniRL/pull/545)做[压缩积分学习](../../notebook/frameworks/unirl-survey.md#sde-窗口后的压缩积分尾段)，作者已有实现，CPU控制不转为我方贡献认领。
+
+## PPO 分项的实现与验收
+
+2026-10-25读取[#86](https://github.com/Tencent-Hunyuan/UniRL/issues/86)全文/全部4评论，仍open、派haonan3；提议者yhl48不等于M1待接单。API核[#254](https://github.com/Tencent-Hunyuan/UniRL/pull/254)（head d2dedfb1、merge0284ccaa）、[#256](https://github.com/Tencent-Hunyuan/UniRL/pull/256)（c6aae06c、3a3dae09）、[#259](https://github.com/Tencent-Hunyuan/UniRL/pull/259)（cbfd6e6f、00cf5df0）均已合并，不能照旧正文再开发GAE、critic或配方。
+
+见[原调研](../../notebook/frameworks/unirl-survey.md#ppo-的轨迹边界与价值目标)：固定main6fd82cba，原GAE/ValueHead模块和value-loss完整函数四组有限CPU控制，优化mask/轨迹界线/value clip和零头梯度分开；六模块仅compile/raw YAML，不是完整Part/PPO/微批/训练验收。作者三步临时交替奖励smoke非长程DAPO或当前32设备FP32默认配方结果。真实条件只补[原M5入口](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不新增训练队列、竞争实现、部署或专项改动；社区写操作仍逐项待用户明确授权。
 
 ## 前缀缓存的配置前置与观测
 

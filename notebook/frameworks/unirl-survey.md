@@ -1,5 +1,7 @@
 # UniRL — 腾讯统一多模态 RL 框架调研
 
+2026-10-25 接续：[PPO 的轨迹边界与价值目标](#ppo-的轨迹边界与价值目标)核#86三个已合并分项；原GAE/ValueHead及value-loss函数CPU控制不认证完整trainer，loss mask也不是GAE轨迹有效位。
+
 2026-10-25 接续：[前缀缓存的参数与失效窗口](#前缀缓存的参数与失效窗口)核#262与已合并#392：合法字段、缓存实际启用、真实命中和吞吐是不同证据；原过滤函数四组本地检查不是引擎启动或性能验收。
 
 2026-10-24 接续：[视频时间步精度与比率诊断盲区](#视频时间步精度与比率诊断盲区)核已合并#438：9/10个FP32差异与2/10个双重舍入差异分开，小平均log-ratio和ODE尾段不认证完整轨迹一致，更不等于#412奖励问题已解决。
@@ -1950,6 +1952,39 @@ M1从该固定源码AST取488个直接声明字段名，未构造ServerArgs。�
 | 性能改善 | 相同负载、同步节奏和测量窗口的完成吞吐/尾延迟 | 字段通过/单个命中比例 |
 
 这里沿用[原路由入口分析](#路由策略与基准入口)，不重做同步AR绕过pool或siblings派发控制。缓存RPC、模型KV、同步与sleep实际效果均未运行；其余六个相关原模块只compile，版本/hash见[当日日志](../../diary/2026-10-25.md)。硬件观测前提补[现有M5路由参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不自动设置缓存/严格模式、启动配方、修改刷新或开发并行路由方案。
+
+## PPO 的轨迹边界与价值目标
+
+**开放追踪项不等于功能尚未实现，局部算法正确也不等于训练曲线已验收。** [#86](https://github.com/Tencent-Hunyuan/UniRL/issues/86)仍open、派haonan3；正文提议者为yhl48，维护者先限定AR并在后续说明可由社区集群补GPU曲线。其三分项[#254](https://github.com/Tencent-Hunyuan/UniRL/pull/254)、[#256](https://github.com/Tencent-Hunyuan/UniRL/pull/256)、[#259](https://github.com/Tencent-Hunyuan/UniRL/pull/259)已于2026-07-26／08-01合并，依次提供纯张量GAE、Qwen3 value与数据接线、PPO损失和配方，不另开发同题实现。
+
+### 有效位和优化位不能互换
+
+固定main`6fd82cba13f52f394747832344039408699ea378`的[GAE helper](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/types/advantages.py)逐时间倒推TD残差，每段尾部隐含next value=0。可选mask会把无效位置的递推清零，并去掉下一无效位置的value；它没有独立bootstrap值或terminated/truncated参数，不能自动代表带时限截断的通用环境GAE。
+
+[Part.compute_gae_advantages](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/types/sample.py)把每条样本奖励放在其最后一个response token，并按cu_seqlens逐轨迹调用helper，**不把loss_mask传作GAE mask**。loss_mask随后用于样本摘要的取均值，以及[PPO](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/algorithms/ppo.py)中actor和critic优化位选择。被排除优化的token仍可承接后续奖励传播，不应凭同一个“mask”名字切断它。
+
+完整原advantages模块接真实CPU张量，gamma=lambda=1，给出两个手算对照：
+
+| 输入与处理 | 原函数结果 | 解释 |
+| --- | --- | --- |
+| 单轨迹reward=[0,0,1]、value全0，不传mask | advantage=[1,1,1] | 末奖励传回全部三个状态 |
+| 误传优化位[1,0,1]作为有效位 | [0,0,1] | 中间位被当递推边界，前端信号消失 |
+| 两轨迹reward=[1,3]、cu=[0,2,4]，分别GAE | [1,1,3,3] | terminal scatter为[0,1,0,3] |
+| 错把同一packed数组直接当单轨迹 | [4,4,3,3] | 第二轨迹奖励漏进第一条 |
+
+后两条的逐段循环按调用方切分规则执行，没有构造或运行Part；错误用法是负控制，不是声称当前代码正在这样做。
+
+### 价值裁剪和零初始化的梯度
+
+原value loss先detach old values和returns，用新预测与old附近的裁剪值分别计算平方误差，再取较大值乘0.5。以old全0、returns全1、clip=.2、新预测[1,2,-1]核原完整函数体，loss约[.32,.5,2]、新预测梯度[0,1,-2]，old/returns均无梯度。超出裁剪范围不意味着梯度总为0：由哪个误差分支较大决定，不能把value clipping解释成硬截所有更新。
+
+完整原[ValueHead](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/models/types/value_head.py)是FP32线性头，weight/bias零初始化。真实CPU Linear输入[2,3]时输出0；对目标1做0.5平方误差，head weight梯度[-2,-3]、bias=-1，而hidden梯度为0。这仅说明零线性权重下的这一次critic贡献，不是actor无梯度、整模型停训或后续更新也相同；没有构造Qwen3或执行meta/sharded加载。
+
+### 准备时机与训练证据
+
+源码中PPO声明按planned micro重算values：stack先eval、按计划取值并复原顺序，再prepare_part算GAE，然后回train并更新；这不同于任意整批forward算一次old values。当前[配方](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/examples/ar/qwen3_ppo_4b_base_dapo_sglang.yaml)声明advantage_mode=gae、use_value_head=true、同步排除value_head.*。本轮只核调用源码与raw YAML，不认证micro/replay/优化或真实同步。
+
+#259作者将8×H20、BF16、SGLang0.5.12.post1的三次更新定位为正确性smoke，使用临时交替奖励而非实际DAPO学习曲线；它不等于长程收敛，也不是本机结果。当前raw配方为32设备、batch64、model_precision=fp32，不能直接沿用该smoke作为当前默认配置的验收。M1 Python3.12.13/torch2.14.1仅四组有限CPU控制：两个完整原模块、一个AST摘取的value-loss原函数；其他六模块只compile。没有完整Part、PPO实例、stage、trainer、forward replay、actor loss、FSDP或设备运行；[命令与hash](../../diary/2026-10-25.md)留日志，真实条件补[原M5参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不改专项或新增训练队列。
 
 ## 下一步
 
