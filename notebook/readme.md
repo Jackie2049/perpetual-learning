@@ -233,6 +233,7 @@
 - [GRPO 实战指南](frameworks/grpo-practical-guide.md) — verl 框架 GRPO 训练完整流程、数据格式、配置参数、奖励函数
 - [SGLang 架构深度分析](frameworks/sglang-architecture.md) — RadixAttention 基数树、DSL 前端、FlashInfer 集成、vs vLLM 对比
 - [UniRL 调研（腾讯统一多模态 RL）](frameworks/unirl-survey.md) — 统一训练抽象、稀疏SDE、SFT游标、packed文本双轴与[按域奖励](frameworks/unirl-survey.md#按域奖励的零分与失败标志)；原CPU路由/统计区分零分、失败和非适用NaN，非服务或训练验收
+  - [多参考图像的双轴](frameworks/unirl-survey.md#多参考图像的样本行与附件轴) — #478原容器CPU控制：3行5图、选行/元数据保持、稠密槽需等附件数；保留行别名，不认证模型/数据/训练路径
   - [可选提示与模式要求](frameworks/unirl-survey.md#可选提示与模式必需条件) — #497已有维护者反对按现状合入；原请求/三版选择方法六输入CPU对照，合法无文本不等于所有模式需prompt，非ImageBind模型回归
   - [原生配置与训练计时](frameworks/unirl-survey.md#原生配置比较与训练计时) — #588公开五行复算/固定prompt哈希匹配；完整训练须含重算，近似耗时不等于精度/学习等价，非性能复测
   - [内部Pipe请求身份](frameworks/unirl-survey.md#内部-pipe-的版本字段与请求身份) — #568合并范围与#567硬件问题分开；原runtime八组真实spawn/Pipe控制，信封合法不等于命令执行或跨版本兼容，非完整引擎验收

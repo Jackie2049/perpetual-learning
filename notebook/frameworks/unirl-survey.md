@@ -267,6 +267,28 @@ Python3.12.13 / torch2.9.1 / Pillow12.0.0。本机原 CPU 环境缺 Pillow，使
 
 脚本锁定七个完整源文件 SHA256（包括仅读的 service.py）。关键 hash：per_domain.py `6aca28149c4dcc48b3f8e29e74ef7195daa997aa833daac778618d4f3b2b73f8`；mc_exact_match.py `452413e2c7db3cf722fd3a887f660a61e5a13513f015a539f103b0a32d1cf526`；wandb_metrics.py `e92b9c40ebab4b78759ad15e36db4a833f853f6b122db4e395577966cc150648`。本题收束，不堆 NaN/路由变体，也不将组件统计等同于服务验收。
 
+## 多参考图像的样本行与附件轴
+
+**一行样本可以有多张参考图；增加参考图，不等于增加样本或生成候选。** [#478](https://github.com/Tencent-Hunyuan/UniRL/pull/478)的DyRef路径新增有序图像集合，2026-10-24读取open/non-draft，固定head `33756c23ec20da7c338602c07a0dce7c1738f187`、base/实际祖先 `272e0e6ea0d72e7a0c3e1be26434abd140980d42`。已有作者实现与训练报告，本节只研究原容器，不是完整PR审阅、替代实现或整条多模型路径验收。
+
+[ImageSet](https://github.com/Tencent-Hunyuan/UniRL/blob/33756c23ec20da7c338602c07a0dce7c1738f187/unirl/types/primitives.py#L183)是一行的有序附件，内部使用原Images的packed像素与形状；metadata按图逐项对齐。[ImageSets](https://github.com/Tencent-Hunyuan/UniRL/blob/33756c23ec20da7c338602c07a0dce7c1738f187/unirl/types/primitives.py#L229)才是外层batch，`len`数行、`counts`数各行附件。[原契约](https://github.com/Tencent-Hunyuan/UniRL/blob/33756c23ec20da7c338602c07a0dce7c1738f187/unirl/types/README.md#ordered-image-sets)另将生成候选定义为fork出的独立行，而不是集合成员；本机没有执行fork。
+
+Python3.12.13 / torch2.14.1 / Pillow13.0.0，完整原primitives、Batch及所需类型模块在CPU加载，只跳过tensor包的Ray transport聚合初始化，无方法摘取或假容器。用三行参考集合`[2,0,3]`、五张不同宽度的3通道小张量及逐图tag metadata，得到：
+
+| 操作 | 原容器结果 | 单位与边界 |
+| --- | --- | --- |
+| flatten | 五图，owners=`[0,0,2,2,2]`，像素与原形状保持 | 附件轴映回样本行；空行仍在外层batch |
+| select行`[2,0,2]` | counts=`[3,2,3]`，附件/metadata顺序保持 | 重复的是整行，且同一原ImageSet对象仍被引用，不是深拷贝 |
+| slice后concat | 恢复`[2,0,3]`及原图顺序 | 拼的是外层行，不把其附件拍成新样本 |
+| 两行各两图转to_slots | 第0槽取各行第0图，第1槽取各行第1图 | 从行内附件转成两个对齐的Images batch；混合counts会拒绝 |
+| primary_images | 非空行各取第一图；有空行则拒绝 | 明确丢弃后续附件，不等同完整参考集合 |
+
+legacy `Images`里两张图，经`as_image_sets`变为**两行各一图**；显式`ImageSets.from_rows([images])`才是**一行两图**。single-image消费者的`require_exactly_one`拒绝多图行，不能悄悄改用primary取图。原metadata数量不齐、rows类型错误也被拒绝；tag对齐不认证subject/style等角色在数据中的语义正确。
+
+容器可表达变长，并不保证每个模型消费者都支持变长。[PR类型说明](https://github.com/Tencent-Hunyuan/UniRL/blob/33756c23ec20da7c338602c07a0dce7c1738f187/unirl/types/README.md#ordered-image-sets)将Qwen逐行处理与FLUX.2稠密槽区分，后者需要按参考图数分桶；本机只验证上表纯容器限制，没有运行编码器、这些模型分支、Part/fork、manifest加载、TensorRef搬运、奖励、Hydra或训练，也不借作者Qwen曲线认证未跑的FLUX配方。
+
+复现代码见[当日日志](../../diary/2026-10-24.md)，不新增永久工具、竞争PR或硬件队列。固定primitives.py SHA256为`cbc7db341a9d7ed7608f862f40fa3d50926f1ae82e1c51a85ebb097aab4842c1`，Batch为`574cb025e85e8e183474e601d5e27fd50ca5a5967ed6c85db1dbca713dbbe871`。
+
 ## 可选提示与模式必需条件
 
 **字段可以缺省，不代表每种评分都能缺它；某种评分需要文本，也不代表共享入口应强制所有模式提供文本。** [#497](https://github.com/Tencent-Hunyuan/UniRL/pull/497)将`RewardBackend.prompts()`从缺所选prompt返回`[]`改为抛ValueError，并删LLMJudge的一处空串回退。2026-10-24读取仍open/non-draft，head `104aad6e1f3cae2bd4461db6d59e99015e394415`、base/实际祖先 `c8af5d699c81fb02a0086e34b342b1efacc7d431`，三文件9增2删。[维护者10-19评论](https://github.com/Tencent-Hunyuan/UniRL/pull/497#issuecomment-6259340578)明确不倾向按现状合入：现有数据源已有文本祖先、全局加固会影响ImageBind非文本模式，且未完整处理变成死分支的下游回退。open状态不能当作方案已获认可。
