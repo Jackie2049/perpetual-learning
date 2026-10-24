@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[采样支持域](#采样概率口径的已有方案)：#8020已有作者、#8207保护未合并，#8196的score centering对齐已合并；原IS／RS函数有限CPU对照不等于后端或训练验收，不另实现。[预处理](#长文本预处理的已有修复)等学习保留原范围，不搬作者报告。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[数据子集身份](#数据子集与验证入口的已有修复)：#7819／#8141已有作者，两候选各5原测试体CPU通过；#8141三个旧入口漏接验证分支，原调用表达式证据与反馈留本地待用户审视，不对外发布。[采样支持域](#采样概率口径的已有方案)等学习保留原范围。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,14 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## 数据子集与验证入口的已有修复
+
+2026-10-25读取[#7816](https://github.com/verl-project/verl/issues/7816)／[#7824](https://github.com/verl-project/verl/issues/7824)全文、均0评论；编号及短关键词查重已有[#7819](https://github.com/verl-project/verl/pull/7819)与[#8141](https://github.com/verl-project/verl/pull/8141)，两项open、非draft、未合并，不认领第三修复。固定head0554e35f／9a7bd53b，实际祖先a9f29851／75879f7f；前者API目标base为3f9d4c0d，按实际祖先核四文件，不把主线进展算入修复。
+
+见[原checkpoint专题](../../notebook/frameworks/verl-checkpoint-management-reading.md#rl-数据子集与恢复身份)：原类／工厂／采样器接真实Parquet／JSONL／StatefulDataLoader，两候选各5原测试体通过，非原生pytest／完整框架。固定seed不校验内容；#8141四个原验证调用表达式中V1正确传False，但旧同步、one-step与fully-async省略参数，仍走默认True。原工厂测试显式传参，不能覆盖此接线缺口；#7819当前正文的调用点说明也不能替代真实diff。未构造trainer／恢复模型或碰设备。
+
+**供用户审视的反馈要点**：请#8141现有作者核对三处验证调用的is_train=False接线与调用层测试，同时保留“头部选择会改变评测来源组成”的语义讨论。当前行审0评论、普通评论仅CLA机器人；本项目只保存源码／CPU证据，不评论、编辑PR／推其head或另发重复修复，任何上游可见动作仍逐项待用户明确同意。本题无需新M5队列，不改其专项。
 
 ## 采样概率口径的已有方案
 

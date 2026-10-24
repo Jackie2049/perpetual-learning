@@ -407,6 +407,49 @@ python experiments/scripts/verify_verl_checkpoint_retention.py /path/to/verl
 
 复现：`python -B experiments/scripts/verify_verl_sft_loader_resume.py /path/to/verl-git --deps /path/to/torchdata-target`，需要上述固定Git对象、torch及torchdata0.11.0。本次仅将torchdata用`uv pip install --target ... --no-deps torchdata==0.11.0`装入独立work目录，未修改复用的torch环境。原handler SHA256：祖先`3b547c2b97e01b7587866053b4aa624d81b8cdd9d75fff20a97420690206a896`、head`676cf43c504922e610e88d236f0afcc5b4a449b63de1893616dee96a384960e8`；原日志helper模块`64d8556b0d6acc667a5be2dd43908111c9e58aae58d779ee9b02f0f28e2b42f7`。脚本打印hash并禁止隐式Git fetch。
 
+### RL 数据子集与恢复身份
+
+**加载器恢复了相同索引，不保证这些索引仍指向相同行。** [#7816](https://github.com/verl-project/verl/issues/7816)讨论重启时重新随机抽取 max_samples 子集；[#7824](https://github.com/verl-project/verl/issues/7824)讨论验证子集使用哪个 shuffle 标志。它们与上节 SFT 的迭代结束状态不同：即使恢复位置正确，重建数据的身份仍可能改变。2026-10-25核对已有两位作者的方案，不另开竞争实现。
+
+#### 固定种子与验证集选择分开
+
+[#7819](https://github.com/verl-project/verl/pull/7819)仍 OPEN、非draft、未合并，固定 head `0554e35fcf642a16b53877d330a7e7d21286752e`。API目标base为 `3f9d4c0d32cc20c7ec31c8137e91bb5673ce9e5e`，实际共同祖先为 `a9f2985159536a607211dcac730d3f5d55028950`；相对祖先4文件182增6删。生产变化为未配置 data.seed 时用42抽子集，显式seed及shuffle=False的前N行分支不变。固定主线 `3c6d9b43b67c74ec343d77874cd8fa6e841523da` 的完整 rl_dataset.py 与该祖先字节相同，尚无这个fallback。
+
+另一个 [#8141](https://github.com/verl-project/verl/pull/8141)仍 OPEN、非draft、未合并，head `9a7bd53b4c56d68f23ed0b647a899cf98e7880ef`、base及祖先 `75879f7f475fd6b64c779f7d9212e45503f58b8f`，2文件125增1删。它只在 `create_rl_dataset(..., is_train=False)` 时复制配置，将 validation_shuffle 映射到 dataset.shuffle；未配置该键则退回 data.shuffle。这个head仍使用旧的无seed抽样逻辑，因此“validation_shuffle=True且seed未设置”不因该PR自动稳定。
+
+两个修复不能互相替代。固定种子解决固定输入下的子集重建；选择 shuffle 标志决定随机抽取还是按文件拼接顺序取前N行。后者改变评测数据组成，不能只因配置名更一致就称统计更具代表性；头部截取也不保证每个数据来源都有样本。
+
+#### 原测试体与真实数据读取
+
+复用 Python3.12.13／torch2.14.1、torchdata0.11.0+cpu、datasets5.1.0、PyArrow26.0.0、pandas3.0.6、NumPy2.5.4、OmegaConf2.3.1。完整原 RLHFDataset 类、get_dataset_class、工厂及采样器经 AST 隔离，fs／hdfs_io载入完整原模块；本地 Parquet／JSONL、HF Dataset 和 StatefulDataLoader 均真实运行。关闭长度过滤、tokenizer=None，原测试自带 row-ID view 避开tokenization；没有伪造采样器、文件加载或状态恢复。
+
+直接调用两份原测试的函数体与其原fixture／helper，只移除 verl 导入声明并绑定上述原定义，不改断言；不是原生 pytest 收集或完整包导入。两次执行得到相同通过／失败集合：
+
+| 原测试体 | 祖先 | 对应候选 |
+| --- | --- | --- |
+| #7819显式seed、前N行、未设seed重建、恢复后续行 | 2过、后两项AssertionError | 4过 |
+| #7819默认常量固定为42 | 无该符号，不运行 | 通过 |
+| #8141五项工厂测试 | 4过、validation_shuffle=False项AssertionError | 5过 |
+
+#7819的64行取8行，fallback子集为 `[62,63,53,38,60,26,5,44]`；显式seed1234为 `[6,16,10,57,55,22,58,56]`。恢复例先消费两批共4行，state_dict之后的剩余行与重建／load_state_dict后的行一致。再保持文件路径和行数、将全部 row_id 加1000：加载器接受状态并读到原剩余行对应的加1000值。后者仅说明固定种子不是文件内容校验，不是该PR承诺支持数据变更却失败。[NumPy随机流兼容政策](https://numpy.org/doc/stable/reference/random/compatibility.html)不提供任意跨版本／构建／环境的Generator一致性保证；文件顺序／内容、过滤条件或tokenizer变化也须分别固定，不能以相同长度推出身份一致。
+
+#### 工厂测试通过不代表所有入口接线完整
+
+在 #8141 固定head上，原五项测试都显式传入 is_train；它们未覆盖遗漏该参数的调用者。将四个生产文件中**原验证集 create_rl_dataset 调用表达式**单独接到该head的原工厂和真实JSONL读取，配置 shuffle=True、validation_shuffle=False、seed1234、64行取8行：
+
+| 原调用入口 | is_train 参数 | 返回 row_id |
+| --- | --- | --- |
+| [V1 trainer_base](https://github.com/verl-project/verl/blob/9a7bd53b4c56d68f23ed0b647a899cf98e7880ef/verl/trainer/ppo/v1/trainer_base.py#L718) | False | 0至7 |
+| [旧同步 ray_trainer](https://github.com/verl-project/verl/blob/9a7bd53b4c56d68f23ed0b647a899cf98e7880ef/verl/trainer/ppo/ray_trainer.py#L387) | 省略，默认True | 6,16,10,57,55,22,58,56 |
+| [one_step_off_policy](https://github.com/verl-project/verl/blob/9a7bd53b4c56d68f23ed0b647a899cf98e7880ef/verl/experimental/one_step_off_policy/main_ppo.py#L84) | 省略，默认True | 同上 |
+| [fully_async_rollouter](https://github.com/verl-project/verl/blob/9a7bd53b4c56d68f23ed0b647a899cf98e7880ef/verl/experimental/fully_async_policy/fully_async_rollouter.py#L393) | 省略，默认True | 同上 |
+
+这里 self／config 仅提供原表达式需要的字段，没有构造或执行trainer、Ray或rollout。因此证据是：**该head的三处调用表达式未进入新增验证分支**，不是三条真实训练失败记录。#7819正文仍提及调用点已显式传参，但其当前四文件diff没有这类修改；不能依赖这段描述假定叠加两PR就会接好。是否补齐入口和是否采用头部选择语义，应由现有作者／维护者与用户审视，不在本项目另写第三个修复。
+
+供用户审阅的反馈要点：#8141的直接工厂测试通过，但三个旧入口漏传 is_train=False；建议现有作者核对这些调用者，并增加调用层覆盖。2026-10-25读取PR行审评论为0、普通评论仅CLA机器人；本项目未发评论、改PR或推其head分支。
+
+七份固定源码快照另通过完整 AST／内存 compile；输入、环境、hash与一次性复现命令见[当日日志](../../diary/2026-10-25.md)。未运行完整trainer checkpoint／模型恢复、prompt过滤／tokenization、原生pytest、并行worker或设备，不需要为这项CPU学习另排M5任务，不把已有作者成果计为我方修复。
+
 ## 6. FSDP2 / DTensor Checkpoint
 
 ```
