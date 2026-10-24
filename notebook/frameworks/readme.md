@@ -191,6 +191,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [verl #6794 — Delta Weight Sync (Bytewise Diff Encoding)](verl-6794-delta-weight-sync-reading.md)
 - [verl #7016 Deep Analysis — Qwen3-MoE FSDP2 Backward Failure](verl-7016-qwen3-moe-fsdp2-backward-deep-analysis.md)
 - [verl (HybridFlow) 架构深度分析](verl-architecture.md)
+- [Meta加载后的共享参数与梯度](verl-architecture.md#meta-加载后的共享参数与梯度)：#7834已有#7835；真实tiny Llama原四用例通过，loss相同仍可有不同梯度，meta零地址断言存在假阳性，反馈仅留项目内。
 - [Critic批处理配置如何进入引擎](verl-architecture.md#critic-批处理配置如何进入引擎)：#7462已有#7465，原六测试体CPU通过；YAML插值、dataclass默认、engine字段与batch覆盖分层，非完整Hydra或后端验收。
 - [FSDP后端配置的权威来源](verl-architecture.md#fsdp-后端配置的权威来源)：#7540已有#7597；原完整配置模块接真实OmegaConf七组只验V1冲突guard，非完整配置/engine或loss根因认证，目标base与实际祖先分开。
 - [verl Async Rollout Architecture Deep Dive — vLLM/SGLang Integration](verl-async-rollout-architecture-deep-dive.md)

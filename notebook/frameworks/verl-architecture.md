@@ -438,6 +438,34 @@ Python3.12.13／OmegaConf2.3.1／pytest9.1.1，原 BaseConfig、CheckpointConfig
 
 本题收束为配置接线知识，不应用候选、不新增校验器或 M5 算力任务。后续排查同类问题，依次核 YAML 解析值、dataclass 默认、engine 有效字段与 batch 是否显式覆盖；不要从外层配置推导实际执行，更不能从本轮 CPU 结果推导训练收益。
 
+## Meta 加载后的共享参数与梯度
+
+**权重值与前向 loss 相同，不代表模型仍共享同一个可训练参数。** [#7834](https://github.com/verl-project/verl/issues/7834)报告大规模 tied-embedding 模型在各 rank 重复加载造成主机内存压力；已有作者 inin-zou 的 [#7835](https://github.com/verl-project/verl/pull/7835)。2026-10-25核对 OPEN、非 draft、未合并，head `93f5328f0fad3756925337505e7318b18f2bcb62`、父提交／共同祖先 `a9f2985159536a607211dcac730d3f5d55028950`，三文件123增3删；API目标 base `3f9d4c0d` 不能充当候选已包含的主线。旧 [#5746](https://github.com/verl-project/verl/pull/5746)已关闭未合并，不另实现。
+
+### 加载数值与恢复共享是两件事
+
+当前固定 main `3c6d9b43` 的 FSDP engine 仍以 `not tie_word_embeddings` 选择 meta 初始化。候选对 fsdp2 放开 meta 路径，并在 [`fsdp2_load_full_state_dict`](https://github.com/verl-project/verl/blob/93f5328f0fad3756925337505e7318b18f2bcb62/verl/utils/fsdp_utils.py)的 `set_model_state_dict` 之后、单独广播 buffers 之前调用 `tie_weights()`；条件是 config 声明 tied 且模块提供该方法。FSDP1 选择不变。初始化 helper 使用 mesh 最后一维坐标判断物化者，mesh=None 才使用全局 rank，因此“rank0-only”要结合实际 mesh 解释。
+
+本机完整执行原 CPU 测试模块的三个测试函数／四个参数化用例，均通过；不是原生 pytest 收集。模型来自内存中的 tiny LlamaConfig，未下载 checkpoint：两层、hidden128、vocab64，真实 Transformers 模型、Accelerate meta 构造与 PyTorch 前反向。原测试以普通 `load_state_dict` 和逐个 buffer 拷贝代替分布式加载，没有调用完整 verl loader 或 FSDP。
+
+补充同一真实模型、seed0、ids形状2×8的 CPU 控制中，复制相同权重及非持久 buffer 后，未重新绑定的模型与参考模型 logits／loss 逐bit相同，loss为4.05669641494751，但输入 embedding 梯度不同。记共享梯度为 `g_shared`、独立输入／输出梯度为 `g_input`／`g_output`，实测 `g_shared ≈ g_input + g_output`；这不表示两个分量相同或固定“减半”。
+
+| 模型状态 | 输入与输出为同一 Parameter | 输入 embedding 梯度范数 |
+| --- | --- | --- |
+| 普通 CPU 参考模型 | 是 | 4.465865 |
+| meta 物化并复制权重，未重绑 | 否 | 3.190585 |
+| 执行候选原重绑条件 | 是 | 与参考梯度 assert_close |
+
+未重绑时输出头梯度范数3.150110；范数不能直接相加，只有向量和与共享梯度相符。本控制没有 optimizer 更新或跨 rank 通信，不能推导完整训练轨迹一致。
+
+### Meta 地址相等不是共享证据
+
+原测试 [`_is_tied`](https://github.com/verl-project/verl/blob/93f5328f0fad3756925337505e7318b18f2bcb62/tests/utils/test_fsdp2_tied_weights_on_cpu.py)只比较 `data_ptr()`。在本机 torch2.14.1／Transformers5.20.2／Accelerate1.15.0，原 `init_empty_weights()` 构造后两 Parameter 已不是同一对象，但地址均为0，因此原“仍在 meta 时共享”的断言通过。将真实 LlamaConfig 明确设为 untied 后，同一原判据仍返回 True。这是 **meta 前置断言的假阳性**，不是四个 CPU 用例完全无效，也不否定物化后恢复梯度的结果。
+
+[PyTorch meta 文档](https://docs.pytorch.org/docs/2.14/meta.html)说明该设备只记录元数据，`to_empty()`留下未初始化参数。本机安装源码中 Accelerate 默认 `include_buffers=False` 的参数注册包装会重新创建 Parameter，不能把这条路径的身份变化全归因于 `to_empty`。另用原生 `with torch.device('meta')` 构造同一真实 Llama：对象身份依次为共享 → `to_empty(cpu)` 后不共享 → `tie_weights()` 后共享，独立验证物化危险。meta 上应先核对象身份；物化后再结合存储关系与梯度，不以空地址代替结构证明。
+
+本地可审阅反馈：明确 meta 前置断言的对象身份及依赖版本，区分构造时已断开与 `to_empty` 导致断开；保留物化后梯度正负对照。仅留项目内，不替作者改测试、评论或推送已有 PR head。原作者使用 torch2.11／Transformers5.9 的 GPU 与内存数据不移作本机结果；其30B修复后训练停滞仍未归因，本轮不复跑、不下结论或新增 M5 队列。[版本、命令与 hash](../../diary/2026-10-25.md)留日志，五份源码语法通过不等于完整 FSDP／offload／内存验收。
+
 ## 参考
 
 - [verl GitHub](https://github.com/volcengine/verl)

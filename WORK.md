@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1共享参数加载学习收束（2026-10-25）**：从31395ae快进M5日志9736ff5，无专项改动。#7834已有#7835 head93f5328f／祖先a9f29851，不另实现。见[原架构专题](notebook/frameworks/verl-architecture.md#meta-加载后的共享参数与梯度)：真实tiny Llama原四CPU用例通过；同loss但未重绑梯度不同，meta零地址判据对明确untied模型假阳性。Accelerate构造与原生torch meta的身份变化分开，反馈仅留项目内待用户审视，不评论／改PR。无完整FSDP／内存验收或M5新队列；下轮转独立实际需求，不堆alias／meta／假rank矩阵或另写共享参数修复。
+
 - **M1 critic配置接线学习收束（2026-10-25）**：起始d172bc0干净，收束前快进M5的7687eb6、保留05:39日志。#7462已有#7465 head2609808d／祖先23a341e3，不另实现。见[原架构专题](notebook/frameworks/verl-architecture.md#critic-批处理配置如何进入引擎)：七个真实原配置类AST及六原测试体CPU通过；YAML插值、直接构造infer默认32768、engine字段和batch显式覆盖分层，四generated只核字段而非后端实例化。无完整Hydra／worker／训练、M5新队列或上游动作；下轮转独立实际需求，不堆默认值／缺参矩阵或写另一配置修复。
 
 - **M5 定时轮 05:37 例行核对（2026-10-25）**：4090-1 直连在线（uptime 129 天 12:37、load 0.16）；**GPU 与 05:07 轮一致——0/1/3/4/5/6/7 各 3050MiB/util 100%**（轻量进程占用延续，compute-apps 同一 PID 1043401 占 8 卡各 ~3040MiB、进程名 [No data]，形态间歇波动），GPU 2 仍 liyaowei VLLM 常驻（23795MiB/0%）；**仍无可领算力项**——UniRL #523 L1 需 ≥8 卡同时空闲 + 获准权重（GPU 2 被 VLLM 占用只剩 7 卡、权重未授权、磁盘满），DeepInfer 真实权重推理需磁盘清理决策 + 不在 mock 授权范围，其余已授权 GPU 工作全部完成；V4.1-Flash 权重日志再确认完成（84/84、Snapshot ready、无 modelscope 进程）；#8313 仍 OPEN/MERGEABLE/REVIEW_REQUIRED/head 71fd3562 等维护者 approve（②③④ 草稿 v2 待用户逐字审定，本轮只读）；/home 仍 100% 满剩 58G（清理待用户决定）；昇腾 910C VPN 掉线**第 12 天**（网关可达 avg 10.8ms、目标机 100% 丢包、22 端口不可达）待用户恢复；DeepInfer-Go PR #2 仍 OPEN+MERGEABLE（head consumer-gpu a0a6940b）等用户审视；上游三仓库 main 无新合并、open PR 无新算力项（verl 最新 #8361、UniRL #628、DeepInfer #222）。本地已 fast-forward 到 origin/main d172bc0（并行会话「核清SFT验证尾批与token加权分母」+ 同步，无新算力队列）。详见 [当日日志](diary/2026-10-25.md)。

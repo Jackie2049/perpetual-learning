@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[critic配置接线](#critic-批处理配置的已有修复)：#7465原六测试体CPU通过，YAML插值与直接构造默认值分开，不当完整后端验收、不另实现。[数据子集接线](#数据子集与验证入口的已有修复)反馈仍只留本地待用户审视，无对外发布。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[共享参数加载](#共享参数加载的已有修复)：#7835原四个CPU用例通过，但meta地址前置断言可假阳性；真实小模型补核参数身份与梯度，非完整FSDP验收。该反馈与[数据子集接线](#数据子集与验证入口的已有修复)均仅留项目内，无上游发布。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## 共享参数加载的已有修复
+
+2026-10-25读取[#7834](https://github.com/verl-project/verl/issues/7834)全文／0评论，编号与tied embeddings rank0查重见报告者inin-zou已有[#7835](https://github.com/verl-project/verl/pull/7835)，OPEN／非draft／未合并；head93f5328f、父提交／祖先a9f29851，API目标base3f9d4c0d，三文件123增3删。读完两条普通评论及两条行内讨论；旧[#5746](https://github.com/verl-project/verl/pull/5746)关闭未合并，不另实现。
+
+见[原架构专题](../../notebook/frameworks/verl-architecture.md#meta-加载后的共享参数与梯度)：真实tiny Llama原四用例CPU通过，但原meta `data_ptr`断言对显式untied模型也返回True。本机Accelerate路径构造后对象已不同；原生torch meta另证共享→物化断开→重绑恢复。前向loss逐bit相同不能替代梯度结构，候选原重绑条件恢复共享梯度。反馈只留项目内待用户审视，不改作者测试或发表review；无完整FSDP／分布式loader／内存验证、M5新队列或专项改动，上游任何动作及PR-head推送仍逐项待用户明确同意。
 
 ## Critic 批处理配置的已有修复
 
