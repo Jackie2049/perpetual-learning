@@ -172,6 +172,7 @@
   - [新版检查与指标哨兵](frameworks/verl-quant-layer-audit.md#新版运行期检查与指标哨兵) — #8327关系/默认warn与硬拒绝分开；原纯Python20例及5控制通过，缓存disabled与缺指标不当健康证明
 - [verl ModelOpt模块忽略](frameworks/verl-quant-layer-audit.md#modelopt-模块忽略与子量化器) — #8329模块名与子量化器名分层；两版原helper名称控制通过，未执行真实量化，权重加载相等不认证actor forward精度
 - [verl 新版阶段 tracing](frameworks/verl-async-logprob-provenance.md#新版阶段-tracing-与证据关联) — #8315原12项日志测试三版本对照，前后head均过但生产lane不同；Mock调用不认证后端显示/真实同步，M5原条目已同步版本
+  - [Gauge元数据与训练步存储](frameworks/verl-async-logprob-provenance.md#gauge-元数据与训练步存储) — #8357原logger到固定SDK原push路由四分支控制；step标签非global_step记录，sink边界保留不等于后端已存储，非服务/设备验收
 - [verl 单 worker NIXL 拓扑](frameworks/verl-async-logprob-provenance.md#单-rollout-worker-的-nixl-拓扑) — #8316原函数20组控制及后续新增1原测试隔离对照；worker非replica，测试体通过非原生导入/传输验收
 - [verl 组初始化等待超时](frameworks/verl-async-logprob-provenance.md#组初始化的等待超时与任务退出) — #7045当前控制端head、12组原参数检查；等待上限不等于全链路截止、RPC取消或资源回收，真机条件补M5原条目
 - [verl Resume扩展字段](frameworks/verl-async-logprob-provenance.md#resume-返回值与扩展字段合并) — #8341原2测试体base丢字段/head通过；最后出现值覆盖非逐token拼接，3组补充CPU控制，非真实backend/AgentLoop验收

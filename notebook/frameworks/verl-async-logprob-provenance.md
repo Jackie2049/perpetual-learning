@@ -239,6 +239,27 @@ python3 experiments/scripts/verify_verl_logprob_provenance.py /path/to/verl-8250
 
 当前tracking SHA256仍为上列`c22afac0…`；engine_workers为 `7166ff29e71eb101031ce88aa22feb32f0d960a5e795af0e8116f37aff757ec1`，原测试为 `874a695c536517254d666dc5b42a7309993a7f86d33e654ec7fbf66c6de58cf3`。详细命令、原类隔离方式、输入hash及首次网络审计误伤asyncio本地socketpair后的修正见[实验记录](../../experiments/verl-rl-insight/readme.md)。原M5条目只同步新版/验证范围，不另开任务或默认部署监控。
 
+### Gauge 元数据与训练步存储
+
+**日志标签带了step，不等于后端已按训练步存储。** 2026-10-24新出现的draft[#8357](https://github.com/verl-project/verl/pull/8357)由ETOgaosion实现，head `cd12877931cdd441adb731978a8b3785858dba27`，base/祖先 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`（ahead1/behind0），两文件9增2删。它保留旧flattened gauge名和值，增加 `rl_insight_step=int(step)`、`rl_insight_metric_name=str(key)` 两个标签；不新增exporter或存储。与已有#8315的step-aware API目标重叠，但不是相同实现，不应盲目叠加或另写竞争修复。
+
+官方RL-Insight源码固定在 `64618dea13ae1977f04b355d94db96bb573eeb13`。[metric_gauge](https://github.com/verl-project/rl-insight/blob/64618dea13ae1977f04b355d94db96bb573eeb13/rl_insight/api.py)将参数写进gauge event的labels；[PushMonitorClient](https://github.com/verl-project/rl-insight/blob/64618dea13ae1977f04b355d94db96bb573eeb13/rl_insight/client/push/client.py)默认将gauge交给 `emit_store`，标签转字符串，不解释这两个新字段，也不据原名改写指标名。`metric_log`则走trace事件，携带原 `metric.name`、数值 `metric.value` 与整数 `global_step`。这正是API路径而非单纯字段拼写的差别。
+
+本机Python3.12.13/packaging26.3，隔离执行三个版本的完整原RLInsightLogger类、SDK原四个emit/API函数、完整原PushMonitorClient/MonitorClient类和两个原dataclass；跳过包入口及构造初始化。两步7/8，各发 `actor/loss=0` 与 `actor_loss=1`，另一个object值被跳过：
+
+| 生产端分支 | 四次sink边界调用 | 名称与步数 |
+| --- | --- | --- |
+| 固定base | store | 均为trainer.actor_loss，无原名/step标签 |
+| #8357 gauge | store | 名称仍相同；原名两种、step字符串7/8，合计四个不同标签组 |
+| #8315旧API分支 | store | 与base同样未携带原名/step |
+| #8315 metric_log分支 | span | 名称trace.metric_log；attributes保留两个原名和整数global_step |
+
+四组有限断言通过。#8315旧分支用显式 `metric_log=None` 控制能力判断，仍接同一固定新版SDK的gauge函数，不是实际旧版SDK兼容测试。SDK状态及client字段由夹具注入；唯一sink是捕获参数的边界替身，不是可运行exporter。没有执行logger/SDK init、原pytest suite、Prometheus registry、Ray、服务投递、存储查询或dashboard；未导入torch或设备模块。完整复现和输入hash留[当日日志](../../diary/2026-10-24.md)。
+
+[Ray collector](https://github.com/verl-project/rl-insight/blob/64618dea13ae1977f04b355d94db96bb573eeb13/rl_insight/collector/ray_monitor_hub.py)把gauge labels原样交给[MetricRegistry.value](https://github.com/verl-project/rl-insight/blob/64618dea13ae1977f04b355d94db96bb573eeb13/rl_insight/utils/prometheus_utils.py)，后者用所有合并标签调用 `gauge.labels(...).set(value)`。因此若不消费/移除step，每个不同step是新标签组合，而非同一时序点的独立横轴；本机四组标签不是Prometheus容量/存储实测。固定SDK的[原生dashboard查询](https://github.com/verl-project/rl-insight/blob/64618dea13ae1977f04b355d94db96bb573eeb13/rl_insight/config/services/grafana/dashboards/verl/verl_tainer_v1_with_vllm_engine.json)查找metric_log trace、global_step和metric.value，新gauge标签不会自行变成这些字段。
+
+评估采用时要先确定实际后端和消费协议：需要新API且可用时，核trace接收/保留与查询；需要旧gauge兼容路径时，核exporter如何恢复原名、解析step并避免将它留作时序维度。当前草案已明确该取舍；不把传参通过称为监控修复完成，不因本项部署监控、外发训练数据、追加GPU任务或改#8250/#8313。已有#8315的原12测试与同步边界结论保持原版本，不重复执行。
+
 ## 单 rollout worker 的 NIXL 拓扑
 
 2026-10-21核对已有[#8316](https://github.com/verl-project/verl/pull/8316)，读取时open、rafiw，head `3a60b8710f8e1001110820f7a14cd0e71d9d5e07`、目标base `f2923cbf154731918b1e36db8c567433f349fede`、共同祖先 `619c397dc9917fed278b6e47c52a6620aef05466`。真正PR只改一行切片，未提交测试文件；正文勾选“新增单测”不能替代固定diff证据。这里验证的是**拓扑参数契约，不是权重同步完成**，也不说明#8250实际使用了此backend或故障由它造成。
