@@ -537,6 +537,30 @@ python -B experiments/scripts/verify_unirl_loss_reduction.py /path/to/UniRL
 
 本机环境缺 Ray/Hydra/OmegaConf/Pillow，未补装或导入训练栈，未复跑作者报告的双 rank Gloo/FSDP2 gate、80,640 组差分或 AROPD。这里确认局部目标差异和固定源码路径，不认证候选所有输入 bit-identical、分布式归约、模型梯度或训练收益；不自动采用或新增 M5 必跑事项。
 
+## 离线 DPO 的成对布局与零步控制
+
+**零步loss等于log 2，是一致性控制，不是配对语义、参考冻结或生成质量的充分证明。** [#476](https://github.com/Tencent-Hunyuan/UniRL/pull/476)新增Qwen3-Omni Thinker离线DPO，2026-10-24读取open/non-draft，head `f824e6954e702ce4fe2e4bb9ec0394152c7306ce`、base/实际祖先 `e6934259da95c5f212a87d572b9ba55284a66ae8`。DPO是偏好目标，不是仓库中名称相近的Divergence-PPO。已有作者实现，本节限定输入几何及原数学片段，不是完整候选审阅或新增修复。
+
+### 记录数与样本行数
+
+[ARPreferenceTrackBuilder](https://github.com/Tencent-Hunyuan/UniRL/blob/f824e6954e702ce4fe2e4bb9ec0394152c7306ce/unirl/train/sft/track_builder.py#L571)声明每条记录两行，把chosen/rejected按相邻顺序展开，共用重复的prompt条件。令全局记录数B、DP数D、每数据批更新数U，则每rank有`2B/D`行，每次更新需分得完整偶数行；micro大小也须为2的倍数。[SFTTrainer guard](https://github.com/Tencent-Hunyuan/UniRL/blob/f824e6954e702ce4fe2e4bb9ec0394152c7306ce/unirl/trainer/sft.py#L89)检查这些整除关系，而[DPO._split_adjacent](https://github.com/Tencent-Hunyuan/UniRL/blob/f824e6954e702ce4fe2e4bb9ec0394152c7306ce/unirl/algorithms/dpo.py)只按偶/奇行切分并拒绝奇数行，不读取prompt ID来证明语义匹配。本机没有运行builder、tokenizer、DP分片或trainer guard。
+
+### 归约单位与 sigmoid 目标
+
+原`_reduce_to_sequences`按长度把packed log-prob放到`[S,Lmax]`再沿固定轴求和，先乘loss_mask；开启average_log_prob才除以监督mask之和，分母最小1。它不是默认token均值，且该中间量随`S×Lmax`增长，不能把packed输入等同于没有稠密临时量。`_real_pair_mask`以两行是否有监督token的OR判定，只有两支都完全mask的pad pair会被剔除。
+
+默认sigmoid、label_smoothing=0时，令每行`d=logπ−logπ_ref`，pair margin为`d_chosen−d_rejected`，loss为`softplus(−β×margin)`；奖励准确率用严格`βd_chosen > βd_rejected`。在策略与参考逐行相等时，margin=0、loss=log 2、准确率0；若同样置换策略和参考的行，这些值仍不变。因而这个控制可帮助定位初始数值不一致，但无法独自识别跨prompt错配，也不证明后续更新中的参考不漂移。作者另报adapter-disabled与无adapter模型的独立对照，本机未复验。
+
+### 本机仅执行原数学片段
+
+Python3.12.13 / torch2.14.1 / CPU FP64，从固定源码AST提取完整归约、相邻分对和pad-mask方法；`_pair_loss`只保留从分对开始的原后半段，显式输入合成policy/ref sequence分数，跳过replay与adapter上下文，绝不构造替身stage。segment仅为lengths/mask属性夹具：
+
+- 长度`[3,2,4,1]`及声明的0/1 mask，原sum为`[-3,-9,-23,-10]`，average为`[-1.5,-4.5,-23/3,-10]`；与独立逐段求和的值及局部梯度逐位相同。奇数三行被原split拒绝。
+- 两pair、β0.1，正确顺序与人为跨prompt重排`[0,3,2,1]`均得到loss `0.6931471805599453`、accuracy0、margin0；两者policy序列分数梯度均为`[-.025,.025,-.025,.025]`。准确率0不等于没有训练信号。
+- 只把chosen相对参考提高2，loss `0.5981388693815918`、accuracy1、奖励margin0.2。三pair的监督模式`[1,1,1,0,0,0]`得到keep `[True,True,False]`，不是要求每支都有监督。
+
+这些检查不认证CUDA原子归约的确定性、BF16长序列、完整DPO/IPO、LoRA参考身份、模型、训练恢复或偏好数据质量。作者的4×H20训练、长度偏差分析及学习指标属于其报告；正文也明确GPU结果早于rebase，不搬到当前head当验收。复现见[当日日志](../../diary/2026-10-24.md)，不新排硬件任务或演化竞争配对补丁。原dpo.py SHA256 `453d179928786688154a2ea2e3402c07599d8b059d92870121d2692a08aaa7a2`。
+
 ## AROPD 的采样梯度与 KL 目标
 
 [已有 PR #534](https://github.com/Tencent-Hunyuan/UniRL/pull/534)新增 AR 端 on-policy distillation：teacher 评价 student 自己生成的 token，再将 teacher/student 的 log-prob 差作为冻结权重。固定 head `1962740c4aabe104c2528d0a79ed853c52d05046`、base `0fe4f99dc2384a022fe0c8472aec889c216d3c07`；本节区分源码机制和固定前缀下的数学，不把采样 surrogate 的值直接当作 KL。
