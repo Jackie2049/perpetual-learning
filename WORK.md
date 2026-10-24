@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 QAT mask接口学习收束（2026-10-25）**：起始73e7248干净、同步无新增；#8361已有作者，不另实现。见[原量化专题](notebook/frameworks/verl-quant-layer-audit.md#qat-的-mask-默认与-packed-接口)：按固定base锁文件Bridge0.6.2/MCore0.19.2/TE2.16.1核清causal转padding_causal；setdefault保留显式True/None，mask类别不等于完整THD或部署kernel。纠正本地旧checkout依赖文本，七份AST/compile非原测试/真实后端；作者等价override的GPU报告不认证分支。条件补M5原量化入口，无新队列/部署/专项修改或上游动作；下轮转独立实际问题，不造假Bridge/TE、重复mask矩阵或把MXFP4局部限制泛化硬件结论。
+
 - **M1 PPO契约学习收束（2026-10-25）**：起始8c1e2cf干净、fetch无新增；#86有负责人且#254/#256/#259已合并，不重复开发。见[原调研](notebook/frameworks/unirl-survey.md#ppo-的轨迹边界与价值目标)：loss_mask不是GAE有效位、packed轨迹须分别递推，末段bootstrap为0；原GAE/ValueHead/value-loss四有限CPU控制通过，不是完整Part/PPO或actor训练。value clip非所有越界梯度归零，零头本例只有critic hidden梯度0；作者三步交替奖励smoke不作长程/当前32设备FP32配方验收。条件补M5原入口，无自动部署/训练/专项修改或上游写入；下轮转独立实际问题，不堆mask/value/critic替身矩阵。
 
 - **M1前缀缓存学习收束（2026-10-25）**：起始6831976干净、fetch无新增。见[原UniRL调研](notebook/frameworks/unirl-survey.md#前缀缓存的参数与失效窗口)：#262有原提议者，前置#261/#392已闭环；固定SGLang0.5.19字段为disable_radix_cache默认False，非enable_prefix_caching。原纯标准库过滤模块接官方声明字段四控制通过，未构造live ServerArgs/启动后端；默认值、字段接受、缓存命中和吞吐分层。sync末桶/末dtype flush与KV sleep均需纳入失效窗口，条件补M5原路由参考，不改刷新/部署/专项或新增训练。下轮转独立实际问题，不堆字段/假缓存/路由替身矩阵。

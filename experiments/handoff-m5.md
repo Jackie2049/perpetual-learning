@@ -213,6 +213,8 @@ M5 最小下一步：先按实际硬件查已有方案和精确 head，读清依
 
 状态：待 M5 核对匹配硬件/软件栈，本项目尚无下述新版路线的真机复验；#8306作者另有Blackwell观测，不是M5结果。该项不代表已接单，也不作为其他任务的前置条件。
 
+QAT packed mask参考（2026-10-25，非新队列）：[#8361](https://github.com/verl-project/verl/pull/8361) head cf6eb518/base3c6d9b4，[M1源码链](../notebook/frameworks/verl-quant-layer-audit.md#qat-的-mask-默认与-packed-接口)按锁声明Bridge0.6.2/MCore0.19.2/TE2.16.1解释CP1默认arbitrary与THD mask检查；仅七份AST/compile，无原替身测试或后端执行。M5若已有获准匹配QAT任务且独立选用，先核实际包/源码与最终override（True/None不会被setdefault覆盖）、真实CP、QKV layout、最终mask枚举与cu_seqlens，再看获准最小forward；padding_causal名字不代表必须保留padding token。作者等价override的GPU报告不是该head验收，MXFP4权重/FP8 activation experts的GH200部署限制另属backend条件，不能以mask修正认证或触发Hopper部署。缺模型/硬件/依赖、需新下载部署或影响专项则停止记未测，不强改mask/packing或拼接量化路线；不改AReaL/#523/#8313。任何上游可见写入、评论或已建PR的fork head推送仍须用户对具体动作明确同意。
+
 VeOmni范围参考（2026-10-24，非新增通信/训练队列）：[M1源码学习](../notebook/frameworks/verl-quant-layer-audit.md#veomni-低精度计算与通信边界)区分#8342待后端讨论的E2E提案、主线3c6d9b4已含#8330的默认关闭梯度RS接线，以及torchao0.18标准rowwise/float8 AllGather限制；无本机通信/量化或模型执行。若M5将来已有获准匹配VeOmni工作且独立选用，先核实际安装版本、计算/参数AG/梯度RS/rollout格式四条路径，分别记通信时延与actor整步/峰值显存；不能以#1167 H100微基准认证#8330最终树或其他设备速度。缺资源/依赖或需新部署下载、影响专项则记未测停止，不为尚未确认接口的RFC启新矩阵、改hook或安装torchao，不改变原任务优先级。
 
 来源：[源码与24项CPU单测](../notebook/frameworks/verl-quant-layer-audit.md)、已有 [#8132](https://github.com/verl-project/verl/pull/8132)，2026-10-21读取时open，head `0defd9a231cb876ce56812611b0afb3b2b25831a`，base `cd58f550fb1c4f5a3fe29da38e6f0002ec462fd3`。第7部分依赖前序量化堆叠且按#8287重做；不能盲目只cherry-pick审计。作者旧B200/ModelOpt观察不是新版验收；M1只运行作者自带替身的CPU单元测试，没有真实TE/compressor/engine。

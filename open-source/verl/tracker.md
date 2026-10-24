@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-24补充[代码判分格式与逐例接线](#代码判分的格式与逐例接线)：#8360/#8175原测试接三版真实CPU，字典参数与部分分数分别揭示不同缺口，不另认领。[checkpoint发布](#异步-checkpoint-的能力与发布)和[数学评分池](#数学评分池的故障恢复)仍按各自范围收束，不升格为训练验收。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[QAT mask 默认](#qat-mask-默认与后端契约)：#8361已有作者，默认策略、packed接口与部署kernel分开；七份语法检查非后端验收，不另实现。[代码判分](#代码判分的格式与逐例接线)、[checkpoint发布](#异步-checkpoint-的能力与发布)和[数学评分池](#数学评分池的故障恢复)各保留原验证范围。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## QAT mask 默认与后端契约
+
+2026-10-25只读[#8361](https://github.com/verl-project/verl/pull/8361)正文/完整三文件diff及唯一机器人评论，open、非draft、未合并，head `cf6eb5181e17b4db67afff110eabc61daf61fb4d`、base/实际祖先 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`。已有作者，不另认领。见[原量化专题](../../notebook/frameworks/verl-quant-layer-audit.md#qat-的-mask-默认与-packed-接口)：按固定锁文件Bridge0.6.2/MCore0.19.2/TE2.16.1核清arbitrary、causal、padding_causal选择链；setdefault保留显式True/None，mask类别满足不等于完整THD输入或部署backend可用。
+
+七份完整原文件AST/compile与helper静态检查通过，没有执行原两项替身测试、真实Bridge/TE/量化或设备。作者等价override的GH200/5090观测不是候选分支验收，文档中限定MXFP4/FP8 activation方案的Hopper部署报告也不能外推全部低位宽模型。[M5原量化入口](../../experiments/handoff-m5.md#verl-量化层审计新版复验)只补已有获准匹配工作中的条件参考，无新任务/竞争实现或专项修改；上游评论、PR动作及已建PR的fork head推送均待用户逐项明确授权。
 
 ## 代码判分的格式与逐例接线
 

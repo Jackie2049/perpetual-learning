@@ -6,6 +6,31 @@
 
 2026-10-24补充：[VeOmni计算与通信边界](#veomni-低精度计算与通信边界)区分端到端RFC、已合并的ReduceScatter接线及torchao版本限制；通信微基准收益不能直接外推actor更新速度。
 
+2026-10-25补充：[QAT 的 mask 默认与 packed 接口](#qat-的-mask-默认与-packed-接口)核清默认策略如何经过 Bridge、MCore 到达 TE。mask 类别通过不等于完整 THD 输入有效，也不能解决量化 MoE 的部署 kernel 限制。
+
+## QAT 的 mask 默认与 packed 接口
+
+QAT 的量化层选择、attention mask 与 rollout 部署格式是三个独立条件。[verl #8361](https://github.com/verl-project/verl/pull/8361)读取时 open、非 draft、未合并，固定 head `cf6eb5181e17b4db67afff110eabc61daf61fb4d`，base 和实际共同祖先均为 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`；三文件 69 增 5 删。它为 QAT 选 ModelOpt layer spec 时补一个默认值，不是新量化方案，也没有验证所有 packing 组合。
+
+该 base 的 [pyproject.toml](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/pyproject.toml)与 [uv.lock](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/uv.lock)声明 Bridge 0.6.2、MCore 0.19.2、TE 2.16.1。这些是依赖声明，不是某台机器的安装证明；下面按对应官方 tag 的固定提交说明接口，而非使用本地旧 checkout 的依赖文本。
+
+| 组件 | 选择或转换 | 对 packed 路径的影响 |
+|---|---|---|
+| Bridge 0.6.2 | `use_arbitrary_attention_mask=None` 时，以实际 CP world size 是否为 1 选择 arbitrary | CP1 默认走 arbitrary，不只是查看配置字典里的 CP 数字 |
+| MCore 0.19.2 ModelOpt spec | True 选 arbitrary，False 选 causal | mask 选择独立于是否传入 packed QKV |
+| MCore TE adapter | THD 且相应 TE 条件成立时，causal 改为 padding_causal，no_mask 改为 padding；arbitrary 不改 | 不能把 arbitrary 自动解释成 packed causal |
+| TE 2.16.1 | THD 分支要求 mask 类型名包含 padding，另检查 QKV 维度与 cu_seqlens | 通过 mask 类别检查只是完整输入契约的一部分 |
+
+固定源码：[Bridge provider](https://github.com/NVIDIA-NeMo/Megatron-Bridge/blob/c0e164ed2aedac4ad1c877780e2564a19d5d54ec/src/megatron/bridge/models/gpt_provider.py)、[MCore ModelOpt spec](https://github.com/NVIDIA/Megatron-LM/blob/4b4acac9a1d28ea6829c8d4f566d75698a21249d/megatron/core/post_training/modelopt/gpt/model_specs.py)、[MCore TE adapter](https://github.com/NVIDIA/Megatron-LM/blob/4b4acac9a1d28ea6829c8d4f566d75698a21249d/megatron/core/extensions/transformer_engine.py)、[TE attention](https://github.com/NVIDIA/TransformerEngine/blob/c9877beb87ad7e711e1869dd0b5062167ede447a/transformer_engine/pytorch/attention/dot_product_attention/dot_product_attention.py)。由这条调用链可解释作者遇到的 CP1、remove_padding 路径：未覆盖时默认 arbitrary，adapter 不转换，随后不满足 TE 的 THD mask 类别要求；显式 False 则经 causal 转为 padding_causal。后者名字有 padding，并不意味着必须保留实际 padding token；仍须满足累计长度、布局等其余条件。
+
+候选 [transformer_impl.py](https://github.com/verl-project/verl/blob/cf6eb5181e17b4db67afff110eabc61daf61fb4d/verl/workers/engine/megatron/transformer_impl.py)用 `provider_overrides.setdefault("use_arbitrary_attention_mask", False)` 补默认。显式 `override_transformer_config` 已先写入字典，因此 True 仍是 True，显式 None 仍可触发 Bridge 的自动选择；不是强制关闭或合法性校验。helper 自身也没有 CP1 条件，适用于进入该 QAT 分支的调用。覆盖随后交给 provider finalize，并非仅改一个未被使用的局部值。
+
+原 [两项 CPU 测试](https://github.com/verl-project/verl/blob/cf6eb5181e17b4db67afff110eabc61daf61fb4d/tests/workers/test_megatron_qat_layer_spec_on_cpu.py)使用假 Bridge 模块与 SimpleNamespace，检查缺省 False 和保留显式 True；它们不构造真实 ModelOpt spec 或 TE attention。本轮只对 head/base 生产文件、该测试文件及上述四份官方源文件共七份做 AST/compile，并静态确认 setdefault 参数；没有执行这两项测试或真实 Bridge/TE。作者的 19 项 CPU 报告不记为本机结果。
+
+作者在 GH200 与 RTX 5090 的报告采用等价显式 False override，明确不是该候选分支的 GPU 验收；小模型的 k3 KL 观察也不是长程训练结论。同一 PR 的 [QAT 文档](https://github.com/verl-project/verl/blob/cf6eb5181e17b4db67afff110eabc61daf61fb4d/docs/low_precision/qat.md)另记录 vLLM 0.29 下 GH200 的 MXFP4 权重、FP8 activation experts 预设启动受限，涉及其 FP8 1x128 activation scheme 与可用 MoE backend，不可泛化成全部四位模型或全部 Hopper 不支持。这里沿用作者限定的部署报告，未独立核验 vLLM dispatch；mask 修正不能补出缺失的 MoE kernel。
+
+真机条件仅补入[已有 M5 量化入口](../../experiments/handoff-m5.md#verl-量化层审计新版复验)：M5 在已有获准、匹配的 QAT 工作中独立选用时，固定实际安装版本、最终 mask、QKV layout 与累计长度，再判断 forward；部署 backend 另行判断。不新增训练队列、应用候选或修改专项，任何上游可见动作仍逐项待用户明确同意。
+
 ## 版本与问题
 
 读取时 PR open，作者 wengeezhang；固定 head `0defd9a231cb876ce56812611b0afb3b2b25831a`，base `cd58f550fb1c4f5a3fe29da38e6f0002ec462fd3`。这是量化支持堆叠的第 7 部分，依赖前序 PR，并按 #8287 的导出接口重做；整个 PR diff 包含前序提交，不能全算作本次审计新增代码。

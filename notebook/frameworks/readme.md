@@ -158,6 +158,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [独立分片head的执行与梯度归属](verl-fused-output-softcap.md#独立分片-head-的执行与梯度归属) — #8091已有#8096/#8097替代方案；FSDP注册方法与显式聚合、梯度布局分开，仅源码/compile，不搬作者GPU报告或旧CPU数学结果。
 
 - [verl 训练与 rollout 的量化层审计](verl-quant-layer-audit.md) — #8132审计/24项CPU单测及新#8306 refit覆盖对照；loader/marker与测试证据不可混用，真机待M5。
+- [QAT 的 mask 默认与 packed 接口](verl-quant-layer-audit.md#qat-的-mask-默认与-packed-接口) — #8361补默认而非强制覆盖；Bridge到TE的causal转padding_causal与完整THD契约分层，MXFP4部署限制另计。七份语法检查非后端或GPU验收。
 - [verl ModelOpt模块忽略](verl-quant-layer-audit.md#modelopt-模块忽略与子量化器) — #8329保留直接叶子并扩展模块后代；两版各11组名称集合控制，非ModelOpt/原34测试或训练验证。
 - [新版MXFP8检查与指标哨兵](verl-quant-layer-audit.md#新版运行期检查与指标哨兵) — #8327替代旧拆分、基于#8306；默认warn不拦截。原20参数例/5边界通过，仅纯Python sentinel，非量化或kernel验收。
 - [量化写入前检查与失败握手](verl-quant-layer-audit.md#写入前检查与失败握手) — #8327新head把格式检查移到引擎逐桶写入前；完成ACK不等于回滚，首轮finished不等于通过。九份语法检查非引擎或通信验收，旧GPU/CPU报告不迁移。
