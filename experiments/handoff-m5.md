@@ -19,6 +19,8 @@ GPU/NPU 的访问、环境与实验由 macbook-M5 Agent 负责。M1 遇到需要
 
 ## UniRL 联合路径的资源与身份边界
 
+AR缓存补充（2026-10-25，复用下方路由基准参考，非新增任务）：[#262](https://github.com/Tencent-Hunyuan/UniRL/issues/262)前置丢参保护#392已合并；[M1固定源码核对](../notebook/frameworks/unirl-survey.md#前缀缓存的参数与失效窗口)仅UniRL6fd82cba原过滤函数接SGLang0.5.19官方源码声明字段四控制、六模块compile，无boot/缓存RPC或模型。若M5以后已有获准匹配AR路由/缓存观测并独立接续，先记录实际安装提交与settled ServerArgs、同一权重代/worker/token前缀，以及sync flush、KV sleep和冷/热窗口，再按既有范围取后端可用命中/prefill及完成吞吐/尾延迟；缺实际计数就写unknown。字段可接受/默认False或同worker不作命中证据，不为提高命中率关闭flush。缺模型/资源/可比负载、需新部署下载或影响专项则记未测停止，不改现有训练/路由；任何社区回复/issue/PR或已建PR的fork head推送仍须逐项明确授权。
+
 HV1.0条件精度参考（2026-10-24，已有修复，不新增训练队列）：[#412](https://github.com/Tencent-Hunyuan/UniRL/issues/412)已派nussejzz，关联[#438](https://github.com/Tencent-Hunyuan/UniRL/pull/438)已合并；[M1核对](../notebook/frameworks/unirl-survey.md#视频时间步精度与比率诊断盲区)固定main6fd82cba，旧/head/main原timestep表达式与完整runtime/index/kernels CPU控制，未运行DiT/引擎或奖励。若M5将来独立选用且已有获准HV1.0/PickScore权重、数据和匹配资源，先记录完整提交、实际引擎/精度/sigma表、每步transformer时间条件及SDE索引；小平均log-ratio不能认证ODE尾段或所有条件一致。需训练因果时先确保同batch、同prompt消耗与评估协议，作者不同batch曲线不作闭环。缺权重/资源、需新部署下载预算或影响专项则停记未测，不自动跑原配方/修改均值或精度策略，不继承HI3设备硬约束。任何上游回复/issue/PR或已建PR的fork head推送均须用户逐项明确授权；本参考不代表接单。
 
 激活卸载基线补充（2026-10-24，同一参考，不另排队）：[#627](https://github.com/Tencent-Hunyuan/UniRL/issues/627)报告offload关闭的4×H100 EP2×FSDP2也被mask接口阻塞；[M1核对](../notebook/frameworks/unirl-survey.md#veomni-生成代码的-mask-接口边界)固定UniRL6fd82cba、VeOmni0.1.11 tag f90b3dc6、HF5.12.1 ddb849ab，仅源码/参数绑定。VeOmni已合并#774，0.1.12 tag fd99abfd的配置与GPU产物均不再传cache_position，但不是UniRL整体升级验收。M5若日后已有获准匹配模型/环境/资源且独立接续，先记录实际wheel/source与完整依赖，核因果mask（含该配方实际padding/packed/滑窗分支）及offload关闭的最小EP更新，再决定是否比较卸载。缺权重/资源、需新部署下载升级或影响专项即记未测停止；不自动升VeOmni/降Transformers、照搬#774全栈或写通用吞参shim，不改#523/AReaL，不代表已接单。

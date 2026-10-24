@@ -1,5 +1,7 @@
 # UniRL — 腾讯统一多模态 RL 框架调研
 
+2026-10-25 接续：[前缀缓存的参数与失效窗口](#前缀缓存的参数与失效窗口)核#262与已合并#392：合法字段、缓存实际启用、真实命中和吞吐是不同证据；原过滤函数四组本地检查不是引擎启动或性能验收。
+
 2026-10-24 接续：[视频时间步精度与比率诊断盲区](#视频时间步精度与比率诊断盲区)核已合并#438：9/10个FP32差异与2/10个双重舍入差异分开，小平均log-ratio和ODE尾段不认证完整轨迹一致，更不等于#412奖励问题已解决。
 
 2026-10-24 接续：[样本观察拆分与音频通道](#样本观察拆分与音频通道)核#628基础层和#597接线层的新版本；原WAV函数及W&B输入表达式的CPU控制，不将旧GPU报告搬到新head。
@@ -1921,6 +1923,33 @@ M1以完整原runtime模块生成当前[原始配方](https://github.com/Tencent
 当前配方把SDE候选限制在[0,5)，每次选4步；原AllSDEScheduler在rollout0选1/2/3/4，其余rollout的具体四步可不同。5到9始终不在该候选范围。实际stage在非SDE步设置eta=0；原SDEStrategy._finalize_logp对此返回None，只收非None log_prob。因此第7步的条件修正不会作为本步SDE密度进入ratio，但仍可能改变终态视频；这不证明它对最终reward的影响方向或大小。
 
 #438作者明确披露：补丁训练和基线的batch_size/GPU数量不同，按rollout画出的改善不能证明按同一消耗prompt预算也改善。其H20运行不是本机结果，维护者的“likely cause”也不是已闭环因果。Python3.12.13/torch2.14.1本轮仅三个完整数值模块、原赋值表达式、eta=0分支与raw YAML核对，无完整predict_noise、embedding、SGLang/Diffusers引擎、PickScore或训练；[命令与hash](../../diary/2026-10-24.md)留日志，缺口记[现有M5参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)。不重复认领、自动部署或将配方8设备写成所有路径的硬需求。
+
+## 前缀缓存的参数与失效窗口
+
+**配置接受某个缓存字段，不代表请求复用了缓存；字段缺省也不代表缓存默认关闭。** [#262](https://github.com/Tencent-Hunyuan/UniRL/issues/262)仍open、无assignee，但正文已有yhl48计划实现配置与文档v1，维护者要求先解决[#261](https://github.com/Tencent-Hunyuan/UniRL/issues/261)的静默丢参。该前置已由[#392](https://github.com/Tencent-Hunyuan/UniRL/pull/392)于2026-09-19合并，head`1b1c44ef686aa2fe85de119dfc78915aa0e2820c`、merge`07ac948a5d70a1a08777920fd191390fc0556ac2`。不能据旧追踪帖再认领同一丢参修复，也不能把#392视为整个缓存RFC完成。
+
+### 字段接受与运行生效
+
+固定UniRL main`6fd82cba13f52f394747832344039408699ea378`的[SGLangEngineConfig](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/rollout/engine/sglang/config.py)先收engine_kwargs，再覆盖显式typed字段、extra和runtime_overrides，最后覆盖保留端口。HTTP/native boot都从实际安装的ServerArgs dataclass读取允许字段，交给[同一过滤函数](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/rollout/engine/sglang/backends/base.py)：普通未知字段默认告警并删除，设置UNIRL_SGLANG_STRICT_SERVER_ARGS=1才拒绝；所声明必需的关键字段缺失则直接拒绝。缓存字段不在该关键字段集合，不能把“现在有告警”改述为“一切拼错都启动失败”。
+
+UniRL Linux extra钉sglang[diffusion]==0.5.19，不等于本机已安装。官方[v0.5.19 ServerArgs](https://github.com/sgl-project/sglang/blob/0bcd822377da7b5718e674eaf9c870d349424dd1/python/sglang/srt/server_args.py)声明disable_radix_cache=False，没有enable_prefix_caching字段。这只是字段默认值，未核实际模型、其他参数及运行时调整；不能由此宣布某次运行已启用或获得命中。
+
+M1从该固定源码AST取488个直接声明字段名，未构造ServerArgs。完整原UniRL backend/base.py正常定义后，四组本地合同检查通过：disable_radix_cache=False保留；enable_prefix_caching=True被告警删除；同一未知项在严格模式抛错；concurrency作为UniRL自用字段被排除且不告警。没有导入SGLang、Hydra compose、构造engine、执行后端boot或发现设备；这不替代live dataclass、字段值合法性或服务器启动验收。
+
+### 缓存复用有权重与生命周期边界
+
+[engine.sleep](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/rollout/engine/sglang/engine.py)在全量释放或tags含kv_cache时先flush，再释放内存；只释放weights的分支不由这里触发相同flush。wake_up恢复资源不等于恢复先前的前缀内容。因此不笼统说每次sleep都清缓存，也不把CPU权重backup等同KV缓存backup。
+
+[FullWeightSync](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/distributed/weight_sync/full/base.py)的flush_cache默认True；[TensorWeightSync](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/distributed/weight_sync/full/tensor.py)只在最后bucket的最后dtype组传最终flush标志，再经SGLang weight-sync seam传给后端。这是调用方的发布时序，不是M1已验服务器完成清理、并发无竞态或同一权重内容。不能为了提高命中率直接关闭刷新，否则比较可能混入旧权重下的KV。
+
+| 要确认的事实 | 需要的证据 | 不足以证明它的观察 |
+| --- | --- | --- |
+| 字段可用 | 实际版本、settled ServerArgs及启动结果 | YAML存在/本地字典保留 |
+| 前缀可复用 | 同一权重代、worker、实际token前缀与未失效窗口 | 同一prompt字符串/同worker |
+| 缓存命中 | 后端实际计数或可追溯prefill观测 | 开关打开/路由亲和 |
+| 性能改善 | 相同负载、同步节奏和测量窗口的完成吞吐/尾延迟 | 字段通过/单个命中比例 |
+
+这里沿用[原路由入口分析](#路由策略与基准入口)，不重做同步AR绕过pool或siblings派发控制。缓存RPC、模型KV、同步与sleep实际效果均未运行；其余六个相关原模块只compile，版本/hash见[当日日志](../../diary/2026-10-25.md)。硬件观测前提补[现有M5路由参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不自动设置缓存/严格模式、启动配方、修改刷新或开发并行路由方案。
 
 ## 下一步
 
