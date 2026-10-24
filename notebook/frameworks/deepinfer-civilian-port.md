@@ -6,6 +6,8 @@
 >
 > 源码基线：`deepseek-ai/DeepInfer` commit `8b16149`（本地 clone `/Users/jackiemac/workspace/DeepInfer`）。
 >
+> **成果承载仓库（2026-10-24）**：[Jackie2049/DeepInfer-Go](https://github.com/Jackie2049/DeepInfer-Go)——main = 上游原版（`9bd9cf2`，含历史），适配成果在 `consumer-gpu` 分支，[PR #2](https://github.com/Jackie2049/DeepInfer-Go/pull/2)（40 文件 +434/-65）待用户审视。分支/目录命名按用户裁定弃 "civilian" 字样，统一为 **consumer-gpu**（GPU 硬件类别标准术语）；mock 链路验证记录见仓库 `consumer-gpu/mock-chain/README-mock.md`。
+>
 > 状态：**堵点定位完成 + 替代方案调研完成 + 两段 4090 真机冒烟（import 链全通、csrc `_C` 编译成功、发现 tilelang PDL 硬堵点）。2026-10-22 续：PDL 机制源码级定位（tilelang 编译期硬检查、无配置可关）+ 5 个 kernel 文本级去 PDL 后 SM89 编译/数值验证全过（改写是机械工程且语义保持）。三续：43/43 个 `_tl` 工厂全量去 PDL 改写后 SM89 编译全过（含条件启用分支），工程量全量实证。下一步：完整移植需 Triton/Cutlass 替换四 kernel 包 + 数值语义逐 kernel 补全 + V4 权重，价值判断待用户确认。** 本专题完成后将作为新章节插入 DeepInfer 研究报告。
 
 ## 结论先行

@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **DeepInfer-Go 仓库落地（2026-10-24）**：按用户裁定弃「civilian（平民版）」分支命名，统一 **consumer-gpu**（GPU 硬件类别标准术语）——分支/目录/README/注释同步改名（a0a6940）；GitHub 分支改名 API 会自动关闭指向该分支的 PR 且 reopen 需 head 分支同名，故 [PR #1](https://github.com/Jackie2049/DeepInfer-Go/pull/1) 关闭留言、由 **[PR #2](https://github.com/Jackie2049/DeepInfer-Go/pull/2)**（base main ← head consumer-gpu，40 文件 +434/-65：28 tilelang kernel 去 PDL、4 个 Blackwell-only 包 stub 回退、架构检查放宽+prompt_length 守卫、引擎单节点修复、mock 链路）替代，**等用户审视**。同轮核验：4090-1 上 V4.1-Flash 权重下载**完成**（48/48 分片 476G，Snapshot ready）；⚠️ /home 盘 100% 满仅剩 58G，是否再清理待用户决定；本会话 SSH 直连 4090-1 正常（M5 侧 VPN 仍掉线，属通道问题）。详见[当日日志](diary/2026-10-24.md)与[专题笔记](notebook/frameworks/deepinfer-civilian-port.md)。
+
 - **M1代码判分格式学习收束（2026-10-24）**：起始2f9777b干净，快进1736d39保留M5记录，无日志丢失。见[原奖励专题](notebook/frameworks/verl-reward-integration-reading.md#代码判分的格式与逐例接线)：#8360 af4f9a3b与#8175 569c875e已有覆盖；两原测试合8项接三版完整评分模块/真实CPU进程，main3过5失败、#8175七过一失败、#8360六过两失败，后两者分别缺新字典参数/部分分数覆盖。数字形文本与JSON输出须先定schema，三真实echo控制非通用格式修复。不改候选/专项、不新增硬件队列或上游写入；下轮转独立实际问题，不堆格式变体或重复满分/部分分数矩阵。
 
 - **M1日志覆盖保全（2026-10-24）**：同步发现c6e4d05将当日日志从96条缩至4条（5增3566删）；保留唯一新增22:35原记录与其待用户决定状态，恢复17ccb79全部96条和当日回看。没有回退PR决定或改M5专项；本地hook无法阻止其他写入端覆盖，尚未根治。详见[当日日志](diary/2026-10-24.md)；下轮转UniRL/verl独立实际问题，继续在合并前检查异常删改。
