@@ -66,3 +66,17 @@
 1. ② middle 分法：对齐 postprocess_data（A）还是保持给头（B）？
 2. 是否按补丁 [8281-review-fixes.patch](patches/8281-review-fixes.patch) 更新 fork 分支（改名 + 显式期望）并推送到 PR？
 3. 是否回复 Jackmeson1 评论（回复草稿按上方逐条要点组织）？
+
+---
+
+## 定稿草稿 v2（2026-10-24，71fd3562 推送后；发前需用户逐字确认）
+
+> Thanks again — both remaining points are addressed in 71fd3562.
+>
+> 2. **`middle` consistency and assertions.** Confirmed the mismatch: `postprocess_data` uses `left_half = max_length // 2` (odd-cap remainder to the tail) while our implementation gave it to the head. The split now matches the helper exactly for cap ≥ 2: `head = max(1, prompt_length // 2)`. One deliberate deviation at cap 1: the helper's formula yields an empty head half and keeps only the last token; since this path caps *prompts* — whose leading token carries BOS/system identity — we keep `prompt_ids[0]` instead and document it in the docstring. Happy to match the helper exactly there too if maintainers prefer strict consistency.
+>
+> The self-referential assertion is gone: `test_middle_keeps_head_and_tail` now takes explicit expected lists for caps 1–6 (`assert out == expected`), plus the cap-1 regression test.
+>
+> 3. **Trainer-level `error` behavior.** This PR intentionally keeps its scope to the data path: the text prompt cap now fails loudly on `error`/unknown policies, mirroring the existing multimodal path, which already raises a `ValueError` for oversized multimodal prompts (agent_loop.py:384) instead of corrupting feature alignment. The exception surfaces from the per-sample task through `asyncio.gather` (agent_loop.py:719). What the trainer does above that — per-group catch/refill, sync vs. async refill semantics, validation accounting — is existing V1 machinery that this change neither modifies nor claims to fix; that contract is exactly the open question raised in #8281. We'd suggest settling it as a follow-up: happy to open an issue describing the sync/async refill paths and validation accounting, or to implement whatever contract the maintainers prefer.
+
+要点备注：①已在独立评论回复过（6385439467），此处不重复；第 3 点措辞刻意不背书 reporter 引用的 `agent_loop_tq.py`（该文件不在上游 main），只陈述已核实事实（多模态先例 384 行、gather 719 行）并把契约决策交还维护者。
