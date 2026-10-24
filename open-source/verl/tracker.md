@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责；四条社区评审已核验，补丁与回复待用户授权，见[原草稿](draft-8313-review-reply.md)。2026-10-24续核[多轮SFT](#多轮-sft-的已有修复)、[Prime新旧同题PR](#prime字典评分的重复覆盖)、[部分覆盖与状态](#部分覆盖与当前状态)、[VeOmni路线](#veomni-端到端低精度路线)及[图片payload](#图片payload的既有修复)：已有作者、局部保证与完整验收分开，不据新编号或空检索认领。[#8252评估](candidate-8252-weight-checker-rfc.md#现有验证能力与当前判断)已纠正旧“无回应/无验证”，不另实现；#8250仍待证据，#7913/clip旧RFC不重开。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责；四条社区评审已核验，补丁与回复待用户授权，见[原草稿](draft-8313-review-reply.md)。2026-10-24续核[FSDP head替代方案](#fsdp-head-生命周期的替代方案)、[多轮SFT](#多轮-sft-的已有修复)、[Prime同题PR](#prime字典评分的重复覆盖)及[部分覆盖与状态](#部分覆盖与当前状态)：已有作者、替代设计与完整验收分开，不据新编号或空检索认领。[#8252评估](candidate-8252-weight-checker-rfc.md#现有验证能力与当前判断)已纠正旧“无回应/无验证”，不另实现；#8250仍待证据，#7913/clip旧RFC不重开。
 
 **【大白话讲明白】**
 
@@ -109,6 +109,12 @@
 2026-10-24读取[#7807](https://github.com/verl-project/verl/issues/7807)全文及唯一认领评论，编号查重命中akushonkamen的非draft [#8197](https://github.com/verl-project/verl/pull/8197)，OPEN/unmerged、head`65195c8557d47a2c43774f31ee2f35f6325c7745`。完整正文、两文件diff和两条评论已读；机器人“Code Review Failed”没有具体代码意见，不能当补丁缺陷证据，也不根据CLA提示代作者操作。
 
 见[原多轮分词专题](../../notebook/frameworks/verl-6779-continuous-token-agentic-rollout-reading.md#12-多轮-sft-的上下文与监督边界)：text-only reasoning会话的assistant改用上下文差分，前缀不等仅告警，原整段sanity_check及忽略开关不变；新增Qwen3例检查IDs与监督内容，Qwen2.5例比较旧路径，但只有一段五消息fixture。本机四次compile及源码核对，不搬用作者2+4测试通过报告、不将推理异常建立为训练因果或拿SFT补丁验收runtime CT。不另开发/发布修复，不新增M5任务；具体数据或实质反馈出现后再判断。
+
+### FSDP head 生命周期的替代方案
+
+2026-10-24读取[#8091](https://github.com/verl-project/verl/issues/8091)全文/全部3评论，已有非draft [#8096](https://github.com/verl-project/verl/pull/8096)与draft [#8097](https://github.com/verl-project/verl/pull/8097)均OPEN/unmerged。见[原输出头专题](../../notebook/frameworks/verl-fused-output-softcap.md#独立分片-head-的执行与梯度归属)：前者注册FSDP forward方法、保留独立head分片；后者在autograd apply前显式聚合并单独处理head每microbatch同步，是替代设计而非可叠加补丁。包裹FSDP pre/post不等于恢复所有普通Module hook，默认full_tensor也不声明Partial梯度。
+
+两候选完整正文/生产diff、#8096原CPU和分布式测试与安装版PyTorch相关实现已核。13次compile非原测试或通信；作者144 case不乘rank，root-owned同kernel与unfused参考分开，不搬作本机验收。不重写同题修复、不向上游评论，真机缺口补原M5输出头参考，非新训练队列；#7991 softcap是另一语义层，旧数值验证不认证本题。
 
 ## 本地论证撤回，不再独立推进
 

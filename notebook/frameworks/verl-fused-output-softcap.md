@@ -1,5 +1,7 @@
 # verl 融合输出头与 logit softcap
 
+2026-10-24 接续：[独立分片 head 的执行与梯度归属](#独立分片-head-的执行与梯度归属)讨论FSDP生命周期；它与下方softcap数学语义是两个独立问题，旧36组CPU结果不验证分布式修复。
+
 通用 fused output head 直接消费hidden states和输出权重，绕过模型原始forward中的输出处理，因此必须保留原模型对logits的变换。省去 `c*tanh(z/c)` 不只是更换计算精度，会改变 log-prob、熵和梯度。verl [#7991](https://github.com/verl-project/verl/pull/7991)选择在不支持时拒绝通用 fused 路径，而不是补上 softcap kernel。
 
 ## 固定版本
@@ -69,3 +71,23 @@ python experiments/scripts/verify_verl_fused_softcap.py /path/to/verl
 作者[原测试](https://github.com/verl-project/verl/blob/b145ec9b405ca93092c45b5f9e7995fb4604dbd2/tests/models/test_fused_softcap_on_cpu.py)以真实HF Gemma2/Gemma3 config及无权重的PreTrainedModel覆盖3 backend×2嵌套布局×2softcap值×2启用状态，共24例。它检查拒绝时这段forward/backend选择未修改，不运行模型或三种kernel；作者报告24过，不是本机结果。本机缺Transformers，未执行这些测试，不用假配置替代。
 
 原生guard回归首先需要匹配HF及verl导入依赖，不需要先申请GPU。若日后在已有获准模型任务中核对真实融合路径，还需匹配模型config/权重、原始forward及backend环境，比较相同hidden/label/temperature下的输出和梯度。真机参考补入[M5原一致性入口](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不自动部署候选、下载模型或增加训练队列；与#8250没有已证因果关系，AReaL/#8313/#523分工不变。
+
+## 独立分片 head 的执行与梯度归属
+
+**拿到完整权重、进入FSDP执行入口、按正确布局归约梯度，并非同一件事。** [#8091](https://github.com/verl-project/verl/issues/8091)报告untied LM-head被单独FSDP2包装后，父模型的融合路径直接读`lm_head.weight`，绕开其参数准备及反向记账，表现可随backend/offload/延后同步变成不同错误。固定主线`3c6d9b43b67c74ec343d77874cd8fa6e841523da`的dense torch分支仍直接传该weight。2026-10-24读取已有两种替代候选均OPEN/unmerged：cyanseek的非draft [#8096](https://github.com/verl-project/verl/pull/8096)，head`6217269365034565d0c032a329dd8eda2cebc4a5`、base/祖先`ddf700725c34bb8966685c8ecf5ca36a2cc54a35`（ahead3）；kolehma8的draft [#8097](https://github.com/verl-project/verl/pull/8097)，head`2d4ad53c02b5a10d238cbe57a4431d18144c4f19`、base/祖先`8718ca30a3f002f93b7c4fd99b9b2506718681bc`（ahead2）。两者不应叠加成重复修复，也不另认领。
+
+### 注册执行入口与显式聚合的区别
+
+[#8096原helper](https://github.com/verl-project/verl/blob/6217269365034565d0c032a329dd8eda2cebc4a5/verl/models/transformers/fused_lm_head.py)在FSDPModule head上懒绑定一次`_verl_fused_forward`，通过PyTorch公开`register_fsdp_forward_method`注册，再在该方法内部读取weight并调用原torch/liger或triton输出头。普通head直接执行helper、不加此属性；原`head.forward`仍返回logits。六个生产文件把dense/GLM4V/Qwen2VL/Qwen3VL/Qwen3.5接至共享入口。Qwen3-VL/Qwen3.5的部分gather/cast旗标保留既有非FSDP DTensor处理，不是通用并行梯度认证。原`torch_functional.py`在该候选base/head字节相同，修的是执行边界，不是换一套融合数学。
+
+本机torch2.14.1（git`5c4886908584029761b579af026dcfb627c84070`）的[公开注册实现](https://github.com/pytorch/pytorch/blob/5c4886908584029761b579af026dcfb627c84070/torch/distributed/fsdp/_fully_shard/_fully_shard.py#L927)包装指定方法，依次调用FSDP state的`_pre_forward`、原方法、`_post_forward`；普通Module则no-op。它没有通过`head(...)`调用普通`nn.Module.__call__`，不能把“恢复FSDP生命周期”泛化成所有第三方forward hooks都恢复。这是安装版源码核对，不把2.14实现当作者2.11/2.13实测环境。
+
+[#8097原helper](https://github.com/verl-project/verl/blob/2d4ad53c02b5a10d238cbe57a4431d18144c4f19/verl/utils/experimental/torch_functional.py)改走显式物化：在custom autograd `apply`之前搬动DTensor shards至hidden设备/精度，再`full_tensor(grad_placements=[Partial("avg")] * mesh.ndim)`，将聚合/搬运接入外层autograd图。其[同步helper](https://github.com/verl-project/verl/blob/2d4ad53c02b5a10d238cbe57a4431d18144c4f19/verl/utils/fsdp_utils.py)在其他模块延后同步时仍让独立FSDP head保持同步，engine上下文改经此入口。作者明确代价是完整head留给反向、每个microbatch都做head梯度通信，不声称吞吐或显存更优。
+
+安装版[DTensor.full_tensor](https://github.com/pytorch/pytorch/blob/5c4886908584029761b579af026dcfb627c84070/torch/distributed/tensor/_api.py#L830)先redistribute至Replicate，再转普通Tensor；`grad_placements`描述返回Tensor未来梯度布局，省略时假设Replicate。由各DP rank不同数据产生的梯度，不能只因前向权重相同就当成副本；这里的Partial(avg)还须与实际mesh/损失归一化匹配，不是任意TP/HSDP的万能修复。本机未执行DTensor通信或验证其梯度。
+
+### 测试参考分别隔离什么
+
+#8096新增CPU测试只有普通Linear的cast开/关两例：核log-prob、entropy、hidden/weight梯度、原forward未改及未添加FSDP入口，不会走FSDP分支。其分布式原测试以六种小随机真实模型、三backend、tied/offload与两种reference构成144个case；rank数不能再乘进独立case数。同kernel/root-owned head参考保持独立两步轨迹，主要隔离生命周期；unfused HF参考每次更新先对齐参数，容差还包含BF16投影/temperature舍入差异，不能把两种reference合称逐bit数学等价。Issue后续第三方称三种候选都过原五复现，也不是吞吐/峰值或完整RL验收。
+
+以上GPU结果均为作者/社区报告；#8097另明确无完整FSDPEngine e2e、Ascend或组合TP验收。本机只核两候选完整生产diff、原CPU/分布式测试源码及PyTorch叶实现，对两候选各六个生产Python和#8096原CPU测试共13次compile，无原pytest、FSDP进程组、模型或设备执行；旧softcap数值实验不复跑、不挪作证据。[命令与hash](../../diary/2026-10-24.md)留日志，缺口只补[原M5输出头参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不自动应用、拼接方案或新增必跑矩阵。
