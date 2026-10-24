@@ -1,0 +1,44 @@
+# verl PR #8313 修正补丁（相对分支 head eecd8975，2026-10-24 用户裁定后）
+#
+# 用户三点指令：
+#   ① 回退测试改名：删除 test_cap_text_prompt_length_on_cpu.py，
+#      恢复原路径 test_cap_text_prompt_length.py——是否加 _on_cpu 后缀进 CI
+#      由 maintainer 决策，reviewer（非 maintainer）的意见不构成授权。
+#   ② cap=1 保留首 token：head = max(1, prompt_length // 2)——cap>=2 与
+#      postprocess_data 逐 token 一致（奇数余量给尾），cap=1 保 prompt 开头
+#      身份（BOS/系统前缀），docstring 写明该一 token 偏差。
+#   ③ middle 测试只保留写死的标准答案（caps 1-6 显式期望 + assert out == expected），
+#      删除一切从输出/输入切片再推导的校验。
+# 验证：本地真实 pytest（Python 3.12.13 + torch 2.14.1）18 passed
+#      （cap 16 + rollout config 2）；负向对照见 2026-10-24 日志
+#      （旧公式→cap3/5 失败；注入 bug→7 条全抓）。
+
+diff --git a/verl/experimental/agent_loop/agent_loop.py b/verl/experimental/agent_loop/agent_loop.py
+index 78358a0..77d9f86 100644
+--- a/verl/experimental/agent_loop/agent_loop.py
++++ b/verl/experimental/agent_loop/agent_loop.py
+@@ -468,7 +468,11 @@ class AgentLoopBase(ABC):
+         """Cap a text prompt to ``rollout.prompt_length`` using ``data.truncation``.
+ 
+         Prompts within the cap are returned unchanged. ``left``, ``right``, and
+-        ``middle`` truncate and log a warning; otherwise raise error.
++        ``middle`` truncate and log a warning; otherwise raise error. ``middle``
++        keeps head and tail halves matching
++        ``verl.utils.torch_functional.postprocess_data`` (the odd-cap remainder
++        goes to the tail); at cap 1 the head half would be empty, so the first
++        token is kept to preserve the prompt's leading identity.
+         """
+         prompt_length = self.rollout_config.prompt_length
+         if len(prompt_ids) <= prompt_length:
+@@ -495,7 +499,7 @@ class AgentLoopBase(ABC):
+                 len(prompt_ids),
+                 prompt_length,
+             )
+-            head = prompt_length // 2
++            head = max(1, prompt_length // 2)
+             tail_length = prompt_length - head
+             return prompt_ids[:head] + prompt_ids[len(prompt_ids) - tail_length:]
+ 
+
+# 另：tests/experimental/agent_loop/test_cap_text_prompt_length_on_cpu.py 删除（恢复原名），
+# tests/experimental/agent_loop/test_cap_text_prompt_length.py 以 caps 1-6 显式期望表版本新增。
