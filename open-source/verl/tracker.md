@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责；四条社区评审已核验，补丁与回复待用户授权，见[原草稿](draft-8313-review-reply.md)。2026-10-24补充[R3路由层选择](#r3-路由传输的阶段选择)，报告者已有内部实现、仅做架构学习；新增[DSA依赖边界](#dsa-依赖与有效输入范围)，官方已有kernel修复、升级兼容仍待决策；续核[后端选择与蒸馏观察](#后端选择与蒸馏数值观察)、[FSDP head替代方案](#fsdp-head-生命周期的替代方案)、[多轮SFT](#多轮-sft-的已有修复)及[Prime同题PR](#prime字典评分的重复覆盖)：已有作者、局部配置/执行保证与完整验收分开，不据新编号或空检索认领。[#8252评估](candidate-8252-weight-checker-rfc.md#现有验证能力与当前判断)已纠正旧“无回应/无验证”，不另实现；#8250仍待证据，#7913/clip旧RFC不重开。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责；四条社区评审已核验，补丁与回复待用户授权，见[原草稿](draft-8313-review-reply.md)。2026-10-24完成[数学评分池恢复](#数学评分池的故障恢复)的真实CPU对照：已有#8015，原七测试两次通过，超时默认分仍不等于故障标注。[R3层选择](#r3-路由传输的阶段选择)与[DSA依赖](#dsa-依赖与有效输入范围)仅在各自证据范围收束；不重复认领或升格为训练验收。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## 数学评分池的故障恢复
+
+2026-10-24读取[#8011](https://github.com/verl-project/verl/issues/8011)两条评论与已有[#8015](https://github.com/verl-project/verl/pull/8015)（ChdDongyang，open/non-draft，head0c4c3d40、base/祖先6093e007）；不是空缺，不另实现。见[原奖励专题](../../notebook/frameworks/verl-reward-integration-reading.md#数学评分池的恢复与错误信号)：原七测试仅调整导入，生产模块逐字节不改，真实math-verify0.9.0/CPU spawn两次全过；旧版三个评分控制过，worker死亡及超时不换池各原例预期失败。SIGKILL/sleep为故障注入，非真实OOM/恶意公式复现，不等于完整verl/CI或RewardLoop验收。
+
+候选只对BrokenProcessPool重试一次，Future超时清共享池会影响其他在飞任务；超时仍返回float默认分，不自动变成manager的timeout标志。服务恢复与错误可观测性分开，不归因#8250或据通过宣布任意并发安全；没有GPU缺口，不新增M5队列。本地学习收束，采用/上游回复/PR及PR-head推送仍须用户逐项明确同意。
 
 ## R3 路由传输的阶段选择
 

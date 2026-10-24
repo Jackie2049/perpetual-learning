@@ -225,6 +225,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [verl 沙箱运行器派发](verl-reward-integration-reading.md#沙箱运行器注册与执行边界)：#8345原14 runner用例两次通过、16未选；注册/响应外形非隔离/超时认证，startup guard非所有worker预检，未安装插件/运行服务或新排GPU。
 - [verl Prime 评分结果与失败范围](verl-reward-integration-reading.md#prime-进程池的结果协议与失败范围)：#8217 原 4 测试体基线字典例预期失败、候选全过；真实进程池与 spawn，不将 worker 按行异常和解析整批回退混为一谈，300 秒非整批硬截止。
 - [verl 数学奖励的分层与精度](verl-reward-integration-reading.md#数学奖励的分层判分与精度边界)：#8347原64参数例与7范围控制；前段拒绝不是最终否决，局部箭头保护不认证组合判分，科学计数/方程仍有旧边界，无GPU需求。
+- [数学评分池的恢复与错误信号](verl-reward-integration-reading.md#数学评分池的恢复与错误信号)：#8015原七测试接真实验证器/spawn两次通过，旧版死亡/超时留池反例成立；超时仍返回float，不认证manager错误标注或训练。
 - [verl RL Infra 架构源码阅读](verl-rl-infra-reading.md)
 - [verl RL Training Pipeline 深度阅读](verl-rl-training-pipeline.md)
 - [verl SGLang PD Disaggregation — Prefill-Decode分离架构深度分析](verl-sglang-pd-disaggregation-reading.md)

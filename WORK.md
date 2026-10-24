@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1数学评分池恢复学习收束（2026-10-24）**：起始a054be3干净、同步无新增；#8011已有ChdDongyang的#8015，不另认领。见[原奖励专题](notebook/frameworks/verl-reward-integration-reading.md#数学评分池的恢复与错误信号)/[tracker](open-source/verl/tracker.md#数学评分池的故障恢复)：固定0c4c3d40/base6093e007，base模块同main3c6d9b4。真实math-verify0.9/CPU spawn接原七测试（仅import调整）两次7过；base3控制过、死亡/超时留池两原例失败。身份重置/一次重试不等于所有交错安全，超时返回float仍无上层timeout信号；非完整manager/训练。依赖仅临时target、子进程已收尾，无GPU缺口或M5新队列，不改专项/采用补丁/对外动作；下轮转独立需求或实质反馈，不堆sleep/并发矩阵或重复原数学判分测试。
+
 - **M1 R3路由层选择学习收束（2026-10-24）**：起始743e531同步无新增；#8160已有weiziyoung内部patch/拟提PR，非无人认领。见[原TQ专题](notebook/frameworks/verl-transferqueue-worker-lifecycle-deep-reading.md#路由记录的层选择与全局坐标)/[tracker](open-source/verl/tracker.md#r3-路由传输的阶段选择)：取数前字段选择与tensor内层维裁剪分开，当前model路径按真实router全局层号读，不只按offset；CP/SP token轴及R2/R3语义独立。四原模块AST/compile非TQ/collective/路由或性能验证，作者157→39GB不等于整批/整步收益。条件补原M5 TQ入口，不造替身/竞争split方案或新增训练；下轮转独立需求/实质反馈，不堆层切片矩阵或重跑既有采样校正。
 
 - **M1 DSA依赖边界学习收束（2026-10-24）**：同步03046da→dc46974仅追加，历史保全；转读#8238全文/两评论，官方#407已合并且1.27源码含奇数标量回退，不另写kernel修复。见[原DSV4专题](notebook/frameworks/verl-6791-dsv4-megatron-lite-reading.md#dsa-奇数输出与依赖版本)/[tracker](open-source/verl/tracker.md#dsa-依赖与有效输入范围)：压缩KV宽度与每行valid lengths分开，旧assert需选中向量2，不是任意奇数；main锁1.26/DSL4.6.2不等于实际安装，历史1.24.1足够说明已限定。三模块AST/compile和锁解析非kernel/GPU/全依赖升级验证；条件记M5，无自动部署/模型或新队列。有限检索不宣布无人负责，任何上游可见动作仍逐项待用户同意；下轮转独立需求/实质反馈，不堆奇偶矩阵/假kernel或重复已测GRPO。

@@ -1,11 +1,43 @@
 # verl Reward Integration 源码级深度阅读
 
+2026-10-24补充：[数学评分池的恢复与错误信号](#数学评分池的恢复与错误信号)用真实math-verify及spawn进程核对#8015：旧版进程死亡/超时留池反例成立，候选原七测试两次通过；超时回默认分仍不等于上层可识别超时。
+
 2026-10-24 补充：[异步奖励的补齐边界](#异步奖励的补齐边界)用 #8101 原张量构造与消费者片段核对末条 response 的读取长度；仅 CPU 几何对照，不是完整 worker/TQ 或训练验收。
 
 2026-10-23 补充：[沙箱运行器注册与执行边界](#沙箱运行器注册与执行边界)固定于未合并 #8345，14 个原 runner 用例仅验证本地契约；[数学奖励的分层判分与精度边界](#数学奖励的分层判分与精度边界)固定于未合并 #8347，仅覆盖 CPU 字符串判分；[Prime 进程池的结果协议与失败范围](#prime-进程池的结果协议与失败范围)用 #8217 原测试核对真实 CPU 进程池。其余 2026-06 架构与硬件建议不属于这些复查范围。
 
 > 2026-06-15 | 源码: verl/trainer/ppo/reward.py + ray_trainer.py + workers/reward_manager/ + experimental/reward_loop/ + core_algos.py + utils/reward_score/
 > 核心: 两层架构(legacy RewardManager + experimental RewardLoop) → 3 reward路径(rule/DisRM/GenRM) → outcome reward=最后token非零 → GRPO group-relative → colocate RM sleep/wake → RTX 4090=rule-based唯一可行
+
+## 数学评分池的恢复与错误信号
+
+**错答案、验证器失败和超时不是同一种训练信号；返回普通0分会掩盖这种区别。** [#8011](https://github.com/verl-project/verl/issues/8011)报告数学评分的共享进程池在worker死亡后永久不可用，正确答案也持续得0分；ChdDongyang已有[#8015](https://github.com/verl-project/verl/pull/8015)，不另写竞争修复。2026-10-24读取issue两条评论及PR正文，PR为open/non-draft，固定head `0c4c3d40d46d5f47d1918c905641eea969b7fa09`，base/共同祖先`6093e007cc341973c9d9a6fb3867a85976c7c458`。生产模块在固定main`3c6d9b4`与该base逐字节相同；真正改动两文件238增9删。
+
+### 共享池与两种超时
+
+[旧模块](https://github.com/verl-project/verl/blob/6093e007cc341973c9d9a6fb3867a85976c7c458/verl/utils/reward_score/math_verify.py)缓存一个四worker、spawn上下文的ProcessPoolExecutor。`future.result(timeout=...)`只限制调用者等待，不终止正在执行的任务；旧实现既不替换坏池，又把普通异常打印后降为0分。全局共享是每个导入进程内的单例，不是所有Ray worker共用一个跨进程池。该模块是显式选用的评分入口；固定[默认分派](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/utils/reward_score/__init__.py)仍把math_verify调用放在注释示例，不能把问题归给所有数学任务或默认训练。
+
+[候选](https://github.com/verl-project/verl/blob/0c4c3d40d46d5f47d1918c905641eea969b7fa09/verl/utils/reward_score/math_verify.py)最多两次尝试。BrokenProcessPool第一次重置并重试，第二次向外抛出；一般异常不再被统一吞掉。外层Future超时会cancel、重置并kill旧池worker，然后返回`timeout_score`；math-verify自身的TimeoutException则只返回默认分，不清池。两种超时的结束条件不同，不能仅按同一个“timeout”名字合并处理。
+
+重置在锁内核对池对象身份，只有仍是当前池才置空，随后快照旧池进程并kill，避免迟到调用者清掉已替换的新池。清一个共享池也会打断其他在飞任务，另一调用者可能依靠那一次重试恢复；这不是每个任务独立取消，也不是已经证明所有并发交错无竞态。每次尝试自己的等待上限加启动/重试开销，不是整个compute_score严格只有一个timeout总预算。
+
+### 原测试接真实进程
+
+M1 macOS、Python3.12.13、pytest9.1.1。math-verify0.9.0等五个包装入独立临时target，不改现有venv；依赖为latex2sympy2-extended1.11.0、antlr4-python3-runtime4.13.2、SymPy1.14.0、mpmath1.3.0。两版完整生产模块原bytes分别保存为同名可导入叶模块，避开verl父包及GPU发现；[原测试](https://github.com/verl-project/verl/blob/0c4c3d40d46d5f47d1918c905641eea969b7fa09/tests/utils/reward_score/reward_score/test_math_verify_on_cpu.py)只改两条import指向它，所有fixture、函数体与断言原样，由pytest收集运行。没有假ProcessPoolExecutor或假验证器。
+
+| 原测试范围 | base结果 | head结果 |
+| --- | --- | --- |
+| 正确、错误、等价答案三个控制 | 3通过 | 3通过 |
+| SIGKILL一个worker后正确答案恢复 | 预期失败：返回0而非1 | 通过 |
+| 重试后的池再次死亡，异常传播 | 未运行 | 通过 |
+| 四worker被阻塞，超时后旧池须替换 | 预期失败：仍是旧池 | 通过 |
+| 一调用超时，另一健康调用重试恢复 | 未运行 | 通过 |
+
+head七项分别跑两次，均7通过。死亡由测试向自己的真实子进程发SIGKILL，不是复现实际OOM；阻塞由原测试的1000秒sleep任务注入，不是发现了能卡死真实verify的数学输入。外部session收尾只清理该pytest进程自己的子进程；一次旧版失败后的首次快照曾显示1个活动子进程，改为有界重扫后复跑确认0，随后只读进程检查也未见spawn/resource_tracker残留。此清理不是候选生产代码的一部分，也不改变测试断言。完整版本、hash、命令与失败记录见[当日日志](../../diary/2026-10-24.md)。
+
+### 恢复服务不等于完整故障标注
+
+固定[RateLimitedRewardManager](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/experimental/reward_loop/reward_manager/limited.py)能对传播来的异常写`reward_extra_info.error`，对它自己捕获的异步超时写timeout。但候选的两种评分超时仍返回普通float；若默认0，该上层只会按分数消费，不自动获得超时标志。故障恢复、行级可观测性和数学等价判分应分别验收，不能把“池恢复了”改述成“所有失败均可区分”。本轮没有执行完整manager、Ray/RewardLoop、训练或大规模并发，也不推断#8250根因/收敛收益。纯CPU问题无需GPU资源，不新增M5任务、不自动采用候选或对外回复。
 
 ## 异步奖励的补齐边界
 
