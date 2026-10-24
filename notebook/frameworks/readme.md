@@ -107,6 +107,8 @@
 
 ## UniRL
 
+- [视频时间步精度与比率诊断盲区](unirl-survey.md#视频时间步精度与比率诊断盲区)：已合并#438的9/10完整FP32差异与2/10双重舍入分开；原数值模块CPU控制不认证模型或#412奖励因果，ODE尾段也不由本步log-prob覆盖。
+
 - [VeOmni生成代码与mask接口](unirl-survey.md#veomni-生成代码的-mask-接口边界)：#627固定依赖的cache_position不兼容已有上游调整；生成配置/产物均核对，参数绑定非mask或EP训练验收，缺口补原M5参考。
 
 Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反向更新边界)区分stage拼接、算法及时backward与外层optimizer；#465已合并，当前主线尾块按C/S加权，std全量重算。两个原元素损失CPU控制非模型/显存/FSDP验收，不新增永久工具。

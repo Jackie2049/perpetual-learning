@@ -1,5 +1,7 @@
 # UniRL — 腾讯统一多模态 RL 框架调研
 
+2026-10-24 接续：[视频时间步精度与比率诊断盲区](#视频时间步精度与比率诊断盲区)核已合并#438：9/10个FP32差异与2/10个双重舍入差异分开，小平均log-ratio和ODE尾段不认证完整轨迹一致，更不等于#412奖励问题已解决。
+
 2026-10-24 接续：[样本观察拆分与音频通道](#样本观察拆分与音频通道)核#628基础层和#597接线层的新版本；原WAV函数及W&B输入表达式的CPU控制，不将旧GPU报告搬到新head。
 
 2026-10-24 接续：[VeOmni 生成代码的 mask 接口边界](#veomni-生成代码的-mask-接口边界)核#627固定依赖的不兼容及上游已有调整；参数绑定成功不等于因果mask或EP训练验收。
@@ -1886,6 +1888,39 @@ VeOmni [#774](https://github.com/ByteDance-Seed/VeOmni/pull/774)已于2026-05-29
 本机Python3标准库读取固定官方源码并compile六份文件；从HF AST构造`inspect.Signature`，用VeOmni原调用AST的关键字名做bind，不执行函数体。0.1.11配置/产物各对两函数均因`cache_position`拒绝；#774合并配置、0.1.12配置/产物各对两函数均接受。首次直接搜索`create_causal_mask(`未命中，是因为实际经`mask_function`调用，不是没有调用；补齐0.1.12产物后结果一致。[命令与hash](../../diary/2026-10-24.md)留日志。
 
 HF预处理由cache的`get_seq_length/get_mask_sizes`推导偏移/长度，无cache则从输入或attention_mask推导，并有position_ids的packed-sequence检测。签名接受不认证这些数值行为、VeOmni自定义attention或EP更新；这里未运行mask、导入依赖、加载模型、升级环境或执行设备，也不删除模型其他位置仍使用的cache_position。真机缺口补[原M5激活卸载参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，先恢复offload关闭的匹配基线，再谈卸载比较，不改#523/AReaL或新增必跑矩阵。
+
+## 视频时间步精度与比率诊断盲区
+
+**小平均log-ratio不能排除模型条件不同，修正条件也不等于已解释奖励曲线。** [#412](https://github.com/Tencent-Hunyuan/UniRL/issues/412)仍open、已派nussejzz；维护者后续要求报告者在含[#438](https://github.com/Tencent-Hunyuan/UniRL/pull/438)的main重跑，并未提供最终确认。#438于2026-09-12合并，head`293ea337c27a0b3014a42d4dae7377340b8f6c9d`、base`27be70b3a2c37b86e34b1e24119a2de77da9043c`，合并提交`f0905f5d9db3ea7bd54af3987cc2ecf007aa2357`；一文件2增1删，不另立相同修复。当前固定main`6fd82cba13f52f394747832344039408699ea378`的实际表达式也保留FP32。
+
+### 两种差异计数对应不同比较对象
+
+[predict_noise](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/models/hunyuan_video10/diffusion.py)把sigma乘1000作为transformer timestep。旧代码先将sigma转模型dtype再乘；修复先保FP32并缩放，传给transformer的timestep仍FP32，而不是乘后再转BF16。模型latent、prompt或guidance的BF16不应反推时间条件也应BF16。
+
+M1以完整原runtime模块生成当前[原始配方](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/examples/diffusion/hunyuan_video10/hunyuan_video10_t2v_sglang.yaml)的10步、shift=5静态sigma表；torch默认FP32。只提取旧/head/main三版原timestep赋值表达式接真实CPU Tensor，不调用模型或伪造transformer。旧结果与FP32参考有9/10不同，head/main均0/10；若额外把参考转BF16再与旧值比，仅2/10不同。后者只是双重舍入比较，不能作为修复后完整FP32行为的替代测试。
+
+| 零起始step | sigma | 旧BF16后乘 | 修复FP32 | 乘后再转BF16的反例 |
+| --- | --- | --- | --- | --- |
+| 1 | 0.97826087 | 976 | 978.260864 | 980 |
+| 7 | 0.68181819 | 684 | 681.818176 | 680 |
+
+原PR正文既讨论9/10完整差异，也突出2/10大偏差，其Test Plan伪代码还出现乘后再转BF16；阅读时须以真实源码和比较对象为准，不能把“只有两步不同”或“改后仍BF16”当最终实现。
+
+### 平均log-ratio与单点误差不同
+
+对同方差的一维高斯，设旧均值mu、新均值mu+delta、标准差s，同一个观测x下，直接相减log密度得到：
+
+`log(p_new/p_old) = delta*(x-mu)/s² - delta²/(2*s²)`。
+
+单点有一次项；只有在旧分布下取期望且残差均值为0时，一次项消失，得到负的二次项。不能把作者“quadratic”解释无条件套到每个样本、每个维度或不同方差的比较。源码[FlowSDEStrategy](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/sde/kernels.py)的log密度后续对非batch维取均值，平均值也不是最大逐坐标偏差。
+
+完整原kernels模块的compute_log_prob接float64 CPU数学控制：mu=0、s=1、delta=.001、x=-1/+1，得到约-.0010005与+.0009995，均值约-5e-7；与上述含一次项公式逐点一致。这只是解析公式的有限控制，不是实际DiT误差分布或训练ratio复现，不能从它倒算真实模型偏差。
+
+### ODE尾段与训练证据
+
+当前配方把SDE候选限制在[0,5)，每次选4步；原AllSDEScheduler在rollout0选1/2/3/4，其余rollout的具体四步可不同。5到9始终不在该候选范围。实际stage在非SDE步设置eta=0；原SDEStrategy._finalize_logp对此返回None，只收非None log_prob。因此第7步的条件修正不会作为本步SDE密度进入ratio，但仍可能改变终态视频；这不证明它对最终reward的影响方向或大小。
+
+#438作者明确披露：补丁训练和基线的batch_size/GPU数量不同，按rollout画出的改善不能证明按同一消耗prompt预算也改善。其H20运行不是本机结果，维护者的“likely cause”也不是已闭环因果。Python3.12.13/torch2.14.1本轮仅三个完整数值模块、原赋值表达式、eta=0分支与raw YAML核对，无完整predict_noise、embedding、SGLang/Diffusers引擎、PickScore或训练；[命令与hash](../../diary/2026-10-24.md)留日志，缺口记[现有M5参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)。不重复认领、自动部署或将配方8设备写成所有路径的硬需求。
 
 ## 下一步
 

@@ -9,7 +9,7 @@
 
 **【价值评估】** 7 / 10 — 甄别"未认领、无 PR、可落地"的开放空间，避免重复投入已有人认领的 RFC。
 
-**【进展】** #523 的我方 fork PR 已获用户认可，测试与 e2e 正式指派 M5；M5 已闭环 L0（四项断言 + pristine 对照），L1 仍待 ≥8 卡及获准权重/存储，见[M5交接](../../experiments/handoff-m5.md)。#567 待匹配 H20；#470/#481/#484已有作者或验证条件。2026-10-24续核[样本观察拆分](#样本观察的基础层与接线层)、[#627依赖接口](#veomni-mask-接口的已有调整)及[#529新反馈](#补充尽调与派发边界)：新编号、局部控制与完整验收分开。不据空assignee、参数绑定或错位基准认领/认证功能；#450/#537的[合并分项](#开放-rfc-的已合并分项)与整个RFC仍分开。
+**【进展】** #523 的我方 fork PR 已获用户认可，测试与 e2e 正式指派 M5；M5 已闭环 L0（四项断言 + pristine 对照），L1 仍待 ≥8 卡及获准权重/存储，见[M5交接](../../experiments/handoff-m5.md)。#567 待匹配 H20；#470/#481/#484已有作者或验证条件。2026-10-24补[视频时间条件与比率盲区](#视频时间条件的已有修复)：#438已合并，原数值模块CPU控制不认证#412奖励因果；[样本观察拆分](#样本观察的基础层与接线层)、[#627依赖接口](#veomni-mask-接口的已有调整)和[路由基准](#补充尽调与派发边界)仍各按原范围，不据局部控制认领或认证训练。
 
 **【大白话讲明白】**
 
@@ -56,6 +56,12 @@ UniRL 仓库当前 **73+ open issues**，其中大量是带 `help wanted` 标签
 #458同样不能只凭浅合并就认定bug：[prepare_input_sample](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/trainer/base.py)顶层覆盖，而PE显式传空ar/chat袋以擦除父输入控制；无条件deep merge会保留本来要清掉的字段。单个字典算法无法替代跨trainer/engine的所有权设计。本轮只做源码和社区状态尽调，无执行、性能/缓存验证、认领或对外操作，不为这两个线索排M5实验。
 
 #473本轮读取正文与全部4条评论；上表只判贡献归属，没有重跑报告者19-check真实包harness或SD3回归。贡献者评论提到#413/#474已覆盖部分清理及上游vllm-omni#8196待复审，属于当时报告；本轮未重核这些PR的当前状态，不据此自动退休passthrough或移除仍有独立用途的stage-0 gate，也不新增M5必跑矩阵。另读已有[#545](https://github.com/Tencent-Hunyuan/UniRL/pull/545)做[压缩积分学习](../../notebook/frameworks/unirl-survey.md#sde-窗口后的压缩积分尾段)，作者已有实现，CPU控制不转为我方贡献认领。
+
+## 视频时间条件的已有修复
+
+2026-10-24读取[#412](https://github.com/Tencent-Hunyuan/UniRL/issues/412)全文/全部2评论：仍open、已派nussejzz；维护者指向已合并[#438](https://github.com/Tencent-Hunyuan/UniRL/pull/438)，等待报告者重跑，不是无主新修复。#438 head293ea337、base27be70b3、合并f0905f5d，仅HV1.0一文件2增1删；当前main6fd82cba也保留FP32 timestep表达式。见[原调研](../../notebook/frameworks/unirl-survey.md#视频时间步精度与比率诊断盲区)：真实CPU原sigma表/三版赋值确认9/10完整FP32差异，只有在另作BF16量化比较时才是2/10。原高斯log密度接解析控制说明单点有一次项、二次均值需条件，不能无条件复述作者概括。
+
+本轮仅完整runtime/index/kernels模块、原表达式与raw YAML；没有模型embedding、引擎、奖励或训练。ODE尾段不产本步logp，作者不同batch曲线也不证明reward问题已解决。真实配对前提留[原M5入口](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不自动复训、部署或改精度策略，不开竞争修复/评论；上游可见动作仍须逐项明确同意。
 
 ## VeOmni mask 接口的已有调整
 
