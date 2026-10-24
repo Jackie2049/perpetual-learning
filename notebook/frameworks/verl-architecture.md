@@ -1,5 +1,7 @@
 # verl (HybridFlow) 架构深度分析
 
+2026-10-24 接续：[FSDP 后端配置的权威来源](#fsdp-后端配置的权威来源)区分请求配置、实例化后的engine选择和训练数值差异；原校验函数接真实OmegaConf的局部控制，不是模型或训练验收。
+
 > 基于 verl 源码的架构阅读笔记，重点关注 RL 训练框架设计、vLLM 集成和前缀缓存机制
 
 2026-10-23 接续：[DeepEP 环境边界](#deepep-的包解析与动态库加载)核对固定候选版本的依赖、镜像和验证层级；其余历史架构概括不作为当前后端支持清单。
@@ -373,6 +375,38 @@ verl 的三级前缀缓存机制直接对应 prefix-sharing 的核心需求：
 本机 Python3.12.13、pytest9.1.1、PyYAML6.0.3，复用现有环境。静态解析 YAML 并核对上述变量作用位置；新旧 `test_engine.py` 均通过 `compile`。从两版原测试 AST 仅取 `value_model_path` 赋值，放入真实 pytest 的两个参数化用例执行，并在新临时目录写入/读回小文本文件：2 passed。两项旧输出都解析到同一个模拟缓存路径，新输出分别处于指定临时根下的两个独立测试目录，模拟缓存保持空目录。
 
 这个 CPU 控制验证路径计算、symlink 解析和 pytest fixture 行为，不是原 verl 测试、模型序列化、真实只读挂载或 `/tmp` 配额故障复现；未导入 verl、启动 Ray 或执行设备命令。[复现代码与命令](../../diary/2026-10-24.md)保存在当日日志，不新增永久工具或硬件排队事项。这里可复用的排错顺序是先明确每种文件的所有者与生命周期，再分别检查隔离路径、实际挂载/权限/容量及锁消费者，不能用一个“换目录”结论覆盖全部层级。
+
+## FSDP 后端配置的权威来源
+
+**脚本写了FSDP2，不代表实际engine就是FSDP2；修正这一点也不能独自解释loss变化。** [#7540](https://github.com/verl-project/verl/issues/7540)比较v0.9.0与`1dda039b`的多教师OPD首步损失。其唯一后续评论指出嵌套`actor.fsdp_config.strategy=fsdp2`会被顶层默认`actor.strategy=fsdp`覆盖，并将配置问题与数值观察分开。yuchenwang3已有非draft [#7597](https://github.com/verl-project/verl/pull/7597)，2026-10-24读取OPEN/unmerged；固定head`96ad10eb7d52b3775edf925a4fe057fdfd4259bf`，API目标base`3f9d4c0d32cc20c7ec31c8137e91bb5673ce9e5e`，实际共同祖先`9ac85640765b29d3079292fbfbb5c0c130f5c18e`，ahead1/behind24。不能将目标base说成候选已包含的主线，不另认领。
+
+### 校验顺序决定能看见什么
+
+固定候选的[`main_ppo.main`](https://github.com/verl-project/verl/blob/96ad10eb7d52b3775edf925a4fe057fdfd4259bf/verl/trainer/main_ppo.py)先调用`validate_config`，之后才选V1或旧TaskRunner。[新校验](https://github.com/verl-project/verl/blob/96ad10eb7d52b3775edf925a4fe057fdfd4259bf/verl/utils/config.py)是validate_config首个动作，发生在actor配置转dataclass之前：只有`trainer.use_v1=True`且有fsdp_config时，才拒绝既非默认`fsdp`、又不等于顶层strategy的嵌套值。它没有重写配置或根据嵌套键选择engine。
+
+随后[`FSDPActorConfig.__post_init__`](https://github.com/verl-project/verl/blob/96ad10eb7d52b3775edf925a4fe057fdfd4259bf/verl/workers/config/actor.py)仍以顶层值覆盖engine.strategy；候选还在该类构造时独立检查顶层只允许fsdp/fsdp2/fsdp_turbo。这项类级校验不是V1专用冲突guard。嵌套默认fsdp被视为兼容占位，因此顶层fsdp2加嵌套fsdp允许通过；这不等于两个显式冲突选择一概被拒绝。固定main`3c6d9b43`也保留顶层覆盖engine的语句，本轮没有在完整主线配置上复现有效值。
+
+### 原模块的有限 CPU 控制
+
+Python3.12.13、真实OmegaConf2.3.1，完整加载候选`verl/utils/config.py`为独立叶模块；其顶层只导入标准库与OmegaConf，不构造假verl包或替换函数体。七组真实DictConfig直接调用原helper，结果如下；每组执行或抛错后原配置均不变。
+
+| 输入 | helper结果 | 含义 |
+| --- | --- | --- |
+| V1，顶层fsdp，嵌套fsdp2 | 拒绝 | 不再静默接受嵌套单独选后端 |
+| V1，顶层fsdp2，嵌套fsdp | 接受 | 保留嵌套默认占位 |
+| V1，两处均fsdp2 | 接受 | 冗余一致合法 |
+| V1，顶层fsdp2，嵌套fsdp_turbo | 拒绝 | 非默认冲突 |
+| 非V1，顶层fsdp，嵌套fsdp2 | 接受 | 弃用路径不新增此冲突检查，不表示它会选择FSDP2 |
+| V1，无fsdp_config | 接受 | 此helper不管其他engine |
+| V1，顶层typo，嵌套fsdp | 接受 | 顶层合法性由后续类构造检查，不是helper认证成功 |
+
+本机没有执行完整validate_config、Hydra compose、dataclass构造、TaskRunner或engine；有效engine值是上述赋值源码及作者组合测试的证据，不是本机七组控制的输出。另对actor模块与原CPU测试做compile，V1 launcher通过`bash -n`；无设备命令、训练或模型执行。[脚本、hash与命令](../../diary/2026-10-24.md)留日志，不新增永久工具或配置修复。
+
+### 配置问题与数值问题分开收束
+
+完整7条PR评论及2条review记录显示维护者要求转V1，当前五文件只改共享配置、测试、一个活跃V1 launcher与文档；不能沿用issue早期“改21个launcher”的范围。作者正文15项/12 subtests及后续19项/12 subtests为不同suite报告，本机均未复跑；作者还明确完整配置suite有与main相同的本地模型fixture缺失，不能称整套通过。
+
+#7540评论称两个报告版本的蒸馏实现无diff，并建议固定实际响应IDs及teacher/student logprobs再比较。本轮未独立重做该跨版本diff或训练；相同seed不等于相同采样输入，这个配置修复也不证明原loss差异消失。若M5以后在已有获准工作中遇到相同问题，先记录请求/有效后端与固定响应、路由、logprobs和mask身份，再决定是否需要数值A/B，见[原一致性参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)。缺匹配资源或需新部署/模型下载即记未测，不自动迁移V1、切后端或新增训练队列，不改专项。
 
 ## 参考
 

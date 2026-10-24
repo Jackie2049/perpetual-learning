@@ -219,6 +219,8 @@ ModelOpt忽略规则参考（2026-10-22，同一量化入口不另排队）：�
 
 ## verl 异步策略一致性补证
 
+后端身份补充（2026-10-24，同一参考不另排队）：[#7540](https://github.com/verl-project/verl/issues/7540)已有#7597 head96ad10eb处理V1选择冲突，但不解释OPD loss差异；[M1原模块/OmegaConf控制](../notebook/frameworks/verl-architecture.md#fsdp-后端配置的权威来源)仅七组guard输入、无Hydra/dataclass或engine运行。若M5已有获准匹配工作且独立接续，先记录原始selector与实例化engine实际strategy，再核同一响应IDs、教师路由、teacher/student logprobs及mask身份；未固定输入不以同seed曲线判数值回归。缺配方/权重/资源、需下载部署或影响专项则停止记未测，不自动迁V1/切FSDP2、安装旧栈或新增A/B矩阵，不改AReaL/#8313/#523，参考非接单。
+
 输出头生命周期补充（2026-10-24，同一参考不另排队）：[#8091](https://github.com/verl-project/verl/issues/8091)已有#8096 head62172693和draft#8097 head2d4ad53c两种替代方案，[M1源码学习](../notebook/frameworks/verl-fused-output-softcap.md#独立分片-head-的执行与梯度归属)仅13次compile及原测试/PyTorch源码核对，无FSDP/DTensor通信。M5若已有获准且恰涉及untied独立head+fused的工作并独立选用，先固定实际torch/模型/后端、wrap与sync策略，分别看参数准备、rank-distinct梯度与累计后更新；同kernel/root-owned参考与unfused语义参考分开。缺匹配资源/依赖、需新部署下载或影响专项即记未测停止，不叠加两方案、不把Partial(avg)泛化TP、不自动应用或新增矩阵；无#8250已证因果，不改AReaL/#8313/#523。
 
 现成对照入口参考（2026-10-24，非新增训练队列）：[#8252](https://github.com/verl-project/verl/issues/8252#issuecomment-6286585440)维护者已指向主线`3c6d9b43b67c74ec343d77874cd8fa6e841523da`的`scripts/rollout_logprob_diff.py`，见[M1范围核对](../notebook/frameworks/verl-async-logprob-provenance.md#现成-logprob-对照与权重自检)。仅原指标/判定片段CPU控制，无脚本/模型/refit运行。若M5已有获准匹配的Megatron+vLLM/SGLang观测环境且独立选用，先核实际head、模型/精度/QAT/R3、同步backend、token/mask和概率处理；保留每轮k3及逐token残差，不把默认末轮均值通过当全部round或tensor内容认证。缺匹配设备/权重/依赖、需下载部署或影响专项则记未测停止，不自动运行、破坏引擎权重或新增校验方案。此脚本未提供RFC的独立参考+破坏/恢复自检，不重开#8250因果判断；参考非接单。

@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1后端配置权威来源学习收束（2026-10-24）**：同步88e8775无新增；#7540已有#7597，固定head96ad10eb/祖先9ac85640，API目标3f9d4c0非已含主线（ahead1/behind24）。见[原架构笔记](notebook/frameworks/verl-architecture.md#fsdp-后端配置的权威来源)/[tracker](open-source/verl/tracker.md#后端选择与蒸馏数值观察)：V1 raw冲突guard、类级合法性与engine覆盖分层；原完整config模块+真实OmegaConf七组拒绝/接受不改raw值，非Hydra/构造或engine验证。当前五文件范围不沿用旧21-launcher描述；配置修复不解释OPD loss差异。缺口补原M5一致性参考，无新矩阵/迁移/专项修改；下轮转独立需求或实质反馈，不堆配置替身、复跑旧矩阵或认领同题。
+
 - **M1 fused head生命周期学习收束（2026-10-24）**：同步54437cc无新增；#8091已有#8096（62172693非draft）/#8097（2d4ad53c draft），不竞争。见[原输出头专题](notebook/frameworks/verl-fused-output-softcap.md#独立分片-head-的执行与梯度归属)/[tracker](open-source/verl/tracker.md#fsdp-head-生命周期的替代方案)：注册FSDP pre/post与显式聚合/Partial梯度/独立head同步是不同设计，不能叠加或以普通CPU数学认证。13次compile/源码核对，无原测试/FSDP/通信/模型执行，作者144case及替代方案报告不搬本机。缺口补原M5输出头参考，无新矩阵/依赖部署/专项修改；下轮转独立实际需求或实质反馈，不复跑softcap旧矩阵或造假FSDP生命周期。
 
 - **M1 VeOmni mask接口学习收束（2026-10-24）**：同步351b222无新增；新UniRL#627将#626 offload关闭基线的签名失败独立登记。见[原调研](notebook/frameworks/unirl-survey.md#veomni-生成代码的-mask-接口边界)/[tracker](open-source/unirl/tracker.md#veomni-mask-接口的已有调整)：固定VeOmni0.1.11配置/产物传cache_position而HF5.12.1两mask接口不收，已合并#774及0.1.12配置/产物不再传。六份compile/AST签名绑定非mask/模型或EP运行，不能据已有调整宣布UniRL升级安全。真机缺口补原激活卸载M5参考，无新队列/环境升级/竞争shim或专项修改；下轮转独立需求或实质反馈，不堆签名矩阵/合成mask认证训练。

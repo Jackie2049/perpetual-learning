@@ -178,6 +178,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [verl #6794 — Delta Weight Sync (Bytewise Diff Encoding)](verl-6794-delta-weight-sync-reading.md)
 - [verl #7016 Deep Analysis — Qwen3-MoE FSDP2 Backward Failure](verl-7016-qwen3-moe-fsdp2-backward-deep-analysis.md)
 - [verl (HybridFlow) 架构深度分析](verl-architecture.md)
+- [FSDP后端配置的权威来源](verl-architecture.md#fsdp-后端配置的权威来源)：#7540已有#7597；原完整配置模块接真实OmegaConf七组只验V1冲突guard，非完整配置/engine或loss根因认证，目标base与实际祖先分开。
 - [verl Async Rollout Architecture Deep Dive — vLLM/SGLang Integration](verl-async-rollout-architecture-deep-dive.md)
 - [verl Checkpoint Management 源码级深度阅读](verl-checkpoint-management-reading.md)：[保留目录与完整恢复](verl-checkpoint-management-reading.md#保留目录与完整恢复的边界)，5原清理测试通过；上限1先保旧再登记，目录/成功通知/可恢复性分开，纠正tracker原子写入及固定存储比例说法。
 - [verl 复制分片与存储隔离](verl-checkpoint-management-reading.md#复制分片的存储隔离) — #7503原3测试体和四组真实CPU storage控制；clone隔离输出，不比较副本值或认证整轮峰值/HF文件完整性。
