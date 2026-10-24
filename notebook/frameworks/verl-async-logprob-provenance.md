@@ -21,13 +21,33 @@
 
 `old_log_probs = rollout_log_probs` 只选择概率锚点，不自动决定远端 actor 使用哪一个 loss。[verl #8348](https://github.com/verl-project/verl/pull/8348)将 loss 配置从训练循环移到 worker 创建之前，修复的是配置传递时机，不是权重同步。2026-10-23读取 open、非draft、作者 aoshen02；固定 head `4b3b9f84078f83fe5f485e7d8bccf8c1ddbba349`、base及共同祖先 `a4b9354968705a441fb7da7367924b15b902e771`，ahead2/behind0，9文件375增87删。上节旧版概率来源分析仍限定于原固定版本；本节不将新PR当成已合并行为或 #8250 根因。
 
-### 配置先于创建生效
+### 当前 head 的范围收窄
+
+**2026-10-24接续：以下旧版19项配置测试不适用于当前head。** [#8348](https://github.com/verl-project/verl/pull/8348)仍OPEN/non-draft、作者aoshen02，当前 `2b4940dfc4802a9a26ef333a147a6b36d2afffde` 是上节旧head `4b3b9f84` 后的一个提交，base/共同祖先仍 `a4b9354968705a441fb7da7367924b15b902e771`（ahead3/behind0），现7文件54增48删。相对旧head，删除199行原CPU测试文件，删除`_parsed_setting`及`configure_bypass_mode`中的冲突、镜像、PP/动态CP保护；原FSDP entropy改动也撤回，当前完整transformer_impl.py与PR基线字节相同。这不是仅增加测试的新版本，也不是相关组合已经得到支持。
+
+当前[原配置函数](https://github.com/verl-project/verl/blob/2b4940dfc4802a9a26ef333a147a6b36d2afffde/verl/trainer/ppo/rollout_corr_helper.py)仍在四个trainer的worker创建前调用。bypass关闭时不动；启用时仅对vanilla／bypass_mode复制algorithm侧rollout_correction并设为bypass_mode，显式其他loss直接返回。真实OmegaConf2.3.1、struct=True的五组输入，两head各执行原函数，得到：
+
+| 输入 | 旧head 4b3b9f84 | 当前head 2b4940df |
+| --- | --- | --- |
+| 默认vanilla，开启bypass | 切换并复制配置 | 同旧版 |
+| 显式gspo，同时设置token IS | ValueError | 保留gspo，不新增actor镜像 |
+| vanilla的actor镜像loss_type与algorithm冲突 | ValueError | 用algorithm配置覆盖镜像 |
+| token IS batch normalize，Megatron PP=2 | ValueError | 接受并设bypass_mode |
+| token IS batch normalize，dynamic CP=true | ValueError | 接受并设bypass_mode |
+
+这10次直接配置调用使用本地输入夹具，不运行旧19项pytest，也不构造worker。**被接受不等于配置生效、归约参与者正确或能够训练。** 新函数不再检查显式其他loss下IS/RS是否有意义，也不再认证原镜像与algorithm等价；不能把旧版的拒绝表、阈值同义比较和并行组合保护继续作为新版保证。
+
+当前helper仍在分布式IS batch normalize分支调用`distributed_masked_mean`，因此本轮确认的是“启动guard已删除”，不是PP死锁已复现或动态CP计数已测。自动评论提出的风险也须保持这一证据层级。新版还改变了sequence IS统计对padding行的处理；本轮没有执行张量指标、loss、entropy或collective，不继承旧版相关结论。作者正文的4GPU A/B与113项既有测试是外部报告，未计入这10次配置调用。
+
+本机Python3.12.13，复用已有OmegaConf目标目录，无安装；旧版四个完整原函数、新版一个完整原函数AST隔离，阻止torch/Ray/verl等框架导入；五模块两版共10次compile，四处configure调用仍存在。旧helper SHA256 `bfe5de2a25311db1236e323fcd1753fa763326622a3e41307d81613b14e56c08`，新helper `cb38e82609f9e1dd8d4a46a46610c7808bae473b1071f442c117a18f83036b15`。[本轮复现](../../diary/2026-10-24.md)不替换下方锁定旧head的历史脚本；[M5原条件参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)已补新版本，不自动应用、替作者补回guard或排训练。
+
+### 旧 head 的创建前接线
 
 旧 [apply_bypass_mode](https://github.com/verl-project/verl/blob/a4b9354968705a441fb7da7367924b15b902e771/verl/trainer/ppo/rollout_corr_helper.py)一面替换 batch 字段，一面修改 trainer 持有的 policy_loss。worker 已经用配置创建后，修改 driver 的对象不等于更新远端副本。候选把这两件事分开：`configure_bypass_mode(config)` 在构造阶段处理 loss，`apply_bypass_mode(batch)` 只检查 rollout_log_probs 存在并替换 old_log_probs。
 
 [legacy trainer](https://github.com/verl-project/verl/blob/4b3b9f84078f83fe5f485e7d8bccf8c1ddbba349/verl/trainer/ppo/ray_trainer.py)、[V1 base](https://github.com/verl-project/verl/blob/4b3b9f84078f83fe5f485e7d8bccf8c1ddbba349/verl/trainer/ppo/v1/trainer_base.py)、[experimental fully async](https://github.com/verl-project/verl/blob/4b3b9f84078f83fe5f485e7d8bccf8c1ddbba349/verl/experimental/fully_async_policy/fully_async_trainer.py)及[one step off policy](https://github.com/verl-project/verl/blob/4b3b9f84078f83fe5f485e7d8bccf8c1ddbba349/verl/experimental/one_step_off_policy/ray_trainer.py)各新增一次构造器调用。V1在后续init→_setup中才把 actor_rollout_ref 交给 RayClassWithInitArgs、spawn worker并init_model；这条源码顺序解释了为何应早配，而不构成真实RPC序列化/worker启动验收。
 
-### 默认选择与显式选择
+### 旧 head 的选择与拒绝规则
 
 [原配置函数](https://github.com/verl-project/verl/blob/4b3b9f84078f83fe5f485e7d8bccf8c1ddbba349/verl/trainer/ppo/rollout_corr_helper.py)只在 algorithm 的 bypass_mode 为真时行动：
 
@@ -41,7 +61,7 @@
 
 因此 `2.0` 与字符串 `"2.0"` 可等价；k1 RS标量2与范围 `0.5_2.0` 也可等价。未启用对应IS/RS时，阈值比较返回None，不代表所有原始配置字节相同。源码对PP/动态CP的理由分别是只有末stage计算loss、样本副本数可变；本轮只验证配置拒绝，没有制造collective挂起或验证设备计数。
 
-### 原配置测试的 CPU 范围
+### 旧 head 原配置测试的 CPU 范围
 
 [复查脚本](../../experiments/scripts/verify_verl_bypass_config.py)使用真实OmegaConf2.3.1、pytest8.4.2、Python3.12.13。四个完整原函数经AST隔离执行，未导入原helper的torch/Ray依赖；[原测试模块](https://github.com/verl-project/verl/blob/4b3b9f84078f83fe5f485e7d8bccf8c1ddbba349/tests/trainer/ppo/test_bypass_mode_config_on_cpu.py)字节未改，pytest选择其19个配置参数例，明确deselect另5个padding-only张量/loss例。两次结果均19过、5未运行：5个loss选择、8个拒绝、6个镜像接受用例。测试以struct=True的DictConfig模拟Hydra的结构限制，但没有实际Hydra合成。base没有新configure函数，不虚造“base19例失败”的统计。
 

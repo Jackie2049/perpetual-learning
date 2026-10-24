@@ -177,7 +177,7 @@
 - [verl 单 worker NIXL 拓扑](frameworks/verl-async-logprob-provenance.md#单-rollout-worker-的-nixl-拓扑) — #8316原函数20组控制及后续新增1原测试隔离对照；worker非replica，测试体通过非原生导入/传输验收
 - [verl 组初始化等待超时](frameworks/verl-async-logprob-provenance.md#组初始化的等待超时与任务退出) — #7045当前控制端head、12组原参数检查；等待上限不等于全链路截止、RPC取消或资源回收，真机条件补M5原条目
 - [verl Resume扩展字段](frameworks/verl-async-logprob-provenance.md#resume-返回值与扩展字段合并) — #8341原2测试体base丢字段/head通过；最后出现值覆盖非逐token拼接，3组补充CPU控制，非真实backend/AgentLoop验收
-- [verl Bypass字段与worker配置](frameworks/verl-async-logprob-provenance.md#bypass-字段替换与-worker-的-loss-配置) — #8348原19配置例通过；默认loss切换须早于worker创建，显式loss与冲突另判，非远端loss/引擎或训练验收
+- [verl Bypass字段与worker配置](frameworks/verl-async-logprob-provenance.md#bypass-字段替换与-worker-的-loss-配置) — #8348新head删除冲突/镜像/PP与动态CP guard及旧测试；两版五组OmegaConf输入确认保证收窄、接受范围扩大，旧19例不作新版认证，非worker/训练验收
 - [verl 分桶接收失败与退出](frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#分桶接收失败与退出) — #7366原8项CPU测试两次通过；真实进程ZMQ/SHM，不是设备/vLLM验收。逐ACK预算、阻塞poll、取消与回滚须分开
 - [DeepInfer SamplingParams 校验](frameworks/deepinfer-initial-survey.md#samplingparams-构造校验与测试组合) — #119/#121原53项配对；[#154种子校验](frameworks/deepinfer-initial-survey.md#种子归一化前的负值校验)原5项/16组控制，负数拒绝与uint64回绕分开
 - [DeepInfer EPLB 副本分配与精度](frameworks/deepinfer-initial-survey.md#eplb-相同热点负载下的副本分配) — #191并列热点及[#212长历史收益](frameworks/deepinfer-initial-survey.md#长历史的公共基线与峰值下降量)；三版本原32项CPU pytest对照，公共基线吞掉0.5收益，非全局最优/设备或吞吐验收
