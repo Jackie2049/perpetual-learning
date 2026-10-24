@@ -45,3 +45,13 @@
 **二次复跑（用户要求确保）**：核对三文件 SHA256 与上次一致后重跑——CPU `12 passed`（5.16s）；GPU 正向 2/2 step（37s，`SMOKE COMPLETED OK`，`/tmp/smoke_8281_verify_pos.log`）；GPU 负向 `ValueError: Prompt of 120 tokens exceeds rollout.prompt_length=32...`（exit 1 预期，`/tmp/smoke_8281_verify_neg.log`）。三项与首次结果一致。
 
 **范围**：验证的是 fork 分支最新 commit 的内容；未重开 PR、未评论上游。`left/right/middle` 真实训练行为仍未逐一跑（单测覆盖）；cap=1 修复仅单测覆盖（cap=1 在实际训练中默认 512 下不可达）。服务器 `/home/zxw/verl-pt-impr` 的包替换为整包同步，若后续其他会话在该树做过本地改动需从 `verl.bak-20261022` 核对。
+
+## 2026-10-25 最终 head（71fd3562）GPU 复验
+
+PR 最终 head 为用户方 22:51 推送的 `71fd3562`（cap=1 保首 token `head=max(1, prompt_length//2)` + 测试改名回退）。服务器树此前停在中间态（`head=prompt_length//2`、测试仍为 `*_on_cpu.py`），本轮将 4 个受影响文件与 head 逐字节对齐后复验（SHA256 全匹配：agent_loop.py `3f03e9d2…`、test_cap_text_prompt_length.py `8995b5fc…`、rollout.py `d90cc2a6…`、test_rollout_config_on_cpu.py `479becf8…`；后两者本已一致，未改动）。
+
+1. **CPU 单测：18 passed**（5.22s）——`test_cap_text_prompt_length.py` 16 项（caps 1-6 显式期望表）+ `test_rollout_config_on_cpu.py` 2 项（prompt_length 正数校验），与本地权威补丁验证结果一致。
+2. **GPU 正向 e2e 冒烟：PASS**（GPU 0，grpo + ToolAgentLoop + Qwen2.5-0.5B + gsm8k agent 16/4，`total_training_steps=2`）——两 step 全过（step1 27.3s / step2 4.5s，`num_turns=2`，prompt_length 104-120 未超 cap 512），日志末尾 `SMOKE COMPLETED OK`，exit 0（`smoke_pos_final_head.log`）。日志尾部的 `DataLoader worker killed` 报错是 atexit 阶段 `dump_compile_times` 导入 tabulate 失败（`tabulate` 未安装）引发的关停噪音，发生在训练完成后，不影响结果。
+3. **GPU 负向验证：PASS**——`max_prompt_length=32` 时默认 `error` 策略 fail-loudly，`_cap_text_prompt_length`（agent_loop.py:506）抛出精确预期的 `ValueError: Prompt of 120 tokens exceeds rollout.prompt_length=32; configured data.truncation='error' which does not truncate...`，0 步完成、无 `SMOKE COMPLETED OK`（`smoke_neg_final_head.log`）。本轮 driver 退出码 0（10-22 轮为 1）：v1 trainer 在全部 rollout 组失败后另报 `Sync replay buffer…no materializable trajectories` RuntimeError 收尾，错误传播路径差异不影响 fail-loudly 契约本身。
+
+**范围**：验证的是 PR 最终 head `71fd3562` 的内容（服务器树 4 文件与 head 字节一致）；未在 GitHub 做任何写操作（取 diff/文件为只读），未改 PR、未发评论或推送 fork head。`left/right/middle` 真实训练行为仍未逐一跑（单测覆盖 16 项）；cap=1 在实际训练中默认 512 下不可达。
