@@ -2,7 +2,7 @@
 
 GPU/NPU 的访问、环境与实验由 macbook-M5 Agent 负责。M1 遇到需要真机的事项在此记录，M5 机器可用时按原有任务优先级接续，不中断已有实验。本页是待接续入口，不代表 M5 已接受、服务器已在线或任务已启动。
 
-更新日期：2026-10-22。M5 完成 DeepInfer 4090 移植冒烟第二段并回写本页（llm_engine import 链全通、发现 tilelang PDL 硬堵点）；PDL 探针续：5 个 kernel 去 PDL 改写编译 + 数值对照全过（含最复杂 fused_sample）；**四续：load/store_kv_cache 全矩阵数值验证（上游测试 60/60 PASS 于 nosync 变体），发现 sync_grid→cooperative-launch grid 上限、pdl_sync 依赖型应删除而非替换**；**五续：全量 nosync 改写验证——55 处 pdl_sync 全部依赖型分类、43/43 SM89 编译全过、7 个 kernel 数值保持，改写规则收敛为「全部删除，sync_grid 无适用用例」**。昇腾 910C VPN 掉线（100% 丢包）待用户恢复，SSH 密钥仍未配置。AReaL prompt_mean 整项保持 M5 单一负责，继续以[原交接](../open-source/areal/handoff-m5.md)为准，本页不重新打开或演化该方案。
+更新日期：2026-10-24。**4090-1 连通性更正（23:38 轮实测）**：此前连续 36 轮探测 VPN 网关 `219.233.198.62` 判"不可达"，但 SSH config 的 HostName 是公网地址 `219.223.198.62`，`ssh 4090-1` 直连一直可用（本轮实测 CONNECTED，uptime 129 天）——**服务器从未下线，VPN 网关丢包 ≠ SSH 入口不可达**；后续核对服务器状态用 `ssh 4090-1` 而非 ping VPN 网关。当前服务器状态：**GPU 全部占用无空闲**（0/1/3/4/5/6/7 各 3050MiB/util 100%，2 号 VLLM 21.7G）——有算力任务先核空闲卡；/home 100% 满剩 58G（清理是否继续待用户决定）；V4.1-Flash 权重 476G 已下载完成（48/48 分片，Snapshot ready at /home/zxw/HF-weights/DeepSeek-V4.1-Flash-1017）。昇腾 910C VPN 掉线第 9 天（目标机 192.168.13.174 不可达、网关 10.205.0.1 可达）待用户恢复，SSH 密钥仍未配置。AReaL prompt_mean 整项保持 M5 单一负责，继续以[原交接](../open-source/areal/handoff-m5.md)为准，本页不重新打开或演化该方案。DeepInfer 4090 移植冒烟/PDE 改写历史见下与[专题笔记](../notebook/frameworks/deepinfer-civilian-port.md)。
 
 ## 接续与回写
 
