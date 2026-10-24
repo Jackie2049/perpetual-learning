@@ -6,7 +6,7 @@
 
 - **M1前缀缓存学习收束（2026-10-25）**：起始6831976干净、fetch无新增。见[原UniRL调研](notebook/frameworks/unirl-survey.md#前缀缓存的参数与失效窗口)：#262有原提议者，前置#261/#392已闭环；固定SGLang0.5.19字段为disable_radix_cache默认False，非enable_prefix_caching。原纯标准库过滤模块接官方声明字段四控制通过，未构造live ServerArgs/启动后端；默认值、字段接受、缓存命中和吞吐分层。sync末桶/末dtype flush与KV sleep均需纳入失效窗口，条件补M5原路由参考，不改刷新/部署/专项或新增训练。下轮转独立实际问题，不堆字段/假缓存/路由替身矩阵。
 
-- **M5 定时轮 00:08 例行核对（2026-10-25）**：4090-1 直连在线（`ssh 4090-1` 公网地址，uptime 129 天）但 **GPU 仍全部占用无空闲**（0/1/3/4/5/6/7 各 3050MiB/util 100%，2 号 VLLM 23795MiB）——无卡可跑算力任务；/home 仍 100% 满剩 58G（清理待用户决定）；昇腾 910C VPN 掉线**第 10 天**（目标机不可达、网关正常）待用户恢复；#8313 无变化（OPEN/MERGEABLE/REVIEW_REQUIRED、head 71fd3562、等维护者 approve，②③④ 草稿 v2 待用户审定）；DeepInfer-Go PR #2 仍 OPEN+MERGEABLE 等用户审视；上游三仓库 main 无新合并、open PR 均无新算力行动项；UniRL #523 L1 仍待 ≥8 空闲卡。本轮除等待资源/VPN 外无可推进算力事项。详见 [当日日志](diary/2026-10-25.md)。
+- **M5 定时轮 00:37 例行核对（2026-10-25）**：4090-1 直连在线（`ssh 4090-1` 公网地址，uptime 129 天）但 **GPU 仍全部占用无空闲**（0/1/3/4/5/6/7 各 3050MiB/util 100%，2 号 VLLM 23795MiB）——无卡可跑算力任务；/home 仍 100% 满剩 58G（清理待用户决定）；昇腾 910C VPN 掉线**第 10 天**（目标机不可达、网关正常）待用户恢复；#8313 无变化（OPEN/MERGEABLE/REVIEW_REQUIRED、head 71fd3562、等维护者 approve，②③④ 草稿 v2 待用户审定）；DeepInfer-Go PR #2 仍 OPEN+MERGEABLE 等用户审视；上游三仓库 main 无新合并（verl 新增 #8361 megatron doc 代码侧无算力项），open PR 均无新算力行动项；UniRL #523 L1 仍待 ≥8 空闲卡。本轮除等待资源/VPN 外无可推进算力事项。详见 [当日日志](diary/2026-10-25.md)。
 
 - **M1视频时间条件学习收束（2026-10-24）**：起始6860b88干净、快进49edebf保留M5新增无日志覆盖；#414原schema已读不复跑。见[原UniRL调研](notebook/frameworks/unirl-survey.md#视频时间步精度与比率诊断盲区)：#412已有负责人，#438已合并；原sigma模块接三版时间赋值CPU确认9/10 FP32差异，2/10只属双重舍入比较。原高斯logp控制含单点一次项，二次项仅特定期望；配方ODE尾段不产本步logp，作者不同batch曲线不证明奖励治愈。仅原数值模块/表达式及raw YAML，真实模型条件记M5原入口，无自动部署/训练/竞争修复或专项修改；下轮转独立需求，不堆sigma/高斯替身矩阵。
 
