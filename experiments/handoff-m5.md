@@ -13,6 +13,8 @@ GPU/NPU 的访问、环境与实验由 macbook-M5 Agent 负责。M1 遇到需要
 
 ## UniRL 联合路径的资源与身份边界
 
+vLLM native TP-IPC边界参考（2026-10-24，非新增实验队列，与Omni逐卡TP1副本分开）：已有[#494](https://github.com/Tencent-Hunyuan/UniRL/pull/494) head `0832ea6b382bbd1ee024c171343794bf1cf1bdef`、base/祖先 `a77575acaaf3ed54386b866747dda2a22d5b6b0c`；[M1源码学习](../notebook/frameworks/unirl-survey.md#原生-ipc-的共识门与物化边界)仅14次AST/compile，未执行作者8项替身或任何通信。若M5日后已有获准匹配Qwen3-MoE全参、FSDP2、同节点actor/rollout UUID及native vLLM环境且独立选用，先记录实际DTensor slice类型/placements、每次redistribute与source/chunk控制门顺序；raw项末尾不自动证明覆盖逐expert通信。再按需要有界核实际发布/退出及存储释放，正常发布与失败停止分开。缺匹配软件/设备/权重、需部署下载或影响专项则记未测停止，不在现有训练注入错误、破坏权重、自动应用候选或并行改门设计；本参考非接单，不影响#523/AReaL/8313及DeepInfer优先级。
+
 LTX2音频配方参考（2026-10-24，先核反证，非新增训练队列）：已有[#475](https://github.com/Tencent-Hunyuan/UniRL/pull/475) head`555ebb29472b4767dcd20874d771cdbb5318ed91`、base/祖先1a0ddbfd；[M1核对](../notebook/frameworks/unirl-survey.md#音频奖励配方的评估协议与后续反证)仅原YAML/默认beta AST及八模块compile。社区同head报告两个seed晚期退化，beta0.04也未阻止；正文32×4/4步评估不能混作当前8×1/30步曲线。audio_policy_logp_weight=1不改拼接latent KL平均；现有100轮配方不当已稳定方案。若M5以后独立选题且已有获准LTX2.3/CLAP权重、AudioCaps资产与匹配资源，先固定完整依赖/配方、真实数据split、checkpoint序列和同一评估协议/噪声身份，再确定稳定性与音频/视频质量判据。缺条件、需新下载部署/预算或影响专项即保留未测停止，不自动启配方、照抄社区beta/停轮建议、另调稳定器或新增必跑矩阵，不改#523/AReaL，参考非接单。
 
 评估尾批参考（2026-10-24，非新增算力队列）：已有[#464](https://github.com/Tencent-Hunyuan/UniRL/pull/464) head`91e96bd5e3b0794c76822e67c31a9053cc757e0d`、实际祖先79d1e8ab；[M1原类型控制](../notebook/frameworks/unirl-survey.md#评估尾批的补齐与计分成员)只执行Sample树/helper与PE聚合片段，奖励为身份夹具，无真实生成/评分/DP gather或模型。若M5日后已有获准匹配PE/Unified评估且独立选用，先固定评估数据ID/顺序、chunk、fanout、DP布局与完整head，最小记录每真实root及其后代计分次数、pad排除位置、每scorer有效count/mean和传输后顺序；pad仍消耗生成/评分，不因count相等认证身份。PE要求单输入Part，短于chunk不补齐；作者4090报告非本机复跑。缺匹配权重/环境/资源、需新下载部署或影响专项即记未测停止，不启评估/另写修复或新增矩阵，不改#523/AReaL，参考非接单。

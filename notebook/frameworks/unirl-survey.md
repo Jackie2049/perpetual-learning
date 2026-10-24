@@ -835,6 +835,37 @@ head SHA256：dispatch.py `2515cab5013f1645f7e441b28833627a766ef0b61f83a6fcc6bb8
 
 本题以监控契约学习收束，不新建CPU替身或GPU实验队列。若M5日后独立选择匹配的async真机任务，只在[原UniRL参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)保留观测入口；缺环境或不属原任务则维持未测，不为指标说明部署训练。
 
+## 原生 IPC 的共识门与物化边界
+
+**失败共识要放在实际通信边界之前，原始参数名不一定等于通信单位。** [#494](https://github.com/Tencent-Hunyuan/UniRL/pull/494)尝试加固vLLM native packed-IPC：2026-10-24读取OPEN/non-draft，作者CjhHa1，head `0832ea6b382bbd1ee024c171343794bf1cf1bdef`、base及祖先 `a77575acaaf3ed54386b866747dda2a22d5b6b0c`（ahead1/behind0），5文件334增22删。当前main `6fd82cba13f52f394747832344039408699ea378`的native_engine.py与该PR基线字节相同，没有新物化边界字段；本节不把候选当已合并行为，也不作完整PR验收。
+
+### 两套边界对应不同的下一步
+
+[IPC计划构造器](https://github.com/Tencent-Hunyuan/UniRL/blob/0832ea6b382bbd1ee024c171343794bf1cf1bdef/unirl/distributed/weight_sync/full/ipc.py)为一个raw state-dict项展开canonical输出，在最后一个输出标记`_materialization_boundary`。发送器另按字节预算分chunk，两种分组可以交叉。新增标记只进入发送器的边界索引，ParamMeta仍只携带name/dtype/shape；相对PR基线，完整publication协议模块字节未变，结构manifest也只归一化原来的五项schema字段，不包含payload内容。
+
+| 共识位置 | 意图保护的下一步 | 条件与限制 |
+| --- | --- | --- |
+| buffer分配／reduce_tensor之后 | 开始读取惰性source | 捕获本地分配/导出异常，其他rank不先进入物化 |
+| source边界 | 下一项的物化通信 | 依赖边界计划真正覆盖producer的collective |
+| chunk边界 | 继承自vLLM的句柄汇总 | 即使chunk在同一raw项中间结束，也先报告本地异常 |
+| 每次发送之后 | 下一块发送／最终验证 | rank0的发送异常须让其余rank知道 |
+
+[发送器](https://github.com/Tencent-Hunyuan/UniRL/blob/0832ea6b382bbd1ee024c171343794bf1cf1bdef/unirl/distributed/weight_sync/transfer/vllm_native_engine.py)遇到本地错误时，选择不早于当前tensor索引的最近source边界与chunk末端中的较小者作为共识门；正常rank继续到同一门，期间先同步当前CUDA stream。这个策略只有在两门之间没有必须由所有rank共同进入的其他通信时，才能支持“错误rank先等、同伴继续到门”。`_consensus`通过Gloo组收集error，phase用于错误报告，并未比较所有rank的phase是否相等；一致的schema、遍历顺序和门序列仍是前提。已卡在collective里或进程已退出的rank不能靠Python异常汇报自动恢复。
+
+### 原始项边界仍须与真实导出器核对
+
+候选[原导出器](https://github.com/Tencent-Hunyuan/UniRL/blob/0832ea6b382bbd1ee024c171343794bf1cf1bdef/unirl/utils/peft_merge.py)的`raw_state_dict → _iter_rollout_tensors`并不总是“一次物化、随后纯本地拆片”。对于packed gate/up或down，先调用`_prepare_qwen_moe_dtensor`，再逐expert调用`_to_full_tensor`。后者若收到的仍是DTensor，会执行`redistribute(placements=[Replicate()] * mesh.ndim).to_local()`；前者自身也可能重分片。**所以“一个raw项的最后输出”不是静态证明下一次collective位置的充分条件。** 这三个producer helper相对PR基线AST未变，新增门没有在这里逐次接线。
+
+这是条件性的源码疑点，不是已复现死锁：实际slice类型、placements、后端是否发起通信及错误位置尚未观测。若要判断该head的保证，须把真实DTensor导出调用序列与控制门放在一起核对，不能只证明索引满足最后一项。也不能用当前main后来变化的producer替代该PR固定head。
+
+发送器每次copy后删除自身`flat/tensor`引用，避免额外持有上一个输出；这不保证生成器frame、DTensor存储或CUDA allocator已释放，不能从`del`推算峰值显存。构造器要求Gloo control timeout严格大于`update_native_weights`命令预算，TP4示例从900改960秒；长短排序为错误汇报留机会，不是整个publication的统一deadline、RPC取消或失败回滚。外层失败后由rank0尝试poison rollout，而不是继续承诺原地重试安全。
+
+### 静态检查与作者测试范围
+
+本机Python3.9.6，仅三个版本各四模块的AST/compile及两份原测试源码compile，共14次模块语法检查；chunk planner、schema validator和三个producer helper相对base AST一致，protocol.py相对base字节一致。未导入torch/vLLM或执行原pytest、Gloo/FSDP、DTensor、CUDA IPC、stream、模型及硬件。
+
+作者报告8项CPU测试通过、GPU smoke未跑。原测试用自制Tensor/Buffer/Source、空vLLM基类和本地回调替换分配、stream同步、共识、句柄汇总及发送；能够检查单进程门标签与分支，不能据此证明多rank真实collective时序、内存峰值或超时退出。这里不复跑这些替身或另造通信模拟；[复现/hash](../../diary/2026-10-24.md)留日志，实机前提仅补[原M5参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不应用候选、新开实验矩阵或竞争作者方案。
+
 ## Omni 原生 IPC 的副本与导出边界
 
 **训练rank的集体参与、向哪个rollout副本发权重、权重内容是否正确，是三个不同问题。** 2026-10-22只读[#617](https://github.com/Tencent-Hunyuan/UniRL/pull/617)，读取时open、未合并，固定head `19f263968deecdecd26cebe8966f8ba012a5575d`；API目标base为`3ecbbc32b2fc373ba30b9842032552e041e84b12`，官方compare祖先`6624b28aab3299d116ae1e3d90aaa14926676911`（ahead4/behind36）。按祖先核16文件454增92删，研究范围是Qwen-Image全参数训练与vLLM-Omni原生IPC接线，不把落后主线的差异当本PR改动。
