@@ -1618,6 +1618,37 @@ Python3.12.13仅标准库，完整原runtime模块加载但不调用`engine_proc
 
 完整runtime SHA256为`66e7aa74a3f442d2b44b094c614124e4b0c91e5e137a09f901ab5216f7dc59fb`，driver为`48218188b8009e9c80b22f48bbe5bf40a247dbd4f7caf63baa55c3ecf2ca9b3c`。
 
+## 激活卸载的保存对象与包装顺序
+
+**激活卸载改变反向所需张量的保存方式，不是权重/优化器卸载，也不保证更快。** 2026-10-24读取[#626](https://github.com/Tencent-Hunyuan/UniRL/pull/626)仍open draft，作者ruiling-smartbear，head `fb2b4bacda31fd395a93bc96820d31b723390985`，base/祖先 `6fd82cba13f52f394747832344039408699ea378`（ahead1/behind0），6文件92增19删。[#625](https://github.com/Tencent-Hunyuan/UniRL/issues/625)已由此实现覆盖，不另起竞争方案。
+
+[默认配置](https://github.com/Tencent-Hunyuan/UniRL/blob/fb2b4bacda31fd395a93bc96820d31b723390985/unirl/train/configs.py)的 `activation_offload=false` 与 `cpu_offload` 分开。[native FSDP](https://github.com/Tencent-Hunyuan/UniRL/blob/fb2b4bacda31fd395a93bc96820d31b723390985/unirl/train/backend/fsdp/wrap.py)先按需checkpoint_wrapper，再在外层offload_wrapper；没有匹配block时开启offload会拒绝。只有offload时fully_shard选其wrapper；同时开启checkpoint时，`ac_wrap_order=outside`选外层activation wrapper，inside选原block，决定重算是否重新经过FSDP hooks。
+
+[VeOmni路径](https://github.com/Tencent-Hunyuan/UniRL/blob/fb2b4bacda31fd395a93bc96820d31b723390985/unirl/train/backend/veomni/wrap.py)先parallelize，再依次改写原block的forward为checkpoint、save_on_cpu、可选compile；不新增包裹模块，`ac_wrap_order`不用于该backend。这里的 `enable_fsdp_offload=False` 未改。保持层级为已有EP参数分组与名称提供前提，不是仅凭名称相同就证明EP通信或恢复正确。
+
+### 原回调的有限 CPU 控制
+
+Python3.12.13/torch2.14.1，torch git `5c4886908584029761b579af026dcfb627c84070`。从固定head原样提取native `wrap_block`及其两个checkpoint helper、VeOmni两个forward factory，真实PyTorch wrapper/非重入checkpoint/autograd执行；没有运行外层fsdp_wrap/veomni_parallelize、模块选择、分布式初始化或FSDP替身。
+
+自编CPU FP64算子模块 `y=(x*scale)^2`，x与参数均4×3，x为stride(1,4)的非连续叶子。用记录hook包住原save_on_cpu的pack/unpack，只增加观测、不替代其复制。两条接线各四种checkpoint/offload开关，共八组：
+
+| checkpoint | offload | 记录到offload pack的张量 | 数值及身份 |
+| --- | --- | --- | --- |
+| off | off | 未进入offload hook | 作为直算参考 |
+| off | on | 参数、输入、中间值各12元素 | 输出/输入梯度/参数梯度与参考逐值一致 |
+| on | off | 未进入offload hook | 三项数值与参考一致，不等于图不保存输入 |
+| on | on | 仅输入12元素 | 三项数值一致，backward未新增offload pack |
+
+八组均保留原参数对象及 `state_dict` 的scale key；VeOmni factory另保持模块对象身份。开启offload时，本例记录的CPU保存副本均保持dtype且不与源tensor共存储，输入stride从(1,4)变为(3,1)。保存参数副本不等于重设模型Parameter的设备/所有权；36→12是本例pack元素计数，不是去重内存、RSS或GPU节省比例。checkpoint内的保存机制替代外层hook，不能把两项技术各自的节省简单相加。
+
+本机安装版save_on_cpu在pin_memory=True分支通过empty+copy保存；CPU路径也可复制，不应把其文档概述“CPU无复制”套给所有分支。它是否实际使用可页锁定内存取决于运行设备能力，本轮没有验证pin、D2H/H2D、异步重叠或性能。dtype相同而layout变化，也说明本例逐值一致不能推广成任意模型逐bit保证。完整复现与源码指纹留[当日日志](../../diary/2026-10-24.md)，不是官方测试或完整候选验收；没有执行optimizer/恢复、EP、compile或真实模型。
+
+### 容量收益与作者报告
+
+[作者报告](https://github.com/Tencent-Hunyuan/UniRL/pull/626)区分H100上synthetic模型的真实FSDP2/NCCL/EP组合与随机初始化Qwen3的固定几何比较。以单H100、190.9M参数、BF16 compute/FP32 master、checkpoint开启、8×8192为例，native FSDP峰值8.94→8.14GiB，step550.6→903.9ms，进程RSS4.44→5.94GiB；这是以主机容量和时间换设备容量，不是本机测量或真实RL收敛报告。VeOmni完整Qwen3-MoE在offload关闭基线就遇到Transformers签名不兼容，不能归因于新flag，也不能据synthetic EP通过宣布完整MoE可用。
+
+真实配方的最小接续条件留[原M5参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)：先固定版本/配置与获准资源，再比较loss、梯度/更新、checkpoint及GPU/host峰值、步时；没有匹配条件就记未测。不自动启flag、修改现有训练、部署新环境、扩充算力矩阵或改#523/AReaL专项。
+
 ## 视频 VAE 分片的状态协商与复本
 
 **拆分解码计算，不等于拆分最终视频的驻留，也不自动构成通用故障恢复。** [#469](https://github.com/Tencent-Hunyuan/UniRL/pull/469)在2026-10-24读取仍为open draft，head `363d5bacf71113d147dd08ec28f733b1b8ab76fb`；API base `f989c03825f187607bcbe6eaf6178909b798b43f`，实际共同祖先 `c21940d802ab9993ab87d7112615899653e7b989`，ahead 6 / behind 1。已有作者在带原生H3 Ulysses支持的fork上开发，本节限定源码契约，不是新修复或候选验收。

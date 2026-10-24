@@ -234,6 +234,7 @@
 - [GRPO 实战指南](frameworks/grpo-practical-guide.md) — verl 框架 GRPO 训练完整流程、数据格式、配置参数、奖励函数
 - [SGLang 架构深度分析](frameworks/sglang-architecture.md) — RadixAttention 基数树、DSL 前端、FlashInfer 集成、vs vLLM 对比
 - [UniRL 调研（腾讯统一多模态 RL）](frameworks/unirl-survey.md) — 统一训练抽象、稀疏SDE、SFT游标、packed文本双轴与[按域奖励](frameworks/unirl-survey.md#按域奖励的零分与失败标志)；原CPU路由/统计区分零分、失败和非适用NaN，非服务或训练验收
+  - [激活卸载与包装顺序](frameworks/unirl-survey.md#激活卸载的保存对象与包装顺序) — #626原回调/真实CPU autograd八组；checkpoint改变offload保存对象，dtype保持不代表layout或性能相同，非FSDP/EP/设备验收
   - [视频VAE分片与状态协商](frameworks/unirl-survey.md#视频-vae-分片的状态协商与复本) — #469仍draft且依赖fork的H3 SP；静态AST确认内层拼接保持，公开hook/slicing包装不同，汇总后仍全rank持有视频，非解码/通信或性能验收
   - [离线DPO布局与零步控制](frameworks/unirl-survey.md#离线-dpo-的成对布局与零步控制) — #476原数学片段CPU值/梯度检查；log2及准确率0不能单独认证语义配对/参考冻结，非模型或CUDA确定性验收
   - [多参考图像的双轴](frameworks/unirl-survey.md#多参考图像的样本行与附件轴) — #478原容器CPU控制：3行5图、选行/元数据保持、稠密槽需等附件数；保留行别名，不认证模型/数据/训练路径
