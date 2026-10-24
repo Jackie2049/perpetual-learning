@@ -183,7 +183,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [verl CPPO Algorithm (PR #6731) — 深度阅读](verl-cppo-algorithm-reading.md)
 - [verl CPPO Async Trainer Incompatibility — Source-Level Analysis](verl-cppo-async-trainer-incompatibility-source-reading.md)
 - [verl CPPO bypass_mode Source-Level Reading](verl-cppo-bypass-source-reading.md)
-- [verl DataProto 数据流架构源码阅读](verl-dataproto-data-flow-reading.md)
+- [verl DataProto 数据流架构源码阅读](verl-dataproto-data-flow-reading.md) — 历史结构与[图片对象生命周期](verl-dataproto-data-flow-reading.md#图片字节与解码对象的生命周期)分开；#7400原方法五例/三版真实Pillow对照，非Ray/RSS验收；纠正230KB及零拷贝概括。
 - [verl FSDP Weight Sync Mechanism: Source Code Analysis](verl-fsdp-weight-sync-mechanism-reading.md)
 - [verl FSDP2 Engine Deep Source Reading — Beyond PR Descriptions](verl-fsdp2-source-deep-reading.md)
 - [verl 参数转换与缓冲区精度](verl-fsdp2-source-deep-reading.md#参数转换与缓冲区精度)：#8189 原 6 CPU 测试体及 4 组控制；保留 buffer 不是修复既有舍入或迁移训练状态，原转换调用非完整 FSDP 验收。

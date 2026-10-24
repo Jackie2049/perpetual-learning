@@ -1,7 +1,9 @@
 # verl DataProto 数据流架构源码阅读
 
 > 2026-06-15 | 源码: verl/utils/dp_rpc.py + verl/utils/tensor_dict.py + verl/trainer/ppo/ray_trainer.py
-> 核心: DataProto是verl分布式RL训练的唯一数据抽象 → split-merge-reconstruct模式 → 跨WorkerGroup零拷贝数据流
+> 历史概览：旧版DataProto的split/merge设计。下方6月结构保留当时的学习视角，不代表2026-10当前实现的完整复核，也不提供跨Worker零拷贝保证。
+
+2026-10-24补充：[图片字节与解码对象的生命周期](#图片字节与解码对象的生命周期)。原方法与真实Pillow对照确认dataset侧清理边界；原“数据开销完全可忽略”概括撤回，张量字节算例也已纠正，不能覆盖raw_prompt中的图片或序列化峰值。
 
 ## 1. DataProto类层次
 
@@ -225,28 +227,21 @@ rLLM多步RL(prefix-merge):
   → rLLM已在DataProto字段扩展: response_mask, episode_ids, trajectory_ids, group_roles, routed_experts
 ```
 
-## 9. 实战: DataProto内存估算
+## 9. 列举张量的字节数算例
+
+以下仅计算明确列出的五个张量，不估计整个DataProto或进程内存。旧稿把int32写成2字节且总和有误，原230KB及“开销完全可忽略”结论不再使用。Python3.12.13/torch2.14.1 CPU按下面shape与dtype实际构造五个empty张量，逐项`numel() * element_size()`核为491520字节，即480KiB；不包含对象头、allocator、元数据、图片或序列化副本。
 
 ```
-7B模型, GRPO训练, rollout_n=4, batch_size=4, seq_len=2048:
+限定算例：rollout_n=4, batch_size=4, seq_len=2048，shape均[16, 2048]
 
-DataProto.batch字段:
-  input_ids:        [4×4, 2048] × 2 bytes (int64→实际int32=2B) = 4×4×2048×2 = 65.5KB
-  log_probs:        [4×4, 2048] × 2 bytes (BF16) = 65.5KB
-  response_mask:    [4×4, 2048] × 1 byte (bool) = 32.8KB
-  token_level_rewards: [4×4, 2048] × 2 bytes = 65.5KB
-  advantages:       [4×4, 2048] × 2 bytes = 65.5KB
+  input_ids:          int64，8字节/元素 = 262144字节 = 256KiB
+  log_probs:          BF16，2字节/元素  =  65536字节 =  64KiB
+  response_mask:      bool，1字节/元素  =  32768字节 =  32KiB
+  token_level_rewards: BF16            =  65536字节 =  64KiB
+  advantages:         BF16             =  65536字节 =  64KiB
 
-DataProto.meta_info字段:
-  uid:              4×4 uuid strings ≈ 1KB
-  rollout_n:        int ≈ 16 bytes
-  temperature:      float ≈ 16 bytes
-
-Total DataProto ≈ 230KB per batch → 极小!
-→ DataProto本身不是内存瓶颈 → 模型参数才是!
-
-对比: 模型参数=14GB → DataProto=230KB → 60000×差距!
-→ DataProto overhead完全可忽略!
+列出张量合计：491520字节 = 480KiB
+这不是总payload、RSS、共享内存或训练峰值；实际字段和dtype须按运行路径测量。
 ```
 
 ## 10. 关键设计洞察
@@ -261,8 +256,8 @@ Total DataProto ≈ 230KB per batch → 极小!
    merge: N个结果→1个batch → coordinator合并
    reconstructor: 随数据发送 → Worker不需要知道合并逻辑
 
-3. meta_info深拷贝 → 简化但代价小
-   非tensor数据全量复制 → 每个Worker持有完整meta → 几KB→可忽略
+3. 非tensor对象也要计入生命周期
+   小元数据算例不能覆盖raw_prompt中的图片bytes/PIL对象或序列化副本
 
 4. BatchTensorDict → batch维度约束
    所有tensor共享batch_dim → split/merge只需dim=0 → 极简
@@ -275,6 +270,32 @@ Total DataProto ≈ 230KB per batch → 极小!
 6. 限制: meta_info不支持split → 大meta_data场景需优化
    → 如长文本prompt → 可能需要分chunk传递meta
 ```
+
+## 图片字节与解码对象的生命周期
+
+**从返回字典删掉压缩bytes、断开解码流、释放整个多模态payload，是三件不同的事。** [#7391](https://github.com/verl-project/verl/issues/7391)的同报告者leooop-al已有非draft修复[#7400](https://github.com/verl-project/verl/pull/7400)，2026-10-24读取仍OPEN。固定head `dc721cfd3cbd4e18f49763f029d498519c74eb91`、目标base `3f9d4c0d32cc20c7ec31c8137e91bb5673ce9e5e`，实际祖先`09ac37258ea66b0cb69b2738eec3074ea4e7261c`，ahead1/behind149，2文件25增1删。不能把目标base当成候选已包含的主线，也不另提相同修复。
+
+### dataset 清理了什么
+
+[原方法](https://github.com/verl-project/verl/blob/dc721cfd3cbd4e18f49763f029d498519c74eb91/verl/utils/dataset/rl_dataset.py)先浅拷贝单张image字典，再在副本中pop bytes；通过`with Image.open(BytesIO(...))`及`decoded_image.copy()`返回已解码的新图像。[Pillow生命周期文档](https://pillow.readthedocs.io/en/stable/reference/open_files.html)说明，open先读元数据，图像派生操作会load原像素；新图像不再关联原文件。因此只pop字段，不能保证旧PIL对象不再通过延迟加载持有流。
+
+本机Python3.12.13、Pillow13.0.0，只执行完整原`_build_messages`方法，绑定到不含dataset构造过程的AST类载体；使用head原factory和原测试体/断言。路径1例、视频参数化3例、图片清理1例，共五例：
+
+| 版本 | 路径与视频4例 | 图片清理原断言 | 新建PNG在首次读像素前的观察 |
+| --- | --- | --- | --- |
+| 祖先09ac3725 | 均通过 | bytes仍在输出，失败 | 源字典被加image，返回PIL仍有打开的fp |
+| 候选dc721cfd | 均通过 | 通过 | 源字典不加image，返回PIL无打开的fp |
+| 固定主线3c6d9b43 | 均通过 | 与祖先同样失败 | 与祖先同样保留字段/流 |
+
+另一个同样2×2红色PNG的直接控制在bytes旁放path和min_pixels：三版都保留path/metadata且像素可读，候选也仍然选择解码bytes，并未优先读取path。源image字典仍保留bytes是有意保持输入不变；整个example并非不可变，原方法依然把prompt message的content原地改为列表。这里的“源不变”只指单张image字典，不等于深拷贝所有输入。
+
+### 不把局部清理当内存验收
+
+候选返回payload仍含解码后的PIL图像，并未改变AgentLoop、DataProto、reward/logging或actor dispatch。当前主线`__getitem__`把方法结果放到raw_prompt再pop顶层images列；pop顶层列并不删除嵌在raw_prompt内的对象。候选copy需要物化像素，可能改变局部峰值和解码时点，这是生命周期推断，不是已测RSS下降；不能从输出少一个字段推导完整训练内存一定下降。
+
+#7391报告者的2节点×8GPU生产内存记录和path-only对照属于外部证据；path-only同时避免了这里的PIL物化，不能当作#7400 bytes清理后的同方案结果。对象引用重复、序列化副本、Ray共享内存和进程RSS也不是同一种统计。#7400作者报告5 passed/5 deselected，本机五例通过只针对源码提取的候选方法，不是其完整pytest、dataset/HF processor或训练验收。
+
+本机未运行dataset构造/`__getitem__`、完整pytest/conftest、DataProto、Ray/actor dispatch、RSS或共享内存测量，也未执行模型、GPU/NPU；仅三版生产模块compile和上述真实Pillow控制。[完整脚本、hash与命令](../../diary/2026-10-24.md)留日志，不增加永久工具、硬件队列或竞争补丁。接续以独立需求/实质反馈为条件，不堆图片格式和序列化替身扩大结论。
 
 ---
 

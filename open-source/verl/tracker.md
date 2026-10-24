@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责；四条社区评审已核验，补丁与回复待用户授权，见[原草稿](draft-8313-review-reply.md)。2026-10-24续核[部分覆盖与状态](#部分覆盖与当前状态)、[资源默认与调度](#资源默认与更新调度)及[VeOmni低精度路线](#veomni-端到端低精度路线)：已有作者、待定接口、已合并梯度通信与端到端支持分开，不据空检索认领。[#8252评估](candidate-8252-weight-checker-rfc.md#现有验证能力与当前判断)已纠正旧“无回应/无验证”，不另实现；#8250仍待证据，#7913/clip旧RFC不重开。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责；四条社区评审已核验，补丁与回复待用户授权，见[原草稿](draft-8313-review-reply.md)。2026-10-24续核[部分覆盖与状态](#部分覆盖与当前状态)、[资源默认与调度](#资源默认与更新调度)、[VeOmni低精度路线](#veomni-端到端低精度路线)及[图片payload](#图片payload的既有修复)：已有作者、局部保证与完整验收分开，不据空检索认领。[#8252评估](candidate-8252-weight-checker-rfc.md#现有验证能力与当前判断)已纠正旧“无回应/无验证”，不另实现；#8250仍待证据，#7913/clip旧RFC不重开。
 
 **【大白话讲明白】**
 
@@ -91,6 +91,12 @@
 2026-10-24读[#8342](https://github.com/verl-project/verl/issues/8342)完整正文及唯一评论、[#8186](https://github.com/verl-project/verl/issues/8186)父路线图及全部8评论。amenomori已提出本地原型及分阶段实现，wuxibin89建议先向VeOmni开RFC；配置、后端归属与验收矩阵仍需维护者确认。正确仓库名下编号PR检索为空、VeOmni的torchao搜索只命中无关issue，均不证明无人推进；旧`repo:volcengine/verl`搜索返回422，已改用`repo:verl-project/verl`成功重查，不将请求失败记作0结果。
 
 见[原量化笔记](../../notebook/frameworks/verl-quant-layer-audit.md#veomni-低精度计算与通信边界)：[#8330](https://github.com/verl-project/verl/pull/8330)已合并，仅接线节点内低精度梯度RS，不是参数AllGather或全部E2E计算；作者H100通信收益与H200 actor无加速报告分开，最终树未重跑CUDA。torchao v0.18.0原源码确有限制标准rowwise与float8 AllGather的guard，不能靠新配置名消除它。不另写统一配置、通信hook或QAT方案；只有明确协作需求/接口变化才重新评估。无本机量化、通信或训练结果，无上游写入，真机条件只补原M5量化参考而不另排队。
+
+### 图片payload的既有修复
+
+2026-10-24读[#7391](https://github.com/verl-project/verl/issues/7391)完整正文和唯一评论，确认同报告者leooop-al已开非draft [#7400](https://github.com/verl-project/verl/pull/7400)，读取时OPEN、head`dc721cfd3cbd4e18f49763f029d498519c74eb91`。编号/图片bytes语义查重同时命中其他传输方案，不能将所有命中当同一修复；#7400完整正文及两文件diff明确限定dataset侧，不改AgentLoop/DataProto/actor派发。
+
+见[原数据流笔记](../../notebook/frameworks/verl-dataproto-data-flow-reading.md#图片字节与解码对象的生命周期)：真实Pillow配原方法/原五例，候选通过、祖先和当前main仅清理例失败；这不是完整pytest或RSS证据。已有作者覆盖字典浅拷贝/pop bytes/解码copy，不另写或发布同一补丁，也不将未处理的完整raw_prompt传输自动当我方新候选。#7391的path-only外部内存对照不认证#7400仍保留PIL的方案；旧本地“零拷贝/开销可忽略”及230KB算例已在原笔记纠正。无Ray/模型/设备执行或新M5任务，后续按具体协作/实质反馈再判断。
 
 ## 本地论证撤回，不再独立推进
 
