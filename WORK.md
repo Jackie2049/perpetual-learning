@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1采样概率口径学习收束（2026-10-25）**：起始51d4bf6干净，已有#8020作者原型、#8207配置保护与已合并#8196，不另开发。见[原概率专题](notebook/frameworks/verl-async-logprob-provenance.md#采样截断后的支持域与归一化)：原IS／RS函数接有限CPU FP64分布，同模型保留质量0.9会得到0.9单token／约0.349十token序列权重，严格k1全拒绝而K3仍小；同支持域控制恢复1，但非完整目标无偏证明。支持域大小在排名变化后不足恢复原集合，SC完整凭据另有范围。五文件语法检查、无原PR测试／引擎／训练；后端身份仅补原M5条件参考，无自动部署／新队列或专项修改。下轮转独立实际需求，不堆概率／阈值合成矩阵、竞争回放实现或重开#8250因果判断。
+
 - **M1长文本检查开销学习收束（2026-10-25）**：起始d772050干净、同步无新增；#8154已有原验证不复跑，转读#8261及已合并官方TF#47580。见[原数据流专题](notebook/frameworks/verl-dataproto-data-flow-reading.md#多模态特殊-token-检查的-cpu-开销)：精确两版原方法18组成对契约一致，131k-token本机CPU中位约319.422→1.379ms，非完整processor/吞吐。tolist减少Tensor标量比较而非移除计数，None不保证全程无Tensor，dataset纯文本过滤的编码改走tokenizer；五文件语法检查。无依赖升级/模型下载/新M5队列或专项修改；下轮转独立实际问题，不堆token长度/计数变体、重跑旧RoPE或据局部收益修改全局pin。
 
 - **M1调度恢复契约学习收束（2026-10-25）**：起始48e228d干净，快进52cb305保全M5记录。已有#7954不重复修复；见[原checkpoint专题](notebook/frameworks/verl-checkpoint-management-reading.md#megatron-调度进度与超参数恢复)：flag选择超参数而非丢计数，官方MCore0.19.2 scheduler接真实CPU SGD六控制通过；加载计数为增量，实际LR还受恢复后的组字段影响，后者非Megatron分组回归证明。八份语法检查，未跑原manager mock测试/分布式恢复；条件补M5原checkpoint入口，无新队列/环境/专项修改或上游动作。下轮转独立实际需求，不堆LR曲线/重复load/参数组替身矩阵或重跑原AMP计数题。

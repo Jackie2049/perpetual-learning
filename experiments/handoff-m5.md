@@ -233,6 +233,8 @@ ModelOpt忽略规则参考（2026-10-22，同一量化入口不另排队）：�
 
 ## verl 异步策略一致性补证
 
+采样概率口径参考（2026-10-25，同一入口不另排队）：[#8020](https://github.com/verl-project/verl/issues/8020)已有作者回放原型、[#8207](https://github.com/verl-project/verl/pull/8207) head0ed74d91仅配置保护／告警，已合并[#8196](https://github.com/verl-project/verl/pull/8196)的score centering完整支持域分支另有范围。[M1原数值函数CPU对照](../notebook/frameworks/verl-async-logprob-provenance.md#采样截断后的支持域与归一化)不是后端概率或训练验收。若M5已有获准匹配观测且独立接续，先记录实际引擎版本／logprobs_mode、最终采样处理、逐token支持集合及完整性凭据、actor归一化和有效mask；不要把小K3当完整KL、同k当同集合或常数残差当权重同步故障。缺匹配环境／授权资源、需部署下载或影响专项即停记未测；不自动切raw、关闭截断、应用候选、开发回放或新开训练，不重判#8250，不改AReaL/#523/#8313/DeepInfer，任何上游写入仍逐项待用户明确同意。
+
 Megatron输出权重就绪参考（2026-10-25，沿原输出头入口不另排队）：[#8029](https://github.com/verl-project/verl/pull/8029) head99b6f022/祖先4b26c788，[M1原23 CPU例](../notebook/frameworks/verl-fused-output-softcap.md#megatron-融合权重的就绪与调度)使用作者fake DDP/Work与torch融合数学，仅生命周期非真实通信。M5若已有获准匹配Megatron/DDP overlap工作且独立选用，先固定真实MCore/Bridge/TE、tied或untied实际消费参数及bucket映射、DDP或外部schedule拥有者、align/optimizer overlap与graph阶段，再核正常多步读取前完成及无遗留handle；外部无handle/graph跳过不能当就绪证据。作者H20观测非M5或所有平台验收；不主动改变生产调度/注入故障，不拼接FSDP方案或启动新训练。缺资源、模型/依赖授权、需部署下载或影响专项即停记未测；不改AReaL/#523/#8313，任何上游可见写入及已建PR的fork head推送仍须用户对具体动作明确同意。
 
 后端身份补充（2026-10-24，同一参考不另排队）：[#7540](https://github.com/verl-project/verl/issues/7540)已有#7597 head96ad10eb处理V1选择冲突，但不解释OPD loss差异；[M1原模块/OmegaConf控制](../notebook/frameworks/verl-architecture.md#fsdp-后端配置的权威来源)仅七组guard输入、无Hydra/dataclass或engine运行。若M5已有获准匹配工作且独立接续，先记录原始selector与实例化engine实际strategy，再核同一响应IDs、教师路由、teacher/student logprobs及mask身份；未固定输入不以同seed曲线判数值回归。缺配方/权重/资源、需下载部署或影响专项则停止记未测，不自动迁V1/切FSDP2、安装旧栈或新增A/B矩阵，不改AReaL/#8313/#523，参考非接单。

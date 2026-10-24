@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[预处理依赖边界](#长文本预处理的已有修复)：#8261已有官方修复，两版原方法的CPU契约／计时不认证完整processor或训练收益，不另实现或升级。[调度恢复](#megatron-调度恢复的已有修复)等学习保留原范围，不搬作者报告。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[采样支持域](#采样概率口径的已有方案)：#8020已有作者、#8207保护未合并，#8196的score centering对齐已合并；原IS／RS函数有限CPU对照不等于后端或训练验收，不另实现。[预处理](#长文本预处理的已有修复)等学习保留原范围，不搬作者报告。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## 采样概率口径的已有方案
+
+2026-10-25读取[#8020](https://github.com/verl-project/verl/issues/8020)全文及唯一作者补充，报告者已有支持域大小回放原型，不认领新修复。已有[#8207](https://github.com/verl-project/verl/pull/8207)仍open、非draft、未合并，head0ed74d91、base/祖先2035f58d；两份生产改动是启动保护、零ESS保护及告警，非支持域回放。[#8196](https://github.com/verl-project/verl/pull/8196)已合并且为固定主线祖先，但完整支持域凭据选择的是score centering路径，不代表一般IS／RS已经解决该问题。
+
+见[原概率专题](../../notebook/frameworks/verl-async-logprob-provenance.md#采样截断后的支持域与归一化)：原六helper／两个mask函数接有限CPU分布，0.9保留质量导致0.9单token和约0.349十token序列权重，严格k1拒绝而K3仅约0.00536；这不是完整精确KL、同步根因或训练回归。已知同支持域控制恢复1不证明原目标无偏；actor排名变化时相同k不保证相同集合。五份完整源文件语法检查，未跑候选原测试／配置启动／SC或后端；[M5条件参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)仅供已有获准匹配观测，无新队列／候选或专项修改，任何上游写入及PR head推送仍逐项待用户明确同意。
 
 ## 长文本预处理的已有修复
 

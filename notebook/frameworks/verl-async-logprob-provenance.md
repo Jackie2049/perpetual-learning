@@ -115,6 +115,38 @@ rollout配置[默认logprobs_mode](https://github.com/verl-project/verl/blob/187
 
 还要保留逐token残差。两个token的log-prob差为+.2/−.2时均值为0，非逐项一致；mean≈0不是“完全匹配”，也不是精确分布KL。只观测采样token的概率时，更不能排除其余词表区域的差异。
 
+## 采样截断后的支持域与归一化
+
+**同权重不保证 rollout 与 actor 的概率同口径；先分清采样分布，再解释 IS 权重、拒绝率和 K3。** [#8020](https://github.com/verl-project/verl/issues/8020)报告 top-p／top-k／min-p 截断与 processed_logprobs 配合时的筛选问题，报告者已有支持域大小回放原型。本节2026-10-25固定主线 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，只核原数值函数与显式小分布，不将作者的设备曲线算作本机结果，也不认定这是 #8250 的原因。
+
+### 相同模型与不同采样分布
+
+设未截断分布为 p，采样保留集合 S，其概率质量 Z=Σₛp；对 S 内 token，截断并归一化后的 q=p/Z。因此即使权重不变，比较全词表 log p 与采样 log q，差仍为 log Z；单 token 的 p/q=Z，长度 L 且每步保留质量相同的序列比值为 Zᴸ。它是两个不同分布在已采样位置的比值，不是指数或减法算错，也不能直接当同步失败。
+
+原 [IS／RS helper](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/ppo/rollout_corr_helper.py)在 Python3.12.13／torch2.14.1、CPU FP64 下执行：六个完整原函数及三个常量经 AST 隔离，masked_sum／masked_mean 也取完整原定义，无指标替身。输入 p=[0.6,0.3,0.1]、S={0,1}、Z≈0.9，十个有效 token 为 [0,1] 重复五次，response_mask 全1；TIS上限2、batch normalize关闭。
+
+| 原函数观测 | 全词表 p 对截断 q | 将 actor 也归一化到同一已知 S 的控制 |
+| --- | --- | --- |
+| token IS 权重 | 0.9 | 1 |
+| sequence IS 权重 | 0.3486784401 | 约1 |
+| seq_mean_k1，范围0.999_1.001 | 保留0/10 token | 保留10/10 |
+| seq_sum_k1，范围0.5_2 | 保留0/10 token | 保留10/10 |
+| seq_mean_k3，上限0.01 | 保留10/10；统计量约0.00536051565 | 保留10/10；接近0 |
+
+k1源码统计量是 −log_ratio，而非 log_ratio；此处两种双侧界限仍均拒绝。K3 的 exp(d)−1−d 在 d=log0.9 时约0.00536，而本例精确 KL(q∥p)=−log0.9≈0.10536。q 在 S 外为0，E_q[p/q]=Z而非1，不能将该 K3 样本均值当完整精确 KL。这个有限例子说明小 K3 与严格筛选全拒绝可以同时发生，不表示任何截断或任意长度都会全拒绝。
+
+同支持域控制改变了 actor 的归一化口径，用于验证差异来源；**不是对原目标 p 的无偏修复**。q 在 S 外没有覆盖，不能单凭删掉 log Z 或改为 raw log-probs 就证明完整目标的支持条件、温度／惩罚处理和估计器均正确。
+
+### 配置保护不等于支持域回放
+
+已有 [#8207](https://github.com/verl-project/verl/pull/8207)是 OPEN、非draft、未合并；固定 head `0ed74d918f8b874ec2d742bd8078ced240719f28`，base及共同祖先 `2035f58dcb06d8cad4caee107b30f4045d724367`，3文件256增4删。读取两份生产改动：配置保护检查 algorithm 或 actor policy_loss 镜像是否启用 IS／RS，再拒绝 processed_logprobs 与 top_p<1、top_k>0 或 min_p>0 的组合。它阻止一种配置，不实现报告者的支持域回放，也不认证其余 logprobs_mode 可用于所有后端。另补全零 IS 的 ESS 分母保护及每进程一次的全拒绝／全零告警；告警不代替逐步有效计数或真实梯度检查。
+
+已合并的 [#8196](https://github.com/verl-project/verl/pull/8196)是另一个范围：merge `8ced5d2f4b148c2991217554e0c6f03028fa1470` 为上述主线祖先。[score_centering_auto_correction](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/ppo/score_centering.py#L262)按概率提供者的逐 token 完整支持域凭据选择支持域归一化；没有凭据时保留 trainer 全词表尾部近似，sampled-score shift为0。记录预算、配置中的 k 大小或 head 质量接近1都不能单独证明完整覆盖。不能据此宣布普通 IS／RS 路径已解决 #8020。
+
+支持域大小本身也有条件。另一个显式控制令 actor 分布变为 [0.46,0.10,0.44]：旧采样集合 {0,1} 的质量是0.56，但在 actor 上重取 top2 得到 {0,2}、质量0.9。因此只有 k=2 不能在排名跨越后恢复原集合；这不是对报告者完整原型的实现判错，而是回放协议必须核对的身份条件。
+
+两次 CPU 数值运行一致；五份完整 Python 源码另过 AST／内存 compile。没有运行 #8207 原测试、配置启动、完整 helper 模块导入、score centering 梯度、概率提供者或真实 vLLM／SGLang／训练。复现输入、函数清单及 hash 留[当日日志](../../diary/2026-10-25.md)；不新增永久合成工具或竞争补丁。真实后端的概率身份只补[既有 M5 条件参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不自动启跑、改 sampler 或排新训练。
+
 ## 最小观测契约
 
 每条用于对照的记录应能回答以下四组问题，缺失项用unknown而不是推定值补齐：

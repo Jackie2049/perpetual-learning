@@ -165,6 +165,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [量化写入前检查与失败握手](verl-quant-layer-audit.md#写入前检查与失败握手) — #8327新head把格式检查移到引擎逐桶写入前；完成ACK不等于回滚，首轮finished不等于通过。九份语法检查非引擎或通信验收，旧GPU/CPU报告不迁移。
 
 - [verl 异步训练策略版本与 logprob 对照条件](verl-async-logprob-provenance.md) — V1 separate-async的rollout/old/current来源、CPU快照路由、版本标签边界和最小观测契约；非训练根因证明
+- [verl 采样支持域与归一化](verl-async-logprob-provenance.md#采样截断后的支持域与归一化) — 原IS／RS函数的有限CPU对照：相同模型仍可有0.9单token／0.349序列权重，小K3不认证精确KL；#8207配置保护与已合并#8196的score centering分开，不另实现。
 - [verl Bypass字段与worker配置](verl-async-logprob-provenance.md#bypass-字段替换与-worker-的-loss-配置) — #8348原19配置例通过；概率锚点替换不等于远端loss切换，提前配置/显式loss保留/冲突拒绝，非worker或训练验收。
 - [verl 新版同步阶段 tracing](verl-async-logprob-provenance.md#新版阶段-tracing-与证据关联) — #8315新head原12项日志测试与实际lane表达式对照；helper通过不认证生产接线/后端显示，保留no-op和真实同步边界。
 - [verl 单 worker NIXL 拓扑](verl-async-logprob-provenance.md#单-rollout-worker-的-nixl-拓扑) — #8316两版各20组控制，后续head补1原测试并隔离对照；on_cpu不保证无原生导入依赖，非同步验收。
