@@ -4,7 +4,36 @@
 > 作者: ISEEKYAN (NVIDIA) | +864/-9 | 9 files | merge_commit: 7f16719
 > 评审: 1 review comment (gemini-code-assist naming check), 0 issue comments
 
+2026-10-24接续：[DSA奇数输出与依赖版本](#dsa-奇数输出与依赖版本)补充运行时约束；下文1.24.1“足够”是原PR时期的说明，不是当前变长序列、全部硬件或依赖栈的兼容认证。
+
 ---
+
+## DSA 奇数输出与依赖版本
+
+**支持某个GPU架构，不等于所有合法top-k都能编译。** 2026-10-24读取[verl #8238](https://github.com/verl-project/verl/issues/8238)及全部两条评论：报告者已给出GB200观测，另一用户补H100/DeepSeek-V4-Pro观测；后续评论向维护者询问依赖兼容路径，尚不是维护者决策。它不是新发现的kernel修复空缺：[NVIDIA #407](https://github.com/NVIDIA/cudnn-frontend/pull/407)于7月20日合并，修复在官方1.27.0 tag源码中。这里的GPU结果均为外部报告，本项目没有复跑。
+
+### 真正送到 kernel 的宽度
+
+[Megatron固定源码](https://github.com/NVIDIA/Megatron-LM/blob/43e45e13074f36da68b34c7a189cd997a01d1b41/megatron/core/transformer/experimental_attention_variant/csa_kernels.py#L520)中，BSHD路径的`sk=k.shape[1]`；THD路径的`sk=int(max_seqlen_kv)`。两者均在调用前做`topk_k=min(topk,sk)`，传给cuDNN；每行实际可见的KV长度另外放在`seq_lens`。返回后若不足配置topk，再补`-1`。所以不能仅以原始prompt/response token数的奇偶判断触发，也不能把每行有效长度与批次kernel输出宽度混为一谈。
+
+[1.26.0输出阶段](https://github.com/NVIDIA/cudnn-frontend/blob/35fd7b0d0e1d4952b904c79341c5e84e3af0a328/python/cudnn/deepseek_sparse_attention/indexer_top_k/indexer_top_k_varlen_util.py#L952)选择
+
+```python
+vecsize_out = min(top_k, ceil_div(top_k, threads_per_cta), copy_bits // dtype_bits, 2)
+assert top_k % vecsize_out == 0
+```
+
+这是源码表达式的简写，不是本机执行的kernel。当`top_k<=threads_per_cta`时，ceil项为1，奇数也可取标量宽度；只有选出2而top_k为奇数才在这里断言。例如官方回归705在256或512线程、copy宽度至少2的配置会选2。输出循环没有处理宽度2留下的标量尾项，不能简单删除assert或把top-k凑偶数当作同语义修复。
+
+[1.27.0固定源码](https://github.com/NVIDIA/cudnn-frontend/blob/f77fbc3d21be3f24cd0286b9b368105f7c518b8a/python/cudnn/deepseek_sparse_attention/indexer_top_k/indexer_top_k_varlen_util.py)将最后上限改为`2 if top_k % 2 == 0 else 1`，奇数回退标量输出，不改变选择阶段或偶数输出宽度。官方新增705到两个原GPU测试的参数；提交者明确当时缺SM90/SM100，不能把“新增测试”写成其已实测通过。该源码修复也不认证其他排序、mask、kernel或训练行为。
+
+### 依赖解析与实际运行分开
+
+固定[verl main 3c6d9b4的uv.lock](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/uv.lock#L2512)仍解析`nvidia-cudnn-frontend=1.26.0`，CUTLASS DSL为4.6.2；这说明锁文件内容，不证明任一运行环境真的安装/导入了它。官方pyproject的`cutedsl`额外依赖在[1.26.0](https://github.com/NVIDIA/cudnn-frontend/blob/35fd7b0d0e1d4952b904c79341c5e84e3af0a328/pyproject.toml)精确要求4.5.0，在[1.27.0](https://github.com/NVIDIA/cudnn-frontend/blob/f77fbc3d21be3f24cd0286b9b368105f7c518b8a/pyproject.toml)放宽为≥4.5.0；是否启用extra与实际依赖图须另外核对，不能据锁内两个数字直接宣布冲突或升级安全。
+
+issue建议只升级Frontend、保留其余环境，并附训练报告；这不等于经过本项目完整resolver/依赖闭包验证。编号与cudnn关键词的有限开放PR检索未找到可据正文确认处理本issue的独立升级PR，但命中旧依赖机器人PR和DSV4示例等噪声；不据此宣布无人负责或自动改锁。后续若有明确协作范围，应先由维护者确定支持版本路径，再准备最小依赖变更，任何上游回复、PR及其head推送仍须用户逐项同意。
+
+本轮Python3.12.13只对两版官方kernel模块和上述Megatron模块做AST/内存compile，三份通过；使用tomllib解析固定uv.lock。没有导入cuDNN/CUTLASS、运行原GPU测试、top-k或模型，不构造假kernel补证。版本/hash与命令范围见[当日日志](../../diary/2026-10-24.md)，真机缺口登记[M5条件参考](../../experiments/handoff-m5.md#verl-dsa-依赖兼容参考)，不自动部署/重跑Pro或把Flash短跑外推Pro。
 
 ## 一、PR 概要: 文档 + 启动脚本, 不含运行时代码
 
@@ -93,6 +122,8 @@ PR #6791 不修改 verl 的训练/推理引擎代码。它将已有的 mlite 运
 |-----|---------------------|
 | **Blackwell** | Release 1.24.1 **足够** |
 | **Hopper (H100)** | 需要 **develop 分支 build** + `IndexerForwardSm90` 支持 |
+
+上表保留原文档的历史要求。后续[#8238](https://github.com/verl-project/verl/issues/8238)及[官方存储修复](https://github.com/NVIDIA/cudnn-frontend/pull/407)说明：满足架构入口不等于覆盖所有有效长度，不能据此选定现行cuDNN版本。
 
 ★★★★★★★ **RTX 4090 影响**: DSA kernels 需要 SM90+ (Hopper) 或 SM100+ (Blackwell)。RTX 4090 是 SM89 (Ada Lovelace), **不支持 DSA kernels**。这意味着 DSv4 on RTX 4090 需要:
 - 不使用 DSA kernel → 回退到标准 attention

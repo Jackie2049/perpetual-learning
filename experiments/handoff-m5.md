@@ -11,6 +11,12 @@ GPU/NPU 的访问、环境与实验由 macbook-M5 Agent 负责。M1 遇到需要
 - 实验结论回写对应主笔记与 diary，并在本页链接结果：保留版本、配置、命令、原始日志/失败、真实执行范围。没有采到的字段写 unknown，不能由依赖 pin 或历史机器记录补齐。
 - **上游硬门槛（2026-10-24 用户三次重申后的全体 Agent 铁律，详见 AGENTS.md「对外主仓库行动的硬门槛」）**：未获用户对**具体动作**的明确同意，任何会话不得在外部项目主仓库回复/评论（含 review comment）、新建 issue、新建 PR、**修改已有 PR 的代码（含推送其 head 分支——即使分支在用户自己 fork 上，推送即对上游可见）**。判断权不在 Agent：主仓库有他人共同参与，未经确认的自主对外动作后果不可承担；不因过往授权、惯例或其他会话先例延伸。准备动作（本地代码、patch、fork 独立分支、回复草稿）不受限。交接任务涉及上游时必须附带本边界；交接不增加对外操作权限，也不将 CPU 学习的未测项自动变成必跑任务。
 
+## verl DSA 依赖兼容参考
+
+状态：仅条件交接，不代表接单或新增训练队列。目的为在已有获准DSV4/DSA工作中识别[#8238](https://github.com/verl-project/verl/issues/8238)的Frontend版本/有效输入边界，非自动升级或启动Pro。固定证据见[原专题](../notebook/frameworks/verl-6791-dsv4-megatron-lite-reading.md#dsa-奇数输出与依赖版本)：verl3c6d9b4锁Frontend1.26.0/CUTLASS DSL4.6.2，Megatron43e45e13传min(topk,压缩KV宽度)；官方#407已合并，1.27 tag f77fbc3d包含奇数标量存储回退。M1仅三模块AST/compile与锁文件解析，没有cuDNN导入、kernel/模型或硬件执行；H100/GB200均为外部报告。
+
+缺口为匹配SM90/SM100设备、已获准模型/输入及完整依赖环境。若M5将来独立接续已有匹配任务，先记录实际安装/导入Frontend及DSL版本、Megatron完整提交、BSHD/THD和实际topk_k/CTA条件，核是否确走该旧输出路径；只有条件齐备才按已有范围决定运行原GPU回归，不以原token长度奇偶或Flash三步未报错认证Pro。需新模型/部署/升级、缺资源或影响专项即记未测停止，不探测服务器、不改现有环境/TopK语义或另启训练。任何上游回复/issue/PR及PR head推送（含fork）须用户对具体动作逐项同意；交接不增加权限。
+
 ## UniRL 联合路径的资源与身份边界
 
 激活卸载基线补充（2026-10-24，同一参考，不另排队）：[#627](https://github.com/Tencent-Hunyuan/UniRL/issues/627)报告offload关闭的4×H100 EP2×FSDP2也被mask接口阻塞；[M1核对](../notebook/frameworks/unirl-survey.md#veomni-生成代码的-mask-接口边界)固定UniRL6fd82cba、VeOmni0.1.11 tag f90b3dc6、HF5.12.1 ddb849ab，仅源码/参数绑定。VeOmni已合并#774，0.1.12 tag fd99abfd的配置与GPU产物均不再传cache_position，但不是UniRL整体升级验收。M5若日后已有获准匹配模型/环境/资源且独立接续，先记录实际wheel/source与完整依赖，核因果mask（含该配方实际padding/packed/滑窗分支）及offload关闭的最小EP更新，再决定是否比较卸载。缺权重/资源、需新部署下载升级或影响专项即记未测停止；不自动升VeOmni/降Transformers、照搬#774全栈或写通用吞参shim，不改#523/AReaL，不代表已接单。

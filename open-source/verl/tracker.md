@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责；四条社区评审已核验，补丁与回复待用户授权，见[原草稿](draft-8313-review-reply.md)。2026-10-24续核[后端选择与蒸馏观察](#后端选择与蒸馏数值观察)、[FSDP head替代方案](#fsdp-head-生命周期的替代方案)、[多轮SFT](#多轮-sft-的已有修复)及[Prime同题PR](#prime字典评分的重复覆盖)：已有作者、局部配置/执行保证与完整验收分开，不据新编号或空检索认领。[#8252评估](candidate-8252-weight-checker-rfc.md#现有验证能力与当前判断)已纠正旧“无回应/无验证”，不另实现；#8250仍待证据，#7913/clip旧RFC不重开。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责；四条社区评审已核验，补丁与回复待用户授权，见[原草稿](draft-8313-review-reply.md)。2026-10-24新增[DSA依赖边界](#dsa-依赖与有效输入范围)，官方已有kernel修复、升级兼容仍待决策；续核[后端选择与蒸馏观察](#后端选择与蒸馏数值观察)、[FSDP head替代方案](#fsdp-head-生命周期的替代方案)、[多轮SFT](#多轮-sft-的已有修复)及[Prime同题PR](#prime字典评分的重复覆盖)：已有作者、局部配置/执行保证与完整验收分开，不据新编号或空检索认领。[#8252评估](candidate-8252-weight-checker-rfc.md#现有验证能力与当前判断)已纠正旧“无回应/无验证”，不另实现；#8250仍待证据，#7913/clip旧RFC不重开。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## DSA 依赖与有效输入范围
+
+2026-10-24读取[#8238](https://github.com/verl-project/verl/issues/8238)全文及两条评论；[原专题补充](../../notebook/frameworks/verl-6791-dsv4-megatron-lite-reading.md#dsa-奇数输出与依赖版本)固定main3c6d9b4的Frontend1.26.0锁定、Megatron43e45e13调用及官方1.26/1.27存储代码。官方[#407](https://github.com/NVIDIA/cudnn-frontend/pull/407)已合并，1.27源码含奇数标量回退；不是新kernel贡献空缺。有效top-k来自压缩KV维度，且旧assert只在选中向量宽度2的奇数上触发，不是任意奇数token长度。三模块语法检查、锁文件解析非GPU/全栈复现，外部H100/GB200报告不搬本机。
+
+编号及cudnn/cudnn-frontend开放PR检索只作有限归属检查，噪声命中不算覆盖，空的精确关联也不算无人负责。升级路线仍需维护者兼容决策；本项目不自动改锁、另开issue、评论或PR。硬件缺口见[条件参考](../../experiments/handoff-m5.md#verl-dsa-依赖兼容参考)，不新增Pro训练或环境升级队列；任何上游可见动作（含fork上的PR head推送）须用户逐项明确同意。
 
 ## 当前活跃
 
