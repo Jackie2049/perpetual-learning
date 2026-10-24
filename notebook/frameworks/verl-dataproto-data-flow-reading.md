@@ -5,6 +5,35 @@
 
 2026-10-24补充：[图片字节与解码对象的生命周期](#图片字节与解码对象的生命周期)。原方法与真实Pillow对照确认dataset侧清理边界；原“数据开销完全可忽略”概括撤回，张量字节算例也已纠正，不能覆盖raw_prompt中的图片或序列化峰值。
 
+2026-10-25补充：[多模态特殊 token 检查的 CPU 开销](#多模态特殊-token-检查的-cpu-开销)区分原检查方法、完整processor与训练吞吐；纯文本走多模态processor也可能付出标记计数成本，但不是所有纯文本入口都走此路径。
+
+## 多模态特殊 token 检查的 CPU 开销
+
+[#8261](https://github.com/verl-project/verl/issues/8261)的性能问题已有官方[Transformers #47580](https://github.com/huggingface/transformers/pull/47580)修复，后者已合并；本项目不另写重复补丁。旧 `_check_special_mm_tokens` 对每种已声明模态，把input_ids的每行转成list后计数。对torch Tensor，list中的元素仍是零维Tensor，逐项比较和真假判断带来大量Python／Tensor边界操作。即使文本没有图片，检查仍须扫描IDs来确认数量为0。
+
+新方法先对整个input_ids调用一次 `tolist()`（若支持），再用原list计数逻辑。它不是在Tensor上做向量化sum，也没有消除每种模态的线性扫描；减少的是逐元素Tensor比较，以及反复跨表示边界。固定官方tag：5.12.1为 `ddb849abe009d1089e6c691bfc897f27211c663c`，5.15.0为 `5eddc12edfaf8cafde8c9bae4ccb12f8a139b4f9`。从这两个版本[旧](https://github.com/huggingface/transformers/blob/ddb849abe009d1089e6c691bfc897f27211c663c/src/transformers/processing_utils.py)／[新](https://github.com/huggingface/transformers/blob/5eddc12edfaf8cafde8c9bae4ccb12f8a139b4f9/src/transformers/processing_utils.py)源码AST提取完整原方法，绑定仅含特殊token属性的输入夹具，不导入整个Transformers或构造processor。
+
+### 本机函数级对照
+
+macbook-M1、Python3.12.13／torch2.14.1／NumPy2.5.4，torch intra-op线程设1。输入为一行131,072个int64 token，文本不含图像标记，检查一种image模态；数据构造在计时外，每种条件预热1次后取5次中位数：
+
+| input_ids表示 | 5.12.1原方法 | 5.15.0原方法 |
+|---|---|---|
+| CPU torch Tensor | 319.422 ms | 1.379 ms |
+| Python list | 0.851 ms | 0.844 ms |
+
+这是本机原方法的局部耗时，不是完整processor、长文本分词、内存峰值、GPU或训练吞吐。它也不是原issue中Xeon／torch2.13的耗时复跑；不能把两台CPU或两种测量范围的时间互相替代。
+
+另以纯文本、正确image计数、缺少token、额外token、image/video两模态、总数相同但逐行分配错误六种输入，各接list／CPU torch／NumPy三表示，共18组成对比较、36次方法调用；两版接受／拒绝结果及完整ValueError文本一致，调用后原input_ids对象和数值未变。逐行 `[2,0]` 对文本计数 `[1,1]` 仍拒绝，不能用batch总数替代逐例检查。这些仅是原计数契约，不认证实际图像内容、模板或完整tokenizer等价。
+
+### verl 的调用范围与依赖约束
+
+固定verl主线 `3c6d9b43b67c74ec343d77874cd8fa6e841523da` 的[processor helper](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/utils/tokenizer/tokenizer.py)默认setdefault(return_tensors, pt)，显式 `mm_processor_kwargs.return_tensors=None` 不被覆盖。因此issue临时绕法改变的是processor返回表示，不是关闭计数检查或修好全部预处理。
+
+[RL dataset过滤](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/utils/dataset/rl_dataset.py)在无image/video/audio时直接调用tokenizer，不应把该计数开销外推到所有纯文本过滤；[AgentLoop后处理](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/experimental/agent_loop/agent_loop.py)只要processor存在便可能调用helper，取出多模态字段后还显式convert_to_tensors(pt)。None中间表示不等于全流程不再构造Tensor。这里仅读接线，没有运行这两条完整路径或认证临时绕法对全部模型／模态安全。
+
+该固定lock声明SGLang0.5.20、Transformers5.12.1及Torch2.13的CPU／CUDA分支；本机微基准并未安装这组完整环境。依赖升级应协调推理后端及整体锁文件，不能仅因局部函数更快就单改pin或全局monkeypatch。五份完整源码AST/compile通过（两官方processing_utils、三verl接线）；本轮无依赖安装、processor资产／模型下载、GPU或新M5任务，原输入和耗时样本见[日志](../../diary/2026-10-25.md)。
+
 ## 1. DataProto类层次
 
 ```

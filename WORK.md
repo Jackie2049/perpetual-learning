@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1长文本检查开销学习收束（2026-10-25）**：起始d772050干净、同步无新增；#8154已有原验证不复跑，转读#8261及已合并官方TF#47580。见[原数据流专题](notebook/frameworks/verl-dataproto-data-flow-reading.md#多模态特殊-token-检查的-cpu-开销)：精确两版原方法18组成对契约一致，131k-token本机CPU中位约319.422→1.379ms，非完整processor/吞吐。tolist减少Tensor标量比较而非移除计数，None不保证全程无Tensor，dataset纯文本过滤的编码改走tokenizer；五文件语法检查。无依赖升级/模型下载/新M5队列或专项修改；下轮转独立实际问题，不堆token长度/计数变体、重跑旧RoPE或据局部收益修改全局pin。
+
 - **M1调度恢复契约学习收束（2026-10-25）**：起始48e228d干净，快进52cb305保全M5记录。已有#7954不重复修复；见[原checkpoint专题](notebook/frameworks/verl-checkpoint-management-reading.md#megatron-调度进度与超参数恢复)：flag选择超参数而非丢计数，官方MCore0.19.2 scheduler接真实CPU SGD六控制通过；加载计数为增量，实际LR还受恢复后的组字段影响，后者非Megatron分组回归证明。八份语法检查，未跑原manager mock测试/分布式恢复；条件补M5原checkpoint入口，无新队列/环境/专项修改或上游动作。下轮转独立实际需求，不堆LR曲线/重复load/参数组替身矩阵或重跑原AMP计数题。
 
 - **M1 Megatron权重就绪学习收束（2026-10-25）**：起始f40e823干净，收尾同步19416a9保全M5新日志/状态。#8324迁移已有fork原型不展开；沿既有#8029核[融合消费边界](notebook/frameworks/verl-fused-output-softcap.md#megatron-融合权重的就绪与调度)：参数handle完成、下一桶派发权和hidden gather分开，weak owner/graph跳过不是无条件就绪保证。原23项CPU生命周期测试通过，作者DDP/Work替身及torch数学非实通信；九份语法检查不代替GPU。仅条件补M5原输出头参考，不另实现/部署/新排队或改专项；下轮转独立实际需求，不堆bucket/graph/假DDP矩阵或自动展开大型原生迁移。

@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[调度恢复契约](#megatron-调度恢复的已有修复)：#7954已有覆盖，官方scheduler接真实CPU SGD六控制不等于完整恢复，不另实现。[权重就绪](#megatron-融合消费的已有修复)、[数学表达式](#数学表达式解析的已有方案)等学习保留各自范围，不搬作者硬件或安全报告。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[预处理依赖边界](#长文本预处理的已有修复)：#8261已有官方修复，两版原方法的CPU契约／计时不认证完整processor或训练收益，不另实现或升级。[调度恢复](#megatron-调度恢复的已有修复)等学习保留原范围，不搬作者报告。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## 长文本预处理的已有修复
+
+2026-10-25读取[#8261](https://github.com/verl-project/verl/issues/8261)全文/0评论；编号开放及历史PR查询为空，但报告已明确官方[Transformers #47580](https://github.com/huggingface/transformers/pull/47580)合并，不把空结果当修复空缺。见[原数据流专题](../../notebook/frameworks/verl-dataproto-data-flow-reading.md#多模态特殊-token-检查的-cpu-开销)：精确5.12.1/5.15.0原方法接list/CPU torch/NumPy，18组成对契约一致；131,072-token CPU方法中位耗时约319.422→1.379ms，非完整processor/分词或训练吞吐，未下载模型资产。
+
+固定verl3c6d9b4锁仍为Transformers5.12.1/SGLang0.5.20/Torch2.13组合；本机torch2.14.1仅提取方法控制，不能认证升级组合。None绕法保留list计数且后续仍可能转Tensor，无模态dataset过滤又走tokenizer，不外推所有入口。已有官方路线及依赖协调，不写竞争shim、不改pin/环境、不新排M5任务；任何上游写入及PR head更新仍逐项待用户明确同意。
 
 ## Megatron 调度恢复的已有修复
 
