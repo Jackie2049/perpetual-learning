@@ -153,6 +153,93 @@ class DiaryTests(unittest.TestCase):
         self.assertEqual(len(diary.entries(text)), 2)
         self.assertEqual(diary.entries(text)[('00:01', '一')], '正文一')
 
+    def committed_records(self):
+        day = self.now.strftime('%Y-%m-%d')
+        path = Path(f'diary/{day}.md')
+        path.write_text('# 日志\n\n## 00:00 — 第一项\n\n结果一。\n\n'
+                        '## 00:00 — 第二项\n\n结果二。\n')
+        Path('diary/readme.md').write_text(f'## 已有日志\n\n- [{day}]({day}.md)\n')
+        self.git('add', 'diary')
+        self.git('commit', '-qm', 'recorded history')
+        return path
+
+    def test_new_record_does_not_excuse_lost_history(self):
+        path = self.committed_records()
+        path.write_text('# 日志\n\n## 00:00 — 第二项\n\n结果二。\n')
+        self.record('本项结果：新增一项，但不应覆盖历史。')
+        self.git('add', 'diary')
+        with self.assertRaisesRegex(ValueError, '移除已有日志.*第一项'):
+            diary.check()
+
+    def test_deleting_a_day_is_rejected_even_with_another_recent_record(self):
+        path = self.committed_records()
+        yesterday = self.now - timedelta(days=1)
+        destination = Path(f'diary/{yesterday:%Y-%m-%d}.md')
+        self.git('mv', str(path), str(destination))
+        self.git('commit', '-qm', 'older history fixture')
+        self.git('rm', str(destination))
+        self.record()
+        self.git('add', 'diary')
+        with self.assertRaisesRegex(ValueError, '移除已有日志'):
+            diary.check()
+
+    def test_preserved_body_can_be_reheaded_alongside_new_work(self):
+        path = self.committed_records()
+        path.write_text(path.read_text().replace('00:00 — 第一项', '00:00 — 更正标题'))
+        self.record('结果：改正标题并记录新工作。')
+        self.git('add', 'diary')
+        diary.check()
+
+    def test_renaming_a_day_does_not_hide_source_history_removal(self):
+        path = self.committed_records()
+        destination = Path(f'diary/{self.now - timedelta(days=1):%Y-%m-%d}.md')
+        self.git('mv', str(path), str(destination))
+        index = Path('diary/readme.md')
+        index.write_text(index.read_text() + f'\n- [历史]({destination.name})\n')
+        self.record('结果：日期文件迁移也不能绕过源记录保全检查。')
+        self.git('add', 'diary')
+        with self.assertRaisesRegex(ValueError, '移除已有日志'):
+            diary.check()
+
+    def test_one_body_cannot_account_for_two_removed_entries(self):
+        path = self.committed_records()
+        path.write_text(path.read_text().replace('结果二。', '结果一。'))
+        self.git('add', 'diary')
+        self.git('commit', '-qm', 'same body fixture')
+        path.write_text('# 日志\n\n## 00:00 — 合并标题\n\n结果一。\n')
+        self.record('结果：合并时不可静默丢失同正文的另一条。')
+        self.git('add', 'diary')
+        with self.assertRaisesRegex(ValueError, '移除已有日志'):
+            diary.check()
+
+    def test_body_cannot_be_emptied_while_heading_survives(self):
+        path = self.committed_records()
+        path.write_text(path.read_text().replace('结果一。', ''))
+        self.record('结果：新增正文不能抵消旧正文清空。')
+        self.git('add', 'diary')
+        with self.assertRaisesRegex(ValueError, '清空已有日志'):
+            diary.check()
+
+    def test_unstaged_recovery_does_not_hide_staged_history_loss(self):
+        path = self.committed_records()
+        original = path.read_text()
+        path.write_text('# 日志\n\n## 00:00 — 第二项\n\n结果二。\n')
+        self.record('结果：检查必须只看暂存区。')
+        self.git('add', 'diary')
+        path.write_text(original + '\n工作区已恢复，但未暂存。\n')
+        with self.assertRaisesRegex(ValueError, '移除已有日志'):
+            diary.check()
+
+    def test_real_hook_rejects_history_replacement_with_new_record(self):
+        path = self.committed_records()
+        diary.install()
+        path.write_text('# 日志\n')
+        self.record('结果：替换历史再加新条目，hook也应拒绝。')
+        self.git('add', 'diary')
+        result = self.git('commit', '-qm', 'must preserve history', ok=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('移除已有日志', result.stderr)
+
     def test_duplicate_append_rejected_without_mutation(self):
         p = self.record()
         before = p.read_text()

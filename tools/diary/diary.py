@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Append work records and check the Git index before committing. Python 3.9+."""
 import argparse
+from collections import Counter
 from datetime import datetime, timedelta
 from pathlib import Path
 import posixpath
@@ -74,7 +75,8 @@ def append(title, body):
 
 def check(now=None):
     now = now or datetime.now(TZ)
-    changed = git('diff', '--cached', '--name-only', '-z').split('\0')
+    # Treat a renamed day as removal + addition so the source history is still checked.
+    changed = git('diff', '--cached', '--no-renames', '--name-only', '-z').split('\0')
     if not any(changed):
         return
     tracked = set(git('ls-files', '-z').split('\0'))
@@ -86,6 +88,16 @@ def check(now=None):
             continue
         old = entries(git('show', f'HEAD:{name}', optional=True))
         new = entries(git('show', f':{name}', optional=True))
+        # Reheading is allowed only when the original body survives, one-to-one.
+        # A fresh work record must not excuse replacing the rest of the day's history.
+        reheaded = Counter(body for key, body in new.items() if key not in old)
+        for key, body in old.items():
+            if key not in new:
+                if reheaded[body] == 0:
+                    raise ValueError(f'{name} 移除已有日志：{key[0]} — {key[1]}。请保留原记录并追加纠正；需要迁移/删除时先由用户决定。')
+                reheaded[body] -= 1
+            elif body and not new[key]:
+                raise ValueError(f'{name} 清空已有日志：{key[0]} — {key[1]}。请保留原记录并追加纠正。')
         for (time, title), body in new.items():
             if body == old.get((time, title)) or body in old.values():
                 continue
