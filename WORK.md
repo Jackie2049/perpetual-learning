@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M5 定时轮 05:37 例行核对（2026-10-25）**：4090-1 直连在线（uptime 129 天 12:37、load 0.16）；**GPU 与 05:07 轮一致——0/1/3/4/5/6/7 各 3050MiB/util 100%**（轻量进程占用延续，compute-apps 同一 PID 1043401 占 8 卡各 ~3040MiB、进程名 [No data]，形态间歇波动），GPU 2 仍 liyaowei VLLM 常驻（23795MiB/0%）；**仍无可领算力项**——UniRL #523 L1 需 ≥8 卡同时空闲 + 获准权重（GPU 2 被 VLLM 占用只剩 7 卡、权重未授权、磁盘满），DeepInfer 真实权重推理需磁盘清理决策 + 不在 mock 授权范围，其余已授权 GPU 工作全部完成；V4.1-Flash 权重日志再确认完成（84/84、Snapshot ready、无 modelscope 进程）；#8313 仍 OPEN/MERGEABLE/REVIEW_REQUIRED/head 71fd3562 等维护者 approve（②③④ 草稿 v2 待用户逐字审定，本轮只读）；/home 仍 100% 满剩 58G（清理待用户决定）；昇腾 910C VPN 掉线**第 12 天**（网关可达 avg 10.8ms、目标机 100% 丢包、22 端口不可达）待用户恢复；DeepInfer-Go PR #2 仍 OPEN+MERGEABLE（head consumer-gpu a0a6940b）等用户审视；上游三仓库 main 无新合并、open PR 无新算力项（verl 最新 #8361、UniRL #628、DeepInfer #222）。本地已 fast-forward 到 origin/main d172bc0（并行会话「核清SFT验证尾批与token加权分母」+ 同步，无新算力队列）。详见 [当日日志](diary/2026-10-25.md)。
+
 - **M1 SFT验证分母学习收束（2026-10-25）**：起始803371a干净，#7464已有#7467 head87dc0d00、祖先a9f29851，不另实现。见[原数据流专题](notebook/frameworks/verl-dataproto-data-flow-reading.md#sft-验证的尾批与-token-分母)：完整原helper／collator／TensorDict及16原测试体CPU两次通过，普通sampler补齐本例计58token，零mask补位保留真实55；显式NLL的token／样本加权约1.0385／1.8，不将stand-in当模型输出。静态切分原函数AST隔离，逻辑rank依次枚举无collective，七份语法检查；无M5新队列／环境／专项或上游动作。下轮转独立实际需求，不堆尾批／padding／假rank矩阵或据CPU通过扩大并行支持。
 
 - **M1工具schema边界学习收束（2026-10-25）**：起始4101149干净，#7505已有#7523、关闭#7766未合并，不另实现。见[原工具专题](notebook/frameworks/verl-6779-continuous-token-agentic-rollout-reading.md#13-工具-schema-保真与执行校验)：两版完整模块接真实Pydantic，原1测试体主线失败／候选通过；extra保真不认证任意schema、元schema合法或调用参数。无副作用echo显示越界值／错误类型仍可进入FunctionTool.call，未知参数由Python签名拒绝，非完整loop／安全漏洞定性。五份语法检查，无GPU缺口／M5新队列或专项改动、无上游写入；下轮转独立需求，不堆schema字段／坏参数矩阵或另写校验器。
