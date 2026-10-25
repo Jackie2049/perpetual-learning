@@ -150,6 +150,7 @@
 - [verl V1源prompt与可变行](frameworks/verl-grpo-source-reading.md#v1-源-prompt-单位与可变轨迹行) — #8201按UID计优化批、逐单元补行并传worker边界；同批非同rank，仅12项原纯helper检查，非TQ/训练验收
 - [verl 拼批形状与对象引用](frameworks/verl-grpo-data-flow-reading.md#拼批中的形状与引用) — 原collator/1原测试体与7组CPU DataLoader检查；一维对象边界不等于深拷贝或字段校验
 - [verl Rollout 完整性](frameworks/verl-grpo-data-flow-reading.md#rollout-完整性与会话计数) — #6641原7项replay测试候选通过/旧版4项拒绝检查预期失败；多输出行不等于多会话，数量护栏非超时、取消或服务恢复
+- [自适应组大小与逐轮生成](frameworks/verl-grpo-data-flow-reading.md#自适应组大小与逐轮生成) — #8077的分轮停止不等逐prompt预设n；生成session、终态、DAPO与优化批单位须配合，源码分析非C-GRPO复现
 - [verl PF PPO重采样身份](frameworks/verl-grpo-data-flow-reading.md#pf-ppo-重采样与原-key-回写) — #7957原四测试三版本对照，内部行一致不等原key对齐；旧mask切片可与新行长度不同，非真实队列或训练验收
 - [verl 二维logprob分块](frameworks/verl-6572-full-determinism-source-reading.md#二维低精度-logprob-的分块预算) — #8351原17测试体绑定cpu通过；单块预算非反向总保存量或CUDA峰值，复用原脚本，不新增训练
 - [verl 奖励限流与取消](frameworks/verl-reward-integration-reading.md#进程配额与取消边界) — 原16协程测试体/2取消对照；类属性不是跨节点配额，超容量预扣不自动退款，timeout不包排队

@@ -3,6 +3,23 @@
 > 2026-06-15 | 源码: verl/verl/trainer/ppo/core_algos.py + ray_trainer.py + workers/utils/losses.py + utils.py
 > 核心: GRPO=PPO损失+group-relative advantage → need_critic自动False → 3种advantage变体 → rollout_n interleave → ref_in_actor=LoRA → Dr.GRPO=不除std → total_loss=pg+0.001*KL-entropy_coef*H
 
+## 自适应组大小与逐轮生成
+
+**优势函数接受不等大的组，不等于训练链路已经实现按答案逐轮加样。** [C-GRPO提案 #8077](https://github.com/verl-project/verl/issues/8077)由作者提出：按2、4、8、16、32个响应的预算分轮生成，在回答足够一致时停止，并定期用当前策略校准阈值。2026-10-25核对该issue仍OPEN、0评论；作者明确等待recipe位置与多轮生成入口的反馈后再实现。编号及精确名称的开放PR检索为空，但这不是无人负责或应由本项目抢先实现的证据。本节只分析固定主线 `3c6d9b43b67c74ec343d77874cd8fa6e841523da` 的V1相关入口，不评价论文的统计保证或节省比例。
+
+| 层次 | 固定主线的接线 | 与逐轮加样的区别 |
+|---|---|---|
+| 优势分组 | [loop GRPO](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/ppo/core_algos.py#L268)按UID收集实际score，不在此函数要求所有组同样大 | 接受已到齐的分组，不决定何时停止生成 |
+| 生成与终态 | [AgentLoopWorkerTQ._run_prompt](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/ppo/v1/agent_loop_tq.py#L112)优先取逐prompt的 `__rollout_n__`，一次创建n个session任务，全部settle后发布finished／failure | 支持出发前设不同n；不是先看2个答案，再只给未解决prompt追加到4个 |
+| prompt取样 | [ReplayBuffer](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/ppo/v1/replay_buffer.py#L336)从终态prompt集合选取数量，再物化这些UID的所有轨迹行 | prompt数、独立session数和多输出轨迹行数是不同单位 |
+| 训练批大小 | [TrainerBase](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/ppo/v1/trainer_base.py#L1590)仍用配置的ppo_mini_batch_size×rollout.n计算actor／critic批倍数，并与DP大小取LCM补行；update_actor也传入此乘积 | 实际生成响应减少，不自动改变训练mini-batch单位或免除补位 |
+
+V1的[多轨迹优势helper](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/ppo/v1/utils.py#L157)还会先取每个session的最后输出参与GRPO，再将优势广播回该session的各行。因此“追加两个响应”不能简单等同于“追加两条任意输出行”。分轮接入需要保留UID／session身份和组仍未完成的状态，直到停止判据或预算耗尽才结束该组；这是由当前终态消费契约推出的设计要求，不是已验证的recipe实现。现有[按源prompt计优化批的候选](verl-grpo-source-reading.md#v1-源-prompt-单位与可变轨迹行)是另一个接口方向，不能把未合并的支持当当前主线行为。
+
+[DAPO过滤](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/ppo/v1/replay_buffer.py#L261)发生在finished组，按所选reward指标判定多行标准差精确为0并补采新prompt；C-GRPO提案则在同一prompt的生成轮次之间决定是否继续。答案文本一致既不保证正确，也不保证所选reward指标相同；如果提前停止的一组恰好同分且启用DAPO，它仍可能被过滤。两种机制不能因都叫“动态采样”而视作同一个功能，也不能把同分组过滤后的补采成本从预算里忽略。
+
+接入前应先明确使用的trainer、停止与失败／空输出的定义、校准样本及策略版本、最终session身份、优化批单位和评价预算。提案声明的定期校准也需要生成；应分别记录训练响应、校准响应、补采与实际训练补位，再比较相同评测条件下的结果。原始rollout数量不是端到端耗时，源码接口分析也不证明质量保持。当前六模块仅AST／compile，无导入、原测试、校准／采样器、TQ或训练执行；复现命令与hash见[当日日志](../../diary/2026-10-25.md)。本题收束为接入范围判断，等待作者／维护者方向，不另写recipe、校准器或新增M5硬件任务。
+
 ## 1. GRPO vs PPO: 只改advantage,不改loss
 
 ```
@@ -28,7 +45,7 @@ GRPO: loss = clipped_surrogate(advantage=group_relative(r_i - μ_g / σ_g))
 ```python
 @register_adv_est(AdvantageEstimator.GRPO)
 def compute_grpo_outcome_advantage(token_level_rewards, response_mask, index, ...):
-    scores = token_level_rewards.sum(dim=-1)  # outcome reward: 只取最后一个token的reward!
+    scores = token_level_rewards.sum(dim=-1)  # 汇总整行token奖励；outcome配方可只在末token放分数
 
     # 按prompt index分组 → 同一prompt的n个response形成1个group
     id2score = defaultdict(list)  # {prompt_id: [r_1, r_2, ..., r_n]}
@@ -59,7 +76,7 @@ def compute_grpo_outcome_advantage(token_level_rewards, response_mask, index, ..
 
 **关键细节**:
 - 单样本group(len=1): μ=0、σ=1；默认advantage=score/(1+epsilon)，关闭std归一化为score，见[两实现CPU核对](verl-grpo-core-algos-reading.md#单样本与同分组的不同回退)
-- outcome reward = token_level_rewards.sum(dim=-1) → 只关心最终结果,不是per-token
+- 此GRPO路径先汇总token奖励再按UID分组，不保留逐token credit，见[奖励字段与逐轮基线](verl-grpo-core-algos-reading.md#逐轮奖励与停止动作的基线)
 - advantage broadcast: 每个token获得相同advantage → 乘response_mask
 
 ### GRPO_VECTORIZED — core_algos.py:335-358
