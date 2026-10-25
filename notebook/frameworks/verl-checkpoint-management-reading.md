@@ -9,6 +9,35 @@
 
 2026-10-25补充：[Megatron 调度进度与超参数恢复](#megatron-调度进度与超参数恢复)用官方调度器和真实CPU optimizer区分进度、超参数来源与参数组覆盖；六组控制不等于完整分布式checkpoint恢复。
 
+## V1 到期前保存的触发与计时范围
+
+[verl #7757](https://github.com/verl-project/verl/issues/7757)指出默认V1 trainer没有接入ESI到期判定，已有报告者YeonwooSung的[#7760](https://github.com/verl-project/verl/pull/7760)。2026-10-25核open、非draft、未合并，普通／行内评论均0；编号及esi_redundant_time查重已有该覆盖，不另实现。固定head `16cd240d14cf0928961492fbb017b8a4356905bd`、实际共同祖先 `a9f2985159536a607211dcac730d3f5d55028950`，两提交、两文件211增7删；直接父提交`6043685b`已经有首版修复，API目标base`3f9d4c0d`也不能替代本次比较祖先。
+
+候选将原频率／末步保存条件收进`_maybe_save_checkpoint`，再加入共享`should_save_ckpt_esi`。`save_freq > 0`仍是写盘前提；默认配置为−1，设了冗余时间也不自动开启保存。`__init__`和每次`fit()`起点都把max_steps_duration设为0。fit中的保存判断位于step计时块内，结束计时后才记录历史最大值，再进入validation，因此当前判断使用此前步骤的历史，历史值含保存耗时但不含验证。共享helper的保存耗时估计仍默认60秒，不等于实测写盘时间，也不是必能赶在回收前完成的保证。
+
+### 两个提供方不是同一到期条件
+
+候选没有修改[共享helper](https://github.com/verl-project/verl/blob/16cd240d14cf0928961492fbb017b8a4356905bd/verl/utils/checkpoint/checkpoint_manager.py)，其完整函数AST在共同祖先、head及固定main `3c6d9b43`相同。本机Python3.12.13用原函数和真实系统时钟，临时环境变量退出后恢复，得到以下有限控制：
+
+| 到期输入 | max_steps_duration | 原helper结果 |
+| --- | --- | --- |
+| Volcengine MLP距现在30秒 | 0 | False |
+| SageMaker AWS距现在30秒 | 0 | True |
+| AWS已过期30秒 | 0 | True |
+| AWS非法整数字符串，且候选save_freq=−1 | 0 | 解析ValueError，未调用保存 |
+
+MLP分支要求剩余时间>0、历史最大耗时>0且剩余时间≤阈值；非法float字符串返回False。AWS分支只比较时间差小于阈值，没有前两项门槛，且整数解析异常没有同样捕获。这是已存在helper的不同契约，不是#7760新加的回归；这里不擅自统一云厂商语义。候选在检查save_freq前调用helper，所以“禁用写盘”不等于“跳过到期参数解析”。PR所说的“首次未记录耗时就不受ESI保护”应限于MLP分支；常规末步／周期保存仍可触发。
+
+### 原测试通过与实际接线的区别
+
+[原12个测试体](https://github.com/verl-project/verl/blob/16cd240d14cf0928961492fbb017b8a4356905bd/tests/trainer/ppo/v1/test_v1_esi_save_on_cpu.py)隔离执行全部通过。原测试自己用SimpleNamespace、真实OmegaConf及MagicMock保存方法；本机绑定未改的两个原方法，接原helper及原CPU fallback计时器／真实codetiming，没有完整PPOTrainer或写盘。原fixture隔离MLP／AWS环境，但设置到期变量的用例均走MLP；这12项不认证AWS行为、文件完成或恢复。
+
+源码核对确认head的fit确有保存调用及计时后的记录调用，祖先与固定main则没有这两个调用。**这是调用位置的静态证据，不是执行fit。** 当前测试文件的说明提到`test_fit_records_the_step_duration`，实际12个定义中没有它；stub也自行提供max_steps_duration，从未执行真实`__init__`。因此这12项不能替代fit调用／初始化守卫，不能据PR正文的mutation报告认定当前文件已具备这些回归保护。
+
+**供用户审视的评审要点**：请已有作者收窄首步／计时描述的提供方范围，补回声明的fit和初始化接线守卫，并将AWS继承行为与本次V1接入分开说明。是否改共享helper需单独决策，不把历史差异塞进竞争修复。反馈只留个人项目，任何上游评论、PR修改或既有PR-head推送仍逐项待用户明确同意。
+
+本机未原生导入trainer／TransferQueue、运行全目录测试、真实云实例或模型，也没有checkpoint文件和恢复验收。两版trainer／helper及head原测试／CPU timer共六份完整快照compile通过；命令、版本和校验值见[当日日志](../../diary/2026-10-25.md)。本轮只解决触发契约与证据范围，不新排M5算力任务；保存完成和恢复指针仍见[原专题](#异步保存能力与恢复指针)。
+
 ## Megatron 调度进度与超参数恢复
 
 恢复训练时，继续到哪一步与使用哪套调度超参数是两个问题。[#7953](https://github.com/verl-project/verl/issues/7953)已有报告者的[#7954](https://github.com/verl-project/verl/pull/7954)，2026-10-25读取open、非draft；固定head `53e632859898a248f89c8dd7e9abbf56e2248944`，base及实际祖先 `fbb4b3a8bf636f290c9c59fc346f756849e9c241`，5文件111增16删。不另开竞争修复。

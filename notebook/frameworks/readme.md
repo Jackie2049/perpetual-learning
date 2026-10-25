@@ -199,6 +199,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [verl Async Rollout Architecture Deep Dive — vLLM/SGLang Integration](verl-async-rollout-architecture-deep-dive.md)
 - [verl Checkpoint Management 源码级深度阅读](verl-checkpoint-management-reading.md)：[保留目录与完整恢复](verl-checkpoint-management-reading.md#保留目录与完整恢复的边界)，5原清理测试通过；上限1先保旧再登记，目录/成功通知/可恢复性分开，纠正tracker原子写入及固定存储比例说法。
 - [异步保存能力与恢复指针](verl-checkpoint-management-reading.md#异步保存能力与恢复指针) — #7955配置保护不实现异步后端，旧#4311 DCP完成日志非tracker发布；原一方法/五文件系统控制非真实状态恢复。
+- [V1 到期前保存的触发与计时范围](verl-checkpoint-management-reading.md#v1-到期前保存的触发与计时范围) — #7760原12个stub测试通过；MLP／AWS门槛不同，测试说明中的fit守卫未落地。触发判断非写盘／恢复验收，反馈仅存个人项目。
 - [Megatron 调度进度与超参数恢复](verl-checkpoint-management-reading.md#megatron-调度进度与超参数恢复) — #7954已有修复；官方scheduler接真实CPU SGD六控制，超参数来源不等于进度开关，重复加载和参数组覆盖另核，非manager/分布式恢复验收。
 - [verl 复制分片与存储隔离](verl-checkpoint-management-reading.md#复制分片的存储隔离) — #7503原3测试体和四组真实CPU storage控制；clone隔离输出，不比较副本值或认证整轮峰值/HF文件完整性。
 - [verl SFT epoch 与加载器恢复](verl-checkpoint-management-reading.md#sft-epoch-边界与加载器状态) — #7402原加载方法接真实torchdata；2个结束状态控制及8组数据流对照，不是完整SFT/作者24项验收。

@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[RLOO独立修复](#rloo-两项契约的已有修复)：#7794／#7964原1／3测试体CPU通过，但dtype回归未检查数值；BF16舍入反馈只留个人项目待审，不另实现或对外发布。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[V1到期保存](#v1-到期保存的已有修复)：#7760原12个stub测试通过，但共享helper的云厂商门槛不同，声明的fit守卫在当前测试中不存在；反馈仅留个人项目待审，不另实现或对外发布。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## V1 到期保存的已有修复
+
+2026-10-25读[#7757](https://github.com/verl-project/verl/issues/7757)全文／0评论，编号及esi_redundant_time查重已有报告者[#7760](https://github.com/verl-project/verl/pull/7760)，open、非draft、未合并、0普通／行内评论，不另实现。head16cd240d、共同祖先a9f29851，两提交两文件211增7删；父提交6043685b已含第一版，API目标base3f9d4c0d另计，未当完整修复基线。
+
+见[原checkpoint专题](../../notebook/frameworks/verl-checkpoint-management-reading.md#v1-到期前保存的触发与计时范围)：完整原helper／两方法接作者stub，12原测试体通过；MLP要求正剩余时间与正历史耗时，AWS没有同样门槛。继承helper的非法AWS时间戳在禁用写盘时仍先解析抛错，非本候选新增回归；fit保存使用前面历史，计时含保存／不含验证。源码已有调用，但原测试说明中的fit守卫并不存在，初始化也未执行；反馈仅留个人项目待审。无真实trainer／云服务／写盘恢复或GPU，不改共享helper／专项、新排M5任务；任何上游动作及既有PR-head推送仍逐项待用户明确同意。
 
 ## RLOO 两项契约的已有修复
 
