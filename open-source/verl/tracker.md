@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[多语言分词](#多语言分词的官方修复与验证范围)：#49116类路由修复已合并，toy BPE与真实AutoTokenizer核本地行为，非公开checkpoint或训练质量验收、不改pin。[共享参数加载](#共享参数加载的已有修复)与数据子集接线的反馈仅留项目内，无上游发布。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[确定性路由](#确定性路由的已有修复)：#7667已有作者，原两测试体与真实子进程验证固定副本集合的选址，修正旧seed充分性结论，非Ray／训练验收。[共享参数加载](#共享参数加载的已有修复)与数据子集接线的反馈仅留项目内，无上游发布。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## 确定性路由的已有修复
+
+2026-10-25读取[#7666](https://github.com/verl-project/verl/issues/7666)全文／0评论，编号及deterministic routing查重见报告者hsusul已有[#7667](https://github.com/verl-project/verl/pull/7667)，open、非draft、未合并；一条普通评论仅CLA机器人、0行内评论。head b2b5f4f6、父提交／祖先4eff9ae3，两文件85增5删，API目标base3f9d4c0d不冒充实际祖先，不另实现。
+
+见[原确定性专题](../../notebook/frameworks/verl-6572-full-determinism-source-reading.md#确定性路由的哈希与副本集合)：完整原类AST接真实cachetools，原两测试体候选通过；两版各4个真实子进程核hash seed，候选结果相同，基线不同。3→4副本时sticky保留旧映射，清缓存后本例21/30改变；CRC32与排序只对固定ID集合消除hash／插入顺序依赖，不认证物理worker或全训练。未跑原整包跨进程测试／原生25项套件、Ray或GPU，不应用候选、改专项／新增M5队列，上游任何动作及已有PR-head推送仍逐项待用户明确同意。
 
 ## 多语言分词的官方修复与验证范围
 

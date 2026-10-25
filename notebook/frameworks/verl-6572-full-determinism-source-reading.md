@@ -4,6 +4,22 @@
 >
 > 2026-10-23 更正：撤回“P9必要且足够”“SM90+天然完整确定性”“P9加batch-invariant即可保证4090完整RL训练”的推论。局部融合/批形状检查不能替代模型、采样、同步及反向的端到端证据。当前限定验证见下一节。
 
+> 2026-10-25 更正：固定 Python hash seed 也不足以保证路由；还需相同副本身份、排列及缓存条件。下文区分已有路由修复与完整训练确定性。
+
+## 确定性路由的哈希与副本集合
+
+固定请求 ID 不保证跨进程选中相同副本。[verl #7666](https://github.com/verl-project/verl/issues/7666)已有报告者 hsusul 的[#7667](https://github.com/verl-project/verl/pull/7667)，2026-10-25仍open、非draft、未合并，不另实现。固定head `b2b5f4f6ce42c3689f86449037c33ba747a07106`，实际父提交／共同祖先 `4eff9ae30a23b59554758fa0ca93940605ae5cdf`，两文件85增5删；API目标base `3f9d4c0d`不是此比较祖先。固定主线 `3c6d9b43` 的完整负载均衡类AST仍与父版本相同。
+
+[原路由](https://github.com/verl-project/verl/blob/4eff9ae30a23b59554758fa0ca93940605ae5cdf/verl/workers/rollout/router.py)在缓存未命中且full_determinism开启时，对**全部副本**做`list(self._servers)[hash(request_id) % len(self._servers)]`，不是最小负载候选间的tie-breaking。不同Python进程的字符串hash及副本注册顺序都可能改变结果；固定启动seed只处理前一项。候选改为`sorted(server_ids)[zlib.crc32(request_id.encode("utf-8")) % len(server_ids)]`，对相同字符串ID集合消除这两项依赖，仍不保证ID对应相同物理worker、模型或执行状态。
+
+Python3.12.13／真实cachetools7.2.4的CPU对照保留两版**完整原类**，仅AST隔离导入并延迟Ray类型注解，没有Ray替身或服务器进程。作者[原测试类](https://github.com/verl-project/verl/blob/b2b5f4f6ce42c3689f86449037c33ba747a07106/tests/workers/rollout/test_router_on_cpu.py)的插入顺序与sticky／clear两个测试体未改：候选2项通过，基线顺序项失败、sticky项通过。另以相同30个`det-i`和四个启动seed `0/42/12345/random`运行两版各4个真实子进程；基线相对seed0分别有0／19／23／18个路由不同，候选均0。random一列只记录这次运行，不是固定oracle。
+
+跨进程控制使用上述AST加载器，未执行原跨进程测试中的verl整包导入，也未运行作者报告的原生25项套件。四份完整源码快照均compile通过；这些结果只验证该Python类的选址，不认证Ray启动环境、平台间结果或模型／GPU。一次性脚本与源文件校验值见[当日日志](../../diary/2026-10-25.md)。
+
+副本集合和缓存是另一层条件：候选中先把30个请求映射到3个副本，再加入第4个，同一进程命中sticky时0个改变；清掉30条缓存后，21个请求改变目标，与新建4副本对象一致。固定哈希不意味着扩缩容时不重映射，也不是最小迁移的consistent hashing。clear只删sticky记录，不清inflight计数；full_determinism分支继续哈希，不能沿用原方法注释把清缓存后的行为一概称作least-loaded。
+
+[Python启动环境文档](https://docs.python.org/3.12/using/cmdline.html#envvar-PYTHONHASHSEED)说明hash seed用于解释器初始化。本机同进程先后赋`os.environ["PYTHONHASHSEED"]="0"/"42"`，同一字符串hash不变；运行时设置变量不会追溯重置当前解释器。复现实验应记录实际子进程启动环境、稳定副本身份／集合和缓存状态，而不是仅看配置里出现seed。此路由条件满足也不推出采样、权重同步、前反向或完整RL轨迹确定性。
+
 ## Actor 前向与 logprob 公式的一致性
 
 [verl #8026](https://github.com/verl-project/verl/pull/8026)研究训练端与vLLM rollout对齐，不能与旧#6572的运行间复现保证混为一谈。2026-10-23 API读取open、head `6a7110b42ae45068b8c7d1c20c56db841c5283af`，目标base `dc709afb7a74fd2645640a4e5f2fdf40166b4fbb`、实际祖先 `831c5d86e58972ef2e26f00345fde1be700611cf`（ahead6/behind4），16文件406增7删。已有作者cr-gao负责，不新增竞争实现。
@@ -82,7 +98,7 @@ base/head torch_functional SHA256分别为 `bc7ff798e2f5c06e0121668490739814efc5
 
 Layer 1: PyTorch-level
   → enable_full_determinism(seed) → sets:
-    - PYTHONHASHSEED → stabilizes Python hash values, not insertion-ordered dict semantics
+    - PYTHONHASHSEED → 须在解释器启动前设置；运行时赋值不重置当前hash，也不固定字典插入顺序
     - CUBLAS_WORKSPACE_CONFIG → deterministic cuBLAS
     - FLASH_ATTENTION_DETERMINISTIC → deterministic flash attention
     - seeds all RNGs (torch, numpy, random)
@@ -104,8 +120,9 @@ Layer 3: vLLM batch invariance + per-request seed
 Layer 4: Priority scheduling + deterministic routing
   → Each sample gets globally unique priority (global_priority_offset + sample_index)
   → SingleTurnAgentLoop → request_id=f"det-{priority}" → not random UUID!
-  → GlobalRequestLoadBalancer → hash(request_id) % len(candidates) → deterministic tie-breaking
-  → PYTHONHASHSEED frozen → hash() deterministic → routing deterministic!
+  → 旧GlobalRequestLoadBalancer → list(全部副本)[hash(request_id) % 副本数]，绕过least-loaded
+  → 固定启动hash seed不足以固定副本顺序；已有#7667改sorted IDs + CRC32
+  → 相同副本身份/集合及缓存条件另核；路由稳定不等于完整训练确定性
 
 Layer 5: Reward model serialization
   → vLLM /classify endpoint → no priority/batch invariance support

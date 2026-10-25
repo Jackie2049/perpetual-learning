@@ -174,6 +174,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [verl #6468: FSDP2 CPU Memory Leak During Weight Sync — Deep Reading](verl-6468-fsdp2-cpu-memory-leak-reading.md)
 - [verl #6512 -- Per-Unit LoRA Summon for FSDP1/FSDP2: Deep Technical Analysis](verl-6512-per-unit-lora-summon-reading.md)
 - [verl 确定性与logprob公式](verl-6572-full-determinism-source-reading.md#actor-前向与-logprob-公式的一致性) — #8026原4测试体及补充CPU控制通过；局部精确公式非模型/反向确定性，P9必要且足够与固定吞吐说法撤回，旧#6572配置作历史快照。
+- [确定性路由的哈希与副本集合](verl-6572-full-determinism-source-reading.md#确定性路由的哈希与副本集合) — #7667已有作者修复，原两测试体及真实子进程分开验证；固定hash seed不固定注册顺序，CRC32也不保证扩容不重映射，非Ray／训练验收。
 - [verl #6699 — Detach model_output Memory Fix Source Reading](verl-6699-detach-memory-fix-reading.md)
 - [verl #6717 — Tinker Training Worker Primitives Source Reading](verl-6717-tinker-training-worker-reading.md)
 - [verl #6765 — Per-Step Optimizer Overrides (OptimStepParams) Reading](verl-6765-optim-step-params-reading.md)
