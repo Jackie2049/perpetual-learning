@@ -223,6 +223,8 @@ VeOmni范围参考（2026-10-24，非新增通信/训练队列）：[M1源码学
 
 VeOmni协作更新（2026-10-25，仍非新队列）：#8342作者已创建[后端RFC #1360](https://github.com/ByteDance-Seed/VeOmni/issues/1360)，保留现有QAT字段语义、迁移另议；后端／verl分工和初始验收矩阵待维护者反馈。若未来有已获准匹配任务，先核[当前协作与配置条件](../notebook/frameworks/verl-quant-layer-audit.md#后端-rfc-的分工与迁移条件)，不按旧示例改名或抢先实施；当前无新增kernel／训练结果。任何上游评论、PR或已建PR的fork head推送均需用户对具体动作明确同意。
 
+VeOmni optimizer参考（2026-10-26，同一条件入口，非接单／新队列）：新draft[#8370](https://github.com/verl-project/verl/pull/8370) head44c97bcd、base3c6d9b43，[M1验证](../notebook/frameworks/verl-veomni-opd-source-reading.md#optimizer-覆盖与-cpu-offload-默认)仅原五builder记录用例和torch2.14.1的257元素CPU单步；无VeOmni／DTensor／FSDP2、RSS／性能或checkpoint ingestion验收。若M5将来独立选用已有获准匹配VeOmni offload任务，先固定实际torch／VeOmni版本、最终override和参数／梯度／状态的真实设备，再核实际optimizer实现、一次更新／恢复与host RSS／step峰值；不能以CPU微例或作者AMD多PR堆叠首步推断整机收益。缺匹配环境／授权、需新下载模型／部署AMD或影响专项即记未测停止，不自动应用#8369／#8370／#8371、切硬件、扩内存压力测试或开训练。不改AReaL／#523／#8313／DeepInfer；任何社区写入或已有PR head推送仍需用户对具体动作明确授权。
+
 来源：[源码与24项CPU单测](../notebook/frameworks/verl-quant-layer-audit.md)、已有 [#8132](https://github.com/verl-project/verl/pull/8132)，2026-10-21读取时open，head `0defd9a231cb876ce56812611b0afb3b2b25831a`，base `cd58f550fb1c4f5a3fe29da38e6f0002ec462fd3`。第7部分依赖前序量化堆叠且按#8287重做；不能盲目只cherry-pick审计。作者旧B200/ModelOpt观察不是新版验收；M1只运行作者自带替身的CPU单元测试，没有真实TE/compressor/engine。
 
 旧#8132审计路线的最小下一步：先核实际设备是否支持目标TE FP8路径、依赖/模型/格式是否匹配及是否已有作者新结果；固定完整提交与安装版本，不覆盖已有环境或打断工作。条件齐备后，使用获准的最小模型/配置，真实FP8 forward后做一次权重导出/同步，保留训练workspace/marker、导出格式与引擎方法的证据、实际route、checked/skipped/unresolved及no-verdict状态。非colocated路径不能声称完成同样的live-vLLM复查，SGLang guard另列执行范围。

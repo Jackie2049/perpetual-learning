@@ -1,0 +1,168 @@
+{
+  "environment": {
+    "pytest": "9.1.1",
+    "python": "3.12.13",
+    "system": "Darwin",
+    "torch": "2.14.1"
+  },
+  "results": {
+    "base": {
+      "default": {
+        "builder_kwargs": {
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "lr": 0.000001,
+          "optimizer_type": "adamw",
+          "weight_decay": 0.01
+        },
+        "status": "passed"
+      },
+      "offload-default": {
+        "builder_kwargs": {
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "lr": 0.000001,
+          "optimizer_type": "adamw",
+          "weight_decay": 0.01
+        },
+        "status": "expected_AssertionError"
+      },
+      "offload-override": {
+        "builder_kwargs": {
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "lr": 0.000001,
+          "optimizer_type": "adamw",
+          "weight_decay": 0.01
+        },
+        "status": "expected_AssertionError"
+      },
+      "other-key": {
+        "builder_kwargs": {
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "lr": 0.000001,
+          "optimizer_type": "adamw",
+          "weight_decay": 0.01
+        },
+        "status": "expected_KeyError"
+      },
+      "override": {
+        "builder_kwargs": {
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "lr": 0.000001,
+          "optimizer_type": "adamw",
+          "weight_decay": 0.01
+        },
+        "status": "expected_AssertionError"
+      }
+    },
+    "head": {
+      "default": {
+        "builder_kwargs": {
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "lr": 0.000001,
+          "optimizer_type": "adamw",
+          "weight_decay": 0.01
+        },
+        "status": "passed"
+      },
+      "offload-default": {
+        "builder_kwargs": {
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "fused": true,
+          "lr": 0.000001,
+          "optimizer_type": "adamw",
+          "weight_decay": 0.01
+        },
+        "status": "passed"
+      },
+      "offload-override": {
+        "builder_kwargs": {
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "fused": false,
+          "lr": 0.000001,
+          "optimizer_type": "adamw",
+          "weight_decay": 0.01
+        },
+        "status": "passed"
+      },
+      "other-key": {
+        "builder_kwargs": {
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "eps": 0.000001,
+          "fused": true,
+          "lr": 0.000001,
+          "optimizer_type": "adamw",
+          "weight_decay": 0.01
+        },
+        "status": "passed"
+      },
+      "override": {
+        "builder_kwargs": {
+          "betas": [
+            0.9,
+            0.999
+          ],
+          "fused": true,
+          "lr": 0.000001,
+          "optimizer_type": "adamw",
+          "weight_decay": 0.01
+        },
+        "status": "passed"
+      }
+    }
+  },
+  "scope": "five unchanged original test cases; original config classes/method; original recorder builder, not original pytest collection; separate direct CPU AdamW; no VeOmni/DTensor/FSDP/ROCm/checkpoint ingestion",
+  "source_sha256": {
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/base_config.py": "a313fdc081a3983193980a475b9b572b125fe95da92c459f05db810a14f62050",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/workers/config/engine.py": "70cbc3f556417a95aad3d4341bc19af389e3b9feedf276c690ac8285357cef45",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/workers/config/optimizer.py": "00a590a076078b52740529a985f5d615f5311cb26506bc8726a5f837a740fb78",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/workers/engine/veomni/transformer_impl.py": "f67670a3ea8aab248d86557fc07f5b0f4d546456626a83ed7079c5f2d4b220dc",
+    "44c97bcd4bd167b93462e3bc380bee6947a90e5f:tests/workers/test_veomni_optimizer_overrides_on_cpu.py": "c69d52b3d4e4872f253a101878360cd2bbced85b19ea416c4347a0db56bfcb7c",
+    "44c97bcd4bd167b93462e3bc380bee6947a90e5f:verl/base_config.py": "a313fdc081a3983193980a475b9b572b125fe95da92c459f05db810a14f62050",
+    "44c97bcd4bd167b93462e3bc380bee6947a90e5f:verl/workers/config/engine.py": "3cc9e2c41133bc397ac968d611a983f04004ddc4f162f1e0b13cbde6c093cc2b",
+    "44c97bcd4bd167b93462e3bc380bee6947a90e5f:verl/workers/config/optimizer.py": "879e6fd5f2ec03d1aed49aa332a1d7f3b72b116b191e3026d706fa8394176e52",
+    "44c97bcd4bd167b93462e3bc380bee6947a90e5f:verl/workers/engine/veomni/transformer_impl.py": "c4a87cc78aa896b2472d53bac0968185f98471a56186257c7d80f187ae3c6cd8"
+  },
+  "tiny_adamw_cpu_control": {
+    "dtype": "float32",
+    "numel": 257,
+    "parameter_bitwise_equal": true,
+    "parameter_max_abs_diff": 0,
+    "state_max_abs_diff": {
+      "exp_avg": 0,
+      "exp_avg_sq": 0,
+      "step": 0
+    },
+    "steps": 1,
+    "timing_or_memory_measured": false
+  },
+  "versions": {
+    "base": "3c6d9b43b67c74ec343d77874cd8fa6e841523da",
+    "head": "44c97bcd4bd167b93462e3bc380bee6947a90e5f"
+  }
+}

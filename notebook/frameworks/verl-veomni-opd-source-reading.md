@@ -10,6 +10,38 @@
 
 2026-10-25 接续：[主线与 GKD 的损失名称和支持域](#主线与-gkd-的损失名称和支持域)核#7975／已有draft #7983；纠正旧2.2节的k2／k3公式，区分采样估计、top-k归一化、tail bucket与JSD端点。配置名称相同不代表梯度或更新相同。
 
+## Optimizer 覆盖与 CPU offload 默认
+
+**配置被传到构建器，与优化器在真实卸载模型中节省了多少内存，是两种证据。** 新draft [verl #8370](https://github.com/verl-project/verl/pull/8370)将`optim.override_optimizer_config`交给VeOmni build_optimizer，并仅在`engine_config.enable_fsdp_offload`为真时补默认`fused=True`；显式`fused=False`保留。检查的是这个特定配置开关，不是运行时检查参数所在设备，也不能把它等同于所有名为optimizer_offload的路径。
+
+2026-10-26固定head `44c97bcd4bd167b93462e3bc380bee6947a90e5f`，base／父版／共同祖先与当轮main均为 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，ahead1／behind0、七文件120增1删。唯一普通评论是机器人跳过draft审查的通知，reviews／行内为空；不是已批准或已合并功能，不另写竞争补丁。
+
+### 原五用例的接线对照
+
+[复现脚本](../../experiments/verl-veomni-optimizer/verify.py)原样装载BaseConfig、engine／optimizer原dataclass、完整_build_optimizer与原测试体／fixture；仅engine类壳绕过分布式构造。builder保持原fixture的记录器，没有安装VeOmni或拿真实AdamW冒充VeOmni构建器。
+
+| 原用例 | base 传给 builder | head 传给 builder | 原断言结果 base／head |
+| --- | --- | --- | --- |
+| 未offload、无覆盖 | 不含fused | 不含fused | 过／过 |
+| 未offload、显式True | 不含fused | fused=True | 失败／过 |
+| offload、无覆盖 | 不含fused | fused=True | 失败／过 |
+| offload、显式False | 不含fused | fused=False | 失败／过 |
+| offload、eps=1e−6 | 不含eps／fused | eps=1e−6、fused=True | 缺键失败／过 |
+
+候选先复制覆盖字典，再setdefault；不是无条件覆盖用户设置。这里实跑四个原参数实例和一个原额外键测试，不是原生pytest收集、hook／distributed mesh或完整engine初始化。
+
+锁文件固定VeOmni `10a26aca258f91a7af3e698cc0db8c6c51705989`。其[原构建器](https://github.com/ByteDance-Seed/VeOmni/blob/10a26aca258f91a7af3e698cc0db8c6c51705989/veomni/optim/optimizer.py#L459)的AdamW分支用`foreach = not fused`，再调用torch AdamW；这解释为何新fused键会改变实现选择。覆盖字典的接收方是**VeOmni构建器的签名**，不是任意torch AdamW关键字透传。本轮只读该依赖源码，未执行其参数分组、ExtraParallel或Muon分支。
+
+### 小型数值对照不是性能复验
+
+另直接在本机torch2.14.1运行一个FP32参数张量、257元素的一次AdamW更新，固定相同输入／梯度、lr=1e−3、betas=(0.9,0.999)、eps=1e−8、weight_decay=0.01，分别使用foreach和fused。参数逐位相等、最大差0；step／exp_avg／exp_avg_sq最大差也为0。这只认证这个CPU输入的一次更新，未用VeOmni、DTensor或FSDP2，**没有测耗时、host RSS或峰值内存**，不能推出所有形状／dtype／步数逐位等价，也不复现作者4GB参数的内存与速度表。
+
+原PR的AMD整机表在读取时只有2×8 MI355X第一步有数值，第二步及MI308X第一步仍标running，且与[#8369](https://github.com/verl-project/verl/pull/8369)量化导出、[#8371](https://github.com/verl-project/verl/pull/8371)ROCm默认和外部依赖组合运行。它不是本机结果、两种架构均完成验收或单独#8370的收益归因，不据此推荐用户更换硬件／安装整套堆叠。
+
+同一PR还新增`broadcast_model_weights_from_rank0=True`与`ep_sharded_stream_load=False`两字段并接入build_parallelize_model、更新生成YAML；这些路径本轮仅源码阅读，没有真实checkpoint读盘／分片／网络传输验证，不能由optimizer五项过认定其正确或提速。
+
+[JSON](../../experiments/verl-veomni-optimizer/result.json)保存两版五用例的实际kwargs、九份原文件hash、小型AdamW差值和环境（Python3.12.13、pytest9.1.1）；两次输出语义一致，九完整Python模块AST／compile通过。复现运行 `python -B experiments/verl-veomni-optimizer/verify.py <已有固定对象的只读verl仓库>`，缺对象不自动联网。真机条件补[原M5 VeOmni参考](../../experiments/handoff-m5.md#verl-量化层审计新版复验)，不是新增训练队列；无匹配获准任务即保留未测，不探测GPU、部署AMD、下载模型、应用候选或改专项。后续转独立需求／实质反馈，不扩optimizer替身或微基准矩阵。
+
 ## Teacher 采样温度与打分温度
 
 **对已有token打分与生成下一个token，可能使用不同的温度入口。** [#7769](https://github.com/verl-project/verl/issues/7769)询问为何teacher温度固定为1；2026-10-25读取为OPEN、0评论，已有yph22的OPEN／non-draft [#8253](https://github.com/verl-project/verl/pull/8253)，head `2920c0144f2cb8e0d416f7ad35ce28034795fdc9`、base及比较祖先 `5b550b0c3dad8c7bb7aab834a3fe195f8cdfc517`。本节区分固定main `3c6d9b43b67c74ec343d77874cd8fa6e841523da` 与未合并候选，不另做竞争实现。
