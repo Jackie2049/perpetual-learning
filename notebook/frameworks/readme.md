@@ -228,6 +228,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [verl KL 前向值与反向规则](verl-grpo-core-algos-reading.md#kl-前向值与反向规则)：k3+值受clamp而梯度走k2，6原测试例及14组CPU对照；日志值不代表梯度限幅，非完整训练验收。
 - [verl GRPO End-to-End Data Flow 源码级阅读](verl-grpo-data-flow-reading.md)：[拼批形状与引用](verl-grpo-data-flow-reading.md#拼批中的形状与引用)及[Rollout完整性](verl-grpo-data-flow-reading.md#rollout-完整性与会话计数)；#6641原7项replay测试候选通过、旧版4项预期失败，区分输出行与会话，非TQ/训练验收。
 - [verl PF PPO重采样身份](verl-grpo-data-flow-reading.md#pf-ppo-重采样与原-key-回写)：#7957原四测试三版本对照，整行一致不等原key对齐；原切片控制区分旧长度与来源长度，拒绝保护非V1支持或真实TQ验收。
+- [响应长度触顶与真实停止原因](verl-grpo-data-flow-reading.md#响应长度触顶与真实停止原因)：#7821原5项／#7906原13项测试体各候选通过；配置阈值与逐行停止标志分层，False覆盖长度相等、None保留估计，不当真实后端或训练验收。
 - [verl 二维logprob分块](verl-6572-full-determinism-source-reading.md#二维低精度-logprob-的分块预算)：#8351原17测试体CPU移植通过，分块减少节点但不保证全部反向保存量下降；32 MiB非整步峰值，无GPU性能验收。
 - [verl GRPO 内存泄漏与 detach_metrics 修复 — RTX 4090关键分析](verl-grpo-detach-metrics-rtx4090-reading.md)
 - [verl GRPO 源码深度阅读](verl-grpo-source-reading.md)：新增[UID均衡前提](verl-grpo-source-reading.md#连续-uid-与等样本组的前提)，原3个CPU测试体与22组控制；连续段聚合、等段数不自动保证等行分发。

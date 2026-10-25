@@ -319,6 +319,27 @@ python3.12 -B experiments/scripts/verify_verl_pf_ppo_identity.py /path/to/verl-g
 
 脚本按版本打印完整来源SHA。原测试SHA256 `26cd9277a15613ffc181b092e6bc46418b5cb22d8b8e4e96c3fcb6e2800a67ae`；三版protocol均为 `8d69430131e9e894a6c7aea673d489e19e44117b1bc573085a6db521b38c6792`，head V1 utils为 `9b82466e08c9d59fd280882c4e440e462d5ea42607181a59727950ca3d48cceb`；完整PR patch为 `14e71a8528d85d73cf7cb043d8ae412ba4fda4799c0f8c915f2f752ab8f4623a`。变更Python另做祖先2份/head3份完整AST/内存compile。CPU数据契约可在本机核实，不因此新增M5算力任务或推断训练收益；现有GPU/AReaL/#8313/#523专项不变。
 
+### 响应长度触顶与真实停止原因
+
+批次中的最长响应不等于配置上限，达到某个长度也不等于因长度限制停止。[#7817](https://github.com/verl-project/verl/issues/7817)已有[#7821](https://github.com/verl-project/verl/pull/7821)，[#7823](https://github.com/verl-project/verl/issues/7823)已有[#7906](https://github.com/verl-project/verl/pull/7906)；2026-10-25读取均open、非draft、未合并，不另实现或自动拼接两候选。#7821 head `7255b49cf2c5c26745865e1881332fc0e41554a2`、实际共同祖先 `a9f2985159536a607211dcac730d3f5d55028950`，两提交三文件231增4删；#7906 head `2b5536028b6a17aa9d2ce5adf893093629f58b51`、父提交／祖先 `5426b9265e73b37a58d238f59b282e7cbf713408`，一提交16文件412增17删。两API目标base均为3f9d4c0d；#7821直接父提交已含主体修复，不能把它当完整修复基线。
+
+[#7821指标函数](https://github.com/verl-project/verl/blob/7255b49cf2c5c26745865e1881332fc0e41554a2/verl/trainer/ppo/metric_utils.py)接收显式prompt／response cap，V1调用方传已解析rollout配置，缺参仍取张量宽度。真实CPU DataProto控制中，prompt长度[3,5,5,2]、response长度[2,3,4,4]，配置cap为8／6；基线按补齐宽度5／4计算，prompt、response及non-aborted触顶比例均0.5，候选显式传cap后均0。这修正了V1批次形状引入的假阳性，但并没有观察停止原因；其相等比较仍不计超出cap的长度。
+
+后端还有逐请求的上下文预算。若配置response cap为8，实际上下文剩余预算让三条响应在6／5／4停止，单一配置阈值不会命中。[#7906指标函数](https://github.com/verl-project/verl/blob/2b5536028b6a17aa9d2ce5adf893093629f58b51/verl/trainer/ppo/metric_utils.py)改为逐行优先使用`response_truncated`，None才回退到宽度比较。因而它与#7821解决不同层：前者补停止证据，后者修正长度估计的阈值；单用#7906时，未知行与prompt指标仍保留原宽度语义。
+
+| 原指标函数的CPU输入 | #7906候选结果 | 解释 |
+|---|---|---|
+| 长度[6,5,4]，三个True | response比例1 | 不必等到宽度8才计入 |
+| 单行长度8、宽度8，False／None／True | 分别0／1／1 | 已知正常停止覆盖相等估计，未知不是False |
+| 长度[8,2,4]，flags=[False,True,None]，宽度8 | 约1/3 | 按全部三行计分母，不是只看两条已知行的1/2 |
+| 长度[6,5,0]，flags=[True,False,False] | 全部1/3，non-aborted为1/2 | non-aborted分母排除零长度行 |
+
+这里的`response/aborted_ratio`原实现按响应长度为0识别，不能把它当作所有后端抢占／中断次数。全零响应的non-aborted比例为NaN，也不应在看板解释成0。显式正常停止恰好落在cap时，从旧估计的1改成0，是指标语义变更，不是生成质量突然改善。
+
+标志还须走完整传输路径：#7906给[TokenOutput](https://github.com/verl-project/verl/blob/2b5536028b6a17aa9d2ce5adf893093629f58b51/verl/workers/rollout/replica.py)新增可选bool，各后端按finish_reason赋值；agent经extra_fields传入V0／V1指标，V1还按非padding行选择。源码中resume采用最后一次返回标志，并处理累计预算耗尽；工具loop保留任一已知截断，无已知截断但存在未知turn时保留None，工具观察也可能耗尽agent预算。因此该字段不是只记录最后一个模型请求的停止原因，更不是丢弃样本或训练loss mask。这里只核源码与作者测试的替身边界，没有执行这些loop或真实后端。
+
+Python3.12.13／torch2.14.1／NumPy2.5.4／TensorDict0.15.2，复用现有环境。AST原样加载固定main `3c6d9b43b67c74ec343d77874cd8fa6e841523da`的DataProto类与各版两个完整指标函数，真实CPU TensorDict运算，原测试模块、参数和断言不改，直接调用测试体。#7821原5项候选全过，基线5项因不支持新kwargs出现TypeError，上述0.5反例另以旧签名执行；#7906原13参数项候选全过，基线7过6次AssertionError，两次一致。两基线指标函数AST与固定main相同。原DataProto也为AST隔离，不是完整verl导入；没有pytest原生收集、Ray／TQ、tokenizer、模型、后端推理或端到端训练，作者41／101项套件不计本机结果。七份完整源码compile及[命令／hash](../../diary/2026-10-25.md)可追溯，真机缺口只补[原M5条件入口](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不应用候选、改专项或新增基准队列。任何社区动作及已有PR-head推送仍逐项待用户明确同意。
+
 ## 6. LoRA Integration in GRPO
 
 ```

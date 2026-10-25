@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[boxed判分](#boxed-判分的已有修复)：#8124原9项测试体候选全过，pred归一化不改变Answer优先级或提供数学等价判定；不另实现或对外发布。[Triton源码核对](#triton-输出形状的已有修复)保留未测kernel边界。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[响应截断指标](#响应截断指标的已有修复)：#7821原5项／#7906原13项测试体各候选通过，阈值修正与逐行停止信息不同；不拼接实现或对外发布，[boxed判分](#boxed-判分的已有修复)等仍各限原范围。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## 响应截断指标的已有修复
+
+2026-10-25读[#7817](https://github.com/verl-project/verl/issues/7817)、[#7823](https://github.com/verl-project/verl/issues/7823)全文／均0评论，编号及短关键词查重分别已有[#7821](https://github.com/verl-project/verl/pull/7821)、[#7906](https://github.com/verl-project/verl/pull/7906)，两项open、非draft、未合并；PR正文全读，普通评论分别0／2（作者请求review）、行内均0。#7821 head7255b49c／祖先a9f29851，两提交三文件231增4删；#7906 head2b553602／父祖先5426b926，一提交16文件412增17删，API目标base3f9d4c0d另计。不认领同题或自动拼接候选。
+
+见[原数据流专题](../../notebook/frameworks/verl-grpo-data-flow-reading.md#响应长度触顶与真实停止原因)：真实CPU TensorDict、原DataProto／指标函数AST，#7821原5测试体候选通过，旧版因kwargs缺失5次TypeError，另核旧签名0.5假阳性→显式cap0；#7906原13项候选通过／基线7过6失败。False与None不同、unknown不从分母剔除，零长度aborted指标非全部后端抢占。未执行原生pytest／完整V1、Ray／TQ、后端或作者41／101套件，真机条件只补原M5参考，不应用候选、新排实验或改专项，任何上游动作及既有PR-head推送仍逐项待用户明确同意。
 
 ## boxed 判分的已有修复
 
