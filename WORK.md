@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 Ray依赖与认证边界（2026-10-25）**：起始eebda9c干净，compare保留811新增1无删改后ff到14145e0保全M5。读[#7599／已有#7600](open-source/verl/tracker.md#ray-版本固定的已有候选)，不另pin；[原Ray笔记](notebook/fundamentals/ray-framework.md#版本固定与控制面安全)离线解析选定七文件两快照：主线范围>=2.41、lock2.55.1、选定镜像2.54.1／2.46，候选各2.58；不作resolver／安装验收。固定2.58官方文档默认认证关闭，latest2.59本地默认变化另列；版本／认证／隔离分开，无事件因果或安全闭环声称。未安装／导入Ray、读token、扫描端口、访问服务器／改专项或写上游，无新增M5队列。下轮转独立需求／实质反馈，不扩镜像矩阵、部署认证或重写现有升级方案。
+
 - **M1 逐轮奖励与停止基线（2026-10-25）**：起始063b6aa干净，compare保留809新增1无删改后ff到82d2284保全M5。读[#7244／已有参与者与draft #8305](open-source/verl/tracker.md#逐轮奖励的基线与已有过程接口)，编号PR空但关键词有候选，不另认领。[原算法专题](notebook/frameworks/verl-grpo-core-algos-reading.md#逐轮奖励与停止动作的基线)分清主线GRPO整行求和／V1最终输出广播、RFC LOO return-to-go与后置优势塑形；纠正旧“只接最终奖励”的泛化。三模块仅语法，单一二元Fraction例3/8→3/16说明动作相关baseline，不执行原算法／测试、MDP或训练，不判draft有错／已无偏。无新增M5队列、专项／上游动作；下轮转独立需求／实质反馈，不扩二元矩阵、反馈缺失实验或接管过程奖励实现。
 
 - **M1 padding序列统计（2026-10-25）**：起始a3f924e干净，compare保留806新增2无删改后ff到add0864保全M5进展。接续此前仅查重的[#7771／已有#7785](open-source/verl/tracker.md#padding-行与序列统计的已有修复)；[原概率专题](notebook/frameworks/verl-async-logprob-provenance.md#padding-行与序列指标的分母)原一测试体两次CPU一致：祖先／main失败、候选通过，三空行令PPL7.389→2.597及log差1→.25，token统计本例不变。序列PPL均值／token corpus PPL、逐行比率／汇总比率及拒绝前mask分开；脚本JSON随仓库。未跑原31／52项、TQ／padding构造／IS／loss或训练，不据统计改善判质量；M5仅原观测分母参考，无新队列／专项或上游动作。下轮转独立需求／实质反馈，不扩padding矩阵或另修已有候选。

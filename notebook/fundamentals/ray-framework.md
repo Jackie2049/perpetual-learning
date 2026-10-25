@@ -2,6 +2,38 @@
 
 > verl 的基础设施 — 理解 Actor/Task/Placement Group 模型
 
+## 版本固定与控制面安全
+
+2026-10-25接续：**依赖声明、锁文件、已安装运行时、认证启用和网络边界不是同一项验收。** verl [#7599](https://github.com/verl-project/verl/issues/7599)已有报告者jameswong-hai的OPEN/non-draft [#7600](https://github.com/verl-project/verl/pull/7600)，head `821cb4f71bca4ccdb615bc150dd59a949b2a0f28`；本节不另写升级补丁，也不将候选视作已合并或已部署。
+
+### 同一仓库的不同安装入口
+
+固定当轮main `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，只读Git blob，使用Python3.12的tomllib、setup.py赋值AST及packaging Requirement解析。没有执行setup.py、resolver或安装命令。下表只比较选定文件的两个快照，不声称全镜像／全依赖验证：
+
+| 入口 | 主线快照 | 候选快照 |
+|---|---|---|
+| pyproject 的verl-core extra／setup.py的install_requires | ray[default]>=2.41.0 | ray[default]==2.58.0 |
+| requirements.txt／requirements-npu.txt | ray[default]，无版本限制 | ray[default]==2.58.0 |
+| uv.lock中的ray package条目 | 2.55.1 | 2.58.0 |
+| TRT-LLM选定Dockerfile直接安装行 | 2.54.1 | 2.58.0 |
+| Ascend A2选定Dockerfile直接安装行 | 2.46.0 | 2.58.0 |
+
+主线声明的范围允许2.47.1，**不表示主线uv.lock选择了它**，更不表示某台机器正在运行它。候选把选定入口对齐2.58.0，是声明与锁文件事实；旧镜像／既有集群不因文件改动自动升级。锁文件中一个package条目可解析，也不等于 `uv lock --check`、wheel元数据或所有backend约束已通过。代码及结果hash见[当日日志](../../diary/2026-10-25.md)。
+
+### 认证默认值必须绑定版本
+
+[Ray 2.58.0固定版本文档](https://github.com/ray-project/ray/blob/ray-2.58.0/doc/source/ray-core/internals/token-authentication.rst)说明该版本默认 `RAY_AUTH_MODE=disabled`，启用token模式还需各节点配置一致；仅设置凭据来源不等于切换认证模式。本节未读取、生成或输出任何token，也未检查真实集群配置。
+
+当日[latest认证文档](https://docs.ray.io/en/latest/ray-core/internals/token-authentication.html)已描述Ray2.59本地集群的默认变化。因此既不能用latest的本地默认替代2.58语义，也不能把旧“2.52及以后都默认关闭”的说法无限推广。先固定实际版本、启动方式与节点角色，再判断默认值；PR选择2.58.0本身不是对所有部署的升级建议。
+
+[Ray安全说明](https://docs.ray.io/en/latest/ray-security/index.html)将Dashboard／Jobs／Client视作可控制集群的开发者入口，要求可信代码和受控网络；token认证属于附加防护，不能替代网络隔离，同集群多个job也不构成相互隔离。不要将模型推理HTTP接口的访问规则直接当作Ray控制面的边界，更不能把依赖pin解释为服务器已经安全。
+
+### 核对范围与接续
+
+#7600目标base为 `3f9d4c0d`，共同祖先 `ea53291385ce764019a2b40733605f21d8317583`，ahead1／behind87；祖先diff共34文件，uv.lock有大段重锁变化。读取目录时已处理API默认30项分页，34文件目录不等于全patch审计。本轮读了元数据／requirements／helper／Docker说明六处diff、选定七文件的两版完整解析，以及PR唯一CLA评论；reviews空。作者报告的lock检查、Ray版本导入、wheel构建及pre-commit未在本机复跑，专用镜像构建作者也未跑，不能将这些报告标成本项目测试。
+
+本轮没有安装／导入Ray、构建镜像、启动服务、读取凭据或探测端口／GPU／服务器；离线依赖核对不是认证、网络隔离或事件响应验收，也没有证据将某版本与现有服务器事件建立因果。只有未来明确授权且环境安全时才由相应负责人安排运行验证；当前不新增M5任务、升级现有环境或写社区／已有PR head。下一轮转独立需求／实质反馈，不重写已有pin方案、扩安装矩阵或把静态声明当部署结果。
+
 ## 1. Ray 概述
 
 ### 1.1 定位
