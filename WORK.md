@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 日志历史比对工具（2026-10-25）**：起始d619461干净、首次fetch无新增。扩展[原日志工具](tools/diary/readme.md#已提交历史的只读比对)，`compare --base REF --target REF` 固定两个commit OID后读取日志，逐项提示删除／正文改写，退出码区分保留与需核对；不自动同步、合并或接入hook。39项隔离测试在Python3.9／3.12通过（新增12项），覆盖真实CLI、重复键、错误ref与脏仓库字节不变；真实旧覆盖提交分别报告49／50条删除，d619461相对双亲均保留，未再修改已恢复历史。改标题／日期迁移保守报删增，分叉时缺少另一侧新记录不等于覆盖；不认证当日回看／语义或阻止远端写入。下轮实际同步复用，不堆新检查器或改M5专项；无服务器访问、算力队列或社区写入。
+
 - **M1 13:41 轮：system-only契约与CT调用路径（2026-10-25）**：起始c104322干净、首次fetch无新增，转未覆盖#7798。[原CT专题](notebook/frameworks/verl-6779-continuous-token-agentic-rollout-reading.md#14-仅-system-消息的输入契约)核维护者要求初始SFT／RL prompt至少有user、报告者追问配方／验证归属尚待回应；旧#7725关闭completed不等于#7726合并（实际closed/unmerged）。main3c6d9b43的Qwen VL CT仍经mixin调用共享wrapper，不能据旧评论排除，但也不推翻输入契约／宣布通用修复获准。四份源码AST／compile与调用点静态核对，无真实processor、旧25例／模型／GPU，不造替身／改配方或wrapper；无新增M5算力项或专项／上游动作。下一轮转独立真实需求，不扩system变体、补空user或重排／合并消息来替代维护者决定。
 
 - **M1 13:10 轮：原生MTP契约与迁移边界（2026-10-25）**：起始2fe439d干净、首次fetch无新增；近期#8357/#8356与既有笔记一致，未复跑。转[原输出头专题](notebook/frameworks/verl-fused-output-softcap.md#原生-mtp-的梯度与归一化控制)：#8324已有ISEEKYAN整体原型，Core个人fork #263 headb1a29d72仍draft，非上游已接纳接口；原八参数CPU梯度体两次通过，完整原loss/autograd/roll隔离，默认观察器原模块。输出权重分离与主干分离不同；fixture无真实embedding绑定、前后mask计数均2，不能认证完整模型／不均匀DP/CP分母。六份compile，base/head仅新增关键字签名绑定，无base梯度／第九CP例或完整Core/GPU验收；无新算力队列／升级依赖、专项改动或上游写入。下轮转独立真实需求或实质反馈，不扩MTP假模型／mask矩阵，也不接管作者整体迁移。

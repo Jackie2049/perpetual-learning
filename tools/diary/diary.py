@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Append work records and check the Git index before committing. Python 3.9+."""
+"""Append work records, check the Git index, and compare committed history. Python 3.9+."""
 import argparse
 from collections import Counter
 from datetime import datetime, timedelta
@@ -124,6 +124,43 @@ def check(now=None):
     print('日志检查通过：' + '; '.join(recent))
 
 
+def committed_entries(oid):
+    """Read date-file blobs from a resolved commit, never the index or worktree."""
+    records = {}
+    for item in filter(None, git('ls-tree', '-r', '-z', oid, '--', 'diary/').split('\0')):
+        metadata, name = item.split('\t', 1)
+        if not DAY.fullmatch(name):
+            continue
+        mode, kind, _ = metadata.split()
+        if kind != 'blob' or mode not in ('100644', '100755'):
+            raise ValueError(f'{oid}:{name} 不是普通日志文件。')
+        try:
+            day = entries(git('show', f'{oid}:{name}'))
+        except ValueError as exc:
+            raise ValueError(f'{oid}:{name}：{exc}') from exc
+        for (time, title), body in day.items():
+            records[(name, time, title)] = body
+    return records
+
+
+def compare(base, target):
+    # Resolve both names before reading trees; never silently treat a bad ref as empty.
+    base_oid, target_oid = [git('rev-parse', '--verify', '--end-of-options',
+                                f'{ref}^{{commit}}').strip() for ref in (base, target)]
+    old, new = committed_entries(base_oid), committed_entries(target_oid)
+    removed = sorted(old.keys() - new.keys())
+    changed = sorted(key for key in old.keys() & new.keys() if old[key] != new[key])
+    added = len(new.keys() - old.keys())
+    unchanged = len(old.keys() & new.keys()) - len(changed)
+    print(f'日志历史比对：{base_oid} → {target_oid}')
+    print(f'保留 {unchanged}；新增 {added}；删除 {len(removed)}；正文变化 {len(changed)}。')
+    for label, keys in [('删除', removed), ('正文变化', changed)]:
+        for name, time, title in keys:
+            print(f'需核对 {label}：{name} {time} — {title}')
+    print('仅核对日期文件中的时间/标题及去首尾空白正文；不判断语义或当日回看。')
+    return not removed and not changed
+
+
 def install():
     configured = git('config', '--get', 'core.hooksPath', optional=True).strip()
     if configured == HOOKS:
@@ -145,6 +182,9 @@ def main():
     add.add_argument('--title', required=True)
     add.add_argument('--body-file', type=Path)
     commands.add_parser('check', help='只检查暂存区，不自动暂存或修改文件')
+    audit = commands.add_parser('compare', help='只读比对两个已提交版本；旧条目删除或正文变化时返回 1')
+    audit.add_argument('--base', required=True)
+    audit.add_argument('--target', required=True)
     commands.add_parser('install', help='为当前克隆启用 pre-commit；已有 hooks 时拒绝覆盖')
     args = parser.parse_args()
     try:
@@ -155,6 +195,8 @@ def main():
             append(args.title, args.body_file.read_text() if args.body_file else sys.stdin.read())
         elif args.command == 'check':
             check()
+        elif args.command == 'compare':
+            return 0 if compare(args.base, args.target) else 1
         else:
             install()
     except (ValueError, OSError) as exc:

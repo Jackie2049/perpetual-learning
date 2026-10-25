@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -36,7 +37,8 @@ class DiaryTests(unittest.TestCase):
         self.git('add', '.')
         self.git('commit', '-qm', 'initial fixture')
         self.now = datetime.now(diary.TZ)
-        self.output = contextlib.redirect_stdout(io.StringIO())
+        self.stdout = io.StringIO()
+        self.output = contextlib.redirect_stdout(self.stdout)
         self.output.__enter__()
 
     def tearDown(self):
@@ -270,6 +272,136 @@ class DiaryTests(unittest.TestCase):
         self.record()
         self.git('add', 'diary')
         self.git('commit', '-qm', 'recorded work')
+
+    def commit_diary(self):
+        self.git('add', 'diary')
+        self.git('commit', '-qm', 'history comparison fixture')
+
+    def test_compare_same_commit_and_additions_pass(self):
+        path = self.committed_records()
+        self.assertTrue(diary.compare('HEAD', 'HEAD'))
+        path.write_text(path.read_text() + '\n## 00:01 — 新工作\n\n新增结果。\n')
+        self.commit_diary()
+        self.assertTrue(diary.compare('HEAD~', 'HEAD'))
+        self.assertIn('保留 2；新增 1；删除 0；正文变化 0', self.stdout.getvalue())
+
+    def test_compare_removed_entry_and_nonempty_rewrite_both_reported(self):
+        path = self.committed_records()
+        path.write_text('# 日志\n\n## 00:00 — 第二项\n\n非空的新正文。\n')
+        self.commit_diary()
+        self.assertFalse(diary.compare('HEAD~', 'HEAD'))
+        output = self.stdout.getvalue()
+        self.assertIn('删除 1；正文变化 1', output)
+        self.assertIn('需核对 删除：' + str(path) + ' 00:00 — 第一项', output)
+        self.assertIn('需核对 正文变化：' + str(path) + ' 00:00 — 第二项', output)
+
+    def test_compare_deleted_day_fails(self):
+        path = self.committed_records()
+        self.git('rm', str(path))
+        self.commit_diary()
+        self.assertFalse(diary.compare('HEAD~', 'HEAD'))
+        self.assertIn('删除 2', self.stdout.getvalue())
+
+    def test_compare_reheading_and_day_move_require_review(self):
+        path = self.committed_records()
+        path.write_text(path.read_text().replace('第一项', '更正标题'))
+        self.commit_diary()
+        self.assertFalse(diary.compare('HEAD~', 'HEAD'))
+        destination = Path('diary/2000-01-01.md')
+        self.git('mv', str(path), str(destination))
+        self.commit_diary()
+        self.assertFalse(diary.compare('HEAD~', 'HEAD'))
+
+    def test_compare_body_clear_fails_but_outer_whitespace_is_ignored(self):
+        path = self.committed_records()
+        original = path.read_text()
+        path.write_text(original.replace('结果一。', '   结果一。  \n'))
+        self.commit_diary()
+        self.assertTrue(diary.compare('HEAD~', 'HEAD'))
+        path.write_text(original.replace('结果一。', ''))
+        self.commit_diary()
+        self.assertFalse(diary.compare('HEAD~', 'HEAD'))
+
+    def test_compare_does_not_certify_overview_or_entry_order(self):
+        path = self.committed_records()
+        path.write_text('# 不同的回看\n\n## 00:00 — 第二项\n\n结果二。\n\n'
+                        '## 00:00 — 第一项\n\n结果一。\n')
+        self.commit_diary()
+        self.assertTrue(diary.compare('HEAD~', 'HEAD'))
+
+    def test_compare_invalid_refs_and_noncommits_fail_closed(self):
+        self.committed_records()
+        for base, target in [('no-such-ref', 'HEAD'), ('HEAD', 'no-such-ref'),
+                             ('--help', 'HEAD'), ('HEAD:asset.md', 'HEAD')]:
+            with self.subTest(base=base, target=target), self.assertRaises(ValueError):
+                diary.compare(base, target)
+
+    def test_compare_duplicate_entries_in_either_ref_fail(self):
+        path = self.committed_records()
+        path.write_text(path.read_text() + '\n## 00:00 — 第一项\n\n重复正文。\n')
+        self.commit_diary()
+        for base, target in [('HEAD~', 'HEAD'), ('HEAD', 'HEAD~')]:
+            with self.subTest(base=base), self.assertRaisesRegex(ValueError, '重复的时间与标题'):
+                diary.compare(base, target)
+
+    def test_compare_refuses_symlink_date_file(self):
+        path = self.committed_records()
+        path.unlink()
+        path.symlink_to('../asset.md')
+        self.commit_diary()
+        with self.assertRaisesRegex(ValueError, '不是普通日志文件'):
+            diary.compare('HEAD~', 'HEAD')
+
+    def test_compare_reads_only_commits_without_mutating_dirty_repository(self):
+        path = self.committed_records()
+        path.write_text(path.read_text() + '\n## 00:01 — 新工作\n\n新增结果。\n')
+        self.commit_diary()
+        path.write_text('# 已暂存的截断不参与已提交版本比对\n')
+        self.git('add', 'diary')
+        path.write_text('# 未暂存内容也不参与\n')
+        Path('untracked.txt').write_text('preserve me')
+
+        def snapshot():
+            return {str(p): p.read_bytes() for p in Path('.').rglob('*') if p.is_file()}
+
+        before = snapshot()  # Includes index, local config, refs and reflogs.
+        self.assertTrue(diary.compare('HEAD~', 'HEAD'))
+        self.assertFalse(diary.compare('HEAD', 'HEAD~'))
+        with self.assertRaises(ValueError):
+            diary.compare('HEAD', 'missing-ref')
+        self.assertEqual(snapshot(), before)
+
+    def test_compare_resolves_names_before_reading_trees(self):
+        self.committed_records()
+        old_oid = self.git('rev-parse', 'HEAD~').stdout.strip()
+        new_oid = self.git('rev-parse', 'HEAD').stdout.strip()
+        self.git('update-ref', 'refs/heads/audit-base', old_oid)
+        original_reader = diary.committed_entries
+        seen = []
+
+        def move_ref_after_resolution(oid):
+            seen.append(oid)
+            self.git('update-ref', 'refs/heads/audit-base', new_oid)
+            return original_reader(oid)
+
+        with patch.object(diary, 'committed_entries', side_effect=move_ref_after_resolution):
+            self.assertTrue(diary.compare('audit-base', 'HEAD'))
+        self.assertEqual(seen, [old_oid, new_oid])
+        self.assertIn('新增 2', self.stdout.getvalue())
+
+    def test_compare_cli_exit_codes(self):
+        self.committed_records()
+        command = [sys.executable, 'tools/diary/diary.py', 'compare', '--base', 'HEAD~', '--target', 'HEAD']
+        passed = subprocess.run(command, capture_output=True, text=True)
+        self.assertEqual(passed.returncode, 0, passed.stderr)
+        command[-3], command[-1] = 'HEAD', 'HEAD~'
+        needs_review = subprocess.run(command, capture_output=True, text=True)
+        self.assertEqual(needs_review.returncode, 1, needs_review.stderr)
+        self.assertIn('删除 2', needs_review.stdout)
+        command[-1] = 'missing-ref'
+        invalid = subprocess.run(command, capture_output=True, text=True)
+        self.assertEqual(invalid.returncode, 1)
+        self.assertIn('日志收尾检查', invalid.stderr)
 
 
 class FenceTests(unittest.TestCase):
