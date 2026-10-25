@@ -1,0 +1,35 @@
+{
+  "dual_failure_control": {
+    "events": [
+      "create",
+      "execute",
+      "release"
+    ],
+    "message": "release-secondary",
+    "raised": "OSError"
+  },
+  "environment": {
+    "machine": "arm64",
+    "pydantic": "2.14.1",
+    "python": "3.12.13",
+    "system": "Darwin"
+  },
+  "original_tests_passed": [
+    "test_empty_arguments",
+    "test_invalid_json_arguments",
+    "test_left_truncation_keeps_response_tail",
+    "test_none_arguments",
+    "test_right_truncation_keeps_response_head",
+    "test_tool_execution_error",
+    "test_unknown_function_name",
+    "test_valid_tool_call"
+  ],
+  "revision": "3c6d9b43b67c74ec343d77874cd8fa6e841523da",
+  "scope": "original method/schema/test fakes; no FunctionTool branch, sandbox or agent runtime",
+  "source_sha256": {
+    "tests/experimental/agent_loop/test_call_tool_on_cpu.py": "f462175016b6fbb77019435d9b3617447f1cc1060e25f5d80c2c1a586d0bdba6",
+    "verl/experimental/agent_loop/tool_agent_loop.py": "c6025fe19ea29151e1926538be8de0d45785e4f2152e54b71e2639f8a0a9ff78",
+    "verl/tools/function_tool.py": "fb512e1470101059f828ccbacaa8e387bde840b9234c36120f18ea3a600f8883",
+    "verl/tools/schemas.py": "b5c3a38a44015c27da2dcf1a1f5204f038b895bbf3678c4b1575f62fe1ba5c08"
+  }
+}

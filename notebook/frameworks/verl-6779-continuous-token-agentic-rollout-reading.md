@@ -1000,6 +1000,32 @@ Python3.12.13/pytest8.4.2，候选原172测试全过；同一测试配共同祖�
 
 保真、schema合法性、调用参数校验须分别命名，不能从其中一层通过推另一层。五份源码快照另过完整AST／内存compile；原测试体不是原生pytest／完整tools套件。命令、输入和hash留[当日日志](../../diary/2026-10-25.md)，本题CPU范围足够，不排新M5任务、不下载模型／扩写校验器／应用候选或新增竞争修复；任何社区写操作仍逐项待用户明确同意。
 
+## 工具异常与资源释放的边界
+
+**将执行错误转成工具文本，不等于整个工具生命周期不会抛错，也不等于失败可安全重试。** [#6978](https://github.com/verl-project/verl/issues/6978)请求为可恢复的BaseTool错误增加默认关闭、有界、重建实例的重试。原提案明确仅适用于幂等或可安全重建的调用，不恢复sandbox中间文件／进程／环境状态。[维护者回复](https://github.com/verl-project/verl/issues/6978#issuecomment-4913743950)指出ToolAgentLoop面向简单ReAct，复杂sandbox场景应参考uni-agent；这不是批准在当前loop中加入通用重试。
+
+2026-10-26读完整issue及唯一评论；编号all-state PR检索为空，开放关键词搜索仅见无关的多轮SFT候选，不据此认领。固定verl main `3c6d9b43b67c74ec343d77874cd8fa6e841523da` 的[原方法](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/experimental/agent_loop/tool_agent_loop.py)先检查工具名、解析JSON，再分两路：FunctionTool直接call且没有实例生命周期；BaseTool式对象先create拿instance_id，再execute。参数是否符合schema是[另一项契约](#13-工具-schema-保真与执行校验)，不能把JSON可解码当成完整参数校验。
+
+create／execute处的普通Exception会被转换为 `ToolResponse(text=...)`、reward=0、空附加结果；但finally里对已取得的truthy instance_id执行 `await tool.release(instance_id)`，没有包在这个except中。释放异常可以阻止已经准备好的错误响应返回。上层工具处理方法使用await gather；本轮没有执行并行处理，不据单工具控制推断兄弟任务取消、远端资源释放或整条轨迹如何落盘。
+
+### 原测试与单一双故障控制
+
+[复查脚本](../../experiments/verl-tool-cleanup/verify.py)按固定Git blob执行原schemas模块、装配完整原_call_tool方法，并用本地类壳绕过AgentLoop初始化；原FunctionTool类型／返回归一化定义也保留，但该分支未被执行。原[8个unittest用例](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/tests/experimental/agent_loop/test_call_tool_on_cpu.py)的类、setUp、FakeTool、MagicMock及断言不改，实际由IsolatedAsyncioTestCase运行，全部通过，覆盖正常调用、未知工具、无效／空／None参数、执行报错与左右截断。
+
+另一个本地记录工具仅制造一次双故障：execute抛RuntimeError，release再抛OSError。完整原方法实际事件为 `create → execute → release`，最终向调用者抛 `OSError("release-secondary")`，没有返回准备中的ToolResponse，也没有第二次create。它说明本例终态异常来自清理阶段，不能倒推execute未曾执行；更不能据此自动重试已经可能产生副作用的外部动作。这是本地替身的控制流证据，不是数据库／sandbox故障复现。
+
+[结果](../../experiments/verl-tool-cleanup/result.json)保存8项名称、单一控制、完整源码SHA256与环境。Python3.12.13、Pydantic2.14.1、macOS arm64；两次执行结果一致。四份完整原模块AST／compile通过，实际执行只有上述原方法、真实Pydantic响应类型和测试替身；未运行模型、完整AgentLoop、FunctionTool调用、真实BaseTool服务、并发取消或资源耗尽测试。
+
+### 重试与会话恢复的归属
+
+[Uni-Agent README](https://github.com/verl-project/uni-agent/blob/c3edb1a6515e96e9cedc6d024a75d2865599afe0/README.md)将Agent、Tool、Task、Sandbox分层，并支持现有harness经Gateway接入；本轮只读其定位，未验证其具体恢复／重试实现或宣称sandbox恰好执行一次。单次调用重试、重建有状态会话、确认外部动作是否已提交，需要不同的身份与幂等契约；释放失败本身不能决定哪一步可重做。
+
+本项以源码学习和CPU控制收束，不新增tool_retry配置、异常分类或重试补丁，不启动sandbox／外部服务、读凭据或执行模型输出代码。没有新增GPU缺口，不另排M5队列或修改其专项；若后续出现具体工具及恢复契约，再在维护者指定层审视，任何上游动作仍待用户逐项明确同意。
+
+```bash
+/path/to/python experiments/verl-tool-cleanup/verify.py /path/to/verl
+```
+
 ## 14. 仅 system 消息的输入契约
 
 **模板包装器仍被调用，不等于框架承诺支持任意消息形状。** [#7798](https://github.com/verl-project/verl/issues/7798)报告Qwen3.5-9B经CT初始构建、executor和VL渲染后仍报错；2026-10-25读取OPEN、三条评论。[维护者9月9日回复](https://github.com/verl-project/verl/issues/7798#issuecomment-5595459592)明确CT不面向仅system历史，SFT／RL数据至少应有一条user消息。[报告者9月14日追问](https://github.com/verl-project/verl/issues/7798#issuecomment-5657837490)称部分Uni-Agent配方可能产生这种轮次，询问应由配方保证输入、框架提前报清楚错误还是扩展支持；目前这三条评论中没有对该归属追问的进一步决定。不能把issue仍open当成维护者已经同意扩大输入契约。

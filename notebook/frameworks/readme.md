@@ -196,6 +196,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [仅 system 消息的输入契约](verl-6779-continuous-token-agentic-rollout-reading.md#14-仅-system-消息的输入契约)：#7798维护者要求至少一条user；当前VL CT仍有wrapper调用点，不能据旧评论排除，也不据此扩大支持或复用未合并#7726。
 - [多轮配置的消费路径与告警契约](verl-6779-continuous-token-agentic-rollout-reading.md#15-多轮配置的消费路径与告警契约)：#7662的两键只见旧请求类消费，活跃CT另维护token账本；旧strict差异仅告警，不是SFT抛错检查，不另认领接线／弃用。
 - [verl 工具schema保真与执行校验](verl-6779-continuous-token-agentic-rollout-reading.md#13-工具-schema-保真与执行校验)：#7505已有#7523；原回归体与真实Pydantic／无副作用调用分清extra保留、schema合法性和参数校验，非完整AgentLoop或安全认证，不另实现。
+- [工具异常与资源释放](verl-6779-continuous-token-agentic-rollout-reading.md#工具异常与资源释放的边界)：#6978不是通用重试许可；main原8项与1双故障CPU控制，release可向外抛错，Tool／Sandbox恢复契约分开。
 - [verl #6782 — LoRA Rank=64 Breaks EOS in vLLM Rollout Reading](verl-6782-lora-rank-breaks-eos-reading.md)
 - [verl #6786: Dynamic Context Parallel (DCP) Batch Split Bug Deep Reading](verl-6786-dynamic-cp-batch-split-bug-reading.md)
 - [verl PR #6790: Separate Async Trainer with Switch+Offload Strategies — Source-Level Reading](verl-6790-async-trainer-reading.md)：新增[局部指标聚合](verl-6790-async-trainer-reading.md#局部更新的指标聚合)，19原测试/5组CPU观察；样本权重不等于token分母，正式计时后置计算，不由helper反例断言trainer缺陷。
