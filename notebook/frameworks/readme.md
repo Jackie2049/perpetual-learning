@@ -269,7 +269,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [verl PrefixGrouper 源码深度阅读](verl-prefix-grouper.md)
 - [verl FSDP shared-prefix packing](verl-shared-prefix-packing.md)
 - [verl ReMax (#6340) and IcePop (#5722) Source-Level Reading](verl-remax-icepop-source-reading.md)：补[#8310 V1基线来源](verl-remax-icepop-source-reading.md#v1-贪心会话与-sampled-最大值)，额外贪心会话非sampled最大值；原核心CPU对照通过，撤回零方差/硬件最优推荐，非完整trainer验收。
-- [verl Reward Integration 源码级深度阅读](verl-reward-integration-reading.md)：新增[验证标志与元数据范围](verl-reward-integration-reading.md#异步奖励的验证标志与元数据范围)，#7217原两参数CPU测试体通过，元数据单项修复非全批透传；原假远程句柄非服务验收。
+- [verl Reward Integration 源码级深度阅读](verl-reward-integration-reading.md)：新增[DisRM契约与部分写入](verl-reward-integration-reading.md#disrm-返回契约与部分写入)，#7608原三回归候选通过；已写分数后缺键失败，同对象再次调用不等于恢复。
 - [verl 沙箱运行器派发](verl-reward-integration-reading.md#沙箱运行器注册与执行边界)：#8345原14 runner用例两次通过、16未选；注册/响应外形非隔离/超时认证，startup guard非所有worker预检，未安装插件/运行服务或新排GPU。
 - [verl Prime 评分结果与失败范围](verl-reward-integration-reading.md#prime-进程池的结果协议与失败范围)：#8217 原 4 测试体基线字典例预期失败、候选全过；真实进程池与 spawn，不将 worker 按行异常和解析整批回退混为一谈，300 秒非整批硬截止。
 - [verl 数学奖励的分层与精度](verl-reward-integration-reading.md#数学奖励的分层判分与精度边界)：#8347原64参数例与7范围控制；前段拒绝不是最终否决，局部箭头保护不认证组合判分，科学计数/方程仍有旧边界，无GPU需求。

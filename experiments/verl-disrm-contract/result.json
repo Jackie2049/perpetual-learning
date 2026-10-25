@@ -1,0 +1,89 @@
+{
+  "consumer_method_ast_equal": true,
+  "environment": {
+    "machine": "arm64",
+    "numpy": "2.5.4",
+    "pytest": "9.1.1",
+    "python": "3.12.13",
+    "system": "Darwin",
+    "torch": "2.14.1"
+  },
+  "results": {
+    "ancestor": {
+      "after_first": {
+        "extra_fields": {},
+        "reward_score": 0.875
+      },
+      "after_second": {
+        "extra_fields": {},
+        "reward_score": 0.875
+      },
+      "first_control_error": "reward_extra_info",
+      "original_cases": {
+        "consumer": "expected_KeyError_reward_extra_info",
+        "sglang": "expected_contract_assertion_failure",
+        "vllm": "expected_contract_assertion_failure"
+      },
+      "post_request_await_count": 1
+    },
+    "head": {
+      "after_first": {
+        "extra_fields": {
+          "reward_extra_info": {}
+        },
+        "reward_score": 0.875
+      },
+      "after_second": {
+        "extra_fields": {
+          "reward_extra_info": {}
+        },
+        "reward_score": 0.875
+      },
+      "first_control_error": null,
+      "original_cases": {
+        "consumer": "passed",
+        "sglang": "passed",
+        "vllm": "passed"
+      },
+      "post_request_await_count": 1
+    },
+    "main": {
+      "after_first": {
+        "extra_fields": {},
+        "reward_score": 0.875
+      },
+      "after_second": {
+        "extra_fields": {},
+        "reward_score": 0.875
+      },
+      "first_control_error": "reward_extra_info",
+      "original_cases": {
+        "consumer": "expected_KeyError_reward_extra_info",
+        "sglang": "expected_contract_assertion_failure",
+        "vllm": "expected_contract_assertion_failure"
+      },
+      "post_request_await_count": 1
+    }
+  },
+  "scope": "original AST methods/types/test bodies; original transport/preprocess fakes; no services",
+  "source_sha256": {
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/experimental/agent_loop/agent_loop.py": "e931a80ca4740c18ad8b6b2f9c01e8cd78d1c42c8fe2a491fe21845ecc69cb57",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/experimental/reward_loop/reward_loop.py": "f30932e2445ab01ca7fa4fbcec13910c85bfaf2cd8a4f49d040f15d7fe2ed973",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/protocol.py": "8d69430131e9e894a6c7aea673d489e19e44117b1bc573085a6db521b38c6792",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/utils/profiler/performance.py": "4cac930bbbe75df039fe8201ef0c9bca6e473060ac06f12146a348436395f332",
+    "e1e753776781129ae39de77a91fd2ee06ac74508:tests/experimental/reward_loop/test_disrm_reward_contract_on_cpu.py": "f0692ae42027c6dcde6b1dfc9ad6bccb475e0f1cc73a8a9017024344661c5449",
+    "e1e753776781129ae39de77a91fd2ee06ac74508:verl/experimental/agent_loop/agent_loop.py": "55fc9489dd431d4c25d910e0bf70f9b92b9c45747ea780a502c3b45fb2dff021",
+    "e1e753776781129ae39de77a91fd2ee06ac74508:verl/experimental/reward_loop/reward_loop.py": "bf704928381ae2356c5a8d153337984cf48dab25889c1326f843166ec8351e31",
+    "e1e753776781129ae39de77a91fd2ee06ac74508:verl/protocol.py": "8d69430131e9e894a6c7aea673d489e19e44117b1bc573085a6db521b38c6792",
+    "e1e753776781129ae39de77a91fd2ee06ac74508:verl/utils/profiler/performance.py": "4cac930bbbe75df039fe8201ef0c9bca6e473060ac06f12146a348436395f332",
+    "ea53291385ce764019a2b40733605f21d8317583:verl/experimental/agent_loop/agent_loop.py": "55fc9489dd431d4c25d910e0bf70f9b92b9c45747ea780a502c3b45fb2dff021",
+    "ea53291385ce764019a2b40733605f21d8317583:verl/experimental/reward_loop/reward_loop.py": "f30932e2445ab01ca7fa4fbcec13910c85bfaf2cd8a4f49d040f15d7fe2ed973",
+    "ea53291385ce764019a2b40733605f21d8317583:verl/protocol.py": "8d69430131e9e894a6c7aea673d489e19e44117b1bc573085a6db521b38c6792",
+    "ea53291385ce764019a2b40733605f21d8317583:verl/utils/profiler/performance.py": "4cac930bbbe75df039fe8201ef0c9bca6e473060ac06f12146a348436395f332"
+  },
+  "versions": {
+    "ancestor": "ea53291385ce764019a2b40733605f21d8317583",
+    "head": "e1e753776781129ae39de77a91fd2ee06ac74508",
+    "main": "3c6d9b43b67c74ec343d77874cd8fa6e841523da"
+  }
+}

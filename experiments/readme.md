@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-disrm-contract/verify.py](verl-disrm-contract/verify.py) | #7608原三回归接三版原方法及1同输出再次调用控制，[结果](verl-disrm-contract/result.json)；HTTP／预处理／Ray为原替身，非模型／恢复验收 | [DisRM契约与部分写入](../notebook/frameworks/verl-reward-integration-reading.md#disrm-返回契约与部分写入) |
 | [verl-tool-cleanup/verify.py](verl-tool-cleanup/verify.py) | main原8工具调用CPU测试及1双故障控制，[结果](verl-tool-cleanup/result.json)；原FakeTool／本地记录器，无sandbox／模型输出代码 | [工具异常与释放](../notebook/frameworks/verl-6779-continuous-token-agentic-rollout-reading.md#工具异常与资源释放的边界) |
 | [verl-lora-export/verify.py](verl-lora-export/verify.py) | #7341原6配置／2无adapter CPU测试体，[结果](verl-lora-export/result.json)；5项未运行，无PEFT／融合或文件导出 | [分片重组与LoRA融合](../notebook/frameworks/verl-checkpoint-management-reading.md#分片重组与-lora-融合不是同一步) |
 | [verl-reward-validation/verify.py](verl-reward-validation/verify.py) | #7217原两参数CPU测试体／三版原方法，[结果](verl-reward-validation/result.json)；真实容器、原假远程句柄，非Ray／TQ／奖励服务 | [验证标志与元数据](../notebook/frameworks/verl-reward-integration-reading.md#异步奖励的验证标志与元数据范围) |

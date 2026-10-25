@@ -1,5 +1,7 @@
 # verl Reward Integration 源码级深度阅读
 
+2026-10-26补充：[DisRM返回契约与部分写入](#disrm-返回契约与部分写入)核对已有#7608：原三回归候选过；旧版缺字段时已写分数，同一输出再次调用会跳过评分，不能据“没再报错”认证恢复。
+
 2026-10-25补充：[异步奖励的验证标志与元数据范围](#异步奖励的验证标志与元数据范围)核对已有#7217：原两参数用例通过，修复显式验证标志，不透传全部批级元数据；原假远程句柄不是实际奖励服务。
 
 2026-10-25补充：[数学表达式的语法与资源边界](#数学表达式的语法与资源边界)比较两项已有eval替换方案：限制可执行语法、保持答案兼容和限制资源是不同要求。只做原方法及良性输入CPU对照，不运行攻击或耗尽载荷。
@@ -142,6 +144,32 @@ head七项分别跑两次，均7通过。死亡由测试向自己的真实子进
 ### 恢复服务不等于完整故障标注
 
 固定[RateLimitedRewardManager](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/experimental/reward_loop/reward_manager/limited.py)能对传播来的异常写`reward_extra_info.error`，对它自己捕获的异步超时写timeout。但候选的两种评分超时仍返回普通float；若默认0，该上层只会按分数消费，不自动获得超时标志。故障恢复、行级可观测性和数学等价判分应分别验收，不能把“池恢复了”改述成“所有失败均可区分”。本轮没有执行完整manager、Ray/RewardLoop、训练或大规模并发，也不推断#8250根因/收敛收益。纯CPU问题无需GPU资源，不新增M5任务、不自动采用候选或对外回复。
+
+## DisRM 返回契约与部分写入
+
+独立DisRM的模型请求成功，不代表AgentLoop已经完整接收奖励结果。[#7368](https://github.com/verl-project/verl/issues/7368)报告生产者只返回 `reward_score`，消费者却同时要求 `reward_extra_info`；已有[候选 #7608](https://github.com/verl-project/verl/pull/7608)补上空字典，并同步文档。2026-10-26核验OPEN、非draft、未合并，两个普通评论仅作者请求启动CI，reviews／行内评论为空；旧[#7389](https://github.com/verl-project/verl/pull/7389)为CLOSED且mergedAt=null，不能当已合入修复。不另写同一补丁或替作者催审。
+
+固定head `e1e753776781129ae39de77a91fd2ee06ac74508`，父提交／与当前main共同祖先 `ea53291385ce764019a2b40733605f21d8317583`，相对main `3c6d9b43b67c74ec343d77874cd8fa6e841523da` ahead1／behind203；三文件112增2删。API目标base `3f9d4c0d` 不替代实际祖先。编号与关键词检索已见现有覆盖，未将空assignee或历史候选关闭解释成可重新认领。
+
+### 返回键与消费路径
+
+[原生产者](https://github.com/verl-project/verl/blob/e1e753776781129ae39de77a91fd2ee06ac74508/verl/experimental/reward_loop/reward_loop.py)的vLLM路径取 `data[-1].probs[-1]` 并请求classify，SGLang路径取 `data[-1].embedding[-1]` 并请求v1/embeddings；候选不改分数计算或HTTP格式，只让两路都返回 `{"reward_score": score, "reward_extra_info": {}}`。原两个参数用例分别使用固定响应0.875／0.75，不是奖励模型数值或质量验证。
+
+[AgentLoop消费者](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/experimental/agent_loop/agent_loop.py)先给末条output的reward_score赋值，再严格索引附加字段；三版整个_compute_score方法AST相同。候选修的是生产者契约，没有把消费者改成容忍所有缺字段。相邻的共置[批处理路径](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/experimental/reward_loop/reward_loop.py)使用 `output.get("reward_extra_info", {})`，因此不能拿它对缺键的容忍证明独立路径也安全；这也不认证不同样本内部附加key的对齐。
+
+### 原回归与同一输出再次调用
+
+[复查脚本](../../experiments/verl-disrm-contract/verify.py)执行候选[两种生产者参数例及一个消费者回归](https://github.com/verl-project/verl/blob/e1e753776781129ae39de77a91fd2ee06ac74508/tests/experimental/reward_loop/test_disrm_reward_contract_on_cpu.py)。原测试体、参数表、装饰器及断言不变，按固定blob AST装配完整生产／消费方法、原DataProto与Pydantic类型，类壳绕过框架初始化。候选三项通过；祖先／main各为两项返回字典断言失败、一项精确 `KeyError("reward_extra_info")`。预处理、HTTP和远程句柄沿用原AsyncMock／本地代理，因此原测试docstring的“end-to-end”只对应这条隔离方法链，不是服务或训练贯通。
+
+另一个固定输入控制保留输出对象：祖先／main首次抛缺键异常后，reward_score已是0.875，extra_fields仍为空。再次对**同一个Python输出对象**调用原方法，因为reward_score不再为None而跳过评分，HTTP替身累计仍只调用一次，缺失附加字段也没补齐。候选首次完成两字段写入，第二次正常使用已评分状态。这仅说明该局部对象的失败不是原子操作；不证明框架实际会重用失败对象、自动重试或静默接纳坏训练批，不能把局部再次返回无异常当成恢复成功。
+
+[结果](../../experiments/verl-disrm-contract/result.json)保存两次调用前后状态、原测试结果及源码SHA256。Python3.12.13、torch2.14.1、NumPy2.5.4、pytest9.1.1、macOS arm64；两次执行结果一致。三版四个完整模块及原测试AST／compile通过，实际运行只有所述方法／容器与替身；没有导入原verl包、运行真实tokenizer／模型／HTTP／Ray／TransferQueue或完整训练。
+
+本项不应用候选、不降低消费者的缺键检查、不扩故障／后端矩阵或改恢复策略。CPU契约无新增GPU缺口，不另排M5队列或改其专项；任何上游动作仍待用户逐项明确同意。
+
+```bash
+/path/to/python experiments/verl-disrm-contract/verify.py /path/to/verl
+```
 
 ## 异步奖励的验证标志与元数据范围
 
