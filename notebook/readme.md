@@ -139,6 +139,7 @@
 - [Megatron-LM 流水线并行](frameworks/megatron-pp-reading.md) — 1F1B 调度、气泡分析、通信 overlap
 - [verl 架构](frameworks/verl-architecture.md) — 三级前缀缓存（系统级+进程级+请求级）
 - [verl 激活卸载的反向入口](frameworks/verl-architecture.md#激活卸载的反向入口与重载顺序) — #8277原五CPU测试体通过；区分内部描述、commit顺序和detached输出，不认证异步传输／真实模型。
+- [verl 异步并发预算](frameworks/verl-fully-async-policy-reading.md#样本任务并发与推理序列数) — 主线已有倍率配置；样本组、n条轨迹与实际引擎序列占用分开，不复用旧报告吞吐倍率
 - [verl DisRM返回契约](frameworks/verl-reward-integration-reading.md#disrm-返回契约与部分写入) — #7608原三回归候选通过；旧缺键异常前已写分数，同一对象再次调用跳过评分，非真实服务／恢复验收
 - [verl 异步奖励验证标志](frameworks/verl-reward-integration-reading.md#异步奖励的验证标志与元数据范围) — #7217原两参数CPU测试体通过；validate单项元数据非全部批信息透传，原假远程句柄非奖励服务
 - [verl 异步奖励补齐](frameworks/verl-reward-integration-reading.md#异步奖励的补齐边界) — #8101原构造/消费片段的CPU几何对照；mask总数正确仍可读错response，恢复长度也可能增加应有惩罚，非完整worker/TQ验收

@@ -5,6 +5,26 @@
 
 2026-10-24 接续：[续跑的累计长度上下限](#续跑的累计长度上下限)核对固定候选代码与原测试协程；下方6月架构与设备选型概括为历史记录，本轮不将其认证为当前支持清单。
 
+## 样本任务并发与推理序列数
+
+**当前主线已能配置并发倍率，旧问题仍开放不等于功能仍缺失。** 2026-10-26核对[#6946](https://github.com/verl-project/verl/issues/6946)：请求将硬编码16改为可配置，状态OPEN、无评论；固定main `3c6d9b43b67c74ec343d77874cd8fa6e841523da` 已在[FSDP配置](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/experimental/fully_async_policy/config/fully_async_ppo_trainer.yaml#L49)及[Megatron配置](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/experimental/fully_async_policy/config/fully_async_ppo_megatron_trainer.yaml#L49)声明 `async_training.concurrent_samples_per_replica: 16`，rollouter构造器读取同一路径。不应再按提案另造 `actor_rollout_ref.rollout.max_concurrent_samples` 或声称只能改源码；这里确认已有键及读取，不认证完整Hydra覆盖命令。
+
+### 上限限制的是整组任务
+
+[rollouter](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/experimental/fully_async_policy/fully_async_rollouter.py#L493)以 `ppo_mini_batch_size × require_batches` 计算所需组数，再乘 `(staleness_threshold + 1) × trigger_parameter_sync_step` 后取int，得到 `max_required_samples`。初始并发为活跃server计数乘上述倍率，再受 `max_required_samples` 截断。因此增大倍率不保证增大最终上限；副本变化后的重算另用 `len(get_replicas())`，不能仅凭命名假定与初始计数器始终等价。
+
+在要求 `gen_batch_size=1` 的此入口，[准备函数](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/experimental/fully_async_policy/detach_utils.py#L42)先将一个输入按 `actor_rollout_ref.rollout.n` 重复；`active_tasks` 的一项随后处理整组DataProto，直到生成及队列提交完成。AgentLoopManager只选择一个worker接收该组，worker再[为每行创建agent-loop协程](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/experimental/agent_loop/agent_loop.py#L669)。这是全局组任务预算，不是每个推理副本上的独立Semaphore，也不是后端 `max_num_seqs`。
+
+例如两副本、倍率16且未被样本预算截断时，上限为32个组任务；n=4时对应最多128条输入轨迹的展开规模。**这只是计数解释，不是128条序列同时驻留KV cache的观测**：agent-loop、工具等待、负载路由、引擎排队及任务完成后的提交都可能改变瞬时占用。不能用这个乘积直接预算峰值显存或断言GPU利用率。
+
+### 旧报告和相邻修复的边界
+
+[#6946](https://github.com/verl-project/verl/issues/6946)作者在8×Ascend 910、Qwen1.5-0.5B、n=4、分离4+4资源的私有配置中报告16→32带来2.29倍端到端吞吐；这不是当前main或M1复测，不推广成默认推荐。其引用的[#6306](https://github.com/verl-project/verl/issues/6306)回复只是matdou对KV背压的推测，原话包含不确定性；API的author_association为NONE，不能沿用“维护者已确认16的理论依据”这一归因。
+
+编号all-state PR检索为空不证明无人处理；源码已经覆盖主要配置需求。关键词命中的OPEN [#7010](https://github.com/verl-project/verl/pull/7010)则处理等待容量时持有状态锁的问题，正文明确不改公共API／配置。它不是新增倍率配置，也不能以作者的锁修复测试或性能报告替代本项验收。
+
+本轮仅四份完整Python模块AST／compile、两份YAML解析与默认值核对通过；未运行rollouter、原pytest、Hydra组合、Ray／推理服务或训练。源码hash及复核命令见[当日日志](../../diary/2026-10-26.md)。不创建候选实现、调参训练或新算力队列；需要具体动态计数或吞吐结论时，应另有对应运行证据，而非继续扩手写并发模拟。
+
 ## 1. Fully-Async Policy 三组件架构
 
 ```
