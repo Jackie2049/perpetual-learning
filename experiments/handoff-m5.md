@@ -19,6 +19,10 @@ GPU/NPU 的访问、环境与实验由 macbook-M5 Agent 负责。M1 遇到需要
 
 ## UniRL 联合路径的资源与身份边界
 
+SGLang scheduler环境参考（2026-10-26，同一部署入口、非新训练队列）：已有[#468](https://github.com/Tencent-Hunyuan/UniRL/pull/468) head3dac11fb、父版／祖先f989c038，相对main6fd82cba behind105。[M1主机契约](../notebook/frameworks/unirl-survey.md#scheduler-子进程环境与依赖版本)仅两个原helper接独立dict／目录夹具，异常恢复和值解析通过；未改真实环境或启动进程。候选基于SGLang0.5.12.post1，main为0.5.19；memory-saver v0.0.10已拼接原preload／选择单hook，master另暴露已映射cudart目录。先核实际安装版，不按旧正文自动加同类shim，也不据这些源码断言整项候选无用。
+
+若M5将来独立接续已有获准、安全、匹配的SGLang部署，先记Python可执行文件、实际sglang／torch／memory-saver版本与提交、driver／compat身份、父子进程实际库映射和启动环境；辨明HTTP/native及所需GPU可见性，再决定是否需局部适配与一次原范围有界启动。字符串存在／CPU字典恢复不等于真实dlopen结果，旧#225的8×H20报告非独立head或4090验收。安全未恢复、无现有环境／资源、需安装driver/compat、改服务/全局preload或影响专项即停记未测；不自动部署、重启、跑训练或建立新兼容方案。上游写入及已有PR-head推送（含fork）仍须用户对具体动作明确同意，记录不代表接单。
+
 SDE窗口计数补充（2026-10-25，沿用原压缩积分参考，非新增队列）：[#488／#489](https://github.com/Tencent-Hunyuan/UniRL/pull/489)的两衰减策略已合并；[M1固定main6fd82cba原模块CPU核对](../notebook/frameworks/unirl-survey.md#sde-窗口的停留步数与坐标)仅窗口序列／四配方显式标量，非Hydra／SDE／模型／参考parity。若M5将来独立选用且已有安全、获准权重／数据／匹配环境及既有观测，先记录rollout_id、optimizer step、T与窗口起点／所选SDE索引，尾段求解网格与实际模型调用／完成吞吐分列。当前四配方实际仍progressive；默认13不是所有T都不衰减，Wan22 T20仅切exp的反事实末窗25→21。不自动改阈值、部署／下载／跑作者矩阵；缺条件、需新权限预算或影响专项即记未测停止，社区写入及已建PR的fork head推送仍须逐项明确授权，不代表已接单。
 
 奖励共置MPS参考（2026-10-25，仅条件记录，非新增基准／训练队列）：[#463](https://github.com/Tencent-Hunyuan/UniRL/issues/463)已有负责人、#492已合并，#482关闭未合并且被接替；[M1固定main6fd82cba学习](../notebook/frameworks/unirl-survey.md#奖励共置的调度份额与-mps-边界)仅原config四控制／七模块compile。主线解析接受FP16／50%，group直接ray.kill，不把PR正文旧保护或作者H20报告作为当前数值／关停认证。只有M5将来独立选用、已有获准匹配奖励权重／环境／独占可控资源，且获得本次daemon生命周期权限时，先固定CUDA／driver／Ray／源码与scorer实际forward batch、物理UUID及客户端映射，核目标server/client接入与实际限制，再按已获准范围比较无MPS／MPS配对分数、完成吞吐／尾延迟和退出后的客户端／daemon状态；评分成功或pipe存在不算接入，清目录不算排空。缺匹配条件、需新部署下载、共享故障域／影响他人或原专项即停记未测，不启MPS、改compute mode、杀他人进程或复跑作者矩阵；任何社区写入及已建PR的fork head推送仍须逐项明确同意，参考不代表接单。

@@ -1,5 +1,7 @@
 # UniRL — 腾讯统一多模态 RL 框架调研
 
+2026-10-26 接续：[Scheduler 子进程环境与依赖版本](#scheduler-子进程环境与依赖版本)核已有#468；环境恢复不等于真实动态库选择／启动，旧memory-saver假设须与实际依赖版本分开。
+
 2026-10-25 接续：[SDE 窗口的停留步数与坐标](#sde-窗口的停留步数与坐标)核已合并#489：输入计rollout_id，阈值比较去噪窗口起点；原调度模块CPU序列不等于MixGRPO参考等价或训练提速。
 
 2026-10-25 接续：[PPO 的轨迹边界与价值目标](#ppo-的轨迹边界与价值目标)核#86三个已合并分项；原GAE/ValueHead及value-loss函数CPU控制不认证完整trainer，loss mask也不是GAE轨迹有效位。
@@ -2065,6 +2067,36 @@ Python3.12.13／PyYAML6.0.3仅加载完整原[config.py](https://github.com/Tenc
 作者#492的H20／driver535报告也不能简化成“MPS统一加速”：其空闲确认后的CLIP+PickScore对照，model batch1为49.51→48.01 items/s（−3.0%），batch4为99.82→124.96（+25.2%）。这是作者同卡特定负载结果，不是本机测量；service batch与模型实际forward batch还需逐scorer核对。其旧未清空干扰负载的吞吐已被作者撤回；#482另一贡献者的B300报告又说明负载瓶颈与低线程数值行为可随软件／设备栈改变，不能跨卡照搬收益或放宽保护。
 
 本机四组只验证YAML解析，七份完整源码compile不认证进程调度、kernel并发、数值或安全关停；命令与hash见[当日日志](../../diary/2026-10-25.md)。真实接入、配对分数、资源／尾延迟与清理条件补[原M5参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不启动daemon、改compute mode、借用他人负载或新增基准队列；任何社区动作仍逐项待用户明确同意。
+
+## Scheduler 子进程环境与依赖版本
+
+**GPU可见性、库路径、preload及真实driver兼容是不同层。** [#468](https://github.com/Tencent-Hunyuan/UniRL/pull/468)把SGLang scheduler启动环境从[#225](https://github.com/Tencent-Hunyuan/UniRL/pull/225)拆出，不是TP权重同步实现。2026-10-26核OPEN/non-draft、维护者CjhHa1已有实现，head`3dac11fbdf691dde142c74b0db0a6556a0d52966`、父版／目标base及实际祖先`f989c03825f187607bcbe6eaf6178909b798b43f`，相对main`6fd82cba13f52f394747832344039408699ea378` ahead1／behind105；四文件214增5删，普通评论／reviews／行内空。已读完整正文／diff，不另开兼容补丁；[旧TP限制与后续实现](../../open-source/unirl/tracker.md#旧-tp-限制与后续实现)已有研究，不重复认领。
+
+### 父进程恢复与子进程生命周期
+
+[候选base helper](https://github.com/Tencent-Hunyuan/UniRL/blob/3dac11fbdf691dde142c74b0db0a6556a0d52966/unirl/rollout/engine/sglang/backends/base.py)从显式LD_PRELOAD中识别实际存在、文件名以libcuda.so开头的driver路径，再将driver目录和当前Python环境的CUDA wheel／torch库目录放在继承LD_LIBRARY_PATH之前。HTTP将环境上下文放在process.start边界；native包住Engine构造并转入显式设备列表。两者在退出finally中恢复父进程原LD_LIBRARY_PATH与CUDA_VISIBLE_DEVICES，**恢复也包含原先不存在的键**。
+
+另一个上下文临时替换torch_memory_saver.configure_subprocess，将显式driver放在其hook preload之前，再恢复该函数；scheduler target另替换HookUtilModePreload.get_path_binary，只选恰好一个memory-saver hook。这个后者替换按设计保留在子进程生命周期，而不是退出启动上下文就撤回；两种恢复范围不能混写。真正的库映射顺序、兼容driver能否使用及SGLang私有回调接线仍须真实进程证据，不能从字符串顺序认证。
+
+即使没有driver preload，_scheduler_spawn_environment仍会前置当前Python库目录并可能修改设备列表。PR所说“无libcuda时近似no-op”不能理解成所有环境键完全不动；这是其主动选择运行库的范围，不据此指称新故障。环境变量和函数替换是进程级状态，finally证明单个上下文恢复，不等于线程间隔离或并发启动安全。
+
+### 依赖已经变化的部分
+
+候选pyproject声明SGLang0.5.12.post1，而当前main声明0.5.19；[SGLang v0.5.19依赖](https://github.com/sgl-project/sglang/blob/v0.5.19/python/pyproject.toml)要求torch_memory_saver>=0.0.9.post1，不是该包的精确版本锁。不能仅由main配置推出M5实际安装版，更不能机械沿用旧“替换整个preload／整个字符串当ctypes路径”的假设。
+
+固定[torch_memory_saver v0.0.10 `9026084a`](https://github.com/fzyzcjy/torch_memory_saver/blob/9026084a4ea65b75fd6126a6a0665a88a810d172/torch_memory_saver/hooks/mode_preload.py)：configure_subprocess已经把hook与现有LD_PRELOAD拼接，get_path_binary已经按冒号分割后要求恰好一个相关路径。其[master `118b09b3`](https://github.com/fzyzcjy/torch_memory_saver/blob/118b09b3bc7b0cf386745db1eac2601d4aa7e681/torch_memory_saver/hooks/mode_preload.py)还将已映射libcudart目录置入子进程库路径。这里只读两个固定版本，不推断0.0.9.post1所有行为，也不以一个依赖的改善判整个#468冗余；driver前后顺序、当前wheel路径、HTTP／native接线仍是不同问题。
+
+### 本机只验证环境字典契约
+
+[复查脚本](../../experiments/unirl-scheduler-environment/verify.py)执行候选完整原_split_preloads与_scheduler_spawn_environment，os.environ替换为**独立普通dict**，目录提供者给定夹具，没有改真实进程环境、加载.so或启动scheduler。混合空白／冒号解析返回两个预期路径；无driver时库路径从`/legacy:/active/lib`变为`/active/lib:/legacy`、可见性暂为`3,5`，主动抛异常后原两键逐值恢复。原两键缺失的正常退出控制也恢复到缺失；原helper在父版／main不存在，没有伪造基线运行。
+
+[JSON](../../experiments/unirl-scheduler-environment/result.json)保存两次一致的结果、三版四完整模块的SHA256和Python3.12.13／Darwin环境；12模块AST／compile通过。目录发现、driver文件检查、memory-saver wrapper／hook、真实os.environ、multiprocessing、Ray、HTTP/native Engine、CUDA/GPU均未执行。这不是作者原环境smoke、完整PR审核或新head GPU验收；作者旧#225集成8×H20报告不迁为本机／独立head结果。
+
+```bash
+python -B experiments/unirl-scheduler-environment/verify.py /path/to/UniRL
+```
+
+真机缺口补[原M5入口](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)：先核实际依赖和映射库，再在已有安全、获准部署中决定是否需要该补丁，不自动安装compat、改preload或重启服务。不扩模拟spawn／hook矩阵，不改专项、不新增训练或上游写入。
 
 ## 下一步
 

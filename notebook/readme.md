@@ -261,6 +261,7 @@
 - [GRPO 实战指南](frameworks/grpo-practical-guide.md) — verl 框架 GRPO 训练完整流程、数据格式、配置参数、奖励函数
 - [SGLang 架构深度分析](frameworks/sglang-architecture.md) — RadixAttention 基数树、DSL 前端、FlashInfer 集成、vs vLLM 对比
 - [UniRL 调研（腾讯统一多模态 RL）](frameworks/unirl-survey.md) — 统一训练抽象、稀疏SDE、SFT游标、packed文本双轴与[按域奖励](frameworks/unirl-survey.md#按域奖励的零分与失败标志)；原CPU路由/统计区分零分、失败和非适用NaN，非服务或训练验收
+  - [Scheduler环境与依赖](frameworks/unirl-survey.md#scheduler-子进程环境与依赖版本) — #468两个原helper接独立dict恢复通过，非spawn或库加载；当前memory-saver已变化，不自动套旧shim
   - [路由策略与基准入口](frameworks/unirl-survey.md#路由策略与基准入口) — #529新反馈与当前调用链：同步基准不经过pool，Agentic siblings与普通turn不同；亲和、缓存命中和吞吐证据分开，仅源码学习
   - [AR种子与请求规划](frameworks/unirl-survey.md#ar-种子配置与逐样本请求) — #474已合并不等于#507完成；原生Sample/完整原解析器六组CPU入口控制，SGLang有确定性前提、n=1不减组fanout，非采样或复现验收
   - [IPC共识门与物化边界](frameworks/unirl-survey.md#原生-ipc-的共识门与物化边界) — #494区分source/chunk门；raw项可含逐expert DTensor重分布，边界覆盖须核真实producer，14次静态检查非通信/死锁验收

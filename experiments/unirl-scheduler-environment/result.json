@@ -1,0 +1,39 @@
+{
+  "environment": {
+    "python": "3.12.13",
+    "system": "Darwin"
+  },
+  "results": {
+    "exception_restores_prior_values": true,
+    "no_driver_context": {
+      "CUDA_VISIBLE_DEVICES": "3,5",
+      "LD_LIBRARY_PATH": "/active/lib:/legacy"
+    },
+    "normal_exit_restores_absent_keys": true,
+    "parsed_preloads": [
+      "/compat/libcuda.so.1",
+      "/hook/libtorch_memory_saver.so"
+    ],
+    "real_process_environment_unchanged": true
+  },
+  "scope": "two original head helper bodies; local controls, not upstream tests; isolated dict plus directory-provider fixtures; all 12 modules syntax checked; no real env mutation, scheduler spawn, library loading, TMS wrapper/hook runtime, SGLang/Ray/engine/driver/GPU or dependency installation",
+  "source_sha256": {
+    "3dac11fbdf691dde142c74b0db0a6556a0d52966:unirl/rollout/engine/sglang/backends/base.py": "02f3d97d775abf02d1aca53380edfd4fdfe210c320bbd76448e0b6e3f0f3c178",
+    "3dac11fbdf691dde142c74b0db0a6556a0d52966:unirl/rollout/engine/sglang/backends/http.py": "ab2a133df3c4ce0dd76c26d3ed8653e0544c0c03701c037b5e8862dda38ab68f",
+    "3dac11fbdf691dde142c74b0db0a6556a0d52966:unirl/rollout/engine/sglang/backends/native.py": "6e569f81009bbb804034d5311bb8d2c1c7d45affbff63d82b124c7b2ef72bb7d",
+    "3dac11fbdf691dde142c74b0db0a6556a0d52966:unirl/rollout/engine/sglang/engine.py": "96732c0323a22eda5f5d2d171bc86bf784d3ee5f02504a4acab6d4dd5bf380b7",
+    "6fd82cba13f52f394747832344039408699ea378:unirl/rollout/engine/sglang/backends/base.py": "d34bbae12080202ad532df4e33907061248bea05bff05d9b847ee4ffb68a1fc2",
+    "6fd82cba13f52f394747832344039408699ea378:unirl/rollout/engine/sglang/backends/http.py": "5dfd46d0bf5628eef105a729e30a18b93698757372d01d5cb087e364c5058ff1",
+    "6fd82cba13f52f394747832344039408699ea378:unirl/rollout/engine/sglang/backends/native.py": "8a767886568294ef5f1f67bb187270e2bea0654cb35112c933d97ddcd7f6354b",
+    "6fd82cba13f52f394747832344039408699ea378:unirl/rollout/engine/sglang/engine.py": "6a5385f84b2fe7a52c7507d48cde211bf878ed9f47f32e681fd2f27ed6f39948",
+    "f989c03825f187607bcbe6eaf6178909b798b43f:unirl/rollout/engine/sglang/backends/base.py": "0a50f5b2882f31da4d65fb84becb9b0eed078ebce2f86221e437727552b6df6f",
+    "f989c03825f187607bcbe6eaf6178909b798b43f:unirl/rollout/engine/sglang/backends/http.py": "f44d31bdff051d13ab09c4b9cf4978d374e87451398886fb86ffb22a94b8fee3",
+    "f989c03825f187607bcbe6eaf6178909b798b43f:unirl/rollout/engine/sglang/backends/native.py": "ceba9ba8fc2369137ba908c132bb1bffa696c342acf43c0c8271a091f87bfdba",
+    "f989c03825f187607bcbe6eaf6178909b798b43f:unirl/rollout/engine/sglang/engine.py": "46d0bcac9fbe637edae2086e447790cf48cca300faa49796dd2c694e6a283480"
+  },
+  "versions": {
+    "base": "f989c03825f187607bcbe6eaf6178909b798b43f",
+    "head": "3dac11fbdf691dde142c74b0db0a6556a0d52966",
+    "main": "6fd82cba13f52f394747832344039408699ea378"
+  }
+}

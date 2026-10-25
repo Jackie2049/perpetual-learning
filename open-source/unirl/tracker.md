@@ -9,7 +9,7 @@
 
 **【价值评估】** 7 / 10 — 甄别"未认领、无 PR、可落地"的开放空间，避免重复投入已有人认领的 RFC。
 
-**【进展】** #523 的我方 fork PR 已获用户认可，测试与 e2e 正式指派 M5；M5 已闭环 L0（四项断言 + pristine 对照），L1 仍待 ≥8 卡及获准权重/存储，见[M5交接](../../experiments/handoff-m5.md)。#567 待匹配 H20；#470/#481/#484已有作者或验证条件。2026-10-25补[MPS已有实现与主线边界](#mps-共置的已有实现与当前边界)：#492已合并、#482被接替而关闭未合并；原配置四控制非接入、数值、吞吐或关停验收，不据正文设计或本地解析另认领功能。 同日补[SDE窗口已有修复](#sde-窗口调度的已有修复)：#489已合并，CPU序列只核计数／阈值坐标，四实际配方仍progressive，不另认领或排GPU任务。
+**【进展】** #523 的我方 fork PR 已获用户认可，测试与 e2e 正式指派 M5；M5 已闭环 L0（四项断言 + pristine 对照），L1 仍待 ≥8 卡及获准权重/存储，见[M5交接](../../experiments/handoff-m5.md)。#567 待匹配 H20；#470/#481/#484已有作者或验证条件。2026-10-25补[MPS已有实现与主线边界](#mps-共置的已有实现与当前边界)：#492已合并、#482被接替而关闭未合并；原配置四控制非接入、数值、吞吐或关停验收，不据正文设计或本地解析另认领功能。 同日补[SDE窗口已有修复](#sde-窗口调度的已有修复)：#489已合并，CPU序列只核计数／阈值坐标，四实际配方仍progressive，不另认领或排GPU任务。 2026-10-26核[Scheduler环境](#scheduler-环境兼容的已有候选)：#468两个原helper接独立dict核恢复，不是库加载／GPU验收；依赖已演进，条件补M5，不另实现。
 
 **【大白话讲明白】**
 
@@ -23,6 +23,12 @@
 <!-- contribution-summary:end -->
 
 > 扫描时间 2026-10-22（GitHub 实时 API）。main 固定 `6fd82cba`。状态以当日核验为准，继续前重新核对关联 issue/PR。
+
+## Scheduler 环境兼容的已有候选
+
+2026-10-26只读核OPEN/non-draft [#468](https://github.com/Tencent-Hunyuan/UniRL/pull/468)全文、四文件diff及空普通评论／reviews／行内；维护者CjhHa1已有实现，关键词检索已命中，不另认领。head3dac11fb、父版／目标base／祖先f989c038，相对当前main6fd82cba ahead1／behind105，四文件214增5删；本轮未重复已有TP同步或rollout校正研究。
+
+见[原UniRL专题](../../notebook/frameworks/unirl-survey.md#scheduler-子进程环境与依赖版本)：两个原helper接独立dict／目录夹具，解析及异常／正常恢复过，12模块AST／compile；不是原作者smoke、真实环境／scheduler／TMS／CUDA或完整PR审核。候选基于旧SGLang0.5.12.post1，main0.5.19；固定memory-saver v0.0.10已处理复合preload，不据旧假设自动拼接或据依赖演进判整体失效。真实库映射缺口补M5原条件参考，无探测、部署、新队列或社区写入。
 
 ## SDE 窗口调度的已有修复
 
