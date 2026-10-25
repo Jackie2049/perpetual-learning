@@ -362,6 +362,38 @@ ray_trainer.py (974-1108):
 
 另从#7955原测试类摘取`test_missing_tracker_makes_auto_resume_start_from_scratch`完整原方法，绑定原helper及真实unittest/临时目录，一项通过。它只证明发现入口，不是实际恢复模型或完整ActorConfig测试。Python3.12.13/torch2.14.1，无distributed初始化、trainer、Ray、FSDP/DCP或checkpoint数据保存/加载；四个相关原模块另仅AST/compile，作者14测试/5 subtests不是本机结果。版本与hash留[当日日志](../../diary/2026-10-24.md)，实际整合条件留[M5参考](../../experiments/handoff-m5.md#verl-训练-checkpoint-发布参考)，不新增实验队列、应用候选或对外发布。
 
+### 对象存储下载与 checkpoint 提交
+
+**下载入口能读对象存储，不等于训练状态已经完整写入并可恢复。** [S3 RFC #7641](https://github.com/verl-project/verl/issues/7641)提出原生FSDP2对象存储生命周期；2026-10-25读取全文及唯一评论，维护者[询问S3 FUSE挂载路线](https://github.com/verl-project/verl/issues/7641#issuecomment-5487704372)，尚不是对某个实现的采纳或验收。查重另有旧[#2334](https://github.com/verl-project/verl/pull/2334)（head23bd321f，17文件774增54删）与下载侧[#6850](https://github.com/verl-project/verl/pull/6850)，两PR均OPEN／非draft／未合并；本轮不另写后端或自动选型。
+
+RFC的 `trainer.default_remote_dir` 与 `_COMMITTED` 是提案接口；#2334正文给出的是 `trainer.s3_checkpoint_dir`。不能把不同候选中的配置名拼成主线已可使用的统一API。
+
+#### 当前路径与下载候选
+
+固定main `3c6d9b43b67c74ec343d77874cd8fa6e841523da` 的[fs.py](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/utils/fs.py)只将hdfs://归为non_local；默认use_shm=False时，`copy_to_local("s3://...")`原样返回URI，并没有发起S3下载。[FSDP manager](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/utils/checkpoint/fsdp_checkpoint_manager.py)的hdfs_path明确未使用；legacy PPO的_load_checkpoint遇default_hdfs_dir非空直接拒绝，SFT共享handler的发现入口也以本地路径为准。不能给hdfs参数换一个URI就宣布获得对象存储恢复；挂载路径则应另按实际文件系统语义判断。
+
+#6850固定head `c87b60ceace43f33eee027c95cbab32d05f8bc74`，API目标base3f9d4c0d；官方compare实际祖先为 `2390a3f5cff9d80d4844f8b4616ef8c2616276de`，ahead2／behind344，三文件120增4删。head本身是merge，直接第一父提交已含功能，不能将空parent diff当作没有实现。候选保持is_non_local仅识别HDFS，另加is_fsspec_path，将下载交给fsspec.fs.get，复用MD5路径缓存／filelock／目录记录；没有上传器、分布式checkpoint marker或remote resume发现协议。
+
+本机Python3.12.13、fsspec2026.7.0、filelock4.2.4、pytest9.1.1，执行完整原fs.py／hdfs_io.py模块，原测试仅替换框架import，选择该候选新增的五测试体，结果重复一致：
+
+| 原五测试体 | 固定main／实际祖先 | 候选head |
+| --- | --- | --- |
+| URI分类 | 缺is_fsspec_path，AttributeError | 通过 |
+| 单文件下载、glob拒绝、目录尾斜线 | 三项预期检查失败 | 三项通过 |
+| 本地路径透传 | 通过 | 通过 |
+
+使用真实fsspec MemoryFileSystem和临时本地缓存，不是S3服务；未跑同文件另外三项HDFS mock测试或完整原生pytest套件，也未安装s3fs／gcsfs、读取云凭据、访问桶／HDFS或执行checkpoint manager。URI分类通过不证明相应云后端已安装，memory下载通过不证明认证、重试、远端校验或持久性。主线另一个S3 URI透传控制只核函数返回值，没有云端请求。
+
+#### 多对象完成条件需要应用协议
+
+[AWS一致性说明](https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html#ConsistencyModel)区分单key原子更新与跨key事务：成功PUT后的读取／列举可见，不代表多个rank的不同对象同时完成。因而“能LIST到global_step前缀”不是完整checkpoint条件；[条件写入](https://docs.aws.amazon.com/AmazonS3/latest/userguide/conditional-writes.html)可约束单对象覆盖，但不会自动建立整步事务。RFC提出先上传分片及common.pt，再发布actor/.metadata与最后的_COMMITTED，这是待实现／验收的协议，不是主线已有保证。
+
+审阅时应追问marker引用的对象集合是否固定、如何绑定run／step／world_size及对象内容、是否容许随后覆写，以及多writer重试怎样避免同前缀混入另一快照。只有marker名或对象存在不能回答这些问题。multipart完成只组装**一个对象**，不是一次提交所有rank；[AWS文档](https://docs.aws.amazon.com/AmazonS3/latest/userguide/mpuoverview.html)也说明最终ETag不必是内容MD5，校验不能无条件以ETag代替约定的checksum。这些是存储协议审阅条件，不是本机发现某个已实现S3后端的新故障。
+
+RFC的初期范围为actor-only、相同FSDP world size；包含critic的训练仍须另说明critic与数据／scheduler／RNG的同一步恢复契约。作者1.37TiB／64rank案例中，save_state返回约5.1秒与durable save约39.4秒分别描述暂停和持久化延迟，不能把前者当全部远端完成。本轮没有重跑该案例，也没有核验#2334完整17文件或其mock上传测试，不将其正文中的auto-resume主张挪作RFC实现或本机结果。
+
+FUSE可以提供另一种路径接口，但仍须指定实现／版本并验证写入、seek、rename／关闭／同步、并发可见和冷恢复语义；不因能挂载就视为POSIX等价，也不未经实测否决这条路线。后续选型应先取得维护者方向与用户明确的云资源授权，而不是拼接#2334／#6850／RFC或从本机更多缓存测试推导durability。[复查脚本](../../experiments/verl-object-store-read/verify.py)、[结果](../../experiments/verl-object-store-read/results.json)随仓库保存，命令／hash见[当日日志](../../diary/2026-10-25.md)；GPU／云端恢复条件只补[原M5参考](../../experiments/handoff-m5.md#verl-训练-checkpoint-发布参考)，不新建存储服务或实验队列。
+
 ### 保留目录与完整恢复的边界
 
 `max_ckpt_to_keep` 控制已登记目录的淘汰，不是保存事务或磁盘容量上限。`BaseCheckpointManager` 将“保存前腾位置”和“成功后登记”拆开，避免上限为 1 时提前删掉唯一旧目录。[固定版本源码](https://github.com/verl-project/verl/blob/1876b06d0a3e4e71e06230be10af14492ca8a75b/verl/utils/checkpoint/checkpoint_manager.py)

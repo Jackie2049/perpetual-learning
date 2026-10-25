@@ -1,0 +1,51 @@
+{
+  "python": "3.12.13",
+  "fsspec": "2026.7.0",
+  "filelock": "4.2.4",
+  "pytest": "9.1.1",
+  "results": {
+    "2390a3f5cff9d80d4844f8b4616ef8c2616276de": {
+      "test_is_fsspec_path": "AttributeError: module 'isolated_fs' has no attribute 'is_fsspec_path'",
+      "test_copy_to_local_fetches_fsspec_file": "AssertionError: ",
+      "test_copy_to_local_local_path_passthrough": "PASS",
+      "test_copy_to_local_rejects_fsspec_glob": "Failed: DID NOT RAISE ValueError",
+      "test_copy_to_local_fsspec_dir_trailing_slash": "AssertionError: Make sure the last char in src is not / because it will cause error. Got memory://ckpt/"
+    },
+    "c87b60ceace43f33eee027c95cbab32d05f8bc74": {
+      "test_is_fsspec_path": "PASS",
+      "test_copy_to_local_fetches_fsspec_file": "PASS",
+      "test_copy_to_local_local_path_passthrough": "PASS",
+      "test_copy_to_local_rejects_fsspec_glob": "PASS",
+      "test_copy_to_local_fsspec_dir_trailing_slash": "PASS"
+    },
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da": {
+      "test_is_fsspec_path": "AttributeError: module 'isolated_fs' has no attribute 'is_fsspec_path'",
+      "test_copy_to_local_fetches_fsspec_file": "AssertionError: ",
+      "test_copy_to_local_local_path_passthrough": "PASS",
+      "test_copy_to_local_rejects_fsspec_glob": "Failed: DID NOT RAISE ValueError",
+      "test_copy_to_local_fsspec_dir_trailing_slash": "AssertionError: Make sure the last char in src is not / because it will cause error. Got memory://ckpt/"
+    }
+  },
+  "source_sha256": {
+    "2390a3f5cff9d80d4844f8b4616ef8c2616276de": {
+      "fs.py": "fcc6443d2e42b44c510ad9f25979d08a3373927e3660518bae6711790cdc8c51",
+      "hdfs_io.py": "14ea05cfdf000666899109a417d8d8bd23cb02afc43e06c16a861a3020590bd8"
+    },
+    "c87b60ceace43f33eee027c95cbab32d05f8bc74": {
+      "fs.py": "81670cac0d7106bd5c2ebb8faf51818c76485e13dd385cc24b90047f7cf91743",
+      "hdfs_io.py": "14ea05cfdf000666899109a417d8d8bd23cb02afc43e06c16a861a3020590bd8"
+    },
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da": {
+      "fs.py": "fcc6443d2e42b44c510ad9f25979d08a3373927e3660518bae6711790cdc8c51",
+      "hdfs_io.py": "14ea05cfdf000666899109a417d8d8bd23cb02afc43e06c16a861a3020590bd8"
+    }
+  },
+  "original_test_sha256": "5f75d4f246df3967421294d911317f8a9e772ed916d1f80573b414239f71a025",
+  "static_only_sha256": {
+    "verl/utils/checkpoint/fsdp_checkpoint_manager.py": "ff5aa26224081af3937155f19561629e8e1da69bf290ec2fc67953dd4704ff22",
+    "verl/utils/checkpoint/checkpoint_handler.py": "3b547c2b97e01b7587866053b4aa624d81b8cdd9d75fff20a97420690206a896",
+    "verl/trainer/ppo/ray_trainer.py": "eb41f99ccc66976eab14ebe35aa1aa5b7318e02469240ef1569ac4c884c94312"
+  },
+  "main_s3_uri_passthrough": true,
+  "scope": "original five download bodies; real memory backend and temporary cache, no S3/GCS/HDFS I/O or checkpoint manager execution"
+}

@@ -315,6 +315,8 @@ M5 最小下一步：先判断是否有获准使用的对应配置、完整 toke
 
 ## verl 训练 checkpoint 发布参考
 
+S3层级参考（2026-10-25，同一入口非新增云／训练队列）：[#7641](https://github.com/verl-project/verl/issues/7641)为设计RFC，维护者询问FUSE；旧[#2334](https://github.com/verl-project/verl/pull/2334) head23bd321f和下载侧[#6850](https://github.com/verl-project/verl/pull/6850) headc87b60ce尚未合并。[M1原五下载测试体](../notebook/frameworks/verl-checkpoint-management-reading.md#对象存储下载与-checkpoint-提交)只用真实memory后端／本地缓存，非S3／上传／分布式恢复。若将来用户明确选定云端checkpoint路线并提供安全环境、获准非生产桶／前缀与完整配方，M5再独立核最终实现、所有必要角色／数据／optimizer状态、单对象上传完成与整步发布者、失败传播／退出drain和冷恢复后下一步；不得以5.1秒save返回、目录可见、单key条件写或ETag当整步durability。无明确云资源授权、缺安全环境／实现／权重，需部署挂载／付费资源或影响专项即停记未测，不自动建桶、读凭据、上传／删除对象、拼接候选或启动64rank复刻。任何上游可见动作仍逐项需用户同意。
+
 Megatron调度恢复参考（2026-10-25，复用本入口非新队列）：[#7954](https://github.com/verl-project/verl/pull/7954) head53e63285/base fbb4b3a8已覆盖两处加载门控；[M1官方scheduler/真实CPU SGD六控制](../notebook/frameworks/verl-checkpoint-management-reading.md#megatron-调度进度与超参数恢复)不运行manager或分布式恢复。若M5已有获准匹配checkpoint工作且独立选用，固定实际MCore、普通或Megatron-FSDP路径、load_contents及新scheduler初始计数，分开记录flag/全局超参数、恢复num_steps、各参数组max_lr/min_lr/当前LR与下一次更新；原实现加载为增量，勿对已推进对象重复加载来验证冷恢复。普通SGD组覆盖反例不是Megatron分组bug证明，须核实际optimizer payload/组身份及完整恢复次序。缺资源/模型依赖授权、需部署下载或影响专项则停止记未测，不应用/改schema/重复加载生产对象或新增训练；任何上游可见写入及PR head推送仍须用户对动作明确同意。
 
 状态：仅条件参考，不代表接单或新增训练队列。目的为将来已有获准checkpoint工作中区分异步数据完成、发布tracker与冷恢复完整状态。已有[#7955](https://github.com/verl-project/verl/pull/7955) headb8c1aa6a仅加actor配置保护；[#4311](https://github.com/verl-project/verl/pull/4311)旧headf0411c95与目标base已明显分叉，其DCP完成日志非当前PPO发布接线。[M1原专题](../notebook/frameworks/verl-checkpoint-management-reading.md#异步保存能力与恢复指针)仅查找helper五组真实文件系统控制+原一方法及四份compile，无实际保存/加载、FSDP/DCP或设备执行。
