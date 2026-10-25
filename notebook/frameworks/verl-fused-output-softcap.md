@@ -1,10 +1,53 @@
 # verl 融合输出头与 logit softcap
 
+2026-10-25补充：[选定 token 概率与共享归一化项](#选定-token-概率与共享归一化项)区分#7712已收窄的引擎输出提案、旧fork组合器和新的恒等式；FP64 CPU数学／梯度对照不是fused、布局或训练验收。
+
 2026-10-25接续：[Megatron 融合权重的就绪与调度](#megatron-融合权重的就绪与调度)说明直接读取参数会绕过DDP前向钩子。#8029原23项CPU生命周期测试通过，不是实通信或融合kernel验收；FSDP注册方法、Megatron bucket就绪和softcap数学仍是不同问题。
 
 2026-10-24 接续：[独立分片 head 的执行与梯度归属](#独立分片-head-的执行与梯度归属)讨论FSDP生命周期；它与下方softcap数学语义是两个独立问题，旧36组CPU结果不验证分布式修复。
 
 通用 fused output head 直接消费hidden states和输出权重，绕过模型原始forward中的输出处理，因此必须保留原模型对logits的变换。省去 `c*tanh(z/c)` 不只是更换计算精度，会改变 log-prob、熵和梯度。verl [#7991](https://github.com/verl-project/verl/pull/7991)选择在不支持时拒绝通用 fused 路径，而不是补上 softcap kernel。
+
+## 选定 token 概率与共享归一化项
+
+**返回少数列不代表计算天然便宜，但已有的标签概率可以携带全词表归一化项。** [RFC #7712](https://github.com/verl-project/verl/issues/7712)作者于2026-10-03[撤回目标组合器、插件加载及归约schema](https://github.com/verl-project/verl/issues/7712#issuecomment-5966319867)，称GenRank已通过`TrainingWorker.set_loss_fn`组合目标；剩余请求是默认关闭的`model_output["selected_token_logprobs"]`，包括fused路径，不再以新增kernel为前提。2026-10-25读完整正文及全部5评论；WenzheWang之前已请求认领kernel切片，但没有在这段讨论中获得确认，不另建组合器、kernel或竞争方案。
+
+[旧fork draft #1](https://github.com/eteluna/verl/pull/1)仍open／draft／未合并，head `f894f21e7cec29f04ddef30cc9593ddfab7a1503`、base `e42d6af6e85dd37c907af5ea99326355c376bd97`，更新时间为9月9日；正文仍是组合器与eager共享log-softmax、启用selected时拒绝fused。它不是10月3日恒等式方案的已发布实现。编号与selected_token_logprobs的上游all-state PR搜索均为空，不据此认定无人推进；旧66项CPU测试和作者GPU报告均非本机结果。
+
+### 恒等式与梯度来源
+
+设`z`为**同一位置、同一温度、同一logit变换与精度语义**下的最终logits，`A=logsumexp(z)`，标签为`y`，选定ID为`i`：
+
+```text
+log p(i) = z_i - A
+         = log p(y) + z_i - z_y
+```
+
+线性无偏置输出头可用`h @ W[ids].T / temperature`取得少量选定logits，并取得每行标签logit。额外投影不必另建完整`[T,V]`输出，但原标签路径仍要计算全词表归一化与其梯度；输出权重／权重梯度也仍有词表维度。这不是将整个输出头计算量降至只依赖选定列数。
+
+若两种输出收到上游权重`a_t`、`b_ti`，复用表达式令标签概率支路收到`a_t + sum_i b_ti`，另外两项投影补回选定与标签logit的梯度。**不能detach标签概率锚点**：那会丢失全词表归一化项的导数，虽然forward值不变。精确算术下，最终梯度与完整log-softmax相同；这不自动保证任意后端的舍入、自定义backward或原地修改相容。
+
+选定列仍是全词表概率，通常和不为1。若消费者确实要条件于选定集合的分布，可再减去这些列的logsumexp，此时共同归一化项消去；这是不同的目标。均匀7词表选2列时，每列全词表概率为1/7，集合内条件概率为1/2，不能把二者都叫“校准概率”而不标分母。
+
+### 当前引擎边界与性能证据
+
+固定主线`3c6d9b43b67c74ec343d77874cd8fa6e841523da`的[通用dense适配器](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/models/transformers/dense_common.py)只返回log_probs与entropy，优先采用engine提供的shift_labels；[FSDP引擎](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/workers/engine/fsdp/transformer_impl.py)在remove-padding／SP路径先全局roll再切标签，随后gather／去padding／jagged重包。生产树检索没有selected_token_logprobs字段；新输出必须沿同一token身份与重包路径，不能把局部hidden与全局标签直接相减。
+
+当前fused入口还拒绝逐样本温度；[torch输出头](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/utils/experimental/torch_functional.py)先投影／除温度，再转FP32求log-softmax；[Triton包装器](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/utils/kernel/linear_cross_entropy.py)则调用专用kernel。本轮未逐行审查Triton内部算术，不能由相同dtype名称宣布两条支路舍入相同。带bias／softcap等变换、ignored标签、不同head及FSDP参数可读生命周期也各须匹配实际契约；纯恒等式没有解决这些集成条件。
+
+作者10月3日报告的是H200、BF16、H=1024、V=151936、M=5的单算子forward+backward：6.8k token时，Liger label-only到identity方案的算子额外峰值为0.59→0.90 GB、耗时20.1→21.1 ms；不是整步训练只加1 ms。相对旧eager参考的节省还包含更换backend的差异，torch+identity在同表中反而慢于eager参考，不能概括为“恒等式对所有后端均提速”。此前16×H200的eager组合器训练报告属于旧方案，不迁移为新接口的端到端证据。
+
+### FP64 CPU 数学对照
+
+[复现脚本](../../experiments/verl-selected-logprob-identity/verify.py)与[原始结果](../../experiments/verl-selected-logprob-identity/results.json)使用真实torch2.14.1 CPU autograd，固定T=4、H=3、V=7、M=2、temperature=0.7及seed7712。标签概率来自dense参考，不是原fused kernel，脚本本身物化`[T,V]`作为oracle，不用于显存／速度测量。
+
+恒等式与dense全log-softmax的输出、hidden梯度与weight梯度最大误差分别为8.88e-16、4.44e-16、3.33e-16；detach锚点负控制保持相同值，梯度却分别偏离2.6754与1.2801。集合内重归一化的值与梯度也在1e-12内一致；该控制只有一个固定FP64形状，没有BF16、ignored标签、padding／SP或kernel覆盖。两次运行结果一致。
+
+```bash
+/private/tmp/verl312/bin/python -B experiments/verl-selected-logprob-identity/verify.py
+```
+
+四份完整相关主线模块另过AST／内存compile；没有执行作者测试、engine、模型、原地CE、FSDP或GPU。后续只有接口实质变化或明确协作范围才再评估；[原M5条件参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)不新增训练队列，不自动接管作者工作。
 
 ## 原生 MTP 的梯度与归一化控制
 

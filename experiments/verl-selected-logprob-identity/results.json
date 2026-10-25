@@ -1,0 +1,41 @@
+{
+  "torch": "2.14.1",
+  "device": "cpu",
+  "dtype": "float64",
+  "shape": {
+    "tokens": 4,
+    "hidden": 3,
+    "vocab": 7,
+    "selected": 2
+  },
+  "temperature": 0.7,
+  "seed": 7712,
+  "identity_vs_dense_max_abs_error": {
+    "values": 8.881784197001252e-16,
+    "hidden_grad": 4.440892098500626e-16,
+    "weight_grad": 3.3306690738754696e-16
+  },
+  "detached_anchor_negative_control": {
+    "values": 8.881784197001252e-16,
+    "hidden_grad": 2.6754371609290173,
+    "weight_grad": 1.2800961281653724
+  },
+  "conditional_subset_vs_dense_max_abs_error": {
+    "values": 4.440892098500626e-16,
+    "hidden_grad": 3.3306690738754696e-16,
+    "weight_grad": 3.0531133177191805e-16
+  },
+  "uniform_full_vocab_probs": [
+    [
+      0.14285714285714288,
+      0.14285714285714288
+    ]
+  ],
+  "uniform_conditional_subset_probs": [
+    [
+      0.5,
+      0.5
+    ]
+  ],
+  "scope": "math-only; dense label oracle; no fused/layout/rounding/performance validation"
+}

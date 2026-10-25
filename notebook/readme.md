@@ -171,6 +171,7 @@
 - [V1异步空闲指标](frameworks/verl-6790-async-trainer-reading.md#异步空闲指标与调度等待) — 采样等待、借卡rollout、布尔idle与请求计数分开；旧fully_async比率非V1资源利用率，11份语法检查非训练验收
 - [verl 学习率步数与恢复](frameworks/verl-grpo-training-loop-internals-reading.md#学习率步数与恢复条件) — 原构造器/真实CPU optimizer四轨迹、两恢复与一步覆写；推进后LR不等于刚使用LR，加载状态不重建原调度闭包
 - [verl 融合输出头与softcap](frameworks/verl-fused-output-softcap.md) — #7991拒绝不支持的通用路径，非kernel实现；原torch输出头36组语义分离对照，保留数值超限，原24配置测试未跑
+- [选定token概率与梯度锚点](frameworks/verl-fused-output-softcap.md#选定-token-概率与共享归一化项) — #7712已收窄为引擎输出；全词表与集合条件概率分开，单形状FP64梯度控制非kernel／舍入或训练结果
 - [verl 前向与logprob一致性](frameworks/verl-6572-full-determinism-source-reading.md#actor-前向与-logprob-公式的一致性) — #8026原4数学测试体通过；同logits的公式、批形状前向和训练复现分层，撤回P9完整确定性/固定吞吐推论，非GPU验收
 - [verl 量化层审计与 refit](frameworks/verl-quant-layer-audit.md) — #8132三类证据/24项CPU审计单测；与新#8306的格式、存储和保护覆盖对照，不能混用分支证据
   - [VeOmni计算与通信边界](frameworks/verl-quant-layer-audit.md#veomni-低精度计算与通信边界) — #8342已由作者接续至VeOmni #1360，分工／配置迁移仍待确认；#8330梯度RS、torchao0.18限制与整步性能分开

@@ -237,6 +237,8 @@ ModelOpt忽略规则参考（2026-10-22，同一量化入口不另排队）：�
 
 ## verl 异步策略一致性补证
 
+选定token概率参考（2026-10-25，同一输出头参考、非新增算力队列）：[#7712](https://github.com/verl-project/verl/issues/7712)已收窄，旧fork f894f21e非最新identity实现。[M1数学对照](../notebook/frameworks/verl-fused-output-softcap.md#选定-token-概率与共享归一化项)仅一个固定FP64 dense标签oracle及真实autograd，无kernel／布局／性能；detach标签概率值同梯度错。若M5未来独立选用且已有获准、安全、匹配dense_common／fused观测，先核实际实现、logit变换／温度／舍入与梯度连接，再按原范围核label及selected的同token身份、ignored mask、SP重包、head参数就绪；全词表和集合条件概率分母须标明。缺实现／环境／授权或需新部署下载、影响专项就停记未测，不应用旧组合器、新写kernel或复刻作者H200矩阵。所有社区写入与既有PR-head推送仍需用户对具体动作明确同意，参考非接单。
+
 异步idle口径参考（2026-10-25，同一入口、非新增观测／基准队列）：[#7601](https://github.com/verl-project/verl/issues/7601)已有参与者方案，[M1固定main3c6d9b43源码学习](../notebook/frameworks/verl-6790-async-trainer-reading.md#异步空闲指标与调度等待)仅11模块AST／compile，无调度／服务执行。若M5将来独立选用且已有获准匹配观测，先满足环境安全、授权与资源条件，记录trainer模式、switch有效配置、standalone／hybrid副本身份和同一窗口；结合生成／采样／同步时间线辨别等待与忙碌，不以switch/idle布尔值、gen/step或单点零请求比例认证GPU利用率／调整资源。缺条件则保留未测，不启动新服务／下载、改router或并行推进专项；任何上游评论、PR或既有PR head推送仍逐项待用户明确同意，记录非接单。
 
 原生MTP参考（2026-10-25，同一输出头入口、不新增算力任务）：[#8324](https://github.com/verl-project/verl/issues/8324)已有ISEEKYAN整体原型，[Core个人fork #263](https://github.com/ISEEKYAN/Megatron-LM/pull/263) headb1a29d72仍draft、依赖私有新增契约。[M1八原参数例](../notebook/frameworks/verl-fused-output-softcap.md#原生-mtp-的梯度与归一化控制)仅真实CPU辅助损失／autograd／单进程roll，未执行完整Core、GPT／Hybrid／CP或全模型梯度；fixture无真实embedding绑定且前后有效数相等。M5若已有获准匹配MTP迁移任务并独立选用，先核安全／资源／授权权重、Core/Bridge/TE实际源码与接口接线，记录compute开关、head／backbone分离、runtime CP、真实mask与分母、主loss scale及下一更新；不要由八例通过移除旧补丁或宣布整个迁移可用。无条件即停记未测，不升级环境、下载部署、重排训练、拼已有修复或改AReaL/#523/#8313/DeepInfer；所有社区写入及既有PR-head推送仍逐项待用户明确同意，参考非接单。
