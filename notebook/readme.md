@@ -172,6 +172,7 @@
 - [verl SFT epoch 与加载器恢复](frameworks/verl-checkpoint-management-reading.md#sft-epoch-边界与加载器状态) — #7402原方法、2个原生迭代状态及8组真实CPU数据流控制；最后一批与结束确认不同，legacy回退非边界修复
 - [verl LoRA-only键完整性](frameworks/verl-checkpoint-management-reading.md#lora-only-的键完整性与加载副作用) — #8350原分支八组真实CPU控制；缺adapter被拒绝不等模型回滚，也不认证base权重身份，非原17项或FSDP恢复验收
 - [verl 对象存储下载与checkpoint提交](frameworks/verl-checkpoint-management-reading.md#对象存储下载与-checkpoint-提交) — #6850原五下载测试体通过只认证memory缓存；#7641的_COMMITTED是待验收协议，非主线已有S3恢复。
+- [verl LoRA导出与融合](frameworks/verl-checkpoint-management-reading.md#分片重组与-lora-融合不是同一步) — #7341默认仍分离adapter；原8项配置／早返回通过，融合Mock非数值验证，hash变化也不认证增量正确
 - [verl 复制分片存储隔离](frameworks/verl-checkpoint-management-reading.md#复制分片的存储隔离) — #7503原3测试体base2过1预期失败/head全过；共享view非重叠，输出占用下降不认证合并峰值或重复key根因
 - [verl 局部更新指标聚合](frameworks/verl-6790-async-trainer-reading.md#局部更新的指标聚合) — 原19项pytest及5组CPU观察；日志加权/求和/末值依key而定，比率求和不是整轮平均，正式计时路径另算
 - [verl 会话水位与未消费组上限](frameworks/verl-6790-async-trainer-reading.md#会话水位与未消费组上限) — #8203准入单位与采样/训练释放分开；组额度非逐样本陈旧度或TQ总内存上限，仅源码/语法及4个原schema参数例

@@ -621,6 +621,32 @@ model_merger/fsdp_model_merger.py (35-):
 ★ LoRA: lora_train_meta.json → 重建PEFT config → 分离adapter和base weights
 ```
 
+### 分片重组与 LoRA 融合不是同一步
+
+`model_merger merge` 的 merge 首先指重组训练分片，不自动表示把 LoRA 增量融入基座。[#7285](https://github.com/verl-project/verl/issues/7285)报告者描述三次评估疑似用了基座，并明确承认**当时没有做文件哈希比较**；其标题“byte-identical”不能转述为已实测的哈希结论。源码能确认未主动融合，但实际剩余权重、dtype和序列化布局仍须分别检查，不能据此推断所有导出目录都与最初基座逐字节相同。
+
+2026-10-25 核验已有[候选 #7341](https://github.com/verl-project/verl/pull/7341)，OPEN、非 draft、未合并；唯一普通评论为当时的CLA提示，reviews／行内评论为空。固定head `fb304fc116fbacc2ccfef6c01eefc8acae76bf65`，父提交／与当前main共同祖先 `b75f0d06a72b74e471cd4d3402bcbb0ceaa2e0c8`；相对main `3c6d9b43b67c74ec343d77874cd8fa6e841523da` ahead1／behind280，两文件366增1删。编号与关键词检索已有该覆盖，不另写融合补丁；候选CLI不当作主线已有功能。
+
+#### 默认仍分离 adapter
+
+[原导出方法](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/model_merger/base_model_merger.py)先从state_dict弹出含 `lora_` 的键，保存到 `target_dir/lora_adapter`，再将余下基座键改名后交给HF保存。候选、父版与main的整个 `save_lora_adapter` 方法AST相同；新增的是另一条可选路径，未改变这个分离契约。若使用默认导出而推理只加载根目录、没有加载独立adapter，不能把测得结果当成“基座加LoRA”的效果。
+
+候选 `--fuse-lora` 仅在merge子命令提供，配置默认False；test子命令通过getattr回退仍为False。[融合方法](https://github.com/verl-project/verl/blob/fb304fc116fbacc2ccfef6c01eefc8acae76bf65/verl/model_merger/base_model_merger.py)先调用同一分离函数，再 `model.load_state_dict(..., strict=False)`、`PeftModel.from_pretrained`、`merge_and_unload()`，最后用融合模型的state_dict替换原字典。无adapter键时直接返回None，不尝试导入PEFT。返回None既可以表示完成融合，也可以表示没有adapter，不能单凭返回值认证已应用增量。
+
+代码注释称其adapter目录为临时目录，实际路径仍固定为 `target_dir/lora_adapter`，并非新建唯一临时路径；成功后才调用rmtree，没有try/finally包住加载／融合。在匹配真实数据前要核清输出目录归属与失败残留，不应把它描述为自动回滚或异常安全清理。原分离方法对缺失／零alpha元数据发出警告并写0；本机未执行PEFT，不对其数值后果作验收结论。
+
+#### 配置测试不等于数值融合
+
+[本机脚本](../../experiments/verl-lora-export/verify.py)保留候选原函数、配置类、BaseModelMerger类与原测试体，按AST装载以绕过包初始化；原6个配置／CLI用例和2个无adapter早返回用例通过。[结果](../../experiments/verl-lora-export/result.json)列出8项通过、5项未运行及四份原文件SHA256。配置测试中的os.makedirs仍由原patch拦截，类方法测试仍用原MagicMock；没有导出模型或删除任何adapter目录。Python3.12.13、torch2.14.1、pytest9.1.1、macOS arm64。
+
+未运行的5项涉及真实分离保存或HF分支／PEFT替身；其中两项融合测试把 `PeftModel.from_pretrained` 与 `merge_and_unload` 返回对象设为Mock，fused_state也是独立随机张量，断言没有比较它与真实基座＋adapter的数值关系。即使这些调用测试通过，也只说明接线与成功路径清理，不能认证增量正确。候选完整13项也不是本机8项的别称。
+
+本机没有安装PEFT／accelerate，本轮不扩环境或下载模型。进一步验收应在独立CPU小模型与有效adapter元数据下，对比“基座＋adapter”和融合模型的同输入输出，并检查载入键／dtype／容差；单个文件hash变了仍不足以证明数值正确。这一离线缺口不要求访问GPU，不新增M5算力队列或改其专项；上游只读，不应用候选或发布评审。
+
+```bash
+/path/to/python experiments/verl-lora-export/verify.py /path/to/verl
+```
+
 ### 复制分片的存储隔离
 
 离线合并中的`Replicate()`表示取一个副本的值，不自动表示返回值拥有独立存储。[verl #7503](https://github.com/verl-project/verl/pull/7503)将该分支的`return tensors[0]`改为`.clone()`；2026-10-23读取open，作者amanyagami，固定head `e2d9f145d9176f8a0763bb3cd43ed430a4ca6d8b`、目标base `3f9d4c0d32cc20c7ec31c8137e91bb5673ce9e5e`、实际祖先 `8df88be746801b6d87c42e15f9a5a0ec1d5eeeae`（ahead2/behind89），两文件104增1删。当前版本只改变复制分支，已撤去此前广泛拒绝共享storage的guard；不能把旧版guard或目标分支的其他变更算进本候选。

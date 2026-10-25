@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-lora-export/verify.py](verl-lora-export/verify.py) | #7341原6配置／2无adapter CPU测试体，[结果](verl-lora-export/result.json)；5项未运行，无PEFT／融合或文件导出 | [分片重组与LoRA融合](../notebook/frameworks/verl-checkpoint-management-reading.md#分片重组与-lora-融合不是同一步) |
 | [verl-reward-validation/verify.py](verl-reward-validation/verify.py) | #7217原两参数CPU测试体／三版原方法，[结果](verl-reward-validation/result.json)；真实容器、原假远程句柄，非Ray／TQ／奖励服务 | [验证标志与元数据](../notebook/frameworks/verl-reward-integration-reading.md#异步奖励的验证标志与元数据范围) |
 | [verl-balance-scalars/verify.py](verl-balance-scalars/verify.py) | #7281原两项CPU测试体及同一原FP32反例的三版分区对照，[结果](verl-balance-scalars/result.json)；非trainer／DP或性能测试 | [标量类型与局部收益](../notebook/frameworks/verl-grpo-source-reading.md#python-分区的标量类型与性能范围) |
 | [verl-resume-retention/verify.py](verl-resume-retention/verify.py) | #7396两原文件22项隔离CPU测试及两版原重启回归，[结果](verl-resume-retention/results.json)保留macOS别名条件失败；只删新建scratch，非真实checkpoint恢复 | [重启保留与路径身份](../notebook/frameworks/verl-checkpoint-management-reading.md#重启后的保留状态与路径身份) |

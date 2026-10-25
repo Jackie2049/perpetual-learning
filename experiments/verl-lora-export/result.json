@@ -1,0 +1,40 @@
+{
+  "environment": {
+    "machine": "arm64",
+    "pytest": "9.1.1",
+    "python": "3.12.13",
+    "system": "Darwin",
+    "torch": "2.14.1"
+  },
+  "not_run": [
+    "TestFuseLoraIntoModel.test_fuse_calls_merge_and_unload",
+    "TestFuseLoraIntoModel.test_fuse_cleans_up_temp_adapter_dir",
+    "TestSaveHfModelBranching.test_fuse_lora_false_calls_save_lora_adapter",
+    "TestSaveHfModelBranching.test_fuse_lora_true_calls_fuse_method",
+    "TestSaveLoraAdapterSplitsKeys.test_lora_keys_removed_from_state_dict"
+  ],
+  "passed_original_cases": [
+    "TestFuseLoraConfig.test_config_default_is_false",
+    "TestFuseLoraConfig.test_config_accepts_true",
+    "TestFuseLoraConfig.test_cli_flag_parsed",
+    "TestFuseLoraConfig.test_cli_flag_absent",
+    "TestFuseLoraConfig.test_generate_config_passes_fuse_lora",
+    "TestFuseLoraConfig.test_test_operation_no_fuse_lora",
+    "TestSaveLoraAdapterSplitsKeys.test_no_lora_keys_returns_none",
+    "TestFuseLoraIntoModel.test_no_lora_keys_returns_none"
+  ],
+  "scope": "original config/no-adapter cases; no PEFT import, fusion, model saving, Ray or GPU",
+  "source_sha256": {
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/model_merger/base_model_merger.py": "1606b18a1f6b4ff9d235dd1b6001242dc2d9201d5bd529172a64f0b555ccd5a7",
+    "b75f0d06a72b74e471cd4d3402bcbb0ceaa2e0c8:verl/model_merger/base_model_merger.py": "9e3fe856235ca166746663e97c13201d38c8ac1c7d74eada9525ca03bb143f83",
+    "fb304fc116fbacc2ccfef6c01eefc8acae76bf65:tests/model_merger/test_fuse_lora.py": "577d714c103ae73ec459a9051c88429a60e62291d78f5a8a71905a84a2f7694c",
+    "fb304fc116fbacc2ccfef6c01eefc8acae76bf65:verl/model_merger/base_model_merger.py": "07bf8cb7f947dab9696f08940a90f9760269285c6016077ac14f7a3514d281c8"
+  },
+  "split_method_ast_matches_ancestor": true,
+  "split_method_ast_matches_main": true,
+  "versions": {
+    "ancestor": "b75f0d06a72b74e471cd4d3402bcbb0ceaa2e0c8",
+    "head": "fb304fc116fbacc2ccfef6c01eefc8acae76bf65",
+    "main": "3c6d9b43b67c74ec343d77874cd8fa6e841523da"
+  }
+}

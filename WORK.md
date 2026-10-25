@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 LoRA导出与融合口径（2026-10-25）**：起始e402eaa干净，compare保留827新增1无删改，ff12a6a04保全M5。转[#7285已有#7341](open-source/verl/tracker.md#lora-导出与可选融合的已有候选)，不另实现；[原检查点专题](notebook/frameworks/verl-checkpoint-management-reading.md#分片重组与-lora-融合不是同一步)分清分片重组／分离adapter／可选融合。原8配置／无adapter测试体通过、5项未运行；原融合Mock非数值验收，hash未实测不泛化byte-identical，成功清理非异常事务。脚本JSON随仓库，未装PEFT／改环境或导出用户模型；离线缺口无需新GPU／M5队列，专项／上游未动。下轮转独立真实需求／实质反馈，不扩Mock融合矩阵或另造融合补丁。
+
 - **M1 异步奖励验证元数据（2026-10-25）**：起始b198e6a干净，fetch无新增、compare保留825无删改。新问题[#7121已有#7217](open-source/verl/tracker.md#异步奖励验证标志的已有修复)，不另实现；[原奖励专题](notebook/frameworks/verl-reward-integration-reading.md#异步奖励的验证标志与元数据范围)原两参数CPU测试体候选通过，祖先／main签名预期失败，另按实际签名核到空meta_info。validate单项与kwargs逐行字段不同，非全批透传；真实容器／原假句柄非Ray、TQ或服务。脚本JSON随仓库，无新算力／专项或上游动作。下轮转独立需求／实质反馈，不扩假远程／元数据矩阵或另做通用透传。
 
 - **M1 批均衡标量与性能口径（2026-10-25）**：起始85af6f5干净，fetch无新增、compare保留823无删改。读[#7279／已有#7281](open-source/verl/tracker.md#批均衡的标量转换已有候选)，不另实现；[原GRPO专题](notebook/frameworks/verl-grpo-source-reading.md#python-分区的标量类型与性能范围)原两CPU测试体两次通过，同一原FP32输入三版Tensor分区一致，裸tolist改变分区。候选保NumPy浮点累加；他方ABBA局部省61ms但整步未提速，非本机性能。五文件语法非完整测试／trainer／DP，无新M5队列、专项／服务器或上游动作。下轮转独立真实需求／实质反馈，不扩dtype／长度／性能矩阵或另写转换修复。
