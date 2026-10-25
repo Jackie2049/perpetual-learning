@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[V1到期保存](#v1-到期保存的已有修复)：#7760原12个stub测试通过，但共享helper的云厂商门槛不同，声明的fit守卫在当前测试中不存在；反馈仅留个人项目待审，不另实现或对外发布。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[代码部分分数](#代码部分分数的已有修复)：#8022原真实执行／mock两例候选通过，保留一次已知错误并非全量正确率，不另实现或对外发布；此前V1保存／RLOO反馈仍仅存个人项目待审。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## 代码部分分数的已有修复
+
+2026-10-25读[#8021](https://github.com/verl-project/verl/issues/8021)全文／0评论，编号及code reward关键词查重已有报告者no-hup的[#8022](https://github.com/verl-project/verl/pull/8022)，open、非draft、未合并、唯一普通评论仅CLA机器人、0行内评论。head a5aef7cd、父提交／API base／祖先6093e007，四文件32新增，不另实现；#8175／#8360是已有调用格式修复，未拼接。
+
+见[原奖励专题](../../notebook/frameworks/verl-reward-integration-reading.md#代码奖励的已知失败与部分分数)：完整原本地判题器执行固定无害程序，错第11例的旧版得1、候选10/11；原本地真实测试与远端mock测试均base失败／head通过。21例中10对11错仍得10/11，不是10/21全量比例；本地metadata10条与远端mock21条不一致，合成错误码−1路径仍可得1。仅CPU fork／结果包聚合，不认证外部服务、安全隔离／训练或作者28过13跳套件。无候选应用、M5新队列／专项或上游写入，任何上游动作及既有PR-head推送仍逐项待用户明确同意。
 
 ## V1 到期保存的已有修复
 

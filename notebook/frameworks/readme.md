@@ -251,6 +251,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [数学表达式的语法与资源边界](verl-reward-integration-reading.md#数学表达式的语法与资源边界)：#7607/#7701已有替代方案；原8个良性方法及小输入CPU对照区分AST类型、矩阵算式兼容与局部限额，不认证安全沙箱或另开修复。
 - [数学评分池的恢复与错误信号](verl-reward-integration-reading.md#数学评分池的恢复与错误信号)：#8015原七测试接真实验证器/spawn两次通过，旧版死亡/超时留池反例成立；超时仍返回float，不认证manager错误标注或训练。
 - [代码判分的格式与逐例接线](verl-reward-integration-reading.md#代码判分的格式与逐例接线)：#8360/#8175两份原测试接三版真实CPU进程；格式支持、fn_name重测与JSON文本歧义分别验收，不按满分用例互证部分分数。
+- [代码奖励的已知失败与部分分数](verl-reward-integration-reading.md#代码奖励的已知失败与部分分数)：#8022原真实执行／mock两例候选通过；21用例控制仍给10/11而非10/21，保留一次失败不等于全量正确率，未连远端或认证代码隔离。
 - [verl RL Infra 架构源码阅读](verl-rl-infra-reading.md)
 - [verl RL Training Pipeline 深度阅读](verl-rl-training-pipeline.md)
 - [verl SGLang PD Disaggregation — Prefill-Decode分离架构深度分析](verl-sglang-pd-disaggregation-reading.md)

@@ -13,6 +13,22 @@
 > 2026-06-15 | 源码: verl/trainer/ppo/reward.py + ray_trainer.py + workers/reward_manager/ + experimental/reward_loop/ + core_algos.py + utils/reward_score/
 > 核心: 两层架构(legacy RewardManager + experimental RewardLoop) → 3 reward路径(rule/DisRM/GenRM) → outcome reward=最后token非零 → GRPO group-relative → colocate RM sleep/wake → RTX 4090=rule-based唯一可行
 
+## 代码奖励的已知失败与部分分数
+
+“不再把已知错解评为满分”与“按全部用例计算正确率”是两个目标。[#8021](https://github.com/verl-project/verl/issues/8021)已有报告者no-hup的[#8022](https://github.com/verl-project/verl/pull/8022)，2026-10-25仍open、非draft、未合并，唯一普通评论为CLA机器人、0行内评论，不另实现。固定head `a5aef7cd78978554e709ccd93e1dadfd3fcddf7c`、父提交／API base／共同祖先均为 `6093e007cc341973c9d9a6fb3867a85976c7c458`，四文件32行新增。
+
+原`default_compute_score`把codecontests／apps／codeforces／taco路由到continuous评分。本地[prime_code](https://github.com/verl-project/verl/blob/a5aef7cd78978554e709ccd93e1dadfd3fcddf7c/verl/utils/reward_score/prime_code/__init__.py)先以timeout=5调用完整列表，但runner遇首个失败就返回；未全过时，以timeout=10逐例重测最多前10个。这两个值是调用参数，不是含进程创建的端到端硬截止。旧实现丢掉首轮第11例及以后的已知错误，可能返回1。候选保存full_res，若其末项严格为Python False且超出重测范围，向部分分数分母再计一次失败。它没有继续跑完后面的全部用例。
+
+Python3.12.13、macOS本机fork进程，用完整原prime_code、utils与testing_util及原default路由函数，执行固定的无害程序`n=int(input()); print(2*n if n<=10 else 0)`。11个输入期望各自两倍，原版错解／正确程序均实得1；候选[原真实执行测试体](https://github.com/verl-project/verl/blob/a5aef7cd78978554e709ccd93e1dadfd3fcddf7c/tests/utils/reward_score/test_sandbox_on_cpu.py)通过，错解10/11、正确程序1。原测试体在base失败，候选通过；不是把模拟返回值接给本地runner。
+
+单一21用例控制区分了评分范围：同一程序按构造前10个正确、后11个错误，候选本地分数仍为10/11≈0.9091，并非全量比例10/21≈0.4762。后者是根据程序逻辑计算的参考，不是runner已执行21例后的统计。第一轮已在第11例停止，返回的metadata只来自重测前10例，长度10；分数计入的第11例失败没有新增成一条返回metadata。
+
+[sandbox_fusion](https://github.com/verl-project/verl/blob/a5aef7cd78978554e709ccd93e1dadfd3fcddf7c/verl/utils/reward_score/sandbox_fusion/__init__.py)沿其已有结果列表评分：前N（最多10）项全为True且后面存在严格False时，才把分母加1。作者[原mock测试体](https://github.com/verl-project/verl/blob/a5aef7cd78978554e709ccd93e1dadfd3fcddf7c/tests/utils/reward_score/reward_score/test_sandbox_fusion_on_cpu.py)在base失败／候选通过；21项结果包`10×True+11×False`也给10/11，但保留全部21条mock metadata。这是聚合函数的结果包测试，未连接服务，不能据同分认证实际执行顺序、重试或metadata一致。
+
+错误类别仍影响策略。仅给sandbox聚合器`10×True+[-1]`的合成结果包，本机候选返回1；此次没有运行超时、崩溃或攻击代码。修复只追记严格False，不能泛化为“任何已知失败都无法满分”。这是候选刻意保留的错误码路径，不作为另开评分补丁的理由；真实数据分布、奖励对训练的影响和外部服务行为仍需另外证据。
+
+本机只运行上述已审阅程序。原`reliability_guard`自己声明不是安全沙箱，不能据这些用例认证任意模型代码可在主机上安全执行。默认执行沙箱首次阻止Manager本地Unix socket，随后经工具权限审查允许本地IPC重跑；最终harness无遗留子进程。包壳仅连接原模块、default函数与测试导入，远端调用被禁止／mock替代；未原生收集作者28过13跳套件、跑完整reward manager或训练，fork设置仅限独立harness进程。两版四个原模块及head两个测试模块共10份完整源码compile通过，命令与校验值见[当日日志](../../diary/2026-10-25.md)。不应用候选、拼接上节的调用格式修复或新排M5算力；任何上游动作及既有PR-head推送仍逐项待用户明确同意。
+
 ## 数学表达式的语法与资源边界
 
 奖励判分器应把模型答案当数据；替换通用 `eval` 后，也必须明确哪些表示仍应接受、结果是什么类型，以及资源预算在哪里生效。[#7603](https://github.com/verl-project/verl/issues/7603)的两个执行位置已有[#7607](https://github.com/verl-project/verl/pull/7607)和[#7701](https://github.com/verl-project/verl/pull/7701)覆盖，2026-10-25读取均open、非draft、未合并，不另开竞争修复。它们独立于[#8347](https://github.com/verl-project/verl/pull/8347)的区间/数值正确性保护，不能拿那一项的64个参数例认证解析安全，也不能自动叠加补丁。
