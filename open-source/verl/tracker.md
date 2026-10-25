@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[确定性路由](#确定性路由的已有修复)：#7667已有作者，原两测试体与真实子进程验证固定副本集合的选址，修正旧seed充分性结论，非Ray／训练验收。[共享参数加载](#共享参数加载的已有修复)与数据子集接线的反馈仅留项目内，无上游发布。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[RLOO独立修复](#rloo-两项契约的已有修复)：#7794／#7964原1／3测试体CPU通过，但dtype回归未检查数值；BF16舍入反馈只留个人项目待审，不另实现或对外发布。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## RLOO 两项契约的已有修复
+
+2026-10-25读[#7793](https://github.com/verl-project/verl/issues/7793)及唯一评论，编号／RLOO singleton查重已有[#7794](https://github.com/verl-project/verl/pull/7794)、[#7581](https://github.com/verl-project/verl/pull/7581)及较宽的[#7150](https://github.com/verl-project/verl/pull/7150)，另有独立dtype [#7964](https://github.com/verl-project/verl/pull/7964)，四项均open、非draft、未合并，不另实现。读#7794／#7964正文、全部两文件diff及全部1／2普通评论，两项均0行内评论；head58b37737／ea236890，实际祖先f1c27141／f542ae22，两文件各26增1删／32增1删。
+
+见[原算法专题](../../notebook/frameworks/verl-grpo-core-algos-reading.md#rloo-的单样本回退与输出精度)：完整原函数AST和注册接线，原singleton一例及dtype三例分别候选通过，#7964仍不处理singleton。真实CPU bincount对FP32／低精度输入并非一律FP64；BF16 [256,1]候选与标量均为[256,−254]，原vectorized／FP64参考为[255,−255]，类型一致不证明数值不变。现有dtype测试只断言类型，供用户审视的描述／数值覆盖反馈留项目内，未跑原生24／26套件、trainer或GPU。不拼候选、改专项／新排M5任务；任何上游动作及既有PR-head推送仍逐项待用户明确同意。
 
 ## 确定性路由的已有修复
 

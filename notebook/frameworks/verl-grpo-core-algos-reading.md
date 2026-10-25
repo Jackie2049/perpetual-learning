@@ -166,6 +166,34 @@ A = Σ_k A_k  # 维度间解耦
 - **OPTIMAL_TOKEN_BASELINE**: token-level最优baseline(理论推导)
 - **TIR_OPTIMAL_TOKEN_BASELINE**: TIR(Trust-region)优化token baseline
 
+### RLOO 的单样本回退与输出精度
+
+RLOO对多样本组用“自身奖励减去其他样本均值”；n=1时没有其他样本，需显式选择回退约定，不能直接套除以n−1的公式。[#7793](https://github.com/verl-project/verl/issues/7793)报告标量版保留原score、向量版清零。已有[#7794](https://github.com/verl-project/verl/pull/7794)改为`torch.where(c > 1, loo, scores)`；[#7964](https://github.com/verl-project/verl/pull/7964)另修group_sum的dtype。这是两项独立契约，不能把任一修复看作覆盖另一项。相邻行可能冲突，但不需要第三份竞争实现；另有[#7581](https://github.com/verl-project/verl/pull/7581)和较大范围的[#7150](https://github.com/verl-project/verl/pull/7150)覆盖。
+
+2026-10-25核上述四PR均open、非draft、未合并。本次固定#7794 head `58b3773730ad8b4e7c363bc32f9f5216c734ac12`／父提交及祖先 `f1c271417bddfbf97b41a261819d04319a70c603`，两文件26增1删；#7964 head `ea2368905318c569355cdae8b40b01e0fe045ccd`／父提交及祖先 `f542ae22b730b3736d3a46e79d9d8848813a2d48`，两文件32增1删。两项API目标base均为`3f9d4c0d`，不能替代实际比较祖先。固定main `3c6d9b43` 的两个完整RLOO函数AST仍与这两个父版本相同。
+
+本机Python3.12.13／torch2.14.1／NumPy2.5.4，完整原枚举、注册装饰器及两个函数AST接真实CPU张量，未改函数体，也未拼两候选。原新增测试体隔离执行结果如下；#7964的测试只断言dtype，不检查输出数值：
+
+| 原回归范围 | 对应base | 对应head |
+| --- | --- | --- |
+| #7794混合组含singleton，1例 | AssertionError | 通过 |
+| #7964双样本组，FP32／BF16／FP16三例 | FP32通过，低精度两例失败 | 三例通过 |
+| #7794同一singleton测试放到#7964 head | — | 仍失败，dtype修复不处理此语义 |
+
+**dtype保真不意味着数值不变。** 在本机CPU上，`bincount(weights=...)`的FP32输入返回FP32，BF16／FP16返回FP64；[PyTorch2.14.1原CPU实现](https://github.com/pytorch/pytorch/blob/v2.14.1/aten/src/ATen/native/SummaryOps.cpp)对Float权重使用float模板，其余已定义权重转Double后使用double模板。因此不应照抄PR注释“任何dtype都累积为FP64”为通用事实，也不把本次CPU行为外推CUDA。#7964把group_sum转回scores.dtype后再算优势，这既改输出类型，也改变中间舍入。单一BF16组`[256,1]`（两数均可精确表示）、全1同dtype mask的原函数对照为：
+
+| 计算路径 | 输出dtype | 两行优势 |
+| --- | --- | --- |
+| 原vectorized／只修singleton的#7794 | FP64 | [255,−255] |
+| #7964及原scalar | BF16 | [256,−254] |
+| 将同样输入转FP64的scalar参考 | FP64 | [255,−255] |
+
+本例group_sum的257转BF16变成256；标量路径同样有低精度均值舍入，因此“与标量一致”不能证明更接近高精度公式。它是dtype契约与精度取舍的反例，不是训练退化或候选整体错误的证据。两项函数最后都乘response_mask；#7964本例若只把mask换为FP32，结果也为FP32，而非强制保持奖励BF16。原dtype测试的mask与奖励同dtype，结论应保持这一条件，实际调用另核。
+
+**供用户审视的评审要点**：请已有#7964作者限定“FP64无条件累积”和“same values”的描述，并为cast前后的数值／容差补覆盖。当前新测试验证了类型与标量类型一致，没有验证数值误差；无需据此再做同一dtype补丁。反馈只保存在个人项目，不评论／编辑PR或推送其head，任何外部动作仍待用户逐项明确同意。
+
+原函数返回优势与returns的同一张量，处于no_grad；这里非零优势不等于已经验证actor梯度、参数更新或训练收益。八份完整源码快照compile通过，未运行作者报告的原生24／26项套件、trainer、模型或设备。版本、命令及源文件校验见[当日日志](../../diary/2026-10-25.md)；本题不新排M5算力任务，也不重复上文GRPO同分组实验。
+
 ## 二、10种 Policy Loss
 
 ### 1. Vanilla (PPO-clip, 行1278) — **标准!**
