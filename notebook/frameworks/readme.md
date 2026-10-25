@@ -238,6 +238,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [verl GRPO bypass_mode + TransferQueue + Detach Metrics + Weight Sync 源码级深度阅读](verl-grpo-bypass-mode-reading.md)
 - [verl GRPO Training Core Algorithms — core_algos.py 源码深度阅读](verl-grpo-core-algos-reading.md)：[掩码统计与梯度](verl-grpo-core-algos-reading.md#掩码统计与梯度的数值边界)及[单样本组回退](verl-grpo-core-algos-reading.md#单样本与同分组的不同回退)；区分有限值/梯度、singleton/同分pair，保留CPU复查范围。
   - [逐轮奖励与停止基线](verl-grpo-core-algos-reading.md#逐轮奖励与停止动作的基线)：#7244已有作者、#8305另做后置过程优势塑形；GRPO可汇总中间奖励但不保留逐轮credit，三模块语法及二元代数非无偏算法或训练验收。
+  - [GSPO裁剪指标](verl-grpo-core-algos-reading.md#gspo-的-clipfrac-分母与梯度范围)：#7356已有社区解释，单次token分母不等全局MEAN或序列比例；原Metric类CPU控制不认证GSPO／DP或训练，不重开旧RFC／调阈值。
 - [KL-Cov的选词范围与微批切分](verl-grpo-core-algos-reading.md#kl-cov-的选词范围与微批切分)：#7829已有#7830，原五纯CPU例通过；相同配额仍可改变惩罚位置，整批mask切片恢复输入梯度，非worker／DP／训练验收。
 - [RLOO 的单样本回退与输出精度](verl-grpo-core-algos-reading.md#rloo-的单样本回退与输出精度)：#7794／#7964分别修singleton与dtype，原1／3测试体CPU通过；BF16反例显示类型一致不代表数值不变或更准确，评审要点仅存个人项目。
 - [verl 同分小数奖励的舍入残差](verl-grpo-core-algos-reading.md#同分小数奖励的舍入残差)：新draft#8349原16参数例及低方差/singleton控制，更正“同分必精确零”的泛化，复用原脚本、不另开竞争修复或训练。

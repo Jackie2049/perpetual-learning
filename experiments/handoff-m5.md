@@ -239,6 +239,8 @@ ModelOpt忽略规则参考（2026-10-22，同一量化入口不另排队）：�
 
 ## verl 异步策略一致性补证
 
+GSPO指标参考（2026-10-25，同一观测入口、非新增算力队列）：[#7356](https://github.com/verl-project/verl/issues/7356)已有社区解释，[M1源码核对](../notebook/frameworks/verl-grpo-core-algos-reading.md#gspo-的-clipfrac-分母与梯度范围)仅原Metric类CPU控制／语法，非GSPO或训练复现。若M5日后独立选用且已有获准、安全、匹配的观测，按原范围记录实际源码／消费路径、new与old来源、优势符号、有效token数、微批／rank归约、IS及KL／entropy配置；不要把局部clipfrac或外层MEAN直接当全局响应比例／有效梯度占比，lower固定0也非无下界clip。缺安全／资源／模型授权或需新部署下载、影响专项即停记未测，不调阈值、新开A/B／训练、重开旧clip RFC或改AReaL/#523/#8313/DeepInfer。所有社区写入及既有PR-head推送仍须用户对具体动作明确同意，本参考非接单。
+
 选定token概率参考（2026-10-25，同一输出头参考、非新增算力队列）：[#7712](https://github.com/verl-project/verl/issues/7712)已收窄，旧fork f894f21e非最新identity实现。[M1数学对照](../notebook/frameworks/verl-fused-output-softcap.md#选定-token-概率与共享归一化项)仅一个固定FP64 dense标签oracle及真实autograd，无kernel／布局／性能；detach标签概率值同梯度错。若M5未来独立选用且已有获准、安全、匹配dense_common／fused观测，先核实际实现、logit变换／温度／舍入与梯度连接，再按原范围核label及selected的同token身份、ignored mask、SP重包、head参数就绪；全词表和集合条件概率分母须标明。缺实现／环境／授权或需新部署下载、影响专项就停记未测，不应用旧组合器、新写kernel或复刻作者H200矩阵。所有社区写入与既有PR-head推送仍需用户对具体动作明确同意，参考非接单。
 
 异步idle口径参考（2026-10-25，同一入口、非新增观测／基准队列）：[#7601](https://github.com/verl-project/verl/issues/7601)已有参与者方案，[M1固定main3c6d9b43源码学习](../notebook/frameworks/verl-6790-async-trainer-reading.md#异步空闲指标与调度等待)仅11模块AST／compile，无调度／服务执行。若M5将来独立选用且已有获准匹配观测，先满足环境安全、授权与资源条件，记录trainer模式、switch有效配置、standalone／hybrid副本身份和同一窗口；结合生成／采样／同步时间线辨别等待与忙碌，不以switch/idle布尔值、gen/step或单点零请求比例认证GPU利用率／调整资源。缺条件则保留未测，不启动新服务／下载、改router或并行推进专项；任何上游评论、PR或既有PR head推送仍逐项待用户明确同意，记录非接单。

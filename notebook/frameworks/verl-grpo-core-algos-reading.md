@@ -6,6 +6,8 @@
 
 2026-10-25接续：[逐轮奖励与停止动作的基线](#逐轮奖励与停止动作的基线)区分#7244的LOO return-to-go提案与#8305的过程优势塑形；奖励可按token存储，不代表GRPO保留逐轮credit。一个精确二元代数例仅说明基线依赖动作的偏差，不认证候选或训练效果。
 
+2026-10-25接续：[GSPO 的 clipfrac 分母与梯度范围](#gspo-的-clipfrac-分母与梯度范围)核#7356：局部token加权、外层MEAN与loss聚合分开，0.4不能直接解释为全局序列比例或整体梯度损失；不重开已撤回的clip RFC。
+
 ## 逐轮奖励与停止动作的基线
 
 **逐轮奖励字段、逐轮优势估计与无偏停止决策是三件事。** [#7244](https://github.com/verl-project/verl/issues/7244)作者lijuliana已有fork实现，讨论variable horizon下基线求和上限依赖本条轨迹的停止位置；[另一参与者](https://github.com/verl-project/verl/issues/7244#issuecomment-6122893289)正在询问缺失／延迟反馈方向。本轮不重复其MDP实验或实现。按编号查开放PR为空，但关键词查重发现另一作者luzy99的[draft #8305](https://github.com/verl-project/verl/pull/8305)，不能据编号空结果认定逐轮接口无人做，也不能把它标作已修复该RFC。
@@ -268,9 +270,27 @@ pg_losses = where(A < 0, clip_pg_losses2, clip_pg_losses1)
 ### 4. GSPO (行1538) — 序列级clip
 
 ```python
-# 序列级ratio → 不按token clip, 按整个序列clip
-# 对长序列更稳定(避免逐token clip过度限制)
+# 前向使用长度归一化的序列几何平均ratio，再逐token形成代理损失
+# ratio结构本身不证明长序列训练更稳定；指标和梯度范围见下节
 ```
+
+#### GSPO 的 clipfrac 分母与梯度范围
+
+2026-10-25读取[#7356](https://github.com/verl-project/verl/issues/7356)全文与[唯一社区解释](https://github.com/verl-project/verl/issues/7356#issuecomment-5755317393)。DBMing报告fully-async Megatron／vLLM、GRPO＋GSPO时clipfrac约0.35–0.44、奖励改善慢；评论来自社区参与者，不是维护者给出的通用阈值建议。编号PR检索空不代表根因已定位或需要新修复；本节只核固定main `3c6d9b43b67c74ec343d77874cd8fa6e841523da`的源码口径，不重开[已撤回旧RFC](../../open-source/verl/verl-clip-semantics-rfc-draft.md)。
+
+[原GSPO函数](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/ppo/core_algos.py)令每条响应的 `dᵢ=masked_sum(log_prob−old_log_prob)/有效长度`、`sᵢ=exp(dᵢ)`。实际代码用detach构造前向相同、局部token反向的ratio，并对log ratio设max=10数值保护；不能把前向数值相同自动扩成任意梯度／engine等价。代理损失取 `max(−A*s, −A*clamp(s, 1−eps_low, 1+eps_high))`。
+
+在常规GRPO整条响应优势符号相同、避开边界时，clip分支胜出的条件是：正优势且s超过上界，或负优势且s低于下界。反方向越界不计该分支；A=0时两项相等，严格 `pg_losses2 > pg_losses1`也不记clip。若逐token优势符号不同，则同一响应不再能简化成一个布尔clip标志。
+
+`actor/pg_clipfrac`直接对该布尔矩阵做response_mask的masked_mean，所以**单次调用按有效token计分母**，不是按响应条数。算术说明：一条3-token响应全部命中、一条1-token响应不命中，局部指标是3/4，序列计数比例是1/2；这不是实际训练观测。即使loss选择 `seq-mean-token-mean`，指标仍走这条token归约，不自动采用loss的等权序列分母。
+
+外层[ppo_loss包装器](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/workers/utils/losses.py)把pg_metrics包装成 `Metric(..., MEAN)`，并非随标量附上有效token分子／分母。[原Metric类](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/utils/metric/utils.py)对DP各rank先取均值，再按MEAN归约累积值。本轮完整原Metric模块的CPU控制，给两份局部标量1和0，`aggregate_dp`得到0.5；若**人为假定**它们分别来自3和1个有效token，合并token数后应是0.75。控制只执行原聚合类，不执行GSPO、worker或分布式；说明“先求局部比例再平均”不自动等于全局token比例，不能据此断言报告环境的归约出错。最终W&B的0.4仍须匹配实际版本、微批／rank布局及外层汇总，不能直接翻译成“全局40%响应／token被裁”。
+
+严格被clip选中的局部代理分支对ratio的直接梯度可为0，但不是整个actor梯度为0：[包装器](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/workers/utils/losses.py)还可加入KL／entropy，其他样本也仍贡献。GSPO在loss上后乘rollout IS权重，而clip标志不据权重重算；这个指标不是最终更新中“有效梯度占比”。`actor/pg_clipfrac_lower`在此函数为兼容固定返回0，不能用它证明下界裁剪从未发生。
+
+[固定Qwen3.5异步配方](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/experimental/fully_async_policy/shell/grpo_qwen35_35b_megatron_async.sh)确实将0.2／0.28传入GSPO，并设置seq-mean-token-mean和独立KL项；不是把bypass示例误写成GSPO。但配方存在不构成普遍推荐，也没有证据在本报告中把阈值放宽会改善学习。若使用0.0003／0.0004，上下边界仅0.9997／1.0004；高clipfrac既受阈值影响，也受实际old锚点、优势符号、mask和归约影响，单一曲线不能分离这些因素或证明过度陈旧。
+
+源码还显示experimental fully_async继承separation trainer，其log-prob入口区分bypass与重算old；这里不将它混同[V1 separate-async快照路径](verl-async-logprob-provenance.md#四种策略与概率字段)。比较同步／异步前应固定实际消费函数和old来源，不能只看同名配置。原GSPO／wrapper／调用者仅源码阅读与五完整模块AST／compile，配方只 `bash -n`，未执行loss／原测试、Ray／Megatron／模型或报告训练；原Metric控制也不认证整条日志链。版本和hash见[当日日志](../../diary/2026-10-25.md)。本题仅补原M5观测口径，不新增A/B训练、调阈值或发社区回复；下一轮转独立需求／实质反馈，不扩clip矩阵或重开旧候选。
 
 ### 5. SAPO (行1614) — 平滑advantage
 

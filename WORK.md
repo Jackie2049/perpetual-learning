@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 GSPO裁剪指标口径（2026-10-25）**：起始a244e88干净，compare保留813新增1无删改后ff到35bf2e8保全并行日志。读[#7356及唯一社区评论](open-source/verl/tracker.md#gspo-裁剪指标的讨论与边界)，不另认领；[原算法专题](notebook/frameworks/verl-grpo-core-algos-reading.md#gspo-的-clipfrac-分母与梯度范围)区分局部有效token比例、MEAN归约与最终梯度。固定main3c6d9b43原Metric类CPU控制1／0→.5，假定token数3／1池化则.75；非GSPO／worker／DP或训练复现。五模块语法与配方bash -n，不按0.4判健康／陈旧或调阈值，lower固定0不等无下界clip。旧clip RFC继续withdrawn，M5原观测仅补条件，无新队列／专项／服务器或上游动作。下轮转独立需求／实质反馈，不扩clip矩阵、重开候选或重复阈值实验。
+
 - **M1 Ray依赖与认证边界（2026-10-25）**：起始eebda9c干净，compare保留811新增1无删改后ff到14145e0保全M5。读[#7599／已有#7600](open-source/verl/tracker.md#ray-版本固定的已有候选)，不另pin；[原Ray笔记](notebook/fundamentals/ray-framework.md#版本固定与控制面安全)离线解析选定七文件两快照：主线范围>=2.41、lock2.55.1、选定镜像2.54.1／2.46，候选各2.58；不作resolver／安装验收。固定2.58官方文档默认认证关闭，latest2.59本地默认变化另列；版本／认证／隔离分开，无事件因果或安全闭环声称。未安装／导入Ray、读token、扫描端口、访问服务器／改专项或写上游，无新增M5队列。下轮转独立需求／实质反馈，不扩镜像矩阵、部署认证或重写现有升级方案。
 
 - **M1 逐轮奖励与停止基线（2026-10-25）**：起始063b6aa干净，compare保留809新增1无删改后ff到82d2284保全M5。读[#7244／已有参与者与draft #8305](open-source/verl/tracker.md#逐轮奖励的基线与已有过程接口)，编号PR空但关键词有候选，不另认领。[原算法专题](notebook/frameworks/verl-grpo-core-algos-reading.md#逐轮奖励与停止动作的基线)分清主线GRPO整行求和／V1最终输出广播、RFC LOO return-to-go与后置优势塑形；纠正旧“只接最终奖励”的泛化。三模块仅语法，单一二元Fraction例3/8→3/16说明动作相关baseline，不执行原算法／测试、MDP或训练，不判draft有错／已无偏。无新增M5队列、专项／上游动作；下轮转独立需求／实质反馈，不扩二元矩阵、反馈缺失实验或接管过程奖励实现。

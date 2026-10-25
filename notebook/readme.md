@@ -115,7 +115,7 @@
 - [Chinchilla Scaling Laws](papers/chinchilla.md) — L(N,D) 最优 ~20 tok/param, 推翻 Kaplan "大模型少数据"
 - [PPO](papers/ppo.md) — L^{CLIP}, RLHF 核心算法, GRPO 简化版
 - [GMPO](papers/gmpo.md) — 完整符号裁剪目标与限定值/梯度对照；旧“论文与实现配置空间不同”结论撤回，非完整训练证明
-- [GSPO](papers/gspo.md) — 序列级 importance ratio + 组归一优势, verl 示例 ε=3e-4 极紧窗发现
+- [GSPO](papers/gspo.md) — 序列级 importance ratio + 组归一优势；[裁剪指标口径](frameworks/verl-grpo-core-algos-reading.md#gspo-的-clipfrac-分母与梯度范围)区分局部token比例与外层归约，不以配方阈值判训练质量
 - [SAPO](papers/sapo.md) — sech² 平滑门替代硬裁剪, 非对称温度 τ_neg>τ_pos, Qwen3-VL 实战
 - [GPT-4](papers/gpt4.md) — 可预测扩展, RLHF 无损, RBRMs 安全
 - [Mamba](papers/mamba.md) — 选择性 SSM, 线性时间, 2.8B 匹配 GPT-J-6B
@@ -160,6 +160,7 @@
 - [verl 掩码统计与梯度](frameworks/verl-grpo-core-algos-reading.md#掩码统计与梯度的数值边界) — 原3参数例/20组CPU对照；mean过滤无效NaN不代表方差梯度或白化全部槽位有限，非训练故障定性
 - [verl 单样本组回退](frameworks/verl-grpo-core-algos-reading.md#单样本与同分组的不同回退) — 原4等价性例/12组双实现控制；singleton保留近似原奖励，撤回排错指南n=1必退化与n≥4/8硬规则，非训练收益证明
   - [逐轮奖励与停止基线](frameworks/verl-grpo-core-algos-reading.md#逐轮奖励与停止动作的基线) — #7244的LOO return-to-go不等于#8305过程塑形；主线GRPO汇总token奖励，三模块语法与二元代数非候选／MDP或训练复现
+  - [GSPO裁剪指标](frameworks/verl-grpo-core-algos-reading.md#gspo-的-clipfrac-分母与梯度范围) — 局部token比例、MEAN归约及辅助梯度分开；原Metric类控制非分布式训练，不重开旧clip RFC
 - [verl 同分小数奖励的舍入残差](frameworks/verl-grpo-core-algos-reading.md#同分小数奖励的舍入残差) — #8349原16参数例base3过13预期失败/head全过；大组FP32残差可放大，singleton与非同分保留，无设备/训练收益结论
 - [verl ReMax 贪心基线](frameworks/verl-remax-icepop-source-reading.md#v1-贪心会话与-sampled-最大值) — #8310额外贪心会话非sampled最大值；核心CPU对照区分advantages/returns，撤回零方差和4090最优推荐，非解码/训练验收
 - [verl KL 前向与反向](frameworks/verl-grpo-core-algos-reading.md#kl-前向值与反向规则) — k3+数值clamp非梯度clamp；6原例/14组CPU对照，有限差分与straight-through反向须区分
