@@ -9,7 +9,7 @@
 
 **【价值评估】** 7 / 10 — 甄别"未认领、无 PR、可落地"的开放空间，避免重复投入已有人认领的 RFC。
 
-**【进展】** #523 的我方 fork PR 已获用户认可，测试与 e2e 正式指派 M5；M5 已闭环 L0（四项断言 + pristine 对照），L1 仍待 ≥8 卡及获准权重/存储，见[M5交接](../../experiments/handoff-m5.md)。#567 待匹配 H20；#470/#481/#484已有作者或验证条件。2026-10-25补[MPS已有实现与主线边界](#mps-共置的已有实现与当前边界)：#492已合并、#482被接替而关闭未合并；原配置四控制非接入、数值、吞吐或关停验收，不据正文设计或本地解析另认领功能。
+**【进展】** #523 的我方 fork PR 已获用户认可，测试与 e2e 正式指派 M5；M5 已闭环 L0（四项断言 + pristine 对照），L1 仍待 ≥8 卡及获准权重/存储，见[M5交接](../../experiments/handoff-m5.md)。#567 待匹配 H20；#470/#481/#484已有作者或验证条件。2026-10-25补[MPS已有实现与主线边界](#mps-共置的已有实现与当前边界)：#492已合并、#482被接替而关闭未合并；原配置四控制非接入、数值、吞吐或关停验收，不据正文设计或本地解析另认领功能。 同日补[SDE窗口已有修复](#sde-窗口调度的已有修复)：#489已合并，CPU序列只核计数／阈值坐标，四实际配方仍progressive，不另认领或排GPU任务。
 
 **【大白话讲明白】**
 
@@ -23,6 +23,12 @@
 <!-- contribution-summary:end -->
 
 > 扫描时间 2026-10-22（GitHub 实时 API）。main 固定 `6fd82cba`。状态以当日核验为准，继续前重新核对关联 issue/PR。
+
+## SDE 窗口调度的已有修复
+
+2026-10-25只读核[#488全文及四评论](https://github.com/Tencent-Hunyuan/UniRL/issues/488)、[已合并#489](https://github.com/Tencent-Hunyuan/UniRL/pull/489)正文与文件目录。原两衰减策略缺派发已有同一作者修复；TempFlow／Flash后续也已有参与者，RFC开放不当未认领信号。未读取成功旧PR base/head diff：本地partial clone缺blob且懒取受代理阻塞，停止重试；本次证据固定main6fd82cba，不冒称前后回归。
+
+学习见[原UniRL专题](../../notebook/frameworks/unirl-survey.md#sde-窗口的停留步数与坐标)，[完整原调度模块CPU脚本／结果](../../experiments/unirl-window-dwell/verify.py)两次一致：输入rollout_id与公式去噪起点分开。默认threshold13在T10未触发，但Wan22 T20仅切exp策略的反事实末窗停留25→21；四份实际配方仍progressive。作者已更正MixGRPO坐标等价范围，旧head GPU smoke不迁为最终版或本机验收。无Hydra／真实SDE／模型／性能测试；只补M5原条件参考，不修改配方或另接实现、训练及社区写入。
 
 ## 本次扫描（2026-10-22）核心结论
 

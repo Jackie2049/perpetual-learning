@@ -107,6 +107,8 @@
 
 ## UniRL
 
+窗口调度补读：[SDE 停留步数与坐标](unirl-survey.md#sde-窗口的停留步数与坐标)区分rollout_id与去噪窗口起点；#489已合并，原模块CPU序列非参考parity／训练加速。默认13在Wan22 T20反事实末窗会衰减，实际四配方仍progressive。
+
 - [奖励共置的调度份额与 MPS 边界](unirl-survey.md#奖励共置的调度份额与-mps-边界)：#492已合并、#482关闭未合并；原配置四控制区分份额、线程／分配上限及真机资格，主线未拒绝FP16／50%，非接入、吞吐或关停验收。
 
 - [PPO 的轨迹边界与价值目标](unirl-survey.md#ppo-的轨迹边界与价值目标)：#86三分项已合并；原GAE/ValueHead/value-loss四组CPU控制分清优化mask、轨迹边界和裁剪梯度，非完整PPO或训练曲线验收。

@@ -1,0 +1,638 @@
+{
+  "revision": "6fd82cba13f52f394747832344039408699ea378",
+  "python": "3.12.13",
+  "numpy": "2.5.4",
+  "pyyaml": "6.0.3",
+  "controls_T10_W4_overlap1": {
+    "progressive": {
+      "runs": [
+        [
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          25
+        ],
+        [
+          [
+            3,
+            4,
+            5,
+            6
+          ],
+          25
+        ],
+        [
+          [
+            6,
+            7,
+            8,
+            9
+          ],
+          25
+        ]
+      ],
+      "period": 75,
+      "wrap_window": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "stop_window": [
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    "decay": {
+      "runs": [
+        [
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          10
+        ],
+        [
+          [
+            3,
+            4,
+            5,
+            6
+          ],
+          7
+        ],
+        [
+          [
+            6,
+            7,
+            8,
+            9
+          ],
+          4
+        ]
+      ],
+      "period": 21,
+      "wrap_window": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "stop_window": [
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    "exp_threshold_3": {
+      "runs": [
+        [
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          25
+        ],
+        [
+          [
+            3,
+            4,
+            5,
+            6
+          ],
+          25
+        ],
+        [
+          [
+            6,
+            7,
+            8,
+            9
+          ],
+          19
+        ]
+      ],
+      "period": 69,
+      "wrap_window": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "stop_window": [
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    "exp_default_13": {
+      "runs": [
+        [
+          [
+            0,
+            1,
+            2,
+            3
+          ],
+          25
+        ],
+        [
+          [
+            3,
+            4,
+            5,
+            6
+          ],
+          25
+        ],
+        [
+          [
+            6,
+            7,
+            8,
+            9
+          ],
+          25
+        ]
+      ],
+      "period": 75,
+      "wrap_window": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "stop_window": [
+        6,
+        7,
+        8,
+        9
+      ]
+    }
+  },
+  "recipes": [
+    {
+      "path": "examples/diffusion/sd3/sd3_mixgrpo.yaml",
+      "num_inference_steps": 10,
+      "configured_strategy": "progressive",
+      "actual": {
+        "runs": [
+          [
+            [
+              0,
+              1,
+              2,
+              3
+            ],
+            25
+          ],
+          [
+            [
+              3,
+              4,
+              5,
+              6
+            ],
+            25
+          ],
+          [
+            [
+              6,
+              7,
+              8,
+              9
+            ],
+            25
+          ]
+        ],
+        "period": 75,
+        "wrap_window": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "stop_window": [
+          6,
+          7,
+          8,
+          9
+        ]
+      },
+      "counterfactual_exp_default": {
+        "runs": [
+          [
+            [
+              0,
+              1,
+              2,
+              3
+            ],
+            25
+          ],
+          [
+            [
+              3,
+              4,
+              5,
+              6
+            ],
+            25
+          ],
+          [
+            [
+              6,
+              7,
+              8,
+              9
+            ],
+            25
+          ]
+        ],
+        "period": 75,
+        "wrap_window": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "stop_window": [
+          6,
+          7,
+          8,
+          9
+        ]
+      }
+    },
+    {
+      "path": "examples/diffusion/wan21/wan21_t2v_mixgrpo.yaml",
+      "num_inference_steps": 14,
+      "configured_strategy": "progressive",
+      "actual": {
+        "runs": [
+          [
+            [
+              0,
+              1,
+              2,
+              3
+            ],
+            25
+          ],
+          [
+            [
+              3,
+              4,
+              5,
+              6
+            ],
+            25
+          ],
+          [
+            [
+              6,
+              7,
+              8,
+              9
+            ],
+            25
+          ],
+          [
+            [
+              9,
+              10,
+              11,
+              12
+            ],
+            25
+          ]
+        ],
+        "period": 100,
+        "wrap_window": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "stop_window": [
+          9,
+          10,
+          11,
+          12
+        ]
+      },
+      "counterfactual_exp_default": {
+        "runs": [
+          [
+            [
+              0,
+              1,
+              2,
+              3
+            ],
+            25
+          ],
+          [
+            [
+              3,
+              4,
+              5,
+              6
+            ],
+            25
+          ],
+          [
+            [
+              6,
+              7,
+              8,
+              9
+            ],
+            25
+          ],
+          [
+            [
+              9,
+              10,
+              11,
+              12
+            ],
+            25
+          ]
+        ],
+        "period": 100,
+        "wrap_window": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "stop_window": [
+          9,
+          10,
+          11,
+          12
+        ]
+      }
+    },
+    {
+      "path": "examples/diffusion/wan22/wan22_t2v_14b_mixgrpo.yaml",
+      "num_inference_steps": 20,
+      "configured_strategy": "progressive",
+      "actual": {
+        "runs": [
+          [
+            [
+              0,
+              1,
+              2,
+              3
+            ],
+            25
+          ],
+          [
+            [
+              3,
+              4,
+              5,
+              6
+            ],
+            25
+          ],
+          [
+            [
+              6,
+              7,
+              8,
+              9
+            ],
+            25
+          ],
+          [
+            [
+              9,
+              10,
+              11,
+              12
+            ],
+            25
+          ],
+          [
+            [
+              12,
+              13,
+              14,
+              15
+            ],
+            25
+          ],
+          [
+            [
+              15,
+              16,
+              17,
+              18
+            ],
+            25
+          ]
+        ],
+        "period": 150,
+        "wrap_window": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "stop_window": [
+          15,
+          16,
+          17,
+          18
+        ]
+      },
+      "counterfactual_exp_default": {
+        "runs": [
+          [
+            [
+              0,
+              1,
+              2,
+              3
+            ],
+            25
+          ],
+          [
+            [
+              3,
+              4,
+              5,
+              6
+            ],
+            25
+          ],
+          [
+            [
+              6,
+              7,
+              8,
+              9
+            ],
+            25
+          ],
+          [
+            [
+              9,
+              10,
+              11,
+              12
+            ],
+            25
+          ],
+          [
+            [
+              12,
+              13,
+              14,
+              15
+            ],
+            25
+          ],
+          [
+            [
+              15,
+              16,
+              17,
+              18
+            ],
+            21
+          ]
+        ],
+        "period": 146,
+        "wrap_window": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "stop_window": [
+          15,
+          16,
+          17,
+          18
+        ]
+      }
+    },
+    {
+      "path": "examples/diffusion/qwen_image/qwen_image_mixgrpo.yaml",
+      "num_inference_steps": 12,
+      "configured_strategy": "progressive",
+      "actual": {
+        "runs": [
+          [
+            [
+              0,
+              1,
+              2,
+              3
+            ],
+            25
+          ],
+          [
+            [
+              3,
+              4,
+              5,
+              6
+            ],
+            25
+          ],
+          [
+            [
+              6,
+              7,
+              8,
+              9
+            ],
+            25
+          ]
+        ],
+        "period": 75,
+        "wrap_window": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "stop_window": [
+          6,
+          7,
+          8,
+          9
+        ]
+      },
+      "counterfactual_exp_default": {
+        "runs": [
+          [
+            [
+              0,
+              1,
+              2,
+              3
+            ],
+            25
+          ],
+          [
+            [
+              3,
+              4,
+              5,
+              6
+            ],
+            25
+          ],
+          [
+            [
+              6,
+              7,
+              8,
+              9
+            ],
+            25
+          ]
+        ],
+        "period": 75,
+        "wrap_window": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "stop_window": [
+          6,
+          7,
+          8,
+          9
+        ]
+      }
+    }
+  ],
+  "source_sha256": {
+    "unirl/sde/index_schedule.py": "4a313b44df9275b8e470a1dd1226d3b835e5170eb4a707ab162c269fe307f3c4",
+    "examples/diffusion/sd3/sd3_mixgrpo.yaml": "5d506b56eab7291ad083882d4b8589b7fc47c3bd4486fcccf211ba14ffe344cb",
+    "examples/diffusion/wan21/wan21_t2v_mixgrpo.yaml": "57aea75939c9e158f43928e03ff4577a0e5ca5bef901a24a7bc5b9a5f74dcb12",
+    "examples/diffusion/wan22/wan22_t2v_14b_mixgrpo.yaml": "4040ba1edba3189b10ba17e4eba1ae241cabc9f5cc425c2c00fd998fc00329bb",
+    "examples/diffusion/qwen_image/qwen_image_mixgrpo.yaml": "345c6af30916031a0b78889a041c8328cf9285977a920070e3d00a51f0132d2e"
+  },
+  "scope": "original scheduler module and explicit YAML scalars; no Hydra/engine/SDE/model/reference parity"
+}

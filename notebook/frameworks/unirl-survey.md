@@ -1,5 +1,7 @@
 # UniRL — 腾讯统一多模态 RL 框架调研
 
+2026-10-25 接续：[SDE 窗口的停留步数与坐标](#sde-窗口的停留步数与坐标)核已合并#489：输入计rollout_id，阈值比较去噪窗口起点；原调度模块CPU序列不等于MixGRPO参考等价或训练提速。
+
 2026-10-25 接续：[PPO 的轨迹边界与价值目标](#ppo-的轨迹边界与价值目标)核#86三个已合并分项；原GAE/ValueHead及value-loss函数CPU控制不认证完整trainer，loss mask也不是GAE轨迹有效位。
 
 2026-10-25 接续：[前缀缓存的参数与失效窗口](#前缀缓存的参数与失效窗口)核#262与已合并#392：合法字段、缓存实际启用、真实命中和吞吐是不同证据；原过滤函数四组本地检查不是引擎启动或性能验收。
@@ -1524,6 +1526,51 @@ python3.12 -B experiments/scripts/verify_unirl_reward_rows.py /path/to/UniRL /pa
 `PhaseTimer` 两版 AST 相同：同名 phase 累加，异常退出也在 `finally` 记录；`async_step_timing` 的 `finally` 只清除 trainer 的活动 timer，不冻结返回对象。`total()` 每次都是当前主机时钟减构造时间，新循环在窗口后紧接着读它，所以总时长截至**读取点**，不能把 context 退出当成缓存的精确终点。窗口内异常会清除活动 timer，但控制流跳过后面的 `log_perf`，本改动不是失败轮次完整遥测。窗口外已包装的方法不计 phase；缺少某 phase 也不能自动补成零。
 
 计时经 `log_perf(step=rollout_id+1)` 写到 `rollout/step` 横轴，不是新增 optimizer 步。作者报告 Qwen3-4B/SGLang 的异步 100 rollouts/400 updates 和同步 32/128 的 W&B 核验；本机只做两版各四个完整 Python 模块编译、`PhaseTimer` AST 同一性及 3 组真实标准库控制（phase 累加/异常、正常窗口清理与 total 继续取时、异常窗口清理），没有假训练循环/时钟，也未执行 wrapper 安装、trainer、Ray、W&B 或设备。复现代码与 hash 见[当日日志](../../diary/2026-10-23.md)；不新增一次性工具。真实跑次比较的前提补[原 M5 参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不启动新训练或自动合并 #620 等指标分支。
+
+## SDE 窗口的停留步数与坐标
+
+2026-10-25 核验。[#488](https://github.com/Tencent-Hunyuan/UniRL/issues/488)中原本列出却无法派发的 `decay` / `exp_decay`，已由同一作者在[#489](https://github.com/Tencent-Hunyuan/UniRL/pull/489)补齐，2026-09-23合并（head `dfc35aaa`，merge `951a0734`）。RFC仍开放不表示这两种策略尚待实现；TempFlow／Flash是另两条算法路线，不能由窗口调度完成推断全部完成，也不另认领已有参与者的工作。
+
+**先分两个计数。** 固定main `6fd82cba13f52f394747832344039408699ea378`，[原调度器](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/sde/index_schedule.py)的输入 `step` 经当前 diffusion trainer传入的是 **rollout_id**；采样参数选好索引后，trainer把固定列表放入请求并移除scheduler。它不是每次optimizer update、每次采样调用或去噪循环步数的自动计数器。停留25意味着连续ID下25个rollout编号对应同一窗口，不保证25次参数更新。另一方面，公式里的 `t` 是**该窗口在去噪日程中的起点**，`T` 是 `num_inference_steps`：
+
+- 线性停留次数：`max(min_iters, int(max_iters*(1-t/T) + min_iters*t/T))`。
+- 指数停留次数：`ceil(iters_per_window * exp(-k*max(0, t-threshold)))`，默认threshold=13、k=0.1。
+
+窗口起点以 `window_size-overlap_size` 为stride，只保留完整窗口，不追加裁短窗口。编号达到全部停留次数之和后，rollback=True取模回首窗，False停留末窗。覆盖full-T坐标不等于每个去噪位置最终都被选作SDE；未选位置仍走确定性求解，不能把窗口数量直接当模型调用节省。
+
+### 原模块 CPU 序列
+
+[复现脚本](../../experiments/unirl-window-dwell/verify.py)读取固定Git blob，完整执行原 `index_schedule.py`，不导入UniRL包、torch或设备运行时。Python3.12.13／NumPy2.5.4／PyYAML6.0.3，两次运行结果一致，[原始JSON](../../experiments/unirl-window-dwell/results.json)含源码与配方SHA256。T=10、W=4、overlap=1、init=0时，三窗依次为0–3／3–6／6–9：
+
+| 策略与控制参数 | 各窗口停留编号数 | 回卷周期 |
+|---|---|---|
+| progressive，iters=25 | 25／25／25 | 75 |
+| decay，max=10、min=1 | 10／7／4 | 21 |
+| exp_decay，iters=25、threshold=3 | 25／25／19 | 69 |
+| exp_decay，默认threshold=13 | 25／25／25 | 75 |
+
+复现时从本仓库根目录运行 `python -B experiments/unirl-window-dwell/verify.py <只读UniRL仓库>`；该仓库须已有固定提交的源码／配方Git blob，缺失即失败，不懒取。依赖numpy、pyyaml；本机解释器为 `/private/tmp/verl312/bin/python`。
+
+同一编号乱序查询所得窗口相同，另核周期边界回卷及不回卷时驻留末窗；这只是无状态索引选择，不认证随机轨迹一致。未运行原作者大矩阵、旧base/head对照、MixGRPO参考harness或训练。sampling／trainer两个完整模块仅AST／compile与调用点阅读，不是请求／引擎执行。
+
+### 默认阈值不能跨配方概括
+
+固定main四份 `*_mixgrpo.yaml` **实际全部仍为progressive**，W=4、overlap=1、iters=25。脚本只解析显式YAML标量并构造原WindowConfig，没有Hydra组合；下面最后一列是**仅切换strategy到exp_decay、保留默认threshold=13的反事实**，不是已启用配置：
+
+| 配方 | T | 实际末窗／progressive周期 | 反事实指数停留 |
+|---|---:|---|---|
+| SD3 | 10 | 6–9／75 | 三窗均25 |
+| Wan2.1 T2V | 14 | 9–12／100 | 四窗均25 |
+| Wan2.2 T2V 14B | 20 | 15–18／150 | 前五窗25，末窗21；周期146 |
+| Qwen Image | 12 | 6–9／75 | 三窗均25 |
+
+因此README中“短日程默认阈值下不衰减”的提醒适用于这些短配方，但不能概括当前Wan2.2的T=20；它的末窗起点15已超过13。这里没有改任何上游配方，也不把未覆盖尾位置说成当前bug。
+
+### 参考等价与加速证据另列
+
+作者已在[#488后续更正](https://github.com/Tencent-Hunyuan/UniRL/issues/488#issuecomment-5768148430)限定：沿用MixGRPO的停留公式，但参考实现的T−2样本字典坐标与UniRL完整去噪坐标不同，不能沿用此前216/216的全序列等价说法。本机未执行参考实现，不独立认证作者矩阵。PR所报H100／SD3.5-medium／BF16 LoRA五rollout、十optimizer step smoke固定在旧head `fa01335d`，不是本机或合并最终版GPU验收；104／81秒含初始化，非稳态吞吐或质量结论。
+
+滑动窗口决定哪些位置随机采样、各窗口停留多久；[窗口后的压缩积分](#sde-窗口后的压缩积分尾段)另决定尾段求解网格，二者不能用同一“少步数”替代实际模型调用数与完成吞吐。只在原M5入口补未来已有获准匹配观测的计数口径，不新排GPU／基准任务、不改专项或对外发布；下一轮转独立真实需求或实质反馈，不扩窗口矩阵、修改阈值或重复实现已有策略。
 
 ## SDE 窗口后的压缩积分尾段
 

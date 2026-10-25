@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [unirl-window-dwell/verify.py](unirl-window-dwell/verify.py) | 固定main原窗口模块CPU序列／四份配方显式标量，[结果](unirl-window-dwell/results.json)；反事实策略切换非Hydra／模型或参考parity | [停留计数与阈值坐标](../notebook/frameworks/unirl-survey.md#sde-窗口的停留步数与坐标) |
 | [handoff-m5.md](handoff-m5.md) | 需要 GPU/NPU 的事项交接、资源/数据前提及停止条件；M5 可用时接续 | 对应主笔记和原始实测结果就近回写 |
 | [verl-async-resume-warmup/verify.py](verl-async-resume-warmup/verify.py) | 固定main原9 warmup测试体／完整方法隔离执行，[结果](verl-async-resume-warmup/results.json)；原Mock加载，非TQ／checkpoint往返 | [库存恢复与训练历史](../notebook/frameworks/verl-checkpoint-management-reading.md#异步恢复的存活库存与训练历史) |
 | [verl-selected-logprob-identity/verify.py](verl-selected-logprob-identity/verify.py) | #7712恒等式的单一FP64 CPU autograd控制，[结果](verl-selected-logprob-identity/results.json)；dense标签oracle，非作者实现／fused或性能验证 | [选定概率与梯度锚点](../notebook/frameworks/verl-fused-output-softcap.md#选定-token-概率与共享归一化项) |

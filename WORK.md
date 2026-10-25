@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 SDE窗口计数学习（2026-10-25）**：起始dc29152干净，compare保留801新增1无删改后ff到32ac5b5，保全并行日志。读[#488／已合并#489](open-source/unirl/tracker.md#sde-窗口调度的已有修复)，不另认领；[原UniRL专题](notebook/frameworks/unirl-survey.md#sde-窗口的停留步数与坐标)区分输入rollout_id、去噪窗口起点与optimizer step。固定main6fd82cba原完整调度模块CPU两次一致，T10默认threshold13不衰减，但Wan22 T20仅切换策略的反事实末窗25→21；四实际配方仍progressive。脚本／JSON随仓库，无Hydra／SDE／模型、参考parity或提速验收；旧PR blob缺失未得diff，未重试代理。M5原入口只补条件口径，不新增队列、探服务器、改专项或写上游。下轮转独立真实需求／实质反馈，不扩窗口矩阵或改已有调度方案。
+
 - **M1 异步恢复库存与warmup（2026-10-25）**：起始e02b537干净、fetch无新增，compare保留799无删改。读[#7579全文／两评论与已合并#7762](open-source/verl/tracker.md#异步恢复库存与预热容量)，作者确认新journal＋旧模型非一致时间点恢复，已消费轨迹不留且更晚策略库存影响未测，不接管117文件方案。[原checkpoint专题](notebook/frameworks/verl-checkpoint-management-reading.md#异步恢复的存活库存与训练历史)核main3c6d9b43重发／预热次序：所有恢复prompt占预取容量，终态不重发亦计数。原9 warmup测试体两次隔离通过，仅完整方法／原Mock；无TQ／实际重发／往返／journal或训练，脚本／JSON随仓库。flush级故障、tick尾时延及生成工作秒不泛化。M5原参考只补获准匹配条件，无新崩溃／算力队列、服务器／专项或上游动作。下轮转独立真实需求／实质反馈，不扩假恢复矩阵、写consume log或自动部署原型。
 
 - **M1 选定token概率恒等式（2026-10-25）**：起始d4f8a52干净、fetch无新增，compare保留797无删改。读[#7712](open-source/verl/tracker.md#选定-token-概率提案的范围收窄)全文／5评论及旧fork draft；作者已撤回组合器，剩默认off引擎输出，新恒等式非旧f894f21e实现，不认领。[原输出头专题](notebook/frameworks/verl-fused-output-softcap.md#选定-token-概率与共享归一化项)区分全词表概率与集合条件概率，真实FP64 CPU值／双梯度对照误差<1e-12，detach锚点负控制值同梯度错；脚本／JSON随仓库。仅一个数学形状与四模块语法，无原作者测试、BF16／kernel／SP／原地CE／训练；H200单算子报告非新E2E证据。原M5条件参考不新排算力，无服务器、专项或上游动作。下轮转独立需求／实质接口反馈，不扩toy矩阵、另写组合器或抢先实现kernel。

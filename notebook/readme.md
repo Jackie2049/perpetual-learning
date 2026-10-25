@@ -258,6 +258,7 @@
   - [Judge回复与失败状态](frameworks/unirl-survey.md#judge-回复解析与失败状态) — 原方法七组本地Response控制；关键词非语义、协议外文本不重试、请求失败可零分且上层仍标成功，非真实服务或训练验收
   - [离线embedding身份与发布](frameworks/unirl-survey.md#离线-embedding-的身份与索引发布) — 原store真实CPU文件往返/rename失败恢复；coverage只查key，resume字符串非权重内容身份，不是编码或共享存储验收
   - [Replay分块与反向](frameworks/unirl-survey.md#replay-分块与反向更新边界) — #465已合并；stage小forward与算法及时backward分开，尾块按C/S、std非均值，纯元素损失CPU控制不认证真实replay/通信
+  - [窗口停留与阈值坐标](frameworks/unirl-survey.md#sde-窗口的停留步数与坐标) — #489已合并，原调度模块CPU序列区分rollout_id／去噪起点；Wan22 T20反事实可触发默认13，四实际配方仍progressive，非参考等价或模型验收
   - [窗口后的压缩积分](frameworks/unirl-survey.md#sde-窗口后的压缩积分尾段) — #545原纯模块720静态日程/64小张量CPU控制；保留窗口出口，尾点数非尾段调用数，非参考harness/Flow SDE或训练收益验收
   - [Token预算与update成员](frameworks/unirl-survey.md#token-预算与-update-成员) — 原CPU planner保留update成员；预算不拒绝超长单样本，无长度会回退数量规划，非显存保证
   - [EMA衰减与时机](frameworks/unirl-survey.md#ema-衰减方向与更新时机) — decay乘旧影子，零值复制live；原CPU mirror/回调/上下文控制，非optimizer或训练验收
