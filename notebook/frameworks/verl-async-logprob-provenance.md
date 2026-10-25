@@ -4,6 +4,41 @@
 
 适用源码为 verl `1876b06d0a3e4e71e06230be10af14492ca8a75b` 的 V1 separate-async。关联 [#8250](https://github.com/verl-project/verl/issues/8250) 报告明确使用该入口、私有修改及 temperature=1；安装的vLLM版本仍未知。这里不将旧experimental fully_async_policy路径或依赖pin当作该运行环境。阅读日期2026-10-21。
 
+## Padding 行与序列指标的分母
+
+2026-10-25接续。[#7771](https://github.com/verl-project/verl/issues/7771)的序列诊断问题已有rrrxxx0510的OPEN/non-draft [#7785](https://github.com/verl-project/verl/pull/7785)，head `7ffe2fa4a4f5581c27e09b8f2e438e3b61d8e7ee`。当前目标base为 `3f9d4c0d`，真正共同祖先为 `d040717b21af2e23e8e789a3e354cff2394ae2de`，ahead1／behind49；相对祖先仅两文件46增3删。不把目标base当直接父版本，也不另写竞争修复。
+
+**全mask行不应成为“模型更一致”的证据。** 固定main `3c6d9b43b67c74ec343d77874cd8fa6e841523da`的[原指标函数](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/ppo/rollout_corr_helper.py)先对每行做masked_mean，再跨所有行取均值。全零mask的行得到平均log-prob=0，于是人为贡献PPL=1、log-PPL差=0和序列ρ²=1。补空行不改变真实token，却改变这些序列统计；token级kl、k3_kl、chi2_token使用全部有效token的mask归约，分母不同。
+
+### 原回归的 CPU 对照
+
+[复现脚本](../../experiments/verl-padding-metrics/verify.py)从固定Git blob提取**未改断言的原新增一测试体**、完整compute_offpolicy_metrics及各版本原masked_mean／masked_sum函数，真实PyTorch CPU执行。没有导入verl包或运行其他测试的设备自动探测。Python3.12.13／torch2.14.1／pytest9.1.1，两次输出逐字相同；[JSON](../../experiments/verl-padding-metrics/results.json)保留全部指标、源码hash和失败信息。
+
+原例一行六个有效token，old_log_prob=−2、rollout_log_prob=−1，再追加**三行**全零mask：
+
+| 版本 | 原回归 | training_ppl 补行前→后 | log_ppl_abs_diff 补行前→后 |
+|---|---|---|---|
+| 共同祖先 d040717b | 首个断言预期失败 | 7.389056→2.597264 | 1→0.25 |
+| 候选 7ffe2fa4 | 通过全部原断言 | 7.389056→7.389056 | 1→1 |
+| 当轮main 3c6d9b43 | 首个断言预期失败 | 7.389056→2.597264 | 1→0.25 |
+
+候选只在序列归约时选择 `response_mask.sum(-1)>0` 的行；在0/1有效位契约下对应至少一枚有效token。该原例中，三版token级kl=1、k3_kl≈0.367879、chi2_token≈−0.864665在补行前后不变。有限样本的chi2估计出现负值，不是完整词表χ²散度为负的证明；这些常数log-prob也不模拟真实模型分布。候选仍保留全空batch断言，未将全空定义成0指标。本轮只跑这一个原测试体，不将作者31项或报告者52项测试记成本项目结果。
+
+### 去掉空行仍不等于 corpus PPL
+
+令每条非空响应的平均负log-prob为hᵢ。`training_ppl`实际是**mean(exp(hᵢ))**，`training_log_ppl`是mean(hᵢ)，二者不是对同一个聚合量互取exp／log。按所有token累计的corpus PPL还会按长度加权，也不是这两者。脚本仅补一个两行代数解释例：有效长度分别1和3，student平均负log-prob分别1和3，rollout分别0.5和2；候选原函数得到：
+
+- 序列PPL算术均值11.401909；exp(序列NLL均值)=7.389056；corpus token PPL=12.182494。
+- `ppl_ratio`是mean(exp(逐序列log-PPL差))=2.183501；exp(`log_ppl_diff`)=2.117000；两个PPL均值之比=2.523167。
+
+因此源码注释里的逐序列 `log(ppl_ratioᵢ)=log_ppl_diffᵢ` 不能直接套到日志里的跨行汇总值；不把这些不同数值当新bug或再改聚合公式。这个解释例不是原回归、性能实验或新测试矩阵。
+
+### 调用位置与验证边界
+
+[V1原调用者](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/ppo/v1/trainer_base.py)先balance，后算old log-prob与优势；[padding模板](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/ppo/padding_utils.py)给response_mask置0并设is_padding=True。在解耦、配置存在且有rollout_log_probs时，优势入口直接调用校正包装器；后面的_compute_metrics按tag过滤，不能追溯修复先前已算好的标量。校正函数还刻意用**拒绝前的原response_mask**算off-policy诊断，而非RS修改后的mask；排synthetic padding与只统计被接纳token不是同一需求。
+
+本轮祖先／main的指标函数AST相同、完整helper文件也同字节；不代表全部工具或代码树相同。源码调用链仅阅读，CPU未执行padding构造、TQ、trainer、IS／RS或loss，所以原回归通过不认证这些路径或训练质量。复现从本项目根目录执行 `python -B experiments/verl-padding-metrics/verify.py <已有固定对象的只读verl仓库>`，缺blob直接失败，不自动取网。M5原观测参考仅补有效行／token分母，不新增训练队列或改专项；下一轮转独立需求／实质反馈，不扩padding矩阵或采用／发布候选。社区写入与已建PR head推送仍须逐项明确授权。
+
 ## 四种策略与概率字段
 
 | 对象 | 字段与来源 | 比较时须保留的身份 |

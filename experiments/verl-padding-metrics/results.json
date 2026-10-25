@@ -1,0 +1,145 @@
+{
+  "revisions": {
+    "ancestor": "d040717b21af2e23e8e789a3e354cff2394ae2de",
+    "candidate": "7ffe2fa4a4f5581c27e09b8f2e438e3b61d8e7ee",
+    "main": "3c6d9b43b67c74ec343d77874cd8fa6e841523da"
+  },
+  "python": "3.12.13",
+  "torch": "2.14.1",
+  "pytest": "9.1.1",
+  "results": {
+    "ancestor": {
+      "original_test": "assertion_failed",
+      "real": {
+        "training_ppl": 7.389056205749512,
+        "training_log_ppl": 2.0,
+        "kl": 1.0,
+        "k3_kl": 0.36787939071655273,
+        "rollout_ppl": 2.7182817459106445,
+        "rollout_log_ppl": 1.0,
+        "log_ppl_diff": 1.0,
+        "log_ppl_abs_diff": 1.0,
+        "log_ppl_diff_max": 1.0,
+        "log_ppl_diff_min": 1.0,
+        "ppl_ratio": 2.7182817459106445,
+        "chi2_token": -0.8646646738052368,
+        "chi2_seq": -0.9999938607215881
+      },
+      "with_three_padding_rows": {
+        "training_ppl": 2.597264051437378,
+        "training_log_ppl": 0.5,
+        "kl": 1.0,
+        "k3_kl": 0.36787939071655273,
+        "rollout_ppl": 1.4295704364776611,
+        "rollout_log_ppl": 0.25,
+        "log_ppl_diff": 0.25,
+        "log_ppl_abs_diff": 0.25,
+        "log_ppl_diff_max": 1.0,
+        "log_ppl_diff_min": 0.0,
+        "ppl_ratio": 1.4295704364776611,
+        "chi2_token": -0.8646646738052368,
+        "chi2_seq": -0.24999845027923584
+      },
+      "original_assertion": "training_ppl changed when all-padding rows were added: 7.389056205749512 -> 2.597264051437378"
+    },
+    "candidate": {
+      "original_test": "passed",
+      "real": {
+        "training_ppl": 7.389056205749512,
+        "training_log_ppl": 2.0,
+        "kl": 1.0,
+        "k3_kl": 0.36787939071655273,
+        "rollout_ppl": 2.7182817459106445,
+        "rollout_log_ppl": 1.0,
+        "log_ppl_diff": 1.0,
+        "log_ppl_abs_diff": 1.0,
+        "log_ppl_diff_max": 1.0,
+        "log_ppl_diff_min": 1.0,
+        "ppl_ratio": 2.7182817459106445,
+        "chi2_token": -0.8646646738052368,
+        "chi2_seq": -0.9999938607215881
+      },
+      "with_three_padding_rows": {
+        "training_ppl": 7.389056205749512,
+        "training_log_ppl": 2.0,
+        "kl": 1.0,
+        "k3_kl": 0.36787939071655273,
+        "rollout_ppl": 2.7182817459106445,
+        "rollout_log_ppl": 1.0,
+        "log_ppl_diff": 1.0,
+        "log_ppl_abs_diff": 1.0,
+        "log_ppl_diff_max": 1.0,
+        "log_ppl_diff_min": 1.0,
+        "ppl_ratio": 2.7182817459106445,
+        "chi2_token": -0.8646646738052368,
+        "chi2_seq": -0.9999938607215881
+      }
+    },
+    "aggregation_illustration": {
+      "original_metrics": {
+        "training_ppl": 11.401908874511719,
+        "training_log_ppl": 2.0,
+        "kl": 0.875,
+        "k3_kl": 0.30254220962524414,
+        "rollout_ppl": 4.518888473510742,
+        "rollout_log_ppl": 1.25,
+        "log_ppl_diff": 0.75,
+        "log_ppl_abs_diff": 0.75,
+        "log_ppl_diff_max": 1.0,
+        "log_ppl_diff_min": 0.5,
+        "ppl_ratio": 2.1835014820098877,
+        "chi2_token": -0.8065286874771118,
+        "chi2_seq": -0.8148208856582642
+      },
+      "exp_mean_sequence_nll": 7.38905609893065,
+      "corpus_token_ppl": 12.182493960703473,
+      "exp_mean_log_ppl_diff": 2.117000016612675,
+      "ratio_of_mean_ppls": 2.523166690514389
+    },
+    "main": {
+      "original_test": "assertion_failed",
+      "real": {
+        "training_ppl": 7.389056205749512,
+        "training_log_ppl": 2.0,
+        "kl": 1.0,
+        "k3_kl": 0.36787939071655273,
+        "rollout_ppl": 2.7182817459106445,
+        "rollout_log_ppl": 1.0,
+        "log_ppl_diff": 1.0,
+        "log_ppl_abs_diff": 1.0,
+        "log_ppl_diff_max": 1.0,
+        "log_ppl_diff_min": 1.0,
+        "ppl_ratio": 2.7182817459106445,
+        "chi2_token": -0.8646646738052368,
+        "chi2_seq": -0.9999938607215881
+      },
+      "with_three_padding_rows": {
+        "training_ppl": 2.597264051437378,
+        "training_log_ppl": 0.5,
+        "kl": 1.0,
+        "k3_kl": 0.36787939071655273,
+        "rollout_ppl": 1.4295704364776611,
+        "rollout_log_ppl": 0.25,
+        "log_ppl_diff": 0.25,
+        "log_ppl_abs_diff": 0.25,
+        "log_ppl_diff_max": 1.0,
+        "log_ppl_diff_min": 0.0,
+        "ppl_ratio": 1.4295704364776611,
+        "chi2_token": -0.8646646738052368,
+        "chi2_seq": -0.24999845027923584
+      },
+      "original_assertion": "training_ppl changed when all-padding rows were added: 7.389056205749512 -> 2.597264051437378"
+    }
+  },
+  "ancestor_main_metric_ast_equal": true,
+  "source_sha256": {
+    "7ffe2fa4a4f5581c27e09b8f2e438e3b61d8e7ee:tests/trainer/ppo/test_rollout_corr.py": "d5cc68769791a1bb7f1cb39dbeadf4fa6cd4e82174131449ac7adf2c6499c430",
+    "d040717b21af2e23e8e789a3e354cff2394ae2de:verl/utils/torch_functional.py": "9855e101c19b64c90d1f07bf47ce3e628751afe979b40d2b863ae6d16aa4cee1",
+    "d040717b21af2e23e8e789a3e354cff2394ae2de:verl/trainer/ppo/rollout_corr_helper.py": "763158342551bc4077805a8a009d959a7a2043c4d43b772fe6045f4a40932f3e",
+    "7ffe2fa4a4f5581c27e09b8f2e438e3b61d8e7ee:verl/utils/torch_functional.py": "9855e101c19b64c90d1f07bf47ce3e628751afe979b40d2b863ae6d16aa4cee1",
+    "7ffe2fa4a4f5581c27e09b8f2e438e3b61d8e7ee:verl/trainer/ppo/rollout_corr_helper.py": "04e87fa39df37bd0c5d61a217bb5aaa96a3ea55c1a0a365b1c9b01cfab56c2d2",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/utils/torch_functional.py": "bc7ff798e2f5c06e0121668490739814efc519ff66d4d7dd7c8fc40b4840eb03",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/trainer/ppo/rollout_corr_helper.py": "763158342551bc4077805a8a009d959a7a2043c4d43b772fe6045f4a40932f3e"
+  },
+  "scope": "one original test body; original metric/masked functions only; no trainer/TQ/IS/loss/model"
+}
