@@ -3,6 +3,26 @@
 > 2026-06-15 | 源码: verl/single_controller/ + verl/workers/engine_workers.py + verl/checkpoint_engine/ + verl/workers/rollout/
 > 核心: WorkerGroup=Ray actor管理+Dispatch路由 → RolloutMode(HYBRID/COLOCATED/STANDALONE) → Sleep/Wake GPU内存切换 → 3种Weight Sync后端(naive/NCCL/NIXL)
 
+## Rollout 调度等待与引擎就绪
+
+**暴露调度失败，不等于预留资源或证明引擎已就绪。** 2026-10-26核对[#7381](https://github.com/verl-project/verl/issues/7381)与[#7383](https://github.com/verl-project/verl/issues/7383)：报告者在两节点、每节点一卡的7B colocate运行中观察到一个vLLM server actor长期PENDING_CREATION，0.5B同布局却成功；明确没有保存其required_resources。报告将挂起定位到首次actor方法结果等待处，不足以证明确定的GPU短缺、所有一卡拓扑不受支持，或NCCL就是根因。#7383的资源预留／分离部署／限制拓扑仍是待维护者裁定的方向。
+
+已有OPEN/non-draft [#7382](https://github.com/verl-project/verl/pull/7382)，固定head `8ebc3558c39d5192a6bf312a806c889a2197f293`，父版／共同祖先 `dc709afb7a74fd2645640a4e5f2fdf40166b4fbb`，相对当轮main `3c6d9b43` ahead1／behind5，五文件131增3删。不另实现超时helper或PG方案。主线[vLLM创建路径](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/workers/rollout/vllm_rollout/vllm_async_server.py#L1534)仍硬节点亲和、随后等待get_master_address；这个调用点没有显式num_gpus请求，不能把原CPU测试字典中的GPU=1当真实actor资源需求。
+
+### Guard 实际覆盖什么
+
+候选在vLLM、SGLang和TRTLLM创建server actors后、首次启动相关RPC前插入[wait_rollout_servers_scheduled](https://github.com/verl-project/verl/blob/8ebc3558c39d5192a6bf312a806c889a2197f293/verl/workers/rollout/replica.py#L45)。缺省300秒、轮询间隔2秒；只有PENDING_CREATION／DEPENDENCIES_UNREADY留在pending，查不到actor的None也按pending处理。它不是“每个actor都为ALIVE”的断言，更不检查模型加载、HTTP服务或生成请求成功。查不到状态也不单独证明节点没空位。
+
+循环先同步逐个调用get_actor，再决定是否超时；不传每次查询的剩余预算，没有把整个循环包在可取消的超时器内。若没有pending则直接返回，不再检查deadline。因此300秒是pending轮询的检查阈值，不是整个LLMServerManager.create／引擎启动的硬上限。helper也没有reserve、取消／kill actor或部分启动回滚；报错文本提供建议，不等于已实施这些操作。
+
+CodeRabbit在同一行内评论提出State API依赖和阻塞两项担忧，review状态为COMMENTED，不是批准。独立核对[Ray 2.41.0官方get_actor](https://github.com/ray-project/ray/blob/ray-2.41.0/python/ray/util/state/api.py#L554)确为普通同步函数，构造REST StateApiClient并有独立timeout；[默认值为30秒](https://github.com/ray-project/ray/blob/ray-2.41.0/python/ray/util/state/common.py#L47)。候选未捕获查询异常，它们不会变成None分支的调度诊断。这个固定版本源码核对**不认证报告／部署安装的Ray版本，也不证明任意include_dashboard=False配置必然失败**；后者需区分UI开关、State服务可达性及具体安装，不能直接照抄机器人判断。
+
+### 四个原测试体的验证范围
+
+[复现脚本](../../experiments/verl-server-schedule-guard/verify.py)原样AST装载helper／两常量和原四协程测试体，保留原get_actor替身：ALIVE立即返回、两次pending后ALIVE、持续pending的诊断异常、None持续缺失的异常；四项两次通过且[JSON](../../experiments/verl-server-schedule-guard/result.json)一致。真实asyncio／monotonic／sleep与pytest MonkeyPatch／raises，Python3.12.13、pytest9.1.1；不是原生pytest收集，也没有Ray State HTTP、真实actor或调度器。
+
+五份完整模块AST／compile通过，三调用端各一个await接线仅AST核对，未运行其启动路径。测试里人工填的node0／GPU=1不能补足原报告的资源证据；未验证API异常、所有状态、清理、调度修复或GPU引擎，不继续扩替身矩阵。本题是现有候选的范围审计，不新排M5算力、不改专项或发布反馈；若后续确有获准运行，应先捕获同版真实actor资源／节点快照再判断根因，不能据这四项控制调整GPU布局。另见[组初始化等待与退出](verl-async-logprob-provenance.md#组初始化的等待超时与任务退出)，两者都不能把等待失败自动视为资源已回收，但属于不同启动阶段。
+
 ## 1. WorkerGroup 类层次
 
 ```

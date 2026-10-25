@@ -1,0 +1,36 @@
+{
+  "caller_wiring": {
+    "verl/workers/rollout/sglang_rollout/async_sglang_server.py": {
+      "check": "AST only; caller not executed",
+      "guard_await_line": 863
+    },
+    "verl/workers/rollout/trtllm_rollout/trtllm_async_server.py": {
+      "check": "AST only; caller not executed",
+      "guard_await_line": 659
+    },
+    "verl/workers/rollout/vllm_rollout/vllm_async_server.py": {
+      "check": "AST only; caller not executed",
+      "guard_await_line": 1556
+    }
+  },
+  "environment": {
+    "pytest": "9.1.1",
+    "python": "3.12.13",
+    "system": "Darwin"
+  },
+  "passed_original_test_bodies": [
+    "test_returns_once_actor_is_alive",
+    "test_waits_through_transient_pending",
+    "test_raises_with_diagnostic_when_unschedulable",
+    "test_treats_missing_actor_as_unschedulable"
+  ],
+  "revision": "8ebc3558c39d5192a6bf312a806c889a2197f293",
+  "scope": "unchanged original helper/test bodies, original get_actor replacements; real asyncio/time and pytest MonkeyPatch/raises; not pytest collection, Ray State API, scheduling or backend launch",
+  "source_sha256": {
+    "tests/workers/rollout/test_rollout_server_schedule_guard_on_cpu.py": "8d8ae5dd61828730e53c43f7e80d6f7b555e86e07701b52afb877ea83161714e",
+    "verl/workers/rollout/replica.py": "e7fc55507212532d130b522bcd15fe1236a2e5d8e9b94adde9e70c4e4f3f632b",
+    "verl/workers/rollout/sglang_rollout/async_sglang_server.py": "99e0592845ccd7e58f41ee0c437c62e3c61da597627fc9e650114e3e9eaf509a",
+    "verl/workers/rollout/trtllm_rollout/trtllm_async_server.py": "9ee2a23e9698b291a1d91dbbb3bfa54f4e2367e69ef3157fc9aacb57d6064095",
+    "verl/workers/rollout/vllm_rollout/vllm_async_server.py": "e59b6b6177b28da2cf05ddb6ee07937f34dda1b5977c84c6f00a34849b61d289"
+  }
+}

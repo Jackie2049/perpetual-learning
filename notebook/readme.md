@@ -194,6 +194,7 @@
 - [verl 新版阶段 tracing](frameworks/verl-async-logprob-provenance.md#新版阶段-tracing-与证据关联) — #8315原12项日志测试三版本对照，前后head均过但生产lane不同；Mock调用不认证后端显示/真实同步，M5原条目已同步版本
   - [Gauge元数据与训练步存储](frameworks/verl-async-logprob-provenance.md#gauge-元数据与训练步存储) — #8357原logger到固定SDK原push路由四分支控制；step标签非global_step记录，sink边界保留不等于后端已存储，非服务/设备验收
 - [verl 单 worker NIXL 拓扑](frameworks/verl-async-logprob-provenance.md#单-rollout-worker-的-nixl-拓扑) — #8316原函数20组控制及后续新增1原测试隔离对照；worker非replica，测试体通过非原生导入/传输验收
+- [verl Rollout调度等待](frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#rollout-调度等待与引擎就绪) — #7382原四协程控制通过；不等资源预留、引擎就绪或整个启动硬期限，机器人部署判断需独立核对
 - [verl 组初始化等待超时](frameworks/verl-async-logprob-provenance.md#组初始化的等待超时与任务退出) — #7045当前控制端head、12组原参数检查；等待上限不等于全链路截止、RPC取消或资源回收，真机条件补M5原条目
 - [verl Resume扩展字段](frameworks/verl-async-logprob-provenance.md#resume-返回值与扩展字段合并) — #8341新版三推测计数按attempt求和；仅新增2原测试体旧/新对照，原统计函数显示率相同仍可丢计数，非后端/AgentLoop验收；旧字段测试保留历史
 - [verl Bypass字段与worker配置](frameworks/verl-async-logprob-provenance.md#bypass-字段替换与-worker-的-loss-配置) — #8348新head删除冲突/镜像/PP与动态CP guard及旧测试；两版五组OmegaConf输入确认保证收窄、接受范围扩大，旧19例不作新版认证，非worker/训练验收
