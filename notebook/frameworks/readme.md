@@ -182,6 +182,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [SGLang 概率模式与请求参数](verl-async-logprob-provenance.md#sglang-概率模式与请求参数) — #8363原四配置测试体候选全过，验证参数覆盖可无构造告警；raw／温度／截断归一化与启动环境分开，非真实引擎验收。
 - [verl Bypass字段与worker配置](verl-async-logprob-provenance.md#bypass-字段替换与-worker-的-loss-配置) — #8348原19配置例通过；概率锚点替换不等于远端loss切换，提前配置/显式loss保留/冲突拒绝，非worker或训练验收。
 - [verl 新版同步阶段 tracing](verl-async-logprob-provenance.md#新版阶段-tracing-与证据关联) — #8315新head原12项日志测试与实际lane表达式对照；helper通过不认证生产接线/后端显示，保留no-op和真实同步边界。
+  - [Gauge元数据原测试补证](../../experiments/verl-rl-insight/readme.md#gauge-元数据原测试补证) — #8357原七项候选过、父版仅新增标签契约失败；不重复认领已有路由学习，Mock通过非存储／服务验收。
 - [verl 单 worker NIXL 拓扑](verl-async-logprob-provenance.md#单-rollout-worker-的-nixl-拓扑) — #8316两版各20组控制，后续head补1原测试并隔离对照；on_cpu不保证无原生导入依赖，非同步验收。
 - [verl Resume扩展字段](verl-async-logprob-provenance.md#resume-返回值与扩展字段合并) — #8341原2测试体隔离对照，首次非None cache/分段top-k与通用最后出现值分开；未跑原生导入或后端。
 - [verl Full Model Prefix Sharing 旧 RFC 已撤回](verl-6401-rfc-full-model-ps.md)

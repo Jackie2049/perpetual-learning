@@ -389,6 +389,8 @@ python3 experiments/scripts/verify_verl_logprob_provenance.py /path/to/verl-8250
 
 评估采用时要先确定实际后端和消费协议：需要新API且可用时，核trace接收/保留与查询；需要旧gauge兼容路径时，核exporter如何恢复原名、解析step并避免将它留作时序维度。当前草案已明确该取舍；不把传参通过称为监控修复完成，不因本项部署监控、外发训练数据、追加GPU任务或改#8250/#8313。已有#8315的原12测试与同步边界结论保持原版本，不重复执行。
 
+2026-10-26补证限于[原七项logger测试](../../experiments/verl-rl-insight/readme.md#gauge-元数据原测试补证)：#8357仍同一draft head，唯一bot评论表示未自动review，reviews／行内评论空。候选7过，父版6过、仅新增标签契约项失败；完整原fixtures／MagicMock和断言不改，结果／源文件hash已保存。它补上10-24当轮未执行的原测试范围，不替代或扩大上面的事件路由／存储结论。默认#8315十二项只作脚本修改回归，未增加服务、存储或设备验收；无新GPU缺口或M5队列。
+
 ## 单 rollout worker 的 NIXL 拓扑
 
 2026-10-21核对已有[#8316](https://github.com/verl-project/verl/pull/8316)，读取时open、rafiw，head `3a60b8710f8e1001110820f7a14cd0e71d9d5e07`、目标base `f2923cbf154731918b1e36db8c567433f349fede`、共同祖先 `619c397dc9917fed278b6e47c52a6620aef05466`。真正PR只改一行切片，未提交测试文件；正文勾选“新增单测”不能替代固定diff证据。这里验证的是**拓扑参数契约，不是权重同步完成**，也不说明#8250实际使用了此backend或故障由它造成。

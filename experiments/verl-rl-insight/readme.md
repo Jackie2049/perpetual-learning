@@ -31,3 +31,16 @@ GIT_NO_LAZY_FETCH=1读固定对象，不切换checkout或写上游源码。AST�
 首次审计钩子拒绝全部socket事件，误伤asyncio自唤醒用的本地匿名AF_UNIX socketpair，出现4失败/8通过及未等待协程警告；这是本复查脚本的限制，不是上游失败。修正为仅允许AF_UNIX socket创建，继续拒绝INET创建及bind/connect/DNS等事件，三版本重跑得到上表结果且无该警告。没有放开服务连接或修改原async测试。
 
 脚本打印完整输入SHA256，核torch/ray/orjson/rl_insight未导入。当前tracking与前head逐字相同；当前engine_workers SHA256 `7166ff29e71eb101031ce88aa22feb32f0d960a5e795af0e8116f37aff757ec1`，原测试 `874a695c536517254d666dc5b42a7309993a7f86d33e654ec7fbf66c6de58cf3`。本实验不认证监控后端接收、lane筛选/显示、真实性能或权重同步；真实观测仍依M5原事项条件，不新增实验排队或默认采用候选。
+
+## Gauge 元数据原测试补证
+
+2026-10-26只补[#8357](https://github.com/verl-project/verl/pull/8357)的完整原七项logger测试，不重开[已有事件路由结论](../../notebook/frameworks/verl-async-logprob-provenance.md#gauge-元数据与训练步存储)。两个新revision选项分别固定父版／main `3c6d9b43b67c74ec343d77874cd8fa6e841523da` 和head `cd12877931cdd441adb731978a8b3785858dba27`；均配head原测试文件。类、fixtures、测试体和断言不改，隔离机制沿用上节，真实客户端仍是原MagicMock。
+
+Python3.12.13／pytest9.1.1／Darwin：候选7项通过；父版6项通过，仅test_log_lazy_inits_and_writes_gauge因缺少两个新增标签而预期AssertionError。原pytest对父版返回1，包装器核对精确失败集合后才退出0，没有改xfail或吞掉任意失败。环境关闭、初始化／清理、16协程及旧特性降级的Mock契约都包含在七项中，不是七项新功能。源码hash、每项结果与环境见[gauge-result.json](gauge-result.json)，两次执行语义一致。
+
+```bash
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1 python experiments/verl-rl-insight/verify.py /path/to/verl --revision gauge-base
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONDONTWRITEBYTECODE=1 python experiments/verl-rl-insight/verify.py /path/to/verl --revision gauge-head
+```
+
+两版各两完整生产模块及同一原测试文件均内存compile；不执行整包导入。修改脚本后的默认current模式12项也回归通过，只保证旧复查入口未破坏，不新增tracing或后端结论。本轮初筛漏检原笔记，短暂重复的事件控制已停止、未保留成新实验或新发现；未安装缺失的Prometheus客户端，没有registry／服务／存储验证或新M5任务。

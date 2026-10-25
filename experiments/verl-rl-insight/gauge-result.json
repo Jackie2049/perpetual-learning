@@ -1,0 +1,97 @@
+{
+  "base": {
+    "counts": {
+      "failed": 1,
+      "passed": 6
+    },
+    "environment": {
+      "pytest": "9.1.1",
+      "python": "3.12.13",
+      "system": "Darwin"
+    },
+    "revision": "3c6d9b43b67c74ec343d77874cd8fa6e841523da",
+    "scope": "7 original gauge PR tests and fixtures on isolated original classes; MagicMock client; not native verl imports or monitoring service",
+    "source_sha256": {
+      "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/utils/rollout_trace.py": "ffb4ee0f50062594c00d8a99a8396ccc50800bdfb1b47bea0bdb64651a7dd60a",
+      "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/utils/tracking.py": "b237109346c1133ecbdd615e5631e49021609eaeb59f100629e894bfd32ca3c1",
+      "cd12877931cdd441adb731978a8b3785858dba27:tests/utils/test_rl_insight_logger_on_cpu.py": "26a7793584177590315c333ef221a6135e3782c27efa8b480fc8f0f4815b1581"
+    },
+    "tests": [
+      [
+        "test_apis_are_noops_when_env_disabled",
+        "passed"
+      ],
+      [
+        "test_init_registers_transfer_queue_after_client_init",
+        "passed"
+      ],
+      [
+        "test_log_lazy_inits_and_writes_gauge",
+        "failed"
+      ],
+      [
+        "test_trace_state_lazy_inits_once_under_concurrent_async_tasks",
+        "passed"
+      ],
+      [
+        "test_register_metrics_dedups_and_finish_resets",
+        "passed"
+      ],
+      [
+        "test_trace_span_warns_and_noops_with_old_rl_insight",
+        "passed"
+      ],
+      [
+        "test_agent_loop_session_falls_back_with_old_rl_insight",
+        "passed"
+      ]
+    ]
+  },
+  "head": {
+    "counts": {
+      "passed": 7
+    },
+    "environment": {
+      "pytest": "9.1.1",
+      "python": "3.12.13",
+      "system": "Darwin"
+    },
+    "revision": "cd12877931cdd441adb731978a8b3785858dba27",
+    "scope": "7 original gauge PR tests and fixtures on isolated original classes; MagicMock client; not native verl imports or monitoring service",
+    "source_sha256": {
+      "cd12877931cdd441adb731978a8b3785858dba27:tests/utils/test_rl_insight_logger_on_cpu.py": "26a7793584177590315c333ef221a6135e3782c27efa8b480fc8f0f4815b1581",
+      "cd12877931cdd441adb731978a8b3785858dba27:verl/utils/rollout_trace.py": "ffb4ee0f50062594c00d8a99a8396ccc50800bdfb1b47bea0bdb64651a7dd60a",
+      "cd12877931cdd441adb731978a8b3785858dba27:verl/utils/tracking.py": "23f090f5c79b1c1ed182e2670482050c3893a9100f94413b27936f5a0c0321af"
+    },
+    "tests": [
+      [
+        "test_apis_are_noops_when_env_disabled",
+        "passed"
+      ],
+      [
+        "test_init_registers_transfer_queue_after_client_init",
+        "passed"
+      ],
+      [
+        "test_log_lazy_inits_and_writes_gauge",
+        "passed"
+      ],
+      [
+        "test_trace_state_lazy_inits_once_under_concurrent_async_tasks",
+        "passed"
+      ],
+      [
+        "test_register_metrics_dedups_and_finish_resets",
+        "passed"
+      ],
+      [
+        "test_trace_span_warns_and_noops_with_old_rl_insight",
+        "passed"
+      ],
+      [
+        "test_agent_loop_session_falls_back_with_old_rl_insight",
+        "passed"
+      ]
+    ]
+  }
+}
