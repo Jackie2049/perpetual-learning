@@ -2,6 +2,8 @@
 
 2026-10-22 补充：[局部更新的指标聚合](#局部更新的指标聚合)固定于 verl `1876b06d`，区分日志归约与实际计时接线。下方 #6790 的架构、PR 状态及性能判断是 2026-06-18 历史阅读，不属于本次 CPU 验证范围。
 
+2026-10-25接续：[异步空闲指标与调度等待](#异步空闲指标与调度等待)固定主线`3c6d9b43`：混合引擎已有借给rollout再收回的实现，不能沿用六月“永不切换”的结论。采样等待、切换等待、路由请求数与GPU利用率分开，本次仅源码核对。
+
 2026-10-23 补充：[会话水位与未消费组上限](#会话水位与未消费组上限)分析未合并draft #8203的准入单位与资源释放；旧warmup与进程内ReplayBuffer说明不自动适用于这条新路径。
 
 > 2026-06-18 | MERGED | Author: Begunner | +17/-16 | 2 files changed
@@ -715,6 +717,39 @@ actor在一轮中复用一次TQ元数据快照，处理终态淘汰与请求，�
 作者正文仅写CPU unit tests，未给通过数量；GPU e2e的colocate_async+swe-rebench仍为TODO，未据此推断吞吐、陈旧度或训练收益。真实计数/内存/行为版本条件记入[原M5可选参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不自动升级原报告环境、套用draft或把它归因为#8250。
 
 原SHA256：streaming_dataloader `9a50ea881cd0de5ccb74887224d780ce749f6cdf13016358aa4bbf720f09d90f`、agent_loop_tq `323686bc5a480c8e37439366cb87fe18cc1658d313c97a25c5df999946f4a5ff`、tq_schema `0940a334e4754090f5b114ecf231c70c2b43a457ae0dc507fc5d028ea0ca50eb`、原schema测试 `40bc68e8c5cc7106e3f9936d47460c2b608ccd6e76b12a4e78035ffd565a6c09`。
+
+## 异步空闲指标与调度等待
+
+**等待训练数据不等于整组GPU没有工作，路由中有请求也不等于推理kernel满载。** [#7601](https://github.com/verl-project/verl/issues/7601)请求给V1 `separate_async`补trainer／rollouter idle ratio。2026-10-25读完整正文和三条评论：hsusul已提出路由副本时间积分方案；报告者[mikequan0425](https://github.com/verl-project/verl/issues/7601#issuecomment-5505514047)指出混合引擎在ROLLOUT模式时不应计为trainer资源空闲，并倾向rollouter只统计standalone副本；协作者[tardis-key](https://github.com/verl-project/verl/issues/7601#issuecomment-5505659130)说明当时RL-Insight提供时间线而未计算这两项数值。后者是2026-09-02的说明，不是本轮对所有RL-Insight版本的审计。编号PR搜索为空不代表无人推进，不另写计量实现或替讨论参与者定案。
+
+### 当前计时与状态的含义
+
+固定源码为`3c6d9b43b67c74ec343d77874cd8fa6e841523da`。在[V1训练循环](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/ppo/v1/trainer_base.py#L474)中，每个global step清空`timing_raw`，多个局部更新共享该字典；标准计时实现对同名阶段累加，NVTX／MSTX入口同样委托该实现，平台插件的自定义计时不在本次范围。正式`timing_s/*`由`compute_timing_metrics`在step完成后生成，不是直接把旧fully_async的比率函数装到V1。
+
+| 观测 | 固定源码的含义 | 不能替代 |
+| --- | --- | --- |
+| `timing_s/gen` | `_step_once`中的`on_sample_begin → replay_buffer.sample → metadata更新 → on_sample_end`整段累计 | 纯sample阻塞秒数，或混合GPU空闲比例 |
+| `timing_s/switch_wait` | 混合引擎仍在ROLLOUT模式时等待足够sampleable组，随后才切回trainer | trainer资源完全闲置时间 |
+| `separate_async/switch/idle` | `_step_sample_wait_seconds > poll_interval`得到的布尔决策，写为float | 按时间积分的idle ratio或硬件采样率 |
+| 路由器`get_status` | 当前每副本inflight请求数、总数与注册副本数 | 历史空闲副本时间、后端排队／token调度槽或GPU利用率 |
+| 旧`fully_async/trainer/idle_ratio` | 独立旧聚合器用汇总gen秒数除以step秒数 | 已发布的V1 idle指标，或跨模式等价的资源利用率 |
+| 旧`fully_async/rollouter/idle_ratio` | `reset_staleness`按版本窗口与最后idle起点计算尾段等待；另有active-task/capacity积分指标 | V1 standalone副本空闲比例，或全部空闲区间已累加的保证 |
+
+V1的`step`计时包括step钩子、训练、到期checkpoint保存及step末同步，validation、指标计算与日志写出在外。因此即使自行算gen/step，保存／同步开销也会改变分母，不能仅据比率升降定位生成速度。当前V1目录与默认router没有`idle_ratio`或`resource_utilization`字段命中；这是该固定源码范围的检索结论，不涵盖插件或外部监控。
+
+### 混合资源与路由请求的边界
+
+当前[混合切换](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/ppo/v1/trainer_separate_async.py#L292)会在prepare阶段等待组数，再执行remove／abort／sleep回收混合副本；step末按等待量与实测切换成本决定是否重新借出。等待数据、切换成本和训练计算已经属于不同阶段，不应把`switch_wait`简单加到gen后统称“GPU闲置”。
+
+默认[GlobalRequestLoadBalancer](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/workers/rollout/router.py#L133)只存当前计数：acquire递增、release递减、add置零、remove删除。standalone与借出的hybrid共用它；直接对所有注册副本取零值比例会混入不同资源角色，且单点快照没有时长。讨论中的时间积分仍需确定窗口、副本范围与容量变化规则，当前类没有积累这些历史。
+
+[LLMServerClient](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/workers/rollout/llm_server.py#L124)在发生成RPC前acquire，finally中以不等待的RPC提交release；其inflight范围覆盖服务请求生命周期而非纯kernel时间。一个长请求足以令副本“非零”，多轮工具间隙又不等于该会话已消失；partial-resume还会重复经过该生成调用。这里只按调用关系解释计数语义，未验证Ray消息延迟、异常恢复或后端实际忙闲。
+
+### 验证与接续范围
+
+本机对11份完整相关模块做AST／内存compile，未导入verl、解析硬件平台、执行原切换测试、调度器、Ray、TQ、推理服务或训练。旧fully_async的active-task/capacity积分也未运行，不迁移为V1的验证结果。原CPU切换测试入口为`tests/trainer/ppo/v1/test_separate_async_step_switch_on_cpu.py`，本轮只读入口，不报告其通过。
+
+后续调资源应先固定trainer模式、switch配置、实际standalone／hybrid副本集合、同一统计窗口和生成／采样／同步时间线，再区分等待、容量与后端忙碌；这不是新监控方案或新的训练队列。条件只补[原M5参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，等已有获准匹配观测时独立选用，不抢先启基准或改既定专项。
 
 ## Key Findings Summary
 

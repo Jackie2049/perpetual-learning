@@ -196,6 +196,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [verl #6786: Dynamic Context Parallel (DCP) Batch Split Bug Deep Reading](verl-6786-dynamic-cp-batch-split-bug-reading.md)
 - [verl PR #6790: Separate Async Trainer with Switch+Offload Strategies — Source-Level Reading](verl-6790-async-trainer-reading.md)：新增[局部指标聚合](verl-6790-async-trainer-reading.md#局部更新的指标聚合)，19原测试/5组CPU观察；样本权重不等于token分母，正式计时后置计算，不由helper反例断言trainer缺陷。
 - [verl 会话水位与未消费组上限](verl-6790-async-trainer-reading.md#会话水位与未消费组上限)：#8203会话计数与组额度共同准入，COUNT也维护库存；采样归还组额度早于轨迹释放，非内存/严格陈旧度保证。本机23模块语法、4个原schema参数例，无actor/TQ实测。
+- [V1异步空闲指标与调度等待](verl-6790-async-trainer-reading.md#异步空闲指标与调度等待)：#7601已有参与者方案；gen钩子段、混合rollout等待、布尔idle和路由请求数均非GPU利用率，旧比率不能直接移植。仅源码／语法。
 - [verl PR #6791 — DSv4/GLM5/KimiK2.5 via Megatron Lite 深度阅读](verl-6791-dsv4-megatron-lite-reading.md)
 - [DSA奇数输出与依赖版本](verl-6791-dsv4-megatron-lite-reading.md#dsa-奇数输出与依赖版本) — #8238关联官方#407已合并；压缩KV宽度、输出向量和锁文件分层，历史架构支持不认证变长输入；本机仅源码/语法核对。
 - [verl #6794 — Delta Weight Sync Deep Reading (Extended Analysis)](verl-6794-delta-weight-sync-deep-reading.md)

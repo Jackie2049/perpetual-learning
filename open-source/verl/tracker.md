@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责：①10-24 22:32、②10-25 12:00 回复均按用户逐字文本发出，head 71fd3562（用户裁决：middle 对齐 postprocess_data、cap=1 保留首 token、测试改名回退；CPU 18 passed + 10-25 01:08 GPU e2e 2/2 PASS + 负例 fail-loudly PASS），仍 OPEN/MERGEABLE 等维护者 approve（requested reviewers wuxibin89+dajiaohuang，10-22 后无新审查）；③trainer 级问题讲解中、④草稿 v3 待用户逐字审定，见[原草稿](draft-8313-review-reply.md)。另核[VeOmni后端RFC](#veomni-端到端低精度路线)：作者已开#1360，配置迁移与职责待反馈，不另实现。另核[S3层级](#s3-下载与完整-checkpoint-生命周期)：下载测试不等持久化验收，不另写后端。另核[激活卸载入口](#激活卸载的辅助输出入口)：已有#8277，原五CPU测试体head通过，recording图顺序非真机验收，不另实现。另核[多轮旧配置](#多轮旧配置的接线或弃用)：活跃AgentLoop未消费两键，旧strict差异只告警，等待维护者选择接线或弃用，不另认领。2026-10-25核[system-only输入契约](#仅-system-消息的契约裁定)：当前VL CT仍有wrapper调用点，但维护者要求初始prompt包含user，不另推进通用支持。[原生MTP](#megatron-迁移的已有原型与验收边界)、[FSDP精度](#fsdp-精度默认的两份候选)等历史验证各限原版本与范围，不另竞争实现或对外发布。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责：①10-24 22:32、②10-25 12:00 回复均按用户逐字文本发出，head 71fd3562（用户裁决：middle 对齐 postprocess_data、cap=1 保留首 token、测试改名回退；CPU 18 passed + 10-25 01:08 GPU e2e 2/2 PASS + 负例 fail-loudly PASS），仍 OPEN/MERGEABLE 等维护者 approve（requested reviewers wuxibin89+dajiaohuang，10-22 后无新审查）；③trainer 级问题讲解中、④草稿 v3 待用户逐字审定，见[原草稿](draft-8313-review-reply.md)。另核[V1 idle统计](#v1-异步空闲指标的统计范围)：等待／布尔决策／路由请求数非GPU利用率，不另实现。另核[VeOmni后端RFC](#veomni-端到端低精度路线)：作者已开#1360，配置迁移与职责待反馈，不另实现。另核[S3层级](#s3-下载与完整-checkpoint-生命周期)：下载测试不等持久化验收，不另写后端。另核[激活卸载入口](#激活卸载的辅助输出入口)：已有#8277，原五CPU测试体head通过，recording图顺序非真机验收，不另实现。另核[多轮旧配置](#多轮旧配置的接线或弃用)：活跃AgentLoop未消费两键，旧strict差异只告警，等待维护者选择接线或弃用，不另认领。2026-10-25核[system-only输入契约](#仅-system-消息的契约裁定)：当前VL CT仍有wrapper调用点，但维护者要求初始prompt包含user，不另推进通用支持。[原生MTP](#megatron-迁移的已有原型与验收边界)、[FSDP精度](#fsdp-精度默认的两份候选)等历史验证各限原版本与范围，不另竞争实现或对外发布。
 
 **【大白话讲明白】**
 
@@ -285,6 +285,12 @@
 | [#8099 多输出固定更新次数](https://github.com/verl-project/verl/issues/8099) | 报告者 luyuzhe111 已发布下游实现，限定 V1 actor-only、无distillation、`seq-mean-token-sum`；eteluna 已[公开说明有原型](https://github.com/verl-project/verl/issues/8099#issuecomment-6254265298)，涉及静态micro-batch倍数、padding分布、拒绝shuffle，损失分母仍待定。[#8201](https://github.com/verl-project/verl/pull/8201) OPEN/non-draft，FZYsheep、head `bb057a8c0cedabacadeafc3b1d1b9318d1b59517`，正文声明V1按UID分组与分单元padding/均衡；[#6025](https://github.com/verl-project/verl/pull/6025) OPEN/non-draft，guillemgt、head `e827294d97d5020e17c9b0cd8681e75e5bdbe2aa`，面向旧同步trainer分组 | 不据 `fixed_count` PR关键词搜索空结果认定无人实现，也不标成 #8201 已完整解决 RFC。固定配置步数与按实际materialized UID分组不同；#8201只有每个prompt产生轨迹或启用失败组refill等条件下才维持原定步数。保持同UID不跨步、每步分母选真实行或配置rollout数，也不能互相替代 |
 
 #8340 作者报告3项配置测试和上述CPU复现；#8201作者报告26 passed/10 skipped，#6025作者称做过多输出训练，本项目均未复跑或逐行复审。旧#7525正文还提醒恢复checkpoint须保留原storage-unit数，这属于旧方案的兼容说明，不当作新PR已完成恢复验收。这里不判断三种batching方案谁的训练质量更好，也不搬用RFC中的MigrationBench收益数字；本轮不执行Ray/TQ/训练、创建补丁、对外评论或新增M5任务。只有出现独立缺口、具体协作或契约决策才重新投入。
+
+### V1 异步空闲指标的统计范围
+
+2026-10-25读[#7601](https://github.com/verl-project/verl/issues/7601)全文及三评论：hsusul已提出路由副本积分，报告者要求区分混合ROLLOUT与standalone，协作者说明当时RL-Insight时间线非两项数值。all-state编号搜索无PR；关键词命中已合并[#7373](https://github.com/verl-project/verl/pull/7373)混合借卡及旧fully_async工作，不当作#7601实现完成或空白可认领。
+
+见[原异步专题](../../notebook/frameworks/verl-6790-async-trainer-reading.md#异步空闲指标与调度等待)：main3c6d9b43的gen包含采样钩子、switch/idle是布尔等待决策，router仅当前请求计数且共用混合／独立副本；不能直接推出GPU利用率或完整窗口空闲比。旧gen/step与版本尾段idle不能直接移植V1。11模块AST／compile，无原pytest、调度／服务或训练执行；不另写计量实现／合成积分器，真机观测条件只补原M5参考，不新增队列或上游动作。
 
 ### VeOmni 端到端低精度路线
 

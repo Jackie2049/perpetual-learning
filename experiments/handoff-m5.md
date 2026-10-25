@@ -237,6 +237,8 @@ ModelOpt忽略规则参考（2026-10-22，同一量化入口不另排队）：�
 
 ## verl 异步策略一致性补证
 
+异步idle口径参考（2026-10-25，同一入口、非新增观测／基准队列）：[#7601](https://github.com/verl-project/verl/issues/7601)已有参与者方案，[M1固定main3c6d9b43源码学习](../notebook/frameworks/verl-6790-async-trainer-reading.md#异步空闲指标与调度等待)仅11模块AST／compile，无调度／服务执行。若M5将来独立选用且已有获准匹配观测，先满足环境安全、授权与资源条件，记录trainer模式、switch有效配置、standalone／hybrid副本身份和同一窗口；结合生成／采样／同步时间线辨别等待与忙碌，不以switch/idle布尔值、gen/step或单点零请求比例认证GPU利用率／调整资源。缺条件则保留未测，不启动新服务／下载、改router或并行推进专项；任何上游评论、PR或既有PR head推送仍逐项待用户明确同意，记录非接单。
+
 原生MTP参考（2026-10-25，同一输出头入口、不新增算力任务）：[#8324](https://github.com/verl-project/verl/issues/8324)已有ISEEKYAN整体原型，[Core个人fork #263](https://github.com/ISEEKYAN/Megatron-LM/pull/263) headb1a29d72仍draft、依赖私有新增契约。[M1八原参数例](../notebook/frameworks/verl-fused-output-softcap.md#原生-mtp-的梯度与归一化控制)仅真实CPU辅助损失／autograd／单进程roll，未执行完整Core、GPT／Hybrid／CP或全模型梯度；fixture无真实embedding绑定且前后有效数相等。M5若已有获准匹配MTP迁移任务并独立选用，先核安全／资源／授权权重、Core/Bridge/TE实际源码与接口接线，记录compute开关、head／backbone分离、runtime CP、真实mask与分母、主loss scale及下一更新；不要由八例通过移除旧补丁或宣布整个迁移可用。无条件即停记未测，不升级环境、下载部署、重排训练、拼已有修复或改AReaL/#523/#8313/DeepInfer；所有社区写入及既有PR-head推送仍逐项待用户明确同意，参考非接单。
 
 FSDP精度参考（2026-10-25，同一入口、不新增队列）：[#8083](https://github.com/verl-project/verl/pull/8083) headba4b3f2d与[#8359](https://github.com/verl-project/verl/pull/8359) head74eac195的构造逻辑相同，新PR另改QAT导出。[M1原20参数例](../notebook/frameworks/verl-architecture.md#fsdp-初始化与计算精度的优先级)两候选全过仅Mock接线，不是实际cast/scaler/collective。M5若已有获准匹配FSDP观测且独立选用，先核安全条件、真实源码/torch、model_dtype、有效param/reduce/buffer与_autocast_dtype，再按原任务需要核实际前后向、scaler是否启用、梯度/更新和选中导出路径及接收dtype；delta-shard源码仍转BF16，不把计算FP16当所有同步已对齐。无安全／资源／权重或匹配环境就停记未测，不新部署下载、切精度、拼候选或排训练，不改AReaL/#523/#8313/DeepInfer。所有社区写入及既有PR-head推送仍须用户对具体动作明确同意，参考不代表接单。

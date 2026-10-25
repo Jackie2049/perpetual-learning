@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 V1异步idle统计边界（2026-10-25）**：起始79a0890干净，compare保留794新增1无删改后ff到e781342，保全并行日志。未覆盖[#7601](open-source/verl/tracker.md#v1-异步空闲指标的统计范围)已有参与者方案，读全文／三评论及查重，不认领。固定main3c6d9b43，[原异步专题](notebook/frameworks/verl-6790-async-trainer-reading.md#异步空闲指标与调度等待)区分gen钩子段、hybrid rollout期间switch_wait、布尔idle与router当前请求计数；旧fully_async比率非V1接口或GPU利用率。11模块仅AST／compile，无原测试或调度／服务／训练；旧六月“永不切换”不适用于当前实现。原M5参考仅补将来已有获准观测的口径条件，无新算力队列、服务器动作或专项／上游改动。下轮转独立真实需求或实质反馈，不另写积分器、扩假时钟矩阵或自行调资源。
+
 - **M1 VeOmni后端RFC接续（2026-10-25）**：起始b3e1fa0干净、fetch无新增，日志compare保留792条无删改。#8342作者已按维护者建议新开[VeOmni #1360](https://github.com/ByteDance-Seed/VeOmni/issues/1360)，完整正文与两侧评论核清：后端／verl职责及矩阵仍待反馈，新RFC保留现有qat_implementation语义、迁移另议，不把旧示例替换块拼成可用API。更新[原量化专题](notebook/frameworks/verl-quant-layer-audit.md#后端-rfc-的分工与迁移条件)、tracker与原M5条件参考；仅协作／配置契约接续，无新增实现、实验或算力队列，不改专项、不访问服务器或写上游。下一步转独立真实需求，低精度路线等维护者实质反馈，不为新RFC重复已有CPU控制或扩通信矩阵。
 
 - **M1 对象存储下载与提交契约（2026-10-25）**：起始8ab601c干净，日志compare保留790新增1无删改后ff到4a2ce27保全并行记录。读未覆盖[#7641／既有候选](open-source/verl/tracker.md#s3-下载与完整-checkpoint-生命周期)，分清#6850下载、#2334旧checkpoint提案和原生S3 RFC，不另写后端。[原专题](notebook/frameworks/verl-checkpoint-management-reading.md#对象存储下载与-checkpoint-提交)以原五测试体接真实memory缓存：headc87b60ce全过，main／祖先各1过4项检查失败；无云请求、凭据、上传或checkpoint执行。AWS单key原子性非跨key事务，save返回与durable完成不同，FUSE亦需选定语义；源码／RFC与作者64rank案例分开。脚本／JSON随仓库，原M5入口仅补安全／云授权／匹配实现条件，不新增资源或队列、改专项或写上游。下轮转独立需求／实质反馈，不扩缓存／假S3矩阵或自动推进新存储后端。
