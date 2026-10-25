@@ -4,7 +4,7 @@
 
 2026-10-24接续：[写入前检查与失败握手](#写入前检查与失败握手)说明#8327新版将引擎格式检查前移，以及失败后排空IPC握手的边界；本轮只做源码与语法核对。此前[新版运行期检查](#新版运行期检查与指标哨兵)的纯Python哨兵结果属于旧head，不迁移为新版本验收。旧#8132/#8306分析也保留各自固定版本范围。
 
-2026-10-24补充：[VeOmni计算与通信边界](#veomni-低精度计算与通信边界)区分端到端RFC、已合并的ReduceScatter接线及torchao版本限制；通信微基准收益不能直接外推actor更新速度。
+2026-10-25接续：[VeOmni计算与通信边界](#veomni-低精度计算与通信边界)补入作者新开的VeOmni #1360：后端分工与配置迁移仍待确认；端到端RFC、已合并的ReduceScatter接线及torchao版本限制分别看待，通信微基准收益不能直接外推actor更新速度。
 
 2026-10-25补充：[QAT 的 mask 默认与 packed 接口](#qat-的-mask-默认与-packed-接口)核清默认策略如何经过 Bridge、MCore 到达 TE。mask 类别通过不等于完整 THD 输入有效，也不能解决量化 MoE 的部署 kernel 限制。
 
@@ -285,7 +285,15 @@ python -B experiments/scripts/verify_verl_quant_sentinel.py /path/to/verl-git
 
 ## VeOmni 低精度计算与通信边界
 
-**低精度计算、参数通信、梯度通信和rollout量化不能用一个开关或一组性能数字互相认证。** [verl #8342](https://github.com/verl-project/verl/issues/8342)提出FSDP2加torchao、模型中保留分片FP32主权重的端到端路线；作者amenomori已有本地原型，完整实现仍待推进。2026-10-24读取完整RFC及唯一评论：维护者wuxibin89建议先向VeOmni提出RFC，尚不是维护者已批准的接口分工或验收矩阵。不据无assignee或未搜到编号关联PR另认领。
+**低精度计算、参数通信、梯度通信和rollout量化不能用一个开关或一组性能数字互相认证。** [verl #8342](https://github.com/verl-project/verl/issues/8342)提出FSDP2加torchao、模型中保留分片FP32主权重的端到端路线；作者amenomori已有本地原型，完整实现仍待推进。维护者wuxibin89建议先向VeOmni提出RFC；作者于2026-10-25T06:34:34Z创建[VeOmni #1360](https://github.com/ByteDance-Seed/VeOmni/issues/1360)，并于06:41:16Z[回链确认](https://github.com/verl-project/verl/issues/8342#issuecomment-6394489917)。当日核对#8342完整正文及两条评论、#1360完整正文及评论列表，后者open、评论为0；这项协作转移不等于后端已批准接口或完成实现，不另认领。
+
+### 后端 RFC 的分工与迁移条件
+
+#1360拟由VeOmni负责配方、转换、分布式集成、量化状态与checkpoint/export契约及后端测试；verl消费接口，负责RL编排、rollout/refit集成及端到端验收。作者提出的阶段仍是float8计算、MXFP8、参数AllGather、torchao QAT，原生QAT另与已有负责人协调，不是只完成一个通信选项就关闭整个路线。
+
+**配置迁移尚未定案。** #8342正文拟在已有配方与kernel选择被表示后用QAT块替换`qat_implementation`；#1360则明确保留现有默认值与该字段语义，迁移另行议定。两份提案不能拼成已发布统一配置，也不应据旧示例抢先改名或弃用。后端RFC还提出与[FP8 MoE #1356](https://github.com/ByteDance-Seed/VeOmni/pull/1356)协调；这是作者列出的依赖关系，本次未复查该PR实现或测试。
+
+其拟议验收逐配方覆盖真实kernel与通信、数值容差、梯度累积、FP32更新、checkpoint/resume与export；下游另核rollout格式、train/rollout数值偏差，以及固定基线下的吞吐和峰值显存。初始模型、硬件与依赖矩阵仍请求维护者确认，不把验收清单当成通过记录。后续只在维护者给出实质接口／协作反馈时重开技术判断，无需为RFC先排新算力矩阵。
 
 ### 各工作流的完成边界
 

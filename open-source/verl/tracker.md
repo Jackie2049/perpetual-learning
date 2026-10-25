@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责：①10-24 22:32、②10-25 12:00 回复均按用户逐字文本发出，head 71fd3562（用户裁决：middle 对齐 postprocess_data、cap=1 保留首 token、测试改名回退；CPU 18 passed + 10-25 01:08 GPU e2e 2/2 PASS + 负例 fail-loudly PASS），仍 OPEN/MERGEABLE 等维护者 approve（requested reviewers wuxibin89+dajiaohuang，10-22 后无新审查）；③trainer 级问题讲解中、④草稿 v3 待用户逐字审定，见[原草稿](draft-8313-review-reply.md)。另核[S3层级](#s3-下载与完整-checkpoint-生命周期)：下载测试不等持久化验收，不另写后端。另核[激活卸载入口](#激活卸载的辅助输出入口)：已有#8277，原五CPU测试体head通过，recording图顺序非真机验收，不另实现。另核[多轮旧配置](#多轮旧配置的接线或弃用)：活跃AgentLoop未消费两键，旧strict差异只告警，等待维护者选择接线或弃用，不另认领。2026-10-25核[system-only输入契约](#仅-system-消息的契约裁定)：当前VL CT仍有wrapper调用点，但维护者要求初始prompt包含user，不另推进通用支持。[原生MTP](#megatron-迁移的已有原型与验收边界)、[FSDP精度](#fsdp-精度默认的两份候选)等历史验证各限原版本与范围，不另竞争实现或对外发布。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责：①10-24 22:32、②10-25 12:00 回复均按用户逐字文本发出，head 71fd3562（用户裁决：middle 对齐 postprocess_data、cap=1 保留首 token、测试改名回退；CPU 18 passed + 10-25 01:08 GPU e2e 2/2 PASS + 负例 fail-loudly PASS），仍 OPEN/MERGEABLE 等维护者 approve（requested reviewers wuxibin89+dajiaohuang，10-22 后无新审查）；③trainer 级问题讲解中、④草稿 v3 待用户逐字审定，见[原草稿](draft-8313-review-reply.md)。另核[VeOmni后端RFC](#veomni-端到端低精度路线)：作者已开#1360，配置迁移与职责待反馈，不另实现。另核[S3层级](#s3-下载与完整-checkpoint-生命周期)：下载测试不等持久化验收，不另写后端。另核[激活卸载入口](#激活卸载的辅助输出入口)：已有#8277，原五CPU测试体head通过，recording图顺序非真机验收，不另实现。另核[多轮旧配置](#多轮旧配置的接线或弃用)：活跃AgentLoop未消费两键，旧strict差异只告警，等待维护者选择接线或弃用，不另认领。2026-10-25核[system-only输入契约](#仅-system-消息的契约裁定)：当前VL CT仍有wrapper调用点，但维护者要求初始prompt包含user，不另推进通用支持。[原生MTP](#megatron-迁移的已有原型与验收边界)、[FSDP精度](#fsdp-精度默认的两份候选)等历史验证各限原版本与范围，不另竞争实现或对外发布。
 
 **【大白话讲明白】**
 
@@ -288,7 +288,7 @@
 
 ### VeOmni 端到端低精度路线
 
-2026-10-24读[#8342](https://github.com/verl-project/verl/issues/8342)完整正文及唯一评论、[#8186](https://github.com/verl-project/verl/issues/8186)父路线图及全部8评论。amenomori已提出本地原型及分阶段实现，wuxibin89建议先向VeOmni开RFC；配置、后端归属与验收矩阵仍需维护者确认。正确仓库名下编号PR检索为空、VeOmni的torchao搜索只命中无关issue，均不证明无人推进；旧`repo:volcengine/verl`搜索返回422，已改用`repo:verl-project/verl`成功重查，不将请求失败记作0结果。
+2026-10-25接续：读[#8342](https://github.com/verl-project/verl/issues/8342)完整正文及两条评论；amenomori已按wuxibin89建议创建[VeOmni RFC #1360](https://github.com/ByteDance-Seed/VeOmni/issues/1360)并回链。新RFC完整正文／评论列表核实open、0评论，后端／verl分工及验收矩阵仍为待反馈提案；保留现有`qat_implementation`语义、迁移另议，不能把#8342的拟议替换块视作已批准API。不认领或另开实现。2026-10-24已读[#8186](https://github.com/verl-project/verl/issues/8186)全部8评论；当时编号PR搜索空、torchao搜索仅无关issue不代表无人推进；旧组织名查询422已用正确仓库成功重查，均非本次重新认证。
 
 见[原量化笔记](../../notebook/frameworks/verl-quant-layer-audit.md#veomni-低精度计算与通信边界)：[#8330](https://github.com/verl-project/verl/pull/8330)已合并，仅接线节点内低精度梯度RS，不是参数AllGather或全部E2E计算；作者H100通信收益与H200 actor无加速报告分开，最终树未重跑CUDA。torchao v0.18.0原源码确有限制标准rowwise与float8 AllGather的guard，不能靠新配置名消除它。不另写统一配置、通信hook或QAT方案；只有明确协作需求/接口变化才重新评估。无本机量化、通信或训练结果，无上游写入，真机条件只补原M5量化参考而不另排队。
 

@@ -219,6 +219,8 @@ QAT packed mask参考（2026-10-25，非新队列）：[#8361](https://github.co
 
 VeOmni范围参考（2026-10-24，非新增通信/训练队列）：[M1源码学习](../notebook/frameworks/verl-quant-layer-audit.md#veomni-低精度计算与通信边界)区分#8342待后端讨论的E2E提案、主线3c6d9b4已含#8330的默认关闭梯度RS接线，以及torchao0.18标准rowwise/float8 AllGather限制；无本机通信/量化或模型执行。若M5将来已有获准匹配VeOmni工作且独立选用，先核实际安装版本、计算/参数AG/梯度RS/rollout格式四条路径，分别记通信时延与actor整步/峰值显存；不能以#1167 H100微基准认证#8330最终树或其他设备速度。缺资源/依赖或需新部署下载、影响专项则记未测停止，不为尚未确认接口的RFC启新矩阵、改hook或安装torchao，不改变原任务优先级。
 
+VeOmni协作更新（2026-10-25，仍非新队列）：#8342作者已创建[后端RFC #1360](https://github.com/ByteDance-Seed/VeOmni/issues/1360)，保留现有QAT字段语义、迁移另议；后端／verl分工和初始验收矩阵待维护者反馈。若未来有已获准匹配任务，先核[当前协作与配置条件](../notebook/frameworks/verl-quant-layer-audit.md#后端-rfc-的分工与迁移条件)，不按旧示例改名或抢先实施；当前无新增kernel／训练结果。任何上游评论、PR或已建PR的fork head推送均需用户对具体动作明确同意。
+
 来源：[源码与24项CPU单测](../notebook/frameworks/verl-quant-layer-audit.md)、已有 [#8132](https://github.com/verl-project/verl/pull/8132)，2026-10-21读取时open，head `0defd9a231cb876ce56812611b0afb3b2b25831a`，base `cd58f550fb1c4f5a3fe29da38e6f0002ec462fd3`。第7部分依赖前序量化堆叠且按#8287重做；不能盲目只cherry-pick审计。作者旧B200/ModelOpt观察不是新版验收；M1只运行作者自带替身的CPU单元测试，没有真实TE/compressor/engine。
 
 旧#8132审计路线的最小下一步：先核实际设备是否支持目标TE FP8路径、依赖/模型/格式是否匹配及是否已有作者新结果；固定完整提交与安装版本，不覆盖已有环境或打断工作。条件齐备后，使用获准的最小模型/配置，真实FP8 forward后做一次权重导出/同步，保留训练workspace/marker、导出格式与引擎方法的证据、实际route、checked/skipped/unresolved及no-verdict状态。非colocated路径不能声称完成同样的live-vLLM复查，SGLang guard另列执行范围。

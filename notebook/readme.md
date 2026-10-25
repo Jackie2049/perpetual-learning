@@ -172,7 +172,7 @@
 - [verl 融合输出头与softcap](frameworks/verl-fused-output-softcap.md) — #7991拒绝不支持的通用路径，非kernel实现；原torch输出头36组语义分离对照，保留数值超限，原24配置测试未跑
 - [verl 前向与logprob一致性](frameworks/verl-6572-full-determinism-source-reading.md#actor-前向与-logprob-公式的一致性) — #8026原4数学测试体通过；同logits的公式、批形状前向和训练复现分层，撤回P9完整确定性/固定吞吐推论，非GPU验收
 - [verl 量化层审计与 refit](frameworks/verl-quant-layer-audit.md) — #8132三类证据/24项CPU审计单测；与新#8306的格式、存储和保护覆盖对照，不能混用分支证据
-  - [VeOmni计算与通信边界](frameworks/verl-quant-layer-audit.md#veomni-低精度计算与通信边界) — #8342拟议端到端路线与已合并#8330分开；torchao0.18 rowwise/AllGather限制，通信微基准收益不等于actor更新加速
+  - [VeOmni计算与通信边界](frameworks/verl-quant-layer-audit.md#veomni-低精度计算与通信边界) — #8342已由作者接续至VeOmni #1360，分工／配置迁移仍待确认；#8330梯度RS、torchao0.18限制与整步性能分开
   - [新版检查与指标哨兵](frameworks/verl-quant-layer-audit.md#新版运行期检查与指标哨兵) — #8327关系/默认warn与硬拒绝分开；原纯Python20例及5控制通过，缓存disabled与缺指标不当健康证明
 - [verl ModelOpt模块忽略](frameworks/verl-quant-layer-audit.md#modelopt-模块忽略与子量化器) — #8329模块名与子量化器名分层；两版原helper名称控制通过，未执行真实量化，权重加载相等不认证actor forward精度
 - [verl 现成logprob对照与权重自检](frameworks/verl-async-logprob-provenance.md#现成-logprob-对照与权重自检) — #8252已有维护者回应；原metric/退出片段CPU控制区分平均及末轮门槛与内容恢复保证，非模型/同步实测，不另起检查器
