@@ -9,7 +9,7 @@
 
 **【价值评估】** 6 / 10 — 意见全部技术属实、有实质价值；其中①③无争议可直接改，②④需要用户决策。
 
-**【进展】** 2026-10-23 23:07 轮 M5 已核验四条意见全部属实并实测对照；改进补丁 [8281-review-fixes.patch](patches/8281-review-fixes.patch) 已备好（改名 + 显式期望，服务器 CPU 16 passed 验证）；尚未改 PR、未回评论（待授权）。
+**【进展】** ①10-24 22:32、②10-25 12:00 回复已按用户逐字文本发出（②含 "postprocess_data.py" 措辞为用户保留，已提示实际函数位于 torch_functional.py）；head 经用户裁决由用户侧推送 71fd3562（middle 对齐 postprocess_data、cap=1 保留首 token、测试改名回退、caps 显式期望，CPU 18 passed；10-25 01:08 GPU 正 e2e 2/2 PASS + 负例 fail-loudly PASS）。③trainer 级问题向用户讲解中（草稿 v3 未发），④待用户逐字审定；仍等维护者 approve（requested reviewers wuxibin89+dajiaohuang）。补丁历史见 [patches/](patches/)。
 
 **【大白话讲明白】** 有人仔细看了我们修截断问题的 PR，提出四点：测试文件命名导致 CI 根本不会跑它、middle 截断和 verl 其他工具的分法不一致、测试断言自己抄自己导致错误也测不出来、以及默认 error 报错后训练是不是真的会停。四点都说得对，我们准备好了补丁和回复草稿，等用户决定怎么回。
 
