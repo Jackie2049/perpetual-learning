@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[Triton输出形状](#triton-输出形状的已有修复)：#8090五适配器仅加reshape，14源码快照语法通过，原20参数例未跑；不将源码检查当kernel／训练验收，不另实现或对外发布。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[boxed判分](#boxed-判分的已有修复)：#8124原9项测试体候选全过，pred归一化不改变Answer优先级或提供数学等价判定；不另实现或对外发布。[Triton源码核对](#triton-输出形状的已有修复)保留未测kernel边界。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## boxed 判分的已有修复
+
+2026-10-25读[#8123](https://github.com/verl-project/verl/issues/8123)全文／0评论、报告者[#8124](https://github.com/verl-project/verl/pull/8124)全文／两文件diff及两条普通评论（CLA、外部11项验证报告），0行内评论。编号及关键词查重已有覆盖，PR为open、非draft、未合并；head c5e26eec，父提交／API base／祖先8718ca30，两文件52增2删，不另实现。
+
+见[原奖励专题](../../notebook/frameworks/verl-reward-integration-reading.md#boxed-答案的归一化与选择优先级)：原七组表示加错误／strict两例，完整原模块直接调用测试体，基线2过7失败、候选9过，两次一致；不是pytest原生收集或完整reward套件。三个pred从两键变一键，但未跑完整maj@N；冲突Answer仍优先，分数与小数仍不等价。此纯CPU任务不需M5新队列，不应用候选／修改专项；任何上游动作及既有PR-head推送仍逐项待用户明确同意。
 
 ## Triton 输出形状的已有修复
 
@@ -204,7 +210,7 @@
 
 | 问题 | 对应实现与声明范围 | 本项目处理 |
 | --- | --- | --- |
-| [#8123 boxed 判分归一化](https://github.com/verl-project/verl/issues/8123) | 同报告者 KardeniaPoyu 的 [#8124](https://github.com/verl-project/verl/pull/8124)，head `c5e26eec5ab5941e443d1b9f6853a9e210972487`；正文声明 fallback 两侧归一化、返回归一化 pred，并保持 `strict_box_verify=True` 严格比较 | 不另修 comma/空格等同一 fallback 问题；归一化覆盖不认证判分器对全部数学表达式正确，作者9项 CPU及套件报告未复跑 |
+| [#8123 boxed 判分归一化](https://github.com/verl-project/verl/issues/8123) | 同报告者 KardeniaPoyu 的 [#8124](https://github.com/verl-project/verl/pull/8124)，head `c5e26eec5ab5941e443d1b9f6853a9e210972487`；fallback两侧及pred归一化，strict保持原比较 | 2026-10-25本机原9项测试体候选全过／基线2过7失败，非完整套件；[详见专题](../../notebook/frameworks/verl-reward-integration-reading.md#boxed-答案的归一化与选择优先级)。不另修同一问题；Answer优先级与数学等价边界不变，作者完整套件／外部11项报告未复跑 |
 | [#8076 FSDP dtype 未作默认](https://github.com/verl-project/verl/issues/8076) | 报告者 aryanyadav0402，另一贡献者 zupengwang 的 [#8083](https://github.com/verl-project/verl/pull/8083)，head `ba4b3f2d833dafe195ad9dc049d92a6a47b6f9df`；缺失或部分 mixed_precision 配置时回退 engine dtype，显式 param_dtype 优先，reduce/buffer 默认 FP32，model_dtype 仍管初始化 | 不是只剩文档/告警尚无人修；已有功能修复及说明，不另改默认。作者31 CPU/12 CUDA、world_size1报告不认证多卡、GRPO收敛或本项目精度结果 |
 | [#7953 Megatron 调度器恢复](https://github.com/verl-project/verl/issues/7953) | 同报告者 YeonwooSung 的 [#7954](https://github.com/verl-project/verl/pull/7954)，head `53e632859898a248f89c8dd7e9abbf56e2248944`；正文声明两处加载恢复已有 scheduler state，flag 仍选择超参数来源并保留缺状态的严格断言；文档区分 Megatron optimizer 与 FSDP extra 的存放位置 | 不把报告者已说明的“extra与optimizer差异”另立相同修复。作者manager测试 mock底层加载，明确未验真实LR续接及Megatron-FSDP第二路径；缺验收不等于我方可重复提交实现 |
 

@@ -13,6 +13,20 @@
 > 2026-06-15 | 源码: verl/trainer/ppo/reward.py + ray_trainer.py + workers/reward_manager/ + experimental/reward_loop/ + core_algos.py + utils/reward_score/
 > 核心: 两层架构(legacy RewardManager + experimental RewardLoop) → 3 reward路径(rule/DisRM/GenRM) → outcome reward=最后token非零 → GRPO group-relative → colocate RM sleep/wake → RTX 4090=rule-based唯一可行
 
+## boxed 答案的归一化与选择优先级
+
+答案的字符串身份、提取优先级和数学等价性是三个要求。[#8123](https://github.com/verl-project/verl/issues/8123)已有报告者KardeniaPoyu的[#8124](https://github.com/verl-project/verl/pull/8124)，2026-10-25读取为open、非draft、未合并，不另实现。固定head `c5e26eec5ab5941e443d1b9f6853a9e210972487`，父提交／API base／共同祖先均为 `8718ca30a3f002f93b7c4fd99b9b2506718681bc`，两文件52增2删；基线math_dapo与主线 `3c6d9b43b67c74ec343d77874cd8fa6e841523da` 同字节。
+
+[候选完整评分器](https://github.com/verl-project/verl/blob/c5e26eec5ab5941e443d1b9f6853a9e210972487/verl/utils/reward_score/math_dapo.py)只在非strict的boxed后备分支调用已有normalizer：比较两侧归一化文本，也返回归一化的pred。Python3.12.13本机加载两版完整原模块，直接调用[原测试体](https://github.com/verl-project/verl/blob/c5e26eec5ab5941e443d1b9f6853a9e210972487/tests/utils/reward_score/test_math_dapo_boxed_fallback_on_cpu.py)的七组表示、错答案与strict控制，共9项：基线2过7失败，候选9过，两次相同。strict控制仍对`1,000`与`1000`给−1、保留原pred；非strict错`1,001`也仍拒绝，不能把统一表示理解为放宽所有答案。
+
+返回pred与只改分数不同。对gt `1000`，三条响应`\boxed{1,000}`、`\boxed{1000}`、`Answer: 1000`的pred计数，基线为`{"1,000":1,"1000":2}`，候选为`{"1000":3}`。[固定主线的calc_maj_val](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/ppo/metric_utils.py#L862)确实按pred键计票，maj@N再经过bootstrap和聚合；本机只数这三个实际评分输出的键，没有执行完整指标链或证明多数投票质量提升。
+
+后备的触发条件是“未提取到Answer”，而不是“Answer判错”。`Answer: 4\nFinal result: \boxed{5}`对gt `5`，两版完整compute_score均返回`score=-1, acc=False, pred="4"`，不因后面boxed正确而改选它。原有外层末300字符、boxed提取末100字符的窗口也未改；这不是[#7440](https://github.com/verl-project/verl/issues/7440)的窗口问题修复，不扩展格式矩阵。
+
+normalizer是指定文本规则，不是通用符号计算。`\boxed{\frac{1}{2}}`对gt `0.5`，两版均−1、pred仍为`\frac{1}{2}`；这是已有能力边界，不指称候选引入回归，也不为此另写数学grader。
+
+包壳仅绕过verl父包初始化，原生产／测试源码与断言不改；无Torch、模型、Ray或设备导入。9项是直接调用测试体，不是pytest原生收集、完整奖励套件或训练验收；原作者9项／套件声明、外部评论11项均独立标注为他人报告，不计入本机结果。三份完整源码compile通过，命令与hash见[当日日志](../../diary/2026-10-25.md)。本项无需GPU交接，不应用候选、改M5专项或新增任务；上游写入及已有PR的fork head推送仍逐项待用户明确同意。
+
 ## 代码奖励的已知失败与部分分数
 
 “不再把已知错解评为满分”与“按全部用例计算正确率”是两个目标。[#8021](https://github.com/verl-project/verl/issues/8021)已有报告者no-hup的[#8022](https://github.com/verl-project/verl/pull/8022)，2026-10-25仍open、非draft、未合并，唯一普通评论为CLA机器人、0行内评论，不另实现。固定head `a5aef7cd78978554e709ccd93e1dadfd3fcddf7c`、父提交／API base／共同祖先均为 `6093e007cc341973c9d9a6fb3867a85976c7c458`，四文件32行新增。
