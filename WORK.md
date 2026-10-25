@@ -4,7 +4,7 @@
 
 ## 当前阶段
 
-- **UniRL #523 上游 PR 已开（2026-10-25）**：用户授权后 **[Tencent-Hunyuan/UniRL#629](https://github.com/Tencent-Hunyuan/UniRL/pull/629)** 已创建（head `Jackie2049:fix-523-anchor-lifecycle`，1 文件 +8/-2 锚生命周期修复）；正文按上游模板如实呈现 L0 四断言/pristine 对照/e2e 资源判定（载体配方 bagel 32 设备、hi3 ~160GB每卡物理不可行，replay 路径 shipped 算法不使用），三项检查 SUCCESS、MERGEABLE，**等维护者 review，逐步推动合并**（评论/催审等后续动作逐项请示）。fork PR #1 保留审阅副本。详见 [tracker](open-source/unirl/tracker.md) 与 [当日日志](diary/2026-10-25.md)。
+- **UniRL #523 上游 PR 已开（2026-10-25）**：用户授权后 **[Tencent-Hunyuan/UniRL#629](https://github.com/Tencent-Hunyuan/UniRL/pull/629)** 已创建（head `Jackie2049:fix-523-anchor-lifecycle`，1 文件 +8/-2 锚生命周期修复）；正文按上游模板如实呈现 L0 四断言/pristine 对照/e2e 资源判定（载体配方 bagel 32 设备、hi3 ~160GB每卡物理不可行，replay 路径 shipped 算法不使用），三项检查 SUCCESS、MERGEABLE；Test Plan 按反馈精简后**同日按用户指示关闭**，fork 分支/PR #1 保留、随时可重开（重开或重启推动方式待用户定）。详见 [tracker](open-source/unirl/tracker.md) 与 [当日日志](diary/2026-10-25.md)。
 
 - **M1 Teacher温度与精度（2026-10-25）**：起始a519112干净，fetch无新增，compare保留817无删改。读[#7769／已有#8253](open-source/verl/tracker.md#teacher-温度的已有修复与精度边界)，不另实现；[原OPD专题](notebook/frameworks/verl-veomni-opd-source-reading.md#teacher-采样温度与打分温度)分开请求T=1与vLLM目标logits缩放。原默认3例三版均过，旧／新候选固定CPU控制：FP16溢出／BF16误差784→head本例误差0，非Sampler／原30项或训练验收。脚本JSON随仓库，仅原M5条件参考，无新算力／专项或上游动作。下轮转独立需求／实质反馈，不扩温度矩阵或另改teacher实现。
 
