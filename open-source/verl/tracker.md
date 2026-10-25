@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责：①10-24 22:32、②10-25 12:00 回复均按用户逐字文本发出，head 71fd3562（用户裁决：middle 对齐 postprocess_data、cap=1 保留首 token、测试改名回退；CPU 18 passed + 10-25 01:08 GPU e2e 2/2 PASS + 负例 fail-loudly PASS），仍 OPEN/MERGEABLE 等维护者 approve（requested reviewers wuxibin89+dajiaohuang，10-22 后无新审查）；③trainer 级问题讲解中、④草稿 v3 待用户逐字审定，见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[FSDP精度优先级](#fsdp-精度默认的两份候选)：#8083／#8359原20参数例各全过，构造逻辑相同而导出范围不同；无真实分片训练验收。另补充[SGLang概率模式](#sglang-概率模式的已有候选)：#8363原四配置测试体候选全过，最终请求与启动环境仍须分开核验；未运行引擎或另做实现。另补充[响应截断指标](#响应截断指标的已有修复)：#7821原5项／#7906原13项测试体各候选通过，阈值修正与逐行停止信息不同；不拼接实现或对外发布，[boxed判分](#boxed-判分的已有修复)等仍各限原范围。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责：①10-24 22:32、②10-25 12:00 回复均按用户逐字文本发出，head 71fd3562（用户裁决：middle 对齐 postprocess_data、cap=1 保留首 token、测试改名回退；CPU 18 passed + 10-25 01:08 GPU e2e 2/2 PASS + 负例 fail-loudly PASS），仍 OPEN/MERGEABLE 等维护者 approve（requested reviewers wuxibin89+dajiaohuang，10-22 后无新审查）；③trainer 级问题讲解中、④草稿 v3 待用户逐字审定，见[原草稿](draft-8313-review-reply.md)。2026-10-25核[原生MTP契约](#megatron-迁移的已有原型与验收边界)：作者Core个人fork草稿的八项原CPU梯度例通过，非全模型／分布式或迁移验收；[FSDP精度](#fsdp-精度默认的两份候选)与[SGLang概率](#sglang-概率模式的已有候选)等历史验证各限原版本与范围，不另竞争实现或对外发布。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## Megatron 迁移的已有原型与验收边界
+
+2026-10-25读取[Modern Megatron #8324](https://github.com/verl-project/verl/issues/8324)完整正文／0评论；编号检索只命中#8338，不能据此宣布无人做迁移，正文已链接作者个人fork原型。[Core #263](https://github.com/ISEEKYAN/Megatron-LM/pull/263)当前OPEN/draft、未合并、0评论／行内评论，headb1a29d72／base728ef141，十文件339增27删。读取完整正文／十文件diff，聚焦MTP，不另接管整体迁移、补依赖或开同题PR。
+
+见[原输出头专题](../../notebook/frameworks/verl-fused-output-softcap.md#原生-mtp-的梯度与归一化控制)：完整原辅助损失／autograd／roll与原八参数测试体，两次CPU通过；同一输出层参数的显式传入不等于真实embedding绑定，等计数mask不覆盖不均匀全局分母。仅base/head新增关键字签名绑定，无base梯度测试、完整Core／CP或模型／GPU验收；不与作者80／15／8报告合计。源码契约仅补M5原条件参考，无新队列／专项改动，任何社区写入及既有PR-head推送仍逐项待用户明确授权。
 
 ## FSDP 精度默认的两份候选
 

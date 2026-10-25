@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 13:10 轮：原生MTP契约与迁移边界（2026-10-25）**：起始2fe439d干净、首次fetch无新增；近期#8357/#8356与既有笔记一致，未复跑。转[原输出头专题](notebook/frameworks/verl-fused-output-softcap.md#原生-mtp-的梯度与归一化控制)：#8324已有ISEEKYAN整体原型，Core个人fork #263 headb1a29d72仍draft，非上游已接纳接口；原八参数CPU梯度体两次通过，完整原loss/autograd/roll隔离，默认观察器原模块。输出权重分离与主干分离不同；fixture无真实embedding绑定、前后mask计数均2，不能认证完整模型／不均匀DP/CP分母。六份compile，base/head仅新增关键字签名绑定，无base梯度／第九CP例或完整Core/GPU验收；无新算力队列／升级依赖、专项改动或上游写入。下轮转独立真实需求或实质反馈，不扩MTP假模型／mask矩阵，也不接管作者整体迁移。
+
 - **M1 12:40 轮：FSDP精度优先级（2026-10-25）**：起始b72408e干净、ff到2c02477保留M5安全调查与完整日志，不访问或处置服务器。[原架构笔记](notebook/frameworks/verl-architecture.md#fsdp-初始化与计算精度的优先级)核#8076已有#8083 ba4b3f2d／#8359 74eac195：完整构造方法去docstring后AST相同，新候选另改QAT导出，非全PR等同。旧原20参数例两次两候选各20过、main3c6d9b43为8过12断言失败；仅配置类／完整方法隔离和原Mock接线，不是实际FSDP/scaler或同步验收。15份源码compile，未跑新7例或搬作者CUDA结果。初始化、计算、归约、导出分开；M5原条件参考只补范围，无新队列／专项改动或上游写入。下轮转独立真实需求或实质反馈，不堆dtype／空字典／假scaler矩阵或另写第三修复。
 
 - **4090-1 挖矿木马确证（2026-10-25，最高优先级）**：受用户指令详细排查（只读取证，未处置）。**实锤**：FORGE MINER v1.8.9（本体 `/etc/network/net` 51.5MB），矿池 `219.223.200.225:16433`、钱包 `krxYDJGDN4`，7×4090 @100%/435W 约 11 天；监督器 `/usr/sbin/tools` 经系统账户 **bin（UID 2）** 的 `session-225514.scope` 常驻（`/etc/sudoers.d/bin` = `bin ALL=(ALL) NOPASSWD:ALL` 提权持久化、`/usr/sbin/nologin` 被替换为后门）；**反取证**：检测 SSH 登录即隐藏矿机（`/dev/shm/.1` 俄语日志自述），矿机内存加载文件即删、cmdline 清空；**凭据收割**：`/etc/default/ossh` 含 czp/cl/lhx/liyaowei/lyk/tlx/user/zxw 等 8+ 账号明文密码——**zxw 密码已泄露，服务器上 4 把私钥（含 GitHub）视同泄露**；内网横向已成事实（205.159/192.118/200.225/200.80 均内网机）。**建议（未执行）**：立即改密+轮换 GitHub 私钥；管理员断网后保全证据**重装**（不要只 kill，30 秒即重启）；排查内网其他机器。全 IOC 与时间线见[当日日志](diary/2026-10-25.md)。

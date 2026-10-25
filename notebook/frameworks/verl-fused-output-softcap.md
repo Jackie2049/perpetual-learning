@@ -6,6 +6,37 @@
 
 通用 fused output head 直接消费hidden states和输出权重，绕过模型原始forward中的输出处理，因此必须保留原模型对logits的变换。省去 `c*tanh(z/c)` 不只是更换计算精度，会改变 log-prob、熵和梯度。verl [#7991](https://github.com/verl-project/verl/pull/7991)选择在不支持时拒绝通用 fused 路径，而不是补上 softcap kernel。
 
+## 原生 MTP 的梯度与归一化控制
+
+**升级依赖、提供原生接口、移除verl补丁是三个不同决定。** [Modern Megatron RFC #8324](https://github.com/verl-project/verl/issues/8324)由ISEEKYAN提出，2026-10-25读取OPEN、0评论，已有个人fork原型，不另认领迁移。其Core配套 [ISEEKYAN/Megatron-LM #263](https://github.com/ISEEKYAN/Megatron-LM/pull/263)仍是OPEN/draft、未合并的个人fork草稿；固定head `b1a29d72d161ed3cff6128889b11379da1127e3b`、base `728ef1414008ce4b51ce1c0db86993c3eb871601`，十文件339增27删。RFC提出Core0.20／Bridge0.8开发快照，不是仅按版本号就能获得这些新增契约。
+
+### 计算开关与梯度开关不能互换
+
+[Core草稿MTP源码](https://github.com/ISEEKYAN/Megatron-LM/blob/b1a29d72d161ed3cff6128889b11379da1127e3b/megatron/core/transformer/multi_token_prediction.py)将输出权重分离从旧的整条MTP输入分离中拆出来；[GPT入口](https://github.com/ISEEKYAN/Megatron-LM/blob/b1a29d72d161ed3cff6128889b11379da1127e3b/megatron/core/models/gpt/gpt_model.py)另外传递每次forward的计算控制。
+
+| 控制项 | 对应职责 | 不应混作 |
+| --- | --- | --- |
+| compute_mtp_loss | 传给postprocess，控制其中MTP执行／辅助损失；fine-grained schedule同时选择是否建MTP层计划 | 把输出权重detach就等于关闭MTP |
+| mtp_detach_output_weight | MTP投影使用detach后的显式output_weight，或output_layer.weight | 同时冻结主干、输入embedding或主任务投影 |
+| mtp_detach_heads | 原有MTP主干hidden输入与embedding输入分离；也使MTP输出权重detach | 仅让策略head不收辅助梯度 |
+| mtp_loss_normalization_factor | 乘到辅助损失缩放因子上，再沿现有token归一化分支处理 | 自动修正所有DP／CP全局分母 |
+
+MTPLossAutoScaler的forward保留主返回hidden，backward另给保存的辅助损失梯度。因此把主返回值乘0，仍可有MTP辅助梯度；这不是“整个目标都为零却凭空产生梯度”。主损失反向缩放还由main_loss_backward_scale提供，不能把本例设1的结果推广到真实AMP或pipeline调度。
+
+### 原八个梯度用例的范围
+
+本机Python3.12.13／torch2.14.1／pytest9.1.1，执行[原测试体](https://github.com/ISEEKYAN/Megatron-LM/blob/b1a29d72d161ed3cff6128889b11379da1127e3b/tests/unit_tests/transformer/test_mtp_native_rl.py)的八个参数例，两次全过。完整原process_mtp_loss、MTPLossAutoScaler与roll_tensor经AST隔离；原tensor_observation模块保留默认关闭状态，没有用自写损失／roll或观察器替身。未导入完整Core、TE／Apex／Transformers／Ray或初始化process group。
+
+八例是显式传入共享权重／不传、detach开关、per-token开关的2×2×2组合；F.linear／交叉熵计算真实CPU梯度。原断言确认MTP hidden部分梯度非零、主hidden部分为零，输出权重是否有梯度随detach变化，并匹配独立移位参考的归一化系数。**它的“tied”只是传入同一输出层参数，没有把该参数同时用于真实embedding查表；不能据此认证完整模型的权重绑定或主干参数梯度。**
+
+原mask为[0,1,1]，移位后[1,1,0]，有效数都为2；没有覆盖滚动前后token数不等、空段或多rank汇总。两种归一化分支在这个夹具中分别使用0.1×2／2与0.1×2×(2／2)的系数，但完整分母仍依赖上层调度。源码自身也注明per-token分支使用本地计数，不能直接认证不均匀packed／DP／CP输入的精确全局等价。
+
+本轮对base／head函数仅另做签名绑定：base拒绝loss_normalization_factor，head接受；没有运行base梯度对照，不把接口缺失写成旧版八次数值失败。同文件第九个runtime-CP测试、Hybrid callback及router replay测试均未执行；CP覆盖、GPT开关和schedule传递只核源码diff。六份完整复制快照compile通过，复现与hash见[当日日志](../../diary/2026-10-25.md)。
+
+### 迁移条件仍由整体契约决定
+
+RFC作者报告的Core15项、verl80项及Bridge8项CPU结果是外部证据；其环境不同，不能与本机八例相加。草稿明确仍待人工逐行审阅和分布式GPU验收。本轮只说明辅助梯度的局部契约可检验，不支持据此删除旧MTP／router补丁、自动升级Core／Bridge／TE，或认定Hybrid／多模态／Ascend支持成立。若M5已有获准匹配迁移工作并独立选用，沿[原M5参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)记录版本、真实mask／token分母、调度和下一次更新；没有新增算力队列或对外行动。
+
 ## Triton 输出的批维与序列维
 
 元素个数相同，不代表满足下游张量契约。[#8089](https://github.com/verl-project/verl/issues/8089)报告Triton fused路径返回平铺logprob／entropy，关闭remove-padding后，引擎在`output.log_probs.shape[1]`处失败。已有报告者的[#8090](https://github.com/verl-project/verl/pull/8090)，2026-10-25核open、非draft、未合并，唯一普通评论为CLA机器人、0行内评论；编号及Triton output shape查重已覆盖，不另实现。
