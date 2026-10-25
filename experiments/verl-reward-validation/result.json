@@ -1,0 +1,109 @@
+{
+  "environment": {
+    "machine": "arm64",
+    "numpy": "2.5.4",
+    "python": "3.12.13",
+    "system": "Darwin",
+    "tensordict": "0.15.2",
+    "torch": "2.14.1"
+  },
+  "results": {
+    "ancestor": {
+      "caller_keywords": {
+        "verl/experimental/agent_loop/agent_loop.py": [
+          [
+            "kwargs"
+          ]
+        ],
+        "verl/trainer/ppo/v1/agent_loop_tq.py": [
+          [
+            "kwargs"
+          ]
+        ]
+      },
+      "control_meta_info": {},
+      "control_non_tensor_marker": [
+        "row-field"
+      ],
+      "control_reward_score": 1,
+      "original_two_parameter_cases": {
+        "False": "expected_signature_failure",
+        "True": "expected_signature_failure"
+      }
+    },
+    "head": {
+      "caller_keywords": {
+        "verl/experimental/agent_loop/agent_loop.py": [
+          [
+            "kwargs",
+            "validate"
+          ]
+        ],
+        "verl/trainer/ppo/v1/agent_loop_tq.py": [
+          [
+            "kwargs",
+            "validate"
+          ]
+        ]
+      },
+      "control_meta_info": {
+        "validate": true
+      },
+      "control_non_tensor_marker": [
+        "row-field"
+      ],
+      "control_reward_score": 1,
+      "original_two_parameter_cases": {
+        "False": "passed",
+        "True": "passed"
+      }
+    },
+    "main": {
+      "caller_keywords": {
+        "verl/experimental/agent_loop/agent_loop.py": [
+          [
+            "kwargs"
+          ]
+        ],
+        "verl/trainer/ppo/v1/agent_loop_tq.py": [
+          [
+            "kwargs"
+          ]
+        ]
+      },
+      "control_meta_info": {},
+      "control_non_tensor_marker": [
+        "row-field"
+      ],
+      "control_reward_score": 1,
+      "original_two_parameter_cases": {
+        "False": "expected_signature_failure",
+        "True": "expected_signature_failure"
+      }
+    }
+  },
+  "scope": "original AST definitions and original fake-remote regression; no Ray/TQ/trainer",
+  "source_sha256": {
+    "2781c1e405fa80871a838bfdf9495b412df19c35:verl/experimental/agent_loop/agent_loop.py": "04234862956696bae55d5f5d59d50d1035f908bd696befaf1bb45b21c6abdd88",
+    "2781c1e405fa80871a838bfdf9495b412df19c35:verl/protocol.py": "b2db8399daaca64d74c40a8246bcf825f08746757485c7a494303f089a06a34f",
+    "2781c1e405fa80871a838bfdf9495b412df19c35:verl/trainer/ppo/v1/agent_loop_tq.py": "43b7a2fca55e46c2fe0d7844257aa57c792971dd557a8c2b03b6cfef05a2dc80",
+    "2781c1e405fa80871a838bfdf9495b412df19c35:verl/utils/model.py": "331a083bd1c7d2f145a48debb4a43c45ae1d955455729f387f4a285452348df9",
+    "2781c1e405fa80871a838bfdf9495b412df19c35:verl/utils/profiler/performance.py": "4cac930bbbe75df039fe8201ef0c9bca6e473060ac06f12146a348436395f332",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/experimental/agent_loop/agent_loop.py": "e931a80ca4740c18ad8b6b2f9c01e8cd78d1c42c8fe2a491fe21845ecc69cb57",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/protocol.py": "8d69430131e9e894a6c7aea673d489e19e44117b1bc573085a6db521b38c6792",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/trainer/ppo/v1/agent_loop_tq.py": "255ca2dd6b6149afca8a25df6f1dcd92874cd7a2e3ac503dd88309377ea6eea5",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/utils/model.py": "a13d8595499da87abee759fb5d5a31b5e70327c6c0523d49c86798832670d78f",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/utils/profiler/performance.py": "4cac930bbbe75df039fe8201ef0c9bca6e473060ac06f12146a348436395f332",
+    "e8508932b0a7ae99b97ec8c3512fddbadd35d9d0:tests/experimental/agent_loop/test_async_reward_meta_info_on_cpu.py": "f896e8d918b3e9b109fd2afc287f9056dd488fad27e67e9c63a837bc62b969ff",
+    "e8508932b0a7ae99b97ec8c3512fddbadd35d9d0:verl/experimental/agent_loop/agent_loop.py": "87d61552af12337c124432ee40b9d1d0b272e591dbf4bb0b64e7165324ac1d47",
+    "e8508932b0a7ae99b97ec8c3512fddbadd35d9d0:verl/protocol.py": "b2db8399daaca64d74c40a8246bcf825f08746757485c7a494303f089a06a34f",
+    "e8508932b0a7ae99b97ec8c3512fddbadd35d9d0:verl/trainer/ppo/v1/agent_loop_tq.py": "14efce529fa116743d7711bd53250d0a18dcd7ea0814777d445363b19588f493",
+    "e8508932b0a7ae99b97ec8c3512fddbadd35d9d0:verl/utils/model.py": "331a083bd1c7d2f145a48debb4a43c45ae1d955455729f387f4a285452348df9",
+    "e8508932b0a7ae99b97ec8c3512fddbadd35d9d0:verl/utils/profiler/performance.py": "4cac930bbbe75df039fe8201ef0c9bca6e473060ac06f12146a348436395f332"
+  },
+  "versions": {
+    "ancestor": "2781c1e405fa80871a838bfdf9495b412df19c35",
+    "head": "e8508932b0a7ae99b97ec8c3512fddbadd35d9d0",
+    "main": "3c6d9b43b67c74ec343d77874cd8fa6e841523da"
+  }
+}

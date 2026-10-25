@@ -1,5 +1,7 @@
 # verl Reward Integration 源码级深度阅读
 
+2026-10-25补充：[异步奖励的验证标志与元数据范围](#异步奖励的验证标志与元数据范围)核对已有#7217：原两参数用例通过，修复显式验证标志，不透传全部批级元数据；原假远程句柄不是实际奖励服务。
+
 2026-10-25补充：[数学表达式的语法与资源边界](#数学表达式的语法与资源边界)比较两项已有eval替换方案：限制可执行语法、保持答案兼容和限制资源是不同要求。只做原方法及良性输入CPU对照，不运行攻击或耗尽载荷。
 
 2026-10-24补充：[代码判分的格式与逐例接线](#代码判分的格式与逐例接线)比较#8360/#8175原测试：两候选在部分分数和字典参数上各有不同覆盖，不能以“支持APPS”互相替代。
@@ -140,6 +142,30 @@ head七项分别跑两次，均7通过。死亡由测试向自己的真实子进
 ### 恢复服务不等于完整故障标注
 
 固定[RateLimitedRewardManager](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/experimental/reward_loop/reward_manager/limited.py)能对传播来的异常写`reward_extra_info.error`，对它自己捕获的异步超时写timeout。但候选的两种评分超时仍返回普通float；若默认0，该上层只会按分数消费，不自动获得超时标志。故障恢复、行级可观测性和数学等价判分应分别验收，不能把“池恢复了”改述成“所有失败均可区分”。本轮没有执行完整manager、Ray/RewardLoop、训练或大规模并发，也不推断#8250根因/收敛收益。纯CPU问题无需GPU资源，不新增M5任务、不自动采用候选或对外回复。
+
+## 异步奖励的验证标志与元数据范围
+
+异步奖励的新建输入不会自动继承 rollout 批的元数据。[#7121](https://github.com/verl-project/verl/issues/7121)报告自定义奖励无法从 `data.meta_info` 区分训练与验证；[已有 #7217](https://github.com/verl-project/verl/pull/7217)把现成的 `validate` 显式传到评分方法，再写入 `meta_info={"validate": validate}`。这恢复的是一个标志，不是整批元数据透传。2026-10-25 核验候选 OPEN、非 draft；四条普通评论是机器人声明／CLA与作者催审，唯一review为COMMENTED而非APPROVED，不能当维护者验收或合并。
+
+固定 head `e8508932b0a7ae99b97ec8c3512fddbadd35d9d0` 是合并提交：首父 `7fcdd5e1` 已含修复，第二父及与当前 main 的共同祖先为 `2781c1e405fa80871a838bfdf9495b412df19c35`。相对 main `3c6d9b43b67c74ec343d77874cd8fa6e841523da` ahead2／behind298；真正候选差异为三文件67增3删，不能用首父差异中的主线合并量描述修复。编号及关键词查重已有覆盖，不另实现或发反馈。
+
+### 批级标志与逐行字段分开传递
+
+[普通 AgentLoopWorker](https://github.com/verl-project/verl/blob/e8508932b0a7ae99b97ec8c3512fddbadd35d9d0/verl/experimental/agent_loop/agent_loop.py)在 postprocess 中将一个 output 包成列表评分；[TQ postprocess](https://github.com/verl-project/verl/blob/e8508932b0a7ae99b97ec8c3512fddbadd35d9d0/verl/trainer/ppo/v1/agent_loop_tq.py)可传整个 outputs 列表。候选两处都以关键字传 `validate`，评分方法把它设为必需参数，而不是默认 False。缺接线会显式报错，不会静默把验证算成训练；本机对两文件AST确认这两处调用，未执行完整 postprocess／TQ。
+
+评分方法只有在末条 output 没有预计算 reward、且存在 reward worker 句柄时才新建 DataProto 并调用奖励；结果仍写回末条 output。它将 `kwargs` 复制到 `non_tensor_batch` 的逐行数组，另构造仅含 validate 的 `meta_info`，两者并不互为备份。[奖励 worker](https://github.com/verl-project/verl/blob/e8508932b0a7ae99b97ec8c3512fddbadd35d9d0/verl/experimental/reward_loop/reward_loop.py)再把收到的 DataProto 交给 `run_single`；自定义消费者必须知道字段在哪一层。候选不会恢复任意父批字段或自动补上 `reward_extra_keys`，也不修复[评分张量的补齐几何](#异步奖励的补齐边界)。
+
+### 原回归测试与本机边界
+
+[复查脚本](../../experiments/verl-reward-validation/verify.py)按固定 blob 提取完整原 DataProto／DataProtoItem、Pydantic 输出类型、四个原 worker 方法、位置ID函数与计时 helper；worker仅用本地类壳装配这四方法以绕过 Ray 初始化。原测试的两种 validate 参数、装饰器、断言和假远程奖励句柄均保留，直接 await 原测试体，候选两项通过；不是原模块的完整 pytest 或作者25+1项套件。
+
+同一原测试体接祖先／main 时，两参数例都在调用处因 `validate` 非法关键字而失败，不能把这四项说成已到达远程后的断言失败。另一个独立边界对照按各版真实签名调用，祖先／main 的接收端 meta_info 为空，候选为 `{"validate": true}`；三个版本都把同一 `batch_marker` 留在 non_tensor_batch，并得到原假句柄的1.0分。这个1.0是恒定测试返回值，不是实际奖励函数算出的分数。
+
+[JSON结果](../../experiments/verl-reward-validation/result.json)保存签名失败／通过、真实容器内容、调用关键字与源码SHA256。Python3.12.13、torch2.14.1、NumPy2.5.4、TensorDict0.15.2、macOS arm64；使用真实CPU张量／容器，不导入原 verl 包或初始化 Ray／TQ／模型。测试只走 processor=None 的纯文本支路，完整方法中的其他分支不计为已覆盖；奖励服务、自定义manager、模型及训练均未运行。这个元数据问题无需新增 M5 算力队列，现有专项与上游只读边界不变。
+
+```bash
+/path/to/python experiments/verl-reward-validation/verify.py /path/to/verl
+```
 
 ## 异步奖励的补齐边界
 
