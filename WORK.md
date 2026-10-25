@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 逐轮奖励与停止基线（2026-10-25）**：起始063b6aa干净，compare保留809新增1无删改后ff到82d2284保全M5。读[#7244／已有参与者与draft #8305](open-source/verl/tracker.md#逐轮奖励的基线与已有过程接口)，编号PR空但关键词有候选，不另认领。[原算法专题](notebook/frameworks/verl-grpo-core-algos-reading.md#逐轮奖励与停止动作的基线)分清主线GRPO整行求和／V1最终输出广播、RFC LOO return-to-go与后置优势塑形；纠正旧“只接最终奖励”的泛化。三模块仅语法，单一二元Fraction例3/8→3/16说明动作相关baseline，不执行原算法／测试、MDP或训练，不判draft有错／已无偏。无新增M5队列、专项／上游动作；下轮转独立需求／实质反馈，不扩二元矩阵、反馈缺失实验或接管过程奖励实现。
+
 - **M1 padding序列统计（2026-10-25）**：起始a3f924e干净，compare保留806新增2无删改后ff到add0864保全M5进展。接续此前仅查重的[#7771／已有#7785](open-source/verl/tracker.md#padding-行与序列统计的已有修复)；[原概率专题](notebook/frameworks/verl-async-logprob-provenance.md#padding-行与序列指标的分母)原一测试体两次CPU一致：祖先／main失败、候选通过，三空行令PPL7.389→2.597及log差1→.25，token统计本例不变。序列PPL均值／token corpus PPL、逐行比率／汇总比率及拒绝前mask分开；脚本JSON随仓库。未跑原31／52项、TQ／padding构造／IS／loss或训练，不据统计改善判质量；M5仅原观测分母参考，无新队列／专项或上游动作。下轮转独立需求／实质反馈，不扩padding矩阵或另修已有候选。
 
 - **M1 OPD／GKD损失映射（2026-10-25）**：起始96c186e干净、fetch无新增，日志compare保留803无删改。转未覆盖[#7975／已有draft #7983](open-source/verl/tracker.md#opd-与-gkd-损失的已有说明)，不另认领；[原OPD专题](notebook/frameworks/verl-veomni-opd-source-reading.md#主线与-gkd-的损失名称和支持域)核主线kl/k1采样反向、recipe kl截断前向及rkl重归一化，beta端点不切纯KL，当前tail-bucket非JSD。就地纠正旧k3=绝对值／k2公式等错误；六原模块仅AST／compile，无loss／custom backward、Sphinx、模型或GPU，不新增M5队列／改专项或写上游。下一轮转独立需求／实质反馈，不复跑作者端点矩阵、自动迁配方或另改蒸馏实现。

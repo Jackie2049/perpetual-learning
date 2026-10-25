@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责：①10-24 22:32、②10-25 12:00 回复均按用户逐字文本发出，head 71fd3562（用户裁决：middle 对齐 postprocess_data、cap=1 保留首 token、测试改名回退；CPU 18 passed + 10-25 01:08 GPU e2e 2/2 PASS + 负例 fail-loudly PASS），仍 OPEN/MERGEABLE 等维护者 approve（requested reviewers wuxibin89+dajiaohuang，10-22 后无新审查）；③trainer 级问题讲解中、④草稿 v3 待用户逐字审定，见[原草稿](draft-8313-review-reply.md)。另核[异步恢复库存](#异步恢复库存与预热容量)：#7579非原历史回放，原9 warmup测试体仅Mock接线，不另实现。另核[选定token概率](#选定-token-概率提案的范围收窄)：#7712已撤回组合器，恒等式CPU数学对照非kernel验收，不另实现。另核[V1 idle统计](#v1-异步空闲指标的统计范围)：等待／布尔决策／路由请求数非GPU利用率，不另实现。另核[VeOmni后端RFC](#veomni-端到端低精度路线)：作者已开#1360，配置迁移与职责待反馈，不另实现。另核[S3层级](#s3-下载与完整-checkpoint-生命周期)：下载测试不等持久化验收，不另写后端。另核[激活卸载入口](#激活卸载的辅助输出入口)：已有#8277，原五CPU测试体head通过，recording图顺序非真机验收，不另实现。另核[多轮旧配置](#多轮旧配置的接线或弃用)：活跃AgentLoop未消费两键，旧strict差异只告警，等待维护者选择接线或弃用，不另认领。2026-10-25核[system-only输入契约](#仅-system-消息的契约裁定)：当前VL CT仍有wrapper调用点，但维护者要求初始prompt包含user，不另推进通用支持。[原生MTP](#megatron-迁移的已有原型与验收边界)、[FSDP精度](#fsdp-精度默认的两份候选)等历史验证各限原版本与范围，不另竞争实现或对外发布。 另核[OPD／GKD名称映射](#opd-与-gkd-损失的已有说明)：#7975已有draft #7983，不另认领；当前tail-bucket模式也非recipe JSD等价。 另核[padding序列统计](#padding-行与序列统计的已有修复)：#7785原一CPU回归候选通过，统计修复非IS／loss或质量验收，不另实现。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责：①10-24 22:32、②10-25 12:00 回复均按用户逐字文本发出，head 71fd3562（用户裁决：middle 对齐 postprocess_data、cap=1 保留首 token、测试改名回退；CPU 18 passed + 10-25 01:08 GPU e2e 2/2 PASS + 负例 fail-loudly PASS），仍 OPEN/MERGEABLE 等维护者 approve（requested reviewers wuxibin89+dajiaohuang，10-22 后无新审查）；③trainer 级问题讲解中、④草稿 v3 待用户逐字审定，见[原草稿](draft-8313-review-reply.md)。另核[异步恢复库存](#异步恢复库存与预热容量)：#7579非原历史回放，原9 warmup测试体仅Mock接线，不另实现。另核[选定token概率](#选定-token-概率提案的范围收窄)：#7712已撤回组合器，恒等式CPU数学对照非kernel验收，不另实现。另核[V1 idle统计](#v1-异步空闲指标的统计范围)：等待／布尔决策／路由请求数非GPU利用率，不另实现。另核[VeOmni后端RFC](#veomni-端到端低精度路线)：作者已开#1360，配置迁移与职责待反馈，不另实现。另核[S3层级](#s3-下载与完整-checkpoint-生命周期)：下载测试不等持久化验收，不另写后端。另核[激活卸载入口](#激活卸载的辅助输出入口)：已有#8277，原五CPU测试体head通过，recording图顺序非真机验收，不另实现。另核[多轮旧配置](#多轮旧配置的接线或弃用)：活跃AgentLoop未消费两键，旧strict差异只告警，等待维护者选择接线或弃用，不另认领。2026-10-25核[system-only输入契约](#仅-system-消息的契约裁定)：当前VL CT仍有wrapper调用点，但维护者要求初始prompt包含user，不另推进通用支持。[原生MTP](#megatron-迁移的已有原型与验收边界)、[FSDP精度](#fsdp-精度默认的两份候选)等历史验证各限原版本与范围，不另竞争实现或对外发布。 另核[OPD／GKD名称映射](#opd-与-gkd-损失的已有说明)：#7975已有draft #7983，不另认领；当前tail-bucket模式也非recipe JSD等价。 另核[padding序列统计](#padding-行与序列统计的已有修复)：#7785原一CPU回归候选通过，统计修复非IS／loss或质量验收，不另实现。 另核[逐轮奖励路线](#逐轮奖励的基线与已有过程接口)：#7244已有作者，draft #8305不claim同一LOO估计器，不另实现。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## 逐轮奖励的基线与已有过程接口
+
+2026-10-25只读[#7244](https://github.com/verl-project/verl/issues/7244)全文／唯一评论。作者lijuliana已有fork实现，GBX-Max1220另询问反馈缺失／延迟扩展。开放PR按7244 in:body为空，但per-turn关键词发现luzy99的OPEN/draft [#8305](https://github.com/verl-project/verl/pull/8305)，head07d3a6d6、目标basecd58f550。已读正文、19文件目录、完整process_reward模块及三处接线diff、唯一机器人评论，reviews空；不说全patch已审、无人实现或机器人认可，不替作者触发评审。
+
+见[原算法专题](../../notebook/frameworks/verl-grpo-core-algos-reading.md#逐轮奖励与停止动作的基线)：主线GRPO行求和与V1最终输出广播、RFC的LOO return-to-go、draft的后置actor优势塑形各有不同契约。#8305保留outcome rewards／critic returns，不claim解决该RFC；作者CPU报告与GPU待验非本项目证据。三模块仅AST／compile及一个精确二元代数例，没有运行原算法／候选、测试、MDP／反馈研究或训练；不据此判draft有错或已无偏，不新排M5任务／另写实现或社区动作。
 
 ## Padding 行与序列统计的已有修复
 

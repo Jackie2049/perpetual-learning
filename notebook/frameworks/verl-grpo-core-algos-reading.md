@@ -4,6 +4,42 @@
 
 2026-10-25接续：[KL-Cov 的选词范围](#kl-cov-的选词范围与微批切分)说明批处理切分如何改变选择性惩罚；以下早期算法数量和行号保留历史含义，不作当前版本清单。
 
+2026-10-25接续：[逐轮奖励与停止动作的基线](#逐轮奖励与停止动作的基线)区分#7244的LOO return-to-go提案与#8305的过程优势塑形；奖励可按token存储，不代表GRPO保留逐轮credit。一个精确二元代数例仅说明基线依赖动作的偏差，不认证候选或训练效果。
+
+## 逐轮奖励与停止动作的基线
+
+**逐轮奖励字段、逐轮优势估计与无偏停止决策是三件事。** [#7244](https://github.com/verl-project/verl/issues/7244)作者lijuliana已有fork实现，讨论variable horizon下基线求和上限依赖本条轨迹的停止位置；[另一参与者](https://github.com/verl-project/verl/issues/7244#issuecomment-6122893289)正在询问缺失／延迟反馈方向。本轮不重复其MDP实验或实现。按编号查开放PR为空，但关键词查重发现另一作者luzy99的[draft #8305](https://github.com/verl-project/verl/pull/8305)，不能据编号空结果认定逐轮接口无人做，也不能把它标作已修复该RFC。
+
+### 主线如何消费奖励
+
+固定2026-10-25核验main `3c6d9b43b67c74ec343d77874cd8fa6e841523da`：[原GRPO函数](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/ppo/core_algos.py)先将 `token_level_rewards.sum(-1)`压成每条响应一个score，按UID组统计后将同一优势广播到该行有效token。因此输入可以含中间奖励，但此路径不保留这些奖励分别属于哪一轮的credit；不能写成“框架只能接最终奖励”。[原compute_advantage](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/ppo/ray_trainer.py)的GAE分支另消费token rewards及values，不在本节GRPO结论内。
+
+[V1多输出helper](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/ppo/v1/utils.py)对GRPO只选择每个uid/session最后一个输出计算，再广播给该session其他输出；其他estimator委托旧helper。这里的output index不自动等于对话turn。字符串注册名虽可被 `register_adv_est`接受，注册本身也不会让调用者自动传入turn边界／奖励字段。
+
+### 基线项独立还不够
+
+RFC讨论的危险形式是 `B[i,l] = Σ(j=l…m_i−1) μ_I[j] + μ_O`：即使每个均值都来自其他轨迹，**取多少项**仍由本条轨迹的未来停止位置mᵢ决定。给定当前状态，若当前动作影响mᵢ，baseline就可能依赖该动作；`detach`只能取消autograd穿过baseline，不能消除score-function期望中的相关性。
+
+一个二元logit的精确解释例：p=π(continue)=1/4，continue／stop的条件回报分别2／0，score分别1−p和−p。记两动作分别减去B_c、B_s，则期望更新为：
+
+```text
+g = p(1−p) × [(G_c−G_s) − (B_c−B_s)]
+true policy gradient = p(1−p) × (G_c−G_s)
+baseline-induced bias = −p(1−p) × (B_c−B_s)
+```
+
+标准库Fraction精确枚举这两分支：不减基线得到3/8；仅continue分支减1得到3/16；两个分支都减1仍为3/8。这里B_c=1、B_s=0是**人为给定的解释条件**，不是从#7244或#8305代码复现的结果。它说明“停止动作看见不同baseline”足以改变梯度，并不证明任意逐轮归一化必有相同偏差，也不测方差、MSE或学习收益。
+
+RFC提出按turn index、在其他到达该轮的成员上取realized return-to-go的LOO均值。通常需要给定prompt／既有历史后，其他样本对本条当前动作条件独立；单成员／没有同行、共享采样／筛选造成相关性、反馈缺失和自含样本的标准差缩放仍须单独定义。去掉一个baseline依赖通道，不等于所有归一化／clipping／off-policy更新都已无偏。作者的tabular梯度、方向相似度及收益数字仅属其报告，本轮没有重跑或推广到LLM。
+
+### 已有过程塑形 draft 的范围
+
+2026-10-25读#8305为OPEN/draft，head `07d3a6d6f241b09826a78f2c605dbec9272d347f`、目标base `cd58f550fb1c4f5a3fe29da38e6f0002ec462fd3`；正文不claim修复#7244。它在已有outcome估计之后加入process_scores塑形actor优势，保留原outcome奖励与critic returns；[原数值模块](https://github.com/verl-project/verl/blob/07d3a6d6f241b09826a78f2c605dbec9272d347f/verl/trainer/ppo/process_reward.py)的additive／gvpo／process_weighted三分支不是RFC的LOO return-to-go估计器。逐轮scalar广播到该轮token，也不等于给之前动作计算累计未来奖励。
+
+该draft的直接 `turn_rewards`优先于scorer评估，零值仍是显式输入；`generated_turn_spans`是response坐标的半开区间，默认按response_mask连续生成段回退。合法边界／有限标量只验证数据契约，不认证奖励目标、基线独立性或credit正确。trainer接线在rollout correction后用修改后的mask排掉被拒绝token，与[拒绝前的off-policy诊断分母](verl-async-logprob-provenance.md#padding-行与序列指标的分母)须分开。
+
+本轮仅三完整模块AST／内存compile（main core_algos、V1 utils、draft process_reward）与调用点阅读，加上述Fraction代数。没有执行框架／候选／原测试、MDP、TQ、scorer或训练；19文件目录不等于全patch审核，作者36／13／2项CPU报告非本项目结果，GPU学习质量仍是其待验条件。一条机器人“draft未review”评论与reviews空不作人工认可。本题保存语义与查重结论，不新增M5实验队列、改专项、应用draft或发布社区动作；后续只有实质反馈／明确任务才接续，不扩二元MDP或抢先实现逐轮算法。
+
 ## 核心架构: 注册表式扩展
 
 ### 双注册表系统
@@ -55,7 +91,7 @@ advantages = scores.unsqueeze(-1) * response_mask
 ```
 
 **关键设计决策**:
-1. **Outcome-only**: `scores = rewards.sum()` → 只看最终reward, 不区分哪个token贡献
+1. **整条响应一个score**：`scores = rewards.sum()`可汇总中间奖励，但随后广播同一优势，不保留逐token／逐轮credit；不是输入只能含最终奖励，见上方2026-10-25接续
 2. **组归一化**: `(r_i - μ_group) / σ_group` → 同prompt的n个response互为baseline
 3. **单样本组特殊处理**: `len(id2score[idx])==1 → mean=0, std=1`；默认优势为score/(1+epsilon)，关闭std归一化为score，不是自动归零，见下节
 4. **Dr.GRPO选项**: `norm_adv_by_std_in_grpo=False` → 不除std → 更保守(防止过度归一化)
