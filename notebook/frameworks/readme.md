@@ -237,6 +237,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [verl FSDP Weight Sync Mechanism: Source Code Analysis](verl-fsdp-weight-sync-mechanism-reading.md)
 - [verl FSDP2 Engine Deep Source Reading — Beyond PR Descriptions](verl-fsdp2-source-deep-reading.md)
 - [verl 参数转换与缓冲区精度](verl-fsdp2-source-deep-reading.md#参数转换与缓冲区精度)：#8189 原 6 CPU 测试体及 4 组控制；保留 buffer 不是修复既有舍入或迁移训练状态，原转换调用非完整 FSDP 验收。
+- [verl Checkpoint 配置覆盖](verl-checkpoint-management-reading.md#配置字段可覆盖与对象默认值)：#7388仅actor、#7426含critic／SFT；真实Hydra组合与原配置对象构造不等完整保存验收。
 - [verl Fully-Async Policy 源码级深度阅读](verl-fully-async-policy-reading.md)：新增[样本任务并发与推理序列数](verl-fully-async-policy-reading.md#样本任务并发与推理序列数)，主线已有倍率配置；全局组任务预算非逐副本序列配额。
 - [verl GRPO bypass_mode + TransferQueue + Detach Metrics + Weight Sync 源码级深度阅读](verl-grpo-bypass-mode-reading.md)
 - [verl GRPO Training Core Algorithms — core_algos.py 源码深度阅读](verl-grpo-core-algos-reading.md)：[掩码统计与梯度](verl-grpo-core-algos-reading.md#掩码统计与梯度的数值边界)及[单样本组回退](verl-grpo-core-algos-reading.md#单样本与同分组的不同回退)；区分有限值/梯度、singleton/同分pair，保留CPU复查范围。

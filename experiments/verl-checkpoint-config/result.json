@@ -1,0 +1,619 @@
+{
+  "default_constructed_values_equal_7426_and_parent": true,
+  "environment": {
+    "hydra": "1.3.7",
+    "omegaconf": "2.3.1",
+    "python": "3.12.13",
+    "system": "Darwin"
+  },
+  "results": {
+    "actor_7388": {
+      "config_tree_files": 55,
+      "config_tree_manifest_sha256": "3c35defd1f094a2dd13457c8cc560604a46c0ede2a2df2041b7b8e328de6b155",
+      "configs": {
+        "ppo_megatron_trainer": {
+          "blocks": {
+            "actor_rollout_ref.actor.checkpoint": {
+              "constructed": {
+                "_target_": "",
+                "async_save": false,
+                "load_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "mbridge_config": {},
+                "save_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_lora_only": false,
+                "strict": true
+              },
+              "missing": [],
+              "target": "verl.workers.config.McoreCheckpointConfig"
+            },
+            "critic.checkpoint": {
+              "constructed": {
+                "_target_": "",
+                "async_save": false,
+                "load_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "mbridge_config": {},
+                "save_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_lora_only": false,
+                "strict": true
+              },
+              "missing": [
+                "save_lora_only",
+                "strict"
+              ],
+              "target": "verl.workers.config.McoreCheckpointConfig"
+            }
+          },
+          "override": "critic.checkpoint.strict=False",
+          "override_result": {
+            "accepted": false,
+            "cause": "ConfigAttributeError",
+            "error": "ConfigCompositionException"
+          }
+        },
+        "ppo_trainer": {
+          "blocks": {
+            "actor_rollout_ref.actor.checkpoint": {
+              "constructed": {
+                "_target_": "",
+                "async_save": false,
+                "load_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_lora_only": false,
+                "strict": true
+              },
+              "missing": [],
+              "target": "verl.trainer.config.CheckpointConfig"
+            },
+            "critic.checkpoint": {
+              "constructed": {
+                "_target_": "",
+                "async_save": false,
+                "load_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_lora_only": false,
+                "strict": true
+              },
+              "missing": [
+                "save_lora_only",
+                "strict"
+              ],
+              "target": "verl.trainer.config.CheckpointConfig"
+            }
+          },
+          "override": "actor_rollout_ref.actor.checkpoint.save_lora_only=True",
+          "override_result": {
+            "accepted": true,
+            "value": true
+          }
+        },
+        "sft_trainer_engine": {
+          "blocks": {
+            "checkpoint": {
+              "constructed": {
+                "_target_": "",
+                "async_save": false,
+                "load_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_lora_only": false,
+                "strict": true
+              },
+              "missing": [
+                "async_save",
+                "save_lora_only",
+                "strict"
+              ],
+              "target": "verl.trainer.config.CheckpointConfig"
+            }
+          },
+          "override": "checkpoint.async_save=True",
+          "override_result": {
+            "accepted": false,
+            "cause": "ConfigAttributeError",
+            "error": "ConfigCompositionException"
+          }
+        }
+      }
+    },
+    "all_7426": {
+      "config_tree_files": 50,
+      "config_tree_manifest_sha256": "ec25238cf647ae7a517cf34511924e4939c5d0f661893f38842feee9d177adfa",
+      "configs": {
+        "ppo_megatron_trainer": {
+          "blocks": {
+            "actor_rollout_ref.actor.checkpoint": {
+              "constructed": {
+                "_target_": "",
+                "async_save": false,
+                "load_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "mbridge_config": {},
+                "save_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_lora_only": false,
+                "strict": true
+              },
+              "missing": [],
+              "target": "verl.workers.config.McoreCheckpointConfig"
+            },
+            "critic.checkpoint": {
+              "constructed": {
+                "_target_": "",
+                "async_save": false,
+                "load_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "mbridge_config": {},
+                "save_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_lora_only": false,
+                "strict": true
+              },
+              "missing": [],
+              "target": "verl.workers.config.McoreCheckpointConfig"
+            }
+          },
+          "override": "critic.checkpoint.strict=False",
+          "override_result": {
+            "accepted": true,
+            "value": false
+          }
+        },
+        "ppo_trainer": {
+          "blocks": {
+            "actor_rollout_ref.actor.checkpoint": {
+              "constructed": {
+                "_target_": "",
+                "async_save": false,
+                "load_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_lora_only": false,
+                "strict": true
+              },
+              "missing": [],
+              "target": "verl.trainer.config.CheckpointConfig"
+            },
+            "critic.checkpoint": {
+              "constructed": {
+                "_target_": "",
+                "async_save": false,
+                "load_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_lora_only": false,
+                "strict": true
+              },
+              "missing": [],
+              "target": "verl.trainer.config.CheckpointConfig"
+            }
+          },
+          "override": "actor_rollout_ref.actor.checkpoint.save_lora_only=True",
+          "override_result": {
+            "accepted": true,
+            "value": true
+          }
+        },
+        "sft_trainer_engine": {
+          "blocks": {
+            "checkpoint": {
+              "constructed": {
+                "_target_": "",
+                "async_save": false,
+                "load_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_lora_only": false,
+                "strict": true
+              },
+              "missing": [],
+              "target": "verl.trainer.config.CheckpointConfig"
+            }
+          },
+          "override": "checkpoint.async_save=True",
+          "override_result": {
+            "accepted": true,
+            "value": true
+          }
+        }
+      }
+    },
+    "ancestor_7426": {
+      "config_tree_files": 50,
+      "config_tree_manifest_sha256": "2785d317b04f147ee113a774b09d4aa6a29971f97f26564ca18982bc79824070",
+      "configs": {
+        "ppo_megatron_trainer": {
+          "blocks": {
+            "actor_rollout_ref.actor.checkpoint": {
+              "constructed": {
+                "_target_": "",
+                "async_save": false,
+                "load_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "mbridge_config": {},
+                "save_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_lora_only": false,
+                "strict": true
+              },
+              "missing": [
+                "save_lora_only"
+              ],
+              "target": "verl.workers.config.McoreCheckpointConfig"
+            },
+            "critic.checkpoint": {
+              "constructed": {
+                "_target_": "",
+                "async_save": false,
+                "load_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "mbridge_config": {},
+                "save_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_lora_only": false,
+                "strict": true
+              },
+              "missing": [
+                "save_lora_only",
+                "strict"
+              ],
+              "target": "verl.workers.config.McoreCheckpointConfig"
+            }
+          },
+          "override": "critic.checkpoint.strict=False",
+          "override_result": {
+            "accepted": false,
+            "cause": "ConfigAttributeError",
+            "error": "ConfigCompositionException"
+          }
+        },
+        "ppo_trainer": {
+          "blocks": {
+            "actor_rollout_ref.actor.checkpoint": {
+              "constructed": {
+                "_target_": "",
+                "async_save": false,
+                "load_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_lora_only": false,
+                "strict": true
+              },
+              "missing": [
+                "save_lora_only"
+              ],
+              "target": "verl.trainer.config.CheckpointConfig"
+            },
+            "critic.checkpoint": {
+              "constructed": {
+                "_target_": "",
+                "async_save": false,
+                "load_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_lora_only": false,
+                "strict": true
+              },
+              "missing": [
+                "save_lora_only",
+                "strict"
+              ],
+              "target": "verl.trainer.config.CheckpointConfig"
+            }
+          },
+          "override": "actor_rollout_ref.actor.checkpoint.save_lora_only=True",
+          "override_result": {
+            "accepted": false,
+            "cause": "ConfigAttributeError",
+            "error": "ConfigCompositionException"
+          }
+        },
+        "sft_trainer_engine": {
+          "blocks": {
+            "checkpoint": {
+              "constructed": {
+                "_target_": "",
+                "async_save": false,
+                "load_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_lora_only": false,
+                "strict": true
+              },
+              "missing": [
+                "async_save",
+                "save_lora_only",
+                "strict"
+              ],
+              "target": "verl.trainer.config.CheckpointConfig"
+            }
+          },
+          "override": "checkpoint.async_save=True",
+          "override_result": {
+            "accepted": false,
+            "cause": "ConfigAttributeError",
+            "error": "ConfigCompositionException"
+          }
+        }
+      }
+    },
+    "main": {
+      "config_tree_files": 50,
+      "config_tree_manifest_sha256": "95df87df88669bdfb895618c38d07a53d5932a81984d0c37e010b03138aba104",
+      "configs": {
+        "ppo_megatron_trainer": {
+          "blocks": {
+            "actor_rollout_ref.actor.checkpoint": {
+              "constructed": {
+                "_target_": "",
+                "async_save": false,
+                "load_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_lora_only": false,
+                "strict": true
+              },
+              "missing": [
+                "save_lora_only"
+              ],
+              "target": "verl.trainer.config.CheckpointConfig"
+            },
+            "critic.checkpoint": {
+              "constructed": {
+                "_target_": "",
+                "async_save": false,
+                "load_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_lora_only": false,
+                "strict": true
+              },
+              "missing": [
+                "save_lora_only",
+                "strict"
+              ],
+              "target": "verl.trainer.config.CheckpointConfig"
+            }
+          },
+          "override": "critic.checkpoint.strict=False",
+          "override_result": {
+            "accepted": false,
+            "cause": "ConfigAttributeError",
+            "error": "ConfigCompositionException"
+          }
+        },
+        "ppo_trainer": {
+          "blocks": {
+            "actor_rollout_ref.actor.checkpoint": {
+              "constructed": {
+                "_target_": "",
+                "async_save": false,
+                "load_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_lora_only": false,
+                "strict": true
+              },
+              "missing": [
+                "save_lora_only"
+              ],
+              "target": "verl.trainer.config.CheckpointConfig"
+            },
+            "critic.checkpoint": {
+              "constructed": {
+                "_target_": "",
+                "async_save": false,
+                "load_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_lora_only": false,
+                "strict": true
+              },
+              "missing": [
+                "save_lora_only",
+                "strict"
+              ],
+              "target": "verl.trainer.config.CheckpointConfig"
+            }
+          },
+          "override": "actor_rollout_ref.actor.checkpoint.save_lora_only=True",
+          "override_result": {
+            "accepted": false,
+            "cause": "ConfigAttributeError",
+            "error": "ConfigCompositionException"
+          }
+        },
+        "sft_trainer_engine": {
+          "blocks": {
+            "checkpoint": {
+              "constructed": {
+                "_target_": "",
+                "async_save": false,
+                "load_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_contents": [
+                  "model",
+                  "optimizer",
+                  "extra"
+                ],
+                "save_lora_only": false,
+                "strict": true
+              },
+              "missing": [
+                "async_save",
+                "save_lora_only",
+                "strict"
+              ],
+              "target": "verl.trainer.config.CheckpointConfig"
+            }
+          },
+          "override": "checkpoint.async_save=True",
+          "override_result": {
+            "accepted": false,
+            "cause": "ConfigAttributeError",
+            "error": "ConfigCompositionException"
+          }
+        }
+      }
+    }
+  },
+  "scope": "own real-Hydra composition controls, five explicit checkpoint nodes; original classes/converter only; no original reflective pytest, full resolve, all-subclass discovery, trainer, backend or checkpoint IO",
+  "source_sha256": {
+    "0e540bc35c234008e7c5e3b80a148582ae860c58:verl/base_config.py": "a313fdc081a3983193980a475b9b572b125fe95da92c459f05db810a14f62050",
+    "0e540bc35c234008e7c5e3b80a148582ae860c58:verl/trainer/config/config.py": "21317b7c1c63761fcf0c162cf3a199c4fa9f9ceb650420330bc2dd2384d8b986",
+    "0e540bc35c234008e7c5e3b80a148582ae860c58:verl/utils/config.py": "92210b0bd4f97d5d27bbeeb5e23f15688b9bd425fa66806a95b3f1d58aec97a1",
+    "0e540bc35c234008e7c5e3b80a148582ae860c58:verl/workers/config/checkpoint.py": "f98c17c598e12dd84b8d697b5427fc6bd9e7b17ad2a553407ecb8e0af458ece6",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/base_config.py": "a313fdc081a3983193980a475b9b572b125fe95da92c459f05db810a14f62050",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/trainer/config/config.py": "e4818cf00afe41b4e19d1244b1f42c7383fae25806b749aafcdb8efe0b42695f",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/utils/config.py": "6bd50c96392a845bb92c092a4460f14ad863669b13a4c4c4b2aacb3bf404dac7",
+    "51f8f311294b2732e04c736a3b9eb11d966a5eeb:verl/base_config.py": "a313fdc081a3983193980a475b9b572b125fe95da92c459f05db810a14f62050",
+    "51f8f311294b2732e04c736a3b9eb11d966a5eeb:verl/trainer/config/config.py": "0862845aadcfccbc1b2842070104113e231da813823902da128c6917fe08979a",
+    "51f8f311294b2732e04c736a3b9eb11d966a5eeb:verl/utils/config.py": "92210b0bd4f97d5d27bbeeb5e23f15688b9bd425fa66806a95b3f1d58aec97a1",
+    "51f8f311294b2732e04c736a3b9eb11d966a5eeb:verl/workers/config/checkpoint.py": "3242479795bd51e30f1179b4f8c9da0a28bc5c542e12aa53c7b09d6ded9b8cd6",
+    "ea53291385ce764019a2b40733605f21d8317583:verl/base_config.py": "a313fdc081a3983193980a475b9b572b125fe95da92c459f05db810a14f62050",
+    "ea53291385ce764019a2b40733605f21d8317583:verl/trainer/config/config.py": "0862845aadcfccbc1b2842070104113e231da813823902da128c6917fe08979a",
+    "ea53291385ce764019a2b40733605f21d8317583:verl/utils/config.py": "92210b0bd4f97d5d27bbeeb5e23f15688b9bd425fa66806a95b3f1d58aec97a1",
+    "ea53291385ce764019a2b40733605f21d8317583:verl/workers/config/checkpoint.py": "3242479795bd51e30f1179b4f8c9da0a28bc5c542e12aa53c7b09d6ded9b8cd6"
+  },
+  "versions": {
+    "actor_7388": "0e540bc35c234008e7c5e3b80a148582ae860c58",
+    "all_7426": "51f8f311294b2732e04c736a3b9eb11d966a5eeb",
+    "ancestor_7426": "ea53291385ce764019a2b40733605f21d8317583",
+    "main": "3c6d9b43b67c74ec343d77874cd8fa6e841523da"
+  }
+}

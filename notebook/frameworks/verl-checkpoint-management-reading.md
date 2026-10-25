@@ -11,6 +11,35 @@
 
 2026-10-25补充：[Megatron 调度进度与超参数恢复](#megatron-调度进度与超参数恢复)用官方调度器和真实CPU optimizer区分进度、超参数来源与参数组覆盖；六组控制不等于完整分布式checkpoint恢复。
 
+## 配置字段可覆盖与对象默认值
+
+**dataclass里有字段，不代表Hydra普通命令行覆盖能找到这个键。** 2026-10-26核对[#7387](https://github.com/verl-project/verl/issues/7387)及两个OPEN/non-draft候选：[#7388](https://github.com/verl-project/verl/pull/7388)只补actor的`save_lora_only`；[#7426](https://github.com/verl-project/verl/pull/7426)同时补actor、critic、SFT，并更新四份生成YAML、增加字段一致性测试。后者作者已在#7388评论中说明重叠、提出按维护者选择拆分；不另认领或提交第三份修复。
+
+固定main `3c6d9b43b67c74ec343d77874cd8fa6e841523da` 的[基础配置](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/config/config.py#L24)含`save_lora_only=False`、`strict=True`及`async_save=False`。但原YAML缺actor的第一项、critic的前两项、SFT的三项。`_target_`只是后续实例化的目标标识，不会在Hydra组合阶段自动把类的默认字段补进普通YAML节点；缺键发生在构造对象之前。
+
+### 真实 Hydra 组合对照
+
+[复现脚本](../../experiments/verl-checkpoint-config/verify.py)从固定Git对象抽取各版完整配置树，在临时目录用真实Hydra组合三个根配置；对其中五个明确checkpoint节点检查原dataclass字段，再调用各版原`omega_conf_to_dataclass`及真实Hydra实例化。仅用包壳绕过verl初始化，BaseConfig完整执行、CheckpointConfig与旧McoreCheckpointConfig类定义未改；没有伪造这些配置类型，也没有加载模型后端。
+
+以下是三个代表性**无加号**覆盖，不是完整main_ppo启动或原作者pytest：
+
+| 版本 | PPO actor save_lora_only=True | Megatron critic strict=False | SFT async_save=True |
+| --- | --- | --- | --- |
+| #7426父版 ea532913 | 缺键拒绝 | 缺键拒绝 | 缺键拒绝 |
+| #7388 head 0e540bc3 | 接受 | 缺键拒绝 | 缺键拒绝 |
+| #7426 head 51f8f311 | 接受 | 接受 | 接受 |
+| 当轮main 3c6d9b43 | 缺键拒绝 | 缺键拒绝 | 缺键拒绝 |
+
+拒绝均为ConfigCompositionException、原因为ConfigAttributeError。#7426的五节点全部暴露各自dataclass字段；仅actor候选仍缺critic的strict／save_lora_only、SFT的async_save／strict／save_lora_only。缺字段的旧节点却仍可由原类默认值构造成对象；#7426与其父版在五处默认构造值的`asdict`结果相等。这是**配置对象值相等**，不是序列化字节相同或训练行为／存储格式相同。
+
+历史候选的Megatron节点实际指向McoreCheckpointConfig、包含mbridge_config；当轮main指向基础CheckpointConfig，不能强行把不同版本的对象类型视为相同。脚本分别加载各版原类型，默认值等价断言只比较#7426与其真实父版，不把旧候选当成已能直接应用当前main的补丁。
+
+### 验证范围与接续
+
+Python3.12.13、Hydra1.3.7、OmegaConf2.3.1，两次运行JSON语义一致；[原始结果](../../experiments/verl-checkpoint-config/result.json)保留四版配置树manifest hash、类／转换器来源hash、五节点字段与构造值及覆盖结果。原#7426测试会递归调用get_class发现所有目标类及子类；本轮仅五处显式路径，**没有运行这套原反射测试、作者20项sanity、完整resolve或生成文件再生成检查**。也未执行checkpoint文件写读、LoRA过滤、后端异步保存或训练。新增可覆盖字段不认证这些底层功能。
+
+复现从本项目根目录运行 `python -B experiments/verl-checkpoint-config/verify.py <已有固定对象的只读verl仓库>`；缺对象直接失败、不自动联网。问题已有两份重叠候选，保留供维护者选择，不另修复、应用候选或排新M5算力；后续等待实质反馈／独立需求，不继续扩类型或覆盖排列矩阵。任何社区写入及已有PR head推送仍需用户对具体动作明确授权。
+
 ## 异步恢复的存活库存与训练历史
 
 **保住崩溃前的未消费轨迹，不等于重建检查点之后做过的训练。** [RFC #7579](https://github.com/verl-project/verl/issues/7579)提出TransferQueue持久后端、秒级metadata journal及离线reconciliation。2026-10-25读完整RFC与两条评论，参与者[Begunner](https://github.com/verl-project/verl/issues/7579#issuecomment-5448893542)提出恢复状态跨时间点的问题；作者[savaresejeremy明确确认](https://github.com/verl-project/verl/issues/7579#issuecomment-5466730166)：模型／optimizer从原trainer checkpoint恢复，queue／可选dataloader位置来自更新的journal；已消费对象被删除，不保留原训练顺序或批次，也没有一致时间点恢复。其[已有原型分支](https://github.com/savaresejeremy/verl/tree/feat/durable-replay-buffer)不是主线功能，本轮没有下载或执行这套117文件实现。
