@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责：①10-24 22:32、②10-25 12:00 回复均按用户逐字文本发出，head 71fd3562（用户裁决：middle 对齐 postprocess_data、cap=1 保留首 token、测试改名回退；CPU 18 passed + 10-25 01:08 GPU e2e 2/2 PASS + 负例 fail-loudly PASS），仍 OPEN/MERGEABLE 等维护者 approve（requested reviewers wuxibin89+dajiaohuang，10-22 后无新审查）；③trainer 级问题讲解中、④草稿 v3 待用户逐字审定，见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[响应截断指标](#响应截断指标的已有修复)：#7821原5项／#7906原13项测试体各候选通过，阈值修正与逐行停止信息不同；不拼接实现或对外发布，[boxed判分](#boxed-判分的已有修复)等仍各限原范围。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责：①10-24 22:32、②10-25 12:00 回复均按用户逐字文本发出，head 71fd3562（用户裁决：middle 对齐 postprocess_data、cap=1 保留首 token、测试改名回退；CPU 18 passed + 10-25 01:08 GPU e2e 2/2 PASS + 负例 fail-loudly PASS），仍 OPEN/MERGEABLE 等维护者 approve（requested reviewers wuxibin89+dajiaohuang，10-22 后无新审查）；③trainer 级问题讲解中、④草稿 v3 待用户逐字审定，见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[SGLang概率模式](#sglang-概率模式的已有候选)：#8363原四配置测试体候选全过，最终请求与启动环境仍须分开核验；未运行引擎或另做实现。另补充[响应截断指标](#响应截断指标的已有修复)：#7821原5项／#7906原13项测试体各候选通过，阈值修正与逐行停止信息不同；不拼接实现或对外发布，[boxed判分](#boxed-判分的已有修复)等仍各限原范围。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## SGLang 概率模式的已有候选
+
+2026-10-25读取 #8362 与作者 #8363（OPEN/non-draft，head107c8b08、base3c6d9b43，三文件44增0删），不再另实现或重复反馈。[概率口径笔记](../../notebook/frameworks/verl-async-logprob-provenance.md#sglang-概率模式与请求参数)区分raw温度前概率、processed常规路径与截断归一化。原四配置测试体AST隔离执行两次：基线2过2项预期检查失败，候选4过；仅val_kwargs.top_p=0.8构造零告警，已有机器人行内意见指出同一请求覆盖问题。
+
+仅配置与源码验证，非完整pytest收集、真实请求或引擎；两版共12份完整源码compile，未导入Torch/Ray/SGLang/vLLM/Transformers。锁定SGLang0.5.20源码开关在模块导入读取，真实启动环境仍须核对；作者两步4090报告不计本机结果、不认证逐token一致。M5条件参考补原入口，不新增队列，不改#8313/AReaL/#523/DeepInfer；所有社区写入和既有PR-head推送仍须用户逐项明确同意。
 
 ## 响应截断指标的已有修复
 

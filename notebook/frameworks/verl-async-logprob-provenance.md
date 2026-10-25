@@ -147,6 +147,22 @@ k1源码统计量是 −log_ratio，而非 log_ratio；此处两种双侧界限�
 
 两次 CPU 数值运行一致；五份完整 Python 源码另过 AST／内存 compile。没有运行 #8207 原测试、配置启动、完整 helper 模块导入、score centering 梯度、概率提供者或真实 vLLM／SGLang／训练。复现输入、函数清单及 hash 留[当日日志](../../diary/2026-10-25.md)；不新增永久合成工具或竞争补丁。真实后端的概率身份只补[既有 M5 条件参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不自动启跑、改 sampler 或排新训练。
 
+## SGLang 概率模式与请求参数
+
+**同名 logprobs_mode 不足以证明后端概率同口径。** [#8362](https://github.com/verl-project/verl/issues/8362)已有作者提交的 [#8363](https://github.com/verl-project/verl/pull/8363)，2026-10-25读取仍OPEN、非draft、未合并。固定head `107c8b0817ae62af351a7e00046dbf198904a227`、父提交及base `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，三文件44增0删；不将候选当成主线行为，也不据此解释 #8250。
+
+候选在SGLang启动前为raw模式设置 `SGLANG_RETURN_ORIGINAL_LOGPROB=1`；配置侧仅在calculate_log_probs启用时限定processed_logprobs／raw_logprobs，并对processed搭配顶层top_p<1或top_k>0告警。[锁定依赖SGLang0.5.20的sampler](https://github.com/sgl-project/sglang/blob/94602c9c2b7cbdb8efd5c52802dac6a1c180089e/python/sglang/srt/layers/sampler.py)在非greedy路径中，raw分支保存温度缩放前的log-softmax；但它位于已有logits预处理之后，不能泛称“所有processor之前”。常规返回路径与截断后保留集合的重新归一化仍不同；这个PR没有为verl实现完整支持域回放或同集合归一化。不要把raw、温度处理后的全词表概率、截断采样概率合成一个标签。
+
+### 原配置测试通过的范围
+
+本机Python3.12.13、OmegaConf2.3.1、pytest9.1.1：保留完整BaseConfig及原配置类定义／默认工厂／post_init，以AST隔离重依赖；直接执行候选原测试模块的四个测试体（既有一项加新增三项），没有改断言。两次均为基线2过、2项预期检查失败，候选4过：基线不拒绝processed_logits，也不为顶层top_p=0.8产生新告警。另两项为既有chunked-prefill预算检查、未截断processed与raw截断不告警。这里不是原生包导入或pytest完整收集，也不覆盖所有配置分支。
+
+补充一项直接配置控制：顶层top_p保持默认1，仅 `val_kwargs=SamplingConfig(top_p=0.8)`，构造时零告警。[agent loop](https://github.com/verl-project/verl/blob/107c8b0817ae62af351a7e00046dbf198904a227/verl/experimental/agent_loop/agent_loop.py)在验证时覆盖采样参数，[server](https://github.com/verl-project/verl/blob/107c8b0817ae62af351a7e00046dbf198904a227/verl/workers/rollout/sglang_rollout/async_sglang_server.py)继续转发该字典；配置检查不等于最终请求检查。已有[机器人行内意见](https://github.com/verl-project/verl/pull/8363#discussion_r4369493645)指出同一缺口，本轮只核验，不另修复或重复反馈。控制没有发送请求或启动引擎。
+
+环境变量也属于运行身份：锁定sampler在模块导入时读取该开关；候选只在raw时赋1，没有在其他模式清除继承值。因此真实观测须核对进程启动环境与导入时序；这里只确认源码前提，没有复现污染进程或判定生产故障。两版六个完整相关Python文件共12次compile通过，未导入Torch、Ray、SGLang、vLLM或Transformers，未安装依赖。复现命令与hash见[当日日志](../../diary/2026-10-25.md)。
+
+作者报告Qwen3-0.6B／GSM8K、32 prompt×4、两步、单RTX4090，temperature=0.7、top_p=1，候选raw的IS均值约1.0332／1.0343；这是作者结果，不是M1设备实验。接近vLLM的均值不能认证逐token一致、截断参数或其他模型的表现。若M5既有获准且匹配的观测需要，才沿[原交接入口](../../experiments/handoff-m5.md#verl-异步策略一致性补证)独立接续；没有新增GPU队列、应用候选或修改M5专项。
+
 ## 最小观测契约
 
 每条用于对照的记录应能回答以下四组问题，缺失项用unknown而不是推定值补齐：
