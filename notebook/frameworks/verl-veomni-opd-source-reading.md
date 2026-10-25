@@ -10,6 +10,28 @@
 
 2026-10-25 接续：[主线与 GKD 的损失名称和支持域](#主线与-gkd-的损失名称和支持域)核#7975／已有draft #7983；纠正旧2.2节的k2／k3公式，区分采样估计、top-k归一化、tail bucket与JSD端点。配置名称相同不代表梯度或更新相同。
 
+## Rollout 量化导出与字节布局
+
+**导出流经过量化器，不等于已验证推理引擎能加载该布局；pass-through也不总是对象完全不变。** 新draft [#8369](https://github.com/verl-project/verl/pull/8369)给VeOmni补trainer-side rollout quantizer接口。2026-10-26读取OPEN／draft、作者xiaohong42，head `ca0aea265f4bc4dab927a106cc7f9d43fc201337`，父版／base／共同祖先与当前main均为 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`；两文件60增2删。唯一bot评论表示draft未自动review，reviews／行内评论空，不当人工验收或无人负责的新机会。
+
+### 接口与两条导出路径
+
+主线[init_model](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/workers/engine_workers.py)在actor路径构造checkpoint engine，再由dispatcher选量化器；返回非None才调用engine.set_rollout_weight_quantizer。未实现该接口的引擎继承[BaseEngine](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/workers/engine/base.py)的NotImplementedError。它不要求开启QAT：原checkpoint的native quantization_config也可能选出FP8量化器。本轮没有运行init_model或复现作者的整机启动错误。
+
+[候选VeOmni实现](https://github.com/verl-project/verl/blob/ca0aea265f4bc4dab927a106cc7f9d43fc201337/verl/workers/engine/veomni/transformer_impl.py)在构造器记None，setter保存callable；无量化器时helper原样返回输入，否则调用它。get_per_tensor_param的converter.export_weights与state_dict生成器两条返回流均经helper，第二个返回值仍None。AST对照移除恰好两处wrapper后，完整导出方法与父版相同；构造器移除新增赋None后也相同。原offload、DTensor收集及EP广播逻辑未改，不代表这些分支已由本机执行；shard/delta接口与LoRA支持也不能由这两处接线推出。
+
+[原CPU测试](https://github.com/verl-project/verl/blob/ca0aea265f4bc4dab927a106cc7f9d43fc201337/tests/workers/test_veomni_rollout_quantizer_on_cpu.py)只有一项，手动用object.__new__避开engine初始化：先检查无量化器时迭代器身份不变，再装把名字加.q的lambda，值仍是整数1／2。原测试体与断言经AST隔离，候选通过，父版因缺_quantize_for_rollout而AttributeError；这不是上段NotImplementedError的真实启动复现。原文件顶层的VeOmni MagicMock注册／整包导入未执行，也没调用完整get_per_tensor_param。
+
+### Pass through 仍可重解释 expert 字节
+
+固定主线[Fp8ConfigWeightQuantizer](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/utils/qat/compressed_tensors.py)按model_type包含deepseek_v4／deepseek_v41选passthrough。该分支对名字含.experts.且dtype为int8或float8_e8m0fnu的张量执行view(uint8)，其余直接yield；没有把这些expert重新作通用BF16→FP8压缩，但“直接转交”仍可能改变张量视图dtype。其他模型的标准native FP8路径另有dynamic、128×128及store_dtype限制，不是任意FP8配置通吃。
+
+[复查脚本](../../experiments/verl-veomni-rollout-quantizer/verify.py)加载完整原量化器类，在真实torch2.14.1／CPU用一个四字节int8输入作控制：expert名下的[-128,-1,0,127]导出为uint8的[128,255,0,127]，data_ptr相同；同值非expert名保持原int8对象。字节未重新量化，负数显示改变来自同一bit pattern的解释方式。这个固定小例不验证E8M0分支、真实converter混合FP8／FP4布局或vLLM接收端。
+
+Python3.12.13；六完整源文件版本AST／内存compile，源码SHA256、原测试及CPU结果见[JSON](../../experiments/verl-veomni-rollout-quantizer/result.json)，复跑语义一致。命令：`python -B experiments/verl-veomni-rollout-quantizer/verify.py /path/to/verl-git`，只读已有固定对象，不自动fetch或安装；未导入verl／VeOmni／Ray、运行模型或分布式导出。
+
+PR正文当前报告组合#8370／#8371在2×8 MI355X完成三步，第四步和MI308X第一步仍running；这是作者外部报告，不是本机或单独此补丁的验收。真实格式／scale／加载及更新后数值缺口仅补[原M5条件参考](../../experiments/handoff-m5.md#verl-量化层审计新版复验)，不下载模型、部署AMD、应用候选或新增训练队列。
+
 ## Optimizer 覆盖与 CPU offload 默认
 
 **配置被传到构建器，与优化器在真实卸载模型中节省了多少内存，是两种证据。** 新draft [verl #8370](https://github.com/verl-project/verl/pull/8370)将`optim.override_optimizer_config`交给VeOmni build_optimizer，并仅在`engine_config.enable_fsdp_offload`为真时补默认`fused=True`；显式`fused=False`保留。检查的是这个特定配置开关，不是运行时检查参数所在设备，也不能把它等同于所有名为optimizer_offload的路径。

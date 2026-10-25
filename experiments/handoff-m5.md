@@ -219,6 +219,8 @@ M5 最小下一步：先按实际硬件查已有方案和精确 head，读清依
 
 ## verl 量化层审计新版复验
 
+VeOmni导出参考（2026-10-26，同一入口、非新队列）：[#8369](https://github.com/verl-project/verl/pull/8369) headca0aea26／base3c6d9b43，[M1原一包装测试与CPU字节控制](../notebook/frameworks/verl-veomni-opd-source-reading.md#rollout-量化导出与字节布局)通过；两导出边与构造器只静态对照，无VeOmni／DTensor／converter／refit。DeepSeek passthrough对特定expert仍view(uint8)，不能按“完全不改对象”省去dtype／scale／布局检查。若M5未来独立选用已有获准、安全、匹配的VeOmni量化任务，先固定最终head和实际后端／converter版本、模型类型、quantization_config及导出键／形状／dtype／scale，再在原小预算内核一次真实加载和更新后的对应数值；原lambda加.q测试与作者AMD组合三步不能替代它。缺安全／资源／授权模型或需新部署下载、影响专项即停记未测，不拼接#8370／#8371、升级／启开关或另排训练。所有社区写入与已建PR的fork head推送仍逐项待用户明确同意，本参考非接单。
+
 状态：待 M5 核对匹配硬件/软件栈，本项目尚无下述新版路线的真机复验；#8306作者另有Blackwell观测，不是M5结果。该项不代表已接单，也不作为其他任务的前置条件。
 
 QAT packed mask参考（2026-10-25，非新队列）：[#8361](https://github.com/verl-project/verl/pull/8361) head cf6eb518/base3c6d9b4，[M1源码链](../notebook/frameworks/verl-quant-layer-audit.md#qat-的-mask-默认与-packed-接口)按锁声明Bridge0.6.2/MCore0.19.2/TE2.16.1解释CP1默认arbitrary与THD mask检查；仅七份AST/compile，无原替身测试或后端执行。M5若已有获准匹配QAT任务且独立选用，先核实际包/源码与最终override（True/None不会被setdefault覆盖）、真实CP、QKV layout、最终mask枚举与cu_seqlens，再看获准最小forward；padding_causal名字不代表必须保留padding token。作者等价override的GPU报告不是该head验收，MXFP4权重/FP8 activation experts的GH200部署限制另属backend条件，不能以mask修正认证或触发Hopper部署。缺模型/硬件/依赖、需新下载部署或影响专项则停止记未测，不强改mask/packing或拼接量化路线；不改AReaL/#523/#8313。任何上游可见写入、评论或已建PR的fork head推送仍须用户对具体动作明确同意。

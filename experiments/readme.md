@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-veomni-rollout-quantizer/verify.py](verl-veomni-rollout-quantizer/verify.py) | #8369原一包装测试候选过／父版缺helper；两导出边静态、原FP8类一次CPU字节视图控制，[结果](verl-veomni-rollout-quantizer/result.json)，非converter／refit验收 | [导出与字节布局](../notebook/frameworks/verl-veomni-opd-source-reading.md#rollout-量化导出与字节布局) |
 | [verl-deterministic-compile-defaults/verify.py](verl-deterministic-compile-defaults/verify.py) | #8366原helper／5原参数例及调用端原if节点，[结果](verl-deterministic-compile-defaults/result.json)；六模块语法，无torch／vLLM导入、完整38项套件或模型编译 | [编译默认与覆盖](../notebook/frameworks/verl-6572-full-determinism-source-reading.md#确定性编译默认与显式覆盖) |
 | [verl-squared-probability-chunks/verify.py](verl-squared-probability-chunks/verify.py) | #8365候选16原CPU参数项／父版既有7项通过，[结果](verl-squared-probability-chunks/result.json)；空行反向／负chunk已有反馈控制，无未初始化值读取、GPU峰值或训练 | [平方概率分块与梯度](../notebook/frameworks/verl-grpo-core-algos-reading.md#平方概率分块与空输入梯度) |
 | [unirl-scheduler-environment/verify.py](unirl-scheduler-environment/verify.py) | #468两个原helper接独立dict／目录夹具，[结果](unirl-scheduler-environment/result.json)；异常／正常恢复与解析通过，12模块语法；无真实环境改变、spawn或动态库加载 | [环境与依赖版本](../notebook/frameworks/unirl-survey.md#scheduler-子进程环境与依赖版本) |

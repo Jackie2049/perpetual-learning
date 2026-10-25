@@ -1,0 +1,53 @@
+{
+  "constructor_only_adds_quantizer_none": true,
+  "cpu_passthrough_control": {
+    "expert_aliases_input": true,
+    "expert_output_dtype": "torch.uint8",
+    "expert_output_values": [
+      128,
+      255,
+      0,
+      127
+    ],
+    "input_dtype": "torch.int8",
+    "input_values": [
+      -128,
+      -1,
+      0,
+      127
+    ],
+    "nonexpert_identity_preserved": true
+  },
+  "environment": {
+    "python": "3.12.13",
+    "system": "Darwin",
+    "torch": "2.14.1"
+  },
+  "export_restores_base_when_unwrapped": true,
+  "original_test": {
+    "base": {
+      "message": "'VeOmniEngine' object has no attribute '_quantize_for_rollout'",
+      "status": "expected_AttributeError"
+    },
+    "head": {
+      "status": "passed"
+    }
+  },
+  "scope": "one unchanged original test body with engine shell, not original module imports; two export edges and constructor static only; original FP8 quantizer class on one CPU int8 byte-view input; no VeOmni/converter/DTensor/FP8 kernel, distributed export, model init, refit or training",
+  "source_sha256": {
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/utils/qat/compressed_tensors.py": "894cf83498dd3a7881c3c9b8a6291fc99d3e9b6ae6fe02529ed70fa450801cfe",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/workers/engine/base.py": "58057882c03110cdcf846fd833085e01e3f517a17dd9400f3c0d0e4bdba6500a",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/workers/engine/veomni/transformer_impl.py": "f67670a3ea8aab248d86557fc07f5b0f4d546456626a83ed7079c5f2d4b220dc",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/workers/engine_workers.py": "301323b0a8665d236189c3438b835ee4b2ba8bc8cfced1890684070d403ef7a8",
+    "ca0aea265f4bc4dab927a106cc7f9d43fc201337:tests/workers/test_veomni_rollout_quantizer_on_cpu.py": "dcd4033a34e8ee82a51df7f3dda8d998ad28d67468da446d04ab278beec36940",
+    "ca0aea265f4bc4dab927a106cc7f9d43fc201337:verl/workers/engine/veomni/transformer_impl.py": "75052bf3a989e5a2b622b084d21fdc78d13912f2257f528e78d3b6a8547c44ee"
+  },
+  "static_export_edges": [
+    "converter.export_weights(self.module)",
+    "param_generator()"
+  ],
+  "versions": {
+    "base": "3c6d9b43b67c74ec343d77874cd8fa6e841523da",
+    "head": "ca0aea265f4bc4dab927a106cc7f9d43fc201337"
+  }
+}
