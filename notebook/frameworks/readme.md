@@ -250,7 +250,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [响应长度触顶与真实停止原因](verl-grpo-data-flow-reading.md#响应长度触顶与真实停止原因)：#7821原5项／#7906原13项测试体各候选通过；配置阈值与逐行停止标志分层，False覆盖长度相等、None保留估计，不当真实后端或训练验收。
 - [verl 二维logprob分块](verl-6572-full-determinism-source-reading.md#二维低精度-logprob-的分块预算)：#8351原17测试体CPU移植通过，分块减少节点但不保证全部反向保存量下降；32 MiB非整步峰值，无GPU性能验收。
 - [verl GRPO 内存泄漏与 detach_metrics 修复 — RTX 4090关键分析](verl-grpo-detach-metrics-rtx4090-reading.md)
-- [verl GRPO 源码深度阅读](verl-grpo-source-reading.md)：新增[UID均衡前提](verl-grpo-source-reading.md#连续-uid-与等样本组的前提)，原3个CPU测试体与22组控制；连续段聚合、等段数不自动保证等行分发。
+- [verl GRPO 源码深度阅读](verl-grpo-source-reading.md)：[UID均衡前提](verl-grpo-source-reading.md#连续-uid-与等样本组的前提)与[Python标量转换](verl-grpo-source-reading.md#python-分区的标量类型与性能范围)；#7281原两CPU测试体通过，裸tolist可改FP32分区，局部提速非整步吞吐收益。
 - [verl V1源prompt与可变行](verl-grpo-source-reading.md#v1-源-prompt-单位与可变轨迹行)：#8201新单位/GCD单元/worker可变边界，UID同批不保证同rank；12项原纯helper检查，未跑控制端或训练栈。
 - [verl GRPO Training Loop Internals — Source Code Level Deep Reading](verl-grpo-training-loop-internals-reading.md)：补[学习率步数与恢复](verl-grpo-training-loop-internals-reading.md#学习率步数与恢复条件)，真实CPU optimizer四轨迹/两恢复/一步覆写；日志是推进后LR，state不保存原函数闭包，非训练或worker集成验收。
 - [verl HYBRID Sleep/Wake Architecture — Source Reading](verl-hybrid-sleep-wake-architecture-reading.md)

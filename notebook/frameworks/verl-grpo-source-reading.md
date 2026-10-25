@@ -163,6 +163,22 @@ python experiments/scripts/verify_verl_uid_balancing.py /path/to/verl
 
 Python 3.12.13、torch 2.9.1；不是原文件的完整 pytest、DataProto/rollout/trainer/dispatch、DP通信或性能测试。官方API与本地源码 Git blob 均为 `3ffb4f28c9bc251ad2d8b7f670e4917b0004831d`；实现 SHA256 `f0536d757a8c8eb1a15d63e7174a8995ebbf180481845576f1817ee6020b4902`，原测试 `658fb094f2edb2fe6914ded167e4b18aba3543d5b5410a93a2816622a7b9c48d`。本项只澄清输入与切分契约，不改源码、不新开贡献候选或 M5 硬件任务。
 
+### Python 分区的标量类型与性能范围
+
+批均衡的分区器是 Python 堆与排序算法；把 Tensor 中的零维标量一直带入比较与累加，会反复经过 Torch 分派。[问题 #7279](https://github.com/verl-project/verl/issues/7279)已有[候选 #7281](https://github.com/verl-project/verl/pull/7281)，不需要另一份转换补丁。2026-10-25 核验候选 OPEN、非 draft、无普通评论／行内评论／review；固定 head `05ef5dcc8d36f3e7d5c652b2d9d14b11ffc5a487`，父提交／与当前 main 的共同祖先 `87c68d2124ead7e1e3611e6ad0a8d0393dfd5274`，相对 main `3c6d9b43b67c74ec343d77874cd8fa6e841523da` ahead 1／behind 297。关键词检索另有缓存 spread 的 [#8137](https://github.com/verl-project/verl/pull/8137) 和动态批复用的 [#7097](https://github.com/verl-project/verl/pull/7097)，不据此认定均衡领域无人负责。
+
+候选保留原 Tensor-native `calculate_workload`，在经典 PPO、V1 PPO 与 SFT 的 Python 分区入口增加[主机标量 helper](https://github.com/verl-project/verl/blob/05ef5dcc8d36f3e7d5c652b2d9d14b11ffc5a487/verl/utils/seqlen_balancing.py)。整数走 `tolist()`，浮点走 `list(workloads.detach().cpu().numpy())`，因此 FP32 元素仍是 NumPy float32，而不是 Python float。SFT 用默认浮点 Tensor 构造长度；这条路径不能只凭 PPO 的整数微基准判断兼容性。经典 PPO／SFT 还按 workload 与索引排序、将小样本放在两端；候选 V1 仅分区后拼平，没有相同的区内排序步骤。PrefixGrouper 的分支跳过外层未使用的 workload 计算，组内原有工作量计算仍存在，也不改变上节的 UID 前提。
+
+**数值相等的单项转换，不保证累加与分区相同。** Python float 会让原 FP32 workload 的后续累加改用双精度，近似平衡时的差值比较和 tie-breaking 可以变化。候选在分区集合首次加入 NumPy 浮点数时直接用该标量初始化 sum；否则 NumPy 1.x 的 `0 + np.float32` 可先提升至 float64，而 NumPy 2.x 保持 float32。这个首项规则同时用于 add 与 merge，不能将补丁缩成一行裸 `tolist()`。
+
+[本机脚本](../../experiments/verl-balance-scalars/verify.py)执行候选[两项原测试函数体](https://github.com/verl-project/verl/blob/05ef5dcc8d36f3e7d5c652b2d9d14b11ffc5a487/tests/utils/test_seqlen_balancing.py)，不改函数体、参数或断言；原 helper 与分区函数也按 AST 完整提取，真实 CPU torch／NumPy／heapq 执行，绕过 verl 包初始化。两项通过，涵盖 int64／FP32 标量类型、分区一致与输入不变。再复用原16长度 FP32 反例，在候选／父版／main 的 Tensor 路径上，等大小及不等大小分区均一致；候选 NumPy float32 列表保持原等大小分区，而裸 `tolist()` 得到不同索引集合。[结果](../../experiments/verl-balance-scalars/result.json)保存具体输入、分区、版本与原文件 SHA256。两次执行结果一致；Python 3.12.13、torch 2.14.1、NumPy 2.5.4、macOS arm64。五份候选完整文件另做 AST／内存 compile；没有运行原完整8／9项、trainer、DP 分发或 NumPy 1.x，后者仅为源码条件与作者报告。
+
+```bash
+/path/to/python experiments/verl-balance-scalars/verify.py /path/to/verl
+```
+
+[作者报告](https://github.com/verl-project/verl/pull/7281)的单核 Xeon 整数微基准为22–27倍局部提速；四张 RTX 3090 的 Qwen3.5-0.8B SFT、ABBA四次短跑中，balance 阶段均值89.568→28.557ms，但训练步7492.403→7530.990ms，吞吐2591.3→2576.0 token/s。局部节约约61ms并未转成该测量中的整步提速，不能用微基准倍率描述训练收益。这些训练数值是他方报告，不是 M1 重测；本轮不做性能基准、模型下载或 GPU 访问，不新增 M5 队列、不应用候选或写上游。
+
 ## 6. GRPO vs PPO 在 verl 中的实际差异
 
 | 方面 | PPO (adv_estimator=gae) | GRPO (adv_estimator=grpo) |

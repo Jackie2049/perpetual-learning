@@ -1,0 +1,232 @@
+{
+  "candidate_numpy_float32": [
+    [
+      0,
+      1,
+      4,
+      8,
+      9,
+      10,
+      11,
+      15
+    ],
+    [
+      2,
+      3,
+      5,
+      6,
+      7,
+      12,
+      13,
+      14
+    ]
+  ],
+  "environment": {
+    "device": "cpu",
+    "machine": "arm64",
+    "numpy": "2.5.4",
+    "python": "3.12.13",
+    "system": "Darwin",
+    "torch": "2.14.1"
+  },
+  "host_scalar_type": "float32",
+  "naive_python_float": [
+    [
+      2,
+      3,
+      5,
+      7,
+      10,
+      11,
+      12,
+      14
+    ],
+    [
+      0,
+      1,
+      4,
+      6,
+      8,
+      9,
+      13,
+      15
+    ]
+  ],
+  "original_float32_input": [
+    3765,
+    30817,
+    14350,
+    9825,
+    28544,
+    25697,
+    7113,
+    20034,
+    14106,
+    13834,
+    10,
+    7534,
+    3612,
+    532,
+    32621,
+    15886
+  ],
+  "passed_original_tests": [
+    "test_calculate_workload_as_list_uses_host_scalars",
+    "test_calculate_workload_as_list_preserves_float32_partitioning"
+  ],
+  "scope": "unchanged AST function/test bodies; no trainer/DP/GPU/timing",
+  "source_sha256": {
+    "05ef5dcc8d36f3e7d5c652b2d9d14b11ffc5a487:tests/utils/test_seqlen_balancing.py": "1d620dc375f802a7561c19cf03e309dce4d1af0a9d702344fb0bb22d072aaf8c",
+    "05ef5dcc8d36f3e7d5c652b2d9d14b11ffc5a487:verl/trainer/ppo/ray_trainer.py": "90b9a347d47725868e64184ce1be55aeef362cc405f9b2475efdeaa3c2fe37e1",
+    "05ef5dcc8d36f3e7d5c652b2d9d14b11ffc5a487:verl/trainer/ppo/v1/trainer_base.py": "522a49cb73dc2c55e08b1e452ad5625917396e859f43646f1a4b0f6435b36740",
+    "05ef5dcc8d36f3e7d5c652b2d9d14b11ffc5a487:verl/trainer/sft_trainer_ray.py": "7e253af121500305576ca642c3a19e072b69dd3383f2859426aea4fca7baaef8",
+    "05ef5dcc8d36f3e7d5c652b2d9d14b11ffc5a487:verl/utils/seqlen_balancing.py": "5378fd4ed24138155c8123d727b3769a09640b529fce4cafed3913624746c4b8",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/utils/seqlen_balancing.py": "f0536d757a8c8eb1a15d63e7174a8995ebbf180481845576f1817ee6020b4902",
+    "87c68d2124ead7e1e3611e6ad0a8d0393dfd5274:verl/utils/seqlen_balancing.py": "c114cd1a2908292763fbcae34788a1b010c262ded33712d3f035bc25ff8c2a06"
+  },
+  "tensor_partitions": {
+    "head": {
+      "False": [
+        [
+          0,
+          1,
+          4,
+          8,
+          9,
+          11,
+          15
+        ],
+        [
+          2,
+          3,
+          5,
+          6,
+          7,
+          10,
+          12,
+          13,
+          14
+        ]
+      ],
+      "True": [
+        [
+          0,
+          1,
+          4,
+          8,
+          9,
+          10,
+          11,
+          15
+        ],
+        [
+          2,
+          3,
+          5,
+          6,
+          7,
+          12,
+          13,
+          14
+        ]
+      ]
+    },
+    "main": {
+      "False": [
+        [
+          0,
+          1,
+          4,
+          8,
+          9,
+          11,
+          15
+        ],
+        [
+          2,
+          3,
+          5,
+          6,
+          7,
+          10,
+          12,
+          13,
+          14
+        ]
+      ],
+      "True": [
+        [
+          0,
+          1,
+          4,
+          8,
+          9,
+          10,
+          11,
+          15
+        ],
+        [
+          2,
+          3,
+          5,
+          6,
+          7,
+          12,
+          13,
+          14
+        ]
+      ]
+    },
+    "parent": {
+      "False": [
+        [
+          0,
+          1,
+          4,
+          8,
+          9,
+          11,
+          15
+        ],
+        [
+          2,
+          3,
+          5,
+          6,
+          7,
+          10,
+          12,
+          13,
+          14
+        ]
+      ],
+      "True": [
+        [
+          0,
+          1,
+          4,
+          8,
+          9,
+          10,
+          11,
+          15
+        ],
+        [
+          2,
+          3,
+          5,
+          6,
+          7,
+          12,
+          13,
+          14
+        ]
+      ]
+    }
+  },
+  "versions": {
+    "head": "05ef5dcc8d36f3e7d5c652b2d9d14b11ffc5a487",
+    "main": "3c6d9b43b67c74ec343d77874cd8fa6e841523da",
+    "parent": "87c68d2124ead7e1e3611e6ad0a8d0393dfd5274"
+  }
+}

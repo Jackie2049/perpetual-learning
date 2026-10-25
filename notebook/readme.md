@@ -146,7 +146,7 @@
 - [verl LoRA 主机暂存](verl-v1-checkpoint-engines-deep-reading.md#lora-分桶接收的主机存储所有权) — #8352原暂存语句CPU存储控制；每桶一个块仍须累计整个adapter，逐tensor复制及锁页/loader另有条件，非IPC或加速验收
 - [vLLM MLA Backend 源码阅读](frameworks/vllm-mla-backend-reading.md) — FlashMLA/FlashInfer/Triton/Cutlass MLA 后端、压缩数据流、KV Cache 格式、Backend 选择
 - [verl shared-prefix packing](frameworks/verl-shared-prefix-packing.md) — #8300 的 FSDP 分支可见域、首响应标签、等价条件及 38 组原始 CPU 布局检查
-- [verl UID 分组均衡](frameworks/verl-grpo-source-reading.md#连续-uid-与等样本组的前提) — 连续UID、固定每组样本数与DP等行切分的复合契约；原3个CPU测试体及22组控制，非标准trainer故障复现
+- [verl UID 分组均衡](frameworks/verl-grpo-source-reading.md#连续-uid-与等样本组的前提) — 连续UID、固定每组样本数与DP等行切分的复合契约；另核[Python标量转换](frameworks/verl-grpo-source-reading.md#python-分区的标量类型与性能范围)，#7281原两CPU测试体通过，FP32累加语义与局部性能分开
 - [verl V1源prompt与可变行](frameworks/verl-grpo-source-reading.md#v1-源-prompt-单位与可变轨迹行) — #8201按UID计优化批、逐单元补行并传worker边界；同批非同rank，仅12项原纯helper检查，非TQ/训练验收
 - [verl 拼批形状与对象引用](frameworks/verl-grpo-data-flow-reading.md#拼批中的形状与引用) — 原collator/1原测试体与7组CPU DataLoader检查；一维对象边界不等于深拷贝或字段校验
 - [verl Rollout 完整性](frameworks/verl-grpo-data-flow-reading.md#rollout-完整性与会话计数) — #6641原7项replay测试候选通过/旧版4项拒绝检查预期失败；多输出行不等于多会话，数量护栏非超时、取消或服务恢复

@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责：①10-24 22:32、②10-25 12:00 回复均按用户逐字文本发出，head 71fd3562（用户裁决：middle 对齐 postprocess_data、cap=1 保留首 token、测试改名回退；CPU 18 passed + 10-25 01:08 GPU e2e 2/2 PASS + 负例 fail-loudly PASS），仍 OPEN/MERGEABLE 等维护者 approve（requested reviewers wuxibin89+dajiaohuang，10-22 后无新审查）；③trainer 级问题讲解中、④草稿 v3 待用户逐字审定，见[原草稿](draft-8313-review-reply.md)。另核[异步恢复库存](#异步恢复库存与预热容量)：#7579非原历史回放，原9 warmup测试体仅Mock接线，不另实现。另核[选定token概率](#选定-token-概率提案的范围收窄)：#7712已撤回组合器，恒等式CPU数学对照非kernel验收，不另实现。另核[V1 idle统计](#v1-异步空闲指标的统计范围)：等待／布尔决策／路由请求数非GPU利用率，不另实现。另核[VeOmni后端RFC](#veomni-端到端低精度路线)：作者已开#1360，配置迁移与职责待反馈，不另实现。另核[S3层级](#s3-下载与完整-checkpoint-生命周期)：下载测试不等持久化验收，不另写后端。另核[激活卸载入口](#激活卸载的辅助输出入口)：已有#8277，原五CPU测试体head通过，recording图顺序非真机验收，不另实现。另核[多轮旧配置](#多轮旧配置的接线或弃用)：活跃AgentLoop未消费两键，旧strict差异只告警，等待维护者选择接线或弃用，不另认领。2026-10-25核[system-only输入契约](#仅-system-消息的契约裁定)：当前VL CT仍有wrapper调用点，但维护者要求初始prompt包含user，不另推进通用支持。[原生MTP](#megatron-迁移的已有原型与验收边界)、[FSDP精度](#fsdp-精度默认的两份候选)等历史验证各限原版本与范围，不另竞争实现或对外发布。 另核[OPD／GKD名称映射](#opd-与-gkd-损失的已有说明)：#7975已有draft #7983，不另认领；当前tail-bucket模式也非recipe JSD等价。 另核[padding序列统计](#padding-行与序列统计的已有修复)：#7785原一CPU回归候选通过，统计修复非IS／loss或质量验收，不另实现。 另核[逐轮奖励路线](#逐轮奖励的基线与已有过程接口)：#7244已有作者，draft #8305不claim同一LOO估计器，不另实现。 另核[Ray版本与认证](#ray-版本固定的已有候选)：#7599已有#7600，离线声明／lock核对不作安装或安全验收，不另升级。 另核[GSPO裁剪指标](#gspo-裁剪指标的讨论与边界)：局部token比例／MEAN归约／最终梯度分开，#7356已有社区解释，不重开旧RFC或调参。 另核[自适应组大小](#自适应组大小的接入范围)：#8077原作者待接口方向，预设n非分轮停止，源码接线非recipe或训练验收，不另实现。 另核[teacher温度](#teacher-温度的已有修复与精度边界)：#7769已有#8253，CPU钩子精度控制非vLLM／训练验收，不另实现。 另核[SFT重启保留](#sft-重启保留的已有修复与路径条件)：#7396原22项有路径条件，别名失败为保守保留，反馈不发布、不另修复。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责：①10-24 22:32、②10-25 12:00 回复均按用户逐字文本发出，head 71fd3562（用户裁决：middle 对齐 postprocess_data、cap=1 保留首 token、测试改名回退；CPU 18 passed + 10-25 01:08 GPU e2e 2/2 PASS + 负例 fail-loudly PASS），仍 OPEN/MERGEABLE 等维护者 approve（requested reviewers wuxibin89+dajiaohuang，10-22 后无新审查）；③trainer 级问题讲解中、④草稿 v3 待用户逐字审定，见[原草稿](draft-8313-review-reply.md)。另核[异步恢复库存](#异步恢复库存与预热容量)：#7579非原历史回放，原9 warmup测试体仅Mock接线，不另实现。另核[选定token概率](#选定-token-概率提案的范围收窄)：#7712已撤回组合器，恒等式CPU数学对照非kernel验收，不另实现。另核[V1 idle统计](#v1-异步空闲指标的统计范围)：等待／布尔决策／路由请求数非GPU利用率，不另实现。另核[VeOmni后端RFC](#veomni-端到端低精度路线)：作者已开#1360，配置迁移与职责待反馈，不另实现。另核[S3层级](#s3-下载与完整-checkpoint-生命周期)：下载测试不等持久化验收，不另写后端。另核[激活卸载入口](#激活卸载的辅助输出入口)：已有#8277，原五CPU测试体head通过，recording图顺序非真机验收，不另实现。另核[多轮旧配置](#多轮旧配置的接线或弃用)：活跃AgentLoop未消费两键，旧strict差异只告警，等待维护者选择接线或弃用，不另认领。2026-10-25核[system-only输入契约](#仅-system-消息的契约裁定)：当前VL CT仍有wrapper调用点，但维护者要求初始prompt包含user，不另推进通用支持。[原生MTP](#megatron-迁移的已有原型与验收边界)、[FSDP精度](#fsdp-精度默认的两份候选)等历史验证各限原版本与范围，不另竞争实现或对外发布。 另核[OPD／GKD名称映射](#opd-与-gkd-损失的已有说明)：#7975已有draft #7983，不另认领；当前tail-bucket模式也非recipe JSD等价。 另核[padding序列统计](#padding-行与序列统计的已有修复)：#7785原一CPU回归候选通过，统计修复非IS／loss或质量验收，不另实现。 另核[逐轮奖励路线](#逐轮奖励的基线与已有过程接口)：#7244已有作者，draft #8305不claim同一LOO估计器，不另实现。 另核[Ray版本与认证](#ray-版本固定的已有候选)：#7599已有#7600，离线声明／lock核对不作安装或安全验收，不另升级。 另核[GSPO裁剪指标](#gspo-裁剪指标的讨论与边界)：局部token比例／MEAN归约／最终梯度分开，#7356已有社区解释，不重开旧RFC或调参。 另核[自适应组大小](#自适应组大小的接入范围)：#8077原作者待接口方向，预设n非分轮停止，源码接线非recipe或训练验收，不另实现。 另核[teacher温度](#teacher-温度的已有修复与精度边界)：#7769已有#8253，CPU钩子精度控制非vLLM／训练验收，不另实现。 另核[SFT重启保留](#sft-重启保留的已有修复与路径条件)：#7396原22项有路径条件，别名失败为保守保留，反馈不发布、不另修复。 另核[批均衡标量](#批均衡的标量转换已有候选)：#7281原两CPU测试体通过，FP32分区语义与局部性能分开，不另实现。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## 批均衡的标量转换已有候选
+
+2026-10-25读[#7279](https://github.com/verl-project/verl/issues/7279)全文／唯一评论，编号与关键词查重命中OPEN/non-draft [#7281](https://github.com/verl-project/verl/pull/7281)，head05ef5dcc、父版／与main共同祖先87c68d21，相对当前main3c6d9b43 ahead1／behind297；五文件diff、正文完整读取，普通／行内评论及reviews均空。不另提转换补丁，相关[#8137缓存spread](https://github.com/verl-project/verl/pull/8137)／[#7097动态批复用](https://github.com/verl-project/verl/pull/7097)也不当无人负责。
+
+见[原GRPO均衡专题](../../notebook/frameworks/verl-grpo-source-reading.md#python-分区的标量类型与性能范围)：原两CPU测试体两次通过，复用原FP32输入三版Tensor分区一致，裸tolist却改变分区；NumPy首项累加须保源dtype。作者四卡SFT报告局部约61ms节省、整步无提速，不能照搬微基准倍率。仅原函数提取／五文件语法，不认证完整8／9测试、NumPy1.x、trainer／DP或性能；无候选应用、M5新队列／专项改动或社区写入。
 
 ## SFT 重启保留的已有修复与路径条件
 
