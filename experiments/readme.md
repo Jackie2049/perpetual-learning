@@ -7,6 +7,7 @@
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
 | [handoff-m5.md](handoff-m5.md) | 需要 GPU/NPU 的事项交接、资源/数据前提及停止条件；M5 可用时接续 | 对应主笔记和原始实测结果就近回写 |
+| [verl-async-resume-warmup/verify.py](verl-async-resume-warmup/verify.py) | 固定main原9 warmup测试体／完整方法隔离执行，[结果](verl-async-resume-warmup/results.json)；原Mock加载，非TQ／checkpoint往返 | [库存恢复与训练历史](../notebook/frameworks/verl-checkpoint-management-reading.md#异步恢复的存活库存与训练历史) |
 | [verl-selected-logprob-identity/verify.py](verl-selected-logprob-identity/verify.py) | #7712恒等式的单一FP64 CPU autograd控制，[结果](verl-selected-logprob-identity/results.json)；dense标签oracle，非作者实现／fused或性能验证 | [选定概率与梯度锚点](../notebook/frameworks/verl-fused-output-softcap.md#选定-token-概率与共享归一化项) |
 | [verl-object-store-read/verify.py](verl-object-store-read/verify.py) | #6850原五下载测试体的真实memory后端／临时缓存对照，[结果](verl-object-store-read/results.json)；无云请求或checkpoint执行 | [下载与checkpoint提交](../notebook/frameworks/verl-checkpoint-management-reading.md#对象存储下载与-checkpoint-提交) |
 | [verl-offload-commit/verify.py](verl-offload-commit/verify.py) | #8277原五CPU测试体与前版／单一基线控制，[结果](verl-offload-commit/results.json)；原recording handler，无异步传输 | [反向入口与重载顺序](../notebook/frameworks/verl-architecture.md#激活卸载的反向入口与重载顺序) |

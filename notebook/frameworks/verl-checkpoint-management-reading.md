@@ -1,5 +1,7 @@
 # verl Checkpoint Management 源码级深度阅读
 
+2026-10-25接续：[异步恢复的存活库存与训练历史](#异步恢复的存活库存与训练历史)区分#7579较新journal库存、旧模型回滚和主线#7762预热容量修复；原9个warmup测试体的Mock加载不认证持久化或训练质量。
+
 > 2026-06-15 | 源码: verl/utils/checkpoint/ + verl/checkpoint_engine/ + verl/model_merger/ + verl/trainer/ppo/ray_trainer.py
 > 核心: 2层架构(CheckpointManager→磁盘持久化+CheckpointEngineManager→实时权重同步); FSDP每rank独立shard+HF export(rank0 gather); Megatron dist_ckpt+async save; CheckpointEngineManager 5后端(naive/NCCL/NIXL/Kimi/Mooncake/HCCL); FSDPModelMerger离线合并→HF; GRPO只存actor+dataloader→省critic
 
@@ -8,6 +10,49 @@
 2026-10-24补充：[异步保存能力与恢复指针](#异步保存能力与恢复指针)核对#7955及旧DCP候选#4311；原查找函数的一例测试与五组真实文件系统控制说明“找到目录”并不验收恢复内容，异步写入能力也不自动提供tracker发布。
 
 2026-10-25补充：[Megatron 调度进度与超参数恢复](#megatron-调度进度与超参数恢复)用官方调度器和真实CPU optimizer区分进度、超参数来源与参数组覆盖；六组控制不等于完整分布式checkpoint恢复。
+
+## 异步恢复的存活库存与训练历史
+
+**保住崩溃前的未消费轨迹，不等于重建检查点之后做过的训练。** [RFC #7579](https://github.com/verl-project/verl/issues/7579)提出TransferQueue持久后端、秒级metadata journal及离线reconciliation。2026-10-25读完整RFC与两条评论，参与者[Begunner](https://github.com/verl-project/verl/issues/7579#issuecomment-5448893542)提出恢复状态跨时间点的问题；作者[savaresejeremy明确确认](https://github.com/verl-project/verl/issues/7579#issuecomment-5466730166)：模型／optimizer从原trainer checkpoint恢复，queue／可选dataloader位置来自更新的journal；已消费对象被删除，不保留原训练顺序或批次，也没有一致时间点恢复。其[已有原型分支](https://github.com/savaresejeremy/verl/tree/feat/durable-replay-buffer)不是主线功能，本轮没有下载或执行这套117文件实现。
+
+### 新库存恢复与训练回放的区别
+
+假设模型checkpoint在step 5，journal在step 7。以下是这套提案的恢复语义，不是本项目执行过的崩溃实验：
+
+| 状态 | 恢复来源或缺口 | 含义 |
+| --- | --- | --- |
+| 模型与optimizer | step 5 trainer checkpoint | step 6／7的参数更新回滚 |
+| 存活轨迹与prompt状态 | step 7 journal对应的库存，经DROP／FENCE协调 | 较新未训练库存可少做生成，但不包含全部历史 |
+| dataloader位置 | 若启用journal记录则为较新位置 | 不再重派部分已消费prompt，也不会因此重建丢失的更新 |
+| step 6／7已消费轨迹 | 原型已删除，不留待回放 | 恢复后推进相同步号，不等于重做原批次或顺序 |
+
+作者确认，剩余库存可能由比恢复模型更新的策略产生；kill drill验证库存／重发数量，没有测量这段版本差对loss轨迹的影响。消费日志与延后删除只是作者讨论的后续方向，不是已具备的“精确回放”。对这个提案的判断应先明确目标：接受换用幸存库存继续训练，还是要求重放原消费历史／恢复可比轨迹；减少重新生成不能单独回答后一个问题。
+
+### 主线重发与预热容量
+
+固定主线`3c6d9b43b67c74ec343d77874cd8fa6e841523da`的[恢复入口](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/ppo/v1/trainer_base.py)依次加载actor、可选critic、data.pt与异步TransferQueue，再统计所有`is_prompt`组。fit将global step推进一格后，先重发pending／running prompt，再进入on_train_begin；重发会清除这些prompt原有trajectory并重新标记当前step，不是续接半生成token。finished／failure不重发，但都计入恢复prompt池。
+
+已合并[#7762](https://github.com/verl-project/verl/pull/7762)修复的是预取窗口：两个异步trainer共用`_add_async_warmup_batches`，只补`max(0, target_prompts − restored_prompts)`，满额或超额都不再追加。当前main另支持按gen_batch_size对fractional warmup目标向下取整；下述原9例只有整数输入，不据此认证所有小数配置。**恢复prompt数不等于重发数，也不等于sampleable组数**；用重发数作为唯一扣减量，会漏掉已经恢复的终态组。
+
+本轮编号查重仅命中#7762对#7579的引用，它不是持久后端实现；不据PR已合并宣布该RFC已落地。PR报告的两步e2e也不是本机结果，主线已经修复warmup不意味着新journal可精确恢复训练。
+
+### 持久化保证与证据单位
+
+RFC把写身份FENCE与索引复用区分：旧metadata若指向被回收并复用的索引，可能读到形状／dtype相同的另一条样本；其原型以日志顺序和写身份协调，而不是只看索引存在。这里是作者原型及报告，不是本机复现或新缺陷判断。
+
+RFC默认日志与对象是flush而非fsync，将保证限定为进程级故障；节点掉电／丢失的更强保证需要另选屏障条件。journal配置间隔也不是独立最坏损失上限：报告中共享文件系统有9–13秒tick尾部，作者按间隔与tick耗时较大者限定窗口。其“27B-like”确定性harness统计的是累计trajectory-generation-seconds，非27B实跑节约的墙钟时间；8×B200 kill drill与内部27B观测是另外的外部证据。原型声明的253项包测试、153／155 V1测试均未在本机执行，更不能用“0个重发”证明完整恢复或收敛一致。
+
+### 原 warmup 测试体的本机范围
+
+[复查脚本](../../experiments/verl-async-resume-warmup/verify.py)从固定main抽取完整`_load_checkpoint`、`_add_async_warmup_batches`与两种on_train_begin方法，移除原测试的verl导入，保留其9个完整测试体、OmegaConf与MagicMock断言。九例两次通过：fresh 12、满池／超额不补、恢复6时补6、零目标／skip不补、colocate补8、separate补8，以及Mock加载后的计数接线。[原始结果](../../experiments/verl-async-resume-warmup/results.json)含完整源码hash与版本。
+
+最后一例只有真实临时目录及exists检查，queue／actor loader为原Mock，恢复计数按原测试固定为6；没有data.pt内容加载、实际TQ／Ray、重发测试套件、checkpoint往返、journal、reconciler或训练。三份生产模块与原warmup测试另过语法检查，不算额外功能例。复现：
+
+```bash
+/private/tmp/verl312/bin/python -B experiments/verl-async-resume-warmup/verify.py /path/to/verl-git
+```
+
+后续只在明确恢复目标、实质接口反馈或已有获准匹配工作时再评估。[原M5 checkpoint参考](../../experiments/handoff-m5.md#verl-训练-checkpoint-发布参考)仅补状态／时间点核对条件，不新排崩溃实验、不在共享或安全未恢复环境注入故障，不自动安装原型或改现有恢复路径。
 
 ## V1 到期前保存的触发与计时范围
 

@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 异步恢复库存与warmup（2026-10-25）**：起始e02b537干净、fetch无新增，compare保留799无删改。读[#7579全文／两评论与已合并#7762](open-source/verl/tracker.md#异步恢复库存与预热容量)，作者确认新journal＋旧模型非一致时间点恢复，已消费轨迹不留且更晚策略库存影响未测，不接管117文件方案。[原checkpoint专题](notebook/frameworks/verl-checkpoint-management-reading.md#异步恢复的存活库存与训练历史)核main3c6d9b43重发／预热次序：所有恢复prompt占预取容量，终态不重发亦计数。原9 warmup测试体两次隔离通过，仅完整方法／原Mock；无TQ／实际重发／往返／journal或训练，脚本／JSON随仓库。flush级故障、tick尾时延及生成工作秒不泛化。M5原参考只补获准匹配条件，无新崩溃／算力队列、服务器／专项或上游动作。下轮转独立真实需求／实质反馈，不扩假恢复矩阵、写consume log或自动部署原型。
+
 - **M1 选定token概率恒等式（2026-10-25）**：起始d4f8a52干净、fetch无新增，compare保留797无删改。读[#7712](open-source/verl/tracker.md#选定-token-概率提案的范围收窄)全文／5评论及旧fork draft；作者已撤回组合器，剩默认off引擎输出，新恒等式非旧f894f21e实现，不认领。[原输出头专题](notebook/frameworks/verl-fused-output-softcap.md#选定-token-概率与共享归一化项)区分全词表概率与集合条件概率，真实FP64 CPU值／双梯度对照误差<1e-12，detach锚点负控制值同梯度错；脚本／JSON随仓库。仅一个数学形状与四模块语法，无原作者测试、BF16／kernel／SP／原地CE／训练；H200单算子报告非新E2E证据。原M5条件参考不新排算力，无服务器、专项或上游动作。下轮转独立需求／实质接口反馈，不扩toy矩阵、另写组合器或抢先实现kernel。
 
 - **M1 V1异步idle统计边界（2026-10-25）**：起始79a0890干净，compare保留794新增1无删改后ff到e781342，保全并行日志。未覆盖[#7601](open-source/verl/tracker.md#v1-异步空闲指标的统计范围)已有参与者方案，读全文／三评论及查重，不认领。固定main3c6d9b43，[原异步专题](notebook/frameworks/verl-6790-async-trainer-reading.md#异步空闲指标与调度等待)区分gen钩子段、hybrid rollout期间switch_wait、布尔idle与router当前请求计数；旧fully_async比率非V1接口或GPU利用率。11模块仅AST／compile，无原测试或调度／服务／训练；旧六月“永不切换”不适用于当前实现。原M5参考仅补将来已有获准观测的口径条件，无新算力队列、服务器动作或专项／上游改动。下轮转独立真实需求或实质反馈，不另写积分器、扩假时钟矩阵或自行调资源。

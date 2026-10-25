@@ -1,0 +1,25 @@
+{
+  "revision": "3c6d9b43b67c74ec343d77874cd8fa6e841523da",
+  "python": "3.12.13",
+  "torch": "2.14.1",
+  "omegaconf": "2.3.1",
+  "pytest": "9.1.1",
+  "passed": [
+    "test_fresh_start_submits_the_whole_prefetch_window",
+    "test_full_restored_prompt_pool_skips_warmup",
+    "test_partial_restored_prompt_pool_is_topped_up",
+    "test_overfilled_restored_prompt_pool_does_not_add_warmup",
+    "test_zero_warmup_batches_submits_nothing",
+    "test_skip_rollout_tq_skips_warmup_even_without_restored_prompts",
+    "test_colocate_async_on_train_begin_tops_up_configured_window",
+    "test_separate_async_on_train_begin_tops_up_configured_window",
+    "test_loaded_prompt_count_drives_on_train_begin_top_up"
+  ],
+  "source_sha256": {
+    "verl/trainer/ppo/v1/trainer_base.py": "293af89dab738cc57a67a8cc730f3337622685e29d96dfdd2e9af1e6fc2144e8",
+    "verl/trainer/ppo/v1/trainer_colocate_async.py": "efc3fa946cfb24ce4727b5ad92d6ac7ecffd961c5afd0d9d605436c7dbf7a025",
+    "verl/trainer/ppo/v1/trainer_separate_async.py": "329c326d05aea6bc6ee5b96eb182c8be4dc45d70e7b3dd8db9b8fbed772ad4cd",
+    "tests/trainer/ppo/v1/test_v1_async_warmup_on_cpu.py": "bffa5489426e453baf30bb9fd87e848b82f166ecc81319dc33a2397281b5cd28"
+  },
+  "scope": "original nine test bodies; extracted methods; mock loaders; no TQ/Ray/model/checkpoint round-trip"
+}
