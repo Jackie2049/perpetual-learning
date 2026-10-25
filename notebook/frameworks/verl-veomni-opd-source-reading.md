@@ -8,6 +8,37 @@
 
 2026-10-23 补充：[教师生成与蒸馏目标](#教师生成与蒸馏目标)以新draft #8335为准，区分生成方、软标签打分方和学生更新。下方June阅读、星级及硬件建议不是该实验路线的就绪或性能结论。
 
+2026-10-25 接续：[主线与 GKD 的损失名称和支持域](#主线与-gkd-的损失名称和支持域)核#7975／已有draft #7983；纠正旧2.2节的k2／k3公式，区分采样估计、top-k归一化、tail bucket与JSD端点。配置名称相同不代表梯度或更新相同。
+
+## 主线与 GKD 的损失名称和支持域
+
+**从GKD recipe迁到主线OPD，不能原样搬 `kl`、beta或rkl_ratio。** [#7975](https://github.com/verl-project/verl/issues/7975)已有Liu-KM的文档[draft #7983](https://github.com/verl-project/verl/pull/7983)，2026-10-25核为OPEN/draft、head `28879f83095a7f1a38cd4ae70d6eb331cdcf0dcc`；只读到一条CLA机器人评论、无reviews，不当已发布说明或另认领。同日固定主线 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，recipe固定该PR引用的 `5451026758c3f1dc3ebc2a46a0e52b14406f0f72`。
+
+### 同名模式的输入不同
+
+以下P表示teacher，Q表示student，K是teacher选出的top-k token集合。主线配置入口为 `distillation.distillation_loss.loss_mode`；recipe为 `actor_rollout_ref.actor.distill_loss.name`，beta／rkl_ratio在同一distill_loss命名空间。[主线registry与包装器](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/distillation/losses.py)与[recipe四模式](https://github.com/verl-project/verl-recipe/blob/5451026758c3f1dc3ebc2a46a0e52b14406f0f72/gkd/megatron/megatron_distill_losses.py)对应如下：
+
+| 模式 | 支持域与前向目标 | 迁移时的区别 |
+|---|---|---|
+| 主线 `kl`／`k1` | 同一已采样token的log Q−log P；在Q采样的期望下估计反向KL | 不是recipe前向KL；PG路径把负值detach后作优势 |
+| 主线 `forward_kl_topk` | Σ(K) P(log P−log Q)，保留全词表概率，不在K内重新归一化 | 默认先对两边log-prob下限裁剪，外层再将负的逐token结果裁为0 |
+| recipe `kl` | 相同形式的截断前向和，不重归一化 | 没有主线包装器的相同裁剪；同一前向形式也不认证自定义backward等价 |
+| recipe `rkl` | Q、P都在**teacher的K**内归一化，再算KL(Q̂∥P̂) | 不是主线采样反向KL，也不是全词表反向KL |
+| recipe `kl_rkl` | (1−r)×上述recipe kl＋r×上述recipe rkl；r裁到[0,1] | 两项本来使用不同归一化，不能只搬一个混合比例 |
+| recipe `jsd` | P仅保留K且外部为0，Q仍是全词表概率；M=βP(K)+(1−β)Q，含K外Q∥M解析项 | 无top-k重归一化，不能简化成两个recipe纯KL的线性混合 |
+
+当前主线还注册 `forward_kl_topk_tail`，不能把旧比较表当作完整模式目录。它将K外teacher／student概率质量各折成一个tail bucket，形成K+1类的粗粒度前向KL；[FSDP原实现](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/distillation/fsdp/losses.py)与[tail helper](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/distillation/tail_kl.py)保留这一个尾部总质量，不恢复尾部内部token分布，也没有JSD混合分布M。学生尾质量有epsilon保护；[配置](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/workers/config/distillation.py)要求该模式 `log_prob_min_clamp=None`。因此它不是recipe rkl／kl_rkl／jsd的直接等价入口。
+
+### 标量损失与更新路径分开
+
+主线 `use_policy_gradient` 是更新方式，不是第三种支持域：True时将负的逐token蒸馏损失detach为优势，走采样token的policy-loss；False时直接聚合蒸馏损失反向。相同log-ratio值不保证两条路径梯度相同。`loss_max_clamp`、response mask、聚合分母、task-reward开关及系数也须一起核，不能把前向公式相同写成训练迁移验收。
+
+recipe JSD把beta裁到 `[1e-6,1−1e-6]`，配置0／1并不切换到独立kl／rkl模式。[recipe #151](https://github.com/verl-project/verl-recipe/issues/151)的NumPy端点分析和27B观察属于作者报告，其中生产观察来自另一实现；“原始损失或梯度很小”不能升级成“无学习／优化器更新按比例缩小”。Adam状态、epsilon及其他损失都可能改变最终更新；本轮不复跑该NumPy例、不改变公式或阈值。
+
+### 本轮核对范围
+
+六个完整Python模块仅AST／内存compile：主线loss registry、FSDP loss、tail helper、worker config、core_algos，以及固定recipe四模式模块。未导入框架、执行loss／自定义backward／TP collective或跑原作者测试、Sphinx、模型与GPU；源码hash和检查方式见[当日日志](../../diary/2026-10-25.md)。#7983所报323个Sphinx警告与基线相同是作者的文档构建报告，不是本项目验证。旧文中的k3=绝对值、mse无1/2及k2另为概率比公式已在下方原位置纠正。下轮转独立需求／实质反馈，不扩端点矩阵、自动搬配方、修改kernel或新排M5训练；社区发布和已有PR head推送仍须用户逐项明确同意。
+
 ---
 
 ## 1. Overview: VeOmni OPD in verl
@@ -71,9 +102,9 @@ Step Loop:
   6. (Optional) Schedulers overlap phases for throughput
 ```
 
-### 2.2 Loss Function Architecture: Three-Mode Design
+### 2.2 Loss Families and Update Paths
 
-The distillation loss system (`verl/trainer/distillation/losses.py`) supports **three distinct loss modes**:
+The two input families below are teacher-top-k objectives and sampled-token estimators. Policy-gradient versus direct backpropagation is a separate update choice; the current tail-aware top-k variant is described in the 2026-10-25 comparison above.
 
 #### Mode 1: forward_kl_topk (Top-K Sparse Forward KL)
 
@@ -97,23 +128,26 @@ With VeOmni fused kernel:
 
 #### Mode 2: Single-Sample KL Estimators (k1, k3, kl, abs, mse, k2, low_var_kl)
 
+The corrected expressions follow the fixed [core_algos implementation](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/ppo/core_algos.py), not an inferred expansion from estimator names.
+
 ```
 Student generates tokens on-policy (single sample a_t ~ pi_student)
 Teacher provides log_prob of that SAME token: teacher_log_probs(a_t)
 
-Per-token divergence:
-  k1: log P(a_t) - log Q(a_t)           — signed, can be negative
-  k3: |log P(a_t) - log Q(a_t)|         — absolute value
-  kl: log P(a_t) - log Q(a_t)           — same as k1 but used differently
-  mse: (log P(a_t) - log Q(a_t))^2      — squared
-  k2: (P(a_t) - Q(a_t))^2 / Q(a_t)     — population variance estimator
+Per-token quantities (corrected 2026-10-25 from main 3c6d9b43):
+  d = log pi_student(a_t) - log pi_teacher(a_t)
+  kl / k1: d                          — signed, can be negative
+  abs: abs(d)
+  mse / k2: 0.5 * d^2
+  low_var_kl / k3: exp(-d) + d - 1
+    implementation clamps -d to [-20,20], then the result to [-10,10]
 
 Recommended pairings:
   use_policy_gradient=True + loss_mode=k1  — treat -distillation_loss as reward, PG update
   use_policy_gradient=False + loss_mode=k3  — direct supervised backprop
 ```
 
-#### Mode 3: Policy Gradient Distillation (use_policy_gradient=True)
+#### Update Choice: Policy Gradient Distillation (use_policy_gradient=True)
 
 ```python
 # From losses.py distillation_loss() function:

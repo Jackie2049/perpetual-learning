@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 OPD／GKD损失映射（2026-10-25）**：起始96c186e干净、fetch无新增，日志compare保留803无删改。转未覆盖[#7975／已有draft #7983](open-source/verl/tracker.md#opd-与-gkd-损失的已有说明)，不另认领；[原OPD专题](notebook/frameworks/verl-veomni-opd-source-reading.md#主线与-gkd-的损失名称和支持域)核主线kl/k1采样反向、recipe kl截断前向及rkl重归一化，beta端点不切纯KL，当前tail-bucket非JSD。就地纠正旧k3=绝对值／k2公式等错误；六原模块仅AST／compile，无loss／custom backward、Sphinx、模型或GPU，不新增M5队列／改专项或写上游。下一轮转独立需求／实质反馈，不复跑作者端点矩阵、自动迁配方或另改蒸馏实现。
+
 - **M1 SDE窗口计数学习（2026-10-25）**：起始dc29152干净，compare保留801新增1无删改后ff到32ac5b5，保全并行日志。读[#488／已合并#489](open-source/unirl/tracker.md#sde-窗口调度的已有修复)，不另认领；[原UniRL专题](notebook/frameworks/unirl-survey.md#sde-窗口的停留步数与坐标)区分输入rollout_id、去噪窗口起点与optimizer step。固定main6fd82cba原完整调度模块CPU两次一致，T10默认threshold13不衰减，但Wan22 T20仅切换策略的反事实末窗25→21；四实际配方仍progressive。脚本／JSON随仓库，无Hydra／SDE／模型、参考parity或提速验收；旧PR blob缺失未得diff，未重试代理。M5原入口只补条件口径，不新增队列、探服务器、改专项或写上游。下轮转独立真实需求／实质反馈，不扩窗口矩阵或改已有调度方案。
 
 - **M1 异步恢复库存与warmup（2026-10-25）**：起始e02b537干净、fetch无新增，compare保留799无删改。读[#7579全文／两评论与已合并#7762](open-source/verl/tracker.md#异步恢复库存与预热容量)，作者确认新journal＋旧模型非一致时间点恢复，已消费轨迹不留且更晚策略库存影响未测，不接管117文件方案。[原checkpoint专题](notebook/frameworks/verl-checkpoint-management-reading.md#异步恢复的存活库存与训练历史)核main3c6d9b43重发／预热次序：所有恢复prompt占预取容量，终态不重发亦计数。原9 warmup测试体两次隔离通过，仅完整方法／原Mock；无TQ／实际重发／往返／journal或训练，脚本／JSON随仓库。flush级故障、tick尾时延及生成工作秒不泛化。M5原参考只补获准匹配条件，无新崩溃／算力队列、服务器／专项或上游动作。下轮转独立真实需求／实质反馈，不扩假恢复矩阵、写consume log或自动部署原型。

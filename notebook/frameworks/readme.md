@@ -289,6 +289,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [verl V1 Trainer Architecture 源码级深度阅读](verl-v1-trainer-architecture-reading.md)
 - [verl V1 Unified Trainer Architecture — Reading Note](verl-v1-unified-trainer-architecture-reading.md)
 - [verl VeOmni OPD (On-Policy Distillation) Engine — Source-Level Analysis](verl-veomni-opd-source-reading.md)
+  - [主线与GKD损失映射](verl-veomni-opd-source-reading.md#主线与-gkd-的损失名称和支持域) — #7975已有draft #7983；kl名称、top-k归一化与JSD端点不通用，纠正旧k2/k3公式，六模块语法非梯度／训练验收。
   - [教师生成与蒸馏目标](verl-veomni-opd-source-reading.md#教师生成与蒸馏目标) — #8335按submission选生成方、另取teacher软标签；只支持受限同步V1，源码/16文件语法核对，未跑原测试或设备。
 - [verl vs rLLM Transform Pipeline 对比 (源码级)](verl-vs-rllm-transform-comparison.md)
 - [verl Worker 生命周期与 Ray 分布式架构源码阅读](verl-worker-lifecycle-ray-weight-sync-reading.md)

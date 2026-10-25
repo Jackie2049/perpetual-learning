@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责：①10-24 22:32、②10-25 12:00 回复均按用户逐字文本发出，head 71fd3562（用户裁决：middle 对齐 postprocess_data、cap=1 保留首 token、测试改名回退；CPU 18 passed + 10-25 01:08 GPU e2e 2/2 PASS + 负例 fail-loudly PASS），仍 OPEN/MERGEABLE 等维护者 approve（requested reviewers wuxibin89+dajiaohuang，10-22 后无新审查）；③trainer 级问题讲解中、④草稿 v3 待用户逐字审定，见[原草稿](draft-8313-review-reply.md)。另核[异步恢复库存](#异步恢复库存与预热容量)：#7579非原历史回放，原9 warmup测试体仅Mock接线，不另实现。另核[选定token概率](#选定-token-概率提案的范围收窄)：#7712已撤回组合器，恒等式CPU数学对照非kernel验收，不另实现。另核[V1 idle统计](#v1-异步空闲指标的统计范围)：等待／布尔决策／路由请求数非GPU利用率，不另实现。另核[VeOmni后端RFC](#veomni-端到端低精度路线)：作者已开#1360，配置迁移与职责待反馈，不另实现。另核[S3层级](#s3-下载与完整-checkpoint-生命周期)：下载测试不等持久化验收，不另写后端。另核[激活卸载入口](#激活卸载的辅助输出入口)：已有#8277，原五CPU测试体head通过，recording图顺序非真机验收，不另实现。另核[多轮旧配置](#多轮旧配置的接线或弃用)：活跃AgentLoop未消费两键，旧strict差异只告警，等待维护者选择接线或弃用，不另认领。2026-10-25核[system-only输入契约](#仅-system-消息的契约裁定)：当前VL CT仍有wrapper调用点，但维护者要求初始prompt包含user，不另推进通用支持。[原生MTP](#megatron-迁移的已有原型与验收边界)、[FSDP精度](#fsdp-精度默认的两份候选)等历史验证各限原版本与范围，不另竞争实现或对外发布。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责：①10-24 22:32、②10-25 12:00 回复均按用户逐字文本发出，head 71fd3562（用户裁决：middle 对齐 postprocess_data、cap=1 保留首 token、测试改名回退；CPU 18 passed + 10-25 01:08 GPU e2e 2/2 PASS + 负例 fail-loudly PASS），仍 OPEN/MERGEABLE 等维护者 approve（requested reviewers wuxibin89+dajiaohuang，10-22 后无新审查）；③trainer 级问题讲解中、④草稿 v3 待用户逐字审定，见[原草稿](draft-8313-review-reply.md)。另核[异步恢复库存](#异步恢复库存与预热容量)：#7579非原历史回放，原9 warmup测试体仅Mock接线，不另实现。另核[选定token概率](#选定-token-概率提案的范围收窄)：#7712已撤回组合器，恒等式CPU数学对照非kernel验收，不另实现。另核[V1 idle统计](#v1-异步空闲指标的统计范围)：等待／布尔决策／路由请求数非GPU利用率，不另实现。另核[VeOmni后端RFC](#veomni-端到端低精度路线)：作者已开#1360，配置迁移与职责待反馈，不另实现。另核[S3层级](#s3-下载与完整-checkpoint-生命周期)：下载测试不等持久化验收，不另写后端。另核[激活卸载入口](#激活卸载的辅助输出入口)：已有#8277，原五CPU测试体head通过，recording图顺序非真机验收，不另实现。另核[多轮旧配置](#多轮旧配置的接线或弃用)：活跃AgentLoop未消费两键，旧strict差异只告警，等待维护者选择接线或弃用，不另认领。2026-10-25核[system-only输入契约](#仅-system-消息的契约裁定)：当前VL CT仍有wrapper调用点，但维护者要求初始prompt包含user，不另推进通用支持。[原生MTP](#megatron-迁移的已有原型与验收边界)、[FSDP精度](#fsdp-精度默认的两份候选)等历史验证各限原版本与范围，不另竞争实现或对外发布。 另核[OPD／GKD名称映射](#opd-与-gkd-损失的已有说明)：#7975已有draft #7983，不另认领；当前tail-bucket模式也非recipe JSD等价。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## OPD 与 GKD 损失的已有说明
+
+2026-10-25读[#7975](https://github.com/verl-project/verl/issues/7975)全文／0评论与关联[recipe #151](https://github.com/verl-project/verl-recipe/issues/151)全文／0评论；编号查重命中Liu-KM的OPEN/draft [#7983](https://github.com/verl-project/verl/pull/7983)，head28879f83、base8e03c039。完整正文、单文档diff、一条CLA评论已读，reviews空；不是无人实现，也不将机器人／作者构建报告当人工审定或已发布接口。
+
+见[原OPD专题](../../notebook/frameworks/verl-veomni-opd-source-reading.md#主线与-gkd-的损失名称和支持域)：主线kl/k1为采样token反向估计，recipe kl为未重归一化截断前向和，rkl另在teacher top-k内归一化。固定main3c6d9b43还已有tail-bucket KL，不等于JSD或尾部全分布；beta端点不切纯KL。六原模块仅AST／compile，无数值／TP／custom backward、Sphinx或训练；就地纠正本项目旧k2／k3公式，无新修复／M5队列或社区写入。
 
 ## 异步恢复库存与预热容量
 
