@@ -9,7 +9,7 @@
 
 **【价值评估】** 7 / 10 — 甄别"未认领、无 PR、可落地"的开放空间，避免重复投入已有人认领的 RFC。
 
-**【进展】** #523 的我方 fork PR 已获用户认可，测试与 e2e 正式指派 M5；M5 已闭环 L0（四项断言 + pristine 对照），L1 仍待 ≥8 卡及获准权重/存储，见[M5交接](../../experiments/handoff-m5.md)。#567 待匹配 H20；#470/#481/#484已有作者或验证条件。2026-10-25补[PPO已有分项与验收边界](#ppo-分项的实现与验收)：#86三PR已合并，四组有限CPU控制非完整trainer或曲线；[缓存参数](#前缀缓存的配置前置与观测)、[视频时间条件](#视频时间条件的已有修复)和[路由基准](#补充尽调与派发边界)仍各按原范围，不据局部控制认领或认证训练。
+**【进展】** #523 的我方 fork PR 已获用户认可，测试与 e2e 正式指派 M5；M5 已闭环 L0（四项断言 + pristine 对照），L1 仍待 ≥8 卡及获准权重/存储，见[M5交接](../../experiments/handoff-m5.md)。#567 待匹配 H20；#470/#481/#484已有作者或验证条件。2026-10-25补[MPS已有实现与主线边界](#mps-共置的已有实现与当前边界)：#492已合并、#482被接替而关闭未合并；原配置四控制非接入、数值、吞吐或关停验收，不据正文设计或本地解析另认领功能。
 
 **【大白话讲明白】**
 
@@ -56,6 +56,12 @@ UniRL 仓库当前 **73+ open issues**，其中大量是带 `help wanted` 标签
 #458同样不能只凭浅合并就认定bug：[prepare_input_sample](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/trainer/base.py)顶层覆盖，而PE显式传空ar/chat袋以擦除父输入控制；无条件deep merge会保留本来要清掉的字段。单个字典算法无法替代跨trainer/engine的所有权设计。本轮只做源码和社区状态尽调，无执行、性能/缓存验证、认领或对外操作，不为这两个线索排M5实验。
 
 #473本轮读取正文与全部4条评论；上表只判贡献归属，没有重跑报告者19-check真实包harness或SD3回归。贡献者评论提到#413/#474已覆盖部分清理及上游vllm-omni#8196待复审，属于当时报告；本轮未重核这些PR的当前状态，不据此自动退休passthrough或移除仍有独立用途的stage-0 gate，也不新增M5必跑矩阵。另读已有[#545](https://github.com/Tencent-Hunyuan/UniRL/pull/545)做[压缩积分学习](../../notebook/frameworks/unirl-survey.md#sde-窗口后的压缩积分尾段)，作者已有实现，CPU控制不转为我方贡献认领。
+
+## MPS 共置的已有实现与当前边界
+
+2026-10-25只读核[#463](https://github.com/Tencent-Hunyuan/UniRL/issues/463)全文／全部3评论，jyizheng与Zcchill已负责；编号及MPS查重已有[#482](https://github.com/Tencent-Hunyuan/UniRL/pull/482)和[#492](https://github.com/Tencent-Hunyuan/UniRL/pull/492)。#482为关闭未合并的draft，全部两评论说明被#492接替；#492已于10-14合并，head38a13a4e、merge0ac8bc3e，普通／行内评论均0。本轮口头一度把#482关闭误说成合并，已当轮更正，不作为两项采纳或空缺认领。
+
+见[原调研](../../notebook/frameworks/unirl-survey.md#奖励共置的调度份额与-mps-边界)：固定main6fd82cba，完整原config四组CPU控制，原双0.5 GPU示例接受，FP16／50%也在配置层接受，101及remote MPS被拒绝。Ray份额不等于线程／显存分区；PR正文的白名单／低线程guard／协调关停不能搬作当前源码保护，未核变更历史或指称新回归。七模块compile，不执行Ray／MPS／模型／设备或复跑作者H20/B300基准；原M5参考仅补条件，不另排队、启daemon、改专项或对外写入，既有PR-head推送也仍需逐项明确同意。
 
 ## PPO 分项的实现与验收
 

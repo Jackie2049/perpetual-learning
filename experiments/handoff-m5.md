@@ -19,6 +19,8 @@ GPU/NPU 的访问、环境与实验由 macbook-M5 Agent 负责。M1 遇到需要
 
 ## UniRL 联合路径的资源与身份边界
 
+奖励共置MPS参考（2026-10-25，仅条件记录，非新增基准／训练队列）：[#463](https://github.com/Tencent-Hunyuan/UniRL/issues/463)已有负责人、#492已合并，#482关闭未合并且被接替；[M1固定main6fd82cba学习](../notebook/frameworks/unirl-survey.md#奖励共置的调度份额与-mps-边界)仅原config四控制／七模块compile。主线解析接受FP16／50%，group直接ray.kill，不把PR正文旧保护或作者H20报告作为当前数值／关停认证。只有M5将来独立选用、已有获准匹配奖励权重／环境／独占可控资源，且获得本次daemon生命周期权限时，先固定CUDA／driver／Ray／源码与scorer实际forward batch、物理UUID及客户端映射，核目标server/client接入与实际限制，再按已获准范围比较无MPS／MPS配对分数、完成吞吐／尾延迟和退出后的客户端／daemon状态；评分成功或pipe存在不算接入，清目录不算排空。缺匹配条件、需新部署下载、共享故障域／影响他人或原专项即停记未测，不启MPS、改compute mode、杀他人进程或复跑作者矩阵；任何社区写入及已建PR的fork head推送仍须逐项明确同意，参考不代表接单。
+
 AR PPO参考（2026-10-25，仅条件参考，非新增任务）：[#86](https://github.com/Tencent-Hunyuan/UniRL/issues/86)已有#254/#256/#259合并，M1[固定main6fd82cba学习](../notebook/frameworks/unirl-survey.md#ppo-的轨迹边界与价值目标)仅原GAE/ValueHead与value-loss CPU四控制、六模块compile/raw YAML。若M5将来已有获准匹配Qwen3 AR PPO模型/数据/环境与资源并独立接续，先核planned micro下冻结values、cu_seqlens轨迹边界、loss_mask优化位、实际终止/截断契约及train-only value head同步排除，再决定原范围最小更新/恢复观测；不要把优化mask传作有效位或通用bootstrap。作者8×H20 BF16三步临时交替奖励不是当前32设备FP32配方或长程DAPO曲线验收，配方设备数也不是普遍架构硬需求。缺条件、需新部署/下载/预算或影响专项即停记未测，不启默认大配方、改mask/奖励/GAE或另实现critic；任何社区写操作及已建PR的fork head推送仍须逐项明确同意，参考不代表接单。
 
 AR缓存补充（2026-10-25，复用下方路由基准参考，非新增任务）：[#262](https://github.com/Tencent-Hunyuan/UniRL/issues/262)前置丢参保护#392已合并；[M1固定源码核对](../notebook/frameworks/unirl-survey.md#前缀缓存的参数与失效窗口)仅UniRL6fd82cba原过滤函数接SGLang0.5.19官方源码声明字段四控制、六模块compile，无boot/缓存RPC或模型。若M5以后已有获准匹配AR路由/缓存观测并独立接续，先记录实际安装提交与settled ServerArgs、同一权重代/worker/token前缀，以及sync flush、KV sleep和冷/热窗口，再按既有范围取后端可用命中/prefill及完成吞吐/尾延迟；缺实际计数就写unknown。字段可接受/默认False或同worker不作命中证据，不为提高命中率关闭flush。缺模型/资源/可比负载、需新部署下载或影响专项则记未测停止，不改现有训练/路由；任何社区回复/issue/PR或已建PR的fork head推送仍须逐项明确授权。

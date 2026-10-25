@@ -1986,6 +1986,39 @@ M1从该固定源码AST取488个直接声明字段名，未构造ServerArgs。�
 
 #259作者将8×H20、BF16、SGLang0.5.12.post1的三次更新定位为正确性smoke，使用临时交替奖励而非实际DAPO学习曲线；它不等于长程收敛，也不是本机结果。当前raw配方为32设备、batch64、model_precision=fp32，不能直接沿用该smoke作为当前默认配置的验收。M1 Python3.12.13/torch2.14.1仅四组有限CPU控制：两个完整原模块、一个AST摘取的value-loss原函数；其他六模块只compile。没有完整Part、PPO实例、stage、trainer、forward replay、actor loss、FSDP或设备运行；[命令与hash](../../diary/2026-10-25.md)留日志，真实条件补[原M5参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不改专项或新增训练队列。
 
+## 奖励共置的调度份额与 MPS 边界
+
+Ray允许两个奖励actor共用一张卡，不等于给它们各划出半张卡。[#463](https://github.com/Tencent-Hunyuan/UniRL/issues/463)仍open，已派jyizheng和Zcchill；[#482](https://github.com/Tencent-Hunyuan/UniRL/pull/482)于关闭时注明由[#492](https://github.com/Tencent-Hunyuan/UniRL/pull/492)接替，前者未合并，后者于2026-10-14合并。#492固定head `38a13a4ec847370b38c3804af0e2a0eaee080f57`、merge `0ac8bc3e0e9f59fc7c7019aab61645f545e1650b`。以下执行链以当前固定main `6fd82cba13f52f394747832344039408699ea378`为准，不将PR正文的全部设计声明搬成主线行为，也不另开同范围实现。
+
+### 配置份额和实际设备资源不同
+
+[Ray官方说明](https://docs.ray.io/en/latest/ray-core/scheduling/accelerators.html#fractional-accelerators)把fractional GPU用于调度共置，显存用量仍由应用负责。num_gpus=0.5不是显存上限，也不代表固定吞吐份额。Ray通常在运行actor前设置CUDA_VISIBLE_DEVICES；UniRL的[_pin_cuda_to_ray_gpus](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl-reward-service/reward_service/workers/actor.py)还会重新赋值，不能照抄该函数注释，将其解释为Ray一般不设置可见设备。
+
+主线[_actor_options](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl-reward-service/reward_service/workers/group.py)分别传num_gpus和MPS环境：份额不自动换算成线程百分比。官方示例是两个0.5份额actor、各100% active threads、各20GiB上限，不是各50%算力。runtime_env在actor启动前注入pipe、thread与memory变量；显存字符串中的`0=`是客户端可见设备编号，不能直接当物理卡0的观测证据。
+
+[NVIDIA环境变量说明](https://docs.nvidia.com/deploy/mps/latest/appendix-environment-variables.html)区分客户端线程可用上限、设备内存分配上限和daemon层约束；旧MPS v2客户端设置只能进一步收紧daemon限制，已建context不随任意后改环境自动变化。当前这套变量接线不是物理显存、带宽或故障域分区，也不去重模型权重；100%只是不额外缩小该项线程上限，并非保证每个actor独占全卡。
+
+### 主线解析成功不认证运行正确
+
+Python3.12.13／PyYAML6.0.3仅加载完整原[config.py](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl-reward-service/reward_service/config.py)，四组本地检查如下；没有Ray、Torch或MPS模块导入：
+
+| 配置 | 原解析器结果 | 说明 |
+|---|---|---|
+| 原双奖励示例，各0.5 GPU／100%／20GiB | 接受，各20480MiB | 未加载任何模型或检查路径中的权重 |
+| 单CLIP，0.5 GPU／50%／12GiB，dtype=float16 | 接受，12288MiB | 当前解析器不据半精度拒绝低线程比例 |
+| active_thread_percentage=101 | ValueError | 检查整数范围1至100 |
+| MPS加cluster.ray_address=auto | ValueError | 当前实现仅允许本地单节点配置 |
+
+#492正文描述的低线程半精度guard、scorer白名单、external daemon模式及30秒协调关停，不能直接视为这份主线的已执行保护。该源码接受上述50%配置；MPS采用本服务管理的UID/PID隔离路径，而[WorkerGroup.shutdown](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl-reward-service/reward_service/workers/group.py)直接ray.kill。这里未核保护逻辑演变的提交历史，不将描述差异定性为新引入回归或另认领补丁。
+
+### 客户端接入和关停都需要真机证据
+
+[create_app](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl-reward-service/reward_service/server.py)在WorkerPool之前进入[mps_daemon](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl-reward-service/reward_service/mps.py)，后者检查控制命令、拒绝已有路径、启动daemon与watchdog，退出时请求quit并清理目录。源码顺序和目录清理并不证明actor已连到目标server、在飞CUDA工作已排空或所有进程已退出。[NVIDIA架构说明](https://docs.nvidia.com/deploy/mps/latest/architecture.html)还明确：连接daemon失败时客户端可以不使用MPS继续运行；共享卡上的致命故障也可能影响其他客户端。因此服务能评分、Python进程分离或健康ping成功，均不足以认证MPS接入或独立GPU故障域。
+
+作者#492的H20／driver535报告也不能简化成“MPS统一加速”：其空闲确认后的CLIP+PickScore对照，model batch1为49.51→48.01 items/s（−3.0%），batch4为99.82→124.96（+25.2%）。这是作者同卡特定负载结果，不是本机测量；service batch与模型实际forward batch还需逐scorer核对。其旧未清空干扰负载的吞吐已被作者撤回；#482另一贡献者的B300报告又说明负载瓶颈与低线程数值行为可随软件／设备栈改变，不能跨卡照搬收益或放宽保护。
+
+本机四组只验证YAML解析，七份完整源码compile不认证进程调度、kernel并发、数值或安全关停；命令与hash见[当日日志](../../diary/2026-10-25.md)。真实接入、配对分数、资源／尾延迟与清理条件补[原M5参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不启动daemon、改compute mode、借用他人负载或新增基准队列；任何社区动作仍逐项待用户明确同意。
+
 ## 下一步
 
 继续以 UniRL 为高优源码/潜在贡献轨道，优先围绕真实配置与类型契约选题；不是已找到 bug 或获得对外发布许可。真机验证由 M5 独立选择获准且资源匹配的配方，条件不符时保留未测，不为复现默认 HI3 直接启动大模型或升级环境。
