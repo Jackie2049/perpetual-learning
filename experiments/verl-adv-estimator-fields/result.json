@@ -1,0 +1,100 @@
+{
+  "environment": {
+    "numpy": "2.5.4",
+    "python": "3.12.13",
+    "system": "Darwin",
+    "tensordict": "0.15.2",
+    "torch": "2.14.1"
+  },
+  "results": {
+    "base": {
+      "local_control": null,
+      "original_tests": {
+        "test_custom_estimator_receives_non_tensor_batch": "expected_assertion_failure",
+        "test_estimator_with_a_fixed_signature_is_unaffected": "passed"
+      },
+      "v1_source_only_read_fields": [
+        "uid",
+        "response_mask",
+        "rm_scores",
+        "rollout_log_probs",
+        "old_log_probs",
+        "ref_log_prob",
+        "values"
+      ]
+    },
+    "head": {
+      "local_control": {
+        "advantages": [
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "output_rows": 2,
+        "same_batch_object": true,
+        "same_data_object": true,
+        "same_non_tensor_object": true,
+        "sample_is_valid": [
+          true,
+          false
+        ]
+      },
+      "original_tests": {
+        "test_accepts_kwarg_detects_declared_and_catch_all_parameters": "passed",
+        "test_custom_estimator_receives_non_tensor_batch": "passed",
+        "test_estimator_with_a_fixed_signature_is_unaffected": "passed"
+      },
+      "v1_source_only_read_fields": [
+        "uid",
+        "response_mask",
+        "rm_scores",
+        "rollout_log_probs",
+        "old_log_probs",
+        "ref_log_prob",
+        "values"
+      ]
+    },
+    "main": {
+      "local_control": null,
+      "original_tests": {
+        "test_custom_estimator_receives_non_tensor_batch": "expected_assertion_failure",
+        "test_estimator_with_a_fixed_signature_is_unaffected": "passed"
+      },
+      "v1_source_only_read_fields": [
+        "uid",
+        "response_mask",
+        "rm_scores",
+        "rollout_log_probs",
+        "old_log_probs",
+        "ref_log_prob",
+        "values"
+      ]
+    }
+  },
+  "scope": "unchanged original test bodies; real CPU tensors/DataProto/TensorDict; original enum/registry/caller; signature case head only; one local identity control; V1 whitelist source only; no full pytest/estimator filtering/TransferQueue/Ray/rollout/training",
+  "source_sha256": {
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/protocol.py": "8d69430131e9e894a6c7aea673d489e19e44117b1bc573085a6db521b38c6792",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/trainer/ppo/core_algos.py": "369b614f239f237a04a38a40b1877cd6fd14aa7bd5f9ff4fe4d7758b682a6948",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/trainer/ppo/ray_trainer.py": "eb41f99ccc66976eab14ebe35aa1aa5b7318e02469240ef1569ac4c884c94312",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/trainer/ppo/v1/trainer_base.py": "293af89dab738cc57a67a8cc730f3337622685e29d96dfdd2e9af1e6fc2144e8",
+    "b256ebf83b304d83be5c1207fdf6867c04a0d077:verl/protocol.py": "b2db8399daaca64d74c40a8246bcf825f08746757485c7a494303f089a06a34f",
+    "b256ebf83b304d83be5c1207fdf6867c04a0d077:verl/trainer/ppo/core_algos.py": "0ec87b90cba24fa0aa959adff573efb2cc49434d705621cf546be231e56a8932",
+    "b256ebf83b304d83be5c1207fdf6867c04a0d077:verl/trainer/ppo/ray_trainer.py": "eb41f99ccc66976eab14ebe35aa1aa5b7318e02469240ef1569ac4c884c94312",
+    "b256ebf83b304d83be5c1207fdf6867c04a0d077:verl/trainer/ppo/v1/trainer_base.py": "c05038e54b5d19aeae8db1722279b8eb5f674f8022b498c9521dc1dd0d32bf1a",
+    "c9e1e9150e26d9bc109fe0b142891804885af66e:tests/trainer/ppo/test_adv_estimator_kwargs_on_cpu.py": "9972a1f1b24901a906ea6a6a7f23b53787369c9e802b1aae839aa722c2b99f6e",
+    "c9e1e9150e26d9bc109fe0b142891804885af66e:verl/protocol.py": "b2db8399daaca64d74c40a8246bcf825f08746757485c7a494303f089a06a34f",
+    "c9e1e9150e26d9bc109fe0b142891804885af66e:verl/trainer/ppo/core_algos.py": "0ec87b90cba24fa0aa959adff573efb2cc49434d705621cf546be231e56a8932",
+    "c9e1e9150e26d9bc109fe0b142891804885af66e:verl/trainer/ppo/ray_trainer.py": "09ad7929c2d09b5312353ae699b50ece71ebeb874f7abce221385a839b429be4",
+    "c9e1e9150e26d9bc109fe0b142891804885af66e:verl/trainer/ppo/v1/trainer_base.py": "c05038e54b5d19aeae8db1722279b8eb5f674f8022b498c9521dc1dd0d32bf1a"
+  },
+  "versions": {
+    "base": "b256ebf83b304d83be5c1207fdf6867c04a0d077",
+    "head": "c9e1e9150e26d9bc109fe0b142891804885af66e",
+    "main": "3c6d9b43b67c74ec343d77874cd8fa6e841523da"
+  }
+}

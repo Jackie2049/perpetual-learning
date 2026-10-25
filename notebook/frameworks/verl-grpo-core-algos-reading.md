@@ -8,6 +8,38 @@
 
 2026-10-25接续：[GSPO 的 clipfrac 分母与梯度范围](#gspo-的-clipfrac-分母与梯度范围)核#7356：局部token加权、外层MEAN与loss聚合分开，0.4不能直接解释为全局序列比例或整体梯度损失；不重开已撤回的clip RFC。
 
+2026-10-26接续：[估计器附加字段与样本有效性](#估计器附加字段与样本有效性)区分注册扩展、数据透传和统计过滤；#7473已有候选，V1读取范围仍是独立条件。
+
+## 估计器附加字段与样本有效性
+
+**估计器能读到有效性标志，不等于框架已经排除无效样本。** [#7473](https://github.com/verl-project/verl/pull/7473)为通用估计器分支增加`non_tensor_batch`和`batch`透传，替换旧GDPO专用判断；候选按`inspect.signature`中的参数名或`**kwargs`决定是否传入。GAE和GRPO仍走各自专用分支，没有因此获得新过滤逻辑。自定义注册名能扩展函数选择，不能自动扩展上游读取的数据或定义过滤算法。
+
+固定2026-10-26核验：候选head `c9e1e9150e26d9bc109fe0b142891804885af66e`，父版／实际共同祖先 `b256ebf83b304d83be5c1207fdf6867c04a0d077`，相对当前main `3c6d9b43b67c74ec343d77874cd8fa6e841523da` ahead1／behind239；API目标base `3f9d4c0d`不是父版。两文件100增5删，OPEN/non-draft；普通评论只有CLA机器人，reviews／行内评论空，不作人工认可。关键词检索已命中本候选，不另写竞争实现。
+
+### 原测试验证了什么
+
+[复查脚本](../../experiments/verl-adv-estimator-fields/verify.py)从固定Git blob装配完整原`DataProto`／`DataProtoItem`、enum、注册表声明／注册与查询函数、`compute_advantage`及候选签名helper；原测试体与输入不改，使用真实CPU TensorDict、NumPy和torch，不初始化verl／Ray。
+
+| 原测试体 | 候选父版 | 候选 | 当前主线 |
+| --- | --- | --- | --- |
+| 自定义估计器读取附加字段 | 断言失败 | 通过 | 断言失败 |
+| 固定签名估计器仍可调用 | 通过 | 通过 | 通过 |
+| 声明参数／catch-all签名判断 | helper不存在，未执行 | 通过 | helper不存在，未执行 |
+
+这些是原函数体隔离执行，不是完整pytest收集或所有内置估计器的兼容性验收。签名测试覆盖其三种Python函数，不推广为任意callable都可安全按关键字调用。父版与当前main的完整`ray_trainer.py`内容相同，原字段读取失败仍存在；候选的`core_algos.py`未相对父版改变。
+
+一个额外记录器复用原两行输入，确认传入`batch`／`non_tensor_batch`均为原对象引用，返回的也是原DataProto，输出仍两行。有效性标志为`[True, False]`，优势仍`[[0,1],[0,0]]`：原测试估计器只做rewards×response_mask，没有使用该标志计算。第二行本来就是零奖励，因此不能据它的零优势认定统计已过滤；也不能据保留两行认定任何下游自定义算法必然不能用mask过滤。引用透传不是隔离副本，字段消费语义仍由具体估计器定义。
+
+### V1 数据选择仍在透传之前
+
+[候选V1调用端](https://github.com/verl-project/verl/blob/c9e1e9150e26d9bc109fe0b142891804885af66e/verl/trainer/ppo/v1/trainer_base.py#L1632)先用`select_fields`从TransferQueue读取uid、response_mask、rm_scores、rollout_log_probs、old_log_probs、ref_log_prob和values，再建DataProto，仅将uid转入non_tensor_batch。这七字段在父版、候选和当前main一致，不含`sample_is_valid`；候选未改此文件。非GRPO估计器虽经[V1 helper](https://github.com/verl-project/verl/blob/c9e1e9150e26d9bc109fe0b142891804885af66e/verl/trainer/ppo/v1/utils.py#L148)委托旧helper，也不能恢复未读取的字段。这里仅核源码和AST，不是TransferQueue运行结果；PR正文同样将V1选择列为后续问题。
+
+[结果JSON](../../experiments/verl-adv-estimator-fields/result.json)保存两次一致的测试／控制结果、完整源文件SHA256及Python3.12.13、torch2.14.1、NumPy2.5.4、TensorDict0.15.2环境。作者browser-agent故障率和奖励下降是其报告，不是本机复现，也不认证有效性分类、组基线或学习收益。此接口问题不需要新GPU队列；不应用候选、替作者实现V1选择／过滤、修改M5专项或写上游。后续仅在具体接入契约或实质反馈出现时接续，不扩签名／统计替身矩阵。
+
+```bash
+python -B experiments/verl-adv-estimator-fields/verify.py /path/to/verl
+```
+
 ## 逐轮奖励与停止动作的基线
 
 **逐轮奖励字段、逐轮优势估计与无偏停止决策是三件事。** [#7244](https://github.com/verl-project/verl/issues/7244)作者lijuliana已有fork实现，讨论variable horizon下基线求和上限依赖本条轨迹的停止位置；[另一参与者](https://github.com/verl-project/verl/issues/7244#issuecomment-6122893289)正在询问缺失／延迟反馈方向。本轮不重复其MDP实验或实现。按编号查开放PR为空，但关键词查重发现另一作者luzy99的[draft #8305](https://github.com/verl-project/verl/pull/8305)，不能据编号空结果认定逐轮接口无人做，也不能把它标作已修复该RFC。
@@ -56,7 +88,7 @@ POLICY_LOSS_REGISTRY: dict[str, PolicyLossFn] = {}
 @register_policy_loss("vanilla")  # 装饰器注册
 ```
 
-**设计优势**: 新算法只需写函数+装饰器 → 零修改框架代码 → 可插拔扩展
+**设计优势**: 函数+装饰器可注册新算法名；输入字段仍受调用端约束，不意味着任意新算法都无需框架接线，见上方附加字段核对。
 
 ### 调用路径
 

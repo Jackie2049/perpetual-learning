@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-adv-estimator-fields/verify.py](verl-adv-estimator-fields/verify.py) | #7473三个原CPU测试体候选通过；父版／main字段读取失败，[结果](verl-adv-estimator-fields/result.json)；原registry／容器，1引用控制与V1白名单仅源码，非过滤／TQ／训练 | [附加字段与有效性](../notebook/frameworks/verl-grpo-core-algos-reading.md#估计器附加字段与样本有效性) |
 | [verl-veomni-optimizer/verify.py](verl-veomni-optimizer/verify.py) | 新draft #8370五原配置用例，[结果](verl-veomni-optimizer/result.json)；原builder记录器与单独真实257元素CPU AdamW，不测内存／耗时，无VeOmni／DTensor | [覆盖与offload默认](../notebook/frameworks/verl-veomni-opd-source-reading.md#optimizer-覆盖与-cpu-offload-默认) |
 | [verl-outcome-placement/verify.py](verl-outcome-placement/verify.py) | #8368原两CPU测试体base失败／head通过，[结果](verl-outcome-placement/result.json)；原GAE／RF++六token对照，非SWE重建／loss／训练 | [奖励落点与传播](../notebook/frameworks/verl-reward-integration-reading.md#整条奖励的落点与回报传播) |
 | [verl-server-schedule-guard/verify.py](verl-server-schedule-guard/verify.py) | #7382原helper／四协程测试体，[结果](verl-server-schedule-guard/result.json)；原get_actor替身与真实asyncio，三调用端仅AST，无Ray／调度或引擎 | [调度等待与引擎就绪](../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#rollout-调度等待与引擎就绪) |

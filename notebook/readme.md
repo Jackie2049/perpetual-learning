@@ -165,6 +165,7 @@
 - [verl 数学奖励的分层与精度](frameworks/verl-reward-integration-reading.md#数学奖励的分层判分与精度边界) — #8347原64参数例候选全过/祖先25预期失败；7组控制区分后备接受、整数字面量、科学计数法及方程提取，非数据集或训练验收
 - [verl 掩码统计与梯度](frameworks/verl-grpo-core-algos-reading.md#掩码统计与梯度的数值边界) — 原3参数例/20组CPU对照；mean过滤无效NaN不代表方差梯度或白化全部槽位有限，非训练故障定性
 - [verl 单样本组回退](frameworks/verl-grpo-core-algos-reading.md#单样本与同分组的不同回退) — 原4等价性例/12组双实现控制；singleton保留近似原奖励，撤回排错指南n=1必退化与n≥4/8硬规则，非训练收益证明
+  - [附加字段与有效性](frameworks/verl-grpo-core-algos-reading.md#估计器附加字段与样本有效性) — #7473原三测试体通过，透传不等过滤；V1读取仍限七字段，不另实现接线或新排训练
   - [逐轮奖励与停止基线](frameworks/verl-grpo-core-algos-reading.md#逐轮奖励与停止动作的基线) — #7244的LOO return-to-go不等于#8305过程塑形；主线GRPO汇总token奖励，三模块语法与二元代数非候选／MDP或训练复现
   - [GSPO裁剪指标](frameworks/verl-grpo-core-algos-reading.md#gspo-的-clipfrac-分母与梯度范围) — 局部token比例、MEAN归约及辅助梯度分开；原Metric类控制非分布式训练，不重开旧clip RFC
 - [verl 同分小数奖励的舍入残差](frameworks/verl-grpo-core-algos-reading.md#同分小数奖励的舍入残差) — #8349原16参数例base3过13预期失败/head全过；大组FP32残差可放大，singleton与非同分保留，无设备/训练收益结论
