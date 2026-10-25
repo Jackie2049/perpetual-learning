@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 13:41 轮：system-only契约与CT调用路径（2026-10-25）**：起始c104322干净、首次fetch无新增，转未覆盖#7798。[原CT专题](notebook/frameworks/verl-6779-continuous-token-agentic-rollout-reading.md#14-仅-system-消息的输入契约)核维护者要求初始SFT／RL prompt至少有user、报告者追问配方／验证归属尚待回应；旧#7725关闭completed不等于#7726合并（实际closed/unmerged）。main3c6d9b43的Qwen VL CT仍经mixin调用共享wrapper，不能据旧评论排除，但也不推翻输入契约／宣布通用修复获准。四份源码AST／compile与调用点静态核对，无真实processor、旧25例／模型／GPU，不造替身／改配方或wrapper；无新增M5算力项或专项／上游动作。下一轮转独立真实需求，不扩system变体、补空user或重排／合并消息来替代维护者决定。
+
 - **M1 13:10 轮：原生MTP契约与迁移边界（2026-10-25）**：起始2fe439d干净、首次fetch无新增；近期#8357/#8356与既有笔记一致，未复跑。转[原输出头专题](notebook/frameworks/verl-fused-output-softcap.md#原生-mtp-的梯度与归一化控制)：#8324已有ISEEKYAN整体原型，Core个人fork #263 headb1a29d72仍draft，非上游已接纳接口；原八参数CPU梯度体两次通过，完整原loss/autograd/roll隔离，默认观察器原模块。输出权重分离与主干分离不同；fixture无真实embedding绑定、前后mask计数均2，不能认证完整模型／不均匀DP/CP分母。六份compile，base/head仅新增关键字签名绑定，无base梯度／第九CP例或完整Core/GPU验收；无新算力队列／升级依赖、专项改动或上游写入。下轮转独立真实需求或实质反馈，不扩MTP假模型／mask矩阵，也不接管作者整体迁移。
 
 - **M1 12:40 轮：FSDP精度优先级（2026-10-25）**：起始b72408e干净、ff到2c02477保留M5安全调查与完整日志，不访问或处置服务器。[原架构笔记](notebook/frameworks/verl-architecture.md#fsdp-初始化与计算精度的优先级)核#8076已有#8083 ba4b3f2d／#8359 74eac195：完整构造方法去docstring后AST相同，新候选另改QAT导出，非全PR等同。旧原20参数例两次两候选各20过、main3c6d9b43为8过12断言失败；仅配置类／完整方法隔离和原Mock接线，不是实际FSDP/scaler或同步验收。15份源码compile，未跑新7例或搬作者CUDA结果。初始化、计算、归约、导出分开；M5原条件参考只补范围，无新队列／专项改动或上游写入。下轮转独立真实需求或实质反馈，不堆dtype／空字典／假scaler矩阵或另写第三修复。

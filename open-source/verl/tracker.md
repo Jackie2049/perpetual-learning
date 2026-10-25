@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责：①10-24 22:32、②10-25 12:00 回复均按用户逐字文本发出，head 71fd3562（用户裁决：middle 对齐 postprocess_data、cap=1 保留首 token、测试改名回退；CPU 18 passed + 10-25 01:08 GPU e2e 2/2 PASS + 负例 fail-loudly PASS），仍 OPEN/MERGEABLE 等维护者 approve（requested reviewers wuxibin89+dajiaohuang，10-22 后无新审查）；③trainer 级问题讲解中、④草稿 v3 待用户逐字审定，见[原草稿](draft-8313-review-reply.md)。2026-10-25核[原生MTP契约](#megatron-迁移的已有原型与验收边界)：作者Core个人fork草稿的八项原CPU梯度例通过，非全模型／分布式或迁移验收；[FSDP精度](#fsdp-精度默认的两份候选)与[SGLang概率](#sglang-概率模式的已有候选)等历史验证各限原版本与范围，不另竞争实现或对外发布。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责：①10-24 22:32、②10-25 12:00 回复均按用户逐字文本发出，head 71fd3562（用户裁决：middle 对齐 postprocess_data、cap=1 保留首 token、测试改名回退；CPU 18 passed + 10-25 01:08 GPU e2e 2/2 PASS + 负例 fail-loudly PASS），仍 OPEN/MERGEABLE 等维护者 approve（requested reviewers wuxibin89+dajiaohuang，10-22 后无新审查）；③trainer 级问题讲解中、④草稿 v3 待用户逐字审定，见[原草稿](draft-8313-review-reply.md)。2026-10-25核[system-only输入契约](#仅-system-消息的契约裁定)：当前VL CT仍有wrapper调用点，但维护者要求初始prompt包含user，不另推进通用支持。[原生MTP](#megatron-迁移的已有原型与验收边界)、[FSDP精度](#fsdp-精度默认的两份候选)等历史验证各限原版本与范围，不另竞争实现或对外发布。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## 仅 system 消息的契约裁定
+
+2026-10-25读[#7798](https://github.com/verl-project/verl/issues/7798)全文及全部三评论：维护者明确CT／SFT／RL输入至少有一条user；报告者关于Uni-Agent配方归属的后续追问尚无进一步决定，不据issue仍OPEN认领通用支持。旧#7725虽CLOSED/completed，关联[#7726](https://github.com/verl-project/verl/pull/7726)为CLOSED/unmerged、heade4582b87，不能标成修复已合入；完整正文、两普通／两行内评论已核，作者25测试与processor结果不计本机。
+
+见[原CT专题](../../notebook/frameworks/verl-6779-continuous-token-agentic-rollout-reading.md#14-仅-system-消息的输入契约)：固定main3c6d9b43的VL builder仍调用共享wrapper，旧“CT不再调用”的概括不适用于所有路径；这不推翻输入契约。四份原源码AST／compile及调用点核对，无真实processor／旧测试、模型或GPU。不造替身、补用户消息／合并system、不改原配方／wrapper或重复开修复；本题无新增GPU缺口／M5队列，所有社区写入仍逐项待用户明确同意。
 
 ## Megatron 迁移的已有原型与验收边界
 

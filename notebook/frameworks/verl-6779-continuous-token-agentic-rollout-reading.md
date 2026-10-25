@@ -999,3 +999,25 @@ Python3.12.13/pytest8.4.2，候选原172测试全过；同一测试配共同祖�
 调用均为无副作用的本地回显，没有读文件、网络或执行模型输出代码。原 [FunctionTool.call](https://github.com/verl-project/verl/blob/d7f5e73bf6af967a323dd8ac5e06f182795b75d4/verl/tools/function_tool.py#L60)同步函数走asyncio.to_thread，直接按kwargs调用；[ToolAgentLoop的函数工具分支](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/experimental/agent_loop/tool_agent_loop.py#L444)另检查工具名、JSON解码及捕获异常。这里仅阅读后者、未执行完整loop，不能从回显控制推定所有BaseTool或用户工具都没有自身校验，也不能把捕获异常当成拒绝所有语义无效参数。
 
 保真、schema合法性、调用参数校验须分别命名，不能从其中一层通过推另一层。五份源码快照另过完整AST／内存compile；原测试体不是原生pytest／完整tools套件。命令、输入和hash留[当日日志](../../diary/2026-10-25.md)，本题CPU范围足够，不排新M5任务、不下载模型／扩写校验器／应用候选或新增竞争修复；任何社区写操作仍逐项待用户明确同意。
+
+## 14. 仅 system 消息的输入契约
+
+**模板包装器仍被调用，不等于框架承诺支持任意消息形状。** [#7798](https://github.com/verl-project/verl/issues/7798)报告Qwen3.5-9B经CT初始构建、executor和VL渲染后仍报错；2026-10-25读取OPEN、三条评论。[维护者9月9日回复](https://github.com/verl-project/verl/issues/7798#issuecomment-5595459592)明确CT不面向仅system历史，SFT／RL数据至少应有一条user消息。[报告者9月14日追问](https://github.com/verl-project/verl/issues/7798#issuecomment-5657837490)称部分Uni-Agent配方可能产生这种轮次，询问应由配方保证输入、框架提前报清楚错误还是扩展支持；目前这三条评论中没有对该归属追问的进一步决定。不能把issue仍open当成维护者已经同意扩大输入契约。
+
+### 原生渲染与 fallback 的角色顺序
+
+固定主线 `3c6d9b43b67c74ec343d77874cd8fa6e841523da` 的[共享wrapper](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/utils/tokenizer/chat_template.py)先调用processor原生模板，遇任意Exception后尝试构造空user前缀，再渲染 `dummy_user_message + messages` 并裁掉前缀。它不是只捕获“缺user”异常，也不会先判断输入已满足该模板的role契约。
+
+如果原模板同时要求至少一条user、system只能位于首位，那么system-only原渲染可能先因缺user被拒绝，fallback又把空user插到system前，引出不同的末端报错。此处是源码链解释；Qwen实际报错及patched返回12个token均来自报告者，非本机processor复现。排查时要保留原异常和fallback调用上下文，不能只从最后的“system不在开头”推定原始输入已把system放错位置。
+
+### CT 仍可能经过共享 wrapper
+
+旧 [#7726](https://github.com/verl-project/verl/pull/7726)普通评论称CT默认启用后不再使用apply_chat_template。但在上述固定主线，[工厂](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/utils/tokenizer/continuous_token_wiring.py)将qwen3_5识别为QWEN35；存在多模态processor时可升级到QWEN3_VL，对应QwenVLContinuousTokenBuilder。该类继承[VLContinuousTokenMixin](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/utils/tokenizer/continuous_token.py)：build_initial_tokens进入render_tokens_with_mm，后者明确调用共享apply_chat_template，再构造多模态processor输入。这条源码路径不能用“CT默认启用”排除，也不能外推所有text-only builder都走同一路径。
+
+源代码中存在调用点，与真实checkpoint选中该builder、原生模板行为及受支持输入范围是三种证据。维护者关于system-only的契约裁定仍应单独遵守；发现wrapper仍在调用，不自动构成另提兼容修复的授权或理由。讨论的复现入口是初始prompt；若考虑提前验证，须先区分完整数据样本与增量append的局部片段，不能直接把“至少一条user”变成所有共享wrapper调用的统一拒绝规则。
+
+### 旧方案状态与本轮结论
+
+[#7725](https://github.com/verl-project/verl/issues/7725)当前CLOSED、state_reason=completed，关联#7726却是CLOSED／未合并，head `e4582b877e67a53bf09296bda46e4f630d9079d5`。后者作者声明保留开头system、移除synthetic-user span、合并晚到或重复system，并报告25项CPU及真实processor控制；这些不是已合入主线行为，也不是本项目结果。移动／合并system或人为补user会改消息布局，不能未经recipe／模板契约确认就称为同语义修复。
+
+本轮Python3.12.13仅做四份完整原Python源码的AST／compile与上述继承、调用点、前缀表达式检查，没有执行CT、processor、Jinja模板、旧25项测试、模型或训练，也没有构造处理器替身。当前处理是保留“不单独推进通用system-only支持”的判断，等待维护者与原报告者确定输入验证或配方侧责任；不改配方／wrapper，不重复发布issue、评论或PR。输入问题不需要GPU来判断支持契约，不新增M5算力任务。复核命令与hash见[当日日志](../../diary/2026-10-25.md)。
