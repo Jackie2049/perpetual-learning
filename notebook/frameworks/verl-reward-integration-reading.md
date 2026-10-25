@@ -17,6 +17,33 @@
 > 2026-06-15 | 源码: verl/trainer/ppo/reward.py + ray_trainer.py + workers/reward_manager/ + experimental/reward_loop/ + core_algos.py + utils/reward_score/
 > 核心: 两层架构(legacy RewardManager + experimental RewardLoop) → 3 reward路径(rule/DisRM/GenRM) → outcome reward=最后token非零 → GRPO group-relative → colocate RM sleep/wake → RTX 4090=rule-based唯一可行
 
+## 整条奖励的落点与回报传播
+
+**奖励总和没变，不代表优势估计器消费到了它。** 2026-10-26核对新[#8367](https://github.com/verl-project/verl/issues/8367)及已有OPEN/non-draft [#8368](https://github.com/verl-project/verl/pull/8368)。报告者的SWE轨迹末尾为模板换行、response_mask=0；原agent loop把整条reward_score放在最后响应位置，GAE／REINFORCE++会跳过这个位置的奖励。作者同时指出其SWE默认配方用GRPO，不属于该失败条件；不能把它扩写成默认SWE训练已坏。
+
+固定head `9cf35a1d3692e2680c96e5c594e204638fcf08bc`，base／共同祖先与当轮main均为 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，ahead2／behind0、两文件71增5删。候选只改[AgentLoopOutput.as_dict与AgentLoopWorker._postprocess](https://github.com/verl-project/verl/blob/9cf35a1d3692e2680c96e5c594e204638fcf08bc/verl/experimental/agent_loop/agent_loop.py)：把分数放在response_mask最后一个非零位置，而非更后的模板后缀；未改变评分器看到的轨迹或优势估计器。没有生成位时，未补齐输出仍回退最后响应位置，补齐batch回退最后有效响应位置。这是兼容回退，不保证全零mask行能产生学习信号；也不应通过把模板mask改成1来绕过问题。
+
+### 两个原回归与一个数学对照
+
+[复现脚本](../../experiments/verl-outcome-placement/verify.py)从固定Git对象装载原Pydantic输出类、DataProto／DataProtoItem和完整_postprocess方法，类壳只绕过worker初始化。两个新增原测试体及其_pad_1d／_to_internal助手不改：as_dict使用mask=[1,0,1,0]，postprocess同时检查模板尾部、补齐行和无生成位回退。base两项断言预期失败，head两项通过；真实CPU torch／TensorDict及Pydantic，不是完整原pytest收集或Ray worker。
+
+另按issue的六token几何构造一个本地输出：mask=[1,1,0,1,1,0]、reward_score=1。经各版原as_dict生成rm_scores，再交给原GAE／REINFORCE++、原masked_whiten等函数，gamma=lam=1、V=0；仅跳过注册装饰器，RF配置是只含gamma的本地对象。
+
+| 版本 | 非零奖励落点 从0计数 | 奖励总和 | 首token GAE return | 首token RF++ return |
+| --- | --- | --- | --- | --- |
+| base 3c6d9b43 | 5 即mask为0的末位 | 1 | 0 | 0 |
+| head 9cf35a1d | 4 即最后生成位 | 1 | 1 | 1 |
+
+head完整GAE returns为[1,1,1,1,1,0]，RF++ returns为[1,1,0,1,1,0]；中间观察位是否显示carry与最终优化位不是同一层。两个估计器AST及完整core_algos文件在两版相同。GRPO按整行sum获取分数的源码路径与这两者不同，本轮未执行GRPO／其余估计器，不将报告者14种估计器检查计为本项目结果。
+
+**return恢复不等于本例已有非零actor优势。** 此单轨迹在四个有效位置的return全为1，masked_whiten后有效位优势仍全部为0。GAE在被mask的末位还产生−10000，这是本例零方差下对非有效位置的标准化数值，不是有效token上的异常、模型不稳定或新候选缺陷证明。这里只保留原输出，不另改标准化／掩码策略，也未执行loss或梯度。
+
+### 不同奖励路径仍需分开
+
+作者明确排除后续token-level rejection改mask的情况，以及colocated RewardManagerBase.assemble_rm_scores路径。前者涉及return mask与loss mask及已混入KL项的奖励语义，不能机械在所有估计器里把分数搬回去；后者也不因agent loop两处通过就视为修好。这些是已有提案的范围边界，不另开通用mask修复或修改M5专项。
+
+[JSON](../../experiments/verl-outcome-placement/result.json)保存两版原测试结果、奖励／return／优势及九份源码hash。Python3.12.13、torch2.14.1、Pydantic2.14.1、NumPy2.5.4、TensorDict0.15.2，两次语义一致；九份完整模块AST／compile通过。作者21／42项、mutation与真实SWE重建／tokenizer结果均非本机验收；本轮没有模型下载、配方重建、完整训练或GPU操作，不新排M5队列。复现运行 `python -B experiments/verl-outcome-placement/verify.py <已有固定对象的只读verl仓库>`。现有候选已有作者，不另实现或发布；下轮转独立需求／实质反馈，不扩mask／估计器矩阵。
+
 ## boxed 答案的归一化与选择优先级
 
 答案的字符串身份、提取优先级和数学等价性是三个要求。[#8123](https://github.com/verl-project/verl/issues/8123)已有报告者KardeniaPoyu的[#8124](https://github.com/verl-project/verl/pull/8124)，2026-10-25读取为open、非draft、未合并，不另实现。固定head `c5e26eec5ab5941e443d1b9f6853a9e210972487`，父提交／API base／共同祖先均为 `8718ca30a3f002f93b7c4fd99b9b2506718681bc`，两文件52增2删；基线math_dapo与主线 `3c6d9b43b67c74ec343d77874cd8fa6e841523da` 同字节。

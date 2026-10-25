@@ -1,0 +1,167 @@
+{
+  "environment": {
+    "numpy": "2.5.4",
+    "pydantic": "2.14.1",
+    "python": "3.12.13",
+    "system": "Darwin",
+    "tensordict": "0.15.2",
+    "torch": "2.14.1"
+  },
+  "estimator_ast_unchanged": true,
+  "results": {
+    "base": {
+      "control": {
+        "gae_advantages": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "gae_returns": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "response_mask": [
+          [
+            1,
+            1,
+            0,
+            1,
+            1,
+            0
+          ]
+        ],
+        "reward_sum": 1,
+        "rf_advantages": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "rf_returns": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "rm_scores": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
+          ]
+        ]
+      },
+      "original_tests": {
+        "test_agent_loop_output_as_dict_scores_last_generated_token": "expected_assertion_failure",
+        "test_agent_loop_postprocess_scores_last_generated_token": "expected_assertion_failure"
+      }
+    },
+    "head": {
+      "control": {
+        "gae_advantages": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            -10000
+          ]
+        ],
+        "gae_returns": [
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            0
+          ]
+        ],
+        "response_mask": [
+          [
+            1,
+            1,
+            0,
+            1,
+            1,
+            0
+          ]
+        ],
+        "reward_sum": 1,
+        "rf_advantages": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "rf_returns": [
+          [
+            1,
+            1,
+            0,
+            1,
+            1,
+            0
+          ]
+        ],
+        "rm_scores": [
+          [
+            0,
+            0,
+            0,
+            0,
+            1,
+            0
+          ]
+        ]
+      },
+      "original_tests": {
+        "test_agent_loop_output_as_dict_scores_last_generated_token": "passed",
+        "test_agent_loop_postprocess_scores_last_generated_token": "passed"
+      }
+    }
+  },
+  "scope": "two original test bodies/helper, real CPU tensors/containers/Pydantic; original method/class shells; two original estimators with registration bypassed; gamma-only local config control; no full pytest/recipe/tokenizer/rollout/trainer",
+  "source_sha256": {
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/experimental/agent_loop/agent_loop.py": "e931a80ca4740c18ad8b6b2f9c01e8cd78d1c42c8fe2a491fe21845ecc69cb57",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/protocol.py": "8d69430131e9e894a6c7aea673d489e19e44117b1bc573085a6db521b38c6792",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/trainer/ppo/core_algos.py": "369b614f239f237a04a38a40b1877cd6fd14aa7bd5f9ff4fe4d7758b682a6948",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/utils/torch_functional.py": "bc7ff798e2f5c06e0121668490739814efc519ff66d4d7dd7c8fc40b4840eb03",
+    "9cf35a1d3692e2680c96e5c594e204638fcf08bc:tests/experimental/agent_loop/test_agent_loop_extra_fields_schema_on_cpu.py": "12b945b56b75682cca1f7170ed27a56478e00c4f3bbe41dd5eb59aa63c1593bd",
+    "9cf35a1d3692e2680c96e5c594e204638fcf08bc:verl/experimental/agent_loop/agent_loop.py": "8f6d0dc87939675405132de7f08036eff24895eb1fd2949b2f21e737b72d2ff7",
+    "9cf35a1d3692e2680c96e5c594e204638fcf08bc:verl/protocol.py": "8d69430131e9e894a6c7aea673d489e19e44117b1bc573085a6db521b38c6792",
+    "9cf35a1d3692e2680c96e5c594e204638fcf08bc:verl/trainer/ppo/core_algos.py": "369b614f239f237a04a38a40b1877cd6fd14aa7bd5f9ff4fe4d7758b682a6948",
+    "9cf35a1d3692e2680c96e5c594e204638fcf08bc:verl/utils/torch_functional.py": "bc7ff798e2f5c06e0121668490739814efc519ff66d4d7dd7c8fc40b4840eb03"
+  },
+  "versions": {
+    "base": "3c6d9b43b67c74ec343d77874cd8fa6e841523da",
+    "head": "9cf35a1d3692e2680c96e5c594e204638fcf08bc"
+  }
+}

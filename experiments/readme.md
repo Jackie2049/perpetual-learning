@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-outcome-placement/verify.py](verl-outcome-placement/verify.py) | #8368原两CPU测试体base失败／head通过，[结果](verl-outcome-placement/result.json)；原GAE／RF++六token对照，非SWE重建／loss／训练 | [奖励落点与传播](../notebook/frameworks/verl-reward-integration-reading.md#整条奖励的落点与回报传播) |
 | [verl-server-schedule-guard/verify.py](verl-server-schedule-guard/verify.py) | #7382原helper／四协程测试体，[结果](verl-server-schedule-guard/result.json)；原get_actor替身与真实asyncio，三调用端仅AST，无Ray／调度或引擎 | [调度等待与引擎就绪](../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#rollout-调度等待与引擎就绪) |
 | [verl-checkpoint-config/verify.py](verl-checkpoint-config/verify.py) | 四版完整配置树的真实Hydra三入口／五显式节点对照，[结果](verl-checkpoint-config/result.json)；原类／转换器，非#7426反射pytest、trainer或文件保存 | [配置覆盖与默认值](../notebook/frameworks/verl-checkpoint-management-reading.md#配置字段可覆盖与对象默认值) |
 | [verl-disrm-contract/verify.py](verl-disrm-contract/verify.py) | #7608原三回归接三版原方法及1同输出再次调用控制，[结果](verl-disrm-contract/result.json)；HTTP／预处理／Ray为原替身，非模型／恢复验收 | [DisRM契约与部分写入](../notebook/frameworks/verl-reward-integration-reading.md#disrm-返回契约与部分写入) |

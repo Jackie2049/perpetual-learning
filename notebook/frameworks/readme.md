@@ -302,6 +302,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
   - [教师生成与蒸馏目标](verl-veomni-opd-source-reading.md#教师生成与蒸馏目标) — #8335按submission选生成方、另取teacher软标签；只支持受限同步V1，源码/16文件语法核对，未跑原测试或设备。
 - [verl vs rLLM Transform Pipeline 对比 (源码级)](verl-vs-rllm-transform-comparison.md)
 - [verl Worker 生命周期与 Ray 分布式架构源码阅读](verl-worker-lifecycle-ray-weight-sync-reading.md)
+- [整条奖励的落点与回报传播](verl-reward-integration-reading.md#整条奖励的落点与回报传播) — 新#8368原两回归base失败／head通过，sum相同而GAE／RF++ return不同，非梯度或训练验收。
   - [Rollout 调度等待与引擎就绪](verl-worker-lifecycle-ray-weight-sync-reading.md#rollout-调度等待与引擎就绪) — #7382原四测试体通过仅认证原状态替身；pending检查阈值非全启动硬期限，诊断不等资源预留。
   - [分桶接收失败与退出](verl-worker-lifecycle-ray-weight-sync-reading.md#分桶接收失败与退出) — #7366原8项CPU测试两次通过，真实ZMQ/SHM与替身范围分开；逐ACK超时非整轮截止或回滚，同步poll会阻塞asyncio。
 - [verl v0.8 Worker Lifecycle + vLLM Integration Source Reading](verl-worker-lifecycle-source-reading.md)

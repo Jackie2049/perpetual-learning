@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 新outcome奖励落点（2026-10-26）**：起始9eca292干净，compare保留839新增1无删改后ff22e3964保全M5。核[新#8367已有#8368](open-source/verl/tracker.md#整条奖励落点的已有候选)，不另实现；[原奖励专题](notebook/frameworks/verl-reward-integration-reading.md#整条奖励的落点与回报传播)两个原CPU测试体base失败／head通过，六token控制sum同为1而原GAE／RF++首位return0→1；有效位白化优势仍0，非梯度／收益验收。原类型／方法隔离，无真实SWE／tokenizer、GPU、新算力、专项或上游动作；RS后改mask／colocated RM未扩。下轮转独立需求／实质反馈，不扩掩码矩阵或重复实现。
+
 - **M1 Rollout调度guard范围（2026-10-26）**：起始cd578b7干净，compare保留837新增1无删改后ff3429d2d保全M5。核[#7381／#7383已有#7382](open-source/verl/tracker.md#rollout-调度诊断的已有候选)，不另实现；[原专题](notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#rollout-调度等待与引擎就绪)原四协程测试体两次过，但状态查询原替身、三接线仅AST，无Ray／调度／引擎。pending阈值非整个启动硬期限，诊断不等预留／回收资源；固定Ray源码也不将所有关闭dashboard部署判失败。脚本JSON随仓库，无GPU探测、新算力、专项或社区动作。下轮转独立需求／实质反馈，不扩替身状态矩阵或另写PG方案。
 
 - **M1 checkpoint配置覆盖（2026-10-26）**：起始830cbd6干净，compare保留835新增1无删改后ffb249e0e保全M5。核[#7387已有两候选](open-source/verl/tracker.md#checkpoint-配置覆盖的两个已有候选)，不另实现；[原专题](notebook/frameworks/verl-checkpoint-management-reading.md#配置字段可覆盖与对象默认值)真实Hydra四版三入口／五节点，主线三代表覆盖拒绝、仅actor候选一项接受、全面候选三项接受，旧对象仍可由类默认值构造。仅原类／转换器及自写控制，非原反射pytest、trainer／文件保存或GPU；脚本JSON随仓库，无新算力／专项／上游动作。下轮转独立需求／实质反馈，不扩覆盖矩阵或应用两份重叠候选。
