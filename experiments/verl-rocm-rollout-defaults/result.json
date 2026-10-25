@@ -1,0 +1,42 @@
+{
+  "environment": {
+    "pytest": "9.1.1",
+    "python": "3.12.13",
+    "system": "Darwin",
+    "torch": "2.14.1"
+  },
+  "original_cases": {
+    "base": {
+      "environment": "expected_KeyError",
+      "hip_7_2": "expected_AssertionError",
+      "hip_none": "passed"
+    },
+    "head": {
+      "environment": "passed",
+      "hip_7_2": "passed",
+      "hip_none": "passed"
+    }
+  },
+  "scope": "original two test bodies / three parameter cases; monkeypatched torch.version.hip and _is_hopper; isolated original functions and two environment methods; not native pytest/imports, ROCm detection, backend choice, Ray propagation, recipe commands, kernel execution, weight reload or training",
+  "shell_syntax": {
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da": "bash -n passed; recipe not executed",
+    "7b6c38123bdf8ec7c70cadaf2d2796d36de67b8f": "bash -n passed; recipe not executed"
+  },
+  "source_sha256": {
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:examples/grpo_trainer/run_deepseek_v4_veomni.sh": "9ee3bde1da03499408a1de58a21a09a6a062c218d6f65fc8bb4743f4ba2aa7d3",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/plugin/platform/platform_cuda.py": "3a7cabbea44347ff1ce803e9dc1968918d08f1866131086d97eff71cca5fd6b3",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/plugin/platform/platform_rocm.py": "5a8739d9a8f49d488d3501c62e3a234d35f4b51a6dbedc5f79340608b2dfa22f",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/trainer/main_ppo.py": "8f5166336c11fc84f0144d93cc9412d446854820c0b4135ab902be6173e40a08",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/utils/vllm/vllm_quant_utils.py": "5240c4197ada1c6f7af1d79c1e18f96142c8097b004eb9b189ca3d5abf92aac3",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/workers/rollout/vllm_rollout/vllm_async_server.py": "c6d5ee430ad7eb28f3989b38f04714b843a4d9e2378d98ab2fd87ebfc9d433e8",
+    "7b6c38123bdf8ec7c70cadaf2d2796d36de67b8f:examples/grpo_trainer/run_deepseek_v4_veomni.sh": "4dd64e1b258bb034d0ea06f0b911b5ca91a725e85229173b4f5d41b2b3d03857",
+    "7b6c38123bdf8ec7c70cadaf2d2796d36de67b8f:tests/utils/test_vllm_rocm_rollout_defaults_on_cpu.py": "8893e1f87984f4e55da09e687f0e141247935ebd3669c3186d6d7acb24546778",
+    "7b6c38123bdf8ec7c70cadaf2d2796d36de67b8f:verl/plugin/platform/platform_cuda.py": "3a7cabbea44347ff1ce803e9dc1968918d08f1866131086d97eff71cca5fd6b3",
+    "7b6c38123bdf8ec7c70cadaf2d2796d36de67b8f:verl/plugin/platform/platform_rocm.py": "9efa65d64289a431637fd4097305a0b0f46235ac5e73faf867a6fccc39efc6ea",
+    "7b6c38123bdf8ec7c70cadaf2d2796d36de67b8f:verl/utils/vllm/vllm_quant_utils.py": "bc66104cdbcfce27cf809298189575eff6a568437259fb127612bfb620244ba9"
+  },
+  "versions": {
+    "base": "3c6d9b43b67c74ec343d77874cd8fa6e841523da",
+    "head": "7b6c38123bdf8ec7c70cadaf2d2796d36de67b8f"
+  }
+}

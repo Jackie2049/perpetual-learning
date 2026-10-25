@@ -304,6 +304,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [verl V1 Trainer Architecture 源码级深度阅读](verl-v1-trainer-architecture-reading.md)
 - [verl V1 Unified Trainer Architecture — Reading Note](verl-v1-unified-trainer-architecture-reading.md)
 - [verl VeOmni OPD (On-Policy Distillation) Engine — Source-Level Analysis](verl-veomni-opd-source-reading.md)
+  - [ROCm默认与后端支持](verl-veomni-opd-source-reading.md#rocm-配方默认与后端支持)：#8371原3参数例候选通过，两版bash -n；构建标志／配置传递／vLLM能力分开，非Ray／AMD／重载或训练验收。
   - [Rollout量化导出与字节布局](verl-veomni-opd-source-reading.md#rollout-量化导出与字节布局)：#8369两导出边只静态、原一包装测试通过；原FP8类的CPU expert view共享存储，非真实加载／同步验收。
   - [Optimizer覆盖与CPU offload默认](verl-veomni-opd-source-reading.md#optimizer-覆盖与-cpu-offload-默认)：新draft #8370原五接线用例通过；257元素真实CPU单步不是VeOmni／DTensor或内存性能复验。
   - [Teacher采样与打分温度](verl-veomni-opd-source-reading.md#teacher-采样温度与打分温度)：#8253保留请求T=1而在vLLM teacher logits上缩放；原默认3例三版均过、低精度局部控制非Sampler／原30项或训练验收。

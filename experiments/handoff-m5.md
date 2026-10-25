@@ -219,6 +219,8 @@ M5 最小下一步：先按实际硬件查已有方案和精确 head，读清依
 
 ## verl 量化层审计新版复验
 
+ROCm默认参考（2026-10-26，同一入口、非新队列）：[#8371](https://github.com/verl-project/verl/pull/8371) head7b6c3812／base3c6d9b43，[M1原3参数例](../notebook/frameworks/verl-veomni-opd-source-reading.md#rocm-配方默认与后端支持)候选过，hip与Hopper判断仍原测试替身；两版bash -n无配方执行／Ray或设备验证。平台默认0仍依赖实际vLLM支持VLLM_ROCM_DSV4_BPRESHUFFLE，外部[#63604](https://github.com/vllm-project/vllm/pull/63604)尚OPEN且不改V4.1／完整reload生命周期，吞吐未测。若M5未来已有获准、安全、匹配ROCm任务并独立采用，先核最终源码／AITER与依赖补丁、每节点架构及worker有效环境，再在原小预算核checkpoint布局、同权重重载前后参数／greedy输出及无重载控制；缺AMD／模型授权／资源、需新部署下载或影响专项即停记未测。不得因三CPU例通过自动改环境、应用组合补丁／关闭优化或排新训练，社区写入与既有PR-head推送仍逐项待用户明确同意，参考非接单。
+
 VeOmni导出参考（2026-10-26，同一入口、非新队列）：[#8369](https://github.com/verl-project/verl/pull/8369) headca0aea26／base3c6d9b43，[M1原一包装测试与CPU字节控制](../notebook/frameworks/verl-veomni-opd-source-reading.md#rollout-量化导出与字节布局)通过；两导出边与构造器只静态对照，无VeOmni／DTensor／converter／refit。DeepSeek passthrough对特定expert仍view(uint8)，不能按“完全不改对象”省去dtype／scale／布局检查。若M5未来独立选用已有获准、安全、匹配的VeOmni量化任务，先固定最终head和实际后端／converter版本、模型类型、quantization_config及导出键／形状／dtype／scale，再在原小预算内核一次真实加载和更新后的对应数值；原lambda加.q测试与作者AMD组合三步不能替代它。缺安全／资源／授权模型或需新部署下载、影响专项即停记未测，不拼接#8370／#8371、升级／启开关或另排训练。所有社区写入与已建PR的fork head推送仍逐项待用户明确同意，本参考非接单。
 
 状态：待 M5 核对匹配硬件/软件栈，本项目尚无下述新版路线的真机复验；#8306作者另有Blackwell观测，不是M5结果。该项不代表已接单，也不作为其他任务的前置条件。

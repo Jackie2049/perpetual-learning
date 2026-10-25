@@ -244,6 +244,7 @@
 - [verl RL Infra 架构源码阅读](frameworks/verl-rl-infra-reading.md) — SyncPPOTrainer、ActorRolloutRefWorker、GRPO/GAE、TransferQueue、vLLM Rollout
 - [verl TransferQueue 数据面与启动资源](frameworks/verl-transferqueue-worker-lifecycle-deep-reading.md) — #8340按nnodes填默认单元数；3原配置测试/4组generated配对，不认证Ray启动。数据字段与权重同步分开，旧零拷贝/性能推导撤回
 - [verl 教师生成与蒸馏目标](frameworks/verl-veomni-opd-source-reading.md#教师生成与蒸馏目标) — #8335整批来源选择、生成/软标签评分分开；教师prefix不是纯学生on-policy，16文件仅语法与源码核对
+  - [ROCm配方默认与后端支持](frameworks/verl-veomni-opd-source-reading.md#rocm-配方默认与后端支持) — #8371原3参数例通过非AMD检测；预重排键依赖未合并vLLM补丁，配方仅语法、传参链仅源码
   - [Rollout量化导出与字节布局](frameworks/verl-veomni-opd-source-reading.md#rollout-量化导出与字节布局) — #8369原一包装测试通过；DeepSeek pass-through仍可view uint8，CPU字节控制非converter／refit或训练验收
   - [Optimizer覆盖与offload默认](frameworks/verl-veomni-opd-source-reading.md#optimizer-覆盖与-cpu-offload-默认) — #8370原五接线用例；真实CPU一次AdamW相等不等VeOmni／DTensor或内存、速度倍率验收
   - [Teacher采样与打分温度](frameworks/verl-veomni-opd-source-reading.md#teacher-采样温度与打分温度) — 请求T=1不等于目标分布不变；#8253先转FP32再除温度的CPU钩子控制，不是vLLM或训练验收

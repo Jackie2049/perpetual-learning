@@ -10,6 +10,36 @@
 
 2026-10-25 接续：[主线与 GKD 的损失名称和支持域](#主线与-gkd-的损失名称和支持域)核#7975／已有draft #7983；纠正旧2.2节的k2／k3公式，区分采样估计、top-k归一化、tail bucket与JSD端点。配置名称相同不代表梯度或更新相同。
 
+## ROCm 配方默认与后端支持
+
+**不再强加DeepGEMM、把环境键传出去、后端真正支持该键，是三件事。** [#8371](https://github.com/verl-project/verl/pull/8371)于2026-10-26读取OPEN／draft，作者xiaohong42；固定head `7b6c38123bdf8ec7c70cadaf2d2796d36de67b8f`，父版／base／共同祖先及当前main均为 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，ahead1／behind0，四文件72增0删。唯一bot评论表示draft未自动review，reviews／行内为空；已有作者，不另实现或发布。
+
+[默认backend helper](https://github.com/verl-project/verl/blob/7b6c38123bdf8ec7c70cadaf2d2796d36de67b8f/verl/utils/vllm/vllm_quant_utils.py)先保留原配置／NVFP4判断，再在torch.version.hip非None时直接返回。它停止补linear_backend／moe_backend=deep_gemm，不强制选择AITER／Triton，也不清理用户已有kwargs；具体kernel仍由真实vLLM和设备决定。这是torch构建标志判断，不是GPU可达性／可用性测试。
+
+[PlatformROCm](https://github.com/verl-project/verl/blob/7b6c38123bdf8ec7c70cadaf2d2796d36de67b8f/verl/plugin/platform/platform_rocm.py)在原CUDA环境与SGLANG_USE_AITER之外补VLLM_ROCM_DSV4_BPRESHUFFLE，缺省为字符串0、显式值仍保留。[server创建端](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/workers/rollout/vllm_rollout/vllm_async_server.py)把平台字典放入Ray actor的runtime_env.env_vars。它不强制拒绝显式1，也不是已证明所有worker读取时机和已导入vLLM状态正确。
+
+### 原测试与配方检查
+
+[复查脚本](../../experiments/verl-rocm-rollout-defaults/verify.py)保留[两个原测试体](https://github.com/verl-project/verl/blob/7b6c38123bdf8ec7c70cadaf2d2796d36de67b8f/tests/utils/test_vllm_rocm_rollout_defaults_on_cpu.py)及装饰器／断言，展开后共3项；AST隔离原函数与两层rollout_env_vars方法，跳过平台注册／发现与整包导入。
+
+| 原用例 | 父版 | 候选 |
+| --- | --- | --- |
+| hip设为None，_is_hopper替身False | 通过，补DeepGEMM | 通过，补DeepGEMM |
+| hip设为7.2，同一替身 | kwargs仍被补，预期AssertionError | 通过，不补默认 |
+| 预重排环境缺省0／显式1 | 缺键，预期KeyError | 通过，两个取值保留 |
+
+用例标签cuda／rocm只是修改torch.version.hip的参数，不代表CUDA／ROCm硬件实测。Python3.12.13／torch2.14.1／pytest9.1.1；九份完整Python文件版本内存compile，两版完整[配方](https://github.com/verl-project/verl/blob/7b6c38123bdf8ec7c70cadaf2d2796d36de67b8f/examples/grpo_trainer/run_deepseek_v4_veomni.sh)通过bash -n，未执行lscpu、GPU0架构查询或训练命令。结果与源码hash见[JSON](../../experiments/verl-rocm-rollout-defaults/result.json)，重复执行一致。复跑：`python -B experiments/verl-rocm-rollout-defaults/verify.py /path/to/verl-git`。
+
+配方新增OMP线程默认为物理core／socket去重计数除以每节点GPU数、至少1，非空shell覆盖优先；这只是启发式默认，不是CPU亲和性或吞吐最佳值。GPU0的架构查询成功且非空才补NCCL_DEBUG=VERSION，gfx94前缀再补VLLM_ROCM_USE_AITER=1；查询失败被转为空，不构成硬件验证。环境进入ray_kwargs.ray_init.runtime_env.env_vars；[main_ppo](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/main_ppo.py)在尚未初始化Ray时按默认、平台、用户配置顺序merge。这条传参链仅源码核对，没有实际启动Ray或运行Hydra配方；脚本头部旧版本注释也不是实际环境清单。
+
+### 预重排开关依赖 vLLM 补丁
+
+[vLLM #63604](https://github.com/vllm-project/vllm/pull/63604)仍OPEN／未合并，head `20c15e257a0c3abf9f6be29b8937b111d3c6f333`。其五文件diff新增环境键（vLLM自身默认1），并给DeepSeek-V4 ROCm attention及shared-expert gate_up预重排加条件。关闭后沿非预重排路径读取checkpoint布局，避免运行中重新加载权重时保留旧的重排解释；仅在调用方传环境键不能给旧安装增加这种能力。
+
+作者的一层MI308X重载对照／greedy token与日志概率报告是外部证据，本机未运行其重现脚本或原vLLM模型测试。PR正文明确完整改法仍需把预重排纳入reload生命周期，DeepSeek-V4.1同类路径未改，吞吐差异未测；不能外推为全部模型无损热加载、完整训练确定性或零性能代价。
+
+#8371的整机报告依赖#8369／#8370及多份外部补丁，不是四文件改动单独闭环。实际安装支持、环境生效与加载／更新验证仅补[原M5条件参考](../../experiments/handoff-m5.md#verl-量化层审计新版复验)，不探测AMD／GPU、安装补丁、切换配置或新增训练队列。
+
 ## Rollout 量化导出与字节布局
 
 **导出流经过量化器，不等于已验证推理引擎能加载该布局；pass-through也不总是对象完全不变。** 新draft [#8369](https://github.com/verl-project/verl/pull/8369)给VeOmni补trainer-side rollout quantizer接口。2026-10-26读取OPEN／draft、作者xiaohong42，head `ca0aea265f4bc4dab927a106cc7f9d43fc201337`，父版／base／共同祖先与当前main均为 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`；两文件60增2删。唯一bot评论表示draft未自动review，reviews／行内评论空，不当人工验收或无人负责的新机会。
