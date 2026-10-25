@@ -245,6 +245,10 @@ ModelOpt忽略规则参考（2026-10-22，同一量化入口不另排队）：�
 
 ## verl 异步策略一致性补证
 
+平方概率分块参考（2026-10-26，同一输出头观测入口、非新OTB训练队列）：已有[#8365](https://github.com/verl-project/verl/pull/8365) head0ed8b370、父版／main3c6d9b43。[M1原CPU用例](../notebook/frameworks/verl-grpo-core-algos-reading.md#平方概率分块与空输入梯度)候选16过／父版既有7过，但空行反向与负chunk两条已有bot反馈也有界复现，未改候选或读取未初始化值。原测试空行跳过梯度，不等于默认训练已坏；作者4090额外峰值／三步OTB是外部报告，V1接线另有#8364，不能自动拼接部署。
+
+仅M5未来独立接续已有获准、安全、匹配的输出头／OTB工作时，先核最终head是否处理已有边界、实际调用grad模式、logits形状／dtype／布局与是否需要V1字段接线，再在既有小预算内区分数值／梯度、输入logits和调用额外allocated／reserved峰值及同步计时；不按2048行推导全训练内存硬上限。缺安全环境／资源、需新模型／部署升级或影响专项即停记未测，不自动应用、故意OOM、追加大词表基准或训练，不据此诊断#8250。所有社区写入及已有PR-head推送（含fork）仍须用户对具体动作明确同意，参考非接单。
+
 Teacher温度参考（2026-10-25，同一OPD观测入口、非新增算力队列）：已有[#8253](https://github.com/verl-project/verl/pull/8253)head2920c014，[M1 CPU钩子控制](../notebook/frameworks/verl-veomni-opd-source-reading.md#teacher-采样温度与打分温度)仅原默认3例／真实torch局部归一化，无vLLM Sampler或服务。若M5日后已有获准、安全、匹配OPD观测并独立选用，先固定实际vLLM源码／版本、teacher与student温度、角色／logits钩子入口、同一token／词表mask／top-k身份，分开请求采样参数与prompt目标；作者0.23报告不当新版本运行时验收。缺安全／资源／授权模型或需下载升级、影响专项即停记未测，不自动应用PR、切后端、新开极端温度或训练矩阵，不改AReaL/#523/#8313/DeepInfer。所有社区写入及既有PR-head推送仍逐项待用户明确同意，参考非接单。
 
 GSPO指标参考（2026-10-25，同一观测入口、非新增算力队列）：[#7356](https://github.com/verl-project/verl/issues/7356)已有社区解释，[M1源码核对](../notebook/frameworks/verl-grpo-core-algos-reading.md#gspo-的-clipfrac-分母与梯度范围)仅原Metric类CPU控制／语法，非GSPO或训练复现。若M5日后独立选用且已有获准、安全、匹配的观测，按原范围记录实际源码／消费路径、new与old来源、优势符号、有效token数、微批／rank归约、IS及KL／entropy配置；不要把局部clipfrac或外层MEAN直接当全局响应比例／有效梯度占比，lower固定0也非无下界clip。缺安全／资源／模型授权或需新部署下载、影响专项即停记未测，不调阈值、新开A/B／训练、重开旧clip RFC或改AReaL/#523/#8313/DeepInfer。所有社区写入及既有PR-head推送仍须用户对具体动作明确同意，本参考非接单。

@@ -10,6 +10,34 @@
 
 2026-10-26接续：[估计器附加字段与样本有效性](#估计器附加字段与样本有效性)区分注册扩展、数据透传和统计过滤；#7473已有候选，V1读取范围仍是独立条件。
 
+2026-10-26接续：[平方概率分块与空输入梯度](#平方概率分块与空输入梯度)核#8365：原16个CPU参数项通过不覆盖空输入反向，两条已有bot反馈需分开验证，局部数值不认证GPU峰值。
+
+## 平方概率分块与空输入梯度
+
+**数值用例通过、空批可反向、降低GPU峰值是三件事。** [#8365](https://github.com/verl-project/verl/pull/8365)将calculate_sum_pi_squared_from_logits按行分块，仍计算`exp(logsumexp(2z)−2logsumexp(z))`，即每个位置完整词表softmax概率的平方和，不是被采样token的概率，也不是沿响应token求平方和。已有作者flyingdoubleG负责，不另写修复。
+
+2026-10-26读取OPEN/non-draft，head`0ed8b37033984ba9862395af9ec621125f53eb10`，父版／目标base／实际祖先及当轮main均`3c6d9b43b67c74ec343d77874cd8fa6e841523da`，ahead1／behind0，两文件31增2删。完整正文／diff、一条普通bot评论、一个COMMENTED bot review及两条行内已读；不是维护者批准。关键词已命中本候选；[另有V1接线#8364](https://github.com/verl-project/verl/pull/8364)，不把helper分块等同于trainer字段全程可达。
+
+### 原数值与梯度用例
+
+候选flatten前导维，将每chunk_size行套用原公式，再cat并恢复原前导shape；默认2048行，空块列表返回new_empty。它没有消除输入logits，2048也不是显存字节上限：每块仍含整个词表宽度。作者4090表测调用额外分配，不能当完整actor／训练峰值或所有梯度模式的保证。本轮没有测量内存／耗时或执行OTB训练。
+
+[复查脚本](../../experiments/verl-squared-probability-chunks/verify.py)AST选择完整原helper及原测试体，显式CPU，用真实torch autograd，不导入verl包／设备发现。父版原7项通过；候选同7项加9个新增参数项共16项通过。既有6项含FP32／FP64三种shape，另1项FP64大幅值；新增项是三个shape×chunk_size为1／4／2048，均FP64。原测试断言采用容差，不把结果写成任意后端逐位一致。
+
+新增9项中只有6个非空项会核梯度，3个`(0,33)`项因`if actual.numel()`而跳过反向。基线没有chunk_size参数，未改写新测试来制造9项基线失败；两份既有测试AST相同。完整两版源／测试共四模块另做AST／compile，不是原生pytest收集或整份torch_functional suite。
+
+### 两条已有反馈的有界核对
+
+对同一`(0,33)`、requires_grad=True输入，父版输出仍连接原图，autograd.grad可返回同shape空梯度；候选输出requires_grad=False，反向抛“does not require grad”。这核实[已有空行反馈](https://github.com/verl-project/verl/pull/8365#discussion_r4370608520)，说明原“16过”没有覆盖该契约，不是新发现或完整trainer零行故障复现。
+
+候选在`chunk_size=-1`且输入两行时，range不执行，落入new_empty分支，未拒绝参数且输出无梯度连接；本机只检查shape／requires_grad，**未读取、打印或比较未初始化值**。这与[已有负参数反馈](https://github.com/verl-project/verl/pull/8365#discussion_r4370608514)一致。默认2048不触发该控制，不能据非法显式参数认定默认配方失败；是否在实际OTB调用中需要空行反向也须单独判断。
+
+[JSON](../../experiments/verl-squared-probability-chunks/result.json)保存两次一致的原测试名称、边界结果、四原文件SHA256及Python3.12.13／torch2.14.1／pytest9.1.1环境。作者表中的额外GiB／毫秒、配合#8364的三步训练及logprob差异均为其报告，不是本机复跑，不据此认证学习收益。只保存复核证据，不应用bot建议、改候选或发布反馈；GPU条件补[M5原输出头参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不新排训练。后续仅跟实质head／契约变化，不扩dtype／chunk／故障矩阵或另开重复实现。
+
+```bash
+python -B experiments/verl-squared-probability-chunks/verify.py /path/to/verl
+```
+
 ## 估计器附加字段与样本有效性
 
 **估计器能读到有效性标志，不等于框架已经排除无效样本。** [#7473](https://github.com/verl-project/verl/pull/7473)为通用估计器分支增加`non_tensor_batch`和`batch`透传，替换旧GDPO专用判断；候选按`inspect.signature`中的参数名或`**kwargs`决定是否传入。GAE和GRPO仍走各自专用分支，没有因此获得新过滤逻辑。自定义注册名能扩展函数选择，不能自动扩展上游读取的数据或定义过滤算法。

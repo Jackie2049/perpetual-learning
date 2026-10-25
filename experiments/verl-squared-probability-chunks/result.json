@@ -1,0 +1,80 @@
+{
+  "environment": {
+    "pytest": "9.1.1",
+    "python": "3.12.13",
+    "system": "Darwin",
+    "torch": "2.14.1"
+  },
+  "results": {
+    "base": {
+      "empty_backward_control": {
+        "backward": "passed",
+        "gradient_shape": [
+          0,
+          33
+        ],
+        "output_shape": [
+          0
+        ],
+        "requires_grad": true
+      },
+      "negative_chunk_control": null,
+      "passed_original_cases": [
+        "test_calculate_sum_pi_squared_from_logits:((8, 17), 'torch.float32')",
+        "test_calculate_sum_pi_squared_from_logits:((8, 17), 'torch.float64')",
+        "test_calculate_sum_pi_squared_from_logits:((3, 5, 32), 'torch.float32')",
+        "test_calculate_sum_pi_squared_from_logits:((3, 5, 32), 'torch.float64')",
+        "test_calculate_sum_pi_squared_from_logits:((1, 1024), 'torch.float32')",
+        "test_calculate_sum_pi_squared_from_logits:((1, 1024), 'torch.float64')",
+        "test_calculate_sum_pi_squared_from_logits_extreme_values"
+      ]
+    },
+    "head": {
+      "empty_backward_control": {
+        "backward": "expected_runtime_error",
+        "error": "element 0 of tensors does not require grad and does not have a grad_fn",
+        "output_shape": [
+          0
+        ],
+        "requires_grad": false
+      },
+      "negative_chunk_control": {
+        "output_shape": [
+          2
+        ],
+        "rejected": false,
+        "requires_grad": false,
+        "uninitialized_values_not_read": true
+      },
+      "passed_original_cases": [
+        "test_calculate_sum_pi_squared_from_logits:((8, 17), 'torch.float32')",
+        "test_calculate_sum_pi_squared_from_logits:((8, 17), 'torch.float64')",
+        "test_calculate_sum_pi_squared_from_logits:((3, 5, 32), 'torch.float32')",
+        "test_calculate_sum_pi_squared_from_logits:((3, 5, 32), 'torch.float64')",
+        "test_calculate_sum_pi_squared_from_logits:((1, 1024), 'torch.float32')",
+        "test_calculate_sum_pi_squared_from_logits:((1, 1024), 'torch.float64')",
+        "test_calculate_sum_pi_squared_from_logits_extreme_values",
+        "test_calculate_sum_pi_squared_from_logits_chunking:((10, 33), 1)",
+        "test_calculate_sum_pi_squared_from_logits_chunking:((10, 33), 4)",
+        "test_calculate_sum_pi_squared_from_logits_chunking:((10, 33), 2048)",
+        "test_calculate_sum_pi_squared_from_logits_chunking:((3, 7, 33), 1)",
+        "test_calculate_sum_pi_squared_from_logits_chunking:((3, 7, 33), 4)",
+        "test_calculate_sum_pi_squared_from_logits_chunking:((3, 7, 33), 2048)",
+        "test_calculate_sum_pi_squared_from_logits_chunking:((0, 33), 1)",
+        "test_calculate_sum_pi_squared_from_logits_chunking:((0, 33), 4)",
+        "test_calculate_sum_pi_squared_from_logits_chunking:((0, 33), 2048)"
+      ]
+    }
+  },
+  "scope": "unchanged original function/test bodies; explicit CPU tensors and autograd; 7 existing base cases and 16 head cases, not full pytest collection; two reported-boundary controls, negative output values never read; no GPU/allocator peak or timing/FSDP/trainer/V1 wiring/OTB training",
+  "source_sha256": {
+    "0ed8b37033984ba9862395af9ec621125f53eb10:tests/utils/test_torch_functional.py": "26ea5c909b1184eb1c943934233ee6e21f990b3933a7cb7ebd53450ab1147858",
+    "0ed8b37033984ba9862395af9ec621125f53eb10:verl/utils/torch_functional.py": "82a559e4f0aa3c3d33b0c2e584974f7e00394e130268957e8847d87d5792b8a4",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:tests/utils/test_torch_functional.py": "341c60a490aa50e04b36cf700acb2558d8a96971732136aac8051e6845c9e0e4",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/utils/torch_functional.py": "bc7ff798e2f5c06e0121668490739814efc519ff66d4d7dd7c8fc40b4840eb03"
+  },
+  "versions": {
+    "base": "3c6d9b43b67c74ec343d77874cd8fa6e841523da",
+    "head": "0ed8b37033984ba9862395af9ec621125f53eb10"
+  }
+}

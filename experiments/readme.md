@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-squared-probability-chunks/verify.py](verl-squared-probability-chunks/verify.py) | #8365候选16原CPU参数项／父版既有7项通过，[结果](verl-squared-probability-chunks/result.json)；空行反向／负chunk已有反馈控制，无未初始化值读取、GPU峰值或训练 | [平方概率分块与梯度](../notebook/frameworks/verl-grpo-core-algos-reading.md#平方概率分块与空输入梯度) |
 | [unirl-scheduler-environment/verify.py](unirl-scheduler-environment/verify.py) | #468两个原helper接独立dict／目录夹具，[结果](unirl-scheduler-environment/result.json)；异常／正常恢复与解析通过，12模块语法；无真实环境改变、spawn或动态库加载 | [环境与依赖版本](../notebook/frameworks/unirl-survey.md#scheduler-子进程环境与依赖版本) |
 | [verl-npu-offload-policy/verify.py](verl-npu-offload-policy/verify.py) | 新#8372／3／4重叠源码，#8374原7CPU参数例head过／base4过3预期失败，[结果](verl-npu-offload-policy/result.json)；原传输Mock，非NPU allocator／FSDP运行 | [复制与显式pin策略](../notebook/frameworks/verl-fsdp2-source-deep-reading.md#npu-卸载的复制策略与固定内存) |
 | [verl-adv-estimator-fields/verify.py](verl-adv-estimator-fields/verify.py) | #7473三个原CPU测试体候选通过；父版／main字段读取失败，[结果](verl-adv-estimator-fields/result.json)；原registry／容器，1引用控制与V1白名单仅源码，非过滤／TQ／训练 | [附加字段与有效性](../notebook/frameworks/verl-grpo-core-algos-reading.md#估计器附加字段与样本有效性) |

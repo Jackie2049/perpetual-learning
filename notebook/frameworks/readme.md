@@ -244,6 +244,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [verl Fully-Async Policy 源码级深度阅读](verl-fully-async-policy-reading.md)：新增[样本任务并发与推理序列数](verl-fully-async-policy-reading.md#样本任务并发与推理序列数)，主线已有倍率配置；全局组任务预算非逐副本序列配额。
 - [verl GRPO bypass_mode + TransferQueue + Detach Metrics + Weight Sync 源码级深度阅读](verl-grpo-bypass-mode-reading.md)
 - [verl GRPO Training Core Algorithms — core_algos.py 源码深度阅读](verl-grpo-core-algos-reading.md)：[掩码统计与梯度](verl-grpo-core-algos-reading.md#掩码统计与梯度的数值边界)及[单样本组回退](verl-grpo-core-algos-reading.md#单样本与同分组的不同回退)；区分有限值/梯度、singleton/同分pair，保留CPU复查范围。
+  - [平方概率分块与梯度](verl-grpo-core-algos-reading.md#平方概率分块与空输入梯度)：#8365原16CPU参数项通过不覆盖空行反向，两条已有反馈有界核对；2048行非显存上限，无训练／性能验收。
   - [附加字段与有效性](verl-grpo-core-algos-reading.md#估计器附加字段与样本有效性)：#7473三个原测试体候选通过，父版／main仍缺透传；引用传递非统计过滤，V1七字段读取仍未改，非TQ／训练验收。
   - [逐轮奖励与停止基线](verl-grpo-core-algos-reading.md#逐轮奖励与停止动作的基线)：#7244已有作者、#8305另做后置过程优势塑形；GRPO可汇总中间奖励但不保留逐轮credit，三模块语法及二元代数非无偏算法或训练验收。
   - [GSPO裁剪指标](verl-grpo-core-algos-reading.md#gspo-的-clipfrac-分母与梯度范围)：#7356已有社区解释，单次token分母不等全局MEAN或序列比例；原Metric类CPU控制不认证GSPO／DP或训练，不重开旧RFC／调阈值。
