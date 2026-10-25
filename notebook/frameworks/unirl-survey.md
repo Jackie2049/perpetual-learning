@@ -728,6 +728,8 @@ head SHA256：device_pool.py `eeb37485a54a1c8b4d9aaa07f3fad7db20c72916433fb2189a
 
 ### 共用初始噪声但仍重复完整生成
 
+> 版本提示：本节后续的算法／噪声控制以ef9cb36为固定历史对象；2026-10-26接续核对的候选已到0e6a620，范围与计数类型变化见下方。旧GPU报告不自动迁为新head验收。
+
 [trainer._build_branch_request_samples](https://github.com/Tencent-Hunyuan/UniRL/blob/ef9cb362ee8f92f1dcae6ec474075ed922ef994d/unirl/trainer/diffusion.py)为每个选中的步j建立一次包含全部prompt的请求，固定`sde_indices=[j]`。生成sample_id带步组序号和分支序号以保持唯一；init_noise_group_id则只带prompt父ID和seed序号，使同seed的6分支、不同步组使用同一初始噪声键。它是当前输入批次内的共享，不据此承诺跨rollout、批形状或引擎逐位轨迹一致。
 
 这些显式键通过[NoiseRecipe.from_sample](https://github.com/Tencent-Hunyuan/UniRL/blob/ef9cb362ee8f92f1dcae6ec474075ed922ef994d/unirl/types/noise_recipe.py)优先于init_same_noise的默认分组；[SD3Pipeline](https://github.com/Tencent-Hunyuan/UniRL/blob/ef9cb362ee8f92f1dcae6ec474075ed922ef994d/unirl/models/sd3/pipeline.py)再生CPU fp32 x_T并送diffuse。因此不能因继承配方init_same_noise=false就推断此分支路径没有共享x_T；缺driver latent shape时trainer反而拒绝branched布局。
@@ -775,6 +777,26 @@ PY
 noise.py、noise_recipe、trainer.diffusion、TempFlow/PerSample GRPO、PerSampleReplay、SD3 diffusion/pipeline及Sample共9完整模块内存compile通过，其余模块不执行。noise.py SHA256 `694a81dcf17cf2ff1c5de13399dcc5d721bc02c100394620acc845a9b7b1830c`；trainer.diffusion.py `55dc251e5f707af2501c16e76d892efd65794f60efb0207855c397a12e2d5458`；per_sample_replay.py `bbf5b6358c65c3aa047312ce8a5c9fbab9945d90240286a52286ad1f50a4c6f3`。
 
 PR未提交所述外部harness；作者40项CPU/早期8×L40S smoke与5a1eff0的fp32 parity报告均非本机结果，且正文明确最新API/replay修改未重跑GPU。其原生批形状latent阈值未过、统一microbatch=4后才逐位匹配的观测，也不能外推默认bf16或训练等价。真机缺口补[原M5 UniRL参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不自动选用、部署配方或新增训练队列；本题以分支与时间轴契约学习收束。
+
+### 后续范围收窄与计数类型
+
+2026-10-26核[#552](https://github.com/Tencent-Hunyuan/UniRL/pull/552)仍OPEN／非draft，作者ruiling-smartbear；新head `0e6a620c1058234e021c56230083c235abc5828a`比旧ef9cb36多一个[收窄提交](https://github.com/Tencent-Hunyuan/UniRL/commit/0e6a620c1058234e021c56230083c235abc5828a)，增量七文件19增418删。相对base／共同祖先及当前main `6fd82cba13f52f394747832344039408699ea378`，真正PR现为18文件957增51删、ahead18／behind0，不再沿用上文旧23文件的范围。唯一普通评论是作者要求先审#589／#546前置，reviews／行内评论空，不是维护者批准或我方接单。
+
+该提交从候选树移出两份WAN Flash配方，并将SGLang adapter的flash映射、patch_dance中的flash白名单／公式分支移回主线状态；当前整个sglang_diffusion子树相对固定main无diff。不能再把旧候选中的SGLang Flash适配算作新head功能，也不能据此宣称UniRL全局废弃Flash。作者称这些工作保留在独立分支，本轮未核其分支内容；TempFlow仍依赖replay／Flash训练侧前置。
+
+算法[构造器](https://github.com/Tencent-Hunyuan/UniRL/blob/0e6a620c1058234e021c56230083c235abc5828a/unirl/algorithms/tempflowgrpo.py)与driver的[_configure_branches](https://github.com/Tencent-Hunyuan/UniRL/blob/0e6a620c1058234e021c56230083c235abc5828a/unirl/trainer/diffusion.py)现要求type(count) is int，不只检查“能转成整数”。branches_per_seed必须正整数；branch_steps_per_rollout可为None，否则算法要求正整数、driver还要求不超过候选pool长度。driver的类型检查在本条件的模运算之前短路；算法构造器仍先调用super().__init__，不据此承诺所有模型／资源初始化之前全局fail-fast。
+
+本机Python3.12.13仅抽取这四个**完整原if节点**，给每个guard分别输入6、True、6.0，driver上下文仅固定samples_per_prompt=24、pool=0..8：
+
+| 输入 | 旧版四个guard | 新版四个guard |
+| --- | --- | --- |
+| Python int 6 | 均放行 | 均放行 |
+| bool True | 均放行 | 均ValueError |
+| float 6.0 | 均放行 | 均ValueError |
+
+共24次if求值，不是24项原单元测试或完整算法／driver执行；没有执行super、真实采样参数、构造请求、modulo到range的整链或张量计算。四份完整Python源码内存compile，row_weights与_build_branch_request_samples的完整AST在两head相同。复核代码和四源文件SHA256见[当日日志](../../diary/2026-10-26.md)。未扩充非法数值矩阵，也不把旧int(NaN)本就报错的情况说成“此前全部非法值都能通过”。
+
+作者新报告的38计数／40 replay与实际loss-backward检查使用未提交的外部harness，本机未复跑；正文明确此次范围／校验变更未重跑GPU。原fp32批形状及早期8×L40S证据仍只归其原版本，不认证新head、默认bf16或学习收益。仅同步[原M5条件入口](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不应用候选、补回移出配方／适配或新排训练；后续仅在实质接口／模型证据变化时接续。
 
 ### 逐行步号与潜变量引用保留
 
