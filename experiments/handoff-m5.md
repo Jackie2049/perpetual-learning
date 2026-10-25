@@ -329,6 +329,8 @@ M5 最小下一步：先判断是否有获准使用的对应配置、完整 toke
 
 ## verl 训练 checkpoint 发布参考
 
+SFT重启保留参考（2026-10-25，同一恢复入口、非新增算力／清理队列）：已有[#7396](https://github.com/verl-project/verl/pull/7396)head8a1a031a，[M1原22项CPU隔离](../notebook/frameworks/verl-checkpoint-management-reading.md#重启后的保留状态与路径身份)仅Mock engine／barrier及新建临时文件；统一路径22过，macOS别名条件21过1失败，不是Linux或真实分片结论。若M5日后已有获准、安全、匹配SFT恢复工作且独立选用，应在获准的一次性输出目录核真实源码、恢复路径／series、保留上限、新步登记／tracker及分片可恢复性；不以tracker推进或Mock事件序列认证多rank／HDFS提交。缺环境／授权模型、需下载部署或影响专项即停记未测，不应用候选、扫描清理历史目录、改路径解析或新排故障／训练矩阵，不改AReaL/#523/#8313/DeepInfer。所有社区写入及既有PR-head推送仍逐项待用户明确同意，参考非接单。
+
 异步库存恢复参考（2026-10-25，同一入口、非新崩溃／训练队列）：[#7579](https://github.com/verl-project/verl/issues/7579)作者确认新journal／旧模型不是一致时间点恢复；[#7762](https://github.com/verl-project/verl/pull/7762)只修主线warmup。[M1原9测试体](../notebook/frameworks/verl-checkpoint-management-reading.md#异步恢复的存活库存与训练历史)仅完整方法与原Mock加载，无TQ／重发／journal执行。若M5未来独立选用已有获准、安全、匹配的恢复观测，先核目标是幸存库存还是原批次回放，记录模型／optimizer／data.pt／TQ各自时间点、已消费对象、行为策略版本及恢复prompt池与重发数；单次恢复成功或0重发不认证质量／精确回放。缺明确定义／实现／资源／授权即保留未测，不自动部署117文件原型、改consume／delete、删除checkpoint或在共享／安全未恢复环境注入故障。所有社区写入及既有PR head推送仍逐项需用户明确同意，参考非接单。
 
 S3层级参考（2026-10-25，同一入口非新增云／训练队列）：[#7641](https://github.com/verl-project/verl/issues/7641)为设计RFC，维护者询问FUSE；旧[#2334](https://github.com/verl-project/verl/pull/2334) head23bd321f和下载侧[#6850](https://github.com/verl-project/verl/pull/6850) headc87b60ce尚未合并。[M1原五下载测试体](../notebook/frameworks/verl-checkpoint-management-reading.md#对象存储下载与-checkpoint-提交)只用真实memory后端／本地缓存，非S3／上传／分布式恢复。若将来用户明确选定云端checkpoint路线并提供安全环境、获准非生产桶／前缀与完整配方，M5再独立核最终实现、所有必要角色／数据／optimizer状态、单对象上传完成与整步发布者、失败传播／退出drain和冷恢复后下一步；不得以5.1秒save返回、目录可见、单key条件写或ETag当整步durability。无明确云资源授权、缺安全环境／实现／权重，需部署挂载／付费资源或影响专项即停记未测，不自动建桶、读凭据、上传／删除对象、拼接候选或启动64rank复刻。任何上游可见动作仍逐项需用户同意。

@@ -214,6 +214,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [FSDP后端配置的权威来源](verl-architecture.md#fsdp-后端配置的权威来源)：#7540已有#7597；原完整配置模块接真实OmegaConf七组只验V1冲突guard，非完整配置/engine或loss根因认证，目标base与实际祖先分开。
 - [verl Async Rollout Architecture Deep Dive — vLLM/SGLang Integration](verl-async-rollout-architecture-deep-dive.md)
 - [verl Checkpoint Management 源码级深度阅读](verl-checkpoint-management-reading.md)：[保留目录与完整恢复](verl-checkpoint-management-reading.md#保留目录与完整恢复的边界)，5原清理测试通过；上限1先保旧再登记，目录/成功通知/可恢复性分开，纠正tracker原子写入及固定存储比例说法。
+- [重启保留与路径身份](verl-checkpoint-management-reading.md#重启后的保留状态与路径身份) — #7396在统一临时路径下原22项过，系统别名条件21过1失败；仅删记住的已加载目录，Mock顺序非真实分布式恢复，不另修复。
 - [异步恢复的存活库存与训练历史](verl-checkpoint-management-reading.md#异步恢复的存活库存与训练历史) — #7579新journal非完整历史回放；#7762原9 warmup测试体仅Mock接线，所有恢复prompt计数与pending／running重发分开。
 - [异步保存能力与恢复指针](verl-checkpoint-management-reading.md#异步保存能力与恢复指针) — #7955配置保护不实现异步后端，旧#4311 DCP完成日志非tracker发布；原一方法/五文件系统控制非真实状态恢复。
 - [V1 到期前保存的触发与计时范围](verl-checkpoint-management-reading.md#v1-到期前保存的触发与计时范围) — #7760原12个stub测试通过；MLP／AWS门槛不同，测试说明中的fit守卫未落地。触发判断非写盘／恢复验收，反馈仅存个人项目。

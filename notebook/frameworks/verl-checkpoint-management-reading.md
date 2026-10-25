@@ -469,6 +469,27 @@ python experiments/scripts/verify_verl_checkpoint_retention.py /path/to/verl
 
 源文件 SHA256：manager `be4fa702f0fab63dfb1d482716d31bc13a3b8f5129adbbd61872a169b07cbbc6`；原测试 `30f2df35a31c6eeb21db737557336c9178bb4b69a5427a44621121eaa4a18a18`。
 
+### 重启后的保留状态与路径身份
+
+**同一进程中的轮换历史，不会自动随模型checkpoint恢复。** [#7395](https://github.com/verl-project/verl/issues/7395)报告SFT进程重启后，manager的 `previous_saved_paths` 重新为空；加载step 1再保存step 2时，上限1仍留下两个目录。2026-10-25读全文／0评论，已有ai-yang的OPEN／non-draft [#7396](https://github.com/verl-project/verl/pull/7396)，head `8a1a031a9c03105839dcc6659e15cd975bfd5246`。API目标base为3f9d4c0d，实际父提交／比较祖先为 `09ac37258ea66b0cb69b2738eec3074ea4e7261c`，ahead1／behind149，七文件375增1删；不把目标分支的其他更新算进修复。主线另固定为3c6d9b43，未合入此候选。
+
+[候选handler](https://github.com/verl-project/verl/blob/8a1a031a9c03105839dcc6659e15cd975bfd5246/verl/utils/checkpoint/checkpoint_handler.py)在模型加载及dataloader恢复入口完成后记录已加载路径；dataloader文件不存在时原入口只告警，不把它升级为强制完整状态校验。保存时先由engine登记新模型目录，再写dataloader／替换tracker、处理可选HDFS copy及既有SPMD barrier，最后才调用保留finalize。[manager](https://github.com/verl-project/verl/blob/8a1a031a9c03105839dcc6659e15cd975bfd5246/verl/utils/checkpoint/checkpoint_manager.py)只考虑**这次记住的已加载目录**：上限恰为1、新目录已登记且存在、两路径属于相同父目录的global_step数字序列、且新step更大，才删旧路径。没有扫描或清理所有历史目录；上限1仍不是全盘目录数／容量保证。
+
+| 原测试情形 | 候选中的保留行为 | 不能据此推导 |
+|---|---|---|
+| 加载1后新2正常保存 | 旧1删除，新2与tracker 2保留 | 模型分片及跨rank恢复内容已验收 |
+| dataloader保存或tracker替换失败 | 旧1仍在，tracker仍1 | 所有写入被回滚、全局保存具备事务性 |
+| HDFS copy返回False | 旧1仍在，但本地tracker已2 | tracker已推进就代表远端完整完成 |
+| 另有更早但未记住的同级目录 | 只处理被记录的旧路径，不扫其他目录 | 自动修复历次重启积累的全部历史 |
+
+[CPU复查脚本](../../experiments/verl-resume-retention/verify.py)复用旧保留测试的隔离加载器，原样加载完整manager类、handler定义及原文件系统／logger helper，配合作者原Mock engine、dataloader、barrier和HDFS失败返回；测试体、fixture及断言不改。临时根统一为解析后的路径时，[原两文件22参数项](https://github.com/verl-project/verl/blob/8a1a031a9c03105839dcc6659e15cd975bfd5246/tests/utils/ckpt/test_checkpoint_handler_on_cpu.py)全部通过；父版本及main只运行同一原重启回归，各以“旧目录仍在”的AssertionError失败，未将缺方法或收集错误当复现。SPMD顺序例仅Mock事件序列，不是实际多rank同步。[结果及hash](../../experiments/verl-resume-retention/results.json)随仓库保存。
+
+首次保留本机系统临时路径拼写时，head原22项为21过1失败，原相对登记用例保留了旧目录。本机 `/var/...` 经chdir后成为 `/private/var/...`；`abspath` 不解析符号链接，同一物理目录的父路径字符串可以不同，因而被“不同series”保护挡住。仅将新建scratch入口统一为其resolve路径，不改候选或原测试，22项即通过；切回system拼写又复现21过1失败。**这是macOS路径别名条件下的保守不删除，不是Linux训练复现、误删或数据丢失证据。**
+
+本地反馈要点是请作者说明series身份按路径字符串还是物理目录定义，并让原相对路径测试覆盖／规避这一主机条件；不能为追求全绿直接把生产删除边界统一改成realpath。是否允许沿符号链接扩大“同一series”的范围，须与外部恢复路径保护一起审视。本轮不改候选、不发布review或另开同题修复。
+
+Python3.12.13／torch2.14.1／NumPy2.5.4／pytest9.1.1，仅真实临时文件、torch.save/load小字典与隔离定义；原Mock不包含真实FSDP分片、optimizer／RNG恢复、Ray RPC或HDFS。作者22＋27项及4×3090结果不合并计为本机验证，未跑模型／GPU、真实进程重启或故障／断电恢复。脚本对已声明的baseline／别名失败可返回0，JSON仍保存实际pytest_exit=1，不能据脚本成功称原套件全绿。目录删除审计仅允许本次新建scratch并在退出时移除，没有扫描／删除用户检查点。真机条件只补[原M5发布参考](../../experiments/handoff-m5.md#verl-训练-checkpoint-发布参考)，不新排训练、清理或自动应用候选；下轮转独立问题，不扩路径／故障注入矩阵。
+
 ### SFT epoch 边界与加载器状态
 
 取到最后一批数据，不等于迭代器已经观察到`StopIteration`。[verl #7402](https://github.com/verl-project/verl/pull/7402)处理的正是这个差别：SFT从下一epoch开始训练，却恢复了尚停在上一epoch末尾的加载器状态，第一次遍历可能没有任何batch。已有作者ai-yang负责该修复，本项目只核验数据流，不另做竞争实现。

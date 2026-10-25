@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 SFT重启保留与路径身份（2026-10-25）**：起始321ec7b干净，ff到c31db92保全M5（compare正文变化1为追加#629 Test Plan补充，原文未覆盖；#629关闭后不重启推进）。读[#7395／已有#7396](open-source/verl/tracker.md#sft-重启保留的已有修复与路径条件)，[原专题](notebook/frameworks/verl-checkpoint-management-reading.md#重启后的保留状态与路径身份)原22项统一scratch路径通过，系统别名条件21过1失败；父版/main单一原重启回归预期失败。仅记住的旧目录延后清理，路径身份反馈留个人项目；非真实分片／分布式／HDFS恢复。脚本JSON随仓库，无新M5队列／专项或上游动作。下轮转独立需求，不扩路径／故障矩阵或另写清理修复。
+
 - **UniRL #523 上游 PR 已开（2026-10-25）**：用户授权后 **[Tencent-Hunyuan/UniRL#629](https://github.com/Tencent-Hunyuan/UniRL/pull/629)** 已创建（head `Jackie2049:fix-523-anchor-lifecycle`，1 文件 +8/-2 锚生命周期修复）；正文按上游模板如实呈现 L0 四断言/pristine 对照/e2e 资源判定（载体配方 bagel 32 设备、hi3 ~160GB每卡物理不可行，replay 路径 shipped 算法不使用），三项检查 SUCCESS、MERGEABLE；Test Plan 按反馈精简后**同日按用户指示关闭**，fork 分支/PR #1 保留、随时可重开（重开或重启推动方式待用户定）。详见 [tracker](open-source/unirl/tracker.md) 与 [当日日志](diary/2026-10-25.md)。
 
 - **M1 Teacher温度与精度（2026-10-25）**：起始a519112干净，fetch无新增，compare保留817无删改。读[#7769／已有#8253](open-source/verl/tracker.md#teacher-温度的已有修复与精度边界)，不另实现；[原OPD专题](notebook/frameworks/verl-veomni-opd-source-reading.md#teacher-采样温度与打分温度)分开请求T=1与vLLM目标logits缩放。原默认3例三版均过，旧／新候选固定CPU控制：FP16溢出／BF16误差784→head本例误差0，非Sampler／原30项或训练验收。脚本JSON随仓库，仅原M5条件参考，无新算力／专项或上游动作。下轮转独立需求／实质反馈，不扩温度矩阵或另改teacher实现。

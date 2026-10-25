@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-resume-retention/verify.py](verl-resume-retention/verify.py) | #7396两原文件22项隔离CPU测试及两版原重启回归，[结果](verl-resume-retention/results.json)保留macOS别名条件失败；只删新建scratch，非真实checkpoint恢复 | [重启保留与路径身份](../notebook/frameworks/verl-checkpoint-management-reading.md#重启后的保留状态与路径身份) |
 | [verl-teacher-temperature/verify.py](verl-teacher-temperature/verify.py) | #8253原默认3参数例三版CPU钩子隔离执行及旧／新候选低精度控制，[结果](verl-teacher-temperature/result.json)；非Sampler／服务／训练 | [采样与打分温度](../notebook/frameworks/verl-veomni-opd-source-reading.md#teacher-采样温度与打分温度) |
 | [verl-padding-metrics/verify.py](verl-padding-metrics/verify.py) | #7785原一回归体接三版原CPU函数，[结果](verl-padding-metrics/results.json)；另一个聚合解释例，非TQ／IS／loss执行 | [Padding与序列分母](../notebook/frameworks/verl-async-logprob-provenance.md#padding-行与序列指标的分母) |
 | [unirl-window-dwell/verify.py](unirl-window-dwell/verify.py) | 固定main原窗口模块CPU序列／四份配方显式标量，[结果](unirl-window-dwell/results.json)；反事实策略切换非Hydra／模型或参考parity | [停留计数与阈值坐标](../notebook/frameworks/unirl-survey.md#sde-窗口的停留步数与坐标) |

@@ -1,0 +1,154 @@
+{
+  "head": {
+    "calls": [
+      "test_max_ckpt_1_preserves_existing_before_save",
+      "test_max_ckpt_1_deletes_old_after_save",
+      "test_max_ckpt_2_keeps_one_before_save",
+      "test_max_ckpt_0_keeps_all",
+      "test_full_save_cycle_max_ckpt_1",
+      "test_loaded_checkpoint_restores_retention_after_restart",
+      "test_loaded_checkpoint_accepts_relative_registered_path",
+      "test_loaded_checkpoint_retention_does_not_scan_siblings",
+      "test_loaded_checkpoint_retention_is_limited_to_max_one[None]",
+      "test_loaded_checkpoint_retention_is_limited_to_max_one[0]",
+      "test_loaded_checkpoint_retention_is_limited_to_max_one[2]",
+      "test_loaded_checkpoint_retention_ignores_different_series",
+      "test_loaded_checkpoint_retention_ignores_same_or_newer_loaded_step[100]",
+      "test_loaded_checkpoint_retention_ignores_same_or_newer_loaded_step[50]",
+      "test_loaded_checkpoint_retention_requires_registered_replacement",
+      "test_restart_loaded_checkpoint_is_removed_after_replacement_commits",
+      "test_restart_loaded_checkpoint_survives_dataloader_save_failure",
+      "test_restart_loaded_checkpoint_is_not_rotated_when_retention_exceeds_one",
+      "test_external_resume_checkpoint_is_not_deleted",
+      "test_restart_loaded_checkpoint_survives_tracker_update_failure",
+      "test_restart_loaded_checkpoint_survives_failed_hdfs_copy",
+      "test_spmd_waits_for_dataloader_before_finalizing_retention"
+    ],
+    "expected_assertion_failures": 0,
+    "failure_names": [],
+    "label": "head",
+    "numpy": "2.5.4",
+    "pytest": "9.1.1",
+    "pytest_exit": 0,
+    "python": "3.12.13",
+    "revision": "8a1a031a9c03105839dcc6659e15cd975bfd5246",
+    "scope": "original AST manager/handler/helpers plus original Mock engine/dataloader/barrier/HDFS failure; no real model shards, process group, Ray, HDFS, GPU, crash recovery or training",
+    "scratch_removed": true,
+    "scratch_spelling": "canonical",
+    "sha256": {
+      "8a1a031a9c03105839dcc6659e15cd975bfd5246:tests/utils/ckpt/test_checkpoint_cleanup_on_cpu.py": "9996069aed299b73d2596bc193ee6cb93625ddb6fe31b033e520b534bc0667f0",
+      "8a1a031a9c03105839dcc6659e15cd975bfd5246:tests/utils/ckpt/test_checkpoint_handler_on_cpu.py": "4aa8978cbd089ddb96c31e535d2466f412de5e26846a0bf3c49bf0ecf53e69c6",
+      "8a1a031a9c03105839dcc6659e15cd975bfd5246:verl/utils/checkpoint/checkpoint_handler.py": "8f75640e79d8c1cfa02de936be38e78a568bf2ab391f7bb1bc40e9d73a195c48",
+      "8a1a031a9c03105839dcc6659e15cd975bfd5246:verl/utils/checkpoint/checkpoint_manager.py": "04602b557871ab0efbedf3e51c385aec1f6250f7649e21798863158d752d10c0",
+      "8a1a031a9c03105839dcc6659e15cd975bfd5246:verl/utils/fs.py": "fcc6443d2e42b44c510ad9f25979d08a3373927e3660518bae6711790cdc8c51",
+      "8a1a031a9c03105839dcc6659e15cd975bfd5246:verl/utils/logger/aggregate_logger.py": "64d8556b0d6acc667a5be2dd43908111c9e58aae58d779ee9b02f0f28e2b42f7"
+    },
+    "system_scratch_has_alias": true,
+    "torch": "2.14.1"
+  },
+  "parent": {
+    "calls": [
+      "test_restart_loaded_checkpoint_is_removed_after_replacement_commits"
+    ],
+    "expected_assertion_failures": 1,
+    "failure_names": [
+      "test_restart_loaded_checkpoint_is_removed_after_replacement_commits"
+    ],
+    "label": "parent",
+    "numpy": "2.5.4",
+    "pytest": "9.1.1",
+    "pytest_exit": 1,
+    "python": "3.12.13",
+    "revision": "09ac37258ea66b0cb69b2738eec3074ea4e7261c",
+    "scope": "original AST manager/handler/helpers plus original Mock engine/dataloader/barrier/HDFS failure; no real model shards, process group, Ray, HDFS, GPU, crash recovery or training",
+    "scratch_removed": true,
+    "scratch_spelling": "canonical",
+    "sha256": {
+      "09ac37258ea66b0cb69b2738eec3074ea4e7261c:verl/utils/checkpoint/checkpoint_handler.py": "3b547c2b97e01b7587866053b4aa624d81b8cdd9d75fff20a97420690206a896",
+      "09ac37258ea66b0cb69b2738eec3074ea4e7261c:verl/utils/checkpoint/checkpoint_manager.py": "2cdce4ca23d4771e4e788767639cb5e26e8a0f1ba44fb110898394dd61833fad",
+      "09ac37258ea66b0cb69b2738eec3074ea4e7261c:verl/utils/fs.py": "fcc6443d2e42b44c510ad9f25979d08a3373927e3660518bae6711790cdc8c51",
+      "09ac37258ea66b0cb69b2738eec3074ea4e7261c:verl/utils/logger/aggregate_logger.py": "64d8556b0d6acc667a5be2dd43908111c9e58aae58d779ee9b02f0f28e2b42f7",
+      "8a1a031a9c03105839dcc6659e15cd975bfd5246:tests/utils/ckpt/test_checkpoint_cleanup_on_cpu.py": "9996069aed299b73d2596bc193ee6cb93625ddb6fe31b033e520b534bc0667f0",
+      "8a1a031a9c03105839dcc6659e15cd975bfd5246:tests/utils/ckpt/test_checkpoint_handler_on_cpu.py": "4aa8978cbd089ddb96c31e535d2466f412de5e26846a0bf3c49bf0ecf53e69c6"
+    },
+    "system_scratch_has_alias": true,
+    "torch": "2.14.1"
+  },
+  "main": {
+    "calls": [
+      "test_restart_loaded_checkpoint_is_removed_after_replacement_commits"
+    ],
+    "expected_assertion_failures": 1,
+    "failure_names": [
+      "test_restart_loaded_checkpoint_is_removed_after_replacement_commits"
+    ],
+    "label": "main",
+    "numpy": "2.5.4",
+    "pytest": "9.1.1",
+    "pytest_exit": 1,
+    "python": "3.12.13",
+    "revision": "3c6d9b43b67c74ec343d77874cd8fa6e841523da",
+    "scope": "original AST manager/handler/helpers plus original Mock engine/dataloader/barrier/HDFS failure; no real model shards, process group, Ray, HDFS, GPU, crash recovery or training",
+    "scratch_removed": true,
+    "scratch_spelling": "canonical",
+    "sha256": {
+      "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/utils/checkpoint/checkpoint_handler.py": "3b547c2b97e01b7587866053b4aa624d81b8cdd9d75fff20a97420690206a896",
+      "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/utils/checkpoint/checkpoint_manager.py": "be4fa702f0fab63dfb1d482716d31bc13a3b8f5129adbbd61872a169b07cbbc6",
+      "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/utils/fs.py": "fcc6443d2e42b44c510ad9f25979d08a3373927e3660518bae6711790cdc8c51",
+      "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/utils/logger/aggregate_logger.py": "64d8556b0d6acc667a5be2dd43908111c9e58aae58d779ee9b02f0f28e2b42f7",
+      "8a1a031a9c03105839dcc6659e15cd975bfd5246:tests/utils/ckpt/test_checkpoint_cleanup_on_cpu.py": "9996069aed299b73d2596bc193ee6cb93625ddb6fe31b033e520b534bc0667f0",
+      "8a1a031a9c03105839dcc6659e15cd975bfd5246:tests/utils/ckpt/test_checkpoint_handler_on_cpu.py": "4aa8978cbd089ddb96c31e535d2466f412de5e26846a0bf3c49bf0ecf53e69c6"
+    },
+    "system_scratch_has_alias": true,
+    "torch": "2.14.1"
+  },
+  "alias": {
+    "calls": [
+      "test_max_ckpt_1_preserves_existing_before_save",
+      "test_max_ckpt_1_deletes_old_after_save",
+      "test_max_ckpt_2_keeps_one_before_save",
+      "test_max_ckpt_0_keeps_all",
+      "test_full_save_cycle_max_ckpt_1",
+      "test_loaded_checkpoint_restores_retention_after_restart",
+      "test_loaded_checkpoint_accepts_relative_registered_path",
+      "test_loaded_checkpoint_retention_does_not_scan_siblings",
+      "test_loaded_checkpoint_retention_is_limited_to_max_one[None]",
+      "test_loaded_checkpoint_retention_is_limited_to_max_one[0]",
+      "test_loaded_checkpoint_retention_is_limited_to_max_one[2]",
+      "test_loaded_checkpoint_retention_ignores_different_series",
+      "test_loaded_checkpoint_retention_ignores_same_or_newer_loaded_step[100]",
+      "test_loaded_checkpoint_retention_ignores_same_or_newer_loaded_step[50]",
+      "test_loaded_checkpoint_retention_requires_registered_replacement",
+      "test_restart_loaded_checkpoint_is_removed_after_replacement_commits",
+      "test_restart_loaded_checkpoint_survives_dataloader_save_failure",
+      "test_restart_loaded_checkpoint_is_not_rotated_when_retention_exceeds_one",
+      "test_external_resume_checkpoint_is_not_deleted",
+      "test_restart_loaded_checkpoint_survives_tracker_update_failure",
+      "test_restart_loaded_checkpoint_survives_failed_hdfs_copy",
+      "test_spmd_waits_for_dataloader_before_finalizing_retention"
+    ],
+    "expected_assertion_failures": 1,
+    "failure_names": [
+      "test_loaded_checkpoint_accepts_relative_registered_path"
+    ],
+    "label": "head",
+    "numpy": "2.5.4",
+    "pytest": "9.1.1",
+    "pytest_exit": 1,
+    "python": "3.12.13",
+    "revision": "8a1a031a9c03105839dcc6659e15cd975bfd5246",
+    "scope": "original AST manager/handler/helpers plus original Mock engine/dataloader/barrier/HDFS failure; no real model shards, process group, Ray, HDFS, GPU, crash recovery or training",
+    "scratch_removed": true,
+    "scratch_spelling": "system",
+    "sha256": {
+      "8a1a031a9c03105839dcc6659e15cd975bfd5246:tests/utils/ckpt/test_checkpoint_cleanup_on_cpu.py": "9996069aed299b73d2596bc193ee6cb93625ddb6fe31b033e520b534bc0667f0",
+      "8a1a031a9c03105839dcc6659e15cd975bfd5246:tests/utils/ckpt/test_checkpoint_handler_on_cpu.py": "4aa8978cbd089ddb96c31e535d2466f412de5e26846a0bf3c49bf0ecf53e69c6",
+      "8a1a031a9c03105839dcc6659e15cd975bfd5246:verl/utils/checkpoint/checkpoint_handler.py": "8f75640e79d8c1cfa02de936be38e78a568bf2ab391f7bb1bc40e9d73a195c48",
+      "8a1a031a9c03105839dcc6659e15cd975bfd5246:verl/utils/checkpoint/checkpoint_manager.py": "04602b557871ab0efbedf3e51c385aec1f6250f7649e21798863158d752d10c0",
+      "8a1a031a9c03105839dcc6659e15cd975bfd5246:verl/utils/fs.py": "fcc6443d2e42b44c510ad9f25979d08a3373927e3660518bae6711790cdc8c51",
+      "8a1a031a9c03105839dcc6659e15cd975bfd5246:verl/utils/logger/aggregate_logger.py": "64d8556b0d6acc667a5be2dd43908111c9e58aae58d779ee9b02f0f28e2b42f7"
+    },
+    "system_scratch_has_alias": true,
+    "torch": "2.14.1"
+  }
+}
