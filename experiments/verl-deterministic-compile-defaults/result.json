@@ -1,0 +1,46 @@
+{
+  "environment": {
+    "pytest": "9.1.1",
+    "python": "3.12.13",
+    "system": "Darwin"
+  },
+  "isolated_gate_results": {
+    "False": {
+      "cudagraph_mode": "FULL_AND_PIECEWISE"
+    },
+    "True": {
+      "cudagraph_mode": "FULL_AND_PIECEWISE",
+      "inductor_compile_config": {
+        "benchmark_combo_kernel": false,
+        "combo_kernels": true
+      }
+    }
+  },
+  "original_cases_passed": [
+    "test_sets_combo_kernels_without_benchmarking",
+    "test_keeps_other_inductor_options",
+    "test_user_combo_kernel_settings_win:{\"combo_kernels\": false}",
+    "test_user_combo_kernel_settings_win:{\"benchmark_combo_kernel\": true}",
+    "test_user_combo_kernel_settings_win:{\"combo_kernels\": true}"
+  ],
+  "per_compile_false_control": {
+    "inductor_compile_config": {
+      "benchmark_combo_kernel": false,
+      "combo_kernels": true,
+      "deterministic": false
+    }
+  },
+  "scope": "original helper and 5 unchanged CPU test parameter cases; original isolated full_determinism if-node on two flag values, not launch_server; one per-compile override control; 6 modules syntax checked; no full pytest/38-case suite, torch/vLLM import, Inductor compile, engine/GPU/training",
+  "source_sha256": {
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:tests/workers/rollout/test_vllm_cli_args_on_cpu.py": "e1d6bb68d5176bb96368ee63738c7bad3b6f8996cea7cc948fb6f2e79f8d9f36",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/workers/rollout/vllm_rollout/utils.py": "71e6e1480d79df2681b9c66419ee6c51daec87a47743b7430fcb21c59733b79f",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/workers/rollout/vllm_rollout/vllm_async_server.py": "c6d5ee430ad7eb28f3989b38f04714b843a4d9e2378d98ab2fd87ebfc9d433e8",
+    "e1ac734c5db176dfdb1bed74a67306b6ee89da46:tests/workers/rollout/test_vllm_cli_args_on_cpu.py": "bceac9fc72806963da74762e256bec492eb8f06f2c5424cf98965536ccf00b70",
+    "e1ac734c5db176dfdb1bed74a67306b6ee89da46:verl/workers/rollout/vllm_rollout/utils.py": "861da0d617714eaff9abe1fbf9c660357db3307601c37961b31d30316692f4bc",
+    "e1ac734c5db176dfdb1bed74a67306b6ee89da46:verl/workers/rollout/vllm_rollout/vllm_async_server.py": "33a6ad9ff4739d72bc77bafb6e1dc1e766121123efd861c66c48e1d328bf9977"
+  },
+  "versions": {
+    "base": "3c6d9b43b67c74ec343d77874cd8fa6e841523da",
+    "head": "e1ac734c5db176dfdb1bed74a67306b6ee89da46"
+  }
+}

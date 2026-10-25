@@ -6,6 +6,28 @@
 
 > 2026-10-25 更正：固定 Python hash seed 也不足以保证路由；还需相同副本身份、排列及缓存条件。下文区分已有路由修复与完整训练确定性。
 
+## 确定性编译默认与显式覆盖
+
+[verl #8366](https://github.com/verl-project/verl/pull/8366)修的是确定性模式下的vLLM编译默认，不是路由或完整训练复现。2026-10-26读取OPEN、非draft，作者flyingdoubleG；head `e1ac734c5db176dfdb1bed74a67306b6ee89da46`，父版／目标base／共同祖先及当前main均为 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，ahead1／behind0，三文件49增0删。唯一普通评论为bot摘要，reviews／行内评论为空，不当人工验收；已有作者，不另实现或对外反馈。
+
+候选[helper](https://github.com/verl-project/verl/blob/e1ac734c5db176dfdb1bed74a67306b6ee89da46/verl/workers/rollout/vllm_rollout/utils.py)只在嵌套inductor_compile_config中**两个键都不存在**时成组补入combo_kernels=True、benchmark_combo_kernel=False；任一键存在就保留原字典，即使显式combo_kernels=False，也不会替另一个键补默认。其他选项保留。这不是两个独立setdefault，也不保证所有显式配置都能启动。
+
+[调用端](https://github.com/verl-project/verl/blob/e1ac734c5db176dfdb1bed74a67306b6ee89da46/verl/workers/rollout/vllm_rollout/vllm_async_server.py)在解析compilation_config、处理cudagraph默认后，仅在rollout.full_determinism为真时调用helper，再序列化交给vLLM。enforce_eager是另一个参数，不会自行打开该条件。固定base的pyproject.toml及uv.lock声明torch2.13.0／vLLM0.29.0；这是Git版本依赖，不代表本机或M5实际安装环境。
+
+### 与 vLLM 自身默认的区别
+
+[vLLM #59074](https://github.com/vllm-project/vllm/pull/59074)已合并（merge b9767299）。对照[v0.29.0](https://github.com/vllm-project/vllm/blob/v0.29.0/vllm/config/compilation.py)和[v0.32.0](https://github.com/vllm-project/vllm/blob/v0.32.0/vllm/config/compilation.py)源码：在torch版本、非CPU、两个combo键均缺省的原guard内，旧版补True／True；新版让benchmark取决于确定性状态，**单次编译的deterministic覆盖全局Inductor设置**，不存在全局字段则回退False。只核这两个tag，不据此断言首次发布版本。
+
+verl helper按rollout开关补值，不读取单次编译deterministic。一个本地字典控制中，显式deterministic=False仍得到combo=True／benchmark=False；vLLM新源码在自身guard满足时会按该显式False选benchmark=True。因此普通缺省场景可得到相同值，但不能泛称“升级后helper对所有配置都等价于不操作”。这是配置优先级的源码比较，不是运行过vLLM构造器，也不把混合显式设置另立成故障或修复任务。
+
+### 本机验证与作者实测分开
+
+[脚本](../../experiments/verl-deterministic-compile-defaults/verify.py)按固定Git blob抽取完整原helper／新增原测试类，方法体和断言不变：两个固定用例及三个显式覆盖参数例共5项通过。另执行调用端原if节点的False／True两分支，分别不补／补上述默认；不是整个launch_server执行。六份完整模块AST／内存compile通过，未导入verl、torch或vLLM。Python3.12.13／pytest9.1.1、源码SHA256及结果见[JSON](../../experiments/verl-deterministic-compile-defaults/result.json)，重复执行语义一致；父版没有helper，不伪造基线失败计数，也不宣称作者整文件38项测试由本机通过。
+
+复跑命令：`python -B experiments/verl-deterministic-compile-defaults/verify.py /path/to/verl-git`；需要pytest及JSON中两版Git对象，不要求检出候选或安装verl／vLLM。脚本读固定对象而非工作树，避免把旧checkout的依赖当成当前版本。
+
+PR正文的单4090、Qwen3-0.6B／GSM8K两步重复是作者外部报告：各工作配置内部重复相同，但eager与compile之间的指标不同。不能把启动恢复或局部字典测试推出跨配置轨迹一致、Inductor全局flag恢复、actor／rollout前向对齐或完整RL确定性。本机未编译模型／运行服务／训练。真正启动与重复性缺口仅补[原M5条件参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不升级依赖、应用候选或新排训练。
+
 ## 确定性路由的哈希与副本集合
 
 固定请求 ID 不保证跨进程选中相同副本。[verl #7666](https://github.com/verl-project/verl/issues/7666)已有报告者 hsusul 的[#7667](https://github.com/verl-project/verl/pull/7667)，2026-10-25仍open、非draft、未合并，不另实现。固定head `b2b5f4f6ce42c3689f86449037c33ba747a07106`，实际父提交／共同祖先 `4eff9ae30a23b59554758fa0ca93940605ae5cdf`，两文件85增5删；API目标base `3f9d4c0d`不是此比较祖先。固定主线 `3c6d9b43` 的完整负载均衡类AST仍与父版本相同。

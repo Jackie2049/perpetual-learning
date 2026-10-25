@@ -158,6 +158,7 @@
 - [自适应组大小与逐轮生成](frameworks/verl-grpo-data-flow-reading.md#自适应组大小与逐轮生成) — #8077的分轮停止不等逐prompt预设n；生成session、终态、DAPO与优化批单位须配合，源码分析非C-GRPO复现
 - [verl PF PPO重采样身份](frameworks/verl-grpo-data-flow-reading.md#pf-ppo-重采样与原-key-回写) — #7957原四测试三版本对照，内部行一致不等原key对齐；旧mask切片可与新行长度不同，非真实队列或训练验收
 - [verl 二维logprob分块](frameworks/verl-6572-full-determinism-source-reading.md#二维低精度-logprob-的分块预算) — #8351原17测试体绑定cpu通过；单块预算非反向总保存量或CUDA峰值，复用原脚本，不新增训练
+- [verl 确定性编译默认](frameworks/verl-6572-full-determinism-source-reading.md#确定性编译默认与显式覆盖) — #8366原五字典参数例通过，显式覆盖与vLLM版本默认分开；非完整套件／启动或训练验收
 - [verl 奖励限流与取消](frameworks/verl-reward-integration-reading.md#进程配额与取消边界) — 原16协程测试体/2取消对照；类属性不是跨节点配额，超容量预扣不自动退款，timeout不包排队
 - [verl Prime 评分结果与失败范围](frameworks/verl-reward-integration-reading.md#prime-进程池的结果协议与失败范围) — #8217旧原4例/真实spawn；[新#8358同题对照](frameworks/verl-reward-integration-reading.md#新编号与已有修复)仅注释/docstring差异、计算AST相同，测试范围不同，不重复验证或当新候选
 - [verl 沙箱运行器派发](frameworks/verl-reward-integration-reading.md#沙箱运行器注册与执行边界) — #8345原14用例通过/16未选；包注册不等于代码隔离，传入timeout不等于强制终止，非entry-point/服务或安全验收
