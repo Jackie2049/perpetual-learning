@@ -6,6 +6,26 @@
 
 通用 fused output head 直接消费hidden states和输出权重，绕过模型原始forward中的输出处理，因此必须保留原模型对logits的变换。省去 `c*tanh(z/c)` 不只是更换计算精度，会改变 log-prob、熵和梯度。verl [#7991](https://github.com/verl-project/verl/pull/7991)选择在不支持时拒绝通用 fused 路径，而不是补上 softcap kernel。
 
+## Triton 输出的批维与序列维
+
+元素个数相同，不代表满足下游张量契约。[#8089](https://github.com/verl-project/verl/issues/8089)报告Triton fused路径返回平铺logprob／entropy，关闭remove-padding后，引擎在`output.log_probs.shape[1]`处失败。已有报告者的[#8090](https://github.com/verl-project/verl/pull/8090)，2026-10-25核open、非draft、未合并，唯一普通评论为CLA机器人、0行内评论；编号及Triton output shape查重已覆盖，不另实现。
+
+固定head `90c8667a149c457a335b42bd362311f989d9315c`、实际共同祖先 `fbb4b3a8bf636f290c9c59fc346f756849e9c241`，两提交六文件43新增。直接父提交`6ac75615`已含生产修复，最后提交仅加28行测试；API目标base `8718ca30a3f002f93b7c4fd99b9b2506718681bc`也不等于本次比较祖先。只看父提交diff会漏掉五个适配器的改动。
+
+### 形状恢复不负责恢复标签身份
+
+[原kernel包装器](https://github.com/verl-project/verl/blob/90c8667a149c457a335b42bd362311f989d9315c/verl/utils/kernel/linear_cross_entropy.py)先把hidden从`[B,S,H]`变成`[B×S,H]`、labels变成一维，再调用融合实现；forward直接返回kernel结果，原形状保存给反向，不等于forward自动恢复两维。[FSDP消费者](https://github.com/verl-project/verl/blob/90c8667a149c457a335b42bd362311f989d9315c/verl/workers/engine/fsdp/transformer_impl.py)在不使用rmpad／SP且fused、DatasetPadMode.NO_PADDING的分支，以第二维构造每行长度mask，再把有效token重新包成jagged。这里需要的是`[B,S]`与行身份，不只是B×S个元素。
+
+源码AST比较确认dense_common、glm4v、qwen2_vl、qwen3_vl、qwen3_5五个Triton函数都**仅增加同三条语句**：从hidden_states.shape取B、S，对log_probs和entropy各reshape(B,S)。移除这三条后完整函数AST与祖先相同；五个Torch函数未改，固定main `3c6d9b43`的五个Triton函数也仍与祖先相同。reshape保留平铺顺序，但不会修正错误的shift_labels、token排列或有效mask，也不补FSDP输出头参数准备。此项与SP标签、softcap数学和untied参数生命周期分别验收，不互相替代。
+
+### 测试替身必须保留真实后端的外形
+
+作者[原测试模块](https://github.com/verl-project/verl/blob/90c8667a149c457a335b42bd362311f989d9315c/tests/models/test_fused_kernels_ulysses_sp_on_cpu.py)已有标签路由测试，但旧fake_linear_ce直接按input_ids形状造二维零结果，本身不会暴露真实平铺输出的缺口。新测试对10个adapter／backend组合与两种形状声明20个参数例，显式令Triton假kernel返回flatten结果、Torch假kernel返回二维结果，再检查logprob／entropy恢复为预设顺序。
+
+这20例的模型与kernel均为作者替身；`packed`只是`(1,6)`测试ID，没有真实cu_seqlens、Ulysses通信或多模态body。它们针对外形契约，不计算真实log-softmax、entropy或反向。**本机未执行这20例或构造模型替身**，只做原测试／生产接线的源码核对，不能写成20例通过或真实kernel等价。
+
+Python3.12.13仅标准库AST／内存compile：两版五个适配器和测试模块，加head kernel包装器／FSDP消费者，共14个完整快照语法通过，没有导入torch／Transformers／Triton、发现设备或运行模型。作者“首训练步不再崩溃”的报告不是本项目GPU实测或长程质量证明。匹配资源下的真实kernel、非等长有效token、标签与反向条件补[M5原输出头参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不自动应用候选、新排训练或改其专项；任何上游动作及既有PR-head推送仍逐项待用户明确同意。命令与校验值见[当日日志](../../diary/2026-10-25.md)。
+
 ## Megatron 融合权重的就绪与调度
 
 融合输出头读取 `weight`，不一定调用该参数所属模块的 `forward`。计算公式即使正确，也可能绕过分片参数的准备时机。[#8028](https://github.com/verl-project/verl/issues/8028)报告的链条是：decoder预取输出权重的AllGather，融合LM-head跳过output_layer前钩子，遗留handle；下一批再次派发时触发断言。原故障来自作者下游MCore0.16.2/H20配置，不能写成本机或当前主线GPU复现。

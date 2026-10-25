@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[代码部分分数](#代码部分分数的已有修复)：#8022原真实执行／mock两例候选通过，保留一次已知错误并非全量正确率，不另实现或对外发布；此前V1保存／RLOO反馈仍仅存个人项目待审。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责，最新回复与待授权项见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[Triton输出形状](#triton-输出形状的已有修复)：#8090五适配器仅加reshape，14源码快照语法通过，原20参数例未跑；不将源码检查当kernel／训练验收，不另实现或对外发布。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## Triton 输出形状的已有修复
+
+2026-10-25读[#8089](https://github.com/verl-project/verl/issues/8089)全文／0评论，编号及Triton output shape查重已有报告者[#8090](https://github.com/verl-project/verl/pull/8090)，open、非draft、未合并，唯一普通评论仅CLA机器人、0行内评论，不另实现。head90c8667a、共同祖先fbb4b3a8，两提交六文件43新增；父提交6ac75615已含修复，最后提交仅加测试，API目标base8718ca30另计。
+
+见[原输出头专题](../../notebook/frameworks/verl-fused-output-softcap.md#triton-输出的批维与序列维)：五个Triton函数AST只增三条形状恢复，Torch与标签选择未改。原新测试声明20个模型／kernel替身参数例，**本机未运行**；旧假kernel二维结果不覆盖真实平铺外形。14完整源码快照AST／compile，无原生包／kernel／模型、SP或训练验收；真实条件补M5原参考，不应用候选／新排任务、改专项或上游写入。任何外部动作及既有PR-head推送仍逐项待用户明确同意。
 
 ## 代码部分分数的已有修复
 

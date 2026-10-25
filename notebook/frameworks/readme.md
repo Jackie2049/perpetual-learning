@@ -155,6 +155,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [重算叶子与共享存储](../fundamentals/gradient-checkpointing.md#重算叶子与共享存储) — #8338放弃叶子引用与截断storage分开；4组CPU控制只执行原清理两语句，非MCore/CUDA回归或显存测量。
 
 - [verl 融合输出头与logit softcap](verl-fused-output-softcap.md) — #7991通用guard不是softcap实现；完整原torch输出头36组语义对照，保留FP64参考误差，原24配置测试未跑。
+- [Triton 输出的批维与序列维](verl-fused-output-softcap.md#triton-输出的批维与序列维) — #8090五适配器只加reshape，旧假kernel的二维输出隐藏外形缺口；原新20参数例未跑，14源码语法检查非kernel／SP或训练验收。
 - [Megatron 融合权重的就绪与调度](verl-fused-output-softcap.md#megatron-融合权重的就绪与调度) — #8029原23 CPU生命周期测试通过；等待已有通信不等于拥有派发权，原替身／torch数学不认证DDP、融合kernel或GPU。
 - [独立分片head的执行与梯度归属](verl-fused-output-softcap.md#独立分片-head-的执行与梯度归属) — #8091已有#8096/#8097替代方案；FSDP注册方法与显式聚合、梯度布局分开，仅源码/compile，不搬作者GPU报告或旧CPU数学结果。
 
