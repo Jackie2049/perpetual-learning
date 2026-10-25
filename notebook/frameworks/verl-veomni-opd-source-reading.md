@@ -10,6 +10,26 @@
 
 2026-10-25 接续：[主线与 GKD 的损失名称和支持域](#主线与-gkd-的损失名称和支持域)核#7975／已有draft #7983；纠正旧2.2节的k2／k3公式，区分采样估计、top-k归一化、tail bucket与JSD端点。配置名称相同不代表梯度或更新相同。
 
+## Teacher 采样温度与打分温度
+
+**对已有token打分与生成下一个token，可能使用不同的温度入口。** [#7769](https://github.com/verl-project/verl/issues/7769)询问为何teacher温度固定为1；2026-10-25读取为OPEN、0评论，已有yph22的OPEN／non-draft [#8253](https://github.com/verl-project/verl/pull/8253)，head `2920c0144f2cb8e0d416f7ad35ce28034795fdc9`、base及比较祖先 `5b550b0c3dad8c7bb7aab834a3fe195f8cdfc517`。本节区分固定main `3c6d9b43b67c74ec343d77874cd8fa6e841523da` 与未合并候选，不另做竞争实现。
+
+| 入口 | 当前主线 | 候选的改变 |
+|---|---|---|
+| teacher请求 | [manager](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/experimental/teacher_loop/teacher_manager.py)把已有序列作为prompt，要求prompt_logprobs，另生成1个未使用token；请求temperature为1 | 请求仍为1，不靠改此参数缩放prompt分布 |
+| teacher目标概率 | 主线该入口不将配置温度用于teacher logits缩放，即使[配置](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/config/distillation/distillation.yaml)默认插值学生rollout温度 | [vLLM teacher专属启动参数](https://github.com/verl-project/verl/blob/2920c0144f2cb8e0d416f7ad35ce28034795fdc9/verl/workers/rollout/vllm_rollout/vllm_async_server.py)送到compute_logits钩子，在prompt归一化前计算logits／T；普通actor／reward传1 |
+| student概率 | [选定FSDP非fused路径](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/workers/engine/fsdp/transformer_impl.py)先缩放logits，再交给蒸馏logits_processor或采样token logprob计算 | 默认配置继承的同一数值开始实际作用于vLLM teacher；不代表所有后端／kernel完成一致性验收 |
+
+候选的teacher目标是 `log P_T(v)=z_v/T−logsumexp(z/T)`，不是把已返回的top-k log-prob简单除以T。后一种做法缺少变化后的全词表归一化项；有限top-k不能直接恢复所有尾部token在新温度下的质量。观察token和top-k目标都应来自相同的完整分布。teacher／student温度是否刻意不同属于目标选择，不能把“必须相同”当数学要求；该候选的默认行为是让已有配置继承真正生效。若要保留旧teacher分布，候选文档给出的覆盖为 `distillation.teacher_models.teacher_model.inference.temperature=1.0`，本轮未应用任何配置。
+
+### 除法之前的精度边界
+
+[完整原logits钩子](https://github.com/verl-project/verl/blob/2920c0144f2cb8e0d416f7ad35ce28034795fdc9/verl/workers/rollout/vllm_rollout/utils.py)先屏蔽词表外尾部及禁用token；T≠1时先转FP32再除温度，T=1不额外转换。前一候选提交 `d44e8847c4e9312290ac0271f888c83e12cc61a7` 仍在模型dtype中原地相除，后续FP32 log-softmax无法补救已发生的溢出或舍入。
+
+[CPU脚本](../../experiments/verl-teacher-temperature/verify.py)原样摘取三版完整钩子、作者原FakeModel及默认温度测试体，去掉参数化装饰器后直接调用：FP16／BF16／FP32原3参数例在main、旧候选和head均通过，只保证该夹具下T=1的dtype／值与屏蔽不变。另沿用作者固定logits和T=0.0001，对旧候选／head各两个dtype做局部控制：旧FP16有效位置log-prob非有限，旧BF16相对FP32参考最大绝对误差784；head两者有效位置有限且本例误差0，屏蔽位仍为负无穷。[原始结果](../../experiments/verl-teacher-temperature/result.json)两次一致。
+
+非单位温度控制使用真实torch CPU log_softmax，**没有调用vLLM Sampler**，不算作者原低精度测试或30项套件通过；也未验证server启动／角色隔离、Hydra继承／配置拒绝、真实模型、GPU或训练。作者报告基于vLLM0.23，明确尚未做其所称主线pin0.29的运行时及GPU端到端验证；机器人COMMENTED不当维护者批准。其他teacher后端在本候选中仍保留未缩放的prompt分数和告警，不据vLLM局部控制切换SGLang或推广所有engine。设备缺口只补[原M5观测参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不新排部署／训练或应用补丁；下一轮转独立需求，不扩温度矩阵或另改教师实现。
+
 ## 主线与 GKD 的损失名称和支持域
 
 **从GKD recipe迁到主线OPD，不能原样搬 `kl`、beta或rkl_ratio。** [#7975](https://github.com/verl-project/verl/issues/7975)已有Liu-KM的文档[draft #7983](https://github.com/verl-project/verl/pull/7983)，2026-10-25核为OPEN/draft、head `28879f83095a7f1a38cd4ae70d6eb331cdcf0dcc`；只读到一条CLA机器人评论、无reviews，不当已发布说明或另认领。同日固定主线 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，recipe固定该PR引用的 `5451026758c3f1dc3ebc2a46a0e52b14406f0f72`。

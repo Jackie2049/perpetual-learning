@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 Teacher温度与精度（2026-10-25）**：起始a519112干净，fetch无新增，compare保留817无删改。读[#7769／已有#8253](open-source/verl/tracker.md#teacher-温度的已有修复与精度边界)，不另实现；[原OPD专题](notebook/frameworks/verl-veomni-opd-source-reading.md#teacher-采样温度与打分温度)分开请求T=1与vLLM目标logits缩放。原默认3例三版均过，旧／新候选固定CPU控制：FP16溢出／BF16误差784→head本例误差0，非Sampler／原30项或训练验收。脚本JSON随仓库，仅原M5条件参考，无新算力／专项或上游动作。下轮转独立需求／实质反馈，不扩温度矩阵或另改teacher实现。
+
 - **M1 自适应组大小接入范围（2026-10-25）**：起始a0580fa干净，compare保留815新增1无删改后ff到0db8f3b保全M5。读[#8077](open-source/verl/tracker.md#自适应组大小的接入范围)，作者待接口反馈，不另实现；[原数据流专题](notebook/frameworks/verl-grpo-data-flow-reading.md#自适应组大小与逐轮生成)分清预设n／答案驱动分轮、session／输出行／prompt、终态DAPO及配置n的优化批。六模块语法非校准／TQ／训练或论文收益验收，无新M5队列、专项／服务器或上游动作。下轮转独立需求／实质反馈，不堆预算／分组模拟或抢先写recipe。
 
 - **M1 GSPO裁剪指标口径（2026-10-25）**：起始a244e88干净，compare保留813新增1无删改后ff到35bf2e8保全并行日志。读[#7356及唯一社区评论](open-source/verl/tracker.md#gspo-裁剪指标的讨论与边界)，不另认领；[原算法专题](notebook/frameworks/verl-grpo-core-algos-reading.md#gspo-的-clipfrac-分母与梯度范围)区分局部有效token比例、MEAN归约与最终梯度。固定main3c6d9b43原Metric类CPU控制1／0→.5，假定token数3／1池化则.75；非GSPO／worker／DP或训练复现。五模块语法与配方bash -n，不按0.4判健康／陈旧或调阈值，lower固定0不等无下界clip。旧clip RFC继续withdrawn，M5原观测仅补条件，无新队列／专项／服务器或上游动作。下轮转独立需求／实质反馈，不扩clip矩阵、重开候选或重复阈值实验。

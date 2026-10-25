@@ -231,6 +231,7 @@
 - [verl RL Infra 架构源码阅读](frameworks/verl-rl-infra-reading.md) — SyncPPOTrainer、ActorRolloutRefWorker、GRPO/GAE、TransferQueue、vLLM Rollout
 - [verl TransferQueue 数据面与启动资源](frameworks/verl-transferqueue-worker-lifecycle-deep-reading.md) — #8340按nnodes填默认单元数；3原配置测试/4组generated配对，不认证Ray启动。数据字段与权重同步分开，旧零拷贝/性能推导撤回
 - [verl 教师生成与蒸馏目标](frameworks/verl-veomni-opd-source-reading.md#教师生成与蒸馏目标) — #8335整批来源选择、生成/软标签评分分开；教师prefix不是纯学生on-policy，16文件仅语法与源码核对
+  - [Teacher采样与打分温度](frameworks/verl-veomni-opd-source-reading.md#teacher-采样温度与打分温度) — 请求T=1不等于目标分布不变；#8253先转FP32再除温度的CPU钩子控制，不是vLLM或训练验收
   - [主线与GKD损失映射](frameworks/verl-veomni-opd-source-reading.md#主线与-gkd-的损失名称和支持域) — 采样kl与截断前向kl同名不同义；top-k重归一化、tail bucket与JSD端点分层，六模块语法非数值或训练认证
 - [vLLM 量化推理管线源码阅读](frameworks/vllm-quantization-pipeline-reading.md) — 量化方法注册表、Kernel 选择逻辑、离线/在线量化、QuantKey 系统
 - [vLLM 权重加载管线源码阅读](frameworks/vllm-weight-loading-reading.md) — safetensors 到 GPU 全流程、TP/PP/EP 分片、weight_loader 机制

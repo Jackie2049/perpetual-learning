@@ -1,0 +1,54 @@
+{
+  "python": "3.12.13",
+  "torch": "2.14.1",
+  "versions": {
+    "main": "3c6d9b43b67c74ec343d77874cd8fa6e841523da",
+    "pre_fp32": "d44e8847c4e9312290ac0271f888c83e12cc61a7",
+    "head": "2920c0144f2cb8e0d416f7ad35ce28034795fdc9"
+  },
+  "test_sha256": "63f494be6eef0453cbd609d05c9b208650dfa5d7be4bde8e2cba2afc50432df3",
+  "defaults": {
+    "main": 3,
+    "pre_fp32": 3,
+    "head": 3
+  },
+  "small_temperature": {
+    "pre_fp32": [
+      {
+        "dtype": "torch.float16",
+        "scaled_dtype": "torch.float16",
+        "valid_logprobs_finite": false,
+        "max_abs_error": null,
+        "masked_scores_neg_inf": false
+      },
+      {
+        "dtype": "torch.bfloat16",
+        "scaled_dtype": "torch.bfloat16",
+        "valid_logprobs_finite": true,
+        "max_abs_error": 784,
+        "masked_scores_neg_inf": true
+      }
+    ],
+    "head": [
+      {
+        "dtype": "torch.float16",
+        "scaled_dtype": "torch.float32",
+        "valid_logprobs_finite": true,
+        "max_abs_error": 0,
+        "masked_scores_neg_inf": true
+      },
+      {
+        "dtype": "torch.bfloat16",
+        "scaled_dtype": "torch.float32",
+        "valid_logprobs_finite": true,
+        "max_abs_error": 0,
+        "masked_scores_neg_inf": true
+      }
+    ]
+  },
+  "hook_sha256": {
+    "main": "71e6e1480d79df2681b9c66419ee6c51daec87a47743b7430fcb21c59733b79f",
+    "pre_fp32": "ad1262744c7451060f14025382abf898e7c51f9b087b813fdb67345a4defe9b1",
+    "head": "c95fd3c1ba4c380d88938cb900937fd2de1295d8dd3cea05797638afb43b2011"
+  }
+}

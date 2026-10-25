@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责：①10-24 22:32、②10-25 12:00 回复均按用户逐字文本发出，head 71fd3562（用户裁决：middle 对齐 postprocess_data、cap=1 保留首 token、测试改名回退；CPU 18 passed + 10-25 01:08 GPU e2e 2/2 PASS + 负例 fail-loudly PASS），仍 OPEN/MERGEABLE 等维护者 approve（requested reviewers wuxibin89+dajiaohuang，10-22 后无新审查）；③trainer 级问题讲解中、④草稿 v3 待用户逐字审定，见[原草稿](draft-8313-review-reply.md)。另核[异步恢复库存](#异步恢复库存与预热容量)：#7579非原历史回放，原9 warmup测试体仅Mock接线，不另实现。另核[选定token概率](#选定-token-概率提案的范围收窄)：#7712已撤回组合器，恒等式CPU数学对照非kernel验收，不另实现。另核[V1 idle统计](#v1-异步空闲指标的统计范围)：等待／布尔决策／路由请求数非GPU利用率，不另实现。另核[VeOmni后端RFC](#veomni-端到端低精度路线)：作者已开#1360，配置迁移与职责待反馈，不另实现。另核[S3层级](#s3-下载与完整-checkpoint-生命周期)：下载测试不等持久化验收，不另写后端。另核[激活卸载入口](#激活卸载的辅助输出入口)：已有#8277，原五CPU测试体head通过，recording图顺序非真机验收，不另实现。另核[多轮旧配置](#多轮旧配置的接线或弃用)：活跃AgentLoop未消费两键，旧strict差异只告警，等待维护者选择接线或弃用，不另认领。2026-10-25核[system-only输入契约](#仅-system-消息的契约裁定)：当前VL CT仍有wrapper调用点，但维护者要求初始prompt包含user，不另推进通用支持。[原生MTP](#megatron-迁移的已有原型与验收边界)、[FSDP精度](#fsdp-精度默认的两份候选)等历史验证各限原版本与范围，不另竞争实现或对外发布。 另核[OPD／GKD名称映射](#opd-与-gkd-损失的已有说明)：#7975已有draft #7983，不另认领；当前tail-bucket模式也非recipe JSD等价。 另核[padding序列统计](#padding-行与序列统计的已有修复)：#7785原一CPU回归候选通过，统计修复非IS／loss或质量验收，不另实现。 另核[逐轮奖励路线](#逐轮奖励的基线与已有过程接口)：#7244已有作者，draft #8305不claim同一LOO估计器，不另实现。 另核[Ray版本与认证](#ray-版本固定的已有候选)：#7599已有#7600，离线声明／lock核对不作安装或安全验收，不另升级。 另核[GSPO裁剪指标](#gspo-裁剪指标的讨论与边界)：局部token比例／MEAN归约／最终梯度分开，#7356已有社区解释，不重开旧RFC或调参。 另核[自适应组大小](#自适应组大小的接入范围)：#8077原作者待接口方向，预设n非分轮停止，源码接线非recipe或训练验收，不另实现。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责：①10-24 22:32、②10-25 12:00 回复均按用户逐字文本发出，head 71fd3562（用户裁决：middle 对齐 postprocess_data、cap=1 保留首 token、测试改名回退；CPU 18 passed + 10-25 01:08 GPU e2e 2/2 PASS + 负例 fail-loudly PASS），仍 OPEN/MERGEABLE 等维护者 approve（requested reviewers wuxibin89+dajiaohuang，10-22 后无新审查）；③trainer 级问题讲解中、④草稿 v3 待用户逐字审定，见[原草稿](draft-8313-review-reply.md)。另核[异步恢复库存](#异步恢复库存与预热容量)：#7579非原历史回放，原9 warmup测试体仅Mock接线，不另实现。另核[选定token概率](#选定-token-概率提案的范围收窄)：#7712已撤回组合器，恒等式CPU数学对照非kernel验收，不另实现。另核[V1 idle统计](#v1-异步空闲指标的统计范围)：等待／布尔决策／路由请求数非GPU利用率，不另实现。另核[VeOmni后端RFC](#veomni-端到端低精度路线)：作者已开#1360，配置迁移与职责待反馈，不另实现。另核[S3层级](#s3-下载与完整-checkpoint-生命周期)：下载测试不等持久化验收，不另写后端。另核[激活卸载入口](#激活卸载的辅助输出入口)：已有#8277，原五CPU测试体head通过，recording图顺序非真机验收，不另实现。另核[多轮旧配置](#多轮旧配置的接线或弃用)：活跃AgentLoop未消费两键，旧strict差异只告警，等待维护者选择接线或弃用，不另认领。2026-10-25核[system-only输入契约](#仅-system-消息的契约裁定)：当前VL CT仍有wrapper调用点，但维护者要求初始prompt包含user，不另推进通用支持。[原生MTP](#megatron-迁移的已有原型与验收边界)、[FSDP精度](#fsdp-精度默认的两份候选)等历史验证各限原版本与范围，不另竞争实现或对外发布。 另核[OPD／GKD名称映射](#opd-与-gkd-损失的已有说明)：#7975已有draft #7983，不另认领；当前tail-bucket模式也非recipe JSD等价。 另核[padding序列统计](#padding-行与序列统计的已有修复)：#7785原一CPU回归候选通过，统计修复非IS／loss或质量验收，不另实现。 另核[逐轮奖励路线](#逐轮奖励的基线与已有过程接口)：#7244已有作者，draft #8305不claim同一LOO估计器，不另实现。 另核[Ray版本与认证](#ray-版本固定的已有候选)：#7599已有#7600，离线声明／lock核对不作安装或安全验收，不另升级。 另核[GSPO裁剪指标](#gspo-裁剪指标的讨论与边界)：局部token比例／MEAN归约／最终梯度分开，#7356已有社区解释，不重开旧RFC或调参。 另核[自适应组大小](#自适应组大小的接入范围)：#8077原作者待接口方向，预设n非分轮停止，源码接线非recipe或训练验收，不另实现。 另核[teacher温度](#teacher-温度的已有修复与精度边界)：#7769已有#8253，CPU钩子精度控制非vLLM／训练验收，不另实现。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## Teacher 温度的已有修复与精度边界
+
+2026-10-25读[#7769](https://github.com/verl-project/verl/issues/7769)全文／0评论；编号及关键词查到yph22的OPEN/non-draft [#8253](https://github.com/verl-project/verl/pull/8253)，head2920c014、base/祖先5b550b0c，八文件226增24删。已读完整PR正文、选定接线diff与两个原测试文件；长机器人评论输出截断，另核review元数据只有COMMENTED，不视为批准或完整review。已有作者，不另实现、回帖或接管测试发布。
+
+见[原OPD专题](../../notebook/frameworks/verl-veomni-opd-source-reading.md#teacher-采样温度与打分温度)：请求temperature仍1，vLLM teacher另在归一化前缩放logits，其他后端不一并获得该能力。原默认3参数例在main／旧候选／head均过，作者固定logits的局部CPU控制显示旧FP16溢出、BF16误差784，head本例均有限且误差0；不是vLLM Sampler、配置／角色隔离、原30项或训练验收。脚本及JSON随个人仓库，仅补原M5条件参考，不启部署／应用候选、新排算力或改专项。
 
 ## 自适应组大小的接入范围
 

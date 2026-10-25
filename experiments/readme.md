@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-teacher-temperature/verify.py](verl-teacher-temperature/verify.py) | #8253原默认3参数例三版CPU钩子隔离执行及旧／新候选低精度控制，[结果](verl-teacher-temperature/result.json)；非Sampler／服务／训练 | [采样与打分温度](../notebook/frameworks/verl-veomni-opd-source-reading.md#teacher-采样温度与打分温度) |
 | [verl-padding-metrics/verify.py](verl-padding-metrics/verify.py) | #7785原一回归体接三版原CPU函数，[结果](verl-padding-metrics/results.json)；另一个聚合解释例，非TQ／IS／loss执行 | [Padding与序列分母](../notebook/frameworks/verl-async-logprob-provenance.md#padding-行与序列指标的分母) |
 | [unirl-window-dwell/verify.py](unirl-window-dwell/verify.py) | 固定main原窗口模块CPU序列／四份配方显式标量，[结果](unirl-window-dwell/results.json)；反事实策略切换非Hydra／模型或参考parity | [停留计数与阈值坐标](../notebook/frameworks/unirl-survey.md#sde-窗口的停留步数与坐标) |
 | [handoff-m5.md](handoff-m5.md) | 需要 GPU/NPU 的事项交接、资源/数据前提及停止条件；M5 可用时接续 | 对应主笔记和原始实测结果就近回写 |
