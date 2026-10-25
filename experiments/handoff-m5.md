@@ -329,6 +329,14 @@ M5 最小下一步：先判断是否有获准使用的对应配置、完整 toke
 
 当前服务器安全事件未闭环、资源／权重／依赖不齐、需新模型下载部署或影响AReaL／#523／#8313／DeepInfer等专项即记未测停止；不在失陷或共享生产训练注入断言／故障，不自动应用候选、扩大到任意嵌套pytree或追加矩阵。任何上游可见写入及已有PR head推送（含fork）仍须用户对具体动作明确同意；本条交接不增加权限。
 
+## verl NPU 参数卸载参考
+
+状态：2026-10-26条件交接，非已接单或新训练队列。目的为区分D2H目标分配与FSDP2显式pin策略。已有[#8372](https://github.com/verl-project/verl/pull/8372) head648423c5、[#8373](https://github.com/verl-project/verl/pull/8373) head340680d3、[#8374](https://github.com/verl-project/verl/pull/8374) head8b7aa26c，共同父版e009360c、当轮main3c6d9b43。两份生产AST同，第三仅模型；[M1原7CPU参数项](../notebook/frameworks/verl-fsdp2-source-deep-reading.md#npu-卸载的复制策略与固定内存)head过／父版4过3预期失败，原Mock非NPU内存验收。FSDP2显式CPUOffloadPolicy仍True，已有#8057另处理。
+
+缺口为安全可用NPU、匹配torch／torch-npu／CANN／driver和实际故障栈，M1不尝试SSH／VPN。M5仅在未来已有获准匹配任务中独立接续：固定真实提交／依赖、FSDP版本／offload配置及rank并发，先判断失败在初始化pin还是手动卸载，再选择单一候选范围；在原小规模预算内核复制完成后的分片／optimizer值和卸载重载一致性，记录分配失败、可取得的host内存指标与同步／耗时，未知项记unknown。不以CPU断言或单个RSS／cgroup数字认证修复或性能。
+
+NPU未就绪、安全事件未闭环、无既有获准配方／资源，需新权重／升级部署或影响专项即停记未测；不故意耗尽allocator，不在共享训练注入故障，不拿CUDA替代NPU证据、不拼接三候选或夹带LoRA sleep祖先。上游可见写入及已有PR head推送（含fork）仍须用户对具体动作明确同意；交接只记录恢复条件，不增加权限。
+
 ## verl 训练 checkpoint 发布参考
 
 SFT重启保留参考（2026-10-25，同一恢复入口、非新增算力／清理队列）：已有[#7396](https://github.com/verl-project/verl/pull/7396)head8a1a031a，[M1原22项CPU隔离](../notebook/frameworks/verl-checkpoint-management-reading.md#重启后的保留状态与路径身份)仅Mock engine／barrier及新建临时文件；统一路径22过，macOS别名条件21过1失败，不是Linux或真实分片结论。若M5日后已有获准、安全、匹配SFT恢复工作且独立选用，应在获准的一次性输出目录核真实源码、恢复路径／series、保留上限、新步登记／tracker及分片可恢复性；不以tracker推进或Mock事件序列认证多rank／HDFS提交。缺环境／授权模型、需下载部署或影响专项即停记未测，不应用候选、扫描清理历史目录、改路径解析或新排故障／训练矩阵，不改AReaL/#523/#8313/DeepInfer。所有社区写入及既有PR-head推送仍逐项待用户明确同意，参考非接单。

@@ -1,0 +1,51 @@
+{
+  "environment": {
+    "pytest": "9.1.1",
+    "python": "3.12.13",
+    "system": "Darwin",
+    "torch": "2.14.1"
+  },
+  "original_tests": {
+    "8374": {
+      "test_offload_fsdp_model_copy_policy_and_shard_aliases:('cuda', True, False)": "passed",
+      "test_offload_fsdp_model_copy_policy_and_shard_aliases:('cuda', True, True)": "passed",
+      "test_offload_fsdp_model_copy_policy_and_shard_aliases:('npu', False, False)": "passed",
+      "test_offload_fsdp_model_copy_policy_and_shard_aliases:('npu', False, True)": "passed",
+      "test_offload_fsdp_optimizer_copy_policy:('cuda', True)": "passed",
+      "test_offload_fsdp_optimizer_copy_policy:('npu', False)": "passed",
+      "test_offload_fsdp_optimizer_without_state": "passed"
+    },
+    "base": {
+      "test_offload_fsdp_model_copy_policy_and_shard_aliases:('cuda', True, False)": "passed",
+      "test_offload_fsdp_model_copy_policy_and_shard_aliases:('cuda', True, True)": "passed",
+      "test_offload_fsdp_model_copy_policy_and_shard_aliases:('npu', False, False)": "expected_assertion_failure",
+      "test_offload_fsdp_model_copy_policy_and_shard_aliases:('npu', False, True)": "expected_assertion_failure",
+      "test_offload_fsdp_optimizer_copy_policy:('cuda', True)": "passed",
+      "test_offload_fsdp_optimizer_copy_policy:('npu', False)": "expected_assertion_failure",
+      "test_offload_fsdp_optimizer_without_state": "passed"
+    }
+  },
+  "scope": "seven unchanged original #8374 CPU parameter cases on base/head; original functions/type dispatch with original mock handles, device modules and optimizer tensors; discovery imports replaced by fail-closed guards; no full pytest/FSDP construction/NPU or CUDA transfers/allocator metrics",
+  "source_checks": {
+    "8372_8374_full_module_ast_equal": true,
+    "8373_model_ast_equal_8374": true,
+    "8373_optimizer_unchanged": true,
+    "base_main_full_source_equal": true,
+    "fsdp2_and_reload_functions_unchanged": true
+  },
+  "source_sha256": {
+    "340680d39c84293c2bebdaf292a3941b77958b47:verl/utils/fsdp_utils.py": "f813f387621b4cd30c010d7f6c5a2087a7afacb8a8dfa1f248f9c647f7420fee",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/utils/fsdp_utils.py": "2d5f7fa51087ad7a09a070dfd97bb4ba39d36c11d0a5cbd145c194d114b03b97",
+    "648423c5a5cece57a5412f8c1d96bee7d068d512:verl/utils/fsdp_utils.py": "0a4deaba42c8a87fe664cc7891d35a551960fb2c9bfa5dbbcb353867842bef9a",
+    "8b7aa26c055e8f4cbbfc8989e429e4265b5dcb67:tests/utils/test_fsdp_model_transfer_on_cpu.py": "455801ede486b207e63dec782f2c40e96d7e2115b0d17d6fef8bfb3a87a9a7d3",
+    "8b7aa26c055e8f4cbbfc8989e429e4265b5dcb67:verl/utils/fsdp_utils.py": "b485ac2abc84bc8f16ff996be0071bd934a661a24d031baa6968bfaf79efbd56",
+    "e009360c03e708e75d5628c9b7ad584af8a53e4d:verl/utils/fsdp_utils.py": "2d5f7fa51087ad7a09a070dfd97bb4ba39d36c11d0a5cbd145c194d114b03b97"
+  },
+  "versions": {
+    "8372": "648423c5a5cece57a5412f8c1d96bee7d068d512",
+    "8373": "340680d39c84293c2bebdaf292a3941b77958b47",
+    "8374": "8b7aa26c055e8f4cbbfc8989e429e4265b5dcb67",
+    "base": "e009360c03e708e75d5628c9b7ad584af8a53e4d",
+    "main": "3c6d9b43b67c74ec343d77874cd8fa6e841523da"
+  }
+}

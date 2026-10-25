@@ -2,6 +2,40 @@
 
 2026-10-23 补充：[参数转换与缓冲区精度](#参数转换与缓冲区精度)固定于 #8189，用原 CPU 测试与原转换语句区分初始化数值和存储 dtype；本节之后的 2026-06 分析未在此次重核。
 
+2026-10-26 补充：[NPU卸载的复制策略与固定内存](#npu-卸载的复制策略与固定内存)区分FSDP1／优化器复制开关与FSDP2显式pin策略，CPU调用测试不认证NPU内存收益。
+
+## NPU 卸载的复制策略与固定内存
+
+**阻塞D2H复制不等于关闭所有CPU offload的pinned memory。** 新[#8372](https://github.com/verl-project/verl/pull/8372)、[#8373](https://github.com/verl-project/verl/pull/8373)、[#8374](https://github.com/verl-project/verl/pull/8374)在2026-10-26读取时均OPEN/non-draft、同一CodeRabbit app创建，均自述未运行验证；评论仅bot跳过审查／CLA未签提示，reviews与行内空，不作人工验收。完整正文、diff、原测试及查重均已核，不另开第四份。
+
+| 候选 | 固定head | 相对共同父版的生产改动 |
+| --- | --- | --- |
+| #8372 | `648423c5a5cece57a5412f8c1d96bee7d068d512` | FSDP1模型分片及优化器tensor卸载，NPU用non_blocking=False |
+| #8373 | `340680d39c84293c2bebdaf292a3941b77958b47` | 仅FSDP1模型分片，优化器保留原True |
+| #8374 | `8b7aa26c055e8f4cbbfc8989e429e4265b5dcb67` | 与#8372完整fsdp_utils模块AST相同，测试不同 |
+
+三者父版／目标base均为`e009360c03e708e75d5628c9b7ad584af8a53e4d`。相对当轮main `3c6d9b43b67c74ec343d77874cd8fa6e841523da`均ahead4／behind0、实际祖先main；中间三个LoRA sleep/resync提交未在本轮审核或应用，不能把整支候选当单一卸载补丁。父版与main的完整fsdp_utils相同。三个PR各两文件，依次90增2删、66增1删、108增2删。
+
+### 两个不同的分配入口
+
+固定[Ascend/pytorch `0ed76164180e419b6c33569d05ae48b2627803ca` 的ToKernelNpu.cpp](https://github.com/Ascend/pytorch/blob/0ed76164180e419b6c33569d05ae48b2627803ca/torch_npu/csrc/aten/common/ToKernelNpu.cpp)：`_to_copy`在non_blocking为真、源为NPU、目标为CPU且layout为strided时令pin_out为真，再把它传入目标empty／empty_strided的pinned_memory选项。改变该复制flag会影响**这次目标分配**，不只是主机等待方式。[同版CopyKernel.cpp](https://github.com/Ascend/pytorch/blob/0ed76164180e419b6c33569d05ae48b2627803ca/torch_npu/csrc/aten/common/CopyKernel.cpp)另区分异步任务／事件处理与同步stream后memcpy。两原文件blob分别`a7a2a212e4d5e19379090ffe46da66d145d8e59d`／`2f69e6bd1383e89142b582da3bf9ddb268aa16a1`。这是固定后端源码，不代表M5安装版、所有布局或实际allocator行为已验收。
+
+新候选的模型修改只在FSDP1分支，原`_offload_params=True`的handle仍跳过，原data／local_shard存储别名更新保留；两份另改通用optimizer tensor，非tensor元数据不动。FSDP2／普通模块提前分派到另一个helper，该helper在main已用`model.to("cpu", non_blocking=False)`；三候选没有改它，也没有改模型／optimizer重载函数。
+
+另一入口是[main FSDPEngine构建](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/workers/engine/fsdp/transformer_impl.py#L454)：offload_policy或forward_only时显式构造`CPUOffloadPolicy(pin_memory=True)`，并非上述D2H默认目标分配。三个新候选未触及它。已有[#8057](https://github.com/verl-project/verl/pull/8057) head `cbe21f44a4a537fd7d7ebe0da92dc88c1db47d91`另加默认True的offload_pin_memory，FSDP-Turbo nightly另传其已有pin_memory=False；完整diff还含CI、runner及依赖pin，不能按标题拼接。其A3故障／cgroup／RSS观测为作者现场报告，不作本项目或所有平台结论；本轮只读正文／diff，未执行其配置或nightly。
+
+### CPU 测试的验证范围
+
+[复查脚本](../../experiments/verl-npu-offload-policy/verify.py)隔离加载完整原四函数及真实FSDP类型，选#8374原三个测试函数、原参数共7项：head全过，父版4过、3项NPU复制flag断言预期失败。测试体不改，FlatParameter和CPU clone真实，但handle、device module及optimizer tensor仍是原Mock；没有构造FSDP实例、进程组或进行NPU／CUDA传输。设备发现导入由必须被原测试替换的fail-closed guard保护，未导入verl或torch_npu。基线失败限定原call-list断言位置／non_blocking调用断言，不将任意错误当复现。
+
+AST比较忽略注释与行号：#8372与#8374完整模块同，#8373模型函数同但optimizer未改；五版FSDP2／重载函数不变。未另外运行#8372／#8373测试。[JSON](../../experiments/verl-npu-offload-policy/result.json)保存原参数、source hash及Python3.12.13／torch2.14.1／pytest9.1.1环境，重复结果一致。这不是完整pytest收集、pin分配峰值／耗时、并发rank或NPU内存耗尽修复验收。
+
+```bash
+python -B experiments/verl-npu-offload-policy/verify.py /path/to/verl
+```
+
+真机缺口写入[M5交接入口](../../experiments/handoff-m5.md#verl-npu-参数卸载参考)，仅在安全、获准、匹配的NPU工作中接续；M1不探测服务器、不以4090替代NPU、不故意耗尽allocator或另启训练。后续根据真实故障栈确定分配入口，不扩Mock矩阵或另造第四份修复。
+
 ## 参数转换与缓冲区精度
 
 [#8154](https://github.com/verl-project/verl/issues/8154) 指出，显式 BF16 加载后再调用 `module.to(torch_dtype)`，会连模型以 FP32 构造的 RoPE 频率 buffer 一起舍入。报告者提供的三模型、九条固定 token 轨迹、四条件 CUDA replay 属外部证据，不能当本项目训练结果。已有 [#8189](https://github.com/verl-project/verl/pull/8189) 修复，读取时 open/non-draft：head `4e830c72bd0eb2b0d6ecfbd4c2c4144040637324`、目标 base 与共同祖先 `1d367a4f459a43768f76312c0d3430a99ec46b8c`，ahead 2 / behind 0，3 文件 118 增 3 删；不另开竞争候选。
