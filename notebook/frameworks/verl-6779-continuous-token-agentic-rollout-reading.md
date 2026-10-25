@@ -1021,3 +1021,27 @@ Python3.12.13/pytest8.4.2，候选原172测试全过；同一测试配共同祖�
 [#7725](https://github.com/verl-project/verl/issues/7725)当前CLOSED、state_reason=completed，关联#7726却是CLOSED／未合并，head `e4582b877e67a53bf09296bda46e4f630d9079d5`。后者作者声明保留开头system、移除synthetic-user span、合并晚到或重复system，并报告25项CPU及真实processor控制；这些不是已合入主线行为，也不是本项目结果。移动／合并system或人为补user会改消息布局，不能未经recipe／模板契约确认就称为同语义修复。
 
 本轮Python3.12.13仅做四份完整原Python源码的AST／compile与上述继承、调用点、前缀表达式检查，没有执行CT、processor、Jinja模板、旧25项测试、模型或训练，也没有构造处理器替身。当前处理是保留“不单独推进通用system-only支持”的判断，等待维护者与原报告者确定输入验证或配方侧责任；不改配方／wrapper，不重复发布issue、评论或PR。输入问题不需要GPU来判断支持契约，不新增M5算力任务。复核命令与hash见[当日日志](../../diary/2026-10-25.md)。
+
+## 15. 多轮配置的消费路径与告警契约
+
+**配置仍可填写，不等于活跃路径实现了它。** [#7662](https://github.com/verl-project/verl/issues/7662)报告两个多轮配置在迁移后没有接入AgentLoop。2026-10-25核对固定主线 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，问题仍有源码依据，但“接线”与“弃用”是不同的行为决定，不从配置名推定应实现哪一种。
+
+### 文档承诺与旧请求类
+
+[MultiTurnConfig](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/workers/config/rollout.py)保留 `use_inference_chat_template=False` 与 `tokenization_sanity_check_mode="strict"`；rollout YAML及四份生成配置也仍有这两个键。[多轮文档](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/docs/sglang_multiturn/multiturn.rst)推荐前者用于排除历史推理内容、靠近生产推理；后者被说明为默认在rollout末尾比较增量与整段分词结果。
+
+实际消费代码位于[旧AsyncRolloutRequest](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/workers/rollout/schemas.py)：`get_generation_prompt_ids`在前者为True时重渲染messages，否则返回累计input_ids；`finalize`在后者非disable时重渲染、比较结果。这里的strict在发现差异后设 `log_warning=True` 并调用logger.warning，**不是因差异抛异常的开关**。这与第12节离线SFT的sanity_check默认抛错是两套契约，不能借用相似名称。
+
+### 活跃循环另有 token 账本
+
+固定源码的 `verl/` 生产Python中，两键的文本引用仅见配置类与上述旧schema。解析全部360份生产Python的绝对／相对import后，没有发现导入该schema命名空间的语句、包含完整模块名的字符串或 `get_generation_prompt_ids` 调用；仓库范围文本检索的两个调用均在旧schema测试。不能由这两个测试通过推定活跃rollout使用这些选项，也不能把旧schema仍存在当生产可达证明。
+
+[AgentLoopBase](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/experimental/agent_loop/agent_loop.py)从 `data.apply_chat_template_kwargs` 构造Continuous Token builder，没有把这两个multi_turn键传入。[ToolAgentLoop](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/experimental/agent_loop/tool_agent_loop.py)初始构建后，以当前prompt_ids调用server.generate；每轮将返回token经 `ct_merge_assistant_token` 合入，并更新response_mask／response_logprobs；工具观察则经 `ct_merge_context_msg` 合入。它消费max_turns、tool format等其他multi_turn字段，并不消费上述两键。
+
+因此对这条仓内活跃路径，不能承诺把旧开关设True就会删除历史reasoning，也不能依赖旧strict值提供末尾整段比较告警。反过来，缺少旧比较器不等于CT没有自己的边界处理或已产生错误token／loss。若要改变历史推理保留策略，后续生成条件prompt和已产生动作的token／mask／logprob对应关系都必须先定义；把旧重渲染方法直接搬入新循环不是已验证的等价修复。
+
+### 当前处理
+
+[#7662的两条回复](https://github.com/verl-project/verl/issues/7662#issuecomment-5549979988)仍在请求维护者选择接线或告警弃用；[后续回复](https://github.com/verl-project/verl/issues/7662#issuecomment-5550661995)倾向先弃用，并明确另一个检查选项有不同契约。编号及inference_chat_template的all-state PR检索均无命中，不因此宣布无人负责或另认领实现。当前只保存复核证据，等待维护者方向或用户的具体需求，不新增竞争补丁／上游评论。
+
+本轮是Python3.12.13标准库源码核对：生产树import AST与名称检索、strict分支检查，以及五份完整相关模块的内存compile；不执行AgentLoop、旧请求类、原测试、模板或模型。静态检索不覆盖仓外插件／下游导入、动态拼接模块名或任意反射，也不证明真实checkpoint的reasoning行为或训练质量。复查命令与hash见[当日日志](../../diary/2026-10-25.md)。本题的判断是配置契约与代码路径，不新增M5算力队列，不改其专项。

@@ -29,6 +29,7 @@
 以下目录从原项目 README 迁入，保留已有知识入口。摘要中的版本、性能数字和进度属于历史记录，使用前需核对原文及适用条件；本次整理没有重新验证这些结论。
 
 - [verl 新版 CT tokenizer 回退](frameworks/verl-6779-continuous-token-agentic-rollout-reading.md#11-新版自动选择与-tokenizer-能力回退) — #8311原172项CPU对照；模型架构不认证ChatML协议，成功回退不认证多轮边界。
+- [verl 多轮配置的消费路径](frameworks/verl-6779-continuous-token-agentic-rollout-reading.md#15-多轮配置的消费路径与告警契约) — #7662两键在活跃AgentLoop无消费点；旧strict只告警，源码核对不认证模板／模型行为，等待维护者方向。
 
 ## 规划与路线
 
