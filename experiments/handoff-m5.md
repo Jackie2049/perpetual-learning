@@ -305,6 +305,14 @@ M5 最小下一步：先判断是否有获准使用的对应配置、完整 toke
 
 停止条件：缺私有材料/配对身份就记录“待资料”，不启动原报告的长训练，也不以公共 toy 或另一模型称已复现 #8250。对照有差异只能缩小范围；没有原始观测前，不设计新的修复、不发布旧诊断稿或承诺治愈阈值。完成标准是可追溯的配对证据，或明确缺失材料清单。
 
+## verl 激活卸载重载顺序参考
+
+状态：只留匹配条件参考，不代表接单或新增必跑训练。已有[#8277](https://github.com/verl-project/verl/pull/8277) head `8c227d6abceb21da69b49a62262709a3ca158056`、base／祖先4b26c788；[M1原CPU测试体](../notebook/frameworks/verl-architecture.md#激活卸载的反向入口与重载顺序)head五项通过、初稿4过1失败，基线单一辅助输出反向在旧helper参数适配后报重载前pop。仅原RecordingOffloadHandler与真实CPU autograd，不含异步stream／传输、checkpoint、FSDP或原Qwen3.5 27B。
+
+目的为日后已有获准匹配卸载工作中，区分内部(key,shape)描述未重载与模型输出结构。M1按分工不访问服务器。M5仅在用户／管理员确认安全可用的环境、已有获准权重／完整配方且不影响专项时独立选用：先记录实际torch／Transformers／FLA、FSDP与checkpoint模式，确认层实际输出为本候选支持的顶层tuple、反向是否经辅助状态；再决定是否运行同一输入的offload关闭基线与候选最小更新，核loss／参数梯度、detached项与真实reload/copy顺序，内存／耗时另记，不将recording事件当设备时间线。
+
+当前服务器安全事件未闭环、资源／权重／依赖不齐、需新模型下载部署或影响AReaL／#523／#8313／DeepInfer等专项即记未测停止；不在失陷或共享生产训练注入断言／故障，不自动应用候选、扩大到任意嵌套pytree或追加矩阵。任何上游可见写入及已有PR head推送（含fork）仍须用户对具体动作明确同意；本条交接不增加权限。
+
 ## verl 训练 checkpoint 发布参考
 
 Megatron调度恢复参考（2026-10-25，复用本入口非新队列）：[#7954](https://github.com/verl-project/verl/pull/7954) head53e63285/base fbb4b3a8已覆盖两处加载门控；[M1官方scheduler/真实CPU SGD六控制](../notebook/frameworks/verl-checkpoint-management-reading.md#megatron-调度进度与超参数恢复)不运行manager或分布式恢复。若M5已有获准匹配checkpoint工作且独立选用，固定实际MCore、普通或Megatron-FSDP路径、load_contents及新scheduler初始计数，分开记录flag/全局超参数、恢复num_steps、各参数组max_lr/min_lr/当前LR与下一次更新；原实现加载为增量，勿对已推进对象重复加载来验证冷恢复。普通SGD组覆盖反例不是Megatron分组bug证明，须核实际optimizer payload/组身份及完整恢复次序。缺资源/模型依赖授权、需部署下载或影响专项则停止记未测，不应用/改schema/重复加载生产对象或新增训练；任何上游可见写入及PR head推送仍须用户对动作明确同意。

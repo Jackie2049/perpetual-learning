@@ -136,6 +136,7 @@
 - [Megatron-LM TP 源码深度阅读](frameworks/megatron-tp-source-reading.md) — 通信原语 autograd、TP 数据流、权重分发、SP 扩展、3D 并行交互
 - [Megatron-LM 流水线并行](frameworks/megatron-pp-reading.md) — 1F1B 调度、气泡分析、通信 overlap
 - [verl 架构](frameworks/verl-architecture.md) — 三级前缀缓存（系统级+进程级+请求级）
+- [verl 激活卸载的反向入口](frameworks/verl-architecture.md#激活卸载的反向入口与重载顺序) — #8277原五CPU测试体通过；区分内部描述、commit顺序和detached输出，不认证异步传输／真实模型。
 - [verl 异步奖励补齐](frameworks/verl-reward-integration-reading.md#异步奖励的补齐边界) — #8101原构造/消费片段的CPU几何对照；mask总数正确仍可读错response，恢复长度也可能增加应有惩罚，非完整worker/TQ验收
 - [verl DeepEP 环境边界](frameworks/verl-architecture.md#deepep-的包解析与动态库加载) — #8354 Python包/系统NVSHMEM/dispatcher分层；4份TOML与17份YAML静态一致，不等于镜像、import或通信验收
 - [verl 模型缓存与临时目录](frameworks/verl-architecture.md#只读模型缓存与测试临时目录) — #8343 原路径赋值与真实 pytest 两用例控制；隔离输出不扩大配额，CI 锁配置不等于外部消费者验收

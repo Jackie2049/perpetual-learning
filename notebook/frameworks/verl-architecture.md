@@ -528,6 +528,34 @@ Python3.12.13、仅标准库与只读GitHub API，三份原方法定义／签名
 
 本题收束为包装器能力与依赖版本知识。真实checkpoint数值隔离仍是另一层证据，不以源码或包装器测试补齐，也不为已有作者修复自动新增M5队列；不改模型kernel／训练专项或对上游发布。
 
+## 激活卸载的反向入口与重载顺序
+
+**看到tuple断言，不等于saved-tensor hook收到了模型的结构化输出。** [#7472](https://github.com/verl-project/verl/issues/7472)报告Qwen3.5 27B、FSDP2、gradient checkpointing和fused kernel组合在首个反向失败。已有[#8277](https://github.com/verl-project/verl/pull/8277)处理提交节点的依赖顺序；2026-10-25核对仍OPEN／非draft／未合并，本项目不另写竞争修复。
+
+固定head `8c227d6abceb21da69b49a62262709a3ca158056`，base及实际共同祖先 `4b26c788d41ce932ce7706c5ee8e249ab52f4c51`，ahead2／behind0，两文件225增16删。主线 `3c6d9b43b67c74ec343d77874cd8fa6e841523da` 的activation_offload.py与该base字节相同，下面的单一基线控制只据这份相同模块关联主线，不当成整个版本或训练栈等同。
+
+### 保存张量与内部描述分开
+
+[PyTorch saved-tensor hooks](https://docs.pytorch.org/docs/2.14/autograd.html#torch.autograd.graph.saved_tensors_hooks)的pack输入为单个Tensor，返回值可为任意对象，unpack再将其恢复为Tensor。[verl原卸载器](https://github.com/verl-project/verl/blob/4b26c788d41ce932ce7706c5ee8e249ab52f4c51/verl/utils/activation_offload.py)还有两层内部表示：同步offload保存 `(device, cpu_backup)`，异步bulk_offload_group将组内状态替换成 `(key, shape)`，另以key持有CPU副本。bulk_reload_group应先恢复Tensor，再由tensor_pop返回。失败断言看到的是后一个内部描述仍未被恢复，不能据此直接设计“递归卸载模型tuple”。
+
+旧ActivationHandler只把返回tuple的首项送入GroupCommitFunction。若损失只从后面的可微状态张量进入反向，它的图不必经过首项的commit节点，可能先请求保存激活。候选将顶层tuple中首项及其他requires_grad的Tensor送入**同一个多输出节点**，在分派输入梯度前调用一次group backward commit；在首项为Tensor的既有契约下，后续非Tensor及不求导项保留。这里修的是图依赖入口，不是删除断言或把未重载描述直接返回给autograd。
+
+### 保持值与保持可微性不同
+
+多输出自定义Function有一个容易漏掉的契约：一个输入需要梯度时，原本detached的其他输出不能只凭原值相同就算保真。初稿 `fea49f196d99d641b896d32e30dcb4a5234f6373` 未标记首项为不可微，原测试中的detached首输出因此又带上grad_fn。当前head用 `ctx.mark_non_differentiable` 保留该边界；[PyTorch说明](https://docs.pytorch.org/docs/2.14/generated/torch.autograd.function.FunctionCtx.mark_non_differentiable.html)也明确该标记用于输出不可微性。新helper参数顺序改为handler在前，且单Tensor输入也返回tuple，ActivationHandler负责解包；这不是所有外部调用者都自动兼容的承诺。
+
+原[测试文件](https://github.com/verl-project/verl/blob/8c227d6abceb21da69b49a62262709a3ca158056/tests/utils/test_activation_offload_structured_outputs_on_cpu.py)当前含五测试，而PR正文的“两测试”描述尚未反映后续补充。本机Python3.12.13／torch2.14.1，提取五个完整生产类及原alias，使用原测试体和作者原RecordingOffloadHandler；只替换其框架import，未修改断言。两次结果一致：
+
+| 固定版本 | 本机原测试体结果 | 范围 |
+| --- | --- | --- |
+| base 4b26c788 | 辅助输出单独反向一项失败，提示重载前pop | 只适配helper旧参数顺序；其余四项不跑，不把API不兼容当失败机制 |
+| 初稿 fea49f19 | 4通过、1断言失败 | detached首输出检查失败，未保留不可微性 |
+| 当前head 8c227d6a | 5通过 | 辅助输出、前向值／结构、detached边界、合并梯度／一次commit、单输入tuple契约 |
+
+RecordingOffloadHandler用布尔状态及事件清单约束“commit_backward先于pop”，没有执行真实AsyncDoubleBufferGroupOffloadHandler、stream／copy、FSDP或gradient checkpointing。测试中的模块是两Linear层，不是真实delta-net或Qwen；五例也不证明任意嵌套pytree、重复retain_graph反向、并发／异常恢复或显存收益。候选明确只处理顶层tuple，不能把issue评论中另一份嵌套pytree原型的范围挪到该PR。四份生产快照及原测试的compile只是语法检查，不计额外功能测试。
+
+复现[脚本](../../experiments/verl-offload-commit/verify.py)及[原始结果](../../experiments/verl-offload-commit/results.json)随仓库保存，Python3.12+和torch环境下从项目根执行 `python3.12 -B experiments/verl-offload-commit/verify.py /path/to/verl-git`，需已有上述固定Git对象，不自动联网获取。命令与hash另留[当日日志](../../diary/2026-10-25.md)。当前结论是已有候选覆盖这条CPU图依赖路径，不宣称原27B训练已修复；真机条件留[M5参考入口](../../experiments/handoff-m5.md#verl-激活卸载重载顺序参考)，不自动排训练、下载权重或将CPU通过当硬件验收。任何上游回复／PR／PR-head推送仍逐项待用户明确同意。
+
 ## 参考
 
 - [verl GitHub](https://github.com/volcengine/verl)

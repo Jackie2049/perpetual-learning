@@ -1,0 +1,38 @@
+{
+  "torch": "2.14.1",
+  "results": {
+    "4b26c788d41ce932ce7706c5ee8e249ab52f4c51": {
+      "test_backward_through_secondary_output_reloads_group_first": "AssertionError: saved activation popped before the group was reloaded"
+    },
+    "fea49f196d99d641b896d32e30dcb4a5234f6373": {
+      "test_backward_through_secondary_output_reloads_group_first": "PASS",
+      "test_wrapped_layer_preserves_outputs_and_structure": "PASS",
+      "test_detached_first_output_stays_detached_and_secondary_gradient_matches": "AssertionError: ",
+      "test_combined_output_backward_commits_once_and_matches_gradients": "PASS",
+      "test_commit_helper_returns_tuple_for_single_input": "PASS"
+    },
+    "8c227d6abceb21da69b49a62262709a3ca158056": {
+      "test_backward_through_secondary_output_reloads_group_first": "PASS",
+      "test_wrapped_layer_preserves_outputs_and_structure": "PASS",
+      "test_detached_first_output_stays_detached_and_secondary_gradient_matches": "PASS",
+      "test_combined_output_backward_commits_once_and_matches_gradients": "PASS",
+      "test_commit_helper_returns_tuple_for_single_input": "PASS"
+    }
+  },
+  "original_test_sha256": "fcdd91abecf64b777200a4836a1b33c403dc68c5738b1601d863c4d9c4677357",
+  "compiled_production_sha256": {
+    "4b26c788d41ce932ce7706c5ee8e249ab52f4c51": "fadc0f0911af4f17bab6748659e6193dfb5826b491db8dda8d4814ba2101e8d9",
+    "fea49f196d99d641b896d32e30dcb4a5234f6373": "b632496a6d6b34fb4456f0d20437ae5cd37bef864e0f2d66c9730937a7f530c5",
+    "8c227d6abceb21da69b49a62262709a3ca158056": "1d4a40c83a40c69df2f8e8646faf8f7ce215ee4ffa0b17b04d7b49f1cb5ca727",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da": "fadc0f0911af4f17bab6748659e6193dfb5826b491db8dda8d4814ba2101e8d9"
+  },
+  "production_classes": [
+    "ActivationHandler",
+    "CpuOffloadHookWithOffloadHandler",
+    "FSDPParameterFilter",
+    "GroupCommitFunction",
+    "OffloadHandler"
+  ],
+  "baseline_adapter": "old helper argument order only; secondary-output regression only",
+  "scope": "real CPU autograd and original recording handler; no async streams, transfers, FSDP or checkpointing"
+}

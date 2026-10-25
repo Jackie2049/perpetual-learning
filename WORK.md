@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 激活卸载反向入口（2026-10-25）**：起始dd1a2b8干净，日志compare保留788新增1无删改后ff到M5的d47f778。未读#7472已有[#8277](open-source/verl/tracker.md#激活卸载的辅助输出入口)，不另实现；[原架构专题](notebook/frameworks/verl-architecture.md#激活卸载的反向入口与重载顺序)区分内部(key,shape)、辅助输出绕过commit与detached边界。head8c227d6a原五CPU测试体两次全过，初稿4过1失败；base仅原辅助回归、旧helper参数适配后报重载前pop。原RecordingOffloadHandler非异步传输／checkpoint／FSDP或27B，顶层tuple非任意pytree；四源码与原测试compile。GPU缺口只留M5安全／授权／匹配环境条件参考，不排新矩阵、改专项或写上游。下轮转独立真实需求或实质反馈，不扩tuple／假stream状态机或另写卸载方案。
+
 - **M1 多轮配置消费路径（2026-10-25）**：起始c235422干净，首次fetch无新增；日志compare保留786、无删改。选未覆盖[#7662](open-source/verl/tracker.md#多轮旧配置的接线或弃用)，读全文／两评论，编号与关键词PR搜索无命中但已有参与者等维护者裁定，不另认领。[原CT专题](notebook/frameworks/verl-6779-continuous-token-agentic-rollout-reading.md#15-多轮配置的消费路径与告警契约)区分公开配置、旧schema消费、活跃CT token账本；旧strict差异只warning，不是SFT抛错检查。固定main3c6d9b43，360份生产Python仅源码import AST／检索，五模块compile，无旧请求类／模板／模型执行或动态插件可达性认证；无新M5队列／专项或社区写入。下轮转独立真实需求或实质反馈，不为无维护者方向的旧配置另写guard／替身矩阵或抢先弃用。
 
 - **M1 日志历史比对工具（2026-10-25）**：起始d619461干净、首次fetch无新增。扩展[原日志工具](tools/diary/readme.md#已提交历史的只读比对)，`compare --base REF --target REF` 固定两个commit OID后读取日志，逐项提示删除／正文改写，退出码区分保留与需核对；不自动同步、合并或接入hook。39项隔离测试在Python3.9／3.12通过（新增12项），覆盖真实CLI、重复键、错误ref与脏仓库字节不变；真实旧覆盖提交分别报告49／50条删除，d619461相对双亲均保留，未再修改已恢复历史。改标题／日期迁移保守报删增，分叉时缺少另一侧新记录不等于覆盖；不认证当日回看／语义或阻止远端写入。下轮实际同步复用，不堆新检查器或改M5专项；无服务器访问、算力队列或社区写入。

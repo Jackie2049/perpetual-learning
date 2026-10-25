@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责：①10-24 22:32、②10-25 12:00 回复均按用户逐字文本发出，head 71fd3562（用户裁决：middle 对齐 postprocess_data、cap=1 保留首 token、测试改名回退；CPU 18 passed + 10-25 01:08 GPU e2e 2/2 PASS + 负例 fail-loudly PASS），仍 OPEN/MERGEABLE 等维护者 approve（requested reviewers wuxibin89+dajiaohuang，10-22 后无新审查）；③trainer 级问题讲解中、④草稿 v3 待用户逐字审定，见[原草稿](draft-8313-review-reply.md)。另核[多轮旧配置](#多轮旧配置的接线或弃用)：活跃AgentLoop未消费两键，旧strict差异只告警，等待维护者选择接线或弃用，不另认领。2026-10-25核[system-only输入契约](#仅-system-消息的契约裁定)：当前VL CT仍有wrapper调用点，但维护者要求初始prompt包含user，不另推进通用支持。[原生MTP](#megatron-迁移的已有原型与验收边界)、[FSDP精度](#fsdp-精度默认的两份候选)等历史验证各限原版本与范围，不另竞争实现或对外发布。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责：①10-24 22:32、②10-25 12:00 回复均按用户逐字文本发出，head 71fd3562（用户裁决：middle 对齐 postprocess_data、cap=1 保留首 token、测试改名回退；CPU 18 passed + 10-25 01:08 GPU e2e 2/2 PASS + 负例 fail-loudly PASS），仍 OPEN/MERGEABLE 等维护者 approve（requested reviewers wuxibin89+dajiaohuang，10-22 后无新审查）；③trainer 级问题讲解中、④草稿 v3 待用户逐字审定，见[原草稿](draft-8313-review-reply.md)。另核[激活卸载入口](#激活卸载的辅助输出入口)：已有#8277，原五CPU测试体head通过，recording图顺序非真机验收，不另实现。另核[多轮旧配置](#多轮旧配置的接线或弃用)：活跃AgentLoop未消费两键，旧strict差异只告警，等待维护者选择接线或弃用，不另认领。2026-10-25核[system-only输入契约](#仅-system-消息的契约裁定)：当前VL CT仍有wrapper调用点，但维护者要求初始prompt包含user，不另推进通用支持。[原生MTP](#megatron-迁移的已有原型与验收边界)、[FSDP精度](#fsdp-精度默认的两份候选)等历史验证各限原版本与范围，不另竞争实现或对外发布。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## 激活卸载的辅助输出入口
+
+2026-10-25核[#7472](https://github.com/verl-project/verl/issues/7472)全文／一条评论，编号与关键词查重命中已有[#8277](https://github.com/verl-project/verl/pull/8277)，OPEN／非draft／未合并，head8c227d6a、base／祖先4b26c788，两文件225增16删，不另写竞争修复。原报告的tuple推断须区分卸载器内部(key,shape)描述与模型结构输出；已有评论已指出commit入口问题，不重复发布同一观察。
+
+见[原架构笔记](../../notebook/frameworks/verl-architecture.md#激活卸载的反向入口与重载顺序)：原五CPU测试体两次head全过、初稿fea49f19为4过1失败（detached边界），base只跑单一辅助输出回归、以helper旧参数顺序适配后报重载前pop，不计其余测试或API错误。原RecordingOffloadHandler验证图顺序，非CUDA传输／FSDP／checkpoint或原27B验收；候选只限顶层tuple，正文“两测试”不代表当前文件只有两项。条件留[M5参考](../../experiments/handoff-m5.md#verl-激活卸载重载顺序参考)，不自动排训练／应用或改其专项；任何上游动作仍逐项待用户明确同意。
 
 ## 多轮旧配置的接线或弃用
 
