@@ -408,6 +408,39 @@ Python3.12.13、真实OmegaConf2.3.1，完整加载候选`verl/utils/config.py`�
 
 #7540评论称两个报告版本的蒸馏实现无diff，并建议固定实际响应IDs及teacher/student logprobs再比较。本轮未独立重做该跨版本diff或训练；相同seed不等于相同采样输入，这个配置修复也不证明原loss差异消失。若M5以后在已有获准工作中遇到相同问题，先记录请求/有效后端与固定响应、路由、logprobs和mask身份，再决定是否需要数值A/B，见[原一致性参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)。缺匹配资源或需新部署/模型下载即记未测，不自动迁移V1、切后端或新增训练队列，不改专项。
 
+## FSDP 初始化与计算精度的优先级
+
+**模型初始化精度、FSDP计算精度与导出精度不是一个开关。** [#8076](https://github.com/verl-project/verl/issues/8076)报告将actor.fsdp_config.dtype和rollout.dtype都设float16后，actor仍按BF16计算；[#8083](https://github.com/verl-project/verl/pull/8083)与[#8359](https://github.com/verl-project/verl/pull/8359)均已有作者修复。2026-10-25两项仍OPEN、非draft、未合并；旧head `ba4b3f2d833dafe195ad9dc049d92a6a47b6f9df`／父祖先 `fbb4b3a8bf636f290c9c59fc346f756849e9c241`，五文件212增4删；新head `74eac19552e7ba630ce483c79b9403a4b093c6ba`／父base `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，三文件148增5删。两份不是顺序叠加补丁；去文档字符串后，完整_build_fsdp_module方法AST相同，但新候选另改QAT导出，不能把整个PR判成完全重复。
+
+### 三种精度与有效配置
+
+下表以新候选的[配置类](https://github.com/verl-project/verl/blob/74eac19552e7ba630ce483c79b9403a4b093c6ba/verl/workers/config/engine.py)和[消费者](https://github.com/verl-project/verl/blob/74eac19552e7ba630ce483c79b9403a4b093c6ba/verl/workers/engine/fsdp/transformer_impl.py)为准，不是当前主线保证。
+
+| 位置 | 读取规则 | 不能据此推出 |
+| --- | --- | --- |
+| 模型初始化 | model_dtype默认fp32；显式None时训练取FP32、forward_only取BF16 | 后续FSDP前后向仍使用初始化dtype |
+| FSDP计算与autocast | 显式mixed_precision.param_dtype优先；缺键、空字典或整个None才回退engine.dtype | actor与rollout后端数值完全相同 |
+| 梯度归约与buffer | reduce_dtype／buffer_dtype各自默认FP32；FSDP2的MixedPrecisionPolicy不接buffer_dtype | 改计算dtype就将所有通信或buffer都改成同种精度 |
+| 导出与同步 | 新候选QATQuantizer.param_dtype采用同一回退；其他导出分支仍需单独核查 | QAT、全量、LoRA和delta发布已全部同口径 |
+
+有效param_dtype为FP16时，原构造方法创建growth_interval=400的ShardedGradScaler；BF16／FP32时设None。forward_step据_autocast_dtype选择autocast，FP32走nullcontext。这是源码中的选择，不是检查每个算子的实际执行dtype。PyTorch的[FSDP1 MixedPrecision](https://docs.pytorch.org/docs/2.14/fsdp.html#torch.distributed.fsdp.MixedPrecision)与[FSDP2 MixedPrecisionPolicy](https://docs.pytorch.org/docs/2.14/distributed.fsdp.fully_shard.html#torch.distributed.fsdp.MixedPrecisionPolicy)均将计算／归约精度与优化器使用的参数精度区分；verl显式默认FP32归约，不应套用PyTorch reduce_dtype=None时跟随param_dtype的规则。
+
+例如engine.dtype=float16、mixed_precision={"param_dtype":"bf16"}，两候选仍选BF16且不建scaler；只有移除param_dtype才选FP16。model_dtype仍默认FP32。这不是配置冲突，而是显式覆盖优先级。两个外层dtype字符串都写float16，不足以认证这条链，也不能凭issue中八条response的一步K3观测推导长期质量收益。
+
+### 原 CPU 测试的实际覆盖
+
+复用Python3.12.13／torch2.14.1／pytest9.1.1，原BaseConfig模块、四个完整配置类、PrecisionType与完整构造方法AST隔离；轻量载体没有engine构造器和继承生命周期。直接运行旧候选[原参数化测试体](https://github.com/verl-project/verl/blob/ba4b3f2d833dafe195ad9dc049d92a6a47b6f9df/tests/workers/test_fsdp_engine_dtype_on_cpu.py)的10组输入×两种strategy，保持imports和断言不改，两次结果均为：
+
+| 固定源码 | 通过 | 断言失败 |
+| --- | --- | --- |
+| 当前基线3c6d9b43 | 8 | 12 |
+| 旧候选ba4b3f2d | 20 | 0 |
+| 新候选74eac195 | 20 | 0 |
+
+真实torch.nn.Linear与MixedPrecision／MixedPrecisionPolicy参与，但原测试将FSDP包装、apply_fsdp2、状态加载与scaler替换为Mock；world_size也由测试替换。因此通过的是参数转交、autocast字段与scaler选择，不是真实cast、缩放、collective或优化器更新；没有初始化process group。新候选自身CPU文件实际是FSDP六组加FSDP2一组，不是两种strategy各完整六组；本轮未另跑这七例、原生pytest收集或tests/models中的设备worker，也未沿用旧作者31 CPU／12 CUDA报告作为本机数字。三版本各五份相关完整Python源码共15次compile，复现与hash见[当日日志](../../diary/2026-10-25.md)。
+
+新候选QAT回退仅由源码核对，上述20项不调用get_per_tensor_param或量化器。它的普通delta-shard生产者仍显式将浮点payload转BF16；已有机器人评论也提醒同步精度问题。该分支在基线已存在，是否实际选中、接收端如何转换与误差大小均未在本轮验证，不能宣布候选引入新回归或所有同步已对齐。真实观测仅补[原M5条件参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不新增训练队列、拼两方案或发第三份修复。
+
 ## Critic 批处理配置如何进入引擎
 
 **配置必须传到消费者读取的位置，声明字段和默认值本身不保证生效。** [#7462](https://github.com/verl-project/verl/issues/7462)报告 critic 转为裸 `TrainingWorker` 后漏传动态批处理开关和 micro-batch 大小，V1 还把推理 token 预算写到训练预算。已有同报告者 [#7465](https://github.com/verl-project/verl/pull/7465)，2026-10-25 核对 OPEN、非 draft、未合并，head `2609808db4847d0ff0a45b1866e46749afd2f002`；实际父提交／共同祖先 `23a341e361e18063b4ec53e1f7cc4eae68f102cf`，不是 API 目标 base `3f9d4c0d`。十文件160增4删，不另实现。

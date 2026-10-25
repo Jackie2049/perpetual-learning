@@ -152,6 +152,8 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 
 ## verl
 
+- [FSDP 初始化与计算精度的优先级](verl-architecture.md#fsdp-初始化与计算精度的优先级) — #8083／#8359构造逻辑相同，新候选另改QAT导出；原20参数例两候选全过，仅Mock接线，非真实分片／scaler或同步精度验收。
+
 - [verl 文件系统权重同步](../verl-v1-checkpoint-engines-deep-reading.md#文件系统权重同步的发布与清理)：#8355原导出/复制/CPU接收控制两次通过，三独立writer覆盖分片，index-last非原子事务；撤回4090仅naive、固定4GiB与同进程共享存储推断。非collective/FUSE或GPU验收。
 
 - [重算叶子与共享存储](../fundamentals/gradient-checkpointing.md#重算叶子与共享存储) — #8338放弃叶子引用与截断storage分开；4组CPU控制只执行原清理两语句，非MCore/CUDA回归或显存测量。

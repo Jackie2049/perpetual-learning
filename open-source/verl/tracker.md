@@ -9,7 +9,7 @@
 
 **【价值评估】** 8 / 10 — 记录成功、重复覆盖和放弃原因，避免反复投入已失效问题。
 
-**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责：①10-24 22:32、②10-25 12:00 回复均按用户逐字文本发出，head 71fd3562（用户裁决：middle 对齐 postprocess_data、cap=1 保留首 token、测试改名回退；CPU 18 passed + 10-25 01:08 GPU e2e 2/2 PASS + 负例 fail-loudly PASS），仍 OPEN/MERGEABLE 等维护者 approve（requested reviewers wuxibin89+dajiaohuang，10-22 后无新审查）；③trainer 级问题讲解中、④草稿 v3 待用户逐字审定，见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[SGLang概率模式](#sglang-概率模式的已有候选)：#8363原四配置测试体候选全过，最终请求与启动环境仍须分开核验；未运行引擎或另做实现。另补充[响应截断指标](#响应截断指标的已有修复)：#7821原5项／#7906原13项测试体各候选通过，阈值修正与逐行停止信息不同；不拼接实现或对外发布，[boxed判分](#boxed-判分的已有修复)等仍各限原范围。
+**【进展】** [我方 #8313](https://github.com/verl-project/verl/pull/8313)由M5单一负责：①10-24 22:32、②10-25 12:00 回复均按用户逐字文本发出，head 71fd3562（用户裁决：middle 对齐 postprocess_data、cap=1 保留首 token、测试改名回退；CPU 18 passed + 10-25 01:08 GPU e2e 2/2 PASS + 负例 fail-loudly PASS），仍 OPEN/MERGEABLE 等维护者 approve（requested reviewers wuxibin89+dajiaohuang，10-22 后无新审查）；③trainer 级问题讲解中、④草稿 v3 待用户逐字审定，见[原草稿](draft-8313-review-reply.md)。2026-10-25补充[FSDP精度优先级](#fsdp-精度默认的两份候选)：#8083／#8359原20参数例各全过，构造逻辑相同而导出范围不同；无真实分片训练验收。另补充[SGLang概率模式](#sglang-概率模式的已有候选)：#8363原四配置测试体候选全过，最终请求与启动环境仍须分开核验；未运行引擎或另做实现。另补充[响应截断指标](#响应截断指标的已有修复)：#7821原5项／#7906原13项测试体各候选通过，阈值修正与逐行停止信息不同；不拼接实现或对外发布，[boxed判分](#boxed-判分的已有修复)等仍各限原范围。
 
 **【大白话讲明白】**
 
@@ -24,6 +24,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## FSDP 精度默认的两份候选
+
+2026-10-25核#8076完整正文／0评论，编号及FSDP dtype关键词查重，旧[#8083](https://github.com/verl-project/verl/pull/8083) headba4b3f2d和新[#8359](https://github.com/verl-project/verl/pull/8359) head74eac195均OPEN/non-draft/unmerged。完整构造方法去文档字符串后AST相同，新PR另有QAT导出回退，旧PR另有文档与原生CUDA测试，非整个PR完全相同，不另实现／拼接或对外评论。
+
+见[原架构笔记](../../notebook/frameworks/verl-architecture.md#fsdp-初始化与计算精度的优先级)：初始化／计算／归约／导出分开，显式param_dtype仍优先。旧原测试体20参数例两次在新旧候选均20过、main3c6d9b43为8过12断言失败；真实torch策略对象配原Mock，不是FSDP/scaler／训练验收。新CPU文件是FSDP六例加FSDP2一例，本轮未运行；QAT与delta-shard仅源码核对，不沿用作者设备数字。仅补M5原条件入口，无新算力队列或专项改动，任何社区写入与已有PR-head推送仍逐项待用户明确授权。
 
 ## SGLang 概率模式的已有候选
 
