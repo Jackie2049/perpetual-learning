@@ -563,6 +563,40 @@ Python3.12.13／torch2.14.1／NumPy2.5.4／pytest9.1.1，仅真实临时文件�
 
 复现：`python -B experiments/scripts/verify_verl_sft_loader_resume.py /path/to/verl-git --deps /path/to/torchdata-target`，需要上述固定Git对象、torch及torchdata0.11.0。本次仅将torchdata用`uv pip install --target ... --no-deps torchdata==0.11.0`装入独立work目录，未修改复用的torch环境。原handler SHA256：祖先`3b547c2b97e01b7587866053b4aa624d81b8cdd9d75fff20a97420690206a896`、head`676cf43c504922e610e88d236f0afcc5b4a449b63de1893616dee96a384960e8`；原日志helper模块`64d8556b0d6acc667a5be2dd43908111c9e58aae58d779ee9b02f0f28e2b42f7`。脚本打印hash并禁止隐式Git fetch。
 
+### SFT 与 V1 的恢复顺序
+
+**恢复后能继续取batch，不等于数据顺序与未中断运行一致；相同的边界判断也不能跨采样器照搬。** [#7974](https://github.com/verl-project/verl/pull/7974)是ewan0x79对[#7401](https://github.com/verl-project/verl/issues/7401)的另一现存候选，2026-10-26核为OPEN/non-draft。当前head `cfad96962d5aa9640cce052774a34b810382b20f` 相对实际祖先 `339a5636367772b4ae3131588f718b5e8b28aa77` ahead2／behind0、五文件311增0删；API目标base为3f9d4c0d，不能替代实际祖先。
+
+修订前提交 `4105a9914658ae2dc411d80cb530681ce759546e` 同时给SFT共享handler和V1加了边界skip。[社区反馈](https://github.com/verl-project/verl/pull/7974#issuecomment-6393919528)指出V1会重复最初排列；[作者新提交](https://github.com/verl-project/verl/commit/cfad96962d5aa9640cce052774a34b810382b20f)已完整撤回V1生产改动，新增数据顺序测试。当前V1文件与上述祖先逐字节相同；SFT三份生产文件则与修订前相同。旧正文仍称覆盖V1，不能以正文判断当前实现。
+
+#### 两种采样器的状态来源
+
+SFT的DistributedSampler由 `set_epoch(epoch)` 重新确定本轮排列；外层for-loop遇到恢复的耗尽状态就结束该epoch。因此在固定epoch长度、每step消费一batch的条件下，丢弃上一轮结束游标后重新设置epoch，可避免跳空一整轮。
+
+V1的[原采样器工厂](https://github.com/verl-project/verl/blob/cfad96962d5aa9640cce052774a34b810382b20f/verl/trainer/ppo/utils.py)使用torchdata RandomSampler及专属torch.Generator；其RNG进度随loader state保存。[原_fetch_one_gen_batch](https://github.com/verl-project/verl/blob/cfad96962d5aa9640cce052774a34b810382b20f/verl/trainer/ppo/v1/trainer_base.py)捕获StopIteration后会再建迭代器、再取一次，所以恢复耗尽状态本来不会丢掉下一轮。跳过恢复却丢失RNG进度，使新loader重复初始排列。这里seed=None也仍新建显式Generator、不是自动采用全局随机种子，所测默认状态同样可重复。
+
+#### 原测试与修订前对照
+
+[隔离脚本](../../experiments/verl-epoch-resume-order/verify.py)原样加载新head两份测试模块，由pytest保留原fixture／参数／断言收集。完整原handler定义、原采样器工厂／TensorDict转换helper及原V1两个方法接真实torchdata／torch CPU／小状态文件；V1类外壳跳过模型初始化，actor仍是作者MagicMock。不是完整verl导入或训练器构造。
+
+Python3.12.13／torch2.14.1／torchdata0.11.0+cpu／pytest9.1.1、单线程、原参数num_workers=0：
+
+| 固定生产版本与原参数项 | 结果 | 实际覆盖 |
+|---|---|---|
+| 新head SFT 15项 | 全过 | 5个边界判定、4个加载策略、6个实际数据顺序项 |
+| 新head V1 4项 | 全过 | seed42／None × 中途step3／边界step8，连续3轮共24批 |
+| 修订前V1，同一新head原4项 | 2过2失败 | 中途两例过；边界两例均在完整顺序相等断言失败 |
+
+旧V1在两个边界例的首个不一致均为全程第9批（零基index8）；seed42时实际 `[38,24,48,63,10,29,36,51]` 等于最初第1批，而未中断参考为 `[8,55,19,61,44,39,57,5]`。这些是本机原测试局部变量，不是社区GPU表格。[新结果](../../experiments/verl-epoch-resume-order/head-result.json)和[旧V1结果](../../experiments/verl-epoch-resume-order/old-v1-result.json)保留源码／脚本指纹与失败详情；旧模式脚本在确认预期两失败后返回0，JSON中的pytest_exit仍是1。
+
+SFT六顺序项使用num_replicas／rank显式枚举 `(1,0),(2,0),(2,1)`，各自产生真实DistributedSampler数据流；**没有启动两个rank进程或做collective**。原测试只覆盖相同数据、batch和长度，不能升级为拓扑变化、自定义stateful sampler、worker进程、异步TQ、模型／optimizer恢复或完整训练验收。作者提交所报Linux35项及社区GPU观察另属外部证据。
+
+#### 与元数据候选的真实区别
+
+#7974按**当前**steps_per_epoch取模，不增加旧长度元数据，因而可对legacy文件触发skip，但也无法判断保存时长度是否相同。另一个[#7402当前head b7d1f36e](https://github.com/verl-project/verl/blob/b7d1f36e446da4caeb85a7f9d770daa416a9e76f/verl/utils/checkpoint/checkpoint_handler.py)仍为上节已读版本：把旧长度存入现有data字典，长度变化或legacy缺键时告警并原生恢复。它已不是“新增版本化sidecar、长度变化硬报错”的方案；#7974正文对它的描述过期。两者的legacy修复范围／保守判断不同，不能只按改动行数认定谁全面更好，也不叠加两个未合并候选。
+
+本轮不重跑旧#7402八组控制、不另写修复或发表review；仅记录新修订的边界与本机原测试结果。没有GPU工作或新M5队列，用户未明确授权前不改社区及已有PR-head。复现命令为 `python verify.py /absolute/verl --deps /absolute/torchdata-target --revision head` 或末参 `old-v1`，可选 `--output result.json`；仅使用固定本地Git对象，禁止隐式fetch。隔离加载最初缺__file__、pytest未限制祖先收集、失败栈未附内存源码时均曾中止；只修验证器上下文和诊断，不改原测试或生产逻辑。
+
 ### RL 数据子集与恢复身份
 
 **加载器恢复了相同索引，不保证这些索引仍指向相同行。** [#7816](https://github.com/verl-project/verl/issues/7816)讨论重启时重新随机抽取 max_samples 子集；[#7824](https://github.com/verl-project/verl/issues/7824)讨论验证子集使用哪个 shuffle 标志。它们与上节 SFT 的迭代结束状态不同：即使恢复位置正确，重建数据的身份仍可能改变。2026-10-25核对已有两位作者的方案，不另开竞争实现。

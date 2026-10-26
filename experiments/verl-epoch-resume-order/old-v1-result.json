@@ -1,0 +1,106 @@
+{
+  "scope": "Original #7974 CPU tests, isolated imports, real torchdata/order/file IO.\n\nhead: original 15 SFT + 4 V1 parameter cases; old-v1: original 4 V1 cases.\nNot a framework import, trainer construction, model restore or GPU test.\n",
+  "v1_revision": "4105a9914658ae2dc411d80cb530681ce759546e",
+  "sft_revision": null,
+  "original_tests_revision": "cfad96962d5aa9640cce052774a34b810382b20f",
+  "python": "3.12.13",
+  "torch": "2.14.1",
+  "torchdata": "0.11.0+cpu",
+  "pytest": "9.1.1",
+  "source_hashes": {
+    "cfad96962d5aa9640cce052774a34b810382b20f:verl/utils/logger/aggregate_logger.py": "64d8556b0d6acc667a5be2dd43908111c9e58aae58d779ee9b02f0f28e2b42f7",
+    "cfad96962d5aa9640cce052774a34b810382b20f:verl/utils/checkpoint/checkpoint_handler.py": "35b22f9316c704f511362b5eb5cc4c45c12d63f809a4f6e7cbb3122dfc2fabb7",
+    "cfad96962d5aa9640cce052774a34b810382b20f:verl/trainer/ppo/utils.py": "7756cf5005e7e72cbc78cb82872e6a6f4df3de0f0f98e22b82f795db62c3ad9a",
+    "cfad96962d5aa9640cce052774a34b810382b20f:verl/utils/tensordict_utils.py": "4dc4c321a51e256232751ddb5cb2a2be129076e7f02f36a685fcad6d0d98f5f1",
+    "4105a9914658ae2dc411d80cb530681ce759546e:verl/trainer/ppo/v1/trainer_base.py": "6ec872477361097210c2374355f99be00d4063b751730f8b236ba9f4539ec452",
+    "cfad96962d5aa9640cce052774a34b810382b20f:tests/trainer/ppo/v1/test_dataloader_resume_on_cpu.py": "526c58dbc369ba89ead2848a1ca2092237da30d007bb79e89c1d456da2a3a6fa"
+  },
+  "script_sha256": "4bb753275d4d02506c9eb0ba078c5bf8b84c694d8b62b9764062da58345ad69b",
+  "pytest_exit": 1,
+  "passed": [
+    "verify.py::test_resume_preserves_batch_order[42-3-0]",
+    "verify.py::test_resume_preserves_batch_order[None-3-0]"
+  ],
+  "failures": [
+    {
+      "nodeid": "verify.py::test_resume_preserves_batch_order[42-8-0]",
+      "phase": "call",
+      "traceback": "tmp_path = PosixPath('/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/verl-7974-control-ms9xpxbp/pytest/test_resume_preserves_batch_or2')\nseed = 42, checkpoint_step = 8, num_workers = 0\n\n    @pytest.mark.parametrize(\n        \"seed,checkpoint_step,num_workers\",\n        [(42, 3, 0), (None, 3, 0), (42, 8, 0), (None, 8, 0)],\n    )\n    def test_resume_preserves_batch_order(tmp_path, seed, checkpoint_step, num_workers):\n        checkpoint_dir = tmp_path / f\"global_step_{checkpoint_step}\"\n        checkpoint_dir.mkdir()\n        continuous = _make_trainer(checkpoint_dir, seed, num_workers)\n        steps_per_epoch = continuous.steps_per_epoch\n        total_steps = 3 * steps_per_epoch\n    \n        expected = _fetch_indices(continuous, checkpoint_step)\n        # Save inside the last batch body, before asking the iterator for\n        # StopIteration, just like a checkpoint at the end of a training step.\n        torch.save(continuous.train_dataloader.state_dict(), checkpoint_dir / \"data.pt\")\n        expected += _fetch_indices(continuous, total_steps - checkpoint_step)\n        assert expected[:steps_per_epoch] != expected[steps_per_epoch : 2 * steps_per_epoch]\n    \n        resumed = _make_trainer(checkpoint_dir, seed, num_workers)\n        resumed._load_checkpoint()\n        assert resumed.global_steps == checkpoint_step\n        actual = expected[:checkpoint_step] + _fetch_indices(resumed, total_steps - checkpoint_step)\n    \n        # Dropping the exhausted state loses RandomSampler's RNG progress and\n        # replays epoch 0, including when seed=None creates a fresh Generator.\n>       assert actual == expected\n               ^^^^^^^^^^^^^^^^^^\nE       AssertionError\n\ntests/trainer/ppo/v1/test_dataloader_resume_on_cpu.py:92: AssertionError"
+    },
+    {
+      "nodeid": "verify.py::test_resume_preserves_batch_order[None-8-0]",
+      "phase": "call",
+      "traceback": "tmp_path = PosixPath('/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/verl-7974-control-ms9xpxbp/pytest/test_resume_preserves_batch_or3')\nseed = None, checkpoint_step = 8, num_workers = 0\n\n    @pytest.mark.parametrize(\n        \"seed,checkpoint_step,num_workers\",\n        [(42, 3, 0), (None, 3, 0), (42, 8, 0), (None, 8, 0)],\n    )\n    def test_resume_preserves_batch_order(tmp_path, seed, checkpoint_step, num_workers):\n        checkpoint_dir = tmp_path / f\"global_step_{checkpoint_step}\"\n        checkpoint_dir.mkdir()\n        continuous = _make_trainer(checkpoint_dir, seed, num_workers)\n        steps_per_epoch = continuous.steps_per_epoch\n        total_steps = 3 * steps_per_epoch\n    \n        expected = _fetch_indices(continuous, checkpoint_step)\n        # Save inside the last batch body, before asking the iterator for\n        # StopIteration, just like a checkpoint at the end of a training step.\n        torch.save(continuous.train_dataloader.state_dict(), checkpoint_dir / \"data.pt\")\n        expected += _fetch_indices(continuous, total_steps - checkpoint_step)\n        assert expected[:steps_per_epoch] != expected[steps_per_epoch : 2 * steps_per_epoch]\n    \n        resumed = _make_trainer(checkpoint_dir, seed, num_workers)\n        resumed._load_checkpoint()\n        assert resumed.global_steps == checkpoint_step\n        actual = expected[:checkpoint_step] + _fetch_indices(resumed, total_steps - checkpoint_step)\n    \n        # Dropping the exhausted state loses RandomSampler's RNG progress and\n        # replays epoch 0, including when seed=None creates a fresh Generator.\n>       assert actual == expected\n               ^^^^^^^^^^^^^^^^^^\nE       AssertionError\n\ntests/trainer/ppo/v1/test_dataloader_resume_on_cpu.py:92: AssertionError"
+    }
+  ],
+  "order_failures": [
+    {
+      "nodeid": "verify.py::test_resume_preserves_batch_order[42-8-0]",
+      "first_mismatch_batch_index": 8,
+      "actual": [
+        38,
+        24,
+        48,
+        63,
+        10,
+        29,
+        36,
+        51
+      ],
+      "expected": [
+        8,
+        55,
+        19,
+        61,
+        44,
+        39,
+        57,
+        5
+      ],
+      "first_epoch_batch": [
+        38,
+        24,
+        48,
+        63,
+        10,
+        29,
+        36,
+        51
+      ]
+    },
+    {
+      "nodeid": "verify.py::test_resume_preserves_batch_order[None-8-0]",
+      "first_mismatch_batch_index": 8,
+      "actual": [
+        54,
+        48,
+        59,
+        19,
+        13,
+        8,
+        0,
+        21
+      ],
+      "expected": [
+        3,
+        16,
+        17,
+        4,
+        29,
+        49,
+        31,
+        0
+      ],
+      "first_epoch_batch": [
+        54,
+        48,
+        59,
+        19,
+        13,
+        8,
+        0,
+        21
+      ]
+    }
+  ]
+}
