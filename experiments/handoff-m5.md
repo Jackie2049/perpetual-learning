@@ -257,6 +257,8 @@ ModelOpt忽略规则参考（2026-10-22，同一量化入口不另排队）：�
 
 ## verl 异步策略一致性补证
 
+Qwen3.5适配参考（2026-10-26，同一入口、非新队列）：[#8390](https://github.com/verl-project/verl/pull/8390)新head `eab3d58b1eb9d1fad81f5994c8e4cc29dee0bf54`接旧6847168a，新增Transformers5.16字段／模块callable适配。[M1参考控制](../notebook/frameworks/verl-architecture.md#qwen35-适配与内核能力探测)只执行显式去Hub装饰器的官方Torch参考体及原打包helper，CPU两小序列说明kwargs可接受不认证边界；参考体与5.12相同，不判新回归、真实provider故障或可达性。作者nproc1两conv参数仅单序列布局，不认证多rank。若未来独立选题且有明确授权、安全、匹配环境，先记录实际Hub／FLA／Torch callable、包提交及cu_seqlens／cp_context处理，再选既有预算内的独立样本／跨rank输出梯度对照；缺条件、需新下载编译／环境或影响专项即记未测停止。不自动升级、应用／回改候选或新增训练矩阵；社区写入仍逐项需用户明确同意，本条不代表接单。
+
 外部KV命名空间参考（2026-10-26，同一入口、非新队列）：已有daegyu94的[#8323](https://github.com/verl-project/verl/pull/8323)，head `4e93e4761ddde2ea5bf9d3032b86b6c3844126fd`、父19835b21、PR元数据base16ec093c。[M1源码／纯helper控制](../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#外部-kv-缓存的权重命名空间)只核salt格式、8次connector检查与七模块语法，无完整config、pause、缓存hit／miss或设备执行。若未来独立选择且已有明确授权、安全、匹配的缓存观测，先固定引擎／connector的真实寻址方式、run namespace、成功加载权重与global_steps对应、门后请求身份，以及外部条目淘汰／容量；同步版本值不当参数内容一致性证据。作者0.29／0.5.20／1.3rc15报告不移作新环境，不自动叠加#8390升级。缺授权／环境／模型或影响原专项即记未测停止，不下载部署、停服务、注入故障、套用候选或新排训练；任何社区写入仍逐项待用户明确同意，参考不表示接单。
 
 Rollout解释器RFC参考（2026-10-26，同一入口、非新队列）：[新#8388](https://github.com/verl-project/verl/issues/8388)仅设计，main0bd668c1；[M1启动边界对照](../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#rollout-解释器与导入边界)为四verl模块／Slime b5205544原runtime语法，未创建环境或运行通信。若未来用户明确选择并授权运行时隔离课题，先区分driver、rollout checkpoint worker、server与后端子进程的实际解释器／版本；先同核心栈证明导入隔离，再验证明确transport／包组合的更新与恢复，不能只打印一个server的sys.executable就验收。当前无实现和获准部署条件，不新建／升级环境、跨版本通信、换传输或另写launcher，缺授权／安全匹配资源／影响专项即停止。所有社区写入及既有PR-head推送仍需用户对具体动作明确同意；仅参考、不表示接单。

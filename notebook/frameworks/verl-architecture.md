@@ -1,5 +1,7 @@
 # verl (HybridFlow) 架构深度分析
 
+2026-10-26接续：[Qwen3.5适配与内核能力探测](#qwen35-适配与内核能力探测)核#8390新模型改动：可接受kwargs不代表处理packed边界，torch_函数也可能由装饰器转到FLA；小CPU参考控制不判新回归或完整SP兼容。
+
 2026-10-26接续：[缓存候选的当前事件范围](#缓存修复之外的-gpu-工作流触发变化)已核新head退回aaae3716，GPU工作流删除不再属于当前PR；旧16f800b7的分析保留为历史，不作为当前阻碍。
 
 2026-10-24 接续：[FSDP 后端配置的权威来源](#fsdp-后端配置的权威来源)区分请求配置、实例化后的engine选择和训练数值差异；原校验函数接真实OmegaConf的局部控制，不是模型或训练验收。
@@ -523,6 +525,41 @@ Python3.12.13／OmegaConf2.3.1／pytest9.1.1，原 BaseConfig、CheckpointConfig
 [PyTorch meta 文档](https://docs.pytorch.org/docs/2.14/meta.html)说明该设备只记录元数据，`to_empty()`留下未初始化参数。本机安装源码中 Accelerate 默认 `include_buffers=False` 的参数注册包装会重新创建 Parameter，不能把这条路径的身份变化全归因于 `to_empty`。另用原生 `with torch.device('meta')` 构造同一真实 Llama：对象身份依次为共享 → `to_empty(cpu)` 后不共享 → `tie_weights()` 后共享，独立验证物化危险。meta 上应先核对象身份；物化后再结合存储关系与梯度，不以空地址代替结构证明。
 
 本地可审阅反馈：明确 meta 前置断言的对象身份及依赖版本，区分构造时已断开与 `to_empty` 导致断开；保留物化后梯度正负对照。仅留项目内，不替作者改测试、评论或推送已有 PR head。原作者使用 torch2.11／Transformers5.9 的 GPU 与内存数据不移作本机结果；其30B修复后训练停滞仍未归因，本轮不复跑、不下结论或新增 M5 队列。[版本、命令与 hash](../../diary/2026-10-25.md)留日志，五份源码语法通过不等于完整 FSDP／offload／内存验收。
+
+## Qwen3.5 适配与内核能力探测
+
+**接口能调用，不等于选中了预期内核，也不等于独立样本仍被隔离。** wuxibin89的[#8390](https://github.com/verl-project/verl/pull/8390)起初更新vLLM0.32／Transformers5.16.1；2026-10-26新head `eab3d58b1eb9d1fad81f5994c8e4cc29dee0bf54`直接接旧6847168a，新增Qwen3.5适配和top-k测试调整，PR累计8文件1789增1443删，目标base0bd668c1，仍OPEN／非draft。本节只核模型接口与边界能力，不把lock解析成功、作者CPU门测试或top-k报告合计成训练栈验收，也不接管已有作者的实现。
+
+### 字段迁移与实际 provider
+
+官方Transformers [5.12.1](https://github.com/huggingface/transformers/blob/ddb849abe009d1089e6c691bfc897f27211c663c/src/transformers/models/qwen3_5/modeling_qwen3_5.py)在decoder上保存layer_type，GDN实例保存conv／delta-rule callable；[5.16.1](https://github.com/huggingface/transformers/blob/93c8b7b485963a10800c91f55304db6be211c2bd/src/transformers/models/qwen3_5/modeling_qwen3_5.py)的decoder改为block_type，相关调用移到模块入口。候选[`qwen3_5.py`](https://github.com/verl-project/verl/blob/eab3d58b1eb9d1fad81f5994c8e4cc29dee0bf54/verl/models/transformers/qwen3_5.py)优先取新block_type，缺省再读layer_type；内核则优先保留实例属性，否则读模块入口。这能适配对象布局，但属性存在性不证明packed／CP参数的语义。
+
+5.16.1的 `torch_chunk_gated_delta_rule` 带[Hub装饰器](https://github.com/huggingface/transformers/blob/93c8b7b485963a10800c91f55304db6be211c2bd/src/transformers/integrations/hub_kernels.py)：可按配置选择Hub内核、原FLA包或Torch参考实现；不能因名字以torch_开头就断言强制使用裸Torch。该装饰器还会按选中实现的参数名过滤kwargs，导出路径可回退Torch。`inspect.signature`又可沿 `functools.wraps` 暴露参考函数签名，故签名、provider选择与实际参数处理应分别看；本轮没有执行Hub调度、下载内核或复现torch.export路径。
+
+### kwargs 接受与样本隔离
+
+verl的 `_call_accepts_kwarg` 将显式参数或任意 `**kwargs` 都视为可接受。`_packed_chunk_gated_delta_rule`据此决定直接传cu_seqlens，还是逐独立序列切开计算；CP分支同样用它检查cp_context。官方Torch参考函数虽然收 `**kwargs`，正文却不读kwargs，没有借此重置不同样本的状态。这个区别与[TRL透明包装器](#trl-包装器的打包边界探测)的场景相反：一个接口可能真正转交参数，也可能接受后忽略；通用kwargs不能独立证明哪一种。
+
+[有界CPU脚本](../../experiments/qwen35-kernel-capability/verify.py)强校验六份完整源码并做AST／内存compile。数值部分**明确移除官方Hub装饰器，只执行其原Torch参考函数体、原verl打包helper及签名helper**；没有安装或导入完整Transformers／FLA、构造GDN或替换真实provider。Python3.12.13／torch2.14.1、CPU FP32，输入为两条各2-token序列，q=k=1、g=0、beta=.5、v依次[1,1,0,0]，cu_seqlens=[0,2,4]。原helper固定启用QK归一化，[实际输出](../../experiments/qwen35-kernel-capability/result.json)为：
+
+| 控制 | 四个token输出（约值） |
+| --- | --- |
+| 原packed helper接裸参考函数 | [.5, .75, .375, .1875] |
+| 同一参考函数逐序列独立调用 | [.5, .75, 0, 0] |
+
+两项关键字探测均为True，但第二条序列在这个裸参考控制中继承了前序状态。**这不构成#8390的新回归结论**：去掉装饰器后，5.12与5.16的chunk参考函数AST完全相同；完整模型是否可达该路径、真实Hub／FLA如何处理边界与CP均未验证。它只反证“签名接受就足以认证语义”的推理，不是对所有安装组合或训练结果的故障报告。
+
+### 单进程 SP 报告的覆盖范围
+
+作者报告 `torchrun --nproc_per_node=1` 的[原SP测试](https://github.com/verl-project/verl/blob/eab3d58b1eb9d1fad81f5994c8e4cc29dee0bf54/tests/special_distributed/test_qwen35_linear_attention_ulysses_sp.py)2项通过。原文件要求FLA及加速器，两个参数项切换conv路径；其 `_cases_for_world_size(1)` 只生成一条8-token序列，2／4／8进程分支才列出多样本、跨rank切分等布局。该结果不能代替多序列边界或多rank通信验收；本轮只执行原纯case选择函数确认world1布局，没有运行原GPU测试、反向或分布式组。
+
+复查输入为六个固定源码副本，路径名与hash写在脚本中：
+
+```bash
+python -B experiments/qwen35-kernel-capability/verify.py /path/to/pinned-source
+```
+
+若将来M5独立选择且有明确授权、匹配环境，最先需要记录真实callable／provider及版本，再比较多独立样本和跨rank切分的输出／梯度；不能拿本节裸参考结果冒充已安装环境故障。条件仅补[原M5参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不自动升级、回改候选、部署模型或新增SP矩阵。
 
 ## TRL 包装器的打包边界探测
 

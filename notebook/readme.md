@@ -142,6 +142,7 @@
 - [Megatron-LM TP 源码深度阅读](frameworks/megatron-tp-source-reading.md) — 通信原语 autograd、TP 数据流、权重分发、SP 扩展、3D 并行交互
 - [Megatron-LM 流水线并行](frameworks/megatron-pp-reading.md) — 1F1B 调度、气泡分析、通信 overlap
 - [verl 架构](frameworks/verl-architecture.md) — 三级前缀缓存（系统级+进程级+请求级）
+- [Qwen3.5适配与内核能力](frameworks/verl-architecture.md#qwen35-适配与内核能力探测) — #8390字段迁移不等packed／SP语义；裸Torch参考CPU控制显示kwargs接受不足，未判新回归或真实provider结果
 - [verl 激活卸载的反向入口](frameworks/verl-architecture.md#激活卸载的反向入口与重载顺序) — #8277原五CPU测试体通过；区分内部描述、commit顺序和detached输出，不认证异步传输／真实模型。
 - [verl 异步并发预算](frameworks/verl-fully-async-policy-reading.md#样本任务并发与推理序列数) — 主线已有倍率配置；样本组、n条轨迹与实际引擎序列占用分开，不复用旧报告吞吐倍率
 - [verl 整条奖励落点](frameworks/verl-reward-integration-reading.md#整条奖励的落点与回报传播) — #8368原两回归base失败／head通过；奖励总和相同但GAE／RF++回报不同，单样本标准化后优势仍可为0

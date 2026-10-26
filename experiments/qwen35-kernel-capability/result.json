@@ -1,0 +1,42 @@
+{
+  "python": "3.12.13",
+  "torch": "2.14.1",
+  "scope": "undecorated Torch reference + original packing helper, CPU forward only",
+  "source_sha256": {
+    "hf-512.py": "395439341ea5ba4dd14c103e830383caa75686cfaf6b693dd7efb58622224da6",
+    "hf-516.py": "788d4bad50a8d39be2fe79125f0f40134773cd23b1791606fb6b3ab0bc6d2263",
+    "hub-516.py": "fa5143bbbc6a928c70f7e05580b358caae16e88f53f49059c7002f0d01f6c832",
+    "sp-test.py": "7f96db7e982e35f3457bed536217a008673fe63c5bd799348914990810cf834f",
+    "verl-new.py": "cdbe7654d5e26bb5fa31cd602cceb7d1242998ba9fc3997400caab4751955d45",
+    "verl-old.py": "a6abf55ac6dd846e2d8691d75eab09ef95885394ac84d532185f2ca78dacb99f"
+  },
+  "decorators_removed": [
+    "use_kernel_func_from_hub_with_fallback('chunk_gated_delta_rule', 'fla')"
+  ],
+  "reference_AST_same_as_512": true,
+  "signature_accepts": {
+    "cu_seqlens": true,
+    "cp_context": true
+  },
+  "reference_reads_kwargs": false,
+  "packed_helper_output": [
+    0.4999995231628418,
+    0.7499995231628418,
+    0.37500011920928955,
+    0.1875002384185791
+  ],
+  "independent_sequences_output": [
+    0.4999995231628418,
+    0.7499995231628418,
+    0.0,
+    0.0
+  ],
+  "world_size_1_cases": [
+    [
+      "single_sequence",
+      [
+        8
+      ]
+    ]
+  ]
+}
