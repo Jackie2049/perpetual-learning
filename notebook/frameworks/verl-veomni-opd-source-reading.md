@@ -90,9 +90,38 @@ PR正文当前报告组合#8370／#8371在2×8 MI355X完成三步，第四步和
 
 原PR的AMD整机表在读取时只有2×8 MI355X第一步有数值，第二步及MI308X第一步仍标running，且与[#8369](https://github.com/verl-project/verl/pull/8369)量化导出、[#8371](https://github.com/verl-project/verl/pull/8371)ROCm默认和外部依赖组合运行。它不是本机结果、两种架构均完成验收或单独#8370的收益归因，不据此推荐用户更换硬件／安装整套堆叠。
 
-同一PR还新增`broadcast_model_weights_from_rank0=True`与`ep_sharded_stream_load=False`两字段并接入build_parallelize_model、更新生成YAML；这些路径本轮仅源码阅读，没有真实checkpoint读盘／分片／网络传输验证，不能由optimizer五项过认定其正确或提速。
+同一PR还新增`broadcast_model_weights_from_rank0=True`与`ep_sharded_stream_load=False`两字段并接入build_parallelize_model、更新生成YAML；这些路径本轮仅源码阅读，没有真实checkpoint读盘／分片／网络传输验证，不能由optimizer五项过认定其正确或提速。2026-10-26后续核清[加载路由与分片范围](#checkpoint-加载路由与分片范围)，候选head仍44c97bcd，不是新的代码修订，旧五用例与AdamW微例不重跑。
 
 [JSON](../../experiments/verl-veomni-optimizer/result.json)保存两版五用例的实际kwargs、九份原文件hash、小型AdamW差值和环境（Python3.12.13、pytest9.1.1）；两次输出语义一致，九完整Python模块AST／compile通过。复现运行 `python -B experiments/verl-veomni-optimizer/verify.py <已有固定对象的只读verl仓库>`，缺对象不自动联网。真机条件补[原M5 VeOmni参考](../../experiments/handoff-m5.md#verl-量化层审计新版复验)，不是新增训练队列；无匹配获准任务即保留未测，不探测GPU、部署AMD、下载模型、应用候选或改专项。后续转独立需求／实质反馈，不扩optimizer替身或微基准矩阵。
+
+### Checkpoint 加载路由与分片范围
+
+固定verl所选VeOmni `10a26aca258f91a7af3e698cc0db8c6c51705989`，这两个开关控制的是**初始HF权重摄入**，不能仅因名称含checkpoint就当作训练中保存、optimizer状态恢复或整个checkpoint生命周期的优化。调用链为verl的build_parallelize_model参数→[torch_parallelize中的_materialize_and_load_weights](https://github.com/ByteDance-Seed/VeOmni/blob/10a26aca258f91a7af3e698cc0db8c6c51705989/veomni/distributed/torch_parallelize.py#L108)→[module_utils的实际加载器](https://github.com/ByteDance-Seed/VeOmni/blob/10a26aca258f91a7af3e698cc0db8c6c51705989/veomni/models/module_utils.py#L619)。本节为固定源码结论，不是模型加载实验。
+
+HF路径前还有随机初始化／resume跳过分支：weights_path=None或should_skip_hf_weight_load时不沿下表加载；跳过HF但又是PEFT会先拒绝，因为仅训练参数checkpoint不能补出冻结base。不能把未读HF权重本身说成已经恢复训练状态。
+
+| HF摄入条件 | 实际选择 | 不应推导 |
+|---|---|---|
+| broadcast=True，包括stream=True | rank0_load_and_broadcast_weights优先 | 两开关同时True就自动EP磁盘切片 |
+| broadcast=False、stream=False | 每rank普通load_model_weights | FSDP本地参数小就代表磁盘只读该片 |
+| broadcast=False、stream=True、模型无ExtraParallel plan | 记录忽略stream，仍普通加载 | 全局mesh有EP维就够；异构模型每个子模块都可流式 |
+| broadcast=False、stream=True、模型有ExtraParallel plan | load_model_weights_ep_sharded | 所有参数都变成局部读；任何格式都支持 |
+
+模型plan而非仅全局EP启用决定路由。普通加载器先取checkpoint Tensor、转换，然后按parallel plan／DTensor派发；流式加载器则对标记为ExtraParallel的参数直接 `safe_open(...).get_slice()[start:end]`，只构造其dim0本地段，再沿FSDP子mesh派发且不重复EP切片。persistent DTensor另有本地shard辅助路径，本节不把普通dim0分支推广为其完整布局验收。dense参数和persistent buffers仍调用get_tensor读取整张；独立专家LoRA与共享／dense LoRA也不能混为同一分片比例。
+
+切片范围取自对应extra_parallel组的size／rank，不是全局world_size；该组未启用时helper退回size=1／rank=0，没有1/N缩减。相同EP身份还可能在别的组／副本重复读，因而不能把单组专家读取推导为整个集群总字节只读一遍，或所有权重都按world_size等比例减少。这里没有磁盘／缓存／网络流量测量。
+
+### 流式格式约束与失败时机
+
+流式入口只解析safetensors单文件或索引分片；模型plan有非dim0 Shard会抛NotImplementedError。checkpoint与建模格式需要融合、重排或dtype转换时，通常必须用完整Tensor集合，不能靠取一个专家片重建；入口先扫描raw checkpoint keys，拒绝不满足能力声明的converter，避免把未匹配到fused目标名的per-expert键静默丢掉。[converter协议](https://github.com/ByteDance-Seed/VeOmni/blob/10a26aca258f91a7af3e698cc0db8c6c51705989/veomni/models/checkpoint_tensor_loading.py)允许的例外是明确声明的纯dim0尾部零补齐；缺少能力方法默认不允许，不能自行给任意converter标True。
+
+零补齐尤其不能机械用于MoE专家数量：协议明确要求补出的行在语义上不会被读取，如真实词表外的embedding行；新补的expert/router行却可能参与top-k路由，不是惰性占位。普通严格切片要求checkpoint dim0等于model预期，允许补齐的分支也会拒绝checkpoint比模型更大，尾部按有效重叠读入再补零；这不是自动扩充所有模型结构。
+
+**拒绝不支持的流式格式，不等于自动回退或原子回滚。** 实际调用层直接调用loader、没有捕获NotImplementedError后重试完整加载。部分注释提到caller可选另一条路径，不能当作已实现的fallback。converter预扫描在model.to_empty之前，但主循环的形状／参数错误和finalize产生额外结果的拒绝可以更晚发生；据源码顺序，不能保证所有错误都在模型状态改变前完成，失败后不应假定可以在同一对象上无条件重试。
+
+rank0加载也不是一律把每个完整expert Tensor都广播到每个rank：其固定实现对超过阈值或指定CPU加载、且属于extra_parallel计划的参数可分块并按对应shard目标分发；普通分支再做广播。无process group时该函数还会直接回普通加载。关闭rank0广播可能把网络通信压力转为每rank存储读取，并非无条件提速；原作者硬件表与本机未运行的拓扑不能互相替代。
+
+本轮只做三份完整固定依赖源码的AST／内存compile与SHA256记录（见[当日日志](../../diary/2026-10-26.md)），没有导入VeOmni、创建模型／权重夹具、读取checkpoint、测RSS／I/O／网络或执行GPU。已有M5条件入口仅补实际plan／组身份、checkpoint布局与converter兼容、加载失败后模型重建前提，不新增性能或训练队列，不应用／改写作者方案；任何社区动作和既有PR-head推送仍逐项待用户明确同意。
 
 ## Teacher 采样温度与打分温度
 

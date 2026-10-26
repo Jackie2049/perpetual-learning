@@ -235,6 +235,8 @@ VeOmni协作更新（2026-10-25，仍非新队列）：#8342作者已创建[后�
 
 VeOmni optimizer参考（2026-10-26，同一条件入口，非接单／新队列）：新draft[#8370](https://github.com/verl-project/verl/pull/8370) head44c97bcd、base3c6d9b43，[M1验证](../notebook/frameworks/verl-veomni-opd-source-reading.md#optimizer-覆盖与-cpu-offload-默认)仅原五builder记录用例和torch2.14.1的257元素CPU单步；无VeOmni／DTensor／FSDP2、RSS／性能或checkpoint ingestion验收。若M5将来独立选用已有获准匹配VeOmni offload任务，先固定实际torch／VeOmni版本、最终override和参数／梯度／状态的真实设备，再核实际optimizer实现、一次更新／恢复与host RSS／step峰值；不能以CPU微例或作者AMD多PR堆叠首步推断整机收益。缺匹配环境／授权、需新下载模型／部署AMD或影响专项即记未测停止，不自动应用#8369／#8370／#8371、切硬件、扩内存压力测试或开训练。不改AReaL／#523／#8313／DeepInfer；任何社区写入或已有PR head推送仍需用户对具体动作明确授权。
 
+同一checkpoint摄入参考补充（2026-10-26，仍非新队列）：[固定VeOmni 10a26aca源码](../notebook/frameworks/verl-veomni-opd-source-reading.md#checkpoint-加载路由与分片范围)中broadcast优先，stream仅在非广播且模型有ExtraParallel plan时选用，dense／buffers仍整张读，切片按该组身份而非world_size。若上述已有工作确需切换加载策略，先核实际safetensors布局、原plan的dim0分片、converter纯补齐／融合能力及组size，分别记录真实读盘／网络／host峰值和最终权重一致；初始HF摄入非训练checkpoint全生命周期。调用层不自动捕获unsupported后回退，晚期失败也非原子回滚，先重建安全模型状态；无匹配授权／资源就停记未测，不改flag、自动重试／拼补丁或新增基准训练。社区写入和PR-head推送仍逐项需用户明确同意，参考不表示M5已接单。
+
 来源：[源码与24项CPU单测](../notebook/frameworks/verl-quant-layer-audit.md)、已有 [#8132](https://github.com/verl-project/verl/pull/8132)，2026-10-21读取时open，head `0defd9a231cb876ce56812611b0afb3b2b25831a`，base `cd58f550fb1c4f5a3fe29da38e6f0002ec462fd3`。第7部分依赖前序量化堆叠且按#8287重做；不能盲目只cherry-pick审计。作者旧B200/ModelOpt观察不是新版验收；M1只运行作者自带替身的CPU单元测试，没有真实TE/compressor/engine。
 
 旧#8132审计路线的最小下一步：先核实际设备是否支持目标TE FP8路径、依赖/模型/格式是否匹配及是否已有作者新结果；固定完整提交与安装版本，不覆盖已有环境或打断工作。条件齐备后，使用获准的最小模型/配置，真实FP8 forward后做一次权重导出/同步，保留训练workspace/marker、导出格式与引擎方法的证据、实际route、checked/skipped/unresolved及no-verdict状态。非colocated路径不能声称完成同样的live-vLLM复查，SGLang guard另列执行范围。

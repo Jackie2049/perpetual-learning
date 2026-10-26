@@ -309,6 +309,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
   - [ROCm默认与后端支持](verl-veomni-opd-source-reading.md#rocm-配方默认与后端支持)：#8371原3参数例候选通过，两版bash -n；构建标志／配置传递／vLLM能力分开，非Ray／AMD／重载或训练验收。
   - [Rollout量化导出与字节布局](verl-veomni-opd-source-reading.md#rollout-量化导出与字节布局)：#8369两导出边只静态、原一包装测试通过；原FP8类的CPU expert view共享存储，非真实加载／同步验收。
   - [Optimizer覆盖与CPU offload默认](verl-veomni-opd-source-reading.md#optimizer-覆盖与-cpu-offload-默认)：新draft #8370原五接线用例通过；257元素真实CPU单步不是VeOmni／DTensor或内存性能复验。
+  - [Checkpoint加载路由与分片范围](verl-veomni-opd-source-reading.md#checkpoint-加载路由与分片范围)：固定依赖中广播优先，流式只切ExtraParallel参数、dense／buffers仍整读；converter拒绝不等自动回退／原子回滚，仅源码非I/O验收。
   - [Teacher采样与打分温度](verl-veomni-opd-source-reading.md#teacher-采样温度与打分温度)：#8253保留请求T=1而在vLLM teacher logits上缩放；原默认3例三版均过、低精度局部控制非Sampler／原30项或训练验收。
   - [主线与GKD损失映射](verl-veomni-opd-source-reading.md#主线与-gkd-的损失名称和支持域) — #7975已有draft #7983；kl名称、top-k归一化与JSD端点不通用，纠正旧k2/k3公式，六模块语法非梯度／训练验收。
   - [教师生成与蒸馏目标](verl-veomni-opd-source-reading.md#教师生成与蒸馏目标) — #8335按submission选生成方、另取teacher软标签；只支持受限同步V1，源码/16文件语法核对，未跑原测试或设备。
