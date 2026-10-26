@@ -1,0 +1,115 @@
+{
+  "scope": "Run PR #8046's nine new policy cases, not vLLM sleep or weight restoration.",
+  "python": "3.12.13",
+  "pytest": "9.1.1",
+  "head": "576b8e91a1f4df718e5dcf5171efdff8c331825e",
+  "base": "2035f58dcb06d8cad4caee107b30f4045d724367",
+  "script_sha256": "67b0c4d2c425e96d86347b840238797a6e04cde7d498ce7d537587bca22f55b9",
+  "original_test_sha256": "76662c4ea86fe4cac877b80d7ecb263866e2e4e1b230e587548e9e259df15e0e",
+  "runs": {
+    "2035f58dcb06d8cad4caee107b30f4045d724367": {
+      "server_sha256": "633009c6d992557f0b24d65b4304abf5f6206a54ee979368583e94a36ce02e83",
+      "cases": [
+        {
+          "name": "test_hybrid_full_param_sleep_discards_weights",
+          "strategy": "not-parametrized",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_hybrid_fsdp_merged_lora_sleep_keeps_weights",
+          "strategy": "fsdp",
+          "outcome": "assertion_failed"
+        },
+        {
+          "name": "test_hybrid_fsdp_merged_lora_sleep_keeps_weights",
+          "strategy": "fsdp2",
+          "outcome": "assertion_failed"
+        },
+        {
+          "name": "test_hybrid_fsdp_merged_lora_sleep_keeps_weights",
+          "strategy": "fsdp_turbo",
+          "outcome": "assertion_failed"
+        },
+        {
+          "name": "test_hybrid_megatron_merged_lora_sleep_discards_weights",
+          "strategy": "megatron",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_hybrid_megatron_merged_lora_sleep_discards_weights",
+          "strategy": "veomni",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_hybrid_megatron_merged_lora_sleep_discards_weights",
+          "strategy": "torchtitan",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_hybrid_megatron_merged_lora_sleep_discards_weights",
+          "strategy": null,
+          "outcome": "passed"
+        },
+        {
+          "name": "test_hybrid_lora_adapter_sleep_keeps_weights",
+          "strategy": "not-parametrized",
+          "outcome": "passed"
+        }
+      ],
+      "passed": 6,
+      "assertion_failed": 3
+    },
+    "576b8e91a1f4df718e5dcf5171efdff8c331825e": {
+      "server_sha256": "552c055d491168b816657cee3ee9ec320e94fd0289ec8b8f36b88980283cd8d0",
+      "cases": [
+        {
+          "name": "test_hybrid_full_param_sleep_discards_weights",
+          "strategy": "not-parametrized",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_hybrid_fsdp_merged_lora_sleep_keeps_weights",
+          "strategy": "fsdp",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_hybrid_fsdp_merged_lora_sleep_keeps_weights",
+          "strategy": "fsdp2",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_hybrid_fsdp_merged_lora_sleep_keeps_weights",
+          "strategy": "fsdp_turbo",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_hybrid_megatron_merged_lora_sleep_discards_weights",
+          "strategy": "megatron",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_hybrid_megatron_merged_lora_sleep_discards_weights",
+          "strategy": "veomni",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_hybrid_megatron_merged_lora_sleep_discards_weights",
+          "strategy": "torchtitan",
+          "outcome": "passed"
+        },
+        {
+          "name": "test_hybrid_megatron_merged_lora_sleep_discards_weights",
+          "strategy": null,
+          "outcome": "passed"
+        },
+        {
+          "name": "test_hybrid_lora_adapter_sleep_keeps_weights",
+          "strategy": "not-parametrized",
+          "outcome": "passed"
+        }
+      ],
+      "passed": 9,
+      "assertion_failed": 0
+    }
+  }
+}

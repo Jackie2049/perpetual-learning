@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-merged-lora-sleep/verify.py](verl-merged-lora-sleep/verify.py) | #8046新增四原测试函数的9参数项，[结果](verl-merged-lora-sleep/result.json)候选9过／基线6过3失败；原FakeSleepEngine只记策略，无真实备份／wake／权重恢复 | [合并LoRA睡眠证据](../notebook/frameworks/verl-fsdp-weight-sync-mechanism-reading.md#合并-lora-的睡眠策略与恢复证据) |
 | [torch-cond-selection/verify.py](torch-cond-selection/verify.py) | 三写法×两个标量的真实CPU前向／反向及公开export图，[结果](torch-cond-selection/result.json)；Dynamo eager backend全图，不是Inductor／CUDA Graph | [数据选择与结构分支](../notebook/frameworks/pytorch-compile-stack-knowledge-synthesis.md#数据选择与结构化分支) |
 | [sdpa-interface-contract/verify.py](sdpa-interface-contract/verify.py) | 真实CPU FP64 MHA／SDPA mask极性、全屏蔽行及p=1 dropout门控控制，[结果](sdpa-interface-contract/result.json)；无模型／梯度／GPU／性能测量 | [MHA与SDPA契约](../notebook/fundamentals/flash-attention.md#mha-与-sdpa-的调用契约) |
 | [weight-file-mapping/verify.py](weight-file-mapping/verify.py) | safetensors mmap／torch mmap／eager三CPU小文件路线的读值、私有修改和文件不变控制，[结果](weight-file-mapping/result.json)；BOOL／E4M3字节回读，无计时／RSS／GPU | [映射加载边界](../notebook/fundamentals/model-weight-formats-deep-dive.md#映射加载的实际边界) |

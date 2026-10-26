@@ -127,6 +127,7 @@
 
 ## 框架源码阅读
 
+- [合并LoRA的睡眠策略与恢复证据](frameworks/verl-fsdp-weight-sync-mechanism-reading.md#合并-lora-的睡眠策略与恢复证据) — #8046限定FSDP的level1例外；原9替身参数例不认证完整重载，纠正引擎睡眠语义混用。
 [按框架浏览完整索引](frameworks/readme.md) · [按项目浏览贡献材料](../open-source/README.md)
 
 - [数据选择与结构化分支](frameworks/pytorch-compile-stack-knowledge-synthesis.md#数据选择与结构化分支) — torch.where并非惰性if，cond是受限单值控制流；本机CPU eager-backend与export，不作GPU／Inductor验收。

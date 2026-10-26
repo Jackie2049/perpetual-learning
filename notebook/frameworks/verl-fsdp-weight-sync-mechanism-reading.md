@@ -5,7 +5,36 @@
 **Scope**: verl-project/verl main branch + PR #6794 (delta weight sync)
 **Purpose**: Understanding trainer->rollout weight synchronization in HYBRID mode on RTX 4090
 
+2026-10-26校正：[合并 LoRA 的睡眠策略与恢复证据](#合并-lora-的睡眠策略与恢复证据)区分#8046的FSDP候选策略、Megatron导出和实际权重恢复；第4节撤回把SGLang标签语义套到vLLM整数级别及固定4090优选的说法。其他历史条目的版本、内存与性能未在本轮全面复核。
+
 ---
+
+## 合并 LoRA 的睡眠策略与恢复证据
+
+**可以丢弃哪些状态，取决于后续更新真正覆盖哪些状态，不只取决于是否用了LoRA。** 已有[#8046](https://github.com/verl-project/verl/pull/8046)针对[#7904](https://github.com/verl-project/verl/issues/7904)的合并LoRA异常，2026-10-26读取仍OPEN、非draft，head `576b8e91a1f4df718e5dcf5171efdff8c331825e`，目标base与共同祖先均为 `2035f58dcb06d8cad4caee107b30f4045d724367`，ahead4／behind0，五文件188增14删。新近更新是作者请求维护者批准CI和再审，不是新GPU结果；此前人工反馈要求区分FSDP与Megatron并移除可能累积整层张量的layerwise reload。
+
+### 策略只对 FSDP 合并路径增加例外
+
+[当前候选server](https://github.com/verl-project/verl/blob/576b8e91a1f4df718e5dcf5171efdff8c331825e/verl/workers/rollout/vllm_rollout/vllm_async_server.py)增加actor_strategy：manager在replica构造签名支持该参数时传入，普通与PD replica继续传给server。无strategy不是自动识别为FSDP，而是维持原默认。
+
+| 配置范围 | 候选sleep level | 基线sleep level |
+|---|---|---|
+| 有效LoRA、merge=true，strategy为fsdp／fsdp2／fsdp_turbo | 1 | 2 |
+| merge=true，strategy为megatron／veomni／torchtitan／未设置 | 2 | 2 |
+| adapter LoRA，merge=false | 1 | 1 |
+| 无LoRA且未触发MTP／NPU例外 | 2 | 2 |
+
+MTP rollout与NPU的原level 1例外保留；这只是代码策略，不是这些后端已支持全部sleep／wake组合的验收。尤其测试名称含megatron的四参数例还包含VeOmni、TorchTitan和None，它们只能证明未进入FSDP例外，不能认证各自的导出完整性。
+
+### 策略回归不证明漏项根因
+
+[复跑脚本](../../experiments/verl-merged-lora-sleep/verify.py)提取原server的完整相关方法／property及作者新增四测试函数，保留原FakeSleepEngine和参数列表；不执行顶层ray／vllm importorskip与框架import，也不运行原有fake-MTP测试。Python3.12.13／pytest9.1.1下，两次一致：候选9参数项通过，基线6通过、3个FSDP merged用例断言失败。[结果](../../experiments/verl-merged-lora-sleep/result.json)固定源文件与脚本hash。作者“10项”包含旧MTP例，本轮新增部分是9项，不把它写成10个新用例或完整原套件。
+
+FakeSleepEngine仅记录sleep(level)与collective_rpc名称，没有参数、CPU备份或wake。该回归支持策略差异及不用collective_rpc的局部接线，不支持“乱码已修好”、显存／主机内存、DP广播或模型数值结论；manager到Ray actor的真实启动亦未执行。
+
+两版[FSDP导出](https://github.com/verl-project/verl/blob/576b8e91a1f4df718e5dcf5171efdff8c331825e/verl/workers/engine/fsdp/transformer_impl.py)、[Megatron导出](https://github.com/verl-project/verl/blob/576b8e91a1f4df718e5dcf5171efdff8c331825e/verl/workers/engine/megatron/transformer_impl.py)、[FSDP工具](https://github.com/verl-project/verl/blob/576b8e91a1f4df718e5dcf5171efdff8c331825e/verl/utils/fsdp_utils.py)与[vLLM IPC工具](https://github.com/verl-project/verl/blob/576b8e91a1f4df718e5dcf5171efdff8c331825e/verl/workers/rollout/vllm_rollout/utils.py)文件逐字节相同。FSDP merged路径在merge上下文内取module.state_dict，normalize改名并剔除含lora_／.adapter_的键，随后转换键并materialize；它不是adapter-only的get_peft_model_state_dict。Megatron merged路径调用bridge.export_hf_weights。**这些不同入口本身不能列出vLLM中哪些基础参数未被覆盖，也不能仅从PEFT标签推断必然漏传。** 作者的“level 2后有遗漏参数未初始化”是待按真实模型核对的解释，不被本轮9项测试证明或推翻。
+
+四改动Python文件两版共八次AST/compile通过，未安装PEFT或导入完整引擎。真机缺口记入[原M5一致性入口](../../experiments/handoff-m5.md#verl-异步策略一致性补证)：只在已有获准、安全、匹配工作中，按发送键、引擎实际参数／buffer与alias逐项核覆盖，再比较sleep前、wake后和更新后同token观测。此项已有作者，不另写修复、应用候选或排训练；上游动作仍需用户逐项明确授权。
 
 ## 1. Architecture Overview: Trainer-to-Rollout Weight Sync Pipeline
 
@@ -271,17 +300,9 @@ RTX 4090 — only LoRA deltas need to be transferred per step.
 
 ### 4.1 Sleep Levels: 1 vs 2
 
-★★★★★★★★ **sleep_level=1** (LoRA adapter path, `merge=False`):
-- **Release**: `tags=["kv_cache"]` only — base weights stay on GPU
-- **Resume**: `tags=["kv_cache"]` + `tags=["weights"]` (weights never left, but resume restores kv_cache)
-- **Per-step payload**: Only LoRA delta params (~2-4 MiB for rank=32)
-- **RTX 4090 optimal**: No weight re-transfer, no OOM risk from full model re-load
+2026-10-26校正：同名level不代表两个引擎的相同操作。[vLLM 0.29 Sleep Mode](https://docs.vllm.ai/en/v0.29.0/features/sleep_mode/)的level 1将模型权重备份到CPU并丢弃KV，wake再恢复；level 2丢弃权重和KV，模型buffers另保存在CPU，需要在生成前补齐有效权重。分阶段wake weights、更新、再wake KV可以控制峰值，但不保证任意模型无OOM。
 
-★★★★★★★★ **sleep_level=2** (merge path or no LoRA, default):
-- **Release**: `tags=["kv_cache", "weights"]` — everything released
-- **Resume**: `tags=["kv_cache", "weights"]` — full model re-loaded from trainer
-- **Per-step payload**: Full model params (~16 GiB for 8B model)
-- **RTX 4090 risky**: Must hold full model in trainer + rollout simultaneously during sync
+下节SGLang adapter分支只释放KV标签，不能反过来证明vLLM level 1也保持全部base weights驻GPU。同步payload量与睡眠备份量是两回事，rank=32不能独立决定字节数；撤回原固定2–4MiB、16GiB与4090必选／无OOM结论。合并LoRA的候选例外见上节，不将尚未合并的#8046当主线默认。
 
 ### 4.2 SGLang Sleep/Wake (Tag-Based)
 
@@ -305,29 +326,11 @@ await self._engine.resume_memory_occupation(tags=tags)
 
 ### 4.3 vLLM Sleep/Wake (Integer-Based)
 
-vLLM uses **integer-based** sleep levels via `engine.sleep(level=N)`:
-
-```python
-# In vLLMHttpServer._sleep_hybrid():
-if mtp_rollout_enabled or self.lora_as_adapter or is_npu_available:
-    sleep_level = 1  # Keep weights, release kv_cache
-else:
-    sleep_level = 2  # Release everything
-
-await self.engine.sleep(level=sleep_level)
-```
-
-★★★★★★★★ **SGLang tag-based > vLLM integer-based**: SGLang's tag system is more
-flexible and explicit. vLLM's integer system conflates multiple behaviors into
-a single level number. For RTX 4090 HYBRID mode, SGLang is the preferred
-rollout backend precisely because of this control granularity.
+vLLM通过engine.sleep(level=N)选择保留策略，同时wake_up也可按weights／kv_cache标签分阶段执行。不能用“一个有标签、一个只有整数”推导引擎性能或4090选型。#8046的FSDP merged例外和基线策略见[版本化对照](#合并-lora-的睡眠策略与恢复证据)；省去了CPU备份不等于后续更新能恢复全部运行状态。
 
 ### 4.4 vLLM-Ascend Sleep Level Issue
 
-★★★★★★★★ **vLLM-Ascend sleep_level=1 NOT supported**: The code explicitly forces
-sleep_level=1 on Ascend but this is a workaround — Ascend NPU does not properly
-support sleep/wake at all, and enabling EP during training leads to accuracy
-issues. See vLLM-Ascend #10684 (DSA Hadamard ALL-ZERO after sleep/wake).
+固定候选与基线的helper在检测到NPU时都选择level 1；不能由这个分支宣布level 1不可用，或认证全部Ascend sleep／EP路径。原vLLM-Ascend #10684的设备问题未在本轮复查，保留为历史线索而非当前通用结论。
 
 ---
 

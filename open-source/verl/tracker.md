@@ -15,6 +15,8 @@
 
 2026-10-26补[原生V4后端默认](#原生-v4-混合精度后端的已有报告)：#8381已有报告者方案；固定源码解释Hopper被显式DeepGEMM阻断auto，Marlin会改变activation精度，只有七文件语法核对，非加载／refit验收，不另实现。
 
+2026-10-26补[merged LoRA睡眠](#合并-lora-睡眠的已有候选)：#8046已收窄FSDP；原9策略参数项候选过／基线3失败，非权重恢复或乱码修复验收，不另实现。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -28,6 +30,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## 合并 LoRA 睡眠的已有候选
+
+2026-10-26读取[#8046](https://github.com/verl-project/verl/pull/8046)完整正文、五文件diff、七普通评论及人工review／一行内反馈。作者Shr3yash、OPEN非draft，head576b8e91、目标base／共同祖先2035f58d，ahead4／behind0。近期只是催维护者批准CI；历史评审要求保留Megatron merged level2并移除会累积整层tensor的layerwise reload，候选已收窄为FSDP三strategy例外，不另认领或发言。
+
+[原同步专题](../../notebook/frameworks/verl-fsdp-weight-sync-mechanism-reading.md#合并-lora-的睡眠策略与恢复证据)与[复跑](../../experiments/verl-merged-lora-sleep/verify.py)：新增四原函数共9参数项，head9过／base6过3FSDP断言失败；作者“10项”还包括旧fake-MTP，本轮不重跑。原FakeSleepEngine只记录level／RPC，无权重、wake或备份。FSDP／Megatron导出、normalize及IPC工具两版逐字节同，PEFT完整state_dict导出后去adapter键不能单凭名称证明漏写基础参数；实际覆盖和乱码根因待真实模型证据。八份AST/compile，未导入PEFT／引擎或访问设备；纠正原笔记vLLM level1等同KV-only的说法，M5仅原条件参考不排新训练。任何上游写入及既有PR-head推送仍须用户逐项明确同意。
 
 ## 原生 V4 混合精度后端的已有报告
 
