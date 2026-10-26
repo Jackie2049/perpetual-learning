@@ -1,5 +1,46 @@
 # verl 融合输出头与 logit softcap
 
+2026-10-26补充：[软标签消去与求导阶数](#软标签消去与求导阶数)区分完整分布的一阶数值修正、detach注入的二阶限制和verl的截断top-k目标；CPU数学转写不是框架补丁。
+
+## 软标签消去与求导阶数
+
+**相同分布下仍有梯度，可能来自舍入，也可能是目标本来不同，须先看支持域。** [Barron等论文第3节](https://arxiv.org/html/2610.31642v1#S3)讨论固定teacher、完整同词表分布的交叉熵：令teacher为p、student为q，学生logits的精确梯度为q−p。分别算两个近似相同的概率再相减，会损失相对精度；teacher softmax与student log_softmax的反向算术不同，还可能使相同logits留下残余。这与下节高置信硬标签的Softmax Collapse不同。
+
+论文保留两方logits，先求差δ，再在teacher分布下中心化：
+
+```text
+d = δ − sum(p * δ)
+s = d − log1p(sum(p * expm1(d)))
+u = p * expm1(s)
+g = u − q * sum(u)
+```
+
+这里s表示log(q/p)，u表示q−p，最后一项修正浮点归约漂移；不是在已舍入的概率差外再加epsilon。本对照使用对齐词表、明确各自温度与输出变换后的有限完整logits；不要求teacher与student刻意采用的温度数值必须相同。已经在输入量化时丢失的差异不能靠expm1还原，也未认证大差值、非有限输入或低精度kernel的通用安全性。
+
+### 三个小输入的 CPU 结果
+
+[脚本](../../experiments/soft-target-cancellation/verify.py)将论文第2／3节公式转写为PyTorch，teacher固定为FP32 `[2,1,0]`，使用真实CPU autograd；不是原JAX代码执行或verl原测试。FP64参考先接收**已舍入的FP32输入**再计算，避免把十进制意图与实际Tensor混为一谈。[结果](../../experiments/soft-target-cancellation/result.json)在Python3.12.13／torch2.14.1单线程下两次一致：
+
+| student输入 | 普通交叉熵的最大梯度误差 | 论文公式转写的最大梯度误差 |
+|---|---|---|
+| 与teacher完全相同 | 5.96e−8 | 1.11e−16，实际FP32梯度全0 |
+| teacher加 `[-1e-7,1e-7,0]` | 1.36e−8 | 2.55e−15 |
+| teacher整体加1 | 5.96e−8 | 1.11e−16，实际FP32梯度全0 |
+
+相同输入下，普通梯度为 `[5.96e-8,1.49e-8,7.45e-9]`；交叉熵值约0.8324是teacher熵，不应要求loss为0。微扰例的普通CPU结果并未出现论文所示JAX第三项符号翻转，不能搬用作者数值。转写后的forward也不保证与普通实现逐bit相同；微扰例相差约1.19e−7，即此量级的2个FP32 ULP，不是训练质量或收敛实测。
+
+### 梯度注入不保留二阶链
+
+论文示例以 `stop_gradient(g) * (z − stop_gradient(z))` 注入学生一阶梯度。本转写使用detach；在FP64相同logits处，以create_graph求得的一阶梯度仍不带求导链，functional.hessian默认strict=False把这类常量导数补为零矩阵。普通交叉熵的Hessian则是 `diag(q)−q qᵀ`，本例最大元素约0.222695。因此该示例写法适用于所述一阶目的，**不等于正确的double backward实现**；这不是发现另一个普通CE的数学Hessian为零，也不是对原JAX高阶行为做了实测。
+
+### 为什么不能直接替换 verl top k
+
+固定主线 `3c6d9b43b67c74ec343d77874cd8fa6e841523da` 的[FSDP蒸馏入口](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/distillation/fsdp/losses.py)收到teacher选定IDs与top-k **log-probs**，并非完整teacher原logits。默认truncated项为 `sum_K p_i (log p_i−log q_i)`；无clamp的数学目标对完整student logits的梯度是 `r*q−p_K`，其中r为teacher top-k质量、p_K在未选位置补0。r<1时，即使两方完整分布相同，也未必驻点。
+
+同一三类分布选前两类的FP64数学控制中，r≈0.909969、truncated值为0，梯度却为 `[-0.0598920,-0.0220330,0.0819251]`，与上述解析式相符；这不是数值消去故障。将top-k重新归一化或添加tail bucket会改变目标，不能偷换成完整分布q−p。[最终包装器](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/trainer/distillation/losses.py)另有clamp和PG／直接反传分支；此控制未执行这些框架路径，也未把其梯度称为原框架实测。
+
+本项只补数学判断与可复现材料，不提出竞争修复、不改依赖／训练配置。没有模型、优化器、分布式或GPU工作，不新增M5队列；原硬件条件参考与AReaL等单一负责人分工不变。下一步仅在实际任务需要完整软目标或作者方案实质变化时重评，不扩词表／dtype合成矩阵。
+
 2026-10-26补充：[高置信标签的舍入与反向边界](#高置信标签的舍入与反向边界)核对#8377原12项CPU测试和已有评审反例。高置信样例改善不等于低置信／二阶梯度或融合kernel全部安全。
 
 ## 高置信标签的舍入与反向边界

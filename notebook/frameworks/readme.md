@@ -165,6 +165,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 
 - [verl 融合输出头与logit softcap](verl-fused-output-softcap.md) — #7991通用guard不是softcap实现；完整原torch输出头36组语义对照，保留FP64参考误差，原24配置测试未跑。
 - [高置信标签的舍入与反向边界](verl-fused-output-softcap.md#高置信标签的舍入与反向边界) — #8377原12项CPU候选过／父版4高置信项失败；已有低置信梯度反例与二阶原地异常也复现，不等于整体数值安全或Triton验收。
+- [软标签消去与求导阶数](verl-fused-output-softcap.md#软标签消去与求导阶数) — 论文公式PyTorch转写在3个小CPU输入改善一阶梯度；detach注入不保留Hessian，完整分布q−p不直接适用于截断top-k目标。
 - [选定token概率与共享归一化项](verl-fused-output-softcap.md#选定-token-概率与共享归一化项) — #7712已撤回组合器，新恒等式复用标签概率；FP64数学／梯度对照揭示detach风险，非fused／SP或训练验收。
 - [原生 MTP 的梯度与归一化控制](verl-fused-output-softcap.md#原生-mtp-的梯度与归一化控制) — #8324的Core配套仍为fork草稿；原八例CPU梯度通过，输出权重detach与主干detach不同，单进程等计数夹具不认证整体迁移。
 - [Triton 输出的批维与序列维](verl-fused-output-softcap.md#triton-输出的批维与序列维) — #8090五适配器只加reshape，旧假kernel的二维输出隐藏外形缺口；原新20参数例未跑，14源码语法检查非kernel／SP或训练验收。
