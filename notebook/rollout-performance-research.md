@@ -6,8 +6,8 @@
 ## 0. Project Status
 
 - **阶段**：Phase 1 — recall-first literature & code investigation（广扫建库，不收束观点）
-- **最近更新**：2026-10-27（M1 基础补核与rollout补库：补核9篇既有serving文献，新增APRIL／RLHFSpec两篇，详见§5.8）
-- **覆盖**：累计**15篇已核身份**（11篇serving基础＋4篇rollout/RLHF，均非深读）；本批只新增2篇，FlashAttention／FA2从同一行拆成两篇不算新发现。Round 1“≈73”仍是待去重审计的历史估计，不能与15相加；其余历史条目继续核验。
+- **最近更新**：2026-10-27（M1 RL系统补核：8篇既有文献补版本，新增ROLL／EARL／PUZZLE，详见§5.9）
+- **覆盖**：累计**26篇已核身份**（11篇serving基础＋15篇rollout/RLHF，均非深读；24个唯一arXiv ID＋Orca／PUZZLE会议记录）。本批核既有8篇、仅新增3篇；Round 1“≈73”仍是待去重审计的历史估计，不能与26相加；其余历史条目继续核验。
 - **深读 / 代码阅读**：0 / 0
 - **最高优先级**：补来源与版本别名、按唯一文献去重后继续广扫至100–150；A Core短名单不以未核身份的条目数为依据
 - **下一步**：见 §16
@@ -65,20 +65,22 @@
 | ID | 日期 | 标题（短） | 层 | 类型 | 机制一句话 | 置信 |
 |---|---|---|---|---|---|---|
 | 2505.24298 | 2025-05 | AReaL | L4 | B | 大规模 async RL，decoupled actor/learner，staleness 界控制 | ✅ |
-| 2409.19256 | 2024-09 | HybridFlow / veRL | L4 | B | hybrid 控制流编程模型，单机多卡/多机 rollout 引擎统一抽象（EuroSys'25） | ✅ |
-| 2507.13833 | 2025-07 | DistFlow | L4 | B | 全分布式 RL 框架，controller-worker 解耦 | ✅ |
-| 2504.15930 | 2025-04 | StreamRL | L4 | B | disaggregated stream generation，异构弹性，气泡消除 | ✅ |
-| 2505.24034 | 2025-05 | LlamaRL | L4 | B | 分布式 async RL 框架（Meta） | ✅ |
+| [2409.19256v2](https://arxiv.org/abs/2409.19256v2) | 2024-09-28首次／v2 10-02 | HybridFlow / veRL | L4 | B | 混合单／多controller与分层API，3D-HybridEngine用于训练和生成间actor resharding | 核 |
+| [2507.13833v4](https://arxiv.org/abs/2507.13833v4) | 2025-07-18首次／v4 2026-05-30 | DistFlow | L4 | B | 多controller，数据传输与控制派发解耦，去中心Data Coordinator及DAG任务调度 | 核 |
+| [2504.15930v1](https://arxiv.org/abs/2504.15930v1) | 2025-04-22／v1 | StreamRL | L3/L4（暂） | B | 流式生成处理阶段气泡，长度ranker与调度处理长尾气泡；同步与异步路径须分开 | 核 |
+| [2505.24034v2](https://arxiv.org/abs/2505.24034v2) | 2025-05-29首次／v2 06-02 | LlamaRL | L4 | B | native PyTorch单controller，异步off-policy、模型offload及DMA权重同步 | 核 |
 | 2510.12633 | 2025-10 | Laminar | L4 | B | scalable async RL post-training | ✅ |
 | 2604.26256 | 2026-04 | DORA | L4 | B | scalable async RL system | ✅ |
 | 2601.12784 | 2026-01 | StaleFlow | L4 | B/C? | disaggregated 下 staleness-aware 数据管理，缓解数据偏斜 | ✅ |
-| 2507.01663 | 2025-07 | AsyncFlow | L4 | B | async streaming RL（参数 shuffle 式权重同步） | ✅ |
+| [2507.01663v2](https://arxiv.org/abs/2507.01663v2) | 2025-07-02首次／v2 2026-09-11 | AsyncFlow | L4 | B | 分布式流式数据管理与producer-consumer，staleness阈值内延后参数更新 | 核 |
 | 2606.26997 | 2026-06 | RolloutPipe | L4 | B | disaggregated 下 pipelined rollout-training 重叠 | ✅ |
-| 2410.18252 | 2024-10 | Asynchronous RLHF | L4 | B | off-policy async RLHF，吞吐优先 | ✅ |
+| [2410.18252v3](https://arxiv.org/abs/2410.18252v3) | 2024-10-23首次／v3 2025-04-26 | Asynchronous RLHF | L4 | B | 生成与旧样本训练重叠，研究off-policy容忍度；算法鲁棒性不自动推广 | 核 |
 | [2406.14088](https://arxiv.org/abs/2406.14088v2) | 2024-06 | ReaL（v1名ReaLHF） | L4 | B | parameter reallocation与执行计划搜索；v2标MLSys'25，不再标SOSP'24 | 核 |
 | [2409.13221](https://arxiv.org/abs/2409.13221v3) | 2024-09 | RLHFuse／Stage Fusion | L4 | B | 样本级跨阶段与微批级阶段内融合；同一文献，NSDI'25 | 核 |
-| 2405.11143 | 2024-05 | OpenRLHF | L4 | B | 主流开源 RLHF 框架（Ray 3.0 重构） | ✅ |
-| 2308.01320 | 2023-08 | DeepSpeed-Chat | L4 | B | 早期 RLHF 训练系统 | ✅ |
+| [2405.11143v6](https://arxiv.org/abs/2405.11143v6) | 2024-05-20首次／v6 2025-10-09 | OpenRLHF | L4 | B | 基于Ray／vLLM／DeepSpeed／Transformers的RLHF／RLVR框架 | 核 |
+| [2308.01320v1](https://arxiv.org/abs/2308.01320v1) | 2023-08-02／v1 | DeepSpeed-Chat | L4 | B | 统一训练／推理优化的端到端RLHF系统；后续框架基线须核具体实现与配置 | 核 |
+| [2506.06122v1](https://arxiv.org/abs/2506.06122v1) | 2025-06-06／v1 | ROLL | L3/L4（暂） | B（暂） | 单controller／parallel worker，逐样本rollout生命周期与AutoDeviceMapping | 核 |
+| [USENIX ATC'24](https://www.usenix.org/conference/atc24/presentation/lei) | 2024-07会议记录 | PUZZLE | L4（暂） | B（暂） | 阶段内模型亲和／时分重叠，阶段间按相似性降低切换通信成本 | 核 |
 | 2605.12070 | 2026-05 | Missing Old Logits in Async Agentic RL | L4 | B | async 语义失配与 off-policy 修正 | ✅ |
 | 2606.03070 | 2026-06 | ASymPO | L4 | B | 非对称规模 async post-training，无行为信息 | ✅ |
 | 2602.01826 | 2026-02 | Training-Inference Mismatch = Optimization Problem | L1/L4 | B | 训推失配的优化视角，LR 调度修复 | ✅ |
@@ -97,7 +99,7 @@
 | ？ | ? | Seer | L3 | B | ？"trajectory prefetch/length 预测"方向 | ？ |
 | ？ | ? | Weave | L3/L4 | B | ？（种子，待验证） | ？ |
 
-### 5.3 L1/L2 — RL-aware Speculative Rollout（"为什么 serving spec decoding 不能直接套 RL"专题）
+### 5.3 L1/L2 — RL-aware Speculative Rollout（serving机制的迁移条件）
 
 | ID | 日期 | 标题（短） | 层 | 类型 | 机制一句话 | 置信 |
 |---|---|---|---|---|---|---|
@@ -125,6 +127,7 @@
 | 2512.22560 | 2025-12 | RollArt | L4 | B | disaggregated multi-task agentic RL at scale | ✅ |
 | 2603.28101 | 2026-03 | Heddle | L3/L4 | B | distributed orchestration for agentic rollout | ✅ |
 | 2511.16108 | 2025-11 | SkyRL-Agent | L4 | B | multi-turn agent RL 训练框架 | ✅ |
+| [2510.05943v1](https://arxiv.org/abs/2510.05943v1) | 2025-10-07／v1 | EARL | L4（暂） | B（暂） | 按序列长度／负载选跨阶段并行策略，layout-aware去中心data dispatcher | 核 |
 | 2605.05262 | 2026-05 | Rollout Informativeness（submodular tree search） | L3 | **C** | 固定预算下最大化 rollout 信息量（改分布） | ✅ |
 | 2606.05597 | 2026-06 | AsyncWebRL | L4 | B | 多步 web agent async RL | ✅ |
 | 2603.18464 | 2026-03 | AcceRL | L4 | B | VLA 场景 async RL + world model | ✅ |
@@ -173,6 +176,16 @@
 新增[APRIL v3](https://arxiv.org/abs/2509.18521v3)和[RLHFSpec v2](https://arxiv.org/abs/2512.04752v2)通过本主文档标题／ID查重后进入矩阵。前者的超额请求、完成配额及跨步续跑使“没有丢弃响应”与“每步样本集合／策略版本是否不变”必须分开；B/C标签暂留问题，不凭摘要判定有偏或无偏。后者把draft策略选择与样本迁移并用，先标A/B；不把sample reallocation自动理解成删样本，也不沿用其摘要中的“首次”自述作历史优先权结论。
 
 版本例子：[Mooncake v1](https://arxiv.org/abs/2407.00079v1)题为Kimi's KVCache-centric Architecture，[v5](https://arxiv.org/abs/2407.00079v5)题为A KVCache-centric Disaggregated Architecture，均属同一ID；不新增一篇或把当前软件行为当成各版本论文结论。上述工作只核元数据、摘要与历史版本；没有全文深读、性能数字抽取、原作者测试或实现审计。下一批优先rollout-native候选的身份／来源及citation扩展，不反复核这11篇。
+
+### 5.9 RL系统身份补核与引用扩展
+
+2026-10-27第三批：HybridFlow、DistFlow、StreamRL、LlamaRL、AsyncFlow、Asynchronous RLHF、OpenRLHF、DeepSpeed-Chat共8篇的标题与原ID匹配，§5.1补齐首次提交与采用版本。累计26篇身份已核；这8篇不是新增发现。层／类型仅为建库标签，StreamRL同时涉及长尾调度与阶段重叠，暂补L3，不据此冻结分类。
+
+三项机制表述收窄：[DistFlow v4](https://arxiv.org/abs/2507.13833v4)解耦的是数据传输和控制派发，不只笼统写controller-worker；[AsyncFlow v2](https://arxiv.org/abs/2507.01663v2)摘要支持流式管理、producer-consumer和staleness阈值内延后更新，原“参数shuffle式权重同步”撤回，具体同步实现待读代码。[OpenRLHF v1](https://arxiv.org/abs/2405.11143v1)与[v6](https://arxiv.org/abs/2405.11143v6)同题但作者／摘要已变，不能把当前软件release、Ray依赖版本或旧版基线结论拼入论文身份。HybridFlow本批只核arXiv版本与机制；ACM关联DOI页面返回403，venue未在本批独立确认。
+
+新增三篇经本主文档标题／ID查重：[ROLL v1](https://arxiv.org/abs/2506.06122v1)补逐样本调度／跨阶段资源映射线索；[EARL v1](https://arxiv.org/abs/2510.05943v1)补长上下文agentic工作负载的并行策略与数据布局线索。两篇来自定向检索，不声称引用关系。[StreamRL v1 §8及参考文献](https://arxiv.org/html/2504.15930v1#S8)提供PUZZLE回溯入口，随后以[ATC'24官方记录](https://www.usenix.org/conference/atc24/presentation/lei)确认完整题名、作者、2024-07与127–140页；只计一篇，不猜arXiv ID。三个条目均暂B类，是否影响样本语义留待正文／实现核对。
+
+本批范围为元数据、摘要，以及StreamRL的相关工作／参考文献定位；不是完整深读或代码阅读，没有记录作者加速比为本项目结果。下一批优先核§5.2长尾与§5.3推测rollout候选，并从已核论文扩展引用，不重复核这8篇系统基础。
 
 ## 6. Paper Deep Reads
 
@@ -244,6 +257,8 @@
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（M1 RL系统补核）**：核8篇既有RL／RLHF系统身份与版本，收窄DistFlow／AsyncFlow／OpenRLHF旧描述；新增ROLL、EARL及从StreamRL回溯并核官方记录的PUZZLE。累计26篇身份已核（11 serving＋15 rollout/RLHF；24 arXiv＋2会议记录），仅新增3篇，不重算历史≈73。§5.3标题同步撤回预设不可迁移说法；仍无全文深读、代码或复现。下一批转长尾／推测rollout候选核验与引用扩展。
 
 - **2026-10-27（M1基础补核与rollout补库）**：核既有9篇serving原始文献，补primary链接／首次提交／采用版本，FA1/2拆行不计新发现；新增APRIL 2509.18521v3与RLHFSpec 2512.04752v2，累计15篇身份已核（11 serving＋4 rollout/RLHF）。两新项层／类型暂定，未抽性能数字；修正PD分离与trainer/rollout分离混同，撤回speculative不可直接迁移的先验绝对说法。未做全文深读、taxonomy收束、代码或复现；下一批转rollout-native来源核验与扩展。
 
