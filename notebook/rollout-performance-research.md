@@ -6,9 +6,9 @@
 ## 0. Project Status
 
 - **阶段**：Phase 1 — recall-first literature & code investigation（广扫建库，不收束观点）
-- **最近更新**：2026-10-27（M1原生框架与低精度补库：新增7篇，详见§5.16）
-- **覆盖**：累计**97篇已核身份**（20篇serving基础／迁移边界＋77篇rollout/RLHF及相关边界，含VLA、训练侧与算法诊断；均非深读；93个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL会议记录）。本批新增RLinf、DynaRL、NeMo-Aligner、ROLL Flash、CadenceRL及两篇含系统章节的模型报告；RLinf的arXiv与OSDI记录合计1篇，模型报告不当纯系统增益实证。总数97或RL相关77不代表原生80–120目标已达成。ASymPO证明错误警示保留，历史✅补核完不等检索收敛；Round 1“≈73”不与当前数量相加。
-- **深读 / 代码阅读**：0 / 0
+- **最近更新**：2026-10-27（M1 veRL固定源码广扫：权重同步／vLLM生命周期与计时口径，详见§8.2／§12；本批不增文献）
+- **覆盖**：累计**97篇已核身份**（20篇serving基础／迁移边界＋77篇rollout/RLHF及相关边界，含VLA、训练侧与算法诊断；均非深读；93个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL会议记录）。上一文献批次新增RLinf、DynaRL、NeMo-Aligner、ROLL Flash、CadenceRL及两篇含系统章节的模型报告；RLinf的arXiv与OSDI记录合计1篇，模型报告不当纯系统增益实证。总数97或RL相关77不代表原生80–120目标已达成。ASymPO证明错误警示保留，历史✅补核完不等检索收敛；Round 1“≈73”不与当前数量相加。
+- **全文深读 / 代码广扫**：0 / 1（本专题首条固定源码路径：veRL `24f25b03` 的weight-sync→vLLM；不是10份文件或整个框架读完，也不是运行验证）
 - **最高优先级**：继续原生系统引用／会议扩展与种子落实，补serving机制覆盖，按唯一文献广扫至100–150；总数不替代原生覆盖，A Core短名单不只按条目数选取
 - **下一步**：见 §16
 
@@ -328,11 +328,15 @@ BubbleSpec／SRT的run-ahead用于后续draft验证，不等于直接拿旧polic
 - `/Users/jackiemac/workspace/UniRL-main`：UniRL 源码（train/stack 双栈结构已深读）；
 - M5 服务器：verl-e2e 环境（4090-1，可跑 rollout 冒烟）。
 
+本轮实际复用的只读检出：`/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/verl-7913`，HEAD固定`24f25b03aa4b54249a273655ebbcce06f484192b`，origin为`verl-project/verl`，工作树干净。此快照不称最新main，不与上方历史工作区／论文发表年代混为一版；文件夹名不是本轮接续旧PR的授权。
+
 **待建代码地图**（按 §9 的锚点逐框架定位）：veRL（已部分完成，见 §8）→ AReaL → vLLM/SGLang（引擎层 scheduler）→ OpenRLHF → rLLM/SkyRL/NeMo-RL。
 
 ## 8. Paper → Mechanism → Code Mapping
 
-以 veRL 为第一个完整样本（已有源码基础）：
+### 8.1 历史定位（未在本轮重核）
+
+保留专题外已有veRL源码线索；以下80ee82bd时代定位不与§8.2的新快照拼成一套执行证据，也不计本轮代码广扫数量。
 
 | 概念锚点 | veRL 代码位置（80ee82bd 代） | 状态 |
 |---|---|---|
@@ -343,6 +347,32 @@ BubbleSpec／SRT的run-ahead用于后续draft验证，不等于直接拿旧polic
 | multi-sample / batch construction | `verl/trainer/ppo/` | 待读 |
 
 （AReaL / vLLM / SGLang 等行待补。）
+
+### 8.2 veRL权重同步与vLLM生命周期广扫
+
+固定[veRL `24f25b03`](https://github.com/verl-project/verl/tree/24f25b03aa4b54249a273655ebbcce06f484192b)，只读默认CheckpointEngineManager→ActorRolloutRefWorker→vLLM ServerAdapter路径。trainer允许配置替换manager，其他rollout backend、PD、完整LoRA／quant／MTP loader及底层通信实现未全审；不能将本表推广为所有配置的协议。与HybridFlow论文的联系仅是工作流／参数重分配锚点，不是论文原版实现的逐项复现。
+
+| 锚点 | 固定代码入口 | 静态可见内容 |
+|---|---|---|
+| trainer阶段与同步入口 | [ray_trainer.py:974](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/trainer/ppo/ray_trainer.py#L974)、[fit:1430](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/trainer/ppo/ray_trainer.py#L1430) | 建manager时可用自定义类；初始化载checkpoint后sync，常规actor更新后再sync；生成后sleep |
+| 同步协调与两条分支 | [CheckpointEngineManager.update_weights:506](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/checkpoint_engine/base.py#L506) | naive直接调actor；非naive协调abort、KV释放、拓扑、send／receive、finalize与恢复 |
+| actor导出与直接加载 | [ActorRolloutRefWorker.update_weights:727](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/workers/engine_workers.py#L727) | 非naive转checkpoint engine发送；naive按配置恢复weights、导出／加载，再恢复KV；adapter base-sync另有分支 |
+| 两段传输的接口边界 | [CheckpointEngineWorker:355](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/checkpoint_engine/base.py#L355)、[ServerAdapter:209](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/workers/rollout/vllm_rollout/vllm_rollout.py#L209) | CE接收后交adapter；vLLM adapter断言named_tensors，再经bucketed IPC／shared-memory fallback交加载RPC；不是仅一条NCCL传输 |
+| generation／KV控制 | [RolloutReplica:273](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/workers/rollout/replica.py#L273)、[vLLMHttpServer:829](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/workers/rollout/vllm_rollout/vllm_async_server.py#L829) | replica向servers派发；clear、release、resume与pause／resume generation不是同一动作，且有node rank／free_cache_engine／RolloutMode门控 |
+| sync调用如何完成 | [auto_await:97](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/utils/ray_utils.py#L97) | 无running loop时asyncio.run；同步调用者处于loop中时线程执行后取结果；async调用者取coroutine需await，不是见async def就fire-and-forget |
+
+默认manager的成功调用顺序（不是故障事务保证）：
+
+```text
+naive：actor.update_weights → 配置允许时resume weights → adapter加载／清缓存 → 配置允许时resume KV
+其他backend：abort replicas → release KV → prepare／建拓扑 → actor发送＋rollout接收／加载（ray.get等待）→ finalize → resume KV → resume generation
+```
+
+`mode`／checkpoint backend与server的`RolloutMode`是不同开关。非naive分支的KV方法在`free_cache_engine=False`、非leader node或COLOCATED模式可能直接返回；vLLM的release实现实际先sleep再只wake weights，并非专门的KV释放API。`_resolve_sleep_level`对MTP、adapter等保留状态选择level 1，因此不能把同名sleep等同“所有权重均丢弃”。这些是源码条件，不是本机显存／吞吐观测。
+
+adapter等待发送及可用的加载RPC后，有server的rank调用clear_kv_cache，再可选设置global_steps；server调用prefix／多模态／encoder cache清理接口，其中prefix reset带`reset_connector=True`。恢复KV内存不等旧KV内容可跨权重使用；global_steps是此路径的标记字段，不是张量一致性证明。server的abort异常会返回带error的dict，而manager聚合处未显式判该字段；仅完成await不能据此声称全故障场景已安全暂停，未做bug定性、恢复实验或修复提案。
+
+验证限度：表中7个入口文件，加`verl/workers/rollout/base.py`、`verl/workers/rollout/vllm_rollout/bucketed_weight_transfer.py`及同目录`utils.py`，共10份与固定Git blob逐字节相同并通过AST解析，锚点行号由AST及原文定位；未导入模块、执行函数或跑原生测试。未确认底层vLLM实际版本、RPC兼容性、进程／设备完成性、恢复和off-policy修正。后续代码广扫扩展batch／old-logp／staleness数据契约；不将框架接口名直接视为论文性能／正确性验收，也不触及M5专项。
 
 ## 9. Serving → Rollout Transfer
 
@@ -370,6 +400,8 @@ BubbleSpec／SRT的run-ahead用于后续draft验证，不等于直接拿旧polic
 
 后续逐篇登记makespan、tokens/s、step time、bubble ratio及长度分布，同时区分作者实测、模拟预测与本项目复现，当前不建立跨论文加速比排名。
 
+固定源码的计时口径（veRL `24f25b03`，静态）：[fit的gen计时块:1510](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/trainer/ppo/ray_trainer.py#L1510)包住generate_sequences、sleep_replicas及条件性的profile调用；[update_weights计时块:1715](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/trainer/ppo/ray_trainer.py#L1715)包住整个manager同步流程，分支见§8.2。因此前者不直接等纯decode／kernel时间，后者不直接等链路传输时间。未来提取benchmark须注明计时边界、backend／free-cache／profiler配置；本轮没有时间测量或拆分数值。
+
 ## 13. Research Gaps / Ideas
 
 （Round 1 初步观察，待 corpus 收敛后修正）：
@@ -390,6 +422,8 @@ BubbleSpec／SRT的run-ahead用于后续draft验证，不等于直接拿旧polic
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（M1固定源码广扫）**：不增文献，保持97身份；新增§8.2固定veRL `24f25b03` 默认manager→vLLM的权重同步／生命周期地图，§12记录gen与update_weights计时并非纯decode／链路传输。naive／非naive及server mode／free-cache门控分开，KV内存恢复不当缓存内容有效，await不当故障保证。10源码blob一致／AST解析，未导入、运行或设备验证；全文深读0，代码广扫1条路径，不称整个框架读完。后续扩batch／old-logp／staleness契约并继续原生文献，M5专项不动。
 
 - **2026-10-27（M1原生框架与低精度补库）**：新增RLinf／DynaRL／NeMo-Aligner／ROLL Flash／CadenceRL及两篇含系统章节的模型报告，累计97身份（20 serving／边界＋77 rollout/RLHF及相关边界；93 arXiv＋4会议记录）。RLinf arXiv／OSDI不重复，ROLL Flash为后续独立论文非原ID修订；异步RPC不等stale-policy，CadenceRL暂候续跑不等删轨迹，FP8 policy／draft区分，CompassMax过滤单列C。仅身份／摘要和局部机制、定性评估条件，深读／代码仍0／0；未设备验证或扩算法综述，后续继续原生与种子扩展。
 
