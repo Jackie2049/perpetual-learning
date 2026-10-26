@@ -10,6 +10,7 @@
 | [frameworks/](frameworks/readme.md) | 框架架构、源码阅读与完整文件索引 |
 | [experiments/](experiments/) | 实验记录：问题、环境、方法、结果、结论和经验 |
 | [roadmap.md](roadmap.md) | 技术学习与实践规划 |
+| [rollout-performance-research.md](rollout-performance-research.md) | **长期专项**：LLM Post-training / RL Rollout 性能优化调研 canonical 主文档（文献矩阵 / taxonomy / 代码地图 / gaps） |
 | [knowledge-map.md](knowledge-map.md) | 知识整理、关联与整体导航 |
 | [resources/](resources/readme.md) | 学习与调研的原始资料留档 |
 | [papers/](papers/) | 延续已有论文阅读笔记 |

@@ -875,6 +875,8 @@
 
 ## 当前用户需求与决定
 
+- **长期专项（2026-10-27 用户新立）**：**LLM Post-training / RL Rollout Performance Optimization 调研**。当前阶段=recall-first 文献+代码广扫（corpus 目标 100–150 篇：rollout-native 80–120 + serving 基础 20–30），**不写 survey 正文、不冻结 taxonomy、不批量低价值摘要、不启动大规模复现**。canonical 主文档 [notebook/rollout-performance-research.md](notebook/rollout-performance-research.md)（16 节结构；每轮实质工作后必须更新主文档而非只写 diary）。taxonomy=L1 token/L2 engine/L3 cluster/L4 pipeline co-design × A/B/C 优化类型（C 类改训练分布须单独标记）。Round 1 已完成：arXiv 两批验证检索、corpus ≈73（40 篇实证 + 25 知识注册 + 8 待验证）。执行规则：长期任务不问"是否继续"，无实质阻塞即推进；涉及上游动作仍受铁律约束。
+
 - **两周技术掘金聚焦（2026-10-23 用户明确）**：**UniRL 与 verl 是最近两周技术掘金的重点对象**——两周内技术掘金精力聚焦到这两个开源项目，**重点寻找提出 issue 和 PR 的机会**。**铁律：用户审批之前不能在主仓库上提交**（任何 issue/PR/评论/上游行动均需用户拍板；候选先在本地/fork 准备，见 [AGENTS.md](AGENTS.md#执行边界)）。现状：verl 主贡献轨道（#8313 已 OPEN 待维护者 approve、#8250 待补证）；UniRL 贡献轨道已建立（未认领候选 [#523](open-source/unirl/candidate-523-anchor-lifecycle.md)，fork 分支 `fix-523-anchor-lifecycle` 已备，**待用户审批后决定是否提 PR/issue**）。技术掘金精力优先分配给这两个项目；DeepInfer 降为常规关注（其 PR 采纳门槛高，见下）。
 
 - **主机分工（2026-10-20 最新用户明确）**：所有 GPU 访问/环境/实验由 M5 Agent 负责；AReaL prompt_mean 候选/PR 整项由 M5 单一负责，M1 阶段收尾，后续定时任务不并行修改其思路、代码、实验或定性。M1 继续独立研究，只有用户重新指派或明确要求只读 review 才涉及该项。统一 [交接说明](open-source/areal/handoff-m5.md)。
