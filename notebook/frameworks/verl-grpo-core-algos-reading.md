@@ -1,5 +1,7 @@
 # verl GRPO Training Core Algorithms — core_algos.py 源码深度阅读
 
+2026-10-26接续：[k3 近零消去与拒绝阈值](#k3-近零消去与拒绝阈值)复查已有#8386：原新增20参数项基线12过8失败／候选全过；同一长序列夹具从错误保留转为拒绝，仍不是完整训练或GPU验收。
+
 > 2026-06-07 | 2487行源码分析: 14种Advantage Estimator + 10种Policy Loss + 注册表架构
 
 2026-10-25接续：[KL-Cov 的选词范围](#kl-cov-的选词范围与微批切分)说明批处理切分如何改变选择性惩罚；以下早期算法数量和行号保留历史含义，不作当前版本清单。
@@ -463,6 +465,40 @@ python experiments/scripts/verify_verl_kl_plus.py /path/to/verl
 ```
 
 Python3.12.13、torch2.9.1、pytest8.4.2；非完整pytest、PPO loss/optimizer、模型/DP或设备验证，也未检验KL估计器的统计无偏性、配置优劣或收敛效果。官方API/本地core_algos Git blob为 `9d08b8461a0f95d25f348c566358360bbfb72ece`，losses.py为 `ebaa4e4d8b759db980f62bf96f83be305f54847e`。core模块SHA256 `a54b6d812db4441e8b0989ae69d2c46b0a0a7b584296f73d8316f264462c37cb`，原测试模块 `0a60e917589ab91646989f0a8616f810fea0dc70047d2b8c13914f4977f5569c`。本题只澄清数值/梯度与接线，不改算法或新增M5任务。
+
+### k3 近零消去与拒绝阈值
+
+**代数等价的k3表达式，在FP32下可能给出不同的样本筛选结果。** 2026-10-26核对Eppiehu的OPEN／non-draft [#8386](https://github.com/verl-project/verl/pull/8386)，head `c854acbbec2248950d562dde49e4d831641daf1f`、父版／API base／实际祖先均`0bd668c1aa7b63c5f174f7dcb1c5de12e0c74a0b`，ahead1／behind0，三文件107增4删。已有作者及原回归测试，本项目只独立复查，不另写竞争补丁。
+
+令x为该调用点的log-ratio，`exp(x)−1−x`在近零时应约为x²/2。先得到接近1的exp(x)再相减，会丢失需要保留的小量。候选三处改用`torch.expm1(x)−x`；[PyTorch API](https://docs.pytorch.org/docs/2.14/generated/torch.expm1.html)将expm1指向专用special操作。三个消费点仍须分别理解：
+
+| 消费点 | x来源与数值保护 | 本次不改变的契约 |
+|---|---|---|
+| [KL penalty](https://github.com/verl-project/verl/blob/c854acbbec2248950d562dde49e4d831641daf1f/verl/trainer/ppo/core_algos.py) | ref_logprob−logprob，先clamp到±20，结果仍clamp到±10 | k3／low_var_kl别名、`+`模式的k2 straight-through反向 |
+| [拒绝采样](https://github.com/verl-project/verl/blob/c854acbbec2248950d562dde49e4d831641daf1f/verl/trainer/ppo/rollout_corr_helper.py) | training／rollout的log-ratio，先clamp到±20 | token／seq_sum／seq_mean／seq_max的阈值和mask归约规则 |
+| 同文件off-policy诊断 | old_log_prob−rollout_log_prob，此处k3没有同样的输入clamp | 指标不是额外loss；expm1不新增溢出或非有限值保护 |
+
+惩罚的旧式是`exp(x)−x−1`，拒绝采样旧式是`exp(x)−1−x`；相减顺序也会改变舍入，不应将不同入口的旧数值互相套用。改善后续求值也不能还原早已在输入logprob中舍掉的差异。下列原测试的参考先将**实际存入的Tensor值**升为FP64，再用2至11阶Taylor项求和；它是近零夹具的有限精度参考，不是任意x的通用oracle。
+
+[复查脚本](../../experiments/verl-k3-cancellation/verify.py)从固定Git对象选择完整原KL／拒绝／指标函数、两个原masked归约及六个新增测试体，保留断言、参数和函数体，用真实CPU torch及autograd直接调用，不替换求值或归约逻辑：
+
+| 原参数组 | 基线 | 候选 |
+|---|---|---|
+| 近零惩罚，两dtype×四别名 | 4过4失败，失败均FP32 | 8过 |
+| 四种拒绝粒度 | 2过2失败 | 4过 |
+| 长序列累加 | 1失败 | 1过 |
+| off-policy k3指标 | 1失败 | 1过 |
+| 梯度／clamp与远离零值 | 6过 | 6过 |
+
+合计基线12过8断言失败、候选20过，两次独立执行JSON相同。沿原长序列输入，32,768个FP32 `−1e−4`在阈值`1e−4`下，FP64 Taylor总和为`0.0001638345305`；旧拒绝函数统计`−0.0005438327789`并保留全部token，候选统计`0.0001637935638`并拒绝全部token。这说明数值误差能穿过配置阈值改变mask，而不只是日志最后几位不同；不能据这组严格阈值夹具断言默认配方或某真实训练必然受损。候选仍有舍入误差，测试采用5e−3相对容差，不是逐bit等同参考。
+
+`k3+`的值更准确不等于其反向改成k3：原四梯度项继续验证k2反向，有限差分也仍不能当作该straight-through设计的梯度标准。FP32／FP64的有界近零例通过，不认证全部低精度、非有限输入、编译后端或分布式训练。作者Windows上73项整组pytest与本机20项隔离原函数执行分开；本机Python3.12.13／torch2.14.1／pytest9.1.1，未完整pytest收集、执行Ray／actor／optimizer或GPU／NPU。四份完整源码仅另做AST／compile，[结果和hash](../../experiments/verl-k3-cancellation/result.json)随仓库保存。
+
+```bash
+python -B experiments/verl-k3-cancellation/verify.py --repo /path/to/verl --output result.json
+```
+
+已有GPU观测若将来由M5独立选用，只补[原一致性入口](../../experiments/handoff-m5.md#verl-异步策略一致性补证)的版本／dtype／阈值参考，不新增训练队列、改作者代码或以CPU结果声称质量提升。任何社区写入及已有PR-head推送仍逐项待用户明确同意。
 
 ### 掩码统计与梯度的数值边界
 

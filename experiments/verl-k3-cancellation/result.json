@@ -1,0 +1,383 @@
+{
+  "scope": "Run #8386's 20 new CPU cases using isolated original functions, not training.\n\nRequires torch and pytest. No framework imports, device discovery or network.\npython -B verify.py --repo /path/to/verl --output result.json\n",
+  "base": "0bd668c1aa7b63c5f174f7dcb1c5de12e0c74a0b",
+  "head": "c854acbbec2248950d562dde49e4d831641daf1f",
+  "python": "3.12.13",
+  "torch": "2.14.1",
+  "pytest": "9.1.1",
+  "platform": "macOS-15.4.1-arm64-arm-64bit",
+  "script_sha256": "1d3413fcf692f284994a749d380555b84adb2a08316dbf29b7c288c5f4cda8ec",
+  "test_sha256": "ae551ecc29179387fba71ccfb1b52132d1a40c8f5bd0b42a58c539b775fb507b",
+  "runs": {
+    "0bd668c1aa7b63c5f174f7dcb1c5de12e0c74a0b": {
+      "source_sha256": {
+        "verl/trainer/ppo/core_algos.py": "369b614f239f237a04a38a40b1877cd6fd14aa7bd5f9ff4fe4d7758b682a6948",
+        "verl/trainer/ppo/rollout_corr_helper.py": "763158342551bc4077805a8a009d959a7a2043c4d43b772fe6045f4a40932f3e",
+        "verl/utils/torch_functional.py": "bc7ff798e2f5c06e0121668490739814efc519ff66d4d7dd7c8fc40b4840eb03"
+      },
+      "passed": 12,
+      "assertion_failed": 8,
+      "cases": [
+        {
+          "name": "test_k3_penalty_preserves_gradients_and_clipping",
+          "parameters": {
+            "name": "k3"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_k3_penalty_preserves_gradients_and_clipping",
+          "parameters": {
+            "name": "low_var_kl"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_k3_penalty_preserves_gradients_and_clipping",
+          "parameters": {
+            "name": "k3+"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_k3_penalty_preserves_gradients_and_clipping",
+          "parameters": {
+            "name": "low_var_kl+"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_k3_penalty_preserves_values_away_from_zero",
+          "parameters": {
+            "dtype": "torch.float32"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_k3_penalty_preserves_values_away_from_zero",
+          "parameters": {
+            "dtype": "torch.float64"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_k3_penalty_small_log_ratios",
+          "parameters": {
+            "name": "k3",
+            "dtype": "torch.float32"
+          },
+          "outcome": "assertion_failed",
+          "detail": "Tensor-likes are not close!\n\nMismatched elements: 6 / 7 (85.7%)\nGreatest absolute difference: 2.3257037268037815e-08 at index (6,) (up to 0 allowed)\nGreatest relative difference: 1.0 at index (1,) (up to 0.005 allowed)"
+        },
+        {
+          "name": "test_k3_penalty_small_log_ratios",
+          "parameters": {
+            "name": "k3",
+            "dtype": "torch.float64"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_k3_penalty_small_log_ratios",
+          "parameters": {
+            "name": "low_var_kl",
+            "dtype": "torch.float32"
+          },
+          "outcome": "assertion_failed",
+          "detail": "Tensor-likes are not close!\n\nMismatched elements: 6 / 7 (85.7%)\nGreatest absolute difference: 2.3257037268037815e-08 at index (6,) (up to 0 allowed)\nGreatest relative difference: 1.0 at index (1,) (up to 0.005 allowed)"
+        },
+        {
+          "name": "test_k3_penalty_small_log_ratios",
+          "parameters": {
+            "name": "low_var_kl",
+            "dtype": "torch.float64"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_k3_penalty_small_log_ratios",
+          "parameters": {
+            "name": "k3+",
+            "dtype": "torch.float32"
+          },
+          "outcome": "assertion_failed",
+          "detail": "Tensor-likes are not close!\n\nMismatched elements: 6 / 7 (85.7%)\nGreatest absolute difference: 2.3257037268037815e-08 at index (6,) (up to 0 allowed)\nGreatest relative difference: 1.0 at index (1,) (up to 0.005 allowed)"
+        },
+        {
+          "name": "test_k3_penalty_small_log_ratios",
+          "parameters": {
+            "name": "k3+",
+            "dtype": "torch.float64"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_k3_penalty_small_log_ratios",
+          "parameters": {
+            "name": "low_var_kl+",
+            "dtype": "torch.float32"
+          },
+          "outcome": "assertion_failed",
+          "detail": "Tensor-likes are not close!\n\nMismatched elements: 6 / 7 (85.7%)\nGreatest absolute difference: 2.3257037268037815e-08 at index (6,) (up to 0 allowed)\nGreatest relative difference: 1.0 at index (1,) (up to 0.005 allowed)"
+        },
+        {
+          "name": "test_k3_penalty_small_log_ratios",
+          "parameters": {
+            "name": "low_var_kl+",
+            "dtype": "torch.float64"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_k3_rejection_accumulates_small_divergences_on_long_sequences",
+          "parameters": {},
+          "outcome": "assertion_failed",
+          "detail": ""
+        },
+        {
+          "name": "test_k3_rejection_agrees_with_reference_near_zero",
+          "parameters": {
+            "mode": "token_k3",
+            "threshold": "1e-08"
+          },
+          "outcome": "assertion_failed",
+          "detail": "Tensor-likes are not equal!\n\nMismatched elements: 1 / 4 (25.0%)\nGreatest absolute difference: 1 at index (0, 0)\nGreatest relative difference: 1.0 at index (0, 0)"
+        },
+        {
+          "name": "test_k3_rejection_agrees_with_reference_near_zero",
+          "parameters": {
+            "mode": "seq_mean_k3",
+            "threshold": "1e-08"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_k3_rejection_agrees_with_reference_near_zero",
+          "parameters": {
+            "mode": "seq_max_k3",
+            "threshold": "1e-08"
+          },
+          "outcome": "assertion_failed",
+          "detail": "Tensor-likes are not equal!\n\nMismatched elements: 2 / 4 (50.0%)\nGreatest absolute difference: 1 at index (0, 0)\nGreatest relative difference: 1.0 at index (0, 0)"
+        },
+        {
+          "name": "test_k3_rejection_agrees_with_reference_near_zero",
+          "parameters": {
+            "mode": "seq_sum_k3",
+            "threshold": "2.5e-08"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_offpolicy_k3_metric_preserves_small_divergences",
+          "parameters": {},
+          "outcome": "assertion_failed",
+          "detail": ""
+        }
+      ],
+      "long_sequence": {
+        "actual_fp32_x": -9.999999747378752e-05,
+        "oracle_sum": 0.00016383453052571824,
+        "observed_sum": -0.0005438327789306641,
+        "kept_tokens": 32768
+      }
+    },
+    "c854acbbec2248950d562dde49e4d831641daf1f": {
+      "source_sha256": {
+        "verl/trainer/ppo/core_algos.py": "0aeda35c3835999af13c77fc0f2f4a63363b98c3b5237ccf8ccfb5383e813795",
+        "verl/trainer/ppo/rollout_corr_helper.py": "fbf452478640215d033de710ddc7096abf960a8c245e8c2583fd8e737ae6b289",
+        "verl/utils/torch_functional.py": "bc7ff798e2f5c06e0121668490739814efc519ff66d4d7dd7c8fc40b4840eb03"
+      },
+      "passed": 20,
+      "assertion_failed": 0,
+      "cases": [
+        {
+          "name": "test_k3_penalty_preserves_gradients_and_clipping",
+          "parameters": {
+            "name": "k3"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_k3_penalty_preserves_gradients_and_clipping",
+          "parameters": {
+            "name": "low_var_kl"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_k3_penalty_preserves_gradients_and_clipping",
+          "parameters": {
+            "name": "k3+"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_k3_penalty_preserves_gradients_and_clipping",
+          "parameters": {
+            "name": "low_var_kl+"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_k3_penalty_preserves_values_away_from_zero",
+          "parameters": {
+            "dtype": "torch.float32"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_k3_penalty_preserves_values_away_from_zero",
+          "parameters": {
+            "dtype": "torch.float64"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_k3_penalty_small_log_ratios",
+          "parameters": {
+            "name": "k3",
+            "dtype": "torch.float32"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_k3_penalty_small_log_ratios",
+          "parameters": {
+            "name": "k3",
+            "dtype": "torch.float64"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_k3_penalty_small_log_ratios",
+          "parameters": {
+            "name": "low_var_kl",
+            "dtype": "torch.float32"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_k3_penalty_small_log_ratios",
+          "parameters": {
+            "name": "low_var_kl",
+            "dtype": "torch.float64"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_k3_penalty_small_log_ratios",
+          "parameters": {
+            "name": "k3+",
+            "dtype": "torch.float32"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_k3_penalty_small_log_ratios",
+          "parameters": {
+            "name": "k3+",
+            "dtype": "torch.float64"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_k3_penalty_small_log_ratios",
+          "parameters": {
+            "name": "low_var_kl+",
+            "dtype": "torch.float32"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_k3_penalty_small_log_ratios",
+          "parameters": {
+            "name": "low_var_kl+",
+            "dtype": "torch.float64"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_k3_rejection_accumulates_small_divergences_on_long_sequences",
+          "parameters": {},
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_k3_rejection_agrees_with_reference_near_zero",
+          "parameters": {
+            "mode": "token_k3",
+            "threshold": "1e-08"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_k3_rejection_agrees_with_reference_near_zero",
+          "parameters": {
+            "mode": "seq_mean_k3",
+            "threshold": "1e-08"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_k3_rejection_agrees_with_reference_near_zero",
+          "parameters": {
+            "mode": "seq_max_k3",
+            "threshold": "1e-08"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_k3_rejection_agrees_with_reference_near_zero",
+          "parameters": {
+            "mode": "seq_sum_k3",
+            "threshold": "2.5e-08"
+          },
+          "outcome": "passed",
+          "detail": null
+        },
+        {
+          "name": "test_offpolicy_k3_metric_preserves_small_divergences",
+          "parameters": {},
+          "outcome": "passed",
+          "detail": null
+        }
+      ],
+      "long_sequence": {
+        "actual_fp32_x": -9.999999747378752e-05,
+        "oracle_sum": 0.00016383453052571824,
+        "observed_sum": 0.00016379356384277344,
+        "kept_tokens": 0
+      }
+    }
+  }
+}

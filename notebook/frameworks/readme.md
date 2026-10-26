@@ -262,6 +262,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [RLOO 的单样本回退与输出精度](verl-grpo-core-algos-reading.md#rloo-的单样本回退与输出精度)：#7794／#7964分别修singleton与dtype，原1／3测试体CPU通过；BF16反例显示类型一致不代表数值不变或更准确，评审要点仅存个人项目。
 - [verl 同分小数奖励的舍入残差](verl-grpo-core-algos-reading.md#同分小数奖励的舍入残差)：新draft#8349原16参数例及低方差/singleton控制，更正“同分必精确零”的泛化，复用原脚本、不另开竞争修复或训练。
 - [verl KL 前向值与反向规则](verl-grpo-core-algos-reading.md#kl-前向值与反向规则)：k3+值受clamp而梯度走k2，6原测试例及14组CPU对照；日志值不代表梯度限幅，非完整训练验收。
+  - [k3近零消去与拒绝阈值](verl-grpo-core-algos-reading.md#k3-近零消去与拒绝阈值)：#8386原20CPU参数项基线8失败／候选全过；同长序列夹具mask翻转，expm1不改变straight-through或自动保证训练质量。
 - [verl GRPO End-to-End Data Flow 源码级阅读](verl-grpo-data-flow-reading.md)：[拼批形状与引用](verl-grpo-data-flow-reading.md#拼批中的形状与引用)及[Rollout完整性](verl-grpo-data-flow-reading.md#rollout-完整性与会话计数)；#6641原7项replay测试候选通过、旧版4项预期失败，区分输出行与会话，非TQ/训练验收。
 - [自适应组大小与逐轮生成](verl-grpo-data-flow-reading.md#自适应组大小与逐轮生成)：#8077等待作者／维护者方向；预设__rollout_n__不等分轮停止，UID优势分组不代表优化批／补位已适配，六模块语法非算法或训练验收。
 - [verl PF PPO重采样身份](verl-grpo-data-flow-reading.md#pf-ppo-重采样与原-key-回写)：#7957原四测试三版本对照，整行一致不等原key对齐；原切片控制区分旧长度与来源长度，拒绝保护非V1支持或真实TQ验收。

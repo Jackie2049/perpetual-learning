@@ -23,6 +23,8 @@
 
 2026-10-26纠正[数学奖励候选状态](#数学奖励候选关闭与方程认领)：#8347关闭未合并，区间／数值问题仍未解决；方程提取已有JianhaoYu-AI认领，旧64项结果不作主线修复，新27项及未来Linux数据复核均不计为本机验收。
 
+2026-10-26补[k3近零消去](#k3-近零消去的已有候选)：新#8386已有作者，原20项基线12过8失败／候选全过；长序列夹具筛选翻转，非默认配方、GPU或训练质量验收，不另实现。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -48,6 +50,12 @@
 2026-10-26核实[#8347](https://github.com/verl-project/verl/pull/8347)在02:27:59 UTC由wuxibin89关闭，未合并，head仍7f34e018；撤回原表中OPEN／REVIEW_REQUIRED的当前状态。普通评论只见此前CLA障碍，关闭原因未获明确说明，不推断因CLA或技术否决。最新main3dd97a0e的prime_math入口／grader／normalizer三blob与旧d430157d基线相同，旧候选64项通过不代表修复进入主线；本轮不重跑。
 
 [#8346的新讨论](https://github.com/verl-project/verl/issues/8346#issuecomment-6410234797)已有JianhaoYu-AI认领方程原文匹配及boxed／fbox最后位置选择，报告者[同意其继续](https://github.com/verl-project/verl/issues/8346#issuecomment-6410710152)，并明确区间／缩放／整数问题仍未解决。新27项为贡献者本地CPU报告，含七项mock grader路由例，基线自述Windows多进程错误；Linux的1,024行复核只是后续意愿。详见[原奖励专题](../../notebook/frameworks/verl-reward-integration-reading.md#候选关闭与方程后续)。不复制认领、不把检索未命中当无人负责；无本机新实验或M5算力队列。所有社区写入与既有PR-head推送仍待用户对具体动作明确同意。
+
+## k3 近零消去的已有候选
+
+2026-10-26读取Eppiehu的OPEN／non-draft [#8386](https://github.com/verl-project/verl/pull/8386)，headc854acbb，父版／API base／实际祖先均0bd668c1，ahead1／behind0、三文件107增4删。完整正文／diff与六新增测试体已读；普通评论为bot摘要，reviews／行内未见条目，非维护者验收。已有作者，不另认领或发布反馈。
+
+[原算法专题](../../notebook/frameworks/verl-grpo-core-algos-reading.md#k3-近零消去与拒绝阈值)与[复查脚本](../../experiments/verl-k3-cancellation/verify.py)保存20原参数项CPU对照：基线12过8断言失败、候选20过，两次JSON一致。三处expm1求值改进不变更既有clamp／k2 straight-through；长序列seq_sum_k3原夹具从负统计错误保留转为接近参考的正统计拒绝，不能外推默认训练故障或质量收益。原函数／归约隔离执行非作者73项原生pytest、模型／设备验证；只补M5原条件参考、不新排实验或改专项。任何上游写入与既有PR-head推送仍须用户对具体动作明确同意。
 
 ## 合并 LoRA 睡眠的已有候选
 

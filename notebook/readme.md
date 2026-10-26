@@ -178,6 +178,7 @@
 - [verl 同分小数奖励的舍入残差](frameworks/verl-grpo-core-algos-reading.md#同分小数奖励的舍入残差) — #8349原16参数例base3过13预期失败/head全过；大组FP32残差可放大，singleton与非同分保留，无设备/训练收益结论
 - [verl ReMax 贪心基线](frameworks/verl-remax-icepop-source-reading.md#v1-贪心会话与-sampled-最大值) — #8310额外贪心会话非sampled最大值；核心CPU对照区分advantages/returns，撤回零方差和4090最优推荐，非解码/训练验收
 - [verl KL 前向与反向](frameworks/verl-grpo-core-algos-reading.md#kl-前向值与反向规则) — k3+数值clamp非梯度clamp；6原例/14组CPU对照，有限差分与straight-through反向须区分
+  - [k3近零消去与筛选](frameworks/verl-grpo-core-algos-reading.md#k3-近零消去与拒绝阈值) — #8386三处求值改进，20原CPU项候选过／基线8失败；严格阈值下mask可变，非模型或GPU验收
 - [verl checkpoint 配置覆盖](frameworks/verl-checkpoint-management-reading.md#配置字段可覆盖与对象默认值) — 原dataclass有默认值不等Hydra普通覆盖可见；两个已有候选范围不同，真实配置组合非后端保存验收
 - [verl checkpoint 保留与恢复](frameworks/verl-checkpoint-management-reading.md#保留目录与完整恢复的边界) — 原5清理测试通过；上限1保存前不删旧，目录保留不认证整轮可恢复，PPO与SFT的tracker写法分开
   - [重启保留与路径身份](frameworks/verl-checkpoint-management-reading.md#重启后的保留状态与路径身份) — #7396仅登记已加载路径；原22项统一路径过、macOS别名条件21过1失败，真实分布式／分片恢复未验收
