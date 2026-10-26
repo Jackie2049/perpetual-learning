@@ -6,9 +6,9 @@
 ## 0. Project Status
 
 - **阶段**：Phase 1 — recall-first literature & code investigation（广扫建库，不收束观点）
-- **最近更新**：2026-10-27（M1 veRL fully-async广扫：样本预算／队列淘汰／版本时钟，详见§8.4／§12；本批不增文献）
+- **最近更新**：2026-10-27（M1 OpenRLHF固定源码广扫：异步slot／生成缓冲／概率锚点，详见§8.5／§12；本批不增文献）
 - **覆盖**：累计**97篇已核身份**（20篇serving基础／迁移边界＋77篇rollout/RLHF及相关边界，含VLA、训练侧与算法诊断；均非深读；93个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL会议记录）。上一文献批次新增RLinf、DynaRL、NeMo-Aligner、ROLL Flash、CadenceRL及两篇含系统章节的模型报告；RLinf的arXiv与OSDI记录合计1篇，模型报告不当纯系统增益实证。总数97或RL相关77不代表原生80–120目标已达成。ASymPO证明错误警示保留，历史✅补核完不等检索收敛；Round 1“≈73”不与当前数量相加。
-- **全文深读 / 代码广扫**：0 / 3（同一veRL `24f25b03`快照：weight-sync→vLLM、默认batch→概率字段、fully-async生产／消费队列；不是三个框架或运行验证，也不按文件数计）
+- **全文深读 / 代码广扫**：0 / 4（veRL `24f25b03`三条路径＋OpenRLHF `dc2a7ad3`一条；共2框架，不是4框架或运行验证，也不按文件数计）
 - **最高优先级**：继续原生系统引用／会议扩展与种子落实，补serving机制覆盖，按唯一文献广扫至100–150；总数不替代原生覆盖，A Core短名单不只按条目数选取
 - **下一步**：见 §16
 
@@ -328,9 +328,11 @@ BubbleSpec／SRT的run-ahead用于后续draft验证，不等于直接拿旧polic
 - `/Users/jackiemac/workspace/UniRL-main`：UniRL 源码（train/stack 双栈结构已深读）；
 - M5 服务器：verl-e2e 环境（4090-1，可跑 rollout 冒烟）。
 
-本轮实际复用的只读检出：`/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/verl-7913`，HEAD固定`24f25b03aa4b54249a273655ebbcce06f484192b`，origin为`verl-project/verl`，工作树干净。此快照不称最新main，不与上方历史工作区／论文发表年代混为一版；文件夹名不是本轮接续旧PR的授权。
+veRL三条地图使用的只读检出：`/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/verl-7913`，HEAD固定`24f25b03aa4b54249a273655ebbcce06f484192b`，origin为`verl-project/verl`，核对时工作树干净。此快照不称最新main，不与上方历史工作区／论文发表年代混为一版；文件夹名不是接续旧PR的授权。
 
-**待建代码地图**（按 §9 的锚点逐框架定位）：veRL（已部分完成，见 §8）→ AReaL → vLLM/SGLang（引擎层 scheduler）→ OpenRLHF → rLLM/SkyRL/NeMo-RL。
+OpenRLHF本轮只读克隆：`/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/openrlhf-rollout-scan`，origin为`OpenRLHF/OpenRLHF`，固定HEAD `dc2a7ad326f619fc5a47737ea47d1920ce2c0b53`，工作树干净；未安装依赖或运行项目。两框架快照分别标版本，不把实现差异写成同年代／同配置的性能对比。
+
+**代码地图覆盖**：veRL三条路径见§8.2–8.4，OpenRLHF一条见§8.5；下一批可补rLLM／SkyRL／NeMo-RL或引擎scheduler，不以单路径代表框架全貌。AReaL prompt_mean仍由M5单一负责，不在此代码广扫中接续。
 
 ## 8. Paper → Mechanism → Code Mapping
 
@@ -420,6 +422,27 @@ RS屏蔽不等于减少已做的生成：此fit已完成采样和reward，decoup
 
 验证范围：fully_async_main／rollouter／trainer、message_queue、detach_utils、separation/ray_trainer和共享llm_server共7份Python，与上述YAML共8份固定Git blob一致；Python仅AST解析。未导入框架、创建队列／Ray actor或执行并发与设备函数，不给出严格年龄上界、死锁／故障定性、吞吐或收敛结论。后续转另一原生框架做数据生命周期对照，并继续文献扩展；动态调度、异常／恢复和真实队列轨迹留待独立范围，不以CPU替身或新GPU任务补造运行证据。
 
+### 8.5 OpenRLHF异步批次与概率锚点
+
+固定[OpenRLHF `dc2a7ad3`](https://github.com/OpenRLHF/OpenRLHF/tree/dc2a7ad326f619fc5a47737ea47d1920ce2c0b53)，沿CLI→PPOTrainerAsync→SamplesGenerator→RemoteExperienceMaker→PPO loss入口广扫。CLI只有`train.async_enable`才选异步trainer；其默认False，queue_size默认1、partial_rollout默认False、IS correction默认off。下述是显式启用async后的路径，不是所有OpenRLHF作业的默认执行。
+
+| 边界 | 固定代码入口 | 静态行为 |
+|---|---|---|
+| 队列与生成预算 | [异步入口:269](https://github.com/OpenRLHF/OpenRLHF/blob/dc2a7ad326f619fc5a47737ea47d1920ce2c0b53/openrlhf/trainer/ppo_trainer_async.py#L269)、[生产:100](https://github.com/OpenRLHF/OpenRLHF/blob/dc2a7ad326f619fc5a47737ea47d1920ce2c0b53/openrlhf/trainer/ppo_trainer_async.py#L100)、[消费:202](https://github.com/OpenRLHF/OpenRLHF/blob/dc2a7ad326f619fc5a47737ea47d1920ce2c0b53/openrlhf/trainer/ppo_trainer_async.py#L202) | 结果Queue与slot Queue容量均Q。生成前取slot，结果阻塞put；trainer取payload后、train_step前归还slot。空生成自行还slot，eval另走消息分支；所读通路无满队淘汰旧payload操作 |
+| 队列外的生成缓冲 | [generate_samples:89](https://github.com/OpenRLHF/OpenRLHF/blob/dc2a7ad326f619fc5a47737ea47d1920ce2c0b53/openrlhf/trainer/ppo_utils/samples_generator.py#L89) | chunk为rollout.batch_size×n；可一次生成更大的vllm_generate_batch_size，剩余Experience留_sample_buffer，后续调用直接取。尾部返回up to chunk而非统一丢弃不足批；下游训练覆盖另核 |
+| 筛组与补抽 | [_generate_vllm:140](https://github.com/OpenRLHF/OpenRLHF/blob/dc2a7ad326f619fc5a47737ea47d1920ce2c0b53/openrlhf/trainer/ppo_utils/samples_generator.py#L140) | 按prompt派发，等待ready ref后将该prompt响应组连续收集；启用dynamic_filtering且分数齐全时，用组均分的开区间筛整组，失败后取新prompt补抽。这改变训练集合，与队列背压不同 |
+| token与组身份 | [response转Experience:243](https://github.com/OpenRLHF/OpenRLHF/blob/dc2a7ad326f619fc5a47737ea47d1920ce2c0b53/openrlhf/trainer/ppo_utils/samples_generator.py#L243)、[组统计:238](https://github.com/OpenRLHF/OpenRLHF/blob/dc2a7ad326f619fc5a47737ea47d1920ce2c0b53/openrlhf/trainer/ppo_utils/experience_maker.py#L238) | observation_tokens含上下文，action_ranges另建action_mask；mask和rollout logp按next-token位置截取。split前赋index，reward按index还原原列表顺序后reshape(-1,n)取组，不是veRL的uid映射 |
+| PPO概率的三种来源 | [make_experience:113](https://github.com/OpenRLHF/OpenRLHF/blob/dc2a7ad326f619fc5a47737ea47d1920ce2c0b53/openrlhf/trainer/ppo_utils/experience_maker.py#L113)、[actor training_step:259](https://github.com/OpenRLHF/OpenRLHF/blob/dc2a7ad326f619fc5a47737ea47d1920ce2c0b53/openrlhf/trainer/ray/ppo_actor.py#L259)、[PolicyLoss:174](https://github.com/OpenRLHF/OpenRLHF/blob/dc2a7ad326f619fc5a47737ea47d1920ce2c0b53/openrlhf/models/loss.py#L174) | Experience.action_log_probs由训练actor先forward重算，之后作为old_action_log_probs；更新forward产生new，rollout_log_probs另存vLLM字段，base_action_log_probs为reference。PPO校正启用时另取detach(old−rollout)，并非将old直接替换成rollout |
+| 生成与权重同步 | [broadcast:255](https://github.com/OpenRLHF/OpenRLHF/blob/dc2a7ad326f619fc5a47737ea47d1920ce2c0b53/openrlhf/trainer/ppo_trainer_async.py#L255)、[vLLM pause:130](https://github.com/OpenRLHF/OpenRLHF/blob/dc2a7ad326f619fc5a47737ea47d1920ce2c0b53/openrlhf/trainer/ray/vllm_engine.py#L130) | 普通async在generate_samples与broadcast之间共享锁，训练计算仍可与生成重叠；partial模式生成不取该锁，broadcast调用pause_generation(mode="keep")／resume。锁／接口调用不认证逐token权重身份或故障恢复 |
+
+Q限制结果队列及slot预算，**不包括当前已取走的训练批，也不覆盖_sample_buffer中一次超额生成的全部响应**。slot携带的global_step在所读代码用于eval时机，并非每条Experience的policy版本；不能由Q=1推出只落后一个optimizer更新或绝对on-policy。普通生成锁也不能使缓冲中的旧响应自动变成最新权重的样本。[CLI约束](https://github.com/OpenRLHF/OpenRLHF/blob/dc2a7ad326f619fc5a47737ea47d1920ce2c0b53/openrlhf/cli/train_ppo_ray.py#L711)禁止async与vLLM sleep共用，partial要求async，超额生成也要求async；这与veRL的free-cache／RolloutMode条件不是同一套开关。
+
+概率与集合变化分开：这里PPO的mask式IS校正在loss上乘零／非零系数，最后仍按传入action_mask汇总，不是veRL decoupled在advantage前修改response_mask的同一操作。两边不能仅凭“mask／IS”名称互称等价。动态筛组在生成阶段已产生被弃响应并可能增加补抽，不能把训练保留数直接当生成工作量；原n响应组的完整性也依赖executor返回契约，本轮未认证自定义agent任意输出。名为replay_buffer的actor缓冲在[正常fit返回前:598](https://github.com/OpenRLHF/OpenRLHF/blob/dc2a7ad326f619fc5a47737ea47d1920ce2c0b53/openrlhf/trainer/ray/ppo_actor.py#L598)会clear，名称本身不证明跨训练步回放旧轨迹。
+
+对照§8.4：veRL队列条目为单prompt的n响应组，完成后入队，消费R组；此OpenRLHF结果payload则是一个rollout训练chunk，且其内部还有超额生成缓冲。前者满队分支淘汰旧条目，后者所读生产路径使用阻塞put／slot；两种容量数值不可直接横比为相同在途轨迹或陈旧性上限。PPO概率字段、分组身份和partial开关均须按各自调用链解释，不把软件快照直接等同对应论文版本或性能证据。
+
+验证范围：ppo_trainer_async／ppo_trainer、samples_generator、experience／experience_maker／replay_buffer、ray/ppo_actor／vllm_engine、models/loss和cli/train_ppo_ray共10份Python与固定Git blob逐字节一致并作AST解析；阅读入口和相关函数，不称10份全文或完整框架读完。未导入模块、安装依赖、解析有效作业配置、运行原生测试／模型／队列／设备，未验证底层vLLM实际版本与自定义agent。下一步继续原生文献扩展，或补第三框架的队列／概率生命周期，不将静态差异当性能排名、bug结论或新GPU任务。
+
 ## 9. Serving → Rollout Transfer
 
 三问框架（每个 serving 工作都过一遍）：① serving 里解决什么 bottleneck？② 哪些机制可直接迁移？③ 进入 rollout 后 objective/scheduler semantics/correctness 约束怎么变、是否需要 RL-aware redesign？
@@ -450,6 +473,8 @@ RS屏蔽不等于减少已做的生成：此fit已完成采样和reward，decoup
 
 同快照fully-async的[gen块:643](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/experimental/fully_async_policy/fully_async_trainer.py#L643)则包住队列取批、反序列化／assembly及样本指标收集，不是rollouter的生成计算时间；不能与上段同名gen直接横比。[param_sync:690](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/experimental/fully_async_policy/fully_async_trainer.py#L690)计时块之后才调用reset_staleness，故其数字也不是整次生产恢复流程的总时长。性能评估应同时记录prompt组／response／token单位、队列淘汰与不足尾批，而非只看保留样本吞吐。
 
+OpenRLHF `dc2a7ad3`的[异步生产／消费计时](https://github.com/OpenRLHF/OpenRLHF/blob/dc2a7ad326f619fc5a47737ea47d1920ce2c0b53/openrlhf/trainer/ppo_trainer_async.py#L129)中，timing/generation包住generate_samples调用，既可能含筛组／补抽，也可能仅取_sample_buffer，并不总对应一次新的模型生成；timing/step_total为消费循环墙钟，包含队列等待，不能把重叠的generation／训练分项相加当端到端。dynamic filtering的filter_pass_rate在源码中算`len(experiences)/prompts_consumed×100`，分子为响应、分母为prompt，未校正n前不当prompt通过百分比，缓冲直出时还可能为None。本轮没有测量任何耗时／通过率。
+
 ## 13. Research Gaps / Ideas
 
 （Round 1 初步观察，待 corpus 收敛后修正）：
@@ -470,6 +495,8 @@ RS屏蔽不等于减少已做的生成：此fit已完成采样和reward，decoup
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（M1 OpenRLHF跨框架广扫）**：文献仍97，代码路径累计4条、涉及2框架。只读克隆固定OpenRLHF `dc2a7ad3`，§8.5对照slot／阻塞队列与veRL条件淘汰，补_sample_buffer、筛整组补抽、index分组与PPO old／rollout／ref来源，普通锁与partial pause分开；§12记录缓冲直出计时和响应／prompt分母。10 Python blob一致／AST通过，无依赖安装、原生运行或设备；不作性能／算法正确性／故障判断，不改M5专项。后续原生文献扩展或第三框架生命周期。
 
 - **2026-10-27（M1 fully-async队列广扫）**：文献仍97，代码路径累计3条同版本veRL路径。§8.4补prompt组预算M=int(R(1+s)K)、pending／active／MQ区别、FIFO满队淘汰旧条目而保留新条目、尾批终止、local step／同步版本两时钟及old锚点覆盖；stale指标不当硬版本准入。§12区分异步gen取批计时与默认gen。8源码／配置blob一致、7 Python AST通过，未创建队列／框架／设备；不定性bug、测丢弃率或加GPU任务。后续跨框架对照与原生文献扩展。
 
