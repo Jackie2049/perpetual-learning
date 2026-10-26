@@ -6,8 +6,8 @@
 ## 0. Project Status
 
 - **阶段**：Phase 1 — recall-first literature & code investigation（广扫建库，不收束观点）
-- **最近更新**：2026-10-27（M1推测机制与范围补核：8篇既有条目、FastGRPO种子落实来源，新增3篇引用文献，详见§5.11）
-- **覆盖**：累计**50篇已核身份**（15篇serving基础／迁移边界＋35篇rollout/RLHF，均非深读；48个唯一arXiv ID＋Orca／PUZZLE会议记录）。本批8篇既有条目与1种子转已核，新增3篇；Aurora移至serving边界，不算新文献。Round 1“≈73”仍是待去重审计的历史估计，不能与50相加。
+- **最近更新**：2026-10-27（M1 agentic补核：10篇既有文献，新增FlexMARL及两篇Agent Lightning论文，详见§5.12）
+- **覆盖**：累计**63篇已核身份**（15篇serving基础／迁移边界＋48篇rollout/RLHF，含已标明的VLA边界条目；均非深读；61个唯一arXiv ID＋Orca／PUZZLE会议记录）。本批核既有10篇、仅新增3篇；RollArc／RollArt别名不多计，Agent Lightning两篇相关论文不当两套独立系统。Round 1“≈73”仍是待去重审计的历史估计，不能与63相加。
 - **深读 / 代码阅读**：0 / 0
 - **最高优先级**：补来源与版本别名、按唯一文献去重后继续广扫至100–150；A Core短名单不以未核身份的条目数为依据
 - **下一步**：见 §16
@@ -125,18 +125,21 @@
 
 | ID | 日期 | 标题（短） | 层 | 类型 | 机制一句话 | 置信 |
 |---|---|---|---|---|---|---|
-| 2603.18815 | 2026-03 | ProRL Agent | L4 | B | **Rollout-as-a-Service** for multi-turn agent RL | ✅ |
-| 2605.15565 | 2026-05 | AstraFlow | L4 | B | dataflow-oriented agentic RL | ✅ |
-| 2512.22560 | 2025-12 | RollArt | L4 | B | disaggregated multi-task agentic RL at scale | ✅ |
-| 2603.28101 | 2026-03 | Heddle | L3/L4 | B | distributed orchestration for agentic rollout | ✅ |
-| 2511.16108 | 2025-11 | SkyRL-Agent | L4 | B | multi-turn agent RL 训练框架 | ✅ |
+| [2603.18815v1](https://arxiv.org/abs/2603.18815v1) | 2026-03-19／v1 | ProRL Agent | L4（暂） | B（暂） | API服务承载完整rollout生命周期，rootless HPC sandbox；服务接口不等故障恢复保证 | 核 |
+| [2605.15565v1](https://arxiv.org/abs/2605.15565v1) | 2026-05-15／v1 | AstraFlow | L4（暂） | B（暂） | rollout服务／dataflow／training自主组件解耦，支持multi-policy与异构弹性执行 | 核 |
+| [2512.22560v2](https://arxiv.org/abs/2512.22560v2) | 2025-12-27首次／v2 2026-06-15 | RollArt（v1摘要名RollArc） | L2/L4（暂） | B（暂） | 按阶段硬件亲和映射、轨迹级解耦、serverless reward与有界staleness权重同步 | 核 |
+| [2603.28101v1](https://arxiv.org/abs/2603.28101v1) | 2026-03-30／v1 | Heddle | L3/L4（暂） | B（暂） | 轨迹级预测／优先级，tool等待窗口迁移与自适应模型并行度 | 核 |
+| [2511.16108v1](https://arxiv.org/abs/2511.16108v1) | 2025-11-20／v1 | SkyRL-Agent | L4（暂） | B／**C?**（recipe） | 异步pipeline dispatcher与AST搜索工具recipe并用，系统／工具收益须分开 | 核 |
 | [2510.05943v1](https://arxiv.org/abs/2510.05943v1) | 2025-10-07／v1 | EARL | L4（暂） | B（暂） | 按序列长度／负载选跨阶段并行策略，layout-aware去中心data dispatcher | 核 |
 | [2610.15246v1](https://arxiv.org/abs/2610.15246v1) | 2026-10-11／v1 | ObsSpec | L4（暂） | A/B（暂） | world model预测tool observation并与真实执行重叠，预测／真实完全匹配才保留推测工作 | 核 |
-| 2605.05262 | 2026-05 | Rollout Informativeness（submodular tree search） | L3 | **C** | 固定预算下最大化 rollout 信息量（改分布） | ✅ |
-| 2606.05597 | 2026-06 | AsyncWebRL | L4 | B | 多步 web agent async RL | ✅ |
-| 2603.18464 | 2026-03 | AcceRL | L4 | B | VLA 场景 async RL + world model | ✅ |
-| 2605.08527 | 2026-05 | MARLaaS | L4 | B | multi-tenant async RL as a service | ✅ |
-| 2608.14498 | 2026-08 | Rollplex | L2/L4 | B | VLM post-training 跨阶段 GPU 空分共享 | ✅ |
+| [2605.05262v1](https://arxiv.org/abs/2605.05262v1) | 2026-05-06／v1 | InfoTree（Rollout Informativeness） | L3/L4（暂） | **C**／B（暂） | UUCB中间状态选择、学习式预算分配及异步Speculative Expansion；不是仅复用prefix | 核 |
+| [2606.05597v3](https://arxiv.org/abs/2606.05597v3) | 2026-06-04首次／v3 08-07 | AsyncWebRL | L4（暂） | B／**C?**（算法边界） | 异步rollout／update／refresh＋常驻pool／轻量截图，另改GRPO轨迹归一化 | 核 |
+| [2603.18464v3](https://arxiv.org/abs/2603.18464v3) | 2026-03-19首次／v3 06-12 | AcceRL（VLA边界） | L4（暂） | B／**C?**（world model） | 环境rollout／模型推理／更新隔离；world model样本效率与系统吞吐分开 | 核 |
+| [2605.08527v1](https://arxiv.org/abs/2605.08527v1) | 2026-05-08／v1 | MARLaaS | L4（暂） | B（暂） | 多租户共享base＋LoRA，环境／rollout／训练独立事件调度；非multi-agent同义词 | 核 |
+| [2608.14498v1](https://arxiv.org/abs/2608.14498v1) | 2026-08-14／v1 | Rollplex | L2/L4（暂） | B（暂） | rollout decode窗口并行做reference／training prefix，生命周期HBM与跨TP兼容权重共享 | 核 |
+| [2602.09578v1](https://arxiv.org/abs/2602.09578v1) | 2026-02-10／v1 | FlexMARL | L3/L4（暂） | B（暂） | 多agent experience store驱动micro-batch异步pipeline、分层均衡与agent资源绑定 | 核 |
+| [2508.03680v1](https://arxiv.org/abs/2508.03680v1) | 2025-08-05／v1 | Agent Lightning（2025） | L4（暂） | B（系统；算法另核） | Training-Agent Disaggregation与统一transition接口，含LightningRL credit assignment | 核 |
+| [2608.17528v1](https://arxiv.org/abs/2608.17528v1) | 2026-08-18／v1 | Agent Lightning v1.0（2026） | L4（暂） | B（系统；算法另核） | deploy-time harness拥有环境交互loop，trainer接收LLM请求／响应；合样本及loss语义待核 | 核 |
 | 2602.00482 | 2026-02 | AREAL-DTA | L1 | A | RL 中 dynamic tree attention（与 AReaL 相关？待核） | ✅ |
 | 2610.28998 | 2026-10 | FlashNext-RL | L1/L4 | A/B | long-horizon agentic RL 系统优化案例 | ✅ |
 
@@ -223,6 +226,18 @@ BubbleSpec／SRT的run-ahead用于后续draft验证，不等于直接拿旧polic
 
 引用入口为[EfficientRollout v2参考文献](https://arxiv.org/html/2606.18967v2)：定位后逐一核三篇原站标题／日期／版本。两篇基础论文分别列一条，不因都涉及拒绝采样而合并，也不凭首发日期裁定优先权。当前只核元数据、摘要与引用位置，未深读证明、核实现或实测；§12只登记Iso等的证据类型，不提取加速比作比较。下一批集中agentic簇与其引用，不再重复本批已核推测条目。
 
+### 5.12 Agentic系统版本与评估边界补核
+
+2026-10-27第六批：ProRL Agent、AstraFlow、RollArt、Heddle、SkyRL-Agent、Rollout Informativeness、AsyncWebRL、AcceRL、MARLaaS、Rollplex共10篇标题与原ID匹配，补首次提交及采用版本；Rollout Informativeness补系统名InfoTree。新入FlexMARL及两篇Agent Lightning论文，累计63身份=50＋10既有＋3新发现，不把别名、版本或旧条目补核算作新发现。
+
+版本与沿革：[RollArt v1](https://arxiv.org/abs/2512.22560v1)题为Scaling Agentic RL Training via Disaggregated Infrastructure，摘要使用RollArc系统名；[v2](https://arxiv.org/abs/2512.22560v2)题为Disaggregated Multi-Task Agentic RL Training at Scale，系统统一为ROLLART，同ID只留一条。[Agent Lightning 2025](https://arxiv.org/abs/2508.03680v1)与[Agent Lightning v1.0 2026](https://arxiv.org/abs/2608.17528v1)是不同ID／题名／作者的相关论文，后者明确承接original工作；“v1.0”是题名中的系统版本，不是前一arXiv ID的v2，也不作为两套独立系统实证。
+
+系统与recipe分开：[SkyRL-Agent v1](https://arxiv.org/abs/2511.16108v1)包含pipeline dispatcher和AST搜索工具recipe；[AsyncWebRL v3](https://arxiv.org/abs/2606.05597v3)同时有系统异步与GRPO轨迹归一化修改，不能把联合质量／成本结果全归异步。两者潜在训练语义影响分别暂留C?；normalizer修改不等于直接删选轨迹，具体归类待正文。[InfoTree v1](https://arxiv.org/abs/2605.05262v1)有中间状态选择／预算分配，保留C，并补异步expansion的B线索，不把其理论保证当本项目已验收。[AcceRL v3](https://arxiv.org/abs/2603.18464v3)是VLA场景，保留工作负载边界，world model样本效率与系统吞吐不能互换，也不与ObsSpec的tool observation精确匹配机制混同。
+
+资源与控制边界：[Rollplex v1](https://arxiv.org/abs/2608.14498v1)重叠的是与生成响应独立的prefix计算和rollout decode，并称保持同步on-policy更新；不能见跨阶段并发即判async off-policy。跨TP仅共享layout-compatible物理存储，不是任意layout零拷贝。MARLaaS是多租户共享base／LoRA；新增FlexMARL关注多agent协同训练，二者不因MARL缩写合并。Agent Lightning v1.0把environment loop归harness，ProRL Agent提供生命周期API；均不能只凭接口解耦推断工具副作用、重试或恢复已受保证。
+
+新条目来自定向检索／已见线索后回arXiv原站核身份，未声称Heddle引用它们；本批在[Heddle v1 HTML](https://arxiv.org/html/2603.28101v1)检索Weave／Lightning未命中，不据此判断不存在或无引用。范围限元数据、摘要与关键词／引用定位，无全文深读、代码、性能抽取或复现。下一批核剩余L4及agentic边界条目后继续原生文献扩展；当前仍不冻结分类或写survey正文。
+
 ## 6. Paper Deep Reads
 
 （空。优先级建议：AReaL、HybridFlow/veRL、StreamRL、RollPacker、RhymeRL、BubbleSpec、StaleFlow——覆盖四层 + 三大机制家族。深读模板：问题/瓶颈 → 性能模型 → 机制 → 实验条件与增益（保留硬件/batch/长度分布）→ 与 taxonomy 对照 → 可迁移性 → 疑点。）
@@ -278,10 +293,10 @@ BubbleSpec／SRT的run-ahead用于后续draft验证，不等于直接拿旧polic
 ## 13. Research Gaps / Ideas
 
 （Round 1 初步观察，待 corpus 收敛后修正）：
-1. **分布改变与纯路由／重排的边界待核**：DARTS明确主动塑形，WAR不再作为C类例子；Rollout Informativeness／ExpThink尚待审计。对分布／收敛影响的评估仍待逐篇阅读，撤回“普遍缺乏严格评估”的先验结论；
+1. **分布改变与纯路由／重排的边界待核**：DARTS主动塑形、InfoTree选择状态／预算，WAR不再作为C类例子；ExpThink仍待审计。对分布／收敛影响的评估仍待逐篇阅读，不预设“普遍缺乏严格评估”；
 2. speculative-for-RL已出现多个候选，但条目数不证明方向饱和。统一性能模型（acceptance rate × staleness × 长尾交互）是待探索问题，不据此否定其他drafter方案的研究空间；
 3. cap/长度类边界条件的系统化处理（如 cap=1 的 -0 陷阱、偶奇 cap 分配）在现有论文中未见讨论——来自 verl #8281 实战的微观缺口；
-4. VLM post-training 的跨阶段 GPU 空分（Rollplex）只有单篇——是否空白？
+4. 当前库的VLM跨阶段GPU空分仅Rollplex一篇已核条目，不足以判断文献空白；需继续查相近机制与不同工作负载。
 
 ## 14. Reproduction Candidates
 
@@ -295,6 +310,8 @@ BubbleSpec／SRT的run-ahead用于后续draft验证，不等于直接拿旧polic
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（M1 agentic补核）**：核既有10篇，补InfoTree名称及RollArc／RollArt版本沿革；定向检索补FlexMARL与两篇相关Agent Lightning论文，累计63身份（15 serving／边界＋48 rollout/RLHF；61 arXiv＋2会议记录），仅3新发现。系统／recipe、VLA样本效率／吞吐、同步prefix重叠／async off-policy分开，暂留分类疑问而非性能结论。未全文深读、读代码或复现，下批核剩余L4／agentic边界并扩展原生。
 
 - **2026-10-27（M1推测机制与范围补核）**：核既有8篇并补Bebop／Aurora别名，FastGRPO种子落实；EfficientRollout引用回溯新增两篇SD基础与Iso等NeMo-RL集成论文。Aurora移serving边界、ObsSpec移agentic，防止把speculator RL、observation推测或稀疏／量化draft混成policy rollout机制；Iso实测／模拟证据分开。累计50身份（15 serving／边界＋35 rollout/RLHF；48 arXiv＋2会议记录），仅3新发现。无全文深读、代码／性能验收，下批核agentic簇与扩展引用。
 
