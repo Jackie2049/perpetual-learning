@@ -14,6 +14,35 @@
 
 2026-10-26接续：[平方概率分块与空输入梯度](#平方概率分块与空输入梯度)核#8365新23d891cd：原测试补空行反向及非正chunk拒绝，新版18项通过／旧版13过5失败；撤回当前版本的旧边界风险，CPU结果仍不认证GPU峰值。
 
+## V1 的 OTB 统计接线与策略身份
+
+**配置打开不等于字段已到达估计器；字段存在也不等于它来自正确策略。** [#8364](https://github.com/verl-project/verl/pull/8364)补 V1 的 `sum_pi_squared` 链路，即每个位置完整词表的概率平方和。2026-10-26核为 OPEN／非 draft／未合并，head `d17219079c48e3f580922c59702a5ee03002d067`，base `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，两文件185增4删。已有 flyingdoubleG 实现，不另写竞争修复；它与 [#8365 的分块计算](#平方概率分块与空输入梯度)分别解决接线与计算内存，不能自动拼成一个已验收方案。
+
+[候选 trainer](https://github.com/verl-project/verl/blob/d17219079c48e3f580922c59702a5ee03002d067/verl/trainer/ppo/v1/trainer_base.py)分别补三个环节：`_compute_old_log_prob` 把配置放进 actor 请求的 `extra_info`，读取完整序列统计、按与 logprob 相同的左移规则切出响应并写回 TransferQueue；`_compute_advantage` 再显式选入该字段。对于 prompt 长 P、响应长 R 的序列，保留的是预测响应的 `[P−1, P+R−1)`，不是直接从 P 开始切，也不是沿响应求平方和。基线已经有 OTB 算法，缺的是 V1 到它的输入链路。
+
+参考模型计算复用批次元数据；候选 `_compute_ref_log_prob` 显式把开关设为 False，避免 actor 的统计被 reference 统计替换。两者即使形状相同也不是同一策略的量。`bypass_mode=True` 则跳过 actor 重算，候选在开关为 True 时主动抛 ValueError：rollout 中被采样 token 的 logprob 不能代替完整词表统计；这不是给旁路补出了该能力。
+
+### 七个原参数项的 CPU 对照
+
+[原测试](https://github.com/verl-project/verl/blob/d17219079c48e3f580922c59702a5ee03002d067/tests/trainer/ppo/v1/test_sum_pi_squared_on_cpu.py)的四函数共7个参数项，由[复查脚本](../../experiments/verl-otb-v1-wiring/verify.py)装配两版完整原方法、固定 base 的真实 DataProto／注册表／两种 OTB／padding helper；保留原 FakeTQ、MagicMock worker 和测试体，不执行 trainer 构造、Ray 或真实 TransferQueue。两次结果一致，原始异常与源码 SHA256 见 [JSON](../../experiments/verl-otb-v1-wiring/result.json)。
+
+| 原用例 | 基线 | 候选 | 结论范围 |
+| --- | --- | --- | --- |
+| 统计开关 True／False | 2项 KeyError，元数据无该键 | 2项通过 | 开关传入；True 按原切片对齐，False 不替换已有统计 |
+| OTB／TIR OTB | 2项断言缺少统计，即使配置为 True | 2项通过 | 两条响应优势长度4／2且有限，不是数值 oracle 或学习收益 |
+| ref 与 actor 共置／分离 | 2项 KeyError，元数据无该键 | 2项通过 | **只断言开关 False**，worker mock 不产生 reference 写入，不能称真实统计未被覆盖 |
+| bypass 与统计开关同开 | KeyError，夹具没有 rollout_log_probs | 通过，捕获明确 ValueError | 验证候选先拒绝组合；基线红测不证明真实旁路运行结果 |
+
+原夹具直接生成随机 `log_probs`／统计，而非从同一真实策略 logits 导出；“优势有限”因此只支持这条输入通路，不认证 OTB 数学质量。作者正文的14项 CPU 与单4090三步报告保留为外部报告，不能当作本轮7项或与新版 #8365 组合后的训练验收。
+
+复现需 base Git 对象可读的 verl 克隆，以及从固定 head 下载、分别命名 `candidate.py` 和 `test.py` 的上述两份完整文件；脚本验证 Git blob 身份 `e8cfe65b…`／`0346a1fd…`，不访问网络、不改原仓库：
+
+```bash
+python -B experiments/verl-otb-v1-wiring/verify.py /path/to/verl /path/to/downloaded-sources
+```
+
+结论补入[原 M5 输出头条件参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不新增训练队列、安装依赖或应用候选；后续只跟实质版本／反馈，完整引擎的字段来源与 reference 写入保留给已有获准、安全、匹配工作的实际观测。
+
 ## 平方概率分块与空输入梯度
 
 ### 新版修复空行反向和参数拒绝

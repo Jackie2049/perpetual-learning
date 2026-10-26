@@ -285,7 +285,9 @@ M5若未来已有获准、安全、匹配的输出头工作并独立选用，先
 
 平方概率分块参考（2026-10-26新版更新，同一输出头入口、非新OTB队列）：已有[#8365](https://github.com/verl-project/verl/pull/8365)新head23d891cd／base3c6d9b43。[M1新版原测试](../notebook/frameworks/verl-grpo-core-algos-reading.md#新版修复空行反向和参数拒绝)18项全过、旧0ed13过5失败：空行反向和非正chunk契约已修，0旧已有range错误但消息不符；不再把旧两反馈当23d当前阻碍。四完整源码hash／AST、真实CPU autograd，非原生pytest、GPU峰值／计时或训练，旧result.json保留。作者4090额外峰值／三步OTB不迁为新head验收；V1接线另有#8364，不能自动拼接部署。
 
-仅M5未来独立接续已有获准、安全、匹配的输出头／OTB工作时，先核实际安装head、调用grad模式、logits形状／dtype／布局与是否需要V1字段接线，再在既有小预算内区分数值／梯度、输入logits和调用额外allocated／reserved峰值及同步计时；不按2048行推导全训练内存硬上限。缺安全环境／资源、需新模型／部署升级或影响专项即停记未测，不自动应用、故意OOM、追加大词表基准或训练，不据此诊断#8250。所有社区写入及已有PR-head推送（含fork）仍须用户对具体动作明确同意，参考非接单。
+接线补充（2026-10-26，同一参考非新队列）：[#8364](https://github.com/verl-project/verl/pull/8364) head d1721907／base3c6d9b43 的[V1 OTB分析](../notebook/frameworks/verl-grpo-core-algos-reading.md#v1-的-otb-统计接线与策略身份)含7原参数项提取逻辑候选全过，原FakeTQ／worker mock；reference测试仅断言开关False，不认证引擎统计未覆盖。bypass候选明确拒绝该开关；基线该例缺rollout字段的KeyError不等真实旁路验证。不能由#8365 helper通过推导V1接线成立，也不自动组合部署。
+
+仅M5未来独立接续已有获准、安全、匹配的输出头／OTB工作时，先核实际安装head、调用grad模式、logits形状／dtype／布局与是否需要V1字段接线，以及统计确属actor、reference后未被替换、响应token身份与logprob一致，再在既有小预算内区分数值／梯度、输入logits和调用额外allocated／reserved峰值及同步计时；不按2048行推导全训练内存硬上限。缺安全环境／资源、需新模型／部署升级或影响专项即停记未测，不自动应用、故意OOM、追加大词表基准或训练，不据此诊断#8250。所有社区写入及已有PR-head推送（含fork）仍须用户对具体动作明确同意，参考非接单。
 
 Teacher温度参考（2026-10-25，同一OPD观测入口、非新增算力队列）：已有[#8253](https://github.com/verl-project/verl/pull/8253)head2920c014，[M1 CPU钩子控制](../notebook/frameworks/verl-veomni-opd-source-reading.md#teacher-采样温度与打分温度)仅原默认3例／真实torch局部归一化，无vLLM Sampler或服务。若M5日后已有获准、安全、匹配OPD观测并独立选用，先固定实际vLLM源码／版本、teacher与student温度、角色／logits钩子入口、同一token／词表mask／top-k身份，分开请求采样参数与prompt目标；作者0.23报告不当新版本运行时验收。缺安全／资源／授权模型或需下载升级、影响专项即停记未测，不自动应用PR、切后端、新开极端温度或训练矩阵，不改AReaL/#523/#8313/DeepInfer。所有社区写入及既有PR-head推送仍逐项待用户明确同意，参考非接单。
 

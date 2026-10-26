@@ -1,0 +1,138 @@
+{
+  "base": "3c6d9b43b67c74ec343d77874cd8fa6e841523da",
+  "environment": {
+    "numpy": "2.5.4",
+    "pytest": "9.1.1",
+    "python": "3.12.13",
+    "system": "Darwin",
+    "tensordict": "0.15.2",
+    "torch": "2.14.1"
+  },
+  "head": "d17219079c48e3f580922c59702a5ee03002d067",
+  "results": {
+    "base": [
+      {
+        "exception": "KeyError",
+        "message": "'calculate_sum_pi_squared'",
+        "name": "test_old_log_prob_writes_response_aligned_sum_pi_squared",
+        "parameters": [
+          true
+        ],
+        "status": "failed"
+      },
+      {
+        "exception": "KeyError",
+        "message": "'calculate_sum_pi_squared'",
+        "name": "test_old_log_prob_writes_response_aligned_sum_pi_squared",
+        "parameters": [
+          false
+        ],
+        "status": "failed"
+      },
+      {
+        "exception": "AssertionError",
+        "message": "Step-dependent optimal baseline requires sum_pi_squared from actor. Please set actor.calculate_sum_pi_squared=True in config.",
+        "name": "test_optimal_token_baseline_receives_sum_pi_squared",
+        "parameters": [
+          "optimal_token_baseline"
+        ],
+        "status": "failed"
+      },
+      {
+        "exception": "AssertionError",
+        "message": "Step-dependent optimal baseline requires sum_pi_squared from actor. Please set actor.calculate_sum_pi_squared=True in config.",
+        "name": "test_optimal_token_baseline_receives_sum_pi_squared",
+        "parameters": [
+          "tir_optimal_token_baseline"
+        ],
+        "status": "failed"
+      },
+      {
+        "exception": "KeyError",
+        "message": "'calculate_sum_pi_squared'",
+        "name": "test_ref_log_prob_keeps_actor_sum_pi_squared",
+        "parameters": [
+          true
+        ],
+        "status": "failed"
+      },
+      {
+        "exception": "KeyError",
+        "message": "'calculate_sum_pi_squared'",
+        "name": "test_ref_log_prob_keeps_actor_sum_pi_squared",
+        "parameters": [
+          false
+        ],
+        "status": "failed"
+      },
+      {
+        "exception": "KeyError",
+        "message": "'key \"rollout_log_probs\" not found in TensorDict with keys []'",
+        "name": "test_bypass_mode_rejects_sum_pi_squared",
+        "parameters": [],
+        "status": "failed"
+      }
+    ],
+    "candidate": [
+      {
+        "name": "test_old_log_prob_writes_response_aligned_sum_pi_squared",
+        "parameters": [
+          true
+        ],
+        "status": "passed"
+      },
+      {
+        "name": "test_old_log_prob_writes_response_aligned_sum_pi_squared",
+        "parameters": [
+          false
+        ],
+        "status": "passed"
+      },
+      {
+        "name": "test_optimal_token_baseline_receives_sum_pi_squared",
+        "parameters": [
+          "optimal_token_baseline"
+        ],
+        "status": "passed"
+      },
+      {
+        "name": "test_optimal_token_baseline_receives_sum_pi_squared",
+        "parameters": [
+          "tir_optimal_token_baseline"
+        ],
+        "status": "passed"
+      },
+      {
+        "name": "test_ref_log_prob_keeps_actor_sum_pi_squared",
+        "parameters": [
+          true
+        ],
+        "status": "passed"
+      },
+      {
+        "name": "test_ref_log_prob_keeps_actor_sum_pi_squared",
+        "parameters": [
+          false
+        ],
+        "status": "passed"
+      },
+      {
+        "name": "test_bypass_mode_rejects_sum_pi_squared",
+        "parameters": [],
+        "status": "passed"
+      }
+    ]
+  },
+  "scope": "original seven parameter cases; extracted complete methods/functions/classes; real CPU jagged/padded TensorDict/DataProto/OTB; original FakeTQ and mock workers; no native pytest/trainer constructor/TransferQueue/Ray/engine/reference writes/GPU/training",
+  "source_sha256": {
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/protocol.py": "8d69430131e9e894a6c7aea673d489e19e44117b1bc573085a6db521b38c6792",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/trainer/ppo/core_algos.py": "369b614f239f237a04a38a40b1877cd6fd14aa7bd5f9ff4fe4d7758b682a6948",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/trainer/ppo/ray_trainer.py": "eb41f99ccc66976eab14ebe35aa1aa5b7318e02469240ef1569ac4c884c94312",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/trainer/ppo/v1/trainer_base.py": "293af89dab738cc57a67a8cc730f3337622685e29d96dfdd2e9af1e6fc2144e8",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/trainer/ppo/v1/utils.py": "88cdc5c859477be0a7d2e45f20e70da61b3f64649ed201af578b3d596aae5315",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/utils/torch_functional.py": "bc7ff798e2f5c06e0121668490739814efc519ff66d4d7dd7c8fc40b4840eb03",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/workers/utils/padding.py": "4e29a4af7d6f7a2182cbd45536df5c3423745e925d0cd3bb151440dbfba8fbcc",
+    "d17219079c48e3f580922c59702a5ee03002d067:candidate.py": "93a47bee54de314243ddfe231d89e04f580bd00a41c97de84043bf8eb336fb1a",
+    "d17219079c48e3f580922c59702a5ee03002d067:test.py": "507902309ea40c437825e477aa39607e46a00864b4fe1bfea1a3ac917e19012f"
+  }
+}
