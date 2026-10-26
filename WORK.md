@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 Rollout原生框架／低精度补库（2026-10-27）**：定向检索与出版线索新增RLinf／DynaRL／NeMo-Aligner／ROLL Flash／CadenceRL及GLM-4.5、Each Prompt Matters系统章节，共7篇，累计97身份（20serving／边界＋77rollout/RLHF及相关边界；93arXiv＋4会议记录，非深读）。见[canonical§5.16](notebook/rollout-performance-research.md#516-原生框架异构调度与低精度系统来源)：RLinf arXiv／OSDI同篇，ROLL Flash承接ROLL而非原ID修订；异步RPC不等stale-policy，CadenceRL暂候续跑不等删样本，FP8 policy与draft区分、CompassMax过滤单列C。NeMo局部评估示例提示负载均衡不保证任意batch收益。无代码／设备／M5专项／社区写入或新算力队列；下步继续原生引用与未落实种子，不为凑百篇扩无关算法。
+
 - **M1 Rollout引用扩展／多轮缓存边界（2026-10-27）**：从TideRL引用回溯新增SpecActor／MindSpeed RL／Infinite Sampling／AgentRL及CachedAttention／CONCUR／Continuum／Helium，共8篇，累计90身份（20serving／边界＋70rollout/RLHF及相关边界；87arXiv＋3会议记录，非深读）。见[canonical§5.15](notebook/rollout-performance-research.md#515-tiderl引用扩展与多轮缓存迁移边界)：FoN选draft不等筛训练响应，micro group不独立归一化，AgentRL主动cross-policy单列C；缓存驻留／TTL不等跨权重有效或删样本。仅身份／摘要与局部机制定位，无代码／性能验收、GPU／NPU／M5专项或社区写入。下步继续原生引用与种子扩展，不把serving20或总数90当覆盖收敛。
 
 - **M1 Rollout原生补库／种子落实（2026-10-27）**：新发现TideRL／ROSE／QwenGyre，落实SpecRoll种子为同ID改题的SPARK v2及ExpThink旧线索，增5矩阵条目，累计82身份（16serving／边界＋66rollout/RLHF及相关边界，非全纯原生）。见[canonical§5.14](notebook/rollout-performance-research.md#514-原生系统补库与specroll版本落实)：SPARK不迁旧Reflex说明，分布保证有exact verifier等假设；就绪度／协作serving算力／轨迹去重分开，ExpThink是reward塑形而非执行加速。仅身份／摘要与局部正文定位，非深读、代码／性能验收；无GPU、M5专项、社区写入或新算力队列。下步会议／引用扩展原生并补serving，Weave等未落实种子不硬并。
@@ -902,7 +904,7 @@
 
 ## 当前用户需求与决定
 
-- **长期专项（2026-10-27 用户新立）**：**LLM Post-training / RL Rollout Performance Optimization 调研**。当前阶段=recall-first 文献+代码广扫（corpus 目标 100–150 篇：rollout-native 80–120 + serving 基础 20–30），**不写 survey 正文、不冻结 taxonomy、不批量低价值摘要、不启动大规模复现**。canonical 主文档 [notebook/rollout-performance-research.md](notebook/rollout-performance-research.md)（16 节结构；每轮实质工作后必须更新主文档而非只写 diary）。taxonomy=L1 token/L2 engine/L3 cluster/L4 pipeline co-design × A/B/C 优化类型（C 类改训练分布须单独标记；算法诊断不硬塞A/B/C）。Round 1历史自报≈73尚非去重已核数量；当前已核90篇身份（20serving／边界＋70rollout/RLHF及相关边界，非全部纯原生；非深读），最近从TideRL引用回溯新增4篇RL系统及4篇多轮serving，见[§5.15](notebook/rollout-performance-research.md#515-tiderl引用扩展与多轮缓存迁移边界)；FoN选draft与AgentRL主动混policy分开，缓存迁移条件单列。ASymPO证明错误警示保留；历史错配ID／别名重复已纠正，SpecRoll→SPARK同ID只计1。历史✅补核完或serving登记20不等覆盖收敛／原生目标达成；后续继续原生引用／会议与未落实种子扩展，补serving机制覆盖。执行规则：长期任务不问"是否继续"，无实质阻塞即推进；涉及上游动作仍受铁律约束。
+- **长期专项（2026-10-27 用户新立）**：**LLM Post-training / RL Rollout Performance Optimization 调研**。当前阶段=recall-first 文献+代码广扫（corpus 目标 100–150 篇：rollout-native 80–120 + serving 基础 20–30），**不写 survey 正文、不冻结 taxonomy、不批量低价值摘要、不启动大规模复现**。canonical 主文档 [notebook/rollout-performance-research.md](notebook/rollout-performance-research.md)（16 节结构；每轮实质工作后必须更新主文档而非只写 diary）。taxonomy=L1 token/L2 engine/L3 cluster/L4 pipeline co-design × A/B/C 优化类型（C 类改训练分布须单独标记；算法诊断不硬塞A/B/C）。Round 1历史自报≈73尚非去重已核数量；当前已核97篇身份（20serving／边界＋77rollout/RLHF及相关边界，非全部纯原生；非深读），最近新增5篇框架／调度及2篇含系统机制的模型报告，见[§5.16](notebook/rollout-performance-research.md#516-原生框架异构调度与低精度系统来源)；RLinf arXiv／OSDI只计1，FP8 policy／draft、异步通信／stale-policy、暂候续跑／过滤分别核。ASymPO证明错误警示保留，历史错配ID／别名重复已纠正。历史✅补核完、serving登记20或总量97不等覆盖收敛／原生目标达成；后续继续原生调度／权重同步／数据管理引用与未落实种子扩展，补serving机制覆盖。执行规则：长期任务不问"是否继续"，无实质阻塞即推进；涉及上游动作仍受铁律约束。
 
 - **两周技术掘金聚焦（2026-10-23 用户明确）**：**UniRL 与 verl 是最近两周技术掘金的重点对象**——两周内技术掘金精力聚焦到这两个开源项目，**重点寻找提出 issue 和 PR 的机会**。**铁律：用户审批之前不能在主仓库上提交**（任何 issue/PR/评论/上游行动均需用户拍板；候选先在本地/fork 准备，见 [AGENTS.md](AGENTS.md#执行边界)）。现状：verl 主贡献轨道（#8313 已 OPEN 待维护者 approve、#8250 待补证）；UniRL 贡献轨道已建立（未认领候选 [#523](open-source/unirl/candidate-523-anchor-lifecycle.md)，fork 分支 `fix-523-anchor-lifecycle` 已备，**待用户审批后决定是否提 PR/issue**）。技术掘金精力优先分配给这两个项目；DeepInfer 降为常规关注（其 PR 采纳门槛高，见下）。
 

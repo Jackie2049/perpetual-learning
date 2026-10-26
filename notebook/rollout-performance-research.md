@@ -6,8 +6,8 @@
 ## 0. Project Status
 
 - **阶段**：Phase 1 — recall-first literature & code investigation（广扫建库，不收束观点）
-- **最近更新**：2026-10-27（M1引用扩展：新增4篇RL系统与4篇多轮serving文献，详见§5.15）
-- **覆盖**：累计**90篇已核身份**（20篇serving基础／迁移边界＋70篇rollout/RLHF及相关边界，含VLA、训练侧与算法诊断；均非深读；87个唯一arXiv ID＋Orca／PUZZLE／CachedAttention会议记录）。本批从TideRL引用回溯新增8个矩阵条目，均经原站核身份；不把serving登记20篇或总量90当覆盖目标／原生80–120篇已达成。ASymPO证明错误警示仍单列，不作可靠理论依据。历史✅补核完不等于种子全落实或检索收敛。Round 1“≈73”不与当前数量相加。
+- **最近更新**：2026-10-27（M1原生框架与低精度补库：新增7篇，详见§5.16）
+- **覆盖**：累计**97篇已核身份**（20篇serving基础／迁移边界＋77篇rollout/RLHF及相关边界，含VLA、训练侧与算法诊断；均非深读；93个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL会议记录）。本批新增RLinf、DynaRL、NeMo-Aligner、ROLL Flash、CadenceRL及两篇含系统章节的模型报告；RLinf的arXiv与OSDI记录合计1篇，模型报告不当纯系统增益实证。总数97或RL相关77不代表原生80–120目标已达成。ASymPO证明错误警示保留，历史✅补核完不等检索收敛；Round 1“≈73”不与当前数量相加。
 - **深读 / 代码阅读**：0 / 0
 - **最高优先级**：继续原生系统引用／会议扩展与种子落实，补serving机制覆盖，按唯一文献广扫至100–150；总数不替代原生覆盖，A Core短名单不只按条目数选取
 - **下一步**：见 §16
@@ -54,7 +54,7 @@
 - **B** Execute the trajectory set better（Schedule({traj_i})）：batching、length-aware scheduling、migration…
 - **C** Generate less/better rollout work（改变 {traj_i}，**可能改变训练分布，必须单独标记**）：early stop、partial rollout、filtering、adaptive allocation、trajectory shaping…
 
-按实际改变的训练轨迹集合判断C，不按技术名称判断：partial rollout若仅提供路由信号，或历史轨迹仅供draft验证，不自动归C。跨训练步重排、短组先更新等对每步集合与更新顺序的影响另核，不能由“不丢样本”排除。
+按实际改变的训练轨迹集合判断C，不按技术名称判断：partial rollout若仅提供路由信号，或历史轨迹仅供draft验证，不自动归C。CadenceRL的pacing让长轨迹pending后续跑，不因“replace”措辞自动归删样本；跨训练步重排、短组先更新等对每步集合与更新顺序的影响另核，不能由“不丢样本”排除。
 
 反例登记：当前无。凡 taxonomy 解释不了的工作记入 §15 并提修订。
 
@@ -90,6 +90,12 @@
 | [2605.14220v2](https://arxiv.org/abs/2605.14220v2) | 2026-05-14首次／v2 09-29 | Diagnosing Training Inference Mismatch（VeXact） | L1/L4边界（暂） | 诊断，不硬归A/B/C | 同权重不同引擎的概率差异，以zero-mismatch reference隔离TIM与off-policy drift | 核 |
 | [2609.32444v1](https://arxiv.org/abs/2609.32444v1) | 2026-09-26／v1 | Rethinking Training-Inference Mismatch（CIS） | L1/L4边界（暂） | 算法修正，不硬归B/C | logit-displacement刻画与confidence-aware截断importance sampling；偏差／稳定性待深读 | 核 |
 | [2507.19017v1](https://arxiv.org/abs/2507.19017v1) | 2025-07-25／v1 | MindSpeed RL（Ascend平台） | L4（暂） | B（暂） | distributed transfer dock组织sample flow，allgather-swap处理resharding内存；平台结果不外推CUDA | 核 |
+| [2509.15965v2](https://arxiv.org/abs/2509.15965v2) | 2025-09-19首次／v2 12-29 | RLinf | L3/L4（暂） | B（暂） | M2Flow时空拆分／重组工作流，context switching、elastic pipelining及profiling-guided计划 | 核 |
+| [USENIX OSDI'26](https://www.usenix.org/conference/osdi26/presentation/wang-yuanqing) | 2026-07会议记录 | DynaRL | L3/L4（暂） | B（暂） | 动态hypergraph控制面，多级调度、资源迁移及context-aware路由跨组件重分配 | 核 |
+| [2405.01481v2](https://arxiv.org/abs/2405.01481v2) | 2024-05-02首次／v2 09-03 | NeMo-Aligner | L1/L4（暂） | A/B（暂） | PPO多模型PyTriton异步通信／权重offload，TRT-LLM生成与原地refit、推理reshard | 核 |
+| [2510.11345v1](https://arxiv.org/abs/2510.11345v1) | 2025-10-13／v1 | ROLL Flash（Part II） | L3/L4（暂） | B（系统；算法另核） | 承接ROLL的细粒度并行与rollout-train解耦，queue调度／环境级异步及off-policy算法 | 核 |
+| [2508.06471v1](https://arxiv.org/abs/2508.06471v1) | 2025-08-08／v1 | GLM-4.5报告（Slime §3.5） | L1/L4（暂） | A/B（系统；recipe另核） | Megatron／SGLang-Router／Data Buffer，支持同置同步及分离异步；BF16训、在线block FP8推 | 核 |
+| [2512.07710v1](https://arxiv.org/abs/2512.07710v1) | 2025-12-08／v1 | Each Prompt Matters（CompassMax-V3-Thinking） | L1/L3/L4（暂） | A/B／**C**（联合算法） | FP8 rollout、reward重叠与长度调度；另有zero-variance过滤、ESPO及MoE Router Replay | 核 |
 
 ### 5.2 L3 — Long-tail / Scheduling / Cluster
 
@@ -104,6 +110,7 @@
 | [2511.14617v3](https://arxiv.org/abs/2511.14617v3) | 2025-11-18首次／v3 2026-04-03 | Seer | L1/L3（暂） | A/B（暂） | divided rollout、context-aware调度与grouped speculation；不是仅长度预测 | 核 |
 | [2605.07501v2](https://arxiv.org/abs/2605.07501v2) | 2026-05-08首次／v2 05-17 | ExpThink（CoT塑形边界） | workload／算法边界 | C边界（非直接筛轨迹） | 历史最短正确长度引导reward塑形及correct-count advantage归一化；改变学习目标，不是执行同一轨迹更快 | 核 |
 | [2506.22950v1](https://arxiv.org/abs/2506.22950v1) | 2025-06-28／v1 | Infinite Sampling | L2/L3/L4（暂） | B（暂） | micro sampling groups与跨组连续采样，prefix长度预测、全局分组及SJF refill；完整组统计后反向 | 核 |
+| [2609.36899v1](https://arxiv.org/abs/2609.36899v1) | 2026-09-29／v1 | CadenceRL（Reshaping Rollout Workloads） | L2/L3/L4（暂） | B（暂） | pacing让长context暂候、concentration聚尾到亲和worker，late-bound KV准备；不是直接删长轨迹 | 核 |
 | ？ | ? | Weave | L3/L4 | B | ？（种子，待验证） | ？ |
 
 ### 5.3 L1/L2 — RL-aware Speculative Rollout（serving机制的迁移条件）
@@ -298,6 +305,18 @@ BubbleSpec／SRT的run-ahead用于后续draft验证，不等于直接拿旧polic
 
 范围限元数据／摘要、引用位置和SpecActor／Infinite Sampling／AgentRL局部机制定位，无全文深读、代码阅读或性能抽取／复现。serving登记达到20条只是数量进展，基础机制覆盖仍待补；70个RL相关条目也含边界，未达到80–120原生目标。下一批优先继续原生引用扩展及未落实种子，不为追总数扩成算法综述或重复本批核验。
 
+### 5.16 原生框架、异构调度与低精度系统来源
+
+2026-10-27第十批：定向搜索与项目出版线索补7篇，均回原站核身份／版本。六个新arXiv ID加DynaRL的OSDI'26官方记录，累计97身份（93唯一arXiv＋4会议记录），20 serving／边界＋77 rollout/RLHF及相关边界。来源包含五篇框架／调度论文及GLM-4.5、Each Prompt Matters两篇含系统机制的模型报告；只取后者的rollout系统线索，不展开模型能力或算法综述。
+
+框架与论文版本分开：[RLinf v2](https://arxiv.org/abs/2509.15965v2)的M2Flow、context switching与elastic pipelining也见[OSDI'26官方记录](https://www.usenix.org/conference/osdi26/presentation/yu-chao)，合计一篇；[DynaRL](https://www.usenix.org/conference/osdi26/presentation/wang-yuanqing)是另一题名／作者记录，动态hypergraph、资源迁移与在线调度单列，不按两篇论文推断两套独立实现或独立复现实证。[ROLL Flash v1](https://arxiv.org/abs/2510.11345v1)明确扩展ROLL，是不同ID的后续论文而非ROLL原ID修订；off-policy算法与调度联合结果不全归纯系统B。
+
+异步通信不必然等于stale-policy训练：[NeMo-Aligner v2 §3.1–3.2](https://arxiv.org/html/2405.01481v2)以PyTriton连接PPO模型、同架构不同权重通过offload／swap复用，并优化TRT-LLM生成、推理reshard及原地refit。不能由异步requests直接推断当前NeMo-RL的训练语义或软件能力。[CadenceRL v1 §3.4／§4](https://arxiv.org/html/2609.36899v1)的长轨迹会进入pending并在合适worker续跑，pacing／concentration以staleness预算调节吞吐—时延，不把摘要“replace long-context”解释成丢样本；暂B，跨版本协调与每步训练集合仍需后续核实现。
+
+低精度policy rollout与低精度draft分开：[GLM-4.5 v1 §3.5](https://arxiv.org/html/2508.06471v1)给出Slime的Megatron训练、SGLang＋Router生成、Data Buffer三模块，支持同置同步／分离异步；训练BF16，每轮发往rollout前在线block-wise FP8量化。它不是量化draft再由dense target验证，采样概率／训推修正仍须另核。[Each Prompt Matters v1](https://arxiv.org/abs/2512.07710v1)同含FP8 rollout、reward重叠、长度调度和zero-variance过滤／ESPO／Router Replay，过滤明确记C；MoE Router Replay不等于回放历史trajectory，质量收益不能全归FP8或系统调度。
+
+证据边界：[NeMo-Aligner v2 §3.5](https://arxiv.org/html/2405.01481v2)报告其小问题规模下worker-pool负载均衡开销抵消收益，不能把“有长尾／均衡器”直接推成任意batch都更快。此处仅定位定性条件，不抽数值比较。全批限元数据、摘要及上述局部机制定位，无全文深读、代码或设备验证；总数未替代原生覆盖目标。下一批优先原生调度／权重同步／数据管理引用与未落实种子，继续补缺而非复核本批或为凑百篇加无关算法。
+
 ## 6. Paper Deep Reads
 
 （空。优先级建议：AReaL、HybridFlow/veRL、StreamRL、RollPacker、RhymeRL、BubbleSpec、StaleFlow——覆盖四层 + 三大机制家族。深读模板：问题/瓶颈 → 性能模型 → 机制 → 实验条件与增益（保留硬件/batch/长度分布）→ 与 taxonomy 对照 → 可迁移性 → 疑点。）
@@ -371,6 +390,8 @@ BubbleSpec／SRT的run-ahead用于后续draft验证，不等于直接拿旧polic
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（M1原生框架与低精度补库）**：新增RLinf／DynaRL／NeMo-Aligner／ROLL Flash／CadenceRL及两篇含系统章节的模型报告，累计97身份（20 serving／边界＋77 rollout/RLHF及相关边界；93 arXiv＋4会议记录）。RLinf arXiv／OSDI不重复，ROLL Flash为后续独立论文非原ID修订；异步RPC不等stale-policy，CadenceRL暂候续跑不等删轨迹，FP8 policy／draft区分，CompassMax过滤单列C。仅身份／摘要和局部机制、定性评估条件，深读／代码仍0／0；未设备验证或扩算法综述，后续继续原生与种子扩展。
 
 - **2026-10-27（M1引用扩展与多轮缓存边界）**：从TideRL参考文献新增SpecActor／MindSpeed RL／Infinite Sampling／AgentRL及CachedAttention／CONCUR／Continuum／Helium八篇，累计90身份（20 serving／边界＋70 rollout/RLHF及相关边界；87 arXiv＋3会议记录）。FoN选draft不等筛训练响应；micro group与完整组统计区分，AgentRL主动cross-policy单列C，缓存驻留不等跨权重可复用或删样本。仅身份／摘要及局部正文定位，深读／代码仍0／0；无NPU任务或实验，下步继续原生与种子扩展，不宣称覆盖收敛。
 
