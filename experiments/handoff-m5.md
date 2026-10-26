@@ -405,6 +405,8 @@ Megatron调度恢复参考（2026-10-25，复用本入口非新队列）：[#795
 
 状态：待M5独立选题与匹配环境，非新增必跑队列，不打断现有任务。[#8338](https://github.com/verl-project/verl/pull/8338)固定head `c099b0179cfa70987b7b75e5b1c9b685d39c4d5c`、目标base dc709afb/共同祖先 `d1390eea0c94467d4ae1387eeda9e2f78f8d73ea`；[M1源码/CPU入口](../notebook/fundamentals/gradient-checkpointing.md#重算叶子与共享存储)仅原两条清理语句的4组CPU所有权/梯度/延后反向控制和3文件compile，无完整patch、原5项GPU测试或显存/stream验收。
 
+2026-10-26同一参考更新：最新head `b028abee139755a289e390bf1f51d0dd91f646d6`直接接旧head，patch.py字节与测试函数AST未变；新增CI前置标志，旧harness不重跑。[M1收集控制](../notebook/fundamentals/gradient-checkpointing.md#重算测试的执行前置条件)仅真实缺Megatron时原模块退出5／5／2，无CUDA查询或测试体执行。若日后独立选用既有获准匹配环境，记录是否设置 `VERL_REQUIRE_MCORE_TESTS=1`、实际执行／skip／error数及原因；标志不取消首个leak例的stock条件skip，不能只据进程退出或作者旧报告认定五项回收覆盖。此更新不新增队列、部署或原任务前置条件，也不授权任何社区写入。
+
 目的：若后续已有获准Megatron全重算工作，区分叶子引用留存与共享storage被截断，不能据MTP名字特判认证普通共享输入安全。缺口是匹配MCore/PyTorch/CUDA版本、原测试真实执行/skip、显存floor/peak与释放时序；作者0.18.0/torch2.11/H800和8卡MTP报告不外推不同MCore/后端或4090环境。只有M5独立选择且已有兼容获准环境时，才考虑隔离进程运行 `tests/models/test_mcore_recompute_reclaim.py`，保留5项具体结果/skip、梯度与stock对照；实际模型回收及跨stream/分布式条件另行判断，不按作者矩阵自动追加训练。缺依赖、需新编译/切环境/模型/预算或影响其他任务即停并记未测，不自动改环境、应用patch或在原训练制造非法访存；AReaL/#8313/#523及移植专项边界不变，本条不代表接单。
 
 ## verl V1 可变行布局参考

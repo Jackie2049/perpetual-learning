@@ -161,7 +161,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 
 - [verl 文件系统权重同步](../verl-v1-checkpoint-engines-deep-reading.md#文件系统权重同步的发布与清理)：#8355原导出/复制/CPU接收控制两次通过，三独立writer覆盖分片，index-last非原子事务；撤回4090仅naive、固定4GiB与同进程共享存储推断。非collective/FUSE或GPU验收。
 
-- [重算叶子与共享存储](../fundamentals/gradient-checkpointing.md#重算叶子与共享存储) — #8338放弃叶子引用与截断storage分开；4组CPU控制只执行原清理两语句，非MCore/CUDA回归或显存测量。
+- [重算叶子与共享存储](../fundamentals/gradient-checkpointing.md#重算叶子与共享存储) — #8338清理核心未变；[新CI标志](../fundamentals/gradient-checkpointing.md#重算测试的执行前置条件)只强化前置条件，缺Megatron的真实收集退出5／2非CUDA验收，强制标志也不取消例内skip。
 
 - [verl 融合输出头与logit softcap](verl-fused-output-softcap.md) — #7991通用guard不是softcap实现；完整原torch输出头36组语义对照，保留FP64参考误差，原24配置测试未跑。
 - [高置信标签的舍入与反向边界](verl-fused-output-softcap.md#高置信标签的舍入与反向边界) — #8377原12项CPU候选过／父版4高置信项失败；已有低置信梯度反例与二阶原地异常也复现，不等于整体数值安全或Triton验收。

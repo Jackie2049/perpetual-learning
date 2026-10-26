@@ -1,0 +1,36 @@
+{
+  "python": "3.12.13",
+  "pytest": "9.1.1",
+  "torch": "2.14.1",
+  "source_sha256": {
+    "old": "d046908de4585d0efb24063b911d570058a9a4f3617fa980998e27ad836fbc49",
+    "new": "1c6240c843152e46ed690a36c379d2cc9fab5cf817a6a8f368a921f9148bcaa6"
+  },
+  "scope": "missing-Megatron collection only; zero GPU test bodies executed",
+  "results": [
+    {
+      "source": "old",
+      "flag": null,
+      "exit_code": 5,
+      "expected_exit_code": 5,
+      "stdout": "\n1 skipped in 0.61s\n",
+      "stderr": ""
+    },
+    {
+      "source": "new",
+      "flag": null,
+      "exit_code": 5,
+      "expected_exit_code": 5,
+      "stdout": "\n1 skipped in 0.60s\n",
+      "stderr": ""
+    },
+    {
+      "source": "new",
+      "flag": "1",
+      "exit_code": 2,
+      "expected_exit_code": 2,
+      "stdout": "\n==================================== ERRORS ====================================\n_______________ ERROR collecting test_mcore_recompute_reclaim.py _______________\nImportError while importing test module '/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/recompute-ci-new/test_mcore_recompute_reclaim.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/Users/jackiemac/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/importlib/__init__.py:90: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest_mcore_recompute_reclaim.py:29: in <module>\n    import megatron.core.tensor_parallel.random as mcore_random\nE   ModuleNotFoundError: No module named 'megatron'\n=========================== short test summary info ============================\nERROR test_mcore_recompute_reclaim.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.65s\n",
+      "stderr": ""
+    }
+  ]
+}

@@ -4,6 +4,8 @@
 
 2026-10-23补充：[重算叶子与共享存储](#重算叶子与共享存储)核verl #8338的回收语义；CPU存储/梯度控制与Megatron原GPU测试分开，不更新上文历史显存或性能结论。
 
+2026-10-26接续：[重算测试的执行前置条件](#重算测试的执行前置条件)核同PR的新CI标志。核心patch未变；本机缺Megatron时，原模块收集为退出5，新版显式要求依赖后为退出2，不把skip或导入失败算成GPU测试通过。
+
 ## 1. 核心问题：激活值的显存占用
 
 训练时，前向传播的中间激活需要保存在显存中，用于反向传播计算梯度。
@@ -298,6 +300,32 @@ python experiments/scripts/verify_recompute_leaf_storage.py /path/to/verl
 作者另报告MCore0.18.0/torch2.11/H800的小型GPTModel MoE内存floor从736.56降至608.56MiB，保持旧resize路径的回收量；dense floor不变，并报告8卡48项MTP回归。均为外部报告，不是本项目结果，也不认证原mHC+MTP完整训练或Qwen3-30B-A3B配置；作者明确这两条端到端路径未覆盖。
 
 原测试中若stock MCore已不再保留输入，leak例会skip，不能只看总退出码称回收修复已验证。作者将留存归因于MoE dispatcher持有routing probs及重算图，但本机未观察真实dispatcher、CUDA allocator、跨stream释放、PP/TP或分布式保存激活。真机恢复条件见[M5重算参考](../../experiments/handoff-m5.md#verl-megatron-重算回收参考)，不自动采用候选或修改既有环境。
+
+### 重算测试的执行前置条件
+
+**让CI要求依赖可用，与证明回收修复有效，是两层验收。** 2026-10-26只读核 [#8338](https://github.com/verl-project/verl/pull/8338)仍open、非draft，作者HydrogenSulfate的新head `b028abee139755a289e390bf1f51d0dd91f646d6`直接接在旧c099b017之后，目标base仍dc709afb；PR累计3文件207增34删。新提交只改测试前置条件与workflow入口：完整patch.py与旧版SHA256相同，全部测试／helper函数AST也相同，因此不重跑旧4组CPU所有权控制，也不新增一份回收实现。
+
+[`model_engine`步骤](https://github.com/verl-project/verl/blob/b028abee139755a289e390bf1f51d0dd91f646d6/.github/workflows/model.yml)在调用原测试模块时增加 `VERL_REQUIRE_MCORE_TESTS=1`，沿用带megatron extra的frozen uv环境。[模块入口](https://github.com/verl-project/verl/blob/b028abee139755a289e390bf1f51d0dd91f646d6/tests/models/test_mcore_recompute_reclaim.py)据此把 `pytest.importorskip` 改为普通Megatron导入，并使CUDA不可用的模块级skip条件不再成立。这个标志按非空字符串判断，`"0"`也会启用；未设置或空值才走可选模式。源码仍保留首个leak测试内的条件skip：若stock已不留存输入，会跳过该例。**强制前置条件并不等于强制五项全部通过。**
+
+本机Python3.12.13／pytest9.1.1／torch2.14.1没有安装Megatron，使用哈希匹配的两份完整原测试做独立pytest收集；没有替换导入、伪造依赖或执行测试体：
+
+| 原模块版本 | 标志 | pytest实际结果 |
+| --- | --- | --- |
+| c099b017 | 未设置 | 1 skipped，退出5（未收集到测试） |
+| b028abee | 未设置 | 1 skipped，退出5 |
+| b028abee | `1` | ModuleNotFoundError收集错误，退出2 |
+
+因此不能把评审机器人“缺Megatron也会让这条单模块CI命令成功”的概括直接当事实；在本机独立调用中，旧版已经非零退出。模块级CUDA skip与收集时缺模块不是同一种结果，本轮未执行前者。退出5的定义见[pytest官方说明](https://docs.pytest.org/en/stable/reference/exit-codes.html)。新标志仍明确表达CI需要该依赖，并避免CUDA前置条件静默跳过；是否在真实CI运行、五项具体结果及显存回收效果需分别看实际证据，不能由机器人无新增意见推导维护者批准或CI通过。
+
+[收集复查脚本](../../experiments/recompute-ci-prerequisites/verify.py)拒绝已安装Megatron的环境、强校验原文件SHA256、关闭插件自动加载／conftest并显式限制rootdir；[原始结果](../../experiments/recompute-ci-prerequisites/result.json)保存退出码和输出。输入应是两个固定提交的原测试文件的隔离副本，命令如下；脚本不获取网络、安装框架或运行GPU测试：
+
+```bash
+python -B experiments/recompute-ci-prerequisites/verify.py \
+  --old-test /path/to/isolated-old/test_mcore_recompute_reclaim.py \
+  --new-test /path/to/isolated-new/test_mcore_recompute_reclaim.py
+```
+
+两版完整patch与test共4次AST／内存compile通过。作者旧H800／8卡报告保持原版本身份，不改写成本轮或新head实测；原M5参考只更新版本与skip判断，不新增回收、CUDA或训练队列。
 
 ## 7. 学习要点
 

@@ -47,7 +47,7 @@
   - [AMP跳步与学习率计数](fundamentals/mixed-precision.md#amp-跳步与学习率计数) — 真实CPU GradScaler区分梯度检查、优化器调用与scheduler；多优化器可部分更新，非GPU/融合优化器或框架训练验收
 - [AdamW缺失与零梯度](fundamentals/adamw-optimizer-deep-dive.md#缺失梯度与零梯度) — 真实CPU optimizer/autograd：None跳过参数与本参数步数，零梯度仍推进动量/衰减；动态冻结须核旧grad，非分布式或性能验收
 - [梯度检查点](fundamentals/gradient-checkpointing.md#重计算的随机数与可变状态) — 真实CPU重算对照：默认元数据检查不认证梯度一致，Torch RNG不覆盖外部随机源，early-stop可能跳过末尾副作用；非显存/性能或FSDP验收
-  - [重算叶子与共享存储](fundamentals/gradient-checkpointing.md#重算叶子与共享存储) — verl#8338原两条清理语句/4组CPU所有权对照；不截断其他alias，原5项CUDA回归和显存回收未验证
+  - [重算叶子与共享存储](fundamentals/gradient-checkpointing.md#重算叶子与共享存储) — verl#8338原4组CPU所有权控制；[新CI前置条件](fundamentals/gradient-checkpointing.md#重算测试的执行前置条件)不改核心patch，真实缺依赖收集退出5／2均非GPU通过，例内skip仍保留
 - [NCCL 通信库](fundamentals/nccl.md) — Ring/Tree AllReduce、调优参数、网络拓扑
 - [RDMA 高性能网络](fundamentals/rdma-networking.md) — InfiniBand/RoCE/iWARP、GPUDirect RDMA、NCCL 调优、实战排错
 - [CUDA 编程基础](fundamentals/cuda-programming-basics.md) — Grid/Block/Thread、内存层次、Coalesced Access、Occupancy、Roofline Model
