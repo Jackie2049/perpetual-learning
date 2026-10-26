@@ -22,6 +22,8 @@
 
 ## 权重版本与外部缓存
 
+2026-10-26接续：[新版显式清理与sleep调用链](verl-worker-lifecycle-ray-weight-sync-reading.md#新版的显式清理与-sleep-路径)核#8323新head1787d6a2／base174888fc及vLLM0.32.0固定源码。salt下显式reset_connector=False不代表完整生命周期保留外层；sleep(level≥1)仍请求connector reset，实际效果取决于实现。版本不匹配、物理删除与复用率分开，旧CPU／标签命中实验不迁作新环境验收。以下保留4e93历史版本分析。
+
 ### 命名隔离不等于删除或权重认证
 
 固定阅读[verl #8323](https://github.com/verl-project/verl/pull/8323)，head `4e93e4761ddde2ea5bf9d3032b86b6c3844126fd`、目标base `16ec093cc4a235c603c29aed1f2c4e9f551fab48`，共同祖先 `f2923cbf154731918b1e36db8c567433f349fede`，ahead2/behind3；实际PR为20文件869增20删。候选默认仍`external_kv_cache_invalidation=reset`；可选salt改变外部缓存查找身份，不新增跨版本KV复用或自动沿用在途任务旧版本的策略。
@@ -38,7 +40,7 @@
 
 | 后端 | 放盐位置 | 失效动作与限制 |
 |---|---|---|
-| vLLM | `_park_until_admitted`之后加入prompt | salt下仍清本地prefix/MM/encoder cache，但reset_connector=False保留外层；入场barrier超时改为抛错，不带着迟到请求继续更新 |
+| vLLM | `_park_until_admitted`之后加入prompt | salt下显式清本地prefix/MM/encoder时传reset_connector=False；不覆盖sleep的其他清理路径。入场barrier超时改为抛错，不带着迟到请求继续更新 |
 | SGLang | 新增verl侧Event门，wait后填写GenerateReqInput | abort前关门，pause失败重开；continue成功后开门。原local flush路径不因salt消失；依赖native请求进入pause检查的时序 |
 | TRT-LLM | `_park_until_allowed`之后，非None才传cache_salt | 保持reset模式兼容不接受该参数的旧版本；verl本候选没有为它配置外部store，不能外推外部层清理/命中 |
 

@@ -33,6 +33,8 @@
 
 2026-10-26补[MLflow初始化](#mlflow-初始化文件锁的已有候选)：新#8393已有作者；原类接记录回调与真实子进程flock确认锁持有／释放，回调内部ImportError会无锁再调用。三局部控制非MLflow迁移或八worker验收，不另实现。
 
+2026-10-26补[KV salt与sleep](#kv-salt-与-sleep-的清理范围)：#8323新1787d6a2适配0.32 pause API；显式False不阻止sleep经另一入口请求reset，正确失效与保留率分开。四源码仅语法，不重复旧CPU／GPU或另改引擎。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -46,6 +48,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## KV salt 与 sleep 的清理范围
+
+2026-10-26只读[#8323](https://github.com/verl-project/verl/pull/8323)新head1787d6a2／base祖先174888fc，OPEN／非draft／未合并，ahead2／behind0，20文件872增21删。旧4e93已分叉，整仓比较ahead23／behind2包含多项main变化，不记成本PR新增。作者新[sleep解释](https://github.com/verl-project/verl/pull/8323#issuecomment-6416461545)及维护者引擎侧修复问题不当接口批准或本项目认领。
+
+[原Worker专题](../../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#新版的显式清理与-sleep-路径)对照固定vLLM0.32.0 commit5df63a72：salt显式clear传False，abort适配mode=abort后单独清local；sleep(level≥1)仍经_finish_pause／_reset_caches默认True请求connector reset。实际删除由connector.reset_cache实现决定，不应写成所有store清空或必然完整保留。已有原生release_kv_cache_memory也走默认reset，不能仅凭方法名替换。四完整源码AST／compile及scheduler方法只读，无pause／sleep／connector／模型执行，旧helper结果与作者0.29 GPU报告均不迁作新组合验收；只修原M5条件参考，无新队列／补丁／专项或社区写入。
 
 ## MLflow 初始化文件锁的已有候选
 

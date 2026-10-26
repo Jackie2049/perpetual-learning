@@ -37,6 +37,26 @@
 
 ## 外部 KV 缓存的权重命名空间
 
+### 新版的显式清理与 sleep 路径
+
+2026-10-26再核[#8323](https://github.com/verl-project/verl/pull/8323)：仍OPEN／非draft／未合并，新head `1787d6a29250365da07c13e2ab1331a8a3a9cdcc`，base／实际祖先 `174888fcf4b65dea032566a02fd16c5f76fb5b5b`，ahead2／behind0，20文件872增21删。与旧4e93 head已经分叉（ahead23／behind2），整仓比较混入多项main合并，不能全部算本题新增；旧CPU helper结果不迁作新20文件验收。
+
+作者新增[sleep说明](https://github.com/verl-project/verl/pull/8323#issuecomment-6416461545)，维护者另问是否将部分修复放在引擎侧。**salt隔离查找身份，不保证外部缓存经完整生命周期始终保留。** 固定[候选server](https://github.com/verl-project/verl/blob/1787d6a29250365da07c13e2ab1331a8a3a9cdcc/verl/workers/rollout/vllm_rollout/vllm_async_server.py)与vLLM0.32.0 commit `5df63a7203cdb9328d824a27b682e77c7b9928be` 的[AsyncLLM](https://github.com/vllm-project/vllm/blob/5df63a7203cdb9328d824a27b682e77c7b9928be/vllm/v1/engine/async_llm.py)、[EngineCore](https://github.com/vllm-project/vllm/blob/5df63a7203cdb9328d824a27b682e77c7b9928be/vllm/v1/engine/core.py)显示三条不同路径：
+
+| 入口 | salt模式的实际接线 | 能说明什么 |
+| --- | --- | --- |
+| 显式clear／wake／resume中的 `_reset_prefix_cache` | 传reset_connector=False | 这一次调用不请求重置外层，不能约束其他入口 |
+| abort并要求清cache | vLLM≥0.32用mode=abort，salt先clear_cache=False，再经clear_kv_cache仅清本地 | 对新版pause API有适配，不是原生引擎已实测 |
+| sleep／release_kv_cache借用sleep | level≥1经pause(clear_cache=True) → `_finish_pause` → `_reset_caches`默认reset_connector=True | 绕过上面的False；free_cache_engine及rollout_mode决定是否走到该入口 |
+
+[checkpoint manager](https://github.com/verl-project/verl/blob/1787d6a29250365da07c13e2ab1331a8a3a9cdcc/verl/checkpoint_engine/base.py)非naive路径在abort后、传权重前调用release_kv_cache_replicas；server对非COLOCATED路径借sleep后仅唤醒weights，正常HYBRID sleep也走level1／2。vLLM0.32另已有release_kv_cache_memory，但该方法自身也调用默认 `_reset_caches()`，不能只凭名字就替换成“保留connector”的修复。
+
+[scheduler消费点](https://github.com/vllm-project/vllm/blob/5df63a7203cdb9328d824a27b682e77c7b9928be/vllm/v1/core/sched/scheduler.py#L2840)还区分**请求reset**与**外层实际清空**：只有reset_connector=True才调用connector.reset_cache，具体效果取决于连接器实现；没有connector是no-op成功。因此sleep可能减少外层复用，但不能称所有store都被清空。若正确绑定新权重版本并按带盐key寻址，即使未清外层，旧版本仍不应命中；反之“命中率下降／无命中”不证明版本绑定正确。共享store的性能及其他副本影响仍需对应环境观察，不把作者“只会over-clear”的说明扩大成所有布局验收。
+
+本轮四份完整Python源码仅AST／compile及上述scheduler方法阅读；没有执行sleep、pause、原CPU／GPU套件、connector、模型或权重更新。作者vLLM0.29／SGLang0.5.20／TRT1.3rc15报告不作为0.32新组合结果，不造FakeEngine清理矩阵。缺口仅更新[原M5条件参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)：未来已有获准匹配观测时，连同sleep调用点、connector reset实现与命中计数分别记录；不自动切salt、关闭free_cache_engine、改引擎或新排部署。
+
+### 旧版身份与请求接线记录
+
 **旧权重生成的KV不能用于新权重；让旧缓存不再被查到，不等于把它从存储中删除。** 已有daegyu94的[#8323](https://github.com/verl-project/verl/pull/8323)将外部缓存失效拆成默认 `reset` 与可选 `salt`。2026-10-26核为OPEN／非draft，固定head `4e93e4761ddde2ea5bf9d3032b86b6c3844126fd`、直接父版19835b21，PR元数据base16ec093c，20文件869增20删。本轮聚焦六个运行模块和一个原CPU测试，不是整个PR或三种推理引擎的完整验收，也不另开竞争实现。
 
 ### 缓存身份与存储回收
@@ -45,7 +65,7 @@
 
 按候选[配置检查](https://github.com/verl-project/verl/blob/4e93e4761ddde2ea5bf9d3032b86b6c3844126fd/verl/workers/config/rollout.py)，vLLM仅接受列出的按block hash寻址的connector：MooncakeStore、Offloading、LMCacheMP和HF3FS；MultiConnector递归检查孩子，按token查找的LMCacheConnectorV1被拒绝。检查同时接受 `kv_transfer_config` 与 `kv-transfer-config` 两种拼写，支持JSON字符串。它检查配置名称，不加载插件或证明具体部署确实按该hash查找。salt还拒绝PD disaggregation，不能把prefill／decode跨进程拆分当已覆盖。
 
-候选[vLLM重置方法](https://github.com/verl-project/verl/blob/4e93e4761ddde2ea5bf9d3032b86b6c3844126fd/verl/workers/rollout/vllm_rollout/vllm_async_server.py#L953)在salt模式传 `reset_connector=False`，保留外部存储、继续请求本地cache清理。旧版本条目占用仍需后端淘汰策略与容量管理；换键不自动回收空间，也不保证吞吐提升。TRT-LLM这里只传cache_salt，不由verl配置外部存储；SGLang HiCache文件存储的失效缺口与命中结果仍是作者报告，不推广到所有tier。
+候选[vLLM重置方法](https://github.com/verl-project/verl/blob/4e93e4761ddde2ea5bf9d3032b86b6c3844126fd/verl/workers/rollout/vllm_rollout/vllm_async_server.py#L953)在salt模式传 `reset_connector=False`，这条显式路径不请求清外部存储，仍请求本地cache清理；它不覆盖sleep的其他清理路径。旧版本条目占用仍需后端淘汰策略与容量管理；换键不自动回收空间，也不保证吞吐提升。TRT-LLM这里只传cache_salt，不由verl配置外部存储；SGLang HiCache文件存储的失效缺口与命中结果仍是作者报告，不推广到所有tier。
 
 ### 版本必须在正确的请求时点绑定
 

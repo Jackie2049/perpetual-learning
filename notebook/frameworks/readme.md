@@ -68,7 +68,7 @@
 - [vLLM V1 PD Separation & KV Transfer Architecture](vllm-pd-separation-kv-transfer-architecture.md)
 - [vLLM V1 Prefix-Cache Hash Computation 深度阅读 (2026-06-15)](vllm-prefix-cache-hash-collision-reading.md)
 - [前缀缓存失效模式分类（故障分类学）](prefix-cache-failure-modes.md)
-  - [权重版本与外部缓存](prefix-cache-failure-modes.md#权重版本与外部缓存) — verl#8323的namespace/step、暂停门及连接器前提；逻辑不匹配非删除，标签命中测试非真实权重更新验收，11模块仅语法核对。
+  - [权重版本与外部缓存](prefix-cache-failure-modes.md#权重版本与外部缓存) — verl#8323新版salt不保证外层经sleep完整保留；逻辑失效、connector重置与命中率分开，旧标签测试非真实权重更新验收。
 - [vLLM V1 Prefix Caching 源码深度分析](vllm-prefix-caching-v1.md)
 - [vLLM 量化推理管线源码阅读](vllm-quantization-pipeline-reading.md)
 - [vLLM Rust Frontend (vllm-rs) 源码级深度阅读](vllm-rust-frontend-reading.md)
@@ -332,7 +332,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
   - [Rollout 调度等待与引擎就绪](verl-worker-lifecycle-ray-weight-sync-reading.md#rollout-调度等待与引擎就绪) — #7382原四测试体通过仅认证原状态替身；pending检查阈值非全启动硬期限，诊断不等资源预留。
   - [SGLang停用后的请求准入](verl-worker-lifecycle-ray-weight-sync-reading.md#sglang-停用后的请求准入) — #8387 route删除不撤销既得handle；临时等待／停用拒绝及原13项覆盖分开，六源码静态核对非peer／GPU验收。
   - [Rollout解释器与导入边界](verl-worker-lifecycle-ray-weight-sync-reading.md#rollout-解释器与导入边界) — #8388角色子树／driver导入／权重兼容分开；Slime已合并方案仍需训练侧helper，五模块语法非环境／通信验收。
-  - [外部KV缓存的权重命名空间](verl-worker-lifecycle-ray-weight-sync-reading.md#外部-kv-缓存的权重命名空间) — #8323按run／步数换查找键，非自动删除／权重hash；门后取版本与后端寻址是前提，两个纯helper非服务回归。
+  - [外部KV缓存的权重命名空间](verl-worker-lifecycle-ray-weight-sync-reading.md#外部-kv-缓存的权重命名空间) — #8323新版显式clear与sleep走不同重置路径；salt正确失效不等外层完整保留，四源码语法非0.32服务验收。
   - [分桶接收失败与退出](verl-worker-lifecycle-ray-weight-sync-reading.md#分桶接收失败与退出) — #7366原8项CPU测试两次通过，真实ZMQ/SHM与替身范围分开；逐ACK超时非整轮截止或回滚，同步poll会阻塞asyncio。
 - [verl v0.8 Worker Lifecycle + vLLM Integration Source Reading](verl-worker-lifecycle-source-reading.md)
 
