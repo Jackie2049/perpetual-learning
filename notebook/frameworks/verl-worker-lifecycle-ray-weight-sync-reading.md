@@ -2,6 +2,8 @@
 
 2026-10-26接续：[SGLang 停用后的请求准入](#sglang-停用后的请求准入)区分移除路由、处理已取得的handle、临时暂停与拒绝重试；新#8387已有作者，本轮只做源码／原测试范围核对。
 
+2026-10-26接续：[Rollout 解释器与导入边界](#rollout-解释器与导入边界)对照新#8388与Slime已合并实现：资源分离、Python包隔离和跨栈权重通信是三个不同验收目标；不另写launcher或resolver。
+
 > 2026-06-15 | 源码: verl/single_controller/ + verl/workers/engine_workers.py + verl/checkpoint_engine/ + verl/workers/rollout/
 > 核心: WorkerGroup=Ray actor管理+Dispatch路由 → RolloutMode(HYBRID/COLOCATED/STANDALONE) → Sleep/Wake GPU内存切换 → 3种Weight Sync后端(naive/NCCL/NIXL)
 
@@ -60,6 +62,45 @@ pause／resume用同一个asyncio.Lock串行控制，但请求并不持有这个
 祖先、候选、目标的V1 trainer／manager／客户端三个完整文件逐字节相同，两个生产修改文件在祖先与目标也相同；但现有GPU workflow的镜像从祖先dev4变为目标dev5。候选新增显式CPU pytest step并对该step设CUDA_VISIBLE_DEVICES为空，仍位于原GPU job及其SGLang／Megatron环境，并没有建立独立轻量CPU runner或证明Actions已执行。不能把源码可接入、作者旧基线通过和目标锁定依赖通过合成一项结论。
 
 本轮六完整Python模块AST／compile、generate首条gate接线与YAML BaseLoader结构检查通过，无SGLang／Ray imports、原测试／引擎或故障注入。源码hash见[当日日志](../../diary/2026-10-26.md)；仅向[M5原一致性入口](../../experiments/handoff-m5.md#verl-异步策略一致性补证)补条件参考，不新排pause／resume实验、不改专项或采用候选。所有上游写入与既有PR-head推送仍逐项待用户明确同意。
+
+## Rollout 解释器与导入边界
+
+**另一个进程不自动意味着另一个包环境，另一个解释器也不自动意味着可跨版本同步权重。** ZihaoW123的[RFC #8388](https://github.com/verl-project/verl/issues/8388)于2026-10-26提出，读取OPEN／0评论，基于main`0bd668c1aa7b63c5f174f7dcb1c5de12e0c74a0b`。它先限定standalone vLLM、FSDP2、separate_async且关闭hybrid切换；字段拼写、resolver、preflight和兼容矩阵均是提案，不是已实现能力。作者明确未保留各实现阶段的所有权；已有设计不代表实现被覆盖，0评论也不表示无需协调。
+
+### 解释器要覆盖整个执行子树
+
+固定源码展示的不是单个server启动点：
+
+| 边界 | 当前路径 | 为什么只改server不够 |
+|---|---|---|
+| 控制侧导入 | [replica注册器的_load_vllm](https://github.com/verl-project/verl/blob/0bd668c1aa7b63c5f174f7dcb1c5de12e0c74a0b/verl/workers/rollout/replica.py)导入vllm_async_server里的vLLMReplica | 同模块顶层导入vLLM多个子模块，尚未启动远端actor也会碰后端依赖 |
+| rollout权重接收端 | standalone创建RayWorkerGroup，使用[CheckpointEngineWorker](https://github.com/verl-project/verl/blob/0bd668c1aa7b63c5f174f7dcb1c5de12e0c74a0b/verl/checkpoint_engine/base.py) | worker构造器会创建rollout adapter及通信组，也需要相应后端依赖 |
+| HTTP server actor | [vLLMReplica.launch_servers](https://github.com/verl-project/verl/blob/0bd668c1aa7b63c5f174f7dcb1c5de12e0c74a0b/verl/workers/rollout/vllm_rollout/vllm_async_server.py)另设node affinity、runtime_env.env_vars与并发度 | 不走同一个worker-group创建入口，不能只在WorkerGroup覆盖解释器 |
+| 引擎与TP／DP子进程 | server启动AsyncLLM／headless等后端入口 | actor的sys.executable只是第一层证据，子进程实际继承／重启行为还须按后端版本验证 |
+
+同文件[RolloutReplica.init_hybrid](https://github.com/verl-project/verl/blob/0bd668c1aa7b63c5f174f7dcb1c5de12e0c74a0b/verl/workers/rollout/replica.py)直接复用已初始化训练worker；同一进程内的两个角色不能各用一个Python解释器。init_colocated虽然另开进程，当前也没有因此自动选择另一套包；GPU placement、内存共享与Python依赖是不同维度。
+
+[全局ppo配置](https://github.com/verl-project/verl/blob/0bd668c1aa7b63c5f174f7dcb1c5de12e0c74a0b/verl/trainer/config/ppo_trainer.yaml)已有ray.init.runtime_env.py_executable并注释其被TaskRunner与worker继承，但它不能替换已经运行的driver。新提案要让训练侧不装vLLM，还须把controller-facing定义与模块级后端导入分开；仅把类名写成字符串，若launch前仍解析并导入原模块，也没有跨过导入边界。
+
+### 不混淆本地选项覆盖与 Ray 继承
+
+[RayClassWithInitArgs.update_options](https://github.com/verl-project/verl/blob/0bd668c1aa7b63c5f174f7dcb1c5de12e0c74a0b/verl/single_controller/ray/base.py)直接做_options.update；后续_create_worker重新写入runtime_env，包含内部rank／master变量，CUDA profiling时另含nsight。若较早把完整runtime_env放在同一class options中，后写字典会替换它，不是按字段深合并。**这不等于Ray从父job继承的runtime_env必定全部丢失**：两者属于不同层，不能用普通dict实验代替Ray继承验收。
+
+RFC因此提出在两个actor创建边界统一解析角色覆盖，保留code distribution／profiling／placement和内部设备变量，拒绝冲突的pip／conda／uv规格。当前_create_worker已经拒绝用户覆盖其保护变量；“用户env overlay”不能被解读成可改RANK／WORLD_SIZE。[Ray环境文档](https://docs.ray.io/en/latest/ray-core/handling-dependencies.html#using-uv-for-package-management)说明py_executable可选择worker解释器及命令参数，父uv环境会被子任务继承，Ray／Python版本还需匹配cluster。该页面读取为2.59.0，而固定verl锁为Ray2.55.1；它支持概念边界，不能算本项目锁定栈已验证这些组合。
+
+### Slime 已有实现隔离的是服务子进程
+
+[Slime #2484](https://github.com/THUDM/slime/pull/2484)已于2026-10-19合并，固定head`b52055443810ba37e4f66d89e3316b4ae1ca1365`、merge`a4202e0595467d9374d9a68d45a34f45c3f8d230`。其[runtime原模块](https://github.com/THUDM/slime/blob/b52055443810ba37e4f66d89e3316b4ae1ca1365/slime/backends/sglang_utils/runtime.py)由普通Popen启动`[executable, '-m', 'slime.backends.sglang_utils.runtime']`，通过stdin传JSON，在子进程重建ServerArgs，而不是把父进程的Torch对象交给multiprocessing序列化。
+
+这里executable是一个argv元素，文档用绝对Python路径或保留参数的wrapper；它不是Ray py_executable可带参数的命令前缀，不能机械搬用同一种字符串。JSON只承载启动参数，不是权重数据面的替代协议。环境从父os.environ复制，针对allocator和Mooncake端口做有限处理，不是隔离全部PATH／PYTHONPATH／动态库搜索路径的安全沙箱。
+
+[Slime文档](https://github.com/THUDM/slime/blob/b52055443810ba37e4f66d89e3316b4ae1ca1365/docs/en/advanced/sglang-config.md#independent-sglang-python-environment)明确Ray控制actor／router仍用训练环境，训练侧仍需SGLang Python helper与router包，并要求对齐SGLang版本；服务侧可不装Megatron。这比“训练环境完全没有推理后端”窄。[engine_group改动](https://github.com/THUDM/slime/pull/2484/files)还要求共享GPU退役时确认服务退出，失败／超时停止交接，不是父actor退出就认证子进程已释放GPU。模块里的终止函数只作源码阅读，本轮未执行任何kill或进程树清理。
+
+### 包隔离和跨栈同步分两道验收
+
+verl的TensorMeta仍含torch.Size与torch.dtype，接收端按dtype.itemsize和chunk.view重建权重；切换解释器不自动提供跨PyTorch序列化、CUDA IPC／NCCL／NIXL或动态库ABI兼容。RFC先要求相同Python／Ray／verl revision，并以相同核心栈的两个环境证明选择与导入隔离，再对明确的transport／package tuple做generate→train→sync→generate及checkpoint／清理验收。不同CUDA用户态库也不等于隔离宿主GPU driver。Slime已有磁盘替代建议不应被悄悄移植成verl的新默认权重路径。
+
+本轮四份verl完整Python模块及Slime runtime完整原模块AST／compile通过，另读配置／lock、Slime相关patch／文档及Ray一手说明；没有安装新环境、调用resolver／Popen／Ray、运行Slime原测试或设备通信。hash见[当日日志](../../diary/2026-10-26.md)。硬件与端到端缺口只补[M5原条件入口](../../experiments/handoff-m5.md#verl-异步策略一致性补证)的参考，不接单部署／实现新launcher、不影响专项；上游写入及既有PR-head推送仍逐项需用户明确同意。
 
 ## 1. WorkerGroup 类层次
 

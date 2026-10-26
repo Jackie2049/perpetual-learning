@@ -210,6 +210,7 @@
 - [verl 单 worker NIXL 拓扑](frameworks/verl-async-logprob-provenance.md#单-rollout-worker-的-nixl-拓扑) — #8316原函数20组控制及后续新增1原测试隔离对照；worker非replica，测试体通过非原生导入/传输验收
 - [verl Rollout调度等待](frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#rollout-调度等待与引擎就绪) — #7382原四协程控制通过；不等资源预留、引擎就绪或整个启动硬期限，机器人部署判断需独立核对
   - [SGLang停用后的请求准入](frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#sglang-停用后的请求准入) — #8387已有候选，临时暂停和拒绝重试不同；旧基线／目标CI镜像及真实peer条件分开，仅源码审计
+  - [Rollout解释器与导入边界](frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#rollout-解释器与导入边界) — #8388与Slime现有子进程对照；包隔离不等跨PyTorch／CUDA同步或宿主隔离，只读源码与文档
 - [verl 组初始化等待超时](frameworks/verl-async-logprob-provenance.md#组初始化的等待超时与任务退出) — #7045当前控制端head、12组原参数检查；等待上限不等于全链路截止、RPC取消或资源回收，真机条件补M5原条目
 - [verl Resume扩展字段](frameworks/verl-async-logprob-provenance.md#resume-返回值与扩展字段合并) — #8341新版三推测计数按attempt求和；仅新增2原测试体旧/新对照，原统计函数显示率相同仍可丢计数，非后端/AgentLoop验收；旧字段测试保留历史
 - [verl Bypass字段与worker配置](frameworks/verl-async-logprob-provenance.md#bypass-字段替换与-worker-的-loss-配置) — #8348新head删除冲突/镜像/PP与动态CP guard及旧测试；两版五组OmegaConf输入确认保证收窄、接受范围扩大，旧19例不作新版认证，非worker/训练验收

@@ -27,6 +27,8 @@
 
 2026-10-26补[SGLang迟到准入](#sglang-停用准入的已有候选)：#8387为draft，临时等待／停用拒绝、控制失败关闭与重试条件分开；六模块仅语法，作者13项及双A100报告不作目标main／本机验收，不另实现。
 
+2026-10-26补[rollout解释器提案](#rollout-解释器隔离的已有提案)：#8388已有设计非实现；四verl模块与Slime原runtime仅语法，区分角色子树、driver导入和权重兼容，不另造resolver／launcher或部署环境。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -64,6 +66,12 @@
 2026-10-26读取donghyq的OPEN／draft [#8387](https://github.com/verl-project/verl/pull/8387)，headdf92e6a2、实际父版／祖先a4b93549，API目标0bd668c1，相对目标ahead1／behind4；四文件340增14删。正文／完整diff／12原测试函数已读，普通评论为draft未review通知与CLA机器人，reviews／行内空，非人工验收。已有作者，不另认领或补发反馈。
 
 [原worker专题](../../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#sglang-停用后的请求准入)区分route撤销与既得handle、临时pause与停用拒绝、控制锁与native请求。V1原链已经传True，候选补SGLang透传并改legacy参数；aborted能触发特定客户端重试，不保证peer存在、KV／RNG迁移或恢复时限。六完整模块AST／compile及YAML结构通过，无原13项／引擎运行；作者旧基线13过和固定权重双A100不认证目标dev5／default-lock环境。仅补M5原条件参考，不另排故障／训练任务、改专项或写上游，所有社区动作／既有PR-head推送仍需用户逐项明确同意。
+
+## Rollout 解释器隔离的已有提案
+
+2026-10-26完整读取ZihaoW123的OPEN／0评论[RFC #8388](https://github.com/verl-project/verl/issues/8388)，基于main0bd668c1，vLLM standalone separate_async优先、其他模式分阶段；resolver、preflight和兼容矩阵仍未实现，作者不保留实现阶段所有权。既有设计不当已修，也不据0评论认定无人协作。
+
+[原worker专题](../../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#rollout-解释器与导入边界)核四原模块：class options浅覆盖不等Ray父job继承全丢，server环境不足以覆盖checkpoint worker／driver模块级vLLM导入。已合并[Slime #2484](https://github.com/THUDM/slime/pull/2484)只把SGLang服务放普通子进程，训练侧仍需helper；JSON启动参数不认证权重ABI。五模块AST／compile、固定lock与文档核对，无环境安装／Ray／原测试／GPU运行。缺口仅M5原条件参考，不另实现launcher／resolver或排部署任务；任何社区写入及既有PR-head推送仍须用户逐项明确同意。
 
 ## 合并 LoRA 睡眠的已有候选
 

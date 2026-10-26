@@ -327,6 +327,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [colocated组装与V1生成mask](verl-reward-integration-reading.md#colocated-组装与-v1-生成-mask) — 新#8379补独立路径，原13参数项候选过／主线9失败；真实jagged写回接原TQ／推理替身，return线性损失非完整PPO更新。
   - [Rollout 调度等待与引擎就绪](verl-worker-lifecycle-ray-weight-sync-reading.md#rollout-调度等待与引擎就绪) — #7382原四测试体通过仅认证原状态替身；pending检查阈值非全启动硬期限，诊断不等资源预留。
   - [SGLang停用后的请求准入](verl-worker-lifecycle-ray-weight-sync-reading.md#sglang-停用后的请求准入) — #8387 route删除不撤销既得handle；临时等待／停用拒绝及原13项覆盖分开，六源码静态核对非peer／GPU验收。
+  - [Rollout解释器与导入边界](verl-worker-lifecycle-ray-weight-sync-reading.md#rollout-解释器与导入边界) — #8388角色子树／driver导入／权重兼容分开；Slime已合并方案仍需训练侧helper，五模块语法非环境／通信验收。
   - [分桶接收失败与退出](verl-worker-lifecycle-ray-weight-sync-reading.md#分桶接收失败与退出) — #7366原8项CPU测试两次通过，真实ZMQ/SHM与替身范围分开；逐ACK超时非整轮截止或回滚，同步poll会阻塞asyncio。
 - [verl v0.8 Worker Lifecycle + vLLM Integration Source Reading](verl-worker-lifecycle-source-reading.md)
 

@@ -257,6 +257,8 @@ ModelOpt忽略规则参考（2026-10-22，同一量化入口不另排队）：�
 
 ## verl 异步策略一致性补证
 
+Rollout解释器RFC参考（2026-10-26，同一入口、非新队列）：[新#8388](https://github.com/verl-project/verl/issues/8388)仅设计，main0bd668c1；[M1启动边界对照](../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#rollout-解释器与导入边界)为四verl模块／Slime b5205544原runtime语法，未创建环境或运行通信。若未来用户明确选择并授权运行时隔离课题，先区分driver、rollout checkpoint worker、server与后端子进程的实际解释器／版本；先同核心栈证明导入隔离，再验证明确transport／包组合的更新与恢复，不能只打印一个server的sys.executable就验收。当前无实现和获准部署条件，不新建／升级环境、跨版本通信、换传输或另写launcher，缺授权／安全匹配资源／影响专项即停止。所有社区写入及既有PR-head推送仍需用户对具体动作明确同意；仅参考、不表示接单。
+
 SGLang停用准入参考（2026-10-26，同一入口、非新队列）：已有donghyq draft [#8387](https://github.com/verl-project/verl/pull/8387) headdf92e6a2／真实祖先a4b93549、目标0bd668c1。[M1源码范围](../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#sglang-停用后的请求准入)只六模块AST／compile与YAML；作者13项及同机双A100 fixed-weight probe非本机／目标锁定环境。若M5在已获明确授权的隔离pause／resume观测中独立参考，先核实际server／client、临时等待还是reject、LB是否有可用peer、控制失败停在哪一阶段，以及dev4／dev5镜像与锁；返回aborted不当GPU释放／KV迁移或时限证明。当前安全事件未闭环／共享生产、缺授权、需新部署或影响专项即停，不自行停服务、kill、注入故障或新排训练；不采用或另写gate。所有社区写入／既有PR-head推送仍须用户对具体动作明确同意；参考不表示接单。
 
 k3数值参考（2026-10-26，同一观测入口、非新队列）：已有Eppiehu的[#8386](https://github.com/verl-project/verl/pull/8386) headc854acbb／base祖先0bd668c1。[M1原20参数项CPU复查](../notebook/frameworks/verl-grpo-core-algos-reading.md#k3-近零消去与拒绝阈值)候选全过／基线8失败，32,768-token严格阈值夹具由负统计保留转为正统计拒绝；非作者73项整组、设备或模型验收。若M5在已有获准、安全、匹配的观测任务中独立参考，记录实际torch／源码／dtype、log-ratio定义、mask／长度、RS粒度／阈值与三处clamp差异；不把k3+值改变当其梯度切回k3，亦不把CPU近零通过当低精度／编译／训练质量保证。缺匹配条件、需新下载部署或影响专项就记未测停止，不为本项新排A/B训练、应用候选或改阈值。所有社区写入及既有PR-head推送仍须用户对具体动作明确同意；参考不表示接单。
