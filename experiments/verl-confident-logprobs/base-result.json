@@ -1,0 +1,125 @@
+{
+  "revision": "3c6d9b43b67c74ec343d77874cd8fa6e841523da",
+  "test_revision": "e9847a3d3db1d0f44ccb919e21677fb02e603464",
+  "python": "3.12.13",
+  "torch": "2.14.1",
+  "pytest": "9.1.1",
+  "threads": 1,
+  "source_sha256": "bc7ff798e2f5c06e0121668490739814efc519ff66d4d7dd7c8fc40b4840eb03",
+  "test_sha256": "464911bf457d5c0d9cc027282b5fa39a16f9c7bcbf29267b7c3e51686ad5a83f",
+  "original_tests": [
+    {
+      "test": "test_logprobs_match_log_softmax[dtype0-logprobs_from_logits_naive]",
+      "outcome": "passed"
+    },
+    {
+      "test": "test_logprobs_match_log_softmax[dtype0-logprobs_from_logits_v2]",
+      "outcome": "passed"
+    },
+    {
+      "test": "test_logprobs_match_log_softmax[dtype1-logprobs_from_logits_naive]",
+      "outcome": "passed"
+    },
+    {
+      "test": "test_logprobs_match_log_softmax[dtype1-logprobs_from_logits_v2]",
+      "outcome": "passed"
+    },
+    {
+      "test": "test_logprobs_match_log_softmax[dtype2-logprobs_from_logits_naive]",
+      "outcome": "passed"
+    },
+    {
+      "test": "test_logprobs_match_log_softmax[dtype2-logprobs_from_logits_v2]",
+      "outcome": "passed"
+    },
+    {
+      "test": "test_logprobs_confident_label[dtype0-label_logits0-logprobs_from_logits_naive]",
+      "outcome": "failed"
+    },
+    {
+      "test": "test_logprobs_confident_label[dtype0-label_logits0-logprobs_from_logits_v2]",
+      "outcome": "failed"
+    },
+    {
+      "test": "test_logprobs_confident_label[dtype1-label_logits1-logprobs_from_logits_naive]",
+      "outcome": "failed"
+    },
+    {
+      "test": "test_logprobs_confident_label[dtype1-label_logits1-logprobs_from_logits_v2]",
+      "outcome": "failed"
+    },
+    {
+      "test": "test_logprobs_label_without_competitors_has_finite_grad[logprobs_from_logits_naive]",
+      "outcome": "passed"
+    },
+    {
+      "test": "test_logprobs_label_without_competitors_has_finite_grad[logprobs_from_logits_v2]",
+      "outcome": "passed"
+    }
+  ],
+  "counts": {
+    "passed": 8,
+    "failed": 4
+  },
+  "controls": [
+    {
+      "function": "logprobs_from_logits_naive",
+      "issue_repro": {
+        "logprob": 0,
+        "label_grad": 0,
+        "other_grad_sum": -2.9943445500890675e-9
+      },
+      "existing_review_low_label": {
+        "gradient": [
+          [
+            1,
+            -0.2689414322376251,
+            -0.7310585975646973
+          ]
+        ],
+        "reference": [
+          [
+            1,
+            -0.2689414213699951,
+            -0.7310585786300049
+          ]
+        ],
+        "gradient_sum": 0,
+        "max_abs_error": 1.8934692369576567e-8
+      },
+      "first_order_gradcheck": true,
+      "gradgradcheck": true,
+      "gradgradcheck_runtime_error": null
+    },
+    {
+      "function": "logprobs_from_logits_v2",
+      "issue_repro": {
+        "logprob": 0,
+        "label_grad": 0,
+        "other_grad_sum": -2.9943445500890675e-9
+      },
+      "existing_review_low_label": {
+        "gradient": [
+          [
+            1,
+            -0.2689414322376251,
+            -0.7310585975646973
+          ]
+        ],
+        "reference": [
+          [
+            1,
+            -0.2689414213699951,
+            -0.7310585786300049
+          ]
+        ],
+        "gradient_sum": 0,
+        "max_abs_error": 1.8934692369576567e-8
+      },
+      "first_order_gradcheck": true,
+      "gradgradcheck": true,
+      "gradgradcheck_runtime_error": null
+    }
+  ],
+  "scope": "original functions/class and unchanged original tests with real CPU autograd; no full verl, flash-attn, NPU, Triton, model, memory or training test"
+}

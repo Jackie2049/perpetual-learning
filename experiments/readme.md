@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-confident-logprobs/verify.py](verl-confident-logprobs/verify.py) | #8377原12项内存收集／原函数真实CPU autograd；[父版](verl-confident-logprobs/base-result.json)8过4失败／[候选](verl-confident-logprobs/head-result.json)12过，另核已有低置信与二阶反馈；无模型／GPU／峰值测量 | [舍入与反向边界](../notebook/frameworks/verl-fused-output-softcap.md#高置信标签的舍入与反向边界) |
 | [verl-processor-binding/verify.py](verl-processor-binding/verify.py) | #8375两版完整原工厂共8次替身加载控制，[结果](verl-processor-binding/result.json)；官方5.5.3已有方法，绑定／覆盖／版本跳过分开；无真实Transformers安装或processor运行 | [回移绑定与评审前提](../notebook/frameworks/verl-dataproto-data-flow-reading.md#回移候选的绑定条件与评审前提) |
 | [verl-rocm-rollout-defaults/verify.py](verl-rocm-rollout-defaults/verify.py) | #8371原3参数例候选过／父版1过2预期失败，[结果](verl-rocm-rollout-defaults/result.json)；hip／Hopper为原替身，两版bash -n，非AMD／Ray／重载验证 | [ROCm默认与支持](../notebook/frameworks/verl-veomni-opd-source-reading.md#rocm-配方默认与后端支持) |
 | [verl-veomni-rollout-quantizer/verify.py](verl-veomni-rollout-quantizer/verify.py) | #8369原一包装测试候选过／父版缺helper；两导出边静态、原FP8类一次CPU字节视图控制，[结果](verl-veomni-rollout-quantizer/result.json)，非converter／refit验收 | [导出与字节布局](../notebook/frameworks/verl-veomni-opd-source-reading.md#rollout-量化导出与字节布局) |

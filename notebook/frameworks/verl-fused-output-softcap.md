@@ -1,5 +1,43 @@
 # verl 融合输出头与 logit softcap
 
+2026-10-26补充：[高置信标签的舍入与反向边界](#高置信标签的舍入与反向边界)核对#8377原12项CPU测试和已有评审反例。高置信样例改善不等于低置信／二阶梯度或融合kernel全部安全。
+
+## 高置信标签的舍入与反向边界
+
+[#8376](https://github.com/verl-project/verl/issues/8376)报告标签概率接近1时，旧logprob与标签梯度被舍入成0，其他类别梯度仍非零。报告者catherinelee274已有开放非draft [CPU候选 #8377](https://github.com/verl-project/verl/pull/8377)，2026-10-26固定head `e9847a3d3db1d0f44ccb919e21677fb02e603464`、父版／base／main `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，两文件134增22删，不另认领。
+
+[Barron等的论文](https://arxiv.org/html/2610.31642v1#S2)将这种现象称为Softmax Collapse：稳定地减去最大logit防止溢出，却不能避免分母中很小的其他类别质量加到1后被舍入。关键margin为标签logit减去其他所有logits的logsumexp，不是只减第二大值。论文另讨论软目标蒸馏的Softmax Cancellation，不能把本候选当成两类问题都已解决。
+
+候选先排除标签，再算 `logp_t = -softplus(logsumexp(z_others) - z_t)`；标签梯度用 `-expm1(logp_t)`，避免直接做 `1-p_t`。原 `naive` 与逐行 `v2` 共用新的自定义autograd类，BF16内部至少用FP32、结果转回输入dtype。源码仍保存输入logits引用、labels及逐标签值供反向，不是全无保存Tensor；forward临时全词表副本与峰值成本也没有消失。
+
+### 原测试通过的范围
+
+[脚本](../../experiments/verl-confident-logprobs/verify.py)在Python3.12.13／torch2.14.1 CPU／pytest9.1.1、单线程下，AST加载两版完整原gather／naive／v2及候选自定义类；候选原测试全文在内存中交给pytest收集，未改测试函数、参数、参考或断言。不是导入完整verl。原12个参数项中，候选12过，父版8过／4个高置信项失败；六个普通dtype对照与两个“有限标签、其他均负无穷”的用例并不覆盖反过来的负无穷标签。普通dtype测试还会把reference logits转FP32，不能据FP64参数名声称普通输入已按FP64全精度校验。
+
+另执行原issue的一行32,000词表输入：标签logit=30、其余0，聚合margin约19.63。两个函数父版均给logprob=0、标签梯度=0；候选均为约−2.99434e−9与+2.99434e−9，其他梯度和约−2.99434e−9。这里是实际CPU autograd，不是GPU／PPO收益；单个输入的近零梯度和也不保证所有输入都满足平移不变性。
+
+### 已有评审指出的反例
+
+[归一化反馈](https://github.com/verl-project/verl/pull/8377#discussion_r4373037858)的有限FP32输入 `[-1e8,0,1]`、label=0，在两函数上均复现：
+
+| 实现 | 三个logits的梯度 | 梯度和 |
+|---|---|---|
+| 父版 | `[1, -0.26894143, -0.73105860]` | 0 |
+| 候选 | `[1, -1, -2.71828175]` | −2.71828175 |
+| FP64 log_softmax参考 | `[1, -0.26894142, -0.73105858]` | 约0 |
+
+原因不是排除标签的数学恒等式错误，而是候选backward用 `z_t-logp_t` 重建logsumexp；此处两个约−1e8的FP32数相减得到0，丢掉真正约1.31326的归一化项。候选与FP64参考最大梯度差约1.98722，父版约1.89e−8。评审另述负无穷标签情形，本机未执行，不把它写成实测。
+
+[二阶反馈](https://github.com/verl-project/verl/pull/8377#discussion_r4373037850)另指出保存forward中间值的导数链问题。[PyTorch官方说明](https://docs.pytorch.org/tutorials/intermediate/custom_function_double_backward_tutorial.html#saving-intermediate-results)解释自定义forward内部不记录通常的计算图，直接复用中间值不能自动保证double backward。本机只用一个普通FP64输入 `[0.2,-0.3,0.7]`：两函数两版一阶gradcheck均过，父版gradgradcheck均过；候选二阶检查均先抛“反向所需变量被原地修改”的RuntimeError，未取得可比较Hessian，不能把实际结果简写为二阶数值误差已量出。初跑脚本在该异常处停止，随后只修验证脚本来记录异常，未改候选实现。
+
+[父版结果](../../experiments/verl-confident-logprobs/base-result.json)与[候选结果](../../experiments/verl-confident-logprobs/head-result.json)保留源码／原测试SHA256、完整参数项及控制结果。复用命令为 `python experiments/verl-confident-logprobs/verify.py /absolute/path/to/verl base` 或末参 `head`；依赖本地固定Git对象，无网络、模型或设备发现。
+
+### 实际调用路径仍须分开
+
+固定候选的 `logprobs_from_logits` 分派仍优先Flash-Attention CE，再选NPU CE，最后才是v2；单改两个torch函数不覆盖前两条。作者另有[Triton候选 #8378](https://github.com/verl-project/verl/pull/8378)，本轮仅读正文／元数据（head `d8c3a2501f8674b4560eb5952688103b50e2c88d`），未审计其kernel diff或执行GPU／TP。作者3090显存／测试及单rank NCCL报告不算M1结果，单rank也不认证跨rank归约。
+
+当前结论是候选修复了所测高置信一阶样例，却仍有已反馈的低置信与二阶边界，不支持直接采用或发新补丁。GPU／TP缺口仅补[原M5输出头条件参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不是新训练队列或已接单；任何社区写入／已有PR-head推送仍逐项待用户明确同意。后续只在作者实质修订或实际匹配需求出现时重评，不扩极端logits矩阵。
+
 2026-10-25补充：[选定 token 概率与共享归一化项](#选定-token-概率与共享归一化项)区分#7712已收窄的引擎输出提案、旧fork组合器和新的恒等式；FP64 CPU数学／梯度对照不是fused、布局或训练验收。
 
 2026-10-25接续：[Megatron 融合权重的就绪与调度](#megatron-融合权重的就绪与调度)说明直接读取参数会绕过DDP前向钩子。#8029原23项CPU生命周期测试通过，不是实通信或融合kernel验收；FSDP注册方法、Megatron bucket就绪和softcap数学仍是不同问题。

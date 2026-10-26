@@ -251,6 +251,10 @@ ModelOpt忽略规则参考（2026-10-22，同一量化入口不另排队）：�
 
 ## verl 异步策略一致性补证
 
+高置信logprob参考（2026-10-26，同一输出头条件入口、非新增训练队列）：[#8376](https://github.com/verl-project/verl/issues/8376)已有作者两份候选。[M1原CPU测试](../notebook/frameworks/verl-fused-output-softcap.md#高置信标签的舍入与反向边界)在#8377 head e9847a3d候选12过／main3c6d9b43的4高置信项失败，但已有有限低置信梯度反例及二阶原地异常也复现，未应用补丁。torch原分派仍可走Flash-Attention或NPU CE；#8378 head d8c3a250仅读正文／元数据、未审计kernel，更未验证真实GPU／多rankTP，作者3090／单rankNCCL结果不能代替。
+
+M5若未来已有获准、安全、匹配的输出头工作并独立选用，先核最终head与已有反馈处理、实际CE后端及dtype／归约／有效标签，再在原小预算内分开验证logprob、标签／其他梯度与跨rank归约；单rank不作TP验收。缺安全资源、模型授权或需新增部署／下载、影响专项即停记未测，不自动应用／拼两PR、升级环境、新排大词表／训练，也不修改AReaL/#523/#8313/DeepInfer。所有社区写入和已有PR-head推送仍逐项待用户明确同意，本记录非接单。
+
 确定性编译默认参考（2026-10-26，非新增训练队列）：已有[#8366](https://github.com/verl-project/verl/pull/8366) head e1ac734c、父版／main3c6d9b43。[M1五原字典参数例](../notebook/frameworks/verl-6572-full-determinism-source-reading.md#确定性编译默认与显式覆盖)及原if节点两分支通过，无torch／vLLM导入或模型编译；固定依赖声明2.13／0.29不代表实际安装。上游vLLM #59074已修默认，但其单次deterministic优先于全局，与verl按rollout开关补值不能无条件视为等价。
 
 仅M5未来独立接续已有获准、安全、匹配的确定性启动观测时，先核最终源码／实际依赖、有效full_determinism与全局／单次编译选项，再在原小预算内区分冷缓存启动、同配置重复、eager与compile差异；作者两步4090报告非本项目结果。缺安全／资源／授权模型或需新部署下载、影响专项即停记未测，不自动升级、应用候选／启开关或新增训练矩阵，也不重开P9或#8250诊断。所有社区写入和已有PR-head推送仍逐项待用户明确同意，参考非接单。
