@@ -6,8 +6,8 @@
 ## 0. Project Status
 
 - **阶段**：Phase 1 — recall-first literature & code investigation（广扫建库，不收束观点）
-- **最近更新**：2026-10-27（M1 RL系统补核：8篇既有文献补版本，新增ROLL／EARL／PUZZLE，详见§5.9）
-- **覆盖**：累计**26篇已核身份**（11篇serving基础＋15篇rollout/RLHF，均非深读；24个唯一arXiv ID＋Orca／PUZZLE会议记录）。本批核既有8篇、仅新增3篇；Round 1“≈73”仍是待去重审计的历史估计，不能与26相加；其余历史条目继续核验。
+- **最近更新**：2026-10-27（M1长尾／推测rollout补核：9篇既有条目、Seer／TLT两种子落实来源，新增SuffixDecoding，详见§5.10）
+- **覆盖**：累计**38篇已核身份**（12篇serving基础＋26篇rollout/RLHF，均非深读；36个唯一arXiv ID＋Orca／PUZZLE会议记录）。本批9篇既有条目及2个既有种子转为已核，仅SuffixDecoding为新发现；Round 1“≈73”仍是待去重审计的历史估计，不能与38相加。
 - **深读 / 代码阅读**：0 / 0
 - **最高优先级**：补来源与版本别名、按唯一文献去重后继续广扫至100–150；A Core短名单不以未核身份的条目数为依据
 - **下一步**：见 §16
@@ -54,6 +54,8 @@
 - **B** Execute the trajectory set better（Schedule({traj_i})）：batching、length-aware scheduling、migration…
 - **C** Generate less/better rollout work（改变 {traj_i}，**可能改变训练分布，必须单独标记**）：early stop、partial rollout、filtering、adaptive allocation、trajectory shaping…
 
+按实际改变的训练轨迹集合判断C，不按技术名称判断：partial rollout若仅提供路由信号，或历史轨迹仅供draft验证，不自动归C。跨训练步重排、短组先更新等对每步集合与更新顺序的影响另核，不能由“不丢样本”排除。
+
 反例登记：当前无。凡 taxonomy 解释不了的工作记入 §15 并提修订。
 
 ## 5. Literature Matrix
@@ -89,24 +91,25 @@
 
 | ID | 日期 | 标题（短） | 层 | 类型 | 机制一句话 | 置信 |
 |---|---|---|---|---|---|---|
-| 2509.21009 | 2025-09 | RollPacker | L3 | B | 长尾 rollout 打包压缩，加速 sync post-training | ✅ |
-| 2603.23414 | 2026-03 | SortedRL | L3 | B | 在线 length-aware 调度 | ✅ |
-| 2608.22788 | 2026-08 | TailSieve | L3 | C/B | partial rollout 引导的尾路由 | ✅ |
-| 2607.17299 | 2026-07 | WAR | L3/L4 | C/B | workload-aware rollouts for sync agentic RL | ✅ |
-| 2605.30859 | 2026-05 | DARTS | L3 | **C** | distribution-aware active trajectory **shaping**（改分布，重点标记） | ✅ |
+| [2509.21009v1](https://arxiv.org/abs/2509.21009v1) | 2025-09-25／v1 | RollPacker | L3/L4（暂） | B（暂） | tail batching把长尾集中到少数long rounds，配合rollout／reward／训练优化；批构成待核 | 核 |
+| [2603.23414v1](https://arxiv.org/abs/2603.23414v1) | 2026-03-24／v1 | SortedRL | L3/L4（暂） | B/**C?** | 按输出长度重排、短组先更新，cache机制控制off-policy程度；micro-curriculum语义待核 | 核 |
+| [2608.22788v2](https://arxiv.org/abs/2608.22788v2) | 2026-08-24首次／v2 08-26 | TailSieve | L1/L3（暂） | A/B（暂） | partial信号识别尾组、分池路由／副本分配，低并发池可叠推测；当前policy重新生成 | 核 |
+| [2607.17299v1](https://arxiv.org/abs/2607.17299v1) | 2026-07-19／v1 | WAR | L1/L3（暂） | A/B（暂） | 低负载SuffixDecoding、高负载cache-aware placement；不由workload-aware推导改样本 | 核 |
+| [2605.30859v1](https://arxiv.org/abs/2605.30859v1) | 2026-05-29／v1 | DARTS | L3（暂） | **C** | 从每prompt冗余探索空间选轨迹、适配冗余分配，主动塑造分布 | 核 |
 | [2509.18521v3](https://arxiv.org/abs/2509.18521v3) | 2025-09-23首次／09-26修订 | APRIL | L3/L4（暂） | B/**C?** | 超额发起，达到目标完成数后结束本步、未完成响应跨步续跑；训练集合／版本影响待深读 | 核 |
 | 2408.13510 | 2024-08 | Intelligent Router | L3 | B | workload-aware load balancing（serving 迁移候选） | ✅ |
-| ？ | ? | Seer | L3 | B | ？"trajectory prefetch/length 预测"方向 | ？ |
+| [2511.14617v3](https://arxiv.org/abs/2511.14617v3) | 2025-11-18首次／v3 2026-04-03 | Seer | L1/L3（暂） | A/B（暂） | divided rollout、context-aware调度与grouped speculation；不是仅长度预测 | 核 |
 | ？ | ? | Weave | L3/L4 | B | ？（种子，待验证） | ？ |
 
 ### 5.3 L1/L2 — RL-aware Speculative Rollout（serving机制的迁移条件）
 
 | ID | 日期 | 标题（短） | 层 | 类型 | 机制一句话 | 置信 |
 |---|---|---|---|---|---|---|
-| 2509.23232 | 2025-09 | SPEC-RL | L1/L2 | A | speculative rollouts 加速 on-policy RL | ✅ |
-| 2508.18588 | 2025-08 | RhymeRL（History Rhymes） | L1/L2 | A | 历史轨迹复用作 draft | ✅ |
-| 2510.26475 | 2025-10 | ReSpec | L1/L2 | A | RL 系统中 speculative decoding 优化 | ✅ |
-| 2511.13841 | 2025-11 | DAS（Beat the long tail） | L1/L3 | A/B | distribution-aware speculative decoding for RL | ✅ |
+| [2509.23232v3](https://arxiv.org/abs/2509.23232v3) | 2025-09-27首次／v3 2026-01-12 | SPEC-RL | L1/L2（暂） | A（暂） | 历史轨迹段作speculative prefix并draft-and-verify，不等直接回放作训练样本 | 核 |
+| [2508.18588v1](https://arxiv.org/abs/2508.18588v1) | 2025-08-26／v1 | RhymeRL（History Rhymes） | L1/L2/L3（暂） | A/B（暂） | HistoSpec用历史token作draft，HistoPipe用历史分布作两级调度 | 核 |
+| [2510.26475v1](https://arxiv.org/abs/2510.26475v1) | 2025-10-30／v1 | ReSpec | L1/L2（暂） | A（暂） | 动态SD配置、蒸馏演进drafter、reward加权update；加权对象待读正文 | 核 |
+| [2511.13841v1](https://arxiv.org/abs/2511.13841v1) | 2025-11-17／v1 | DAS（Beat the long tail） | L1/L3（暂） | A/B（暂） | 历史rollout suffix tree作非参数draft，长轨迹分配更激进draft预算 | 核 |
+| [2511.16665v3](https://arxiv.org/abs/2511.16665v3) | 2025-11-20首次／v3 2026-03-20 | TLT（Taming the Long-Tail） | L1/L2/L3（暂） | A/B（暂） | 利用长尾期空闲GPU持续训drafter，预捕获CUDAGraph池按batch适配策略 | 核 |
 | [2512.04752v2](https://arxiv.org/abs/2512.04752v2) | 2025-12-04首次／12-12修订 | RLHFSpec | L1/L3/L4（暂） | A/B（暂） | 依验证成本与接受token数选draft策略，并作样本重分配／迁移；摘要不等采样正确性证明 | 核 |
 | 2605.08862 | 2026-05 | BubbleSpec | L1/L3 | A/B | 把 sync 长尾气泡变成 speculative draft 时机 | ✅ |
 | 2606.18967 | 2026-06 | EfficientRollout | L1/L2 | A | system-aware **self**-speculative decoding for RL | ✅ |
@@ -151,10 +154,13 @@
 | [2407.00079v5](https://arxiv.org/abs/2407.00079v5) | 2024-06-24／v5 2026-10-08 | Mooncake | KV中心化PD分离及过载拒绝；rollout不能无条件继承请求丢弃语义 | 核 |
 | [2401.10774v3](https://arxiv.org/abs/2401.10774v3) | 2024-01-19／v3 2024-06-14 | Medusa | 多预测头与树状验证；backbone是否冻结及接受规则不可混用 | 核 |
 | [2401.15077v3](https://arxiv.org/abs/2401.15077v3) | 2024-01-26／v3 2025-03-04 | EAGLE | feature-level草稿预测；只是原始EAGLE，不混作EAGLE-2／3或RL drafter适配 | 核 |
+| [2411.04975v3](https://arxiv.org/abs/2411.04975v3) | 2024-11-07／v3 2025-10-07 | SuffixDecoding | suffix tree缓存prompt／历史输出，适配推测长度；RL中的跨步／跨worker复用另核 | 核 |
 
 ### 5.6 待验证种子（用户清单中尚未在检索中命中）
 
-？Seer ｜ ？Weave ｜ ？FastGRPO ｜ ？SpecRoll ｜ ？MTP-RL（2606.12370 为方向候选）｜ ？"Taming the Long-Tail / adaptive drafter" ｜ ？Online Draft Co-Training for long-context RL
+？Weave ｜ ？FastGRPO ｜ ？SpecRoll ｜ ？MTP-RL（2606.12370 为方向候选）｜ ？Online Draft Co-Training for long-context RL
+
+Seer与Taming the Long-Tail（TLT）已在§5.2／§5.3落实来源。Weave本批定向检索未命中，仍是种子，不据此判定不存在。
 
 ### 5.7 基础文献身份与版本勘误
 
@@ -186,6 +192,18 @@
 新增三篇经本主文档标题／ID查重：[ROLL v1](https://arxiv.org/abs/2506.06122v1)补逐样本调度／跨阶段资源映射线索；[EARL v1](https://arxiv.org/abs/2510.05943v1)补长上下文agentic工作负载的并行策略与数据布局线索。两篇来自定向检索，不声称引用关系。[StreamRL v1 §8及参考文献](https://arxiv.org/html/2504.15930v1#S8)提供PUZZLE回溯入口，随后以[ATC'24官方记录](https://www.usenix.org/conference/atc24/presentation/lei)确认完整题名、作者、2024-07与127–140页；只计一篇，不猜arXiv ID。三个条目均暂B类，是否影响样本语义留待正文／实现核对。
 
 本批范围为元数据、摘要，以及StreamRL的相关工作／参考文献定位；不是完整深读或代码阅读，没有记录作者加速比为本项目结果。下一批优先核§5.2长尾与§5.3推测rollout候选，并从已核论文扩展引用，不重复核这8篇系统基础。
+
+### 5.10 长尾调度与推测rollout的身份和类型补核
+
+2026-10-27第四批：RollPacker、SortedRL、TailSieve、WAR、DARTS、SPEC-RL、RhymeRL、ReSpec、DAS共9篇标题与原ID匹配，矩阵补首次提交与采用版本；既有Seer、Taming the Long-Tail两种子分别落实为2511.14617v3、2511.16665v3。累计38篇身份已核，而非新增12篇；只有SuffixDecoding是本批新发现。
+
+分类修正针对机制边界，不作正确性验收：[WAR v1](https://arxiv.org/abs/2607.17299v1)结合低负载推测与高负载cache-aware调度，改暂A/B，不再把它列为已知C例子。[TailSieve v2](https://arxiv.org/abs/2608.22788v2)用partial作为路由信号并称所选prompt在当前policy重生成，不能仅因partial一词推导删样本／改训练分布，改暂A/B；作者的on-policy／steady-state无额外长度偏差声明仍须核假设。[SortedRL v1](https://arxiv.org/abs/2603.23414v1)有短样本组先更新、micro-curriculum及off-policy控制，暂B/C?；[DARTS v1](https://arxiv.org/abs/2605.30859v1)明确主动分布塑形，保留C。RollPacker的跨round重排与训练批构成仍待正文核对，不能把“不丢轨迹”当作每步分布不变的证明。
+
+[RhymeRL v1](https://arxiv.org/abs/2508.18588v1)同时有HistoSpec与HistoPipe，原仅A／L1-L2遗漏调度，改暂A/B并补L3。ReSpec中的reward加权update对象尚未确认，不由摘要短语推断它一定修改actor目标。SPEC-RL、DAS的历史轨迹复用用于draft／验证，不等于将旧样本直接回放训练；标签不证明它们的采样正确性。
+
+引用扩展：[WAR v1参考文献](https://arxiv.org/html/2607.17299v1)同时列出Seer、TLT和SuffixDecoding，逐一返回arXiv原站核元数据。[SuffixDecoding v1](https://arxiv.org/abs/2411.04975v1)题为A Model-Free Approach to Speeding Up Large Language Model Inference，[v3](https://arxiv.org/abs/2411.04975v3)改为Extreme Speculative Decoding for Emerging AI Applications，按同ID计一篇serving基础；不把其agentic inference评测误算agentic RL训练实证。Seer与TLT转已核，不再留在未命中种子列表。
+
+本批仅元数据、摘要及WAR引用定位，没有全文深读、代码或性能抽取。下一批转其余推测／agentic条目身份与引用扩展；不据条目数量判断方向已饱和，也不冻结分类。
 
 ## 6. Paper Deep Reads
 
@@ -240,8 +258,8 @@
 ## 13. Research Gaps / Ideas
 
 （Round 1 初步观察，待 corpus 收敛后修正）：
-1. **C 类（改分布）工作在增多**（DARTS、WAR、Rollout Informativeness、ExpThink）但普遍缺乏"对训练分布/收敛的影响"的严格评估——evaluation gap；
-2. speculative-for-RL 簇已相当密集（10+ 篇）——饱和信号：新增量在于统一性能模型（acceptance rate × staleness × 长尾交互），而非又一个 drafter 方案；
+1. **分布改变与纯路由／重排的边界待核**：DARTS明确主动塑形，WAR不再作为C类例子；Rollout Informativeness／ExpThink尚待审计。对分布／收敛影响的评估仍待逐篇阅读，撤回“普遍缺乏严格评估”的先验结论；
+2. speculative-for-RL已出现多个候选，但条目数不证明方向饱和。统一性能模型（acceptance rate × staleness × 长尾交互）是待探索问题，不据此否定其他drafter方案的研究空间；
 3. cap/长度类边界条件的系统化处理（如 cap=1 的 -0 陷阱、偶奇 cap 分配）在现有论文中未见讨论——来自 verl #8281 实战的微观缺口；
 4. VLM post-training 的跨阶段 GPU 空分（Rollplex）只有单篇——是否空白？
 
@@ -257,6 +275,8 @@
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（M1长尾／推测补核）**：核既有9篇、落实Seer／TLT两种子，WAR引用回溯新增SuffixDecoding并核v1/v3同文改题。累计38身份（12 serving＋26 rollout/RLHF；36 arXiv＋2会议记录），仅1新发现。WAR／TailSieve暂A/B，SortedRL暂B/C?，RhymeRL补调度维度；撤回C类普遍缺评估／推测方向已饱和的先验判断。仍无全文深读、代码或复现，下批核其余推测／agentic与扩展引用。
 
 - **2026-10-27（M1 RL系统补核）**：核8篇既有RL／RLHF系统身份与版本，收窄DistFlow／AsyncFlow／OpenRLHF旧描述；新增ROLL、EARL及从StreamRL回溯并核官方记录的PUZZLE。累计26篇身份已核（11 serving＋15 rollout/RLHF；24 arXiv＋2会议记录），仅新增3篇，不重算历史≈73。§5.3标题同步撤回预设不可迁移说法；仍无全文深读、代码或复现。下一批转长尾／推测rollout候选核验与引用扩展。
 
