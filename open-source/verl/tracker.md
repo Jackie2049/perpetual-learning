@@ -29,7 +29,7 @@
 
 2026-10-26补[rollout解释器提案](#rollout-解释器隔离的已有提案)：#8388已有设计非实现；四verl模块与Slime原runtime仅语法，区分角色子树、driver导入和权重兼容，不另造resolver／launcher或部署环境。
 
-2026-10-26接续[QAT结构选择](#qat-mask-默认与后端契约)：#8361新head仅替换默认spec，专用spec提前返回也不补mask；原三替身测试旧2过1失败／新3过，非模型或refit验收。新人工反馈建议连默认spec也保留，尚待Qwen3-MoE验证，不另实现。
+2026-10-26更新[QAT合并版](#qat-mask-默认与后端契约)：#8361最终781c在4f8f090a合并，删除全部spec替换与mask默认helper；原三例只属8a历史版，旧正文不作最终Qwen3-MoE／refit验收。另核[#8390依赖与模型适配](../../notebook/frameworks/verl-architecture.md#qwen35-适配与内核能力探测)已合入f78fd053，八改动文件同eab3d58b，不重复CPU控制或自动升级环境。
 
 **【大白话讲明白】**
 
@@ -440,6 +440,10 @@ AMD组合栈后续（2026-10-26）：#8371／#8370／#8369各head未变，作者
 两个候选各4个原良性方法共8方法通过，另有限helper/原math_equal CPU控制两次一致；不运行攻击、状态投毒或耗尽载荷，不搬作者完整安全套件报告。#7701 helper接受bool/string/位移并不证明这些输入得分；单元素矩阵的分数算式差异才明确到达math_equal返回值。本轮不合并/采用或对外提醒，不改专项、不新排M5任务；如需上游评论、PR或其fork head更新，仍须用户对具体动作明确同意。
 
 ## QAT mask 默认与后端契约
+
+2026-10-26合并核对：[#8361](https://github.com/verl-project/verl/pull/8361)最终head781c0dcc，12:00:40 UTC合入[4f8f090a](https://github.com/verl-project/verl/commit/4f8f090af34bb5962e78dccb0f061a5dd52df13d)，累计三文件5增7删。最终删除helper／调用及原三项测试，所有Bridge spec保留，无额外mask setdefault；补FP4适配器activation_key与两个K3标志，并撤回旧SequentialMLP TP+EP段。固定当前主线f78fd053的QAT文档／FP4 blob同最终head，engine构造方法AST相同、整文件差异只另一个checkpoint onload；三Python源码仅语法，无新模型／量化／设备执行。见[最终版专题](../../notebook/frameworks/verl-quant-layer-audit.md#合并版不再替换任何-spec)。
+
+全保留建议已进入代码且有维护者APPROVED，但正文与机器人摘要仍描述8a方案；其80CPU／旧GPU报告不能移作最终781c的全mode Qwen3-MoE覆盖与export／refit验收。旧原三例与脚本保留作历史，不为已删除helper另造测试或方案。仅修正M5原条件参考，无新队列／专项／社区写入。以下为合并前记录。
 
 2026-10-26接续：[#8361](https://github.com/verl-project/verl/pull/8361)仍OPEN／非draft／未合并，head `8a697618897d473a43b6d9e83ba6c3341a23067b`、base仍3c6d9b43，比cf6eb518只前进一提交、累计三文件100增5删。见[原量化专题新版](../../notebook/frameworks/verl-quant-layer-audit.md#新版先保留模型结构)：helper只在default_layer_spec对象身份相同时换ModelOpt并setdefault False，其余直接返回；旧“全QAT调用补默认”的范围已不适用。Bridge0.6.2 OLMoE专用attention／全宽QK norm和权重映射解释保留结构的意义，后续mtq.quantize调用本身不认证覆盖。
 

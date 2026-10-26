@@ -1,4 +1,7 @@
-"""Run upstream test bodies with their own fake Bridge fixture, not a native suite.
+"""Historical cf6 -> 8a control, not final merged 781c validation.
+
+The final PR removes this helper and test file; do not apply these results to it.
+Run upstream test bodies with their own fake Bridge fixture, not a native suite.
 
 Usage: python verify.py /path/to/qat-spec-source
 Inputs: old.py, new.py, test.py, fetched at the commits recorded below.

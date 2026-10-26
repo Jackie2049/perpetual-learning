@@ -528,7 +528,9 @@ Python3.12.13／OmegaConf2.3.1／pytest9.1.1，原 BaseConfig、CheckpointConfig
 
 ## Qwen3.5 适配与内核能力探测
 
-**接口能调用，不等于选中了预期内核，也不等于独立样本仍被隔离。** wuxibin89的[#8390](https://github.com/verl-project/verl/pull/8390)起初更新vLLM0.32／Transformers5.16.1；2026-10-26新head `eab3d58b1eb9d1fad81f5994c8e4cc29dee0bf54`直接接旧6847168a，新增Qwen3.5适配和top-k测试调整，PR累计8文件1789增1443删，目标base0bd668c1，仍OPEN／非draft。本节只核模型接口与边界能力，不把lock解析成功、作者CPU门测试或top-k报告合计成训练栈验收，也不接管已有作者的实现。
+**接口能调用，不等于选中了预期内核，也不等于独立样本仍被隔离。** wuxibin89的[#8390](https://github.com/verl-project/verl/pull/8390)起初更新vLLM0.32／Transformers5.16.1；head `eab3d58b1eb9d1fad81f5994c8e4cc29dee0bf54`直接接旧6847168a，新增Qwen3.5适配和top-k测试调整，累计8文件1789增1443删，目标base0bd668c1。已于2026-10-26 12:08:30 UTC合入[主线f78fd053](https://github.com/verl-project/verl/commit/f78fd053e13c3d021e51de5e81afc54dddd13993)。本节只核模型接口与边界能力，不把lock解析成功、作者CPU门测试或top-k报告合计成训练栈验收，也不接管已有作者的实现。
+
+合并后八个改动文件逐一blob相同，包括模型、server、两个测试与四份依赖／lock声明；模型blob `bd995abca176281df55a96cda16f59fe7db1dabd`。整仓tree不同是主线还包含其他提交，不能据此误判模型又有改动。本轮不重跑此前裸参考CPU控制：其源码身份未变，结论仍限原控制，不因进入main变成真实provider故障或成功证明。主线依赖声明改变也不代表M1／M5实际环境已升级，QAT的同次合并另见[最终spec选择](verl-quant-layer-audit.md#合并版不再替换任何-spec)，不得自动拼接两份旧GPU报告作新组合验收。
 
 ### 字段迁移与实际 provider
 

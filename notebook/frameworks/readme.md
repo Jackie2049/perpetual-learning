@@ -175,7 +175,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [verl 训练与 rollout 的量化层审计](verl-quant-layer-audit.md) — #8132审计/24项CPU单测及新#8306 refit覆盖对照；loader/marker与测试证据不可混用，真机待M5。
 - [原生混合精度模型的后端选择](verl-quant-layer-audit.md#原生混合精度模型的后端选择) — #8381的FP8顶层／FP4 experts与显式backend分开；Marlin改变activation格式，源码非加载或refit验收。
 - [VeOmni后端RFC分工](verl-quant-layer-audit.md#后端-rfc-的分工与迁移条件) — #8342作者已开#1360，保留现有QAT配置语义、迁移另议；仍待维护者反馈，不另实现或新排算力。
-- [QAT 的 mask 默认与 packed 接口](verl-quant-layer-audit.md#qat-的-mask-默认与-packed-接口) — #8361新版只替换默认spec，模型专用spec连同mask字典保留；原三替身测试新版过／旧版专用例失败，非模型量化或refit验收。全保留spec仍是待验证建议。
+- [QAT 的 mask 默认与 packed 接口](verl-quant-layer-audit.md#qat-的-mask-默认与-packed-接口) — #8361最终已合并，删除全部spec替换与mask默认helper；原三例只属8a历史版，PR旧正文不作最终Qwen3-MoE／refit验收。
 - [verl ModelOpt模块忽略](verl-quant-layer-audit.md#modelopt-模块忽略与子量化器) — #8329保留直接叶子并扩展模块后代；两版各11组名称集合控制，非ModelOpt/原34测试或训练验证。
 - [新版MXFP8检查与指标哨兵](verl-quant-layer-audit.md#新版运行期检查与指标哨兵) — #8327替代旧拆分、基于#8306；默认warn不拦截。原20参数例/5边界通过，仅纯Python sentinel，非量化或kernel验收。
 - [量化写入前检查与失败握手](verl-quant-layer-audit.md#写入前检查与失败握手) — #8327新head把格式检查移到引擎逐桶写入前；完成ACK不等于回滚，首轮finished不等于通过。九份语法检查非引擎或通信验收，旧GPU/CPU报告不迁移。
@@ -220,7 +220,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [缓存修复与GPU工作流触发范围](verl-architecture.md#缓存修复之外的-gpu-工作流触发变化)：#8343已退回aaae3716，当前仅原缓存两文件，GPU YAML与目标主线字节相同；旧16f删除PR入口只作历史，不重跑路径控制或推定CI通过。
 - [激活卸载的反向入口与重载顺序](verl-architecture.md#激活卸载的反向入口与重载顺序)：#7472已有#8277；原五CPU测试体在head通过，初稿漏detached边界；recording handler只核图顺序，不是异步传输／FSDP或27B训练验收。
 - [TRL包装器的打包边界探测](verl-architecture.md#trl-包装器的打包边界探测)：#7931已有#7932；三个TRL版本原forward AST相同、无显式cu_seqlens，1.13移除原模块；已知类能力与真实模型隔离分开，仅源码核对。
-- [Qwen3.5适配与内核能力](verl-architecture.md#qwen35-适配与内核能力探测)：#8390新模型改动；Hub／FLA／Torch调度与kwargs语义分开，裸参考两小序列控制非实际provider或多rank验收。
+- [Qwen3.5适配与内核能力](verl-architecture.md#qwen35-适配与内核能力探测)：#8390已合并，八改动文件同此前head；Hub／FLA／Torch调度与kwargs语义分开，旧裸参考控制不因合并变成实际provider或多rank验收。
 - [Meta加载后的共享参数与梯度](verl-architecture.md#meta-加载后的共享参数与梯度)：#7834已有#7835；真实tiny Llama原四用例通过，loss相同仍可有不同梯度，meta零地址断言存在假阳性，反馈仅留项目内。
 - [Critic批处理配置如何进入引擎](verl-architecture.md#critic-批处理配置如何进入引擎)：#7462已有#7465，原六测试体CPU通过；YAML插值、dataclass默认、engine字段与batch覆盖分层，非完整Hydra或后端验收。
 - [FSDP后端配置的权威来源](verl-architecture.md#fsdp-后端配置的权威来源)：#7540已有#7597；原完整配置模块接真实OmegaConf七组只验V1冲突guard，非完整配置/engine或loss根因认证，目标base与实际祖先分开。

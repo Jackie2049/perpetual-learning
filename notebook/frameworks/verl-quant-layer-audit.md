@@ -38,9 +38,19 @@ verl固定main `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，vLLM固定v0.29.0的
 
 ## QAT 的 mask 默认与 packed 接口
 
+### 合并版不再替换任何 spec
+
+[#8361](https://github.com/verl-project/verl/pull/8361)于2026-10-26 12:00:40 UTC合并，最终head `781c0dcc01bd17f46125afbabd8500f4b6b6b80c`，主线提交[4f8f090a](https://github.com/verl-project/verl/commit/4f8f090af34bb5962e78dccb0f061a5dd52df13d)，累计三文件5增7删。它比此前记录的8a697618再前进一提交：**删除整个spec替换helper及调用，默认和专用Bridge spec均保留，也不再额外setdefault mask。** 对用户显式provider override的正常应用仍在，不是禁止用户调整spec或mask。后续ModelOpt原地量化接线未因此被删除。
+
+最终变化还包括[compressed-tensors FP4适配器](https://github.com/verl-project/verl/blob/781c0dcc01bd17f46125afbabd8500f4b6b6b80c/verl/utils/vllm/vllm_fp4_utils.py)：其子类直接调用FusedMoEMethodBase初始化而非Mxfp4MoEMethod初始化，现补 `activation_key=kFp8Dynamic128Sym` 和两个K3路径标志False。字段补齐不等价于新kernel能力或vLLM0.32部署验收。文档保留限定MXFP4权重×FP8 activation的Hopper说明，移除了“默认spec必须TP=1或EP=1”的ModelOpt SequentialMLP段落；不能再把该旧段当合并版的通用限制。
+
+固定主线 `f78fd053e13c3d021e51de5e81afc54dddd13993` 中，QAT文档与FP4文件blob分别为 `42ae7a2cfa8de532ea0d0b75a24dcb87a8d40a02`、`66b1ac06c7e5bc2916a5857011c03a45340c928d`，与最终head和QAT合并提交相同。engine整文件blob不同，只因主线另有optimizer checkpoint恢复前onload；`_build_tf_config` AST完全相同。最终head、合并提交和该主线均不存在旧三项测试文件；本轮三份完整Python源文件仅AST／compile，未重复原三例或构造新替身。
+
+维护者的全保留建议已落实为代码，随后有空正文APPROVED；但读取时PR正文仍写旧helper、80项CPU与ModelOpt默认spec表格，机器人摘要也停在8a697618。**合并、批准和旧正文都不能补出最终781c版的Qwen3-MoE各mode量化覆盖、导出／refit运行记录。** [原实验](../../experiments/qat-spec-selection/result.json)只属于cf6→8a历史对照，不能移作删除helper后的验收。此前OLMoE报告也保持其原版本范围，不因合并升级为全模型证明。
+
 ### 新版先保留模型结构
 
-2026-10-26核[#8361](https://github.com/verl-project/verl/pull/8361)：仍OPEN／非draft／未合并，新head `8a697618897d473a43b6d9e83ba6c3341a23067b` 比旧 `cf6eb5181e17b4db67afff110eabc61daf61fb4d` 前进一提交；base仍 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，累计三文件100增5删。当前不再对所有QAT provider替换spec或补mask默认，下面初版“适用于进入QAT分支的调用”只描述旧head。
+本小节保留合并前8a版本的源码与实验记录，不描述最终781c版。2026-10-26前次核[#8361](https://github.com/verl-project/verl/pull/8361)时仍OPEN／非draft／未合并，head `8a697618897d473a43b6d9e83ba6c3341a23067b` 比旧 `cf6eb5181e17b4db67afff110eabc61daf61fb4d` 前进一提交；base仍 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，累计三文件100增5删。8a不再对所有QAT provider替换spec或补mask默认，下面初版“适用于进入QAT分支的调用”只描述cf6旧head。
 
 [新helper](https://github.com/verl-project/verl/blob/8a697618897d473a43b6d9e83ba6c3341a23067b/verl/workers/engine/megatron/transformer_impl.py)按对象身份判断：仅 `provider.transformer_layer_spec is default_layer_spec` 时替换成ModelOpt spec并setdefault False；其余对象直接返回，spec与override字典均不改。显式True／None的保留规则只属于替换分支，不是全模型mask策略。它发生在provider应用overrides并finalize之前，不能单凭此身份检查认证最终模型结构。
 
@@ -50,7 +60,7 @@ verl固定main `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，vLLM固定v0.29.0的
 
 作者更新报告须与本机结果分开：其80项CPU与Bridge0.6.2配置级provider检查不是本机运行；其1张GH200的OLMoE FP8_BLOCK linear+MoE／qat-mode fp8在旧版加载norm shape失败、新版跑通，报告128个enabled TE quantizer及k3 KL约6.3e-3（关QAT约9.1e-3）。这只支持其OLMoE环境，不覆盖全部自定义spec；dummyweights rollout收到导出权重也不是完整refit数值验收。Qwen3-Next／文本Qwen3.5仍只是作者源码观察，不能把VL provider和文本结构混称一类。
 
-新[人工反馈](https://github.com/verl-project/verl/pull/8361#issuecomment-6414899795)来自wuxibin89：建议连默认spec也保留，前提是验证Qwen3-MoE的原TE spec在各支持QAT mode的量化器覆盖、前反向、导出expert scales与refit。**这是待验证建议，当前head仍替换默认spec**；不代作者实现第三条路线。候选文档另称默认spec的ModelOpt SequentialMLP不支持TP+EP同时启用，本文未独立执行或审完该限制实现，不能外推为全部TE／ModelOpt后端限制。仅更新[原M5条件参考](../../experiments/handoff-m5.md#verl-量化层审计新版复验)，不新排实验或改专项；社区写入仍待用户具体授权。
+当时的[人工反馈](https://github.com/verl-project/verl/pull/8361#issuecomment-6414899795)来自wuxibin89：建议连默认spec也保留，前提是验证Qwen3-MoE的原TE spec在各支持QAT mode的量化器覆盖、前反向、导出expert scales与refit。**该8a head仍替换默认spec，后续781c才移除**；本项目不代作者实现。8a文档另称默认spec的ModelOpt SequentialMLP不支持TP+EP同时启用，不能外推为全部TE／ModelOpt后端限制，且该段未进入最终版。仅更新[原M5条件参考](../../experiments/handoff-m5.md#verl-量化层审计新版复验)，不新排实验或改专项；社区写入仍待用户具体授权。
 
 ### 初版 mask 调用链（历史版本）
 
