@@ -25,6 +25,8 @@
 
 2026-10-26补[k3近零消去](#k3-近零消去的已有候选)：新#8386已有作者，原20项基线12过8失败／候选全过；长序列夹具筛选翻转，非默认配方、GPU或训练质量验收，不另实现。
 
+2026-10-26补[SGLang迟到准入](#sglang-停用准入的已有候选)：#8387为draft，临时等待／停用拒绝、控制失败关闭与重试条件分开；六模块仅语法，作者13项及双A100报告不作目标main／本机验收，不另实现。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -56,6 +58,12 @@
 2026-10-26读取Eppiehu的OPEN／non-draft [#8386](https://github.com/verl-project/verl/pull/8386)，headc854acbb，父版／API base／实际祖先均0bd668c1，ahead1／behind0、三文件107增4删。完整正文／diff与六新增测试体已读；普通评论为bot摘要，reviews／行内未见条目，非维护者验收。已有作者，不另认领或发布反馈。
 
 [原算法专题](../../notebook/frameworks/verl-grpo-core-algos-reading.md#k3-近零消去与拒绝阈值)与[复查脚本](../../experiments/verl-k3-cancellation/verify.py)保存20原参数项CPU对照：基线12过8断言失败、候选20过，两次JSON一致。三处expm1求值改进不变更既有clamp／k2 straight-through；长序列seq_sum_k3原夹具从负统计错误保留转为接近参考的正统计拒绝，不能外推默认训练故障或质量收益。原函数／归约隔离执行非作者73项原生pytest、模型／设备验证；只补M5原条件参考、不新排实验或改专项。任何上游写入与既有PR-head推送仍须用户对具体动作明确同意。
+
+## SGLang 停用准入的已有候选
+
+2026-10-26读取donghyq的OPEN／draft [#8387](https://github.com/verl-project/verl/pull/8387)，headdf92e6a2、实际父版／祖先a4b93549，API目标0bd668c1，相对目标ahead1／behind4；四文件340增14删。正文／完整diff／12原测试函数已读，普通评论为draft未review通知与CLA机器人，reviews／行内空，非人工验收。已有作者，不另认领或补发反馈。
+
+[原worker专题](../../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#sglang-停用后的请求准入)区分route撤销与既得handle、临时pause与停用拒绝、控制锁与native请求。V1原链已经传True，候选补SGLang透传并改legacy参数；aborted能触发特定客户端重试，不保证peer存在、KV／RNG迁移或恢复时限。六完整模块AST／compile及YAML结构通过，无原13项／引擎运行；作者旧基线13过和固定权重双A100不认证目标dev5／default-lock环境。仅补M5原条件参考，不另排故障／训练任务、改专项或写上游，所有社区动作／既有PR-head推送仍需用户逐项明确同意。
 
 ## 合并 LoRA 睡眠的已有候选
 

@@ -1,5 +1,7 @@
 # verl Worker 生命周期与 Ray 分布式架构源码阅读
 
+2026-10-26接续：[SGLang 停用后的请求准入](#sglang-停用后的请求准入)区分移除路由、处理已取得的handle、临时暂停与拒绝重试；新#8387已有作者，本轮只做源码／原测试范围核对。
+
 > 2026-06-15 | 源码: verl/single_controller/ + verl/workers/engine_workers.py + verl/checkpoint_engine/ + verl/workers/rollout/
 > 核心: WorkerGroup=Ray actor管理+Dispatch路由 → RolloutMode(HYBRID/COLOCATED/STANDALONE) → Sleep/Wake GPU内存切换 → 3种Weight Sync后端(naive/NCCL/NIXL)
 
@@ -22,6 +24,42 @@ CodeRabbit在同一行内评论提出State API依赖和阻塞两项担忧，revi
 [复现脚本](../../experiments/verl-server-schedule-guard/verify.py)原样AST装载helper／两常量和原四协程测试体，保留原get_actor替身：ALIVE立即返回、两次pending后ALIVE、持续pending的诊断异常、None持续缺失的异常；四项两次通过且[JSON](../../experiments/verl-server-schedule-guard/result.json)一致。真实asyncio／monotonic／sleep与pytest MonkeyPatch／raises，Python3.12.13、pytest9.1.1；不是原生pytest收集，也没有Ray State HTTP、真实actor或调度器。
 
 五份完整模块AST／compile通过，三调用端各一个await接线仅AST核对，未运行其启动路径。测试里人工填的node0／GPU=1不能补足原报告的资源证据；未验证API异常、所有状态、清理、调度修复或GPU引擎，不继续扩替身矩阵。本题是现有候选的范围审计，不新排M5算力、不改专项或发布反馈；若后续确有获准运行，应先捕获同版真实actor资源／节点快照再判断根因，不能据这四项控制调整GPU布局。另见[组初始化等待与退出](verl-async-logprob-provenance.md#组初始化的等待超时与任务退出)，两者都不能把等待失败自动视为资源已回收，但属于不同启动阶段。
+
+## SGLang 停用后的请求准入
+
+**移除路由不等于撤销已经发出的actor handle。** donghyq的draft [#8387](https://github.com/verl-project/verl/pull/8387)处理这样的窗口：客户端刚取得hybrid副本的handle，控制器随后移除该副本并归还GPU；请求晚一步进入已暂停的SGLang，旧版会在native manager内等待源副本恢复，而不是退出后重新路由。这与已进入引擎的请求如何保留KV、进程重建或版本盐缓存隔离是不同阶段。
+
+2026-10-26读取OPEN／draft，head `df92e6a205b8d8f6f111fd6b4c007d4a4e38f17a`、实际父版／共同祖先 `a4b9354968705a441fb7da7367924b15b902e771`；API目标base `0bd668c1aa7b63c5f174f7dcb1c5de12e0c74a0b`并非候选已包含的祖先，相对它ahead1／behind4。相对祖先四文件340增14删，已有实现及原测试，不另写竞争gate。
+
+### 临时暂停和停用采用不同准入行为
+
+[候选server](https://github.com/verl-project/verl/blob/df92e6a205b8d8f6f111fd6b4c007d4a4e38f17a/verl/workers/rollout/sglang_rollout/async_sglang_server.py)在generate的第一条语句等待准入判断，位于PD派发和GenerateReqInput构造之前。状态由submission_paused、rejecting与resume_event表达：
+
+| 状态 | 新到请求 | 事件作用 |
+|---|---|---|
+| 正常 | 继续进入原生成路径 | event设为可通过 |
+| 临时pause，reject_request=False | 在verl外层等待，不先进入native manager | clear；成功resume后唤醒 |
+| 停用，reject_request=True | 返回空token、stop_reason=aborted及global_steps | set；唤醒此前停在临时pause的请求，让它们也重新判断 |
+
+因此event被set并不总表示“可生成”；被唤醒的协程还会检查暂停／拒绝状态。后续新的临时pause也会重新clear，不能把reject_request当永久锁死开关。这里的global_steps是返回标签，不是“没有观察过混合权重”或内容身份的认证。
+
+pause／resume用同一个asyncio.Lock串行控制，但请求并不持有这个锁完成整个生成。原pause调用前先关闭外层准入；其BaseException路径将状态保持为暂停并拒绝。已经关闭准入时，native resume失败不会执行后面的重新开放，成功后才清除两状态。它不是原子回滚native状态、GPU释放或全副本分布式屏障，也不替代native层处理早已进入引擎的请求。仅从catch BaseException可推断代码意图覆盖取消，不代表原测试已经验证所有取消／竞态。
+
+### 先停止路由再处理迟到请求
+
+[V1 switch_to_trainer](https://github.com/verl-project/verl/blob/df92e6a205b8d8f6f111fd6b4c007d4a4e38f17a/verl/trainer/ppo/v1/trainer_separate_async.py)原来就按remove_servers → abort_replicas(reject_request=True) → sleep_replicas → 设置TRAINER模式执行；[manager](https://github.com/verl-project/verl/blob/df92e6a205b8d8f6f111fd6b4c007d4a4e38f17a/verl/checkpoint_engine/base.py)也已经传递该flag，缺口在SGLang replica旧实现只告警并忽略。候选改为向node-rank 0的primary server透传，避免对多节点每个server广播native控制。legacy dynamic controller则新增True参数；只改controller不能让旧SGLang server获得拒绝能力。
+
+若pause抛错，V1顺序调用不会走到sleep与模式修改；这表示该切换没有顺利完成，不等于路由已自动恢复或所有副本仍处于同一状态。[现有FullyAsync客户端](https://github.com/verl-project/verl/blob/df92e6a205b8d8f6f111fd6b4c007d4a4e38f17a/verl/workers/rollout/llm_server.py)可在aborted后延迟1秒重新acquire，保留已返回token前缀；实际partial_rollout配置仍决定是否重试。普通base客户端没有这层循环。only_hybrid且LB为空时会继续等，其他配置可抛无可用server，所以**返回aborted只是给出重试机会，不保证存在peer、固定故障恢复时限、KV迁移或相同随机轨迹**。
+
+### 原测试和目标环境的验收范围
+
+新增文件含12个测试函数，其中replica flag的False／True参数组使执行项为13：七项server准入／控制、两项flag转发、一项legacy顺序、三项V1链路。原TokenizerManager、Ray responses与load balancer均用本地记录器；通过object.__new__绕过真实server／trainer初始化。V1三项能检查原方法的调用顺序、pause失败不sleep与disabled-hybrid早退，不构成真实多actor、GPU释放或peer重试验收。源码中的两个sleep(0)只安排该夹具的协程，不证明所有交错都安全。本轮未执行这13项，不新增替身测试矩阵。
+
+作者报告Linux／Python3.12.11正常imports下13过，以及同机双A100、TP1 synthetic Qwen2、真实Mooncake TCP的固定权重probe：combined修改经peer完成、controller-only仍等待。该报告明确不是完整hybrid Trainer或吞吐benchmark，且CPU资格绑定a4b93549加四文件，目标main／default-lock CI仍待完成，不能计为本机实测。
+
+祖先、候选、目标的V1 trainer／manager／客户端三个完整文件逐字节相同，两个生产修改文件在祖先与目标也相同；但现有GPU workflow的镜像从祖先dev4变为目标dev5。候选新增显式CPU pytest step并对该step设CUDA_VISIBLE_DEVICES为空，仍位于原GPU job及其SGLang／Megatron环境，并没有建立独立轻量CPU runner或证明Actions已执行。不能把源码可接入、作者旧基线通过和目标锁定依赖通过合成一项结论。
+
+本轮六完整Python模块AST／compile、generate首条gate接线与YAML BaseLoader结构检查通过，无SGLang／Ray imports、原测试／引擎或故障注入。源码hash见[当日日志](../../diary/2026-10-26.md)；仅向[M5原一致性入口](../../experiments/handoff-m5.md#verl-异步策略一致性补证)补条件参考，不新排pause／resume实验、不改专项或采用候选。所有上游写入与既有PR-head推送仍逐项待用户明确同意。
 
 ## 1. WorkerGroup 类层次
 

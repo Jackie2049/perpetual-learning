@@ -257,6 +257,8 @@ ModelOpt忽略规则参考（2026-10-22，同一量化入口不另排队）：�
 
 ## verl 异步策略一致性补证
 
+SGLang停用准入参考（2026-10-26，同一入口、非新队列）：已有donghyq draft [#8387](https://github.com/verl-project/verl/pull/8387) headdf92e6a2／真实祖先a4b93549、目标0bd668c1。[M1源码范围](../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#sglang-停用后的请求准入)只六模块AST／compile与YAML；作者13项及同机双A100 fixed-weight probe非本机／目标锁定环境。若M5在已获明确授权的隔离pause／resume观测中独立参考，先核实际server／client、临时等待还是reject、LB是否有可用peer、控制失败停在哪一阶段，以及dev4／dev5镜像与锁；返回aborted不当GPU释放／KV迁移或时限证明。当前安全事件未闭环／共享生产、缺授权、需新部署或影响专项即停，不自行停服务、kill、注入故障或新排训练；不采用或另写gate。所有社区写入／既有PR-head推送仍须用户对具体动作明确同意；参考不表示接单。
+
 k3数值参考（2026-10-26，同一观测入口、非新队列）：已有Eppiehu的[#8386](https://github.com/verl-project/verl/pull/8386) headc854acbb／base祖先0bd668c1。[M1原20参数项CPU复查](../notebook/frameworks/verl-grpo-core-algos-reading.md#k3-近零消去与拒绝阈值)候选全过／基线8失败，32,768-token严格阈值夹具由负统计保留转为正统计拒绝；非作者73项整组、设备或模型验收。若M5在已有获准、安全、匹配的观测任务中独立参考，记录实际torch／源码／dtype、log-ratio定义、mask／长度、RS粒度／阈值与三处clamp差异；不把k3+值改变当其梯度切回k3，亦不把CPU近零通过当低精度／编译／训练质量保证。缺匹配条件、需新下载部署或影响专项就记未测停止，不为本项新排A/B训练、应用候选或改阈值。所有社区写入及既有PR-head推送仍须用户对具体动作明确同意；参考不表示接单。
 
 独立重启RFC参考（2026-10-26，同一入口、非新队列）：[#8380](https://github.com/verl-project/verl/issues/8380)已有HaoWang113设计，引用tongyx361的[#8168](https://github.com/verl-project/verl/pull/8168) headf9a275ba；[M1恢复水位分析](../notebook/frameworks/verl-async-logprob-provenance.md#独立重启与恢复水位)只核四源码AST/compile。snapshot是三项调度指标非训练备份，现有重启保留接收端后全量重新注入；逆拉／optimizer镜像仍属RFC，无trainer恢复验收。若未来用户明确授权隔离环境的恢复／故障注入工作，M5先核完整版本、精度／布局、theta与optimizer／scheduler／RNG／消费账本的同水位身份及恢复generation，再按原小预算核实际返回／提交／发布顺序；同步后健康检查失败可抛带已完成metrics的ReplicaRecoveryError，不能重做optimizer更新或发布失败实例。93.95秒属作者64ce33c单replica贪心A100报告，非当前head或完整训练。当前安全事件未闭环／共享生产环境、缺授权或需下载部署、影响专项即停止，不自行kill进程、制造OOM、切通信组或实现FT服务。任何社区写入／PR-head推送仍逐项需用户明确同意，参考不表示接单。
