@@ -138,10 +138,10 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
   - [TempFlow分支与逐行时间](unirl-survey.md#tempflow-分支共享与逐行时间索引)：#552共用x_T不复用前缀计算，分步算优势后合并，槽0非真实j=0；仅原噪声模块CPU控制/9模块compile，非replay/loss或训练验收。
     - [后续范围与计数类型](unirl-survey.md#后续范围收窄与计数类型)：#552新head0e6a620收窄到18文件，移出WAN配方／SGLang Flash适配；四原if的24次求值只核严格int边界，不认证完整方法／训练。
   - [异步快照与指标消费](unirl-survey.md#异步快照与指标消费)：#620状态单位/采样点与单消费者增量；slot占用非GPU利用率，ready lag缺值非0，仅源码/6模块compile。
-  - [奖励能力与模型加载](unirl-survey.md#奖励能力校验与模型加载)：#621将本地模型物化延后到服务校验之后；非按请求懒加载/资源事务，managed子进程仍在构造时启动，仅源码与两版语法核对。
+  - [奖励能力与模型加载](unirl-survey.md#奖励能力校验与模型加载)：#621最终合并版也将managed子进程延后到load，旧“构造即启动”已撤回；局部清理非整图回滚，九模块语法核对非真实模型加载验收。
   - [Omni原生IPC副本与导出](unirl-survey.md#omni-原生-ipc-的副本与导出边界)：#617全rank物化、逐卡TP1发布；结构hash非内容校验。原元数据/CPU视图检查通过，非CUDA导出/IPC或Qwen模型验收。
   - [原始block权重与冻结外围](unirl-survey.md#原始-block-权重训练与冻结外围)：#593保持分片/混合精度边界；冻结头仍传输入梯度，原optimizer与非重入helper的CPU数学控制通过，作者8×H100首反向仍OOM，非H3训练验收。
-  - [全词表熵与有效token汇总](unirl-survey.md#全词表条件熵与有效-token-汇总)：#563 replay条件熵非采样器熵/entropy loss；20组原LM-head局部CPU梯度与加权聚合控制，非Qwen/分布式验收。
+  - [全词表熵与有效token汇总](unirl-survey.md#全词表条件熵与有效-token-汇总)：#563新cc0df170的13专题文件同前次d2f0a489，仅同步奖励主线；旧20组CPU结果仍限原版本，无新训练／分布式验收。
   - [有界动态采样与游标](unirl-survey.md#有界动态采样与数据游标)：#562筛完整有限非同分组，预算含首批/耗尽不回滚；游标非随机生成恢复。仅源码与两版语法，旧GPU证据不迁为新head验收。
   - [Replay锚点与采样校正](unirl-survey.md#replay-锚点与-rollout-采样校正)：#557 PPO裁剪后乘冻结token权重，不改分母；36组原片段CPU值/梯度控制及ESS反例，非完整算法/anchor或学习收益验收。
   - [回合续跑与行为版本](unirl-survey.md#回合边界续跑与行为版本)：#558完整turn后暂停，状态随Sample续跑；W计训练批、版本计optimizer update，排空与消费完成分开，仅两版7模块语法/源码，非agent或训练验收。

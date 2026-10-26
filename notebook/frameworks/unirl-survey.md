@@ -1036,6 +1036,8 @@ python -B experiments/scripts/verify_unirl_block_freeze.py /path/to/UniRL
 
 ## 全词表条件熵与有效 token 汇总
 
+2026-10-26接续：[再次同步主线后的代码身份](#再次同步主线后的代码身份)核当前候选cc0df170／base8cfbac177；13个专题文件与前次d2f0a489逐blob相同，本轮不重跑旧20项或将历史GPU报告迁作新组合验收。以下00e5597f记录保留首次学习与实验的版本范围。
+
 **一次采样的负log-prob不是该位置的全词表熵，微批均值的均值也未必是全局token均值。** [#563](https://github.com/Tencent-Hunyuan/UniRL/pull/563)（2026-10-23读取open）新增可选AR熵监控。固定head `00e5597f6ff6de639d7997a2ea21266d688e9f72`、base/实际祖先 `94e8f26b8768a3695b5985c2fa072e07d9dbfa0d`，ahead3/behind0；13文件270增43删，无提交测试。本节是已有方案的源码学习，不是本项目新增修复或对熵坍塌故障的定性。
 
 ### 监控哪个分布
@@ -1077,6 +1079,16 @@ SHA256：Qwen3 ar `49557b0cf37b0823940307531f99efa2505242411492b2fe506f5f14387e5
 2026-10-24，[#563](https://github.com/Tencent-Hunyuan/UniRL/pull/563)仍open/non-draft，head更新为`d2f0a489211200f5655e755b3337f875ab7144c4`，base `6fd82cba13f52f394747832344039408699ea378`。`4f6ebd80`合并旧head与main，末提交仅整理三个算法的导入顺序；对当前base仍为13文件270增43删。旧`unirl/train/stack/base.py`中的熵实体化、聚合与副本过滤/reduce段迁至`unirl/train/stack/single.py`。
 
 AST比较确认该完整统计段、`policy_entropy_metrics`、`_categorical_entropy`和完整`ReplayResult`与原固定head相同；这是限定源码结构比较，不认证整个replay/算法/TrainStack等价。旧20组数值控制与脚本仍锁原版本，本轮未重跑。作者本次另报六算法loss/梯度、拆分后单栈实体化及两rank Gloo检查，且明确未重跑GPU；历史A100/L4证据不迁移为新head验收。
+
+### 再次同步主线后的代码身份
+
+2026-10-26核[#563](https://github.com/Tencent-Hunyuan/UniRL/pull/563)仍OPEN／非draft／未合并，head `cc0df170a507220383dd0f1a1df5aec67e8d1c90`，API目标base `8cfbac17765004afb68fef08a4e011a4c8daf555`，相对base ahead6／behind0、13文件270增43删；ahead数包含历史与合并提交，不表示新增六项熵修复。关联[#564](https://github.com/Tencent-Hunyuan/UniRL/issues/564)明确要求监控而非正则化，已有作者实现；普通评论与reviews为空，不推导已获维护者批准。
+
+[新旧head比较](https://github.com/Tencent-Hunyuan/UniRL/compare/d2f0a489211200f5655e755b3337f875ab7144c4...cc0df170a507220383dd0f1a1df5aec67e8d1c90)显示从d2f0a489前进两提交，仅合入[#621奖励加载](https://github.com/Tencent-Hunyuan/UniRL/pull/621)的8cfbac177及merge提交；十个实际变更文件都属于reward／ReFL VideoAlign。与候选[相对新base的13文件差异](https://github.com/Tencent-Hunyuan/UniRL/compare/8cfbac17765004afb68fef08a4e011a4c8daf555...cc0df170a507220383dd0f1a1df5aec67e8d1c90)是两种比较，不能把前者的奖励改动算成熵功能扩大。
+
+从未截断Git tree逐blob核对，两head的全部13个熵专题文件相同：六算法及base、算法／Qwen3说明、Qwen3 ar、ReplayResult、`train/stack/single.py`和metrics。关键blob为ar `8316db745f00d62634b30f8180210ec51338156c`、single `765028742e803466ce21f81df17790686c936e52`、metrics `d6dde64944fe7c4af631f4b845e7758dbbb542a4`。单阶段熵实体化／副本过滤没有因此新增改动；本轮只做Git对象身份核验，没有执行原20个CPU控制、完整算法或TrainStack。
+
+PR正文保留前次sync的CPU/Gloo报告，并明确该sync未重跑GPU；早期L4／A100及固定响应FSDP-Ray单步仍是作者外部结果，不能改写为cc0df170上完整ARTrainer rollout／reward／weight-sync或VeOmni验收。新奖励生命周期与熵文件保持各自范围，也不因合并主线就认为二者组合已训练通过。更新[原M5熵参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)的版本与观察条件，不新增队列／环境或候选组合；后续仅跟真实代码／反馈变化。
 
 ## 有界动态采样与数据游标
 
