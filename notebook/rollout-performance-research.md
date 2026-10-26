@@ -6,9 +6,9 @@
 ## 0. Project Status
 
 - **阶段**：Phase 1 — recall-first literature & code investigation（广扫建库，不收束观点）
-- **最近更新**：2026-10-27（M1 veRL固定源码广扫续：batch／old-logp／版本标签契约，详见§8.3；本批不增文献）
+- **最近更新**：2026-10-27（M1 veRL fully-async广扫：样本预算／队列淘汰／版本时钟，详见§8.4／§12；本批不增文献）
 - **覆盖**：累计**97篇已核身份**（20篇serving基础／迁移边界＋77篇rollout/RLHF及相关边界，含VLA、训练侧与算法诊断；均非深读；93个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL会议记录）。上一文献批次新增RLinf、DynaRL、NeMo-Aligner、ROLL Flash、CadenceRL及两篇含系统章节的模型报告；RLinf的arXiv与OSDI记录合计1篇，模型报告不当纯系统增益实证。总数97或RL相关77不代表原生80–120目标已达成。ASymPO证明错误警示保留，历史✅补核完不等检索收敛；Round 1“≈73”不与当前数量相加。
-- **全文深读 / 代码广扫**：0 / 2（同一veRL `24f25b03`快照的两条路径：weight-sync→vLLM、batch→概率字段／版本标签；不是两个框架或运行验证，也不按文件数计）
+- **全文深读 / 代码广扫**：0 / 3（同一veRL `24f25b03`快照：weight-sync→vLLM、默认batch→概率字段、fully-async生产／消费队列；不是三个框架或运行验证，也不按文件数计）
 - **最高优先级**：继续原生系统引用／会议扩展与种子落实，补serving机制覆盖，按唯一文献广扫至100–150；总数不替代原生覆盖，A Core短名单不只按条目数选取
 - **下一步**：见 §16
 
@@ -395,7 +395,30 @@ RS屏蔽不等于减少已做的生成：此fit已完成采样和reward，decoup
 
 默认trainer创建client未传子类，`get_client()`默认返回基础LLMServerClient，不能把FullyAsync的abort续跑当此fit默认路径。续跑分支的min／max标签只有在版本单调等条件下才可解释为版本跨度；它们不是逐token版本向量，也不是lag上限检查。tool loop后续turn只条件更新max字段，worker将这些extra字段带入non_tensor_batch；所读默认fit／校正入口未按min／max字段作准入或拒绝，校正依据的是logp差，不是整数step差。server标签在返回时读取，也不是每token权重身份或不可中断请求的证明；其他fully-async trainer／staleness调度器留待单独广扫。
 
-验证范围：上表涉及文件，加single_turn_agent_loop.py、tool_agent_loop.py、trainer/config/algorithm.py及3份配置YAML，共13份固定Git blob一致（10份Python只作AST解析、3份YAML仅字节核对）。阅读入口函数与相关调用段，不称13份全文读完；未导入模块、构造DataProto／配置或执行loss／模型。下一步广扫原生异步trainer的准入／队列／staleness边界，或转另一框架作对照，并继续文献扩展；不为这轮静态地图新增GPU任务。
+验证范围：上表涉及文件，加single_turn_agent_loop.py、tool_agent_loop.py、trainer/config/algorithm.py及3份配置YAML，共13份固定Git blob一致（10份Python只作AST解析、3份YAML仅字节核对）。阅读入口函数与相关调用段，不称13份全文读完；未导入模块、构造DataProto／配置或执行loss／模型。原生异步trainer的队列与staleness接续见§8.4；跨框架对照与文献扩展继续，不为静态地图新增GPU任务。
+
+### 8.4 veRL异步样本预算与消费边界
+
+同一固定commit的`experimental/fully_async_policy`是独立入口，不能将它的语义套回§8.3默认fit。[入口runner](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/experimental/fully_async_policy/fully_async_main.py#L186)分别启动Rollouter和Trainer；rollouter使用FullyAsync客户端，默认同步路径的整批等待变为**每个prompt组完成后入队，trainer收够若干组再更新**。动态资源调度在本节配置片段中关闭，其控制器／policy不在本轮审阅范围。
+
+| 边界 | 固定代码入口 | 静态行为与单位 |
+|---|---|---|
+| 一个队列sample是什么 | [prepare:42](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/experimental/fully_async_policy/detach_utils.py#L42)、[生成并发布:991](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/experimental/fully_async_policy/fully_async_rollouter.py#L991) | gen_batch_size要求1；单prompt先重复n条response，全部生成结果封进一个RolloutSample，共用uid再序列化入队。预算／队列条目不是单条response或token |
+| 预取、并发与预算 | [预算:491](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/experimental/fully_async_policy/fully_async_rollouter.py#L491)、[processor:902](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/experimental/fully_async_policy/fully_async_rollouter.py#L902) | pending_queue预取上限128；active_tasks限制同时进行的prompt组。staleness_samples在从pending取出时递增，暂停条件读此计数或MQ长度，并非检查每条样本的版本差 |
+| 参数同步后如何恢复 | [reset_staleness:594](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/experimental/fully_async_policy/fully_async_rollouter.py#L594)、[暂停检查:1142](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/experimental/fully_async_policy/fully_async_rollouter.py#L1142) | reset把计数重设为active任务数＋MQ条目数并发resume信号；不是清零旧轨迹、清空队列或重新生成旧内容。背压暂停主要挡新提交，权重同步中的abort／resume另沿§8.2和客户端路径 |
+| 满队语义 | [MessageQueue.put_sample:55](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/experimental/fully_async_policy/message_queue.py#L55) | FIFO deque满时先popleft旧条目，再append新条目并返回False；不解码样本、不比较policy版本。不是拒收新样本，也不是阻塞put等待空位 |
+| 训练消费与尾批 | [get_samples:375](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/experimental/fully_async_policy/fully_async_trainer.py#L375)、[assemble:84](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/experimental/fully_async_policy/detach_utils.py#L84) | 按FIFO取够required_samples个组，反序列化concat并可balance；正常成功时为R×n行。先遇None且不足R则返回终止，不训练这份不足批；此函数不按版本差筛条目 |
+| 两个训练时钟 | [fit_step:536](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/experimental/fully_async_policy/fully_async_trainer.py#L536)、[local step:676](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/experimental/fully_async_policy/fully_async_trainer.py#L676) | 每次取批／训练调用推进local_trigger_step；累计K次后current_param_version递增并触发权重同步。K不是token数，也不等引擎内部optimizer.step次数；critic warmup还可跳过actor更新 |
+
+设`R=ppo_mini_batch_size×require_batches`（这里计prompt组），`K=trigger_parameter_sync_step`、`s=staleness_threshold`，源码设`M=int(R×(1+s)×K)`，MQ容量同为M，并发上限为`min(活动server数×concurrent_samples_per_replica, M)`。因此s是样本预算的比例参数，不能解释成秒数、逐token年龄或“最多落后s个版本”；s=0也不意味着队列／active任务为零。pending、active、MQ和消费端批次是不同位置，MQ长度本身不是全链路内存／在途总数。
+
+满队返回False表示**此次put发生旧条目淘汰，新条目仍已保留**。rollouter据此增加`dropped_stale_samples`，但这个名称不证明被淘汰条目经过陈旧性判定。满队淘汰或尾批舍弃若触发，会改变实际进入训练的集合，应与纯重排／背压分开登记；每步组批与更新顺序的影响仍须另核，不能将整条异步通路先验归C或排除C。这里确认的是分支语义，不断言当前配置必然满队或测得了丢弃率。
+
+[版本统计](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/experimental/fully_async_policy/fully_async_trainer.py#L1033)使用每行`max_global_steps`作为trajectory_param_versions，按`current_param_version-v>=1`累计stale行数；assembly另以首末标签绝对差统计partial span。这延续§8.3的首末标签限制，不是逐token最大年龄或严格版本准入。K内当前训练参数可继续改变而rollout参数版本标签不变，故参数同步时钟、训练调用时钟与概率差异仍须分开。
+
+[异步配置片段](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/experimental/fully_async_policy/config/fully_async_ppo_trainer.yaml#L9)取s=0.1、K=4、require_batches=1、partial_rollout=True并设bypass_mode=True，覆盖§8.3基础配置的bypass=false。若改用decoupled，[old-logp覆盖方法](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/experimental/fully_async_policy/fully_async_trainer.py#L654)在K窗口首批保存训练参数，后续批临时恢复该锚点求概率再恢复当前参数；不能沿用默认fit“每批以当前训练侧参数为old”的概括。这里只读保存／恢复调用，未验证CPU快照、异常恢复、配置组合或数值一致性。
+
+验证范围：fully_async_main／rollouter／trainer、message_queue、detach_utils、separation/ray_trainer和共享llm_server共7份Python，与上述YAML共8份固定Git blob一致；Python仅AST解析。未导入框架、创建队列／Ray actor或执行并发与设备函数，不给出严格年龄上界、死锁／故障定性、吞吐或收敛结论。后续转另一原生框架做数据生命周期对照，并继续文献扩展；动态调度、异常／恢复和真实队列轨迹留待独立范围，不以CPU替身或新GPU任务补造运行证据。
 
 ## 9. Serving → Rollout Transfer
 
@@ -425,6 +448,8 @@ RS屏蔽不等于减少已做的生成：此fit已完成采样和reward，decoup
 
 固定源码的计时口径（veRL `24f25b03`，静态）：[fit的gen计时块:1510](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/trainer/ppo/ray_trainer.py#L1510)包住generate_sequences、sleep_replicas及条件性的profile调用；[update_weights计时块:1715](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/trainer/ppo/ray_trainer.py#L1715)包住整个manager同步流程，分支见§8.2。因此前者不直接等纯decode／kernel时间，后者不直接等链路传输时间。未来提取benchmark须注明计时边界、backend／free-cache／profiler配置；本轮没有时间测量或拆分数值。
 
+同快照fully-async的[gen块:643](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/experimental/fully_async_policy/fully_async_trainer.py#L643)则包住队列取批、反序列化／assembly及样本指标收集，不是rollouter的生成计算时间；不能与上段同名gen直接横比。[param_sync:690](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/experimental/fully_async_policy/fully_async_trainer.py#L690)计时块之后才调用reset_staleness，故其数字也不是整次生产恢复流程的总时长。性能评估应同时记录prompt组／response／token单位、队列淘汰与不足尾批，而非只看保留样本吞吐。
+
 ## 13. Research Gaps / Ideas
 
 （Round 1 初步观察，待 corpus 收敛后修正）：
@@ -445,6 +470,8 @@ RS屏蔽不等于减少已做的生成：此fit已完成采样和reward，decoup
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（M1 fully-async队列广扫）**：文献仍97，代码路径累计3条同版本veRL路径。§8.4补prompt组预算M=int(R(1+s)K)、pending／active／MQ区别、FIFO满队淘汰旧条目而保留新条目、尾批终止、local step／同步版本两时钟及old锚点覆盖；stale指标不当硬版本准入。§12区分异步gen取批计时与默认gen。8源码／配置blob一致、7 Python AST通过，未创建队列／框架／设备；不定性bug、测丢弃率或加GPU任务。后续跨框架对照与原生文献扩展。
 
 - **2026-10-27（M1批次与概率字段广扫）**：文献仍97，代码路径累计2条（同一veRL `24f25b03`，非2框架）；§8.3登记uid重复／gather等齐／balance、rollout与重算old概率、decoupled／bypass校正位置和版本标签。YAML关闭IS而配置类默认sequence的入口差异单列；RS屏蔽不省已生成工作，首末step标签不当逐token版本或准入保证。13源码／配置blob一致、10 Python AST通过，无框架／设备执行。后续异步trainer准入与跨框架对照、继续原生文献，M5专项不动。
 
