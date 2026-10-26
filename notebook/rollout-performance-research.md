@@ -6,10 +6,10 @@
 ## 0. Project Status
 
 - **阶段**：Phase 1 — recall-first literature & code investigation（广扫建库，不收束观点）
-- **最近更新**：2026-10-27（M1原生补库与种子落实：新增TideRL／ROSE／QwenGyre，落实SpecRoll→SPARK与ExpThink，详见§5.14）
-- **覆盖**：累计**82篇已核身份**（16篇serving基础／迁移边界＋66篇rollout/RLHF及相关边界，含VLA、训练侧与算法诊断；均非深读；80个唯一arXiv ID＋Orca／PUZZLE会议记录）。本批新增5个矩阵条目=3个新发现＋SpecRoll种子及ExpThink既有线索各1；其中4个rollout原生系统／机制，ExpThink为算法塑形边界。ASymPO证明错误警示仍单列，不作可靠理论依据。历史✅补核完不等于种子全落实、全部为rollout-native或检索收敛。Round 1“≈73”不与当前数量相加。
+- **最近更新**：2026-10-27（M1引用扩展：新增4篇RL系统与4篇多轮serving文献，详见§5.15）
+- **覆盖**：累计**90篇已核身份**（20篇serving基础／迁移边界＋70篇rollout/RLHF及相关边界，含VLA、训练侧与算法诊断；均非深读；87个唯一arXiv ID＋Orca／PUZZLE／CachedAttention会议记录）。本批从TideRL引用回溯新增8个矩阵条目，均经原站核身份；不把serving登记20篇或总量90当覆盖目标／原生80–120篇已达成。ASymPO证明错误警示仍单列，不作可靠理论依据。历史✅补核完不等于种子全落实或检索收敛。Round 1“≈73”不与当前数量相加。
 - **深读 / 代码阅读**：0 / 0
-- **最高优先级**：补来源与版本别名、按唯一文献去重后继续广扫至100–150；A Core短名单不以未核身份的条目数为依据
+- **最高优先级**：继续原生系统引用／会议扩展与种子落实，补serving机制覆盖，按唯一文献广扫至100–150；总数不替代原生覆盖，A Core短名单不只按条目数选取
 - **下一步**：见 §16
 
 ## 1. Research Question & Scope
@@ -89,6 +89,7 @@
 | [2510.26788v1](https://arxiv.org/abs/2510.26788v1) | 2025-10-30／v1 | Defeating the Training-Inference Mismatch via FP16 | L1/L4边界（暂） | 数值诊断，类型待核 | 对比BF16／FP16训推一致性；摘要结论限作者条件，不推广为统一精度建议 | 核 |
 | [2605.14220v2](https://arxiv.org/abs/2605.14220v2) | 2026-05-14首次／v2 09-29 | Diagnosing Training Inference Mismatch（VeXact） | L1/L4边界（暂） | 诊断，不硬归A/B/C | 同权重不同引擎的概率差异，以zero-mismatch reference隔离TIM与off-policy drift | 核 |
 | [2609.32444v1](https://arxiv.org/abs/2609.32444v1) | 2026-09-26／v1 | Rethinking Training-Inference Mismatch（CIS） | L1/L4边界（暂） | 算法修正，不硬归B/C | logit-displacement刻画与confidence-aware截断importance sampling；偏差／稳定性待深读 | 核 |
+| [2507.19017v1](https://arxiv.org/abs/2507.19017v1) | 2025-07-25／v1 | MindSpeed RL（Ascend平台） | L4（暂） | B（暂） | distributed transfer dock组织sample flow，allgather-swap处理resharding内存；平台结果不外推CUDA | 核 |
 
 ### 5.2 L3 — Long-tail / Scheduling / Cluster
 
@@ -102,6 +103,7 @@
 | [2509.18521v3](https://arxiv.org/abs/2509.18521v3) | 2025-09-23首次／09-26修订 | APRIL | L3/L4（暂） | B/**C?** | 超额发起，达到目标完成数后结束本步、未完成响应跨步续跑；训练集合／版本影响待深读 | 核 |
 | [2511.14617v3](https://arxiv.org/abs/2511.14617v3) | 2025-11-18首次／v3 2026-04-03 | Seer | L1/L3（暂） | A/B（暂） | divided rollout、context-aware调度与grouped speculation；不是仅长度预测 | 核 |
 | [2605.07501v2](https://arxiv.org/abs/2605.07501v2) | 2026-05-08首次／v2 05-17 | ExpThink（CoT塑形边界） | workload／算法边界 | C边界（非直接筛轨迹） | 历史最短正确长度引导reward塑形及correct-count advantage归一化；改变学习目标，不是执行同一轨迹更快 | 核 |
+| [2506.22950v1](https://arxiv.org/abs/2506.22950v1) | 2025-06-28／v1 | Infinite Sampling | L2/L3/L4（暂） | B（暂） | micro sampling groups与跨组连续采样，prefix长度预测、全局分组及SJF refill；完整组统计后反向 | 核 |
 | ？ | ? | Weave | L3/L4 | B | ？（种子，待验证） | ？ |
 
 ### 5.3 L1/L2 — RL-aware Speculative Rollout（serving机制的迁移条件）
@@ -123,6 +125,7 @@
 | [2509.21792v1](https://arxiv.org/abs/2509.21792v1) | 2025-09-26／v1 | FastGRPO | L1/L2（暂） | A（暂） | 并发感知draft／验证配置与online draft learning | 核 |
 | [2604.26779v1](https://arxiv.org/abs/2604.26779v1) | 2026-04-29／v1 | System-Integrated SD（Iso等） | L1/L4（暂） | A/B（暂） | NeMo-RL＋vLLM集成MTP／外部draft／EAGLE3；实测与模拟预测分开 | 核 |
 | [2608.04962v2](https://arxiv.org/abs/2608.04962v2) | 2026-08-05首次／v2 10-14 | SPARK（v1名SpecRoll） | L1/L2（暂） | A（暂） | verifier反馈修正draft logits，同prompt共享rollout-local correction、跨rollout学projection；不改为直接采样draft | 核 |
+| [2511.16193v3](https://arxiv.org/abs/2511.16193v3) | 2025-11-20首次／v3 12-23 | SpecActor（Fast LLM Post-training） | L1/L3/L4（暂） | A/B（暂） | 解耦draft／verification，Fastest-of-N按接受率与draft ladder选择方法并利用长尾空闲worker | 核 |
 | ？ | ? | MTP-RL | L1 | A | 种子待验证；Bebop仍只是方向候选，不确认同名 | ？ |
 
 ### 5.4 Agentic Rollout
@@ -149,6 +152,7 @@
 | [2608.10402v1](https://arxiv.org/abs/2608.10402v1) | 2026-08-11／v1 | TideRL | L2/L3/L4（暂） | B（暂） | 保留rollout状态的连续task batching，以ready backlog／到达间隔选择ref-actor执行及弹性rank分配 | 核 |
 | [2605.06534v2](https://arxiv.org/abs/2605.06534v2) | 2026-05-07首次／v2 05-20 | ROSE | L3/L4（暂） | B（暂） | 在SLO约束下借用serving GPU，跨集群分片／稀疏权重传输与弹性rollout路由 | 核 |
 | [2609.33848v2](https://arxiv.org/abs/2609.33848v2) | 2026-09-27首次／v2 10-20 | QwenGyre | L3/L4（暂） | B／**C?**（轨迹处理） | live执行中弹性重分配GPU；重建分支历史、partial-progress评分和路径去重，loss／样本语义另核 | 核 |
+| [2510.04206v1](https://arxiv.org/abs/2510.04206v1) | 2025-10-05／v1 | AgentRL | L4（暂） | B／**C**（cross-policy） | 全异步生成训练与统一环境接口；另有单轨迹内跨模型采样和task advantage归一化 | 核 |
 
 ### 5.5 Serving 基础（supporting corpus，含迁移边界，不标 rollout-native）
 
@@ -170,6 +174,10 @@
 | [2302.01318v1](https://arxiv.org/abs/2302.01318v1) | 2023-02-02／v1 | Speculative Sampling（Chen等） | 修改拒绝采样以保target分布，原文带hardware numerics条件；非bitwise相同承诺 | 核 |
 | [2602.06932v5](https://arxiv.org/abs/2602.06932v5) | 2026-02-06／v5 2026-08-04 | Aurora（When RL Meets Adaptive Speculative Training） | 由live inference traces在线RL训练speculator、热换更新；不是post-training policy rollout系统 | 核 |
 | [2408.13510v2](https://arxiv.org/abs/2408.13510v2) | 2024-08-24首次／v2 2025-01-07 | Intelligent Router | response-length预测与混合负载估计，RL路由跨推理实例；是serving调度，不是post-training rollout系统 | 核 |
+| [USENIX ATC'24](https://www.usenix.org/conference/atc24/presentation/gao-bin-cost) | 2024-07会议记录 | CachedAttention | 分层KV、逐层预载／异步保存及scheduler-aware换入换出；context-window有效性不等policy更新后缓存仍有效 | 核 |
+| [2601.22705v1](https://arxiv.org/abs/2601.22705v1) | 2026-01-30／v1 | CONCUR | agent级准入与cache信号控制并发、缓解middle-phase thrashing；RL下完整组／陈旧性须另核 | 核 |
+| [2511.02230v7](https://arxiv.org/abs/2511.02230v7) | 2025-11-04首次／v7 2026-09-08 | Continuum | 工具等待中按reload／排队成本设置KV TTL并结合program-level FCFS；TTL到期是缓存回收，不等轨迹终止 | 核 |
+| [2603.16104v1](https://arxiv.org/abs/2603.16104v1) | 2026-03-17／v1 | Helium（Efficient LLM Serving for Agentic Workflows） | workflow视作query plan，proactive缓存与cache-aware调度；进入RL需核版本／随机输出／样本独立性 | 核 |
 
 ### 5.6 待验证种子（用户清单中尚未落实）
 
@@ -278,6 +286,18 @@ BubbleSpec／SRT的run-ahead用于后续draft验证，不等于直接拿旧polic
 
 本批限元数据、摘要和SPARK／TideRL局部正文定位，非全文深读、代码阅读或性能验收；分类仍暂定。Weave未确认同名，MTP-RL与Online Draft Co-Training仍未落实，不凭相似机制合并。后续优先会议／引用扩展补原生，同时补serving至20–30篇目标；不以82总量代替原生80–120篇目标已达成。
 
+### 5.15 TideRL引用扩展与多轮缓存迁移边界
+
+2026-10-27第九批：从[TideRL v1参考文献](https://arxiv.org/html/2608.10402v1)回溯[3] SpecActor、[4] MindSpeed RL、[37] Infinite Sampling、[44] AgentRL及serving侧[2] CONCUR、[6] CachedAttention、[15] Continuum、[35] Helium，逐一回arXiv或USENIX原站核标题／首次日期／采用版本。新增8条，累计90身份（87唯一arXiv＋3会议记录），20 serving／边界＋70 rollout/RLHF及相关边界；不重复版本，不把引用年份当首次提交年份。CachedAttention采用ATC'24记录，不猜arXiv ID；Continuum首发2025而采用v7修订2026。
+
+方法选择不等于训练样本选择：[SpecActor v3 §4.2](https://arxiv.org/html/2511.16193v3)的Fastest-of-N用draft ladder、接受率及空闲worker调整draft方法，不是选最快完成的N条训练响应，暂A/B而非自动C。[Infinite Sampling v1 §3.4](https://arxiv.org/html/2506.22950v1)缓存各micro group奖励、等完整组均值后形成advantage再分micro batch反向；micro group不能直接解释成独立的GRPO归一化组，也不凭此局部描述承诺完整算法／数值等价。其长度预测prefix被续用，不直接判为删选响应。
+
+主动混policy与系统异步分开：[AgentRL v1 §3.1](https://arxiv.org/html/2510.04206v1)的cross-policy sampling允许一条轨迹的不同动作来自模型池，另有task advantage normalization。明确记C及算法边界，不等同DORA所约束的单轨迹policy版本一致，也不能把质量收益全部归全异步pipeline。[MindSpeed RL v1](https://arxiv.org/abs/2507.19017v1)组织sample／resharding两类flow，Ascend NPU是作者实验平台；仅登记架构来源，不把通信策略或性能结果直接外推CUDA，也不触发本项目NPU部署／测试任务。
+
+多轮serving各有不同的复用单位：[CachedAttention官方记录](https://www.usenix.org/conference/atc24/presentation/gao-bin-cost)关注分层KV及预载／保存，[Continuum v7](https://arxiv.org/abs/2511.02230v7)以TTL保留工具等待中的KV，[CONCUR v1](https://arxiv.org/abs/2601.22705v1)在agent级调并发，[Helium v1](https://arxiv.org/abs/2603.16104v1)把workflow建模为query plan。迁到RL须重核权重身份、group依赖及训练进度，而不能由缓存能保留推出可以跨policy更新直接复用；TTL到期或cache eviction也不是删除训练样本。Helium的中间结果复用是否满足随机采样独立性仍待核，不把缓存命中率或serving JCT直接换算RL time-to-quality。
+
+范围限元数据／摘要、引用位置和SpecActor／Infinite Sampling／AgentRL局部机制定位，无全文深读、代码阅读或性能抽取／复现。serving登记达到20条只是数量进展，基础机制覆盖仍待补；70个RL相关条目也含边界，未达到80–120原生目标。下一批优先继续原生引用扩展及未落实种子，不为追总数扩成算法综述或重复本批核验。
+
 ## 6. Paper Deep Reads
 
 （空。优先级建议：AReaL、HybridFlow/veRL、StreamRL、RollPacker、RhymeRL、BubbleSpec、StaleFlow——覆盖四层 + 三大机制家族。深读模板：问题/瓶颈 → 性能模型 → 机制 → 实验条件与增益（保留硬件/batch/长度分布）→ 与 taxonomy 对照 → 可迁移性 → 疑点。）
@@ -315,6 +335,7 @@ BubbleSpec／SRT的run-ahead用于后续draft验证，不等于直接拿旧polic
 - speculative decoding：不能由serving加速比直接推导RL收益；policy变化下draft适配、接受率与成本需重评。原先“不可原样迁移”的绝对判断尚未成立，采样正确性与draft效率分开，具体机制是否可直接复用待深读；
 - chunked prefill：rollout 的 prompt 占比与 serving 不同（reasoning 长 decode），需重估；
 - prefill/decode分离（DistServe系）：分开的是推理内部两个阶段，不能直接等同trainer/rollout分离；进入RL后的目标、分离粒度与资源配比仍待研究。
+- 多轮agent缓存／准入：分层KV、TTL、agent并发及workflow缓存分别处理驻留／重载／压力／跨调用依赖；迁到RL还需完整GRPO组、policy版本与staleness条件，不能把cache eviction等同删样本，见§5.15。
 
 ## 10. Workload-specific Findings
 
@@ -350,6 +371,8 @@ BubbleSpec／SRT的run-ahead用于后续draft验证，不等于直接拿旧polic
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（M1引用扩展与多轮缓存边界）**：从TideRL参考文献新增SpecActor／MindSpeed RL／Infinite Sampling／AgentRL及CachedAttention／CONCUR／Continuum／Helium八篇，累计90身份（20 serving／边界＋70 rollout/RLHF及相关边界；87 arXiv＋3会议记录）。FoN选draft不等筛训练响应；micro group与完整组统计区分，AgentRL主动cross-policy单列C，缓存驻留不等跨权重可复用或删样本。仅身份／摘要及局部正文定位，深读／代码仍0／0；无NPU任务或实验，下步继续原生与种子扩展，不宣称覆盖收敛。
 
 - **2026-10-27（M1原生补库与种子落实）**：新增TideRL／ROSE／QwenGyre，落实SpecRoll→SPARK同ID改题与ExpThink既有线索，共增5矩阵条目而非5全新发现，累计82身份（16 serving／边界＋66 rollout/RLHF及相关边界；80 arXiv＋2会议记录）。SPARK采用v2，不迁旧Reflex说明；就绪度弹性、serving算力协作及路径去重三边界分开，ExpThink不混作执行加速。仅身份／摘要及局部正文定位，深读／代码仍0／0；下步会议／引用扩展原生并补serving，不宣称原生目标已达成。
 
