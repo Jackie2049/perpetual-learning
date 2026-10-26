@@ -8,6 +8,34 @@
 
 2026-10-25补充：[QAT 的 mask 默认与 packed 接口](#qat-的-mask-默认与-packed-接口)核清默认策略如何经过 Bridge、MCore 到达 TE。mask 类别通过不等于完整 THD 输入有效，也不能解决量化 MoE 的部署 kernel 限制。
 
+2026-10-26接续：[原生混合精度模型的后端选择](#原生混合精度模型的后端选择)追踪新议题#8381。顶层FP8配置不代表experts也为FP8；显式DeepGEMM会阻止自动候选回退，切换Marlin还改变activation精度，不能仅按“成功启动”认证训练与rollout一致。
+
+## 原生混合精度模型的后端选择
+
+**后端应按实际层的格式与能力判断，不能只看模型顶层量化名称。** [议题#8381](https://github.com/verl-project/verl/issues/8381)于2026-10-26报告：原生DeepSeek-V4-Pro在H100上因MXFP4 expert被指定DeepGEMM而加载失败；显式Marlin后完成三步。报告者已有方案草稿并询问是否并入[#8371](https://github.com/verl-project/verl/pull/8371)，读取时0评论；本文不另实现方案。此前QAT预设中的GH200限制与此原生checkpoint问题相关，但不能混为同一模型格式或同一次实验。
+
+### 默认配置如何成为显式约束
+
+verl固定main `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，vLLM固定v0.29.0的commit `98dff2a81d747d1dba01a47f939f48c3526d4206`：
+
+| 位置 | 实际行为 | 推论边界 |
+|---|---|---|
+| [verl启动接线](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/workers/rollout/vllm_rollout/vllm_async_server.py) | 取override或HF的quantization_config，仅把该配置和engine_kwargs传给默认函数 | 不传独立hf_config，函数无法看到expert_dtype |
+| [verl默认函数](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/utils/vllm/vllm_quant_utils.py) | Mapping且非NVFP4时，分别setdefault linear_backend和moe_backend为deep_gemm | 保留用户显式值，但缺省值到vLLM后已不再是auto；E8M0 scale开关不改变MoE候选 |
+| [vLLM原生V4量化配置](https://github.com/vllm-project/vllm/blob/98dff2a81d747d1dba01a47f939f48c3526d4206/vllm/models/deepseek_v4/quant_config.py) | 未忽略的RoutedExperts在expert_dtype=fp4且无NVFP4 override时返回Mxfp4MoEMethod；fp8则交父类FP8路径 | 同一顶层FP8配置可对应不同expert格式；该版本缺expert_dtype时默认fp4，不宜直接推广到所有checkpoint |
+
+[Mxfp4MoEMethod](https://github.com/vllm-project/vllm/blob/98dff2a81d747d1dba01a47f939f48c3526d4206/vllm/model_executor/layers/quantization/mxfp4.py)调用专用V4 selector。[selector与映射](https://github.com/vllm-project/vllm/blob/98dff2a81d747d1dba01a47f939f48c3526d4206/vllm/model_executor/layers/fused_moe/oracle/mxfp4.py)将显式deep_gemm映为单候选DEEPGEMM_MXFP4，检查失败后抛出last_error，不进入auto列表。只有auto分支才依次检查TRTLLM MXFP8、DeepGEMM、Marlin、Batched Marlin；每项仍有设备、量化和布局等支持检查，列表存在不保证总有可用后端。
+
+[DeepGemmFP4Experts](https://github.com/vllm-project/vllm/blob/98dff2a81d747d1dba01a47f939f48c3526d4206/vllm/model_executor/layers/fused_moe/experts/deep_gemm_moe.py)要求is_deep_gemm_supported且设备属于100或120能力家族，排除SM90。源码注释的“SM100+”不能理解成所有数值更大的SM都必然通过。FP8 dense层可用DeepGEMM，不会使另一种FP4 expert kernel也在Hopper上可用。
+
+### 能加载与可持续重载分开
+
+同一vLLM oracle把DeepGEMM映为动态FP8 group-128 activation，Marlin的量化配置则走W4A16/BF16 activation；相同MXFP4权重不保证两者logprob或训练轨迹相同。verl的[refit名单](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/utils/vllm/vllm_fp4_utils.py)包含Marlin与Batched Marlin，说明已有存储重装路线，**不是完整refit或CUDA graph数值验收**；不能据此把所有auto可加载后端都当成可更新权重。
+
+固定main在verl、docs、tests中未命中`VERL_ROLLOUT_USE_DEEP_GEMM`。它出现在报告者提案中，不能把PR描述里的opt-out当作当前可执行开关。报告者H100的Marlin三步、GB200 DeepGEMM非法地址及Marlin速度观察均属其环境，GB200批大小阈值尚待隔离；源码支持Hopper的后端约束解释，不据此判定GB200根因或保证单改一个参数即可部署所有模型。
+
+本轮七份完整Python源文件AST/compile通过，未导入vLLM、构造替身dispatch、运行加载或新增GPU实验。硬件差额仅补[原M5量化入口](../../experiments/handoff-m5.md#verl-量化层审计新版复验)的条件参考：已有获准、安全、匹配任务确需采用时，再记录实际安装commit、expert_dtype、最终backend及activation格式、一次加载与更新后同token数值；缺模型／匹配硬件或需新部署则停止，不另排队。方案归属与接口等待社区实质反馈，任何上游动作仍逐项待用户明确同意。
+
 ## QAT 的 mask 默认与 packed 接口
 
 QAT 的量化层选择、attention mask 与 rollout 部署格式是三个独立条件。[verl #8361](https://github.com/verl-project/verl/pull/8361)读取时 open、非 draft、未合并，固定 head `cf6eb5181e17b4db67afff110eabc61daf61fb4d`，base 和实际共同祖先均为 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`；三文件 69 增 5 删。它为 QAT 选 ModelOpt layer spec 时补一个默认值，不是新量化方案，也没有验证所有 packing 组合。

@@ -13,6 +13,8 @@
 
 另核[epoch恢复顺序](#epoch-边界恢复与采样器状态)：#7974新head撤回V1改动，原19CPU参数项过／旧V1边界两例顺序失败；正文对#7402的sidecar比较已过期，不另实现或发布。
 
+2026-10-26补[原生V4后端默认](#原生-v4-混合精度后端的已有报告)：#8381已有报告者方案；固定源码解释Hopper被显式DeepGEMM阻断auto，Marlin会改变activation精度，只有七文件语法核对，非加载／refit验收，不另实现。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -26,6 +28,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## 原生 V4 混合精度后端的已有报告
+
+2026-10-26读取新[议题#8381](https://github.com/verl-project/verl/issues/8381)完整正文／0评论；报告者已有Hopper gating与opt-out草稿，询问是否并入[#8371](https://github.com/verl-project/verl/pull/8371)，不据关联搜索空结果认定无人负责，不另写候选。H100 Marlin三步、GB200 DeepGEMM非法地址与速度均为作者观测，后者批大小根因仍待隔离。
+
+[原量化专题](../../notebook/frameworks/verl-quant-layer-audit.md#原生混合精度模型的后端选择)固定verl main3c6d9b43／vLLM v0.29.0 commit98dff2a8：启动只传quantization_config，缺省linear／MoE都设deep_gemm，原生V4的expert_dtype另决定FP4／FP8；显式MXFP4 DeepGEMM失败不回auto列表，Marlin走BF16 activation而非动态FP8。refit名单有Marlin不等更新／graph数值验收，提案opt-out变量在固定main三目录未命中。七完整源文件AST/compile通过，无引擎import、替身测试或设备执行；真机缺口补原M5条件参考、非新任务。不上游评论／PR或推既有PR-head，所有具体外部写入仍待用户明确同意。
 
 ## Epoch 边界恢复与采样器状态
 
