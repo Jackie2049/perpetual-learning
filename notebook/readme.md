@@ -89,6 +89,7 @@
 
 ## 推理与部署
 
+- [权重格式与映射加载](fundamentals/model-weight-formats-deep-dive.md#映射加载的实际边界) — 撤回只映射对比完整加载的巨大倍数与固定多进程节省；3条CPU小文件路线、BOOL／FP8字节回读不等性能／GPU验收。
 - [Speculative Decoding](fundamentals/speculative-decoding.md) — Draft-Verify、Medusa、Eagle 投机采样
 - [Continuous Batching](fundamentals/continuous-batching.md) — Static→Continuous 演进、Chunked Prefill、调度策略
 - [Tokenizer 与推理管线](fundamentals/tokenizer.md) — BPE、词表大小影响、压缩率与推理成本、特殊 Tokens

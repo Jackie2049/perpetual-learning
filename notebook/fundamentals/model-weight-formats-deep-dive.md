@@ -1,37 +1,49 @@
-# Model Weight Formats Deep Dive — Safetensors Specification + mmap/Zero-Copy + GGUF + ONNX + PyTorch pickle + vLLM Weight Loading Pipeline
+# 权重格式与映射加载
 
 > 2026-06-12 | LLM权重存储格式全链路分析: safetensors(二进制规格+8B header+N JSON+data buffer+mmap/zero-copy/lazy load)+GGUF(llama.cpp+内置量化+CPU推理)+ONNX(跨框架+图+权重)+PyTorch pickle(训练checkpoint+安全风险)+vLLM weight loading pipeline(discover→detect→parse→map→allocate→transfer)+训练→分发→部署管线+RTX 4090
 > 源码: github.com/huggingface/safetensors (Rust core + Python/Rust/Go bindings)
 > 关联: checkpoint.md, vllm-weight-loading-reading.md, quantization.md, fp8-quantization.md
 
-## 0. 核心定律: 格式决定安全+速度+内存 — 训练→分发→部署3阶段不同格式
+2026-10-26校正：**mmap返回Tensor不等于完整权重已从存储读入，更不等于模型已在GPU可用。** 撤回原文无来源的“0.1ms对30s、300000倍”和“8进程固定省98GB”结论；未将旧数值改称本机benchmark。下方GGUF／ONNX和模型管线仍是历史概念材料，未逐项重核其当前后端支持。
+
+## 映射加载的实际边界
+
+[PyTorch 2.14 torch.load](https://docs.pytorch.org/docs/2.14/generated/torch.load.html)也支持 `mmap=True`，将storage字节的读取延后到访问时；并非只有safetensors能映射。安全策略、文件结构与加载策略是三个不同选择。`weights_only=True`缩小unpickler允许的对象集合，不代表checkpoint只有模型权重，也不等于可安全加载任意不可信文件，见[官方序列化说明](https://docs.pytorch.org/docs/2.14/notes/serialization.html#torch-load-with-weights-only-true)。
+
+固定[safetensors v0.8.0实现](https://github.com/huggingface/safetensors/blob/a406ca3e7a90598be0cd05a50069cb9bf5ef6ba6/bindings/python/src/lib.rs)中，现代PyTorch CPU mmap路径采用 `UntypedStorage.from_file(..., shared=False)`；其他框架／pread／设备支路不能据此统称零拷贝。打开文件、解析header、构造Tensor、触及全部数据、dtype／布局转换、设备搬运、写入模型参数须分开计时；文件系统缓存及存储介质也要固定。[官方速度示例](https://huggingface.co/docs/safetensors/speed)有其旧软件／机器条件，不能外推成所有模型和路线的固定倍数。
+
+[CPU文件控制](../../experiments/weight-file-mapping/verify.py)与[结果](../../experiments/weight-file-mapping/result.json)只用自建32KiB级Tensor文件：Python3.12.13／torch2.14.1／safetensors0.8.0，safetensors CPU mmap、torch.load CPU mmap和eager三路线均读到8192元素、求和33550336；将返回值首项改成−7后，重新打开仍为0，文件SHA256均未变。前两条与私有映射／写时复制语义相符，eager则本来有独立数据；**这项现象本身不能证明用了mmap或物理页共享**，机制还须结合源码。safetensors的Tensor在safe_open上下文关闭后仍可读，并非退出上下文就立即失效。
+
+同一文件还将3个BOOL存为3数据字节、4个E4M3 FP8存为4字节，FP8原始字节回读一致；名为 `optimizer.momentum` 的浮点Tensor正常回读。格式本身不区分“模型权重”与“优化器Tensor”，但完整训练恢复仍需组织其余状态与结构。本控制没有计时、RSS／PSS、冷缓存、多进程、模型或设备测试；不以一次求和、映射字节数或文件大小替代这些证据。复现为 `python experiments/weight-file-mapping/verify.py --output result.json`，只创建并清理本次临时文件，无外部checkpoint或GPU访问。
+
+## 0. 权重生命周期中的格式选择
 
 ```
 LLM权重生命周期3阶段+对应格式:
 
 阶段1: 训练 → PyTorch .pt/.bin (pickle)
-  → 需要optimizer state+scheduler+RNG state → 必须pickle → 训练专用
+  → 需要optimizer state+scheduler+RNG state等恢复信息 → .pt是常见方案，非唯一格式
   → 安全风险: pickle可执行任意代码 → 只在可信环境用!
-  → 大文件: 7B BF16=14GB params+56GB optimizer=70GB → 比safetensors大5x!
+  → 7B BF16约14GB参数；另存两份FP32 Adam矩约56GB是状态组成差异，不是格式固定大5倍
 
 阶段2: 分发 → Safetensors (.safetensors)
-  → 只存权重 → 不存optimizer → 安全+快速+跨框架 → 分发标准!
-  → mmap+zero-copy → 加载10GB模型≈ms → 比pickle快10x+!
-  → 多进程共享 → 内核管理page cache → 同文件物理内存共享!
+  → 存命名Tensor与字符串metadata → 常用于分发模型；也能存优化器Tensor
+  → mmap可延迟读取／减少某些复制 → 不承诺10GB模型毫秒级完整加载
+  → 同文件私有映射可复用干净页；写入／转换／复制会改变共享情况
   → → HuggingFace Hub默认格式 → 2025标准!
 
 阶段3: 部署 → GGUF/ONNX/TensorRT-LLM
   → GGUF → CPU/边缘推理 → llama.cpp → 内置量化 → 消费级硬件
   → ONNX → 跨框架+硬件优化 → ONNX Runtime → 多后端
-  → TensorRT-LLM → NVIDIA GPU最优 → FP8+kernel融合 → 生产GPU推理
+  → TensorRT-LLM → NVIDIA GPU工具链之一 → 优化选择须匹配模型与实际工作负载
   → → 格式选择取决于目标硬件!
 
 关键设计定律:
-  → safetensors: 零拷贝+mmap+lazy → 加载最快 → 内存最省 → 多进程共享
-  → GGUF: 单文件+内置量化+mmap → CPU推理最优 → llama.cpp生态
+  → safetensors: Tensor结构明确，支持映射与选取；速度／内存仍依具体加载路线
+  → GGUF: 模型元数据与量化表示 → 常见于llama.cpp生态
   → ONNX: 图+权重+跨框架 → 硬件加速 → 多后端推理
-  → pickle: 完整状态+可执行代码 → 训练唯一选择 → 但危险!
-  → → → 格式不可替代! 训练用pickle → 分发用safetensors → 部署用GGUF/ONNX
+  → pickle: 可表达复杂对象，但非受限加载存在任意代码执行风险
+  → → → 生命周期是使用场景，不是三种格式互不替代的硬规则
 ```
 
 ## 1. Safetensors 二进制格式规范
@@ -60,10 +72,10 @@ Header JSON结构:
   }
 
 dtype支持:
-  → BOOL (1bit) → U8 (uint8) → I8 (int8) → I16 (int16) → I32 (int32) → I64 (int64)
+  → BOOL (每元素8bit) → U8 (uint8) → I8 (int8) → I16 (int16) → I32 (int32) → I64 (int64)
   → F16 (float16) → BF16 (bfloat16) → F32 (float32) → F64 (float64)
-  → → 不支持: F8(E4M3/E5M2) → 不在规范! → FP8权重需其他格式(GGUF/custom)
-  → → → vLLM FP8推理: FP8权重存BF16/F16 safetensors → 运行时quantize → 或自定义格式!
+  → v0.8.0已定义F8_E4M3／F8_E5M2等；框架dtype与运行kernel支持另判
+  → 本轮CPU只测E4M3原始字节回读，未验证任意FP8量化模型或推理后端
 
 约束:
   → Header必须以{开头(0x7B) → 识别safetensors文件
@@ -78,8 +90,8 @@ dtype支持:
 7B模型safetensors文件示例:
   → Llama-2-7B: ~13.5GB safetensors → 多文件(model-00001-of-00002.safetensors等)
   → → 每文件≈6.75GB → header≈几KB → 数据≈6.75GB → header占比<0.001%
-  → → 加载时间: mmap≈0.1ms(只映射) → 实际访问时才page fault → 惰性!
-  → → → vs pickle .bin: 13.5GB → 反序列化≈30s → mmap≈0.1ms → 300,000x差距!
+  → → 建立映射可先返回，数据访问仍可能触发page fault与存储I/O
+  → → 不用只映射耗时对比完整读入；本例没有统一条件下的13.5GB计时
 ```
 
 ## 2. Safetensors mmap/Zero-Copy/Lazy Loading架构
@@ -91,33 +103,29 @@ safe_open("model.safetensors", framework="pt", device="cpu"):
   1. 读取8字节 → N = header长度
   2. 读取N字节 → JSON header → 解析tensor metadata
   3. mmap整个文件 → mmap(fd, filesize) → 返回虚拟内存映射
-  4. → 不读取数据! → 只建立映射 → 页表设置 → 0.1ms!
+  4. → header已访问，主体数据可按需触页；不提供固定0.1ms保证
   5. 返回SafeTensorsFile对象 → 包含metadata+mmap指针
 
 f.get_tensor("model.layers.0.weight"):
   1. 从metadata查找 → dtype=BF16, shape=[4096,4096], data_offsets=[0,33554432]
   2. 计算绝对偏移 → header_end + data_offsets[0] = 8+N+0
-  3. 从mmap区域创建tensor → torch.from_buffer(mmap_ptr+offset, dtype, shape)
-  4. → 不复制! → 直接引用mmap内存 → zero-copy!
+  3. v0.8.0现代PyTorch CPU mmap支路从私有文件storage创建相应视图
+  4. → 避免先复制完整payload；不代表Python对象／header没有分配
   5. → → 页故障时才从磁盘读取 → 惰性 → 按需加载!
 
 ### 2.2 多进程共享物理内存
 
-  Process A → mmap("model.safetensors") → 虚拟地址VA_A → 物理页PA
-  Process B → mmap("model.safetensors") → 虚拟地址VA_B → 同一物理页PA!
-  → → 内核page cache管理 → 同文件→同物理页 → 2进程共享14GB→只占14GB物理内存!
-  → → → vs pickle: 每进程独立反序列化 → 2进程14GB→占28GB → 多进程内存翻倍!
-
-  vLLM多进程推理:
-    → 8 GPU workers → 8进程 → 同safetensors文件 → mmap
-    → → 14GB模型 → 8进程共享 → 只占14GB物理内存 → 省7×14=98GB!
-    → → → vs pickle: 8×14=112GB → mmap省98GB → 8进程推理内存减半!
+  同文件映射的干净页可由OS复用，但不是每个进程所有Tensor都共用同一份内存
+  私有映射的写入可能产生COW私有页，转换／clone／模型参数复制会另行分配
+  各rank还可能读取不同shard；设备上的参数存储不因CPU页共享而自动共享
+  因而不由“8个worker、14GB文件”直接推导省98GB；需区分RSS、PSS及全作业峰值
+  torch.load(mmap=True)也可映射storage，不应将所有.pt路线假定为独立eager全量复制
 
 ### 2.3 Lazy Loading选择性加载
 
   只加载需要的tensor → 不加载全部:
-    → f.get_tensor("model.layers.0.weight") → 只映射这一页 → 不读其余!
-    → → 模型有200个tensor → 只需要1个 → 只读1个 → 省199个的内存+时间!
+    → f.get_tensor("model.layers.0.weight") → 选取该tensor；文件映射不等同只映射一页
+    → → 未请求其他Tensor不等于OS绝不预读；header也已读取，节省不按Tensor个数线性保证
     → → → 量化: 加载BF16→quantize→FP8 → 只需要target层 → 惰性quantize!
 
   vLLM lazy loading架构(2025新):
@@ -128,15 +136,15 @@ f.get_tensor("model.layers.0.weight"):
 
 ### 2.4 Rust核心实现架构
 
-  safetensors_rust/ → Rust参考实现 → 最权威!
-    → Safetensors::read_metadata() → 只读header → 不读数据 → 惰性!
-    → Safetensors::lazy_mmap() → mmap-backed view → 惰性访问
-    → Safetensors::deserialize() → 全量加载 → 仍zero-copy(从mmap)
-    → Safetensors::serialize() → 写header+data → 顺序写 → 快!
+  safetensors/src/tensor.rs → 固定v0.8.0的Rust格式实现
+    → SafeTensors::read_metadata(&[u8]) → 从调用方提供的字节解析元数据
+    → mmap由Python绑定等调用层组织，不将lazy_mmap当已核公开Rust API
+    → SafeTensors::deserialize(&[u8]) → 解析已提供字节buffer的借用视图，不自行决定磁盘I/O
+    → 序列化入口 → 组织header+data；顺序格式不自动证明固定速度优势
 
   Python绑定:
     → PyO3桥接 → Rust→Python → 高性能
-    → 纯Python fallback → 无Rust时用 → 较慢但仍安全
+    → Python框架helper依赖原生扩展，不据helper为.py就推定存在无Rust纯Python解析fallback
     → → safetensors/torch.py → PyTorch集成 → load_file/save_file
     → → safetensors/numpy.py → NumPy集成
     → → safetensors/tensorflow.py → TF集成
@@ -176,12 +184,12 @@ GGUF关键特性:
 
 GGUF vs safetensors:
   → GGUF: 推理专用 → CPU优化 → 内置量化 → 单文件 → llama.cpp生态
-  → safetensors: 分发/训练→推理转换 → GPU优化 → 无量化 → 多文件 → HF生态
+  → safetensors: 命名Tensor容器，无完整计算图；可承载量化表示的数据与scales
   → → 不可互换! → safetensors→GGUF需要convert.py → 量化→格式转换!
 
 RTX 4090 GGUF:
-  → llama.cpp → CUDA backend → GGUF on GPU → 7B Q4_K_M ≈4GB → 24GB够6个模型!
-  → → 但! vLLM不原生支持GGUF → vLLM用safetensors → 不同生态!
+  → llama.cpp可有CUDA路线；文件大小不含KV／workspace，不能据4GB断言可部署六个
+  → → vLLM的当前GGUF插件与限制见第8节，不再笼统写“不支持GGUF”
   → → → GGUF用于llama.cpp/ollama → safetensors用于vLLM/SGLang → 不同工具!
 ```
 
@@ -193,7 +201,7 @@ ONNX = Open Neural Network Exchange → Microsoft+Meta+AWS → 跨框架标准!
 文件结构:
   → 单文件 → 模型图(nodes+edges)+权重+元数据 → protobuf编码
   → → graph = 计算图 → 节点=算子 → 边=tensor流动 → 完整模型定义!
-  → → → safetensors只存权重 → ONNX存图+权重 → 更完整但也更复杂!
+  → → → safetensors存命名Tensor而非计算图；ONNX同时表达图结构
 
 ONNX Runtime推理后端:
   → CPU → OpenVINO/Intel → x86优化 → AVX-512/VNNI
@@ -209,14 +217,14 @@ ONNX量化:
 
 ONNX vs safetensors:
   → ONNX: 图+权重 → 跨框架 → 多后端 → 推理优化 → 但训练不支持!
-  → safetensors: 权重only → 跨框架 → mmap → 分发标准 → 但无图!
+  → safetensors: 命名Tensor → 跨框架 → 可映射 → 无完整计算图
   → → → 互补! → ONNX用于硬件优化推理 → safetensors用于模型分发!
 ```
 
 ## 5. PyTorch pickle (.pt/.bin) — 训练checkpoint格式
 
 ```
-PyTorch pickle = torch.save/torch.load → Python pickle序列化 → 训练专用!
+PyTorch checkpoint = torch.save/torch.load → 对象元数据与Tensor storage → 不只用于训练
 
 存储内容:
   → state_dict → 模型权重 → 必须存
@@ -224,33 +232,31 @@ PyTorch pickle = torch.save/torch.load → Python pickle序列化 → 训练专�
   → scheduler.state_dict → LR调度状态 → 建议存
   → rng_state → 随机数状态 → 建议存(恢复训练!)
   → epoch/step → 进度标记 → 建议存
-  → → 完整训练状态 → 可以精确恢复 → 训练必须!
+  → → 是否足够恢复还取决于数据身份、采样器、版本及分布式状态，非只看.pt后缀
 
 安全风险:
   → pickle反序列化 → 执行任意Python代码 → 恶意模型文件 = 远程代码执行!
-  → → __reduce__ → 自定义反序列化 → 可以import os→os.system("rm -rf /") → 灾难!
+  → → 自定义反序列化可能执行任意系统命令；此处不执行安全负例
   → → → 下载不明来源.pt文件 → 可能被攻击 → 必须信任来源!
   → → → → HuggingFace: 只信任safetensors → 自动将.bin转为safetensors → 安全!
 
 加载性能:
-  → 反序列化 → 逐对象重建 → Python解释器开销 → 极慢!
-  → → 7B .bin → 反序列化≈30s → vs safetensors mmap≈0.1ms → 300,000x差距!
-  → → → 原因: pickle重建每个Python对象 → dict→str→Tensor→逐个→慢!
-  → → → → safetensors: mmap→直接内存映射→不重建→快!
+  → 元数据解码与storage读取是不同成本；torch.load(mmap=True)也可按需读取storage
+  → 比较时必须同样计入全数据访问、缓存、转换和设备同步，撤回旧300000倍说法
 
 内存开销:
-  → 反序列化创建新对象 → 每进程独立 → 不能共享物理内存!
-  → → 8进程×14GB=112GB → vs safetensors mmap: 14GB(共享) → 8x差距!
-  → → → 分布式训练: 每进程独立加载 → 内存翻倍 → 不可接受!
-  → → → → vLLM: 用safetensors+mmap → 8进程共享14GB → 省98GB!
+  → eager／mmap路线、实际触页、COW和模型复制不同，不能按后缀推导多进程常驻内存
+  → 没有本页8进程PSS／峰值结果，不保留112GB对14GB的性能结论
 
-PyTorch pickle仍然必要:
-  → 训练恢复 → optimizer+scheduler+rng → pickle唯一能存完整状态
-  → → safetensors只存权重 → 不存optimizer → 不能恢复训练!
-  → → → 训练: 用pickle(.pt) → 分发: 转safetensors → 两种格式并存!
+恢复格式的取舍:
+  → .pt便于表达常见训练state_dict；weights_only受限加载仍要求信任来源
+  → safetensors能存优化器Tensor，但不能直接序列化任意Python对象图
+  → 完整恢复需额外组织标量／结构／数据与RNG状态，格式选择不等于恢复协议
 ```
 
 ## 6. vLLM Weight Loading Pipeline
+
+以下为旧概念管线，不是固定当前vLLM版本的类名／调用栈；本轮只校正映射、dtype和未测耗时，不作引擎实现验收。
 
 ```
 文件: vllm/v1/worker/weight_loader.py + vllm/model_executor/model_loader/
@@ -265,14 +271,14 @@ Step 1: Discovery → 扫描模型目录 → 找所有权重文件
 
 Step 2: Format Detection → 识别文件格式
   → .safetensors → SafetensorsModelLoader → mmap路径
-  → .bin → DefaultModelLoader → pickle路径(慢!)
+  → .bin → 具体loader的torch加载策略，不能只凭后缀判慢
   → .gguf → GGUFModelLoader → llama.cpp路径
-  → → 优先safetensors → 最快+mmap → 生产默认!
+  → → 文件格式偏好与实际加载策略须按具体版本／配置核对
 
 Step 3: Metadata Parsing → 解析tensor元数据
   → safetensors → 读8字节header长度 → 读JSON header → tensor列表
   → → 不读数据! → 只读metadata → 惰性! → 知道所有tensor名和shape
-  → → → vs pickle: 反序列化整个文件 → 慢!
+  → → → torch checkpoint也可有懒加载，不能以此概括全部pickle路线
 
 Step 4: Weight Mapping → 映射tensor名到模型参数
   → source_name → target_name → 可能需要rename/concat/split
@@ -284,12 +290,12 @@ Step 4: Weight Mapping → 映射tensor名到模型参数
 Step 5: Memory Allocation → 分配GPU tensor
   → 根据shape+dtype → torch.empty(shape, dtype, device="cuda")
   → → 不填充数据 → 只分配内存 → 快!
-  → → → 7B BF16 → 14GB GPU内存 → 分配≈0.5s → 主要是CUDA malloc
+  → → → 设备分配成本需单独测量，不在此给固定耗时
 
 Step 6: Weight Transfer → CPU→GPU数据传输
   → mmap→CPU tensor → GPU tensor → cudaMemcpy
   → → 惰性! → 逐tensor传输 → 不一次性全部!
-  → → → PCIe: 14GB→≈1.2s(H→D) → 比pickle反序列化快25x!
+  → → → 带宽、同步、页读取与转换会影响总时间；没有本页统一PCIe计时
 
 ### 6.2 SafetensorsModelLoader — mmap优化路径
 
@@ -297,13 +303,13 @@ class SafetensorsModelLoader:
   → load_model() → safe_open(path, framework="pt") → mmap!
   → → 遍历f.keys() → 逐tensor → f.get_tensor(name) → mmap→CPU
   → → → CPU→GPU → cudaMemcpy → 逐层加载!
-  → → → → 优势: 不反序列化 → 不创建Python对象 → 纯内存映射!
-  → → → → → 7B加载时间: mmap≈0.1ms(映射) + H→D≈1.2s ≈1.2s → vs pickle≈31.2s!
+  → → → → 仍创建字典／Tensor等对象，CPU payload映射不等于全流程零分配
+  → → → → → 完整加载还包含触页／转换／传输／参数安装，不用映射开销推总时间
 
   多文件处理:
     → 大模型分多个safetensors文件 → 逐文件mmap
     → → model-00001-of-00008.safetensors → 8个文件 → 8次mmap
-    → → → 但mmap几乎0开销 → 8次mmap≈0.8ms → negligible!
+    → → → 文件个数、header与存储访问均有成本，不提供8次映射固定耗时
     → → → → 顺序遍历文件 → 逐文件逐tensor → 线性加载 → 简单高效!
 
 ### 6.3 量化权重加载
@@ -311,9 +317,9 @@ class SafetensorsModelLoader:
   FP8权重加载(2025新):
     → safetensors存BF16权重 → vLLM运行时quantize → FP8
     → → load BF16 → quantize_to_fp8 → 存到FP8 GPU tensor
-    → → → 或: 自定义FP8 safetensors → 直接存FP8 → 但safetensors规范不支持F8 dtype!
-    → → → → vLLM方案: BF16 safetensors → 运行时FP8 quantize → 兼容规范!
-    → → → → → 但开销! → quantize 14GB→1.75GB → ≈1s → 可接受!
+    → → → safetensors已能直接表示部分FP8 dtype，无需因此宣称自定义格式
+    → → → → 能否消费取决于目标引擎的量化schema、scales与kernel，不以dtype回读替代
+    → → → → → 量化成本需实际测量，本页不提供1s保证
 
   INT4权重加载:
     → AWQ/GPTQ safetensors → 自定义dtype → 可能用U8/I8存储pack后的INT4
@@ -329,7 +335,7 @@ class SafetensorsModelLoader:
   合并流程:
     → 每rank加载自己分片 → all_gather重建完整参数 → 单进程合并!
     → → 7B ZeRO-3: 8分片×~2GB=16GB → 合并→14GB safetensors → 去冗余!
-    → → → 合并时间 ≈30s(pickle反序列化) → 一次性 → 可接受
+    → → → 合并成本取决于布局／I/O／通信／格式，不给统一30s估计
     → → → → 合并后永久用safetensors → 不需要再pickle!
 ```
 
@@ -345,61 +351,31 @@ class SafetensorsModelLoader:
 
 分发场景:
   → HuggingFace Hub → safetensors → 默认! → 安全+快速+mmap
-  → → .bin → HuggingFace自动转safetensors → 用户只下载safetensors!
+  → → 实际检查发布者提供的格式，不假设所有.bin都会自动转成safetensors
   → → → 不分发.pt → 安全风险 → 只在可信环境共享!
 
 推理场景:
-  → GPU推理(vLLM/SGLang) → safetensors → mmap → 最快加载!
+  → GPU推理(vLLM/SGLang) → 检查safetensors与对应loader／量化schema支持
   → → 量化推理 → safetensors(BF16) → 运行时quantize → 或量化safetensors
-  → CPU推理(llama.cpp) → GGUF → 内置量化 → mmap → CPU最优!
+  → CPU推理(llama.cpp) → GGUF是常见工具链选择，不在此评定普遍最优
   → 跨硬件推理 → ONNX → 多后端 → 硬件加速!
-  → NVIDIA GPU最优 → TensorRT-LLM engine → FP8+kernel融合 → 生产级!
+  → NVIDIA GPU → TensorRT-LLM等引擎按模型／部署约束评估
 
 RTX 4090决策:
-  → 训练 → .pt → 单GPU → optimizer offload → 唯一选择!
-  → 推理 → safetensors → vLLM → mmap → 14GB→1.2s → 最快!
-  → → INT4推理 → safetensors(AWQ/GPTQ) → vLLM → 量化kernel → 最快!
+  → 训练 → 根据训练框架选择完整checkpoint，不由GPU型号决定唯一格式
+  → 推理 → safetensors与受支持loader是一个选项，不承诺14GB加载时延
+  → → INT4推理 → 还需匹配AWQ/GPTQ表示与kernel，不由文件后缀保证更快
   → CPU推理 → GGUF(Q4_K_M) → llama.cpp → 4GB→RTX 4090 CUDA → 可行但不如vLLM!
-  → → → RTX 4090: safetensors+vLLM → GPU推理最优!
+  → → → 本页没有同模型同条件比较，不能选出RTX 4090唯一最优方案
 ```
 
 ## 8. RTX 4090 Weight Format Implications
 
-```
-1. safetensors mmap对RTX 4090:
-  → 14GB模型 → mmap≈0.1ms → H→D≈1.2s → 总≈1.2s → 极快!
-  → → vs pickle: 反序列化≈30s → H→D≈1.2s → 总≈31.2s → 慢26x!
-  → → → 生产必须safetensors → 加载快26x → 首次响应快!
+本页没有RTX 4090加载benchmark，不能由GPU型号推导固定1.2秒、26倍加速或唯一最优格式。参数文件大小也不包含KV cache、运行时workspace和模型复制，不能用24GB除以4GB断言可同时部署六个模型。
 
-2. 多进程共享对RTX 4090:
-  → vLLM TP=1 → 单进程 → 不需要共享 → mmap仍然快(避免反序列化)
-  → → 但! TP>1 → 多进程 → mmap共享14GB → 只占14GB → 省内存!
-  → → → RTX 4090: TP=1 → 不需要多进程共享 → 但mmap零拷贝仍然最优!
+safetensors的FP8存储能力与4090的算子／量化支持是不同层次；本轮E4M3 CPU字节回读不验证推理。原文“vLLM不支持GGUF”也撤回：[vLLM官方GGUF说明](https://docs.vllm.ai/en/latest/features/quantization/gguf/)提供实验性支持入口，目前要求另装vllm-gguf-plugin，并提示优化与兼容边界；这不是本项目模型实测或4090支持认证。
 
-3. safetensors不支持FP8 dtype:
-  → 规范只有BF16/F16/F32 → FP8(E4M3/E5M2)不在规范!
-  → → vLLM FP8推理: BF16 safetensors → 运行时FP8 quantize → ≈1s
-  → → → 或: 自定义格式 → FP8 tensor → 不兼容HF Hub!
-  → → → → RTX 4090: BF16→FP8 quantize开销≈1s → 可接受 → 但如果能直接FP8更好!
-
-4. GGUF对RTX 4090:
-  → llama.cpp CUDA backend → GGUF→GPU → Q4_K_M→4GB→24GB够6个模型!
-  → → 但! vLLM不支持GGUF → 不同工具链 → 需要safetensors→GGUF转换
-  → → → llama.cpp适合本地实验 → vLLM适合生产服务 → 不同场景!
-
-5. 模型下载+safetensors对RTX 4090:
-  → 中国大陆网络 → HuggingFace慢 → 需镜像(hf-mirror.com) → 下载14GB≈10min
-  → → safetensors文件大小 ≈模型参数×2(BF16) → 7B=14GB → 可接受
-  → → → INT4 AWQ safetensors → ≈4GB → 下载更快 → 量化推理更快!
-  → → → → Qwen2.5-7B-Instruct AWQ → ≈4GB → vLLM INT4推理 → 最优配置!
-
-6. 生产最优格式链:
-  → 训练: .pt(pickle) → ZeRO-2+offload → 单GPU → optimizer在CPU
-  → → 合并: consolidate → 全参数 → 转safetensors → 一次转换
-  → → 推理: safetensors → vLLM → INT4+INT8KV+GQA-8 → 最快推理!
-  → → → 或: safetensors→AWQ量化→INT4 safetensors → vLLM INT4推理 → 更小更快!
-  → → → → 全链路: pickle训练→safetensors分发→vLLM推理 → 格式转换一次!
-```
+若未来已有获准加载任务，需要固定模型及其量化schema、引擎与版本、实际文件／缓存状态、设备和完整测量终点，再谈格式对加载／推理的收益。本轮没有新增硬件实验，不部署模型或排M5队列。
 
 ## 参考文献
 

@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1权重格式知识校正（2026-10-26）**：起始ac1f289干净，compare保留874新增1无删改后ff698ac43保全M5；#7974/#8354等均原head、原知识已覆盖，不复测。查重发现[旧权重格式笔记](notebook/fundamentals/model-weight-formats-deep-dive.md#映射加载的实际边界)错比映射与完整加载；撤回300000倍／固定98GB／4090固定时延，按官方0.8.0及torch2.14说明校正mmap、BOOL8bit／FP8与优化器Tensor范围。三CPU小文件路线两次一致，未测时间／PSS／模型／设备；GGUF原“不支持”按官方插件说明收窄。无新M5队列／专项或社区写入，下轮转独立需求／实质变化，不扩文件大小／缓存／worker矩阵或据本控制选择部署方案。
+
 - **M1 epoch恢复顺序接续（2026-10-26）**：起始290e947干净，compare保留872新增1无删改后ff9a504c1保全M5。核[#7974新cfad9696](notebook/frameworks/verl-checkpoint-management-reading.md#sft-与-v1-的恢复顺序)：撤回V1 skip，SFT三生产文件与旧候选相同；19原CPU参数项过，修订前V1同4项边界两例顺序失败。两份旧正文前提（仍改V1、#7402仍sidecar）均不沿用。真实0worker采样器与隔离原方法非模型／Ray／多rank／TQ恢复，无新M5队列／专项或上游动作。下轮转独立需求／实质变化，不扩sampler／worker／恢复矩阵或另写补丁。
 
 - **M1软标签数值学习收束（2026-10-26）**：起始db1935f干净，compare保留870新增1无删改后ff357a099保全M5；#8370/#8371同head不复跑。转[完整软目标消去](notebook/frameworks/verl-fused-output-softcap.md#软标签消去与求导阶数)：论文公式PyTorch转写3个小CPU输入两次一致，微扰梯度误差1.36e−8→2.55e−15；detach一阶注入不保留Hessian，截断top-k同分布非驻点也不当舍入错误。仅数学控制与固定主线源码，无原JAX／verl套件、模型／训练／GPU或新M5队列／专项／社区写入。下轮转独立实际需求或实质变化，不扩logits／dtype合成矩阵或另写蒸馏补丁。

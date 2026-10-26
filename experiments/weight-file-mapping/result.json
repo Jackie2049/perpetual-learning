@@ -1,0 +1,76 @@
+{
+  "scope": "Small CPU file semantics control. No timing, RSS, cold-cache or GPU claims.",
+  "python": "3.12.13",
+  "torch": "2.14.1",
+  "safetensors": "0.8.0",
+  "script_sha256": "257ad12d7d5b68dc4e237a1b5747bf8d2de74757a387a0f71ff4fc3004a6c954",
+  "routes": {
+    "safetensors_cpu_mmap": {
+      "elements": 8192,
+      "sum_before_mutation": 33550336.0,
+      "mutated_value": -7.0,
+      "reopened_value": 0.0,
+      "file_hash_unchanged": true
+    },
+    "torch_cpu_mmap": {
+      "elements": 8192,
+      "sum_before_mutation": 33550336.0,
+      "mutated_value": -7.0,
+      "reopened_value": 0.0,
+      "file_hash_unchanged": true
+    },
+    "torch_cpu_eager": {
+      "elements": 8192,
+      "sum_before_mutation": 33550336.0,
+      "mutated_value": -7.0,
+      "reopened_value": 0.0,
+      "file_hash_unchanged": true
+    }
+  },
+  "header": {
+    "optimizer.momentum": {
+      "dtype": "F32",
+      "shape": [
+        4
+      ],
+      "data_offsets": [
+        0,
+        16
+      ]
+    },
+    "weights": {
+      "dtype": "F32",
+      "shape": [
+        8192
+      ],
+      "data_offsets": [
+        16,
+        32784
+      ]
+    },
+    "fp8": {
+      "dtype": "F8_E4M3",
+      "shape": [
+        4
+      ],
+      "data_offsets": [
+        32784,
+        32788
+      ]
+    },
+    "bool_mask": {
+      "dtype": "BOOL",
+      "shape": [
+        3
+      ],
+      "data_offsets": [
+        32788,
+        32791
+      ]
+    }
+  },
+  "torch_mmap_options": "MAP_PRIVATE",
+  "fp8_roundtrip_bytes_equal": true,
+  "optimizer_named_tensor_roundtrip": true,
+  "scratch_removed": true
+}
