@@ -6,9 +6,9 @@
 ## 0. Project Status
 
 - **阶段**：Phase 1 — recall-first literature & code investigation（广扫建库，不收束观点）
-- **最近更新**：2026-10-27（M1 veRL固定源码广扫：权重同步／vLLM生命周期与计时口径，详见§8.2／§12；本批不增文献）
+- **最近更新**：2026-10-27（M1 veRL固定源码广扫续：batch／old-logp／版本标签契约，详见§8.3；本批不增文献）
 - **覆盖**：累计**97篇已核身份**（20篇serving基础／迁移边界＋77篇rollout/RLHF及相关边界，含VLA、训练侧与算法诊断；均非深读；93个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL会议记录）。上一文献批次新增RLinf、DynaRL、NeMo-Aligner、ROLL Flash、CadenceRL及两篇含系统章节的模型报告；RLinf的arXiv与OSDI记录合计1篇，模型报告不当纯系统增益实证。总数97或RL相关77不代表原生80–120目标已达成。ASymPO证明错误警示保留，历史✅补核完不等检索收敛；Round 1“≈73”不与当前数量相加。
-- **全文深读 / 代码广扫**：0 / 1（本专题首条固定源码路径：veRL `24f25b03` 的weight-sync→vLLM；不是10份文件或整个框架读完，也不是运行验证）
+- **全文深读 / 代码广扫**：0 / 2（同一veRL `24f25b03`快照的两条路径：weight-sync→vLLM、batch→概率字段／版本标签；不是两个框架或运行验证，也不按文件数计）
 - **最高优先级**：继续原生系统引用／会议扩展与种子落实，补serving机制覆盖，按唯一文献广扫至100–150；总数不替代原生覆盖，A Core短名单不只按条目数选取
 - **下一步**：见 §16
 
@@ -374,6 +374,29 @@ adapter等待发送及可用的加载RPC后，有server的rank调用clear_kv_cac
 
 验证限度：表中7个入口文件，加`verl/workers/rollout/base.py`、`verl/workers/rollout/vllm_rollout/bucketed_weight_transfer.py`及同目录`utils.py`，共10份与固定Git blob逐字节相同并通过AST解析，锚点行号由AST及原文定位；未导入模块、执行函数或跑原生测试。未确认底层vLLM实际版本、RPC兼容性、进程／设备完成性、恢复和off-policy修正。后续代码广扫扩展batch／old-logp／staleness数据契约；不将框架接口名直接视为论文性能／正确性验收，也不触及M5专项。
 
+### 8.3 veRL采样批次与概率字段
+
+沿用§8.2的固定commit，范围为`RayPPOTrainer.fit`、默认AgentLoop／vLLM输出到trainer的字段流，以及bypass loss入口；FullyAsync客户端只作独立分支对照。关键区别是**重排、概率重算、样本屏蔽、版本记录分别发生在不同位置**，不能从“async rollout”名称或一个step字段推导训练语义。
+
+| 数据契约 | 固定代码入口 | 静态可见内容 |
+|---|---|---|
+| prompt组与行顺序 | [trainer:1481](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/trainer/ppo/ray_trainer.py#L1481)、[DataProto.repeat:968](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/protocol.py#L968) | 先给原prompt设uid，生成输入与训练侧原批都按n交错重复，再union生成输出；不是每条response新建组ID |
+| 等齐与重排 | [AgentLoopManager:1201](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/experimental/agent_loop/agent_loop.py#L1201)、[balance:1182](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/trainer/ppo/ray_trainer.py#L1182) | manager按chunk派发后gather／concat，worker内部也gather；此fit等返回批再训练，并非完成一条立即更新。balance可改行顺序，DataProto同时重排tensor与non-tensor字段；GRPO按uid分组，不靠物理相邻 |
+| 有效token与rollout概率 | [postprocess:698](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/experimental/agent_loop/agent_loop.py#L698)、[vLLM输出:678](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/workers/rollout/vllm_rollout/vllm_async_server.py#L678) | attention_mask含工具／观察token，response_mask另标LLM生成token且与padding mask相乘；请求logprobs时后端提取已生成token的值，经单回合loop对齐、右pad后汇总为rollout_log_probs，不是全词表logits |
+| old-logp两种来源 | [重算:1290](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/trainer/ppo/ray_trainer.py#L1290)、[bypass设置:1109](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/trainer/ppo/rollout_corr_helper.py#L1109) | decoupled在本批actor更新前调用训练侧compute_log_prob，padding-free往返后设old_log_probs；bypass缺rollout_log_probs即报错，否则直接赋给old字段并切换loss_mode，不只是省一遍等价forward |
+| 校正与屏蔽位置 | [trainer:1648](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/trainer/ppo/ray_trainer.py#L1648)、[helper:1013](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/trainer/ppo/rollout_corr_helper.py#L1013)、[bypass loss:2414](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/trainer/ppo/core_algos.py#L2414) | decoupled按配置在advantage前用old−rollout计算校正，RS改response_mask、IS可另加权重，不删DataProto行；bypass在loss内用当前logp−rollout重算，ppo_clip分支明确不再乘额外IS权重 |
+| 版本标签的生成与携带 | [基础client:240](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/workers/rollout/llm_server.py#L240)、[续跑client:346](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/workers/rollout/llm_server.py#L346) | server返回时读取self.global_steps，基础client补min／max字段；续跑client拼接分段token／logp，min取首个非None标签、max被末段覆盖，未作数值min／max聚合 |
+
+decoupled的`old_log_probs`是本批更新前的训练侧锚点，`rollout_log_probs`是生成后端返回的token字段；即便名义权重版本相同，也不能先验认定二者逐值相等。bypass把两者合并为一个分母来源，当前policy仍在更新；启用参考policy时的`ref_log_prob`则另算，不与任一旧概率字段混用。这里尚未审训练engine的温度／采样变换与后端实际logprob定义，不由字段名认证它们等于最终截断采样分布的精确密度。
+
+默认值须按入口记录：[ppo_trainer组合的rollout_correction YAML](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/trainer/config/algorithm/rollout_correction.yaml#L5)中`rollout_is=null`、`rollout_rs=null`、`bypass_mode=false`，而[直接构造RolloutCorrectionConfig](https://github.com/verl-project/verl/blob/24f25b03aa4b54249a273655ebbcce06f484192b/verl/trainer/config/algorithm.py#L178)的`rollout_is="sequence"`。不能只见helper被调用或存在rollout_corr指标，就说已应用IS／RS；本轮未运行Hydra组合，不把配置片段当具体作业的有效配置。
+
+RS屏蔽不等于减少已做的生成：此fit已完成采样和reward，decoupled校正在advantage前改mask；bypass的effective mask在loss内生成。两者影响训练贡献的位置不同，不能互称等价或把被屏蔽token说成未生成。balance仅为重排也不保证优化轨迹不变：trainer源码明确提示mini-batch划分可能变化。
+
+默认trainer创建client未传子类，`get_client()`默认返回基础LLMServerClient，不能把FullyAsync的abort续跑当此fit默认路径。续跑分支的min／max标签只有在版本单调等条件下才可解释为版本跨度；它们不是逐token版本向量，也不是lag上限检查。tool loop后续turn只条件更新max字段，worker将这些extra字段带入non_tensor_batch；所读默认fit／校正入口未按min／max字段作准入或拒绝，校正依据的是logp差，不是整数step差。server标签在返回时读取，也不是每token权重身份或不可中断请求的证明；其他fully-async trainer／staleness调度器留待单独广扫。
+
+验证范围：上表涉及文件，加single_turn_agent_loop.py、tool_agent_loop.py、trainer/config/algorithm.py及3份配置YAML，共13份固定Git blob一致（10份Python只作AST解析、3份YAML仅字节核对）。阅读入口函数与相关调用段，不称13份全文读完；未导入模块、构造DataProto／配置或执行loss／模型。下一步广扫原生异步trainer的准入／队列／staleness边界，或转另一框架作对照，并继续文献扩展；不为这轮静态地图新增GPU任务。
+
 ## 9. Serving → Rollout Transfer
 
 三问框架（每个 serving 工作都过一遍）：① serving 里解决什么 bottleneck？② 哪些机制可直接迁移？③ 进入 rollout 后 objective/scheduler semantics/correctness 约束怎么变、是否需要 RL-aware redesign？
@@ -422,6 +445,8 @@ adapter等待发送及可用的加载RPC后，有server的rank调用clear_kv_cac
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（M1批次与概率字段广扫）**：文献仍97，代码路径累计2条（同一veRL `24f25b03`，非2框架）；§8.3登记uid重复／gather等齐／balance、rollout与重算old概率、decoupled／bypass校正位置和版本标签。YAML关闭IS而配置类默认sequence的入口差异单列；RS屏蔽不省已生成工作，首末step标签不当逐token版本或准入保证。13源码／配置blob一致、10 Python AST通过，无框架／设备执行。后续异步trainer准入与跨框架对照、继续原生文献，M5专项不动。
 
 - **2026-10-27（M1固定源码广扫）**：不增文献，保持97身份；新增§8.2固定veRL `24f25b03` 默认manager→vLLM的权重同步／生命周期地图，§12记录gen与update_weights计时并非纯decode／链路传输。naive／非naive及server mode／free-cache门控分开，KV内存恢复不当缓存内容有效，await不当故障保证。10源码blob一致／AST解析，未导入、运行或设备验证；全文深读0，代码广扫1条路径，不称整个框架读完。后续扩batch／old-logp／staleness契约并继续原生文献，M5专项不动。
 
