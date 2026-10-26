@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 Rollout推测机制／范围补核（2026-10-27）**：核8既有、落实FastGRPO种子，新增两篇SD基础与Iso等NeMo-RL集成论文；累计50身份=15serving／边界+35rollout/RLHF。见[canonical§5.11](notebook/rollout-performance-research.md#511-推测对象与serving边界补核)：Aurora的RL训speculator，移serving；ObsSpec推测tool observation，移agentic；量化／稀疏draft不等直接采样policy。Iso摘要实测／模拟证据分开，OpenReview验证页不绕过、FastGRPO venue未独立核。仅metadata／摘要／引用定位，无全文深读、代码／性能验收、GPU／M5专项或社区写入。下轮集中agentic身份与引用扩展，不重复本批推测条目。
+
 - **M1 Rollout长尾／推测补核（2026-10-27）**：已核38身份（12serving+26rollout/RLHF），本轮核既有9篇、落实Seer／TLT两种子，仅SuffixDecoding为新发现。见[canonical§5.10](notebook/rollout-performance-research.md#510-长尾调度与推测rollout的身份和类型补核)：WAR／TailSieve改暂A/B，SortedRL暂B/C?，RhymeRL补调度；撤回普遍缺评估／方向已饱和的先验判断。元数据／摘要和WAR引用定位，非深读／代码／性能验收，无GPU／M5专项或社区写入。下轮核其余推测／agentic与扩展引用，未命中Weave仍保留种子，不重复本批。
 
 - **M1 Rollout RL系统补核（2026-10-27）**：起始f460bec干净，日志compare保留928新增1无删改后ff bd72030保全M5。[canonical§5.9](notebook/rollout-performance-research.md#59-rl系统身份补核与引用扩展)核既有8篇身份／版本，收窄DistFlow解耦对象、撤回AsyncFlow“参数shuffle”与OpenRLHF“Ray 3.0”旧描述；新增ROLL／EARL、从StreamRL参考文献回溯并核ATC官方记录的PUZZLE。累计26身份=11serving+15rollout/RLHF（24唯一arXiv+2会议记录），仅新增3，旧≈73仍待审计。元数据／摘要及参考文献定位，非全文深读或代码；ACM DOI 403，HybridFlow venue不作本批独立已核。write-page技能使机制与软件版本区分；无新工具、复现、GPU／M5专项或社区写入。下轮核长尾／推测rollout候选并扩展引用，不反复核这8篇。
@@ -886,7 +888,7 @@
 
 ## 当前用户需求与决定
 
-- **长期专项（2026-10-27 用户新立）**：**LLM Post-training / RL Rollout Performance Optimization 调研**。当前阶段=recall-first 文献+代码广扫（corpus 目标 100–150 篇：rollout-native 80–120 + serving 基础 20–30），**不写 survey 正文、不冻结 taxonomy、不批量低价值摘要、不启动大规模复现**。canonical 主文档 [notebook/rollout-performance-research.md](notebook/rollout-performance-research.md)（16 节结构；每轮实质工作后必须更新主文档而非只写 diary）。taxonomy=L1 token/L2 engine/L3 cluster/L4 pipeline co-design × A/B/C 优化类型（C 类改训练分布须单独标记）。Round 1历史自报≈73尚非去重已核数量；当前已核38篇身份（12serving＋26rollout/RLHF，非深读），最近核既有9篇、落实Seer／TLT两种子并新增SuffixDecoding，见[§5.10](notebook/rollout-performance-research.md#510-长尾调度与推测rollout的身份和类型补核)；首批三错配ID及别名重复已在§5.7纠正。后续转其余推测／agentic条目核验与citation扩展。执行规则：长期任务不问"是否继续"，无实质阻塞即推进；涉及上游动作仍受铁律约束。
+- **长期专项（2026-10-27 用户新立）**：**LLM Post-training / RL Rollout Performance Optimization 调研**。当前阶段=recall-first 文献+代码广扫（corpus 目标 100–150 篇：rollout-native 80–120 + serving 基础 20–30），**不写 survey 正文、不冻结 taxonomy、不批量低价值摘要、不启动大规模复现**。canonical 主文档 [notebook/rollout-performance-research.md](notebook/rollout-performance-research.md)（16 节结构；每轮实质工作后必须更新主文档而非只写 diary）。taxonomy=L1 token/L2 engine/L3 cluster/L4 pipeline co-design × A/B/C 优化类型（C 类改训练分布须单独标记）。Round 1历史自报≈73尚非去重已核数量；当前已核50篇身份（15serving／边界＋35rollout/RLHF，非深读），最近核8既有、落实FastGRPO并新增3篇，见[§5.11](notebook/rollout-performance-research.md#511-推测对象与serving边界补核)；Aurora已移serving边界，首批错配ID／别名重复已纠正。后续集中agentic身份核验与citation扩展。执行规则：长期任务不问"是否继续"，无实质阻塞即推进；涉及上游动作仍受铁律约束。
 
 - **两周技术掘金聚焦（2026-10-23 用户明确）**：**UniRL 与 verl 是最近两周技术掘金的重点对象**——两周内技术掘金精力聚焦到这两个开源项目，**重点寻找提出 issue 和 PR 的机会**。**铁律：用户审批之前不能在主仓库上提交**（任何 issue/PR/评论/上游行动均需用户拍板；候选先在本地/fork 准备，见 [AGENTS.md](AGENTS.md#执行边界)）。现状：verl 主贡献轨道（#8313 已 OPEN 待维护者 approve、#8250 待补证）；UniRL 贡献轨道已建立（未认领候选 [#523](open-source/unirl/candidate-523-anchor-lifecycle.md)，fork 分支 `fix-523-anchor-lifecycle` 已备，**待用户审批后决定是否提 PR/issue**）。技术掘金精力优先分配给这两个项目；DeepInfer 降为常规关注（其 PR 采纳门槛高，见下）。
 

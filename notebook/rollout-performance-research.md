@@ -6,8 +6,8 @@
 ## 0. Project Status
 
 - **阶段**：Phase 1 — recall-first literature & code investigation（广扫建库，不收束观点）
-- **最近更新**：2026-10-27（M1长尾／推测rollout补核：9篇既有条目、Seer／TLT两种子落实来源，新增SuffixDecoding，详见§5.10）
-- **覆盖**：累计**38篇已核身份**（12篇serving基础＋26篇rollout/RLHF，均非深读；36个唯一arXiv ID＋Orca／PUZZLE会议记录）。本批9篇既有条目及2个既有种子转为已核，仅SuffixDecoding为新发现；Round 1“≈73”仍是待去重审计的历史估计，不能与38相加。
+- **最近更新**：2026-10-27（M1推测机制与范围补核：8篇既有条目、FastGRPO种子落实来源，新增3篇引用文献，详见§5.11）
+- **覆盖**：累计**50篇已核身份**（15篇serving基础／迁移边界＋35篇rollout/RLHF，均非深读；48个唯一arXiv ID＋Orca／PUZZLE会议记录）。本批8篇既有条目与1种子转已核，新增3篇；Aurora移至serving边界，不算新文献。Round 1“≈73”仍是待去重审计的历史估计，不能与50相加。
 - **深读 / 代码阅读**：0 / 0
 - **最高优先级**：补来源与版本别名、按唯一文献去重后继续广扫至100–150；A Core短名单不以未核身份的条目数为依据
 - **下一步**：见 §16
@@ -111,15 +111,15 @@
 | [2511.13841v1](https://arxiv.org/abs/2511.13841v1) | 2025-11-17／v1 | DAS（Beat the long tail） | L1/L3（暂） | A/B（暂） | 历史rollout suffix tree作非参数draft，长轨迹分配更激进draft预算 | 核 |
 | [2511.16665v3](https://arxiv.org/abs/2511.16665v3) | 2025-11-20首次／v3 2026-03-20 | TLT（Taming the Long-Tail） | L1/L2/L3（暂） | A/B（暂） | 利用长尾期空闲GPU持续训drafter，预捕获CUDAGraph池按batch适配策略 | 核 |
 | [2512.04752v2](https://arxiv.org/abs/2512.04752v2) | 2025-12-04首次／12-12修订 | RLHFSpec | L1/L3/L4（暂） | A/B（暂） | 依验证成本与接受token数选draft策略，并作样本重分配／迁移；摘要不等采样正确性证明 | 核 |
-| 2605.08862 | 2026-05 | BubbleSpec | L1/L3 | A/B | 把 sync 长尾气泡变成 speculative draft 时机 | ✅ |
-| 2606.18967 | 2026-06 | EfficientRollout | L1/L2 | A | system-aware **self**-speculative decoding for RL | ✅ |
-| 2601.09083 | 2026-01 | SRT | L1/L2 | A | tree-structured cache 的 speculative rollout | ✅ |
-| 2610.13202 | 2026-10 | S³R | L1/L2 | A | self-sparse speculative decoding | ✅ |
-| 2610.32881 | 2026-10 | NgramRL | L1/L2 | A | 结构化生成的 rollout-aware n-gram speculative | ✅ |
-| 2610.15246 | 2026-10 | ObsSpec | L1/L4 | A | **observation speculation** for agentic RL（跳过环境等待？深读确认） | ✅ |
-| 2606.12370 | 2026-06 | Breaking Entropy Bounds（MTP+RS for RL） | L1 | A | MTP+拒绝采样加速 RL 训练（MTP-RL 方向候选） | ✅ |
-| 2602.06932 | 2026-02 | Unified Training-Serving Speculative | L1/L4 | A | 训推一体 speculative 系统 | ✅ |
-| ？ | ? | FastGRPO / SpecRoll / MTP-RL | L1 | A | 种子待验证 | ？ |
+| [2605.08862v1](https://arxiv.org/abs/2605.08862v1) | 2026-05-09／v1 | BubbleSpec | L1/L3（暂） | A/B（暂） | 空闲rank预生成后续step的draft，交后续推测验证；不等直接用旧policy样本训练 | 核 |
+| [2606.18967v2](https://arxiv.org/abs/2606.18967v2) | 2026-06-17首次／v2 09-30 | EfficientRollout | L1/L2（暂） | A（暂） | 从target诱导量化drafter，按系统regime切SD开关、按接受情况调draft长度 | 核 |
+| [2601.09083v1](https://arxiv.org/abs/2601.09083v1) | 2026-01-14／v1 | SRT | L1/L3（暂） | A/B（暂） | 每prompt历史续写树作draft，在线更新并在空闲气泡run-ahead生成 | 核 |
+| [2610.13202v1](https://arxiv.org/abs/2610.13202v1) | 2026-10-09／v1 | S³R | L1/L2（暂） | A/B（暂） | 同参数稀疏attention作draft、full-attention验证与KV调度；非直接稀疏采样 | 核 |
+| [2610.32881v1](https://arxiv.org/abs/2610.32881v1) | 2026-10-23／v1 | NgramRL | L1/L2（暂） | A（暂） | 有界近期历史构造每prompt n-gram，按接受长度／续写token预测lookup分支并预取 | 核 |
+| [2606.12370v1](https://arxiv.org/abs/2606.12370v1) | 2026-06-10／v1 | Bebop（Breaking Entropy Bounds） | L1（暂） | A（暂） | MTP＋概率拒绝采样、预RL e2e TV训练；在线MTP更新非默认必要 | 核 |
+| [2509.21792v1](https://arxiv.org/abs/2509.21792v1) | 2025-09-26／v1 | FastGRPO | L1/L2（暂） | A（暂） | 并发感知draft／验证配置与online draft learning | 核 |
+| [2604.26779v1](https://arxiv.org/abs/2604.26779v1) | 2026-04-29／v1 | System-Integrated SD（Iso等） | L1/L4（暂） | A/B（暂） | NeMo-RL＋vLLM集成MTP／外部draft／EAGLE3；实测与模拟预测分开 | 核 |
+| ？ | ? | SpecRoll / MTP-RL | L1 | A | 种子待验证；MTP-RL仍只登记方向候选Bebop | ？ |
 
 ### 5.4 Agentic Rollout
 
@@ -131,6 +131,7 @@
 | 2603.28101 | 2026-03 | Heddle | L3/L4 | B | distributed orchestration for agentic rollout | ✅ |
 | 2511.16108 | 2025-11 | SkyRL-Agent | L4 | B | multi-turn agent RL 训练框架 | ✅ |
 | [2510.05943v1](https://arxiv.org/abs/2510.05943v1) | 2025-10-07／v1 | EARL | L4（暂） | B（暂） | 按序列长度／负载选跨阶段并行策略，layout-aware去中心data dispatcher | 核 |
+| [2610.15246v1](https://arxiv.org/abs/2610.15246v1) | 2026-10-11／v1 | ObsSpec | L4（暂） | A/B（暂） | world model预测tool observation并与真实执行重叠，预测／真实完全匹配才保留推测工作 | 核 |
 | 2605.05262 | 2026-05 | Rollout Informativeness（submodular tree search） | L3 | **C** | 固定预算下最大化 rollout 信息量（改分布） | ✅ |
 | 2606.05597 | 2026-06 | AsyncWebRL | L4 | B | 多步 web agent async RL | ✅ |
 | 2603.18464 | 2026-03 | AcceRL | L4 | B | VLA 场景 async RL + world model | ✅ |
@@ -139,7 +140,7 @@
 | 2602.00482 | 2026-02 | AREAL-DTA | L1 | A | RL 中 dynamic tree attention（与 AReaL 相关？待核） | ✅ |
 | 2610.28998 | 2026-10 | FlashNext-RL | L1/L4 | A/B | long-horizon agentic RL 系统优化案例 | ✅ |
 
-### 5.5 Serving 基础（supporting corpus，不标 rollout-native）
+### 5.5 Serving 基础（supporting corpus，含迁移边界，不标 rollout-native）
 
 | ID/出处 | 首次提交／采用版本 | 标题（短） | 迁移价值与待核条件 | 置信 |
 |---|---|---|---|---|
@@ -155,12 +156,17 @@
 | [2401.10774v3](https://arxiv.org/abs/2401.10774v3) | 2024-01-19／v3 2024-06-14 | Medusa | 多预测头与树状验证；backbone是否冻结及接受规则不可混用 | 核 |
 | [2401.15077v3](https://arxiv.org/abs/2401.15077v3) | 2024-01-26／v3 2025-03-04 | EAGLE | feature-level草稿预测；只是原始EAGLE，不混作EAGLE-2／3或RL drafter适配 | 核 |
 | [2411.04975v3](https://arxiv.org/abs/2411.04975v3) | 2024-11-07／v3 2025-10-07 | SuffixDecoding | suffix tree缓存prompt／历史输出，适配推测长度；RL中的跨步／跨worker复用另核 | 核 |
+| [2211.17192v2](https://arxiv.org/abs/2211.17192v2) | 2022-11-30／v2 2023-05-18 | Fast Inference from Transformers（Leviathan等） | 近似模型draft与target验证／修正采样；输出分布正确性须核实现前提 | 核 |
+| [2302.01318v1](https://arxiv.org/abs/2302.01318v1) | 2023-02-02／v1 | Speculative Sampling（Chen等） | 修改拒绝采样以保target分布，原文带hardware numerics条件；非bitwise相同承诺 | 核 |
+| [2602.06932v5](https://arxiv.org/abs/2602.06932v5) | 2026-02-06／v5 2026-08-04 | Aurora（When RL Meets Adaptive Speculative Training） | 由live inference traces在线RL训练speculator、热换更新；不是post-training policy rollout系统 | 核 |
 
 ### 5.6 待验证种子（用户清单中尚未在检索中命中）
 
-？Weave ｜ ？FastGRPO ｜ ？SpecRoll ｜ ？MTP-RL（2606.12370 为方向候选）｜ ？Online Draft Co-Training for long-context RL
+？Weave ｜ ？SpecRoll ｜ ？MTP-RL（2606.12370／Bebop为方向候选，未确认同名）｜ ？Online Draft Co-Training for long-context RL
 
 Seer与Taming the Long-Tail（TLT）已在§5.2／§5.3落实来源。Weave本批定向检索未命中，仍是种子，不据此判定不存在。
+
+FastGRPO已落实2509.21792v1；不据online draft learning关键词把它等同其他未确认同名的种子。
 
 ### 5.7 基础文献身份与版本勘误
 
@@ -204,6 +210,18 @@ Seer与Taming the Long-Tail（TLT）已在§5.2／§5.3落实来源。Weave本�
 引用扩展：[WAR v1参考文献](https://arxiv.org/html/2607.17299v1)同时列出Seer、TLT和SuffixDecoding，逐一返回arXiv原站核元数据。[SuffixDecoding v1](https://arxiv.org/abs/2411.04975v1)题为A Model-Free Approach to Speeding Up Large Language Model Inference，[v3](https://arxiv.org/abs/2411.04975v3)改为Extreme Speculative Decoding for Emerging AI Applications，按同ID计一篇serving基础；不把其agentic inference评测误算agentic RL训练实证。Seer与TLT转已核，不再留在未命中种子列表。
 
 本批仅元数据、摘要及WAR引用定位，没有全文深读、代码或性能抽取。下一批转其余推测／agentic条目身份与引用扩展；不据条目数量判断方向已饱和，也不冻结分类。
+
+### 5.11 推测对象与serving边界补核
+
+2026-10-27第五批：BubbleSpec、EfficientRollout、SRT、S³R、NgramRL、ObsSpec、Breaking Entropy Bounds、Unified Training-Serving Speculative共8个既有条目的ID与文献匹配，补版本／日期；后两项分别补系统名Bebop和Aurora。FastGRPO从旧种子落实为2509.21792v1；从EfficientRollout v2引用扩展新增Leviathan等2211.17192、Chen等2302.01318和Iso等2604.26779三篇。累计50身份=38＋8既有＋1种子＋3新发现，不把系统别名、移行或引用中提到的论文另加一篇。
+
+范围勘误：[Aurora v1](https://arxiv.org/abs/2602.06932v1)及采用的[v5](https://arxiv.org/abs/2602.06932v5)描述的是用live serving反馈在线训练speculator，target服务用户流量；其中的RL不等于post-training policy的rollout加速。移至§5.5作serving／迁移边界，撤回原L1/L4 rollout-native归类，不删除文献。FastGRPO采用arXiv v1；其Comments为Submitted to ICLR 2026，引用记录中的会议标签不替代独立录用核验，OpenReview入口停在浏览器验证页。
+
+推测对象需要区分：[EfficientRollout v2](https://arxiv.org/abs/2606.18967v2)的量化target派生draft与[S³R v1](https://arxiv.org/abs/2610.13202v1)的同参数稀疏draft都不能简称为低精度／稀疏policy直接生成训练响应。S³R还明确dense验证仍需完整历史KV，不由稀疏draft推断整条路径KV常驻下降。[ObsSpec v1](https://arxiv.org/abs/2610.15246v1)推测的是tool observation，不是token草稿：环境真实执行并行进行，完全匹配才保留推测工作；移至agentic簇、暂L4 A/B，动作提交／副作用及不匹配恢复待正文核对，不称跳过工具调用。
+
+BubbleSpec／SRT的run-ahead用于后续draft验证，不等于直接拿旧policy样本训练；NgramRL预取的是可能验证结果对应的CPU lookup分支，不是绕过target验证。Bebop是Breaking Entropy Bounds文中的系统名，MTP-RL仍为未确认同名的方向种子，不强行合并。
+
+引用入口为[EfficientRollout v2参考文献](https://arxiv.org/html/2606.18967v2)：定位后逐一核三篇原站标题／日期／版本。两篇基础论文分别列一条，不因都涉及拒绝采样而合并，也不凭首发日期裁定优先权。当前只核元数据、摘要与引用位置，未深读证明、核实现或实测；§12只登记Iso等的证据类型，不提取加速比作比较。下一批集中agentic簇与其引用，不再重复本批已核推测条目。
 
 ## 6. Paper Deep Reads
 
@@ -253,7 +271,9 @@ Seer与Taming the Long-Tail（TLT）已在§5.2／§5.3落实来源。Weave本�
 
 ## 12. Evaluation & Benchmark
 
-（空。观察目标：各论文用什么报性能——makespan? tokens/s? step time? 是否报 bubble ratio？长度分布是否披露？——最后汇总成"rollout 性能评测方法学"小节，服务 survey。）
+证据类型登记（摘要级，未作实验表抽取）：[Iso等2604.26779v1](https://arxiv.org/abs/2604.26779v1)将8B同步RL rollout实测与235B异步组合的performance simulator预测分开报告；不能把后者写作大模型端到端实测，也不把rollout吞吐与整步／端到端时间混成同一指标。
+
+后续逐篇登记makespan、tokens/s、step time、bubble ratio及长度分布，同时区分作者实测、模拟预测与本项目复现，当前不建立跨论文加速比排名。
 
 ## 13. Research Gaps / Ideas
 
@@ -275,6 +295,8 @@ Seer与Taming the Long-Tail（TLT）已在§5.2／§5.3落实来源。Weave本�
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（M1推测机制与范围补核）**：核既有8篇并补Bebop／Aurora别名，FastGRPO种子落实；EfficientRollout引用回溯新增两篇SD基础与Iso等NeMo-RL集成论文。Aurora移serving边界、ObsSpec移agentic，防止把speculator RL、observation推测或稀疏／量化draft混成policy rollout机制；Iso实测／模拟证据分开。累计50身份（15 serving／边界＋35 rollout/RLHF；48 arXiv＋2会议记录），仅3新发现。无全文深读、代码／性能验收，下批核agentic簇与扩展引用。
 
 - **2026-10-27（M1长尾／推测补核）**：核既有9篇、落实Seer／TLT两种子，WAR引用回溯新增SuffixDecoding并核v1/v3同文改题。累计38身份（12 serving＋26 rollout/RLHF；36 arXiv＋2会议记录），仅1新发现。WAR／TailSieve暂A/B，SortedRL暂B/C?，RhymeRL补调度维度；撤回C类普遍缺评估／推测方向已饱和的先验判断。仍无全文深读、代码或复现，下批核其余推测／agentic与扩展引用。
 
