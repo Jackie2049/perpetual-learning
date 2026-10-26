@@ -3,13 +3,15 @@
 <!-- contribution-summary:start -->
 **【仓库】** [UniRL](https://github.com/Tencent-Hunyuan/UniRL)（腾讯统一多模态 RL）
 
-**【贡献点】** UniRL 贡献追踪。[候选目录](readme.md) · [候选 #523](candidate-523-anchor-lifecycle.md)
+**【贡献点】** UniRL 贡献追踪，并按最终合并源码纠正旧范围。[候选目录](readme.md) · [候选 #523](candidate-523-anchor-lifecycle.md) · [奖励加载 #621](https://github.com/Tencent-Hunyuan/UniRL/pull/621)
 
 **【类型】** 候选追踪
 
 **【价值评估】** 7 / 10 — 甄别"未认领、无 PR、可落地"的开放空间，避免重复投入已有人认领的 RFC。
 
 **【进展】** #523 的我方 fork PR 已获用户认可，测试与 e2e 正式指派 M5；M5 已闭环 L0（四项断言 + pristine 对照），L1 仍待 ≥8 卡及获准权重/存储，见[M5交接](../../experiments/handoff-m5.md)。#567 待匹配 H20；#470/#481/#484已有作者或验证条件。2026-10-25补[MPS已有实现与主线边界](#mps-共置的已有实现与当前边界)：#492已合并、#482被接替而关闭未合并；原配置四控制非接入、数值、吞吐或关停验收，不据正文设计或本地解析另认领功能。 同日补[SDE窗口已有修复](#sde-窗口调度的已有修复)：#489已合并，CPU序列只核计数／阈值坐标，四实际配方仍progressive，不另认领或排GPU任务。 2026-10-26核[Scheduler环境](#scheduler-环境兼容的已有候选)：#468两个原helper接独立dict核恢复，不是库加载／GPU验收；依赖已演进，条件补M5，不另实现。 另核[TempFlow后续范围](#tempflow-候选范围与计数类型)：#552移出WAN／SGLang Flash、严格int计数；仅局部if求值，不外推作者外部harness或旧GPU结果，不另实现。
+
+2026-10-26另按[#621最终合并范围](#奖励加载的最终合并范围)修正旧记录：managed也延迟启动，实验VideoAlign增配置检查；九模块语法检查不算真实加载验收，不新增任务。
 
 **【大白话讲明白】**
 
@@ -23,6 +25,12 @@
 <!-- contribution-summary:end -->
 
 > 扫描时间 2026-10-22（GitHub 实时 API）。main 固定 `6fd82cba`。状态以当日核验为准，继续前重新核对关联 issue/PR。
+
+## 奖励加载的最终合并范围
+
+2026-10-26接M5已记录的[#621合并](https://github.com/Tencent-Hunyuan/UniRL/pull/621)事实，只读补[原专题](../../notebook/frameworks/unirl-survey.md#奖励能力校验与模型加载)：最终head ceacde5e／main 8cfbac177为同一tree，10文件93增52删；旧27cb版本“managed仍构造即启动”不再适用。最终版将孩子启动移到load，并增实验VideoAlign的spec检查；局部启动清理仍不提供组合整体回滚，load的进程存活快返也非每次health复核。
+
+本机九个完整Python模块仅AST／compile，无构造／模型／HTTP／子进程或设备执行；作者旧42项替身证据不迁为最终版验收。上游已有作者且已合并，不另认领或开发；仅更新原M5条件参考，不新增算力任务。社区保持只读，任何可见写操作仍须用户逐项明确同意。
 
 ## TempFlow 候选范围与计数类型
 

@@ -1,5 +1,7 @@
 # UniRL — 腾讯统一多模态 RL 框架调研
 
+2026-10-26 接续：[奖励能力校验与模型加载](#奖励能力校验与模型加载)按 #621 最终合并版修正：managed 子进程也延后启动，实验 VideoAlign 增配置检查；加载幂等不等于整图回滚，旧版42项替身报告不迁为新版验收。
+
 2026-10-26 接续：[Scheduler 子进程环境与依赖版本](#scheduler-子进程环境与依赖版本)核已有#468；环境恢复不等于真实动态库选择／启动，旧memory-saver假设须与实际依赖版本分开。
 
 2026-10-25 接续：[SDE 窗口的停留步数与坐标](#sde-窗口的停留步数与坐标)核已合并#489：输入计rollout_id，阈值比较去噪窗口起点；原调度模块CPU序列不等于MixGRPO参考等价或训练提速。
@@ -324,9 +326,25 @@ Python3.12.13 / torch2.14.1 / Pillow13.0.0，在原生CPU Audios、Videos和Rewa
 
 ## 奖励能力校验与模型加载
 
+**最终合并版已将 managed 子进程纳入延迟加载；下文初读时的“只延后本地模型”仅适用于旧 head。** 2026-10-26只读核 [#621](https://github.com/Tencent-Hunyuan/UniRL/pull/621)：GBX-Max1220 的实现于09:31:11 UTC合并，最终head `ceacde5ed0bb55a49d41d7d03b59656ebd87a594`，main为 `8cfbac17765004afb68fef08a4e011a4c8daf555`，相对base `6fd82cba` 共10文件、93增52删。两个提交的tree均为 `912365244d0c33d7b9992f26b374e0b4fc46fa80`，但提交祖先不同；不能拿GitHub三点compare的10文件当两棵树仍有差异。这是他人的已合并修复，不是我方贡献或待认领任务。
+
+### 最终版新增的物化范围
+
+[`ManagedScorerProcessBackend`](https://github.com/Tencent-Hunyuan/UniRL/blob/8cfbac17765004afb68fef08a4e011a4c8daf555/unirl/reward/managed_process.py)构造器只保存配置、准备HTTP客户端和锁，不再启动孩子。`load()`在RLock内调用 `_start_child()`，该方法创建监听socket／日志、Popen并等待匹配的health后返回地址；启动异常会调用 `_stop_child()` 再抛出。已有进程且 `poll() is None` 时直接返回，**并不会每次load重新验证health**。因此它与本地叶子 `_loaded` 成功标志是不同的幂等机制，不能把“进程还活着”写成“当前评分服务必然健康”。纯Remote仍继承no-op，由外部服务管理自己的模型。
+
+[`RewardService`](https://github.com/Tencent-Hunyuan/UniRL/blob/8cfbac17765004afb68fef08a4e011a4c8daf555/unirl/reward/service.py)在prompt-video声明、输入种类与截断配置检查之后才调用backend.load；T2AV／PerDomain／Video继续递归转发。这个顺序依赖叶子与自定义wrapper遵守生命周期约定，不是对任意 `_target_` 构造器／模块导入副作用的隔离。直接构造scorer的调用方须先load，compute不会自动补上首次加载；不应把它描述成“第一条请求到来才加载”。[最终README](https://github.com/Tencent-Hunyuan/UniRL/blob/8cfbac17765004afb68fef08a4e011a4c8daf555/unirl/reward/README.md)现已明确这份调用契约。
+
+另一个新增范围是[实验ReFL VideoAlign scorer](https://github.com/Tencent-Hunyuan/UniRL/blob/8cfbac17765004afb68fef08a4e011a4c8daf555/experimental/refl/reward/videoalign/scorer.py)：能力判断改读spec.w_ta；dataclass的 `__post_init__` 拒绝空reward_model_path、非正resize尺寸／micro_batch_size及非有限三项权重；offload/onload在model为None时返回。[wrapper](https://github.com/Tencent-Hunyuan/UniRL/blob/8cfbac17765004afb68fef08a4e011a4c8daf555/experimental/refl/reward/videoalign/wrapper.py)也不再把micro_batch_size静默夹到至少1。这里是实验模块的 `reward_model_path/w_ta` 接口，不要与内置 `unirl/reward/local/videoalign.py` 的 `checkpoint_path/ta_coef` 混用；字段通过不证明权重目录内容可加载。
+
+**局部清理没有升级为全图事务。** managed新增启动异常清理，不等于T2AV／PerDomain会撤销先前成功加载的兄弟；它们仍按顺序调用孩子load而无整体回滚。Local的成功标志也仍不证明失败中途分配已回收。这里仅据控制流说明契约，未注入真实加载失败或判定新回归。
+
+本轮Python3.12.13对最终10个变更文件中的9个完整Python模块做AST／内存compile，均通过；没有导入奖励包、执行构造器／loader、查询设备、启动HTTP／子进程或下载模型。Git partial-clone缺两个blob，默认代理失联、直连Git取对象失败后改用只读GitHub contents API固定ref获取；不是GPU连接尝试。最终关键SHA256：managed_process.py `eb5677bacfcae709d4569524fe6df9a613a737fcebab8ce462b784b904ed6000`，实验scorer.py `738640e8ee1f8723153dd9e6a075fec9677b1a00b3e85b3589ea0631389eb721`。此前42项fake-loader报告和本机12次compile均绑定旧head，不移作最终版模型、梯度、健康恢复或训练验收。原M5条目仅更新版本与条件，不新增实验队列。
+
+### 初读版本与历史证据
+
 **配置能声明一种评分能力，不等于模型已能加载；把加载延后，也不等于整个构造过程没有副作用。** 2026-10-22只读[#621](https://github.com/Tencent-Hunyuan/UniRL/pull/621)，读取时open、未合并，固定head `27cb49307fc89dd60331f86d23cadb2e8cc4b0cb`、base及官方compare祖先`6fd82cba13f52f394747832344039408699ea378`（ahead1/behind0），7文件40行新增。它将本地reward的模型物化从叶子构造器移到服务层校验之后，不修改奖励公式或配置项。
 
-### 递归构造为何让校验太晚
+#### 递归构造为何让校验太晚
 
 [Worker._resolve_init_kwargs](https://github.com/Tencent-Hunyuan/UniRL/blob/27cb49307fc89dd60331f86d23cadb2e8cc4b0cb/unirl/distributed/group/worker.py)先递归构造字典的children，最后调用该层_target_。T2AV是文本到音视频；其组合scorer需要至少一个正权重分量连接prompt与video。旧版ImageBind(mode=audio_video)+CLAP会先在两个叶子的构造器调用_load_model，再由T2AVCompositeScorer拒绝缺少prompt-video能力的组合。缺依赖时，甚至会先遇到模型导入错误，而到不了组合配置错误。这是错误发现顺序，不是原校验条件不存在。
 
@@ -338,19 +356,19 @@ Python3.12.13 / torch2.14.1 / Pillow13.0.0，在原生CPU Audios、Videos和Rewa
 
 变化见[LocalRewardBackend](https://github.com/Tencent-Hunyuan/UniRL/blob/27cb49307fc89dd60331f86d23cadb2e8cc4b0cb/unirl/reward/local/base.py)与[RewardService](https://github.com/Tencent-Hunyuan/UniRL/blob/27cb49307fc89dd60331f86d23cadb2e8cc4b0cb/unirl/reward/service.py)。这不是首次compute_rewards时自动懒加载：直接构造local scorer的脚本须显式load；服务构造成功返回前仍执行load。T2AV、PerDomain、Video三个wrapper新增转发，基类load本身是no-op，自定义组合不能靠继承自动遍历孩子。
 
-### 能力声明的适用范围
+#### 能力声明的适用范围
 
 [ImageBind.covers_prompt_video](https://github.com/Tencent-Hunyuan/UniRL/blob/27cb49307fc89dd60331f86d23cadb2e8cc4b0cb/unirl/reward/local/imagebind.py)按mode及text_video权重判断，[VideoAlign](https://github.com/Tencent-Hunyuan/UniRL/blob/27cb49307fc89dd60331f86d23cadb2e8cc4b0cb/unirl/reward/local/videoalign.py)按ta_coef>0判断，均不需要先有模型对象。但RewardService只对实现PromptVideoReward协议的backend检查该声明；它不是任意奖励模型语义、checkpoint、依赖或评分质量的通用验证器。preferred_input_kind属于image/video/text也只验证种类名，实际frontier是否包含该模态仍在score_and_attach检查。
 
 服务层require_prompt_video=False只跳过服务自己的检查，不撤销[T2AV构造器](https://github.com/Tencent-Hunyuan/UniRL/blob/27cb49307fc89dd60331f86d23cadb2e8cc4b0cb/unirl/reward/local/t2av_composite.py)的正权重prompt-video要求。组合load遍历所有配置的孩子，既不按当前domain按需加载，也不跳过零权重项；延迟到统一时点不等于按实际请求节省模型内存。
 
-### 成功标志不是资源事务
+#### 成功标志不是资源事务
 
 LocalRewardBackend在_load_model正常返回后才置_loaded=True；后续顺序load可直接返回。这个标志不能由model is not None替代：无权重的MCExactMatch也有空_load_model。onload只把已有model移回device，不承担首次加载；offload也不清除_loaded。源码没有并发load锁，也没有失败自动回滚：某孩子已加载、后一个抛错时，组合循环不撤销前一个；失败叶子的False只说明未成功返回，不证明中途分配已释放。它提供重试入口，不是整图加载的原子性保证。
 
 本PR不改变[ManagedScorerProcessBackend](https://github.com/Tencent-Hunyuan/UniRL/blob/27cb49307fc89dd60331f86d23cadb2e8cc4b0cb/unirl/reward/managed_process.py)：其构造器仍_start_child，创建监听socket/日志并Popen，等待子进程health达到预期状态，然后才返回；load继承no-op。纯RemoteRewardBackend构造HTTP session、模型在外部服务；不能从“本进程没有model”推出“配置拒绝前没有启动子进程或远端工作”。本地叶子构造的resolve_device也仍可能查询CUDA可用性；这里延后的是_load_model，不是所有设备相关操作。这些文件与base的Git blob相同，是范围边界而非本PR新增行为。
 
-### 验证范围与复查
+#### 验证范围与复查
 
 本机Python3.9.6只对6个修改的完整Python模块在base/head各做内存compile，共12次通过；另核worker、managed_process、remote、ImageBind、VideoAlign、device六文件Git blob前后相同。未导入奖励包、执行resolver/构造器/load、启动子进程/HTTP或探测设备，也未制造新模型替身。最小语法复查（对象须已在本地）：
 

@@ -322,7 +322,7 @@
   - [TempFlow分支与逐行时间](frameworks/unirl-survey.md#tempflow-分支共享与逐行时间索引) — #552共享x_T不等于缓存前缀；[#589引用保留后续](frameworks/unirl-survey.md#逐行步号与潜变量引用保留)三版原方法/原容器CPU控制，只读索引、保留潜变量句柄，非远程传输或模型验收
     - [后续范围与计数类型](frameworks/unirl-survey.md#后续范围收窄与计数类型) — 新head0e6a620移出WAN／SGLang Flash适配，四原guard拒绝bool与float；24次if求值非构造／训练或作者外部38／40项验收
   - [异步快照与指标消费](frameworks/unirl-survey.md#异步快照与指标消费) — #620的状态、事件与采样时刻分开；增量单消费者，ready lag缺值不补0，源码/语法检查非训练验收
-  - [奖励能力与模型加载](frameworks/unirl-survey.md#奖励能力校验与模型加载) — #621先校验再物化本地模型，但声明不认证checkpoint可用，失败不自动回滚；managed-process不在延迟范围，仅静态核对
+  - [奖励能力与模型加载](frameworks/unirl-survey.md#奖励能力校验与模型加载) — #621最终版也延后managed子进程启动，实验VideoAlign增配置检查；局部清理非整图回滚，九模块语法检查非实际加载验收
   - [Omni原生IPC副本与导出](frameworks/unirl-survey.md#omni-原生-ipc-的副本与导出边界) — #617区分全rank参与、逐卡副本与内容一致；原meta/CPU视图规则通过，非真实IPC/模型或普通卡容量保证
 - [DeepInfer 平民版（魔改适配非旗舰硬件）可行性](frameworks/deepinfer-civilian-port.md) — DeepInfer 对 Blackwell/Ascend950 的依赖堵点、替换方案、4090/A100/H100/910C 分层可行性；2026-10-21 已补 4090 真机验证（csrc `_C` 编译导入成功、架构检查与 kernel 包堵点实测确认）
 - [分布式训练排错指南](frameworks/troubleshooting-guide.md) — NCCL 超时、OOM、梯度异常等常见问题
