@@ -6,8 +6,8 @@
 ## 0. Project Status
 
 - **阶段**：Phase 1 — recall-first literature & code investigation（广扫建库，不收束观点）
-- **最近更新**：2026-10-27（M1 agentic补核：10篇既有文献，新增FlexMARL及两篇Agent Lightning论文，详见§5.12）
-- **覆盖**：累计**63篇已核身份**（15篇serving基础／迁移边界＋48篇rollout/RLHF，含已标明的VLA边界条目；均非深读；61个唯一arXiv ID＋Orca／PUZZLE会议记录）。本批核既有10篇、仅新增3篇；RollArc／RollArt别名不多计，Agent Lightning两篇相关论文不当两套独立系统。Round 1“≈73”仍是待去重审计的历史估计，不能与63相加。
+- **最近更新**：2026-10-27（M1剩余历史条目补核：11篇既有文献，新增3篇训推失配文献，详见§5.13）
+- **覆盖**：累计**77篇已核身份**（16篇serving基础／迁移边界＋61篇rollout/RLHF及相关边界，含VLA、训练侧与算法诊断；均非深读；75个唯一arXiv ID＋Orca／PUZZLE会议记录）。本批核既有11篇、仅新增3篇；ASymPO虽计入身份清单，但证明错误警示单列，不作为可靠理论依据。现有矩阵的历史✅已补核完，不代表种子已落实、全部为rollout-native或检索已收敛。Round 1“≈73”是历史估计，不能与77相加。
 - **深读 / 代码阅读**：0 / 0
 - **最高优先级**：补来源与版本别名、按唯一文献去重后继续广扫至100–150；A Core短名单不以未核身份的条目数为依据
 - **下一步**：见 §16
@@ -27,7 +27,7 @@
 | 核心指标 | TTFT / TPOT / latency / goodput | trajectory throughput / **rollout makespan** / bubble ratio / GPU-hours / RL step time / time-to-quality |
 | 关键结构 | 单请求延迟敏感 | **T_rollout ≈ max_i T_trajectory_i**（sync RL）——平均 tokens/s 高 ≠ rollout phase 快 |
 | 版本约束 | 单一模型权重 | policy 连续更新 → drafter/cache/调度决策随版本过期（staleness） |
-| 正确性约束 | 输出质量 | on-policy 性（权重版本一致性）、新旧 logp 一致性 |
+| 正确性约束 | 输出质量 | policy版本、同权重训推数值差异及old logp语义分别核；同版本不足以保证概率一致 |
 
 **假设状态**：未验证。每个 corpus 条目都要问一句"该工作隐含的 serving/rollout 假设是什么"，反例记入 §11。
 
@@ -66,16 +66,16 @@
 
 | ID | 日期 | 标题（短） | 层 | 类型 | 机制一句话 | 置信 |
 |---|---|---|---|---|---|---|
-| 2505.24298 | 2025-05 | AReaL | L4 | B | 大规模 async RL，decoupled actor/learner，staleness 界控制 | ✅ |
+| [2505.24298v5](https://arxiv.org/abs/2505.24298v5) | 2025-05-30首次／v5 2026-03-02 | AReaL | L4（暂） | B（系统；算法另核） | 分离生成／训练、均衡负载控制staleness；另有staleness-enhanced PPO | 核 |
 | [2409.19256v2](https://arxiv.org/abs/2409.19256v2) | 2024-09-28首次／v2 10-02 | HybridFlow / veRL | L4 | B | 混合单／多controller与分层API，3D-HybridEngine用于训练和生成间actor resharding | 核 |
 | [2507.13833v4](https://arxiv.org/abs/2507.13833v4) | 2025-07-18首次／v4 2026-05-30 | DistFlow | L4 | B | 多controller，数据传输与控制派发解耦，去中心Data Coordinator及DAG任务调度 | 核 |
 | [2504.15930v1](https://arxiv.org/abs/2504.15930v1) | 2025-04-22／v1 | StreamRL | L3/L4（暂） | B | 流式生成处理阶段气泡，长度ranker与调度处理长尾气泡；同步与异步路径须分开 | 核 |
 | [2505.24034v2](https://arxiv.org/abs/2505.24034v2) | 2025-05-29首次／v2 06-02 | LlamaRL | L4 | B | native PyTorch单controller，异步off-policy、模型offload及DMA权重同步 | 核 |
-| 2510.12633 | 2025-10 | Laminar | L4 | B | scalable async RL post-training | ✅ |
-| 2604.26256 | 2026-04 | DORA | L4 | B | scalable async RL system | ✅ |
-| 2601.12784 | 2026-01 | StaleFlow | L4 | B/C? | disaggregated 下 staleness-aware 数据管理，缓解数据偏斜 | ✅ |
+| [2510.12633v1](https://arxiv.org/abs/2510.12633v1) | 2025-10-14／v1 | Laminar | L3/L4（暂） | B（暂） | trajectory级异步，relay workers服务细粒度权重拉取，repack集中长尾 | 核 |
+| [2604.26256v2](https://arxiv.org/abs/2604.26256v2) | 2026-04-29首次／v2 07-20 | DORA | L4（暂） | B（暂） | 多版本streaming rollout，约束轨迹内policy一致性、数据完整性及有界staleness | 核 |
+| [2601.12784v2](https://arxiv.org/abs/2601.12784v2) | 2026-01-19首次／v2 08-03 | StaleFlow | L4（暂） | B（暂） | global consistency跟踪轨迹生命周期，trajectory／parameter server协调陈旧性与长度偏斜 | 核 |
 | [2507.01663v2](https://arxiv.org/abs/2507.01663v2) | 2025-07-02首次／v2 2026-09-11 | AsyncFlow | L4 | B | 分布式流式数据管理与producer-consumer，staleness阈值内延后参数更新 | 核 |
-| 2606.26997 | 2026-06 | RolloutPipe | L4 | B | disaggregated 下 pipelined rollout-training 重叠 | ✅ |
+| [2606.26997v2](https://arxiv.org/abs/2606.26997v2) | 2026-06-25首次／v2 07-05 | RolloutPipe | L3/L4（暂） | B（暂） | fixed-weight rollout中完整group FIFO送训，frontier-group准入提早供给下一批 | 核 |
 | [2410.18252v3](https://arxiv.org/abs/2410.18252v3) | 2024-10-23首次／v3 2025-04-26 | Asynchronous RLHF | L4 | B | 生成与旧样本训练重叠，研究off-policy容忍度；算法鲁棒性不自动推广 | 核 |
 | [2406.14088](https://arxiv.org/abs/2406.14088v2) | 2024-06 | ReaL（v1名ReaLHF） | L4 | B | parameter reallocation与执行计划搜索；v2标MLSys'25，不再标SOSP'24 | 核 |
 | [2409.13221](https://arxiv.org/abs/2409.13221v3) | 2024-09 | RLHFuse／Stage Fusion | L4 | B | 样本级跨阶段与微批级阶段内融合；同一文献，NSDI'25 | 核 |
@@ -83,9 +83,12 @@
 | [2308.01320v1](https://arxiv.org/abs/2308.01320v1) | 2023-08-02／v1 | DeepSpeed-Chat | L4 | B | 统一训练／推理优化的端到端RLHF系统；后续框架基线须核具体实现与配置 | 核 |
 | [2506.06122v1](https://arxiv.org/abs/2506.06122v1) | 2025-06-06／v1 | ROLL | L3/L4（暂） | B（暂） | 单controller／parallel worker，逐样本rollout生命周期与AutoDeviceMapping | 核 |
 | [USENIX ATC'24](https://www.usenix.org/conference/atc24/presentation/lei) | 2024-07会议记录 | PUZZLE | L4（暂） | B（暂） | 阶段内模型亲和／时分重叠，阶段间按相似性降低切换通信成本 | 核 |
-| 2605.12070 | 2026-05 | Missing Old Logits in Async Agentic RL | L4 | B | async 语义失配与 off-policy 修正 | ✅ |
-| 2606.03070 | 2026-06 | ASymPO | L4 | B | 非对称规模 async post-training，无行为信息 | ✅ |
-| 2602.01826 | 2026-02 | Training-Inference Mismatch = Optimization Problem | L1/L4 | B | 训推失配的优化视角，LR 调度修复 | ✅ |
+| [2605.12070v3](https://arxiv.org/abs/2605.12070v3) | 2026-05-12首次／v3 09-29 | Missing Old Logits in Asynchronous Agentic RL | L4（暂） | 系统／算法边界 | 区分同版本训推差异与policy staleness，比较精确old logits获取及近似修正 | 核 |
+| [2606.03070v3](https://arxiv.org/abs/2606.03070v3) | 2026-06-02首次／v3 06-23 | ASymPO（证明错误警示） | L4边界（暂） | 算法边界，不硬归B/C | current-policy-only的非对称loss尺度归一化；页面注明证明有误、v2曾撤回，见§5.13 | 核 |
+| [2602.01826v1](https://arxiv.org/abs/2602.01826v1) | 2026-02-02／v1 | Beyond Precision | L1/L4边界（暂） | 算法诊断，不硬归B/C | 以响应长度信号触发LR衰减，研究优化动态与训推失配；不是系统吞吐优化 | 核 |
+| [2510.26788v1](https://arxiv.org/abs/2510.26788v1) | 2025-10-30／v1 | Defeating the Training-Inference Mismatch via FP16 | L1/L4边界（暂） | 数值诊断，类型待核 | 对比BF16／FP16训推一致性；摘要结论限作者条件，不推广为统一精度建议 | 核 |
+| [2605.14220v2](https://arxiv.org/abs/2605.14220v2) | 2026-05-14首次／v2 09-29 | Diagnosing Training Inference Mismatch（VeXact） | L1/L4边界（暂） | 诊断，不硬归A/B/C | 同权重不同引擎的概率差异，以zero-mismatch reference隔离TIM与off-policy drift | 核 |
+| [2609.32444v1](https://arxiv.org/abs/2609.32444v1) | 2026-09-26／v1 | Rethinking Training-Inference Mismatch（CIS） | L1/L4边界（暂） | 算法修正，不硬归B/C | logit-displacement刻画与confidence-aware截断importance sampling；偏差／稳定性待深读 | 核 |
 
 ### 5.2 L3 — Long-tail / Scheduling / Cluster
 
@@ -97,7 +100,6 @@
 | [2607.17299v1](https://arxiv.org/abs/2607.17299v1) | 2026-07-19／v1 | WAR | L1/L3（暂） | A/B（暂） | 低负载SuffixDecoding、高负载cache-aware placement；不由workload-aware推导改样本 | 核 |
 | [2605.30859v1](https://arxiv.org/abs/2605.30859v1) | 2026-05-29／v1 | DARTS | L3（暂） | **C** | 从每prompt冗余探索空间选轨迹、适配冗余分配，主动塑造分布 | 核 |
 | [2509.18521v3](https://arxiv.org/abs/2509.18521v3) | 2025-09-23首次／09-26修订 | APRIL | L3/L4（暂） | B/**C?** | 超额发起，达到目标完成数后结束本步、未完成响应跨步续跑；训练集合／版本影响待深读 | 核 |
-| 2408.13510 | 2024-08 | Intelligent Router | L3 | B | workload-aware load balancing（serving 迁移候选） | ✅ |
 | [2511.14617v3](https://arxiv.org/abs/2511.14617v3) | 2025-11-18首次／v3 2026-04-03 | Seer | L1/L3（暂） | A/B（暂） | divided rollout、context-aware调度与grouped speculation；不是仅长度预测 | 核 |
 | ？ | ? | Weave | L3/L4 | B | ？（种子，待验证） | ？ |
 
@@ -140,8 +142,8 @@
 | [2602.09578v1](https://arxiv.org/abs/2602.09578v1) | 2026-02-10／v1 | FlexMARL | L3/L4（暂） | B（暂） | 多agent experience store驱动micro-batch异步pipeline、分层均衡与agent资源绑定 | 核 |
 | [2508.03680v1](https://arxiv.org/abs/2508.03680v1) | 2025-08-05／v1 | Agent Lightning（2025） | L4（暂） | B（系统；算法另核） | Training-Agent Disaggregation与统一transition接口，含LightningRL credit assignment | 核 |
 | [2608.17528v1](https://arxiv.org/abs/2608.17528v1) | 2026-08-18／v1 | Agent Lightning v1.0（2026） | L4（暂） | B（系统；算法另核） | deploy-time harness拥有环境交互loop，trainer接收LLM请求／响应；合样本及loss语义待核 | 核 |
-| 2602.00482 | 2026-02 | AREAL-DTA | L1 | A | RL 中 dynamic tree attention（与 AReaL 相关？待核） | ✅ |
-| 2610.28998 | 2026-10 | FlashNext-RL | L1/L4 | A/B | long-horizon agentic RL 系统优化案例 | ✅ |
+| [2602.00482v2](https://arxiv.org/abs/2602.00482v2) | 2026-01-31首次／v2 06-13 | AReaL-DTA（训练侧边界） | L1/L3（训练侧；暂） | A/B（训练侧；暂） | DFS遍历共享prefix树做前后向，分布式tree batching；不是rollout decode tree验证 | 核 |
+| [2610.28998v1](https://arxiv.org/abs/2610.28998v1) | 2026-10-20／v1 | FlashNext-RL | L1/L4（暂） | A/B（暂） | prime-rl＋vLLM，模型特定offload／累积及kernel优化；训练tokens/s与RL迭代分开 | 核 |
 
 ### 5.5 Serving 基础（supporting corpus，含迁移边界，不标 rollout-native）
 
@@ -162,6 +164,7 @@
 | [2211.17192v2](https://arxiv.org/abs/2211.17192v2) | 2022-11-30／v2 2023-05-18 | Fast Inference from Transformers（Leviathan等） | 近似模型draft与target验证／修正采样；输出分布正确性须核实现前提 | 核 |
 | [2302.01318v1](https://arxiv.org/abs/2302.01318v1) | 2023-02-02／v1 | Speculative Sampling（Chen等） | 修改拒绝采样以保target分布，原文带hardware numerics条件；非bitwise相同承诺 | 核 |
 | [2602.06932v5](https://arxiv.org/abs/2602.06932v5) | 2026-02-06／v5 2026-08-04 | Aurora（When RL Meets Adaptive Speculative Training） | 由live inference traces在线RL训练speculator、热换更新；不是post-training policy rollout系统 | 核 |
+| [2408.13510v2](https://arxiv.org/abs/2408.13510v2) | 2024-08-24首次／v2 2025-01-07 | Intelligent Router | response-length预测与混合负载估计，RL路由跨推理实例；是serving调度，不是post-training rollout系统 | 核 |
 
 ### 5.6 待验证种子（用户清单中尚未在检索中命中）
 
@@ -238,6 +241,18 @@ BubbleSpec／SRT的run-ahead用于后续draft验证，不等于直接拿旧polic
 
 新条目来自定向检索／已见线索后回arXiv原站核身份，未声称Heddle引用它们；本批在[Heddle v1 HTML](https://arxiv.org/html/2603.28101v1)检索Weave／Lightning未命中，不据此判断不存在或无引用。范围限元数据、摘要与关键词／引用定位，无全文深读、代码、性能抽取或复现。下一批核剩余L4及agentic边界条目后继续原生文献扩展；当前仍不冻结分类或写survey正文。
 
+### 5.13 异步语义、训练侧边界与文献可靠性补核
+
+2026-10-27第七批：核剩余11篇历史✅的标题、首次日期、采用版本及摘要，ID均匹配；新增3篇TIM文献来自定向搜索后回arXiv原站核验。累计77身份=63＋11既有＋3新发现（75唯一arXiv＋2会议记录）。Intelligent Router移serving，故分组为16 serving／边界＋61 rollout/RLHF及相关边界；后者不是61篇纯rollout-native。现有矩阵历史✅已清零，种子与未收录线索仍待查，不等于检索收敛。
+
+异步不等于轨迹内任意混版本：[DORA v2](https://arxiv.org/abs/2604.26256v2)同时要求轨迹内policy一致、数据完整与有界staleness，其多版本并存不直接推出单轨迹混版本。[Laminar v1](https://arxiv.org/abs/2510.12633v1)的relay／repack与故障隔离自述不替代重试／恢复协议证明。[StaleFlow v2](https://arxiv.org/abs/2601.12784v2)涉及数据管理，但摘要不足以确认改训练集合，暂撤C?而留待正文核。[RolloutPipe v2](https://arxiv.org/abs/2606.26997v2)在fixed-weight rollout内按完整group送训，作者称保持on-policy；不能因生成与训练重叠就并入stale-policy异步，也不把这一自述当本项目正确性验收。[AReaL v5](https://arxiv.org/abs/2505.24298v5)含PPO变体，联合结果不能全归调度；这里只核论文，未触及M5的prompt_mean事项。
+
+训练侧与生成侧分开：[AReaL-DTA v2](https://arxiv.org/abs/2602.00482v2)复用的是policy训练前后向的prefix计算，DFS仅物化root-to-leaf路径并做分布式tree batching；不应由名字tree attention推成推测decode机制。首次日期是1月31日，不按ID前缀猜2月。[FlashNext-RL v1](https://arxiv.org/abs/2610.28998v1)研究模型特定训练优化，摘要中的开发配置同时改变context length；训练tokens/s增长不作同配置rollout吞吐加速，另有8层累积研究与live SWE RL迭代记录，证据类型不混成一个数字。
+
+同权重的训推差异与跨更新的陈旧性分开：[Missing Old Logits v3](https://arxiv.org/abs/2605.12070v3)将两类修正区分，精确old logits获取与PPO-EWMA近似路线也不等价。新增[FP16 v1](https://arxiv.org/abs/2510.26788v1)、[VeXact v2](https://arxiv.org/abs/2605.14220v2)、[CIS v1](https://arxiv.org/abs/2609.32444v1)，连同[Beyond Precision v1](https://arxiv.org/abs/2602.01826v1)，分别提供精度、隔离诊断、importance修正与LR动态线索；不只凭摘要裁决哪一种解释普遍成立。VeXact v2标题比v1补入via a Zero-Mismatch Reference，不重复计数。算法改变不自动等于C类选轨迹，也不硬塞为纯系统B收益；保留边界而非扩张研究范围去做算法评测。
+
+可靠性警示：[ASymPO原站](https://arxiv.org/abs/2606.03070)Comments明确写“incorrect proofs in the paper”，版本史标v2 withdrawn，当前页面为v3；不能误写成v3也明确撤回或警示已被修复。仅保留身份及检索线索，停止用其理论保证支持结论；旧“非对称规模”改为loss尺度，不解释成模型规模不对称。当前未核正文证明、代码或性能，深读／代码计数仍0／0。下一批优先新增rollout-native来源、未落实种子及会议引用扩展，再补serving基础；不重复这11篇或急于形成survey结论。
+
 ## 6. Paper Deep Reads
 
 （空。优先级建议：AReaL、HybridFlow/veRL、StreamRL、RollPacker、RhymeRL、BubbleSpec、StaleFlow——覆盖四层 + 三大机制家族。深读模板：问题/瓶颈 → 性能模型 → 机制 → 实验条件与增益（保留硬件/batch/长度分布）→ 与 taxonomy 对照 → 可迁移性 → 疑点。）
@@ -310,6 +325,8 @@ BubbleSpec／SRT的run-ahead用于后续draft验证，不等于直接拿旧polic
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（M1异步／训练边界补核）**：核剩余11篇历史条目，新增FP16／VeXact／CIS三篇TIM文献，累计77身份（16 serving／边界＋61 rollout/RLHF及相关边界；75 arXiv＋2会议记录）。历史✅清零不等于corpus收敛或77篇可用实证；ASymPO证明错误与v2撤回显式警示。Intelligent Router移serving，AReaL-DTA改训练侧边界，RolloutPipe的group流水与stale-policy异步分开。仅身份／摘要补核，无深读、代码、复现或M5专项改动；后续优先新增原生及种子，不重复本批。
 
 - **2026-10-27（M1 agentic补核）**：核既有10篇，补InfoTree名称及RollArc／RollArt版本沿革；定向检索补FlexMARL与两篇相关Agent Lightning论文，累计63身份（15 serving／边界＋48 rollout/RLHF；61 arXiv＋2会议记录），仅3新发现。系统／recipe、VLA样本效率／吞吐、同步prefix重叠／async off-policy分开，暂留分类疑问而非性能结论。未全文深读、读代码或复现，下批核剩余L4／agentic边界并扩展原生。
 
