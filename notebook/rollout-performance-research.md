@@ -6,9 +6,9 @@
 ## 0. Project Status
 
 - **阶段**：Phase 1 — recall-first literature & code investigation（广扫建库，不收束观点）
-- **最近更新**：2026-10-27（M1补6篇权重同步／低精度／资源迁移／容错与执行底座文献，见§5.17；本批不增代码路径）
+- **最近更新**：2026-10-27（M1补NeMo RL SingleController的准入／选择／版本与TQ所有权地图，见§8.6／§12；本批不增论文）
 - **覆盖**：累计**103篇已核身份**（20篇serving基础／迁移边界＋83篇rollout/RLHF及相关边界，含VLA、训练侧、执行底座与算法诊断；均非深读；99个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL会议记录）。本批新增SparseRL-Sync、PULSE、FP8-RL、PivotRL、RobustRL和Rollout Infrastructure Tax；PULSE的两种通信算法合计1篇。总数过100或RL相关83不代表纯原生80–120目标达成、覆盖收敛或已完成分级。ASymPO证明错误警示保留，历史✅补核完不等检索收敛；Round 1“≈73”不与当前数量相加。
-- **全文深读 / 代码广扫**：0 / 4（veRL `24f25b03`三条路径＋OpenRLHF `dc2a7ad3`一条；共2框架，不是4框架或运行验证，也不按文件数计）
+- **全文深读 / 代码广扫**：0 / 5（veRL `24f25b03`三条路径＋OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`各一条；共3框架，不是5框架或运行验证，也不按文件数计）
 - **最高优先级**：继续原生系统引用／会议扩展与种子落实，补serving机制覆盖，按唯一文献广扫至100–150；总数不替代原生覆盖，A Core短名单不只按条目数选取
 - **下一步**：见 §16
 
@@ -348,7 +348,9 @@ veRL三条地图使用的只读检出：`/Users/jackiemac/Documents/Codex/2026-1
 
 OpenRLHF本轮只读克隆：`/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/openrlhf-rollout-scan`，origin为`OpenRLHF/OpenRLHF`，固定HEAD `dc2a7ad326f619fc5a47737ea47d1920ce2c0b53`，工作树干净；未安装依赖或运行项目。两框架快照分别标版本，不把实现差异写成同年代／同配置的性能对比。
 
-**代码地图覆盖**：veRL三条路径见§8.2–8.4，OpenRLHF一条见§8.5；下一批可补rLLM／SkyRL／NeMo-RL或引擎scheduler，不以单路径代表框架全貌。AReaL prompt_mean仍由M5单一负责，不在此代码广扫中接续。
+NeMo RL只读克隆：`/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/nemo-rl-rollout-scan`，origin为`NVIDIA-NeMo/RL`，固定HEAD `a9d1a4bec45a28fd0d455519a2a979a37da2ac4a`，工作树干净。这里是SingleController路径，不与legacy async GRPO、NeMo-Aligner论文或其他快照拼为同一实现；未安装依赖或运行项目。
+
+**代码地图覆盖**：veRL三条路径见§8.2–8.4，OpenRLHF一条见§8.5，NeMo RL一条见§8.6；下一批继续原生引用／会议／种子，或补rLLM／SkyRL，不以单路径代表框架全貌。AReaL prompt_mean仍由M5单一负责，不在此代码广扫中接续。
 
 ## 8. Paper → Mechanism → Code Mapping
 
@@ -459,6 +461,29 @@ Q限制结果队列及slot预算，**不包括当前已取走的训练批，也�
 
 验证范围：ppo_trainer_async／ppo_trainer、samples_generator、experience／experience_maker／replay_buffer、ray/ppo_actor／vllm_engine、models/loss和cli/train_ppo_ray共10份Python与固定Git blob逐字节一致并作AST解析；阅读入口和相关函数，不称10份全文或完整框架读完。未导入模块、安装依赖、解析有效作业配置、运行原生测试／模型／队列／设备，未验证底层vLLM实际版本与自定义agent。下一步继续原生文献扩展，或补第三框架的队列／概率生命周期，不将静态差异当性能排名、bug结论或新GPU任务。
 
+### 8.6 NeMo RL准入 选择与样本所有权
+
+固定`NVIDIA-NeMo/RL a9d1a4be`，从[SingleController入口:80](https://github.com/NVIDIA-NeMo/RL/blob/a9d1a4bec45a28fd0d455519a2a979a37da2ac4a/examples/run_grpo_single_controller.py#L80)追到两条pump、sampler与TQReplayBuffer。示例[SC YAML:25](https://github.com/NVIDIA-NeMo/RL/blob/a9d1a4bec45a28fd0d455519a2a979a37da2ac4a/examples/configs/grpo_math_1B_megatron_single_controller.yaml#L25)采用in_order、lookahead=1、整步groups才stream、inflight=每步prompt数、buffer=64；这些是示例覆盖，不当所有recipe的有效配置。guide将SC标为beta；本节只读局部调用链，不是训练／恢复验收。
+
+**生产准入和消费选择不是同一个窗口。** 令v为当前trainer版本、s为buffer记录的start_weight、w为配置窗口；内置四种策略的静态条件如下（custom不在覆盖内）。共同[选择收尾:310](https://github.com/NVIDIA-NeMo/RL/blob/a9d1a4bec45a28fd0d455519a2a979a37da2ac4a/nemo_rl/algorithms/async_utils/staleness_sampler.py#L310)按min／max和group_multiple裁齐，未对齐尾组留待后续，然后claim，不在这里清TQ张量。
+
+| sampler | 生产准入 | 已完成组的选择与淘汰 |
+|---|---|---|
+| [windowed:361](https://github.com/NVIDIA-NeMo/RL/blob/a9d1a4bec45a28fd0d455519a2a979a37da2ac4a/nemo_rl/algorithms/async_utils/staleness_sampler.py#L361) | 无trainer版本gate，仍受容量／并发背压 | 选max(0,v−w)≤s≤v且ready的组，可freshest-first；默认evict移除低于下界的ready组 |
+| [ready_first:523](https://github.com/NVIDIA-NeMo/RL/blob/a9d1a4bec45a28fd0d455519a2a979a37da2ac4a/nemo_rl/algorithms/async_utils/staleness_sampler.py#L523) | gate限制dispatch批次的lookahead | 所有s≤v且ready组均可选，无s下界；该sampler的evict返回0，不按年龄淘汰长尾组 |
+| [weight_fifo:578](https://github.com/NVIDIA-NeMo/RL/blob/a9d1a4bec45a28fd0d455519a2a979a37da2ac4a/nemo_rl/algorithms/async_utils/staleness_sampler.py#L578) | gated lookahead | 在窗口内先找最小s（含未ready槽），仅消费该版本ready组；较新ready组不能越过它。默认evict按s下界 |
+| [in_order:629](https://github.com/NVIDIA-NeMo/RL/blob/a9d1a4bec45a28fd0d455519a2a979a37da2ac4a/nemo_rl/algorithms/async_utils/staleness_sampler.py#L629) | dispatch序号作为target_step；lookahead可按PPO warmup调宽 | 选target_step=v且ready，不按s窗口选；evict仅清target_step<v的ready组，不早清未来target |
+
+这四种是sampler实现，不是四种均支持任意算法：固定快照的[PPO校验:1329](https://github.com/NVIDIA-NeMo/RL/blob/a9d1a4bec45a28fd0d455519a2a979a37da2ac4a/nemo_rl/algorithms/single_controller_utils/config.py#L1329)仅允许in_order／ready_first。
+
+[_GatedSampler:498](https://github.com/NVIDIA-NeMo/RL/blob/a9d1a4bec45a28fd0d455519a2a979a37da2ac4a/nemo_rl/algorithms/async_utils/staleness_sampler.py#L498)等待dispatch_index小于trainer_version+gate_window后才递增并盖章；这限制的是批次准入游标。尤其ready_first的`max_staleness_versions`不能解释成消费样本的硬年龄上限；“sampler不按年龄淘汰”也不等全系统绝不丢组，错误预算／过滤另有路径。[配置校验:1403](https://github.com/NVIDIA-NeMo/RL/blob/a9d1a4bec45a28fd0d455519a2a979a37da2ac4a/nemo_rl/algorithms/single_controller_utils/config.py#L1403)对ready_first显式要求importance sampling，并限制force_on_policy_ratio与CISPO组合；校验开关不是数值收敛证明。
+
+**槽、元数据与张量的寿命分开。** [rollout _launch:2471](https://github.com/NVIDIA-NeMo/RL/blob/a9d1a4bec45a28fd0d455519a2a979a37da2ac4a/nemo_rl/algorithms/single_controller.py#L2471)先取buffer permit、再取inflight semaphore、再等refit派发gate。buffer permit覆盖未消费组而非仅ready组，token-capture生成permit可在finalizer完成前归还。[reserve:1176](https://github.com/NVIDIA-NeMo/RL/blob/a9d1a4bec45a28fd0d455519a2a979a37da2ac4a/nemo_rl/algorithms/async_utils/replay_buffer.py#L1176)建ready=False槽；[claim_for_training:1529](https://github.com/NVIDIA-NeMo/RL/blob/a9d1a4bec45a28fd0d455519a2a979a37da2ac4a/nemo_rl/algorithms/async_utils/replay_buffer.py#L1529)将ready组从可选索引转入training claims，但保留TQ数据和checkpoint元数据。正常训练完成后的[cleanup:3600](https://github.com/NVIDIA-NeMo/RL/blob/a9d1a4bec45a28fd0d455519a2a979a37da2ac4a/nemo_rl/algorithms/single_controller.py#L3600)才清数据、释放claims及buffer permit；因此选择后的buffer长度不等全部驻留数据或端到端在途量，不把claim当立即free。持久化／故障重试是否完整仍需独立审计。
+
+**版本标签按生成分支解释。** 非capture的[generate_and_push:2010](https://github.com/NVIDIA-NeMo/RL/blob/a9d1a4bec45a28fd0d455519a2a979a37da2ac4a/nemo_rl/experience/rollout_manager.py#L2010)在尝试开始读manager版本reserve，run_rollout结束再读end版本后commit；首末标签不是逐token权重证明。capture的[commit_finalized:1383](https://github.com/NVIDIA-NeMo/RL/blob/a9d1a4bec45a28fd0d455519a2a979a37da2ac4a/nemo_rl/algorithms/async_utils/replay_buffer.py#L1383)则将输入group_min_wv／group_max_wv写作start／end，本轮未追finalizer如何形成每个call的版本。[同步入口:5450](https://github.com/NVIDIA-NeMo/RL/blob/a9d1a4bec45a28fd0d455519a2a979a37da2ac4a/nemo_rl/algorithms/single_controller.py#L5450)关闭新派发gate，经backend pause／同步／resume再开放；native与Gym的过旧inflight abort分支不同，不能概括成所有backend统一清空／取消。manager标签在[refit调用点之后:3774](https://github.com/NVIDIA-NeMo/RL/blob/a9d1a4bec45a28fd0d455519a2a979a37da2ac4a/nemo_rl/algorithms/single_controller.py#L3774)更新；PPO另有early-refit及critic-warmup分支，trainer步号不自动等每次actor optimizer更新或实际权重变化。
+
+与§8.4／§8.5的区别：veRL所读队列会条件淘汰旧条目，OpenRLHF所读路径用slot／阻塞put且另有响应buffer；SC把准入、按版本或target选组、training所有权分为独立阶段。不能拿三者的“queue size／staleness”数值直接比较，也不把windowed筛选、动态reward过滤与背压混作同一操作。验证限6份Python blob一致／AST解析及引用行号核对（entry、controller、sampler、replay、rollout_manager、config），另读guide和示例YAML；未导入框架、安装依赖、运行Ray／TQ／原生测试／模型／设备，无性能或故障结论。全文深读0，代码路径累计5条／3框架；后续继续原生补库或补尚未覆盖框架，不为静态差异创建GPU任务。
+
 ## 9. Serving → Rollout Transfer
 
 三问框架（每个 serving 工作都过一遍）：① serving 里解决什么 bottleneck？② 哪些机制可直接迁移？③ 进入 rollout 后 objective/scheduler semantics/correctness 约束怎么变、是否需要 RL-aware redesign？
@@ -491,6 +516,8 @@ Q限制结果队列及slot预算，**不包括当前已取走的训练批，也�
 
 OpenRLHF `dc2a7ad3`的[异步生产／消费计时](https://github.com/OpenRLHF/OpenRLHF/blob/dc2a7ad326f619fc5a47737ea47d1920ce2c0b53/openrlhf/trainer/ppo_trainer_async.py#L129)中，timing/generation包住generate_samples调用，既可能含筛组／补抽，也可能仅取_sample_buffer，并不总对应一次新的模型生成；timing/step_total为消费循环墙钟，包含队列等待，不能把重叠的generation／训练分项相加当端到端。dynamic filtering的filter_pass_rate在源码中算`len(experiences)/prompts_consumed×100`，分子为响应、分母为prompt，未校正n前不当prompt通过百分比，缓冲直出时还可能为None。本轮没有测量任何耗时／通过率。
 
+NeMo RL SC `a9d1a4be`的[exposed_generation:3010](https://github.com/NVIDIA-NeMo/RL/blob/a9d1a4bec45a28fd0d455519a2a979a37da2ac4a/nemo_rl/algorithms/single_controller.py#L3010)包住evict、选组和饥饿轮询，不是rollout引擎生成总算时；[weight_sync:3748](https://github.com/NVIDIA-NeMo/RL/blob/a9d1a4bec45a28fd0d455519a2a979a37da2ac4a/nemo_rl/algorithms/single_controller.py#L3748)在colocated且为save延后refit时可进入空计时块，其他分支才调用同步生命周期。组数／版本／claim寿命见§8.6；计时名称不能替代执行分支和生成工作量，本轮无计时实测。
+
 ## 13. Research Gaps / Ideas
 
 （Round 1 初步观察，待 corpus 收敛后修正）：
@@ -511,6 +538,8 @@ OpenRLHF `dc2a7ad3`的[异步生产／消费计时](https://github.com/OpenRLHF/
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（M1 NeMo RL准入与所有权广扫）**：文献仍103，代码路径5条／3框架。固定NeMo RL `a9d1a4be`，§8.6分开四sampler的生产gate、start_weight窗口、target_step与ready-first长尾；reserve／commit／claim／cleanup及capture／非capture版本标签不混用。§12补exposed_generation非引擎算时、延后refit空计时块。6 Python blob／AST与源码链接核对，无框架／原生测试／设备，非故障或性能验收；不改M5专项、不向上游写入。下一步继续原生引用／会议／种子扩展或未覆盖框架，capture finalizer和恢复另核。
 
 - **2026-10-27（M1同步与运行开销补库）**：新增SparseRL-Sync／PULSE／FP8-RL／PivotRL／RobustRL／Rollout Infrastructure Tax六篇，累计103身份（20 serving／边界＋83 RL相关边界；99 arXiv＋4会议记录）。§5.17区分post-cast无损与FP32更新、两通信通道、policy量化与draft、故障条件收益与固定命令worker-hours外推；参考文献占位项不继承，submitted不当accepted。身份／摘要和局部范围核验，深读0、代码4条／2框架不变；无设备／M5专项／上游写入。下步继续原生扩展或第三框架，不因过百结束广扫。
 
