@@ -12,9 +12,27 @@
 
 2026-10-26接续：[估计器附加字段与样本有效性](#估计器附加字段与样本有效性)区分注册扩展、数据透传和统计过滤；#7473已有候选，V1读取范围仍是独立条件。
 
-2026-10-26接续：[平方概率分块与空输入梯度](#平方概率分块与空输入梯度)核#8365：原16个CPU参数项通过不覆盖空输入反向，两条已有bot反馈需分开验证，局部数值不认证GPU峰值。
+2026-10-26接续：[平方概率分块与空输入梯度](#平方概率分块与空输入梯度)核#8365新23d891cd：原测试补空行反向及非正chunk拒绝，新版18项通过／旧版13过5失败；撤回当前版本的旧边界风险，CPU结果仍不认证GPU峰值。
 
 ## 平方概率分块与空输入梯度
+
+### 新版修复空行反向和参数拒绝
+
+2026-10-26再核[#8365](https://github.com/verl-project/verl/pull/8365)，仍OPEN／非draft／未合并，head `23d891cd2ac16d3d7063c4eb94330d6aa29a9b5d`，base仍 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，累计两文件41增2删；比旧0ed8b370前进一提交。已有作者修订，本项目不另写实现。
+
+[新helper](https://github.com/verl-project/verl/blob/23d891cd2ac16d3d7063c4eb94330d6aa29a9b5d/verl/utils/torch_functional.py)先拒绝chunk_size≤0；行数≤chunk_size时直接对原logits套同一logsumexp恒等式，包括零行输入，因此保留空输出到输入的autograd连接，不再返回脱图new_empty。更大的输入仍按行切块后cat；没有消除输入logits，也没有把2048变成显存字节硬上限，启用梯度时的整体保存量与GPU峰值仍另判。
+
+[原测试](https://github.com/verl-project/verl/blob/23d891cd2ac16d3d7063c4eb94330d6aa29a9b5d/tests/utils/test_torch_functional.py)删除了空输出跳过反向的条件，并新增chunk_size=0／-1的ValueError与消息检查。本机将新版四个原测试函数、18个原参数项原样接两版AST helper：新23d **18过**，旧0ed **13过5失败**。三项是零行×chunk1／4／2048反向失败；另两项是0值错误消息不含chunk_size、-1未抛错。旧版对0本已由range抛ValueError，不应把这项写成旧版完全接受0。旧-1返回值未被读取，不消费未初始化数据。
+
+[更新原脚本](../../experiments/verl-squared-probability-chunks/verify.py)保留默认历史复查，新增 `--revised-source` 模式；[新结果](../../experiments/verl-squared-probability-chunks/result-revised.json)记录四份完整源文件hash、原测试名称和失败原因，两次JSON一致。Python3.12.13／torch2.14.1／pytest9.1.1、显式CPU真实autograd，四完整模块AST／compile；没有原生pytest收集、整份suite、V1字段接线、GPU内存／耗时或OTB训练。原[result.json](../../experiments/verl-squared-probability-chunks/result.json)保留0ed历史证据，不覆盖成新版结果。下载副本初多一个尾部空行，修正后旧文件SHA256与原Git读取结果一致，新模式强校验全部输入hash。
+
+```bash
+python -B experiments/verl-squared-probability-chunks/verify.py --revised-source /path/to/pinned-source
+```
+
+输入目录包含old-production.py／old-test.py（0ed8b370）及new-production.py／new-test.py（23d891cd），分别对应上述生产和测试路径。**旧两条边界问题不再作为23d当前阻碍；数值／梯度修复不等于性能或训练收益验收。** #8364是另一项V1接线，不自动拼接两候选。仅更新[原M5参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)中的版本与已知边界，无新训练队列、依赖安装、专项修改或社区写入。
+
+### 旧版问题与原控制记录
 
 **数值用例通过、空批可反向、降低GPU峰值是三件事。** [#8365](https://github.com/verl-project/verl/pull/8365)将calculate_sum_pi_squared_from_logits按行分块，仍计算`exp(logsumexp(2z)−2logsumexp(z))`，即每个位置完整词表softmax概率的平方和，不是被采样token的概率，也不是沿响应token求平方和。已有作者flyingdoubleG负责，不另写修复。
 

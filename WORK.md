@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 平方概率边界修订（2026-10-26）**：起始c35e66c干净，compare保留915新增1无删改后ff7cd7248保全M5。新#8365 head23d891cd／base3c6d9b43，较0ed前进1提交、累计两文件41增2删；[原算法专题新版](notebook/frameworks/verl-grpo-core-algos-reading.md#新版修复空行反向和参数拒绝)核空行走原公式保持图、拒非正chunk。新四原函数18参数项接两版helper，23d全过／0ed13过5失败，两次JSON同；0旧已有range错误只消息不符，未读负chunk未初始化值。原脚本加revised模式、旧JSON不改；四完整模块hash／compile，非原生pytest／V1／GPU峰值／训练。write-page技能区分当前已修与历史风险，原M5参考仅修版本与边界，无新队列／补丁／专项或社区写入；#8386同head不复跑，#8364不自动拼接。下轮转独立真实需求／实质反馈，不扩chunk／dtype矩阵或把CPU全过认证性能。
+
 - **M1 KV salt／sleep接续（2026-10-26）**：先确认上轮f951617推送完成；起始f951617干净，compare保留913新增1无删改后ff422d8ab保全M5。新#8323 head1787d6a2／base祖先174888fc，ahead2／behind0、20文件872增21删；与旧4e93已分叉，不把整仓23／2差异当本题新增。[原Worker专题](notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#新版的显式清理与-sleep-路径)对照vLLM0.32.0 commit5df63a72，显式clear传False但sleep(level≥1)仍默认请求reset，实际删除由connector实现决定。四完整模块AST／compile及scheduler方法只读，无旧CPU复跑、原测试／后端／设备；新release_kv_cache_memory也默认reset，不能据方法名改接线。write-page技能区分失效正确性／存储保留／命中率，原M5两历史参考修版本与观察条件，无新队列／环境／引擎补丁／专项或社区写入。下轮转独立真实需求／实质反馈，不造清理替身矩阵、套sleep修复或无变化复测。
 
 - **M1 AR seed协作接续（2026-10-26）**：起始4a6473e干净，compare保留910新增2无删改后ffd012332保全M5。两项目各6更新选#507新人工回复：CjhHa1于12:45:08Z让JianhaoYu-AI接手逐请求seed，自己当前未做整题、副本engine偏移另议；[原种子专题](notebook/frameworks/unirl-survey.md#ar-种子配置与逐样本请求)纠正报告者独做整项记录，不把另一部分认领为本项目任务。main8cfbac177与旧6fd82cba八文件逐blob同，两tree未截断；编号PR查询0不等无人负责，不重跑六CPU或执行RNG／请求／设备。write-page技能分开协作／实现／验收，原M5参考只修分工，不新增队列／方案／专项／社区写入。下轮转独立真实需求／实质反馈，不追问／替作者选batching或扩seed矩阵。

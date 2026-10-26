@@ -1,4 +1,4 @@
-"""Run #8365's unchanged CPU test bodies and two already-reported boundary controls."""
+"""Run pinned #8365 CPU bodies; --revised-source checks the later boundary fix."""
 import __future__
 import argparse
 import ast
@@ -22,12 +22,81 @@ FUNCTION = "calculate_sum_pi_squared_from_logits"
 REGULAR = "test_calculate_sum_pi_squared_from_logits"
 EXTREME = REGULAR + "_extreme_values"
 CHUNKING = REGULAR + "_chunking"
+REJECTS = REGULAR + "_rejects_non_positive_chunk_size"
+REVISED = "23d891cd2ac16d3d7063c4eb94330d6aa29a9b5d"
+REVISED_HASHES = {
+    "old-production.py": "82a559e4f0aa3c3d33b0c2e584974f7e00394e130268957e8847d87d5792b8a4",
+    "old-test.py": "26ea5c909b1184eb1c943934233ee6e21f990b3933a7cb7ebd53450ab1147858",
+    "new-production.py": "9b3dccdb1cd38dd642a75293b5d62a03062002cccdc9207511f281400493133c",
+    "new-test.py": "3485abd190764db43ca897c72e6d7966c5891f833a2f16069809be366ed24f9b",
+}
+
+
+def revised_result(source_directory):
+    """Execute the new original tests unchanged against the two original helpers."""
+    trees, hashes = {}, {}
+    for name, expected in REVISED_HASHES.items():
+        raw = (source_directory / name).read_bytes()
+        hashes[name] = hashlib.sha256(raw).hexdigest()
+        assert hashes[name] == expected, name
+        trees[name] = ast.parse(raw, filename=name)
+        compile(trees[name], name, "exec")
+    for name in (REGULAR, EXTREME):
+        nodes = [next(n for n in trees[version + "-test.py"].body if getattr(n, "name", None) == name)
+                 for version in ("old", "new")]
+        assert ast.dump(nodes[0], include_attributes=False) == ast.dump(nodes[1], include_attributes=False)
+    original_tests = [n for n in trees["new-test.py"].body
+                      if getattr(n, "name", None) in (REGULAR, EXTREME, CHUNKING, REJECTS)]
+    assert len(original_tests) == 4
+    cases = [(REGULAR, (shape, dtype)) for shape in ((8, 17), (3, 5, 32), (1, 1024))
+             for dtype in (torch.float32, torch.float64)]
+    cases += [(EXTREME, ())]
+    cases += [(CHUNKING, (shape, chunk)) for shape in ((10, 33), (3, 7, 33), (0, 33))
+              for chunk in (1, 4, 2048)]
+    cases += [(REJECTS, (chunk,)) for chunk in (0, -1)]
+    assert len(cases) == 18
+    torch.set_default_device("cpu")
+    results = {}
+    for version in ("old", "new"):
+        helper = next(n for n in trees[version + "-production.py"].body if getattr(n, "name", None) == FUNCTION)
+        ns = {"torch": torch, "pytest": pytest}
+        exec(compile(ast.Module(body=[helper, *original_tests], type_ignores=[]), "original_definitions", "exec",
+                     flags=__future__.annotations.compiler_flag), ns)
+        outcomes = []
+        for name, arguments in cases:
+            record = {"test": name, "parameters": [str(arg) for arg in arguments]}
+            try:
+                ns[name](*arguments)
+            except (Exception, pytest.fail.Exception) as exc:
+                record.update(outcome="failed", error_type=type(exc).__name__, error=str(exc))
+            else:
+                record["outcome"] = "passed"
+            outcomes.append(record)
+        results[version] = {"passed": sum(r["outcome"] == "passed" for r in outcomes), "cases": outcomes}
+    assert results["old"]["passed"] == 13 and results["new"]["passed"] == 18
+    old_failures = [r for r in results["old"]["cases"] if r["outcome"] == "failed"]
+    assert [r["test"] for r in old_failures] == [CHUNKING] * 3 + [REJECTS] * 2
+    assert "verl" not in sys.modules
+    return {"versions": {"old": VERSIONS["head"], "new": REVISED},
+            "production_path": SOURCE, "test_path": TEST, "tests_from": REVISED,
+            "source_sha256": hashes, "results": results,
+            "environment": {"python": platform.python_version(), "torch": torch.__version__,
+                            "pytest": pytest.__version__, "system": platform.system()},
+            "scope": "18 new original CPU test cases against both AST-extracted original helpers; "
+                     "empty backward and nonpositive parameters included; no native pytest collection, "
+                     "uninitialized-value reads, GPU/memory/timing, V1 wiring, or OTB training"}
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("source_repo", type=Path)
+    parser.add_argument("source_repo", type=Path, nargs="?")
+    parser.add_argument("--revised-source", type=Path)
     args = parser.parse_args()
+    if args.revised_source is not None:
+        print(json.dumps(revised_result(args.revised_source), indent=2, sort_keys=True))
+        return
+    if args.source_repo is None:
+        parser.error("source_repo is required without --revised-source")
     hashes, trees = {}, {}
     for label, revision in VERSIONS.items():
         for path in (SOURCE, TEST):

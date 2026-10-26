@@ -1,0 +1,322 @@
+{
+  "environment": {
+    "pytest": "9.1.1",
+    "python": "3.12.13",
+    "system": "Darwin",
+    "torch": "2.14.1"
+  },
+  "production_path": "verl/utils/torch_functional.py",
+  "results": {
+    "new": {
+      "cases": [
+        {
+          "outcome": "passed",
+          "parameters": [
+            "(8, 17)",
+            "torch.float32"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits"
+        },
+        {
+          "outcome": "passed",
+          "parameters": [
+            "(8, 17)",
+            "torch.float64"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits"
+        },
+        {
+          "outcome": "passed",
+          "parameters": [
+            "(3, 5, 32)",
+            "torch.float32"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits"
+        },
+        {
+          "outcome": "passed",
+          "parameters": [
+            "(3, 5, 32)",
+            "torch.float64"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits"
+        },
+        {
+          "outcome": "passed",
+          "parameters": [
+            "(1, 1024)",
+            "torch.float32"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits"
+        },
+        {
+          "outcome": "passed",
+          "parameters": [
+            "(1, 1024)",
+            "torch.float64"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits"
+        },
+        {
+          "outcome": "passed",
+          "parameters": [],
+          "test": "test_calculate_sum_pi_squared_from_logits_extreme_values"
+        },
+        {
+          "outcome": "passed",
+          "parameters": [
+            "(10, 33)",
+            "1"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits_chunking"
+        },
+        {
+          "outcome": "passed",
+          "parameters": [
+            "(10, 33)",
+            "4"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits_chunking"
+        },
+        {
+          "outcome": "passed",
+          "parameters": [
+            "(10, 33)",
+            "2048"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits_chunking"
+        },
+        {
+          "outcome": "passed",
+          "parameters": [
+            "(3, 7, 33)",
+            "1"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits_chunking"
+        },
+        {
+          "outcome": "passed",
+          "parameters": [
+            "(3, 7, 33)",
+            "4"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits_chunking"
+        },
+        {
+          "outcome": "passed",
+          "parameters": [
+            "(3, 7, 33)",
+            "2048"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits_chunking"
+        },
+        {
+          "outcome": "passed",
+          "parameters": [
+            "(0, 33)",
+            "1"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits_chunking"
+        },
+        {
+          "outcome": "passed",
+          "parameters": [
+            "(0, 33)",
+            "4"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits_chunking"
+        },
+        {
+          "outcome": "passed",
+          "parameters": [
+            "(0, 33)",
+            "2048"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits_chunking"
+        },
+        {
+          "outcome": "passed",
+          "parameters": [
+            "0"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits_rejects_non_positive_chunk_size"
+        },
+        {
+          "outcome": "passed",
+          "parameters": [
+            "-1"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits_rejects_non_positive_chunk_size"
+        }
+      ],
+      "passed": 18
+    },
+    "old": {
+      "cases": [
+        {
+          "outcome": "passed",
+          "parameters": [
+            "(8, 17)",
+            "torch.float32"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits"
+        },
+        {
+          "outcome": "passed",
+          "parameters": [
+            "(8, 17)",
+            "torch.float64"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits"
+        },
+        {
+          "outcome": "passed",
+          "parameters": [
+            "(3, 5, 32)",
+            "torch.float32"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits"
+        },
+        {
+          "outcome": "passed",
+          "parameters": [
+            "(3, 5, 32)",
+            "torch.float64"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits"
+        },
+        {
+          "outcome": "passed",
+          "parameters": [
+            "(1, 1024)",
+            "torch.float32"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits"
+        },
+        {
+          "outcome": "passed",
+          "parameters": [
+            "(1, 1024)",
+            "torch.float64"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits"
+        },
+        {
+          "outcome": "passed",
+          "parameters": [],
+          "test": "test_calculate_sum_pi_squared_from_logits_extreme_values"
+        },
+        {
+          "outcome": "passed",
+          "parameters": [
+            "(10, 33)",
+            "1"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits_chunking"
+        },
+        {
+          "outcome": "passed",
+          "parameters": [
+            "(10, 33)",
+            "4"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits_chunking"
+        },
+        {
+          "outcome": "passed",
+          "parameters": [
+            "(10, 33)",
+            "2048"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits_chunking"
+        },
+        {
+          "outcome": "passed",
+          "parameters": [
+            "(3, 7, 33)",
+            "1"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits_chunking"
+        },
+        {
+          "outcome": "passed",
+          "parameters": [
+            "(3, 7, 33)",
+            "4"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits_chunking"
+        },
+        {
+          "outcome": "passed",
+          "parameters": [
+            "(3, 7, 33)",
+            "2048"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits_chunking"
+        },
+        {
+          "error": "element 0 of tensors does not require grad and does not have a grad_fn",
+          "error_type": "RuntimeError",
+          "outcome": "failed",
+          "parameters": [
+            "(0, 33)",
+            "1"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits_chunking"
+        },
+        {
+          "error": "element 0 of tensors does not require grad and does not have a grad_fn",
+          "error_type": "RuntimeError",
+          "outcome": "failed",
+          "parameters": [
+            "(0, 33)",
+            "4"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits_chunking"
+        },
+        {
+          "error": "element 0 of tensors does not require grad and does not have a grad_fn",
+          "error_type": "RuntimeError",
+          "outcome": "failed",
+          "parameters": [
+            "(0, 33)",
+            "2048"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits_chunking"
+        },
+        {
+          "error": "Regex pattern did not match.\n  Expected regex: 'chunk_size'\n  Actual message: 'range() arg 3 must not be zero'",
+          "error_type": "AssertionError",
+          "outcome": "failed",
+          "parameters": [
+            "0"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits_rejects_non_positive_chunk_size"
+        },
+        {
+          "error": "DID NOT RAISE ValueError",
+          "error_type": "Failed",
+          "outcome": "failed",
+          "parameters": [
+            "-1"
+          ],
+          "test": "test_calculate_sum_pi_squared_from_logits_rejects_non_positive_chunk_size"
+        }
+      ],
+      "passed": 13
+    }
+  },
+  "scope": "18 new original CPU test cases against both AST-extracted original helpers; empty backward and nonpositive parameters included; no native pytest collection, uninitialized-value reads, GPU/memory/timing, V1 wiring, or OTB training",
+  "source_sha256": {
+    "new-production.py": "9b3dccdb1cd38dd642a75293b5d62a03062002cccdc9207511f281400493133c",
+    "new-test.py": "3485abd190764db43ca897c72e6d7966c5891f833a2f16069809be366ed24f9b",
+    "old-production.py": "82a559e4f0aa3c3d33b0c2e584974f7e00394e130268957e8847d87d5792b8a4",
+    "old-test.py": "26ea5c909b1184eb1c943934233ee6e21f990b3933a7cb7ebd53450ab1147858"
+  },
+  "test_path": "tests/utils/test_torch_functional.py",
+  "tests_from": "23d891cd2ac16d3d7063c4eb94330d6aa29a9b5d",
+  "versions": {
+    "new": "23d891cd2ac16d3d7063c4eb94330d6aa29a9b5d",
+    "old": "0ed8b37033984ba9862395af9ec621125f53eb10"
+  }
+}
