@@ -1,6 +1,6 @@
 # verl Worker 生命周期与 Ray 分布式架构源码阅读
 
-2026-10-26接续：[MLflow 初始化的文件锁与异常范围](#mlflow-初始化的文件锁与异常范围)核新#8393：进程内单例不能隔离多个worker；文件锁只串行同锁文件的初始化，不修复数据库，也不能把回调内部ImportError当平台不支持锁。
+2026-10-26接续：[MLflow 初始化的文件锁与异常范围](#mlflow-初始化的文件锁与异常范围)核#8393新f1dd14b：with管理句柄不缩小异常捕获；原三控制仍出现回调ImportError后无锁重试。trainer初始化另无同锁，不把局部串行化当整个启动流程互斥。
 
 2026-10-26接续：[外部 KV 缓存的权重命名空间](#外部-kv-缓存的权重命名空间)核#8323：缓存失效不必等于删除存储，但版本与真实权重必须对应；两个原helper的CPU检查不认证引擎命中、并发门或淘汰效果。
 
@@ -13,9 +13,25 @@
 
 ## MLflow 初始化的文件锁与异常范围
 
-**初始化互斥、数据库修复和完整trace写入安全是不同问题。** analytistic的[#8393](https://github.com/verl-project/verl/pull/8393)为已有候选：2026-10-26读取OPEN／非draft／未合并，head `8313d7b6961f399609e3aae34ef739c0cac55cb5`，base／实际祖先 `174888fcf4b65dea032566a02fd16c5f76fb5b5b`，ahead1／behind0，仅一个生产文件23增1删，无提交测试；读取时没有人工评论／审查意见。作者报告两进程锁测试及八个AgentLoopWorker并发启动，不计本机MLflow结果。
+**初始化互斥、数据库修复和完整trace写入安全是不同问题。** analytistic的[#8393](https://github.com/verl-project/verl/pull/8393)为已有候选：2026-10-26再次核验仍OPEN／非draft／未合并，当前head `f1dd14b0a843570b2542568678ef286d81aaed7f`，目标base `174888fcf4b65dea032566a02fd16c5f76fb5b5b`，两提交、一个生产文件22增1删，无提交测试。旧head `8313d7b6961f399609e3aae34ef739c0cac55cb5` 是首提交；新增提交仅将文件句柄改为上下文管理，三斜杠PR正文与四斜杠源码的差异仍在。当前两条COMMENTED review及三条行内均来自机器人，不作维护者认可。作者两进程及八worker报告仍是外部结果，不认证新版完整启动。
 
-固定版本[AgentLoopWorker调用点](https://github.com/verl-project/verl/blob/8313d7b6961f399609e3aae34ef739c0cac55cb5/verl/experimental/agent_loop/agent_loop.py#L580)让各worker调用[RolloutTraceConfig.init](https://github.com/verl-project/verl/blob/8313d7b6961f399609e3aae34ef739c0cac55cb5/verl/utils/rollout_trace.py)。`_instance`／`_initialized`只属于各进程自己的Python类，不能充当跨worker屏障。候选对字面以sqlite:开头的URI打开旁置 `.lock` 文件，用阻塞LOCK_EX仅包住set_experiment，最后解锁并关闭；enable_async_logging和set_tracking_uri在锁外，后续start_span／set_trace_tag也不在这段锁内。代码没有超时、数据库回滚、损坏schema检测或修复步骤。
+### 句柄关闭不等于异常捕获或全体初始化已修复
+
+[新版原类](https://github.com/verl-project/verl/blob/f1dd14b0a843570b2542568678ef286d81aaed7f/verl/utils/rollout_trace.py)把 `open`／显式close换为 `with open`，仍在outer `try/except ImportError` 内执行锁获取、业务回调和解锁。因此回调抛ImportError仍进入平台fallback，在锁已释放后再次调用。复用下方原三条件、不新增用例，[新版结果](../../experiments/mlflow-init-lock/result-revised.json)的cases与旧JSON逐项相同；新增 `--revision revised` 只选择完整源码hash，原脚本默认模式和旧结果保留。不能因“改成context manager”撤回这条异常边界，也不能说锁完全没有效果：正常回调期间子进程仍被阻挡，返回后可拿锁。
+
+从结构看，with也会在flock获取／释放本身抛错时关闭文件；旧版可能在执行显式close前退出。原三条件没有注入这两类错误，因此结果相同不代表所有失败路径语义相同，不把这次重构说成完全没有作用。
+
+另一个覆盖条件是所有相关初始化者都使用同一锁。[固定新版 Tracking.__init__](https://github.com/verl-project/verl/blob/f1dd14b0a843570b2542568678ef286d81aaed7f/verl/utils/tracking.py#L116)在trainer启用mlflow且未设置MLFLOW_RUN_ID时，直接调用set_experiment再start_run；没有使用旁置文件锁。[V1 fit](https://github.com/verl-project/verl/blob/f1dd14b0a843570b2542568678ef286d81aaed7f/verl/trainer/ppo/v1/trainer_base.py#L424)会构造Tracking。若它与worker初始化重叠并指向同库，worker持有的协作锁不约束trainer。这是源码覆盖范围，不是本机已复现并发迁移；trainer自己的异常重试最终可降级为无MLflow日志，也不能机械推成每次都启动崩溃。
+
+对应[机器人反馈](https://github.com/verl-project/verl/pull/8393#discussion_r4377446960)已经提出trainer侧覆盖问题，不另认领／复制修复。另两条反馈涉及[URI解析](https://github.com/verl-project/verl/pull/8393#discussion_r4377345999)及[锁文件打开](https://github.com/verl-project/verl/pull/8393#discussion_r4377346014)，本轮只确认字面split和open模式仍未改，不执行其建议或新增安全／故障实验。三份完整源码AST／compile及Git blob与GitHub固定tree相符，分别为rollout_trace `5da7ac1e…`、tracking `3107f50b…`、trainer `117c1a98…`；未执行Tracking或完整trainer。
+
+```bash
+python experiments/mlflow-init-lock/verify.py /path/to/f1dd14b/rollout_trace.py --revision revised
+```
+
+以下原三条件的锁探针方法在新版沿用；旧结果仅代表8313d7b，当前结论对应上面的新版JSON。
+
+首版[AgentLoopWorker调用点](https://github.com/verl-project/verl/blob/8313d7b6961f399609e3aae34ef739c0cac55cb5/verl/experimental/agent_loop/agent_loop.py#L580)让各worker调用[RolloutTraceConfig.init](https://github.com/verl-project/verl/blob/8313d7b6961f399609e3aae34ef739c0cac55cb5/verl/utils/rollout_trace.py)。`_instance`／`_initialized`只属于各进程自己的Python类，不能充当跨worker屏障。两版都对字面以sqlite:开头的URI打开旁置 `.lock` 文件，用阻塞LOCK_EX仅包住set_experiment，最后解锁并关闭；enable_async_logging和set_tracking_uri在锁外，后续start_span／set_trace_tag也不在这段锁内。代码没有超时、数据库回滚、损坏schema检测或修复步骤。
 
 默认URI实际为 `sqlite:////tmp/mlruns.db`，四斜杠对应绝对路径 `/tmp/mlruns.db`，锁为 `/tmp/mlruns.db.lock`；不能照PR正文的三斜杠当成同一路径。候选用 `split("///", 1)[1]` 和字符串追加来生成锁名，不是SQLAlchemy URL解析。[SQLAlchemy官方连接规则](https://docs.sqlalchemy.org/en/20/dialects/sqlite.html#connect-strings)区分相对／绝对路径、内存数据库及查询参数。因此要按真实数据库身份评估锁是否一致：例如query被原样拼入锁名，SQLAlchemy驱动前缀sqlite+pysqlite:则不进入此startswith分支；sqlite://连分割的第二项都没有。这是源码／官方格式对照，不代表已验证这些URI在特定MLflow安装中可用，也不扩写通用解析补丁。
 

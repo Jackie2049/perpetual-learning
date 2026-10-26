@@ -1,9 +1,10 @@
 """Bounded original-class control with real cross-process flock, not MLflow.
 
-Usage: python verify.py /path/to/pinned/rollout_trace.py
+Usage: python verify.py /path/to/pinned/rollout_trace.py [--revision revised]
 The MLflow callback is an explicit recorder/exception injector. No database,
 Alembic migration, Ray actor, GPU, or tracing server is started.
 """
+import argparse
 import ast
 import hashlib
 import json
@@ -20,6 +21,8 @@ from unittest.mock import patch
 COMMIT = "8313d7b6961f399609e3aae34ef739c0cac55cb5"
 SOURCE_PATH = "verl/utils/rollout_trace.py"
 EXPECTED_SHA256 = "6c942a3bb32787f72f0875c6f848095b852d01efaa5d5b96009668c9c748d7ad"
+REVISED_COMMIT = "f1dd14b0a843570b2542568678ef286d81aaed7f"
+REVISED_SHA256 = "bf795f42a0bb271a4504e4e075563bf1874a4f8e87303ed96abe89863834d2aa"
 
 # A new interpreter opens its own descriptor; errno is not guessed from timing.
 PROBE = """
@@ -84,9 +87,12 @@ def run_case(source, root, mode):
             "after_return": probe(lock_path), "lock_file_remains": lock_path.exists()}
 
 
-def run(source_file):
+def run(source_file, revision="original"):
+    assert revision in ("original", "revised")
+    commit, expected_hash = ((COMMIT, EXPECTED_SHA256) if revision == "original"
+                             else (REVISED_COMMIT, REVISED_SHA256))
     source = source_file.read_bytes()
-    assert hashlib.sha256(source).hexdigest() == EXPECTED_SHA256
+    assert hashlib.sha256(source).hexdigest() == expected_hash
     with tempfile.TemporaryDirectory(prefix="mlflow-init-lock-") as directory:
         cases = {mode: run_case(source, Path(directory), mode)
                  for mode in ("success", "runtime_error", "import_error")}
@@ -97,11 +103,15 @@ def run(source_file):
     assert [x["other_process"] for x in cases["import_error"]["calls"]] == ["blocked", "acquired"]
     assert cases["import_error"]["initialized"]
     assert all(case["after_return"] == "acquired" for case in cases.values())
-    return {"commit": COMMIT, "source_path": SOURCE_PATH, "sha256": EXPECTED_SHA256,
+    return {"commit": commit, "source_path": SOURCE_PATH, "sha256": expected_hash,
             "python": platform.python_version(), "platform": platform.system(),
             "scope": "original AST class, recorder MLflow callback, real fcntl and child lock probes; no MLflow/Alembic/database/Ray execution",
             "cases": cases}
 
 
 if __name__ == "__main__":
-    print(json.dumps(run(Path(sys.argv[1])), indent=2))
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("source_file", type=Path)
+    parser.add_argument("--revision", choices=("original", "revised"), default="original")
+    args = parser.parse_args()
+    print(json.dumps(run(args.source_file, args.revision), indent=2))

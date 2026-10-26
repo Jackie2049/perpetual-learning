@@ -1,0 +1,50 @@
+{
+  "commit": "f1dd14b0a843570b2542568678ef286d81aaed7f",
+  "source_path": "verl/utils/rollout_trace.py",
+  "sha256": "bf795f42a0bb271a4504e4e075563bf1874a4f8e87303ed96abe89863834d2aa",
+  "python": "3.12.13",
+  "platform": "Darwin",
+  "scope": "original AST class, recorder MLflow callback, real fcntl and child lock probes; no MLflow/Alembic/database/Ray execution",
+  "cases": {
+    "success": {
+      "calls": [
+        {
+          "project": "project",
+          "other_process": "blocked"
+        }
+      ],
+      "error": null,
+      "initialized": true,
+      "after_return": "acquired",
+      "lock_file_remains": true
+    },
+    "runtime_error": {
+      "calls": [
+        {
+          "project": "project",
+          "other_process": "blocked"
+        }
+      ],
+      "error": "RuntimeError",
+      "initialized": false,
+      "after_return": "acquired",
+      "lock_file_remains": true
+    },
+    "import_error": {
+      "calls": [
+        {
+          "project": "project",
+          "other_process": "blocked"
+        },
+        {
+          "project": "project",
+          "other_process": "acquired"
+        }
+      ],
+      "error": null,
+      "initialized": true,
+      "after_return": "acquired",
+      "lock_file_remains": true
+    }
+  }
+}

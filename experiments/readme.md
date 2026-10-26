@@ -7,7 +7,7 @@
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
 | [verl-otb-v1-wiring/verify.py](verl-otb-v1-wiring/verify.py) | #8364原7参数项提取逻辑候选全过／基线全失败，[结果](verl-otb-v1-wiring/result.json)保留真实异常；原FakeTQ／mock worker，reference仅断言开关，无真实引擎／训练 | [OTB接线与策略身份](../notebook/frameworks/verl-grpo-core-algos-reading.md#v1-的-otb-统计接线与策略身份) |
-| [mlflow-init-lock/verify.py](mlflow-init-lock/verify.py) | #8393原类接显式记录／异常注入回调，[三组结果](mlflow-init-lock/result.json)由真实子进程探锁；ImportError内部失败会无锁再调用，无MLflow／数据库／Ray执行 | [初始化锁与异常](../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#mlflow-初始化的文件锁与异常范围) |
+| [mlflow-init-lock/verify.py](mlflow-init-lock/verify.py) | #8393原类接记录／注入回调，[新版三组结果](mlflow-init-lock/result-revised.json)同[首版](mlflow-init-lock/result.json)；with关闭句柄仍会在ImportError后无锁重调，真实子进程探锁，无MLflow／数据库／Ray执行 | [初始化锁与异常](../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#mlflow-初始化的文件锁与异常范围) |
 | [qat-spec-selection/verify.py](qat-spec-selection/verify.py) | #8361合并前cf6→8a历史对照，[结果](qat-spec-selection/result.json)旧2过1失败／8a三过；最终781c删除helper及三测试，不能移作主线量化／refit验收 | [QAT最终结构](../notebook/frameworks/verl-quant-layer-audit.md#合并版不再替换任何-spec) |
 | [qwen35-kernel-capability/verify.py](qwen35-kernel-capability/verify.py) | #8390原打包helper接显式去Hub装饰器的Torch参考体，[结果](qwen35-kernel-capability/result.json)比较两独立小序列；六源码语法，无实际provider／模型／SP执行，不判新回归 | [Qwen3.5能力探测](../notebook/frameworks/verl-architecture.md#qwen35-适配与内核能力探测) |
 | [kv-cache-salt-contract/verify.py](kv-cache-salt-contract/verify.py) | #8323两个原纯helper检查，[结果](kv-cache-salt-contract/result.json)含run／步数格式及8个connector输入；无完整配置、缓存／并发或模型执行 | [缓存权重命名空间](../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#外部-kv-缓存的权重命名空间) |

@@ -31,7 +31,7 @@
 
 2026-10-26更新[QAT合并版](#qat-mask-默认与后端契约)：#8361最终781c在4f8f090a合并，删除全部spec替换与mask默认helper；原三例只属8a历史版，旧正文不作最终Qwen3-MoE／refit验收。另核[#8390依赖与模型适配](../../notebook/frameworks/verl-architecture.md#qwen35-适配与内核能力探测)已合入f78fd053，八改动文件同eab3d58b，不重复CPU控制或自动升级环境。
 
-2026-10-26补[MLflow初始化](#mlflow-初始化文件锁的已有候选)：新#8393已有作者；原类接记录回调与真实子进程flock确认锁持有／释放，回调内部ImportError会无锁再调用。三局部控制非MLflow迁移或八worker验收，不另实现。
+2026-10-26更新[MLflow初始化](#mlflow-初始化文件锁的已有候选)：#8393新f1dd14b改with句柄管理，原三控制结果同首版，回调ImportError仍无锁重调；trainer未共用锁仅源码、已有bot反馈，非真实迁移或八worker验收，不另实现。
 
 2026-10-26补[KV salt与sleep](#kv-salt-与-sleep-的清理范围)：#8323新1787d6a2适配0.32 pause API；显式False不阻止sleep经另一入口请求reset，正确失效与保留率分开。四源码仅语法，不重复旧CPU／GPU或另改引擎。
 
@@ -56,6 +56,8 @@
 [原Worker专题](../../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#新版的显式清理与-sleep-路径)对照固定vLLM0.32.0 commit5df63a72：salt显式clear传False，abort适配mode=abort后单独清local；sleep(level≥1)仍经_finish_pause／_reset_caches默认True请求connector reset。实际删除由connector.reset_cache实现决定，不应写成所有store清空或必然完整保留。已有原生release_kv_cache_memory也走默认reset，不能仅凭方法名替换。四完整源码AST／compile及scheduler方法只读，无pause／sleep／connector／模型执行，旧helper结果与作者0.29 GPU报告均不迁作新组合验收；只修原M5条件参考，无新队列／补丁／专项或社区写入。
 
 ## MLflow 初始化文件锁的已有候选
+
+2026-10-26新版接续：[#8393](https://github.com/verl-project/verl/pull/8393) headf1dd14b0／base仍174888fc，仍OPEN／非draft／未合并，两提交、单文件22增1删。仅open／显式close换with，未缩小outer ImportError；[原三条件复核](../../experiments/mlflow-init-lock/result-revised.json)的cases与旧结果逐项相同，旧JSON保留，脚本加固定hash模式而非新矩阵。[原Worker专题](../../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#句柄关闭不等于异常捕获或全体初始化已修复)补Tracking未共用锁的条件范围；已有[bot行内反馈](https://github.com/verl-project/verl/pull/8393#discussion_r4377446960)，无维护者批准。本轮三源码AST／compile、真实子进程flock，无实际MLflow／迁移／trainer启动，不执行补丁建议或新增M5队列。以下首版记录保留历史含义。
 
 2026-10-26读取analytistic的[#8393](https://github.com/verl-project/verl/pull/8393)，OPEN／非draft／未合并，head8313d7b、base／实际祖先174888fc，ahead1／behind0，单生产文件23增1删，无配套提交测试，读取时无人工评论／审查意见。作者已有两进程及八worker启动报告，不另认领修复。
 
