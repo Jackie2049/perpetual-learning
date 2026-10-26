@@ -107,6 +107,8 @@
 
 ## UniRL
 
+- [AR种子的请求与副本分工](unirl-survey.md#ar-种子配置与逐样本请求)：#507逐请求seed已由报告者让JianhaoYu-AI接手，engine偏移另议；八源文件同旧分析，不因协作回复重跑CPU或认领另一部分。
+
 - [Scheduler子进程环境与依赖版本](unirl-survey.md#scheduler-子进程环境与依赖版本)：#468已有实现，两个原helper接独立dict核恢复，非真实spawn／库映射；memory-saver已演进，真机先核实际版本。
 
 窗口调度补读：[SDE 停留步数与坐标](unirl-survey.md#sde-窗口的停留步数与坐标)区分rollout_id与去噪窗口起点；#489已合并，原模块CPU序列非参考parity／训练加速。默认13在Wan22 T20反事实末窗会衰减，实际四配方仍progressive。

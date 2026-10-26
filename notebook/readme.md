@@ -283,7 +283,7 @@
 - [UniRL 调研（腾讯统一多模态 RL）](frameworks/unirl-survey.md) — 统一训练抽象、稀疏SDE、SFT游标、packed文本双轴与[按域奖励](frameworks/unirl-survey.md#按域奖励的零分与失败标志)；原CPU路由/统计区分零分、失败和非适用NaN，非服务或训练验收
   - [Scheduler环境与依赖](frameworks/unirl-survey.md#scheduler-子进程环境与依赖版本) — #468两个原helper接独立dict恢复通过，非spawn或库加载；当前memory-saver已变化，不自动套旧shim
   - [路由策略与基准入口](frameworks/unirl-survey.md#路由策略与基准入口) — #529新反馈与当前调用链：同步基准不经过pool，Agentic siblings与普通turn不同；亲和、缓存命中和吞吐证据分开，仅源码学习
-  - [AR种子与请求规划](frameworks/unirl-survey.md#ar-种子配置与逐样本请求) — #474已合并不等于#507完成；原生Sample/完整原解析器六组CPU入口控制，SGLang有确定性前提、n=1不减组fanout，非采样或复现验收
+  - [AR种子与请求规划](frameworks/unirl-survey.md#ar-种子配置与逐样本请求) — #507逐请求部分已由JianhaoYu-AI接手、副本偏移另议；当前八相关文件同旧分析，原六组入口控制非采样／复现验收，#474合并不等整题完成
   - [IPC共识门与物化边界](frameworks/unirl-survey.md#原生-ipc-的共识门与物化边界) — #494区分source/chunk门；raw项可含逐expert DTensor重分布，边界覆盖须核真实producer，14次静态检查非通信/死锁验收
   - [监控奖励与目标隔离](frameworks/unirl-survey.md#监控奖励的目标隔离与失败契约) — #419已由社区接手；原解析/Part CPU控制表明小权重可经标准化成近单位优势，零权重仅适用于weighted_sum，失败契约不随之消失，非训练实测
   - [音频奖励与后续反证](frameworks/unirl-survey.md#音频奖励配方的评估协议与后续反证) — #475正文与社区同head晚期退化分开；原YAML/八模块静态核对，音频policy权重不自动改变KL，不是训练或质量复测

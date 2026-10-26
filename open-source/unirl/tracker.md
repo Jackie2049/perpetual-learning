@@ -13,6 +13,8 @@
 
 2026-10-26另按[#621最终合并范围](#奖励加载的最终合并范围)修正旧记录：managed也延迟启动，实验VideoAlign增配置检查；九模块语法检查不算真实加载验收，不新增任务。
 
+2026-10-26接续[AR seed协作](#ar-种子的协作分工)：#507报告者已让JianhaoYu-AI接手逐请求部分，engine副本偏移另议，不再记报告者正在独自实现整项；八相关源码同旧main，不重复CPU或认领另一部分。
+
 **【大白话讲明白】**
 
 这张表区分尚有贡献空间、已有负责人、只覆盖部分需求和缺验证条件的问题。训练栈一致性修复（#523）已经交给 M5 单一推进，不是 M1 的待认领任务；其他线索也要读正文、评论及对应补丁，不能只看 assignee 是否为空。
@@ -25,6 +27,12 @@
 <!-- contribution-summary:end -->
 
 > 扫描时间 2026-10-22（GitHub 实时 API）。main 固定 `6fd82cba`。状态以当日核验为准，继续前重新核对关联 issue/PR。
+
+## AR 种子的协作分工
+
+2026-10-26读取[#507全文与两评论](https://github.com/Tencent-Hunyuan/UniRL/issues/507)，仍OPEN。JianhaoYu-AI于07:05:18Z提出逐请求seed／sample_id构造切片并要求先确定batching方式；报告者CjhHa1于12:45:08Z[同意其接手](https://github.com/Tencent-Hunyuan/UniRL/issues/507#issuecomment-6416315321)，明确自己当前未做#507，engine副本seed偏移分开。更正“报告者自行实现整项”的旧描述，但不把拆分后的另一项当本项目可直接认领，亦不把协作同意当代码完成或接口批准。
+
+见[原种子专题](../../notebook/frameworks/unirl-survey.md#ar-种子配置与逐样本请求)：主线8cfbac177与原6fd82cba的八个类型／解析器／adapter／trainer文件逐一blob同（tree均未截断）；#474合并只删除随机seed patch，仍不能替代#507的两个目标。507 in:body PR检索本轮为0，只说明此查询未命中。没有新CPU／请求构造／采样／模型／设备执行，旧六组解析器结果保留固定范围；只更新原M5条件参考，无新任务／竞争实现或上游写入。所有社区可见动作仍需用户逐项明确授权。
 
 ## 奖励加载的最终合并范围
 

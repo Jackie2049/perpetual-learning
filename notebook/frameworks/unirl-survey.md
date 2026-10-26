@@ -1,5 +1,7 @@
 # UniRL — 腾讯统一多模态 RL 框架调研
 
+2026-10-26 接续：[AR种子协作分工](#ar-种子配置与逐样本请求)中，报告者已让JianhaoYu-AI接手逐请求seed，engine副本偏移另议；八相关文件同旧分析，不将认领评论当实现完成或重复原CPU验证。
+
 2026-10-26 接续：[奖励能力校验与模型加载](#奖励能力校验与模型加载)按 #621 最终合并版修正：managed 子进程也延后启动，实验 VideoAlign 增配置检查；加载幂等不等于整图回滚，旧版42项替身报告不迁为新版验收。
 
 2026-10-26 接续：[Scheduler 子进程环境与依赖版本](#scheduler-子进程环境与依赖版本)核已有#468；环境恢复不等于真实动态库选择／启动，旧memory-saver假设须与实际依赖版本分开。
@@ -1771,7 +1773,11 @@ Python3.12.13、requests2.34.2，执行原 `_judge_one` 完整方法及原prompt
 
 ## AR 种子配置与逐样本请求
 
-**种子字段存在、请求携带种子、真实生成可复现，是三层证据。** [#507](https://github.com/Tencent-Hunyuan/UniRL/issues/507)报告Omni AR忽略显式seed及多副本初始RNG相关，报告者已表示自行提交修复，不因无assignee或编号PR检索为空认领。前置[#474](https://github.com/Tencent-Hunyuan/UniRL/pull/474)实际上已于2026-09-24合并为`67d33392254822556734fd3df76aaa668c52ee47`，删除用os.urandom补每请求seed的patch；它不等于完成#507的两项接线。本节固定当前main `6fd82cba13f52f394747832344039408699ea378`。
+**种子字段存在、请求携带种子、真实生成可复现，是三层证据。** [#507](https://github.com/Tencent-Hunyuan/UniRL/issues/507)报告Omni AR忽略显式seed及多副本初始RNG相关。2026-10-26的[新回复](https://github.com/Tencent-Hunyuan/UniRL/issues/507#issuecomment-6416315321)中，报告者CjhHa1明确自己当前未在实现此题，并让JianhaoYu-AI接手逐请求AR seed部分，副本engine seed偏移分开。不能继续写成报告者正在独自实现整项，也不能将分出的另一部分自动认领给本项目。前置[#474](https://github.com/Tencent-Hunyuan/UniRL/pull/474)已于2026-09-24合并为`67d33392254822556734fd3df76aaa668c52ee47`，删除用os.urandom补每请求seed的patch；它不等于完成#507的两项接线。
+
+JianhaoYu-AI的[先前提议](https://github.com/Tencent-Hunyuan/UniRL/issues/507#issuecomment-6410257747)只承接seed／sample_id映射，先确定逐样本GenerateCall还是后端支持逐prompt参数，以保留未设seed路径并评估batching代价；尚无这条评论给出的实现或吞吐报告。报告者同意协作，不等同维护者批准接口、用户授权本项目写上游，或证明跨副本采样独立。按507 in:body的PR检索本轮为0，仅为该查询结果，不作为无代码／无负责人证明。
+
+本节原10-24代码分析与六组CPU入口控制固定 `6fd82cba13f52f394747832344039408699ea378`。2026-10-26主线为 `8cfbac17765004afb68fef08a4e011a4c8daf555`，两个完整tree查询均未截断；sampling类型、SGLang解析器／text adapter、direct-vLLM解析器／driver、两个Omni adapter及unified trainer共八文件blob逐一相同。两个Omni文件分别为 `f5caa6a5ba0380baa963eafdbc9627d7ae5f99fb`、`6eecc3b0c56e5d72686281d390336cc3caab13c3`，trainer为 `0904478ab79c0d89ff39057951d0aa973fe3e598`。因此当前相关入口没有这两次主线快照间的修订，本轮不重复CPU、RNG或设备检查。以下源码结论沿用其固定版本，不把协作进展当代码落地。
 
 ### 当前解析器的入口前提
 
