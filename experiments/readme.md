@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [qat-spec-selection/verify.py](qat-spec-selection/verify.py) | #8361原三测试体与原假Bridge fixture接两版原helper，[结果](qat-spec-selection/result.json)旧2过1失败／新3过；不导入真实后端，不认证模型／量化／refit | [QAT结构与mask](../notebook/frameworks/verl-quant-layer-audit.md#qat-的-mask-默认与-packed-接口) |
 | [qwen35-kernel-capability/verify.py](qwen35-kernel-capability/verify.py) | #8390原打包helper接显式去Hub装饰器的Torch参考体，[结果](qwen35-kernel-capability/result.json)比较两独立小序列；六源码语法，无实际provider／模型／SP执行，不判新回归 | [Qwen3.5能力探测](../notebook/frameworks/verl-architecture.md#qwen35-适配与内核能力探测) |
 | [kv-cache-salt-contract/verify.py](kv-cache-salt-contract/verify.py) | #8323两个原纯helper检查，[结果](kv-cache-salt-contract/result.json)含run／步数格式及8个connector输入；无完整配置、缓存／并发或模型执行 | [缓存权重命名空间](../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#外部-kv-缓存的权重命名空间) |
 | [recompute-ci-prerequisites/verify.py](recompute-ci-prerequisites/verify.py) | #8338新旧原模块的真实缺Megatron收集控制，[结果](recompute-ci-prerequisites/result.json)退出5／5／2；零CUDA测试体执行，不重跑原所有权实验 | [重算测试前置条件](../notebook/fundamentals/gradient-checkpointing.md#重算测试的执行前置条件) |

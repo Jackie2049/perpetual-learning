@@ -1,0 +1,44 @@
+{
+  "python": "3.12.13",
+  "pytest": "9.1.1",
+  "scope": "original test bodies and original fake Bridge fixture; AST-extracted original helper; not native pytest or real backend",
+  "old_commit": "cf6eb5181e17b4db67afff110eabc61daf61fb4d",
+  "new_commit": "8a697618897d473a43b6d9e83ba6c3341a23067b",
+  "production_path": "verl/workers/engine/megatron/transformer_impl.py",
+  "test_path": "tests/workers/test_megatron_qat_layer_spec_on_cpu.py",
+  "sha256": {
+    "old.py": "ae9c0f67e92fd0c31cfcc68572e452047b61256abf4c999768c256d49b97acec",
+    "new.py": "1c4a029de4e1248433260b3c84e508d0e9b589a563953750c6d2074d91ec57e3",
+    "test.py": "9b2eed71d1f19031e3be6766cc5bbbf935c026285bd46b0c10deb55d17fe1f48"
+  },
+  "runs": {
+    "old": [
+      {
+        "test": "test_qat_spec_defaults_arbitrary_attention_mask_off",
+        "outcome": "passed"
+      },
+      {
+        "test": "test_qat_spec_keeps_an_explicit_override",
+        "outcome": "passed"
+      },
+      {
+        "test": "test_qat_spec_keeps_a_bridge_specific_spec",
+        "outcome": "assertion_failed"
+      }
+    ],
+    "new": [
+      {
+        "test": "test_qat_spec_defaults_arbitrary_attention_mask_off",
+        "outcome": "passed"
+      },
+      {
+        "test": "test_qat_spec_keeps_an_explicit_override",
+        "outcome": "passed"
+      },
+      {
+        "test": "test_qat_spec_keeps_a_bridge_specific_spec",
+        "outcome": "passed"
+      }
+    ]
+  }
+}

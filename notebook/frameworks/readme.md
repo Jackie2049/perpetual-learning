@@ -175,7 +175,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [verl 训练与 rollout 的量化层审计](verl-quant-layer-audit.md) — #8132审计/24项CPU单测及新#8306 refit覆盖对照；loader/marker与测试证据不可混用，真机待M5。
 - [原生混合精度模型的后端选择](verl-quant-layer-audit.md#原生混合精度模型的后端选择) — #8381的FP8顶层／FP4 experts与显式backend分开；Marlin改变activation格式，源码非加载或refit验收。
 - [VeOmni后端RFC分工](verl-quant-layer-audit.md#后端-rfc-的分工与迁移条件) — #8342作者已开#1360，保留现有QAT配置语义、迁移另议；仍待维护者反馈，不另实现或新排算力。
-- [QAT 的 mask 默认与 packed 接口](verl-quant-layer-audit.md#qat-的-mask-默认与-packed-接口) — #8361补默认而非强制覆盖；Bridge到TE的causal转padding_causal与完整THD契约分层，MXFP4部署限制另计。七份语法检查非后端或GPU验收。
+- [QAT 的 mask 默认与 packed 接口](verl-quant-layer-audit.md#qat-的-mask-默认与-packed-接口) — #8361新版只替换默认spec，模型专用spec连同mask字典保留；原三替身测试新版过／旧版专用例失败，非模型量化或refit验收。全保留spec仍是待验证建议。
 - [verl ModelOpt模块忽略](verl-quant-layer-audit.md#modelopt-模块忽略与子量化器) — #8329保留直接叶子并扩展模块后代；两版各11组名称集合控制，非ModelOpt/原34测试或训练验证。
 - [新版MXFP8检查与指标哨兵](verl-quant-layer-audit.md#新版运行期检查与指标哨兵) — #8327替代旧拆分、基于#8306；默认warn不拦截。原20参数例/5边界通过，仅纯Python sentinel，非量化或kernel验收。
 - [量化写入前检查与失败握手](verl-quant-layer-audit.md#写入前检查与失败握手) — #8327新head把格式检查移到引擎逐桶写入前；完成ACK不等于回滚，首轮finished不等于通过。九份语法检查非引擎或通信验收，旧GPU/CPU报告不迁移。

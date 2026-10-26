@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 QAT spec范围接续（2026-10-26）**：起始6310c1d干净，fetch／compare保留906无新增删改。#8361新head8a697618相对cf6eb518前进一提交，base仍3c6d9b43；[原量化专题](notebook/frameworks/verl-quant-layer-audit.md#新版先保留模型结构)纠正当前仅默认spec替换并补mask，其余spec／字典保留。七源码语法，原三测试体／原fixture接原helper旧2过1失败／新3过，非原生pytest／真实provider或设备；作者GH200 OLMoE与80CPU报告不计本机，新人工全保留建议仍待Qwen3-MoE覆盖／导出／refit验证。write-page技能将新版与旧mask调用链分层，只更新原M5条件，无新任务／专项／社区写入。下轮转独立真实需求／实质反馈，不扩spec替身或代作者实现第三方案。
+
 - **M1 Qwen3.5能力接续（2026-10-26）**：起始524d936干净，compare保留904新增1无删改后ffee97ddf保全M5。两项目各6更新选#8390新head eab3d58b／父6847168a，8文件1789增1443删；[原架构专题](notebook/frameworks/verl-architecture.md#qwen35-适配与内核能力探测)核官方5.12／5.16字段迁移与Hub装饰器。六源码语法，原packed helper接显式去装饰器Torch参考CPU两序列控制说明kwargs非边界能力；参考体与5.12相同，不判新回归／实际provider故障。作者nproc1两项仅单序列case，未跑模型／反向／SP／设备或改依赖。write-page技能分开解析／调度／语义／验收，只补原M5条件，无新队列／专项／社区写入。下轮转独立需求／实质反馈，不扩provider替身或同head复跑。
 
 - **M1外部KV身份学习（2026-10-26）**：起始f3266b8干净，compare保留902新增1无删改后fff0f138d保全M5。两项目各6更新选#8323已有作者候选head4e93e476／父19835b21，20文件869增20删；[原Worker专题](notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#外部-kv-缓存的权重命名空间)分开换键失效／物理回收、门后取版本与真实权重身份。两个原helper核格式和8次connector输入，七完整模块AST／compile，无config／暂停／缓存／模型／设备执行，作者GPU报告及#8390新栈不叠加。write-page技能组织当前条件与证据边界，只补原M5参考，无新队列／专项／社区写入。下轮转独立实际需求／实质反馈，不扩缓存替身矩阵或复跑同head。

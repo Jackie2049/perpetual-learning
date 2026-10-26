@@ -29,6 +29,8 @@
 
 2026-10-26补[rollout解释器提案](#rollout-解释器隔离的已有提案)：#8388已有设计非实现；四verl模块与Slime原runtime仅语法，区分角色子树、driver导入和权重兼容，不另造resolver／launcher或部署环境。
 
+2026-10-26接续[QAT结构选择](#qat-mask-默认与后端契约)：#8361新head仅替换默认spec，专用spec提前返回也不补mask；原三替身测试旧2过1失败／新3过，非模型或refit验收。新人工反馈建议连默认spec也保留，尚待Qwen3-MoE验证，不另实现。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -438,6 +440,10 @@ AMD组合栈后续（2026-10-26）：#8371／#8370／#8369各head未变，作者
 两个候选各4个原良性方法共8方法通过，另有限helper/原math_equal CPU控制两次一致；不运行攻击、状态投毒或耗尽载荷，不搬作者完整安全套件报告。#7701 helper接受bool/string/位移并不证明这些输入得分；单元素矩阵的分数算式差异才明确到达math_equal返回值。本轮不合并/采用或对外提醒，不改专项、不新排M5任务；如需上游评论、PR或其fork head更新，仍须用户对具体动作明确同意。
 
 ## QAT mask 默认与后端契约
+
+2026-10-26接续：[#8361](https://github.com/verl-project/verl/pull/8361)仍OPEN／非draft／未合并，head `8a697618897d473a43b6d9e83ba6c3341a23067b`、base仍3c6d9b43，比cf6eb518只前进一提交、累计三文件100增5删。见[原量化专题新版](../../notebook/frameworks/verl-quant-layer-audit.md#新版先保留模型结构)：helper只在default_layer_spec对象身份相同时换ModelOpt并setdefault False，其余直接返回；旧“全QAT调用补默认”的范围已不适用。Bridge0.6.2 OLMoE专用attention／全宽QK norm和权重映射解释保留结构的意义，后续mtq.quantize调用本身不认证覆盖。
+
+[本机原三测试体](../../experiments/qat-spec-selection/result.json)接原fixture／两版AST helper，旧2过1失败、新3过；七模块仅语法，非原生pytest、真实provider或量化。作者新增80CPU／GH200 OLMoE FP8_BLOCK报告分别归其环境，不迁为本项目或Qwen3-MoE／refit验收。[wuxibin89新评论](https://github.com/verl-project/verl/pull/8361#issuecomment-6414899795)建议在验证默认TE spec的各mode量化覆盖／导出expert scales／前反向及refit后全保留spec，当前代码尚未采用。仅更新[M5原条件参考](../../experiments/handoff-m5.md#verl-量化层审计新版复验)，不新排训练、不接管作者路线或发布回复。以下为10-25旧版记录，不能继续当当前范围。
 
 2026-10-25只读[#8361](https://github.com/verl-project/verl/pull/8361)正文/完整三文件diff及唯一机器人评论，open、非draft、未合并，head `cf6eb5181e17b4db67afff110eabc61daf61fb4d`、base/实际祖先 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`。已有作者，不另认领。见[原量化专题](../../notebook/frameworks/verl-quant-layer-audit.md#qat-的-mask-默认与-packed-接口)：按固定锁文件Bridge0.6.2/MCore0.19.2/TE2.16.1核清arbitrary、causal、padding_causal选择链；setdefault保留显式True/None，mask类别满足不等于完整THD输入或部署backend可用。
 

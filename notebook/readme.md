@@ -199,6 +199,7 @@
 - [选定token概率与梯度锚点](frameworks/verl-fused-output-softcap.md#选定-token-概率与共享归一化项) — #7712已收窄为引擎输出；全词表与集合条件概率分开，单形状FP64梯度控制非kernel／舍入或训练结果
 - [verl 前向与logprob一致性](frameworks/verl-6572-full-determinism-source-reading.md#actor-前向与-logprob-公式的一致性) — #8026原4数学测试体通过；同logits的公式、批形状前向和训练复现分层，撤回P9完整确定性/固定吞吐推论，非GPU验收
 - [verl 量化层审计与 refit](frameworks/verl-quant-layer-audit.md) — #8132三类证据/24项CPU审计单测；与新#8306的格式、存储和保护覆盖对照，不能混用分支证据
+  - [QAT模型结构与mask](frameworks/verl-quant-layer-audit.md#qat-的-mask-默认与-packed-接口) — #8361新版保留模型专用spec；原三替身测试非量化覆盖，作者OLMoE实测与Qwen3-MoE待验证建议分开
 - [原生混合精度模型的后端选择](frameworks/verl-quant-layer-audit.md#原生混合精度模型的后端选择) — 顶层FP8不等expert格式；#8381默认值阻断auto回退，Marlin与DeepGEMM的activation精度也不同。
   - [VeOmni计算与通信边界](frameworks/verl-quant-layer-audit.md#veomni-低精度计算与通信边界) — #8342已由作者接续至VeOmni #1360，分工／配置迁移仍待确认；#8330梯度RS、torchao0.18限制与整步性能分开
   - [新版检查与指标哨兵](frameworks/verl-quant-layer-audit.md#新版运行期检查与指标哨兵) — #8327关系/默认warn与硬拒绝分开；原纯Python20例及5控制通过，缓存disabled与缺指标不当健康证明

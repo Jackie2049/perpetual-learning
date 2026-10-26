@@ -38,6 +38,22 @@ verl固定main `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，vLLM固定v0.29.0的
 
 ## QAT 的 mask 默认与 packed 接口
 
+### 新版先保留模型结构
+
+2026-10-26核[#8361](https://github.com/verl-project/verl/pull/8361)：仍OPEN／非draft／未合并，新head `8a697618897d473a43b6d9e83ba6c3341a23067b` 比旧 `cf6eb5181e17b4db67afff110eabc61daf61fb4d` 前进一提交；base仍 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，累计三文件100增5删。当前不再对所有QAT provider替换spec或补mask默认，下面初版“适用于进入QAT分支的调用”只描述旧head。
+
+[新helper](https://github.com/verl-project/verl/blob/8a697618897d473a43b6d9e83ba6c3341a23067b/verl/workers/engine/megatron/transformer_impl.py)按对象身份判断：仅 `provider.transformer_layer_spec is default_layer_spec` 时替换成ModelOpt spec并setdefault False；其余对象直接返回，spec与override字典均不改。显式True／None的保留规则只属于替换分支，不是全模型mask策略。它发生在provider应用overrides并finalize之前，不能单凭此身份检查认证最终模型结构。
+
+这不是仅靠模型名猜测。[Bridge 0.6.2 OLMoE provider](https://github.com/NVIDIA-NeMo/Megatron-Bridge/blob/c0e164ed2aedac4ad1c877780e2564a19d5d54ec/src/megatron/bridge/models/olmoe/olmoe_provider.py)用自己的olmoe_layer_spec，将attention换成OLMoESelfAttention，对Q/K做全宽归一化；[OLMoE bridge](https://github.com/NVIDIA-NeMo/Megatron-Bridge/blob/c0e164ed2aedac4ad1c877780e2564a19d5d54ec/src/megatron/bridge/models/olmoe/olmoe_bridge.py)对应HF q_norm／k_norm权重映射。通用spec的替换可能丢掉模型专用模块，不能把mask默认修正当成拓扑兼容。候选随后仍逐chunk调用[apply_qat_to_modules → apply_qat → mtq.quantize](https://github.com/verl-project/verl/blob/8a697618897d473a43b6d9e83ba6c3341a23067b/verl/utils/qat/modelopt.py)；这一调用接线不证明具体模块量化覆盖。
+
+本机运行新head[原三项测试体](https://github.com/verl-project/verl/blob/8a697618897d473a43b6d9e83ba6c3341a23067b/tests/workers/test_megatron_qat_layer_spec_on_cpu.py)及其原假Bridge fixture，接AST提取的两版原helper：旧版2过／专用spec断言失败，新版3过。见[复现脚本](../../experiments/qat-spec-selection/verify.py)与[原始结果／源文件哈希](../../experiments/qat-spec-selection/result.json)。Python3.12.13／pytest9.1.1；命令为 `/private/tmp/verl312/bin/python experiments/qat-spec-selection/verify.py ../qat-spec-source`，输入分别是上述两head的完整transformer_impl.py和新head原测试，重现时按result.json固定路径／commit获取。只省略生产模块重导入，保留原测试定义与fixture；没有原生pytest套件、真实Bridge／TE／ModelOpt／模型或设备执行。七份完整源文件AST／compile通过；初次按旧checkout路径utils/modelopt/qat_utils.py请求新head返回404，核新接线改取utils/qat/modelopt.py，不将缺路径判断成缺量化调用。
+
+作者更新报告须与本机结果分开：其80项CPU与Bridge0.6.2配置级provider检查不是本机运行；其1张GH200的OLMoE FP8_BLOCK linear+MoE／qat-mode fp8在旧版加载norm shape失败、新版跑通，报告128个enabled TE quantizer及k3 KL约6.3e-3（关QAT约9.1e-3）。这只支持其OLMoE环境，不覆盖全部自定义spec；dummyweights rollout收到导出权重也不是完整refit数值验收。Qwen3-Next／文本Qwen3.5仍只是作者源码观察，不能把VL provider和文本结构混称一类。
+
+新[人工反馈](https://github.com/verl-project/verl/pull/8361#issuecomment-6414899795)来自wuxibin89：建议连默认spec也保留，前提是验证Qwen3-MoE的原TE spec在各支持QAT mode的量化器覆盖、前反向、导出expert scales与refit。**这是待验证建议，当前head仍替换默认spec**；不代作者实现第三条路线。候选文档另称默认spec的ModelOpt SequentialMLP不支持TP+EP同时启用，本文未独立执行或审完该限制实现，不能外推为全部TE／ModelOpt后端限制。仅更新[原M5条件参考](../../experiments/handoff-m5.md#verl-量化层审计新版复验)，不新排实验或改专项；社区写入仍待用户具体授权。
+
+### 初版 mask 调用链（历史版本）
+
 QAT 的量化层选择、attention mask 与 rollout 部署格式是三个独立条件。[verl #8361](https://github.com/verl-project/verl/pull/8361)读取时 open、非 draft、未合并，固定 head `cf6eb5181e17b4db67afff110eabc61daf61fb4d`，base 和实际共同祖先均为 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`；三文件 69 增 5 删。它为 QAT 选 ModelOpt layer spec 时补一个默认值，不是新量化方案，也没有验证所有 packing 组合。
 
 该 base 的 [pyproject.toml](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/pyproject.toml)与 [uv.lock](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/uv.lock)声明 Bridge 0.6.2、MCore 0.19.2、TE 2.16.1。这些是依赖声明，不是某台机器的安装证明；下面按对应官方 tag 的固定提交说明接口，而非使用本地旧 checkout 的依赖文本。
