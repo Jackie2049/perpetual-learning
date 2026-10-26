@@ -352,7 +352,7 @@ verl 的三级前缀缓存机制直接对应 prefix-sharing 的核心需求：
 
 ## 只读模型缓存与测试临时目录
 
-**生成 checkpoint 不应与预置模型共用输出目录；用例隔离和文件系统容量又是两层问题。** [verl #8343](https://github.com/verl-project/verl/pull/8343) 同时调整测试输出位置和 Ascend CI 环境。2026-10-24 读取为 OPEN、非 draft，作者 lxb007981；固定 head `37f7d0c6b5389bcfd06a455188359c092194ae80`、base/祖先 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，ahead1/behind0，2文件13增2删。已有作者实现，不另写竞争补丁。
+**生成 checkpoint 不应与预置模型共用输出目录；用例隔离和文件系统容量又是两层问题。** [verl #8343](https://github.com/verl-project/verl/pull/8343) 同时调整测试输出位置和 Ascend CI 环境。2026-10-24记录为OPEN、非draft，作者lxb007981；旧head `37f7d0c6b5389bcfd06a455188359c092194ae80` 的实际共同祖先为 `a4b9354968705a441fb7da7367924b15b902e771`，相对该祖先两文件13增2删。2026-10-26更正：原文把目标主线 `3c6d9b43b67c74ec343d77874cd8fa6e841523da` 误记成祖先，并误写ahead1／behind0；相对该目标实际ahead1／behind1。当前新head与事件范围见[后续核对](#缓存修复之外的-gpu-工作流触发变化)，不另写竞争补丁。
 
 ### 输入模型与生成模型分开
 
@@ -375,6 +375,25 @@ verl 的三级前缀缓存机制直接对应 prefix-sharing 的核心需求：
 本机 Python3.12.13、pytest9.1.1、PyYAML6.0.3，复用现有环境。静态解析 YAML 并核对上述变量作用位置；新旧 `test_engine.py` 均通过 `compile`。从两版原测试 AST 仅取 `value_model_path` 赋值，放入真实 pytest 的两个参数化用例执行，并在新临时目录写入/读回小文本文件：2 passed。两项旧输出都解析到同一个模拟缓存路径，新输出分别处于指定临时根下的两个独立测试目录，模拟缓存保持空目录。
 
 这个 CPU 控制验证路径计算、symlink 解析和 pytest fixture 行为，不是原 verl 测试、模型序列化、真实只读挂载或 `/tmp` 配额故障复现；未导入 verl、启动 Ray 或执行设备命令。[复现代码与命令](../../diary/2026-10-24.md)保存在当日日志，不新增永久工具或硬件排队事项。这里可复用的排错顺序是先明确每种文件的所有者与生命周期，再分别检查隔离路径、实际挂载/权限/容量及锁消费者，不能用一个“换目录”结论覆盖全部层级。
+
+### 缓存修复之外的 GPU 工作流触发变化
+
+2026-10-26 #8343仍OPEN，现为draft，head `16f800b758d0d75b0c1758ae29fbc6479276fd70`、base／共同祖先／main均为 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，ahead2／behind0，三文件13增27删。当前两提交为aaae3716的原缓存路径修复与16f800b7的“remove unrelated tests”。[model_ascend.yml](https://github.com/verl-project/verl/blob/16f800b758d0d75b0c1758ae29fbc6479276fd70/.github/workflows/model_ascend.yml)和[test_engine.py](https://github.com/verl-project/verl/blob/16f800b758d0d75b0c1758ae29fbc6479276fd70/tests/models/test_engine.py)均与上节旧head逐字节相同，旧tmp_path两例不重跑；新增差异是[GPU工作流](https://github.com/verl-project/verl/blob/16f800b758d0d75b0c1758ae29fbc6479276fd70/.github/workflows/gpu_unit_tests.yml)删除完整pull_request事件块，而不是改变pytest选择哪些测试。
+
+| GPU工作流内容 | 目标主线与旧head | 当前候选 |
+|---|---|---|
+| push事件 | main／v0.4.x，带Python／工作流／依赖路径过滤 | 完整保留 |
+| pull_request事件 | 目标main／v0.4.x，带原有路径与排除规则 | 删除 |
+| 其他事件 | 无 | 仍无；未替成pull_request_target／workflow_dispatch |
+| setup／gpu_unit_tests／cleanup及其余顶层设置 | 原runner、权限、owner条件、步骤和并发策略 | 结构相同 |
+
+根据[GitHub事件说明](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request)，PR事件在符合分支／路径条件时可覆盖opened／reopened／head更新；push的分支过滤看被推送的分支，不等价于“PR目标main”。因此若采用当前候选YAML，普通feature分支的PR更新不再通过这个工作流取得原先的合并前入口；保留的main／v0.4.x push检查不能自动代替它。作业仍有 `github.repository_owner == 'verl-project'` 限制，不能据fork上同名main分支推送就保证重跑。此结论限定这个文件的事件资格，不是宣称所有CI停跑、当前主线已经失去检查，或runner实际不可用。
+
+这项删除不属于解决模型缓存写权限／pytest目录隔离所必需的改动。供人工审视的内部反馈是：将GPU触发策略拆离，或先说明等价的合并前覆盖与调度策略，再分别判断缓存修复和CI政策；本项目没有代作者恢复触发器、改PR代码、发评论或dispatch工作流。仓库required checks设置、其他实际调度机制和Actions运行结果未核验，不能由静态YAML判某个PR必定阻塞／可合并，或声称已有GPU测试失败。
+
+旧评审必须按提交归属判断。当前可见人类review处于DISMISSED，关联970cb63f；机器人反馈分别关联8c107fac与3f59bff9，后者涉及多项workflow／secret-scan删除。当前相对base只差上述三文件，secret-scan／CPU等文件不在当前差异，不能把那批历史反馈都当成当前未解决问题。也不能用旧review批准／否决当前head。旧head与新head直接比较还会出现vLLM LoRA工具差异，这是目标历史推进／rebase口径问题；按各自共同祖先比较才不会把它误作缓存修复新增动作。
+
+本机Python3.12／PyYAML6.0.3，使用BaseLoader保留`on`字符串键（避免默认YAML 1.1把它当布尔键），核对三版GPU YAML、完整其他顶层结构相同与缓存两文件字节相同；两版Ascend YAML可解析、Python测试模块仅compile。未模拟完整GitHub事件匹配器、运行pytest目录控制、Actions／Ray／GPU／NPU或任何模型测试；hash和复现命令见[当日日志](../../diary/2026-10-26.md)。这是CI策略审视项，不新增M5硬件队列或借设备实测替代触发政策讨论；后续仅接实质修订或用户明确要求，所有社区动作与已有PR-head推送仍逐项待授权。
 
 ## FSDP 后端配置的权威来源
 
