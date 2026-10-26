@@ -257,6 +257,8 @@ ModelOpt忽略规则参考（2026-10-22，同一量化入口不另排队）：�
 
 ## verl 异步策略一致性补证
 
+外部KV命名空间参考（2026-10-26，同一入口、非新队列）：已有daegyu94的[#8323](https://github.com/verl-project/verl/pull/8323)，head `4e93e4761ddde2ea5bf9d3032b86b6c3844126fd`、父19835b21、PR元数据base16ec093c。[M1源码／纯helper控制](../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#外部-kv-缓存的权重命名空间)只核salt格式、8次connector检查与七模块语法，无完整config、pause、缓存hit／miss或设备执行。若未来独立选择且已有明确授权、安全、匹配的缓存观测，先固定引擎／connector的真实寻址方式、run namespace、成功加载权重与global_steps对应、门后请求身份，以及外部条目淘汰／容量；同步版本值不当参数内容一致性证据。作者0.29／0.5.20／1.3rc15报告不移作新环境，不自动叠加#8390升级。缺授权／环境／模型或影响原专项即记未测停止，不下载部署、停服务、注入故障、套用候选或新排训练；任何社区写入仍逐项待用户明确同意，参考不表示接单。
+
 Rollout解释器RFC参考（2026-10-26，同一入口、非新队列）：[新#8388](https://github.com/verl-project/verl/issues/8388)仅设计，main0bd668c1；[M1启动边界对照](../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#rollout-解释器与导入边界)为四verl模块／Slime b5205544原runtime语法，未创建环境或运行通信。若未来用户明确选择并授权运行时隔离课题，先区分driver、rollout checkpoint worker、server与后端子进程的实际解释器／版本；先同核心栈证明导入隔离，再验证明确transport／包组合的更新与恢复，不能只打印一个server的sys.executable就验收。当前无实现和获准部署条件，不新建／升级环境、跨版本通信、换传输或另写launcher，缺授权／安全匹配资源／影响专项即停止。所有社区写入及既有PR-head推送仍需用户对具体动作明确同意；仅参考、不表示接单。
 
 SGLang停用准入参考（2026-10-26，同一入口、非新队列）：已有donghyq draft [#8387](https://github.com/verl-project/verl/pull/8387) headdf92e6a2／真实祖先a4b93549、目标0bd668c1。[M1源码范围](../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#sglang-停用后的请求准入)只六模块AST／compile与YAML；作者13项及同机双A100 fixed-weight probe非本机／目标锁定环境。若M5在已获明确授权的隔离pause／resume观测中独立参考，先核实际server／client、临时等待还是reject、LB是否有可用peer、控制失败停在哪一阶段，以及dev4／dev5镜像与锁；返回aborted不当GPU释放／KV迁移或时限证明。当前安全事件未闭环／共享生产、缺授权、需新部署或影响专项即停，不自行停服务、kill、注入故障或新排训练；不采用或另写gate。所有社区写入／既有PR-head推送仍须用户对具体动作明确同意；参考不表示接单。

@@ -174,10 +174,12 @@ async def wake_up(self, tags=['kv_cache', 'weights']):
   → Level 1: offload权重 → GPU空出大部分 → KV仍保留
   → Level 2: 丢弃全部GPU内存 → 完全释放 → 训练获得最大空间
 
-→ **Prefix cache必须在wake_up后reset**:
-  → 新权重 → 旧KV不匹配 → 继续使用会产出错误token → 必须reset!
-  → reset_connector=True → 同时断开MooncakeStoreConnector(外部KV存储)
+→ Prefix cache必须与实际权重版本一致:
+  → 新权重不能复用旧权重KV；物理reset是一种失效方式，不是唯一方式。
+  → reset_connector=True请求重置connector缓存，不等于断开连接或保证清除全部外部tier。
 ```
+
+2026-10-26补充：[外部KV权重命名空间](verl-worker-lifecycle-ray-weight-sync-reading.md#外部-kv-缓存的权重命名空间)区分reset与已有#8323的salt候选；换键不等于删除条目，真实后端寻址、权重版本与淘汰条件必须分别核验。此补充不更新上面历史sleep布局或显存收益推导。
 
 ## 权重同步 — BucketedWeightSender (ZMQ IPC)
 

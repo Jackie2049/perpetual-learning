@@ -1,0 +1,70 @@
+{
+  "python": "3.12.13",
+  "revision": "4e93e4761ddde2ea5bf9d3032b86b6c3844126fd",
+  "scope": "two original pure helpers only; not full config or cache execution",
+  "source_sha256": {
+    "tests/workers/rollout/test_prefix_cache_versioning_on_cpu.py": "fa542182d0f0d27447f97dd5b1c538662361ff5cddd09067581ae2b885595265",
+    "verl/checkpoint_engine/base.py": "5c2c1eb86e572310dd6b61ae338483a4e9daf922a9a5294b02082d6925c62644",
+    "verl/workers/config/rollout.py": "166034674ca9b62e2c7663bc22d3f801cfde9b362e1e25fc1cf6b6ce1b7dd118",
+    "verl/workers/rollout/replica.py": "ec938575ca5202bbc1b443752bd8568289450a07558e10434b0f835b9ca146c0",
+    "verl/workers/rollout/sglang_rollout/async_sglang_server.py": "9378e51959ae078583294c1b9166e2c3b2e4c0bfc45553e7a3c4ff3f20ed9c71",
+    "verl/workers/rollout/trtllm_rollout/trtllm_async_server.py": "5b321daf80343f4df5305d5c57860b4a6a572c993128c76eb834f5b7eb4b851d",
+    "verl/workers/rollout/vllm_rollout/vllm_async_server.py": "c8f4ee7dd53b71093015eb48cbcbc696f518c404966c50e0939c4423cde67330"
+  },
+  "formatting": {
+    "reset": [
+      null,
+      null
+    ],
+    "salt": [
+      "run-a:3",
+      "run-a:4"
+    ],
+    "other_run": "run-b:3",
+    "same_version_again": "run-a:3",
+    "missing_version_at_helper": "run-a:None",
+    "missing_namespace": "AssertionError"
+  },
+  "connector_checks": [
+    {
+      "key": "kv_transfer_config",
+      "original_case": 0,
+      "accepted": true
+    },
+    {
+      "key": "kv_transfer_config",
+      "original_case": 1,
+      "accepted": true
+    },
+    {
+      "key": "kv_transfer_config",
+      "original_case": 2,
+      "accepted": false
+    },
+    {
+      "key": "kv_transfer_config",
+      "original_case": 3,
+      "accepted": false
+    },
+    {
+      "key": "kv-transfer-config",
+      "original_case": 0,
+      "accepted": true
+    },
+    {
+      "key": "kv-transfer-config",
+      "original_case": 1,
+      "accepted": true
+    },
+    {
+      "key": "kv-transfer-config",
+      "original_case": 2,
+      "accepted": false
+    },
+    {
+      "key": "kv-transfer-config",
+      "original_case": 3,
+      "accepted": false
+    }
+  ]
+}

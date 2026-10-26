@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1外部KV身份学习（2026-10-26）**：起始f3266b8干净，compare保留902新增1无删改后fff0f138d保全M5。两项目各6更新选#8323已有作者候选head4e93e476／父19835b21，20文件869增20删；[原Worker专题](notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#外部-kv-缓存的权重命名空间)分开换键失效／物理回收、门后取版本与真实权重身份。两个原helper核格式和8次connector输入，七完整模块AST／compile，无config／暂停／缓存／模型／设备执行，作者GPU报告及#8390新栈不叠加。write-page技能组织当前条件与证据边界，只补原M5参考，无新队列／专项／社区写入。下轮转独立实际需求／实质反馈，不扩缓存替身矩阵或复跑同head。
+
 - **M1重算CI前置学习（2026-10-26）**：起始4ef8921干净，compare保留900新增1无删改后ff054bd67保全M5。两项目各6更新后选#8338新head b028abee，patch.py字节／全部测试函数AST同旧c099；[原重算专题](notebook/fundamentals/gradient-checkpointing.md#重算测试的执行前置条件)补真实pytest收集：缺Megatron旧／新未设标志均退出5，新强制导入退出2。四源码compile，无MCore／CUDA查询／测试体，原4组所有权及作者旧GPU不重跑、不迁新版；新脚本限缺依赖与哈希，原M5参考仅更新版本／skip条件。write-page技能促使把新CI要求与回收验收分开，无新算力队列／专项／社区写入。下轮转独立需求／实质反馈，不扩环境替身或同head重复收集。
 
 - **M1奖励物化接续（2026-10-26）**：起始900bf82，compare保留898新增1无删改后ff853b1f2保全M5。接其#621已合并事实，核最终head ceacde5e与main 8cfbac177同tree、10文件93增52删；[原专题](notebook/frameworks/unirl-survey.md#奖励能力校验与模型加载)撤回旧managed排除范围，补实验VideoAlign spec检查及启动清理／存活快返边界。九完整Python模块仅AST／compile，无模型／HTTP／孩子／设备执行，旧42项替身证据不迁新版；Git取缺失blob失败后只读API固定ref获取。按write-page技能保留历史证据并修正当前索引／原M5参考，不重复作者harness、新排加载实验或改专项／社区。下轮选独立实际需求／实质反馈，不扩同head加载替身矩阵。

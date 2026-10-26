@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [kv-cache-salt-contract/verify.py](kv-cache-salt-contract/verify.py) | #8323两个原纯helper检查，[结果](kv-cache-salt-contract/result.json)含run／步数格式及8个connector输入；无完整配置、缓存／并发或模型执行 | [缓存权重命名空间](../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#外部-kv-缓存的权重命名空间) |
 | [recompute-ci-prerequisites/verify.py](recompute-ci-prerequisites/verify.py) | #8338新旧原模块的真实缺Megatron收集控制，[结果](recompute-ci-prerequisites/result.json)退出5／5／2；零CUDA测试体执行，不重跑原所有权实验 | [重算测试前置条件](../notebook/fundamentals/gradient-checkpointing.md#重算测试的执行前置条件) |
 | [verl-k3-cancellation/verify.py](verl-k3-cancellation/verify.py) | #8386六原测试体／20参数项基线12过8失败、候选全过，[结果](verl-k3-cancellation/result.json)两次相同；真实CPU原KL／RS／指标与归约，非完整pytest／GPU／训练 | [近零消去与拒绝阈值](../notebook/frameworks/verl-grpo-core-algos-reading.md#k3-近零消去与拒绝阈值) |
 | [verl-merged-lora-sleep/verify.py](verl-merged-lora-sleep/verify.py) | #8046新增四原测试函数的9参数项，[结果](verl-merged-lora-sleep/result.json)候选9过／基线6过3失败；原FakeSleepEngine只记策略，无真实备份／wake／权重恢复 | [合并LoRA睡眠证据](../notebook/frameworks/verl-fsdp-weight-sync-mechanism-reading.md#合并-lora-的睡眠策略与恢复证据) |

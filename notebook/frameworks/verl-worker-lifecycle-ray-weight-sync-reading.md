@@ -1,11 +1,43 @@
 # verl Worker 生命周期与 Ray 分布式架构源码阅读
 
+2026-10-26接续：[外部 KV 缓存的权重命名空间](#外部-kv-缓存的权重命名空间)核#8323：缓存失效不必等于删除存储，但版本与真实权重必须对应；两个原helper的CPU检查不认证引擎命中、并发门或淘汰效果。
+
 2026-10-26接续：[SGLang 停用后的请求准入](#sglang-停用后的请求准入)区分移除路由、处理已取得的handle、临时暂停与拒绝重试；新#8387已有作者，本轮只做源码／原测试范围核对。
 
 2026-10-26接续：[Rollout 解释器与导入边界](#rollout-解释器与导入边界)对照新#8388与Slime已合并实现：资源分离、Python包隔离和跨栈权重通信是三个不同验收目标；不另写launcher或resolver。
 
 > 2026-06-15 | 源码: verl/single_controller/ + verl/workers/engine_workers.py + verl/checkpoint_engine/ + verl/workers/rollout/
 > 核心: WorkerGroup=Ray actor管理+Dispatch路由 → RolloutMode(HYBRID/COLOCATED/STANDALONE) → Sleep/Wake GPU内存切换 → 3种Weight Sync后端(naive/NCCL/NIXL)
+
+## 外部 KV 缓存的权重命名空间
+
+**旧权重生成的KV不能用于新权重；让旧缓存不再被查到，不等于把它从存储中删除。** 已有daegyu94的[#8323](https://github.com/verl-project/verl/pull/8323)将外部缓存失效拆成默认 `reset` 与可选 `salt`。2026-10-26核为OPEN／非draft，固定head `4e93e4761ddde2ea5bf9d3032b86b6c3844126fd`、直接父版19835b21，PR元数据base16ec093c，20文件869增20删。本轮聚焦六个运行模块和一个原CPU测试，不是整个PR或三种推理引擎的完整验收，也不另开竞争实现。
+
+### 缓存身份与存储回收
+
+[`prefix_cache_salt`](https://github.com/verl-project/verl/blob/4e93e4761ddde2ea5bf9d3032b86b6c3844126fd/verl/workers/rollout/replica.py)在salt模式返回 `namespace:global_steps`，reset模式返回None；RolloutReplica在namespace尚为None时填入创建进程共享的模块UUID。默认新driver进程得到新namespace，恢复到相同步数也不复用上一进程的键；已显式填写的namespace则保留。salt不是权重内容hash，也没有证明两个副本的参数已逐字节一致。
+
+按候选[配置检查](https://github.com/verl-project/verl/blob/4e93e4761ddde2ea5bf9d3032b86b6c3844126fd/verl/workers/config/rollout.py)，vLLM仅接受列出的按block hash寻址的connector：MooncakeStore、Offloading、LMCacheMP和HF3FS；MultiConnector递归检查孩子，按token查找的LMCacheConnectorV1被拒绝。检查同时接受 `kv_transfer_config` 与 `kv-transfer-config` 两种拼写，支持JSON字符串。它检查配置名称，不加载插件或证明具体部署确实按该hash查找。salt还拒绝PD disaggregation，不能把prefill／decode跨进程拆分当已覆盖。
+
+候选[vLLM重置方法](https://github.com/verl-project/verl/blob/4e93e4761ddde2ea5bf9d3032b86b6c3844126fd/verl/workers/rollout/vllm_rollout/vllm_async_server.py#L953)在salt模式传 `reset_connector=False`，保留外部存储、继续请求本地cache清理。旧版本条目占用仍需后端淘汰策略与容量管理；换键不自动回收空间，也不保证吞吐提升。TRT-LLM这里只传cache_salt，不由verl配置外部存储；SGLang HiCache文件存储的失效缺口与命中结果仍是作者报告，不推广到所有tier。
+
+### 版本必须在正确的请求时点绑定
+
+vLLM先过 `_park_until_admitted`，再给prompt加salt；TRT-LLM先过 `_park_until_allowed`，再传salt关键字。SGLang在salt模式增设verl侧Event，等待它恢复后才给GenerateReqInput赋salt，避免请求先带旧salt进入tokenizer manager等待、恢复后却运行新权重。源码明确依赖SGLang0.5.20在该调用间隔的调度语义；原CPU测试使用FakeTokenizerManager，本轮不据它认证真实并发时序。
+
+vLLM的准入屏障若超时，salt模式抛错阻止继续更新，reset模式仍可警告后继续；暂停时salt先避免引擎顺带重置connector，再单独清本地cache。这是控制流策略，不是已验证故障后的权重回滚协议。[CheckpointEngineManager](https://github.com/verl-project/verl/blob/4e93e4761ddde2ea5bf9d3032b86b6c3844126fd/verl/checkpoint_engine/base.py#L510)在非naive更新路径只检查global_steps是否为None，不校验新编号、单调性或权重内容；naive分支在该检查之前返回，作者解释其无步数调用用于同权重的validation唤醒。因此正确性仍要求调用方让权重变化与新版本对应，不能把“传了一个非空步数”当身份一致性证明。
+
+### 两个原 helper 的有界检查
+
+[复查脚本](../../experiments/kv-cache-salt-contract/verify.py)强校验七个源码副本hash并做完整AST／内存compile，只执行原salt格式化函数与connector检查函数；SimpleNamespace仅提供两个必需字段，没有构造RolloutConfig、引擎或假缓存。Python3.12.13标准库下，[原始结果](../../experiments/kv-cache-salt-contract/result.json)确认：同run的3／4步为 `run-a:3`／`run-a:4`，另一run的3步为 `run-b:3`；重复3步仍是同键，helper直接收到None会格式化成 `run-a:None`，不替调用层检查版本。namespace为空则AssertionError。后两点说明职责边界，不单独证明正常trainer会错误复用缓存。
+
+另按原测试的四个connector输入、两种拼写做8次原helper调用：两个允许项接受、LMCacheConnectorV1及包含它的MultiConnector拒绝。没有运行原配置类／原CPU测试套件、暂停协程、Ray、cache RPC、模型或设备；格式化结果不是缓存hit／miss证据。输入须为固定head的源码副本：
+
+```bash
+python -B experiments/kv-cache-salt-contract/verify.py /path/to/pinned-source
+```
+
+作者报告RTX PRO 4000上的vLLM0.29／SGLang0.5.20／TRT-LLM1.3.0rc15小模型对照，以及HiCache file在reset下仍命中384／400 tokens、salt下0命中；这是外部报告，不是本轮测量，也不等于20文件均完成集成回归。另一个[#8390依赖升级](https://github.com/verl-project/verl/pull/8390)面向vLLM0.32并改pause API，不能未经接线核对就把两份候选或其报告叠成已验证组合。缺少的真实版本／请求绑定／跨副本与淘汰证据只补[原M5条件参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不新排部署或训练任务。
 
 ## Rollout 调度等待与引擎就绪
 
