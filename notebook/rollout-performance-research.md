@@ -6,8 +6,8 @@
 ## 0. Project Status
 
 - **阶段**：Phase 1 — recall-first literature & code investigation（广扫建库，不收束观点）
-- **最近更新**：2026-10-27（M1剩余历史条目补核：11篇既有文献，新增3篇训推失配文献，详见§5.13）
-- **覆盖**：累计**77篇已核身份**（16篇serving基础／迁移边界＋61篇rollout/RLHF及相关边界，含VLA、训练侧与算法诊断；均非深读；75个唯一arXiv ID＋Orca／PUZZLE会议记录）。本批核既有11篇、仅新增3篇；ASymPO虽计入身份清单，但证明错误警示单列，不作为可靠理论依据。现有矩阵的历史✅已补核完，不代表种子已落实、全部为rollout-native或检索已收敛。Round 1“≈73”是历史估计，不能与77相加。
+- **最近更新**：2026-10-27（M1原生补库与种子落实：新增TideRL／ROSE／QwenGyre，落实SpecRoll→SPARK与ExpThink，详见§5.14）
+- **覆盖**：累计**82篇已核身份**（16篇serving基础／迁移边界＋66篇rollout/RLHF及相关边界，含VLA、训练侧与算法诊断；均非深读；80个唯一arXiv ID＋Orca／PUZZLE会议记录）。本批新增5个矩阵条目=3个新发现＋SpecRoll种子及ExpThink既有线索各1；其中4个rollout原生系统／机制，ExpThink为算法塑形边界。ASymPO证明错误警示仍单列，不作可靠理论依据。历史✅补核完不等于种子全落实、全部为rollout-native或检索收敛。Round 1“≈73”不与当前数量相加。
 - **深读 / 代码阅读**：0 / 0
 - **最高优先级**：补来源与版本别名、按唯一文献去重后继续广扫至100–150；A Core短名单不以未核身份的条目数为依据
 - **下一步**：见 §16
@@ -101,6 +101,7 @@
 | [2605.30859v1](https://arxiv.org/abs/2605.30859v1) | 2026-05-29／v1 | DARTS | L3（暂） | **C** | 从每prompt冗余探索空间选轨迹、适配冗余分配，主动塑造分布 | 核 |
 | [2509.18521v3](https://arxiv.org/abs/2509.18521v3) | 2025-09-23首次／09-26修订 | APRIL | L3/L4（暂） | B/**C?** | 超额发起，达到目标完成数后结束本步、未完成响应跨步续跑；训练集合／版本影响待深读 | 核 |
 | [2511.14617v3](https://arxiv.org/abs/2511.14617v3) | 2025-11-18首次／v3 2026-04-03 | Seer | L1/L3（暂） | A/B（暂） | divided rollout、context-aware调度与grouped speculation；不是仅长度预测 | 核 |
+| [2605.07501v2](https://arxiv.org/abs/2605.07501v2) | 2026-05-08首次／v2 05-17 | ExpThink（CoT塑形边界） | workload／算法边界 | C边界（非直接筛轨迹） | 历史最短正确长度引导reward塑形及correct-count advantage归一化；改变学习目标，不是执行同一轨迹更快 | 核 |
 | ？ | ? | Weave | L3/L4 | B | ？（种子，待验证） | ？ |
 
 ### 5.3 L1/L2 — RL-aware Speculative Rollout（serving机制的迁移条件）
@@ -121,7 +122,8 @@
 | [2606.12370v1](https://arxiv.org/abs/2606.12370v1) | 2026-06-10／v1 | Bebop（Breaking Entropy Bounds） | L1（暂） | A（暂） | MTP＋概率拒绝采样、预RL e2e TV训练；在线MTP更新非默认必要 | 核 |
 | [2509.21792v1](https://arxiv.org/abs/2509.21792v1) | 2025-09-26／v1 | FastGRPO | L1/L2（暂） | A（暂） | 并发感知draft／验证配置与online draft learning | 核 |
 | [2604.26779v1](https://arxiv.org/abs/2604.26779v1) | 2026-04-29／v1 | System-Integrated SD（Iso等） | L1/L4（暂） | A/B（暂） | NeMo-RL＋vLLM集成MTP／外部draft／EAGLE3；实测与模拟预测分开 | 核 |
-| ？ | ? | SpecRoll / MTP-RL | L1 | A | 种子待验证；MTP-RL仍只登记方向候选Bebop | ？ |
+| [2608.04962v2](https://arxiv.org/abs/2608.04962v2) | 2026-08-05首次／v2 10-14 | SPARK（v1名SpecRoll） | L1/L2（暂） | A（暂） | verifier反馈修正draft logits，同prompt共享rollout-local correction、跨rollout学projection；不改为直接采样draft | 核 |
+| ？ | ? | MTP-RL | L1 | A | 种子待验证；Bebop仍只是方向候选，不确认同名 | ？ |
 
 ### 5.4 Agentic Rollout
 
@@ -144,6 +146,9 @@
 | [2608.17528v1](https://arxiv.org/abs/2608.17528v1) | 2026-08-18／v1 | Agent Lightning v1.0（2026） | L4（暂） | B（系统；算法另核） | deploy-time harness拥有环境交互loop，trainer接收LLM请求／响应；合样本及loss语义待核 | 核 |
 | [2602.00482v2](https://arxiv.org/abs/2602.00482v2) | 2026-01-31首次／v2 06-13 | AReaL-DTA（训练侧边界） | L1/L3（训练侧；暂） | A/B（训练侧；暂） | DFS遍历共享prefix树做前后向，分布式tree batching；不是rollout decode tree验证 | 核 |
 | [2610.28998v1](https://arxiv.org/abs/2610.28998v1) | 2026-10-20／v1 | FlashNext-RL | L1/L4（暂） | A/B（暂） | prime-rl＋vLLM，模型特定offload／累积及kernel优化；训练tokens/s与RL迭代分开 | 核 |
+| [2608.10402v1](https://arxiv.org/abs/2608.10402v1) | 2026-08-11／v1 | TideRL | L2/L3/L4（暂） | B（暂） | 保留rollout状态的连续task batching，以ready backlog／到达间隔选择ref-actor执行及弹性rank分配 | 核 |
+| [2605.06534v2](https://arxiv.org/abs/2605.06534v2) | 2026-05-07首次／v2 05-20 | ROSE | L3/L4（暂） | B（暂） | 在SLO约束下借用serving GPU，跨集群分片／稀疏权重传输与弹性rollout路由 | 核 |
+| [2609.33848v2](https://arxiv.org/abs/2609.33848v2) | 2026-09-27首次／v2 10-20 | QwenGyre | L3/L4（暂） | B／**C?**（轨迹处理） | live执行中弹性重分配GPU；重建分支历史、partial-progress评分和路径去重，loss／样本语义另核 | 核 |
 
 ### 5.5 Serving 基础（supporting corpus，含迁移边界，不标 rollout-native）
 
@@ -166,13 +171,15 @@
 | [2602.06932v5](https://arxiv.org/abs/2602.06932v5) | 2026-02-06／v5 2026-08-04 | Aurora（When RL Meets Adaptive Speculative Training） | 由live inference traces在线RL训练speculator、热换更新；不是post-training policy rollout系统 | 核 |
 | [2408.13510v2](https://arxiv.org/abs/2408.13510v2) | 2024-08-24首次／v2 2025-01-07 | Intelligent Router | response-length预测与混合负载估计，RL路由跨推理实例；是serving调度，不是post-training rollout系统 | 核 |
 
-### 5.6 待验证种子（用户清单中尚未在检索中命中）
+### 5.6 待验证种子（用户清单中尚未落实）
 
-？Weave ｜ ？SpecRoll ｜ ？MTP-RL（2606.12370／Bebop为方向候选，未确认同名）｜ ？Online Draft Co-Training for long-context RL
+？Weave ｜ ？MTP-RL（2606.12370／Bebop为方向候选，未确认同名）｜ ？Online Draft Co-Training for long-context RL
 
 Seer与Taming the Long-Tail（TLT）已在§5.2／§5.3落实来源。Weave本批定向检索未命中，仍是种子，不据此判定不存在。
 
 FastGRPO已落实2509.21792v1；不据online draft learning关键词把它等同其他未确认同名的种子。
+
+SpecRoll已落实2608.04962v1，采用同ID改题的SPARK v2，只计一篇，见§5.14。ExpThink既有线索已落实2605.07501v2，作为算法塑形边界，不把其token压缩直接列为系统执行加速。Weave定向检索及TideRL正文关键词定位仍未命中匹配系统，继续保留，不把其他同名工具／机器人工作强行合并。
 
 ### 5.7 基础文献身份与版本勘误
 
@@ -253,6 +260,24 @@ BubbleSpec／SRT的run-ahead用于后续draft验证，不等于直接拿旧polic
 
 可靠性警示：[ASymPO原站](https://arxiv.org/abs/2606.03070)Comments明确写“incorrect proofs in the paper”，版本史标v2 withdrawn，当前页面为v3；不能误写成v3也明确撤回或警示已被修复。仅保留身份及检索线索，停止用其理论保证支持结论；旧“非对称规模”改为loss尺度，不解释成模型规模不对称。当前未核正文证明、代码或性能，深读／代码计数仍0／0。下一批优先新增rollout-native来源、未落实种子及会议引用扩展，再补serving基础；不重复这11篇或急于形成survey结论。
 
+### 5.14 原生系统补库与SpecRoll版本落实
+
+2026-10-27第八批：定向检索新增TideRL、ROSE、QwenGyre三个来源，落实SpecRoll种子及ExpThink既有线索；五个ID均回arXiv原站核标题、首次提交和采用版本。累计82身份=77＋5（80唯一arXiv＋2会议记录），其中本批4个原生系统／机制和1个算法塑形边界；不把全部五篇称作全新发现。
+
+版本与推测对象：[SpecRoll v1](https://arxiv.org/abs/2608.04962v1)的fast/slow与Reflex描述属于旧版；同ID的[SPARK v2](https://arxiv.org/abs/2608.04962v2)已改题并增作者，不能重复注册或将旧机制直接迁入新版。[v2 §3／§4.4及附录B.4](https://arxiv.org/html/2608.04962v2)说明同prompt共享correction、每轮验证后更新且每次rollout重置，projection在rollout后学习；这不是直接更改target policy。其分布保证依赖exact verifier获得真实proposal概率、独立随机性及只使用此前轮反馈，不能泛化成任意在线draft更新都正确或bitwise轨迹相同。此处只定位机制／假设，未审计完整证明或实现。
+
+三个agentic资源边界分别登记，不凭“弹性”合并：
+
+| 来源 | 调度对象与信号 | 需保留的边界 |
+|---|---|---|
+| [TideRL v1](https://arxiv.org/html/2608.10402v1) | task状态保留；ready backlog／到达间隔选择ref-actor策略及rollout／training rank配比 | 作者以送达trainer并推进更新的token计training goodput；不能用GPU占用率或KV命中率代替time-to-quality |
+| [ROSE v2](https://arxiv.org/abs/2605.06534v2) | 专用rollout池与已部署serving GPU协作，共享compute／memory且受serving SLO约束 | 不是只把serving算法迁到rollout，而是二者共享物理资源；权重传输稀疏性不等于稀疏policy采样，SLO结果限作者负载 |
+| [QwenGyre v2](https://arxiv.org/abs/2609.33848v2) | live rollout中重分配GPU；重建分支历史并评分／去重 | 系统B与轨迹处理C?分开；需核是消除存储重复、loss重复还是改变训练集合，不能仅凭dedup判无分布影响 |
+
+[ExpThink v2](https://arxiv.org/abs/2605.07501v2)跟踪每问题历史最短正确长度，以分级reward与correct-count advantage引导简短正确回答，是改变学习目标／未来工作负载的边界案例；不是为同一固定trajectory set减少执行开销。摘要中的accuracy／平均token比也不是RL step time或time-to-quality，后续不为此扩展成CoT压缩算法综述。
+
+本批限元数据、摘要和SPARK／TideRL局部正文定位，非全文深读、代码阅读或性能验收；分类仍暂定。Weave未确认同名，MTP-RL与Online Draft Co-Training仍未落实，不凭相似机制合并。后续优先会议／引用扩展补原生，同时补serving至20–30篇目标；不以82总量代替原生80–120篇目标已达成。
+
 ## 6. Paper Deep Reads
 
 （空。优先级建议：AReaL、HybridFlow/veRL、StreamRL、RollPacker、RhymeRL、BubbleSpec、StaleFlow——覆盖四层 + 三大机制家族。深读模板：问题/瓶颈 → 性能模型 → 机制 → 实验条件与增益（保留硬件/batch/长度分布）→ 与 taxonomy 对照 → 可迁移性 → 疑点。）
@@ -308,7 +333,7 @@ BubbleSpec／SRT的run-ahead用于后续draft验证，不等于直接拿旧polic
 ## 13. Research Gaps / Ideas
 
 （Round 1 初步观察，待 corpus 收敛后修正）：
-1. **分布改变与纯路由／重排的边界待核**：DARTS主动塑形、InfoTree选择状态／预算，WAR不再作为C类例子；ExpThink仍待审计。对分布／收敛影响的评估仍待逐篇阅读，不预设“普遍缺乏严格评估”；
+1. **分布改变与纯路由／重排的边界待核**：DARTS主动塑形、InfoTree选择状态／预算，WAR不再作为C类例子；ExpThink已核为reward塑形边界，非直接筛选轨迹；QwenGyre路径去重的loss／训练集合语义仍待核。对分布／收敛影响的评估仍待逐篇阅读，不预设“普遍缺乏严格评估”；
 2. speculative-for-RL已出现多个候选，但条目数不证明方向饱和。统一性能模型（acceptance rate × staleness × 长尾交互）是待探索问题，不据此否定其他drafter方案的研究空间；
 3. cap/长度类边界条件的系统化处理（如 cap=1 的 -0 陷阱、偶奇 cap 分配）在现有论文中未见讨论——来自 verl #8281 实战的微观缺口；
 4. 当前库的VLM跨阶段GPU空分仅Rollplex一篇已核条目，不足以判断文献空白；需继续查相近机制与不同工作负载。
@@ -325,6 +350,8 @@ BubbleSpec／SRT的run-ahead用于后续draft验证，不等于直接拿旧polic
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（M1原生补库与种子落实）**：新增TideRL／ROSE／QwenGyre，落实SpecRoll→SPARK同ID改题与ExpThink既有线索，共增5矩阵条目而非5全新发现，累计82身份（16 serving／边界＋66 rollout/RLHF及相关边界；80 arXiv＋2会议记录）。SPARK采用v2，不迁旧Reflex说明；就绪度弹性、serving算力协作及路径去重三边界分开，ExpThink不混作执行加速。仅身份／摘要及局部正文定位，深读／代码仍0／0；下步会议／引用扩展原生并补serving，不宣称原生目标已达成。
 
 - **2026-10-27（M1异步／训练边界补核）**：核剩余11篇历史条目，新增FP16／VeXact／CIS三篇TIM文献，累计77身份（16 serving／边界＋61 rollout/RLHF及相关边界；75 arXiv＋2会议记录）。历史✅清零不等于corpus收敛或77篇可用实证；ASymPO证明错误与v2撤回显式警示。Intelligent Router移serving，AReaL-DTA改训练侧边界，RolloutPipe的group流水与stale-policy异步分开。仅身份／摘要补核，无深读、代码、复现或M5专项改动；后续优先新增原生及种子，不重复本批。
 
