@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1 colocated奖励接续（2026-10-26）**：起始27d8edb干净，compare保留865新增1无删改后ff797715d保全M5。核[新#8379](notebook/frameworks/verl-reward-integration-reading.md#colocated-组装与-v1-生成-mask)补#8368未覆盖的组装／V1字段路径；13原CPU参数项候选过／父版4过9失败，V1 train／val都因缺生成mask失败。原TQ／RM边界替身下真实jagged／容器与return线性反向，不是完整PPO更新；缺mask兼容仅组装器、不外推V1。真机缺口补M5原条件参考，不新训练／拼补丁／改专项或写社区。下轮转独立需求／实质修订，不扩mask／估计器矩阵。
+
 - **M1高置信logprob接续（2026-10-26）**：起始bc7ba42干净，compare保留863新增1无删改后fffcfa86b保全M5。核[#8377已有候选](notebook/frameworks/verl-fused-output-softcap.md#高置信标签的舍入与反向边界)，12原CPU参数项候选过／父版8过4失败；原issue高置信梯度恢复，但已有低置信反例与二阶原地异常均复现，不定性整体安全。保存原函数控制／结果，Triton #8378仅读正文与元数据、真机／多rank缺口补M5原条件参考；不另补丁、改专项或写社区。下轮转独立需求／实质修订，不扩极端logits矩阵或由12过采用候选。
 
 - **M1 processor回移候选接续（2026-10-26）**：起始59a71ac干净，compare保留861新增1无删改后ff0da1f2a。原#8261专题已覆盖性能，不重跑旧计时；补[新#8375绑定边界](notebook/frameworks/verl-dataproto-data-flow-reading.md#回移候选的绑定条件与评审前提)，官方5.5.3已有方法，机器人“缺API”前提不成立。两版原工厂8次替身加载控制核继承／类覆盖／版本跳过，非真实processor或安装验收。已有作者，不另补丁、改pin、新排M5任务或写社区；下轮转独立需求／实质反馈，不扩版本矩阵。

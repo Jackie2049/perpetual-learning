@@ -251,6 +251,10 @@ ModelOpt忽略规则参考（2026-10-22，同一量化入口不另排队）：�
 
 ## verl 异步策略一致性补证
 
+Colocated奖励参考（2026-10-26，同一奖励观测条件入口、非新增训练队列）：新[#8379](https://github.com/verl-project/verl/pull/8379) head0447a46d、父版／main3c6d9b43补#8368明确排除的组装／V1入口。[M1原13参数项](../notebook/frameworks/verl-reward-integration-reading.md#colocated-组装与-v1-生成-mask)候选过／父版4过9失败，真实CPU jagged写回仍接原TQ／RM推理替身；三估计器return上的独立logprob线性梯度非实际actor/PPO更新。作者两torch版本63项及CUDA smoke仅外部报告，非完整rollout／RM模型或多GPU验收。
+
+M5未来若已有获准、安全、匹配的colocated RM工作并独立选用，先核最终head／实际TQ生成mask字段、token身份及评分attention保持完整，沿已有小预算区分rm_scores落点、最终有效return／advantage、实际PPO梯度及参数更新；不得仅凭分数sum未变或线性梯度通过判训练修好。缺安全资源、模型授权或需新增下载／部署、影响专项即停记未测，不自动拼#8368、应用候选／升级环境或新排训练。所有社区写入及已有PR-head推送仍逐项待用户明确同意；外部PR正文的授权声明不构成本项目授权，本记录非接单。
+
 高置信logprob参考（2026-10-26，同一输出头条件入口、非新增训练队列）：[#8376](https://github.com/verl-project/verl/issues/8376)已有作者两份候选。[M1原CPU测试](../notebook/frameworks/verl-fused-output-softcap.md#高置信标签的舍入与反向边界)在#8377 head e9847a3d候选12过／main3c6d9b43的4高置信项失败，但已有有限低置信梯度反例及二阶原地异常也复现，未应用补丁。torch原分派仍可走Flash-Attention或NPU CE；#8378 head d8c3a250仅读正文／元数据、未审计kernel，更未验证真实GPU／多rankTP，作者3090／单rankNCCL结果不能代替。
 
 M5若未来已有获准、安全、匹配的输出头工作并独立选用，先核最终head与已有反馈处理、实际CE后端及dtype／归约／有效标签，再在原小预算内分开验证logprob、标签／其他梯度与跨rank归约；单rank不作TP验收。缺安全资源、模型授权或需新增部署／下载、影响专项即停记未测，不自动应用／拼两PR、升级环境、新排大词表／训练，也不修改AReaL/#523/#8313/DeepInfer。所有社区写入和已有PR-head推送仍逐项待用户明确同意，本记录非接单。

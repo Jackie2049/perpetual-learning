@@ -1,0 +1,95 @@
+{
+  "revision": "3c6d9b43b67c74ec343d77874cd8fa6e841523da",
+  "test_revision": "0447a46d59b842da56e38e7d25b0d05e47f6b42e",
+  "counts": {
+    "failed": 9,
+    "passed": 4
+  },
+  "tests": [
+    {
+      "test": "test_assemble_scores_on_last_generated_token[mask_dtype0]",
+      "outcome": "failed",
+      "failure": "E   AssertionError: Tensor-likes are not close!\n    \n    Mismatched elements: 4 / 12 (33.3%)\n    Greatest absolute difference: 2.0 at index (0, 4) (up to 1e-05 allowed)\n    Greatest relative difference: inf at index (0, 5) (up to 1.3e-06 allowed)"
+    },
+    {
+      "test": "test_assemble_scores_on_last_generated_token[mask_dtype1]",
+      "outcome": "failed",
+      "failure": "E   AssertionError: Tensor-likes are not close!\n    \n    Mismatched elements: 4 / 12 (33.3%)\n    Greatest absolute difference: 2.0 at index (0, 4) (up to 1e-05 allowed)\n    Greatest relative difference: inf at index (0, 5) (up to 1.3e-06 allowed)"
+    },
+    {
+      "test": "test_assemble_scores_on_last_generated_token[mask_dtype2]",
+      "outcome": "failed",
+      "failure": "E   AssertionError: Tensor-likes are not close!\n    \n    Mismatched elements: 4 / 12 (33.3%)\n    Greatest absolute difference: 2.0 at index (0, 4) (up to 1e-05 allowed)\n    Greatest relative difference: inf at index (0, 5) (up to 1.3e-06 allowed)"
+    },
+    {
+      "test": "test_assemble_scores_preserves_single_turn_placement[False]",
+      "outcome": "passed",
+      "failure": null
+    },
+    {
+      "test": "test_assemble_scores_preserves_single_turn_placement[True]",
+      "outcome": "passed",
+      "failure": null
+    },
+    {
+      "test": "test_assemble_scores_without_generated_tokens_uses_legacy_fallback",
+      "outcome": "passed",
+      "failure": null
+    },
+    {
+      "test": "test_assemble_scores_ignores_generated_marks_on_padding",
+      "outcome": "failed",
+      "failure": "E   AssertionError: Tensor-likes are not close!\n    \n    Mismatched elements: 2 / 5 (40.0%)\n    Greatest absolute difference: 2.0 at index (0, 1) (up to 1e-05 allowed)\n    Greatest relative difference: inf at index (0, 2) (up to 1.3e-06 allowed)"
+    },
+    {
+      "test": "test_assemble_scores_handles_empty_batch",
+      "outcome": "passed",
+      "failure": null
+    },
+    {
+      "test": "test_colocated_outcome_reaches_returns_and_policy_gradient[gae]",
+      "outcome": "failed",
+      "failure": "E   AssertionError: Tensor-likes are not close!\n    \n    Mismatched elements: 6 / 6 (100.0%)\n    Greatest absolute difference: 2.0 at index (0,) (up to 1e-05 allowed)\n    Greatest relative difference: 1.0 at index (0,) (up to 1.3e-06 allowed)"
+    },
+    {
+      "test": "test_colocated_outcome_reaches_returns_and_policy_gradient[reinforce_plus_plus]",
+      "outcome": "failed",
+      "failure": "E   AssertionError: Tensor-likes are not close!\n    \n    Mismatched elements: 6 / 6 (100.0%)\n    Greatest absolute difference: 2.0 at index (0,) (up to 1e-05 allowed)\n    Greatest relative difference: 1.0 at index (0,) (up to 1.3e-06 allowed)"
+    },
+    {
+      "test": "test_colocated_outcome_reaches_returns_and_policy_gradient[remax]",
+      "outcome": "failed",
+      "failure": "E   AssertionError: Tensor-likes are not close!\n    \n    Mismatched elements: 6 / 6 (100.0%)\n    Greatest absolute difference: 2.0 at index (0,) (up to 1e-05 allowed)\n    Greatest relative difference: 1.0 at index (0,) (up to 1.3e-06 allowed)"
+    },
+    {
+      "test": "test_colocated_reward_preserves_generation_mask_from_transfer_queue[train]",
+      "outcome": "failed",
+      "failure": "E   KeyError: 'response_mask'\n\nDuring handling of the above exception, another exception occurred:\nE   KeyError: 'key \"response_mask\" not found in TensorDict with keys [\\'attention_mask\\', \\'prompts\\', \\'responses\\']'"
+    },
+    {
+      "test": "test_colocated_reward_preserves_generation_mask_from_transfer_queue[val]",
+      "outcome": "failed",
+      "failure": "E   KeyError: 'response_mask'\n\nDuring handling of the above exception, another exception occurred:\nE   KeyError: 'key \"response_mask\" not found in TensorDict with keys [\\'attention_mask\\', \\'prompts\\', \\'responses\\']'"
+    }
+  ],
+  "source_sha256": {
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/protocol.py": "8d69430131e9e894a6c7aea673d489e19e44117b1bc573085a6db521b38c6792",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/base_config.py": "a313fdc081a3983193980a475b9b572b125fe95da92c459f05db810a14f62050",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/trainer/config/algorithm.py": "b17048a837394325d2b590e575ec9c7e7911c52f24504b09692476434b8d40f0",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/utils/torch_functional.py": "bc7ff798e2f5c06e0121668490739814efc519ff66d4d7dd7c8fc40b4840eb03",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/trainer/ppo/core_algos.py": "369b614f239f237a04a38a40b1877cd6fd14aa7bd5f9ff4fe4d7758b682a6948",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/experimental/reward_loop/reward_manager/base.py": "ebe8873b3a3c891cc01f5fb0f256f543b7939449780dd18afd65d3c44c6f0023",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/trainer/ppo/v1/trainer_base.py": "293af89dab738cc57a67a8cc730f3337622685e29d96dfdd2e9af1e6fc2144e8",
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da:verl/utils/tensordict_utils.py": "4dc4c321a51e256232751ddb5cb2a2be129076e7f02f36a685fcad6d0d98f5f1",
+    "0447a46d59b842da56e38e7d25b0d05e47f6b42e:tests/experimental/reward_loop/test_assemble_rm_scores_on_cpu.py": "27019ff206c76097d5d5b98bea3481d4df0841c52a9f37a73306829f9699cc6d",
+    "0447a46d59b842da56e38e7d25b0d05e47f6b42e:tests/trainer/ppo/v1/test_trainer_base_on_cpu.py": "97760db74ba1174e96efe97af4d50c41a2c3ae39e741847c04f2dbffe9e08b31"
+  },
+  "environment": {
+    "python": "3.12.13",
+    "torch": "2.14.1",
+    "tensordict": "0.15.2",
+    "numpy": "2.5.4",
+    "pytest": "9.1.1"
+  },
+  "scope": "11 original assembly/estimator items + 2 original V1 items; original method shells, DataProto, typed config, CPU autograd and jagged TensorDict; original TQ/inference mocks, no service/model/full trainer or GPU"
+}

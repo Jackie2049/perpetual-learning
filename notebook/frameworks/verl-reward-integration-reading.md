@@ -1,5 +1,7 @@
 # verl Reward Integration 源码级深度阅读
 
+2026-10-26接续：[colocated 组装与 V1 生成 mask](#colocated-组装与-v1-生成-mask)核对新#8379补上#8368明确排除的路径；原13参数项候选通过，实际TQ服务／RM推理与完整PPO更新仍分开验收。
+
 2026-10-26补充：[DisRM返回契约与部分写入](#disrm-返回契约与部分写入)核对已有#7608：原三回归候选过；旧版缺字段时已写分数，同一输出再次调用会跳过评分，不能据“没再报错”认证恢复。
 
 2026-10-25补充：[异步奖励的验证标志与元数据范围](#异步奖励的验证标志与元数据范围)核对已有#7217：原两参数用例通过，修复显式验证标志，不透传全部批级元数据；原假远程句柄不是实际奖励服务。
@@ -43,6 +45,22 @@ head完整GAE returns为[1,1,1,1,1,0]，RF++ returns为[1,1,0,1,1,0]；中间观
 作者明确排除后续token-level rejection改mask的情况，以及colocated RewardManagerBase.assemble_rm_scores路径。前者涉及return mask与loss mask及已混入KL项的奖励语义，不能机械在所有估计器里把分数搬回去；后者也不因agent loop两处通过就视为修好。这些是已有提案的范围边界，不另开通用mask修复或修改M5专项。
 
 [JSON](../../experiments/verl-outcome-placement/result.json)保存两版原测试结果、奖励／return／优势及九份源码hash。Python3.12.13、torch2.14.1、Pydantic2.14.1、NumPy2.5.4、TensorDict0.15.2，两次语义一致；九份完整模块AST／compile通过。作者21／42项、mutation与真实SWE重建／tokenizer结果均非本机验收；本轮没有模型下载、配方重建、完整训练或GPU操作，不新排M5队列。复现运行 `python -B experiments/verl-outcome-placement/verify.py <已有固定对象的只读verl仓库>`。现有候选已有作者，不另实现或发布；下轮转独立需求／实质反馈，不扩mask／估计器矩阵。
+
+### colocated 组装与 V1 生成 mask
+
+2026-10-26新增OPEN／非draft [#8379](https://github.com/verl-project/verl/pull/8379)，作者Levius-Fubuki，head `0447a46d59b842da56e38e7d25b0d05e47f6b42e`，父版／base／main `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，五文件209增9删。这不是#8368重复提交：新候选只改RewardManagerBase的组装和V1 colocated输入，不改agent-loop或估计器；两个候选不能因主题相同就互相替代，也未在本机拼接。
+
+组装器用 `response_mask.bool() & response_attention_mask.bool()` 找最大的生成且非padding索引，避免把奖励放到后面的模板后缀或带错误生成标记的padding。没有mask／行内没有生成位时仍回退 `attention.sum()-1`，延续原右补齐有效前缀假设；它不是任意稀疏attention的通用最后非零算法，也不保证全零生成mask行能产生学习信号。新空batch用例为0行、响应宽4，不认证零响应宽度。
+
+V1另从TQ明确请求保存的 `response_mask`，转成padded后放进RM输入；attention仍由prompt／response各自行长度重建，不用生成mask裁剪评分上下文。主线agent-loop已有输出该字段的接线，原V1却没在此入口取它。**组装器可接受缺mask，不等于新V1入口也可缺字段**：后者无条件请求并索引TQ中的mask；原缺字段兼容用例只测试组装器，不是所有历史TQ记录兼容保证。
+
+[本机脚本](../../experiments/verl-colocated-outcome/verify.py)用完整原DataProto类／typed AlgoConfig、三原估计器、masked helpers、原assemble方法和V1两方法类壳，保留原get_tensordict。候选新增assembly测试文件的全部原函数，加V1新增测试与原StubTrainer，由pytest在内存中按原参数／断言收集；跳过包／服务初始化及估计器注册，不改测试数值。Python3.12.13／torch2.14.1 CPU／TensorDict0.15.2／NumPy2.5.4／pytest9.1.1，11个组装／估计器项加train／val两个V1项：候选13过，父版4过9失败。父版7个组装／return项断言失败，V1两项均因RM输入缺response_mask失败。[父版](../../experiments/verl-colocated-outcome/base-result.json)／[候选结果](../../experiments/verl-colocated-outcome/head-result.json)保留每项结果和源码hash。
+
+原夹具含内部观察位、模板尾、补齐和2／−1两种outcome；bool／int／float mask项只用二值mask，不能扩为任意浮点权重语义。V1原测试保留TQ读写与RM推理替身，但实际执行原方法、真实jagged张量与DataProto：评分输入attention仍含模板尾，写回长度仍为6／3，奖励分别位于从0计的4／1；train与val是分区参数检查，不是启动两套队列服务。三估计器用例执行真实GAE／REINFORCE++／ReMax，确认有效位置returns保留2或−1；反向用 `-(log_probs * returns.detach() * mask).sum()`，log_probs是独立叶子。它既未消费估计器返回的advantages，也不是实际PPO clipped loss、actor参数或AdamW更新。
+
+作者另报63项套件在两版torch通过及CUDA合成PPO／AdamW smoke；均为外部报告，不计入本机13项，也不是完整rollout／RM推理训练。本轮未执行真实TQ服务／RM模型、完整trainer、CUDA、多GPU或训练，不重跑#8368旧控制。缺口补[M5原条件入口](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不自动应用候选、新排训练或改其专项；有实质反馈或真实匹配需求才接续，不扩mask矩阵。任何社区写入和已有PR-head推送仍逐项待用户明确同意，PR正文的外部提交授权不改变本项目权限。
+
+复用：已有固定Git对象的只读verl checkout，执行 `python experiments/verl-colocated-outcome/verify.py /absolute/path/to/verl base` 或末参 `head`。base返回脚本exit0表示记录到了9个预期失败，不表示原测试全过；无需网络／模型下载。
 
 ## boxed 答案的归一化与选择优先级
 

@@ -1,0 +1,94 @@
+{
+  "revision": "0447a46d59b842da56e38e7d25b0d05e47f6b42e",
+  "test_revision": "0447a46d59b842da56e38e7d25b0d05e47f6b42e",
+  "counts": {
+    "passed": 13
+  },
+  "tests": [
+    {
+      "test": "test_assemble_scores_on_last_generated_token[mask_dtype0]",
+      "outcome": "passed",
+      "failure": null
+    },
+    {
+      "test": "test_assemble_scores_on_last_generated_token[mask_dtype1]",
+      "outcome": "passed",
+      "failure": null
+    },
+    {
+      "test": "test_assemble_scores_on_last_generated_token[mask_dtype2]",
+      "outcome": "passed",
+      "failure": null
+    },
+    {
+      "test": "test_assemble_scores_preserves_single_turn_placement[False]",
+      "outcome": "passed",
+      "failure": null
+    },
+    {
+      "test": "test_assemble_scores_preserves_single_turn_placement[True]",
+      "outcome": "passed",
+      "failure": null
+    },
+    {
+      "test": "test_assemble_scores_without_generated_tokens_uses_legacy_fallback",
+      "outcome": "passed",
+      "failure": null
+    },
+    {
+      "test": "test_assemble_scores_ignores_generated_marks_on_padding",
+      "outcome": "passed",
+      "failure": null
+    },
+    {
+      "test": "test_assemble_scores_handles_empty_batch",
+      "outcome": "passed",
+      "failure": null
+    },
+    {
+      "test": "test_colocated_outcome_reaches_returns_and_policy_gradient[gae]",
+      "outcome": "passed",
+      "failure": null
+    },
+    {
+      "test": "test_colocated_outcome_reaches_returns_and_policy_gradient[reinforce_plus_plus]",
+      "outcome": "passed",
+      "failure": null
+    },
+    {
+      "test": "test_colocated_outcome_reaches_returns_and_policy_gradient[remax]",
+      "outcome": "passed",
+      "failure": null
+    },
+    {
+      "test": "test_colocated_reward_preserves_generation_mask_from_transfer_queue[train]",
+      "outcome": "passed",
+      "failure": null
+    },
+    {
+      "test": "test_colocated_reward_preserves_generation_mask_from_transfer_queue[val]",
+      "outcome": "passed",
+      "failure": null
+    }
+  ],
+  "source_sha256": {
+    "0447a46d59b842da56e38e7d25b0d05e47f6b42e:verl/protocol.py": "8d69430131e9e894a6c7aea673d489e19e44117b1bc573085a6db521b38c6792",
+    "0447a46d59b842da56e38e7d25b0d05e47f6b42e:verl/base_config.py": "a313fdc081a3983193980a475b9b572b125fe95da92c459f05db810a14f62050",
+    "0447a46d59b842da56e38e7d25b0d05e47f6b42e:verl/trainer/config/algorithm.py": "b17048a837394325d2b590e575ec9c7e7911c52f24504b09692476434b8d40f0",
+    "0447a46d59b842da56e38e7d25b0d05e47f6b42e:verl/utils/torch_functional.py": "bc7ff798e2f5c06e0121668490739814efc519ff66d4d7dd7c8fc40b4840eb03",
+    "0447a46d59b842da56e38e7d25b0d05e47f6b42e:verl/trainer/ppo/core_algos.py": "369b614f239f237a04a38a40b1877cd6fd14aa7bd5f9ff4fe4d7758b682a6948",
+    "0447a46d59b842da56e38e7d25b0d05e47f6b42e:verl/experimental/reward_loop/reward_manager/base.py": "724ec68b189fe86a5ca2f84e2a3ce3b2f912679163e15d7105db6b731da8ce85",
+    "0447a46d59b842da56e38e7d25b0d05e47f6b42e:verl/trainer/ppo/v1/trainer_base.py": "5b19618eb254d46ea68a6e9ce6f5c8ae3f6df3561f49b3d5e22bcc3b401106b1",
+    "0447a46d59b842da56e38e7d25b0d05e47f6b42e:verl/utils/tensordict_utils.py": "4dc4c321a51e256232751ddb5cb2a2be129076e7f02f36a685fcad6d0d98f5f1",
+    "0447a46d59b842da56e38e7d25b0d05e47f6b42e:tests/experimental/reward_loop/test_assemble_rm_scores_on_cpu.py": "27019ff206c76097d5d5b98bea3481d4df0841c52a9f37a73306829f9699cc6d",
+    "0447a46d59b842da56e38e7d25b0d05e47f6b42e:tests/trainer/ppo/v1/test_trainer_base_on_cpu.py": "97760db74ba1174e96efe97af4d50c41a2c3ae39e741847c04f2dbffe9e08b31"
+  },
+  "environment": {
+    "python": "3.12.13",
+    "torch": "2.14.1",
+    "tensordict": "0.15.2",
+    "numpy": "2.5.4",
+    "pytest": "9.1.1"
+  },
+  "scope": "11 original assembly/estimator items + 2 original V1 items; original method shells, DataProto, typed config, CPU autograd and jagged TensorDict; original TQ/inference mocks, no service/model/full trainer or GPU"
+}
