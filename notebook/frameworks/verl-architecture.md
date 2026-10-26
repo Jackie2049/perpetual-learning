@@ -1,5 +1,7 @@
 # verl (HybridFlow) 架构深度分析
 
+2026-10-26接续：[缓存候选的当前事件范围](#缓存修复之外的-gpu-工作流触发变化)已核新head退回aaae3716，GPU工作流删除不再属于当前PR；旧16f800b7的分析保留为历史，不作为当前阻碍。
+
 2026-10-24 接续：[FSDP 后端配置的权威来源](#fsdp-后端配置的权威来源)区分请求配置、实例化后的engine选择和训练数值差异；原校验函数接真实OmegaConf的局部控制，不是模型或训练验收。
 
 > 基于 verl 源码的架构阅读笔记，重点关注 RL 训练框架设计、vLLM 集成和前缀缓存机制
@@ -378,20 +380,24 @@ verl 的三级前缀缓存机制直接对应 prefix-sharing 的核心需求：
 
 ### 缓存修复之外的 GPU 工作流触发变化
 
-2026-10-26 #8343仍OPEN，现为draft，head `16f800b758d0d75b0c1758ae29fbc6479276fd70`、base／共同祖先／main均为 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，ahead2／behind0，三文件13增27删。当前两提交为aaae3716的原缓存路径修复与16f800b7的“remove unrelated tests”。[model_ascend.yml](https://github.com/verl-project/verl/blob/16f800b758d0d75b0c1758ae29fbc6479276fd70/.github/workflows/model_ascend.yml)和[test_engine.py](https://github.com/verl-project/verl/blob/16f800b758d0d75b0c1758ae29fbc6479276fd70/tests/models/test_engine.py)均与上节旧head逐字节相同，旧tmp_path两例不重跑；新增差异是[GPU工作流](https://github.com/verl-project/verl/blob/16f800b758d0d75b0c1758ae29fbc6479276fd70/.github/workflows/gpu_unit_tests.yml)删除完整pull_request事件块，而不是改变pytest选择哪些测试。
+**后续核对：删除GPU PR触发器已不在当前候选中。** 2026-10-26新API head为 `aaae371688b76b2e41816e7d09591edd69436f27`，仍OPEN／draft；它是先前16f800b7的直接父提交，不是新增一次“修复触发器”的提交。目标base及共同祖先均为 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，ahead1／behind0，当前只有两文件13增2删。新head的[gpu_unit_tests.yml](https://github.com/verl-project/verl/blob/aaae371688b76b2e41816e7d09591edd69436f27/.github/workflows/gpu_unit_tests.yml)与目标主线逐字节相同，含原pull_request块；[Ascend工作流](https://github.com/verl-project/verl/blob/aaae371688b76b2e41816e7d09591edd69436f27/.github/workflows/model_ascend.yml)和[test_engine.py](https://github.com/verl-project/verl/blob/aaae371688b76b2e41816e7d09591edd69436f27/tests/models/test_engine.py)则与16f800b7、37f7d0c均逐字节相同，旧两例路径控制不重跑。
 
-| GPU工作流内容 | 目标主线与旧head | 当前候选 |
+因此撤回“当前PR另改GPU触发政策”的判断与拆分建议，保留缓存修复的原有适用范围；这不是确认Actions已运行、required checks已满足或维护者已批准。旧评审需按提交逐项看，不能一概当成当前未解决问题，也不能一概因旧commit而宣布无效。下面保留16f版本的历史分析，后续只按实际新diff接续，不为无变化的缓存代码再建测试或M5任务。本轮仅Git身份、PyYAML BaseLoader结构与一个Python文件compile，无Actions／设备或模型执行。
+
+**历史16f800b7范围：** 当时OPEN／draft，head `16f800b758d0d75b0c1758ae29fbc6479276fd70`、base／共同祖先／main均为 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，ahead2／behind0，三文件13增27删。两提交为aaae3716的原缓存路径修复与16f800b7的“remove unrelated tests”。缓存两文件与上节旧head逐字节相同；新增差异是[GPU工作流](https://github.com/verl-project/verl/blob/16f800b758d0d75b0c1758ae29fbc6479276fd70/.github/workflows/gpu_unit_tests.yml)删除完整pull_request事件块，而不是改变pytest选择哪些测试。
+
+| GPU工作流内容 | 目标主线与旧head | 历史16f候选 |
 |---|---|---|
 | push事件 | main／v0.4.x，带Python／工作流／依赖路径过滤 | 完整保留 |
 | pull_request事件 | 目标main／v0.4.x，带原有路径与排除规则 | 删除 |
 | 其他事件 | 无 | 仍无；未替成pull_request_target／workflow_dispatch |
 | setup／gpu_unit_tests／cleanup及其余顶层设置 | 原runner、权限、owner条件、步骤和并发策略 | 结构相同 |
 
-根据[GitHub事件说明](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request)，PR事件在符合分支／路径条件时可覆盖opened／reopened／head更新；push的分支过滤看被推送的分支，不等价于“PR目标main”。因此若采用当前候选YAML，普通feature分支的PR更新不再通过这个工作流取得原先的合并前入口；保留的main／v0.4.x push检查不能自动代替它。作业仍有 `github.repository_owner == 'verl-project'` 限制，不能据fork上同名main分支推送就保证重跑。此结论限定这个文件的事件资格，不是宣称所有CI停跑、当前主线已经失去检查，或runner实际不可用。
+根据[GitHub事件说明](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request)，PR事件在符合分支／路径条件时可覆盖opened／reopened／head更新；push的分支过滤看被推送的分支，不等价于“PR目标main”。因此若采用该历史候选YAML，普通feature分支的PR更新不再通过这个工作流取得原先的合并前入口；保留的main／v0.4.x push检查不能自动代替它。作业仍有 `github.repository_owner == 'verl-project'` 限制，不能据fork上同名main分支推送就保证重跑。此结论限定该历史文件的事件资格，不是宣称所有CI停跑、当前主线已经失去检查，或runner实际不可用。
 
 这项删除不属于解决模型缓存写权限／pytest目录隔离所必需的改动。供人工审视的内部反馈是：将GPU触发策略拆离，或先说明等价的合并前覆盖与调度策略，再分别判断缓存修复和CI政策；本项目没有代作者恢复触发器、改PR代码、发评论或dispatch工作流。仓库required checks设置、其他实际调度机制和Actions运行结果未核验，不能由静态YAML判某个PR必定阻塞／可合并，或声称已有GPU测试失败。
 
-旧评审必须按提交归属判断。当前可见人类review处于DISMISSED，关联970cb63f；机器人反馈分别关联8c107fac与3f59bff9，后者涉及多项workflow／secret-scan删除。当前相对base只差上述三文件，secret-scan／CPU等文件不在当前差异，不能把那批历史反馈都当成当前未解决问题。也不能用旧review批准／否决当前head。旧head与新head直接比较还会出现vLLM LoRA工具差异，这是目标历史推进／rebase口径问题；按各自共同祖先比较才不会把它误作缓存修复新增动作。
+旧评审必须按提交归属判断。可见人类review处于DISMISSED，关联970cb63f；机器人反馈分别关联8c107fac与3f59bff9，后者涉及多项workflow／secret-scan删除。16f相对base只差上述三文件，secret-scan／CPU等文件不在该版本差异，不能把那批历史反馈都当成当时未解决问题。也不能用旧review批准／否决其他head。37f旧head与rebase后head直接比较还会出现vLLM LoRA工具差异，这是目标历史推进／rebase口径问题；按各自共同祖先比较才不会把它误作缓存修复新增动作。
 
 本机Python3.12／PyYAML6.0.3，使用BaseLoader保留`on`字符串键（避免默认YAML 1.1把它当布尔键），核对三版GPU YAML、完整其他顶层结构相同与缓存两文件字节相同；两版Ascend YAML可解析、Python测试模块仅compile。未模拟完整GitHub事件匹配器、运行pytest目录控制、Actions／Ray／GPU／NPU或任何模型测试；hash和复现命令见[当日日志](../../diary/2026-10-26.md)。这是CI策略审视项，不新增M5硬件队列或借设备实测替代触发政策讨论；后续仅接实质修订或用户明确要求，所有社区动作与已有PR-head推送仍逐项待授权。
 

@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1缓存候选范围纠正（2026-10-26）**：起始3c41186干净，compare保留886新增1无删改后ffe5f8cdb保全M5。#8334仍0评论、仅正文接续不重做；新#8343 head退回aaae3716（旧16f直接父），base祖先3c6d9b43，ahead1／behind0、原缓存两文件13增2删。补[原架构记录](notebook/frameworks/verl-architecture.md#缓存修复之外的-gpu-工作流触发变化)：GPU YAML与主线字节同，缓存两文件与16f／37f均同，撤回当前CI删除／拆分建议，旧分析明示历史。仅BaseLoader／一个Python compile，无旧两例复跑／Actions／设备或新M5队列；不接管#8313等专项或写上游。下轮转独立真实需求／实质变化，不反复复查同一PR或重建事件模拟器。
+
 - **M1 HIP分支同步学习（2026-10-26）**：起始d013f46干净，compare保留884新增1无删改后ff94bb330保全M5。UniRL #627原知识已覆盖，verl #8369／#8370／#8371同head不复测；新AMD八步报告转读[原VeOmni专题新节](notebook/frameworks/verl-veomni-opd-source-reading.md#hip-的-mhc-分支同步与依赖栈)。TileKernels #43去HIP第二分支pre_mix_shared／xs中转，仍读阶段mixes_shared；CUDA else与post／comb AST同base，no_grad选fused路径，测试容差非逐bit／一ULP保证。八文件compile，未import内核或线程模拟，VeOmni #1363／TileLang #3665与旧pin回移分开；M5仅原条件参考，无新任务／专项／上游动作。下轮转独立实际需求／实质反馈，不造CPU线程模拟、扩tile矩阵或移植作者方案。
 
 - **M1合并LoRA睡眠学习（2026-10-26）**：起始125ae7e干净，compare保留882新增1无删改后ffdc09f14保全M5。读已有#8046 head576b8e91／base祖先2035f58d，近期只催审，无GPU新证据。补[原同步专题](notebook/frameworks/verl-fsdp-weight-sync-mechanism-reading.md#合并-lora-的睡眠策略与恢复证据)：FSDP三strategy merged候选level1、Megatron仍2；新增四原函数9参数项head9过／base6过3失败，原engine仅记level。导出／IPC文件不变，state_dict经PEFT改名去adapter键不直接证明漏项。撤回原vLLM level1 KV-only与4090必选推导，八份源码compile，无PEFT／引擎或设备运行；M5只原条件参考，无竞争实现／新训练／专项／上游动作。下轮转独立需求／实质反馈，不扩sleep替身／策略矩阵或抢改作者方案。
