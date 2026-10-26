@@ -181,6 +181,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [量化写入前检查与失败握手](verl-quant-layer-audit.md#写入前检查与失败握手) — #8327新head把格式检查移到引擎逐桶写入前；完成ACK不等于回滚，首轮finished不等于通过。九份语法检查非引擎或通信验收，旧GPU/CPU报告不迁移。
 
 - [verl 异步训练策略版本与 logprob 对照条件](verl-async-logprob-provenance.md) — V1 separate-async的rollout/old/current来源、CPU快照路由、版本标签边界和最小观测契约；非训练根因证明
+  - [独立重启与恢复水位](verl-async-logprob-provenance.md#独立重启与恢复水位) — #8380设计与#8168生命周期API分开；snapshot非训练状态，参数／optimizer／RNG／账本同水位仍需验证，不另建FT实现。
   - [Padding行与序列分母](verl-async-logprob-provenance.md#padding-行与序列指标的分母) — #7785原一回归体CPU候选过、祖先／main失败；去空行不把序列PPL均值变成corpus PPL，非IS／loss或训练验收。
 - [verl 采样支持域与归一化](verl-async-logprob-provenance.md#采样截断后的支持域与归一化) — 原IS／RS函数的有限CPU对照：相同模型仍可有0.9单token／0.349序列权重，小K3不认证精确KL；#8207配置保护与已合并#8196的score centering分开，不另实现。
 - [SGLang 概率模式与请求参数](verl-async-logprob-provenance.md#sglang-概率模式与请求参数) — #8363原四配置测试体候选全过，验证参数覆盖可无构造告警；raw／温度／截断归一化与启动环境分开，非真实引擎验收。

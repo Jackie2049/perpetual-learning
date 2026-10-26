@@ -4,6 +4,42 @@
 
 适用源码为 verl `1876b06d0a3e4e71e06230be10af14492ca8a75b` 的 V1 separate-async。关联 [#8250](https://github.com/verl-project/verl/issues/8250) 报告明确使用该入口、私有修改及 temperature=1；安装的vLLM版本仍未知。这里不将旧experimental fully_async_policy路径或依赖pin当作该运行环境。阅读日期2026-10-21。
 
+2026-10-26接续：[独立重启与恢复水位](#独立重启与恢复水位)区分新#8380的容错设计与#8168已有候选API；后者可替换引擎并重新注入权重，不是trainer状态快照或通用反向恢复实现。
+
+## 独立重启与恢复水位
+
+**恢复了服务进程、恢复了策略参数、恢复了同一条训练轨迹，是三个不同目标。** [RFC #8380](https://github.com/verl-project/verl/issues/8380)由HaoWang113于2026-10-26提出，读取时OPEN、0评论。它以driver存活、节点与拓扑／软件版本不变为前提，规划trainer组重建与rollout独立替换，状态不确定时回落磁盘checkpoint。逆向拉权重、optimizer镜像、提交水位、generation fencing仍属设计，不是已完成的框架能力或我方候选。
+
+### 引擎重启候选实际提供什么
+
+RFC引用tongyx361的[非draft候选#8168](https://github.com/verl-project/verl/pull/8168)，读取仍OPEN，固定head `f9a275ba9dab018aff03187f946fc6c1eea528e6`、API目标base `1d367a4f459a43768f76312c0d3430a99ec46b8c`。不能把它当已经合入main，或用旧GPU报告认证后续全部修订。
+
+| 入口 | 固定源码的行为 | 不提供的保证 |
+|---|---|---|
+| [server snapshot](https://github.com/verl-project/verl/blob/f9a275ba9dab018aff03187f946fc6c1eea528e6/verl/workers/rollout/vllm_rollout/vllm_async_server.py) | 返回KV占用、等待请求数、运行请求数三个指标 | 不含模型、optimizer、RNG、KV内容或训练恢复点 |
+| 同文件replica.restart | 验证旧server退出后重建；限单节点standalone、MP、非PD，保留worker／资源池 | 不是trainer重启；timeout只限旧server清理，不限新初始化／同步总时长 |
+| [manager.restart_replica](https://github.com/verl-project/verl/blob/f9a275ba9dab018aff03187f946fc6c1eea528e6/verl/checkpoint_engine/base.py) | next_weight_sync模式保留接收端，replacement拒绝请求，等待原全权重同步和健康检查 | 不自动做故障检测、反向拉trainer状态或发布LB路由；未merge LoRA、delta-only等不获支持 |
+
+候选`verl/`树未找到RFC拟新增的`pull_weights`文本接口。已有trainer→rollout通道，不等于已实现rollout→trainer的布局转换、完整精度参数或optimizer恢复。固定main的[原生FP8导出器](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/utils/qat/compressed_tensors.py)在普通FP8_BLOCK路径会真正压缩高精度权重；这种有损映射不能靠逆reshard恢复原始训练值。DeepSeek特殊passthrough路径又不同，不能将此限制套成所有部署必然丢精度。
+
+### 水位一致仍需完整状态一致
+
+RFC §4.2明确选择退回最近完成同步水位W：trainer当前head为T时，W之后尚未发布的更新可以丢弃。开头的“零loss”目标不应解读为所有optimizer更新和训练计算都保留；其限定语义是接受回退后继续，而不是承诺逐步等价。应逐项核清theta(W)、optimizer的m/v与step、scheduler、数据消费／在飞批次账本，以及所需RNG状态是否属于同一个恢复边界。只把旧m/v配到新theta，或重置optimizer再继续，是不同训练方案，不是无损恢复。
+
+[PyTorch state_dict说明](https://docs.pytorch.org/tutorials/recipes/recipes/what_is_state_dict.html)将模型参数／buffers与optimizer状态分开；[复现说明](https://docs.pytorch.org/docs/2.14/notes/randomness.html)也区分多类RNG及确定性算法。同seed加step只有在随机流划分和调用序列均有明确定义时才足够，不能从driver保存seed直接推导各rank、数据worker、模型dropout与采样状态都被还原。
+
+水位必须绑定实际成员、已完成的写入与保留副本。若唯一持有W的replica已经损坏／被覆盖，或同步只完成部分分片，版本号W不能凭空补出一份可逆拉的干净快照；RFC已把无干净来源列为降级条件。双缓冲镜像的原子flip与checksum也须按实际实现核验，不能把提案中的协议名称当现成保证。
+
+若head回退后复用旧step号，新的更新可能沿不同数据／随机路径产生同编号但不同参数；因而还需明确恢复generation与策略版本、样本账本的关系。现有min/max版本区间不是跨回退历史的内容身份，通信组的generation fencing也不自动定义训练样本的去重／重放语义。这是接入契约待验证项，不是本轮发现某现成恢复器已出错。
+
+### 同步完成后的失败与请求重放
+
+固定manager在全组传输和finalize完成后，先恢复普通replica，再分别检查pending replacement。某替代实例健康检查失败时会抛ReplicaRecoveryError，携带已完成的sync_metrics、版本及失败列表；失败实例保持pending，其他成功实例可以恢复。**抛错不等于该次权重更新没有发生。** 调用方应区分传输未完成与发布未完成，不能因为捕获异常便重做optimizer.step或将失败replacement发布到路由。
+
+#8168的[客户端](https://github.com/verl-project/verl/blob/f9a275ba9dab018aff03187f946fc6c1eea528e6/verl/workers/rollout/llm_server.py)将引擎故障重试设为opt-in：普通客户端整turn重放，fully-async可保留已返回前缀及原logp，再prefill重建KV；它不迁移采样RNG或KV内容，server actor死亡时未返回的局部前缀不能保证存活。作者在64ce33c修订的A100 tiny Qwen2／单replica贪心对照报告93.95秒恢复，不是当前head、随机采样轨迹、多节点trainer重启或完整PPO验收；后续CPU报告不能替代GPU重验。
+
+本轮四份完整源文件AST/compile、snapshot返回键与文本接口核对通过，未导入Ray／vLLM、执行原103项CPU测试、模型或故障注入。源码hash见[当日日志](../../diary/2026-10-26.md)；硬件缺口只补[原M5一致性入口](../../experiments/handoff-m5.md#verl-异步策略一致性补证)的条件参考，不排新恢复实验、不实现另一个FT控制器或接管既有作者工作。所有上游写入仍逐项待用户明确同意。
+
 ## Padding 行与序列指标的分母
 
 2026-10-25接续。[#7771](https://github.com/verl-project/verl/issues/7771)的序列诊断问题已有rrrxxx0510的OPEN/non-draft [#7785](https://github.com/verl-project/verl/pull/7785)，head `7ffe2fa4a4f5581c27e09b8f2e438e3b61d8e7ee`。当前目标base为 `3f9d4c0d`，真正共同祖先为 `d040717b21af2e23e8e789a3e354cff2394ae2de`，ahead1／behind49；相对祖先仅两文件46增3删。不把目标base当直接父版本，也不另写竞争修复。

@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1独立重启水位学习（2026-10-26）**：起始353884a干净，compare保留888新增1无删改后ff3ebef30保全M5。读新#8380 RFC／0评论及其引用#8168 headf9a275ba，补[原策略来源专题](notebook/frameworks/verl-async-logprob-provenance.md#独立重启与恢复水位)：snapshot三指标非训练状态，pull_weights仍设计；参数精度／optimizer／scheduler／RNG／消费账本同水位与generation分开。固定manager同步后replacement失败可抛带已完成metrics错误，不重做optimizer更新。四源码AST/compile，无引擎／原103例／GPU或故障注入；作者旧A100报告不搬到当前head。M5只原条件参考，故障注入须明确授权隔离环境；不另实现FT控制器、改专项或写上游。下轮转独立真实需求／实质反馈，不造恢复状态机／RNG替身矩阵。
+
 - **M1缓存候选范围纠正（2026-10-26）**：起始3c41186干净，compare保留886新增1无删改后ffe5f8cdb保全M5。#8334仍0评论、仅正文接续不重做；新#8343 head退回aaae3716（旧16f直接父），base祖先3c6d9b43，ahead1／behind0、原缓存两文件13增2删。补[原架构记录](notebook/frameworks/verl-architecture.md#缓存修复之外的-gpu-工作流触发变化)：GPU YAML与主线字节同，缓存两文件与16f／37f均同，撤回当前CI删除／拆分建议，旧分析明示历史。仅BaseLoader／一个Python compile，无旧两例复跑／Actions／设备或新M5队列；不接管#8313等专项或写上游。下轮转独立真实需求／实质变化，不反复复查同一PR或重建事件模拟器。
 
 - **M1 HIP分支同步学习（2026-10-26）**：起始d013f46干净，compare保留884新增1无删改后ff94bb330保全M5。UniRL #627原知识已覆盖，verl #8369／#8370／#8371同head不复测；新AMD八步报告转读[原VeOmni专题新节](notebook/frameworks/verl-veomni-opd-source-reading.md#hip-的-mhc-分支同步与依赖栈)。TileKernels #43去HIP第二分支pre_mix_shared／xs中转，仍读阶段mixes_shared；CUDA else与post／comb AST同base，no_grad选fused路径，测试容差非逐bit／一ULP保证。八文件compile，未import内核或线程模拟，VeOmni #1363／TileLang #3665与旧pin回移分开；M5仅原条件参考，无新任务／专项／上游动作。下轮转独立实际需求／实质反馈，不造CPU线程模拟、扩tile矩阵或移植作者方案。

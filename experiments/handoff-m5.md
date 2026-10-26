@@ -257,6 +257,8 @@ ModelOpt忽略规则参考（2026-10-22，同一量化入口不另排队）：�
 
 ## verl 异步策略一致性补证
 
+独立重启RFC参考（2026-10-26，同一入口、非新队列）：[#8380](https://github.com/verl-project/verl/issues/8380)已有HaoWang113设计，引用tongyx361的[#8168](https://github.com/verl-project/verl/pull/8168) headf9a275ba；[M1恢复水位分析](../notebook/frameworks/verl-async-logprob-provenance.md#独立重启与恢复水位)只核四源码AST/compile。snapshot是三项调度指标非训练备份，现有重启保留接收端后全量重新注入；逆拉／optimizer镜像仍属RFC，无trainer恢复验收。若未来用户明确授权隔离环境的恢复／故障注入工作，M5先核完整版本、精度／布局、theta与optimizer／scheduler／RNG／消费账本的同水位身份及恢复generation，再按原小预算核实际返回／提交／发布顺序；同步后健康检查失败可抛带已完成metrics的ReplicaRecoveryError，不能重做optimizer更新或发布失败实例。93.95秒属作者64ce33c单replica贪心A100报告，非当前head或完整训练。当前安全事件未闭环／共享生产环境、缺授权或需下载部署、影响专项即停止，不自行kill进程、制造OOM、切通信组或实现FT服务。任何社区写入／PR-head推送仍逐项需用户明确同意，参考不表示接单。
+
 合并LoRA睡眠参考（2026-10-26，同一入口、非新队列）：已有[#8046](https://github.com/verl-project/verl/pull/8046) head576b8e91／base祖先2035f58d，作者新近只催审、未重跑A100。[M1原9参数策略测试](../notebook/frameworks/verl-fsdp-weight-sync-mechanism-reading.md#合并-lora-的睡眠策略与恢复证据)候选全过／基线6过3FSDP例失败，原engine仅记录level；FSDP／Megatron导出、normalize、IPC工具两版文件相同，不认证实际恢复。PEFT导出标签本身未列出漏写基础参数，先按真实模型核发送键、接收应用键、engine参数／buffers及alias覆盖，再比较sleep前／wake后／更新后同token观测；vLLM level1权重CPU备份不能套SGLang的KV-only驻留语义。仅M5将来独立选择已有获准、安全、匹配LoRA任务时在原小预算参考，缺模型／PEFT／设备或需下载部署、影响专项就停记未测，不为#7904或#8250重开训练、应用修复或扩容矩阵。所有社区写入及已有PR-head推送仍待用户对具体动作明确同意，本参考不代表接单。
 
 Colocated奖励参考（2026-10-26，同一奖励观测条件入口、非新增训练队列）：新[#8379](https://github.com/verl-project/verl/pull/8379) head0447a46d、父版／main3c6d9b43补#8368明确排除的组装／V1入口。[M1原13参数项](../notebook/frameworks/verl-reward-integration-reading.md#colocated-组装与-v1-生成-mask)候选过／父版4过9失败，真实CPU jagged写回仍接原TQ／RM推理替身；三估计器return上的独立logprob线性梯度非实际actor/PPO更新。作者两torch版本63项及CUDA smoke仅外部报告，非完整rollout／RM模型或多GPU验收。

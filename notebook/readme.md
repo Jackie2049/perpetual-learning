@@ -202,6 +202,7 @@
   - [新版检查与指标哨兵](frameworks/verl-quant-layer-audit.md#新版运行期检查与指标哨兵) — #8327关系/默认warn与硬拒绝分开；原纯Python20例及5控制通过，缓存disabled与缺指标不当健康证明
 - [verl ModelOpt模块忽略](frameworks/verl-quant-layer-audit.md#modelopt-模块忽略与子量化器) — #8329模块名与子量化器名分层；两版原helper名称控制通过，未执行真实量化，权重加载相等不认证actor forward精度
 - [verl 现成logprob对照与权重自检](frameworks/verl-async-logprob-provenance.md#现成-logprob-对照与权重自检) — #8252已有维护者回应；原metric/退出片段CPU控制区分平均及末轮门槛与内容恢复保证，非模型/同步实测，不另起检查器
+  - [独立重启与恢复水位](frameworks/verl-async-logprob-provenance.md#独立重启与恢复水位) — #8380退回水位非逐步等价；#8168进程替换／请求重放不等trainer状态恢复，四源码仅静态核对。
   - [Padding行与序列分母](frameworks/verl-async-logprob-provenance.md#padding-行与序列指标的分母) — #7785原一测试体CPU候选过、主线失败；空行PPL1会稀释统计，序列均值／token加权／逐行比率不能混用，非训练验收
 - [verl 新版阶段 tracing](frameworks/verl-async-logprob-provenance.md#新版阶段-tracing-与证据关联) — #8315原12项日志测试三版本对照，前后head均过但生产lane不同；Mock调用不认证后端显示/真实同步，M5原条目已同步版本
   - [Gauge元数据与训练步存储](frameworks/verl-async-logprob-provenance.md#gauge-元数据与训练步存储) — #8357原push路由控制保留；补原7项logger测试候选过，step标签仍非global_step存储，非服务/设备验收

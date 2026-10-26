@@ -19,6 +19,8 @@
 
 2026-10-26补[AMD内核依赖](#rocm-配方默认的已有候选)：三个verl head未变，不重测；追TileKernels #43的局部分支同步与容差变化，仅AST／源码，作者八步组合报告不作单PR或本机验收。
 
+2026-10-26补[独立重启RFC](#独立重启-rfc-与已有生命周期候选)：#8380已有设计、#8168已有实现作者；恢复水位与optimizer／RNG／样本账本分开，四源码核对非故障恢复验收，不另实现。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -32,6 +34,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## 独立重启 RFC 与已有生命周期候选
+
+2026-10-26读HaoWang113的[#8380](https://github.com/verl-project/verl/issues/8380)，OPEN／0评论，重点核完整§4.2及其引用tongyx361的OPEN／non-draft [#8168](https://github.com/verl-project/verl/pull/8168) headf9a275ba、API base1d367a4f。不是未认领修复：RFC规划全trainer组恢复／水位镜像，已有候选限单节点standalone MP引擎替换和next_weight_sync；不接管作者方案或运行其故障例。
+
+[原策略来源专题](../../notebook/frameworks/verl-async-logprob-provenance.md#独立重启与恢复水位)区分snapshot三指标、完整训练状态和行为轨迹。pull_weights仍RFC新接口；有损rollout量化不能自动逆回原训练值。同水位theta／optimizer／scheduler／RNG与数据账本需配套，head回退需generation身份；重放请求不保证原随机轨迹。固定manager同步完成后若replacement健康检查失败会保留pending并抛带metrics的错误，不当该次权重未更新或重做optimizer.step。四完整源码AST/compile，无Ray／vLLM导入、原CPU套件／GPU或故障注入；作者93.95秒A100报告绑64ce33c，非当前head或全训练。缺口仅补M5原条件参考，必须明确隔离故障注入授权，不排新实验／另写控制器；所有上游写入与PR-head推送仍需用户逐项同意。
 
 ## 合并 LoRA 睡眠的已有候选
 
