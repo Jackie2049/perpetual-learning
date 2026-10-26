@@ -257,6 +257,7 @@
 - [verl 源码架构阅读](frameworks/verl-source-reading.md) — HybridFlow RL 训练框架、PPO/GRPO 循环、FSDP+混合推理引擎、Prefix Grouper
 - [verl RL Infra 架构源码阅读](frameworks/verl-rl-infra-reading.md) — SyncPPOTrainer、ActorRolloutRefWorker、GRPO/GAE、TransferQueue、vLLM Rollout
 - [verl TransferQueue 数据面与启动资源](frameworks/verl-transferqueue-worker-lifecycle-deep-reading.md) — #8340按nnodes填默认单元数；3原配置测试/4组generated配对，不认证Ray启动。数据字段与权重同步分开，旧零拷贝/性能推导撤回
+- [MLflow初始化的锁与异常](frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#mlflow-初始化的文件锁与异常范围) — #8393同锁文件的局部互斥不是坏库修复；原类／真实锁与注入回调控制非MLflow迁移验收
 - [verl 教师生成与蒸馏目标](frameworks/verl-veomni-opd-source-reading.md#教师生成与蒸馏目标) — #8335整批来源选择、生成/软标签评分分开；教师prefix不是纯学生on-policy，16文件仅语法与源码核对
   - [HIP的mHC分支同步与依赖栈](frameworks/verl-veomni-opd-source-reading.md#hip-的-mhc-分支同步与依赖栈) — #43消除局部分支shared通信；no_grad入口、容差与实际回移栈分开，作者多步报告非单PR性能证明
   - [ROCm配方默认与后端支持](frameworks/verl-veomni-opd-source-reading.md#rocm-配方默认与后端支持) — #8371原3参数例通过非AMD检测；预重排键依赖未合并vLLM补丁，配方仅语法、传参链仅源码

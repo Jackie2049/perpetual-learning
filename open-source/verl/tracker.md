@@ -31,6 +31,8 @@
 
 2026-10-26更新[QAT合并版](#qat-mask-默认与后端契约)：#8361最终781c在4f8f090a合并，删除全部spec替换与mask默认helper；原三例只属8a历史版，旧正文不作最终Qwen3-MoE／refit验收。另核[#8390依赖与模型适配](../../notebook/frameworks/verl-architecture.md#qwen35-适配与内核能力探测)已合入f78fd053，八改动文件同eab3d58b，不重复CPU控制或自动升级环境。
 
+2026-10-26补[MLflow初始化](#mlflow-初始化文件锁的已有候选)：新#8393已有作者；原类接记录回调与真实子进程flock确认锁持有／释放，回调内部ImportError会无锁再调用。三局部控制非MLflow迁移或八worker验收，不另实现。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -44,6 +46,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## MLflow 初始化文件锁的已有候选
+
+2026-10-26读取analytistic的[#8393](https://github.com/verl-project/verl/pull/8393)，OPEN／非draft／未合并，head8313d7b、base／实际祖先174888fc，ahead1／behind0，单生产文件23增1删，无配套提交测试，读取时无人工评论／审查意见。作者已有两进程及八worker启动报告，不另认领修复。
+
+见[Worker原专题](../../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#mlflow-初始化的文件锁与异常范围)：进程内单例不等跨worker互斥，LOCK_EX只包set_experiment，不负责坏库修复或所有trace写入。固定默认四斜杠为绝对路径，字面URI拆锁名不是SQLAlchemy解析。原类接记录／异常注入回调与真实子进程锁探针的[三组结果](../../experiments/mlflow-init-lock/result.json)确认成功／RuntimeError路径释放锁，回调内部ImportError会被平台fallback捕获并无锁再调用，第二次成功后initialized=True。该条件控制不是实际MLflow故障普遍性或Alembic／Ray验收；原完整模块仅AST／compile，未安装服务／数据库或启动设备。本轮不写补丁／评论、不新增M5算力任务；所有社区动作仍待用户逐项授权。
 
 ## 独立重启 RFC 与已有生命周期候选
 

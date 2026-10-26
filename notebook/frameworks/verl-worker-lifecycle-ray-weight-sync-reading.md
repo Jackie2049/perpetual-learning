@@ -1,5 +1,7 @@
 # verl Worker 生命周期与 Ray 分布式架构源码阅读
 
+2026-10-26接续：[MLflow 初始化的文件锁与异常范围](#mlflow-初始化的文件锁与异常范围)核新#8393：进程内单例不能隔离多个worker；文件锁只串行同锁文件的初始化，不修复数据库，也不能把回调内部ImportError当平台不支持锁。
+
 2026-10-26接续：[外部 KV 缓存的权重命名空间](#外部-kv-缓存的权重命名空间)核#8323：缓存失效不必等于删除存储，但版本与真实权重必须对应；两个原helper的CPU检查不认证引擎命中、并发门或淘汰效果。
 
 2026-10-26接续：[SGLang 停用后的请求准入](#sglang-停用后的请求准入)区分移除路由、处理已取得的handle、临时暂停与拒绝重试；新#8387已有作者，本轮只做源码／原测试范围核对。
@@ -8,6 +10,30 @@
 
 > 2026-06-15 | 源码: verl/single_controller/ + verl/workers/engine_workers.py + verl/checkpoint_engine/ + verl/workers/rollout/
 > 核心: WorkerGroup=Ray actor管理+Dispatch路由 → RolloutMode(HYBRID/COLOCATED/STANDALONE) → Sleep/Wake GPU内存切换 → 3种Weight Sync后端(naive/NCCL/NIXL)
+
+## MLflow 初始化的文件锁与异常范围
+
+**初始化互斥、数据库修复和完整trace写入安全是不同问题。** analytistic的[#8393](https://github.com/verl-project/verl/pull/8393)为已有候选：2026-10-26读取OPEN／非draft／未合并，head `8313d7b6961f399609e3aae34ef739c0cac55cb5`，base／实际祖先 `174888fcf4b65dea032566a02fd16c5f76fb5b5b`，ahead1／behind0，仅一个生产文件23增1删，无提交测试；读取时没有人工评论／审查意见。作者报告两进程锁测试及八个AgentLoopWorker并发启动，不计本机MLflow结果。
+
+固定版本[AgentLoopWorker调用点](https://github.com/verl-project/verl/blob/8313d7b6961f399609e3aae34ef739c0cac55cb5/verl/experimental/agent_loop/agent_loop.py#L580)让各worker调用[RolloutTraceConfig.init](https://github.com/verl-project/verl/blob/8313d7b6961f399609e3aae34ef739c0cac55cb5/verl/utils/rollout_trace.py)。`_instance`／`_initialized`只属于各进程自己的Python类，不能充当跨worker屏障。候选对字面以sqlite:开头的URI打开旁置 `.lock` 文件，用阻塞LOCK_EX仅包住set_experiment，最后解锁并关闭；enable_async_logging和set_tracking_uri在锁外，后续start_span／set_trace_tag也不在这段锁内。代码没有超时、数据库回滚、损坏schema检测或修复步骤。
+
+默认URI实际为 `sqlite:////tmp/mlruns.db`，四斜杠对应绝对路径 `/tmp/mlruns.db`，锁为 `/tmp/mlruns.db.lock`；不能照PR正文的三斜杠当成同一路径。候选用 `split("///", 1)[1]` 和字符串追加来生成锁名，不是SQLAlchemy URL解析。[SQLAlchemy官方连接规则](https://docs.sqlalchemy.org/en/20/dialects/sqlite.html#connect-strings)区分相对／绝对路径、内存数据库及查询参数。因此要按真实数据库身份评估锁是否一致：例如query被原样拼入锁名，SQLAlchemy驱动前缀sqlite+pysqlite:则不进入此startswith分支；sqlite://连分割的第二项都没有。这是源码／官方格式对照，不代表已验证这些URI在特定MLflow安装中可用，也不扩写通用解析补丁。
+
+### 原类与真实子进程锁探针
+
+[有界脚本](../../experiments/mlflow-init-lock/verify.py)提取完整原RolloutTraceConfig类、保留原方法体，MLflow仅用显式记录／异常注入回调替代；fcntl是真实系统调用，锁争用由独立Python子进程的LOCK_EX|LOCK_NB及EACCES／EAGAIN判断，不靠sleep或时间差猜测。Python3.12.13／Darwin，使用新临时目录，未访问默认数据库；原完整模块AST／compile通过。
+
+| 注入条件 | 回调期间另一进程的拿锁结果 | 返回状态 |
+| --- | --- | --- |
+| 成功，再调用同进程init | 仅一次回调，blocked | initialized=True；重复init直接返回 |
+| 首次回调抛RuntimeError | 一次回调，blocked | 原错误传播，initialized=False |
+| 首次回调抛ImportError，第二次成功 | 第一次blocked，第二次acquired | 同一次init发生两次回调，最终initialized=True |
+
+第三项源于outer `except ImportError`覆盖整个加锁和回调段，不仅是import fcntl。首次回调的finally已释放锁，catch随后无锁重试；条件是**回调自身抛ImportError**，并非已证明实际MLflow正常启动必然如此。三组结束后子进程均可拿锁，而.lock文件仍在，说明文件存在不等于锁仍被持有；也没有必要据此删除共享锁文件。RuntimeError路径的config字段已在回调前赋值，initialized=False不等于所有状态回滚。
+
+[原始结果](../../experiments/mlflow-init-lock/result.json)固定完整源码SHA256及commit；重现命令为 `python experiments/mlflow-init-lock/verify.py /path/to/pinned/rollout_trace.py`。没有导入真实MLflow／Alembic／SQLAlchemy、建立SQLite库、启动Ray／AgentLoopWorker或GPU，不把该控制写成迁移race复现／修复验收。LOCK_EX与非阻塞错误解释见[Python官方fcntl文档](https://docs.python.org/3.12/library/fcntl.html#fcntl.flock)。
+
+候选适用性仍取决于所有初始化者使用同一锁文件及实际文件系统锁语义；作者已限定单机SQLite，多节点应接其MLflow服务路线，不从本机Darwin探针推广共享文件系统。后续仅等待作者／维护者反馈或真实用户场景，不实施另一套锁、数据库清理或错误重试方案，不安装依赖／启动服务，也不新增M5算力任务。任何上游评论、PR或既有PR-head推送仍须用户逐项明确授权。
 
 ## 外部 KV 缓存的权重命名空间
 
