@@ -21,6 +21,8 @@
 
 2026-10-26补[独立重启RFC](#独立重启-rfc-与已有生命周期候选)：#8380已有设计、#8168已有实现作者；恢复水位与optimizer／RNG／样本账本分开，四源码核对非故障恢复验收，不另实现。
 
+2026-10-26纠正[数学奖励候选状态](#数学奖励候选关闭与方程认领)：#8347关闭未合并，区间／数值问题仍未解决；方程提取已有JianhaoYu-AI认领，旧64项结果不作主线修复，新27项及未来Linux数据复核均不计为本机验收。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -40,6 +42,12 @@
 2026-10-26读HaoWang113的[#8380](https://github.com/verl-project/verl/issues/8380)，OPEN／0评论，重点核完整§4.2及其引用tongyx361的OPEN／non-draft [#8168](https://github.com/verl-project/verl/pull/8168) headf9a275ba、API base1d367a4f。不是未认领修复：RFC规划全trainer组恢复／水位镜像，已有候选限单节点standalone MP引擎替换和next_weight_sync；不接管作者方案或运行其故障例。
 
 [原策略来源专题](../../notebook/frameworks/verl-async-logprob-provenance.md#独立重启与恢复水位)区分snapshot三指标、完整训练状态和行为轨迹。pull_weights仍RFC新接口；有损rollout量化不能自动逆回原训练值。同水位theta／optimizer／scheduler／RNG与数据账本需配套，head回退需generation身份；重放请求不保证原随机轨迹。固定manager同步完成后若replacement健康检查失败会保留pending并抛带metrics的错误，不当该次权重未更新或重做optimizer.step。四完整源码AST/compile，无Ray／vLLM导入、原CPU套件／GPU或故障注入；作者93.95秒A100报告绑64ce33c，非当前head或全训练。缺口仅补M5原条件参考，必须明确隔离故障注入授权，不排新实验／另写控制器；所有上游写入与PR-head推送仍需用户逐项同意。
+
+## 数学奖励候选关闭与方程认领
+
+2026-10-26核实[#8347](https://github.com/verl-project/verl/pull/8347)在02:27:59 UTC由wuxibin89关闭，未合并，head仍7f34e018；撤回原表中OPEN／REVIEW_REQUIRED的当前状态。普通评论只见此前CLA障碍，关闭原因未获明确说明，不推断因CLA或技术否决。最新main3dd97a0e的prime_math入口／grader／normalizer三blob与旧d430157d基线相同，旧候选64项通过不代表修复进入主线；本轮不重跑。
+
+[#8346的新讨论](https://github.com/verl-project/verl/issues/8346#issuecomment-6410234797)已有JianhaoYu-AI认领方程原文匹配及boxed／fbox最后位置选择，报告者[同意其继续](https://github.com/verl-project/verl/issues/8346#issuecomment-6410710152)，并明确区间／缩放／整数问题仍未解决。新27项为贡献者本地CPU报告，含七项mock grader路由例，基线自述Windows多进程错误；Linux的1,024行复核只是后续意愿。详见[原奖励专题](../../notebook/frameworks/verl-reward-integration-reading.md#候选关闭与方程后续)。不复制认领、不把检索未命中当无人负责；无本机新实验或M5算力队列。所有社区写入与既有PR-head推送仍待用户对具体动作明确同意。
 
 ## 合并 LoRA 睡眠的已有候选
 
@@ -592,7 +600,7 @@ AMD组合栈后续（2026-10-26）：#8371／#8370／#8369各head未变，作者
 | — | tool_parser.py 静默吞异常 | REJECTED | Phase ④ 复核：仅 3 处真静默（L404/469/527），14 处有 logger。3 行 debug 日志 + experimental/ 变动快 → 性价比 <10 不达标 |
 | 4 | veomni transformer del_local_after_load 类型标注错误 | HOLD | 单行类型标注，攒着等同文件实质改动顺带修，不单独提 |
 | 5 | [perf] pinned Transformers 慢处理长 prompt (#8261) | REJECTED | 依赖协调型：需升级 Transformers 5.12.1→5.15+，但与 pinned SGLang 0.5.20 冲突（0.5.22 需 TF 5.19+Torch 2.14）；reporter 明确"adopting processor fix without duplicating #8240 工作"、仍在等社区决策；无干净自修点，排除 |
-| 6 | prime_math reward 误判：区间括号/100x/1/100x/差一/大整数给满分，正确等式给 0 (#8346) | REJECTED | reporter 自修（2026-10-23 核实）：[PR #8347](https://github.com/verl-project/verl/pull/8347) OPEN、REVIEW_REQUIRED，新增 135 行测试（ground truth 取自 PRIME-RL/Eurus-2-RL-Data 真实数据行），覆盖区间括号/100x·1/100x·差一/>2^53 整数精度/百分号四类；已有作者实现与测试，不另开竞争修复；测试数不能认证全部判分边界。修复点 `prime_math/__init__.py`（_str_is_int/_normalize）+ `grader.py`（is_digit），纯 CPU |
+| 6 | prime_math reward 误判：区间括号/100x/1/100x/差一/大整数给满分，正确等式给 0 ([#8346](https://github.com/verl-project/verl/issues/8346)) | M1不接手，状态已纠正 | 2026-10-26：[PR #8347](https://github.com/verl-project/verl/pull/8347) CLOSED未合并、head7f34e018，区间／数值缺陷仍未解决；方程原文匹配与框选择已有新贡献者认领。旧64项为历史候选CPU证据，不再以“OPEN自修已覆盖”排除问题；[当前责任与边界](#数学奖励候选关闭与方程认领)，不复制实现或自行对外发布 |
 
 ## 经验教训
 

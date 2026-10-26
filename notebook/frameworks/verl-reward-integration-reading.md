@@ -1,5 +1,7 @@
 # verl Reward Integration 源码级深度阅读
 
+2026-10-26状态纠正：[数学奖励候选关闭与方程后续](#候选关闭与方程后续)确认#8347关闭未合并、主线三个评分文件仍同旧基线；方程提取已有新贡献者认领，不把旧64项通过当成已部署修复。
+
 2026-10-26接续：[colocated 组装与 V1 生成 mask](#colocated-组装与-v1-生成-mask)核对新#8379补上#8368明确排除的路径；原13参数项候选通过，实际TQ服务／RM推理与完整PPO更新仍分开验收。
 
 2026-10-26补充：[DisRM返回契约与部分写入](#disrm-返回契约与部分写入)核对已有#7608：原三回归候选过；旧版缺字段时已写分数，同一输出再次调用会跳过评分，不能据“没再报错”认证恢复。
@@ -1261,7 +1263,17 @@ algorithm:
 
 ## 数学奖励的分层判分与精度边界
 
-奖励函数能返回分数，不代表它保留了题目要求的数学语义。[Issue #8346](https://github.com/verl-project/verl/issues/8346)报告prime_math会接受错误区间括号、100倍/百分之一数值与大整数差1，又拒绝部分原样回填的方程。报告者jimmy-holdout已提交[#8347](https://github.com/verl-project/verl/pull/8347)，本项目做独立CPU复查，不另开竞争实现。2026-10-23读取open、非draft，head `7f34e0188697b89ec0def7ce243633ba4076b707`、目标base `bfff4d90b911f412a0856abecffc15eeafb78977`、实际祖先 `d430157d15516d89e0cc853fd10fcd21d9234c44`（ahead1/behind1）。四文件185增3删，其中三份生产源码50增3删；脚本断言祖先与目标base的这三份源码完全一致。
+奖励函数能返回分数，不代表它保留了题目要求的数学语义。[Issue #8346](https://github.com/verl-project/verl/issues/8346)报告prime_math会接受错误区间括号、100倍/百分之一数值与大整数差1，又拒绝部分原样回填的方程。报告者jimmy-holdout的[#8347](https://github.com/verl-project/verl/pull/8347)已于2026-10-26关闭未合并；以下是2026-10-23的独立CPU复查，不是主线已修复的记录。当时候选open、非draft，head `7f34e0188697b89ec0def7ce243633ba4076b707`、目标base `bfff4d90b911f412a0856abecffc15eeafb78977`、实际祖先 `d430157d15516d89e0cc853fd10fcd21d9234c44`（ahead1/behind1）。四文件185增3删，其中三份生产源码50增3删；脚本断言祖先与目标base的这三份源码完全一致。
+
+### 候选关闭与方程后续
+
+2026-10-26核验：#8347由wuxibin89在02:27:59 UTC关闭，merged=false、merged_at=null，head仍为上述7f34e018。公开关闭事件和普通评论未说明关闭理由；[作者此前的CLA签署障碍](https://github.com/verl-project/verl/pull/8347#issuecomment-6389576199)不能直接当作关闭原因，更不能据此判断修复在技术上被否定。
+
+最新主线`3dd97a0e1b4b2cdf84c302c53431efaad441ae9b`的[评分入口](https://github.com/verl-project/verl/blob/3dd97a0e1b4b2cdf84c302c53431efaad441ae9b/verl/utils/reward_score/prime_math/__init__.py)、[grader](https://github.com/verl-project/verl/blob/3dd97a0e1b4b2cdf84c302c53431efaad441ae9b/verl/utils/reward_score/prime_math/grader.py)与[normalizer](https://github.com/verl-project/verl/blob/3dd97a0e1b4b2cdf84c302c53431efaad441ae9b/verl/utils/reward_score/prime_math/math_normalize.py)三个Git blob均与原基线d430157d相同。区间／数值修复没有通过这份PR进入这些文件；旧64项候选通过的结论仍只属于候选，不认证当前完整运行环境。#8346仍OPEN，报告者也明确表示区间括号及缩放／整数问题尚未解决。本轮只核源码身份，不重复执行旧用例。
+
+方程部分已有新的责任人：[JianhaoYu-AI认领](https://github.com/verl-project/verl/issues/8346#issuecomment-6410234797)仅在gold含等号、最后一个boxed／fbox内容与gold除外层空白外完全相同时增加接受分支；非相同答案仍走原提取和判分。这不是一般方程等价判断，也不删除旧路径的误接受。作者同时拟纠正当前selector优先任意boxed、仅无boxed时才找fbox的行为，使两类框按实际位置选择；该提取顺序与数值／区间比较是不同改动。
+
+新贡献者报告本地CPU测试27项通过，其中七项后备路由测试mock了grader；这些例子证明分流，不证明真实grader会拒绝所有改单位／变量／函数的答案。其基线还出现自述的Windows多进程错误，未声称完成Linux或完整套件验证。该评论未附源码，本项目未复验。报告者[同意其继续并愿在PR出现后复核Linux的1,024行数据](https://github.com/verl-project/verl/issues/8346#issuecomment-6410710152)，属于未来协作，不是已完成数据集验收、维护者批准或本项目的上游写入授权。本项目不接管该认领，也不以关键词检索未命中为据另开区间／数值修复。
 
 ### 前段拒绝不是最终否决
 
@@ -1269,7 +1281,7 @@ algorithm:
 
 原CPU路径对`22501`/gold `22500`得到：祖先`grade_answer=False`、`math_equal=True`、最终1；候选为False/False/0。只测试前段或只读其中“整数精确匹配”的注释，无法发现最终奖励的误接受。后备判分不是“保留前段所有拒绝条件”的单调增强。
 
-### 修复了哪些表示
+### 历史候选处理的表示
 
 [候选grader](https://github.com/verl-project/verl/blob/7f34e0188697b89ec0def7ce243633ba4076b707/verl/utils/reward_score/prime_math/grader.py)在去除括号比较内容前，先对区间形状检查端点括号序列；无穷端点的方/圆括号则归一为开口，Unicode∞也被统一。它是现有字符串判分路径的限定保护，不是任意区间/集合语法的完整解析器。
 

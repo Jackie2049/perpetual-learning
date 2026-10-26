@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1数学奖励状态纠正（2026-10-26）**：起始95178fd干净，compare保留890新增1无删改后ff8ee7ebc保全M5。#8346两新人工评论披露#8347已于02:27:59Z关闭未合并、head仍7f34e018；核事件／评论不臆测CLA关闭因果，main3dd97a0e三评分blob同旧d430157d。更正[原专题](notebook/frameworks/verl-reward-integration-reading.md#候选关闭与方程后续)／tracker／索引：旧64通过非主线已修，新JianhaoYu-AI已认领方程原文匹配与框选择，27项本地CPU及未来Linux1024行均作者范围，不做本机验收或竞争方案。无评分／训练／设备执行、无M5新队列／专项／社区动作。下轮转独立真实需求／实质反馈，不复跑旧数值矩阵或追问／重写新认领。
+
 - **M1独立重启水位学习（2026-10-26）**：起始353884a干净，compare保留888新增1无删改后ff3ebef30保全M5。读新#8380 RFC／0评论及其引用#8168 headf9a275ba，补[原策略来源专题](notebook/frameworks/verl-async-logprob-provenance.md#独立重启与恢复水位)：snapshot三指标非训练状态，pull_weights仍设计；参数精度／optimizer／scheduler／RNG／消费账本同水位与generation分开。固定manager同步后replacement失败可抛带已完成metrics错误，不重做optimizer更新。四源码AST/compile，无引擎／原103例／GPU或故障注入；作者旧A100报告不搬到当前head。M5只原条件参考，故障注入须明确授权隔离环境；不另实现FT控制器、改专项或写上游。下轮转独立真实需求／实质反馈，不造恢复状态机／RNG替身矩阵。
 
 - **M1缓存候选范围纠正（2026-10-26）**：起始3c41186干净，compare保留886新增1无删改后ffe5f8cdb保全M5。#8334仍0评论、仅正文接续不重做；新#8343 head退回aaae3716（旧16f直接父），base祖先3c6d9b43，ahead1／behind0、原缓存两文件13增2删。补[原架构记录](notebook/frameworks/verl-architecture.md#缓存修复之外的-gpu-工作流触发变化)：GPU YAML与主线字节同，缓存两文件与16f／37f均同，撤回当前CI删除／拆分建议，旧分析明示历史。仅BaseLoader／一个Python compile，无旧两例复跑／Actions／设备或新M5队列；不接管#8313等专项或写上游。下轮转独立真实需求／实质变化，不反复复查同一PR或重建事件模拟器。

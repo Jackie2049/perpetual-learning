@@ -168,7 +168,7 @@
 - [verl 沙箱运行器派发](frameworks/verl-reward-integration-reading.md#沙箱运行器注册与执行边界) — #8345原14用例通过/16未选；包注册不等于代码隔离，传入timeout不等于强制终止，非entry-point/服务或安全验收
 - [verl NPU卸载的复制与pin策略](frameworks/verl-fsdp2-source-deep-reading.md#npu-卸载的复制策略与固定内存) — 新三候选重叠，原7CPU参数例head过非allocator验收；与FSDP2显式pin配置分开，真机条件交M5
 - [verl 参数转换与缓冲区精度](frameworks/verl-fsdp2-source-deep-reading.md#参数转换与缓冲区精度) — #8189 原 6 CPU 测试体与 4 组控制，区分保留初值、FP32 标签和训练状态迁移；未运行真实 RoPE/model/FSDP
-- [verl 数学奖励的分层与精度](frameworks/verl-reward-integration-reading.md#数学奖励的分层判分与精度边界) — #8347原64参数例候选全过/祖先25预期失败；7组控制区分后备接受、整数字面量、科学计数法及方程提取，非数据集或训练验收
+- [verl 数学奖励的分层与精度](frameworks/verl-reward-integration-reading.md#数学奖励的分层判分与精度边界) — #8347已关闭未合并，原64参数例是历史候选证据；[方程后续](frameworks/verl-reward-integration-reading.md#候选关闭与方程后续)已有认领，精确原文接受不等完整判分修复，非数据集或训练验收
 - [verl 掩码统计与梯度](frameworks/verl-grpo-core-algos-reading.md#掩码统计与梯度的数值边界) — 原3参数例/20组CPU对照；mean过滤无效NaN不代表方差梯度或白化全部槽位有限，非训练故障定性
 - [verl 单样本组回退](frameworks/verl-grpo-core-algos-reading.md#单样本与同分组的不同回退) — 原4等价性例/12组双实现控制；singleton保留近似原奖励，撤回排错指南n=1必退化与n≥4/8硬规则，非训练收益证明
   - [平方概率分块与梯度](frameworks/verl-grpo-core-algos-reading.md#平方概率分块与空输入梯度) — #8365原16CPU参数项过，但空行反向／负chunk已有反馈仍复现，非GPU性能或训练验收

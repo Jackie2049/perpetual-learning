@@ -288,7 +288,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [verl Reward Integration 源码级深度阅读](verl-reward-integration-reading.md)：新增[DisRM契约与部分写入](verl-reward-integration-reading.md#disrm-返回契约与部分写入)，#7608原三回归候选通过；已写分数后缺键失败，同对象再次调用不等于恢复。
 - [verl 沙箱运行器派发](verl-reward-integration-reading.md#沙箱运行器注册与执行边界)：#8345原14 runner用例两次通过、16未选；注册/响应外形非隔离/超时认证，startup guard非所有worker预检，未安装插件/运行服务或新排GPU。
 - [verl Prime 评分结果与失败范围](verl-reward-integration-reading.md#prime-进程池的结果协议与失败范围)：#8217 原 4 测试体基线字典例预期失败、候选全过；真实进程池与 spawn，不将 worker 按行异常和解析整批回退混为一谈，300 秒非整批硬截止。
-- [verl 数学奖励的分层与精度](verl-reward-integration-reading.md#数学奖励的分层判分与精度边界)：#8347原64参数例与7范围控制；前段拒绝不是最终否决，局部箭头保护不认证组合判分，科学计数/方程仍有旧边界，无GPU需求。
+- [verl 数学奖励的分层与精度](verl-reward-integration-reading.md#数学奖励的分层判分与精度边界)：#8347关闭未合并，原64参数例与7控制仅属历史候选；[新方程认领](verl-reward-integration-reading.md#候选关闭与方程后续)分开原文匹配与后备判分，不重跑或新排GPU。
 - [数学表达式的语法与资源边界](verl-reward-integration-reading.md#数学表达式的语法与资源边界)：#7607/#7701已有替代方案；原8个良性方法及小输入CPU对照区分AST类型、矩阵算式兼容与局部限额，不认证安全沙箱或另开修复。
 - [数学评分池的恢复与错误信号](verl-reward-integration-reading.md#数学评分池的恢复与错误信号)：#8015原七测试接真实验证器/spawn两次通过，旧版死亡/超时留池反例成立；超时仍返回float，不认证manager错误标注或训练。
 - [代码判分的格式与逐例接线](verl-reward-integration-reading.md#代码判分的格式与逐例接线)：#8360/#8175两份原测试接三版真实CPU进程；格式支持、fn_name重测与JSON文本歧义分别验收，不按满分用例互证部分分数。
