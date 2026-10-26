@@ -6,8 +6,8 @@
 ## 0. Project Status
 
 - **阶段**：Phase 1 — recall-first literature & code investigation（广扫建库，不收束观点）
-- **最近更新**：2026-10-27（M1 身份核验批次：4篇基础文献，三处标题与ID错配、一处同文异名重复已纠正，详见§5.7）
-- **覆盖**：Round 1 的“≈73（40实证／25注册／8种子）”是**历史估计，尚非去重后的已核文献数**。本批4篇按arXiv原始／修订版或会议官网确认身份；其余条目的标题、ID、版本及唯一计数仍须逐步核验，不能以ID能打开代替身份匹配。
+- **最近更新**：2026-10-27（M1 基础补核与rollout补库：补核9篇既有serving文献，新增APRIL／RLHFSpec两篇，详见§5.8）
+- **覆盖**：累计**15篇已核身份**（11篇serving基础＋4篇rollout/RLHF，均非深读）；本批只新增2篇，FlashAttention／FA2从同一行拆成两篇不算新发现。Round 1“≈73”仍是待去重审计的历史估计，不能与15相加；其余历史条目继续核验。
 - **深读 / 代码阅读**：0 / 0
 - **最高优先级**：补来源与版本别名、按唯一文献去重后继续广扫至100–150；A Core短名单不以未核身份的条目数为依据
 - **下一步**：见 §16
@@ -92,6 +92,7 @@
 | 2608.22788 | 2026-08 | TailSieve | L3 | C/B | partial rollout 引导的尾路由 | ✅ |
 | 2607.17299 | 2026-07 | WAR | L3/L4 | C/B | workload-aware rollouts for sync agentic RL | ✅ |
 | 2605.30859 | 2026-05 | DARTS | L3 | **C** | distribution-aware active trajectory **shaping**（改分布，重点标记） | ✅ |
+| [2509.18521v3](https://arxiv.org/abs/2509.18521v3) | 2025-09-23首次／09-26修订 | APRIL | L3/L4（暂） | B/**C?** | 超额发起，达到目标完成数后结束本步、未完成响应跨步续跑；训练集合／版本影响待深读 | 核 |
 | 2408.13510 | 2024-08 | Intelligent Router | L3 | B | workload-aware load balancing（serving 迁移候选） | ✅ |
 | ？ | ? | Seer | L3 | B | ？"trajectory prefetch/length 预测"方向 | ？ |
 | ？ | ? | Weave | L3/L4 | B | ？（种子，待验证） | ？ |
@@ -104,6 +105,7 @@
 | 2508.18588 | 2025-08 | RhymeRL（History Rhymes） | L1/L2 | A | 历史轨迹复用作 draft | ✅ |
 | 2510.26475 | 2025-10 | ReSpec | L1/L2 | A | RL 系统中 speculative decoding 优化 | ✅ |
 | 2511.13841 | 2025-11 | DAS（Beat the long tail） | L1/L3 | A/B | distribution-aware speculative decoding for RL | ✅ |
+| [2512.04752v2](https://arxiv.org/abs/2512.04752v2) | 2025-12-04首次／12-12修订 | RLHFSpec | L1/L3/L4（暂） | A/B（暂） | 依验证成本与接受token数选draft策略，并作样本重分配／迁移；摘要不等采样正确性证明 | 核 |
 | 2605.08862 | 2026-05 | BubbleSpec | L1/L3 | A/B | 把 sync 长尾气泡变成 speculative draft 时机 | ✅ |
 | 2606.18967 | 2026-06 | EfficientRollout | L1/L2 | A | system-aware **self**-speculative decoding for RL | ✅ |
 | 2601.09083 | 2026-01 | SRT | L1/L2 | A | tree-structured cache 的 speculative rollout | ✅ |
@@ -133,18 +135,19 @@
 
 ### 5.5 Serving 基础（supporting corpus，不标 rollout-native）
 
-| ID/出处 | 标题（短） | 迁移价值一句话 | 置信 |
-|---|---|---|---|
-| [USENIX OSDI'22](https://www.usenix.org/conference/osdi22/presentation/yu) | Orca | iteration-level scheduling及selective batching；本行用会议记录，不沿用错配arXiv ID | 核 |
-| 2309.06180 | vLLM / PagedAttention | KV 分页管理 | ◇ |
-| [2312.07104](https://arxiv.org/abs/2312.07104v2) | SGLang / RadixAttention | 结构化语言模型程序与KV复用；迁到rollout仍需核工作负载与版本约束 | 核 |
-| 2205.14135 / 2307.08691 | FlashAttention / FA2 | attention kernel | ◇ |
-| 2501.01005 | FlashInfer | rollout 引擎常用 kernel 库 | ◇ |
-| 2403.02310 | Sarathi-Serve | chunked prefill（rollout 中 prompt 占比高） | ◇ |
-| 2401.09670 | DistServe | prefill/decode 分离（→ colocation/disaggregation 之争的 serving 原型） | ◇ |
-| 2407.00079 | Mooncake | KV cache 中心化（→ rollout KV 复用） | ◇ |
-| 2401.10774 | Medusa | 多 token 预测（→ MTP-RL 线的 serving 侧起源） | ◇ |
-| 2401.15077 | EAGLE | feature 级 speculative decoding（RL-aware drafter 的对照基线） | ◇ |
+| ID/出处 | 首次提交／采用版本 | 标题（短） | 迁移价值与待核条件 | 置信 |
+|---|---|---|---|---|
+| [USENIX OSDI'22](https://www.usenix.org/conference/osdi22/presentation/yu) | 2022-07会议记录 | Orca | iteration-level scheduling及selective batching；本行用会议记录，不沿用错配arXiv ID | 核 |
+| [2309.06180v1](https://arxiv.org/abs/2309.06180v1) | 2023-09-12／v1 | vLLM / PagedAttention | 分页KV及共享；并发收益仍取决于rollout布局／驻留，不等减少每步最长响应 | 核 |
+| [2312.07104v2](https://arxiv.org/abs/2312.07104v2) | 2023-12-12／v2 2024-06-06 | SGLang / RadixAttention | 结构化程序与KV复用；迁到rollout仍需核工作负载与版本约束 | 核 |
+| [2205.14135v2](https://arxiv.org/abs/2205.14135v2) | 2022-05-27／v2 2022-06-23 | FlashAttention | IO-aware精确attention；kernel加速不等整条rollout makespan收益 | 核 |
+| [2307.08691v1](https://arxiv.org/abs/2307.08691v1) | 2023-07-17／v1 | FlashAttention-2 | 改work partitioning与并行度；与FA1分开计数，不当RL-native论文 | 核 |
+| [2501.01005v2](https://arxiv.org/abs/2501.01005v2) | 2025-01-02／v2 2025-04-21 | FlashInfer | 面向不同KV布局、可定制attention与负载均衡；整引擎收益另核 | 核 |
+| [2403.02310v3](https://arxiv.org/abs/2403.02310v3) | 2024-03-04／v3 2024-06-17 | Sarathi-Serve | chunked prefill与stall-free混批；需按真实prefill/decode构成重评，不假定rollout prompt占比高 | 核 |
+| [2401.09670v3](https://arxiv.org/abs/2401.09670v3) | 2024-01-18／v3 2024-06-06 | DistServe | prefill/decode分离、TTFT／TPOT约束goodput；不是trainer/rollout分离的同义词 | 核 |
+| [2407.00079v5](https://arxiv.org/abs/2407.00079v5) | 2024-06-24／v5 2026-10-08 | Mooncake | KV中心化PD分离及过载拒绝；rollout不能无条件继承请求丢弃语义 | 核 |
+| [2401.10774v3](https://arxiv.org/abs/2401.10774v3) | 2024-01-19／v3 2024-06-14 | Medusa | 多预测头与树状验证；backbone是否冻结及接受规则不可混用 | 核 |
+| [2401.15077v3](https://arxiv.org/abs/2401.15077v3) | 2024-01-26／v3 2025-03-04 | EAGLE | feature-level草稿预测；只是原始EAGLE，不混作EAGLE-2／3或RL drafter适配 | 核 |
 
 ### 5.6 待验证种子（用户清单中尚未在检索中命中）
 
@@ -161,7 +164,15 @@
 | RLHFuse | 2412.15179实际是[概率论中的Beat the Average问题](https://arxiv.org/abs/2412.15179)；矩阵又把Stage Fusion列成第二篇 | [2409.13221v1](https://arxiv.org/abs/2409.13221v1)名RLHFuse，2024-09-20提交；[v3](https://arxiv.org/abs/2409.13221v3)与[NSDI'25官方记录](https://www.usenix.org/conference/nsdi25/presentation/zhong)采用Stage Fusion题名，保留一个条目及两个别名 |
 | ReaLHF | ID正确，SOSP'24标签不符修订版接收信息；忽略改名易重复注册 | [2406.14088v1](https://arxiv.org/abs/2406.14088v1)名ReaLHF，2024-06-20提交；[v2](https://arxiv.org/abs/2406.14088v2)名ReaL，2025-04-24修订且标MLSys'25 |
 
-核验原则：先以原站标题／作者／摘要确认身份，再登记首次提交日期、采用版本、venue及别名。检索结果可能对应旧标题，最新摘要也可能有不同实验数字；不能把不同版本的名称或数字拼成一条证据。当前仅完成这4篇；Round 1其他✅仍待身份审计，既不认定全部错误，也不继续称全库已验证。下一批优先补其他serving基础的primary链接，再扩展未覆盖的rollout-native工作。
+核验原则：先以原站标题／作者／摘要确认身份，再登记首次提交日期、采用版本、venue及别名。检索结果可能对应旧标题，最新摘要也可能有不同实验数字；不能把不同版本的名称或数字拼成一条证据。此首批完成4篇；后续累计见§0与§5.8。Round 1其他✅仍待身份审计，既不认定全部错误，也不继续称全库已验证。
+
+### 5.8 Serving基础补核与rollout原生补库
+
+2026-10-27第二批：§5.5剩余9篇的标题／ID全部匹配，补齐primary链接、首次提交与采用版本。FA1／FA2原已共列，拆行仅为区分版本和唯一文献，不是新发现；当前serving基础11篇，加首批ReaL／RLHFuse及本批新增两篇，累计15篇身份已核。仍未审计全库或重算Round 1的≈73，不把日期编号前缀直接当提交日。
+
+新增[APRIL v3](https://arxiv.org/abs/2509.18521v3)和[RLHFSpec v2](https://arxiv.org/abs/2512.04752v2)通过本主文档标题／ID查重后进入矩阵。前者的超额请求、完成配额及跨步续跑使“没有丢弃响应”与“每步样本集合／策略版本是否不变”必须分开；B/C标签暂留问题，不凭摘要判定有偏或无偏。后者把draft策略选择与样本迁移并用，先标A/B；不把sample reallocation自动理解成删样本，也不沿用其摘要中的“首次”自述作历史优先权结论。
+
+版本例子：[Mooncake v1](https://arxiv.org/abs/2407.00079v1)题为Kimi's KVCache-centric Architecture，[v5](https://arxiv.org/abs/2407.00079v5)题为A KVCache-centric Disaggregated Architecture，均属同一ID；不新增一篇或把当前软件行为当成各版本论文结论。上述工作只核元数据、摘要与历史版本；没有全文深读、性能数字抽取、原作者测试或实现审计。下一批优先rollout-native候选的身份／来源及citation扩展，不反复核这11篇。
 
 ## 6. Paper Deep Reads
 
@@ -197,9 +208,9 @@
 初步判断（待逐项深读验证）：
 - continuous batching：直接迁移，但 sync RL 下"批内最慢者"支配 → 需 L3 重调度补偿；
 - prefix caching：rollout 中 multi-sample 共享 prompt → 收益天然放大；partial rollout 场景与版本管理耦合；
-- speculative decoding：**不可原样迁移**——draft 分布随 policy 更新而漂移（staleness），drafter 需复用历史轨迹/旧版本策略（这正是 5.3 整个簇的动机）；
+- speculative decoding：不能由serving加速比直接推导RL收益；policy变化下draft适配、接受率与成本需重评。原先“不可原样迁移”的绝对判断尚未成立，采样正确性与draft效率分开，具体机制是否可直接复用待深读；
 - chunked prefill：rollout 的 prompt 占比与 serving 不同（reasoning 长 decode），需重估；
-- prefill/decode 分离（DistServe 系）：rollout 下的对应物是 train/rollout 分离之争（L4），分离粒度和资源配比是开放问题。
+- prefill/decode分离（DistServe系）：分开的是推理内部两个阶段，不能直接等同trainer/rollout分离；进入RL后的目标、分离粒度与资源配比仍待研究。
 
 ## 10. Workload-specific Findings
 
@@ -233,6 +244,8 @@
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（M1基础补核与rollout补库）**：核既有9篇serving原始文献，补primary链接／首次提交／采用版本，FA1/2拆行不计新发现；新增APRIL 2509.18521v3与RLHFSpec 2512.04752v2，累计15篇身份已核（11 serving＋4 rollout/RLHF）。两新项层／类型暂定，未抽性能数字；修正PD分离与trainer/rollout分离混同，撤回speculative不可直接迁移的先验绝对说法。未做全文深读、taxonomy收束、代码或复现；下一批转rollout-native来源核验与扩展。
 
 - **2026-10-27（M1身份核验批次）**：承接新专项，核4篇而非新增4篇；纠正SGLang／Orca／RLHFuse三处错配ID，合并RLHFuse与Stage Fusion重复项，登记ReaLHF→ReaL及MLSys'25版本信息。来源为arXiv原始／修订元数据与USENIX官网；撤回“≈73”为已去重已核数量的解释，保留Round 1历史记录。未做深读／性能判断、taxonomy收束、代码改动或复现；下一步按§5.7补其余来源与身份。
 
