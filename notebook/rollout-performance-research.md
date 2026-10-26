@@ -6,8 +6,8 @@
 ## 0. Project Status
 
 - **阶段**：Phase 1 — recall-first literature & code investigation（广扫建库，不收束观点）
-- **最近更新**：2026-10-27（M1 OpenRLHF固定源码广扫：异步slot／生成缓冲／概率锚点，详见§8.5／§12；本批不增文献）
-- **覆盖**：累计**97篇已核身份**（20篇serving基础／迁移边界＋77篇rollout/RLHF及相关边界，含VLA、训练侧与算法诊断；均非深读；93个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL会议记录）。上一文献批次新增RLinf、DynaRL、NeMo-Aligner、ROLL Flash、CadenceRL及两篇含系统章节的模型报告；RLinf的arXiv与OSDI记录合计1篇，模型报告不当纯系统增益实证。总数97或RL相关77不代表原生80–120目标已达成。ASymPO证明错误警示保留，历史✅补核完不等检索收敛；Round 1“≈73”不与当前数量相加。
+- **最近更新**：2026-10-27（M1补6篇权重同步／低精度／资源迁移／容错与执行底座文献，见§5.17；本批不增代码路径）
+- **覆盖**：累计**103篇已核身份**（20篇serving基础／迁移边界＋83篇rollout/RLHF及相关边界，含VLA、训练侧、执行底座与算法诊断；均非深读；99个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL会议记录）。本批新增SparseRL-Sync、PULSE、FP8-RL、PivotRL、RobustRL和Rollout Infrastructure Tax；PULSE的两种通信算法合计1篇。总数过100或RL相关83不代表纯原生80–120目标达成、覆盖收敛或已完成分级。ASymPO证明错误警示保留，历史✅补核完不等检索收敛；Round 1“≈73”不与当前数量相加。
 - **全文深读 / 代码广扫**：0 / 4（veRL `24f25b03`三条路径＋OpenRLHF `dc2a7ad3`一条；共2框架，不是4框架或运行验证，也不按文件数计）
 - **最高优先级**：继续原生系统引用／会议扩展与种子落实，补serving机制覆盖，按唯一文献广扫至100–150；总数不替代原生覆盖，A Core短名单不只按条目数选取
 - **下一步**：见 §16
@@ -96,6 +96,11 @@
 | [2510.11345v1](https://arxiv.org/abs/2510.11345v1) | 2025-10-13／v1 | ROLL Flash（Part II） | L3/L4（暂） | B（系统；算法另核） | 承接ROLL的细粒度并行与rollout-train解耦，queue调度／环境级异步及off-policy算法 | 核 |
 | [2508.06471v1](https://arxiv.org/abs/2508.06471v1) | 2025-08-08／v1 | GLM-4.5报告（Slime §3.5） | L1/L4（暂） | A/B（系统；recipe另核） | Megatron／SGLang-Router／Data Buffer，支持同置同步及分离异步；BF16训、在线block FP8推 | 核 |
 | [2512.07710v1](https://arxiv.org/abs/2512.07710v1) | 2025-12-08／v1 | Each Prompt Matters（CompassMax-V3-Thinking） | L1/L3/L4（暂） | A/B／**C**（联合算法） | FP8 rollout、reward重叠与长度调度；另有zero-variance过滤、ESPO及MoE Router Replay | 核 |
+| [2605.07330v1](https://arxiv.org/abs/2605.07330v1) | 2026-05-08／v1 | SparseRL-Sync | L4（暂） | B（暂） | 稀疏索引／值传输重建post-cast rollout权重；通信量模型须计编码与索引开销 | 核 |
+| [2602.03839v2](https://arxiv.org/abs/2602.03839v2) | 2026-02-03首次／v2 05-19 | PULSE（Understanding and Exploiting Weight Update Sparsity） | L4／训练通信边界（暂） | B（Sync；LoCo另核） | PULSESync传BF16权重patch；PULSELoCo为trainer间FP32 pseudo-gradient与error feedback，非同一通道 | 核 |
+| [2601.18150v2](https://arxiv.org/abs/2601.18150v2) | 2026-01-26首次／v2 04-10 | FP8-RL | L1/L2/L4（暂） | A/B（系统；数值校正另核） | W8A8 policy rollout与FP8 KV，每步QKV scale重校准，TIS/MIS处理训推失配；非量化draft | 核 |
+| [2610.16866v1](https://arxiv.org/abs/2610.16866v1) | 2026-10-12／v1 | PivotRL（Efficient Resource-Shiftable RL Post-training with Generative Rewards） | L3/L4（暂） | B（暂） | Global Parameter Storage与role context切换，迁移sequence并权衡资源转移收益／开销 | 核 |
+| [2512.22492v1](https://arxiv.org/abs/2512.22492v1) | 2025-12-27／v1 | RobustRL（Role-Based Fault Tolerance System for LLM RL Post-Training） | L4（暂） | B（容错；暂） | role故障隔离、rollout warm standby与动态UCX重连；恢复收益限故障评估条件 | 核 |
 
 ### 5.2 L3 — Long-tail / Scheduling / Cluster
 
@@ -160,6 +165,7 @@
 | [2605.06534v2](https://arxiv.org/abs/2605.06534v2) | 2026-05-07首次／v2 05-20 | ROSE | L3/L4（暂） | B（暂） | 在SLO约束下借用serving GPU，跨集群分片／稀疏权重传输与弹性rollout路由 | 核 |
 | [2609.33848v2](https://arxiv.org/abs/2609.33848v2) | 2026-09-27首次／v2 10-20 | QwenGyre | L3/L4（暂） | B／**C?**（轨迹处理） | live执行中弹性重分配GPU；重建分支历史、partial-progress评分和路径去重，loss／样本语义另核 | 核 |
 | [2510.04206v1](https://arxiv.org/abs/2510.04206v1) | 2025-10-05／v1 | AgentRL | L4（暂） | B／**C**（cross-policy） | 全异步生成训练与统一环境接口；另有单轨迹内跨模型采样和task advantage归一化 | 核 |
+| [2607.01415v1](https://arxiv.org/abs/2607.01415v1) | 2026-07-01／v1 | The Rollout Infrastructure Tax in Coding-Agent Reinforcement Learning | L4环境执行边界（暂） | B（暂） | 固定command轨迹对照四种执行底座，测启动／执行／reset；worker-hours为外推而非完整RL训练实测 | 核 |
 
 ### 5.5 Serving 基础（supporting corpus，含迁移边界，不标 rollout-native）
 
@@ -316,6 +322,16 @@ BubbleSpec／SRT的run-ahead用于后续draft验证，不等于直接拿旧polic
 低精度policy rollout与低精度draft分开：[GLM-4.5 v1 §3.5](https://arxiv.org/html/2508.06471v1)给出Slime的Megatron训练、SGLang＋Router生成、Data Buffer三模块，支持同置同步／分离异步；训练BF16，每轮发往rollout前在线block-wise FP8量化。它不是量化draft再由dense target验证，采样概率／训推修正仍须另核。[Each Prompt Matters v1](https://arxiv.org/abs/2512.07710v1)同含FP8 rollout、reward重叠、长度调度和zero-variance过滤／ESPO／Router Replay，过滤明确记C；MoE Router Replay不等于回放历史trajectory，质量收益不能全归FP8或系统调度。
 
 证据边界：[NeMo-Aligner v2 §3.5](https://arxiv.org/html/2405.01481v2)报告其小问题规模下worker-pool负载均衡开销抵消收益，不能把“有长尾／均衡器”直接推成任意batch都更快。此处仅定位定性条件，不抽数值比较。全批限元数据、摘要及上述局部机制定位，无全文深读、代码或设备验证；总数未替代原生覆盖目标。下一批优先原生调度／权重同步／数据管理引用与未落实种子，继续补缺而非复核本批或为凑百篇加无关算法。
+
+### 5.17 权重同步、低精度与运行开销补库
+
+2026-10-27第十一文献批：定向检索补5篇，再沿[SparseRL-Sync v1参考文献](https://arxiv.org/html/2605.07330v1)的具体链接找到PULSE，分别回arXiv核标题、首次日期及采用版本，去重新增6篇。累计103身份（99唯一arXiv＋4会议记录），20 serving／边界＋83 rollout/RLHF及相关边界；两种PULSE算法不拆两篇，FP8-RL v2不与v1重复。SparseRL-Sync参考文献含TODO／占位条目，不继承其中未核的年份、ID或优先性判断；其正文日期不替代arXiv提交历史。
+
+**同步的精度与通道**：[SparseRL-Sync §3.3](https://arxiv.org/html/2605.07330v1)的稀疏payload含索引和值，另有编码／metadata成本；标题的通信量缩减不能直接当端到端加速。BF16转换掩盖小FP32更新，不是优化器没有更新；“无损”针对重建的post-cast权重。[PULSE v2](https://arxiv.org/abs/2602.03839v2)同样从compute-visible sparsity出发，但PULSESync是trainer→inference的BF16 patch，PULSELoCo是trainer→trainer的DiLoCo式FP32 pseudo-gradient与error feedback；前者的bit-identical重建不推广到后者或整个训练确定性。两论文相近机制不合并为别名。
+
+**低精度、迁移和恢复分开**：[FP8-RL v2](https://arxiv.org/abs/2601.18150v2)直接改policy rollout数值路径，并用importance-sampling校正，不能当exact BF16采样保证或draft优化。[PivotRL v1](https://arxiv.org/abs/2610.16866v1)定位GenRM／rollout／train三角色竞争资源，sequence migration不自动等于删样本；具体更新顺序／质量条件待深读。[RobustRL v1](https://arxiv.org/abs/2512.22492v1)的ETTR及训练时间收益来自故障注入评估，不当无故障稳态tokens/s收益；角色重连不自动证明所有恢复一致性条件。
+
+**执行底座的证据单位**：[Rollout Infrastructure Tax v1 §4.4／§6](https://arxiv.org/html/2607.01415v1)以固定命令序列比较container、hosted sandbox、Kubernetes和VM；worker-hours按测得轨迹latency外推，排除模型推理、reward评估、optimizer及worker外排队，并非live policy驱动的完整训练对照。页面标preprint／submitted to SoCC，不登记为会议录用。此项暂放L4环境边界，不据此冻结第五层taxonomy。全批仅身份／摘要和上述局部机制／评估条件，全文深读仍0，代码广扫仍4条／2框架，无原生执行、设备或性能验收。下步继续原生引用／会议与种子扩展，或第三框架生命周期；总量不代替覆盖与分级。
 
 ## 6. Paper Deep Reads
 
@@ -495,6 +511,8 @@ OpenRLHF `dc2a7ad3`的[异步生产／消费计时](https://github.com/OpenRLHF/
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（M1同步与运行开销补库）**：新增SparseRL-Sync／PULSE／FP8-RL／PivotRL／RobustRL／Rollout Infrastructure Tax六篇，累计103身份（20 serving／边界＋83 RL相关边界；99 arXiv＋4会议记录）。§5.17区分post-cast无损与FP32更新、两通信通道、policy量化与draft、故障条件收益与固定命令worker-hours外推；参考文献占位项不继承，submitted不当accepted。身份／摘要和局部范围核验，深读0、代码4条／2框架不变；无设备／M5专项／上游写入。下步继续原生扩展或第三框架，不因过百结束广扫。
 
 - **2026-10-27（M1 OpenRLHF跨框架广扫）**：文献仍97，代码路径累计4条、涉及2框架。只读克隆固定OpenRLHF `dc2a7ad3`，§8.5对照slot／阻塞队列与veRL条件淘汰，补_sample_buffer、筛整组补抽、index分组与PPO old／rollout／ref来源，普通锁与partial pause分开；§12记录缓冲直出计时和响应／prompt分母。10 Python blob一致／AST通过，无依赖安装、原生运行或设备；不作性能／算法正确性／故障判断，不改M5专项。后续原生文献扩展或第三框架生命周期。
 
