@@ -5,7 +5,7 @@
 
 2026-10-24补充：[图片字节与解码对象的生命周期](#图片字节与解码对象的生命周期)。原方法与真实Pillow对照确认dataset侧清理边界；原“数据开销完全可忽略”概括撤回，张量字节算例也已纠正，不能覆盖raw_prompt中的图片或序列化峰值。
 
-2026-10-25补充：[多模态特殊 token 检查的 CPU 开销](#多模态特殊-token-检查的-cpu-开销)区分原检查方法、完整processor与训练吞吐；纯文本走多模态processor也可能付出标记计数成本，但不是所有纯文本入口都走此路径。
+2026-10-25补充：[多模态特殊 token 检查的 CPU 开销](#多模态特殊-token-检查的-cpu-开销)区分原检查方法、完整processor与训练吞吐；纯文本走多模态processor也可能付出标记计数成本，但不是所有纯文本入口都走此路径。2026-10-26接续[回移候选的绑定条件](#回移候选的绑定条件与评审前提)，不重跑旧微基准。
 
 ## 多模态特殊 token 检查的 CPU 开销
 
@@ -33,6 +33,18 @@ macbook-M1、Python3.12.13／torch2.14.1／NumPy2.5.4，torch intra-op线程设1
 [RL dataset过滤](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/utils/dataset/rl_dataset.py)在无image/video/audio时直接调用tokenizer，不应把该计数开销外推到所有纯文本过滤；[AgentLoop后处理](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/experimental/agent_loop/agent_loop.py)只要processor存在便可能调用helper，取出多模态字段后还显式convert_to_tensors(pt)。None中间表示不等于全流程不再构造Tensor。这里仅读接线，没有运行这两条完整路径或认证临时绕法对全部模型／模态安全。
 
 该固定lock声明SGLang0.5.20、Transformers5.12.1及Torch2.13的CPU／CUDA分支；本机微基准并未安装这组完整环境。依赖升级应协调推理后端及整体锁文件，不能仅因局部函数更快就单改pin或全局monkeypatch。五份完整源码AST/compile通过（两官方processing_utils、三verl接线）；本轮无依赖安装、processor资产／模型下载、GPU或新M5任务，原输入和耗时样本见[日志](../../diary/2026-10-25.md)。
+
+### 回移候选的绑定条件与评审前提
+
+2026-10-26已有同报告者WinstonLiyt的开放非draft [verl #8375](https://github.com/verl-project/verl/pull/8375)，head `240f7f0ae09286429fbd81d21a2a403e323665fb`，base／main仍为 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`；两文件78增1删。候选不升级依赖、不把processor输出改成list，而是在检查时临时转换IDs、继续调用上游计数方法。安装位置在 `hf_processor`：版本低于5.15.0且类继承原基类方法时才绑定到实例；自定义类方法不覆盖，5.15.0路径不安装。这里的5.15.0是分支控制，不代表verl当前依赖范围已允许升级。
+
+[行内机器人反馈](https://github.com/verl-project/verl/pull/8375#discussion_r4372894021)称受支持最低版本5.5.3缺少该基类方法，会令工厂捕获AttributeError并返回None。官方[v5.5.3 tag](https://github.com/huggingface/transformers/tree/v5.5.3)解引用到 `c6c8503869367af938666810e01a71866ca4fe93`，其[原文件](https://github.com/huggingface/transformers/blob/c6c8503869367af938666810e01a71866ca4fe93/src/transformers/processing_utils.py#L1995)已直接定义 `_check_special_mm_tokens`；5.12.1与5.15.0也有。因此“5.5.3缺方法”这一故障前提不成立，不能根据该评审再造缺失API或修复补丁。这不证明所有第三方processor均兼容。
+
+[本机控制脚本](../../experiments/verl-processor-binding/verify.py)从两版verl提取完整原 `hf_processor`，用原版本比较函数、模拟包版本、fake AutoProcessor／AutoConfig加载器及按官方方法构造的类壳执行四情形：5.5.3继承、5.12.1继承、5.12.1覆盖、5.15.0继承。两版共8次工厂调用均返回原夹具对象、无告警；候选只在前两情形绑定wrapper，父版均不绑定，后两情形保持原方法。[结果](../../experiments/verl-processor-binding/result.json)保留固定源码SHA256。这不是安装三组Transformers或执行真实Mllama／Qwen processor，也不是候选原测试套件；候选三项原测试直接调用helper，未覆盖工厂安装点，机器人关于该覆盖缺口的提示与错误的缺方法前提应分开判断。
+
+作者另报Qwen3.5-2B完整processor的131,073-token耗时0.800→0.292秒及22项测试通过，均为作者环境结果，不替换上节M1旧版原方法计时。当前只补新绑定边界与评审核验，不改pin、安装依赖、下载模型、写竞争shim或新增M5队列；后续仅在候选实质更新或实际兼容需求出现时接续。
+
+复用：固定公开对象已取回的verl checkout，使用Python3.12、packaging及已认证gh执行 `python experiments/verl-processor-binding/verify.py /absolute/path/to/verl`；脚本只读三个固定官方源码文件及本地Git对象，结果输出到stdout。
 
 ## 1. DataProto类层次
 

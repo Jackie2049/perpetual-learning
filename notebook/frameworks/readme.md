@@ -238,7 +238,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [verl CPPO bypass_mode Source-Level Reading](verl-cppo-bypass-source-reading.md)
 - [verl DataProto 数据流架构源码阅读](verl-dataproto-data-flow-reading.md) — 历史结构与[图片对象生命周期](verl-dataproto-data-flow-reading.md#图片字节与解码对象的生命周期)分开；#7400原方法五例/三版真实Pillow对照，非Ray/RSS验收；纠正230KB及零拷贝概括。
 - [多语言预分词与类路由](verl-dataproto-data-flow-reading.md#多语言预分词与类路由)：#8030关联官方#49116已合并；真实toy BPE说明round-trip不足认证IDs，已知model_type下显式Qwen2声明仍可被Auto纠正，不当checkpoint／训练质量验收或自动升级理由。
-- [多模态特殊token检查的CPU开销](verl-dataproto-data-flow-reading.md#多模态特殊-token-检查的-cpu-开销) — #8261已有官方修复；两版原方法18组成对契约及131k-token局部计时，不代替完整processor/训练吞吐或依赖组合验收。
+- [多模态特殊token检查的CPU开销](verl-dataproto-data-flow-reading.md#多模态特殊-token-检查的-cpu-开销) — #8261已有官方修复及#8375回移候选；旧18组成对／局部计时不重跑，新增8次原工厂替身控制核绑定条件，官方5.5.3已有方法，不能照搬机器人缺API前提；非完整processor验收。
 - [verl FSDP Weight Sync Mechanism: Source Code Analysis](verl-fsdp-weight-sync-mechanism-reading.md)
 - [verl FSDP2 Engine Deep Source Reading — Beyond PR Descriptions](verl-fsdp2-source-deep-reading.md)
   - [NPU卸载复制与固定内存](verl-fsdp2-source-deep-reading.md#npu-卸载的复制策略与固定内存)：新#8372／3／4重叠，原7CPU参数例head过非NPU内存验收；单次D2H与显式CPUOffloadPolicy分开，真机仅条件交M5。

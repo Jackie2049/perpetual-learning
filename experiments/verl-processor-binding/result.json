@@ -1,0 +1,97 @@
+{
+  "manifest": {
+    "5.5.3": {
+      "ref": "c6c8503869367af938666810e01a71866ca4fe93",
+      "sha256": "90a592d355bb01e1976f97a0fff39837f2862fe43dce35aa5d9bbf65b84bda9b",
+      "has_direct_check": true,
+      "bases": [
+        "PushToHubMixin"
+      ]
+    },
+    "5.12.1": {
+      "ref": "ddb849abe009d1089e6c691bfc897f27211c663c",
+      "sha256": "45ecfe302d280032a621537f0c6622036cc826c1d2eef153549c83f7dedf8886",
+      "has_direct_check": true,
+      "bases": [
+        "PushToHubMixin"
+      ]
+    },
+    "5.15.0": {
+      "ref": "5eddc12edfaf8cafde8c9bae4ccb12f8a139b4f9",
+      "sha256": "e270803a5f5e3de4852e7f5df36fc4beefc102f613880532ca2bf157015e791b",
+      "has_direct_check": true,
+      "bases": [
+        "PushToHubMixin"
+      ]
+    },
+    "3c6d9b43b67c74ec343d77874cd8fa6e841523da": "ce2d4aedc1eeb4c745efacfd10830e6a7b50ee42ccd27789e8816fb68b03c112",
+    "240f7f0ae09286429fbd81d21a2a403e323665fb": "076c84fc0616f162339fd722a611ec3a0bb6ef0294811a56e4d18bfaa88db55d"
+  },
+  "factory_calls": [
+    {
+      "ref": "3c6d9b43",
+      "version": "5.5.3",
+      "override": false,
+      "returned_none": false,
+      "bound_wrapper": false,
+      "warnings": []
+    },
+    {
+      "ref": "3c6d9b43",
+      "version": "5.12.1",
+      "override": false,
+      "returned_none": false,
+      "bound_wrapper": false,
+      "warnings": []
+    },
+    {
+      "ref": "3c6d9b43",
+      "version": "5.12.1",
+      "override": true,
+      "returned_none": false,
+      "bound_wrapper": false,
+      "warnings": []
+    },
+    {
+      "ref": "3c6d9b43",
+      "version": "5.15.0",
+      "override": false,
+      "returned_none": false,
+      "bound_wrapper": false,
+      "warnings": []
+    },
+    {
+      "ref": "240f7f0a",
+      "version": "5.5.3",
+      "override": false,
+      "returned_none": false,
+      "bound_wrapper": true,
+      "warnings": []
+    },
+    {
+      "ref": "240f7f0a",
+      "version": "5.12.1",
+      "override": false,
+      "returned_none": false,
+      "bound_wrapper": true,
+      "warnings": []
+    },
+    {
+      "ref": "240f7f0a",
+      "version": "5.12.1",
+      "override": true,
+      "returned_none": false,
+      "bound_wrapper": false,
+      "warnings": []
+    },
+    {
+      "ref": "240f7f0a",
+      "version": "5.15.0",
+      "override": false,
+      "returned_none": false,
+      "bound_wrapper": false,
+      "warnings": []
+    }
+  ],
+  "scope": "8 original-factory calls with fake loaders and class shells; no actual Transformers installation or processor/tokenizer execution"
+}
