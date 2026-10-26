@@ -6,10 +6,10 @@
 ## 0. Project Status
 
 - **阶段**：Phase 1 — recall-first literature & code investigation（广扫建库，不收束观点）
-- **最近更新**：2026-10-27（Round 1：骨架建立 + 种子注册 + arXiv 验证检索 2 批）
-- **覆盖**：arXiv 验证 ~40 篇（有 ID 实证）/ 知识注册 ~25 篇（标 ◇）/ 待验证种子 ~8 篇（标 ？）→ **候选 corpus ≈ 73**
+- **最近更新**：2026-10-27（M1 身份核验批次：4篇基础文献，三处标题与ID错配、一处同文异名重复已纠正，详见§5.7）
+- **覆盖**：Round 1 的“≈73（40实证／25注册／8种子）”是**历史估计，尚非去重后的已核文献数**。本批4篇按arXiv原始／修订版或会议官网确认身份；其余条目的标题、ID、版本及唯一计数仍须逐步核验，不能以ID能打开代替身份匹配。
 - **深读 / 代码阅读**：0 / 0
-- **最高优先级**：收敛 corpus 至 100–150；从验证集中标出 A Core 短名单
+- **最高优先级**：补来源与版本别名、按唯一文献去重后继续广扫至100–150；A Core短名单不以未核身份的条目数为依据
 - **下一步**：见 §16
 
 ## 1. Research Question & Scope
@@ -58,7 +58,7 @@
 
 ## 5. Literature Matrix
 
-字段约定：完整 24 字段在深读时逐项补全（§6）；矩阵阶段记录 `arXiv ID | 日期 | 标题 | 层 | 类型 | 一句话机制 | 置信度`。置信度：✅=arXiv 实证（2026-10-27 检索）；◇=知识注册待核；？=种子待验证。
+字段约定：完整 24 字段在深读时逐项补全（§6）；矩阵阶段记录 `arXiv ID | 日期 | 标题 | 层 | 类型 | 一句话机制 | 置信度`。置信度：**核**=本批已核primary元数据与版本（非深读／性能验收）；✅=Round 1历史检索标记，尚未逐条完成本批的标题—ID—版本审计；◇=知识注册待核；？=种子待验证。文献标题别名不重复计数，层／类型仍为可修订工作标签。
 
 ### 5.1 L4 — RL Pipeline / Async / Disaggregation
 
@@ -75,11 +75,10 @@
 | 2507.01663 | 2025-07 | AsyncFlow | L4 | B | async streaming RL（参数 shuffle 式权重同步） | ✅ |
 | 2606.26997 | 2026-06 | RolloutPipe | L4 | B | disaggregated 下 pipelined rollout-training 重叠 | ✅ |
 | 2410.18252 | 2024-10 | Asynchronous RLHF | L4 | B | off-policy async RLHF，吞吐优先 | ✅ |
-| 2406.14088 | 2024-06 | ReaLHF | L4 | B | allocation + resharding 优化 human-feedback RL（SOSP'24） | ◇ |
-| 2412.15179 | 2024-12 | RLHFuse | L4 | B | RLHF 阶段级 fused 调度（NSDI'25） | ◇ |
+| [2406.14088](https://arxiv.org/abs/2406.14088v2) | 2024-06 | ReaL（v1名ReaLHF） | L4 | B | parameter reallocation与执行计划搜索；v2标MLSys'25，不再标SOSP'24 | 核 |
+| [2409.13221](https://arxiv.org/abs/2409.13221v3) | 2024-09 | RLHFuse／Stage Fusion | L4 | B | 样本级跨阶段与微批级阶段内融合；同一文献，NSDI'25 | 核 |
 | 2405.11143 | 2024-05 | OpenRLHF | L4 | B | 主流开源 RLHF 框架（Ray 3.0 重构） | ✅ |
 | 2308.01320 | 2023-08 | DeepSpeed-Chat | L4 | B | 早期 RLHF 训练系统 | ✅ |
-| 2409.13221 | 2024-09 | Stage Fusion | L4 | B | RLHF 阶段融合调度 | ✅ |
 | 2605.12070 | 2026-05 | Missing Old Logits in Async Agentic RL | L4 | B | async 语义失配与 off-policy 修正 | ✅ |
 | 2606.03070 | 2026-06 | ASymPO | L4 | B | 非对称规模 async post-training，无行为信息 | ✅ |
 | 2602.01826 | 2026-02 | Training-Inference Mismatch = Optimization Problem | L1/L4 | B | 训推失配的优化视角，LR 调度修复 | ✅ |
@@ -136,9 +135,9 @@
 
 | ID/出处 | 标题（短） | 迁移价值一句话 | 置信 |
 |---|---|---|---|
-| 2205.12318 | Orca | iteration-level scheduling 的起源 | ◇ |
+| [USENIX OSDI'22](https://www.usenix.org/conference/osdi22/presentation/yu) | Orca | iteration-level scheduling及selective batching；本行用会议记录，不沿用错配arXiv ID | 核 |
 | 2309.06180 | vLLM / PagedAttention | KV 分页管理 | ◇ |
-| 2310.07204 | SGLang / RadixAttention | prefix 复用（rollout 中 multi-sample/partial rollout 直接受益） | ◇ |
+| [2312.07104](https://arxiv.org/abs/2312.07104v2) | SGLang / RadixAttention | 结构化语言模型程序与KV复用；迁到rollout仍需核工作负载与版本约束 | 核 |
 | 2205.14135 / 2307.08691 | FlashAttention / FA2 | attention kernel | ◇ |
 | 2501.01005 | FlashInfer | rollout 引擎常用 kernel 库 | ◇ |
 | 2403.02310 | Sarathi-Serve | chunked prefill（rollout 中 prompt 占比高） | ◇ |
@@ -149,7 +148,20 @@
 
 ### 5.6 待验证种子（用户清单中尚未在检索中命中）
 
-？Seer ｜ ？Weave ｜ ？FastGRPO ｜ ？SpecRoll ｜ ？MTP-RL（2606.12370 为方向候选）｜ ？RLHFuse（◇2412.15179 待核）｜ ？"Taming the Long-Tail / adaptive drafter" ｜ ？Online Draft Co-Training for long-context RL
+？Seer ｜ ？Weave ｜ ？FastGRPO ｜ ？SpecRoll ｜ ？MTP-RL（2606.12370 为方向候选）｜ ？"Taming the Long-Tail / adaptive drafter" ｜ ？Online Draft Co-Training for long-context RL
+
+### 5.7 基础文献身份与版本勘误
+
+2026-10-27核对4篇基础文献的元数据、摘要及版本历史，不计为深读，不增加独立论文数。原三个错配ID仍保留在下表供追溯，但不纳入本专题文献计数。
+
+| 条目 | 原记录的问题 | 核验与当前身份 |
+|---|---|---|
+| SGLang | 2310.07204实际是[视觉计算扩散模型综述](https://arxiv.org/abs/2310.07204)，不是SGLang | [2312.07104v2](https://arxiv.org/abs/2312.07104v2)，v1提交2023-12-12，v2修订2024-06-06 |
+| Orca | 2205.12318实际是[ColdGuess图网络论文](https://arxiv.org/abs/2205.12318)，不是Orca | [OSDI'22官方记录](https://www.usenix.org/conference/osdi22/presentation/yu)，2022-07、521–538页；不猜另一个arXiv ID |
+| RLHFuse | 2412.15179实际是[概率论中的Beat the Average问题](https://arxiv.org/abs/2412.15179)；矩阵又把Stage Fusion列成第二篇 | [2409.13221v1](https://arxiv.org/abs/2409.13221v1)名RLHFuse，2024-09-20提交；[v3](https://arxiv.org/abs/2409.13221v3)与[NSDI'25官方记录](https://www.usenix.org/conference/nsdi25/presentation/zhong)采用Stage Fusion题名，保留一个条目及两个别名 |
+| ReaLHF | ID正确，SOSP'24标签不符修订版接收信息；忽略改名易重复注册 | [2406.14088v1](https://arxiv.org/abs/2406.14088v1)名ReaLHF，2024-06-20提交；[v2](https://arxiv.org/abs/2406.14088v2)名ReaL，2025-04-24修订且标MLSys'25 |
+
+核验原则：先以原站标题／作者／摘要确认身份，再登记首次提交日期、采用版本、venue及别名。检索结果可能对应旧标题，最新摘要也可能有不同实验数字；不能把不同版本的名称或数字拼成一条证据。当前仅完成这4篇；Round 1其他✅仍待身份审计，既不认定全部错误，也不继续称全库已验证。下一批优先补其他serving基础的primary链接，再扩展未覆盖的rollout-native工作。
 
 ## 6. Paper Deep Reads
 
@@ -221,5 +233,7 @@
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（M1身份核验批次）**：承接新专项，核4篇而非新增4篇；纠正SGLang／Orca／RLHFuse三处错配ID，合并RLHFuse与Stage Fusion重复项，登记ReaLHF→ReaL及MLSys'25版本信息。来源为arXiv原始／修订元数据与USENIX官网；撤回“≈73”为已去重已核数量的解释，保留Round 1历史记录。未做深读／性能判断、taxonomy收束、代码改动或复现；下一步按§5.7补其余来源与身份。
 
 - **2026-10-27（Round 1）**：骨架建立；种子注册 + 2 批 arXiv 验证检索（40 篇实证 + 15+ 新发现：SRT/ObsSpec/S³R/NgramRL/DARTS/ASymPO/MARLaaS/AsyncWebRL/AcceRL/Stage Fusion/FlashNext-RL/AREAL-DTA 等）；corpus ≈73（目标 100–150）。待验证种子 8 个。未做：深读、代码地图扩展、corpus 收敛检索（SGLang/vLLM 博客、ICML/NeurIPS/OSDI/SOSP/NSDI/ATC/EuroSys 2025-2026 proceedings 扫描、citation graph 前向/后向扩展）。
