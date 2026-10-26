@@ -451,6 +451,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [PyTorch torch.compile End-to-End 源码级追踪](pytorch-compile-e2e-reading.md)
 - [PyTorch torch.compile + FSDP2 集成: 实战指南与兼容性分析](pytorch-compile-fsdp2-integration-reading.md)
 - [PyTorch torch.compile 知识综合图谱](pytorch-compile-stack-knowledge-synthesis.md)
+- [数据选择与结构化分支](pytorch-compile-stack-knowledge-synthesis.md#数据选择与结构化分支) — where先计算与cond择支不可互换；CPU eager-backend梯度／export图对照，不认证Inductor或CUDA Graph。
 - [PyTorch CUDA Graph Refactoring Cluster (#187740-#187750) — Deep Reading](pytorch-cuda-graph-refactoring-cluster-reading.md)
 - [PyTorch custom_op and torch.library System: Deep Source-Level Analysis](pytorch-custom-op-library-system-reading.md)
 - [PyTorch DTensor Autograd 源码级深度阅读](pytorch-dtensor-autograd-reading.md)

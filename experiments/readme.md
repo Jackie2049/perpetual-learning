@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [torch-cond-selection/verify.py](torch-cond-selection/verify.py) | 三写法×两个标量的真实CPU前向／反向及公开export图，[结果](torch-cond-selection/result.json)；Dynamo eager backend全图，不是Inductor／CUDA Graph | [数据选择与结构分支](../notebook/frameworks/pytorch-compile-stack-knowledge-synthesis.md#数据选择与结构化分支) |
 | [sdpa-interface-contract/verify.py](sdpa-interface-contract/verify.py) | 真实CPU FP64 MHA／SDPA mask极性、全屏蔽行及p=1 dropout门控控制，[结果](sdpa-interface-contract/result.json)；无模型／梯度／GPU／性能测量 | [MHA与SDPA契约](../notebook/fundamentals/flash-attention.md#mha-与-sdpa-的调用契约) |
 | [weight-file-mapping/verify.py](weight-file-mapping/verify.py) | safetensors mmap／torch mmap／eager三CPU小文件路线的读值、私有修改和文件不变控制，[结果](weight-file-mapping/result.json)；BOOL／E4M3字节回读，无计时／RSS／GPU | [映射加载边界](../notebook/fundamentals/model-weight-formats-deep-dive.md#映射加载的实际边界) |
 | [verl-epoch-resume-order/verify.py](verl-epoch-resume-order/verify.py) | #7974原15 SFT+4 V1 CPU参数项[新head全过](verl-epoch-resume-order/head-result.json)，[旧V1](verl-epoch-resume-order/old-v1-result.json)同4项2过2顺序失败；真实torchdata、0worker／隔离方法非完整训练 | [两种恢复顺序](../notebook/frameworks/verl-checkpoint-management-reading.md#sft-与-v1-的恢复顺序) |

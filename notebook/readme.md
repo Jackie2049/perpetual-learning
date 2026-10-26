@@ -129,6 +129,7 @@
 
 [按框架浏览完整索引](frameworks/readme.md) · [按项目浏览贡献材料](../open-source/README.md)
 
+- [数据选择与结构化分支](frameworks/pytorch-compile-stack-knowledge-synthesis.md#数据选择与结构化分支) — torch.where并非惰性if，cond是受限单值控制流；本机CPU eager-backend与export，不作GPU／Inductor验收。
 - [vLLM V1 架构](frameworks/vllm-architecture.md) — V1 整体架构、Scheduler/Executor 分离、混合推理
 - [vLLM KV Transfer Connector](frameworks/vllm-kv-transfer-connector.md) — NIXL 连接器架构、P/D 分离、ZMQ 握手、TP 聚合
 - [vLLM V1 Scheduler 源码阅读](frameworks/vllm-v1-scheduler-reading.md) — 调度循环、抢占策略、KV Cache 管理、Prefix Caching 集成

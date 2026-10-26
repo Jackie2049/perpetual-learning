@@ -1,0 +1,88 @@
+{
+  "scope": "CPU eager-backend compile and export controls, not Inductor/CUDA validation.",
+  "python": "3.12.13",
+  "torch": "2.14.1",
+  "torch_git": "5c4886908584029761b579af026dcfb627c84070",
+  "script_sha256": "30b33f4c5c52024fb4efba89048f2c66d640d4882ce7eb7a4f32e87a64b1091f",
+  "torch_cond_source_sha256": "d20288b2f1720bea24e3ab8eda54288dd90b9c49a44c744289b5d99067ce0447",
+  "backend": "eager",
+  "fullgraph": true,
+  "dtype": "CPU float64",
+  "cases": {
+    "where": [
+      {
+        "input": -4.0,
+        "output": 16.0,
+        "grad_finite": false,
+        "grad": null
+      },
+      {
+        "input": 4.0,
+        "output": 2.0,
+        "grad_finite": true,
+        "grad": 0.25
+      }
+    ],
+    "cond": [
+      {
+        "input": -4.0,
+        "output": 16.0,
+        "grad_finite": true,
+        "grad": -8.0
+      },
+      {
+        "input": 4.0,
+        "output": 2.0,
+        "grad_finite": true,
+        "grad": 0.25
+      }
+    ],
+    "safe_where": [
+      {
+        "input": -4.0,
+        "output": 16.0,
+        "grad_finite": true,
+        "grad": -8.0
+      },
+      {
+        "input": 4.0,
+        "output": 2.0,
+        "grad_finite": true,
+        "grad": 0.25
+      }
+    ]
+  },
+  "exports": {
+    "where": {
+      "root": [
+        "aten.gt.Scalar",
+        "aten.sqrt.default",
+        "aten.square.default",
+        "aten.where.self"
+      ]
+    },
+    "cond": {
+      "root": [
+        "aten.gt.Scalar",
+        "cond",
+        "<built-in function getitem>"
+      ],
+      "true_graph_0": [
+        "aten.sqrt.default"
+      ],
+      "false_graph_0": [
+        "aten.square.default"
+      ]
+    },
+    "safe_where": {
+      "root": [
+        "aten.gt.Scalar",
+        "aten.ones_like.default",
+        "aten.where.self",
+        "aten.sqrt.default",
+        "aten.square.default",
+        "aten.where.self"
+      ]
+    }
+  }
+}

@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1结构化分支学习（2026-10-26）**：起始763d2c6干净，compare保留878新增1无删改后ffcca197e保全M5。#8316同head及缺失梯度／重算元数据／masked-stat均原知识已覆盖，不复测。校正[编译原笔记](notebook/frameworks/pytorch-compile-stack-knowledge-synthesis.md#数据选择与结构化分支)把where／cond并列替换if的说法：三写法×两标量CPU梯度、公开export图通过；负输入where前向16但梯度NaN，cond与安全输入where为−8。只Dynamo eager backend与前向export，无Inductor／CUDA／模型或M5新队列／专项／社区动作。下轮转独立实际需求，不扩谓词／dtype／backend矩阵。
+
 - **M1注意力接口契约学习（2026-10-26）**：起始9a54551干净，compare保留876新增1无删改后ff364e813保全M5；查重已有缓存后缀控制，不重跑。补[原FlashAttention专题](notebook/fundamentals/flash-attention.md#mha-与-sdpa-的调用契约)：真实CPU FP64 MHA／SDPA同bool mask得2／4，反转或相同加性bias对齐；全屏蔽本机两MHA分支NaN／0分开，p=1展示eval门控。只算子与已安装源码，无梯度／模型／性能／设备或新M5队列／专项／上游动作。下轮转独立实际需求，不扩shape／mask／dtype矩阵或把退化输入视作通用保证。
 
 - **M1权重格式知识校正（2026-10-26）**：起始ac1f289干净，compare保留874新增1无删改后ff698ac43保全M5；#7974/#8354等均原head、原知识已覆盖，不复测。查重发现[旧权重格式笔记](notebook/fundamentals/model-weight-formats-deep-dive.md#映射加载的实际边界)错比映射与完整加载；撤回300000倍／固定98GB／4090固定时延，按官方0.8.0及torch2.14说明校正mmap、BOOL8bit／FP8与优化器Tensor范围。三CPU小文件路线两次一致，未测时间／PSS／模型／设备；GGUF原“不支持”按官方插件说明收窄。无新M5队列／专项或社区写入，下轮转独立需求／实质变化，不扩文件大小／缓存／worker矩阵或据本控制选择部署方案。

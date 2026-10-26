@@ -3,6 +3,8 @@
 > 2026-06-15 | 综合10篇源码阅读: compile e2e + Dynamo internals + FX IR + AOTAutograd + Inductor(lowering+scheduler+codegen) + custom_op + FSDP2 internals + DTensor autograd + compile tracer + aotautograd visualizer
 > ★ ★ ★ 这是PyTorch compile栈的完整知识体系 → 从C-level hook到Triton codegen → 每一步都有源码级理解
 
+2026-10-26校正：[数据选择与结构化分支](#数据选择与结构化分支)不再把torch.where与torch.cond当成可互换的if替代。新增结果仅限torch2.14.1 CPU／Dynamo eager backend与公开export；其他历史版本、兼容性和性能条目未在本轮全面复核。
+
 ## 1. 编译栈全景 (5层→10篇→完整覆盖)
 
 ```
@@ -182,16 +184,42 @@ FSDP2多GPU (H100集群):
    → ★ Symbolic Shapes(2.7+) → 根本解决
    → 解决: 固定shape或Symbolic Shapes
 
-6. data-dependent control flow ✗
-   → if/while → Dynamo无法trace → graph break
-   → ★ torch.cond(2.12+) → CUDA graph内数据依赖控制流
-   → 解决: torch.where/torch.cond替代
+6. Tensor值驱动的Python分支可能产生graph break
+   → torch.where是逐元素选择，输入表达式已先计算，不是惰性if
+   → torch.cond是单值谓词的受限结构化分支，需要两分支都可捕获
+   → 本轮只验证CPU eager backend／export，不据此认定Inductor或CUDA Graph支持
 
 7. MoE dynamic routing + compile ✗
    → expert选择 → 数据依赖 → graph break
    → ★ verl freeze_moe_router → 固定路由 → compile兼容
    → 解决: freeze router 或 router_replay
 ```
+
+## 数据选择与结构化分支
+
+**避免graph break与避免无效分支的数值影响，不是同一个目标。** [torch.where文档](https://docs.pytorch.org/docs/2.14/generated/torch.where.html)定义逐元素数据选择；常规Python调用先求输入参数，`torch.where(pred, sqrt(x), x²)`并不会阻止sqrt先执行。[torch.cond文档](https://docs.pytorch.org/docs/2.14/generated/torch.cond.html)则将其定义为结构化控制流，以单元素谓词选择分支函数；当前仍是prototype，签名、输出元数据和副作用受限制，不是任意Python if／while的通用替代。
+
+### 同前向不等于同梯度
+
+[CPU控制](../../experiments/torch-cond-selection/verify.py)对同一个分段标量函数比较三种写法：正数取sqrt(x)，否则取x²。第三种仍用where，但在sqrt之前把非正位置的输入换成1，最后再按原谓词选择输出；它不改变本例正数支路的值，也不计算非法sqrt。
+
+Python3.12.13／torch2.14.1（git `5c4886908584029761b579af026dcfb627c84070`）、CPU FP64、单线程，全部显式 `torch.compile(backend="eager", fullgraph=True)`：
+
+| 写法 | x=−4的输出／梯度 | x=4的输出／梯度 |
+|---|---|---|
+| 先算sqrt与square，再where选择 | 16／NaN | 2／0.25 |
+| cond在两个纯函数间选择 | 16／−8 | 2／0.25 |
+| 在sqrt前准备安全输入，再where选择 | 16／−8 | 2／0.25 |
+
+NaN来自已进入图的无效sqrt反向，不是本轮发现了where前向选错值，也不是cond自动修复了任意上游NaN。[原结果](../../experiments/torch-cond-selection/result.json)记录实际反向与非有限标志。已有[掩码统计专题](verl-grpo-core-algos-reading.md#掩码统计与梯度的数值边界)已说明遮掉最终结果不能删除更早非法运算，本轮不重跑其20组控制。
+
+### 两分支可捕获不等于两分支都在主图计算
+
+同一脚本用公开 `torch.export.export(..., strict=True)` 导出前向图。where主图按顺序含sqrt、square、where；cond主图含higher-order cond，另有true_graph_0中的sqrt与false_graph_0中的square。safe_where主图则在sqrt之前多一次选择安全输入。**两个cond分支都要进入捕获／检查范围**，不能把运行时择支理解为未选分支可含任意不可追踪代码、异常或全局副作用。本轮没有用计数器／print给分支加副作用来“证明惰性”。
+
+cond的单值谓词选择整个分支，不能把逐元素mask随意改成any／all后宣称等价；向量混合正负、广播、alias／mutation及分布式控制还需其自身契约。安全输入的where也只是本例对已知数学定义域的处理，不能用常数替换掩盖实际有效数据中的错误。
+
+eager backend证明这几段Dynamo完整捕获及本地autograd可执行，export保存图结构；没有Inductor代码生成、AOT导出反向、CUDA conditional graph、性能、模型或分布式验收。复现为 `python experiments/torch-cond-selection/verify.py --output experiments/torch-cond-selection/result.json`，无需依赖安装或GPU。此项不改框架、不新排M5任务；后续只在实际控制流迁移需求中接续，不扩谓词／dtype／backend矩阵。
 
 ## 5. 编译栈工具矩阵
 
