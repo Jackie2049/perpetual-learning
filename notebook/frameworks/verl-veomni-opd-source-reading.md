@@ -10,6 +10,8 @@
 
 2026-10-25 接续：[主线与 GKD 的损失名称和支持域](#主线与-gkd-的损失名称和支持域)核#7975／已有draft #7983；纠正旧2.2节的k2／k3公式，区分采样估计、top-k归一化、tail bucket与JSD端点。配置名称相同不代表梯度或更新相同。
 
+2026-10-26补充：[HIP 的 mHC 分支同步与依赖栈](#hip-的-mhc-分支同步与依赖栈)区分平台gate、编译器类型、分支内共享通信和验收容差；AMD多步报告不代表单一verl补丁可独立复现。
+
 ## ROCm 配方默认与后端支持
 
 **不再强加DeepGEMM、把环境键传出去、后端真正支持该键，是三件事。** [#8371](https://github.com/verl-project/verl/pull/8371)于2026-10-26读取OPEN／draft，作者xiaohong42；固定head `7b6c38123bdf8ec7c70cadaf2d2796d36de67b8f`，父版／base／共同祖先及当前main均为 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，ahead1／behind0，四文件72增0删。唯一bot评论表示draft未自动review，reviews／行内为空；已有作者，不另实现或发布。
@@ -40,6 +42,34 @@
 
 #8371的整机报告依赖#8369／#8370及多份外部补丁，不是四文件改动单独闭环。实际安装支持、环境生效与加载／更新验证仅补[原M5条件参考](../../experiments/handoff-m5.md#verl-量化层审计新版复验)，不探测AMD／GPU、安装补丁、切换配置或新增训练队列。
 
+## HIP 的 mHC 分支同步与依赖栈
+
+**放开设备gate只允许进入实现，不能补齐编译器类型或跨线程通信。** 2026-10-26读取的[#8371报告](https://github.com/verl-project/verl/pull/8371)已完成八个MI355X训练step，但仍是多补丁栈：verl #8369／#8370／#8371各head仍为ca0aea26／44c97bcd／7b6c3812；并非新代码带来的独立对照。MI308X采用TCP、MI355X采用RDMA且硬件不同，表中step时间不能用来估算纯网络收益。该报告未给相同工作负载下每个补丁的单独消融，也不能单凭高Pearson判定逐token一致。
+
+| 依赖 | 已有候选与职责 | 不由该候选补齐的部分 |
+|---|---|---|
+| VeOmni | [#1363](https://github.com/ByteDance-Seed/VeOmni/pull/1363)，OPEN/draft，head9168fd32a01b8cc05e03eb493604c917cd14d54e；放开gfx942／gfx950的部分TileLang路径并调整LDS tiling、FP8处理 | 作者仍将FP4 quantizer限于NVIDIA；不能把FP8 experts的Flash-Base报告外推为FP4 experts的Flash |
+| TileLang HIP模板 | [#3665](https://github.com/tile-ai/tilelang/pull/3665)，OPEN/未合并，head20200a281d2cb43529a53b35eaf6a2b110856c0b；补E8M0类型与数值FP4 cast | 作者明确8-lane FP4 store仍不覆盖；修正cast不等完整FP4输出可编译 |
+| TileKernels mHC | [#43](https://github.com/deepseek-ai/TileKernels/pull/43)，OPEN/未合并，head8ddcd4edc6314dc96fb1352d005b1b94d8abe4e6，API base c1cf914a82e6901c679445f872051ce44ac2cc63；重写HIP pre分支的共享通信 | 不替代VeOmni gate、LDS与QAT改动，也不认证多层重算或旧pin直接升级 |
+
+### 96 个线程中的局部屏障
+
+[固定内核](https://github.com/deepseek-ai/TileKernels/blob/8ddcd4edc6314dc96fb1352d005b1b94d8abe4e6/tile_kernels/mhc/pre_big_fuse_cuda.py)每CTA有96线程。前32线程先生成mixes_shared；后续又按tid<32分成post／comb计算与其余64线程的pre／collapse。后者的旧实现将pre_mix_shared和residual tile xs放在shared memory，再由其他线程读取。在作者目标的64线程wavefront上，tid=32边界落在一个wave内部，不能把“64个参与线程”误当成一个对齐的wave；CUDA局部named barrier也不能直接映射为任意位置的HIP整CTA屏障。作者报告新TileLang在该分支拒绝lowering，旧版曾漏屏障导致部分输出错误；本文未复现这些设备结果。
+
+新`elif _IS_HIP`让各线程重复计算少量pre系数，以local／fragment保存；residual直接读入fragment后归约写出，不再经分支内的pre_mix_shared或xs中转。它以局部重复计算换掉这两处跨线程shared通信，**不是在原分支随意加一个全CTA barrier**。最初的mixes_shared仍由前一阶段生成并被HIP分支读取，所以不能称整个内核无shared或无需同步；该阶段正确lowering仍属于编译器／设备验收。
+
+本机标准库AST比较确认：候选的CUDA else body和post／comb body与API base相同；新增HIP分支没有T.alloc_shared调用，但保留mixes_shared读取。这里比较的是Python AST，不是生成机器码、寄存器占用、LDS分配或性能，`torch.version.hip`分支也不是运行中的设备探测。
+
+### 无梯度调用与测试容差
+
+[VeOmni wrapper](https://github.com/ByteDance-Seed/VeOmni/blob/9168fd32a01b8cc05e03eb493604c917cd14d54e/veomni/ops/kernels/mhc/pre/tilelang.py)在`not torch.is_grad_enabled()`时调用mhc_pre_big_fuse，有梯度时则走norm、split、Sinkhorn与apply的分解路径。只核有梯度前向／反向，可能没有触达这个fused入口；no_grad也并不自动说明请求一定来自rollout，而不是训练侧打分或checkpoint内部阶段。
+
+候选[pre测试](https://github.com/deepseek-ai/TileKernels/blob/8ddcd4edc6314dc96fb1352d005b1b94d8abe4e6/tests/mhc/test_pre_big_fuse.py)在HIP将layer_input的torch.equal改为assert_close，rtol与atol均2**−7，post_mix／comb_mix仍逐bit比较；这个相对加绝对容差不应泛称所有数值都严格限定为“一ULP”。[post测试](https://github.com/deepseek-ai/TileKernels/blob/8ddcd4edc6314dc96fb1352d005b1b94d8abe4e6/tests/mhc/test_post.py)另把comb梯度容差1e−4放宽到2e−4。源码、判据与作者结果要一起看，不能把新通过数当旧严格判据全部通过；作者明确没有运行约70GB的multilayer_recompute测试。
+
+[VeOmni该head依赖](https://github.com/ByteDance-Seed/VeOmni/blob/9168fd32a01b8cc05e03eb493604c917cd14d54e/pyproject.toml)仍pin tile-kernels1.0.0、TileLang0.1.9，wrapper使用旧modeling.mhc接口；#43则改重组后的tile_kernels/mhc文件。作者实际训练采用verl的旧VeOmni pin10a26aca加等效修改、镜像TileLang0.1.10加补丁及tile-kernels1.0.0回移，不能仅按新PR编号拼成一份已验证的默认安装。较新TileLang0.1.15已有部分HIP修正，也不代表自动包含仍OPEN的#3665。
+
+本轮只核八份完整Python源文件的AST/compile与上述分支结构，未导入TileLang／VeOmni、复跑原GPU测试或模拟线程调度；源码hash见[当日日志](../../diary/2026-10-26.md)。硬件缺口仅补[原M5量化条件入口](../../experiments/handoff-m5.md#verl-量化层审计新版复验)，不新排AMD部署、回移补丁或训练。需要实际迁移时先固定完整安装制品与编译缓存身份，分开核grad-enabled／no_grad路径和原判据，再看获准最小模型；全部对外动作仍待用户逐项明确授权。
+
 ## Rollout 量化导出与字节布局
 
 **导出流经过量化器，不等于已验证推理引擎能加载该布局；pass-through也不总是对象完全不变。** 新draft [#8369](https://github.com/verl-project/verl/pull/8369)给VeOmni补trainer-side rollout quantizer接口。2026-10-26读取OPEN／draft、作者xiaohong42，head `ca0aea265f4bc4dab927a106cc7f9d43fc201337`，父版／base／共同祖先与当前main均为 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`；两文件60增2删。唯一bot评论表示draft未自动review，reviews／行内评论空，不当人工验收或无人负责的新机会。
@@ -60,7 +90,7 @@
 
 Python3.12.13；六完整源文件版本AST／内存compile，源码SHA256、原测试及CPU结果见[JSON](../../experiments/verl-veomni-rollout-quantizer/result.json)，复跑语义一致。命令：`python -B experiments/verl-veomni-rollout-quantizer/verify.py /path/to/verl-git`，只读已有固定对象，不自动fetch或安装；未导入verl／VeOmni／Ray、运行模型或分布式导出。
 
-PR正文当前报告组合#8370／#8371在2×8 MI355X完成三步，第四步和MI308X第一步仍running；这是作者外部报告，不是本机或单独此补丁的验收。真实格式／scale／加载及更新后数值缺口仅补[原M5条件参考](../../experiments/handoff-m5.md#verl-量化层审计新版复验)，不下载模型、部署AMD、应用候选或新增训练队列。
+2026-10-26后续正文报告更新为2×8 MI355X完成八步、第九步running，MI308X完成一步、第二步running；三个verl head未变，未重跑原控制。这是[作者组合栈报告](https://github.com/verl-project/verl/pull/8371)，不是单独此补丁的验收；依赖版本与内核限制见[后续分析](#hip-的-mhc-分支同步与依赖栈)。真实格式／scale／加载及更新后数值缺口仍仅补原M5条件参考，不部署AMD或新增训练队列。
 
 ## Optimizer 覆盖与 CPU offload 默认
 

@@ -311,6 +311,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [verl V1 Trainer Architecture 源码级深度阅读](verl-v1-trainer-architecture-reading.md)
 - [verl V1 Unified Trainer Architecture — Reading Note](verl-v1-unified-trainer-architecture-reading.md)
 - [verl VeOmni OPD (On-Policy Distillation) Engine — Source-Level Analysis](verl-veomni-opd-source-reading.md)
+  - [HIP的mHC分支同步与依赖栈](verl-veomni-opd-source-reading.md#hip-的-mhc-分支同步与依赖栈)：去掉局部shared中转不等整个kernel无需同步；no_grad fused入口、容差与旧pin回移分开，仅源码非AMD验收。
   - [ROCm默认与后端支持](verl-veomni-opd-source-reading.md#rocm-配方默认与后端支持)：#8371原3参数例候选通过，两版bash -n；构建标志／配置传递／vLLM能力分开，非Ray／AMD／重载或训练验收。
   - [Rollout量化导出与字节布局](verl-veomni-opd-source-reading.md#rollout-量化导出与字节布局)：#8369两导出边只静态、原一包装测试通过；原FP8类的CPU expert view共享存储，非真实加载／同步验收。
   - [Optimizer覆盖与CPU offload默认](verl-veomni-opd-source-reading.md#optimizer-覆盖与-cpu-offload-默认)：新draft #8370原五接线用例通过；257元素真实CPU单步不是VeOmni／DTensor或内存性能复验。

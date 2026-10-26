@@ -17,6 +17,8 @@
 
 2026-10-26补[merged LoRA睡眠](#合并-lora-睡眠的已有候选)：#8046已收窄FSDP；原9策略参数项候选过／基线3失败，非权重恢复或乱码修复验收，不另实现。
 
+2026-10-26补[AMD内核依赖](#rocm-配方默认的已有候选)：三个verl head未变，不重测；追TileKernels #43的局部分支同步与容差变化，仅AST／源码，作者八步组合报告不作单PR或本机验收。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -76,6 +78,8 @@
 [原VeOmni专题](../../notebook/frameworks/verl-veomni-opd-source-reading.md#rocm-配方默认与后端支持)：原3参数例head过／base1过2预期失败，仅hip／Hopper替身；九Python版本compile／两配方bash -n，无GPU0探测或命令执行。环境传参非后端支持，依赖的[vLLM #63604](https://github.com/vllm-project/vllm/pull/63604)尚OPEN、未覆盖V4.1或完整reload生命周期，关闭性能未测；M5仅原条件参考，不应用／拼接候选、新训练或写社区。
 
 ## VeOmni 量化导出的已有候选
+
+AMD组合栈后续（2026-10-26）：#8371／#8370／#8369各head未变，作者报告更新为MI355X八步、MI308X一步，后续仍running，不复跑原控制。新增[内核依赖分析](../../notebook/frameworks/verl-veomni-opd-source-reading.md#hip-的-mhc-分支同步与依赖栈)：VeOmni #1363、TileLang #3665、TileKernels #43均已有作者；mHC HIP分支去掉局部shared中转仍读mixes_shared，no_grad选fused路线；测试的assert_close非旧逐bit判据，多层重算未测。八份源码AST/compile，未import或执行GPU／线程模拟。仅补原M5条件参考，不回移／升级／拼装依赖，不另实现或新排训练；上游写入仍逐项待用户明确授权。
 
 2026-10-26读OPEN／draft [#8369](https://github.com/verl-project/verl/pull/8369)正文／两文件完整diff及唯一bot未review通知，reviews／行内空；作者xiaohong42，headca0aea26、父版／base／祖先与main3c6d9b43，两文件60增2删。查重命中本PR及#8327相关工作，不另认领或对外反馈。
 
