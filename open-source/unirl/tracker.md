@@ -52,7 +52,7 @@ UniRL 仓库当前 **73+ open issues**，其中大量是带 `help wanted` 标签
 | [#567](https://github.com/Tencent-Hunyuan/UniRL/issues/567) cosmos3 H20 cuBLAS workaround 被错版本 gate | 配置/验证型 | **OPEN · 无 assignee** | **blocked-on-H20**（2026-10-23） | reporter 明确两个分支（删死代码 vs 放宽 gate）都要在 H20+pinned torch 2.13/cu130 实机对照（loss + cublasGemmEx 探针）才能定；我们与 M5（4090）均无 H20，写 PR 即投机，整项挂起不推进 |
 | [#581](https://github.com/Tencent-Hunyuan/UniRL/issues/581) FSDP2 0-token micro collective mismatch | bug | **OPEN · 无 assignee** | 可做但已上 #580 路线 | reporter 给了完整 CPU repro；issue 说明 #580 phase 3 会修，宜与 #580 owner 沟通或作为其一部分 |
 | [#419](https://github.com/Tencent-Hunyuan/UniRL/issues/419) monitor-only rewards | enhancement/help wanted | **已 assign GoDiao** | 已认领 | 非我方空间 |
-| [#423](https://github.com/Tencent-Hunyuan/UniRL/issues/423) 复合奖励能力预检 | enhancement/help wanted | **已 assign GBX-Max1220，有 PR #621** | 已认领 | 非我方空间 |
+| [#423](https://github.com/Tencent-Hunyuan/UniRL/issues/423) 复合奖励能力预检 | enhancement/help wanted | **PR #621 已合并**（2026-10-26，main 8cfbac177） | 已完成 | 非我方空间，不跟进 |
 | [#453](https://github.com/Tencent-Hunyuan/UniRL/issues/453) 主仓库文档社区刷新 | documentation/help wanted | **已 assign 6 人，WIP** | 已认领 | 非我方空间 |
 | [#520](https://github.com/Tencent-Hunyuan/UniRL/issues/520) batched chat-template tokenization bug | bug | **已 assign ruiling-smartbear，关联 PR #544** | 已认领 | 非我方空间 |
 
