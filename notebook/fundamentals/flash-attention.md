@@ -2,6 +2,8 @@
 
 > IO-Aware Tiling：为什么 FlashAttention 比标准 Attention 快 2-4x
 
+2026-10-26补充：[MHA 与 SDPA 的调用契约](#mha-与-sdpa-的调用契约)区分布尔mask含义、全屏蔽行与eval时dropout。下文历史GPU性能表不是本轮重新验证结果，CPU MATH控制也不代表FlashAttention kernel性能。
+
 ## 实验验证 (A16, PyTorch 2.5.1+cu118)
 
 **SDPA (Flash Attention) vs Naive Attention:**
@@ -203,6 +205,38 @@ FA3 针对 H100 的三大特性：
 - **IO 复杂度**: 标准 O(N²d), Flash O(N²d²/M), 序列越长节省越多
 - **中间存储**: 标准 N=16K 时需要 ~32GB, Flash = 0（零中间矩阵!）
 - **Block size 不影响精度**: online softmax 数值等价与 block size 无关
+
+## MHA 与 SDPA 的调用契约
+
+**切换注意力接口时，不能只保留相同mask张量和dropout数值。** [PyTorch 2.14 SDPA](https://docs.pytorch.org/docs/2.14/generated/torch.nn.functional.scaled_dot_product_attention.html)与[MultiheadAttention](https://docs.pytorch.org/docs/2.14/generated/torch.nn.MultiheadAttention.html)对布尔mask采用相反含义；SDPA也没有模块training状态参数。接口语义正确与选择哪个kernel是两件事。
+
+| 参数 | bool为True | 浮点mask |
+|---|---|---|
+| SDPA attn_mask | 允许该query关注该key | 加到attention score的bias |
+| MHA attn_mask | 禁止该位置的注意力 | 加性bias |
+| MHA key_padding_mask | 忽略对应key | 加性bias；本轮只核文档，未执行此参数 |
+
+迁移相同布尔可见域时要反转极性，并核对batch／head／query／key的广播维度。浮点bias不能机械取反或把bool直接cast为0/1：允许项常用0、禁用项用负无穷，其他有限值则改变分数，不等于删除位置。
+
+### 用可见值的均值检查极性
+
+[CPU脚本](../../experiments/sdpa-interface-contract/verify.py)使用真实torch2.14.1、CPU FP64、单线程，并显式限定SDPA MATH。Q/K均0，V为 `[0,2,8]`，一行query、一个head、head_dim=1；MHA投影和输出权重手工置1、bias关闭，使结果直接对应可见值均值。这是算子控制，不是训练模型或重写注意力kernel。
+
+SDPA传 `[True,False,True]` 得4；MHA原样传此bool mask得2，反转后才得4。相同加性bias `[0,−inf,0]` 在两接口均得4。[原始结果](../../experiments/sdpa-interface-contract/result.json)还保留函数源码及脚本指纹；本例只执行MHA的attn_mask，没有把key_padding_mask定义当成另一个实测。
+
+### 全屏蔽行不是正常概率分布
+
+在同一输入中，SDPA的全False mask输出0；MHA全True、need_weights=True时输出NaN，而need_weights=False输出0。安装版[source](https://github.com/pytorch/pytorch/blob/5c4886908584029761b579af026dcfb627c84070/torch/nn/functional.py)中，前者显式对全负无穷score做softmax，后者调用SDPA。测试的Q/K/V是不同输入，单head，不能将这个观察移作MHA原生self-attention inference fastpath的结果。
+
+这里没有合法key时，通常的softmax条件分布本就未定义；不同支路对这个退化输入的处理不应被当作统一API保证。也不应只为掩盖NaN就切need_weights。调用方需明确无可见key的行应拒绝、跳过还是按既定语义返回零；零attention经过带bias的输出投影也未必仍为零，本例专门关闭bias。没有检查反向梯度、混合精度或其他backend。
+
+### eval 不会自动传递给函数式 dropout
+
+SDPA按传入dropout_p执行，外围Module.eval()或no_grad()不自动把它改为0；调用方应使用 `dropout_p=(self.p if self.training else 0.0)`。本机MHA函数入口则在training=False时把p置0。
+
+用p=1这个确定性端点控制：固定p=1的SDPA wrapper即使eval仍输出0；按training显式门控的wrapper在eval输出4；原MHA dropout=1时eval输出4、train输出0。p=1只用于无随机干扰地展示调用契约，不是普通dropout率的分布／seed复现测试，更不是训练效果结论。
+
+复现：`python experiments/sdpa-interface-contract/verify.py --output experiments/sdpa-interface-contract/result.json`。环境Python3.12.13／torch2.14.1（git `5c4886908584029761b579af026dcfb627c84070`）；未安装依赖、创建模型服务或访问GPU／NPU／MPS。此处不改框架或新增M5任务，也不复跑[旧因果位置控制](#缓存后缀的因果对齐)；后续只在实际接口迁移需求时接续，不扩shape／mask／dtype矩阵。
 
 ## 缓存后缀的因果对齐
 

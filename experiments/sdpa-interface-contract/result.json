@@ -1,0 +1,80 @@
+{
+  "scope": "Small real CPU MHA/SDPA contract controls; no model, CUDA or performance test.",
+  "python": "3.12.13",
+  "torch": "2.14.1",
+  "torch_git": "5c4886908584029761b579af026dcfb627c84070",
+  "dtype": "float64",
+  "backend": "CPU MATH",
+  "script_sha256": "b6d9f752f69f0e4ca0aae6f39c5d3ee91e771d524ca61fd9d8d82d7b77613873",
+  "source_hashes": {
+    "MHA.forward": "574c6b13f8e66a4a24cf179e6cdd3052432084064d0a04705ec3fc00b0c395ef",
+    "multi_head_attention_forward": "26529f460df8191d6d015697d47d8620b3c80922edfa6ca009f37201dbff570f",
+    "_canonical_mask": "70a41f41aac9e6c2339358040476b3c1b3bfc20147146460ec1e4e03a5673db9"
+  },
+  "polarity": {
+    "sdpa_bool_allowed": {
+      "finite": true,
+      "all_nan": false,
+      "scalar": 4.0
+    },
+    "mha_same_bool": {
+      "finite": true,
+      "all_nan": false,
+      "scalar": 2.0
+    },
+    "mha_inverted_bool": {
+      "finite": true,
+      "all_nan": false,
+      "scalar": 4.0
+    },
+    "sdpa_additive": {
+      "finite": true,
+      "all_nan": false,
+      "scalar": 4.0
+    },
+    "mha_additive": {
+      "finite": true,
+      "all_nan": false,
+      "scalar": 4.0
+    }
+  },
+  "fully_blocked": {
+    "sdpa_all_false": {
+      "finite": true,
+      "all_nan": false,
+      "scalar": 0.0
+    },
+    "mha_all_true_need_weights_true": {
+      "finite": false,
+      "all_nan": true,
+      "scalar": null
+    },
+    "mha_all_true_need_weights_false": {
+      "finite": true,
+      "all_nan": false,
+      "scalar": 0.0
+    }
+  },
+  "dropout": {
+    "functional_wrapper_eval_hardcoded_p1": {
+      "finite": true,
+      "all_nan": false,
+      "scalar": 0.0
+    },
+    "functional_wrapper_eval_gated_p": {
+      "finite": true,
+      "all_nan": false,
+      "scalar": 4.0
+    },
+    "mha_eval_p1": {
+      "finite": true,
+      "all_nan": false,
+      "scalar": 4.0
+    },
+    "mha_train_p1": {
+      "finite": true,
+      "all_nan": false,
+      "scalar": 0.0
+    }
+  }
+}

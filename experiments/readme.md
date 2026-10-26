@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [sdpa-interface-contract/verify.py](sdpa-interface-contract/verify.py) | 真实CPU FP64 MHA／SDPA mask极性、全屏蔽行及p=1 dropout门控控制，[结果](sdpa-interface-contract/result.json)；无模型／梯度／GPU／性能测量 | [MHA与SDPA契约](../notebook/fundamentals/flash-attention.md#mha-与-sdpa-的调用契约) |
 | [weight-file-mapping/verify.py](weight-file-mapping/verify.py) | safetensors mmap／torch mmap／eager三CPU小文件路线的读值、私有修改和文件不变控制，[结果](weight-file-mapping/result.json)；BOOL／E4M3字节回读，无计时／RSS／GPU | [映射加载边界](../notebook/fundamentals/model-weight-formats-deep-dive.md#映射加载的实际边界) |
 | [verl-epoch-resume-order/verify.py](verl-epoch-resume-order/verify.py) | #7974原15 SFT+4 V1 CPU参数项[新head全过](verl-epoch-resume-order/head-result.json)，[旧V1](verl-epoch-resume-order/old-v1-result.json)同4项2过2顺序失败；真实torchdata、0worker／隔离方法非完整训练 | [两种恢复顺序](../notebook/frameworks/verl-checkpoint-management-reading.md#sft-与-v1-的恢复顺序) |
 | [soft-target-cancellation/verify.py](soft-target-cancellation/verify.py) | 论文公式PyTorch转写的3个CPU输入、一阶注入／Hessian及未clamp top-k数学控制，[结果](soft-target-cancellation/result.json)；非原JAX／verl套件或训练 | [软标签消去与求导阶数](../notebook/frameworks/verl-fused-output-softcap.md#软标签消去与求导阶数) |
