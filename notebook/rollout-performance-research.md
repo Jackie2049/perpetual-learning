@@ -6,11 +6,12 @@
 ## 0. Project Status
 
 - **阶段**：**Phase 2 — deep research（2026-10-27 用户指令：广度已足（计数另按唯一身份核算），转入论文/项目深读，围绕 rollout 性能与 L1–L4 四维；M1 定时启动的技术秘书任务以深读为主要工作）**
-- **最近更新**：2026-10-27（§6补HybridFlow自动映射成本、解析模拟边界与PDF图9／12–16核对；条目仍进行中，不新增文献或代码路径）
+- **最近更新**：2026-10-27（新增§6.0冲刺批次表：Phase 2 两天截止≤2026-10-29；§6补HybridFlow自动映射成本、解析模拟边界与PDF图9／12–16核对；条目仍进行中）
 - **覆盖**：累计**121篇已核身份**（20篇serving基础／迁移边界＋101篇rollout/RLHF及相关边界；115个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL／Weave／MTP-RL会议记录，均非深读）。§5.20将RL相关101暂分为86直接Rollout系统／机制候选与15保守单列条目；86只是工作范围计数，不是原生80–120覆盖／质量验收。MTP-RL是ACL Findings独立文献，不与Bebop同篇；初始种子身份已全部落实，但原生覆盖／分级／引用检索仍未收敛。ASymPO证明错误警示保留；Round 1“≈73”不与当前数量相加。
 - **待核线索**：§5.23余5项（4项仅元数据／摘要已核、1项身份待核），不计入上述121或86候选；两项已入库只计一次，APRIL不重复计数。
 - **全文深读 / 代码广扫**：0（另有HybridFlow进行中1项） / 6（veRL `24f25b03`三条路径＋OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`、SkyRL `e0893f6e`各一条；共4框架，不是6框架或运行验证，也不按文件数计）
-- **最高优先级**：接续§6定位HybridFlow论文年代实现与成本／重分片的对应关系；精确上界点需原始数据，不能继续猜图。余5条线索保留，不以补数量为主，M5专项与上游写入边界不变。
+- **最高优先级（2026-10-27 用户加急指令）**：**Phase 2 全部深读须在两天内完成（≤2026-10-29）**——每次定时触发完成**一批对应规模**的调研（分级深度 + 批次表见 §6.0），不得单次只做一篇；深度与时间约束按批次表权衡。HybridFlow 深读继续；余5条线索并入相应批次，不再单列追。M5专项与上游写入边界不变。
+- **深读当前焦点**：接续§6定位HybridFlow论文年代实现与成本／重分片的对应关系；精确上界点需原始数据，不能继续猜图。M5专项与上游写入边界不变。
 - **Phase 2 完成标准与预估（2026-10-27 定，用户问"多久读完"后定量）**：**不是 121 篇全读**。深读总量 = A Core 15–20 篇全模板深读 + B Supporting ~40–60 篇中等深度（机制+关键结果，轻模板）+ 代码深读 ~8–12 条路径；C 边界与 serving 保持元数据级即可。节奏：每篇 A Core ≈ 1 个定时任务轮次，B 类 3–5 篇/轮次；按多会话并行（每日 2–4 轮次涉及本专项）预估 **A Core ≈ 1–1.5 周、Phase 2 整体 ≈ 3–4 周日历时间**。里程碑：第 1 周末 A Core 短名单定稿+完成一半；第 2 周末 A Core 完成+代码地图齐；第 3–4 周 B 覆盖+gaps/ideas 提炼+（可选）survey outline。**加速杠杆**：为定时任务显式分配深读配额。
 - **下一步**：见 §16
 
@@ -460,6 +461,32 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 
 ## 6. Paper Deep Reads
 
+### 6.0 Phase 2 冲刺批次表（2026-10-27 用户指令：**截止 2026-10-29 两天内完成**）
+
+**分级深度（权衡深度与时间）**：T1 全模板压缩深读（每篇 15–25 行：问题/性能模型/机制/实验条件/taxonomy/代码映射/疑点）；T2 中等深度（每篇 5–8 行：机制+关键结果+条件+分类核对）；T3 triage（每条 1–2 行：不深读理由+与 rollout 关联判定）。**单次定时触发规模**：T1 触发=2 篇；T2 触发=6–8 篇；T3 触发=15–20 条；Code 触发=1–2 条路径。每触发必须：认领批次→完成→回写本表与矩阵→§0 计数→§16→推送。
+
+**认领规则（防重复）**：取最小号未完成批次；先回写「认领+会话标识+时间」并推送，再开始工作；完成回写「完成+时间」；冲突以远端为准重放（既有惯例）。
+
+| 批 | 层级 | 范围 | 状态 |
+|---|---|---|---|
+| B1 | T1 | StreamRL、StaleFlow、Laminar、DORA | 待认领 |
+| B2 | T1 | AReaL、RolloutPipe、PACE、ECHO-2 | 待认领 |
+| B3 | T1 | RollPacker、SortedRL、APRIL、DARTS | 待认领 |
+| B4 | T1 | RhymeRL、ReSpec、BubbleSpec、DAS | 待认领 |
+| B5 | T1 | EfficientRollout、Heddle、ObsSpec、FP8-RL | 待认领 |
+| B6 | T2 | L4 其余：AsyncFlow、LlamaRL、RLinf、MindSpeed RL、NeMo-Aligner、ROLL／ROLL Flash、GLM-4.5、Long-RL | 待认领 |
+| B7 | T2 | 权重同步/失配子簇：SparseRL-Sync、PULSE、NeMo-DCR、ThunderSyncRL、PipelineRL、Missing Old Logits、Beyond Precision、FP16/Diagnosing/Rethinking 三选二 | 待认领 |
+| B8 | T2 | L3/spec：TailSieve、WAR、Seer、Infinite Sampling、CadenceRL、Weave、CERO、Scheduling Mixed、SRT、S³R、NgramRL、TLT | 待认领 |
+| B9 | T2 | spec/agentic：RLHFSpec、Bebop、FastGRPO、System-Integrated SD、SPARK、SpecActor、Online Draft Co-Training、MTP-RL、AReaL-DTA、FlashNext-RL、Rollplex、AREAL-DTA | 待认领 |
+| B10 | T2 | agentic：SkyRL-Agent(广扫深化)、EARL、InfoTree、AsyncWebRL、AcceRL、MARLaaS、FlexMARL、Agent Lightning v0/v1.0、TideRL、ROSE、QwenGyre | 待认领 |
+| B11 | T2 | 资源/边界：ARL-Tangram、DART、MCP-Universe RL、PEARL、SAO、Rollout Infrastructure Tax、ExpThink、Intelligent Router | 待认领 |
+| B12 | T3 | serving 20 条 + 其余边界条目 triage（不深读，逐条给不深读理由+关联判定） | 待认领 |
+| C1 | 代码 | veRL TransferQueue/TQ 数据面 + AReaL 调度器 | 待认领 |
+| C2 | 代码 | vLLM / SGLang core scheduler 路径 | 待认领 |
+| C3 | 代码 | rLLM / slime / 其余框架 | 待认领 |
+
+（HybridFlow 已由并行会话进行中，不计入批次。T2/T3 具体名单允许执行会话按 §5 矩阵实际条目微调，微调须记录。）
+
 **深读顺序（覆盖四维与机制家族，交替推进）**：① HybridFlow/veRL（L4 元框架，本地有源码，进行中）→ ② AReaL（L4 async 旗舰）→ ③ StreamRL（L4 disaggregation+气泡）→ ④ RollPacker（L3 长尾）→ ⑤ RhymeRL（L1/L2 speculative）→ ⑥ BubbleSpec（L1/L3 气泡→draft）→ ⑦ StaleFlow（L4 staleness）→ ⑧ Laminar/DORA（L4 新一代）→ ⑨ RollArt/AstraFlow/Heddle（agentic）→ ⑩ APRIL/PrefixFlow（新补小簇）。
 
 **深读模板**：问题/瓶颈 → 性能模型与指标 → 机制 → 实验条件与增益（必须保留硬件/batch/长度分布；未核实处标 unknown）→ 与 taxonomy 对照（层 + A/B/C）→ 代码映射（有源码则实证路径）→ 可迁移性 → 疑点与未验证项。
@@ -701,6 +728,8 @@ SkyRL `e0893f6e`的[wait_for_generation_buffer:843](https://github.com/NovaSky-A
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（用户加急指令：Phase 2 两天截止）**：121 篇深读须 ≤2026-10-29 完成——分级深度（T1 全模板压缩 20 篇／T2 中等 ~60 篇／T3 triage 其余）+ 14 批次表（§6.0）+ 认领规则（最小未完成批次，先认领后工作）；单次定时触发规模=T1×2 或 T2×6–8 或 T3×15–20 或 Code×1–2。放弃原 3–4 周排期。
 
 - **2026-10-27（M1 HybridFlow映射成本与原图补核）**：§6补算法1的组内sum／组间max／跨stage sum及解析模拟前提，核附录与§8.3–8.5；PDF第11–13页视觉核对区分图12／13、transition／整步与TP／KV条件。图9(c)无逐柱精确比值，不猜上界GPU点；图16联合变化不当渐近复杂度证据。文献121、代码6条／4框架不增，深读仍进行中。后续定位论文年代实现／原始数据，无设备、M5专项或社区写入。
 
