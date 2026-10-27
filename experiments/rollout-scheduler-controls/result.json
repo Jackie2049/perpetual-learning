@@ -1,0 +1,20 @@
+{
+  "result": "pass",
+  "python": "3.12.14",
+  "vllm_commit": "eaf1627c01f553ea9a26b3d77f3cff8495dbf404",
+  "sglang_commit": "cb55d77d37c5f982e75edfd7f4a016f6a6ad35a1",
+  "source_asts": 9,
+  "control_groups": 8,
+  "lookahead_cases": 8700,
+  "groups": [
+    "vllm_mtp_chunk_boundary",
+    "vllm_preempt_bookkeeping",
+    "vllm_optimistic_schedule_counters",
+    "vllm_free_fence_predicate",
+    "sglang_retraction_order",
+    "sglang_single_pool_prefill_budget",
+    "sglang_uncached_prefill_order",
+    "sglang_retraction_ratio_estimator"
+  ],
+  "limits": "Fake request/queue/cache/capacity APIs. No framework import, native pytest, kernels, real allocation, concurrency, distributed execution or timing."
+}

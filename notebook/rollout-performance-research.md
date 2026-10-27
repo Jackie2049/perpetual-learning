@@ -6,13 +6,13 @@
 ## 0. Project Status
 
 - **阶段**：**Phase 2 — deep research（2026-10-27 用户指令：广度已足（计数另按唯一身份核算），转入论文/项目深读，围绕 rollout 性能与 L1–L4 四维；M1 定时启动的技术秘书任务以深读为主要工作）**
-- **最近更新**：2026-10-28（§6.33完成B13六篇T2；三边界从T3升级、不双计。126身份＝20 T1＋84 T2＋21 T3＋1未标完成；HybridFlow及Code仍待，代码7路径／4框架，截止≤2026-10-29不变）
+- **最近更新**：2026-10-28（§8.9–8.10完成C2两条推理调度器路径，累计9路径／6系统（4 RL框架＋2推理引擎）；126身份及20/84/21/1深度账不变。HybridFlow与C3仍待，截止≤2026-10-29不变）
 - **覆盖**：累计**126篇已核身份**（20篇serving基础／迁移边界＋106篇rollout/RLHF及相关边界；120个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL／Weave／MTP-RL会议记录；其中T1压缩深读20篇，其余不据身份核验算深读）。§5.25将RL相关106暂分89直接候选与17保守单列，承接§5.20的86／15历史快照；这是工作范围计数，不是原生80–120覆盖／质量验收。MTP-RL不与Bebop同篇；初始种子及旧五线索身份已落实，但检索／分级／正文审查未全收敛。ASymPO证明错误警示保留，Round 1“≈73”不相加。
 - **接续线索**：§5.23原余5项已在§5.25入库，§6.33完成Belayer／BIRD-RL／ScaleRLT及PrefixFlow／psRL／CIS六篇T2。训练侧共享与概率修正仍单列边界，不因深化转为原生覆盖；入库、T2与实现／复现验收分开。
-- **深读 / 代码广扫**：按§6.0新压缩标准完成T1 **20篇**（B1–B5各四篇）、T2 **84篇**（B6补后22/22、B7为9/9、B8补后13/13、B9为11/11、B10为12/12、B11为11/11、B13为6/6；含Intelligent Router serving旁读；GLM-4.5仅§3.5系统片段，非整份报告；非源码或性能复现验收），另有HybridFlow进行中1项 / **7条代码路径**（veRL `24f25b03`四条路径＋OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`、SkyRL `e0893f6e`各一条；共4框架，不按文件数计，不是原生运行验证）；完整复现仍0。
-- **最高优先级（2026-10-27 用户加急指令）**：**Phase 2 全部深读须在两天内完成（≤2026-10-29）**——每次定时触发完成**一批对应规模**的调研（分级深度 + 批次表见 §6.0），不得单次只做一篇；深度与时间约束按批次表权衡。HybridFlow 深读继续；B13已收束，转C2／C3代码，不再为数量扩文献。M5专项与上游写入边界不变。
+- **深读 / 代码广扫**：按§6.0新压缩标准完成T1 **20篇**（B1–B5各四篇）、T2 **84篇**（B6补后22/22、B7为9/9、B8补后13/13、B9为11/11、B10为12/12、B11为11/11、B13为6/6；含Intelligent Router serving旁读；GLM-4.5仅§3.5系统片段，非整份报告；非源码或性能复现验收），另有HybridFlow进行中1项 / **9条代码路径**（veRL `24f25b03`四条；OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`、SkyRL `e0893f6e`各一条；vLLM `eaf1627c`、SGLang `cb55d77d`各一条；共6系统＝4 RL框架＋2推理引擎，不按文件数计，不是原生运行验证）；完整复现仍0。
+- **最高优先级（2026-10-27 用户加急指令）**：**Phase 2 全部深读须在两天内完成（≤2026-10-29）**——每次定时触发完成**一批对应规模**的调研（分级深度 + 批次表见 §6.0），不得单次只做一篇；深度与时间约束按批次表权衡。HybridFlow 深读继续；B13与C2已收束，转C3代码，不再为数量扩文献。M5专项与上游写入边界不变。
 - **Triage与未读账**：B12范围triage完成28项的历史范围不变，triage事项数不等当前T3身份数。B13三项原T3（PrefixFlow／psRL／CIS）升级T2并替换最深层；126＝20 T1＋84 T2＋21 T3＋1未标完成，仅HybridFlow进行中。不存在把同篇T2/T3相加的新增覆盖。
-- **深读当前焦点**：下一轮先核远端认领C2 vLLM／SGLang core scheduler的1–2路径，再补C3 rLLM／slime等未覆盖框架；代码7尚未达8–12目标。HybridFlow论文年代实现／原始数据仍进行中，不用现代源码替代；T1/T2超目标不等Phase 2完成，M5专项与上游写入边界不变。
+- **深读当前焦点**：下一轮先核远端认领C3 rLLM／slime等未覆盖框架的1–2路径；代码9已达8–12数量下限，但C3覆盖及HybridFlow论文年代实现／原始数据仍待，不用现代源码替代。T1/T2或代码数量达标不等Phase 2完成，M5专项与上游写入边界不变。
 - **Phase 2 完成标准与预估（2026-10-27 定，用户问"多久读完"后定量）**：**不是 121 篇全读**。深读总量 = A Core 15–20 篇全模板深读 + B Supporting ~40–60 篇中等深度（机制+关键结果，轻模板）+ 代码深读 ~8–12 条路径；C 边界与 serving 保持元数据级即可。节奏：每篇 A Core ≈ 1 个定时任务轮次，B 类 3–5 篇/轮次；按多会话并行（每日 2–4 轮次涉及本专项）预估 **A Core ≈ 1–1.5 周、Phase 2 整体 ≈ 3–4 周日历时间**。里程碑：第 1 周末 A Core 短名单定稿+完成一半；第 2 周末 A Core 完成+代码地图齐；第 3–4 周 B 覆盖+gaps/ideas 提炼+（可选）survey outline。**加速杠杆**：为定时任务显式分配深读配额。
 - **下一步**：见 §16
 
@@ -510,7 +510,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 | B12 | T3 | serving 20 条 + 其余边界条目 triage（不深读，逐条给不深读理由+关联判定） | **范围triage完成28/28**：首批认领a65cb4d、§6.30完成20项；余八随C1认领d86477d，2026-10-28 00:29完成§5.25。原三＋新二补T3，另三直接候选转B13待T2，Router沿既有T2；28事项不当28 T3身份 |
 | B13 | T2 | Belayer、BIRD-RL、ScaleRLT；边界深化PrefixFlow、psRL、CIS | **完成6/6**：2026-10-28 00:47 M1 new-chat @440db98认领、先推送505a5cf，00:58完成阅读回写及检查；见§6.33。三边界T3→T2互斥替换，累计20/84/21/1。不转原生覆盖、无实现／设备验收 |
 | C1 | 代码 | veRL TransferQueue/TQ 数据面 + AReaL 调度器 | **veRL部分完成1路径**：2026-10-28 00:19 M1 new-chat @2508282认领、先推送d86477d，00:29完成§8.8；累计7路径／4框架。AReaL调度器未开展，不将C1整项写完成，M5专项不触及 |
-| C2 | 代码 | vLLM / SGLang core scheduler 路径 | **认领0/2路径**：2026-10-28 01:18 M1 new-chat @36e1ad9，先推送再读；固定远端vLLM eaf1627c／SGLang cb55d77d各1条，检出后确认完整OID，代码当前7条／4框架不预增 |
+| C2 | 代码 | vLLM / SGLang core scheduler 路径 | **完成2/2路径**：2026-10-28 01:18 M1 new-chat @36e1ad9认领、先推送e5b874b，01:29完成检查回写；§8.9–8.10固定eaf1627c／cb55d77d各1条，9源码AST／8组原函数体控制通过。累计9路径／6系统，不当原生引擎／性能或RL复现 |
 | C3 | 代码 | rLLM / slime / 其余框架 | 待认领 |
 
 （HybridFlow 已由并行会话进行中，不计入批次。T2/T3 具体名单允许执行会话按 §5 矩阵实际条目微调，微调须记录。）
@@ -2117,6 +2117,35 @@ KV接口的“key-value”不是attention K/V。[KV→Batch:302](https://github.
 
 验证限度：固定Git blob的10份Python通过Python 3.12.14 AST解析，23个函数行号复核；另读2份YAML及文档相关段落。仅提取原样的4个stdlib异步桥函数，五组CPU检查通过：返回值、100次复用、已有event loop调用、异常传播、关闭线程／loop。系统Python 3.9及旧web venv因match语法无法解析replay_buffer，改用已有3.12后通过，不是源码缺陷。未导入verl／torch／Ray／TQ、运行原生pytest、Linux FD泄漏测试、存储／故障／性能／设备实验。新计代码路径1条而非10条；累计7路径／4框架，完整复现0；无M5专项或新增算力交接。
 
+### 8.9 vLLM token预算与抢占
+
+固定[vLLM `eaf1627c01f553ea9a26b3d77f3cff8495dbf404`](https://github.com/vllm-project/vllm/tree/eaf1627c01f553ea9a26b3d77f3cff8495dbf404)，独立稀疏检出`work/vllm-c2-readonly`。一条路径覆盖`Scheduler.schedule`→KV准入→抢占／恢复→输出计数回滚，不是全引擎源码验收。L2 B为主；引擎内调度不是RL训练侧异步更新。
+
+- **预算不是一个batch数。** [schedule:688](https://github.com/vllm-project/vllm/blob/eaf1627c01f553ea9a26b3d77f3cff8495dbf404/vllm/v1/core/sched/scheduler.py#L688)用computed追赶已知token＋spec＋placeholder。scheduled-token预算与输入预算分开，后者逐请求还预留draft slots；同时受模型长度、encoder预算与Mamba／MTP边界约束。异步placeholder不等已采样token。
+- **运行中先于等待。** [running循环:783](https://github.com/vllm-project/vllm/blob/eaf1627c01f553ea9a26b3d77f3cff8495dbf404/vllm/v1/core/sched/scheduler.py#L783)先排已有请求；encoder等条件导致零token时可跳过而非阻塞队首，不是严格FCFS。发生抢占后[本步不再纳新等待请求:1039](https://github.com/vllm-project/vllm/blob/eaf1627c01f553ea9a26b3d77f3cff8495dbf404/vllm/v1/core/sched/scheduler.py#L1039)；KV持有等待队列又先于普通waiting。局部prefill cadence有容量饱和逃逸，不是按固定间隔永远拒绝新prefill。
+- **KV准入与计算预算分开。** [allocate_slots:380](https://github.com/vllm-project/vllm/blob/eaf1627c01f553ea9a26b3d77f3cff8495dbf404/vllm/v1/core/kv_cache_manager.py#L380)计local／external hit、新计算及lookahead；waiting／preempted在已有运行请求时才加watermark。默认[full ISL gate:190](https://github.com/vllm-project/vllm/blob/eaf1627c01f553ea9a26b3d77f3cff8495dbf404/vllm/config/scheduler.py#L190)检查当前已知输入序列能否容纳，不保证未来`max_tokens`全部预留。滑窗旧块按已处理而非乐观推进的边界回收。
+- **抢占先释放再重排。** 分配失败时FCFS选running尾，priority选最大`(priority,arrival_time)`；若victim本步已排，退还计算／encoder预算。[preempt:1773](https://github.com/vllm-project/vllm/blob/eaf1627c01f553ea9a26b3d77f3cff8495dbf404/vllm/v1/core/sched/scheduler.py#L1773)清computed／spec、保已生成token并prepend waiting；重入按完整已知序列含输出重算，允许prefix hit，不是把物理KV原封不动保留。
+- **计算进度是乐观账。** [after_schedule:1819](https://github.com/vllm-project/vllm/blob/eaf1627c01f553ea9a26b3d77f3cff8495dbf404/vllm/v1/core/sched/scheduler.py#L1819)先加computed与in-flight；[输出处理:2233](https://github.com/vllm-project/vllm/blob/eaf1627c01f553ea9a26b3d77f3cff8495dbf404/vllm/v1/core/sched/scheduler.py#L2233)再减在途和拒绝draft。抢占后stale output可能交付，也可能因reset／connector条件丢弃；它不应再回滚已重置的计数。“stale”在此是引擎流水状态，不等RL policy staleness。
+- **资源释放有fence。** [free guard:3048](https://github.com/vllm-project/vllm/blob/eaf1627c01f553ea9a26b3d77f3cff8495dbf404/vllm/v1/core/sched/scheduler.py#L3048)在异步connector可能仍写块时延迟回收；不能由一次抢占调用推KV已立即可用。[prefix hit:266](https://github.com/vllm-project/vllm/blob/eaf1627c01f553ea9a26b3d77f3cff8495dbf404/vllm/v1/core/kv_cache_manager.py#L266)默认最多命中`num_tokens−1`以重算logits；cache hit率不等零prefill。
+- **异步与换权重边界。** [AsyncScheduler:24](https://github.com/vllm-project/vllm/blob/eaf1627c01f553ea9a26b3d77f3cff8495dbf404/vllm/v1/core/sched/async_scheduler.py#L24)预留输出placeholder并限制PP下一次decode时机，不决定RL整组消费／optimizer粒度。[reset_prefix_cache:3129](https://github.com/vllm-project/vllm/blob/eaf1627c01f553ea9a26b3d77f3cff8495dbf404/vllm/v1/core/sched/scheduler.py#L3129)可选择抢占运行请求，仍可能因remote KV在途失败；换权重后的缓存失效和轨迹版本需调用方协议，不能仅凭scheduler认证。
+
+迁移到RL应记录每组最后完成时间、准入等待、重算token、抢占／abort、实际输出token及版本，而不只记录scheduled tokens/s。固定RL工作集合下重排可作为B；若调用者过滤异常、丢弃慢组或跨版本续跑，则须另审集合／概率语义，不能由引擎排队规则证明on-policy。
+
+### 8.10 SGLang prefill准入与decode回撤
+
+固定[SGLang `cb55d77d37c5f982e75edfd7f4a016f6a6ad35a1`](https://github.com/sgl-project/sglang/tree/cb55d77d37c5f982e75edfd7f4a016f6a6ad35a1)，独立稀疏检出`work/sglang-c2-readonly`，不切换已有六月checkout。一条路径覆盖事件循环→等待排序→PrefillAdder预算→decode回撤／重入；PD／beam／hybrid仅核与该链相接的分支，不扩大为各后端全读。
+
+- **CPU/GPU overlap不是RL async。** [event_loop_overlap:2061](https://github.com/sgl-project/sglang/blob/cb55d77d37c5f982e75edfd7f4a016f6a6ad35a1/python/sglang/srt/managers/scheduler.py#L2061)先规划／launch、保存batch副本，再消费前一结果；有批次会关闭overlap。它不保证逐轨迹optimizer更新、整组终态或单policy版本。
+- **prefill与decode有不同准入。** [get_next_batch:3894](https://github.com/sgl-project/sglang/blob/cb55d77d37c5f982e75edfd7f4a016f6a6ad35a1/python/sglang/srt/managers/scheduler.py#L3894)先过滤终态、处理chunk，再尝试prefill，否则decode；[raw prefill:4079](https://github.com/sgl-project/sglang/blob/cb55d77d37c5f982e75edfd7f4a016f6a6ad35a1/python/sglang/srt/managers/scheduler.py#L4079)同时受request行槽、PP微批、LoRA、cache及计算预算限制，chunk continuation可绕过部分纳新门控，不代表新请求可无限进入。
+- **排序目标不是RL组尾。** [SchedulePolicy:213](https://github.com/sgl-project/sglang/blob/cb55d77d37c5f982e75edfd7f4a016f6a6ad35a1/python/sglang/srt/managers/schedule_policy.py#L213)有FCFS／LPM／DFS／HRRN等；LPM／HRRN大队列可退FCFS。实验性shortest-prefill-first按未缓存输入工作排序，不预测最终输出长度；不能直接当RollPacker式组makespan策略。
+- **计算预算与显存预算不同。** [PrefillAdder:608](https://github.com/sgl-project/sglang/blob/cb55d77d37c5f982e75edfd7f4a016f6a6ad35a1/python/sglang/srt/managers/schedule_policy.py#L608)扣混合decode行、估计已有请求输出余量；[_update_prefill_budget:895](https://github.com/sgl-project/sglang/blob/cb55d77d37c5f982e75edfd7f4a016f6a6ad35a1/python/sglang/srt/managers/schedule_policy.py#L895)把replay算入计算charge，KV按页取整。单池[PrefillBudget:62](https://github.com/sgl-project/sglang/blob/cb55d77d37c5f982e75edfd7f4a016f6a6ad35a1/python/sglang/srt/mem_cache/prefill_budget.py#L62)动态查询可用＋可逐出容量，不等仅看free显存；hybrid池另有约束。
+- **logprob影响批形状。** [mixed chunk条件:4377](https://github.com/sgl-project/sglang/blob/cb55d77d37c5f982e75edfd7f4a016f6a6ad35a1/python/sglang/srt/managers/scheduler.py#L4377)要求prefill与running均不返回logprob，且无input_embeds／beam；decode余量不够时该步让其等待，不在mixed分支直接回撤。因此serving默认计时不能不带配置迁到RL采样。
+- **回撤不总是无损续跑。** [update_running_batch:4459](https://github.com/sgl-project/sglang/blob/cb55d77d37c5f982e75edfd7f4a016f6a6ad35a1/python/sglang/srt/managers/scheduler.py#L4459)在decode容量不足时回撤并重排；[retract_decode:3451](https://github.com/sgl-project/sglang/blob/cb55d77d37c5f982e75edfd7f4a016f6a6ad35a1/python/sglang/srt/managers/schedule_batch.py#L3451)对beam组、PD无备份或最后请求仍放不下可abort，不是“始终至少保一请求”。长度策略优先回撤已输出少、同输出下prompt长者；配置priority另分支。
+- **重算、备份与重启分开。** [release_req:2360](https://github.com/sgl-project/sglang/blob/cb55d77d37c5f982e75edfd7f4a016f6a6ad35a1/python/sglang/srt/managers/schedule_batch.py#L2360)在decode disaggregation可先备份；[reset_for_retract:2049](https://github.com/sgl-project/sglang/blob/cb55d77d37c5f982e75edfd7f4a016f6a6ad35a1/python/sglang/srt/managers/schedule_batch.py#L2049)清prefix／KV进度，普通token请求保output重入，但input_embeds分支清output并重新生成。该差异不应隐藏在统一“retract”计数里。
+- **版本记录不等缓存失效。** [record_weight_version_change:5636](https://github.com/sgl-project/sglang/blob/cb55d77d37c5f982e75edfd7f4a016f6a6ad35a1/python/sglang/srt/managers/scheduler.py#L5636)记录活请求版本事件，函数本身不flush；[flush_cache:5518](https://github.com/sgl-project/sglang/blob/cb55d77d37c5f982e75edfd7f4a016f6a6ad35a1/python/sglang/srt/managers/scheduler.py#L5518)有idle条件。不能由版本metadata存在推单轨迹单版本或缓存自动适配新权重。
+
+**验证与计数**：[复跑入口及结果](../experiments/rollout-scheduler-controls/readme.md)固定上述OID和九份源码，Python 3.12.14 AST通过；八组原函数体控制检查MTP chunk边界（8700组合）、抢占计数、乐观进度、释放fence、回撤排序、单池预算、未缓存prefill排序与ratio估计。请求／队列／cache／capacity为替身，不导入框架，不执行原生pytest、真实分配／kernel、并发／故障／性能／设备；不称修复验证。C2新增两路径，累计9路径／6系统＝4 RL框架＋2推理引擎，完整复现0；与既有RL框架固定版本并非自动兼容组合。下一轮C3 rLLM／slime，HybridFlow原版映射仍待；无新增M5算力任务。
+
 ## 9. Serving → Rollout Transfer
 
 三问框架（每个 serving 工作都过一遍）：① serving 里解决什么 bottleneck？② 哪些机制可直接迁移？③ 进入 rollout 后 objective/scheduler semantics/correctness 约束怎么变、是否需要 RL-aware redesign？
@@ -2175,6 +2204,8 @@ SkyRL `e0893f6e`的[wait_for_generation_buffer:843](https://github.com/NovaSky-A
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-28（M1 C2推理调度器两路径）**：认领先推送e5b874b；§8.9–8.10固定vLLM eaf1627c／SGLang cb55d77d，独立稀疏只读检出，未改旧六月分支。核token／输入／KV预算、纳新与运行次序、抢占／re-prefill、乐观计数／spec回滚、deferred free；SGLang mixed分支排除logprob、回撤可abort或input_embeds重启，版本事件不等flush。九源码AST与八组原函数体控制通过（8700 chunk组合），替身接口／无原生引擎／性能证明；脚本和结果入experiments。代码7→9路径、4 RL框架＋2引擎＝6系统，文献20/84/21/1与复现0不变。下轮C3 1–2路径；数量达下限不称Phase 2完成，HybridFlow仍待。无GPU／NPU／SSH／VPN、M5专项或社区写入。
 
 - **2026-10-28（M1 B13六篇T2）**：认领先推送505a5cf，§6.33完成Belayer／BIRD-RL／ScaleRLT及PrefixFlow／psRL／CIS；三原T3替换为T2，126＝20＋84＋21＋1，B13为6/6。Belayer显存分配／语义KV及环境本地／外部副作用分开；BIRD的12.8×是在线I/O且有离线成本；ScaleRLT读出policy另C、质量负项及same-weight概率值／dense梯度分开；两项训练前缀共享的update／整步与生成分账，CIS保留条件token目标、floor、偏差及rescore成本。均固定HTML方法／实验／必要附录阅读，无PDF图像、源码或设备验收。下一轮C2后C3，HybridFlow与代码目标仍待；代码7条／4框架、完整复现0，无M5专项、算力队列或社区写入。
 
