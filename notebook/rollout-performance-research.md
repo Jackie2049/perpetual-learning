@@ -6,12 +6,13 @@
 ## 0. Project Status
 
 - **阶段**：**Phase 2 — deep research（2026-10-27 用户指令：广度已足（计数另按唯一身份核算），转入论文/项目深读，围绕 rollout 性能与 L1–L4 四维；M1 定时启动的技术秘书任务以深读为主要工作）**
-- **最近更新**：2026-10-27（§6.29完成B11余六篇，T2累计64、T1仍20；B11收束11/11，Intelligent Router保留serving旁读范围；HybridFlow仍进行中，截止≤2026-10-29不变）
+- **最近更新**：2026-10-27（§6.30完成B12首批serving20条范围复核，新增T3为19条、Router沿用T2；T1／T2仍20／64，HybridFlow及14直接候选未读账保留，截止≤2026-10-29不变）
 - **覆盖**：累计**121篇已核身份**（20篇serving基础／迁移边界＋101篇rollout/RLHF及相关边界；115个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL／Weave／MTP-RL会议记录；其中T1压缩深读20篇，其余不据身份核验算深读）。§5.20将RL相关101暂分为86直接Rollout系统／机制候选与15保守单列条目；86只是工作范围计数，不是原生80–120覆盖／质量验收。MTP-RL是ACL Findings独立文献，不与Bebop同篇；初始种子身份已全部落实，但原生覆盖／分级／引用检索仍未收敛。ASymPO证明错误警示保留；Round 1“≈73”不与当前数量相加。
 - **待核线索**：§5.23余5项（4项仅元数据／摘要已核、1项身份待核），不计入上述121或86候选；两项已入库只计一次，APRIL不重复计数。
 - **深读 / 代码广扫**：按§6.0新压缩标准完成T1 **20篇**（B1–B5各四篇）、T2 **64篇**（B6／B7各9/9、B8为12/12、B9为11/11、B10为12/12、B11为11/11；含Intelligent Router serving旁读；GLM-4.5仅§3.5系统片段，非整份报告；非源码或性能复现验收），另有HybridFlow进行中1项 / 6（veRL `24f25b03`三条路径＋OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`、SkyRL `e0893f6e`各一条；共4框架，不是6框架或运行验证，也不按文件数计）；完整复现仍0。
 - **最高优先级（2026-10-27 用户加急指令）**：**Phase 2 全部深读须在两天内完成（≤2026-10-29）**——每次定时触发完成**一批对应规模**的调研（分级深度 + 批次表见 §6.0），不得单次只做一篇；深度与时间约束按批次表权衡。HybridFlow 深读继续；余5条线索并入相应批次，不再单列追。M5专项与上游写入边界不变。
-- **深读当前焦点**：B1–B5均完成4/4、B6／B7均完成9/9、B8为12/12、B9去重后11/11、B10为12/12、B11为11/11。下一轮先核远端／未读清单，再认领B12首批15–20条serving／边界triage，逐条给不另深读理由与rollout关联；已T2的Intelligent Router只引用、不重复计深度。训练侧／算法边界不转算原生覆盖；Rethinking仍为边界未读账。HybridFlow论文年代实现／原始数据另保留进行中，不用现代源码替代。T1达到20、T2达到64均不等Phase 2整体完成，B12及Code批次仍待推进；M5专项与上游写入边界不变。
+- **Triage与未读账**：B12首批serving20条已复核＝19条T3＋1条既有T2引用，不重计Router；矩阵121＝20 T1＋64 T2＋19 T3＋18未标完成。18条拆为HybridFlow进行中1、原单列边界3、直接候选14，见§6.30逐名清单；§5.23另5条线索仍不入121。B1–B11完成不等全矩阵分级或Phase 2完成。
+- **深读当前焦点**：B1–B11均完成当前名单，B12首批serving20/20已复核，但其余边界未收束。下一轮先核远端／§6.30未读清单，给漏列的直接候选按6–8篇T2补批（认领时回写批次表），可附带边界triage；不把14直接候选笼统降T3，也不重复serving凑配额。训练侧／算法边界不转算原生覆盖；Rethinking仍为边界未读账。HybridFlow论文年代实现／原始数据保留进行中，不用现代源码替代。T1达到20、T2达到64均不等Phase 2整体完成，B12、遗漏候选及Code批次仍待推进；M5专项与上游写入边界不变。
 - **Phase 2 完成标准与预估（2026-10-27 定，用户问"多久读完"后定量）**：**不是 121 篇全读**。深读总量 = A Core 15–20 篇全模板深读 + B Supporting ~40–60 篇中等深度（机制+关键结果，轻模板）+ 代码深读 ~8–12 条路径；C 边界与 serving 保持元数据级即可。节奏：每篇 A Core ≈ 1 个定时任务轮次，B 类 3–5 篇/轮次；按多会话并行（每日 2–4 轮次涉及本专项）预估 **A Core ≈ 1–1.5 周、Phase 2 整体 ≈ 3–4 周日历时间**。里程碑：第 1 周末 A Core 短名单定稿+完成一半；第 2 周末 A Core 完成+代码地图齐；第 3–4 周 B 覆盖+gaps/ideas 提炼+（可选）survey outline。**加速杠杆**：为定时任务显式分配深读配额。
 - **下一步**：见 §16
 
@@ -192,26 +193,26 @@
 
 | ID/出处 | 首次提交／采用版本 | 标题（短） | 迁移价值与待核条件 | 置信 |
 |---|---|---|---|---|
-| [USENIX OSDI'22](https://www.usenix.org/conference/osdi22/presentation/yu) | 2022-07会议记录 | Orca | iteration-level scheduling及selective batching；本行用会议记录，不沿用错配arXiv ID | 核 |
-| [2309.06180v1](https://arxiv.org/abs/2309.06180v1) | 2023-09-12／v1 | vLLM / PagedAttention | 分页KV及共享；并发收益仍取决于rollout布局／驻留，不等减少每步最长响应 | 核 |
-| [2312.07104v2](https://arxiv.org/abs/2312.07104v2) | 2023-12-12／v2 2024-06-06 | SGLang / RadixAttention | 结构化程序与KV复用；迁到rollout仍需核工作负载与版本约束 | 核 |
-| [2205.14135v2](https://arxiv.org/abs/2205.14135v2) | 2022-05-27／v2 2022-06-23 | FlashAttention | IO-aware精确attention；kernel加速不等整条rollout makespan收益 | 核 |
-| [2307.08691v1](https://arxiv.org/abs/2307.08691v1) | 2023-07-17／v1 | FlashAttention-2 | 改work partitioning与并行度；与FA1分开计数，不当RL-native论文 | 核 |
-| [2501.01005v2](https://arxiv.org/abs/2501.01005v2) | 2025-01-02／v2 2025-04-21 | FlashInfer | 面向不同KV布局、可定制attention与负载均衡；整引擎收益另核 | 核 |
-| [2403.02310v3](https://arxiv.org/abs/2403.02310v3) | 2024-03-04／v3 2024-06-17 | Sarathi-Serve | chunked prefill与stall-free混批；需按真实prefill/decode构成重评，不假定rollout prompt占比高 | 核 |
-| [2401.09670v3](https://arxiv.org/abs/2401.09670v3) | 2024-01-18／v3 2024-06-06 | DistServe | prefill/decode分离、TTFT／TPOT约束goodput；不是trainer/rollout分离的同义词 | 核 |
-| [2407.00079v5](https://arxiv.org/abs/2407.00079v5) | 2024-06-24／v5 2026-10-08 | Mooncake | KV中心化PD分离及过载拒绝；rollout不能无条件继承请求丢弃语义 | 核 |
-| [2401.10774v3](https://arxiv.org/abs/2401.10774v3) | 2024-01-19／v3 2024-06-14 | Medusa | 多预测头与树状验证；backbone是否冻结及接受规则不可混用 | 核 |
-| [2401.15077v3](https://arxiv.org/abs/2401.15077v3) | 2024-01-26／v3 2025-03-04 | EAGLE | feature-level草稿预测；只是原始EAGLE，不混作EAGLE-2／3或RL drafter适配 | 核 |
-| [2411.04975v3](https://arxiv.org/abs/2411.04975v3) | 2024-11-07／v3 2025-10-07 | SuffixDecoding | suffix tree缓存prompt／历史输出，适配推测长度；RL中的跨步／跨worker复用另核 | 核 |
-| [2211.17192v2](https://arxiv.org/abs/2211.17192v2) | 2022-11-30／v2 2023-05-18 | Fast Inference from Transformers（Leviathan等） | 近似模型draft与target验证／修正采样；输出分布正确性须核实现前提 | 核 |
-| [2302.01318v1](https://arxiv.org/abs/2302.01318v1) | 2023-02-02／v1 | Speculative Sampling（Chen等） | 修改拒绝采样以保target分布，原文带hardware numerics条件；非bitwise相同承诺 | 核 |
-| [2602.06932v5](https://arxiv.org/abs/2602.06932v5) | 2026-02-06／v5 2026-08-04 | Aurora（When RL Meets Adaptive Speculative Training） | 由live inference traces在线RL训练speculator、热换更新；不是post-training policy rollout系统 | 核 |
-| [2408.13510v2](https://arxiv.org/abs/2408.13510v2) | 2024-08-24首次／v2 2025-01-07 | Intelligent Router | 输出长度桶＋硬件profile引导DQN向同模型实例路由／等待；11.43%是E2E延迟改善，非TPS或RL rollout收益 | 核；[T2](#6293-intelligent-router)（serving迁移旁读） |
-| [USENIX ATC'24](https://www.usenix.org/conference/atc24/presentation/gao-bin-cost) | 2024-07会议记录 | CachedAttention | 分层KV、逐层预载／异步保存及scheduler-aware换入换出；context-window有效性不等policy更新后缓存仍有效 | 核 |
-| [2601.22705v1](https://arxiv.org/abs/2601.22705v1) | 2026-01-30／v1 | CONCUR | agent级准入与cache信号控制并发、缓解middle-phase thrashing；RL下完整组／陈旧性须另核 | 核 |
-| [2511.02230v7](https://arxiv.org/abs/2511.02230v7) | 2025-11-04首次／v7 2026-09-08 | Continuum | 工具等待中按reload／排队成本设置KV TTL并结合program-level FCFS；TTL到期是缓存回收，不等轨迹终止 | 核 |
-| [2603.16104v1](https://arxiv.org/abs/2603.16104v1) | 2026-03-17／v1 | Helium（Efficient LLM Serving for Agentic Workflows） | workflow视作query plan，proactive缓存与cache-aware调度；进入RL需核版本／随机输出／样本独立性 | 核 |
+| [USENIX OSDI'22](https://www.usenix.org/conference/osdi22/presentation/yu) | 2022-07会议记录 | Orca | iteration-level scheduling及selective batching；本行用会议记录，不沿用错配arXiv ID | 核；[T3](#630-serving文献triage) |
+| [2309.06180v1](https://arxiv.org/abs/2309.06180v1) | 2023-09-12／v1 | vLLM / PagedAttention | 分页KV及共享；并发收益仍取决于rollout布局／驻留，不等减少每步最长响应 | 核；[T3](#630-serving文献triage) |
+| [2312.07104v2](https://arxiv.org/abs/2312.07104v2) | 2023-12-12／v2 2024-06-06 | SGLang / RadixAttention | 结构化程序与KV复用；迁到rollout仍需核工作负载与版本约束 | 核；[T3](#630-serving文献triage) |
+| [2205.14135v2](https://arxiv.org/abs/2205.14135v2) | 2022-05-27／v2 2022-06-23 | FlashAttention | IO-aware精确attention；kernel加速不等整条rollout makespan收益 | 核；[T3](#630-serving文献triage) |
+| [2307.08691v1](https://arxiv.org/abs/2307.08691v1) | 2023-07-17／v1 | FlashAttention-2 | 改work partitioning与并行度；与FA1分开计数，不当RL-native论文 | 核；[T3](#630-serving文献triage) |
+| [2501.01005v2](https://arxiv.org/abs/2501.01005v2) | 2025-01-02／v2 2025-04-21 | FlashInfer | 面向不同KV布局、可定制attention与负载均衡；整引擎收益另核 | 核；[T3](#630-serving文献triage) |
+| [2403.02310v3](https://arxiv.org/abs/2403.02310v3) | 2024-03-04／v3 2024-06-17 | Sarathi-Serve | chunked prefill与stall-free混批；需按真实prefill/decode构成重评，不假定rollout prompt占比高 | 核；[T3](#630-serving文献triage) |
+| [2401.09670v3](https://arxiv.org/abs/2401.09670v3) | 2024-01-18／v3 2024-06-06 | DistServe | prefill/decode分离、TTFT／TPOT约束goodput；不是trainer/rollout分离的同义词 | 核；[T3](#630-serving文献triage) |
+| [2407.00079v5](https://arxiv.org/abs/2407.00079v5) | 2024-06-24／v5 2026-10-08 | Mooncake | KV中心化PD分离及过载拒绝；rollout不能无条件继承请求丢弃语义 | 核；[T3](#630-serving文献triage) |
+| [2401.10774v3](https://arxiv.org/abs/2401.10774v3) | 2024-01-19／v3 2024-06-14 | Medusa | 多预测头与树状验证；backbone是否冻结及接受规则不可混用 | 核；[T3](#630-serving文献triage) |
+| [2401.15077v3](https://arxiv.org/abs/2401.15077v3) | 2024-01-26／v3 2025-03-04 | EAGLE | feature-level草稿预测；只是原始EAGLE，不混作EAGLE-2／3或RL drafter适配 | 核；[T3](#630-serving文献triage) |
+| [2411.04975v3](https://arxiv.org/abs/2411.04975v3) | 2024-11-07／v3 2025-10-07 | SuffixDecoding | suffix tree缓存prompt／历史输出，适配推测长度；RL中的跨步／跨worker复用另核 | 核；[T3](#630-serving文献triage) |
+| [2211.17192v2](https://arxiv.org/abs/2211.17192v2) | 2022-11-30／v2 2023-05-18 | Fast Inference from Transformers（Leviathan等） | 近似模型draft与target验证／修正采样；输出分布正确性须核实现前提 | 核；[T3](#630-serving文献triage) |
+| [2302.01318v1](https://arxiv.org/abs/2302.01318v1) | 2023-02-02／v1 | Speculative Sampling（Chen等） | 修改拒绝采样以保target分布，原文带hardware numerics条件；非bitwise相同承诺 | 核；[T3](#630-serving文献triage) |
+| [2602.06932v5](https://arxiv.org/abs/2602.06932v5) | 2026-02-06／v5 2026-08-04 | Aurora（When RL Meets Adaptive Speculative Training） | 由live inference traces在线RL训练speculator、热换更新；不是post-training policy rollout系统 | 核；[T3](#630-serving文献triage) |
+| [2408.13510v2](https://arxiv.org/abs/2408.13510v2) | 2024-08-24首次／v2 2025-01-07 | Intelligent Router | 输出长度桶＋硬件profile引导DQN向同模型实例路由／等待；11.43%是E2E延迟改善，非TPS或RL rollout收益 | 核；[T2](#6293-intelligent-router)（serving迁移旁读）；[范围](#630-serving文献triage) |
+| [USENIX ATC'24](https://www.usenix.org/conference/atc24/presentation/gao-bin-cost) | 2024-07会议记录 | CachedAttention | 分层KV、逐层预载／异步保存及scheduler-aware换入换出；context-window有效性不等policy更新后缓存仍有效 | 核；[T3](#630-serving文献triage) |
+| [2601.22705v1](https://arxiv.org/abs/2601.22705v1) | 2026-01-30／v1 | CONCUR | agent级准入与cache信号控制并发、缓解middle-phase thrashing；RL下完整组／陈旧性须另核 | 核；[T3](#630-serving文献triage) |
+| [2511.02230v7](https://arxiv.org/abs/2511.02230v7) | 2025-11-04首次／v7 2026-09-08 | Continuum | 工具等待中按reload／排队成本设置KV TTL并结合program-level FCFS；TTL到期是缓存回收，不等轨迹终止 | 核；[T3](#630-serving文献triage) |
+| [2603.16104v1](https://arxiv.org/abs/2603.16104v1) | 2026-03-17／v1 | Helium（Efficient LLM Serving for Agentic Workflows） | workflow视作query plan，proactive缓存与cache-aware调度；进入RL需核版本／随机输出／样本独立性 | 核；[T3](#630-serving文献triage) |
 
 ### 5.6 初始种子落实状态
 
@@ -480,7 +481,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 | B9 | T2 | spec/agentic：RLHFSpec、Bebop、FastGRPO、System-Integrated SD、SPARK、SpecActor、Online Draft Co-Training、MTP-RL、AReaL-DTA、FlashNext-RL、Rollplex | **完成11/11**：前6完成§6.25；2026-10-27 20:48 M1 new-chat @34e8adb去重AReaL-DTA／AREAL-DTA同一2602.00482身份后认领余5，先推送bc0649d，与SkyRL-Agent合批完成§6.26；训练侧边界保留，不增源码／复现计数 |
 | B10 | T2 | agentic：SkyRL-Agent(广扫深化)、EARL、InfoTree、AsyncWebRL、AcceRL、MARLaaS、FlexMARL、Agent Lightning v0/v1.0、TideRL、ROSE、QwenGyre | **完成12/12**：SkyRL-Agent见§6.26.6，八篇见§6.27；余三认领先推送c96756b，与B11前五篇合批完成§6.28.1–3 |
 | B11 | T2 | 资源/边界：ARL-Tangram、DART、MCP-Universe RL、PEARL、SAO、Rollout Infrastructure Tax、ExpThink、Intelligent Router；补AgentRL／RollArt／AstraFlow | **完成11/11**：前五见§6.28.4–8；2026-10-27 22:18 M1 new-chat @81084bc认领余三＋补三，先推送8aac21e，22:29完成六篇§6.29。按允许微调补三篇、分母8→11；Intelligent Router仍serving迁移边界，不转原生覆盖 |
-| B12 | T3 | serving 20 条 + 其余边界条目 triage（不深读，逐条给不深读理由+关联判定） | **首批20条认领**：2026-10-27 22:48 M1 new-chat @82e1d07认领§5.5全20条，先推送再读；Router已T2只引用，其余19条T3待完成，边界余项下批另核，不先计B12全完成 |
+| B12 | T3 | serving 20 条 + 其余边界条目 triage（不深读，逐条给不深读理由+关联判定） | **首批serving20/20完成、余项待核**：M1 new-chat @82e1d07于2026-10-27 22:48认领，先推送a65cb4d；§6.30完成19条T3＋Router既有T2引用。剩余3条原单列边界及5条线索未作新triage；另14直接候选须补T2或逐条分级，不自动降T3，见§6.30 |
 | C1 | 代码 | veRL TransferQueue/TQ 数据面 + AReaL 调度器 | 待认领 |
 | C2 | 代码 | vLLM / SGLang core scheduler 路径 | 待认领 |
 | C3 | 代码 | rLLM / slime / 其余框架 | 待认领 |
@@ -1657,6 +1658,37 @@ B11余三＋补三完成T2，各6条；均读HTML正文及必要附录，不是�
 - **弹性成本**：14B在H200 rollout池6–11卡伸缩，约358–359→312 GPU-hours，但墙钟23.9→24.4小时、准确率68.0→67.9；省资源不等更快。代码多policy质量实验还从8扩16卡，不能当同卡系统收益。
 - **跨域／数据边界**：同H200功率帽与4Gbps／300ms链路塑造异构跨区，不是真实多地异卡实测；稀疏传输有周期全量。动态采样生成200K→700K另有成本，不能只数训练接受token；四次生成评测／择优checkpoint不等多seed长跑。
 
+### 6.30 Serving文献triage
+
+B12首批20条范围复核：19条新增T3，Intelligent Router沿用§6.29.3的T2，不重复计深度。本批按原站版本摘要／会议介绍判定范围，不抽取未核正文的性能倍数；“不追加T2”是当前冲刺的阅读优先级，不是认定机制无用。下列迁入RL时的条件是本专题判断，而非原serving论文已经验证的训练契约。
+
+| 条目／来源 | 本批处置与理由 | 与rollout的关联及迁移条件 |
+|---|---|---|
+| [Orca OSDI22](https://www.usenix.org/conference/osdi22/presentation/yu) | T3；连续批处理的L2基础，不另做RL系统轻模板 | iteration-level scheduling与selective batching可供引擎比较；逐请求能提前返回不代表同步RL的整组／整批屏障消失。 |
+| [vLLM v1](https://arxiv.org/abs/2309.06180v1) | T3；分页KV基础，具体实现留C2代码路径核对 | 动态KV分配和共享有利并发多采样；仍须同版本、相同前缀及实际驻留，不能由内存节省推出最长轨迹缩短。 |
+| [SGLang v2](https://arxiv.org/abs/2312.07104v2) | T3；program执行／RadixAttention基础，现代实现另核 | 前端控制流、KV复用与结构化解码可承载agent调用；约束输出会定义不同采样空间，更新policy后还需缓存版本契约。 |
+| [FlashAttention v2](https://arxiv.org/abs/2205.14135v2) | T3；L1 IO优化，非独立rollout编排方案 | tiled exact attention是后端基础；训练／prefill的IO收益不直接套给逐token decode，也不等数值路径逐位一致。 |
+| [FlashAttention2 v1](https://arxiv.org/abs/2307.08691v1) | T3；L1 work partitioning，与FA1保持独立身份 | 减non-matmul工作及改block／warp分工；须结合prefill长度、batch与硬件判断瓶颈，不将kernel利用率当RL气泡消除。 |
+| [FlashInfer v2](https://arxiv.org/abs/2501.01005v2) | T3；可定制attention后端，不另排训练系统T2 | KV布局、JIT与负载均衡／CUDAGraph兼容性可迁；kernel和serving端到端指标分开，实际RL需核具体backend调用。 |
+| [Sarathi Serve v3](https://arxiv.org/abs/2403.02310v3) | T3；serving吞吐—尾延迟权衡，不直接按SLO排名RL | chunked prefill与stall-free decode混批可借鉴；须按RL真实输入／输出比例和整组完成重评，不能预设prompt主导。 |
+| [DistServe v3](https://arxiv.org/abs/2401.09670v3) | T3；TTFT／TPOT goodput目标，不是trainer／rollout拆分 | PD各自资源与并行策略可供L2/L3对照；RL迁移需计KV传输及组尾，SLO合格请求数不等训练样本消费速率。 |
+| [Mooncake v5](https://arxiv.org/abs/2407.00079v5) | T3；PD与分层KV架构，过载拒绝是serving语义 | 亲和放置、CPU／DRAM／SSD缓存可借；若把early rejection用于训练准入，须另核任务混合／样本集合，不默认纯B。 |
+| [Medusa v3](https://arxiv.org/abs/2401.10774v3) | T3；多头推测基础，不把两个训练版本合成无损保证 | Medusa1冻结骨干、Medusa2联合训练；迁到RL需分别核骨干目标、接受规则和版本适配，质量保持不替代精确分布契约。 |
+| [EAGLE v3](https://arxiv.org/abs/2401.15077v3) | T3；原始feature-level draft，不混入EAGLE2／3 | 特征预测＋前移token处理不确定性可供drafter背景；RL policy持续变化后的接受率／适配成本由具体RL系统另证。 |
+| [SuffixDecoding v3](https://arxiv.org/abs/2411.04975v3) | T3；重复agent推理的历史文本draft，不等RL训练回放 | suffix tree缓存prompt／旧输出并调推测长度；迁入RL应由当前target验证，不把命中文本直接当当前policy样本或旧KV。 |
+| [Leviathan等 v2](https://arxiv.org/abs/2211.17192v2) | T3；精确推测采样的基础来源，RL细化见现有T1/T2 | 快draft与大target并行验证／修正是概率契约依据；保分布不代表同随机种子逐token相同，仍需核实际p/q与采样实现。 |
+| [Chen等 v1](https://arxiv.org/abs/2302.01318v1) | T3；独立的modified rejection sampling来源，不与前篇去重 | 原文保留hardware numerics条件；迁入RL须匹配temperature／截断后的实际分布，不能把“精确”扩张为全栈bit-exact。 |
+| [Aurora v5](https://arxiv.org/abs/2602.06932v5) | T3；RL用于在线训练speculator，非post-training actor rollout系统 | live traces、拒绝反馈与热换draft可启发适配；target是否同步更新、draft学习成本和训练目标须在RL场景另核。 |
+| [Intelligent Router既有T2](#6293-intelligent-router) | 仅复核范围；不重读、不增T3或T2 | 同模型副本的长度／混负载路由可借；serving延迟不等rollout组makespan，仍需policy年龄与分布漂移条件。 |
+| [CachedAttention ATC24](https://www.usenix.org/conference/atc24/presentation/gao-bin-cost) | T3；多轮对话缓存分层，不追加模型更新系统T2 | 逐层预载／异步保存及scheduler-aware换入换出可借；解决context溢出的缓存有效性，不自动保证更新权重后的KV有效。 |
+| [CONCUR v1](https://arxiv.org/abs/2601.22705v1) | T3；agent批推理拥塞控制，非RL采样配额管理 | 用cache反馈调active agents以保连续执行；迁入RL需区分延迟准入和永久丢弃，另核整组完成、task配额与staleness。 |
+| [Continuum v7](https://arxiv.org/abs/2511.02230v7) | T3；工具暂停间KV TTL与program FCFS，非终止轨迹策略 | 按reload／排队成本留KV可减少跨turn重载；TTL到期只允许evict cache，不等abort rollout，跨policy更新的KV另核。 |
+| [Helium v1](https://arxiv.org/abs/2603.16104v1) | T3；workflow query plan优化，非RL训练管线实证 | proactive caching／cache-aware调度可迁到调用DAG；若复用随机输出而非仅复用KV，须核组内采样独立性、版本和reward语义。 |
+
+**剩余阅读账**：121条矩阵现为20 T1＋64 T2＋19 T3＋18未标完成；这些是互斥身份数，不把Router双计。18条中HybridFlow仍进行中1；原§5.20单列而未T2的ASymPO／CIS／Each Prompt Matters共3；另14条仍是直接候选，不能仅因批次表B1–B11完成就自动降为T3或称全文已读完。
+
+14条直接候选未读清单：DistFlow、Asynchronous RLHF、ReaL、RLHFuse、OpenRLHF、DeepSpeed-Chat、PUZZLE、DynaRL、PivotRL、RobustRL、RLBoost、Relax、SPEC-RL、ProRL Agent。代码广扫已有OpenRLHF不等论文T2完成，Relax局部多模态补核也不等深读。B12其余边界与§5.23五条线索仍待实质判定；下一轮先核远端与分级，将直接候选按6–8篇T2补批、在认领时回写名单，不以重复serving条目凑T3规模。HybridFlow与Code批次保持各自验收标准。
+
 ## 7. Code & System Landscape
 
 **本地已有资产**（重要：不用重新 clone）：
@@ -1882,6 +1914,8 @@ SkyRL `e0893f6e`的[wait_for_generation_buffer:843](https://github.com/NovaSky-A
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（M1 B12首批serving triage）**：§6.30复核§5.5全20条，19条新增T3、Router引用既有T2不双计；T1／T2仍20／64。19项回原站版本摘要／会议介绍，逐条写不追加T2理由及rollout迁移条件；PD goodput／组尾、缓存eviction／轨迹终止、历史文本draft／训练回放、speculator RL／actor RL分别保留。121身份、115 arXiv＋6会议不增；互斥深度账20＋64＋19＋18，18未标完成＝HybridFlow1＋边界3＋直接候选14，不能据批次表完成漏掉14项；另5条线索分账。B12未整体完成；下轮先核远端、按6–8篇T2补直接候选并在认领时微调批次，边界另作triage，不重复serving凑数。代码6条／4框架、复现0不增，无设备、M5专项或社区动作。
 
 - **2026-10-27（M1 B11余六篇T2收束）**：§6.29完成Infrastructure Tax／ExpThink／Intelligent Router／AgentRL／RollArt／AstraFlow，B11为11/11、T2累计64、T1仍20；121身份不增，Router保留serving旁读。固定命令worker-hours外推与完整RL、输出token与TPS、混卡／外部reward与同资源收益分别登记；RollArt过旧逐出及冗余终止改B/C，AgentRL主动跨policy／task归一、ExpThink梯度单调性反例保留。AstraFlow弹性省GPU-hours却墙钟变慢、主计时与引用质量基线分账。HybridFlow进行中1、代码6条／4框架、复现0不变；下轮B12首15–20条triage，已T2只引用不重复计数；仍非Phase 2整体完成，无设备、M5专项或社区动作。
 
