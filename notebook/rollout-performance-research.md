@@ -6,13 +6,13 @@
 ## 0. Project Status
 
 - **阶段**：**Phase 2 — deep research（2026-10-27 用户指令：广度已足（计数另按唯一身份核算），转入论文/项目深读，围绕 rollout 性能与 L1–L4 四维；M1 定时启动的技术秘书任务以深读为主要工作）**
-- **最近更新**：2026-10-28（§8.9–8.10完成C2两条推理调度器路径，累计9路径／6系统（4 RL框架＋2推理引擎）；126身份及20/84/21/1深度账不变。HybridFlow与C3仍待，截止≤2026-10-29不变）
+- **最近更新**：2026-10-28（§8.11–8.12完成C3 rLLM／Slime两条生成消费路径，累计11路径／8系统（6 RL框架＋2推理引擎）；126身份及20/84/21/1深度账不变。HybridFlow原版实现／原始数据与覆盖验收仍待，截止≤2026-10-29不变）
 - **覆盖**：累计**126篇已核身份**（20篇serving基础／迁移边界＋106篇rollout/RLHF及相关边界；120个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL／Weave／MTP-RL会议记录；其中T1压缩深读20篇，其余不据身份核验算深读）。§5.25将RL相关106暂分89直接候选与17保守单列，承接§5.20的86／15历史快照；这是工作范围计数，不是原生80–120覆盖／质量验收。MTP-RL不与Bebop同篇；初始种子及旧五线索身份已落实，但检索／分级／正文审查未全收敛。ASymPO证明错误警示保留，Round 1“≈73”不相加。
 - **接续线索**：§5.23原余5项已在§5.25入库，§6.33完成Belayer／BIRD-RL／ScaleRLT及PrefixFlow／psRL／CIS六篇T2。训练侧共享与概率修正仍单列边界，不因深化转为原生覆盖；入库、T2与实现／复现验收分开。
-- **深读 / 代码广扫**：按§6.0新压缩标准完成T1 **20篇**（B1–B5各四篇）、T2 **84篇**（B6补后22/22、B7为9/9、B8补后13/13、B9为11/11、B10为12/12、B11为11/11、B13为6/6；含Intelligent Router serving旁读；GLM-4.5仅§3.5系统片段，非整份报告；非源码或性能复现验收），另有HybridFlow进行中1项 / **9条代码路径**（veRL `24f25b03`四条；OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`、SkyRL `e0893f6e`各一条；vLLM `eaf1627c`、SGLang `cb55d77d`各一条；共6系统＝4 RL框架＋2推理引擎，不按文件数计，不是原生运行验证）；完整复现仍0。
-- **最高优先级（2026-10-27 用户加急指令）**：**Phase 2 全部深读须在两天内完成（≤2026-10-29）**——每次定时触发完成**一批对应规模**的调研（分级深度 + 批次表见 §6.0），不得单次只做一篇；深度与时间约束按批次表权衡。HybridFlow 深读继续；B13与C2已收束，转C3代码，不再为数量扩文献。M5专项与上游写入边界不变。
+- **深读 / 代码广扫**：按§6.0新压缩标准完成T1 **20篇**（B1–B5各四篇）、T2 **84篇**（B6补后22/22、B7为9/9、B8补后13/13、B9为11/11、B10为12/12、B11为11/11、B13为6/6；含Intelligent Router serving旁读；GLM-4.5仅§3.5系统片段，非整份报告；非源码或性能复现验收），另有HybridFlow进行中1项 / **11条代码路径**（veRL `24f25b03`四条；OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`、SkyRL `e0893f6e`、rLLM `4e828c81`、Slime `540ea919`各一条；vLLM `eaf1627c`、SGLang `cb55d77d`各一条；共8系统＝6 RL框架＋2推理引擎，不按文件数计，不是原生运行验证）；完整复现仍0。
+- **最高优先级（2026-10-27 用户加急指令）**：**Phase 2 全部深读须在两天内完成（≤2026-10-29）**——每次定时触发完成**一批对应规模**的调研（分级深度 + 批次表见 §6.0），不得单次只做一篇；深度与时间约束按批次表权衡。B13、C2与C3本批已收束；先核HybridFlow已有认领，再补原版实现／原始数据与Phase 2覆盖缺口，不再为数量扩文献。M5专项与上游写入边界不变。
 - **Triage与未读账**：B12范围triage完成28项的历史范围不变，triage事项数不等当前T3身份数。B13三项原T3（PrefixFlow／psRL／CIS）升级T2并替换最深层；126＝20 T1＋84 T2＋21 T3＋1未标完成，仅HybridFlow进行中。不存在把同篇T2/T3相加的新增覆盖。
-- **深读当前焦点**：下一轮先核远端认领C3 rLLM／slime等未覆盖框架的1–2路径；代码9已达8–12数量下限，但C3覆盖及HybridFlow论文年代实现／原始数据仍待，不用现代源码替代。T1/T2或代码数量达标不等Phase 2完成，M5专项与上游写入边界不变。
+- **深读当前焦点**：下一轮先核远端及HybridFlow已有认领／负责人，再补论文年代实现／原始数据和覆盖缺口审计；代码11已达8–12数量目标，不用现代源码替代历史实现。C1仅veRL数据路径完成，AReaL部分不开展／不据C3完成自动销项。T1/T2或代码数量达标不等Phase 2完成，M5专项与上游写入边界不变。
 - **Phase 2 完成标准与预估（2026-10-27 定，用户问"多久读完"后定量）**：**不是 121 篇全读**。深读总量 = A Core 15–20 篇全模板深读 + B Supporting ~40–60 篇中等深度（机制+关键结果，轻模板）+ 代码深读 ~8–12 条路径；C 边界与 serving 保持元数据级即可。节奏：每篇 A Core ≈ 1 个定时任务轮次，B 类 3–5 篇/轮次；按多会话并行（每日 2–4 轮次涉及本专项）预估 **A Core ≈ 1–1.5 周、Phase 2 整体 ≈ 3–4 周日历时间**。里程碑：第 1 周末 A Core 短名单定稿+完成一半；第 2 周末 A Core 完成+代码地图齐；第 3–4 周 B 覆盖+gaps/ideas 提炼+（可选）survey outline。**加速杠杆**：为定时任务显式分配深读配额。
 - **下一步**：见 §16
 
@@ -511,7 +511,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 | B13 | T2 | Belayer、BIRD-RL、ScaleRLT；边界深化PrefixFlow、psRL、CIS | **完成6/6**：2026-10-28 00:47 M1 new-chat @440db98认领、先推送505a5cf，00:58完成阅读回写及检查；见§6.33。三边界T3→T2互斥替换，累计20/84/21/1。不转原生覆盖、无实现／设备验收 |
 | C1 | 代码 | veRL TransferQueue/TQ 数据面 + AReaL 调度器 | **veRL部分完成1路径**：2026-10-28 00:19 M1 new-chat @2508282认领、先推送d86477d，00:29完成§8.8；累计7路径／4框架。AReaL调度器未开展，不将C1整项写完成，M5专项不触及 |
 | C2 | 代码 | vLLM / SGLang core scheduler 路径 | **完成2/2路径**：2026-10-28 01:18 M1 new-chat @36e1ad9认领、先推送e5b874b，01:29完成检查回写；§8.9–8.10固定eaf1627c／cb55d77d各1条，9源码AST／8组原函数体控制通过。累计9路径／6系统，不当原生引擎／性能或RL复现 |
-| C3 | 代码 | rLLM / slime / 其余框架 | **认领0/2路径**：2026-10-28 01:48 M1 new-chat @3b3d2bb，先推送再读；rLLM 4e828c81／Slime 540ea919各1条生成／组消费／同步路径，检出核完整OID；代码9路径／6系统不预增 |
+| C3 | 代码 | rLLM / slime / 其余框架 | **本批完成2/2路径**：2026-10-28 01:48 M1认领ef69115先推送、02:00收尾；§8.11–8.12固定rLLM 4e828c81／Slime 540ea919，13源码AST／八组限定CPU控制通过；累计11路径／8系统，非全框架／性能验收；HybridFlow与覆盖审计接续 |
 
 （HybridFlow 已由并行会话进行中，不计入批次。T2/T3 具体名单允许执行会话按 §5 矩阵实际条目微调，微调须记录。）
 
@@ -2146,6 +2146,33 @@ KV接口的“key-value”不是attention K/V。[KV→Batch:302](https://github.
 
 **验证与计数**：[复跑入口及结果](../experiments/rollout-scheduler-controls/readme.md)固定上述OID和九份源码，Python 3.12.14 AST通过；八组原函数体控制检查MTP chunk边界（8700组合）、抢占计数、乐观进度、释放fence、回撤排序、单池预算、未缓存prefill排序与ratio估计。请求／队列／cache／capacity为替身，不导入框架，不执行原生pytest、真实分配／kernel、并发／故障／性能／设备；不称修复验证。C2新增两路径，累计9路径／6系统＝4 RL框架＋2推理引擎，完整复现0；与既有RL框架固定版本并非自动兼容组合。下一轮C3 rLLM／slime，HybridFlow原版映射仍待；无新增M5算力任务。
 
+### 8.11 rLLM 组消费与同步窗口
+
+固定[rLLM `4e828c81680e5a85b638ceedeaf09d1e90109ca8`](https://github.com/rllm-org/rllm/tree/4e828c81680e5a85b638ceedeaf09d1e90109ca8)，独立稀疏只读检出`work/rllm-c3-readonly`。一条路径为unified trainer→TrajectoryGroupBuffer→SyncCoordinator→权重发布；不是所有rLLM入口或后端实现的认证。当前`trainer/agent_trainer.py`仅veRL包装，不能用旧Tinker笔记概括此统一入口。主要L4 B，过滤／删尾及跨版本语义另审C。
+
+- **async函数不等fully-async。** [_fit_fully_async:585](https://github.com/rllm-org/rllm/blob/4e828c81680e5a85b638ceedeaf09d1e90109ca8/rllm/trainer/unified_trainer.py#L585)仅在显式开启async配置后选用，默认enable为false。[AsyncTrainingConfig:75](https://github.com/rllm-org/rllm/blob/4e828c81680e5a85b638ceedeaf09d1e90109ca8/rllm/trainer/algorithms/config.py#L75)还区分sync每步／每K步及partial；staleness=0且K>1仍标为stream off-policy，不能把“零阈值”普遍写成严格on-policy。partial的dataclass与YAML默认值不同，应记录实际解析配置。
+- **派发单位是prompt组。** [_generation_loop:629](https://github.com/rllm-org/rllm/blob/4e828c81680e5a85b638ceedeaf09d1e90109ca8/rllm/trainer/unified_trainer.py#L629)每prompt记一次dispatch，创建n个episode任务。[coordinator配额:17](https://github.com/rllm-org/rllm/blob/4e828c81680e5a85b638ceedeaf09d1e90109ca8/rllm/trainer/sync_coordinator.py#L17)为`int((1+threshold)*sync_steps*mini_batch_size)`，不乘group_size；这不是n个独立请求各占一份，也不是任意token年龄的硬上限。
+- **齐组之后仍可能零入队。** [add_episode:166](https://github.com/rllm-org/rllm/blob/4e828c81680e5a85b638ceedeaf09d1e90109ca8/rllm/trainer/buffer.py#L166)凑满同task_id的n个episode后transform、剔除不满足最小组的项、算advantage并可过滤全零组。一个TaskBatch可含多个转换后的TrajectoryGroup；空TaskBatch记filtered而不入队。原始episode指标在过滤前记，不等实际训练样本量。
+- **消费不释放同步窗口配额。** [on_group_consumed:65](https://github.com/rllm-org/rllm/blob/4e828c81680e5a85b638ceedeaf09d1e90109ca8/rllm/trainer/sync_coordinator.py#L65)只减in-flight；filtered才同时退配额并恢复派发。[on_sync_complete:93](https://github.com/rllm-org/rllm/blob/4e828c81680e5a85b638ceedeaf09d1e90109ca8/rllm/trainer/sync_coordinator.py#L93)版本加一并将仍在途组结转为下一窗口已用配额。它不是简单“队列取走即可补一个”的bounded queue。
+- **出队早于optimizer成功。** [_training_loop:669](https://github.com/rllm-org/rllm/blob/4e828c81680e5a85b638ceedeaf09d1e90109ca8/rllm/trainer/unified_trainer.py#L669)按TaskBatch凑mini-batch，get后即记consumed，再分fwd/bwd块；不足完整mini-batch的尾部直接结束而不执行该次update。buffer的[get:282](https://github.com/rllm-org/rllm/blob/4e828c81680e5a85b638ceedeaf09d1e90109ca8/rllm/trainer/buffer.py#L282)消费计数不等optimizer提交计数；[generation_complete:314](https://github.com/rllm-org/rllm/blob/4e828c81680e5a85b638ceedeaf09d1e90109ca8/rllm/trainer/buffer.py#L314)会清理不足n的pending组并放sentinel，不保证所有生成任务最终训练或持久化exactly-once。
+- **版本标签不认证物理原子换权重。** [_perform_weight_sync:812](https://github.com/rllm-org/rllm/blob/4e828c81680e5a85b638ceedeaf09d1e90109ca8/rllm/trainer/unified_trainer.py#L812)非partial先pause／drain，调用backend发布，再设rollout engine／gateway版本与coordinator版本；partial分支不在此等待整个workflow排空。[get_model_response:87](https://github.com/rllm-org/rllm/blob/4e828c81680e5a85b638ceedeaf09d1e90109ca8/rllm/engine/rollout/rollout_engine.py#L87)在await前捕获版本，[组版本:414](https://github.com/rllm-org/rllm/blob/4e828c81680e5a85b638ceedeaf09d1e90109ca8/rllm/trainer/buffer.py#L414)取已观察step版本最小值、缺省0；两者是metadata规则，不证明每token同policy或backend无中间态。
+
+性能记录需分prompt dispatch、episode完成、有效TaskBatch、出队、成功update和已发布版本。过滤、转换粒度、尾批与partial配置必须随吞吐一起报告；本轮未测训练吞吐、概率一致性或物理同步。
+
+### 8.12 Slime 默认组生成与训练交界
+
+固定[Slime `540ea919e45b8b929198abce008a103be9cfc779`](https://github.com/THUDM/slime/tree/540ea919e45b8b929198abce008a103be9cfc779)，独立稀疏只读检出`work/slime-c3-readonly`。一条路径为默认`train.py`→RolloutManager→sglang_rollout组生成→BatchBuilder；非整套fully_async／straw后端验收。L4 B为主，动态过滤、过量取消及partial旧token mask另记C边界。
+
+- **默认驱动仍有阶段顺序。** [rollout-function默认:377](https://github.com/THUDM/slime/blob/540ea919e45b8b929198abce008a103be9cfc779/slime/utils/arguments.py#L377)指向sglang_rollout；flush-cache-interval默认1，非1受分离GPU等约束并切换另一fully_async函数，不将该分支冒充本轮已读。[train:13](https://github.com/THUDM/slime/blob/540ea919e45b8b929198abce008a103be9cfc779/train.py#L13)先装恢复权重再training_ready，循环generate→等待训练结束→training_completed→pause admission／update_weights／resume；Ray方法名async_train不等逐trajectory更新。
+- **目标数量按prompt组而非token。** [generate_rollout_async:492](https://github.com/THUDM/slime/blob/540ea919e45b8b929198abce008a103be9cfc779/slime/rollout/sglang_rollout.py#L492)按rollout_batch_size收组，每组n_samples；过量取任务，FIRST_COMPLETED逐批收结果，动态过滤后补组。收够目标即abort余量，不是所有派发轨迹无损进入训练，也不能凭完成优先策略推等价于固定工作集合。
+- **组内gather与reward有边界。** [generate_and_rm_group:388](https://github.com/THUDM/slime/blob/540ea919e45b8b929198abce008a103be9cfc779/slime/rollout/sglang_rollout.py#L388)组内异步生成、gather保顺序；已完成且有reward的分段重试可跳过再生成，group-RM另在gather后执行。[filter判定:17](https://github.com/THUDM/slime/blob/540ea919e45b8b929198abce008a103be9cfc779/slime/rollout/filter_hub/base_types.py#L17)还可配置不足目标时保留被拒组，不是所有keep=False都无条件丢弃。
+- **取消区分所属者与回收资格。** [abort:442](https://github.com/THUDM/slime/blob/540ea919e45b8b929198abce008a103be9cfc779/slime/rollout/sglang_rollout.py#L442)取消本地登记任务，必要时请求server abort并等余任务；非partial丢弃余组，partial仅保留至少一个ABORTED且已有response的组。[_run_request_abortable_generate:258](https://github.com/THUDM/slime/blob/540ea919e45b8b929198abce008a103be9cfc779/slime/rollout/sglang_rollout.py#L258)只将由abort移出登记集的取消转ABORTED，其他CancelledError继续抛；server active计数finally回落。这不是通用吞异常或所有慢组必恢复。
+- **续跑保token不等全token参与loss。** [generate_and_rm:289](https://github.com/THUDM/slime/blob/540ea919e45b8b929198abce008a103be9cfc779/slime/rollout/sglang_rollout.py#L289)在partial＋mask_offpolicy配置下把已有response的loss_mask置0，随后续生成；生成本身[generate:158](https://github.com/THUDM/slime/blob/540ea919e45b8b929198abce008a103be9cfc779/slime/rollout/sglang_rollout.py#L158)向server索logprob并追加返回token／logprob。mask不能独立证明概率修正精确或整轨迹同版本。wrapper将回收组交data_source，[add_samples:221](https://github.com/THUDM/slime/blob/540ea919e45b8b929198abce008a103be9cfc779/slime/data/data_source.py#L221)校验n并缓冲，下一轮优先消费；不是持久化事务证据。
+- **训练数据转换还有一层契约。** [manager._generate:335](https://github.com/THUDM/slime/blob/540ea919e45b8b929198abce008a103be9cfc779/slime/ray/rollout.py#L335)经BatchBuilder plan／convert／split；[convert:256](https://github.com/THUDM/slime/blob/540ea919e45b8b929198abce008a103be9cfc779/slime/data/batch_builder.py#L256)处理reward、rollout身份、loss mask、remove_sample全零mask及跨segment分母，带rollout_log_probs；[split_by_dp:445](https://github.com/THUDM/slime/blob/540ea919e45b8b929198abce008a103be9cfc779/slime/data/batch_builder.py#L445)按长度／身份排DP计划，不能把segment当独立prompt。自定义转换hook可以改变这些行为。
+- **完成通知不是联合checkpoint。** [training_completed:144](https://github.com/THUDM/slime/blob/540ea919e45b8b929198abce008a103be9cfc779/slime/data/batch_builder.py#L144)完成batch／释放队列容量，driver明确与模型、optimizer及数据的共同持久化分开。pause admission也不自动等全部在途排空；本轮未读物理权重传输实现，不给atomic发布或故障exactly-once结论。
+
+**限定验证与计数**：[脚本、口径和结果](../experiments/rollout-group-controls/readme.md)固定两完整OID／13份Python源码AST；八组CPU控制运行原stdlib coordinator／filter模块及AST提取原取消／版本函数，核配额、sync结转、pause／resume、失败cause、cancel drain、min-version、取消所属与条件过滤。真实asyncio、假sample／state；不导入框架，不运行HTTP／Ray／存储／optimizer／设备或性能实验，不称源码修复。C3本批2/2，代码9→11路径、6→8系统（6 RL框架＋2推理引擎），文献126与20/84/21/1、完整复现0不变。下轮先核HybridFlow已有认领再补原版代码／数据与覆盖审计；不启动M5专项或新增算力队列。
+
 ## 9. Serving → Rollout Transfer
 
 三问框架（每个 serving 工作都过一遍）：① serving 里解决什么 bottleneck？② 哪些机制可直接迁移？③ 进入 rollout 后 objective/scheduler semantics/correctness 约束怎么变、是否需要 RL-aware redesign？
@@ -2204,6 +2231,8 @@ SkyRL `e0893f6e`的[wait_for_generation_buffer:843](https://github.com/NovaSky-A
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-28（M1 C3 rLLM／Slime两路径）**：认领先推送ef69115；§8.11–8.12固定rLLM 4e828c81／Slime 540ea919。rLLM派发配额与in-flight、TaskBatch与转换组、出队与update、partial metadata与物理换权重分账；Slime默认阶段循环与另一fully_async入口分开，收够组后取消、条件过滤／partial回收资格、旧token mask与联合checkpoint边界保留。13源码AST／八组限定CPU控制通过，原stdlib模块＋提取函数，无框架／设备／性能验收；代码11路径／8系统，论文20/84/21/1及复现0不变。下轮先核HybridFlow已有认领，补历史实现／原始数据及覆盖审计；不以数量称Phase 2完成。无设备探测、M5专项、算力队列或社区写入。
 
 - **2026-10-28（M1 C2推理调度器两路径）**：认领先推送e5b874b；§8.9–8.10固定vLLM eaf1627c／SGLang cb55d77d，独立稀疏只读检出，未改旧六月分支。核token／输入／KV预算、纳新与运行次序、抢占／re-prefill、乐观计数／spec回滚、deferred free；SGLang mixed分支排除logprob、回撤可abort或input_embeds重启，版本事件不等flush。九源码AST与八组原函数体控制通过（8700 chunk组合），替身接口／无原生引擎／性能证明；脚本和结果入experiments。代码7→9路径、4 RL框架＋2引擎＝6系统，文献20/84/21/1与复现0不变。下轮C3 1–2路径；数量达下限不称Phase 2完成，HybridFlow仍待。无GPU／NPU／SSH／VPN、M5专项或社区写入。
 

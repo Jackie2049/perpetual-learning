@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [rollout-group-controls/](rollout-group-controls/readme.md) | 固定rLLM／Slime 13源码AST与八组配额／同步／取消／过滤CPU控制，假sample／state；无框架／设备／性能验收 | [生成消费地图](../notebook/rollout-performance-research.md#811-rllm-组消费与同步窗口) |
 | [rollout-scheduler-controls/](rollout-scheduler-controls/readme.md) | 固定vLLM／SGLang九源码AST与八组原函数计数／排序／预算控制，含8700 chunk边界组合；接口为替身，无引擎／显存／性能验收 | [推理调度器地图](../notebook/rollout-performance-research.md#89-vllm-token预算与抢占) |
 | [verl-otb-v1-wiring/verify.py](verl-otb-v1-wiring/verify.py) | #8364原7参数项提取逻辑候选全过／基线全失败，[结果](verl-otb-v1-wiring/result.json)保留真实异常；原FakeTQ／mock worker，reference仅断言开关，无真实引擎／训练 | [OTB接线与策略身份](../notebook/frameworks/verl-grpo-core-algos-reading.md#v1-的-otb-统计接线与策略身份) |
 | [mlflow-init-lock/verify.py](mlflow-init-lock/verify.py) | #8393原类接记录／注入回调，[新版三组结果](mlflow-init-lock/result-revised.json)同[首版](mlflow-init-lock/result.json)；with关闭句柄仍会在ImportError后无锁重调，真实子进程探锁，无MLflow／数据库／Ray执行 | [初始化锁与异常](../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#mlflow-初始化的文件锁与异常范围) |

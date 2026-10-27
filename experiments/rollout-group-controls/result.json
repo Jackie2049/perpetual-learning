@@ -1,0 +1,9 @@
+{
+  "result": "pass",
+  "python": "3.12.14",
+  "rllm_commit": "4e828c81680e5a85b638ceedeaf09d1e90109ca8",
+  "slime_commit": "540ea919e45b8b929198abce008a103be9cfc779",
+  "source_asts": 13,
+  "control_groups": 8,
+  "limits": "Real stdlib asyncio coordinator and filter modules; extracted cancellation/version helpers with fake sample/state. No framework import, HTTP, Ray, storage, optimizer, device or performance execution."
+}
