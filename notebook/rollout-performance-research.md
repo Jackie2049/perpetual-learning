@@ -6,11 +6,11 @@
 ## 0. Project Status
 
 - **阶段**：Phase 1 — recall-first literature & code investigation（广扫建库，不收束观点）
-- **最近更新**：2026-10-27（M1修复并行接续覆盖，恢复§5.22与三条多模态矩阵行；§5.23保全八个接续名称，APRIL去重，另七条线索分账，不新增主矩阵／代码计数）
-- **覆盖**：累计**119篇已核身份**（20篇serving基础／迁移边界＋99篇rollout/RLHF及相关边界；113个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL／Weave／MTP-RL会议记录，均非深读）。§5.20将RL相关99暂分为84直接Rollout系统／机制候选与15保守单列条目；84只是工作范围计数，不是原生80–120覆盖／质量验收。MTP-RL是ACL Findings独立文献，不与Bebop同篇；初始种子身份已全部落实，但原生覆盖／分级／引用检索仍未收敛。ASymPO证明错误警示保留；Round 1“≈73”不与当前数量相加。
-- **待核线索**：§5.23另列7项（6项元数据／摘要已核、1项身份待核），不计入上述119或84候选；APRIL为已有身份，不重复计数。
+- **最近更新**：2026-10-27（M1将Mixed RL Rollouts／MISA-T与MCP-Universe RL从接续线索并入主矩阵；§5.24核准入／环境流水及计时、混合与off-policy边界，代码计数不增）
+- **覆盖**：累计**121篇已核身份**（20篇serving基础／迁移边界＋101篇rollout/RLHF及相关边界；115个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL／Weave／MTP-RL会议记录，均非深读）。§5.20将RL相关101暂分为86直接Rollout系统／机制候选与15保守单列条目；86只是工作范围计数，不是原生80–120覆盖／质量验收。MTP-RL是ACL Findings独立文献，不与Bebop同篇；初始种子身份已全部落实，但原生覆盖／分级／引用检索仍未收敛。ASymPO证明错误警示保留；Round 1“≈73”不与当前数量相加。
+- **待核线索**：§5.23余5项（4项仅元数据／摘要已核、1项身份待核），不计入上述121或86候选；两项已入库只计一次，APRIL不重复计数。
 - **全文深读 / 代码广扫**：0 / 6（veRL `24f25b03`三条路径＋OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`、SkyRL `e0893f6e`各一条；共4框架，不是6框架或运行验证，也不按文件数计）
-- **最高优先级**：补原生候选覆盖及其引用／会议盲区，同时扩未覆盖框架；总量及84候选进入目标区间不等检索收敛／最终分级，A Core短名单不按计数凑齐
+- **最高优先级**：补原生候选覆盖及其引用／会议盲区，同时扩未覆盖框架；总量及86候选进入目标区间不等检索收敛／最终分级，A Core短名单不按计数凑齐
 - **下一步**：见 §16
 
 ## 1. Research Question & Scope
@@ -128,6 +128,8 @@
 | [USENIX OSDI'26](https://www.usenix.org/conference/osdi26/presentation/wu-tianyuan) | 2026-07会议记录 | Weave（Efficient Co-Scheduling for Disaggregated RL Post-Training） | L3/L4（暂） | B（暂） | co-execution group内跨job交错填补同步气泡，两级调度及host-memory residency支持warm切换 | 核 |
 | [2606.05606v1](https://arxiv.org/abs/2606.05606v1) | 2026-06-04／v1 | CERO（Cross-Epoch Adaptive Rollout Optimization） | workload／算法边界 | **C**（预算分配） | 用prompt成功率Beta posterior估计边际价值，在跨epoch全局预算下分配rollout次数；非固定轨迹执行调度 | 核 |
 
+| [2608.11152v1](https://arxiv.org/abs/2608.11152v1) | 2026-08-11／v1 | Scheduling Mixed RL Rollouts（MISA-T） | L3（暂） | B（准入；混合条件另核） | 会话准入与prefix路由分开，以KV占用及驻留时间分配类预算；HOLD不删需求，有限步混合偏差不等精确同分布 | 核 |
+
 ### 5.3 L1/L2 — RL-aware Speculative Rollout（serving机制的迁移条件）
 
 | ID | 日期 | 标题（短） | 层 | 类型 | 机制一句话 | 置信 |
@@ -181,6 +183,8 @@
 | [2609.35158v1](https://arxiv.org/abs/2609.35158v1) | 2026-09-28／v1 | PEARL | L2/L3/L4（暂） | B（暂） | 外部弹性与临时借用训练GPU联合选择PD同置／分离及比例，以切换收益门槛抑制无效重配置 | 核 |
 | [2603.13019v1](https://arxiv.org/abs/2603.13019v1) | 2026-03-13／v1 | ARL-Tangram | L3/L4（暂） | B（暂） | action级调度共享CPU／GPU／API外部资源，异构manager及弹性分配减少trajectory级过量预留 | 核 |
 | [2509.23866v1](https://arxiv.org/abs/2509.23866v1) | 2025-09-28／v1 | DART（DART-GUI） | L3/L4（暂） | B／**C**（数据／step选择） | 环境／rollout／data manager／trainer异步解耦及逐worker同步；另调rollout数／长度、经验池与高熵step训练 | 核 |
+
+| [2608.22167v1](https://arxiv.org/abs/2608.22167v1) | 2026-08-23／v1 | MCP-Universe RL（MCP-U RL） | L3/L4（暂） | B（流水；异步语义另核） | 环境获取／轨迹执行／评分分阶段限并发，重叠工具等待；固定环境数的阶段消融与一步off-policy异步placement分开 | 核 |
 
 ### 5.5 Serving 基础（supporting corpus，含迁移边界，不标 rollout-native）
 
@@ -378,14 +382,14 @@ BubbleSpec／SRT的run-ahead用于后续draft验证，不等于直接拿旧polic
 
 **最后一项初始种子已落实。** [ACL Findings'26官方记录](https://aclanthology.org/2026.findings-acl.1871/)列出Ke Wang等8位作者、标题、页码37530–37542及DOI；采用会议身份，不猜arXiv。其摘要描述两阶段、多层参数共享MTP及advantage-aware优化。[Bebop 2606.12370v1](https://arxiv.org/abs/2606.12370v1)则是Yucheng Li等的Breaking Entropy Bounds，身份与机制均不同，不合并别名。当前只核元数据与摘要；参数共享／共训对policy梯度的影响和验证路径待后续阅读，不由rollout更快或接受率提高推出训练等价。累计112身份＝106 arXiv＋6会议记录；本批只是旧种子落实，非新名字发现。
 
-**以下是基于当前矩阵的保守工作口径，不是最终文献分级或新taxonomy（随§5.22更新）。** 沿用已有范围边界，并把主要呈现模型／训练优化、仅包含部分rollout系统内容的3篇暂单列，避免把所有RL相关条目充作原生覆盖；不删除任何论文或撤回其中已有机制。剩余直接候选仍含C类工作、联合算法和待核语义，不能称84篇已验收的纯原生／无损优化。
+**以下是基于当前矩阵的保守工作口径，不是最终文献分级或新taxonomy（随§5.24更新）。** 沿用已有范围边界，并把主要呈现模型／训练优化、仅包含部分rollout系统内容的3篇暂单列，避免把所有RL相关条目充作原生覆盖；不删除任何论文或撤回其中已有机制。剩余直接候选仍含C类工作、联合算法和待核语义，不能称86篇已验收的纯原生／无损优化。
 
 | 本轮口径 | 数量 | 计数含义 |
 |---|---:|---|
-| 直接Rollout系统／机制候选 | 84 | §5.1–5.4已核99条中扣除下列15条；含§5.21四项及§5.22三项，不要求全为A/B或不改采样 |
+| 直接Rollout系统／机制候选 | 86 | §5.1–5.4已核101条中扣除下列15条；含§5.21四项、§5.22三项及§5.24两项，不要求全为A/B或不改采样 |
 | 保守单列的范围／混合证据 | 15 | 见逐项清单；暂不用于宣称原生80–120达标，也不是最终C Boundary等级 |
-| Serving基础／迁移边界 | 20 | §5.5，独立于上述99；最终相关性仍需再核 |
-| 合计 | 119 | 84＋15＋20；身份数，不是全文深读或性能验收数 |
+| Serving基础／迁移边界 | 20 | §5.5，独立于上述101；最终相关性仍需再核 |
+| 合计 | 121 | 86＋15＋20；身份数，不是全文深读或性能验收数 |
 
 单列15条的可复核清单（ID按现有矩阵，无新身份或重复计数）：
 
@@ -423,24 +427,33 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 
 ### 5.23 并行线索去重与范围核对
 
-2026-10-27接续核对：`49ac0b3`以116基线覆盖了`372b3e2`已入库的三项多模态条目及§5.22，并移除了同日原10:54日志；本轮恢复原文和三个矩阵行，同时保全该提交与M5后续日志，不以重置或删除另一侧成果解决冲突。原“新增8篇、累计124”的自报不作现行统计：八个名称中APRIL已经在§5.2；其余七个是新增接续线索，不是已完成范围审计的七项原生系统。主矩阵仍为119＝113 arXiv＋6会议，84直接候选＋15单列＋20 serving；若七项未来全部入库，唯一身份才是126，而不是124或127。
+2026-10-27接续核对：`49ac0b3`以116基线覆盖了`372b3e2`已入库的三项多模态条目及§5.22，并移除了同日原10:54日志；本轮恢复原文和三个矩阵行，同时保全该提交与M5后续日志，不以重置或删除另一侧成果解决冲突。原“新增8篇、累计124”的自报不作现行统计：八个名称中APRIL已经在§5.2；其余七个是新增接续线索，不是已完成范围审计的七项原生系统。该恢复轮主矩阵为119＝113 arXiv＋6会议（84＋15＋20）；这是11:25恢复时的历史基线。随后两项完成范围补核并入库，现行计数见§0／§5.20／§5.24；其余五项仍分账，若原七项最终全部入库才为126，而不是124或127。
 
 | 接续ID／短名 | 本轮 primary 身份／版本核对 | 机制与待核范围 | 当前计数状态 |
 |---|---|---|---|
 | [2509.18521 APRIL](https://arxiv.org/abs/2509.18521) | 既有§5.2的同一身份，已有v3 | partial rollout跨步续跑本身不证明改变分布；拒收／丢弃语义仍按原条目核，不自动升级成C | 重复线索，不新增 |
 | [2606.01143 PrefixFlow](https://arxiv.org/abs/2606.01143v4) | v1 2026-05-31／v4 10-15；Training-Time KV Caching for Schedule-Level Prefix Reuse in LLM RL Training | 前缀forward缓存、suffix微批读KV并积累梯度、延迟prefix backward；训练更新侧范围，不直接当rollout生成提速 | 元数据／摘要已核，待范围入库 |
 | [2608.25683 psRL](https://arxiv.org/abs/2608.25683v1) | v1 2026-08-26；Efficient Training for Agentic AI via Training-Time Prefix Sharing | update阶段前缀共享及KV管理；与生成侧prefix cache分开，训练端优化是否纳入本专项另核 | 元数据／摘要已核，待范围入库 |
-| [2608.11152 Scheduling Mixed RL Rollouts](https://arxiv.org/abs/2608.11152v1) | v1 2026-08-11；Scheduling Mixed RL Rollouts Beyond Prefix Locality | MISA-T混合工作负载路由／准入考虑KV容量与驻留时间，声称保持消费混合；rollout-only与匹配训练迭代证据分开，尚未核实现 | 元数据／摘要已核，待范围入库 |
+| [2608.11152 Scheduling Mixed RL Rollouts](https://arxiv.org/abs/2608.11152v1) | v1 2026-08-11 | 元数据及局部机制／评估条件已补核，见§5.24 | 已并入§5.2，只计一次；非全文深读 |
 | [2608.14635 Belayer](https://arxiv.org/abs/2608.14635v2) | v1 2026-07-28／v2 08-18；Efficient Fault Tolerance for LLM Agentic RL Training | worker局部故障下shadow worker复用独立持有的权重／raw KV分配，按日志prefix重建request KV内容；环境checkpoint与上下文协调恢复。不能称原KV内容无条件存活或所有硬件故障可恢复 | 元数据／摘要已核，待故障模型与范围入库 |
 | [2610.29426 BIRD-RL](https://arxiv.org/abs/2610.29426v1) | v1 2026-10-21；Scaling Agentic Reinforcement Learning over Stateful Data-Centric Environments | trajectory-scoped执行基础设施复用／隔离数据库副本，同时有四阶段curriculum；系统与recipe混合证据须拆分，不能把整体质量算纯B类收益 | 元数据／摘要已核，待范围入库 |
-| [2608.22167 MCP-Universe RL](https://arxiv.org/abs/2608.22167v1) | v1 2026-08-23；A Framework for Training MCP Tool-Use Agents via Reinforcement Learning | MCP环境容器编排与staged rollout pipeline重叠工具等待；后端框架接入不证明版本／过滤契约，仍待源码 | 元数据／摘要已核，待范围入库 |
+| [2608.22167 MCP-Universe RL](https://arxiv.org/abs/2608.22167v1) | v1 2026-08-23 | 元数据及局部机制／评估条件已补核，见§5.24 | 已并入§5.4，只计一次；非全文深读 |
 | [2610.34427 ScaleRLT](https://arxiv.org/abs/2610.34427) | 本轮abs读取失败（cache miss）；定向检索未返回匹配primary | 仅保留49ac的名称／ID线索；其looped transformer、exact logp、deferred rollout机制自报未独立复核，不沿用✅ | 身份及机制待核，不入主矩阵 |
 
-这七项与主矩阵分账：六项只核元数据／摘要，一项尚未核到；不是七篇全文深读、七项性能实证或新的复现队列。arXiv摘要中的会议接收自报也不替代会议官网核验。后续先解决范围和版本证据，再决定并入§5.1–5.5还是保守单列；不能把“线索保留”写成“原生覆盖达标”。
+接续线索状态：两项已入主矩阵，余五项分账（四项仅元数据／摘要已核，一项尚未核到）。arXiv摘要中的会议接收自报不替代会议官网核验。余项仍先核范围和版本，再决定入库或保守单列；“线索保留”不等原生覆盖达标。
 
 撤回两条过强的空白判断：既有AReaL-DTA及serving缓存条目已触及训练／前缀复用边界，不能把PrefixFlow、psRL、Mixed Scheduling混成此前完全真空的同类生成机制；已有RobustRL等恢复条目，也不能据Belayer一个新名字宣布“容错为taxonomy全新维度”。此处只是扩展覆盖线索，不冻结taxonomy。TransferQueue本轮未系统检索所有文献渠道，原“无独立arXiv文献”也仅是上一轮未命中，不作不存在证明。
 
 本轮优先修复真实接续损失；未启动原拟rLLM代码广扫，代码仍6条／4框架、全文深读0。未访问设备、变更M5专项、发起算力任务或写入社区。
+
+### 5.24 混合准入与环境流水
+
+本轮从§5.23转入MISA-T与MCP-U RL两项，不是另外发现两篇。主矩阵121＝115 arXiv＋6会议，101 RL相关暂86直接候选＋15单列，serving20；余五条线索不加总。
+
+- **会话容量不等训练混合配额。** [MISA-T v1 §3–5](https://arxiv.org/html/2608.11152v1)按KV block-time分配准入，pending防快照间超收，HOLD仍记需求。混合保持依赖可行负载及积压占比趋零；有限50步报告TV偏差，不是每批精确同分布或采样等价证明。Step3.7同初始化／采样流对比用6个H200训练节点＋4个推理节点（各推理副本TP8），平均迭代时间下降22.8%；不混同固定checkpoint的rollout-only消融。更新权重后清prefix cache，不能外推跨版本缓存有效；effective prefill TPS含命中token，不作实际计算token速率。
+- **更多执行worker不等更多环境或无损异步。** [MCP-U RL v1 §3.1–3.3／§4.2／附录C](https://arxiv.org/html/2608.22167v1)将Acquire／Run／Eval限并发分开，环境保留至评分。gpt-oss-20b软件工程实验用3 H200、无高速NVLink；固定Acquire=24、live环境=120，Run从24扫到120，warmup后5步平均rollout tokens/s由147到410。另一个placement对比只平均前5步，异步为至多一步陈旧；不能把两种收益相乘、称精确on-policy或time-to-quality收益。
+
+暂列B描述调度／编排机制，不认证RNG、逐token版本或异步过滤契约；两项均只核身份与上述局部条件，未全文深读、拉取实现或复现性能。深读0、代码6条／4框架不变，无新设备任务或M5专项交接。下一步补其余五条范围／原生证据，或扩未覆盖框架，不用121／86作为收束依据。
 
 ## 6. Paper Deep Reads
 
@@ -671,6 +684,8 @@ SkyRL `e0893f6e`的[wait_for_generation_buffer:843](https://github.com/NovaSky-A
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（M1混合准入与环境流水补核）**：§5.23两条接续线索MISA-T／MCP-U RL并入§5.2／§5.4，§5.24分开有限混合偏差与渐近目标、固定checkpoint与训练循环、阶段并发与异步placement。121身份＝115arXiv＋6会议，86直接候选＋15单列＋20serving；余五项仍分账。旧119行／15条清单／代码地图保留，深读0、代码6条／4框架；仅局部机制／设置，无作者实现／设备／M5专项／社区动作。下步继续余项范围或未覆盖框架，不冻结分级。
 
 - **2026-10-27（M1并行接续保全与纠错）**：恢复372b3e2的三项多模态矩阵行、§5.22、§13说明及原10:54日志／回看；保全49ac0b3与3e5d82d日志。主矩阵恢复119／113 arXiv＋6会议，84＋15＋20；八名称中APRIL重复，余七项另入§5.23，其中六项primary元数据／摘要已核、一项未核到。训练更新侧prefix共享与生成侧分开，容错／缓存“全新真空”判断撤回，未新增深读／代码／设备或社区动作。下述49ac历史自报保留以供追溯，其124计数、八篇全新及空白判断已由本条纠正，不作当前结论。
 
