@@ -4,7 +4,7 @@
 
 ## 当前阶段
 
-- **M1本轮认领（2026-10-27 18:47）**：保全并ff吸收799504e的M5接续／日志，认领[§6.0](notebook/rollout-performance-research.md#60-phase-2-冲刺批次表2026-10-27-用户指令截止-2026-10-29-两天内完成)B6余Long-RL＋B7前七篇SparseRL-Sync、PULSE、NeMo-DCR、ThunderSyncRL、PipelineRL、Missing Old Logits、Beyond Precision，共8篇T2，先推送再读。B6仍8/9、T2仍8，余B7两篇下轮与B8合批；无设备、M5专项或社区动作。
+- **M1 Long-RL＋B7前七篇完成（2026-10-27 18:54）**：保全ff吸收799504e的M5记录，认领先推送75916da；[§6.22](notebook/rollout-performance-research.md#622-long-rl与权重同步及失配)完成Long-RL、SparseRL-Sync、PULSE、NeMo-DCR、ThunderSyncRL、PipelineRL、Missing Old Logits、Beyond Precision八篇T2。B6收束9/9、B7为7/9、T2累计16、T1仍20。文档维护技能保留通信／forward／全步、实测／压测／外推与概率／更新等价边界，不拿130×字节比作训练加速；Missing Old Logits故障终止窗口与LR启发式未写在线检测器保留。下一轮核远端后认领B7余FP16／Diagnosing／Rethinking三选二＋B8中4–6篇，共6–8篇。121身份、HybridFlow进行中1、代码6条／4框架、复现0不增；旧状态以本条及canonical为准，无设备、M5专项或社区动作。
 
 - **M1 B6前八篇完成（2026-10-27 18:25）**：ff保全b70e15a的M5记录，认领先推送eb79ac5；[§6.21](notebook/rollout-performance-research.md#621-b6-t2系统阅读)完成AsyncFlow、LlamaRL、RLinf、MindSpeed RL、NeMo-Aligner、ROLL、ROLL Flash、GLM-4.5系统片段各6–7行T2。T2累计8、B6为8/9、T1仍20；GLM仅§3.5，不称整报告完成。文档维护技能保留平台／基线／精度／扩卡条件、RLinf空间负项、ROLL质量非吞吐及ROLL Flash模拟／选样边界。下一轮先核远端，Long-RL与B7中5–7篇合批6–8篇；121身份、HybridFlow进行中1、代码6条／4框架、复现0不增。下方旧状态以本条和canonical为准；无设备、M5专项或社区动作。
 
