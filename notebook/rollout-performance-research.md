@@ -6,11 +6,11 @@
 ## 0. Project Status
 
 - **阶段**：**Phase 2 — deep research（2026-10-27 用户指令：广度已足（计数另按唯一身份核算），转入论文/项目深读，围绕 rollout 性能与 L1–L4 四维；M1 定时启动的技术秘书任务以深读为主要工作）**
-- **最近更新**：2026-10-27（保留Phase 2方向；恢复被79e892f旧版覆盖的五行／§5.22–5.24及121统计；§6补HybridFlow正文条件，深读进行中）
+- **最近更新**：2026-10-27（§6补HybridFlow自动映射成本、解析模拟边界与PDF图9／12–16核对；条目仍进行中，不新增文献或代码路径）
 - **覆盖**：累计**121篇已核身份**（20篇serving基础／迁移边界＋101篇rollout/RLHF及相关边界；115个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL／Weave／MTP-RL会议记录，均非深读）。§5.20将RL相关101暂分为86直接Rollout系统／机制候选与15保守单列条目；86只是工作范围计数，不是原生80–120覆盖／质量验收。MTP-RL是ACL Findings独立文献，不与Bebop同篇；初始种子身份已全部落实，但原生覆盖／分级／引用检索仍未收敛。ASymPO证明错误警示保留；Round 1“≈73”不与当前数量相加。
 - **待核线索**：§5.23余5项（4项仅元数据／摘要已核、1项身份待核），不计入上述121或86候选；两项已入库只计一次，APRIL不重复计数。
 - **全文深读 / 代码广扫**：0（另有HybridFlow进行中1项） / 6（veRL `24f25b03`三条路径＋OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`、SkyRL `e0893f6e`各一条；共4框架，不是6框架或运行验证，也不按文件数计）
-- **最高优先级**：先完成§6 HybridFlow全文与实验／版本证据，不再以补数量为主；余5条线索保留而不强制清零。M5专项与上游写入边界不变。
+- **最高优先级**：接续§6定位HybridFlow论文年代实现与成本／重分片的对应关系；精确上界点需原始数据，不能继续猜图。余5条线索保留，不以补数量为主，M5专项与上游写入边界不变。
 - **下一步**：见 §16
 
 ## 1. Research Question & Scope
@@ -471,7 +471,9 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 - **实验条件与增益**：[v2 §8.1–8.2](https://arxiv.org/html/2409.19256v2)最多16节点×8 A100-80GB、节点间200Gbps；Llama 7B–70B，基线DeepSpeed-Chat 0.14.0／OpenRLHF 0.2.5／NeMo-Aligner 0.2.0。prompt／response均固定1024、global batch 1024，warmup 10轮后平均5轮；吞吐为整RLHF迭代的prompt＋response tokens/s，不是decode TPS。图9(c)及正文将20.57×对应34B PPO与NeMo-Aligner；具体GPU横轴点仍待核图，不外推现代长尾／agent场景。
 - **与 taxonomy 对照**：L4 的"元框架"（后续 rollout 系统多构建于其上或与之对比）；B 类为主（execute set better）。
 - **代码映射与年代**：11:53接续已有trainer／workers／protocol／sharding_manager及`80ee82bd`映射自报，本轮未重核该快照。已核现代实现见§8（veRL `24f25b03`等）；现代agent_loop不能替代论文证据，旧论文也不替现代实现背书。
-- **重分片与待核项**：[v2 §5.1–5.4／§7](https://arxiv.org/html/2409.19256v2)同组actor GPU顺序train／generate，重排generation分组以复用training权重。零冗余仅限重分片权重；表2峰值仍为`M/(t_g p_g)`，§7仍有独立buffer和CPU offload，不等全显存零开销／无传输。尚待补齐§6成本模型、完整消融／附录、图9(c)具体点及原版实现；全文完结0、进行中1，不把11:53摘要＋代码映射自报作全文验收。
+- **映射成本**：[§6算法1／附录C](https://arxiv.org/html/2409.19256v2)在候选映射中最小化预测成本。以stage为`s`、同置组为`G`，可重写为`C = Σ_s max_G Σ_{l∈G} simu(l, W_s)`：组内相加、组间取最大、跨stage累加。解析估计与同构设备是前提，不等在线普适最优；图16联合改变模型／GPU数，不证明渐近线性。
+- **图表核对**：[v2 PDF，第11–13页](https://arxiv.org/pdf/2409.19256v2)图9(c)有32／64／128 GPU点，但未逐柱标20.57×，不猜精确对应点。图12同尺寸、图13异尺寸，按PDF图题而非错位HTML引用区分。图14的transition不当全步，图15的16 GPU／training TP8／KV条件不外推为更小generation TP总更优。
+- **重分片与待核项**：[v2 §5.1–5.4／§7](https://arxiv.org/html/2409.19256v2)同组actor GPU顺序train／generate，重排generation分组以复用training权重。零冗余仅限重分片权重；表2峰值仍为`M/(t_g p_g)`，§7仍有独立buffer和CPU offload，不等全显存零开销／无传输。成本模型、关键消融与附录已补核；原版实现及20.57×上界原始数据仍待定位。全文完结0、进行中1；下一步以论文年代代码对应为主，不继续反复概括摘要或从现行代码代填旧实验。
 
 ## 7. Code & System Landscape
 
@@ -698,6 +700,8 @@ SkyRL `e0893f6e`的[wait_for_generation_buffer:843](https://github.com/NovaSky-A
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（M1 HybridFlow映射成本与原图补核）**：§6补算法1的组内sum／组间max／跨stage sum及解析模拟前提，核附录与§8.3–8.5；PDF第11–13页视觉核对区分图12／13、transition／整步与TP／KV条件。图9(c)无逐柱精确比值，不猜上界GPU点；图16联合变化不当渐近复杂度证据。文献121、代码6条／4框架不增，深读仍进行中。后续定位论文年代实现／原始数据，无设备、M5专项或社区写入。
 
 - **2026-10-27（M1 Phase 2接续保全与HybridFlow正文补核）**：保留79e892f深读方向、顺序及日志，恢复91105d0五行矩阵、§5.22–5.24／§13与121统计，不恢复旧Phase 1方向。§6补核v2重分片及实验条件，修正摘要＋源码即完成／以现代代码替论文的口径。深读完结0、进行中1、代码6条／4框架，无作者实现／设备／M5专项／社区写入。
 
