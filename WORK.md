@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1本轮认领（2026-10-28 01:18）**：M1 new-chat @36e1ad9核远端0/0、工作树干净；认领C2 vLLM／SGLang core scheduler各1条路径，先推送再读。远端main只读定位vLLM eaf1627c、SGLang cb55d77d，拟用独立稀疏只读检出，不修改已有六月分支。当前代码仍7条／4框架，论文20/84/21/1及复现0不预增；无设备、M5专项或社区写入。
+
 - **M1 B13六篇T2完成（2026-10-28）**：00:47认领先推送505a5cf；[§6.33](notebook/rollout-performance-research.md#633-恢复-前缀与概率边界)完成Belayer／BIRD-RL／ScaleRLT及PrefixFlow／psRL／CIS。恢复失效域／语义KV、在线数据库I/O／离线预建成本、混合读出质量负项与概率值／梯度、训练侧prefix／生成、CIS条件token修正／整轨迹目标分别保留；ScaleRLT混合读出另C。三项T3升级替换，126＝20 T1＋84 T2＋21 T3＋1未标完成，仅HybridFlow进行中；代码仍7条／4框架、复现0。下轮核远端认领C2 vLLM／SGLang core scheduler 1–2路径，再C3未覆盖框架；不称Phase 2完成。仅论文HTML阅读，无源码／PDF图像／设备验收，无M5专项、算力队列或社区动作。
 
 - **M1 C1 veRL数据面与B12余项完成（2026-10-28 00:29）**：00:19认领先推送d86477d；[§8.8](notebook/rollout-performance-research.md#88-verl-v1-transferqueue数据面)完成固定24f25b03的V1 TQ数据路径，累计7条／4框架。修正默认入口为V1／sync，旧RayPPOTrainer与experimental fully-async分析只适用对应分支；metadata传输／后台生成、选批／更新及清理分账。10 Python AST、23锚点与四原函数五组stdlib CPU检查通过，未运行框架／TQ／原生pytest或设备。[§5.25](notebook/rollout-performance-research.md#525-剩余边界与接续线索分级)随Code批附带完成余八范围triage，原五线索入库；126身份＝120 arXiv＋6会议＝20 T1＋78 T2＋24 T3＋4未标，B12范围28/28。四未标为HybridFlow1及Belayer／BIRD-RL／ScaleRLT待T2三篇；下轮核远端认领B13三新候选＋PrefixFlow／psRL／CIS六篇，再补C2／C3代码。旧日志与M5记录保全；C1的AReaL部分未开展，不称C1整项或Phase 2完成，复现0。无设备、M5专项、算力队列或社区动作。

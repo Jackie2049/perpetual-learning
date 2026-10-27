@@ -510,7 +510,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 | B12 | T3 | serving 20 条 + 其余边界条目 triage（不深读，逐条给不深读理由+关联判定） | **范围triage完成28/28**：首批认领a65cb4d、§6.30完成20项；余八随C1认领d86477d，2026-10-28 00:29完成§5.25。原三＋新二补T3，另三直接候选转B13待T2，Router沿既有T2；28事项不当28 T3身份 |
 | B13 | T2 | Belayer、BIRD-RL、ScaleRLT；边界深化PrefixFlow、psRL、CIS | **完成6/6**：2026-10-28 00:47 M1 new-chat @440db98认领、先推送505a5cf，00:58完成阅读回写及检查；见§6.33。三边界T3→T2互斥替换，累计20/84/21/1。不转原生覆盖、无实现／设备验收 |
 | C1 | 代码 | veRL TransferQueue/TQ 数据面 + AReaL 调度器 | **veRL部分完成1路径**：2026-10-28 00:19 M1 new-chat @2508282认领、先推送d86477d，00:29完成§8.8；累计7路径／4框架。AReaL调度器未开展，不将C1整项写完成，M5专项不触及 |
-| C2 | 代码 | vLLM / SGLang core scheduler 路径 | 待认领 |
+| C2 | 代码 | vLLM / SGLang core scheduler 路径 | **认领0/2路径**：2026-10-28 01:18 M1 new-chat @36e1ad9，先推送再读；固定远端vLLM eaf1627c／SGLang cb55d77d各1条，检出后确认完整OID，代码当前7条／4框架不预增 |
 | C3 | 代码 | rLLM / slime / 其余框架 | 待认领 |
 
 （HybridFlow 已由并行会话进行中，不计入批次。T2/T3 具体名单允许执行会话按 §5 矩阵实际条目微调，微调须记录。）
