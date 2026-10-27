@@ -6,8 +6,8 @@
 ## 0. Project Status
 
 - **阶段**：Phase 1 — recall-first literature & code investigation（广扫建库，不收束观点）
-- **最近更新**：2026-10-27（M1补NeMo RL SingleController的准入／选择／版本与TQ所有权地图，见§8.6／§12；本批不增论文）
-- **覆盖**：累计**103篇已核身份**（20篇serving基础／迁移边界＋83篇rollout/RLHF及相关边界，含VLA、训练侧、执行底座与算法诊断；均非深读；99个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL会议记录）。本批新增SparseRL-Sync、PULSE、FP8-RL、PivotRL、RobustRL和Rollout Infrastructure Tax；PULSE的两种通信算法合计1篇。总数过100或RL相关83不代表纯原生80–120目标达成、覆盖收敛或已完成分级。ASymPO证明错误警示保留，历史✅补核完不等检索收敛；Round 1“≈73”不与当前数量相加。
+- **最近更新**：2026-10-27（M1补NeMo-DCR、ThunderSyncRL、PipelineRL与PACE四篇，区分同步更新屏障、序列内换权重与拒收，见§5.18；本批不增代码路径）
+- **覆盖**：累计**107篇已核身份**（20篇serving基础／迁移边界＋87篇rollout/RLHF及相关边界，含VLA、训练侧、执行底座与算法诊断；均非深读；103个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL会议记录）。本批新增NeMo-DCR、ThunderSyncRL、PipelineRL与PACE；相近机制、论文版本与软件实现不重复计篇。总数过100或RL相关87不代表纯原生80–120目标达成、覆盖收敛或已完成分级。ASymPO证明错误警示保留，历史✅补核完不等检索收敛；Round 1“≈73”不与当前数量相加。
 - **全文深读 / 代码广扫**：0 / 5（veRL `24f25b03`三条路径＋OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`各一条；共3框架，不是5框架或运行验证，也不按文件数计）
 - **最高优先级**：继续原生系统引用／会议扩展与种子落实，补serving机制覆盖，按唯一文献广扫至100–150；总数不替代原生覆盖，A Core短名单不只按条目数选取
 - **下一步**：见 §16
@@ -101,6 +101,10 @@
 | [2601.18150v2](https://arxiv.org/abs/2601.18150v2) | 2026-01-26首次／v2 04-10 | FP8-RL | L1/L2/L4（暂） | A/B（系统；数值校正另核） | W8A8 policy rollout与FP8 KV，每步QKV scale重校准，TIS/MIS处理训推失配；非量化draft | 核 |
 | [2610.16866v1](https://arxiv.org/abs/2610.16866v1) | 2026-10-12／v1 | PivotRL（Efficient Resource-Shiftable RL Post-training with Generative Rewards） | L3/L4（暂） | B（暂） | Global Parameter Storage与role context切换，迁移sequence并权衡资源转移收益／开销 | 核 |
 | [2512.22492v1](https://arxiv.org/abs/2512.22492v1) | 2025-12-27／v1 | RobustRL（Role-Based Fault Tolerance System for LLM RL Post-Training） | L4（暂） | B（容错；暂） | role故障隔离、rollout warm standby与动态UCX重连；恢复收益限故障评估条件 | 核 |
+| [2610.08430v1](https://arxiv.org/abs/2610.08430v1) | 2026-10-06／v1 | NeMo-DCR | L4（暂） | B（暂） | canonical坐标与native loader放置XOR／overwrite增量，joint commit绑定下一delta基线；bit-exact针对dense refit | 核 |
+| [2610.05935v1](https://arxiv.org/abs/2610.05935v1) | 2026-10-05／v1 | ThunderSyncRL | L4（暂） | B（暂） | 固定policy下按reward／teacher-score就绪做gradient streaming，batch结束才一次optimizer更新 | 核 |
+| [2509.19128v2](https://arxiv.org/abs/2509.19128v2) | 2025-09-23首次／v2 09-26 | PipelineRL | L2/L4（暂） | B／**C?**（行为分布另核） | 并行生成训练，in-flight换权重后继续未完序列；保留旧KV的mixed-policy不当零陈旧性 | 核 |
+| [2609.36830v1](https://arxiv.org/abs/2609.36830v1) | 2026-09-29／v1 | PACE（Where Does Staleness Accumulate?） | L4（暂） | B／**C**（拒收） | 分解生成／入池后等待staleness，pool超额占用决定拒收预算，按prefix-aware有效陈旧度排序 | 核 |
 
 ### 5.2 L3 — Long-tail / Scheduling / Cluster
 
@@ -333,6 +337,18 @@ BubbleSpec／SRT的run-ahead用于后续draft验证，不等于直接拿旧polic
 
 **执行底座的证据单位**：[Rollout Infrastructure Tax v1 §4.4／§6](https://arxiv.org/html/2607.01415v1)以固定命令序列比较container、hosted sandbox、Kubernetes和VM；worker-hours按测得轨迹latency外推，排除模型推理、reward评估、optimizer及worker外排队，并非live policy驱动的完整训练对照。页面标preprint／submitted to SoCC，不登记为会议录用。此项暂放L4环境边界，不据此冻结第五层taxonomy。全批仅身份／摘要和上述局部机制／评估条件，全文深读仍0，代码广扫仍4条／2框架，无原生执行、设备或性能验收。下步继续原生引用／会议与种子扩展，或第三框架生命周期；总量不代替覆盖与分级。
 
+### 5.18 更新屏障 序列内换权重与样本拒收
+
+2026-10-27第十二文献批：接上轮NeMo相关搜索线索、本轮项目出版入口及in-flight更新扩展，补4个此前未登记ID。NeMo-DCR可由固定[NeMo RL README:17](https://github.com/NVIDIA-NeMo/RL/blob/a9d1a4bec45a28fd0d455519a2a979a37da2ac4a/README.md#L17)追溯，但采用arXiv首次提交10-06，不把项目公告10-07当首发；PipelineRL采用v2，其余v1。累计107身份（103唯一arXiv＋4会议记录），20 serving／边界＋87 rollout/RLHF及相关边界；没有把四篇都说成新近发表或纯原生目标已完成。
+
+**同步重排与mixed-policy分开**：[ThunderSyncRL v1 §3.3–3.4](https://arxiv.org/html/2610.05935v1)让GRPO的单轨迹score gradient在reward就绪后先算，待整组统计齐全再组合；OPD按teacher-scored turn释放工作。policy在该批保持固定，所有登记源及延后传播结束后归约、归一化／clip、一次optimizer更新。作者的更新等价主张限其目标／条件，不当任意PPO loss、任意实现或浮点逐bit训练证明。反观[PipelineRL v2 §4／§5.1](https://arxiv.org/html/2509.19128v2)，换权重后继续同一未完序列，作者明确分析mixed behavior policy与旧KV，并单列重算KV比较；“更on-policy”不等单轨迹固定版本或零staleness。暂B／C?，意在提示行为分布差异待核，不因in-flight名称直接判定删样本。
+
+**池选择不只是在执行上排队**：[PACE v1摘要](https://arxiv.org/abs/2609.36830v1)区分完成前的Generation Staleness与入完成池后的Waiting Staleness，以超额pool占用调节拒收预算，再结合prefix-aware生成陈旧度排序。拒收改变训练保留集合，显式列C；不能与§8.6的ready_first生产gate、纯背压或仅重排无损互称等价。本批只登记摘要机制，不由其结果反推所有长序列应拒收或已经验证该分数。
+
+**两种lossless的对象不同**：[NeMo-DCR v1 §4–§8及附录C](https://arxiv.org/html/2610.08430v1)用canonical映射、native loader、XOR／overwrite及失败后overwrite重试和joint commit，目标是接收端参数／buffer位与dense refit一致；不是整个RL更新轨迹不变或跨任意loader无条件保证。refit延迟比较采用transport-only full-checkpoint reference和指定change-rate压力条件；它不是端到端训练加速，附录计时还排除post-apply check，gate重开在计时窗后。不要把论文中的bit-exact refit与ThunderSyncRL的目标更新等价混为一种验收。NeMo-DCR软件入口存在不代表§8.6已审计其delta实现。
+
+全批限原站身份／版本、摘要与上述局部机制和计时口径定位，全文深读仍0，代码仍5条路径／3框架；未运行作者代码、验证证明、复现数值或启动设备任务。后续继续原生引用／会议扩展和未落实种子，或补未覆盖框架；具体结论按目标、版本和采样语义再分级，不按总数收束。
+
 ## 6. Paper Deep Reads
 
 （空。优先级建议：AReaL、HybridFlow/veRL、StreamRL、RollPacker、RhymeRL、BubbleSpec、StaleFlow——覆盖四层 + 三大机制家族。深读模板：问题/瓶颈 → 性能模型 → 机制 → 实验条件与增益（保留硬件/batch/长度分布）→ 与 taxonomy 对照 → 可迁移性 → 疑点。）
@@ -538,6 +554,8 @@ NeMo RL SC `a9d1a4be`的[exposed_generation:3010](https://github.com/NVIDIA-NeMo
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（M1更新语义与delta refit补库）**：新增NeMo-DCR／ThunderSyncRL／PipelineRL／PACE四篇，累计107身份（20 serving／边界＋87 RL相关边界；103 arXiv＋4会议记录）。§5.18分开固定policy的gradient streaming与一次更新、序列内换权重／旧KV、池拒收C及bit-exact dense refit；传输基准／计时窗不当端到端训练。身份／摘要和局部机制，深读0、代码5条／3框架不变，无设备／M5专项／上游写入。下步继续原生引用／会议／种子，或未覆盖框架，不以过百结束广扫。
 
 - **2026-10-27（M1 NeMo RL准入与所有权广扫）**：文献仍103，代码路径5条／3框架。固定NeMo RL `a9d1a4be`，§8.6分开四sampler的生产gate、start_weight窗口、target_step与ready-first长尾；reserve／commit／claim／cleanup及capture／非capture版本标签不混用。§12补exposed_generation非引擎算时、延后refit空计时块。6 Python blob／AST与源码链接核对，无框架／原生测试／设备，非故障或性能验收；不改M5专项、不向上游写入。下一步继续原生引用／会议／种子扩展或未覆盖框架，capture finalizer和恢复另核。
 
