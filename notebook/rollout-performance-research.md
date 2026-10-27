@@ -471,7 +471,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 |---|---|---|---|
 | B1 | T1 | StreamRL、StaleFlow、Laminar、DORA | **完成4/4**：前半M1 new-chat @27c4e00，13:18认领并推送38c0234，13:24完成§6.1–6.2；后半M1 new-chat @743da31，13:47认领并推送b3efd71，2026-10-27 13:52完成§6.3–6.4（T1标准，非实现／复现验收） |
 | B2 | T1 | AReaL、RolloutPipe、PACE、ECHO-2 | **完成4/4**：前半M1 new-chat @e159534，14:17认领并推送82a3fb6，14:22完成§6.5–6.6；后半M1 new-chat @fe3bb80，2026-10-27 14:47认领并推送b353e4c，14:55完成§6.7–6.8（非实现／复现验收）。AReaL不接续prompt_mean专项 |
-| B3 | T1 | RollPacker、SortedRL、APRIL、DARTS | **部分完成2/4**：前半M1 new-chat @aecd7f5，2026-10-27 15:17认领并推送9139ab3，15:22完成§6.9–6.10；后半APRIL／DARTS待认领（非实现／复现验收） |
+| B3 | T1 | RollPacker、SortedRL、APRIL、DARTS | **部分完成2/4**：前半M1 new-chat @aecd7f5，15:17认领并推送9139ab3，15:22完成§6.9–6.10；后半APRIL／DARTS由M1 new-chat @100f213于2026-10-27 15:47认领，尚未完成（非实现／复现验收） |
 | B4 | T1 | RhymeRL、ReSpec、BubbleSpec、DAS | 待认领 |
 | B5 | T1 | EfficientRollout、Heddle、ObsSpec、FP8-RL | 待认领 |
 | B6 | T2 | L4 其余：AsyncFlow、LlamaRL、RLinf、MindSpeed RL、NeMo-Aligner、ROLL／ROLL Flash、GLM-4.5、Long-RL | 待认领 |
