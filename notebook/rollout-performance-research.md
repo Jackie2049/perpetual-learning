@@ -470,7 +470,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 | 批 | 层级 | 范围 | 状态 |
 |---|---|---|---|
 | B1 | T1 | StreamRL、StaleFlow、Laminar、DORA | **完成4/4**：前半M1 new-chat @27c4e00，13:18认领并推送38c0234，13:24完成§6.1–6.2；后半M1 new-chat @743da31，13:47认领并推送b3efd71，2026-10-27 13:52完成§6.3–6.4（T1标准，非实现／复现验收） |
-| B2 | T1 | AReaL、RolloutPipe、PACE、ECHO-2 | 待认领 |
+| B2 | T1 | AReaL、RolloutPipe、PACE、ECHO-2 | 前半AReaL论文／RolloutPipe：M1 new-chat @e159534于2026-10-27 14:17认领，尚未完成；后半PACE／ECHO-2仍待认领。AReaL不接续prompt_mean专项 |
 | B3 | T1 | RollPacker、SortedRL、APRIL、DARTS | 待认领 |
 | B4 | T1 | RhymeRL、ReSpec、BubbleSpec、DAS | 待认领 |
 | B5 | T1 | EfficientRollout、Heddle、ObsSpec、FP8-RL | 待认领 |

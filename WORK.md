@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1本轮认领（2026-10-27 14:17）**：同步e159534后认领[§6.0 B2](notebook/rollout-performance-research.md#60-phase-2-冲刺批次表2026-10-27-用户指令截止-2026-10-29-两天内完成)前半AReaL论文／RolloutPipe两篇T1，先推送后阅读；PACE／ECHO-2未占用。当前完成仍4篇，AReaL仅系统论文证据，不接续prompt_mean思路／代码／实测／PR；无设备或社区动作。
+
 - **M1 B1完成（2026-10-27 13:52）**：本轮认领先推送b3efd71，随后完成[§6.3 Laminar／§6.4 DORA](notebook/rollout-performance-research.md#63-laminar-t1压缩深读)两篇T1，B1累计4/4、T1累计4篇；HybridFlow仍进行中1、121身份与代码6条／4框架不增，复现0。Laminar低陈旧性是观测非硬界；DORA的8.2×为未遮蔽rollout-only时段，RBS／TBS原文单位混写留疑，不把保留轨迹升级为同步等价或公共系统排名。文档维护技能将条件留在原结论旁并统一批次状态；未核源码或用设备，无M5专项／社区操作。下方B1前半与“待认领”属历史，本条及canonical§0为当前；下一轮先核远端后认领B2前半两篇，AReaL论文阅读不接续prompt_mean专项。
 
 - **M1 B1前半完成（2026-10-27，本轮13:18认领）**：认领已先推送38c0234；[§6.1–6.2](notebook/rollout-performance-research.md#61-streamrl-t1压缩深读)完成StreamRL v1／StaleFlow v2两篇T1压缩模板，B1仅2/4，后半Laminar／DORA仍待认领。StreamRL强制长度性能实验不当真实在线收敛；StaleFlow主评估禁用冗余，附录与超时过滤另标C，不把续跑／迁移混作删样本。当前T1完成2、HybridFlow进行中1、代码6条／4框架、完整复现0；下方历史“完结0”以此及canonical§0更新为准。HybridFlow本轮仅预查tag元数据，未找到论文原版实现。未用设备、安装／运行框架、改M5专项或社区写入。下一轮先认领B1后半，不重复前两篇或只做一篇。
