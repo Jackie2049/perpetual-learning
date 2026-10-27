@@ -6,13 +6,13 @@
 ## 0. Project Status
 
 - **阶段**：**Phase 2 — deep research（2026-10-27 用户指令：广度已足（计数另按唯一身份核算），转入论文/项目深读，围绕 rollout 性能与 L1–L4 四维；M1 定时启动的技术秘书任务以深读为主要工作）**
-- **最近更新**：2026-10-27（§6.30完成B12首批serving20条范围复核，新增T3为19条、Router沿用T2；T1／T2仍20／64，HybridFlow及14直接候选未读账保留，截止≤2026-10-29不变）
+- **最近更新**：2026-10-27（§6.31完成B6补六篇，B6收束15/15，T2累计70、T1仍20／T3仍19；直接候选余8，HybridFlow、B12余项与Code仍待，截止≤2026-10-29不变）
 - **覆盖**：累计**121篇已核身份**（20篇serving基础／迁移边界＋101篇rollout/RLHF及相关边界；115个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL／Weave／MTP-RL会议记录；其中T1压缩深读20篇，其余不据身份核验算深读）。§5.20将RL相关101暂分为86直接Rollout系统／机制候选与15保守单列条目；86只是工作范围计数，不是原生80–120覆盖／质量验收。MTP-RL是ACL Findings独立文献，不与Bebop同篇；初始种子身份已全部落实，但原生覆盖／分级／引用检索仍未收敛。ASymPO证明错误警示保留；Round 1“≈73”不与当前数量相加。
 - **待核线索**：§5.23余5项（4项仅元数据／摘要已核、1项身份待核），不计入上述121或86候选；两项已入库只计一次，APRIL不重复计数。
-- **深读 / 代码广扫**：按§6.0新压缩标准完成T1 **20篇**（B1–B5各四篇）、T2 **64篇**（B6／B7各9/9、B8为12/12、B9为11/11、B10为12/12、B11为11/11；含Intelligent Router serving旁读；GLM-4.5仅§3.5系统片段，非整份报告；非源码或性能复现验收），另有HybridFlow进行中1项 / 6（veRL `24f25b03`三条路径＋OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`、SkyRL `e0893f6e`各一条；共4框架，不是6框架或运行验证，也不按文件数计）；完整复现仍0。
+- **深读 / 代码广扫**：按§6.0新压缩标准完成T1 **20篇**（B1–B5各四篇）、T2 **70篇**（B6补后15/15、B7为9/9、B8为12/12、B9为11/11、B10为12/12、B11为11/11；含Intelligent Router serving旁读；GLM-4.5仅§3.5系统片段，非整份报告；非源码或性能复现验收），另有HybridFlow进行中1项 / 6（veRL `24f25b03`三条路径＋OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`、SkyRL `e0893f6e`各一条；共4框架，不是6框架或运行验证，也不按文件数计）；完整复现仍0。
 - **最高优先级（2026-10-27 用户加急指令）**：**Phase 2 全部深读须在两天内完成（≤2026-10-29）**——每次定时触发完成**一批对应规模**的调研（分级深度 + 批次表见 §6.0），不得单次只做一篇；深度与时间约束按批次表权衡。HybridFlow 深读继续；余5条线索并入相应批次，不再单列追。M5专项与上游写入边界不变。
-- **Triage与未读账**：B12首批serving20条已复核＝19条T3＋1条既有T2引用，不重计Router；矩阵121＝20 T1＋64 T2＋19 T3＋18未标完成。18条拆为HybridFlow进行中1、原单列边界3、直接候选14，见§6.30逐名清单；§5.23另5条线索仍不入121。B1–B11完成不等全矩阵分级或Phase 2完成。
-- **深读当前焦点**：B1–B11均完成当前名单，B12首批serving20/20已复核，但其余边界未收束。下一轮先核远端／§6.30未读清单，给漏列的直接候选按6–8篇T2补批（认领时回写批次表），可附带边界triage；不把14直接候选笼统降T3，也不重复serving凑配额。训练侧／算法边界不转算原生覆盖；Rethinking仍为边界未读账。HybridFlow论文年代实现／原始数据保留进行中，不用现代源码替代。T1达到20、T2达到64均不等Phase 2整体完成，B12、遗漏候选及Code批次仍待推进；M5专项与上游写入边界不变。
+- **Triage与未读账**：B12首批serving20条已复核＝19条T3＋1条既有T2引用，不重计Router；矩阵121＝20 T1＋70 T2＋19 T3＋12未标完成。12条拆为HybridFlow进行中1、原单列边界3、直接候选8，见§6.31逐名清单；§5.23另5条线索仍不入121。批次名单完成不等全矩阵分级或Phase 2完成。
+- **深读当前焦点**：下一轮先核远端／未读清单，将PUZZLE、DynaRL、PivotRL、RobustRL、RLBoost、Relax、SPEC-RL、ProRL Agent余八直接候选合批T2，认领时按§6.0回写补批；不把候选笼统降T3，也不重复serving凑配额。B12余三边界及五线索未收束，训练侧／算法边界不转算原生覆盖。HybridFlow论文年代实现／原始数据保留进行中，不用现代源码替代。T1达到20、T2达到70均不等Phase 2整体完成，B12、遗漏候选及Code批次仍待推进；M5专项与上游写入边界不变。
 - **Phase 2 完成标准与预估（2026-10-27 定，用户问"多久读完"后定量）**：**不是 121 篇全读**。深读总量 = A Core 15–20 篇全模板深读 + B Supporting ~40–60 篇中等深度（机制+关键结果，轻模板）+ 代码深读 ~8–12 条路径；C 边界与 serving 保持元数据级即可。节奏：每篇 A Core ≈ 1 个定时任务轮次，B 类 3–5 篇/轮次；按多会话并行（每日 2–4 轮次涉及本专项）预估 **A Core ≈ 1–1.5 周、Phase 2 整体 ≈ 3–4 周日历时间**。里程碑：第 1 周末 A Core 短名单定稿+完成一半；第 2 周末 A Core 完成+代码地图齐；第 3–4 周 B 覆盖+gaps/ideas 提炼+（可选）survey outline。**加速杠杆**：为定时任务显式分配深读配额。
 - **下一步**：见 §16
 
@@ -72,7 +72,7 @@
 |---|---|---|---|---|---|---|
 | [2505.24298v5](https://arxiv.org/abs/2505.24298v5) | 2025-05-30首次／v5 2026-03-02 | AReaL | L2/L4 | B（系统；混版本／目标另列） | 生成准入限流与旧样本优先；中断换权重重算KV，decoupled PPO区分behavior／proximal | 核；[T1](#65-areal论文-t1压缩深读) |
 | [2409.19256v2](https://arxiv.org/abs/2409.19256v2) | 2024-09-28首次／v2 10-02 | HybridFlow / veRL | L4 | B | 混合单／多controller与分层API，3D-HybridEngine用于训练和生成间actor resharding | 核 |
-| [2507.13833v4](https://arxiv.org/abs/2507.13833v4) | 2025-07-18首次／v4 2026-05-30 | DistFlow | L4 | B | 多controller，数据传输与控制派发解耦，去中心Data Coordinator及DAG任务调度 | 核 |
+| [2507.13833v4](https://arxiv.org/abs/2507.13833v4) | 2025-07-18首次／v4 2026-05-30 | DistFlow | L4 | B | DAG串行化＋分布式数据面，缓存中间张量非prefix KV；512卡为随batch增长的弱扩展，不当固定job加速 | 核；[T2](#6311-distflow) |
 | [2504.15930v1](https://arxiv.org/abs/2504.15930v1) | 2025-04-22／v1 | StreamRL | L3/L4 | B（异步语义另列） | stream与ranker调度分治气泡；强制长度吞吐实验与真实收敛分开 | 核；[T1](#61-streamrl-t1压缩深读) |
 | [2505.24034v2](https://arxiv.org/abs/2505.24034v2) | 2025-05-29首次／v2 06-02 | LlamaRL | L4 | B（AIPO／FP8另列） | Executor独立并行度与DDMA权重传输；10.7×含异步／并行度／FP8组合，非纯异步收益 | 核；[T2](#6212-llamarl) |
 | [2510.12633v1](https://arxiv.org/abs/2510.12633v1) | 2025-10-14／v1 | Laminar | L3/L4 | B（buffer策略另核） | CPU relay与同版本repack；低陈旧性是观测，不是显式硬上限 | 核；[T1](#63-laminar-t1压缩深读) |
@@ -80,11 +80,11 @@
 | [2601.12784v2](https://arxiv.org/abs/2601.12784v2) | 2026-01-19首次／v2 08-03 | StaleFlow | L3/L4 | B；冗余／过滤另C | Reserve／Occupy／Consume界定轨迹年龄，TS／PS协调路由；主评估禁用冗余 | 核；[T1](#62-staleflow-t1压缩深读) |
 | [2507.01663v2](https://arxiv.org/abs/2507.01663v2) | 2025-07-02首次／v2 2026-09-11 | AsyncFlow | L3/L4 | B（版本／目标另核） | TransferQueue字段／微批流水及延迟一步安装权重；Ascend结果与串行同栈消融分账 | 核；[T2](#6211-asyncflow) |
 | [2606.26997v2](https://arxiv.org/abs/2606.26997v2) | 2026-06-25首次／v2 07-05 | RolloutPipe | L3/L4 | B（过滤／顺序另核） | 固定本轮rollout权重，完整group先送训；每U组更新、全R组消费后发布权重 | 核；[T1](#66-rolloutpipe-t1压缩深读) |
-| [2410.18252v3](https://arxiv.org/abs/2410.18252v3) | 2024-10-23首次／v3 2025-04-26 | Asynchronous RLHF | L4 | B | 生成与旧样本训练重叠，研究off-policy容忍度；算法鲁棒性不自动推广 | 核 |
-| [2406.14088](https://arxiv.org/abs/2406.14088v2) | 2024-06 | ReaL（v1名ReaLHF） | L4 | B | parameter reallocation与执行计划搜索；v2标MLSys'25，不再标SOSP'24 | 核 |
-| [2409.13221](https://arxiv.org/abs/2409.13221v3) | 2024-09 | RLHFuse／Stage Fusion | L4 | B | 样本级跨阶段与微批级阶段内融合；同一文献，NSDI'25 | 核 |
-| [2405.11143v6](https://arxiv.org/abs/2405.11143v6) | 2024-05-20首次／v6 2025-10-09 | OpenRLHF | L4 | B | 基于Ray／vLLM／DeepSpeed／Transformers的RLHF／RLVR框架 | 核 |
-| [2308.01320v1](https://arxiv.org/abs/2308.01320v1) | 2023-08-02／v1 | DeepSpeed-Chat | L4 | B | 统一训练／推理优化的端到端RLHF系统；后续框架基线须核具体实现与配置 | 核 |
+| [2410.18252v3](https://arxiv.org/abs/2410.18252v3) | 2024-10-23首次／v3 2025-04-26 | Asynchronous RLHF | L4 | B；**C**（off-policy／选样） | Cleanba式前一批数据训练与当前权重生成重叠；best/worst、减步数及KL代价分账，非纯调度2.5× | 核；[T2](#6312-asynchronous-rlhf) |
+| [2406.14088](https://arxiv.org/abs/2406.14088v2) | 2024-06 | ReaL（v1名ReaLHF） | L4 | B | 函数级mesh／并行度搜索与参数重分配；MCMC不保最优，主测随机prompt强制满长度、20步吞吐非收敛时间 | 核；[T2](#6313-real) |
+| [2409.13221](https://arxiv.org/abs/2409.13221v3) | 2024-09 | RLHFuse／Stage Fusion | L3/L4 | B | 聚尾KV迁移后提前评分、actor／critic双向流水；保留训前屏障，融合对同栈Base为1.2–1.4×非3.7× | 核；[T2](#6314-rlhfuse) |
+| [2405.11143v6](https://arxiv.org/abs/2405.11143v6) | 2024-05-20首次／v6 2025-10-09 | OpenRLHF | L2/L4 | B；**C**（DAPO筛组另列） | Ray／vLLM／ZeRO＋AutoTP／Ring；PDF表1原始时间几何平均复算1.146／1.181／1.393×，不沿用汇总列 | 核；[T2](#6315-openrlhf) |
+| [2308.01320v1](https://arxiv.org/abs/2308.01320v1) | 2023-08-02／v1 | DeepSpeed-Chat | L1/L2/L4 | A/B；**C**（可选mixture） | Hybrid Engine在TP生成／ZeRO训练间切换并管理内存；Step3吞吐与SFT＋RM＋PPO全流程时间、历史价格分账 | 核；[T2](#6316-deepspeed-chat) |
 | [2506.06122v1](https://arxiv.org/abs/2506.06122v1) | 2025-06-06／v1 | ROLL | L3/L4 | B（recipe／过滤另列） | 单controller、ParallelWorker与逐样本reward／env流水；质量曲线不当系统吞吐证据 | 核；[T2](#6216-roll) |
 | [USENIX ATC'24](https://www.usenix.org/conference/atc24/presentation/lei) | 2024-07会议记录 | PUZZLE | L4（暂） | B（暂） | 阶段内模型亲和／时分重叠，阶段间按相似性降低切换通信成本 | 核 |
 | [2605.12070v3](https://arxiv.org/abs/2605.12070v3) | 2026-05-12首次／v3 09-29 | Missing Old Logits in Asynchronous Agentic RL | L4边界 | 系统成本／算法修正，mask另C | 精确old logits分解训推差异与版本陈旧性；EWMA是近似，快照成本窗口有Ray故障终止 | 核；[T2](#6227-missing-old-logits) |
@@ -475,13 +475,13 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 | B3 | T1 | RollPacker、SortedRL、APRIL、DARTS | **完成4/4**：前半M1 new-chat @aecd7f5，15:17认领并推送9139ab3，15:22完成§6.9–6.10；后半M1 new-chat @100f213，2026-10-27 15:47认领并推送828ea15，15:53完成§6.11–6.12（非实现／复现验收） |
 | B4 | T1 | RhymeRL、ReSpec、BubbleSpec、DAS | **完成4/4**：前半M1 new-chat @7ae5758，16:17认领并推送d1df96e，16:22完成§6.13–6.14；后半M1 new-chat @6cf28b5，2026-10-27 16:47认领并推送c17ff36，16:54完成§6.15–6.16（非实现／复现验收） |
 | B5 | T1 | EfficientRollout、Heddle、ObsSpec、FP8-RL | **完成4/4**：前半M1 new-chat @70c59d3，2026-10-27 17:17认领并推送9dcbdc8，17:23完成§6.17–6.18；后半M1 new-chat @5304df1，17:47认领并推送4e1c946，17:52完成§6.19–6.20（非实现／复现验收） |
-| B6 | T2 | L4 其余：AsyncFlow、LlamaRL、RLinf、MindSpeed RL、NeMo-Aligner、ROLL／ROLL Flash、GLM-4.5、Long-RL；补DistFlow／Asynchronous RLHF／ReaL／RLHFuse／OpenRLHF／DeepSpeed-Chat | **9/15完成、补六认领**：旧九篇前八见§6.21、Long-RL见§6.22（认领75916da、18:54完成）。2026-10-27 23:17 M1 new-chat @fa2b3cf认领§6.30遗漏的六篇，先推送再读；按允许微调分母9→15，不重复旧九篇或将广扫计论文完成 |
+| B6 | T2 | L4 其余：AsyncFlow、LlamaRL、RLinf、MindSpeed RL、NeMo-Aligner、ROLL／ROLL Flash、GLM-4.5、Long-RL；补DistFlow／Asynchronous RLHF／ReaL／RLHFuse／OpenRLHF／DeepSpeed-Chat | **完成15/15**：旧九篇前八见§6.21、Long-RL见§6.22（认领75916da、18:54完成）。2026-10-27 23:17 M1 new-chat @fa2b3cf认领补六，先推送2336d47，23:27完成§6.31；按允许微调分母9→15，不重复旧九篇或将广扫计论文完成 |
 | B7 | T2 | 权重同步/失配子簇：SparseRL-Sync、PULSE、NeMo-DCR、ThunderSyncRL、PipelineRL、Missing Old Logits、Beyond Precision、FP16/Diagnosing/Rethinking 三选二 | **完成9/9**：前七篇§6.22；M1 new-chat @1353af5于2026-10-27 19:18认领FP16／Diagnosing（VeXact），先推送cea145d，19:30完成§6.23.1–2；Rethinking未选入，仍留边界未读账 |
 | B8 | T2 | L3/spec：TailSieve、WAR、Seer、Infinite Sampling、CadenceRL、Weave、CERO、Scheduling Mixed、SRT、S³R、NgramRL、TLT | **完成12/12**：前六篇认领先推送cea145d、19:30完成§6.23.3–8；M1 new-chat @9f7419e于2026-10-27 19:48认领余六篇，先推送f71f617，19:55完成§6.24；不增加源码／复现计数 |
 | B9 | T2 | spec/agentic：RLHFSpec、Bebop、FastGRPO、System-Integrated SD、SPARK、SpecActor、Online Draft Co-Training、MTP-RL、AReaL-DTA、FlashNext-RL、Rollplex | **完成11/11**：前6完成§6.25；2026-10-27 20:48 M1 new-chat @34e8adb去重AReaL-DTA／AREAL-DTA同一2602.00482身份后认领余5，先推送bc0649d，与SkyRL-Agent合批完成§6.26；训练侧边界保留，不增源码／复现计数 |
 | B10 | T2 | agentic：SkyRL-Agent(广扫深化)、EARL、InfoTree、AsyncWebRL、AcceRL、MARLaaS、FlexMARL、Agent Lightning v0/v1.0、TideRL、ROSE、QwenGyre | **完成12/12**：SkyRL-Agent见§6.26.6，八篇见§6.27；余三认领先推送c96756b，与B11前五篇合批完成§6.28.1–3 |
 | B11 | T2 | 资源/边界：ARL-Tangram、DART、MCP-Universe RL、PEARL、SAO、Rollout Infrastructure Tax、ExpThink、Intelligent Router；补AgentRL／RollArt／AstraFlow | **完成11/11**：前五见§6.28.4–8；2026-10-27 22:18 M1 new-chat @81084bc认领余三＋补三，先推送8aac21e，22:29完成六篇§6.29。按允许微调补三篇、分母8→11；Intelligent Router仍serving迁移边界，不转原生覆盖 |
-| B12 | T3 | serving 20 条 + 其余边界条目 triage（不深读，逐条给不深读理由+关联判定） | **首批serving20/20完成、余项待核**：M1 new-chat @82e1d07于2026-10-27 22:48认领，先推送a65cb4d；§6.30完成19条T3＋Router既有T2引用。剩余3条原单列边界及5条线索未作新triage；另14直接候选须补T2或逐条分级，不自动降T3，见§6.30 |
+| B12 | T3 | serving 20 条 + 其余边界条目 triage（不深读，逐条给不深读理由+关联判定） | **首批serving20/20完成、余项待核**：M1 new-chat @82e1d07于2026-10-27 22:48认领，先推送a65cb4d；§6.30完成19条T3＋Router既有T2引用。剩余3条原单列边界及5条线索未作新triage；原14直接候选已有六篇补§6.31，余8不自动降T3 |
 | C1 | 代码 | veRL TransferQueue/TQ 数据面 + AReaL 调度器 | 待认领 |
 | C2 | 代码 | vLLM / SGLang core scheduler 路径 | 待认领 |
 | C3 | 代码 | rLLM / slime / 其余框架 | 待认领 |
@@ -1685,9 +1685,69 @@ B12首批20条范围复核：19条新增T3，Intelligent Router沿用§6.29.3的
 | [Continuum v7](https://arxiv.org/abs/2511.02230v7) | T3；工具暂停间KV TTL与program FCFS，非终止轨迹策略 | 按reload／排队成本留KV可减少跨turn重载；TTL到期只允许evict cache，不等abort rollout，跨policy更新的KV另核。 |
 | [Helium v1](https://arxiv.org/abs/2603.16104v1) | T3；workflow query plan优化，非RL训练管线实证 | proactive caching／cache-aware调度可迁到调用DAG；若复用随机输出而非仅复用KV，须核组内采样独立性、版本和reward语义。 |
 
-**剩余阅读账**：121条矩阵现为20 T1＋64 T2＋19 T3＋18未标完成；这些是互斥身份数，不把Router双计。18条中HybridFlow仍进行中1；原§5.20单列而未T2的ASymPO／CIS／Each Prompt Matters共3；另14条仍是直接候选，不能仅因批次表B1–B11完成就自动降为T3或称全文已读完。
+**22:55完成时的阅读账（本轮前快照，当前见§0／§6.31）**：121条矩阵当时为20 T1＋64 T2＋19 T3＋18未标完成；这些是互斥身份数，不把Router双计。18条中HybridFlow仍进行中1；原§5.20单列而未T2的ASymPO／CIS／Each Prompt Matters共3；另14条仍是直接候选，不能仅因批次表B1–B11完成就自动降为T3或称全文已读完。
 
-14条直接候选未读清单：DistFlow、Asynchronous RLHF、ReaL、RLHFuse、OpenRLHF、DeepSpeed-Chat、PUZZLE、DynaRL、PivotRL、RobustRL、RLBoost、Relax、SPEC-RL、ProRL Agent。代码广扫已有OpenRLHF不等论文T2完成，Relax局部多模态补核也不等深读。B12其余边界与§5.23五条线索仍待实质判定；下一轮先核远端与分级，将直接候选按6–8篇T2补批、在认领时回写名单，不以重复serving条目凑T3规模。HybridFlow与Code批次保持各自验收标准。
+22:55时14条直接候选未读清单：DistFlow、Asynchronous RLHF、ReaL、RLHFuse、OpenRLHF、DeepSpeed-Chat、PUZZLE、DynaRL、PivotRL、RobustRL、RLBoost、Relax、SPEC-RL、ProRL Agent。代码广扫已有OpenRLHF不等论文T2完成，Relax局部多模态补核也不等深读。B12其余边界与§5.23五条线索仍待实质判定；当时接续为先核远端与分级，将直接候选按6–8篇T2补批、在认领时回写名单，不以重复serving条目凑T3规模。HybridFlow与Code批次保持各自验收标准。
+
+### 6.31 L4执行计划与异步补读
+
+B6补六篇T2，按§6.0名单微调由9扩为15；各6条。正文与必要附录阅读不替代代码／性能验收。算术复算为本轮判断，条件与原始时间保留，不据单一汇总错误否定全部系统机制。
+
+#### 6.31.1 DistFlow
+
+- **来源／分类**：[v4 §4–7、附录A/B](https://arxiv.org/html/2507.13833v4)，T2完成；L4 B。分散控制／数据面，不等于policy异步更新。
+- **执行契约**：DAG Planner为colocated资源将同深度节点加依赖串行化，DAG Worker本地执行；“DAG”不代表任意阶段都并行。
+- **数据机制**：DP不变走本地中间张量cache，变化才经每节点Databuffer重分片，TP0提交；Constrained LPT按已知序列长度平衡训练侧且限制每worker等条数，非预测生成长度或丢弃尾样本；double buffer交换指针后后台释放。
+- **条件**：Qwen2.5 7／32／72B、Hopper集群、vLLM0.8.5.post1／FSDP；默认prompt≤2048／response≤4096。主LLM至128卡，VLM至512卡同时增global batch，是弱扩展，不是固定job强扩展。
+- **结果口径**：正文PPO对verl为1.09–1.64×、GRPO最高2.62×（摘要2.63×不混用）；20-epoch的32B／32卡reward与entropy接近、总时间减21%，不等严格采样等价证明。
+- **负项／迁移**：小batch负载均衡收益可被调度开销抵消；附B 8K／G8／32卡step192.326→91.881秒，但rollout compute25.169→29.236秒反慢，收益主要不能归decode kernel。排除异步基线也不能证明所有异步算法必然错误。
+
+#### 6.31.2 Asynchronous RLHF
+
+- **来源／分类**：[v3 §3–5、附录A/D](https://arxiv.org/html/2410.18252v3)，T2完成；L4 B，off-policy及best/worst选样另 **C**，鲁棒性是实证而非无偏／on-policy保证。
+- **机制**：Cleanba式用θ_i生成本批、训练前一批得到θ_i+1，分离生成／训练资源；N批由同旧policy生成再多次更新的off-policy扫描，与实际一步旧流水分开。
+- **条件／基线**：TLDR用Pythia0.41／1／2.8B、batch512、256步、4 A100；同步HF生成对异步vLLM还换了backend，25% headline不全是异步重叠。
+- **较同栈对照**：No Robots Llama3.1-8B、8 H100、1卡vLLM＋7卡训练，两侧均vLLM；100K episodes，报告耗时约减38%、GPT4o win-rate均57.2%，是此任务结果，不普遍承诺同质量。
+- **选样／成本**：训练受限时K2→4，仅取最高／最低reward，LR与步数减半，2.5×包含配方改变；多次复用旧batch或扩K都可提高KL，不能称目标不变的纯B提速。
+- **单位／负项**：GSM8K Rho1B表2为218→129分钟，即速度1.69×／时间减40.8%，不把“68% faster”写成耗时减68%；pass@1为52.2→52.6。附录实际异步step15.1秒高于理想12.9秒，仍有通信／同步开销。
+
+#### 6.31.3 ReaL
+
+- **来源／分类**：[v2 §4–8、附录A](https://arxiv.org/html/2406.14088v2)，T2完成；L4 B；同ID的ReaLHF→ReaL不加身份。
+- **机制**：函数级DAG同时含数据／参数版本依赖，为各generation／inference／train选mesh和DP／TP／PP／微批数；权重按共享层／TP分区broadcast重分配，master只派控制信息，数据留GPU。
+- **计划成本**：profile层级运算＋插值、通信按大小／带宽估计，MCMC时限内选最低估计成本；同构GPU／带宽和可预测调用是假设，原文明确不保全局最优。1024卡搜索不等1024卡实际RL训练。
+- **条件**：主测16–128 H100随模型／batch增长；base batch512、context2048、prompt1024、8 PPO mini-batches。附录用随机prompt且强制生成满最大长度，排除了真实EOS／长尾，不能拿它验收实际agent分布。
+- **结果口径**：warmup后20步吞吐最高3.58×对多系统，搜索对自身heuristic平均+54%、长context最高+81%；不是完整收敛墙钟，也不等每模型／配置同一增益。
+- **迁移限制**：7B+7B actor／critic可重叠，70B+7B反而选择串行，重叠不是普遍最优；生成长度动态变化会伤成本预测。保持图依赖是语义设计，不替代RNG、训推数值或质量验证。
+
+#### 6.31.4 RLHFuse
+
+- **来源／分类**：[v3 §3–7](https://arxiv.org/html/2409.13221v3)，T2完成；L3/L4 B，Stage Fusion为同篇，不新增名称数。
+- **跨阶段契约**：已完成样本先评分，将未完尾样本与KV聚到少数生成实例、释放卡作Ref／RW／Critic inference；训练仍等完整生成集随机分mini-batch，非够数就提前更新或丢尾。
+- **阶段内机制**：actor／critic微批双向流水填彼此气泡；受依赖、无环和activation内存约束，以退火求近优，局部达到下界不证明任意配置最优。规划实验用了768 CPU核，非免费执行开销。
+- **条件**：256 Hopper、LLaMA13／33／65B四种actor／critic组合、HH-RLHF，global512／mini64、输出上限512／1024／2048；DSChat为能运行改mini256，更新次数不再完全一致。
+- **结果分账**：warmup后20步samples/s，对DSChat2.5–3.7×、ReaLHF1.4–2.4×，但对同栈无融合Base仅1.2–1.4×；3.7×不能全部归融合，更不是质量达标时间。
+- **负项／迁移**：迁移太早可使少数尾实例过载，约20%阈值仅早期负载观察、随分布调整；主测用RDMA直接迁KV，不能外推慢网仍零成本，保同步依赖也不等逐位随机一致。
+
+#### 6.31.5 OpenRLHF
+
+- **来源／分类**：[v6 §3–5、附录C](https://arxiv.org/html/2405.11143v6)，T2完成；L2/L4 B，DAPO动态筛组另 **C**；论文不替代既有固定commit代码广扫。
+- **机制**：Ray编排rollout与ZeRO engines、vLLM生成；AutoTP＋ZeRO／DP＋Ring序列并行为文中“3D”，不是默认等同经典TP／DP／PP；异步RPC描述不自动给每条轨迹版本／年龄硬界。
+- **主对照条件**：OpenRLHF0.8.5对verl0.4.0，8 H200、PyTorch2.7，DeepSeek蒸馏Qwen1.5／7／14B，DAPO同超参、local batch1、prompt≤1024、输出1K–8K；计平均step、去掉前10步，不是全训练time-to-quality。
+- **原表核对**：[PDF第5页表1](https://arxiv.org/pdf/2405.11143v6)视觉确认时间与HTML一致；按其图注 `exp(mean(log(t_verl/t_ours)))` 复算三行约1.146／1.181／1.393×，不能复现原列1.22／1.42／1.68×。这是汇总算术疑点，所有原始配置时间仍较短，不否定这些时间记录。
+- **其他结果**：PPO 1024 prompts一epoch为855.09→236.8秒、约3.6×对DSChat；不合并为主长CoT实验倍率。两侧均DAPO也不能将全部系统差异归因DAPO算法本身，代码行数更不认证可维护性或故障安全。
+- **迁移边界**：附录给rollout logp与PPO流程，未逐项交代主性能对照的队列／版本／组消费契约；不能由“fully async”推出零陈旧、精确on-policy或通用算法稳定性。
+
+#### 6.31.6 DeepSpeed Chat
+
+- **来源／分类**：[v1 §3–5](https://arxiv.org/html/2308.01320v1)，T2完成；L1/L2/L4 A/B；可选Mixture Training的预训练loss另 **C**，不把整个框架都算目标变化。
+- **机制**：Hybrid Engine按train／eval模式切换ZeRO训练与TP生成，配合推理kernel、KV／中间内存管理与分区重配置；是分阶段统一资源，不是actor生成与更新永远同时进行。
+- **条件**：2023报告的OPT系列、生成256 tokens＋prompt256、最大global batch1024；以可用内存选batch／GPU数。不能把短输出最大batch性能直接套给长CoT或固定batch强扩展。
+- **结果分账**：13B actor＋350M reward在8 A100-40GB上，全三阶段13.6小时、其中Step3为10.8小时；图中6–19×对Colossal-AI及1.4–10.5×对HF DDP主要是Step3，不是SFT＋RM＋PPO全程或现代框架排名。
+- **额外成本／限制**：EMA checkpoint与mixture均可增加内存／训练成本；报告的小时／历史云价不是同质量ChatGPT复现或当前账单。175B端因内存限制batch、有效吞吐下降，不是规模越大总更高效。
+- **迁移边界**：超线性扩展同时来自更多内存允许更大batch；后继论文的DSChat版本、mini-batch修改和backend必须单列，不能将2023公开倍率移植到其他论文的对照设置。
+
+**本轮后未读账**：121＝20 T1＋70 T2＋19 T3＋12未标完成；12＝HybridFlow进行中1＋原单列边界3＋直接候选8。余八为PUZZLE、DynaRL、PivotRL、RobustRL、RLBoost、Relax、SPEC-RL、ProRL Agent；下轮核远端后合批T2并在认领时回写名单。B12边界三项及§5.23五条线索仍待，代码6路径／4框架、完整复现0不增；不将B6补齐或T2达到70称作Phase 2整体完成。
 
 ## 7. Code & System Landscape
 
@@ -1914,6 +1974,8 @@ SkyRL `e0893f6e`的[wait_for_generation_buffer:843](https://github.com/NovaSky-A
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（M1 B6补六篇L4 T2）**：§6.31完成DistFlow、Asynchronous RLHF、ReaL、RLHFuse、OpenRLHF、DeepSpeed-Chat，各6条；B6补后15/15，T2累计70、T1仍20、T3仍19。DistFlow本地中间张量cache／弱扩展与decoder计算分账；Async RLHF换backend／选best-worst／减步数及KL另C，GSM8K速度1.69×不写耗时减68%。ReaL强制满长度与真实长尾、估算MCMC与最优、RLHFuse同栈融合1.2–1.4×与对DSChat3.7×／mini-batch差异分开。PDF第5页确认OpenRLHF表1，几何均值复算1.146／1.181／1.393×不沿原汇总列；DSChat Step3与三阶段时间、历史基线／batch扩展分账。121身份不增，互斥账20＋70＋19＋12，直接候选余8；HybridFlow／B12余项／Code未完成，代码6条／4框架、复现0不增。无设备、M5专项或社区动作。
 
 - **2026-10-27（M1 B12首批serving triage）**：§6.30复核§5.5全20条，19条新增T3、Router引用既有T2不双计；T1／T2仍20／64。19项回原站版本摘要／会议介绍，逐条写不追加T2理由及rollout迁移条件；PD goodput／组尾、缓存eviction／轨迹终止、历史文本draft／训练回放、speculator RL／actor RL分别保留。121身份、115 arXiv＋6会议不增；互斥深度账20＋64＋19＋18，18未标完成＝HybridFlow1＋边界3＋直接候选14，不能据批次表完成漏掉14项；另5条线索分账。B12未整体完成；下轮先核远端、按6–8篇T2补直接候选并在认领时微调批次，边界另作triage，不重复serving凑数。代码6条／4框架、复现0不增，无设备、M5专项或社区动作。
 

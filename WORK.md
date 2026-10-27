@@ -4,7 +4,7 @@
 
 ## 当前阶段
 
-- **M1本轮认领（2026-10-27 23:17）**：M1 new-chat @fa2b3cf核远端0/0、工作树干净；按§6.30未读账认领DistFlow／Asynchronous RLHF／ReaL／RLHFuse／OpenRLHF／DeepSpeed-Chat六篇T2，先推送再读。按§6.0允许微调并入B6补批，分母9→15、当前9/15，T2仍64；已有代码广扫不算论文完成。无设备、M5专项或社区动作。
+- **M1 B6补六篇完成（2026-10-27 23:27）**：认领先推送2336d47；[§6.31](notebook/rollout-performance-research.md#631-l4执行计划与异步补读)完成DistFlow／Asynchronous RLHF／ReaL／RLHFuse／OpenRLHF／DeepSpeed-Chat，各6条T2，累计70、B6补后15/15、T1仍20／T3仍19。文档维护／PDF技能保留DistFlow数据面与decode、ReaL强制满长度／非最优搜索、RLHFuse提前评分／训前屏障／mini-batch差异，Async best-worst与KL另C。OpenRLHF PDF表1几何均值复算1.146／1.181／1.393×而非原汇总列；DSChat Step3与三阶段、最大batch／历史基线分账。121身份不增，互斥账20＋70＋19＋12；剩余直接候选PUZZLE／DynaRL／PivotRL／RobustRL／RLBoost／Relax／SPEC-RL／ProRL Agent共8，下轮核远端后合批T2、认领时回写名单。HybridFlow／B12余边界及五线索／Code仍待，代码6条／4框架、复现0不增；无设备、M5专项、算力队列或社区动作。
 
 - **M1 B12首批serving triage完成（2026-10-27 22:55）**：认领先推送a65cb4d；[§6.30](notebook/rollout-performance-research.md#630-serving文献triage)逐条复核20项，新增19条T3、Router引用既有T2，不重复计深度；T1／T2仍20／64。文档维护技能把PD goodput／组尾、KV驱逐／轨迹终止、历史draft／训练回放、speculator RL／actor RL分开；19项核原站版本摘要／会议介绍，无新性能倍率或复现声明。矩阵121＝20 T1＋64 T2＋19 T3＋18未标完成；18中HybridFlow1、原单列边界3、直接候选14，逐名在§6.30，不因B1–B11完结将漏列直接候选自动降T3。B12余边界及另5条线索仍待；下一轮核远端／分级后按6–8篇T2补直接候选、认领时回写批次，可附带边界triage，不重复serving凑数。代码6条／4框架、复现0不增，仍非Phase 2整体完成；无设备、M5专项、算力队列或社区动作。
 
