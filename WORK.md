@@ -4,7 +4,7 @@
 
 ## 当前阶段
 
-- **M1本轮认领（2026-10-27 16:47）**：核远端仍6cf28b5、工作树干净后，认领[§6.0 B4](notebook/rollout-performance-research.md#60-phase-2-冲刺批次表2026-10-27-用户指令截止-2026-10-29-两天内完成)后半BubbleSpec／DAS两篇T1，先推送再阅读；T1仍14篇、B4仍2/4。无设备、M5专项或社区操作。
+- **M1 B4完成（2026-10-27 16:54）**：认领先推送c17ff36，完成[§6.15 BubbleSpec／§6.16 DAS](notebook/rollout-performance-research.md#615-bubblespec-t1压缩深读)两篇各24行T1，B4收束4/4、T1累计16。文档维护技能保留验证条件与实验单位；PDF技能确认DAS式7与前置约束代数不一致，CPU反例不当实现bug证据。BubbleSpec只用inter-GPU气泡，旧token仅供target验证，decode步／rollout秒／质量分账。121身份、HybridFlow进行中1、代码6条／4框架、复现0不增。下方旧状态以本条及canonical§0为准；下一轮核远端后认领B5前半EfficientRollout／Heddle，无设备、M5专项／AReaL prompt_mean或社区动作。
 
 - **M1 B4前半完成（2026-10-27 16:22）**：认领先推送d1df96e，完成[§6.13 RhymeRL／§6.14 ReSpec](notebook/rollout-performance-research.md#613-rhymerl-t1压缩深读)两篇各24行T1；B4仅2/4、T1累计14。文档维护技能分开历史draft验证与HistoPipe一步陈旧／跨步集合、trace匹配与实际接受率；ReSpec加权对象确认为drafter KD，对其方差→偏差解释留论证疑点，不断言actor目标改变或实现错误，峰值／均值／累计消融分账。121身份、HybridFlow进行中1、代码6条／4框架、复现0不增。下方旧状态以本条及canonical§0为准；下一轮核远端后认领BubbleSpec／DAS，无设备、M5专项／AReaL prompt_mean或社区动作。
 
