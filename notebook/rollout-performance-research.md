@@ -6,9 +6,9 @@
 ## 0. Project Status
 
 - **阶段**：Phase 1 — recall-first literature & code investigation（广扫建库，不收束观点）
-- **最近更新**：2026-10-27（M1补抢占／跨域／PD弹性及action级外部资源四项系统，见§5.21；覆盖账更新为81直接候选＋15单列边界＋20 serving，本批不增代码路径）
+- **最近更新**：2026-10-27（M1补SkyRL fully-async组准入／完成FIFO／过滤与概率锚点，固定`e0893f6e`，见§8.7；文献计数不变）
 - **覆盖**：累计**116篇已核身份**（20篇serving基础／迁移边界＋96篇rollout/RLHF及相关边界；110个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL／Weave／MTP-RL会议记录，均非深读）。§5.20将RL相关96暂分为81直接Rollout系统／机制候选与15保守单列条目；81只是工作范围计数，不是原生80–120覆盖／质量验收。MTP-RL是ACL Findings独立文献，不与Bebop同篇；初始种子身份已全部落实，但原生覆盖／分级／引用检索仍未收敛。ASymPO证明错误警示保留；Round 1“≈73”不与当前数量相加。
-- **全文深读 / 代码广扫**：0 / 5（veRL `24f25b03`三条路径＋OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`各一条；共3框架，不是5框架或运行验证，也不按文件数计）
+- **全文深读 / 代码广扫**：0 / 6（veRL `24f25b03`三条路径＋OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`、SkyRL `e0893f6e`各一条；共4框架，不是6框架或运行验证，也不按文件数计）
 - **最高优先级**：补原生候选覆盖及其引用／会议盲区，同时扩未覆盖框架；总量及81候选进入目标区间不等检索收敛／最终分级，A Core短名单不按计数凑齐
 - **下一步**：见 §16
 
@@ -424,7 +424,9 @@ OpenRLHF本轮只读克隆：`/Users/jackiemac/Documents/Codex/2026-10-20/new-ch
 
 NeMo RL只读克隆：`/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/nemo-rl-rollout-scan`，origin为`NVIDIA-NeMo/RL`，固定HEAD `a9d1a4bec45a28fd0d455519a2a979a37da2ac4a`，工作树干净。这里是SingleController路径，不与legacy async GRPO、NeMo-Aligner论文或其他快照拼为同一实现；未安装依赖或运行项目。
 
-**代码地图覆盖**：veRL三条路径见§8.2–8.4，OpenRLHF一条见§8.5，NeMo RL一条见§8.6；下一批继续原生引用／会议／种子，或补rLLM／SkyRL，不以单路径代表框架全貌。AReaL prompt_mean仍由M5单一负责，不在此代码广扫中接续。
+SkyRL只读克隆：`/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/skyrl-rollout-scan`，origin为`NovaSky-AI/SkyRL`，固定HEAD `e0893f6eb878f4d396184cb14c4f9d27bbbb0aef`，工作树干净。只读统一包的fully-async／SkyRLGym路径，不同于SkyRL-Agent论文原版、默认同步trainer或模拟trainer；未安装依赖或运行项目。
+
+**代码地图覆盖**：veRL三条路径见§8.2–8.4，OpenRLHF一条见§8.5，NeMo RL一条见§8.6，SkyRL一条见§8.7；下一批继续原生引用／会议盲区或补rLLM等未覆盖框架，不以单路径代表框架全貌。AReaL prompt_mean仍由M5单一负责，不在此代码广扫中接续。
 
 ## 8. Paper → Mechanism → Code Mapping
 
@@ -558,6 +560,26 @@ Q限制结果队列及slot预算，**不包括当前已取走的训练批，也�
 
 与§8.4／§8.5的区别：veRL所读队列会条件淘汰旧条目，OpenRLHF所读路径用slot／阻塞put且另有响应buffer；SC把准入、按版本或target选组、training所有权分为独立阶段。不能拿三者的“queue size／staleness”数值直接比较，也不把windowed筛选、动态reward过滤与背压混作同一操作。验证限6份Python blob一致／AST解析及引用行号核对（entry、controller、sampler、replay、rollout_manager、config），另读guide和示例YAML；未导入框架、安装依赖、运行Ray／TQ／原生测试／模型／设备，无性能或故障结论。全文深读0，代码路径累计5条／3框架；后续继续原生补库或补尚未覆盖框架，不为静态差异创建GPU任务。
 
+### 8.7 SkyRL异步组准入与消费
+
+固定[SkyRL `e0893f6e`](https://github.com/NovaSky-AI/SkyRL/tree/e0893f6eb878f4d396184cb14c4f9d27bbbb0aef)，沿[fully-async示例入口:15](https://github.com/NovaSky-AI/SkyRL/blob/e0893f6eb878f4d396184cb14c4f9d27bbbb0aef/examples/train/fully_async/main_fully_async.py#L15)→FullyAsyncRayPPOTrainer→SkyRLGymGenerator→训练输入／loss与同步调用点广扫。[配置:1096](https://github.com/NovaSky-AI/SkyRL/blob/e0893f6eb878f4d396184cb14c4f9d27bbbb0aef/skyrl/train/config/config.py#L1096)的fully_async.enabled与sample_full_batch默认False；本节是显式启用的真实trainer路径，不把独立simulate_training模式或默认同步路径混入证据。
+
+| 环节 | 固定代码入口 | 静态可见内容 |
+|---|---|---|
+| prompt组与完成边界 | [生产:922](https://github.com/NovaSky-AI/SkyRL/blob/e0893f6eb878f4d396184cb14c4f9d27bbbb0aef/skyrl/train/fully_async_trainer.py#L922)、[generate:957](https://github.com/NovaSky-AI/SkyRL/blob/e0893f6eb878f4d396184cb14c4f9d27bbbb0aef/skyrl/train/generators/skyrl_gym_generator.py#L957) | 每worker取一个prompt，展开n_samples_per_prompt为同uid组；generate以gather等待组内agent loops并保序。完整组完成后put_nowait入池，QueueFull抛断言，不淘汰旧组或阻塞put |
+| 容量准入 | [_compute_capacity:181](https://github.com/NovaSky-AI/SkyRL/blob/e0893f6eb878f4d396184cb14c4f9d27bbbb0aef/skyrl/train/fully_async_trainer.py#L181)、[初始化:339](https://github.com/NovaSky-AI/SkyRL/blob/e0893f6eb878f4d396184cb14c4f9d27bbbb0aef/skyrl/train/fully_async_trainer.py#L339) | 同时限制running组和超前训练的总组数；结果池maxsize=B(S+1)，不是逐trajectory或token预算。取出一组不直接返还超前预算，训练后推进global_step再通知容量 |
+| 消费与长尾 | [收集:823](https://github.com/NovaSky-AI/SkyRL/blob/e0893f6eb878f4d396184cb14c4f9d27bbbb0aef/skyrl/train/fully_async_trainer.py#L823)、[转换:1013](https://github.com/NovaSky-AI/SkyRL/blob/e0893f6eb878f4d396184cb14c4f9d27bbbb0aef/skyrl/train/fully_async_trainer.py#L1013) | finish-time FIFO收B个组，不等最先派发的B组；组内仍等慢轨迹。step-wise组可展开不同数量的turn行，按response_ids数复制uid。超过S仅warning并计数，仍拼入训练 |
+| 筛组与不足尾批 | [过滤返还:208](https://github.com/NovaSky-AI/SkyRL/blob/e0893f6eb878f4d396184cb14c4f9d27bbbb0aef/skyrl/train/fully_async_trainer.py#L208)、[消费循环:823](https://github.com/NovaSky-AI/SkyRL/blob/e0893f6eb878f4d396184cb14c4f9d27bbbb0aef/skyrl/train/fully_async_trainer.py#L823)、[epoch耗尽:552](https://github.com/NovaSky-AI/SkyRL/blob/e0893f6eb878f4d396184cb14c4f9d27bbbb0aef/skyrl/train/fully_async_trainer.py#L552) | sample_full_batch要求zero_variance_filter；丢组后accepted减1、filtered加1，释放预算并继续补组。epoch耗尽则丢不足B的已保留组；这些uid记为filtered／consumed，恢复时不重抽。它改变训练集合，不是单纯背压 |
+| 概率锚点 | [构造校验:393](https://github.com/NovaSky-AI/SkyRL/blob/e0893f6eb878f4d396184cb14c4f9d27bbbb0aef/skyrl/train/fully_async_trainer.py#L393)、[forward门控:1347](https://github.com/NovaSky-AI/SkyRL/blob/e0893f6eb878f4d396184cb14c4f9d27bbbb0aef/skyrl/train/trainer.py#L1347)、[rollout_is:868](https://github.com/NovaSky-AI/SkyRL/blob/e0893f6eb878f4d396184cb14c4f9d27bbbb0aef/skyrl/backends/skyrl_train/utils/ppo_utils.py#L868) | async限制依赖重算old的loss，CISPO按anchor判断；rollout_is断言有rollout logp并以new−rollout算ratio。只有相应loss、已有rollout logp、KL reward关闭且off-policy correction关闭时才跳过policy forward；不能统称async总不重算 |
+
+**总体超前量不等每组硬年龄。** 令B=policy_mini_batch_size（prompt组数）、S=max_staleness_steps、v=当前正在训练的global_step、A=accepted（含已训练与待训练，过滤时减回）、R=running、W=并发组上限；准入容量为`min(W−R, (S+v)B−A−R)`，正值才提交。`global_step_when_scheduled`在取得slot后、调用generate前记录；消费计算`global_step−scheduled`，并不检查引擎实际token权重版本。配置docstring的`j−i≤S`不能覆盖代码明确允许的长尾超限；也不能与NeMo windowed的消费年龄筛选混称同一保证。全异步在epoch内运行，跨epoch会等待／重置控制状态。
+
+**过滤与计量口径分别保留。** sample_full_batch在收集阶段丢组补组；即使此开关关闭，[共同postprocess:1154](https://github.com/NovaSky-AI/SkyRL/blob/e0893f6eb878f4d396184cb14c4f9d27bbbb0aef/skyrl/train/trainer.py#L1154)对response-level reward仍可将零方差组的loss_masks置零，token-level reward另走分支。不能把mask置零与collector丢组／补组视为同一操作。正常收齐B组后的转换会将同轮丢弃的零方差组仅并入headline奖励／生成指标，训练输入另用保留组；consumed uid数也不等训练组数，后者扣除filtered。这里不认证checkpoint恢复、自定义generator输出或过滤后的数值收敛。
+
+**步号、prefix缓存盐与轨迹权重不是同一身份。** [cache salt:315](https://github.com/NovaSky-AI/SkyRL/blob/e0893f6eb878f4d396184cb14c4f9d27bbbb0aef/skyrl/train/generators/skyrl_gym_generator.py#L315)按engine weight_version与模型名生成，每次generate只捕获一次，不以trainer global_step代替；这是prefix复用隔离，不证明跨turn／in-flight轨迹始终同权重。[同步调用:783](https://github.com/NovaSky-AI/SkyRL/blob/e0893f6eb878f4d396184cb14c4f9d27bbbb0aef/skyrl/backends/skyrl_train/workers/worker_dispatch.py#L783)的non-colocated非LoRA普通分支pause→broadcast／finish→resume，delta另将pause交内部；KV-offload又有独立分支。不能把外层pause调用直接当所有backend、adapter、KV和token一致性证明。
+
+验证限8份Python文件与固定Git blob一致、AST解析及本节行号核对：示例entry、fully_async、config、generator base／gym、trainer、worker_dispatch、ppo_utils；未导入SkyRL、Torch、Ray、vLLM或运行原生测试／模型／设备。文献仍116、深读0，代码累计6条路径／4框架；不将代码快照等同论文原版或静态差异等同性能排名。后续继续原生引用／会议盲区或尚未覆盖框架，具体恢复／token版本追踪另核，不为本次代码阅读创建GPU任务。
+
 ## 9. Serving → Rollout Transfer
 
 三问框架（每个 serving 工作都过一遍）：① serving 里解决什么 bottleneck？② 哪些机制可直接迁移？③ 进入 rollout 后 objective/scheduler semantics/correctness 约束怎么变、是否需要 RL-aware redesign？
@@ -592,6 +614,8 @@ OpenRLHF `dc2a7ad3`的[异步生产／消费计时](https://github.com/OpenRLHF/
 
 NeMo RL SC `a9d1a4be`的[exposed_generation:3010](https://github.com/NVIDIA-NeMo/RL/blob/a9d1a4bec45a28fd0d455519a2a979a37da2ac4a/nemo_rl/algorithms/single_controller.py#L3010)包住evict、选组和饥饿轮询，不是rollout引擎生成总算时；[weight_sync:3748](https://github.com/NVIDIA-NeMo/RL/blob/a9d1a4bec45a28fd0d455519a2a979a37da2ac4a/nemo_rl/algorithms/single_controller.py#L3748)在colocated且为save延后refit时可进入空计时块，其他分支才调用同步生命周期。组数／版本／claim寿命见§8.6；计时名称不能替代执行分支和生成工作量，本轮无计时实测。
 
+SkyRL `e0893f6e`的[wait_for_generation_buffer:843](https://github.com/NovaSky-AI/SkyRL/blob/e0893f6eb878f4d396184cb14c4f9d27bbbb0aef/skyrl/train/fully_async_trainer.py#L843)覆盖取组、等待和条件筛组／记账；group_completion_time则在取得准入slot后包住单组generate调用，不含此前容量等待。两者不等纯decode时间。[sync_weights:604](https://github.com/NovaSky-AI/SkyRL/blob/e0893f6eb878f4d396184cb14c4f9d27bbbb0aef/skyrl/train/fully_async_trainer.py#L604)包住dispatch全调用；名为sync_weights_only_transfer的内层计时在[worker_dispatch:809](https://github.com/NovaSky-AI/SkyRL/blob/e0893f6eb878f4d396184cb14c4f9d27bbbb0aef/skyrl/backends/skyrl_train/workers/worker_dispatch.py#L809)包住broadcast加finish，仍不等链路字节传输耗时。生成与训练重叠，分项不简单相加；本轮没有计时实测。
+
 ## 13. Research Gaps / Ideas
 
 （Round 1 初步观察，待 corpus 收敛后修正）：
@@ -612,6 +636,8 @@ NeMo RL SC `a9d1a4be`的[exposed_generation:3010](https://github.com/NVIDIA-NeMo
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（M1 SkyRL组准入与消费广扫）**：只读固定`e0893f6e`，§8.7补组完成FIFO、总体容量公式与长尾超限只warning、零方差补组／不足尾批丢弃及uid记账；rollout／重算old概率和engine版本cache salt分别标语义。§12补外层同步／broadcast加finish、组生成／收集等待的计时边界。8 Python blob／AST与引用核对，无依赖／原生执行／设备／M5专项／社区写入；文献116、深读0、代码6条／4框架。下步仍原生引用／会议或未覆盖框架，恢复和逐token版本另核，不据静态差异排名。
 
 - **2026-10-27（M1弹性与跨域补库）**：新增RLBoost v3／ECHO-2 v6／PEARL v1／ARL-Tangram v1，累计116身份（110 arXiv＋6会议），§5.20更新81直接候选＋15单列＋20 serving。§5.21分开抢占续跑、过旧丢弃、同trace执行比较及action外部资源；价格估计不当账单或wall-time优势，RLBoost+不当原版。原112行与代码地图保留，深读0、代码5条／3框架不变；无设备／M5专项／社区写入。下步仍原生引用／会议或未覆盖框架，不以81自动验收收束。
 
