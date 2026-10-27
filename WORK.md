@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1本轮认领（2026-10-27 13:18）**：按新加急规则转入[§6.0 B1](notebook/rollout-performance-research.md#60-phase-2-冲刺批次表2026-10-27-用户指令截止-2026-10-29-两天内完成)前半StreamRL／StaleFlow两篇T1；后半Laminar／DORA仍待认领。会话M1 new-chat @27c4e00，先推送认领再阅读。HybridFlow未完结：只读本地tag日期晚于v2预印本，未当论文原版证据，不继续占用本轮单篇循环。无设备或M5专项操作。
+
 - **M1 HybridFlow映射成本与原图补核（2026-10-27）**：见[§6](notebook/rollout-performance-research.md#6-paper-deep-reads)，补算法1预测成本与解析模拟／同构前提，核关键消融及PDF第11–13页；分清图12同尺寸／图13异尺寸、transition／整迭代，图16联合变规模不当渐近复杂度证明。精确上界点需原始数据，未猜柱高。现行121身份、5线索、代码6条／4框架不增，深读仍进行中；下一步定位论文年代实现和原始数据，不反复概括摘要／用现代代码替论文。无设备、M5专项／AReaL prompt_mean或社区写入。
 
 - **M1 Phase 2接续与HybridFlow正文补核（2026-10-27）**：保留79e892f新深读安排，恢复其旧基线覆盖的五个矩阵行／§5.22–5.24和WORK接续，不恢复Phase 1旧方向。现主矩阵121＝115arXiv＋6会议，86＋15＋20；余5条线索不强制清零。见[§6](notebook/rollout-performance-research.md#6-paper-deep-reads)：核v2正文实验与重分片边界，零冗余限权重，固定长度整迭代吞吐不当长尾decode收益；摘要＋代码映射不作全文完成。完结0、进行中1、代码6／4框架。优先补齐HybridFlow成本模型、消融／附录、图表点及原版代码；无设备、M5专项／AReaL prompt_mean或社区写入。
