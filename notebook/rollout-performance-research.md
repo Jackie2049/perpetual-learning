@@ -6,10 +6,10 @@
 ## 0. Project Status
 
 - **阶段**：Phase 1 — recall-first literature & code investigation（广扫建库，不收束观点）
-- **最近更新**：2026-10-27（M1以ACL官方身份落实MTP-RL，补保守覆盖账：77直接候选＋15单列边界＋20 serving，见§5.20；本批不增代码路径）
-- **覆盖**：累计**112篇已核身份**（20篇serving基础／迁移边界＋92篇rollout/RLHF及相关边界；106个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL／Weave／MTP-RL会议记录，均非深读）。§5.20将RL相关92暂分为77直接Rollout系统／机制候选与15保守单列条目，不把92或总数直接充作原生80–120目标。MTP-RL是ACL Findings独立文献，不与Bebop同篇；初始种子身份已全部落实，但原生覆盖／分级／引用检索仍未收敛。ASymPO证明错误警示保留；Round 1“≈73”不与当前数量相加。
+- **最近更新**：2026-10-27（M1补抢占／跨域／PD弹性及action级外部资源四项系统，见§5.21；覆盖账更新为81直接候选＋15单列边界＋20 serving，本批不增代码路径）
+- **覆盖**：累计**116篇已核身份**（20篇serving基础／迁移边界＋96篇rollout/RLHF及相关边界；110个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL／Weave／MTP-RL会议记录，均非深读）。§5.20将RL相关96暂分为81直接Rollout系统／机制候选与15保守单列条目；81只是工作范围计数，不是原生80–120覆盖／质量验收。MTP-RL是ACL Findings独立文献，不与Bebop同篇；初始种子身份已全部落实，但原生覆盖／分级／引用检索仍未收敛。ASymPO证明错误警示保留；Round 1“≈73”不与当前数量相加。
 - **全文深读 / 代码广扫**：0 / 5（veRL `24f25b03`三条路径＋OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`各一条；共3框架，不是5框架或运行验证，也不按文件数计）
-- **最高优先级**：按§5.20补原生候选覆盖及其引用／会议盲区，同时扩未覆盖框架；总量已在100–150区间，但77候选不是原生验收或最终分级，A Core短名单不按计数凑齐
+- **最高优先级**：补原生候选覆盖及其引用／会议盲区，同时扩未覆盖框架；总量及81候选进入目标区间不等检索收敛／最终分级，A Core短名单不按计数凑齐
 - **下一步**：见 §16
 
 ## 1. Research Question & Scope
@@ -105,6 +105,8 @@
 | [2610.05935v1](https://arxiv.org/abs/2610.05935v1) | 2026-10-05／v1 | ThunderSyncRL | L4（暂） | B（暂） | 固定policy下按reward／teacher-score就绪做gradient streaming，batch结束才一次optimizer更新 | 核 |
 | [2509.19128v2](https://arxiv.org/abs/2509.19128v2) | 2025-09-23首次／v2 09-26 | PipelineRL | L2/L4（暂） | B／**C?**（行为分布另核） | 并行生成训练，in-flight换权重后继续未完序列；保留旧KV的mixed-policy不当零陈旧性 | 核 |
 | [2609.36830v1](https://arxiv.org/abs/2609.36830v1) | 2026-09-29／v1 | PACE（Where Does Staleness Accumulate?） | L4（暂） | B／**C**（拒收） | 分解生成／入池后等待staleness，pool超额占用决定拒收预算，按prefix-aware有效陈旧度排序 | 核 |
+| [2510.19225v3](https://arxiv.org/abs/2510.19225v3) | 2025-10-22首次／v3 2026-04-08 | RLBoost | L3/L4（暂） | B（暂） | 自适应partial seeding、pull式权重传输与token流收集／迁移，利用抢占式资源且不因抢占直接丢请求 | 核 |
+| [2602.02192v6](https://arxiv.org/abs/2602.02192v6) | 2026-02-02首次／v6 09-29 | ECHO-2 | L3/L4（暂） | B／**C**（过旧丢弃） | 中央learner／远程rollout、peer-assisted流水广播及成本感知扩缩；版本窗口外轨迹丢弃 | 核 |
 
 ### 5.2 L3 — Long-tail / Scheduling / Cluster
 
@@ -173,6 +175,8 @@
 | [2510.04206v1](https://arxiv.org/abs/2510.04206v1) | 2025-10-05／v1 | AgentRL | L4（暂） | B／**C**（cross-policy） | 全异步生成训练与统一环境接口；另有单轨迹内跨模型采样和task advantage归一化 | 核 |
 | [2607.01415v1](https://arxiv.org/abs/2607.01415v1) | 2026-07-01／v1 | The Rollout Infrastructure Tax in Coding-Agent Reinforcement Learning | L4环境执行边界（暂） | B（暂） | 固定command轨迹对照四种执行底座，测启动／执行／reset；worker-hours为外推而非完整RL训练实测 | 核 |
 | [2607.07508v1](https://arxiv.org/abs/2607.07508v1) | 2026-07-08／v1 | SAO（Single-Rollout Asynchronous Optimization for Agentic Reinforcement Learning） | L4／算法边界（暂） | **C**／算法改动 | 每prompt单rollout替代group sampling，配value-model设计与double-sided token clipping；不作GRPO等价系统加速 | 核 |
+| [2609.35158v1](https://arxiv.org/abs/2609.35158v1) | 2026-09-28／v1 | PEARL | L2/L3/L4（暂） | B（暂） | 外部弹性与临时借用训练GPU联合选择PD同置／分离及比例，以切换收益门槛抑制无效重配置 | 核 |
+| [2603.13019v1](https://arxiv.org/abs/2603.13019v1) | 2026-03-13／v1 | ARL-Tangram | L3/L4（暂） | B（暂） | action级调度共享CPU／GPU／API外部资源，异构manager及弹性分配减少trajectory级过量预留 | 核 |
 
 ### 5.5 Serving 基础（supporting corpus，含迁移边界，不标 rollout-native）
 
@@ -370,14 +374,14 @@ BubbleSpec／SRT的run-ahead用于后续draft验证，不等于直接拿旧polic
 
 **最后一项初始种子已落实。** [ACL Findings'26官方记录](https://aclanthology.org/2026.findings-acl.1871/)列出Ke Wang等8位作者、标题、页码37530–37542及DOI；采用会议身份，不猜arXiv。其摘要描述两阶段、多层参数共享MTP及advantage-aware优化。[Bebop 2606.12370v1](https://arxiv.org/abs/2606.12370v1)则是Yucheng Li等的Breaking Entropy Bounds，身份与机制均不同，不合并别名。当前只核元数据与摘要；参数共享／共训对policy梯度的影响和验证路径待后续阅读，不由rollout更快或接受率提高推出训练等价。累计112身份＝106 arXiv＋6会议记录；本批只是旧种子落实，非新名字发现。
 
-**以下是基于当前矩阵的保守工作口径，不是最终文献分级或新taxonomy。** 沿用已有范围边界，并把主要呈现模型／训练优化、仅包含部分rollout系统内容的3篇暂单列，避免把所有RL相关条目充作原生覆盖；不删除任何论文或撤回其中已有机制。剩余直接候选仍含C类工作、联合算法和待核语义，不能称77篇已验收的纯原生／无损优化。
+**以下是基于当前矩阵的保守工作口径，不是最终文献分级或新taxonomy（随§5.21更新）。** 沿用已有范围边界，并把主要呈现模型／训练优化、仅包含部分rollout系统内容的3篇暂单列，避免把所有RL相关条目充作原生覆盖；不删除任何论文或撤回其中已有机制。剩余直接候选仍含C类工作、联合算法和待核语义，不能称81篇已验收的纯原生／无损优化。
 
 | 本轮口径 | 数量 | 计数含义 |
 |---|---:|---|
-| 直接Rollout系统／机制候选 | 77 | §5.1–5.4已核92条中扣除下列15条；含MTP-RL，不要求全为A/B或不改采样 |
+| 直接Rollout系统／机制候选 | 81 | §5.1–5.4已核96条中扣除下列15条；含MTP-RL与§5.21四项，不要求全为A/B或不改采样 |
 | 保守单列的范围／混合证据 | 15 | 见逐项清单；暂不用于宣称原生80–120达标，也不是最终C Boundary等级 |
-| Serving基础／迁移边界 | 20 | §5.5，独立于上述92；最终相关性仍需再核 |
-| 合计 | 112 | 77＋15＋20；身份数，不是全文深读或性能验收数 |
+| Serving基础／迁移边界 | 20 | §5.5，独立于上述96；最终相关性仍需再核 |
+| 合计 | 116 | 81＋15＋20；身份数，不是全文深读或性能验收数 |
 
 单列15条的可复核清单（ID按现有矩阵，无新身份或重复计数）：
 
@@ -390,7 +394,18 @@ BubbleSpec／SRT的run-ahead用于后续draft验证，不等于直接拿旧polic
 
 C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因矩阵已登记其rollout机制；CERO／SAO等单列是沿用当前算法范围判断，后续发现明确系统证据可以调整。PULSE因含trainer→rollout的PULSESync保留在直接候选，不能把同篇LoCo训练通信也当原生rollout。单列是计数上的保守选择，不是认定15条无系统价值；也不以标题或venue替代后续实质判断。
 
-按此工作口径77尚不足80，说明“总量112／RL相关92”不足以宣布原生覆盖达标；不为凑3篇补无关文献。下一批优先补真实原生机制与会议／引用盲区、并读未覆盖框架；之后再决定分级与深读入口。当前没有检索收敛证明，初始种子全部落实仅关闭身份待核，不关闭整个广扫。原111矩阵行／代码地图不变，全文深读0、代码5条／3框架；无作者实现、理论／性能验证或设备任务。
+历史盘点时77尚不足80，说明当时“总量112／RL相关92”不能宣布原生覆盖达标；§5.21按真实机制缺口新增4项后为81。进入数量区间仍没有检索收敛证明，也不替代分级与证据质量检查；初始种子全部落实仅关闭身份待核，不关闭整个广扫。MTP-RL批保留原111矩阵行／代码地图；后续新增见§5.21。全文深读0、代码5条／3框架，无作者实现、理论／性能验证或设备任务。
+
+### 5.21 抢占 跨域与外部资源弹性
+
+沿Weave引用中的RLBoost线索及elastic／cost-efficient定向检索，回到arXiv版本页与正文局部核验四项新身份；不是重复计ROSE／TideRL，也不把通用pretraining／serving弹性论文充作原生。累计116身份＝110 arXiv＋6会议，96 RL相关暂分81直接候选＋15单列；20 serving不变。ARL-Tangram直接编排agentic rollout中的action／reward资源，故暂入直接系统候选；区别于Infrastructure Tax仅固定command轨迹测底座，不因都涉及环境就混记范围。
+
+- **抢占后续跑不等重新采样或零恢复成本。** [RLBoost v3 §4／§6](https://arxiv.org/html/2510.19225v3)用限时partial seeding及token流保留已生成prefix，迁移后重新prefill再续跑，按最新已装权重路由。作者采用同步GRPO；本轮不认证RNG／数值／逐样本完全相同。实验将真实可用性trace在按需实例上重放，成本用跨云均价估计；不当真实spot账单或固定GPU数的纯执行加速。v3 HTML标题含Cloud、abs标题不含，按同ID处理。
+- **跨域重叠带样本准入语义。** [ECHO-2 v6 §4.1／§5.1–5.2](https://arxiv.org/html/2602.02192v6)按learner版本窗口收轨迹、过旧丢弃，故显式B/C；S不是队列容量。peer-assisted广播／成本选worker属系统部分，不由“未改RL目标”推出训练样本集合不变。主对照用4 A100 learner＋5090 pool对8 A100中央基线，成本由GPU-hours×历史租价估算；cost–quality优势不当单步更快或同硬件比较。NeurIPS'26仅abs自报，本轮不作官方venue确认。
+- **同资源trace和更多GPU基线分开。** [PEARL v1 §4／§6.1](https://arxiv.org/html/2609.35158v1)联动外部扩缩、暂借训练GPU及PD模式／比例，并计切换成本。RLBoost+是作者针对异步agentic的改编，不是RLBoost原版；两者共享外部可用性trace与16训练GPU，ROLL仅4固定rollout GPU，ROLL-Large另用固定较大池。throughput计生成＋训练token／step时间，不等纯decode速率、价格效率或time-to-quality；保留预印本身份，不采用HTML会议模板占位字样。
+- **外部资源节省不等policy推理内核加速。** [ARL-Tangram v1 §4–6](https://arxiv.org/html/2603.13019v1)把trajectory级长期资源占用改为action级共享，覆盖CPU执行、GPU服务及带quota的API。主指标平均ACT与RL step分别报告；coding／MOPD／DeepSearch各用不同基线，含内部数据／服务配置，不能将最佳action收益当所有任务整步收益或公开可复现保证。暂B描述资源编排，不认证重试／缓存对环境语义完全等价。
+
+本轮仅身份／摘要和上述局部机制／评估设置；未通读四篇、运行代码或抽取完整实验表，深读0、代码5条／3框架不变。下一步补原生引用／会议盲区或未覆盖框架；81不作停止广扫或冻结taxonomy的条件，无新算力／M5专项交接。
 
 ## 6. Paper Deep Reads
 
@@ -597,6 +612,8 @@ NeMo RL SC `a9d1a4be`的[exposed_generation:3010](https://github.com/NVIDIA-NeMo
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（M1弹性与跨域补库）**：新增RLBoost v3／ECHO-2 v6／PEARL v1／ARL-Tangram v1，累计116身份（110 arXiv＋6会议），§5.20更新81直接候选＋15单列＋20 serving。§5.21分开抢占续跑、过旧丢弃、同trace执行比较及action外部资源；价格估计不当账单或wall-time优势，RLBoost+不当原版。原112行与代码地图保留，深读0、代码5条／3框架不变；无设备／M5专项／社区写入。下步仍原生引用／会议或未覆盖框架，不以81自动验收收束。
 
 - **2026-10-27（M1 MTP-RL落实与覆盖口径）**：ACL Findings官方身份落实最后种子MTP-RL，与Bebop分开；累计112身份（106 arXiv＋6会议）。§5.20逐项单列15条范围／混合证据，92 RL相关暂为77直接候选＋15，不当最终分级／纯原生验收；serving20独立。初始种子身份闭环不当引用检索收敛。仅矩阵复核与MTP元数据／摘要，深读0、代码5条／3框架不变，无设备／M5专项／上游写入。下步补原生引用／会议盲区或未覆盖框架，不以总量达标或凑3篇收束。
 
