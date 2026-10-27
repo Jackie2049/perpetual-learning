@@ -475,8 +475,8 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 | B4 | T1 | RhymeRL、ReSpec、BubbleSpec、DAS | **完成4/4**：前半M1 new-chat @7ae5758，16:17认领并推送d1df96e，16:22完成§6.13–6.14；后半M1 new-chat @6cf28b5，2026-10-27 16:47认领并推送c17ff36，16:54完成§6.15–6.16（非实现／复现验收） |
 | B5 | T1 | EfficientRollout、Heddle、ObsSpec、FP8-RL | **完成4/4**：前半M1 new-chat @70c59d3，2026-10-27 17:17认领并推送9dcbdc8，17:23完成§6.17–6.18；后半M1 new-chat @5304df1，17:47认领并推送4e1c946，17:52完成§6.19–6.20（非实现／复现验收） |
 | B6 | T2 | L4 其余：AsyncFlow、LlamaRL、RLinf、MindSpeed RL、NeMo-Aligner、ROLL／ROLL Flash、GLM-4.5、Long-RL | **完成9/9**：前八篇认领eb79ac5、18:25完成§6.21；余Long-RL由M1 new-chat @799504e于2026-10-27 18:47认领，先推送75916da，18:54与B7前七篇合批完成§6.22；未重复前八篇 |
-| B7 | T2 | 权重同步/失配子簇：SparseRL-Sync、PULSE、NeMo-DCR、ThunderSyncRL、PipelineRL、Missing Old Logits、Beyond Precision、FP16/Diagnosing/Rethinking 三选二 | **完成7/9**：M1 new-chat @799504e于2026-10-27 18:47认领、先推送75916da，18:54完成§6.22.2–8；余FP16/Diagnosing/Rethinking三选二，下轮与B8中4–6篇合计6–8篇，B7尚未收束 |
-| B8 | T2 | L3/spec：TailSieve、WAR、Seer、Infinite Sampling、CadenceRL、Weave、CERO、Scheduling Mixed、SRT、S³R、NgramRL、TLT | 待认领 |
+| B7 | T2 | 权重同步/失配子簇：SparseRL-Sync、PULSE、NeMo-DCR、ThunderSyncRL、PipelineRL、Missing Old Logits、Beyond Precision、FP16/Diagnosing/Rethinking 三选二 | **完成7/9，余2已认领**：前七篇§6.22已完成；M1 new-chat @1353af5于2026-10-27 19:18认领FP16与Diagnosing（VeXact），三选二已定；Rethinking留边界未读账，不计本批完成。与B8前六篇合计8篇，先推送再读 |
+| B8 | T2 | L3/spec：TailSieve、WAR、Seer、Infinite Sampling、CadenceRL、Weave、CERO、Scheduling Mixed、SRT、S³R、NgramRL、TLT | **已认领前6/12**：M1 new-chat @1353af5于2026-10-27 19:18认领TailSieve至Weave，与B7余两篇合计8篇；未计完成，后六篇下轮合批 |
 | B9 | T2 | spec/agentic：RLHFSpec、Bebop、FastGRPO、System-Integrated SD、SPARK、SpecActor、Online Draft Co-Training、MTP-RL、AReaL-DTA、FlashNext-RL、Rollplex、AREAL-DTA | 待认领 |
 | B10 | T2 | agentic：SkyRL-Agent(广扫深化)、EARL、InfoTree、AsyncWebRL、AcceRL、MARLaaS、FlexMARL、Agent Lightning v0/v1.0、TideRL、ROSE、QwenGyre | 待认领 |
 | B11 | T2 | 资源/边界：ARL-Tangram、DART、MCP-Universe RL、PEARL、SAO、Rollout Infrastructure Tax、ExpThink、Intelligent Router | 待认领 |
