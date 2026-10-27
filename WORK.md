@@ -4,7 +4,7 @@
 
 ## 当前阶段
 
-- **M1本轮认领（2026-10-27 15:47）**：保留100f213新增M5记录后，认领[§6.0 B3](notebook/rollout-performance-research.md#60-phase-2-冲刺批次表2026-10-27-用户指令截止-2026-10-29-两天内完成)后半APRIL／DARTS两篇T1，先推送再阅读；累计完成仍10篇，B3仍2/4。无设备、M5专项或社区操作。
+- **M1 B3完成（2026-10-27 15:53）**：认领先推送828ea15，完成[§6.11 APRIL／§6.12 DARTS](notebook/rollout-performance-research.md#611-april-t1压缩深读)两篇各24行T1；B3收束4/4、T1累计12。文档维护技能保留整prompt组／续跑混版本、观测年龄与硬界、吞吐与百分点的区别；DARTS塑形另C，token流水只提前前向，同栈Tail Batching不当完整RollPacker，BBH负项不抹平。121身份、HybridFlow进行中1、代码6条／4框架、复现0不增。下方旧计数属历史，当前以本条及canonical§0为准；下一轮先核远端再认领B4前半RhymeRL／ReSpec。无设备、M5专项／AReaL prompt_mean或社区动作。
 
 - **M1 B3前半完成（2026-10-27 15:22）**：认领先推送9139ab3，完成[§6.9 RollPacker／§6.10 SortedRL](notebook/rollout-performance-research.md#69-rollpacker-t1压缩深读)两篇各24行T1；B3仅2/4、T1累计10。文档维护技能将最快响应选择／评分预算与同步梯度分开，RollPacker改B/C；PDF技能核SortedRL表1与正文归属矛盾，短组curriculum／partial失败、固定长度吞吐与队列空槽条件保留。121身份、HybridFlow进行中1、代码6条／4框架、复现0不增。下方旧计数属历史，当前以本条及canonical§0为准；下一轮先核远端再认领APRIL／DARTS，无设备、M5专项／AReaL prompt_mean或社区动作。
 

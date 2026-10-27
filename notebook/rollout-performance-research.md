@@ -6,12 +6,12 @@
 ## 0. Project Status
 
 - **阶段**：**Phase 2 — deep research（2026-10-27 用户指令：广度已足（计数另按唯一身份核算），转入论文/项目深读，围绕 rollout 性能与 L1–L4 四维；M1 定时启动的技术秘书任务以深读为主要工作）**
-- **最近更新**：2026-10-27（§6.9–6.10完成RollPacker／SortedRL两篇T1，B3部分完成2/4、T1累计10；APRIL／DARTS待认领，HybridFlow仍进行中；截止≤2026-10-29不变）
-- **覆盖**：累计**121篇已核身份**（20篇serving基础／迁移边界＋101篇rollout/RLHF及相关边界；115个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL／Weave／MTP-RL会议记录；其中T1压缩深读10篇，其余不据身份核验算深读）。§5.20将RL相关101暂分为86直接Rollout系统／机制候选与15保守单列条目；86只是工作范围计数，不是原生80–120覆盖／质量验收。MTP-RL是ACL Findings独立文献，不与Bebop同篇；初始种子身份已全部落实，但原生覆盖／分级／引用检索仍未收敛。ASymPO证明错误警示保留；Round 1“≈73”不与当前数量相加。
+- **最近更新**：2026-10-27（§6.11–6.12完成APRIL／DARTS两篇T1，B3累计4/4、T1累计12；下一批B4待认领，HybridFlow仍进行中；截止≤2026-10-29不变）
+- **覆盖**：累计**121篇已核身份**（20篇serving基础／迁移边界＋101篇rollout/RLHF及相关边界；115个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL／Weave／MTP-RL会议记录；其中T1压缩深读12篇，其余不据身份核验算深读）。§5.20将RL相关101暂分为86直接Rollout系统／机制候选与15保守单列条目；86只是工作范围计数，不是原生80–120覆盖／质量验收。MTP-RL是ACL Findings独立文献，不与Bebop同篇；初始种子身份已全部落实，但原生覆盖／分级／引用检索仍未收敛。ASymPO证明错误警示保留；Round 1“≈73”不与当前数量相加。
 - **待核线索**：§5.23余5项（4项仅元数据／摘要已核、1项身份待核），不计入上述121或86候选；两项已入库只计一次，APRIL不重复计数。
-- **深读 / 代码广扫**：按§6.0新压缩标准完成T1 **10篇**（B1、B2各四篇＋B3前半两篇；非源码或性能复现验收），另有HybridFlow进行中1项 / 6（veRL `24f25b03`三条路径＋OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`、SkyRL `e0893f6e`各一条；共4框架，不是6框架或运行验证，也不按文件数计）；完整复现仍0。
+- **深读 / 代码广扫**：按§6.0新压缩标准完成T1 **12篇**（B1–B3各四篇；非源码或性能复现验收），另有HybridFlow进行中1项 / 6（veRL `24f25b03`三条路径＋OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`、SkyRL `e0893f6e`各一条；共4框架，不是6框架或运行验证，也不按文件数计）；完整复现仍0。
 - **最高优先级（2026-10-27 用户加急指令）**：**Phase 2 全部深读须在两天内完成（≤2026-10-29）**——每次定时触发完成**一批对应规模**的调研（分级深度 + 批次表见 §6.0），不得单次只做一篇；深度与时间约束按批次表权衡。HybridFlow 深读继续；余5条线索并入相应批次，不再单列追。M5专项与上游写入边界不变。
-- **深读当前焦点**：B1、B2均完成4/4，B3仅2/4；下一次先核远端再认领APRIL／DARTS两篇。HybridFlow论文年代实现／原始数据另保留进行中，不用现代源码替代。M5专项与上游写入边界不变。
+- **深读当前焦点**：B1–B3均完成4/4；下一次先核远端再认领B4前半RhymeRL／ReSpec两篇。HybridFlow论文年代实现／原始数据另保留进行中，不用现代源码替代。M5专项与上游写入边界不变。
 - **Phase 2 完成标准与预估（2026-10-27 定，用户问"多久读完"后定量）**：**不是 121 篇全读**。深读总量 = A Core 15–20 篇全模板深读 + B Supporting ~40–60 篇中等深度（机制+关键结果，轻模板）+ 代码深读 ~8–12 条路径；C 边界与 serving 保持元数据级即可。节奏：每篇 A Core ≈ 1 个定时任务轮次，B 类 3–5 篇/轮次；按多会话并行（每日 2–4 轮次涉及本专项）预估 **A Core ≈ 1–1.5 周、Phase 2 整体 ≈ 3–4 周日历时间**。里程碑：第 1 周末 A Core 短名单定稿+完成一半；第 2 周末 A Core 完成+代码地图齐；第 3–4 周 B 覆盖+gaps/ideas 提炼+（可选）survey outline。**加速杠杆**：为定时任务显式分配深读配额。
 - **下一步**：见 §16
 
@@ -121,8 +121,8 @@
 | [2603.23414v1](https://arxiv.org/abs/2603.23414v1) | 2026-03-24／v1 | SortedRL | L3/L4 | B／**C**（批构成／更新次序） | 长度分批且清空prompt池后再补新；on-policy重跑未完响应，partial续token并缓存行为logp；micro-curriculum | 核；[T1](#610-sortedrl-t1压缩深读) |
 | [2608.22788v2](https://arxiv.org/abs/2608.22788v2) | 2026-08-24首次／v2 08-26 | TailSieve | L1/L3（暂） | A/B（暂） | partial信号识别尾组、分池路由／副本分配，低并发池可叠推测；当前policy重新生成 | 核 |
 | [2607.17299v1](https://arxiv.org/abs/2607.17299v1) | 2026-07-19／v1 | WAR | L1/L3（暂） | A/B（暂） | 低负载SuffixDecoding、高负载cache-aware placement；不由workload-aware推导改样本 | 核 |
-| [2605.30859v1](https://arxiv.org/abs/2605.30859v1) | 2026-05-29／v1 | DARTS | L3（暂） | **C** | 从每prompt冗余探索空间选轨迹、适配冗余分配，主动塑造分布 | 核 |
-| [2509.18521v3](https://arxiv.org/abs/2509.18521v3) | 2025-09-23首次／09-26修订 | APRIL | L3/L4（暂） | B/**C?** | 超额发起，达到目标完成数后结束本步、未完成响应跨步续跑；训练集合／版本影响待深读 | 核 |
+| [2605.30859v1](https://arxiv.org/abs/2605.30859v1) | 2026-05-29／v1 | DARTS | L3/L4 | B／**C**（主动塑形） | 7短＋1长组选择、预算饱和改shortest-only；token流水仅前向提前，整轨迹后奖励／反向 | 核；[T1](#612-darts-t1压缩深读) |
+| [2509.18521v3](https://arxiv.org/abs/2509.18521v3) | 2025-09-23首次／09-26修订 | APRIL | L3/L4 | B／**C**（每步集合／混版本） | 超发后按完整prompt组收齐配额，未完token优先跨版本续跑；不丢轨迹不等同步采样等价 | 核；[T1](#611-april-t1压缩深读) |
 | [2511.14617v3](https://arxiv.org/abs/2511.14617v3) | 2025-11-18首次／v3 2026-04-03 | Seer | L1/L3（暂） | A/B（暂） | divided rollout、context-aware调度与grouped speculation；不是仅长度预测 | 核 |
 | [2605.07501v2](https://arxiv.org/abs/2605.07501v2) | 2026-05-08首次／v2 05-17 | ExpThink（CoT塑形边界） | workload／算法边界 | C边界（非直接筛轨迹） | 历史最短正确长度引导reward塑形及correct-count advantage归一化；改变学习目标，不是执行同一轨迹更快 | 核 |
 | [2506.22950v1](https://arxiv.org/abs/2506.22950v1) | 2025-06-28／v1 | Infinite Sampling | L2/L3/L4（暂） | B（暂） | micro sampling groups与跨组连续采样，prefix长度预测、全局分组及SJF refill；完整组统计后反向 | 核 |
@@ -471,7 +471,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 |---|---|---|---|
 | B1 | T1 | StreamRL、StaleFlow、Laminar、DORA | **完成4/4**：前半M1 new-chat @27c4e00，13:18认领并推送38c0234，13:24完成§6.1–6.2；后半M1 new-chat @743da31，13:47认领并推送b3efd71，2026-10-27 13:52完成§6.3–6.4（T1标准，非实现／复现验收） |
 | B2 | T1 | AReaL、RolloutPipe、PACE、ECHO-2 | **完成4/4**：前半M1 new-chat @e159534，14:17认领并推送82a3fb6，14:22完成§6.5–6.6；后半M1 new-chat @fe3bb80，2026-10-27 14:47认领并推送b353e4c，14:55完成§6.7–6.8（非实现／复现验收）。AReaL不接续prompt_mean专项 |
-| B3 | T1 | RollPacker、SortedRL、APRIL、DARTS | **部分完成2/4**：前半M1 new-chat @aecd7f5，15:17认领并推送9139ab3，15:22完成§6.9–6.10；后半APRIL／DARTS由M1 new-chat @100f213于2026-10-27 15:47认领，尚未完成（非实现／复现验收） |
+| B3 | T1 | RollPacker、SortedRL、APRIL、DARTS | **完成4/4**：前半M1 new-chat @aecd7f5，15:17认领并推送9139ab3，15:22完成§6.9–6.10；后半M1 new-chat @100f213，2026-10-27 15:47认领并推送828ea15，15:53完成§6.11–6.12（非实现／复现验收） |
 | B4 | T1 | RhymeRL、ReSpec、BubbleSpec、DAS | 待认领 |
 | B5 | T1 | EfficientRollout、Heddle、ObsSpec、FP8-RL | 待认领 |
 | B6 | T2 | L4 其余：AsyncFlow、LlamaRL、RLinf、MindSpeed RL、NeMo-Aligner、ROLL／ROLL Flash、GLM-4.5、Long-RL | 待认领 |
@@ -764,6 +764,60 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 - 代码缺口：未核commit／文件及KV跨权重处理契约。
 - 后续：版本／归一化接口待源码核查，不排新设备任务。
 
+### 6.11 APRIL T1压缩深读
+
+- 状态：2026-10-27完成T1，非实现／复现验收。
+- 原文：[v3 §2–3、附录A.2–3](https://arxiv.org/html/2509.18521v3)。
+- 性能模型：等全批最长响应→等第N个完整prompt组。
+- 超发64 prompts×8响应，目标32组／256训练轨迹。
+- 同prompt八响应须齐备；先完成的子集暂存，不拆组更新。
+- 未完tokens入buffer，下步优先续跑，再补新请求。
+- 续跑suffix用更新policy，优势对应混版本轨迹。
+- 文中m≤5属观测，不是年龄硬界／收敛证明。
+- 分类：L3/L4、B/C；每步集合与版本变化不因最终保留而消失。
+- Qwen3-4B／8B，主评估GRPO和DAPO，不外推GSPO全表覆盖。
+- DAPO-Math／DeepScaleR／DeepMath训练，AIME2024评估。
+- 主报告8×MI300；另有H100兼容验证，不混硬件收益。
+- eval每prompt16次；训练global batch256。
+- 响应上限16384、温度0.8；32k纯rollout分析另计。
+- 吞吐=8卡生成tokens／rollout迭代wall time。
+- 平均+22.5%为rollout throughput，不作全训练提速。
+- 表1最大+49.5%；abs页“44%”不一致，保留版本证据差异。
+- 表2差值均值约+2.1个百分点，非2.1%相对提升。
+- 8B DAPO三项两负一正，不称逐项无损。
+- 约40%混旧比例在正文／图注有token与rollout单位差异。
+- 论文映射：slime续跑buffer＋HIP torch_memory_saver。
+- 后者保留虚拟地址不等保留释放后的KV内容。
+- 未核commit／文件，行为logp／KV重建契约待源码确认。
+- 后续：只留实现核查，无新设备任务或外部操作。
+
+### 6.12 DARTS T1压缩深读
+
+- 状态：2026-10-27完成T1，非实现／复现验收。
+- 原文：[v1 §3–5、附录A–I](https://arxiv.org/html/2605.30859v1)。
+- 问题：prompt内长尾；每prompt生成M′≥M候选。
+- 主组7最短＋1最长，长端排除未完／到限无效轨迹。
+- 改组均值和相对advantage，不是仅改变执行次序。
+- 两种长短／奖励模式用于解释，并非在线显式分类器。
+- 成本模型ΣΔl·PTL(TP,剩余batch)，PTL靠同引擎实测拟合。
+- 总预算clip(⌊ρ/(λk)⌋,MN,2MN)，来自代理utility，非质量最优证明。
+- 分配按`w/[m(m+1)]`边际收益贪心，M≤m≤2M。
+- 饱和m=2M时改只取M个最短有效完成，提前停余项。
+- token块到达后可增量forward，训练端维护轨迹KV。
+- reward和backward仍等完整轨迹，不是边生成边更新。
+- 论文链：veRL0.4→vLLM0.8.5.post1／Ray actor→PyTorch2.6 FSDP。
+- H20-96GB：3B用8卡，7/14B用32卡，32B／30B-MoE用64卡。
+- 3B用MATH-lighteval，其余DAPO-MATH，Qwen dense／MoE。
+- GRPO M=8，沿用clip-higher／token loss／overlong shaping。
+- 500步平均端到端吞吐对veRL为1.29–1.77×，非同策略执行收益。
+- 对Tail Batching最高1.43×，该基线是同栈移植而非完整RollPacker。
+- 14B消融1.09→1.40→1.63×为累计，不再相乘。
+- BBH的30B-MoE为85.8→84.4，不称所有任务均改善。
+- 固定长度／极稀疏reward及大规模agentic适用性有限或待评估。
+- 分类：L3/L4、B/C；分布塑形与流水系统收益分开。
+- 未核公开commit／文件；筛选后激活生命周期与重算仍待源码核查。
+- 后续：保留条件与接口疑点，不开算力队列或社区事项。
+
 ## 7. Code & System Landscape
 
 **本地已有资产**（重要：不用重新 clone）：
@@ -989,6 +1043,8 @@ SkyRL `e0893f6e`的[wait_for_generation_buffer:843](https://github.com/NovaSky-A
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（M1 B3后半T1压缩深读）**：§6.11–6.12完成APRIL v3／DARTS v1各24行，B3累计4/4、T1累计12。APRIL按整prompt组纳入，续跑混版本／五版本观测与硬界区分，吞吐和质量百分点分账，abs／表1及40%计量口径差异保留。DARTS的7短1长、预算代理模型、饱和剪枝另C；token流水只提前前向，奖励／反向等全轨迹。同栈Tail Batching不冒充完整RollPacker，BBH负项保留。121身份、代码6条／4框架、复现0不变；下一轮B4前半RhymeRL／ReSpec，无设备、M5专项或社区动作。
 
 - **2026-10-27（M1 B3前半T1压缩深读）**：§6.9–6.10完成RollPacker／SortedRL各24行，B3仅2/4、T1累计10。前者prompt延期不等保留原响应，最快完成响应与自适应评分超时改B/C；流式算梯度不提前更新。后者prompt池分组与GRPO组区分，重跑／partial行为logp及批归一化分别登记；PDF证实AIME正文／表1归属矛盾。队列空槽不当SM闲置，固定长度rollout TPS不当time-to-quality。121身份、代码6条／4框架、复现0不变；下一轮APRIL／DARTS，无设备、M5专项或社区动作。
 
