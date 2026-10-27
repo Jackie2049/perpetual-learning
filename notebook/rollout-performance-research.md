@@ -6,12 +6,12 @@
 ## 0. Project Status
 
 - **阶段**：**Phase 2 — deep research（2026-10-27 用户指令：广度已足（计数另按唯一身份核算），转入论文/项目深读，围绕 rollout 性能与 L1–L4 四维；M1 定时启动的技术秘书任务以深读为主要工作）**
-- **最近更新**：2026-10-27（§6.25完成B9前六篇T2，T2累计36、T1仍20；B9余项先去重／范围核对，HybridFlow仍进行中；截止≤2026-10-29不变）
+- **最近更新**：2026-10-27（§6.26完成B9余五篇＋B10 SkyRL-Agent，T2累计42、T1仍20；B9去重后收束11/11，HybridFlow仍进行中；截止≤2026-10-29不变）
 - **覆盖**：累计**121篇已核身份**（20篇serving基础／迁移边界＋101篇rollout/RLHF及相关边界；115个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL／Weave／MTP-RL会议记录；其中T1压缩深读20篇，其余不据身份核验算深读）。§5.20将RL相关101暂分为86直接Rollout系统／机制候选与15保守单列条目；86只是工作范围计数，不是原生80–120覆盖／质量验收。MTP-RL是ACL Findings独立文献，不与Bebop同篇；初始种子身份已全部落实，但原生覆盖／分级／引用检索仍未收敛。ASymPO证明错误警示保留；Round 1“≈73”不与当前数量相加。
 - **待核线索**：§5.23余5项（4项仅元数据／摘要已核、1项身份待核），不计入上述121或86候选；两项已入库只计一次，APRIL不重复计数。
-- **深读 / 代码广扫**：按§6.0新压缩标准完成T1 **20篇**（B1–B5各四篇）、T2 **36篇**（B6／B7各9/9、B8为12/12、B9前六篇；GLM-4.5仅§3.5系统片段，非整份报告；非源码或性能复现验收），另有HybridFlow进行中1项 / 6（veRL `24f25b03`三条路径＋OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`、SkyRL `e0893f6e`各一条；共4框架，不是6框架或运行验证，也不按文件数计）；完整复现仍0。
+- **深读 / 代码广扫**：按§6.0新压缩标准完成T1 **20篇**（B1–B5各四篇）、T2 **42篇**（B6／B7各9/9、B8为12/12、B9为11/11、B10首篇；GLM-4.5仅§3.5系统片段，非整份报告；非源码或性能复现验收），另有HybridFlow进行中1项 / 6（veRL `24f25b03`三条路径＋OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`、SkyRL `e0893f6e`各一条；共4框架，不是6框架或运行验证，也不按文件数计）；完整复现仍0。
 - **最高优先级（2026-10-27 用户加急指令）**：**Phase 2 全部深读须在两天内完成（≤2026-10-29）**——每次定时触发完成**一批对应规模**的调研（分级深度 + 批次表见 §6.0），不得单次只做一篇；深度与时间约束按批次表权衡。HybridFlow 深读继续；余5条线索并入相应批次，不再单列追。M5专项与上游写入边界不变。
-- **深读当前焦点**：B1–B5均完成4/4、B6／B7均完成9/9、B8完成12/12、B9前六篇完成；下一次先核远端，再核B9余项身份／别名及范围，去重后与B10合成6–8篇认领，不按12个名称认证B9分母。Rethinking未选入B7，仍为边界未读账；HybridFlow论文年代实现／原始数据另保留进行中，不用现代源码替代。T1达到20不等Phase 2整体完成，M5专项与上游写入边界不变。
+- **深读当前焦点**：B1–B5均完成4/4、B6／B7均完成9/9、B8为12/12、B9去重后11/11，B10 SkyRL-Agent完成。下一轮先核远端，再认领B10的EARL、InfoTree、AsyncWebRL、AcceRL、MARLaaS、FlexMARL及两篇Agent Lightning，共八篇；训练侧／算法边界不转算原生覆盖。Rethinking仍为边界未读账；HybridFlow论文年代实现／原始数据另保留进行中，不用现代源码替代。T1达到20不等Phase 2整体完成，M5专项与上游写入边界不变。
 - **Phase 2 完成标准与预估（2026-10-27 定，用户问"多久读完"后定量）**：**不是 121 篇全读**。深读总量 = A Core 15–20 篇全模板深读 + B Supporting ~40–60 篇中等深度（机制+关键结果，轻模板）+ 代码深读 ~8–12 条路径；C 边界与 serving 保持元数据级即可。节奏：每篇 A Core ≈ 1 个定时任务轮次，B 类 3–5 篇/轮次；按多会话并行（每日 2–4 轮次涉及本专项）预估 **A Core ≈ 1–1.5 周、Phase 2 整体 ≈ 3–4 周日历时间**。里程碑：第 1 周末 A Core 短名单定稿+完成一半；第 2 周末 A Core 完成+代码地图齐；第 3–4 周 B 覆盖+gaps/ideas 提炼+（可选）survey outline。**加速杠杆**：为定时任务显式分配深读配额。
 - **下一步**：见 §16
 
@@ -152,8 +152,8 @@
 | [2604.26779v1](https://arxiv.org/abs/2604.26779v1) | 2026-04-29／v1 | System-Integrated SD（Iso等） | L1/L4 | A/B | 固定EAGLE3实测与大规模预测分开，接受长度不等速度 | 核；[T2](#6254-system-integrated-sd) |
 | [2608.04962v2](https://arxiv.org/abs/2608.04962v2) | 2026-08-05首次／v2 10-14 | SPARK（v1名SpecRoll） | L1/L2 | A | prompt-local反馈仅改draft；精确分布依赖因果q与独立验证随机数 | 核；[T2](#6255-spark) |
 | [2511.16193v3](https://arxiv.org/abs/2511.16193v3) | 2025-11-20首次／v3 12-23 | SpecActor（Fast LLM Post-training） | L1/L3/L4 | A/B | 解耦窗口＋draft ladder／FoN；抽样trace计时非连续完整训练 | 核；[T2](#6256-specactor) |
-| [2609.07108v1](https://arxiv.org/abs/2609.07108v1) | 2026-09-07／v1 | Online Draft Co-Training（Large-Scale Long-Context RL） | L1/L2/L4（暂） | A/B（系统；暂） | packed zigzag-ring合并causal／branch attention，TapChannel跨PP传target features，支持在线draft训练 | 核 |
-| [ACL Findings'26](https://aclanthology.org/2026.findings-acl.1871/) | 2026-07会议记录 | MTP-RL（Acceleration of Reinforcement Learning Rollouts with Policy-Aligned Multi-Token Prediction） | L1/L4（暂） | A（rollout）；共训语义待核 | 两阶段配置多层参数共享MTP、advantage-aware优化使draft跟随policy；不当无条件目标分布／训练等价证明 | 核 |
+| [2609.07108v1](https://arxiv.org/abs/2609.07108v1) | 2026-09-07／v1 | Online Draft Co-Training（Large-Scale Long-Context RL） | L1/L2/L4 | A/B | stop-gradient共训，branch CP与TapChannel；256K算子／RL全步分账 | 核；[T2](#6261-online-draft-co-training) |
+| [ACL Findings'26](https://aclanthology.org/2026.findings-acl.1871/) | 2026-07会议记录 | MTP-RL（Acceleration of Reinforcement Learning Rollouts with Policy-Aligned Multi-Token Prediction） | L1/L4 | A；**C（主模型辅助目标）** | 优势门控KL仅限MTP项，但辅助loss回传主模型，非纯目标不变加速 | 核；[T2](#6262-mtp-rl) |
 
 ### 5.4 Agentic Rollout
 
@@ -163,19 +163,19 @@
 | [2605.15565v1](https://arxiv.org/abs/2605.15565v1) | 2026-05-15／v1 | AstraFlow | L4（暂） | B（暂） | rollout服务／dataflow／training自主组件解耦，支持multi-policy与异构弹性执行 | 核 |
 | [2512.22560v2](https://arxiv.org/abs/2512.22560v2) | 2025-12-27首次／v2 2026-06-15 | RollArt（v1摘要名RollArc） | L2/L4（暂） | B（暂） | 按阶段硬件亲和映射、轨迹级解耦、serverless reward与有界staleness权重同步 | 核 |
 | [2603.28101v1](https://arxiv.org/abs/2603.28101v1) | 2026-03-30／v1 | Heddle | L3/L4 | B（采样／版本待核） | 长轨迹优先抢占、排序DP放置、工具间隙迁KV＋MP退火；最优性限代理假设、开销非总能全藏 | 核；[T1](#618-heddle-t1压缩深读) |
-| [2511.16108v1](https://arxiv.org/abs/2511.16108v1) | 2025-11-20／v1 | SkyRL-Agent | L4（暂） | B／**C?**（recipe） | 异步pipeline dispatcher与AST搜索工具recipe并用，系统／工具收益须分开 | 核 |
+| [2511.16108v1](https://arxiv.org/abs/2511.16108v1) | 2025-11-20／v1 | SkyRL-Agent | L4 | B；**C（recipe／梯度屏蔽）** | 三阶段队列重叠与工具recipe分账；超外部限制轨迹不算梯度 | 核；[T2](#6266-skyrl-agent) |
 | [2510.05943v1](https://arxiv.org/abs/2510.05943v1) | 2025-10-07／v1 | EARL | L4（暂） | B（暂） | 按序列长度／负载选跨阶段并行策略，layout-aware去中心data dispatcher | 核 |
 | [2610.15246v1](https://arxiv.org/abs/2610.15246v1) | 2026-10-11／v1 | ObsSpec | L4 | A/B（精确匹配／执行门槛） | observation匹配才保留预生成动作、核验后才顺序执行；WM离线重放训练，额外占8卡 | 核；[T1](#619-obsspec-t1压缩深读) |
 | [2605.05262v1](https://arxiv.org/abs/2605.05262v1) | 2026-05-06／v1 | InfoTree（Rollout Informativeness） | L3/L4（暂） | **C**／B（暂） | UUCB中间状态选择、学习式预算分配及异步Speculative Expansion；不是仅复用prefix | 核 |
 | [2606.05597v3](https://arxiv.org/abs/2606.05597v3) | 2026-06-04首次／v3 08-07 | AsyncWebRL | L4（暂） | B／**C?**（算法边界） | 异步rollout／update／refresh＋常驻pool／轻量截图，另改GRPO轨迹归一化 | 核 |
 | [2603.18464v3](https://arxiv.org/abs/2603.18464v3) | 2026-03-19首次／v3 06-12 | AcceRL（VLA边界） | L4（暂） | B／**C?**（world model） | 环境rollout／模型推理／更新隔离；world model样本效率与系统吞吐分开 | 核 |
 | [2605.08527v1](https://arxiv.org/abs/2605.08527v1) | 2026-05-08／v1 | MARLaaS | L4（暂） | B（暂） | 多租户共享base＋LoRA，环境／rollout／训练独立事件调度；非multi-agent同义词 | 核 |
-| [2608.14498v1](https://arxiv.org/abs/2608.14498v1) | 2026-08-14／v1 | Rollplex | L2/L4（暂） | B（暂） | rollout decode窗口并行做reference／training prefix，生命周期HBM与跨TP兼容权重共享 | 核 |
+| [2608.14498v1](https://arxiv.org/abs/2608.14498v1) | 2026-08-14／v1 | Rollplex | L2/L4 | B（主同步路径） | 同snapshot的prefix–decode重叠，保autograd与全局update屏障；仅兼容布局共享 | 核；[T2](#6265-rollplex) |
 | [2602.09578v1](https://arxiv.org/abs/2602.09578v1) | 2026-02-10／v1 | FlexMARL | L3/L4（暂） | B（暂） | 多agent experience store驱动micro-batch异步pipeline、分层均衡与agent资源绑定 | 核 |
 | [2508.03680v1](https://arxiv.org/abs/2508.03680v1) | 2025-08-05／v1 | Agent Lightning（2025） | L4（暂） | B（系统；算法另核） | Training-Agent Disaggregation与统一transition接口，含LightningRL credit assignment | 核 |
 | [2608.17528v1](https://arxiv.org/abs/2608.17528v1) | 2026-08-18／v1 | Agent Lightning v1.0（2026） | L4（暂） | B（系统；算法另核） | deploy-time harness拥有环境交互loop，trainer接收LLM请求／响应；合样本及loss语义待核 | 核 |
-| [2602.00482v2](https://arxiv.org/abs/2602.00482v2) | 2026-01-31首次／v2 06-13 | AReaL-DTA（训练侧边界） | L1/L3（训练侧；暂） | A/B（训练侧；暂） | DFS遍历共享prefix树做前后向，分布式tree batching；不是rollout decode tree验证 | 核 |
-| [2610.28998v1](https://arxiv.org/abs/2610.28998v1) | 2026-10-20／v1 | FlashNext-RL | L1/L4（暂） | A/B（暂） | prime-rl＋vLLM，模型特定offload／累积及kernel优化；训练tokens/s与RL迭代分开 | 核 |
+| [2602.00482v2](https://arxiv.org/abs/2602.00482v2) | 2026-01-31首次／v2 06-13 | AReaL-DTA（训练侧边界） | L1/L3/L4（训练侧） | A/B（训练侧） | DFS共享前后向＋连续分区；局部训练8.31×不作全步，低共享可负益 | 核；[T2](#6263-areal-dta) |
+| [2610.28998v1](https://arxiv.org/abs/2610.28998v1) | 2026-10-20／v1 | FlashNext-RL | L1/L4 | A/B；**C（冻结层／零优势组）** | offload与模型kernel优化；开发配置变更／回放与live run分开 | 核；[T2](#6264-flashnext-rl) |
 | [2608.10402v1](https://arxiv.org/abs/2608.10402v1) | 2026-08-11／v1 | TideRL | L2/L3/L4（暂） | B（暂） | 保留rollout状态的连续task batching，以ready backlog／到达间隔选择ref-actor执行及弹性rank分配 | 核 |
 | [2605.06534v2](https://arxiv.org/abs/2605.06534v2) | 2026-05-07首次／v2 05-20 | ROSE | L3/L4（暂） | B（暂） | 在SLO约束下借用serving GPU，跨集群分片／稀疏权重传输与弹性rollout路由 | 核 |
 | [2609.33848v2](https://arxiv.org/abs/2609.33848v2) | 2026-09-27首次／v2 10-20 | QwenGyre | L3/L4（暂） | B／**C?**（轨迹处理） | live执行中弹性重分配GPU；重建分支历史、partial-progress评分和路径去重，loss／样本语义另核 | 核 |
@@ -477,8 +477,8 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 | B6 | T2 | L4 其余：AsyncFlow、LlamaRL、RLinf、MindSpeed RL、NeMo-Aligner、ROLL／ROLL Flash、GLM-4.5、Long-RL | **完成9/9**：前八篇认领eb79ac5、18:25完成§6.21；余Long-RL由M1 new-chat @799504e于2026-10-27 18:47认领，先推送75916da，18:54与B7前七篇合批完成§6.22；未重复前八篇 |
 | B7 | T2 | 权重同步/失配子簇：SparseRL-Sync、PULSE、NeMo-DCR、ThunderSyncRL、PipelineRL、Missing Old Logits、Beyond Precision、FP16/Diagnosing/Rethinking 三选二 | **完成9/9**：前七篇§6.22；M1 new-chat @1353af5于2026-10-27 19:18认领FP16／Diagnosing（VeXact），先推送cea145d，19:30完成§6.23.1–2；Rethinking未选入，仍留边界未读账 |
 | B8 | T2 | L3/spec：TailSieve、WAR、Seer、Infinite Sampling、CadenceRL、Weave、CERO、Scheduling Mixed、SRT、S³R、NgramRL、TLT | **完成12/12**：前六篇认领先推送cea145d、19:30完成§6.23.3–8；M1 new-chat @9f7419e于2026-10-27 19:48认领余六篇，先推送f71f617，19:55完成§6.24；不增加源码／复现计数 |
-| B9 | T2 | spec/agentic：RLHFSpec、Bebop、FastGRPO、System-Integrated SD、SPARK、SpecActor、Online Draft Co-Training、MTP-RL、AReaL-DTA、FlashNext-RL、Rollplex | **6/11完成、余5认领**：前6先推送21bcf15、完成§6.25；2026-10-27 20:48 M1 new-chat @34e8adb按矩阵核AReaL-DTA／AREAL-DTA同一2602.00482身份，去重为11，训练侧仍保留边界；认领余5与B10 SkyRL-Agent合批，先推送再读，不计认领完成 |
-| B10 | T2 | agentic：SkyRL-Agent(广扫深化)、EARL、InfoTree、AsyncWebRL、AcceRL、MARLaaS、FlexMARL、Agent Lightning v0/v1.0、TideRL、ROSE、QwenGyre | **首篇已认领**：2026-10-27 20:48 M1 new-chat @34e8adb认领SkyRL-Agent，与B9余5合批六篇，先推送再读；其余待认领 |
+| B9 | T2 | spec/agentic：RLHFSpec、Bebop、FastGRPO、System-Integrated SD、SPARK、SpecActor、Online Draft Co-Training、MTP-RL、AReaL-DTA、FlashNext-RL、Rollplex | **完成11/11**：前6完成§6.25；2026-10-27 20:48 M1 new-chat @34e8adb去重AReaL-DTA／AREAL-DTA同一2602.00482身份后认领余5，先推送bc0649d，与SkyRL-Agent合批完成§6.26；训练侧边界保留，不增源码／复现计数 |
+| B10 | T2 | agentic：SkyRL-Agent(广扫深化)、EARL、InfoTree、AsyncWebRL、AcceRL、MARLaaS、FlexMARL、Agent Lightning v0/v1.0、TideRL、ROSE、QwenGyre | **首篇完成**：M1 new-chat 20:48认领、先推送bc0649d，SkyRL-Agent完成§6.26.6；下轮先核远端，再认领EARL至两篇Agent Lightning共八篇，其余仍待认领 |
 | B11 | T2 | 资源/边界：ARL-Tangram、DART、MCP-Universe RL、PEARL、SAO、Rollout Infrastructure Tax、ExpThink、Intelligent Router | 待认领 |
 | B12 | T3 | serving 20 条 + 其余边界条目 triage（不深读，逐条给不深读理由+关联判定） | 待认领 |
 | C1 | 代码 | veRL TransferQueue/TQ 数据面 + AReaL 调度器 | 待认领 |
@@ -1389,6 +1389,64 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 - **结果**：dense trace平均全步1.5–1.7×、rollout2.0–2.4×；235B另仅测首尾少量checkpoint，全步1.4–2.3×，不当200步MoE质量证明。RLHFuse基线为作者重实现。
 - **限制／迁移**：模型预驻留隐藏部署成本但不免KV恢复；预测模型、空闲worker及整batch可驻留是适用条件。无法从抽样计时证明time-to-quality或全流程正确性，下一步只登记待核契约，不启动设备任务。
 
+### 6.26 共训与跨阶段执行
+
+本批完成B9去重后的余五篇与B10 SkyRL-Agent，共六篇T2。训练目标、有效梯度集合及系统执行重排分账；不增加源码或完整复现计数。
+
+#### 6.26.1 Online Draft Co Training
+
+- **来源／分类**：[v1 §3–4](https://arxiv.org/html/2609.07108v1)，T2完成；L1/L2/L4 A/B，target features stop-gradient，共训不回传draft梯度到policy。
+- **机制**：packed zigzag-ring分别算causal主序列与rank-local branch attention，再以log-sum-exp合并；TapChannel侧路传跨PP features，mailbox stamp及CUDA事件管理buffer复用，不改policy拓扑。
+- **设置**：NeMo RL／GRPO，8B主实验H100、TP/PP/CP=2/2/2，数学输入4096／响应16384、工具任务32K；更大MoE用GB200。总卡数／batch未列，不由EP度直接推卡数。
+- **结果口径**：表1跨模型全步1.16–1.88×、rollout1.19–2.23×；工具任务全步1.25–1.43×。无SD且无共训对照不独立证明在线优于冻结draft，奖励／KL曲线近似不当逐位相同。
+- **算子／开销**：256K为attention扩展测试，不是完整RL长度；相对USP最多2.9×还含免padding。PP表前10更新共训开销13.6–34.3%，tap等待仅其中一部分，不把总开销归为通信。
+- **迁移**：保持target验证与stop-gradient，先判断draft质量及PP slack；不把高接受长度推广MoE／linear-attention高全步收益，未核具体实现。
+
+#### 6.26.2 MTP RL
+
+- **来源／分类**：[ACL Findings论文§3–4、附录A/E](https://aclanthology.org/2026.findings-acl.1871.pdf)，T2完成；L1/L4，解码A，**主模型辅助目标另C**，不与Bebop同篇。
+- **机制**：先冻结主模型，以自蒸馏数据训练跨层共享MTP；RL阶段`I[A≥0]`只门控MTP的KL项，CE另加。不是直接从RL loss删负优势轨迹。
+- **目标边界**：式5及算法1明确主模型也更新`RL+Adv-Opt`，不是仅draft适配；严格接受描述不代替随机采样精确证明，更不能推出训练更新与纯RL相同。
+- **设置**：Qwen2.5-7B／14B、GRPO／GSPO、Slime＋SGLang；8题×32响应、温度.8、三次draft。预训batch16×5 epochs；硬件与最大长度未列。
+- **结果**：主表rollout1.30–2.24×，单步最高3.15×；短0.4 epoch另计装备成本，全程时间降16.36%／35.58%，不是同一计时。表1／4原图核7B数学76.8→76.2、14B代码85.4→84.2，不认定严格全无损。
+- **限制／迁移**：仅adv-KL的τ1.20低于CE＋adv-KL的2.49；正优势门控与共享梯度共同改变训练，需按算法＋系统联合方案评估，不能只按接受率排名。
+
+#### 6.26.3 AReaL DTA
+
+- **来源／分类**：[v2 §3–5、附录A/B](https://arxiv.org/html/2602.00482v2)，T2完成；L1/L3/L4训练侧A/B，不是推测decode tree，也不接续prompt_mean专项。
+- **机制**：DFS只保活跃root-to-leaf状态，汇入后代loss梯度后回传共享prefix；优化顺序＋分块重算控制显存，额外NoGrad anchor forward有约7%开销。
+- **调度边界**：按DFS顺序连续分区、二分最大tree-token成本；最优仅限固定顺序／成本代理，非任意树切分或实测时间全局最优。共享计算须保留各轨迹loss贡献。
+- **设置**：8 H800、GRPO／τ²-bench、训练context16K；1.7B／8B全流程，4B／14B另为消融。原始树压缩9.43×，不是9.43×rollout加速；batch未列。
+- **结果口径**：局部训练最高8.31×对Dense+CKPT，梯度计算消融不含optimizer；全流程1.28／2.28×同时将rollout/train卡比由2/6调到5/3，不能全归单kernel。
+- **负项／迁移**：GSM8K低共享时1.7B仅.62×、8B .86×；接近无共享的AIME 14B为.95×。训练复用机会依赖工作负载，异步奖励相似不等数值／梯度逐位一致，保留训练侧范围账。
+
+#### 6.26.4 FlashNext RL
+
+- **来源／分类**：[v1 §2–5](https://arxiv.org/html/2610.28998v1)，T2完成；L1/L4 A/B，冻结层及零优势组处理另C，模型特定混合证据不转算纯rollout系统。
+- **机制**：exact-size pinned arena、GPU expert梯度累积、稀疏attention／MoE kernels；共享host n-gram、分层权重广播与有界批buffer应对host峰值，router replay降低训推失配。
+- **设置**：Qwen3.8-Flash-Next，4×8 B200，一节点训／三节点推；BF16主路径、131072 context、672在途、目标1024可训rollouts；冻结首两层、n-gram、indexer和MTP，非全部参数更新。
+- **比较边界**：full-model 395→4438 nonpadding tokens/s/GPU的长度／batch变了，不作受控11×；8层同形状累加梯7.4×也非48层完整RL收益，编译首级反而−19.9%。
+- **live口径**：步骤5–15均值22.4分钟、收1393／训1026；全零优势组不训练，故不是固定生成工作量。4737 trainer tokens/s/GPU含padding且只计forward/backward，不与4438直接比较；11–14节点需求仅乐观外推。
+- **限制／迁移**：GPU kernel提升须先解host瓶颈；共享内存用PSS、不累加RSS。短跑熵／KL有界不证任务质量或长期收敛，live关闭expert prefetch以保host余量，不照搬开发最优配置。
+
+#### 6.26.5 Rollplex
+
+- **来源／分类**：[v1 §3–5及生命周期附录](https://arxiv.org/html/2608.14498v1)，T2完成；L2/L4 B，主路径保持同步snapshot更新，不因kernel并行归off-policy。
+- **机制／契约**：response-independent的reference／actor prefix放到decode窗口；actor边界KV保autograd，reference detached，更新前所有旧权重读者静止，chunk update前先完成全局norm／clip。
+- **内存／布局**：VMM稳定虚址、生命周期offload与optimizer流式驻留；跨TP仅整数比且布局兼容的张量共享，不兼容QKV重建。92.8%共享不是任意模型全参数零拷贝。
+- **设置**：ROLL、Megatron0.13／vLLM0.17、32 H800、Qwen2.5-VL-32B、四视频集；32题×8、prompt8K／response2K，首步排warmup。所有基线已有相同prefix共享。
+- **结果**：全步较串行colocate1.23–1.30×、同32卡disagg1.57–2.24×；收益受decode窗口与干扰约束，不能归为新增去重。H20／7B资源策略消融不挪作主硬件结果。
+- **限制／迁移**：prefix短则机会小；叠加partial／oversampling只比各自开关，不横排改变工作量的绝对时间。MPS／IPC共享无独立故障恢复边界，不能由奖励接近推逐位轨迹相同。
+
+#### 6.26.6 SkyRL Agent
+
+- **来源／分类**：[v1 §3–5](https://arxiv.org/html/2511.16108v1)，T2完成；L4，dispatcher B，**工具recipe／有效梯度集合另C**，修订此前C?。
+- **机制**：init／agent-run／reward各有界队列，pipeline重叠CPU与GPU工作；transition记录token／可得logp，经post-process接训练后端。执行异步不自动意味跨policy更新异步。
+- **训练边界**：SWE将超32K context／50 turns终止的轨迹屏蔽梯度，仍参与reward／advantage；不改reward不等更新目标不变。AST搜索、提示及leave-one-out／去归一化另属recipe。
+- **设置**：SWE Qwen3-32B、R2E-Gym4.5K、batch＝minibatch64×8响应，系统图2×8 H100。评测40K／100步且无AST工具，不能将训练与评测预算混同。
+- **结果口径**：pipeline较bounded batch约1.55×针对生成调度；SA-SWE 39.4% Pass@1、4601 H100-hours相对DeepSWE 9180还混入recipe／样本效率，不能全归调度。其他scaffold报告分数不直接横比。
+- **反例／迁移**：OSWorld训练reward升而验证几无改善；工具服务不足会污染轨迹，不仅拖慢吞吐。token原样传输不证明版本／数值一致，纠错提示也不等工具副作用可安全重试；论文与现代SkyRL代码地图分开。
+
 ## 7. Code & System Landscape
 
 **本地已有资产**（重要：不用重新 clone）：
@@ -1614,6 +1672,8 @@ SkyRL `e0893f6e`的[wait_for_generation_buffer:843](https://github.com/NovaSky-A
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（M1 B9收束＋SkyRL-Agent T2）**：§6.26完成六篇，B9大小写别名去重为11/11，B10首篇完成，T2累计42、T1仍20。MTP-RL辅助目标回传policy、FlashNext冻结层／零优势组、SkyRL-Agent超外部限制梯度屏蔽另C；DTA训练8.31×／全流程2.28×、Online Draft 256K算子、Rollplex同步屏障与共享布局边界保留。MTP原PDF表1／4核负项，不把接受率、训练吞吐、异步执行或奖励接近当等价证明；121身份、HybridFlow进行中1、代码6条／4框架、复现0不增。下轮B10八篇先核远端再认领；无设备、M5专项或社区动作。
 
 - **2026-10-27（M1 B9前六篇T2）**：§6.25完成RLHFSpec、Bebop、FastGRPO、System-Integrated SD、SPARK、SpecActor，T2累计36、T1仍20。保留局部成本模型／全局makespan、熵单调性反例、AR提前退出对照、实测／专有模拟、因果proposal与组独立性、抽样trace／连续训练的区别。B9余项先核别名与范围再同B10合批6–8篇，不按名称数认证分母；121身份、HybridFlow进行中1、代码6条／4框架、复现0不增，无设备、M5专项或社区动作。
 

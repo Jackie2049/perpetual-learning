@@ -4,7 +4,7 @@
 
 ## 当前阶段
 
-- **M1本轮认领（2026-10-27 20:48）**：核远端与34e8adb同步、工作树干净；B9的AReaL-DTA／AREAL-DTA为同一2602.00482身份，去重后11篇、已完成6篇。认领余五篇Online Draft Co-Training、MTP-RL、AReaL-DTA、FlashNext-RL、Rollplex，与B10 SkyRL-Agent合成六篇，先推送再读；T2仍36，不计认领为完成。训练侧边界保留，不接续M5 prompt_mean；无设备或社区动作。
+- **M1 B9收束与SkyRL-Agent完成（2026-10-27 20:55）**：认领先推送bc0649d；[§6.26](notebook/rollout-performance-research.md#626-共训与跨阶段执行)完成Online Draft Co-Training、MTP-RL、AReaL-DTA、FlashNext-RL、Rollplex及SkyRL-Agent六篇T2。B9大小写别名去重后11/11、B10首篇完成，T2累计42、T1仍20。文档维护／PDF技能保留MTP辅助目标回传policy与原表质量负项、FlashNext冻结层及零优势组、SkyRL-Agent梯度屏蔽另C，Rollplex同步／autograd契约、DTA局部与全流程、Online Draft算子与完整RL分账。下轮先核远端再认领B10的EARL、InfoTree、AsyncWebRL、AcceRL、MARLaaS、FlexMARL及两篇Agent Lightning共八篇。121身份、HybridFlow进行中1、代码6条／4框架、复现0不增；无设备、M5专项或社区动作。
 
 - **M1 B9前六篇完成（2026-10-27 20:28）**：ff保全11dfc69、认领先推送21bcf15；[§6.25](notebook/rollout-performance-research.md#625-推测配置与在线适配)完成RLHFSpec、Bebop、FastGRPO、System-Integrated SD、SPARK、SpecActor六篇T2，T2累计36、T1仍20。文档维护技能保留熵单调性反例、提前退出对照、实测／模拟、因果proposal与组随机性、抽样trace／连续训练边界；SpecActor FoN后选契约待实现核验，不据正文声称已证明或发现偏差。下轮先核远端，再核B9余项别名／范围，与B10合批6–8篇，不按名称数认证分母。121身份、HybridFlow进行中1、代码6条／4框架、复现0不增；无设备、M5专项或社区动作。
 
