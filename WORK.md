@@ -4,7 +4,7 @@
 
 ## 当前阶段
 
-- **M1本轮认领（2026-10-28 00:19）**：M1 new-chat @2508282核远端0/0、工作树干净；认领C1中的veRL TransferQueue数据面1条路径，固定既有24f25b03源码快照（本地Git对象存在），附带B12余三边界与§5.23五线索范围triage；先推送再读。不触及C1的AReaL调度器或M5专项，代码仍6条／4框架、T1/T2/T3仍20/78/19，不预记完成。
+- **M1 C1 veRL数据面与B12余项完成（2026-10-28 00:29）**：00:19认领先推送d86477d；[§8.8](notebook/rollout-performance-research.md#88-verl-v1-transferqueue数据面)完成固定24f25b03的V1 TQ数据路径，累计7条／4框架。修正默认入口为V1／sync，旧RayPPOTrainer与experimental fully-async分析只适用对应分支；metadata传输／后台生成、选批／更新及清理分账。10 Python AST、23锚点与四原函数五组stdlib CPU检查通过，未运行框架／TQ／原生pytest或设备。[§5.25](notebook/rollout-performance-research.md#525-剩余边界与接续线索分级)随Code批附带完成余八范围triage，原五线索入库；126身份＝120 arXiv＋6会议＝20 T1＋78 T2＋24 T3＋4未标，B12范围28/28。四未标为HybridFlow1及Belayer／BIRD-RL／ScaleRLT待T2三篇；下轮核远端认领B13三新候选＋PrefixFlow／psRL／CIS六篇，再补C2／C3代码。旧日志与M5记录保全；C1的AReaL部分未开展，不称C1整项或Phase 2完成，复现0。无设备、M5专项、算力队列或社区动作。
 
 - **M1 余八直接候选完成（2026-10-27 23:58）**：23:47认领先推送900f515；[§6.32](notebook/rollout-performance-research.md#632-资源迁移-容错与采样边界)完成PUZZLE／DynaRL／PivotRL／RobustRL／RLBoost／Relax／SPEC-RL／ProRL Agent，各6–7条T2。B6补后22/22、B8补后13/13、T2累计78，互斥账121＝20 T1＋78 T2＋19 T3＋4未标完成。文档维护／PDF技能核短长度／变batch、DynaRL基线与RLinf依赖；抢占trace回放／估价、容错失效域、隐藏计算与零成本分别保留。SPEC-RL补A/C与论文伪代码二分类反例，ProRL补过滤／取消C边界，未定位源码缺陷。当前矩阵未标完成的直接候选已补，不等检索收敛或Phase 2完成；HybridFlow1＋边界3及另5线索仍待。下轮先核远端，认领C1 veRL TransferQueue数据面1路径，可附带B12余项范围triage，不拿8条充15–20条T3批次；代码6条／4框架、复现0不增。无设备、M5专项、算力队列或社区动作。
 
