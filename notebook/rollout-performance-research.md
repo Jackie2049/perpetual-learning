@@ -6,8 +6,8 @@
 ## 0. Project Status
 
 - **阶段**：Phase 1 — recall-first literature & code investigation（广扫建库，不收束观点）
-- **最近更新**：2026-10-27（M1补NeMo-DCR、ThunderSyncRL、PipelineRL与PACE四篇，区分同步更新屏障、序列内换权重与拒收，见§5.18；本批不增代码路径）
-- **覆盖**：累计**107篇已核身份**（20篇serving基础／迁移边界＋87篇rollout/RLHF及相关边界，含VLA、训练侧、执行底座与算法诊断；均非深读；103个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL会议记录）。本批新增NeMo-DCR、ThunderSyncRL、PipelineRL与PACE；相近机制、论文版本与软件实现不重复计篇。总数过100或RL相关87不代表纯原生80–120目标达成、覆盖收敛或已完成分级。ASymPO证明错误警示保留，历史✅补核完不等检索收敛；Round 1“≈73”不与当前数量相加。
+- **最近更新**：2026-10-27（M1落实Weave、Online Draft Co-Training两种子，新增CERO／SAO预算与算法边界，见§5.19；本批不增代码路径）
+- **覆盖**：累计**111篇已核身份**（20篇serving基础／迁移边界＋91篇rollout/RLHF及相关边界，含VLA、训练侧、执行底座与算法诊断；均非深读；106个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL／Weave会议记录）。本批2种子落实＋2新条目；Weave采用官方会议身份，不沿用二手错配arXiv。总数过100或RL相关91不代表纯原生80–120目标达成、覆盖收敛或已完成分级。ASymPO证明错误警示保留，历史✅补核完不等检索收敛；Round 1“≈73”不与当前数量相加。
 - **全文深读 / 代码广扫**：0 / 5（veRL `24f25b03`三条路径＋OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`各一条；共3框架，不是5框架或运行验证，也不按文件数计）
 - **最高优先级**：继续原生系统引用／会议扩展与种子落实，补serving机制覆盖，按唯一文献广扫至100–150；总数不替代原生覆盖，A Core短名单不只按条目数选取
 - **下一步**：见 §16
@@ -120,7 +120,8 @@
 | [2605.07501v2](https://arxiv.org/abs/2605.07501v2) | 2026-05-08首次／v2 05-17 | ExpThink（CoT塑形边界） | workload／算法边界 | C边界（非直接筛轨迹） | 历史最短正确长度引导reward塑形及correct-count advantage归一化；改变学习目标，不是执行同一轨迹更快 | 核 |
 | [2506.22950v1](https://arxiv.org/abs/2506.22950v1) | 2025-06-28／v1 | Infinite Sampling | L2/L3/L4（暂） | B（暂） | micro sampling groups与跨组连续采样，prefix长度预测、全局分组及SJF refill；完整组统计后反向 | 核 |
 | [2609.36899v1](https://arxiv.org/abs/2609.36899v1) | 2026-09-29／v1 | CadenceRL（Reshaping Rollout Workloads） | L2/L3/L4（暂） | B（暂） | pacing让长context暂候、concentration聚尾到亲和worker，late-bound KV准备；不是直接删长轨迹 | 核 |
-| ？ | ? | Weave | L3/L4 | B | ？（种子，待验证） | ？ |
+| [USENIX OSDI'26](https://www.usenix.org/conference/osdi26/presentation/wu-tianyuan) | 2026-07会议记录 | Weave（Efficient Co-Scheduling for Disaggregated RL Post-Training） | L3/L4（暂） | B（暂） | co-execution group内跨job交错填补同步气泡，两级调度及host-memory residency支持warm切换 | 核 |
+| [2606.05606v1](https://arxiv.org/abs/2606.05606v1) | 2026-06-04／v1 | CERO（Cross-Epoch Adaptive Rollout Optimization） | workload／算法边界 | **C**（预算分配） | 用prompt成功率Beta posterior估计边际价值，在跨epoch全局预算下分配rollout次数；非固定轨迹执行调度 | 核 |
 
 ### 5.3 L1/L2 — RL-aware Speculative Rollout（serving机制的迁移条件）
 
@@ -142,6 +143,7 @@
 | [2604.26779v1](https://arxiv.org/abs/2604.26779v1) | 2026-04-29／v1 | System-Integrated SD（Iso等） | L1/L4（暂） | A/B（暂） | NeMo-RL＋vLLM集成MTP／外部draft／EAGLE3；实测与模拟预测分开 | 核 |
 | [2608.04962v2](https://arxiv.org/abs/2608.04962v2) | 2026-08-05首次／v2 10-14 | SPARK（v1名SpecRoll） | L1/L2（暂） | A（暂） | verifier反馈修正draft logits，同prompt共享rollout-local correction、跨rollout学projection；不改为直接采样draft | 核 |
 | [2511.16193v3](https://arxiv.org/abs/2511.16193v3) | 2025-11-20首次／v3 12-23 | SpecActor（Fast LLM Post-training） | L1/L3/L4（暂） | A/B（暂） | 解耦draft／verification，Fastest-of-N按接受率与draft ladder选择方法并利用长尾空闲worker | 核 |
+| [2609.07108v1](https://arxiv.org/abs/2609.07108v1) | 2026-09-07／v1 | Online Draft Co-Training（Large-Scale Long-Context RL） | L1/L2/L4（暂） | A/B（系统；暂） | packed zigzag-ring合并causal／branch attention，TapChannel跨PP传target features，支持在线draft训练 | 核 |
 | ？ | ? | MTP-RL | L1 | A | 种子待验证；Bebop仍只是方向候选，不确认同名 | ？ |
 
 ### 5.4 Agentic Rollout
@@ -170,6 +172,7 @@
 | [2609.33848v2](https://arxiv.org/abs/2609.33848v2) | 2026-09-27首次／v2 10-20 | QwenGyre | L3/L4（暂） | B／**C?**（轨迹处理） | live执行中弹性重分配GPU；重建分支历史、partial-progress评分和路径去重，loss／样本语义另核 | 核 |
 | [2510.04206v1](https://arxiv.org/abs/2510.04206v1) | 2025-10-05／v1 | AgentRL | L4（暂） | B／**C**（cross-policy） | 全异步生成训练与统一环境接口；另有单轨迹内跨模型采样和task advantage归一化 | 核 |
 | [2607.01415v1](https://arxiv.org/abs/2607.01415v1) | 2026-07-01／v1 | The Rollout Infrastructure Tax in Coding-Agent Reinforcement Learning | L4环境执行边界（暂） | B（暂） | 固定command轨迹对照四种执行底座，测启动／执行／reset；worker-hours为外推而非完整RL训练实测 | 核 |
+| [2607.07508v1](https://arxiv.org/abs/2607.07508v1) | 2026-07-08／v1 | SAO（Single-Rollout Asynchronous Optimization for Agentic Reinforcement Learning） | L4／算法边界（暂） | **C**／算法改动 | 每prompt单rollout替代group sampling，配value-model设计与double-sided token clipping；不作GRPO等价系统加速 | 核 |
 
 ### 5.5 Serving 基础（supporting corpus，含迁移边界，不标 rollout-native）
 
@@ -198,13 +201,15 @@
 
 ### 5.6 待验证种子（用户清单中尚未落实）
 
-？Weave ｜ ？MTP-RL（2606.12370／Bebop为方向候选，未确认同名）｜ ？Online Draft Co-Training for long-context RL
+？MTP-RL（2606.12370／Bebop为方向候选，未确认同名）
 
-Seer与Taming the Long-Tail（TLT）已在§5.2／§5.3落实来源。Weave本批定向检索未命中，仍是种子，不据此判定不存在。
+Weave已由OSDI'26官方记录落实，Online Draft Co-Training已落实2609.07108v1，见§5.19；两者从待核转入矩阵，不是本轮新发现的两个名称。MTP-RL仍不与Bebop强行合并。
+
+Seer与Taming the Long-Tail（TLT）已在§5.2／§5.3落实来源。历史早批次Weave定向检索未命中，不据此判定不存在；本批改从会议官方入口落实。
 
 FastGRPO已落实2509.21792v1；不据online draft learning关键词把它等同其他未确认同名的种子。
 
-SpecRoll已落实2608.04962v1，采用同ID改题的SPARK v2，只计一篇，见§5.14。ExpThink既有线索已落实2605.07501v2，作为算法塑形边界，不把其token压缩直接列为系统执行加速。Weave定向检索及TideRL正文关键词定位仍未命中匹配系统，继续保留，不把其他同名工具／机器人工作强行合并。
+SpecRoll已落实2608.04962v1，采用同ID改题的SPARK v2，只计一篇，见§5.14。ExpThink既有线索已落实2605.07501v2，作为算法塑形边界，不把其token压缩直接列为系统执行加速。早期Weave关键词未命中的记录保留在§5.12／§5.14；不与机器人同名工作合并，亦不采用错配2602.11143，见§5.19。
 
 ### 5.7 基础文献身份与版本勘误
 
@@ -348,6 +353,18 @@ BubbleSpec／SRT的run-ahead用于后续draft验证，不等于直接拿旧polic
 **两种lossless的对象不同**：[NeMo-DCR v1 §4–§8及附录C](https://arxiv.org/html/2610.08430v1)用canonical映射、native loader、XOR／overwrite及失败后overwrite重试和joint commit，目标是接收端参数／buffer位与dense refit一致；不是整个RL更新轨迹不变或跨任意loader无条件保证。refit延迟比较采用transport-only full-checkpoint reference和指定change-rate压力条件；它不是端到端训练加速，附录计时还排除post-apply check，gate重开在计时窗后。不要把论文中的bit-exact refit与ThunderSyncRL的目标更新等价混为一种验收。NeMo-DCR软件入口存在不代表§8.6已审计其delta实现。
 
 全批限原站身份／版本、摘要与上述局部机制和计时口径定位，全文深读仍0，代码仍5条路径／3框架；未运行作者代码、验证证明、复现数值或启动设备任务。后续继续原生引用／会议扩展和未落实种子，或补未覆盖框架；具体结论按目标、版本和采样语义再分级，不按总数收束。
+
+### 5.19 两项种子落实与样本预算边界
+
+2026-10-27第十三文献批：落实Weave与Online Draft Co-Training两个既有种子，另补CERO、SAO两个预算／算法边界条目；新增4个已核身份，但不是4个新发现的名字。累计111身份（106唯一arXiv＋5会议记录），20 serving／边界＋91 rollout/RLHF及相关边界，不把后者当91篇纯原生系统；MTP-RL仍待同名来源。
+
+**Weave的复用单位是跨job气泡。** [OSDI'26官方记录](https://www.usenix.org/conference/osdi26/presentation/wu-tianyuan)给出论文标题、作者与页码809–827；采用会议身份，不猜arXiv。co-execution group隔离locality域，组间规划placement、组内round-robin交错不同job的活动阶段，host memory驻留约束支持warm切换。这里的cost efficiency／SLO属于多job调度条件，不等单job rollout延迟收益；摘要的最优性主张未作证明验收。二手检索曾给出2602.11143，但[该ID原站](https://arxiv.org/abs/2602.11143v3)实为APEX humanoid traversal，不进入本库；也不与W&B工具或机器人Weave同名合并。
+
+**Online Draft Co-Training补的是draft训练的并行布局。** [2609.07108v1 §3及§4.2–4.5](https://arxiv.org/html/2609.07108v1)的branch attention／TapChannel服务在线draft更新，不是FP8 policy数值路径；256K证据对应attention算子扩展，不等256K完整RL端到端验证。无draft且无speculation的对照也不能单独归因于“在线训练胜过冻结draft”；完整更新overhead不全归TapChannel。接受长度、算子加速和整步加速分别登记，不从局部一致性曲线推普遍exactness。摘要的软件链接只登记为入口，不认作本轮已验证实现。
+
+**分配工作和执行同一工作分开。** [CERO v1摘要](https://arxiv.org/abs/2606.05606v1)以固定全局预算耦合prompt和epoch的rollout次数，属于C类采样分配；其regret条件是fixed prompt utilities，不外推为RL非平稳训练保证。[SAO v1摘要](https://arxiv.org/abs/2607.07508v1)改为单rollout、value-model与clipping，组估计／loss一并改变，不是只拆掉GRPO同步等待。两项只补workload边界，不展开算法综述或把样本效率当tokens/s。
+
+全批仅官方身份／版本、摘要和draft论文上述局部机制／评估条件，全文深读仍0，代码仍5条／3框架；未运行作者实现、验证理论／数值或启动设备任务。下一步继续原生引用／会议与唯一未落实种子，或未覆盖框架；总量不替代覆盖与分级，不从两项种子落实直接转survey正文。
 
 ## 6. Paper Deep Reads
 
@@ -554,6 +571,8 @@ NeMo RL SC `a9d1a4be`的[exposed_generation:3010](https://github.com/NVIDIA-NeMo
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（M1两项种子与预算边界补库）**：Weave以OSDI'26身份落实、Online Draft Co-Training落实2609.07108v1，另增CERO／SAO；累计111身份（20 serving／边界＋91 RL相关边界；106 arXiv＋5会议记录）。§5.6移除两项待核，MTP-RL保留；§5.19拒绝2602.11143机器人错号，分开跨job效率、draft算子／完整训练与采样预算／loss改变。深读0、代码5条／3框架不变，无设备／M5专项／上游写入。下步原生引用／会议、剩余种子或未覆盖框架，不按总量收束。
 
 - **2026-10-27（M1更新语义与delta refit补库）**：新增NeMo-DCR／ThunderSyncRL／PipelineRL／PACE四篇，累计107身份（20 serving／边界＋87 RL相关边界；103 arXiv＋4会议记录）。§5.18分开固定policy的gradient streaming与一次更新、序列内换权重／旧KV、池拒收C及bit-exact dense refit；传输基准／计时窗不当端到端训练。身份／摘要和局部机制，深读0、代码5条／3框架不变，无设备／M5专项／上游写入。下步继续原生引用／会议／种子，或未覆盖框架，不以过百结束广扫。
 
