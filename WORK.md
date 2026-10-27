@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1本轮认领（2026-10-27 17:47）**：核远端仍5304df1、工作树干净，认领[§6.0 B5](notebook/rollout-performance-research.md#60-phase-2-冲刺批次表2026-10-27-用户指令截止-2026-10-29-两天内完成)后半ObsSpec／FP8-RL两篇T1，先推送再阅读；T1仍18篇、B5仍2/4。无设备、M5专项或社区操作。
+
 - **M1 B5前半完成（2026-10-27 17:23）**：认领先推送9dcbdc8，完成[§6.17 EfficientRollout／§6.18 Heddle](notebook/rollout-performance-research.md#617-efficientrollout-t1压缩深读)各24行T1；B5仅2/4、T1累计18。文档维护技能保留W4 draft与target KV覆盖／残差恢复、一次开启假设、α反推与不同计时路径；Heddle排序DP最优性限假设，数学tool短窗口不作零开销，rollout吞吐不当全训练／质量证明。121身份、HybridFlow进行中1、代码6条／4框架、复现0不增。下方旧状态以本条及canonical§0为准；下一轮先核远端再认领ObsSpec／FP8-RL，无设备、M5专项／AReaL prompt_mean或社区操作。
 
 - **M1 B4完成（2026-10-27 16:54）**：认领先推送c17ff36，完成[§6.15 BubbleSpec／§6.16 DAS](notebook/rollout-performance-research.md#615-bubblespec-t1压缩深读)两篇各24行T1，B4收束4/4、T1累计16。文档维护技能保留验证条件与实验单位；PDF技能确认DAS式7与前置约束代数不一致，CPU反例不当实现bug证据。BubbleSpec只用inter-GPU气泡，旧token仅供target验证，decode步／rollout秒／质量分账。121身份、HybridFlow进行中1、代码6条／4框架、复现0不增。下方旧状态以本条及canonical§0为准；下一轮核远端后认领B5前半EfficientRollout／Heddle，无设备、M5专项／AReaL prompt_mean或社区动作。
