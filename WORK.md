@@ -4,7 +4,7 @@
 
 ## 当前阶段
 
-- **M1本轮认领（2026-10-27 14:17）**：同步e159534后认领[§6.0 B2](notebook/rollout-performance-research.md#60-phase-2-冲刺批次表2026-10-27-用户指令截止-2026-10-29-两天内完成)前半AReaL论文／RolloutPipe两篇T1，先推送后阅读；PACE／ECHO-2未占用。当前完成仍4篇，AReaL仅系统论文证据，不接续prompt_mean思路／代码／实测／PR；无设备或社区动作。
+- **M1 B2前半完成（2026-10-27 14:22）**：认领先推送82a3fb6，完成[§6.5 AReaL论文／§6.6 RolloutPipe](notebook/rollout-performance-research.md#65-areal论文-t1压缩深读)两篇各24行T1。B2仅2/4、T1累计6，PACE／ECHO-2仍待认领；HybridFlow仍进行中1，121身份、代码6条／4框架、复现0不变。AReaL准入／混版本／目标变化与RolloutPipe固定生成权重／每U组更新／全R组发布分开；训练小时、估算小时与主时窗缩短百分比不混算。未知源码契约保留，AReaL仅论文阅读，未接续M5 prompt_mean专项或探针。下方旧状态以本条及canonical§0为准；下一轮核远端后认领PACE／ECHO-2，无设备或社区操作。
 
 - **M1 B1完成（2026-10-27 13:52）**：本轮认领先推送b3efd71，随后完成[§6.3 Laminar／§6.4 DORA](notebook/rollout-performance-research.md#63-laminar-t1压缩深读)两篇T1，B1累计4/4、T1累计4篇；HybridFlow仍进行中1、121身份与代码6条／4框架不增，复现0。Laminar低陈旧性是观测非硬界；DORA的8.2×为未遮蔽rollout-only时段，RBS／TBS原文单位混写留疑，不把保留轨迹升级为同步等价或公共系统排名。文档维护技能将条件留在原结论旁并统一批次状态；未核源码或用设备，无M5专项／社区操作。下方B1前半与“待认领”属历史，本条及canonical§0为当前；下一轮先核远端后认领B2前半两篇，AReaL论文阅读不接续prompt_mean专项。
 
