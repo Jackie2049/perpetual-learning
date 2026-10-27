@@ -4,7 +4,7 @@
 
 ## 当前阶段
 
-- **M1本轮认领（2026-10-27 21:48）**：核远端与a268b1d同步、工作树干净；认领B10余TideRL／ROSE／QwenGyre及B11 ARL-Tangram／DART／MCP-Universe RL／PEARL／SAO，共八篇T2，先推送再读，T2仍50。只读论文、原位维护条件与分类，不增源码／复现或设备任务；M5专项与社区只读边界不变。
+- **M1 B10收束与B11前五完成（2026-10-27 21:56）**：认领先推送c96756b；[§6.28](notebook/rollout-performance-research.md#628-弹性执行与样本语义)完成TideRL／ROSE／QwenGyre／ARL-Tangram／DART／MCP-Universe RL／PEARL／SAO八篇，各6行T2，累计58、B10为12/12、B11为5/8、T1仍20。文档维护技能保留Tide弹性batch、Qwen target集合与调度平均年龄前提、DART成功回放／高熵step和SAO目标变化；ROSE扩卡、PEARL同trace／负项／切换成本、Tangram ACT及MCP五步计时分账，DART算术修正14.61pp。下一轮核远端／未读清单，B11余三与AgentRL／RollArt／AstraFlow合批六篇，认领时按§6.0回写名单微调；58篇不等Phase 2整体完成。121身份、HybridFlow进行中1、代码6条／4框架、复现0不增，无设备、M5专项或社区动作。
 
 - **M1 B10八篇完成（2026-10-27 21:30）**：认领先推送025a29d；[§6.27](notebook/rollout-performance-research.md#627-agentic执行与训练契约)完成EARL、InfoTree、AsyncWebRL、AcceRL、MARLaaS、FlexMARL及两篇Agent Lightning，各6行T2，累计50、B10为9/12、T1仍20。文档维护技能区分租户异步／整批更新／跨版本轨迹与算法C；InfoTree理论前提、AcceRL离线轨迹1000／2000冲突、FlexMARL基线和Lightning负消融保留，不合并局部延迟／聚合吞吐／time-to-quality。下一轮先核远端，再认领B10余TideRL／ROSE／QwenGyre＋B11前五篇ARL-Tangram／DART／MCP-Universe RL／PEARL／SAO，共八篇。121身份、HybridFlow进行中1、代码6条／4框架、复现0不增；无设备、M5专项或社区动作。
 
