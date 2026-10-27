@@ -6,13 +6,13 @@
 ## 0. Project Status
 
 - **阶段**：**Phase 2 — deep research（2026-10-27 用户指令：广度已足（计数另按唯一身份核算），转入论文/项目深读，围绕 rollout 性能与 L1–L4 四维；M1 定时启动的技术秘书任务以深读为主要工作）**
-- **最近更新**：2026-10-28（§8.11–8.12完成C3 rLLM／Slime两条生成消费路径，累计11路径／8系统（6 RL框架＋2推理引擎）；126身份及20/84/21/1深度账不变。HybridFlow原版实现／原始数据与覆盖验收仍待，截止≤2026-10-29不变）
+- **最近更新**：2026-10-28（§8.13完成C4公开早期veRL生成／重分片1路径，累计12路径／8系统；§13.1复点覆盖账。v0.1rc晚于论文，非原实验commit认证；HybridFlow原认领与原始数据缺口保留。126身份及20/84/21/1深度账、截止≤2026-10-29不变）
 - **覆盖**：累计**126篇已核身份**（20篇serving基础／迁移边界＋106篇rollout/RLHF及相关边界；120个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL／Weave／MTP-RL会议记录；其中T1压缩深读20篇，其余不据身份核验算深读）。§5.25将RL相关106暂分89直接候选与17保守单列，承接§5.20的86／15历史快照；这是工作范围计数，不是原生80–120覆盖／质量验收。MTP-RL不与Bebop同篇；初始种子及旧五线索身份已落实，但检索／分级／正文审查未全收敛。ASymPO证明错误警示保留，Round 1“≈73”不相加。
 - **接续线索**：§5.23原余5项已在§5.25入库，§6.33完成Belayer／BIRD-RL／ScaleRLT及PrefixFlow／psRL／CIS六篇T2。训练侧共享与概率修正仍单列边界，不因深化转为原生覆盖；入库、T2与实现／复现验收分开。
-- **深读 / 代码广扫**：按§6.0新压缩标准完成T1 **20篇**（B1–B5各四篇）、T2 **84篇**（B6补后22/22、B7为9/9、B8补后13/13、B9为11/11、B10为12/12、B11为11/11、B13为6/6；含Intelligent Router serving旁读；GLM-4.5仅§3.5系统片段，非整份报告；非源码或性能复现验收），另有HybridFlow进行中1项 / **11条代码路径**（veRL `24f25b03`四条；OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`、SkyRL `e0893f6e`、rLLM `4e828c81`、Slime `540ea919`各一条；vLLM `eaf1627c`、SGLang `cb55d77d`各一条；共8系统＝6 RL框架＋2推理引擎，不按文件数计，不是原生运行验证）；完整复现仍0。
-- **最高优先级（2026-10-27 用户加急指令）**：**Phase 2 全部深读须在两天内完成（≤2026-10-29）**——每次定时触发完成**一批对应规模**的调研（分级深度 + 批次表见 §6.0），不得单次只做一篇；深度与时间约束按批次表权衡。B13、C2与C3本批已收束；先核HybridFlow已有认领，再补原版实现／原始数据与Phase 2覆盖缺口，不再为数量扩文献。M5专项与上游写入边界不变。
+- **深读 / 代码广扫**：按§6.0新压缩标准完成T1 **20篇**（B1–B5各四篇）、T2 **84篇**（B6补后22/22、B7为9/9、B8补后13/13、B9为11/11、B10为12/12、B11为11/11、B13为6/6；含Intelligent Router serving旁读；GLM-4.5仅§3.5系统片段，非整份报告；非源码或性能复现验收），另有HybridFlow进行中1项 / **12条代码路径**（veRL `24f25b03`四条＋公开历史`53bb5d21`一条；OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`、SkyRL `e0893f6e`、rLLM `4e828c81`、Slime `540ea919`各一条；vLLM `eaf1627c`、SGLang `cb55d77d`各一条；共8系统＝6 RL框架＋2推理引擎，不按文件数或历史版本重复加系统，不是原生运行验证）；完整复现仍0。
+- **最高优先级（2026-10-27 用户加急指令）**：**Phase 2 全部深读须在两天内完成（≤2026-10-29）**——每次定时触发完成**一批对应规模**的调研（分级深度 + 批次表见 §6.0），不得单次只做一篇；深度与时间约束按批次表权衡。B13、C2／C3与C4本批已收束；HybridFlow不接管原并行认领，早期公开实现不替原实验commit／原始数据。接续按§13.1补证据，不再为数量扩文献。M5专项与上游写入边界不变。
 - **Triage与未读账**：B12范围triage完成28项的历史范围不变，triage事项数不等当前T3身份数。B13三项原T3（PrefixFlow／psRL／CIS）升级T2并替换最深层；126＝20 T1＋84 T2＋21 T3＋1未标完成，仅HybridFlow进行中。不存在把同篇T2/T3相加的新增覆盖。
-- **深读当前焦点**：下一轮先核远端及HybridFlow已有认领／负责人，再补论文年代实现／原始数据和覆盖缺口审计；代码11已达8–12数量目标，不用现代源码替代历史实现。C1仅veRL数据路径完成，AReaL部分不开展／不据C3完成自动销项。T1/T2或代码数量达标不等Phase 2完成，M5专项与上游写入边界不变。
+- **深读当前焦点**：下一轮先核远端，再从§13.1选一批跨层结果口径／负载条件核对，例如RollPacker／SortedRL／APRIL／DARTS与RhymeRL／ReSpec的局部／整步指标，产出可比较与不可比较条件，不新加深读计数。HybridFlow仍保留原并行认领及原实验数据缺口，不能据本机无活动会话宣告接管。代码12已达8–12数量目标；C1仅veRL数据路径完成、AReaL部分不开展。仍非Phase 2整体完成。
 - **Phase 2 完成标准与预估（2026-10-27 定，用户问"多久读完"后定量）**：**不是 121 篇全读**。深读总量 = A Core 15–20 篇全模板深读 + B Supporting ~40–60 篇中等深度（机制+关键结果，轻模板）+ 代码深读 ~8–12 条路径；C 边界与 serving 保持元数据级即可。节奏：每篇 A Core ≈ 1 个定时任务轮次，B 类 3–5 篇/轮次；按多会话并行（每日 2–4 轮次涉及本专项）预估 **A Core ≈ 1–1.5 周、Phase 2 整体 ≈ 3–4 周日历时间**。里程碑：第 1 周末 A Core 短名单定稿+完成一半；第 2 周末 A Core 完成+代码地图齐；第 3–4 周 B 覆盖+gaps/ideas 提炼+（可选）survey outline。**加速杠杆**：为定时任务显式分配深读配额。
 - **下一步**：见 §16
 
@@ -512,7 +512,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 | C1 | 代码 | veRL TransferQueue/TQ 数据面 + AReaL 调度器 | **veRL部分完成1路径**：2026-10-28 00:19 M1 new-chat @2508282认领、先推送d86477d，00:29完成§8.8；累计7路径／4框架。AReaL调度器未开展，不将C1整项写完成，M5专项不触及 |
 | C2 | 代码 | vLLM / SGLang core scheduler 路径 | **完成2/2路径**：2026-10-28 01:18 M1 new-chat @36e1ad9认领、先推送e5b874b，01:29完成检查回写；§8.9–8.10固定eaf1627c／cb55d77d各1条，9源码AST／8组原函数体控制通过。累计9路径／6系统，不当原生引擎／性能或RL复现 |
 | C3 | 代码 | rLLM / slime / 其余框架 | **本批完成2/2路径**：2026-10-28 01:48 M1认领ef69115先推送、02:00收尾；§8.11–8.12固定rLLM 4e828c81／Slime 540ea919，13源码AST／八组限定CPU控制通过；累计11路径／8系统，非全框架／性能验收；HybridFlow与覆盖审计接续 |
-| C4 | 代码／覆盖核查 | 公开历史veRL生成与重分片1路径，附Phase 2覆盖缺口 | **认领0/1路径**：2026-10-28 02:18 M1 new-chat @8b82580，先推送；先定位历史ref，不将2026的80ee82bd当2024实现；不接管HybridFlow并行认领、论文20/84/21/1及代码11不预增 |
+| C4 | 代码／覆盖核查 | 公开历史veRL生成与重分片1路径，附Phase 2覆盖缺口 | **完成1/1路径**：2026-10-28 02:18 M1认领先推送bab2fe8、02:27收尾；§8.13固定v0.1rc 53bb5d21、公开历史根30911f13，12源码AST／静态顺序与§13.1覆盖账核查通过；累计12路径／8系统。非原实验commit或性能认证，不接管HybridFlow原并行认领 |
 
 （HybridFlow 已由并行会话进行中，不计入批次。T2/T3 具体名单允许执行会话按 §5 矩阵实际条目微调，微调须记录。）
 
@@ -1937,7 +1937,7 @@ NeMo RL只读克隆：`/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work
 
 SkyRL只读克隆：`/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/skyrl-rollout-scan`，origin为`NovaSky-AI/SkyRL`，固定HEAD `e0893f6eb878f4d396184cb14c4f9d27bbbb0aef`，工作树干净。只读统一包的fully-async／SkyRLGym路径，不同于SkyRL-Agent论文原版、默认同步trainer或模拟trainer；未安装依赖或运行项目。
 
-**代码地图覆盖**：累计7条／4框架：veRL原三条见§8.2–8.4，V1 TransferQueue数据面第四条见§8.8；OpenRLHF／NeMo RL／SkyRL各一条见§8.5–8.7。§8.8另核默认V1入口，不将旧RayPPOTrainer或experimental fully-async路径当所有配置的默认。AReaL prompt_mean仍由M5单一负责，不在此代码阅读中接续；7条不等整个框架读完或性能验收。
+**代码地图覆盖**：当前累计12路径／8系统：veRL现代四条见§8.2–8.4／§8.8，公开历史补充一条见§8.13；OpenRLHF／NeMo RL／SkyRL各一条见§8.5–8.7，rLLM／Slime各一条见§8.11–8.12；vLLM／SGLang推理调度器各一条见§8.9–8.10。即6 RL框架＋2推理引擎，不将历史veRL再计一个系统。§8.8默认V1与旧分支、§8.13公开版与论文版分开；早期三条地图的历史表述不作现行总数。AReaL prompt_mean仍由M5单一负责；数量不等全框架或性能验收。
 
 ## 8. Paper → Mechanism → Code Mapping
 
@@ -2174,6 +2174,31 @@ KV接口的“key-value”不是attention K/V。[KV→Batch:302](https://github.
 
 **限定验证与计数**：[脚本、口径和结果](../experiments/rollout-group-controls/readme.md)固定两完整OID／13份Python源码AST；八组CPU控制运行原stdlib coordinator／filter模块及AST提取原取消／版本函数，核配额、sync结转、pause／resume、失败cause、cancel drain、min-version、取消所属与条件过滤。真实asyncio、假sample／state；不导入框架，不运行HTTP／Ray／存储／optimizer／设备或性能实验，不称源码修复。C3本批2/2，代码9→11路径、6→8系统（6 RL框架＋2推理引擎），文献126与20/84/21/1、完整复现0不变。下轮先核HybridFlow已有认领再补原版代码／数据与覆盖审计；不启动M5专项或新增算力队列。
 
+### 8.13 早期veRL重分片与生成路径
+
+固定公开标签[v0.1rc `53bb5d21372a667954afb7109a2ef1df485e3137`](https://github.com/verl-project/verl/tree/53bb5d21372a667954afb7109a2ef1df485e3137)，独立只读检出`work/verl-v01rc-c4-readonly`。一条历史路径为RayPPOTrainer→Megatron ActorRolloutRefWorker→MegatronVLLMShardingManager→vLLM 0.5.4→actor重算；L4 B为主，不将旧实现当现代框架默认或论文性能复现。
+
+**年代证据。** tag提交为2024-11-01；该公开链四个提交的根为[30911f13，2024-10-31](https://github.com/verl-project/verl/commit/30911f133aa300ae9d8e341dba8e63192335705e)，晚于[论文v2，10-02](https://arxiv.org/html/2409.19256v2)。只能认证当前公开历史链，不推作者没有内部版本或历史未被改写。旧80ee82bd本地提交日期为2026-10-20，更不能认证为论文年代实现。原HybridFlow并行认领、原实验commit及20.57×逐配置数据的缺口保留。
+
+- **驱动调用涵盖的不只decode。** [trainer gen:432](https://github.com/verl-project/verl/blob/53bb5d21372a667954afb7109a2ef1df485e3137/verl/trainer/ppo/ray_trainer.py#L432)计整个worker generate调用。[worker:345](https://github.com/verl-project/verl/blob/53bb5d21372a667954afb7109a2ef1df485e3137/verl/trainer/ppo/workers/megatron_workers.py#L345)在sharding context中预处理→生成→输出汇集，退出后非validation的actor路径还重算old_log_probs。rollout虽索取server logprob，却不把它直接放入返回batch的old_log_probs；重算值也不自动证明与行为引擎逐token一致。
+- **PP汇集有实际buffer与通信。** [AllGatherPPModel:37](https://github.com/verl-project/verl/blob/53bb5d21372a667954afb7109a2ef1df485e3137/verl/trainer/ppo/hybrid_engine/megatron_vllm.py#L37)保本PP训练模型，其余PP模型buffer卸载CPU；[allgather_params:118](https://github.com/verl-project/verl/blob/53bb5d21372a667954afb7109a2ef1df485e3137/verl/trainer/ppo/hybrid_engine/megatron_vllm.py#L118)实为逐源PP的同步broadcast，不因方法名就认作单次all_gather collective。generation先load其他PP到CUDA再广播，退出卸载非本PP，不能从“zero redundancy”推无buffer／无传输。
+- **TP转换有整除与模型布局条件。** [manager构造:240](https://github.com/verl-project/verl/blob/53bb5d21372a667954afb7109a2ef1df485e3137/verl/trainer/ppo/hybrid_engine/megatron_vllm.py#L240)要求infer_tp≤train_tp且整除，micro_dp=train_tp/infer_tp。[concat:267](https://github.com/verl-project/verl/blob/53bb5d21372a667954afb7109a2ef1df485e3137/verl/trainer/ppo/hybrid_engine/megatron_vllm.py#L267)对QKV按头比例拆后分别拼接，对gate/up先拆再拼，其他按tensor partition dim拼；不是任意权重直接cat或任意TP变换。[_post_process_params:318](https://github.com/verl-project/verl/blob/53bb5d21372a667954afb7109a2ef1df485e3137/verl/trainer/ppo/hybrid_engine/megatron_vllm.py#L318)还分配临时all-gather tensor，不能泛称切换无额外内存。
+- **权重绑定与备份不同。** [enter:345／exit:360](https://github.com/verl-project/verl/blob/53bb5d21372a667954afb7109a2ef1df485e3137/verl/trainer/ppo/hybrid_engine/megatron_vllm.py#L345)依次load→PP广播→规范名→TP重组→sync；退出卸载非本PP、恢复字典原引用并解绑生成模型。0.5.4的[loader:27](https://github.com/verl-project/verl/blob/53bb5d21372a667954afb7109a2ef1df485e3137/verl/third_party/vllm/vllm_v_0_5_4/megatron_weight_loaders.py#L27)在shape／dtype匹配时重绑param.data；[offload_model_weights:275](https://github.com/verl-project/verl/blob/53bb5d21372a667954afb7109a2ef1df485e3137/verl/third_party/vllm/vllm_v_0_5_4/worker.py#L275)首次建empty CPU占位再重绑，不是保存一份有效生成权重checkpoint。下次须重新同步；不推广为所有loader／模型的零拷贝保证。
+- **数据重排必须与权重组对应。** [dispatch:161](https://github.com/verl-project/verl/blob/53bb5d21372a667954afb7109a2ef1df485e3137/single_controller/base/decorator.py#L161)按`dp_rank*pp_size+pp_rank`分片、PP视作额外DP；[preprocess:378](https://github.com/verl-project/verl/blob/53bb5d21372a667954afb7109a2ef1df485e3137/verl/trainer/ppo/hybrid_engine/megatron_vllm.py#L378)再广播训练TP内输入并按micro_dp切块，输出先micro_dp后PP汇集；[collect:209](https://github.com/verl-project/verl/blob/53bb5d21372a667954afb7109a2ef1df485e3137/single_controller/base/decorator.py#L209)仅收tp0／pp0。不是同一prompt重复独立计分，也不把训练TP当生成TP。
+
+下表是单PP、单训练TP块内train_tp=4／infer_tp=2的源码布局推导，非运行trace。[0.5.4 parallel_state:101](https://github.com/verl-project/verl/blob/53bb5d21372a667954afb7109a2ef1df485e3137/verl/third_party/vllm/vllm_v_0_5_4/parallel_state.py#L101)把生成TP组排成跨步rank，micro_dp则连续分组：
+
+| rank | 权重汇集的micro_dp组 | 生成TP组 | 输入micro_dp切块 |
+|---|---|---|---|
+| 0 | 0、1 | 0、2 | 0 |
+| 1 | 0、1 | 1、3 | 1 |
+| 2 | 2、3 | 0、2 | 0 |
+| 3 | 2、3 | 1、3 | 1 |
+
+**与论文配置的边界。** [README:72](https://github.com/verl-project/verl/blob/53bb5d21372a667954afb7109a2ef1df485e3137/README.md#L72)示例装vLLM 0.5.4，源码wrapper另支持0.3.1／0.4.2；[Megatron YAML:6](https://github.com/verl-project/verl/blob/53bb5d21372a667954afb7109a2ef1df485e3137/verl/trainer/config/ppo_megatron_trainer.yaml#L6)默认prompt／response上限512、ignore_eos=false，不等论文固定1024／1024。free_cache_engine路径[生成:140](https://github.com/verl-project/verl/blob/53bb5d21372a667954afb7109a2ef1df485e3137/verl/trainer/ppo/rollout/vllm_rollout/vllm_rollout.py#L140)每次init／free，[worker:233](https://github.com/verl-project/verl/blob/53bb5d21372a667954afb7109a2ef1df485e3137/verl/third_party/vllm/vllm_v_0_5_4/worker.py#L233)置空cache对象，不能代填论文§7所述KV CPU卸载／重载。同tag不能将不同backend／配置组合成一份论文复现配方。
+
+[静态复跑材料](../experiments/verl-v01rc-provenance/readme.md)核四提交链、12源码AST／blob一致、enter顺序及actor重算在context之后；没有执行原函数／tensor／collective／框架或设备。按生成与重分片历史路径新增1条，累计12路径／8系统；不增论文深度或完整复现数。202文件的目标公开树与本批资料中未定位图9(c)逐配置原始吞吐表／日志，不将未定位升级为作者未公开或永久不可得。
+
 ## 9. Serving → Rollout Transfer
 
 三问框架（每个 serving 工作都过一遍）：① serving 里解决什么 bottleneck？② 哪些机制可直接迁移？③ 进入 rollout 后 objective/scheduler semantics/correctness 约束怎么变、是否需要 RL-aware redesign？
@@ -2220,6 +2245,21 @@ SkyRL `e0893f6e`的[wait_for_generation_buffer:843](https://github.com/NovaSky-A
 3. cap/长度类边界条件的系统化处理（如 cap=1 的 -0 陷阱、偶奇 cap 分配）在现有论文中未见讨论——来自 verl #8281 实战的微观缺口；
 4. 多模态机制继续分开：§5.22补MR-SP的编码／embedding复用与Relax的字段流水／encoder布局，不等Rollplex的跨阶段GPU空分；DART等视觉agent另有环境／采样语义。不能从某一机制候选少，推出整个多模态系统文献空白；后续继续查相近机制和不同工作负载。
 
+### 13.1 Phase 2覆盖与证据缺口
+
+当前矩阵与代码地图复点如下。这里审计项目证据状态，不把欠缺直接宣告为整个领域的研究空白；原HybridFlow认领和历史日志不改写。
+
+| 项目 | 已有证据 | 仍需闭环的边界 |
+|---|---|---|
+| 身份与深度 | §5.1–5.5共126行，120唯一arXiv＋6会议；20 T1／84 T2／21 T3／1未标，互斥无重复ID | HybridFlow仍由原并行认领进行中；T1／T2是压缩阅读标准，不自动变成源码或性能验收 |
+| 原生范围 | 106 RL相关＋20 serving；§5.25暂分89直接候选＋17保守单列 | 89不是已认证原生覆盖：例如训练侧共享／算法边界仍须按任务阶段保留，不为满足80–120目标自动改标签 |
+| 实现覆盖 | §8.2–8.13为12路径／8系统；veRL现代4＋历史1，其余5 RL框架与2引擎各1 | 历史tag不是新系统；没有AReaL专项并行推进，不把C1未开展部分自动标完成；路径数不证明每个后端／所有算法已审 |
+| 历史基线 | §8.13固定公开v0.1rc，可对应早期Megatron重分片／生成 | 论文实验commit和34B逐配置原始数据仍未认证，不用2026源码或默认YAML补数；原负责人未退出的证据不足，不自主接管 |
+| 可比性能 | 各T1／T2已保留硬件、长度、基线及局部／整步口径；§12补源码计时边界 | 还没有统一跨层可比性账：先以RollPacker／SortedRL／APRIL／DARTS和RhymeRL／ReSpec六篇核工作集合、局部／整步指标与负项，不做加速比排行或新扩库 |
+| 验证等级 | AST／纯函数／替身／真实CPU各自按实验记录界定，完整复现0 | 未运行端到端设备实验不是新算力任务；本阶段先完成证据核查，不把静态守卫、成功率曲线或版本metadata称概率／性能证明 |
+
+数量目标已达到，当前收尾问题是责任状态、历史版本和结果可比性，而非继续机械补论文／路径。下一轮核远端后按上表六篇跨层条件审计推进；仍不写survey正文／冻结taxonomy或启动大规模复现。
+
 ## 14. Reproduction Candidates
 
 （空。登记模板：为什么值得复现 / repo / model / hardware / dataset / expected cost / key metric / stopping condition。**当前不启动 GPU 实验**。已有可借力资源：M5 4090-1 verl-e2e 环境、本地 veRL 源码。）
@@ -2232,6 +2272,8 @@ SkyRL `e0893f6e`的[wait_for_generation_buffer:843](https://github.com/NovaSky-A
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-28（M1 C4早期公开实现与覆盖核查）**：认领先推送bab2fe8；§8.13固定v0.1rc 53bb5d21与公开链根30911f13，日期晚于论文v2，原80ee82bd则2026快照。核PP同步broadcast／buffer、TP QKV与gate/up重排、跨步生成TP组／连续micro_dp、权重data绑定／CPU占位、actor重算与cache释放；README／YAML不拼论文配置。12源码AST／静态顺序与126身份20/84/21/1复点通过，无原函数／框架／设备／性能执行。代码12路径／8系统，修正§7滞后总数；§13.1保存覆盖与跨层可比性缺口。HybridFlow原并行认领／实验数据缺口保留，不接管或新计T1；复现0，无M5专项、算力队列或社区写入。
 
 - **2026-10-28（M1 C3 rLLM／Slime两路径）**：认领先推送ef69115；§8.11–8.12固定rLLM 4e828c81／Slime 540ea919。rLLM派发配额与in-flight、TaskBatch与转换组、出队与update、partial metadata与物理换权重分账；Slime默认阶段循环与另一fully_async入口分开，收够组后取消、条件过滤／partial回收资格、旧token mask与联合checkpoint边界保留。13源码AST／八组限定CPU控制通过，原stdlib模块＋提取函数，无框架／设备／性能验收；代码11路径／8系统，论文20/84/21/1及复现0不变。下轮先核HybridFlow已有认领，补历史实现／原始数据及覆盖审计；不以数量称Phase 2完成。无设备探测、M5专项、算力队列或社区写入。
 

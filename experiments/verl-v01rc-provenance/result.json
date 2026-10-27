@@ -1,0 +1,26 @@
+{
+  "result": "pass",
+  "source_commit": "53bb5d21372a667954afb7109a2ef1df485e3137",
+  "tag": "v0.1rc",
+  "commit_date": "2024-11-01T13:06:03+08:00",
+  "initial_public_chain_commit": "30911f133aa300ae9d8e341dba8e63192335705e",
+  "initial_commit_date": "2024-10-31T14:29:44+08:00",
+  "history_commits": 4,
+  "source_asts": 12,
+  "enter_calls": [
+    "load_params_to_cuda",
+    "allgather_params",
+    "get_all_params",
+    "normalize_pp_vpp_params",
+    "_post_process_params",
+    "sync_model_weights"
+  ],
+  "actor_recompute_after_sharding_context": true,
+  "ledger": {
+    "identities": 126,
+    "unique_arxiv": 120,
+    "depth": {"T1": 20, "unmarked": 1, "T2": 84, "T3": 21},
+    "groups": {"RL-related": 106, "serving": 20}
+  },
+  "limits": "Static provenance, blob, AST and ledger checks only. No source-function, framework, tensor, collective, device or performance execution; not the paper experiment commit."
+}

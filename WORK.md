@@ -4,7 +4,7 @@
 
 ## 当前阶段
 
-- **M1本轮认领（2026-10-28 02:18）**：M1 new-chat @8b82580核fetch成功、远端0/0与干净工作树；认领C4公开历史veRL生成／重分片1路径溯源及Phase 2覆盖核查，先推送再开展。HybridFlow保留并行进行中状态，不接管原认领或重计论文；只读会话清单未见另一个活动研究会话，但不据此判原负责人已退出。旧80ee82bd实为2026-10-20，不能冒充2024实现；先定位公开历史ref。代码11路径／8系统、20/84/21/1及复现0不预增；无设备、M5专项或社区写入。
+- **M1 C4早期实现与覆盖核查完成（2026-10-28 02:27）**：02:18认领先推送bab2fe8；[§8.13](notebook/rollout-performance-research.md#813-早期verl重分片与生成路径)固定v0.1rc 53bb5d21与公开历史根30911f13（2024-11-01／10-31），晚于论文v2，非原实验commit认证；旧80ee82bd为2026快照。生成／PP广播／TP拼接／跨步生成TP组、权重绑定与CPU占位、actor重算／cache释放已对应；12源码AST／静态顺序与覆盖账[复跑材料](experiments/verl-v01rc-provenance/readme.md)通过，无原函数／框架／设备或性能执行。[§13.1](notebook/rollout-performance-research.md#131-phase-2覆盖与证据缺口)复点126身份、20/84/21/1；代码累计12路径／8系统，修正§7旧总数，不把历史版加系统。HybridFlow原并行认领与原数据缺口保留，不接管／重计T1；下一轮核远端后核RollPacker／SortedRL／APRIL／DARTS与RhymeRL／ReSpec六篇的跨层结果口径，不扩数量或称Phase 2完成。复现0，无设备探测、M5专项、算力队列或社区写入。
 
 - **M1 C3两条生成消费路径完成（2026-10-28 02:00）**：01:48认领先推送ef69115；[§8.11–8.12](notebook/rollout-performance-research.md#811-rllm-组消费与同步窗口)固定rLLM 4e828c81／Slime 540ea919，独立稀疏只读检出。rLLM派发配额／在途、TaskBatch／转换组、出队／update与partial版本标签分账；Slime默认阶段驱动／fully_async入口、收够取消／partial回收、过滤／旧token mask与联合checkpoint边界保留。[复跑材料](experiments/rollout-group-controls/readme.md)13源码AST／八组原stdlib模块及提取函数CPU控制通过，真实asyncio、假sample／state，无框架／设备／性能验收。代码累计11路径／8系统（6 RL框架＋2引擎），论文126、20/84/21/1与完整复现0不变；下一轮先核HybridFlow已有认领，补原版实现／原始数据及覆盖审计，仍非Phase 2完成。未改C1的AReaL或M5专项，无设备探测、算力队列及社区写入。
 

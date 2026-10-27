@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-v01rc-provenance/](verl-v01rc-provenance/readme.md) | 固定早期v0.1rc四提交链／12源码AST、enter顺序／重算位置及126身份互斥账；纯静态，不运行原函数／框架或性能 | [早期生成重分片路径](../notebook/rollout-performance-research.md#813-早期verl重分片与生成路径) |
 | [rollout-group-controls/](rollout-group-controls/readme.md) | 固定rLLM／Slime 13源码AST与八组配额／同步／取消／过滤CPU控制，假sample／state；无框架／设备／性能验收 | [生成消费地图](../notebook/rollout-performance-research.md#811-rllm-组消费与同步窗口) |
 | [rollout-scheduler-controls/](rollout-scheduler-controls/readme.md) | 固定vLLM／SGLang九源码AST与八组原函数计数／排序／预算控制，含8700 chunk边界组合；接口为替身，无引擎／显存／性能验收 | [推理调度器地图](../notebook/rollout-performance-research.md#89-vllm-token预算与抢占) |
 | [verl-otb-v1-wiring/verify.py](verl-otb-v1-wiring/verify.py) | #8364原7参数项提取逻辑候选全过／基线全失败，[结果](verl-otb-v1-wiring/result.json)保留真实异常；原FakeTQ／mock worker，reference仅断言开关，无真实引擎／训练 | [OTB接线与策略身份](../notebook/frameworks/verl-grpo-core-algos-reading.md#v1-的-otb-统计接线与策略身份) |
