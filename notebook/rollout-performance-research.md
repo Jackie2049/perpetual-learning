@@ -482,7 +482,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 | B10 | T2 | agentic：SkyRL-Agent(广扫深化)、EARL、InfoTree、AsyncWebRL、AcceRL、MARLaaS、FlexMARL、Agent Lightning v0/v1.0、TideRL、ROSE、QwenGyre | **完成12/12**：SkyRL-Agent见§6.26.6，八篇见§6.27；余三认领先推送c96756b，与B11前五篇合批完成§6.28.1–3 |
 | B11 | T2 | 资源/边界：ARL-Tangram、DART、MCP-Universe RL、PEARL、SAO、Rollout Infrastructure Tax、ExpThink、Intelligent Router；补AgentRL／RollArt／AstraFlow | **完成11/11**：前五见§6.28.4–8；2026-10-27 22:18 M1 new-chat @81084bc认领余三＋补三，先推送8aac21e，22:29完成六篇§6.29。按允许微调补三篇、分母8→11；Intelligent Router仍serving迁移边界，不转原生覆盖 |
 | B12 | T3 | serving 20 条 + 其余边界条目 triage（不深读，逐条给不深读理由+关联判定） | **首批serving20/20完成、余项待核**：M1 new-chat @82e1d07于2026-10-27 22:48认领，先推送a65cb4d；§6.30完成19条T3＋Router既有T2引用。剩余3条原单列边界及5条线索未作新triage；原14直接候选已补§6.31–32的T2，不降T3或重复计数 |
-| C1 | 代码 | veRL TransferQueue/TQ 数据面 + AReaL 调度器 | 待认领 |
+| C1 | 代码 | veRL TransferQueue/TQ 数据面 + AReaL 调度器 | **veRL路径认领**：2026-10-28 00:19 M1 new-chat @2508282，固定24f25b03；先推送再读，附带B12余八项范围triage，不预记完成。AReaL调度器不在本轮，M5专项不触及 |
 | C2 | 代码 | vLLM / SGLang core scheduler 路径 | 待认领 |
 | C3 | 代码 | rLLM / slime / 其余框架 | 待认领 |
 

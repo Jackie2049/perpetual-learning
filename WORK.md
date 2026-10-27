@@ -1,8 +1,10 @@
 # perpetual-learning — 当前工作上下文
 
-更新时间：2026-10-27
+更新时间：2026-10-28
 
 ## 当前阶段
+
+- **M1本轮认领（2026-10-28 00:19）**：M1 new-chat @2508282核远端0/0、工作树干净；认领C1中的veRL TransferQueue数据面1条路径，固定既有24f25b03源码快照（本地Git对象存在），附带B12余三边界与§5.23五线索范围triage；先推送再读。不触及C1的AReaL调度器或M5专项，代码仍6条／4框架、T1/T2/T3仍20/78/19，不预记完成。
 
 - **M1 余八直接候选完成（2026-10-27 23:58）**：23:47认领先推送900f515；[§6.32](notebook/rollout-performance-research.md#632-资源迁移-容错与采样边界)完成PUZZLE／DynaRL／PivotRL／RobustRL／RLBoost／Relax／SPEC-RL／ProRL Agent，各6–7条T2。B6补后22/22、B8补后13/13、T2累计78，互斥账121＝20 T1＋78 T2＋19 T3＋4未标完成。文档维护／PDF技能核短长度／变batch、DynaRL基线与RLinf依赖；抢占trace回放／估价、容错失效域、隐藏计算与零成本分别保留。SPEC-RL补A/C与论文伪代码二分类反例，ProRL补过滤／取消C边界，未定位源码缺陷。当前矩阵未标完成的直接候选已补，不等检索收敛或Phase 2完成；HybridFlow1＋边界3及另5线索仍待。下轮先核远端，认领C1 veRL TransferQueue数据面1路径，可附带B12余项范围triage，不拿8条充15–20条T3批次；代码6条／4框架、复现0不增。无设备、M5专项、算力队列或社区动作。
 
