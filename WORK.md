@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1本轮认领（2026-10-27 23:17）**：M1 new-chat @fa2b3cf核远端0/0、工作树干净；按§6.30未读账认领DistFlow／Asynchronous RLHF／ReaL／RLHFuse／OpenRLHF／DeepSpeed-Chat六篇T2，先推送再读。按§6.0允许微调并入B6补批，分母9→15、当前9/15，T2仍64；已有代码广扫不算论文完成。无设备、M5专项或社区动作。
+
 - **M1 B12首批serving triage完成（2026-10-27 22:55）**：认领先推送a65cb4d；[§6.30](notebook/rollout-performance-research.md#630-serving文献triage)逐条复核20项，新增19条T3、Router引用既有T2，不重复计深度；T1／T2仍20／64。文档维护技能把PD goodput／组尾、KV驱逐／轨迹终止、历史draft／训练回放、speculator RL／actor RL分开；19项核原站版本摘要／会议介绍，无新性能倍率或复现声明。矩阵121＝20 T1＋64 T2＋19 T3＋18未标完成；18中HybridFlow1、原单列边界3、直接候选14，逐名在§6.30，不因B1–B11完结将漏列直接候选自动降T3。B12余边界及另5条线索仍待；下一轮核远端／分级后按6–8篇T2补直接候选、认领时回写批次，可附带边界triage，不重复serving凑数。代码6条／4框架、复现0不增，仍非Phase 2整体完成；无设备、M5专项、算力队列或社区动作。
 
 - **M1 B11余六篇T2完成（2026-10-27 22:29）**：认领先推送8aac21e；[§6.29](notebook/rollout-performance-research.md#629-执行底座与数据流边界)完成Infrastructure Tax／ExpThink／Intelligent Router／AgentRL／RollArt／AstraFlow，各6条，T2累计64、T1仍20、B11为11/11。文档维护技能保留环境worker-hours外推／完整RL、token减少／执行提速、混卡／外部reward成本分界；RollArt过旧逐出与冗余终止修订B/C，AgentRL主动跨policy／task归一及ExpThink梯度单调性反例明确。AstraFlow弹性省GPU-hours但墙钟变慢、主计时／引用质量基线分账；Router仍serving旁读，不转原生覆盖。121身份、HybridFlow进行中1、代码6条／4框架、复现0不增，64篇不等Phase 2整体完成。下一轮核远端／未读后B12首15–20条triage，已T2只引用、不重复计数。无设备、M5专项、算力队列或社区动作。
