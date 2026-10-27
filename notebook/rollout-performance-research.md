@@ -6,10 +6,10 @@
 ## 0. Project Status
 
 - **阶段**：Phase 1 — recall-first literature & code investigation（广扫建库，不收束观点）
-- **最近更新**：2026-10-27（M1落实Weave、Online Draft Co-Training两种子，新增CERO／SAO预算与算法边界，见§5.19；本批不增代码路径）
-- **覆盖**：累计**111篇已核身份**（20篇serving基础／迁移边界＋91篇rollout/RLHF及相关边界，含VLA、训练侧、执行底座与算法诊断；均非深读；106个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL／Weave会议记录）。本批2种子落实＋2新条目；Weave采用官方会议身份，不沿用二手错配arXiv。总数过100或RL相关91不代表纯原生80–120目标达成、覆盖收敛或已完成分级。ASymPO证明错误警示保留，历史✅补核完不等检索收敛；Round 1“≈73”不与当前数量相加。
+- **最近更新**：2026-10-27（M1以ACL官方身份落实MTP-RL，补保守覆盖账：77直接候选＋15单列边界＋20 serving，见§5.20；本批不增代码路径）
+- **覆盖**：累计**112篇已核身份**（20篇serving基础／迁移边界＋92篇rollout/RLHF及相关边界；106个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL／Weave／MTP-RL会议记录，均非深读）。§5.20将RL相关92暂分为77直接Rollout系统／机制候选与15保守单列条目，不把92或总数直接充作原生80–120目标。MTP-RL是ACL Findings独立文献，不与Bebop同篇；初始种子身份已全部落实，但原生覆盖／分级／引用检索仍未收敛。ASymPO证明错误警示保留；Round 1“≈73”不与当前数量相加。
 - **全文深读 / 代码广扫**：0 / 5（veRL `24f25b03`三条路径＋OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`各一条；共3框架，不是5框架或运行验证，也不按文件数计）
-- **最高优先级**：继续原生系统引用／会议扩展与种子落实，补serving机制覆盖，按唯一文献广扫至100–150；总数不替代原生覆盖，A Core短名单不只按条目数选取
+- **最高优先级**：按§5.20补原生候选覆盖及其引用／会议盲区，同时扩未覆盖框架；总量已在100–150区间，但77候选不是原生验收或最终分级，A Core短名单不按计数凑齐
 - **下一步**：见 §16
 
 ## 1. Research Question & Scope
@@ -144,7 +144,7 @@
 | [2608.04962v2](https://arxiv.org/abs/2608.04962v2) | 2026-08-05首次／v2 10-14 | SPARK（v1名SpecRoll） | L1/L2（暂） | A（暂） | verifier反馈修正draft logits，同prompt共享rollout-local correction、跨rollout学projection；不改为直接采样draft | 核 |
 | [2511.16193v3](https://arxiv.org/abs/2511.16193v3) | 2025-11-20首次／v3 12-23 | SpecActor（Fast LLM Post-training） | L1/L3/L4（暂） | A/B（暂） | 解耦draft／verification，Fastest-of-N按接受率与draft ladder选择方法并利用长尾空闲worker | 核 |
 | [2609.07108v1](https://arxiv.org/abs/2609.07108v1) | 2026-09-07／v1 | Online Draft Co-Training（Large-Scale Long-Context RL） | L1/L2/L4（暂） | A/B（系统；暂） | packed zigzag-ring合并causal／branch attention，TapChannel跨PP传target features，支持在线draft训练 | 核 |
-| ？ | ? | MTP-RL | L1 | A | 种子待验证；Bebop仍只是方向候选，不确认同名 | ？ |
+| [ACL Findings'26](https://aclanthology.org/2026.findings-acl.1871/) | 2026-07会议记录 | MTP-RL（Acceleration of Reinforcement Learning Rollouts with Policy-Aligned Multi-Token Prediction） | L1/L4（暂） | A（rollout）；共训语义待核 | 两阶段配置多层参数共享MTP、advantage-aware优化使draft跟随policy；不当无条件目标分布／训练等价证明 | 核 |
 
 ### 5.4 Agentic Rollout
 
@@ -199,11 +199,11 @@
 | [2511.02230v7](https://arxiv.org/abs/2511.02230v7) | 2025-11-04首次／v7 2026-09-08 | Continuum | 工具等待中按reload／排队成本设置KV TTL并结合program-level FCFS；TTL到期是缓存回收，不等轨迹终止 | 核 |
 | [2603.16104v1](https://arxiv.org/abs/2603.16104v1) | 2026-03-17／v1 | Helium（Efficient LLM Serving for Agentic Workflows） | workflow视作query plan，proactive缓存与cache-aware调度；进入RL需核版本／随机输出／样本独立性 | 核 |
 
-### 5.6 待验证种子（用户清单中尚未落实）
+### 5.6 初始种子落实状态
 
-？MTP-RL（2606.12370／Bebop为方向候选，未确认同名）
+初始清单目前无未落实身份。MTP-RL已由ACL Findings'26记录落实（§5.20），与2606.12370／Bebop分开；旧方向候选没有冒充同名来源。身份落实不等于检索、覆盖或可信度验收完成。
 
-Weave已由OSDI'26官方记录落实，Online Draft Co-Training已落实2609.07108v1，见§5.19；两者从待核转入矩阵，不是本轮新发现的两个名称。MTP-RL仍不与Bebop强行合并。
+Weave已由OSDI'26官方记录落实，Online Draft Co-Training已落实2609.07108v1，见§5.19；两者从待核转入矩阵，不是该轮新发现的两个名称。
 
 Seer与Taming the Long-Tail（TLT）已在§5.2／§5.3落实来源。历史早批次Weave定向检索未命中，不据此判定不存在；本批改从会议官方入口落实。
 
@@ -365,6 +365,32 @@ BubbleSpec／SRT的run-ahead用于后续draft验证，不等于直接拿旧polic
 **分配工作和执行同一工作分开。** [CERO v1摘要](https://arxiv.org/abs/2606.05606v1)以固定全局预算耦合prompt和epoch的rollout次数，属于C类采样分配；其regret条件是fixed prompt utilities，不外推为RL非平稳训练保证。[SAO v1摘要](https://arxiv.org/abs/2607.07508v1)改为单rollout、value-model与clipping，组估计／loss一并改变，不是只拆掉GRPO同步等待。两项只补workload边界，不展开算法综述或把样本效率当tokens/s。
 
 全批仅官方身份／版本、摘要和draft论文上述局部机制／评估条件，全文深读仍0，代码仍5条／3框架；未运行作者实现、验证理论／数值或启动设备任务。下一步继续原生引用／会议与唯一未落实种子，或未覆盖框架；总量不替代覆盖与分级，不从两项种子落实直接转survey正文。
+
+### 5.20 MTP-RL身份与保守覆盖账
+
+**最后一项初始种子已落实。** [ACL Findings'26官方记录](https://aclanthology.org/2026.findings-acl.1871/)列出Ke Wang等8位作者、标题、页码37530–37542及DOI；采用会议身份，不猜arXiv。其摘要描述两阶段、多层参数共享MTP及advantage-aware优化。[Bebop 2606.12370v1](https://arxiv.org/abs/2606.12370v1)则是Yucheng Li等的Breaking Entropy Bounds，身份与机制均不同，不合并别名。当前只核元数据与摘要；参数共享／共训对policy梯度的影响和验证路径待后续阅读，不由rollout更快或接受率提高推出训练等价。累计112身份＝106 arXiv＋6会议记录；本批只是旧种子落实，非新名字发现。
+
+**以下是基于当前矩阵的保守工作口径，不是最终文献分级或新taxonomy。** 沿用已有范围边界，并把主要呈现模型／训练优化、仅包含部分rollout系统内容的3篇暂单列，避免把所有RL相关条目充作原生覆盖；不删除任何论文或撤回其中已有机制。剩余直接候选仍含C类工作、联合算法和待核语义，不能称77篇已验收的纯原生／无损优化。
+
+| 本轮口径 | 数量 | 计数含义 |
+|---|---:|---|
+| 直接Rollout系统／机制候选 | 77 | §5.1–5.4已核92条中扣除下列15条；含MTP-RL，不要求全为A/B或不改采样 |
+| 保守单列的范围／混合证据 | 15 | 见逐项清单；暂不用于宣称原生80–120达标，也不是最终C Boundary等级 |
+| Serving基础／迁移边界 | 20 | §5.5，独立于上述92；最终相关性仍需再核 |
+| 合计 | 112 | 77＋15＋20；身份数，不是全文深读或性能验收数 |
+
+单列15条的可复核清单（ID按现有矩阵，无新身份或重复计数）：
+
+| 范围 | 数量 | 条目及唯一ID |
+|---|---:|---|
+| 概率／数值／算法诊断 | 6 | Missing Old Logits `2605.12070`；ASymPO `2606.03070`；Beyond Precision `2602.01826`；FP16 `2510.26788`；VeXact `2605.14220`；CIS `2609.32444` |
+| 采样分配／目标或估计器改变，暂按算法边界保留 | 3 | ExpThink `2605.07501`；CERO `2606.05606`；SAO `2607.07508` |
+| 含系统片段的模型报告／训练优化混合证据 | 3 | GLM-4.5 `2508.06471`；Each Prompt Matters `2512.07710`；FlashNext-RL `2610.28998` |
+| 非语言环境／训练侧／执行底座 | 3 | AcceRL `2603.18464`；AReaL-DTA `2602.00482`；Rollout Infrastructure Tax `2607.01415` |
+
+C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因矩阵已登记其rollout机制；CERO／SAO等单列是沿用当前算法范围判断，后续发现明确系统证据可以调整。PULSE因含trainer→rollout的PULSESync保留在直接候选，不能把同篇LoCo训练通信也当原生rollout。单列是计数上的保守选择，不是认定15条无系统价值；也不以标题或venue替代后续实质判断。
+
+按此工作口径77尚不足80，说明“总量112／RL相关92”不足以宣布原生覆盖达标；不为凑3篇补无关文献。下一批优先补真实原生机制与会议／引用盲区、并读未覆盖框架；之后再决定分级与深读入口。当前没有检索收敛证明，初始种子全部落实仅关闭身份待核，不关闭整个广扫。原111矩阵行／代码地图不变，全文深读0、代码5条／3框架；无作者实现、理论／性能验证或设备任务。
 
 ## 6. Paper Deep Reads
 
@@ -571,6 +597,8 @@ NeMo RL SC `a9d1a4be`的[exposed_generation:3010](https://github.com/NVIDIA-NeMo
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（M1 MTP-RL落实与覆盖口径）**：ACL Findings官方身份落实最后种子MTP-RL，与Bebop分开；累计112身份（106 arXiv＋6会议）。§5.20逐项单列15条范围／混合证据，92 RL相关暂为77直接候选＋15，不当最终分级／纯原生验收；serving20独立。初始种子身份闭环不当引用检索收敛。仅矩阵复核与MTP元数据／摘要，深读0、代码5条／3框架不变，无设备／M5专项／上游写入。下步补原生引用／会议盲区或未覆盖框架，不以总量达标或凑3篇收束。
 
 - **2026-10-27（M1两项种子与预算边界补库）**：Weave以OSDI'26身份落实、Online Draft Co-Training落实2609.07108v1，另增CERO／SAO；累计111身份（20 serving／边界＋91 RL相关边界；106 arXiv＋5会议记录）。§5.6移除两项待核，MTP-RL保留；§5.19拒绝2602.11143机器人错号，分开跨job效率、draft算子／完整训练与采样预算／loss改变。深读0、代码5条／3框架不变，无设备／M5专项／上游写入。下步原生引用／会议、剩余种子或未覆盖框架，不按总量收束。
 
