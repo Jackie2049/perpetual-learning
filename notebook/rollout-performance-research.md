@@ -6,13 +6,13 @@
 ## 0. Project Status
 
 - **阶段**：**Phase 2 — deep research（2026-10-27 用户指令：广度已足（计数另按唯一身份核算），转入论文/项目深读，围绕 rollout 性能与 L1–L4 四维；M1 定时启动的技术秘书任务以深读为主要工作）**
-- **最近更新**：2026-10-28（§8.8完成C1 veRL数据面1路径，累计7路径／4框架；§5.25收束B12余项范围triage并转入五条旧线索。126身份＝20 T1＋78 T2＋24 T3＋4未标完成；HybridFlow与B13／Code仍待，截止≤2026-10-29不变）
+- **最近更新**：2026-10-28（§6.33完成B13六篇T2；三边界从T3升级、不双计。126身份＝20 T1＋84 T2＋21 T3＋1未标完成；HybridFlow及Code仍待，代码7路径／4框架，截止≤2026-10-29不变）
 - **覆盖**：累计**126篇已核身份**（20篇serving基础／迁移边界＋106篇rollout/RLHF及相关边界；120个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL／Weave／MTP-RL会议记录；其中T1压缩深读20篇，其余不据身份核验算深读）。§5.25将RL相关106暂分89直接候选与17保守单列，承接§5.20的86／15历史快照；这是工作范围计数，不是原生80–120覆盖／质量验收。MTP-RL不与Bebop同篇；初始种子及旧五线索身份已落实，但检索／分级／正文审查未全收敛。ASymPO证明错误警示保留，Round 1“≈73”不相加。
-- **接续线索**：§5.23原余5项已在§5.25完成范围triage并入库，不再另计。PrefixFlow／psRL训练侧单列T3；Belayer／BIRD-RL／ScaleRLT为直接候选待T2，不能因入库或摘要核验记全文完成。
-- **深读 / 代码广扫**：按§6.0新压缩标准完成T1 **20篇**（B1–B5各四篇）、T2 **78篇**（B6补后22/22、B7为9/9、B8补后13/13、B9为11/11、B10为12/12、B11为11/11；含Intelligent Router serving旁读；GLM-4.5仅§3.5系统片段，非整份报告；非源码或性能复现验收），另有HybridFlow进行中1项 / **7条代码路径**（veRL `24f25b03`四条路径＋OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`、SkyRL `e0893f6e`各一条；共4框架，不按文件数计，不是原生运行验证）；完整复现仍0。
-- **最高优先级（2026-10-27 用户加急指令）**：**Phase 2 全部深读须在两天内完成（≤2026-10-29）**——每次定时触发完成**一批对应规模**的调研（分级深度 + 批次表见 §6.0），不得单次只做一篇；深度与时间约束按批次表权衡。HybridFlow 深读继续；原五线索已入库，需深化项合入B13，不再单列追。M5专项与上游写入边界不变。
-- **Triage与未读账**：B12范围triage完成28项＝serving20＋原边界3＋旧线索5，其中仅24条为T3，Router已有T2、三直接候选待T2；triage事项数不等深度身份数。126＝20 T1＋78 T2＋24 T3＋4未标完成；4＝HybridFlow1＋Belayer／BIRD-RL／ScaleRLT三篇。B13另含三项已有T3边界的必要深化，升级时替换深度而非双计。
-- **深读当前焦点**：下一轮先核远端认领B13六篇：Belayer、BIRD-RL、ScaleRLT及PrefixFlow／psRL／CIS；三项训练／概率边界用于对照新候选的跨阶段与数值契约，不转为原生覆盖。再推进C2推理scheduler与C3未覆盖框架，代码7尚未达8–12目标。HybridFlow论文年代实现／原始数据仍进行中，不用现代源码替代；T1/T2超目标不等Phase 2完成，M5专项与上游写入边界不变。
+- **接续线索**：§5.23原余5项已在§5.25入库，§6.33完成Belayer／BIRD-RL／ScaleRLT及PrefixFlow／psRL／CIS六篇T2。训练侧共享与概率修正仍单列边界，不因深化转为原生覆盖；入库、T2与实现／复现验收分开。
+- **深读 / 代码广扫**：按§6.0新压缩标准完成T1 **20篇**（B1–B5各四篇）、T2 **84篇**（B6补后22/22、B7为9/9、B8补后13/13、B9为11/11、B10为12/12、B11为11/11、B13为6/6；含Intelligent Router serving旁读；GLM-4.5仅§3.5系统片段，非整份报告；非源码或性能复现验收），另有HybridFlow进行中1项 / **7条代码路径**（veRL `24f25b03`四条路径＋OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`、SkyRL `e0893f6e`各一条；共4框架，不按文件数计，不是原生运行验证）；完整复现仍0。
+- **最高优先级（2026-10-27 用户加急指令）**：**Phase 2 全部深读须在两天内完成（≤2026-10-29）**——每次定时触发完成**一批对应规模**的调研（分级深度 + 批次表见 §6.0），不得单次只做一篇；深度与时间约束按批次表权衡。HybridFlow 深读继续；B13已收束，转C2／C3代码，不再为数量扩文献。M5专项与上游写入边界不变。
+- **Triage与未读账**：B12范围triage完成28项的历史范围不变，triage事项数不等当前T3身份数。B13三项原T3（PrefixFlow／psRL／CIS）升级T2并替换最深层；126＝20 T1＋84 T2＋21 T3＋1未标完成，仅HybridFlow进行中。不存在把同篇T2/T3相加的新增覆盖。
+- **深读当前焦点**：下一轮先核远端认领C2 vLLM／SGLang core scheduler的1–2路径，再补C3 rLLM／slime等未覆盖框架；代码7尚未达8–12目标。HybridFlow论文年代实现／原始数据仍进行中，不用现代源码替代；T1/T2超目标不等Phase 2完成，M5专项与上游写入边界不变。
 - **Phase 2 完成标准与预估（2026-10-27 定，用户问"多久读完"后定量）**：**不是 121 篇全读**。深读总量 = A Core 15–20 篇全模板深读 + B Supporting ~40–60 篇中等深度（机制+关键结果，轻模板）+ 代码深读 ~8–12 条路径；C 边界与 serving 保持元数据级即可。节奏：每篇 A Core ≈ 1 个定时任务轮次，B 类 3–5 篇/轮次；按多会话并行（每日 2–4 轮次涉及本专项）预估 **A Core ≈ 1–1.5 周、Phase 2 整体 ≈ 3–4 周日历时间**。里程碑：第 1 周末 A Core 短名单定稿+完成一半；第 2 周末 A Core 完成+代码地图齐；第 3–4 周 B 覆盖+gaps/ideas 提炼+（可选）survey outline。**加速杠杆**：为定时任务显式分配深读配额。
 - **下一步**：见 §16
 
@@ -92,7 +92,7 @@
 | [2602.01826v1](https://arxiv.org/abs/2602.01826v1) | 2026-02-02／v1 | Beyond Precision | L1/L4边界 | 优化诊断；数据过滤另C | 长度激增时点指导定期LR减半；1.8×为启发式，稳定性改善不等引擎精确一致或系统提速 | 核；[T2](#6228-beyond-precision) |
 | [2510.26788v1](https://arxiv.org/abs/2510.26788v1) | 2025-10-30／v1 | Defeating the Training-Inference Mismatch via FP16 | L1/L4边界 | 数值诊断，不硬归A/B | 训推同时FP16＋loss scaling降低失配，仍有框架尖峰；稳定性非bit-exact或通用精度建议 | 核；[T2](#6231-fp16) |
 | [2605.14220v2](https://arxiv.org/abs/2605.14220v2) | 2026-05-14首次／v2 09-29 | Diagnosing Training Inference Mismatch（VeXact） | L1/L4边界 | 诊断；RS另C | batch-invariant参考隔离TIM，聚合KL可掩盖失败；TIS＋RS近似跟踪非严格目标等价 | 核；[T2](#6232-vexact) |
-| [2609.32444v1](https://arxiv.org/abs/2609.32444v1) | 2026-09-26／v1 | Rethinking Training-Inference Mismatch（CIS） | L1/L4边界（暂） | 算法修正，不硬归B/C | logit-displacement刻画与confidence-aware截断importance sampling；偏差／稳定性待深读 | 核；[T3](#525-剩余边界与接续线索分级) |
+| [2609.32444v1](https://arxiv.org/abs/2609.32444v1) | 2026-09-26／v1 | Rethinking Training-Inference Mismatch（CIS） | L1/L4边界 | 算法修正，不硬归B/C | confidence-aware单侧截断并加数值floor；只修观测prefix条件下token分布，有偏非轨迹精确校正 | 核；[T2](#6336-cis) |
 | [2507.19017v1](https://arxiv.org/abs/2507.19017v1) | 2025-07-25／v1 | MindSpeed RL（Ascend平台） | L3/L4 | B | transfer dock与allgather-swap；主16 NPU、按设备归一TPS含prompt，不外推CUDA或384卡主测 | 核；[T2](#6214-mindspeed-rl) |
 | [2509.15965v2](https://arxiv.org/abs/2509.15965v2) | 2025-09-19首次／v2 12-29 | RLinf | L3/L4 | B | M2Flow时空重组与profile计划，GRPO保留整prompt组；空间拆分长序列7B有负收益 | 核；[T2](#6213-rlinf) |
 | [USENIX OSDI'26](https://www.usenix.org/conference/osdi26/presentation/wang-yuanqing) | 2026-07会议记录 | DynaRL | L3/L4 | B | RLinf上动态hypergraph／安全点迁移／多轮优先路由；1.98×为32B对verl，不是对RLinf | 核；[T2](#6322-dynarl) |
@@ -100,8 +100,8 @@
 | [2510.11345v1](https://arxiv.org/abs/2510.11345v1) | 2025-10-13／v1 | ROLL Flash（Part II） | L3/L4 | B；**C**（冗余／过滤） | 样本年龄约束下混版本续跑，queue／env异步；先够数即停的冗余采样另C，5.45×为模拟 | 核；[T2](#6217-roll-flash) |
 | [2508.06471v1](https://arxiv.org/abs/2508.06471v1) | 2025-08-08／v1 | GLM-4.5报告（Slime §3.5） | L1/L3/L4 | A/B；**C**（数值／任务过滤） | Megatron／SGLang-Router／Data Buffer两种模式；在线block FP8与task过滤另列，无独立系统计时 | 核；[T2](#6218-glm-45-slime系统片段) |
 | [2512.07710v1](https://arxiv.org/abs/2512.07710v1) | 2025-12-08／v1 | Each Prompt Matters（CompassMax-V3-Thinking） | L1/L3/L4（暂） | A/B／**C**（联合算法） | FP8 rollout、reward重叠与长度调度；另有zero-variance过滤、ESPO及MoE Router Replay | 核；[T3](#525-剩余边界与接续线索分级) |
-| [2606.01143v4](https://arxiv.org/abs/2606.01143v4) | 2026-05-31首次／v4 10-15 | PrefixFlow | L4训练侧边界 | B（训练调度，暂） | prefix前向一次、suffix微批累积gK/gV、延后prefix反向；不当生成KV复用 | 核；[T3](#525-剩余边界与接续线索分级)，B13待深化 |
-| [2608.25683v1](https://arxiv.org/abs/2608.25683v1) | 2026-08-26／v1 | psRL | L4训练侧边界 | B（训练调度，暂） | update期prefix共享与KV管理，生产trace吞吐不能转为rollout生成加速 | 核；[T3](#525-剩余边界与接续线索分级)，B13待深化 |
+| [2606.01143v4](https://arxiv.org/abs/2606.01143v4) | 2026-05-31首次／v4 10-15 | PrefixFlow | L4训练侧边界 | B（训练调度） | prefix前向一次、suffix累积gK/gV后延迟反向；长prefix全步1.90×来自actor更新非生成 | 核；[T2](#6334-prefixflow) |
+| [2608.25683v1](https://arxiv.org/abs/2608.25683v1) | 2026-08-26／v1 | psRL | L4训练侧边界 | B（训练调度） | 静态样本的prefix共享、token微批与KV生命周期；update至5.2×、整RL迭代至2.1×分账 | 核；[T2](#6335-psrl) |
 | [2605.07330v1](https://arxiv.org/abs/2605.07330v1) | 2026-05-08／v1 | SparseRL-Sync | L4 | B | post-cast索引／新值覆盖；106B同步延迟实测、671B外推，约100×压缩不当全训练加速 | 核；[T2](#6222-sparserl-sync) |
 | [2602.03839v2](https://arxiv.org/abs/2602.03839v2) | 2026-02-03首次／v2 05-19 | PULSE（Understanding and Exploiting Weight Update Sparsity） | L4／训练通信边界 | B（Sync）；LoCo优化另列 | Sync覆盖BF16新值，LoCo发送FP32 pseudo-gradient并留误差反馈；130×为上传字节比，非同一通道／算法精确等价 | 核；[T2](#6223-pulse) |
 | [2601.18150v2](https://arxiv.org/abs/2601.18150v2) | 2026-01-26首次／v2 04-10 | FP8-RL | L1/L2/L4 | A/B；**C**（数值policy／TIS） | 真FP8 policy／KV及每步scale刷新；token TIS不保证BF16轨迹等价，MoE长跑仍有崩溃 | 核；[T1](#620-fp8-rl-t1压缩深读) |
@@ -158,7 +158,7 @@
 | [2609.07108v1](https://arxiv.org/abs/2609.07108v1) | 2026-09-07／v1 | Online Draft Co-Training（Large-Scale Long-Context RL） | L1/L2/L4 | A/B | stop-gradient共训，branch CP与TapChannel；256K算子／RL全步分账 | 核；[T2](#6261-online-draft-co-training) |
 | [ACL Findings'26](https://aclanthology.org/2026.findings-acl.1871/) | 2026-07会议记录 | MTP-RL（Acceleration of Reinforcement Learning Rollouts with Policy-Aligned Multi-Token Prediction） | L1/L4 | A；**C（主模型辅助目标）** | 优势门控KL仅限MTP项，但辅助loss回传主模型，非纯目标不变加速 | 核；[T2](#6262-mtp-rl) |
 
-| [2610.34427v1](https://arxiv.org/abs/2610.34427) | 2026-10-25／v1（abs页核） | ScaleRLT | L1/L2/L4（暂） | A/B；训练梯度另核 | looped transformer延后深层计算、schedule-replay概率与dense梯度混合；原生readout质量负项须核 | 核；直接候选，B13待T2 |
+| [2610.34427v1](https://arxiv.org/abs/2610.34427) | 2026-10-25／v1（abs页核） | ScaleRLT | L1/L2/L4 | A/B；**C**（混合深度读出） | 固定读出下defer深层计算、schedule概率值＋dense梯度；改原生读出有质量负项，bitwise非梯度保证 | 核；[T2](#6333-scalerlt) |
 
 ### 5.4 Agentic Rollout
 
@@ -193,8 +193,8 @@
 
 | [2608.22167v1](https://arxiv.org/abs/2608.22167v1) | 2026-08-23／v1 | MCP-Universe RL（MCP-U RL） | L3/L4 | B（placement非严格on-policy） | Acquire／Run／Eval限并发；3 H200五步局部测量，2.8×与2×异步placement分账 | [T2](#6286-mcp-universe-rl) |
 
-| [2608.14635v2](https://arxiv.org/abs/2608.14635v2) | 2026-07-28首次／v2 08-18 | Belayer | L4（暂） | B（容错，暂） | scoped worker-local故障、shadow独立持有权重／raw KV空间、按token日志重建KV；环境全状态恢复 | 核；直接候选，B13待T2 |
-| [2610.29426v1](https://arxiv.org/abs/2610.29426v1) | 2026-10-21／v1 | BIRD-RL | L4（暂） | B/C（系统与curriculum） | trajectory-scoped持久执行隔离／复用数据库；四阶段curriculum质量不当纯系统收益 | 核；直接候选，B13待T2 |
+| [2608.14635v2](https://arxiv.org/abs/2608.14635v2) | 2026-07-28首次／v2 08-18 | Belayer | L4 | B（容错） | 独立server持有权重／raw KV空间，shadow健康检查后重建请求KV；容器本地prefix一致恢复非外部exactly-once | 核；[T2](#6331-belayer) |
+| [2610.29426v1](https://arxiv.org/abs/2610.29426v1) | 2026-10-21／v1 | BIRD-RL | L4 | B/C（系统与curriculum） | trajectory绑定数据库副本、终态释放与脏感知lazy reset；12.8×是在线生命周期I/O降幅 | 核；[T2](#6332-bird-rl) |
 
 ### 5.5 Serving 基础（supporting corpus，含迁移边界，不标 rollout-native）
 
@@ -508,7 +508,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 | B10 | T2 | agentic：SkyRL-Agent(广扫深化)、EARL、InfoTree、AsyncWebRL、AcceRL、MARLaaS、FlexMARL、Agent Lightning v0/v1.0、TideRL、ROSE、QwenGyre | **完成12/12**：SkyRL-Agent见§6.26.6，八篇见§6.27；余三认领先推送c96756b，与B11前五篇合批完成§6.28.1–3 |
 | B11 | T2 | 资源/边界：ARL-Tangram、DART、MCP-Universe RL、PEARL、SAO、Rollout Infrastructure Tax、ExpThink、Intelligent Router；补AgentRL／RollArt／AstraFlow | **完成11/11**：前五见§6.28.4–8；2026-10-27 22:18 M1 new-chat @81084bc认领余三＋补三，先推送8aac21e，22:29完成六篇§6.29。按允许微调补三篇、分母8→11；Intelligent Router仍serving迁移边界，不转原生覆盖 |
 | B12 | T3 | serving 20 条 + 其余边界条目 triage（不深读，逐条给不深读理由+关联判定） | **范围triage完成28/28**：首批认领a65cb4d、§6.30完成20项；余八随C1认领d86477d，2026-10-28 00:29完成§5.25。原三＋新二补T3，另三直接候选转B13待T2，Router沿既有T2；28事项不当28 T3身份 |
-| B13 | T2 | Belayer、BIRD-RL、ScaleRLT；边界深化PrefixFlow、psRL、CIS | **认领0/6**：2026-10-28 00:47 M1 new-chat @440db98，先推送再读。承接三新直接候选与三项跨阶段／概率边界；后三项目前T3，升级后按最深层互斥计数，不转原生覆盖 |
+| B13 | T2 | Belayer、BIRD-RL、ScaleRLT；边界深化PrefixFlow、psRL、CIS | **完成6/6**：2026-10-28 00:47 M1 new-chat @440db98认领、先推送505a5cf，00:58完成阅读回写及检查；见§6.33。三边界T3→T2互斥替换，累计20/84/21/1。不转原生覆盖、无实现／设备验收 |
 | C1 | 代码 | veRL TransferQueue/TQ 数据面 + AReaL 调度器 | **veRL部分完成1路径**：2026-10-28 00:19 M1 new-chat @2508282认领、先推送d86477d，00:29完成§8.8；累计7路径／4框架。AReaL调度器未开展，不将C1整项写完成，M5专项不触及 |
 | C2 | 代码 | vLLM / SGLang core scheduler 路径 | 待认领 |
 | C3 | 代码 | rLLM / slime / 其余框架 | 待认领 |
@@ -1855,6 +1855,72 @@ B6补六篇T2，按§6.0名单微调由9扩为15；各6条。正文与必要附�
 
 **本批后账**：121＝20 T1＋78 T2＋19 T3＋4未标完成；B6为22/22、B8为13/13，其余既有T2批次不变。4＝HybridFlow进行中1＋原单列边界3；§5.23另5线索不入121。当前矩阵直接候选无未标完成项，但原生覆盖／检索、HybridFlow、B12及Code整体验收未完成；代码6路径／4框架、完整复现0，不因论文数超目标就称Phase 2结束。
 
+### 6.33 恢复 前缀与概率边界
+
+B13六篇完成T2，每篇7条；阅读固定版本HTML的方法、实验及必要附录，未审源码／核PDF图像／运行原生实验。§5.25保留当时triage快照，三项T3升级后只计T2；ScaleRLT v1 HTML本轮可读，不再沿用旧cache miss作为全文阻塞。
+
+#### 6.33.1 Belayer
+
+- **来源／分类**：[v2 §4–8](https://arxiv.org/html/2608.14635v2)，T2完成，L4 B容错；减少故障损失，不等稳态decode提速。
+- **恢复机制**：独立server持有权重／KV空间，shadow重建易失状态并隔离旧worker；仅owner存活、GPU健康时复用，清空语义KV后按256-token日志前缀重prefill。
+- **故障范围**：worker局部fail-stop／stall，不含SDC／fail-slow；环境只保容器本地FS＋CRIU runtime及合法上下文前缀，不保外部副作用exactly-once。
+- **环境协议**：动作结束后冻结并制作复合checkpoint，两部分成功才ready；恢复先FS后runtime。自适应频率权衡故障重做与未遮蔽开销，不是零成本快照。
+- **条件／结果**：Qwen3 4B–32B、16／32 H200、GRPO batch64×8；注入worker故障后训练时间增1.16%对基线8.72%，无故障Math约1%差异。
+- **证据强度**：17个目标bug仅复现8个，八项确定性文本恢复匹配；环境593个有效合成故障匹配oracle，不证明任意agent语义。频繁故障扩展另含LLM sleep模拟。
+- **边界**：HDD自适应仍有21.6%额外总时间，SSD为2.1%；非所有存储均近零。论文结果非本机实测，未部署Linux容器或算力任务。
+
+#### 6.33.2 BIRD-RL
+
+- **来源／分类**：[v1 §3–5、附录C/D.2](https://arxiv.org/html/2610.29426v1)，T2完成，L4 B基础设施＋C课程；两类贡献分别核。
+- **机制**：worker独占副本子池；trajectory ID始终绑定同一DB直到终态，超时回收。脏副本释放时不立刻reset，下一次租用前恢复，隔离轨迹而不切断轮间状态。
+- **训练语义**：先两阶段SFT再单轮／多轮GRPO，最后方案的执行测试奖励；课程和reward设计不能归因于纯资源复用。
+- **条件**：7B／14B Qwen2.5-Coder、8 H100、veRL＋vLLM；SQLite调试500题、五次评估。跨数据库基准与SQLite训练基础设施不混为同一验证。
+- **系统指标**：B=16、R=16时在线生命周期I/O降12.8×；排除69 GiB离线预建副本成本，只有9.25%轨迹触发改写重置，不是TPS或全训练提速。
+- **质量指标**：Talon 7B／14B为44.4%／48.0%成功率；是完整课程结果，不单独隔离数据库池效果。
+- **边界**：动态池复杂度有均匀／稳态假设，实际用预建池抗热点；足够容量是所测负载经验，不能推任意倾斜不耗尽。未审实现或运行DB。
+
+#### 6.33.3 ScaleRLT
+
+- **来源／分类**：[v1 §2–7、§10、附录B/C](https://arxiv.org/html/2610.34427v1)，T2完成，L1/L2/L4 A/B；相对原生模型的混合深度读出另C，非只调度同一policy。
+- **机制**：Ouro-1.4B先两loop、每四token深读出；浅token的深层工作延后批处理，几乎最终仍要计算，非直接省掉一半层。
+- **概率契约**：`ℓ=dense+sg(schedule−dense)`取调度replay的值、dense的梯度；same-weight gate可bitwise，梯度仅同精度误差级，非精确梯度等价。每batch一步，额外步须重算replay。
+- **条件／结果**：GH200 FP32、512–4096长度，同混合读出defer/eager两侧均graph时1.18–1.54×；双节点8卡、512上限的准入＋graph组合使update为2.71×。
+- **质量负项**：100更新、500题、每设置单种子；混合读出落后原生7.6–9个百分点，原生20步已胜混合100步，不以更快update代替time-to-quality。
+- **数值负项**：512-token BF16 gated／ungated质量未分离；exact gate此处买一致性，不已证提质。graph捕获、allocator残留和replay都有成本。
+- **边界**：跨节点ring只是通信实测支撑的设计，未实现完整mapped engine；所测概率一致不认证任意batch／precision／训练路径，无源码或设备验收。
+
+#### 6.33.4 PrefixFlow
+
+- **来源／分类**：[v4 §3–6](https://arxiv.org/html/2606.01143v4)，T2完成，L4训练侧B边界；不是生成KV cache优化。
+- **机制**：prefix一次forward；suffix微批读KV、累积gK/gV；最后一次prefix backward。hot KV/gKV留GPU，休眠激活可offload后用于suffix预算。
+- **正确性条件**：固定参数、mask、位置及prefix前向trace，MoE须固定路由；实数梯度叠加证明不等浮点bitwise。20步BF16校验使用绝对1e-3＋相对1e-2容差。
+- **分布式**：CP逐层KV预取／gKV归约、PP局部切阶段，避免全局屏障；offload可退回按需加载，不以完全遮蔽作为正确性前提。
+- **闭环结果**：8 H20、Qwen3-8B、MuSiQue、N=16、prefix约95%、200步；actor更新6.1×，全步1.90×，生成和policy evaluation未提速。
+- **负项／适用域**：低复用N=2 compiled可更慢；数学／SWE短prefix不套长RAG收益。采样轨迹可种子级分叉，冻结trace核trainer偏移不等奖励逐值一致。
+- **边界**：全序列同栈TorchTitan基线；不作跨成熟度Megatron计时排名。内存释放、长度上限与吞吐分账，未应用缓存或运行训练。
+
+#### 6.33.5 psRL
+
+- **来源／分类**：[v1 §4–7](https://arxiv.org/html/2608.25683v1)，T2完成，L4训练侧B边界；不把静态样本update优化转成生成加速。
+- **机制**：完整semantic group按去重后工作量分配worker；跨微批共享、长序列按token切批。收集共享prefix的全部consumer梯度后只反向一次。
+- **内存／语义**：可变块贴合复用段、引用计数及已知未来访问指导eviction；attention／advantage mask保留序列依赖和loss归属。不同权重／optimizer步间缓存失效协议尚未由源码核验。
+- **条件**：veRL＋Megatron、A100；标准任务8卡，工业DTN用Qwen3-235B及生产工作负载，主配1536卡。扩到12288卡同时提高DP，不视为固定工作量强扩展。
+- **指标拆分**：Fig.9是update吞吐1.2–5.2×，Fig.10整RL迭代至2.1×；虽正文局部称end-to-end，不能写成全RL 5.2×。
+- **基线边界**：vLLM-PS／SGLang-PS是作者移植到训练engine的共享机制，不是原生serving框架的公平性能排名；长序列扩展插入dummy token，不代表真实语义长任务。
+- **未验证**：文中工业扩展与mask正确性自述不替代公开原始trace、逐梯度对照或质量收敛证据；本轮仅文献，不读取真实生产数据／设备。
+
+#### 6.33.6 CIS
+
+- **来源／分类**：[v1 §2–4、附录B/C/D.4](https://arxiv.org/html/2609.32444v1)，T2完成，L1/L4算法边界；不是rollout系统提速。
+- **目标边界**：`p/q`为旧权重下train／infer失配，PPO另有current／old更新ratio；只校正已观测prefix下next-token分布，不修整条prefix分布或任意版本陈旧性。
+- **机制**：仅截正向log-odds位移，对应`min(p/q,1+λ·max(1−p,κ))`；旧train概率定confidence，权重detach、infer须取sampling原始logp，不用加工后概率代替。
+- **理论条件**：有界梯度payload及独立token／受控协方差；相关token用有效样本数。有限cap控二阶矩但引入截断偏差，不证明CIS普遍优于所有cap。
+- **条件／结果**：三MoE、GSM8K训练、五数学测试、三种子；Qwen1.5平均34.78对无修正30.99，部分跨域差距仍在种子波动内。
+- **数值／成本**：κ=0.005防高置信度舍入，无floor降到29.02；八A100示例每步总时间增3.2%，不含checkpoint／eval。算子本身逐元素，不等整流程无需rescore。
+- **边界**：floor端放松理想位移阈值，λ=0可崩溃；有限设置稳定不等exact训练或普适超参。只读论文，未接续AReaL prompt_mean、修改代码或增加算力队列。
+
+**本批后账**：126身份、120唯一arXiv＋6会议不增；20 T1＋84 T2＋21 T3＋1未标，后三项由T3替换为T2，不双计。B13为6/6，HybridFlow仍进行中；代码7路径／4框架、完整复现0。下一批C2 scheduler 1–2路径，再C3；不因T2超目标称Phase 2完成。
+
 ## 7. Code & System Landscape
 
 **本地已有资产**（重要：不用重新 clone）：
@@ -2109,6 +2175,8 @@ SkyRL `e0893f6e`的[wait_for_generation_buffer:843](https://github.com/NovaSky-A
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-28（M1 B13六篇T2）**：认领先推送505a5cf，§6.33完成Belayer／BIRD-RL／ScaleRLT及PrefixFlow／psRL／CIS；三原T3替换为T2，126＝20＋84＋21＋1，B13为6/6。Belayer显存分配／语义KV及环境本地／外部副作用分开；BIRD的12.8×是在线I/O且有离线成本；ScaleRLT读出policy另C、质量负项及same-weight概率值／dense梯度分开；两项训练前缀共享的update／整步与生成分账，CIS保留条件token目标、floor、偏差及rescore成本。均固定HTML方法／实验／必要附录阅读，无PDF图像、源码或设备验收。下一轮C2后C3，HybridFlow与代码目标仍待；代码7条／4框架、完整复现0，无M5专项、算力队列或社区写入。
 
 - **2026-10-28（M1 C1 veRL数据面与B12余项）**：认领先推送d86477d，§8.8完成固定24f25b03的V1 TQ数据路径，累计7路径／4框架；默认use_v1=true／sync修正旧分支默认入口概括，生成后台提交不等训练逐样本更新，prompt／trajectory key清理、BatchMeta／tags／extra_info与概率来源分别核。10 Python AST／23锚点及4原函数五组stdlib CPU检查通过；3.9解析match失败改用现有3.12，不运行框架／TQ或设备。§5.25附带8范围triage：旧五线索入库，ScaleRLT身份可核；PrefixFlow／psRL单列T3，Belayer／BIRD-RL／ScaleRLT待T2，非自动降级。126＝120 arXiv＋6会议＝20 T1＋78 T2＋24 T3＋4未标；B12范围28/28，B13六篇待认领，HybridFlow及代码目标仍待。完整复现0；无设备、M5专项、算力队列或社区写入。
 
