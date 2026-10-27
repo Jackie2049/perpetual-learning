@@ -6,12 +6,12 @@
 ## 0. Project Status
 
 - **阶段**：**Phase 2 — deep research（2026-10-27 用户指令：广度已足（计数另按唯一身份核算），转入论文/项目深读，围绕 rollout 性能与 L1–L4 四维；M1 定时启动的技术秘书任务以深读为主要工作）**
-- **最近更新**：2026-10-27（§6.5–6.6完成AReaL论文／RolloutPipe两篇T1，B2部分完成2/4、T1累计6；PACE／ECHO-2待认领，HybridFlow仍进行中；截止≤2026-10-29不变）
-- **覆盖**：累计**121篇已核身份**（20篇serving基础／迁移边界＋101篇rollout/RLHF及相关边界；115个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL／Weave／MTP-RL会议记录；其中T1压缩深读6篇，其余不据身份核验算深读）。§5.20将RL相关101暂分为86直接Rollout系统／机制候选与15保守单列条目；86只是工作范围计数，不是原生80–120覆盖／质量验收。MTP-RL是ACL Findings独立文献，不与Bebop同篇；初始种子身份已全部落实，但原生覆盖／分级／引用检索仍未收敛。ASymPO证明错误警示保留；Round 1“≈73”不与当前数量相加。
+- **最近更新**：2026-10-27（§6.7–6.8完成PACE／ECHO-2两篇T1，B2累计4/4、T1累计8；下一批B3待认领，HybridFlow仍进行中；截止≤2026-10-29不变）
+- **覆盖**：累计**121篇已核身份**（20篇serving基础／迁移边界＋101篇rollout/RLHF及相关边界；115个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL／Weave／MTP-RL会议记录；其中T1压缩深读8篇，其余不据身份核验算深读）。§5.20将RL相关101暂分为86直接Rollout系统／机制候选与15保守单列条目；86只是工作范围计数，不是原生80–120覆盖／质量验收。MTP-RL是ACL Findings独立文献，不与Bebop同篇；初始种子身份已全部落实，但原生覆盖／分级／引用检索仍未收敛。ASymPO证明错误警示保留；Round 1“≈73”不与当前数量相加。
 - **待核线索**：§5.23余5项（4项仅元数据／摘要已核、1项身份待核），不计入上述121或86候选；两项已入库只计一次，APRIL不重复计数。
-- **深读 / 代码广扫**：按§6.0新压缩标准完成T1 **6篇**（B1四篇＋B2前半两篇；非源码或性能复现验收），另有HybridFlow进行中1项 / 6（veRL `24f25b03`三条路径＋OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`、SkyRL `e0893f6e`各一条；共4框架，不是6框架或运行验证，也不按文件数计）；完整复现仍0。
+- **深读 / 代码广扫**：按§6.0新压缩标准完成T1 **8篇**（B1、B2各四篇；非源码或性能复现验收），另有HybridFlow进行中1项 / 6（veRL `24f25b03`三条路径＋OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`、SkyRL `e0893f6e`各一条；共4框架，不是6框架或运行验证，也不按文件数计）；完整复现仍0。
 - **最高优先级（2026-10-27 用户加急指令）**：**Phase 2 全部深读须在两天内完成（≤2026-10-29）**——每次定时触发完成**一批对应规模**的调研（分级深度 + 批次表见 §6.0），不得单次只做一篇；深度与时间约束按批次表权衡。HybridFlow 深读继续；余5条线索并入相应批次，不再单列追。M5专项与上游写入边界不变。
-- **深读当前焦点**：B1完成4/4、B2完成2/4；下一次先核远端再认领PACE／ECHO-2两篇。HybridFlow论文年代实现／原始数据另保留进行中，不用现代源码替代。AReaL仅论文研究，不接续prompt_mean专项；M5专项与上游写入边界不变。
+- **深读当前焦点**：B1、B2均完成4/4；下一次先核远端再认领B3前半RollPacker／SortedRL两篇。HybridFlow论文年代实现／原始数据另保留进行中，不用现代源码替代。M5专项与上游写入边界不变。
 - **Phase 2 完成标准与预估（2026-10-27 定，用户问"多久读完"后定量）**：**不是 121 篇全读**。深读总量 = A Core 15–20 篇全模板深读 + B Supporting ~40–60 篇中等深度（机制+关键结果，轻模板）+ 代码深读 ~8–12 条路径；C 边界与 serving 保持元数据级即可。节奏：每篇 A Core ≈ 1 个定时任务轮次，B 类 3–5 篇/轮次；按多会话并行（每日 2–4 轮次涉及本专项）预估 **A Core ≈ 1–1.5 周、Phase 2 整体 ≈ 3–4 周日历时间**。里程碑：第 1 周末 A Core 短名单定稿+完成一半；第 2 周末 A Core 完成+代码地图齐；第 3–4 周 B 覆盖+gaps/ideas 提炼+（可选）survey outline。**加速杠杆**：为定时任务显式分配深读配额。
 - **下一步**：见 §16
 
@@ -107,9 +107,9 @@
 | [2610.08430v1](https://arxiv.org/abs/2610.08430v1) | 2026-10-06／v1 | NeMo-DCR | L4（暂） | B（暂） | canonical坐标与native loader放置XOR／overwrite增量，joint commit绑定下一delta基线；bit-exact针对dense refit | 核 |
 | [2610.05935v1](https://arxiv.org/abs/2610.05935v1) | 2026-10-05／v1 | ThunderSyncRL | L4（暂） | B（暂） | 固定policy下按reward／teacher-score就绪做gradient streaming，batch结束才一次optimizer更新 | 核 |
 | [2509.19128v2](https://arxiv.org/abs/2509.19128v2) | 2025-09-23首次／v2 09-26 | PipelineRL | L2/L4（暂） | B／**C?**（行为分布另核） | 并行生成训练，in-flight换权重后继续未完序列；保留旧KV的mixed-policy不当零陈旧性 | 核 |
-| [2609.36830v1](https://arxiv.org/abs/2609.36830v1) | 2026-09-29／v1 | PACE（Where Does Staleness Accumulate?） | L4（暂） | B／**C**（拒收） | 分解生成／入池后等待staleness，pool超额占用决定拒收预算，按prefix-aware有效陈旧度排序 | 核 |
+| [2609.36830v1](https://arxiv.org/abs/2609.36830v1) | 2026-09-29／v1 | PACE（Where Does Staleness Accumulate?） | L4 | B／**C**（拒收） | pool超额占用→EMA拒收预算，Kwait＋相对prefix漂移加权Kgen排序；不拒绝在途轨迹 | 核；[T1](#67-pace-t1压缩深读) |
 | [2510.19225v3](https://arxiv.org/abs/2510.19225v3) | 2025-10-22首次／v3 2026-04-08 | RLBoost | L3/L4（暂） | B（暂） | 自适应partial seeding、pull式权重传输与token流收集／迁移，利用抢占式资源且不因抢占直接丢请求 | 核 |
-| [2602.02192v6](https://arxiv.org/abs/2602.02192v6) | 2026-02-02首次／v6 09-29 | ECHO-2 | L3/L4（暂） | B／**C**（过旧丢弃） | 中央learner／远程rollout、peer-assisted流水广播及成本感知扩缩；版本窗口外轨迹丢弃 | 核 |
+| [2602.02192v6](https://arxiv.org/abs/2602.02192v6) | 2026-02-02首次／v6 09-29 | ECHO-2 | L3/L4 | B／**C**（过旧丢弃） | overlap容量约束下按c/μ激活worker，分块链式广播与版本窗口丢弃；优化cost–quality | 核；[T1](#68-echo-2-t1压缩深读) |
 | [2604.11554v2](https://arxiv.org/abs/2604.11554v2) | 2026-04-13首次／v2 04-14 | Relax（Omni-Modal Post-Training） | L3/L4（暂） | B（暂） | role服务解耦、TransferQueue字段／microbatch流水与producer陈旧性门控；encoder-aware并行处理多模态输入 | 核 |
 | [2507.07966v4](https://arxiv.org/abs/2507.07966v4) | 2025-07-10首次／v4 09-30 | Long-RL（Scaling RL to Long Videos／MR-SP） | L1/L2/L4（暂） | A/B（MR-SP；数据另核） | 分片并行视频编码、all-gather embedding供多rollout复用，policy／reference prefilling用SP；forward计时不当全步 | 核 |
 
@@ -470,7 +470,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 | 批 | 层级 | 范围 | 状态 |
 |---|---|---|---|
 | B1 | T1 | StreamRL、StaleFlow、Laminar、DORA | **完成4/4**：前半M1 new-chat @27c4e00，13:18认领并推送38c0234，13:24完成§6.1–6.2；后半M1 new-chat @743da31，13:47认领并推送b3efd71，2026-10-27 13:52完成§6.3–6.4（T1标准，非实现／复现验收） |
-| B2 | T1 | AReaL、RolloutPipe、PACE、ECHO-2 | **部分完成2/4**：前半M1 new-chat @e159534，14:17认领并推送82a3fb6，2026-10-27 14:22完成§6.5–6.6；后半PACE／ECHO-2由M1 new-chat @fe3bb80于2026-10-27 14:47认领，尚未完成。AReaL不接续prompt_mean专项 |
+| B2 | T1 | AReaL、RolloutPipe、PACE、ECHO-2 | **完成4/4**：前半M1 new-chat @e159534，14:17认领并推送82a3fb6，14:22完成§6.5–6.6；后半M1 new-chat @fe3bb80，2026-10-27 14:47认领并推送b353e4c，14:55完成§6.7–6.8（非实现／复现验收）。AReaL不接续prompt_mean专项 |
 | B3 | T1 | RollPacker、SortedRL、APRIL、DARTS | 待认领 |
 | B4 | T1 | RhymeRL、ReSpec、BubbleSpec、DAS | 待认领 |
 | B5 | T1 | EfficientRollout、Heddle、ObsSpec、FP8-RL | 待认领 |
@@ -655,6 +655,60 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 - 未决：完成序FIFO不证明各更新组集合与原顺序完全一致。
 - 四轮时间／负载对照不替长期收敛或多模型验收。
 - 本轮无作者框架执行、算力交接或社区动作。
+
+### 6.7 PACE T1压缩深读
+
+- 状态：2026-10-27完成T1；非实现／性能验收。
+- 原文：[v1 PDF §2–4、附录A/B](https://arxiv.org/pdf/2609.36830v1)，公式与表1–3核原页。
+- 问题：生成完成后积压，使已饱和trainer的数据继续变旧。
+- 模型：token均值年龄`Kgen+Kwait`，非最大token年龄。
+- 预算：`clip((N−Ntar)/max(N,1),0,1)`后EMA平滑。
+- 排序：`Keff=Kwait+F(s_pre)·Kgen`，按分位数拒收。
+- prefix分数为平均绝对log-ratio；F用近期相对CDF，非全局KL。
+- 仅完成池拒收、继续抽满批；group评分取均值。
+- 论文映射：vLLM元数据／prefix rescoring→pool admission→trainer。
+- 主8B配置12r4t；GPU型号unknown，不填H800。
+- 数学训练每更新12 prompts×12 responses=144轨迹，GRPO。
+- DAPO-MATH-17K，prompt≤2048、response≤8192。
+- 表1取300步内六benchmark均值最高的一次评估，mean@32。
+- 主8B：41.29%对Async 36.34%，差4.95个百分点，非18.7个百分点。
+- 图1的47.1%基于logged training-step time，不当全流程账单。
+- 图8六GPU计时消融不代替主8B的16GPU配置。
+- ReTool中Sync／Async 4卡、PACE 6卡；不称同GPU预算比较。
+- supply threshold=8约束在途工作，不是每轨迹年龄硬界。
+- 分类判断：L4、B/C；loss不变不等训练分布不变。
+- 迁移判断：需token版本／行为概率、组完整性与prefix重评分接口。
+- 低prefix漂移不证明低梯度偏差，拒收也非无偏采样保证。
+- 代码缺口：未核公开commit／文件；不增§8路径数。
+- 未决：Ntar与评分窗口对饥饿／拒收偏差的影响及完整成本。
+- 后续：仅保留实现核查项，不新建算力队列。
+
+### 6.8 ECHO-2 T1压缩深读
+
+- 状态：2026-10-27完成T1；非实现／性能验收。
+- 原文：[v6 §3–6、附录B–E](https://arxiv.org/html/2602.02192v6)。
+- 问题：WAN权重分发与异构rollout的成本／空闲权衡。
+- 容量模型：`μmin=κR/(κTtrain−Tbcast)`，分母须正。
+- μ含生成、reward、调度和网络，不是原始decode TPS。
+- 按c/μ贪心激活，γ=1.1留余量；非全局整数最优保证。
+- κ=S−1的保守年龄推导有overlap及Tbcast/Ttrain<1前提。
+- 消费要求`v≥vt−S`，更旧轨迹丢弃；S不是buffer大小。
+- 分块到达即可转发，但完整snapshot安装后才用新版本生成。
+- 论文映射：Parallax worker→versioned buffer→central GRPO learner。
+- 主4B/8B：4 A100-80GB learner＋5090 pool；中央基线8 A100。
+- DAPO-Math训练、AIME24 avg@64；GB128、n16、response≤8192。
+- WAN消融B0=300–800Mbps、worker上限100Mbps，非全部场景固定值。
+- Tbcast以约90.9% worker装好快照计，不是全员最大延迟。
+- 成本=GPU-hours×2026-05-01租价，非实际账单／当前报价。
+- 8B同AIME质量成本降33.3%–36.3%，不称同硬件更快。
+- 主对照step约1508s对1631/1649s，成本收益不等wall-time收益。
+- 32B对Prime-RL的4.6%另有硬件／网络对照，不与前项相加。
+- S≤6的稳定性属所测GRPO任务，S=11可发散，无普适收敛证明。
+- 单worker恢复240–312s为γ=1.0消融，非大规模故障保证。
+- 分类判断：L3/L4、B/C；目标不变不能排除丢弃的集合影响。
+- 迁移判断：需重测有效μ、分发分位数与消费版本时钟。
+- 代码缺口：未核commit／文件；batch单位／group保留契约仍unknown。
+- 后续：校准／部署均未启动，不因廉价worker自述排设备任务。
 
 ## 7. Code & System Landscape
 
@@ -881,6 +935,8 @@ SkyRL `e0893f6e`的[wait_for_generation_buffer:843](https://github.com/NovaSky-A
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（M1 B2后半T1压缩深读）**：§6.7–6.8完成PACE v1／ECHO-2 v6各24行，B2累计4/4、T1累计8。PACE核原PDF公式／表1–3，分开token均值年龄、供给阈值与硬界、4.95个百分点与同预算相对增益、六卡消融与16卡主配置；ReTool非等GPU对照。ECHO容量与分发分位数有前提，dated租价成本不当账单／单步更快，两者拒收另C。121身份、代码6条／4框架、复现0不增；下一轮认领B3前半两篇，无设备、M5专项或社区动作。
 
 - **2026-10-27（M1 B2前半T1压缩深读）**：§6.5–6.6完成AReaL v5论文／RolloutPipe v2两篇24行模板，B2仅2/4、T1累计6，后半PACE／ECHO-2待认领。AReaL准入／混版本／目标调整与RolloutPipe固定生成权重／每U组更新／全R组发布分开；2.77×同栈训练小时、veRL估算小时及主时窗缩短百分比分账，等待比定义留待实现核。121身份、代码6条／4框架、复现0不变；不推进prompt_mean专项、设备或社区事项。
 
