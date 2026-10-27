@@ -4,6 +4,8 @@
 
 ## 当前阶段
 
+- **M1本轮认领（2026-10-28 01:48）**：M1 new-chat @3b3d2bb核远端0/0、工作树干净；认领C3 rLLM与Slime各1条生成／组消费／同步路径，先推送再读。远端main只读定位rLLM 4e828c81、Slime 540ea919，独立检出后核完整OID；代码当前9路径／6系统、论文20/84/21/1与复现0不预增。无设备、M5专项或社区写入。
+
 - **M1 C2两条推理调度器路径完成（2026-10-28 01:29）**：01:18认领先推送e5b874b；[§8.9–8.10](notebook/rollout-performance-research.md#89-vllm-token预算与抢占)固定vLLM eaf1627c／SGLang cb55d77d，独立稀疏只读检出，未动旧六月SGLang分支。纳新／运行次序、计算／KV预算、回撤重算／abort、异步乐观计数／最终输出、版本事件／flush分开；SGLang mixed分支有logprob限制。九源码AST／八组原函数体CPU控制通过，含8700 chunk组合，接口为替身而非引擎／性能验收；[脚本及结果](experiments/rollout-scheduler-controls/readme.md)已存。代码累计9路径／6系统（4 RL框架＋2推理引擎），论文20/84/21/1、完整复现0不变；下轮C3 rLLM／slime 1–2路径，HybridFlow原版映射仍待，不称Phase 2完成。无设备、M5专项、算力队列或社区写入。
 
 - **M1 B13六篇T2完成（2026-10-28）**：00:47认领先推送505a5cf；[§6.33](notebook/rollout-performance-research.md#633-恢复-前缀与概率边界)完成Belayer／BIRD-RL／ScaleRLT及PrefixFlow／psRL／CIS。恢复失效域／语义KV、在线数据库I/O／离线预建成本、混合读出质量负项与概率值／梯度、训练侧prefix／生成、CIS条件token修正／整轨迹目标分别保留；ScaleRLT混合读出另C。三项T3升级替换，126＝20 T1＋84 T2＋21 T3＋1未标完成，仅HybridFlow进行中；代码仍7条／4框架、复现0。下轮核远端认领C2 vLLM／SGLang core scheduler 1–2路径，再C3未覆盖框架；不称Phase 2完成。仅论文HTML阅读，无源码／PDF图像／设备验收，无M5专项、算力队列或社区动作。
