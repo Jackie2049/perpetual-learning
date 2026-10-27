@@ -476,7 +476,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 | B5 | T1 | EfficientRollout、Heddle、ObsSpec、FP8-RL | **完成4/4**：前半M1 new-chat @70c59d3，2026-10-27 17:17认领并推送9dcbdc8，17:23完成§6.17–6.18；后半M1 new-chat @5304df1，17:47认领并推送4e1c946，17:52完成§6.19–6.20（非实现／复现验收） |
 | B6 | T2 | L4 其余：AsyncFlow、LlamaRL、RLinf、MindSpeed RL、NeMo-Aligner、ROLL／ROLL Flash、GLM-4.5、Long-RL | **完成9/9**：前八篇认领eb79ac5、18:25完成§6.21；余Long-RL由M1 new-chat @799504e于2026-10-27 18:47认领，先推送75916da，18:54与B7前七篇合批完成§6.22；未重复前八篇 |
 | B7 | T2 | 权重同步/失配子簇：SparseRL-Sync、PULSE、NeMo-DCR、ThunderSyncRL、PipelineRL、Missing Old Logits、Beyond Precision、FP16/Diagnosing/Rethinking 三选二 | **完成9/9**：前七篇§6.22；M1 new-chat @1353af5于2026-10-27 19:18认领FP16／Diagnosing（VeXact），先推送cea145d，19:30完成§6.23.1–2；Rethinking未选入，仍留边界未读账 |
-| B8 | T2 | L3/spec：TailSieve、WAR、Seer、Infinite Sampling、CadenceRL、Weave、CERO、Scheduling Mixed、SRT、S³R、NgramRL、TLT | **完成6/12**：M1 new-chat @1353af5于2026-10-27 19:18认领前六篇，先推送cea145d，19:30与B7余两篇合批完成§6.23.3–8；后六篇下轮合批，不增加源码／复现计数 |
+| B8 | T2 | L3/spec：TailSieve、WAR、Seer、Infinite Sampling、CadenceRL、Weave、CERO、Scheduling Mixed、SRT、S³R、NgramRL、TLT | **完成6/12，余6已认领**：前六篇认领先推送cea145d、19:30完成§6.23.3–8；M1 new-chat @9f7419e于2026-10-27 19:48认领CERO、Scheduling Mixed（MISA-T）、SRT、S³R、NgramRL、TLT六篇，先推送再读，不将认领计完成 |
 | B9 | T2 | spec/agentic：RLHFSpec、Bebop、FastGRPO、System-Integrated SD、SPARK、SpecActor、Online Draft Co-Training、MTP-RL、AReaL-DTA、FlashNext-RL、Rollplex、AREAL-DTA | 待认领 |
 | B10 | T2 | agentic：SkyRL-Agent(广扫深化)、EARL、InfoTree、AsyncWebRL、AcceRL、MARLaaS、FlexMARL、Agent Lightning v0/v1.0、TideRL、ROSE、QwenGyre | 待认领 |
 | B11 | T2 | 资源/边界：ARL-Tangram、DART、MCP-Universe RL、PEARL、SAO、Rollout Infrastructure Tax、ExpThink、Intelligent Router | 待认领 |
