@@ -6,12 +6,12 @@
 ## 0. Project Status
 
 - **阶段**：**Phase 2 — deep research（2026-10-27 用户指令：广度已足（计数另按唯一身份核算），转入论文/项目深读，围绕 rollout 性能与 L1–L4 四维；M1 定时启动的技术秘书任务以深读为主要工作）**
-- **最近更新**：2026-10-27（§6.1–6.2完成B1前半StreamRL／StaleFlow两篇T1压缩深读；B1后半待认领，HybridFlow仍进行中；截止≤2026-10-29不变）
-- **覆盖**：累计**121篇已核身份**（20篇serving基础／迁移边界＋101篇rollout/RLHF及相关边界；115个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL／Weave／MTP-RL会议记录；其中T1压缩深读2篇，其余不据身份核验算深读）。§5.20将RL相关101暂分为86直接Rollout系统／机制候选与15保守单列条目；86只是工作范围计数，不是原生80–120覆盖／质量验收。MTP-RL是ACL Findings独立文献，不与Bebop同篇；初始种子身份已全部落实，但原生覆盖／分级／引用检索仍未收敛。ASymPO证明错误警示保留；Round 1“≈73”不与当前数量相加。
+- **最近更新**：2026-10-27（§6.3–6.4完成Laminar／DORA两篇T1压缩深读，B1累计4/4；下一批B2待认领，HybridFlow仍进行中；截止≤2026-10-29不变）
+- **覆盖**：累计**121篇已核身份**（20篇serving基础／迁移边界＋101篇rollout/RLHF及相关边界；115个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL／Weave／MTP-RL会议记录；其中T1压缩深读4篇，其余不据身份核验算深读）。§5.20将RL相关101暂分为86直接Rollout系统／机制候选与15保守单列条目；86只是工作范围计数，不是原生80–120覆盖／质量验收。MTP-RL是ACL Findings独立文献，不与Bebop同篇；初始种子身份已全部落实，但原生覆盖／分级／引用检索仍未收敛。ASymPO证明错误警示保留；Round 1“≈73”不与当前数量相加。
 - **待核线索**：§5.23余5项（4项仅元数据／摘要已核、1项身份待核），不计入上述121或86候选；两项已入库只计一次，APRIL不重复计数。
-- **深读 / 代码广扫**：按§6.0新压缩标准完成T1 **2篇**（StreamRL／StaleFlow；非源码或性能复现验收），另有HybridFlow进行中1项 / 6（veRL `24f25b03`三条路径＋OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`、SkyRL `e0893f6e`各一条；共4框架，不是6框架或运行验证，也不按文件数计）；完整复现仍0。
+- **深读 / 代码广扫**：按§6.0新压缩标准完成T1 **4篇**（B1四篇；非源码或性能复现验收），另有HybridFlow进行中1项 / 6（veRL `24f25b03`三条路径＋OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`、SkyRL `e0893f6e`各一条；共4框架，不是6框架或运行验证，也不按文件数计）；完整复现仍0。
 - **最高优先级（2026-10-27 用户加急指令）**：**Phase 2 全部深读须在两天内完成（≤2026-10-29）**——每次定时触发完成**一批对应规模**的调研（分级深度 + 批次表见 §6.0），不得单次只做一篇；深度与时间约束按批次表权衡。HybridFlow 深读继续；余5条线索并入相应批次，不再单列追。M5专项与上游写入边界不变。
-- **深读当前焦点**：B1已完成2/4，下一次先认领Laminar／DORA两篇；HybridFlow论文年代实现／原始数据另保留进行中，不用现代源码替代。M5专项与上游写入边界不变。
+- **深读当前焦点**：B1已完成4/4；下一次先核远端再认领B2前半两篇，不重复B1。HybridFlow论文年代实现／原始数据另保留进行中，不用现代源码替代。AReaL论文阅读不接续prompt_mean专项；M5专项与上游写入边界不变。
 - **Phase 2 完成标准与预估（2026-10-27 定，用户问"多久读完"后定量）**：**不是 121 篇全读**。深读总量 = A Core 15–20 篇全模板深读 + B Supporting ~40–60 篇中等深度（机制+关键结果，轻模板）+ 代码深读 ~8–12 条路径；C 边界与 serving 保持元数据级即可。节奏：每篇 A Core ≈ 1 个定时任务轮次，B 类 3–5 篇/轮次；按多会话并行（每日 2–4 轮次涉及本专项）预估 **A Core ≈ 1–1.5 周、Phase 2 整体 ≈ 3–4 周日历时间**。里程碑：第 1 周末 A Core 短名单定稿+完成一半；第 2 周末 A Core 完成+代码地图齐；第 3–4 周 B 覆盖+gaps/ideas 提炼+（可选）survey outline。**加速杠杆**：为定时任务显式分配深读配额。
 - **下一步**：见 §16
 
@@ -74,8 +74,8 @@
 | [2507.13833v4](https://arxiv.org/abs/2507.13833v4) | 2025-07-18首次／v4 2026-05-30 | DistFlow | L4 | B | 多controller，数据传输与控制派发解耦，去中心Data Coordinator及DAG任务调度 | 核 |
 | [2504.15930v1](https://arxiv.org/abs/2504.15930v1) | 2025-04-22／v1 | StreamRL | L3/L4 | B（异步语义另列） | stream与ranker调度分治气泡；强制长度吞吐实验与真实收敛分开 | 核；[T1](#61-streamrl-t1压缩深读) |
 | [2505.24034v2](https://arxiv.org/abs/2505.24034v2) | 2025-05-29首次／v2 06-02 | LlamaRL | L4 | B | native PyTorch单controller，异步off-policy、模型offload及DMA权重同步 | 核 |
-| [2510.12633v1](https://arxiv.org/abs/2510.12633v1) | 2025-10-14／v1 | Laminar | L3/L4（暂） | B（暂） | trajectory级异步，relay workers服务细粒度权重拉取，repack集中长尾 | 核 |
-| [2604.26256v2](https://arxiv.org/abs/2604.26256v2) | 2026-04-29首次／v2 07-20 | DORA | L4（暂） | B（暂） | 多版本streaming rollout，约束轨迹内policy一致性、数据完整性及有界staleness | 核 |
+| [2510.12633v1](https://arxiv.org/abs/2510.12633v1) | 2025-10-14／v1 | Laminar | L3/L4 | B（buffer策略另核） | CPU relay与同版本repack；低陈旧性是观测，不是显式硬上限 | 核；[T1](#63-laminar-t1压缩深读) |
+| [2604.26256v2](https://arxiv.org/abs/2604.26256v2) | 2026-04-29首次／v2 07-20 | DORA | L2/L3/L4 | B（跨步集合另核） | 单轨迹固定版本、旧版本排空后移窗，同版本KV迁移；不丢弃自述非同步等价证明 | 核；[T1](#64-dora-t1压缩深读) |
 | [2601.12784v2](https://arxiv.org/abs/2601.12784v2) | 2026-01-19首次／v2 08-03 | StaleFlow | L3/L4 | B；冗余／过滤另C | Reserve／Occupy／Consume界定轨迹年龄，TS／PS协调路由；主评估禁用冗余 | 核；[T1](#62-staleflow-t1压缩深读) |
 | [2507.01663v2](https://arxiv.org/abs/2507.01663v2) | 2025-07-02首次／v2 2026-09-11 | AsyncFlow | L4 | B | 分布式流式数据管理与producer-consumer，staleness阈值内延后参数更新 | 核 |
 | [2606.26997v2](https://arxiv.org/abs/2606.26997v2) | 2026-06-25首次／v2 07-05 | RolloutPipe | L3/L4（暂） | B（暂） | fixed-weight rollout中完整group FIFO送训，frontier-group准入提早供给下一批 | 核 |
@@ -469,7 +469,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 
 | 批 | 层级 | 范围 | 状态 |
 |---|---|---|---|
-| B1 | T1 | StreamRL、StaleFlow、Laminar、DORA | **部分完成2/4**：前半M1 new-chat @27c4e00，13:18认领并推送38c0234，2026-10-27 13:24完成§6.1–6.2；后半Laminar／DORA由M1 new-chat @743da31于2026-10-27 13:47认领，尚未完成 |
+| B1 | T1 | StreamRL、StaleFlow、Laminar、DORA | **完成4/4**：前半M1 new-chat @27c4e00，13:18认领并推送38c0234，13:24完成§6.1–6.2；后半M1 new-chat @743da31，13:47认领并推送b3efd71，2026-10-27 13:52完成§6.3–6.4（T1标准，非实现／复现验收） |
 | B2 | T1 | AReaL、RolloutPipe、PACE、ECHO-2 | 待认领 |
 | B3 | T1 | RollPacker、SortedRL、APRIL、DARTS | 待认领 |
 | B4 | T1 | RhymeRL、ReSpec、BubbleSpec、DAS | 待认领 |
@@ -549,6 +549,58 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 - 代码缺口：未核commit／文件，不能宣称协议已在源码验收。
 - 待核：逐token概率／过滤配置和跨任务收敛；η=3个案非普遍保证。
 - 后续：不按支持冗余推断主评估启用；本轮无硬件复现。
+
+### 6.3 Laminar T1压缩深读
+
+- 状态：2026-10-27完成T1；源码／性能未验收。
+- 原文：[v1 §3–8及附录A–D](https://arxiv.org/html/2510.12633v1)。
+- 问题：全局同步与长尾导致rollout闲置。
+- 调度模型：同版本bin packing，受KV容量与roofline batch双约束。
+- 权重路径：actor→CPU master relay→RDMA链→本地PCIe。
+- actor仍有发布停顿；广播后台化不等无同步成本。
+- repack集中同版本长尾，释放副本更新权重。
+- 陈旧性`M-K`来自生成耗时；最大4是**观测**，非配置硬界。
+- buffer允许自定义采样／淘汰；收敛实验用FIFO。
+- 条件：Qwen2.5系列7/32/72B，最多1024 H800-80GB。
+- 负载：DAPO-Math-17k／tool，输入≤2K、输出≤16K长尾。
+- batch=512 prompts×16=8192；GRPO Clip-Higher。
+- 指标：整迭代prompt＋response tokens/s；warmup10后均值5步。
+- 数学任务对veRL v0.5.0平均2.56×；不是纯repack收益。
+- repack消融：32B／128GPU，generation吞吐+26%，非全步。
+- 吞吐／收敛实验并发分别1024／256每副本；基线配置另调。
+- 故障恢复252s含新机初始化；链修复秒级不等全任务秒级恢复。
+- 分类判断：L3/L4、B；buffer选择／淘汰对集合的影响另核。
+- 论文映射：rollout manager／三池／relay／trainer，基于veRL。
+- 代码缺口：未核公开commit／文件；不能用现行veRL代填。
+- 迁移判断：核同版本续跑、group完整性与实际消费年龄。
+- 未决：RNG／故障重放一致性、采样偏差；不作普适无偏结论。
+
+### 6.4 DORA T1压缩深读
+
+- 状态：2026-10-27完成T1；源码／性能未验收。
+- 原文：[v2 §3–5、附录B–D](https://arxiv.org/html/2604.26256v2)。
+- 问题模型：同步decode近似`τ·max_j max_i L_i`。
+- stream超供给（作者记`RBS>TBS`）；未完轨迹留原版本续跑。
+- 窗口：最旧版本全部收集并转训后才前移，不主动丢长尾。
+- 调度：按版本负载重分DP资源，旧版本亦可补充请求。
+- KV迁移限同版本；省re-prefill不等零传输成本。
+- 论文映射：RolloutManager→TransferQueue→Trainer＋orchestrator。
+- 条件：Qwen2.5-32B，64／128 H800；同内部框架基线。
+- 负载：DAPO-Math-17k，输入≤2K、输出≤30K；均长2.4K。
+- 配置：512 prompts×16=8192；16次update，micro-batch512。
+- 口径疑点：正文RBS称prompt、TBS称trajectory；不直接比较512与8192。
+- 指标：实际消费prompt＋response tokens/s，warmup后均值5步。
+- 128GPU端到端吞吐为同步2.12×；非直接跑公共框架排名。
+- 64GPU的8.2×仅**未被训练遮蔽的rollout-only时段**。
+- KV消融183→166s为rollout计时；不可与全步收益相乘。
+- 生产4096非CUDA设备／约500B MoE结果另列，不外推H800。
+- 收敛仅72GPU／100步奖励曲线，K=3较K=1略慢。
+- 分类判断：L2/L3/L4、B；保留轨迹不证明跨步训练集合等价。
+- 理论为抽象混合行为策略分析，不替完整GRPO动态保证。
+- 迁移判断：需核KV布局／数值兼容，不仅检查版本标签。
+- 代码缺口：内部实现未核commit／文件，不增§8路径。
+- 未决：窗口版本与实际消费时钟、GRPO组归属／概率字段。
+- 后续：这些实现条件留代码核对，不新排设备任务。
 
 ## 7. Code & System Landscape
 
@@ -775,6 +827,8 @@ SkyRL `e0893f6e`的[wait_for_generation_buffer:843](https://github.com/NovaSky-A
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-27（M1 B1后半T1压缩深读）**：§6.3–6.4完成Laminar v1／DORA v2两篇22／24行模板，B1累计4/4、T1累计4，HybridFlow仍进行中。Laminar观测最大陈旧性不当硬界，relay链修复不当全任务恢复；DORA的rollout-only时段、实际消费tokens/s和生产非CUDA结果分开，RBS／TBS原文单位留疑，保留轨迹不认证每步等价，抽象理论不替源码协议。121身份、代码6条／4框架及复现0不变；下一轮核远端后认领B2前半两篇，不接续M5 prompt_mean，无设备或社区动作。
 
 - **2026-10-27（M1 B1前半T1压缩深读）**：§6.1–6.2完成StreamRL v1／StaleFlow v2两篇20／21行模板，B1仅2/4、Laminar／DORA仍待认领；按新压缩标准计完成2，HybridFlow仍进行中1。StreamRL强制长度／真实收敛及同后端／跨后端分开；StaleFlow主评估无冗余，附录冗余／Stuck过滤另C，续跑迁移不混丢弃。121身份、代码6条／4框架不增，源码与完整复现未验收。下一轮先认领B1后半；无设备、M5专项或社区写入。
 
