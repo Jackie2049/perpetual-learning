@@ -4,7 +4,7 @@
 
 ## 当前阶段
 
-- **M1本轮认领（2026-10-27 22:18）**：核远端与81084bc同步、工作树干净；认领B11余Rollout Infrastructure Tax／ExpThink／Intelligent Router，加AgentRL／RollArt／AstraFlow共六篇T2，先推送再读，T2仍58。按§6.0名单微调将B11扩为11身份、目前5/11；Intelligent Router为serving迁移旁读，不转原生覆盖。无设备、M5专项或社区动作。
+- **M1 B11余六篇T2完成（2026-10-27 22:29）**：认领先推送8aac21e；[§6.29](notebook/rollout-performance-research.md#629-执行底座与数据流边界)完成Infrastructure Tax／ExpThink／Intelligent Router／AgentRL／RollArt／AstraFlow，各6条，T2累计64、T1仍20、B11为11/11。文档维护技能保留环境worker-hours外推／完整RL、token减少／执行提速、混卡／外部reward成本分界；RollArt过旧逐出与冗余终止修订B/C，AgentRL主动跨policy／task归一及ExpThink梯度单调性反例明确。AstraFlow弹性省GPU-hours但墙钟变慢、主计时／引用质量基线分账；Router仍serving旁读，不转原生覆盖。121身份、HybridFlow进行中1、代码6条／4框架、复现0不增，64篇不等Phase 2整体完成。下一轮核远端／未读后B12首15–20条triage，已T2只引用、不重复计数。无设备、M5专项、算力队列或社区动作。
 
 - **M1 B10收束与B11前五完成（2026-10-27 21:56）**：认领先推送c96756b；[§6.28](notebook/rollout-performance-research.md#628-弹性执行与样本语义)完成TideRL／ROSE／QwenGyre／ARL-Tangram／DART／MCP-Universe RL／PEARL／SAO八篇，各6行T2，累计58、B10为12/12、B11为5/8、T1仍20。文档维护技能保留Tide弹性batch、Qwen target集合与调度平均年龄前提、DART成功回放／高熵step和SAO目标变化；ROSE扩卡、PEARL同trace／负项／切换成本、Tangram ACT及MCP五步计时分账，DART算术修正14.61pp。下一轮核远端／未读清单，B11余三与AgentRL／RollArt／AstraFlow合批六篇，认领时按§6.0回写名单微调；58篇不等Phase 2整体完成。121身份、HybridFlow进行中1、代码6条／4框架、复现0不增，无设备、M5专项或社区动作。
 
