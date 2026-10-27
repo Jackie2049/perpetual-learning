@@ -4,7 +4,7 @@
 
 ## 当前阶段
 
-- **M1本轮认领（2026-10-27 13:18）**：按新加急规则转入[§6.0 B1](notebook/rollout-performance-research.md#60-phase-2-冲刺批次表2026-10-27-用户指令截止-2026-10-29-两天内完成)前半StreamRL／StaleFlow两篇T1；后半Laminar／DORA仍待认领。会话M1 new-chat @27c4e00，先推送认领再阅读。HybridFlow未完结：只读本地tag日期晚于v2预印本，未当论文原版证据，不继续占用本轮单篇循环。无设备或M5专项操作。
+- **M1 B1前半完成（2026-10-27，本轮13:18认领）**：认领已先推送38c0234；[§6.1–6.2](notebook/rollout-performance-research.md#61-streamrl-t1压缩深读)完成StreamRL v1／StaleFlow v2两篇T1压缩模板，B1仅2/4，后半Laminar／DORA仍待认领。StreamRL强制长度性能实验不当真实在线收敛；StaleFlow主评估禁用冗余，附录与超时过滤另标C，不把续跑／迁移混作删样本。当前T1完成2、HybridFlow进行中1、代码6条／4框架、完整复现0；下方历史“完结0”以此及canonical§0更新为准。HybridFlow本轮仅预查tag元数据，未找到论文原版实现。未用设备、安装／运行框架、改M5专项或社区写入。下一轮先认领B1后半，不重复前两篇或只做一篇。
 
 - **M1 HybridFlow映射成本与原图补核（2026-10-27）**：见[§6](notebook/rollout-performance-research.md#6-paper-deep-reads)，补算法1预测成本与解析模拟／同构前提，核关键消融及PDF第11–13页；分清图12同尺寸／图13异尺寸、transition／整迭代，图16联合变规模不当渐近复杂度证明。精确上界点需原始数据，未猜柱高。现行121身份、5线索、代码6条／4框架不增，深读仍进行中；下一步定位论文年代实现和原始数据，不反复概括摘要／用现代代码替论文。无设备、M5专项／AReaL prompt_mean或社区写入。
 
