@@ -508,7 +508,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 | B10 | T2 | agentic：SkyRL-Agent(广扫深化)、EARL、InfoTree、AsyncWebRL、AcceRL、MARLaaS、FlexMARL、Agent Lightning v0/v1.0、TideRL、ROSE、QwenGyre | **完成12/12**：SkyRL-Agent见§6.26.6，八篇见§6.27；余三认领先推送c96756b，与B11前五篇合批完成§6.28.1–3 |
 | B11 | T2 | 资源/边界：ARL-Tangram、DART、MCP-Universe RL、PEARL、SAO、Rollout Infrastructure Tax、ExpThink、Intelligent Router；补AgentRL／RollArt／AstraFlow | **完成11/11**：前五见§6.28.4–8；2026-10-27 22:18 M1 new-chat @81084bc认领余三＋补三，先推送8aac21e，22:29完成六篇§6.29。按允许微调补三篇、分母8→11；Intelligent Router仍serving迁移边界，不转原生覆盖 |
 | B12 | T3 | serving 20 条 + 其余边界条目 triage（不深读，逐条给不深读理由+关联判定） | **范围triage完成28/28**：首批认领a65cb4d、§6.30完成20项；余八随C1认领d86477d，2026-10-28 00:29完成§5.25。原三＋新二补T3，另三直接候选转B13待T2，Router沿既有T2；28事项不当28 T3身份 |
-| B13 | T2 | Belayer、BIRD-RL、ScaleRLT；边界深化PrefixFlow、psRL、CIS | **待认领0/6**：承接§5.25范围核查的三新直接候选与三项跨阶段／概率边界。后三项目前T3，升级后按最深层互斥计数；不把三边界转原生覆盖 |
+| B13 | T2 | Belayer、BIRD-RL、ScaleRLT；边界深化PrefixFlow、psRL、CIS | **认领0/6**：2026-10-28 00:47 M1 new-chat @440db98，先推送再读。承接三新直接候选与三项跨阶段／概率边界；后三项目前T3，升级后按最深层互斥计数，不转原生覆盖 |
 | C1 | 代码 | veRL TransferQueue/TQ 数据面 + AReaL 调度器 | **veRL部分完成1路径**：2026-10-28 00:19 M1 new-chat @2508282认领、先推送d86477d，00:29完成§8.8；累计7路径／4框架。AReaL调度器未开展，不将C1整项写完成，M5专项不触及 |
 | C2 | 代码 | vLLM / SGLang core scheduler 路径 | 待认领 |
 | C3 | 代码 | rLLM / slime / 其余框架 | 待认领 |
