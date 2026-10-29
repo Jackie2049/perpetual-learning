@@ -31,7 +31,7 @@
 - **4090-1 网络（已恢复，22:0x 轮确认）**：断连约 28h 后恢复（ssh/ping 通、0% 丢包），**矿机未重启**（无 nort/xmrig/矿池连接，sudoers/cron/bin 正常）；GPU 0/1/3/4/5/6 被 cl 用户训练占用、GPU 2 为 liyaowei vLLM embed、仅 GPU 7 空闲但 watchdog 随时抢占＋无自有 verl 环境＋/data 满——当前无可领算力项，待 cl 训练结束或用户安排后复核。
 - **昇腾 910C VPN（等待用户恢复）**：断第 19 天（网关 10.205.0.1 通、目标 192.168.13.174 100% 丢包、EasyConnect 进程在跑）。
 - **等待用户决策**：#8313 ④ 回复草稿 v2 待逐字审定（[draft-8313-review-reply.md](open-source/verl/draft-8313-review-reply.md)）；DeepInfer-Go PR #2 待审视；UniRL #523 待审批（fork 分支已备）；磁盘清理决策（②档 242G＋③档 93G＋fsy/ 558G）→ DeepInfer 真实权重前置；verl #8250 补证待授权。
-- **M1 学习/贡献线**：各学习/收束条目均已入库 `notebook/frameworks/` 各笔记与 `experiments/scripts/` 验证脚本，不再在本文件列条目；M1 机器宕机（2026-10-29），其原负责 rollout 专项已移交 M5。
+- **M1 学习/贡献线**：当前 M1 会话已于2026-10-30恢复并同步远端；rollout 专项仍按10-29决定由M5完全负责，M1不因恢复自动接回。停机前D1旧稿仅保留未应用参考，接续与差异见[当日日志](diary/2026-10-30.md#0033--m1恢复接续与m5单一负责人核对)；既有学习成果仍在对应笔记／实验，不在此重复。
 - **上游只读核对基线**：verl `59f9a42c`（#8413 trainer token-axis fix，非算力线索）、DeepInfer `553741557`、UniRL `5d1da78d`（canonical Tencent-Hunyuan/UniRL）、AReaL `890de371`（#1833 XPU＋#1819 docs，非本机算力线索；最近合并均无算力线索；新 open PR 均作者侧，逐轮 gh api 复核）。
 
 ## 待讨论与下一步
