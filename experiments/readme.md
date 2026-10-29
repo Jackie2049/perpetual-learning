@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-layered-base-sync/verify.py](verl-layered-base-sync/verify.py) | #8032八项原Mock回归的原生pytest，[结果](verl-layered-base-sync/result.json)核父版3拒绝项失败／head全过；一额外free-cache控制仅调用边界，非真实导出／内存或恢复 | [分层base同步guard](../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#分层导出与-base-重同步的拒绝边界) |
 | [verl-lora-plus-capability/verify.py](verl-lora-plus-capability/verify.py) | #7484原optimizer／engine方法的八项调用控制，[结果](verl-lora-plus-capability/result.json)分开默认绕过／opt-in缺helper／透传与日志；依赖为显式记录替身，无真实参数组或训练验收 | [LoRA+兼容条件](../notebook/frameworks/verl-architecture.md#lora-默认兼容与启用条件) |
 | [verl-docker-transformers-resolution/verify.py](verl-docker-transformers-resolution/verify.py) | #8446原Docker双pin的三条件原生uv解析，[结果](verl-docker-transformers-resolution/result.json)分开旧版本冲突与2.28缺wheel／2.39成功；禁源码构建，无包安装／完整镜像或ABI验收 | [镜像版本与平台分发](../notebook/frameworks/verl-architecture.md#镜像版本约束与平台分发) |
 | [unirl-agentic-group-semantics/verify.py](unirl-agentic-group-semantics/verify.py) | #635前提的四原归一化CPU控制及零优势clip surrogate梯度，[结果](unirl-agentic-group-semantics/result.json)区分std1回退与方差；仅函数控制，非RFC诊断器／真实频率或训练 | [Agentic奖励组统计](../notebook/frameworks/unirl-survey.md#agentic-奖励组的统计边界) |

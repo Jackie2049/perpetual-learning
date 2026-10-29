@@ -1,0 +1,43 @@
+{
+  "head": "b7fca1bf72c9ef488595af2ade0b28f95ad00e5e",
+  "direct_parent": "c0b1c7c3d9b4031fa1d8082d3afddfee43212164",
+  "python": "3.12.13",
+  "pytest": "8.4.2",
+  "source_sha256": {
+    "b7fca1bf72c9ef488595af2ade0b28f95ad00e5e:tests/workers/test_layered_lora_base_sync_on_cpu.py": "f68f233d08aaed9ad4c2f37b448b5133a46130f8b9c45ddf010dcbe3063ce70a",
+    "b7fca1bf72c9ef488595af2ade0b28f95ad00e5e:verl/workers/engine_workers.py": "447d2d0151eebe3deffa5c88e681ac073b6f7b3e85710c1d19ae16371a0f62e0",
+    "c0b1c7c3d9b4031fa1d8082d3afddfee43212164:verl/workers/engine_workers.py": "a7f39ee369193851c260c1c6c1480f6fdff49851f1fdb1e5a648483ac1c99045"
+  },
+  "original_test_cases": {
+    "parent": {
+      "worker_revision": "c0b1c7c3d9b4031fa1d8082d3afddfee43212164",
+      "test_revision": "b7fca1bf72c9ef488595af2ade0b28f95ad00e5e",
+      "exit_code": 1,
+      "stdout": "FFF.....                                                                 [100%]\n=================================== FAILURES ===================================\n______________ test_layered_summon_rejects_base_export[True-True] ______________\ntests/workers/test_layered_lora_base_sync_on_cpu.py:74: in test_layered_summon_rejects_base_export\n    with pytest.raises(ValueError, match=r\"layered_summon.*base.*resync_base\"):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE <class 'ValueError'>\n_____________ test_layered_summon_rejects_base_export[False-True] ______________\ntests/workers/test_layered_lora_base_sync_on_cpu.py:74: in test_layered_summon_rejects_base_export\n    with pytest.raises(ValueError, match=r\"layered_summon.*base.*resync_base\"):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE <class 'ValueError'>\n_____________ test_layered_summon_rejects_base_export[False-False] _____________\ntests/workers/test_layered_lora_base_sync_on_cpu.py:74: in test_layered_summon_rejects_base_export\n    with pytest.raises(ValueError, match=r\"layered_summon.*base.*resync_base\"):\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   Failed: DID NOT RAISE <class 'ValueError'>\n=========================== short test summary info ============================\nFAILED <snapshot>::test_layered_summon_rejects_base_export[True-True]\nFAILED <snapshot>::test_layered_summon_rejects_base_export[False-True]\nFAILED <snapshot>::test_layered_summon_rejects_base_export[False-False]\n3 failed, 5 passed",
+      "stderr": ""
+    },
+    "head": {
+      "worker_revision": "b7fca1bf72c9ef488595af2ade0b28f95ad00e5e",
+      "test_revision": "b7fca1bf72c9ef488595af2ade0b28f95ad00e5e",
+      "exit_code": 0,
+      "stdout": "........                                                                 [100%]\n8 passed",
+      "stderr": ""
+    }
+  },
+  "additional_guard_boundary_control": {
+    "input": "author _worker defaults, free_cache_engine=True",
+    "exception": "rollout.layered_summon=True does not support LoRA base weight synchronization. Use a preloaded base model with model.lora.resync_base=False, or set rollout.layered_summon=False.",
+    "allocator_switch_calls": [
+      false
+    ],
+    "resume_tags": [
+      [
+        "weights"
+      ]
+    ],
+    "weight_transfer_calls": 0,
+    "base_sync_done": true,
+    "rollout_sleep_level_after_rejection": 2
+  },
+  "scope": "Native pytest of original mock-based CPU cases; no production imports, real base export/transfer, allocator, GPU memory, recovery or performance validation"
+}

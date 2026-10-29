@@ -1,5 +1,7 @@
 # verl Worker 生命周期与 Ray 分布式架构源码阅读
 
+2026-10-30接续：[分层导出与base重同步的拒绝边界](#分层导出与-base-重同步的拒绝边界)核#8032新guard；原8项Mock回归候选全过／父版3项未拒绝，不等真实权重释放、恢复或异常回滚验收。
+
 2026-10-26接续：[MLflow 初始化的文件锁与异常范围](#mlflow-初始化的文件锁与异常范围)核#8393新f1dd14b：with管理句柄不缩小异常捕获；原三控制仍出现回调ImportError后无锁重试。trainer初始化另无同锁，不把局部串行化当整个启动流程互斥。
 
 2026-10-26接续：[外部 KV 缓存的权重命名空间](#外部-kv-缓存的权重命名空间)核#8323：缓存失效不必等于删除存储，但版本与真实权重必须对应；两个原helper的CPU检查不认证引擎命中、并发门或淘汰效果。
@@ -10,6 +12,33 @@
 
 > 2026-06-15 | 源码: verl/single_controller/ + verl/workers/engine_workers.py + verl/checkpoint_engine/ + verl/workers/rollout/
 > 核心: WorkerGroup=Ray actor管理+Dispatch路由 → RolloutMode(HYBRID/COLOCATED/STANDALONE) → Sleep/Wake GPU内存切换 → 3种Weight Sync后端(naive/NCCL/NIXL)
+
+## 分层导出与 base 重同步的拒绝边界
+
+**配置组合被拒绝，不等于接口已经支持它，也不等于拒绝前没有调用副作用。** 2026-10-30核HollowMan6已有OPEN／非draft [#8032](https://github.com/verl-project/verl/pull/8032)，固定head `b7fca1bf72c9ef488595af2ade0b28f95ad00e5e`。该提交只给naive更新路径加guard及原CPU回归，直接父版为 `c0b1c7c3d9b4031fa1d8082d3afddfee43212164`；整个PR还含睡眠策略等其他改动，不把单提交结果扩大到全部13文件。新[bot反馈](https://github.com/verl-project/verl/pull/8032#pullrequestreview-5704512750)已有作者后续实现，本项目不另修复。
+
+[原update_weights](https://github.com/verl-project/verl/blob/b7fca1bf72c9ef488595af2ade0b28f95ad00e5e/verl/workers/engine_workers.py)的拒绝条件是：实际mode为naive、未merge且有peft_config、启用layered_summon，并且 `resync_base=True` 或worker尚未完成base sync。因此不仅“已有base且每次重同步”被拒绝；首次需要base的分层导出，即使resync_base=False也会被拒绝。已预加载base、resync=False的adapter-only路径仍可走。非naive路径在这段逻辑之前交checkpoint engine，不在这八项回归范围。
+
+导出请求顺序和传输顺序不同：方法先用engine参数 `base_sync_done=True` 请求adapter；需要base时再以False请求base，随后**先await base更新，再await adapter更新**。worker的同名状态字段不决定第一个请求的参数。返回对象可能惰性产生张量，不能以拿到iterator就宣称已经物化完整adapter或base。[FSDP消费点](https://github.com/verl-project/verl/blob/b7fca1bf72c9ef488595af2ade0b28f95ad00e5e/verl/workers/engine/fsdp/transformer_impl.py)把layered_summon／base_sync_done交给collect_lora_params；本轮未执行该引擎，只验worker的guard位置与调用契约。
+
+### 原回归与拒绝前的调用
+
+Python3.12.13／pytest8.4.2，原[测试文件](https://github.com/verl-project/verl/blob/b7fca1bf72c9ef488595af2ade0b28f95ad00e5e/tests/workers/test_layered_lora_base_sync_on_cpu.py)不改源码／断言，真实pytest运行。fixture本来就AST抽取完整原async方法、移除基础设施decorator，以MagicMock／AsyncMock代替引擎、rollout、Torch和设备接口；这不是真实worker初始化或FSDP导出。
+
+| 原测试范围 | 直接父版 | guard候选 |
+|---|---|---|
+| 三组需要base且layered=True：状态／resync为True/True、False/True、False/False | 三项均DID NOT RAISE | 三项均按预期ValueError；只请求adapter、不发更新，原worker状态保留 |
+| 已预载adapter-only、非分层resync、非分层首次base、merged、非LoRA五例 | 5通过 | 5通过；需要base的两例先base后adapter，global_steps=7透传 |
+
+原fixture关闭free_cache_engine，不能用三项拒绝通过证明拒绝前没有resume。唯一额外控制沿用同一fixture，仅打开free_cache_engine：候选在ValueError前已经调用 `set_expandable_segments(False)`、await `resume(tags=["weights"])`、请求adapter并设置rollout.sleep_level=2；无base导出／权重更新，未走到末尾的kv_cache恢复与 `set_expandable_segments(True)`。这里观察的是**Mock调用与局部字段**，不是实际内存状态或已复现资源泄漏；invalid配置报错也不是异常后继续训练的恢复协议。
+
+[脚本](../../experiments/verl-layered-base-sync/verify.py)以独立临时Git index复制原输入，原source index和工作树不变；同一head测试分别对父版／head原worker运行，禁止隐式fetch和pytest插件自动加载。三份输入hash、原生退出码与失败原因、额外控制入[结果](../../experiments/verl-layered-base-sync/result.json)，临时路径／耗时归一化后复跑一致：
+
+```bash
+python3.12 -B experiments/verl-layered-base-sync/verify.py /path/to/verl-git
+```
+
+本题确认的是已有guard及调用顺序，不构成resync_base节约内存、真实权重恢复、sleep／wake正确性或吞吐验收。PR正文对vLLM丢弃base、SGLang保留CPU备份的区分仍是作者特性说明，本轮不把它改写成跨后端实测。未执行另两份SGLang／MTP原测试、安装引擎或新排M5算力；不改作者方案／依赖或接管M5专项。后续仅在实质接口／反馈变化时再核，社区写入和既有PR-head推送仍逐项待用户授权。
 
 ## MLflow 初始化的文件锁与异常范围
 

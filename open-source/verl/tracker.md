@@ -47,6 +47,8 @@
 
 2026-10-30接[LoRA+兼容条件](#lora-优化器接线的已有候选)：#7484已有作者与新bot反馈；声明Bridge0.6.2原源码缺opt-in helper，默认比值绕过。八原函数调用控制只验分支／透传，enabled日志非参数组或训练验收，不另实现／发布。
 
+2026-10-30核[分层base同步guard](#分层-base-重同步的已有拒绝条件)：#8032已有作者，新8项原Mock回归候选全过／父版3项未拒绝；guard前仍可有resume等调用，不等全流程回滚／真实权重或内存验收，不另实现／排算力。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -66,6 +68,12 @@
 2026-10-26只读[#8323](https://github.com/verl-project/verl/pull/8323)新head1787d6a2／base祖先174888fc，OPEN／非draft／未合并，ahead2／behind0，20文件872增21删。旧4e93已分叉，整仓比较ahead23／behind2包含多项main变化，不记成本PR新增。作者新[sleep解释](https://github.com/verl-project/verl/pull/8323#issuecomment-6416461545)及维护者引擎侧修复问题不当接口批准或本项目认领。
 
 [原Worker专题](../../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#新版的显式清理与-sleep-路径)对照固定vLLM0.32.0 commit5df63a72：salt显式clear传False，abort适配mode=abort后单独清local；sleep(level≥1)仍经_finish_pause／_reset_caches默认True请求connector reset。实际删除由connector.reset_cache实现决定，不应写成所有store清空或必然完整保留。已有原生release_kv_cache_memory也走默认reset，不能仅凭方法名替换。四完整源码AST／compile及scheduler方法只读，无pause／sleep／connector／模型执行，旧helper结果与作者0.29 GPU报告均不迁作新组合验收；只修原M5条件参考，无新队列／补丁／专项或社区写入。
+
+## 分层 base 重同步的已有拒绝条件
+
+2026-10-30接HollowMan6的OPEN／非draft [#8032](https://github.com/verl-project/verl/pull/8032)，headb7fca1bf，guard直接父版c0b1c7c3；PR整体13文件229增22删不等guard单提交范围。[新bot反馈](https://github.com/verl-project/verl/pull/8032#pullrequestreview-5704512750)已有作者后续，不另修复。naive路径下分层导出只要需要base就拒绝，含resync=False的首次base；不是实现对该组合的支持。
+
+[原生命周期专题](../../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#分层导出与-base-重同步的拒绝边界)与[原回归结果](../../experiments/verl-layered-base-sync/result.json)保存原生pytest：候选8项通过，父版3项DID NOT RAISE／5通过。测试原AST方法／Mock后端，非真实FSDP导出。唯一额外控制只启用fixture的free_cache：拒绝前已有weights resume与局部配置调用，不走末尾恢复；不是设备内存／资源泄漏或异常恢复实测。无SGLang／MTP原套件、sleep／wake、模型或性能验收，不改M5专项／环境／新排算力，不写补丁／社区或既有PR-head；后续实质反馈再核，上游动作仍逐项待用户明确同意。
 
 ## LoRA+ 优化器接线的已有候选
 
