@@ -1,0 +1,316 @@
+{
+  "verl_revision": "a08ea02a784d7d4982b1d81df36d188a476192bb",
+  "tq_revision": "5c15a2c8d65f05a52514830da6de4c5ec4336c1c",
+  "tq_blob": "d14e67c3c2f38bd4e829b78bac354d20924a454a",
+  "source_sha256": {
+    "tq_module": "718abb5025605cca52cca5f891aca5232e42298097ef473d1c75b13aaa79c2fd",
+    "verl_tensordict_utils": "4dc4c321a51e256232751ddb5cb2a2be129076e7f02f36a685fcad6d0d98f5f1"
+  },
+  "environment": {
+    "python": "3.12.13",
+    "torch": "2.9.1",
+    "device": "cpu",
+    "threads": 1
+  },
+  "cases": {
+    "equal": {
+      "lengths": [
+        7,
+        7,
+        7
+      ],
+      "components": 4,
+      "before_retag": {
+        "ragged_idx": 1,
+        "values_shape": [
+          12,
+          7
+        ],
+        "offsets": [
+          0,
+          4,
+          8,
+          12
+        ],
+        "public_shape": [
+          3,
+          "j",
+          7
+        ]
+      },
+      "original_layout_roundtrip": true,
+      "after_retag": {
+        "ragged_idx": 2,
+        "values_shape": [
+          12,
+          7
+        ],
+        "offsets": [
+          0,
+          4,
+          8,
+          12
+        ],
+        "public_shape": [
+          3,
+          "j",
+          7
+        ]
+      },
+      "retag_outcome": {
+        "status": "RuntimeError",
+        "message": "Expected cond to be True, but got False. (Could this error message be improved? If so, please report an enhancement request to PyTorch.)"
+      },
+      "explicit_reference_layout": {
+        "ragged_idx": 2,
+        "values_shape": [
+          4,
+          21
+        ],
+        "offsets": [
+          0,
+          7,
+          14,
+          21
+        ],
+        "public_shape": [
+          3,
+          4,
+          "j"
+        ]
+      },
+      "explicit_reference_roundtrip": true
+    },
+    "unequal": {
+      "lengths": [
+        5,
+        7,
+        9
+      ],
+      "components": 4,
+      "before_retag": {
+        "ragged_idx": 2,
+        "values_shape": [
+          4,
+          21
+        ],
+        "offsets": [
+          0,
+          5,
+          12,
+          21
+        ],
+        "public_shape": [
+          3,
+          4,
+          "j"
+        ]
+      },
+      "original_layout_roundtrip": true,
+      "after_retag": {
+        "ragged_idx": 2,
+        "values_shape": [
+          4,
+          21
+        ],
+        "offsets": [
+          0,
+          5,
+          12,
+          21
+        ],
+        "public_shape": [
+          3,
+          4,
+          "j"
+        ]
+      },
+      "retag_outcome": {
+        "status": "correct",
+        "sample_shapes": [
+          [
+            4,
+            5
+          ],
+          [
+            4,
+            7
+          ],
+          [
+            4,
+            9
+          ]
+        ],
+        "exact_samples_match": true
+      },
+      "explicit_reference_layout": {
+        "ragged_idx": 2,
+        "values_shape": [
+          4,
+          21
+        ],
+        "offsets": [
+          0,
+          5,
+          12,
+          21
+        ],
+        "public_shape": [
+          3,
+          4,
+          "j"
+        ]
+      },
+      "explicit_reference_roundtrip": true
+    },
+    "single": {
+      "lengths": [
+        7
+      ],
+      "components": 4,
+      "before_retag": {
+        "ragged_idx": 1,
+        "values_shape": [
+          4,
+          7
+        ],
+        "offsets": [
+          0,
+          4
+        ],
+        "public_shape": [
+          1,
+          "j",
+          7
+        ]
+      },
+      "original_layout_roundtrip": true,
+      "after_retag": {
+        "ragged_idx": 2,
+        "values_shape": [
+          4,
+          7
+        ],
+        "offsets": [
+          0,
+          4
+        ],
+        "public_shape": [
+          1,
+          "j",
+          7
+        ]
+      },
+      "retag_outcome": {
+        "status": "RuntimeError",
+        "message": "split_with_sizes expects split_sizes to sum exactly to 7 (input tensor's size at dimension 1), but got split_sizes=[4]"
+      },
+      "explicit_reference_layout": {
+        "ragged_idx": 2,
+        "values_shape": [
+          4,
+          7
+        ],
+        "offsets": [
+          0,
+          7
+        ],
+        "public_shape": [
+          1,
+          4,
+          "j"
+        ]
+      },
+      "explicit_reference_roundtrip": true
+    },
+    "square": {
+      "lengths": [
+        8,
+        8
+      ],
+      "components": 4,
+      "before_retag": {
+        "ragged_idx": 1,
+        "values_shape": [
+          8,
+          8
+        ],
+        "offsets": [
+          0,
+          4,
+          8
+        ],
+        "public_shape": [
+          2,
+          "j",
+          8
+        ]
+      },
+      "original_layout_roundtrip": true,
+      "after_retag": {
+        "ragged_idx": 2,
+        "values_shape": [
+          8,
+          8
+        ],
+        "offsets": [
+          0,
+          4,
+          8
+        ],
+        "public_shape": [
+          2,
+          "j",
+          8
+        ]
+      },
+      "retag_outcome": {
+        "status": "wrong_samples",
+        "sample_shapes": [
+          [
+            8,
+            4
+          ],
+          [
+            8,
+            4
+          ]
+        ],
+        "exact_samples_match": false
+      },
+      "explicit_reference_layout": {
+        "ragged_idx": 2,
+        "values_shape": [
+          4,
+          16
+        ],
+        "offsets": [
+          0,
+          8,
+          16
+        ],
+        "public_shape": [
+          2,
+          4,
+          "j"
+        ]
+      },
+      "explicit_reference_roundtrip": true
+    }
+  },
+  "scope": {
+    "tq_method": "original _pack_field_values pure tensor branch; no fallback mocks",
+    "verl_input": "plain dict adapter, not TensorDict",
+    "reference": "native explicit jagged_dim=2 construction, not candidate #7901",
+    "not_run": [
+      "TQ service",
+      "_merge_tensors_to_tensordict",
+      "pickle",
+      "microbatch/trainer",
+      "#7901 tests",
+      "community 63-case suite",
+      "GPU/NPU",
+      "training"
+    ]
+  }
+}

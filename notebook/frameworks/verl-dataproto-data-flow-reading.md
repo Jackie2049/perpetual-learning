@@ -1,11 +1,38 @@
 # verl DataProto 数据流架构源码阅读
 
+2026-10-30接续：[队列打包与位置张量的轴语义](#队列打包与位置张量的轴语义)复核#7899的新TQ写入反馈：原packing方法与原消费端retag的四个CPU控制出现两异常、一静默错样本；通用张量打包可自洽，仍不满足mRoPE序列轴契约。
+
 > 2026-06-15 | 源码: verl/utils/dp_rpc.py + verl/utils/tensor_dict.py + verl/trainer/ppo/ray_trainer.py
 > 历史概览：旧版DataProto的split/merge设计。下方6月结构保留当时的学习视角，不代表2026-10当前实现的完整复核，也不提供跨Worker零拷贝保证。
 
 2026-10-24补充：[图片字节与解码对象的生命周期](#图片字节与解码对象的生命周期)。原方法与真实Pillow对照确认dataset侧清理边界；原“数据开销完全可忽略”概括撤回，张量字节算例也已纠正，不能覆盖raw_prompt中的图片或序列化峰值。
 
 2026-10-25补充：[多模态特殊 token 检查的 CPU 开销](#多模态特殊-token-检查的-cpu-开销)区分原检查方法、完整processor与训练吞吐；纯文本走多模态processor也可能付出标记计数成本，但不是所有纯文本入口都走此路径。2026-10-26接续[回移候选的绑定条件](#回移候选的绑定条件与评审前提)，不重跑旧微基准。
+
+## 队列打包与位置张量的轴语义
+
+**改ragged轴标签不等于重排values和offsets；不报错也不等于样本边界正确。** [#7899](https://github.com/verl-project/verl/issues/7899)已有iceflysnow的OPEN／非draft [#7901](https://github.com/verl-project/verl/pull/7901)，2026-10-30核head2310b690。10-29的[新社区反馈](https://github.com/verl-project/verl/issues/7899#issuecomment-6504217618)补充TransferQueue自身也会由逐样本张量构造jagged batch，因此不能把只修verl padding写入点的#8413当作所有写入来源已闭环。此边界已有作者及社区方案，不另认领修复。
+
+固定[TransferQueue 5c15a2c8的`_pack_field_values`](https://github.com/Ascend/TransferQueue/blob/5c15a2c8d65f05a52514830da6de4c5ec4336c1c/transfer_queue/storage/managers/simple_storage_manager.py)，纯Tensor列表分支直接调用`as_nested_tensor(..., layout=torch.jagged)`；[另一merge方法](https://github.com/Ascend/TransferQueue/blob/5c15a2c8d65f05a52514830da6de4c5ec4336c1c/transfer_queue/storage/managers/base.py)也有同类构造，但本机只读它、不执行。固定[verl main a08ea02a](https://github.com/verl-project/verl/blob/a08ea02a784d7d4982b1d81df36d188a476192bb/verl/utils/tensordict_utils.py)仍对3D nested position_ids直接设`_ragged_idx=2`；同版本padding已改显式token轴构造，未消除队列这条独立生产路径。
+
+[CPU复现](../../experiments/verl-tq-position-layout/verify.py)AST提取完整原packing及retag方法，后者接plain dict数据适配，非真实TensorDict；不构造队列或替换方法体。Python3.12.13／torch2.9.1、单线程、C=4，样本含不同的整数内容而非全零；[结果与两原文件hash](../../experiments/verl-tq-position-layout/result.json)如下：
+
+| 样本长度 | 原packing布局 values／offsets／ragged轴 | 原retag后unbind | 显式序列轴构造参考 |
+| --- | --- | --- | --- |
+| [7,7,7] | (12,7)／[0,4,8,12]／1 | RuntimeError，本机为Expected cond错误 | (4,21)／[0,7,14,21]／2，逐样本精确相等 |
+| [5,7,9] | (4,21)／[0,5,12,21]／2 | 正确 | 同布局，精确相等 |
+| [7] | (4,7)／[0,4]／1 | split_with_sizes RuntimeError | (4,7)／[0,7]／2，精确相等 |
+| [8,8] | (8,8)／[0,4,8]／1 | **无异常，但返回两个(8,4)，并非原(4,8)样本** | (4,16)／[0,8,16]／2，精确相等 |
+
+所有原packing输出在retag**之前**都能unbind回原样本；它们是通用jagged表示的自洽结果，不应把“不是mRoPE要求的序列轴”直接叫作Torch内存损坏。原retag既没有移动数据也没有更新offsets，公开shape还保留原来的ragged位置。方形例中`offsets[-1]==values.shape[1]`恰好成立，仍切错语义轴；对这里的紧凑布局，只看长度和轴尺寸一致仍不足以认证样本身份。必须将序列长度／组件数等语义契约与表示一起核对。
+
+参考用原samples沿末轴cat、按已知长度构造offsets，再调用原生`nested_tensor_from_jagged(..., jagged_dim=2)`；四组均经同一原retag后精确往返。它只说明**显式构造契约**，不是我方修复补丁、#7901验收或生产输入的自动推断器。[10-27社区替代方案](https://github.com/verl-project/verl/issues/7899#issuecomment-6435660247)以input_ids offsets约束布局，#7901则另有形状签名／方形判断；两者的完整正确性不由本轮四小输入裁决。社区63项／Qwen3.5 e2e、原报告35B训练与#7901测试均不计本机通过。
+
+```bash
+python3.12 -B experiments/verl-tq-position-layout/verify.py /path/to/verl-git /path/to/simple_storage_manager.py
+```
+
+第二输入为上述固定TQ提交的完整原文件，脚本强校验Git blob `d14e67c3c2f38bd4e829b78bac354d20924a454a`；verl对象须已缓存，运行不联网。只有纯Tensor分支，未为NonTensorStack fallback造替身；异常文字随torch版本不同，不能要求所有版本都逐字报split_with_sizes。未导入TQ／verl全包、构造服务、pickle、microbatch、trainer、模型或设备；无GPU／性能／训练验收。本项收束，后续只跟实质版本／反馈，不替作者改方案或新增M5任务；所有上游及既有PR-head写入仍逐项待用户授权。
 
 ## 多模态特殊 token 检查的 CPU 开销
 

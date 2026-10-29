@@ -41,6 +41,8 @@
 
 2026-10-30核[OTB非负截断](#otb-非负截断的已有候选)：#8444已有作者且明示精度限制；原两OTB参数体候选过、同源logits仍有0与FP64参考0.818的偏离，指标dict适配非DataProto验收，不另实现／发布。
 
+2026-10-30接[位置张量队列写入](#位置张量队列写入的已有反馈)：#7899新TQ反馈已有#7901及社区方案；原packing接原retag的四CPU控制含两异常／一静默错样本，非TQ服务或候选验收，不另修复／发布。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -60,6 +62,12 @@
 2026-10-26只读[#8323](https://github.com/verl-project/verl/pull/8323)新head1787d6a2／base祖先174888fc，OPEN／非draft／未合并，ahead2／behind0，20文件872增21删。旧4e93已分叉，整仓比较ahead23／behind2包含多项main变化，不记成本PR新增。作者新[sleep解释](https://github.com/verl-project/verl/pull/8323#issuecomment-6416461545)及维护者引擎侧修复问题不当接口批准或本项目认领。
 
 [原Worker专题](../../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#新版的显式清理与-sleep-路径)对照固定vLLM0.32.0 commit5df63a72：salt显式clear传False，abort适配mode=abort后单独清local；sleep(level≥1)仍经_finish_pause／_reset_caches默认True请求connector reset。实际删除由connector.reset_cache实现决定，不应写成所有store清空或必然完整保留。已有原生release_kv_cache_memory也走默认reset，不能仅凭方法名替换。四完整源码AST／compile及scheduler方法只读，无pause／sleep／connector／模型执行，旧helper结果与作者0.29 GPU报告均不迁作新组合验收；只修原M5条件参考，无新队列／补丁／专项或社区写入。
+
+## 位置张量队列写入的已有反馈
+
+2026-10-30只读核[#7899](https://github.com/verl-project/verl/issues/7899)及10-29[新TQ反馈](https://github.com/verl-project/verl/issues/7899#issuecomment-6504217618)，已有iceflysnow的OPEN／非draft [#7901](https://github.com/verl-project/verl/pull/7901)（head2310b690）及yuan-qi5以input_ids offsets判断的另一社区方案，不另认领。#8413只修verl padding写入，固定main a08ea02a消费端retag和TQ 5c15a2c8 packing仍是独立范围。
+
+[原数据流专题](../../notebook/frameworks/verl-dataproto-data-flow-reading.md#队列打包与位置张量的轴语义)与[四组CPU结果](../../experiments/verl-tq-position-layout/result.json)核原TQ纯Tensor packing／原verl retag（dict适配）：等长和singleton报错，方形无异常却切成错误(8,4)样本，变长正确。原packing未retag前均能精确往返；显式token轴原生构造四组也往返，不计为自动修复或#7901／社区63项／模型e2e验收。无真实TQ／TensorDict／pickle／trainer或算力执行，不扩矩阵、补作者方案、新排M5任务或发布反馈；社区和既有PR-head所有写入仍待用户逐项明确同意。
 
 ## OTB 非负截断的已有候选
 
