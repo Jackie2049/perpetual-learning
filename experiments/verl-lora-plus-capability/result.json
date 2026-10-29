@@ -1,0 +1,164 @@
+{
+  "base": "a08ea02a784d7d4982b1d81df36d188a476192bb",
+  "head": "cf96a3a64978e6bb16f19ed6d55602d96a34fe14",
+  "bridge_v0_6_2": "c0e164ed2aedac4ad1c877780e2564a19d5d54ec",
+  "python": "3.12.14",
+  "source_sha256": {
+    "a08ea02a784d7d4982b1d81df36d188a476192bb:verl/utils/megatron/optimizer.py": "c831c36b8686f46e8460dc4d76984259cb6edb99318a8444108bf00705d471ef",
+    "cf96a3a64978e6bb16f19ed6d55602d96a34fe14:verl/utils/megatron/optimizer.py": "0fe296861eaeefca8dbd448616118659c3ce5f4adf135febb4bb9f622d668006",
+    "cf96a3a64978e6bb16f19ed6d55602d96a34fe14:verl/workers/engine/megatron/transformer_impl.py": "5ef353b13cf60094324ad8f3778800e23e20552793efa1cc85e2a8f783b9d6d9",
+    "cf96a3a64978e6bb16f19ed6d55602d96a34fe14:pyproject.toml": "d5e5a865dcf641a053148500312442f1405fc5b21d85ecd79905dcb181d2d1ba",
+    "cf96a3a64978e6bb16f19ed6d55602d96a34fe14:verl/trainer/config/model/hf_model.yaml": "0dd3e6e79fcbdacfc385d93779d4b366b046f57a00f97b02ae2eb6521d81e98d",
+    "c0e164ed2aedac4ad1c877780e2564a19d5d54ec:src/megatron/bridge/peft/lora.py": "3085edc165526c5c54f46f39a57dca2717beaaf52a4b82f757a1e7a3caa6cdac"
+  },
+  "bridge_helper_absent_in_fixed_source": true,
+  "cases": {
+    "base_default": {
+      "ratio": null,
+      "helper_available_fixture": false,
+      "legacy_native_signature_fixture": true,
+      "outcome": "returned_optimizer_marker",
+      "events": [
+        {
+          "native_keys": [],
+          "same_config": true,
+          "same_model": true,
+          "same_overrides": false
+        }
+      ]
+    },
+    "head_default": {
+      "ratio": null,
+      "helper_available_fixture": false,
+      "legacy_native_signature_fixture": true,
+      "outcome": "returned_optimizer_marker",
+      "events": [
+        {
+          "native_keys": [],
+          "same_config": true,
+          "same_model": true,
+          "same_overrides": false
+        }
+      ]
+    },
+    "head_zero": {
+      "ratio": 0,
+      "helper_available_fixture": false,
+      "legacy_native_signature_fixture": true,
+      "outcome": "returned_optimizer_marker",
+      "events": [
+        {
+          "native_keys": [],
+          "same_config": true,
+          "same_model": true,
+          "same_overrides": false
+        }
+      ]
+    },
+    "head_opt_in_missing_helper": {
+      "ratio": 16,
+      "helper_available_fixture": false,
+      "legacy_native_signature_fixture": false,
+      "outcome": "ImportError",
+      "events": [
+        {
+          "import": "megatron.bridge.peft.lora",
+          "fromlist": [
+            "get_lora_plus_config_overrides"
+          ]
+        }
+      ]
+    },
+    "head_opt_in_forwarding": {
+      "ratio": 16,
+      "helper_available_fixture": true,
+      "legacy_native_signature_fixture": false,
+      "outcome": "returned_optimizer_marker",
+      "events": [
+        {
+          "import": "megatron.bridge.peft.lora",
+          "fromlist": [
+            "get_lora_plus_config_overrides"
+          ]
+        },
+        {
+          "helper_ratio": 16,
+          "same_config": true
+        },
+        {
+          "log": "LoRA+ enabled: lora_plus_ratio=16.0 (linear_in/A max_lr=0.001, linear_out/B max_lr=0.016)"
+        },
+        {
+          "native_keys": [
+            "config_overrides"
+          ],
+          "same_config": true,
+          "same_model": true,
+          "same_overrides": true
+        }
+      ]
+    },
+    "head_opt_in_legacy_native": {
+      "ratio": 16,
+      "helper_available_fixture": true,
+      "legacy_native_signature_fixture": true,
+      "outcome": "TypeError",
+      "events": [
+        {
+          "import": "megatron.bridge.peft.lora",
+          "fromlist": [
+            "get_lora_plus_config_overrides"
+          ]
+        },
+        {
+          "helper_ratio": 16,
+          "same_config": true
+        },
+        {
+          "log": "LoRA+ enabled: lora_plus_ratio=16.0 (linear_in/A max_lr=0.001, linear_out/B max_lr=0.016)"
+        }
+      ]
+    },
+    "engine_default": {
+      "config_input": {},
+      "events": [
+        {
+          "config_kwargs": {
+            "use_distributed_optimizer": true,
+            "fp16": false,
+            "bf16": true
+          }
+        },
+        {
+          "forwarded_ratio": 1,
+          "ratio_type": "float"
+        },
+        {
+          "hook_optimizer": true
+        }
+      ]
+    },
+    "engine_string_ratio": {
+      "config_input": {
+        "lora_plus_ratio": "16"
+      },
+      "events": [
+        {
+          "config_kwargs": {
+            "use_distributed_optimizer": true,
+            "fp16": false,
+            "bf16": true
+          }
+        },
+        {
+          "forwarded_ratio": 16,
+          "ratio_type": "float"
+        },
+        {
+          "hook_optimizer": true
+        }
+      ]
+    }
+  },
+  "scope": "Original wrapper/method call boundaries with explicit doubles; not actual Bridge import, native optimizer, parameter groups, LR schedule, model, training or device validation"
+}

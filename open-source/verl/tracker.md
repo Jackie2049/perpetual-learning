@@ -45,6 +45,8 @@
 
 2026-10-30补[镜像pin与wheel分发](#镜像依赖-pin-的已有候选)：#8446已有作者；原生uv解析确认旧pin冲突，新pin在2.39目标可解、2.28的binary-only条件缺llguidance wheel。两pin解析非完整镜像／ABI验收，不另实现或改M5环境。
 
+2026-10-30接[LoRA+兼容条件](#lora-优化器接线的已有候选)：#7484已有作者与新bot反馈；声明Bridge0.6.2原源码缺opt-in helper，默认比值绕过。八原函数调用控制只验分支／透传，enabled日志非参数组或训练验收，不另实现／发布。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -64,6 +66,12 @@
 2026-10-26只读[#8323](https://github.com/verl-project/verl/pull/8323)新head1787d6a2／base祖先174888fc，OPEN／非draft／未合并，ahead2／behind0，20文件872增21删。旧4e93已分叉，整仓比较ahead23／behind2包含多项main变化，不记成本PR新增。作者新[sleep解释](https://github.com/verl-project/verl/pull/8323#issuecomment-6416461545)及维护者引擎侧修复问题不当接口批准或本项目认领。
 
 [原Worker专题](../../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#新版的显式清理与-sleep-路径)对照固定vLLM0.32.0 commit5df63a72：salt显式clear传False，abort适配mode=abort后单独清local；sleep(level≥1)仍经_finish_pause／_reset_caches默认True请求connector reset。实际删除由connector.reset_cache实现决定，不应写成所有store清空或必然完整保留。已有原生release_kv_cache_memory也走默认reset，不能仅凭方法名替换。四完整源码AST／compile及scheduler方法只读，无pause／sleep／connector／模型执行，旧helper结果与作者0.29 GPU报告均不迁作新组合验收；只修原M5条件参考，无新队列／补丁／专项或社区写入。
+
+## LoRA+ 优化器接线的已有候选
+
+2026-10-30接HollowMan6的OPEN／非draft [#7484](https://github.com/verl-project/verl/pull/7484)，headcf96a3a6、实际祖先a08ea02a，ahead11／behind0、15文件351增15删。最新[bot审查](https://github.com/verl-project/verl/pull/7484#pullrequestreview-5704644066)已限定默认兼容而非非默认可用；不是我方新发现，也不是人工批准。独立核官方Bridge v0.6.2标签c0e164ed的原lora.py确无LoRA+ helper，候选pyproject仍pin0.6.2；[Bridge #5589](https://github.com/NVIDIA-NeMo/Megatron-Bridge/pull/5589)已合并不等该标签含接口。
+
+[原架构专题](../../notebook/frameworks/verl-architecture.md#lora-默认兼容与启用条件)与[八项事件](../../experiments/verl-lora-plus-capability/result.json)确认原optimizer／engine方法的默认／0绕过、16缺helper／对象透传、反事实旧接收器拒绝及engine float转换。比值0不是冻结B，enabled日志发生在Core调用前。helper／Core／config／hook为记录替身，无真实参数组、LR schedule、原adapter-export测试、EP通信／模型或训练验收；仅接线课题，不接管M5性能专项／环境或新排算力。不修改候选、依赖pin或发布反馈，社区写入及既有PR-head推送仍逐项待用户明确同意。
 
 ## 镜像依赖 pin 的已有候选
 

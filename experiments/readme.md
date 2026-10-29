@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-lora-plus-capability/verify.py](verl-lora-plus-capability/verify.py) | #7484原optimizer／engine方法的八项调用控制，[结果](verl-lora-plus-capability/result.json)分开默认绕过／opt-in缺helper／透传与日志；依赖为显式记录替身，无真实参数组或训练验收 | [LoRA+兼容条件](../notebook/frameworks/verl-architecture.md#lora-默认兼容与启用条件) |
 | [verl-docker-transformers-resolution/verify.py](verl-docker-transformers-resolution/verify.py) | #8446原Docker双pin的三条件原生uv解析，[结果](verl-docker-transformers-resolution/result.json)分开旧版本冲突与2.28缺wheel／2.39成功；禁源码构建，无包安装／完整镜像或ABI验收 | [镜像版本与平台分发](../notebook/frameworks/verl-architecture.md#镜像版本约束与平台分发) |
 | [unirl-agentic-group-semantics/verify.py](unirl-agentic-group-semantics/verify.py) | #635前提的四原归一化CPU控制及零优势clip surrogate梯度，[结果](unirl-agentic-group-semantics/result.json)区分std1回退与方差；仅函数控制，非RFC诊断器／真实频率或训练 | [Agentic奖励组统计](../notebook/frameworks/unirl-survey.md#agentic-奖励组的统计边界) |
 | [verl-tq-position-layout/verify.py](verl-tq-position-layout/verify.py) | #7899新TQ反馈的原packing＋原retag四CPU控制，[结果](verl-tq-position-layout/result.json)含等长／单例异常及方形静默错样本；dict适配与显式构造参考，非队列服务／#7901或训练验收 | [队列与位置轴语义](../notebook/frameworks/verl-dataproto-data-flow-reading.md#队列打包与位置张量的轴语义) |

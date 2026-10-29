@@ -622,6 +622,36 @@ RecordingOffloadHandler用布尔状态及事件清单约束“commit_backward先
 
 复现[脚本](../../experiments/verl-offload-commit/verify.py)及[原始结果](../../experiments/verl-offload-commit/results.json)随仓库保存，Python3.12+和torch环境下从项目根执行 `python3.12 -B experiments/verl-offload-commit/verify.py /path/to/verl-git`，需已有上述固定Git对象，不自动联网获取。命令与hash另留[当日日志](../../diary/2026-10-25.md)。当前结论是已有候选覆盖这条CPU图依赖路径，不宣称原27B训练已修复；真机条件留[M5参考入口](../../experiments/handoff-m5.md#verl-激活卸载重载顺序参考)，不自动排训练、下载权重或将CPU通过当硬件验收。任何上游回复／PR／PR-head推送仍逐项待用户明确同意。
 
+## LoRA+ 默认兼容与启用条件
+
+**默认配置能沿旧接口运行，不代表新功能在声明依赖中已经可用。** 2026-10-30接HollowMan6已有OPEN／非draft [#7484](https://github.com/verl-project/verl/pull/7484)，固定head `cf96a3a64978e6bb16f19ed6d55602d96a34fe14`，实际祖先／API目标均 `a08ea02a784d7d4982b1d81df36d188a476192bb`，ahead11／behind0。本节只核LoRA+优化器接线，不验收该PR的shared-outer导出、EP同步或vLLM布局。最新[机器人反馈](https://github.com/verl-project/verl/pull/7484#pullrequestreview-5704644066)已将默认兼容与opt-in缺helper分开，不把复核记成新发现或人工批准。
+
+[原engine方法](https://github.com/verl-project/verl/blob/cf96a3a64978e6bb16f19ed6d55602d96a34fe14/verl/workers/engine/megatron/transformer_impl.py)从 `model.lora` 取比值，先 `float(...)`，默认1.0，再交[原optimizer包装器](https://github.com/verl-project/verl/blob/cf96a3a64978e6bb16f19ed6d55602d96a34fe14/verl/utils/megatron/optimizer.py)。包装器仅在比值为真且不等于1时导入 `get_lora_plus_config_overrides`；只有返回的overrides非None才向Core传 `config_overrides`。因此ratio=0走普通优化器路径，**不是将B组学习率设为0或冻结B**。
+
+候选[pyproject](https://github.com/verl-project/verl/blob/cf96a3a64978e6bb16f19ed6d55602d96a34fe14/pyproject.toml)仍声明 `megatron-bridge==0.6.2`，wheelhouse注释称其取自官方v0.6.2。官方标签固定到 `c0e164ed2aedac4ad1c877780e2564a19d5d54ec`，该[完整lora.py](https://github.com/NVIDIA-NeMo/Megatron-Bridge/blob/c0e164ed2aedac4ad1c877780e2564a19d5d54ec/src/megatron/bridge/peft/lora.py)没有该helper、星号导入或模块动态getattr。作者引用的[Bridge #5589](https://github.com/NVIDIA-NeMo/Megatron-Bridge/pull/5589)已合并，但“另一个提交已合并”不能替代对这个固定标签的能力核查；这里也不宣称某个未核release或wheelhouse实物已经包含helper。按标签源码，非默认LoRA+在调用Core前就缺失导出接口；默认绕过导入则不受这项缺失阻断。
+
+### 原函数的调用边界控制
+
+Python3.12.14，仅标准库：AST提取两版完整 `get_megatron_optimizer` 与head完整 `_build_optimizer`，只延后注解；不导入verl／Torch／Megatron。Bridge可用性、helper、Core优化器、配置构造和training hook均为明确的记录替身，八项结果如下：
+
+| 控制 | 观察 |
+|---|---|
+| base默认、head默认、head比值0 | 三项都不导入Bridge、不传新keyword，同样的config／model交给仅收旧签名的替身 |
+| head比值16，helper缺失替身 | ImportError，未调用Core替身；缺失条件另由官方标签源码确认 |
+| head比值16，helper及新keyword接收替身 | helper收到16.0及原config，返回的同一marker透传为config_overrides |
+| head比值16，helper存在但仅收旧签名的替身 | 先打印enabled日志，再TypeError；这是反事实接收器，不是对声明Core0.19.2能力的实测结论 |
+| engine缺省、字符串比值"16" | 两项分别传float1.0／16.0，记录hook收到返回的optimizer marker |
+
+这些控制确认分支和对象透传，**没有生成真实参数组或测量A/B的有效学习率**。打印的 `linear_out/B max_lr=0.016` 来自配置乘法，在Core接受请求之前出现；不能作为参数分组、LR schedule或step已生效的证据。Bridge模块整体导入也可能更早受其他环境依赖影响，本轮缺helper控制不是对完整环境异常顺序的验收。
+
+[复现脚本](../../experiments/verl-lora-plus-capability/verify.py)和[结果](../../experiments/verl-lora-plus-capability/result.json)保留六份完整输入SHA256、固定版本与八项事件。Git对象及上述官方标签lora.py须已缓存；脚本校验Bridge文件hash、禁止隐式fetch，两个新进程结果一致：
+
+```bash
+python3.12 -B experiments/verl-lora-plus-capability/verify.py /path/to/verl-git /path/to/bridge-v0.6.2-lora.py
+```
+
+不改作者实现或依赖pin，不把其他原adapter-export CPU测试算成本轮通过；无真实Bridge／Core安装、optimizer／训练、EP通信或设备任务。本题收束为版本与接线知识，不另排M5算力，也不干预其环境。社区回复、PR及既有PR-head推送仍逐项待用户明确同意；作者实质修订依赖契约后再核。
+
 ## 镜像版本约束与平台分发
 
 **修正版本约束、找到可用 wheel、完整镜像可运行，是三层不同的证据。** 2026-10-30核nataliekung已有OPEN／非draft [#8446](https://github.com/verl-project/verl/pull/8446)，固定head `f9fd7888400df03034482f2f68691046d32cb53d`、唯一父版 `a08ea02a784d7d4982b1d81df36d188a476192bb`；[原Dockerfile](https://github.com/verl-project/verl/blob/f9fd7888400df03034482f2f68691046d32cb53d/docker/Dockerfile.stable.vllm)只将Transformers从5.3.0改为5.5.3，vLLM仍0.24.0。作者已经给出解析报告，不另认领该修复。
