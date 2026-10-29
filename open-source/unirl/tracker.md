@@ -21,6 +21,8 @@
 
 2026-10-30核[奖励服务测试收集](#奖励服务测试收集的已有候选)：#632已有作者，八组原文件快照的原生collection核6个CLI节点与候选空收集退出5，非服务测试通过；不另实现／发布。
 
+2026-10-30接[Agentic奖励组RFC](#agentic-奖励组诊断的已有-rfc)：#635已有作者愿实现只读诊断；有限奖励／基线／训练行分开，四归一化与零surrogate梯度控制非发生频率或质量结论，不另实现／发布。
+
 **【大白话讲明白】**
 
 这张表区分尚有贡献空间、已有负责人、只覆盖部分需求和缺验证条件的问题。训练栈一致性修复（#523）已经交给 M5 单一推进，不是 M1 的待认领任务；其他线索也要读正文、评论及对应补丁，不能只看 assignee 是否为空。
@@ -33,6 +35,12 @@
 <!-- contribution-summary:end -->
 
 > 扫描时间 2026-10-22（GitHub 实时 API）。main 固定 `6fd82cba`。状态以当日核验为准，继续前重新核对关联 issue/PR。
+
+## Agentic 奖励组诊断的已有 RFC
+
+2026-10-30只读读取GBX-Max1220的OPEN [#635](https://github.com/Tencent-Hunyuan/UniRL/issues/635)，评论为空；作者愿实现opt-in聚合诊断，未提训练干预。不把新RFC当无人认领或已落地，也不重复其脚本／测试实现。
+
+[原UniRL专题](../../notebook/frameworks/unirl-survey.md#agentic-奖励组的统计边界)按固定5d1da78d区分failed NaN占位、服务坏返回抛错、overflow保留基线但可屏蔽训练行，以及多轮／DP补齐的train_rows口径。[原函数CPU结果](../../experiments/unirl-agentic-group-semantics/result.json)核N=0／1的std1是算法回退而非方差实测，四小组输出与零优势clip surrogate梯度；非Sample／完整trainer、实际发生率、optimizer或训练质量验收。分析口径建议留在原专题，不另造诊断器、采数据、排M5队列或发布反馈；所有上游及既有PR-head写入仍逐项待用户明确同意。
 
 ## 奖励服务测试收集的已有候选
 

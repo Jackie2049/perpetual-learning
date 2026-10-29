@@ -1,0 +1,79 @@
+{
+  "revision": "5d1da78d4d87593b41a4235a65e9ad9dc3f9b6f8",
+  "source_sha256": {
+    "unirl/types/advantages.py": "a1857dd05ae072a4687def748c20ea06429d3d9c8790bdf57543c79f104ca4d8",
+    "unirl/trainer/agentic.py": "ffac29144f1c3e568fe1346c9d30924247a5490fd8bc2544fb1b24066f61d525",
+    "unirl/algorithms/base.py": "3783201c6a7d18e9a7e82268b1761d1cdae883808e2fcca01c744e8e74421878",
+    "unirl/algorithms/grpo.py": "8d522e03451ad78efff18948f057da7aec868c03860ba90f56abdf295490e4ff"
+  },
+  "environment": {
+    "python": "3.12.13",
+    "torch": "2.9.1",
+    "device": "cpu",
+    "threads": 1
+  },
+  "normalization_controls": {
+    "no_finite": {
+      "rewards_null_is_nan_sentinel": [
+        null,
+        null
+      ],
+      "normalizer_mean": 0,
+      "normalizer_std": 1,
+      "advantages": [
+        0,
+        0
+      ]
+    },
+    "one_finite": {
+      "rewards_null_is_nan_sentinel": [
+        2,
+        null
+      ],
+      "normalizer_mean": 2,
+      "normalizer_std": 1,
+      "advantages": [
+        0,
+        0
+      ]
+    },
+    "equal_pair": {
+      "rewards_null_is_nan_sentinel": [
+        2,
+        2
+      ],
+      "normalizer_mean": 2,
+      "normalizer_std": 0,
+      "advantages": [
+        0,
+        0
+      ]
+    },
+    "different_pair_with_failure": {
+      "rewards_null_is_nan_sentinel": [
+        0,
+        2,
+        null
+      ],
+      "normalizer_mean": 1,
+      "normalizer_std": 1,
+      "advantages": [
+        -1,
+        1,
+        0
+      ]
+    }
+  },
+  "zero_advantage_clip_surrogate": {
+    "loss_per_token": [
+      0,
+      0
+    ],
+    "gradient_wrt_new_logp": [
+      0,
+      0
+    ],
+    "approx_kl_metric": 0.012500000186264515
+  },
+  "scope": "Original function controls only; no diagnostic implementation, real Sample, trainer, service, optimizer, rates or training quality"
+}

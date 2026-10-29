@@ -1,5 +1,7 @@
 # UniRL — 腾讯统一多模态 RL 框架调研
 
+2026-10-30接续：[Agentic 奖励组的统计边界](#agentic-奖励组的统计边界)核新RFC#635：有效奖励、基线参与与训练行是三个口径；原函数CPU控制不提供发生频率或学习效率证据，不另实现作者的诊断器。
+
 2026-10-30 接续：[奖励服务的测试收集与空结果](#奖励服务的测试收集与空结果)核已有#632：原文件快照的八组原生pytest collection区分6个误收集CLI节点、空收集退出5和缺路径退出4；排除误收集不是新增服务测试或训练验收。
 
 2026-10-30 接续：[SDE 索引的两层边界校验](#sde-索引的两层边界校验)核已有 #633／#634：窗口上界与采样日程长度检查互补，但负起点和运行时返回集合仍须分开判断；14组原模块CPU控制不当引擎或训练验收。
@@ -84,6 +86,42 @@
 - **硬件**：仅 NVIDIA GPU（Linux/CUDA 13），不涉及昇腾——和 910C/昇腾关注不重叠。
 - **价值**：作为**统一 AR + diffusion 多模态 RL** 框架，范围比 verl 广；外部 PR 合入友好度高。
 - **建议定位**：**技术掘金高优关注项**，偏「学习 + 潜在贡献」；因其硬件范围（NVIDIA only），不与 DeepInfer（Ascend 支持）在硬件上冲突，但与 verl（同为 RL 训练框架）可能有研究视角重叠。
+
+## Agentic 奖励组的统计边界
+
+**组内没有终局奖励差异，是诊断对象，不是已经证明的训练无效或可直接丢弃条件。** GBX-Max1220（Baixin Guo）新开[研究RFC #635](https://github.com/Tencent-Hunyuan/UniRL/issues/635)，2026-10-30核为OPEN、无评论。作者已有#621贡献，愿实现opt-in只读统计，先看有限奖励数、失败与组内方差，再研究其与held-out结果的关系；没有提出修改采样、奖励或优势。本项目只核源码前提，不另做同范围统计器或将RFC当已有实现。
+
+固定主线 `5d1da78d4d87593b41a4235a65e9ad9dc3f9b6f8`，[AgenticTrainer](https://github.com/Tencent-Hunyuan/UniRL/blob/5d1da78d4d87593b41a4235a65e9ad9dc3f9b6f8/unirl/trainer/agentic.py)的三个集合并不完全相同：
+
+| 轨迹／服务状态 | 评分与组基线 | 训练行 |
+| --- | --- | --- |
+| 无生成部分或terminal harness_status=failed | 不送评分，reward保留NaN占位，归一化忽略它 | 不进入 |
+| 有限reward、普通轨迹 | 参与本组mean／std | 每个generated part都可进入，即使终局优势为0 |
+| overflow且`mask_overflow_loss=True` | 仍评分且保留在本组基线 | 仅这里排除其梯度行；默认False不作此排除 |
+| 评分服务缺rewards、数量不匹配或返回非有限值 | **直接抛错**，不是当作一条“缺奖励轨迹”继续 | 本轮不走正常训练接续 |
+
+因此`failed`、有限reward计数、参与基线数和可训练轨迹数要分开；已有`agent/train_rows`还含多轮generated parts与DP补齐行，不是有效轨迹数。全组失败时归一化返回零，训练行为空的路径返回optimizer_updates=0；不能把这与“有有限reward但优势为零、仍送入stack”混为同一跳过机制。以上为原调用路径分析，未构造真实Sample、服务或stack。
+
+[原`finite_mean_std`](https://github.com/Tencent-Hunyuan/UniRL/blob/5d1da78d4d87593b41a4235a65e9ad9dc3f9b6f8/unirl/types/advantages.py)在N=0时返回mean0／std1，N=1返回该reward／std1；多样本才用总体std。因此**normalizer的std1回退不是观测到的方差1**。诊断若直接复用该std判断“零方差组”，会遗漏singleton的退化含义；无有限样本的方差也不应补成一次实测。
+
+[CPU函数控制](../../experiments/unirl-agentic-group-semantics/verify.py)使用完整原helper／`_group_advantages`与[clip surrogate](https://github.com/Tencent-Hunyuan/UniRL/blob/5d1da78d4d87593b41a4235a65e9ad9dc3f9b6f8/unirl/algorithms/base.py)，只延后注解并移除装饰器；组成员只是供len使用的占位，不冒充真实Sample。Python3.12.13／torch2.9.1／单线程CPU，[结果与四源文件hash](../../experiments/unirl-agentic-group-semantics/result.json)记录：
+
+| 一组reward（NaN为失败占位） | normalizer mean／std | 输出优势 |
+| --- | --- | --- |
+| [NaN,NaN] | 0／1 | [0,0] |
+| [2,NaN] | 2／1 | [0,0] |
+| [2,2] | 2／0 | [0,0] |
+| [0,2,NaN] | 1／1 | [−1,1,0] |
+
+这些采用可精确表示的奖励，不把四个小输入推广成任意FP32同分值的逐位全零保证。另以两个真实CPU logprob叶子接原`grpo_clip_loss`：优势均0时，sum loss与对new_logp梯度均0，但`approx_kl`指标约0.0125。所核[AR GRPO](https://github.com/Tencent-Hunyuan/UniRL/blob/5d1da78d4d87593b41a4235a65e9ad9dc3f9b6f8/unirl/algorithms/grpo.py)将该surrogate归约后backward，k3等放在metrics，不是另一个KL正则损失；源码没有按“优势全零”提前跳过replay／backward。不能用非零KL日志证明奖励信号，也不能用零surrogate梯度推断完整optimizer是否更新——本机未运行optimizer或trainer。
+
+分析上可先按N=0、N=1、N≥2同分、N≥2异分四互斥桶说明现象，再从中组合RFC所需比率，明确零方差的定义及分母。跨step聚合应保留组数／有限轨迹数，避免把不同规模step的比率无权平均；overflow屏蔽策略与generated-part／padding计数另列。频率与held-out结果的相关性仍可能受题目难度、失败机制和训练时序共同影响，不能由toy输入或同step相关性解释成干预收益。这些是基于调用路径的分析建议，未落地计数器、采集真实数据或改作者范围。
+
+```bash
+python3.12 -B experiments/unirl-agentic-group-semantics/verify.py /path/to/unirl-git
+```
+
+固定Git blob须已缓存，运行禁止隐式fetch；无GPU／NPU、服务、模型、原suite或训练频率／质量验收。本项到此收束，等待维护者反馈或作者实质实现再核；不扩控制矩阵、新排M5训练或对社区发布，任何上游／既有PR-head写入仍逐项待用户明确授权。
 
 ## AR 与 diffusion 的源码统一边界
 
