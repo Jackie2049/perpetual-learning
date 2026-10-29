@@ -11,6 +11,8 @@
 
 **【进展】** #523 的我方 fork PR 已获用户认可，测试与 e2e 正式指派 M5；M5 已闭环 L0（四项断言 + pristine 对照），L1 仍待 ≥8 卡及获准权重/存储，见[M5交接](../../experiments/handoff-m5.md)。#567 待匹配 H20；#470/#481/#484已有作者或验证条件。2026-10-25补[MPS已有实现与主线边界](#mps-共置的已有实现与当前边界)：#492已合并、#482被接替而关闭未合并；原配置四控制非接入、数值、吞吐或关停验收，不据正文设计或本地解析另认领功能。 同日补[SDE窗口已有修复](#sde-窗口调度的已有修复)：#489已合并，CPU序列只核计数／阈值坐标，四实际配方仍progressive，不另认领或排GPU任务。 2026-10-26核[Scheduler环境](#scheduler-环境兼容的已有候选)：#468两个原helper接独立dict核恢复，不是库加载／GPU验收；依赖已演进，条件补M5，不另实现。 另核[TempFlow后续范围](#tempflow-候选范围与计数类型)：#552移出WAN／SGLang Flash、严格int计数；仅局部if求值，不外推作者外部harness或旧GPU结果，不另实现。
 
+2026-10-30核[SDE索引边界候选](#sde-索引边界的已有候选)：#633／#634已有作者；14组原模块CPU对照区分右溢出拒绝、仍接受的负起点及声明长度检查的兼容收紧，不作整体正确性／训练验收，不另认领或排M5任务。
+
 2026-10-26另按[#621最终合并范围](#奖励加载的最终合并范围)修正旧记录：managed也延迟启动，实验VideoAlign增配置检查；九模块语法检查不算真实加载验收，不新增任务。
 
 2026-10-26接续[AR seed协作](#ar-种子的协作分工)：#507报告者已让JianhaoYu-AI接手逐请求部分，engine副本偏移另议，不再记报告者正在独自实现整项；八相关源码同旧main，不重复CPU或认领另一部分。
@@ -29,6 +31,12 @@
 <!-- contribution-summary:end -->
 
 > 扫描时间 2026-10-22（GitHub 实时 API）。main 固定 `6fd82cba`。状态以当日核验为准，继续前重新核对关联 issue/PR。
+
+## SDE 索引边界的已有候选
+
+2026-10-30只读核294962silent的OPEN／非draft [#633](https://github.com/Tencent-Hunyuan/UniRL/pull/633)（d31017ae）和[#634](https://github.com/Tencent-Hunyuan/UniRL/pull/634)（523d245e），均未合并，共同祖先／API base=8cfbac177；main5d1da78d两相关文件同祖先。两候选分别改窗口右端几何、静态列表／scheduler声明长度；不另认领或把作者本地lint报告当维护者批准。
+
+[原SDE专题](../../notebook/frameworks/unirl-survey.md#sde-索引的两层边界校验)与[14组CPU结果](../../experiments/unirl-window-dwell/bounds-results.json)保留原模块对照：#633仍接受init=−1返回负索引，#634不检查scheduler实际返回集合；空显式列表配过长但未使用scheduler、或过滤后输出合法的长scheduler亦被构造拒绝。早期拒绝不等完整输入域保证，仍接受反例不等已发生训练故障。无GPU／Hydra／模型／原作者穷举，不套补丁、评论、改PR或新排M5任务；社区可见写入及既有PR-head推送仍逐项待用户明确同意。
 
 ## 熵监控同步主线后的范围
 

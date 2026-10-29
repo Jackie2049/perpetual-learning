@@ -1,0 +1,30 @@
+{
+  "python": "3.12.14",
+  "numpy": "2.3.5",
+  "cases": [
+    {"case":"633 partial upper overflow","base":[9,10,11,12],"candidate":"ValueError"},
+    {"case":"633 oversized random window","base":[0,1,2,3],"candidate":"ValueError"},
+    {"case":"633 negative start remains accepted","base":[-1,0,1,2],"candidate":[-1,0,1,2]},
+    {"case":"633 all ignores window geometry","base":[0,1,2,3,4,5,6,7,8,9],"candidate":[0,1,2,3,4,5,6,7,8,9]},
+    {"case":"634 static past end","base":[10,11],"candidate":"ValueError"},
+    {"case":"634 static negative","base":[-1],"candidate":"ValueError"},
+    {"case":"634 string normalization preserved","base":[3],"candidate":[3]},
+    {"case":"634 empty override with oversized dormant scheduler","base":[],"candidate":"ValueError"},
+    {"case":"634 oversized scheduler with in-range filtered pool","base":[0,1,2,3,4,5,6,7,8,9],"candidate":"ValueError"},
+    {"case":"634 does not validate returned window indices","base":[9,10,11,12],"candidate":[9,10,11,12]},
+    {"case":"634 shorter scheduler prefix","base":[0,1,2,3,4,5],"candidate":[0,1,2,3,4,5]},
+    {"case":"634 replace unrelated height","base":[9],"candidate":[9]},
+    {"case":"634 replace shrunk steps","base":[9],"candidate":"ValueError"},
+    {"case":"634 replace cleared eval-like fields","base":[],"candidate":[]}
+  ],
+  "source_sha256": {
+    "8cfbac17765004afb68fef08a4e011a4c8daf555:unirl/config/require.py":"d30f89e77ff72e9dddaaf8b8f0ab403790b3e2984fbd6afea28f6bcc60177238",
+    "8cfbac17765004afb68fef08a4e011a4c8daf555:unirl/sde/index_schedule.py":"4a313b44df9275b8e470a1dd1226d3b835e5170eb4a707ab162c269fe307f3c4",
+    "d31017aea1c91f881043d896637b7c3a6db4bc6b:unirl/sde/index_schedule.py":"1354e84c432bfe6aef5d556c583dcd3e828e3f3c895b7570fb2c0e9bfdcff6d6",
+    "8cfbac17765004afb68fef08a4e011a4c8daf555:unirl/types/sampling.py":"95325713e5f9d426ef56a2b84c0d7a2f701f0cd7c3a0f7f76b728d420a4f9ddc",
+    "523d245e61dec961b714ba96ef9663ab877d36d4:unirl/types/sampling.py":"5d6c1ea283bc2f4437d346064f014c1075a88c01afd957c0e3f7fde4e3ca8b35",
+    "5d1da78d4d87593b41a4235a65e9ad9dc3f9b6f8:unirl/sde/index_schedule.py":"4a313b44df9275b8e470a1dd1226d3b835e5170eb4a707ab162c269fe307f3c4",
+    "5d1da78d4d87593b41a4235a65e9ad9dc3f9b6f8:unirl/types/sampling.py":"95325713e5f9d426ef56a2b84c0d7a2f701f0cd7c3a0f7f76b728d420a4f9ddc"
+  },
+  "scope":"14 original constructor/selection controls, not engine execution or upstream tests"
+}

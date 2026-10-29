@@ -1,5 +1,7 @@
 # UniRL — 腾讯统一多模态 RL 框架调研
 
+2026-10-30 接续：[SDE 索引的两层边界校验](#sde-索引的两层边界校验)核已有 #633／#634：窗口上界与采样日程长度检查互补，但负起点和运行时返回集合仍须分开判断；14组原模块CPU控制不当引擎或训练验收。
+
 2026-10-26 接续：[AR种子协作分工](#ar-种子配置与逐样本请求)中，报告者已让JianhaoYu-AI接手逐请求seed，engine副本偏移另议；八相关文件同旧分析，不将认领评论当实现完成或重复原CPU验证。
 
 2026-10-26 接续：[奖励能力校验与模型加载](#奖励能力校验与模型加载)按 #621 最终合并版修正：managed 子进程也延后启动，实验 VideoAlign 增配置检查；加载幂等不等于整图回滚，旧版42项替身报告不迁为新版验收。
@@ -1627,6 +1629,34 @@ python3.12 -B experiments/scripts/verify_unirl_reward_rows.py /path/to/UniRL /pa
 作者已在[#488后续更正](https://github.com/Tencent-Hunyuan/UniRL/issues/488#issuecomment-5768148430)限定：沿用MixGRPO的停留公式，但参考实现的T−2样本字典坐标与UniRL完整去噪坐标不同，不能沿用此前216/216的全序列等价说法。本机未执行参考实现，不独立认证作者矩阵。PR所报H100／SD3.5-medium／BF16 LoRA五rollout、十optimizer step smoke固定在旧head `fa01335d`，不是本机或合并最终版GPU验收；104／81秒含初始化，非稳态吞吐或质量结论。
 
 滑动窗口决定哪些位置随机采样、各窗口停留多久；[窗口后的压缩积分](#sde-窗口后的压缩积分尾段)另决定尾段求解网格，二者不能用同一“少步数”替代实际模型调用数与完成吞吐。只在原M5入口补未来已有获准匹配观测的计数口径，不新排GPU／基准任务、不改专项或对外发布；下一轮转独立真实需求或实质反馈，不扩窗口矩阵、修改阈值或重复实现已有策略。
+
+## SDE 索引的两层边界校验
+
+2026-10-30核验：[窗口候选 #633](https://github.com/Tencent-Hunyuan/UniRL/pull/633)（head `d31017aea1c91f881043d896637b7c3a6db4bc6b`）和[采样参数候选 #634](https://github.com/Tencent-Hunyuan/UniRL/pull/634)（head `523d245e61dec961b714ba96ef9663ab877d36d4`）均为294962silent的OPEN／非draft／未合并候选。共同祖先与API base均为 `8cfbac17765004afb68fef08a4e011a4c8daf555`，分别仅改一个生产文件（10行／14行新增）；当前main `5d1da78d4d87593b41a4235a65e9ad9dc3f9b6f8` 的两文件与祖先相同。已有作者，不另认领或叠加实现。两份正文和完整diff已读；普通评论只有作者本地lint通过与CI待批准的自述，reviews／行内反馈为空，不视为维护者验收。
+
+### 日程长度与返回集合不是同一契约
+
+窗口调度器先在自己的长度M内选位置；采样参数再对应推理的T步日程。合法SDE索引应在 `[0,T)`，而非包含T的sigma点位置。#633在非all策略构造时要求 `M−window_size >= init_timestep`，拦截窗口超出右端；all不使用窗口几何。#634在原int归一化后检查显式列表，并拒绝 `scheduler.num_timesteps > T`，允许较短scheduler覆盖日程前缀。
+
+两者不互相替代：#634并未在 `get_sde_indices` 后检查返回集合；若单独配原WindowScheduler(M=10,W=4,init=9)，T=10仍返回 `[9,10,11,12]`。#633虽拦截此右溢出，却仍接受progressive的负起点init=−1并返回 `[-1,0,1,2]`。因此不能把两份候选概括为“所有生成索引已保证合法”。这是原构造器／选择器的可复现边界，不是已观测到训练损坏。
+
+[vLLM-Omni原消费片段](https://github.com/Tencent-Hunyuan/UniRL/blob/8cfbac17765004afb68fef08a4e011a4c8daf555/unirl/rollout/engine/vllm_omni/pipelines/_shared/flow_match_sde_scheduler.py#L143)按当前sigma_idx做集合成员测试；无有效匹配的索引不会打开该步SDE。部分越界不等整段均为ODE；[fastvideo入口](https://github.com/Tencent-Hunyuan/UniRL/blob/8cfbac17765004afb68fef08a4e011a4c8daf555/unirl/rollout/engine/fastvideo/engine.py#L328)另显式拒绝坏列表，早于驱动调用。此处仅核源码片段，不推广到其他后端或负索引的所有消费者。
+
+### 构造校验还收紧未使用的配置
+
+`get_sde_indices`仍优先返回显式列表（含空列表），但#634的scheduler长度检查没有相同的条件分支。因此T=10、显式 `[]`、scheduler=AllSDE(20)在祖先返回空列表，候选已在构造时拒绝。AllSDE(20,fraction=.5)实际只返回0…9，也同样被拒绝：检查的是声明长度，不是返回池。它们说明兼容范围比“仅拒绝实际越界输出”更窄；不据此自动更改候选的fail-closed设计。
+
+`dataclasses.replace`重新运行构造校验：保留 `[9]` 只改height仍通过，T从10缩到8则拒绝；同时清空索引与scheduler、eta设0的eval-like替换仍通过。[真实eval helper](https://github.com/Tencent-Hunyuan/UniRL/blob/8cfbac17765004afb68fef08a4e011a4c8daf555/unirl/trainer/diffusion.py#L246)在eta<=0时先清两字段，eta>0且改步数则先报错。本机未调用完整trainer，不能把字段替换控制称作eval管线实测。
+
+### 原模块 CPU 对照
+
+[脚本](../../experiments/unirl-window-dwell/verify_bounds.py)和[结果](../../experiments/unirl-window-dwell/bounds-results.json)固定上述Git对象，Python3.12.14／NumPy2.3.5执行14组base/head对照；每组断言其预期行为，包括仍接受的反例，并非“候选全部正确”的14项验收。完整执行原require、两版sampling、两版index_schedule；空包壳仅避开根初始化，未改原函数、伪造scheduler或合并两份候选。
+
+```bash
+python3.12 -B experiments/unirl-window-dwell/verify_bounds.py /path/to/UniRL
+```
+
+输入为已有固定blob的只读Git仓库，脚本禁止隐式fetch，输出源码SHA256；本轮重复结果与JSON逐项一致。范围为构造、选择和replace，未运行作者穷举矩阵、原生测试、Hydra配方组合、引擎、模型或GPU。此项CPU证据已收束，不新排M5训练；后续仅在作者候选实质修订或有真实需求时复核，不自行补丁、评论或推既有PR-head，所有社区写入仍需用户逐项明确授权。
 
 ## SDE 窗口后的压缩积分尾段
 
