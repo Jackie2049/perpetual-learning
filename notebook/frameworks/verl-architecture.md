@@ -622,6 +622,38 @@ RecordingOffloadHandler用布尔状态及事件清单约束“commit_backward先
 
 复现[脚本](../../experiments/verl-offload-commit/verify.py)及[原始结果](../../experiments/verl-offload-commit/results.json)随仓库保存，Python3.12+和torch环境下从项目根执行 `python3.12 -B experiments/verl-offload-commit/verify.py /path/to/verl-git`，需已有上述固定Git对象，不自动联网获取。命令与hash另留[当日日志](../../diary/2026-10-25.md)。当前结论是已有候选覆盖这条CPU图依赖路径，不宣称原27B训练已修复；真机条件留[M5参考入口](../../experiments/handoff-m5.md#verl-激活卸载重载顺序参考)，不自动排训练、下载权重或将CPU通过当硬件验收。任何上游回复／PR／PR-head推送仍逐项待用户明确同意。
 
+## 镜像版本约束与平台分发
+
+**修正版本约束、找到可用 wheel、完整镜像可运行，是三层不同的证据。** 2026-10-30核nataliekung已有OPEN／非draft [#8446](https://github.com/verl-project/verl/pull/8446)，固定head `f9fd7888400df03034482f2f68691046d32cb53d`、唯一父版 `a08ea02a784d7d4982b1d81df36d188a476192bb`；[原Dockerfile](https://github.com/verl-project/verl/blob/f9fd7888400df03034482f2f68691046d32cb53d/docker/Dockerfile.stable.vllm)只将Transformers从5.3.0改为5.5.3，vLLM仍0.24.0。作者已经给出解析报告，不另认领该修复。
+
+### 同一版本组合的两个平台条件
+
+本机Python3.12.14／uv0.11.16，输入只有 `vllm==0.24.0` 和上述Transformers pin；以PyPI为唯一索引、目标Python3.12、x86_64，原生 `uv pip compile` **只允许wheel，禁止源码构建**。首次联网取元数据，后续同缓存离线复验：
+
+| Transformers | manylinux目标 | 原生解析结果 |
+|---|---|---|
+| 5.3.0 | 2.39 | exit1；vLLM要求Transformers>=5.5.3，与旧pin冲突 |
+| 5.5.3 | 2.28 | exit1；vLLM要求llguidance>=1.7.0,<1.8.0，该范围没有可用wheel |
+| 5.5.3 | 2.39 | exit0；194条依赖，含torch2.11.0、llguidance1.7.6 |
+
+[vLLM发布元数据](https://pypi.org/pypi/vllm/0.24.0/json)支持上述最低版本要求。[llguidance1.7.6的发布文件](https://pypi.org/pypi/llguidance/1.7.6/json)中，Python3.12可用的Linux x86_64 wheel为 `cp39-abi3-manylinux_2_31_x86_64`；另一个manylinux2.17文件是 `cp314-cp314t`，不能因glibc标签较旧就供Python3.12使用。这里以1.7.6解释标签，完整1.7.x范围的不可用判断由uv诊断给出，不以单文件推断全范围。
+
+Docker基镜像声明Ubuntu24.04，[官方发行说明](https://discourse.ubuntu.com/t/ubuntu-24-04-lts-noble-numbat-release-notes/39890)记载glibc2.39，因此2.39是有来源的对照目标；未拉取／启动镜像或测量其实际libc。作者的2.28解析报告未加本轮binary-only限制，允许的分发／构建策略不同；本轮负例不能反驳其报告，也不是判定PR仍坏。
+
+### 两个顶层 pin 不是镜像锁
+
+Docker顺序先装vLLM等，再单独装Transformers，后续还有其他包、源码构建与覆盖。联合解析旧组合失败，不等于本轮已观测顺序安装后的 `pip check` 或启动异常。尤其原文件用 `VERL_VERSION=v0.7.1` 安装后卸载verl以取得依赖；当前main的 `transformers>=5.5.3,!=5.6.0,<5.17` 不是这一步的输入，也不能套用main新extra的torch／vLLM组。
+
+成功解析选中 `nvidia-nccl-cu13==2.28.9`，但Docker后段显式以no-deps覆盖为 `>=2.29.7,<3.0`。这直接说明两pin输出不等最终镜像环境，不是本轮发现了已安装NCCL冲突。未安装目标包、构建sdist、导入CUDA库、验收完整Docker依赖图／ARM／ABI／模型或训练；不用于改动M5既定环境。
+
+[复现脚本](../../experiments/verl-docker-transformers-resolution/verify.py)与[原始结果](../../experiments/verl-docker-transformers-resolution/result.json)保存原文件SHA256、版本、目标、完整诊断与成功要求清单。固定Git对象及uv缓存须已存在，默认禁止联网：
+
+```bash
+python3.12 -B experiments/verl-docker-transformers-resolution/verify.py /path/to/verl-git /path/to/uv-cache --uv /path/to/uv
+```
+
+仅首次填缓存可显式加 `--online`；命令用法见[uv官方说明](https://docs.astral.sh/uv/pip/compile/)。本题收束在解析证据，不为已有作者候选另排M5镜像／训练任务；若用户要求完整部署验收，再按M5职责和既有优先级交接。社区评论、PR及既有PR-head推送仍逐项待用户授权。
+
 ## Python 可选依赖的声明与发布元数据
 
 **环境入口应核发布元数据，而不能只读 `setup.py` 的extras字典。** 2026-10-30读取nataliekung的OPEN [#8447](https://github.com/verl-project/verl/issues/8447)，固定main `a08ea02a784d7d4982b1d81df36d188a476192bb`。报告者已表示愿按维护者方向提交修复，读取时评论为空；`8447 in:body`的PR／issue查询未命中，不据此断言全社区无人实现，本项目不另开候选。

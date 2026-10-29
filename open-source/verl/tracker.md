@@ -43,6 +43,8 @@
 
 2026-10-30接[位置张量队列写入](#位置张量队列写入的已有反馈)：#7899新TQ反馈已有#7901及社区方案；原packing接原retag的四CPU控制含两异常／一静默错样本，非TQ服务或候选验收，不另修复／发布。
 
+2026-10-30补[镜像pin与wheel分发](#镜像依赖-pin-的已有候选)：#8446已有作者；原生uv解析确认旧pin冲突，新pin在2.39目标可解、2.28的binary-only条件缺llguidance wheel。两pin解析非完整镜像／ABI验收，不另实现或改M5环境。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -62,6 +64,12 @@
 2026-10-26只读[#8323](https://github.com/verl-project/verl/pull/8323)新head1787d6a2／base祖先174888fc，OPEN／非draft／未合并，ahead2／behind0，20文件872增21删。旧4e93已分叉，整仓比较ahead23／behind2包含多项main变化，不记成本PR新增。作者新[sleep解释](https://github.com/verl-project/verl/pull/8323#issuecomment-6416461545)及维护者引擎侧修复问题不当接口批准或本项目认领。
 
 [原Worker专题](../../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#新版的显式清理与-sleep-路径)对照固定vLLM0.32.0 commit5df63a72：salt显式clear传False，abort适配mode=abort后单独清local；sleep(level≥1)仍经_finish_pause／_reset_caches默认True请求connector reset。实际删除由connector.reset_cache实现决定，不应写成所有store清空或必然完整保留。已有原生release_kv_cache_memory也走默认reset，不能仅凭方法名替换。四完整源码AST／compile及scheduler方法只读，无pause／sleep／connector／模型执行，旧helper结果与作者0.29 GPU报告均不迁作新组合验收；只修原M5条件参考，无新队列／补丁／专项或社区写入。
+
+## 镜像依赖 pin 的已有候选
+
+2026-10-30核nataliekung的OPEN／非draft [#8446](https://github.com/verl-project/verl/pull/8446)，headf9fd7888、父版a08ea02a，唯一改动为Docker Transformers5.3.0→5.5.3；作者已有解析报告，不另认领。见[原架构专题](../../notebook/frameworks/verl-architecture.md#镜像版本约束与平台分发)与[三条件原生结果](../../experiments/verl-docker-transformers-resolution/result.json)：vLLM0.24.0旧组合在Python3.12／x86_64-manylinux2.39失败，新组合在2.39成功；2.28仅wheel条件下因llguidance不可用失败，与作者未限制源码构建的报告分开。
+
+只有两顶层pin与传递依赖解析，未安装包／编译源码或运行镜像。Docker固定verl v0.7.1、后续NCCL覆盖与当前main extras均不能被本轮lock替代；无ARM／ABI／训练验收，不据此干预M5环境或新增算力任务。不修改作者代码、发布反馈／新PR或推既有PR-head，社区可见写入仍逐项待用户明确同意。
 
 ## 位置张量队列写入的已有反馈
 
