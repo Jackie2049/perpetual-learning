@@ -517,6 +517,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 | D1 | 结果口径核查 | RollPacker／SortedRL／APRIL／DARTS／RhymeRL／ReSpec六篇跨层条件 | **完成6/6**：2026-10-29 12:10 M5 认领接管（原 2026-10-28 02:47 M1 @31e502d 认领后 M1 宕机未完成），12:40 完成；回固定原文核指标分子／分母、基线／资源、工作集合、局部／整步收益，产出跨层可比性账见 §13.1，不新计T1或扩库 |
 | D2 | 边界核对 | ReSpec buffer消费量／RolloutPipe等待比／QwenGyre训练集合语义／Helium采样独立性／Infinite Sampling FPTAS旗标 | **完成5/5**：2026-10-29 12:42 M5 认领，12:47 完成；回固定原文逐字核对五项"待核/另C"边界，产出 §13.3 边界核对账：三项真歧义/缺口确认（ReSpec 算法1遍历全Q vs §5.3.2 1/I、RolloutPipe 式4端到端 vs §5 wait/(wait+compute) 双分母、Helium 缓存仅限确定性/greedy 无随机独立性保证），两项闭合（QwenGyre 并集去重+共享target只训一次、Infinite Sampling 旗标对齐 §6.23.6）。不新计深读、不扩库 |
 | D3 | 边界核对 | AcceRL离线预算1000/2000／ASymPO v3状态／ThunderSyncRL vs PipelineRL行为分布／Each Prompt Matters T3复核 | **完成4/4**：2026-10-29 13:12 M5 认领、13:25 完成；回固定原文/原站逐字核对四项矩阵"待核"旗标与§5.25单列复核，产出 §13.4 边界核对账二：两项原文确认（AcceRL 摘要/图5 1000 vs §6.4 2000 OOD 冲突 v3 未调和、ASymPO v3 Comments 仍 "incorrect proofs" + v2 withdrawn 警示保留）、两项旗标收口（ThunderSyncRL 执行期异步/策略期同步零staleness B vs PipelineRL 策略期换权重 mixed behavior B/C? 机制目标不同不合并、Each Prompt Matters 摘要确认混合 FP8/调度/筛组/目标改变单列维持）。不新计深读、不扩库 |
+| D4 | 边界核对 | Laminar buffer策略／DORA跨步集合／StaleFlow冗余过滤／AsyncFlow版本目标／ARL-Tangram工具语义 | **认领中**：2026-10-29 13:41 M5 认领，先回写并推送再开始；回固定原文（arXiv HTML，版本同各深读）核五项矩阵"另核/待核"旗标：Laminar 2510.12633v1 buffer 策略对轨迹集合/顺序的影响（B vs C）、DORA 2604.26256v2 跨步集合与旧版本排空语义、StaleFlow 2601.12784v2 冗余/过滤 C 边界、AsyncFlow 2507.01663v2 版本/目标一致性、ARL-Tangram 2603.13019v1 pytest 并行等义。产出 §13.5 边界核对账三；不新计深读、不扩库 |
 
 （HybridFlow 已由并行会话进行中，不计入批次。T2/T3 具体名单允许执行会话按 §5 矩阵实际条目微调，微调须记录。）
 
