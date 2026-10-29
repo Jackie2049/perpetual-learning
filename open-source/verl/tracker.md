@@ -53,6 +53,8 @@
 
 2026-10-30补[LoRA名称契约](#lora-名称处理的已有候选)：#7483原八测试体隔离通过，17次解析区分严格／扁平加载器与packed目标；两head的本轮完整输入相同，非真实加载／量化或整PR验收，不另实现／排算力。
 
+2026-10-30接[批元数据拼接](#批元数据拼接的已有候选)：#8453已有作者；真实TensorDict0.11.0＋Torch2.9.1上两版原两个测试体均通过，无旧失败／新通过证据；0.15.1要求更高Torch，仅源码／元数据，不迁移作者TPU报告或另排算力。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -66,6 +68,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## 批元数据拼接的已有候选
+
+2026-10-30只读jialei777的OPEN／非draft [#8453](https://github.com/verl-project/verl/pull/8453)，head1ffe98bf14949f0ac1cc000facf056ec0b7808d9、basea08ea02a，一提交两文件37增2删；reviews为空，bot摘要不作人工批准。已有作者修复新版cat把不同批元数据变逐样本列表的问题，不另认领生产方案或发布反馈。
+
+[原数据流专题](../../notebook/frameworks/verl-dataproto-data-flow-reading.md#批元数据与逐样本字段的拼接)区分首份NonTensorData与逐样本NonTensorStack；首rank内存并非全局峰值。两完整原utils模块接原两个测试体，[本机结果](../../experiments/verl-first-metadata/result.json)在TensorDict0.11.0／Torch2.9.1下基线及候选均2通过，普通／jagged均保留首份；不是旧失败／新通过，也不支持简单以≥0.11判必败。0.15.1声明Torch>=2.13.0a0，不兼容本机，导入未成功，只有源码／元数据核对；作者TPU报告不算本机／当前全部环境验收。CPU差额不新排M5算力或改其环境；所有社区与既有PR-head写入仍逐项待用户明确授权。
 
 ## LoRA 名称处理的已有候选
 

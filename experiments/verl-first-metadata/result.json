@@ -1,0 +1,96 @@
+{
+  "head": "1ffe98bf14949f0ac1cc000facf056ec0b7808d9",
+  "base": "a08ea02a784d7d4982b1d81df36d188a476192bb",
+  "python": "3.12.13",
+  "torch": "2.9.1",
+  "tensordict": "0.11.0",
+  "source_sha256": {
+    "1ffe98bf14949f0ac1cc000facf056ec0b7808d9:tests/test_protocol_v2_on_cpu.py": "f936f544b7d6047dc5f88fe1dd1879b5ae131daba6a08a6f00c270e32574c6f7",
+    "a08ea02a784d7d4982b1d81df36d188a476192bb:verl/utils/tensordict_utils.py": "4dc4c321a51e256232751ddb5cb2a2be129076e7f02f36a685fcad6d0d98f5f1",
+    "1ffe98bf14949f0ac1cc000facf056ec0b7808d9:verl/utils/tensordict_utils.py": "032983634aab36a93e40ab2d6dc144fbb2dee3b43d10a521e6dc9af6b43bdef2"
+  },
+  "results": {
+    "base": {
+      "original_test_bodies_passed": [
+        "test_concat_tensordict",
+        "test_concat_tensordict_keeps_the_first_metadata"
+      ],
+      "branch_observations": {
+        "regular": {
+          "batch_size": [
+            4
+          ],
+          "metadata_type": "NonTensorData",
+          "metadata": {
+            "loss": 0.5,
+            "peak": 17.9
+          }
+        },
+        "nested": {
+          "batch_size": [
+            4
+          ],
+          "metadata_type": "NonTensorData",
+          "metadata": {
+            "loss": 0.5,
+            "peak": 17.9
+          }
+        }
+      }
+    },
+    "head": {
+      "original_test_bodies_passed": [
+        "test_concat_tensordict",
+        "test_concat_tensordict_keeps_the_first_metadata"
+      ],
+      "branch_observations": {
+        "regular": {
+          "batch_size": [
+            4
+          ],
+          "metadata_type": "NonTensorData",
+          "metadata": {
+            "loss": 0.5,
+            "peak": 17.9
+          }
+        },
+        "nested": {
+          "batch_size": [
+            4
+          ],
+          "metadata_type": "NonTensorData",
+          "metadata": {
+            "loss": 0.5,
+            "peak": 17.9
+          }
+        }
+      }
+    }
+  },
+  "unexecuted_distribution": {
+    "version": "0.15.1",
+    "metadata_sha256": "b4f29d9d7f9e8c669bf922a37070b100f7746de18d9043bb646429f68808e17d",
+    "torch_requirement": "torch>=2.13.0a0",
+    "current_torch_satisfies": false
+  },
+  "library_source_syntax_only": {
+    "0.11.0/tensorclass.py": {
+      "sha256": "70577b2cb49ce1b3c2e9beebf085277a57b0e326384cf6051cf1052dc5c0683c",
+      "cat_non_tensor_definitions": 0
+    },
+    "0.15.1/tensorclass.py": {
+      "sha256": "efcc6d3cf0a27d1e09da3ce96204a40c2cdbeb6ea5e38120466bb9973350411d",
+      "cat_non_tensor_definitions": 1
+    }
+  },
+  "support_packages": {
+    "numpy": "2.0.2",
+    "cloudpickle": "3.1.2",
+    "orjson": "3.13.0",
+    "packaging": "26.3",
+    "pyvers": "0.2.3",
+    "importlib_metadata": "10.1.0",
+    "zipp": "4.1.2"
+  },
+  "scope": "Two original test bodies, executed directly against both complete original utils modules and real CPU TensorDict 0.11.0. Both versions pass: no old-fails/new-passes fix evidence here. 0.15.1 metadata and source only; no valid import/test, version-bisect, full native pytest, BatchData/Ray/worker, training or TPU validation."
+}

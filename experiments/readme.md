@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-first-metadata/verify.py](verl-first-metadata/verify.py) | #8453两完整原utils接两个原测试体，[结果](verl-first-metadata/result.json)在TensorDict0.11.0／Torch2.9.1下两版均通过；普通／jagged留首份，0.15.1只读源码与依赖，不是修复／TPU验收 | [批元数据拼接](../notebook/frameworks/verl-dataproto-data-flow-reading.md#批元数据与逐样本字段的拼接) |
 | [unirl-loss-unit-resolution/verify.py](unirl-loss-unit-resolution/verify.py) | #622原loss_units及两版resolver的五本地条件控制，[结果](unirl-loss-unit-resolution/result.json)核None／局部零／全局零、重排与SP guard；后端peer值及Segment是接口替身，非分布式／训练 | [原缩放函数条件](../notebook/frameworks/unirl-survey.md#原缩放函数的五个条件对照) |
 | [verl-lora-loader-names/verify.py](verl-lora-loader-names/verify.py) | #7483三原名称helper接八原测试体，[结果](verl-lora-loader-names/result.json)8通过／17次解析，原假mapper／loader结构与空worker类；非原生pytest、真实加载或整PR验收 | [LoRA名称与加载器](../notebook/frameworks/verl-quant-layer-audit.md#lora-权重名称与加载器契约) |
 | [verl-effective-sync-mode/verify.py](verl-effective-sync-mode/verify.py) | #8032新反馈的六模块路由核对与原resolver两分支，[结果](verl-effective-sync-mode/result.json)区分标准V1 HYBRID=2／COLOCATED=1；无配置实例化／Ray初始化、权重同步或设备验收 | [配置后端与部署模式](../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#配置后端与部署模式) |

@@ -9,6 +9,31 @@
 
 2026-10-25补充：[多模态特殊 token 检查的 CPU 开销](#多模态特殊-token-检查的-cpu-开销)区分原检查方法、完整processor与训练吞吐；纯文本走多模态processor也可能付出标记计数成本，但不是所有纯文本入口都走此路径。2026-10-26接续[回移候选的绑定条件](#回移候选的绑定条件与评审前提)，不重跑旧微基准。
 
+## 批元数据与逐样本字段的拼接
+
+**保留首份批元数据与拼接逐样本字段是两种不同契约；保留首个rank的内存字典也不等于求全局峰值。** 2026-10-30只读学习jialei777的OPEN／非draft [#8453](https://github.com/verl-project/verl/pull/8453)，head `1ffe98bf14949f0ac1cc000facf056ec0b7808d9`、base `a08ea02a784d7d4982b1d81df36d188a476192bb`，一提交两文件37增2删。作者报告TensorDict0.15.1将不同的`metrics`拼为逐行列表，SFT调用方仍按`metrics["loss"]`读取而失败；其TPU CI是外部报告，不计本机验证。
+
+[候选helper](https://github.com/verl-project/verl/blob/1ffe98bf14949f0ac1cc000facf056ec0b7808d9/verl/utils/tensordict_utils.py)在普通／nested两次`TensorDict.cat`之后检查首输入的顶层键：首值为NonTensorData、输出却不再是该类型时，用首值的数据重新包装。它不聚合rank指标，也不覆盖原本就是NonTensorStack的逐样本列表；空batch维仍直接返回首输入。这里的修复目标是返回类型与既有首份语义，不是监控量的全局归约。
+
+### 本机版本没有触发报告中的失败
+
+本机Python3.12.13／Torch2.9.1，独立安装[TensorDict0.11.0分发](https://pypi.org/project/tensordict/0.11.0/)，未改原Torch环境。分别执行两版**完整原utils模块**，接候选[两个原测试体](https://github.com/verl-project/verl/blob/1ffe98bf14949f0ac1cc000facf056ec0b7808d9/tests/test_protocol_v2_on_cpu.py)：既有`test_concat_tensordict`和新增`test_concat_tensordict_keeps_the_first_metadata`，均未改函数体。两版各2通过，直接调用而非原生pytest收集；旧测试还检查逐样本labels拼接及输入不变。
+
+| 实际CPU容器条件 | 基线 | 候选 |
+|---|---|---|
+| 普通Tensor，两rank的peak为17.9／18.3 | batch4、NonTensorData、首份17.9 | 相同 |
+| jagged输入，每rank样本长3／5 | batch4、NonTensorData、首份17.9 | 相同 |
+
+所以本机没有“旧失败、新通过”证据。PR正文与注释将变化起点写为“从0.11开始”，**不能仅凭该版本号认定所有组合都会失败**；这里0.11.0＋Torch2.9.1已经保留首份。初步直接`TensorDict.cat`探针及capture开关True／False也都返回首份，不据此断言0.15.1报告错误，或推断精确变更版本。
+
+### 目标新版本仍有依赖差额
+
+[0.15.1分发](https://pypi.org/project/tensordict/0.15.1/)的METADATA声明`torch>=2.13.0a0`，不满足本机Torch2.9.1。最初无依赖安装后导入止于缺pyvers，未形成有效容器测试；之后仅对0.11目录补齐轻依赖，没有为0.15升级Torch或伪造导入。缓存0.15.1的`tensorclass.py`可静态读到专门的`_cat_non_tensor`：非一致值走unbind再stack，与0.11没有该方法的源码不同；这只是源码解释，不是0.15运行验收。
+
+[脚本](../../experiments/verl-first-metadata/verify.py)与[结果](../../experiments/verl-first-metadata/result.json)保存两版生产文件、原测试和两分发源码／元数据哈希、实际轻依赖版本。命令：`PYTHONPATH=/path/to/td011 python3.12 -B experiments/verl-first-metadata/verify.py /path/to/verl-git /path/to/td0151`；第一目录需有0.11.0及结果中固定轻依赖，第二目录只供读取0.15.1缓存，不得放进PYTHONPATH。固定Git对象预缓存后运行不联网。两次新进程JSON一致，真实TensorDict与CPU张量，无批数据／worker／Ray、TPU或训练验收。
+
+本题以版本条件下的否定复现收束。已有作者修复，不代改其阈值或发布反馈；匹配0.15依赖的CPU复验仍未做，不属于GPU访问阻塞，也不新排M5算力队列或调整其既定环境。后续实质版本／反馈改变再核，社区及既有PR-head写入仍逐项待用户授权。
+
 ## 队列打包与位置张量的轴语义
 
 **改ragged轴标签不等于重排values和offsets；不报错也不等于样本边界正确。** [#7899](https://github.com/verl-project/verl/issues/7899)已有iceflysnow的OPEN／非draft [#7901](https://github.com/verl-project/verl/pull/7901)，2026-10-30核head2310b690。10-29的[新社区反馈](https://github.com/verl-project/verl/issues/7899#issuecomment-6504217618)补充TransferQueue自身也会由逐样本张量构造jagged batch，因此不能把只修verl padding写入点的#8413当作所有写入来源已闭环。此边界已有作者及社区方案，不另认领修复。
