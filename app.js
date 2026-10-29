@@ -98,11 +98,11 @@ function contributionsPage() {
 }
 /* 对外呈现：可直链分享的独立专题页（不自持工作台菜单，页面顶部带返回主站链接）。 */
 const PRESENTATIONS = [
-  {tag:'强化学习', title:'Rollout综述项目-研究大纲', desc:'《Efficient Rollout Systems for LLM Post-Training》报告大纲：研究问题、serving/rollout 核心假设、性能模型与 L1–L4 分类法', href:'./presentations/rollout-survey-outline.html', date:'2026-10'},
-  {tag:'强化学习', title:'Rollout综述项目-论文集锦', desc:'126 篇已核文献，按综述大纲的 L1–L4 骨架分类，含 arXiv 链接、tier 分层与一句话机制，支持搜索筛选', href:'./presentations/rollout-papers.html', date:'2026-10'},
+  {tag:'强化学习infra', title:'Rollout综述项目-研究大纲', desc:'《Efficient Rollout Systems for LLM Post-Training》报告大纲：研究问题、serving/rollout 核心假设、性能模型与 L1–L4 分类法', href:'./presentations/rollout-survey-outline.html', date:'2026-10'},
+  {tag:'强化学习infra', title:'Rollout综述项目-论文集锦', desc:'126 篇已核文献，按综述大纲的 L1–L4 骨架分类，含 arXiv 链接、tier 分层与一句话机制，支持搜索筛选', href:'./presentations/rollout-papers.html', date:'2026-10'},
   {tag:'AgenticRL', title:'综述', desc:'国内旗舰 Agent 训练五层技术栈：任务与环境、学习目标、训推一致性、长程 rollout、长序列架构', href:'./presentations/gallery/rl_survey/', date:'2026-09'},
   {tag:'News', title:'每日快报', desc:'新闻快报专题', href:'./presentations/gallery/news_jackiesnews/', date:'2026-08'},
-  {tag:'RL infra', title:'Lego-RL', desc:'Lego-RL 深度研究报告：Harness-Native 强化学习训练 Coding Agent', href:'./presentations/gallery/rl-infra_research/', date:'2026-08'},
+  {tag:'强化学习infra', title:'Lego-RL', desc:'Lego-RL 深度研究报告：Harness-Native 强化学习训练 Coding Agent', href:'./presentations/gallery/rl-infra_research/', date:'2026-08'},
   {tag:'Harness', title:'DeepSeek Harness', desc:'DeepSeek Harness 开源项目研究报告', href:'./presentations/gallery/harness_research/report_deepseek-harness.html', date:'2026-08'},
   {tag:'vLLM', title:'DeepSeek-V4 的 KV Cache 管理', desc:'', href:'./presentations/gallery/infer_vLLM/deepseek-v4-kvcache.html', date:'2026-06'},
   {tag:'vLLM', title:'KV Cache 架构', desc:'', href:'./presentations/gallery/infer_vLLM/kv-cache-arch.html', date:'2026-06'},
