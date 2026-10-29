@@ -87,10 +87,10 @@
 <p><b>层（L1–L4，允许反例修订）</b>：</p>
 <table>
   <tr><th style="width:190px">层</th><th>核心问题</th><th>代表性技术抓手</th></tr>
-  <tr><td><b>L1</b> Token / Model Execution</td><td>单 token / decode step 怎么更便宜</td><td>attention/kernel、KV cache、quantization/FP8、speculative decoding、MTP、draft model</td></tr>
-  <tr><td><b>L2</b> Engine / Replica</td><td>一个 engine 高效完成一组 trajectories</td><td>continuous batching、chunked prefill、prefix/KV reuse、multi-sample、sleep/wake</td></tr>
-  <tr><td><b>L3</b> Cluster</td><td>一批 trajectory set 整体最快（minimize makespan）</td><td>global scheduling、length prediction、straggler/tail、migration、cache-aware routing、elastic</td></tr>
   <tr><td><b>L4</b> RL Pipeline Co-design</td><td>rollout 与 trainer / reward / env / weight-update 协同</td><td>sync/async、colocated/disaggregated、overlap、weight sync、staleness、partial rollout、resource allocation</td></tr>
+  <tr><td><b>L3</b> Cluster</td><td>一批 trajectory set 整体最快（minimize makespan）</td><td>global scheduling、length prediction、straggler/tail、migration、cache-aware routing、elastic</td></tr>
+  <tr><td><b>L2</b> Engine / Replica</td><td>一个 engine 高效完成一组 trajectories</td><td>continuous batching、chunked prefill、prefix/KV reuse、multi-sample、sleep/wake</td></tr>
+  <tr><td><b>L1</b> Token / Model Execution</td><td>单 token / decode step 怎么更便宜</td><td>attention/kernel、KV cache、quantization/FP8、speculative decoding、MTP、draft model</td></tr>
 </table>
 <p><b>类型（第二维度）</b>：</p>
 <ul>
