@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>[vLLM] KV Cache 架构</title>
+<style>
+  :root{--bg:#fafafa;--card:#fff;--text:#1f2328;--muted:#6b7280;--border:#e4e6eb;--accent:#4338ca;}
+  @media(prefers-color-scheme:dark){:root{--bg:#0f1115;--card:#1a1d23;--text:#e6e8eb;--muted:#9aa0a8;--border:#2a2e36;}}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.7;font-size:15px;}
+  .wrap{max-width:960px;margin:0 auto;padding:32px 24px 60px;}
+  header h1{margin:0 0 4px;font-size:24px;line-height:1.4;}
+  header .sub{color:var(--muted);font-size:13px;margin-bottom:24px;}
+  h2{font-size:17px;margin:28px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+  h3{font-size:15px;margin:18px 0 8px;}
+  p{margin:8px 0;}
+  ul,ol{margin:8px 0;padding-left:22px;}
+  li{margin:4px 0;}
+  code{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:13px;}
+  table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13px;}
+  th,td{border:1px solid var(--border);padding:6px 10px;text-align:left;}
+  th{background:var(--card);}
+  .callout{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:6px;padding:10px 14px;font-size:14px;color:var(--muted);margin:12px 0;}
+  .src{margin-top:36px;padding-top:14px;border-top:1px solid var(--border);font-size:13px;color:var(--muted);}
+  .src a{color:var(--accent);}
+  a{color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>vLLM 中的几种 KVCache 分组机制</h1>
+  <div class="sub">project: infer_vLLM · 内容转写自 Mengqing Cao 博客（2026-06-09）</div>
+</header>
+
+<h2>一、统一术语</h2>
+<ul>
+  <li><strong>KVCache 类型</strong>：不同的 <code>KVCacheSpec</code></li>
+  <li><strong>大小</strong>：一个 block 占的物理内存字节数，通常为 <code>block_size × num_head × head_dim × sizeof(cache_dtype)</code></li>
+</ul>
+
+<h2>二、三种分组方式</h2>
+
+<h3>1. 统一的 KVCacheSpec 组</h3>
+<p>每个 Attention 层的 KVCache 完全一致（类型、大小都一致）。最广泛最基础，几乎所有非混合 Attention 模型都属于这一种——典型如 Qwen2.5、DeepSeek V3.1。每层一块 buffer，每块 buffer 上 <code>num_gpu_blocks</code> 个 blocks，由 KVCacheManager 统一从 BlockPool 调度。</p>
+
+<h3>2. 类型统一的 KVCacheSpec 组</h3>
+<p>不同层 KVCache <strong>类型相同但大小不同</strong>。典型：DeepSeek V3.2（indexer cache 层与 MLA 层量化策略不一致）、MiniCPM 4.1、spec decode / MTP 层中 kv head 数与主模型不一致（<a href="https://github.com/vllm-project/vllm/pull/25101">vLLM PR #25101</a>）。每层仍各有一块 buffer，但大小不一；同一 token 在不同层分配的 block id 相同。</p>
+
+<h3>3. 混合 KVCacheSpec 组（HMA 的核心）</h3>
+<p>不同层 KVCache 类型不同、大小不一定一样。典型：Gemma3、Qwen3-Next、Qwen3.5。</p>
+<p class="callout">问题的起点：没有 HMA 时 vLLM 给每层分配同样大小的 buffer。而 linear attention 层每个请求所需 KVCache 总量是固定的（只需 N=1 个 block），却被强行为其分配 <code>NUM_BLOCKS</code> 个 block——且 Qwen3-Next 中 linear attention 层数是 full attention 层的 2 倍以上，浪费被放大。</p>
+
+<h2>三、为什么 UniformTypeKVCacheSpecs 解决不了</h2>
+<ul>
+  <li>UniformType 机制仍要求每层 block 数量相等：KVCacheCoordinator 只有一个 block pool、只有一个 SingleTypeKVCacheManager，同一请求各层分配的 block id 相同</li>
+  <li>若拆多个 block pool 给 linear / full 分别预留，则必须预估 linear 层运行时的 block 峰值——考虑 prefix cache 时无法预知命中数；按最保守方式预留会退化为每层同样数量的 block</li>
+</ul>
+
+<h2>四、HMA 的核心设计</h2>
+<p><strong>不同层共享同一块 buffer：一个 block pool、一份 blocktable</strong>，从而减少 KVCache 浪费与碎片化。</p>
+<p>以 Qwen3-Next 为例：full attention 与 linear attention 层数比 1:3，<code>shared_by</code> 中 1 层 full + 3 层 linear 共享同一 buffer；对一个 token，每个 KVCacheTensor 上分配 4 个 block id（共享组内每层一个）。</p>
+
+<h3>HMA 两个关键点</h3>
+<ol>
+  <li><strong>page size 对齐</strong>：不同类型 KVCacheSpec 的 page size（一个 block 的物理内存大小）必须对齐。vLLM 当前两种对齐方法：<strong>放大 block size 为原来 x 倍</strong>，或<strong>添加 pad</strong>。共享同一 buffer 的各类型仍各自有一份内存视图——物理内存同一片，解读不同。</li>
+  <li><strong>解耦 kernel block size 与 KV page size</strong>：attention 算子接收的 block size / block table / slot mapping 都基于<strong>算子支持的 block size</strong> 计算；调度侧仍用大 block size 做分配（一次分配 x 个 kernel 侧 blocks）。该特性让更多 attention backend 能接入 HMA（<a href="https://github.com/vllm-project/vllm/pull/24486">vLLM PR #24486: Decouple Kernel Block Size from KV Page Size</a>）。</li>
+</ol>
+
+<div class="src">
+  原文作者：Mengqing Cao（2026-06-09）· 原文：<a href="https://mengqingcao.github.io/posts/vllm-kvcache-grouping/">vLLM 中的几种 KVCache 分组机制</a> · 本文为转写摘要<br>
+  相关阅读：<a href="https://pytorch.org/blog/hybrid-models-as-first-class-citizens-in-vllm/">PyTorch 博客: Hybrid Models as First-Class Citizens in vLLM</a> · <a href="deepseek-v4-kvcache.html">[vLLM] DeepSeek-V4 的 KV Cache 管理（基于 HMA 的实战案例）</a>
+</div>
+</div>
+</body>
+</html>

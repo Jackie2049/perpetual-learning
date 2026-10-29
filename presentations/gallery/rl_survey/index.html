@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="国内旗舰模型 Agent 训练五层技术栈：任务与环境、学习目标、训推一致性、长程 rollout、长序列架构。回答的不是谁先上 Agent，而是上 Agent 时栈的哪一层先坏。">
+<title>[AgenticRL] 综述 · 五层技术栈</title>
+<style>
+:root{
+  --bg:#f6f7fb;--paper:#fff;--text:#1c2330;--muted:#667085;--line:#dfe3ea;
+  --accent:#4338ca;--accent-soft:#eef0ff;--code:#f3f5f8;
+  --era1:#eef2ff;--era2:#f3eefc;--era3:#fff4ea;
+  --l3:#b45309;--dot:#4338ca;--hollow:#9aa3b5;
+  --shadow:0 10px 32px rgba(28,35,48,.06);
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#0f1115;--paper:#171a21;--text:#e8edf5;--muted:#9aa3b5;--line:#2a2e36;
+  --accent:#a5b4fc;--accent-soft:#1e1b4b;--code:#11151c;
+  --era1:#161a2c;--era2:#1c1730;--era3:#2a1f14;
+  --l3:#fdba74;--dot:#a5b4fc;--hollow:#6b7280;
+  --shadow:0 12px 36px rgba(0,0,0,.28);
+}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.7;font-size:15px}
+a{color:var(--accent)}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 22px 80px}
+.back{font-size:12px;color:var(--muted);text-decoration:none}
+.back:hover{color:var(--accent)}
+.kicker{margin:18px 0 6px;font-size:12px;letter-spacing:.08em;color:var(--accent);font-weight:700}
+h1{font-size:30px;line-height:1.25;letter-spacing:-.03em;margin:0 0 10px}
+.lede{color:var(--muted);max-width:720px;margin:0 0 22px}
+.thesis{background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:0 12px 12px 0;padding:14px 18px;margin:0 0 28px}
+.thesis b{color:var(--text)}
+.navpills{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 22px}
+.navpills a,.toggle button{display:inline-block;padding:6px 11px;border:1px solid var(--line);border-radius:999px;background:var(--paper);color:var(--muted);text-decoration:none;font-size:12px}
+.navpills a:hover,.toggle button:hover,.toggle button.on{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+h2{font-size:20px;margin:36px 0 12px;letter-spacing:-.02em}
+h3{font-size:16px;margin:22px 0 8px}
+p{margin:10px 0}
+.figure{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:22px 22px 16px;box-shadow:var(--shadow);margin:0 0 22px}
+.figure-title{font-size:13px;font-weight:750;margin:0 0 4px}
+.figure-note,.caption{font-size:12px;color:var(--muted);margin:12px 0 0}
+.stack{display:flex;flex-direction:column;gap:0;max-width:640px;margin:8px auto 4px}
+.layer{display:grid;grid-template-columns:52px 1fr;gap:12px;align-items:center;padding:11px 14px;border:1px solid var(--line);background:var(--code);cursor:pointer;text-align:left;font:inherit;color:inherit}
+.layer:first-child{border-radius:12px 12px 0 0}
+.layer:last-child{border-radius:0 0 12px 12px}
+.layer + .layer{border-top:0}
+.layer:hover,.layer.on{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+.layer.l3{background:var(--era3)}
+.layer .idx{font-size:11px;font-weight:800;color:var(--accent);letter-spacing:.04em}
+.layer .name{font-weight:720}
+.layer .ask{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.arrow{text-align:center;color:var(--muted);font-size:11px;padding:3px 0}
+.stack-meta{display:flex;justify-content:space-between;max-width:640px;margin:8px auto 0;font-size:11px;color:var(--muted)}
+.toggle{display:flex;gap:8px;margin:0 0 12px}
+.swim{position:relative;overflow-x:auto;padding-bottom:8px}
+.swim-inner{min-width:920px;position:relative}
+.eras{position:absolute;left:148px;right:8px;top:28px;bottom:28px;pointer-events:none;display:grid;grid-template-columns:30% 25% 45%}
+.era{border-radius:10px;margin:0 3px}
+.era.e1{background:var(--era1)}.era.e2{background:var(--era2)}.era.e3{background:var(--era3)}
+.axis{display:grid;grid-template-columns:148px 1fr;margin-bottom:6px;font-size:11px;color:var(--muted)}
+.ticks{position:relative;height:18px;margin-right:8px}
+.ticks span{position:absolute;transform:translateX(-50%)}
+.track{display:grid;grid-template-columns:148px 1fr;align-items:center;min-height:56px;border-top:1px dashed var(--line)}
+.track-lab{padding:6px 10px 6px 0;font-size:12px}
+.track-lab b{display:block;font-size:13px}
+.track-lab span{color:var(--muted);font-size:11px}
+.rail{position:relative;height:44px;margin-right:8px}
+.rail::before{content:"";position:absolute;left:0;right:0;top:50%;height:2px;background:var(--line)}
+.bead{position:absolute;top:50%;transform:translate(-50%,-50%);border:1.5px solid var(--dot);background:var(--paper);color:var(--text);border-radius:999px;padding:3px 8px;font-size:11px;font-weight:650;cursor:pointer;white-space:nowrap;line-height:1.3;font-family:inherit}
+.bead.def{background:var(--accent);color:var(--paper);border-color:var(--accent);z-index:1}
+.bead:hover,.bead.on{outline:2px solid var(--accent);z-index:2}
+.era-lab{display:grid;grid-template-columns:148px 1fr;margin-top:8px;font-size:11px;color:var(--muted)}
+.era-lab .row{display:grid;grid-template-columns:30% 25% 45%;margin-right:8px;text-align:center}
+.detail{min-height:108px;margin-top:14px;padding:14px 16px;background:var(--code);border-radius:12px;border:1px solid var(--line)}
+.detail .when{font-size:12px;color:var(--accent);font-weight:700}
+.detail h3{margin:2px 0 6px}
+.laws{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:8px 0 28px}
+.law{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.law .n{font-size:11px;font-weight:800;color:var(--accent);letter-spacing:.04em}
+.law p{margin:6px 0 0;font-size:13px;color:var(--muted)}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0 20px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.card b{display:block;margin-bottom:4px}
+.card span{font-size:12px;color:var(--muted)}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--paper);margin:12px 0 24px}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:13px}
+th,td{border-bottom:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
+th{background:var(--code);font-weight:700}
+tr:last-child td{border-bottom:0}
+.hl{font-weight:750;text-decoration:underline;text-underline-offset:3px}
+.flow{display:flex;flex-direction:column;gap:6px;max-width:560px;margin:8px 0 20px}
+.flow-box{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:13px}
+.flow-box.now{border-color:var(--accent);background:var(--accent-soft)}
+.flow-arr{color:var(--accent);font-size:12px;padding-left:14px}
+article{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:28px 36px 40px;box-shadow:var(--shadow)}
+.muted{color:var(--muted)}
+code{font-family:"SFMono-Regular",Consolas,monospace;font-size:.9em;background:var(--code);padding:.12em .35em;border-radius:4px}
+.formula{background:var(--code);border-radius:8px;padding:10px 14px;margin:10px 0;font-size:13.5px}
+footer{margin-top:28px;font-size:12px;color:var(--muted)}
+@media(max-width:860px){
+  h1{font-size:24px}
+  .laws,.cards{grid-template-columns:1fr}
+  article{padding:22px 16px 32px}
+  .layer{grid-template-columns:40px 1fr}
+}
+@media print{
+  .back,.toggle,.navpills{display:none}
+  body{background:#fff;color:#111}
+  .figure,article{box-shadow:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../">← JackiesGallery</a>
+  <div class="kicker">AGENTICRL · 阶段一</div>
+  <h1>国内旗舰模型的 Agent 训练五层技术栈</h1>
+  <p class="lede">范围：Qwen / DeepSeek / GLM / Kimi / 混元（Hy3 起）。中心不是又一张型号表，而是：<b>为了让模型会规划、调工具、跟环境多轮交互，后训练栈的哪一层先坏。</b></p>
+  <div class="thesis">型号表回答「谁先上 Agent」。下面这五层回答「上 Agent 时栈的哪一层先坏」。从上到下：越上面越靠近产品任务，越下面越靠近系统与模型。<b>上面的层要能训，默认下面的层已经扛得住。</b></div>
+
+  <nav class="navpills">
+    <a href="#fig-stack">五层依赖</a>
+    <a href="#fig-time">瓶颈时间线</a>
+    <a href="#laws">三条读法</a>
+    <a href="#l1">L1 任务与环境</a>
+    <a href="#l2">L2 学习目标</a>
+    <a href="#l3">L3 训推一致性</a>
+    <a href="#l4">L4 长程 rollout</a>
+    <a href="#l5">L5 长序列架构</a>
+    <a href="#firsts">若干「第一」</a>
+  </nav>
+
+  <section class="figure" id="fig-stack">
+    <div class="figure-title">图 1 · 依赖栈：上层能训，默认下层已经扛得住</div>
+    <p class="caption" style="margin:0 0 10px">点一层，下面时间线与正文会跟着走。L3 着色，是因为 Reasoning 短轨迹里它几乎看不见，Agent 训练同时踩中多轮 tool、异步引擎、MoE 之后才变成基础课。</p>
+    <div class="stack-meta"><span>靠近产品 / 任务</span><span>靠近系统 / 模型</span></div>
+    <div class="stack" id="stack"></div>
+    <div class="arrow">↓ 依赖方向：上面要用，下面先得扛得住</div>
+  </section>
+
+  <section class="figure" id="fig-time">
+    <div class="figure-title">图 2 · 瓶颈泳道：只标第一次成为默认的名字</div>
+    <p class="caption" style="margin:0 0 8px">实心胶囊 = 该层第一次被旗舰写成默认做法。空心 = 当时已有、但还不是这一层的主叙事。底部分三截：Reasoning RL 只打穿 L2 → Agent 主路径先打穿 L1 与 L4 → 引擎拆开后 L3 才爆。</p>
+    <div class="toggle" id="viewToggle"></div>
+    <div class="swim"><div class="swim-inner" id="swim"></div></div>
+    <div class="detail" id="detail">点时间线上的胶囊，看这一下打穿的是哪一层、解决的是什么。</div>
+  </section>
+
+  <div class="laws" id="laws">
+    <div class="law"><div class="n">读法 1 · 2025-01</div><p><b>Reasoning RL 只真正打穿了「学习目标」</b>（GRPO + 可验证结果）。轨迹短、无工具、常是 dense 或还没把训推引擎拆开，所以 TITO / R3 当时不是瓶颈。</p></div>
+    <div class="law"><div class="n">读法 2 · 2025-07</div><p><b>Agent 成为主路径，先打穿「任务与环境」和「rollout 系统」</b>（两万环境、slime、轨迹合成）。学习目标大多还是 GRPO 家族。</p></div>
+    <div class="law"><div class="n">读法 3 · 2025-10 起</div><p><b>引擎一拆成异步、模型一变成 MoE、轨迹一变成多轮 tool，第 3 层才爆。</b>R3 和 TITO 都在这一层。DSA / 百万 token 是为了让 L1、L4 的长轨迹在计算上付得起。</p></div>
+  </div>
+
+  <article>
+    <h2>按层展开</h2>
+    <p class="muted">GRPO 的小变体（DAPO、CISPO 等）不单开。每层只留有代表性、反复被旗舰点名的技术。</p>
+
+    <h2 id="l1">L1 · 任务与环境</h2>
+    <p>问的是：模型在跟什么交互、怎样算一次「做对了」。奖励设计附属于环境——环境给不给得出干净信号——不单独成层。</p>
+    <div class="cards">
+      <div class="card"><b>2025-04 原子能力</b><span>Qwen3 把 agent/工具掺进通用 RL；GLM-4-0414 用拒绝采样 + RL 训 function calling。动作空间扩到 tool call，反馈仍是格式/偏好，不是沙箱跑完测试。这是数据形态起点，不是 AgenticRL。</span></div>
+      <div class="card"><b>2025-07 两条分叉</b><span>Qwen3-Coder：真实环境 RL，约 2 万路并行，SWE / Browser-Use / Tool-Use，<i>环境就是数据源</i>。Kimi K2：先合成工具/任务/轨迹做 SFT，再 Gym 式 RLVR。两条后来一直并存。</span></div>
+      <div class="card"><b>2025-12 环境工厂化</b><span>DeepSeek-V3.2：合成 1800+ 环境、85000+ prompt；agent 用规则结果奖励，通用任务用带 rubric 的生成式 RM；reasoning / agent / 对齐并在一个 GRPO 阶段。</span></div>
+      <div class="card"><b>2026-01 可并行分解</b><span>Kimi K2.5 PARL：只训 orchestrator，冻住子 agent。要评估的是并行调度，不是单条长轨迹。奖励 = 并行实例化 + 完成率 + 任务结果，防假并行和串行塌缩。</span></div>
+      <div class="card"><b>2026-04 多 harness · 可暂停</b><span>V4 的 DSec（函数/容器/microVM/虚机）与 K3 可恢复沙箱：partial rollout 若环境不能暂停，生成省了、交互省不了。K3 训练时轮换 Claude Code / Codex / OpenClaw。</span></div>
+      <div class="card"><b>扩缩三角</b><span>Qwen3.8：Task（单任务→多日）× Workspace（多文件→异构目录）× Harness（类别/版本/skills）独立扩。Universal Reward 把执行检查、文本/视觉 rubric、agent 巡检收进同一套。</span></div>
+    </div>
+    <p>这一层的演进一句话：<b>原子 tool call → 单环境长程 → 合成环境工厂 → 并行 / 多 harness → 环境与奖励一起 scale。</b></p>
+
+    <h2 id="l2">L2 · 学习目标</h2>
+    <p>问的是：有了轨迹和奖励之后，用什么式子更新策略。Agent 轨迹变长、模型变 MoE 之后，目标函数的粒度会跟着变；名字可以一直叫 GRPO 家族。</p>
+    <p><b>2025-01 GRPO 成为默认骨架。</b>同一 prompt 采一组回复，组内相对优势，不要 value model。它解决的是「长 CoT 上 PPO 养不起 critic」，并不解决多轮工具或 MoE 路由。可验证结果（对错、单测）是配套奖励；环境层后来把「可验证」从数学题换成沙箱，这一层可以暂时不动。</p>
+    <p><b>2025-07 GSPO：MoE 上把优化粒度从 token 改到序列。</b>GRPO 对每个 token 算 importance ratio 再 clip；MoE 里 router 稍抖，每个 token 的 r<sub>t</sub> 都在抖，长序列方差爆炸。GSPO 用整段回复的几何平均做序列级 ratio，clip 一次。</p>
+    <div class="formula">GSPO 与 R3 正交：GSPO 改 <b>loss 粒度</b>，R3 改 <b>是不是同一组 expert</b>。先保证动作定义一致，再考虑 ratio 不要按 token 抖。</div>
+    <p>之后到 GLM-5、Qwen3.8、K3，公开材料仍是「在 GRPO/GSPO 这类 critic-free 目标上做长程」。真正换的是环境、一致性和 rollout，不是又发明一个 loss 名。</p>
+
+    <h2 id="l3">L3 · 训推一致性</h2>
+    <p>问的是：采样时模型做的那个动作，反传时是不是还在对<b>同一个动作</b>求导。可以记成三个「动作必须对上」：</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>对不上什么</th><th>代表性技术</th><th>何时成为问题</th></tr></thead>
+      <tbody>
+        <tr><td>token 序列（含 tool / thinking 边界）</td><td><b>TITO</b></td><td>异步 + 多轮，text 往返再 tokenize</td></tr>
+        <tr><td>MoE expert 选择</td><td><b>R3 / Routing Replay</b></td><td>推理引擎与训练引擎各算一遍 router</td></tr>
+        <tr><td>DSA indexer 的 top-k</td><td>确定性 top-k / 冻结 indexer</td><td>稀疏注意力当另一种路由</td></tr>
+      </tbody>
+    </table></div>
+    <p><b>R3（2025-10）：</b>rollout（vLLM/SGLang）和训练（Megatron 等）数值差会让同一 token 选到不同 expert。重要性采样假设「当前 logπ 对应当初采样的动作」被破坏。做法：rollout 记录每层 top-k expert <em>索引</em>，训练 forward 强制重放；router logits 仍用当前权重算。只重放离散选择。dense 模型不需要。</p>
+    <p><b>TITO（2026-02）：</b>反面是 Text-In-Text-Out——rollout 吐字符串，训练再 tokenize。空白、截断、chat template、tool 消息、<code>&lt;/think&gt;</code> 一 decode/encode，采样 token id ≠ 反传 token id。正面：gateway 保存 input_ids / output_ids / logprobs（以及 routed experts），多轮只对新增后缀 tokenize。<b>没有 TITO，异步 + 多轮 tool 的 GRPO 在数学上已经不是对采样动作求导。</b></p>
+    <p>IcePop / 双端 IS 修的是<b>策略版本差</b>（异步 off-policy），不是 token 对不齐、也不是 expert 对不齐。先有 TITO 和 R3，再谈 IS。</p>
+
+    <h2 id="l4">L4 · 长程 rollout 系统</h2>
+    <p>问的是：一条轨迹要跑很多步、很长生成，一批里总有几条拖到天荒地老，训练还能否向前走。</p>
+    <div class="flow">
+      <div class="flow-box">2025-01　partial rollout（k1.5）：做完一部分就更新，没做完的下一轮接着滚</div>
+      <div class="flow-arr">↓ Agent 轨迹比 CoT 更长、更吃环境，这套直接搬家</div>
+      <div class="flow-box now">2025-07　slime：Megatron 训练 + SGLang rollout + Data Buffer；环境当 data generation 插件接入</div>
+      <div class="flow-arr">↓ 吞吐再升一档</div>
+      <div class="flow-box">APRIL 超额发请求、主动收部分完成，打 rollout 长尾（生成可占 RL 时间九成以上）</div>
+      <div class="flow-arr">↓ 异步解耦换来的就是 L3</div>
+      <div class="flow-box">2026-02 异步 + 2026-04 可恢复 microVM：环境状态也必须能暂停，否则只省了 decode</div>
+    </div>
+    <p>演进：<b>同步等齐 → 部分完成就更新 → 框架化插环境 → 异步 + 可恢复环境。</b>吞吐每升一档，第 3 层就要补一档。</p>
+
+    <h2 id="l5">L5 · 长序列模型架构</h2>
+    <p>问的是：多轮工具、保留思考、仓库级上下文，注意力和 KV 是否付得起。架构不直接「训 Agent」，但没有它，上面四层的长轨迹在计算上不成立。</p>
+    <div class="cards">
+      <div class="card"><b>2025-04 快慢思考合一</b><span>Qwen3：同一套权重，thinking budget 可调。把「推理 token 也要占上下文」变成产品默认。</span></div>
+      <div class="card"><b>2025-09 DSA</b><span>lightning indexer + top-k，装在 MLA 上，主注意力从 O(L²) 降到 O(Lk)。给 L1/L4 让路，同时把 indexer 选择变成 L3 的新一致性问题。</span></div>
+      <div class="card"><b>2025-11 交错 / 保留思考</b><span>工具调用之间不丢掉思考块。这是模板与数据约定，要求 TITO 能正确切 thinking / tool 边界。</span></div>
+      <div class="card"><b>2026-02 线性注意力混合</b><span>Qwen3.5：Gated DeltaNet 与 Gated Attention 交错。目标同样是长序列效率，路线与 DSA 不同（混合线性 vs 选择稀疏）。</span></div>
+      <div class="card"><b>2026-04 百万 token</b><span>V4 / K3 / Hy4 / GLM-5.3 Flash。卖点从「窗口数字」变成「agent 用得起的 1M」。架构层到这里和任务层合龙。</span></div>
+    </div>
+
+    <h2 id="matrix">五层对照时间</h2>
+    <p class="muted">只标第一次成为默认。空白表示沿用上一窗。</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>时间</th><th>L1 任务与环境</th><th>L2 学习目标</th><th>L3 训推一致性</th><th>L4 长程 rollout</th><th>L5 长序列架构</th></tr></thead>
+      <tbody>
+        <tr><td>2025-01</td><td>可验证题</td><td><b>GRPO</b></td><td>尚未成为瓶颈</td><td><b>partial rollout</b></td><td>长 CoT 占窗口</td></tr>
+        <tr><td>2025-04</td><td>tool call 原子能力</td><td></td><td></td><td></td><td>快慢思考合一</td></tr>
+        <tr><td>2025-07</td><td>真实环境 RL / 轨迹合成</td><td><b>GSPO</b></td><td></td><td><b>slime</b></td><td></td></tr>
+        <tr><td>2025-09</td><td></td><td></td><td></td><td></td><td><b>DSA</b></td></tr>
+        <tr><td>2025-10</td><td></td><td></td><td><b>R3</b></td><td></td><td></td></tr>
+        <tr><td>2025-12</td><td>合成环境工厂</td><td>单阶段混合 GRPO</td><td></td><td></td><td></td></tr>
+        <tr><td>2026-01</td><td><b>PARL</b></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td>2026-02</td><td></td><td></td><td><b>TITO</b> · indexer</td><td>异步解耦</td><td>线性注意力混合</td></tr>
+        <tr><td>2026-04+</td><td>多 harness · 百万 token 任务</td><td></td><td>R3 进 MoE 旗舰默认</td><td>可恢复沙箱</td><td><b>1M</b> 窗口</td></tr>
+      </tbody>
+    </table></div>
+
+    <h2 id="firsts">Agent 训练：先记住这几条「第一」</h2>
+    <p class="muted">只比较公开、可引用的节点。AgenticRL 是重要子类，SFT / 合成轨迹 / 工具调用也算进来。下划线加粗对应时间线上与 Agent 训练比较相关的型号。</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>问题</th><th>目前看到的答案</th></tr></thead>
+      <tbody>
+        <tr><td>谁先把开源 Reasoning RL 做成现象？</td><td><b>DeepSeek-R1</b> 与 <b>Kimi k1.5</b> 同日（2025-01-20）。R1 影响更大。</td></tr>
+        <tr><td>谁先把快慢思考合并进一个开源权重？</td><td><b>Qwen3</b>（2025-04）</td></tr>
+        <tr><td>谁先在旗舰后训练里明确训 function calling / agent 原子能力？</td><td><b>GLM-4-0414</b>（2025-04）；Qwen3 同期把 agent 放进通用 RL</td></tr>
+        <tr><td>谁先把大规模 agentic 轨迹合成 + 联合 RL 写成开源旗舰故事？</td><td><b>Kimi K2</b>（2025-07-11）</td></tr>
+        <tr><td>谁先把环境并行规模写成 Agent 训练卖点？</td><td><b>Qwen3-Coder</b>（2 万环境，2025-07）</td></tr>
+        <tr><td>谁先把 Agent 训练框架开源给社区？</td><td><b>GLM slime</b>（随 4.5，2025-07）</td></tr>
+        <tr><td>谁先把 reasoning+agent+对齐合成一个 RL 阶段并公开配方？</td><td><b>DeepSeek-V3.2</b>（2025-12）</td></tr>
+        <tr><td>谁先做并行多 Agent 的 RL（只训编排器）？</td><td><b>Kimi K2.5 PARL</b>（2026-01）</td></tr>
+        <tr><td>谁先把长程 Agent 训练推到异步系统工程并写进报告？</td><td><b>GLM-5</b>（2026-02）</td></tr>
+        <tr><td>百万 token 上的 Agent 训练？</td><td><b>K3 / DeepSeek-V4</b> 同季（2026-04–07）</td></tr>
+      </tbody>
+    </table></div>
+
+    <h2>共性演化</h2>
+    <div class="flow">
+      <div class="flow-box">可验证 Reasoning RL（R1 / k1.5）</div>
+      <div class="flow-arr">↓</div>
+      <div class="flow-box">混合推理合一 + 工具/agent 原子能力（Qwen3 / GLM-4-0414）</div>
+      <div class="flow-arr">↓</div>
+      <div class="flow-box now">单 Agent 训练：合成轨迹 SFT 与/或环境 RL（Coder / K2 / GLM-4.5）</div>
+      <div class="flow-arr">↓</div>
+      <div class="flow-box">合成环境 + 单阶段混合 RL（V3.2）</div>
+      <div class="flow-arr">↓</div>
+      <div class="flow-box">并行 Swarm / 异步长程（K2.5 / GLM-5）</div>
+      <div class="flow-arr">↓</div>
+      <div class="flow-box">多模态 + 百万上下文 Agent（Qwen3.5/3.8、K3、V4）</div>
+    </div>
+    <p>若继续深挖，按层而不是按厂商，优先第 3 层（TITO、R3）再补开源落点（slime / verl / NeMo-RL）的对照。配方完整度：V3.2 → K2 → Qwen3-Coder → GLM-4.5→5 → K2.5 PARL。</p>
+  </article>
+
+  <footer>材料整理自阶段一综述 · 日期以官方 blog / API changelog / 技术报告为准 · 2026-09</footer>
+</div>
+
+<script>
+const LAYERS = [
+  {id:1, name:'任务与环境', ask:'训什么、在哪交互、反馈从哪来', cls:''},
+  {id:2, name:'学习目标', ask:'用什么目标函数更新策略', cls:''},
+  {id:3, name:'训推一致性', ask:'采样时的动作 == 反传时的动作', cls:'l3'},
+  {id:4, name:'长程 rollout 系统', ask:'轨迹又长又拖尾，怎么还能吞吐', cls:''},
+  {id:5, name:'长序列模型架构', ask:'上下文和注意力撑不撑得住多轮工具', cls:''}
+];
+
+const T0 = Date.parse('2025-01-01'), T1 = Date.parse('2026-09-01');
+function x(ym){
+  const [y,m] = ym.split('-').map(Number);
+  return ((Date.parse(y+'-'+String(m).padStart(2,'0')+'-01') - T0) / (T1 - T0)) * 100;
+}
+
+const EVENTS = [
+  {layer:1, date:'2025-01', label:'可验证题', def:false, title:'可验证题当奖励', body:'数学/代码对错是标量奖励。还没有环境。Agent 训练的数据形态还没开始。'},
+  {layer:1, date:'2025-04', label:'tool call', def:false, title:'原子能力，还没有环境', body:'Qwen3 把 agent/工具掺进通用 RL；GLM-4-0414 训 function calling。反馈仍是格式与偏好，不是沙箱跑完测试。'},
+  {layer:1, date:'2025-07', label:'环境 RL', def:true, title:'两条分叉，后来一直并存', body:'Qwen3-Coder：约 2 万路真实环境，环境就是数据源。Kimi K2：先合成轨迹 SFT，再 Gym 式 RLVR。GLM-4.5 用 slime 把检索 QA 与 SWE 插进同一条流。'},
+  {layer:1, date:'2025-12', label:'环境工厂', def:false, title:'合成 1800+ 环境', body:'DeepSeek-V3.2：85000+ prompt；reasoning / agent / 对齐并在一个 GRPO 阶段，避免切阶段遗忘。'},
+  {layer:1, date:'2026-01', label:'PARL', def:true, title:'环境从串行变成可并行分解', body:'K2.5 只训 orchestrator、冻住子 agent。要评估的是并行调度。奖励塑形防假并行和串行塌缩。'},
+  {layer:1, date:'2026-04', label:'多 harness', def:false, title:'环境要能撑百万 token、多 harness', body:'DSec / 可恢复沙箱让 long-horizon partial rollout 能暂停交互。K3 轮换 Claude Code / Codex / OpenClaw。Qwen3.8 按 Task × Workspace × Harness 扩缩。'},
+  {layer:2, date:'2025-01', label:'GRPO', def:true, title:'GRPO 成为默认骨架', body:'组内相对优势，不要 critic。解决长 CoT 上 PPO 养不起 value model。不解决多轮工具或 MoE 路由。'},
+  {layer:2, date:'2025-07', label:'GSPO', def:true, title:'优化粒度从 token 改到序列', body:'MoE 上 token 级 importance 方差爆炸。GSPO 用整段几何平均做序列级 ratio，clip 一次。与 R3 正交。'},
+  {layer:2, date:'2025-12', label:'单阶段混合', def:false, title:'reasoning + agent + 对齐并在一个 GRPO 阶段', body:'V3.2 的配方选择：不再切阶段，避免遗忘。loss 家族没换，配比和任务换了。'},
+  {layer:3, date:'2025-10', label:'R3', def:true, title:'Rollout Routing Replay', body:'同一 token 在 rollout 与训练上选到不同 expert，重要性采样假设被破坏。重放 top-k expert 索引，不搬运整段浮点。'},
+  {layer:3, date:'2026-02', label:'TITO', def:true, title:'Token-In-Token-Out', body:'禁止 text 往返再 tokenize。gateway 保存 id 流；多轮只对新增后缀 tokenize。没有 TITO，异步多轮 GRPO 已经不是对采样动作求导。'},
+  {layer:3, date:'2026-04', label:'R3 默认', def:false, title:'R3 进入 MoE 旗舰默认', body:'Agentic 多轮还要把 routed_experts 跟着 packing / context parallel 切片走。DSA indexer 的 top-k 是同一思想在稀疏注意力上的对应物。'},
+  {layer:4, date:'2025-01', label:'partial rollout', def:true, title:'不必等组内所有 CoT 结束', body:'k1.5：做完一部分就更新策略。Agent 轨迹更长、更吃环境，这套后来直接搬家。'},
+  {layer:4, date:'2025-07', label:'slime', def:true, title:'生成和训练拆开，环境当插件', body:'Megatron + SGLang + Data Buffer。数学、代码、沙箱、搜索、多 agent 都以 data generation 身份接入，不改训练主循环。'},
+  {layer:4, date:'2026-02', label:'异步解耦', def:false, title:'长程 agent 不再锁步', body:'APRIL 打长尾；GLM-5 异步化。吞吐换来的就是 L3 的一致性问题。'},
+  {layer:4, date:'2026-04', label:'可恢复沙箱', def:false, title:'环境状态也必须能暂停', body:'K3 / V4 的 microVM：partial rollout 跨很多 iteration，只省 decode 不够，交互状态得能恢复。'},
+  {layer:5, date:'2025-01', label:'长 CoT 窗口', def:false, title:'推理 token 开始占窗口', body:'还不是 Agent 架构问题，但是后面 interleaved thinking 的预演。'},
+  {layer:5, date:'2025-04', label:'快慢合一', def:false, title:'同一套权重要装下 thinking budget', body:'Qwen3 把「推理 token 也要占上下文」做成产品默认。'},
+  {layer:5, date:'2025-09', label:'DSA', def:true, title:'主注意力从 O(L²) 降到 O(Lk)', body:'给 L1/L4 的长轨迹让路，同时把 indexer 选择变成 L3 的新离散动作。'},
+  {layer:5, date:'2026-02', label:'线性混合', def:false, title:'Gated DeltaNet × Gated Attention', body:'Qwen3.5。与 DSA 同目标、不同路线：混合线性 vs 选择稀疏。'},
+  {layer:5, date:'2026-04', label:'1M 窗口', def:true, title:'agent 用得起的 1M', body:'V4 / K3 / Hy4 / GLM-5.3 Flash。没有长序列，多日任务和多 harness 轨迹放不进去。架构层和任务层在这里合龙。'}
+];
+
+const VENDORS = [
+  {id:'qwen', name:'Qwen', items:[
+    {date:'2025-04', label:'Qwen3', def:true, title:'Qwen3', body:'快慢思考合一；agent/工具任务掺进第四阶段通用 RL。线上 Agent 训练的起点。'},
+    {date:'2025-07', label:'Coder', def:true, title:'Qwen3-Coder', body:'长程 Agent RL，约 2 万路并行独立环境。本系列第一优先对象。'},
+    {date:'2025-09', label:'Max', def:true, title:'Qwen3-Max', body:'工具调用成为卖点；训练侧未公开是 SFT 还是独立环境 RL。'},
+    {date:'2026-02', label:'3.5', def:true, title:'Qwen3.5', body:'原生多模态 Agent 基座；大规模 agent scaffold + 异步 RL。'},
+    {date:'2026-04', label:'3.6', def:true, title:'Qwen3.6', body:'Agentic Coding + Thinking Preservation。'},
+    {date:'2026-08', label:'3.8', def:true, title:'Qwen3.8', body:'环境×harness×Universal Reward；多日无人值守。'}
+  ]},
+  {id:'ds', name:'DeepSeek', items:[
+    {date:'2025-01', label:'R1', def:false, title:'DeepSeek-R1', body:'开源 Reasoning RL 原点。GRPO + 可验证结果。Agent 训练几乎还没有。'},
+    {date:'2025-08', label:'V3.1', def:true, title:'DeepSeek-V3.1', body:'混合推理 + 后训练强化工具使用与智能体任务。开始做 Agent 的节点。'},
+    {date:'2025-12', label:'V3.2', def:true, title:'DeepSeek-V3.2', body:'合成环境 × 单阶段混合 GRPO。开源阵营里第一份写清的配方。'},
+    {date:'2026-04', label:'V4', def:true, title:'DeepSeek-V4', body:'DSec 沙箱真实工具环境 RL；1M 做成 agent 用得起的窗口。'}
+  ]},
+  {id:'glm', name:'GLM', items:[
+    {date:'2025-04', label:'4-0414', def:true, title:'GLM-4-0414', body:'function calling 当原子能力训进去。智谱 Agent 训练前史。'},
+    {date:'2025-07', label:'4.5', def:true, title:'GLM-4.5', body:'ARC 定位；开源 slime。检索 QA + 真实 SWE。'},
+    {date:'2026-02', label:'GLM-5', def:true, title:'GLM-5', body:'独立 Agentic RL 阶段：异步、TITO、双端 IS。长程系统工程。'},
+    {date:'2026-08', label:'5.3', def:true, title:'GLM-5.3', body:'冻住基座，只 scale 后训练：往 slime 里灌更多长程环境。'}
+  ]},
+  {id:'kimi', name:'Kimi', items:[
+    {date:'2025-01', label:'k1.5', def:false, title:'Kimi k1.5', body:'与 R1 同日的长上下文 Reasoning RL。partial rollout 从这里来。'},
+    {date:'2025-07', label:'K2', def:true, title:'Kimi K2', body:'大规模 agentic 轨迹合成 + 联合 RL。开源权重里第一款把 Agentic 写进标题。'},
+    {date:'2026-01', label:'K2.5', def:true, title:'Kimi K2.5', body:'PARL：只训编排器的并行 Swarm。'},
+    {date:'2026-07', label:'K3', def:true, title:'Kimi K3', body:'白盒 harness 轮换 + 百万 token + 可恢复 microVM。'}
+  ]},
+  {id:'hy', name:'混元', items:[
+    {date:'2025-03', label:'T1', def:false, title:'Hunyuan-T1', body:'混元的 R1 时刻。前史，不展开。'},
+    {date:'2025-06', label:'A13B', def:true, title:'Hunyuan-A13B', body:'代码沙箱 + agent 规则奖励。混元线上可核对的 Agent 训练节点。'},
+    {date:'2026-07', label:'Hy3', def:true, title:'Hy3', body:'开源侧提供 verl + GRPO 接口；旗舰配方公开度低。'},
+    {date:'2026-08', label:'Hy4', def:true, title:'Hy4 preview', body:'1M 上下文进入与 V4 / K3 同一档；Agent 训练故事仍偏产品反馈。'}
+  ]}
+];
+
+const TICKS = ['2025-01','2025-04','2025-07','2025-10','2026-01','2026-04','2026-07','2026-09'];
+let view = 'stack';
+let selected = null;
+let filterLayer = null;
+
+function renderStack(){
+  document.getElementById('stack').innerHTML = LAYERS.map(L =>
+    `<button type="button" class="layer ${L.cls}${filterLayer===L.id?' on':''}" data-l="${L.id}">
+      <div class="idx">L${L.id}</div>
+      <div><span class="name">${L.name}</span><span class="ask">${L.ask}</span></div>
+    </button>`
+  ).join('');
+  document.querySelectorAll('.layer').forEach(btn => btn.onclick = () => {
+    const id = Number(btn.dataset.l);
+    filterLayer = filterLayer === id ? null : id;
+    view = 'stack';
+    selected = null;
+    renderStack();
+    renderToggle();
+    renderSwim();
+  });
+}
+
+function renderToggle(){
+  document.getElementById('viewToggle').innerHTML =
+    `<button type="button" class="${view==='stack'?'on':''}" data-v="stack">按层看瓶颈</button>
+     <button type="button" class="${view==='vendor'?'on':''}" data-v="vendor">按厂商看代际</button>`;
+  document.querySelectorAll('#viewToggle button').forEach(b => b.onclick = () => {
+    view = b.dataset.v; selected = null; renderToggle(); renderSwim();
+    document.getElementById('detail').textContent = view==='stack'
+      ? '点时间线上的胶囊，看这一下打穿的是哪一层、解决的是什么。'
+      : '点型号，看这一代的 Agent 训练形态。下划线叙事对应综述里与 Agent 训练相关的节点。';
+  });
+}
+
+function renderSwim(){
+  const axis = `<div class="axis"><div></div><div class="ticks">${TICKS.map(t=>`<span style="left:${x(t)}%">${t}</span>`).join('')}</div></div>`;
+  const eras = `<div class="eras"><div class="era e1"></div><div class="era e2"></div><div class="era e3"></div></div>`;
+  let tracks = '';
+  if(view==='stack'){
+    tracks = LAYERS.filter(L => !filterLayer || filterLayer===L.id).map(L => {
+      const items = EVENTS.filter(e => e.layer===L.id).map((e,i)=>({...e, _id:L.id+'-'+i}));
+      return `<div class="track">
+        <div class="track-lab"><b>L${L.id} ${L.name}</b><span>${L.ask}</span></div>
+        <div class="rail">${items.map(e=>`<button type="button" class="bead ${e.def?'def':''}${selected&&selected.id===e._id?' on':''}" style="left:${x(e.date)}%" data-id="${e._id}">${e.label}</button>`).join('')}</div>
+      </div>`;
+    }).join('');
+  } else {
+    tracks = VENDORS.map(V => {
+      const items = V.items.map((e,i)=>({...e, _id:V.id+'-'+i}));
+      return `<div class="track">
+        <div class="track-lab"><b>${V.name}</b><span>旗舰节点</span></div>
+        <div class="rail">${items.map(e=>`<button type="button" class="bead ${e.def?'def':''}${selected&&selected.id===e._id?' on':''}" style="left:${x(e.date)}%" data-id="${e._id}">${e.label}</button>`).join('')}</div>
+      </div>`;
+    }).join('');
+  }
+  const eraLab = `<div class="era-lab"><div></div><div class="row"><span>Reasoning RL · 只打穿 L2</span><span>Agent 主路径 · L1 + L4</span><span>一致性 / 长序列 · L3 才爆</span></div></div>`;
+  document.getElementById('swim').innerHTML = eras + axis + tracks + eraLab;
+  document.querySelectorAll('#swim .bead').forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.dataset.id;
+      let e=null;
+      if(view==='stack'){
+        const [lid, idx] = id.split('-');
+        e = EVENTS.filter(x=>x.layer===Number(lid))[Number(idx)];
+      } else {
+        const [vid, idx] = id.split('-');
+        e = (VENDORS.find(v=>v.id===vid)||{}).items[Number(idx)];
+      }
+      if(!e) return;
+      selected = {id, ...e};
+      document.getElementById('detail').innerHTML =
+        `<div class="when">${e.date}${e.def?' · 第一次成为默认 / Agent 训练相关':''}</div><h3>${e.title}</h3><p>${e.body}</p>`;
+      renderSwim();
+    };
+  });
+}
+
+renderStack();
+renderToggle();
+renderSwim();
+</script>
+</body>
+</html>

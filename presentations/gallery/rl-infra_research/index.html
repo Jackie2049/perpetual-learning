@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>[RL infra] Lego-RL：Harness-Native 强化学习训练 Coding Agent 深度研究报告</title>
+<style>
+    :root {
+        --primary: #4338ca;
+        --primary-light: #eef2ff;
+        --primary-mid: #6366f1;
+        --text: #202124;
+        --text-secondary: #5f6368;
+        --bg: #ffffff;
+        --bg-secondary: #f8f9fa;
+        --border: #dadce0;
+        --code-bg: #f1f3f4;
+        --success: #34a853;
+        --warning: #f9ab00;
+        --danger: #d93025;
+        --info-bg: #e8f0fe;
+    }
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --primary: #a5b4fc; --primary-light: #1e1b4b; --primary-mid: #818cf8;
+            --text: #e6e8eb; --text-secondary: #9aa0a8; --bg: #0f1115; --bg-secondary: #171a21;
+            --border: #2a2e36; --code-bg: #1e2229; --info-bg: #1b2a4a;
+            --success: #4ade80; --warning: #fbbf24; --danger: #f87171;
+        }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        color: var(--text); background: var(--bg); line-height: 1.75; font-size: 15px;
+        max-width: 1000px; margin: 0 auto; padding: 24px 20px 80px;
+    }
+    h1 { font-size: 1.9em; color: var(--primary); margin: 1.2em 0 0.4em; border-bottom: 3px solid var(--primary); padding-bottom: 0.3em; line-height: 1.4; }
+    h2 { font-size: 1.45em; color: var(--primary); margin: 1.8em 0 0.5em; border-bottom: 1px solid var(--border); padding-bottom: 0.25em; }
+    h3 { font-size: 1.15em; color: var(--text); margin: 1.3em 0 0.45em; }
+    h4 { font-size: 1.02em; color: var(--text-secondary); margin: 1em 0 0.3em; }
+    p { margin: 0.55em 0; text-align: justify; }
+    ul, ol { margin: 0.5em 0 0.5em 1.6em; }
+    li { margin: 0.3em 0; }
+    a { color: var(--primary); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.88em; font-family: 'SF Mono', Menlo, Consolas, monospace; }
+    table { border-collapse: collapse; width: 100%; margin: 1em 0; font-size: 0.88em; }
+    th, td { border: 1px solid var(--border); padding: 7px 10px; text-align: left; vertical-align: top; }
+    th { background: var(--primary-light); color: var(--primary); font-weight: 600; white-space: nowrap; }
+    tr:nth-child(even) { background: var(--bg-secondary); }
+    .toc { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 18px 22px; margin: 1em 0 2em; }
+    .toc h2 { border: none; margin: 0 0 0.4em; font-size: 1.1em; }
+    .toc ol { margin-left: 1.4em; }
+    .toc li { margin: 0.25em 0; }
+    .badge { display: inline-block; padding: 2px 9px; border-radius: 12px; font-size: 0.75em; font-weight: 600; margin-right: 4px; white-space: nowrap; }
+    .badge-blue { background: var(--primary-light); color: var(--primary); }
+    .badge-green { background: #e6f4ea; color: var(--success); }
+    .badge-orange { background: #fef7e0; color: #e37400; }
+    .badge-red { background: #fce8e6; color: var(--danger); }
+    .callout { padding: 14px 18px; border-radius: 10px; margin: 1em 0; border-left: 4px solid; font-size: 0.94em; }
+    .callout-info { background: var(--info-bg); border-color: var(--primary); }
+    .callout-warning { background: #fef7e0; border-color: var(--warning); }
+    .callout-tip { background: #e6f4ea; border-color: var(--success); }
+    .callout-red { background: #fce8e6; border-color: var(--danger); }
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 1em 0; }
+    .kpi { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+    .kpi .num { font-size: 1.5em; font-weight: 700; color: var(--primary); }
+    .kpi .label { font-size: 0.8em; color: var(--text-secondary); }
+    .flow { display: flex; flex-direction: column; gap: 6px; margin: 1em 0; }
+    .flow-box { background: var(--bg-secondary); border: 1.5px solid var(--primary-mid); border-radius: 8px; padding: 8px 14px; font-size: 0.9em; text-align: center; }
+    .flow-arrow { text-align: center; color: var(--primary-mid); font-size: 1em; line-height: 1; }
+    .diagram { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin: 1em 0; overflow-x: auto; font-size: 0.88em; }
+    .diagram .row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 4px 0; }
+    .diagram .node { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; text-align: center; }
+    .diagram .node.hl { border-color: var(--primary); background: var(--primary-light); }
+    .diagram .node small { display: block; color: var(--text-secondary); font-size: 0.78em; }
+    .formula { background: var(--code-bg); border-radius: 8px; padding: 10px 14px; margin: 0.8em 0; font-family: 'Times New Roman', 'STIX Two Math', serif; font-size: 1.02em; overflow-x: auto; }
+    .footnote { font-size: 0.8em; color: var(--text-secondary); }
+    .taglist { margin: 0.5em 0; }
+    .backtop { position: fixed; right: 22px; bottom: 22px; background: var(--primary); color: #fff; border: none; border-radius: 50%; width: 42px; height: 42px; font-size: 1.1em; cursor: pointer; opacity: 0.85; }
+    .backtop:hover { opacity: 1; }
+    @media (max-width: 768px) { body { padding: 14px 12px 60px; font-size: 14px; } h1 { font-size: 1.45em; } table { font-size: 0.8em; } }
+</style>
+</head>
+<body>
+
+<h1>🧱 [RL infra] Lego-RL：Harness-Native 强化学习训练 Coding Agent</h1>
+<p><strong>研究对象：</strong> <a href="https://github.com/LegoX/Lego-RL">LegoX/Lego-RL</a>（开源项目 + 论文 arXiv:2608.17393）&nbsp;|&nbsp; <strong>研究日期：</strong> 2026-08-29 &nbsp;|&nbsp; <span class="badge badge-blue">RL infra</span><span class="badge badge-green">verl 生态</span><span class="badge badge-orange">Coding Agent</span></p>
+
+<div class="callout callout-info">
+    <strong>📌 一句话结论：</strong>Lego-RL 在 <strong>verl</strong> 之上架起一层「不改 agent 控制流」的在线强化学习管线——通过 in-process LLM 代理捕获生成时刻的真实 token 流（保真优化）、K8s/Docker 沙箱保证 reward 可信（可靠执行）、插件 + Live UI 实现轨迹级可观测（可观测训练），并用 GSPO 在三个原生 harness（OpenHands SDK / Claude Code / OpenCode）上把 Qwen3.5-35B-A3B 的 SWE-bench Verified 分别提升了 <strong>+6.4 / +5.8 / +9.4</strong> 个百分点。
+</div>
+
+<div class="toc">
+    <h2>📑 目录</h2>
+    <ol>
+        <li><a href="#s0">0. 摘要 —— 关键数字</a></li>
+        <li><a href="#s1">1. 项目概览</a></li>
+        <li><a href="#s2">2. 研究动机：为什么需要 Harness-Native RL</a></li>
+        <li><a href="#s3">3. 主要方法：四大支柱</a></li>
+        <li><a href="#s4">4. 软件架构（代码级）</a></li>
+        <li><a href="#s5">5. 实验效果</a></li>
+        <li><a href="#s6">6. 与相关工作的对比</a></li>
+        <li><a href="#s7">7. 局限性与开放问题</a></li>
+        <li><a href="#s8">8. 对我们工作的启示</a></li>
+        <li><a href="#s9">9. 结论</a></li>
+        <li><a href="#s10">10. 附录</a></li>
+    </ol>
+</div>
+
+<!-- ================= 0 摘要 ================= -->
+<h2 id="s0">0. 摘要 —— 关键数字</h2>
+
+<div class="kpi-grid">
+    <div class="kpi"><div class="num">+6.4 / +5.8 / +9.4</div><div class="label">三个 harness 的 SWE-bench Verified 提升（pp）</div></div>
+    <div class="kpi"><div class="num">70.4%</div><div class="label">最优结果：OpenHands SDK 下 Qwen3.5-35B-A3B</div></div>
+    <div class="kpi"><div class="num">&gt; 0.99</div><div class="label">rollout–训练 log-prob 相关性（Pearson 中位数 ≥ 0.998）</div></div>
+    <div class="kpi"><div class="num">91.3%</div><div class="label">agent 执行占 trial 墙钟时间比例（920s 级 trial）</div></div>
+    <div class="kpi"><div class="num">2,699</div><div class="label">训练任务池（36,884 个候选漏斗筛选而来）</div></div>
+    <div class="kpi"><div class="num">8×A100/H100</div><div class="label">官方硬件门槛（K8s + Nydus + vLLM）</div></div>
+</div>
+
+<div class="kpi-grid">
+    <div class="kpi"><div class="num">2.5×</div><div class="label">异步 vs 同步训练步耗时降幅（7.5h 内 7 步 vs 3 步）</div></div>
+    <div class="kpi"><div class="num">33.2× / 15.4× / 1.7×</div><div class="label">预构建镜像 / 挂载运行时 / Nydus 懒拉取加速比</div></div>
+    <div class="kpi"><div class="num">0.9993</div><div class="label">开启 R3 路由重放后的 rollout–训练相关性（原 0.9946）</div></div>
+    <div class="kpi"><div class="num">7.1% / 2.4% / 6.4%</div><div class="label">三个 harness 被轨迹过滤丢弃的比例</div></div>
+</div>
+
+<!-- ================= 1 项目概览 ================= -->
+<h2 id="s1">1. 项目概览</h2>
+
+<h3>1.1 基本信息</h3>
+<table>
+    <tr><th>项目</th><td><a href="https://github.com/LegoX/Lego-RL">github.com/LegoX/Lego-RL</a>（LegoX 组织，华为 + 港中文团队）</td></tr>
+    <tr><th>论文</th><td>LEGO-RL: Harness-Native Reinforcement Learning for Coding Agents，arXiv:2608.17393（2026-08-18），12 位作者，共一 3 人</td></tr>
+    <tr><th>开源时间</th><td>2026-07-28 建仓，2026-08 首次公开 release；截至 2026-08-29：59 stars / 3 forks / 46+ commits，仍在活跃开发</td></tr>
+    <tr><th>License</th><td>Apache-2.0（代码）；论文 CC Zero</td></tr>
+    <tr><th>技术底座</th><td>verl v0.8.0（训练引擎）+ Harbor（沙箱执行/verifier reward）+ vLLM v0.19.0（推理服务）；均以 <code>third_party/</code> 源码树 + patch 方式钉扎（<code>verl_7aed6b23.patch</code> 改 32 个文件、<code>vllm_2a69949b.patch</code> 改 5 个文件），<code>setup_env.sh</code> 幂等应用</td></tr>
+    <tr><th>关键依赖</th><td>Python 3.12、torch 2.10、transformers 5.4.0、veomni 0.1.11、ray ≥ 2.41、uv（含 <code>overrides.txt</code> 绕过过时版本上限）</td></tr>
+    <tr><th>文档/监控</th><td>文档站 <a href="https://lego-rl.pages.dev/docs">lego-rl.pages.dev/docs</a>（Next.js + Fumadocs，Cloudflare Pages）；HF 集合 Lego-X/lego-rl（模型、2699 任务索引）</td></tr>
+</table>
+
+<h3>1.2 生态定位</h3>
+<p>Lego-RL 不做训练引擎本身，而是把「真实的 coding-agent harness 环境」接到 verl 上：<strong>verl 负责 PPO/GRPO/GSPO 优化与分布式，Harbor 负责沙箱与可执行验证，Lego-RL 解决两者之间的三件事</strong>——rollout 的保真捕获（in-process proxy）、失败/reward 污染的处理（轨迹过滤 + reward 完整性防御）、以及运行期可观测（agent plugin + Live UI）。支持一个新 harness 只需写一个薄适配器，训练管线完全共享。它与我们此前研究的 <code>verl</code>、<code>rLLM</code> 属于同一生态位竞争，但选择了「模型 API 边界观察」路线（见第 6 章对比）。</p>
+
+<!-- ================= 2 研究动机 ================= -->
+<h2 id="s2">2. 研究动机：为什么需要 Harness-Native RL</h2>
+
+<h3>2.1 背景：coding agent 的 RL 与普通 LLM-RL 不同</h3>
+<p>训练 coding agent 需要优化的是<strong>长程行为</strong>：一条 rollout 可能包含数十次模型调用、仓库检查、工具调用、代码修改、依赖安装、测试执行，最后才得到一个稀疏的可执行 reward。这些轨迹由原生 agent harness 生成——harness 负责 prompt 构造、工具管理、上下文管理、执行状态。因此优化目标应当是「该 harness 控制流所诱导的策略行为」，而不是某个框架自定义的 rollout 接口下的行为。这是「harness-native」立场的根源：<strong>你在什么 harness 里训，就在什么 harness 里跑</strong>（论文用 KAT-Coder 的例子证明了这一点：它在自己报告的 Claude Code 下 +3.4，在 OpenHands SDK 下 −0.4——换 harness 收益不迁移）。</p>
+
+<h3>2.2 三大痛点</h3>
+<table>
+    <tr><th>痛点</th><th>具体问题</th><th>后果</th></tr>
+    <tr><td>① harness 不可侵入</td><td>一般 RL 框架要求 agent 适配框架定义的 rollout 接口（OpenHands 系要改初始化、换工具集、写自定义终止逻辑）</td><td>训练的是「改过的 agent」，行为分布偏移；每个新 agent 都要重写一套集成</td></tr>
+    <tr><td>② rollout 保真度断裂</td><td>harness 会压缩/重序列化/重写对话历史；事后从最终轨迹反推 token 序列 ≠ 采样时刻的真实序列；训练端重算 log-prob 与 rollout 不一致。稀疏 MoE 还会引入<strong>路由不一致</strong>（训练时选的专家 ≠ rollout 时选的专家）</td><td>PPO/GRPO 类算法对 log-prob 极其敏感——log-prob 就是 importance ratio 的输入，错一丁点梯度就偏</td></tr>
+    <tr><td>③ 沙箱与 reward 不可信</td><td>沙箱崩溃、依赖错误、verifier 配置错误、超时、<strong>reward hacking</strong> 都会污染二值 reward；异步管线中失败跨 stage 传播，难以定位</td><td>成本极高的轨迹被丢弃，或把「环境噪声」当「策略学习信号」</td></tr>
+</table>
+
+<h3>2.3 形式化目标与「保真」的定义</h3>
+<p>论文把任务写成 <code>x = (q_x, R_x, V_x)</code>（问题陈述、仓库环境、可执行 verifier），rollout 是模型 API 处真实交换的 prompt–response 序列 <code>τ = ((c₁,a₁),…,(c_T,a_T))</code>，verifier 给终态二值 reward。训练目标用 group-relative advantage（即 GRPO 式）与 GSPO 序列级损失：</p>
+
+<div class="formula">
+Âᵢ = (rᵢ − r̄) / (std(r₁:G) + δ)，δ = 10⁻⁶<br>
+𝒥<sub>GSPO</sub>(θ) = 𝔼 [ (1/G) Σᵢ w(τᵢ) · min( σᵢ(θ)Âᵢ , clip(σᵢ(θ), 1−ε<sub>low</sub>, 1+ε<sub>high</sub>)·Âᵢ ) ]<br>
+σᵢ(θ) = ( π_θ(τᵢ) / π_θ<sub>k′</sub>(τᵢ) )<sup>1/|ℳ(τᵢ)|</sup>　　（序列级 ratio，|ℳ| 为策略生成 token 数）
+</div>
+
+<p>两个推论塑造了整个系统设计：<strong>(a)</strong> 同组 reward 全等时 Â ≡ 0、无梯度——任务难度是「相对策略」的，任务池构成是一等公民；<strong>(b)</strong> r 由执行代码产生——学习信号可信度完全取决于沙箱与 verifier。而「保真」的严格定义是：训练端在相同权重 θ<sub>k′</sub> 下重算的 log-prob <code>ℓ^train ≈ ℓ^roll</code>（对每个策略生成 token，允许数值容差）——只有当 token id、response mask、权重、以及 MoE 的专家路由都一致时才能成立。异步训练下 trainer 版本领先 behavior 版本是<strong>有界 staleness（论文取 1）</strong>，由式 (1) 做 off-policy 校正；而任何保真条件破坏则是<strong>捕获错误</strong>，必须杜绝。</p>
+
+<!-- ================= 3 主要方法 ================= -->
+<h2 id="s3">3. 主要方法：四大支柱</h2>
+
+<h3>3.1 支柱一：薄适配层 —— 不改 agent 一行代码</h3>
+<p>支持一个 harness = 一个 adapter：负责在沙箱里启动 agent、把它的模型调用指向 in-process proxy、执行完返回交互数据。论文支持的三种原生 harness：</p>
+<ul>
+    <li><strong>OpenHands SDK</strong>：容器内跑轻量 SDK（<code>openhands-sdk==1.33.0</code>），Jinja2 模板渲染 user 指令，env 注入 <code>LLM_BASE_URL</code>/<code>LLM_MODEL</code>/<code>SKILL_PATHS</code>；</li>
+    <li><strong>Claude Code</strong>：走 Anthropic Messages API，env 注入 <code>ANTHROPIC_BASE_URL</code> 指向 proxy 的 <code>/sess/{id}/v1</code>（按 trial 覆盖，不走独立 LiteLLM）；<code>CLAUDE_CODE_ATTRIBUTION_HEADER=0</code> 关掉 billing hash 头以保 prefix cache；</li>
+    <li><strong>OpenCode</strong>：OpenAI 兼容 hosted_vllm provider，env 注入 <code>HOSTED_VLLM_BASE_URL</code> + <code>OPENCODE_TEMPERATURE</code>。</li>
+</ul>
+<p>任何会讲 OpenAI/Anthropic API 的自定义 scaffold 都可以直接复用同一套 agent-loop 接口（verl 的 <code>AgentLoopBase</code> 注册表）。</p>
+
+<h3>3.2 支柱二：保真 rollout —— in-process proxy 在生成时刻捕获一切</h3>
+<p>核心模块 <code>src/verl_patch/agent_loop/vllm_chat_completion_proxy.py</code>（约 2400 行）：一个与 verl rollout 引擎同进程的 aiohttp 服务器，<strong>同时讲 OpenAI Chat Completions 和 Anthropic Messages 两种协议</strong>，但内部是 token-in/token-out：用 verl 的 tokenizer <code>apply_chat_template</code> 把消息 tokenize 后直接调 <code>server_manager.generate(prompt_ids)</code>，在响应瞬间把 <strong>token ids、逐 token log-prob、response mask、MoE 路由决策（R3）</strong>全部归档进 session 轨迹。要解决的工程难题都在「history rewrite」上：</p>
+<ul>
+    <li><strong>消息级前缀对齐</strong>：逐轮对增量消息做 <code>apply_chat_template</code>（去重 generation-prompt、回填 EOS 尾 token），新请求必须是已归档快照的前缀扩展，否则进入 rebuild 路径；</li>
+    <li><strong>tool-call 身份锚定</strong>：Claude Code 会以任意方式重序列化 tool_call 的 arguments（JSON↔list、key 重排、schema 默认填充），但 <strong>id 恒不变</strong>——按 id 匹配即可吸收 207/222（93%）的重序列化差异，只有真正的历史改写（如动态插入 system-reminder）才触发重建；</li>
+    <li><strong>重建时救回 log-prob</strong>：重建路径只把「共同前缀」的旧 log-prob 拷贝回来（token 的 log-prob 取决于完整左上下文，共同后缀不可复用），并可用 vLLM <code>prompt_logprobs</code> 重算分歧尾部（默认开、OOM 可 kill-switch）；</li>
+    <li><strong>子 agent 隔离</strong>：Claude Code 的 Task 子 agent（Explore 等）与主会话共享 session_id 但 system prompt 不同——按 system prompt 指纹路由到隔离的、不入训练的非归档状态（论文实测把混入率从 6.3% 降到 0%）；OpenCode 的标题生成内部请求同理；</li>
+    <li><strong>会话级准入调度</strong>：高 KV 压力时按「会话所有权 + prefix-cache 命中率」准入（vLLM patch 新增 <code>kv_cache_usage_probe</code>/<code>prefix_cache_probe</code> 无副作用探针），保 prefix 驻留。</li>
+</ul>
+<p>归档结果通过 <code>AgentLoopOutput</code> 交给 verl：<code>prompt_ids</code>、<code>response_ids</code>（截到 response_length）、<code>response_mask</code>（1=模型 token，0=工具/用户 token）、<code>response_logprobs</code>、<code>routed_experts</code>（R3）、以及 <code>termination_reason</code> 等 extra_fields。MoE 训练端用 <strong>R3（rollout routing replay）</strong>：vLLM 侧 capturer 在推理时把每层 top-k 专家选择写入共享内存（<code>routed_experts_capturer.py</code>，uint8 缓冲 + <code>R3_BUFFER_FACTOR=5</code> 修复混合注意力模型低估 ~4 倍的问题），训练时 <code>qwen3_5_router_replay.py</code> 包裹 router 的 forward：RECORD 记录索引，REPLAY_FORWARD 用捕获索引覆盖 top-k 选择并重归一化——保证训练前向与 rollout 走同一批专家。</p>
+
+<h3>3.3 支柱三：训练与扩展 —— 异步、staleness、轨迹过滤</h3>
+<ul>
+    <li><strong>全异步 rollout</strong>：<code>FullyAsyncRollouter</code>（verl experimental）解耦轨迹生成与优化，agentic rollout 长尾重——同步批次会被最慢的 10% 轨迹拖住（离线实测：最慢 10% 占 24.5% 总工作量，31 次 batch 边界 stall 中位数 38.7 分钟）。异步下每次权重同步时被中断的部分 rollout 由 <code>AsyncLLMServerManager</code> 自动续生（<code>partial_rollout: True</code>），staleness 有界（模板默认 <code>STALENESS=1.0</code>，配置 <code>staleness_threshold: 0.1</code>、每 4 步同步一次参数）；</li>
+    <li><strong>终止感知的轨迹准入</strong>：统一的终止分类法（agent_completed / overlong / max_turns_reached / timeout / env_setup_failed）。<code>trajectory_filter.py</code>（verl 新增模块）把环境失败/超时/上下文溢出/超长轨迹从训练中剔除：<strong>零化其 reward、改写 uid 为单例组（从 GRPO 组统计中摘除）、事后零化 advantage</strong>——batch 形状不变，三重保险。论文实测丢弃率：Claude Code 7.1%、OpenHands SDK 2.4%、OpenCode 6.4%；</li>
+    <li><strong>算法/后端</strong>：PPO / GRPO / GSPO × FSDP / VeOmni / Megatron；生产用 <code>use_rollout_log_probs=True</code>（训练直接吃 rollout 捕获的 log-prob）+ <code>rollout_correction.bypass_mode</code>（log-prob 一致性足够高时跳过 IS 校正，降低方差）。</li>
+</ul>
+
+<h3>3.4 支柱四：沙箱化 reward —— 隔离、懒拉取、反作弊</h3>
+<ul>
+    <li><strong>K8s/Docker 双后端</strong>：每个 trial 一个全新 pod/容器；<code>harbor_patch/environments/kubernetes.py</code> 是通用 K8s 实现（非 GKE 专用），Docker 端支持远程 daemon；</li>
+    <li><strong>启动优化</strong>：Nydus 懒拉取（按需流式取镜像块，冷启动中位 1.7×、最大 23× 提速；网络流量 21.6GB→1.59GB、磁盘写 65.6GB→5.29GB）、预构建任务镜像（33.2×）、agent 运行时只读挂载而非安装（15.4×）；</li>
+    <li><strong>reward 完整性防御</strong>（论文附录 A 实测的六类失败模式 + 对策）：
+    <table>
+        <tr><th>失败模式</th><th>实测发生率</th><th>防御</th></tr>
+        <tr><td>读 git 历史找答案</td><td>4.6–20.5%</td><td>agent 阶段把历史 rebase 成单 commit，判分前恢复</td></tr>
+        <tr><td>下载参考修复</td><td>1.9%</td><td>特权 sidecar 按阶段防火墙（agent 容器无 NET_ADMIN，改不了规则）</td></tr>
+        <tr><td>改测试文件</td><td>2.4–19.4%</td><td>判分前才注入测试；测试路径改动回滚</td></tr>
+        <tr><td>grader 误应用参考 patch</td><td>2.5%</td><td>审计并剔除受影响实例</td></tr>
+        <tr><td>grader 需要网络 / 仓库构建不完整</td><td>—</td><td>判分依赖全部打包进镜像；hermetic fail-fast 构建，显式报 setup 失败而非零 reward</td></tr>
+    </table></li>
+</ul>
+
+<!-- ================= 4 软件架构 ================= -->
+<h2 id="s4">4. 软件架构（代码级）</h2>
+
+<h3>4.1 分层视图</h3>
+<div class="diagram">
+    <div class="row"><div class="node"><strong>Trainer</strong><small>FSDP / VeOmni / Megatron · GSPO loss · trajectory_filter</small></div></div>
+    <div class="row">▲ 权重同步（staleness ≤ 1）▼ 过滤后的 batch</div>
+    <div class="row"><div class="node"><strong>Rollouter</strong><small>FullyAsyncRollouter · worker 队列 · partial-rollout 续生</small></div></div>
+    <div class="row">▼ AgentLoopOutput（token ids / logprobs / masks / routing / termination）</div>
+    <div class="row"><div class="node"><strong>AgentLoopWorkers</strong><small>verl 进程池（生产 96–250 worker）· 每 worker 一个 trial</small></div></div>
+    <div class="row">▼ 起沙箱 → 注入 proxy 地址 → 多轮 agent → verifier reward</div>
+    <div class="row"><div class="node hl"><strong>In-Process Proxy</strong><small>/v1/chat/completions + /v1/messages · 生成时刻归档 · 前缀对齐 · R3</small></div></div>
+    <div class="row">▼ prompt_ids（token-in / token-out）</div>
+    <div class="row"><div class="node"><strong>Global Load Balancer + Session Scheduler</strong><small>sticky routing · KV 压力准入 · prefix-cache 探针</small></div></div>
+    <div class="row">▼</div>
+    <div class="row"><div class="node"><strong>vLLM 推理服务</strong><small>TP=SP=8 · expert-parallel · tool parser (qwen3_coder) · Nydus 沙箱镜像</small></div></div>
+</div>
+<p class="footnote">分层参考官方文档 architecture 章节（Environment → AgentLoopWorkers → In-Process Proxy → Global Load Balancer → Session Scheduler → Rollouter → Trainer）。</p>
+
+<h3>4.2 一次训练 run 的端到端数据流</h3>
+<div class="flow">
+    <div class="flow-box"><strong>① 启动</strong>：<code>train.sh config.env</code> → source 模板 env（backend/harbor/scaffold/verl 模块）→ <code>preflight.sh</code> 9 类断言（tool_parser 必须匹配模型 chat_template、拓扑 NNODES == train+rollout、SP_SIZE 整除 train_world、R3 仅 MoE、镜像注册表与 inline-build 二选一等）→ 构造 ~100 个 hydra 参数 → ray bringup（先 <code>ray stop</code> + 清 /dev/shm 防 SIGBUS）</div>
+    <div class="flow-arrow">▼</div>
+    <div class="flow-box"><strong>② 引擎</strong>：<code>python -m verl.experimental.fully_async_policy.fully_async_main --config-name=lego_rl_fully_async_fsdp.yaml</code> → vLLM 起服务（served-model-name 与 agent 侧一致、enable-auto-tool-choice）→ AgentLoopManager 注册 <code>builtin_swe_agent</code></div>
+    <div class="flow-arrow">▼</div>
+    <div class="flow-box"><strong>③ 采样</strong>：每个 AgentLoopWorker：起 in-process proxy（每 server_manager 单例、0.0.0.0 随机端口）→ Harbor <code>Trial.create</code>（K8s pod：main 容器 + netadmin sidecar；git 重写为单 commit）→ 按 scaffold 注入 <code>ANTHROPIC_BASE_URL</code> / <code>LLM_BASE_URL</code> / <code>HOSTED_VLLM_BASE_URL</code> 指向 <code>proxy/sess/{id}/v1</code> → agent 多轮调用（每次请求都经 proxy 归档）→ Harbor verifier 跑 FAIL_TO_PASS/PASS_TO_PASS → reward 0/1 → 按终止分类（timeout 不重试、无 verifier 结果重试至多 2 次）</div>
+    <div class="flow-arrow">▼</div>
+    <div class="flow-box"><strong>④ 组批</strong>：AgentLoopOutput → DataProto（<code>routed_experts</code> 缺键自动零填充对齐；traj 合法性校验：mask/logprob 长度必须等于 response 段长度）→ 异步 batch</div>
+    <div class="flow-arrow">▼</div>
+    <div class="flow-box"><strong>⑤ 训练</strong>：trajectory_filter（先于 advantage：零化 reward → 单例 uid → 零化 advantage）→ GRPO advantage → GSPO 序列级 clip 损失 + KL 惩罚（仅入 loss，系数 1e-3）→ 更新权重 → 同步回推理服务（sticky routing，每次同步中断的 rollout 自动续生）</div>
+    <div class="flow-arrow">▼</div>
+    <div class="flow-box"><strong>⑥ 观测</strong>：Live UI（React 19 + Vite + Recharts，后端为 Python 标准库 server.py 解析 verl 日志 + wandb）展示训练曲线 / 终止原因分布 / 任务网格 / 轨迹视图 / 一致性视图；agent plugin（<code>/rl:check</code> <code>/rl:run</code> <code>/rl:status</code> <code>/rl:dashboard</code> 等 5 个 skill）编排整个生命周期 ——「scripts 拥有确定性行为，skill 只做判断」</div>
+</div>
+
+<h3>4.3 关键代码文件索引</h3>
+<table>
+    <tr><th>路径</th><th>职责</th></tr>
+    <tr><td><code>src/verl_patch/agent_loop/vllm_chat_completion_proxy.py</code></td><td>in-process proxy：双协议（OpenAI/Anthropic）、生成时刻归档、前缀对齐与 rebuild、子 agent 隔离、会话调度</td></tr>
+    <tr><td><code>src/verl_patch/agent_loop/builtin_swe_agent_loop.py</code> / <code>builtin_cc_agent_loop.py</code></td><td>Harbor trial ↔ verl AgentLoopOutput 桥（SWE 通用 / Claude Code 版），终止分类、R3 张量组装（<code>routed_experts[j] = position j-1 的前向路由</code> 的对齐约定）</td></tr>
+    <tr><td><code>src/harbor_patch/agents/*</code></td><td>harness 适配器（ohsdk / claude_code / opencode / terminus_2）</td></tr>
+    <tr><td><code>src/harbor_patch/environments/kubernetes.py</code> / <code>remote_docker.py</code></td><td>沙箱后端：egress 隔离 sidecar、反作弊 git 重写、孤儿 pod 清理 / 远程 daemon</td></tr>
+    <tr><td><code>patches/verl_7aed6b23.patch</code></td><td>verl 32 文件改动：agent_loop 框架、fully_async、router_replay（<code>verl/utils/router_replay.py</code> + <code>qwen3_5_router_replay.py</code> + megatron 版）、trajectory_filter、off-policy 指标（p50/90/99 + tail 分数）、DataProto 缺键对齐、vLLM KV 探针 client</td></tr>
+    <tr><td><code>patches/vllm_2a69949b.patch</code></td><td>vLLM 5 文件改动：routed_experts_capturer uint8 化 + 越界守护、R3_BUFFER_FACTOR、KV/prefix 探针</td></tr>
+    <tr><td><code>scripts/train/</code>、<code>scripts/lib/</code></td><td>train.sh + preflight/ray_bringup/harbor_env；demo.env（1 节点 8 GPU、8 prompt×4 resp=32 trials/step）与 2 个生产配置（3 节点：train×2 + rollout×1、SP=8 EP=1、30k prompt + 170k response、worker 96–250）</td></tr>
+    <tr><td><code>utils/</code></td><td>任务索引生成（parquet 注册表）、SWE-rebench 转换、veomni/qwen35 FSDP→HF 合并（含 MoE v5 布局展开）、R3 patch 重放</td></tr>
+</table>
+
+<!-- ================= 5 实验效果 ================= -->
+<h2 id="s5">5. 实验效果</h2>
+
+<h3>5.1 实验设置</h3>
+<p>模型 <strong>Qwen3.5-35B-A3B</strong>（稀疏 MoE，A3B 激活）+ VeOmni 混合引擎；三个原生 harness 分别训（OpenHands SDK / Claude Code / OpenCode）；GSPO + GRPO advantage；rollout 温度 1.0、上下文预算 200k（prompt 30k + response 170k）；训练任务来自 OpenSWE 派生池（2,699 任务，与 SWE-bench Verified 在 repo 与 instance 两级严格去重）；checkpoint 在固定 SWE-bench Verified 上以温度 0.7、200 turns 离线可执行验证评估；3 epoch = 126 步（64 prompt/步 × 8 rollout = 512 trial/步）。</p>
+
+<h3>5.2 主结果</h3>
+<table>
+    <tr><th>Coding agent</th><th>模型</th><th>SWE-bench Verified (%)</th></tr>
+    <tr><td rowspan="4"><strong>OpenHands SDK</strong></td><td>Qwen3.5-35B-A3B（起点）</td><td>64.0</td></tr>
+    <tr><td>Qwen3.6-35B-A3B（下一代 base）</td><td>67.4</td></tr>
+    <tr><td>KAT-Coder-V2.5-Dev（RL 后训练）</td><td>67.0</td></tr>
+    <tr><td><strong>Lego-RL-Qwen3.5-35B-A3B</strong></td><td><strong>70.4 (+6.4)</strong></td></tr>
+    <tr><td rowspan="4"><strong>Claude Code</strong></td><td>Qwen3.5-35B-A3B</td><td>62.4</td></tr>
+    <tr><td>Qwen3.6-35B-A3B</td><td>63.4</td></tr>
+    <tr><td>KAT-Coder-V2.5-Dev</td><td>66.8</td></tr>
+    <tr><td><strong>Lego-RL-Qwen3.5-35B-A3B</strong></td><td><strong>68.2 (+5.8)</strong></td></tr>
+    <tr><td rowspan="4"><strong>OpenCode</strong></td><td>Qwen3.5-35B-A3B</td><td>57.2</td></tr>
+    <tr><td>Qwen3.6-35B-A3B</td><td>60.6</td></tr>
+    <tr><td>KAT-Coder-V2.5-Dev</td><td>64.8</td></tr>
+    <tr><td><strong>Lego-RL-Qwen3.5-35B-A3B</strong></td><td><strong>66.6 (+9.4)</strong></td></tr>
+</table>
+<p class="footnote">同一 harness 版本与评测协议（温度 0.7、200 turns、200k 上下文）下由作者实测。Lego-RL 训练后模型在三个 harness 下均超过下一代 base（+3.0/+4.8/+6.0 pp）和 KAT-Coder-V2.5-Dev（+3.4/+1.4/+1.8 pp）——即「在 3.5 上做 RL 胜过升级 base 模型」。收益是 harness 特异的：KAT-Coder 在它报告的 Claude Code 下 +3.4，在 OpenHands SDK 下 −0.4。README 对 OpenCode 列的 KAT 分数为 61.2，与论文表（64.8）不一致，以论文为准。</p>
+
+<h3>5.3 数据管线与 reward 完整性（§4.3）</h3>
+<ul>
+    <li><strong>任务筛选漏斗</strong>：36,884 个 OpenSWE 候选 → 规则筛选（有效性/仓库多样性/复杂度）22,806 → 构建 + verifier 验证 21,681（其中约 2.5% 的 verifier 逻辑会错误应用参考 patch）→ Qwen3.6-27B + OpenHands SDK 四次 rollout 中解出 1–3 次的 2,699 个任务。筛选虽用单一模型-脚手架组合，产出池对另外两个 harness 同样有效；</li>
+    <li><strong>难度消融</strong>（951 任务池 × 4 组）：全带与上半带均提升（post-warmup 验证分 0.671 / 0.670），下半带 0.640，未筛选池无提升——未筛选池中 72.7% 任务永远解不出、13.4% 总是解出，几乎不产生组内差异信号；</li>
+    <li><strong>reward 信息量随时间衰减</strong>：8 rollout/任务下「全对或全错」的零方差组占比，OpenHands SDK 从 44.7% 升到 51.4%（全解组增长超过全错组减少）——任务难度是策略相对的，固定池的监督信号会随策略变强而稀释，这解释了为什么需要持续更新任务池；</li>
+    <li><strong>reward 完整性</strong>：见 3.4 的六类失败模式表——这些发生率是防御部署前实测的，说明真实训练中 reward 污染是系统性风险而非理论问题。</li>
+</ul>
+
+<h3>5.4 保真优化（§4.4）</h3>
+<table>
+    <tr><th>Coding agent</th><th>Pearson r（中位数）</th><th>KL (×10⁻³)</th><th>|Δlog p̄| p50 / p90 / p99 (×10⁻³)</th></tr>
+    <tr><td>OpenHands SDK</td><td>0.9993</td><td>0.75</td><td>0.7 / 1.2 / 2.1</td></tr>
+    <tr><td>Claude Code</td><td>0.9980</td><td>1.35</td><td>0.7 / 1.3 / 2.7</td></tr>
+    <tr><td>OpenCode</td><td>0.9993</td><td>0.60</td><td>0.6 / 1.1 / 2.0</td></tr>
+</table>
+<ul>
+    <li><strong>R3 路由重放</strong>：相关性 0.9946 → 0.9993，平均 token log-prob 差异 0.0062 → 0.0025；训练第一步（serving 与 trainer 权重相同）专家重叠 0.996、top-1 一致 0.985。<strong>故意错位重放（每 token 用邻居的路由）把所有指标打崩（r=0.7503）且表面不可见</strong>——附录 B 证明「重放开着」≠「重放正确」，唯一诊断是直接对比重放索引与模型在线选择；捕获完整性方面，初版缓冲低估混合注意力模型 ~4 倍导致覆盖率降到 24% 且静默（越界记 0 而非报错），修复后 &gt;99.8%，未捕获 token 按「不约束」软降级；</li>
+    <li><strong>历史一致性</strong>：tool-call 重序列化按 id 锚定吸收 93% 差异；子 agent 隔离把混入率 6.3% → 0%；被权重同步打断的轨迹只有捕获前缀完全一致才保留；真被压缩/重写的历史直接排除——<strong>训练只吃「生成时刻身份与概率可精确保留」的 token</strong>。</li>
+</ul>
+
+<h3>5.5 可观测与行为分析（§4.5）</h3>
+<ul>
+    <li><strong>故障诊断三案例</strong>：① 验证分 0.556→0.150，172 条轨迹仅 60 条到验证——终止分析定位是任务 setup 失败而非策略退化；② 1,024 条轨迹全部单轮终止——轨迹检查发现不兼容的 tool-call parser；③ 崩溃 run（reward 0.351→0.050，turns 18.9→0.96，rollout–训练一致性 0.995→0.851）——轨迹级分析发现「工具调用从输出中消失、命令退化为代码块散文」，据此得到提前 8 步触发的 early-stop 条件；</li>
+    <li><strong>行为变化</strong>（OpenHands SDK，420 轨迹首末对比）：编辑后回读 73.6%→98.1%、首次编辑前探索文件数 3.45→6.92、命令失败后仍解决 63.9%→66.8%、畸形工具调用 1.07%→0.15%、pass@8 覆盖率 83.2%→87.9%、pass8 可靠性 28.3%→39.4%——<strong>训练显著改变自检行为（+24.5pp），但对「出错后的恢复」改变有限（+2.9pp）</strong>；</li>
+    <li><strong>交互 horizon 增长</strong>：OpenHands SDK 平均 response 43.5k→90.9k token，主要来自轮数 46.6→83.1（+78%）而非单轮长度（+17%）；Claude Code 只到 41k→51k——harness 决定轨迹分布；推理占比（非工具调用字符比例）0.22→0.39（OH）、0.18→0.39（CC），两个 harness 收敛到同一水平，且变难任务收益最大（起点低）——但作者明确说明这是分布漂移观察，不是「推理导致成功」的因果证据。</li>
+</ul>
+
+<h3>5.6 系统效率（§4.6）</h3>
+<ul>
+    <li><strong>瓶颈分解</strong>（3,699 条 OpenHands SDK trial）：agent 执行占 91.3%（均 840.5s / 总 920.4s），沙箱 setup 2.3%、验证 3.9%，但后两者长尾显著（p99 275s / 928s）——因此分阶段超时而非整 trial 超时；异步下 rollout 槽位空闲率中位数为 0，但 trainer 仍分别等待 40.8%（OH）/ 66.1%（CC）的训练时间——<strong>生成是吞吐主瓶颈，优化不是</strong>；</li>
+    <li><strong>同步 vs 异步</strong>：同一 7.5 小时内，同步完成 3 步、异步 7 步（步耗时 2.5× 降幅）；校正 GPU 组优化吞吐差异（2.1×）后，同步步耗时估计 2.5→1.9 小时 vs 异步 1.0 小时——结论受 staleness=1 限制，更大 staleness 可进一步重叠；</li>
+    <li><strong>沙箱优化</strong>：懒拉取（1.7× 中位 / 23× 最大冷启动，网络 21.6GB→1.59GB）、预构建镜像 33.2×、挂载运行时 15.4×；判分依赖打包无延迟收益，仅为 reward 可复现性保留。</li>
+</ul>
+
+<!-- ================= 6 相关工作对比 ================= -->
+<h2 id="s6">6. 与相关工作的对比</h2>
+<p>论文按 8 个维度对比了 11 个 agentic RL 框架（✓ 支持 / △ 部分支持 / – 未报告）：</p>
+<table>
+    <tr><th>框架</th><th>黑盒 harness</th><th>Token-in/Out</th><th>历史对齐</th><th>R3</th><th>全异步</th><th>沙箱执行</th><th>Reward 防作弊</th><th>训练可观测</th></tr>
+    <tr><td>verl (2025)</td><td>–</td><td>✓</td><td>–</td><td>✓</td><td>✓</td><td>△</td><td>–</td><td>△</td></tr>
+    <tr><td>slime (2025)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>△</td><td>△</td><td>–</td></tr>
+    <tr><td>MOLT (2026)</td><td>△</td><td>✓</td><td>–</td><td>✓</td><td>✓</td><td>–</td><td>–</td><td>–</td></tr>
+    <tr><td>SkyRL-Agent (2025)</td><td>△</td><td>△</td><td>△</td><td>✓</td><td>✓</td><td>✓</td><td>–</td><td>–</td></tr>
+    <tr><td>AReaL (2025)</td><td>✓</td><td>△</td><td>–</td><td>–</td><td>✓</td><td>–</td><td>–</td><td>–</td></tr>
+    <tr><td>Agent Lightning (2025)</td><td>△</td><td>✓</td><td>–</td><td>–</td><td>△</td><td>–</td><td>–</td><td>△</td></tr>
+    <tr><td>Polar (2026)</td><td>✓</td><td>✓</td><td>✓</td><td>–</td><td>✓</td><td>✓</td><td>–</td><td>–</td></tr>
+    <tr><td>rLLM (2026)</td><td>✓</td><td>✓</td><td>–</td><td>✓</td><td>✓</td><td>✓</td><td>–</td><td>✓</td></tr>
+    <tr><td>OpenForgeRL (2026)</td><td>✓</td><td>△</td><td>–</td><td>–</td><td>✓</td><td>✓</td><td>–</td><td>–</td></tr>
+    <tr><td>ALE (ROLL/ROCK) (2025)</td><td>–</td><td>–</td><td>–</td><td>–</td><td>✓</td><td>✓</td><td>△</td><td>–</td></tr>
+    <tr><td><strong>Lego-RL</strong></td><td><strong>✓</strong></td><td><strong>✓</strong></td><td><strong>✓</strong></td><td><strong>✓</strong></td><td><strong>✓</strong></td><td><strong>✓</strong></td><td><strong>✓</strong></td><td><strong>✓</strong></td></tr>
+</table>
+<p>路线分野：verl/slime/MOLT/SkyRL/AReaL 把 rollout 留在框架内（agent 要适配框架抽象）；ALE 通过掌控全栈（ROLL trainer + ROCK 沙箱 + iFlow CLI）取得一致；<strong>Polar、rLLM、OpenForgeRL 与 Lego-RL 同为「模型 API 边界观察」路线</strong>（保留原生 harness、在 API 层捕获交互），Lego-RL 的差异点是把它与策略梯度训练、沙箱执行、可执行验证、reward 完整性、轨迹级可观测系统性整合，并做了真实规模（2699 任务、512 trial/步、三个生产 harness）的验证。</p>
+
+<!-- ================= 7 局限 ================= -->
+<h2 id="s7">7. 局限性与开放问题</h2>
+<ul>
+    <li><strong>证据面窄</strong>：全部实验用 Qwen3.5-35B-A3B 单模型、每个 harness 单次 run——训练收益与系统效率的 run-to-run 方差未量化；跨模型架构、混合 harness 训练未验证；</li>
+    <li><strong>reward 粒度</strong>：二值可执行验证可靠但粗糙，无法给「错误恢复」等行为中间学分；防御覆盖了观察到的失败模式，不保证对所有 reward 利用策略免疫；</li>
+    <li><strong>保真的边界</strong>：训练严格限制在「能精确保留身份与概率」的 token 上，被压缩重写的轨迹直接丢弃——这保证了正确性，但代价是数据效率（丢弃率 2.4–7.1% 只是显式过滤，还有隐式排除）；log-prob 一致性依赖 weights 匹配 + R3，任何引擎侧改动都可能静默破坏（附录 B 的错位重放案例就是教训）；</li>
+    <li><strong>成本门槛</strong>：8×A100/H100 + K8s 集群 + 预构建镜像体系，单 run 生产规模（3 epoch、512 trial/步）的成本使其难以成为可快速迭代的科研工具；异步下 trainer 空闲 40–66% 说明整条链路的算力利用率仍受生成侧主导；</li>
+    <li><strong>诊断的因果性</strong>：行为分析（推理占比、自检、恢复）都是观察性结论，作者明言不构成自动化因果验证；</li>
+    <li><strong>未来工作</strong>（作者自述在推进）：混合任务训练、单策略跨 harness 联合训练、更多 harness 适配器、比终态二值 reward 更细的学分分配、Live UI 自动化诊断。</li>
+</ul>
+
+<!-- ================= 8 启示 ================= -->
+<h2 id="s8">8. 对我们工作的启示</h2>
+
+<h3>8.1 与 RTX 4090 / 现有 infra 的差距</h3>
+<p>诚实地说，Lego-RL 的完整形态在我们现有资源下不可复现：官方门槛 8×A100/H100 + K8s + Nydus 镜像体系；4090 单卡跑不动 35B 稀疏 MoE 的 expert-parallel 推理，partner 的 4×H20 距 demo 规模（8 GPU）也差一半。但它的<strong>思路层级</strong>与我们的多条研究线直接共振：</p>
+<ul>
+    <li><strong>R3 的「对齐」教训</strong>（错位重放把相关性从 0.9993 打到 0.7503 且表面不可见）与我们的 P9→tl.constexpr→CUDA Graph→XLA 批次不变性模式同构：都是「分布式/训练推理之间存在一个必须显式保持的不变量」。R3 可以视为「路由不变性」——我们的 cross-framework 模式列表可以加第 5 条成员；</li>
+    <li><strong>trajectory filter 的「单例 uid」技巧</strong>是我们 GRPO 数学工作（组归一化对噪声敏感）的直接工程化：零化 reward + 摘出组统计 + 零化 advantage 三重保险，且 batch 形状不变——这一招完全可移植到我们自己的 verl 实验脚本里；</li>
+    <li><strong>「训练只吃可精确保留的 token」原则</strong>是对我们「GRPO 对 log-prob 敏感」结论的工程回应——宁可丢数据，不可喂噪声；</li>
+    <li><strong>reward 完整性检查清单</strong>（git 历史 / 参考修复下载 / 测试文件编辑 / grader 误应用参考 patch）可以直接用于我们 fork 评审和实验设计时的 verifier 审计。</li>
+</ul>
+
+<h3>8.2 可行动的后续</h3>
+<ul>
+    <li><strong>patch 审阅 → fork PR 机会</strong>：Lego-RL 在 verl v0.8.0 上打了 32 文件补丁，其中 <code>trajectory_filter</code>、<code>rollout_corr_helper</code> 的分布指标（p50/90/99 + tail 分数）、DataProto 缺键对齐、KV/prefix 探针接口都是与 agentic RL 解耦的通用改进——可对照上游 verl 现状，评估哪些值得提炼成独立上游 PR（与我们的 verl fork 系列一致）；</li>
+    <li><strong>把「保真度」验证加入我们的实验规范</strong>：论文的 rollout–训练 Pearson 相关性 + |Δlog p| + R3 专家重叠三个指标，成本低、可自动化，适合作为任何 verl 训练的 CI 级检查；</li>
+    <li><strong>单机降级实验（可选）</strong>：<code>BACKEND=docker</code> + 更小模型（如 Qwen3-30B-A3B 或 8B dense）+ 小任务池可以在单机 8 卡上跑通 1/16 demo 流程验证数据流，但训练收益预期远低于论文——适合做工程验证而非科研复现。</li>
+</ul>
+
+<!-- ================= 9 结论 ================= -->
+<h2 id="s9">9. 结论</h2>
+<p>Lego-RL 的价值不在于发明新的 RL 算法，而在于把 coding-agent RL 从「demo 阶段」推到「生产可信」的系统性工程答案：<strong>用 in-process proxy 在生成时刻捕获 token 级真值（配合 R3 路由重放）解决保真；用沙箱化可执行验证 + 阶段式反作弊 + 终止感知轨迹过滤解决可信；用轨迹级 Live UI + agent plugin 解决可观测</strong>。它在三个原生 harness 上的 SWE-bench 提升（+5.8~+9.4 pp）证明「不侵入 agent 也能有效训练」，而 harness 特异的收益曲线则实证了「harness 是优化目标的一部分」这一论文立场的现实意义。对做 RL infra 的我们而言，它的最大启示是：<strong>当训练信号（log-prob、路由、reward）不可信时，工程防御（捕获、过滤、诊断）的价值不亚于算法本身</strong>——这与我们 GRPO 系列工作中「信号质量决定学习质量」的结论完全一致。</p>
+
+<!-- ================= 10 附录 ================= -->
+<h2 id="s10">10. 附录</h2>
+
+<h3>附录 A：生产 run 超参数（论文附录 I）</h3>
+<table>
+    <tr><th>项</th><th>值</th><th>项</th><th>值</th></tr>
+    <tr><td>Policy loss</td><td>GSPO（序列级）</td><td>Clip 范围</td><td>(3×10⁻⁴, 4×10⁻⁴) 不对称</td></tr>
+    <tr><td>Advantage</td><td>GRPO（组归一化）</td><td>Loss 聚合</td><td>seq-mean-token-mean</td></tr>
+    <tr><td>KL 惩罚</td><td>仅入 loss，系数 1e-3</td><td>学习率</td><td>1e-6，constant</td></tr>
+    <tr><td>Gradient clip</td><td>1.0</td><td>Prompt/批 × rollout/任务</td><td>64 × 8（512 trial/步）</td></tr>
+    <tr><td>Micro-batch/GPU</td><td>1</td><td>Rollout 温度 / top-p</td><td>1.0 / 1.0</td></tr>
+    <tr><td>验证温度</td><td>0.7</td><td>Prompt / Response 预算</td><td>30k / 170k tokens</td></tr>
+    <tr><td>Staleness 阈值</td><td>1（最大策略滞后）</td><td>部分 rollout 恢复</td><td>on</td></tr>
+    <tr><td>重要性采样校正</td><td>off（保真度高时开省方差）</td><td>训练池 / epoch</td><td>2,699 任务 / 3（126 步）</td></tr>
+</table>
+
+<h3>附录 B：术语表</h3>
+<table>
+    <tr><th>术语</th><th>含义</th></tr>
+    <tr><td>Harness</td><td>coding-agent 运行框架（prompt 构造、工具、上下文、执行状态管理），论文指 OpenHands SDK / Claude Code / OpenCode</td></tr>
+    <tr><td>Harness-native</td><td>不修改 agent 内部控制流，把原生 harness 当环境，只优化它调用的策略</td></tr>
+    <tr><td>In-process proxy</td><td>与 rollout 引擎同进程的 LLM API 代理，在生成时刻归档 token 级信息</td></tr>
+    <tr><td>保真优化（faithful）</td><td>训练端重算 log-prob 与 rollout 捕获值一致（同权重、同 token、同 mask、同路由）</td></tr>
+    <tr><td>R3（routing replay）</td><td>MoE 路由重放：把 rollout 时选的专家在训练前向中强制复现</td></tr>
+    <tr><td>Termination-aware admission</td><td>按终止原因（完成/超长/超时/环境失败）决定轨迹是否进入训练</td></tr>
+    <tr><td>Trajectory filter</td><td>零化坏轨迹 reward、单例 uid 摘出组统计、零化 advantage 的三重过滤</td></tr>
+    <tr><td>Reward hacking / integrity</td><td>agent 利用环境信息获取虚假成功 / 环境使 reward 与行为脱钩的防御体系</td></tr>
+    <tr><td>Staleness</td><td>全异步下 trainer 权重版本领先 rollout 行为版本的最大步数</td></tr>
+    <tr><td>Zero-variation group</td><td>一组 8 条轨迹全对或全错 → 组内无方差 → 无学习信号</td></tr>
+</table>
+
+<h3>附录 C：参考资料</h3>
+<ul>
+    <li>论文：<a href="https://arxiv.org/abs/2608.17393">LEGO-RL: Harness-Native Reinforcement Learning for Coding Agents</a>（arXiv:2608.17393）</li>
+    <li>仓库：<a href="https://github.com/LegoX/Lego-RL">github.com/LegoX/Lego-RL</a>；文档：<a href="https://lego-rl.pages.dev/docs">lego-rl.pages.dev/docs</a></li>
+    <li>HF：<a href="https://huggingface.co/collections/Lego-X/lego-rl">Lego-X/lego-rl 集合</a>（模型 / <a href="https://huggingface.co/datasets/Lego-X/Lego-RL-2699">Lego-RL-2699 任务索引</a>）</li>
+    <li>底座：verl（verl-project/verl）、Harbor（Elvin-Yiming-Du/harbor）、vLLM（vllm-project/vllm）</li>
+    <li>GSPO：Zheng et al., 2025（π0 序列级策略优化）</li>
+</ul>
+
+<hr style="border:none;border-top:1px solid var(--border);margin:2em 0 0.5em;">
+<p class="footnote">本报告基于论文全文（arXiv:2608.17393v1）与仓库 main 分支源码（截至 2026-08-29）的独立研读，所有数字均可在论文或代码中溯源。报告由 Claude 撰写并人工校对。</p>
+
+<button class="backtop" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="回到顶部">↑</button>
+</body>
+</html>

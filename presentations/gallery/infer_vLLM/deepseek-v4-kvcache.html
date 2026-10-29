@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>[vLLM] DeepSeek-V4 的 KV Cache 管理</title>
+<style>
+  :root{--bg:#fafafa;--card:#fff;--text:#1f2328;--muted:#6b7280;--border:#e4e6eb;--accent:#4338ca;}
+  @media(prefers-color-scheme:dark){:root{--bg:#0f1115;--card:#1a1d23;--text:#e6e8eb;--muted:#9aa0a8;--border:#2a2e36;}}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.7;font-size:15px;}
+  .wrap{max-width:960px;margin:0 auto;padding:32px 24px 60px;}
+  header h1{margin:0 0 4px;font-size:24px;line-height:1.4;}
+  header .sub{color:var(--muted);font-size:13px;margin-bottom:24px;}
+  h2{font-size:17px;margin:28px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+  h3{font-size:15px;margin:18px 0 8px;}
+  p{margin:8px 0;}
+  ul,ol{margin:8px 0;padding-left:22px;}
+  li{margin:4px 0;}
+  code{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:13px;}
+  table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13px;}
+  th,td{border:1px solid var(--border);padding:6px 10px;text-align:left;}
+  th{background:var(--card);}
+  .callout{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:6px;padding:10px 14px;font-size:14px;color:var(--muted);margin:12px 0;}
+  .src{margin-top:36px;padding-top:14px;border-top:1px solid var(--border);font-size:13px;color:var(--muted);}
+  .src a{color:var(--accent);}
+  a{color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>DeepSeek-V4 的 KV Cache 管理</h1>
+  <div class="sub">project: infer_vLLM · 内容转写自 Mengqing Cao 博客（2026-06-09）</div>
+</header>
+
+<h2>一、模型侧的创新</h2>
+
+<h3>mHC 残差连接</h3>
+<p>在 attention + MoE 的架构上对残差连接做了一处创新：计算前先用 <code>hc_pre</code> 将 hidden states <strong>降维</strong>，降维后的状态参与 attention / MoE 计算，计算后经 <code>hc_post</code> <strong>升维</strong>，再与残差线上的 hidden states concat 作为下一层输入。mHC 在尽量保留更多前层信息的同时，不增加主体 attention / MoE 的计算量。</p>
+
+<h3>KV 压缩（核心创新）</h3>
+<ul>
+  <li>通过可训练的 <strong>compressor 模块</strong>对 KV Cache 进行压缩，设计了两种压缩比 <strong>4 和 128</strong>，两种压缩比的 attention 层交替出现</li>
+  <li>MTP 层不压缩；Flash 模型的第 0/1 层不压缩</li>
+</ul>
+
+<h3>三种 attention 层的 KV 形态</h3>
+<table>
+  <tr><th>层类型</th><th>名称</th><th>KV 构成</th></tr>
+  <tr><td>c4（压缩比 4）</td><td>CSA · Compressed Sparse Attention</td><td>sliding window + compressed kv + indexer 稀疏选择（同 V3.2 DSA 机制，indices 指向压缩后的 kv）</td></tr>
+  <tr><td>c128（压缩比 128）</td><td>HCA · Heavily Compressed Attention</td><td>sliding window + 主 compressor，无 indexer 稀疏化（≈ c4 去掉 topk select）</td></tr>
+  <tr><td>不压缩层</td><td>Sliding Window MLA</td><td>仅 sliding window kv</td></tr>
+</table>
+
+<p>需要框架侧管理的 cache 由此扩展到多种：swa cache、compressed kv cache、compressed indexer kv cache；此外 compressor 在不满压缩比时需暂存 kv state 与加权和 softmax 的 score state，因此每个 compressor 还对应两个中间暂存 cache：</p>
+<table>
+  <tr><th>层</th><th>cache 清单</th></tr>
+  <tr><td>c1</td><td>swa cache</td></tr>
+  <tr><td>c4</td><td>swa cache、compressed kv cache、compressed indexer kv cache、c4a kv/score state、c4i kv/score state</td></tr>
+  <tr><td>c128</td><td>swa cache、compressed kv cache、c128a kv/score state</td></tr>
+</table>
+<p class="callout">c4a = c4 层的 attention，c4i = c4 层的 indexer；压缩 kv 满压缩比后才写入 compressed kv cache。</p>
+
+<h2>二、vLLM（GPU）侧的实现</h2>
+<p>KVCache planning 基于 <a href="kv-cache-arch.html">UniformTypeKVCacheSpecs + Hybrid Memory Allocator（详见另一篇转写）</a>，总体思路：</p>
+<ul>
+  <li>先用 <code>UniformTypeKVCacheSpecs</code> 对 page_size 差异大的 specs 做一层 warp，再在多个 UniformType 组之间做 hybrid kv 共享</li>
+  <li>UniformType 组内部划分为 <strong>3 个大小不一的 tensor</strong>：既实现组间共享同一 block pool，又避免 HMA 的 page_size 对齐引入过多 wasted pad</li>
+  <li>管理面看到的 block_size 是 256，但每个 spec 的实际 block_size 并不相等——<strong>压缩发生在 block_size 这一维</strong>：kernel 侧实际 block 只有 <code>block_size // compress_ratio</code> 个 slots</li>
+</ul>
+
+<h3>运行时实例（DeepSeek V4 Flash，43 层）</h3>
+<ul>
+  <li>层结构：0/1 swa；2～42 偶数层 c4、奇数层 c128；分组组大小 22 → <code>22 × 3</code> 个 KVCacheTensor，每个 tensor 被全部 5 个组共享</li>
+  <li>长度 258 的请求按组分配：group1/2/3 → <code>cdiv(258,256)=2</code>，group4 → <code>cdiv(258,8)=33</code>，group5 → <code>cdiv(258,4)=65</code></li>
+  <li>group4/5 是 SlidingWindowManager：前 32/64 个 block 立即 <code>free_blocks</code> 释放，实际占用仅 1 个 block</li>
+  <li>slot_mapping 压缩：<code>vllm/v1/attention/backends/mla/compressor_utils.py</code> 的 <code>get_compressed_slot_mapping</code>——按压缩后的 block_size 计算 slot_mapping，不满压缩比的位置置 <code>-1</code>，<code>reshape_and_cache</code> 对 -1 位置跳过写入，从而在 attention 后端实现压缩存储</li>
+</ul>
+
+<h2>三、vLLM Ascend 侧的定制</h2>
+<p class="callout">Ascend 算子限制：attention 算子支持的最小 block_size 为 16，性能推荐 128——这是与 GPU 方案分道扬镳的根本原因。</p>
+<ul>
+  <li><strong>定制点 1</strong>：c128a 的物理大小比 GPU 大数倍，单独一个 KVCacheTensor 会引入巨大 pad；做法是让 c128a 也成为与其他组共享 tensor 的一个组，仅引入一个组即消除大量临时 pad blocks（代价：实现与 vLLM 略有不同的 KVCache Planning）</li>
+  <li><strong>定制点 2</strong>：压缩维度改为 <strong>num_blocks 维而非 block_size 维</strong>——scheduler 为 num_tokens 申请 blocks 时提前压缩为 <code>num_tokens // compress_ratio</code>，分配时即为 compressed kv 只分配 1/compress_ratio 倍 blocks；代价是 block_id 已被压缩，ModelRunner 需适配压缩 position id 与 slot_mapping（参考 <code>vllm_ascend.utils.get_compressed_pos_and_indices</code> 与 <code>vllm_ascend.worker.block_table.MultiGroupBlockTable.compute_slot_mapping</code>）</li>
+</ul>
+
+<div class="src">
+  原文作者：Mengqing Cao（2026-06-09）· 原文：<a href="https://mengqingcao.github.io/posts/deepseek-v4-kvcache-management/">DeepSeek V4 KVCache 管理</a> · 本文为转写摘要<br>
+  相关阅读：<a href="https://vllm.ai/blog/2026-04-24-deepseek-v4">vLLM Blog: DeepSeek V4</a> · <a href="https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/blob/main/DeepSeek_V4.pdf">DeepSeek V4 技术报告</a> · <a href="kv-cache-arch.html">[vLLM] KV Cache 架构（vLLM KVCache 分组机制）</a>
+</div>
+</div>
+</body>
+</html>

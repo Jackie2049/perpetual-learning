@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rollout 性能调研 · 综述大纲 — Efficient Rollout Systems for LLM Post-Training</title>
+<style>
+  :root{--bg:#fafafa;--card:#fff;--text:#1f2328;--muted:#6b7280;--border:#e4e6eb;--accent:#287967;}
+  @media(prefers-color-scheme:dark){:root{--bg:#0f1115;--card:#1a1d23;--text:#e6e8eb;--muted:#9aa0a8;--border:#2a2e36;}}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.8;font-size:15px;}
+  .topbar{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 24px;border-bottom:1px solid var(--border);background:var(--bg);}
+  .topbar a{color:var(--accent);text-decoration:none;font-size:13px;font-weight:600;}
+  .topbar a:hover{text-decoration:underline;}
+  .topbar .crumb{font-size:12px;color:var(--muted);}
+  .wrap{max-width:880px;margin:0 auto;padding:42px 24px 90px;}
+  header h1{font-size:27px;margin:0 0 8px;letter-spacing:-.01em;line-height:1.45;}
+  header .en{color:var(--muted);font-size:14px;font-style:italic;margin-bottom:8px;}
+  header .sub{color:var(--muted);font-size:13px;margin-bottom:10px;}
+  .badges{margin-bottom:30px;}
+  h2{font-size:19px;margin:40px 0 14px;padding-top:20px;border-top:1px solid var(--border);}
+  h2:first-of-type{border-top:0;padding-top:0;margin-top:26px;}
+  h3{font-size:15px;margin:20px 0 8px;}
+  p{margin:10px 0;}
+  ul,ol{padding-left:22px;margin:10px 0;}
+  li{margin:6px 0;}
+  li::marker{color:var(--accent);}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:22px 26px;margin:16px 0;}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin:14px 0;}
+  th,td{border:1px solid var(--border);padding:9px 12px;text-align:left;vertical-align:top;}
+  th{background:var(--card);font-weight:600;}
+  code{background:rgba(127,127,127,.14);padding:2px 6px;border-radius:4px;font-size:.88em;}
+  .formula{font-family:Georgia,"Times New Roman",serif;font-size:18px;text-align:center;padding:18px;background:var(--card);border:1px dashed var(--border);border-radius:10px;margin:16px 0;}
+  .formula small{display:block;font-family:inherit;font-size:12px;color:var(--muted);margin-top:8px;}
+  .note{font-size:12px;color:var(--muted);}
+  .badge{display:inline-block;font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--border);color:var(--muted);margin:0 6px 6px 0;}
+  .skeleton{counter-reset:sec;list-style:none;padding:0;}
+  .skeleton>li{counter-increment:sec;padding:12px 0 12px 46px;position:relative;border-bottom:1px dashed var(--border);}
+  .skeleton>li:last-child{border-bottom:0;}
+  .skeleton>li:before{content:counter(sec,decimal-leading-zero);position:absolute;left:0;top:13px;font-family:ui-monospace,monospace;font-size:12px;color:var(--accent);}
+  .skeleton b{font-size:14px;}
+  .skeleton .sub-items{color:var(--muted);font-size:13px;margin-top:4px;}
+  footer{margin-top:54px;padding-top:16px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);}
+  footer a{color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="https://jackie2049.github.io/perpetual-learning/">← Perpetual Learning 工作台</a>
+  <span class="crumb">对外呈现 · Rollout 调研专项</span>
+</div>
+<div class="wrap">
+
+<header>
+  <h1>Rollout 性能优化调研 · 综述大纲</h1>
+  <div class="en">Efficient Rollout Systems for LLM Post-Training — a systems-oriented survey</div>
+  <div class="sub">大纲 v1 · 2026-10-29 · 由调研专项 canonical 文档重建（16 节结构 + L1–L4 分类法）</div>
+  <div class="badges">
+    <span class="badge">126 篇已核身份</span><span class="badge">深读 T1×20 + T2×84</span><span class="badge">12 条代码路径 / 8 系统</span><span class="badge">阶段：成果提炼</span>
+  </div>
+</header>
+
+<h2>1 · 研究问题</h2>
+<div class="card">
+  <p><b>LLM post-training（RL / 推理类后训练）中，rollout 阶段的性能由什么决定、可以被系统化优化到什么程度？</b></p>
+  <p><b>范围</b>：rollout-native 系统与论文（L1 token 级 → L4 pipeline 级）+ serving→rollout 迁移分析 + 代码实现对照。</p>
+  <p><b>明确不做</b>：reward / 算法本身的改进（只关心其对 rollout workload 的影响）、pretraining、纯 serving 部署。</p>
+</div>
+
+<h2>2 · 核心假设：Serving ≠ Rollout</h2>
+<p>rollout 不是「serving 换个负载」——两者在请求模型、核心指标、版本与正确性约束上系统性不同。每个调研条目都要回答：<i>它隐含的 serving/rollout 假设是什么？</i>反例单独登记。</p>
+<table>
+  <tr><th style="width:120px">维度</th><th>Serving</th><th>Rollout</th></tr>
+  <tr><td>请求模型</td><td>独立用户请求，到达不可控</td><td>一批 trajectory，同批生成、同步/半同步推进</td></tr>
+  <tr><td>核心指标</td><td>TTFT / TPOT / latency / goodput</td><td>trajectory throughput、<b>rollout makespan</b>、bubble ratio、GPU-hours、RL step time、time-to-quality</td></tr>
+  <tr><td>版本约束</td><td>单一模型权重</td><td>policy 连续更新 → drafter / cache / 调度决策随版本过期（staleness）</td></tr>
+  <tr><td>正确性约束</td><td>输出质量</td><td>policy 版本、同权重训推数值差异、old logp 语义分别核</td></tr>
+</table>
+
+<h2>3 · 性能模型</h2>
+<div class="formula">
+  T<sub>rollout</sub> ≈ max<sub>i</sub> T<sub>trajectory,i</sub>
+  <small>sync RL 下 makespan 由最慢轨迹支配 —— 平均 tokens/s 高 ≠ rollout 快；长尾 / straggler 是 L3 调度类工作的理论起点</small>
+</div>
+
+<h2>4 · 分类法（Taxonomy）</h2>
+<p><b>层（L1–L4，允许反例修订）</b>：</p>
+<table>
+  <tr><th style="width:190px">层</th><th>核心问题</th><th>代表杠杆</th></tr>
+  <tr><td><b>L1</b> Token / Model Execution</td><td>单 token / decode step 怎么更便宜</td><td>attention/kernel、KV cache、quantization/FP8、speculative decoding、MTP、draft model</td></tr>
+  <tr><td><b>L2</b> Engine / Replica</td><td>一个 engine 高效完成一组 trajectories</td><td>continuous batching、chunked prefill、prefix/KV reuse、multi-sample、sleep/wake</td></tr>
+  <tr><td><b>L3</b> Cluster</td><td>一批 trajectory set 整体最快（minimize makespan）</td><td>global scheduling、length prediction、straggler/tail、migration、cache-aware routing、elastic</td></tr>
+  <tr><td><b>L4</b> RL Pipeline Co-design</td><td>rollout 与 trainer / reward / env / weight-update 协同</td><td>sync/async、colocated/disaggregated、overlap、weight sync、staleness、partial rollout、resource allocation</td></tr>
+</table>
+<p><b>类型（第二维度）</b>：</p>
+<ul>
+  <li><b>A</b> — Make each trajectory cheaper（C(trajectory)↓）：speculative、MTP、KV/prefix reuse…</li>
+  <li><b>B</b> — Execute the trajectory set better（Schedule({traj_i})）：batching、length-aware scheduling、migration…</li>
+  <li><b>C</b> — Generate less/better rollout work（改变 {traj_i}，<b>可能改变训练分布，必须单独标记</b>）：early stop、partial rollout、filtering、adaptive allocation、trajectory shaping…</li>
+</ul>
+<p class="note">C 类判定原则：按实际改变的训练轨迹集合判断，不按技术名称判断（如 partial rollout 若仅提供路由信号，不自动归 C）。</p>
+
+<h2>5 · 报告章节骨架</h2>
+<ol class="skeleton">
+  <li><b>Introduction</b><div class="sub-items">为什么 rollout 是 post-training 的瓶颈；survey 的范围与读法</div></li>
+  <li><b>Background — Serving vs Rollout</b><div class="sub-items">请求模型、核心指标、版本约束、正确性约束的四维对照</div></li>
+  <li><b>Performance Model</b><div class="sub-items">makespan 分解、长尾与 bubble、L1–L4 优化杠杆的定量框架</div></li>
+  <li><b>Taxonomy</b><div class="sub-items">L1–L4 × A/B/C 二维分类，C 类的分布改变警示</div></li>
+  <li><b>Literature by Layer</b><div class="sub-items">5.1 L4 RL Pipeline / Async / Disaggregation · 5.2 L3 Long-tail / Scheduling / Cluster · 5.3 L1/L2 RL-aware Speculative Rollout · 5.4 Agentic Rollout · 5.5 Serving 基础与迁移边界</div></li>
+  <li><b>Code &amp; System Landscape</b><div class="sub-items">6 个 RL 框架 + 2 个推理引擎的实现对照（veRL、OpenRLHF、NeMo RL、SkyRL、rLLM、Slime、vLLM、SGLang）</div></li>
+  <li><b>Paper → Mechanism → Code Mapping</b><div class="sub-items">论文机制在真实代码里的落点与出入</div></li>
+  <li><b>Serving → Rollout Transfer</b><div class="sub-items">三问框架：serving 里解决什么瓶颈 → 哪些机制可直接迁移 → objective / scheduler semantics / correctness 怎么变</div></li>
+  <li><b>Workload-specific Findings</b><div class="sub-items">Reasoning / Agentic / VLM 三类负载的特有现象</div></li>
+  <li><b>Cross-layer Findings</b><div class="sub-items">跨层耦合反例（如 BubbleSpec 同时是 L1 机制 + L3 气泡利用）</div></li>
+  <li><b>Evaluation &amp; Benchmark</b><div class="sub-items">计时口径陷阱、指标错位与跨论文不可比性</div></li>
+  <li><b>Research Gaps &amp; Ideas</b><div class="sub-items">分布改变与纯路由边界、speculative-for-RL 统一性能模型、长度边界条件等</div></li>
+  <li><b>Reproduction Roadmap</b><div class="sub-items">可复现候选与验证分级（AST / 纯函数 / 替身 / 真实 CPU / 端到端）</div></li>
+  <li><b>Conclusion</b><div class="sub-items">rollout 系统设计的开放问题清单</div></li>
+</ol>
+
+<h2>6 · 当前证据状态</h2>
+<div class="card">
+  <p>本大纲对应的研究专项已完成 Phase 2 深读（批次 D1–D14 收口，2026-10-29）：</p>
+  <ul>
+    <li><b>126 篇已核身份</b>（20 serving 基础 + 106 rollout/RLHF 及相关边界；120 唯一 arXiv ID + 6 条会议记录）</li>
+    <li>深读账：<b>T1 ×20 + T2 ×84 完成</b>，T3 ×21 元数据级，HybridFlow 1 项原并行认领进行中</li>
+    <li>代码：<b>12 条路径 / 8 系统</b>（固定 commit 逐一核对），完整复现 0（本阶段设计如此）</li>
+    <li>配套论文集锦：<a href="./rollout-papers.html">Rollout 论文集锦（按本大纲分类）→</a></li>
+  </ul>
+</div>
+
+<footer>
+  <p>来源：perpetual-learning「Rollout Performance Optimization」调研专项（canonical 文档随仓库演进）。本大纲由该文档重建；原始提示词未逐字存档，如有出入以专项文档为准。</p>
+  <p>本页为独立网页，链接可直接分享；顶部「Perpetual Learning 工作台」可回到主站。</p>
+</footer>
+
+</div>
+</body>
+</html>

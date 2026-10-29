@@ -210,3 +210,5 @@ body.theme-dark .orbit-dot{background:#5a9fd4}
 body.theme-dark .orbit-dot.d2{background:#4a6a8a}
 body.theme-dark .sidebar .sidebar-bottom>a{color:#9a9a9a}
 body.theme-dark .sidebar .sidebar-bottom>a:hover{color:#ffffff}
+/* 对外呈现：独立专题卡片 */
+.present-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}.present-card{background:#fff;border:1px solid var(--line);border-radius:9px;padding:20px;display:flex;flex-direction:column;min-height:170px;transition:border-color .15s,transform .15s}.present-card:hover{border-color:#b9d2c7;transform:translateY(-2px)}.present-tag{font-size:9px;letter-spacing:.6px;color:#709885;text-transform:uppercase;margin-bottom:9px}.present-card h2{font-size:15px;font-weight:600;line-height:1.55;margin-bottom:9px}.present-card p{font-size:11px;color:#879499;line-height:1.85;margin-bottom:14px}.present-meta{margin-top:auto;font-size:10px;color:var(--green);display:flex;align-items:center;gap:6px}.present-meta svg{width:13px;height:13px}body.theme-dark .present-card{background:var(--white);border-color:var(--line)}body.theme-dark .present-card p{color:var(--muted)}
