@@ -48,7 +48,7 @@
 
 **层（L1–L4，允许反例修订）**：
 
-| 层 | 核心问题 | 代表性技术抓手 |
+| 架构分层 | 核心问题 | 代表性技术抓手 |
 |---|---|---|
 | L1 Model Execution | 单 token/decode step 怎么更便宜 | attention/kernel（[FlashAttention-2](https://arxiv.org/abs/2307.08691v1)）、KV cache（[vLLM / PagedAttention](https://arxiv.org/abs/2309.06180v1)）、quantization/FP8（[FP8-RL](https://arxiv.org/abs/2601.18150v2)）、speculative decoding（[Speculative Sampling](https://arxiv.org/abs/2302.01318v1)）、MTP（[MTP-RL](https://aclanthology.org/2026.findings-acl.1871/)）、draft model（[EAGLE](https://arxiv.org/abs/2401.15077v3)） |
 | L2 Infer Engine | 一个 engine 如何高效处理一批路由到该实例的trajectories | continuous batching（[Orca](https://www.usenix.org/conference/osdi22/presentation/yu)）、chunked prefill（[Sarathi-Serve](https://arxiv.org/abs/2403.02310v3)）、prefix/KV reuse（[SGLang / RadixAttention](https://arxiv.org/abs/2312.07104v2)）、multi-sample（[Infinite Sampling](https://arxiv.org/abs/2506.22950v1)）、sleep/wake（[PUZZLE](https://www.usenix.org/conference/atc24/presentation/lei)） |
