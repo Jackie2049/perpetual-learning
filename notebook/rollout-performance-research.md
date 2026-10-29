@@ -7,13 +7,13 @@
 
 - **接管记录（2026-10-29 用户指令）**：M1 机器宕机，本专项自即日起**完全由 M5 定时任务负责**（此前由 M1 定时启动的技术秘书任务以深读为主力推进）。接手方每轮先读本文件恢复状态，按 §6.0 批次表与 §16 下一步推进并及时回写；加急期限（≤2026-10-29）因 M1 停机中断，剩余批次由 M5 顺延完成并在 §13.1 记账；HybridFlow 原并行认领与上游写入边界不变。
 - **阶段**：**Phase 2 — deep research（2026-10-27 用户指令：广度已足（计数另按唯一身份核算），转入论文/项目深读，围绕 rollout 性能与 L1–L4 四维；定时任务以深读为主要工作，2026-10-29 起由 M5 接手）**
-- **最近更新**：2026-10-29（M5 接续 D5 完成五项边界核对，§13.6 产出边界核对账四：Heddle §4.2 被抢占轨迹持久化 KV 回队列不丢弃——采样旗标收口、权重版本语义原文无表述维持待源码核；DAS §4.1.2 target 批量验证 draft＋接受推进、拒绝/回滚契约未给出——验证契约收口为"原文仅批量验证"、式7 `−ln(1−k(1−N/l))` 与式6 约束代数解 `−ln((N/l−1+k)/k)` 不一致逐字复核保留；RollPacker §3 "without altering the underlying sample distribution"＋被中止 prompt 入长队列最终纳入＋整轮结束才更新参数——跨round重排不改变样本集合为原文自述、最快响应保留/评分超时仍 C；ReSpec §2.2 标准 SD 批量前向+逐token 接受测试+拒绝残差替换、Reward-Weighted KD 只更新 drafter——验证契约收口为 A；APRIL §3.1 主评估（over_sampling_batch_size=64）即用混版本续跑、advantage 按 mixed policy 计算——B/C 收口为 C）。均不新计深读或扩库；§6.0 D5 行 5/5。126身份及20/84/21/1深度账、截止≤2026-10-29不变）
+- **最近更新**：2026-10-29（M5 接续 D6 完成五项边界核对，§13.7 产出边界核对账五：ObsSpec lossless 限定"精确匹配+顺序提交下的 rollout 集合"、不覆盖时变环境/RNG/logp（§6.19 旗标收口）；EfficientRollout 一次开启依据 active batch 单调缩小为原文自述、全文无 continuous batching 延伸（§6.17 收口）；FP8-RL 式3 clip(w,C) 阈值 C=2/有界区间确认、区间端点实现待核，MIS/RRR 为建议非实证逐字确认（§6.20 部分收口）；WAR TTL 为非活跃沙箱生存期、到期终止轨迹产生 incomplete rollout——论文级确认、源码级待核（§6.23.4 升格）；CadenceRL 准入为 credit 模型 η 界在途批数非逐轨迹年龄上限、被置换轨迹保留且仅原版本 worker 恢复（§6.23.7 收口））。均不新计深读或扩库；§6.0 D6 行 5/5。126身份及20/84/21/1深度账、截止≤2026-10-29不变）
 - **覆盖**：累计**126篇已核身份**（20篇serving基础／迁移边界＋106篇rollout/RLHF及相关边界；120个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL／Weave／MTP-RL会议记录；其中T1压缩深读20篇，其余不据身份核验算深读）。§5.25将RL相关106暂分89直接候选与17保守单列，承接§5.20的86／15历史快照；这是工作范围计数，不是原生80–120覆盖／质量验收。MTP-RL不与Bebop同篇；初始种子及旧五线索身份已落实，但检索／分级／正文审查未全收敛。ASymPO证明错误警示保留，Round 1“≈73”不相加。
 - **接续线索**：§5.23原余5项已在§5.25入库，§6.33完成Belayer／BIRD-RL／ScaleRLT及PrefixFlow／psRL／CIS六篇T2。训练侧共享与概率修正仍单列边界，不因深化转为原生覆盖；入库、T2与实现／复现验收分开。
 - **深读 / 代码广扫**：按§6.0新压缩标准完成T1 **20篇**（B1–B5各四篇）、T2 **84篇**（B6补后22/22、B7为9/9、B8补后13/13、B9为11/11、B10为12/12、B11为11/11、B13为6/6；含Intelligent Router serving旁读；GLM-4.5仅§3.5系统片段，非整份报告；非源码或性能复现验收），另有HybridFlow进行中1项 / **12条代码路径**（veRL `24f25b03`四条＋公开历史`53bb5d21`一条；OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`、SkyRL `e0893f6e`、rLLM `4e828c81`、Slime `540ea919`各一条；vLLM `eaf1627c`、SGLang `cb55d77d`各一条；共8系统＝6 RL框架＋2推理引擎，不按文件数或历史版本重复加系统，不是原生运行验证）；完整复现仍0。
 - **最高优先级（2026-10-27 用户加急指令）**：**Phase 2 全部深读须在两天内完成（≤2026-10-29）**——每次定时触发完成**一批对应规模**的调研（分级深度 + 批次表见 §6.0），不得单次只做一篇；深度与时间约束按批次表权衡。B13、C2／C3与C4本批已收束；HybridFlow不接管原并行认领，早期公开实现不替原实验commit／原始数据。接续按§13.1补证据，不再为数量扩文献。M5专项与上游写入边界不变。
 - **Triage与未读账**：B12范围triage完成28项的历史范围不变，triage事项数不等当前T3身份数。B13三项原T3（PrefixFlow／psRL／CIS）升级T2并替换最深层；126＝20 T1＋84 T2＋21 T3＋1未标完成，仅HybridFlow进行中。不存在把同篇T2/T3相加的新增覆盖。
-- **深读当前焦点**：D1 六篇跨层口径核查（§13.2）、D2 五项边界核对（§13.3）、D3 四项边界核对（§13.4）、D4 五项边界核对（§13.5）与 D5 五项边界核对（§13.6）已完成。下一轮先核远端，再从 §13.1 剩余行与边界账续选核对（如 T1 批次其余深读的契约/旗标条目——ObsSpec 保分布契约、FP8-RL 数值精度边界等，或推进 HybridFlow 原并行认领的只读核远端状态）；不新加深读计数。代码12已达8–12数量目标；C1仅veRL数据路径完成、AReaL部分不开展。仍非Phase 2整体完成。
+- **深读当前焦点**：D1 六篇跨层口径核查（§13.2）、D2 五项边界核对（§13.3）、D3 四项边界核对（§13.4）、D4 五项边界核对（§13.5）、D5 五项边界核对（§13.6）与 D6 五项边界核对（§13.7）已完成。下一轮先核远端，再从 §13.1 剩余行与边界账续选核对（如矩阵其余"另核/待核"旗标，或推进 HybridFlow 原并行认领的只读核远端状态）；不新加深读计数。代码12已达8–12数量目标；C1仅veRL数据路径完成、AReaL部分不开展。仍非Phase 2整体完成。
 - **Phase 2 完成标准与预估（2026-10-27 定，用户问"多久读完"后定量）**：**不是 121 篇全读**。深读总量 = A Core 15–20 篇全模板深读 + B Supporting ~40–60 篇中等深度（机制+关键结果，轻模板）+ 代码深读 ~8–12 条路径；C 边界与 serving 保持元数据级即可。节奏：每篇 A Core ≈ 1 个定时任务轮次，B 类 3–5 篇/轮次；按多会话并行（每日 2–4 轮次涉及本专项）预估 **A Core ≈ 1–1.5 周、Phase 2 整体 ≈ 3–4 周日历时间**。里程碑：第 1 周末 A Core 短名单定稿+完成一半；第 2 周末 A Core 完成+代码地图齐；第 3–4 周 B 覆盖+gaps/ideas 提炼+（可选）survey outline。**加速杠杆**：为定时任务显式分配深读配额。
 - **下一步**：见 §16
 
@@ -105,7 +105,7 @@
 | [2608.25683v1](https://arxiv.org/abs/2608.25683v1) | 2026-08-26／v1 | psRL | L4训练侧边界 | B（训练调度） | 静态样本的prefix共享、token微批与KV生命周期；update至5.2×、整RL迭代至2.1×分账 | 核；[T2](#6335-psrl) |
 | [2605.07330v1](https://arxiv.org/abs/2605.07330v1) | 2026-05-08／v1 | SparseRL-Sync | L4 | B | post-cast索引／新值覆盖；106B同步延迟实测、671B外推，约100×压缩不当全训练加速 | 核；[T2](#6222-sparserl-sync) |
 | [2602.03839v2](https://arxiv.org/abs/2602.03839v2) | 2026-02-03首次／v2 05-19 | PULSE（Understanding and Exploiting Weight Update Sparsity） | L4／训练通信边界 | B（Sync）；LoCo优化另列 | Sync覆盖BF16新值，LoCo发送FP32 pseudo-gradient并留误差反馈；130×为上传字节比，非同一通道／算法精确等价 | 核；[T2](#6223-pulse) |
-| [2601.18150v2](https://arxiv.org/abs/2601.18150v2) | 2026-01-26首次／v2 04-10 | FP8-RL | L1/L2/L4 | A/B；**C**（数值policy／TIS） | 真FP8 policy／KV及每步scale刷新；token TIS不保证BF16轨迹等价，MoE长跑仍有崩溃 | 核；[T1](#620-fp8-rl-t1压缩深读) |
+| [2601.18150v2](https://arxiv.org/abs/2601.18150v2) | 2026-01-26首次／v2 04-10 | FP8-RL | L1/L2/L4 | A/B；**C**（数值policy／TIS） | 真FP8 policy／KV及每步scale刷新；token TIS不保证BF16轨迹等价，MoE长跑仍有崩溃（已核：式3 clip阈值C=2、MIS/RRR为建议非实证） | 核；[T1](#620-fp8-rl-t1压缩深读) |
 | [2610.16866v1](https://arxiv.org/abs/2610.16866v1) | 2026-10-12／v1 | PivotRL（Efficient Resource-Shiftable RL Post-training with Generative Rewards） | L3/L4 | B | GPS／role context切换＋保token重prefill迁移；planner模拟不等主评估模拟，收益限含GenRM三角色 | 核；[T2](#6323-pivotrl) |
 | [2512.22492v1](https://arxiv.org/abs/2512.22492v1) | 2025-12-27／v1 | RobustRL（Role-Based Fault Tolerance System for LLM RL Post-Training） | L4 | B（容错） | 角色恢复／同构rollout备用／UCX relay；每10步注入trainer故障，CPU管理角色未获容错 | 核；[T2](#6324-robustrl) |
 | [2610.08430v1](https://arxiv.org/abs/2610.08430v1) | 2026-10-06／v1 | NeMo-DCR | L4 | B | canonical投影／native loader放置，XOR去重及overwrite恢复／joint commit；refit等价不含KV，延迟压测不当1T训练 | 核；[T2](#6224-nemo-dcr) |
@@ -124,13 +124,13 @@
 | [2509.21009v1](https://arxiv.org/abs/2509.21009v1) | 2025-09-25／v1 | RollPacker | L3/L4 | B／**C**（响应选择／评分预算；跨round重排不改变样本集合为原文自述） | tail batching延后prompt但短轮保留最快响应；流式算梯度、整轮后更新，自适应sandbox超时另改奖励边界 | 核；[T1](#69-rollpacker-t1压缩深读)；[D5](#136-d5-边界核对账四2026-10-29-m5-完成) |
 | [2603.23414v1](https://arxiv.org/abs/2603.23414v1) | 2026-03-24／v1 | SortedRL | L3/L4 | B／**C**（批构成／更新次序） | 长度分批且清空prompt池后再补新；on-policy重跑未完响应，partial续token并缓存行为logp；micro-curriculum | 核；[T1](#610-sortedrl-t1压缩深读) |
 | [2608.22788v2](https://arxiv.org/abs/2608.22788v2) | 2026-08-24首次／v2 08-26 | TailSieve | L1/L3/L4 | A/B；**C**（跨轮集合） | 当前policy重生成旧尾组＋本轮最早bulk组，稳态无额外长度偏差不等每批集合不变 | 核；[T2](#6233-tailsieve) |
-| [2607.17299v1](https://arxiv.org/abs/2607.17299v1) | 2026-07-19／v1 | WAR | L1/L3 | A/B（超时边界另核） | 低负载suffix draft、高负载TTL／cache调度；计时筛选工作量差≤5%的运行，小batch调度可负收益 | 核；[T2](#6234-war) |
+| [2607.17299v1](https://arxiv.org/abs/2607.17299v1) | 2026-07-19／v1 | WAR | L1/L3 | A/B（超时边界另核→已核：TTL到期终止轨迹产生incomplete rollout） | 低负载suffix draft、高负载TTL／cache调度；计时筛选工作量差≤5%的运行，小batch调度可负收益 | 核；[T2](#6234-war) |
 | [2605.30859v1](https://arxiv.org/abs/2605.30859v1) | 2026-05-29／v1 | DARTS | L3/L4 | B／**C**（主动塑形） | 7短＋1长组选择、预算饱和改shortest-only；token流水仅前向提前，整轨迹后奖励／反向 | 核；[T1](#612-darts-t1压缩深读) |
 | [2509.18521v3](https://arxiv.org/abs/2509.18521v3) | 2025-09-23首次／09-26修订 | APRIL | L3/L4 | **C**（混版本；主评估即用续跑） | 超发后按完整prompt组收齐配额，未完token跨版本续跑为主评估机制；"不丢轨迹"指未完成续跑，非采样集合不变 | 核；[T1](#611-april-t1压缩深读)；[D5](#136-d5-边界核对账四2026-10-29-m5-完成) |
 | [2511.14617v3](https://arxiv.org/abs/2511.14617v3) | 2025-11-18首次／v3 2026-04-03 | Seer | L1/L2/L3 | A/B | chunk与共享KV池、组内probe调度＋suffix推测；尾时段是最后10%请求，不是P95 | 核；[T2](#6235-seer) |
 | [2605.07501v2](https://arxiv.org/abs/2605.07501v2) | 2026-05-08首次／v2 05-17 | ExpThink（CoT塑形边界） | workload／算法边界 | **C**（reward／advantage） | 每题最短正确长度统计塑形、按正确数缩放优势；77.18%是平均相对token减量，非同工作量提速 | 核；[T2](#6292-expthink) |
 | [2506.22950v1](https://arxiv.org/abs/2506.22950v1) | 2025-06-28／v1 | Infinite Sampling | L2/L3/L4 | B（dynamic-slot集合另列） | 固定slot复用KV与SJF refill、全组reward后反向；decode rounds不当墙钟，FPTAS保证疑点保留（算法2无近似证明，见§6.23.6） | 核；[T2](#6236-infinite-sampling) |
-| [2609.36899v1](https://arxiv.org/abs/2609.36899v1) | 2026-09-29／v1 | CadenceRL（Reshaping Rollout Workloads） | L2/L3/L4 | B（消费／年龄另核） | 同版本pending续跑与聚尾，credit非逐轨迹年龄界；跨硬件KV不兼容时re-prefill | 核；[T2](#6237-cadencerl) |
+| [2609.36899v1](https://arxiv.org/abs/2609.36899v1) | 2026-09-29／v1 | CadenceRL（Reshaping Rollout Workloads） | L2/L3/L4 | B（消费／年龄另核→已核：credit模型η界非逐轨迹上限、置换轨迹保留并原版本恢复） | 同版本pending续跑与聚尾，credit非逐轨迹年龄界；跨硬件KV不兼容时re-prefill | 核；[T2](#6237-cadencerl) |
 | [USENIX OSDI'26](https://www.usenix.org/conference/osdi26/presentation/wu-tianyuan) | 2026-07会议记录 | Weave（Efficient Co-Scheduling for Disaggregated RL Post-Training） | L3/L4 | B | 跨job组内交错＋host warm切换；局部最优有负载前提，trace回放成本与模拟近最优分账 | 核；[T2](#6238-weave) |
 | [2606.05606v1](https://arxiv.org/abs/2606.05606v1) | 2026-06-04／v1 | CERO（Cross-Epoch Adaptive Rollout Optimization） | workload／算法边界 | **C**（预算分配） | posterior信息代理＋跨epoch预算价格决定采样，固定utility regret不等非平稳实现保证；保留7B负项 | 核；[T2](#6241-cero) |
 
@@ -147,7 +147,7 @@
 | [2511.16665v3](https://arxiv.org/abs/2511.16665v3) | 2025-11-20首次／v3 2026-03-20 | TLT（Taming the Long-Tail） | L1/L2/L3/L4 | A/B | 尾部Spot Trainer＋分桶graph/MAB；三步计时用已训draft，旧长响应只训draft不改actor屏障 | 核；[T2](#6246-tlt) |
 | [2512.04752v2](https://arxiv.org/abs/2512.04752v2) | 2025-12-04首次／12-12修订 | RLHFSpec | L1/L3/L4 | A/B | profile选树与固定请求迁移；局部TPS非全局makespan最优 | 核；[T2](#6251-rlhfspec) |
 | [2605.08862v1](https://arxiv.org/abs/2605.08862v1) | 2026-05-09／v1 | BubbleSpec | L1/L3/L4 | A/B（精确验证条件） | 仅用inter-GPU气泡预生成下一批draft；逐token接受／残差校正＋统一短query attention | 核；[T1](#615-bubblespec-t1压缩深读) |
-| [2606.18967v2](https://arxiv.org/abs/2606.18967v2) | 2026-06-17首次／v2 09-30 | EfficientRollout | L1/L2 | A（验证／KV契约） | 每步RTN W4 draft＋roofline一次开启＋跨步调长度；target覆盖临时KV并拒绝校正 | 核；[T1](#617-efficientrollout-t1压缩深读) |
+| [2606.18967v2](https://arxiv.org/abs/2606.18967v2) | 2026-06-17首次／v2 09-30 | EfficientRollout | L1/L2 | A（验证／KV契约；一次开启自述已核，无continuous batching延伸） | 每步RTN W4 draft＋roofline一次开启＋跨步调长度；target覆盖临时KV并拒绝校正 | 核；[T1](#617-efficientrollout-t1压缩深读) |
 | [2601.09083v1](https://arxiv.org/abs/2601.09083v1) | 2026-01-14／v1 | SRT | L1/L3 | A/B | per-prompt树由当前policy验证；主计时无run-ahead，维护增益模拟与实测分账 | 核；[T2](#6243-srt) |
 | [2610.13202v1](https://arxiv.org/abs/2610.13202v1) | 2026-10-09／v1 | S³R | L1/L2/L4 | A/B（稀疏直采对照另C） | sparse draft＋dense KV重算／残差采样，完整组同快照；KV压力限流，稀疏读不减完整KV存储 | 核；[T2](#6244-s3r) |
 | [2610.32881v1](https://arxiv.org/abs/2610.32881v1) | 2026-10-23／v1 | NgramRL | L1/L2 | A/B | 近期per-prompt LUT＋验证结果分支预取；TPS为token/forward，1.38×相对同步预取基线非全训练 | 核；[T2](#6245-ngramrl) |
@@ -171,7 +171,7 @@
 | [2603.28101v1](https://arxiv.org/abs/2603.28101v1) | 2026-03-30／v1 | Heddle | L3/L4 | B（采样已核不丢弃；版本语义原文未给定待源码） | 长轨迹优先抢占、排序DP放置、工具间隙迁KV＋MP退火；最优性限代理假设、开销非总能全藏 | 核；[T1](#618-heddle-t1压缩深读)；[D5](#136-d5-边界核对账四2026-10-29-m5-完成) |
 | [2511.16108v1](https://arxiv.org/abs/2511.16108v1) | 2025-11-20／v1 | SkyRL-Agent | L4 | B；**C（recipe／梯度屏蔽）** | 三阶段队列重叠与工具recipe分账；超外部限制轨迹不算梯度 | 核；[T2](#6266-skyrl-agent) |
 | [2510.05943v1](https://arxiv.org/abs/2510.05943v1) | 2025-10-07／v1 | EARL | L4 | B | rollout间切TP与reference-logp直接分发；局部9.7–11.2×非全流程 | [T2](#6271-earl) |
-| [2610.15246v1](https://arxiv.org/abs/2610.15246v1) | 2026-10-11／v1 | ObsSpec | L4 | A/B（精确匹配／执行门槛） | observation匹配才保留预生成动作、核验后才顺序执行；WM离线重放训练，额外占8卡 | 核；[T1](#619-obsspec-t1压缩深读) |
+| [2610.15246v1](https://arxiv.org/abs/2610.15246v1) | 2026-10-11／v1 | ObsSpec | L4 | A/B（精确匹配／执行门槛；lossless限机制范围已核） | observation匹配才保留预生成动作、核验后才顺序执行；WM离线重放训练，额外占8卡 | 核；[T1](#619-obsspec-t1压缩深读) |
 | [2605.05262v1](https://arxiv.org/abs/2605.05262v1) | 2026-05-06／v1 | InfoTree（Rollout Informativeness） | L3/L4 | **C**／B | 树选样／预算C；过期评分重验B，时间到目标非每步更快；理论前提另核 | [T2](#6272-infotree) |
 | [2606.05597v3](https://arxiv.org/abs/2606.05597v3) | 2026-06-04首次／v3 08-07 | AsyncWebRL | L4 | B／**C** | 常驻pool／截图引用B；step归一化、混合结果组过滤C，联合吞吐非等工作量 | [T2](#6273-asyncwebrl) |
 | [2603.18464v3](https://arxiv.org/abs/2603.18464v3) | 2026-03-19首次／v3 06-12 | AcceRL（VLA边界） | L4 | B／**C** | 三段解耦B；GIPO／延迟norm／WM另C，离线轨迹1000／2000冲突已确认（摘要/图5 1000 vs §6.4 2000，v3未调和） | [T2](#6274-accerl)；[§13.4](#134-d3-边界核对账二2026-10-29-m5-完成) |
@@ -519,7 +519,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 | D3 | 边界核对 | AcceRL离线预算1000/2000／ASymPO v3状态／ThunderSyncRL vs PipelineRL行为分布／Each Prompt Matters T3复核 | **完成4/4**：2026-10-29 13:12 M5 认领、13:25 完成；回固定原文/原站逐字核对四项矩阵"待核"旗标与§5.25单列复核，产出 §13.4 边界核对账二：两项原文确认（AcceRL 摘要/图5 1000 vs §6.4 2000 OOD 冲突 v3 未调和、ASymPO v3 Comments 仍 "incorrect proofs" + v2 withdrawn 警示保留）、两项旗标收口（ThunderSyncRL 执行期异步/策略期同步零staleness B vs PipelineRL 策略期换权重 mixed behavior B/C? 机制目标不同不合并、Each Prompt Matters 摘要确认混合 FP8/调度/筛组/目标改变单列维持）。不新计深读、不扩库 |
 | D4 | 边界核对 | Laminar buffer策略／DORA跨步集合／StaleFlow冗余过滤／AsyncFlow版本目标／ARL-Tangram工具语义 | **完成5/5**：2026-10-29 13:41 M5 认领、13:44 完成；回固定原文（arXiv HTML，版本同各深读）逐字核对五项矩阵"另核/待核"旗标，产出 §13.5 边界核对账三：四项原文确认（Laminar buffer 采样/淘汰为可定制 API 且仅容量不足才淘汰、论文未指定实验配置——§6.3 "收敛实验用 FIFO" 无原文支撑已修正；DORA 窗口最旧版本全部收集转训后才前移、"preserves every sampled trajectory"、未完轨迹端到端固定原版本，staleness 由 K 界；StaleFlow 冗余中止长尾+主动过滤无信号条目双 C、主评估明确禁用冗余（附录C消融）；AsyncFlow 旧权重继续生成、新权重当前生成迭代结束后安装（延迟一步）、自称 off-policy 工作流且 sub-step 仍未来工作）＋一项警示保留（ARL-Tangram pytest -n 并行直接启用、无测试顺序/状态等义验证）。不新计深读、不扩库 |
 | D5 | 边界核对 | Heddle采样/版本旗标／DAS验证契约+约束代数／RollPacker跨round重排与训练批构成／ReSpec验证契约收口／APRIL B/C标签收口 | **完成5/5**：2026-10-29 14:14 M5 认领、14:16 完成；回固定原文（arXiv HTML，版本同各深读）逐字核对五项矩阵"待核/另C"旗标，产出 §13.6 边界核对账四：三项旗标收口（Heddle 被抢占轨迹持久化 KV 回队列不丢弃——采样收口、权重版本语义原文无表述维持待源码核；RollPacker 跨round重排不改变样本集合为原文自述、被中止 prompt 最终纳入、整轮结束才更新参数——最快响应保留/评分超时仍 C；ReSpec 验证契约为标准 SD 批量前向+逐token 接受测试+拒绝残差替换、Reward-Weighted KD 只更新 drafter——A 收口）＋一项代数复核确认（DAS 式7 与式6 约束解不一致逐字复核、拒绝/回滚契约原文未给出）＋一项标签升级（APRIL 主评估即用混版本续跑——B/C 收口为 C）。不新计深读、不扩库 |
-| D6 | 边界核对 | ObsSpec 保分布契约／FP8-RL 数值精度边界／EfficientRollout 一次开启假设／WAR 超时边界／CadenceRL 跨步消费与年龄 | **认领中（2026-10-29 14:42 M5）**：按 §0 焦点从 T1 批次其余深读契约/旗标与矩阵"另核"项选五项，先回写再开始核对；完成回写 §13.7 边界核对账五，不新计深读、不扩库 |
+| D6 | 边界核对 | ObsSpec 保分布契约／FP8-RL 数值精度边界／EfficientRollout 一次开启假设／WAR 超时边界／CadenceRL 跨步消费与年龄 | **完成5/5**：2026-10-29 14:42 M5 认领、14:52 完成；回固定原文（ObsSpec/EfficientRollout/WAR/CadenceRL 为 arXiv HTML、FP8-RL 为 PDF，版本同各深读）逐字核对五项契约/旗标，产出 §13.7 边界核对账五：两项契约收口（ObsSpec lossless 限定"精确匹配+顺序提交下的 rollout 集合"、不覆盖时变环境/RNG/logp；EfficientRollout 一次开启依据 active batch 单调缩小为原文自述且全文无 continuous batching 延伸）、一项数值边界部分收口（FP8-RL 式3 clip(w,C) 阈值 C=2/有界区间确认、区间端点实现待核；MIS/RRR 为建议非实证逐字确认）、一项失败语义升格（WAR TTL 为非活跃沙箱生存期、到期终止轨迹产生 incomplete rollout——论文级已确认、源码级待核）、一项跨步消费收口（CadenceRL 准入为 credit 模型 η 界在途批数非逐轨迹年龄上限、被置换轨迹保留且仅原版本 worker 恢复）。不新计深读、不扩库 |
 
 （HybridFlow 已由并行会话进行中，不计入批次。T2/T3 具体名单允许执行会话按 §5 矩阵实际条目微调，微调须记录。）
 
@@ -973,7 +973,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 - 共享KV：draft写临时状态，target全精度验证覆盖；首拒绝校正、丢弃后续KV。
 - 保分布依赖上述采样／KV契约，不因共用缓存自动成立。
 - roofline按B／S及上步τ预测，≥1.05开启；同一rollout内开启后不再关闭。
-- 一次开启依据active batch单调缩小，不直接迁移到补新请求的continuous batching。
+- 一次开启依据active batch单调缩小（原文自述逐字确认："Once activated, SD remains enabled until the end of the rollout, as the active batch size monotonically decreases…"），不直接迁移到补新请求的continuous batching（全文无此延伸，§13.7）。
 - Γ={5,7,9,11}、P=2、上下阈值.94／.85，仅跨训练步调γ。
 - 每model–hardware剖析校准；H100有害开启0–4%，不是绝对安全边界。
 - 表3 decode构成与W4／W8理想比率含模拟，不冒充GPU算子实测。
@@ -1039,7 +1039,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 - K=8去重后仅3.14候选，match多2.6百分点却agent慢25.3%，相对K=1。
 - 大WM rollback减少但更慢／cancel更多；训练到500步时更新WM较冻结100步者match高9.1百分点。
 - TIR负项：55.82→56.42秒，tool仅占21.2%；更大WM也无实质收益。
-- 表中误差为SE，reward相近不等同seed轨迹；条件lossless不认证时变环境／RNG／logp契约。
+- 表中误差为SE，reward相近不等同seed轨迹；条件lossless（exact-match保留＋顺序提交＋错误丢弃，§13.7已核原文）不认证时变环境／RNG／logp契约。
 - 分类L4、A/B；exact-match与顺序提交门槛下不因rollback自动标C。
 - [论文代码入口](https://github.com/kylemontgomery1/verl-recipe/tree/obsspec/obsspec)未核commit／文件；不排新算力或接续M5专项。
 
@@ -1055,7 +1055,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 - NeMo-RL训练侧用新权重／数据重校准再同步，报校准占全步2–3%，不算免费。
 - token IS比率`πtrain(a|s)/πFP8(a|s)`，训练端重算BF16 logp；TIS阈值C=2。
 - 截断／逐token校正非完整轨迹重要性乘积，不推出exact BF16 rollout或无偏轨迹更新。
-- 式3只写clip(w,C)，上下界／实现语义待核；MIS／router replay是建议，非已用实证。
+- 式3只写clip(w,C)，原文"clips the importance weights to a bounded range"＋"C is the clipping threshold (we use 𝐶=2)"——阈值语义已确认、区间端点实现语义待核；MIS／router replay是建议，非已用实证（崩溃实验明言 "no additional techniques such as…MIS are used"，§13.7）。
 - W8A8主8B用8 H100、30B-A3B用16 H100；FSDP＋vLLM、DAPO／AIME24验证。
 - prompt32、n16、训练／mini-batch32、上限20K；正文却列rollout32×3×16，×3与温度口径未释。
 - dense BF16无TIS对FP8有／无TIS，MoE两侧均用TIS；不混作同一控制条件。
@@ -1271,7 +1271,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 - **控制**：AIMD依据cache命中调请求窗口，推测按本地batch负载开关；TTL优先调度是避免过期，不能承诺执行中绝无超时终止。
 - **设置**：veRL0.8／SGLang0.5.5／Megatron0.13.1，Qwen3-32B＋YaRN 96K、SWE 500题；两节点16 H100，batch4–64题×8响应，观察5个训练步。
 - **结果条件**：仅统计prefill／decode／turn工作量与基线相差5%以内的运行；这是评估筛选，不是训练过滤机制，也不证明所有运行都生成同一轨迹集。组合prefill缩短35–63%、decode缩短32–63%，非完整训练时间。
-- **负项／迁移**：调度单独使用时batch4的decode约退化4%，batch64才改善约47%；短窗口不足以证明长期收敛或任意负载受益。未核源码与TTL失败消费语义。
+- **负项／迁移**：调度单独使用时batch4的decode约退化4%，batch64才改善约47%；短窗口不足以证明长期收敛或任意负载受益。TTL失败消费语义已回原文核（§13.7）：TTL为非活跃沙箱生存期、"Once the sandbox reaches ttl_sandbox, the trajectory is terminated, resulting in an incomplete rollout"——论文级incomplete rollout确认，未核源码与实现级消费。
 
 #### 6.23.5 Seer
 
@@ -1293,7 +1293,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 
 #### 6.23.7 CadenceRL
 
-- **来源／分类**：[v1 §4–6、附录](https://arxiv.org/html/2609.36899v1)，T2完成；L2/L3/L4 B，跨步消费／年龄仍另核，不因pacing替换resident就归删样本。
+- **来源／分类**：[v1 §4–6、附录](https://arxiv.org/html/2609.36899v1)，T2完成；L2/L3/L4 B，跨步消费／年龄已回原文核（§13.7：credit模型η界在途批数非逐轨迹年龄上限、被置换轨迹保留且仅原版本worker恢复），不因pacing替换resident就归删样本。
 - **机制**：长context暂存pending、短请求先补，准入耗尽后按亲和性聚尾；pending只在原policy版本恢复，排空才释放该源worker。准入credit约束超前batch供给，**不是逐轨迹版本年龄硬界**。
 - **状态迁移**：late-bound KV准备经host／relay分散传输；只在兼容集群复用，跨硬件或集群回退token re-prefill，不称任意异构KV无缝复用。
 - **设置**：Steptron训练H800、vLLM rollout用A910X／BI-V150／H800；Qwen3-8／14／32B，最大64K／32K／16K，512题×16响应，PPO单次mini更新。trainer刻意保留余量，系统以rollout为瓶颈。
@@ -2356,6 +2356,22 @@ SkyRL `e0893f6e`的[wait_for_generation_buffer:843](https://github.com/NovaSky-A
 
 **D5 结论**：三项旗标收口（Heddle 采样不丢弃/版本待源码、RollPacker 重排不改变样本集合为原文自述、ReSpec 验证契约为标准 SD 契约）＋一项代数复核确认（DAS 式7 与式6 约束不一致）＋一项标签升级（APRIL 主评估即用混版本续跑，B/C 收口为 C）。不构成新算力任务、不新计深读、不扩库。
 
+### 13.7 D6 边界核对账五（2026-10-29 M5 完成）
+
+按批次表 D6 回固定原文逐字核对 T1 批次其余深读契约/旗标与矩阵"另核"项。不新计深读、不扩库、不写 survey 正文。
+
+**ObsSpec（2610.15246v1）保分布契约——收口为"lossless 限定精确匹配+顺序提交下的 rollout 集合，不覆盖时变环境/RNG/logp"**：引言贡献 "ObsSpec retains speculative work only when the predicted and actual observations match exactly, making rollout collection lossless"、§2.2 "we execute them sequentially, checking each prediction before executing the next action. This procedure ensures that rollout collection is lossless: the rollout contains no mispredicted observations or actions generated from them"——lossless 的明确定义是"rollout 中不含预测错误观测或其派生的动作"，条件为 exact-match 保留＋顺序提交＋错误则丢弃/重采（"a wrong prediction therefore wastes speculative computation"）；§2.1 需求一 "rollout collection must be lossless: rollouts contain no mispredicted observations or actions generated from them" 同义。即 lossless 是**限观测推测机制范围的集合性保证**，论文不提供时变环境/RNG/logp 等义契约，§6.19 "条件lossless不认证时变环境／RNG／logp契约"逐字成立并据此收口（旗标不关闭到"无条件等价"）。
+
+**FP8-RL（2601.18150v2）数值精度边界——C=2 阈值与 bounded range 确认、区间端点未指定；MIS/RRR 确认为建议非实证**：§2.1 式3 `w_TIS(a|s)=clip(w(a|s),C)`，原文 "Naive importance weights can exhibit high variance…We adopt token-level truncated importance sampling (TIS), which clips the importance weights to a bounded range"＋"where 𝐶 is the clipping threshold (we use 𝐶=2 in all experiments)"——式3 语义为"截断到有界区间"、C=2 全实验使用逐字确认；**具体区间端点（[1/C,C] 或 [0,C] 等）原文未指定，实现语义仍待源码**，§6.20 "式3只写clip(w,C)，上下界／实现语义待核"据此收口为"阈值语义已确认、端点实现待核"；"we compute these ratios at token level during training, using the BF16 policy πθ to evaluate the log-probabilities"（token 级比率、BF16 重算 logp，D1/T1 已记）。MIS/RRR：MoE 失配讨论 "scenarios with more severe instability may require advanced correction techniques such as Masked Importance Sampling (MIS) or Rollout Router Replay (RRR)"，且 §B.3 崩溃实验明言 "token-level TIS is the only mismatch mitigation applied—no additional techniques such as Rollout Router Replay (R3) or Masked Importance Sampling (MIS) are used"——"MIS／router replay 是建议、非已用实证"逐字确认；崩溃实验自述 "TIS alone may be insufficient to control mismatch under mixed precision"。
+
+**EfficientRollout（2606.18967v2）一次开启假设——逐字确认"开启后保持至 rollover 结束、依据 active batch 单调缩小"，无 continuous batching 延伸**：§3.2 式3 roofline `[T_p/(γT_q+T_V)≥1+ε]`（ε≥0）"activating SD only when the prediction is favorable"、同段 "Once activated, SD remains enabled until the end of the rollout, as the active batch size monotonically decreases toward the SD-beneficial tail regimes"；§2 "active batch sizes shrink throughout rollout decoding"、"rollout generation often starts with large active batch sizes, creating compute-bound intervals where SD may be slower than autoregressive (AR) decoding, before the batch later shrinks as shorter responses finish"——一次开启依据 active batch 单调缩小为原文自述逐字确认。**全文无 "continuous batching"／新请求到达的讨论**，§6.17 "一次开启依据active batch单调缩小，不直接迁移到补新请求的continuous batching"维持（原文未提供该延伸）。
+
+**WAR（2607.17299v1）超时边界——收口为"TTL 为非活跃沙箱生存期、到期终止轨迹产生 incomplete rollout（论文自述的失败消费语义）；源码级消费仍待核"**：§4 "the sandbox related to the request have a prescribed time to live ttl_sandbox. If the sandbox is not visited for ttl_sandbox, it will be released"、"Once the sandbox reaches ttl_sandbox, the trajectory is terminated, resulting in an incomplete rollout"、§4.2 "|S_waiting| is assigned the largest magnitude to prioritize requests approaching the sandbox timeout"、§5 "when the corresponding sandbox reaches its TTL, the sandbox shuts down and the agent trajectory is terminated prematurely. This leads to incomplete rollouts, which is reflected in the overall reduction of prefill tokens, decode tokens, and end-to-end time"——TTL 是**非活跃生存期**（not visited 即释放），到期轨迹被终止＝产生 incomplete rollout 且计入工作量缩减（论文级失败消费语义逐字确认）；主评估仍只统计与基线工作量差≤5%的运行（§6.23.4 判定为评估筛选、非训练过滤）。"TTL失败消费"由"未核源码"收口为"论文级已确认（incomplete rollout）、源码级仍未核"；§6.23.4 "不能承诺执行中绝无超时终止"逐字成立。
+
+**CadenceRL（2609.36899v1）跨步消费/年龄——收口为"准入为 credit 模型非逐轨迹上限（η 界在途样本数）、被置换轨迹保留并仅在原版本 worker 恢复"**：§4.1 pending 集 "A trajectory not resident on any worker belongs to a pending set 𝒫_v, indexed by the policy version v under which it was generated. The version index ensures that a trajectory resumes only on a worker serving the same policy version"、§4.3 准入 "the admission budget uses a credit model rather than a per-trajectory cap. Each completed training iteration adds one iteration-batch of samples to the credit pool, and a dimensionless parameter η controls how far ahead of training consumption the system may admit new work. In steady state, the number of in-flight samples is bounded by approximately (η+1) iteration-batches"、"the displaced long-context trajectories leave their current workers but remain in the system, where they must be served by other workers"——被置换轨迹**不丢弃**（remain in the system）、跨步消费=原版本 pending 恢复（版本索引）；staleness 由 η 界在途样本批数（batch 级、非逐轨迹年龄硬界）逐字确认。§6.23.7 "准入credit约束超前batch供给，不是逐轨迹版本年龄硬界"据此收口成立；"跨步消费／年龄仍另核"旗标关闭（batch 级 η 界＋版本索引恢复为原文确认），实现级（何时算 in-flight、pending 恢复时机）仍待源码。
+
+**D6 结论**：五项全部逐字确认——两项契约收口（ObsSpec lossless 限定机制范围、EfficientRollout 一次开启自述且无 continuous batching 延伸）、一项数值边界部分收口（FP8-RL C=2/bounded range 确认、端点与 MIS/RRR 建议性确认）、一项失败语义升格（WAR TTL 到期终止轨迹→incomplete rollout，源码级待核）、一项跨步消费收口（CadenceRL credit 模型 η 界＋版本索引恢复）。矩阵五行旗标、§6.17/§6.19/§6.20/§6.23.4/§6.23.7 对应行更新。不构成新算力任务、不新计深读、不扩库。
+
 ## 14. Reproduction Candidates
 
 （空。登记模板：为什么值得复现 / repo / model / hardware / dataset / expected cost / key metric / stopping condition。**当前不启动 GPU 实验**。已有可借力资源：M5 4090-1 verl-e2e 环境、本地 veRL 源码。）
@@ -2368,6 +2384,8 @@ SkyRL `e0893f6e`的[wait_for_generation_buffer:843](https://github.com/NovaSky-A
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-29（M5 D6 五项边界核对）**：14:42 认领、14:52 完成，回写 §6.0 D6 行 5/5、新增 §13.7 边界核对账五。回固定原文（ObsSpec/EfficientRollout/WAR/CadenceRL 为 arXiv HTML、FP8-RL 为 PDF，版本同各深读）逐字核对五项契约/旗标：① ObsSpec 2610.15246v1 保分布契约——引言 "retains speculative work only when the predicted and actual observations match exactly, making rollout collection lossless"、§2.2 "we execute them sequentially, checking each prediction before executing the next action. This procedure ensures that rollout collection is lossless: the rollout contains no mispredicted observations or actions generated from them"、需求一 "rollout collection must be lossless: rollouts contain no mispredicted observations or actions generated from them"、错误路径 "a wrong prediction therefore wastes speculative computation"——lossless 限定"精确匹配+顺序提交下 rollout 不含预测错误观测/派生动作"、不覆盖时变环境/RNG/logp（§6.19 旗标收口，不关闭到无条件等价）；② FP8-RL 2601.18150v2 数值精度边界——式3 `w_TIS=clip(w,C)`、"clips the importance weights to a bounded range"、"C is the clipping threshold (we use 𝐶=2 in all experiments)"（阈值语义/有界区间逐字确认、具体区间端点原文未指定仍待源码）；"we compute these ratios at token level…using the BF16 policy"（token 级/BF16 logp 重算）；MIS/RRR 建议性确认：MoE 失配讨论 "may require advanced correction techniques such as…MIS or…RRR"、崩溃实验明言 "token-level TIS is the only mismatch mitigation applied—no additional techniques such as…MIS are used"（§6.20 部分收口）；③ EfficientRollout 2606.18967v2 一次开启假设——式3 roofline `[T_p/(γT_q+T_V)≥1+ε]`、"Once activated, SD remains enabled until the end of the rollout, as the active batch size monotonically decreases toward the SD-beneficial tail regimes"、§2 "active batch sizes shrink throughout rollout decoding…before the batch later shrinks as shorter responses finish"（一次开启依据单调缩小为原文自述）；全文无 "continuous batching"/新请求到达讨论（§6.17 收口，无该延伸）；④ WAR 2607.17299v1 超时边界——"the sandbox…have a prescribed time to live ttl_sandbox. If the sandbox is not visited for ttl_sandbox, it will be released"、"Once the sandbox reaches ttl_sandbox, the trajectory is terminated, resulting in an incomplete rollout"、"|S_waiting| is assigned the largest magnitude to prioritize requests approaching the sandbox timeout"、§5 "the sandbox shuts down and the agent trajectory is terminated prematurely. This leads to incomplete rollouts, which is reflected in the overall reduction of prefill tokens, decode tokens, and end-to-end time"——TTL 为非活跃生存期、到期终止产生 incomplete rollout（论文级失败消费语义确认、源码级待核，§6.23.4 升格）；⑤ CadenceRL 2609.36899v1 跨步消费/年龄——"A trajectory not resident on any worker belongs to a pending set 𝒫_v, indexed by the policy version v under which it was generated. The version index ensures that a trajectory resumes only on a worker serving the same policy version"、"the admission budget uses a credit model rather than a per-trajectory cap…η controls how far ahead of training consumption…In steady state, the number of in-flight samples is bounded by approximately (η+1) iteration-batches"、"the displaced long-context trajectories leave their current workers but remain in the system"——准入为 credit 模型 η 界在途批数非逐轨迹年龄上限、被置换轨迹保留并原版本恢复（§6.23.7 收口，实现级待源码）。矩阵五行旗标、§6.17/§6.19/§6.20/§6.23.4/§6.23.7 对应行同步更新；§0 计数与焦点更新。126 身份 20/84/21/1、代码 12 路径／8 系统、复现 0 不变；HybridFlow 原并行认领与原始数据缺口保留。无设备探测、M5 专项、算力队列或社区写入。
 
 - **2026-10-29（M5 D5 五项边界核对）**：14:14 认领、14:16 完成，回写 §6.0 D5 行 5/5、新增 §13.6 边界核对账四。回固定原文（arXiv HTML，版本同各深读）逐字核对五项矩阵"待核/另C"旗标：① Heddle 2603.28101v1 采样/版本——§4.2 算法1 "Evict r_min from A; persist KV cache"＋"Move r_min to Q"、正文 "relegating it to the waiting queue while persisting its prefix cache"（被抢占轨迹不丢弃、持久化前缀 KV 回队列；执行重排≠删样本）——采样旗标收口；权重版本语义原文无任何表述，"跨MP KV布局／版本与工具状态一致性待源码核"维持；② DAS 2511.13841v1 验证契约+代数——§4.1.2 "The target model verifies this draft in one or a few batched steps"、"accepted tokens advance generation"（原文仅批量验证+接受推进，拒绝/回滚/逐token与整序列区分未给出）；§5.1 "lossless acceleration approach aiming to preserve the rollout distribution"（分布保真为声称非证明）；式7 `p_i*=−(l_i/α_i)ln(1−k_i(1−N_fwd/l_i))` 与式6 约束 `l_i(1−k_i+k_i e^{−α_i p_i/l_i})≤N_fwd` 的代数解 `−ln((N/l−1+k)/k)` 不一致逐字复核（§6.16 反例保留，式8/9 沿用式7 不作最优预算证明）；③ RollPacker 2509.21009v1 跨round重排——§3 "only reorders short and long prompts into separate rounds **without altering the underlying sample distribution**"、§1 "alters only the order of training samples"（重排不改变样本集合为原文自述）、§3 "prompts aborted … are added to a long-prompt queue"/"no prompt is permanently excluded"/"all prompts are eventually included"（最终纳入）、§4.4 "no updates are applied … until the streaming concludes"/"the final update is equivalent to that of standard on-policy training"（整轮结束才更新，等价为自称）——§5.10 旗标收口，最快响应保留/评分超时仍 C；④ ReSpec 2510.26475v1 验证契约——§2.2 "the target evaluates the proposed block in a batched forward and accepts drafted tokens sequentially according to an acceptance test; if a token is rejected, it is replaced by sampling from a residual distribution"（标准 SD 契约逐字确认）、接受规则 `min(1,p/q)`＋残差采样、§5.3.1 Reward-Weighted KD `L_KD=w(r)Σ KL(p||q_θ)` 且 "gradients are always computed with respect to the current draft (qθ)"（只更新 drafter，D1 判定逐字支撑）、§5.1 "standard RL training loop"（actor 不变）——"A（验证契约待核）"收口为 A，算法1 vs 1/I 矛盾保留；⑤ APRIL 2509.18521v3 B/C——§2.2 "the unfinished ones are buffered and resumed in the next step k+1 … without data loss"/"was initialized by an earlier policy … ultimately completed under the current policy"（混版本续跑）、**主评估即用该机制**（§3.1 over_sampling_batch_size=64 主对照，非消融）、§2.2 "the advantage estimate … is calculated over a sequence generated by a 'mixed' policy"（advantage 按 mixed policy 计算）、§3.2.3 "approximately 40% of the tokens"（token 单位，D1 已记）——"B／C（每步集合／混版本）"收口为 C。矩阵五行旗标、§5.9/§5.10 对应段落同步更新；§0 计数与焦点更新。126 身份 20/84/21/1、代码 12 路径／8 系统、复现 0 不变；HybridFlow 原并行认领与原始数据缺口保留。无设备探测、M5 专项、算力队列或社区写入。
 
