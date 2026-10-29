@@ -47,7 +47,7 @@
 
 **层（L1–L4，允许反例修订）**：
 
-| 层 | 核心问题 | 代表杠杆 |
+| 层 | 核心问题 | 代表性技术抓手 |
 |---|---|---|
 | L1 Token/Model Execution | 单 token/decode step 怎么更便宜 | attention/kernel、KV cache、quantization/FP8、speculative decoding、MTP、draft model |
 | L2 Engine/Replica | 一个 engine 高效完成一组 trajectories | continuous batching、chunked prefill、prefix/KV reuse、multi-sample、sleep/wake |
