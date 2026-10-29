@@ -1,5 +1,7 @@
 # verl Reward Integration 源码级深度阅读
 
+2026-10-30接续：[Minerva装饰与答案身份](#minerva-装饰与答案身份)核已有#8450：原21参数测试体候选全过／基线14断言失败，但末尾实质星号被删可造成符号串误接收；反引号跨行和冒号前标签仍未覆盖。已有bot反馈，本机只复核、不补丁或发布。
+
 2026-10-26状态纠正：[数学奖励候选关闭与方程后续](#候选关闭与方程后续)确认#8347关闭未合并、主线三个评分文件仍同旧基线；方程提取已有新贡献者认领，不把旧64项通过当成已部署修复。
 
 2026-10-26接续：[colocated 组装与 V1 生成 mask](#colocated-组装与-v1-生成-mask)核对新#8379补上#8368明确排除的路径；原13参数项候选通过，实际TQ服务／RM推理与完整PPO更新仍分开验收。
@@ -63,6 +65,35 @@ V1另从TQ明确请求保存的 `response_mask`，转成padded后放进RM输入�
 作者另报63项套件在两版torch通过及CUDA合成PPO／AdamW smoke；均为外部报告，不计入本机13项，也不是完整rollout／RM推理训练。本轮未执行真实TQ服务／RM模型、完整trainer、CUDA、多GPU或训练，不重跑#8368旧控制。缺口补[M5原条件入口](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不自动应用候选、新排训练或改其专项；有实质反馈或真实匹配需求才接续，不扩mask矩阵。任何社区写入和已有PR-head推送仍逐项待用户明确同意，PR正文的外部提交授权不改变本项目权限。
 
 复用：已有固定Git对象的只读verl checkout，执行 `python experiments/verl-colocated-outcome/verify.py /absolute/path/to/verl base` 或末参 `head`。base返回脚本exit0表示记录到了9个预期失败，不表示原测试全过；无需网络／模型下载。
+
+## Minerva 装饰与答案身份
+
+**格式容错不能自动把边界符号当装饰。** 2026-10-30读取RerankerGuo的[#8449](https://github.com/verl-project/verl/issues/8449)与已有OPEN／非draft [#8450](https://github.com/verl-project/verl/pull/8450)，不另认领修复。固定head `e8e82c2fc349c64e199392eaf6f7aaf79d185d42`，API目标base为main `a08ea02a784d7d4982b1d81df36d188a476192bb`，实际共同祖先却是 `dc709afb7a74fd2645640a4e5f2fdf40166b4fbb`（ahead1／behind22）。祖先与该main的math_dapo逐字节相同，下面仅据这一评分文件对应主线，不称整仓库相同。
+
+原Minerva优先匹配最后一个 `Answer:`，再走指定文本normalizer。候选增加装饰剥离：成对包裹先处理，残留单侧星号／反引号再移除；下划线仅剥成对包裹，以保留 `x_1`／`_1`／`x_`。默认正则另允许冒号后的强调标记跨空白跳到答案。**匹配标签、取答案跨度、清理装饰、归一化与选择后备**是不同步骤；只看最终21个绿色断言不能判断所有步骤都保持答案身份。
+
+### 原测试覆盖与反向边界
+
+Python3.12.14／仅标准库，完整执行两版[原评分器](https://github.com/verl-project/verl/blob/e8e82c2fc349c64e199392eaf6f7aaf79d185d42/verl/utils/reward_score/math_dapo.py)，直接调用[原测试](https://github.com/verl-project/verl/blob/e8e82c2fc349c64e199392eaf6f7aaf79d185d42/tests/utils/reward_score/test_math_dapo_minerva_markdown_on_cpu.py)九函数展开的21参数体：基线7通过／14断言失败，候选21通过。测试体、参数值和断言保留，只去pytest／框架imports及parametrize装饰器；不是原生pytest收集，也不是作者39项奖励manager套件。所测多行字符串经解析确有真实换行，不是字面反斜杠n。
+
+两条已有[bot行内反馈](https://github.com/verl-project/verl/pull/8450#discussion_r4415579531)、[格式边界反馈](https://github.com/verl-project/verl/pull/8450#discussion_r4415579540)涉及下列问题，本机固定head复核，不将建议当执行指令或新发现。读取时唯一review为CodeRabbit的COMMENTED（针对旧d7d931de），无人工批准；当前两条行内记录标head e8e82c2f，结论以实际代码为准，不照搬“低风险”摘要。
+
+| 小输入与目标 | 基线输出 | 候选输出 | 所说明的边界 |
+|---|---|---|---|
+| `Answer: x*`，目标`x*` | +1，pred=`x*` | −1，pred=`x` | 清理删掉答案的末尾符号 |
+| 同一输入，目标`x` | −1，pred=`x*` | +1，pred=`x` | 在本符号串契约下从拒绝变误接收 |
+| 反引号包裹Answer标签，值在下一行 | −1，pred为反引号 | −1，pred=`[INVALID]` | 冒号后跨行规则未含反引号，并非本候选新引入的拒绝 |
+| `**Answer**: 42`，目标42 | −1，`[INVALID]` | −1，`[INVALID]` | 标签结束标记在冒号前，根本未匹配 |
+
+这些是有限输入的字符串判分控制，不是符号数学等价器、常见数据频率或训练质量结论；末尾星号也不能仅因“通常是Markdown”就对全部目标删去。测试保住内部 `3*4` 不代表保住边界 `x*`，保住下划线也不等所有运算／标记语义无损。没有在候选上回改正则或剥离策略。
+
+### 后备代码未改但可达性会变
+
+六个既有函数（boxed提取／去壳、normalizer、strict box、verify、compute_score）两版AST相同。候选把空装饰串改回 `[INVALID]`，因此 `\boxed{42}` 后接空 `**Answer:**` 的本地控制由−1变+1：不是boxed函数变了，而是现在能走到后备。相反，明确提取出错的 `Answer: 41` 即使旁边有正确box，仍−1；strict模式绕过Minerva则给+1。原[后备选择与窗口](#boxed-答案的归一化与选择优先级)条件不变，不能写成“Minerva判错就再选box”。
+
+本地 `\boxed{1,000}` 对目标1000两版仍−1；它属于另一项boxed归一化需求，而非本次Minerva修复。未把#8124拼进#8450或将其旧9项移作当前候选验收。
+
+[复现脚本](../../experiments/verl-math-dapo-markdown/verify.py)和[逐项结果／四源码hash](../../experiments/verl-math-dapo-markdown/result.json)另存八个本地边界控制，区别于21原测试；两次结果与JSON相同。运行 `python3.12 -B experiments/verl-math-dapo-markdown/verify.py /path/to/verl-git`，需已有固定Git blob、禁止隐式fetch。无第三方依赖、verl父包／模型／worker／设备导入、完整manager或训练；不据bot工具警告声称已验证ReDoS。CPU证据收束，无需新GPU队列，候选有实质修订再接续；不修改M5专项或对社区写入，所有上游动作／PR-head推送仍须用户逐项明确授权。
 
 ## boxed 答案的归一化与选择优先级
 

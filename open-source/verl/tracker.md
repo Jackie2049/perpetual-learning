@@ -37,6 +37,8 @@
 
 2026-10-30补[extras实际元数据](#可选依赖入口的已有报告)：#8447报告者愿提交、方向待维护者决定；原六输入的egg-info／PEP517一致，六旧组名缺失但18基础依赖保留，无安装／镜像验收，不另实现或排M5任务。
 
+2026-10-30核[Minerva装饰边界](#minerva-装饰的已有候选)：#8450已有作者与bot反馈；21原测试体候选全过／基线14断言失败，但八个本地控制复核末尾星号误删／跨行标签及后备可达性，不作整体安全或训练验收，不另修复／发布。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -56,6 +58,12 @@
 2026-10-26只读[#8323](https://github.com/verl-project/verl/pull/8323)新head1787d6a2／base祖先174888fc，OPEN／非draft／未合并，ahead2／behind0，20文件872增21删。旧4e93已分叉，整仓比较ahead23／behind2包含多项main变化，不记成本PR新增。作者新[sleep解释](https://github.com/verl-project/verl/pull/8323#issuecomment-6416461545)及维护者引擎侧修复问题不当接口批准或本项目认领。
 
 [原Worker专题](../../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#新版的显式清理与-sleep-路径)对照固定vLLM0.32.0 commit5df63a72：salt显式clear传False，abort适配mode=abort后单独清local；sleep(level≥1)仍经_finish_pause／_reset_caches默认True请求connector reset。实际删除由connector.reset_cache实现决定，不应写成所有store清空或必然完整保留。已有原生release_kv_cache_memory也走默认reset，不能仅凭方法名替换。四完整源码AST／compile及scheduler方法只读，无pause／sleep／connector／模型执行，旧helper结果与作者0.29 GPU报告均不迁作新组合验收；只修原M5条件参考，无新队列／补丁／专项或社区写入。
+
+## Minerva 装饰的已有候选
+
+2026-10-30读取RerankerGuo的[#8449](https://github.com/verl-project/verl/issues/8449)与OPEN／非draft [#8450](https://github.com/verl-project/verl/pull/8450)，heade8e82c2f；API目标a08ea02a，实际祖先dc709afb、ahead1／behind22。两基线评分文件相同，已有作者，不另认领。唯一review为bot COMMENTED、两条bot行内反馈，不等人工批准。
+
+[原奖励专题](../../notebook/frameworks/verl-reward-integration-reading.md#minerva-装饰与答案身份)和[结果](../../experiments/verl-math-dapo-markdown/result.json)保存21原参数测试体（候选21过／基线7过14断言失败）及八本地控制：`x*`末尾被剥，既可错拒原目标也可误接收`x`；反引号标签跨行／标签强调止于冒号前仍拒绝，空装饰变INVALID可让未改的boxed后备可达。只用原评分模块／断言，不是原生pytest、manager或训练；已有bot指向的边界仅本地复核，不套建议补丁、发回复、改PR或新增M5任务。上游与PR-head写入仍逐项待用户明确同意。
 
 ## 可选依赖入口的已有报告
 

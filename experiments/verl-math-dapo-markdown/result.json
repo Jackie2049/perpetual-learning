@@ -1,0 +1,77 @@
+{
+  "python":"3.12.14",
+  "base":"dc709afb7a74fd2645640a4e5f2fdf40166b4fbb",
+  "main":"a08ea02a784d7d4982b1d81df36d188a476192bb",
+  "head":"e8e82c2fc349c64e199392eaf6f7aaf79d185d42",
+  "original_test_bodies": {
+    "base": {
+      "passed":7,"assertion_failed":14,
+      "items": [
+        {"case":"test_minerva_answer_with_markdown_emphasis_is_accepted[0]","status":"assertion_failed"},
+        {"case":"test_minerva_answer_with_markdown_emphasis_is_accepted[1]","status":"assertion_failed"},
+        {"case":"test_minerva_answer_with_markdown_emphasis_is_accepted[2]","status":"assertion_failed"},
+        {"case":"test_minerva_answer_with_markdown_emphasis_is_accepted[3]","status":"assertion_failed"},
+        {"case":"test_minerva_answer_with_markdown_emphasis_is_accepted[4]","status":"assertion_failed"},
+        {"case":"test_minerva_answer_with_markdown_emphasis_is_accepted[5]","status":"assertion_failed"},
+        {"case":"test_minerva_extraction_strips_markdown_emphasis[0]","status":"assertion_failed"},
+        {"case":"test_minerva_extraction_strips_markdown_emphasis[1]","status":"assertion_failed"},
+        {"case":"test_minerva_extraction_strips_markdown_emphasis[2]","status":"assertion_failed"},
+        {"case":"test_minerva_extraction_strips_markdown_emphasis[3]","status":"assertion_failed"},
+        {"case":"test_minerva_extraction_strips_markdown_emphasis[4]","status":"assertion_failed"},
+        {"case":"test_minerva_extraction_strips_markdown_emphasis[5]","status":"assertion_failed"},
+        {"case":"test_plain_answer_is_unchanged[0]","status":"passed"},
+        {"case":"test_wrong_answer_with_markdown_emphasis_is_rejected[0]","status":"assertion_failed"},
+        {"case":"test_markdown_emphasis_inside_the_answer_is_kept[0]","status":"passed"},
+        {"case":"test_latex_subscript_answer_is_not_treated_as_emphasis[0]","status":"passed"},
+        {"case":"test_latex_subscript_answer_is_not_treated_as_emphasis[1]","status":"passed"},
+        {"case":"test_latex_subscript_answer_is_not_treated_as_emphasis[2]","status":"passed"},
+        {"case":"test_bare_answer_label_falls_back_to_the_boxed_answer[0]","status":"assertion_failed"},
+        {"case":"test_boxed_answer_is_unaffected[0]","status":"passed"},
+        {"case":"test_answer_label_without_value_is_rejected[0]","status":"passed"}
+      ]
+    },
+    "head": {
+      "passed":21,"assertion_failed":0,
+      "items": [
+        {"case":"test_minerva_answer_with_markdown_emphasis_is_accepted[0]","status":"passed"},
+        {"case":"test_minerva_answer_with_markdown_emphasis_is_accepted[1]","status":"passed"},
+        {"case":"test_minerva_answer_with_markdown_emphasis_is_accepted[2]","status":"passed"},
+        {"case":"test_minerva_answer_with_markdown_emphasis_is_accepted[3]","status":"passed"},
+        {"case":"test_minerva_answer_with_markdown_emphasis_is_accepted[4]","status":"passed"},
+        {"case":"test_minerva_answer_with_markdown_emphasis_is_accepted[5]","status":"passed"},
+        {"case":"test_minerva_extraction_strips_markdown_emphasis[0]","status":"passed"},
+        {"case":"test_minerva_extraction_strips_markdown_emphasis[1]","status":"passed"},
+        {"case":"test_minerva_extraction_strips_markdown_emphasis[2]","status":"passed"},
+        {"case":"test_minerva_extraction_strips_markdown_emphasis[3]","status":"passed"},
+        {"case":"test_minerva_extraction_strips_markdown_emphasis[4]","status":"passed"},
+        {"case":"test_minerva_extraction_strips_markdown_emphasis[5]","status":"passed"},
+        {"case":"test_plain_answer_is_unchanged[0]","status":"passed"},
+        {"case":"test_wrong_answer_with_markdown_emphasis_is_rejected[0]","status":"passed"},
+        {"case":"test_markdown_emphasis_inside_the_answer_is_kept[0]","status":"passed"},
+        {"case":"test_latex_subscript_answer_is_not_treated_as_emphasis[0]","status":"passed"},
+        {"case":"test_latex_subscript_answer_is_not_treated_as_emphasis[1]","status":"passed"},
+        {"case":"test_latex_subscript_answer_is_not_treated_as_emphasis[2]","status":"passed"},
+        {"case":"test_bare_answer_label_falls_back_to_the_boxed_answer[0]","status":"passed"},
+        {"case":"test_boxed_answer_is_unaffected[0]","status":"passed"},
+        {"case":"test_answer_label_without_value_is_rejected[0]","status":"passed"}
+      ]
+    }
+  },
+  "local_boundary_probes": [
+    {"case":"backtick label across real newlines","input":"`Answer:`\n\n42","target":"42","strict":false,"base":{"score":-1.0,"acc":false,"pred":"`"},"head":{"score":-1.0,"acc":false,"pred":"[INVALID]"}},
+    {"case":"bold label ends before colon","input":"**Answer**: 42","target":"42","strict":false,"base":{"score":-1.0,"acc":false,"pred":"[INVALID]"},"head":{"score":-1.0,"acc":false,"pred":"[INVALID]"}},
+    {"case":"literal trailing star correct target","input":"Answer: x*","target":"x*","strict":false,"base":{"score":1.0,"acc":true,"pred":"x*"},"head":{"score":-1.0,"acc":false,"pred":"x"}},
+    {"case":"literal trailing star different target","input":"Answer: x*","target":"x","strict":false,"base":{"score":-1.0,"acc":false,"pred":"x*"},"head":{"score":1.0,"acc":true,"pred":"x"}},
+    {"case":"empty decorated label permits boxed fallback","input":"\\boxed{42}\n**Answer:**","target":"42","strict":false,"base":{"score":-1.0,"acc":false,"pred":"**"},"head":{"score":1.0,"acc":true,"pred":"42"}},
+    {"case":"wrong but valid Minerva blocks boxed fallback","input":"\\boxed{42}\nAnswer: 41","target":"42","strict":false,"base":{"score":-1.0,"acc":false,"pred":"41"},"head":{"score":-1.0,"acc":false,"pred":"41"}},
+    {"case":"strict box ignores wrong Minerva","input":"\\boxed{42}\nAnswer: 41","target":"42","strict":true,"base":{"score":1.0,"acc":true,"pred":"42"},"head":{"score":1.0,"acc":true,"pred":"42"}},
+    {"case":"boxed comma normalization not added","input":"\\boxed{1,000}","target":"1000","strict":false,"base":{"score":-1.0,"acc":false,"pred":"1,000"},"head":{"score":-1.0,"acc":false,"pred":"1,000"}}
+  ],
+  "source_sha256": {
+    "dc709afb7a74fd2645640a4e5f2fdf40166b4fbb:verl/utils/reward_score/math_dapo.py":"a1943c1379313cbde933687a496bd3071f9f830cbbb70158e615d21cf31cf713",
+    "a08ea02a784d7d4982b1d81df36d188a476192bb:verl/utils/reward_score/math_dapo.py":"a1943c1379313cbde933687a496bd3071f9f830cbbb70158e615d21cf31cf713",
+    "e8e82c2fc349c64e199392eaf6f7aaf79d185d42:verl/utils/reward_score/math_dapo.py":"84a130b5332f4d5d482fb24c76df7568ecc918d07f5be09964bad0c5f2734b51",
+    "e8e82c2fc349c64e199392eaf6f7aaf79d185d42:tests/utils/reward_score/test_math_dapo_minerva_markdown_on_cpu.py":"168ab6fcf4c151d21c63ad66fee975e97205a1a805e3ef0ce53b3095e34ec9a9"
+  },
+  "scope":"complete original scorer modules and 21 original test bodies; 8 local probes; no native pytest, manager or training"
+}
