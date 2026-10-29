@@ -98,8 +98,8 @@ function contributionsPage() {
 }
 /* 对外呈现：可直链分享的独立专题页（不自持工作台菜单，页面顶部带返回主站链接）。 */
 const PRESENTATIONS = [
-  {tag:'Rollout 调研', title:'综述大纲', desc:'《Efficient Rollout Systems for LLM Post-Training》报告大纲：研究问题、serving/rollout 核心假设、性能模型与 L1–L4 分类法', href:'./presentations/rollout-survey-outline.html', date:'2026-10'},
-  {tag:'Rollout 调研', title:'论文集锦', desc:'126 篇已核文献，按综述大纲的 L1–L4 骨架分类，含 arXiv 链接、tier 分层与一句话机制，支持搜索筛选', href:'./presentations/rollout-papers.html', date:'2026-10'},
+  {tag:'强化学习', title:'综述大纲', desc:'《Efficient Rollout Systems for LLM Post-Training》报告大纲：研究问题、serving/rollout 核心假设、性能模型与 L1–L4 分类法', href:'./presentations/rollout-survey-outline.html', date:'2026-10'},
+  {tag:'强化学习', title:'论文集锦', desc:'126 篇已核文献，按综述大纲的 L1–L4 骨架分类，含 arXiv 链接、tier 分层与一句话机制，支持搜索筛选', href:'./presentations/rollout-papers.html', date:'2026-10'},
   {tag:'AgenticRL', title:'综述', desc:'国内旗舰 Agent 训练五层技术栈：任务与环境、学习目标、训推一致性、长程 rollout、长序列架构', href:'./presentations/gallery/rl_survey/', date:'2026-09'},
   {tag:'News', title:'每日快报', desc:'新闻快报专题', href:'./presentations/gallery/news_jackiesnews/', date:'2026-08'},
   {tag:'RL infra', title:'Lego-RL', desc:'Lego-RL 深度研究报告：Harness-Native 强化学习训练 Coding Agent', href:'./presentations/gallery/rl-infra_research/', date:'2026-08'},
@@ -110,8 +110,17 @@ const PRESENTATIONS = [
   {tag:'0daybot', title:'推理开箱工作流', desc:'在 vLLM 上进行新模型开箱适配', href:'./presentations/gallery/infer_0daybot/', date:'2026-08'},
 ];
 function presentationsPage() {
+  const selected=new URLSearchParams(location.hash.split('?')[1]||'').get('category')||'全部';
+  const tags=[...new Set(PRESENTATIONS.map(p=>p.tag))];
+  const chips=['全部',...tags].map(c=>{
+    const n=c==='全部'?PRESENTATIONS.length:PRESENTATIONS.filter(p=>p.tag===c).length;
+    const href=c==='全部'?'#presentations':'#presentations?category='+encodeURIComponent(c);
+    return `<a href="${href}" ${selected===c?'aria-current="true"':''}>${esc(c)} <span>${n}</span></a>`;
+  }).join('');
+  const visible=PRESENTATIONS.filter(p=>selected==='全部'||p.tag===selected);
   main.innerHTML=heading('对外呈现','可直接分享的专题报告与调研成果。每个专题都是独立网页——链接可以直发，页面顶部可回到本工作台。')+
-    `<div class="present-grid">${PRESENTATIONS.map(p=>`<a class="present-card" href="${esc(p.href)}"><span class="present-tag">${esc(p.tag)}</span><h2>${esc(p.title)}</h2>${p.desc?`<p>${esc(p.desc)}</p>`:''}<span class="present-meta">${esc(p.date)} · 独立网页 ${icon('arrow')}</span></a>`).join('')}</div>`;
+    `<nav class="project-filters" aria-label="专题分类筛选">${chips}</nav>
+    <div class="present-grid">${visible.map(p=>`<a class="present-card" href="${esc(p.href)}"><span class="present-tag">${esc(p.tag)}</span><h2>${esc(p.title)}</h2>${p.desc?`<p>${esc(p.desc)}</p>`:''}<span class="present-meta">${esc(p.date)} · 独立网页 ${icon('arrow')}</span></a>`).join('')||'<p class="empty">该分类下暂无专题。</p>'}</div>`;
 }
 function route() {
   const [slug,search='']=(location.hash.slice(1)||'overview').split('?');page=names[slug]?slug:'overview';const params=new URLSearchParams(search);query=params.get('q')||'';category=params.get('category')||'全部';shown=30;
