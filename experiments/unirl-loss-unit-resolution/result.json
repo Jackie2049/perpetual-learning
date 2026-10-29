@@ -1,0 +1,205 @@
+{
+  "head": "9dded4e2fd92732dd9de40252a4ae5b342b164e0",
+  "base": "6fd82cba13f52f394747832344039408699ea378",
+  "python": "3.12.13",
+  "torch": "2.9.1",
+  "source_sha256": {
+    "9dded4e2fd92732dd9de40252a4ae5b342b164e0:unirl/types/loss_agg.py": "8049957fa4ecbf2086afab6e066fa1beeb9d35bdabebfd3d8890f7ee078ecd3f",
+    "9dded4e2fd92732dd9de40252a4ae5b342b164e0:unirl/algorithms/base.py": "f586474992dee187755ae47f431a90dc4857180fa1b1aa01dd8b27e2f59a4f1a",
+    "6fd82cba13f52f394747832344039408699ea378:unirl/train/stack/loss_scale.py": "5507a43553865113b2f79eac21c92d21a3b9153f3291c857b092aa2780a385ff",
+    "9dded4e2fd92732dd9de40252a4ae5b342b164e0:unirl/train/stack/loss_scale.py": "d627ea261f0867d46335a1264622911913ff1d684450b7333aaf0dc67209f13c"
+  },
+  "controls_passed": 5,
+  "results": [
+    {
+      "case": "sample_share_sp2",
+      "mode": "seq-mean-token-mean",
+      "sp_size_fixture": 2,
+      "peer_units_fixture": 99.0,
+      "head_row_units": null,
+      "observed": {
+        "base": {
+          "scales": [
+            0.6666666666666666,
+            0.3333333333333333
+          ],
+          "global_units": null,
+          "events": []
+        },
+        "head": {
+          "scales": [
+            0.6666666666666666,
+            0.3333333333333333
+          ],
+          "global_units": null,
+          "events": []
+        }
+      }
+    },
+    {
+      "case": "token_reordered_unequal",
+      "mode": "token-mean",
+      "sp_size_fixture": 1,
+      "peer_units_fixture": 6.0,
+      "head_row_units": [
+        1.0,
+        3.0,
+        0.0
+      ],
+      "observed": {
+        "base": {
+          "scales": [
+            0.6,
+            0.2
+          ],
+          "global_units": 10.0,
+          "events": [
+            [
+              "all_reduce_loss_sums",
+              [
+                4.0
+              ]
+            ],
+            [
+              "gradient_world",
+              2
+            ]
+          ]
+        },
+        "head": {
+          "scales": [
+            0.6,
+            0.2
+          ],
+          "global_units": 10.0,
+          "events": [
+            [
+              "all_reduce_loss_sums",
+              [
+                4.0
+              ]
+            ],
+            [
+              "gradient_world",
+              2
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "case": "local_zero_peer_positive",
+      "mode": "token-mean",
+      "sp_size_fixture": 1,
+      "peer_units_fixture": 6.0,
+      "head_row_units": [
+        0.0,
+        0.0
+      ],
+      "observed": {
+        "base": {
+          "scales": [
+            0.0,
+            0.0
+          ],
+          "global_units": 6.0,
+          "events": [
+            [
+              "all_reduce_loss_sums",
+              [
+                0.0
+              ]
+            ],
+            [
+              "gradient_world",
+              2
+            ]
+          ]
+        },
+        "head": {
+          "scales": [
+            0.0,
+            0.0
+          ],
+          "global_units": 6.0,
+          "events": [
+            [
+              "all_reduce_loss_sums",
+              [
+                0.0
+              ]
+            ],
+            [
+              "gradient_world",
+              2
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "case": "global_zero",
+      "mode": "token-mean",
+      "sp_size_fixture": 1,
+      "peer_units_fixture": 0.0,
+      "head_row_units": [
+        0.0,
+        0.0
+      ],
+      "observed": {
+        "base": {
+          "scales": [
+            0.0,
+            0.0
+          ],
+          "global_units": 0.0,
+          "events": [
+            [
+              "all_reduce_loss_sums",
+              [
+                0.0
+              ]
+            ]
+          ]
+        },
+        "head": {
+          "scales": [
+            0.0,
+            0.0
+          ],
+          "global_units": 0.0,
+          "events": [
+            [
+              "all_reduce_loss_sums",
+              [
+                0.0
+              ]
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "case": "token_sp2_rejected",
+      "mode": "token-mean",
+      "sp_size_fixture": 2,
+      "peer_units_fixture": 6.0,
+      "head_row_units": [
+        1.0,
+        3.0,
+        0.0
+      ],
+      "observed": {
+        "base": {
+          "error": "ValueError",
+          "events": []
+        },
+        "head": {
+          "error": "ValueError",
+          "events": []
+        }
+      }
+    }
+  ],
+  "scope": "Original loss-mode module, LossNorm, loss_units method and both resolve_loss_scales bodies. SimpleNamespace substitutes for TextSegment/Part/rank info; deterministic peer-sum and gradient-world backend fixtures. No real segment construction, native suite, process group, collective, FSDP, backward, optimizer, GPU/NPU or training. Five local controls do not establish rank agreement or general bit-identity."
+}

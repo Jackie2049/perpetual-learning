@@ -613,6 +613,24 @@ SHA256：schema `760bcc3bb262907eebc1600045b5f83b770c717027d97ea43f4f88eff608a17
 
 原 single/unified stack 没有在该 PR 中改动：TrainStack 对全局零 token update 抛错；unified 单路为零时保留零 scale 及警告，由另一轨道继续。这是源码接线，不是本机执行过的 optimizer 行为。[算法基类](https://github.com/Tencent-Hunyuan/UniRL/blob/9dded4e2fd92732dd9de40252a4ae5b342b164e0/unirl/algorithms/base.py)、[缩放 helper](https://github.com/Tencent-Hunyuan/UniRL/blob/9dded4e2fd92732dd9de40252a4ae5b342b164e0/unirl/train/stack/loss_scale.py)、[训练约定](https://github.com/Tencent-Hunyuan/UniRL/blob/9dded4e2fd92732dd9de40252a4ae5b342b164e0/unirl/train/readme.md)。
 
+### 原缩放函数的五个条件对照
+
+2026-10-30补齐原 `loss_units → resolve_loss_scales` 的局部执行，版本仍为上述9dded4e2／6fd82cba；[#622](https://github.com/Tencent-Hunyuan/UniRL/pull/622)仍OPEN／非draft、四文件53增34删。[作者10-27催审](https://github.com/Tencent-Hunyuan/UniRL/pull/622#issuecomment-6436928213)不是维护者批准，读取时无review。本轮不是新代码反馈或新缺陷，亦不复跑此前原reducer四组梯度对照。
+
+原候选方法按mask产生行单位，再分别交给两版完整原resolver。同一算法替身携带原候选方法；旧resolver仍只读其loss_agg_mode，不调用该方法。peer总量与梯度平均world由记录后端显式给定，下面的“归约”仅指该后端方法被调用：
+
+| 条件 | 两版原helper结果 | 后端记录 |
+|---|---|---|
+| seq-mean、SP2、微批行数2／1 | scales为2/3、1/3，分母None | 不调用单位归约或gradient world |
+| token-mean，行单位1／3／0，重排为3／1／0，peer=6、G=2 | 两微批scale为0.6／0.2，分母10 | 以本地4调用归约，再取G |
+| 本地两行均0，peer=6、G=2 | 两scale均0，分母6 | 以本地0调用归约，仍取G |
+| 本地与peer均0 | 两scale均0，分母0 | 调用归约，零总量早返回，不取G |
+| token-mean、SP2 | ValueError | 在单位归约之前拒绝 |
+
+本地scale之和0.8不是必须补成1的遗漏：式子仍为 `w×G/D`，分母还含peer单位；真实梯度平均未在这里执行。**局部全零、全局全零和None走不同协议路径，不能互换。** helper的全局零早返回也不是TrainStack是否backward／抛错的验证。
+
+[复现脚本](../../experiments/unirl-loss-unit-resolution/verify.py)与[完整结果](../../experiments/unirl-loss-unit-resolution/result.json)保留四完整输入SHA256。Python3.12.13／Torch2.9.1，`python3.12 -B experiments/unirl-loss-unit-resolution/verify.py /path/to/UniRL-git`；预缓存固定commit后禁止隐式fetch。五项本地控制候选／基线一致，两新进程JSON相同；只执行原loss-mode模块、LossNorm、loss_units及两版resolver，TextSegment／Part／RankInfo为SimpleNamespace接口替身，未构造真实Segment或进程组。作者的Gloo/FSDP大矩阵仍属其报告；这里无collective、反向／optimizer或训练，不建立通用bit-identity与rank一致性。本题在条件控制范围收束，不另实现作者接口或排M5任务。
+
 ### 本机聚合函数对照
 
 2026-10-22 用原 `aggregate_token_losses` 和真实 CPU autograd 核对两种局部归约。合成 packed 行长 `[2,3]`，loss 为 `[2,999 | 4,6,8]`，999 所在槽始终被掩码；horizon=1。两个版本的原聚合函数 AST 相同，本轮没有执行新 `loss_units` 或 `resolve_loss_scales`。

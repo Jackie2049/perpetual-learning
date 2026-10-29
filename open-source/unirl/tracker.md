@@ -23,6 +23,8 @@
 
 2026-10-30接[Agentic奖励组RFC](#agentic-奖励组诊断的已有-rfc)：#635已有作者愿实现只读诊断；有限奖励／基线／训练行分开，四归一化与零surrogate梯度控制非发生频率或质量结论，不另实现／发布。
 
+2026-10-30补[损失单位接口](#损失单位接口的已有候选)：#622同head，五个原helper条件控制核None／局部零／全局零及SP guard，候选与基线一致；后端与Segment为显式替身，不作分布式／训练验收，不另实现或排算力。
+
 **【大白话讲明白】**
 
 这张表区分尚有贡献空间、已有负责人、只覆盖部分需求和缺验证条件的问题。训练栈一致性修复（#523）已经交给 M5 单一推进，不是 M1 的待认领任务；其他线索也要读正文、评论及对应补丁，不能只看 assignee 是否为空。
@@ -35,6 +37,12 @@
 <!-- contribution-summary:end -->
 
 > 扫描时间 2026-10-22（GitHub 实时 API）。main 固定 `6fd82cba`。状态以当日核验为准，继续前重新核对关联 issue/PR。
+
+## 损失单位接口的已有候选
+
+2026-10-30只读核MinhaoLi0318的OPEN／非draft [#622](https://github.com/Tencent-Hunyuan/UniRL/pull/622)，head9dded4e2fd92732dd9de40252a4ae5b342b164e0、base6fd82cba，四文件53增34删，仍无review；作者10-27催审不当维护者批准。已有作者实现#580 Phase1，本轮补旧笔记未执行的helper边界，不认领重叠方案。
+
+[原专题五条件对照](../../notebook/frameworks/unirl-survey.md#原缩放函数的五个条件对照)核原loss_units／两版resolver：None走行份额不归约；局部零仍以0参与计数后端；全局零早返回；重排有效单位按w×G/D；token-SP2在归约前拒绝。[结果](../../experiments/unirl-loss-unit-resolution/result.json)候选／基线五项一致，两次新进程复跑相同，Segment与peer总量等是明确接口夹具，无真实collective／FSDP／训练，不迁移作者大矩阵或宣称所有输入bit-identical。CPU范围收束，不另写生产修复／发布反馈／新增M5任务；上游及既有PR-head写入仍逐项待用户明确授权。
 
 ## Agentic 奖励组诊断的已有 RFC
 
