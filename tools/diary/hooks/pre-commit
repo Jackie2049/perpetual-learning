@@ -1,3 +1,10 @@
 #!/bin/sh
+# WORK.md 瘦身告警（只提示、不阻断）：超 150KB 时提醒先删除已落入 diary/专项文档的旧轮次记录
+if [ -f WORK.md ]; then
+  work_size=$(wc -c < WORK.md)
+  if [ "$work_size" -gt 153600 ]; then
+    echo "提示：WORK.md 已 ${work_size} 字节（>150KB），建议先删除已落入 diary/专项文档的旧轮次记录（瘦身）再提交，见 AGENTS.md「文件与交接」。"
+  fi
+fi
 python3 tools/diary/diary.py check || exit $?
 exec python3 tools/contributions/summary.py --staged
