@@ -7,13 +7,13 @@
 
 - **接管记录（2026-10-29 用户指令）**：M1 机器宕机，本专项自即日起**完全由 M5 定时任务负责**（此前由 M1 定时启动的技术秘书任务以深读为主力推进）。接手方每轮先读本文件恢复状态，按 §6.0 批次表与 §16 下一步推进并及时回写；加急期限（≤2026-10-29）因 M1 停机中断，剩余批次由 M5 顺延完成并在 §13.1 记账；HybridFlow 原并行认领与上游写入边界不变。
 - **阶段**：**Phase 2 — deep research（2026-10-27 用户指令：广度已足（计数另按唯一身份核算），转入论文/项目深读，围绕 rollout 性能与 L1–L4 四维；定时任务以深读为主要工作，2026-10-29 起由 M5 接手）**
-- **最近更新**：2026-10-29（M5 接续 D3 完成四项边界核对，§13.4 产出边界核对账二：AcceRL 摘要/图5 1000 vs §6.4 2000 OOD 离线预算冲突逐字确认（v3 未调和）、ASymPO v3 abs Comments 仍 "incorrect proofs in the paper" + v2 withdrawn 警示保留逐字确认、ThunderSyncRL vs PipelineRL 行为分布差异收口（执行期异步/策略期同步零 staleness B vs 策略期换权重 mixed behavior B/C?，两篇机制/目标不同不合并）、Each Prompt Matters T3 单列维持（摘要确认混合 FP8/调度/筛组/目标改变）。均不新计深读或扩库；§6.0 D3 行 4/4。v0.1rc晚于论文，非原实验commit认证；HybridFlow原认领与原始数据缺口保留。126身份及20/84/21/1深度账、截止≤2026-10-29不变）
+- **最近更新**：2026-10-29（M5 接续 D4 完成五项边界核对，§13.5 产出边界核对账三：Laminar buffer 为可定制 API 且仅容量不足才淘汰（条件C）、论文未指定实验配置——§6.3 "收敛实验用 FIFO" 无原文支撑已修正；DORA 窗口仅最旧版本全部收集转训后前移、"preserves every sampled trajectory"、未完轨迹端到端固定原版本；StaleFlow 冗余中止长尾+主动过滤无信号条目双C、主评估禁用冗余（附录C消融）；AsyncFlow 旧权重继续生成、新权重当前生成迭代结束后安装（延迟一步）、自称 off-policy 工作流、sub-step 仍未来工作；ARL-Tangram pytest -n 并行直接启用、无测试顺序/状态等义验证——警示保留）。均不新计深读或扩库；§6.0 D4 行 5/5。v0.1rc晚于论文，非原实验commit认证；HybridFlow原认领与原始数据缺口保留。126身份及20/84/21/1深度账、截止≤2026-10-29不变）
 - **覆盖**：累计**126篇已核身份**（20篇serving基础／迁移边界＋106篇rollout/RLHF及相关边界；120个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL／Weave／MTP-RL会议记录；其中T1压缩深读20篇，其余不据身份核验算深读）。§5.25将RL相关106暂分89直接候选与17保守单列，承接§5.20的86／15历史快照；这是工作范围计数，不是原生80–120覆盖／质量验收。MTP-RL不与Bebop同篇；初始种子及旧五线索身份已落实，但检索／分级／正文审查未全收敛。ASymPO证明错误警示保留，Round 1“≈73”不相加。
 - **接续线索**：§5.23原余5项已在§5.25入库，§6.33完成Belayer／BIRD-RL／ScaleRLT及PrefixFlow／psRL／CIS六篇T2。训练侧共享与概率修正仍单列边界，不因深化转为原生覆盖；入库、T2与实现／复现验收分开。
 - **深读 / 代码广扫**：按§6.0新压缩标准完成T1 **20篇**（B1–B5各四篇）、T2 **84篇**（B6补后22/22、B7为9/9、B8补后13/13、B9为11/11、B10为12/12、B11为11/11、B13为6/6；含Intelligent Router serving旁读；GLM-4.5仅§3.5系统片段，非整份报告；非源码或性能复现验收），另有HybridFlow进行中1项 / **12条代码路径**（veRL `24f25b03`四条＋公开历史`53bb5d21`一条；OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`、SkyRL `e0893f6e`、rLLM `4e828c81`、Slime `540ea919`各一条；vLLM `eaf1627c`、SGLang `cb55d77d`各一条；共8系统＝6 RL框架＋2推理引擎，不按文件数或历史版本重复加系统，不是原生运行验证）；完整复现仍0。
 - **最高优先级（2026-10-27 用户加急指令）**：**Phase 2 全部深读须在两天内完成（≤2026-10-29）**——每次定时触发完成**一批对应规模**的调研（分级深度 + 批次表见 §6.0），不得单次只做一篇；深度与时间约束按批次表权衡。B13、C2／C3与C4本批已收束；HybridFlow不接管原并行认领，早期公开实现不替原实验commit／原始数据。接续按§13.1补证据，不再为数量扩文献。M5专项与上游写入边界不变。
 - **Triage与未读账**：B12范围triage完成28项的历史范围不变，triage事项数不等当前T3身份数。B13三项原T3（PrefixFlow／psRL／CIS）升级T2并替换最深层；126＝20 T1＋84 T2＋21 T3＋1未标完成，仅HybridFlow进行中。不存在把同篇T2/T3相加的新增覆盖。
-- **深读当前焦点**：D1 六篇跨层口径核查（§13.2）、D2 五项边界核对（§13.3）与 D3 四项边界核对（§13.4）已完成。下一轮先核远端，再从 §13.1 剩余行与 §13.3/§13.4 边界账续选核对（如训练侧共享／算法边界条目、§5.25 剩余单列）或推进 HybridFlow 原并行认领的只读核远端状态；不新加深读计数。代码12已达8–12数量目标；C1仅veRL数据路径完成、AReaL部分不开展。仍非Phase 2整体完成。
+- **深读当前焦点**：D1 六篇跨层口径核查（§13.2）、D2 五项边界核对（§13.3）、D3 四项边界核对（§13.4）与 D4 五项边界核对（§13.5）已完成。下一轮先核远端，再从 §13.1 剩余行与 §13.3–13.5 边界账续选核对（如训练侧共享／算法边界条目、§5.25 剩余单列）或推进 HybridFlow 原并行认领的只读核远端状态；不新加深读计数。代码12已达8–12数量目标；C1仅veRL数据路径完成、AReaL部分不开展。仍非Phase 2整体完成。
 - **Phase 2 完成标准与预估（2026-10-27 定，用户问"多久读完"后定量）**：**不是 121 篇全读**。深读总量 = A Core 15–20 篇全模板深读 + B Supporting ~40–60 篇中等深度（机制+关键结果，轻模板）+ 代码深读 ~8–12 条路径；C 边界与 serving 保持元数据级即可。节奏：每篇 A Core ≈ 1 个定时任务轮次，B 类 3–5 篇/轮次；按多会话并行（每日 2–4 轮次涉及本专项）预估 **A Core ≈ 1–1.5 周、Phase 2 整体 ≈ 3–4 周日历时间**。里程碑：第 1 周末 A Core 短名单定稿+完成一半；第 2 周末 A Core 完成+代码地图齐；第 3–4 周 B 覆盖+gaps/ideas 提炼+（可选）survey outline。**加速杠杆**：为定时任务显式分配深读配额。
 - **下一步**：见 §16
 
@@ -76,10 +76,10 @@
 | [2507.13833v4](https://arxiv.org/abs/2507.13833v4) | 2025-07-18首次／v4 2026-05-30 | DistFlow | L4 | B | DAG串行化＋分布式数据面，缓存中间张量非prefix KV；512卡为随batch增长的弱扩展，不当固定job加速 | 核；[T2](#6311-distflow) |
 | [2504.15930v1](https://arxiv.org/abs/2504.15930v1) | 2025-04-22／v1 | StreamRL | L3/L4 | B（异步语义另列） | stream与ranker调度分治气泡；强制长度吞吐实验与真实收敛分开 | 核；[T1](#61-streamrl-t1压缩深读) |
 | [2505.24034v2](https://arxiv.org/abs/2505.24034v2) | 2025-05-29首次／v2 06-02 | LlamaRL | L4 | B（AIPO／FP8另列） | Executor独立并行度与DDMA权重传输；10.7×含异步／并行度／FP8组合，非纯异步收益 | 核；[T2](#6212-llamarl) |
-| [2510.12633v1](https://arxiv.org/abs/2510.12633v1) | 2025-10-14／v1 | Laminar | L3/L4 | B（buffer策略另核） | CPU relay与同版本repack；低陈旧性是观测，不是显式硬上限 | 核；[T1](#63-laminar-t1压缩深读) |
-| [2604.26256v2](https://arxiv.org/abs/2604.26256v2) | 2026-04-29首次／v2 07-20 | DORA | L2/L3/L4 | B（跨步集合另核） | 单轨迹固定版本、旧版本排空后移窗，同版本KV迁移；不丢弃自述非同步等价证明 | 核；[T1](#64-dora-t1压缩深读) |
-| [2601.12784v2](https://arxiv.org/abs/2601.12784v2) | 2026-01-19首次／v2 08-03 | StaleFlow | L3/L4 | B；冗余／过滤另C | Reserve／Occupy／Consume界定轨迹年龄，TS／PS协调路由；主评估禁用冗余 | 核；[T1](#62-staleflow-t1压缩深读) |
-| [2507.01663v2](https://arxiv.org/abs/2507.01663v2) | 2025-07-02首次／v2 2026-09-11 | AsyncFlow | L3/L4 | B（版本／目标另核） | TransferQueue字段／微批流水及延迟一步安装权重；Ascend结果与串行同栈消融分账 | 核；[T2](#6211-asyncflow) |
+| [2510.12633v1](https://arxiv.org/abs/2510.12633v1) | 2025-10-14／v1 | Laminar | L3/L4 | B（buffer策略已核：可定制API、容量不足才淘汰） | CPU relay与同版本repack；低陈旧性是观测，不是显式硬上限 | 核；[T1](#63-laminar-t1压缩深读) |
+| [2604.26256v2](https://arxiv.org/abs/2604.26256v2) | 2026-04-29首次／v2 07-20 | DORA | L2/L3/L4 | B（跨步集合已核：保留全部样本、K界staleness） | 单轨迹固定版本、旧版本排空后移窗，同版本KV迁移；不丢弃自述非同步等价证明 | 核；[T1](#64-dora-t1压缩深读) |
+| [2601.12784v2](https://arxiv.org/abs/2601.12784v2) | 2026-01-19首次／v2 08-03 | StaleFlow | L3/L4 | B；冗余／过滤另C（已核：冗余中止+主动过滤双C、主评估禁用） | Reserve／Occupy／Consume界定轨迹年龄，TS／PS协调路由；主评估禁用冗余 | 核；[T1](#62-staleflow-t1压缩深读) |
+| [2507.01663v2](https://arxiv.org/abs/2507.01663v2) | 2025-07-02首次／v2 2026-09-11 | AsyncFlow | L3/L4 | B（版本／目标已核：延迟一步安装、off-policy契约） | TransferQueue字段／微批流水及延迟一步安装权重；Ascend结果与串行同栈消融分账 | 核；[T2](#6211-asyncflow) |
 | [2606.26997v2](https://arxiv.org/abs/2606.26997v2) | 2026-06-25首次／v2 07-05 | RolloutPipe | L3/L4 | B（过滤／顺序另核） | 固定本轮rollout权重，完整group先送训；每U组更新、全R组消费后发布权重 | 核；[T1](#66-rolloutpipe-t1压缩深读) |
 | [2410.18252v3](https://arxiv.org/abs/2410.18252v3) | 2024-10-23首次／v3 2025-04-26 | Asynchronous RLHF | L4 | B；**C**（off-policy／选样） | Cleanba式前一批数据训练与当前权重生成重叠；best/worst、减步数及KL代价分账，非纯调度2.5× | 核；[T2](#6312-asynchronous-rlhf) |
 | [2406.14088](https://arxiv.org/abs/2406.14088v2) | 2024-06 | ReaL（v1名ReaLHF） | L4 | B | 函数级mesh／并行度搜索与参数重分配；MCMC不保最优，主测随机prompt强制满长度、20步吞吐非收敛时间 | 核；[T2](#6313-real) |
@@ -189,7 +189,7 @@
 | [2607.01415v1](https://arxiv.org/abs/2607.01415v1) | 2026-07-01／v1 | The Rollout Infrastructure Tax in Coding-Agent Reinforcement Learning | L4环境执行边界 | B（成本测量） | 四底座固定命令测启动／执行／reset；1.8×外推worker-hours不含推理／reward／训练，非完整RL加速 | 核；[T2](#6291-rollout-infrastructure-tax) |
 | [2607.07508v1](https://arxiv.org/abs/2607.07508v1) | 2026-07-08／v1 | SAO（Single-Rollout Asynchronous Optimization for Agentic Reinforcement Learning） | L4／算法边界 | **C**／算法改动 | 128题×1对GRPO16题×8；DIS区间外mask、critic双更新与冻结attention，非吞吐等价优化 | [T2](#6288-sao) |
 | [2609.35158v1](https://arxiv.org/abs/2609.35158v1) | 2026-09-28／v1 | PEARL | L2/L3/L4 | B | PD配置＋训练卡借用、增量切换；四rollout卡强拆PD负项及非零交接成本保留 | [T2](#6287-pearl) |
-| [2603.13019v1](https://arxiv.org/abs/2603.13019v1) | 2026-03-13／v1 | ARL-Tangram | L3/L4 | B（工具语义另核） | action级弹性与CPU／GPU／API池；平均ACT不等RL尾延迟，pytest并行需核等义 | [T2](#6284-arl-tangram) |
+| [2603.13019v1](https://arxiv.org/abs/2603.13019v1) | 2026-03-13／v1 | ARL-Tangram | L3/L4 | B（工具语义已核：pytest并行无等义验证、警示保留） | action级弹性与CPU／GPU／API池；平均ACT不等RL尾延迟，pytest并行需核等义 | [T2](#6284-arl-tangram) |
 | [2509.23866v1](https://arxiv.org/abs/2509.23866v1) | 2025-09-28／v1 | DART（DART-GUI） | L3/L4 | B／**C** | 逐worker换权重B；动态频率／长度、成功回放、高熵step及步数加权adv另C | [T2](#6285-dart-gui) |
 
 | [2608.22167v1](https://arxiv.org/abs/2608.22167v1) | 2026-08-23／v1 | MCP-Universe RL（MCP-U RL） | L3/L4 | B（placement非严格on-policy） | Acquire／Run／Eval限并发；3 H200五步局部测量，2.8×与2×异步placement分账 | [T2](#6286-mcp-universe-rl) |
@@ -517,7 +517,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 | D1 | 结果口径核查 | RollPacker／SortedRL／APRIL／DARTS／RhymeRL／ReSpec六篇跨层条件 | **完成6/6**：2026-10-29 12:10 M5 认领接管（原 2026-10-28 02:47 M1 @31e502d 认领后 M1 宕机未完成），12:40 完成；回固定原文核指标分子／分母、基线／资源、工作集合、局部／整步收益，产出跨层可比性账见 §13.1，不新计T1或扩库 |
 | D2 | 边界核对 | ReSpec buffer消费量／RolloutPipe等待比／QwenGyre训练集合语义／Helium采样独立性／Infinite Sampling FPTAS旗标 | **完成5/5**：2026-10-29 12:42 M5 认领，12:47 完成；回固定原文逐字核对五项"待核/另C"边界，产出 §13.3 边界核对账：三项真歧义/缺口确认（ReSpec 算法1遍历全Q vs §5.3.2 1/I、RolloutPipe 式4端到端 vs §5 wait/(wait+compute) 双分母、Helium 缓存仅限确定性/greedy 无随机独立性保证），两项闭合（QwenGyre 并集去重+共享target只训一次、Infinite Sampling 旗标对齐 §6.23.6）。不新计深读、不扩库 |
 | D3 | 边界核对 | AcceRL离线预算1000/2000／ASymPO v3状态／ThunderSyncRL vs PipelineRL行为分布／Each Prompt Matters T3复核 | **完成4/4**：2026-10-29 13:12 M5 认领、13:25 完成；回固定原文/原站逐字核对四项矩阵"待核"旗标与§5.25单列复核，产出 §13.4 边界核对账二：两项原文确认（AcceRL 摘要/图5 1000 vs §6.4 2000 OOD 冲突 v3 未调和、ASymPO v3 Comments 仍 "incorrect proofs" + v2 withdrawn 警示保留）、两项旗标收口（ThunderSyncRL 执行期异步/策略期同步零staleness B vs PipelineRL 策略期换权重 mixed behavior B/C? 机制目标不同不合并、Each Prompt Matters 摘要确认混合 FP8/调度/筛组/目标改变单列维持）。不新计深读、不扩库 |
-| D4 | 边界核对 | Laminar buffer策略／DORA跨步集合／StaleFlow冗余过滤／AsyncFlow版本目标／ARL-Tangram工具语义 | **认领中**：2026-10-29 13:41 M5 认领，先回写并推送再开始；回固定原文（arXiv HTML，版本同各深读）核五项矩阵"另核/待核"旗标：Laminar 2510.12633v1 buffer 策略对轨迹集合/顺序的影响（B vs C）、DORA 2604.26256v2 跨步集合与旧版本排空语义、StaleFlow 2601.12784v2 冗余/过滤 C 边界、AsyncFlow 2507.01663v2 版本/目标一致性、ARL-Tangram 2603.13019v1 pytest 并行等义。产出 §13.5 边界核对账三；不新计深读、不扩库 |
+| D4 | 边界核对 | Laminar buffer策略／DORA跨步集合／StaleFlow冗余过滤／AsyncFlow版本目标／ARL-Tangram工具语义 | **完成5/5**：2026-10-29 13:41 M5 认领、13:44 完成；回固定原文（arXiv HTML，版本同各深读）逐字核对五项矩阵"另核/待核"旗标，产出 §13.5 边界核对账三：四项原文确认（Laminar buffer 采样/淘汰为可定制 API 且仅容量不足才淘汰、论文未指定实验配置——§6.3 "收敛实验用 FIFO" 无原文支撑已修正；DORA 窗口最旧版本全部收集转训后才前移、"preserves every sampled trajectory"、未完轨迹端到端固定原版本，staleness 由 K 界；StaleFlow 冗余中止长尾+主动过滤无信号条目双 C、主评估明确禁用冗余（附录C消融）；AsyncFlow 旧权重继续生成、新权重当前生成迭代结束后安装（延迟一步）、自称 off-policy 工作流且 sub-step 仍未来工作）＋一项警示保留（ARL-Tangram pytest -n 并行直接启用、无测试顺序/状态等义验证）。不新计深读、不扩库 |
 
 （HybridFlow 已由并行会话进行中，不计入批次。T2/T3 具体名单允许执行会话按 §5 矩阵实际条目微调，微调须记录。）
 
@@ -577,7 +577,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 - 主评估禁用冗余；对VeRL-Async最多1.42×、均值1.18×。
 - 消融／拟合另用40K、η=3；不与20K主评估混同。
 - 冗余消融会缩短输出；另有Stuck超时Abort路径。
-- 分类判断：调度B；冗余／过滤C，后续重采prompt不证明无偏。
+- 分类判断：调度B；冗余／过滤C，后续重采prompt不证明无偏。2026-10-29 D4核（§13.5）：冗余=超量中止长尾轨迹、主动过滤=丢弃同组同奖励无信号条目，双C逐字确认；主评估明确禁用冗余（§6.1）、消融在附录C。
 - 迁移判断：须保留group完整性、最低版本与消费槽语义。
 - 论文实现链接：[psrl-project/psrl](https://github.com/psrl-project/psrl)，不是训练前缀共享psRL论文。
 - 代码缺口：未核commit／文件，不能宣称协议已在源码验收。
@@ -594,7 +594,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 - actor仍有发布停顿；广播后台化不等无同步成本。
 - repack集中同版本长尾，释放副本更新权重。
 - 陈旧性`M-K`来自生成耗时；最大4是**观测**，非配置硬界。
-- buffer允许自定义采样／淘汰；收敛实验用FIFO。
+- buffer采样／淘汰为可定制API；容量不足才淘汰旧经验。2026-10-29 D4核（§13.5）：论文未指定实验用采样/淘汰配置（全文无FIFO字样，"收敛实验用FIFO"无原文支撑，按原文修正）。
 - 条件：Qwen2.5系列7/32/72B，最多1024 H800-80GB。
 - 负载：DAPO-Math-17k／tool，输入≤2K、输出≤16K长尾。
 - batch=512 prompts×16=8192；GRPO Clip-Higher。
@@ -603,7 +603,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 - repack消融：32B／128GPU，generation吞吐+26%，非全步。
 - 吞吐／收敛实验并发分别1024／256每副本；基线配置另调。
 - 故障恢复252s含新机初始化；链修复秒级不等全任务秒级恢复。
-- 分类判断：L3/L4、B；buffer选择／淘汰对集合的影响另核。
+- 分类判断：L3/L4、B；buffer选择／淘汰对集合的影响另核。2026-10-29 D4核（§13.5）：采样/淘汰为可定制API且仅容量不足才淘汰（条件C），论文未评估其对集合的影响，保留未评估项。
 - 论文映射：rollout manager／三池／relay／trainer，基于veRL。
 - 代码缺口：未核公开commit／文件；不能用现行veRL代填。
 - 迁移判断：核同版本续跑、group完整性与实际消费年龄。
@@ -629,7 +629,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 - KV消融183→166s为rollout计时；不可与全步收益相乘。
 - 生产4096非CUDA设备／约500B MoE结果另列，不外推H800。
 - 收敛仅72GPU／100步奖励曲线，K=3较K=1略慢。
-- 分类判断：L2/L3/L4、B；保留轨迹不证明跨步训练集合等价。
+- 分类判断：L2/L3/L4、B；保留轨迹不证明跨步训练集合等价。2026-10-29 D4核（§13.5）：窗口仅当最旧版本全部收集转训后才前移、"preserves every sampled trajectory"、未完轨迹端到端固定原版本——不丢样本但训练步消费跨步旧版本轨迹，staleness 由 K 界。
 - 理论为抽象混合行为策略分析，不替完整GRPO动态保证。
 - 迁移判断：需核KV布局／数值兼容，不仅检查版本标签。
 - 代码缺口：内部实现未核commit／文件，不增§8路径。
@@ -1074,7 +1074,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 
 #### 6.21.1 AsyncFlow
 
-- **来源／状态**：[v2正文§3–7](https://arxiv.org/html/2507.01663v2)，T2完成；L3/L4、B，异步版本与训练目标契约另核。
+- **来源／状态**：[v2正文§3–7](https://arxiv.org/html/2507.01663v2)，T2完成；L3/L4、B，异步版本与训练目标契约另核（2026-10-29 D4核 §13.5：旧权重继续生成、新权重当前生成迭代结束后安装——延迟一步逐字确认；作者自称 off-policy 工作流、以 staleness 阈值界定收敛影响，sub-step 异步仍未来工作；不升级为精确 on-policy 等价）。
 - **机制**：TransferQueue把控制元数据与分片数据分开，按全局索引／字段／微批就绪送下游，解除整批屏障；不是每个样本一到就独立更新policy。
 - **权重**：旧权重继续生成，新权重异步接收到host，当前生成迭代结束后才安装，延迟一步；更细的sub-step依次更新实例仍是未来工作。
 - **设置／基线**：Qwen2.5-7B／32B、GRPO、DeepScaleR，32–512 Ascend NPU；MindSpeed＋vLLM-Ascend对比适配veRL d13434f的FSDP＋同推理后端，并非全部组件相同。
@@ -1592,7 +1592,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 
 - **来源／分类**：[v1 §4–6](https://arxiv.org/html/2603.13019v1)，T2完成；L3/L4 B，工具并行语义另核，不当policy内核优化。
 - **机制**：action而非trajectory长期占资源；FCFS候选＋弹性分配启发式，以平均ACT（排队＋执行）为目标。单关键弹性资源假设、局部DP／近似后续ACT，不是全局最优或RL尾延迟最优证明。
-- **资源契约**：CPU按exec改cgroup、保容器内存；GPU缓存静态服务、host恢复／LRU逐出，API按并发／quota限流。`pytest`改并行执行需核测试顺序／状态等义，不能默认reward完全不变。
+- **资源契约**：CPU按exec改cgroup、保容器内存；GPU缓存静态服务、host恢复／LRU逐出，API按并发／quota限流。`pytest`改并行执行需核测试顺序／状态等义，不能默认reward完全不变（2026-10-29 D4核 §13.5：原文直接"replace pytest with pytest -n ${parallel_num}"，无等义验证；论文自述非所有动作天然可并行、须在数据集/动作构造层保证——警示保留）。
 - **设置**：veRL最多48×8 Hopper训练卡；外部15×256 CPU核与5×8 GPU，型号未细列；Qwen3-32B／MiMo-V2-Flash，coding／MOPD／Search batch1280／2048／2048，部分内置数据。
 - **结果口径**：报告平均ACT最高4.3×，十步平均RL step的coding仅1.4×、Search1.5×；不同任务用不同专用基线，不能横排成通用加速或将调用延迟倍数计为整步倍率。
 - **负项／迁移**：MOPD仍被最慢轨迹支配、整步收益小；Search单reward模型有restore反而更慢。流控减少API失败也改变有效反馈，不能以平均ACT提升推所有轨迹分布／质量严格相同。
@@ -2322,6 +2322,22 @@ SkyRL `e0893f6e`的[wait_for_generation_buffer:843](https://github.com/NovaSky-A
 
 **D3 结论**：四项均为"复核/确认"级核对——两项原文数字/状态确认（AcceRL 1000/2000 冲突、ASymPO v3 警示仍保留）、两项旗标收口（ThunderSyncRL/PipelineRL 行为分布差异确认、Each Prompt Matters T3 维持）。矩阵 AcceRL 行"离线预算待核"、§5.17 暂 B/C? 均按此更新；§5.13/§5.25 对应条目补原站证据。不构成新算力任务、不新计深读、不扩库。
 
+### 13.5 D4 边界核对账三（2026-10-29 M5 完成）
+
+按批次表 D4 回固定原文（arXiv HTML，版本同各深读）逐字核对五项矩阵"另核/待核"旗标。不新计深读、不扩库、不写 survey 正文。
+
+**Laminar（2510.12633v1）buffer 策略——旗标收口＋一处深读表述修正**：experience buffer 由 writer/sampler 管理，"Flexible APIs are provided for both writer and sampler, allowing users to customize the sampling strategy for training and the eviction strategy for removing old experiences when buffer capacity is not enough"——采样/淘汰是用户可定制 API，淘汰**仅在 buffer 容量不足时**移除旧经验（有条件改变训练集合→条件 C）；§6 另述 "Various sampling strategies can be adopted by the trainer (e.g., priority-based sampling…)" 且经验采样 "orthogonal to the current paper"。**全文无 "FIFO" 字样**：§6.3 "收敛实验用 FIFO" 无原文支撑，已修正为"论文未指定实验用采样/淘汰配置"。§8.2 收敛实验只写各基线用各自调优/开源超参、Laminar 最大 staleness 4 直接对比。B 调度判断维持（relay 权重同步＋repack 不改变轨迹集合），buffer 淘汰属容量压力下的条件 C、论文未评估其对集合的影响——保留为未评估项。
+
+**DORA（2604.26256v2）跨步集合——逐字确认**：滑动窗口 `W={w_j,…,w_{j−K+1}}`（|W|≤K），"The window slides forward only when all trajectories from the oldest version w_{j−K+1} have been collected and forwarded to training. This provides a deterministic upper bound on policy staleness"；Trajectory 4 例——长尾请求在 w1 下跨越两个训练步，"The system proceeds to Step 2 with updated weights w2 without waiting for Trajectory 4 to complete, which continues under its original version w1 in a dedicated DP group"；"While multi-version streaming **preserves every sampled trajectory**…"——所有采样轨迹均保留、无主动丢弃，未完轨迹端到端固定原版本。跨步集合语义=不丢样本但训练步消费跨步旧版本轨迹，staleness 由 K 界（"a smaller K yields more on-policy data at the cost of rollout efficiency; a larger K increases throughput with controlled convergence impact"）——§6.4 "保留轨迹不证明跨步训练集合等价"维持。
+
+**StaleFlow（2601.12784v2）冗余/过滤 C 边界——逐字确认**：staleness buffer "accommodates flexible redundant rollout and rollout filtering"——(1) 冗余（batch/group 级）下 "surplus data can be aborted, dropping trajectories that take too long to generate"（被动中止长尾=删样本 C）；(2) 主动过滤 occupied/reserved 条目 "when trajectories are not needed by the algorithm (e.g., identical rewards within a group provide no learning signal)"（丢弃无学习信号条目=主动 C）。主评估明确禁用：§6.1 "To ensure a fair comparison, redundant rollout is not used, as it would abort trajectories and negatively affect response length"，冗余消融在附录 C。§6.2 "调度 B；冗余／过滤 C"逐字成立，"后续重采 prompt 不证明无偏"保留。
+
+**AsyncFlow（2507.01663v2）版本/目标——逐字确认**：权重安装语义="the actor rollout worker does not immediately halt generation when the actor update is completed. Instead, it continues generating responses using the **old model weights** while asynchronously writing the received new parameters to the host memory. The new parameters will load to the Ascend NPUs **when the current generation iteration is completed**"——旧权重继续生成、新权重当前生成迭代结束后安装（延迟一步）。目标契约=作者自称 "asynchronous **off-policy** RL workflow"，"strategically delaying parameter updates within a staleness threshold"；sub-step 异步 "We leave the implementation of this mechanism for future work"（深读"更细 sub-step 仍未来工作"逐字确认）。结论：版本语义=延迟一步安装、旧权重生成 off-policy 数据；作者以 staleness 阈值界定收敛影响，未声称精确 on-policy 等价，质量仅 7B/16 NPU 近似核——§6.21.1 旗标收口、不升级为精确等价。
+
+**ARL-Tangram（2603.13019v1）工具语义——等义未验证、警示保留**：原文直接启用并行="As most test commands rely on the library pytest, we replace pytest with pytest -n ${parallel_num} and dynamically set parallel_num at runtime to enable parallel execution"；论文**未提供**测试隔离/确定性/顺序等义的分析或验证，且其动机段自述 "not all elastic actions innately are allowed for parallel in actual. Therefore, we should ensure the elasticity of certain actions when constructing RL datasets or submitting actions"——并行须在数据集/动作构造层保证。§6.28.4 "pytest 改并行执行需核测试顺序／状态等义，不能默认 reward 完全不变"保留——旗标收口为"等义未验证、警示保留"。
+
+**D4 结论**：四项原文逐字确认（Laminar buffer 为容量压力条件 C 且论文未指定实验采样/淘汰配置、DORA 保留全部样本由 K 界 staleness、StaleFlow 冗余中止/主动过滤双 C 且主评估禁用、AsyncFlow 延迟一步安装的 off-policy 契约）＋一项警示保留（ARL-Tangram pytest 并行等义未验证）；另修正 §6.3 一处无原文支撑的 "FIFO" 表述。不构成新算力任务、不新计深读、不扩库。
+
 ## 14. Reproduction Candidates
 
 （空。登记模板：为什么值得复现 / repo / model / hardware / dataset / expected cost / key metric / stopping condition。**当前不启动 GPU 实验**。已有可借力资源：M5 4090-1 verl-e2e 环境、本地 veRL 源码。）
@@ -2334,6 +2350,8 @@ SkyRL `e0893f6e`的[wait_for_generation_buffer:843](https://github.com/NovaSky-A
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-29（M5 D4 五项边界核对）**：13:41 认领、13:44 完成，回写 §6.0 D4 行 5/5、新增 §13.5 边界核对账三。回固定原文（arXiv HTML，版本同各深读）逐字核对五项矩阵"另核/待核"旗标：① Laminar 2510.12633v1 buffer 策略——experience buffer 由 writer/sampler 管理、"Flexible APIs…customize the sampling strategy for training and the eviction strategy for removing old experiences when buffer capacity is not enough"（采样/淘汰为可定制 API、仅容量不足才淘汰=条件C）；**全文无 "FIFO" 字样**，§6.3 "收敛实验用 FIFO" 无原文支撑已修正（§8.2 收敛实验只写基线用各自调优超参、Laminar 最大 staleness 4 直接对比）；"Various sampling strategies can be adopted…orthogonal to the current paper"；② DORA 2604.26256v2 跨步集合——"The window slides forward only when all trajectories from the oldest version w_{j−K+1} have been collected and forwarded to training"、"preserves every sampled trajectory"、Trajectory 4 例未完请求在 w1 下跨两步、"continues under its original version w1 in a dedicated DP group"——保留全部样本、staleness 由 K 界；③ StaleFlow 2601.12784v2 冗余/过滤——"surplus data can be aborted, dropping trajectories that take too long to generate"（冗余中止长尾 C）＋"proactively filter…identical rewards within a group provide no learning signal"（主动过滤 C）；主评估 §6.1 "redundant rollout is not used, as it would abort trajectories and negatively affect response length"，消融在附录 C；④ AsyncFlow 2507.01663v2 版本/目标——"continues generating responses using the old model weights…new parameters will load to the Ascend NPUs when the current generation iteration is completed"（延迟一步安装逐字确认）、"asynchronous off-policy RL workflow"（作者自称 off-policy、staleness 阈值界定收敛影响）、sub-step "We leave the implementation…for future work"；⑤ ARL-Tangram 2603.13019v1 工具语义——"we replace pytest with pytest -n ${parallel_num}"直接启用并行、无测试顺序/状态等义验证；作者自述 "not all elastic actions innately are allowed for parallel…ensure the elasticity of certain actions when constructing RL datasets"——警示保留。矩阵五行旗标、§6.2/§6.3/§6.4/§6.21.1/§6.28.4 对应行同步更新；§0 计数与焦点更新。126 身份 20/84/21/1、代码 12 路径／8 系统、复现 0 不变；HybridFlow 原并行认领与原始数据缺口保留。无设备探测、M5 专项、算力队列或社区写入。
 
 - **2026-10-29（M5 D3 四项边界核对）**：13:12 认领、13:25 完成，回写 §6.0 D3 行 4/4、新增 §13.4 边界核对账二。回固定原文/原站（arXiv HTML/abs）逐字核对四项矩阵"待核"旗标与 §5.25 单列复核：① AcceRL 2603.18464v3 离线预算——摘要与图 5 均为 "a world model pre-trained on 1,000 offline trajectories"、§6.4 为 "pre-trained on 2,000 out-of-distribution offline trajectories"，v3 未调和、附录 E 无独立数——"离线预算待核"升级为"数字冲突已确认"；② ASymPO 2606.03070v3 原站——abs Comments 仍 "incorrect proofs in the paper"、v2 withdrawn、v3 当前版，警示保留逐字确认，T3 维持；③ ThunderSyncRL 2610.05935v1 vs PipelineRL 2509.19128v2——ThunderSyncRL §3.3–3.4 单轨迹 reward 就绪即 backward、running sums 恢复精确组梯度、全部完成后一次 optimizer 步（式3），自称 "asynchronous in execution and synchronous in policy updates"/zero staleness，等价主张限其目标/条件（附录 G 经验验证）；PipelineRL §4 换权重续跑未完序列、§5.1 显式定义 mixed behavior policy `μ:=μ_C(x_{1:t1})...μ_{C+g}(x_{tg:tg+1}|...)` 并分析 stale KV（"slightly higher divergence"）、ESS 声称 "similar on-policyness as G=8"——两篇机制/目标不同不合并，暂 B/C? 旗标收口；④ Each Prompt Matters 2512.07710v1 摘要复核——确认 FP8 rollout/length-aware scheduling/Multi-Stage Zero-Variance Elimination 筛组/reward model adjustment/importance sampling 混合，T3 单列维持。§5.13 ASymPO 警示行、§5.17 暂 B/C? 行、§5.25 单列行、矩阵 AcceRL 行、§6.27.4 冲突行同步更新。126 身份 20/84/21/1、代码 12 路径／8 系统、复现 0 不变；HybridFlow 原并行认领与原始数据缺口保留。无设备探测、M5 专项、算力队列或社区写入。
 
