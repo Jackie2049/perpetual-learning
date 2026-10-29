@@ -516,6 +516,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 | C4 | 代码／覆盖核查 | 公开历史veRL生成与重分片1路径，附Phase 2覆盖缺口 | **完成1/1路径**：2026-10-28 02:18 M1认领先推送bab2fe8、02:27收尾；§8.13固定v0.1rc 53bb5d21、公开历史根30911f13，12源码AST／静态顺序与§13.1覆盖账核查通过；累计12路径／8系统。非原实验commit或性能认证，不接管HybridFlow原并行认领 |
 | D1 | 结果口径核查 | RollPacker／SortedRL／APRIL／DARTS／RhymeRL／ReSpec六篇跨层条件 | **完成6/6**：2026-10-29 12:10 M5 认领接管（原 2026-10-28 02:47 M1 @31e502d 认领后 M1 宕机未完成），12:40 完成；回固定原文核指标分子／分母、基线／资源、工作集合、局部／整步收益，产出跨层可比性账见 §13.1，不新计T1或扩库 |
 | D2 | 边界核对 | ReSpec buffer消费量／RolloutPipe等待比／QwenGyre训练集合语义／Helium采样独立性／Infinite Sampling FPTAS旗标 | **完成5/5**：2026-10-29 12:42 M5 认领，12:47 完成；回固定原文逐字核对五项"待核/另C"边界，产出 §13.3 边界核对账：三项真歧义/缺口确认（ReSpec 算法1遍历全Q vs §5.3.2 1/I、RolloutPipe 式4端到端 vs §5 wait/(wait+compute) 双分母、Helium 缓存仅限确定性/greedy 无随机独立性保证），两项闭合（QwenGyre 并集去重+共享target只训一次、Infinite Sampling 旗标对齐 §6.23.6）。不新计深读、不扩库 |
+| D3 | 边界核对 | AcceRL离线预算1000/2000／ASymPO v3状态／ThunderSyncRL vs PipelineRL行为分布／Each Prompt Matters T3复核 | **认领4/4**：2026-10-29 13:12 M5 认领，回固定原文/原站逐字核对矩阵"待核"旗标与§5.25单列复核；产出 §13.4 边界核对账二，不新计深读、不扩库 |
 
 （HybridFlow 已由并行会话进行中，不计入批次。T2/T3 具体名单允许执行会话按 §5 矩阵实际条目微调，微调须记录。）
 
