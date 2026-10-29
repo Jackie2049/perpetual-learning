@@ -7,13 +7,13 @@
 
 - **接管记录（2026-10-29 用户指令）**：M1 机器宕机，本专项自即日起**完全由 M5 定时任务负责**（此前由 M1 定时启动的技术秘书任务以深读为主力推进）。接手方每轮先读本文件恢复状态，按 §6.0 批次表与 §16 下一步推进并及时回写；加急期限（≤2026-10-29）因 M1 停机中断，剩余批次由 M5 顺延完成并在 §13.1 记账；HybridFlow 原并行认领与上游写入边界不变。
 - **阶段**：**Phase 2 — deep research（2026-10-27 用户指令：广度已足（计数另按唯一身份核算），转入论文/项目深读，围绕 rollout 性能与 L1–L4 四维；定时任务以深读为主要工作，2026-10-29 起由 M5 接手）**
-- **最近更新**：2026-10-29（M5 接续 D1 完成六篇跨层结果口径核查，§13.2 产出可比性账：三族指标口径、基线/资源、工作集合、局部/整步判定，不新计深读或扩库；§6.0 D1 行 6/6。v0.1rc晚于论文，非原实验commit认证；HybridFlow原认领与原始数据缺口保留。126身份及20/84/21/1深度账、截止≤2026-10-29不变）
+- **最近更新**：2026-10-29（M5 接续 D1 完成六篇跨层结果口径核查，§13.2 产出可比性账：三族指标口径、基线/资源、工作集合、局部/整步判定；D2 完成五项边界逐字核对，§13.3 产出边界核对账：ReSpec buffer消费量文中矛盾确认、RolloutPipe 等待比双分母并存、QwenGyre 训练集合语义附录B闭合、Helium 缓存仅限确定性/greedy 无随机独立性保证、Infinite Sampling FPTAS 旗标对齐 §6.23.6。均不新计深读或扩库；§6.0 D1 行 6/6、D2 行 5/5。v0.1rc晚于论文，非原实验commit认证；HybridFlow原认领与原始数据缺口保留。126身份及20/84/21/1深度账、截止≤2026-10-29不变）
 - **覆盖**：累计**126篇已核身份**（20篇serving基础／迁移边界＋106篇rollout/RLHF及相关边界；120个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL／Weave／MTP-RL会议记录；其中T1压缩深读20篇，其余不据身份核验算深读）。§5.25将RL相关106暂分89直接候选与17保守单列，承接§5.20的86／15历史快照；这是工作范围计数，不是原生80–120覆盖／质量验收。MTP-RL不与Bebop同篇；初始种子及旧五线索身份已落实，但检索／分级／正文审查未全收敛。ASymPO证明错误警示保留，Round 1“≈73”不相加。
 - **接续线索**：§5.23原余5项已在§5.25入库，§6.33完成Belayer／BIRD-RL／ScaleRLT及PrefixFlow／psRL／CIS六篇T2。训练侧共享与概率修正仍单列边界，不因深化转为原生覆盖；入库、T2与实现／复现验收分开。
 - **深读 / 代码广扫**：按§6.0新压缩标准完成T1 **20篇**（B1–B5各四篇）、T2 **84篇**（B6补后22/22、B7为9/9、B8补后13/13、B9为11/11、B10为12/12、B11为11/11、B13为6/6；含Intelligent Router serving旁读；GLM-4.5仅§3.5系统片段，非整份报告；非源码或性能复现验收），另有HybridFlow进行中1项 / **12条代码路径**（veRL `24f25b03`四条＋公开历史`53bb5d21`一条；OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`、SkyRL `e0893f6e`、rLLM `4e828c81`、Slime `540ea919`各一条；vLLM `eaf1627c`、SGLang `cb55d77d`各一条；共8系统＝6 RL框架＋2推理引擎，不按文件数或历史版本重复加系统，不是原生运行验证）；完整复现仍0。
 - **最高优先级（2026-10-27 用户加急指令）**：**Phase 2 全部深读须在两天内完成（≤2026-10-29）**——每次定时触发完成**一批对应规模**的调研（分级深度 + 批次表见 §6.0），不得单次只做一篇；深度与时间约束按批次表权衡。B13、C2／C3与C4本批已收束；HybridFlow不接管原并行认领，早期公开实现不替原实验commit／原始数据。接续按§13.1补证据，不再为数量扩文献。M5专项与上游写入边界不变。
 - **Triage与未读账**：B12范围triage完成28项的历史范围不变，triage事项数不等当前T3身份数。B13三项原T3（PrefixFlow／psRL／CIS）升级T2并替换最深层；126＝20 T1＋84 T2＋21 T3＋1未标完成，仅HybridFlow进行中。不存在把同篇T2/T3相加的新增覆盖。
-- **深读当前焦点**：D1 六篇跨层口径核查已完成（§13.2）。下一轮先核远端，再从 §13.1 剩余行选边界核对（如训练侧共享／算法边界条目、§5.25 剩余单列）或推进 HybridFlow 原并行认领的只读核远端状态；不新加深读计数。代码12已达8–12数量目标；C1仅veRL数据路径完成、AReaL部分不开展。仍非Phase 2整体完成。
+- **深读当前焦点**：D1 六篇跨层口径核查（§13.2）与 D2 五项边界核对（§13.3）已完成。下一轮先核远端，再从 §13.1 剩余行与 §13.3 边界账续选核对（如训练侧共享／算法边界条目、§5.25 剩余单列）或推进 HybridFlow 原并行认领的只读核远端状态；不新加深读计数。代码12已达8–12数量目标；C1仅veRL数据路径完成、AReaL部分不开展。仍非Phase 2整体完成。
 - **Phase 2 完成标准与预估（2026-10-27 定，用户问"多久读完"后定量）**：**不是 121 篇全读**。深读总量 = A Core 15–20 篇全模板深读 + B Supporting ~40–60 篇中等深度（机制+关键结果，轻模板）+ 代码深读 ~8–12 条路径；C 边界与 serving 保持元数据级即可。节奏：每篇 A Core ≈ 1 个定时任务轮次，B 类 3–5 篇/轮次；按多会话并行（每日 2–4 轮次涉及本专项）预估 **A Core ≈ 1–1.5 周、Phase 2 整体 ≈ 3–4 周日历时间**。里程碑：第 1 周末 A Core 短名单定稿+完成一半；第 2 周末 A Core 完成+代码地图齐；第 3–4 周 B 覆盖+gaps/ideas 提炼+（可选）survey outline。**加速杠杆**：为定时任务显式分配深读配额。
 - **下一步**：见 §16
 
@@ -129,7 +129,7 @@
 | [2509.18521v3](https://arxiv.org/abs/2509.18521v3) | 2025-09-23首次／09-26修订 | APRIL | L3/L4 | B／**C**（每步集合／混版本） | 超发后按完整prompt组收齐配额，未完token优先跨版本续跑；不丢轨迹不等同步采样等价 | 核；[T1](#611-april-t1压缩深读) |
 | [2511.14617v3](https://arxiv.org/abs/2511.14617v3) | 2025-11-18首次／v3 2026-04-03 | Seer | L1/L2/L3 | A/B | chunk与共享KV池、组内probe调度＋suffix推测；尾时段是最后10%请求，不是P95 | 核；[T2](#6235-seer) |
 | [2605.07501v2](https://arxiv.org/abs/2605.07501v2) | 2026-05-08首次／v2 05-17 | ExpThink（CoT塑形边界） | workload／算法边界 | **C**（reward／advantage） | 每题最短正确长度统计塑形、按正确数缩放优势；77.18%是平均相对token减量，非同工作量提速 | 核；[T2](#6292-expthink) |
-| [2506.22950v1](https://arxiv.org/abs/2506.22950v1) | 2025-06-28／v1 | Infinite Sampling | L2/L3/L4 | B（dynamic-slot集合另列） | 固定slot复用KV与SJF refill、全组reward后反向；decode rounds不当墙钟，FPTAS保证待核 | 核；[T2](#6236-infinite-sampling) |
+| [2506.22950v1](https://arxiv.org/abs/2506.22950v1) | 2025-06-28／v1 | Infinite Sampling | L2/L3/L4 | B（dynamic-slot集合另列） | 固定slot复用KV与SJF refill、全组reward后反向；decode rounds不当墙钟，FPTAS保证疑点保留（算法2无近似证明，见§6.23.6） | 核；[T2](#6236-infinite-sampling) |
 | [2609.36899v1](https://arxiv.org/abs/2609.36899v1) | 2026-09-29／v1 | CadenceRL（Reshaping Rollout Workloads） | L2/L3/L4 | B（消费／年龄另核） | 同版本pending续跑与聚尾，credit非逐轨迹年龄界；跨硬件KV不兼容时re-prefill | 核；[T2](#6237-cadencerl) |
 | [USENIX OSDI'26](https://www.usenix.org/conference/osdi26/presentation/wu-tianyuan) | 2026-07会议记录 | Weave（Efficient Co-Scheduling for Disaggregated RL Post-Training） | L3/L4 | B | 跨job组内交错＋host warm切换；局部最优有负载前提，trace回放成本与模拟近最优分账 | 核；[T2](#6238-weave) |
 | [2606.05606v1](https://arxiv.org/abs/2606.05606v1) | 2026-06-04／v1 | CERO（Cross-Epoch Adaptive Rollout Optimization） | workload／算法边界 | **C**（预算分配） | posterior信息代理＋跨epoch预算价格决定采样，固定utility regret不等非平稳实现保证；保留7B负项 | 核；[T2](#6241-cero) |
@@ -220,7 +220,7 @@
 | [USENIX ATC'24](https://www.usenix.org/conference/atc24/presentation/gao-bin-cost) | 2024-07会议记录 | CachedAttention | 分层KV、逐层预载／异步保存及scheduler-aware换入换出；context-window有效性不等policy更新后缓存仍有效 | 核；[T3](#630-serving文献triage) |
 | [2601.22705v1](https://arxiv.org/abs/2601.22705v1) | 2026-01-30／v1 | CONCUR | agent级准入与cache信号控制并发、缓解middle-phase thrashing；RL下完整组／陈旧性须另核 | 核；[T3](#630-serving文献triage) |
 | [2511.02230v7](https://arxiv.org/abs/2511.02230v7) | 2025-11-04首次／v7 2026-09-08 | Continuum | 工具等待中按reload／排队成本设置KV TTL并结合program-level FCFS；TTL到期是缓存回收，不等轨迹终止 | 核；[T3](#630-serving文献triage) |
-| [2603.16104v1](https://arxiv.org/abs/2603.16104v1) | 2026-03-17／v1 | Helium（Efficient LLM Serving for Agentic Workflows） | workflow视作query plan，proactive缓存与cache-aware调度；进入RL需核版本／随机输出／样本独立性 | 核；[T3](#630-serving文献triage) |
+| [2603.16104v1](https://arxiv.org/abs/2603.16104v1) | 2026-03-17／v1 | Helium（Efficient LLM Serving for Agentic Workflows） | workflow视作query plan，proactive缓存与cache-aware调度；缓存仅限确定性/greedy算子，随机采样独立性未提供（§13.3） | 核；[T3](#630-serving文献triage) |
 
 ### 5.6 初始种子落实状态
 
@@ -339,7 +339,7 @@ BubbleSpec／SRT的run-ahead用于后续draft验证，不等于直接拿旧polic
 
 主动混policy与系统异步分开：[AgentRL v1 §3.1](https://arxiv.org/html/2510.04206v1)的cross-policy sampling允许一条轨迹的不同动作来自模型池，另有task advantage normalization。明确记C及算法边界，不等同DORA所约束的单轨迹policy版本一致，也不能把质量收益全部归全异步pipeline。[MindSpeed RL v1](https://arxiv.org/abs/2507.19017v1)组织sample／resharding两类flow，Ascend NPU是作者实验平台；仅登记架构来源，不把通信策略或性能结果直接外推CUDA，也不触发本项目NPU部署／测试任务。
 
-多轮serving各有不同的复用单位：[CachedAttention官方记录](https://www.usenix.org/conference/atc24/presentation/gao-bin-cost)关注分层KV及预载／保存，[Continuum v7](https://arxiv.org/abs/2511.02230v7)以TTL保留工具等待中的KV，[CONCUR v1](https://arxiv.org/abs/2601.22705v1)在agent级调并发，[Helium v1](https://arxiv.org/abs/2603.16104v1)把workflow建模为query plan。迁到RL须重核权重身份、group依赖及训练进度，而不能由缓存能保留推出可以跨policy更新直接复用；TTL到期或cache eviction也不是删除训练样本。Helium的中间结果复用是否满足随机采样独立性仍待核，不把缓存命中率或serving JCT直接换算RL time-to-quality。
+多轮serving各有不同的复用单位：[CachedAttention官方记录](https://www.usenix.org/conference/atc24/presentation/gao-bin-cost)关注分层KV及预载／保存，[Continuum v7](https://arxiv.org/abs/2511.02230v7)以TTL保留工具等待中的KV，[CONCUR v1](https://arxiv.org/abs/2601.22705v1)在agent级调并发，[Helium v1](https://arxiv.org/abs/2603.16104v1)把workflow建模为query plan。迁到RL须重核权重身份、group依赖及训练进度，而不能由缓存能保留推出可以跨policy更新直接复用；TTL到期或cache eviction也不是删除训练样本。Helium的中间结果复用不涉及随机采样（2026-10-29 核 v1 原文：缓存机制明确限定确定性算子——"restricted to deterministic operators, such as non-LLM operators and LLM operators with greedy sampling (e.g., zero temperature)"，全部实验用 greedy 采样；随机输出复用未提供组内采样独立性保证，不把缓存命中率或serving JCT直接换算RL time-to-quality）。
 
 范围限元数据／摘要、引用位置和SpecActor／Infinite Sampling／AgentRL局部机制定位，无全文深读、代码阅读或性能抽取／复现。serving登记达到20条只是数量进展，基础机制覆盖仍待补；70个RL相关条目也含边界，未达到80–120原生目标。下一批优先继续原生引用扩展及未落实种子，不为追总数扩成算法综述或重复本批核验。
 
@@ -515,6 +515,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 | C3 | 代码 | rLLM / slime / 其余框架 | **本批完成2/2路径**：2026-10-28 01:48 M1认领ef69115先推送、02:00收尾；§8.11–8.12固定rLLM 4e828c81／Slime 540ea919，13源码AST／八组限定CPU控制通过；累计11路径／8系统，非全框架／性能验收；HybridFlow与覆盖审计接续 |
 | C4 | 代码／覆盖核查 | 公开历史veRL生成与重分片1路径，附Phase 2覆盖缺口 | **完成1/1路径**：2026-10-28 02:18 M1认领先推送bab2fe8、02:27收尾；§8.13固定v0.1rc 53bb5d21、公开历史根30911f13，12源码AST／静态顺序与§13.1覆盖账核查通过；累计12路径／8系统。非原实验commit或性能认证，不接管HybridFlow原并行认领 |
 | D1 | 结果口径核查 | RollPacker／SortedRL／APRIL／DARTS／RhymeRL／ReSpec六篇跨层条件 | **完成6/6**：2026-10-29 12:10 M5 认领接管（原 2026-10-28 02:47 M1 @31e502d 认领后 M1 宕机未完成），12:40 完成；回固定原文核指标分子／分母、基线／资源、工作集合、局部／整步收益，产出跨层可比性账见 §13.1，不新计T1或扩库 |
+| D2 | 边界核对 | ReSpec buffer消费量／RolloutPipe等待比／QwenGyre训练集合语义／Helium采样独立性／Infinite Sampling FPTAS旗标 | **完成5/5**：2026-10-29 12:42 M5 认领，12:47 完成；回固定原文逐字核对五项"待核/另C"边界，产出 §13.3 边界核对账：三项真歧义/缺口确认（ReSpec 算法1遍历全Q vs §5.3.2 1/I、RolloutPipe 式4端到端 vs §5 wait/(wait+compute) 双分母、Helium 缓存仅限确定性/greedy 无随机独立性保证），两项闭合（QwenGyre 并集去重+共享target只训一次、Infinite Sampling 旗标对齐 §6.23.6）。不新计深读、不扩库 |
 
 （HybridFlow 已由并行会话进行中，不计入批次。T2/T3 具体名单允许执行会话按 §5 矩阵实际条目微调，微调须记录。）
 
@@ -680,7 +681,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 - 主指标为rollout-start至train-end，不默认包含下轮权重刷新。
 - 对Slime主时窗缩短30.7%–42.3%，非tokens/s增幅。
 - FGD在CGP上另缩短2.5%–11.4%，不与总收益相加。
-- 等待比Eq4为首启窗口，§5另写wait/(wait+compute)，实现口径待核。
+- 等待比两处定义并存（2026-10-29 逐字核对 v2 原文）：式(4) `w_train=(t_start−t_rollout_start)/(t_train_end−t_rollout_start)` 为端到端空闲占比（t_start=首个U组dispatch时刻，分子是整个首更新前的空闲段而非"首启窗口"自身），§5 另写 trainer 侧 `wait/(wait+compute)` 占空比——两种分母不同，量级可比（Slime 47%–52% → CGP+FGD 14%–33%，§5.3）。
 - 分类判断：L3/L4、B；组顺序／dynamic filtering影响另核。
 - 迁移判断：需完整group、token预算及U组累积契约。
 - 未决：完成序FIFO不证明各更新组集合与原顺序完全一致。
@@ -886,7 +887,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 - 存target logits及reward，梯度对当前drafter计算。
 - reward加权`w(r)Σ KL(p∥qθ)`是drafter KD，不直接改actor RL loss。
 - 每I轮更新／清buffer，与生成重叠；不是actor异步更新间隔。
-- 算法遍历全Q与正文只用1/I数据不一致，精确消费量待核。
+- 算法遍历全Q与正文只用1/I数据不一致（2026-10-29 逐字核对 v1：算法1 `for each sample (x,y,log qθ,log p,r) ∈ Q do` 遍历全buffer；§5.3.2 "updated every I iterations using only 1/I of the buffer data"）——文中矛盾已确认，精确消费量仍待实现核验。
 - I=1／3／5消融属drafter新鲜度；奖励差异不作因果证明。
 - 论文实现链：veRL＋SGLang／EAGLE-3，未核源码版本。
 - 测试床两节点各8 H100-80GB，PyTorch2.7.1／CUDA12.6。
@@ -1580,7 +1581,7 @@ C标签不是剔除规则：DARTS、InfoTree、PACE等仍在直接候选，因�
 
 - **来源／分类**：[v2 §4–6、附录A/B](https://arxiv.org/html/2609.33848v2)，T2完成；L3/L4 B＋**C**，明确修订路径处理C?。
 - **执行契约**：core持唯一optimizer，satellite从固定权重快照加入累梯，整batch统一norm／clip后一次update；水位控制cell回收，harness／workspace不迁，模型请求可取消重试并RDMA交接KV。
-- **target契约**：TITO留原context／behavior logp；按角色优先级最多5路径、共享target只训一次，execution内token均值再跨execution平均。排除无有效评分、部分成果评分均另C；固定target换路径归属不变，**采样本身会改变target集合**。
+- **target契约**：TITO留原context／behavior logp；按角色优先级最多5路径、共享target只训一次，execution内token均值再跨execution平均。排除无有效评分、部分成果评分均另C；固定target换路径归属不变，**采样本身会改变target集合**（2026-10-29 附录B逐字确认：训练集`𝒯i=⋃𝒯r`为各路径target集之并，取"admitted, deduplicated trainable tokens"；"On-tree masking makes these sets disjoint"；"Changing which selected path carries a shared target leaves the execution's sequence ratio, clipping decision, and loss unchanged"；"Sampling can change 𝒯i itself; the invariance concerns the assignment and ordering of a fixed set of targets"——路径去重的loss语义=树上掩码去重后共享target只计一次）。
 - **年龄边界**：平均调度陈旧`φ+(μ−1)/2`需固定B／μ、稳态、每组恰消费一次；度量从准入版本算，不是每次生成policy年龄、最大lag或有限48步的自动证明。
 - **设置／结果**：122B用32节点八cell、2.4T用192节点四cell，GPU型号未列；NL2Repo G16、B32，Megatron／SGLang。2.4T48步75.42h对Async134.55h／Colocate91.47h为1.78／1.21×，不套用跨任务最大1.85×。
 - **限制／迁移**：cap5的forward/backward降25.2%非纯调度；cap1质量差。多步burst不能全局shuffle，排序质量影响未隔离；改小cell的2.2%仅同32节点，不外推小卡预算。700K／近1M为执行生命周期token量，非单请求context。
@@ -1713,7 +1714,7 @@ B12首批20条范围复核：19条新增T3，Intelligent Router沿用§6.29.3的
 | [CachedAttention ATC24](https://www.usenix.org/conference/atc24/presentation/gao-bin-cost) | T3；多轮对话缓存分层，不追加模型更新系统T2 | 逐层预载／异步保存及scheduler-aware换入换出可借；解决context溢出的缓存有效性，不自动保证更新权重后的KV有效。 |
 | [CONCUR v1](https://arxiv.org/abs/2601.22705v1) | T3；agent批推理拥塞控制，非RL采样配额管理 | 用cache反馈调active agents以保连续执行；迁入RL需区分延迟准入和永久丢弃，另核整组完成、task配额与staleness。 |
 | [Continuum v7](https://arxiv.org/abs/2511.02230v7) | T3；工具暂停间KV TTL与program FCFS，非终止轨迹策略 | 按reload／排队成本留KV可减少跨turn重载；TTL到期只允许evict cache，不等abort rollout，跨policy更新的KV另核。 |
-| [Helium v1](https://arxiv.org/abs/2603.16104v1) | T3；workflow query plan优化，非RL训练管线实证 | proactive caching／cache-aware调度可迁到调用DAG；若复用随机输出而非仅复用KV，须核组内采样独立性、版本和reward语义。 |
+| [Helium v1](https://arxiv.org/abs/2603.16104v1) | T3；workflow query plan优化，非RL训练管线实证 | proactive caching／cache-aware调度可迁到调用DAG；缓存仅限确定性算子，若复用随机输出须自证组内采样独立性、版本和reward语义（§13.3已核边界）。 |
 
 **22:55完成时的阅读账（本轮前快照，当前见§0／§6.31）**：121条矩阵当时为20 T1＋64 T2＋19 T3＋18未标完成；这些是互斥身份数，不把Router双计。18条中HybridFlow仍进行中1；原§5.20单列而未T2的ASymPO／CIS／Each Prompt Matters共3；另14条仍是直接候选，不能仅因批次表B1–B11完成就自动降为T3或称全文已读完。
 
@@ -2285,9 +2286,25 @@ SkyRL `e0893f6e`的[wait_for_generation_buffer:843](https://github.com/NovaSky-A
 - APRIL：同 prompt 8 响应须齐备、未完 tokens 续跑用更新 policy——混版本轨迹；约 40% 旧比例在正文为 **token 单位**（§3.2.3 "Tokens carried over…approximately 40% of the tokens in the subsequent steps"）、图 4 图注为 rollout 单位（单位表述差异保留）；表 2 差值均值约 +2.1 为**绝对百分点**（非相对百分比）；8B DAPO 三项 +0.7/-1.6/-0.4（两负一正）。
 - DARTS：改组均值和相对 advantage 即分布塑形，C；reward/backward 仍等完整轨迹（token 块增量 forward 不提前更新）；14B 消融 1.09→1.40→1.63× 为**累计**；BBH 30B-MoE 85.8→84.4 负项保留。
 - RhymeRL：HistoSpec 历史 token 只供 draft 验证（A，不直接筛 actor 样本）；trace 匹配 93%（数学）／75%（代码，§5.1 模拟：末 3 token 前缀查历史）**不等于**运行期 draft 接受率 65%–79%（§7.2.2 实际推测解码）——两指标不可互换；对 AReaL v0.3.0 须区分 max off-policyness=1（最高 2.1×、8K 均值 1.6×、16K 1.8×）与 =8（最高 1.6×、8K 1.3×、16K 1.4×）——lag 参数显著改变收益，跨系统比较必须带此条件。
-- ReSpec：Reward-Weighted KD 是 drafter 蒸馏（A，不改 actor RL loss）；14B 组件消融 1.48→1.66→1.78× 为**累计**（+Reward-Weighted KD → +Adaptive Server → +Async Update Overlap）；算法 1 遍历全 buffer 与正文"只用 1/I buffer 数据"不一致（精确消费量待核）；奖励差异不作因果证明。
+- ReSpec：Reward-Weighted KD 是 drafter 蒸馏（A，不改 actor RL loss）；14B 组件消融 1.48→1.66→1.78× 为**累计**（+Reward-Weighted KD → +Adaptive Server → +Async Update Overlap）；算法 1 遍历全 buffer（`for each sample ∈ Q`）与正文"只用 1/I buffer 数据"（§5.3.2）不一致——文中矛盾逐字确认，精确消费量仍待实现核验；奖励差异不作因果证明。
 
 **局部／整步判定**：四篇端到端族（RollPacker／DARTS／RhymeRL／ReSpec）报告的是**整训练步/墙钟加速**，其内部机制收益（tail batching、token streaming、draft 验证）只在同栈消融中可归属；两篇 rollout 族（APRIL／SortedRL）报告 rollout 阶段吞吐/bubble，**不能相加成端到端加速**。跨层结论只能断言"机制在各自治口径下有效"（如长尾调度在 RollPacker/DARTS/SortedRL 三篇均改善整批时间），不能跨篇构造"X 比 Y 快 Z×"排名。
+
+### 13.3 D2 边界核对账（2026-10-29 M5 完成）
+
+按 §0 焦点从 §13.1 剩余行与矩阵"待核/另C"旗标中选取五项已固定原文的边界项逐字核对（arXiv HTML，版本同各深读）。不新计深读、不扩库、不写 survey 正文。
+
+**ReSpec（2510.26475v1）算法1 buffer 消费量**——文中矛盾逐字确认：算法1 `for each sample (x,y,log qθ,log p,r) ∈ Q do`（遍历全 buffer）与 §5.3.2 "The draft model is then updated every I iterations using only 1/I of the buffer data" 并存；`1/I` 同时作更新频率与"数据量分数"的表述，精确消费量无法由正文裁决，仍待实现核验。D1 的"精确消费量待核"升级为"文中矛盾已确认"。
+
+**RolloutPipe（2606.26997v2）等待比**——两处定义并存：式(4) `w_train=(t_start−t_rollout_start)/(t_train_end−t_rollout_start)` 为端到端空闲占比，t_start=首个 U 组 dispatch 时刻（分子是整个首更新前的空闲段，不是"首启窗口"自身）；§5 定义 trainer 侧 `wait/(wait+compute)` 占空比。两种分母不同但量级可比：Slime 47%–52% → CGP+FGD 14%–33%（§5.3 十二点，R=96 时 14.2/15.0/13.8/13.9）。原 §6.6 "Eq4 为首启窗口" 的概括不精确，已按原文修正。
+
+**QwenGyre（2609.33848v2）路径去重／共享 target 训练集合**——附录 B 逐字确认：训练集合 `𝒯i=⋃_{r∈ℛi}𝒯r`（各路径 target 集之并），取 "admitted, deduplicated trainable tokens"；"On-tree masking makes these sets disjoint"——去重机制是树上掩码，共享 target 只计一次；"Changing which selected path carries a shared target leaves the execution's sequence ratio, clipping decision, and loss unchanged"（固定 target 集合下换路径归属不影响 loss）；"Sampling can change 𝒯i itself; the invariance concerns the assignment and ordering of a fixed set of targets"。§13 第 1 条 QwenGyre 待核项据此关闭：路径去重=树上掩码去重，训练集合语义=并集去重、共享 target 只训一次、loss 对路径归属不变但随采样演化。
+
+**Helium（2603.16104v1）中间结果复用的采样独立性**——原文缓存机制明确限定确定性算子："this caching mechanism is restricted to deterministic operators, such as non-LLM operators and LLM operators with greedy sampling (e.g., zero temperature)"，且全部实验 "we employ greedy sampling for all LLM calls"。即论文以确定性缓存绕过随机采样独立性问题，未提供随机输出复用的组内独立性保证；迁移到 RL（需随机 on-policy 采样）须自行证明，不能从论文借用。§5.5 待核项关闭。
+
+**Infinite Sampling（2506.22950v1）FPTAS 旗标收口**——矩阵"FPTAS保证待核"与 §6.23.6 判定（算法2称 FPTAS 但所列舍入＋first-fit 流程无近似保证证明，不据命名认证）对齐为"疑点保留"；不新开深读。
+
+**边界核对结论**：三项真歧义/缺口已确认（ReSpec 消费量、RolloutPipe 双分母、Helium 无随机独立性保证），两项已闭合（QwenGyre 训练集合语义、Infinite Sampling 旗标）。均不构成新算力任务或新文献覆盖，仍不启动设备实验。
 
 ## 14. Reproduction Candidates
 
@@ -2301,6 +2318,8 @@ SkyRL `e0893f6e`的[wait_for_generation_buffer:843](https://github.com/NovaSky-A
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？
 
 ## 16. Changelog / Research Log
+
+- **2026-10-29（M5 D2 五项边界逐字核对）**：12:42 认领、12:47 完成，回写 §6.0 D2 行 5/5、新增 §13.3 边界核对账。回固定原文（arXiv HTML，版本同各深读）核五项矩阵"待核/另C"边界：① ReSpec 2510.26475v1 算法1 `for each sample ∈ Q` 遍历全 buffer 与 §5.3.2 "updated every I iterations using only 1/I of the buffer data" 并存——文中矛盾逐字确认，精确消费量仍待实现核验；② RolloutPipe 2606.26997v2 等待比两定义并存——式(4) `w_train=(t_start−t_rollout_start)/(t_train_end−t_rollout_start)` 端到端空闲占比（t_start=首U组dispatch）与 §5 trainer 侧 `wait/(wait+compute)` 双分母，原"Eq4 为首启窗口"概括按原文修正，Slime 47–52%→CGP+FGD 14–33% 数值确认；③ QwenGyre 2609.33848v2 附录B：训练集 `𝒯i=⋃𝒯r` 并集去重（on-tree masking 使集合不相交）、共享 target 只训一次、"Changing which selected path carries a shared target leaves … loss unchanged"、"Sampling can change 𝒯i itself"——§13 第 1 条 QwenGyre 待核项关闭；④ Helium 2603.16104v1 缓存明确限定确定性算子（non-LLM＋greedy/零温度 LLM），全部实验 greedy 采样，随机输出复用的组内采样独立性未提供——§5.5 待核项关闭；⑤ Infinite Sampling 2506.22950v1 矩阵"FPTAS保证待核"旗标与 §6.23.6（算法2无近似证明）对齐为疑点保留。三项真缺口确认＋两项闭合，不新计深读、不扩库、不写 survey 正文。126 身份 20/84/21/1、代码 12 路径／8 系统、复现 0 不变；HybridFlow 原并行认领与原始数据缺口保留。无设备探测、M5 专项、算力队列或社区写入。
 
 - **2026-10-29（M5 接续 D1 六篇跨层结果口径核查）**：认领先推送 f7f4f5a，完成回写 §6.0 D1 行 6/6、新增 §13.2 可比性账。回固定原文核 RollPacker 2509.21009v1／SortedRL 2603.23414v1／APRIL 2509.18521v3／DARTS 2605.30859v1／RhymeRL 2508.18588v1／ReSpec 2510.26475v1：三族指标口径（端到端整步：RollPacker 2.03–2.56×、DARTS 1.29–1.77×、RhymeRL 最高 2.6×、ReSpec 峰值 4.53×；rollout 阶段：APRIL +22.5% rollout 吞吐、SortedRL TPS 3987→4289/5559+bubble 74%→5.81%/3.37%）、分子单位差异（samples vs tokens）、基线版本/硬件均不同栈（H800 128卡 vs H20 8–64卡 vs 8×MI300 vs H100/MI300X 混合 vs 128 GPU 未列 vs 2×8 H100-80GB 非全卡）、工作集合 C 类边界（最快响应选择/评分超时、micro-curriculum、混版本续跑、分布塑形改组、draft-only、drafter KD）、局部/整步判定（rollout 族收益不能相加成端到端加速；跨层只作机制方向比较，不构造跨篇加速比排行）。RhymeRL 对 AReaL 区分 max off-policyness=1/8、trace 匹配 93%/75% ≠ 运行期接受率 65%–79%；ReSpec 算法 1 与正文 1/I 数据消费不一致保留。三篇消融（RollPacker 表 2、DARTS 14B、ReSpec 14B）均确认累计不可相乘。§13.1 可比性能行更新、§0 计数与焦点更新。126 身份 20/84/21/1、代码 12 路径／8 系统、复现 0 不变；HybridFlow 原并行认领与原始数据缺口保留，不接管、不新增深读计数、不扩库。无设备探测、M5 专项、算力队列或社区写入。
 
