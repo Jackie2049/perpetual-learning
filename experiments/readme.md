@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-packaging-metadata/verify.py](verl-packaging-metadata/verify.py) | 原六打包输入的egg-info／PEP517元数据与去pyproject反事实，[结果](verl-packaging-metadata/result.json)核14实际extra／六旧名缺失／18基础依赖保留；无完整wheel、依赖解析或安装 | [可选依赖的实际集合](../notebook/frameworks/verl-architecture.md#python-可选依赖的声明与发布元数据) |
 | [verl-v01rc-provenance/](verl-v01rc-provenance/readme.md) | 固定早期v0.1rc四提交链／12源码AST、enter顺序／重算位置及126身份互斥账；纯静态，不运行原函数／框架或性能 | [早期生成重分片路径](../notebook/rollout-performance-research.md#813-早期verl重分片与生成路径) |
 | [rollout-group-controls/](rollout-group-controls/readme.md) | 固定rLLM／Slime 13源码AST与八组配额／同步／取消／过滤CPU控制，假sample／state；无框架／设备／性能验收 | [生成消费地图](../notebook/rollout-performance-research.md#811-rllm-组消费与同步窗口) |
 | [rollout-scheduler-controls/](rollout-scheduler-controls/readme.md) | 固定vLLM／SGLang九源码AST与八组原函数计数／排序／预算控制，含8700 chunk边界组合；接口为替身，无引擎／显存／性能验收 | [推理调度器地图](../notebook/rollout-performance-research.md#89-vllm-token预算与抢占) |

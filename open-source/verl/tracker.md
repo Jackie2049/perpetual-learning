@@ -35,6 +35,8 @@
 
 2026-10-26补[KV salt与sleep](#kv-salt-与-sleep-的清理范围)：#8323新1787d6a2适配0.32 pause API；显式False不阻止sleep经另一入口请求reset，正确失效与保留率分开。四源码仅语法，不重复旧CPU／GPU或另改引擎。
 
+2026-10-30补[extras实际元数据](#可选依赖入口的已有报告)：#8447报告者愿提交、方向待维护者决定；原六输入的egg-info／PEP517一致，六旧组名缺失但18基础依赖保留，无安装／镜像验收，不另实现或排M5任务。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -54,6 +56,12 @@
 2026-10-26只读[#8323](https://github.com/verl-project/verl/pull/8323)新head1787d6a2／base祖先174888fc，OPEN／非draft／未合并，ahead2／behind0，20文件872增21删。旧4e93已分叉，整仓比较ahead23／behind2包含多项main变化，不记成本PR新增。作者新[sleep解释](https://github.com/verl-project/verl/pull/8323#issuecomment-6416461545)及维护者引擎侧修复问题不当接口批准或本项目认领。
 
 [原Worker专题](../../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#新版的显式清理与-sleep-路径)对照固定vLLM0.32.0 commit5df63a72：salt显式clear传False，abort适配mode=abort后单独清local；sleep(level≥1)仍经_finish_pause／_reset_caches默认True请求connector reset。实际删除由connector.reset_cache实现决定，不应写成所有store清空或必然完整保留。已有原生release_kv_cache_memory也走默认reset，不能仅凭方法名替换。四完整源码AST／compile及scheduler方法只读，无pause／sleep／connector／模型执行，旧helper结果与作者0.29 GPU报告均不迁作新组合验收；只修原M5条件参考，无新队列／补丁／专项或社区写入。
+
+## 可选依赖入口的已有报告
+
+2026-10-30读nataliekung的OPEN [#8447](https://github.com/verl-project/verl/issues/8447)及空评论，报告者愿按维护者方向提交；关联编号检索空不等无人参与。不另认领修复。main固定a08ea02a，[原架构专题](../../notebook/frameworks/verl-architecture.md#python-可选依赖的声明与发布元数据)与[元数据结果](../../experiments/verl-packaging-metadata/result.json)核实际14组、旧geo／gpu／mcore／prime／trl／trtllm缺失；基础18依赖仍在，prime旧组原本为空，同名vLLM／SGLang版本组也已替换。
+
+真实egg-info及PEP517 metadata hook执行于六原始打包输入的临时快照；去pyproject仅反事实，不作为安装办法。TRT-LLM文档旧extra、pyproject的DEFERRED和预装镜像分别判断；无完整wheel、resolver、pip／uv安装、Docker或GPU验收，不恢复旧pin／并表、写社区或新排M5任务，所有社区写入与PR-head推送仍逐项待用户明确同意。
 
 ## MLflow 初始化文件锁的已有候选
 

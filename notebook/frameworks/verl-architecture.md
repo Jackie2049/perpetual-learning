@@ -1,5 +1,7 @@
 # verl (HybridFlow) 架构深度分析
 
+2026-10-30接续：[Python可选依赖的实际发布集合](#python-可选依赖的声明与发布元数据)核#8447：原六份打包输入生成的egg-info与PEP517元数据一致，六个旧extra缺失，但18条基础依赖仍保留；同名vLLM／SGLang组也已换版本，不将旧字典当当前安装契约。
+
 2026-10-26接续：[Qwen3.5适配与内核能力探测](#qwen35-适配与内核能力探测)核#8390新模型改动：可接受kwargs不代表处理packed边界，torch_函数也可能由装饰器转到FLA；小CPU参考控制不判新回归或完整SP兼容。
 
 2026-10-26接续：[缓存候选的当前事件范围](#缓存修复之外的-gpu-工作流触发变化)已核新head退回aaae3716，GPU工作流删除不再属于当前PR；旧16f800b7的分析保留为历史，不作为当前阻碍。
@@ -619,6 +621,44 @@ Python3.12.13、仅标准库与只读GitHub API，三份原方法定义／签名
 RecordingOffloadHandler用布尔状态及事件清单约束“commit_backward先于pop”，没有执行真实AsyncDoubleBufferGroupOffloadHandler、stream／copy、FSDP或gradient checkpointing。测试中的模块是两Linear层，不是真实delta-net或Qwen；五例也不证明任意嵌套pytree、重复retain_graph反向、并发／异常恢复或显存收益。候选明确只处理顶层tuple，不能把issue评论中另一份嵌套pytree原型的范围挪到该PR。四份生产快照及原测试的compile只是语法检查，不计额外功能测试。
 
 复现[脚本](../../experiments/verl-offload-commit/verify.py)及[原始结果](../../experiments/verl-offload-commit/results.json)随仓库保存，Python3.12+和torch环境下从项目根执行 `python3.12 -B experiments/verl-offload-commit/verify.py /path/to/verl-git`，需已有上述固定Git对象，不自动联网获取。命令与hash另留[当日日志](../../diary/2026-10-25.md)。当前结论是已有候选覆盖这条CPU图依赖路径，不宣称原27B训练已修复；真机条件留[M5参考入口](../../experiments/handoff-m5.md#verl-激活卸载重载顺序参考)，不自动排训练、下载权重或将CPU通过当硬件验收。任何上游回复／PR／PR-head推送仍逐项待用户明确同意。
+
+## Python 可选依赖的声明与发布元数据
+
+**环境入口应核发布元数据，而不能只读 `setup.py` 的extras字典。** 2026-10-30读取nataliekung的OPEN [#8447](https://github.com/verl-project/verl/issues/8447)，固定main `a08ea02a784d7d4982b1d81df36d188a476192bb`。报告者已表示愿按维护者方向提交修复，读取时评论为空；`8447 in:body`的PR／issue查询未命中，不据此断言全社区无人实现，本项目不另开候选。
+
+[原pyproject](https://github.com/verl-project/verl/blob/a08ea02a784d7d4982b1d81df36d188a476192bb/pyproject.toml)静态声明 `[project.optional-dependencies]`，`dynamic`仅含version／dependencies／authors／urls。后端据此覆盖[原setup.py](https://github.com/verl-project/verl/blob/a08ea02a784d7d4982b1d81df36d188a476192bb/setup.py)的整个extras_require，不把两张表自动取并集。[PyPA规范](https://packaging.python.org/en/latest/specifications/pyproject-toml/#dynamic)要求尊重静态字段；[setuptools说明](https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html)亦将project表作为构建输入。这里的覆盖结论另经setuptools84.0.0实测，不用规范替代具体后端行为。
+
+### 组名消失和依赖丢失分开
+
+原始输入的实际元数据含14个 `Provides-Extra`：ci、cpu、cupy-cu130、flash-attn-cu130torch213、fsdp、math、megatron、sglang、test、torchtitan、veomni、veomni-sft、verl-core、vllm。旧setup的10组中，geo／gpu／mcore／prime／trl／trtllm六名不在其中。
+
+但**基础18条Requires-Dist仍在**：`dependencies`本就允许动态提供。不能把“trtllm没有额外依赖可选”写成“verl及其基础依赖均不安装”。prime在旧字典原本就是空列表，其缺失首先是组名兼容与告警问题，不能说丢失了某个PRIME依赖。安装器对缺组的具体告警／解析行为本轮未执行。
+
+保留同名也不等于保留旧依赖：
+
+| extra | 仅旧setup的反事实元数据 | 当前pyproject元数据的部分要求 |
+|---|---|---|
+| vllm | vllm>=0.18.0 | vllm==0.32.0、torch==2.13.0、transformers==5.16.1及verl-core |
+| sglang | sglang[srt,openai]==0.5.8、torch==2.9.1 | sglang==0.5.20、torch==2.13.0、transformers==5.16.1及verl-core |
+| trtllm | tensorrt-llm>=1.2.0rc6 | 无该extra；pyproject注释明确DEFERRED |
+
+所以不能用加回六旧键、把mcore改叫megatron等表面操作，就保证统一torch／uv冲突组与原有后端契约兼容。恢复别名还是清理旧入口，仍应由维护者决定；本项目没有改pin或建议用户直接删pyproject安装。
+
+### 文档入口与预装镜像分开
+
+[TRT-LLM文档](https://github.com/verl-project/verl/blob/a08ea02a784d7d4982b1d81df36d188a476192bb/docs/workers/trtllm_worker.rst)仍有 `pip install -e ".[trtllm]"`，与上述组名集合不符；这不等于TRT-LLM后端源码已移除。[原Dockerfile](https://github.com/verl-project/verl/blob/a08ea02a784d7d4982b1d81df36d188a476192bb/docker/Dockerfile.stable.trtllm)使用预装TRT-LLM的NGC基镜像，另从verl v0.7.1取得依赖，与当前main的extra解析是不同路径。这里只核文件，不把Dockerfile存在当镜像可构建、库ABI或训练已验收。
+
+### 原输入的离线元数据验证
+
+[脚本](../../experiments/verl-packaging-metadata/verify.py)与[结果](../../experiments/verl-packaging-metadata/result.json)使用Python3.12.14、setuptools84.0.0、wheel0.48.0、packaging26.3。通过临时独立Git index导出原setup.py／pyproject.toml／README／LICENSE／version／包init六份文件，禁止隐式fetch；不改原文件或源仓库真实index。原生 `setup.py -q egg_info` 的PKG-INFO与PEP517 `prepare_metadata_for_build_wheel`的METADATA在extra、基础依赖、选定组要求和版本上相同，均观测到extras_require覆盖告警；PEP517子进程断言未导入verl／torch／Ray。
+
+仅省略pyproject的五文件反事实恢复旧10组及TRT-LLM要求，基础18条不变，用于定位声明来源；这不是支持的部署建议。两次完整运行与保存JSON一致，六输入SHA256随结果保存。
+
+```bash
+python3.12 -B experiments/verl-packaging-metadata/verify.py /path/to/verl-git
+```
+
+实验是选定原始打包输入的真实元数据生成，不含完整源码树／wheel打包、依赖解析、pip／uv安装、镜像、模型或设备验证；没有安装GPU软件或访问服务器。CPU结论在此收束，不新排M5任务；后续有维护者决策或修订再核入口，不另实现／评论／推既有上游PR-head，社区写入仍需用户逐项明确授权。
 
 ## 参考
 

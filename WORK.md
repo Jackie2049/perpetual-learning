@@ -31,7 +31,7 @@
 - **4090-1 网络（已恢复，22:0x 轮确认）**：断连约 28h 后恢复（ssh/ping 通、0% 丢包），**矿机未重启**（无 nort/xmrig/矿池连接，sudoers/cron/bin 正常）；GPU 0/1/3/4/5/6 被 cl 用户训练占用、GPU 2 为 liyaowei vLLM embed、仅 GPU 7 空闲但 watchdog 随时抢占＋无自有 verl 环境＋/data 满——当前无可领算力项，待 cl 训练结束或用户安排后复核。
 - **昇腾 910C VPN（等待用户恢复）**：断第 20 天（网关 10.205.0.1 通 ~32–56ms、目标 192.168.13.174 100% 丢包、EasyConnect 进程在跑）。
 - **等待用户决策**：#8313 ④ 回复草稿 v2 待逐字审定（[draft-8313-review-reply.md](open-source/verl/draft-8313-review-reply.md)）；DeepInfer-Go PR #2 待审视；UniRL #523 待审批（fork 分支已备）；磁盘清理决策（②档 242G＋③档 93G＋fsy/ 558G）→ DeepInfer 真实权重前置；verl #8250 补证待授权；**rollout 综述 §1 研究问题表述出处待用户确认（2026-10-30 provenance 考证）**——本机可查范围内该句为 agent 形式化非用户逐字原文（ChatGPT 桌面端无本地会话库、Codex 237 会话/161 线程查尽无本课题讨论、立项逐字指令在宕机 M1 的 ~/.zcode 会话库），三个确认渠道：① chatgpt.com/ChatGPT app 翻 10-26 前后对话；② M1 会话库取逐字指令；③ 以 WORK.md@8d8efa5 注册文为准逐句确认后补 §0 与 web 大纲页 provenance（详见[专项 §1](notebook/rollout-performance-research.md)与当日 diary）。
-- **M1 学习/贡献线（2026-10-30）**：UniRL [SDE索引边界](notebook/frameworks/unirl-survey.md#sde-索引的两层边界校验)已做14组原模块CPU对照，#633负起点仍接受、#634声明长度校验不等返回集合校验；已有作者，不另实现／发布。此项CPU证据收束，下轮按UniRL／verl实质新反馈选题，不扩同一矩阵。rollout专项仍M5全责，[旧D1草稿未应用](diary/2026-10-30.md#0033--m1恢复接续与m5单一负责人核对)。
+- **M1 学习/贡献线（2026-10-30）**：verl [可选依赖元数据](notebook/frameworks/verl-architecture.md#python-可选依赖的声明与发布元数据)已用原输入生成egg-info／PEP517元数据，14实际extra、六旧名缺失但18基础依赖保留；#8447报告者愿提交，方向待维护者，不另实现／安装。CPU证据收束，下轮按UniRL／verl实质新反馈选题，不扩同一矩阵。rollout专项仍M5全责，[旧D1草稿未应用](diary/2026-10-30.md#0033--m1恢复接续与m5单一负责人核对)。
 - **上游只读核对基线**：verl `59f9a42c`（#8413 trainer token-axis fix，非算力线索）、DeepInfer `553741557`、UniRL `5d1da78d`（canonical Tencent-Hunyuan/UniRL）、AReaL `890de371`（#1833 XPU＋#1819 docs，非本机算力线索；最近合并均无算力线索；新 open PR 均作者侧，逐轮 gh api 复核）。
 
 ## 待讨论与下一步

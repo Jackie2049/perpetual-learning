@@ -1,0 +1,40 @@
+{
+  "revision": "a08ea02a784d7d4982b1d81df36d188a476192bb",
+  "python": "3.12.14",
+  "tools": {"setuptools":"84.0.0","wheel":"0.48.0","packaging":"26.3"},
+  "project_dynamic": ["version","dependencies","authors","urls"],
+  "legacy_declared_extras": ["geo","gpu","math","mcore","prime","sglang","test","trl","trtllm","vllm"],
+  "missing_legacy_extras": ["geo","gpu","mcore","prime","trl","trtllm"],
+  "current": {
+    "version": "0.10.0.dev0",
+    "provides_extra": ["ci","cpu","cupy-cu130","flash-attn-cu130torch213","fsdp","math","megatron","sglang","test","torchtitan","veomni","veomni-sft","verl-core","vllm"],
+    "base_requires_dist": ["accelerate","codetiming","datasets","dill","hydra-core","numpy>=2.0.0","packaging>=20.0","pandas","peft","pyarrow>=19.0.0","pybind11","pylatexenc","ray[default]>=2.41.0","tensorboard","tensordict!=0.9.0,<=0.10.0,>=0.8.0","torchdata","transformers!=5.6.0,<5.17,>=5.5.3","wandb"],
+    "selected_extra_requires_dist": {
+      "vllm": ["torch==2.13.0","torchaudio==2.11.0","torchvision==0.28.0","transformers==5.16.1","verl[verl-core]","vllm==0.32.0"],
+      "sglang": ["sglang-kernel","sglang==0.5.20","torch==2.13.0","torchaudio==2.11.0","torchvision==0.28.0","transformers==5.16.1","verl[verl-core]"]
+    },
+    "extras_overwrite_warning": true
+  },
+  "pep517_matches_egg_info": true,
+  "counterfactual_without_pyproject": {
+    "version": "0.10.0.dev0",
+    "provides_extra": ["geo","gpu","math","mcore","prime","sglang","test","trl","trtllm","vllm"],
+    "base_requires_dist": ["accelerate","codetiming","datasets","dill","hydra-core","numpy>=2.0.0","packaging>=20.0","pandas","peft","pyarrow>=19.0.0","pybind11","pylatexenc","ray[default]>=2.41.0","tensorboard","tensordict!=0.9.0,<=0.10.0,>=0.8.0","torchdata","transformers!=5.6.0,<5.17,>=5.5.3","wandb"],
+    "selected_extra_requires_dist": {
+      "vllm": ["tensordict!=0.9.0,<=0.10.0,>=0.8.0","vllm>=0.18.0"],
+      "sglang": ["sglang[openai,srt]==0.5.8","tensordict!=0.9.0,<=0.10.0,>=0.8.0","torch==2.9.1"],
+      "prime": [],
+      "trtllm": ["tensorrt-llm>=1.2.0rc6"]
+    },
+    "extras_overwrite_warning": false
+  },
+  "source_sha256": {
+    "setup.py":"d9ac3d954517d6feaf050b931e76717953dac02e52f6bb00522efd9304d4ede5",
+    "pyproject.toml":"d5e5a865dcf641a053148500312442f1405fc5b21d85ecd79905dcb181d2d1ba",
+    "README.md":"ddf49da56b709047d7641c6885c00bb43a68944aa458f03965008978d75a019d",
+    "LICENSE":"cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "verl/version/version":"893034a1a8f4e5a5267b8dc178de355ad4dfb697baa4e568846c6141596f4902",
+    "verl/__init__.py":"513270d0f054e18b66dce36220d001df3030c94b6967864ad3824fbd9d742285"
+  },
+  "scope":"six original packaging inputs; real egg_info and PEP517 metadata hook; no full source tree, wheel build, resolver or install"
+}
