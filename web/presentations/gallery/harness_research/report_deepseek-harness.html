@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepSeek Harness 全面研究报告</title>
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-light: #e8f0fe;
+            --text: #202124;
+            --text-secondary: #5f6368;
+            --bg: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --border: #dadce0;
+            --code-bg: #f1f3f4;
+            --success: #34a853;
+            --warning: #fbbc04;
+            --danger: #ea4335;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: var(--text); background: var(--bg); line-height: 1.7;
+            max-width: 960px; margin: 0 auto; padding: 20px;
+        }
+        h1 { font-size: 2em; color: var(--primary); margin: 1.5em 0 0.5em; border-bottom: 3px solid var(--primary); padding-bottom: 0.3em; }
+        h2 { font-size: 1.5em; color: var(--primary); margin: 1.5em 0 0.5em; border-bottom: 1px solid var(--border); padding-bottom: 0.2em; }
+        h3 { font-size: 1.2em; color: #333; margin: 1em 0 0.5em; }
+        h4 { font-size: 1.05em; color: #444; margin: 0.8em 0 0.4em; }
+        p { margin: 0.5em 0; }
+        ul, ol { margin: 0.5em 0 0.5em 1.5em; }
+        li { margin: 0.3em 0; }
+        a { color: var(--primary); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.9em; font-family: 'SF Mono', Menlo, monospace; }
+        pre { background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 1em 0; font-size: 0.85em; line-height: 1.5; }
+        pre code { background: none; padding: 0; color: inherit; }
+        table { border-collapse: collapse; width: 100%; margin: 1em 0; font-size: 0.9em; }
+        th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+        th { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+        tr:nth-child(even) { background: var(--bg-secondary); }
+        .toc { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin: 1em 0 2em; }
+        .toc h2 { border: none; margin: 0 0 0.5em; font-size: 1.2em; }
+        .toc ul { list-style: none; margin-left: 0; }
+        .toc > ul > li { margin: 0.3em 0; }
+        .toc ul ul { margin-left: 1.5em; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75em; font-weight: 600; }
+        .badge-blue { background: var(--primary-light); color: var(--primary); }
+        .badge-green { background: #e6f4ea; color: var(--success); }
+        .badge-orange { background: #fef7e0; color: #e37400; }
+        .badge-red { background: #fce8e6; color: var(--danger); }
+        .callout { padding: 16px; border-radius: 8px; margin: 1em 0; border-left: 4px solid; }
+        .callout-info { background: var(--primary-light); border-color: var(--primary); }
+        .callout-warning { background: #fef7e0; border-color: var(--warning); }
+        .callout-tip { background: #e6f4ea; border-color: var(--success); }
+        .diagram { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin: 1em 0; overflow-x: auto; }
+        .section-nav { display: flex; gap: 8px; flex-wrap: wrap; margin: 1em 0; }
+        .section-nav a { background: var(--primary-light); color: var(--primary); padding: 6px 14px; border-radius: 20px; font-size: 0.85em; font-weight: 500; }
+        .section-nav a:hover { background: var(--primary); color: white; text-decoration: none; }
+        @media (max-width: 768px) { body { padding: 12px; } h1 { font-size: 1.5em; } table { font-size: 0.8em; } }
+    </style>
+</head>
+<body>
+
+<h1>🧠 DeepSeek Harness 全面研究报告</h1>
+
+<p><strong>研究对象：</strong> <a href="https://github.com/deepseek-ai/deepseek-harness">deepseek-ai/deepseek-harness</a> &nbsp;|&nbsp; <strong>版本：</strong> 0.1.0-rc.5 &nbsp;|&nbsp; <strong>研究日期：</strong> 2026-08-13</p>
+
+<div class="callout callout-info">
+    <strong>📝 写给谁看？</strong> 本报告面向 Agent Infra 领域的新手，假设你对 Harness（智能体框架/脚手架）这个概念完全不了解。报告遵循「从粗到细、从广入深」的学习路径，先建立宏观心智模型，再逐步深入技术细节。
+</div>
+
+<div class="toc">
+    <h2>📑 目录</h2>
+    <ul>
+        <li><a href="#part1">第一部分：宏观认知 —— 这是什么？为什么？</a></li>
+        <li><a href="#part2">第二部分：核心概念 —— 五个关键思想</a></li>
+        <li><a href="#part3">第三部分：架构全貌 —— 仓库结构与技术栈</a></li>
+        <li><a href="#part4">第四部分：插件系统深度剖析</a></li>
+        <li><a href="#part5">第五部分：Agent Loop —— 智能体的心跳</a></li>
+        <li><a href="#part6">第六部分：会话系统 —— 事件溯源与持久化</a></li>
+        <li><a href="#part7">第七部分：LLM 层 —— 模型适配与流式推理</a></li>
+        <li><a href="#part8">第八部分：通信架构 —— Host-Client-SDK 三角</a></li>
+        <li><a href="#part9">第九部分：能力缝隙 —— 可插拔的执行世界</a></li>
+        <li><a href="#part10">第十部分：学习路径建议</a></li>
+    </ul>
+</div>
+
+<!-- ===================== PART 1 ===================== -->
+<h2 id="part1">第一部分：宏观认知 —— 这是什么？为什么？</h2>
+
+<h3>1.1 一句话定义</h3>
+<p>DeepSeek Harness（简称 <code>dsh</code>）是一个 <strong>AI 智能体运行框架</strong>——它为 AI Agent 提供运行所需的一切基础设施（模型调用、工具执行、沙箱隔离、会话管理、Web UI），而且所有这些基础设施都是<strong>可插拔的插件</strong>。</p>
+
+<h3>1.2 什么是 Harness？</h3>
+<p>在 Agent Infra 领域，<strong>Harness</strong>（脚手架/测试框架）指的是一套为 AI 智能体提供运行时环境的系统。类比：</p>
+<ul>
+    <li>如果 AI 模型是「大脑」，那么 Harness 就是「身体 + 感官 + 四肢」——它让大脑能看文件、敲命令、上网搜索、调用工具</li>
+    <li>如果 AI Agent 是一个员工，那么 Harness 就是他的办公环境——电脑、终端、文件系统、网络、审批流程</li>
+    <li>类比其他项目：OpenAI Codex CLI、Claude Code、Cursor 都是某种形式的 Harness</li>
+</ul>
+
+<h3>1.3 为什么需要「一切皆插件」？</h3>
+<p>传统 Agent 框架把功能硬编码在核心里——换模型要改代码，换沙箱要改代码，换 UI 还是要改代码。<code>dsh</code> 的哲学是：</p>
+<div class="callout callout-tip">
+    <strong>核心原则：</strong>没有特权核心。模型适配器、工具注册表、会话日志、甚至 Agent Loop 本身——全都是插件。换一个插件 = 换一个能力，无需动框架。
+</div>
+<p>这意味着：</p>
+<ul>
+    <li>你想用 OpenAI 而不是 DeepSeek？换一个 LLM 适配器插件</li>
+    <li>你想在 Docker 沙箱里执行？换一个 Sandbox 插件</li>
+    <li>你想用终端 UI 而不是 Web UI？换一个 Surface 插件</li>
+    <li>你想给 Agent 加一个新能力？写一个新插件</li>
+</ul>
+
+<h3>1.4 与同类项目的定位对比</h3>
+<table>
+    <tr><th>项目</th><th>定位</th><th>插件化程度</th><th>语言</th></tr>
+    <tr><td><strong>DeepSeek Harness</strong></td><td>通用 Agent 运行框架</td><td>⭐⭐⭐⭐⭐ 极致插件化</td><td>TypeScript</td></tr>
+    <tr><td>Claude Code</td><td>Anthropic 官方 CLI Agent</td><td>⭐⭐ 固定能力集</td><td>TypeScript</td></tr>
+    <tr><td>OpenAI Codex CLI</td><td>OpenAI 官方 CLI Agent</td><td>⭐⭐ 固定能力集</td><td>Node.js</td></tr>
+    <tr><td>LangChain/LangGraph</td><td>Agent 编排框架</td><td>⭐⭐⭐ 模块化</td><td>Python</td></tr>
+    <tr><td>AutoGPT</td><td>自主 Agent 原型</td><td>⭐⭐ 固定架构</td><td>Python</td></tr>
+    <tr><td>OpenHands</td><td>软件开发 Agent</td><td>⭐⭐⭐ 容器化</td><td>Python</td></tr>
+</table>
+
+<!-- ===================== PART 2 ===================== -->
+<h2 id="part2">第二部分：核心概念 —— 五个关键思想</h2>
+
+<p>理解 <code>dsh</code> 不需要读懂全部 56 万行代码，只需要掌握五个关键思想，它们都来自底层框架 <strong>Cordis</strong>：</p>
+
+<h3>2.1 思想一：插件即服务</h3>
+<p>一个插件就是一个实现 <code>Service</code> 的对象。它可以是一个函数（最简单形式），也可以是一个类（更结构化）。插件通过 <code>apply(ctx, config)</code> 接收上下文和配置。</p>
+<pre><code>// 函数式插件 —— 最简单
+export function apply(ctx: Context, config: Config) {
+    ctx.tools.register('my-tool', ...)
+}
+
+// 类式插件 —— 更结构化
+export class MyService extends Service {
+    static inject = ['tools', 'llm']
+    constructor(ctx: Context, config: Config) {
+        super(ctx, 'myService')
+    }
+}</code></pre>
+
+<h3>2.2 思想二：上下文即服务仓库</h3>
+<p><code>ctx</code> 是所有服务的容器。插件通过稳定的 <code>ctx.&lt;key&gt;</code> 来发现和消费服务，而不是直接 <code>import</code> 具体实现：</p>
+<pre><code>// 不要这样写（紧耦合）：
+import { deepseek } from '@deepseek-ai/dsh-llm-deepseek'
+
+// 应该这样写（松耦合）：
+const models = ctx.llm  // 谁实现的不重要，接口一样就行</code></pre>
+
+<h3>2.3 思想三：声明式依赖</h3>
+<p>插件通过 <code>inject</code> 声明自己需要哪些服务，框架会等这些服务都就位后才启动插件。不需要手动管理加载顺序：</p>
+<pre><code>export const inject = ['tools', 'shell', 'systemPrompt']
+// 等到 ctx.tools、ctx.shell、ctx.systemPrompt 都有了，才执行 apply()</code></pre>
+
+<h3>2.4 思想四：类型化事件</h3>
+<p>插件之间通过<strong>类型化事件</strong>通信，有五种派发模式：</p>
+<table>
+    <tr><th>模式</th><th>方法</th><th>语义</th><th>场景</th></tr>
+    <tr><td><code>emit</code></td><td><code>ctx.emit()</code></td><td>广播通知，不等结果</td><td>状态变更通知</td></tr>
+    <tr><td><code>waterfall</code></td><td><code>ctx.waterfall()</code></td><td>瀑布链，每个监听器包裹 <code>next()</code></td><td>请求拦截/修改</td></tr>
+    <tr><td><code>parallel</code></td><td><code>ctx.parallel()</code></td><td>所有监听器并行执行</td><td>独立副作用</td></tr>
+    <tr><td><code>serial</code></td><td><code>ctx.serial()</code></td><td>按序执行，可短路</td><td>有序决策</td></tr>
+    <tr><td><code>bail</code></td><td><code>ctx.bail()</code></td><td>同步，首个非空返回即停</td><td>快速查找</td></tr>
+</table>
+
+<h3>2.5 思想五：注册即可逆效应</h3>
+<p>每一个注册（工具、提示词、事件监听器）都通过 <code>ctx.effect()</code> 或 <code>ctx.on()</code> 完成，卸载插件时所有注册自动撤销：</p>
+<pre><code>ctx.effect(() => {
+    const dispose = ctx.tools.register('my-tool', ...)
+    return dispose  // 卸载时自动调用
+})</code></pre>
+<p>这就是为什么<strong>热重载</strong>在 <code>dsh</code> 里是安全的——插件卸载 = 一切归零，插件重装 = 一切重建。</p>
+
+<!-- ===================== PART 3 ===================== -->
+<h2 id="part3">第三部分：架构全貌 —— 仓库结构与技术栈</h2>
+
+<h3>3.1 仓库规模</h3>
+<table>
+    <tr><th>指标</th><th>数值</th></tr>
+    <tr><td>总代码行数（TypeScript）</td><td>~564,000 行</td></tr>
+    <tr><td>包数量</td><td>219 个 workspace 包</td></tr>
+    <tr><td>包分组</td><td>49 个逻辑组</td></tr>
+    <tr><td>Star（首日）</td><td>~19,255</td></tr>
+    <tr><td>Fork（首日）</td><td>~1,299</td></tr>
+    <tr><td>许可证</td><td>MIT</td></tr>
+    <tr><td>状态</td><td>Developer Preview（开发者预览）</td></tr>
+</table>
+<p><strong>概念速解：</strong>「包」= npm workspace 包，即 monorepo 中一个可独立构建、复用、发布的模块（如 <code>@deepseek-ai/dsh-core</code>），整个仓库像积木盒装着 219 块积木；「逻辑组」= 按功能域把这些包归入的 49 个分组目录（核心 / 客户端 / 服务端 / LLM 能力…），见下方 3.2 目录结构。</p>
+
+<h3>3.2 目录结构</h3>
+<pre><code>deepseek-harness/
+├── packages/          # 219 个 @deepseek-ai/dsh-* 工作区包
+│   ├── core/          # 7 包 · 产品 API 脊柱（session, agent, tools, scope...）
+│   ├── client/        # 37 包 · 浏览器 UI（React 组件, 连接, 运行时...）
+│   ├── host/          # 7 包 · 服务端（webserver, API proxy...）
+│   ├── llm/           # 5 包 · LLM 能力（适配器, 重试, Token 计量...）
+│   ├── session/       # 12 包 · 会话持久化/投影/遥测/标题...
+│   ├── shell/         # 8 包 · Shell 执行能力
+│   ├── fs/            # 5 包 · 文件系统能力
+│   ├── sandbox/       # 4 包 · 沙箱隔离能力
+│   ├── subagent/      # 11 包 · 子智能体能力（6 种提供者）
+│   ├── storage/       # 4 包 · 通用存储能力
+│   ├── sdk/           # 3 包 · JSON-RPC 协议与客户端
+│   ├── api/           # 2 包 · BFF 网关与远程组装
+│   ├── typert/        # 4 包 · 类型反射与 RPC 系统
+│   ├── boot/          # 2 包 · 启动胶水
+│   ├── bundle/        # 3 包 · 组合层（base, web-app, headless）
+│   ├── preset/        # 2 包 · Agent 预设/人格系统
+│   ├── hooks/         # 3 包 · Claude Code/Codex 钩子桥接
+│   ├── web/           # 5 包 · 网络访问能力
+│   ├── extensions/    # 4 包 · 自修改（动态 Cordis 运行器）
+│   ├── interaction/   # 5 包 · 审批/交互/权限
+│   ├── ...            # 更多能力组
+│   └── util/          # 7 包 · 零依赖工具函数
+├── apps/
+│   ├── cli/           # dsh 命令行启动器
+│   └── web/           # 浏览器 Web 应用（Vite）
+├── vendor/            # 9 个 Cordis 框架包（vendored）
+├── examples/          # 6 个可运行示例
+├── python/            # Python SDK + 打包运行时
+├── native/            # 原生 Node addon（Landlock 沙箱）
+├── docs/              # 架构文档、教程、 cookbook（双语）
+├── scripts/           # ~31K 行脚本（CI 闸门、代码生成器）
+└── website/           # VitePress 文档站点</code></pre>
+
+<h3>3.3 技术栈</h3>
+<table>
+    <tr><th>层</th><th>技术</th></tr>
+    <tr><td>语言</td><td>TypeScript（strict, ESM-only）</td></tr>
+    <tr><td>运行时</td><td>Node.js ^22.19 || >=24</td></tr>
+    <tr><td>包管理</td><td>pnpm 11.7（workspaces）</td></tr>
+    <tr><td>插件框架</td><td>Cordis（vendored，源自 Koishi）</td></tr>
+    <tr><td>HTTP 服务器</td><td>原生 node:http（无 Express/Fastify/Hono）</td></tr>
+    <tr><td>Schema/验证</td><td>schemastery（配置）+ Zod v4（协议）</td></tr>
+    <tr><td>实时推送</td><td>SSE（服务端→客户端）+ WebSocket 下行链路</td></tr>
+    <tr><td>RPC（Web）</td><td>自定义四象限消息模型，JSON over HTTP POST</td></tr>
+    <tr><td>RPC（SDK）</td><td>JSON-RPC 2.0 over stdio</td></tr>
+    <tr><td>状态管理（客户端）</td><td>Zustand + Immer</td></tr>
+    <tr><td>UI 框架</td><td>React 18</td></tr>
+    <tr><td>构建</td><td>tsc + tsdown（库）/ Vite（Web 前端）</td></tr>
+    <tr><td>测试</td><td>Vitest（单元 + 100% 覆盖率 + E2E + 快照 + Web）</td></tr>
+    <tr><td>Lint</td><td>oxlint（Rust 实现，非 ESLint）</td></tr>
+    <tr><td>数据库</td><td>SQLite（better-sqlite3，可选）</td></tr>
+    <tr><td>原生 FFI</td><td>koffi（Windows 目录对话框）、node-pty（持久终端）</td></tr>
+</table>
+
+<h3>3.4 包依赖图（简化）</h3>
+<div class="diagram">
+<pre>
+util/* (brand, invariants, timeout, ...)
+  → core/* (session, scope, system-prompt, agent, tools, agent-loop)
+    → capability seams (llm, shell, fs, sandbox, subprocess, web, subagent, ...)
+      → providers (llm-deepseek, bash-local, fs-local, sandbox-local, ...)
+        → consumers / tools (tool-bash, tool-fs, tool-web, tool-subagent, ...)
+          → bundle/* (base, headless, web-app)
+            → apps/* (cli, web)</pre>
+</div>
+<p>最核心被依赖的包：<code>invariants</code>（几乎被所有包依赖）、<code>session</code>、<code>llm</code>、<code>agent</code>、<code>tools</code>、<code>scope</code></p>
+
+<!-- ===================== PART 4 ===================== -->
+<h2 id="part4">第四部分：插件系统深度剖析</h2>
+
+<h3>4.1 Cordis —— 底层插件框架</h3>
+<p><code>dsh</code> 的插件系统并非自研，而是基于 <strong>Cordis</strong> 框架（源自 Koishi 聊天机器人框架），以 vendor 方式内嵌在 <code>vendor/</code> 目录。Cordis 提供：</p>
+<table>
+    <tr><th>Vendor 包</th><th>角色</th></tr>
+    <tr><td><code>cordis</code></td><td>核心框架：Context、Service、Fiber、事件总线</td></tr>
+    <tr><td><code>loader</code></td><td>配置驱动的插件加载器</td></tr>
+    <tr><td><code>include</code></td><td>YAML 组合与补丁</td></tr>
+    <tr><td><code>group</code></td><td>插件分组管理</td></tr>
+    <tr><td><code>hmr</code></td><td>热模块替换</td></tr>
+    <tr><td><code>timer</code></td><td>定时任务</td></tr>
+    <tr><td><code>logger-console</code></td><td>控制台日志</td></tr>
+    <tr><td><code>cosmokit</code></td><td>工具库</td></tr>
+    <tr><td><code>schemastery</code></td><td>Schema/验证框架</td></tr>
+</table>
+
+<h3>4.2 Fiber 生命周期</h3>
+<p>每个插件实例是一个 <strong>Fiber</strong>，有以下状态：</p>
+<table>
+    <tr><th>状态</th><th>含义</th></tr>
+    <tr><td><code>PENDING</code></td><td>等待依赖服务就绪</td></tr>
+    <tr><td><code>LOADING</code></td><td>插件回调正在执行</td></tr>
+    <tr><td><code>ACTIVE</code></td><td>加载完成，提供服务</td></tr>
+    <tr><td><code>FAILED</code></td><td>回调或配置验证抛出异常</td></tr>
+    <tr><td><code>UNLOADING</code></td><td>正在卸载（执行清理函数）</td></tr>
+    <tr><td><code>DISPOSED</code></td><td>已永久移除</td></tr>
+</table>
+<p>关键特性：依赖服务丢失时 Fiber 自动卸载并撤销所有效应；依赖恢复时自动重新激活。</p>
+
+<h3>4.3 能力缝隙（Capability Seam）模式</h3>
+<p>这是 <code>dsh</code> 最核心的架构模式。每个能力由三个角色组成：</p>
+<div class="diagram">
+<pre>
+┌─────────────────────────────────────────────────────────────┐
+│                    Capability Seam（能力缝隙）                 │
+│                                                               │
+│  ┌──────────────────┐    ┌──────────────────┐    ┌─────────┐ │
+│  │  Service          │    │  Service          │    │ Consumer │ │
+│  │  Definition       │    │  Provider         │    │ (工具)   │ │
+│  │  (接口声明)        │    │  (具体实现)        │    │ (消费者) │ │
+│  │                   │    │                   │    │         │ │
+│  │  dsh-shell        │    │  dsh-bash-local   │    │tool-bash│ │
+│  │  ctx.shell        │    │  dsh-bash-sandbox │    │         │ │
+│  │                   │    │                   │    │         │ │
+│  └──────────────────┘    └──────────────────┘    └─────────┘ │
+│                                                               │
+│  换一个 Provider → 整个产品行为改变，无需动 Consumer 或 Loop     │
+└─────────────────────────────────────────────────────────────┘</pre>
+</div>
+<p>例如，把文件系统和子进程的 Provider 指向远程沙箱，Bash、PTY、LSP 工具就自动在远程执行——<strong>无需改动任何工具代码</strong>。</p>
+
+<h3>4.4 Profile 和 Bundle —— 组合层系统</h3>
+<p>一个运行中的 <code>dsh</code> 是一棵<strong>插件树</strong>，由有序的层组合而成：</p>
+<div class="diagram">
+<pre>
+运行中的 dsh 插件树
+=====================
+
+Profile: web
+  │
+  ├── Bundle: dsh-base（第一层，~60 个插件）
+  │     - 模型适配器、工具、持久化、沙箱、审批、设置、凭证、遥测
+  │
+  ├── Bundle: dsh-web-app（第二层）
+  │     - 浏览器应用、Web 服务器、前端静态文件
+  │
+  ├── Profile 的 cordis.patch.yml（用户覆盖）
+  │
+  ├── Home 级 cordis.patch.yml
+  │
+  └── --patch 命令行覆盖
+
+Profile: headless
+  │
+  ├── Bundle: dsh-base（同样的基础层）
+  │
+  ├── Bundle: dsh-headless（一次性运行器，无 HTTP 服务器）
+  │
+  └── ...</pre>
+</div>
+<p><code>dsh-base</code> 是每个 Profile 的第一层，包含所有核心能力。之后叠加不同的 Surface 包：Web 版 vs Headless 版。用户可以通过 <code>cordis.patch.yml</code> 覆盖任意插件的配置。</p>
+
+<h3>4.5 约 25 个能力缝隙一览</h3>
+<table>
+    <tr><th>ctx 键</th><th>服务定义包</th><th>示例提供者</th></tr>
+    <tr><td><code>ctx.llm</code></td><td>dsh-llm</td><td>dsh-llm-deepseek, dsh-llm-pi-ai</td></tr>
+    <tr><td><code>ctx.tools</code></td><td>dsh-tools</td><td>per-tool 插件</td></tr>
+    <tr><td><code>ctx.shell</code></td><td>dsh-shell</td><td>dsh-bash-local, dsh-bash-sandbox</td></tr>
+    <tr><td><code>ctx.fs</code></td><td>dsh-fs</td><td>dsh-fs-local, dsh-fs-sandbox</td></tr>
+    <tr><td><code>ctx.subprocess</code></td><td>dsh-subprocess</td><td>dsh-subprocess-local</td></tr>
+    <tr><td><code>ctx.sandbox</code></td><td>dsh-sandbox</td><td>dsh-sandbox-local</td></tr>
+    <tr><td><code>ctx.sessions</code></td><td>dsh-session</td><td>dsh-session-persistence-jsonl/sqlite</td></tr>
+    <tr><td><code>ctx.agents</code></td><td>dsh-agent</td><td>dsh-agent-loop</td></tr>
+    <tr><td><code>ctx.systemPrompt</code></td><td>dsh-system-prompt</td><td>dsh-system-prompt</td></tr>
+    <tr><td><code>ctx.web</code></td><td>dsh-web</td><td>dsh-web-search-deepseek, exa</td></tr>
+    <tr><td><code>ctx.subagentProviders</code></td><td>dsh-subagent</td><td>spawn, fork, ACP, claude-code, codex, dsh-sdk</td></tr>
+    <tr><td><code>ctx.settings</code></td><td>dsh-settings</td><td>dsh-settings-file</td></tr>
+    <tr><td><code>ctx.credentials</code></td><td>dsh-credentials</td><td>dsh-credentials-local</td></tr>
+    <tr><td><code>ctx.approval</code></td><td>dsh-user-approval</td><td>dsh-user-approval</td></tr>
+    <tr><td><code>ctx.compaction</code></td><td>dsh-compaction</td><td>dsh-compaction-basic</td></tr>
+    <tr><td><code>ctx.workflow</code></td><td>dsh-workflow</td><td>dsh-workflow-worker-thread</td></tr>
+    <tr><td><code>ctx.lsp</code></td><td>dsh-lsp</td><td>dsh-lsp-stdio</td></tr>
+    <tr><td><code>ctx.skill</code></td><td>dsh-skill</td><td>dsh-skill-filesystem</td></tr>
+    <tr><td><code>ctx.goals</code></td><td>dsh-goal</td><td>dsh-goal-round-driver</td></tr>
+    <tr><td><code>ctx.jobs</code></td><td>dsh-jobs</td><td>dsh-jobs-local</td></tr>
+    <tr><td><code>ctx.terminals</code></td><td>dsh-terminal</td><td>dsh-terminal-bash</td></tr>
+    <tr><td><code>ctx.storage</code></td><td>dsh-storage</td><td>dsh-storage-json, dsh-storage-sqlite</td></tr>
+    <tr><td><code>ctx.spill</code></td><td>dsh-spill</td><td>dsh-spill-local</td></tr>
+    <tr><td><code>ctx.codeRuntime</code></td><td>dsh-code-runtime</td><td>dsh-code-runtime-worker-thread</td></tr>
+    <tr><td><code>ctx.tokenMeter</code></td><td>dsh-token-meter</td><td>(内置)</td></tr>
+</table>
+
+<!-- ===================== PART 5 ===================== -->
+<h2 id="part5">第五部分：Agent Loop —— 智能体的心跳</h2>
+
+<h3>5.1 什么是 Agent Loop？</h3>
+<p>Agent Loop 是让 AI 智能体「活」起来的循环——它接收输入、调用模型、执行工具、把工具结果喂回模型，直到任务完成。在 <code>dsh</code> 中，Agent Loop 本身也是一个插件 <code>dsh-agent-loop</code>。</p>
+
+<h3>5.2 Turn / Step 模型</h3>
+<div class="diagram">
+<pre>
+Turn（对话轮次）
+├── Step 1（一次模型调用 + 工具执行）
+│   ├── 组装 Prompt + 工具 Schema
+│   ├── agent/pre-step (waterfall: 拒绝或放行)
+│   ├── 调用 LLM (llm/stream waterfall)
+│   ├── 接收 assistant/chunk* → assistant/message
+│   ├── 解析 tool/call*
+│   ├── tools/pre-execute → tools/execute → tools/post-execute
+│   └── tool/result*
+│
+├── Step 2（如果工具结果需要再次调用模型）
+│   └── ...同上...
+│
+└── Turn 结束（agent/turn-stopping serial 决定是否停止）</pre>
+</div>
+
+<p><strong>关键概念：</strong></p>
+<ul>
+    <li><strong>Step</strong> = 一次模型请求 + 它触发的工具调用</li>
+    <li><strong>Turn</strong> = 零或多个 Step，从用户输入开始到无需继续为止</li>
+    <li><strong>模型可见 = 必须记录</strong>：任何到达模型请求的内容，必须能从会话日志重建</li>
+    <li>输入通过<strong>一个收件箱</strong>到达驱动器；注入的上下文在收件箱中排队等待</li>
+</ul>
+
+<h3>5.3 事件拦截点</h3>
+<p>整个循环暴露了多个事件拦截点，让你可以在不修改 Loop 的情况下改变行为：</p>
+<table>
+    <tr><th>事件</th><th>模式</th><th>作用</th></tr>
+    <tr><td><code>agent/pre-step</code></td><td>waterfall</td><td>拒绝或修改即将发送给模型的请求</td></tr>
+    <tr><td><code>agent/request</code></td><td>waterfall</td><td>修改 LLM 调用配置</td></tr>
+    <tr><td><code>llm/stream</code></td><td>waterfall</td><td>拦截/修改模型流式输出</td></tr>
+    <tr><td><code>tools/pre-execute</code></td><td>waterfall</td><td>工具执行前拦截（审批、修改参数）</td></tr>
+    <tr><td><code>tools/execute</code></td><td>waterfall</td><td>替换工具执行逻辑</td></tr>
+    <tr><td><code>tools/post-execute</code></td><td>waterfall</td><td>工具执行后处理（日志、遥测）</td></tr>
+    <tr><td><code>agent/turn-stopping</code></td><td>serial</td><td>决定 Turn 是否结束</td></tr>
+</table>
+
+<h3>5.4 Scope —— 每个 Agent 的独立世界</h3>
+<p>当多个 Agent 同时运行时（如子智能体），每个 Agent 有自己的 <strong>Scope</strong>。Scope 提供：</p>
+<ul>
+    <li><strong>注册隔离</strong>：Agent A 注册的工具不影响 Agent B</li>
+    <li><strong>事件路由</strong>：Agent A 的事件只会被 A 的监听器接收（父 Scope 可以收子 Scope 事件）</li>
+    <li><strong>Preset 绑定</strong>：每个 Agent 绑定到一个 Preset 的「常驻挂载」，继承其工具和提示词</li>
+</ul>
+
+<!-- ===================== PART 6 ===================== -->
+<h2 id="part6">第六部分：会话系统 —— 事件溯源与持久化</h2>
+
+<h3>6.1 事件溯源（Event Sourcing）</h3>
+<p>会话日志是整个系统的<strong>唯一真相来源</strong>。所有模型可见状态都从日志推导。关键不变量：</p>
+<div class="callout callout-warning">
+    <strong>核心不变量：</strong>模型可见 = 必须记录。任何到达模型请求的内容，必须能从会话日志重建。如果你想让 Agent 「看到」新东西，必须定义新的 SessionEvent。
+</div>
+
+<p>核心会话事件类型：</p>
+<table>
+    <tr><th>事件</th><th>含义</th></tr>
+    <tr><td><code>turn/start</code>, <code>turn/end</code></td><td>对话轮次边界</td></tr>
+    <tr><td><code>step/start</code>, <code>step/end</code></td><td>模型调用步骤边界</td></tr>
+    <tr><td><code>user/message</code></td><td>用户输入</td></tr>
+    <tr><td><code>assistant/chunk</code></td><td>流式输出片段</td></tr>
+    <tr><td><code>assistant/message</code></td><td>完整的助手消息</td></tr>
+    <tr><td><code>tool/call</code>, <code>tool/result</code></td><td>工具调用与结果</td></tr>
+    <tr><td><code>todo/write</code></td><td>待办事项更新</td></tr>
+    <tr><td><code>request/header</code>, <code>request/context</code></td><td>请求上下文</td></tr>
+</table>
+
+<h3>6.2 持久化后端</h3>
+<p>两个可互换的持久化后端：</p>
+<table>
+    <tr><th>后端</th><th>格式</th><th>特点</th></tr>
+    <tr><td><strong>JSONL</strong>（默认）</td><td>每会话一个 <code>.jsonl[.zstd]</code> 文件</td><td>人类可读，支持 zstd 压缩，崩溃修复（撕裂帧恢复），原子写入</td></tr>
+    <tr><td><strong>SQLite</strong></td><td>单数据库文件</td><td>支持 seek-capable 后缀读取（不读全量），事务原子性，单调递增修订版本</td></tr>
+</table>
+
+<h3>6.3 写后 batching</h3>
+<p>实时事件不会立即写入磁盘，而是通过 <strong>Write-Behind Batching</strong> 缓冲：</p>
+<ul>
+    <li>固定截止时间（默认 200ms）批量写入</li>
+    <li><code>session/flush</code> 或会话销毁时强制刷新</li>
+    <li>写入失败时保留缓冲，暂停定时器直到下次显式 flush</li>
+    <li>每个会话有独立的 promise chain，写入不会交错</li>
+</ul>
+
+<h3>6.4 崩溃修复</h3>
+<p>加载时，持久化协调器会：</p>
+<ol>
+    <li>读取存储前缀</li>
+    <li>检测撕裂尾部（JSONL 通过 zstd 帧扫描，SQLite 通过行间隙）</li>
+    <li>追加合成的 <code>interruptedTurnClosers</code> 来平衡日志</li>
+</ol>
+
+<h3>6.5 投影（Projection）</h3>
+<p>投影是从会话日志<strong>折叠</strong>出的派生视图，用于避免每次都重放全量日志：</p>
+<ul>
+    <li><code>tokenUsage</code>：累计 Token 使用量</li>
+    <li><code>contextPressure</code>：上下文窗口占用比</li>
+    <li><code>sessionStats</code>：Turn/Step 计数、耗时统计</li>
+    <li><code>title</code>：会话标题</li>
+</ul>
+<p>投影支持<strong>快照缓存</strong>——持久化检查点，冷启动时从缓存 + 后缀重放恢复。</p>
+
+<!-- ===================== PART 7 ===================== -->
+<h2 id="part7">第七部分：LLM 层 —— 模型适配与流式推理</h2>
+
+<h3>7.1 适配器注册表</h3>
+<p><code>ctx.llm</code>（<code>LlmRuntime</code>）是 LLM 能力的中心：</p>
+<ul>
+    <li>多个适配器注册到不同的 <strong>Provider 路由</strong>（如 <code>deepseek-official</code>、<code>openai</code>）</li>
+    <li><code>registerAdapter(providers, adapter)</code> 返回句柄，支持原子替换</li>
+    <li><code>llm/stream</code> waterfall 拦截每次模型调用</li>
+</ul>
+
+<h3>7.2 DeepSeek 适配器</h3>
+<p>直接使用 <code>fetch()</code> + SSE 调用 DeepSeek OpenAI 兼容接口：</p>
+<ul>
+    <li>支持 thinking 模式（reasoning_effort: high/max）</li>
+    <li>流式输出：text-delta、reasoning-delta、tool-call-delta</li>
+    <li>空闲看门狗（默认 300s 超时）</li>
+    <li>归属头：每个请求包含 <code>x-deepseek-harness-user-id</code></li>
+    <li>错误映射：401/403→AUTH, 429→RATE_LIMIT, 400 context→CONTEXT_WINDOW_EXCEEDED, 5xx→SERVER</li>
+</ul>
+
+<h3>7.3 pi-ai 多提供商适配器</h3>
+<p>通过 <code>@earendil-works/pi-ai</code> 库支持 OpenAI、Anthropic、Azure、Bedrock、Vertex 等：</p>
+<ul>
+    <li>每个路由有独立的 apiKeyEnv、baseURL、协议、模型列表</li>
+    <li>支持 OpenAI-compatible 和 Responses 两种协议</li>
+    <li>通过 <code>GET /models</code> 自动发现模型</li>
+</ul>
+
+<h3>7.4 流式协议（StreamChunk）</h3>
+<table>
+    <tr><th>Chunk 类型</th><th>含义</th></tr>
+    <tr><td><code>block-start</code></td><td>新内容块开始</td></tr>
+    <tr><td><code>text-delta</code></td><td>文本增量</td></tr>
+    <tr><td><code>reasoning-delta</code></td><td>推理思维增量</td></tr>
+    <tr><td><code>tool-call-delta</code></td><td>工具调用增量</td></tr>
+    <tr><td><code>block-end</code></td><td>内容块结束（含完整组装结果）</td></tr>
+    <tr><td><code>usage</code></td><td>Token 使用统计（finish 之前）</td></tr>
+    <tr><td><code>finish</code></td><td>流结束（含 finish_reason）</td></tr>
+</table>
+
+<h3>7.5 重试策略</h3>
+<p>在 <code>agent/request-error</code> waterfall 上执行：</p>
+<ul>
+    <li>指数退避 + 抖动：<code>initialDelayMs * 2^(retry-1) * jitter</code></li>
+    <li>尊重 <code>Retry-After</code> 头</li>
+    <li>重试事件持久化到会话日志</li>
+    <li>插件销毁时通过 AbortController 取消等待</li>
+</ul>
+
+<!-- ===================== PART 8 ===================== -->
+<h2 id="part8">第八部分：通信架构 —— Host-Client-SDK 三角</h2>
+
+<h3>8.1 Web 模式（Host ↔ Browser）</h3>
+<div class="diagram">
+<pre>
+Browser (React App)                    Host Process (Node.js)
+═══════════════════                    ══════════════════════
+
+POST /api/&lt;method&gt;  ───── JSON ──────→  node:http WebServer
+                     ←──── JSON ──────  Typert Gateway / API Proxy
+
+WebSocket /api/events.mux  ←══════════  Mux 事件流
+WebSocket /api/events.host ←══════════  Host 事件流
+
+信任边界：Host header 必须是 loopback 或匹配 trustedHosts
+特权方法（设置、凭证、桌面操作）仅限 loopback 访问</pre>
+</div>
+
+<h3>8.2 SDK 模式（Client ↔ Runtime via stdio）</h3>
+<div class="diagram">
+<pre>
+Client Process                     Runtime Process
+══════════════                     ══════════════
+
+stdin ──── newline-delimited ────→  JSON-RPC Server
+stdout ←── JSON-RPC 2.0 ──────────  (stdio only, no logging)
+
+initialize { cwd, provider, model }
+session/prompt { sessionId, content }
+← session.event { sessionId, event }  (流式推送)
+← session.status { status }
+shutdown
+
+关闭阶梯：stdin EOF → SIGTERM → SIGKILL</pre>
+</div>
+
+<h3>8.3 ACP 模式（Agent Client Protocol）</h3>
+<p>自动化专用 JSON-RPC 服务器，遵循 <a href="https://agentclientprotocol.com">ACP 规范</a>。支持 <code>initialize</code>、<code>session/new</code>、<code>session/prompt</code>、<code>session/cancel</code>。只输出已提交消息（无原始 chunk/reasoning）。</p>
+
+<h3>8.4 Typert —— 类型反射与 RPC 系统</h3>
+<p><code>dsh</code> 自研的<strong>类型反射和 RPC 框架</strong>，贯穿构建时 TypeScript 分析到运行时验证分发：</p>
+<ul>
+    <li><strong>构建时</strong>：TypeScript 分析器生成 <code>FaceModel</code> / <code>TypeGraph</code>、Zod schema</li>
+    <li><strong>运行时</strong>：<code>@Remote</code> 装饰器声明 RPC 方法，Typert 自动发现和注册</li>
+    <li><strong>双面构建</strong>：Host 构建产出 Host 反射 + Client Remote 投影；Client 构建消费这些投影</li>
+</ul>
+
+<!-- ===================== PART 9 ===================== -->
+<h2 id="part9">第九部分：能力缝隙 —— 可插拔的执行世界</h2>
+
+<h3>9.1 Shell 执行能力</h3>
+<table>
+    <tr><th>组件</th><th>说明</th></tr>
+    <tr><td><code>dsh-shell</code></td><td>Service Definition：<code>ctx.shell</code>（执行 shell 命令的抽象接口）</td></tr>
+    <tr><td><code>dsh-bash-local</code></td><td>Provider：本地 bash 执行（通过 <code>ctx.subprocess</code>）</td></tr>
+    <tr><td><code>dsh-bash-sandbox</code></td><td>Provider：沙箱内 bash 执行</td></tr>
+    <tr><td><code>dsh-tool-bash</code></td><td>Consumer：模型可见的 Bash 工具</td></tr>
+</table>
+
+<h3>9.2 沙箱隔离能力</h3>
+<p>三种权限模式：</p>
+<ul>
+    <li><strong>read-only</strong>：只读文件系统，禁止执行</li>
+    <li><strong>workspace-write</strong>：工作目录可写，其他只读（默认）</li>
+    <li><strong>danger-full-access</strong>：完全访问</li>
+</ul>
+<p>本地沙箱后端支持：</p>
+<ul>
+    <li>Linux：BubbleWrap (bwrap) / Landlock</li>
+    <li>macOS：Seatbelt (sandbox-exec)</li>
+    <li>Windows：ACL 策略</li>
+</ul>
+
+<h3>9.3 子智能体能力</h3>
+<p>6 种子智能体 Provider，覆盖从进程内到跨产品委托：</p>
+<table>
+    <tr><th>Provider</th><th>方式</th></tr>
+    <tr><td><code>spawn-in-process</code></td><td>同进程内新建 Agent（共享 Context）</td></tr>
+    <tr><td><code>fork-in-process</code></td><td>同进程内新建 Agent（独立 Scope）</td></tr>
+    <tr><td><code>subagent-acp</code></td><td>ACP 协议委托外部 Agent</td></tr>
+    <tr><td><code>subagent-claude-code</code></td><td>委托 Claude Code（通过其 Agent SDK）</td></tr>
+    <tr><td><code>subagent-codex</code></td><td>委托 OpenAI Codex</td></tr>
+    <tr><td><code>subagent-dsh-sdk</code></td><td>通过 DSH SDK 启动子进程</td></tr>
+</table>
+
+<h3>9.4 文件系统能力</h3>
+<p><code>ctx.fs</code> 抽象文件访问，支持本地和沙箱两种 Provider。配合观察策略（<code>fs-observation-policy</code>）监控文件变更。</p>
+
+<h3>9.5 Web 访问能力</h3>
+<p>三个搜索 Provider + HTTP fetch：</p>
+<ul>
+    <li><code>dsh-web-search-deepseek</code>：DeepSeek 搜索 API</li>
+    <li><code>dsh-web-search-exa</code>：Exa 搜索 API</li>
+    <li><code>dsh-web-search-perplexity</code>：Perplexity 搜索 API</li>
+    <li><code>dsh-web-fetch-http</code>：HTTP 网页抓取</li>
+</ul>
+
+<!-- ===================== PART 10 ===================== -->
+<h2 id="part10">第十部分：学习路径建议</h2>
+
+<h3>10.1 推荐学习顺序</h3>
+<ol>
+    <li><strong>读 README</strong>：5 分钟建立直觉</li>
+    <li><strong>跑起来</strong>：<code>npx @deepseek-ai/dsh web</code>，体验 Web UI</li>
+    <li><strong>读 Cordis Primer</strong>：<code>docs/cordis-primer.md</code>，理解五个关键思想</li>
+    <li><strong>读 Architecture</strong>：<code>docs/architecture.md</code>，理解 Profile/Bundle/Turn Flow</li>
+    <li><strong>做一个 Cordis Tutorial</strong>：<code>docs/cordis-tutorial/</code>，7 节动手练习</li>
+    <li><strong>读 Core Subsystem Docs</strong>：<code>docs/subsystems/</code>，逐个理解 session/tools/agent/scope</li>
+    <li><strong>看一个 Example</strong>：<code>examples/headless-agent/</code>，理解 cordis.yml 组合</li>
+    <li><strong>写一个 Tool 插件</strong>：跟着 <code>docs/cookbook/adding-a-tool.md</code></li>
+    <li><strong>写一个 LLM 适配器</strong>：跟着 <code>docs/cookbook/adding-an-llm-adapter.md</code></li>
+    <li><strong>深入代码</strong>：从 <code>packages/core/agent-loop/</code> 开始读 Turn/Step 实现</li>
+</ol>
+
+<h3>10.2 核心文件索引</h3>
+<table>
+    <tr><th>想理解...</th><th>读这个文件</th></tr>
+    <tr><td>插件定义与加载</td><td><code>vendor/cordis/src/registry.ts</code></td></tr>
+    <tr><td>插件生命周期</td><td><code>vendor/cordis/src/fiber.ts</code></td></tr>
+    <tr><td>Agent Loop 实现</td><td><code>packages/core/agent-loop/src/index.ts</code></tr>
+    <tr><td>会话事件源</td><td><code>packages/core/session/src/index.ts</code></td></tr>
+    <tr><td>工具注册与执行</td><td><code>packages/core/tools/src/index.ts</code></td></tr>
+    <tr><td>LLM 适配器注册</td><td><code>packages/llm/llm/src/index.ts</code></td></tr>
+    <tr><td>Scope 机制</td><td><code>packages/core/scope/src/index.ts</code></td></tr>
+    <tr><td>Profile 启动</td><td><code>packages/boot/app-boot/src/index.ts</code></td></tr>
+    <tr><td>Web 通信</td><td><code>packages/host/webserver/src/index.ts</code></td></tr>
+    <tr><td>SDK 协议</td><td><code>packages/sdk/protocol/src/index.ts</code></td></tr>
+</table>
+
+<h3>10.3 关键术语表</h3>
+<table>
+    <tr><th>术语</th><th>含义</th></tr>
+    <tr><td>Cordis</td><td>底层插件框架，源自 Koishi</td></tr>
+    <tr><td>Fiber</td><td>一个插件实例的运行时生命周期对象</td></tr>
+    <tr><td>Context (ctx)</td><td>服务容器 + 事件总线 + 效应注册器</td></tr>
+    <tr><td>Seam</td><td>能力缝隙：定义-提供-消费三方协议</td></tr>
+    <tr><td>Profile</td><td>一个运行配置组合（如 web, headless）</td></tr>
+    <tr><td>Bundle</td><td>一个可分发的 Cordis 配置补丁层</td></tr>
+    <tr><td>Turn</td><td>一次完整的对话轮次（含多个 Step）</td></tr>
+    <tr><td>Step</td><td>一次模型调用 + 工具执行</td></tr>
+    <tr><td>Projection</td><td>从会话日志折叠出的派生视图</td></tr>
+    <tr><td>Scope</td><td>每个 Agent 的独立注册/事件空间</td></tr>
+    <tr><td>Typert</td><td>类型反射与 RPC 系统</td></tr>
+    <tr><td>ACP</td><td>Agent Client Protocol，自动化协议</td></tr>
+    <tr><td>Write-Behind</td><td>延迟批量写入策略</td></tr>
+</table>
+
+<hr/>
+<p style="text-align: center; color: var(--text-secondary); margin-top: 3em;">
+    报告生成于 2026-08-13 &nbsp;|&nbsp; 研究工具：Claude Code &nbsp;|&nbsp; 数据来源：<a href="https://github.com/deepseek-ai/deepseek-harness">deepseek-ai/deepseek-harness</a>
+</p>
+
+</body>
+</html>

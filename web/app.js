@@ -11,6 +11,7 @@ const paths = {
   moon: '<path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"/>',
   sun: '<circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M19.1 4.9l-1.8 1.8M6.7 17.3l-1.8 1.8"/>',
   auto: '<path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M19.1 4.9l-1.8 1.8M6.7 17.3l-1.8 1.8"/><circle cx="17.5" cy="8.5" r="2.2"/>',
+  present: '<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M12 17v4M8.5 21h7"/>',
 };
 const icon = name => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.book}</svg>`;
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -18,7 +19,7 @@ const main = document.querySelector('#main');
 const dialog = document.querySelector('#reader');
 let data, lookup, page = 'overview', query = '', category = '全部', shown = 30, saved;
 try { saved = new Set(JSON.parse(localStorage.getItem('pl:saved') || '[]')); } catch { saved = new Set(); }
-const names = {overview:'总览', library:'成果库', diary:'工作日志', decisions:'待决事项', contributions:'开源贡献', saved:'收藏夹'};
+const names = {overview:'总览', library:'成果库', diary:'工作日志', decisions:'待决事项', contributions:'开源贡献', presentations:'对外呈现', saved:'收藏夹'};
 const fmt = date => new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Singapore',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(date));
 const fmtFull = date => new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Singapore',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(date));
 const saveButton = (id, small=false) => `<button class="save-button ${saved.has(id)?'is-saved':''} ${small?'small':''}" data-save="${id}" aria-label="${saved.has(id)?'取消收藏':'收藏'}" aria-pressed="${saved.has(id)}">${icon('bookmark')}</button>`;
@@ -95,12 +96,29 @@ function contributionsPage() {
     `<nav class="project-filters" aria-label="贡献项目筛选"><a href="#contributions" ${!selected?'aria-current="true"':''}>全部项目 <span>${projects.length}</span></a>${projects.map(p=>`<a href="#contributions?project=${encodeURIComponent(p.slug)}" ${selected===p.slug?'aria-current="true"':''}>${esc(p.name)}</a>`).join('')}</nav>
     <div class="contribution-grid">${projects.filter(p=>!selected||p.slug===selected).map(contributionPanel).join('') || '<p class="empty">当前尚无项目记录。</p>'}</div>`;
 }
+/* 对外呈现：可直链分享的独立专题页（不自持工作台菜单，页面顶部带返回主站链接）。 */
+const PRESENTATIONS = [
+  {tag:'Rollout 调研', title:'综述大纲', desc:'《Efficient Rollout Systems for LLM Post-Training》报告大纲：研究问题、serving/rollout 核心假设、性能模型与 L1–L4 分类法', href:'./presentations/rollout-survey-outline.html', date:'2026-10'},
+  {tag:'Rollout 调研', title:'论文集锦', desc:'126 篇已核文献，按综述大纲的 L1–L4 骨架分类，含 arXiv 链接、tier 分层与一句话机制，支持搜索筛选', href:'./presentations/rollout-papers.html', date:'2026-10'},
+  {tag:'AgenticRL', title:'综述', desc:'国内旗舰 Agent 训练五层技术栈：任务与环境、学习目标、训推一致性、长程 rollout、长序列架构', href:'./presentations/gallery/rl_survey/', date:'2026-09'},
+  {tag:'News', title:'每日快报', desc:'新闻快报专题', href:'./presentations/gallery/news_jackiesnews/', date:'2026-08'},
+  {tag:'RL infra', title:'Lego-RL', desc:'Lego-RL 深度研究报告：Harness-Native 强化学习训练 Coding Agent', href:'./presentations/gallery/rl-infra_research/', date:'2026-08'},
+  {tag:'Harness', title:'DeepSeek Harness', desc:'DeepSeek Harness 开源项目研究报告', href:'./presentations/gallery/harness_research/report_deepseek-harness.html', date:'2026-08'},
+  {tag:'vLLM', title:'DeepSeek-V4 的 KV Cache 管理', desc:'', href:'./presentations/gallery/infer_vLLM/deepseek-v4-kvcache.html', date:'2026-06'},
+  {tag:'vLLM', title:'KV Cache 架构', desc:'', href:'./presentations/gallery/infer_vLLM/kv-cache-arch.html', date:'2026-06'},
+  {tag:'vLLM', title:'系统架构', desc:'vLLM 架构视图 PlantUML', href:'./presentations/gallery/infer_vLLM/', date:'2026-08'},
+  {tag:'0daybot', title:'推理开箱工作流', desc:'在 vLLM 上进行新模型开箱适配', href:'./presentations/gallery/infer_0daybot/', date:'2026-08'},
+];
+function presentationsPage() {
+  main.innerHTML=heading('对外呈现','可直接分享的专题报告与调研成果。每个专题都是独立网页——链接可以直发，页面顶部可回到本工作台。')+
+    `<div class="present-grid">${PRESENTATIONS.map(p=>`<a class="present-card" href="${esc(p.href)}"><span class="present-tag">${esc(p.tag)}</span><h2>${esc(p.title)}</h2>${p.desc?`<p>${esc(p.desc)}</p>`:''}<span class="present-meta">${esc(p.date)} · 独立网页 ${icon('arrow')}</span></a>`).join('')}</div>`;
+}
 function route() {
   const [slug,search='']=(location.hash.slice(1)||'overview').split('?');page=names[slug]?slug:'overview';const params=new URLSearchParams(search);query=params.get('q')||'';category=params.get('category')||'全部';shown=30;
   if(!['全部','知识笔记','开源贡献','工作日志'].includes(category))category='全部';
   document.querySelectorAll('[data-nav]').forEach(a=>{const active=a.dataset.nav===page;a.classList.toggle('active',active);if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
   document.title=names[page]+' · perpetual-learning';
-  if(page==='overview')overview();else if(page==='library'||page==='saved')library();else if(page==='diary')diaryPage();else if(page==='contributions')contributionsPage();else decisionPage();
+  if(page==='overview')overview();else if(page==='library'||page==='saved')library();else if(page==='diary')diaryPage();else if(page==='contributions')contributionsPage();else if(page==='presentations')presentationsPage();else decisionPage();
   window.scrollTo(0,0);
 }
 let readerRequest=0;

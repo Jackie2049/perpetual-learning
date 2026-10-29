@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepSeek Harness · 项目进展汇报（2026-08-14）</title>
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-light: #e8f0fe;
+            --text: #202124;
+            --text-secondary: #5f6368;
+            --bg: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --border: #dadce0;
+            --success: #34a853;
+            --warning: #fbbc04;
+            --danger: #ea4335;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif;
+            color: var(--text); background: var(--bg); line-height: 1.7;
+            max-width: 860px; margin: 0 auto; padding: 20px;
+        }
+        h1 { font-size: 1.8em; color: var(--primary); margin: 1em 0 0.4em; }
+        h2 { font-size: 1.25em; color: var(--primary); margin: 1.4em 0 0.5em; border-bottom: 1px solid var(--border); padding-bottom: 0.2em; }
+        p { margin: 0.5em 0; }
+        a { color: var(--primary); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        table { border-collapse: collapse; width: 100%; margin: 0.8em 0; font-size: 0.9em; }
+        th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+        th { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+        tr:nth-child(even) { background: var(--bg-secondary); }
+        .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600; }
+        .ok { background: #e6f4ea; color: var(--success); }
+        .wait { background: var(--primary-light); color: var(--primary); }
+        .down { background: #fce8e6; color: var(--danger); }
+        .callout { padding: 14px 16px; border-radius: 8px; margin: 1em 0; border-left: 4px solid; font-size: 0.95em; }
+        .callout-warning { background: #fef7e0; border-color: var(--warning); }
+        .callout-tip { background: #e6f4ea; border-color: var(--success); }
+        .nav { margin: 1em 0; }
+        .nav a { background: var(--primary-light); color: var(--primary); padding: 5px 12px; border-radius: 16px; font-size: 0.85em; font-weight: 500; }
+        .nav a:hover { background: var(--primary); color: white; text-decoration: none; }
+        .updated { color: var(--text-secondary); font-size: 0.85em; margin-bottom: 1em; }
+        @media (max-width: 600px) { body { padding: 12px; } table { font-size: 0.8em; } }
+    </style>
+</head>
+<body>
+
+<h1>📈 DeepSeek Harness · 项目进展汇报</h1>
+<p class="updated">更新日期：2026-08-14 · 配套阅读：<a href="report_deepseek-harness.html">DeepSeek Harness 全面研究报告</a></p>
+
+<h2>当前状态一览</h2>
+<table>
+    <tr><th>项目</th><th>状态</th></tr>
+    <tr><td>TencentDB fork：78 issues + 27 PRs</td><td><span class="badge wait">待用户评审</span></td></tr>
+    <tr><td>10 个经典 fork PR（5 框架）</td><td><span class="badge ok">✅ 2 个被官方验证合并</span>，8 个 open</td></tr>
+    <tr><td>数学理论资产（GRPO 推导/验证器）</td><td><span class="badge ok">✅ 已完成</span>（10/10 测试通过）</td></tr>
+    <tr><td>3 台 GPU 服务器</td><td><span class="badge down">⛔ 全部离线</span>（已复测）</td></tr>
+</table>
+
+<h2>最近工作：TencentDB-Agent-Memory（8/12）</h2>
+<p><strong>78 issues</strong>：30 上游镜像 + 48 审查发现（2 个误报已关）；<strong>27 PRs</strong>（#79-105）覆盖 MemoryCore/Proxy/Knowledge/Panel/deploy 五模块，全部 open 待审。</p>
+<table>
+    <tr><th>实测 Bug</th><th>PR</th><th>问题</th></tr>
+    <tr><td>#871</td><td>#103</td><td>删除静默 no-op（SELECT 缺隔离条件）</td></tr>
+    <tr><td>#927</td><td>#102</td><td>embedding 重试被禁用（MAX_RETRIES=0）</td></tr>
+    <tr><td>#903</td><td>#104</td><td>首轮对话 48% 丢失（时间戳契约违规）</td></tr>
+    <tr><td>#928</td><td>#99</td><td>资产分配 20 条上限丢数据</td></tr>
+</table>
+<div class="callout callout-warning">
+    <strong>上游结论：</strong>外部 578 个 PR 仅 3 个被合并（0.5%），381 个从未被 review → fork 内自审价值 &gt; 上游合并期望。
+</div>
+
+<h2>经典战绩（7/15 前）</h2>
+<ul>
+    <li>Megatron #2 → 官方 <strong>#5808 MERGED</strong>；vllm #9 → 官方 #48638</li>
+    <li>DeepSpeed #8068 MERGED；P9 论题被验证 4 次</li>
+    <li>其余 8 个 fork PR 均为 UNIQUE 修复（UP-GRPO、NaN guard、record_stream 等）</li>
+</ul>
+
+<h2>待办（需决策）</h2>
+<ol>
+    <li>评审 27 个 fork PR（建议先合 4 个实测 bug 的 #99/#102/#103/#104）</li>
+    <li>GPU 离线期间 → 推进纯本地工作（新审查 / 数学验证 / 上游跟踪）</li>
+    <li>是否挑 1-2 个高价值修复推上游（月级等待，可走犀牛鸟通道）</li>
+</ol>
+
+<div class="callout callout-tip">
+    💡 本页为进展快照，详细技术资产见 <a href="report_deepseek-harness.html">研究报告</a>。
+</div>
+
+</body>
+</html>

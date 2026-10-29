@@ -253,6 +253,9 @@ def main():
     for report in ['report_deepinfer.html']:
         if (WEB / report).exists():
             shutil.copyfile(WEB / report, OUT / report)
+    # Standalone presentation pages (directly shareable, outside the workbench shell).
+    if (WEB / 'presentations').is_dir():
+        shutil.copytree(WEB / 'presentations', OUT / 'presentations')
     index = (OUT / 'index.html').read_text()
     for name in ['app.js', 'styles.css', 'vendor/katex/katex.min.css']:
         index = index.replace(f'./{name}', asset_url(name))
