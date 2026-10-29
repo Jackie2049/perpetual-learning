@@ -55,6 +55,8 @@
 
 2026-10-30接[批元数据拼接](#批元数据拼接的已有候选)：#8453已有作者；真实TensorDict0.11.0＋Torch2.9.1上两版原两个测试体均通过，无旧失败／新通过证据；0.15.1要求更高Torch，仅源码／元数据，不迁移作者TPU报告或另排算力。
 
+2026-10-30接[自定义loader恢复](#自定义-loader-恢复的已有草案)：draft #8454已有作者；六个原方法局部控制区分接口缺失前拒绝与数据文件错误后拒绝，模型接口为Mock、文件真实，非原作者pytest或完整恢复验收，不另实现／排算力。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -68,6 +70,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## 自定义 loader 恢复的已有草案
+
+2026-10-30只读Mecoli1219的OPEN／draft [#8454](https://github.com/verl-project/verl/pull/8454)，headc7e22a9e0ecbc08bc3600c05b0be717203fe7d1a、basea08ea02a，一提交13文件940增50删；reviews为空，bot未审draft。已有作者在做V1同步自定义loader，不认领重叠接口；PR正文引用的其他议题不替代本轮代码范围。
+
+[原checkpoint专题](../../notebook/frameworks/verl-checkpoint-management-reading.md#自定义数据源的保存与恢复边界)区分模型可保存、loader恢复方法与data.pt内容就绪。六个自设计CPU控制接完整原_load_checkpoint：[结果](../../experiments/verl-custom-loader-resume/result.json)核无接口auto／显式恢复在加载调用前拒绝，无接口auto无checkpoint可新启动；有接口但缺文件／类型错会在step与actor／critic Mock加载调用之后拒绝，字典则传给loader替身。保存／构造仅源码，原测试已读未跑，不等真实权重变更、回滚、流offset或完整恢复验收。两次新进程一致，本题条件验证收束，不新排M5算力、改候选或发布反馈；社区和既有PR-head写入仍逐项待用户明确同意。
 
 ## 批元数据拼接的已有候选
 

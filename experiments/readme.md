@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-custom-loader-resume/verify.py](verl-custom-loader-resume/verify.py) | draft #8454原恢复方法的六个本地条件，[结果](verl-custom-loader-resume/result.json)分开接口拒绝与缺／错data.pt时的调用顺序；真实临时文件、Mock worker，非原作者pytest／完整恢复 | [自定义loader恢复](../notebook/frameworks/verl-checkpoint-management-reading.md#自定义数据源的保存与恢复边界) |
 | [verl-first-metadata/verify.py](verl-first-metadata/verify.py) | #8453两完整原utils接两个原测试体，[结果](verl-first-metadata/result.json)在TensorDict0.11.0／Torch2.9.1下两版均通过；普通／jagged留首份，0.15.1只读源码与依赖，不是修复／TPU验收 | [批元数据拼接](../notebook/frameworks/verl-dataproto-data-flow-reading.md#批元数据与逐样本字段的拼接) |
 | [unirl-loss-unit-resolution/verify.py](unirl-loss-unit-resolution/verify.py) | #622原loss_units及两版resolver的五本地条件控制，[结果](unirl-loss-unit-resolution/result.json)核None／局部零／全局零、重排与SP guard；后端peer值及Segment是接口替身，非分布式／训练 | [原缩放函数条件](../notebook/frameworks/unirl-survey.md#原缩放函数的五个条件对照) |
 | [verl-lora-loader-names/verify.py](verl-lora-loader-names/verify.py) | #7483三原名称helper接八原测试体，[结果](verl-lora-loader-names/result.json)8通过／17次解析，原假mapper／loader结构与空worker类；非原生pytest、真实加载或整PR验收 | [LoRA名称与加载器](../notebook/frameworks/verl-quant-layer-audit.md#lora-权重名称与加载器契约) |

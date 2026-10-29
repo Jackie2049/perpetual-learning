@@ -1,0 +1,66 @@
+{
+  "revision": "c7e22a9e0ecbc08bc3600c05b0be717203fe7d1a",
+  "python": "3.12.13",
+  "torch": "2.9.1",
+  "source_sha256": {
+    "verl/trainer/ppo/v1/trainer_base.py": "cf084ad149e953fc7da73a5d5073e1abd2c986f77bbc14e9b70df662b544781c",
+    "verl/utils/dataset/dataloader.py": "5a4189b7dc2ced66998616a932f94875583adecc1975f764660943a3c96df036",
+    "tests/utils/dataset/test_custom_dataloader_on_cpu.py": "be6fb6e2155e4c2424a2e49fa36f6f3cb3d6c2b700015c874a7e672ee778db64"
+  },
+  "local_controls_passed": 6,
+  "results": [
+    {
+      "case": "nonstateful_auto_found",
+      "error": "ValueError",
+      "actor_load_called": false,
+      "critic_load_called": false,
+      "global_steps": 0,
+      "loader_states": []
+    },
+    {
+      "case": "nonstateful_explicit",
+      "error": "ValueError",
+      "actor_load_called": false,
+      "critic_load_called": false,
+      "global_steps": 0,
+      "loader_states": []
+    },
+    {
+      "case": "nonstateful_auto_fresh",
+      "error": null,
+      "actor_load_called": false,
+      "critic_load_called": false,
+      "global_steps": 0,
+      "loader_states": []
+    },
+    {
+      "case": "stateful_missing_data",
+      "error": "FileNotFoundError",
+      "actor_load_called": true,
+      "critic_load_called": true,
+      "global_steps": 7,
+      "loader_states": []
+    },
+    {
+      "case": "stateful_invalid_data",
+      "error": "TypeError",
+      "actor_load_called": true,
+      "critic_load_called": true,
+      "global_steps": 7,
+      "loader_states": []
+    },
+    {
+      "case": "stateful_valid_data",
+      "error": null,
+      "actor_load_called": true,
+      "critic_load_called": true,
+      "global_steps": 7,
+      "loader_states": [
+        {
+          "cursor": 3
+        }
+      ]
+    }
+  ],
+  "scope": "Original complete _load_checkpoint only; three full sources syntax-checked. Six locally designed controls, not original PR tests/native pytest. Config/loader/latest discovery/workers are explicit fixtures; self-written data.pt uses real torch.save/load. No model weights, optimizer, real stream, Hydra construction, saving-method execution, rollback, Ray/TransferQueue, GPU/NPU or training validation."
+}

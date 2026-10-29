@@ -11,6 +11,33 @@
 
 2026-10-25补充：[Megatron 调度进度与超参数恢复](#megatron-调度进度与超参数恢复)用官方调度器和真实CPU optimizer区分进度、超参数来源与参数组覆盖；六组控制不等于完整分布式checkpoint恢复。
 
+## 自定义数据源的保存与恢复边界
+
+**模型checkpoint可保存、loader有恢复方法、数据状态文件有效，是三个不同条件。** 2026-10-30只读Mecoli1219的draft [#8454](https://github.com/verl-project/verl/pull/8454)，固定head `c7e22a9e0ecbc08bc3600c05b0be717203fe7d1a`、base `a08ea02a784d7d4982b1d81df36d188a476192bb`，一提交13文件940增50删；reviews为空，bot提示draft未审查，不算接口批准。本节只看自定义loader的checkpoint契约，不评审全部流式训练接线。
+
+[桥接接口](https://github.com/verl-project/verl/blob/c7e22a9e0ecbc08bc3600c05b0be717203fe7d1a/verl/utils/dataset/dataloader.py)允许训练loader只实现迭代；若提供任一checkpoint方法，构造检查要求`state_dict`与`load_state_dict`都可调用。按[保存源码](https://github.com/verl-project/verl/blob/c7e22a9e0ecbc08bc3600c05b0be717203fe7d1a/verl/trainer/ppo/v1/trainer_base.py)，无状态loader仍可走actor／critic保存，跳过数据状态并清除同目录旧data.pt；这不是完整训练可重启承诺。该保存路径、Hydra构造和清理只做源码核对，未在本轮执行。
+
+### 失败位置取决于缺失条件
+
+本机抽取完整原`_load_checkpoint`，用六个自设计条件核对返回、错误、step与调用边界。临时目录内的data.pt仅由本脚本写入简单字典／列表，使用真实torch.save/load；actor／critic及loader状态接口、latest查找和配置是明确替身。
+
+| loader与checkpoint条件 | 原方法结果 | actor／critic替身是否已收到加载调用 |
+|---|---|---|
+| 无恢复接口，auto找到checkpoint | ValueError，step0 | 否 |
+| 无恢复接口，显式resume_path | ValueError，step0 | 否 |
+| 无恢复接口，auto找不到checkpoint | 正常新训练入口，step0 | 否 |
+| 有恢复接口，缺data.pt | FileNotFoundError，step7 | 是 |
+| 有恢复接口，data.pt存的是列表 | TypeError，step7 | 是 |
+| 有恢复接口，data.pt为字典cursor=3 | loader接口收到该字典，step7 | 是 |
+
+接口缺失的拒绝在设置恢复step／加载权重前；内容缺失或类型错误则在这两步之后。**明确报错不等于所有条件都已预检，也不证明恢复具有回滚能力。** 后三行的“收到调用”不是实际模型状态已改变；最后一行只验字典透传，不证明下一批样本身份、远端流offset或优化器／RNG一致。
+
+[原CPU测试](https://github.com/verl-project/verl/blob/c7e22a9e0ecbc08bc3600c05b0be717203fe7d1a/tests/utils/dataset/test_custom_dataloader_on_cpu.py)已有无状态保存／恢复前拒绝、stateful游标回放及缺文件等用例。本轮读取但未运行这些原测试或其Hydra／trainer fixture，不把作者测试和本机控制合并计数。完整trainer、bridge与原测试三文件AST／compile通过；只执行了一个原生产方法。
+
+[脚本](../../experiments/verl-custom-loader-resume/verify.py)与[结果](../../experiments/verl-custom-loader-resume/result.json)保存固定输入SHA256。Python3.12.13／Torch2.9.1，`python3.12 -B experiments/verl-custom-loader-resume/verify.py /path/to/verl-git`，Git对象预缓存后运行不联网。六条件通过、两新进程JSON相同；没有模型权重／optimizer加载、真实loader恢复、Ray／TQ／设备或训练验收。用户数据或外部pickle不应交给这个临时夹具。
+
+已有作者推进草案，本题在恢复条件范围收束，不改其接口、重复认领、发布评论或新排M5训练任务；社区与既有PR-head写入仍逐项待用户明确授权。
+
 ## 配置字段可覆盖与对象默认值
 
 **dataclass里有字段，不代表Hydra普通命令行覆盖能找到这个键。** 2026-10-26核对[#7387](https://github.com/verl-project/verl/issues/7387)及两个OPEN/non-draft候选：[#7388](https://github.com/verl-project/verl/pull/7388)只补actor的`save_lora_only`；[#7426](https://github.com/verl-project/verl/pull/7426)同时补actor、critic、SFT，并更新四份生成YAML、增加字段一致性测试。后者作者已在#7388评论中说明重叠、提出按维护者选择拆分；不另认领或提交第三份修复。
