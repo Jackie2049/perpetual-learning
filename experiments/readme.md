@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [unirl-pytest-collection/verify.py](unirl-pytest-collection/verify.py) | #632两版原配置／原CLI快照的八组原生collection，[结果](unirl-pytest-collection/result.json)核6误收集节点／空收集exit5／缺路径exit4；不执行测试体、HTTP或服务，不等测试通过 | [测试收集与空结果](../notebook/frameworks/unirl-survey.md#奖励服务的测试收集与空结果) |
 | [verl-otb-weight-clamp/verify.py](verl-otb-weight-clamp/verify.py) | #8444原两OTB参数测试体head通过／base失败，[结果](verl-otb-weight-clamp/result.json)另列原指标dict适配及同源logits精度控制；截断修符号不修已丢失权重，非DataProto、原生pytest或训练 | [OTB非负与精度](../notebook/frameworks/verl-grpo-core-algos-reading.md#otb-权重非负与基线精度) |
 | [verl-math-dapo-markdown/verify.py](verl-math-dapo-markdown/verify.py) | #8450原21参数测试体head全过／base14断言失败，[结果](verl-math-dapo-markdown/result.json)另列八本地边界；原模块／断言，非原生pytest、manager或训练 | [Minerva装饰与答案身份](../notebook/frameworks/verl-reward-integration-reading.md#minerva-装饰与答案身份) |
 | [verl-packaging-metadata/verify.py](verl-packaging-metadata/verify.py) | 原六打包输入的egg-info／PEP517元数据与去pyproject反事实，[结果](verl-packaging-metadata/result.json)核14实际extra／六旧名缺失／18基础依赖保留；无完整wheel、依赖解析或安装 | [可选依赖的实际集合](../notebook/frameworks/verl-architecture.md#python-可选依赖的声明与发布元数据) |

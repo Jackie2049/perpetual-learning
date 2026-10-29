@@ -1,5 +1,7 @@
 # UniRL — 腾讯统一多模态 RL 框架调研
 
+2026-10-30 接续：[奖励服务的测试收集与空结果](#奖励服务的测试收集与空结果)核已有#632：原文件快照的八组原生pytest collection区分6个误收集CLI节点、空收集退出5和缺路径退出4；排除误收集不是新增服务测试或训练验收。
+
 2026-10-30 接续：[SDE 索引的两层边界校验](#sde-索引的两层边界校验)核已有 #633／#634：窗口上界与采样日程长度检查互补，但负起点和运行时返回集合仍须分开判断；14组原模块CPU控制不当引擎或训练验收。
 
 2026-10-26 接续：[AR种子协作分工](#ar-种子配置与逐样本请求)中，报告者已让JianhaoYu-AI接手逐请求seed，engine副本偏移另议；八相关文件同旧分析，不将认领评论当实现完成或重复原CPU验证。
@@ -451,6 +453,32 @@ python -B experiments/scripts/verify_unirl_ema.py /path/to/UniRL
 Python3.12.13 / torch2.9.1，全部原模块正常导入，无包壳、方法摘取或假 Shadow；真实 inject_mirror 返回原 Shadow，原 local_view 直接处理普通 CPU Tensor。四类衰减、延后复制、两种时机、零衰减及异常退出恢复控制通过。这是自编原模块检查，不是上游原测试；无新依赖安装、预训练权重、forward/backward、optimizer、LoRA 注入、DTensor/FSDP、设备发现或 GPU/NPU 运行，不新增 M5 必跑事项。
 
 脚本核对五个完整源文件 SHA256，包括仅读的 backend。ema.py `b4b057cd565780b467c56d0ca8032a48c0e5b5366702fbd11cf2f06c9654701b`，configs.py `18dcc241700eeaf83f6e1aa9cc3a73519350c60c83d1c1631f7a8c574e29e03e`；其余见脚本。此处解释实现契约，不推荐衰减值，也不由局部 CPU 结果判断训练质量。
+
+## 奖励服务的测试收集与空结果
+
+**pytest不再误收集CLI，不等于奖励服务有了通过的测试。** 294962silent的[#632](https://github.com/Tencent-Hunyuan/UniRL/pull/632)删除过期`testpaths=["tests"]`，新增递归排除目录，并把`test_videoalign.py`重命名为`videoalign_smoke.py`、同步文档与启动提示。2026-10-30核为OPEN／非draft，head `ff13197a2ba6208a2287c32d72daf202fd4f68e0`，compare确认共同祖先 `8cfbac17765004afb68fef08a4e011a4c8daf555`、ahead2／behind0；reviews／行内comments为空，不推定人工批准或另认领。
+
+两固定Git树的子项目各90个跟踪路径，均无`tests/`或`conftest.py`；旧树唯一匹配pytest默认文件名的文件就是smoke CLI，新树匹配文件为零。这只描述所核版本，不把作者“历史上从未提供测试”的说法扩成我方全历史审计。脚本重命名前后除顶层usage文档串外，完整可执行AST一致；其六个`test_*`函数接受`url`／`video`等CLI实参，并未新增pytest夹具。
+
+[复现](../../experiments/unirl-pytest-collection/verify.py)在独立Python3.12.13／pytest8.4.2／requests2.32.5环境，使用各版**原pyproject与原完整CLI两文件快照**，以原树清单检查未漏匹配测试／conftest及scripts包init。真实pytest子进程全部带`--collect-only`，不替换生产代码、不生成假测试；关闭插件自动加载和cacheprovider，未安装完整项目／server／Pillow或模型栈。[结果](../../experiments/unirl-pytest-collection/result.json)含四原文件hash、两树清单hash、环境与逐命令节点／退出码：
+
+| 原配置或显式覆盖 | 收集节点数 | 退出码 | 含义 |
+| --- | --- | --- | --- |
+| 旧版默认／`-m "not gpu and not slow and not integration"`／仅`-o testpaths=`，三组 | 各6 | 各0 | 标记过滤不排除这些无标记CLI；只去过期路径告警仍会发现CLI |
+| 旧版仅`-o norecursedirs=scripts` | 0 | 5 | 递归排除可以阻止默认发现；旧testpaths告警仍在 |
+| 候选默认／`-o norecursedirs=`，两组 | 各0 | 各5 | 当前树上仅文件重命名已足以避开默认模式，不否认目录排除对未来文件的作用 |
+| 候选显式传`scripts/videoalign_smoke.py` | 6 | 0 | 显式文件仍会收集原函数；默认递归排除不是禁止手工指定 |
+| 候选显式传不存在的`tests/integration/ -m integration` | 0 | 4 | 改说明没有生成该目录；旧命令仍是路径使用错误 |
+
+这里的退出0只意味着**本次collection成功**，六个函数体均未执行，不是“6 tests passed”。[pytest官方退出码](https://docs.pytest.org/en/stable/reference/exit-codes.html)把5定义为空收集，不能在CI中一概当成功或用`|| true`吞掉其他失败：预期有测试的任务拿到5应检查测试是否意外消失，明确允许空树的任务则须另列实际smoke／集成验收。[递归排除配置](https://docs.pytest.org/en/stable/reference/reference.html#confval-norecursedirs)只负责发现范围，不提供模型、输入文件、服务可用性或HTTP行为的证据。
+
+本机未运行作者的普通pytest命令，因此不将Windows上“旧版exit2／候选exit5”外部报告改记为本机base/head结果。`asyncio_mode`告警来自未加载pytest-asyncio；该包已列在原dev extra，不能把受控的最小环境告警另立成新缺陷。复现不发HTTP请求，不启动reward service、Ray、Torch／GPU或训练；已有MPS／奖励加载真机事项不重复排队。
+
+```bash
+python3.12 -B experiments/unirl-pytest-collection/verify.py /path/to/unirl-git
+```
+
+固定Git blob须预先缓存；脚本禁止隐式fetch，临时独立index只导出原文件，不改源仓库index／工作树。本题到此收束，实质修订或真实测试需求再核，不扩脚本矩阵、补作者方案或写社区。上游和既有PR-head写入仍须用户对具体动作明确授权。
 
 ## Smoke 结果格式与训练验收
 

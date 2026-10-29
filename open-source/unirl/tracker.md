@@ -19,6 +19,8 @@
 
 2026-10-26接续[熵候选代码身份](#熵监控同步主线后的范围)：#563新cc0df170合入奖励主线，13专题文件同前次d2f0a489；不重跑旧CPU、不迁移历史GPU验收，不另认领或新排任务。
 
+2026-10-30核[奖励服务测试收集](#奖励服务测试收集的已有候选)：#632已有作者，八组原文件快照的原生collection核6个CLI节点与候选空收集退出5，非服务测试通过；不另实现／发布。
+
 **【大白话讲明白】**
 
 这张表区分尚有贡献空间、已有负责人、只覆盖部分需求和缺验证条件的问题。训练栈一致性修复（#523）已经交给 M5 单一推进，不是 M1 的待认领任务；其他线索也要读正文、评论及对应补丁，不能只看 assignee 是否为空。
@@ -31,6 +33,12 @@
 <!-- contribution-summary:end -->
 
 > 扫描时间 2026-10-22（GitHub 实时 API）。main 固定 `6fd82cba`。状态以当日核验为准，继续前重新核对关联 issue/PR。
+
+## 奖励服务测试收集的已有候选
+
+2026-10-30只读核294962silent的OPEN／非draft [#632](https://github.com/Tencent-Hunyuan/UniRL/pull/632)，headff13197a、实际祖先8cfbac177，ahead2／behind0，五文件含CLI重命名；reviews／行内comments为空，不推定人工批准。已有作者处理测试发现与文档，不另认领、改方案或发布反馈。
+
+[原UniRL专题](../../notebook/frameworks/unirl-survey.md#奖励服务的测试收集与空结果)和[八组原生collection结果](../../experiments/unirl-pytest-collection/result.json)区分：旧版默认／标记过滤／仅去testpaths仍收6个CLI函数；目录排除或候选默认空收集exit5；候选显式传重命名脚本仍收6个，缺失integration路径exit4。每版仅原配置／原完整CLI快照，另核90路径清单与可执行AST相同；未执行这六函数或作者普通pytest，故非“6项测试通过”、真实服务／HTTP／GPU验收或我方历史审计。不新排M5任务；上游与既有PR-head所有写入仍逐项待用户明确同意。
 
 ## SDE 索引边界的已有候选
 

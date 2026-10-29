@@ -1,0 +1,204 @@
+{
+  "base": "8cfbac17765004afb68fef08a4e011a4c8daf555",
+  "head": "ff13197a2ba6208a2287c32d72daf202fd4f68e0",
+  "environment": {
+    "python": "3.12.13",
+    "packages": {
+      "pytest": "8.4.2",
+      "requests": "2.32.5",
+      "pluggy": "1.7.0",
+      "iniconfig": "2.3.1",
+      "packaging": "26.3",
+      "pygments": "2.21.0",
+      "charset-normalizer": "3.5.2",
+      "idna": "3.20",
+      "urllib3": "2.8.0",
+      "certifi": "2026.10.23"
+    },
+    "plugin_autoload": false
+  },
+  "source_sha256": {
+    "8cfbac17765004afb68fef08a4e011a4c8daf555:unirl-reward-service/pyproject.toml": "8a981f804c3247ade65c628c657674f54edac2c8c679fb5ec93292a2cbb38715",
+    "8cfbac17765004afb68fef08a4e011a4c8daf555:unirl-reward-service/scripts/test_videoalign.py": "53c8296d2e4cf179f1b81051063e9c8177b61871042f79a386c7766e4b89b818",
+    "ff13197a2ba6208a2287c32d72daf202fd4f68e0:unirl-reward-service/pyproject.toml": "5bef7417b5741d1da0334a6df3facadcce3e0991e0954be3977c16ed386bd9b6",
+    "ff13197a2ba6208a2287c32d72daf202fd4f68e0:unirl-reward-service/scripts/videoalign_smoke.py": "0b351dbd03d6259403d5a9068258a98014fc409fcc397c0f81cac7269a0b24e5"
+  },
+  "inventory": {
+    "base": {
+      "tracked_paths": 90,
+      "path_list_sha256": "1101aa6b8de8b7f07c98546112bcb6a273c10243052b86a7f9acfb5cca806684",
+      "matching_test_files": [
+        "unirl-reward-service/scripts/test_videoalign.py"
+      ],
+      "tests_tree_present": false,
+      "conftest_present": false
+    },
+    "candidate": {
+      "tracked_paths": 90,
+      "path_list_sha256": "e6e87a324d5fb15607871e6e87ce08eef4b0b76d163487929ef3d3fcbd046aae",
+      "matching_test_files": [],
+      "tests_tree_present": false,
+      "conftest_present": false
+    }
+  },
+  "smoke_executable_ast_equal": true,
+  "native_collection_results": {
+    "base": {
+      "default": {
+        "arguments_after_pytest": [
+          "--collect-only",
+          "-q",
+          "--color=no",
+          "-p",
+          "no:cacheprovider"
+        ],
+        "exit_code": 0,
+        "collected_nodeids": [
+          "scripts/test_videoalign.py::test_health",
+          "scripts/test_videoalign.py::test_rewards_endpoint",
+          "scripts/test_videoalign.py::test_single_video_b64",
+          "scripts/test_videoalign.py::test_single_video_path",
+          "scripts/test_videoalign.py::test_batch",
+          "scripts/test_videoalign.py::test_consistency"
+        ],
+        "missing_testpaths_warning": true,
+        "unknown_asyncio_mode_warning": true,
+        "missing_path_error": false
+      },
+      "marker_filter": {
+        "arguments_after_pytest": [
+          "--collect-only",
+          "-q",
+          "--color=no",
+          "-p",
+          "no:cacheprovider",
+          "-m",
+          "not gpu and not slow and not integration"
+        ],
+        "exit_code": 0,
+        "collected_nodeids": [
+          "scripts/test_videoalign.py::test_health",
+          "scripts/test_videoalign.py::test_rewards_endpoint",
+          "scripts/test_videoalign.py::test_single_video_b64",
+          "scripts/test_videoalign.py::test_single_video_path",
+          "scripts/test_videoalign.py::test_batch",
+          "scripts/test_videoalign.py::test_consistency"
+        ],
+        "missing_testpaths_warning": true,
+        "unknown_asyncio_mode_warning": true,
+        "missing_path_error": false
+      },
+      "remove_stale_testpaths": {
+        "arguments_after_pytest": [
+          "--collect-only",
+          "-q",
+          "--color=no",
+          "-p",
+          "no:cacheprovider",
+          "-o",
+          "testpaths="
+        ],
+        "exit_code": 0,
+        "collected_nodeids": [
+          "scripts/test_videoalign.py::test_health",
+          "scripts/test_videoalign.py::test_rewards_endpoint",
+          "scripts/test_videoalign.py::test_single_video_b64",
+          "scripts/test_videoalign.py::test_single_video_path",
+          "scripts/test_videoalign.py::test_batch",
+          "scripts/test_videoalign.py::test_consistency"
+        ],
+        "missing_testpaths_warning": false,
+        "unknown_asyncio_mode_warning": true,
+        "missing_path_error": false
+      },
+      "exclude_scripts_only": {
+        "arguments_after_pytest": [
+          "--collect-only",
+          "-q",
+          "--color=no",
+          "-p",
+          "no:cacheprovider",
+          "-o",
+          "norecursedirs=scripts"
+        ],
+        "exit_code": 5,
+        "collected_nodeids": [],
+        "missing_testpaths_warning": true,
+        "unknown_asyncio_mode_warning": true,
+        "missing_path_error": false
+      }
+    },
+    "candidate": {
+      "default": {
+        "arguments_after_pytest": [
+          "--collect-only",
+          "-q",
+          "--color=no",
+          "-p",
+          "no:cacheprovider"
+        ],
+        "exit_code": 5,
+        "collected_nodeids": [],
+        "missing_testpaths_warning": false,
+        "unknown_asyncio_mode_warning": true,
+        "missing_path_error": false
+      },
+      "no_recursive_exclusions": {
+        "arguments_after_pytest": [
+          "--collect-only",
+          "-q",
+          "--color=no",
+          "-p",
+          "no:cacheprovider",
+          "-o",
+          "norecursedirs="
+        ],
+        "exit_code": 5,
+        "collected_nodeids": [],
+        "missing_testpaths_warning": false,
+        "unknown_asyncio_mode_warning": true,
+        "missing_path_error": false
+      },
+      "explicit_smoke_file": {
+        "arguments_after_pytest": [
+          "--collect-only",
+          "-q",
+          "--color=no",
+          "-p",
+          "no:cacheprovider",
+          "scripts/videoalign_smoke.py"
+        ],
+        "exit_code": 0,
+        "collected_nodeids": [
+          "scripts/videoalign_smoke.py::test_health",
+          "scripts/videoalign_smoke.py::test_rewards_endpoint",
+          "scripts/videoalign_smoke.py::test_single_video_b64",
+          "scripts/videoalign_smoke.py::test_single_video_path",
+          "scripts/videoalign_smoke.py::test_batch",
+          "scripts/videoalign_smoke.py::test_consistency"
+        ],
+        "missing_testpaths_warning": false,
+        "unknown_asyncio_mode_warning": true,
+        "missing_path_error": false
+      },
+      "missing_integration_path": {
+        "arguments_after_pytest": [
+          "--collect-only",
+          "-q",
+          "--color=no",
+          "-p",
+          "no:cacheprovider",
+          "tests/integration/",
+          "-m",
+          "integration"
+        ],
+        "exit_code": 4,
+        "collected_nodeids": [],
+        "missing_testpaths_warning": false,
+        "unknown_asyncio_mode_warning": true,
+        "missing_path_error": true
+      }
+    }
+  },
+  "scope": "Two original files per snapshot, inventory checked; collection only, no test bodies or HTTP/service/model/GPU execution"
+}
