@@ -51,6 +51,8 @@
 
 2026-10-30复核[同步后端与部署模式](../../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#配置后端与部署模式)：#8032同head的新bot反馈不能直接成立于标准V1 vLLM路径；后者init_hybrid，不等COLOCATED。原resolver两分支结果2／1仅条件控制，未跑初始化／权重同步，不据此改策略或发布。
 
+2026-10-30补[LoRA名称契约](#lora-名称处理的已有候选)：#7483原八测试体隔离通过，17次解析区分严格／扁平加载器与packed目标；两head的本轮完整输入相同，非真实加载／量化或整PR验收，不另实现／排算力。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -64,6 +66,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## LoRA 名称处理的已有候选
+
+2026-10-30只读HollowMan6的OPEN／非draft [#7483](https://github.com/verl-project/verl/pull/7483)，当前head0ed94ba020747101bb22db6005849c9a6ca06aa6、目标basea08ea02a，45提交52文件5210增331删。已有作者与多轮bot反馈；本轮仅学习名称helper，不竞争实现、发布评论或改既有PR head。
+
+[原量化与权重专题](../../notebook/frameworks/verl-quant-layer-audit.md#lora-权重名称与加载器契约)区分严格查表／扁平递归、真实包装层和packed目标，映射仅辅助判断而返回发送端名称。原三函数＋九假fixture定义接八原测试体，8通过／17次解析；原严格／扁平loader函数未执行，worker分配为明确空类，非原生pytest、真实vLLM／refit／训练验收。初读2671d862与当前head的两完整输入相同，当前版两次新进程结果一致，[脚本与结果](../../experiments/verl-lora-loader-names/verify.py)保留固定版本及哈希。原测试部分注释仍说getsource，但实际探针使用co_names；不把旧注释当实现。本题证据收束，不扩大模拟矩阵或新排M5工作；外部写入仍逐项待用户明确同意。
 
 ## KV salt 与 sleep 的清理范围
 

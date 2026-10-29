@@ -10,6 +10,34 @@
 
 2026-10-26接续：[原生混合精度模型的后端选择](#原生混合精度模型的后端选择)追踪新议题#8381。顶层FP8配置不代表experts也为FP8；显式DeepGEMM会阻止自动候选回退，切换Marlin还改变activation精度，不能仅按“成功启动”认证训练与rollout一致。
 
+## LoRA 权重名称与加载器契约
+
+**同一个 `.base_layer` 后缀，可能需要保留、补回或删除；是否能找到真实目标与谁负责后续映射必须一起判断。** 2026-10-30只读学习HollowMan6的[#7483](https://github.com/verl-project/verl/pull/7483)：当前head `0ed94ba020747101bb22db6005849c9a6ca06aa6`、目标base `a08ea02a784d7d4982b1d81df36d188a476192bb`，OPEN／非draft，45提交52文件5210增331删。本节只覆盖[utils.py的三个名称helper](https://github.com/verl-project/verl/blob/0ed94ba020747101bb22db6005849c9a6ca06aa6/verl/utils/vllm/utils.py)，不是对整个模型适配栈的审查或新修复候选。
+
+### 严格查表与递归加载
+
+严格加载器最终按名称查参数字典，LoRA包装后的真实键可能是 `q_proj.base_layer.weight`；递归的扁平加载器则可能自行进入包装层，需要接收 `q_proj.weight`。候选不是按模型名设白名单，而是沿 `.model`／`.language_model` 检查下一层 `load_weights` 的代码对象：`co_names` 不含 `AutoWeightsLoader` 时视为严格，结果按外层类缓存。这是结构启发式，不是执行加载契约；同类实例复用缓存还依赖其包装结构稳定。原测试注释仍提到 `inspect.getsource`／`params_dict[`，**固定版本的实际判断并不搜索源码文本或字典下标**。
+
+候选再结合真实参数名、`hf_to_vllm_mapper` 和 `packed_modules_mapping` 决定一个后缀的去留。映射只辅助查找：返回值仍是发送端的未映射名称，留给vLLM完成映射与分片融合。否则“本地找到真实目标”可能变成接收端重复改名。
+
+| 原测试条件 | 解析结果 |
+|---|---|
+| 新加载接口夹具、严格内层、真实键含base_layer | 已有后缀保留；普通名称补回后缀 |
+| 相同真实键、扁平内层 | 删除输入的base_layer后缀 |
+| 严格内层，但视觉merger真实键无包装 | 删除merger后缀，语言投影后缀仍保留 |
+| compressor.wkv／wgate分片，融合目标无包装 | 删除后缀，保留分片名与原前缀；输入无model前缀也不补 |
+| gate_proj／up_proj分片，融合目标含包装 | 保留后缀；原旧接口夹具在严格／扁平两种内层均保留 |
+
+例如输入 `layers.0.attn.compressor.wkv.base_layer.weight`，真实目标为 `model.layers.0.attn.compressor.fused_wkv_wgate.weight`，原测试结果仍是 `layers.0.attn.compressor.wkv.weight`，不是目标全名。这里证明的是解析决策，未调用真实vLLM的stacking或参数写入。
+
+### 八个原测试体的隔离结果
+
+本机Python3.12.13／Torch2.9.1／pytest8.4.2，抽取原三个完整生产函数、原缓存／哨兵赋值及[原测试文件](https://github.com/verl-project/verl/blob/0ed94ba020747101bb22db6005849c9a6ca06aa6/tests/utils/test_vllm_weight_name_normalization_on_cpu.py)的九个假模型／mapper／worker辅助定义，直接运行八个未改测试体：**8通过、17次名称解析，两次当前版本新进程结果相同**。保留原断言与真实`pytest.MonkeyPatch`，但不是原生pytest收集；worker类型为空分配夹具、特性标志显式设定，只创建空CPU张量，原严格／扁平loader函数体均未执行。
+
+见[脚本](../../experiments/verl-lora-loader-names/verify.py)与[完整结果](../../experiments/verl-lora-loader-names/result.json)。复现：`python3.12 -B experiments/verl-lora-loader-names/verify.py /path/to/verl-git`；需预先缓存脚本中的两个commit，运行禁止隐式联网。初读快照 `2671d862e3fb5e937b0da70da348b86e37df724f` 与当前head的两份完整输入逐字节相同，脚本强校验并保存SHA256，不能由此推断其余50文件相同。
+
+这组结果不覆盖真实能力探测、混合VLM多层前缀、全部MoE分支、量化重载或模型训练。PR作者的双节点GPU报告也不计为本机验收。已有作者在推进，本题在名称契约范围收束，不另写修复、部署候选或新增M5算力队列；上游可见动作仍逐项待用户明确授权。
+
 ## 原生混合精度模型的后端选择
 
 **后端应按实际层的格式与能力判断，不能只看模型顶层量化名称。** [议题#8381](https://github.com/verl-project/verl/issues/8381)于2026-10-26报告：原生DeepSeek-V4-Pro在H100上因MXFP4 expert被指定DeepGEMM而加载失败；显式Marlin后完成三步。报告者已有方案草稿并询问是否并入[#8371](https://github.com/verl-project/verl/pull/8371)，读取时0评论；本文不另实现方案。此前QAT预设中的GH200限制与此原生checkpoint问题相关，但不能混为同一模型格式或同一次实验。

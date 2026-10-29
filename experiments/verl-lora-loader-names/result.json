@@ -1,0 +1,242 @@
+{
+  "revision": "0ed94ba020747101bb22db6005849c9a6ca06aa6",
+  "previous_snapshot": "2671d862e3fb5e937b0da70da348b86e37df724f",
+  "both_complete_inputs_identical_to_previous": true,
+  "python": "3.12.13",
+  "torch": "2.9.1",
+  "pytest": "8.4.2",
+  "source_sha256": {
+    "verl/utils/vllm/utils.py": "f1d4b7c12b87c126a6dfc4ee45c8d6fd61431fa1e2e9ed996fbb58a6c060d74b",
+    "tests/utils/test_vllm_weight_name_normalization_on_cpu.py": "708f623c4c9f33117a741d356f85f00be9251604e9550eff4c0d46ddb54c7ac1"
+  },
+  "production_definitions": [
+    "_inner_load_weights_is_strict",
+    "_name_reaches_strict_loader",
+    "resolve_weight_name"
+  ],
+  "original_fixture_definitions": [
+    "_FakeMapper",
+    "_FakeVllmConfig",
+    "_make_worker",
+    "_resolve",
+    "_FakeStrictInner",
+    "_FakeFlatInner",
+    "_OuterModel",
+    "_strict_outer",
+    "_flat_outer"
+  ],
+  "original_tests_passed": 8,
+  "resolver_calls": 17,
+  "results": [
+    {
+      "original_test": "test_strict_loader_keeps_base_layer_suffix_on_newer_vllm",
+      "passed": true,
+      "calls": [
+        {
+          "input": "language_model.model.layers.0.self_attn.q_proj.base_layer.weight",
+          "output": "language_model.model.layers.0.self_attn.q_proj.base_layer.weight",
+          "has_lora_load_weights_fixture": true,
+          "has_lora_base_layer_prefix_fixture": false,
+          "live_names": [
+            "language_model.model.layers.0.self_attn.q_proj.base_layer.weight"
+          ]
+        }
+      ]
+    },
+    {
+      "original_test": "test_strict_loader_re_suffixes_plain_name_on_newer_vllm",
+      "passed": true,
+      "calls": [
+        {
+          "input": "language_model.model.layers.0.self_attn.q_proj.weight",
+          "output": "language_model.model.layers.0.self_attn.q_proj.base_layer.weight",
+          "has_lora_load_weights_fixture": true,
+          "has_lora_base_layer_prefix_fixture": false,
+          "live_names": [
+            "language_model.model.layers.0.self_attn.q_proj.base_layer.weight"
+          ]
+        }
+      ]
+    },
+    {
+      "original_test": "test_flat_loader_strips_base_layer_suffix_on_newer_vllm",
+      "passed": true,
+      "calls": [
+        {
+          "input": "language_model.model.layers.0.self_attn.q_proj.base_layer.weight",
+          "output": "language_model.model.layers.0.self_attn.q_proj.weight",
+          "has_lora_load_weights_fixture": true,
+          "has_lora_base_layer_prefix_fixture": false,
+          "live_names": [
+            "language_model.model.layers.0.self_attn.q_proj.base_layer.weight"
+          ]
+        }
+      ]
+    },
+    {
+      "original_test": "test_strict_loader_vision_merger_still_strips",
+      "passed": true,
+      "calls": [
+        {
+          "input": "model.visual.merger.linear_fc1.base_layer.weight",
+          "output": "model.visual.merger.linear_fc1.weight",
+          "has_lora_load_weights_fixture": true,
+          "has_lora_base_layer_prefix_fixture": false,
+          "live_names": [
+            "language_model.model.layers.0.self_attn.q_proj.base_layer.weight",
+            "model.visual.merger.linear_fc1.weight"
+          ]
+        },
+        {
+          "input": "language_model.model.layers.0.self_attn.q_proj.base_layer.weight",
+          "output": "language_model.model.layers.0.self_attn.q_proj.base_layer.weight",
+          "has_lora_load_weights_fixture": true,
+          "has_lora_base_layer_prefix_fixture": false,
+          "live_names": [
+            "language_model.model.layers.0.self_attn.q_proj.base_layer.weight",
+            "model.visual.merger.linear_fc1.weight"
+          ]
+        }
+      ]
+    },
+    {
+      "original_test": "test_strict_loader_multi_segment_shard_strips_to_unfused_leaf",
+      "passed": true,
+      "calls": [
+        {
+          "input": "model.layers.0.attn.compressor.wkv.base_layer.weight",
+          "output": "model.layers.0.attn.compressor.wkv.weight",
+          "has_lora_load_weights_fixture": true,
+          "has_lora_base_layer_prefix_fixture": false,
+          "live_names": [
+            "model.layers.0.attn.compressor.fused_wkv_wgate.weight"
+          ]
+        },
+        {
+          "input": "model.layers.0.attn.compressor.wgate.base_layer.weight",
+          "output": "model.layers.0.attn.compressor.wgate.weight",
+          "has_lora_load_weights_fixture": true,
+          "has_lora_base_layer_prefix_fixture": false,
+          "live_names": [
+            "model.layers.0.attn.compressor.fused_wkv_wgate.weight"
+          ]
+        }
+      ]
+    },
+    {
+      "original_test": "test_strict_loader_unprefixed_shard_against_model_prefixed_live",
+      "passed": true,
+      "calls": [
+        {
+          "input": "layers.0.attn.compressor.wkv.base_layer.weight",
+          "output": "layers.0.attn.compressor.wkv.weight",
+          "has_lora_load_weights_fixture": true,
+          "has_lora_base_layer_prefix_fixture": false,
+          "live_names": [
+            "model.layers.0.attn.compressor.fused_wkv_wgate.weight"
+          ]
+        },
+        {
+          "input": "layers.0.attn.compressor.wgate.base_layer.weight",
+          "output": "layers.0.attn.compressor.wgate.weight",
+          "has_lora_load_weights_fixture": true,
+          "has_lora_base_layer_prefix_fixture": false,
+          "live_names": [
+            "model.layers.0.attn.compressor.fused_wkv_wgate.weight"
+          ]
+        }
+      ]
+    },
+    {
+      "original_test": "test_packed_shard_keeps_suffix_when_fused_target_is_wrapped",
+      "passed": true,
+      "calls": [
+        {
+          "input": "model.layers.0.mlp.gate_proj.base_layer.weight",
+          "output": "model.layers.0.mlp.gate_proj.base_layer.weight",
+          "has_lora_load_weights_fixture": true,
+          "has_lora_base_layer_prefix_fixture": false,
+          "live_names": [
+            "model.layers.0.mlp.gate_up_proj.base_layer.weight"
+          ]
+        },
+        {
+          "input": "model.layers.0.mlp.up_proj.base_layer.weight",
+          "output": "model.layers.0.mlp.up_proj.base_layer.weight",
+          "has_lora_load_weights_fixture": true,
+          "has_lora_base_layer_prefix_fixture": false,
+          "live_names": [
+            "model.layers.0.mlp.gate_up_proj.base_layer.weight"
+          ]
+        }
+      ]
+    },
+    {
+      "original_test": "test_packed_shard_keeps_suffix_on_released_vllm",
+      "passed": true,
+      "calls": [
+        {
+          "input": "model.layers.0.mlp.gate_proj.base_layer.weight",
+          "output": "model.layers.0.mlp.gate_proj.base_layer.weight",
+          "has_lora_load_weights_fixture": false,
+          "has_lora_base_layer_prefix_fixture": false,
+          "live_names": [
+            "model.layers.0.mlp.gate_up_proj.base_layer.weight",
+            "model.layers.0.self_attn.qkv_proj.base_layer.weight"
+          ]
+        },
+        {
+          "input": "model.layers.0.mlp.up_proj.base_layer.weight",
+          "output": "model.layers.0.mlp.up_proj.base_layer.weight",
+          "has_lora_load_weights_fixture": false,
+          "has_lora_base_layer_prefix_fixture": false,
+          "live_names": [
+            "model.layers.0.mlp.gate_up_proj.base_layer.weight",
+            "model.layers.0.self_attn.qkv_proj.base_layer.weight"
+          ]
+        },
+        {
+          "input": "model.layers.0.self_attn.q_proj.base_layer.weight",
+          "output": "model.layers.0.self_attn.q_proj.base_layer.weight",
+          "has_lora_load_weights_fixture": false,
+          "has_lora_base_layer_prefix_fixture": false,
+          "live_names": [
+            "model.layers.0.mlp.gate_up_proj.base_layer.weight",
+            "model.layers.0.self_attn.qkv_proj.base_layer.weight"
+          ]
+        },
+        {
+          "input": "model.layers.0.mlp.gate_proj.base_layer.weight",
+          "output": "model.layers.0.mlp.gate_proj.base_layer.weight",
+          "has_lora_load_weights_fixture": false,
+          "has_lora_base_layer_prefix_fixture": false,
+          "live_names": [
+            "model.layers.0.mlp.gate_up_proj.base_layer.weight",
+            "model.layers.0.self_attn.qkv_proj.base_layer.weight"
+          ]
+        },
+        {
+          "input": "model.layers.0.mlp.up_proj.base_layer.weight",
+          "output": "model.layers.0.mlp.up_proj.base_layer.weight",
+          "has_lora_load_weights_fixture": false,
+          "has_lora_base_layer_prefix_fixture": false,
+          "live_names": [
+            "model.layers.0.mlp.gate_up_proj.base_layer.weight",
+            "model.layers.0.self_attn.qkv_proj.base_layer.weight"
+          ]
+        },
+        {
+          "input": "model.layers.0.self_attn.q_proj.base_layer.weight",
+          "output": "model.layers.0.self_attn.q_proj.base_layer.weight",
+          "has_lora_load_weights_fixture": false,
+          "has_lora_base_layer_prefix_fixture": false,
+          "live_names": [
+            "model.layers.0.mlp.gate_up_proj.base_layer.weight",
+            "model.layers.0.self_attn.qkv_proj.base_layer.weight"
+          ]
+        }
+      ]
+    }
+  ],
+  "scope": "Eight original test bodies and nine original fake helpers; three original production functions plus cache/sentinel. Direct calls with real pytest.MonkeyPatch, not native pytest collection. CPU empty tensors, fake mapper/loader topology and empty worker class; no real vLLM feature probes, loader execution, refit, quantization, model, GPU/NPU or training."
+}

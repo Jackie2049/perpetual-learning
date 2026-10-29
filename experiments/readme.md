@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-lora-loader-names/verify.py](verl-lora-loader-names/verify.py) | #7483三原名称helper接八原测试体，[结果](verl-lora-loader-names/result.json)8通过／17次解析，原假mapper／loader结构与空worker类；非原生pytest、真实加载或整PR验收 | [LoRA名称与加载器](../notebook/frameworks/verl-quant-layer-audit.md#lora-权重名称与加载器契约) |
 | [verl-effective-sync-mode/verify.py](verl-effective-sync-mode/verify.py) | #8032新反馈的六模块路由核对与原resolver两分支，[结果](verl-effective-sync-mode/result.json)区分标准V1 HYBRID=2／COLOCATED=1；无配置实例化／Ray初始化、权重同步或设备验收 | [配置后端与部署模式](../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#配置后端与部署模式) |
 | [verl-layered-base-sync/verify.py](verl-layered-base-sync/verify.py) | #8032八项原Mock回归的原生pytest，[结果](verl-layered-base-sync/result.json)核父版3拒绝项失败／head全过；一额外free-cache控制仅调用边界，非真实导出／内存或恢复 | [分层base同步guard](../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#分层导出与-base-重同步的拒绝边界) |
 | [verl-lora-plus-capability/verify.py](verl-lora-plus-capability/verify.py) | #7484原optimizer／engine方法的八项调用控制，[结果](verl-lora-plus-capability/result.json)分开默认绕过／opt-in缺helper／透传与日志；依赖为显式记录替身，无真实参数组或训练验收 | [LoRA+兼容条件](../notebook/frameworks/verl-architecture.md#lora-默认兼容与启用条件) |
