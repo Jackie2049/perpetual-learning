@@ -1,0 +1,93 @@
+# Speculative-for-RL 统一性能模型：理论骨架备忘（G3 转稿）
+
+> 专项：[rollout-performance-research.md](rollout-performance-research.md) §13.15 G3 的转稿成果（2026-10-29 M5）。
+> 状态：本地备忘（survey outline 备料的理论骨架），不写 survey 正文、不冻结 taxonomy、不构成上游动作（铁律只读）。
+> 用途：回答"为什么 spec 簇各报各的、无法横评"时，用本文三轴框架定位每篇缺哪一轴数据；未来建模型/设计受控实验时按 §4 清单补数据。
+
+## 1. 目的与结论
+
+speculative decoding 迁移到 RL rollout（spec-for-RL）已有多篇独立工作（§13.12 D11 spec 簇六篇 + §13.13 账中 T2 spec 家族），但**没有任何统一性能模型**把它们的收益表达式对齐。本文把证据盘点为三轴（接受率 × 陈旧性 × 长尾/批交互），给出统一模型骨架（理论提案，未验证），并列出每篇对齐该模型所缺的字段。
+
+**核心结论（负面证据 + 开放缺口）**：现有六篇 spec-for-RL 的指标分母互相不可换算（墙钟缩短% vs rollout 阶段缩短% vs tokens/s vs ms/token），接受率要么不报（Heddle/FP8-RL）、要么以不同口径报（BubbleSpec 平均接受长度含恢复/bonus token、EfficientRollout 按 iid 公式反推、DAS 自建模非普适），且**没有一篇同时报告接受率-位置曲线 × policy 版本差 × 批内轨迹分布**。因此三轴统一模型当前无法被任何一篇拟合；本文给出骨架与数据补全清单。
+
+## 2. 证据盘点：spec 簇六篇各报各的（§13.12 D11 账）
+
+| 论文 | 指标分母 | 数值 | 接受率口径 | 长度上限 | 硬件 |
+|---|---|---|---|---|---|
+| BubbleSpec 2605.08862v1 | 最慢 DP rank 墙钟（50 步平均） | 缩短 45.2/41.1/30.0% | 平均 accept length（含恢复/bonus token，≠纯 draft 接受数） | 48K/VL 64K | 8 GPU（型号未列） |
+| DAS 2511.13841v1 | 数学 rollout 时间 / 代码 rollout 时间 | >50% / ~25%（30 步） | 自建模 A(p)=k(1−exp(−αp/l))，作者明示非普适接受定律 | 16K | 1 节点 8 H100 / 2 节点 16 H100 |
+| EfficientRollout 2606.18967v2 | 主 rollout 缩短% / 全步缩短% | 24.2/17.1/11.2% / 15.6/10.6/7.3% | α 由实测 τ 按 iid 公式反推、分固定 γ 段加权（95.1–98.1%） | 8K | 8×A100-80GB |
+| Heddle 2603.28101v1 | rollout tokens/s（对 veRL/veRL*/Slime） | 1.4–2.3× / 1.1–2.4× / 1.2–2.5× | 不报接受率（调度/放置/资源三组件不可相乘） | 40K | 8 节点 64 Hopper（型号未列） |
+| ObsSpec 2610.15246v1 | agent 时延 / batch 时延 / async 吞吐（同篇三口径） | 9.3%/14.2%、4.4%/7.8%、+11.5% | observation match 66.45%（观测匹配率，**非 token 接受率**） | 16384/单轮 2048 | 8–16 GPU（型号未列） |
+| FP8-RL 2601.18150v2 | ms/token 与吞吐 | dense 10–20%、MoE 30–50% | 不报接受率（数值精度路径，非 draft 验证路径） | 20K | 8–16 H100（E2E 另 32 H100） |
+
+负载四轴（§13.12）跨篇不可对齐：长度上限 8K–64K 四档、响应 8–16（ObsSpec batch 65536 独立口径）、温度 .6–1 + top-p（FP8-RL rollout32×3×16 的 ×3 未释）、硬件 8–64 GPU 且三篇型号未列。
+
+T2 spec 家族定量账（§13.13 族Ⅰa/Ⅱ）补充：SRT≈1.64×、SpecActor 1.5–1.7×、RLHFSpec 1.47/1.42×、FastGRPO 2.35–2.72×、System-Integrated SD 1.35/1.41×、SPARK 2.31/2.11×、Online Draft Co-Training 1.16–1.88×、TLT 1.21–2.12×、S³R 1.39/1.35×、RollArt 2.05/1.35/1.31×、MTP-RL 1.30–2.24×（Ⅱa）、TailSieve routing 1.67×/叠 MTP 2.59×（Ⅱc）、ReSpec 峰值 4.53×、RhymeRL 最高 2.6×、DAPO SuffixDecoding 反慢（Ⅱa 负项）——同族内部亦不可互比（分母/基线/负载均不同）。
+
+## 3. 统一性能模型骨架（理论提案，未验证）
+
+### 3.1 单轨迹基线（经典 SD 数学，Leviathan 2211.17192 / Chen 2302.01318）
+
+draft 生成 k 个候选 token（每 token 成本 c_d），target 并行验证一次（成本 c_v），逐位置接受率 α。在 iid 近似下期望每验证轮接受 1/(1−α) 个 target token，单轨迹期望时间：
+
+```
+E[T_i] ≈ L_i · (k·c_d + c_v) / (1−ᾱ_i)
+```
+
+其中 ᾱ_i 为轨迹 i 的有效平均接受率；相对纯自回归（单 token 成本 c_t）的加速：
+
+```
+S_i = c_t / ((1−ᾱ_i)·(k·c_d/c_t + c_v/c_t))  ·  （分子为每 target token，分母为每验证轮成本）
+```
+
+该基线只含 L1 轴（token 级执行成本与接受率），不含 RL 特有轴。
+
+### 3.2 三轴扩展（本骨架的核心）
+
+**轴 1：接受率-位置曲线 α_i(t) 与轨迹长度交互。** α 随位置漂移（前缀易匹配、长轨迹尾部退化）；长轨迹（16K–64K）的成本由 α(t) 整条曲线而非单点 ᾱ 决定。BubbleSpec 的平均 accept length、EfficientRollout 的 iid 反推、DAS 的自建模都只是该曲线的某种压缩，口径互不换算（§2）。观测匹配（ObsSpec 66.45%）与 token 接受率是不同量，不可混用。
+
+**轴 2：policy 版本差（staleness）对 α 的侵蚀。** RL 每步更新 policy；draft 来源分三类，陈旧性语义不同：
+- 冻结 draft 模型（Medusa 骨干冻结等）：α 随 policy 漂移单调退化，无更新机制；
+- 当前 policy 量化/压缩 draft（EfficientRollout 每步 RTN W4、FP8-RL 真 FP8 policy）：紧跟版本，但引入数值失配（FP8-RL 需 token-level TIS 修正）；
+- 历史数据后缀树 draft（BubbleSpec/DAS/Seer/TailSieve）：树内容来自旧步骤，DAS 用滑窗 16/32 刷新降权旧匹配，但**无一篇报告 α 随版本差 v_gap 的量化曲线**。
+
+统一写法：ᾱ_i(v_gap) = ᾱ_i^fresh − Δ(v_gap)，Δ 依赖 draft 来源类型；ReSpec 式 drafter 联合 KD（只更新 drafter）使 draft 持续跟踪 target，属另一类——以训练成本换 α 维持，该成本须计入净收益（C 类边界，§4 训练侧）。
+
+**轴 3：批内轨迹分布与 sync makespan。** sync RL 的 T_rollout ≈ max_i T_i（§3 模型）：makespan 由**轨迹 i 的 T_i 分布的上端分位数**决定，不是批均值。即使批平均 ᾱ 高，α 方差大的轨迹成为 straggler 支配 makespan：
+
+```
+T_rollout^spec = max_i E[T_i]（含气泡），加速比 = max_i T_i^base / max_i T_i^spec ≠ 批均值加速比
+```
+
+EfficientRollout 的 active batch 单调缩小论证（短响应先完成、剩余长尾使 SD 更有利）正是轴 3 的正面利用；Heddle 的 tokens/s 吞吐指标看不见 makespan；DAS 以"长轨迹决定 makespan"为动机但报的是 rollout 时间缩短%，非整批 makespan。
+
+### 3.3 完整骨架表达式
+
+对同步 RL 的一个 rollout 批：
+
+```
+T_rollout^spec(B) ≈ max_{i∈B} [ L_i·(k·c_d(v_gap) + c_v) / (1−ᾱ_i(v_gap)) ] + 气泡项(B)
+```
+
+其中 c_d/c_v 本身可随批量大小与引擎重叠能力变化（小批量时 per-request 成本上升）。该式把三轴压缩为一个可拟合对象：**每篇论文只需补报 (α_i(t), v_gap, 批内长度分布) 三个字段即可对齐**。当前六篇均缺至少两字段。
+
+## 4. 对齐该模型所需数据清单（每篇缺什么）
+
+| 论文 | 缺接受率-位置曲线 | 缺版本差 | 缺批内分布 | 缺 metric 统一 |
+|---|---|---|---|---|
+| BubbleSpec | 平均 accept length 需分解为纯接受数（去恢复/bonus） | 未报测量时版本差 | 未报批内轨迹长度分布 | 墙钟缩短% 非倍数 |
+| DAS | A(p) 为自建模，需实测接受曲线 | 未报 | 未报 | rollout 时间缩短% 非整批 makespan |
+| EfficientRollout | iid 反推需原始 τ 序列 | 每步量化紧跟版本（好），未量化 Δ | 单调缩小论证需批内分布佐证 | 主 rollout 与全步双口径已分，缺整批 makespan |
+| Heddle | 完全不报 | 未报 | 未报 | tokens/s 吞吐 ≠ makespan |
+| ObsSpec | 观测匹配率 ≠ token 接受率 | 未报 | 未报 | 同篇三口径不可互比（§13.12） |
+| FP8-RL | 不适用（数值路径）| 每步同步权重+scale，数值失配量未报 | 未报 | ms/token 速率族 ≠ 整步 |
+
+验证路径：G8 算力恢复后可选 #6 FlashInfer（4090 kernel 级，§6.30）或 #2 vLLM（同栈锚点）做受控对比，采集上述三字段；在此之前模型骨架保持理论状态。
+
+## 5. 状态与用途
+
+- **状态**：理论骨架，开放缺口。现有条目数（六篇 spec-for-RL + ~20 篇 T2 spec 家族）不证明方向饱和——方向反而因"无统一模型"而开放。
+- **用途**：survey outline 备料时作为"speculative-for-RL 统一性能模型"主题的论据骨架（负面证据 = 各报各的 + 缺字段清单）；不写 survey 正文、不冻结 taxonomy。
+- **证据来源**：§13.12（D11 六篇负载/口径账）、§13.13（D12 统一可比性账）、§6.15–6.20（六篇 T1 深读）、§6.30 #13/#14（Leviathan/Chen 数学基础）。
+- 不新计深读、不扩库；126 身份 20/84/21/1、代码 12 路径/8 系统、复现 0 不变。
