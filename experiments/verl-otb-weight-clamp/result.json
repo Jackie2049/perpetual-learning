@@ -1,0 +1,303 @@
+{
+  "base_first_parent": "59f9a42c749a49793ee38298f3081beab43d79bc",
+  "head": "615aa6111ce0c5f3ef8ed3bb0614444d9a9223f3",
+  "environment": {
+    "python": "3.12.13",
+    "torch": "2.9.1",
+    "numpy": "2.0.2",
+    "device": "cpu",
+    "threads": 1
+  },
+  "source_sha256": {
+    "59f9a42c749a49793ee38298f3081beab43d79bc:verl/utils/torch_functional.py": "bc7ff798e2f5c06e0121668490739814efc519ff66d4d7dd7c8fc40b4840eb03",
+    "615aa6111ce0c5f3ef8ed3bb0614444d9a9223f3:verl/utils/torch_functional.py": "bc7ff798e2f5c06e0121668490739814efc519ff66d4d7dd7c8fc40b4840eb03",
+    "615aa6111ce0c5f3ef8ed3bb0614444d9a9223f3:tests/trainer/ppo/test_core_algos_on_cpu.py": "dbb7badb5d00fbf283fb83bdd9586b573084d56e4dce51c6e973d65a4996977d",
+    "59f9a42c749a49793ee38298f3081beab43d79bc:verl/trainer/ppo/core_algos.py": "369b614f239f237a04a38a40b1877cd6fd14aa7bd5f9ff4fe4d7758b682a6948",
+    "59f9a42c749a49793ee38298f3081beab43d79bc:verl/trainer/ppo/metric_utils.py": "d857834a6593301ad932ce2fd2e41e781ee140d0f1dafcfe157b97a0625e847f",
+    "615aa6111ce0c5f3ef8ed3bb0614444d9a9223f3:verl/trainer/ppo/core_algos.py": "51744a7ae970641be06ae1e10c6a9a708620d3018e3f434e198320c298d2e10b",
+    "615aa6111ce0c5f3ef8ed3bb0614444d9a9223f3:verl/trainer/ppo/metric_utils.py": "63526ad98838f8221669142c8a96ac9c24c66a4f74c64a8239edcaa9716b6093"
+  },
+  "original_test_parameter_bodies": {
+    "base": {
+      "compute_optimal_token_baseline_advantage": {
+        "passed": false,
+        "error": "Baselines outside [0, 1]: tensor([[1.0003, 1.0002],\n        [1.0003, 1.0002],\n        [1.0003, 1.0002],\n        [1.0003, 1.0002]])"
+      },
+      "compute_multi_turn_optimal_token_baseline_advantage": {
+        "passed": false,
+        "error": "Baselines outside [0, 1]: tensor([[1.0003, 1.0002],\n        [1.0003, 1.0002],\n        [1.0003, 1.0002],\n        [1.0003, 1.0002]])"
+      }
+    },
+    "candidate": {
+      "compute_optimal_token_baseline_advantage": {
+        "passed": true
+      },
+      "compute_multi_turn_optimal_token_baseline_advantage": {
+        "passed": true
+      }
+    }
+  },
+  "constructed_negative_weight_witness": {
+    "raw_w": -0.00000762939453125,
+    "results": {
+      "base": {
+        "compute_optimal_token_baseline_advantage": {
+          "baseline": [
+            [
+              1.0003278255462646,
+              1.0001639127731323
+            ],
+            [
+              1.0003278255462646,
+              1.0001639127731323
+            ],
+            [
+              1.0003278255462646,
+              1.0001639127731323
+            ],
+            [
+              1.0003278255462646,
+              1.0001639127731323
+            ]
+          ]
+        },
+        "compute_multi_turn_optimal_token_baseline_advantage": {
+          "baseline": [
+            [
+              1.0003278255462646,
+              1.0001639127731323
+            ],
+            [
+              1.0003278255462646,
+              1.0001639127731323
+            ],
+            [
+              1.0003278255462646,
+              1.0001639127731323
+            ],
+            [
+              1.0003278255462646,
+              1.0001639127731323
+            ]
+          ]
+        },
+        "metrics_dict_adapter": {
+          "variance_proxy/proxy1_signal_strength": 0,
+          "variance_proxy/proxy2_total_power": 0,
+          "variance_proxy/proxy3_pure_noise": 0,
+          "variance_proxy/expected_a_squared": 1,
+          "variance_proxy/expected_w": -0.00000762939453125
+        }
+      },
+      "candidate": {
+        "compute_optimal_token_baseline_advantage": {
+          "baseline": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ]
+          ]
+        },
+        "compute_multi_turn_optimal_token_baseline_advantage": {
+          "baseline": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              0
+            ]
+          ]
+        },
+        "metrics_dict_adapter": {
+          "variance_proxy/proxy1_signal_strength": 0,
+          "variance_proxy/proxy2_total_power": 0,
+          "variance_proxy/proxy3_pure_noise": 0,
+          "variance_proxy/expected_a_squared": 1,
+          "variance_proxy/expected_w": 0
+        }
+      }
+    }
+  },
+  "same_logits_precision_control": {
+    "logits_shape": [
+      4,
+      1,
+      128
+    ],
+    "selected_logit": 14,
+    "other_logits": 0,
+    "selected_label": 0,
+    "old_log_probs": [
+      [
+        -0.00010585784912109375
+      ],
+      [
+        -0.00010585784912109375
+      ],
+      [
+        -0.00010585784912109375
+      ],
+      [
+        -0.00010585784912109375
+      ]
+    ],
+    "sum_pi_squared": [
+      [
+        0.9997882843017578
+      ],
+      [
+        0.9997882843017578
+      ],
+      [
+        0.9997882843017578
+      ],
+      [
+        0.9997882843017578
+      ]
+    ],
+    "fp32_raw_w": [
+      [
+        0
+      ],
+      [
+        0
+      ],
+      [
+        0
+      ],
+      [
+        0
+      ]
+    ],
+    "fp64_direct_w": [
+      [
+        1.1237675199770874e-8
+      ],
+      [
+        1.1237675199770874e-8
+      ],
+      [
+        1.1237675199770874e-8
+      ],
+      [
+        1.1237675199770874e-8
+      ]
+    ],
+    "epsilon": 1e-8,
+    "returns": 1,
+    "fp64_reference_baseline": [
+      0.8180186994054354
+    ],
+    "results": {
+      "base": {
+        "compute_optimal_token_baseline_advantage": {
+          "baseline": [
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ]
+          ],
+          "max_abs_error_vs_fp64_reference": 0.8180186994054354
+        },
+        "compute_multi_turn_optimal_token_baseline_advantage": {
+          "baseline": [
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ]
+          ],
+          "max_abs_error_vs_fp64_reference": 0.8180186994054354
+        }
+      },
+      "candidate": {
+        "compute_optimal_token_baseline_advantage": {
+          "baseline": [
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ]
+          ],
+          "max_abs_error_vs_fp64_reference": 0.8180186994054354
+        },
+        "compute_multi_turn_optimal_token_baseline_advantage": {
+          "baseline": [
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ],
+            [
+              0
+            ]
+          ],
+          "max_abs_error_vs_fp64_reference": 0.8180186994054354
+        }
+      }
+    }
+  },
+  "scope": {
+    "original_estimator_test_parameters": 2,
+    "metrics_input_adapter": "SimpleNamespace(batch=dict), not DataProto or original metrics test",
+    "logprob_path": "original logprobs_from_logits_v2, float32 branch; no fused dispatch",
+    "not_run": [
+      "native pytest collection",
+      "full suite",
+      "DataProto integration",
+      "trainer",
+      "models",
+      "GPU/NPU",
+      "performance",
+      "training quality"
+    ]
+  }
+}

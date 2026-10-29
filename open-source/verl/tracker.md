@@ -39,6 +39,8 @@
 
 2026-10-30核[Minerva装饰边界](#minerva-装饰的已有候选)：#8450已有作者与bot反馈；21原测试体候选全过／基线14断言失败，但八个本地控制复核末尾星号误删／跨行标签及后备可达性，不作整体安全或训练验收，不另修复／发布。
 
+2026-10-30核[OTB非负截断](#otb-非负截断的已有候选)：#8444已有作者且明示精度限制；原两OTB参数体候选过、同源logits仍有0与FP64参考0.818的偏离，指标dict适配非DataProto验收，不另实现／发布。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -58,6 +60,12 @@
 2026-10-26只读[#8323](https://github.com/verl-project/verl/pull/8323)新head1787d6a2／base祖先174888fc，OPEN／非draft／未合并，ahead2／behind0，20文件872增21删。旧4e93已分叉，整仓比较ahead23／behind2包含多项main变化，不记成本PR新增。作者新[sleep解释](https://github.com/verl-project/verl/pull/8323#issuecomment-6416461545)及维护者引擎侧修复问题不当接口批准或本项目认领。
 
 [原Worker专题](../../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#新版的显式清理与-sleep-路径)对照固定vLLM0.32.0 commit5df63a72：salt显式clear传False，abort适配mode=abort后单独清local；sleep(level≥1)仍经_finish_pause／_reset_caches默认True请求connector reset。实际删除由connector.reset_cache实现决定，不应写成所有store清空或必然完整保留。已有原生release_kv_cache_memory也走默认reset，不能仅凭方法名替换。四完整源码AST／compile及scheduler方法只读，无pause／sleep／connector／模型执行，旧helper结果与作者0.29 GPU报告均不迁作新组合验收；只修原M5条件参考，无新队列／补丁／专项或社区写入。
+
+## OTB 非负截断的已有候选
+
+2026-10-30读取EvanZhuang的OPEN／非draft [#8444](https://github.com/verl-project/verl/pull/8444)，head615aa611、唯一父提交59f9a42c；读取时reviews／行内comments均为空，不推定人工批准。三处权重加非负截断已有作者，正文也已说明精度仍受舍入支配，不另认领或把独立复核当新发现。
+
+[原算法专题](../../notebook/frameworks/verl-grpo-core-algos-reading.md#otb-权重非负与基线精度)与[CPU结果](../../experiments/verl-otb-weight-clamp/result.json)保存两原OTB参数体（基线均断言失败／候选通过）、原指标函数的dict容器适配、同源logits的FP64直接平方范数参考。负权重反例首步baseline由1.00032783变0；但已舍入为零的权重两版均不恢复，另一控制baseline仍0而参考约0.818。指标expected_w恢复非负，proxy2两版均0；不扩大成实际梯度方差或训练质量修复。非DataProto原测试、完整pytest、fused kernel或GPU验收，不组合其他OTB候选、新排M5任务或改作者代码；上游及既有PR-head一切写入仍待用户对具体动作明确同意。
 
 ## Minerva 装饰的已有候选
 

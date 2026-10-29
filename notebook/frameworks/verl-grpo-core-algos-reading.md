@@ -1,5 +1,7 @@
 # verl GRPO Training Core Algorithms — core_algos.py 源码深度阅读
 
+2026-10-30接续：[OTB 权重非负与基线精度](#otb-权重非负与基线精度)核#8444：原两参数测试体候选通过，截断能修负权重，但同源logits控制的基线仍由0偏离FP64参考约0.818；非负性、精度与训练收益分别判断。
+
 2026-10-26接续：[k3 近零消去与拒绝阈值](#k3-近零消去与拒绝阈值)复查已有#8386：原新增20参数项基线12过8失败／候选全过；同一长序列夹具从错误保留转为拒绝，仍不是完整训练或GPU验收。
 
 > 2026-06-07 | 2487行源码分析: 14种Advantage Estimator + 10种Policy Loss + 注册表架构
@@ -13,6 +15,32 @@
 2026-10-26接续：[估计器附加字段与样本有效性](#估计器附加字段与样本有效性)区分注册扩展、数据透传和统计过滤；#7473已有候选，V1读取范围仍是独立条件。
 
 2026-10-26接续：[平方概率分块与空输入梯度](#平方概率分块与空输入梯度)核#8365新23d891cd：原测试补空行反向及非正chunk拒绝，新版18项通过／旧版13过5失败；撤回当前版本的旧边界风险，CPU结果仍不认证GPU峰值。
+
+## OTB 权重非负与基线精度
+
+**把负权重截成零能恢复符号约束，不能恢复已丢失的概率信息。** EvanZhuang的[#8444](https://github.com/verl-project/verl/pull/8444)在两个OTB估计器及W-score指标共三处加`.clamp_min(0)`；2026-10-30核为OPEN／非draft，head `615aa6111ce0c5f3ef8ed3bb0614444d9a9223f3`，本节基线取其唯一父提交 `59f9a42c749a49793ee38298f3081beab43d79bc`。不把它与[#8364接线](#v1-的-otb-统计接线与策略身份)、[#8365分块](#平方概率分块与空输入梯度)或logprob精度提案拼成已验收组合。
+
+设被选token的概率为`p`、完整分布概率平方和为`s`。精确算术中，`w=1−2p+s=(1−p)²+Σ_other π²≥0`。高置信token的真实`w`很小，而`p`与`s`经过不同的浮点计算；展开式可能暴露输入舍入误差，使路径累计权重下降甚至为负。原测试直接构造`old_log_probs=0`和`s=1−2⁻¹⁷`，并非从同一归一化分布导出；它定位下游防护，不证明该输入对在实际模型上的发生频率。
+
+本机Python3.12.13／torch2.9.1／NumPy2.0.2、单线程CPU，[复查脚本](../../experiments/verl-otb-weight-clamp/verify.py)执行两版完整原估计器、指标函数与原masked helper。原OTB测试体保留断言并展开两个估计器参数；指标另用`SimpleNamespace(batch=dict)`容器适配，**不是原DataProto测试或原生pytest收集**。[逐项结果及七份源码hash](../../experiments/verl-otb-weight-clamp/result.json)分别保存：
+
+| 控制 | 父版 | 候选 | 所支持的结论 |
+| --- | --- | --- | --- |
+| 原两OTB参数体，4轨迹×2token、return均1 | 两项断言失败；baseline首步1.00032783、次步1.00016391 | 两项通过；baseline均0 | 消除所测负权重造成的越界，不是恢复baseline=1 |
+| 原指标函数接同值dict适配输入 | expected_w约−7.63e−6 | expected_w=0 | 指标的平方范数符号恢复；两版proxy2_total_power原本均0，不能说此前所有proxy均负 |
+| 同源FP32 logits，4轨迹×1token×128词，选中logit14／其他0，return均1 | 权重与baseline均0 | 同样均0 | 截断对已舍入成零的权重不起作用 |
+
+第三项不手填logprob／平方和：两者来自[原`logprobs_from_logits_v2`的FP32分支与平方和helper](https://github.com/verl-project/verl/blob/615aa6111ce0c5f3ef8ed3bb0614444d9a9223f3/verl/utils/torch_functional.py)。同一logits转FP64后以直接平方范数求参考，每轨迹权重约`1.12377e−8`，按同一`epsilon=1e−8`计算`4w/(4w+epsilon)≈0.81801870`；两版原OTB的baseline都是0。这里的FP64参考保留了原epsilon，**不是拿无正则的1与有epsilon的实现比较**；它是小型人工分布的CPU控制，非模型分布或训练质量实测。作者正文已明确截断不修精度，本项只是独立复核该边界，不计为新漏洞。
+
+基线公式`B=ΣG_iW_i/(ΣW_i+epsilon)`在非负有限权重、正epsilon及有效归约的代数条件下，是给原点额外epsilon权重的均值。因而**return-to-go**在[0,1]时B也在[0,1]；不能把“每个token奖励在[0,1]”替代这个前提，也不能推广成B总在原returns最小／最大值之间——当它们全为正或全为负时，向0收缩可越过该区间。基线为0也不等于优势为0，本例return为1时优势仍1。
+
+复现需要本地已缓存上述固定Git blob；脚本禁止隐式fetch，不修改源仓库：
+
+```bash
+python3.12 -B experiments/verl-otb-weight-clamp/verify.py /path/to/verl-git
+```
+
+只移除注册／pytest装饰器并延后注解，未重写生产函数体；未导入设备发现、fused dispatcher、DataProto、trainer或模型。作者64／7项套件与大型BF16样本报告不计为本机结果。至此收束，候选实质修订或真实需求再接续，不修改作者方案、新排M5训练或写社区；所有上游／既有PR-head写入仍逐项待用户明确授权。
 
 ## V1 的 OTB 统计接线与策略身份
 
