@@ -1,0 +1,34 @@
+{
+  "revision": "b7fca1bf72c9ef488595af2ade0b28f95ad00e5e",
+  "python": "3.12.14",
+  "source_sha256": {
+    "verl/trainer/ppo/v1/trainer_base.py": "293af89dab738cc57a67a8cc730f3337622685e29d96dfdd2e9af1e6fc2144e8",
+    "verl/checkpoint_engine/base.py": "97b51131a5770892007b7fb07264a2657fe83255b085927acd08c952a5682f64",
+    "verl/workers/rollout/llm_server.py": "a31a51faf3bc7a877628eff52917cb442b1d3e17ae5249a7f3cdbc9282a45e96",
+    "verl/workers/rollout/replica.py": "d0896c19a4b22d052c93dcb9f48c86b5e010c3edcc76b2a2a58899f28525cdf9",
+    "verl/workers/rollout/vllm_rollout/vllm_async_server.py": "0bbf862b0cdb4dcb132e0dbcd99e73996161dd9acf9779fcf4d007c4a2a29d0b",
+    "verl/utils/config.py": "6bd50c96392a845bb92c092a4460f14ad863669b13a4c4c4b2aacb3bf404dac7"
+  },
+  "static_source_facts_not_runtime": {
+    "manager_config_creation": "checkpoint_engine_config = omega_conf_to_dataclass(self.config.actor_rollout_ref.rollout.checkpoint_engine)\ncheckpoint_engine_config.backend = \"naive\"\nself.checkpoint_manager: CheckpointEngineManager = CheckpointEngineManager(\n            config=checkpoint_engine_config,\n            actor_wg=self.actor_rollout_wg,\n            replicas=self.llm_server_manager.get_replicas(),\n        )",
+    "replica_mode_selection": "if self.worker_group and self.rollout_config.name != \"trtllm\":\n            await asyncio.gather(*[server.init_hybrid(self.worker_group) for server in self.rollout_replicas])\n        # TODO: unify trtllm to init_hybrid\n        elif self.worker_group and self.rollout_config.name == \"trtllm\":\n            await asyncio.gather(\n                *[\n                    server.init_hybrid_colocated(self.worker_group, self.rollout_resource_pool)\n                    for server in self.rollout_replicas\n                ]\n            )\n        else:\n            await asyncio.gather(*[server.init_standalone() for server in self.rollout_replicas])",
+    "manager_dispatch": "if self.backend == \"naive\":\n            ray.get(self.actor_wg.update_weights(global_steps=global_steps, mode=self.backend))\n            return {}"
+  },
+  "original_resolver_fixture_results": {
+    "HYBRID": {
+      "configured_backend": "nccl",
+      "resync_base": true,
+      "mtp_enabled": false,
+      "npu_capability_fixture": false,
+      "level": 2
+    },
+    "COLOCATED": {
+      "configured_backend": "nccl",
+      "resync_base": true,
+      "mtp_enabled": false,
+      "npu_capability_fixture": false,
+      "level": 1
+    }
+  },
+  "scope": "Source wiring plus original Enum/resolver only; no native config conversion, trainer/actor/Ray construction, sleep, weight sync, GPU memory or performance validation"
+}

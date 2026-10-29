@@ -1,6 +1,6 @@
 # verl Worker 生命周期与 Ray 分布式架构源码阅读
 
-2026-10-30接续：[分层导出与base重同步的拒绝边界](#分层导出与-base-重同步的拒绝边界)核#8032新guard；原8项Mock回归候选全过／父版3项未拒绝，不等真实权重释放、恢复或异常回滚验收。
+2026-10-30接续：[分层导出与base重同步的拒绝边界](#分层导出与-base-重同步的拒绝边界)核#8032新guard；原8项Mock回归候选全过／父版3项未拒绝，不等真实权重释放、恢复或异常回滚验收。另核[后端与部署模式](#配置后端与部署模式)：标准V1的vLLM路径是HYBRID，不能仅因物理同卡部署就套用COLOCATED分支反馈。
 
 2026-10-26接续：[MLflow 初始化的文件锁与异常范围](#mlflow-初始化的文件锁与异常范围)核#8393新f1dd14b：with管理句柄不缩小异常捕获；原三控制仍出现回调ImportError后无锁重试。trainer初始化另无同锁，不把局部串行化当整个启动流程互斥。
 
@@ -39,6 +39,24 @@ python3.12 -B experiments/verl-layered-base-sync/verify.py /path/to/verl-git
 ```
 
 本题确认的是已有guard及调用顺序，不构成resync_base节约内存、真实权重恢复、sleep／wake正确性或吞吐验收。PR正文对vLLM丢弃base、SGLang保留CPU备份的区分仍是作者特性说明，本轮不把它改写成跨后端实测。未执行另两份SGLang／MTP原测试、安装引擎或新排M5算力；不改作者方案／依赖或接管M5专项。后续仅在实质接口／反馈变化时再核，社区写入和既有PR-head推送仍逐项待用户授权。
+
+### 配置后端与部署模式
+
+**输入后端、实际同步方式和RolloutMode不是同一个字段。** 2026-10-30接同一head b7fca1bf的新[bot反馈](https://github.com/verl-project/verl/pull/8032#pullrequestreview-5705209319)：它称V1只将manager配置改成naive，server保留原非naive配置，所以每次sleep都会在COLOCATED保护分支返回1。前半段有源码依据，但后半段还需要证明server实际处于COLOCATED，不能只凭进程在同一GPU上共置。
+
+固定[trainer基类_setup](https://github.com/verl-project/verl/blob/b7fca1bf72c9ef488595af2ade0b28f95ad00e5e/verl/trainer/ppo/v1/trainer_base.py)先用原config和actor worker group创建LLMServerManager，再转换checkpoint配置、将其backend设为naive并创建CheckpointEngineManager。[转换函数](https://github.com/verl-project/verl/blob/b7fca1bf72c9ef488595af2ade0b28f95ad00e5e/verl/utils/config.py)对DictConfig／dict的带_target_路径调用Hydra instantiate；对已经是对象的输入则直接返回。本轮只核源码，没有用假deepcopy替代转换，也没有实测对象身份或完整配置实例化。
+
+| 消费方 | 固定源码实际读取或传递 |
+|---|---|
+| CheckpointEngineManager | backend来自转换后被设为naive的配置；[update_weights](https://github.com/verl-project/verl/blob/b7fca1bf72c9ef488595af2ade0b28f95ad00e5e/verl/checkpoint_engine/base.py)显式传 `mode=self.backend` 给actor |
+| ActorRolloutRefWorker | 显式mode优先于自己config中的backend；manager传naive时走naive路径，不需要原输入backend也变为naive |
+| 标准V1的vLLM replica／server | [LLMServerManager](https://github.com/verl-project/verl/blob/b7fca1bf72c9ef488595af2ade0b28f95ad00e5e/verl/workers/rollout/llm_server.py)收到worker_group且name非trtllm时调用init_hybrid；[RolloutReplica](https://github.com/verl-project/verl/blob/b7fca1bf72c9ef488595af2ade0b28f95ad00e5e/verl/workers/rollout/replica.py)在该入口明确设HYBRID，再把配置／模式传给server |
+
+这里限定普通V1同步训练、默认vLLM replica、无PD／自定义初始化覆盖。server的[resolver](https://github.com/verl-project/verl/blob/b7fca1bf72c9ef488595af2ade0b28f95ad00e5e/verl/workers/rollout/vllm_rollout/vllm_async_server.py)只有 `rollout_mode == COLOCATED` 且配置backend非naive时才提前返回1。HYBRID虽然也物理共享GPU，却不满足这个枚举条件。因此**该反馈不能证明标准V1路径因这项保护而总是返回1**；自定义COLOCATED调用方是否存在配置不一致，仍需其具体构造路径，不能反向据此宣称全PR安全。
+
+Python3.12.14／标准库，直接执行完整原RolloutMode枚举及完整原resolver，两次固定输入均为adapter模式、resync_base=True、backend=nccl、MTP关闭、NPU能力显式False替身：HYBRID得到2，COLOCATED得到1。未导入Torch／Ray或发现设备，未执行trainer、配置转换、replica/server初始化、sleep／权重更新或性能测量。上轮八回归未重跑；本轮两分支也不替代真实GPU的恢复条件。
+
+[复核脚本](../../experiments/verl-effective-sync-mode/verify.py)与[结果](../../experiments/verl-effective-sync-mode/result.json)保存六源文件SHA256、原manager创建／dispatch／replica分支片段及两项输出。六模块仅AST／compile，运行禁止隐式fetch；复跑JSON一致。命令为 `python3.12 -B experiments/verl-effective-sync-mode/verify.py /path/to/verl-git`。已有作者与公开反馈，本项目只记录前提核查，不跟随bot实施改后端／取消保护，不对外回复或另排M5任务。
 
 ## MLflow 初始化的文件锁与异常范围
 

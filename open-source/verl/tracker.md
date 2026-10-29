@@ -49,6 +49,8 @@
 
 2026-10-30核[分层base同步guard](#分层-base-重同步的已有拒绝条件)：#8032已有作者，新8项原Mock回归候选全过／父版3项未拒绝；guard前仍可有resume等调用，不等全流程回滚／真实权重或内存验收，不另实现／排算力。
 
+2026-10-30复核[同步后端与部署模式](../../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#配置后端与部署模式)：#8032同head的新bot反馈不能直接成立于标准V1 vLLM路径；后者init_hybrid，不等COLOCATED。原resolver两分支结果2／1仅条件控制，未跑初始化／权重同步，不据此改策略或发布。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -70,6 +72,8 @@
 [原Worker专题](../../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#新版的显式清理与-sleep-路径)对照固定vLLM0.32.0 commit5df63a72：salt显式clear传False，abort适配mode=abort后单独清local；sleep(level≥1)仍经_finish_pause／_reset_caches默认True请求connector reset。实际删除由connector.reset_cache实现决定，不应写成所有store清空或必然完整保留。已有原生release_kv_cache_memory也走默认reset，不能仅凭方法名替换。四完整源码AST／compile及scheduler方法只读，无pause／sleep／connector／模型执行，旧helper结果与作者0.29 GPU报告均不迁作新组合验收；只修原M5条件参考，无新队列／补丁／专项或社区写入。
 
 ## 分层 base 重同步的已有拒绝条件
+
+2026-10-30同head再接[backend传播bot反馈](https://github.com/verl-project/verl/pull/8032#pullrequestreview-5705209319)，不重跑原八项。manager确实从转换配置强制naive并显式传actor mode，但标准V1 vLLM通过LLMServerManager走init_hybrid，COLOCATED才触发的非naive保护不能直接套用。六模块源码／语法与[原resolver两分支](../../experiments/verl-effective-sync-mode/result.json)确认同配置HYBRID=2／COLOCATED=1，NPU为False替身；不作为完整初始化／GPU或全PR验收，也不把bot建议直接改成补丁。详见[配置与模式小节](../../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#配置后端与部署模式)，等待作者／维护者基于具体调用方澄清，不另排算力或对外回复。
 
 2026-10-30接HollowMan6的OPEN／非draft [#8032](https://github.com/verl-project/verl/pull/8032)，headb7fca1bf，guard直接父版c0b1c7c3；PR整体13文件229增22删不等guard单提交范围。[新bot反馈](https://github.com/verl-project/verl/pull/8032#pullrequestreview-5704512750)已有作者后续，不另修复。naive路径下分层导出只要需要base就拒绝，含resync=False的首次base；不是实现对该组合的支持。
 
