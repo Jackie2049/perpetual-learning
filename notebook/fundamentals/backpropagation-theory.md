@@ -2,6 +2,8 @@
 
 > 2026-06-07 | AI专家必修: 理解"神经网络如何学习"的数学本质
 
+2026-10-30修正：[优势标准化与两种裁剪](#优势标准化与两种裁剪)撤回“GRPO不需要梯度裁剪”的旧结论。优势尺度、策略ratio和参数梯度范数是不同量；原生CPU反例与固定verl FSDP源码分开记录，不作为训练配方或性能建议。
+
 ## 概述
 
 反向传播(Backpropagation)是神经网络训练的核心算法。本文从数学角度深度分析BP——从链式法则到计算图，从梯度消失/爆炸到LLM训练的实践影响。
@@ -145,8 +147,8 @@ ReLU: ReLU'(x) = 1 if x>0, 0 if x≤0
    if ||∇L|| > threshold:
      ∇L = ∇L × (threshold / ||∇L||)  ← 缩放到threshold
 
-   → PPO用梯度裁剪(但不是这个) → PPO的clip是ratio裁剪, 不是梯度裁剪
-   → GRPO不需要梯度裁剪 → 组归一化自然控制梯度大小(A=(r-μ)/σ → σ归一化!)
+   → PPO/GRPO的surrogate ratio clipping与参数梯度范数裁剪可同时使用
+   → 优势标准化不约束模型的log-prob雅可比，不能替代梯度范数裁剪
    ```
 
 2. **权重初始化**:
@@ -167,6 +169,40 @@ ReLU: ReLU'(x) = 1 if x>0, 0 if x≤0
      LN归一化每个token → 不依赖batch → 训练和推理一致
    → RMSNorm: LN的简化版 → 不减均值 → 计算更快 → 我们实测9x加速!
    ```
+
+#### 优势标准化与两种裁剪
+
+**标准化优势不等于标准化参数梯度。** 固定采样动作的策略梯度含`A × ∇θ log πθ(a)`；即使A的总体标准差为1，模型的参数化、输入及归约仍会影响第二项。PPO ratio clipping对当前／旧策略的概率比和优势符号起作用，不是对这个雅可比或最终梯度范数设上限；ratio=1时也可能有很大梯度。
+
+真实CPU小控制令二动作logits=`scale × θ`、θ初值[0,0]，两个样本分别取动作0和1、优势[1,−1]。两个尺度下初始分布相同、ratio均1、优势总体std均1，surrogate标量都为0；梯度分别为[−0.5,0.5]与[−50,50]，范数0.70710678与70.71067812。**零标量loss也不等于零梯度。** 对后者调用`clip_grad_norm_(max_norm=1)`后范数约0.999999986，函数返回的却是裁剪前70.71067812。逐元素clamp到[−1,1]只得到[−1,1]、范数√2，亦不是全局L2范数裁剪。
+
+下面是本例完整复查代码，使用Python3.12.13／Torch2.9.1、CPU FP64；总体std只是该显式小输入的口径，不冒充某框架所有优势归一化选项：
+
+```python
+import math
+import torch
+torch.set_num_threads(1)
+for scale in (1.0, 100.0):
+    theta = torch.zeros(2, dtype=torch.float64, device="cpu", requires_grad=True)
+    advantage = torch.tensor([1.0, -1.0], dtype=torch.float64, device="cpu")
+    logp = (scale * theta).log_softmax(0)
+    ratio = (logp - logp.detach()).exp()
+    loss = -torch.minimum(ratio * advantage, ratio.clamp(0.8, 1.2) * advantage).mean()
+    loss.backward()
+    before = theta.grad.detach().clone()
+    assert advantage.std(correction=0).item() == 1 and loss.item() == 0
+    assert torch.equal(ratio, torch.ones_like(ratio))
+    torch.testing.assert_close(before, torch.tensor([-scale / 2, scale / 2], dtype=torch.float64))
+    reported = torch.nn.utils.clip_grad_norm_([theta], max_norm=1.0, foreach=False)
+    assert math.isclose(reported.item(), scale / math.sqrt(2))
+    assert theta.grad.norm().item() <= 1
+    assert torch.equal(theta.detach(), torch.zeros_like(theta))
+    if scale == 100:
+        assert before.clamp(-1, 1).norm().item() > 1
+    print(scale, before.tolist(), reported.item(), theta.grad.norm().item())
+```
+
+这是真实autograd与原生[PyTorch clip_grad_norm_](https://github.com/pytorch/pytorch/blob/5811a8d7da873dd699ff6687092c225caffcf1bb/torch/nn/utils/clip_grad.py)，ratio surrogate为本地转写，未运行原verl loss、optimizer、模型或训练；本例不是推荐阈值1，也没有比较训练质量。固定[verl 321e4e45的FSDPEngine.optimizer_step](https://github.com/verl-project/verl/blob/321e4e450fcfc47a3491c946cd01dacd9ea7281a/verl/workers/engine/fsdp/transformer_impl.py)在有scaler时先unscale，再按FSDP／FSDP2／普通module路径裁剪梯度，随后step或处理非有限范数；这里只读源码，不认证分片归约或AMP运行。此前“PPO只有ratio clip／GRPO无需梯度裁剪”的概括由此撤回，不能按算法名称决定删掉训练中的裁剪。
 
 ### 3.3 梯度流分析
 

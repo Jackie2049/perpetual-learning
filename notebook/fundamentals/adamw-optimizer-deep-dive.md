@@ -161,6 +161,8 @@ AdamW vs AdaFactor:
 
 优化器、优势归一化、梯度范数裁剪与策略ratio clipping是不同层次。GRPO的组内标准化不等于梯度裁剪，也没有因此取消ratio clip；[DeepSeekMath原论文式3](https://arxiv.org/html/2402.03300v3#S4.SS1.SSS1)明确保留min/clip surrogate。PPO是否归一化优势由具体实现决定，不能单从GAE名称判断。
 
+见[优势标准化与两种裁剪的CPU反例](backpropagation-theory.md#优势标准化与两种裁剪)：相同标准化优势与ratio=1，改变参数到logits的尺度仍使梯度范数增100倍；范数裁剪返回的是裁剪前值，不能把该返回值当裁剪后约束失效。
+
 学习率、weight decay及clip阈值要随模型、奖励尺度与更新配置核对。SFT初始化不意味着已接近RL目标最优点，不能从该前提推出所有任务必须用同一个学习率区间或norm=1.0；裁剪也不保证消除reward hacking。
 
 ## 五、Adam 的预条件不等于自然梯度
