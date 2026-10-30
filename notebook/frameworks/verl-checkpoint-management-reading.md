@@ -538,7 +538,17 @@ ray_trainer.py (974-1108):
 
 #### 正常退出与边界反馈
 
-RL legacy／V1在步边界非阻塞progress，最后步返回前和正常循环耗尽后blocking finalize；这不是任意异常／进程终止都必经的finally。10-30新bot反馈要求SFT循环后drain，不能仅因没搜到尾部调用就断定普通epoch耗尽必漏：两SFT fit已有`global_step >= min(total_training_steps, steps_per_epoch * total_epochs)`判最后步，并将`blocking=is_last_step`传给save。这里仅源码，不证明异常短迭代器、提前break或故障退出均已覆盖，也不据bot提示修改候选或发布反馈。
+RL legacy／V1在步边界非阻塞progress，最后步返回前和正常循环耗尽后blocking finalize；这不是任意异常／进程终止都必经的finally。两SFT fit已有`global_step >= min(total_training_steps, steps_per_epoch * total_epochs)`判最后步，并将`blocking=is_last_step`传给save，因此不能仅因循环后无drain就断定普通训练必漏尾部保存。反过来，该判断也不保证恢复耗尽游标后仍能到达最后一步。
+
+#### 恢复边界与异步 drain 的不同责任
+
+2026-10-30 07:13:58Z，[作者新回复](https://github.com/verl-project/verl/pull/8056#issuecomment-6517157160)明确报告：已在SPMD／Ray两SFT循环复现epoch-boundary恢复问题，并以真实StatefulDataLoader、训练／I/O替身的隔离CPU harness验证[#7974](https://github.com/verl-project/verl/pull/7974)；但它尚未合并或集成进#8056，所以当前head仍可复现。这是**作者的人工复现报告**，比此前bot线索更明确，但不是本轮独立运行或维护者批准。
+
+固定#8056 c76d46ea的[handler](https://github.com/verl-project/verl/blob/c76d46ea6474f9fc9837a469c2ab74b58d921bbc/verl/utils/checkpoint/checkpoint_handler.py)仍直接load_state_dict；两SFT构造调用也未传steps_per_epoch。静态核对支持“未集成#7974的边界策略”。问题条件是保存时位于epoch末、恢复了耗尽状态，外层却已按global_step进入下一epoch；在既有SFT采样器条件下，会跳空该epoch，可能未执行足够更新而到不了is_last_step。尾部drain即使等待完已排队快照，也不能补回跳过的训练更新；**恢复样本进度**与**等待异步写入完成**不能相互替代。
+
+#7974本次head `93f1763a219b5efa819c60e20bbf5bdb41f36d10`、API目标base `6f3f449e113b7eb84eef8c0912aad33ffdd322cd`，仍OPEN／非draft、未合并。对旧cfad9696与新93f1763a的共享handler构造／_at_epoch_boundary／_load_dataloader_state，以及两SFT _build_ckpt_handler，去除docstring后的AST全部相同；仍按当前epoch长度取模，不新增旧长度元数据。两head的Ray fit还含token求和／val_loss构造设备变化，故不能说整份文件或整个PR“只有文档变化”。本次PR文件列表仍无V1生产修改，旧正文声称覆盖V1及对#7402的比较仍须看下方[版本限定](#sft-与-v1-的恢复顺序)。
+
+本轮只编译旧cfad、新93f及#8056三个版本的上述三模块，共九Python输入，并做指定方法AST／调用关键字检查；没有运行生产方法、旧19项恢复测试、八组driver控制或作者新harness，也不把这些历史结果迁移成93f整栈通过。新93f三输入SHA256依次为handler `f304df3b83556648faeb91bb77f6815970bd27b27f4c32f4e1cd4b6ff4ed838d`、SPMD `dbef9ee5b4e35eb099c822492b853c848a74713e89636741779228109f02e58e`、Ray `d017a6a15167a7fe113ce32c8b5849d606390a365e2a12733e2a225fe4c62600`。本轮不合并两个候选、补drain、改恢复策略或新增算力任务。
 
 ```bash
 python3.12 -B experiments/async-checkpoint-publication/verify.py /path/to/verl-git
@@ -681,7 +691,7 @@ Python3.12.13／torch2.14.1／NumPy2.5.4／pytest9.1.1，仅真实临时文件�
 
 ### SFT 与 V1 的恢复顺序
 
-**恢复后能继续取batch，不等于数据顺序与未中断运行一致；相同的边界判断也不能跨采样器照搬。** [#7974](https://github.com/verl-project/verl/pull/7974)是ewan0x79对[#7401](https://github.com/verl-project/verl/issues/7401)的另一现存候选，2026-10-26核为OPEN/non-draft。当前head `cfad96962d5aa9640cce052774a34b810382b20f` 相对实际祖先 `339a5636367772b4ae3131588f718b5e8b28aa77` ahead2／behind0、五文件311增0删；API目标base为3f9d4c0d，不能替代实际祖先。
+**恢复后能继续取batch，不等于数据顺序与未中断运行一致；相同的边界判断也不能跨采样器照搬。** [#7974](https://github.com/verl-project/verl/pull/7974)是ewan0x79对[#7401](https://github.com/verl-project/verl/issues/7401)的另一现存候选，2026-10-26核为OPEN/non-draft。该轮固定head `cfad96962d5aa9640cce052774a34b810382b20f` 相对实际祖先 `339a5636367772b4ae3131588f718b5e8b28aa77` ahead2／behind0、五文件311增0删；API目标base为3f9d4c0d，不能替代实际祖先。2026-10-30新93f1763a的有限源码比较及与#8056的未集成关系，见[恢复与drain责任](#恢复边界与异步-drain-的不同责任)；本节原19参数项仍只属于cfad固定版本。
 
 修订前提交 `4105a9914658ae2dc411d80cb530681ce759546e` 同时给SFT共享handler和V1加了边界skip。[社区反馈](https://github.com/verl-project/verl/pull/7974#issuecomment-6393919528)指出V1会重复最初排列；[作者新提交](https://github.com/verl-project/verl/commit/cfad96962d5aa9640cce052774a34b810382b20f)已完整撤回V1生产改动，新增数据顺序测试。当前V1文件与上述祖先逐字节相同；SFT三份生产文件则与修订前相同。旧正文仍称覆盖V1，不能以正文判断当前实现。
 
