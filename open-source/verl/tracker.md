@@ -65,7 +65,7 @@
 
 2026-10-30补[蒸馏估计器与更新](#蒸馏估计器更新模式的已有提案)：#8423报告者已有#8458，breaking guard语义待维护者决定；四固定状态／16别名对的原KL函数加本地score公式核期望值与梯度不同，非原loss API／作者25或64项，不另实现、迁移配置或排算力。
 
-2026-10-30接[异步快照发布](#多角色异步快照的已有候选)：#8056已有作者，八组完整原driver模块／真实tracker控制核发布与清理的不同失败位置；角色为记录器、未删目录，非原OmegaConf／Megatron或作者H20验收，不另实现／排算力。
+2026-10-30接[异步快照发布](#多角色异步快照的已有候选)：#8056作者新报告确认SFT边界恢复仍可复现、#7974尚未集成；新93f相关恢复方法AST同旧cfad，九输入仅语法／静态核对。旧八driver控制与19恢复项不重跑或迁移为新head验收，不另实现／排算力。
 
 2026-10-30核[NVFP4共享重载](#nvfp4-共享重载的审批与失败边界)：#7971获APPROVED但未合并；旧专用失败封禁已不在当前worker，共享存储回绑检查非回滚。六输入仅语法／AST，不迁移作者旧长跑或新增M5部署／算力任务。
 
@@ -89,6 +89,8 @@
 2026-10-30只读ewan0x79的OPEN／非draft [#8056](https://github.com/verl-project/verl/pull/8056)，headc76d46ea6474f9fc9837a469c2ab74b58d921bbc、API base2ab35292，28文件，建立于其SFT [#8003](https://github.com/verl-project/verl/pull/8003)。reviews仅bot，不当人工批准；首轮全部patch／review输出过长，后续只定向核driver、原测试及保存／退出调用点，不称完整PR review。
 
 [原checkpoint专题](../../notebook/frameworks/verl-checkpoint-management-reading.md#多角色异步保存的发布与清理)与[八组标准库结果](../../experiments/async-checkpoint-publication/result.json)核完整原协调器：替换失败保留旧指针，清理失败时新指针已发布但pending保留；重试重放清理。原模块同d91f870e，不迁移作者该版六阶段／253项或更早22阶段／1690项H20报告为当前head／本机验收。角色确认／prune为明确记录器，无真实角色payload、旧目录删除、OmegaConf原测试／Ray／Megatron或训练。新bot SFT反馈与已有min步数的blocking保存分开，不因尾部无调用断言正常epoch必漏，也不替作者改代码／写社区／另排M5任务；所有上游与既有PR-head动作仍逐项待用户明确同意。
+
+同日07:13Z，[作者人工回复](https://github.com/verl-project/verl/pull/8056#issuecomment-6517157160)报告两SFT恢复到epoch边界仍可复现，并以真实loader／训练I/O替身验证未合入的#7974；不当本项目新实测或维护者批准。[原专题补充](../../notebook/frameworks/verl-checkpoint-management-reading.md#恢复边界与异步-drain-的不同责任)核#8056未传epoch长度且handler无边界策略；#7974新93f与旧cfad的相关恢复方法剥docstring AST相同，但Ray fit另有指标构造变化。样本恢复正确与尾部写入drain不是替代关系；九输入仅compile／静态，不合并候选、补drain或重跑旧测试。
 
 ## 蒸馏估计器更新模式的已有提案
 
@@ -244,6 +246,8 @@
 [原量化专题](../../notebook/frameworks/verl-quant-layer-audit.md#原生混合精度模型的后端选择)固定verl main3c6d9b43／vLLM v0.29.0 commit98dff2a8：启动只传quantization_config，缺省linear／MoE都设deep_gemm，原生V4的expert_dtype另决定FP4／FP8；显式MXFP4 DeepGEMM失败不回auto列表，Marlin走BF16 activation而非动态FP8。refit名单有Marlin不等更新／graph数值验收，提案opt-out变量在固定main三目录未命中。七完整源文件AST/compile通过，无引擎import、替身测试或设备执行；真机缺口补原M5条件参考、非新任务。不上游评论／PR或推既有PR-head，所有具体外部写入仍待用户明确同意。
 
 ## Epoch 边界恢复与采样器状态
+
+2026-10-30当前#7974已到93f1763a、仍未合并；下方19项是cfad固定版本的既有结果，不作新head整体验收。新作者报告及五个相关恢复方法的有限AST比较见[恢复与drain责任](../../notebook/frameworks/verl-checkpoint-management-reading.md#恢复边界与异步-drain-的不同责任)，本轮不重跑矩阵或更改两候选。
 
 2026-10-26只读接续ewan0x79的OPEN／non-draft [#7974](https://github.com/verl-project/verl/pull/7974)，head `cfad96962d5aa9640cce052774a34b810382b20f`，实际祖先339a5636而非API目标3f9d4c0d，ahead2；五文件311增0删。它在[社区反馈](https://github.com/verl-project/verl/pull/7974#issuecomment-6393919528)后撤回修订前4105a991的V1 boundary skip；当前V1生产文件与祖先完全相同，只有SFT共享handler／两调用点保留边界判断。不能沿旧正文称它仍修改V1。
 
