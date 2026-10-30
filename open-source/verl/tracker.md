@@ -61,6 +61,8 @@
 
 2026-10-30核[视觉位置插值](#视觉位置插值的已有优化)：#8414已有作者；两版各16次原测试体断言通过，输出记录相同，非修复回归／计时或完整视觉塔验收，不另实现／排M5任务。
 
+2026-10-30补[critic可选字段](#critic-可选字段的已有候选)：新#8457目标release/v0.9.1而非main；优势／指标取数前按use_critic选择values，另拆FSDPTurbo dispatcher与fused开关。六Python输入／两脚本仅语法与AST，非TQ／设备验收，不另实现或改M5环境。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -73,6 +75,12 @@
 <!-- contribution-summary:end -->
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
+
+## Critic 可选字段的已有候选
+
+2026-10-30只读核renjunying2的OPEN／非draft [#8457](https://github.com/verl-project/verl/pull/8457)，head7c8d16de6ee74f9047876353a350a705366a3734、base77d4b4b93811cadd23a76cf55e7e696e2b8f1c0f，目标release/v0.9.1，两文件10增4删。仅一条bot跳过review通知，reviews／行内为空；标题关键词检索命中同一已有作者，不作无人认领。正文尚无具体TQ版本／失败栈／执行测试结果，不把“Test”占位当验证通过。
+
+[原TQ专题](../../notebook/frameworks/verl-transferqueue-worker-lifecycle-deep-reading.md#critic-可选字段的取数边界)核生产、取数与指标三层：use_critic来自显式配置优先的need_critic，values生产有guard而旧两请求无guard；候选把字段选择移到取数前，未改优势／指标主体AST。同查main321e4e45仍无条件请求，非主线已修复。另有FSDPTurbo示例改动，两个语法检查不认证Turbo／Hydra；六完整Python输入仅AST／compile，不作真实TQ／旧失败新通过或GPU验收。不竞争实现、写社区／PR-head或改M5环境、另排算力；对外动作仍逐项待用户明确同意。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
 
 ## 视觉位置插值的已有优化

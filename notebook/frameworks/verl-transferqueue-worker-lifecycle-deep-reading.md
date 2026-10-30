@@ -2,6 +2,8 @@
 
 TransferQueue把训练轨迹的元数据传递与实际字段数据交换分开；它不是verl的权重同步backend。默认SimpleStorage使用Ray actor管理存储单元，并通过ZMQ交换数据。存储单元数量影响启动时的逻辑CPU预留与数据分片，不等于显存容量或吞吐保证。
 
+2026-10-30补[critic可选字段的取数边界](#critic-可选字段的取数边界)：已有#8457针对release/v0.9.1，在优势和指标取数前按use_critic选择values；下游指标已有开关不能保护上游取数。源码／语法核对不是TransferQueue版本兼容或训练验收。
+
 2026-10-23更新：固定阅读[verl #8340](https://github.com/verl-project/verl/pull/8340)，head `881fb96937f5ddfae5d894bb9a48538d1b049e1e`，base及共同祖先 `dc709afb7a74fd2645640a4e5f2fdf40166b4fbb`，7文件58增6删，读取时open/非draft。TransferQueue资源及数据路径以作者复现所用提交 `5fe4e49fe74aef544fe54da1fbeabf0b36d497eb`为准，不代表verl强制依赖此revision或本机安装了它。
 
 ## 启动默认值与 CPU 预留
@@ -48,6 +50,24 @@ verl的`tq.init`位于其训练try/finally之前；若初始化本身未完成�
 [SimpleStorage manager](https://github.com/Ascend/TransferQueue/blob/5fe4e49fe74aef544fe54da1fbeabf0b36d497eb/transfer_queue/storage/managers/simple_storage_manager.py)用ZMQ multipart发送/接收序列化字段。[该版encoder](https://github.com/Ascend/TransferQueue/blob/5fe4e49fe74aef544fe54da1fbeabf0b36d497eb/transfer_queue/utils/serial_utils.py#L178)对不连续tensor先contiguous，对非CPU tensor调用cpu，再提取memoryview；decoder可从接收buffer构建view。**某个CPU buffer提取或frombuffer步骤免复制，不等于GPU到GPU全链路零复制**。其他backend如Mooncake不能与默认SimpleStorage混用结论，也不能据此断言TQ必须同GPU/NVLink或不支持跨节点。
 
 模型权重走另一条控制链：[CheckpointEngine](https://github.com/verl-project/verl/blob/881fb96937f5ddfae5d894bb9a48538d1b049e1e/verl/checkpoint_engine/base.py)。naive的ColocatedCheckpointEngine保存/消费参数generator，其他backend可使用独立通信组；vLLM adapter还有分桶IPC通路。发送、接收、应用、cache恢复与版本标签仍是不同完成点，见[worker同步笔记](verl-worker-lifecycle-ray-weight-sync-reading.md#分桶接收失败与退出)和[一致性边界](verl-async-logprob-provenance.md)。
+
+## Critic 可选字段的取数边界
+
+**不消费某字段，还必须在取数前决定不请求它。** renjunying2的[已有 #8457](https://github.com/verl-project/verl/pull/8457)于2026-10-30新增，读取时OPEN／非draft，head `7c8d16de6ee74f9047876353a350a705366a3734`，目标是`release/v0.9.1`的base `77d4b4b93811cadd23a76cf55e7e696e2b8f1c0f`，不是默认main。作者报告新TransferQueue拒绝缺字段时，未启用critic仍请求values会阻断GRPO；正文没有给具体TQ revision、失败栈或已执行测试结果，不能将此报告外推所有TQ版本。
+
+[V1 trainer](https://github.com/verl-project/verl/blob/7c8d16de6ee74f9047876353a350a705366a3734/verl/trainer/ppo/v1/trainer_base.py)初始化用[need_critic](https://github.com/verl-project/verl/blob/7c8d16de6ee74f9047876353a350a705366a3734/verl/trainer/ppo/utils.py)派生use_critic：显式critic.enable优先，未设时才由GAE决定，因此不能把“GRPO”直接等同use_critic=False。创建critic、调用`_compute_values`及更新critic均有此开关；`_compute_values`经critic infer后转换并写回values。
+
+父版却在`_compute_advantage`与`_compute_metrics`的初始fields列表中无条件包含values。候选只在use_critic=True时append该字段；关闭时不请求，开启时仍要求真实生产，未制造零值或把GAE输入变成可缺。两原方法去除初始fields赋值及紧邻新增guard后，剩余AST与base分别相同；并未改写优势公式或指标统计。开启时values移动到列表末尾，不把字段集合相同误称请求顺序也相同。
+
+[指标包装器](https://github.com/verl-project/verl/blob/7c8d16de6ee74f9047876353a350a705366a3734/verl/trainer/ppo/metric_utils.py)会先把fields传给kv_batch_get，之后才执行`compute_data_metrics(..., use_critic=...)`；后者的values统计已有if use_critic。包装器只对含routed_experts的ValueError尝试去掉该附加字段重取，不会从原fields删除values。这正是“下游有可选保护，但上游请求仍过早”的两个不同边界，不能靠在结果TensorDict上再pop字段修复此前的取数错误。
+
+同次只读API核main为[321e4e450fcfc47a3491c946cd01dacd9ea7281a](https://github.com/verl-project/verl/blob/321e4e450fcfc47a3491c946cd01dacd9ea7281a/verl/trainer/ppo/v1/trainer_base.py)，其两个方法仍无条件请求values；故本release候选不能写成“默认主线已经修复”。这只是代码身份观察，不是主线／旧TQ／M5现有环境的失败复现，也不据此另开竞争PR。
+
+### 示例配置是另一条兼容边界
+
+PR另改[Qwen3.5 FSDPTurbo示例](https://github.com/verl-project/verl/blob/7c8d16de6ee74f9047876353a350a705366a3734/examples/grpo_trainer/run_qwen3_5_35b_fsdp_turbo.sh)：旧GPU eager／NPU fused dispatcher改为两者all2all，再以GPU False／NPU True的`ep_use_fused_ops`分别传入actor和reference的ep_plan。dispatcher名称与fused实现开关被拆开；这不是只修trainer字段，也不能从bash语法通过推出Hydra组合、Turbo实现或任一设备可运行。原脚本有自动设备探测，本机未执行它。
+
+本轮仅Python3.12.14的六份完整版本／路径输入AST／compile、两个原脚本`bash -n`，原函数、严格字段后端、Ray／TQ、Hydra及训练均未运行；不是作者pytest或旧失败／新通过验收。源码SHA256、复查入口和Git对象读取受阻记录见[当日日志](../../diary/2026-10-30.md#1146--critic-可选字段与取数时机)。已有作者，不改候选或M5脚本／环境，不新增算力队列；后续待实质代码／测试反馈，不扩成“全部可选字段均已修复”的结论。
 
 ## 路由记录的层选择与全局坐标
 
