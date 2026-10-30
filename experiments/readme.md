@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [unirl-ar-call-seeds/verify.py](unirl-ar-call-seeds/verify.py) | 已合并#630原helper／原dataclass的七组标准库控制，[结果](unirl-ar-call-seeds/result.json)核身份映射、拆调用、重排分片、数量与共享对象；六变更文件同合并版，非adapter／原生推理或吞吐验收 | [AR逐样本调用](../notebook/frameworks/unirl-survey.md#合并后的逐样本调用) |
 | [checkpoint-rng-order/verify.py](checkpoint-rng-order/verify.py) | 四个原生CPU小模型重启对照，[结果](checkpoint-rng-order/result.json)核初始seed、独立生成器和恢复顺序；两步后重启三步，仅加载后恢复四随机流匹配连续运行，非框架／DataLoader／设备恢复验收 | [随机状态与恢复顺序](../notebook/frameworks/verl-checkpoint-management-reading.md#随机状态与恢复顺序) |
 | [optimizer-state-identity/verify.py](optimizer-state-identity/verify.py) | 普通AdamW四条真实CPU恢复／更新轨迹及数量guard，[结果](optimizer-state-identity/result.json)核同形状参数换序、只改名称无效与单组显式ID对齐参考；非框架／分片checkpoint缺陷或迁移工具 | [优化器恢复身份](../notebook/fundamentals/adamw-optimizer-deep-dive.md#恢复时的参数身份) |
 | [verl-custom-loader-resume/verify.py](verl-custom-loader-resume/verify.py) | draft #8454原恢复方法的六个本地条件，[结果](verl-custom-loader-resume/result.json)分开接口拒绝与缺／错data.pt时的调用顺序；真实临时文件、Mock worker，非原作者pytest／完整恢复 | [自定义loader恢复](../notebook/frameworks/verl-checkpoint-management-reading.md#自定义数据源的保存与恢复边界) |

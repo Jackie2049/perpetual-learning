@@ -15,7 +15,7 @@
 
 2026-10-26另按[#621最终合并范围](#奖励加载的最终合并范围)修正旧记录：managed也延迟启动，实验VideoAlign增配置检查；九模块语法检查不算真实加载验收，不新增任务。
 
-2026-10-26接续[AR seed协作](#ar-种子的协作分工)：#507报告者已让JianhaoYu-AI接手逐请求部分，engine副本偏移另议，不再记报告者正在独自实现整项；八相关源码同旧main，不重复CPU或认领另一部分。
+2026-10-30接续[AR seed已合并切片](#ar-种子的协作分工)：#630已合并，#507仍OPEN；七组原helper标准库控制核映射／顺序／数量，adapter和trainer仅源码。逐请求seed不等副本独立性或输出／吞吐验收，不另实现或排算力。
 
 2026-10-26接续[熵候选代码身份](#熵监控同步主线后的范围)：#563新cc0df170合入奖励主线，13专题文件同前次d2f0a489；不重跑旧CPU、不迁移历史GPU验收，不另认领或新排任务。
 
@@ -68,9 +68,9 @@
 
 ## AR 种子的协作分工
 
-2026-10-26读取[#507全文与两评论](https://github.com/Tencent-Hunyuan/UniRL/issues/507)，仍OPEN。JianhaoYu-AI于07:05:18Z提出逐请求seed／sample_id构造切片并要求先确定batching方式；报告者CjhHa1于12:45:08Z[同意其接手](https://github.com/Tencent-Hunyuan/UniRL/issues/507#issuecomment-6416315321)，明确自己当前未做#507，engine副本seed偏移分开。更正“报告者自行实现整项”的旧描述，但不把拆分后的另一项当本项目可直接认领，亦不把协作同意当代码完成或接口批准。
+2026-10-30核[JianhaoYu-AI的 #630](https://github.com/Tencent-Hunyuan/UniRL/pull/630)已于10-29 03:30:24Z合并为ffad0b832707f5f1a87609e96f351426ede3f043，最终heade259ae3d；六变更文件与main5d1da78d逐字相同。[#507](https://github.com/Tencent-Hunyuan/UniRL/issues/507)仍OPEN，10-26协作已落实逐请求切片，但engine副本seed偏移另议。不再以旧查询未命中／旧Omni未读seed描述当前代码，亦不将剩余事项自动认领。
 
-见[原种子专题](../../notebook/frameworks/unirl-survey.md#ar-种子配置与逐样本请求)：主线8cfbac177与原6fd82cba的八个类型／解析器／adapter／trainer文件逐一blob同（tree均未截断）；#474合并只删除随机seed patch，仍不能替代#507的两个目标。507 in:body PR检索本轮为0，只说明此查询未命中。没有新CPU／请求构造／采样／模型／设备执行，旧六组解析器结果保留固定范围；只更新原M5条件参考，无新任务／竞争实现或上游写入。所有社区可见动作仍需用户逐项明确授权。
+见[原种子专题](../../notebook/frameworks/unirl-survey.md#合并后的逐样本调用)：HI3／Qwen3-Omni传AR行身份、显式seed逐行拆call、无seed返回原列表，native后端顺序执行带吞吐代价风险。[七组本地标准库控制](../../experiments/unirl-ar-call-seeds/result.json)用原helper／原数据类型，核重排分片、边界、strict数量与共享diffusion对象；两个新进程一致，无Torch导入。未执行真实adapter／Sample lineage／原生参数构造或作者78／27项，不当输出确定性／多副本独立性／吞吐验收。旧解析器结果保留原版本，已有作者已合并，不改代码、追加M5任务或写社区；所有社区与既有PR-head写入仍逐项待用户明确授权。
 
 ## 奖励加载的最终合并范围
 

@@ -1,6 +1,6 @@
 # UniRL — 腾讯统一多模态 RL 框架调研
 
-2026-10-30接续：[Agentic 奖励组的统计边界](#agentic-奖励组的统计边界)核新RFC#635：有效奖励、基线参与与训练行是三个口径；原函数CPU控制不提供发生频率或学习效率证据，不另实现作者的诊断器。
+2026-10-30接续：[AR逐样本调用](#合并后的逐样本调用)核#630已合并：显式seed按AR身份拆call，未设seed保留原批处理；七组原helper标准库控制不是模型输出／副本独立性或吞吐验收。旧Omni未接seed的结论保留为合并前历史，不用于当前代码。
 
 2026-10-30 接续：[奖励服务的测试收集与空结果](#奖励服务的测试收集与空结果)核已有#632：原文件快照的八组原生pytest collection区分6个误收集CLI节点、空收集退出5和缺路径退出4；排除误收集不是新增服务测试或训练验收。
 
@@ -1903,13 +1903,43 @@ Python3.12.13、requests2.34.2，执行原 `_judge_one` 完整方法及原prompt
 
 ## AR 种子配置与逐样本请求
 
-**种子字段存在、请求携带种子、真实生成可复现，是三层证据。** [#507](https://github.com/Tencent-Hunyuan/UniRL/issues/507)报告Omni AR忽略显式seed及多副本初始RNG相关。2026-10-26的[新回复](https://github.com/Tencent-Hunyuan/UniRL/issues/507#issuecomment-6416315321)中，报告者CjhHa1明确自己当前未在实现此题，并让JianhaoYu-AI接手逐请求AR seed部分，副本engine seed偏移分开。不能继续写成报告者正在独自实现整项，也不能将分出的另一部分自动认领给本项目。前置[#474](https://github.com/Tencent-Hunyuan/UniRL/pull/474)已于2026-09-24合并为`67d33392254822556734fd3df76aaa668c52ee47`，删除用os.urandom补每请求seed的patch；它不等于完成#507的两项接线。
+**种子字段存在、请求携带种子、真实生成可复现，是三层证据。** 2026-10-30核[JianhaoYu-AI的 #630](https://github.com/Tencent-Hunyuan/UniRL/pull/630)已于10-29 03:30:24Z合并，最终head `e259ae3dd49dda0b720dc7255dd9e533f0dfbec1`、合并提交 `ffad0b832707f5f1a87609e96f351426ede3f043`。固定main `5d1da78d4d87593b41a4235a65e9ad9dc3f9b6f8`的六个变更文件逐字同合并版；旧笔记“Omni AR未读取seed”的结论不再适用于这条新路径。[#507](https://github.com/Tencent-Hunyuan/UniRL/issues/507)仍OPEN，逐请求实现不等副本engine seed偏移或生成输出独立性也已闭环。
 
-JianhaoYu-AI的[先前提议](https://github.com/Tencent-Hunyuan/UniRL/issues/507#issuecomment-6410257747)只承接seed／sample_id映射，先确定逐样本GenerateCall还是后端支持逐prompt参数，以保留未设seed路径并评估batching代价；尚无这条评论给出的实现或吞吐报告。报告者同意协作，不等同维护者批准接口、用户授权本项目写上游，或证明跨副本采样独立。按507 in:body的PR检索本轮为0，仅为该查询结果，不作为无代码／无负责人证明。
+### 合并后的逐样本调用
 
-本节原10-24代码分析与六组CPU入口控制固定 `6fd82cba13f52f394747832344039408699ea378`。2026-10-26主线为 `8cfbac17765004afb68fef08a4e011a4c8daf555`，两个完整tree查询均未截断；sampling类型、SGLang解析器／text adapter、direct-vLLM解析器／driver、两个Omni adapter及unified trainer共八文件blob逐一相同。两个Omni文件分别为 `f5caa6a5ba0380baa963eafdbc9627d7ae5f99fb`、`6eecc3b0c56e5d72686281d390336cc3caab13c3`，trainer为 `0904478ab79c0d89ff39057951d0aa973fe3e598`。因此当前相关入口没有这两次主线快照间的修订，本轮不重复CPU、RNG或设备检查。以下源码结论沿用其固定版本，不把协作进展当代码落地。
+新[seed_ar_calls](https://github.com/Tencent-Hunyuan/UniRL/blob/5d1da78d4d87593b41a4235a65e9ad9dc3f9b6f8/unirl/rollout/engine/vllm_omni/utils/sampling.py)在seed=None时直接返回原calls。显式seed时先按call与prompt的既有顺序展开行，以`zip(..., strict=True)`对应sample_ids；每行复用原`derive_sampling_seed(base_seed, sample_id)`，只为AR阶段生成带seed的新kwargs和StageSampling，并产生一个prompt的GenerateCall。映射基于身份而非当前位置，但调用方仍须提供语义对齐的ID；长度检查不会证明身份正确或保证哈希无碰撞。
 
-### 当前解析器的入口前提
+[HI3原方法](https://github.com/Tencent-Hunyuan/UniRL/blob/5d1da78d4d87593b41a4235a65e9ad9dc3f9b6f8/unirl/rollout/engine/vllm_omni/adapters/hi3.py)无DiT或有DiT／x_T recipe两分支最终均传`ar_part.sample_ids`，不是diffusion child ID；[Qwen3-Omni](https://github.com/Tencent-Hunyuan/UniRL/blob/5d1da78d4d87593b41a4235a65e9ad9dc3f9b6f8/unirl/rollout/engine/vllm_omni/adapters/qwen3_omni.py)传frontier的sample_ids。[UnifiedModelTrainer](https://github.com/Tencent-Hunyuan/UniRL/blob/5d1da78d4d87593b41a4235a65e9ad9dc3f9b6f8/unirl/trainer/unified_model.py)也改为从chunk AR shell取ID、替换斜杠后分片，避免原来的局部idx构造；这是源码接线观察，非本机Sample lineage或跨chunk rollout验收。
+
+[原生后端generate](https://github.com/Tencent-Hunyuan/UniRL/blob/5d1da78d4d87593b41a4235a65e9ad9dc3f9b6f8/unirl/rollout/engine/vllm_omni/backends/native.py)逐call构造阶段参数，并消费完`list(omni.generate(...))`再处理下一call。因此新文档明确：显式seed可能因逐样本顺序调用降低吞吐，seed=None保留原批处理；不能只看到映射更稳定就称性能无代价。本机没有调用此后端或测量代价。
+
+### 原 helper 的有限条件控制
+
+[复现脚本](../../experiments/unirl-ar-call-seeds/verify.py)用Python3.12.14标准库完整执行原backends/base.py，取得真实GenerateCall／StageSampling；AST隔离完整原helper及两个派生函数、原最大seed常量，避开Sample和注册入口。九个原输入保存hash，八Python文件compile通过；adapter、trainer与native.generate仅源码核对，不执行。七组本地控制为：
+
+| 条件 | 已确认范围 |
+| --- | --- |
+| seed=None，故意提供空ID列表 | 返回同一calls对象；此早返回不校验ID数量 |
+| 两个call含2＋1个prompt，显式17 | 三个单prompt调用保序，AR seed等于原派生函数；输入不变 |
+| prompt和ID一起重排 | 同一ID映射不变 |
+| prompt和ID一起分成1＋2行 | 合并后的ID映射不变 |
+| ID过少／过多 | strict zip均抛ValueError |
+| seed边界与非法输入 | 0／最大非负int64可派生；负值、越界、bool、float、空／空白ID拒绝 |
+| 两行复用同一个ID | seed相同，不替调用方分配独立身份 |
+
+新AR kwargs仅为浅拷贝：本地控制中嵌套stop_token_ids列表仍共享，diffusion StageSampling直接复用原对象，其seed／recipe未改。这里的“不变”是helper调用期间不改输入，不是返回后可任意修改共享嵌套内容的深隔离保证；未为此另造生产补丁。[完整结果](../../experiments/unirl-ar-call-seeds/result.json)两个新进程逐字一致、未导入Torch。没有旧失败／新通过的adapter对照，不把作者78项／27项外部替身测试计为本机通过，也没有原生采样参数构造、RNG采样、模型输出、GPU或吞吐验收。已有作者且已合并，不竞争实现、不追加M5训练队列或写上游。
+
+```bash
+python3.12 -B experiments/unirl-ar-call-seeds/verify.py /path/to/UniRL-git
+```
+
+固定Git对象预缓存后运行不联网；不检出或改源仓库index／工作树。所有社区及既有PR-head写入仍逐项待用户明确授权。
+
+### 合并前的解析入口
+
+以下10-24代码分析与六组CPU入口控制固定 `6fd82cba13f52f394747832344039408699ea378`；10-26主线8cfbac177的八相关文件与其blob相同，是当时的历史对照。10-26[报告者同意JianhaoYu-AI接手](https://github.com/Tencent-Hunyuan/UniRL/issues/507#issuecomment-6416315321)之后，#630已完成逐请求切片，不能继续用当时507 in:body查询未命中或协作评论代替当前代码状态。
+
+前置[#474](https://github.com/Tencent-Hunyuan/UniRL/pull/474)于2026-09-24合并为`67d33392254822556734fd3df76aaa668c52ee47`，只删除用os.urandom补每请求seed的patch，不是后来#630的逐请求接线。旧Omni两adapter blob为f5caa6a5／6eecc3b0、trainer为0904478a，当前完整源身份另见上述结果；历史六组控制不迁为新adapter验收。
 
 [ARSamplingParams](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/types/sampling.py)默认seed=None。[SGLang原解析器](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/rollout/engine/sglang/utils/sampling.py)只有`enable_deterministic_inference is True`或`rl_on_policy_target is not None`才走确定性请求规划；显式seed却没启用这一路径会抛ValueError。启用路径但未设seed，则以42作为派生基准。不能把旧报告的“SGLang honor seed”理解为任何配置下设置seed就可运行。
 
@@ -1926,9 +1956,9 @@ Python3.12.13/torch2.14.1 CPU，使用完整原Sample/Part与ARSamplingParams构
 
 因此`n=1`不是把GRPO组减为一个样本。按[共享TextLMAdapter](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/rollout/engine/sglang/adapters/text.py)源码，有基准seed时按fanout展开请求，使每个叶子sample_id对应一个payload；无基准seed时保留每父prompt的n>1。`derive_sampling_seed`由base_seed与稳定sample_id派生，不使用当前排序或分片号；这个性质属于种子输入，不自动认证采样输出对任意batch、版本或调度不变。[direct-vLLM driver](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/rollout/engine/vllm/engine.py)复用该adapter，再把sampling_seed改名为seed，runtime交给原生SamplingParams；它没有沿用SGLang的确定性开关前提。
 
-### Omni 接线与引擎副本分开
+### 合并前的 Omni 接线与引擎副本
 
-当前[HI3 AR StageSampling](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/rollout/engine/vllm_omni/adapters/hi3.py)仍只传temperature/top_p/top_k/max_tokens/logprobs；[Qwen3-Omni](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/rollout/engine/vllm_omni/adapters/qwen3_omni.py)另带可选stop_token_ids，但这两处AR参数构造都不读取ar.seed。HI3文件里另有diffusion的seed和`seed_from_sample_id`，不能因全文搜到seed就认为AR已接通。
+旧6fd82cba的[HI3 AR StageSampling](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/rollout/engine/vllm_omni/adapters/hi3.py)只传temperature/top_p/top_k/max_tokens/logprobs；[Qwen3-Omni](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/rollout/engine/vllm_omni/adapters/qwen3_omni.py)另带可选stop_token_ids，但当时两处AR参数构造都不读取ar.seed。这正是后来#630新增接线的范围；不能因旧HI3全文含diffusion seed就认为原AR已接通。
 
 另一问题是引擎初始化：[UnifiedModelTrainer](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/trainer/unified_model.py)确有多引擎创建循环，r用于设备位置与AR/DiT分配；该循环未按r注入AR引擎seed。这不证明所有外部配置都用同一个seed，也不能将请求seed支持当成副本seed策略已经落实。
 

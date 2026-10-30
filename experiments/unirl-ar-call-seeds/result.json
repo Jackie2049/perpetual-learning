@@ -1,0 +1,101 @@
+{
+  "python": "3.12.14",
+  "revision": "5d1da78d4d87593b41a4235a65e9ad9dc3f9b6f8",
+  "merge": "ffad0b832707f5f1a87609e96f351426ede3f043",
+  "sources": {
+    "unirl/rollout/engine/README.md": {
+      "sha256": "9e3595b765cef48745e58d3ccf29cb29324f058236976a94357c5019a36a3331",
+      "git_blob": "a30c9eb70a78941d488df7ae63b09b849c855f96"
+    },
+    "unirl/rollout/engine/vllm_omni/adapters/hi3.py": {
+      "sha256": "a4889cad0b22b2ea6c2e411f235266955588f3933f6865c00b5d78bc4d29f873",
+      "git_blob": "0f5170e46bc76e2d326088a21be5c14b258d711e"
+    },
+    "unirl/rollout/engine/vllm_omni/adapters/qwen3_omni.py": {
+      "sha256": "e60e763d67ee59e4d6a9fc6c41a5b729bcd1eb58a4b8d77c1c4fb077e7ecefaf",
+      "git_blob": "5fd39fc0172483ada1fc5cd4e66f039d599391f2"
+    },
+    "unirl/rollout/engine/vllm_omni/utils/__init__.py": {
+      "sha256": "6e4d84e2b1203ff8aeac1aa9034cd8ba0d1a524031c5ad60c82b692f0f19dc2e",
+      "git_blob": "9857ca9a6d1fc4bd2787e0dc3f970303874f045f"
+    },
+    "unirl/rollout/engine/vllm_omni/utils/sampling.py": {
+      "sha256": "062706b11c5983fb8cde385809f39c397c036de44ab238d1f4b408d34555701b",
+      "git_blob": "e7fe426c3c26d0a5cd6e2fa6e26f58419c5446a8"
+    },
+    "unirl/trainer/unified_model.py": {
+      "sha256": "08f2968655877a6e2b1586b1fef4ef57c61d001d82de615380c6a96d09eb9d29",
+      "git_blob": "7c29e4a54f65981eb8f4ab5647ebc47a26f0fa8e"
+    },
+    "unirl/rollout/engine/vllm_omni/backends/base.py": {
+      "sha256": "dfccc87f75fd8170506ba7bfdcc887900ceaba0fde8797cae7056a7006d31a9d",
+      "git_blob": "8da7bafad609f453a3fa9efd05053c50ddb9de49"
+    },
+    "unirl/rollout/engine/sglang/utils/sampling.py": {
+      "sha256": "7c8842ab98d4e2085131336a68fbfd82139220a1faaa0497af950c5d5fdbe759",
+      "git_blob": "fd22f99bec70f52a744c1a78d66deef9f10d0f4e"
+    },
+    "unirl/rollout/engine/vllm_omni/backends/native.py": {
+      "sha256": "fba13880ccccb264e979b7d6d5ef4ccf20f24a1724a7bd6f68c9b073adab2280",
+      "git_blob": "e62fe746357aec0fb8356af1675ca8aa8d801fa1"
+    }
+  },
+  "changed_files_equal_merge": 6,
+  "python_files_compile": 8,
+  "unseeded_same_list_identity_with_unchecked_ids": true,
+  "split_prompt_order": [
+    "alpha",
+    "beta",
+    "gamma"
+  ],
+  "seed_mapping": {
+    "a/0": 3039937972617923904,
+    "b/0": 1598195090759187411,
+    "c/0": 1548135487147275394
+  },
+  "reorder_mapping_equal": true,
+  "shard_mapping_equal": true,
+  "ownership": {
+    "new_ar_stage_and_kwargs": true,
+    "nested_ar_values_shared": true,
+    "diffusion_stage_shared_unchanged": true,
+    "inputs_unchanged": true
+  },
+  "count_errors": {
+    "too_short": "zip() argument 2 is shorter than argument 1",
+    "too_long": "zip() argument 2 is longer than argument 1"
+  },
+  "boundary_seeds": {
+    "0": 4227822609033849262,
+    "9223372036854775807": 4129339104235515966
+  },
+  "invalid_inputs_rejected": [
+    {
+      "seed": -1,
+      "sample_id": "a"
+    },
+    {
+      "seed": 9223372036854775808,
+      "sample_id": "a"
+    },
+    {
+      "seed": true,
+      "sample_id": "a"
+    },
+    {
+      "seed": 1.5,
+      "sample_id": "a"
+    },
+    {
+      "seed": 17,
+      "sample_id": ""
+    },
+    {
+      "seed": 17,
+      "sample_id": " "
+    }
+  ],
+  "duplicate_ids_same_seed": true,
+  "torch_imported": false,
+  "scope": "Seven local stdlib helper-control groups, not author 78/27 tests. Full original wire base, AST-isolated original seed helper and derivation functions; caller inputs are local dictionaries. Adapters, Sample lineage, trainer and native generate only source/compile. No old-fail/new-pass adapter comparison, native parameter construction, engine calls, RNG sampling, model outputs, GPU/NPU or throughput validation."
+}
