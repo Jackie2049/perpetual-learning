@@ -67,6 +67,8 @@
 
 2026-10-30接[异步快照发布](#多角色异步快照的已有候选)：#8056已有作者，八组完整原driver模块／真实tracker控制核发布与清理的不同失败位置；角色为记录器、未删目录，非原OmegaConf／Megatron或作者H20验收，不另实现／排算力。
 
+2026-10-30核[NVFP4共享重载](#nvfp4-共享重载的审批与失败边界)：#7971获APPROVED但未合并；旧专用失败封禁已不在当前worker，共享存储回绑检查非回滚。六输入仅语法／AST，不迁移作者旧长跑或新增M5部署／算力任务。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -104,6 +106,12 @@
 2026-10-30只读Turoad的OPEN [#8414](https://github.com/verl-project/verl/pull/8414)，headd8c490b269d8c288b04b140f254592157c4aecd0、base2ab35292，三文件含CPU测试；bot摘要不作人工批准。已有作者移除四角索引／权重的逐标量Python往返，不另认领或套生产补丁。
 
 [原数据流专题](../../notebook/frameworks/verl-dataproto-data-flow-reading.md#视觉位置插值的张量构造)区分CPU列表构造、插值数值与完整视觉前向。两种模型×FP32／BF16×四grid的原参数／测试体断言，[结果](../../experiments/verl-pos-embed-tensors/result.json)基线16／候选16均通过，输出与输入不变记录一致；入口和CPU模型工厂为本地适配，非原生pytest／Transformers导入。grid_thw.tolist与网格循环仍在，四角加法顺序未变；作者A100视觉塔2.0%–5.5%收益不是本机计时、训练或offload验收。两新进程JSON一致，无安装／设备访问；不新增M5任务或写社区，所有既有PR-head写入仍逐项待用户明确同意。
+
+## NVFP4 共享重载的审批与失败边界
+
+2026-10-30只读zhangyimi的OPEN／非draft [#7971](https://github.com/verl-project/verl/pull/7971)，heade87adec96fe40c86b4d1f44567142c7f75ca2c25、API目标base6b2b417a；wuxibin89于06:19:58Z提交[APPROVED](https://github.com/verl-project/verl/pull/7971#pullrequestreview-5708756650)，仍未合并。已有作者推进native NVFP4，不重复实现或将审批当部署验收。
+
+[原量化专题](../../notebook/frameworks/verl-quant-layer-audit.md#nvfp4-共享重载与失败保护的版本边界)对比作者旧回复所指46b66bc6与当前worker：旧failed标志及execute_model封禁已随专用路径移除，当前共享后处理的storage／scale检查不等事务回滚；也不据局部源码认定整个引擎失败后仍能继续推理。GPU测试覆盖正常重载／返回旧权重／sleep，不是IPC故障注入，本文仅阅读。当前四生产模块＋一GPU测试及旧worker六输入compile／AST通过，非kernel／CUDA graph或恢复验收；700步作者曲线属较早vLLM0.29，不能搬成当前0.32栈性能结论。不新排M5算力、部署环境或写社区／既有PR head。
 
 ## 自定义 loader 恢复的已有草案
 

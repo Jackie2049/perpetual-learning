@@ -10,6 +10,45 @@
 
 2026-10-26接续：[原生混合精度模型的后端选择](#原生混合精度模型的后端选择)追踪新议题#8381。顶层FP8配置不代表experts也为FP8；显式DeepGEMM会阻止自动候选回退，切换Marlin还改变activation精度，不能仅按“成功启动”认证训练与rollout一致。
 
+## NVFP4 共享重载与失败保护的版本边界
+
+**恢复原权重后的输出一致，不等于部分写入失败后能回滚或拒绝推理。** 2026-10-30只读zhangyimi的[#7971](https://github.com/verl-project/verl/pull/7971)：固定head `e87adec96fe40c86b4d1f44567142c7f75ca2c25`、API目标base `6b2b417a059f89167ffdeac8c9cc9b59a787cb13`，37文件4053增1335删；wuxibin89于06:19:58Z提交[APPROVED](https://github.com/verl-project/verl/pull/7971#pullrequestreview-5708756650)，本轮读取仍OPEN／非draft、未合并。这里只核worker refit路径、NVFP4后处理及一份GPU测试的代码范围，不审全部训练／打包变更。
+
+### 旧回复与当前共享路径
+
+[作者10-23回复](https://github.com/verl-project/verl/pull/7971#issuecomment-6360072890)称46b66bc6已在partial refit后拒绝执行与重试。[该旧快照](https://github.com/verl-project/verl/blob/46b66bc6b3b9a5d122eeaec1074b1991acdc7e1f/verl/workers/rollout/vllm_rollout/utils.py)确有专用`_update_nvfp4_per_token_weights`：异常后置`_nvfp4_per_token_update_failed=True`，并将`model_runner.execute_model`改为抛错函数；这是**失败后封禁**，不是恢复已改权重。
+
+但当前[worker扩展](https://github.com/verl-project/verl/blob/e87adec96fe40c86b4d1f44567142c7f75ca2c25/verl/workers/rollout/vllm_rollout/utils.py#L263)已删除该方法、标志与execute_model替换。NVFP4进入共享的prepare→逐bucket load→全部接收后process路径；这个更新方法没有包住整个过程的try／except或finally。当前[load_quanted_weights](https://github.com/verl-project/verl/blob/e87adec96fe40c86b4d1f44567142c7f75ca2c25/verl/utils/vllm/vllm_quant_utils.py)的finally恢复临时修改的参数**Python类型**，不是恢复权重内容。不能将旧回复迁移成当前head的失败封禁保证，也不能仅凭此局部差异断言Ray／vLLM异常处理后一定仍可生成；完整故障生命周期尚未验收。
+
+### 存储回绑检查与事务原子性
+
+当前[FP4 helper的NVFP4部分](https://github.com/verl-project/verl/blob/e87adec96fe40c86b4d1f44567142c7f75ca2c25/verl/utils/vllm/vllm_fp4_utils.py#L401)保留live参数／input scale／派生scale及kernel config。重派生后要求shape、dtype一致，再copy回旧storage；全局scale本来保持checkpoint布局，直接加载。后处理还核对kernel所引用的scale地址、激活scale倒数、g1_scale_c关系及未回绑残留。
+
+这些保护解决“成功重载后，捕获的kernel是否读到本轮scale”，并不构成以下同义关系：
+
+| 保证 | 当前所读代码能说明什么 | 不能由此推出什么 |
+|---|---|---|
+| 后端／重派生检查 | 对不支持后端、shape／dtype错配、旧scale引用抛错 | 所有层在任何写入前已统一预检 |
+| 复制回live storage | 尽量保留已捕获地址与kernel/config对象 | 出错时撤销已经写入的其他bucket或scale |
+| 旧版失败封禁 | 46b快照阻止后续execute_model与专用重试 | 当前共享路径自动继承该专用标志与封禁 |
+
+### 正常重载测试的覆盖范围
+
+当前[GPU测试](https://github.com/verl-project/verl/blob/e87adec96fe40c86b4d1f44567142c7f75ca2c25/tests/utils/real_nvfp4/test_nvfp4_per_token_refit_on_gpu.py)用小Qwen3-MoE／DeepSeek-V3布局，对比eager preset与online量化的greedy logprob；graph路径按权重倍率1→1.5→1重载，要求先改变输出、再恢复一致；level-2 sleep只覆盖Qwen3夹具。测试的_refit直接调用prepare／load／process，不经过真实IPC接收器；没有注入第二bucket失败并验证后续生成或重试。**主动重载旧权重是成功路径，不是失败回滚测试。** 本轮仅阅读与编译，不运行这些GPU测试。
+
+新[文档](https://github.com/verl-project/verl/blob/e87adec96fe40c86b4d1f44567142c7f75ca2c25/docs/low_precision/nvfp4.md)标为Blackwell／SM100 experimental，当前依赖验证口径为vLLM0.32；其700步曲线则明确来自较早vLLM0.29集成，作者还报告后段score低于BF16。不能把审批、旧长跑与当前故障保护合并成同版本端到端验收，也不由此为M1或4090推荐部署。
+
+本轮Python3.12.14标准库对当前四生产模块、一GPU测试及旧worker共六Python输入compile；AST核旧封禁存在、当前扩展移除、当前更新方法无整段try保护与load的finally边界，未import模块或执行生产方法。范围不含量化kernel、IPC、CUDA graph replay、故障恢复或训练性能；不新增修复、M5算力队列或环境更改，社区／既有PR-head写入仍待用户逐项明确授权。输入SHA256：
+
+```text
+当前worker       e9814b162b11b9f3f5a9c3c6465830e8d7a2dfdceda8a3ca6dd27e4fe1f7219d
+量化分发         a331c45cbf1926ddbebbd14adfd4875b5edd625c35843aaf2aa730f469ff12c8
+FP4 helper       ee2ab36637e4d683d5cdfe8cf4a30442ef452353058d9fede30ba00b14a720d5
+per-token helper f29bf790a8fe9c6523e53038c692af3a3a11dd35d4764483d11a21f0be6074d1
+GPU测试          97333af45cede7aa7d3c6db3af084c9a2ca849a60647a55a831b9aa4bdef3d2e
+46b旧worker      8e39d1c6a8f91a328653908f330e6ffc8859bf36727f6dcf2673993c56096ae8
+```
+
 ## LoRA 权重名称与加载器契约
 
 **同一个 `.base_layer` 后缀，可能需要保留、补回或删除；是否能找到真实目标与谁负责后续映射必须一起判断。** 2026-10-30只读学习HollowMan6的[#7483](https://github.com/verl-project/verl/pull/7483)：当前head `0ed94ba020747101bb22db6005849c9a6ca06aa6`、目标base `a08ea02a784d7d4982b1d81df36d188a476192bb`，OPEN／非draft，45提交52文件5210增331删。本节只覆盖[utils.py的三个名称helper](https://github.com/verl-project/verl/blob/0ed94ba020747101bb22db6005849c9a6ca06aa6/verl/utils/vllm/utils.py)，不是对整个模型适配栈的审查或新修复候选。
