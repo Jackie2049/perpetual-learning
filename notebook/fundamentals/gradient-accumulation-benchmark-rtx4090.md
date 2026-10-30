@@ -2,8 +2,9 @@
 
 ## Overview
 
-Benchmarks gradient accumulation vs true large batch for LoRA training.
-Key question: Is accumulation "free" or does it have a cost?
+这份历史 OPT-125M LoRA 表格比较真实大批量与梯度累积的时间、显存。2026-10-30 的脚本复核纠正两点：**表中性能比例不是通用定律；有效 batch 相同，也不自动保证训练目标相同。** 下方 CPU 例子说明不等长序列的归一化问题，不重测历史 GPU 数字。
+
+历史脚本把 `max_length=64` 同时用作吞吐分子，但 `padding=True` 只补到输入池实际最长序列，并不保证宽度为 64；labels 直接复制 input_ids，没有将 padding 标成 ignore_index。因此表中 `tok/s` 统一理解为**按设定长度 64 折算的名义速率**，不是已核实的有效训练 token/s。原值保留，不用猜测的 token 数重算。
 
 ## Results
 
@@ -40,62 +41,91 @@ Key question: Is accumulation "free" or does it have a cost?
 
 ## Key Findings
 
-### 1. Gradient Accumulation is NOT Free — 15x Throughput Loss!
+### 时间和吞吐的比较基线
 
-- Accum B=4×16 → 6,263 tok/s vs Real B=64 → 95,244 tok/s → **15x slower!**
-- Each optimizer step requires N forward+backward passes → step time scales linearly with accumulation
-- Accum=2 → 2x slower, Accum=4 → 4x slower, etc. (near-linear degradation)
+表中累积次数 2→16 时，一个 optimizer step 的时间约随次数增长，但名义吞吐约保持 6,154–6,263；它没有相对 B=4 的 6,082 按次数衰减。约 15 倍差距来自 **B=4×16 对比真实 B=64**，后者在这组历史数据中扩大 batch 几乎未增加 step 时间。
 
-### 2. But Memory is Constant! 352 MB Regardless of Accum
+一般地，忽略其他开销、令一次微批前反向耗时为 `t_fb(b)`，则累积 A 次的更新时间约为 `A*t_fb(b)+t_opt`，真实大批为 `t_fb(A*b)+t_opt`；二者处理同量数据，吞吐比取决于这两个时间，而不是恒为 `1/A`。小模型扩批收益不能外推成任意模型、序列长度或设备的线性定律。
 
-- Accum memory ≈ B=4 memory (353 MB) regardless of accumulation steps
-- Only micro-batch activation memory is needed → no scaling with effective batch
-- This is the key advantage: **simulate large batch without large memory**
+### 显存和更新等价的范围
 
-### 3. LoRA + Accum = Maximum Memory Efficiency
+历史累积表的峰值约 352–353 MB；逐微批 backward 释放计算图，可避免同时保留整批激活。但峰值还受微批形状、最长序列、优化器状态、精度及图保留方式影响，不是任何累积配置都恒定。OPT-125M 表格也不能推出 7B LoRA 固定约 6GB、B=1 累积 32 一定适配 24GB，或某个精度／配方必然最快、最准；撤回这些旧外推，不据此改训练配置。
 
-- Eff B=32: Full FT=1,258MB → LoRA real=871MB → LoRA+accum=352MB
-- LoRA+accum saves **72% memory** vs Full FT at same effective batch!
-- This is the RTX 4090 training sweet spot: LoRA + accum → fits 7B in 24GB
+历史脚本 Exp2 的 warmup、计时循环及 Exp4 累积部分直接对每个 mean loss 调用 backward，再 step，未除累积次数或统一有效 token 分母。即使各微批分母相同，梯度也是 mean 梯度的 A 倍；不能将此脚本当作“仅换 batch 切分而更新保持一致”的验证。AdamW、随机 dropout 等进一步使训练轨迹不能只凭 batch 数相同来认定等价。
 
-### 4. Throughput vs Memory Trade-off
+## 不等长序列的累积归一化
 
-| Strategy | Throughput | Memory | Best For |
-|----------|------------|--------|----------|
-| True B=64 | 95,244 | 1,471 MB | Speed (if memory available) |
-| True B=32 | 47,591 | 872 MB | Balance |
-| Accum=8 (B=4) | 6,262 | 353 MB | Memory-constrained (7B on 24GB) |
+先明确目标是 token 等权还是序列等权。若目标是**未加类别权重、硬标签、无 label smoothing 的有效 token 平均交叉熵**，第 i 个微批有 `n_i` 个有效 token、loss 总和 `S_i`，整窗 `N=Σn_i>0`，则应累积 `S_i/N` 的梯度。对非空微批等价于对局部 mean `μ_i=S_i/n_i` 乘 `n_i/N`。直接累积 `μ_i/A` 只在各 `n_i` 相等（或恰好抵消）时得到同一梯度；每微批样本数相等，不代表有效 token 数相等。
 
-## 7 Core Laws — Gradient Accumulation on RTX 4090
+[PyTorch 2.9 CrossEntropyLoss](https://docs.pytorch.org/docs/2.9/generated/torch.nn.CrossEntropyLoss.html) 的硬标签 mean 分母排除 ignore_index；启用类别权重时分母变为有效标签权重之和，不能仍机械使用 token 个数。序列等权目标本来就不同，不应为了匹配 token mean 而擅自改掉。
 
-1. **Accum-Throughput-Linear-Decay**: Accum throughput = real throughput / accum_steps. 15x slower at accum=16.
-2. **Accum-Memory-Constant**: Memory stays constant regardless of accumulation. Only micro-batch activations scale.
-3. **Accum-NOT-Free**: Gradient accumulation is a memory-saving technique, not a speed technique. It costs throughput.
-4. **LoRA+Accum=Max-Efficiency**: LoRA + accumulation = 72% memory saving vs Full FT. Best for memory-constrained GPUs.
-5. **Real-Batch-Linear-Throughput**: Real batch throughput scales linearly (step time constant ~0.042s).
-6. **Memory-Throughput-Dichotomy**: You can have high throughput OR low memory, but not both. Choose based on GPU capacity.
-7. **Accum-For-7B-Training**: For 7B LoRA on RTX 4090 24GB → B=1 + accum=32 → fits in memory → accepts slow training.
+### CPU 梯度和单步更新对照
 
-## Practical Recommendations for RTX 4090
+两条序列各一个微批，第一条仅 1 个有效 token，第二条 3 个；共享标量 θ 生成两类 logits `[x*θ,0]`。在 θ=0 时两微批 mean loss 都是 log(2)，**相同的 loss 标量仍可掩盖梯度方向差异**。
 
-### OPT-125M (fits easily)
-- **Use real batching**: B=32 or B=64 → high throughput, memory OK
-- No need for accumulation — model is tiny
+```python
+import torch
+import torch.nn.functional as F
 
-### 7B LoRA (memory-constrained)
-- B=1 + accum=8 → effective B=8 → fits in ~6GB memory → training possible
-- Accept ~8x slower throughput → but training IS possible on 24GB
-- This is WHY LoRA matters: enables training, not speed
+torch.set_num_threads(1)
+x = torch.tensor([[2., 9., 9.], [1., 1., 1.]], dtype=torch.float64)
+y = torch.tensor([[0, -100, -100], [1, 1, 1]])
+valid = int(y.ne(-100).sum())
+expected = {
+    "full": (0.125, -0.0125),
+    "token_weighted": (0.125, -0.0125),
+    "micro_mean": (-0.25, 0.025),
+    "micro_sum": (-0.5, 0.05),
+}
+for mode in expected:
+    theta = torch.nn.Parameter(torch.tensor(0., dtype=torch.float64))
+    opt = torch.optim.SGD([theta], lr=0.1)
 
-### Production Pipeline
-1. LoRA r=8, alpha=16, all-linear targets
-2. BF16 (no AMP) — fastest + most accurate
-3. B=4 + accum=4 → effective B=16 → good training dynamics
-4. After training → merge LoRA → quantize → serve
+    def loss(rows, reduction):
+        z = x[rows] * theta
+        logits = torch.stack((z, torch.zeros_like(z)), dim=-1)
+        return F.cross_entropy(
+            logits.reshape(-1, 2), y[rows].reshape(-1),
+            ignore_index=-100, reduction=reduction,
+        )
+
+    scalar = 0.
+    rows = [slice(None)] if mode == "full" else [slice(0, 1), slice(1, 2)]
+    for row in rows:
+        value = loss(row, "sum" if mode == "token_weighted" else "mean")
+        divisor = valid if mode == "token_weighted" else (2 if mode == "micro_mean" else 1)
+        value = value / divisor
+        scalar += value.item()
+        value.backward()
+    grad = theta.grad.item()
+    opt.step()
+    torch.testing.assert_close(
+        torch.tensor([grad, theta.item()], dtype=torch.float64),
+        torch.tensor(expected[mode], dtype=torch.float64), rtol=0, atol=1e-12,
+    )
+    print(mode, "loss=", scalar, "grad=", grad, "theta=", theta.item())
+```
+
+2026-10-30，Python 3.12.13／Torch 2.9.1（git `5811a8d7da873dd699ff6687092c225caffcf1bb`），CPU FP64 单线程执行：
+
+| 归约 | 累积 loss | 梯度 | SGD 后 θ |
+|---|---:|---:|---:|
+| 整批 token mean | 0.69314718056 | 0.125 | −0.0125 |
+| 各微批 sum／整窗 4 token | 0.69314718056 | 0.125 | −0.0125 |
+| 各微批 mean／2 | 0.69314718056 | −0.25 | 0.025 |
+| 各微批 mean 直接相加 | 1.38629436112 | −0.5 | 0.05 |
+
+这是原生交叉熵＋SGD 的局部对照，不是历史 OPT／verl／UniRL 训练复现，也不说明实际故障频率或性能。对可按微批分解的同一目标，累积期间固定参数，梯度才按线性相加；BatchNorm、跨样本目标、随机操作或浮点加法顺序仍可能破坏与大批逐位相同的预期。
+
+### 实现时的检查点
+
+在窗口开始前或按既有训练器契约取得整窗有效分母，逐微批 backward 后统一 step；不要在循环中 zero_grad 或 step。空微批不要先算 `0/0` 的 mean 再乘零；整窗 N=0 时需明确更新策略，零梯度也不保证优化器不更新参数，见 [None 与零梯度](adamw-optimizer-deep-dive.md#缺失梯度与零梯度)。
+
+[PyTorch 2.9 AMP 累积示例](https://docs.pytorch.org/docs/2.9/notes/amp_examples.html#gradient-accumulation) 要求整窗保持同一缩放，累积完成才 unscale／step／update；其示例的除累积次数不能代替对实际 loss 分母的核对。分布式还须计入全局分母和梯度归约约定，本例不是 DDP/FSDP/AMP 的实现模板。
 
 ## Tool
 
-`tools/gradient_accumulation_benchmark_4090.py`
+历史脚本：[gradient_accumulation_benchmark_4090.py](../../tools/gradient_accumulation_benchmark_4090.py)。2026-10-30 复核固定于个人仓库 [490546c](https://github.com/Jackie2049/perpetual-learning/blob/490546c406abdab1914f5342432622591f4b85bb/tools/gradient_accumulation_benchmark_4090.py#L130)，SHA256 `7d17fbe92a5c6f15c777a20d77b9b47ee19d79fd3c3d3ed247d94737e5877bd0`。脚本原样保留，不运行或修改 GPU 工作；上面小例可直接在 CPU 执行。
 
 ## Related
 
