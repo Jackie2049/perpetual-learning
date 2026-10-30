@@ -65,7 +65,7 @@
 
 2026-10-30补[蒸馏估计器与更新](#蒸馏估计器更新模式的已有提案)：#8423报告者已有#8458，breaking guard语义待维护者决定；四固定状态／16别名对的原KL函数加本地score公式核期望值与梯度不同，非原loss API／作者25或64项，不另实现、迁移配置或排算力。
 
-2026-10-30接[异步快照发布](#多角色异步快照的已有候选)：#8056作者新报告确认SFT边界恢复仍可复现、#7974尚未集成；新93f相关恢复方法AST同旧cfad，九输入仅语法／静态核对。旧八driver控制与19恢复项不重跑或迁移为新head验收，不另实现／排算力。
+2026-10-30接[异步快照发布](#多角色异步快照的已有候选)：#8056新4a仅修SFT shell显式路径传递／清理前拒绝；12原参数项＋8本地shell-only控制新20通过、旧4通过16失败，非Hydra或原120项／训练恢复。RL与边界恢复实现未改，旧八driver／19恢复项不重跑或迁移，不另实现／排算力。
 
 2026-10-30核[NVFP4共享重载](#nvfp4-共享重载的审批与失败边界)：#7971获APPROVED但未合并；旧专用失败封禁已不在当前worker，共享存储回绑检查非回滚。六输入仅语法／AST，不迁移作者旧长跑或新增M5部署／算力任务。
 
@@ -93,6 +93,8 @@
 [原checkpoint专题](../../notebook/frameworks/verl-checkpoint-management-reading.md#多角色异步保存的发布与清理)与[八组标准库结果](../../experiments/async-checkpoint-publication/result.json)核完整原协调器：替换失败保留旧指针，清理失败时新指针已发布但pending保留；重试重放清理。原模块同d91f870e，不迁移作者该版六阶段／253项或更早22阶段／1690项H20报告为当前head／本机验收。角色确认／prune为明确记录器，无真实角色payload、旧目录删除、OmegaConf原测试／Ray／Megatron或训练。新bot SFT反馈与已有min步数的blocking保存分开，不因尾部无调用断言正常epoch必漏，也不替作者改代码／写社区／另排M5任务；所有上游与既有PR-head动作仍逐项待用户明确同意。
 
 同日07:13Z，[作者人工回复](https://github.com/verl-project/verl/pull/8056#issuecomment-6517157160)报告两SFT恢复到epoch边界仍可复现，并以真实loader／训练I/O替身验证未合入的#7974；不当本项目新实测或维护者批准。[原专题补充](../../notebook/frameworks/verl-checkpoint-management-reading.md#恢复边界与异步-drain-的不同责任)核#8056未传epoch长度且handler无边界策略；#7974新93f与旧cfad的相关恢复方法剥docstring AST相同，但Ray fit另有指标构造变化。样本恢复正确与尾部写入drain不是替代关系；九输入仅compile／静态，不合并候选、补drain或重跑旧测试。
+
+08:25Z后#8056到head4a0679602e0a56b13a49e477e279cef5f03324aa，相对c76只改SFT测试shell和一测试文件；[启动路径核对](../../notebook/frameworks/verl-checkpoint-management-reading.md#sft-启动路径与清理前置检查)调用12原参数项及8本地shell-only控制，新20通过／旧4通过16失败。原替身运行实际shell，仅合成marker清理；缺路径在命令／trap前拒绝，含空格路径单argv，Bash3.2旧空数组可报错却返回0，须同时核训练记录器已进入。无Hydra／原120项、实际checkpoint加载或异步drain验收；两新进程完整结果一致，未重复旧恢复矩阵或新排M5算力。
 
 ## 蒸馏估计器更新模式的已有提案
 

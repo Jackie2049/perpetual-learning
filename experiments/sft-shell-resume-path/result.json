@@ -1,0 +1,77 @@
+{
+  "python": "3.12.13",
+  "pytest": "8.4.2",
+  "bash": "GNU bash, version 3.2.57(1)-release (arm64-apple-darwin24)",
+  "sha256": {
+    "4a0679602e0a56b13a49e477e279cef5f03324aa:tests/special_e2e/sft/run_sft_engine.sh": "37cf438d17df9dda1546a9193379787b6c03c41cc8e0b8b145f3332309a50852",
+    "4a0679602e0a56b13a49e477e279cef5f03324aa:tests/trainer/test_sft_engine_cleanup_on_cpu.py": "5f9aec06e1e1a7b85c4b2d28c89336000694f698cf7baee12aeccc782dfa7198",
+    "c76d46ea6474f9fc9837a469c2ab74b58d921bbc:tests/special_e2e/sft/run_sft_engine.sh": "9157a035cedf7271c05eee2ed21e6da2fc0f7d3546790b363a17fdd0d066938b"
+  },
+  "scope": "12 upstream parameter cases plus 8 local shell-only space-path cases per script; no Hydra or training",
+  "scripts": {
+    "base": {
+      "original_missing_path": {
+        "passed": 0,
+        "failed": 8,
+        "failed_cases": [
+          "spmd/None/None",
+          "spmd/None/'False'",
+          "spmd/''/None",
+          "spmd/''/'False'",
+          "ray/None/None",
+          "ray/None/'False'",
+          "ray/''/None",
+          "ray/''/'False'"
+        ]
+      },
+      "original_other_modes": {
+        "passed": 4,
+        "failed": 0,
+        "failed_cases": []
+      },
+      "local_space_path_no_hydra": {
+        "passed": 0,
+        "failed": 8,
+        "failed_cases": [
+          "spmd/False/0",
+          "spmd/False/37",
+          "spmd/True/0",
+          "spmd/True/37",
+          "ray/False/0",
+          "ray/False/37",
+          "ray/True/0",
+          "ray/True/37"
+        ]
+      }
+    },
+    "head": {
+      "original_missing_path": {
+        "passed": 8,
+        "failed": 0,
+        "failed_cases": []
+      },
+      "original_other_modes": {
+        "passed": 4,
+        "failed": 0,
+        "failed_cases": []
+      },
+      "local_space_path_no_hydra": {
+        "passed": 8,
+        "failed": 0,
+        "failed_cases": []
+      }
+    }
+  },
+  "base_empty_array_observations": {
+    "spmd": {
+      "returncode": 0,
+      "recorded_training_arguments": false,
+      "empty_array_unbound_error": true
+    },
+    "ray": {
+      "returncode": 0,
+      "recorded_training_arguments": false,
+      "empty_array_unbound_error": true
+    }
+  }
+}

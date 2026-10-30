@@ -556,6 +556,24 @@ python3.12 -B experiments/async-checkpoint-publication/verify.py /path/to/verl-g
 
 Git对象须预缓存，脚本禁隐式fetch。此driver边界学习收束，不扩模拟角色矩阵、不替作者改代码或M5环境；所有社区与既有PR-head写入仍逐项待用户明确授权。
 
+#### SFT 启动路径与清理前置检查
+
+**恢复路径必须先完整进入启动参数，才能谈恢复行为；脚本返回0也不能单独证明训练命令执行过。** #8056于2026-10-30更新到 `4a0679602e0a56b13a49e477e279cef5f03324aa`，相对上述c76仅改[SFT启动脚本](https://github.com/verl-project/verl/blob/4a0679602e0a56b13a49e477e279cef5f03324aa/tests/special_e2e/sft/run_sft_engine.sh)及其[清理回归](https://github.com/verl-project/verl/blob/4a0679602e0a56b13a49e477e279cef5f03324aa/tests/trainer/test_sft_engine_cleanup_on_cpu.py)。RL协调器、SFT循环和handler均未改变，不能将这次更新当作集成#7974或重验作者旧H20结果。
+
+新脚本在 `RESUME_MODE=resume_path` 时用 `${RESUME_FROM_PATH:?...}` 拒绝缺失／空字符串，位置早于checkpoint目录创建、清理和EXIT trap注册；随后把 `trainer.resume_from_path=...` 作为一个array元素传给命令。含空格路径不会被shell拆成多个参数，disable／auto不转发该变量。这里不检查路径是否存在、checkpoint是否完整或Hydra是否接受所有特殊字符，不能把非空字符串检查写成内容就绪保护。
+
+[本机脚本](../../experiments/sft-shell-resume-path/verify.py)使用当前原测试文件及其原命令替身／路径守卫，直接调用两原测试体的12个参数组合；另外8个控制借原_run_sft_engine检查含空格外部路径、同步／异步flag及训练替身退出0／37，不执行其中的Hydra断言。只替换被比较的原shell文件，不改其源码；临时目录中只有合成marker，真实rm限于通过ownership／symlink检查的子目录。
+
+| 检查 | c76旧脚本 | 4a新脚本 |
+|---|---|---|
+| 缺／空路径先拒绝且未清理、未进入命令记录器，原8参数项 | 0通过／8失败 | 8通过 |
+| disable／auto忽略可选恢复变量，原4参数项 | 4通过 | 4通过 |
+| 空格路径为单一argv、外部输入保留、清理和退出码，8本地shell-only项 | 0通过／8失败 | 8通过 |
+
+Python3.12.13／pytest8.4.2／macOS Bash3.2.57，[完整结果及三输入hash](../../experiments/sft-shell-resume-path/result.json)区分12原参数项与8本地控制，**不是原生pytest收集或作者声称的完整120项**。现有环境缺Hydra／OmegaConf，没有安装依赖或以替身解析器补足。新脚本在显式路径、ASYNC_SAVE=False时有非空override数组；旧脚本此时为空，本机两mode均记录到nounset报错、退出码0且无training-arguments.json。这一旧环境观察说明需同时核命令进入证据，不外推所有Bash版本或所有模式已修复空数组问题。
+
+复现：`python3.12 -B experiments/sft-shell-resume-path/verify.py /path/to/verl-git`，要求固定Git对象预缓存。仅测试shell控制流与合成文件，不import verl／Torch、启动分布式launcher、访问模型或验证实际恢复；本题局部收束，不新增算力任务、修改候选或发布社区反馈。
+
 ### 对象存储下载与 checkpoint 提交
 
 **下载入口能读对象存储，不等于训练状态已经完整写入并可恢复。** [S3 RFC #7641](https://github.com/verl-project/verl/issues/7641)提出原生FSDP2对象存储生命周期；2026-10-25读取全文及唯一评论，维护者[询问S3 FUSE挂载路线](https://github.com/verl-project/verl/issues/7641#issuecomment-5487704372)，尚不是对某个实现的采纳或验收。查重另有旧[#2334](https://github.com/verl-project/verl/pull/2334)（head23bd321f，17文件774增54删）与下载侧[#6850](https://github.com/verl-project/verl/pull/6850)，两PR均OPEN／非draft／未合并；本轮不另写后端或自动选型。

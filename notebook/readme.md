@@ -188,6 +188,7 @@
 - [verl 异步恢复库存与预热](frameworks/verl-checkpoint-management-reading.md#异步恢复的存活库存与训练历史) — 新journal＋旧模型非一致时间点恢复；原9 warmup测试体的Mock加载不等TQ往返，终态prompt也占恢复容量
 - [verl SFT epoch 与加载器恢复](frameworks/verl-checkpoint-management-reading.md#sft-epoch-边界与加载器状态) — #7402原方法、2个原生迭代状态及8组真实CPU数据流控制；最后一批与结束确认不同，legacy回退非边界修复
   - [恢复边界与异步drain](frameworks/verl-checkpoint-management-reading.md#恢复边界与异步-drain-的不同责任) — #8056作者报告确认边界恢复可复现、#7974未集成；新93f相关方法AST同旧cfad，不重跑或迁移旧测试为新head验收
+  - [SFT启动路径与清理](frameworks/verl-checkpoint-management-reading.md#sft-启动路径与清理前置检查) — #8056新4a仅修shell；12原参数项＋8本地argv控制通过，旧4通过16失败；退出0不等命令已执行，非Hydra或恢复验收
 - [自定义数据源提前耗尽](frameworks/verl-checkpoint-management-reading.md#提前耗尽与尾部保存) — #8454非draft新bot反馈的静态核对：正常break不补存／补验，更新中途仍抛错；回退step编号不认证reader游标回退，非训练验收
 - [verl LoRA-only键完整性](frameworks/verl-checkpoint-management-reading.md#lora-only-的键完整性与加载副作用) — #8350原分支八组真实CPU控制；缺adapter被拒绝不等模型回滚，也不认证base权重身份，非原17项或FSDP恢复验收
 - [verl 对象存储下载与checkpoint提交](frameworks/verl-checkpoint-management-reading.md#对象存储下载与-checkpoint-提交) — #6850原五下载测试体通过只认证memory缓存；#7641的_COMMITTED是待验收协议，非主线已有S3恢复。
