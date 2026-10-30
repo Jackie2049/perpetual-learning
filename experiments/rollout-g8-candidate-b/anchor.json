@@ -1,0 +1,10 @@
+{
+  "registered_anchor": "eaf1627c (2026-10-27 vllm main, #52970)",
+  "used": "0.24.0+cu129 wheel (ee0da84a, v0.24.0 2026-06-28)",
+  "drift": "6033 commits ahead + 18 behind; same V1 engine, core measurement path heavily evolved",
+  "label": "anchor-drift 0.24.0",
+  "model": "Qwen2.5-1.5B-Instruct",
+  "gpu_memory_utilization": 0.20,
+  "max_model_len": 4096,
+  "metric": "decode tokens/s (prefill separated via 2-point output-len fit) + whole-batch latency percentiles; per-request TTFT/ITL requires serve-mode (optional extension at execution)"
+}
