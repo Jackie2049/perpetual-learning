@@ -1,5 +1,7 @@
 # UniRL — 腾讯统一多模态 RL 框架调研
 
+2026-10-30接续：[AR 概率锚点的响应校验](#ar-概率锚点的响应校验)核已合并#631：按实际采样token取值、拒绝缺失／长度错误／非有限FP32，而非补零或整批丢锚点；20个本地wire输入与原容器操作只验证CPU数据契约，不等GSPO／HI3训练验收。
+
 2026-10-30接续：[AR逐样本调用](#合并后的逐样本调用)核#630已合并：显式seed按AR身份拆call，未设seed保留原批处理；七组原helper标准库控制不是模型输出／副本独立性或吞吐验收。旧Omni未接seed的结论保留为合并前历史，不用于当前代码。
 
 2026-10-30 接续：[奖励服务的测试收集与空结果](#奖励服务的测试收集与空结果)核已有#632：原文件快照的八组原生pytest collection区分6个误收集CLI节点、空收集退出5和缺路径退出4；排除误收集不是新增服务测试或训练验收。
@@ -295,6 +297,41 @@ python -B experiments/scripts/verify_unirl_packed_text.py /path/to/UniRL
 Python3.12.13 / torch2.9.1；只用一个真实__path__包壳跳过 tensor 包初始化器的 Ray transport 汇总导入，其余原类按源码加载。无Ray/Hydra/OmegaConf/worker-local transport导入、设备发现或环境安装。这是自编原容器检查，不是上游原测试；本题不新增M5硬件事项。
 
 脚本核对完整文件SHA256：batch.py `a33122410e68c2295631bbc3e70ce4b69ba41081da7ed49abd06774640676e3c`；segments/base.py `f7b9ce0a6ae77bcdbde81a93b43096bdfe975368234753ef74ab6191d794ff32`；segments/text.py `9f58114b40f3949eea70fba0692fb96b746e3e47af0c94c7db99e314cf237b34`。
+
+## AR 概率锚点的响应校验
+
+**有 token 而没有对应 logprob，应在响应构造处拒绝，不能把缺失值伪装成概率。** [jasonchen505 的 #631](https://github.com/Tencent-Hunyuan/UniRL/pull/631)已于2026-10-29 06:15:04Z合并，最终head `e6651631cad409bbea4408da338b699d8b3783a3`、合并提交 `5d1da78d4d87593b41a4235a65e9ad9dc3f9b6f8`、父版 `ffad0b832707f5f1a87609e96f351426ede3f043`。10-30 03:21Z前后的只读API仍返回main为此合并提交，不能把它与PR head混称。[原 build_ar_segment](https://github.com/Tencent-Hunyuan/UniRL/blob/5d1da78d4d87593b41a4235a65e9ad9dc3f9b6f8/unirl/rollout/engine/vllm_omni/utils/tracks.py)只取每请求首个stage0的首个completion，构造`TextSegment`的tokens、log_probs、rollout_log_probs；不是遍历所有候选completion的概率验证器。
+
+### 采样身份与缺失值分开处理
+
+旧版用`next(iter(step.values()))`取字典首项。它可能属于别的候选token；在本地输入`{99: -0.125, 11: -0.75}`、实际token11时，旧版保存−0.125，新版按`choices.get(11)`保存−0.75。数值有限、长度一致仍不能证明概率对应正确身份。
+
+旧版还会截长、补短／坏step为0；非空token行缺整个logprob列表时，`have_logp`可将整批两个概率字段置None。新版要求逐token的非空dict、采样token必须存在；在构造float32 Tensor后用`torch.isfinite`检查，因此有限Python float `−1e100`转为FP32 `−inf`也会被拒绝。logprob为0本身可以合法表示概率1，但无来源的0不是一个可用锚点。
+
+| 本地输入 | 父版原函数 | 合并版原函数 |
+|---|---|---|
+| 两token只有一步概率 | 补成`[-0.5, 0.0]` | RuntimeError |
+| 一token有两步概率 | 截成`[-0.5]` | RuntimeError |
+| 非空token行缺None／空列表 | 两概率字段为None | RuntimeError |
+| 非dict／空dict step | 补0 | RuntimeError |
+| 仅有别的token | 取别的token概率 | RuntimeError |
+| NaN／−inf／转FP32溢出 | 保存非有限Tensor | RuntimeError |
+
+有效批中可以有空行。六行`[无输出, 非stage0, stage0无completion, 空tokens+None, 空tokens+[], 一有效token]`两版均保留batch_size6、cu_seqlens`[0,0,0,0,0,0,1]`；全部无token仍返回None。但“空token带非空logprob”新版报长度错误，不把所有空行无条件跳过。正有限值0.25仍被接受；缺logprob属性和无法float转换分别仍抛AttributeError／ValueError，故本项不是完整概率域校验或统一异常类型封装。
+
+### 原容器对照与训练边界
+
+[脚本](../../experiments/unirl-ar-logprob-contract/verify.py)在Python3.12.13／Torch2.9.1、单CPU线程执行20个自编wire输入，两版原`build_ar_segment`函数仅AST隔离，响应对象为明确的SimpleNamespace夹具。五份完整原模块（Batch、两Condition、Segment、TextSegment）通过只跳过包初始化的module壳加载，类与pack／concat／slice／select均未替换；这五文件在父版／合并版逐字相同，tracks在最终head／合并版相同。两个新进程[结果](../../experiments/unirl-ar-logprob-contract/result.json)一致：13类输入新抛RuntimeError，采样非首项取值纠正，其余正常／特定拒绝边界如上。
+
+另用原容器核混合空行切片后concat完整还原，重复select`[5,0,5]`得到tokens`[11,11]`与cu`[0,1,1,2]`。独立控制中，旧版两行一行缺None导致整批log_probs为None；再与有效分片concat，原Batch报`TextSegment.log_probs: per-sample value is missing in items [1] but set in others`。这是实际CPU容器拒绝，不是仅检查传给pack的参数。
+
+[GSPO](https://github.com/Tencent-Hunyuan/UniRL/blob/5d1da78d4d87593b41a4235a65e9ad9dc3f9b6f8/unirl/algorithms/gspo.py)调用的[prepare_ar_logp_anchor](https://github.com/Tencent-Hunyuan/UniRL/blob/5d1da78d4d87593b41a4235a65e9ad9dc3f9b6f8/unirl/algorithms/base.py)在log_probs=None时直接返回，GSPO loss入口也会早返回；此处仅源码，未运行replay／loss。响应校验不是重新计算概率、保证锚点来自正确权重版本或证明联合HI3训练成功。本机不是作者所报16项harness／原生pytest，没有真实Omni请求、adapter、Sample／Part、transport或设备训练；已有作者已合并，不另认领实现或新排M5算力。
+
+```bash
+python3.12 -B experiments/unirl-ar-logprob-contract/verify.py /path/to/UniRL-git
+```
+
+原Git对象须预缓存，脚本禁隐式fetch、不安装依赖；输出记录13份版本／路径源码SHA256与Git blob，供限定范围复查。本题CPU契约收束，后续仅随实质反馈重开，不扩充同义异常矩阵。
 
 ## 按域奖励的零分与失败标志
 

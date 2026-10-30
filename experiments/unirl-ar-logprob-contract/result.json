@@ -1,0 +1,590 @@
+{
+  "python": "3.12.13",
+  "torch": "2.9.1",
+  "torch_git": "5811a8d7da873dd699ff6687092c225caffcf1bb",
+  "base": "ffad0b832707f5f1a87609e96f351426ede3f043",
+  "merge": "5d1da78d4d87593b41a4235a65e9ad9dc3f9b6f8",
+  "head": "e6651631cad409bbea4408da338b699d8b3783a3",
+  "sources": {
+    "5d1da78d4d87593b41a4235a65e9ad9dc3f9b6f8:unirl/distributed/tensor/batch.py": {
+      "sha256": "a33122410e68c2295631bbc3e70ce4b69ba41081da7ed49abd06774640676e3c",
+      "git_blob": "5466da4829d27e987fc3c1362a0cfe2e3a77fc09"
+    },
+    "ffad0b832707f5f1a87609e96f351426ede3f043:unirl/distributed/tensor/batch.py": {
+      "sha256": "a33122410e68c2295631bbc3e70ce4b69ba41081da7ed49abd06774640676e3c",
+      "git_blob": "5466da4829d27e987fc3c1362a0cfe2e3a77fc09"
+    },
+    "5d1da78d4d87593b41a4235a65e9ad9dc3f9b6f8:unirl/types/conditions/base.py": {
+      "sha256": "7c03434bc7317eb65eca8d6e6a1f1c3beeb87d1a4a52020f73d2d225c3aa3e87",
+      "git_blob": "b59a6a79dbd294d385baef825007b22e17fb2f61"
+    },
+    "ffad0b832707f5f1a87609e96f351426ede3f043:unirl/types/conditions/base.py": {
+      "sha256": "7c03434bc7317eb65eca8d6e6a1f1c3beeb87d1a4a52020f73d2d225c3aa3e87",
+      "git_blob": "b59a6a79dbd294d385baef825007b22e17fb2f61"
+    },
+    "5d1da78d4d87593b41a4235a65e9ad9dc3f9b6f8:unirl/types/conditions/text.py": {
+      "sha256": "2ab16ab547b01a5e83bae86a521f390e70a40f6822b75cb9307ecc7bc94b501b",
+      "git_blob": "031d11ed35bb64d99530509a7b41b49200abc5c3"
+    },
+    "ffad0b832707f5f1a87609e96f351426ede3f043:unirl/types/conditions/text.py": {
+      "sha256": "2ab16ab547b01a5e83bae86a521f390e70a40f6822b75cb9307ecc7bc94b501b",
+      "git_blob": "031d11ed35bb64d99530509a7b41b49200abc5c3"
+    },
+    "5d1da78d4d87593b41a4235a65e9ad9dc3f9b6f8:unirl/types/segments/base.py": {
+      "sha256": "f7b9ce0a6ae77bcdbde81a93b43096bdfe975368234753ef74ab6191d794ff32",
+      "git_blob": "0d392657e8b4d23f33c78f0c6745f8c5d11c4109"
+    },
+    "ffad0b832707f5f1a87609e96f351426ede3f043:unirl/types/segments/base.py": {
+      "sha256": "f7b9ce0a6ae77bcdbde81a93b43096bdfe975368234753ef74ab6191d794ff32",
+      "git_blob": "0d392657e8b4d23f33c78f0c6745f8c5d11c4109"
+    },
+    "5d1da78d4d87593b41a4235a65e9ad9dc3f9b6f8:unirl/types/segments/text.py": {
+      "sha256": "9f58114b40f3949eea70fba0692fb96b746e3e47af0c94c7db99e314cf237b34",
+      "git_blob": "416bf11847ee9166ac3feb4a30a0b683c5974aec"
+    },
+    "ffad0b832707f5f1a87609e96f351426ede3f043:unirl/types/segments/text.py": {
+      "sha256": "9f58114b40f3949eea70fba0692fb96b746e3e47af0c94c7db99e314cf237b34",
+      "git_blob": "416bf11847ee9166ac3feb4a30a0b683c5974aec"
+    },
+    "ffad0b832707f5f1a87609e96f351426ede3f043:unirl/rollout/engine/vllm_omni/utils/tracks.py": {
+      "sha256": "348c3ba3c326b5544aa9709aebd98d4b2f3e0ae068e0d52e8c65c419b164aea2",
+      "git_blob": "f961ee6e0bbeca5e19567abfff1c05ae517814c0"
+    },
+    "5d1da78d4d87593b41a4235a65e9ad9dc3f9b6f8:unirl/rollout/engine/vllm_omni/utils/tracks.py": {
+      "sha256": "a909f1f87fee8ff64816be59ce39587abaa34e1e9c849ff0027a3bb562f7f4a5",
+      "git_blob": "5c6f0ff48def8d55a48f9a9a0a633419ed6afd1e"
+    },
+    "e6651631cad409bbea4408da338b699d8b3783a3:unirl/rollout/engine/vllm_omni/utils/tracks.py": {
+      "sha256": "a909f1f87fee8ff64816be59ce39587abaa34e1e9c849ff0027a3bb562f7f4a5",
+      "git_blob": "5c6f0ff48def8d55a48f9a9a0a633419ed6afd1e"
+    }
+  },
+  "full_container_modules_equal_base": 5,
+  "merged_tracks_equal_head": true,
+  "local_wire_cases": 20,
+  "new_runtime_error_cases": [
+    "short",
+    "long",
+    "logprobs_on_empty",
+    "missing_none",
+    "missing_empty",
+    "not_sequence",
+    "step_not_dict",
+    "step_empty_dict",
+    "sampled_omitted",
+    "nan",
+    "negative_infinity",
+    "finite_fp64_overflows_fp32",
+    "selected_none"
+  ],
+  "cases": {
+    "valid": {
+      "base": {
+        "result": {
+          "batch_size": 1,
+          "tokens": [
+            11,
+            12
+          ],
+          "cu_seqlens": [
+            0,
+            2
+          ],
+          "log_probs": [
+            -0.5,
+            -0.75
+          ],
+          "rollout_log_probs": [
+            -0.5,
+            -0.75
+          ]
+        }
+      },
+      "merged": {
+        "result": {
+          "batch_size": 1,
+          "tokens": [
+            11,
+            12
+          ],
+          "cu_seqlens": [
+            0,
+            2
+          ],
+          "log_probs": [
+            -0.5,
+            -0.75
+          ],
+          "rollout_log_probs": [
+            -0.5,
+            -0.75
+          ]
+        }
+      }
+    },
+    "sampled_not_first": {
+      "base": {
+        "result": {
+          "batch_size": 1,
+          "tokens": [
+            11
+          ],
+          "cu_seqlens": [
+            0,
+            1
+          ],
+          "log_probs": [
+            -0.125
+          ],
+          "rollout_log_probs": [
+            -0.125
+          ]
+        }
+      },
+      "merged": {
+        "result": {
+          "batch_size": 1,
+          "tokens": [
+            11
+          ],
+          "cu_seqlens": [
+            0,
+            1
+          ],
+          "log_probs": [
+            -0.75
+          ],
+          "rollout_log_probs": [
+            -0.75
+          ]
+        }
+      }
+    },
+    "mixed_empty": {
+      "base": {
+        "result": {
+          "batch_size": 6,
+          "tokens": [
+            11
+          ],
+          "cu_seqlens": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          "log_probs": [
+            -0.5
+          ],
+          "rollout_log_probs": [
+            -0.5
+          ]
+        }
+      },
+      "merged": {
+        "result": {
+          "batch_size": 6,
+          "tokens": [
+            11
+          ],
+          "cu_seqlens": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          "log_probs": [
+            -0.5
+          ],
+          "rollout_log_probs": [
+            -0.5
+          ]
+        }
+      }
+    },
+    "all_empty": {
+      "base": {
+        "result": null
+      },
+      "merged": {
+        "result": null
+      }
+    },
+    "short": {
+      "base": {
+        "result": {
+          "batch_size": 1,
+          "tokens": [
+            11,
+            12
+          ],
+          "cu_seqlens": [
+            0,
+            2
+          ],
+          "log_probs": [
+            -0.5,
+            0.0
+          ],
+          "rollout_log_probs": [
+            -0.5,
+            0.0
+          ]
+        }
+      },
+      "merged": {
+        "error": "RuntimeError",
+        "message": "build_ar_segment: vLLM-Omni returned mismatched token/logprob lengths: 2 tokens vs 1 logprobs"
+      }
+    },
+    "long": {
+      "base": {
+        "result": {
+          "batch_size": 1,
+          "tokens": [
+            11
+          ],
+          "cu_seqlens": [
+            0,
+            1
+          ],
+          "log_probs": [
+            -0.5
+          ],
+          "rollout_log_probs": [
+            -0.5
+          ]
+        }
+      },
+      "merged": {
+        "error": "RuntimeError",
+        "message": "build_ar_segment: vLLM-Omni returned mismatched token/logprob lengths: 1 tokens vs 2 logprobs"
+      }
+    },
+    "logprobs_on_empty": {
+      "base": {
+        "result": null
+      },
+      "merged": {
+        "error": "RuntimeError",
+        "message": "build_ar_segment: vLLM-Omni returned mismatched token/logprob lengths: 0 tokens vs 1 logprobs"
+      }
+    },
+    "missing_none": {
+      "base": {
+        "result": {
+          "batch_size": 1,
+          "tokens": [
+            11
+          ],
+          "cu_seqlens": [
+            0,
+            1
+          ],
+          "log_probs": null,
+          "rollout_log_probs": null
+        }
+      },
+      "merged": {
+        "error": "RuntimeError",
+        "message": "build_ar_segment: vLLM-Omni returned mismatched token/logprob lengths: 1 tokens vs None logprobs"
+      }
+    },
+    "missing_empty": {
+      "base": {
+        "result": {
+          "batch_size": 1,
+          "tokens": [
+            11
+          ],
+          "cu_seqlens": [
+            0,
+            1
+          ],
+          "log_probs": null,
+          "rollout_log_probs": null
+        }
+      },
+      "merged": {
+        "error": "RuntimeError",
+        "message": "build_ar_segment: vLLM-Omni returned mismatched token/logprob lengths: 1 tokens vs 0 logprobs"
+      }
+    },
+    "not_sequence": {
+      "base": {
+        "result": {
+          "batch_size": 1,
+          "tokens": [
+            11
+          ],
+          "cu_seqlens": [
+            0,
+            1
+          ],
+          "log_probs": null,
+          "rollout_log_probs": null
+        }
+      },
+      "merged": {
+        "error": "RuntimeError",
+        "message": "build_ar_segment: vLLM-Omni returned mismatched token/logprob lengths: 1 tokens vs int logprobs"
+      }
+    },
+    "step_not_dict": {
+      "base": {
+        "result": {
+          "batch_size": 1,
+          "tokens": [
+            11
+          ],
+          "cu_seqlens": [
+            0,
+            1
+          ],
+          "log_probs": [
+            0.0
+          ],
+          "rollout_log_probs": [
+            0.0
+          ]
+        }
+      },
+      "merged": {
+        "error": "RuntimeError",
+        "message": "build_ar_segment: expected non-empty dict logprob step for token 11, got NoneType"
+      }
+    },
+    "step_empty_dict": {
+      "base": {
+        "result": {
+          "batch_size": 1,
+          "tokens": [
+            11
+          ],
+          "cu_seqlens": [
+            0,
+            1
+          ],
+          "log_probs": [
+            0.0
+          ],
+          "rollout_log_probs": [
+            0.0
+          ]
+        }
+      },
+      "merged": {
+        "error": "RuntimeError",
+        "message": "build_ar_segment: expected non-empty dict logprob step for token 11, got dict"
+      }
+    },
+    "sampled_omitted": {
+      "base": {
+        "result": {
+          "batch_size": 1,
+          "tokens": [
+            11
+          ],
+          "cu_seqlens": [
+            0,
+            1
+          ],
+          "log_probs": [
+            -0.25
+          ],
+          "rollout_log_probs": [
+            -0.25
+          ]
+        }
+      },
+      "merged": {
+        "error": "RuntimeError",
+        "message": "build_ar_segment: vLLM-Omni omitted sampled token 11 from logprobs"
+      }
+    },
+    "nan": {
+      "base": {
+        "result": {
+          "batch_size": 1,
+          "tokens": [
+            11
+          ],
+          "cu_seqlens": [
+            0,
+            1
+          ],
+          "log_probs": [
+            "nan"
+          ],
+          "rollout_log_probs": [
+            "nan"
+          ]
+        }
+      },
+      "merged": {
+        "error": "RuntimeError",
+        "message": "build_ar_segment: vLLM-Omni returned non-finite float32 logprobs"
+      }
+    },
+    "negative_infinity": {
+      "base": {
+        "result": {
+          "batch_size": 1,
+          "tokens": [
+            11
+          ],
+          "cu_seqlens": [
+            0,
+            1
+          ],
+          "log_probs": [
+            "-inf"
+          ],
+          "rollout_log_probs": [
+            "-inf"
+          ]
+        }
+      },
+      "merged": {
+        "error": "RuntimeError",
+        "message": "build_ar_segment: vLLM-Omni returned non-finite float32 logprobs"
+      }
+    },
+    "finite_fp64_overflows_fp32": {
+      "base": {
+        "result": {
+          "batch_size": 1,
+          "tokens": [
+            11
+          ],
+          "cu_seqlens": [
+            0,
+            1
+          ],
+          "log_probs": [
+            "-inf"
+          ],
+          "rollout_log_probs": [
+            "-inf"
+          ]
+        }
+      },
+      "merged": {
+        "error": "RuntimeError",
+        "message": "build_ar_segment: vLLM-Omni returned non-finite float32 logprobs"
+      }
+    },
+    "selected_none": {
+      "base": {
+        "error": "AttributeError",
+        "message": "'NoneType' object has no attribute 'logprob'"
+      },
+      "merged": {
+        "error": "RuntimeError",
+        "message": "build_ar_segment: vLLM-Omni omitted sampled token 11 from logprobs"
+      }
+    },
+    "missing_logprob_attribute": {
+      "base": {
+        "error": "AttributeError",
+        "message": "'types.SimpleNamespace' object has no attribute 'logprob'"
+      },
+      "merged": {
+        "error": "AttributeError",
+        "message": "'types.SimpleNamespace' object has no attribute 'logprob'"
+      }
+    },
+    "unconvertible_logprob": {
+      "base": {
+        "error": "ValueError",
+        "message": "could not convert string to float: 'not-a-number'"
+      },
+      "merged": {
+        "error": "ValueError",
+        "message": "could not convert string to float: 'not-a-number'"
+      }
+    },
+    "positive_finite": {
+      "base": {
+        "result": {
+          "batch_size": 1,
+          "tokens": [
+            11
+          ],
+          "cu_seqlens": [
+            0,
+            1
+          ],
+          "log_probs": [
+            0.25
+          ],
+          "rollout_log_probs": [
+            0.25
+          ]
+        }
+      },
+      "merged": {
+        "result": {
+          "batch_size": 1,
+          "tokens": [
+            11
+          ],
+          "cu_seqlens": [
+            0,
+            1
+          ],
+          "log_probs": [
+            0.25
+          ],
+          "rollout_log_probs": [
+            0.25
+          ]
+        }
+      }
+    }
+  },
+  "native_slice_concat_roundtrip": true,
+  "native_repeated_select": {
+    "batch_size": 3,
+    "tokens": [
+      11,
+      11
+    ],
+    "cu_seqlens": [
+      0,
+      1,
+      1,
+      2
+    ],
+    "log_probs": [
+      -0.5,
+      -0.5
+    ],
+    "rollout_log_probs": [
+      -0.5,
+      -0.5
+    ]
+  },
+  "base_missing_row_drops_batch_anchors": {
+    "batch_size": 2,
+    "tokens": [
+      11,
+      12
+    ],
+    "cu_seqlens": [
+      0,
+      1,
+      2
+    ],
+    "log_probs": null,
+    "rollout_log_probs": null
+  },
+  "native_base_mixed_anchor_concat_error": "TextSegment.log_probs: per-sample value is missing in items [1] but set in others",
+  "scope": "20 local wire cases, not the author's 16-case harness or upstream pytest. Original AST-isolated build_ar_segment with SimpleNamespace responses, real Torch CPU and five full original container modules; import-only package shells bypass initialization. No adapter, actual engine response, Sample/Part, GSPO replay, joint HI3 update, worker transport, GPU/NPU, training or performance validation. Positive finite logprobs are accepted; missing attributes and conversion failures are not normalized to RuntimeError."
+}
