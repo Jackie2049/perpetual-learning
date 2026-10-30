@@ -1,0 +1,72 @@
+{
+  "python": "3.12.13",
+  "torch": "2.9.1",
+  "torch_git": "5811a8d7da873dd699ff6687092c225caffcf1bb",
+  "source_sha256": {
+    "Module.state_dict": "8cac9a6b14cc6a45fab450de5c5caf516a6d904ea6606ded408f00386018f1f9",
+    "Optimizer.state_dict": "32626b5dd54af43bf30882883bf278c720f3a7cc99159475b920ef09eec236c8",
+    "Adam.step": "a30c184cf93b5e1b06bf6abf2ef3642eb1e6c2a03992e4914f538239fd28a5f2"
+  },
+  "settings": {
+    "device": "cpu", "dtype": "float64", "lr": 0.1,
+    "betas": [0.9, 0.999], "eps": 1e-08,
+    "manual_gradients": [1.0, -2.0], "resumed_gradient": -2.0
+  },
+  "results": {
+    "stage_both_before_update": {
+      "reported_step": 1,
+      "captured": {
+        "weight": 0.900000001, "model_updates": 1, "adam_step": 1.0,
+        "exp_avg": 0.09999999999999998, "exp_avg_sq": 0.0010000000000000009
+      },
+      "after_one_resumed_update": {
+        "weight": 0.9366103534720749, "model_updates": 2, "adam_step": 2.0,
+        "exp_avg": -0.10999999999999999, "exp_avg_sq": 0.004999000000000004
+      },
+      "expected_after_reported_step_plus_one": {
+        "weight": 0.9366103534720749, "model_updates": 2, "adam_step": 2.0,
+        "exp_avg": -0.10999999999999999, "exp_avg_sq": 0.004999000000000004
+      },
+      "next_update_matches_step_two": true,
+      "all_staged_tensor_storages_independent": true,
+      "native_strict_model_and_optimizer_loads_succeeded": true
+    },
+    "split_staging": {
+      "reported_step": 1,
+      "captured": {
+        "weight": 0.900000001, "model_updates": 1, "adam_step": 2.0,
+        "exp_avg": -0.10999999999999999, "exp_avg_sq": 0.004999000000000004
+      },
+      "after_one_resumed_update": {
+        "weight": 0.9636896525897201, "model_updates": 2, "adam_step": 3.0,
+        "exp_avg": -0.29899999999999993, "exp_avg_sq": 0.008994001000000008
+      },
+      "expected_after_reported_step_plus_one": {
+        "weight": 0.9366103534720749, "model_updates": 2, "adam_step": 2.0,
+        "exp_avg": -0.10999999999999999, "exp_avg_sq": 0.004999000000000004
+      },
+      "next_update_matches_step_two": false,
+      "all_staged_tensor_storages_independent": true,
+      "native_strict_model_and_optimizer_loads_succeeded": true
+    },
+    "late_both": {
+      "reported_step": 1,
+      "captured": {
+        "weight": 0.9366103534720749, "model_updates": 2, "adam_step": 2.0,
+        "exp_avg": -0.10999999999999999, "exp_avg_sq": 0.004999000000000004
+      },
+      "after_one_resumed_update": {
+        "weight": 1.000300005061795, "model_updates": 3, "adam_step": 3.0,
+        "exp_avg": -0.29899999999999993, "exp_avg_sq": 0.008994001000000008
+      },
+      "expected_after_reported_step_plus_one": {
+        "weight": 0.9366103534720749, "model_updates": 2, "adam_step": 2.0,
+        "exp_avg": -0.10999999999999999, "exp_avg_sq": 0.004999000000000004
+      },
+      "next_update_matches_step_two": false,
+      "all_staged_tensor_storages_independent": true,
+      "native_strict_model_and_optimizer_loads_succeeded": true
+    }
+  },
+  "scope": "Three native CPU Adam schedules with one real writer thread each. Event barriers place the complete second update before background staging/writing. All snapshots are deep-copied; this is not a live-alias test. Own temporary files, weights_only load and one manual-gradient resumed update. No forward/backward, RNG/data-loader/scheduler recovery, crash/fsync/atomic publication, distributed framework, DCP, GPU/NPU, device discovery, performance or quality validation."
+}

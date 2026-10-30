@@ -86,6 +86,24 @@ Optimizer.state_dict      32626b5dd54af43bf30882883bf278c720f3a7cc99159475b920ef
 
 全部观察通过；这是自己的受控实验，不是上游原测试。只保存/加载自己生成的内存 payload，`weights_only=True`、`map_location="cpu"`；无磁盘 checkpoint、线程、设备探测、分布式保存或完整恢复验证。完成序列化后继续更新的证据，不认证并发 staging 一致性、CUDA 流同步、崩溃原子性或 fsync；这些没有在本轮执行，也不据此调整框架实现。
 
+### 独立存储与同一时刻
+
+**深拷贝可以隔离存储，却不能把不同时刻取得的模型、优化器和step变成同一快照。** 2026-10-31的[CPU受控线程实验](../../experiments/checkpoint-stage-consistency/verify.py)从真实Adam第一轮更新后发起保存，固定报告step1，再让完整第二轮更新先于后台写入。每条路径均深拷贝所有模型／优化器Tensor并断言与活状态的存储指针不同，真实保存到自己的临时文件，以`weights_only=True`加载，随后恢复模型／Adam并再执行一次更新。[完整结果](../../experiments/checkpoint-stage-consistency/result.json)
+
+实验是FP64单参数初值1、持久buffer记录更新数、Adam lr0.1／betas(0.9,0.999)／eps1e-8，foreach／fused／capturable均False。手动梯度依次为1、−2，恢复后也给−2，不运行forward／backward。正常第2步weight参考为`0.9366103534720749`。主线程与每条路径的一条真实writer线程用两个Event规定先后，没有靠sleep碰撞制造或统计数据竞争。
+
+| 复制时机，报告step均为1 | 文件中的模型更新数／Adam step | 加载后再更新一次的weight | 是否重现正常第2步 |
+|---|---|---|---|
+| 第二轮前一起复制模型与Adam，再交writer | 1／1 | 0.9366103534720749 | 是 |
+| 先复制模型，第二轮后writer才复制Adam | 1／2 | 0.9636896525897201 | 否，跨时刻拼接 |
+| 第二轮后writer才复制两者 | 2／2 | 1.000300005061795 | 否，内容一致但报告step过时 |
+
+三条路径的文件保存、`strict=True`模型加载及optimizer加载都成功。第二条说明“各组件拥有独立存储”不足以保证共同版本；第三条说明“模型与optimizer互相一致”仍不足以保证它们与恢复用step一致。这里的buffer和Adam step只是这个小模型的观察标记，**不能在一般训练中强制将两者相等**：梯度累积、冻结参数或不同更新频率都有各自计数契约。
+
+设计异步保存时，应先界定需要一致的状态集合和所属训练时点，再在允许下一次相关修改前完成相应staging；把复制本身延迟到writer不是等价替换。即使本例的正确路径，也只证明模型／buffer／Adam与step的这次更新，不包含RNG、数据游标、scheduler或梯度状态。源码与版本在JSON中固定为Python3.12.13、Torch2.9.1 git `5811a8d7da873dd699ff6687092c225caffcf1bb`；此结果不是DCP／FSDP／Megatron的staging实现、CUDA多流同步、跨rank一致性、崩溃原子发布或性能验证，不将它定性为verl／UniRL的新缺陷。
+
+复查：`python experiments/checkpoint-stage-consistency/verify.py`。脚本不安装依赖、不探测设备，临时目录退出即清理；输出包含三条时序的完整状态和原方法文本SHA256。
+
 ### assign 与优化器的参数引用
 
 **模型和optimizer状态都加载成功，不代表optimizer仍引用当前模型参数。** [PyTorch2.9接口](https://docs.pytorch.org/docs/2.9/generated/torch.nn.Module.html#torch.nn.Module.load_state_dict)明确要求：`assign=True` 时应在模型加载后创建optimizer，除非启用了swap参数机制。默认 `assign=False` 将值copy到现有参数；在普通Parameter且swap关闭的路径，`assign=True` 可用新对象替换模型属性。原optimizer保存的是参数对象引用，不会因模型属性被替换而自动重绑。
@@ -302,7 +320,7 @@ def async_save(state_dict, path):
 # (Megatron-LM 支持)
 ```
 
-这里的手写例子只处理平坦 Tensor 字典，且复制在启动写盘线程之前完成；不能直接用于嵌套优化器状态。已在 CPU 的 Tensor 仅调用 `.cpu()` 不会隔离存储，所以例子中的 `clone()` 不能因此省略，见[CPU 对照](#状态字典与独立快照)。本轮没有运行该线程示例或验证 GPU 多流 staging、一致时刻快照与后台异常传播。
+这里的手写例子只处理平坦 Tensor 字典，且复制在启动写盘线程之前完成；不能直接用于嵌套优化器状态。已在 CPU 的 Tensor 仅调用 `.cpu()` 不会隔离存储，所以例子中的 `clone()` 不能因此省略，见[CPU 对照](#状态字典与独立快照)。该示例本身未运行；另有[真实CPU线程的三种复制时序](#独立存储与同一时刻)，说明跨组件版本与存储隔离是不同条件，不认证GPU多流staging或完整训练恢复。
 
 ### 4.3 内存考量
 

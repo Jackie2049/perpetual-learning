@@ -60,6 +60,7 @@
 - [Ray 分布式框架](fundamentals/ray-framework.md) — Actor/Task 模型、Placement Group、RLHF 调度
   - [版本固定与控制面安全](fundamentals/ray-framework.md#版本固定与控制面安全) — #7600已有候选；声明、lock条目、安装／启动、认证与隔离分层，Ray2.58固定默认与latest本地变化分开，非运行安全验收
 - [分布式 Checkpoint](fundamentals/checkpoint.md#状态字典与独立快照) — 分片保存与状态快照；真实CPU参数/buffer/SGD对照：detach及CPU上的cpu不隔离存储，深拷贝或已完成序列化保留旧值，非异步/设备恢复验证
+- [Checkpoint的一致时刻](fundamentals/checkpoint.md#独立存储与同一时刻) — 三条真实CPU线程／Adam保存加载时序；深拷贝全独立仍可能跨版本拼接或沿用旧step，只有更新前共同staging重现本例下一步
   - [assign加载与optimizer引用](fundamentals/checkpoint.md#assign-与优化器的参数引用) — 四条原生CPU加载／更新：提前创建的optimizer可仍引用旧Parameter，键匹配与状态加载成功不等引用正确；与参数换序分开，非框架／分片恢复验收
 - [DataLoader 优化](fundamentals/dataloader.md) — Prefetch、mmap、WebDataset；新增[分布式补齐与丢弃](fundamentals/dataloader.md#分布式采样的补齐与丢弃)，真实CPU两层drop_last/均值/epoch对照，等长不等于无重复或覆盖完整
   - [持久worker的epoch与随机状态](fundamentals/dataloader.md#持久-worker-的-epoch-与随机状态) — 两个真实spawn worker、两完整epoch：sampler重排不广播dataset属性或重置随机游标；完整运行仍可复现，非恢复／吞吐验证
