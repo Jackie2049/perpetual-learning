@@ -96,13 +96,17 @@
   <tr><td><b>L1</b> Model Execution</td><td>单 token / decode step 怎么更便宜</td><td>attention/kernel（<a href="https://arxiv.org/abs/2307.08691v1" target="_blank" rel="noreferrer">FlashAttention-2</a>）、KV cache（<a href="https://arxiv.org/abs/2309.06180v1" target="_blank" rel="noreferrer">vLLM / PagedAttention</a>）、quantization/FP8（<a href="https://arxiv.org/abs/2601.18150v2" target="_blank" rel="noreferrer">FP8-RL</a>）、speculative decoding（<a href="https://arxiv.org/abs/2302.01318v1" target="_blank" rel="noreferrer">Speculative Sampling</a>）、MTP（<a href="https://aclanthology.org/2026.findings-acl.1871/" target="_blank" rel="noreferrer">MTP-RL</a>）、draft model（<a href="https://arxiv.org/abs/2401.15077v3" target="_blank" rel="noreferrer">EAGLE</a>）</td></tr>
 </table>
 <p class="note">括号内为每个抓手的代表性工作（一篇一手论文或会议记录；均取自本页配套的<a href="./rollout-papers.html">126 篇已核论文集</a>或原始会议页，链接为固定版本）。代表工作只说明该抓手在文献里的落点，不表示其数值收益可跨层相加。</p>
-<p><b>类型（第二维度）</b>：</p>
-<ul>
-  <li><b>A</b> — Make each trajectory cheaper（C(trajectory)↓）：speculative、MTP、KV/prefix reuse…</li>
-  <li><b>B</b> — Execute the trajectory set better（Schedule({traj_i})）：batching、length-aware scheduling、migration…</li>
-  <li><b>C</b> — Generate less/better rollout work（改变 {traj_i}，<b>可能改变训练分布，必须单独标记</b>）：early stop、partial rollout、filtering、adaptive allocation、trajectory shaping…</li>
-</ul>
-<p class="note">C 类判定原则：按实际改变的训练轨迹集合判断，不按技术名称判断（如 partial rollout 若仅提供路由信号，不自动归 C）。</p>
+<h3>三类优化动作（What）</h3>
+<p>回答：<b>优化究竟改变了什么？</b></p>
+<table>
+  <tr><th>类别</th><th>优化对象</th><th>典型方法</th></tr>
+  <tr><td><b>A. Make each trajectory cheaper</b></td><td><b>单轨迹计算成本</b><br>完成同样的轨迹生成任务，减少计算或重复工作</td><td>Spec Decode、MTP、Prefix/KV Reuse</td></tr>
+  <tr><td><b>B. Execute trajectory set better</b></td><td><b>一组轨迹的执行方式</b><br>改进组批、调度、负载分配与迁移，减少等待和空闲</td><td>Batching、Scheduling、Load Balancing、Migration</td></tr>
+  <tr><td><b>C. Generate less/better work</b></td><td><b>需要生成的轨迹集合</b><br>调整生成哪些轨迹、每个 prompt 生成多少条，以及生成到哪里停止</td><td>Early Stopping、Filtering、Adaptive Allocation</td></tr>
+</table>
+<p>三类动作分别改变<b>轨迹成本、集合执行、工作集合本身</b>。L1–L4 回答优化发生在哪里（Where），A/B/C 回答优化改变了什么（What）；两者是独立分类轴，一项工作可以跨层并包含多类动作。</p>
+<p class="note">按实际机制分类，不按技术名称分类：partial rollout 若只是暂停后继续、提供预测信号或辅助调度，不自动归 C；若截断、丢弃轨迹或改变采样数量，则包含 C。Filtering 若在完整生成后才进行，不代表节省了本轮生成成本。</p>
+<p class="note">C 类可能改变训练数据分布，应同时报告质量、收敛或 Time-to-Quality，不能只比较生成加速比。A/B 也不自动意味着无损；采样分布变化、量化误差与 policy staleness 应另设标签记录。</p>
 
 <h2>5 · 报告章节骨架</h2>
 <ol class="skeleton">
