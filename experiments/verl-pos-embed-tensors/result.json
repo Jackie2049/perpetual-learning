@@ -1,0 +1,685 @@
+{
+  "python": "3.12.13",
+  "torch": "2.9.1",
+  "torch_git": "5811a8d7da873dd699ff6687092c225caffcf1bb",
+  "pytest": "8.4.2",
+  "threads": 1,
+  "base": "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4",
+  "head": "d8c490b269d8c288b04b140f254592157c4aecd0",
+  "source_sha256": {
+    "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4:verl/models/transformers/qwen3_vl.py": "d134a41fe26856359cbe02dc903ddcd8633e7d678940fb8008a97213cd5b5246",
+    "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4:verl/models/transformers/qwen3_5.py": "cdbe7654d5e26bb5fa31cd602cceb7d1242998ba9fc3997400caab4751955d45",
+    "d8c490b269d8c288b04b140f254592157c4aecd0:verl/models/transformers/qwen3_vl.py": "2b642fbaabd4a6019a1cfb53796399222ac48807cdc46904f081cf22343fbb9f",
+    "d8c490b269d8c288b04b140f254592157c4aecd0:verl/models/transformers/qwen3_5.py": "adb9b1f81b9111359a75fabf7dea6987cbdf3cf63a2687e2c5a3aedf5ee12c70",
+    "d8c490b269d8c288b04b140f254592157c4aecd0:tests/models/test_qwen_vl_pos_embed_interpolate_on_cpu.py": "8584d7555f7c33566bdfed44c122dd0afef1ec1ce47dd6b2f4dea38569148b4f"
+  },
+  "same_function_ast_across_two_models_per_revision": true,
+  "original_test_body_calls": {
+    "base": 16,
+    "head": 16
+  },
+  "base_and_head_records_equal": true,
+  "results": {
+    "base": [
+      {
+        "module": "qwen3_vl",
+        "dtype": "torch.float32",
+        "grid_thw": [
+          [
+            1,
+            2,
+            2
+          ]
+        ],
+        "shape": [
+          4,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "f0b47e15da6135937804b16dc7cf11513ce6a0576413e40119973f8227e1d1c3",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_vl",
+        "dtype": "torch.float32",
+        "grid_thw": [
+          [
+            1,
+            16,
+            16
+          ]
+        ],
+        "shape": [
+          256,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "652d8f644a0f4959593e7f81ffad1f5d4f848f30e902d6b666510a0b647c75f5",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_vl",
+        "dtype": "torch.float32",
+        "grid_thw": [
+          [
+            2,
+            8,
+            12
+          ],
+          [
+            1,
+            32,
+            20
+          ],
+          [
+            1,
+            4,
+            4
+          ]
+        ],
+        "shape": [
+          848,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "a52bc1fe11f35ffe5b7730dbe31bb2e6f45068282bf583fc8b77a78456d2ee59",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_vl",
+        "dtype": "torch.float32",
+        "grid_thw": [
+          [
+            1,
+            96,
+            64
+          ]
+        ],
+        "shape": [
+          6144,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "b7a733847749bc1239a741df15ee8a60ec870d2321c5ad0099a6b28666192c52",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_vl",
+        "dtype": "torch.bfloat16",
+        "grid_thw": [
+          [
+            1,
+            2,
+            2
+          ]
+        ],
+        "shape": [
+          4,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "64b187f5e7f7d1480d57cf872db79225dab60f33d9801add2d4da031d2d5bc4f",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_vl",
+        "dtype": "torch.bfloat16",
+        "grid_thw": [
+          [
+            1,
+            16,
+            16
+          ]
+        ],
+        "shape": [
+          256,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "b3c36479a6a4b668bf3d9af6acb4bdc1469e1d65275e23c05489a08cbedf8edf",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_vl",
+        "dtype": "torch.bfloat16",
+        "grid_thw": [
+          [
+            2,
+            8,
+            12
+          ],
+          [
+            1,
+            32,
+            20
+          ],
+          [
+            1,
+            4,
+            4
+          ]
+        ],
+        "shape": [
+          848,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "6c50febb52f1c2d0203d5d78bbf322ff7deed00db6295c40b8f811917a35fd39",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_vl",
+        "dtype": "torch.bfloat16",
+        "grid_thw": [
+          [
+            1,
+            96,
+            64
+          ]
+        ],
+        "shape": [
+          6144,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "556d822b3ae9c90f35356c9c307fd6be533cb405eb6ea77d49d5a95b3d167951",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_5",
+        "dtype": "torch.float32",
+        "grid_thw": [
+          [
+            1,
+            2,
+            2
+          ]
+        ],
+        "shape": [
+          4,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "f0b47e15da6135937804b16dc7cf11513ce6a0576413e40119973f8227e1d1c3",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_5",
+        "dtype": "torch.float32",
+        "grid_thw": [
+          [
+            1,
+            16,
+            16
+          ]
+        ],
+        "shape": [
+          256,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "652d8f644a0f4959593e7f81ffad1f5d4f848f30e902d6b666510a0b647c75f5",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_5",
+        "dtype": "torch.float32",
+        "grid_thw": [
+          [
+            2,
+            8,
+            12
+          ],
+          [
+            1,
+            32,
+            20
+          ],
+          [
+            1,
+            4,
+            4
+          ]
+        ],
+        "shape": [
+          848,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "a52bc1fe11f35ffe5b7730dbe31bb2e6f45068282bf583fc8b77a78456d2ee59",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_5",
+        "dtype": "torch.float32",
+        "grid_thw": [
+          [
+            1,
+            96,
+            64
+          ]
+        ],
+        "shape": [
+          6144,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "b7a733847749bc1239a741df15ee8a60ec870d2321c5ad0099a6b28666192c52",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_5",
+        "dtype": "torch.bfloat16",
+        "grid_thw": [
+          [
+            1,
+            2,
+            2
+          ]
+        ],
+        "shape": [
+          4,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "64b187f5e7f7d1480d57cf872db79225dab60f33d9801add2d4da031d2d5bc4f",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_5",
+        "dtype": "torch.bfloat16",
+        "grid_thw": [
+          [
+            1,
+            16,
+            16
+          ]
+        ],
+        "shape": [
+          256,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "b3c36479a6a4b668bf3d9af6acb4bdc1469e1d65275e23c05489a08cbedf8edf",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_5",
+        "dtype": "torch.bfloat16",
+        "grid_thw": [
+          [
+            2,
+            8,
+            12
+          ],
+          [
+            1,
+            32,
+            20
+          ],
+          [
+            1,
+            4,
+            4
+          ]
+        ],
+        "shape": [
+          848,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "6c50febb52f1c2d0203d5d78bbf322ff7deed00db6295c40b8f811917a35fd39",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_5",
+        "dtype": "torch.bfloat16",
+        "grid_thw": [
+          [
+            1,
+            96,
+            64
+          ]
+        ],
+        "shape": [
+          6144,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "556d822b3ae9c90f35356c9c307fd6be533cb405eb6ea77d49d5a95b3d167951",
+        "inputs_unchanged": true
+      }
+    ],
+    "head": [
+      {
+        "module": "qwen3_vl",
+        "dtype": "torch.float32",
+        "grid_thw": [
+          [
+            1,
+            2,
+            2
+          ]
+        ],
+        "shape": [
+          4,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "f0b47e15da6135937804b16dc7cf11513ce6a0576413e40119973f8227e1d1c3",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_vl",
+        "dtype": "torch.float32",
+        "grid_thw": [
+          [
+            1,
+            16,
+            16
+          ]
+        ],
+        "shape": [
+          256,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "652d8f644a0f4959593e7f81ffad1f5d4f848f30e902d6b666510a0b647c75f5",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_vl",
+        "dtype": "torch.float32",
+        "grid_thw": [
+          [
+            2,
+            8,
+            12
+          ],
+          [
+            1,
+            32,
+            20
+          ],
+          [
+            1,
+            4,
+            4
+          ]
+        ],
+        "shape": [
+          848,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "a52bc1fe11f35ffe5b7730dbe31bb2e6f45068282bf583fc8b77a78456d2ee59",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_vl",
+        "dtype": "torch.float32",
+        "grid_thw": [
+          [
+            1,
+            96,
+            64
+          ]
+        ],
+        "shape": [
+          6144,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "b7a733847749bc1239a741df15ee8a60ec870d2321c5ad0099a6b28666192c52",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_vl",
+        "dtype": "torch.bfloat16",
+        "grid_thw": [
+          [
+            1,
+            2,
+            2
+          ]
+        ],
+        "shape": [
+          4,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "64b187f5e7f7d1480d57cf872db79225dab60f33d9801add2d4da031d2d5bc4f",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_vl",
+        "dtype": "torch.bfloat16",
+        "grid_thw": [
+          [
+            1,
+            16,
+            16
+          ]
+        ],
+        "shape": [
+          256,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "b3c36479a6a4b668bf3d9af6acb4bdc1469e1d65275e23c05489a08cbedf8edf",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_vl",
+        "dtype": "torch.bfloat16",
+        "grid_thw": [
+          [
+            2,
+            8,
+            12
+          ],
+          [
+            1,
+            32,
+            20
+          ],
+          [
+            1,
+            4,
+            4
+          ]
+        ],
+        "shape": [
+          848,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "6c50febb52f1c2d0203d5d78bbf322ff7deed00db6295c40b8f811917a35fd39",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_vl",
+        "dtype": "torch.bfloat16",
+        "grid_thw": [
+          [
+            1,
+            96,
+            64
+          ]
+        ],
+        "shape": [
+          6144,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "556d822b3ae9c90f35356c9c307fd6be533cb405eb6ea77d49d5a95b3d167951",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_5",
+        "dtype": "torch.float32",
+        "grid_thw": [
+          [
+            1,
+            2,
+            2
+          ]
+        ],
+        "shape": [
+          4,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "f0b47e15da6135937804b16dc7cf11513ce6a0576413e40119973f8227e1d1c3",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_5",
+        "dtype": "torch.float32",
+        "grid_thw": [
+          [
+            1,
+            16,
+            16
+          ]
+        ],
+        "shape": [
+          256,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "652d8f644a0f4959593e7f81ffad1f5d4f848f30e902d6b666510a0b647c75f5",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_5",
+        "dtype": "torch.float32",
+        "grid_thw": [
+          [
+            2,
+            8,
+            12
+          ],
+          [
+            1,
+            32,
+            20
+          ],
+          [
+            1,
+            4,
+            4
+          ]
+        ],
+        "shape": [
+          848,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "a52bc1fe11f35ffe5b7730dbe31bb2e6f45068282bf583fc8b77a78456d2ee59",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_5",
+        "dtype": "torch.float32",
+        "grid_thw": [
+          [
+            1,
+            96,
+            64
+          ]
+        ],
+        "shape": [
+          6144,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "b7a733847749bc1239a741df15ee8a60ec870d2321c5ad0099a6b28666192c52",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_5",
+        "dtype": "torch.bfloat16",
+        "grid_thw": [
+          [
+            1,
+            2,
+            2
+          ]
+        ],
+        "shape": [
+          4,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "64b187f5e7f7d1480d57cf872db79225dab60f33d9801add2d4da031d2d5bc4f",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_5",
+        "dtype": "torch.bfloat16",
+        "grid_thw": [
+          [
+            1,
+            16,
+            16
+          ]
+        ],
+        "shape": [
+          256,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "b3c36479a6a4b668bf3d9af6acb4bdc1469e1d65275e23c05489a08cbedf8edf",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_5",
+        "dtype": "torch.bfloat16",
+        "grid_thw": [
+          [
+            2,
+            8,
+            12
+          ],
+          [
+            1,
+            32,
+            20
+          ],
+          [
+            1,
+            4,
+            4
+          ]
+        ],
+        "shape": [
+          848,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "6c50febb52f1c2d0203d5d78bbf322ff7deed00db6295c40b8f811917a35fd39",
+        "inputs_unchanged": true
+      },
+      {
+        "module": "qwen3_5",
+        "dtype": "torch.bfloat16",
+        "grid_thw": [
+          [
+            1,
+            96,
+            64
+          ]
+        ],
+        "shape": [
+          6144,
+          32
+        ],
+        "device": "cpu",
+        "output_sha256": "556d822b3ae9c90f35356c9c307fd6be533cb405eb6ea77d49d5a95b3d167951",
+        "inputs_unchanged": true
+      }
+    ]
+  },
+  "scope": "Original parameter marks, test body and list-based reference; original interpolation functions AST-isolated without framework imports. Two local helper adapters replace importorskip and model factory (CPU-only seed/allocation, same Embedding dimensions/config). Direct calls, not native pytest collection or original Transformers imports. No old-fail/new-pass claim, backward, full vision tower, CUDA/offload, GPU/NPU, timing or training validation."
+}

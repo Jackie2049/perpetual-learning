@@ -1,6 +1,6 @@
 # verl DataProto 数据流架构源码阅读
 
-2026-10-30接续：[TensorDict 升级的三个独立边界](#tensordict-升级的三个独立边界)按维护者新反馈、原始修复与官方分发元数据，分清轴信息序列化、非张量拼接和jagged批操作；升级依赖不等于自动修正所有位置张量的构造契约。
+2026-10-30接续：[视觉位置插值的张量构造](#视觉位置插值的张量构造)核已有#8414：移除逐标量Python列表往返，不改插值／BF16求和次序；两版各16次原测试体断言通过，仅函数级CPU数值对照，不搬用作者A100收益。
 
 > 2026-06-15 | 源码: verl/utils/dp_rpc.py + verl/utils/tensor_dict.py + verl/trainer/ppo/ray_trainer.py
 > 历史概览：旧版DataProto的split/merge设计。下方6月结构保留当时的学习视角，不代表2026-10当前实现的完整复核，也不提供跨Worker零拷贝保证。
@@ -8,6 +8,30 @@
 2026-10-24补充：[图片字节与解码对象的生命周期](#图片字节与解码对象的生命周期)。原方法与真实Pillow对照确认dataset侧清理边界；原“数据开销完全可忽略”概括撤回，张量字节算例也已纠正，不能覆盖raw_prompt中的图片或序列化峰值。
 
 2026-10-25补充：[多模态特殊 token 检查的 CPU 开销](#多模态特殊-token-检查的-cpu-开销)区分原检查方法、完整processor与训练吞吐；纯文本走多模态processor也可能付出标记计数成本，但不是所有纯文本入口都走此路径。2026-10-26接续[回移候选的绑定条件](#回移候选的绑定条件与评审前提)，不重跑旧微基准。
+
+## 视觉位置插值的张量构造
+
+**位置插值的算术相同，不代表构造输入张量的主机开销相同；局部开销减少也不等于训练吞吐提升。** Turoad的[已有 #8414](https://github.com/verl-project/verl/pull/8414)针对Qwen3-VL／Qwen3.5视觉塔的`fast_pos_embed_interpolate`，固定head `d8c490b269d8c288b04b140f254592157c4aecd0`、base `2ab35292039a51175a4b3d3b3b2d76e951a0d3e4`，三文件含一个新增CPU测试。已有作者及bot摘要，不另认领实现或将自动评审当维护者批准。
+
+[Qwen3-VL](https://github.com/verl-project/verl/blob/d8c490b269d8c288b04b140f254592157c4aecd0/verl/models/transformers/qwen3_vl.py)与[Qwen3.5](https://github.com/verl-project/verl/blob/d8c490b269d8c288b04b140f254592157c4aecd0/verl/models/transformers/qwen3_5.py)的两个原函数在各自版本内AST相同。旧版每个网格计算四角索引与双线性权重后，逐数组tolist／extend，最后从Python标量列表重建Tensor；候选保留每图Tensor，用append后cat／stack，先在CPU转成目标dtype再移到目标device。仍有四组Tensor列表和`grid_thw.tolist()`，不是移除全部Python循环／列表或主机同步。
+
+索引／权重公式、四角相乘、`p0 + p1 + p2 + p3`的顺序、按t重复和spatial_merge_size的块重排均保留。尤其BF16下不能把保持加法次序泛化为任意归约重排也会bitwise相同；当前数值结论只针对候选实际实现。CPU侧先cast再复制，是该候选保留旧转换语义的做法，不是本机已经认证了混合设备／FSDP offload。
+
+### 原断言的函数级对照
+
+Python3.12.13／Torch2.9.1／pytest8.4.2，单CPU线程。[原测试](https://github.com/verl-project/verl/blob/d8c490b269d8c288b04b140f254592157c4aecd0/tests/models/test_qwen_vl_pos_embed_interpolate_on_cpu.py)的参数装饰、参考函数和测试体断言保持不变；原`_load_impl`改为本地原函数入口，模型工厂保留Embedding(48²,32)和merge_size=2，但仅设CPU seed并强制CPU分配。两版生产函数均AST隔离，未导入完整verl／Transformers，也非原生pytest收集。
+
+两种模型×FP32／BF16×四个原grid，共16次测试体调用，基线16／候选16均通过；比较dtype、device及`torch.equal`，另核grid和Embedding权重调用前后不变。四个grid为`[[1,2,2]]`、`[[1,16,16]]`、`[[2,8,12],[1,32,20],[1,4,4]]`、`[[1,96,64]]`，输出分别为4／256／848／6144行、hidden32。两版对应输出SHA256也相同，覆盖多网格、t>1及插值网格大于48的条件；不是旧失败／新通过的修复证据，不认证空输入、非整除merge或所有dtype。
+
+[脚本](../../experiments/verl-pos-embed-tensors/verify.py)与[完整结果](../../experiments/verl-pos-embed-tensors/result.json)保存五个完整输入的SHA256、环境、逐例形状／dtype／device／输出摘要；五文件compile通过，两个新进程JSON逐字一致。固定Git对象预缓存后，运行不联网、不安装依赖，不调用设备发现或全设备seed接口：
+
+```bash
+python3.12 -B experiments/verl-pos-embed-tensors/verify.py /path/to/verl-git
+```
+
+### 作者性能报告的适用范围
+
+PR报告在A100-80GB／Torch2.11＋CUDA13.0／Transformers5.8.1的随机权重Qwen3-VL视觉塔上，BF16、SDPA、no_grad完整视觉前向缩短约2.0%–5.5%；该口径不同于正文另列的hidden_size=1索引／权重构造耗时，也不是训练端到端收益。本机只做数值对照，没有执行这两个计时、反向、真实视觉塔、CUDA／offload或训练，不将外部报告计为M1或M5验收。CPU范围收束，不套候选或新增M5算力任务；社区及既有PR-head写入仍逐项待用户明确授权。
 
 ## TensorDict 升级的三个独立边界
 

@@ -1614,6 +1614,8 @@ BaseTrainer对**每个生成Part**应用同一个上限，两个Part各限2条�
 
 ### 在批量入口修补而非重写拼批
 
+2026-10-30复核#544新head `23ea7a811159d3cbf0c844e143ef63aa00943d07`、base5d1da78d；两个未截断Git树核compat.py／text_embed.py分别仍为blob `ccd82bc2c563decb5e4026e9f639a2d4d347b32a`／`9150e06825f9d4fc5e99481263aa3129e9362acc`，同上述旧d411输入。只更新生产代码身份，不重新执行旧AST控制、作者20例或迁移早期GPU报告；README状态说明与真实生成仍须分开理解。
+
 报告指出，checkpoint将一个`prompt_list`元素与多份逐样本kwargs交给`batch_gen_infer`，后者zip后只处理首份。已有#543先加入`len(prompts) × cfg_factor`的行数保护，避免悄悄继续；#544则为每份message list提供一个prompt占位，仍委托原`batch_gen_infer`负责批量padding、CFG与输出组合，不另写逐行编码后拼接的替代器。
 
 [repair_hi3_tokenizer_batchify](https://github.com/Tencent-Hunyuan/UniRL/blob/d41122e97e1ab631328c86baad00250c406d2b17/unirl/models/hunyuan_image3/compat.py)捕获实例上原bound method，通过`signature.bind`及defaults解释调用参数；非batchify分支原样调用原方法，batchify分支剥离外层message_list/batchify/cfg_factor/uncond_p后构造逐样本kwargs，要求messages非空且各元素为list。传给批量helper的`infer_fn`是捕获的原方法，不是新wrapper，避免递归进入同一修补分支。

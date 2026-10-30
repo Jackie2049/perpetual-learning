@@ -59,6 +59,8 @@
 
 2026-10-30接[SFT边界人工复查](#epoch-边界恢复与采样器状态)：#7402同b7d1f36e，新普通评论确认旧问题并提醒legacy残留；该限制已有正文披露，评论者未跑CPU，不作批准或新增验证，不另改fallback／重跑旧矩阵。
 
+2026-10-30核[视觉位置插值](#视觉位置插值的已有优化)：#8414已有作者；两版各16次原测试体断言通过，输出记录相同，非修复回归／计时或完整视觉塔验收，不另实现／排M5任务。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -72,6 +74,12 @@
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
 > 上游：https://github.com/verl-project/verl （2026-10 核验：仓库已从 volcengine/verl 迁移至 verl-project/verl，原链接 301 跳转）
+
+## 视觉位置插值的已有优化
+
+2026-10-30只读Turoad的OPEN [#8414](https://github.com/verl-project/verl/pull/8414)，headd8c490b269d8c288b04b140f254592157c4aecd0、base2ab35292，三文件含CPU测试；bot摘要不作人工批准。已有作者移除四角索引／权重的逐标量Python往返，不另认领或套生产补丁。
+
+[原数据流专题](../../notebook/frameworks/verl-dataproto-data-flow-reading.md#视觉位置插值的张量构造)区分CPU列表构造、插值数值与完整视觉前向。两种模型×FP32／BF16×四grid的原参数／测试体断言，[结果](../../experiments/verl-pos-embed-tensors/result.json)基线16／候选16均通过，输出与输入不变记录一致；入口和CPU模型工厂为本地适配，非原生pytest／Transformers导入。grid_thw.tolist与网格循环仍在，四角加法顺序未变；作者A100视觉塔2.0%–5.5%收益不是本机计时、训练或offload验收。两新进程JSON一致，无安装／设备访问；不新增M5任务或写社区，所有既有PR-head写入仍逐项待用户明确同意。
 
 ## 自定义 loader 恢复的已有草案
 
