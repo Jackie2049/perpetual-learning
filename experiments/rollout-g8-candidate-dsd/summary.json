@@ -1,0 +1,184 @@
+{
+ "meta": {
+  "caliber": "engine-level; A(p) = engine-internal per-position acceptance; JIT-warm (preheat combo first)",
+  "engine": "vllm 0.24.0+cu129 (anchor-drift 0.24.0)",
+  "experiment": "rollout-g8-candidate-dsd",
+  "hardware": "4090-1 single RTX 4090 (GPU 5)",
+  "matrix": "input_len {512,2048} x batch {8,16}, mode dsd-ngram (Dynamic SD schedule), max_tokens=128",
+  "model": "Qwen2.5-1.5B-Instruct",
+  "sampling": "temp=0.7 top_p=0.9",
+  "spec_method": "ngram proposer k=5 default + num_speculative_tokens_per_batch_size=[(1,8,2),(9,16,3),(17,64,5)] -> dynamic K per runtime batch size",
+  "ar_baseline": "candidate C summary.json rows *_ar: in512 b8=1294.6/b16=3156.1, in2048 b8=1348.9/b16=2746.8 tok/s",
+  "methodology_note": "preheat combo (in512 b8, untimed) warms Triton JIT kernels (_topk_topp_kernel, _compute_slot_mapping_kernel); candidate-C archive in512 b8 spec (205.2 tok/s, wall 4.99s) was JIT-cold first-spec-combo -- JIT-warm rerun = 476.7 tok/s (wall 2.15s), see run.log verify note"
+ },
+ "combos": {
+  "512_8": {
+   "mode": "dsd-ngram",
+   "input_len": 512,
+   "batch": 8,
+   "max_tokens": 128,
+   "dynamic_k": [
+    [
+     1,
+     8,
+     2
+    ],
+    [
+     9,
+     16,
+     3
+    ],
+    [
+     17,
+     64,
+     5
+    ]
+   ],
+   "wall_s": 2.1945,
+   "decode_tok_per_s": 466.6,
+   "spec_over_ar": 0.361,
+   "finished_full": 8,
+   "spec_metrics": {
+    "mean": 1.38,
+    "acc_tps": 91.61,
+    "draft_tps": 486.52,
+    "acc": 209,
+    "draft": 1110,
+    "A_p": [
+     0.254,
+     0.123,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "pct": 18.8
+   }
+  },
+  "512_16": {
+   "mode": "dsd-ngram",
+   "input_len": 512,
+   "batch": 16,
+   "max_tokens": 128,
+   "dynamic_k": [
+    [
+     1,
+     8,
+     2
+    ],
+    [
+     9,
+     16,
+     3
+    ],
+    [
+     17,
+     64,
+     5
+    ]
+   ],
+   "wall_s": 2.312,
+   "decode_tok_per_s": 885.8,
+   "spec_over_ar": 0.281,
+   "finished_full": 16,
+   "spec_metrics": {
+    "mean": 1.36,
+    "acc_tps": 171.7,
+    "draft_tps": 1400.24,
+    "acc": 412,
+    "draft": 3360,
+    "A_p": [
+     0.221,
+     0.09,
+     0.053,
+     0.0,
+     0.0
+    ],
+    "pct": 12.3
+   }
+  },
+  "2048_8": {
+   "mode": "dsd-ngram",
+   "input_len": 2048,
+   "batch": 8,
+   "max_tokens": 128,
+   "dynamic_k": [
+    [
+     1,
+     8,
+     2
+    ],
+    [
+     9,
+     16,
+     3
+    ],
+    [
+     17,
+     64,
+     5
+    ]
+   ],
+   "wall_s": 2.4468,
+   "decode_tok_per_s": 418.5,
+   "spec_over_ar": 0.31,
+   "finished_full": 8,
+   "spec_metrics": {
+    "mean": 1.17,
+    "acc_tps": 48.94,
+    "draft_tps": 566.39,
+    "acc": 124,
+    "draft": 1435,
+    "A_p": [
+     0.131,
+     0.042,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "pct": 8.6
+   }
+  },
+  "2048_16": {
+   "mode": "dsd-ngram",
+   "input_len": 2048,
+   "batch": 16,
+   "max_tokens": 128,
+   "dynamic_k": [
+    [
+     1,
+     8,
+     2
+    ],
+    [
+     9,
+     16,
+     3
+    ],
+    [
+     17,
+     64,
+     5
+    ]
+   ],
+   "wall_s": 2.6903,
+   "decode_tok_per_s": 761.3,
+   "spec_over_ar": 0.277,
+   "finished_full": 16,
+   "spec_metrics": {
+    "mean": 1.23,
+    "acc_tps": 116.96,
+    "draft_tps": 1503.9,
+    "acc": 325,
+    "draft": 4179,
+    "A_p": [
+     0.148,
+     0.06,
+     0.023,
+     0.0,
+     0.0
+    ],
+    "pct": 7.8
+   }
+  }
+ }
+}

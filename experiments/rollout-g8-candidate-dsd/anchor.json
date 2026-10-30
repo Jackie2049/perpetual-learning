@@ -1,0 +1,12 @@
+{
+  "anchor": "vllm 0.24.0+cu129 wheel (anchor-drift 0.24.0)",
+  "engine_commit_note": "venv wheel, not source-built; same stack as candidates A/B/C/C2 (see rollout-g8-candidate-b/anchor.json)",
+  "gpu": "4090-1, GPU 5, single RTX 4090",
+  "model": "Qwen2.5-1.5B-Instruct (/home/zxw/models)",
+  "prompts": "gsm8k train distinct natural-text prompts (offline HF parquet cache); in512 = prefix of in2048",
+  "sampling": "temp=0.7, top_p=0.9, max_tokens=128",
+  "spec_method": "ngram proposer (prompt_lookup_min=1/max=5, ratio=0.8) + Dynamic SD schedule num_speculative_tokens_per_batch_size=[(1,8,2),(9,16,3),(17,64,5)]",
+  "date_run_utc": "2026-10-30 06:16-06:25 (preheat 06:20:34, combos 06:20:29-06:23:03)",
+  "measure": "wall_s = llm.generate() elapsed incl. prefill; decode_tok_per_s = batch*128/wall_s (direction-only)",
+  "jit_note": "preheat combo (in512 b8) first warms Triton JIT kernels; timed combos JIT-warm. Candidate-C archived in512 b8 spec (205.2 tok/s / wall 4.99s) was JIT-cold first-spec-combo; JIT-warm rerun = 476.7 tok/s / wall 2.15s (methodology correction, see README)"
+}
