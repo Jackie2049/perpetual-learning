@@ -1,6 +1,6 @@
 # verl Checkpoint Management 源码级深度阅读
 
-2026-10-25接续：[异步恢复的存活库存与训练历史](#异步恢复的存活库存与训练历史)区分#7579较新journal库存、旧模型回滚和主线#7762预热容量修复；原9个warmup测试体的Mock加载不认证持久化或训练质量。
+2026-10-30接续：[随机状态与恢复顺序](#随机状态与恢复顺序)用四个原生CPU重启对照区分重设seed、独立生成器和构造顺序；模型与优化器状态相同仍不足以保证下一步一致。这是普通PyTorch小模型控制，不是verl恢复缺陷或完整manager验收。
 
 > 2026-06-15 | 源码: verl/utils/checkpoint/ + verl/checkpoint_engine/ + verl/model_merger/ + verl/trainer/ppo/ray_trainer.py
 > 核心: 2层架构(CheckpointManager→磁盘持久化+CheckpointEngineManager→实时权重同步); FSDP每rank独立shard+HF export(rank0 gather); Megatron dist_ckpt+async save; CheckpointEngineManager 5后端(naive/NCCL/NIXL/Kimi/Mooncake/HCCL); FSDPModelMerger离线合并→HF; GRPO只存actor+dataloader→省critic
@@ -10,6 +10,35 @@
 2026-10-24补充：[异步保存能力与恢复指针](#异步保存能力与恢复指针)核对#7955及旧DCP候选#4311；原查找函数的一例测试与五组真实文件系统控制说明“找到目录”并不验收恢复内容，异步写入能力也不自动提供tracker发布。
 
 2026-10-25补充：[Megatron 调度进度与超参数恢复](#megatron-调度进度与超参数恢复)用官方调度器和真实CPU optimizer区分进度、超参数来源与参数组覆盖；六组控制不等于完整分布式checkpoint恢复。
+
+## 随机状态与恢复顺序
+
+**恢复权重与优化器之后，还要恢复随机流的位置；初始seed不表示中断位置。** 以下是独立的普通PyTorch CPU小模型实验，不是对verl／UniRL保存器的故障复现。[优化器参数身份](../fundamentals/adamw-optimizer-deep-dive.md#恢复时的参数身份)解决状态接到哪个参数，这里固定参数顺序，只改变随机状态与恢复时机。
+
+Python3.12.13／Torch2.9.1（commit `5811a8d7da873dd699ff6687092c225caffcf1bb`）／NumPy2.0.2，单CPU线程、FP64。模型为Linear(3,4)→Tanh→Dropout(0.5)→Linear(4,1)，AdamW用lr=.01、weight_decay=.01，foreach／fused／capturable关闭。先真实更新两步，深拷贝模型、优化器和四份随机状态到内存；连续运行第三至第五步作为参考。每条重启轨迹都先断言模型参数与优化器全部状态精确恢复，再执行同样三步。
+
+四个随机源各有用途：Python模块默认Random产生输入增益，NumPy模块全局RandomState产生目标噪声，Torch CPU默认生成器供初始化／Dropout使用，独立`torch.Generator(device="cpu")`决定固定8行数据池的四行子集。每步重新randperm，不是DataLoader、持久游标或多进程预取模拟。
+
+| 重启方式 | 第三步前随机状态与checkpoint的关系 | 第三步loss | 后续三步与连续运行 |
+| --- | --- | --- | --- |
+| 只重设四个初始seed，再加载模型／optimizer | 四份都不在中断位置 | 0.8555002523 | 不同 |
+| 构造、加载后恢复三份全局状态，漏独立采样生成器 | Python／NumPy／Torch CPU相同，采样不同 | 1.5131241491 | 不同 |
+| 先恢复全部随机状态，再构造和加载模型 | Python／NumPy／采样相同，Torch CPU已被初始化推进 | 0.5111180357 | 不同 |
+| 先构造并加载模型／optimizer，再恢复全部四份状态 | 四份相同 | 2.9594540384 | 本例逐步一致 |
+
+参考第三步取行`[5,1,3,7]`；漏独立生成器时取`[3,6,0,4]`，而该步输入增益与噪声仍精确匹配参考。构造前恢复时行、增益和噪声都匹配，但随机初始化已推进默认Torch状态；加载checkpoint覆盖了初始化权重，却没有倒回这个副作用。最后一组的三步输入、输出、loss及梯度／参数摘要一致，最终模型参数、AdamW状态逐Tensor精确相等，四随机流的最终摘要也一致。前三组最终模型和optimizer均不同；结果不是仅凭一次loss相近判断恢复成功。
+
+### 各生成器的所有权要单独列清
+
+安装版本的[torch/random.py](https://github.com/pytorch/pytorch/blob/5811a8d7da873dd699ff6687092c225caffcf1bb/torch/random.py)明确：`get_rng_state()`／`set_rng_state()`仅操作CPU默认生成器；独立Generator有自己的get_state／set_state。Python与NumPy模块的状态也不自动包含用户另建的Random、default_rng或其他生成器。这里实际覆盖的是上述四个实例，不能把四份状态当作任意训练程序的完整清单。[Linear初始化源码](https://github.com/pytorch/pytorch/blob/5811a8d7da873dd699ff6687092c225caffcf1bb/torch/nn/modules/linear.py)中的kaiming_uniform／uniform解释构造阶段为何消耗随机数。
+
+本例可复用的检查方式是：列清随机源，记录下一步前的状态，完成可能消耗它们的重建／加载后再恢复，并比较下一批样本和下一次更新。它不是“全局最后一行总能恢复”的通用方案：有初始化后仍会消耗随机数的后台任务、worker预取、设备独立流、不同调用顺序或算子非确定性时，还需对应协议。这里未测试磁盘序列化、调度器、AMP、DataLoader、FSDP／DCP／ZeRO、分布式rank或任何设备，也不承诺跨Torch版本／平台bitwise一致；不据此新增框架修复或M5训练队列。
+
+[完整脚本](../../experiments/checkpoint-rng-order/verify.py)与[结果](../../experiments/checkpoint-rng-order/result.json)保存每步数据索引、增益、噪声、输出、loss和梯度／参数摘要，以及四份随机状态摘要、四个已安装Torch方法的源码SHA256。两个最终新进程JSON完全相同，checkpoint原快照也逐项保持不变。运行不联网、不装依赖，不调用设备发现或全设备seed接口：
+
+```bash
+python3.12 -B experiments/checkpoint-rng-order/verify.py
+```
 
 ## 自定义数据源的保存与恢复边界
 

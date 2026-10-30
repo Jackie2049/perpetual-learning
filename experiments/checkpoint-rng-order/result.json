@@ -1,0 +1,529 @@
+{
+  "python": "3.12.13",
+  "torch": "2.9.1",
+  "numpy": "2.0.2",
+  "torch_git": "5811a8d7da873dd699ff6687092c225caffcf1bb",
+  "source_sha256": {
+    "get_rng_state": "584ad4c9c6d69aa1281e0d6886f8771d4c89da1e9cecd3fbec59117b6af05c65",
+    "set_rng_state": "b3fe745a624c6f0c81d7822d08564390e171d7553e967230a4fd916764d47245",
+    "linear_reset_parameters": "c40cf6b1d5d5916de5d31e8526838be01516d2b35bd95e04d7c6e52f375465f3",
+    "dropout_forward": "a9c2fc6e588fe7f252fa64b1ba4baa636e425683d639b9b4532804ef168200f7"
+  },
+  "settings": {
+    "dtype": "float64",
+    "threads": 1,
+    "warmup_steps": 2,
+    "resume_steps": 3,
+    "seeds": {
+      "python": 123,
+      "numpy": 234,
+      "torch_cpu": 345,
+      "sampling": 456
+    },
+    "model": "Linear(3,4), Tanh, Dropout(0.5), Linear(4,1)",
+    "optimizer": "AdamW lr=.01 weight_decay=.01 foreach/fused/capturable=False"
+  },
+  "warmup": [
+    {
+      "step": 1,
+      "indices": [
+        3,
+        6,
+        0,
+        4
+      ],
+      "python_gain": 0.8209454395403778,
+      "numpy_noise": [
+        -0.18761306261199462,
+        -0.09828717070630076,
+        0.1649601774023929,
+        0.18806967912303596
+      ],
+      "prediction": [
+        0.008450891014263773,
+        0.9871917983197807,
+        -0.39138701055550873,
+        -0.08422055510654455
+      ],
+      "loss": 1.053161472087953,
+      "gradient_sha256": "956b7bf6c574c0a0a672cf1a9bf0cd5f14c84e342c495674921b66de2a21f938",
+      "parameters_sha256": "05022d65b889c02c31578ebb99b9998f244d8f4a889578f6fc47c619ded5dc57"
+    },
+    {
+      "step": 2,
+      "indices": [
+        6,
+        0,
+        4,
+        1
+      ],
+      "python_gain": 0.834874671009053,
+      "numpy_noise": [
+        -0.10135208964444692,
+        0.07952296571096068,
+        0.1465717276785344,
+        0.05580873884437505
+      ],
+      "prediction": [
+        -0.3141225534766793,
+        -0.3476953634143574,
+        -0.4676083390398263,
+        -0.21913674967288607
+      ],
+      "loss": 2.2153487349248167,
+      "gradient_sha256": "941f8bd4e7f8d883401eb015494cccf02a00a9bec0a77dff0bd04bebe1a59000",
+      "parameters_sha256": "7e95d53dd719e02cc95f252d8c6e400edc58227234a88129893187e7f70e04f2"
+    }
+  ],
+  "saved_model_sha256": "7e95d53dd719e02cc95f252d8c6e400edc58227234a88129893187e7f70e04f2",
+  "saved_rng_sha256": {
+    "python": "3af55c197596fe6d375a20b89f5cb3a093325df87b4b50055923e7e554459549",
+    "numpy": "106dc385ee87db0d4cc80a02db25377d1c1f6bbe6817c7f183870cb9a37e17a5",
+    "torch_cpu": "09a398bd9ab514c138506ea0174f8473b19bf089a007e519a1cfa309f54ee53c",
+    "sampling": "26568fa47ba96b53b3064a95f534ba2336eaa7698eade4f4587c2f59a58a1b39"
+  },
+  "reference": [
+    {
+      "step": 3,
+      "indices": [
+        5,
+        1,
+        3,
+        7
+      ],
+      "python_gain": 0.9628967054681594,
+      "numpy_noise": [
+        -0.017262540646281944,
+        -0.00048209923463811145,
+        0.08819000277291159,
+        -0.09149872412464721
+      ],
+      "prediction": [
+        -0.35186928942551415,
+        -0.044080236322337096,
+        -0.3531844383283342,
+        -0.3041266056132073
+      ],
+      "loss": 2.959454038411434,
+      "gradient_sha256": "437c3b7987d6045181e32c911e2dbfb830973bbc5fc303e6c3313b91ba2337fc",
+      "parameters_sha256": "38b0cefc096b967676c2da7ca9210e3678f4e0224f54da056f22659226e29b61"
+    },
+    {
+      "step": 4,
+      "indices": [
+        5,
+        2,
+        6,
+        7
+      ],
+      "python_gain": 0.8430800939753756,
+      "numpy_noise": [
+        0.12024761256805352,
+        0.003701070014715091,
+        0.12796840825988826,
+        -0.07691470511007302
+      ],
+      "prediction": [
+        -0.3920157642981569,
+        0.7116796530512961,
+        0.1614495757861763,
+        -0.3507297923290379
+      ],
+      "loss": 3.516343467192181,
+      "gradient_sha256": "6fc20a50faa3b76e8c784680985b8a6fff33836a658071e6fcb4a22ccd587f8f",
+      "parameters_sha256": "891f60add5e39b1f1a6f7970b9640dfa08f2c8cf863485de0585ce278823c0fd"
+    },
+    {
+      "step": 5,
+      "indices": [
+        3,
+        7,
+        6,
+        2
+      ],
+      "python_gain": 1.160479551180678,
+      "numpy_noise": [
+        0.06371128851947683,
+        -0.07459644369726313,
+        0.017860763810421877,
+        -0.07206341527504594
+      ],
+      "prediction": [
+        1.1278821253031326,
+        0.730839967545611,
+        0.7073159011394573,
+        -0.3152158301883129
+      ],
+      "loss": 1.075970210419115,
+      "gradient_sha256": "04bfa81a5edc0a76e26bbe58d23f977e117b8b9fc6fd35d76f956b41face1d3e",
+      "parameters_sha256": "9374eff715d37d8e77d24308ed1530cf2cc6f3a8f0c9074593b5773c0b566b67"
+    }
+  ],
+  "results": {
+    "reseed_initial": {
+      "loaded_model_equal": true,
+      "loaded_optimizer_equal": true,
+      "rng_matches_checkpoint_before_step": {
+        "python": false,
+        "numpy": false,
+        "torch_cpu": false,
+        "sampling": false
+      },
+      "trace": [
+        {
+          "step": 3,
+          "indices": [
+            3,
+            6,
+            0,
+            4
+          ],
+          "python_gain": 0.8209454395403778,
+          "numpy_noise": [
+            -0.18761306261199462,
+            -0.09828717070630076,
+            0.1649601774023929,
+            0.18806967912303596
+          ],
+          "prediction": [
+            0.08998591581819793,
+            1.1199826938173754,
+            -0.3549868768362363,
+            0.0559218356762996
+          ],
+          "loss": 0.8555002522824897,
+          "gradient_sha256": "a4d1b5a1865951754bca57fc36aaf03dac5ce19b24729f3d6d8f9152f0c10453",
+          "parameters_sha256": "67e46756eacca44c5e36cb37a3cf35cb08cc7d88078fdd8047b74ab8cd5fa008"
+        },
+        {
+          "step": 4,
+          "indices": [
+            6,
+            0,
+            4,
+            1
+          ],
+          "python_gain": 0.834874671009053,
+          "numpy_noise": [
+            -0.10135208964444692,
+            0.07952296571096068,
+            0.1465717276785344,
+            0.05580873884437505
+          ],
+          "prediction": [
+            -0.2942944907183636,
+            -0.2931159737986322,
+            -0.36997466562211434,
+            -0.10158384917075758
+          ],
+          "loss": 2.0535806893854014,
+          "gradient_sha256": "7a63f4d1f06608eeb4a277cf71474882bb5634c70bf4a70fc9a530c66944c865",
+          "parameters_sha256": "ecbddf367d0af10a1487b278500a4e697aa361bb5027356153271e16cd281ab2"
+        },
+        {
+          "step": 5,
+          "indices": [
+            5,
+            1,
+            3,
+            7
+          ],
+          "python_gain": 0.9628967054681594,
+          "numpy_noise": [
+            -0.017262540646281944,
+            -0.00048209923463811145,
+            0.08819000277291159,
+            -0.09149872412464721
+          ],
+          "prediction": [
+            -0.31043957457578597,
+            0.06044014559463995,
+            -0.3147325496160389,
+            -0.28435963030574346
+          ],
+          "loss": 2.8482670025452688,
+          "gradient_sha256": "d9a0da319053a43e96fe8dff98900752a5c5d25a703007472006517cba54b668",
+          "parameters_sha256": "960ea339c43c2b4fa2589b32133dde8c9848fb7ff623f8bf85497479897c2966"
+        }
+      ],
+      "trace_equal_reference": false,
+      "final_model_equal": false,
+      "final_optimizer_equal": false,
+      "final_rng_equal": false
+    },
+    "global_rng_only": {
+      "loaded_model_equal": true,
+      "loaded_optimizer_equal": true,
+      "rng_matches_checkpoint_before_step": {
+        "python": true,
+        "numpy": true,
+        "torch_cpu": true,
+        "sampling": false
+      },
+      "trace": [
+        {
+          "step": 3,
+          "indices": [
+            3,
+            6,
+            0,
+            4
+          ],
+          "python_gain": 0.9628967054681594,
+          "numpy_noise": [
+            -0.017262540646281944,
+            -0.00048209923463811145,
+            0.08819000277291159,
+            -0.09149872412464721
+          ],
+          "prediction": [
+            -0.3531844383283342,
+            0.6016139832865286,
+            -0.35514377387908425,
+            -0.3041266056132073
+          ],
+          "loss": 1.5131241491052017,
+          "gradient_sha256": "7635f3bac14fded1b7b54476918efd45b732a4274e29c083275f2864cbb1bd07",
+          "parameters_sha256": "c0be1c1654d94ec4b0480720bb40a1f21c9c519fa3a629b93162f501f1befb16"
+        },
+        {
+          "step": 4,
+          "indices": [
+            6,
+            0,
+            4,
+            1
+          ],
+          "python_gain": 0.8430800939753756,
+          "numpy_noise": [
+            0.12024761256805352,
+            0.003701070014715091,
+            0.12796840825988826,
+            -0.07691470511007302
+          ],
+          "prediction": [
+            -0.3625097664741713,
+            0.0034702017542902475,
+            0.08458044488759087,
+            -0.4710638320302276
+          ],
+          "loss": 2.0307357525635057,
+          "gradient_sha256": "9db46724ac028d2d7784cc599b1aca59c0115f50d153f4d6da80a483252cce27",
+          "parameters_sha256": "8a8884fef067fe2354d37056801dcaf50e8deb857f9ec1821349811aed3559f2"
+        },
+        {
+          "step": 5,
+          "indices": [
+            5,
+            1,
+            3,
+            7
+          ],
+          "python_gain": 1.160479551180678,
+          "numpy_noise": [
+            0.06371128851947683,
+            -0.07459644369726313,
+            0.017860763810421877,
+            -0.07206341527504594
+          ],
+          "prediction": [
+            1.2599168389486413,
+            0.24382736026140528,
+            0.6180334358551866,
+            -0.3018823352264988
+          ],
+          "loss": 1.5583966272996645,
+          "gradient_sha256": "aa1e7ed1f5516afe80568c55de471ac743d0061f7761f1ffa9f110288128fc00",
+          "parameters_sha256": "4a1775ba62811cabae5bb72cf5587d24c9ea1bc4dd3b58a6f2e3d4035d101747"
+        }
+      ],
+      "trace_equal_reference": false,
+      "final_model_equal": false,
+      "final_optimizer_equal": false,
+      "final_rng_equal": false
+    },
+    "restore_before_constructor": {
+      "loaded_model_equal": true,
+      "loaded_optimizer_equal": true,
+      "rng_matches_checkpoint_before_step": {
+        "python": true,
+        "numpy": true,
+        "torch_cpu": false,
+        "sampling": true
+      },
+      "trace": [
+        {
+          "step": 3,
+          "indices": [
+            5,
+            1,
+            3,
+            7
+          ],
+          "python_gain": 0.9628967054681594,
+          "numpy_noise": [
+            -0.017262540646281944,
+            -0.00048209923463811145,
+            0.08819000277291159,
+            -0.09149872412464721
+          ],
+          "prediction": [
+            1.0345810185127657,
+            0.41383008331076837,
+            0.15818430074806283,
+            1.1710146281091371
+          ],
+          "loss": 0.5111180356858256,
+          "gradient_sha256": "1854bb51c13922fc5d24517ea8b84fe5002ab451ccfef7a4b72a419133664dd4",
+          "parameters_sha256": "3c75b6b6b67cb1324b1e694da6275cb5e2cbe52f4c19f93096925dff0b5777e4"
+        },
+        {
+          "step": 4,
+          "indices": [
+            5,
+            2,
+            6,
+            7
+          ],
+          "python_gain": 0.8430800939753756,
+          "numpy_noise": [
+            0.12024761256805352,
+            0.003701070014715091,
+            0.12796840825988826,
+            -0.07691470511007302
+          ],
+          "prediction": [
+            -0.34822041612805743,
+            0.013015510519835516,
+            0.20817484971085137,
+            0.20992690041545908
+          ],
+          "loss": 2.9318575414793555,
+          "gradient_sha256": "6c2328ef86e6ee627cf7c768a8be61751e89fcafad535103d0e9fee9f9b2f506",
+          "parameters_sha256": "a4271b8809d9531ab02025fccae147d8ce85c7be92a2b1c6986b69a8b03a70fd"
+        },
+        {
+          "step": 5,
+          "indices": [
+            3,
+            7,
+            6,
+            2
+          ],
+          "python_gain": 1.160479551180678,
+          "numpy_noise": [
+            0.06371128851947683,
+            -0.07459644369726313,
+            0.017860763810421877,
+            -0.07206341527504594
+          ],
+          "prediction": [
+            0.2223471534265843,
+            -0.17900206574606947,
+            1.3818057975026927,
+            0.16155834695490245
+          ],
+          "loss": 1.6307606165798596,
+          "gradient_sha256": "6a0ff715ec2a1161d758e54ad454e2bb11ea55c629c587d37858ff6cd9112c9d",
+          "parameters_sha256": "5ec2dee8f2c67fc39c884c33b02bf808a4c08e950d4b43fb5ec9c7d674ce2939"
+        }
+      ],
+      "trace_equal_reference": false,
+      "final_model_equal": false,
+      "final_optimizer_equal": false,
+      "final_rng_equal": false
+    },
+    "restore_after_load": {
+      "loaded_model_equal": true,
+      "loaded_optimizer_equal": true,
+      "rng_matches_checkpoint_before_step": {
+        "python": true,
+        "numpy": true,
+        "torch_cpu": true,
+        "sampling": true
+      },
+      "trace": [
+        {
+          "step": 3,
+          "indices": [
+            5,
+            1,
+            3,
+            7
+          ],
+          "python_gain": 0.9628967054681594,
+          "numpy_noise": [
+            -0.017262540646281944,
+            -0.00048209923463811145,
+            0.08819000277291159,
+            -0.09149872412464721
+          ],
+          "prediction": [
+            -0.35186928942551415,
+            -0.044080236322337096,
+            -0.3531844383283342,
+            -0.3041266056132073
+          ],
+          "loss": 2.959454038411434,
+          "gradient_sha256": "437c3b7987d6045181e32c911e2dbfb830973bbc5fc303e6c3313b91ba2337fc",
+          "parameters_sha256": "38b0cefc096b967676c2da7ca9210e3678f4e0224f54da056f22659226e29b61"
+        },
+        {
+          "step": 4,
+          "indices": [
+            5,
+            2,
+            6,
+            7
+          ],
+          "python_gain": 0.8430800939753756,
+          "numpy_noise": [
+            0.12024761256805352,
+            0.003701070014715091,
+            0.12796840825988826,
+            -0.07691470511007302
+          ],
+          "prediction": [
+            -0.3920157642981569,
+            0.7116796530512961,
+            0.1614495757861763,
+            -0.3507297923290379
+          ],
+          "loss": 3.516343467192181,
+          "gradient_sha256": "6fc20a50faa3b76e8c784680985b8a6fff33836a658071e6fcb4a22ccd587f8f",
+          "parameters_sha256": "891f60add5e39b1f1a6f7970b9640dfa08f2c8cf863485de0585ce278823c0fd"
+        },
+        {
+          "step": 5,
+          "indices": [
+            3,
+            7,
+            6,
+            2
+          ],
+          "python_gain": 1.160479551180678,
+          "numpy_noise": [
+            0.06371128851947683,
+            -0.07459644369726313,
+            0.017860763810421877,
+            -0.07206341527504594
+          ],
+          "prediction": [
+            1.1278821253031326,
+            0.730839967545611,
+            0.7073159011394573,
+            -0.3152158301883129
+          ],
+          "loss": 1.075970210419115,
+          "gradient_sha256": "04bfa81a5edc0a76e26bbe58d23f977e117b8b9fc6fd35d76f956b41face1d3e",
+          "parameters_sha256": "9374eff715d37d8e77d24308ed1530cf2cc6f3a8f0c9074593b5773c0b566b67"
+        }
+      ],
+      "trace_equal_reference": true,
+      "final_model_equal": true,
+      "final_optimizer_equal": true,
+      "final_rng_equal": true
+    }
+  },
+  "scope": "Four native single-process CPU restart controls after two real updates; three resumed updates. In-memory deep copies, not disk serialization. Fixed data pool and explicit torch.Generator subsets, not DataLoader, workers or a framework sampler. No distributed checkpoint manager, device discovery, GPU/NPU, framework training, cross-version reproducibility or performance claim."
+}
