@@ -27,6 +27,8 @@
 
 2026-10-30补[损失单位接口](#损失单位接口的已有候选)：#622同head，五个原helper条件控制核None／局部零／全局零及SP guard，候选与基线一致；后端与Segment为显式替身，不作分布式／训练验收，不另实现或排算力。
 
+2026-10-30核[空响应候选与诊断时序](../../notebook/frameworks/unirl-survey.md#空响应候选与诊断时序)：#581评论者撤回重复提议，已有#598同4716906已非draft、未合并；后置检查不能保证先于循环内通信故障，源码时序核对非故障实测，不另认领／实现。
+
 **【大白话讲明白】**
 
 这张表区分尚有贡献空间、已有负责人、只覆盖部分需求和缺验证条件的问题。训练栈一致性修复（#523）已经交给 M5 单一推进，不是 M1 的待认领任务；其他线索也要读正文、评论及对应补丁，不能只看 assignee 是否为空。
@@ -116,7 +118,7 @@ UniRL 仓库当前 **73+ open issues**，其中大量是带 `help wanted` 标签
 |---|---|---|---|---|
 | [#523](https://github.com/Tencent-Hunyuan/UniRL/issues/523) unified stack 跳过 anchor freeze/prepare_part | 跨栈契约 bug | **OPEN · 无 assignee · 无 PR** | **用户已认可方案与实现**（2026-10-23；fork 内 [Jackie2049/UniRL#1](https://github.com/Jackie2049/UniRL/pull/1)：fix-523-anchor-lifecycle @ 04101ad5，base fork main 6fd82cba，unified.py +8/-2；CPU 单测 3 项 + AST 断言通过）；**M5 已闭环 L0 + 判定 L1 待资源/待权重**（[handoff 专设小节](../../experiments/handoff-m5.md)；L0 四项断言全过，L1 需 ≥8 卡 + 获准权重（2026-10-25 修正：载体配方在本机物理不可行，恢复条件实为 8×96GB 级/32 设备多机，见 handoff））；**上游 PR 已开（2026-10-25 用户授权）**：[Tencent-Hunyuan/UniRL#629](https://github.com/Tencent-Hunyuan/UniRL/pull/629)（head `Jackie2049:fix-523-anchor-lifecycle`，正文按上游模板：Fixes #523 + L0 四断言/pristine 对照/e2e 资源原因如实写入 Test Plan；body/title/label 三项检查 SUCCESS、MERGEABLE。**同日按用户指示关闭**——Test Plan 已按反馈精简（1652→716 字符）、检查复验通过后关闭，fork 分支与 fork PR #1 保留，重开随时可行；后续推动方式待用户定）。见 [candidate-523](candidate-523-anchor-lifecycle.md) |
 | [#567](https://github.com/Tencent-Hunyuan/UniRL/issues/567) cosmos3 H20 cuBLAS workaround 被错版本 gate | 配置/验证型 | **OPEN · 无 assignee** | **blocked-on-H20**（2026-10-23） | reporter 明确两个分支（删死代码 vs 放宽 gate）都要在 H20+pinned torch 2.13/cu130 实机对照（loss + cublasGemmEx 探针）才能定；我们与 M5（4090）均无 H20，写 PR 即投机，整项挂起不推进 |
-| [#581](https://github.com/Tencent-Hunyuan/UniRL/issues/581) FSDP2 0-token micro collective mismatch | bug | **OPEN · 无 assignee** | 可做但已上 #580 路线 | reporter 给了完整 CPU repro；issue 说明 #580 phase 3 会修，宜与 #580 owner 沟通或作为其一部分 |
+| [#581](https://github.com/Tencent-Hunyuan/UniRL/issues/581) FSDP2 0-token micro collective mismatch | bug | **OPEN · 已有非draft [#598](https://github.com/Tencent-Hunyuan/UniRL/pull/598)**（2026-10-30） | 不另认领 | 4716906仍未合并；新评论者已撤回未查PR的重复建议。作者L4小模型报告不是本机或完整recipe验收；见[原专题](../../notebook/frameworks/unirl-survey.md#空响应候选与诊断时序) |
 | [#419](https://github.com/Tencent-Hunyuan/UniRL/issues/419) monitor-only rewards | enhancement/help wanted | **已 assign GoDiao** | 已认领 | 非我方空间 |
 | [#423](https://github.com/Tencent-Hunyuan/UniRL/issues/423) 复合奖励能力预检 | enhancement/help wanted | **PR #621 已合并**（2026-10-26，main 8cfbac177） | 已完成 | 非我方空间，不跟进 |
 | [#453](https://github.com/Tencent-Hunyuan/UniRL/issues/453) 主仓库文档社区刷新 | documentation/help wanted | **已 assign 6 人，WIP** | 已认领 | 非我方空间 |
@@ -252,4 +254,4 @@ UniRL 仓库当前 **73+ open issues**，其中大量是带 `help wanted` 标签
 ## 决策待定
 
 - #523 已有获认可的 fork 实现，由 M5 接续验证与发布判断；M1 不再留言认领、重写方案或并行测试。外部主仓库行动仍须用户授权。
-- #567/#581 需 GPU 或需协调 #580，标为"后续/需沟通"，不作为优先。
+- #567仍按匹配H20条件挂起；#581已有#598，不再按旧“需协调#580”描述为可独立认领项，不另开同题实现或联系作者。

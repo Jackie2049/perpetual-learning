@@ -1,5 +1,7 @@
 # UniRL — 腾讯统一多模态 RL 框架调研
 
+2026-10-30接续：[空响应候选与诊断时序](#空响应候选与诊断时序)：#581评论者已撤回重复修复建议；#598同4716906已非draft、仍未合并。循环后的检查不能保证先于循环内collective故障到达；仅源码时序核对，不重跑旧实验或认领实现。
+
 2026-10-30接续：[Qwen3.5 MoE发布文件与接线](#qwen35-moe-的发布文件与接线)：#639新44f文档断言经官方wheel补核，0.1.11两生成模块都带坏mask关键字、0.1.12都移除；四文件各同对应tag。共用bundle按真实model_type条件导入，非三配方／模型或EP验收。
 
 2026-10-30接续：[候选关闭与证据范围](#候选关闭与证据范围)：#632／#633／#636／#637由作者主动关闭、均未合并；#634已合并，#639仍开放。关闭原因属于作者优先级判断，旧CPU结果仍只绑定原快照，不把关闭、非空merge_commit_sha或新版文档当验收。
@@ -1437,6 +1439,16 @@ Python3.12.13上，AST提取父/新提交的完整原guard方法，给本地data
 新提交六项均通过，原metrics保持且输入结果未被原地修改；父提交两项预期异常、四项控制通过。仅隔离执行该原方法，logger记录调用，不构造TrainStack或完整GSPO/PPO/FSDP训练；复现代码见[当日日志](../../diary/2026-10-24.md)。父/新完整`single.py` SHA256分别为`aee263c3ee0e8d02ef1f039e655c0632779e2205d9dc0b1a0df5f8a2b5de01f0`、`e8c8578114b958b2cffb6514a9621416bc7cca28abdf2a44ff96fc684c8420c4`。
 
 作者PR正文为此次同步另报packed padding、七算法零贡献、两rank CPU FSDP deferred-window及GSPO/PPO ratio回归通过，且明确未重跑GPU；此前H100结果仍绑定旧提交。已有作者修复，不另起同题补丁或增加硬件交接任务。
+
+### 空响应候选与诊断时序
+
+2026-10-30只读[#581新增说明](https://github.com/Tencent-Hunyuan/UniRL/issues/581#issuecomment-6521466560)及[后续撤回](https://github.com/Tencent-Hunyuan/UniRL/issues/581#issuecomment-6521964092)：评论者294962silent先因主线仍有early return提出另修，随后发现既有[#598](https://github.com/Tencent-Hunyuan/UniRL/pull/598)，明确收回重复建议。issue仍开放、无assignee或#580阶段尚未合并，都不能推出缺少实现者；也不把评论中的合并／lint协助提议当作本项目的任务。
+
+#598当前OPEN／非draft／未合并，head仍`471690694c51f3070e012276429585fcae877a4e`、base仍6fd82cba。源码身份与上方10-24比未变，本轮不重跑旧8组图、6组optimizer或6组ratio控制。当前PR正文将同head的14项小模型验证报告绑定到2×L4、Torch2.13.0+cu130／NCCL FSDP2；这是作者的tiny FP64模型／SGD报告，不是本机、HI3／BAGEL checkpoint或多rank CUDA PPO验收，旧H100报告也不因此改成当前版本通过。
+
+**诊断的执行时机必须早于它要拦截的故障。** 首条后来被撤回的说明还提出“微批循环后归约has_backward标记”作临时fail-closed检查。固定[main b8e9740e的_run_update](https://github.com/Tencent-Hunyuan/UniRL/blob/b8e9740e981a68a5556fbeb8225558040a4d47a4/unirl/train/stack/single.py#L121)先在循环内调用compute_loss_and_backward（第125行），循环后才有本地deferred-sync guard（143）、optimizer_step（161）和loss汇总collective（176）。4716906相应调用点顺序相同。若不对称replay／backward已在循环内阻塞或collective失配，则后置标记检查无法保证先行运行；不能把“加一个all_reduce”本身称为可靠fail-fast。这个时序推断不等于运行了故障注入，也不否定为后置检查定义其他诊断用途。
+
+本轮只对两份完整single.py做AST／compile、提取上述调用与guard位置，未执行算法、padding、trainer、FSDP／Gloo／NCCL、合并或lint gate。#598现有保护／补齐与后续审阅仍由已有作者推进；[原M5参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)仅更新候选身份与作者报告范围，不新排任务、改其环境或开发另一套共识／guard方案。
 
 ## 冻结教师路由与调用方状态恢复
 

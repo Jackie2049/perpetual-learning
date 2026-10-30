@@ -330,7 +330,7 @@
   - [样本观测的行上限与数据搬运](frameworks/unirl-survey.md#样本观测的行上限与数据搬运) — #597原CPU Sample/本地sink六组控制；每Part上限非全局条数或字节上限，谱系对齐与best-effort文件输出分开
   - [行级奖励派发与分组身份](frameworks/unirl-survey.md#行级奖励派发与分组身份) — #517原类型5组CPU控制；祖先内容保留但scorer组ID改变，奖励DP可放宽不等于rollout/训练或远程服务验收
   - [异步计时窗口与性能比较](frameworks/unirl-survey.md#异步计时窗口与性能比较) — #539把必要权重发布纳入step time，collect非完整生成，主机phase非GPU分解；8模块编译/3标准库控制，无训练或吞吐验收
-  - [空响应的反向与更新](frameworks/unirl-survey.md#空响应的反向通信与零梯度更新) — 原零损失分支CPU图检查；[新增ratio guard](frameworks/unirl-survey.md#纯补齐反向与-ratio-诊断)六组原方法控制，通信反向与统计资格分开，全空诊断0不是策略一致性实测，非FSDP验收
+  - [空响应的反向与更新](frameworks/unirl-survey.md#空响应的反向通信与零梯度更新) — 原图与ratio guard控制各限原版本；[候选与诊断时序](frameworks/unirl-survey.md#空响应候选与诊断时序)核#581重复提议已撤回、#598已非draft，后置guard不保证提前拦截通信故障，非FSDP验收
   - [冻结教师与状态恢复](frameworks/unirl-survey.md#冻结教师路由与调用方状态恢复) — #519逐层路由与全部梯度开关分别恢复，no_grad仍由调用方负责；恢复动作失败非原子回滚，仅源码/语法，非PEFT实测
   - [教师指纹与失败传播](frameworks/unirl-survey.md#教师指纹与控制器失败传播) — #515后续已澄清/#575已合并；ready异常、内容不同与读取卡住分开，原hash函数6组CPU控制，非Ray/Gloo或训练验收
   - [离线回放与结果隔离](frameworks/unirl-survey.md#离线回放的到达契约与结果隔离) — #487 observed与dependency到达分开；两类上游错误接受在作者fork拒绝，完整原stdlib模块对照，非模拟器或性能验收
