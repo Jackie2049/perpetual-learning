@@ -6,6 +6,8 @@
 
 2026-10-23 补充：[会话水位与未消费组上限](#会话水位与未消费组上限)分析未合并draft #8203的准入单位与资源释放；旧warmup与进程内ReplayBuffer说明不自动适用于这条新路径。
 
+2026-10-30 接续：[流式数据加载的缓存重放约束](#流式数据加载的缓存重放约束)固定 #8203 新head `6dc7bd9e`，V1已从拒绝skip改为采样边界直返缓存；异步前缀、恢复队列与缓存文件检查各有不同保证。此候选仍未合并。
+
 > 2026-06-18 | MERGED | Author: Begunner | +17/-16 | 2 files changed
 > ★★★★★★★★ CRITICAL: This PR removes the NotImplementedError barrier — separate_async trainer is NOW RUNNABLE
 > ★★★★★★★★ Hybrid engine can now DYNAMICALLY switch between trainer/rollout modes (switch_to_trainer / switch_to_rollout)
@@ -714,9 +716,41 @@ actor在一轮中复用一次TQ元数据快照，处理终态淘汰与请求，�
 
 本机只对23个新增/修改Python模块执行AST/compile，并从固定Git对象完整加载原`tq_schema.py`及原48行schema测试模块，跳过verl包初始化后直接调用4个参数例，全部通过；未运行pytest收集、流式actor、TQ、Ray或任何模型。schema结果只覆盖key归属/解析及普通字符串tag，不能认证上面的协调和容量设计。可在匹配完整环境用`python -m pytest -q tests/trainer/ppo/v1/test_tq_schema_on_cpu.py`复查原测试；本机隔离调用不等同于这条命令或actor/sampling大套件通过。本轮不为源码手算新建调度器替身或一次性工具。
 
-作者正文仅写CPU unit tests，未给通过数量；GPU e2e的colocate_async+swe-rebench仍为TODO，未据此推断吞吐、陈旧度或训练收益。真实计数/内存/行为版本条件记入[原M5可选参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不自动升级原报告环境、套用draft或把它归因为#8250。
+在上述10-23快照中，作者正文仅写CPU unit tests，未给通过数量；GPU e2e的colocate_async+swe-rebench仍为TODO，未据此推断吞吐、陈旧度或训练收益。真实计数/内存/行为版本条件记入[原M5可选参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不自动升级原报告环境、套用draft或把它归因为#8250。10-30候选更新见下一节，不将这里的状态沿用到新head。
 
 原SHA256：streaming_dataloader `9a50ea881cd0de5ccb74887224d780ce749f6cdf13016358aa4bbf720f09d90f`、agent_loop_tq `323686bc5a480c8e37439366cb87fe18cc1658d313c97a25c5df999946f4a5ff`、tq_schema `0940a334e4754090f5b114ecf231c70c2b43a457ae0dc507fc5d028ea0ca50eb`、原schema测试 `40bc68e8c5cc7106e3f9936d47460c2b608ccd6e76b12a4e78035ffd565a6c09`。
+
+## 流式数据加载的缓存重放约束
+
+**先把缓存写进共享队列，再让普通采样器挑选，并不能保证取回的正是那批缓存。** [#8203 的新差异](https://github.com/verl-project/verl/compare/8691564c57cb52e00ea68f7cc4efb3c33e8ac4fc..6dc7bd9ec57da84f7c36a8bc081f12104ba0ff96)把skip接到actor的`sample`边界：命中时推进actor自己的dataloader、生成新UID，装入一份缓存inner batch，直接返回对应`KVBatchMeta`，不调用正常采样请求，也不添加prompt finished marker。未命中则照常采样后保存。validation分区、显式传入prompts或非配置step仍走原调用。[原装饰器](https://github.com/verl-project/verl/blob/6dc7bd9ec57da84f7c36a8bc081f12104ba0ff96/verl/utils/skip/skip_manager.py#L129)
+
+2026-10-30读取候选为OPEN、非draft、未合并；head `6dc7bd9ec57da84f7c36a8bc081f12104ba0ff96`，目标base `a4b9354968705a441fb7da7367924b15b902e771`。新源码删除了V1全模式拒绝`skip.rollout_tq.enable`的guard，仓内skip／async文档也已改写；PR正文Breaking changes仍写“全模式拒绝”，不能据正文概括当前代码。正文新增的64 GPU、80步及score 55→64属于作者报告，不是本机结果或缓存等价性证据。
+
+### 连续前缀与恢复队列
+
+sync可按配置step独立捕获或重放；async则从**当前训练起始step**筛出连续前缀，整段只选capture或replay，不能交错。`parameter_sync_step`决定每step所需inner目录数；直接采样每次只加载一个inner，超额调用抛错。[原缓存实现](https://github.com/verl-project/verl/blob/6dc7bd9ec57da84f7c36a8bc081f12104ba0ff96/verl/utils/skip/rollout_skip.py#L270)
+
+async恢复先读`data.pt`和可用的TQ快照，再配置缓存模式；若选择replay且train分区含任何key，就拒绝继续，而不是把checkpoint中未消费组强行对应到缓存step。空train队列的replay不重发inflight prompt，在置`_train_state_ready=True`及启动coordinator之前完成该选择；前缀内停止watermark refill，前缀后恢复。**该门控不是完整恢复事务**：拒绝发生在读取状态之后，也不保证模型、数据集或缓存内容身份相同。[原恢复顺序](https://github.com/verl-project/verl/blob/6dc7bd9ec57da84f7c36a8bc081f12104ba0ff96/verl/trainer/ppo/v1/streaming_dataloader.py#L914)
+
+### 文件存在与可重放不是同一保证
+
+系统Python 3.9.6，从固定Git对象AST提取原`RolloutTqSkip`的10个缓存判断方法，去掉继承／注册器；目录入口由临时路径提供，实际用原Path检查、step解析和模式判断。每step要求两个inner，每个存在性夹具仅创建空`tq_batch.pt`与`meta.json`，**不反序列化、不声称它们是有效缓存**。七个自编控制结果：
+
+| 配置steps与起点 | 文件布局 | action | 原方法结果 |
+|---|---|---|---|
+| [1,3]，起点1 | 无 | cache | ValueError，不连续 |
+| [1,2]，起点1 | 无 | cache | capture |
+| [1,2]，起点1 | 两step均完整 | cache | replay |
+| [1,2]，起点1 | 仅step1完整 | cache | ValueError，混合命中 |
+| [1]，起点1 | 仅inner0 | cache | ValueError，inner不齐 |
+| [1,2]，起点2 | 仅step2完整 | cache | replay，忽略起点前配置 |
+| [1,2]，起点1 | 仅step1完整 | repeat | replay，step2可解析到step1 |
+
+这里“完整”只表示原检查要求的两个文件均存在。`repeat`的“全命中”由`has_v1_cache`经过最近可用step解析决定，不要求每个目标step都有独立缓存；因此不能将文档的fully cached误读成逐step精确匹配或payload校验。直接重放还会按缓存组顺序映射新UID，组数不足或组内session不足时循环使用，推进游标本身不认证新prompt内容与缓存语义一致。
+
+版本标签也不再一律刷新为当前版本：`global_steps`改为当前step，`min/max_global_steps`加上`当前step − 解析后的缓存step`。例如缓存step2、版本[0,1]用于step5，得到[3,4]，相对年龄与跨度保留；这是源码算式，不代表生成真的使用了step3／4权重。内容等价、随机状态与训练轨迹仍须另证，不能把skip当作一次等价的真实rollout。
+
+五份完整Python输入AST／内存compile通过，含新343行原测试文件；只执行上述七个存在性控制及replay前缀外退出断言，**没有执行原pytest／TQ测试、actor、TensorDict、torch.load、模型或checkpoint恢复**。旧四schema参数例不重跑、不迁作新验证。固定源码SHA256：rollout_skip `fc145c932a129f633c17d52f3349065d48c24a89b5b532bce67481b5e417d278`；skip_manager `1f48cf05db7630cce84534da514f7443060e9704dac0300ed79d8713c2eaa785`；streaming_dataloader `1d63726f1834ef9a1eee84cc6ac2a92de382bbd063d75543a13628e862d9a45c`；trainer_base `a46330c2a529a743ee42e3966f71d308a7311b22d5309cd03340b7c2cab88ff0`；原测试 `7c3f714e3a2ec5772767939dd5844ba7cc1397301c0cd6850bae0264d9321e7e`。这是本机缓存契约学习，不新增硬件任务或改M5性能专项。
 
 ## 异步空闲指标与调度等待
 
