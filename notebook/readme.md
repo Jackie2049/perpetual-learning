@@ -187,6 +187,7 @@
   - [重启保留与路径身份](frameworks/verl-checkpoint-management-reading.md#重启后的保留状态与路径身份) — #7396仅登记已加载路径；原22项统一路径过、macOS别名条件21过1失败，真实分布式／分片恢复未验收
 - [verl 异步恢复库存与预热](frameworks/verl-checkpoint-management-reading.md#异步恢复的存活库存与训练历史) — 新journal＋旧模型非一致时间点恢复；原9 warmup测试体的Mock加载不等TQ往返，终态prompt也占恢复容量
 - [verl SFT epoch 与加载器恢复](frameworks/verl-checkpoint-management-reading.md#sft-epoch-边界与加载器状态) — #7402原方法、2个原生迭代状态及8组真实CPU数据流控制；最后一批与结束确认不同，legacy回退非边界修复
+- [自定义数据源提前耗尽](frameworks/verl-checkpoint-management-reading.md#提前耗尽与尾部保存) — #8454非draft新bot反馈的静态核对：正常break不补存／补验，更新中途仍抛错；回退step编号不认证reader游标回退，非训练验收
 - [verl LoRA-only键完整性](frameworks/verl-checkpoint-management-reading.md#lora-only-的键完整性与加载副作用) — #8350原分支八组真实CPU控制；缺adapter被拒绝不等模型回滚，也不认证base权重身份，非原17项或FSDP恢复验收
 - [verl 对象存储下载与checkpoint提交](frameworks/verl-checkpoint-management-reading.md#对象存储下载与-checkpoint-提交) — #6850原五下载测试体通过只认证memory缓存；#7641的_COMMITTED是待验收协议，非主线已有S3恢复。
 - [verl LoRA导出与融合](frameworks/verl-checkpoint-management-reading.md#分片重组与-lora-融合不是同一步) — #7341默认仍分离adapter；原8项配置／早返回通过，融合Mock非数值验证，hash变化也不认证增量正确

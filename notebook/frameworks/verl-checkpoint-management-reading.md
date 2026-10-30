@@ -44,7 +44,7 @@ python3.12 -B experiments/checkpoint-rng-order/verify.py
 
 ## 自定义数据源的保存与恢复边界
 
-**模型checkpoint可保存、loader有恢复方法、数据状态文件有效，是三个不同条件。** 2026-10-30只读Mecoli1219的draft [#8454](https://github.com/verl-project/verl/pull/8454)，固定head `c7e22a9e0ecbc08bc3600c05b0be717203fe7d1a`、base `a08ea02a784d7d4982b1d81df36d188a476192bb`，一提交13文件940增50删；reviews为空，bot提示draft未审查，不算接口批准。本节只看自定义loader的checkpoint契约，不评审全部流式训练接线。
+**模型checkpoint可保存、loader有恢复方法、数据状态文件有效，是三个不同条件。** 2026-10-30只读Mecoli1219的 [#8454](https://github.com/verl-project/verl/pull/8454)，固定head `c7e22a9e0ecbc08bc3600c05b0be717203fe7d1a`、base `a08ea02a784d7d4982b1d81df36d188a476192bb`，一提交13文件940增50删。初核为draft；06:12Z后复核已OPEN／非draft，新增[bot COMMENTED review](https://github.com/verl-project/verl/pull/8454#pullrequestreview-5708696150)，不是维护者批准。本节限于保存、恢复与数据耗尽的checkpoint边界，不评审全部流式训练接线。
 
 [桥接接口](https://github.com/verl-project/verl/blob/c7e22a9e0ecbc08bc3600c05b0be717203fe7d1a/verl/utils/dataset/dataloader.py)允许训练loader只实现迭代；若提供任一checkpoint方法，构造检查要求`state_dict`与`load_state_dict`都可调用。按[保存源码](https://github.com/verl-project/verl/blob/c7e22a9e0ecbc08bc3600c05b0be717203fe7d1a/verl/trainer/ppo/v1/trainer_base.py)，无状态loader仍可走actor／critic保存，跳过数据状态并清除同目录旧data.pt；这不是完整训练可重启承诺。该保存路径、Hydra构造和清理只做源码核对，未在本轮执行。
 
@@ -67,7 +67,26 @@ python3.12 -B experiments/checkpoint-rng-order/verify.py
 
 [脚本](../../experiments/verl-custom-loader-resume/verify.py)与[结果](../../experiments/verl-custom-loader-resume/result.json)保存固定输入SHA256。Python3.12.13／Torch2.9.1，`python3.12 -B experiments/verl-custom-loader-resume/verify.py /path/to/verl-git`，Git对象预缓存后运行不联网。六条件通过、两新进程JSON相同；没有模型权重／optimizer加载、真实loader恢复、Ray／TQ／设备或训练验收。用户数据或外部pickle不应交给这个临时夹具。
 
-已有作者推进草案，本题在恢复条件范围收束，不改其接口、重复认领、发布评论或新排M5训练任务；社区与既有PR-head写入仍逐项待用户明确授权。
+### 提前耗尽与尾部保存
+
+同head的[新bot反馈](https://github.com/verl-project/verl/pull/8454#discussion_r4420932965)指出step-based reader提前结束会漏尾部保存。固定[trainer_base](https://github.com/verl-project/verl/blob/c7e22a9e0ecbc08bc3600c05b0be717203fe7d1a/verl/trainer/ppo/v1/trainer_base.py#L494)支持以下**静态控制流结论**：显式total_training_steps会令steps_per_epoch=None，即使loader有len也如此；`_fetch_one_gen_batch`此时将StopIteration转为DataLoaderExhausted，不重绕数据。`step`先在prepare_step取整批，再进入局部更新循环；prepare阶段的该异常能到`_fit`的break，跳过本轮保存／验证。循环尾部只有on_train_end与dump关闭，基础on_train_end无操作；[同步子类](https://github.com/verl-project/verl/blob/c7e22a9e0ecbc08bc3600c05b0be717203fe7d1a/verl/trainer/ppo/v1/trainer_sync.py)也未补存。
+
+例如**假设**总步数5、save_freq=2，已经完整完成1–3步，准备第4步时耗尽，源码只触发周期保存2，不触发补存3；若第3步不在验证周期，也没有最终补验。完成步数为零、最后完整步已在周期保存、保存或验证被显式关闭，均须分别看待，不能写成“所有提前结束都丢最后一步”。这是路径推演，不是真实权重丢失记录。
+
+更新阶段不同：`_step_once`／refill中出现DataLoaderExhausted会被`step`转为RuntimeError，而非走正常break；`fit`的finally仍尝试关闭reader，但关闭资源不等于保存或回滚。原测试`test_step_mode_ignores_epochs_and_stops_cleanly_without_rewinding`替换了step，检验消费数量／关闭；默认save_freq=-1，没有验收正保存周期下的尾部保存。另有partial-update转RuntimeError测试；这些测试本轮只阅读，未重跑或改写。
+
+bot的补存草图仅暂时把global_steps改为最后完整步。**编号回退不等于数据状态回退**：`_next_train_batch`逐个取gen_batch_size块，凑齐后才提交整批；若取到部分块后耗尽，reader可能已消费未训练数据，而`_save_checkpoint`会调用当下state_dict。这是补存方案须处理的源码风险推断，不能仅靠保存目录叫global_step_3就认证样本连续性，不自动采用该草图。
+
+另核[文档反馈](https://github.com/verl-project/verl/pull/8454#discussion_r4420932952)：同head的docs/index.rst确有`advance/custom_dataloader`，Git文档树无对应文件；这是悬空入口的静态确认，不是本机Sphinx构建失败。trainer_base、同步子类与原CPU测试三完整Python输入编译通过，AST断言确认异常分支和继承边界；未导入trainer、执行生产方法或跑训练。输入SHA256：
+
+```text
+trainer_base.py   cf084ad149e953fc7da73a5d5073e1abd2c986f77bbc14e9b70df662b544781c
+trainer_sync.py   bc805f2990910f29e11b45c43a0687eae645cee375ab6b9a7211650022f00186
+原CPU测试        be6fb6e2155e4c2424a2e49fa36f6f3cb3d6c2b700015c874a7e672ee778db64
+docs/index.rst   902010d23c496315c4fbe750141679e1be44ef5f6a79fdc1e8121b925757bea9
+```
+
+已有作者推进候选；原恢复条件验证不扩矩阵，新增反馈只作上述静态核对，不改其接口、重复认领、发布评论或新排M5训练任务；社区与既有PR-head写入仍逐项待用户明确授权。
 
 ## 配置字段可覆盖与对象默认值
 

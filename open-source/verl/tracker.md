@@ -55,7 +55,7 @@
 
 2026-10-30接[批元数据拼接](#批元数据拼接的已有候选)：#8453已有作者，本机0.11.0上两版原测试均通过；新#6082维护者报告经原始修复／发布记录核为0.14.2非张量cat变化，区别0.12.2轴序列化与0.15.3 jagged批操作。此次无新运行验收，不升级环境／排算力。
 
-2026-10-30接[自定义loader恢复](#自定义-loader-恢复的已有草案)：draft #8454已有作者；六个原方法局部控制区分接口缺失前拒绝与数据文件错误后拒绝，模型接口为Mock、文件真实，非原作者pytest或完整恢复验收，不另实现／排算力。
+2026-10-30接[自定义loader恢复](#自定义-loader-恢复的已有草案)：#8454已非draft、同head新增bot审查；静态核提前耗尽的尾部保存／验证缺口，更新中途仍抛RuntimeError，编号回退不认证reader状态回退。旧六恢复条件不重跑，非训练／原pytest或Sphinx验收，不另实现／排算力。
 
 2026-10-30接[SFT边界人工复查](#epoch-边界恢复与采样器状态)：#7402同b7d1f36e，新普通评论确认旧问题并提醒legacy残留；该限制已有正文披露，评论者未跑CPU，不作批准或新增验证，不另改fallback／重跑旧矩阵。
 
@@ -107,9 +107,11 @@
 
 ## 自定义 loader 恢复的已有草案
 
-2026-10-30只读Mecoli1219的OPEN／draft [#8454](https://github.com/verl-project/verl/pull/8454)，headc7e22a9e0ecbc08bc3600c05b0be717203fe7d1a、basea08ea02a，一提交13文件940增50删；reviews为空，bot未审draft。已有作者在做V1同步自定义loader，不认领重叠接口；PR正文引用的其他议题不替代本轮代码范围。
+2026-10-30只读Mecoli1219的OPEN [#8454](https://github.com/verl-project/verl/pull/8454)，headc7e22a9e0ecbc08bc3600c05b0be717203fe7d1a、basea08ea02a，一提交13文件940增50删；初核draft，06:12Z后已非draft，仅新增[bot COMMENTED review](https://github.com/verl-project/verl/pull/8454#pullrequestreview-5708696150)，不是维护者批准。已有作者在做V1同步自定义loader，不认领重叠接口；PR正文引用的其他议题不替代本轮代码范围。
 
 [原checkpoint专题](../../notebook/frameworks/verl-checkpoint-management-reading.md#自定义数据源的保存与恢复边界)区分模型可保存、loader恢复方法与data.pt内容就绪。六个自设计CPU控制接完整原_load_checkpoint：[结果](../../experiments/verl-custom-loader-resume/result.json)核无接口auto／显式恢复在加载调用前拒绝，无接口auto无checkpoint可新启动；有接口但缺文件／类型错会在step与actor／critic Mock加载调用之后拒绝，字典则传给loader替身。保存／构造仅源码，原测试已读未跑，不等真实权重变更、回滚、流offset或完整恢复验收。两次新进程一致，本题条件验证收束，不新排M5算力、改候选或发布反馈；社区和既有PR-head写入仍逐项待用户明确同意。
+
+新增[耗尽与尾部保存核对](../../notebook/frameworks/verl-checkpoint-management-reading.md#提前耗尽与尾部保存)：显式step模式在下一批准备阶段耗尽会正常break，没有最后完整步的补存／补验；更新中途则转RuntimeError。bot暂改step编号的草图未处理可能已消费的部分批数据，不能据此认证reader／权重一致性。三Python输入编译及AST检查通过，文档树确认缺toctree目标；仅静态分析，不执行原trainer／测试或采纳草图，不写社区与PR head。
 
 ## 批元数据拼接的已有候选
 
