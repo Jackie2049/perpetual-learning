@@ -1,6 +1,6 @@
 # verl DataProto 数据流架构源码阅读
 
-2026-10-30接续：[队列打包与位置张量的轴语义](#队列打包与位置张量的轴语义)复核#7899的新TQ写入反馈：原packing方法与原消费端retag的四个CPU控制出现两异常、一静默错样本；通用张量打包可自洽，仍不满足mRoPE序列轴契约。
+2026-10-30接续：[TensorDict 升级的三个独立边界](#tensordict-升级的三个独立边界)按维护者新反馈、原始修复与官方分发元数据，分清轴信息序列化、非张量拼接和jagged批操作；升级依赖不等于自动修正所有位置张量的构造契约。
 
 > 2026-06-15 | 源码: verl/utils/dp_rpc.py + verl/utils/tensor_dict.py + verl/trainer/ppo/ray_trainer.py
 > 历史概览：旧版DataProto的split/merge设计。下方6月结构保留当时的学习视角，不代表2026-10当前实现的完整复核，也不提供跨Worker零拷贝保证。
@@ -8,6 +8,26 @@
 2026-10-24补充：[图片字节与解码对象的生命周期](#图片字节与解码对象的生命周期)。原方法与真实Pillow对照确认dataset侧清理边界；原“数据开销完全可忽略”概括撤回，张量字节算例也已纠正，不能覆盖raw_prompt中的图片或序列化峰值。
 
 2026-10-25补充：[多模态特殊 token 检查的 CPU 开销](#多模态特殊-token-检查的-cpu-开销)区分原检查方法、完整processor与训练吞吐；纯文本走多模态processor也可能付出标记计数成本，但不是所有纯文本入口都走此路径。2026-10-26接续[回移候选的绑定条件](#回移候选的绑定条件与评审前提)，不重跑旧微基准。
+
+## TensorDict 升级的三个独立边界
+
+TensorDict不同版本解决的不是同一个问题。2026-10-30，peterdsharpe在[verl #6082的新评论](https://github.com/verl-project/verl/pull/6082#issuecomment-6512340425)自述维护TensorDict，并报告在verl `2ab3529`上对0.10.0／0.14.3／0.15.3运行1,689项CPU测试：后两版仅三项失败。该数量、性能比较及整栈兼容性属于其外部报告；本机此次只核原始修复和发布记录，没有执行该套件。
+
+| 官方发布边界 | 原始变更 | 对 verl 契约的含义 |
+| --- | --- | --- |
+| [0.12.2](https://github.com/pytorch/tensordict/releases/tag/v0.12.2)，2026-04-20 | [#1675](https://github.com/pytorch/tensordict/pull/1675)，合并 `9792dff3e089c6c9ee8c06655e63e41feb81438a` | consolidate记录已有`_ragged_idx`，反序列化时传回NestedTensor；保留已有轴，不推断轴的业务含义 |
+| [0.14.2](https://github.com/pytorch/tensordict/releases/tag/v0.14.2)，2026-09-09 | [#1786](https://github.com/pytorch/tensordict/pull/1786)，合并 `906274646e07e55b05c4f51fac0cc91f0beb8cc1` | 非张量cat改为保留各输入值，不再默默重复首值；依赖首份批元数据的调用方须自己表达该策略 |
+| [0.15.3](https://github.com/pytorch/tensordict/releases/tag/v0.15.3)，2026-10-24 | [#3113](https://github.com/pytorch/tensordict/pull/3113)，合并 `392ea01b0061b93f406398e48d6e429d878f2052` | 增加首batch维上的jagged索引、切片、split／chunk／cat等；不是所有nested操作或全部布局都获得支持 |
+
+前两项已直接读修复diff。#1675在叶元数据末尾追加ragged轴，读取时仍兼容旧五字段格式；旧数据若未保存轴，读取器并不能凭空恢复它。#1786增加`_cat_non_tensor`，先按输入batch维unbind收集值，再stack，避免旧空内部TensorDict使后续值丢失。这解释了[本机0.11.0仍保留首份](#本机版本没有触发报告中的失败)为何不否定0.15.1作者报告，也将“从0.11开始”的宽泛阈值收窄为有原始变更和发布记录支持的0.14.2边界；不是本机跨版本二分结果。
+
+轴保存与轴构造尤其不能混用。#1675能保存传入的轴信息，却不把等长位置样本自动识别成mRoPE序列轴；[队列原packing后被强制retag的四组控制](#队列打包与位置张量的轴语义)属于另一条条件路径。维护者把#7899／#6851列为升级收益，不足以据此宣布所有TQ写入布局闭环，亦不能自动删除当前消费者的兼容代码。
+
+### 小版本的依赖也须分别核对
+
+2026-10-30读取PyPI官方JSON：[0.15.1](https://pypi.org/pypi/tensordict/0.15.1/json)声明`torch>=2.13.0a0`，[0.15.3](https://pypi.org/pypi/tensordict/0.15.3/json)改为`torch>=2.11.0a0`，且后者基础依赖不再含orjson。两者均有`py3-none-any`轮，但都不满足本机Torch2.9.1；不能把某个0.15小版本的Torch下限推广为整个0.15系列，也不能因纯Python轮就忽略Torch与设备包约束。verl自己使用orjson时应独立声明依赖，不能把它偶然由其他库安装当成自身依赖契约。
+
+所核[verl #6082](https://github.com/verl-project/verl/pull/6082)仍OPEN，head `13a7c067d62ca7a0faf995cc9d401b1d87885aea`、base `3f9d4c0d32cc20c7ec31c8137e91bb5673ce9e5e`，三提交16文件。候选把多处依赖改为无上界`>=0.12.2`；其`maybe_fix_3d_position_ids`实际上保留条件及版本assert，仅注释原赋值，并非整个helper已删除。维护者提出的首份元数据处理、直接依赖orjson、旧测试预期调整和NPU Torch约束，属于升级时需协调的不同事项；不是该旧候选已经完成的兼容修复或本机安装／NPU验收。不改环境、不套候选，也不为本次只读证据更新新增M5任务。
 
 ## 批元数据与逐样本字段的拼接
 
@@ -32,7 +52,7 @@
 
 [脚本](../../experiments/verl-first-metadata/verify.py)与[结果](../../experiments/verl-first-metadata/result.json)保存两版生产文件、原测试和两分发源码／元数据哈希、实际轻依赖版本。命令：`PYTHONPATH=/path/to/td011 python3.12 -B experiments/verl-first-metadata/verify.py /path/to/verl-git /path/to/td0151`；第一目录需有0.11.0及结果中固定轻依赖，第二目录只供读取0.15.1缓存，不得放进PYTHONPATH。固定Git对象预缓存后运行不联网。两次新进程JSON一致，真实TensorDict与CPU张量，无批数据／worker／Ray、TPU或训练验收。
 
-本题以版本条件下的否定复现收束。已有作者修复，不代改其阈值或发布反馈；匹配0.15依赖的CPU复验仍未做，不属于GPU访问阻塞，也不新排M5算力队列或调整其既定环境。后续实质版本／反馈改变再核，社区及既有PR-head写入仍逐项待用户授权。
+本机复现仍以该版本条件下的否定结果收束；后来维护者反馈与原始变更见[三个升级边界](#tensordict-升级的三个独立边界)。已有作者修复，不代改其阈值或发布反馈；匹配0.15依赖的CPU复验仍未做，不属于GPU访问阻塞，也不新排M5算力队列或调整其既定环境。社区及既有PR-head写入仍逐项待用户授权。
 
 ## 队列打包与位置张量的轴语义
 

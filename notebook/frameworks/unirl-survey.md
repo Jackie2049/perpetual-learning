@@ -498,6 +498,8 @@ Python3.12.13 / torch2.9.1，全部原模块正常导入，无包壳、方法摘
 
 两固定Git树的子项目各90个跟踪路径，均无`tests/`或`conftest.py`；旧树唯一匹配pytest默认文件名的文件就是smoke CLI，新树匹配文件为零。这只描述所核版本，不把作者“历史上从未提供测试”的说法扩成我方全历史审计。脚本重命名前后除顶层usage文档串外，完整可执行AST一致；其六个`test_*`函数接受`url`／`video`等CLI实参，并未新增pytest夹具。
 
+同日后续01:08Z更新为head `3d02f036096c54410bc892ccca56f040d0d7c227`，仍OPEN／未合并；它同步main5d1da78d，所核五个奖励服务文件blob与旧head逐一相同。新旧compare还显示主线seed／logprob变更，不能将其算作此候选新增功能；以下结果仍固定旧输入，不重跑或升级为新服务验收。
+
 [复现](../../experiments/unirl-pytest-collection/verify.py)在独立Python3.12.13／pytest8.4.2／requests2.32.5环境，使用各版**原pyproject与原完整CLI两文件快照**，以原树清单检查未漏匹配测试／conftest及scripts包init。真实pytest子进程全部带`--collect-only`，不替换生产代码、不生成假测试；关闭插件自动加载和cacheprovider，未安装完整项目／server／Pillow或模型栈。[结果](../../experiments/unirl-pytest-collection/result.json)含四原文件hash、两树清单hash、环境与逐命令节点／退出码：
 
 | 原配置或显式覆盖 | 收集节点数 | 退出码 | 含义 |
@@ -1719,6 +1721,8 @@ python3.12 -B experiments/scripts/verify_unirl_reward_rows.py /path/to/UniRL /pa
 2026-10-30核验：[窗口候选 #633](https://github.com/Tencent-Hunyuan/UniRL/pull/633)（head `d31017aea1c91f881043d896637b7c3a6db4bc6b`）和[采样参数候选 #634](https://github.com/Tencent-Hunyuan/UniRL/pull/634)（head `523d245e61dec961b714ba96ef9663ab877d36d4`）均为294962silent的OPEN／非draft／未合并候选。共同祖先与API base均为 `8cfbac17765004afb68fef08a4e011a4c8daf555`，分别仅改一个生产文件（10行／14行新增）；当前main `5d1da78d4d87593b41a4235a65e9ad9dc3f9b6f8` 的两文件与祖先相同。已有作者，不另认领或叠加实现。两份正文和完整diff已读；普通评论只有作者本地lint通过与CI待批准的自述，reviews／行内反馈为空，不视为维护者验收。
 
 ### 日程长度与返回集合不是同一契约
+
+同日后续01:08Z两候选同步main5d1da78d，#633为 `714b71bb5dce6145292fb6389ffe96ae64a2abe4`，#634为 `be8baa25ece143539a3780ce35687e4566a07c2f`，仍OPEN／未合并。未截断Git树逐文件核index_schedule.py的blob仍为`5e2f7b91c9545531b02326fbdaa423a3a55551bd`、sampling.py仍为`f9c358f9fa8753c179f8836610aae561c8aedd2e`，均与上方旧输入相同；只更新身份、不将主线变更或旧14组控制计为新增验证。
 
 窗口调度器先在自己的长度M内选位置；采样参数再对应推理的T步日程。合法SDE索引应在 `[0,T)`，而非包含T的sigma点位置。#633在非all策略构造时要求 `M−window_size >= init_timestep`，拦截窗口超出右端；all不使用窗口几何。#634在原int归一化后检查显式列表，并拒绝 `scheduler.num_timesteps > T`，允许较短scheduler覆盖日程前缀。
 

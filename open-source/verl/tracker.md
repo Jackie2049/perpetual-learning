@@ -53,7 +53,7 @@
 
 2026-10-30补[LoRA名称契约](#lora-名称处理的已有候选)：#7483原八测试体隔离通过，17次解析区分严格／扁平加载器与packed目标；两head的本轮完整输入相同，非真实加载／量化或整PR验收，不另实现／排算力。
 
-2026-10-30接[批元数据拼接](#批元数据拼接的已有候选)：#8453已有作者；真实TensorDict0.11.0＋Torch2.9.1上两版原两个测试体均通过，无旧失败／新通过证据；0.15.1要求更高Torch，仅源码／元数据，不迁移作者TPU报告或另排算力。
+2026-10-30接[批元数据拼接](#批元数据拼接的已有候选)：#8453已有作者，本机0.11.0上两版原测试均通过；新#6082维护者报告经原始修复／发布记录核为0.14.2非张量cat变化，区别0.12.2轴序列化与0.15.3 jagged批操作。此次无新运行验收，不升级环境／排算力。
 
 2026-10-30接[自定义loader恢复](#自定义-loader-恢复的已有草案)：draft #8454已有作者；六个原方法局部控制区分接口缺失前拒绝与数据文件错误后拒绝，模型接口为Mock、文件真实，非原作者pytest或完整恢复验收，不另实现／排算力。
 
@@ -84,6 +84,8 @@
 2026-10-30只读jialei777的OPEN／非draft [#8453](https://github.com/verl-project/verl/pull/8453)，head1ffe98bf14949f0ac1cc000facf056ec0b7808d9、basea08ea02a，一提交两文件37增2删；reviews为空，bot摘要不作人工批准。已有作者修复新版cat把不同批元数据变逐样本列表的问题，不另认领生产方案或发布反馈。
 
 [原数据流专题](../../notebook/frameworks/verl-dataproto-data-flow-reading.md#批元数据与逐样本字段的拼接)区分首份NonTensorData与逐样本NonTensorStack；首rank内存并非全局峰值。两完整原utils模块接原两个测试体，[本机结果](../../experiments/verl-first-metadata/result.json)在TensorDict0.11.0／Torch2.9.1下基线及候选均2通过，普通／jagged均保留首份；不是旧失败／新通过，也不支持简单以≥0.11判必败。0.15.1声明Torch>=2.13.0a0，不兼容本机，导入未成功，只有源码／元数据核对；作者TPU报告不算本机／当前全部环境验收。CPU差额不新排M5算力或改其环境；所有社区与既有PR-head写入仍逐项待用户明确授权。
+
+同日01:04Z，[peterdsharpe在#6082的新报告](https://github.com/verl-project/verl/pull/6082#issuecomment-6512340425)补版本信息。[原专题升级边界](../../notebook/frameworks/verl-dataproto-data-flow-reading.md#tensordict-升级的三个独立边界)以TensorDict #1786原diff及0.14.2发布说明支持非张量cat变化起点，解释旧0.11控制而不改其结果；#1675／0.12.2保存已有ragged轴，不保证TQ构造契约；#3113／0.15.3批操作也非全布局验收。PyPI核0.15.1／0.15.3分别要求Torch>=2.13.0a0／>=2.11.0a0，后者不再依赖orjson。所核#6082 head13a7c067三提交16文件仍是旧升级候选、保留版本assert；外部1,689 CPU报告不是本机通过。本轮只读来源，不重跑旧矩阵、改两候选或调整M5环境。
 
 ## LoRA 名称处理的已有候选
 

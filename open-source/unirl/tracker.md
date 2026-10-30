@@ -11,7 +11,7 @@
 
 **【进展】** #523 的我方 fork PR 已获用户认可，测试与 e2e 正式指派 M5；M5 已闭环 L0（四项断言 + pristine 对照），L1 仍待 ≥8 卡及获准权重/存储，见[M5交接](../../experiments/handoff-m5.md)。#567 待匹配 H20；#470/#481/#484已有作者或验证条件。2026-10-25补[MPS已有实现与主线边界](#mps-共置的已有实现与当前边界)：#492已合并、#482被接替而关闭未合并；原配置四控制非接入、数值、吞吐或关停验收，不据正文设计或本地解析另认领功能。 同日补[SDE窗口已有修复](#sde-窗口调度的已有修复)：#489已合并，CPU序列只核计数／阈值坐标，四实际配方仍progressive，不另认领或排GPU任务。 2026-10-26核[Scheduler环境](#scheduler-环境兼容的已有候选)：#468两个原helper接独立dict核恢复，不是库加载／GPU验收；依赖已演进，条件补M5，不另实现。 另核[TempFlow后续范围](#tempflow-候选范围与计数类型)：#552移出WAN／SGLang Flash、严格int计数；仅局部if求值，不外推作者外部harness或旧GPU结果，不另实现。
 
-2026-10-30核[SDE索引边界候选](#sde-索引边界的已有候选)：#633／#634已有作者；14组原模块CPU对照区分右溢出拒绝、仍接受的负起点及声明长度检查的兼容收紧，不作整体正确性／训练验收，不另认领或排M5任务。
+2026-10-30核[SDE索引边界候选](#sde-索引边界的已有候选)：#633／#634新head714b71bb／be8baa25同步主线，两相关文件blob与旧验证输入相同；14组原CPU结论不重计为新验收，不另认领或排M5任务。
 
 2026-10-26另按[#621最终合并范围](#奖励加载的最终合并范围)修正旧记录：managed也延迟启动，实验VideoAlign增配置检查；九模块语法检查不算真实加载验收，不新增任务。
 
@@ -19,7 +19,7 @@
 
 2026-10-26接续[熵候选代码身份](#熵监控同步主线后的范围)：#563新cc0df170合入奖励主线，13专题文件同前次d2f0a489；不重跑旧CPU、不迁移历史GPU验收，不另认领或新排任务。
 
-2026-10-30核[奖励服务测试收集](#奖励服务测试收集的已有候选)：#632已有作者，八组原文件快照的原生collection核6个CLI节点与候选空收集退出5，非服务测试通过；不另实现／发布。
+2026-10-30核[奖励服务测试收集](#奖励服务测试收集的已有候选)：#632新head3d02f036同步主线，五专题文件blob全同旧验证输入；原八组collection结论不重计，空收集仍非服务测试通过，不另实现／发布。
 
 2026-10-30接[Agentic奖励组RFC](#agentic-奖励组诊断的已有-rfc)：#635已有作者愿实现只读诊断；有限奖励／基线／训练行分开，四归一化与零surrogate梯度控制非发生频率或质量结论，不另实现／发布。
 
@@ -52,13 +52,13 @@
 
 ## 奖励服务测试收集的已有候选
 
-2026-10-30只读核294962silent的OPEN／非draft [#632](https://github.com/Tencent-Hunyuan/UniRL/pull/632)，headff13197a、实际祖先8cfbac177，ahead2／behind0，五文件含CLI重命名；reviews／行内comments为空，不推定人工批准。已有作者处理测试发现与文档，不另认领、改方案或发布反馈。
+2026-10-30只读核294962silent的OPEN [#632](https://github.com/Tencent-Hunyuan/UniRL/pull/632)，新head3d02f036096c54410bc892ccca56f040d0d7c227同步到main5d1da78d；旧验证headff13197a基于8cfbac177。未截断Git树核README、pyproject、VideoAlign README、启动脚本、smoke CLI五个blob逐一相同；新旧compare的主线seed／logprob变更不计作奖励服务修订。不推定人工批准，已有作者，不另认领、改方案或发布反馈。
 
 [原UniRL专题](../../notebook/frameworks/unirl-survey.md#奖励服务的测试收集与空结果)和[八组原生collection结果](../../experiments/unirl-pytest-collection/result.json)区分：旧版默认／标记过滤／仅去testpaths仍收6个CLI函数；目录排除或候选默认空收集exit5；候选显式传重命名脚本仍收6个，缺失integration路径exit4。每版仅原配置／原完整CLI快照，另核90路径清单与可执行AST相同；未执行这六函数或作者普通pytest，故非“6项测试通过”、真实服务／HTTP／GPU验收或我方历史审计。不新排M5任务；上游与既有PR-head所有写入仍逐项待用户明确同意。
 
 ## SDE 索引边界的已有候选
 
-2026-10-30只读核294962silent的OPEN／非draft [#633](https://github.com/Tencent-Hunyuan/UniRL/pull/633)（d31017ae）和[#634](https://github.com/Tencent-Hunyuan/UniRL/pull/634)（523d245e），均未合并，共同祖先／API base=8cfbac177；main5d1da78d两相关文件同祖先。两候选分别改窗口右端几何、静态列表／scheduler声明长度；不另认领或把作者本地lint报告当维护者批准。
+2026-10-30只读核294962silent的OPEN／未合并 [#633](https://github.com/Tencent-Hunyuan/UniRL/pull/633)新head714b71bb5dce6145292fb6389ffe96ae64a2abe4和[#634](https://github.com/Tencent-Hunyuan/UniRL/pull/634)新headbe8baa25ece143539a3780ce35687e4566a07c2f。两者同步主线5d1da78d，未截断Git树核index_schedule.py／sampling.py分别同旧验证d31017ae／523d245e，blob为5e2f7b91／f9c358f9；旧验证祖先8cfbac177。仅提交身份变化，不重跑14组或将主线seed／logprob改动归入两校验；不另认领或把作者本地lint报告当维护者批准。
 
 [原SDE专题](../../notebook/frameworks/unirl-survey.md#sde-索引的两层边界校验)与[14组CPU结果](../../experiments/unirl-window-dwell/bounds-results.json)保留原模块对照：#633仍接受init=−1返回负索引，#634不检查scheduler实际返回集合；空显式列表配过长但未使用scheduler、或过滤后输出合法的长scheduler亦被构造拒绝。早期拒绝不等完整输入域保证，仍接受反例不等已发生训练故障。无GPU／Hydra／模型／原作者穷举，不套补丁、评论、改PR或新排M5任务；社区可见写入及既有PR-head推送仍逐项待用户明确同意。
 
