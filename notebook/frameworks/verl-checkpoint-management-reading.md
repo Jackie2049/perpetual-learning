@@ -552,6 +552,12 @@ Python3.12.13／torch2.14.1／NumPy2.5.4／pytest9.1.1，仅真实临时文件�
 
 2026-10-23 API核对为open、未合并；固定head `b7d1f36e446da4caeb85a7f9d770daa416a9e76f`，目标base `3f9d4c0d32cc20c7ec31c8137e91bb5673ce9e5e`，实际祖先 `09ac37258ea66b0cb69b2738eec3074ea4e7261c`（ahead4/behind149）。相对祖先5文件322增5删，不把目标分支的149个提交算进修复范围。
 
+2026-10-30人工反馈复核：UgaTheDev于[10-29的普通评论](https://github.com/verl-project/verl/pull/7402#issuecomment-6511331959)确认sidecar移除、长度变化告警及完成保护测试断言的修订，并把legacy边界残留列为非阻塞提醒。head仍为b7d1f36e，没有新实现。发言者明确自述缺torchdata、未跑CPU测试；这不是APPROVED review，也不能升级作者24项或本机历史控制的验证等级。
+
+评论建议说明legacy限制，或考虑按当前长度取模回退；当前[PR兼容说明](https://github.com/verl-project/verl/pull/7402)已明确legacy耗尽迭代器保留旧行为，[原issue的10-23更新](https://github.com/verl-project/verl/issues/7401)也已披露修复需要新保存的长度元数据。因而不能把这条提醒记为新发现、缺少说明或已接受的新恢复策略。仅凭当前长度猜边界仍无法识别旧长度／数据变化，与现有“不丢弃未知旧位置”的兼容选择不同。
+
+本轮只核反馈与既有契约，不重跑下方历史迭代器／八组控制，不新增fallback、作者回复草稿或M5实验。后续若代码或兼容策略有实质改变再续；普通评论不能授权本项目修改其PR。
+
 #### 最后一批与结束确认
 
 本机Python3.12.13、torch2.9.1、torchdata0.11.0的真实CPU对照：8条数据、batch2、单副本显式rank的DistributedSampler、shuffle/seed0、两层drop_last、0worker且不pin。取完4批后立即保存，与再请求一次、确认结束后保存，恢复到新加载器并设置epoch1，结果不同：

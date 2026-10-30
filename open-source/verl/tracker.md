@@ -57,6 +57,8 @@
 
 2026-10-30接[自定义loader恢复](#自定义-loader-恢复的已有草案)：draft #8454已有作者；六个原方法局部控制区分接口缺失前拒绝与数据文件错误后拒绝，模型接口为Mock、文件真实，非原作者pytest或完整恢复验收，不另实现／排算力。
 
+2026-10-30接[SFT边界人工复查](#epoch-边界恢复与采样器状态)：#7402同b7d1f36e，新普通评论确认旧问题并提醒legacy残留；该限制已有正文披露，评论者未跑CPU，不作批准或新增验证，不另改fallback／重跑旧矩阵。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -196,6 +198,8 @@
 [原checkpoint专题](../../notebook/frameworks/verl-checkpoint-management-reading.md#sft-与-v1-的恢复顺序)与[验证材料](../../experiments/verl-epoch-resume-order/verify.py)区分SFT按epoch重排与V1有状态RandomSampler／重试iter：head两份原测试模块的19参数项通过，旧V1同4项2过2失败，边界第9批重放第一轮开头。真实torchdata／文件／TensorDict及隔离原方法、原actor Mock，不是模型、Ray、多rank或异步TQ恢复；未把作者Linux35项或社区GPU表计成本机。
 
 [#7402](https://github.com/verl-project/verl/pull/7402)仍原b7d1f36e版本，已将旧长度放进现有data字典，长度变化／legacy缺键时警告并原生恢复；不是#7974旧正文所说的版本化sidecar／硬异常。两候选在legacy支持与旧长度判断上不同，不叠加、改写或另认领。CPU证据已收束，不新增M5队列；全部社区写入、评论与已有PR-head推送仍须用户对该动作明确同意。
+
+2026-10-30复核[新人工评论](https://github.com/verl-project/verl/pull/7402#issuecomment-6511331959)：UgaTheDev认可sidecar／告警／完成保护断言修订，非阻塞提醒legacy边界仍恢复旧耗尽状态，并自述缺torchdata未跑测试。当前PR及[原issue](https://github.com/verl-project/verl/issues/7401)已明确该限制，不将建议说明或按当前长度取模自动升级成新任务；不是APPROVED review、新缺陷或新增CPU／GPU验收。见[原专题反馈复核](../../notebook/frameworks/verl-checkpoint-management-reading.md#sft-epoch-边界与加载器状态)，本轮只更新证据、不重跑或另改候选。
 
 ## 缓存路径候选的 CI 触发范围
 
