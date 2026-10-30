@@ -10,6 +10,46 @@
 
 2026-10-26接续：[原生混合精度模型的后端选择](#原生混合精度模型的后端选择)追踪新议题#8381。顶层FP8配置不代表experts也为FP8；显式DeepGEMM会阻止自动候选回退，切换Marlin还改变activation精度，不能仅按“成功启动”认证训练与rollout一致。
 
+## 分片导出与量化器的调用边界
+
+**导出流能正确分片传输，不代表它已生成推理端需要的量化权重和 scale；退回完整张量加载也不能补上导出端没有执行的量化器。** 2026-10-30，[#8395作者的新回复](https://github.com/verl-project/verl/pull/8395#issuecomment-6517846259)确认，`sharded_nixl` 的分片导出绕过训练侧 WeightQuantizer。固定head `d18e1e4712ab0be3a344e39e69cec3b36bf7cff2`、API目标base `174888fcf4b65dea032566a02fd16c5f76fb5b5b`，读取时OPEN／非draft。已有作者在讨论解决方向，本节不另建竞争实现。
+
+### 注册量化器与调用量化器分开
+
+固定版本的[worker初始化与更新入口](https://github.com/verl-project/verl/blob/d18e1e4712ab0be3a344e39e69cec3b36bf7cff2/verl/workers/engine_workers.py)仍调用dispatcher并把返回的量化器存入engine；更新时，`send_weights_takes_engine=True` 的后端直接接收训练engine，不经过普通的 `get_per_tensor_param()` 导出流。因此，初始化成功且setter执行，不能证明同步时使用了量化器。
+
+| 导出路径 | 固定版本的接线 | 量化边界 |
+|---|---|---|
+| Megatron普通完整张量 | `get_per_tensor_param` 导出HF权重，非adapter-only时调用 `_rollout_weight_quantizer` | 可执行格式转换；不代表所有配置都受支持 |
+| Megatron HF坐标分片 | `get_per_tensor_param_hf_shard` → `get_per_tensor_param_shard` → `hf_shard_export` | 不调用上述量化器；raw浮点参数必要时转BF16，坐标转换不等于生成量化scale |
+| sharded_nixl传输 | 引擎自行调用分片接口，按ownership与写表发送；浮点wire dtype默认BF16 | dtype转换与字节搬运不是block量化；不能产生缺失的scale |
+
+源码：[Megatron导出](https://github.com/verl-project/verl/blob/d18e1e4712ab0be3a344e39e69cec3b36bf7cff2/verl/workers/engine/megatron/transformer_impl.py#L988)、[HF分片包装](https://github.com/verl-project/verl/blob/d18e1e4712ab0be3a344e39e69cec3b36bf7cff2/verl/workers/engine/utils.py#L286)、[NIXL导出与wire类型](https://github.com/verl-project/verl/blob/d18e1e4712ab0be3a344e39e69cec3b36bf7cff2/verl/checkpoint_engine/sharded_nixl_checkpoint_engine.py#L502)。Megatron分片转换的NaN探针假设转换主要重排元素，其入口要求非空值为浮点；不能直接视为原生混合FP8／FP4格式转换器的等价路径。这里确认的是缺失通用量化hook，不把所有模型、FSDP或Bridge特例统一断言为同一种设备失败。
+
+候选[设计文档](https://github.com/verl-project/verl/blob/d18e1e4712ab0be3a344e39e69cec3b36bf7cff2/docs/advance/sharded_nixl_weight_sync.md)说明：rank-local切片限plain BF16等条件，量化等配置退回完整张量。该fallback解决“接收哪些切片／调用哪种loader”，不是重新走训练侧完整权重导出和量化。不能用这句支持“量化配置已经安全兼容”。
+
+### 已合并的拒绝条件不在该快照内
+
+[#8369](https://github.com/verl-project/verl/pull/8369)最终head `ac8fa20cd43b5d57d16081b991e83b19a2f3c2d2` 于2026-10-28 02:48:25Z合入 `6f3f449e113b7eb84eef8c0912aad33ffdd322cd`。[合并版dispatcher](https://github.com/verl-project/verl/blob/6f3f449e113b7eb84eef8c0912aad33ffdd322cd/verl/utils/qat/compressed_tensors.py#L584)在解析到非空量化配置后，对 `backend == "delta_sharded"` 抛NotImplementedError；无量化配置的正常早返回不受此guard影响。它不检查 `sharded_nixl`。
+
+但#8395固定d18快照的dispatcher连该backend检查也没有，合并提交6f3不是其祖先。**API显示的目标base不能替代head自身内容。** 作者称“#8369已经让delta_sharded启动拒绝”指已合并路线，不是d18候选已继承这一保护；即使未来正常同步该保护，也不会自动覆盖新后端。旧[#8369一项包装测试](verl-veomni-opd-source-reading.md#rollout-量化导出与字节布局)属于ca0历史版，不作为最终guard的运行验收。
+
+### 跨分片量化仍是方案讨论
+
+[维护者反馈](https://github.com/verl-project/verl/pull/8395#issuecomment-6458902309)指出，量化block可能跨TP rank，需要协调相应统计量，并建议验证DeepSeek-V4-Flash。作者拟先把启动拒绝扩展到新后端，或只对需量化且被切分的参数在TP／ETP组内gather到一rank，复用完整HF量化器，再发送weight与scale；DeepSeek-V4的Bridge特定转换另行处理。它会为部分参数引入组内gather，不再是对所有格式都无gather的同一实现。这些仍是作者询问维护者的方案，尚不是d18代码、已批准范围或本机验证。
+
+本轮Python3.12.14仅对d18的worker、Megatron导出、量化分发、NIXL引擎、Megatron分片转换、HF分片包装及6f3合并版分发共七份完整Python输入做内存compile和定向AST断言；核对普通／分片量化hook、engine-driven入口、wire dtype以及guard恰只匹配delta_sharded。未执行生产函数、原189项CPU／13项GPU测试、NIXL、模型加载或重载。硬件差额仅记入[原M5量化条件入口](../../experiments/handoff-m5.md#verl-量化层审计新版复验)，不新增部署／实验队列或改M5环境。输入SHA256：
+
+```text
+d18 worker       80104da89ed209bbea0215c30b2c7962bd942204338128068020a75439af9c42
+d18 Megatron     7c90a55e29d53e1d07e270e4290654167e52ba8d32bc02fc8c15c4154fc97687
+d18 dispatcher   894cf83498dd3a7881c3c9b8a6291fc99d3e9b6ae6fe02529ed70fa450801cfe
+d18 NIXL         63ef7e410dd2a9388bbc9d54df25f1f53efa0ea2beff1876299135f011b0bd91
+d18 delta_export 993786d71536183cf0cce820341c6bdcc23ab85f2ff87ac66970d38f15fb46ac
+d18 HF wrapper   d99fc75045f822ed78388ec48ba391b8131859dce8bb59ccd1361b8ea5d0f8fe
+6f3 dispatcher   6db8de302ae9ef9f584d38a154605f423704e686d521428718e2ac50e3a43964
+```
+
 ## NVFP4 共享重载与失败保护的版本边界
 
 **恢复原权重后的输出一致，不等于部分写入失败后能回滚或拒绝推理。** 2026-10-30只读zhangyimi的[#7971](https://github.com/verl-project/verl/pull/7971)：固定head `e87adec96fe40c86b4d1f44567142c7f75ca2c25`、API目标base `6b2b417a059f89167ffdeac8c9cc9b59a787cb13`，37文件4053增1335删；wuxibin89于06:19:58Z提交[APPROVED](https://github.com/verl-project/verl/pull/7971#pullrequestreview-5708756650)，本轮读取仍OPEN／非draft、未合并。这里只核worker refit路径、NVFP4后处理及一份GPU测试的代码范围，不审全部训练／打包变更。

@@ -71,6 +71,8 @@
 
 2026-10-30核[多教师启动](#多教师并发初始化的已有候选)：新#8459已有作者；六原函数／方法接异步替身的五组标准库控制区分延迟启动、全就绪发布、gather异常传播与loop退出取消，非Ray／设备清理或作者NPU耗时验收，不另实现／排算力。
 
+2026-10-30核[分片量化导出](#分片导出与量化器的已有讨论)：#8395作者确认分片流绕过量化hook；#8369最终ac8已合并，delta拒绝不在d18候选快照，且不覆盖新后端。七输入仅语法／AST，不把fallback或拟议组内gather当量化验收；原M5条件入口已补，不另实现／排队。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -116,6 +118,14 @@
 2026-10-30只读zgh-99的OPEN／非draft [#8459](https://github.com/verl-project/verl/pull/8459)，headeafee25507cd54bfe62c5282e02705187d871e6e、base321e4e45，仅teacher_model.py改28增6删、无单测／reviews。新增跨教师gather，单教师replica并发原已存在，默认直接构造仍等待。
 
 [原蒸馏专题](../../notebook/frameworks/verl-veomni-opd-source-reading.md#多教师并发初始化与发布边界)的[五组本地控制](../../experiments/teacher-startup-order/result.json)核延迟与协程创建不启动、两教师重叠／完成乱序仍按配置键发布；直接async gather失败后兄弟可继续，同步_run_all的loop关闭会取消本地未完成Task。原六函数／方法，资源与server为替身；不是Ray取消／设备释放、完整构造、NPU性能或训练验收，作者8教师报告不计我方实测。不竞争实现、新排M5作业或写社区／既有PR head。
+
+## 分片导出与量化器的已有讨论
+
+2026-10-30只读rafiw的OPEN／非draft [#8395](https://github.com/verl-project/verl/pull/8395)，headd18e1e4712ab0be3a344e39e69cec3b36bf7cff2、API目标base174888fc；[作者07:58Z回复](https://github.com/verl-project/verl/pull/8395#issuecomment-6517846259)确认sharded_nixl绕过Megatron普通流量化器，并询问先扩启动拒绝还是实现量化。已有负责人和实质讨论，不认领竞争修复。
+
+[原量化专题](../../notebook/frameworks/verl-quant-layer-audit.md#分片导出与量化器的调用边界)核worker注册与实际导出分开、HF分片转换与wire dtype不等量化／scale生成；rank-local退回完整张量只改变接收布局。#8369最终ac8已于10-28合入6f3，合并版对量化delta_sharded拒绝，但6f3不是d18祖先，d18的dispatcher连该guard也无；API目标base不替代head代码。作者TP／ETP组内gather方案仍待讨论，不作已实现／已批准结论。
+
+本轮七完整Python输入compile／定向AST通过，未执行生产函数、原189CPU／13GPU项或NIXL／量化加载。旧#8369包装控制只属ca0；作者B300旧vLLM报告不作本机或当前量化验收。仅补[原M5量化条件入口](../../experiments/handoff-m5.md#verl-量化层审计新版复验)，不自动部署、改环境、新增实验队列或写社区／既有PR head。
 
 ## NVFP4 共享重载的审批与失败边界
 
@@ -282,6 +292,8 @@
 [原VeOmni专题](../../notebook/frameworks/verl-veomni-opd-source-reading.md#rocm-配方默认与后端支持)：原3参数例head过／base1过2预期失败，仅hip／Hopper替身；九Python版本compile／两配方bash -n，无GPU0探测或命令执行。环境传参非后端支持，依赖的[vLLM #63604](https://github.com/vllm-project/vllm/pull/63604)尚OPEN、未覆盖V4.1或完整reload生命周期，关闭性能未测；M5仅原条件参考，不应用／拼接候选、新训练或写社区。
 
 ## VeOmni 量化导出的已有候选
+
+2026-10-30状态更新：[#8369](https://github.com/verl-project/verl/pull/8369)最终headac8fa20c已于10-28 02:48:25Z合入6f3f449e，最终两文件新增量化delta_sharded与DeepSeek-V4 override拒绝；下方ca0包装测试仍属历史，未迁移为最终版验收。与#8395分片导出的版本差异见[新讨论](#分片导出与量化器的已有讨论)。
 
 AMD组合栈后续（2026-10-26）：#8371／#8370／#8369各head未变，作者报告更新为MI355X八步、MI308X一步，后续仍running，不复跑原控制。新增[内核依赖分析](../../notebook/frameworks/verl-veomni-opd-source-reading.md#hip-的-mhc-分支同步与依赖栈)：VeOmni #1363、TileLang #3665、TileKernels #43均已有作者；mHC HIP分支去掉局部shared中转仍读mixes_shared，no_grad选fused路线；测试的assert_close非旧逐bit判据，多层重算未测。八份源码AST/compile，未import或执行GPU／线程模拟。仅补原M5条件参考，不回移／升级／拼装依赖，不另实现或新排训练；上游写入仍逐项待用户明确授权。
 

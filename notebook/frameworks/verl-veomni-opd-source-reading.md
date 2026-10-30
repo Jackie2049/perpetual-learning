@@ -102,6 +102,8 @@ initialize保持普通async def；只调用它得到协程对象，不会立即�
 
 ## Rollout 量化导出与字节布局
 
+2026-10-30状态更新：[#8369](https://github.com/verl-project/verl/pull/8369)最终head `ac8fa20cd43b5d57d16081b991e83b19a2f3c2d2` 已于10-28 02:48:25Z合入 `6f3f449e113b7eb84eef8c0912aad33ffdd322cd`；最终两文件新增量化配置下的delta_sharded启动拒绝与DeepSeek-V4 override拒绝。下方一项包装测试和字节控制仍仅属ca0历史版，不迁移为最终版验收。本轮只对合并版dispatcher做语法／AST及调用链核对，详见[分片导出与量化器边界](verl-quant-layer-audit.md#分片导出与量化器的调用边界)。
+
 **导出流经过量化器，不等于已验证推理引擎能加载该布局；pass-through也不总是对象完全不变。** 新draft [#8369](https://github.com/verl-project/verl/pull/8369)给VeOmni补trainer-side rollout quantizer接口。2026-10-26读取OPEN／draft、作者xiaohong42，head `ca0aea265f4bc4dab927a106cc7f9d43fc201337`，父版／base／共同祖先与当前main均为 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`；两文件60增2删。唯一bot评论表示draft未自动review，reviews／行内评论空，不当人工验收或无人负责的新机会。
 
 ### 接口与两条导出路径
