@@ -1,5 +1,33 @@
 # verl FSDP2 Engine Deep Source Reading — Beyond PR Descriptions
 
+2026-10-30补充：[packed边界与尾部padding](#packed-边界的显式传递与尾部-padding)核#8464：15个原CPU参数项在隔离原函数上通过，静态pad形成独立段；配置门控不是forward兼容性检查，空行offset与位置推导表示有别。非attention／梯度或GPU提速验收。
+
+## Packed 边界的显式传递与尾部 padding
+
+**已有offset可以免去重复推导，但必须描述模型实际收到的完整packed布局。** [#8464](https://github.com/verl-project/verl/pull/8464)读取OPEN，固定head `fc66f413f71c0c85a37847aa9e2b50e9bbea225b`、base `8e48d72de4766228c36623c90f9f5c49ee5b45f3`，五文件含两个新增测试。这里是FSDP训练端将多条序列平铺后的attention边界，不是[shared-prefix packing](verl-shared-prefix-packing.md)的KV前缀复用，也不是rollout调度优化。
+
+[原helper](https://github.com/verl-project/verl/blob/fc66f413f71c0c85a37847aa9e2b50e9bbea225b/verl/workers/engine/utils.py)把offset转int32，最大真实段长通过一次`.max().item()`转为Python int，再按需追加静态pad的终点；Q／K使用同一offset张量与最大段长。原pad_packed_inputs给尾部pad的位置编号从0重启，因此它是独立尾段，不应扩入最后一条真实序列。例如真实长度[5,3]、静态pad8，边界为[0,5,8,16]、max_length为8，而非只取真实最大长度5；pad4时边界[0,5,8,12]、max仍5。无padding时不额外加段，单offset的空微批返回空dict。
+
+### 原 CPU 断言与两个限定对照
+
+本机Python3.12.13／Torch2.9.1／pytest8.4.2，单CPU线程；未安装Transformers。对[15项原CPU测试](https://github.com/verl-project/verl/blob/fc66f413f71c0c85a37847aa9e2b50e9bbea225b/tests/workers/test_fsdp_flash_attn_varlen_kwargs_on_cpu.py)保留参数装饰、helper与断言，通过AST隔离原函数后直接调用，而非原生pytest收集或导入FSDPEngine。对照是[Transformers5.16.1固定提交93c8b7b4的原helper](https://github.com/huggingface/transformers/blob/93c8b7b485963a10800c91f55304db6be211c2bd/src/transformers/modeling_flash_attention_utils.py)；同样只选完整定义、不替换数学或全包导入。六种布局（[5,3]配pad0／4、[1,7,1,2]配0／9、[16]配0／3）均与原position_ids推导得到的offset／max一致，另九项核空微批与配置门控。
+
+两个本地控制单独记账，不算原测试：一是给FA2文本config夹具加不接收额外关键字的strict forward，原配置helper仍返回True，inspect.Signature.bind则拒绝cu_seq_lens_q；没有构造真实remote-code模型或执行forward。二是长度[5,0,3]的offset helper保留[0,5,5,8]，position_ids中空行没有元素，原HF helper推导为[0,5,8]。这是空段的表示差别，不独自证明attention输出不同；本轮未确立生产端会送空行，也不将它定性训练缺陷或扩非法offset矩阵。
+
+[脚本](../../experiments/verl-fa-varlen-metadata/verify.py)与[结果](../../experiments/verl-fa-varlen-metadata/result.json)保存四个完整verl输入hash和固定HF输入hash；两个最终新进程完整JSON一致。HF完整文件SHA256必须为`dea5b555b5bb8fba1b4ab2c62c8df9f96019b17555b3714f75be17c54e801f95`，脚本锁定它、禁止Git隐式fetch，不自动联网／安装。复现需预缓存上述Git对象，并先将固定链接的HF完整源码保存为外部输入：
+
+```bash
+python3.12 -B experiments/verl-fa-varlen-metadata/verify.py /path/to/verl-git /path/to/modeling_flash_attention_utils.py
+```
+
+### 启用条件与完整模型的边界
+
+[engine接线](https://github.com/verl-project/verl/blob/fc66f413f71c0c85a37847aa9e2b50e9bbea225b/verl/workers/engine/fsdp/transformer_impl.py)要求remove-padding分支有packed offsets、FA2／FA3文本config、无vision_config属性、模型不已接收cu_seqlens，并在实际准备输入时排除Ulysses SP。该SP路径仍从all-gather后的position_ids推导边界，不能将本候选结果移作SP支持；vision_config即使值为None，只要属性存在也被排除。[dense_common](https://github.com/verl-project/verl/blob/fc66f413f71c0c85a37847aa9e2b50e9bbea225b/verl/models/transformers/dense_common.py)还让torch／triton fused forward把额外kwargs继续传入base model；只修改helper不能覆盖原先吞掉kwargs的fused路径。本机这三份完整模块只compile／读取接线，没有执行模型或fused算子。
+
+配置门控没有检查四新参数或**kwargs的有效forward签名，作者已在正文披露，另有[机器人行内反馈](https://github.com/verl-project/verl/pull/8464#discussion_r4422782832)；不是维护者批准或本机发现的真实模型故障。包装器接收kwargs也不证明底层模型接收，不能据本地Signature示例实现一个通用signature补丁。
+
+PR作者在RTX5090／Torch2.8／Transformers5.16.1报告默认行对精确父版训练耗时约少9.4%，并有GPU logits／梯度及60步SFT比较；它们不是本机复跑或普遍收益。本轮仅元数据与配置控制，没有FSDP实例、TensorDict／nested输入接线、attention、forward／backward、模型质量、同步次数或速度测量。硬件缺口记[M5条件参考](../../experiments/handoff-m5.md#verl-packed-attention-边界参考)，只供将来已有匹配工作时独立选择，不部署、升级或新增必跑队列。
+
 2026-10-23 补充：[参数转换与缓冲区精度](#参数转换与缓冲区精度)固定于 #8189，用原 CPU 测试与原转换语句区分初始化数值和存储 dtype；本节之后的 2026-06 分析未在此次重核。
 
 2026-10-26 补充：[NPU卸载的复制策略与固定内存](#npu-卸载的复制策略与固定内存)区分FSDP1／优化器复制开关与FSDP2显式pin策略，CPU调用测试不认证NPU内存收益。

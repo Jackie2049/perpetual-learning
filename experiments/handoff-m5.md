@@ -417,6 +417,12 @@ Megatron调度恢复参考（2026-10-25，复用本入口非新队列）：[#795
 
 目的：若后续已有获准Megatron全重算工作，区分叶子引用留存与共享storage被截断，不能据MTP名字特判认证普通共享输入安全。缺口是匹配MCore/PyTorch/CUDA版本、原测试真实执行/skip、显存floor/peak与释放时序；作者0.18.0/torch2.11/H800和8卡MTP报告不外推不同MCore/后端或4090环境。只有M5独立选择且已有兼容获准环境时，才考虑隔离进程运行 `tests/models/test_mcore_recompute_reclaim.py`，保留5项具体结果/skip、梯度与stock对照；实际模型回收及跨stream/分布式条件另行判断，不按作者矩阵自动追加训练。缺依赖、需新编译/切环境/模型/预算或影响其他任务即停并记未测，不自动改环境、应用patch或在原训练制造非法访存；AReaL/#8313/#523及移植专项边界不变，本条不代表接单。
 
+## verl packed attention 边界参考
+
+2026-10-30条件参考，非新增训练队列或接单：已有[#8464](https://github.com/verl-project/verl/pull/8464) headfc66f413／base8e48d72d，五文件；[M1原15CPU参数项](../notebook/frameworks/verl-fsdp2-source-deep-reading.md#packed-边界的显式传递与尾部-padding)只核原helper元数据及配置门控，对固定HF5.16.1函数通过，无engine／attention／梯度或同步次数验收。目的为区分消除重复边界推导与真实模型兼容／性能。M1不访问算力服务器。
+
+M5将来仅在已有获准、安全、匹配FA2／3文本FSDP工作且不影响专项时独立选用：先核最终head、实际Torch／HF／flash-attn、模型有效及fused底层forward、SP关闭与实际非空序列条件；在原小预算核同输入有／无kwargs的前向、梯度、静态pad隔离，最后才考虑微批准备与整步时间／同步次数。作者5090结果不作本机预期收益，配置门控不能代替签名／完整模型验证。缺现成依赖／权重／资源，需新下载部署升级或影响专项即记未测停止；不自动应用补丁、扩SP／mRoPE／压力矩阵或开训练。任何社区写入或既有PR-head推送仍需用户对具体动作明确同意，不改AReaL／#523与原优先级。
+
 ## verl V1 可变行布局参考
 
 状态：待选型/匹配依赖，只保存本轮新线索，不加入自动训练队列或作为原任务前置条件，不代表M5接单。已有[#8201](https://github.com/verl-project/verl/pull/8201)，head `e891fd814e24c0b2d0c70a47e234f75a63d10ad6`、base `18cfb74852a053a27dcf301d3318a093be81b628`；[M1源码阅读](../notebook/frameworks/verl-grpo-source-reading.md#v1-源-prompt-单位与可变轨迹行)仅12项原纯配置/layout控制、8模块compile，未跑原测试/TQ/设备。目的为将来采用V1多输出或部分成功保留时，核对源UID计步与实际行边界，而不是诊断#8250或修改#8313。

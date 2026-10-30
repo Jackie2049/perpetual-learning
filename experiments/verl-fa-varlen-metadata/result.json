@@ -1,0 +1,42 @@
+{
+  "head": "fc66f413f71c0c85a37847aa9e2b50e9bbea225b",
+  "source_sha256": {
+    "verl/workers/engine/utils.py": "fd4534c59c20a336d54c37bdbc39193a433604b3f34aec9f2cf74708197d43ed",
+    "verl/workers/engine/fsdp/transformer_impl.py": "2f4bff043ae70af110082ba86522c277330f57a6b0401d114f7a59d8cc140a8e",
+    "verl/models/transformers/dense_common.py": "f8beaa346d31472891ee509614f463cc85ec6bcbe4a70321c12d8b846d6587d0",
+    "tests/workers/test_fsdp_flash_attn_varlen_kwargs_on_cpu.py": "7a4299b4f1863e60ce295c5b674d1aa6336ea91a8ea8f94a666e831e7430a2ba",
+    "transformers@93c8b7b4:modeling_flash_attention_utils.py": "dea5b555b5bb8fba1b4ab2c62c8df9f96019b17555b3714f75be17c54e801f95"
+  },
+  "environment": {
+    "python": "3.12.13",
+    "torch": "2.9.1",
+    "pytest": "8.4.2",
+    "device": "cpu"
+  },
+  "original_cpu_parameter_cases_passed": 15,
+  "static_pad": {
+    "offsets": [
+      0,
+      5,
+      8,
+      16
+    ],
+    "max_length": 8
+  },
+  "local_controls": {
+    "config_gate_accepts_strict_forward": true,
+    "signature_bind_error": "got an unexpected keyword argument 'cu_seq_lens_q'",
+    "zero_row_offsets": [
+      0,
+      5,
+      5,
+      8
+    ],
+    "zero_row_inferred_offsets": [
+      0,
+      5,
+      8
+    ]
+  },
+  "scope": "AST-isolated original CPU tests/reference, local signature and zero-row fixtures; no model/engine/attention/gradient/timing validation"
+}
