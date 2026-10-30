@@ -14,6 +14,34 @@
 
 2026-10-26补充：[HIP 的 mHC 分支同步与依赖栈](#hip-的-mhc-分支同步与依赖栈)区分平台gate、编译器类型、分支内共享通信和验收容差；AMD多步报告不代表单一verl补丁可独立复现。
 
+## 多教师并发初始化与发布边界
+
+**跨教师并发、全部就绪后发布句柄、失败后清理资源，是三项不同保证。** 2026-10-30只读zgh-99的新[#8459](https://github.com/verl-project/verl/pull/8459)，OPEN／非draft，head `eafee25507cd54bfe62c5282e02705187d871e6e`、base `321e4e450fcfc47a3491c946cd01dacd9ea7281a`，唯一生产文件28增6删，无提交单测、reviews为空。已有作者推进启动优化，不另实现或发布反馈。
+
+### 延迟构造与两层并发
+
+原[teacher_model.py](https://github.com/verl-project/verl/blob/eafee25507cd54bfe62c5282e02705187d871e6e/verl/experimental/teacher_loop/teacher_model.py)在单教师内部已并发初始化replicas，但MultiTeacher逐个构造教师，每个构造器等待该教师就绪。新版本默认`defer_init=False`仍阻塞；MultiTeacher先以True构造全部manager，再由`_initialize_managers` gather各教师initialize，后者在自身replicas全部初始化后创建load balancer。**新并发层是教师之间，不是首次让replicas并发。** 全部教师成功后，外层才填充manager／地址／句柄字典，按配置键顺序而非完成先后关联。
+
+initialize保持普通async def；只调用它得到协程对象，不会立即启动。[原auto_await](https://github.com/verl-project/verl/blob/eafee25507cd54bfe62c5282e02705187d871e6e/verl/utils/ray_utils.py#L97)则会在无运行loop的同步调用里执行asyncio.run；在async调用者内返回协程；在运行loop里的同步调用者内转线程池并阻塞等待。将这样的装饰器套到列表构造时调用的initialize上，可能又把启动串行化，不能只看代码里出现gather就认定并发。
+
+### 原方法的五组标准库控制
+
+[脚本](../../experiments/teacher-startup-order/verify.py)固定两原文件SHA256并在内存compile，原样抽取auto_await、_run_all、单教师构造器／initialize、MultiTeacher聚合／发布共六个函数或方法。真实asyncio.Event控制启动与完成顺序；server初始化、load balancer和资源池拆分是明确替身，不导入Ray／OmegaConf／模型或设备。Python3.12.14标准库、默认事件循环，两次新进程[结果](../../experiments/teacher-startup-order/result.json)逐字一致：
+
+| 控制入口 | 本机事件或状态 | 能说明的范围 |
+|---|---|---|
+| 默认单教师构造 | start→ready→balance，才返回 | 默认入口等待所调用的本地初始化协程 |
+| defer构造，再创建initialize协程 | 无事件，无地址属性 | 构造／协程创建不等于初始化已完成 |
+| 原MultiTeacher发布方法 | zeta／alpha都start后，alpha先ready；字典仍zeta→alpha | 教师协程可重叠，发布前映射为空、键关联不随完成顺序变化 |
+| 在已有async入口await原_run_all | fail先抛错；观察错误后放行slow，slow仍ready／balance | gather传播错误不自动取消兄弟任务 |
+| 无loop的同步_run_all入口 | fail抛错后slow收到CancelledError | 此处asyncio.run关闭loop时取消本地未完成任务 |
+
+[Python 3.12 gather说明](https://docs.python.org/3.12/library/asyncio-task.html#asyncio.gather)同样区分异常传播与兄弟任务取消。上表第四行是直接await协程入口，不是同步MultiTeacher构造器的完整生产调用栈；第三种auto_await线程池分支未执行。5秒wait_for仅防探针挂住，不计启动耗时。脚本不通过sleep／缩放模型估算加速，也不把本地Task收到取消当作远端Ray actor已停止或释放设备。全就绪后发布字典，仍不是失败时撤销已启动教师的事务协议。
+
+复跑需已有Git对象缓存：`python3.12 -B experiments/teacher-startup-order/verify.py /path/to/verl-git`。首次使用了本机Git不支持的--no-lazy-fetch参数而失败，已改为GIT_NO_LAZY_FETCH环境约束；最终脚本两次重跑通过。原_initialize_llm_servers内的资源校验、Ray actor创建／监控注册及完整replica方法只做源码阅读，不算本地执行。
+
+作者报告8教师、每教师TP2的Ascend启动阶段18m24s→1m51s，学生ready至首步结束21m45s→8m20s；这是两次外部作业报告，不是本机基准、任意教师数的线性加速或首次训练正确性验收。并发带来的CPU／磁盘／网络启动压力及远端失败清理仍须真实环境契约判断。当前不改其候选、M5配方或环境，不新增训练队列；社区及既有PR-head写入仍逐项待用户明确授权。
+
 ## ROCm 配方默认与后端支持
 
 **不再强加DeepGEMM、把环境键传出去、后端真正支持该键，是三件事。** [#8371](https://github.com/verl-project/verl/pull/8371)于2026-10-26读取OPEN／draft，作者xiaohong42；固定head `7b6c38123bdf8ec7c70cadaf2d2796d36de67b8f`，父版／base／共同祖先及当前main均为 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`，ahead1／behind0，四文件72增0删。唯一bot评论表示draft未自动review，reviews／行内为空；已有作者，不另实现或发布。

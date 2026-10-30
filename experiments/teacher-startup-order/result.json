@@ -1,0 +1,48 @@
+{
+  "head": "eafee25507cd54bfe62c5282e02705187d871e6e",
+  "python": "3.12.14",
+  "sources": {
+    "verl/experimental/teacher_loop/teacher_model.py": "c0da409d626e21247ea5757380956a9da381e9d9d08ca0813bdd639b45bc3f85",
+    "verl/utils/ray_utils.py": "1f70a9ac05b4a6f92a3ad2486bee17ac9721a9568e7e72b17e76172a60a7751b"
+  },
+  "scope": "original methods with async teacher/resource substitutes; no Ray, devices or startup timing",
+  "results": {
+    "default_constructor": [
+      "start:solo",
+      "ready:solo",
+      "balance:solo"
+    ],
+    "defer_and_coroutine_creation": {
+      "events": [],
+      "addresses_published": false
+    },
+    "concurrent_start_and_publication": {
+      "events": [
+        "start:zeta",
+        "start:alpha",
+        "ready:alpha",
+        "balance:alpha",
+        "ready:zeta",
+        "balance:zeta"
+      ],
+      "keys": [
+        "zeta",
+        "alpha"
+      ]
+    },
+    "gather_in_running_loop": [
+      "start:fail",
+      "start:slow",
+      "fail:fail",
+      "error_observed",
+      "ready:slow",
+      "balance:slow"
+    ],
+    "sync_entry_loop_shutdown": [
+      "start:fail",
+      "start:slow",
+      "fail:fail",
+      "cancel:slow"
+    ]
+  }
+}

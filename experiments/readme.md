@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [teacher-startup-order/verify.py](teacher-startup-order/verify.py) | #8459六原函数／方法的五组标准库事件屏障控制，[结果](teacher-startup-order/result.json)核延迟启动、发布键顺序与失败传播／loop退出取消；server与资源拆分为替身，非Ray／设备或耗时验收 | [教师并发初始化](../notebook/frameworks/verl-veomni-opd-source-reading.md#多教师并发初始化与发布边界) |
 | [async-checkpoint-publication/verify.py](async-checkpoint-publication/verify.py) | #8056完整原driver模块的八组标准库控制，[结果](async-checkpoint-publication/result.json)核真实tracker替换／失败／清理重试；角色为记录器，无权重／目录删除／OmegaConf原测试或设备验收 | [异步发布与清理](../notebook/frameworks/verl-checkpoint-management-reading.md#多角色异步保存的发布与清理) |
 | [distillation-score-gradient/verify.py](distillation-score-gradient/verify.py) | 原KL两函数加显式ratio公式的四固定状态／16别名对，[结果](distillation-score-gradient/result.json)核score项／直接项及同标量不同梯度；非原loss API、配置转换或#8458作者25／64项、模型训练 | [蒸馏估计值与梯度](../notebook/frameworks/verl-veomni-opd-source-reading.md#蒸馏估计值与策略梯度) |
 | [unirl-ar-logprob-contract/verify.py](unirl-ar-logprob-contract/verify.py) | 已合并#631两原函数／五原容器模块的20个本地wire输入，[结果](unirl-ar-logprob-contract/result.json)核采样身份、13类拒绝与旧缺锚点concat失败；非作者16项／Omni或GSPO训练验收 | [AR概率响应校验](../notebook/frameworks/unirl-survey.md#ar-概率锚点的响应校验) |

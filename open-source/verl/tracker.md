@@ -69,6 +69,8 @@
 
 2026-10-30核[NVFP4共享重载](#nvfp4-共享重载的审批与失败边界)：#7971获APPROVED但未合并；旧专用失败封禁已不在当前worker，共享存储回绑检查非回滚。六输入仅语法／AST，不迁移作者旧长跑或新增M5部署／算力任务。
 
+2026-10-30核[多教师启动](#多教师并发初始化的已有候选)：新#8459已有作者；六原函数／方法接异步替身的五组标准库控制区分延迟启动、全就绪发布、gather异常传播与loop退出取消，非Ray／设备清理或作者NPU耗时验收，不另实现／排算力。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -106,6 +108,12 @@
 2026-10-30只读Turoad的OPEN [#8414](https://github.com/verl-project/verl/pull/8414)，headd8c490b269d8c288b04b140f254592157c4aecd0、base2ab35292，三文件含CPU测试；bot摘要不作人工批准。已有作者移除四角索引／权重的逐标量Python往返，不另认领或套生产补丁。
 
 [原数据流专题](../../notebook/frameworks/verl-dataproto-data-flow-reading.md#视觉位置插值的张量构造)区分CPU列表构造、插值数值与完整视觉前向。两种模型×FP32／BF16×四grid的原参数／测试体断言，[结果](../../experiments/verl-pos-embed-tensors/result.json)基线16／候选16均通过，输出与输入不变记录一致；入口和CPU模型工厂为本地适配，非原生pytest／Transformers导入。grid_thw.tolist与网格循环仍在，四角加法顺序未变；作者A100视觉塔2.0%–5.5%收益不是本机计时、训练或offload验收。两新进程JSON一致，无安装／设备访问；不新增M5任务或写社区，所有既有PR-head写入仍逐项待用户明确同意。
+
+## 多教师并发初始化的已有候选
+
+2026-10-30只读zgh-99的OPEN／非draft [#8459](https://github.com/verl-project/verl/pull/8459)，headeafee25507cd54bfe62c5282e02705187d871e6e、base321e4e45，仅teacher_model.py改28增6删、无单测／reviews。新增跨教师gather，单教师replica并发原已存在，默认直接构造仍等待。
+
+[原蒸馏专题](../../notebook/frameworks/verl-veomni-opd-source-reading.md#多教师并发初始化与发布边界)的[五组本地控制](../../experiments/teacher-startup-order/result.json)核延迟与协程创建不启动、两教师重叠／完成乱序仍按配置键发布；直接async gather失败后兄弟可继续，同步_run_all的loop关闭会取消本地未完成Task。原六函数／方法，资源与server为替身；不是Ray取消／设备释放、完整构造、NPU性能或训练验收，作者8教师报告不计我方实测。不竞争实现、新排M5作业或写社区／既有PR head。
 
 ## NVFP4 共享重载的审批与失败边界
 

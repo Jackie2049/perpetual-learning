@@ -264,6 +264,7 @@
 - [MLflow初始化的锁与异常](frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#mlflow-初始化的文件锁与异常范围) — #8393同锁文件的局部互斥不是坏库修复；原类／真实锁与注入回调控制非MLflow迁移验收
 - [KV salt与sleep清理范围](frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#新版的显式清理与-sleep-路径) — #8323显式reset_connector=False不约束sleep；外层复用率和旧权重失效分开，vLLM0.32调用链仅源码核对
 - [verl 教师生成与蒸馏目标](frameworks/verl-veomni-opd-source-reading.md#教师生成与蒸馏目标) — #8335整批来源选择、生成/软标签评分分开；教师prefix不是纯学生on-policy，16文件仅语法与源码核对
+  - [多教师并发启动与发布](frameworks/verl-veomni-opd-source-reading.md#多教师并发初始化与发布边界) — #8459六原函数／方法的五组标准库控制：协程创建、全就绪发布、gather异常与loop退出取消分开，非Ray／设备清理或性能验收
   - [HIP的mHC分支同步与依赖栈](frameworks/verl-veomni-opd-source-reading.md#hip-的-mhc-分支同步与依赖栈) — #43消除局部分支shared通信；no_grad入口、容差与实际回移栈分开，作者多步报告非单PR性能证明
   - [ROCm配方默认与后端支持](frameworks/verl-veomni-opd-source-reading.md#rocm-配方默认与后端支持) — #8371原3参数例通过非AMD检测；预重排键依赖未合并vLLM补丁，配方仅语法、传参链仅源码
   - [Rollout量化导出与字节布局](frameworks/verl-veomni-opd-source-reading.md#rollout-量化导出与字节布局) — #8369原一包装测试通过；DeepSeek pass-through仍可view uint8，CPU字节控制非converter／refit或训练验收
