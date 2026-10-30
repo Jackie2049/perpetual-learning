@@ -1,0 +1,286 @@
+{
+  "combos": {
+    "ar_512_8": {
+      "mode": "ar",
+      "input_len": 512,
+      "batch": 8,
+      "max_tokens": 128,
+      "wall_s": 0.6826,
+      "decode_tok_per_s": 1500.1,
+      "finished_full": 8
+    },
+    "ar_512_16": {
+      "mode": "ar",
+      "input_len": 512,
+      "batch": 16,
+      "max_tokens": 128,
+      "wall_s": 0.6446,
+      "decode_tok_per_s": 3177.0,
+      "finished_full": 15
+    },
+    "ar_512_32": {
+      "mode": "ar",
+      "input_len": 512,
+      "batch": 32,
+      "max_tokens": 128,
+      "wall_s": 0.7083,
+      "decode_tok_per_s": 5783.1,
+      "finished_full": 32
+    },
+    "ar_512_64": {
+      "mode": "ar",
+      "input_len": 512,
+      "batch": 64,
+      "max_tokens": 128,
+      "wall_s": 0.7947,
+      "decode_tok_per_s": 10307.7,
+      "finished_full": 64
+    },
+    "ar_2048_8": {
+      "mode": "ar",
+      "input_len": 2048,
+      "batch": 8,
+      "max_tokens": 128,
+      "wall_s": 0.7504,
+      "decode_tok_per_s": 1364.7,
+      "finished_full": 8
+    },
+    "ar_2048_16": {
+      "mode": "ar",
+      "input_len": 2048,
+      "batch": 16,
+      "max_tokens": 128,
+      "wall_s": 0.7413,
+      "decode_tok_per_s": 2762.5,
+      "finished_full": 16
+    },
+    "ar_2048_32": {
+      "mode": "ar",
+      "input_len": 2048,
+      "batch": 32,
+      "max_tokens": 128,
+      "wall_s": 0.8343,
+      "decode_tok_per_s": 4909.3,
+      "finished_full": 32
+    },
+    "ar_2048_64": {
+      "mode": "ar",
+      "input_len": 2048,
+      "batch": 64,
+      "max_tokens": 128,
+      "wall_s": 1.011,
+      "decode_tok_per_s": 8102.7,
+      "finished_full": 64
+    },
+    "spec_512_8": {
+      "missing": true
+    },
+    "spec_512_16": {
+      "missing": true
+    },
+    "spec_512_32": {
+      "mode": "spec",
+      "input_len": 512,
+      "batch": 32,
+      "max_tokens": 128,
+      "wall_s": 2.657,
+      "decode_tok_per_s": 1541.6,
+      "finished_full": 32,
+      "mean_accept_len": 1.36,
+      "accepted_tok_per_s": 293.7,
+      "drafted_tok_per_s": 4039.53,
+      "accepted_tokens": 805,
+      "drafted_tokens": 11072,
+      "A_p": [
+        0.205,
+        0.07,
+        0.038,
+        0.03,
+        0.019
+      ],
+      "avg_draft_accept_pct": 7.3,
+      "E_L": 1.362
+    },
+    "spec_512_64": {
+      "mode": "spec",
+      "input_len": 512,
+      "batch": 64,
+      "max_tokens": 128,
+      "wall_s": 3.3174,
+      "decode_tok_per_s": 2469.4,
+      "finished_full": 64,
+      "mean_accept_len": 1.41,
+      "accepted_tok_per_s": 536.31,
+      "drafted_tok_per_s": 6477.7,
+      "accepted_tokens": 1825,
+      "drafted_tokens": 22043,
+      "A_p": [
+        0.219,
+        0.087,
+        0.049,
+        0.038,
+        0.02
+      ],
+      "avg_draft_accept_pct": 8.3,
+      "E_L": 1.413
+    },
+    "spec_2048_8": {
+      "missing": true
+    },
+    "spec_2048_16": {
+      "missing": true
+    },
+    "spec_2048_32": {
+      "mode": "spec",
+      "input_len": 2048,
+      "batch": 32,
+      "max_tokens": 128,
+      "wall_s": 3.1375,
+      "decode_tok_per_s": 1305.5,
+      "finished_full": 32,
+      "mean_accept_len": 1.23,
+      "accepted_tok_per_s": 194.26,
+      "drafted_tok_per_s": 4271.5,
+      "accepted_tokens": 626,
+      "drafted_tokens": 13765,
+      "A_p": [
+        0.137,
+        0.047,
+        0.02,
+        0.012,
+        0.011
+      ],
+      "avg_draft_accept_pct": 4.5,
+      "E_L": 1.227
+    },
+    "spec_2048_64": {
+      "mode": "spec",
+      "input_len": 2048,
+      "batch": 64,
+      "max_tokens": 128,
+      "wall_s": 4.4167,
+      "decode_tok_per_s": 1854.8,
+      "finished_full": 64,
+      "mean_accept_len": 1.28,
+      "accepted_tok_per_s": 338.3,
+      "drafted_tok_per_s": 6091.41,
+      "accepted_tokens": 1522,
+      "drafted_tokens": 27405,
+      "A_p": [
+        0.146,
+        0.058,
+        0.031,
+        0.023,
+        0.019
+      ],
+      "avg_draft_accept_pct": 5.6,
+      "E_L": 1.277
+    },
+    "draft_512_8": {
+      "mode": "draft",
+      "input_len": 512,
+      "batch": 8,
+      "max_tokens": 128,
+      "wall_s": 2.9128,
+      "decode_tok_per_s": 351.6,
+      "finished_full": 8,
+      "mean_accept_len": 4.12,
+      "accepted_tok_per_s": 261.27,
+      "drafted_tok_per_s": 418.23,
+      "accepted_tokens": 784,
+      "drafted_tokens": 1255,
+      "A_p": [
+        0.817,
+        0.701,
+        0.606,
+        0.51,
+        0.49
+      ],
+      "avg_draft_accept_pct": 62.5,
+      "E_L": 4.124
+    },
+    "draft_512_16": {
+      "mode": "draft",
+      "input_len": 512,
+      "batch": 16,
+      "max_tokens": 128,
+      "wall_s": 2.5996,
+      "decode_tok_per_s": 787.8,
+      "finished_full": 16,
+      "mean_accept_len": 4.13,
+      "accepted_tok_per_s": 584.53,
+      "drafted_tok_per_s": 934.51,
+      "accepted_tokens": 1570,
+      "drafted_tokens": 2510,
+      "A_p": [
+        0.803,
+        0.697,
+        0.624,
+        0.526,
+        0.478
+      ],
+      "avg_draft_accept_pct": 62.5,
+      "E_L": 4.128
+    },
+    "draft_512_32": {
+      "missing": true
+    },
+    "draft_512_64": {
+      "missing": true
+    },
+    "draft_2048_8": {
+      "mode": "draft",
+      "input_len": 2048,
+      "batch": 8,
+      "max_tokens": 128,
+      "wall_s": 3.4803,
+      "decode_tok_per_s": 294.2,
+      "finished_full": 8,
+      "mean_accept_len": 2.48,
+      "accepted_tok_per_s": 170.91,
+      "drafted_tok_per_s": 575.77,
+      "accepted_tokens": 610,
+      "drafted_tokens": 2055,
+      "A_p": [
+        0.589,
+        0.397,
+        0.234,
+        0.151,
+        0.114
+      ],
+      "avg_draft_accept_pct": 29.7,
+      "E_L": 2.485
+    },
+    "draft_2048_16": {
+      "mode": "draft",
+      "input_len": 2048,
+      "batch": 16,
+      "max_tokens": 128,
+      "wall_s": 3.661,
+      "decode_tok_per_s": 559.4,
+      "finished_full": 16,
+      "mean_accept_len": 2.63,
+      "accepted_tok_per_s": 341.46,
+      "drafted_tok_per_s": 1048.39,
+      "accepted_tokens": 1280,
+      "drafted_tokens": 3930,
+      "A_p": [
+        0.621,
+        0.406,
+        0.271,
+        0.193,
+        0.137
+      ],
+      "avg_draft_accept_pct": 32.6,
+      "E_L": 2.628
+    },
+    "draft_2048_32": {
+      "missing": true
+    },
+    "draft_2048_64": {
+      "missing": true
+    }
+  },
+  "n": 24,
+  "outdir": "raw"
+}

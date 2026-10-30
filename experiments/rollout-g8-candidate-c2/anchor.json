@@ -1,0 +1,18 @@
+{
+  "label": "anchor-drift 0.24.0 + draft_model 0.5B",
+  "engine": "vllm 0.24.0+cu129 (GitHub release asset wheel, venv rollout-g8)",
+  "target_model": "/home/zxw/models/Qwen2.5-1.5B-Instruct (hf-mirror)",
+  "draft_model": "/home/zxw/models/Qwen2.5-0.5B-Instruct (hf-mirror, vocab 151936 match)",
+  "hardware": "4090-1 single RTX 4090 (GPU 5), driver 575.57.08/CUDA 12.9",
+  "sampling": "temp 0.7 / top-p 0.9, max_tokens 128",
+  "proposers": {
+    "ngram": "k=5, prompt_lookup_max=5/min=1 (archive candidate C params)",
+    "draft": "method=draft_model, num_speculative_tokens=5, standard rejection sampling"
+  },
+  "prompts": "gsm8k train first 200 questions joined, truncated to input_len (in512 = prefix of in2048)",
+  "matrix": "axis3: {ar,ngram} x in{512,2048} x b{32,64} (b8/b16 from candidate C archive); proposer: {ar,draft} x in{512,2048} x b{8,16} same-session",
+  "measured": "wall_s (incl prefill), decode_tok_per_s=b*128/wall, A(p) per-position acceptance (engine metrics.py), E[L]=1+sum(A(p))",
+  "variance_note": "seed=0 engine does NOT give cross-process bit-identical sampling; single-run A(p) variance ~+/-0.03-0.06 at p1 (ngram in512 b8: 0.207 vs 0.269 across runs); qualitative conclusions robust",
+  "date": "2026-10-30 04:44-05:13 UTC",
+  "archive": "experiments/rollout-g8-candidate-c2/"
+}
