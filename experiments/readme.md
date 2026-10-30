@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [ddp-token-denominator/](ddp-token-denominator/readme.md) | 两真实本机CPU／Gloo进程的四条DDP交叉熵／SGD路径，[结果](ddp-token-denominator/result.json)核全局分母、平均系数与空rank同步；非框架或GPU性能 | [DDP全局token分母](../notebook/fundamentals/gradient-accumulation-benchmark-rtx4090.md#ddp-的全局-token-分母) |
 | [verl-null-media/verify.py](verl-null-media/verify.py) | #8420两版原消息方法的十组自编行控制，[结果](verl-null-media/result.json)核None／缺键／空列、数组保序及processor要求；解码记录器非真实Parquet／tokenizer／processor或作者7项测试 | [空媒体与processor](../notebook/frameworks/verl-dataproto-data-flow-reading.md#sft-空媒体列与-processor-要求) |
 | [verl-fa-varlen-metadata/verify.py](verl-fa-varlen-metadata/verify.py) | #8464原15CPU参数项与固定HF边界helper，[结果](verl-fa-varlen-metadata/result.json)核独立pad段／Python max及两个本地签名、空段表示对照；AST隔离非原生pytest／engine／attention或性能 | [packed边界与尾pad](../notebook/frameworks/verl-fsdp2-source-deep-reading.md#packed-边界的显式传递与尾部-padding) |
 | [unirl-null-sample-id/verify.py](unirl-null-sample-id/verify.py) | #637原Dataset五行及11个输入、隔离原guard／CPU评估抽样，[结果](unirl-null-sample-id/result.json)区分Sample去重与Part直传、共享随机键与拆批确定性；非原生Part／Sample构造、模型损失或统计偏差证明 | [SFT空ID与随机键](../notebook/frameworks/unirl-survey.md#sft-空-id-与评估随机键) |

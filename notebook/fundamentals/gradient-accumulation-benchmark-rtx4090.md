@@ -4,6 +4,8 @@
 
 这份历史 OPT-125M LoRA 表格比较真实大批量与梯度累积的时间、显存。2026-10-30 的脚本复核纠正两点：**表中性能比例不是通用定律；有效 batch 相同，也不自动保证训练目标相同。** 下方 CPU 例子说明不等长序列的归一化问题，不重测历史 GPU 数字。
 
+同日补[DDP的全局token分母](#ddp-的全局-token-分母)：两个真实CPU／Gloo进程确认局部mean再平均可反转梯度，单除全局分母也会遗漏DDP平均系数；不是OPT／verl／UniRL或GPU性能复现。
+
 历史脚本把 `max_length=64` 同时用作吞吐分子，但 `padding=True` 只补到输入池实际最长序列，并不保证宽度为 64；labels 直接复制 input_ids，没有将 padding 标成 ignore_index。因此表中 `tok/s` 统一理解为**按设定长度 64 折算的名义速率**，不是已核实的有效训练 token/s。原值保留，不用猜测的 token 数重算。
 
 ## Results
@@ -122,6 +124,25 @@ for mode in expected:
 在窗口开始前或按既有训练器契约取得整窗有效分母，逐微批 backward 后统一 step；不要在循环中 zero_grad 或 step。空微批不要先算 `0/0` 的 mean 再乘零；整窗 N=0 时需明确更新策略，零梯度也不保证优化器不更新参数，见 [None 与零梯度](adamw-optimizer-deep-dive.md#缺失梯度与零梯度)。
 
 [PyTorch 2.9 AMP 累积示例](https://docs.pytorch.org/docs/2.9/notes/amp_examples.html#gradient-accumulation) 要求整窗保持同一缩放，累积完成才 unscale／step／update；其示例的除累积次数不能代替对实际 loss 分母的核对。分布式还须计入全局分母和梯度归约约定，本例不是 DDP/FSDP/AMP 的实现模板。
+
+### DDP 的全局 token 分母
+
+**梯度归约对rank求平均，目标函数却可能要求对token求平均。** [PyTorch 2.9 DDP文档](https://docs.pytorch.org/docs/2.9/generated/torch.nn.parallel.DistributedDataParallel.html)明确普通DDP会平均各进程梯度。设该归约组有W个rank，rank r的有效token数为n_r、逐token损失和为S_r，全局N=Σn_r且N>0，目标梯度为`Σ∇S_r/N`。因此每rank应反向`L_r=W*S_r/N`，让DDP的`1/W`抵消；直接用`S_r/N`会再缩小W倍，用局部`S_r/n_r`则通常得到不同目标。这里的W是实际梯度平均组大小，不是任意集群GPU数。
+
+[本机脚本](../../experiments/ddp-token-denominator/verify.py)用原生DDP、交叉熵与SGD构造四条独立更新：CPU FP64线性参数θ从0开始，logits为`[θ*x, 0]`，lr=0.1；rank0一条x=2／label0，rank1三条x=1／label1。所有标签都有效，每行作为一个token；生产统计仍须排除padding、ignore_index或loss mask无效位，不能直接拿张量长度当通用分母。
+
+| 布局与每rank反向loss | 归约后梯度（两rank相同） | SGD后θ | 单进程全局token均值参考 |
+|---|---:|---:|---:|
+| n=1／3，各自local mean | −0.25 | +0.025 | +0.125 |
+| n=1／3，S_r/N | +0.0625 | −0.00625 | +0.125 |
+| n=1／3，W*S_r/N | +0.125 | −0.0125 | +0.125 |
+| n=0／3，W*S_r/N | +0.5 | −0.05 | +0.5 |
+
+最后一行让rank0的空输入仍经过模型前向，对交叉熵`reduction="sum"`所得有图的0执行backward；它依然参与归约，因而也收到rank1贡献的全局梯度。不能因本rank无有效token就独自跳过DDP同步；但本例没有N=0的全局空批，未决定那种情况下是否step，也不靠零梯度推断优化器一定不动。
+
+2026-10-30，Python3.12.13／Torch2.9.1（git5811a8d7），两个spawn工作进程、单线程、Gloo强制本机loopback，分母用真实SUM collective，梯度由DDP默认归约、结果经all_gather_object核两rank一致。两次独立启动的完整[结果JSON](../../experiments/ddp-token-denominator/result.json)相同，包含每rank计数／梯度／更新值与各自单进程autograd参考；不是用peer常数或后端替身计算。
+
+这是普通DDP／SGD的归一化实测，不涵盖FSDP、SP／TP、DDP.join、自定义通信hook、AMP、no_sync累积或实际训练器。后端若执行SUM、另有预缩放或改变参与组，需先核其归约契约，不能再盲乘W。与[UniRL原loss resolver的既有接口控制](../frameworks/unirl-survey.md#原缩放函数的五个条件对照)只是概念关联，不能将本轮DDP结果迁移为该框架的分布式验收。沙箱首次拒绝loopback uv_bind，获准本机执行后两次通过；没有GPU／服务器访问或新增算力队列。
 
 ## Tool
 

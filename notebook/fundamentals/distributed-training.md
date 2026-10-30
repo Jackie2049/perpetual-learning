@@ -41,6 +41,8 @@ GPU 3: grad_3 ──┘
 - 每个 rank 独立前向，反向时通过 AllReduce 同步梯度
 - 使用 buckets 优化：将梯度分组，计算完一组就通信一组（计算通信重叠）
 
+普通DDP平均的是rank梯度，不自动按有效token数加权。各rank长度／mask不同，局部loss mean再平均可能改变目标；[两个真实CPU进程对照](gradient-accumulation-benchmark-rtx4090.md#ddp-的全局-token-分母)区分局部mean、全局分母与梯度平均系数，也核本地空token rank仍参加同步的条件。
+
 ### 局限
 - 每张 GPU 必须装下完整模型 + 优化器状态 + 激活
 - 通信量与 GPU 数量线性相关（但 per-GPU 通信量恒定）

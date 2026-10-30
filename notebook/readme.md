@@ -48,6 +48,7 @@
   - [AMP跳步与学习率计数](fundamentals/mixed-precision.md#amp-跳步与学习率计数) — 真实CPU GradScaler区分梯度检查、优化器调用与scheduler；多优化器可部分更新，非GPU/融合优化器或框架训练验收
 - [AdamW缺失与零梯度](fundamentals/adamw-optimizer-deep-dive.md#缺失梯度与零梯度) — 真实CPU optimizer/autograd：None跳过参数与本参数步数，零梯度仍推进动量/衰减；动态冻结须核旧grad，非分布式或性能验收
 - [梯度累积的目标与分母](fundamentals/gradient-accumulation-benchmark-rtx4090.md#不等长序列的累积归一化) — 不等长CPU交叉熵／SGD对照：局部mean再平均可反转梯度；历史OPT表的名义速率不是通用吞吐定律或7B容量依据
+  - [DDP全局token分母](fundamentals/gradient-accumulation-benchmark-rtx4090.md#ddp-的全局-token-分母) — 两真实CPU／Gloo进程核n=1／3的梯度方向与world-size系数、n=0／3仍同步；非框架／GPU性能验收
 - [梯度检查点](fundamentals/gradient-checkpointing.md#重计算的随机数与可变状态) — 真实CPU重算对照：默认元数据检查不认证梯度一致，Torch RNG不覆盖外部随机源，early-stop可能跳过末尾副作用；非显存/性能或FSDP验收
   - [重算叶子与共享存储](fundamentals/gradient-checkpointing.md#重算叶子与共享存储) — verl#8338原4组CPU所有权控制；[新CI前置条件](fundamentals/gradient-checkpointing.md#重算测试的执行前置条件)不改核心patch，真实缺依赖收集退出5／2均非GPU通过，例内skip仍保留
 - [NCCL 通信库](fundamentals/nccl.md) — Ring/Tree AllReduce、调优参数、网络拓扑
