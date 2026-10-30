@@ -4,6 +4,8 @@
 
 2026-10-22 补充：[分布式采样的补齐与丢弃](#分布式采样的补齐与丢弃)，以 torch 2.9.1 的真实 CPU sampler/loader 核对样本覆盖和评测分母；本轮不测 I/O、预取或训练吞吐，下方原有性能概述不是本次基准结果。
 
+2026-10-30 补充：[持久worker的epoch与随机状态](#持久-worker-的-epoch-与随机状态)，用两个真实CPU spawn worker区分主进程sampler、worker数据副本与随机游标；完整运行可以复现，不等于每个epoch自动重置增强状态。
+
 ## 1. 问题：数据加载成为瓶颈
 
 ```
@@ -255,6 +257,41 @@ python experiments/scripts/verify_distributed_sampler_tail.py
 四种主配置、小数据三种边界、合成均值和 epoch 对照全部通过，使用真实 `DistributedSampler`、`BatchSampler` 与 `DataLoader`；不是上游原测试或多 rank 进程实测。未初始化进程组、启动 worker/collective/DDP、运行模型、设备或 I/O 性能测试，也不新增 M5 硬件任务。
 
 运行时 torch git 为 `5811a8d7da873dd699ff6687092c225caffcf1bb`。按 `inspect.getsource` 取得的完整类文本 SHA256：DistributedSampler `725ae8b532bd36ebd6035eaca1f0a3f380d432fa3fdd6c3cf8cb9ad66c5ae24a`，BatchSampler `6bad7b88e69b07178ade438773b0030a23d86ca036ad8f11a8c044cf4876c593`；指纹是类文本而非整个源文件。
+
+## 持久 worker 的 epoch 与随机状态
+
+**sampler改变索引顺序，不会自动把主进程dataset的新属性广播给持久worker，也不等于重置worker的随机游标。** [PyTorch2.9文档](https://docs.pytorch.org/docs/2.9/data.html#torch.utils.data.DataLoader)说明，persistent_workers保留进程及其中的dataset实例；worker初始化回调在进程启动的seed设置后执行。主进程里的sampler与worker内执行的取样／增强逻辑必须分别管理状态。
+
+### 两轮真实 CPU worker 对照
+
+[脚本](../../experiments/dataloader-worker-state/verify.py)使用8条自建map-style记录、batch2、两个spawn worker、默认Tensor合批、prefetch_factor2、pin_memory=False，完整消费两个epoch。每轮在创建iterator前更新主dataset.epoch并调用真实DistributedSampler.set_epoch；sampler显式指定num_replicas=1／rank=0、seed7，不初始化进程组。DataLoader的独立generator固定seed2026，worker只额外执行标量torch.rand并回传epoch／初始化计数／seed。
+
+两种persistent设置的索引序列完全相同：epoch0为`[7,0,3,4,1,5,2,6]`，epoch1为`[3,6,5,7,2,1,4,0]`。因此，本例第二轮的索引重排确实生效，但worker状态不同：
+
+| 第二轮状态 | persistent=False | persistent=True |
+|---|---|---|
+| worker进程 | 本机观察为新PID | 同一PID复用 |
+| worker内dataset.epoch | 1，新副本带入主进程更新 | 仍为0 |
+| 初始化回调计数 | 每个新副本为1 | 原副本仍为1，没有第二次调用 |
+| worker0的initial_seed | 7618721793331721144 | 仍为4046212693407858054 |
+| worker0本轮首个随机值 | 0.6343041658 | 0.3416987658 |
+| 随机流对应位置 | 新seed的第1–4个数 | 原seed的第5–8个数 |
+
+worker1有同样的状态关系，seed为worker0+1。核对没有只停留在“seed相同／随机值不同”：主进程按每个实际seed创建独立Generator，逐次标量抽样，精确对齐每个worker的四个值；持久模式第二轮须跳过前四次。本例完整消费且每worker每轮恰读四样本，不能照搬这个offset到提前break、异常或不同prefetch调度的恢复场景。
+
+### seed 值不等于随机游标
+
+持久模式的initial_seed不变，但RNG已向前推进；set_epoch(1)只改变sampler生成的索引。worker里的普通Python属性也仍是创建时的副本，所以“主进程改了epoch”与“worker内按新epoch生成增强”不是同一证据。若dataset逻辑依赖epoch，必须明确设计传播或worker内更新方式，不能仅将epoch写到主对象；这里不把关闭persistent_workers当作通用修复或性能建议。
+
+固定安装的DataLoader.__iter__在持久模式复用iterator并调用_reset；_BaseDataLoaderIter._reset重建sampler iterator，worker收到_ResumeIteration后重建fetcher。本例普通map-style路径没有再次调用init_fn或torch.manual_seed；IterDataPipe另有shared_seed分支，不能外推为所有dataset／loader类型都不重设随机状态。
+
+Python3.12.13／Torch2.9.1，git `5811a8d7da873dd699ff6687092c225caffcf1bb`。[完整结果](../../experiments/dataloader-worker-state/result.json)保存每轮索引、dataset／初始化状态、实际seed、32个随机值以及三个原方法文本hash；64位seed以十进制字符串保存，避免JSON消费端将其舍入，PID仅保存是否复用。两次最终新进程完整结果一致，说明这组完整运行仍可复现，**不是persistent_workers必然破坏可复现性的结论**。
+
+```bash
+python -B experiments/dataloader-worker-state/verify.py
+```
+
+默认沙箱首次拒绝torch_shm_manager，随即触发20秒取批超时；该次不计通过。经本机纯CPU权限批准后保持默认合批路径完成验证，没有用Mock或单进程替代。脚本在finally仅对自己创建的iterator调用固定版本私有_shutdown_workers并确认子进程停止；这是实验清理，不作为应用的公开close API。真实执行了数据worker／CPU共享存储，不涉及DDP／collective、模型或checkpoint恢复；只验证Torch随机抽样，不验证其他库随机流、吞吐或内存峰值，不新增M5算力任务。
 
 ## 7. 学习要点
 

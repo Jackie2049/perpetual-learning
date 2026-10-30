@@ -1,0 +1,196 @@
+{
+  "python": "3.12.13",
+  "torch": "2.9.1",
+  "torch_git": "5811a8d7da873dd699ff6687092c225caffcf1bb",
+  "start_method": "spawn",
+  "scope": "8 map-style records, 2 CPU workers, batch 2, two fully consumed epochs, one explicit sampler replica",
+  "source_sha256": {
+    "DataLoader.__iter__": "d4b219cd211f60a78b2ba242efefecd09f97456f91cb99539c4d782feed8f74e",
+    "_BaseDataLoaderIter._reset": "31589bd29a71a3c0f0fe90a4f6b0eb6e193c7c207def143df605021264b31537",
+    "_worker_loop": "bc75fd12051281b7dbce6b7557d91c2a3e5f477d425bafea932229b01f08ef1e"
+  },
+  "nonpersistent": {
+    "same_worker_pids": false,
+    "owned_workers_stopped": true,
+    "epochs": [
+      {
+        "indices": [
+          7,
+          0,
+          3,
+          4,
+          1,
+          5,
+          2,
+          6
+        ],
+        "dataset_epochs": [
+          0
+        ],
+        "worker_init_epochs": [
+          0
+        ],
+        "worker_init_call_counts": [
+          1
+        ],
+        "workers": {
+          "0": {
+            "seed": "4046212693407858054",
+            "draws": [
+              0.04991060495376587,
+              0.3788878917694092,
+              0.9389575123786926,
+              0.43114984035491943
+            ],
+            "rng_offset": 0
+          },
+          "1": {
+            "seed": "4046212693407858055",
+            "draws": [
+              0.3802199363708496,
+              0.705954372882843,
+              0.7728542685508728,
+              0.49569541215896606
+            ],
+            "rng_offset": 0
+          }
+        }
+      },
+      {
+        "indices": [
+          3,
+          6,
+          5,
+          7,
+          2,
+          1,
+          4,
+          0
+        ],
+        "dataset_epochs": [
+          1
+        ],
+        "worker_init_epochs": [
+          1
+        ],
+        "worker_init_call_counts": [
+          1
+        ],
+        "workers": {
+          "0": {
+            "seed": "7618721793331721144",
+            "draws": [
+              0.6343041658401489,
+              0.5629618167877197,
+              0.2955389618873596,
+              0.001882314682006836
+            ],
+            "rng_offset": 0
+          },
+          "1": {
+            "seed": "7618721793331721145",
+            "draws": [
+              0.17555439472198486,
+              0.21042394638061523,
+              0.9198179841041565,
+              0.23673158884048462
+            ],
+            "rng_offset": 0
+          }
+        }
+      }
+    ]
+  },
+  "persistent": {
+    "same_worker_pids": true,
+    "owned_workers_stopped": true,
+    "epochs": [
+      {
+        "indices": [
+          7,
+          0,
+          3,
+          4,
+          1,
+          5,
+          2,
+          6
+        ],
+        "dataset_epochs": [
+          0
+        ],
+        "worker_init_epochs": [
+          0
+        ],
+        "worker_init_call_counts": [
+          1
+        ],
+        "workers": {
+          "0": {
+            "seed": "4046212693407858054",
+            "draws": [
+              0.04991060495376587,
+              0.3788878917694092,
+              0.9389575123786926,
+              0.43114984035491943
+            ],
+            "rng_offset": 0
+          },
+          "1": {
+            "seed": "4046212693407858055",
+            "draws": [
+              0.3802199363708496,
+              0.705954372882843,
+              0.7728542685508728,
+              0.49569541215896606
+            ],
+            "rng_offset": 0
+          }
+        }
+      },
+      {
+        "indices": [
+          3,
+          6,
+          5,
+          7,
+          2,
+          1,
+          4,
+          0
+        ],
+        "dataset_epochs": [
+          0
+        ],
+        "worker_init_epochs": [
+          0
+        ],
+        "worker_init_call_counts": [
+          1
+        ],
+        "workers": {
+          "0": {
+            "seed": "4046212693407858054",
+            "draws": [
+              0.3416987657546997,
+              0.9322824478149414,
+              0.14793550968170166,
+              0.34004783630371094
+            ],
+            "rng_offset": 4
+          },
+          "1": {
+            "seed": "4046212693407858055",
+            "draws": [
+              0.6035066843032837,
+              0.1640310287475586,
+              0.9889681935310364,
+              0.326946496963501
+            ],
+            "rng_offset": 4
+          }
+        }
+      }
+    ]
+  }
+}

@@ -61,6 +61,7 @@
 - [分布式 Checkpoint](fundamentals/checkpoint.md#状态字典与独立快照) — 分片保存与状态快照；真实CPU参数/buffer/SGD对照：detach及CPU上的cpu不隔离存储，深拷贝或已完成序列化保留旧值，非异步/设备恢复验证
   - [assign加载与optimizer引用](fundamentals/checkpoint.md#assign-与优化器的参数引用) — 四条原生CPU加载／更新：提前创建的optimizer可仍引用旧Parameter，键匹配与状态加载成功不等引用正确；与参数换序分开，非框架／分片恢复验收
 - [DataLoader 优化](fundamentals/dataloader.md) — Prefetch、mmap、WebDataset；新增[分布式补齐与丢弃](fundamentals/dataloader.md#分布式采样的补齐与丢弃)，真实CPU两层drop_last/均值/epoch对照，等长不等于无重复或覆盖完整
+  - [持久worker的epoch与随机状态](fundamentals/dataloader.md#持久-worker-的-epoch-与随机状态) — 两个真实spawn worker、两完整epoch：sampler重排不广播dataset属性或重置随机游标；完整运行仍可复现，非恢复／吞吐验证
 
 ## GPU 编程与优化
 
