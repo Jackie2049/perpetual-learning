@@ -1,5 +1,7 @@
 # UniRL — 腾讯统一多模态 RL 框架调研
 
+2026-10-30接续：[采样构造校验与修改](#采样参数的构造校验与后续修改)核#636：新增下界不等于新增类型／有限值保护，直接赋值与浅拷贝不校验、replace重跑继承字段；纯标准库原模块控制，非Hydra／引擎验收。#634最终已合并且改用elif，旧空列表兼容性结论限定历史head。
+
 2026-10-30接续：[SFT空ID与评估随机键](#sft-空-id-与评估随机键)核#637：原Dataset五行由3个ID恢复5个，原评估抽样不再共用null键；去重守卫实际在Sample而非Part，不能据PR正文断言普通SFT训练必报错。仅CPU原定义隔离控制，非模型损失／质量验收。
 
 2026-10-30接续：[AR 概率锚点的响应校验](#ar-概率锚点的响应校验)核已合并#631：按实际采样token取值、拒绝缺失／长度错误／非有限FP32，而非补零或整批丢锚点；20个本地wire输入与原容器操作只验证CPU数据契约，不等GSPO／HI3训练验收。
@@ -1780,7 +1782,101 @@ python3.12 -B experiments/scripts/verify_unirl_reward_rows.py /path/to/UniRL /pa
 
 滑动窗口决定哪些位置随机采样、各窗口停留多久；[窗口后的压缩积分](#sde-窗口后的压缩积分尾段)另决定尾段求解网格，二者不能用同一“少步数”替代实际模型调用数与完成吞吐。只在原M5入口补未来已有获准匹配观测的计数口径，不新排GPU／基准任务、不改专项或对外发布；下一轮转独立真实需求或实质反馈，不扩窗口矩阵、修改阈值或重复实现已有策略。
 
+## 采样参数的构造校验与后续修改
+
+**构造时有效，不代表对象在整个生命周期都有效。** [#636](https://github.com/Tencent-Hunyuan/UniRL/pull/636)在2026-10-30核为open、无评论／review；head `13847881dd8bd93a58b8966b4cf60f4463812f76`，base `b8e9740e981a68a5556fbeb8225558040a4d47a4`。单文件新增四处下界：Base的samples_per_prompt≥1（AR和diffusion继承），AR的max_new_tokens≥1、temperature≥0，以及diffusion的eta≥0。它们在原类型归一化之后执行；temperature和eta的0仍可构造，不据此认证greedy rollout的训练概率或所有后端的ODE行为。
+
+本机Python3.12.14，只用标准库加载两版完整[原sampling模块](https://github.com/Tencent-Hunyuan/UniRL/blob/13847881dd8bd93a58b8966b4cf60f4463812f76/unirl/types/sampling.py)及完整require，包壳只避开框架初始化，没有摘取方法或替换校验函数。14个自编构造输入逐一断言：
+
+| 输入组 | base | head |
+|---|---|---|
+| Base／AR／diffusion的samples_per_prompt=0（三项） | 接受 | ValueError |
+| AR temperature=−0.1、max_new_tokens=0、diffusion eta=−0.5（三项） | 接受 | ValueError |
+| temperature=0、eta=0（两项） | 接受并转float | 相同 |
+| temperature字符串0.7、max_new_tokens字符串1（两项） | 接受并归一化 | 相同 |
+| samples_per_prompt=True、max_new_tokens=1.5（两项） | TypeError | 相同 |
+| temperature=NaN、eta字符串inf（两项） | ValueError | 相同 |
+
+有限值和严格类型拒绝属于原`_coerce_type`，不能把本来就拒绝的NaN／Inf或bool归功于新下界。head上的后续操作另有四组控制：对有效AR对象replace负temperature会拒绝且原对象仍0.7；直接赋NaN成功、浅拷贝也保留NaN；此后即使不传更新，replace仍因继承的NaN拒绝；显式覆盖为字符串0.6则成功产生float0.6的新对象，原对象依然NaN。普通可变dataclass没有赋值验证器，浅拷贝也不调用构造器，这不是新增回归或已发现的训练损坏。
+
+实际[diffusionopd.prepare_part](https://github.com/Tencent-Hunyuan/UniRL/blob/13847881dd8bd93a58b8966b4cf60f4463812f76/unirl/algorithms/diffusionopd.py)通过replace只改teacher guidance_scale，[Boogu pipeline](https://github.com/Tencent-Hunyuan/UniRL/blob/13847881dd8bd93a58b8966b4cf60f4463812f76/unirl/models/boogu_image/pipeline.py)通过replace补noise_group_ids；两处都将重跑其他继承字段的校验。对固定版本`unirl/**`检索，没有找到给这四个规范字段直接赋非法值的现有生产路径；模型自身的同名temperature属性不是修改采样对象。合适的消费约定是通过构造／replace产生有效配置，不把本地赋值反例扩大成框架已发生绕过。replace是浅重建，**并不自动深拷贝全部嵌套对象**。
+
+复现代码如下，在全新进程以`python3.12 -B - /path/to/UniRL`从标准输入运行；固定对象须先缓存，禁止lazy fetch。两次最终新进程的输出逐字一致。构造输出base前十项accepted、后两项TypeError再两项ValueError；head前六项ValueError、中间四项accepted、后四项与base相同。
+
+```python
+import copy, dataclasses, hashlib, json, os, platform, subprocess, sys, types
+repo = sys.argv[1]
+head = "13847881dd8bd93a58b8966b4cf60f4463812f76"
+base = "b8e9740e981a68a5556fbeb8225558040a4d47a4"
+def read(rev, path):
+    return subprocess.check_output(["git", "show", rev + ":" + path], cwd=repo,
+        env=dict(os.environ, GIT_NO_LAZY_FETCH="1"))
+def module(name, raw):
+    mod = types.ModuleType(name)
+    sys.modules[name] = mod
+    exec(compile(raw, name, "exec"), mod.__dict__)
+    return mod
+for name in ["unirl", "unirl.config", "unirl.types"]:
+    sys.modules[name] = types.ModuleType(name)
+    sys.modules[name].__path__ = []
+require_raw = read(head, "unirl/config/require.py")
+assert require_raw == read(base, "unirl/config/require.py")
+assert hashlib.sha256(require_raw).hexdigest() == "d30f89e77ff72e9dddaaf8b8f0ab403790b3e2984fbd6afea28f6bcc60177238"
+module("unirl.config.require", require_raw)
+results = {}
+for label, rev, expected_hash in [
+    ("base", base, "ab5f16dbdaf1db1c3eb2f6666b0cccb449732fab2763433aa7156c3b4b3626ff"),
+    ("head", head, "b19ece97fda68ea556fcd4a87d25f2adf77bb7d8d73ab1a97b8bbab166c79539")]:
+    raw = read(rev, "unirl/types/sampling.py")
+    assert hashlib.sha256(raw).hexdigest() == expected_hash
+    m = module("unirl.types.sampling", raw)
+    cases = [("BaseSamplingParams", "samples_per_prompt", 0, "ValueError"),
+        ("ARSamplingParams", "samples_per_prompt", 0, "ValueError"),
+        ("DiffusionSamplingParams", "samples_per_prompt", 0, "ValueError"),
+        ("ARSamplingParams", "temperature", -0.1, "ValueError"),
+        ("ARSamplingParams", "max_new_tokens", 0, "ValueError"),
+        ("DiffusionSamplingParams", "eta", -0.5, "ValueError"),
+        ("ARSamplingParams", "temperature", 0, "accepted"),
+        ("DiffusionSamplingParams", "eta", 0, "accepted"),
+        ("ARSamplingParams", "temperature", "0.7", "accepted"),
+        ("ARSamplingParams", "max_new_tokens", "1", "accepted"),
+        ("ARSamplingParams", "samples_per_prompt", True, "TypeError"),
+        ("ARSamplingParams", "max_new_tokens", 1.5, "TypeError"),
+        ("ARSamplingParams", "temperature", float("nan"), "ValueError"),
+        ("DiffusionSamplingParams", "eta", "inf", "ValueError")]
+    outcomes = []
+    for i, (cls, field, value, expected) in enumerate(cases):
+        try:
+            getattr(m, cls)(**{field: value})
+            outcome = "accepted"
+        except (TypeError, ValueError) as exc:
+            outcome = type(exc).__name__
+        assert outcome == ("accepted" if label == "base" and i < 6 else expected)
+        outcomes.append(outcome)
+    results[label] = outcomes
+obj = m.ARSamplingParams()
+def rejects_replace(obj, **updates):
+    try:
+        dataclasses.replace(obj, **updates)
+    except ValueError:
+        return
+    raise AssertionError("replace must revalidate")
+rejects_replace(obj, temperature=-0.1)
+assert obj.temperature == 0.7
+obj.temperature = float("nan")
+assert str(obj.temperature) == str(copy.copy(obj).temperature) == "nan"
+rejects_replace(obj)
+fixed = dataclasses.replace(obj, temperature="0.6")
+assert fixed.temperature == 0.6 and str(obj.temperature) == "nan"
+results["lifecycle"] = "negative replace rejected; assignment/copy retain nan; inherited nan rejected; override repaired"
+print(json.dumps({"python": platform.python_version(), "results": results}, sort_keys=True))
+```
+
+本轮没有导入Torch、Hydra、引擎或trainer，没有运行作者的132个配方块／301项扫描或上游原生测试，也不把它们写成本机验收。此题在参数对象语义内收束，不新增验证器、社区动作、GPU实验或M5队列。
+
 ## SDE 索引的两层边界校验
+
+**后续版本更新（2026-10-30）：** #634已于09:13:19Z合并，最终head `01e3955476258fab4810dd895f1f6d7b9f2e4746`、合并提交 `b8e9740e981a68a5556fbeb8225558040a4d47a4`；#633仍OPEN，head714b71bb。与下文旧be8baa25快照相比，最终sampling新增num_inference_steps≥1，并将独立scheduler长度检查改为显式列表分支后的`elif`。因此“显式空列表仍被未使用scheduler长度拒绝”是旧候选的兼容性结果，不用于最终合并版。这里仅比对完整源码diff，未重跑下面旧14组SDE／scheduler矩阵；下文保留当时的版本和结果。
 
 2026-10-30核验：[窗口候选 #633](https://github.com/Tencent-Hunyuan/UniRL/pull/633)（head `d31017aea1c91f881043d896637b7c3a6db4bc6b`）和[采样参数候选 #634](https://github.com/Tencent-Hunyuan/UniRL/pull/634)（head `523d245e61dec961b714ba96ef9663ab877d36d4`）均为294962silent的OPEN／非draft／未合并候选。共同祖先与API base均为 `8cfbac17765004afb68fef08a4e011a4c8daf555`，分别仅改一个生产文件（10行／14行新增）；当前main `5d1da78d4d87593b41a4235a65e9ad9dc3f9b6f8` 的两文件与祖先相同。已有作者，不另认领或叠加实现。两份正文和完整diff已读；普通评论只有作者本地lint通过与CI待批准的自述，reviews／行内反馈为空，不视为维护者验收。
 
