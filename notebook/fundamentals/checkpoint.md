@@ -86,6 +86,100 @@ Optimizer.state_dict      32626b5dd54af43bf30882883bf278c720f3a7cc99159475b920ef
 
 全部观察通过；这是自己的受控实验，不是上游原测试。只保存/加载自己生成的内存 payload，`weights_only=True`、`map_location="cpu"`；无磁盘 checkpoint、线程、设备探测、分布式保存或完整恢复验证。完成序列化后继续更新的证据，不认证并发 staging 一致性、CUDA 流同步、崩溃原子性或 fsync；这些没有在本轮执行，也不据此调整框架实现。
 
+### assign 与优化器的参数引用
+
+**模型和optimizer状态都加载成功，不代表optimizer仍引用当前模型参数。** [PyTorch2.9接口](https://docs.pytorch.org/docs/2.9/generated/torch.nn.Module.html#torch.nn.Module.load_state_dict)明确要求：`assign=True` 时应在模型加载后创建optimizer，除非启用了swap参数机制。默认 `assign=False` 将值copy到现有参数；在普通Parameter且swap关闭的路径，`assign=True` 可用新对象替换模型属性。原optimizer保存的是参数对象引用，不会因模型属性被替换而自动重绑。
+
+下面用真实CPU SGD、FP64单参数验证该区别。源参数1经梯度2、lr0.1更新为0.8，动量为2；每条恢复分支都从独立deepcopy加载相同模型／optimizer状态，再对`weight²/2`反向并step。`strict=True`下空missing／unexpected列表不是optimizer参数身份检查。
+
+```python
+import copy
+import hashlib
+import inspect
+import json
+import torch
+
+torch.set_num_threads(1)
+
+class Scalar(torch.nn.Module):
+    def __init__(self, value):
+        super().__init__()
+        self.weight = torch.nn.Parameter(torch.tensor(value, dtype=torch.float64))
+
+def optimizer(model):
+    return torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9, foreach=False)
+
+source = Scalar(1.0)
+source_opt = optimizer(source)
+source.weight.grad = torch.tensor(2.0, dtype=torch.float64)
+source_opt.step()
+model_state = copy.deepcopy(source.state_dict())
+optim_state = copy.deepcopy(source_opt.state_dict())
+
+def run(assign, create_before, swap):
+    torch.__future__.set_swap_module_params_on_conversion(swap)
+    model = Scalar(10.0)
+    original = model.weight
+    opt = optimizer(model) if create_before else None
+    keys = model.load_state_dict(copy.deepcopy(model_state), strict=True, assign=assign)
+    assert keys.missing_keys == keys.unexpected_keys == []
+    opt = opt if opt is not None else optimizer(model)
+    opt.load_state_dict(copy.deepcopy(optim_state))
+    torch.testing.assert_close(model.weight.detach(), torch.tensor(0.8, dtype=torch.float64))
+    bound = opt.param_groups[0]["params"][0]
+    assert opt.state[bound]["momentum_buffer"].item() == 2.0
+    opt.zero_grad(set_to_none=True)
+    (model.weight.square() / 2).backward()
+    tracks_model = bound is model.weight
+    assert tracks_model == (not assign or not create_before or swap)
+    gradient = model.weight.grad.item()
+    bound_has_no_grad = bound.grad is None
+    assert gradient == 0.8 and bound_has_no_grad == (not tracks_model)
+    opt.step()
+    expected = 0.54 if tracks_model else 0.8
+    torch.testing.assert_close(model.weight.detach(), torch.tensor(expected, dtype=torch.float64))
+    assert opt.state[bound]["momentum_buffer"].item() == (2.6 if tracks_model else 2.0)
+    return {
+        "original_parameter_preserved": original is model.weight,
+        "optimizer_tracks_model": tracks_model,
+        "model_gradient": gradient,
+        "optimizer_parameter_grad_is_none": bound_has_no_grad,
+        "weight_after_step": model.weight.item(),
+        "momentum_after_step": opt.state[bound]["momentum_buffer"].item(),
+    }
+
+original_swap = torch.__future__.get_swap_module_params_on_conversion()
+try:
+    rows = {
+        "copy_optimizer_before": run(False, True, False),
+        "assign_optimizer_before": run(True, True, False),
+        "assign_optimizer_after": run(True, False, False),
+        "assign_swap_optimizer_before": run(True, True, True),
+    }
+finally:
+    torch.__future__.set_swap_module_params_on_conversion(original_swap)
+assert torch.__future__.get_swap_module_params_on_conversion() == original_swap
+print(json.dumps({"torch": torch.__version__, "git": torch.version.git_version,
+                  "initial_swap": original_swap, "rows": rows}, indent=2))
+for method in (torch.nn.Module.load_state_dict, torch.nn.Module._load_from_state_dict):
+    print(method.__name__, hashlib.sha256(inspect.getsource(method).encode()).hexdigest())
+```
+
+2026-10-30，Python3.12.13／Torch2.9.1（git `5811a8d7da873dd699ff6687092c225caffcf1bb`）的结果如下；四条分支的模型键检查与optimizer状态加载均成功，当前模型梯度均为0.8：
+
+| 模型加载方式与optimizer构造时机 | 保留加载前Parameter对象 | optimizer引用当前模型 | 下一步weight／动量 |
+|---|---|---|---|
+| assign=False，提前创建 | 是 | 是 | 0.54／2.6 |
+| assign=True，提前创建，swap=False | 否 | 否，旧参数grad为None | 0.8／2.0，未更新当前模型 |
+| assign=True，加载后创建 | 否 | 是 | 0.54／2.6 |
+| assign=True，提前创建，swap=True | 是 | 是 | 0.54／2.6 |
+
+这与[按参数序列错配状态](adamw-optimizer-deep-dive.md#恢复时的参数身份)是两种检查：本例没有参数换序，单参数数量也相同；即使optimizer状态已加载，其参数对象仍可能已不在模型中。先完成改变对象身份的模型加载，再以当前模型参数创建optimizer并加载其状态，是上述默认assign路径的对应顺序；不靠`strict=True`推断这种引用关系。
+
+完整小例只保存在本节，复查时用所列Torch环境抽取唯一Python代码块执行。两个最终新进程输出逐字一致；本机方法文本SHA256分别为 `load_state_dict: 3a7358fc601586ba7de25759d7c07f648a5b976fc4c7b46b4737674fd2c66b84`、`_load_from_state_dict: 3f9df94e8b6c11933c677da1bdcc5ad3e954cf8e349742c88feaee4b508c6e0d`。源码的copy_／setattr／swap_tensors三分支解释此对象身份差异，不从接口返回成功替代一步更新检查。
+
+本例只做内存状态加载和一步CPU更新，不读写checkpoint文件、不运行框架／分片optimizer、AMP或设备操作；swap选项仅在该进程的对照内设置，并在finally恢复。不能由这组普通Parameter实验推荐为所有框架统一启用全局swap开关，也不能把它认定为verl／UniRL恢复缺陷。
+
 ### 2.2 显存占用
 
 ```

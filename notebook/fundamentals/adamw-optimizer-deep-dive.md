@@ -229,6 +229,8 @@ python -B experiments/scripts/verify_adamw_missing_grad.py
 
 ### 同形状换序可以无报错地错配
 
+参数顺序之外，还须检查对象引用：[assign加载的CPU对照](checkpoint.md#assign-与优化器的参数引用)中没有换序，提前构造的SGD在assign=True替换模型Parameter后仍持有旧对象；模型／optimizer状态均加载成功，却不更新当前模型。它是独立的构造顺序条件，不是下方AdamW换序实验的新一轮结果。
+
 真实CPU控制用两个FP64标量`left=1`、`right=2`，同一参数组，lr0.1、betas=(0.9,0.999)、eps=1e-8、weight_decay=0，关闭foreach／fused／capturable。先给梯度1／−2更新一次，再deepcopy模型和优化器state_dict：参数约为0.900000001／2.0999999995，一阶动量0.1／−0.2，二阶状态0.001／0.004。
 
 每条恢复轨迹都先用真实`Module.load_state_dict(strict=True)`按名恢复模型，并逐项检查权重相等。随后加载优化器状态，再以两个零梯度做一次原生AdamW更新；下表参数值取六位小数，完整状态见结果。
