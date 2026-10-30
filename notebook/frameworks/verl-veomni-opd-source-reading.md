@@ -10,6 +10,8 @@
 
 2026-10-25 接续：[主线与 GKD 的损失名称和支持域](#主线与-gkd-的损失名称和支持域)核#7975／已有draft #7983；纠正旧2.2节的k2／k3公式，区分采样估计、top-k归一化、tail bucket与JSD端点。配置名称相同不代表梯度或更新相同。
 
+2026-10-30补[蒸馏估计值与策略梯度](#蒸馏估计值与策略梯度)：#8423／已有#8458提出k3+PG目标与breaking配置校验。四个固定状态CPU例区分同一期望值、detach奖励的score项和直接微分项；不是原loss API／作者套件或LLM质量验收，不另实现或应用提案。
+
 2026-10-26补充：[HIP 的 mHC 分支同步与依赖栈](#hip-的-mhc-分支同步与依赖栈)区分平台gate、编译器类型、分支内共享通信和验收容差；AMD多步报告不代表单一verl补丁可独立复现。
 
 ## ROCm 配方默认与后端支持
@@ -203,6 +205,47 @@ recipe JSD把beta裁到 `[1e-6,1−1e-6]`，配置0／1并不切换到独立kl�
 六个完整Python模块仅AST／内存compile：主线loss registry、FSDP loss、tail helper、worker config、core_algos，以及固定recipe四模式模块。未导入框架、执行loss／自定义backward／TP collective或跑原作者测试、Sphinx、模型与GPU；源码hash和检查方式见[当日日志](../../diary/2026-10-25.md)。#7983所报323个Sphinx警告与基线相同是作者的文档构建报告，不是本项目验证。旧文中的k3=绝对值、mse无1/2及k2另为概率比公式已在下方原位置纠正。下轮转独立需求／实质反馈，不扩端点矩阵、自动搬配方、修改kernel或新排M5训练；社区发布和已有PR head推送仍须用户逐项明确同意。
 
 ---
+
+## 蒸馏估计值与策略梯度
+
+**无偏估计一个标量，不代表把它detach成奖励后仍得到该标量的梯度。** Eppiehu的[报告 #8423](https://github.com/verl-project/verl/issues/8423)与其已有[配置提案 #8458](https://github.com/verl-project/verl/pull/8458)讨论k3／low_var_kl加use_policy_gradient=True的目标；读取时均OPEN，PR非draft，head `b2278006cc65a1cc6f82c14e6cf1d458c576cdef`、base `321e4e450fcfc47a3491c946cd01dacd9ea7281a`、目标main。报告者已协调自己提交，维护者尚无review决定；不另认领、提交竞争方案或把配置限制当已接受语义。
+
+### 固定状态下的两项梯度
+
+本节改用小写p表示学生、q表示固定教师，避免与上节P／Q顺序混淆。设正概率有限动作分布、固定前缀状态，`k1=log(p/q)`，`k3=q/p−1+log(p/q)`；在未触发任何clamp时，两者在p采样下的期望均为`R=KL(p||q)`。但对依赖参数的k，有：
+
+```text
+∇ E_p[k] = E_p[k ∇log p] + E_p[∇k]
+k1: E_p[∇k1] = 0
+k3: E_p[∇k3] = ∇ KL(q||p)
+```
+
+将k detach为负奖励后，最小化的PG loss只留下score项`E_p[k ∇log p]`。k1因此保留∇R；k3则得到`∇KL(p||q)−∇KL(q||p)`，可以与∇R相反。直接对采样k反向又只保留另一项：k1期望梯度为0，且逐样本梯度不依赖教师；k3在此固定状态、恰在p采样的局部期望下为∇KL(q||p)。不能把后者叫作同一reverse-KL PG更新，更不能迁移为多步、过期样本或状态访问分布的等价性结论。
+
+[原损失包装器](https://github.com/verl-project/verl/blob/321e4e450fcfc47a3491c946cd01dacd9ea7281a/verl/trainer/distillation/losses.py)确实将`advantages=-distillation_losses.detach()`传给policy loss；单样本估计器调用[原kl_penalty](https://github.com/verl-project/verl/blob/321e4e450fcfc47a3491c946cd01dacd9ea7281a/verl/trainer/ppo/core_algos.py)。这里的语义问题与[#8386的近零消去修复](verl-grpo-core-algos-reading.md#k3-近零消去与拒绝阈值)独立：数值计算更准确，不会自动补回被detach移除的梯度项。
+
+### 有限 CPU 数学控制
+
+[脚本](../../experiments/distillation-score-gradient/verify.py)在Python3.12.13／Torch2.9.1、单CPU线程、FP64上执行两个完整原KL函数，未改函数体；ratio surrogate显式转写为`sum(stopgrad(p) * exp(logp−stopgrad(logp)) * stopgrad(k))`，不是原PPO或distillation_loss API。采样权重对期望SGD梯度固定；只有检查完整分布期望时让p参与求导。四个输入为相等、轻微差异、二动作相反分布和三动作分布，四别名共16对；逐例核clamp均不活跃、ratio=1、别名相等、总梯度=score项+直接项，并以中心有限差分核真实reverse-KL梯度。
+
+学生p=[0.8,0.2]、教师q=[0.2,0.8]时，两估计期望均0.8317766167：
+
+| 估计器 | detach奖励的logit梯度 | 固定采样直接微分项 | score梯度一步SGD后reverse KL，lr=0.01 |
+|---|---|---|---|
+| k1／kl | [0.4436142, −0.4436142] | [0, 0] | 0.8278365873，下降 |
+| k3／low_var_kl | [−0.1563858, 0.1563858] | [0.6, −0.6] | 0.8331635957，上升 |
+
+相等分布两项均零；三动作例的k3 score梯度仍能使KL下降，故反例不意味着k3在所有输入都上升。[完整结果](../../experiments/distillation-score-gradient/result.json)两个新进程一致，记录八份版本／路径源码hash；两版core_algos、losses与YAML逐字相同，六Python输入compile通过。配置Python默认True→False仅AST读取，YAML原已false仅文本核对；没有执行配置构造／OmegaConf转换、原作者25／64项、原loss／PPO、模型／teacher或训练，也没有以自选四例估计实际故障频率。
+
+### 配置提案不是梯度修复
+
+#8458拟拒绝k3／low_var_kl+PG，扩展已有直接k1拒绝到kl别名，并将Python默认PG改False以对齐原YAML，保留默认k3。它是breaking配置方案，不修改loss、PPO或detach。常规YAML原本不默认启用该PG组合，不能由Python默认差异声称所有CLI训练都触发；直接监督k3仍可选，但不是等价reverse-KL PG替代。移除detach是否适用于off-policy、裁剪、混合task reward必须另议，本轮不提供该补丁或迁移M5配方。
+
+```bash
+python3.12 -B experiments/distillation-score-gradient/verify.py /path/to/verl-git
+```
+
+输入Git对象须预缓存；脚本禁隐式fetch、不安装依赖或探测设备。已有作者且语义待维护者决定，本项有限数学学习收束，不继续扩同义分布矩阵、写社区或新排M5算力。
 
 ## 1. Overview: VeOmni OPD in verl
 

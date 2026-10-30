@@ -63,6 +63,8 @@
 
 2026-10-30补[critic可选字段](#critic-可选字段的已有候选)：新#8457目标release/v0.9.1而非main；优势／指标取数前按use_critic选择values，另拆FSDPTurbo dispatcher与fused开关。六Python输入／两脚本仅语法与AST，非TQ／设备验收，不另实现或改M5环境。
 
+2026-10-30补[蒸馏估计器与更新](#蒸馏估计器更新模式的已有提案)：#8423报告者已有#8458，breaking guard语义待维护者决定；四固定状态／16别名对的原KL函数加本地score公式核期望值与梯度不同，非原loss API／作者25或64项，不另实现、迁移配置或排算力。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -75,6 +77,12 @@
 <!-- contribution-summary:end -->
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
+
+## 蒸馏估计器更新模式的已有提案
+
+2026-10-30只读Eppiehu的OPEN [#8423](https://github.com/verl-project/verl/issues/8423)全文／两协作评论，以及其OPEN／非draft [#8458](https://github.com/verl-project/verl/pull/8458)正文／三文件diff，headb2278006cc65a1cc6f82c14e6cf1d458c576cdef、base321e4e45、目标main，reviews为空。报告者已协调由自己提交；他人评论所述未发布候选不是本项目成果或授权，不另竞争实现／发布。
+
+[原蒸馏专题](../../notebook/frameworks/verl-veomni-opd-source-reading.md#蒸馏估计值与策略梯度)区分无偏KL数值与detach奖励后的score梯度；[本地CPU结果](../../experiments/distillation-score-gradient/result.json)四固定状态／16别名对核原两KL函数加显式转写ratio公式，二动作反例k3一步使reverse KL上升，三动作例仍下降，不估计训练发生率。原loss仅源码，不是作者真实API／25或64项／配置转换验收；两版loss/core/YAML未改、Python默认仅AST。PR拟拒绝旧组合与对齐默认，是待维护者决定的breaking配置方案，不是修改梯度或已接受修复；不等价替换为监督k3、不移除detach或改M5配置、排新训练。所有社区及既有PR-head写入仍逐项待用户明确同意。
 
 ## Critic 可选字段的已有候选
 

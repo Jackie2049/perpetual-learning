@@ -1,0 +1,299 @@
+{
+  "python": "3.12.13",
+  "torch": "2.9.1",
+  "torch_git": "5811a8d7da873dd699ff6687092c225caffcf1bb",
+  "base": "321e4e450fcfc47a3491c946cd01dacd9ea7281a",
+  "head": "b2278006cc65a1cc6f82c14e6cf1d458c576cdef",
+  "sources": {
+    "321e4e450fcfc47a3491c946cd01dacd9ea7281a:verl/trainer/ppo/core_algos.py": {
+      "sha256": "369b614f239f237a04a38a40b1877cd6fd14aa7bd5f9ff4fe4d7758b682a6948",
+      "git_blob": "afa86c25ba370c45dbf84b2597876ab817485fca"
+    },
+    "321e4e450fcfc47a3491c946cd01dacd9ea7281a:verl/trainer/distillation/losses.py": {
+      "sha256": "5f6eee42682dedecac8508fa8e33bb9606a38687992b40f5a26a493774ff3d5e",
+      "git_blob": "7f632d6e8be59d739f51e168f64a94fd6a17c3b4"
+    },
+    "321e4e450fcfc47a3491c946cd01dacd9ea7281a:verl/workers/config/distillation.py": {
+      "sha256": "e264aacf4a3e318e8ca1052691f117a75b57c62200e9713cc145f12a306718a4",
+      "git_blob": "822ea4ded015cdc73fe760c9a85a9dfab19c010d"
+    },
+    "321e4e450fcfc47a3491c946cd01dacd9ea7281a:verl/trainer/config/distillation/distillation.yaml": {
+      "sha256": "23a74dc343d88a780d053244f1a25c70bc89b338a0734c53599a8eed6b4531ad",
+      "git_blob": "99934f483850f372262ade6083483d1029de9f02"
+    },
+    "b2278006cc65a1cc6f82c14e6cf1d458c576cdef:verl/trainer/ppo/core_algos.py": {
+      "sha256": "369b614f239f237a04a38a40b1877cd6fd14aa7bd5f9ff4fe4d7758b682a6948",
+      "git_blob": "afa86c25ba370c45dbf84b2597876ab817485fca"
+    },
+    "b2278006cc65a1cc6f82c14e6cf1d458c576cdef:verl/trainer/distillation/losses.py": {
+      "sha256": "5f6eee42682dedecac8508fa8e33bb9606a38687992b40f5a26a493774ff3d5e",
+      "git_blob": "7f632d6e8be59d739f51e168f64a94fd6a17c3b4"
+    },
+    "b2278006cc65a1cc6f82c14e6cf1d458c576cdef:verl/workers/config/distillation.py": {
+      "sha256": "f147985cf8d17bdfb82136a1c0992526a29ae0239354665d05c746e09e85884b",
+      "git_blob": "9fa4cfe46c841f019d8473b1341d84e6b699b360"
+    },
+    "b2278006cc65a1cc6f82c14e6cf1d458c576cdef:verl/trainer/config/distillation/distillation.yaml": {
+      "sha256": "23a74dc343d88a780d053244f1a25c70bc89b338a0734c53599a8eed6b4531ad",
+      "git_blob": "99934f483850f372262ade6083483d1029de9f02"
+    }
+  },
+  "loss_core_yaml_equal_base_head": true,
+  "python_inputs_compile": 6,
+  "python_pg_defaults_ast": {
+    "321e4e450fcfc47a3491c946cd01dacd9ea7281a": true,
+    "b2278006cc65a1cc6f82c14e6cf1d458c576cdef": false
+  },
+  "yaml_pg_default_false_text": true,
+  "case_mode_pairs": 16,
+  "cases": [
+    {
+      "case": "equal",
+      "student": [
+        0.5,
+        0.5
+      ],
+      "teacher": [
+        0.5,
+        0.5
+      ],
+      "reverse_kl": 0.0,
+      "reverse_gradient": [
+        0.0,
+        0.0
+      ],
+      "forward_gradient": [
+        0.0,
+        0.0
+      ],
+      "finite_difference": [
+        0.0,
+        0.0
+      ],
+      "aliases_equal": true,
+      "modes": {
+        "k1": {
+          "estimate": 0.0,
+          "score_gradient": [
+            0.0,
+            0.0
+          ],
+          "direct_fixed_sampling_gradient": [
+            0.0,
+            0.0
+          ],
+          "live_expectation_gradient": [
+            0.0,
+            0.0
+          ],
+          "reverse_kl_after_score_sgd_001": 0.0
+        },
+        "k3": {
+          "estimate": 0.0,
+          "score_gradient": [
+            0.0,
+            0.0
+          ],
+          "direct_fixed_sampling_gradient": [
+            0.0,
+            0.0
+          ],
+          "live_expectation_gradient": [
+            0.0,
+            0.0
+          ],
+          "reverse_kl_after_score_sgd_001": 0.0
+        }
+      }
+    },
+    {
+      "case": "mild",
+      "student": [
+        0.6,
+        0.4
+      ],
+      "teacher": [
+        0.55,
+        0.45
+      ],
+      "reverse_kl": 0.0050936119312244565,
+      "reverse_gradient": [
+        0.04915065903504323,
+        -0.049150659035043065
+      ],
+      "forward_gradient": [
+        0.04999999999999993,
+        -0.04999999999999999
+      ],
+      "finite_difference": [
+        0.049150659094804316,
+        -0.049150659094804316
+      ],
+      "aliases_equal": true,
+      "modes": {
+        "k1": {
+          "estimate": 0.0050936119312244565,
+          "score_gradient": [
+            0.049150659035043134,
+            -0.049150659035043134
+          ],
+          "direct_fixed_sampling_gradient": [
+            0.0,
+            0.0
+          ],
+          "live_expectation_gradient": [
+            0.04915065903504323,
+            -0.049150659035043065
+          ],
+          "reverse_kl_after_score_sgd_001": 0.005045407412451679
+        },
+        "k3": {
+          "estimate": 0.005093611931224507,
+          "score_gradient": [
+            -0.0008493409649568484,
+            0.0008493409649568484
+          ],
+          "direct_fixed_sampling_gradient": [
+            0.04999999999999997,
+            -0.04999999999999997
+          ],
+          "live_expectation_gradient": [
+            0.04915065903504312,
+            -0.04915065903504312
+          ],
+          "reverse_kl_after_score_sgd_001": 0.005094446877795734
+        }
+      }
+    },
+    {
+      "case": "opposing",
+      "student": [
+        0.8,
+        0.2
+      ],
+      "teacher": [
+        0.2,
+        0.8
+      ],
+      "reverse_kl": 0.8317766166719343,
+      "reverse_gradient": [
+        0.4436141955583648,
+        -0.443614195558365
+      ],
+      "forward_gradient": [
+        0.6000000000000001,
+        -0.6000000000000001
+      ],
+      "finite_difference": [
+        0.4436141955999062,
+        -0.4436141955999062
+      ],
+      "aliases_equal": true,
+      "modes": {
+        "k1": {
+          "estimate": 0.8317766166719343,
+          "score_gradient": [
+            0.443614195558365,
+            -0.44361419555836495
+          ],
+          "direct_fixed_sampling_gradient": [
+            0.0,
+            0.0
+          ],
+          "live_expectation_gradient": [
+            0.4436141955583648,
+            -0.443614195558365
+          ],
+          "reverse_kl_after_score_sgd_001": 0.8278365872775304
+        },
+        "k3": {
+          "estimate": 0.8317766166719343,
+          "score_gradient": [
+            -0.15638580444163497,
+            0.15638580444163502
+          ],
+          "direct_fixed_sampling_gradient": [
+            0.6000000000000001,
+            -0.6000000000000001
+          ],
+          "live_expectation_gradient": [
+            0.443614195558365,
+            -0.4436141955583651
+          ],
+          "reverse_kl_after_score_sgd_001": 0.8331635957385578
+        }
+      }
+    },
+    {
+      "case": "three_actions",
+      "student": [
+        0.2,
+        0.3,
+        0.5
+      ],
+      "teacher": [
+        0.5,
+        0.4,
+        0.1
+      ],
+      "reverse_kl": 0.5351561881066851,
+      "reverse_gradient": [
+        -0.2902893839961681,
+        -0.24685147816753988,
+        0.5371408621637076
+      ],
+      "forward_gradient": [
+        -0.29999999999999993,
+        -0.09999999999999998,
+        0.40000000000000013
+      ],
+      "finite_difference": [
+        -0.2902893841971732,
+        -0.24685147809178076,
+        0.537140862288954
+      ],
+      "aliases_equal": true,
+      "modes": {
+        "k1": {
+          "estimate": 0.5351561881066851,
+          "score_gradient": [
+            -0.290289383996168,
+            -0.24685147816753975,
+            0.5371408621637077
+          ],
+          "direct_fixed_sampling_gradient": [
+            -5.551115123125783e-17,
+            -5.551115123125783e-17,
+            -1.1102230246251565e-16
+          ],
+          "live_expectation_gradient": [
+            -0.2902893839961681,
+            -0.24685147816753988,
+            0.5371408621637076
+          ],
+          "reverse_kl_after_score_sgd_001": 0.5308268661377388
+        },
+        "k3": {
+          "estimate": 0.5351561881066847,
+          "score_gradient": [
+            0.009710616003831926,
+            -0.14685147816753974,
+            0.13714086216370774
+          ],
+          "direct_fixed_sampling_gradient": [
+            -0.2999999999999999,
+            -0.10000000000000005,
+            0.3999999999999999
+          ],
+          "live_expectation_gradient": [
+            -0.290289383996168,
+            -0.24685147816753977,
+            0.5371408621637077
+          ],
+          "reverse_kl_after_score_sgd_001": 0.534085946959501
+        }
+      }
+    }
+  ],
+  "scope": "Four fixed-state finite-action examples, CPU FP64; original two KL functions with inactive clamps, local ratio-surrogate and expected-gradient decomposition. Not original distillation_loss/PPO API, original 25/64 tests, configuration construction/OmegaConf conversion, model, teacher, sampled training, off-policy/clipped/mixed-reward, GPU/NPU or quality/performance verification. Sampling weights detached except for explicitly live distributional expectation. Config default inspected by AST; YAML by text only."
+}

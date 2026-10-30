@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [distillation-score-gradient/verify.py](distillation-score-gradient/verify.py) | 原KL两函数加显式ratio公式的四固定状态／16别名对，[结果](distillation-score-gradient/result.json)核score项／直接项及同标量不同梯度；非原loss API、配置转换或#8458作者25／64项、模型训练 | [蒸馏估计值与梯度](../notebook/frameworks/verl-veomni-opd-source-reading.md#蒸馏估计值与策略梯度) |
 | [unirl-ar-logprob-contract/verify.py](unirl-ar-logprob-contract/verify.py) | 已合并#631两原函数／五原容器模块的20个本地wire输入，[结果](unirl-ar-logprob-contract/result.json)核采样身份、13类拒绝与旧缺锚点concat失败；非作者16项／Omni或GSPO训练验收 | [AR概率响应校验](../notebook/frameworks/unirl-survey.md#ar-概率锚点的响应校验) |
 | [verl-pos-embed-tensors/verify.py](verl-pos-embed-tensors/verify.py) | #8414两版原插值函数接原16参数／测试体断言，[结果](verl-pos-embed-tensors/result.json)各16通过、CPU输出一致；仅入口与CPU模型工厂适配，非原生pytest／视觉塔或性能验收 | [位置插值张量构造](../notebook/frameworks/verl-dataproto-data-flow-reading.md#视觉位置插值的张量构造) |
 | [unirl-ar-call-seeds/verify.py](unirl-ar-call-seeds/verify.py) | 已合并#630原helper／原dataclass的七组标准库控制，[结果](unirl-ar-call-seeds/result.json)核身份映射、拆调用、重排分片、数量与共享对象；六变更文件同合并版，非adapter／原生推理或吞吐验收 | [AR逐样本调用](../notebook/frameworks/unirl-survey.md#合并后的逐样本调用) |
