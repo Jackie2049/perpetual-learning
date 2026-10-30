@@ -1,5 +1,7 @@
 # UniRL — 腾讯统一多模态 RL 框架调研
 
+2026-10-30接续：[VeOmni发布制品与入口](#发布制品与初始化入口)核新#639：0.1.12官方wheel的GPU／NPU mask产物及初始化入口与tag相符；0.1.13有tag但PyPI版本404且公共入口已改名。仅制品／AST绑定审计，不等Linux导入、mask数值或EP训练验收。
+
 2026-10-30接续：[采样构造校验与修改](#采样参数的构造校验与后续修改)核#636：新增下界不等于新增类型／有限值保护，直接赋值与浅拷贝不校验、replace重跑继承字段；纯标准库原模块控制，非Hydra／引擎验收。#634最终已合并且改用elif，旧空列表兼容性结论限定历史head。
 
 2026-10-30接续：[SFT空ID与评估随机键](#sft-空-id-与评估随机键)核#637：原Dataset五行由3个ID恢复5个，原评估抽样不再共用null键；去重守卫实际在Sample而非Part，不能据PR正文断言普通SFT训练必报错。仅CPU原定义隔离控制，非模型损失／质量验收。
@@ -2301,6 +2303,25 @@ Python3.12.13/torch2.14.1，torch git `5c4886908584029761b579af026dcfb627c84070`
 VeOmni官方v0.1.11 `f90b3dc6fbb0ce693745223cc7a94064123dbf4d`的[生成配置](https://github.com/ByteDance-Seed/VeOmni/blob/f90b3dc6fbb0ce693745223cc7a94064123dbf4d/veomni/models/transformers/qwen3_moe/qwen3_moe_gpu_patch_gen_config.py#L238)及[GPU产物](https://github.com/ByteDance-Seed/VeOmni/blob/f90b3dc6fbb0ce693745223cc7a94064123dbf4d/veomni/models/transformers/qwen3_moe/generated/patched_modeling_qwen3_moe_gpu.py#L606)均传六个关键字给`mask_function`，含`cache_position`；按sliding_window选择全量或滑窗函数。Transformers v5.12.1对应`ddb849abe009d1089e6c691bfc897f27211c663c`的[两个实际签名](https://github.com/huggingface/transformers/blob/ddb849abe009d1089e6c691bfc897f27211c663c/src/transformers/masking_utils.py#L893)都没有该参数或`**kwargs`；残留docstring仍列deprecated参数，不能代替签名。
 
 VeOmni [#774](https://github.com/ByteDance-Seed/VeOmni/pull/774)已于2026-05-29合并为`2d36580b80a6579f95a5318c83939844aee93fb2`，升级至Transformers5.9并调整生成配置，Qwen3-MoE的mask调用不再传该关键字。官方v0.1.12 `fd99abfda9ef4d9d485f0dae14841de88d30963d`的同一配置和GPU产物也都移除了它。已有接口调整不等于UniRL整体升级安全；并行化、模型输出、选择性导入及实际安装制品仍须联合核验。#774作者的A100测试不是UniRL5.12.1验收，不另写竞争吞参shim或自动升级依赖。
+
+### 发布制品与初始化入口
+
+**源码标签、可安装制品和消费端接口，是三项不同约束。** 新[#639](https://github.com/Tencent-Hunyuan/UniRL/pull/639)在2026-10-30读取open、无评论／review；head `97ed729b2ca2952420cb109714b890f1732a7a01`、base `b8e9740e981a68a5556fbeb8225558040a4d47a4`。对两版完整pyproject做TOML解析，移除veomni extra后整个配置dict相同：语义只把Linux `veomni==0.1.11`改为`==0.1.12`，其他变化为注释，不是新的兼容shim。作者对14个导入符号的审计是作者报告，本机本轮限定下列入口与发布制品。
+
+从[PyPI官方0.1.11元数据](https://pypi.org/pypi/veomni/0.1.11/json)和[0.1.12元数据](https://pypi.org/pypi/veomni/0.1.12/json)读取非yanked wheel，在内存取回ZIP、校验整包字节数和官方SHA256，再只读METADATA与三个模块，未解压安装或导入。两个wheel的Python约束均为`>=3.11,<3.13`，不含extra marker的Requires-Dist声明集合相同；这不等于所有可选extra相同或完整依赖求解通过。
+
+| 核对项 | 0.1.11 wheel | 0.1.12 wheel | v0.1.13 Git标签 |
+|---|---|---|---|
+| 官方PyPI制品 | 1,288,446字节，5月26日上传 | 1,885,489字节，9月9日上传 | 本轮[对应版本API](https://pypi.org/pypi/veomni/0.1.13/json)返回404，不推断其他索引或历史发布行为 |
+| Qwen3-MoE生成代码的mask调用 | GPU／NPU均含cache_position | 两份均去掉该关键字、仍传position_ids | 本轮未审其模型代码 |
+| parallel_state公共初始化入口 | 有init_parallel_state定义 | 有init_parallel_state定义 | 无该公共定义或顶层赋值／导入别名，改为_init_parallel_state与init_parallel_state_from_config |
+| 元数据版本 | METADATA为0.1.11 | METADATA为0.1.12 | 源码_version.py仍写0.1.12，不能将tag名当包版本 |
+
+0.1.12 wheel整包SHA256为`682c0ae21b2a7835c928fb378ca740746778f5bcf5d7a64ca15718c58bf2316f`；0.1.11为`fe399ead11350fa3d53cc53293cd60d0c1042f2fa15d599aeb89db9aa417b129`。0.1.12的parallel_state、Qwen3-MoE GPU／NPU三个文件逐字等于[固定tag fd99abfd](https://github.com/ByteDance-Seed/VeOmni/tree/fd99abfda9ef4d9d485f0dae14841de88d30963d)对应文件；这只认证三个文件，不是整个wheel与Git树相同。GPU产物hash为`54246091c6720cd02a10efb64f7653dc16a43e2d7b76dfef47d960d4dfc7eb26`，NPU为`83ab52e13363bed8815af3ea54fab3196ef008774387a16a447135526b855109`。
+
+当前[UniRL backend](https://github.com/Tencent-Hunyuan/UniRL/blob/97ed729b2ca2952420cb109714b890f1732a7a01/unirl/train/backend/veomni/backend.py)仍按公共名导入init_parallel_state，传dp_size、ulysses_size、dp_mode、device_type，EP>1再传extra_parallel_sizes／names。从0.1.12原函数AST构造inspect.Signature，两组关键字都能bind；只做参数名／必需项匹配，不执行默认值表达式或函数体。[v0.1.13固定源码86c5ec1d](https://github.com/ByteDance-Seed/VeOmni/blob/86c5ec1dbba8270206b1ab7f439285215ae4ec92/veomni/distributed/parallel_state.py)已无该公共入口，不能用“最新版tag存在”替代消费端接口检查。
+
+本机Python3.12.14标准库完成官方元数据／制品读取、ZIP哈希、AST／compile及签名绑定，没有pip／uv安装、Linux实际导入、函数调用、mask／attention数值、GPU／NPU或EP更新。本节补的是旧阅读尚缺的实际wheel身份与命名入口；不重跑上节旧HF签名控制，也不宣布#627训练闭环。实际mask和offload关闭的EP最小更新条件回写[原M5条目](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不新增算力队列、不自动采用pin。
 
 ### 本机确认的调用边界
 
