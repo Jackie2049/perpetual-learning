@@ -1,0 +1,732 @@
+{
+  "findings": {
+    "ar": {
+      "MIX_over_H2048": 1.0,
+      "MIX_over_H512": 1.322,
+      "RX8_over_H2048": 0.994,
+      "makespan_s": {
+        "H2048": 1.0646,
+        "H512": 0.8054,
+        "MIX": 1.0647
+      },
+      "spec_over_ar": {
+        "H2048": 2.544,
+        "H512": 2.836,
+        "MIX": 2.726,
+        "RX8": 2.533
+      }
+    },
+    "spec": {
+      "MIX_over_H2048": 1.072,
+      "MIX_over_H512": 1.271,
+      "RX8_over_H2048": 0.99,
+      "makespan_s": {
+        "H2048": 2.7079,
+        "H512": 2.284,
+        "MIX": 2.9026
+      },
+      "spec_over_ar": {
+        "H2048": 1.0,
+        "H512": 1.0,
+        "MIX": 1.0,
+        "RX8": 2.533
+      }
+    }
+  },
+  "meta": {
+    "caliber": "engine-level; axis-3 batch-internal length distribution -> sync makespan (G3 memo); distinct natural-text prompts per request (gsm8k windows)",
+    "engine": "vllm 0.24.0+cu129 (anchor-drift 0.24.0, see anchor.json)",
+    "experiment": "rollout-g8-candidate-d",
+    "hardware": "4090-1 single RTX 4090 (GPU 5)",
+    "matrix": "mode {ar,spec} x comp {H512,H2048,MIX,RX8} x iter {1,2}, batch=8, max_tokens=128 (RX8: per-request 64..256 mean 128), max_model_len=4608",
+    "model": "Qwen2.5-1.5B-Instruct",
+    "sampling": "temp=0.7 top_p=0.9",
+    "spec_method": "ngram proposer k=5, prompt_lookup_max=5/min=1"
+  },
+  "rows": {
+    "ar_H2048": {
+      "decode_tok_per_s": 961.9,
+      "e2e_all": [],
+      "finished_full": [
+        8,
+        8
+      ],
+      "runs": [
+        {
+          "batch": 8,
+          "comp": "H2048",
+          "decode_tok_per_s": 960.6,
+          "e2e_s": [],
+          "finished_full": 8,
+          "first_s": [
+            0.0776,
+            0.2344,
+            0.2341,
+            0.2338,
+            0.3577,
+            0.3575,
+            0.3572,
+            0.357
+          ],
+          "input_lengths": [
+            2048,
+            2048,
+            2048,
+            2048,
+            2048,
+            2048,
+            2048,
+            2048
+          ],
+          "iter": "1",
+          "max_tokens": 128,
+          "mode": "ar",
+          "wall_s": 1.0661
+        },
+        {
+          "batch": 8,
+          "comp": "H2048",
+          "decode_tok_per_s": 963.2,
+          "e2e_s": [],
+          "finished_full": 8,
+          "first_s": [
+            0.1187,
+            0.109,
+            0.2726,
+            0.2724,
+            0.2722,
+            0.3545,
+            0.3543,
+            0.3541
+          ],
+          "input_lengths": [
+            2048,
+            2048,
+            2048,
+            2048,
+            2048,
+            2048,
+            2048,
+            2048
+          ],
+          "iter": "2",
+          "max_tokens": 128,
+          "mode": "ar",
+          "wall_s": 1.0632
+        }
+      ],
+      "wall_s": 1.0646
+    },
+    "ar_H512": {
+      "decode_tok_per_s": 1275.55,
+      "e2e_all": [],
+      "finished_full": [
+        8,
+        8
+      ],
+      "runs": [
+        {
+          "batch": 8,
+          "comp": "H512",
+          "decode_tok_per_s": 1202.8,
+          "e2e_s": [],
+          "finished_full": 8,
+          "first_s": [
+            0.1547,
+            0.1456,
+            0.203,
+            0.2028,
+            0.2026,
+            0.2025,
+            0.2023,
+            0.2021
+          ],
+          "input_lengths": [
+            512,
+            512,
+            512,
+            512,
+            512,
+            512,
+            512,
+            512
+          ],
+          "iter": "1",
+          "max_tokens": 128,
+          "mode": "ar",
+          "wall_s": 0.8514
+        },
+        {
+          "batch": 8,
+          "comp": "H512",
+          "decode_tok_per_s": 1348.3,
+          "e2e_s": [],
+          "finished_full": 8,
+          "first_s": [
+            0.0555,
+            0.0461,
+            0.1036,
+            0.1034,
+            0.1032,
+            0.1031,
+            0.1029,
+            0.1028
+          ],
+          "input_lengths": [
+            512,
+            512,
+            512,
+            512,
+            512,
+            512,
+            512,
+            512
+          ],
+          "iter": "2",
+          "max_tokens": 128,
+          "mode": "ar",
+          "wall_s": 0.7595
+        }
+      ],
+      "wall_s": 0.8054
+    },
+    "ar_MIX": {
+      "decode_tok_per_s": 961.75,
+      "e2e_all": [],
+      "finished_full": [
+        8,
+        8
+      ],
+      "runs": [
+        {
+          "batch": 8,
+          "comp": "MIX",
+          "decode_tok_per_s": 963.9,
+          "e2e_s": [],
+          "finished_full": 8,
+          "first_s": [
+            0.0756,
+            0.0659,
+            0.0657,
+            0.228,
+            0.2278,
+            0.2276,
+            0.36,
+            0.3597
+          ],
+          "input_lengths": [
+            512,
+            512,
+            1024,
+            2048,
+            2048,
+            2048,
+            4096,
+            4096
+          ],
+          "iter": "1",
+          "max_tokens": 128,
+          "mode": "ar",
+          "wall_s": 1.0623
+        },
+        {
+          "batch": 8,
+          "comp": "MIX",
+          "decode_tok_per_s": 959.6,
+          "e2e_s": [],
+          "finished_full": 8,
+          "first_s": [
+            0.053,
+            0.2001,
+            0.1998,
+            0.1997,
+            0.1995,
+            0.1993,
+            0.3652,
+            0.3649
+          ],
+          "input_lengths": [
+            512,
+            512,
+            1024,
+            2048,
+            2048,
+            2048,
+            4096,
+            4096
+          ],
+          "iter": "2",
+          "max_tokens": 128,
+          "mode": "ar",
+          "wall_s": 1.0671
+        }
+      ],
+      "wall_s": 1.0647
+    },
+    "ar_RX8": {
+      "decode_tok_per_s": 967.2,
+      "e2e_all": [],
+      "finished_full": [
+        4,
+        4
+      ],
+      "runs": [
+        {
+          "batch": 8,
+          "comp": "RX8",
+          "decode_tok_per_s": 965.9,
+          "e2e_s": [],
+          "finished_full": 4,
+          "first_s": [
+            0.0774,
+            0.2324,
+            0.2322,
+            0.2319,
+            0.3531,
+            0.3529,
+            0.3527,
+            0.3525
+          ],
+          "gen_tokens": 1024,
+          "input_lengths": [
+            2048,
+            2048,
+            2048,
+            2048,
+            2048,
+            2048,
+            2048,
+            2048
+          ],
+          "iter": "1",
+          "max_tokens": [
+            64,
+            64,
+            128,
+            128,
+            128,
+            128,
+            256,
+            256
+          ],
+          "mode": "ar",
+          "wall_s": 1.0601
+        },
+        {
+          "batch": 8,
+          "comp": "RX8",
+          "decode_tok_per_s": 968.5,
+          "e2e_s": [],
+          "finished_full": 4,
+          "first_s": [
+            0.0776,
+            0.229,
+            0.2287,
+            0.2283,
+            0.3497,
+            0.3494,
+            0.3492,
+            0.349
+          ],
+          "gen_tokens": 1024,
+          "input_lengths": [
+            2048,
+            2048,
+            2048,
+            2048,
+            2048,
+            2048,
+            2048,
+            2048
+          ],
+          "iter": "2",
+          "max_tokens": [
+            64,
+            64,
+            128,
+            128,
+            128,
+            128,
+            256,
+            256
+          ],
+          "mode": "ar",
+          "wall_s": 1.0573
+        }
+      ],
+      "wall_s": 1.0587
+    },
+    "spec_H2048": {
+      "decode_tok_per_s": 378.2,
+      "e2e_all": [],
+      "finished_full": [
+        8,
+        8
+      ],
+      "runs": [
+        {
+          "batch": 8,
+          "comp": "H2048",
+          "decode_tok_per_s": 374.7,
+          "e2e_s": [],
+          "finished_full": 8,
+          "first_s": [
+            1.4357,
+            1.4263,
+            1.426,
+            1.5985,
+            1.5983,
+            1.5981,
+            1.6484,
+            1.6482
+          ],
+          "input_lengths": [
+            2048,
+            2048,
+            2048,
+            2048,
+            2048,
+            2048,
+            2048,
+            2048
+          ],
+          "iter": "1",
+          "max_tokens": 128,
+          "mode": "spec",
+          "wall_s": 2.7329
+        },
+        {
+          "batch": 8,
+          "comp": "H2048",
+          "decode_tok_per_s": 381.7,
+          "e2e_s": [],
+          "finished_full": 8,
+          "first_s": [
+            1.3967,
+            1.387,
+            1.5563,
+            1.556,
+            1.5556,
+            1.6403,
+            1.64,
+            1.6396
+          ],
+          "input_lengths": [
+            2048,
+            2048,
+            2048,
+            2048,
+            2048,
+            2048,
+            2048,
+            2048
+          ],
+          "iter": "2",
+          "max_tokens": 128,
+          "mode": "spec",
+          "wall_s": 2.6829
+        }
+      ],
+      "spec_metrics": {
+        "acceptance_rate_pos": [
+          0.199,
+          0.06,
+          0.023,
+          0.016,
+          0.016
+        ],
+        "accepted_tok_per_s": 54.25,
+        "accepted_tokens": 216,
+        "avg_draft_accept_rate_pct": 6.3,
+        "drafted_tok_per_s": 865.25,
+        "drafted_tokens": 3445,
+        "mean_accept_len": 1.31
+      },
+      "wall_s": 2.7079
+    },
+    "spec_H512": {
+      "decode_tok_per_s": 448.4,
+      "e2e_all": [],
+      "finished_full": [
+        8,
+        8
+      ],
+      "runs": [
+        {
+          "batch": 8,
+          "comp": "H512",
+          "decode_tok_per_s": 444.2,
+          "e2e_s": [],
+          "finished_full": 8,
+          "first_s": [
+            1.3152,
+            1.4511,
+            1.4508,
+            1.4507,
+            1.4505,
+            1.4503,
+            1.4502,
+            1.4501
+          ],
+          "input_lengths": [
+            512,
+            512,
+            512,
+            512,
+            512,
+            512,
+            512,
+            512
+          ],
+          "iter": "1",
+          "max_tokens": 128,
+          "mode": "spec",
+          "wall_s": 2.3054
+        },
+        {
+          "batch": 8,
+          "comp": "H512",
+          "decode_tok_per_s": 452.6,
+          "e2e_s": [],
+          "finished_full": 8,
+          "first_s": [
+            1.3276,
+            1.3181,
+            1.3837,
+            1.3835,
+            1.3834,
+            1.3832,
+            1.3831,
+            1.3829
+          ],
+          "input_lengths": [
+            512,
+            512,
+            512,
+            512,
+            512,
+            512,
+            512,
+            512
+          ],
+          "iter": "2",
+          "max_tokens": 128,
+          "mode": "spec",
+          "wall_s": 2.2626
+        }
+      ],
+      "spec_metrics": {
+        "acceptance_rate_pos": [
+          0.205,
+          0.07,
+          0.029,
+          0.021,
+          0.013
+        ],
+        "accepted_tok_per_s": 57.57,
+        "accepted_tokens": 208,
+        "avg_draft_accept_rate_pct": 6.8,
+        "drafted_tok_per_s": 848.82,
+        "drafted_tokens": 3067,
+        "mean_accept_len": 1.34
+      },
+      "wall_s": 2.284
+    },
+    "spec_MIX": {
+      "decode_tok_per_s": 352.75,
+      "e2e_all": [],
+      "finished_full": [
+        8,
+        8
+      ],
+      "runs": [
+        {
+          "batch": 8,
+          "comp": "MIX",
+          "decode_tok_per_s": 352.8,
+          "e2e_s": [],
+          "finished_full": 8,
+          "first_s": [
+            1.3316,
+            1.564,
+            1.5638,
+            1.5635,
+            1.5632,
+            1.563,
+            1.7275,
+            1.7272
+          ],
+          "input_lengths": [
+            512,
+            512,
+            1024,
+            2048,
+            2048,
+            2048,
+            4096,
+            4096
+          ],
+          "iter": "1",
+          "max_tokens": 128,
+          "mode": "spec",
+          "wall_s": 2.9024
+        },
+        {
+          "batch": 8,
+          "comp": "MIX",
+          "decode_tok_per_s": 352.7,
+          "e2e_s": [],
+          "finished_full": 8,
+          "first_s": [
+            1.3346,
+            1.5661,
+            1.5659,
+            1.5657,
+            1.5655,
+            1.5653,
+            1.7304,
+            1.7301
+          ],
+          "input_lengths": [
+            512,
+            512,
+            1024,
+            2048,
+            2048,
+            2048,
+            4096,
+            4096
+          ],
+          "iter": "2",
+          "max_tokens": 128,
+          "mode": "spec",
+          "wall_s": 2.9029
+        }
+      ],
+      "spec_metrics": {
+        "acceptance_rate_pos": [
+          0.186,
+          0.062,
+          0.041,
+          0.029,
+          0.026
+        ],
+        "accepted_tok_per_s": 54.71,
+        "accepted_tokens": 227,
+        "avg_draft_accept_rate_pct": 6.9,
+        "drafted_tok_per_s": 798.17,
+        "drafted_tokens": 3312,
+        "mean_accept_len": 1.34
+      },
+      "wall_s": 2.9026
+    },
+    "spec_RX8": {
+      "decode_tok_per_s": 381.9,
+      "e2e_all": [],
+      "finished_full": [
+        4,
+        4
+      ],
+      "runs": [
+        {
+          "batch": 8,
+          "comp": "RX8",
+          "decode_tok_per_s": 382.3,
+          "e2e_s": [],
+          "finished_full": 4,
+          "first_s": [
+            1.3965,
+            1.3872,
+            1.5521,
+            1.5518,
+            1.5514,
+            1.6367,
+            1.6363,
+            1.636
+          ],
+          "gen_tokens": 1024,
+          "input_lengths": [
+            2048,
+            2048,
+            2048,
+            2048,
+            2048,
+            2048,
+            2048,
+            2048
+          ],
+          "iter": "1",
+          "max_tokens": [
+            64,
+            64,
+            128,
+            128,
+            128,
+            128,
+            256,
+            256
+          ],
+          "mode": "spec",
+          "wall_s": 2.6785
+        },
+        {
+          "batch": 8,
+          "comp": "RX8",
+          "decode_tok_per_s": 381.5,
+          "e2e_s": [],
+          "finished_full": 4,
+          "first_s": [
+            1.3943,
+            1.385,
+            1.5571,
+            1.5569,
+            1.5566,
+            1.6462,
+            1.646,
+            1.6459
+          ],
+          "gen_tokens": 1024,
+          "input_lengths": [
+            2048,
+            2048,
+            2048,
+            2048,
+            2048,
+            2048,
+            2048,
+            2048
+          ],
+          "iter": "2",
+          "max_tokens": [
+            64,
+            64,
+            128,
+            128,
+            128,
+            128,
+            256,
+            256
+          ],
+          "mode": "spec",
+          "wall_s": 2.6845
+        }
+      ],
+      "spec_metrics": {
+        "acceptance_rate_pos": [
+          0.195,
+          0.06,
+          0.019,
+          0.006,
+          0.004
+        ],
+        "accepted_tok_per_s": 50.7,
+        "accepted_tokens": 199,
+        "avg_draft_accept_rate_pct": 5.7,
+        "drafted_tok_per_s": 894.04,
+        "drafted_tokens": 3509,
+        "mean_accept_len": 1.28
+      },
+      "wall_s": 2.6815
+    }
+  }
+}

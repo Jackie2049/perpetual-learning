@@ -1,0 +1,8 @@
+{
+  "drift": "6033 commits ahead + 18 behind; same V1 engine generation; decode throughput NOT cross-version extrapolatable (batch 21)",
+  "label": "anchor-drift 0.24.0",
+  "preheat": "spec H512 untimed run before matrix (Triton JIT, batch 31)",
+  "reason": "candidate B/C precedent; engine-level baseline, version label suffices; max_model_len=4608 (vs 4096 in C/B) for MIX in=4096+128 -- within-candidate-D consistent",
+  "registered_anchor": "vllm eaf1627c (2026-10-27 main, \u00a78.9)",
+  "used_wheel": "0.24.0+cu129 (tag commit ee0da84a 2026-06-28)"
+}
