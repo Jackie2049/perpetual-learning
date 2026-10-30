@@ -1,0 +1,201 @@
+{
+  "python": "3.12.13",
+  "torch": "2.9.1",
+  "torch_git": "5811a8d7da873dd699ff6687092c225caffcf1bb",
+  "optimizer_load_state_dict_sha256": "6da63f21961dae4c8e051bb768c6552372eed7f606a835b31a3e56f224243bd0",
+  "settings": {
+    "dtype": "float64",
+    "lr": 0.1,
+    "betas": [
+      0.9,
+      0.999
+    ],
+    "eps": 1e-08,
+    "weight_decay": 0.0,
+    "foreach": false,
+    "fused": false,
+    "capturable": false,
+    "warmup_gradients": {
+      "left": 1.0,
+      "right": -2.0
+    },
+    "resume_gradients": {
+      "left": 0.0,
+      "right": 0.0
+    }
+  },
+  "saved_ids": [
+    0,
+    1
+  ],
+  "source_after_warmup": {
+    "left": {
+      "parameter": 0.900000001,
+      "step": 1.0,
+      "exp_avg": 0.09999999999999998,
+      "exp_avg_sq": 0.0010000000000000009
+    },
+    "right": {
+      "parameter": 2.0999999995,
+      "step": 1.0,
+      "exp_avg": -0.19999999999999996,
+      "exp_avg_sq": 0.0040000000000000036
+    }
+  },
+  "results": {
+    "same_order": {
+      "actual_parameter_order": [
+        "left",
+        "right"
+      ],
+      "loaded_param_names": [
+        "left",
+        "right"
+      ],
+      "before_zero_grad_step": {
+        "left": {
+          "parameter": 0.900000001,
+          "step": 1.0,
+          "exp_avg": 0.09999999999999998,
+          "exp_avg_sq": 0.0010000000000000009
+        },
+        "right": {
+          "parameter": 2.0999999995,
+          "step": 1.0,
+          "exp_avg": -0.19999999999999996,
+          "exp_avg_sq": 0.0040000000000000036
+        }
+      },
+      "after_zero_grad_step": {
+        "left": {
+          "parameter": 0.8329941765341887,
+          "step": 2.0,
+          "exp_avg": 0.08999999999999998,
+          "exp_avg_sq": 0.000999000000000001
+        },
+        "right": {
+          "parameter": 2.1670058244397326,
+          "step": 2.0,
+          "exp_avg": -0.17999999999999997,
+          "exp_avg_sq": 0.003996000000000004
+        }
+      }
+    },
+    "reversed_order": {
+      "actual_parameter_order": [
+        "right",
+        "left"
+      ],
+      "loaded_param_names": [
+        "left",
+        "right"
+      ],
+      "before_zero_grad_step": {
+        "left": {
+          "parameter": 0.900000001,
+          "step": 1.0,
+          "exp_avg": -0.19999999999999996,
+          "exp_avg_sq": 0.0040000000000000036
+        },
+        "right": {
+          "parameter": 2.0999999995,
+          "step": 1.0,
+          "exp_avg": 0.09999999999999998,
+          "exp_avg_sq": 0.0010000000000000009
+        }
+      },
+      "after_zero_grad_step": {
+        "left": {
+          "parameter": 0.9670058259397326,
+          "step": 2.0,
+          "exp_avg": -0.17999999999999997,
+          "exp_avg_sq": 0.003996000000000004
+        },
+        "right": {
+          "parameter": 2.032994175034189,
+          "step": 2.0,
+          "exp_avg": 0.08999999999999998,
+          "exp_avg_sq": 0.000999000000000001
+        }
+      }
+    },
+    "renamed_metadata_only": {
+      "actual_parameter_order": [
+        "right",
+        "left"
+      ],
+      "loaded_param_names": [
+        "right",
+        "left"
+      ],
+      "before_zero_grad_step": {
+        "left": {
+          "parameter": 0.900000001,
+          "step": 1.0,
+          "exp_avg": -0.19999999999999996,
+          "exp_avg_sq": 0.0040000000000000036
+        },
+        "right": {
+          "parameter": 2.0999999995,
+          "step": 1.0,
+          "exp_avg": 0.09999999999999998,
+          "exp_avg_sq": 0.0010000000000000009
+        }
+      },
+      "after_zero_grad_step": {
+        "left": {
+          "parameter": 0.9670058259397326,
+          "step": 2.0,
+          "exp_avg": -0.17999999999999997,
+          "exp_avg_sq": 0.003996000000000004
+        },
+        "right": {
+          "parameter": 2.032994175034189,
+          "step": 2.0,
+          "exp_avg": 0.08999999999999998,
+          "exp_avg_sq": 0.000999000000000001
+        }
+      }
+    },
+    "explicitly_aligned_ids": {
+      "actual_parameter_order": [
+        "right",
+        "left"
+      ],
+      "loaded_param_names": [
+        "right",
+        "left"
+      ],
+      "before_zero_grad_step": {
+        "left": {
+          "parameter": 0.900000001,
+          "step": 1.0,
+          "exp_avg": 0.09999999999999998,
+          "exp_avg_sq": 0.0010000000000000009
+        },
+        "right": {
+          "parameter": 2.0999999995,
+          "step": 1.0,
+          "exp_avg": -0.19999999999999996,
+          "exp_avg_sq": 0.0040000000000000036
+        }
+      },
+      "after_zero_grad_step": {
+        "left": {
+          "parameter": 0.8329941765341887,
+          "step": 2.0,
+          "exp_avg": 0.08999999999999998,
+          "exp_avg_sq": 0.000999000000000001
+        },
+        "right": {
+          "parameter": 2.1670058244397326,
+          "step": 2.0,
+          "exp_avg": -0.17999999999999997,
+          "exp_avg_sq": 0.003996000000000004
+        }
+      }
+    }
+  },
+  "different_count_guard": "loaded state dict contains a parameter group that doesn't match the size of optimizer's group",
+  "scope": "Four native CPU AdamW load/step traces plus one native size guard. Model parameters are first restored by name; optimizer states are deep-copied in memory. Explicit ID alignment is a local single-group reference, not a general pre-hook or framework fix. No serialization/storage, scheduler, framework checkpoint manager, FSDP/DCP/ZeRO, AMP, GPU/NPU, model training or performance validation."
+}

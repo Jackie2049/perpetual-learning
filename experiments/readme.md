@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [optimizer-state-identity/verify.py](optimizer-state-identity/verify.py) | 普通AdamW四条真实CPU恢复／更新轨迹及数量guard，[结果](optimizer-state-identity/result.json)核同形状参数换序、只改名称无效与单组显式ID对齐参考；非框架／分片checkpoint缺陷或迁移工具 | [优化器恢复身份](../notebook/fundamentals/adamw-optimizer-deep-dive.md#恢复时的参数身份) |
 | [verl-custom-loader-resume/verify.py](verl-custom-loader-resume/verify.py) | draft #8454原恢复方法的六个本地条件，[结果](verl-custom-loader-resume/result.json)分开接口拒绝与缺／错data.pt时的调用顺序；真实临时文件、Mock worker，非原作者pytest／完整恢复 | [自定义loader恢复](../notebook/frameworks/verl-checkpoint-management-reading.md#自定义数据源的保存与恢复边界) |
 | [verl-first-metadata/verify.py](verl-first-metadata/verify.py) | #8453两完整原utils接两个原测试体，[结果](verl-first-metadata/result.json)在TensorDict0.11.0／Torch2.9.1下两版均通过；普通／jagged留首份，0.15.1只读源码与依赖，不是修复／TPU验收 | [批元数据拼接](../notebook/frameworks/verl-dataproto-data-flow-reading.md#批元数据与逐样本字段的拼接) |
 | [unirl-loss-unit-resolution/verify.py](unirl-loss-unit-resolution/verify.py) | #622原loss_units及两版resolver的五本地条件控制，[结果](unirl-loss-unit-resolution/result.json)核None／局部零／全局零、重排与SP guard；后端peer值及Segment是接口替身，非分布式／训练 | [原缩放函数条件](../notebook/frameworks/unirl-survey.md#原缩放函数的五个条件对照) |

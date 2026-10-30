@@ -221,6 +221,37 @@ python -B experiments/scripts/verify_adamw_missing_grad.py
 
 环境为Python3.12.13/torch2.9.1，torch git `5811a8d7da873dd699ff6687092c225caffcf1bb`；脚本输出版本与zero_grad、_init_group、_single_tensor_adam源码hash。无随机输入、设备发现、模型权重/数据、AMP、DDP/FSDP、上游原测试或吞吐/显存比较。本题CPU语义已收束，不另开GPU/NPU任务。
 
+## 恢复时的参数身份
+
+**模型权重按名称恢复成功，不代表优化器动量也按名称关联正确。** 本节固定PyTorch2.9.1（git `5811a8d7da873dd699ff6687092c225caffcf1bb`）的普通AdamW，不描述分布式checkpoint系统。[Optimizer.load_state_dict实现与其文档](https://github.com/pytorch/pytorch/blob/5811a8d7da873dd699ff6687092c225caffcf1bb/torch/optim/optimizer.py)先检查参数组数量和各组参数数目，再将保存的ID序列与当前参数序列zip配对。`param_names`不参与自动匹配；保存状态中有该字段时，还会覆盖当前组的名称字段。
+
+### 同形状换序可以无报错地错配
+
+真实CPU控制用两个FP64标量`left=1`、`right=2`，同一参数组，lr0.1、betas=(0.9,0.999)、eps=1e-8、weight_decay=0，关闭foreach／fused／capturable。先给梯度1／−2更新一次，再deepcopy模型和优化器state_dict：参数约为0.900000001／2.0999999995，一阶动量0.1／−0.2，二阶状态0.001／0.004。
+
+每条恢复轨迹都先用真实`Module.load_state_dict(strict=True)`按名恢复模型，并逐项检查权重相等。随后加载优化器状态，再以两个零梯度做一次原生AdamW更新；下表参数值取六位小数，完整状态见结果。
+
+| 恢复方式 | left接到的一阶／二阶状态 | 下一步left／right |
+|---|---|---|
+| 当前参数仍按left、right排列 | 0.1／0.001 | 0.832994／2.167006 |
+| 当前参数换成right、left，原状态不改 | −0.2／0.004 | 0.967006／2.032994 |
+| 已换序，只把保存的param_names改为right、left | −0.2／0.004 | 0.967006／2.032994 |
+| 已换序，同时显式对齐保存ID序列与名称 | 0.1／0.001 | 0.832994／2.167006 |
+
+四次加载都不报错；第二行加载后组内名称甚至仍显示旧left、right，第三行名称看似正确但状态仍错配。shape／数量相同和名称字段存在都不能认证逻辑身份。另一个只有一个参数的加载控制会被原生数量检查拒绝，说明“能检测组大小变化”与“能检测同大小换序”并非一回事。
+
+最后一行只是这个单组、唯一名称例子的显式对齐参考：按旧名称→旧ID关系重排保存的params列表，同时更新名称；没有更改state内容。它不是通用迁移器、自动验证器或生产pre-hook，多组变化、共享参数、模型重命名与分片布局都需要独立身份规则。不能把这一普通optimizer机制直接认定为verl、UniRL或name-aware FSDP／DCP／ZeRO的恢复缺陷。
+
+### 复现与范围
+
+[脚本](../../experiments/optimizer-state-identity/verify.py)与[完整结果](../../experiments/optimizer-state-identity/result.json)记录四条真实load／step轨迹、一项数量guard，以及原load_state_dict方法文本SHA256 `6da63f21961dae4c8e051bb768c6552372eed7f606a835b31a3e56f224243bd0`。两次新进程JSON相同，源模型和优化器快照未被其他轨迹改变。
+
+```bash
+python3.12 -B experiments/optimizer-state-identity/verify.py
+```
+
+环境为Python3.12.13／Torch2.9.1，无随机输入或新依赖；手动有限梯度、内存deepcopy与真实原生优化器，不是Mock。没有序列化／磁盘／scheduler、框架checkpoint manager、分片optimizer、AMP或设备／训练性能验收。本题在参数身份的CPU语义范围收束，不开社区缺陷、不改框架候选、不新排M5算力或调整其环境。
+
 ## 七、实测数据汇总
 
 以下为2026-06-07历史小模型记录，本轮未复验其原始配置/日志；保留为历史线索，不据它推荐通用学习率、wd或判定Adam+L2必然发散。
