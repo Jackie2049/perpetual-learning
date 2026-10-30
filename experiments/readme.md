@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-null-media/verify.py](verl-null-media/verify.py) | #8420两版原消息方法的十组自编行控制，[结果](verl-null-media/result.json)核None／缺键／空列、数组保序及processor要求；解码记录器非真实Parquet／tokenizer／processor或作者7项测试 | [空媒体与processor](../notebook/frameworks/verl-dataproto-data-flow-reading.md#sft-空媒体列与-processor-要求) |
 | [verl-fa-varlen-metadata/verify.py](verl-fa-varlen-metadata/verify.py) | #8464原15CPU参数项与固定HF边界helper，[结果](verl-fa-varlen-metadata/result.json)核独立pad段／Python max及两个本地签名、空段表示对照；AST隔离非原生pytest／engine／attention或性能 | [packed边界与尾pad](../notebook/frameworks/verl-fsdp2-source-deep-reading.md#packed-边界的显式传递与尾部-padding) |
 | [unirl-null-sample-id/verify.py](unirl-null-sample-id/verify.py) | #637原Dataset五行及11个输入、隔离原guard／CPU评估抽样，[结果](unirl-null-sample-id/result.json)区分Sample去重与Part直传、共享随机键与拆批确定性；非原生Part／Sample构造、模型损失或统计偏差证明 | [SFT空ID与随机键](../notebook/frameworks/unirl-survey.md#sft-空-id-与评估随机键) |
 | [dataloader-worker-state/verify.py](dataloader-worker-state/verify.py) | 两个真实CPU spawn worker、两完整epoch的持久／非持久对照，[结果](dataloader-worker-state/result.json)核sampler索引、dataset副本、初始化计数及32个随机值的精确游标；默认Tensor合批，非DDP／checkpoint恢复或性能 | [worker状态](../notebook/fundamentals/dataloader.md#持久-worker-的-epoch-与随机状态) |

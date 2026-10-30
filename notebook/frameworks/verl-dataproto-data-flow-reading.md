@@ -1,5 +1,7 @@
 # verl DataProto 数据流架构源码阅读
 
+2026-10-30接续：[SFT空媒体与processor](#sft-空媒体列与-processor-要求)核#8420：原方法十组行输入区分列缺失、None和空列表；数组顺序保留，但字符串消息只要媒体列存在仍要求processor。非新回归、完整Parquet／processor或模型验收。
+
 2026-10-30接续：[视觉位置插值的张量构造](#视觉位置插值的张量构造)核已有#8414：移除逐标量Python列表往返，不改插值／BF16求和次序；两版各16次原测试体断言通过，仅函数级CPU数值对照，不搬用作者A100收益。
 
 > 2026-06-15 | 源码: verl/utils/dp_rpc.py + verl/utils/tensor_dict.py + verl/trainer/ppo/ray_trainer.py
@@ -8,6 +10,37 @@
 2026-10-24补充：[图片字节与解码对象的生命周期](#图片字节与解码对象的生命周期)。原方法与真实Pillow对照确认dataset侧清理边界；原“数据开销完全可忽略”概括撤回，张量字节算例也已纠正，不能覆盖raw_prompt中的图片或序列化峰值。
 
 2026-10-25补充：[多模态特殊 token 检查的 CPU 开销](#多模态特殊-token-检查的-cpu-开销)区分原检查方法、完整processor与训练吞吐；纯文本走多模态processor也可能付出标记计数成本，但不是所有纯文本入口都走此路径。2026-10-26接续[回移候选的绑定条件](#回移候选的绑定条件与评审前提)，不重跑旧微基准。
+
+## SFT 空媒体列与 processor 要求
+
+**把null当空列表，不等于把有媒体列的行改走纯tokenizer路径。** [#8420](https://github.com/verl-project/verl/pull/8420)读取OPEN，head `b11c863ab8d5a2b0fc568c2539779eb82c2455b9`、base `2ab35292039a51175a4b3d3b3b2d76e951a0d3e4`，两文件。[原_build_messages](https://github.com/verl-project/verl/blob/b11c863ab8d5a2b0fc568c2539779eb82c2455b9/verl/utils/dataset/multiturn_sft_dataset.py)先递归复制／转换messages，再按占位符顺序消费images／videos。旧版只在列缺失时取空列表，列值None会在len检查处报错；新版用显式is None回退，保留非None对象，不对NumPy数组做布尔求值。
+
+本机Python3.12.13／NumPy2.0.2，AST隔离两版完整原方法和未变的原convert_nested_value_to_list_recursive；receiver为字段配置夹具，processor仅用object表示“存在”，两个媒体解码入口为记录调用顺序与patch_size的替身。十组自编行控制均按预期；表格限定字符串content：
+
+| 行输入 | base结果 | head结果 |
+|---|---|---|
+| 两媒体列缺失、无processor | 保留字符串消息 | 相同 |
+| 两媒体列缺失、有processor | 转成text-part列表 | 相同 |
+| 两列None、有processor、无占位符 | len(None)的TypeError | 与空列表相同的text-part列表 |
+| 两列空列表、有processor | 正常text-part列表 | 相同 |
+| 两列None／两列空列表、无processor（两组） | processor断言 | 相同 |
+| image占位符、images=None、有processor | None不可下标的TypeError | 空列表下标IndexError，仍拒绝 |
+| 一张image却无占位符 | image_offset计数断言 | 相同 |
+| 两元素image／video数组配两个对应占位符（两组） | 两次记录器调用、原顺序 | 相同 |
+
+图片数组按a、b，视频数组按v0、v1顺序进入记录器，每次image_patch_size=14；输出parts与文本位置对应，原始行的pickle快照在每次方法调用前后逐字一致。单独用两元素数组求值 `array or []` 的本地对照抛ValueError，说明不能随意将显式None分支改成真假值回退；它不是候选中实际存在的代码，也不认证实际图像／视频解码。
+
+**processor要求由列是否存在控制，而非归一化后列表是否非空。** 在字符串消息分支，只有两媒体键都缺失才直接继续；任一媒体键存在便断言processor不为None，哪怕两列都为空。这与[已有机器人反馈](https://github.com/verl-project/verl/pull/8420#pullrequestreview-5682459996)的受限观察一致：它在旧版空列表路径已存在，不是本候选新增的null特有回归。该反馈绑定旧b88da379，当前b11原方法仍保留相同条件；不将机器人建议当用户授权、维护者结论或已实施修复。非字符串content另有直接continue分支，不能把表格推广为所有结构化消息的完整契约。
+
+作者新增回归用真实Parquet、Qwen3-VL-2B-Instruct tokenizer／processor比较input_ids、loss_mask、position_ids，并报告旧1失败6通过／新7通过；本机未运行该完整测试，不能用本地十组记录器替代它。当前证据支持“有processor的混合数据None回退”，不支持“任意空媒体schema均自动兼容纯tokenizer”，也不把缺媒体占位符自动填成图像或静默忽略多余附件。
+
+[脚本](../../experiments/verl-null-media/verify.py)和[原始结果](../../experiments/verl-null-media/result.json)保存两版模块及共同helper完整hash、异常／输出和调用记录；两个最终新进程的完整JSON一致。原方法模块完整compile，未导入verl、Pandas／PyArrow、Torch、Transformers或执行__getitem__、tokenization、真实processor／模型。固定Git对象已缓存后，运行不联网或安装依赖：
+
+```bash
+python3.12 -B experiments/verl-null-media/verify.py /path/to/verl-git
+```
+
+本题在CPU消息构建层收束，无GPU需求，不新排M5实验、下载模型、改processor分支或另造竞争修复；后续只跟实质代码／用户需求变化。
 
 ## 视觉位置插值的张量构造
 
