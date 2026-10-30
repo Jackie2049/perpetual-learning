@@ -1,0 +1,7 @@
+{
+  "drift": "6033 commits ahead + 18 behind; same V1 engine generation; decode throughput NOT cross-version extrapolatable (batch 21 quantification)",
+  "label": "anchor-drift 0.24.0",
+  "reason": "candidate B precedent (batch 24 launch decision); engine-level baseline, version label suffices",
+  "registered_anchor": "vllm eaf1627c (2026-10-27 main, \u00a78.9)",
+  "used_wheel": "0.24.0+cu129 (tag commit ee0da84a 2026-06-28)"
+}
