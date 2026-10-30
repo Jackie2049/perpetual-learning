@@ -296,6 +296,7 @@
 - [UniRL 调研（腾讯统一多模态 RL）](frameworks/unirl-survey.md) — 统一训练抽象、稀疏SDE、SFT游标、packed文本双轴与[按域奖励](frameworks/unirl-survey.md#按域奖励的零分与失败标志)；原CPU路由/统计区分零分、失败和非适用NaN，非服务或训练验收
   - [VeOmni发布制品与入口](frameworks/unirl-survey.md#发布制品与初始化入口) — #639核实际wheel、tag与初始化符号，0.1.12三文件相符；非安装／全导入闭包或EP训练验收
   - [采样构造校验与修改](frameworks/unirl-survey.md#采样参数的构造校验与后续修改) — #636下界与既有类型／有限值检查分开；直接赋值／浅拷贝不校验，replace重跑继承字段；附标准库复现，非引擎或配方验收
+  - [策略窗口与请求快照](frameworks/unirl-survey.md#策略专属窗口检查与请求快照) — #633新分策略guard避免random误拒；PE原replace会重验解析索引，选择器越界不等所有路径静默，非训练或作者穷举验收
   - [SFT空ID与随机键](frameworks/unirl-survey.md#sft-空-id-与评估随机键) — #637原Dataset与隔离CPU抽样：null行身份合并导致同噪声，Sample去重不自动覆盖Part直传，非模型损失或统计偏差证明
   - [Scheduler环境与依赖](frameworks/unirl-survey.md#scheduler-子进程环境与依赖版本) — #468两个原helper接独立dict恢复通过，非spawn或库加载；当前memory-saver已变化，不自动套旧shim
   - [路由策略与基准入口](frameworks/unirl-survey.md#路由策略与基准入口) — #529新反馈与当前调用链：同步基准不经过pool，Agentic siblings与普通turn不同；亲和、缓存命中和吞吐证据分开，仅源码学习

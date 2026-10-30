@@ -1,5 +1,7 @@
 # UniRL — 腾讯统一多模态 RL 框架调研
 
+2026-10-30接续：[策略专属窗口检查与请求快照](#策略专属窗口检查与请求快照)核#633新795732cc：random不再因未使用init过大被拒，扫描／超长窗口保护保留；PE原replace会重验解析后索引。四组原模块／赋值控制，非所有引擎静默或训练结论。
+
 2026-10-30接续：[VeOmni发布制品与入口](#发布制品与初始化入口)核新#639：0.1.12官方wheel的GPU／NPU mask产物及初始化入口与tag相符；0.1.13有tag但PyPI版本404且公共入口已改名。仅制品／AST绑定审计，不等Linux导入、mask数值或EP训练验收。
 
 2026-10-30接续：[采样构造校验与修改](#采样参数的构造校验与后续修改)核#636：新增下界不等于新增类型／有限值保护，直接赋值与浅拷贝不校验、replace重跑继承字段；纯标准库原模块控制，非Hydra／引擎验收。#634最终已合并且改用elif，旧空列表兼容性结论限定历史head。
@@ -1877,6 +1879,93 @@ print(json.dumps({"python": platform.python_version(), "results": results}, sort
 本轮没有导入Torch、Hydra、引擎或trainer，没有运行作者的132个配方块／301项扫描或上游原生测试，也不把它们写成本机验收。此题在参数对象语义内收束，不新增验证器、社区动作、GPU实验或M5队列。
 
 ## SDE 索引的两层边界校验
+
+### 策略专属窗口检查与请求快照
+
+**窗口是否有效取决于策略真正使用的字段，解析后的索引还可能在请求构造时再次校验。** [#633](https://github.com/Tencent-Hunyuan/UniRL/pull/633)当前仍OPEN，新head `795732cc378a782489d113ab8f6a4892adf0fa73`、base `b8e9740e981a68a5556fbeb8225558040a4d47a4`。与旧714b71bb分支已分叉，不是原候选简单追加：GitHub compare为ahead2／behind1，其中还包含#634合并；以下只核新旧窗口模块与指定主线接线，不把整支差异当单一guard。
+
+新[WindowScheduler](https://github.com/Tencent-Hunyuan/UniRL/blob/795732cc378a782489d113ab8f6a4892adf0fa73/unirl/sde/index_schedule.py)对random只要求window_size≤num_timesteps；random每次从[0,M−W]抽起点，根本不读init_timestep。progressive／decay／exp_decay仍要求M−W≥init，all不构造窗口。完整原模块的三个小对照（Python3.12.13／NumPy2.0.2）如下，不是作者21,760／115,920配置穷举：
+
+| 策略与配置 | 旧714b71bb | 新795732cc |
+|---|---|---|
+| random，M10／W3／init8，rollout0 | ValueError | [6,7,8]，合法 |
+| progressive，M10／W4／init9 | ValueError | ValueError |
+| random，M4／W8／init0 | ValueError | ValueError |
+
+负起点仍需分层判断：新窗口M10／W4／init−1可被构造，采样参数的M≤T检查也通过，直接get_sde_indices(0)得到[-1,0,1,2]；它没有在选择方法返回时自动变成合法集合。但[主线PETrainer._build_request_sample](https://github.com/Tencent-Hunyuan/UniRL/blob/b8e9740e981a68a5556fbeb8225558040a4d47a4/unirl/trainer/pe.py)随后用原赋值`diffusion = dataclasses.replace(diff_params, sde_indices=sde_indices, scheduler=None)`生成请求参数快照。只执行该原赋值AST、接前述真实原dataclass对象，会抛`DiffusionSamplingParams.sde_indices [-1] outside the 10-step schedule [0, 9].`，原对象未改。因此“选择器可返回越界”与“这条PE路径会将其静默送进引擎”不是同一结论。本轮没有执行整个PETrainer、request.fork或任意引擎。
+
+#634合并到b8时确实删去[fastvideo engine入口](https://github.com/Tencent-Hunyuan/UniRL/blob/b8e9740e981a68a5556fbeb8225558040a4d47a4/unirl/rollout/engine/fastvideo/engine.py)原来的坏索引列表检查，改由参数构造校验承担；所以本节下方“fastvideo会在驱动前显式拒绝”的旧源码结论只适用8cfbac版本。不过删去某处重复检查，不证明所有producer与engine路径都静默；PE快照正是一个重验证边界，其他路径须分别追踪，不能照搬当前PR正文的“every engine”概括。部分越界中还可能有有效SDE步，也不能一概称整段退化为ODE。
+
+复现仅需固定对象已缓存、Python与NumPy，脚本禁lazy fetch；包壳只跳过根初始化，require／sampling／窗口模块原样执行，PE只取一条原赋值。两个最终新进程输出逐字一致。以下代码以`python3.12 -B - /path/to/UniRL`从标准输入执行：
+
+```python
+import ast, dataclasses, hashlib, json, os, platform, subprocess, sys, types
+import numpy as np
+repo = sys.argv[1]
+old = "714b71bb5dce6145292fb6389ffe96ae64a2abe4"
+new = "795732cc378a782489d113ab8f6a4892adf0fa73"
+main = "b8e9740e981a68a5556fbeb8225558040a4d47a4"
+hashes = {}
+def raw(rev, path):
+    value = subprocess.check_output(["git", "show", rev + ":" + path], cwd=repo,
+        env=dict(os.environ, GIT_NO_LAZY_FETCH="1"))
+    hashes[rev + ":" + path] = hashlib.sha256(value).hexdigest()
+    return value
+def load(name, value):
+    m = types.ModuleType(name)
+    sys.modules[name] = m
+    exec(compile(value, name, "exec"), m.__dict__)
+    return m
+for name in ["unirl", "unirl.config"]:
+    sys.modules[name] = types.ModuleType(name)
+    sys.modules[name].__path__ = []
+load("unirl.config.require", raw(main, "unirl/config/require.py"))
+previous = load("previous_window", raw(old, "unirl/sde/index_schedule.py"))
+current = load("current_window", raw(new, "unirl/sde/index_schedule.py"))
+sampling = load("current_sampling", raw(main, "unirl/types/sampling.py"))
+rows = []
+for strategy, total, size, start in [("random", 10, 3, 8),
+        ("progressive", 10, 4, 9), ("random", 4, 8, 0)]:
+    row = []
+    for mod in [previous, current]:
+        try:
+            s = mod.WindowScheduler(total, mod.WindowConfig(strategy=strategy,
+                window_size=size, init_timestep=start))
+            row.append(sorted(s.get_sde_indices(0)))
+        except ValueError:
+            row.append("ValueError")
+    rows.append(row)
+assert rows == [["ValueError", [6, 7, 8]], ["ValueError", "ValueError"],
+    ["ValueError", "ValueError"]]
+scheduler = current.WindowScheduler(10, current.WindowConfig(
+    strategy="progressive", window_size=4, init_timestep=-1))
+diff_params = sampling.DiffusionSamplingParams(num_inference_steps=10, scheduler=scheduler)
+sde_indices = diff_params.get_sde_indices(0)
+assert sde_indices == [-1, 0, 1, 2]
+# Execute only the original PE assignment, not the trainer or request fork.
+tree = ast.parse(raw(main, "unirl/trainer/pe.py"))
+cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "PETrainer")
+fn = next(n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == "_build_request_sample")
+stmt = next(n for n in fn.body if isinstance(n, ast.Assign)
+    and any(isinstance(t, ast.Name) and t.id == "diffusion" for t in n.targets))
+ns = dict(dataclasses=dataclasses, diff_params=diff_params, sde_indices=sde_indices)
+try:
+    exec(compile(ast.Module(body=[stmt], type_ignores=[]), "original-pe-assignment", "exec"), ns)
+except ValueError as exc:
+    error = str(exc)
+    assert "outside the 10-step schedule" in error
+else:
+    raise AssertionError("the original PE replacement must reject invalid resolved indices")
+assert diff_params.scheduler is scheduler and diff_params.sde_indices is None
+assert not any(x.split(".")[0] in {"torch", "ray", "vllm", "sglang"} for x in sys.modules)
+print(json.dumps({"python": platform.python_version(), "numpy": np.__version__,
+    "three_case_results_old_new": rows, "resolved_before_snapshot": sde_indices,
+    "original_pe_assignment_error": error, "source_sha256": hashes}, sort_keys=True))
+```
+
+输入完整hash随输出保留：旧／新窗口分别`1354e84c432bfe6aef5d556c583dcd3e828e3f3c895b7570fb2c0e9bfdcff6d6`／`f6c33f460f1ade4c0682ca5ddc654c5ac5b66e814ee84e0593566c990eb55f51`；PE为`367f67263b8dbea56c7bee5fbdf4576fc8ef8503c503f4042c71aa58ab02472a`。无Torch／Ray／Hydra／engine导入、真实SDE／轨迹或训练，没有重跑下方旧14组。该CPU语义更新不新增修复、外部评论或M5硬件任务。
+
+### 历史候选与既有验证
 
 **后续版本更新（2026-10-30）：** #634已于09:13:19Z合并，最终head `01e3955476258fab4810dd895f1f6d7b9f2e4746`、合并提交 `b8e9740e981a68a5556fbeb8225558040a4d47a4`；#633仍OPEN，head714b71bb。与下文旧be8baa25快照相比，最终sampling新增num_inference_steps≥1，并将独立scheduler长度检查改为显式列表分支后的`elif`。因此“显式空列表仍被未使用scheduler长度拒绝”是旧候选的兼容性结果，不用于最终合并版。这里仅比对完整源码diff，未重跑下面旧14组SDE／scheduler矩阵；下文保留当时的版本和结果。
 
