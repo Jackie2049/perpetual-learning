@@ -1,5 +1,7 @@
 # verl PR #6779 — Continuous Token for Agentic Rollout (Multi-Turn Tokenization Builder)
 
+2026-10-30接续：[启动时模板接缝检查](#16-启动时模板接缝检查)：新#8463把旧sanity开关接到固定对话回放，非逐轨迹比较；历史差异和全部跳过只告警。五个原分类器控制、两种停点与全跳过路径不等真实tokenizer或训练验收。
+
 > 版本提示：下方主体是2026-06-19的#6779历史阅读。2026-10-21核对的#8311源码已采用根model_type精确注册表，AgentLoop以CT作为唯一tokenization路径；旧“默认关闭”和模型名启发式选择不适用于该新版。新增CPU验证与回退边界见[第11节](#11-新版自动选择与-tokenizer-能力回退)。
 
 2026-10-24 接续：[多轮 SFT 的上下文与监督边界](#12-多轮-sft-的上下文与监督边界)区分离线模板渲染、前缀稳定和loss mask；SFT候选不等于AgentLoop运行时token保留方案。
@@ -1071,3 +1073,35 @@ create／execute处的普通Exception会被转换为 `ToolResponse(text=...)`、
 [#7662的两条回复](https://github.com/verl-project/verl/issues/7662#issuecomment-5549979988)仍在请求维护者选择接线或告警弃用；[后续回复](https://github.com/verl-project/verl/issues/7662#issuecomment-5550661995)倾向先弃用，并明确另一个检查选项有不同契约。编号及inference_chat_template的all-state PR检索均无命中，不因此宣布无人负责或另认领实现。当前只保存复核证据，等待维护者方向或用户的具体需求，不新增竞争补丁／上游评论。
 
 本轮是Python3.12.13标准库源码核对：生产树import AST与名称检索、strict分支检查，以及五份完整相关模块的内存compile；不执行AgentLoop、旧请求类、原测试、模板或模型。静态检索不覆盖仓外插件／下游导入、动态拼接模块名或任意反射，也不证明真实checkpoint的reasoning行为或训练质量。复查命令与hash见[当日日志](../../diary/2026-10-25.md)。本题的判断是配置契约与代码路径，不新增M5算力队列，不改其专项。
+
+## 16. 启动时模板接缝检查
+
+**rollout与训练读到同一串token，不等于这串token符合整段聊天模板。** 新报告[#8462](https://github.com/verl-project/verl/issues/8462)已有同作者候选[#8463](https://github.com/verl-project/verl/pull/8463)，2026-10-30读取OPEN／非draft，head`d9d1f9165c550b3effc4aebc0fd5d94365a70273`、base`8e48d72de4766228c36623c90f9f5c49ee5b45f3`，七文件。它为第二种一致性增加经验检查，不改变CT保留实际生成ID的第一种保证，也不是对任意HF模板的append-only证明。
+
+### 检查时机与覆盖内容
+
+[AgentLoopWorker接线](https://github.com/verl-project/verl/blob/d9d1f9165c550b3effc4aebc0fd5d94365a70273/verl/experimental/agent_loop/agent_loop.py)在设置custom_chat_template后，以与AgentLoopBase相同的工厂参数另建builder。multi_turn.enable、tools、agent_loop_config_path、非single_turn_agent的默认loop任一成立便调用检查；不是仅看enable，也不是每条真实轨迹结束时调用。它还将`qwen3_next`与`glm4_moe_lite`注册到已有Qwen3／GLM47家族；本机仅核映射diff，不认证真实checkpoint的模板兼容。
+
+[原比较器](https://github.com/verl-project/verl/blob/d9d1f9165c550b3effc4aebc0fd5d94365a70273/verl/utils/tokenizer/continuous_token_check.py)有tool／user两份固定对话，各配有／无reasoning_content版本，共八个接缝；每例都传天气工具schema。它渲染初始prompt、assistant轮和含新上下文的完整对话，再用stop集合模拟截停，调用merge_context_tokens。模拟可识别轮末stop后未生成的换行，也可识别GLM式下一role token即stop；这不是推理引擎实际采样。
+
+### 分类与放行条件
+
+先比完整ID列表；不相等时，以runtime最后一个仍保留的token为锚点，比较merged尾段是否等于整段render的尾段。相等则归history，否则归boundary。锚点用`max(len(runtime)−removed_prefix_token_count−1, 0)`，会考虑merge删除的旧stop。下面是[本机原分类器控制](../../experiments/verl-ct-fallback/verify_boundary_scope.py)的显式字符ID输入，Z只作锚点标记，不是某模型special token：
+
+| runtime → merged | 整段参考 | removed | 原分类结果 |
+|---|---|---:|---|
+| oldZ → oldZcd | oldZcd | 0 | match |
+| oldZ → oldZcd | newerZcd | 0 | history |
+| oldZ → oldZcd | oldZ换行cd | 0 | boundary，whitespace_only=True |
+| oldZ → oldZXd | oldZcd | 0 | boundary，whitespace_only=False |
+| oldZZ → oldZcd | newerZcd | 1 | history |
+
+strict只因boundary抛错，history保留并告警；ignore_strippable会容忍whitespace_only的boundary；disable在触碰builder前返回。这里的whitespace_only依据decode后去掉所有空白的后缀比较，不是token ID相等或概率／训练语义等价。不能把strict返回概括成“整个历史与模板完全一致”。
+
+渲染、模拟截停或merge抛出的Exception统一归skipped。显式“不支持样例渲染”的builder夹具让八例均skipped，原verify在strict下返回None并告警Could not verify，而非拒绝启动。部分跳过时源码只输出数量、不展开异常原因，已有[机器人审查](https://github.com/verl-project/verl/pull/8463#discussion_r4422617149)指出同一日志缺口；这不是维护者批准或本机新发现。通过数、精确match数、跳过数需一起读，零可比样例不能记作验证通过。
+
+### 本机范围与复查
+
+Python3.12.13标准库，四份完整源码内存compile；保留原checker全部常量／函数，只省略相对类型导入，并从原continuous_token.py提取完整MergeResult dataclass。五个分类输入使用显式字符decoder，另两项原_simulate_generation断言分别核轮末stop与下轮role stop；全跳过控制的builder是明确失败夹具，不是模型或CT替代实现。两次新进程完整stdout相同，hash及命令见[实验说明](../../experiments/verl-ct-fallback/readme.md#模板接缝分类器的局部控制)。
+
+没有执行原184／40项、真实HF tokenizer／processor、AgentLoopWorker或GRPO；作者这些自测及真实模型表均属外部报告。旧#8311的172项不重跑或累计为本轮结果。第15节的“活跃路径没有消费”限旧3c6d快照；新候选已提出不同的启动检查契约，但尚不能写成主线已接线、逐轨迹校验或use_inference_chat_template也已生效。不竞争实现、改开关／M5环境或新增设备任务；上游写入仍逐项待用户明确同意。

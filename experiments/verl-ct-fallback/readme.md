@@ -35,3 +35,15 @@ Pytest自定义collector从内存测试模块收集，以脚本路径作锚点�
 SHA256：continuous_token.py基线 `1943099099f30b6a47e146ec8af7053be215d03bf23dd8776083712b2a2d01c0`、候选 `256f1c7e483eb55fd0f4e75e370d0f207cc424838d40f2b89453772ee6f9ce54`；wiring基线 `fc6733fd020dfa085acf112d33e3b71e73c4f805da0e1aa86c07ecb26e37e1f6`、候选 `7628c29f6d3787f7b600a8a82cf16e838b97db83bc123adb56033a7c06925582`；原测试 `1b290b6aba1ce19be3a1740f3e0de130757e40e3f1913ae0d25ffe45fbe597fa`。脚本同时打印三个未改辅助文件hash。
 
 作者报告的真实R1 tokenizer和A100训练结果不是本机复跑；本题不新增M5 GPU任务、不自动采用补丁或竞争作者实现。
+
+## 模板接缝分类器的局部控制
+
+2026-10-30新增[verify_boundary_scope.py](verify_boundary_scope.py)，固定[#8463](https://github.com/verl-project/verl/pull/8463)的`d9d1f9165c550b3effc4aebc0fd5d94365a70273`，与上方#8311的172项无关。Python3.12.13标准库、无依赖安装；从已有Git对象读四源码，GIT_NO_LAZY_FETCH=1，缺对象即失败：
+
+```bash
+python -B experiments/verl-ct-fallback/verify_boundary_scope.py /path/to/verl-git
+```
+
+完整checker只省略相对类型import，原常量／函数不改；MergeResult为原dataclass AST。五个人工字符ID／decoder输入依次得到match、history、boundary(空白)、boundary(内容)、history(删一旧stop)；两项停点模拟均返回[1,2,3,9]。明确渲染失败的builder夹具得到八skipped，原verify strict返回None且有Could not verify告警。两次新进程stdout一致；无原CPU suite、真实模板／模型或worker执行，不能记作八个真实接缝通过。
+
+脚本打印的完整输入SHA256：continuous_token.py `1943099099f30b6a47e146ec8af7053be215d03bf23dd8776083712b2a2d01c0`；continuous_token_check.py `646567d622f94c71a9d12c5be85bff524371e88fffc58e6ce2fdf9426c74c036`；agent_loop.py `f02e622aa9b43d330f5f5a51dfe734094c3960e3efd65f60398014599f5d26bf`；wiring `d9851b43be8388712c557d2bc1374a4c228a89e6930ad9446516575fa27c1850`。结论与策略边界见[原CT专题第16节](../../notebook/frameworks/verl-6779-continuous-token-agentic-rollout-reading.md#16-启动时模板接缝检查)。

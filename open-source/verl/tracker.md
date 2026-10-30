@@ -73,6 +73,8 @@
 
 2026-10-30核[分片量化导出](#分片导出与量化器的已有讨论)：#8395作者确认分片流绕过量化hook；#8369最终ac8已合并，delta拒绝不在d18候选快照，且不覆盖新后端。七输入仅语法／AST，不把fallback或拟议组内gather当量化验收；原M5条件入口已补，不另实现／排队。
 
+2026-10-30接[CT启动校验](#多轮旧配置的接线或弃用)：#8462已有作者的#8463，启动固定样例不等逐轨迹比较；原分类器五输入／两停点与全skipped夹具只核局部策略，不当真实模板或训练验收，不另认领／排算力。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -466,6 +468,10 @@ AMD组合栈后续（2026-10-26）：#8371／#8370／#8369各head未变，作者
 见[原架构笔记](../../notebook/frameworks/verl-architecture.md#激活卸载的反向入口与重载顺序)：原五CPU测试体两次head全过、初稿fea49f19为4过1失败（detached边界），base只跑单一辅助输出回归、以helper旧参数顺序适配后报重载前pop，不计其余测试或API错误。原RecordingOffloadHandler验证图顺序，非CUDA传输／FSDP／checkpoint或原27B验收；候选只限顶层tuple，正文“两测试”不代表当前文件只有两项。条件留[M5参考](../../experiments/handoff-m5.md#verl-激活卸载重载顺序参考)，不自动排训练／应用或改其专项；任何上游动作仍逐项待用户明确同意。
 
 ## 多轮旧配置的接线或弃用
+
+2026-10-30接续：新报告[#8462](https://github.com/verl-project/verl/issues/8462)已有同作者OPEN／非draft [#8463](https://github.com/verl-project/verl/pull/8463)，headd9d1f9165c550b3effc4aebc0fd5d94365a70273／base8e48d72d，七文件。候选将tokenization_sanity_check_mode接入worker构造时固定对话检查，不是每条真实轨迹finalize；use_inference_chat_template仍未由此接线，下方无PR检索仅限旧10-25快照。
+
+见[原CT专题第16节](../../notebook/frameworks/verl-6779-continuous-token-agentic-rollout-reading.md#16-启动时模板接缝检查)及[局部控制](../../experiments/verl-ct-fallback/readme.md#模板接缝分类器的局部控制)：五个字符ID输入区分match／history／boundary，两种stop模拟，八例渲染失败夹具使strict告警后返回。完整checker仅省略类型导入，原MergeResult隔离；非作者184／40项、HF模板表或GRPO结果。已有bot COMMENTED及部分skipped日志反馈，不当维护者批准，不改候选、发布建议、移植旧172项或新增M5任务。
 
 2026-10-25读[#7662](https://github.com/verl-project/verl/issues/7662)完整正文及全部两评论；编号与inference_chat_template的all-state PR搜索均无命中，但两位参与者已在等维护者定方向，不据空搜索宣布可独立认领。选择接入use_inference_chat_template会改后续prompt语义，选择弃用会改文档契约；tokenization_sanity_check_mode需另定检查契约。
 
