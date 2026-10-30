@@ -1,5 +1,7 @@
 # UniRL — 腾讯统一多模态 RL 框架调研
 
+2026-10-30接续：[候选关闭与证据范围](#候选关闭与证据范围)：#632／#633／#636／#637由作者主动关闭、均未合并；#634已合并，#639仍开放。关闭原因属于作者优先级判断，旧CPU结果仍只绑定原快照，不把关闭、非空merge_commit_sha或新版文档当验收。
+
 2026-10-30接续：[策略专属窗口检查与请求快照](#策略专属窗口检查与请求快照)核#633新795732cc：random不再因未使用init过大被拒，扫描／超长窗口保护保留；PE原replace会重验解析后索引。四组原模块／赋值控制，非所有引擎静默或训练结论。
 
 2026-10-30接续：[VeOmni发布制品与入口](#发布制品与初始化入口)核新#639：0.1.12官方wheel的GPU／NPU mask产物及初始化入口与tag相符；0.1.13有tag但PyPI版本404且公共入口已改名。仅制品／AST绑定审计，不等Linux导入、mask数值或EP训练验收。
@@ -44,6 +46,19 @@
 >
 > 调研时间：2026-10-22（GitHub API 实时核验）。
 > 状态：**加入技术掘金高优关注项**（2026-10-22 用户定）。
+
+## 候选关闭与证据范围
+
+2026-10-30 13:19Z只读复核PR API及完整timeline：以下四项均为作者294962silent主动关闭，`merged_at=null`。它们虽有非空`merge_commit_sha`，不能据此写成已合并；当前main仍为`b8e9740e981a68a5556fbeb8225558040a4d47a4`，对应真正已合并的[#634](https://github.com/Tencent-Hunyuan/UniRL/pull/634)（09:13:19Z）。下方早先的OPEN与CPU验证记录保留为对应快照的历史，不延伸到关闭时尚未核过的新源码。
+
+| 候选与作者关闭说明 | PR关闭时间 UTC | 关闭时head | 作者给出的优先级判断 |
+|---|---|---|---|
+| [#632 奖励服务收集](https://github.com/Tencent-Hunyuan/UniRL/pull/632#issuecomment-6523631898) | 13:10:38 | bdeeb6af | 文档／测试入口整理，不是已在CI中失败的测试 |
+| [#633 SDE窗口](https://github.com/Tencent-Hunyuan/UniRL/pull/633#issuecomment-6523633235) | 13:10:43 | 795732cc | 作者称所查六份配方未命中guard，属于预防 |
+| [#636 采样参数](https://github.com/Tencent-Hunyuan/UniRL/pull/636#issuecomment-6523634446) | 13:10:46 | bfcfda53 | 作者称333个配方字段值均未触发新增下界，属于提前拒绝 |
+| [#637 SFT空ID](https://github.com/Tencent-Hunyuan/UniRL/pull/637#issuecomment-6523635574) | 13:10:50 | 62514b42 | 作者称六份随附清单没有null ID，优先级较低 |
+
+这些是作者缩小审阅队列的说明，不是维护者否定、合并或本机重新扫描配方的结果。#633关闭评论仍称越界窗口会在“每个引擎”静默退化为ODE；[PE原请求快照赋值的既有控制](#策略专属窗口检查与请求快照)却会因负索引抛错，所以不能照搬这一全路径概括。#637的重复ID异常也不能直接外推普通SFT必经Sample构造，见[原数据调用边界](#sft-空-id-与评估随机键)。关闭不撤销这些固定版本的技术观察，也不自动产生重开／替代PR或新增算力任务。
 
 ## 一句话结论
 
@@ -1882,7 +1897,7 @@ print(json.dumps({"python": platform.python_version(), "results": results}, sort
 
 ### 策略专属窗口检查与请求快照
 
-**窗口是否有效取决于策略真正使用的字段，解析后的索引还可能在请求构造时再次校验。** [#633](https://github.com/Tencent-Hunyuan/UniRL/pull/633)当前仍OPEN，新head `795732cc378a782489d113ab8f6a4892adf0fa73`、base `b8e9740e981a68a5556fbeb8225558040a4d47a4`。与旧714b71bb分支已分叉，不是原候选简单追加：GitHub compare为ahead2／behind1，其中还包含#634合并；以下只核新旧窗口模块与指定主线接线，不把整支差异当单一guard。
+**窗口是否有效取决于策略真正使用的字段，解析后的索引还可能在请求构造时再次校验。** [#633](https://github.com/Tencent-Hunyuan/UniRL/pull/633)在本节验证时OPEN，后于13:10:43Z关闭未合并，见[关闭记录](#候选关闭与证据范围)；head `795732cc378a782489d113ab8f6a4892adf0fa73`、base `b8e9740e981a68a5556fbeb8225558040a4d47a4`。与旧714b71bb分支已分叉，不是原候选简单追加：GitHub compare为ahead2／behind1，其中还包含#634合并；以下只核新旧窗口模块与指定主线接线，不把整支差异当单一guard。
 
 新[WindowScheduler](https://github.com/Tencent-Hunyuan/UniRL/blob/795732cc378a782489d113ab8f6a4892adf0fa73/unirl/sde/index_schedule.py)对random只要求window_size≤num_timesteps；random每次从[0,M−W]抽起点，根本不读init_timestep。progressive／decay／exp_decay仍要求M−W≥init，all不构造窗口。完整原模块的三个小对照（Python3.12.13／NumPy2.0.2）如下，不是作者21,760／115,920配置穷举：
 
@@ -2394,6 +2409,8 @@ VeOmni官方v0.1.11 `f90b3dc6fbb0ce693745223cc7a94064123dbf4d`的[生成配置](
 VeOmni [#774](https://github.com/ByteDance-Seed/VeOmni/pull/774)已于2026-05-29合并为`2d36580b80a6579f95a5318c83939844aee93fb2`，升级至Transformers5.9并调整生成配置，Qwen3-MoE的mask调用不再传该关键字。官方v0.1.12 `fd99abfda9ef4d9d485f0dae14841de88d30963d`的同一配置和GPU产物也都移除了它。已有接口调整不等于UniRL整体升级安全；并行化、模型输出、选择性导入及实际安装制品仍须联合核验。#774作者的A100测试不是UniRL5.12.1验收，不另写竞争吞参shim或自动升级依赖。
 
 ### 发布制品与初始化入口
+
+2026-10-30 13:19Z接续：[#639](https://github.com/Tencent-Hunyuan/UniRL/pull/639)仍OPEN／未合并，head更新为`d37dd75014cce902a90678dfbfca74157cfcd1e6`、base仍b8e9740e；完整两文件diff为pyproject的0.1.12 pin与新增[backend README](https://github.com/Tencent-Hunyuan/UniRL/blob/d37dd75014cce902a90678dfbfca74157cfcd1e6/unirl/train/backend/veomni/README.md)。新增文档将Qwen3-MoE与两个Qwen3.5-MoE配方统称经过同一坏mask路径；下列既有wheel核对仅覆盖Qwen3-MoE生成文件，不能认证这个三配方概括。文档所称0.1.13“从未发布”也强于本机当前PyPI版本API的404证据。这里不迁移旧head的完整TOML比较／签名绑定为新head验收，也不据作者文档宣布#627闭环。
 
 **源码标签、可安装制品和消费端接口，是三项不同约束。** 新[#639](https://github.com/Tencent-Hunyuan/UniRL/pull/639)在2026-10-30读取open、无评论／review；head `97ed729b2ca2952420cb109714b890f1732a7a01`、base `b8e9740e981a68a5556fbeb8225558040a4d47a4`。对两版完整pyproject做TOML解析，移除veomni extra后整个配置dict相同：语义只把Linux `veomni==0.1.11`改为`==0.1.12`，其他变化为注释，不是新的兼容shim。作者对14个导入符号的审计是作者报告，本机本轮限定下列入口与发布制品。
 

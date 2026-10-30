@@ -11,7 +11,7 @@
 
 **【进展】** #523 的我方 fork PR 已获用户认可，测试与 e2e 正式指派 M5；M5 已闭环 L0（四项断言 + pristine 对照），L1 仍待 ≥8 卡及获准权重/存储，见[M5交接](../../experiments/handoff-m5.md)。#567 待匹配 H20；#470/#481/#484已有作者或验证条件。2026-10-25补[MPS已有实现与主线边界](#mps-共置的已有实现与当前边界)：#492已合并、#482被接替而关闭未合并；原配置四控制非接入、数值、吞吐或关停验收，不据正文设计或本地解析另认领功能。 同日补[SDE窗口已有修复](#sde-窗口调度的已有修复)：#489已合并，CPU序列只核计数／阈值坐标，四实际配方仍progressive，不另认领或排GPU任务。 2026-10-26核[Scheduler环境](#scheduler-环境兼容的已有候选)：#468两个原helper接独立dict核恢复，不是库加载／GPU验收；依赖已演进，条件补M5，不另实现。 另核[TempFlow后续范围](#tempflow-候选范围与计数类型)：#552移出WAN／SGLang Flash、严格int计数；仅局部if求值，不外推作者外部harness或旧GPU结果，不另实现。
 
-2026-10-30核[SDE索引边界候选](#sde-索引边界的已有候选)：#633／#634新head714b71bb／be8baa25同步主线，两相关文件blob与旧验证输入相同；14组原CPU结论不重计为新验收，不另认领或排M5任务。
+2026-10-30 13:19Z核[候选关闭](../../notebook/frameworks/unirl-survey.md#候选关闭与证据范围)：#632／#633／#636／#637均由作者关闭未合并；#634已合并为b8e9740e。关闭说明属于作者优先级判断，旧CPU证据不转成新head验收，不另认领／重开或排M5任务。
 
 2026-10-26另按[#621最终合并范围](#奖励加载的最终合并范围)修正旧记录：managed也延迟启动，实验VideoAlign增配置检查；九模块语法检查不算真实加载验收，不新增任务。
 
@@ -21,7 +21,7 @@
 
 2026-10-26接续[熵候选代码身份](#熵监控同步主线后的范围)：#563新cc0df170合入奖励主线，13专题文件同前次d2f0a489；不重跑旧CPU、不迁移历史GPU验收，不另认领或新排任务。
 
-2026-10-30核[奖励服务测试收集](#奖励服务测试收集的已有候选)：#632新head3d02f036同步主线，五专题文件blob全同旧验证输入；原八组collection结论不重计，空收集仍非服务测试通过，不另实现／发布。
+2026-10-30核[VeOmni候选](#veomni-mask-接口的已有调整)：#639仍OPEN，新d37dd750为pin更新与backend文档两文件；旧wheel／入口核对不认证新增文档的三配方概括或训练效果，不自动采用依赖。
 
 2026-10-30接[Agentic奖励组RFC](#agentic-奖励组诊断的已有-rfc)：#635已有作者愿实现只读诊断；有限奖励／基线／训练行分开，四归一化与零surrogate梯度控制非发生频率或质量结论，不另实现／发布。
 
@@ -60,11 +60,15 @@
 
 ## 奖励服务测试收集的已有候选
 
+2026-10-30 13:10:38Z，[#632由作者关闭未合并](https://github.com/Tencent-Hunyuan/UniRL/pull/632#issuecomment-6523631898)，关闭时head为bdeeb6af2cd30cdf1f27f820c10e4fc128270ff9。作者以缩小审阅队列、文档问题优先级低为由收束；以下3d02／ff13197a与八组collection仍为历史证据，不认证新head或完整历史，也不另开替代候选。
+
 2026-10-30只读核294962silent的OPEN [#632](https://github.com/Tencent-Hunyuan/UniRL/pull/632)，新head3d02f036096c54410bc892ccca56f040d0d7c227同步到main5d1da78d；旧验证headff13197a基于8cfbac177。未截断Git树核README、pyproject、VideoAlign README、启动脚本、smoke CLI五个blob逐一相同；新旧compare的主线seed／logprob变更不计作奖励服务修订。不推定人工批准，已有作者，不另认领、改方案或发布反馈。
 
 [原UniRL专题](../../notebook/frameworks/unirl-survey.md#奖励服务的测试收集与空结果)和[八组原生collection结果](../../experiments/unirl-pytest-collection/result.json)区分：旧版默认／标记过滤／仅去testpaths仍收6个CLI函数；目录排除或候选默认空收集exit5；候选显式传重命名脚本仍收6个，缺失integration路径exit4。每版仅原配置／原完整CLI快照，另核90路径清单与可执行AST相同；未执行这六函数或作者普通pytest，故非“6项测试通过”、真实服务／HTTP／GPU验收或我方历史审计。不新排M5任务；上游与既有PR-head所有写入仍逐项待用户明确同意。
 
 ## SDE 索引边界的已有候选
+
+2026-10-30 13:19Z更新：[#633由作者关闭未合并](https://github.com/Tencent-Hunyuan/UniRL/pull/633#issuecomment-6523633235)，最终head795732cc；[#634](https://github.com/Tencent-Hunyuan/UniRL/pull/634)则已于09:13:19Z合并为b8e9740e，最终head01e39554。下文旧两候选OPEN及空列表仍被scheduler长度拒绝均限历史；最终#634改用elif，且[新#633策略分支与PE请求快照](../../notebook/frameworks/unirl-survey.md#策略专属窗口检查与请求快照)已有后续局部控制。作者关闭理由是预防性修复优先级较低，不将“每个引擎静默ODE”的评论概括当已核事实。
 
 2026-10-30只读核294962silent的OPEN／未合并 [#633](https://github.com/Tencent-Hunyuan/UniRL/pull/633)新head714b71bb5dce6145292fb6389ffe96ae64a2abe4和[#634](https://github.com/Tencent-Hunyuan/UniRL/pull/634)新headbe8baa25ece143539a3780ce35687e4566a07c2f。两者同步主线5d1da78d，未截断Git树核index_schedule.py／sampling.py分别同旧验证d31017ae／523d245e，blob为5e2f7b91／f9c358f9；旧验证祖先8cfbac177。仅提交身份变化，不重跑14组或将主线seed／logprob改动归入两校验；不另认领或把作者本地lint报告当维护者批准。
 
@@ -162,6 +166,8 @@ UniRL 仓库当前 **73+ open issues**，其中大量是带 `help wanted` 标签
 本轮仅完整runtime/index/kernels模块、原表达式与raw YAML；没有模型embedding、引擎、奖励或训练。ODE尾段不产本步logp，作者不同batch曲线也不证明reward问题已解决。真实配对前提留[原M5入口](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不自动复训、部署或改精度策略，不开竞争修复/评论；上游可见动作仍须逐项明确同意。
 
 ## VeOmni mask 接口的已有调整
+
+2026-10-30 13:19Z更新：已有作者的[#639](https://github.com/Tencent-Hunyuan/UniRL/pull/639)仍OPEN／未合并，headd37dd75014cce902a90678dfbfca74157cfcd1e6；两文件diff为0.1.12 pin与backend README。见[官方wheel与初始化入口](../../notebook/frameworks/unirl-survey.md#发布制品与初始化入口)：旧97ed快照已核制品身份，不等于新版文档所列三份配方同一路径、完整导入或EP验收。旧10-24检索无明确候选只属当时状态，不用于判断当前无人推进；不自动升级、另实现或排算力。
 
 2026-10-24读[#627](https://github.com/Tencent-Hunyuan/UniRL/issues/627)完整正文/0评论，编号PR检索0结果，Qwen3/mask搜索命中多个相关但非明确修复事项，不能据此宣布无人推进。报告者ruiling-smartbear已从#626验证中分离此基线问题；依赖上游[#774](https://github.com/ByteDance-Seed/VeOmni/pull/774)已合并，v0.1.12配置/生成产物含接口调整，不另提交吞参补丁或自动升级UniRL。
 
