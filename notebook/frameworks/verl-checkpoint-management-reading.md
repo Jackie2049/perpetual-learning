@@ -1,5 +1,7 @@
 # verl Checkpoint Management 源码级深度阅读
 
+2026-10-30补[多角色异步保存的发布与清理](#多角色异步保存的发布与清理)：已有#8056将角色确认、tracker替换和保留清理分开；八组原协调器标准库控制确认清理失败时新指针可能已发布、pending仍留待重试。不是原OmegaConf测试、真实角色写入／恢复或作者H20验收。
+
 2026-10-30接续：[随机状态与恢复顺序](#随机状态与恢复顺序)用四个原生CPU重启对照区分重设seed、独立生成器和构造顺序；模型与优化器状态相同仍不足以保证下一步一致。这是普通PyTorch小模型控制，不是verl恢复缺陷或完整manager验收。
 
 > 2026-06-15 | 源码: verl/utils/checkpoint/ + verl/checkpoint_engine/ + verl/model_merger/ + verl/trainer/ppo/ray_trainer.py
@@ -491,6 +493,39 @@ ray_trainer.py (974-1108):
 主线[find_latest_ckpt_path](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/utils/checkpoint/checkpoint_manager.py)读取tracker中的整数并检查拼出的路径是否存在，不扫描global_step目录选择最大值，也不验证模型/optimizer/extra/data.pt、manifest或checksum。M1用原两helper AST接真实os/torch，在真实临时目录做五组控制：path=None→None；目录在但指针缺失→None；指针3+空global_step_3→返回该路径；指针4+对应目录缺失→None；非整数指针→ValueError。最后一种不是静默“从头开始”，不能与缺指针情形混写。
 
 另从#7955原测试类摘取`test_missing_tracker_makes_auto_resume_start_from_scratch`完整原方法，绑定原helper及真实unittest/临时目录，一项通过。它只证明发现入口，不是实际恢复模型或完整ActorConfig测试。Python3.12.13/torch2.14.1，无distributed初始化、trainer、Ray、FSDP/DCP或checkpoint数据保存/加载；四个相关原模块另仅AST/compile，作者14测试/5 subtests不是本机结果。版本与hash留[当日日志](../../diary/2026-10-24.md)，实际整合条件留[M5参考](../../experiments/handoff-m5.md#verl-训练-checkpoint-发布参考)，不新增实验队列、应用候选或对外发布。
+
+### 多角色异步保存的发布与清理
+
+**写入完成、发布恢复指针、清理旧快照不是同一完成点。** ewan0x79的[已有 #8056](https://github.com/verl-project/verl/pull/8056)构建在SFT候选[#8003](https://github.com/verl-project/verl/pull/8003)之上，补RL多角色发布与退出drain。2026-10-30读取OPEN／非draft，head `c76d46ea6474f9fc9837a469c2ab74b58d921bbc`、API目标base `2ab35292039a51175a4b3d3b3b2d76e951a0d3e4`，28文件；本节只核driver协调器、有限保存／退出调用点，不是整个PR验收。旧#7955的后端能力白名单与本项发布协议不能互相替代。
+
+[完整原协调器](https://github.com/verl-project/verl/blob/c76d46ea6474f9fc9837a469c2ab74b58d921bbc/verl/trainer/ppo/async_checkpoint.py)每次最多留一个pending_step。非阻塞progress会调用各异步worker group，即使较早角色正常返回未完成，也不短路后续角色。每组返回列表必须非空、每项必须`is True`；blocking仍不完整就报错。这是对**返回的确认**的检查，没有在协调器里另核预期rank数量或文件内容。一个RPC抛异常会直接传播，后续角色不再调用；“不短路未完成返回”不是“异常后仍保证所有角色继续执行”。
+
+全部确认后，driver先写tracker.tmp并`os.replace`到正式tracker，再按retention列表清理，最后才置pending_step=None。retention可含同步角色，但只有异步角色收到finalize RPC。[V1保存入口](https://github.com/verl-project/verl/blob/c76d46ea6474f9fc9837a469c2ab74b58d921bbc/verl/trainer/ppo/v1/trainer_base.py)先给角色传`update_tracker=False, defer_retention=True`，再保存data.pt及异步模式下TQ状态，之后才设置pending_step；[legacy入口](https://github.com/verl-project/verl/blob/c76d46ea6474f9fc9837a469c2ab74b58d921bbc/verl/trainer/ppo/ray_trainer.py)同样在数据状态保存后设置pending。辅助状态就绪是调用方协议，不是协调器读取／验证manifest的结果。
+
+| 失败位置 | 本地tracker | pending_step | 此轮清理 |
+|---|---|---|---|
+| 角色返回未完成或finalize抛错 | 旧值1 | 3 | 未调用 |
+| tracker替换注入失败 | 旧值1，tmp为3 | 3 | 未调用 |
+| tracker已替换、critic清理注入失败 | 新值3 | 3 | actor清理已调用，critic报错 |
+| 重试清理全部返回 | 新值3 | None | 两角色清理再次调用 |
+
+因此pending既可能表示尚未发布，也可能表示发布后清理未结束；异常类型和已发布指针须一起判断。重试会再次progress worker并重放清理调用，底层登记／删除的幂等性不能仅从driver推断。替换前失败保留旧指针、替换后失败不回滚新指针，也不等于整个保存具有磁盘断电／远端存储事务保证。
+
+#### 原模块的有限文件系统控制
+
+[脚本](../../experiments/async-checkpoint-publication/verify.py)在Python3.12.14标准库中直接执行完整原模块，无AST改写。显式worker记录器提供确认／异常，prune仅记调用；真实临时目录只写tracker并测试替换，没有角色权重或删除旧目录。八组[结果](../../experiments/async-checkpoint-publication/result.json)核空pending无操作、未完成仍progress下一角色、truthy整数1不当True、首RPC异常中断、替换失败／重试、发布后清理失败／重试及完成后无操作。两新进程相同；清理回调观察到的tracker均已为3，不从“收到prune调用”声称实际目录已删除。
+
+协调器与前一提交d91f870e逐字相同，Git blob为2129be7ecb5dd321acb01bd6a7774cb6a069f07c。作者正文的六阶段／253项H20报告固定d91f870e，更早22阶段／1690项固定ec880ec1；单模块相同不能将这些整栈外部报告升级为当前head或本机通过。本机缺OmegaConf，没有运行原协调器配置测试、原retention／trainer集成套件、Megatron持久FIFO、Ray collective、恢复／模型或GPU。没有为此安装依赖或增加硬件队列。
+
+#### 正常退出与边界反馈
+
+RL legacy／V1在步边界非阻塞progress，最后步返回前和正常循环耗尽后blocking finalize；这不是任意异常／进程终止都必经的finally。10-30新bot反馈要求SFT循环后drain，不能仅因没搜到尾部调用就断定普通epoch耗尽必漏：两SFT fit已有`global_step >= min(total_training_steps, steps_per_epoch * total_epochs)`判最后步，并将`blocking=is_last_step`传给save。这里仅源码，不证明异常短迭代器、提前break或故障退出均已覆盖，也不据bot提示修改候选或发布反馈。
+
+```bash
+python3.12 -B experiments/async-checkpoint-publication/verify.py /path/to/verl-git
+```
+
+Git对象须预缓存，脚本禁隐式fetch。此driver边界学习收束，不扩模拟角色矩阵、不替作者改代码或M5环境；所有社区与既有PR-head写入仍逐项待用户明确授权。
 
 ### 对象存储下载与 checkpoint 提交
 

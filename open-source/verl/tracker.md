@@ -65,6 +65,8 @@
 
 2026-10-30补[蒸馏估计器与更新](#蒸馏估计器更新模式的已有提案)：#8423报告者已有#8458，breaking guard语义待维护者决定；四固定状态／16别名对的原KL函数加本地score公式核期望值与梯度不同，非原loss API／作者25或64项，不另实现、迁移配置或排算力。
 
+2026-10-30接[异步快照发布](#多角色异步快照的已有候选)：#8056已有作者，八组完整原driver模块／真实tracker控制核发布与清理的不同失败位置；角色为记录器、未删目录，非原OmegaConf／Megatron或作者H20验收，不另实现／排算力。
+
 **【大白话讲明白】**
 
 这张表区分哪些问题修好了、哪些只是草稿、哪些已有人在做。它也保留查重失误，提醒后续不能把“没查到”当成“没人修”。
@@ -77,6 +79,12 @@
 <!-- contribution-summary:end -->
 
 > 跨扫描持久维护。每次 SOP 启动时先读本文件，避免重复挖。
+
+## 多角色异步快照的已有候选
+
+2026-10-30只读ewan0x79的OPEN／非draft [#8056](https://github.com/verl-project/verl/pull/8056)，headc76d46ea6474f9fc9837a469c2ab74b58d921bbc、API base2ab35292，28文件，建立于其SFT [#8003](https://github.com/verl-project/verl/pull/8003)。reviews仅bot，不当人工批准；首轮全部patch／review输出过长，后续只定向核driver、原测试及保存／退出调用点，不称完整PR review。
+
+[原checkpoint专题](../../notebook/frameworks/verl-checkpoint-management-reading.md#多角色异步保存的发布与清理)与[八组标准库结果](../../experiments/async-checkpoint-publication/result.json)核完整原协调器：替换失败保留旧指针，清理失败时新指针已发布但pending保留；重试重放清理。原模块同d91f870e，不迁移作者该版六阶段／253项或更早22阶段／1690项H20报告为当前head／本机验收。角色确认／prune为明确记录器，无真实角色payload、旧目录删除、OmegaConf原测试／Ray／Megatron或训练。新bot SFT反馈与已有min步数的blocking保存分开，不因尾部无调用断言正常epoch必漏，也不替作者改代码／写社区／另排M5任务；所有上游与既有PR-head动作仍逐项待用户明确同意。
 
 ## 蒸馏估计器更新模式的已有提案
 

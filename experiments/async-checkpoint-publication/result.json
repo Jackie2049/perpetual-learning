@@ -1,0 +1,146 @@
+{
+  "python": "3.12.14",
+  "head": "c76d46ea6474f9fc9837a469c2ab74b58d921bbc",
+  "previous": "d91f870e3565be4bddfbf680f9eb5e11fda6324c",
+  "module_unchanged_from_previous": true,
+  "source_sha256": "d1ecb056b3e1efdd1b791ca71c1c0a385e004e7df7983e2c345ecefc187ad6b4",
+  "source_git_blob": "2129be7ecb5dd321acb01bd6a7774cb6a069f07c",
+  "local_control_groups": 8,
+  "results": {
+    "no_pending_is_noop": true,
+    "incomplete_return_still_progresses_other_role": [
+      [
+        "finalize",
+        "actor",
+        false
+      ],
+      [
+        "finalize",
+        "critic",
+        false
+      ]
+    ],
+    "blocking_requires_exact_true": true,
+    "raised_rpc_aborts_before_later_roles": [
+      [
+        "finalize",
+        "actor",
+        true
+      ]
+    ],
+    "replace_failure": {
+      "tracker": "1",
+      "temporary_tracker": "3",
+      "pending": 3
+    },
+    "replace_retry_publishes_before_pruning": [
+      [
+        "finalize",
+        "actor",
+        true
+      ],
+      [
+        "finalize",
+        "critic",
+        true
+      ],
+      [
+        "finalize",
+        "actor",
+        true
+      ],
+      [
+        "finalize",
+        "critic",
+        true
+      ],
+      [
+        "prune",
+        "actor",
+        1,
+        "3"
+      ],
+      [
+        "prune",
+        "critic",
+        2,
+        "3"
+      ]
+    ],
+    "cleanup_failure_already_published": {
+      "tracker": "3",
+      "pending": 3,
+      "events": [
+        [
+          "finalize",
+          "actor",
+          true
+        ],
+        [
+          "finalize",
+          "critic",
+          true
+        ],
+        [
+          "prune",
+          "actor",
+          1,
+          "3"
+        ],
+        [
+          "prune",
+          "critic",
+          2,
+          "3"
+        ]
+      ]
+    },
+    "cleanup_retry_repeats_pruning_then_clears_pending": [
+      [
+        "finalize",
+        "actor",
+        true
+      ],
+      [
+        "finalize",
+        "critic",
+        true
+      ],
+      [
+        "prune",
+        "actor",
+        1,
+        "3"
+      ],
+      [
+        "prune",
+        "critic",
+        2,
+        "3"
+      ],
+      [
+        "finalize",
+        "actor",
+        true
+      ],
+      [
+        "finalize",
+        "critic",
+        true
+      ],
+      [
+        "prune",
+        "actor",
+        1,
+        "3"
+      ],
+      [
+        "prune",
+        "critic",
+        2,
+        "3"
+      ]
+    ]
+  },
+  "scope": "Eight local stdlib control groups using the complete original coordinator module, real temporary tracker writes/replace, and explicit worker acknowledgement/error recorders. No original OmegaConf tests, prepare_async_checkpoint configuration construction, actual role payloads, retention deletion, fsync/power-loss durability, shared-storage semantics, Ray/Megatron collectives, SFT/RL trainer, GPU/NPU or author H20 acceptance runs."
+}
