@@ -1,0 +1,115 @@
+{
+  "environment": {
+    "python": "3.12.13",
+    "torch": "2.9.1",
+    "device": "cpu"
+  },
+  "source_sha256": {
+    "62514b42afbcee2672028c205c82554f4d160bf0:unirl/types/media.py": "31578372e90797018ed59e8e498922cee47dcf77d524b3a72a51b91e8e4381f3",
+    "62514b42afbcee2672028c205c82554f4d160bf0:unirl/data/datasets.py": "2dafbf52769b9b246ba00ecd5d631eef8fd380dc9558a367ba8b65f939026b21",
+    "62514b42afbcee2672028c205c82554f4d160bf0:unirl/algorithms/sft.py": "32334296d1c265e5f309afb69216af8d192e066b4d852b291067fa9a1d56630a",
+    "62514b42afbcee2672028c205c82554f4d160bf0:unirl/types/sample.py": "04c7a8caa840953e16fea401676ad30f4f1080fdf494fcf1daf095a15d78a460",
+    "b8e9740e981a68a5556fbeb8225558040a4d47a4:unirl/data/sft.py": "45dc13244d15a0168919e48e33f126b6c9f259f02587007f4adcbc2c24ed782c",
+    "62514b42afbcee2672028c205c82554f4d160bf0:unirl/data/sft.py": "918dce8cb5e25fc8ef93ca4a091084b702b5ce44898e3ec04f481ea84f77c991"
+  },
+  "direct_case_count": 11,
+  "results": {
+    "base": {
+      "direct_ids": [
+        "fallback",
+        "None",
+        "None",
+        "None",
+        "None",
+        "s1",
+        "p7",
+        "42",
+        "",
+        "0",
+        "False"
+      ],
+      "manifest_ids": [
+        "None",
+        "None",
+        "None",
+        "explicit",
+        "manifest.jsonl:4"
+      ],
+      "unique_ids": 3,
+      "isolated_part_guard": "accepted",
+      "isolated_sample_guard_error": "Sample.parts[0] has duplicate sample_ids",
+      "first_two_draws_identical": true,
+      "split_batch_draws_identical": true,
+      "seeds": [
+        "7275843180089811391",
+        "7275843180089811391",
+        "7275843180089811391",
+        "6982004246639591974",
+        "151351705428162243"
+      ],
+      "sigma": [
+        0.7539501190185547,
+        0.7539501190185547,
+        0.7539501190185547,
+        0.537426233291626,
+        0.4554297924041748
+      ],
+      "noise_first_component": [
+        0.4883066415786743,
+        0.4883066415786743,
+        0.4883066415786743,
+        -0.6950637102127075,
+        0.5171133279800415
+      ]
+    },
+    "head": {
+      "direct_ids": [
+        "fallback",
+        "fallback",
+        "fallback",
+        "p7",
+        "fallback",
+        "s1",
+        "p7",
+        "42",
+        "",
+        "0",
+        "False"
+      ],
+      "manifest_ids": [
+        "manifest.jsonl:0",
+        "manifest.jsonl:1",
+        "manifest.jsonl:2",
+        "explicit",
+        "manifest.jsonl:4"
+      ],
+      "unique_ids": 5,
+      "isolated_part_guard": "accepted",
+      "isolated_sample_guard_error": null,
+      "first_two_draws_identical": false,
+      "split_batch_draws_identical": true,
+      "seeds": [
+        "5427221286398326711",
+        "1212176437984183245",
+        "5453232010130900031",
+        "6982004246639591974",
+        "151351705428162243"
+      ],
+      "sigma": [
+        0.6647263765335083,
+        0.5436111092567444,
+        0.6421657800674438,
+        0.537426233291626,
+        0.4554297924041748
+      ],
+      "noise_first_component": [
+        3.752901554107666,
+        -0.594624400138855,
+        -0.7292259335517883,
+        -0.6950637102127075,
+        0.5171133279800415
+      ]
+    }
+  },
+  "scope": "Original definitions with AST isolation; fixture guards/config, no native Part/Sample construction or training/eval model loss"
+}

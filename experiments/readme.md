@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [unirl-null-sample-id/verify.py](unirl-null-sample-id/verify.py) | #637原Dataset五行及11个输入、隔离原guard／CPU评估抽样，[结果](unirl-null-sample-id/result.json)区分Sample去重与Part直传、共享随机键与拆批确定性；非原生Part／Sample构造、模型损失或统计偏差证明 | [SFT空ID与随机键](../notebook/frameworks/unirl-survey.md#sft-空-id-与评估随机键) |
 | [dataloader-worker-state/verify.py](dataloader-worker-state/verify.py) | 两个真实CPU spawn worker、两完整epoch的持久／非持久对照，[结果](dataloader-worker-state/result.json)核sampler索引、dataset副本、初始化计数及32个随机值的精确游标；默认Tensor合批，非DDP／checkpoint恢复或性能 | [worker状态](../notebook/fundamentals/dataloader.md#持久-worker-的-epoch-与随机状态) |
 | [sft-shell-resume-path/verify.py](sft-shell-resume-path/verify.py) | #8056新旧原shell接原替身的12原参数项＋8本地shell-only控制，[结果](sft-shell-resume-path/result.json)新20通过／旧4通过16断言失败；含空格argv／清理前拒绝与Bash3.2空数组返回0分开，非Hydra／原120项或训练恢复 | [SFT启动与清理前置](../notebook/frameworks/verl-checkpoint-management-reading.md#sft-启动路径与清理前置检查) |
 | [teacher-startup-order/verify.py](teacher-startup-order/verify.py) | #8459六原函数／方法的五组标准库事件屏障控制，[结果](teacher-startup-order/result.json)核延迟启动、发布键顺序与失败传播／loop退出取消；server与资源拆分为替身，非Ray／设备或耗时验收 | [教师并发初始化](../notebook/frameworks/verl-veomni-opd-source-reading.md#多教师并发初始化与发布边界) |

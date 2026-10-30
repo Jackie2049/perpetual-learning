@@ -1,5 +1,7 @@
 # UniRL — 腾讯统一多模态 RL 框架调研
 
+2026-10-30接续：[SFT空ID与评估随机键](#sft-空-id-与评估随机键)核#637：原Dataset五行由3个ID恢复5个，原评估抽样不再共用null键；去重守卫实际在Sample而非Part，不能据PR正文断言普通SFT训练必报错。仅CPU原定义隔离控制，非模型损失／质量验收。
+
 2026-10-30接续：[AR 概率锚点的响应校验](#ar-概率锚点的响应校验)核已合并#631：按实际采样token取值、拒绝缺失／长度错误／非有限FP32，而非补零或整批丢锚点；20个本地wire输入与原容器操作只验证CPU数据契约，不等GSPO／HI3训练验收。
 
 2026-10-30接续：[AR逐样本调用](#合并后的逐样本调用)核#630已合并：显式seed按AR身份拆call，未设seed保留原批处理；七组原helper标准库控制不是模型输出／副本独立性或吞吐验收。旧Omni未接seed的结论保留为合并前历史，不用于当前代码。
@@ -267,6 +269,29 @@ python -B experiments/unirl-sft-cursor/verify.py /path/to/UniRL
 Python3.12.13 / torch2.9.1，真实原 dataset/normalizer/Batch/DataSource。仅跳过 tensor 包初始化器中与本题无关的 Ray transport 汇总导入，未替换这些类或摘取方法。全部观察通过，不是上游原测试；无 trainer/worker预取、模型、optimizer、磁盘 checkpoint 或设备执行。本题不新增M5真机事项。
 
 完整源文件 SHA256：data/sft.py `45dc13244d15a0168919e48e33f126b6c9f259f02587007f4adcbc2c24ed782c`；trainer/sft.py `de66b86676f81422a832ce560942fd22e239b2052a00059b685631661ea3d2c9`。后者仅读取，没有执行；脚本也核对这两个hash，以免不同源码混用结果。
+
+## SFT 空 ID 与评估随机键
+
+**显式 `null` 不等于键缺失，样本身份也不只是日志标签。** [#637](https://github.com/Tencent-Hunyuan/UniRL/pull/637)在2026-10-30只读核为open、无评论／review，固定head `62514b42afbcee2672028c205c82554f4d160bf0`、base `b8e9740e981a68a5556fbeb8225558040a4d47a4`（#634合并版），只改一个文件。原 `str(item.get("sample_id", item.get("prompt_id", default_sample_id)))` 只对缺键回退；显式None会变成字符串 `"None"`。候选改为依次 `is None` 检查 sample_id、prompt_id，再取Dataset传入的文件名与行序号。修复不是 `value or fallback`：空字符串、0和False仍各自保留为 `""`、`"0"`、`"False"`，不负责通用ID清洗或全局唯一性；显式重复ID仍可冲突。
+
+本机Python3.12.13／Torch2.9.1，真实临时JSONL读取原 `SupervisedDataset` 与两版原normalizer。11个直接输入中，仅sample_id为None、prompt_id为None、两者None及sample_id None但有prompt_id四项变化；最后一项正确回退到 `p7` 而非行号。五行清单的前三行sample_id为null、第四行显式ID、第五行缺键，结果如下：
+
+| 原定义控制 | base | head |
+|---|---|---|
+| 五行ID | None、None、None、explicit、manifest.jsonl:4（均为字符串） | manifest.jsonl:0、:1、:2、explicit、manifest.jsonl:4（前三项同文件名前缀） |
+| 不同ID数 | 3 | 5 |
+| 隔离Part初始化守卫接空payload夹具 | 接受 | 接受 |
+| 隔离Sample初始化守卫接单Part夹具 | duplicate sample_ids错误 | 接受 |
+| 前两行评估sigma及整块noise | 完全相同 | 不同 |
+| 整批与2＋3拆批的逐行抽样 | 精确一致 | 精确一致 |
+
+**去重位置须与实际调用链对应。** PR正文将拒绝重复ID归到 `Part.__post_init__`，但固定版本的[原sample.py](https://github.com/Tencent-Hunyuan/UniRL/blob/62514b42afbcee2672028c205c82554f4d160bf0/unirl/types/sample.py)在 `Sample.__post_init__` 才检查非空／重复ID；Part的检查针对primitive形状与元数据。普通[SFTTrainer](https://github.com/Tencent-Hunyuan/UniRL/blob/62514b42afbcee2672028c205c82554f4d160bf0/unirl/trainer/sft.py)的 `train_step` 直接把builder返回的Part传给stack.train_track，`_build_part` 只比行数；[三个builder](https://github.com/Tencent-Hunyuan/UniRL/blob/62514b42afbcee2672028c205c82554f4d160bf0/unirl/train/sft/track_builder.py)也直接返回Part。不能用Sample的守卫证明普通SFT路径一定在构建时因重复ID失败；本轮没有构造真实模型或运行完整训练来判断其他消费者。
+
+[FlowMatchSFT._eval_draws](https://github.com/Tencent-Hunyuan/UniRL/blob/62514b42afbcee2672028c205c82554f4d160bf0/unirl/algorithms/sft.py)为每行用 `sample_eval_seed(eval_seed, key)` 初始化独立Torch Generator，然后先抽sigma、再抽与该行x0同形状的noise。本机固定eval_seed42、五个 `[2,3]` CPU latent占位，旧前三行共享seed `7275843180089811391`，sigma均0.7539501190，noise首元素均0.4883066416，且整块noise相等；新前三行seed不同，sigma分别0.6647263765／0.5436111093／0.6421657801。64位seed保存为十进制字符串。相同ID与形状的抽样仍与microbatch拆法无关，错误在行身份被合并，而非拆批算法失去确定性。共享抽样会改变固定评估的随机配对并造成行间相关；**不能仅凭同噪声推出评估均值的期望有偏、偏差方向或训练质量损害**。
+
+[脚本](../../experiments/unirl-null-sample-id/verify.py)通过AST选取完整原定义，跳过包导入；媒体类型、normalizer和Dataset保留原实现，但guard接SimpleNamespace的空payload／单根Part夹具，FlowMatchSFT配置也是夹具，不是原生Part／Sample实例或算法构造器。两个新进程的完整[结果](../../experiments/unirl-null-sample-id/result.json)一致，含六份完整输入hash；没有执行原生pytest、模型前向／损失、distributed stack或GPU。此题在数据身份与随机键层收束，不新建竞争修复或算力任务。
+
+复现：`/path/to/python-with-torch -B experiments/unirl-null-sample-id/verify.py /path/to/UniRL`，需上述固定Git对象已缓存；脚本禁止lazy fetch，不自动安装依赖。
 
 ## Packed 文本的样本轴与 token 轴
 
