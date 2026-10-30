@@ -1,5 +1,7 @@
 # UniRL — 腾讯统一多模态 RL 框架调研
 
+2026-10-30接续：[Qwen3.5 MoE发布文件与接线](#qwen35-moe-的发布文件与接线)：#639新44f文档断言经官方wheel补核，0.1.11两生成模块都带坏mask关键字、0.1.12都移除；四文件各同对应tag。共用bundle按真实model_type条件导入，非三配方／模型或EP验收。
+
 2026-10-30接续：[候选关闭与证据范围](#候选关闭与证据范围)：#632／#633／#636／#637由作者主动关闭、均未合并；#634已合并，#639仍开放。关闭原因属于作者优先级判断，旧CPU结果仍只绑定原快照，不把关闭、非空merge_commit_sha或新版文档当验收。
 
 2026-10-30接续：[策略专属窗口检查与请求快照](#策略专属窗口检查与请求快照)核#633新795732cc：random不再因未使用init过大被拒，扫描／超长窗口保护保留；PE原replace会重验解析后索引。四组原模块／赋值控制，非所有引擎静默或训练结论。
@@ -2428,6 +2430,50 @@ VeOmni [#774](https://github.com/ByteDance-Seed/VeOmni/pull/774)已于2026-05-29
 当前[UniRL backend](https://github.com/Tencent-Hunyuan/UniRL/blob/97ed729b2ca2952420cb109714b890f1732a7a01/unirl/train/backend/veomni/backend.py)仍按公共名导入init_parallel_state，传dp_size、ulysses_size、dp_mode、device_type，EP>1再传extra_parallel_sizes／names。从0.1.12原函数AST构造inspect.Signature，两组关键字都能bind；只做参数名／必需项匹配，不执行默认值表达式或函数体。[v0.1.13固定源码86c5ec1d](https://github.com/ByteDance-Seed/VeOmni/blob/86c5ec1dbba8270206b1ab7f439285215ae4ec92/veomni/distributed/parallel_state.py)已无该公共入口，不能用“最新版tag存在”替代消费端接口检查。
 
 本机Python3.12.14标准库完成官方元数据／制品读取、ZIP哈希、AST／compile及签名绑定，没有pip／uv安装、Linux实际导入、函数调用、mask／attention数值、GPU／NPU或EP更新。本节补的是旧阅读尚缺的实际wheel身份与命名入口；不重跑上节旧HF签名控制，也不宣布#627训练闭环。实际mask和offload关闭的EP最小更新条件回写[原M5条目](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不新增算力队列、不自动采用pin。
+
+### Qwen3.5 MoE 的发布文件与接线
+
+**架构名称不同，必须检查实际模块，不能借用另一模型的验证结论。** 2026-10-30核[#639](https://github.com/Tencent-Hunyuan/UniRL/pull/639)仍OPEN，head`44f2a96db2db13cbf4eb9dc3181bd786eeaa29e4`、base仍b8e9740e。对旧d37和新44f做直接Git diff，只有backend README变化，pyproject未再修改；GitHub三点compare显示ahead1／behind1并包含共同祖先的pin差异，不应把它当成两个head的直接改动。
+
+新文档明确将Qwen3.5-MoE纳入旧mask接口影响。本机补核[官方0.1.11 wheel](https://pypi.org/pypi/veomni/0.1.11/json)与[0.1.12 wheel](https://pypi.org/pypi/veomni/0.1.12/json)：再次核整包字节数／官方SHA256后，在内存读取`veomni/models/transformers/qwen3_5_moe/generated/`两份完整Python，AST／compile并取精确create_causal_mask调用，而不是搜索任意带mask字样的表达式。
+
+| 官方wheel | GPU生成文件的mask调用 | NPU生成文件的mask调用 | 对应固定tag |
+|---|---|---|---|
+| 0.1.11 | 第2038行，含cache_position | 第1980行，含cache_position | 四文件中的这两份各逐字等于f90b3dc6 |
+| 0.1.12 | 第1996行，无该关键字，仍传position_ids | 第1981行，无该关键字，仍传position_ids | 另两份各逐字等于fd99abfd |
+
+这项核对支持两个模型家族都有相同的**调用接口差异**；并不证明0.1.12是所有组合下“首个可工作版本”。两版GPU文件均从transformers.masking_utils导入create_causal_mask；旧[HF5.12.1签名证据](#生成配置与生成产物)仍适用。0.1.12其他attention／model调用仍传cache_position，不能全局删除同名参数。NPU文件仅作发布制品核对，不表示UniRL支持NPU。
+
+两份[文本DAPO配方](https://github.com/Tencent-Hunyuan/UniRL/blob/44f2a96db2db13cbf4eb9dc3181bd786eeaa29e4/examples/ar/qwen3_5_moe_grpo_35b_a3b_base_dapo_sglang.yaml)与[视觉Geo3K配方](https://github.com/Tencent-Hunyuan/UniRL/blob/44f2a96db2db13cbf4eb9dc3181bd786eeaa29e4/examples/ar/qwen3_5_moe_grpo_35b_a3b_geo3k_mc_sglang.yaml)都显式meta_init_transformer=true、选VeOmniBackend，并指向共用[Qwen3_5Bundle](https://github.com/Tencent-Hunyuan/UniRL/blob/44f2a96db2db13cbf4eb9dc3181bd786eeaa29e4/unirl/models/qwen3_5/bundle.py)。bundle依据加载到的HF config.model_type分支：仅在qwen3_5_moe且meta-init时调用ensure_qwen3_5_moe_installed，再build_foundation_model；[shim](https://github.com/Tencent-Hunyuan/UniRL/blob/44f2a96db2db13cbf4eb9dc3181bd786eeaa29e4/unirl/train/backend/veomni/_compat.py)选择导入VeOmni的qwen3_5_moe包。不是按配方文件名直接决定模型类型，也不是所有Qwen3.5加载都进入此路径。
+
+复查只需Python标准库，以下命令在内存读wheel和对应tag，不安装／解压／导入模型；输出四个完整文件hash与mask关键字：
+
+```python
+import ast, hashlib, io, json, urllib.request, zipfile
+refs = {"0.1.11": "f90b3dc6fbb0ce693745223cc7a94064123dbf4d",
+        "0.1.12": "fd99abfda9ef4d9d485f0dae14841de88d30963d"}
+for version, ref in refs.items():
+    metadata = json.load(urllib.request.urlopen(f"https://pypi.org/pypi/veomni/{version}/json", timeout=30))
+    wheel = next(f for f in metadata["urls"] if f["packagetype"] == "bdist_wheel" and not f["yanked"])
+    raw = urllib.request.urlopen(wheel["url"], timeout=30).read()
+    assert len(raw) == wheel["size"] and hashlib.sha256(raw).hexdigest() == wheel["digests"]["sha256"]
+    with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+        for device in ("gpu", "npu"):
+            path = f"veomni/models/transformers/qwen3_5_moe/generated/patched_modeling_qwen3_5_moe_{device}.py"
+            source = archive.read(path)
+            tree = ast.parse(source)
+            compile(tree, path, "exec")
+            calls = [n for n in ast.walk(tree) if isinstance(n, ast.Call)
+                     and isinstance(n.func, ast.Name) and n.func.id == "create_causal_mask"]
+            assert len(calls) == 1
+            keywords = [kw.arg for kw in calls[0].keywords]
+            assert ("cache_position" in keywords) == (version == "0.1.11")
+            tag = urllib.request.urlopen(f"https://raw.githubusercontent.com/ByteDance-Seed/VeOmni/{ref}/{path}", timeout=30).read()
+            assert source == tag
+            print(version, device, hashlib.sha256(source).hexdigest(), calls[0].lineno, keywords)
+```
+
+本机系统Python3.9.6仅标准库完成；UniRL两个完整Python模块另compile，两原始YAML只读显式字段、没有Hydra组合或模型配置加载。四生成文件hash见[当日日志](../../diary/2026-10-30.md)，不把静态接口核对升为实际mask／attention数值、三配方首forward或EP训练通过。原[M5条件参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)补模型分支身份，不部署升级、不新增必跑队列或对外反馈。
 
 ### 本机确认的调用边界
 

@@ -21,7 +21,7 @@
 
 2026-10-26接续[熵候选代码身份](#熵监控同步主线后的范围)：#563新cc0df170合入奖励主线，13专题文件同前次d2f0a489；不重跑旧CPU、不迁移历史GPU验收，不另认领或新排任务。
 
-2026-10-30核[VeOmni候选](#veomni-mask-接口的已有调整)：#639仍OPEN，新d37dd750为pin更新与backend文档两文件；旧wheel／入口核对不认证新增文档的三配方概括或训练效果，不自动采用依赖。
+2026-10-30核[VeOmni候选](#veomni-mask-接口的已有调整)：#639仍OPEN，新44f仅修订backend文档；补官方wheel的Qwen3.5-MoE四生成文件，各同tag，旧mask含cache_position而新无。条件导入接线非三配方训练验收，不自动采用依赖。
 
 2026-10-30接[Agentic奖励组RFC](#agentic-奖励组诊断的已有-rfc)：#635已有作者愿实现只读诊断；有限奖励／基线／训练行分开，四归一化与零surrogate梯度控制非发生频率或质量结论，不另实现／发布。
 
@@ -166,6 +166,8 @@ UniRL 仓库当前 **73+ open issues**，其中大量是带 `help wanted` 标签
 本轮仅完整runtime/index/kernels模块、原表达式与raw YAML；没有模型embedding、引擎、奖励或训练。ODE尾段不产本步logp，作者不同batch曲线也不证明reward问题已解决。真实配对前提留[原M5入口](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不自动复训、部署或改精度策略，不开竞争修复/评论；上游可见动作仍须逐项明确同意。
 
 ## VeOmni mask 接口的已有调整
+
+2026-10-30接续到head44f2a96db2db13cbf4eb9dc3181bd786eeaa29e4，#639仍OPEN／未合并；相对d37直接diff只有README，不能把三点compare的共同祖先pin差异当新改动。[Qwen3.5-MoE原专题补核](../../notebook/frameworks/unirl-survey.md#qwen35-moe-的发布文件与接线)确认0.1.11官方wheel确有GPU／NPU生成文件，精确mask调用带cache_position，0.1.12去掉；四文件各逐字同对应tag。两个raw YAML与共用bundle表明meta-init且HF model_type为qwen3_5_moe才导入这一路径，非真实配置加载／首forward或EP验收。原M5参考只补模型分支条件，不新增算力任务、升级依赖或写社区。
 
 2026-10-30 13:19Z更新：已有作者的[#639](https://github.com/Tencent-Hunyuan/UniRL/pull/639)仍OPEN／未合并，headd37dd75014cce902a90678dfbfca74157cfcd1e6；两文件diff为0.1.12 pin与backend README。见[官方wheel与初始化入口](../../notebook/frameworks/unirl-survey.md#发布制品与初始化入口)：旧97ed快照已核制品身份，不等于新版文档所列三份配方同一路径、完整导入或EP验收。旧10-24检索无明确候选只属当时状态，不用于判断当前无人推进；不自动升级、另实现或排算力。
 

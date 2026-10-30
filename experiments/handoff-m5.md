@@ -19,6 +19,8 @@ GPU/NPU 的访问、环境与实验由 macbook-M5 Agent 负责。M1 遇到需要
 
 ## UniRL 联合路径的资源与身份边界
 
+Qwen3.5-MoE补证（2026-10-30，沿用下方激活卸载基线#627／#639参考，不新增任务）：#639新head44f2a96d仅修订文档；[官方wheel四产物核对](../notebook/frameworks/unirl-survey.md#qwen35-moe-的发布文件与接线)确认0.1.11两mask调用含cache_position、0.1.12移除，各同固定tag。两配方raw YAML选meta-init／VeOmni，实际HF model_type=qwen3_5_moe才经共用bundle／shim进入该模型；M1未加载真实config、Linux导入或执行mask／EP。若M5未来独立接续原已获准匹配工作，需把实际model_type、meta-init分支和安装制品写清，不用另一模型或包名代替；没有相应模型／环境就维持未测，不自动新增Qwen3.5训练、下载升级或改专项。NPU仅源码制品核对，不是UniRL设备支持；上游及PR-head写入仍逐项待用户明确同意。
+
 SGLang scheduler环境参考（2026-10-26，同一部署入口、非新训练队列）：已有[#468](https://github.com/Tencent-Hunyuan/UniRL/pull/468) head3dac11fb、父版／祖先f989c038，相对main6fd82cba behind105。[M1主机契约](../notebook/frameworks/unirl-survey.md#scheduler-子进程环境与依赖版本)仅两个原helper接独立dict／目录夹具，异常恢复和值解析通过；未改真实环境或启动进程。候选基于SGLang0.5.12.post1，main为0.5.19；memory-saver v0.0.10已拼接原preload／选择单hook，master另暴露已映射cudart目录。先核实际安装版，不按旧正文自动加同类shim，也不据这些源码断言整项候选无用。
 
 若M5将来独立接续已有获准、安全、匹配的SGLang部署，先记Python可执行文件、实际sglang／torch／memory-saver版本与提交、driver／compat身份、父子进程实际库映射和启动环境；辨明HTTP/native及所需GPU可见性，再决定是否需局部适配与一次原范围有界启动。字符串存在／CPU字典恢复不等于真实dlopen结果，旧#225的8×H20报告非独立head或4090验收。安全未恢复、无现有环境／资源、需安装driver/compat、改服务/全局preload或影响专项即停记未测；不自动部署、重启、跑训练或建立新兼容方案。上游写入及已有PR-head推送（含fork）仍须用户对具体动作明确同意，记录不代表接单。
