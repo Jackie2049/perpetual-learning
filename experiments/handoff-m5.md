@@ -227,6 +227,8 @@ M5 最小下一步：先按实际硬件查已有方案和精确 head，读清依
 
 ## verl 量化层审计新版复验
 
+专家批处理参考（2026-11-01，同一条件入口，非新队列／接单）：[#8473](https://github.com/verl-project/verl/pull/8473) headb84cd9ac／base8df5baee，[M1四组CPU寿命／cap／storage／fallback控制](../notebook/frameworks/verl-quant-layer-audit.md#专家批量压缩与流式存储寿命)使用原入口／helper及显式记录器，非CT字节／真实exporter验收。作者B300独立exporter 20.0→6.1s/refit按48层换算，未重跑端到端，64MiB输入cap非GPU峰值。未来M5仅独立选择已有获准、安全、匹配量化任务时，在原预算固定实际提交／CT版本／方案，先核真实逐权重与批处理的名字、顺序、dtype、shape、bytes和一次实际refit，再分开记录exporter时间、峰值与完整update_weights；缺匹配资源／授权或需新部署、扩预算／影响专项即停记未测。不自动合并#8467、改环境或新增训练；社区及既有PR-head写入仍逐项待用户明确授权。
+
 激活尺度身份参考（2026-11-01，同一条件入口，非新队列／接单）：[#8467](https://github.com/verl-project/verl/pull/8467) headba2fbf9d、实际base8e48d72d，[M1十个自编原collector控制与两进程Gloo元数据](../notebook/frameworks/verl-quant-layer-audit.md#激活尺度的全局身份与流水线汇集)仅核全局层／expert键和标量汇集；不含ModelOpt观察器、CT查表／压缩／refresh或Bridge。作者两2080Ti旧6093报告未在最终树重跑，非原生NVFP4 kernel或质量验收。若M5未来独立采用已有获准、安全、匹配的NVFP4 QAT任务，最小接续为固定实际提交／依赖／模型spec，核一次真实更新前后各PP／VPP所属层与expert observer及最终HF导出scale对应，区分初次无观察的中性1.0与真实值；不将仅key正确当数值QDQ或rollout一致。缺匹配硬件／授权数据、需新部署下载／扩预算或影响专项即停止记未测，不拼补丁、不启动新训练，社区写入和已有PR-head推送仍逐项待用户明确同意。
 
 分片量化参考（2026-10-30，同一条件入口，非新队列／接单）：[#8395](https://github.com/verl-project/verl/pull/8395) d18e1e47的engine-driven导出绕过Megatron普通流WeightQuantizer；[M1源码核对](../notebook/frameworks/verl-quant-layer-audit.md#分片导出与量化器的调用边界)仅七输入compile／AST。#8369已合并6f3的delta_sharded拒绝不在该候选快照，且不含sharded_nixl；作者组内gather／扩guard仍是讨论。未来M5仅在已有获准、安全、匹配任务中独立采用最终实现时，先固定实际head、最终backend、原生／override格式与真实导出weight／scale，再在原预算核一次加载和更新后同token数值；不得把plain BF16规划测试、rank-local退回完整张量或作者B300／旧vLLM报告作为量化验收。缺匹配硬件／授权模型，需新部署下载或会影响专项即停记未测，不自动部署本候选、拼接其他PR、扩实验或改环境。社区写入与已有PR-head推送仍需用户逐项明确授权。

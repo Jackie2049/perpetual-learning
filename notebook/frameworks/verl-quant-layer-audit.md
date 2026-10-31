@@ -10,6 +10,33 @@
 
 2026-10-26接续：[原生混合精度模型的后端选择](#原生混合精度模型的后端选择)追踪新议题#8381。顶层FP8配置不代表experts也为FP8；显式DeepGEMM会阻止自动候选回退，切换Marlin还改变activation精度，不能仅按“成功启动”认证训练与rollout一致。
 
+## 专家批量压缩与流式存储寿命
+
+**延迟处理一个生成器的输出时，保存tensor对象不等于保存当时的值；行独立量化允许批处理，也不自动解决输入和输出的存储寿命。** 2026-11-01只读0z5a的[#8473](https://github.com/verl-project/verl/pull/8473)，head `b84cd9ac42a50b1018f48a4afa9987728c225b0c`，API base与实际共同祖先同为 `8df5baeed0f5ecdd7f870d83bc3d79194816e2a9`，OPEN／非draft，两文件249行新增。它批处理trainer侧MXFP4／MXFP8 expert压缩，不是模型计算或rollout调度优化，也未合入下一节#8467的尺度身份修改。
+
+[候选实现](https://github.com/verl-project/verl/blob/b84cd9ac42a50b1018f48a4afa9987728c225b0c/verl/utils/qat/compressed_tensors.py)只把GROUP策略视为row-local：统计量限单行内的组时，沿行拼接不会把一个expert的值混入另一个expert的组。NVFP4的TENSOR_GROUP含全局scale，不能据此套相同行拼接；FP8 block／per-channel／per-tensor也未放行。它按同层连续expert积成run，遇下一层、非expert、packed入口、byte cap或流结束时flush，再按projection、shape、dtype、device和scheme对象身份分组，最终按原输入顺序yield。packed 3D分支先拆expert视图，GROUP走同一压缩helper，NVFP4仍保留自己的gate/up共享全局scale路径。
+
+### 两端的存储所有权
+
+输入端每个2D expert到达时先`clone()`，不能等到run结束再统一复制。[同head的VeOmni exporter](https://github.com/verl-project/verl/blob/b84cd9ac42a50b1018f48a4afa9987728c225b0c/verl/workers/engine/veomni/transformer_impl.py)在EP广播循环中复用同一接收buffer；[默认handler](https://github.com/verl-project/verl/blob/b84cd9ac42a50b1018f48a4afa9987728c225b0c/verl/workers/engine/veomni/utils.py)按expert切片后`.to(device)`，同device时并不承诺复制。生成器下一次推进可以覆盖此前视图；仅把`torch.cat`放在后续压缩函数里已经太晚。此前[HF文件导出的可变缓冲控制](../verl-v1-checkpoint-engines-deep-reading.md#本地文件验证范围)说明同类原则，但文件写入结果不能代替此新批处理路径验收。
+
+输出端`_compress_rows`拼接一次压缩后按行拆分，并为每个输出片段clone，使单个权重不必长期挂住整个stack的storage。若任何压缩输出为标量或首维不等于总行数，先前批量尝试之后才回退逐权重调用；所以此分支是一次批量尝试加N次单体调用，不是一定“一组只调用一次”。这些检查只验证输出形状可拆，不证明任意压缩算法数值可分离。
+
+64MiB限制的是run累计输入payload，不是allocator峰值或完整导出流内存硬上限。空run仍接受一个超cap的不可拆权重；实际还同时存在输入clone、拼接张量、压缩中间量与待yield的输出。`_compress_experts`先生成该run各组结果，再按原顺序yield，因此不能仅从生成器接口推出逐张量常量峰值；没有在本机测量GPU峰值。
+
+### CPU寿命控制与压缩证据分开
+
+[脚本](../../experiments/verl-expert-stream-lifetime/verify.py)执行完整原`__call__`与`_compress_rows` AST，路由／flush和压缩端明确使用记录器；不导入CT、不执行真实`_compress_experts`或量化。Python3.12.13／Torch2.9.1，四组自编CPU控制及[原始结果](../../experiments/verl-expert-stream-lifetime/result.json)：
+
+- 同一2×3 FP32缓冲依次填1／2／3再yield，原入口保留`[1,2,3]`；仅在内存中去掉到达clone的反事实得到`[3,3,3]`，没有回改任何上游代码。
+- 将cap设为1 byte，原入口仍接收三个各24 byte的独立run，不切分单个权重。这不是内存预算缺陷报告。
+- 行状恒等记录器收到一次4×3拼接；原helper返回两个独立storage，修改第一输出不改变第二输出或原输入。
+- 标量输出记录器使原helper按4×3、2×3、2×3调用，核实批量尝试后的逐个fallback。
+
+四完整源输入compile，作者新增九项CPU测试只阅读／编译，没有运行。复现：`../deepinfer-eplb-venv/bin/python experiments/verl-expert-stream-lifetime/verify.py ../verl-packaging-readonly`，固定head／路径／SHA256见结果；无需新依赖。CPU记录器证明寿命／控制流，不证明MXFP4／MXFP8打包字节一致或真实EP通信。
+
+作者PR报告九项新CPU测试和合计87项通过；单B300、两层真实形状的独立exporter微基准按48层换算，单权重调用20.0s/refit对64MiB cap的6.1s/refit、额外峰值67MB对564MB。**这是作者量化exporter数据，不是本机测量，也不是整步训练提速；作者明确未重跑端到端训练。** 既有配方的45s／7s `update_weights`对照同样不能直接换算此PR后的整步收益。真实压缩／refit差额仅补[原M5量化入口](../../experiments/handoff-m5.md#verl-量化层审计新版复验)，不开展M5性能专项、不拼接#8467或新增训练部署。
+
 ## 激活尺度的全局身份与流水线汇集
 
 **权重导出使用全局名字，伴随它的激活尺度也必须使用同一层／专家坐标，并到达所有消费该权重的rank。** 2026-11-01只读cyanseek的[#8467](https://github.com/verl-project/verl/pull/8467)：head `ba2fbf9d52c0ac24b4d78ab20ff3e77afb95a8cf`，API目标base与实际共同祖先均为 `8e48d72de4766228c36623c90f9f5c49ee5b45f3`，读取时OPEN／非draft、四文件。它接续ModelOpt／compressed-tensors的NVFP4观察尺度导出，不是[#7971](#nvfp4-共享重载与失败保护的版本边界)原生NVFP4重载故障保护，也不改变QAT量化数学。

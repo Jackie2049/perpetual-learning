@@ -1,0 +1,112 @@
+{
+  "python": "3.12.13",
+  "torch": "2.9.1",
+  "head": "b84cd9ac42a50b1018f48a4afa9987728c225b0c",
+  "source_sha256": {
+    "verl/utils/qat/compressed_tensors.py": "b5194c508b09c534012f76cdf6e4f8d1a14a7f20a5613d9013b284a695ebb4e7",
+    "tests/utils/test_batched_expert_export_on_cpu.py": "34fa8bc6472875df38541c8629addca45a91f7dc6bcdabd899ad4c6b262074ed",
+    "verl/workers/engine/veomni/transformer_impl.py": "b2241068946c3d5acbfd89f8f1449ce8aa525e3d1282c09ecf0af329fde894b9",
+    "verl/workers/engine/veomni/utils.py": "2891e8b0119251f730be35a070aa528b46686a5aadd3ec9149a7b471b0616909"
+  },
+  "arrival_clone_control": {
+    "__call__": {
+      "runs": [
+        {
+          "bytes": 72,
+          "values": [
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "values": [
+        1,
+        2,
+        3
+      ]
+    },
+    "without_arrival_clone": {
+      "runs": [
+        {
+          "bytes": 72,
+          "values": [
+            3,
+            3,
+            3
+          ]
+        }
+      ],
+      "values": [
+        3,
+        3,
+        3
+      ]
+    }
+  },
+  "one_byte_cap_runs": [
+    {
+      "bytes": 24,
+      "values": [
+        1
+      ]
+    },
+    {
+      "bytes": 24,
+      "values": [
+        2
+      ]
+    },
+    {
+      "bytes": 24,
+      "values": [
+        3
+      ]
+    }
+  ],
+  "row_split_control": {
+    "values_before_mutation": [
+      [
+        [
+          1,
+          1,
+          1
+        ],
+        [
+          1,
+          1,
+          1
+        ]
+      ],
+      [
+        [
+          2,
+          2,
+          2
+        ],
+        [
+          2,
+          2,
+          2
+        ]
+      ]
+    ],
+    "distinct_output_storage": true,
+    "first_mutation_leaves_second_and_inputs_unchanged": true
+  },
+  "scalar_output_fallback_call_shapes": [
+    [
+      4,
+      3
+    ],
+    [
+      2,
+      3
+    ],
+    [
+      2,
+      3
+    ]
+  ],
+  "scope": "Four full source inputs compile. Exact original __call__ and _compress_rows AST; own routing/flush and identity/scalar compressor recorders, no CT import or compression. One local in-memory counterfactual removes only arrival clone, never applied upstream. Real CPU tensors demonstrate lifetime, ownership, indivisible input cap and fallback call order only; no original test bodies, real _compress_experts, packed path, quantization bytes, VeOmni/EP/broadcast, model/refit, GPU/NPU, timing or memory-peak benchmark."
+}
