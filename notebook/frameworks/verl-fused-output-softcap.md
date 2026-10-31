@@ -6,6 +6,32 @@
 
 2026-10-26补充：[软标签消去与求导阶数](#软标签消去与求导阶数)区分完整分布的一阶数值修正、detach注入的二阶限制和verl的截断top-k目标；CPU数学转写不是框架补丁。
 
+## 完整 THD 流与内层 hook
+
+**由模型自己切CP的完整packed输入，不能提前当成rank-local THD；包装模型接受的参数也不等于其内层语言模型收到的参数。** 2026-11-01核HollowMan6的[#7483](https://github.com/verl-project/verl/pull/7483)新head `c1eca9d05a03c2b5f85a145bddd3f5f91b333a68`，OPEN／非draft，API base与实际共同祖先均为 `a08ea02a784d7d4982b1d81df36d188a476192bb`。本节只读相对已记录祖先`0ed94ba020747101bb22db6005849c9a6ca06aa6`的六文件增量（505增38删），不审整个LoRA／模型适配PR。[旧名称解析节](verl-quant-layer-audit.md#lora-权重名称与加载器契约)对应utils.py在两head的Git blob同为`5467230c30948931242750a8246badb1d18c8214`，不重跑原八项名称测试或把它们改记为新前向验收。
+
+### 全局布局与切片责任
+
+新[util helper](https://github.com/verl-project/verl/blob/c1eca9d05a03c2b5f85a145bddd3f5f91b333a68/verl/models/mcore/util.py)按实际Bridge `GLM53FlashModel`类识别full-stream模型；导入失败返回False，不按model_type字符串猜测。它依`cu_seqlens_q_padded`把nested序列放到零初始化流的各个padded offset，返回`[1,total_tokens]`，本身不做CP切片；`need_roll`是在放好padding后沿整条流左移一位，不是每条未pad序列单独roll。序列边界监督仍依赖配套labels／loss_mask／packed约定，helper不独立证明训练标签正确。
+
+full-stream VLM入口不提供attention_mask／position_ids，CP切片留给模型。候选拒绝所有非None的local_cp_size；静态CP>1只允许zigzag，CP=1时不据cp_layout字符串拒绝。[普通forward](https://github.com/verl-project/verl/blob/c1eca9d05a03c2b5f85a145bddd3f5f91b333a68/verl/models/mcore/model_forward.py)也为full-stream labels与loss_mask走相同完整布局；BSHD分支明确拒绝该模型，并在需要时取模型返回tuple的第一个输出。这里描述接线，不认证实际Bridge对视觉特征、padding和CP的处理。
+
+### 外层和内层的参数契约
+
+新[fused mode resolver](https://github.com/verl-project/verl/blob/c1eca9d05a03c2b5f85a145bddd3f5f91b333a68/verl/models/mcore/model_forward_fused.py)先检查外层forward是否显式声明output_processor及context；否则检查language_model.forward，选择新增`language_model_hook`；两者都不具备才退legacy。它检查签名，不执行前向，也不把仅有`**kwargs`当显式支持。
+
+内层hook模式用`language_model_forward_kwargs`临时替换内层forward，把hook／context及`compute_mtp_loss=False`转交，外层只接收原有模型参数；普通full-stream路径按mtp_enable_train注入MTP选择。context中的kwargs覆盖该次call_kwargs，并在finally中删除临时实例属性或恢复已有实例patch。若嵌套两层，内层转交仍会经过外层wrapper，**外层注入的同名值优先**；不是“最后进入的context总优先”。恢复只涉及Python方法，不构成模型状态回滚，也未验证并发调用或反向重算时序。
+
+### CPU契约控制
+
+[脚本](../../experiments/verl-full-stream-contract/verify.py)执行完整原三个util helper、两mode resolver函数和常量，Python3.12.13／Torch2.9.1。十组自编控制包含：两种roll、两CP guard组（含允许路径）、三mode对照、三context组。使用真实CPU jagged tensor、人工提供packed metadata、普通nn.Module签名／forward夹具；mesh size和unwrap是明确的控制接缝，不是真实Megatron状态／解包。
+
+输入两序列`[1,2,3]`与`[4,5,6,7,8]`、padded offsets`[0,4,12]`，原helper输出`[1,2,3,0,4,5,6,7,8,0,0,0]`；roll后为`[2,3,0,4,5,6,7,8,0,0,0,1]`。仅内层显式hook的同一夹具，旧resolver选legacy、新版选language_model_hook；外层显式hook与均不支持分别保持hook／legacy。正常context覆盖调用方compute_mtp_loss并删除临时forward，异常context恢复已有bound-method对象身份；嵌套内层True实际收到外层False，退出后仍恢复原实例方法。
+
+[结果](../../experiments/verl-full-stream-contract/result.json)保存全部输出与七完整源SHA256；七输入compile，包括三份原测试文件，但未执行其任何原测试体／原生pytest。复现：`../deepinfer-eplb-venv/bin/python experiments/verl-full-stream-contract/verify.py ../verl-packaging-readonly`。没有运行原preprocess_thd_engine来生成metadata或比较真实rank shard，也没有执行实际GLM／Bridge类识别、engine forward、MTP、CP／SP／TP通信、融合kernel、模型或设备性能。
+
+硬件与依赖差额仅补[原M5输出头条件入口](../../experiments/handoff-m5.md#verl-异步策略一致性补证)：将来若已有获准匹配任务且M5独立采用，先核实际Bridge类／签名、完整流与模型本地切片、labels／loss_mask对齐、hook到达和MTP选择，再做同token数值与梯度；不因这些CPU契约通过就拼接其他MTP候选、部署模型或新增训练队列。
+
 ## 输出头缩放与有效温度
 
 **融合路径必须计算同一个策略分布，不只是使用同一份LM-head权重。** EvanZhuang的[#8441](https://github.com/verl-project/verl/pull/8441)在2026-11-01读取OPEN／非draft，固定head `1ecd1a9e7e2b9b772cf1d03b3eb5a090e358fdef`，API目标base与实际共同祖先均为 `2ab35292039a51175a4b3d3b3b2d76e951a0d3e4`。候选针对generic dense融合forward绕过模型原CausalLM.forward后遗漏的乘法缩放与bias，不改变输出头kernel本体。

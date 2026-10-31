@@ -1,0 +1,90 @@
+{
+  "python": "3.12.13",
+  "torch": "2.9.1",
+  "head": "c1eca9d05a03c2b5f85a145bddd3f5f91b333a68",
+  "old": "0ed94ba020747101bb22db6005849c9a6ca06aa6",
+  "source_sha256": {
+    "0ed94ba020747101bb22db6005849c9a6ca06aa6:verl/models/mcore/model_forward_fused.py": "0566ba6c291c67852dc352929830282e0c749b78a5122cb232500416feb04a54",
+    "c1eca9d05a03c2b5f85a145bddd3f5f91b333a68:verl/models/mcore/util.py": "caea083e56770575eaa53b5ec5d50c51830a98ac3e9cd2c3897b17a475a9f749",
+    "c1eca9d05a03c2b5f85a145bddd3f5f91b333a68:verl/models/mcore/model_forward_fused.py": "e9ae3f64964ea06f1491ffdbfb10b65d764619f593c13fa65c07543dc0e753fb",
+    "c1eca9d05a03c2b5f85a145bddd3f5f91b333a68:verl/models/mcore/model_forward.py": "7a75955b1054fb0c6d4e351f3b3ec6943b5a4ae31133f9b4e38227616973b366",
+    "c1eca9d05a03c2b5f85a145bddd3f5f91b333a68:tests/models/test_mcore_full_stream_thd_on_cpu.py": "8ef92abc3de9409581d860eae5720f7809950c4ce95546b64692cdbbec88413c",
+    "c1eca9d05a03c2b5f85a145bddd3f5f91b333a68:tests/models/test_glm53flash_model_forward.py": "1d970da96cc8ea48ff5377784a2bd217afec8a81b17d06c3b4077b40faf25aa6",
+    "c1eca9d05a03c2b5f85a145bddd3f5f91b333a68:tests/models/test_model_forward_fused.py": "6cc848d19f93888e9b9f09acb514c42e9ff9c9994d151537e6d75fa9506ec318"
+  },
+  "own_layout_controls": [
+    {
+      "need_roll": false,
+      "stream": [
+        [
+          1,
+          2,
+          3,
+          0,
+          4,
+          5,
+          6,
+          7,
+          8,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "need_roll": true,
+      "stream": [
+        [
+          2,
+          3,
+          0,
+          4,
+          5,
+          6,
+          7,
+          8,
+          0,
+          0,
+          0,
+          1
+        ]
+      ]
+    }
+  ],
+  "own_cp_guard_errors": [
+    "GLM-5.3-Flash does not support dynamic context parallelism (local_cp_size).",
+    "GLM-5.3-Flash supports only the zigzag context-parallel layout, got 'contiguous'."
+  ],
+  "own_mode_controls": [
+    {
+      "model": "inner_explicit_hook",
+      "old": "legacy",
+      "head": "language_model_hook"
+    },
+    {
+      "model": "outer_explicit_hook",
+      "old": "hook",
+      "head": "hook"
+    },
+    {
+      "model": "neither_explicit_hook",
+      "old": "legacy",
+      "head": "legacy"
+    }
+  ],
+  "own_context_controls": {
+    "injected_call_overrides_callsite": {
+      "compute_mtp_loss": false,
+      "input_ids": 1,
+      "output_processor": "hook",
+      "output_processor_context": null
+    },
+    "normal_class_forward_restored": true,
+    "exception_restores_existing_instance_forward": true,
+    "nested_context_outer_value_wins": false,
+    "after_inner_outer_value": false,
+    "after_nested_existing_forward_restored": true
+  },
+  "scope": "Seven complete inputs compile. Exact original three util helpers and two mode resolver functions/constants; own real CPU jagged tensor with supplied padded metadata, plain nn.Module signature/forward fixtures, fake mesh-size provider and identity unwrap import seam. Two layouts, two guard groups, three mode and three context groups. No original test bodies, original preprocess_thd_engine, actual Bridge GLM class detector, model engine forward, real wrapper unwrapping, CP/SP/TP collectives, MTP computation, fusion kernels, GPU/NPU, model/training or performance."
+}

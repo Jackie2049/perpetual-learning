@@ -269,6 +269,8 @@ ModelOpt忽略规则参考（2026-10-22，同一量化入口不另排队）：�
 
 ## verl 异步策略一致性补证
 
+完整THD／内层hook参考（2026-11-01，同一入口、不新增任务）：[#7483](https://github.com/verl-project/verl/pull/7483) headc1eca9d0相对旧0ed六文件增量；[M1十组原helper／resolver自编CPU契约](../notebook/frameworks/verl-fused-output-softcap.md#完整-thd-流与内层-hook)仅真实jagged张量和普通LM夹具，metadata／mesh／unwrap接缝，不含真实GLM类识别／Bridge／CP或kernel。未来已有获准、安全、匹配GLM输出头任务且M5独立采用时，先固定实际Core／Bridge类与hook签名、THD完整流和padded offsets、模型自切zigzag的local labels／loss_mask、compute_mtp_loss选择，再核同token输出／梯度和一次异常后的方法恢复；不从外层接收kwargs推断内层已收到。缺授权模型／环境／安全资源、需下载部署／扩预算或影响专项即停记未测，不自动拼其他MTP候选、应用patch／改环境或新增训练；社区及既有PR-head写入仍逐项待用户明确授权，记录非接单。
+
 输出头缩放参考（2026-11-01，同一入口、不新增任务）：[#8441](https://github.com/verl-project/verl/pull/8441) head1ecd1a9e／base祖先2ab35292，[M1原resolver／Torch custom autograd六数值／四guard控制](../notebook/frameworks/verl-fused-output-softcap.md#输出头缩放与有效温度)仅CPU小矩阵，非HF模型adapter或Triton；c乘法按T/c折算，零scale与所有非None bias被拒，负值／NaN未被helper拒绝。若未来已有获准、安全、匹配输出头任务且M5独立采用，先固定实际HF类／模型与配置、native head后变换、bias、最终adapter与backend、temperature及标签布局，原预算核一次同token native／fused logp、熵与hidden／weight梯度；真实Triton有限性须独立核，不移用作者旧H100报告。缺授权模型／资源、需下载部署／扩预算或影响专项即停记未测，不拼softcap／其他候选、不新排训练／改环境；社区及既有PR-head写入仍逐项待用户明确授权，记录非接单。
 
 Ascend熵统计参考（2026-11-01，同一输出头入口、不新增任务）：已有[#8477](https://github.com/verl-project/verl/pull/8477)固定c261bd4a／API目标base8df5baee。[M1原20个CPU数学参数体及三个人为统计错配控制](../notebook/frameworks/verl-fused-output-softcap.md#分块熵的独立归一化)仅独立熵统计／梯度，不是CANN舍入实测或作者NPU／actor结果。若未来已有获准匹配Ascend任务且M5独立选用，先固定CANN／torch_npu、softmax实际有无、CE与熵统计来源、dtype／autocast／temperature、response mask／归约与CE-only／混合支路，核同输入熵及hidden／weight梯度，再在原预算比较完整正确性基线；旧零熵支路不当公平性能参照，TP hidden归约仍由调用者负责。缺授权／环境／权重／安全资源、需部署或影响专项即停记未测，不自动安装、应用／拼接候选、扩大训练或改M5既有任务；所有社区及既有PR-head写入仍逐项待用户明确同意，记录非接单。
