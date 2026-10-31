@@ -1,8 +1,42 @@
 # verl 融合输出头与 logit softcap
 
+2026-11-01补充：[分块熵的独立归一化](#分块熵的独立归一化)说明为何CE统计不能无条件复用到重算logits；原20个CPU数学参数体及三个人为舍入统计对照，不是CANN／NPU验收。
+
 2026-11-01接续：[推理专用MTP与融合标签](#推理专用-mtp-与融合标签)核新#8476：配置门、model labels控制信号与hook标签数据分开；一个原postprocess测试体基线断言失败／候选通过，不等fused CE、MTP或训练验收。
 
 2026-10-26补充：[软标签消去与求导阶数](#软标签消去与求导阶数)区分完整分布的一阶数值修正、detach注入的二阶限制和verl的截断top-k目标；CPU数学转写不是框架补丁。
+
+## 分块熵的独立归一化
+
+**熵需要与当前logits匹配的概率归一化；接口给出了CE最大值和指数和，不代表重算logits可以直接复用。** verl [#8477](https://github.com/verl-project/verl/pull/8477)在2026-11-01读取为OPEN／非draft，head `c261bd4ab2efa740805d5b7c956996b175eebc38`、API目标base `8df5baeed0f5ecdd7f870d83bc3d79194816e2a9`，已有作者Gxj230958，不另实现候选。作者针对CANN默认不返回softmax时，旧forward返回零熵而反向仍产生熵梯度，提出独立分块熵统计与后续workspace优化。零forward分支可由[基线源码](https://github.com/verl-project/verl/blob/8df5baeed0f5ecdd7f870d83bc3d79194816e2a9/verl/utils/kernel/npu/cann_linear_ce.py)确认；实际CANN何时省略softmax取决于安装栈。
+
+### 中心化统计与梯度
+
+令每个token的logits为z，m=max(z)，s=Σexp(z−m)，q=Σexp(z−m)(z−m)。Shannon熵为`H=log(s)−q/s`，导数为`∂H/∂z_j=−p_j[(z_j−m)−q/s]`。这避免用`logsumexp(z)−E_p[z]`相减两个含大公共偏移的量。重算z若比CE内部使用的logits精度不同，用CE的m、s构造的`exp(z−m)/s`可能连总和为1都不满足；只补正确forward熵、不对齐反向统计仍不足。
+
+[候选helper](https://github.com/verl-project/verl/blob/c261bd4ab2efa740805d5b7c956996b175eebc38/verl/utils/kernel/npu/cann_linear_ce.py)按token／词表两维分块。合并新块时取新最大值m′，δ=m−m′，旧质量转为`exp(δ)s`，旧一阶矩转为`exp(δ)(q+δs)`；初始空累加器单独避开`−inf×0`。TP合并也先对齐全局最大值再合并s、q，不是平均各分片熵。该helper对熵投影显式禁autocast，FP64输入保持FP64，其余按FP32算；这只描述该函数，不认证整个反向处于何种autocast上下文。
+
+默认无softmax的forward缓存三条统计向量，反向的熵项使用独立m、s、q，CE项仍沿传入CE统计。entropy仍为逐token输出，reduction仅作用于logprobs，response mask与汇总由调用者负责；TP下返回的hidden梯度是本rank贡献，调用者负责归约。候选保留原CANN CE-only backward及有softmax分支，不能将熵修正概括为CE已与dense FP32完全等价。
+
+### CPU 数学对照
+
+[脚本](../../experiments/verl-entropy-normalizers/verify.py)读取两版完整生产模块与候选CPU测试固定blob，禁lazy fetch；完整生产模块只加载Torch等声明，未调用延迟的torch_npu resolver。四个原测试函数仅去parametrize装饰器、显式展开原参数，函数体／assert不变：6个FP64温度／公共偏移含autograd及有限差分、1个CPU BF16 autocast下统计保持FP32、1个极端logits、12个混合CE／熵反向分块／温度组合，共20个参数体通过。这不是原生pytest收集或作者完整65项CPU suite；真实执行的是CPU matmul、autograd与有限差分。
+
+另设三个**自编统计不匹配控制**：5×8 hidden与11×8 weight先量化到BF16，hidden首列为1、weight首列为公共偏移c；CE统计刻意来自`(h.float() @ w.float().T).bfloat16().float()`，两版原反向helper则重算FP32投影。只给熵上游梯度，CE梯度为零；参考是相同已量化输入的FP64 dense熵，不是舍入后分布的导数。固定seed42，单线程CPU结果：
+
+| 公共偏移c | 复用统计的概率总和最大误差 | 旧helper的hidden梯度最大误差 | 候选helper的hidden梯度最大误差 |
+|---|---:|---:|---:|
+| 0 | 1.10e−4 | 4.02e−7 | 8.59e−10 |
+| 32 | 2.58e−2 | 6.31 | 4.47e−8 |
+| 128 | 4.14e−2 | 211.83 | 4.77e−7 |
+
+首列hidden只改变全词表公共偏移，精确熵梯度应为零；c=128时旧值最大211.83、候选4.77e−7。这个反例说明错配统计会破坏平移不变性；它是组合修正的对照，不将中心化与独立归一化各自的贡献拆成未经实验的比例。完整weight误差、参数、环境与三hash见[JSON](../../experiments/verl-entropy-normalizers/result.json)。复查命令：`python -B experiments/verl-entropy-normalizers/verify.py /path/to/verl-git`，本机Python3.12.13／Torch2.9.1，源码需事先缓存。
+
+### 设备结果与接续边界
+
+上述人为BF16舍入不是CANN实现模型，也未调用CannLinearCrossEntropy.apply、CANN替身或算子、torch_npu、TP／HCCL、actor、训练、性能或内存计量。作者正文另报910B2C／CANN8.5.1、16单设备例及两rank三TP例、Qwen2.5-7B actor对照，并明确修正后不保证通用加速或actor峰值下降，旧版少算熵不能当公平性能基线；这些是作者报告，不能迁为本机验收。作者测试base8e48d72d也不与本轮API目标base8df混用。
+
+M1不为复现作者数值而探测NPU。若M5未来在已有获准且匹配的输出头任务中独立选用，沿[原交接入口](../../experiments/handoff-m5.md#verl-异步策略一致性补证)记录实际CANN／torch_npu、softmax有无、两类统计、temperature／mask／归约及CE-only／混合路径，先核同输入熵与两梯度；不因CPU数学成立自动部署或新增训练队列。
 
 ## 推理专用 MTP 与融合标签
 

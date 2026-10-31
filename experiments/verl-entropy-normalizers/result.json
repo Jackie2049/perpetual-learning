@@ -1,0 +1,46 @@
+{
+  "python": "3.12.13",
+  "torch": "2.9.1",
+  "torch_git": "5811a8d7da873dd699ff6687092c225caffcf1bb",
+  "threads": 1,
+  "base": "8df5baeed0f5ecdd7f870d83bc3d79194816e2a9",
+  "head": "c261bd4ab2efa740805d5b7c956996b175eebc38",
+  "source_sha256": {
+    "8df5baeed0f5ecdd7f870d83bc3d79194816e2a9:verl/utils/kernel/npu/cann_linear_ce.py": "b6e962599df3fc7b3c009f3b97911daad08ed258a37d9ff7ced73b4de30d8f55",
+    "c261bd4ab2efa740805d5b7c956996b175eebc38:verl/utils/kernel/npu/cann_linear_ce.py": "136c2ab03049504228c2ab035e89bb33c85c00c6fae2f77b346b33eff823357e",
+    "c261bd4ab2efa740805d5b7c956996b175eebc38:tests/utils/test_cann_linear_ce_on_cpu.py": "4254663182a3f733494d0d11b9bf8e48c0e059f481fe90573b217eb2fc34fc42"
+  },
+  "original_head_test_bodies": {
+    "test_chunked_ce_entropy_backward_matches_torch": {
+      "passed": 12,
+      "parameters": [[1.0,32,7],[1.0,32,256],[1.0,128,7],[1.0,128,256],[1.0,2048,7],[1.0,2048,256],[1.5,32,7],[1.5,32,256],[1.5,128,7],[1.5,128,256],[1.5,2048,7],[1.5,2048,256]]
+    },
+    "test_entropy_stats_fp64_finite_difference": {
+      "passed": 6,
+      "parameters": [[0.5,0.0],[0.5,10000.0],[1.0,0.0],[1.0,10000.0],[1.5,0.0],[1.5,10000.0]]
+    },
+    "test_entropy_stats_preserve_fp32_under_autocast": {"passed": 1,"parameters": [[]]},
+    "test_entropy_stats_extreme_logits": {"passed": 1,"parameters": [[]]}
+  },
+  "own_rounded_stats_controls": [
+    {
+      "offset": 0.0,
+      "reused_probability_mass_max_error": 0.0001100301742553711,
+      "base": {"hidden_grad_max_error": 4.0219985791888416e-07,"weight_grad_max_error": 5.240752476119714e-07,"common_shift_hidden_grad_max": 0.0},
+      "head": {"hidden_grad_max_error": 8.590591753579457e-10,"weight_grad_max_error": 9.219484377320786e-10,"common_shift_hidden_grad_max": 0.0}
+    },
+    {
+      "offset": 32.0,
+      "reused_probability_mass_max_error": 0.02582073211669922,
+      "base": {"hidden_grad_max_error": 6.308678150176998,"weight_grad_max_error": 0.01764483341048696,"common_shift_hidden_grad_max": 6.308678150177002},
+      "head": {"hidden_grad_max_error": 4.4703482471319944e-08,"weight_grad_max_error": 9.827986723488086e-08,"common_shift_hidden_grad_max": 4.470348358154297e-08}
+    },
+    {
+      "offset": 128.0,
+      "reused_probability_mass_max_error": 0.04136943817138672,
+      "base": {"hidden_grad_max_error": 211.8309631347656,"weight_grad_max_error": 0.2775095716215227,"common_shift_hidden_grad_max": 211.83096313476562},
+      "head": {"hidden_grad_max_error": 4.768371435481811e-07,"weight_grad_max_error": 5.279181488722015e-07,"common_shift_hidden_grad_max": 4.76837158203125e-07}
+    }
+  ],
+  "scope": "20 unchanged original CPU math parameter bodies with decorators replaced by explicit calls, not native pytest collection or the complete CPU suite. Three own entropy-only base/head helper controls with deliberately rounded supplied statistics. Real CPU matmul, autograd and finite differences. No CannLinearCrossEntropy.apply, CANN mocks/operators, torch_npu, NPU/GPU, TP/HCCL, actor, training, performance or memory measurement."
+}
