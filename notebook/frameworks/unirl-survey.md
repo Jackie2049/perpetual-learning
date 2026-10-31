@@ -2100,6 +2100,22 @@ FlowGRPO 多块时拼接 detached 新旧 logp 后重新计算完整 ratio 指标
 
 本轮 5 个完整主线模块 compile，仅执行四个纯函数 AST 和小张量聚合；没有运行 replay mixin、FlowGRPO/FlowDPPO、reference-KL、TrainStack 或设备。#465 原报告的一张4090、S4/micro1、FP32 梯度误差/峰值与 BF16 偏差属于当时作者版本，不能搬为当前 main 的实测结果。真实几何、ratio/梯度及通信缺口记[原 M5 可选参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，缺现成获准匹配配方就保留未测，不新增训练或重新实现已合并功能。
 
+### 保存张量的生命周期
+
+**缩小forward不等于及时释放反向保存的张量。** 在上述10-23源码结论之外，[本机CPU实验](../../experiments/autograd-chunk-lifetime/verify.py)用PyTorch原生autograd观察三条执行路径，不导入UniRL，也不模拟stage。固定FP64标量θ=0.3、5步×3行、`x=arange(1,16).reshape(5,3)/10`，目标为`mean((sin(θx)−cos(x))²)`；分块长度2、2、1。
+
+观测通过已安装Torch的`saved_tensors_hooks`：pack返回持有`tensor.detach()`的包装对象，unpack返回该张量，不改值、不复制数据；WeakSet仅弱引用包装对象，避免计量器自行保留它们，也避免直接保存带grad_fn的输入形成引用环。hook调用语义按本机原接口文档核对，原类文本SHA256见[完整结果](../../experiments/autograd-chunk-lifetime/result.json)。**计数单位是仍被图持有的保存对象与其numel引用总数，不是唯一存储、RAM、图节点数或GPU显存**；同一存储可能被多个对象引用，x等数据也仍由外部变量持有。
+
+| 执行方式 | forward后保存的元素引用数 | backward后 | 峰值对象数／元素引用数 |
+|---|---|---|---|
+| 5步整批forward，一次backward | 45 | 0 | 3／45 |
+| 三块forward后cat，一次backward | 18→36→45，cat后仍45 | 0 | 9／45 |
+| 每块forward后立即backward | 18、18、9 | 每块均0 | 3／18 |
+
+立即反向路径按2/5、2/5、1/5累积梯度，中间不zero_grad、不step；该加权只是使三条路径可比的控制，旧元素损失实验不重跑。三者θ梯度均为`−0.2789929299178102`；整批与cat损失`0.3361206137007003`，立即反向的累加损失`0.33612061370070034`，比较容差1e-12，不能声称逐比特loss相等。即使变量`loss`／`pieces`在backward后仍存在，保存包装对象也已释放；这不等于整个输出、图结构或系统内存归零。
+
+复查命令：`python experiments/autograd-chunk-lifetime/verify.py`，环境Python3.12.13／Torch2.9.1 git `5811a8d7da873dd699ff6687092c225caffcf1bb`，CPU单线程。这里只验证原生逐元素目标的保存状态生命周期；没有UniRL replay／完整算法、真实扩散模型、BF16、retain_graph、重算、FSDP通信、optimizer更新或性能／显存采样，不将45→18换算成模型显存降幅或吞吐收益。原M5真机参考与训练优先级不变，本题不新增硬件队列。
+
 ## 教师指纹与控制器失败传播
 
 **检测到异常、检测到内容不同，以及让卡住的读取结束，是三个不同保证。** [#515](https://github.com/Tencent-Hunyuan/UniRL/issues/515) 的原帖担心一个 rank 读教师失败、其他 rank 进入 collective 后控制器等到超时；但维护者[后续说明](https://github.com/Tencent-Hunyuan/UniRL/issues/515#issuecomment-6138540697)指出，当前 actor 构造链已有 #258 的 fail-fast collector。该 issue 已派给 inaniloquentee，其后续 [#575](https://github.com/Tencent-Hunyuan/UniRL/pull/575) 收窄为权重指纹一致性，于2026-10-13 05:37:27 UTC 合并，merge `6c828f5ed81649153315d996f0f597e8808ff144`；不是尚无人处理的原始挂起修复。

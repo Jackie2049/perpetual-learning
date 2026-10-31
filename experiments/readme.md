@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [autograd-chunk-lifetime/verify.py](autograd-chunk-lifetime/verify.py) | 原生CPU三条forward／backward路径、saved_tensors_hooks与弱引用计数，[结果](autograd-chunk-lifetime/result.json)核保存对象生命周期及梯度；非独立存储／显存／模型replay或性能 | [保存张量生命周期](../notebook/frameworks/unirl-survey.md#保存张量的生命周期) |
 | [checkpoint-stage-consistency/verify.py](checkpoint-stage-consistency/verify.py) | 三条真实CPU writer线程时序、独立深拷贝、临时文件保存／加载与Adam再更新，[结果](checkpoint-stage-consistency/result.json)区分存储隔离、模型／优化器共同版本和报告step；非完整恢复／DCP／设备验收 | [一致时刻](../notebook/fundamentals/checkpoint.md#独立存储与同一时刻) |
 | [ddp-token-denominator/](ddp-token-denominator/readme.md) | 两真实本机CPU／Gloo进程的四条DDP交叉熵／SGD路径，[结果](ddp-token-denominator/result.json)核全局分母、平均系数与空rank同步；非框架或GPU性能 | [DDP全局token分母](../notebook/fundamentals/gradient-accumulation-benchmark-rtx4090.md#ddp-的全局-token-分母) |
 | [verl-null-media/verify.py](verl-null-media/verify.py) | #8420两版原消息方法的十组自编行控制，[结果](verl-null-media/result.json)核None／缺键／空列、数组保序及processor要求；解码记录器非真实Parquet／tokenizer／processor或作者7项测试 | [空媒体与processor](../notebook/frameworks/verl-dataproto-data-flow-reading.md#sft-空媒体列与-processor-要求) |

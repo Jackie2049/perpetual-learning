@@ -1,0 +1,52 @@
+{
+  "python": "3.12.13",
+  "torch": "2.9.1",
+  "torch_git": "5811a8d7da873dd699ff6687092c225caffcf1bb",
+  "saved_tensors_hooks_source_sha256": "898db972c9fb5acfca5e17e09c7706c6b2876ec274742f3a6342ccdfd9886d9b",
+  "settings": {
+    "device": "cpu", "dtype": "float64", "theta": 0.3,
+    "steps": 5, "batch": 3, "chunk_sizes": [2, 2, 1],
+    "objective": "mean((sin(theta*x)-cos(x))**2)",
+    "x": "arange(1,16).reshape(5,3)/10", "tolerance": 1e-12
+  },
+  "results": {
+    "full": {
+      "loss": 0.3361206137007003,
+      "theta_gradient": -0.2789929299178102,
+      "peak_saved_objects": 3,
+      "peak_saved_element_references": 45,
+      "trace": [
+        {"event": "forward_all", "objects": 3, "element_references": 45},
+        {"event": "backward_all", "objects": 0, "element_references": 0}
+      ]
+    },
+    "chunk_forward_concat": {
+      "loss": 0.3361206137007003,
+      "theta_gradient": -0.2789929299178102,
+      "peak_saved_objects": 9,
+      "peak_saved_element_references": 45,
+      "trace": [
+        {"event": "forward_0_2", "objects": 3, "element_references": 18},
+        {"event": "forward_2_4", "objects": 6, "element_references": 36},
+        {"event": "forward_4_5", "objects": 9, "element_references": 45},
+        {"event": "concatenated", "objects": 9, "element_references": 45},
+        {"event": "backward_all", "objects": 0, "element_references": 0}
+      ]
+    },
+    "chunk_immediate_backward": {
+      "loss": 0.33612061370070034,
+      "theta_gradient": -0.2789929299178102,
+      "peak_saved_objects": 3,
+      "peak_saved_element_references": 18,
+      "trace": [
+        {"event": "forward_0_2", "objects": 3, "element_references": 18},
+        {"event": "backward_0_2", "objects": 0, "element_references": 0},
+        {"event": "forward_2_4", "objects": 3, "element_references": 18},
+        {"event": "backward_2_4", "objects": 0, "element_references": 0},
+        {"event": "forward_4_5", "objects": 3, "element_references": 9},
+        {"event": "backward_4_5", "objects": 0, "element_references": 0}
+      ]
+    }
+  },
+  "scope": "Three native CPU autograd traces using pack/unpack hooks and weakly held detached wrappers. Counts are live graph-owned saved objects and their numel references, not unique storage, RAM, allocator, GPU memory or graph-node counts. Correct chunk weights are controls, not a new UniRL loss test. No optimizer step, replay/model, BF16, retain_graph, checkpointing, distributed communication or performance validation."
+}
