@@ -1,0 +1,84 @@
+{
+  "python": "3.12.13",
+  "torch": "2.9.1",
+  "pytest": "8.4.2",
+  "head": "03e1b2951ea7f5aaa49ac4fb8b2c8aa85a4c5eb7",
+  "source_sha256": {
+    "verl/models/mcore/response_only_lm_head.py": "79ffe687c036518833ed28c521349566c6e28048007f8081503312e105279cb8",
+    "tests/models/mcore/test_response_only_lm_head_on_cpu.py": "130e266a8aaa1a5fce59a4011d86b79b6f75b8b16b19096a225ab612c30e0ebd",
+    "verl/models/mcore/model_forward.py": "68bd12176cae32939978b8d08ca181930bd760a3b553afd34b6c14d6133eecd9",
+    "verl/models/mcore/model_forward_fused.py": "46c07e1ccaa539d2e3c7f94a53e69852bb270b346d02a2f25a8a5cd815ce529c",
+    "verl/models/mcore/util.py": "6d7dfd07a66fc3972752aacc170edf6e0ff93957fd815302ceacb27c82725222",
+    "verl/workers/engine/megatron/transformer_impl.py": "a54482d7f75896dec1fc4db42e1d9993d14d2b1e7a2fcde1ba05af8b661f3497",
+    "verl/utils/kernel/kernels.py": "4294af407a1b8eaca949bbd056313b30b06447488e9762f81cfea8705d00437b"
+  },
+  "original_test_cases": [
+    {
+      "test": "test_unfused_projection_preserves_values_and_gradients",
+      "empty": false,
+      "outcome": "passed"
+    },
+    {
+      "test": "test_unfused_projection_preserves_values_and_gradients",
+      "empty": true,
+      "outcome": "passed"
+    },
+    {
+      "test": "test_unfused_sequence_parallel_rejects_deferred_weight_gradients",
+      "outcome": "passed"
+    }
+  ],
+  "own_full_mask_controls": [
+    {
+      "padded": false,
+      "full_loss_mask": [
+        [
+          0,
+          0,
+          0,
+          1,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "padded": true,
+      "full_loss_mask": [
+        [
+          0,
+          0,
+          0,
+          1,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          1,
+          1
+        ]
+      ]
+    }
+  ],
+  "scope": "Complete original response-only helper module. Two original test functions and two original nn.Module fixture classes extracted via AST; only parametrize decorators removed, bodies/assertions unchanged, three cases run manually (not native pytest). True CPU linear projection/autograd, mask selection/restoration and empty connected graph; original objective is selected logits squared, not policy CE. Identity unwrap import seam for plain CPU fixtures. Deferred-SP guard rejects before any gather; no SP executed. Original full-mask builder AST plus two own real nested/padded controls; no causal roll or CP slicing helper execution. Seven complete inputs compile. Remaining 12 original cases, Megatron model/wrapper, true SP/TP/CP/PP, engine, Triton/Liger, GPU/NPU, training, performance and allocator peak are not executed."
+}

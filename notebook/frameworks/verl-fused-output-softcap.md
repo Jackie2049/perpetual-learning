@@ -6,6 +6,37 @@
 
 2026-10-26补充：[软标签消去与求导阶数](#软标签消去与求导阶数)区分完整分布的一阶数值修正、detach注入的二阶限制和verl的截断top-k目标；CPU数学转写不是框架补丁。
 
+## 输出头选行与预测位置
+
+**只投影有损失的行，选择的是目标token的前一位置hidden，而不是简单截取response尾部。** qiangyupei的[#7686](https://github.com/verl-project/verl/pull/7686)在2026-11-01读取OPEN／非draft，head `03e1b2951ea7f5aaa49ac4fb8b2c8aa85a4c5eb7`，API main base与实际共同祖先均为 `2035f58dcb06d8cad4caee107b30f4045d724367`。`response_only_lm_head`默认false，候选覆盖Megatron unfused投影与已有Triton fused路径，不是仅unfused优化；本节CPU执行范围小于其TP／SP／CP／PP集成范围。
+
+### 完整loss mask与选行次序
+
+[原mask builder](https://github.com/verl-project/verl/blob/03e1b2951ea7f5aaa49ac4fb8b2c8aa85a4c5eb7/verl/models/mcore/model_forward.py)先以实际response长度补prompt零，再保留response整个有效span，包括内部loss_mask=0的位置；不能用loss_mask.sum推断response长度。padded输入依response_attention_mask确定右侧padding前的有效span，nested输入用offsets。生产THD／BSHD入口再按与labels相同的roll和padding／CP布局处理mask。例如prompt长3、response mask为`[1,1,0,1,0]`时，活跃target下标3／4／6对应hidden下标2／3／5；首response目标由末prompt hidden预测，内部屏蔽段也不能被抹掉。
+
+[原选行模块](https://github.com/verl-project/verl/blob/03e1b2951ea7f5aaa49ac4fb8b2c8aa85a4c5eb7/verl/models/mcore/response_only_lm_head.py)要求hidden前两维`[sequence,batch]`与mask`[batch,sequence]`相符；先转batch-major再布尔选行，返回`[N,1,H]`。labels和temperature以同一个mask选成`[1,N]`，逐token标量再scatter回原mask布局。未选位置填0是“没有计算”的占位，不是模型在那里logp=0或熵=0；仍需下游原mask排除这些位置。
+
+### 空选择与反向归属
+
+本地mask全False时，候选不返回完全脱图的新零hidden，而取已有hidden的一行作为dummy，label=0、temperature=1；恢复输出时加`value.reshape(-1)[:0].sum()`，将零输出连到该head的反向图。这里的空是没有活跃投影行，不是证明任意零长度底层token张量也可处理；只保留图也不自动证明各rank的collective序列一致。
+
+unfused SP路径先显式gather，再选行；在该次调用暂时关闭output_layer.sequence_parallel并设置disable_grad_reduce，避免第二次gather和重复输入梯度归约，finally移除pre-hook并恢复原标志。它在安装hook前拒绝SP加defer_embedding_wgrad_compute。[fused helper](https://github.com/verl-project/verl/blob/03e1b2951ea7f5aaa49ac4fb8b2c8aa85a4c5eb7/verl/models/mcore/model_forward_fused.py)则分别走SP gather或非SP的TP input-gradient归约接线，不能直接与已自行归约的Liger路径拼接。
+
+[engine兼容门](https://github.com/verl-project/verl/blob/03e1b2951ea7f5aaa49ac4fb8b2c8aa85a4c5eb7/verl/workers/engine/megatron/transformer_impl.py)拒绝response-only与top-k蒸馏或MTP训练。fused的remove-padding、uniform temperature、不提供sum_pi_squared等原限制仍在；选择较少行与融合避免物化完整logits是两种可组合机制，不代表任何active比例都有整步收益。
+
+### 三项原CPU测试的范围
+
+[复现脚本](../../experiments/verl-response-row-selection/verify.py)完整执行原选行模块，仅plain CPU模型的unwrap导入接缝设identity；原两nn.Module夹具、两个测试函数用AST载入，删除parametrize装饰器后手动运行三参数项，函数体／assert不变。Python3.12.13／Torch2.9.1／pytest8.4.2：
+
+- 原unfused稠密／稀疏线性投影在非空和全False mask两项均通过；检查所选logits、labels／temperature、未选输出零、hidden与weight梯度一致。原目标是所选logits平方和，不是策略CE或真实Megatron层。
+- 原deferred-SP guard项通过：报错时未安装pre-hook、标志保持原值，没有调用任何SP gather。
+
+另两个自编输入直接运行原完整mask builder：nested与padded的两response分别为`[1,1,0,1,0]`／`[1,0,1,1]`，总输入长度均8，结果同为`[0,0,0,1,1,0,1,0]`／`[0,0,0,0,1,0,1,1]`。本轮不执行因果roll／CP切片helper，不能把此结果当原六项CP对齐测试通过。
+
+[结果](../../experiments/verl-response-row-selection/result.json)保存三原测试、两自编mask输出和七完整源SHA256；七输入compile。原15参数项中的其余12项未运行，包括SP gather／异常恢复和使用Torch替代kernel的fused对照；不是原生pytest套件、Megatron／TP／SP／CP／PP、Triton／Liger或真实模型验收。复现：`../deepinfer-eplb-venv/bin/python experiments/verl-response-row-selection/verify.py ../verl-packaging-readonly`；先只读缓存七个固定blob，不安装Megatron或下载模型。
+
+作者正文明确9月A100两工作负载的12步压力测试早于10月12日rebase；它们说明历史分布式存活而非新head严格梯度等价。作者还报告同backend的grad norm不完全相同，16K→4K unfused两臂最大相对差4.861%，且有未解释的cache-generation／replay差异；日志loss接近不能消去这些限制。缓存训练步时间不含真实生成，所报memory计数也不是独立整步／全卡最大峰值。本项目不将这组历史结果迁为当前正确性或性能结论，条件仅补[原M5输出头入口](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不新增训练或修改M5性能专项。
+
 ## 完整 THD 流与内层 hook
 
 **由模型自己切CP的完整packed输入，不能提前当成rank-local THD；包装模型接受的参数也不等于其内层语言模型收到的参数。** 2026-11-01核HollowMan6的[#7483](https://github.com/verl-project/verl/pull/7483)新head `c1eca9d05a03c2b5f85a145bddd3f5f91b333a68`，OPEN／非draft，API base与实际共同祖先均为 `a08ea02a784d7d4982b1d81df36d188a476192bb`。本节只读相对已记录祖先`0ed94ba020747101bb22db6005849c9a6ca06aa6`的六文件增量（505增38删），不审整个LoRA／模型适配PR。[旧名称解析节](verl-quant-layer-audit.md#lora-权重名称与加载器契约)对应utils.py在两head的Git blob同为`5467230c30948931242750a8246badb1d18c8214`，不重跑原八项名称测试或把它们改记为新前向验收。

@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-response-row-selection/verify.py](verl-response-row-selection/verify.py) | #7686完整原选行模块／原夹具三CPU参数体与两自编full mask控制；[结果](verl-response-row-selection/result.json)，真实CPU linear／autograd，非CE、原生pytest或TP/SP/CP／Triton验收 | [选行与预测位置](../notebook/frameworks/verl-fused-output-softcap.md#输出头选行与预测位置) |
 | [verl-full-stream-contract/verify.py](verl-full-stream-contract/verify.py) | #7483新增原helper／mode resolver，十组自编CPU布局／CP guard／内层hook选择／context恢复控制；[结果](verl-full-stream-contract/result.json)，metadata／mesh／unwrap为接缝，无GLM／CP或kernel执行 | [完整流与内层hook](../notebook/frameworks/verl-fused-output-softcap.md#完整-thd-流与内层-hook) |
 | [verl-head-logit-scale/verify.py](verl-head-logit-scale/verify.py) | #8441原resolver及Torch分块custom autograd，六自编FP32前反向数值控制与四guard边界，[结果](verl-head-logit-scale/result.json)；无adapter／模型／Triton或设备验收 | [输出头缩放与温度](../notebook/frameworks/verl-fused-output-softcap.md#输出头缩放与有效温度) |
 | [verl-expert-stream-lifetime/verify.py](verl-expert-stream-lifetime/verify.py) | #8473原入口／行拆分helper与显式记录器，四组自编CPU输入寿命／cap／输出storage／fallback控制；[结果](verl-expert-stream-lifetime/result.json)，非CT压缩字节或性能 | [专家批处理与存储寿命](../notebook/frameworks/verl-quant-layer-audit.md#专家批量压缩与流式存储寿命) |

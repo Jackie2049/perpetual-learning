@@ -210,6 +210,7 @@
 - [V1异步空闲指标](frameworks/verl-6790-async-trainer-reading.md#异步空闲指标与调度等待) — 采样等待、借卡rollout、布尔idle与请求计数分开；旧fully_async比率非V1资源利用率，11份语法检查非训练验收
 - [verl 学习率步数与恢复](frameworks/verl-grpo-training-loop-internals-reading.md#学习率步数与恢复条件) — 原构造器/真实CPU optimizer四轨迹、两恢复与一步覆写；推进后LR不等于刚使用LR，加载状态不重建原调度闭包
 - [verl 融合输出头与softcap](frameworks/verl-fused-output-softcap.md) — #7991拒绝不支持的通用路径，非kernel实现；原torch输出头36组语义分离对照，保留数值超限，原24配置测试未跑
+  - [输出头选行与预测位置](frameworks/verl-fused-output-softcap.md#输出头选行与预测位置) — #7686原三CPU测试及两完整mask控制；空选择保留零梯度图，内部mask不等response长度，未跑roll／CP或Triton，历史A100结果不迁新head
   - [完整THD流与内层hook](frameworks/verl-fused-output-softcap.md#完整-thd-流与内层-hook) — #7483新c1增量；十组CPU契约核pad后roll、内层hook模式和方法恢复，嵌套同名外层值优先；旧LoRA名称文件未变不重跑
   - [输出头缩放与有效温度](frameworks/verl-fused-output-softcap.md#输出头缩放与有效温度) — #8441原resolver／Torch custom autograd六组CPU数值与四guard控制；c乘法折入T/c，bias和零拒绝非正值／有限性保证，不等真实模型或Triton验收
 - [推理专用MTP与融合标签](frameworks/verl-fused-output-softcap.md#推理专用-mtp-与融合标签) — #8476把model labels控制信号与hook标签数据分开；一个原postprocess测试体base失败／head通过，不是fused CE／MTP或训练验收
