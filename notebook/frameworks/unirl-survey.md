@@ -1,5 +1,7 @@
 # UniRL — 腾讯统一多模态 RL 框架调研
 
+2026-11-01接续：[零优势与更新事件](#零优势与更新事件)追当前b8的GRPO→stack→backend：has_backward不是梯度非零，有限零norm仍可执行optimizer／scheduler；复用已有AdamW CPU证据，不重复归一化或诊断器实验。
+
 2026-11-01补充：[多图请求的附件轴与候选轴](#多图请求的附件轴与候选轴)核#417：八个原PNG编码／wire自编控制及三拒绝例，区分scalar／flat／一行nested；不把附件数当生成数，也不迁作真实SGLang／模型验收。
 
 2026-11-01接续：[连续token历史与停止文本](#连续-token-历史与停止文本)读新#640：保住文本停止标记不等完整CT，固定main b8的resolver未透传no_stop_trim，下一轮仍重建消息／模板。三个原resolver夹具及一个注入wire控制非SGLang生成／replay或视觉验收。
@@ -182,6 +184,27 @@ python3.12 -B experiments/unirl-agentic-group-semantics/verify.py /path/to/unirl
 ```
 
 固定Git blob须已缓存，运行禁止隐式fetch；无GPU／NPU、服务、模型、原suite或训练频率／质量验收。本项到此收束，等待维护者反馈或作者实质实现再核；不扩控制矩阵、新排M5训练或对社区发布，任何上游／既有PR-head写入仍逐项待用户明确授权。
+
+## 零优势与更新事件
+
+**奖励组没有终端优势信号，不等于这一更新窗口没有backward，更不等于参数必然不变。** 2026-11-01只读核[#635](https://github.com/Tencent-Hunyuan/UniRL/issues/635)仍OPEN／无评论；已有作者的只读诊断范围不变。本节固定当时主线 `b8e9740e981a68a5556fbeb8225558040a4d47a4`，补上节旧5d版本之后的更新调用链，不重复其四个归一化／零surrogate控制，也不实现同范围诊断器。
+
+| 当前链路 | 实际门控 | 不能从它推出什么 |
+|---|---|---|
+| [GRPO.compute_loss_and_backward](https://github.com/Tencent-Hunyuan/UniRL/blob/b8e9740e981a68a5556fbeb8225558040a4d47a4/unirl/algorithms/grpo.py) | 缺segment字段或空token提前返回has_backward=False；正常非空路径调用backward后返回True | 没有按“优势／loss／梯度为0”把该标志改False |
+| [SingleModelTrainStack._run_update](https://github.com/Tencent-Hunyuan/UniRL/blob/b8e9740e981a68a5556fbeb8225558040a4d47a4/unirl/train/stack/single.py) | 非累积中间段，且当前／此前窗口有backward，调用backend.optimizer_step；完全没有backward才跳过 | token计数为零的拒绝，与有token但优势零是两回事 |
+| [backend.optimizer_step](https://github.com/Tencent-Hunyuan/UniRL/blob/b8e9740e981a68a5556fbeb8225558040a4d47a4/unirl/train/backend/base_backend.py) | clip后只拒绝非有限grad norm；0是有限值，仍到optimizer.step及可选scheduler.step／ema.step调用，再递增backend计数并清grad | 计数递增不是逐参数值发生变化的证明；EMA调用也不等于所有timing配置下均更新shadow |
+| [AgenticTrainer](https://github.com/Tencent-Hunyuan/UniRL/blob/b8e9740e981a68a5556fbeb8225558040a4d47a4/unirl/trainer/agentic.py) | train_parts为空才返回0更新；正常接收result.optimizer_updates后推进_train_version | version／更新次数不是新终端奖励信息或学习收益计数 |
+
+Single stack还区分累积窗口与最后一次backward，defer-grad-sync下若末micro未反向而前面已反向，会报错而非自动同步；这不是建议把零优势micro直接跳掉。同项目的[UnifiedModelTrainStack](https://github.com/Tencent-Hunyuan/UniRL/blob/b8e9740e981a68a5556fbeb8225558040a4d47a4/unirl/train/stack/unified.py)以AR或image任一has_backward触发一次**共享**step，两track回报相同optimizer_updates；不能相加成两次，也不能从某一track零优势推断共享更新为零。这里不将unified路径称为AgenticTrainer实际运行入口。
+
+### 复用已有优化器证据
+
+[AdamW缺失梯度与零梯度](../fundamentals/adamw-optimizer-deep-dive.md#缺失梯度与零梯度)已在本机Torch2.9.1做过真实CPU autograd／optimizer对照：已有历史状态时，grad=None保持参数及state，显式零梯度仍推进moment和step；weight_decay=0也可因旧动量继续改变参数。按更新公式，无历史moment、无衰减且显式零grad时，参数则可保持不变。**能发生更新不代表必然发生更新，更不代表更新包含本组的新奖励信息。** 本轮只复核已安装Adam的筛选／更新源码，不重跑旧实验或将它冒充UniRL真实训练。
+
+当前GRPO的k3／approx_kl仍进入metrics，所读正常loss路径并未把它们另加为KL正则；不能用非零KL日志解释成额外正则驱动的更新。判断实际变化要同时知道所有参与行／track、参数grad是None还是零张量、optimizer历史、衰减、调度器与backend是否跳步，而不是只看terminal advantage或`optimizer_updates`。
+
+五完整UniRL模块仅AST／compile、关键调用点只读；没有实例化trainer／stack／backend、执行collective／clip／optimizer／scheduler／EMA、模型或设备。固定源码hash及复核命令见[本轮日志](../../diary/2026-11-01.md#0459--m1零优势与更新事件的接续核对)。这是把已有知识接到当前源码的范围审计，不是测得#635真实频率／因果收益、提出跳组干预或新增M5算力任务。
 
 ## AR 与 diffusion 的源码统一边界
 

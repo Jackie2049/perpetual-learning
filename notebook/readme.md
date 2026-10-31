@@ -320,6 +320,7 @@
   - [离线DPO布局与零步控制](frameworks/unirl-survey.md#离线-dpo-的成对布局与零步控制) — #476原数学片段CPU值/梯度检查；log2及准确率0不能单独认证语义配对/参考冻结，非模型或CUDA确定性验收
   - [多参考图像的双轴](frameworks/unirl-survey.md#多参考图像的样本行与附件轴) — #478原容器CPU控制：3行5图、选行/元数据保持、稠密槽需等附件数；保留行别名，不认证模型/数据/训练路径
   - [多图请求与候选轴](frameworks/unirl-survey.md#多图请求的附件轴与候选轴) — #417原PNG／wire八控制与三拒绝例，保序／重复附件及scalar／flat／nested[1,N]分开；非真实processor或SGLang验收
+  - [零优势与更新事件](frameworks/unirl-survey.md#零优势与更新事件) — 当前b8的backward／step门与共享记账；链接已有AdamW零grad／None证据，非真实训练频率或参数更新验收
   - [可选提示与模式要求](frameworks/unirl-survey.md#可选提示与模式必需条件) — #497已有维护者反对按现状合入；原请求/三版选择方法六输入CPU对照，合法无文本不等于所有模式需prompt，非ImageBind模型回归
   - [原生配置与训练计时](frameworks/unirl-survey.md#原生配置比较与训练计时) — #588公开五行复算/固定prompt哈希匹配；完整训练须含重算，近似耗时不等于精度/学习等价，非性能复测
   - [内部Pipe请求身份](frameworks/unirl-survey.md#内部-pipe-的版本字段与请求身份) — #568合并范围与#567硬件问题分开；原runtime八组真实spawn/Pipe控制，信封合法不等于命令执行或跨版本兼容，非完整引擎验收
