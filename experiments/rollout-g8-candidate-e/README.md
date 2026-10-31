@@ -24,8 +24,10 @@
 | 模式 | 单变量覆盖 | 目标阶段 |
 |---|---|---|
 | e1 | `actor_rollout_ref.actor.ppo_max_token_len_per_gpu` 3000 → 8192 | update_actor |
-| e2 | `actor_rollout_ref.rollout.log_prob_max_token_len_per_gpu` 4096 → 16384 | old_log_prob |
-| e3 | `actor_rollout_ref.ref.log_prob_max_token_len_per_gpu` 8192 → 16384 | ref |
+| e2 | `actor_rollout_ref.rollout.log_prob_max_token_len_per_gpu` 3000 → 16384 | old_log_prob |
+| e3 | `actor_rollout_ref.ref.log_prob_max_token_len_per_gpu` 3000 → 16384 | ref |
+
+> 起点均为 3000：`ref/ref.yaml:24` 与 `rollout/rollout.yaml:117` 的 `log_prob_max_token_len_per_gpu` 均 `${oc.select:actor_rollout_ref.actor.ppo_max_token_len_per_gpu,16384}`——候选 A 脚本显式设 ppo cap=3000，故三阶段动态批 cap 实际默认 3000（readme 早稿按 8192/4096 推断有误，以本表为准）。
 
 ## 结果（steps 3–14 均值，n=12）
 
@@ -35,11 +37,11 @@
 |---|---|---|---|---|---|---|
 | e1 | update_actor 13.277→**18.201s**（+37.1%） | **0.729** | 32.358s | **0.8494**（慢 17.8%） | 0.8480 | −0.0004s |
 | e2 | old_log_prob 3.773→**4.776s**（+26.6%） | **0.790** | 28.672s | **0.9586**（慢 4.3%） | 0.9648 | +0.001s |
-| e3 | ref 4.234→**4.642s**（+9.6%） | **0.912** | 27.634s | **0.9946**（慢 0.5%） | 0.9854 | −0.026s |
+| e3r2 | ref 4.234→**4.713s**（+11.3%） | **0.898** | 27.775s | **0.9895**（慢 1.1%） | 0.9829 | −0.029s |
 
 - **e1（最大阶段、占比 48.3%）**：update_actor 慢 37%，其余阶段均在 ±0.6% 内（噪声）；整步实测 0.8494 与单阶段预测 0.8480 相差 0.2%——单通道恒等式在同栈得到精确验证。
 - **e2**：old_log_prob 慢 26.6%；非目标阶段 ref +2.5%、update_weights +5.2%（均在步间噪声量级，不作系统归因）；整步 0.9586 中约 3.6 个百分点由目标阶段解释。
-- **e3**：ref 慢 9.6%；update_actor −1.6% 部分抵消，整步仅慢 0.5%。
+- **e3r2**：ref 慢 11.3%；update_actor −1.0% 部分抵消，整步仅慢 1.1%。（e3 首跑 14 步半写数据曾给 ref 4.642s／0.9946，与完整 15 步 e3r2 的 4.713s／0.9895 差 1.5%，在步间噪声 sd≈0.8s 内，方向一致。）
 - **峰值 reserved 三模式均 21.18–21.25GB（与基线相同）**—— slowdown 不是显存压力造成的；机制（更大 micro-batch 的 attention/前向效率）未做 profiling，只记实测事实。
 - 单次运行、seed=0（本栈已知跨进程非 bit 确定）；步级均值 n=12，步间 sd≈0.8s，表中 >5% 的差异超出噪声。
 
@@ -49,7 +51,7 @@
 
 - **e1 首跑**：0 步完成，`torch.AcceleratorError: CUDA error: invalid argument`，栈在 FSDP `init_flat_param_attributes` 的 `pin_memory()`（首个 FSDP 前向）。原样重跑（仅 checkpoint/日志路径改到 /tmp）**15/15 步成功** → 判定为**环境瞬时错误，非杠杆属性**；不把单次启动失败归因于 token 上限。
 - **e2**：15/15 步完成（exit=0），结束阶段 DataLoader worker 被 signal Killed（与候选 A 相同的退出清理现象，不影响已输出 step）。
-- **e3**：14/15 步完成，第 15 步 `Saving checkpoint ...` 后崩溃、日志被截断；`/home` 当时已 0 字节可用（e2 的 9.1G checkpoint＋e3 的 6.8G 半写 checkpoint 叠加），判定为**磁盘耗尽中断**，非训练/杠杆失败。steps 3–14 数据完整可用。
+- **e3**：14/15 步完成，第 15 步 `Saving checkpoint ...` 后崩溃、日志被截断；`/home` 当时已 0 字节可用（e2 的 9.1G checkpoint＋e3 的 6.8G 半写 checkpoint 叠加），判定为**磁盘耗尽中断**，非训练/杠杆失败。**本批（第四十二批）以 e3r2 补跑完整 15 步**（checkpoint/日志落 `/tmp`，13:59–14:09 UTC，exit=0），`raw/rollout-g8-candidate-e-e3r2.txt`。
 
 ## 磁盘操作
 
@@ -62,6 +64,7 @@
 # 服务器侧（脚本在 /home/zxw/venvs/，模型/数据已就位）
 MODE=e1 bash /home/zxw/venvs/run-candidate-e.sh     # 原始三模式脚本（checkpoint 落 /home）
 bash /home/zxw/venvs/run-candidate-e-e1r2.sh        # e1 补跑（checkpoint/日志落 /tmp）
+bash /home/zxw/venvs/run-candidate-e-e3r2.sh        # e3 补跑（checkpoint/日志落 /tmp，第四十二批）
 # 解析（本地，需先取回日志；steps 3–14 窗口）
 python3 parse-candidate-e.py <base.txt> <e1.txt> <e2.txt> <e3.txt>
 ```

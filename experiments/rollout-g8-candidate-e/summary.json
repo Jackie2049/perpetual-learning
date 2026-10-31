@@ -73,7 +73,7 @@
       "peak_reserved_gb": 21.252
     },
     "e2": {
-      "lever": "actor_rollout_ref.rollout.log_prob_max_token_len_per_gpu 4096 -> 16384",
+      "lever": "actor_rollout_ref.rollout.log_prob_max_token_len_per_gpu 3000 -> 16384",
       "runs": [
         "raw/rollout-g8-candidate-e-e2.log (15/15)"
       ],
@@ -117,28 +117,29 @@
       "peak_reserved_gb": 21.182
     },
     "e3": {
-      "lever": "actor_rollout_ref.ref.log_prob_max_token_len_per_gpu 8192 -> 16384",
+      "lever": "actor_rollout_ref.ref.log_prob_max_token_len_per_gpu 3000 -> 16384",
       "runs": [
-        "raw/rollout-g8-candidate-e-e3.log (14/15, final checkpoint save interrupted)"
+        "raw/rollout-g8-candidate-e-e3.log (original 14/15, final checkpoint save interrupted; disk-full)",
+        "raw/rollout-g8-candidate-e-e3r2.txt (re-run 15/15, /tmp; fourth-batch complete)"
       ],
       "n": 12,
-      "step_s": 27.634,
-      "step_x_vs_base": 0.9946,
+      "step_s": 27.775,
+      "step_x_vs_base": 0.9895,
       "stages_s": {
-        "gen": 4.1819,
-        "old_log_prob": 3.7283,
-        "ref": 4.6415,
-        "adv": 0.111,
-        "update_actor": 13.0631,
-        "update_weights": 1.8297
+        "gen": 4.182,
+        "old_log_prob": 3.746,
+        "ref": 4.713,
+        "adv": 0.112,
+        "update_actor": 13.14,
+        "update_weights": 1.807
       },
       "G": {
-        "gen": 0.9987,
-        "old_log_prob": 1.0119,
-        "ref": 0.9122,
-        "adv": 0.9921,
-        "update_actor": 1.0163,
-        "update_weights": 0.9888
+        "gen": 0.999,
+        "old_log_prob": 1.007,
+        "ref": 0.898,
+        "adv": 0.982,
+        "update_actor": 1.01,
+        "update_weights": 1.001
       },
       "share_base": {
         "gen": 0.152,
@@ -150,15 +151,16 @@
       },
       "single_stage_pred_step_x": {
         "gen": 0.9998,
-        "old_log_prob": 1.0016,
-        "ref": 0.9854,
-        "adv": 1.0,
-        "update_actor": 1.0078,
-        "update_weights": 0.9993
+        "old_log_prob": 1.001,
+        "ref": 0.9829,
+        "adv": 0.9999,
+        "update_actor": 1.005,
+        "update_weights": 1.0001
       },
-      "rebuild_s": 27.6603,
-      "residual_s": -0.0263,
+      "rebuild_s": 27.804,
+      "residual_s": -0.029,
       "peak_reserved_gb": 21.178
     }
-  }
+  },
+  "note": "e2/e3 lever start = 3000: ref/ref.yaml:24 & rollout/rollout.yaml:117 log_prob_max_token_len_per_gpu oc.select actor.ppo_max_token_len_per_gpu (candidate A sets 3000). e3r2 complete-15 rerun (fourth batch); e3 original 14/15 disk-full data superseded."
 }

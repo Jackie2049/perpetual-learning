@@ -1,0 +1,2 @@
+=== candidate-e e3r2 mode=e3 override=actor_rollout_ref.ref.log_prob_max_token_len_per_gpu=16384 start 2026-10-31T13:59:04Z ===
+=== candidate-e e3r2 mode=e3 exit=0 end 2026-10-31T14:09:10Z ===

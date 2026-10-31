@@ -1,0 +1,10 @@
+BASE  n=12  step=27.484
+stage              base     mode   delta%       G   identity_step_x  actual_step_x
+--- raw/rollout-g8-candidate-e-e3r2.txt  n=12  step=27.775
+gen               4.177    4.182    +0.12   0.999            0.9998         0.9895
+old_log_prob      3.773    3.746    -0.70   1.007            1.0010         0.9895
+ref               4.234    4.713   +11.31   0.898            0.9829         0.9895
+adv               0.110    0.112    +1.80   0.982            0.9999         0.9895
+update_actor     13.277   13.140    -1.03   1.010            1.0050         0.9895
+update_weights    1.809    1.807    -0.12   1.001            1.0001         0.9895
+   all-stage rebuild step=27.804 vs measured=27.775 residual=-0.029s (base unaccounted=+0.105s)
