@@ -1,5 +1,7 @@
 # UniRL — 腾讯统一多模态 RL 框架调研
 
+2026-11-01补充：[多图请求的附件轴与候选轴](#多图请求的附件轴与候选轴)核#417：八个原PNG编码／wire自编控制及三拒绝例，区分scalar／flat／一行nested；不把附件数当生成数，也不迁作真实SGLang／模型验收。
+
 2026-11-01接续：[连续token历史与停止文本](#连续-token-历史与停止文本)读新#640：保住文本停止标记不等完整CT，固定main b8的resolver未透传no_stop_trim，下一轮仍重建消息／模板。三个原resolver夹具及一个注入wire控制非SGLang生成／replay或视觉验收。
 
 2026-10-30接续：[空响应候选与诊断时序](#空响应候选与诊断时序)：#581评论者已撤回重复修复建议；#598同4716906已非draft、仍未合并。循环后的检查不能保证先于循环内collective故障到达；仅源码时序核对，不重跑旧实验或认领实现。
@@ -442,6 +444,34 @@ Python3.12.13 / torch2.9.1 / Pillow12.0.0。本机原 CPU 环境缺 Pillow，使
 两个真实 __path__ 包壳分别跳过 tensor 包的 Ray transport 汇总初始化和 local reward 包的重型模型 scorer 汇总初始化；其余 Batch/Texts/Request/Response/router/MC 类及统计 helper 均从原模块加载，无摘取方法或假 scorer。MC 的空 _load_model 方法会由原构造器调用，model 保持 None；base_device 参数也不代表执行过设备加载。无 Ray/Hydra/OmegaConf/Transformers、服务/HTTP、设备发现、trainer、反向或 GPU/NPU 执行。这是自编原模块控制，不是上游原测试；不据此定性训练缺陷或新增 M5 必跑事项。
 
 脚本锁定七个完整源文件 SHA256（包括仅读的 service.py）。关键 hash：per_domain.py `6aca28149c4dcc48b3f8e29e74ef7195daa997aa833daac778618d4f3b2b73f8`；mc_exact_match.py `452413e2c7db3cf722fd3a887f660a61e5a13513f015a539f103b0a32d1cf526`；wandb_metrics.py `e92b9c40ebab4b78759ad15e36db4a833f853f6b122db4e395577966cc150648`。本题收束，不堆 NaN/路由变体，也不将组件统计等同于服务验收。
+
+## 多图请求的附件轴与候选轴
+
+**同一prompt的多张图，不是多个prompt，也不是多个生成候选。** Ideny42的[#417](https://github.com/Tencent-Hunyuan/UniRL/pull/417)在2026-11-01读取为OPEN／非draft，head `fe40529f3634cc51ee592064aeef0ce969bd7573`、API目标base `79d1e8ab14c027d99cffe253121e965bac7d1587`，30个改动文件。它用一行ImageSets承载完整附件集，并修改SGLang VLM的请求表示；已有作者，本节只核窄的编码接口，不重跑下节旧#478容器测试或替代实现。
+
+[数据源](https://github.com/Tencent-Hunyuan/UniRL/blob/fe40529f3634cc51ee592064aeef0ce969bd7573/unirl/data/data_source.py)按原顺序选择image／condition引用，为每个prompt创建一个ImageSet，再把整个ImageSets放进同一个input primitives['image']。有图批次可保留空附件行，整体无图则返回None；具体模型仍可拒绝空行／多图。这个表示不要求每张附件增加一个Sample祖先Part，容器能表达变长也不保证每个消费者接受它。
+
+### 原编码接口的本机结果
+
+[候选_wire_image_data](https://github.com/Tencent-Hunyuan/UniRL/blob/fe40529f3634cc51ee592064aeef0ce969bd7573/unirl/rollout/engine/sglang/adapters/vlm.py)接收**一个prompt**的images与parallel_samples=r，其候选编码约定为：
+
+| 附件数N | 候选数r | image_data结果 |
+|---|---|---|
+| 1 | 1／2／5 | scalar PNG data URI |
+| 3 | 1 | flat[3]，三附件保序 |
+| 3 | 2／5 | nested[1,3]，外层仍只一行，不复制成r行 |
+
+单张图在r>1时也不额外包list；多图r>1的外层1与候选数r是不同维度。这是候选helper实际输出，不是实测SGLang服务端接受了这三种布局。
+
+[脚本](../../experiments/unirl-multi-image-wire/verify.py)加载原require与PNG/base64工具完整模块，仅AST取完整原_wire_image_data，不导入UniRL／Torch／SGLang，也不用fake encoder或processor。Python3.12.14／Pillow12.3.0，三张内存小图为RGB 2×1、RGBA 3×2、L 4×1；六个N／r组合及一次重排、一次重复附件，共八个自编有效控制。逐URI做真实base64解码与PIL PNG读取，mode／size／像素bytes均与对应输入一致，重排保序、重复附件不去重。另空images、r=0、r=−1三个输入由原require抛ValueError。RGBA／L只证该codec能保留mode；数据源另会转RGB，真实processor能否接受各种mode没有在此验证。
+
+完整参数、PNG内容hash及六源码hash见[结果](../../experiments/unirl-multi-image-wire/result.json)。复查：`python -B experiments/unirl-multi-image-wire/verify.py /path/to/UniRL-git`，需Pillow与已缓存Git blob，脚本禁lazy fetch、不自动安装。原Torch环境无Pillow，旧隔离target也不存在，改用桌面已捆绑的Python／Pillow，只读取运行时位置，未安装依赖或更改环境。不是作者35／30项契约harness或其fake-processor VLM测试。
+
+### 请求编码与模型条件分别验收
+
+[VLM adapter源码](https://github.com/Tencent-Hunyuan/UniRL/blob/fe40529f3634cc51ee592064aeef0ce969bd7573/unirl/rollout/engine/sglang/adapters/vlm.py)把encode_mm从恰好一图放宽为至少一图，processor接收images全集，MMEncoding也改存images列表。build_inputs按sampling.n选择wire形状；group fanout k及base_seed情况下的展开属于另一段控制流，不由附件数推出。[conversation renderer](https://github.com/Tencent-Hunyuan/UniRL/blob/fe40529f3634cc51ee592064aeef0ce969bd7573/unirl/rollout/engine/sglang/utils/conversations.py)为每个附件加image block并累积同序images_list；build_conditions再按prompt_index复制pixel_values／image_grid_thw。这些调用点仅源码读取，不代表占位数、真实processor、token IDs、seed展开或replay已一致。
+
+六完整源输入AST／compile，未构造ImageSets／Part／Sample、加载manifest或图像路径、执行formatter／processor／服务请求、模型／replay／训练或设备。作者明确最终rebase只重跑CPU合同与hooks，旧H20配方结果未在最终树重跑，真实SGLang VLM／FLUX及跨引擎条件一致仍未测；不将其旧生成图变化或有限训练报告搬到当前完整栈。M5后续只有在已有获准匹配任务中独立选用时，沿[原SGLang参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)核真实请求／条件身份，不为本接口新排训练或与CT RFC自动拼接。
 
 ## 多参考图像的样本行与附件轴
 

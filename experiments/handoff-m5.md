@@ -19,6 +19,8 @@ GPU/NPU 的访问、环境与实验由 macbook-M5 Agent 负责。M1 遇到需要
 
 ## UniRL 联合路径的资源与身份边界
 
+多图VLM wire参考（2026-11-01，同一SGLang入口、不新增任务）：[#417](https://github.com/Tencent-Hunyuan/UniRL/pull/417)固定fe40529f／API目标base79d1e8ab；[M1原PNG encoder与wire八控制／三拒绝](../notebook/frameworks/unirl-survey.md#多图请求的附件轴与候选轴)仅CPU编码与scalar／flat／nested[1,N]形状，不是processor／服务或模型。若M5未来已有获准匹配多图任务且独立选用，先固定实际SGLang／模型与processor／tokenizer版本、每prompt附件顺序／mode、有效sampling.n与seed展开、image blocks、prompt IDs／pixel_values／image_grid_thw及replay身份，再沿原小预算核同输入；旧rebase前H20／假processor报告不迁作最终栈。缺环境／授权模型／资源、需下载部署或影响专项即停记未测，不自动安装、套候选、拼CT／FLUX或新增配方矩阵；社区及既有PR-head写入仍逐项须用户明确同意，参考非接单。
+
 SGLang CT条件参考（2026-11-01，沿用本节SGLang环境入口，不新增训练／部署队列）：[#640](https://github.com/Tencent-Hunyuan/UniRL/issues/640)已有ruiling-smartbear，本地no_stop_trim补丁未公开；作者0.5.19／Qwen3-0.6B HTTP两轮只证停止标记文本保留，八replay项属基线，补丁replay／native／视觉／训练未测。[M1主线b8契约](../notebook/frameworks/unirl-survey.md#连续-token-历史与停止文本)仅三个resolver夹具及一个post-resolver注入wire控制。若M5未来本已在获准匹配任务里接续，先固定实际源码／补丁身份、SGLang与模型／tokenizer revision、HTTP或native，分别核生成ID／返回text／下一轮prompt IDs／本轮replay conditions，再看真实logprob；视觉另核图像列表／占位／processor条件，不套文本结论。缺公开patch、现有授权模型／环境／预算或影响专项即保留未测，不自行下载、部署、启动训练或认领RFC；社区写入及已有PR-head推送仍逐项待用户明确同意，记录不代表接单。
 
 Qwen3.5-MoE补证（2026-10-30，沿用下方激活卸载基线#627／#639参考，不新增任务）：#639新head44f2a96d仅修订文档；[官方wheel四产物核对](../notebook/frameworks/unirl-survey.md#qwen35-moe-的发布文件与接线)确认0.1.11两mask调用含cache_position、0.1.12移除，各同固定tag。两配方raw YAML选meta-init／VeOmni，实际HF model_type=qwen3_5_moe才经共用bundle／shim进入该模型；M1未加载真实config、Linux导入或执行mask／EP。若M5未来独立接续原已获准匹配工作，需把实际model_type、meta-init分支和安装制品写清，不用另一模型或包名代替；没有相应模型／环境就维持未测，不自动新增Qwen3.5训练、下载升级或改专项。NPU仅源码制品核对，不是UniRL设备支持；上游及PR-head写入仍逐项待用户明确同意。

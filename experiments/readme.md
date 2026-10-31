@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [unirl-multi-image-wire/verify.py](unirl-multi-image-wire/verify.py) | #417原require／PNG encoder及wire helper，八自编真实内存PNG往返／形状控制与三拒绝例，[结果](unirl-multi-image-wire/result.json)；非ImageSets／processor／SGLang或训练 | [附件轴与候选轴](../notebook/frameworks/unirl-survey.md#多图请求的附件轴与候选轴) |
 | [verl-router-row-mask/verify.py](verl-router-row-mask/verify.py) | #8471完整原控制器／原测试模块内存加载、原生pytest收集22项及四自编值／mask控制，[结果](verl-router-row-mask/result.json)；原router／hook替身非真实VeOmni／EP | [路由有效性](../notebook/frameworks/verl-transferqueue-worker-lifecycle-deep-reading.md#路由值与记录有效性) |
 | [verl-validation-missing/verify.py](verl-validation-missing/verify.py) | #8468原三个指标函数／四测试体，两版对照与两自编聚合控制；[结果](verl-validation-missing/result.json)核缺失补零、条件均值及按N分桶，非完整trainer／Ray取消或训练 | [失败补零](../notebook/frameworks/verl-validation-bayes-passk.md#失败补零与条件均值) |
 | [verl-entropy-normalizers/verify.py](verl-entropy-normalizers/verify.py) | #8477原20个CPU数学参数体、三个人为BF16舍入CE统计的原helper两版对照，[结果](verl-entropy-normalizers/result.json)核熵的独立归一化与平移不变性；非CANN／NPU／actor或性能 | [分块熵](../notebook/frameworks/verl-fused-output-softcap.md#分块熵的独立归一化) |

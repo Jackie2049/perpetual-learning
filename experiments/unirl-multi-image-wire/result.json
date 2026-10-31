@@ -1,0 +1,225 @@
+{
+  "python": "3.12.14",
+  "pillow": "12.3.0",
+  "head": "fe40529f3634cc51ee592064aeef0ce969bd7573",
+  "source_sha256": {
+    "unirl/config/require.py": "d30f89e77ff72e9dddaaf8b8f0ab403790b3e2984fbd6afea28f6bcc60177238",
+    "unirl/rollout/engine/sglang/utils/images.py": "90e1d383193c15cdea23f7ec437f0b670bc4d00028a858248619ffaaa0fced88",
+    "unirl/rollout/engine/sglang/adapters/vlm.py": "6322109af9153902bd058cbd23f4cfc123c58ab133e0e39fc39320bc191420a1",
+    "unirl/rollout/engine/sglang/adapters/base.py": "c1857208b6b1d37a5eed5ddb6c5a3a8315ffa326c80bb1b26baf3212ecc3dce2",
+    "unirl/rollout/engine/sglang/utils/conversations.py": "ba768159e9d6b936f81165af6f816a7481d0d5853e0a0c23636d00ee83dc2923",
+    "unirl/data/data_source.py": "5ca6adc46dd40894c25acd9c6ca518f689b64cf93a5dbc0bccf3349589faf1f8"
+  },
+  "own_valid_controls": [
+    {
+      "images": 1,
+      "candidates": 1,
+      "wire_shape": "scalar",
+      "decoded": [
+        {
+          "mode": "RGB",
+          "size": [
+            2,
+            1
+          ],
+          "png_sha256": "c73d08170eba8ea3e649650ee65116c268bd2bdfacf5cd11ac1ddec33d8597b2"
+        }
+      ]
+    },
+    {
+      "images": 1,
+      "candidates": 2,
+      "wire_shape": "scalar",
+      "decoded": [
+        {
+          "mode": "RGB",
+          "size": [
+            2,
+            1
+          ],
+          "png_sha256": "c73d08170eba8ea3e649650ee65116c268bd2bdfacf5cd11ac1ddec33d8597b2"
+        }
+      ]
+    },
+    {
+      "images": 1,
+      "candidates": 5,
+      "wire_shape": "scalar",
+      "decoded": [
+        {
+          "mode": "RGB",
+          "size": [
+            2,
+            1
+          ],
+          "png_sha256": "c73d08170eba8ea3e649650ee65116c268bd2bdfacf5cd11ac1ddec33d8597b2"
+        }
+      ]
+    },
+    {
+      "images": 3,
+      "candidates": 1,
+      "wire_shape": "flat[3]",
+      "decoded": [
+        {
+          "mode": "RGB",
+          "size": [
+            2,
+            1
+          ],
+          "png_sha256": "c73d08170eba8ea3e649650ee65116c268bd2bdfacf5cd11ac1ddec33d8597b2"
+        },
+        {
+          "mode": "RGBA",
+          "size": [
+            3,
+            2
+          ],
+          "png_sha256": "78c0c880eca59f601d54f2847d8440496f8b0e91015d62d86a6ab5cf98ea0119"
+        },
+        {
+          "mode": "L",
+          "size": [
+            4,
+            1
+          ],
+          "png_sha256": "3dd387fd0a2423d956aeecbfb76bbfbe635766cdafa0d8c6d49e57a6e8bb8dc7"
+        }
+      ]
+    },
+    {
+      "images": 3,
+      "candidates": 2,
+      "wire_shape": "nested[1,3]",
+      "decoded": [
+        {
+          "mode": "RGB",
+          "size": [
+            2,
+            1
+          ],
+          "png_sha256": "c73d08170eba8ea3e649650ee65116c268bd2bdfacf5cd11ac1ddec33d8597b2"
+        },
+        {
+          "mode": "RGBA",
+          "size": [
+            3,
+            2
+          ],
+          "png_sha256": "78c0c880eca59f601d54f2847d8440496f8b0e91015d62d86a6ab5cf98ea0119"
+        },
+        {
+          "mode": "L",
+          "size": [
+            4,
+            1
+          ],
+          "png_sha256": "3dd387fd0a2423d956aeecbfb76bbfbe635766cdafa0d8c6d49e57a6e8bb8dc7"
+        }
+      ]
+    },
+    {
+      "images": 3,
+      "candidates": 5,
+      "wire_shape": "nested[1,3]",
+      "decoded": [
+        {
+          "mode": "RGB",
+          "size": [
+            2,
+            1
+          ],
+          "png_sha256": "c73d08170eba8ea3e649650ee65116c268bd2bdfacf5cd11ac1ddec33d8597b2"
+        },
+        {
+          "mode": "RGBA",
+          "size": [
+            3,
+            2
+          ],
+          "png_sha256": "78c0c880eca59f601d54f2847d8440496f8b0e91015d62d86a6ab5cf98ea0119"
+        },
+        {
+          "mode": "L",
+          "size": [
+            4,
+            1
+          ],
+          "png_sha256": "3dd387fd0a2423d956aeecbfb76bbfbe635766cdafa0d8c6d49e57a6e8bb8dc7"
+        }
+      ]
+    },
+    {
+      "images": 3,
+      "candidates": 2,
+      "wire_shape": "nested[1,3]",
+      "decoded": [
+        {
+          "mode": "L",
+          "size": [
+            4,
+            1
+          ],
+          "png_sha256": "3dd387fd0a2423d956aeecbfb76bbfbe635766cdafa0d8c6d49e57a6e8bb8dc7"
+        },
+        {
+          "mode": "RGB",
+          "size": [
+            2,
+            1
+          ],
+          "png_sha256": "c73d08170eba8ea3e649650ee65116c268bd2bdfacf5cd11ac1ddec33d8597b2"
+        },
+        {
+          "mode": "RGBA",
+          "size": [
+            3,
+            2
+          ],
+          "png_sha256": "78c0c880eca59f601d54f2847d8440496f8b0e91015d62d86a6ab5cf98ea0119"
+        }
+      ]
+    },
+    {
+      "images": 2,
+      "candidates": 1,
+      "wire_shape": "flat[2]",
+      "decoded": [
+        {
+          "mode": "RGB",
+          "size": [
+            2,
+            1
+          ],
+          "png_sha256": "c73d08170eba8ea3e649650ee65116c268bd2bdfacf5cd11ac1ddec33d8597b2"
+        },
+        {
+          "mode": "RGB",
+          "size": [
+            2,
+            1
+          ],
+          "png_sha256": "c73d08170eba8ea3e649650ee65116c268bd2bdfacf5cd11ac1ddec33d8597b2"
+        }
+      ]
+    }
+  ],
+  "own_invalid_controls": [
+    {
+      "images": 0,
+      "candidates": 1,
+      "error": "VLMAdapter requires at least one image per request"
+    },
+    {
+      "images": 3,
+      "candidates": 0,
+      "error": "VLMAdapter parallel_samples must be >= 1, got 0"
+    },
+    {
+      "images": 3,
+      "candidates": -1,
+      "error": "VLMAdapter parallel_samples must be >= 1, got -1"
+    }
+  ],
+  "scope": "Eight own CPU wire controls with real in-memory PIL images, original PNG/base64 encoder and require modules, and the complete unchanged _wire_image_data AST function. Three original precondition rejections. Six full source inputs compile; remaining adapter/data/conversation code read only. No original author harness, ImageSets/Part/Sample construction, fake or real processor, Torch, SGLang request/backend, replay, model, training, GPU/NPU or performance execution."
+}
