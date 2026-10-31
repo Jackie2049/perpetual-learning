@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-router-row-mask/verify.py](verl-router-row-mask/verify.py) | #8471完整原控制器／原测试模块内存加载、原生pytest收集22项及四自编值／mask控制，[结果](verl-router-row-mask/result.json)；原router／hook替身非真实VeOmni／EP | [路由有效性](../notebook/frameworks/verl-transferqueue-worker-lifecycle-deep-reading.md#路由值与记录有效性) |
 | [verl-validation-missing/verify.py](verl-validation-missing/verify.py) | #8468原三个指标函数／四测试体，两版对照与两自编聚合控制；[结果](verl-validation-missing/result.json)核缺失补零、条件均值及按N分桶，非完整trainer／Ray取消或训练 | [失败补零](../notebook/frameworks/verl-validation-bayes-passk.md#失败补零与条件均值) |
 | [verl-entropy-normalizers/verify.py](verl-entropy-normalizers/verify.py) | #8477原20个CPU数学参数体、三个人为BF16舍入CE统计的原helper两版对照，[结果](verl-entropy-normalizers/result.json)核熵的独立归一化与平移不变性；非CANN／NPU／actor或性能 | [分块熵](../notebook/frameworks/verl-fused-output-softcap.md#分块熵的独立归一化) |
 | [verl-mtp-hook/verify.py](verl-mtp-hook/verify.py) | #8476一个原postprocess测试体及原fixture／函数AST，[结果](verl-mtp-hook/result.json)base断言失败／head通过；原回调替身，非Megatron／kernel／训练或完整测试 | [推理MTP与融合标签](../notebook/frameworks/verl-fused-output-softcap.md#推理专用-mtp-与融合标签) |

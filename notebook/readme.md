@@ -277,6 +277,7 @@
 - [verl 源码架构阅读](frameworks/verl-source-reading.md) — HybridFlow RL 训练框架、PPO/GRPO 循环、FSDP+混合推理引擎、Prefix Grouper
 - [verl RL Infra 架构源码阅读](frameworks/verl-rl-infra-reading.md) — SyncPPOTrainer、ActorRolloutRefWorker、GRPO/GAE、TransferQueue、vLLM Rollout
 - [verl TransferQueue 数据面与启动资源](frameworks/verl-transferqueue-worker-lifecycle-deep-reading.md) — #8340按nnodes填默认单元数；3原配置测试/4组generated配对，不认证Ray启动。数据字段与权重同步分开，旧零拷贝/性能推导撤回
+- [路由值与记录有效性](frameworks/verl-transferqueue-worker-lifecycle-deep-reading.md#路由值与记录有效性) — #8471原22个CPU控制器测试；四控制分开expert0／缺失占位与debug检查，生产者／SP／EP仍需另验
 - [MLflow初始化的锁与异常](frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#mlflow-初始化的文件锁与异常范围) — #8393同锁文件的局部互斥不是坏库修复；原类／真实锁与注入回调控制非MLflow迁移验收
 - [KV salt与sleep清理范围](frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#新版的显式清理与-sleep-路径) — #8323显式reset_connector=False不约束sleep；外层复用率和旧权重失效分开，vLLM0.32调用链仅源码核对
 - [verl 教师生成与蒸馏目标](frameworks/verl-veomni-opd-source-reading.md#教师生成与蒸馏目标) — #8335整批来源选择、生成/软标签评分分开；教师prefix不是纯学生on-policy，16文件仅语法与源码核对

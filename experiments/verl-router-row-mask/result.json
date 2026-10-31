@@ -1,0 +1,44 @@
+{
+  "python": "3.12.13",
+  "torch": "2.9.1",
+  "pytest": "8.4.2",
+  "head": "7ad2b4fbd6f0afbd59b89c3022847ebb35bd9b1e",
+  "source_sha256": {
+    "verl/utils/veomni/router_replay.py": "1f6739f327be63a6a3cd26beb44ba43b02b54f4876e505f0238ceadccea9e732",
+    "tests/utils/veomni/test_router_replay_on_cpu.py": "2bee972911aad7cd12b19c4b18a236504d2ca3f7692d936d47d9586714be3982",
+    "verl/experimental/agent_loop/agent_loop.py": "2f1d39dbb9446f9012461ad5efeb0970f69e16217431785ea3f730afec8c0a70",
+    "verl/workers/engine/veomni/transformer_impl.py": "da4e6784ab6dbf7270134c80a6ab9d07381b1e0e4f552c57554cf1e0835d8ee0",
+    "verl/workers/utils/padding.py": "f3282e1911fcc6ca727563a1473bf430a5e11f7943503975c937c13a7a1b21f0"
+  },
+  "native_pytest_controller_reports": [
+    {"test":"test_take_recorded_is_layer_major","outcome":"passed"},
+    {"test":"test_record_begin_microbatch_drops_previous_microbatch","outcome":"passed"},
+    {"test":"test_take_recorded_before_any_router_fired_raises","outcome":"passed"},
+    {"test":"test_take_recorded_outside_record_mode_raises","outcome":"passed"},
+    {"test":"test_record_recompute_per_layer_reverse","outcome":"passed"},
+    {"test":"test_replay_first_step_without_prior_discovery","outcome":"passed"},
+    {"test":"test_replay_per_layer_reverse_recompute","outcome":"passed"},
+    {"test":"test_replay_strict_missing_target_pos_raises","outcome":"passed"},
+    {"test":"test_replay_duplicate_topk_falls_back_to_native","outcome":"passed"},
+    {"test":"test_replay_respects_explicit_mask","outcome":"passed"},
+    {"test":"test_replay_topk_one_supported","outcome":"passed"},
+    {"test":"test_debug_asserts_mask_true_on_zero_row","outcome":"passed"},
+    {"test":"test_replay_mask_row_count_mismatch_raises","outcome":"passed"},
+    {"test":"test_replay_target_row_count_mismatch_raises","outcome":"passed"},
+    {"test":"test_begin_microbatch_replay_without_targets_raises","outcome":"passed"},
+    {"test":"test_begin_microbatch_record_with_targets_raises","outcome":"passed"},
+    {"test":"test_begin_microbatch_while_disabled_raises","outcome":"passed"},
+    {"test":"test_clear_resets_state","outcome":"passed"},
+    {"test":"test_record_snapshot_independent_of_source_tensor","outcome":"passed"},
+    {"test":"test_disabled_passes_through_indices","outcome":"passed"},
+    {"test":"test_install_uninstall_roundtrip","outcome":"passed"},
+    {"test":"test_install_without_veomni_raises","outcome":"passed"}
+  ],
+  "own_controls": {
+    "topk1_no_mask": [[7],[3]],
+    "topk1_explicit_mask_debug_off": [[0],[7]],
+    "topk1_explicit_mask_debug_on_error": "router_replay: routed_experts_mask marks a row valid but its target is all-zero. The producer must mark zero-filled rows (padding, final generated token, tool responses) as invalid.",
+    "nonzero_duplicate_masked_in_debug_on": [[5,5]]
+  },
+  "scope": "Native pytest collection/fixtures/assertions from the unchanged original 22-test controller module, loaded in memory through a custom pytest.Module; complete production controller module, only verl package initialization bypassed. Original router nn.Module fixtures and install/uninstall VeOmni hook stubs are not real SparseMoeBlock/EP execution. Four own CPU value/mask controls. Five full inputs compile; producer/padding/engine modules read and compile only. No VeOmni backend/model, TQ, SP, EP, training, GPU/NPU or performance."
+}

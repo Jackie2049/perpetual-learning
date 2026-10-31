@@ -2,6 +2,8 @@
 
 TransferQueue把训练轨迹的元数据传递与实际字段数据交换分开；它不是verl的权重同步backend。默认SimpleStorage使用Ray actor管理存储单元，并通过ZMQ交换数据。存储单元数量影响启动时的逻辑CPU预留与数据分片，不等于显存容量或吞吐保证。
 
+2026-11-01补[路由值与记录有效性](#路由值与记录有效性)：#8471原22个CPU控制器测试通过，真实expert0与未知占位需要独立mask；debug与数值回退仍有边界，不能代替生产者／EP验收。
+
 2026-10-30补[critic可选字段的取数边界](#critic-可选字段的取数边界)：已有#8457针对release/v0.9.1，在优势和指标取数前按use_critic选择values；下游指标已有开关不能保护上游取数。源码／语法核对不是TransferQueue版本兼容或训练验收。
 
 2026-10-23更新：固定阅读[verl #8340](https://github.com/verl-project/verl/pull/8340)，head `881fb96937f5ddfae5d894bb9a48538d1b049e1e`，base及共同祖先 `dc709afb7a74fd2645640a4e5f2fdf40166b4fbb`，7文件58增6删，读取时open/非draft。TransferQueue资源及数据路径以作者复现所用提交 `5fe4e49fe74aef544fe54da1fbeabf0b36d497eb`为准，不代表verl强制依赖此revision或本机安装了它。
@@ -94,6 +96,37 @@ PR另改[Qwen3.5 FSDPTurbo示例](https://github.com/verl-project/verl/blob/7c8d
 作者报告48层、TP4×PP4×CP8、16节点/128GPU配置中，单元fan-in由157GB降至39GB，`timing_s/ref`从94.6秒降至65.7秒；这是内部patch与特定栈的结果。12/48层说明路由payload约四分之一的来源，不代表整批所有字段、全部网络/H2D字节或整步时间都降四分之三。均值logprob差和grad norm接近也不是逐token路由、loss与梯度完全相等的证明。
 
 M1只阅读issue、有限编号/关键词PR检索及上述调用点，对bridge、router工具、Megatron engine与register四个原模块做AST/内存compile；没有执行原测试、worker、TQ、Megatron、collective、路由或性能实验，不造PP/TQ替身来验证尚未公开的patch。版本/hash留[当日日志](../../diary/2026-10-24.md)；需要匹配资源的后续条件补[原TQ交接](../../experiments/handoff-m5.md#verl-transferqueue-启动资源参考)，不新增训练队列或竞争实现。对外协作仍须用户逐项授权。
+
+## 路由值与记录有效性
+
+**路由到expert0是有效数据，缺失行填0是存储约定；二者不能只靠同一个值区分。** horcham的[#8471](https://github.com/verl-project/verl/pull/8471)在2026-11-01读取为OPEN／非draft，head `7ad2b4fbd6f0afbd59b89c3022847ebb35bd9b1e`、API目标base `8e48d72de4766228c36623c90f9f5c49ee5b45f3`，五文件。候选为VeOmni R3添加`routed_experts_mask`，表示该token行是否确实记录了rollout路由；不是上节Megatron的层裁剪方案，也不另造竞争实现。
+
+### 控制器如何消费掩码
+
+[原控制器](https://github.com/verl-project/verl/blob/7ad2b4fbd6f0afbd59b89c3022847ebb35bd9b1e/verl/utils/veomni/router_replay.py)只替换top-k索引，不重算模型专用的gate权重。显式mask存在时，True使用记录target，False保留当前native；缺mask时才检查重复top-k与整行全零，两者任一命中就退回native。topk1不可能有两个重复slot，新增全零检查避免未知行无条件变成expert0，但无法保留没有mask的真实expert0。
+
+候选另有`VERL_ROUTER_REPLAY_DEBUG=1`检查：显式True且target整行全零会报错。自编CPU控制使用topk1 targets`[[0],[3]]`、native`[[7],[7]]`：
+
+| 模式 | 原控制器结果 | 解释 |
+|---|---|---|
+| 无mask，debug关 | `[[7],[3]]` | 全零回退无法区分真实0与未知占位 |
+| mask=`[True,False]`，debug关 | `[[0],[7]]` | 有效0保留，第二行即使值3也不重放 |
+| 同mask，debug开 | AssertionError | 该guard仍拒绝真实topk1 expert0，不能把普通路径的支持外推debug模式 |
+| 单行target=`[[5,5]]`、mask=True，debug开 | `[[5,5]]` | debug只核全零，不认证所有重复ID或下游permute安全 |
+
+这些是原控制器的局部行为，不是发现真实EP崩溃或另立修复。**显式有效性掩码与专家ID合法性是两项检查**；True不能自动证明记录内容正确。begin_microbatch会拒绝mask行数与首层target行数不等，但同shape不能证明token／层身份相同。模块还按router对象身份处理重复回调，首轮fire顺序决定层slot；mask没有解决层映射问题。
+
+### 生产者与布局必须一起传递
+
+[agent输出](https://github.com/verl-project/verl/blob/7ad2b4fbd6f0afbd59b89c3022847ebb35bd9b1e/verl/experimental/agent_loop/agent_loop.py)在as_dict右侧对齐路径将实际拷入的前num_rows行置True；左padding路径则将start_pos:end_pos区间置True。它标的是拷入区间，不逐行溯源；若上游数组内部已经夹有未知占位，仅凭区间长度无法识别，需生产者保证。不能只引用字段注释便认定所有多轮工具响应空洞已正确标记。
+
+[padding重包](https://github.com/verl-project/verl/blob/7ad2b4fbd6f0afbd59b89c3022847ebb35bd9b1e/verl/workers/utils/padding.py)让routes和mask使用同一unpad indices／cu_seqlens；[VeOmni engine](https://github.com/verl-project/verl/blob/7ad2b4fbd6f0afbd59b89c3022847ebb35bd9b1e/verl/workers/engine/veomni/transformer_impl.py)再对二者补相同pad后缀（mask补False）、按相同Ulysses规则切token轴，最后把routes按层unbind，mask仍为每token一条。R2完整record返回时mask全True。上述是源码链，未执行生产者／重包或SP；同一schema字段不等于已证明全链路持久化和对齐。
+
+### 原 CPU 测试与实际范围
+
+[脚本](../../experiments/verl-router-row-mask/verify.py)在Python3.12.13／Torch2.9.1／pytest8.4.2下，将完整原控制器与[未修改的原测试模块](https://github.com/verl-project/verl/blob/7ad2b4fbd6f0afbd59b89c3022847ebb35bd9b1e/tests/utils/veomni/test_router_replay_on_cpu.py)加载到内存，由自定义pytest.Module交给原生pytest收集、fixture与assert执行，22项全过；仅绕过verl包初始化，没有改测试体。fixture是原nn.Module空router，install／uninstall使用原VeOmni hook替身；反向重算测试是按逆序手动触发回调，不是模型activation checkpoint实跑。完整[JSON](../../experiments/verl-router-row-mask/result.json)保留22项逐名结果、四自编控制、五输入hash。复查：`python -B experiments/verl-router-row-mask/verify.py /path/to/verl-git`，需预缓存固定blob，执行禁lazy fetch。
+
+五完整Python输入AST／compile通过，生产者／padding／engine三模块只读与编译；未跑作者另13个engine helper测试、真实SparseMoeBlock、VeOmni后端、TQ、SP、EP、训练或设备。作者瞬态分配下降及48层外推不是本机峰值显存／吞吐测量。M5若日后在已有获准匹配R3任务中独立选用，沿[原TQ交接](../../experiments/handoff-m5.md#verl-transferqueue-启动资源参考)先核真实有效性来源、token／层坐标与debug／topk1边界；不自动套候选、部署或新增训练矩阵。
 
 ## 配置验证范围与复现
 
