@@ -1,0 +1,164 @@
+{
+  "batch": "candidate-e",
+  "date_utc": "2026-10-31",
+  "window_steps": [
+    3,
+    14
+  ],
+  "stack": {
+    "repo": "verl 24f25b03",
+    "model": "Qwen2.5-1.5B-Instruct",
+    "hardware": "4090-1 GPU5 single RTX 4090 24GB",
+    "data": "gsm8k train_sub480/test_sub120",
+    "config": "GRPO batch32 n=4 max_prompt512 max_response256 bf16 optimizer_offload=True bucket=256, TOTAL_EPOCHS=1 (15 steps)"
+  },
+  "base": {
+    "n": 12,
+    "step_s": 27.4836,
+    "stages": {
+      "gen": 4.1766,
+      "old_log_prob": 3.7725,
+      "ref": 4.2338,
+      "adv": 0.1102,
+      "update_actor": 13.2765,
+      "update_weights": 1.8092
+    },
+    "unaccounted_s": 0.1047,
+    "peak_reserved_gb": 21.176
+  },
+  "modes": {
+    "e1": {
+      "lever": "actor_rollout_ref.actor.ppo_max_token_len_per_gpu 3000 -> 8192",
+      "runs": [
+        "raw/rollout-g8-candidate-e-e1.log (original, failed at step 0)",
+        "raw/rollout-g8-candidate-e-e1r2.log (re-run, 15/15)"
+      ],
+      "n": 12,
+      "step_s": 32.358,
+      "step_x_vs_base": 0.8494,
+      "stages_s": {
+        "gen": 4.1813,
+        "old_log_prob": 3.758,
+        "ref": 4.26,
+        "adv": 0.1095,
+        "update_actor": 18.2015,
+        "update_weights": 1.7433
+      },
+      "G": {
+        "gen": 0.9989,
+        "old_log_prob": 1.0039,
+        "ref": 0.9939,
+        "adv": 1.0057,
+        "update_actor": 0.7294,
+        "update_weights": 1.0378
+      },
+      "share_base": {
+        "gen": 0.152,
+        "old_log_prob": 0.1373,
+        "ref": 0.154,
+        "adv": 0.004,
+        "update_actor": 0.4831,
+        "update_weights": 0.0658
+      },
+      "single_stage_pred_step_x": {
+        "gen": 0.9998,
+        "old_log_prob": 1.0005,
+        "ref": 0.9991,
+        "adv": 1.0,
+        "update_actor": 0.848,
+        "update_weights": 1.0024
+      },
+      "rebuild_s": 32.3584,
+      "residual_s": -0.0004,
+      "peak_reserved_gb": 21.252
+    },
+    "e2": {
+      "lever": "actor_rollout_ref.rollout.log_prob_max_token_len_per_gpu 4096 -> 16384",
+      "runs": [
+        "raw/rollout-g8-candidate-e-e2.log (15/15)"
+      ],
+      "n": 12,
+      "step_s": 28.6718,
+      "step_x_vs_base": 0.9586,
+      "stages_s": {
+        "gen": 4.1797,
+        "old_log_prob": 4.776,
+        "ref": 4.3405,
+        "adv": 0.1109,
+        "update_actor": 13.2565,
+        "update_weights": 1.9026
+      },
+      "G": {
+        "gen": 0.9993,
+        "old_log_prob": 0.7899,
+        "ref": 0.9754,
+        "adv": 0.993,
+        "update_actor": 1.0015,
+        "update_weights": 0.9509
+      },
+      "share_base": {
+        "gen": 0.152,
+        "old_log_prob": 0.1373,
+        "ref": 0.154,
+        "adv": 0.004,
+        "update_actor": 0.4831,
+        "update_weights": 0.0658
+      },
+      "single_stage_pred_step_x": {
+        "gen": 0.9999,
+        "old_log_prob": 0.9648,
+        "ref": 0.9961,
+        "adv": 1.0,
+        "update_actor": 1.0007,
+        "update_weights": 0.9966
+      },
+      "rebuild_s": 28.671,
+      "residual_s": 0.0008,
+      "peak_reserved_gb": 21.182
+    },
+    "e3": {
+      "lever": "actor_rollout_ref.ref.log_prob_max_token_len_per_gpu 8192 -> 16384",
+      "runs": [
+        "raw/rollout-g8-candidate-e-e3.log (14/15, final checkpoint save interrupted)"
+      ],
+      "n": 12,
+      "step_s": 27.634,
+      "step_x_vs_base": 0.9946,
+      "stages_s": {
+        "gen": 4.1819,
+        "old_log_prob": 3.7283,
+        "ref": 4.6415,
+        "adv": 0.111,
+        "update_actor": 13.0631,
+        "update_weights": 1.8297
+      },
+      "G": {
+        "gen": 0.9987,
+        "old_log_prob": 1.0119,
+        "ref": 0.9122,
+        "adv": 0.9921,
+        "update_actor": 1.0163,
+        "update_weights": 0.9888
+      },
+      "share_base": {
+        "gen": 0.152,
+        "old_log_prob": 0.1373,
+        "ref": 0.154,
+        "adv": 0.004,
+        "update_actor": 0.4831,
+        "update_weights": 0.0658
+      },
+      "single_stage_pred_step_x": {
+        "gen": 0.9998,
+        "old_log_prob": 1.0016,
+        "ref": 0.9854,
+        "adv": 1.0,
+        "update_actor": 1.0078,
+        "update_weights": 0.9993
+      },
+      "rebuild_s": 27.6603,
+      "residual_s": -0.0263,
+      "peak_reserved_gb": 21.178
+    }
+  }
+}

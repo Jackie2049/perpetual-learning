@@ -1,0 +1,2 @@
+=== candidate-e e1r2 mode=e1 override=actor_rollout_ref.actor.ppo_max_token_len_per_gpu=8192 start 2026-10-31T13:41:42Z ===
+=== candidate-e e1r2 mode=e1 exit=0 end 2026-10-31T13:52:47Z ===

@@ -1,0 +1,6 @@
+=== candidate-e mode=e1 override=actor_rollout_ref.actor.ppo_max_token_len_per_gpu=8192 start 2026-10-31T10:10:49Z ===
+=== candidate-e mode=e1 exit=1 end 2026-10-31T10:13:25Z ===
+=== candidate-e mode=e2 override=actor_rollout_ref.rollout.log_prob_max_token_len_per_gpu=16384 start 2026-10-31T10:13:25Z ===
+=== candidate-e mode=e2 exit=0 end 2026-10-31T10:23:39Z ===
+=== candidate-e mode=e3 override=actor_rollout_ref.ref.log_prob_max_token_len_per_gpu=16384 start 2026-10-31T10:23:39Z ===
+=== candidate-e mode=e3 exit=1 end 2026-10-31T10:33:21Z ===
