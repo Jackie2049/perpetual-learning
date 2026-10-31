@@ -1,5 +1,7 @@
 # UniRL — 腾讯统一多模态 RL 框架调研
 
+2026-11-01接续：[连续token历史与停止文本](#连续-token-历史与停止文本)读新#640：保住文本停止标记不等完整CT，固定main b8的resolver未透传no_stop_trim，下一轮仍重建消息／模板。三个原resolver夹具及一个注入wire控制非SGLang生成／replay或视觉验收。
+
 2026-10-30接续：[空响应候选与诊断时序](#空响应候选与诊断时序)：#581评论者已撤回重复修复建议；#598同4716906已非draft、仍未合并。循环后的检查不能保证先于循环内collective故障到达；仅源码时序核对，不重跑旧实验或认领实现。
 
 2026-10-30接续：[Qwen3.5 MoE发布文件与接线](#qwen35-moe-的发布文件与接线)：#639新44f文档断言经官方wheel补核，0.1.11两生成模块都带坏mask关键字、0.1.12都移除；四文件各同对应tag。共用bundle按真实model_type条件导入，非三配方／模型或EP验收。
@@ -50,6 +52,33 @@
 >
 > 调研时间：2026-10-22（GitHub API 实时核验）。
 > 状态：**加入技术掘金高优关注项**（2026-10-22 用户定）。
+
+## 连续 token 历史与停止文本
+
+**生成ID保留、返回文本完整、下一轮原样延续ID，以及训练replay一致，是四个不同保证。** [UniRL #640](https://github.com/Tencent-Hunyuan/UniRL/issues/640)由ruiling-smartbear提出，2026-11-01读取OPEN、无评论／assignee，方向是SGLang的Qwen3文本与Qwen2.5-VL工具多轮CT，依托已有[#417](https://github.com/Tencent-Hunyuan/UniRL/pull/417)并保留per-turn replay接口。已有作者，不把RFC当无人推进的修复机会。
+
+作者报告SGLang0.5.19／Qwen3-0.6B在`</tool_call>`停止时，生成ID包含关闭标记，返回文本及下一轮assistant历史却缺它；其本地补丁为agentic请求开启并透传`no_stop_trim=True`，HTTP两轮计算器保住标记，但基线与补丁都完成工具调用并答对。八项通过属于**基线per-turn replay**，不是补丁或CT验证；补丁replay、native后端、完整视觉循环与训练对比未测，reward／吞吐仍是问题。本轮未取得该本地patch，不把正文描述当公开可应用代码或我方实测。
+
+### 主线中的四种表示
+
+固定main `b8e9740e981a68a5556fbeb8225558040a4d47a4`，不是作者本地修订。[HTTP响应解析](https://github.com/Tencent-Hunyuan/UniRL/blob/b8e9740e981a68a5556fbeb8225558040a4d47a4/unirl/rollout/engine/sglang/backends/http.py)独立读取text及`output_token_logprobs`中的ID／概率，不依据ID重建text。文本adapter随后分别保存两种表示：
+
+| 表示 | 固定源码来源与去向 | 保证范围 |
+|---|---|---|
+| 本轮生成ID／logprob | RawResult写入TextSegment.pack | 保存本轮响应字段，不认证与text一致 |
+| 本轮可读text | build_decoded直接使用r.text构造Texts | 不从segment ID重新decode补齐标记 |
+| 下一轮文本prompt | build_text_conversations取text_conditioning的role／content.texts，build_inputs再apply_chat_template | 消息重建路径，不是已生成ID原样append的保证 |
+| 本轮replay prompt条件 | prepared.prompt_token_ids按fanout复制，写入conditions['prompt'] | 保存本轮输入，不单独证明跨轮CT或replay logprob一致 |
+
+[文本adapter](https://github.com/Tencent-Hunyuan/UniRL/blob/b8e9740e981a68a5556fbeb8225558040a4d47a4/unirl/rollout/engine/sglang/adapters/text.py)每次重新套模板，并不意味着每个输入的ID都会变化；这里只界定接口保证，未用假tokenizer制造不一致。多轮harness仍执行`generate → env.step → observe`，也不是CT实现。视觉adapter另做processor重编码，当前encode_mm要求每请求恰好一张image，保存pixel_values／image_grid_thw作为replay条件；纯文本修补不能认证新增图像时的占位、顺序或重放对齐。[VLM源码](https://github.com/Tencent-Hunyuan/UniRL/blob/b8e9740e981a68a5556fbeb8225558040a4d47a4/unirl/rollout/engine/sglang/adapters/vlm.py)
+
+### 采样参数的转换边界
+
+主线[`resolve_sampling`](https://github.com/Tencent-Hunyuan/UniRL/blob/b8e9740e981a68a5556fbeb8225558040a4d47a4/unirl/rollout/engine/sglang/utils/sampling.py)仅从输入Part的control['ar']额外复制stop、stop_token_ids与skip_special_tokens，未复制no_stop_trim。系统Python3.9.6／标准库调用原resolver三次：未提供该键、显式False、显式True，均不出现在输出block，另三键保留。frontier／config是明确SimpleNamespace夹具，ARSamplingParams仅作类型标记，不是其真实构造／校验或端到端请求。
+
+再从原ResolvedSampling dataclass构造一个**resolver之后显式注入**no_stop_trim=True的block，调用原base_payload与native payload_to_generate_kwargs，该嵌套键均保留。因而本机定位的是resolver白名单边界，不是“native mapper必然丢键”；注入控制也不表示当前真实配置可到达它，或SGLang服务端已接受此参数。HTTP传输与native engine没有执行。
+
+[复查脚本](../../experiments/unirl-ct-wire/verify.py)完整加载原sampling模块，仅隔离两处unirl类型import；base_payload与native mapper／passthrough常量从原AST提取，七份完整源码AST／compile。三输入与一个注入控制、版本及七hash保存在[结果](../../experiments/unirl-ct-wire/result.json)。命令：`python3 -B experiments/unirl-ct-wire/verify.py /path/to/UniRL-git`，禁止lazy fetch，无SGLang／Torch／tokenizer导入或服务请求；未运行真实Sample、chat template、processor、生成、工具调用、replay、图像循环、训练或性能。真实链路条件仅补[原M5参考](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不新增任务／复制RFC方案或改M5专项。
 
 ## 候选关闭与证据范围
 

@@ -133,6 +133,7 @@
 
 ## 框架源码阅读
 
+- [UniRL连续token历史与停止文本](frameworks/unirl-survey.md#连续-token-历史与停止文本) — #640已有作者，no_stop_trim文本修补非完整CT；主线三resolver夹具不透传该键，post-resolver注入保留非真实SGLang／replay验收
 - [verl V1结束与加载器清理](frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#v1-结束钩子与加载器清理) — #8474正常末步进入后置收尾，非finally保证；六个原语句／helper记录器控制不等真实loader／Ray退出验收
 - [合并LoRA的睡眠策略与恢复证据](frameworks/verl-fsdp-weight-sync-mechanism-reading.md#合并-lora-的睡眠策略与恢复证据) — #8046限定FSDP的level1例外；原9替身参数例不认证完整重载，纠正引擎睡眠语义混用。
 [按框架浏览完整索引](frameworks/readme.md) · [按项目浏览贡献材料](../open-source/README.md)

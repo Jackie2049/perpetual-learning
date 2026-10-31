@@ -1,0 +1,26 @@
+{
+  "python": "3.9.6",
+  "ref": "b8e9740e981a68a5556fbeb8225558040a4d47a4",
+  "controls": [
+    {"requested_no_stop_trim": null,
+     "resolved_block": {"temperature": 1.0, "max_new_tokens": 16, "top_p": 1.0, "top_k": -1, "n": 1, "stop": ["</tool_call>"], "stop_token_ids": [17], "skip_special_tokens": false},
+     "native_sampling_block": {"temperature": 1.0, "max_new_tokens": 16, "top_p": 1.0, "top_k": -1, "n": 1, "stop": ["</tool_call>"], "stop_token_ids": [17], "skip_special_tokens": false}},
+    {"requested_no_stop_trim": false,
+     "resolved_block": {"temperature": 1.0, "max_new_tokens": 16, "top_p": 1.0, "top_k": -1, "n": 1, "stop": ["</tool_call>"], "stop_token_ids": [17], "skip_special_tokens": false},
+     "native_sampling_block": {"temperature": 1.0, "max_new_tokens": 16, "top_p": 1.0, "top_k": -1, "n": 1, "stop": ["</tool_call>"], "stop_token_ids": [17], "skip_special_tokens": false}},
+    {"requested_no_stop_trim": true,
+     "resolved_block": {"temperature": 1.0, "max_new_tokens": 16, "top_p": 1.0, "top_k": -1, "n": 1, "stop": ["</tool_call>"], "stop_token_ids": [17], "skip_special_tokens": false},
+     "native_sampling_block": {"temperature": 1.0, "max_new_tokens": 16, "top_p": 1.0, "top_k": -1, "n": 1, "stop": ["</tool_call>"], "stop_token_ids": [17], "skip_special_tokens": false}}
+  ],
+  "injected_after_resolver_preserved_by_adapter_and_native_mapper": true,
+  "source_sha256": {
+    "unirl/rollout/engine/sglang/utils/sampling.py": "7c8842ab98d4e2085131336a68fbfd82139220a1faaa0497af950c5d5fdbe759",
+    "unirl/rollout/engine/sglang/adapters/text.py": "4af26e51b36eca3d76ae19484e91847665b5e1e6d34eca63dfc27a8beebdf822",
+    "unirl/rollout/engine/sglang/backends/native.py": "8a767886568294ef5f1f67bb187270e2bea0654cb35112c933d97ddcd7f6354b",
+    "unirl/rollout/engine/sglang/backends/http.py": "5dfd46d0bf5628eef105a729e30a18b93698757372d01d5cb087e364c5058ff1",
+    "unirl/rollout/engine/sglang/utils/conversations.py": "1e8fa4c9e9352d27ed0ad40b32dade06c71f931e0277fbc00def90a972093e63",
+    "unirl/rollout/engine/sglang/adapters/vlm.py": "b01a3f5a31a82a86ba1bec074b68488575b3ec479a9f6854040d4903506e416a",
+    "unirl/rollout/harness/tool_agent.py": "209e0cf06a35667498e352eae22eae6fe0bf47a386a05c4d6ef389bf72d092cc"
+  },
+  "scope": "Three original resolver calls with explicit SimpleNamespace frontier/config fixtures; original base_payload and native kwargs mapper; one injected post-resolver block. Seven complete modules AST/compile only. No real Sample/ARSamplingParams validation, tokenizer/processor, HTTP/native SGLang engine, generation, replay, image loop, training, device or performance validation."
+}
