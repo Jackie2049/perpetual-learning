@@ -1,0 +1,118 @@
+{
+  "python": "3.12.13",
+  "torch": "2.9.1",
+  "torch_git": "5811a8d7da873dd699ff6687092c225caffcf1bb",
+  "head": "1ecd1a9e7e2b9b772cf1d03b3eb5a090e358fdef",
+  "base": "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4",
+  "source_sha256": {
+    "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4:verl/models/transformers/dense_common.py": "9a26fd6e64acdf1a780be1ba0304b2808364611292628da9847ff6b6d31f1e07",
+    "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4:verl/utils/experimental/torch_functional.py": "812d6db39676454f6bdb4881eedc9eceeef28c8e08a1b505bb54346c7b6a7485",
+    "1ecd1a9e7e2b9b772cf1d03b3eb5a090e358fdef:verl/models/transformers/dense_common.py": "593c23dd1ed2e8f1af02f71ad51b6bc6820c09366f2584576bfceba948aae2a4",
+    "1ecd1a9e7e2b9b772cf1d03b3eb5a090e358fdef:verl/utils/experimental/torch_functional.py": "812d6db39676454f6bdb4881eedc9eceeef28c8e08a1b505bb54346c7b6a7485",
+    "1ecd1a9e7e2b9b772cf1d03b3eb5a090e358fdef:tests/models/test_fused_kernels_ulysses_sp_on_cpu.py": "693bccc81857e702280cba66562aad7c3dfbf5bf0e5a3ce95f1a69a4eb70242c",
+    "1ecd1a9e7e2b9b772cf1d03b3eb5a090e358fdef:verl/models/transformers/monkey_patch.py": "13e502a0a7b1470fe37bc98a24f221719e312b3146c6fc9bac91a738f80d2783"
+  },
+  "math_module_identical_to_base": true,
+  "own_numeric_cases": [
+    {
+      "family": "granite",
+      "scale_location": "config",
+      "scale": 0.125,
+      "effective_temperature": 5.6,
+      "new_max_abs_errors": {
+        "logp": 0,
+        "entropy": 2.384185791015625e-7,
+        "hidden_grad": 2.2351741790771484e-8,
+        "weight_grad": 2.9802322387695312e-8
+      },
+      "omitted_scale_max_logp_error": 4.029805660247803
+    },
+    {
+      "family": "cohere",
+      "scale_location": "self",
+      "scale": 0.0625,
+      "effective_temperature": 11.2,
+      "new_max_abs_errors": {
+        "logp": 0,
+        "entropy": 2.384185791015625e-7,
+        "hidden_grad": 1.4901161193847656e-8,
+        "weight_grad": 1.4901161193847656e-8
+      },
+      "omitted_scale_max_logp_error": 4.259042263031006
+    },
+    {
+      "family": "cohere",
+      "scale_location": "config",
+      "scale": 0.0625,
+      "effective_temperature": 11.2,
+      "new_max_abs_errors": {
+        "logp": 0,
+        "entropy": 2.384185791015625e-7,
+        "hidden_grad": 1.4901161193847656e-8,
+        "weight_grad": 1.4901161193847656e-8
+      },
+      "omitted_scale_max_logp_error": 4.259042263031006
+    },
+    {
+      "family": "falcon_h1",
+      "scale_location": "model",
+      "scale": 0.0390625,
+      "effective_temperature": 17.919999999999998,
+      "new_max_abs_errors": {
+        "logp": 2.384185791015625e-7,
+        "entropy": 2.384185791015625e-7,
+        "hidden_grad": 1.1175870895385742e-8,
+        "weight_grad": 1.4901161193847656e-8
+      },
+      "omitted_scale_max_logp_error": 4.340489387512207
+    },
+    {
+      "family": "hyperclovax",
+      "scale_location": "config",
+      "scale": 0.125,
+      "effective_temperature": 5.6,
+      "new_max_abs_errors": {
+        "logp": 0,
+        "entropy": 2.384185791015625e-7,
+        "hidden_grad": 2.2351741790771484e-8,
+        "weight_grad": 2.9802322387695312e-8
+      },
+      "omitted_scale_max_logp_error": 4.029805660247803
+    },
+    {
+      "family": "unknown_family",
+      "scale_location": "config",
+      "scale": 1,
+      "effective_temperature": 0.7,
+      "new_max_abs_errors": {
+        "logp": 0,
+        "entropy": 2.384185791015625e-7,
+        "hidden_grad": 4.76837158203125e-7,
+        "weight_grad": 2.384185791015625e-7
+      },
+      "omitted_scale_max_logp_error": 0
+    }
+  ],
+  "own_resolver_guard_cases": {
+    "zero_scale": "Model SimpleNamespace has a zero post-lm_head logit scale, which is not supported by verl's generic fused-kernel forward. Set use_fused_kernels=False.",
+    "zero_bias_tensor": "Model SimpleNamespace has an lm_head bias, which is not supported by verl's generic fused-kernel forward. Set use_fused_kernels=False.",
+    "negative_scale_returned": -0.5,
+    "nan_scale_returned": "nan"
+  },
+  "inputs": {
+    "seed": 37,
+    "hidden_shape": [
+      5,
+      4
+    ],
+    "weight_shape": [
+      7,
+      4
+    ],
+    "dtype": "float32",
+    "temperature": 0.7,
+    "chunk_size": 2,
+    "objective": "weighted selected logp plus weighted entropy; own fixed upstream gradients"
+  },
+  "scope": "Six complete inputs compile. Exact original resolver/constants and original Torch fwd/bwd/custom autograd class extracted by AST; FlashAttention path explicitly unavailable. Six own positive-scale/default numerical cases compare against explicit dense scaling with autograd, plus four own resolver-only guard probes. Old math is original unchanged custom autograd at unadjusted temperature, not execution of old adapter. No original test bodies, dense_common adapter forward or real HF model, monkey patch application, VLM wrappers, Triton/Liger, model checkpoint, SP/TP, rollout, GPU/NPU, training or performance."
+}

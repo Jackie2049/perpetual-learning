@@ -269,6 +269,8 @@ ModelOpt忽略规则参考（2026-10-22，同一量化入口不另排队）：�
 
 ## verl 异步策略一致性补证
 
+输出头缩放参考（2026-11-01，同一入口、不新增任务）：[#8441](https://github.com/verl-project/verl/pull/8441) head1ecd1a9e／base祖先2ab35292，[M1原resolver／Torch custom autograd六数值／四guard控制](../notebook/frameworks/verl-fused-output-softcap.md#输出头缩放与有效温度)仅CPU小矩阵，非HF模型adapter或Triton；c乘法按T/c折算，零scale与所有非None bias被拒，负值／NaN未被helper拒绝。若未来已有获准、安全、匹配输出头任务且M5独立采用，先固定实际HF类／模型与配置、native head后变换、bias、最终adapter与backend、temperature及标签布局，原预算核一次同token native／fused logp、熵与hidden／weight梯度；真实Triton有限性须独立核，不移用作者旧H100报告。缺授权模型／资源、需下载部署／扩预算或影响专项即停记未测，不拼softcap／其他候选、不新排训练／改环境；社区及既有PR-head写入仍逐项待用户明确授权，记录非接单。
+
 Ascend熵统计参考（2026-11-01，同一输出头入口、不新增任务）：已有[#8477](https://github.com/verl-project/verl/pull/8477)固定c261bd4a／API目标base8df5baee。[M1原20个CPU数学参数体及三个人为统计错配控制](../notebook/frameworks/verl-fused-output-softcap.md#分块熵的独立归一化)仅独立熵统计／梯度，不是CANN舍入实测或作者NPU／actor结果。若未来已有获准匹配Ascend任务且M5独立选用，先固定CANN／torch_npu、softmax实际有无、CE与熵统计来源、dtype／autocast／temperature、response mask／归约与CE-only／混合支路，核同输入熵及hidden／weight梯度，再在原预算比较完整正确性基线；旧零熵支路不当公平性能参照，TP hidden归约仍由调用者负责。缺授权／环境／权重／安全资源、需部署或影响专项即停记未测，不自动安装、应用／拼接候选、扩大训练或改M5既有任务；所有社区及既有PR-head写入仍逐项待用户明确同意，记录非接单。
 
 推理专用MTP／fused标签参考（2026-11-01，沿本节输出头入口，不新增任务）：[#8476](https://github.com/verl-project/verl/pull/8476)固定61064b0f／目标base8df5baee，允许remove-padding且非value、非训练MTP的fused组合，hook labels移context；[M1原一测试体对照](../notebook/frameworks/verl-fused-output-softcap.md#推理专用-mtp-与融合标签)仅_postprocess回调转交，非kernel／完整MTP／训练验收。若M5未来已有获准匹配输出头任务且独立选用，先记Core／Bridge／TE、hook或legacy、THD／bshd、MTP enable／enable_train、实际标签context布局与tied head，再按原小预算核同token logprob／梯度，不从配置可用推断内核或目标等价。缺匹配环境／授权权重／资源、需升级部署或影响专项就停记未测，不自动应用／拼接其他MTP候选、下载训练或新排矩阵；社区及既有PR-head写入仍逐项待用户明确同意，记录非接单。

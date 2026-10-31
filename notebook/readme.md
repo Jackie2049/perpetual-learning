@@ -210,6 +210,7 @@
 - [V1异步空闲指标](frameworks/verl-6790-async-trainer-reading.md#异步空闲指标与调度等待) — 采样等待、借卡rollout、布尔idle与请求计数分开；旧fully_async比率非V1资源利用率，11份语法检查非训练验收
 - [verl 学习率步数与恢复](frameworks/verl-grpo-training-loop-internals-reading.md#学习率步数与恢复条件) — 原构造器/真实CPU optimizer四轨迹、两恢复与一步覆写；推进后LR不等于刚使用LR，加载状态不重建原调度闭包
 - [verl 融合输出头与softcap](frameworks/verl-fused-output-softcap.md) — #7991拒绝不支持的通用路径，非kernel实现；原torch输出头36组语义分离对照，保留数值超限，原24配置测试未跑
+  - [输出头缩放与有效温度](frameworks/verl-fused-output-softcap.md#输出头缩放与有效温度) — #8441原resolver／Torch custom autograd六组CPU数值与四guard控制；c乘法折入T/c，bias和零拒绝非正值／有限性保证，不等真实模型或Triton验收
 - [推理专用MTP与融合标签](frameworks/verl-fused-output-softcap.md#推理专用-mtp-与融合标签) — #8476把model labels控制信号与hook标签数据分开；一个原postprocess测试体base失败／head通过，不是fused CE／MTP或训练验收
 - [分块熵的独立归一化](frameworks/verl-fused-output-softcap.md#分块熵的独立归一化) — #8477的中心化统计与独立熵反向；20个原CPU数学参数体、三个人为舍入统计对照，非CANN／NPU或性能验收
 - [SFT与V1恢复的数据顺序](frameworks/verl-checkpoint-management-reading.md#sft-与-v1-的恢复顺序) — #7974新19原CPU参数项过、旧V1边界两例重放初始排列；采样器状态与外层迭代策略须一起判断，非模型／异步恢复验收

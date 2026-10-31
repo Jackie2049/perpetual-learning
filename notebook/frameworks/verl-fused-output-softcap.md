@@ -6,6 +6,40 @@
 
 2026-10-26补充：[软标签消去与求导阶数](#软标签消去与求导阶数)区分完整分布的一阶数值修正、detach注入的二阶限制和verl的截断top-k目标；CPU数学转写不是框架补丁。
 
+## 输出头缩放与有效温度
+
+**融合路径必须计算同一个策略分布，不只是使用同一份LM-head权重。** EvanZhuang的[#8441](https://github.com/verl-project/verl/pull/8441)在2026-11-01读取OPEN／非draft，固定head `1ecd1a9e7e2b9b772cf1d03b3eb5a090e358fdef`，API目标base与实际共同祖先均为 `2ab35292039a51175a4b3d3b3b2d76e951a0d3e4`。候选针对generic dense融合forward绕过模型原CausalLM.forward后遗漏的乘法缩放与bias，不改变输出头kernel本体。
+
+### 乘法可以折入温度
+
+设原始投影为z=Wh，模型在head后乘c，采样温度为T；应求`softmax(c*z/T)`。当c为非零常数时，代数上可改用有效温度`T/c`，无需物化完整缩放logits；本轮数值验证只覆盖正c、正T。若直接用原T，算的是另一个分布，不能仅归因于浮点舍入。候选[_logit_scale_factor](https://github.com/verl-project/verl/blob/1ecd1a9e7e2b9b772cf1d03b3eb5a090e358fdef/verl/models/transformers/dense_common.py)按白名单解析：
+
+| 候选匹配的模型类型 | 读取位置 | 返回乘法因子c |
+|---|---|---|
+| Granite及列出的变体 | config.logits_scaling | 其倒数 |
+| Cohere及列出的变体 | self.logit_scale优先，缺失／None才取config.logit_scale | 属性值 |
+| falcon_h1 | model.lm_head_multiplier | 属性值 |
+| hyperclovax | config.logits_scaling | 属性值 |
+| 其他类型 | 不按同名属性猜测 | 1.0 |
+
+两generic adapter都把`temperature / c`交给后端；[monkey patch路由](https://github.com/verl-project/verl/blob/1ecd1a9e7e2b9b772cf1d03b3eb5a090e358fdef/verl/models/transformers/monkey_patch.py)中Torch／Liger共用Torch adapter，Triton走另一个。专用VLM adapter、Megatron、text_config内变换和词表裁切不因此自动覆盖。此表描述候选的分派规则，不是逐模型真实forward的本机验收；非线性softcap也不能用一个常数温度折算，仍看[#7991原拒绝范围](#拒绝范围)。
+
+### 拒绝条件不等于通用合法性检查
+
+候选对`lm_head.bias is not None`一律抛ValueError，包含值全零的bias；它按接口是否支持判断，不检查bias数值是否恰好不影响softmax。一般非恒定bias不能只靠缩放T表达，均匀bias则会被softmax抵消，但仍被这个guard保守拒绝。guard在首次融合forward调用resolver时生效：两adapter此前已经调用base model，不能称patch时或decoder执行前拒绝。
+
+`_require_nonzero_scale`先转float，仅拒绝等于0的值；它不检查正数或有限性。自编resolver控制中Granite零scale和全零bias张量均被拒绝，Cohere的−0.5与NaN原样返回。后两项仅界定helper边界，不表示负温度／非有限值获得kernel或模型支持，也不据此改候选或新增缺陷报告。
+
+### 原Torch前反向的CPU对照
+
+[脚本](../../experiments/verl-head-logit-scale/verify.py)AST提取完整原resolver、两常量、[_fused_linear_for_ppo_fwd／bwd及FusedLinearForPPOFunction](https://github.com/verl-project/verl/blob/1ecd1a9e7e2b9b772cf1d03b3eb5a090e358fdef/verl/utils/experimental/torch_functional.py)，不执行模型adapter。数学模块与base逐字节相同；明确禁用可选FlashAttention分支，执行真实CPU matmul、分块custom autograd与反向，不用kernel记录器替代数值计算。Python3.12.13／Torch2.9.1，固定seed37、hidden 5×4、weight 7×4、FP32、T=0.7、chunk_size=2，自编固定logp与熵上游梯度；参考为显式`c*(h@W.T)/T`加普通autograd。
+
+六组取Granite c=0.125、Cohere实例／config各c=0.0625、Falcon c=0.0390625、HyperCLOVA c=0.125，以及未知类型即使含logits_scaling=8仍c=1的默认控制。折算后选定logp和熵最大误差均≤2.38e−7，hidden／weight梯度最大误差≤4.77e−7；这些是浮点容差内等价，不称逐位相同。相同原Torch实现若省略c仍用T，五个缩放案例的logp最大误差为4.03–4.34，默认控制为0。此“旧语义”只由原数学函数用未折算温度构造，并非执行旧adapter／模型。
+
+[结果](../../experiments/verl-head-logit-scale/result.json)保存六数值案例、四resolver guard控制和六完整源输入SHA256；六输入compile，原CPU测试文件仅阅读／编译、不执行其测试体或pytest套件。复现：`../deepinfer-eplb-venv/bin/python experiments/verl-head-logit-scale/verify.py ../verl-packaging-readonly`，需固定blob及已有CPU Torch，不下载模型或补装Transformers／Triton／Liger。
+
+PR正文另报告59项CPU、H100与Granite／Falcon checkpoint对照，包含非有限Triton梯度的旧故障；这是作者报告，不能由本轮小矩阵与Torch路径重现或认证。真实模型缩放、当前Triton reduction、SP／TP、rollout同token logp与训练收益仍分别核验，沿[原M5输出头入口](../../experiments/handoff-m5.md#verl-异步策略一致性补证)保留条件，不拼其他未合候选、不部署或新增训练队列。
+
 ## 分块熵的独立归一化
 
 **熵需要与当前logits匹配的概率归一化；接口给出了CE最大值和指数和，不代表重算logits可以直接复用。** verl [#8477](https://github.com/verl-project/verl/pull/8477)在2026-11-01读取为OPEN／非draft，head `c261bd4ab2efa740805d5b7c956996b175eebc38`、API目标base `8df5baeed0f5ecdd7f870d83bc3d79194816e2a9`，已有作者Gxj230958，不另实现候选。作者针对CANN默认不返回softmax时，旧forward返回零熵而反向仍产生熵梯度，提出独立分块熵统计与后续workspace优化。零forward分支可由[基线源码](https://github.com/verl-project/verl/blob/8df5baeed0f5ecdd7f870d83bc3d79194816e2a9/verl/utils/kernel/npu/cann_linear_ce.py)确认；实际CANN何时省略softmax取决于安装栈。

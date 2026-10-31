@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-head-logit-scale/verify.py](verl-head-logit-scale/verify.py) | #8441原resolver及Torch分块custom autograd，六自编FP32前反向数值控制与四guard边界，[结果](verl-head-logit-scale/result.json)；无adapter／模型／Triton或设备验收 | [输出头缩放与温度](../notebook/frameworks/verl-fused-output-softcap.md#输出头缩放与有效温度) |
 | [verl-expert-stream-lifetime/verify.py](verl-expert-stream-lifetime/verify.py) | #8473原入口／行拆分helper与显式记录器，四组自编CPU输入寿命／cap／输出storage／fallback控制；[结果](verl-expert-stream-lifetime/result.json)，非CT压缩字节或性能 | [专家批处理与存储寿命](../notebook/frameworks/verl-quant-layer-audit.md#专家批量压缩与流式存储寿命) |
 | [verl-nvfp4-scale-identity/verify.py](verl-nvfp4-scale-identity/verify.py) | #8467两版原collector／自编CPU模块树，八层号／包装与两专家控制、两真实Gloo进程的空值／两次尺度快照；[结果](verl-nvfp4-scale-identity/result.json)，非ModelOpt／CT／Bridge或Megatron执行 | [尺度全局身份](../notebook/frameworks/verl-quant-layer-audit.md#激活尺度的全局身份与流水线汇集) |
 | [unirl-multi-image-wire/verify.py](unirl-multi-image-wire/verify.py) | #417原require／PNG encoder及wire helper，八自编真实内存PNG往返／形状控制与三拒绝例，[结果](unirl-multi-image-wire/result.json)；非ImageSets／processor／SGLang或训练 | [附件轴与候选轴](../notebook/frameworks/unirl-survey.md#多图请求的附件轴与候选轴) |
