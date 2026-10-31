@@ -37,7 +37,7 @@
 
 2026-10-30补[extras实际元数据](#可选依赖入口的已有报告)：#8447报告者愿提交、方向待维护者决定；原六输入的egg-info／PEP517一致，六旧组名缺失但18基础依赖保留，无安装／镜像验收，不另实现或排M5任务。
 
-2026-10-30核[Minerva装饰边界](#minerva-装饰的已有候选)：#8450已有作者与bot反馈；21原测试体候选全过／基线14断言失败，但八个本地控制复核末尾星号误删／跨行标签及后备可达性，不作整体安全或训练验收，不另修复／发布。
+2026-11-01接[Minerva修订](#minerva-装饰的已有候选)：#8450新f5d5123的41原参数测试体全过／基线31断言失败，旧末尾星号误删／跨行与冒号前标签问题已不复现；八边界复核不作整体安全或训练验收，候选仍未合并，不另修复／发布。
 
 2026-10-30核[OTB非负截断](#otb-非负截断的已有候选)：#8444已有作者且明示精度限制；原两OTB参数体候选过、同源logits仍有0与FP64参考0.818的偏离，指标dict适配非DataProto验收，不另实现／发布。
 
@@ -198,6 +198,8 @@
 [原算法专题](../../notebook/frameworks/verl-grpo-core-algos-reading.md#otb-权重非负与基线精度)与[CPU结果](../../experiments/verl-otb-weight-clamp/result.json)保存两原OTB参数体（基线均断言失败／候选通过）、原指标函数的dict容器适配、同源logits的FP64直接平方范数参考。负权重反例首步baseline由1.00032783变0；但已舍入为零的权重两版均不恢复，另一控制baseline仍0而参考约0.818。指标expected_w恢复非负，proxy2两版均0；不扩大成实际梯度方差或训练质量修复。非DataProto原测试、完整pytest、fused kernel或GPU验收，不组合其他OTB候选、新排M5任务或改作者代码；上游及既有PR-head一切写入仍待用户对具体动作明确同意。
 
 ## Minerva 装饰的已有候选
+
+2026-11-01复核新head `f5d5123b6d34ec1c10ed914b9bd8bab50d714fca`，仍OPEN／非draft／未合并，API目标base a08ea02a。新41原参数测试体候选全过、旧基线10过31断言失败；八个本地控制确认末尾`x*`保留、跨行反引号与冒号前标签可接受，旧e8的具体负例不再适用。[当前结论](../../notebook/frameworks/verl-reward-integration-reading.md#修订后的-minerva-边界)与[新结果](../../experiments/verl-math-dapo-markdown/result-revised.json)保留版本边界；不是原生pytest／59项manager或通用安全验收，不另实现、发布或新排M5算力。以下为10-30历史快照，旧结果不覆盖。
 
 2026-10-30读取RerankerGuo的[#8449](https://github.com/verl-project/verl/issues/8449)与OPEN／非draft [#8450](https://github.com/verl-project/verl/pull/8450)，heade8e82c2f；API目标a08ea02a，实际祖先dc709afb、ahead1／behind22。两基线评分文件相同，已有作者，不另认领。唯一review为bot COMMENTED、两条bot行内反馈，不等人工批准。
 

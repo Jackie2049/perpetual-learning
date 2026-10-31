@@ -1,0 +1,75 @@
+{
+  "python": "3.12.14",
+  "base": "dc709afb7a74fd2645640a4e5f2fdf40166b4fbb",
+  "main": "a08ea02a784d7d4982b1d81df36d188a476192bb",
+  "head": "f5d5123b6d34ec1c10ed914b9bd8bab50d714fca",
+  "original_test_bodies": {
+    "base": {
+      "passed": 10, "assertion_failed": 31,
+      "test_inventory": {
+        "test_minerva_answer_with_markdown_emphasis_is_accepted": 9,
+        "test_minerva_extraction_strips_markdown_emphasis": 9,
+        "test_plain_answer_is_unchanged": 1,
+        "test_wrong_answer_with_markdown_emphasis_is_rejected": 1,
+        "test_markdown_emphasis_inside_the_answer_is_kept": 1,
+        "test_trailing_asterisk_that_belongs_to_the_answer_is_kept": 1,
+        "test_leading_asterisk_is_treated_as_formatting": 1,
+        "test_markdown_marker_between_the_label_and_the_colon_is_accepted": 3,
+        "test_nested_emphasis_wrappers_are_removed": 1,
+        "test_wrapper_that_spans_the_label_and_the_answer_is_removed": 4,
+        "test_wrapper_that_is_closed_by_the_label_is_not_stripped_from_the_answer": 2,
+        "test_long_asterisk_run_does_not_stall_the_cleanup": 1,
+        "test_latex_subscript_answer_is_not_treated_as_emphasis": 4,
+        "test_bare_answer_label_falls_back_to_the_boxed_answer": 1,
+        "test_boxed_answer_is_unaffected": 1,
+        "test_answer_label_without_value_is_rejected": 1
+      }
+    },
+    "head": {
+      "passed": 41, "assertion_failed": 0,
+      "test_inventory": {
+        "test_minerva_answer_with_markdown_emphasis_is_accepted": 9,
+        "test_minerva_extraction_strips_markdown_emphasis": 9,
+        "test_plain_answer_is_unchanged": 1,
+        "test_wrong_answer_with_markdown_emphasis_is_rejected": 1,
+        "test_markdown_emphasis_inside_the_answer_is_kept": 1,
+        "test_trailing_asterisk_that_belongs_to_the_answer_is_kept": 1,
+        "test_leading_asterisk_is_treated_as_formatting": 1,
+        "test_markdown_marker_between_the_label_and_the_colon_is_accepted": 3,
+        "test_nested_emphasis_wrappers_are_removed": 1,
+        "test_wrapper_that_spans_the_label_and_the_answer_is_removed": 4,
+        "test_wrapper_that_is_closed_by_the_label_is_not_stripped_from_the_answer": 2,
+        "test_long_asterisk_run_does_not_stall_the_cleanup": 1,
+        "test_latex_subscript_answer_is_not_treated_as_emphasis": 4,
+        "test_bare_answer_label_falls_back_to_the_boxed_answer": 1,
+        "test_boxed_answer_is_unaffected": 1,
+        "test_answer_label_without_value_is_rejected": 1
+      }
+    }
+  },
+  "local_boundary_probes": [
+    {"case": "backtick label across real newlines", "input": "`Answer:`\n\n42", "target": "42", "strict": false,
+     "base": {"score": -1.0, "acc": false, "pred": "`"}, "head": {"score": 1.0, "acc": true, "pred": "42"}},
+    {"case": "bold label ends before colon", "input": "**Answer**: 42", "target": "42", "strict": false,
+     "base": {"score": -1.0, "acc": false, "pred": "[INVALID]"}, "head": {"score": 1.0, "acc": true, "pred": "42"}},
+    {"case": "literal trailing star correct target", "input": "Answer: x*", "target": "x*", "strict": false,
+     "base": {"score": 1.0, "acc": true, "pred": "x*"}, "head": {"score": 1.0, "acc": true, "pred": "x*"}},
+    {"case": "literal trailing star different target", "input": "Answer: x*", "target": "x", "strict": false,
+     "base": {"score": -1.0, "acc": false, "pred": "x*"}, "head": {"score": -1.0, "acc": false, "pred": "x*"}},
+    {"case": "empty decorated label permits boxed fallback", "input": "\\boxed{42}\n**Answer:**", "target": "42", "strict": false,
+     "base": {"score": -1.0, "acc": false, "pred": "**"}, "head": {"score": 1.0, "acc": true, "pred": "42"}},
+    {"case": "wrong but valid Minerva blocks boxed fallback", "input": "\\boxed{42}\nAnswer: 41", "target": "42", "strict": false,
+     "base": {"score": -1.0, "acc": false, "pred": "41"}, "head": {"score": -1.0, "acc": false, "pred": "41"}},
+    {"case": "strict box ignores wrong Minerva", "input": "\\boxed{42}\nAnswer: 41", "target": "42", "strict": true,
+     "base": {"score": 1.0, "acc": true, "pred": "42"}, "head": {"score": 1.0, "acc": true, "pred": "42"}},
+    {"case": "boxed comma normalization not added", "input": "\\boxed{1,000}", "target": "1000", "strict": false,
+     "base": {"score": -1.0, "acc": false, "pred": "1,000"}, "head": {"score": -1.0, "acc": false, "pred": "1,000"}}
+  ],
+  "source_sha256": {
+    "dc709afb7a74fd2645640a4e5f2fdf40166b4fbb:verl/utils/reward_score/math_dapo.py": "a1943c1379313cbde933687a496bd3071f9f830cbbb70158e615d21cf31cf713",
+    "a08ea02a784d7d4982b1d81df36d188a476192bb:verl/utils/reward_score/math_dapo.py": "a1943c1379313cbde933687a496bd3071f9f830cbbb70158e615d21cf31cf713",
+    "f5d5123b6d34ec1c10ed914b9bd8bab50d714fca:verl/utils/reward_score/math_dapo.py": "ca869f7eaa1a532bfa73aab19c610a77560722458bd87646dee4a72b831cb9af",
+    "f5d5123b6d34ec1c10ed914b9bd8bab50d714fca:tests/utils/reward_score/test_math_dapo_minerva_markdown_on_cpu.py": "55c9087466d87e36dd2af739d6047f5dce0d29ffce309d23b9f00f2c8649a631"
+  },
+  "scope": "complete original scorer modules and 41 original test bodies; 8 local probes; stdlib time import retained, including original one-input <2s assertion; no native pytest, manager, general ReDoS or training validation"
+}

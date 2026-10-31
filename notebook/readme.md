@@ -178,6 +178,7 @@
 - [verl SFT空媒体与processor](frameworks/verl-dataproto-data-flow-reading.md#sft-空媒体列与-processor-要求) — #8420原方法十组行输入；None回退不改变列存在时的processor断言，数组保序，非完整数据集／模型验收
 - [verl 参数转换与缓冲区精度](frameworks/verl-fsdp2-source-deep-reading.md#参数转换与缓冲区精度) — #8189 原 6 CPU 测试体与 4 组控制，区分保留初值、FP32 标签和训练状态迁移；未运行真实 RoPE/model/FSDP
 - [verl 数学奖励的分层与精度](frameworks/verl-reward-integration-reading.md#数学奖励的分层判分与精度边界) — #8347已关闭未合并，原64参数例是历史候选证据；[方程后续](frameworks/verl-reward-integration-reading.md#候选关闭与方程后续)已有认领，精确原文接受不等完整判分修复，非数据集或训练验收
+- [verl Minerva修订复核](frameworks/verl-reward-integration-reading.md#修订后的-minerva-边界) — #8450新f5的41原参数体全过／基线31失败，旧星号误删及跨行标签问题不再复现；非原生pytest、manager或通用安全验收
 - [verl 掩码统计与梯度](frameworks/verl-grpo-core-algos-reading.md#掩码统计与梯度的数值边界) — 原3参数例/20组CPU对照；mean过滤无效NaN不代表方差梯度或白化全部槽位有限，非训练故障定性
 - [verl 单样本组回退](frameworks/verl-grpo-core-algos-reading.md#单样本与同分组的不同回退) — 原4等价性例/12组双实现控制；singleton保留近似原奖励，撤回排错指南n=1必退化与n≥4/8硬规则，非训练收益证明
   - [平方概率分块与梯度](frameworks/verl-grpo-core-algos-reading.md#平方概率分块与空输入梯度) — #8365新版18原CPU参数项全过／旧13过5失败，撤回旧边界风险；非V1接线、GPU性能或训练验收

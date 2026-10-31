@@ -1,6 +1,6 @@
 # verl Reward Integration 源码级深度阅读
 
-2026-10-30接续：[Minerva装饰与答案身份](#minerva-装饰与答案身份)核已有#8450：原21参数测试体候选全过／基线14断言失败，但末尾实质星号被删可造成符号串误接收；反引号跨行和冒号前标签仍未覆盖。已有bot反馈，本机只复核、不补丁或发布。
+2026-11-01接续：[Minerva修订复核](#修订后的-minerva-边界)固定已有#8450新f5d5123：41原参数测试体全过／基线31断言失败，旧末尾星号误删、跨行及冒号前标签问题不再复现。下方10-30负例限旧e8快照；非原生pytest、manager或训练验收，不另修复／发布。
 
 2026-10-26状态纠正：[数学奖励候选关闭与方程后续](#候选关闭与方程后续)确认#8347关闭未合并、主线三个评分文件仍同旧基线；方程提取已有新贡献者认领，不把旧64项通过当成已部署修复。
 
@@ -94,6 +94,28 @@ Python3.12.14／仅标准库，完整执行两版[原评分器](https://github.c
 本地 `\boxed{1,000}` 对目标1000两版仍−1；它属于另一项boxed归一化需求，而非本次Minerva修复。未把#8124拼进#8450或将其旧9项移作当前候选验收。
 
 [复现脚本](../../experiments/verl-math-dapo-markdown/verify.py)和[逐项结果／四源码hash](../../experiments/verl-math-dapo-markdown/result.json)另存八个本地边界控制，区别于21原测试；两次结果与JSON相同。运行 `python3.12 -B experiments/verl-math-dapo-markdown/verify.py /path/to/verl-git`，需已有固定Git blob、禁止隐式fetch。无第三方依赖、verl父包／模型／worker／设备导入、完整manager或训练；不据bot工具警告声称已验证ReDoS。CPU证据收束，无需新GPU队列，候选有实质修订再接续；不修改M5专项或对社区写入，所有上游动作／PR-head推送仍须用户逐项明确授权。
+
+### 修订后的 Minerva 边界
+
+**修订后的候选已消除本节记录的具体误删，不再用旧负例描述新代码。** 2026-11-01读取[#8450](https://github.com/verl-project/verl/pull/8450)仍OPEN、非draft、未合并，固定head `f5d5123b6d34ec1c10ed914b9bd8bab50d714fca`，API目标base仍`a08ea02a784d7d4982b1d81df36d188a476192bb`。相对旧e8两文件154增19删；这是已有作者的修订，不是本项目提交的修复。没有重新认定人工review或合入状态。
+
+新`_strip_markdown_emphasis`保留单个末尾`*`，标签匹配允许强调结束符位于冒号前，也允许冒号后反引号跨真实换行；`finditer`取得最后一次匹配的位置，用标签前的opening marker及标签是否已经闭合来处理跨标签／答案的包裹。`_marker_run`以字符串操作取连续标记，不把这点写成整个提取器的复杂度或安全证明。[固定评分器](https://github.com/verl-project/verl/blob/f5d5123b6d34ec1c10ed914b9bd8bab50d714fca/verl/utils/reward_score/math_dapo.py)
+
+Python3.12.14、标准库加载完整两版评分器；[新原测试](https://github.com/verl-project/verl/blob/f5d5123b6d34ec1c10ed914b9bd8bab50d714fca/tests/utils/reward_score/test_math_dapo_minerva_markdown_on_cpu.py)16函数展开41参数体，保留原参数／函数体／断言及`time`导入，只去pytest／框架imports与参数装饰器。候选41通过，旧dc709afb基线10通过／31断言失败；六个非Minerva既有函数的AST仍同基线。41项包含原60星号输入的`elapsed < 2s`断言，这次通过只覆盖该单输入／环境，**不是通用ReDoS或性能验收**，也不是作者的59项manager套件或原生pytest收集。
+
+同一组八个本地边界控制在新head的结果：
+
+| 输入与目标 | 新结果 | 相对旧e8 |
+|---|---|---|
+| `Answer: x*`，目标`x*`／`x` | 分别+1／−1，pred都为`x*` | 不再删星号错拒／误接收 |
+| 反引号Answer标签跨行，或`**Answer**: 42`，目标42 | 均+1，pred为42 | 两种旧拒绝不再复现 |
+| 正确box后接空强调标签 | +1 | 保持空提取可走后备 |
+| 正确box旁有有效但错的`Answer: 41` | 非strict仍−1，strict为+1 | 后备优先级未放宽 |
+| `\boxed{1,000}`，目标1000 | 仍−1 | 不混入另一项boxed归一化候选 |
+
+这仍是格式启发式：新测试明确把未闭合的单个前置`*`视为装饰，不能据此声称任意数学符号边界无损。41个原测试体与八个本地控制分开计数；修订模式两次新进程完整JSON一致，新增`--revised`而保留默认旧e8入口，旧结果JSON未覆盖。执行器变更的默认模式兼容检查与历史JSON完全相同，不计作新候选证据。
+
+复查：`python3.12 -B experiments/verl-math-dapo-markdown/verify.py /path/to/verl-git --revised`，需已有Git blob，脚本禁止lazy fetch。[新结果](../../experiments/verl-math-dapo-markdown/result-revised.json)含函数参数数目、八边界及hash：scorer `ca869f7eaa1a532bfa73aab19c610a77560722458bd87646dee4a72b831cb9af`，原测试 `55c9087466d87e36dd2af739d6047f5dce0d29ffce309d23b9f00f2c8649a631`。本机无依赖安装、verl父包／worker／设备／完整reward manager或训练，不外推数据集误判率或学习质量，不新增M5算力任务，也不向社区写入。
 
 ## boxed 答案的归一化与选择优先级
 
