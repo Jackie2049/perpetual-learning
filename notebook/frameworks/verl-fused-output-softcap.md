@@ -1,6 +1,32 @@
 # verl 融合输出头与 logit softcap
 
+2026-11-01接续：[推理专用MTP与融合标签](#推理专用-mtp-与融合标签)核新#8476：配置门、model labels控制信号与hook标签数据分开；一个原postprocess测试体基线断言失败／候选通过，不等fused CE、MTP或训练验收。
+
 2026-10-26补充：[软标签消去与求导阶数](#软标签消去与求导阶数)区分完整分布的一阶数值修正、detach注入的二阶限制和verl的截断top-k目标；CPU数学转写不是框架补丁。
+
+## 推理专用 MTP 与融合标签
+
+**加载推理用draft权重，不等于把drafter纳入训练目标；但仅放宽配置门也不能保证输出头走对路径。** [#8476](https://github.com/verl-project/verl/pull/8476)在2026-11-01读取OPEN／非draft，head `61064b0fab650a5f228ae73413b7f8885fd9fde1`、API目标base `8df5baeed0f5ecdd7f870d83bc3d79194816e2a9`，五文件。它针对[#8475](https://github.com/verl-project/verl/issues/8475)提出的推理MTP与fused log-prob共存问题，不是本项目新实现或已合并特性。
+
+配置门仍要求use_fused_kernels已开、remove-padding启用且非value model；MTP排除从`mtp.enable`缩小到`mtp.enable and mtp.enable_train`。因此允许的是训练MTP未启用的组合，不是放开bshd／value模型或训练drafter。下面三处改动共同构成调用契约：
+
+| 边界 | 新处理 | 仍需区分 |
+|---|---|---|
+| THD fused forward的hook路径 | 从model kwargs移除labels，将真实labels_rmpad放到FusedOutputProcessorContext.labels | model的labels参数还会门控MTP分支，不只是标签数据 |
+| MTP替换版_postprocess | 有output_processor时，在词表投影之前转交hook；传入labels=None时跳过以标签为条件的MTP块 | 这不是取消训练监督标签，而是换到context承载 |
+| fused_output_processor | labels为None时从context取回，再传linear_cross_entropy | 需有正确context、标签布局、输出权重与kernel契约，不能由门已放行替代 |
+
+[fused源码](https://github.com/verl-project/verl/blob/61064b0fab650a5f228ae73413b7f8885fd9fde1/verl/models/mcore/model_forward_fused.py)仅在hook分支移除model kwargs中的标签，legacy分支仍保持原labels传递。[_postprocess源码](https://github.com/verl-project/verl/blob/61064b0fab650a5f228ae73413b7f8885fd9fde1/verl/models/mcore/mtp_patch.py)先处理共享output weight；非post_process stage仍直接返回hidden states。不能把上述一条hook路径概括为所有MCore版本、模型stage或并行布局均已兼容。
+
+### 一个原调用契约的本机证据
+
+[原测试](https://github.com/verl-project/verl/blob/61064b0fab650a5f228ae73413b7f8885fd9fde1/tests/utils/test_megatron_mtp_dcp.py)的`test_postprocess_forwards_output_processor_without_labels`与原_model／_OutputLayer保持不变，配两版完整原_postprocess函数AST执行。测试用真实CPU arange张量，但output_layer／output_processor本来就被记录回调替代；它断言传给hook的labels为None、hidden_states是同对象、context保持，结果为回调的fused-output且未调用output_layer。基线8df断言失败，候选610通过。
+
+这**只有一个原测试体的两版对照**，不是原生pytest收集或完整Megatron测试。原测试的mtp_in_postprocess未显式置True，也不运行drafter或MTP loss；不将它扩报为所有MTP控制组合验证。另一个文件新增的context labels回退测试、修改的THD／legacy forward测试本轮仅源码／编译，没有执行；配置门本身也未执行。作者正文明确其环境缺Megatron／Ray、未运行这些测试和端到端训练，不套作作者或本机全套通过。
+
+[复查脚本](../../experiments/verl-mtp-hook/verify.py)在Python3.12.13／Torch2.9.1 git `5811a8d7da873dd699ff6687092c225caffcf1bb`下执行，六份完整输入AST／compile，基线与候选结果及hash见[JSON](../../experiments/verl-mtp-hook/result.json)。命令：`python -B experiments/verl-mtp-hook/verify.py /path/to/verl-git`；需已缓存blob，禁止lazy fetch。隔离原测试模块的pytest.importorskip与Megatron／Ray包初始化，不改原函数体或断言；没有TP／SP、真实CE数学／logprob／梯度、模型前向／训练、设备或性能验证。
+
+若后续已有获准匹配的M5输出头任务独立接续，应先固定Core／Bridge／TE、hook或legacy、THD／bshd、有效MTP训练开关、labels／context实际布局与tied head，才验证同token数值和梯度；条件仅补[原M5参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不启用候选、下载环境、新增训练队列或改性能专项。
 
 ## 软标签消去与求导阶数
 

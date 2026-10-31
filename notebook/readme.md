@@ -209,6 +209,7 @@
 - [V1异步空闲指标](frameworks/verl-6790-async-trainer-reading.md#异步空闲指标与调度等待) — 采样等待、借卡rollout、布尔idle与请求计数分开；旧fully_async比率非V1资源利用率，11份语法检查非训练验收
 - [verl 学习率步数与恢复](frameworks/verl-grpo-training-loop-internals-reading.md#学习率步数与恢复条件) — 原构造器/真实CPU optimizer四轨迹、两恢复与一步覆写；推进后LR不等于刚使用LR，加载状态不重建原调度闭包
 - [verl 融合输出头与softcap](frameworks/verl-fused-output-softcap.md) — #7991拒绝不支持的通用路径，非kernel实现；原torch输出头36组语义分离对照，保留数值超限，原24配置测试未跑
+- [推理专用MTP与融合标签](frameworks/verl-fused-output-softcap.md#推理专用-mtp-与融合标签) — #8476把model labels控制信号与hook标签数据分开；一个原postprocess测试体base失败／head通过，不是fused CE／MTP或训练验收
 - [SFT与V1恢复的数据顺序](frameworks/verl-checkpoint-management-reading.md#sft-与-v1-的恢复顺序) — #7974新19原CPU参数项过、旧V1边界两例重放初始排列；采样器状态与外层迭代策略须一起判断，非模型／异步恢复验收
 - [软标签消去与一阶梯度注入](frameworks/verl-fused-output-softcap.md#软标签消去与求导阶数) — 小CPU输入分开舍入残差、detach的二阶限制与截断top-k非驻点；不是原JAX／verl或模型验收
 - [选定token概率与梯度锚点](frameworks/verl-fused-output-softcap.md#选定-token-概率与共享归一化项) — #7712已收窄为引擎输出；全词表与集合条件概率分开，单形状FP64梯度控制非kernel／舍入或训练结果

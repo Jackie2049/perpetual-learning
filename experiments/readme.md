@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-mtp-hook/verify.py](verl-mtp-hook/verify.py) | #8476一个原postprocess测试体及原fixture／函数AST，[结果](verl-mtp-hook/result.json)base断言失败／head通过；原回调替身，非Megatron／kernel／训练或完整测试 | [推理MTP与融合标签](../notebook/frameworks/verl-fused-output-softcap.md#推理专用-mtp-与融合标签) |
 | [unirl-ct-wire/verify.py](unirl-ct-wire/verify.py) | 固定主线原resolver三输入／adapter及native mapper一个注入block，[结果](unirl-ct-wire/result.json)核no_stop_trim白名单；frontier为夹具，非真实SGLang／CT／replay | [连续token历史](../notebook/frameworks/unirl-survey.md#连续-token-历史与停止文本) |
 | [autograd-chunk-lifetime/verify.py](autograd-chunk-lifetime/verify.py) | 原生CPU三条forward／backward路径、saved_tensors_hooks与弱引用计数，[结果](autograd-chunk-lifetime/result.json)核保存对象生命周期及梯度；非独立存储／显存／模型replay或性能 | [保存张量生命周期](../notebook/frameworks/unirl-survey.md#保存张量的生命周期) |
 | [checkpoint-stage-consistency/verify.py](checkpoint-stage-consistency/verify.py) | 三条真实CPU writer线程时序、独立深拷贝、临时文件保存／加载与Adam再更新，[结果](checkpoint-stage-consistency/result.json)区分存储隔离、模型／优化器共同版本和报告step；非完整恢复／DCP／设备验收 | [一致时刻](../notebook/fundamentals/checkpoint.md#独立存储与同一时刻) |

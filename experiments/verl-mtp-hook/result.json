@@ -1,0 +1,24 @@
+{
+  "python": "3.12.13",
+  "torch": "2.9.1",
+  "torch_git": "5811a8d7da873dd699ff6687092c225caffcf1bb",
+  "base": "8df5baeed0f5ecdd7f870d83bc3d79194816e2a9",
+  "head": "61064b0fab650a5f228ae73413b7f8885fd9fde1",
+  "original_test_body": {
+    "8df5baeed0f5ecdd7f870d83bc3d79194816e2a9": {
+      "test": "test_postprocess_forwards_output_processor_without_labels", "status": "assertion_failed"
+    },
+    "61064b0fab650a5f228ae73413b7f8885fd9fde1": {
+      "test": "test_postprocess_forwards_output_processor_without_labels", "status": "passed"
+    }
+  },
+  "source_sha256": {
+    "61064b0fab650a5f228ae73413b7f8885fd9fde1:verl/models/mcore/mtp_patch.py": "3da029697fd6010388bb043f474114067e26aae517b27ee7c3725722b90e96a4",
+    "61064b0fab650a5f228ae73413b7f8885fd9fde1:verl/models/mcore/model_forward_fused.py": "85f7d1c81dd788ccccbe63587be747dcc4f89d387e3a053171e7097e8a03d1c6",
+    "61064b0fab650a5f228ae73413b7f8885fd9fde1:verl/workers/engine/megatron/transformer_impl.py": "a6d0a0bf3f29c5a442f7849b19d07e7e0dd47fce198ebb8c0a120b0fde8eb8f8",
+    "61064b0fab650a5f228ae73413b7f8885fd9fde1:tests/utils/test_megatron_mtp_dcp.py": "c3ac4bb37f7ed6aa0f6e02b6308be48b97477ef9db24bff3d3badbaae02b33f1",
+    "61064b0fab650a5f228ae73413b7f8885fd9fde1:tests/models/test_model_forward_fused.py": "948d4e13076441a2a78c36ee01111def7c60bbcc3b70efcab758345afdde2bb3",
+    "8df5baeed0f5ecdd7f870d83bc3d79194816e2a9:verl/models/mcore/mtp_patch.py": "ec40e5b11b5ae4620f32639d04738ee6e9ffa670dc5c4c196b16767de0cde68a"
+  },
+  "scope": "One unchanged original test body plus original _model/_OutputLayer; complete original postprocess function AST at base and head. CPU arange tensors; the original test replaces output_layer/output_processor with recording callbacks. Six full source inputs compile only. No native pytest/Megatron imports, gate or fused-forward execution, labels-context fallback test, TP/SP, fused CE math, MTP drafter/loss, model training, GPU/NPU or performance validation."
+}
