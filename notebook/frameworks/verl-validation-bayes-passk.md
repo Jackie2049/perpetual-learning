@@ -1,8 +1,41 @@
 # Bayes@N与pass@k验证指标
 
+2026-11-01补充：[失败补零与条件均值](#失败补零与条件均值)对照#8468的原四指标测试体；补零是计分政策，不是补出真实二元观测，也不保证请求已取消。
+
 **先固定要回答的问题，再选择指标。** 平均单次成功概率、k次至少成功一次，以及固定题集平均成功概率的后验不确定性，是不同对象。Bayes@N不是pass@k的新名字；相同N与先验下，其后验均值也不是一种新的平均准确率排序。
 
 阅读范围为[Bayes@N论文v4的二元特例与Algorithm 1](https://arxiv.org/html/2510.04265v4#S2)、[verl PR #8303](https://github.com/verl-project/verl/pull/8303)固定head `8971a9ff7666dd2584484d3c8f042d3da4162457`及[HumanEval估计器](https://github.com/openai/human-eval/blob/master/human_eval/evaluation.py#L13)。2026-10-21 06:32心跳核对#8303仍open，由方法作者mohsenhariri负责；这里做学习与既有笔记纠错，不实现竞争方案，也不将作者报告的108测试通过当成本机结果。
+
+## 失败补零与条件均值
+
+**“没返回分数”与“观测到错误答案”不是同一种事件；将前者计零，是明确选择失败代价。** [verl #8468](https://github.com/verl-project/verl/pull/8468)在2026-11-01读取为OPEN／draft，作者zzzzzzzxh，head `9b6ebeb4ca3828cc17ff110943f873f5f8739b14`、API目标base `8e48d72de4766228c36623c90f9f5c49ee5b45f3`。该草稿把预声明session计数用于reward／acc／score，保留有返回值的条件统计；正文已说明uni-agent #294独立集成、不再依赖本草稿，不应自行安排两仓合入顺序或另造竞争修复。
+
+固定[指标函数](https://github.com/verl-project/verl/blob/9b6ebeb4ca3828cc17ff110943f873f5f8739b14/verl/trainer/ppo/metric_utils.py)先按(source,uid)收集非None值，再把缺少的数量补0。reward只要在infos_dict中声明，就可为清单中的全失败来源产生零指标；acc／score仅对实际存在至少一个非None观测的来源启用，不能因为另一来源有score就替它捏造score。`*_success_only`的success是流程有返回值，不是答案正确；得分0也保留，空列表则不产生条件均值。
+
+候选的[原四测试体](https://github.com/verl-project/verl/blob/9b6ebeb4ca3828cc17ff110943f873f5f8739b14/tests/trainer/ppo/test_metric_utils_on_cpu.py)分别检查：
+
+| 输入 | 补零结果 | 条件统计或来源限制 |
+|---|---|---|
+| 预声明5题各1次，仅2题返回0、1 | reward／acc／score均mean@1=0.2 | 三项success_only均mean@1=0.5，包含已观测的0 |
+| reward-only来源3题，仅1题返回2 | reward mean@1=2/3 | 不添加acc／score |
+| scored来源有score，另一来源的score只有None | scored score mean@1=0.5 | scored条件值1，另一来源不产生score |
+| 清单5题、无返回行，但声明reward空列 | reward mean@1=0 | 用键存在性断言，避免defaultdict取值凭空制造0；不添加acc／score |
+
+本机Python3.12.13／NumPy2.0.2／pytest8.4.2，从固定Git blob保留原`process_validation_metrics`、`bootstrap_metric`、`calc_maj_val`完整函数及四测试体，使用真实pytest.approx、不导入verl。基线四项均断言失败，候选四项均通过；原bootstrap在需要时仍执行1000次重采样，未替换为公式。命令：`python -B experiments/verl-validation-missing/verify.py /path/to/verl-git`；[脚本](../../experiments/verl-validation-missing/verify.py)及[结果与五输入hash](../../experiments/verl-validation-missing/result.json)。这是四个测试体的版本对照，不是原生pytest收集或作者83项套件。
+
+### 分母完整不等于统一估计对象
+
+若每题尝试次数不同，原聚合仍按指标键N分桶，并在拥有同一键的uid之间等权平均。自编两题控制：预声明次数2／4，分别只返回reward1／4，得到`mean@2=0.5`、`mean@4=1`，条件`mean@1=2.5`；不会自动返回所有6次尝试的加权均值5/6。报表若选某个最大N键，也不能把它称为全部题目的均值。补齐每题分母与选择跨题权重仍是两个决策。
+
+补零也不保证数值必然下降：另一自编控制中，一次返回reward−1、预声明2次，条件均值−1、补零后−0.5。因而它实现的是“失败效用为0”的政策，不是任意reward上的惩罚或对未观察答案分数的无偏估计。下文旧#8303的Bayes路径则要求完整真实0／1试次并拒绝缺失；不应把不同版本的补零输出直接接成它已观测的Bernoulli数据，也未验证两候选组合。
+
+### 统计结算与取消确认
+
+[V1入口](https://github.com/verl-project/verl/blob/9b6ebeb4ca3828cc17ff110943f873f5f8739b14/verl/trainer/ppo/v1/trainer_base.py)在生成前建立(source,uid)清单并声明reward空列；收到空TQ batch时continue，计算指标后才调用可选publish钩子。生成、收集、日志或dump的前置异常仍可能阻止publish，代码不是覆盖所有失败的finally。局部指标测试不能证明完整验证一定结算。
+
+[client取消分支](https://github.com/verl-project/verl/blob/9b6ebeb4ca3828cc17ff110943f873f5f8739b14/verl/workers/rollout/llm_server.py)保留已发generation_ref，在本地CancelledError后对该ref调用ray.cancel，再在线程中ray.get(timeout=5)。内部只吞TaskCancelledError；其他确认异常可从这里传播，5秒参数本身不证明远端终止或总能保留最初取消异常。finally调用release也不是等待路由器确认。以上仅源码契约，未用Ray替身宣称远端行为已通过。
+
+本轮只执行CPU统计；五完整源输入AST／compile，未运行trainer、真实采样／评分、TQ、Ray、uni-agent、取消或训练。草稿的83项CPU／真实Ray actor及早期GPU观察均属作者报告。无需为这一局部统计检查新增算力交接；后续仅按实质反馈接续，不代建取消方案或改M5任务。
 
 ## 三种量分别估计什么
 

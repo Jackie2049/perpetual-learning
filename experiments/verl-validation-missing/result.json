@@ -1,0 +1,37 @@
+{
+  "python": "3.12.13",
+  "numpy": "2.0.2",
+  "pytest": "8.4.2",
+  "base": "8e48d72de4766228c36623c90f9f5c49ee5b45f3",
+  "head": "9b6ebeb4ca3828cc17ff110943f873f5f8739b14",
+  "source_sha256": {
+    "8e48d72de4766228c36623c90f9f5c49ee5b45f3:verl/trainer/ppo/metric_utils.py": "d857834a6593301ad932ce2fd2e41e781ee140d0f1dafcfe157b97a0625e847f",
+    "9b6ebeb4ca3828cc17ff110943f873f5f8739b14:verl/trainer/ppo/metric_utils.py": "33d8f57e1f0b61d0d587f927735dde18ba22d9c5216039bd0918c855eeb295a9",
+    "9b6ebeb4ca3828cc17ff110943f873f5f8739b14:tests/trainer/ppo/test_metric_utils_on_cpu.py": "b24f81806a984a52b6b9cfac5156ac4a8b0124f997bb5890064f6544c2b40418",
+    "9b6ebeb4ca3828cc17ff110943f873f5f8739b14:verl/trainer/ppo/v1/trainer_base.py": "1bab4347bffaf9acdd39661967a963f0de2008947ec814299b9a8c48248f312b",
+    "9b6ebeb4ca3828cc17ff110943f873f5f8739b14:verl/workers/rollout/llm_server.py": "deee16a9f60321652a99e7d1964853d98f9b68313c7cbd8a910b3222c8be1178"
+  },
+  "original_test_bodies": {
+    "8e48d72de4766228c36623c90f9f5c49ee5b45f3": {
+      "test_real_run_partial_failure_scores_use_original_five_prompts": "assertion_failed",
+      "test_reward_only_source_does_not_acquire_accuracy_or_extra_score": "assertion_failed",
+      "test_extra_score_is_padded_only_for_sources_that_define_it": "assertion_failed",
+      "test_all_failed_validation_still_has_zero_canonical_reward": "assertion_failed"
+    },
+    "9b6ebeb4ca3828cc17ff110943f873f5f8739b14": {
+      "test_real_run_partial_failure_scores_use_original_five_prompts": "passed",
+      "test_reward_only_source_does_not_acquire_accuracy_or_extra_score": "passed",
+      "test_extra_score_is_padded_only_for_sources_that_define_it": "passed",
+      "test_all_failed_validation_still_has_zero_canonical_reward": "passed"
+    }
+  },
+  "own_controls": {
+    "unequal_expected_counts": {
+      "canonical_mean_keys": {"mean@2": 0.5,"mean@4": 1.0},
+      "completed_mean_at_1": 2.5,
+      "arithmetic_attempt_weighted_mean_not_returned": 0.8333333333333334
+    },
+    "negative_reward": {"canonical_mean_at_2": -0.5,"completed_mean_at_1": -1.0}
+  },
+  "scope": "Four unchanged original test bodies with pytest.approx, not native pytest collection or the full suite. Three complete original metric functions per version; original bootstrap executes normally with 1000 resamples where invoked. Two own aggregation controls. Full source files compile only outside selected functions. No trainer/validation lifecycle, model samples, grading, TQ, Ray cancellation, uni-agent, training or GPU/NPU execution."
+}

@@ -90,6 +90,7 @@
 ## RL 训练基础设施
 
 - [Bayes@N与pass@k验证指标](frameworks/verl-validation-bayes-passk.md) — 固定题集后验矩、至少一次成功事件、PR #8303数值helper限定检查及旧公式纠正
+- [失败补零与条件均值](frameworks/verl-validation-bayes-passk.md#失败补零与条件均值) — #8468原四指标体基线失败／候选通过；补零政策、success_only与按N分桶分开，不代替真实观测或取消确认
 - [RLHF/GRPO 训练基础设施](fundamentals/rlhf-training-infra.md) — PPO 四模型架构、GRPO 无 Critic、verl/OpenRLHF 框架、Prefix Sharing
 - [DPO 直接偏好优化](fundamentals/dpo.md) — 跳过 RM 和 RL 的对齐方法、IPO/KTO/SimPO 变体
 - [LoRA 与参数高效微调](fundamentals/lora-peft.md) — 低秩分解原理、QLoRA、多 LoRA 服务、RLHF 中的应用
