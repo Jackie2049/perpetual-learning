@@ -1,5 +1,7 @@
 # verl Worker 生命周期与 Ray 分布式架构源码阅读
 
+2026-11-01接续：[V1结束钩子与加载器清理](#v1-结束钩子与加载器清理)核已有#8474：正常末步不再提前return，后置三项清理并非finally保证；原方法的记录器控制不当真实worker或Ray退出验收。
+
 2026-10-30接续：[分层导出与base重同步的拒绝边界](#分层导出与-base-重同步的拒绝边界)核#8032新guard；原8项Mock回归候选全过／父版3项未拒绝，不等真实权重释放、恢复或异常回滚验收。另核[后端与部署模式](#配置后端与部署模式)：标准V1的vLLM路径是HYBRID，不能仅因物理同卡部署就套用COLOCATED分支反馈。
 
 2026-10-26接续：[MLflow 初始化的文件锁与异常范围](#mlflow-初始化的文件锁与异常范围)核#8393新f1dd14b：with管理句柄不缩小异常捕获；原三控制仍出现回调ImportError后无锁重试。trainer初始化另无同锁，不把局部串行化当整个启动流程互斥。
@@ -12,6 +14,96 @@
 
 > 2026-06-15 | 源码: verl/single_controller/ + verl/workers/engine_workers.py + verl/checkpoint_engine/ + verl/workers/rollout/
 > 核心: WorkerGroup=Ray actor管理+Dispatch路由 → RolloutMode(HYBRID/COLOCATED/STANDALONE) → Sleep/Wake GPU内存切换 → 3种Weight Sync后端(naive/NCCL/NIXL)
+
+## V1 结束钩子与加载器清理
+
+**正常运行到最后一步，与异常时也能完成清理，是不同保证。** [verl #8474](https://github.com/verl-project/verl/pull/8474)在2026-11-01读取为OPEN／非draft，head `02eac3e1238d1c1c37350ae600e585d67bfcae74`，API目标base `8df5baeed0f5ecdd7f870d83bc3d79194816e2a9`，两文件。候选将V1末步的`return`改为`break`，使正常末步和循环自然结束都到达`on_train_end → _shutdown_dump_executor → _shutdown_train_dataloader`。这是已有作者的实现，不另竞争修复。[固定源码](https://github.com/verl-project/verl/blob/02eac3e1238d1c1c37350ae600e585d67bfcae74/verl/trainer/ppo/v1/trainer_base.py#L522)
+
+三项调用顺序执行，没有放在覆盖`fit`的finally中。训练／验证／日志等前序异常仍可能跳过整个后段；结束钩子抛错会阻止后两项，dump关闭抛错会阻止loader关闭。原dump关闭先逐个`future.result()`，写出失败可在执行器shutdown之前重新抛出；这是源码控制流，不是本机磁盘故障复现。`val_only`另有直接关闭dump后return的分支，也不经过这三项；这不自动证明该模式有活跃train worker或应调用训练结束钩子。
+
+新loader helper先把`self.train_dataloader_it`置None，再从原iterator取私有`_shutdown_workers`并调用。没有该属性时只清引用，不调用关闭；关闭抛错也不会恢复引用。单独重调helper因此不等于重试失败的关闭动作，不能从“可重复调用不报错”推断资源已经退出。[原helper](https://github.com/verl-project/verl/blob/02eac3e1238d1c1c37350ae600e585d67bfcae74/verl/trainer/ppo/v1/trainer_base.py#L1297)
+
+### 局部控制与真实 worker 测试
+
+系统Python3.9.6／标准库，从固定完整模块AST抽取原loader helper与`fit`末尾三条原语句；完整模块只编译，不导入verl。结束钩子、dump关闭和worker关闭均为记录器／故障注入回调，不创建任何进程或真正关闭loader：
+
+| 控制 | 实际事件 | trainer中的iterator引用 |
+|---|---|---|
+| 三条原尾部语句，正常回调 | end、dump、workers | None |
+| 结束回调抛RuntimeError | 仅end，异常传播 | 仍保留 |
+| dump回调抛RuntimeError | end、dump，异常传播 | 仍保留 |
+| 单独helper正常，然后再调用 | workers仅一次 | None |
+| 单独helper的worker回调抛错，然后再调用 | workers仅一次，首次异常传播 | None，不重试 |
+| iterator没有关闭属性 | 无关闭回调 | None |
+
+六项是上述自编局部控制，不是候选的两个原测试通过。原120行[测试文件](https://github.com/verl-project/verl/blob/02eac3e1238d1c1c37350ae600e585d67bfcae74/tests/trainer/ppo/v1/test_fit_teardown_on_cpu.py)用真实StatefulDataLoader／两个worker配合stub step和基础设施Mock；作者报告238项CPU套件通过，但明确未用修订重跑完整Ray训练任务。其旧三臂B300作业exit0且打印退出traceback的观察也属作者，不是本机复现。本机torch环境没有torchdata／OmegaConf／Ray／TensorDict，未安装或模拟这些依赖来宣称原测试通过；未验证实际worker退出、Ray报错消失或故障恢复，不新排GPU任务。
+
+### 标准库复查
+
+将下面代码保存为临时Python文件，以`python3 recheck.py /path/to/verl-git`运行；仅读已有Git对象，禁止lazy fetch。它只执行原helper和原尾部语句，不能替代`fit()`运行。完整trainer模块SHA256为`739dd365f385d6541cad3dccac59cddd96e33c3f2b86fa9d2f51453f68201deb`。
+
+```python
+import ast, hashlib, os, subprocess, sys
+from types import SimpleNamespace
+
+ref = "02eac3e1238d1c1c37350ae600e585d67bfcae74"
+path = "verl/trainer/ppo/v1/trainer_base.py"
+raw = subprocess.check_output(["git", "show", f"{ref}:{path}"], cwd=sys.argv[1],
+                              env=dict(os.environ, GIT_NO_LAZY_FETCH="1"))
+tree = ast.parse(raw)
+compile(tree, path, "exec")
+cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "PPOTrainer")
+fit = next(n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == "fit")
+helper = next(n for n in cls.body if isinstance(n, ast.FunctionDef)
+              and n.name == "_shutdown_train_dataloader")
+assert [ast.unparse(n) for n in fit.body[-3:]] == [
+    "self.on_train_end()", "self._shutdown_dump_executor()", "self._shutdown_train_dataloader()"]
+tail = ast.FunctionDef(name="tail_only", args=helper.args, body=fit.body[-3:], decorator_list=[])
+ns = {}
+exec(compile(ast.fix_missing_locations(ast.Module(body=[helper, tail], type_ignores=[])),
+             "original-tail-and-helper", "exec"), ns)
+
+class Harness:
+    def __init__(self, fault=None):
+        self.fault, self.events = fault, []
+        self.train_dataloader_it = SimpleNamespace(_shutdown_workers=self.workers)
+    def on_train_end(self):
+        self.events.append("end")
+        if self.fault == "end": raise RuntimeError("end")
+    def _shutdown_dump_executor(self):
+        self.events.append("dump")
+        if self.fault == "dump": raise RuntimeError("dump")
+    def workers(self):
+        assert self.train_dataloader_it is None
+        self.events.append("workers")
+        if self.fault == "workers": raise RuntimeError("workers")
+    _shutdown_train_dataloader = ns["_shutdown_train_dataloader"]
+
+for fault, expected in [(None, ["end", "dump", "workers"]), ("end", ["end"]),
+                        ("dump", ["end", "dump"])]:
+    h = Harness(fault)
+    try: ns["tail_only"](h)
+    except RuntimeError as error: assert str(error) == fault
+    else: assert fault is None
+    assert h.events == expected
+    print("tail", fault, h.events, "iterator_cleared", h.train_dataloader_it is None)
+for fault in (None, "workers"):
+    h = Harness(fault)
+    try: h._shutdown_train_dataloader()
+    except RuntimeError as error: assert str(error) == fault
+    assert h.train_dataloader_it is None and h.events == ["workers"]
+    h._shutdown_train_dataloader()
+    assert h.events == ["workers"]
+    print("helper", fault, "second call does not retry worker callback")
+h = Harness()
+h.train_dataloader_it = object()
+h._shutdown_train_dataloader()
+assert h.train_dataloader_it is None and h.events == []
+print("helper without shutdown attribute: reference cleared, no shutdown callback")
+print("source_sha256", hashlib.sha256(raw).hexdigest())
+```
+
+这些局部失败传播没有被改写成新修复方案；本题收束于生命周期阅读，不改M5环境／专项、不实现通用finally或重试协议。上游评论、PR代码与已有fork head推送仍待用户针对具体动作明确授权。
 
 ## 分层导出与 base 重同步的拒绝边界
 
