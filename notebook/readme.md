@@ -217,6 +217,7 @@
 - [选定token概率与梯度锚点](frameworks/verl-fused-output-softcap.md#选定-token-概率与共享归一化项) — #7712已收窄为引擎输出；全词表与集合条件概率分开，单形状FP64梯度控制非kernel／舍入或训练结果
 - [verl 前向与logprob一致性](frameworks/verl-6572-full-determinism-source-reading.md#actor-前向与-logprob-公式的一致性) — #8026原4数学测试体通过；同logits的公式、批形状前向和训练复现分层，撤回P9完整确定性/固定吞吐推论，非GPU验收
 - [verl 量化层审计与 refit](frameworks/verl-quant-layer-audit.md) — #8132三类证据/24项CPU审计单测；与新#8306的格式、存储和保护覆盖对照，不能混用分支证据
+  - [激活尺度的全局身份](frameworks/verl-quant-layer-audit.md#激活尺度的全局身份与流水线汇集) — #8467原collector十个自编CPU身份控制与两进程Gloo元数据；层／专家坐标、消费范围和真实QAT导出分开，非Megatron／设备验收
   - [分片导出与量化器边界](frameworks/verl-quant-layer-audit.md#分片导出与量化器的调用边界) — #8395作者确认绕过量化hook；#8369已合并的delta拒绝不在候选快照内，完整张量fallback也非量化修复，七输入仅语法／AST
   - [NVFP4共享重载的失败边界](frameworks/verl-quant-layer-audit.md#nvfp4-共享重载与失败保护的版本边界) — #7971获批准未合并；旧专用封禁与当前存储回绑分开，正常恢复旧权重不等故障回滚，六输入仅语法／AST核对
   - [QAT模型结构与mask](frameworks/verl-quant-layer-audit.md#qat-的-mask-默认与-packed-接口) — #8361最终合并版连默认spec也保留，不再补mask；旧三例已随helper删除，不作最终量化／refit验收

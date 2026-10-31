@@ -1,0 +1,429 @@
+{
+  "python": "3.12.13",
+  "torch": "2.9.1",
+  "torch_git": "5811a8d7da873dd699ff6687092c225caffcf1bb",
+  "base": "8e48d72de4766228c36623c90f9f5c49ee5b45f3",
+  "head": "ba2fbf9d52c0ac24b4d78ab20ff3e77afb95a8cf",
+  "source_sha256": {
+    "8e48d72de4766228c36623c90f9f5c49ee5b45f3:verl/utils/qat/modelopt.py": "c926b4987e48c5e487865c62046de0547bff75cb551bbd50691a3d16129b1828",
+    "8e48d72de4766228c36623c90f9f5c49ee5b45f3:verl/utils/qat/compressed_tensors.py": "6db8de302ae9ef9f584d38a154605f423704e686d521428718e2ac50e3a43964",
+    "ba2fbf9d52c0ac24b4d78ab20ff3e77afb95a8cf:verl/utils/qat/modelopt.py": "b6ab38d1b216faa587a929e92a38da722974be6e36c71a243863bd86c555dba2",
+    "ba2fbf9d52c0ac24b4d78ab20ff3e77afb95a8cf:verl/utils/qat/compressed_tensors.py": "37a8e734b7c4b88841efe5d3ebcb66aa5bd6cb7c45eec4a2f0bf580be97b8188",
+    "ba2fbf9d52c0ac24b4d78ab20ff3e77afb95a8cf:verl/workers/engine/megatron/transformer_impl.py": "bf4a721456f371f13d04cbc974657b5907bf10c8911673ec88d54d8caebd5648",
+    "ba2fbf9d52c0ac24b4d78ab20ff3e77afb95a8cf:tests/utils/test_modelopt_mxfp8_on_gpu.py": "0718946d30c5345c5241ef13cec3c9aa7b0537fd2bbda8c14ec094ba07a3c7a8"
+  },
+  "own_layer_identity_controls": [
+    {
+      "numbers": [
+        [
+          1,
+          2
+        ]
+      ],
+      "wrapped": false,
+      "expected": {
+        "layers.0.mlp.experts.gate_up": 1,
+        "layers.0.mlp.experts.down": 2,
+        "layers.1.mlp.experts.gate_up": 2,
+        "layers.1.mlp.experts.down": 4
+      },
+      "base": {
+        "layers.0.mlp.experts.gate_up": 1,
+        "layers.0.mlp.experts.down": 2,
+        "layers.1.mlp.experts.gate_up": 2,
+        "layers.1.mlp.experts.down": 4
+      },
+      "head": {
+        "layers.0.mlp.experts.gate_up": 1,
+        "layers.0.mlp.experts.down": 2,
+        "layers.1.mlp.experts.gate_up": 2,
+        "layers.1.mlp.experts.down": 4
+      },
+      "base_matches": true
+    },
+    {
+      "numbers": [
+        [
+          1,
+          2
+        ]
+      ],
+      "wrapped": true,
+      "expected": {
+        "layers.0.mlp.experts.gate_up": 1,
+        "layers.0.mlp.experts.down": 2,
+        "layers.1.mlp.experts.gate_up": 2,
+        "layers.1.mlp.experts.down": 4
+      },
+      "base": {
+        "layers.0.mlp.experts.gate_up": 2,
+        "layers.0.mlp.experts.down": 4
+      },
+      "head": {
+        "layers.0.mlp.experts.gate_up": 1,
+        "layers.0.mlp.experts.down": 2,
+        "layers.1.mlp.experts.gate_up": 2,
+        "layers.1.mlp.experts.down": 4
+      },
+      "base_matches": false
+    },
+    {
+      "numbers": [
+        [
+          5,
+          6
+        ]
+      ],
+      "wrapped": false,
+      "expected": {
+        "layers.4.mlp.experts.gate_up": 5,
+        "layers.4.mlp.experts.down": 10,
+        "layers.5.mlp.experts.gate_up": 6,
+        "layers.5.mlp.experts.down": 12
+      },
+      "base": {
+        "layers.0.mlp.experts.gate_up": 5,
+        "layers.0.mlp.experts.down": 10,
+        "layers.1.mlp.experts.gate_up": 6,
+        "layers.1.mlp.experts.down": 12
+      },
+      "head": {
+        "layers.4.mlp.experts.gate_up": 5,
+        "layers.4.mlp.experts.down": 10,
+        "layers.5.mlp.experts.gate_up": 6,
+        "layers.5.mlp.experts.down": 12
+      },
+      "base_matches": false
+    },
+    {
+      "numbers": [
+        [
+          5,
+          6
+        ]
+      ],
+      "wrapped": true,
+      "expected": {
+        "layers.4.mlp.experts.gate_up": 5,
+        "layers.4.mlp.experts.down": 10,
+        "layers.5.mlp.experts.gate_up": 6,
+        "layers.5.mlp.experts.down": 12
+      },
+      "base": {
+        "layers.0.mlp.experts.gate_up": 6,
+        "layers.0.mlp.experts.down": 12
+      },
+      "head": {
+        "layers.4.mlp.experts.gate_up": 5,
+        "layers.4.mlp.experts.down": 10,
+        "layers.5.mlp.experts.gate_up": 6,
+        "layers.5.mlp.experts.down": 12
+      },
+      "base_matches": false
+    },
+    {
+      "numbers": [
+        [
+          1,
+          2
+        ],
+        [
+          5,
+          6
+        ]
+      ],
+      "wrapped": false,
+      "expected": {
+        "layers.0.mlp.experts.gate_up": 1,
+        "layers.0.mlp.experts.down": 2,
+        "layers.1.mlp.experts.gate_up": 2,
+        "layers.1.mlp.experts.down": 4,
+        "layers.4.mlp.experts.gate_up": 5,
+        "layers.4.mlp.experts.down": 10,
+        "layers.5.mlp.experts.gate_up": 6,
+        "layers.5.mlp.experts.down": 12
+      },
+      "base": {
+        "layers.0.mlp.experts.gate_up": 5,
+        "layers.0.mlp.experts.down": 10,
+        "layers.1.mlp.experts.gate_up": 6,
+        "layers.1.mlp.experts.down": 12
+      },
+      "head": {
+        "layers.0.mlp.experts.gate_up": 1,
+        "layers.0.mlp.experts.down": 2,
+        "layers.1.mlp.experts.gate_up": 2,
+        "layers.1.mlp.experts.down": 4,
+        "layers.4.mlp.experts.gate_up": 5,
+        "layers.4.mlp.experts.down": 10,
+        "layers.5.mlp.experts.gate_up": 6,
+        "layers.5.mlp.experts.down": 12
+      },
+      "base_matches": false
+    },
+    {
+      "numbers": [
+        [
+          1,
+          2
+        ],
+        [
+          5,
+          6
+        ]
+      ],
+      "wrapped": true,
+      "expected": {
+        "layers.0.mlp.experts.gate_up": 1,
+        "layers.0.mlp.experts.down": 2,
+        "layers.1.mlp.experts.gate_up": 2,
+        "layers.1.mlp.experts.down": 4,
+        "layers.4.mlp.experts.gate_up": 5,
+        "layers.4.mlp.experts.down": 10,
+        "layers.5.mlp.experts.gate_up": 6,
+        "layers.5.mlp.experts.down": 12
+      },
+      "base": {
+        "layers.0.mlp.experts.gate_up": 6,
+        "layers.0.mlp.experts.down": 12
+      },
+      "head": {
+        "layers.0.mlp.experts.gate_up": 1,
+        "layers.0.mlp.experts.down": 2,
+        "layers.1.mlp.experts.gate_up": 2,
+        "layers.1.mlp.experts.down": 4,
+        "layers.4.mlp.experts.gate_up": 5,
+        "layers.4.mlp.experts.down": 10,
+        "layers.5.mlp.experts.gate_up": 6,
+        "layers.5.mlp.experts.down": 12
+      },
+      "base_matches": false
+    },
+    {
+      "numbers": [
+        [
+          5,
+          6
+        ],
+        [
+          9,
+          10
+        ]
+      ],
+      "wrapped": false,
+      "expected": {
+        "layers.4.mlp.experts.gate_up": 5,
+        "layers.4.mlp.experts.down": 10,
+        "layers.5.mlp.experts.gate_up": 6,
+        "layers.5.mlp.experts.down": 12,
+        "layers.8.mlp.experts.gate_up": 9,
+        "layers.8.mlp.experts.down": 18,
+        "layers.9.mlp.experts.gate_up": 10,
+        "layers.9.mlp.experts.down": 20
+      },
+      "base": {
+        "layers.0.mlp.experts.gate_up": 9,
+        "layers.0.mlp.experts.down": 18,
+        "layers.1.mlp.experts.gate_up": 10,
+        "layers.1.mlp.experts.down": 20
+      },
+      "head": {
+        "layers.4.mlp.experts.gate_up": 5,
+        "layers.4.mlp.experts.down": 10,
+        "layers.5.mlp.experts.gate_up": 6,
+        "layers.5.mlp.experts.down": 12,
+        "layers.8.mlp.experts.gate_up": 9,
+        "layers.8.mlp.experts.down": 18,
+        "layers.9.mlp.experts.gate_up": 10,
+        "layers.9.mlp.experts.down": 20
+      },
+      "base_matches": false
+    },
+    {
+      "numbers": [
+        [
+          5,
+          6
+        ],
+        [
+          9,
+          10
+        ]
+      ],
+      "wrapped": true,
+      "expected": {
+        "layers.4.mlp.experts.gate_up": 5,
+        "layers.4.mlp.experts.down": 10,
+        "layers.5.mlp.experts.gate_up": 6,
+        "layers.5.mlp.experts.down": 12,
+        "layers.8.mlp.experts.gate_up": 9,
+        "layers.8.mlp.experts.down": 18,
+        "layers.9.mlp.experts.gate_up": 10,
+        "layers.9.mlp.experts.down": 20
+      },
+      "base": {
+        "layers.0.mlp.experts.gate_up": 10,
+        "layers.0.mlp.experts.down": 20
+      },
+      "head": {
+        "layers.4.mlp.experts.gate_up": 5,
+        "layers.4.mlp.experts.down": 10,
+        "layers.5.mlp.experts.gate_up": 6,
+        "layers.5.mlp.experts.down": 12,
+        "layers.8.mlp.experts.gate_up": 9,
+        "layers.8.mlp.experts.down": 18,
+        "layers.9.mlp.experts.gate_up": 10,
+        "layers.9.mlp.experts.down": 20
+      },
+      "base_matches": false
+    }
+  ],
+  "own_sequential_expert_controls": [
+    {
+      "experts": [
+        0,
+        1
+      ],
+      "expected": {
+        "layers.4.mlp.experts.0.gate_up": 5,
+        "layers.4.mlp.experts.0.down": 10,
+        "layers.4.mlp.experts.1.gate_up": 10,
+        "layers.4.mlp.experts.1.down": 20
+      },
+      "base": {
+        "layers.0.mlp.experts.gate_up": 10,
+        "layers.0.mlp.experts.down": 20
+      },
+      "head": {
+        "layers.4.mlp.experts.0.gate_up": 5,
+        "layers.4.mlp.experts.0.down": 10,
+        "layers.4.mlp.experts.1.gate_up": 10,
+        "layers.4.mlp.experts.1.down": 20
+      }
+    },
+    {
+      "experts": [
+        4,
+        5
+      ],
+      "expected": {
+        "layers.4.mlp.experts.4.gate_up": 25,
+        "layers.4.mlp.experts.4.down": 50,
+        "layers.4.mlp.experts.5.gate_up": 30,
+        "layers.4.mlp.experts.5.down": 60
+      },
+      "base": {
+        "layers.0.mlp.experts.gate_up": 30,
+        "layers.0.mlp.experts.down": 60
+      },
+      "head": {
+        "layers.4.mlp.experts.4.gate_up": 25,
+        "layers.4.mlp.experts.4.down": 50,
+        "layers.4.mlp.experts.5.gate_up": 30,
+        "layers.4.mlp.experts.5.down": 60
+      }
+    }
+  ],
+  "own_two_rank_gloo_controls": [
+    {
+      "virtual_chunks": 1,
+      "ranks": [
+        {
+          "rank": 0,
+          "empty": {},
+          "snapshots": [
+            {
+              "layers.0.mlp.experts.gate_up": 1,
+              "layers.0.mlp.experts.down": 2,
+              "layers.1.mlp.experts.gate_up": 2,
+              "layers.1.mlp.experts.down": 4
+            },
+            {
+              "layers.0.mlp.experts.gate_up": 2,
+              "layers.0.mlp.experts.down": 4,
+              "layers.1.mlp.experts.gate_up": 4,
+              "layers.1.mlp.experts.down": 8
+            }
+          ]
+        },
+        {
+          "rank": 1,
+          "empty": {},
+          "snapshots": [
+            {
+              "layers.0.mlp.experts.gate_up": 1,
+              "layers.0.mlp.experts.down": 2,
+              "layers.1.mlp.experts.gate_up": 2,
+              "layers.1.mlp.experts.down": 4
+            },
+            {
+              "layers.0.mlp.experts.gate_up": 2,
+              "layers.0.mlp.experts.down": 4,
+              "layers.1.mlp.experts.gate_up": 4,
+              "layers.1.mlp.experts.down": 8
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "virtual_chunks": 2,
+      "ranks": [
+        {
+          "rank": 0,
+          "empty": {},
+          "snapshots": [
+            {
+              "layers.0.mlp.experts.gate_up": 1,
+              "layers.0.mlp.experts.down": 2,
+              "layers.2.mlp.experts.gate_up": 3,
+              "layers.2.mlp.experts.down": 6,
+              "layers.1.mlp.experts.gate_up": 2,
+              "layers.1.mlp.experts.down": 4,
+              "layers.3.mlp.experts.gate_up": 4,
+              "layers.3.mlp.experts.down": 8
+            },
+            {
+              "layers.0.mlp.experts.gate_up": 2,
+              "layers.0.mlp.experts.down": 4,
+              "layers.2.mlp.experts.gate_up": 6,
+              "layers.2.mlp.experts.down": 12,
+              "layers.1.mlp.experts.gate_up": 4,
+              "layers.1.mlp.experts.down": 8,
+              "layers.3.mlp.experts.gate_up": 8,
+              "layers.3.mlp.experts.down": 16
+            }
+          ]
+        },
+        {
+          "rank": 1,
+          "empty": {},
+          "snapshots": [
+            {
+              "layers.0.mlp.experts.gate_up": 1,
+              "layers.0.mlp.experts.down": 2,
+              "layers.2.mlp.experts.gate_up": 3,
+              "layers.2.mlp.experts.down": 6,
+              "layers.1.mlp.experts.gate_up": 2,
+              "layers.1.mlp.experts.down": 4,
+              "layers.3.mlp.experts.gate_up": 4,
+              "layers.3.mlp.experts.down": 8
+            },
+            {
+              "layers.0.mlp.experts.gate_up": 2,
+              "layers.0.mlp.experts.down": 4,
+              "layers.2.mlp.experts.gate_up": 6,
+              "layers.2.mlp.experts.down": 12,
+              "layers.1.mlp.experts.gate_up": 4,
+              "layers.1.mlp.experts.down": 8,
+              "layers.3.mlp.experts.gate_up": 8,
+              "layers.3.mlp.experts.down": 16
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "scope": "Six full source inputs compile. Exact original collector AST only; own nn.Module trees with manually assigned observer scalars, not ModelOpt observers. Eight layer/wrapper controls (base 1 match/7 mismatch, head 8 match), two expert controls (base 2 mismatch/head 2 match). Two real CPU Gloo processes for each of 1/2 virtual chunks; empty observation and two refreshed scalar snapshots on both ranks. No original test bodies or pytest suite, CT lookup/compression/refresh method, ModelOpt/QAT, Bridge export, Megatron pipeline, TP/EP, GPU/NPU, training, quality or performance execution.",
+  "execution_note": "Initial sandbox run failed in Gloo initialization: cannot resolve loopback address. Successful bounded local-only retry with GLOO_SOCKET_IFNAME=lo0 and sandbox escalation. No remote host access."
+}

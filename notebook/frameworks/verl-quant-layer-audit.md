@@ -10,6 +10,30 @@
 
 2026-10-26接续：[原生混合精度模型的后端选择](#原生混合精度模型的后端选择)追踪新议题#8381。顶层FP8配置不代表experts也为FP8；显式DeepGEMM会阻止自动候选回退，切换Marlin还改变activation精度，不能仅按“成功启动”认证训练与rollout一致。
 
+## 激活尺度的全局身份与流水线汇集
+
+**权重导出使用全局名字，伴随它的激活尺度也必须使用同一层／专家坐标，并到达所有消费该权重的rank。** 2026-11-01只读cyanseek的[#8467](https://github.com/verl-project/verl/pull/8467)：head `ba2fbf9d52c0ac24b4d78ab20ff3e77afb95a8cf`，API目标base与实际共同祖先均为 `8e48d72de4766228c36623c90f9f5c49ee5b45f3`，读取时OPEN／非draft、四文件。它接续ModelOpt／compressed-tensors的NVFP4观察尺度导出，不是[#7971](#nvfp4-共享重载与失败保护的版本边界)原生NVFP4重载故障保护，也不改变QAT量化数学。
+
+| 身份／范围 | 基线 | 候选 |
+|---|---|---|
+| 全局层号 | 模块路径第一个数字；PP本地层下标、VPP块与外层Sequential包装会重用它 | 从所属layer取全局一基`layer_number`，减一形成HF坐标 |
+| SequentialMLP专家 | 同层同projection写同一键，后读专家覆盖前者 | 用`local_expert_indices`把本地专家下标映射为全局expert ID；grouped形式保留层级尺度 |
+| PP消费范围 | 收集本rank观察值 | 指定PP组且size>1时，以`all_gather_object`汇集标量字典，重建张量 |
+
+[原收集器](https://github.com/verl-project/verl/blob/ba2fbf9d52c0ac24b4d78ab20ff3e77afb95a8cf/verl/utils/qat/modelopt.py)依赖真实模块提供正确的`layer_number`／专家映射；不从名字猜全局偏移。汇集后的字典是按stage展开，不做TP／EP统计归约或重复键冲突检查；这里的“global”指身份坐标，不应理解为所有并行维度的校准统计已验证。
+
+[CT查表](https://github.com/verl-project/verl/blob/ba2fbf9d52c0ac24b4d78ab20ff3e77afb95a8cf/verl/utils/qat/compressed_tensors.py)先查完整module名，再查专家级canonical键，最后回退grouped层／projection键。gate_proj与up_proj都取gate_up，down_proj单独取down；初次没有任何观察值时仍可用中性1.0，不能由这个数证明做过校准。refresh仅在TENSOR_GROUP activation方案下收集，且只在非空结果时替换现有map，并非空收集会清除历史值。[Megatron普通导出入口](https://github.com/verl-project/verl/blob/ba2fbf9d52c0ac24b4d78ab20ff3e77afb95a8cf/verl/workers/engine/megatron/transformer_impl.py)创建HF iterator后、消费量化流前传入PP组刷新；adapter-only不走此块。本轮只读查表与入口，没有执行CT压缩／refresh方法或Bridge iterator。
+
+### 原收集器的CPU元数据对照
+
+[复现脚本](../../experiments/verl-nvfp4-scale-identity/verify.py)只AST提取两版完整原收集函数；自编真实`nn.Module`树，手工给observer模块赋标量，并非真实ModelOpt观察器。Python3.12.13／Torch2.9.1。八个层号／包装控制取单块(1,2)、单块(5,6)、两块(1,2)/(5,6)、两块(5,6)/(9,10)，各配外层Sequential有／无；基线仅未包装的(1,2)符合预期，另外七项不符，候选八项全符。两个Sequential专家控制取全局expert ID(0,1)与(4,5)、所属layer_number=5；基线两项不符，候选均保留四个独立projection尺度。它们是本项目自编控制，不称为执行作者原测试体。
+
+另以真实本机两CPU进程／Gloo WORLD组运行候选原函数，每rank拥有1／2个模拟虚拟块；先删除全部观察属性核空字典，再赋值并更新两次。两rank每次都获得相同的完整4／8键尺度图，第二次值翻倍，不混用上一次快照。**这是标量字典collective，不是Megatron PP／VPP前反向、权重广播或HF导出。** 初次受限环境在Gloo初始化报无法解析回环地址；限定`GLOO_SOCKET_IFNAME=lo0`并仅为本机通信提权重试通过，无远端请求。六完整输入仅compile，包含候选原测试文件但不执行其中任何测试；[结果](../../experiments/verl-nvfp4-scale-identity/result.json)保存各项输出、源SHA256及失败说明。
+
+复现：已有Python3.12／CPU Torch环境下，固定两提交及六源blob到只读verl缓存后运行 `GLOO_SOCKET_IFNAME=lo0 <python> experiments/verl-nvfp4-scale-identity/verify.py <verl-repo>`（lo0是本机macOS回环接口，其他平台按实际接口）；不安装ModelOpt／CT／Megatron，不下载模型。未执行CT查表、压缩、QAT、真实PP／EP、GPU／NPU、质量或性能测试。
+
+作者PR正文报告当前树53项CPU检查和14项hooks；旧`6093c19e`两2080Ti上的tiny Qwen3-MoE、两次更新／Bridge导出报告属于**作者旧版本**，正文明确最终同步后未重跑GPU。其FP32 eager／local attention与显式spec条件也不能移作当前头、原生NVFP4 kernel或质量验收。本项目不复造依赖替身或竞争修复；硬件差额仅补[原M5量化条件入口](../../experiments/handoff-m5.md#verl-量化层审计新版复验)，不新排训练、不改M5环境／专项，社区及既有PR-head写入仍待用户逐项授权。
+
 ## 分片导出与量化器的调用边界
 
 **导出流能正确分片传输，不代表它已生成推理端需要的量化权重和 scale；退回完整张量加载也不能补上导出端没有执行的量化器。** 2026-10-30，[#8395作者的新回复](https://github.com/verl-project/verl/pull/8395#issuecomment-6517846259)确认，`sharded_nixl` 的分片导出绕过训练侧 WeightQuantizer。固定head `d18e1e4712ab0be3a344e39e69cec3b36bf7cff2`、API目标base `174888fcf4b65dea032566a02fd16c5f76fb5b5b`，读取时OPEN／非draft。已有作者在讨论解决方向，本节不另建竞争实现。

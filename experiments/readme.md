@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-nvfp4-scale-identity/verify.py](verl-nvfp4-scale-identity/verify.py) | #8467两版原collector／自编CPU模块树，八层号／包装与两专家控制、两真实Gloo进程的空值／两次尺度快照；[结果](verl-nvfp4-scale-identity/result.json)，非ModelOpt／CT／Bridge或Megatron执行 | [尺度全局身份](../notebook/frameworks/verl-quant-layer-audit.md#激活尺度的全局身份与流水线汇集) |
 | [unirl-multi-image-wire/verify.py](unirl-multi-image-wire/verify.py) | #417原require／PNG encoder及wire helper，八自编真实内存PNG往返／形状控制与三拒绝例，[结果](unirl-multi-image-wire/result.json)；非ImageSets／processor／SGLang或训练 | [附件轴与候选轴](../notebook/frameworks/unirl-survey.md#多图请求的附件轴与候选轴) |
 | [verl-router-row-mask/verify.py](verl-router-row-mask/verify.py) | #8471完整原控制器／原测试模块内存加载、原生pytest收集22项及四自编值／mask控制，[结果](verl-router-row-mask/result.json)；原router／hook替身非真实VeOmni／EP | [路由有效性](../notebook/frameworks/verl-transferqueue-worker-lifecycle-deep-reading.md#路由值与记录有效性) |
 | [verl-validation-missing/verify.py](verl-validation-missing/verify.py) | #8468原三个指标函数／四测试体，两版对照与两自编聚合控制；[结果](verl-validation-missing/result.json)核缺失补零、条件均值及按N分桶，非完整trainer／Ray取消或训练 | [失败补零](../notebook/frameworks/verl-validation-bayes-passk.md#失败补零与条件均值) |

@@ -227,6 +227,8 @@ M5 最小下一步：先按实际硬件查已有方案和精确 head，读清依
 
 ## verl 量化层审计新版复验
 
+激活尺度身份参考（2026-11-01，同一条件入口，非新队列／接单）：[#8467](https://github.com/verl-project/verl/pull/8467) headba2fbf9d、实际base8e48d72d，[M1十个自编原collector控制与两进程Gloo元数据](../notebook/frameworks/verl-quant-layer-audit.md#激活尺度的全局身份与流水线汇集)仅核全局层／expert键和标量汇集；不含ModelOpt观察器、CT查表／压缩／refresh或Bridge。作者两2080Ti旧6093报告未在最终树重跑，非原生NVFP4 kernel或质量验收。若M5未来独立采用已有获准、安全、匹配的NVFP4 QAT任务，最小接续为固定实际提交／依赖／模型spec，核一次真实更新前后各PP／VPP所属层与expert observer及最终HF导出scale对应，区分初次无观察的中性1.0与真实值；不将仅key正确当数值QDQ或rollout一致。缺匹配硬件／授权数据、需新部署下载／扩预算或影响专项即停止记未测，不拼补丁、不启动新训练，社区写入和已有PR-head推送仍逐项待用户明确同意。
+
 分片量化参考（2026-10-30，同一条件入口，非新队列／接单）：[#8395](https://github.com/verl-project/verl/pull/8395) d18e1e47的engine-driven导出绕过Megatron普通流WeightQuantizer；[M1源码核对](../notebook/frameworks/verl-quant-layer-audit.md#分片导出与量化器的调用边界)仅七输入compile／AST。#8369已合并6f3的delta_sharded拒绝不在该候选快照，且不含sharded_nixl；作者组内gather／扩guard仍是讨论。未来M5仅在已有获准、安全、匹配任务中独立采用最终实现时，先固定实际head、最终backend、原生／override格式与真实导出weight／scale，再在原预算核一次加载和更新后同token数值；不得把plain BF16规划测试、rank-local退回完整张量或作者B300／旧vLLM报告作为量化验收。缺匹配硬件／授权模型，需新部署下载或会影响专项即停记未测，不自动部署本候选、拼接其他PR、扩实验或改环境。社区写入与已有PR-head推送仍需用户逐项明确授权。
 
 HIP mHC依赖补充（2026-10-26，同一入口非新队列）：[M1源码链](../notebook/frameworks/verl-veomni-opd-source-reading.md#hip-的-mhc-分支同步与依赖栈)核VeOmni #1363 head9168fd32、TileLang #3665 head20200a28、TileKernels #43 head8ddcd4ed；八文件只AST/compile，无内核执行。#43的HIP分支移除pre_mix_shared／xs中转，仍读前阶段mixes_shared；VeOmni no_grad走fused、启梯度走分解，测试容差与多层重算缺口分别看待。作者八步MI355X／一步MI308X依赖旧VeOmni pin10a26aca及等效回移，不等默认新包组合或单PR收益，FP4专家也不在该FP8报告内。M5仅未来独立选择已有获准、安全、匹配AMD工作时，在原预算先固定实际制品／回移patch／编译缓存身份、grad模式及具体函数，再分别核所需fused输出与分解梯度、原严格／新容差判据和小规模更新；不以高Pearson代逐token检查。缺匹配AMD／授权模型／安全资源、需新部署下载或影响专项即停记未测，不升级TileLang／TileKernels、移植补丁或新增压力／重算矩阵。所有社区写入和PR-head推送仍需用户对具体动作明确同意，非接单。
