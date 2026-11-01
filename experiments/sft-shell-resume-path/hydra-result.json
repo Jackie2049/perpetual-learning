@@ -1,0 +1,242 @@
+{
+  "base_and_actual_parent": "4a0679602e0a56b13a49e477e279cef5f03324aa",
+  "head": "fa95b88e69c4ed335fd4a8e9791fd1ad47b59633",
+  "environment": {
+    "python": "3.12.13",
+    "pytest": "8.4.2",
+    "hydra-core": "1.3.2",
+    "omegaconf": "2.3.1",
+    "bash": "GNU bash, version 3.2.57(1)-release (arm64-apple-darwin24)"
+  },
+  "source_sha256": {
+    "fa95b88e69c4ed335fd4a8e9791fd1ad47b59633:tests/trainer/test_sft_engine_cleanup_on_cpu.py": "2ea0d8057e31fe893ddc542c74e4b3891bf5202bb6c2c02ba9369f35e5a47f65",
+    "4a0679602e0a56b13a49e477e279cef5f03324aa:tests/special_e2e/sft/run_sft_engine.sh": "37cf438d17df9dda1546a9193379787b6c03c41cc8e0b8b145f3332309a50852",
+    "fa95b88e69c4ed335fd4a8e9791fd1ad47b59633:tests/special_e2e/sft/run_sft_engine.sh": "0c1ecefddd6cecb839bd605cbd24be8b2850f63d9994ac69aaf79333b5c260e3"
+  },
+  "unchanged_core_blobs_not_executed": {
+    "verl/trainer/ppo/async_checkpoint.py": "2129be7ecb5dd321acb01bd6a7774cb6a069f07c",
+    "verl/trainer/ppo/v1/trainer_base.py": "b1a348ce82a442659249a0f4e4c67a2ecd77b865",
+    "verl/trainer/sft_trainer.py": "6e2157faef291d70e2d4ad6f1001d6e170ce0f2b",
+    "verl/trainer/sft_trainer_ray.py": "237d5cbd2cc3479d9e7e3045999133a825e5f6ee",
+    "verl/utils/checkpoint/checkpoint_handler.py": "a979a723418120cb6685ed32bf108d59c22d09b5",
+    "verl/utils/checkpoint/megatron_checkpoint_manager.py": "d0fe4afa0ea7f9819d0b8748e52abd05cf8937c6"
+  },
+  "original_pytest_results": {
+    "base": {
+      "exit_code": 1,
+      "collected_call_reports": 156,
+      "counts": {
+        "passed": 124,
+        "failed": 32
+      },
+      "groups": {
+        "test_sft_engine_checkpoint_cleanup": {
+          "passed": 100
+        },
+        "test_resume_path_requires_path_before_training_or_cleanup": {
+          "passed": 8
+        },
+        "test_resume_path_preserves_argument_and_external_input": {
+          "passed": 8
+        },
+        "test_resume_path_variable_does_not_change_other_modes": {
+          "passed": 4
+        },
+        "test_resume_path_encoding_roundtrip": {
+          "failed": 32,
+          "passed": 4
+        }
+      },
+      "failures": [
+        {
+          "case": "test_resume_path_encoding_roundtrip[comma-spmd]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=spmd\n  + '[' spmd = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer'\n  + COMMAND='python -m torch.distributed.run --standalone --nnodes=1 --nproc-per-node=1 -m verl.trainer.sft_trainer'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun0/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[comma-ray]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=ray\n  + '[' ray = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer_ray'\n  + COMMAND='python -m verl.trainer.sft_trainer_ray trainer.nnodes=1 trainer.n_gpus_per_node=1'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun1/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[single-quote-spmd]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=spmd\n  + '[' spmd = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer'\n  + COMMAND='python -m torch.distributed.run --standalone --nnodes=1 --nproc-per-node=1 -m verl.trainer.sft_trainer'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun2/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[single-quote-ray]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=ray\n  + '[' ray = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer_ray'\n  + COMMAND='python -m verl.trainer.sft_trainer_ray trainer.nnodes=1 trainer.n_gpus_per_node=1'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun3/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[double-quote-spmd]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=spmd\n  + '[' spmd = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer'\n  + COMMAND='python -m torch.distributed.run --standalone --nnodes=1 --nproc-per-node=1 -m verl.trainer.sft_trainer'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun4/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[double-quote-ray]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=ray\n  + '[' ray = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer_ray'\n  + COMMAND='python -m verl.trainer.sft_trainer_ray trainer.nnodes=1 trainer.n_gpus_per_node=1'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun5/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[backslash-quote-spmd]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=spmd\n  + '[' spmd = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer'\n  + COMMAND='python -m torch.distributed.run --standalone --nnodes=1 --nproc-per-node=1 -m verl.trainer.sft_trainer'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun8/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[backslash-quote-ray]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=ray\n  + '[' ray = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer_ray'\n  + COMMAND='python -m verl.trainer.sft_trainer_ray trainer.nnodes=1 trainer.n_gpus_per_node=1'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun9/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[trailing-backslashes-spmd]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=spmd\n  + '[' spmd = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer'\n  + COMMAND='python -m torch.distributed.run --standalone --nnodes=1 --nproc-per-node=1 -m verl.trainer.sft_trainer'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun12/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resum"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[trailing-backslashes-ray]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=ray\n  + '[' ray = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer_ray'\n  + COMMAND='python -m verl.trainer.sft_trainer_ray trainer.nnodes=1 trainer.n_gpus_per_node=1'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun13/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_rou"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[punctuation-spmd]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=spmd\n  + '[' spmd = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer'\n  + COMMAND='python -m torch.distributed.run --standalone --nnodes=1 --nproc-per-node=1 -m verl.trainer.sft_trainer'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun14/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resum"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[punctuation-ray]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=ray\n  + '[' ray = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer_ray'\n  + COMMAND='python -m verl.trainer.sft_trainer_ray trainer.nnodes=1 trainer.n_gpus_per_node=1'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun15/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_rou"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[surrounding-whitespace-spmd]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=spmd\n  + '[' spmd = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer'\n  + COMMAND='python -m torch.distributed.run --standalone --nnodes=1 --nproc-per-node=1 -m verl.trainer.sft_trainer'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun16/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resum"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[surrounding-whitespace-ray]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=ray\n  + '[' ray = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer_ray'\n  + COMMAND='python -m verl.trainer.sft_trainer_ray trainer.nnodes=1 trainer.n_gpus_per_node=1'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun17/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_rou"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[interpolation-spmd]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=spmd\n  + '[' spmd = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer'\n  + COMMAND='python -m torch.distributed.run --standalone --nnodes=1 --nproc-per-node=1 -m verl.trainer.sft_trainer'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun18/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resum"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[interpolation-ray]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=ray\n  + '[' ray = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer_ray'\n  + COMMAND='python -m verl.trainer.sft_trainer_ray trainer.nnodes=1 trainer.n_gpus_per_node=1'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun19/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_rou"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[resolver-spmd]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=spmd\n  + '[' spmd = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer'\n  + COMMAND='python -m torch.distributed.run --standalone --nnodes=1 --nproc-per-node=1 -m verl.trainer.sft_trainer'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun20/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resum"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[resolver-ray]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=ray\n  + '[' ray = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer_ray'\n  + COMMAND='python -m verl.trainer.sft_trainer_ray trainer.nnodes=1 trainer.n_gpus_per_node=1'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun21/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_rou"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[escaped-interpolation-spmd]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=spmd\n  + '[' spmd = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer'\n  + COMMAND='python -m torch.distributed.run --standalone --nnodes=1 --nproc-per-node=1 -m verl.trainer.sft_trainer'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun22/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resum"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[escaped-interpolation-ray]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=ray\n  + '[' ray = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer_ray'\n  + COMMAND='python -m verl.trainer.sft_trainer_ray trainer.nnodes=1 trainer.n_gpus_per_node=1'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun23/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_rou"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[double-escaped-interpolation-spmd]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=spmd\n  + '[' spmd = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer'\n  + COMMAND='python -m torch.distributed.run --standalone --nnodes=1 --nproc-per-node=1 -m verl.trainer.sft_trainer'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun24/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resum"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[double-escaped-interpolation-ray]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=ray\n  + '[' ray = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer_ray'\n  + COMMAND='python -m verl.trainer.sft_trainer_ray trainer.nnodes=1 trainer.n_gpus_per_node=1'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun25/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_rou"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[mixed-escapes-spmd]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=spmd\n  + '[' spmd = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer'\n  + COMMAND='python -m torch.distributed.run --standalone --nnodes=1 --nproc-per-node=1 -m verl.trainer.sft_trainer'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun26/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resum"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[mixed-escapes-ray]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=ray\n  + '[' ray = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer_ray'\n  + COMMAND='python -m verl.trainer.sft_trainer_ray trainer.nnodes=1 trainer.n_gpus_per_node=1'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun27/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_rou"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[unclosed-interpolation-spmd]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=spmd\n  + '[' spmd = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer'\n  + COMMAND='python -m torch.distributed.run --standalone --nnodes=1 --nproc-per-node=1 -m verl.trainer.sft_trainer'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun28/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resum"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[unclosed-interpolation-ray]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=ray\n  + '[' ray = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer_ray'\n  + COMMAND='python -m verl.trainer.sft_trainer_ray trainer.nnodes=1 trainer.n_gpus_per_node=1'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun29/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_rou"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[adjacent-interpolations-spmd]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=spmd\n  + '[' spmd = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer'\n  + COMMAND='python -m torch.distributed.run --standalone --nnodes=1 --nproc-per-node=1 -m verl.trainer.sft_trainer'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun30/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resum"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[adjacent-interpolations-ray]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=ray\n  + '[' ray = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer_ray'\n  + COMMAND='python -m verl.trainer.sft_trainer_ray trainer.nnodes=1 trainer.n_gpus_per_node=1'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun31/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_rou"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[tab-and-newline-spmd]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=spmd\n  + '[' spmd = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer'\n  + COMMAND='python -m torch.distributed.run --standalone --nnodes=1 --nproc-per-node=1 -m verl.trainer.sft_trainer'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun32/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resum"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[tab-and-newline-ray]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=ray\n  + '[' ray = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer_ray'\n  + COMMAND='python -m verl.trainer.sft_trainer_ray trainer.nnodes=1 trainer.n_gpus_per_node=1'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun33/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_rou"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[unicode-spmd]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=spmd\n  + '[' spmd = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer'\n  + COMMAND='python -m torch.distributed.run --standalone --nnodes=1 --nproc-per-node=1 -m verl.trainer.sft_trainer'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun34/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resum"
+        },
+        {
+          "case": "test_resume_path_encoding_roundtrip[unicode-ray]",
+          "outcome": "failed",
+          "error": "AssertionError: + NUM_GPUS=1\n  + mode=ray\n  + '[' ray = spmd ']'\n  + ENTRYPOINT='-m verl.trainer.sft_trainer_ray'\n  + COMMAND='python -m verl.trainer.sft_trainer_ray trainer.nnodes=1 trainer.n_gpus_per_node=1'\n  + DATASET_DIR=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_roun35/unused-data\n  + TRAIN_FILES=/private/var/folders/bm/kz64zx994p12dgqbnf11ypbh0000gq/T/pl-sft-hydra-6aqhko2_/pytest-cases/test_resume_path_encoding_rou"
+        }
+      ],
+      "infrastructure_errors": []
+    },
+    "head": {
+      "exit_code": 0,
+      "collected_call_reports": 156,
+      "counts": {
+        "passed": 156
+      },
+      "groups": {
+        "test_sft_engine_checkpoint_cleanup": {
+          "passed": 100
+        },
+        "test_resume_path_requires_path_before_training_or_cleanup": {
+          "passed": 8
+        },
+        "test_resume_path_preserves_argument_and_external_input": {
+          "passed": 8
+        },
+        "test_resume_path_variable_does_not_change_other_modes": {
+          "passed": 4
+        },
+        "test_resume_path_encoding_roundtrip": {
+          "passed": 36
+        }
+      },
+      "failures": [],
+      "infrastructure_errors": []
+    }
+  },
+  "scope": "Original HEAD test module, native pytest collection and assertions unchanged; only shell revision differs. Original guarded-rm and fake Python command, real minimal Hydra composition/resolution. No torch/verl import, real launcher, model, checkpoint content, resume state, async writer, GPU/NPU, server access or training."
+}

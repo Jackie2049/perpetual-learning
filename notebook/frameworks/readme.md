@@ -244,6 +244,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [verl SFT epoch 与加载器恢复](verl-checkpoint-management-reading.md#sft-epoch-边界与加载器状态) — #7402原加载方法接真实torchdata；2个结束状态控制及8组数据流对照，不是完整SFT/作者24项验收。
 - [SFT与V1恢复的数据顺序](verl-checkpoint-management-reading.md#sft-与-v1-的恢复顺序) — #7974撤回V1边界skip；新19原CPU参数项过，旧V1同4项边界两失败；真实采样器／状态文件不等模型或多进程恢复。
 - [SFT迭代器的随机流隔离](verl-checkpoint-management-reading.md#sft-迭代器的随机流隔离) — #8434原三CPU测试体基线全失败／候选全过；sampler顺序、split generator及全局CPU RNG分开，后续base_seed仍可不同，非worker／训练恢复验收。
+- [SFT恢复路径的Hydra解析](verl-checkpoint-management-reading.md#hydra-路径编码与解析往返) — #8056 fa95原156项原生pytest全过／4a父版124过32失败；shell单argv、Hydra字符串及OmegaConf字面路径分开，原替身非launcher／checkpoint恢复。
 - [verl RL子集与恢复身份](verl-checkpoint-management-reading.md#rl-数据子集与恢复身份) — #7819固定种子与#8141验证shuffle分开；原测试体接真实Parquet／torchdata通过不认证全部入口，三个旧调用漏传is_train=False，反馈仅留本地待审视。
 - [verl SFT验证尾批与token分母](verl-dataproto-data-flow-reading.md#sft-验证的尾批与-token-分母) — #7467原16测试体CPU通过，零mask补位避免sampler重复计数，token加权与样本加权不同；原NLL stand-in非模型／collective验收，不另实现。
 - [verl LoRA-only键完整性](verl-checkpoint-management-reading.md#lora-only-的键完整性与加载副作用) — #8350原加载分支八组真实CPU小模块控制；缺base与缺adapter不同，拒绝发生在参数写入后，非回滚/基座身份或FSDP恢复验收。

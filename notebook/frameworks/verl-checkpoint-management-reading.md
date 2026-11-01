@@ -598,6 +598,26 @@ Python3.12.13／pytest8.4.2／macOS Bash3.2.57，[完整结果及三输入hash](
 
 复现：`python3.12 -B experiments/sft-shell-resume-path/verify.py /path/to/verl-git`，要求固定Git对象预缓存。仅测试shell控制流与合成文件，不import verl／Torch、启动分布式launcher、访问模型或验证实际恢复；本题局部收束，不新增算力任务、修改候选或发布社区反馈。
 
+##### Hydra 路径编码与解析往返
+
+**shell中的一个argv仍可能被Hydra理解成扫描参数，也可能在OmegaConf解析时变成插值。** #8056后续head `fa95b88e69c4ed335fd4a8e9791fd1ad47b59633`（提交时间2026-10-30 10:51:15Z，2026-11-01本机补核）直接接在上述4a067960之后；相对父版仍只改原shell及其CPU测试。PR的API目标base仍为2ab35292，不拿它代替本次增量对照的实际父版4a。该项已有ewan0x79负责，不另写转义方案。
+
+[新shell](https://github.com/verl-project/verl/blob/fa95b88e69c4ed335fd4a8e9791fd1ad47b59633/tests/special_e2e/sft/run_sft_engine.sh)在传入数组元素中保留Hydra所需的字面双引号，逐段处理反斜杠、引号及`${`。这分别解决三个不同边界：shell不拆参数，Hydra不把逗号当sweep，OmegaConf的`resolve=True`不把路径里的`${missing}`或`${oc.env:...}`当配置表达式。前置N个反斜杠遇引号／`${`时编码为2N+1个，尾部编码为2N个；不能将简单“再包一层shell引号”视为同等操作。循环内暂停xtrace是为避免逐UTF-8字节跟踪破坏文本输出，不是路径保密保证。
+
+[本机新脚本](../../experiments/sft-shell-resume-path/verify_hydra.py)按原样物化固定版[完整原测试模块](https://github.com/verl-project/verl/blob/fa95b88e69c4ed335fd4a8e9791fd1ad47b59633/tests/trainer/test_sft_engine_cleanup_on_cpu.py)，分别配父版／候选shell，在两个新进程中原生pytest收集全部156参数项，不改原断言／fixture／命令替身。Python3.12.13、pytest8.4.2、Hydra1.3.2、OmegaConf2.3.1、macOS Bash3.2.57；独立轻量venv内没有Torch／模型依赖。原测试的Python子进程真实调用OverridesParser、最小Hydra compose及OmegaConf resolve；命令入口仍是原fake Python，不运行launcher。
+
+| 原参数项 | 4a父版shell | fa95候选shell |
+|---|---|---|
+| 清理100、缺／空路径前置拒绝8、绝对空格路径与退出码8、其他mode4，共120项 | 120通过 | 120通过 |
+| 18种特殊相对路径×spmd／ray，共36项 | 4通过／32失败 | 36通过 |
+| 合计 | 124通过／32失败 | 156通过 |
+
+特殊路径覆盖逗号、单双引号、反斜杠／尾部反斜杠、括号等标点、前后空格、插值形文本及其转义／相邻／未闭合形式、tab／换行和中文。断言同时核解析后仍为原字符串、不是sweep、合成来源marker保留；其他参数项核清理前拒绝、记录到训练替身入口、退出0／37及清理状态。失败清单与三个源输入SHA256见[新原始结果](../../experiments/sft-shell-resume-path/hydra-result.json)；此前12原参数体＋8自编shell-only结果仍只属于旧4a／c76对照，不覆盖本次真实Hydra解析。
+
+执行命令：`../sft-hydra-cpu-venv/bin/python -B experiments/sft-shell-resume-path/verify_hydra.py ../verl-packaging-readonly`，需预缓存固定Git对象。清理保留原所有权marker、直接子目录与符号链接守卫，真实rm只触及一次性合成夹具；没有删除用户checkpoint或改候选源码。这里的spmd／ray是两种shell入口，不是运行了两种分布式训练。
+
+六个核心文件（RL协调器／V1 trainer、两SFT trainer、checkpoint handler及Megatron manager）的Git blob与4a逐一相同，未执行它们。**路径字符串正确不证明checkpoint内容、epoch边界恢复或异步写入完整；也不把旧H20报告迁移为fa95整栈验收。** 本项CPU接线收束，不新增M5算力任务、改恢复策略或发布上游反馈。
+
 ### 对象存储下载与 checkpoint 提交
 
 **下载入口能读对象存储，不等于训练状态已经完整写入并可恢复。** [S3 RFC #7641](https://github.com/verl-project/verl/issues/7641)提出原生FSDP2对象存储生命周期；2026-10-25读取全文及唯一评论，维护者[询问S3 FUSE挂载路线](https://github.com/verl-project/verl/issues/7641#issuecomment-5487704372)，尚不是对某个实现的采纳或验收。查重另有旧[#2334](https://github.com/verl-project/verl/pull/2334)（head23bd321f，17文件774增54删）与下载侧[#6850](https://github.com/verl-project/verl/pull/6850)，两PR均OPEN／非draft／未合并；本轮不另写后端或自动选型。
