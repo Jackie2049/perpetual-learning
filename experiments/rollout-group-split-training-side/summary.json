@@ -1,0 +1,97 @@
+{
+ "candidates": {
+  "A_cross_group_amplitude": {
+   "max_abs_dev_by_uid": 0.0,
+   "mean_ratio_by_partition": 1.0462308492679213,
+   "mean_ratio_by_uid_reordered": 1.0,
+   "verdict": "**按 uid 归一化（verl 真实路径）的比值恒为 1.0**——拆组只改样本位置，不改 mean/std。§13.30 结论一的 0.69／0.41 倍对应的是`by_partition` 口径（每个分区各自重新归一化），那是**假设方案**，不是默认路径的行为。两种口径必须在正文里分开写，不能混成一句\"拆组让幅度变小\"。"
+  },
+  "B_group_gradient_coherence": {
+   "max_abs_delta": 5.551115123125783e-17,
+   "mean_delta": -1.8503717077085942e-18,
+   "mean_fragment_coherence": 0.4309355908540811,
+   "mean_whole_coherence": 0.4309355908540811,
+   "verdict": "delta ≈ 0 ⇒ 分区不改变组内梯度的一致性结构（因为分区的梯度先在 rank 内归约、再跨 rank 求和，等价于整组求和）。"
+  },
+  "C_gradient_variance": {
+   "max_abs_dev": 3.3306690738754696e-16,
+   "mean_ratio": 1.0,
+   "verdict": "比值 ≈ 1 ⇒ 拆组不改变一批梯度的方差；分区只改浮点求和顺序，不改期望与方差。"
+  }
+ },
+ "default_split_rate": {
+  "dp2": {
+   "max_split_rate": 1.0,
+   "mean_split_rate": 0.9927083333333333
+  },
+  "dp4": {
+   "max_split_rate": 1.0,
+   "mean_split_rate": 1.0
+  },
+  "dp8": {
+   "max_split_rate": 1.0,
+   "mean_split_rate": 1.0
+  }
+ },
+ "doc": "notebook/rollout-performance-research.md §13.31（并订正 §13.30 第二批结论五）",
+ "experiment": "训练侧拆组到底改变了什么：三个候选代价的识别性检验",
+ "identifiability": {
+  "A_cross_group_amplitude": {
+   "by_theta_var": {
+    "0.00": 1.045942383597693,
+    "0.25": 1.045942383597693,
+    "1.00": 1.045942383597693,
+    "25.00": 1.045942383597693,
+    "4.00": 1.045942383597693
+   },
+   "sensitive": false,
+   "spread": 0.0
+  },
+  "B_group_gradient_coherence": {
+   "by_theta_var": {
+    "0.00": 1.3877787807814457e-17,
+    "0.25": -1.3877787807814457e-17,
+    "1.00": 0.0,
+    "25.00": 1.3877787807814457e-17,
+    "4.00": 0.0
+   },
+   "sensitive": false,
+   "spread": 2.7755575615628914e-17
+  },
+  "C_gradient_variance": {
+   "by_theta_var": {
+    "0.00": 1.0,
+    "0.25": 1.0,
+    "1.00": 1.0,
+    "25.00": 1.0,
+    "4.00": 1.0
+   },
+   "sensitive": false,
+   "spread": 0.0
+  }
+ },
+ "invariance": {
+  "all_invariant": true,
+  "max_abs_diff": 2.0539125955565396e-15,
+  "n_seeds": 30,
+  "reading": "全部种子逐位不变 ⇒ `_balance_batch` 的重排不影响优势；这与 ray_trainer.py:1510-1512 的注释一致，是本批订正 §13.30 结论五的依据。"
+ },
+ "source_anchors": [
+  "verl 1a9e711e verl/trainer/ppo/ray_trainer.py:1511-1513（_balance_batch 重排顺序）",
+  "verl 1a9e711e verl/trainer/ppo/ray_trainer.py:1629-1640（之后才 compute_advantage）",
+  "verl 1a9e711e verl/trainer/ppo/core_algos.py:308-321（GRPO 按 uid 分组算 mean/std）",
+  "verl 1a9e711e verl/trainer/ppo/ray_trainer.py:1150-1203（_balance_batch 三条路径）",
+  "verl 1a9e711e verl/utils/seqlen_balancing.py:554-621（get_group_balanced_partitions）",
+  "verl 1a9e711e verl/protocol.py:864-889（chunk 沿 dim=0 连续等分 → 分区顺序即 rank 归属）",
+  "verl 1a9e711e verl/workers/engine_workers.py:246-266（mini_batch_size 按 dp 均分）"
+ ],
+ "verdict": {
+  "all_three_null_on_real_path": true,
+  "corrected_claim": "§13.30 第二批结论五把\"默认逐条 LDM 99.65% 会拆组\"读成\"拆组代价已在付\"是**错的**。源码顺序是 _balance_batch → compute_advantage，而 GRPO 的mean/std 按 uid 分组算，与样本在张量里的位置无关；拆组改变的是\"样本落在哪个 DP rank / mini-batch\"，不改变归一化口径。§13.30 结论一（尺度错配）成立的前提是\"允许按片归一化\"，那是假设情形，不是 verl 默认行为。",
+  "not_supported": [
+   "不支持\"默认路径拆组，因此训练质量已经在受损\"——本批三个候选全为 null 读数。",
+   "不支持\"use_prefix_grouper 修复了拆组\"——它存在的理由是让同 uid 样本落在同一 rank 以做 prefix 共享，不是修一个统计缺陷。"
+  ],
+  "what_remains_true": "拆组在训练侧的真实代价**不在统计量上，而在 mini-batch 组成上**：同组样本被拆进不同 rank 的 mini-batch，会改变每个 mini-batch 的梯度噪声与 PP 微批边界（见 §13.30 的 L4 均衡质量结论：组级均衡牺牲约 2.6%）。这条**尚未量化**，登记为残留。"
+ }
+}

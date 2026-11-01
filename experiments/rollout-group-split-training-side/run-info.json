@@ -1,0 +1,72 @@
+{
+  "experiment": "训练侧「拆组」到底改变了什么：三个候选代价的识别性检验（并订正 §13.30 第二批结论五）",
+  "doc": "notebook/rollout-performance-research.md §13.31",
+  "execution": {
+    "python": "3.9.6（macOS arm64，仅标准库）",
+    "commands": [
+      "python3 training_side_split.py                  # 约 12 s，覆盖 summary.json",
+      "python3 training_side_split.py --verify         # 通过：逐字段相同（连跑两次均通过）",
+      "python3 -m unittest test_training_side_split -v # 14 passed"
+    ],
+    "cross_module_dependency": "LDM 划分复用 experiments/rollout-group-split-tradeoff/group_split_tradeoff.py 的 _karmarkar_karp（该实现已与真实 verl 在 180 组输入上交叉验证分区一致）。本目录不复制第二份。",
+    "source_anchors": [
+      "verl 1a9e711e verl/trainer/ppo/ray_trainer.py:1508（rollout.n 组内连续排列）",
+      "verl 1a9e711e verl/trainer/ppo/ray_trainer.py:1510-1513（_balance_batch 重排；注释声明不影响优势计算）",
+      "verl 1a9e711e verl/trainer/ppo/ray_trainer.py:1629-1640（重排之后才 compute_advantage）",
+      "verl 1a9e711e verl/trainer/ppo/core_algos.py:308-321（compute_grpo_outcome_advantage 按 index=uid 分组）",
+      "verl 1a9e711e verl/trainer/ppo/ray_trainer.py:1150-1203（_balance_batch 三条路径）",
+      "verl 1a9e711e verl/utils/seqlen_balancing.py:554-621（get_group_balanced_partitions）",
+      "verl 1a9e711e verl/protocol.py:864-889（chunk 沿 dim=0 连续等分）",
+      "verl 1a9e711e verl/workers/engine_workers.py:246-266（mini_batch_size 按 dp 均分）",
+      "verl 1a9e711e verl/workers/engine_workers.py:189（DP 组 loss all_reduce AVG）"
+    ]
+  },
+  "classification": "进程内解析＋仿真；非 GPU 实测、非端到端。优势复刻按源码逐行对应，但未与真实 verl 做数值对齐（LDM 划分做过交叉验证）。",
+  "key_readings": {
+    "default_split_rate_dp2": 0.9927083333333333,
+    "default_split_rate_dp4": 1.0,
+    "default_split_rate_dp8": 1.0,
+    "candidate_a_ratio_by_uid_reordered": 1.0,
+    "candidate_a_max_abs_dev_by_uid": 0.0,
+    "candidate_a_ratio_by_partition": 1.0462308492679213,
+    "candidate_b_mean_delta": -1.8503717077085942e-18,
+    "candidate_b_max_abs_delta": 5.551115123125783e-17,
+    "candidate_b_coherence": 0.4309355908540811,
+    "candidate_c_variance_ratio": 1.0,
+    "candidate_c_max_abs_dev": 3.3306690738754696e-16,
+    "advantage_permutation_max_abs_diff": 2.0539125955565396e-15,
+    "advantage_permutation_all_invariant": true,
+    "identifiability_spread_A": 0.0,
+    "identifiability_spread_B": 2.7755575615628914e-17,
+    "identifiability_spread_C": 0.0,
+    "verdict": "拆组在训练侧的统计代价为零；三个候选全部通不过识别性检验（对组难度方差零敏感）。"
+  },
+  "what_this_corrects": {
+    "retracted": "§13.30 第二批结论五把「默认逐条 LDM 99.65% 会拆组」读成「拆组代价在默认训练里已经在付」——该解读撤回。",
+    "why": "源码顺序是 _balance_batch（重排顺序）→ compute_advantage（按 uid 分组算 mean/std），拆组改变的是样本落点而非归一化口径。§13.30 结论一的尺度错配前提是「允许按分片重新归一化」，属假设方案。",
+    "unchanged": [
+      "§13.30 结论一（尺度错配）在其自身假设口径下仍成立，但必须标明是 by_partition 口径。",
+      "§13.30 L4 的均衡质量代价（约 2.6%）不受影响——那量的是分区均衡质量，不是统计量。",
+      "「默认路径 100% 会拆组」这个事实本身不变，被订正的是对它的解读。"
+    ]
+  },
+  "residual": [
+    "mini-batch 组成代价（同组样本拆进不同 mini-batch 后的梯度噪声组成）尚未量化。",
+    "PP 微批边界的影响未量化（use_prefix_grouper 下刻意跳过小微批排两端）。",
+    "B、C 的向量模型为随机方向，不含真实 token 梯度结构；两者为零是聚合语义的推论。",
+    "优势复刻未与真实 verl 做数值对齐（LDM 划分已交叉验证）。",
+    "只覆盖 verl 1a9e711e；其他框架（OpenRLHF / NeMo RL / SkyRL）的分区与归约语义未核。"
+  ],
+  "artifacts": {
+    "sha256": {
+      "summary.json": "b8a3fce6f6f11144b2c464071ba9de7150ef27787b428df7b580728a3e41b663",
+      "training_side_split.py": "b70736c2bd6586811ce3840bd38120c1b194bc0443f1cd86d59e7916782ea99b",
+      "test_training_side_split.py": "594adfd81c7e68dccfec87183b59c8856c6a4d4ec2236b6a980217595734a781"
+    }
+  },
+  "self_check_fixes": [
+    "候选 A 初版只有 by_partition 口径，把它当成「真实路径」报出来得到 1.046——实为按片重新归一化的假设口径。已拆成 by_uid（恒 1.0）与 by_partition（1.046）两个字段并分列判定。",
+    "顺序不变性初版判 `== 0.0`，被浮点求和顺序的 8.9e-16 判成「不成立」，与实测方向相反。改为容差 1e-12 判定，并把容差写进返回值。",
+    "识别性检验初版拿 by_uid 口径做指标——它按定义恒等于 1，永远无法响应组效应，等于用结论证明结论。改用 by_partition 口径后才发现三个候选全部零敏感。"
+  ]
+}

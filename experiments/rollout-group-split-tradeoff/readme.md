@@ -133,6 +133,12 @@
 所以 `use_prefix_grouper` 不是"可选优化"，它和 prefix 共享是**同一个前提的两面**：
 不改成组级均衡，prefix 共享在训练侧根本用不上。
 
+> **2026-11-02 订正**：上面这条只说明"默认路径会拆组"，**不能说成"所以拆组代价已在付"**。
+> verl 是 `_balance_batch` 重排之后才按 uid 算 GRPO 的 mean/std，拆组只改样本落点
+> （DP rank／mini-batch），不改归一化口径。另见
+> [../rollout-group-split-training-side/](../rollout-group-split-training-side/readme.md)
+> （§13.31）：三个候选统计代价实测全为零。「均衡质量 2.6%」这一读数不受影响。
+
 **读数八："纳秒截断"这条在可训练范围内不成立。** `calculate_workload` 返回 int64，
 `int(...item())` 在 exact 值越过 2^63 时饱和，对应序列长度 **3,036,988,213**（约 30 亿 token）。
 常规长度（512 / 32768）截断损失恒为 0。**真实机制是离散性而非截断**：
