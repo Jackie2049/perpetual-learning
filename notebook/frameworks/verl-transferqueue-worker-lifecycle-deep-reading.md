@@ -2,11 +2,49 @@
 
 TransferQueue把训练轨迹的元数据传递与实际字段数据交换分开；它不是verl的权重同步backend。默认SimpleStorage使用Ray actor管理存储单元，并通过ZMQ交换数据。存储单元数量影响启动时的逻辑CPU预留与数据分片，不等于显存容量或吞吐保证。
 
+2026-11-01补[流式采样的双重限流](#流式采样的双重限流)：#8203按未完成session补发，但另用未消费prompt组库存阻止积压；原19个CPU参数项与自编元数据控制区分两种槽位，非真实Ray／TQ消费或吞吐验收。
+
 2026-11-01补[R2 padding 的专家负载与总分配](#r2-padding-的专家负载与总分配)：#7524原三个CPU参数体与自编计数区分峰值rank和总token–expert对；EP32峰值240→60同时总数240→1920，不等显存／吞吐收益。另见[路由值与记录有效性](#路由值与记录有效性)：#8471原22个CPU控制器测试通过，真实expert0与未知占位需要独立mask；debug与数值回退仍有边界，不能代替生产者／EP验收。
 
 2026-10-30补[critic可选字段的取数边界](#critic-可选字段的取数边界)：已有#8457针对release/v0.9.1，在优势和指标取数前按use_critic选择values；下游指标已有开关不能保护上游取数。源码／语法核对不是TransferQueue版本兼容或训练验收。
 
 2026-10-23更新：固定阅读[verl #8340](https://github.com/verl-project/verl/pull/8340)，head `881fb96937f5ddfae5d894bb9a48538d1b049e1e`，base及共同祖先 `dc709afb7a74fd2645640a4e5f2fdf40166b4fbb`，7文件58增6删，读取时open/非draft。TransferQueue资源及数据路径以作者复现所用提交 `5fe4e49fe74aef544fe54da1fbeabf0b36d497eb`为准，不代表verl强制依赖此revision或本机安装了它。
+
+## 流式采样的双重限流
+
+**session结束可以释放生成槽位，却不等于prompt组已被训练消费。** Begunner的[已有 #8203](https://github.com/verl-project/verl/pull/8203)把V1的dispatch／replay控制面移入StreamingDataloader actor；读取时OPEN／非draft，固定head `6dc7bd9ec57da84f7c36a8bc081f12104ba0ff96`、API base及实际共同祖先 `a4b9354968705a441fb7da7367924b15b902e771`。这是候选接口，不能直接替换main `8df5baee`或M5现有环境；本轮人工reviews及inline comments为空，机器人评论不当作维护者批准。
+
+[原异步实现](https://github.com/verl-project/verl/blob/6dc7bd9ec57da84f7c36a8bc081f12104ba0ff96/verl/trainer/ppo/v1/streaming_dataloader.py)用两种单位控制补发。令训练batch含B个prompt、每个prompt固定n个session：
+
+- 目标session水位 `W = round(watermark_batches * B * n)`。pending组占满n槽；running组占`n − 已终态session数`槽，完成及失败marker取并集。记总占用为F，未达到n个空槽不补一个prompt，基本补发数为`max(0, W − F) // n`。
+- 未消费组数D包含pending、running、finished和failure四类；只有`separate_async`再设`C = round(max_outstanding_batches * B)`，将补发数限制为`min(基本补发数, max(0, C − D))`。终态组尚在库存中，因此只限制F不足以限制积压。
+- colocate模式不设这个库存cap；`None`也表示不设。原初始化要求正水位且舍入后非零、cap batches不小于watermark batches；async的wait＋off-policy阈值1被拒绝。这些是局部配置门，不是稳定性或内存字节上限的证明。
+
+session marker是[共享schema](https://github.com/verl-project/verl/blob/6dc7bd9ec57da84f7c36a8bc081f12104ba0ff96/verl/trainer/ppo/v1/tq_schema.py)的`{uid}_{session_id}`，trajectory是`{uid}_{session_id}_{index}`；uid不得含下划线。计数读的是session终态而不是trajectory行数，同一session多次输出不能当成多次释放。超出n个终态marker会拒绝；该数量guard不验证每个session_id的语义合法性，依赖生产者遵守schema。
+
+### CPU 控制与背压单位
+
+[复现脚本](../../experiments/verl-session-watermark/verify.py)在Python3.12.13、pytest8.4.2、OmegaConf2.3.1下提取原七个方法、请求类型与指标累加器，加载完整原schema；选取[原actor测试](https://github.com/verl-project/verl/blob/6dc7bd9ec57da84f7c36a8bc081f12104ba0ff96/tests/trainer/ppo/v1/test_streaming_dataloader_actor_on_cpu.py)14个函数，保留参数化装饰器、fixture helper及断言AST，原生pytest执行**19项通过**。测试用原SimpleNamespace／方法记录器；基类为空、SkipManager注册表为空，没有导入完整verl、Torch、Ray或TQ。三个完整输入仅compile／SHA256记录在[结果](../../experiments/verl-session-watermark/result.json)。
+
+额外自编控制直接调用原计数与补发方法，手动修改集合、以`_refill_exact`记录请求，不实际dispatch或消费。n=4、W=8、C=4时：
+
+| 手动元数据状态 | 未完成session F | 未消费组 D | 补发prompt |
+|---|---|---|---|
+| 两组全在运行 | 8 | 2 | 0 |
+| 三个session结束，尚不足一个新组 | 5 | 2 | 0 |
+| 再一个session失败，凑齐四空槽 | 4 | 2 | 1 |
+| 一个长尾session仍在、三个终态组待消费 | 1 | 4 | 0 |
+| 手动移除一个已消费组 | 1 | 3 | 1 |
+
+十个状态控制另核：pending始终占完整n槽；同一marker同时出现在finished／failure集合只计一次；orphan marker不减其他running组占用。n=0／−1和超额progress三次拒绝，另核validation idle gate。它们核的是原方法对给定元数据的响应，不是分布式元数据快照一致性或真实消费后的恢复速度。
+
+### 完成顺序与适用边界
+
+原19项也覆盖训练请求单次poll、未就绪时继续维护、validation请求不补train、count不消费、wait未达目标仍补发，以及materialize异常交付future。`_coordinator_step`先serve请求（内部poll，sample就绪时materialize），随后才refill；不能把count返回视为消费释放库存。validation idle gate停止训练侧维护，不代表取消已提交的生成。
+
+[AgentLoop生产者](https://github.com/verl-project/verl/blob/6dc7bd9ec57da84f7c36a8bc081f12104ba0ff96/verl/trainer/ppo/v1/agent_loop_tq.py)的session终态位于`_run_agent_loop`返回／异常之后，prompt终态还等待所有session任务settle。本轮仅阅读这段接线；轨迹写入完成、marker可见性、异常清理、真实TQ消费／重新补发与checkpoint恢复均未执行。若生产者提前发终态，控制面算式本身无法证明实际设备并发仍受限。
+
+作者报告sync／separate-async保存恢复到step2、真实cap阻塞及消费后恢复；另报告64GPU、Qwen3.5-35B＋uni-agent＋swe-rebench的80步score55→64。以上均为外部自测，不是本机复现、同栈吞吐对照或调度策略的因果收益证明。已有实现不另开竞争方案；真机缺口只补[原条件交接](../../experiments/handoff-m5.md#verl-transferqueue-启动资源参考)，不排新算力任务、不改M5专项；任何上游及已建PR的fork head写入仍须用户对具体动作明确同意。
 
 ## 启动默认值与 CPU 预留
 

@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-session-watermark/verify.py](verl-session-watermark/verify.py) | #8203原七方法与19个原CPU参数项通过；[结果](verl-session-watermark/result.json)另核十个人工元数据状态、三拒绝与validation idle，区分session水位／未消费组cap。空基类／记录器，非Ray／TQ消费、作者全套或性能验收 | [双重限流](../notebook/frameworks/verl-transferqueue-worker-lifecycle-deep-reading.md#流式采样的双重限流) |
 | [unirl-localization-mask/verify.py](unirl-localization-mask/verify.py) | #354原TensorRef视图／四key-mask helper，14自编元数据控制＋叶数拒绝；[结果](unirl-localization-mask/result.json)核别名次数、keyless／多span及remap前提。无句柄materialize／transport／Ray或生命周期、性能验收 | [掩码与别名](../notebook/frameworks/unirl-survey.md#按需本地化的存储键与别名) |
 | [unirl-reward-request-boundary/verify.py](unirl-reward-request-boundary/verify.py) | #313原Batch／request／client／service与两版几何接自编CPU载体；[结果](unirl-reward-request-boundary/result.json)核行对齐、截断、对象身份与九拒绝。分支behind99，非native Sample／TensorRef／DP、作者11项或流量／训练验收 | [奖励投影与轨迹所有权](../notebook/frameworks/unirl-survey.md#奖励请求投影与轨迹所有权) |
 | [unirl-monitor-objective/verify.py](unirl-monitor-objective/verify.py) | #641两版原类／parser接56组自编CPU控制；[结果](unirl-monitor-objective/result.json)核四聚合目标隔离、必需探针失败及真实Hydra原spec构造。HTTP Session为记录器，非作者37项／完整配方、服务或训练验收 | [监控奖励新字段](../notebook/frameworks/unirl-survey.md#新候选的显式监控字段) |

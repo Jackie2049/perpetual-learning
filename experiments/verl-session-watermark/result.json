@@ -1,0 +1,128 @@
+{
+  "head": "6dc7bd9ec57da84f7c36a8bc081f12104ba0ff96",
+  "base_and_merge_base": "a4b9354968705a441fb7da7367924b15b902e771",
+  "environment": {
+    "python": "3.12.13",
+    "pytest": "8.4.2",
+    "omegaconf": "2.3.1"
+  },
+  "source_sha256": {
+    "verl/trainer/ppo/v1/streaming_dataloader.py": "1d63726f1834ef9a1eee84cc6ac2a92de382bbd063d75543a13628e862d9a45c",
+    "verl/trainer/ppo/v1/tq_schema.py": "0940a334e4754090f5b114ecf231c70c2b43a457ae0dc507fc5d028ea0ca50eb",
+    "tests/trainer/ppo/v1/test_streaming_dataloader_actor_on_cpu.py": "9c4a0f1b005d2e65492ccf6718f7b7785c94781b38b9fff41de93d913999fecf"
+  },
+  "original_scope": {
+    "methods": [
+      "_coordinator_step",
+      "_default_rollout_n",
+      "_init_refill_policy",
+      "_refill_to_watermark",
+      "_serve_request",
+      "outstanding_group_count",
+      "unfinished_session_count"
+    ],
+    "test_functions": [
+      "test_async_wait_strategy_requires_threshold_above_one",
+      "test_colocate_async_has_no_outstanding_cap",
+      "test_materialize_failure_completes_sample_future_with_exception",
+      "test_non_consuming_count_request_uses_watermark_coordinator",
+      "test_non_consuming_wait_request_refills_while_below_target",
+      "test_outstanding_cap_limits_watermark_refill",
+      "test_outstanding_cap_must_cover_watermark",
+      "test_outstanding_cap_resolves_to_prompt_groups",
+      "test_session_watermark_refills_complete_prompt_groups",
+      "test_session_watermark_rejects_positive_value_that_rounds_to_zero",
+      "test_train_eviction_refills_without_fulfilling_unready_request",
+      "test_train_request_uses_one_poll_for_maintenance_and_fulfillment",
+      "test_validation_before_load_does_not_maintain_train_inventory",
+      "test_validation_request_pauses_train_inventory_maintenance"
+    ],
+    "tests_and_methods_ast_unchanged": true
+  },
+  "pytest": {
+    "returncode": 0,
+    "stdout": "...................                                                      [100%]\n19 passed in 0.06s\n",
+    "stderr": ""
+  },
+  "own_controls": {
+    "metadata_transitions": [
+      {
+        "label": "two_full_running_groups",
+        "unfinished_sessions": 8,
+        "outstanding_groups": 2,
+        "requested_prompts": 0
+      },
+      {
+        "label": "three_slots_cannot_dispatch_four_session_prompt",
+        "unfinished_sessions": 5,
+        "outstanding_groups": 2,
+        "requested_prompts": 0
+      },
+      {
+        "label": "terminal_failure_also_releases_session_slot",
+        "unfinished_sessions": 4,
+        "outstanding_groups": 2,
+        "requested_prompts": 1
+      },
+      {
+        "label": "manually_register_dispatched_prompt",
+        "unfinished_sessions": 8,
+        "outstanding_groups": 3,
+        "requested_prompts": 0
+      },
+      {
+        "label": "finished_group_still_occupies_inventory",
+        "unfinished_sessions": 6,
+        "outstanding_groups": 3,
+        "requested_prompts": 0
+      },
+      {
+        "label": "inventory_full_despite_seven_free_session_slots",
+        "unfinished_sessions": 1,
+        "outstanding_groups": 4,
+        "requested_prompts": 0
+      },
+      {
+        "label": "manually_remove_consumed_group_reopens_cap",
+        "unfinished_sessions": 1,
+        "outstanding_groups": 3,
+        "requested_prompts": 1
+      },
+      {
+        "label": "same_terminal_key_in_both_sets_counted_once",
+        "unfinished_sessions": 1,
+        "outstanding_groups": 3,
+        "requested_prompts": 1
+      },
+      {
+        "label": "orphan_marker_does_not_release_running_slot",
+        "unfinished_sessions": 1,
+        "outstanding_groups": 3,
+        "requested_prompts": 1
+      },
+      {
+        "label": "pending_group_reserves_full_n_despite_markers",
+        "unfinished_sessions": 5,
+        "outstanding_groups": 4,
+        "requested_prompts": 0
+      }
+    ],
+    "nonpositive_rollout_n_rejections": 2,
+    "excess_progress_rejection": "passed",
+    "validation_idle_gate": "passed"
+  },
+  "seams": [
+    "empty base class; actor constructor not executed",
+    "SkipManager.skip_instances empty",
+    "original tests use SimpleNamespace/OmegaConf and recorder methods",
+    "own transitions mutate in-memory sets; _refill_exact records only"
+  ],
+  "not_executed": [
+    "native verl module or full author suite",
+    "Ray/TransferQueue/storage/dataloader",
+    "metadata polling, dispatch or actual group consumption",
+    "AgentLoop marker publication and trajectory write settlement",
+    "checkpoint/reissue/off-policy filtering",
+    "model, devices, performance or training quality"
+  ]
+}

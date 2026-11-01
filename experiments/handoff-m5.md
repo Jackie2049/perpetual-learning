@@ -449,6 +449,8 @@ Megatron调度恢复参考（2026-10-25，复用本入口非新队列）：[#795
 
 ## verl TransferQueue 启动资源参考
 
+流式限流参考（2026-11-01，同一控制面入口、非新增队列或接单）：[#8203](https://github.com/verl-project/verl/pull/8203)固定head6dc7bd9e／base及祖先a4b93549；[M1原七方法与19个原CPU参数项](../notebook/frameworks/verl-transferqueue-worker-lifecycle-deep-reading.md#流式采样的双重限流)只用原记录器／空基类与自编集合控制，核session水位、未消费组cap和validation／请求次序，无Ray／TQ消费／生产者settle或模型执行。作者64GPU报值不作本机或调度收益。若M5未来已有获准安全匹配V1工作且独立选用，先固定实际实现、TQ／Ray版本、模式／B／n／W／C，在原预算观察session写入完成点、F与D、消费前后补发和实际峰值库存／字节／策略版本；计数、wall time和质量分列，不从水位推出内存硬界或整步收益。缺匹配版本／资源／授权、需新部署或影响专项即停记未测，不移植候选、改M5脚本／恢复schema或启动新训练／故障矩阵。社区及已建PR的fork head写入仍逐项须用户明确同意；M1不探测服务器。
+
 Megatron R2 padding参考（2026-11-01，复用路由入口、非新队列／已接单）：[#7524](https://github.com/verl-project/verl/pull/7524) heada79099997aeb95bbdf1771fd7631bd9e67101c4c／base及祖先3c6d9b43；[M1原三CPU参数体与自编计数](../notebook/frameworks/verl-transferqueue-worker-lifecycle-deep-reading.md#r2-padding-的专家负载与总分配)只验helper／guard表达式：240padding、256专家、K8时EP32峰值240→60但唯一token–expert总对240→1920，EP8无峰值改善、EP4升480，非真实dispatch或性能。若M5日后已有获准匹配Megatron R2任务且独立选用，固定模型／配置和版本，先核有效行与THD／BSHD、quant／CP／SP对齐及mask／capacity门，再在原预算对照真实路由、logprob／梯度、capacity／token dropping／bias和最忙rank显存／整步时间；勿只看均衡指标。缺匹配环境／授权模型／资源、需部署或影响专项即停记未测，不自动应用／调EP／排训练；社区及既有PR-head写入仍逐项须用户明确同意。M1不探测服务器。
 
 资源槽准入参考（2026-11-01，复用本资源入口、非新队列／已接单）：[#8411](https://github.com/verl-project/verl/pull/8411) head57916cf0af1ffb0a60263077c3df374a2ee5fe47／base2ab35292；[M1原13CPU参数体](../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#资源槽不可用标记与启动拒绝)仅假PG／Mock，非真实Ray或设备恢复。目的为将来已有获准匹配恢复工作中，区分物理设备身份、PG bundle索引、driver本地不可用标记与实际actor状态；M1不探测服务器。若M5独立选用且环境安全、资源／权限已具备，先核映射来源、标记传播／driver生命周期，再在原预算只读观察已有actor及后续创建guard；不得为复现故障自动杀actor、释放PG或缩world。无现成匹配条件、需部署／迁移／故障注入或影响专项即停记未测；不自动应用候选／排训练。所有社区及既有PR-head写入仍逐项须用户明确同意。
