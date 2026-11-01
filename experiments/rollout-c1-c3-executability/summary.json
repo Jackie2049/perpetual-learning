@@ -1,0 +1,332 @@
+{
+ "anchors": {
+  "all_ok": true,
+  "failures": []
+ },
+ "c1": {
+  "blocks": [
+   {
+    "anchor_ok": true,
+    "anchor_reason": "",
+    "c1_grade": "A",
+    "c1_missing": [],
+    "c2_stamps_available": [
+     "t2"
+    ],
+    "commit": "24f25b03aa4b54249a273655ebbcce06f484192b",
+    "file": "verl/trainer/ppo/v1/trainer_base.py",
+    "framework": "veRL",
+    "id": "verl.gen.v1_trainer_base",
+    "item1_block_identity": "decidable",
+    "item2_waiting": "decidable",
+    "item3_overlap": "decidable",
+    "line": 543,
+    "overlap_value": "no",
+    "waiting_value": "yes"
+   },
+   {
+    "anchor_ok": true,
+    "anchor_reason": "",
+    "c1_grade": "A",
+    "c1_missing": [],
+    "c2_stamps_available": [
+     "t0"
+    ],
+    "commit": "24f25b03aa4b54249a273655ebbcce06f484192b",
+    "file": "verl/trainer/ppo/ray_trainer.py",
+    "framework": "veRL",
+    "id": "verl.gen.ray_trainer",
+    "item1_block_identity": "decidable",
+    "item2_waiting": "decidable",
+    "item3_overlap": "decidable",
+    "line": 1510,
+    "overlap_value": "yes",
+    "waiting_value": "no"
+   },
+   {
+    "anchor_ok": true,
+    "anchor_reason": "",
+    "c1_grade": "A",
+    "c1_missing": [],
+    "c2_stamps_available": [
+     "t1_or_t2"
+    ],
+    "commit": "24f25b03aa4b54249a273655ebbcce06f484192b",
+    "file": "verl/trainer/ppo/ray_trainer.py",
+    "framework": "veRL",
+    "id": "verl.update_weights",
+    "item1_block_identity": "decidable",
+    "item2_waiting": "decidable",
+    "item3_overlap": "decidable",
+    "line": 1715,
+    "overlap_value": "no",
+    "waiting_value": "yes"
+   },
+   {
+    "anchor_ok": true,
+    "anchor_reason": "",
+    "c1_grade": "B",
+    "c1_missing": [],
+    "c2_stamps_available": [
+     "none"
+    ],
+    "commit": "dc2a7ad326f619fc5a47737ea47d1920ce2c0b53",
+    "file": "openrlhf/trainer/ppo_trainer_async.py",
+    "framework": "OpenRLHF",
+    "id": "openrlhf.timing_generation",
+    "item1_block_identity": "partial",
+    "item2_waiting": "decidable",
+    "item3_overlap": "decidable",
+    "line": 134,
+    "overlap_value": "yes",
+    "waiting_value": "yes"
+   },
+   {
+    "anchor_ok": true,
+    "anchor_reason": "",
+    "c1_grade": "A",
+    "c1_missing": [],
+    "c2_stamps_available": [
+     "none"
+    ],
+    "commit": "dc2a7ad326f619fc5a47737ea47d1920ce2c0b53",
+    "file": "openrlhf/trainer/ppo_trainer_async.py",
+    "framework": "OpenRLHF",
+    "id": "openrlhf.step_total",
+    "item1_block_identity": "decidable",
+    "item2_waiting": "decidable",
+    "item3_overlap": "decidable",
+    "line": 237,
+    "overlap_value": "n/a",
+    "waiting_value": "yes"
+   },
+   {
+    "anchor_ok": true,
+    "anchor_reason": "",
+    "c1_grade": "A",
+    "c1_missing": [],
+    "c2_stamps_available": [
+     "none"
+    ],
+    "commit": "a9d1a4bec45a28fd0d455519a2a979a37da2ac4a",
+    "file": "nemo_rl/algorithms/single_controller.py",
+    "framework": "NeMo RL",
+    "id": "nemo.exposed_generation",
+    "item1_block_identity": "decidable",
+    "item2_waiting": "decidable",
+    "item3_overlap": "decidable",
+    "line": 3010,
+    "overlap_value": "no",
+    "waiting_value": "yes"
+   },
+   {
+    "anchor_ok": true,
+    "anchor_reason": "",
+    "c1_grade": "B",
+    "c1_missing": [
+     "空块分支：save 延后时块内无同步，报 0 不代表同步免费"
+    ],
+    "c2_stamps_available": [
+     "t1_or_t2"
+    ],
+    "commit": "a9d1a4bec45a28fd0d455519a2a979a37da2ac4a",
+    "file": "nemo_rl/algorithms/single_controller.py",
+    "framework": "NeMo RL",
+    "id": "nemo.weight_sync",
+    "item1_block_identity": "decidable",
+    "item2_waiting": "decidable",
+    "item3_overlap": "decidable",
+    "line": 3754,
+    "overlap_value": "no",
+    "waiting_value": "yes"
+   },
+   {
+    "anchor_ok": true,
+    "anchor_reason": "",
+    "c1_grade": "A",
+    "c1_missing": [],
+    "c2_stamps_available": [
+     "t2"
+    ],
+    "commit": "e0893f6eb878f4d396184cb14c4f9d27bbbb0aef",
+    "file": "skyrl/train/fully_async_trainer.py",
+    "framework": "SkyRL",
+    "id": "skyrl.wait_for_generation_buffer",
+    "item1_block_identity": "decidable",
+    "item2_waiting": "decidable",
+    "item3_overlap": "decidable",
+    "line": 843,
+    "overlap_value": "no",
+    "waiting_value": "yes"
+   },
+   {
+    "anchor_ok": true,
+    "anchor_reason": "",
+    "c1_grade": "A",
+    "c1_missing": [],
+    "c2_stamps_available": [
+     "none"
+    ],
+    "commit": "e0893f6eb878f4d396184cb14c4f9d27bbbb0aef",
+    "file": "skyrl/train/fully_async_trainer.py",
+    "framework": "SkyRL",
+    "id": "skyrl.group_completion_time",
+    "item1_block_identity": "decidable",
+    "item2_waiting": "decidable",
+    "item3_overlap": "decidable",
+    "line": 69,
+    "overlap_value": "no",
+    "waiting_value": "no"
+   },
+   {
+    "anchor_ok": true,
+    "anchor_reason": "",
+    "c1_grade": "A",
+    "c1_missing": [],
+    "c2_stamps_available": [
+     "t1_or_t2"
+    ],
+    "commit": "e0893f6eb878f4d396184cb14c4f9d27bbbb0aef",
+    "file": "skyrl/train/fully_async_trainer.py",
+    "framework": "SkyRL",
+    "id": "skyrl.sync_weights",
+    "item1_block_identity": "decidable",
+    "item2_waiting": "decidable",
+    "item3_overlap": "decidable",
+    "line": 604,
+    "overlap_value": "no",
+    "waiting_value": "yes"
+   },
+   {
+    "anchor_ok": true,
+    "anchor_reason": "",
+    "c1_grade": "A",
+    "c1_missing": [],
+    "c2_stamps_available": [
+     "t1_or_t2"
+    ],
+    "commit": "e0893f6eb878f4d396184cb14c4f9d27bbbb0aef",
+    "file": "skyrl/backends/skyrl_train/workers/worker_dispatch.py",
+    "framework": "SkyRL",
+    "id": "skyrl.sync_weights_only_transfer",
+    "item1_block_identity": "decidable",
+    "item2_waiting": "decidable",
+    "item3_overlap": "decidable",
+    "line": 809,
+    "overlap_value": "no",
+    "waiting_value": "no"
+   }
+  ],
+  "grade_counts": {
+   "A": 9,
+   "B": 2
+  },
+  "grade_meaning": {
+   "A": "可横比：三件套均可由源码唯一判定",
+   "B": "需补声明：有一项只能读到但不足以唯一确定，引用时须显式补写",
+   "C": "不可横比：缺件无法由源码补足，须外部说明"
+  },
+  "item_stats": {
+   "item1_block_identity": {
+    "decidable": 10,
+    "partial": 1
+   },
+   "item2_waiting": {
+    "decidable": 11
+   },
+   "item3_overlap": {
+    "decidable": 11
+   }
+  },
+  "readings": {
+   "from_source_only": "仅凭源码能否补齐三件套",
+   "needs_external": [
+    "openrlhf.timing_generation",
+    "nemo.weight_sync"
+   ]
+  }
+ },
+ "c1_c3_bridge": {
+  "note": "没有一个块能把 t1 与 t2 分开给出；能做拆分的只有把同一块硬当 t1 的写法，与 §21.5 实测的 ack_sep 同类。",
+  "t1_exact": [],
+  "t1_pooled": [
+   "verl.update_weights",
+   "nemo.weight_sync",
+   "skyrl.sync_weights",
+   "skyrl.sync_weights_only_transfer"
+  ],
+  "t2_only": [
+   "verl.gen.v1_trainer_base",
+   "skyrl.wait_for_generation_buffer"
+  ]
+ },
+ "c3": {
+  "framework_rows": [
+   {
+    "c3_literal": false,
+    "consumption_version_field": "self.global_step",
+    "framework": "skyrl",
+    "gap": "报的是\"训练步数年龄\"，不是\"策略版本差\"；一个 step 内多次更新会读到同一个数。",
+    "generation_version_field": "GeneratedOutputGroup.global_step_when_scheduled",
+    "measured_semantics": "global_step − global_step_when_scheduled"
+   },
+   {
+    "c3_literal": "partial",
+    "consumption_version_field": "self._trainer_version",
+    "framework": "nemo_rl",
+    "gap": "能识别\"陈旧\"但按组淘汰，不产出 C3 要求的 max/P50/P90 年龄分布。",
+    "generation_version_field": "prompt stamped with version_during_step / evict(current_train_weight=...)",
+    "measured_semantics": "evict 用训练侧权重版本筛陈旧组（非逐条年龄分布）"
+   },
+   {
+    "c3_literal": false,
+    "consumption_version_field": "global_step（slot 携带，用于 eval 时机）",
+    "framework": "openrlhf",
+    "gap": "所读通路无每条 Experience 的 policy 版本；Q=1 不能推出只落后一步。",
+    "generation_version_field": null,
+    "measured_semantics": "不构成逐条年龄"
+   },
+   {
+    "c3_literal": "partial",
+    "consumption_version_field": "current_param_version",
+    "framework": "verl",
+    "gap": "版本标签按步推进，且 fully-async 的暂停读计数而非逐样本版本差。",
+    "generation_version_field": "min/max global_steps 标签（推理）/ staleness_samples 计数（fully-async）",
+    "measured_semantics": "参数同步时钟与训练调用时钟不相同一步进"
+   }
+  ],
+  "literal_count": 0,
+  "s_examples": {
+   "skyrl_sample_full_batch": {
+    "accepted_by_training": 3200,
+    "relative_gap": 0.0,
+    "reported_by_generation": 3200
+   },
+   "skyrl_sample_full_batch_drops": {
+    "accepted_by_training": 2400,
+    "relative_gap": 0.3333333333333333,
+    "reported_by_generation": 3200
+   }
+  },
+  "staleness_proofs": {
+   "skyrl": {
+    "all_ok": true,
+    "hits": [
+     {
+      "line": 1038,
+      "ok": true,
+      "reason": ""
+     },
+     {
+      "line": 677,
+      "ok": true,
+      "reason": ""
+     }
+    ]
+   }
+  },
+  "total": 4
+ },
+ "doc": "notebook/rollout-performance-research.md §21.6",
+ "experiment": "C1 计时边界约定的可判定性 + C3 的定义可取得性"
+}

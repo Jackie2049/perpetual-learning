@@ -1,0 +1,32 @@
+{
+  "experiment": "C1 计时边界约定的可判定性核验（附 C3 的定义可取得性）",
+  "doc": "notebook/rollout-performance-research.md §21.6",
+  "execution": {
+    "python": "3.9.6（macOS arm64，仅标准库）",
+    "commands": [
+      "python3 c1_timing_blocks.py                  # 覆盖 summary.json",
+      "python3 c1_timing_blocks.py --verify         # 通过：逐字段相同（连跑两次均通过）",
+      "python3 -m unittest test_c1_timing_blocks -v # 10 passed"
+    ],
+    "inputs": "四个只读 checkout（见脚本 CHECKOUTS），HEAD 由 test_checkouts_are_at_recorded_commits 断言"
+  },
+  "classification": "静态源码核验；非 GPU 实测、非端到端、不产生任何耗时数字。",
+  "grading_rule": "① 块名可判=源码有独立命名计时键；②③ 可判=proof 登记的源码锚点真实命中。A=三项全可判；B=有一项 partial 或有已登记缺件；C=有一项 undecidable。",
+  "artifacts": {
+    "sha256": {
+      "summary.json": "e49f40bfaa11cbe9216eb2b49e5f968a7bf596e1f0555e352afa4110a845c716",
+      "c1_timing_blocks.py": "566fd2a162e84eb5a38b3508e985e32592e27d99731e971ed7a34b44b4c3cdb0",
+      "test_c1_timing_blocks.py": "25e1bed1e0ef708bda8fedcb5a0c06a977d0ae7b9703e405467fe7b76760f890"
+    }
+  },
+  "self_check_fixes": [
+    "item_status 初版把“写了 evidence 字段”当作可判，11 个块全部判成 A；改为核对 proof 锚点命中后才识别出 OpenRLHF 无命名计时键与 NeMo 空块分支两个 B 级。",
+    "OpenRLHF 两处行号误写成注释行（129→134、129→237），由 check_anchor 抓出。",
+    "SkyRL sample_full_batch 的 proof 行号差 9 行（855→846），由 check_anchor 抓出。"
+  ],
+  "residual": [
+    "判定是人读代码的结论，脚本只核证据是否仍然命中，不核语义判读是否正确。",
+    "只覆盖 §12 已登记的四个固定 commit，换版本须重跑。",
+    "C3 只核“定义能否按字面取得”，未实测任何 η 分布或 S 数值。"
+  ]
+}
