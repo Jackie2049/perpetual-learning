@@ -1,0 +1,453 @@
+{
+  "base_and_merge_base": "b8e9740e981a68a5556fbeb8225558040a4d47a4",
+  "head": "ec026cd73c73ec4b9ee9cc3feb23e834e90357d6",
+  "source_sha256": {
+    "ec026cd73c73ec4b9ee9cc3feb23e834e90357d6:unirl/distributed/tensor/batch.py": "a33122410e68c2295631bbc3e70ce4b69ba41081da7ed49abd06774640676e3c",
+    "ec026cd73c73ec4b9ee9cc3feb23e834e90357d6:unirl/types/reward.py": "00ab4ad2b7072514f363e4c8cd4f97572a1fc601b152591052fee77ed1ea849b",
+    "ec026cd73c73ec4b9ee9cc3feb23e834e90357d6:unirl/config/require.py": "d30f89e77ff72e9dddaaf8b8f0ab403790b3e2984fbd6afea28f6bcc60177238",
+    "ec026cd73c73ec4b9ee9cc3feb23e834e90357d6:unirl/reward/service.py": "4284399e73f5e01c6e8be65770b10acdfe6bbde3f2d80651b0b5a63762469cd2",
+    "b8e9740e981a68a5556fbeb8225558040a4d47a4:unirl/reward/base.py": "00acd79a2ba2b3f4bedad57c890e609a00ba6c9e786665cd7e116a11d6a4bcff",
+    "b8e9740e981a68a5556fbeb8225558040a4d47a4:unirl/reward/remote.py": "5d2fab727c6b4983e846c0cf9e444bd2e5072b10fe17ab9731ec2d467372ca6f",
+    "ec026cd73c73ec4b9ee9cc3feb23e834e90357d6:unirl/reward/base.py": "00acd79a2ba2b3f4bedad57c890e609a00ba6c9e786665cd7e116a11d6a4bcff",
+    "ec026cd73c73ec4b9ee9cc3feb23e834e90357d6:unirl/reward/remote.py": "7045304d1aba3ad547ede46cff3778d019ea9706a4b693a7f6cb098e4bfa60ee"
+  },
+  "environment": {
+    "python": "3.12.13",
+    "hydra-core": "1.3.2",
+    "omegaconf": "2.3.1",
+    "torch": "2.9.1"
+  },
+  "default_compatibility": [
+    {
+      "aggregation": "weighted_sum",
+      "condition": "normal",
+      "exact": true
+    },
+    {
+      "aggregation": "weighted_sum",
+      "condition": "missing",
+      "exact": true
+    },
+    {
+      "aggregation": "weighted_sum",
+      "condition": "nan",
+      "exact": true
+    },
+    {
+      "aggregation": "mean",
+      "condition": "normal",
+      "exact": true
+    },
+    {
+      "aggregation": "mean",
+      "condition": "missing",
+      "exact": true
+    },
+    {
+      "aggregation": "mean",
+      "condition": "nan",
+      "exact": true
+    },
+    {
+      "aggregation": "min",
+      "condition": "normal",
+      "exact": true
+    },
+    {
+      "aggregation": "min",
+      "condition": "missing",
+      "exact": true
+    },
+    {
+      "aggregation": "min",
+      "condition": "nan",
+      "exact": true
+    },
+    {
+      "aggregation": "max",
+      "condition": "normal",
+      "exact": true
+    },
+    {
+      "aggregation": "max",
+      "condition": "missing",
+      "exact": true
+    },
+    {
+      "aggregation": "max",
+      "condition": "nan",
+      "exact": true
+    }
+  ],
+  "monitor_objective_invariance": [
+    {
+      "aggregation": "weighted_sum",
+      "probe": 0.0,
+      "rewards": [
+        0.7333333333333334,
+        0.7333333333333334
+      ]
+    },
+    {
+      "aggregation": "weighted_sum",
+      "probe": 0.1,
+      "rewards": [
+        0.7333333333333334,
+        0.7333333333333334
+      ]
+    },
+    {
+      "aggregation": "weighted_sum",
+      "probe": 99.0,
+      "rewards": [
+        0.7333333333333334,
+        0.7333333333333334
+      ]
+    },
+    {
+      "aggregation": "weighted_sum",
+      "probe": -5.0,
+      "rewards": [
+        0.7333333333333334,
+        0.7333333333333334
+      ]
+    },
+    {
+      "aggregation": "mean",
+      "probe": 0.0,
+      "rewards": [
+        0.7,
+        0.7
+      ]
+    },
+    {
+      "aggregation": "mean",
+      "probe": 0.1,
+      "rewards": [
+        0.7,
+        0.7
+      ]
+    },
+    {
+      "aggregation": "mean",
+      "probe": 99.0,
+      "rewards": [
+        0.7,
+        0.7
+      ]
+    },
+    {
+      "aggregation": "mean",
+      "probe": -5.0,
+      "rewards": [
+        0.7,
+        0.7
+      ]
+    },
+    {
+      "aggregation": "min",
+      "probe": 0.0,
+      "rewards": [
+        0.6,
+        0.6
+      ]
+    },
+    {
+      "aggregation": "min",
+      "probe": 0.1,
+      "rewards": [
+        0.6,
+        0.6
+      ]
+    },
+    {
+      "aggregation": "min",
+      "probe": 99.0,
+      "rewards": [
+        0.6,
+        0.6
+      ]
+    },
+    {
+      "aggregation": "min",
+      "probe": -5.0,
+      "rewards": [
+        0.6,
+        0.6
+      ]
+    },
+    {
+      "aggregation": "max",
+      "probe": 0.0,
+      "rewards": [
+        0.8,
+        0.8
+      ]
+    },
+    {
+      "aggregation": "max",
+      "probe": 0.1,
+      "rewards": [
+        0.8,
+        0.8
+      ]
+    },
+    {
+      "aggregation": "max",
+      "probe": 99.0,
+      "rewards": [
+        0.8,
+        0.8
+      ]
+    },
+    {
+      "aggregation": "max",
+      "probe": -5.0,
+      "rewards": [
+        0.8,
+        0.8
+      ]
+    }
+  ],
+  "required_monitor_failures": [
+    {
+      "aggregation": "weighted_sum",
+      "condition": "missing",
+      "successes": [
+        true,
+        false
+      ],
+      "error": "probe: missing from server response without error"
+    },
+    {
+      "aggregation": "weighted_sum",
+      "condition": "nan",
+      "successes": [
+        true,
+        false
+      ],
+      "error": "probe: non-finite value nan for sub-metric 'score'"
+    },
+    {
+      "aggregation": "weighted_sum",
+      "condition": "inf",
+      "successes": [
+        true,
+        false
+      ],
+      "error": "probe: non-finite value inf for sub-metric 'score'"
+    },
+    {
+      "aggregation": "weighted_sum",
+      "condition": "bool",
+      "successes": [
+        true,
+        false
+      ],
+      "error": "probe: non-finite value True for sub-metric 'score'"
+    },
+    {
+      "aggregation": "mean",
+      "condition": "missing",
+      "successes": [
+        true,
+        false
+      ],
+      "error": "probe: missing from server response without error"
+    },
+    {
+      "aggregation": "mean",
+      "condition": "nan",
+      "successes": [
+        true,
+        false
+      ],
+      "error": "probe: non-finite value nan for sub-metric 'score'"
+    },
+    {
+      "aggregation": "mean",
+      "condition": "inf",
+      "successes": [
+        true,
+        false
+      ],
+      "error": "probe: non-finite value inf for sub-metric 'score'"
+    },
+    {
+      "aggregation": "mean",
+      "condition": "bool",
+      "successes": [
+        true,
+        false
+      ],
+      "error": "probe: non-finite value True for sub-metric 'score'"
+    },
+    {
+      "aggregation": "min",
+      "condition": "missing",
+      "successes": [
+        true,
+        false
+      ],
+      "error": "probe: missing from server response without error"
+    },
+    {
+      "aggregation": "min",
+      "condition": "nan",
+      "successes": [
+        true,
+        false
+      ],
+      "error": "probe: non-finite value nan for sub-metric 'score'"
+    },
+    {
+      "aggregation": "min",
+      "condition": "inf",
+      "successes": [
+        true,
+        false
+      ],
+      "error": "probe: non-finite value inf for sub-metric 'score'"
+    },
+    {
+      "aggregation": "min",
+      "condition": "bool",
+      "successes": [
+        true,
+        false
+      ],
+      "error": "probe: non-finite value True for sub-metric 'score'"
+    },
+    {
+      "aggregation": "max",
+      "condition": "missing",
+      "successes": [
+        true,
+        false
+      ],
+      "error": "probe: missing from server response without error"
+    },
+    {
+      "aggregation": "max",
+      "condition": "nan",
+      "successes": [
+        true,
+        false
+      ],
+      "error": "probe: non-finite value nan for sub-metric 'score'"
+    },
+    {
+      "aggregation": "max",
+      "condition": "inf",
+      "successes": [
+        true,
+        false
+      ],
+      "error": "probe: non-finite value inf for sub-metric 'score'"
+    },
+    {
+      "aggregation": "max",
+      "condition": "bool",
+      "successes": [
+        true,
+        false
+      ],
+      "error": "probe: non-finite value True for sub-metric 'score'"
+    }
+  ],
+  "no_valid_training_component": {
+    "rewards": [
+      0.0
+    ],
+    "component_rewards": {
+      "main_a": [
+        0.0
+      ],
+      "main_b": [
+        0.0
+      ],
+      "monitor_probe": [
+        7.0
+      ]
+    },
+    "successes": [
+      false
+    ],
+    "errors": [
+      "main_a: missing from server response without error; main_b: missing from server response without error"
+    ],
+    "compute_time": 0.01
+  },
+  "hydra_original_spec": [
+    {
+      "conversion": "none",
+      "condition": "valid",
+      "status": "accepted",
+      "monitor_type": "ListConfig",
+      "weights_type": "DictConfig"
+    },
+    {
+      "conversion": "none",
+      "condition": "unknown_monitor",
+      "status": "rejected",
+      "cause": "RemoteRewardSpec.monitor_rewards must be a subset of required_rewards; got ['absent'] vs ['main_a', 'main_b', 'probe']"
+    },
+    {
+      "conversion": "none",
+      "condition": "all_monitors",
+      "status": "rejected",
+      "cause": "RemoteRewardSpec.monitor_rewards must leave at least one reward that trains"
+    },
+    {
+      "conversion": "none",
+      "condition": "monitor_weight_even_zero",
+      "status": "rejected",
+      "cause": "RemoteRewardSpec.reward_weights must not name monitor_rewards; got ['probe']"
+    },
+    {
+      "conversion": "none",
+      "condition": "component_key_collision",
+      "status": "rejected",
+      "cause": "RemoteRewardSpec.required_rewards must not contain ['monitor_probe']; monitor_rewards report as monitor_<name>"
+    },
+    {
+      "conversion": "all",
+      "condition": "valid",
+      "status": "accepted",
+      "monitor_type": "list",
+      "weights_type": "dict"
+    },
+    {
+      "conversion": "all",
+      "condition": "unknown_monitor",
+      "status": "rejected",
+      "cause": "RemoteRewardSpec.monitor_rewards must be a subset of required_rewards; got ['absent'] vs ['main_a', 'main_b', 'probe']"
+    },
+    {
+      "conversion": "all",
+      "condition": "all_monitors",
+      "status": "rejected",
+      "cause": "RemoteRewardSpec.monitor_rewards must leave at least one reward that trains"
+    },
+    {
+      "conversion": "all",
+      "condition": "monitor_weight_even_zero",
+      "status": "rejected",
+      "cause": "RemoteRewardSpec.reward_weights must not name monitor_rewards; got ['probe']"
+    },
+    {
+      "conversion": "all",
+      "condition": "component_key_collision",
+      "status": "rejected",
+      "cause": "RemoteRewardSpec.required_rewards must not contain ['monitor_probe']; monitor_rewards report as monitor_<name>"
+    }
+  ],
+  "legacy_tiny_weight_min": [
+    0.1
+  ],
+  "monitor_min": [
+    0.6
+  ],
+  "wire_identity_helper_ast_unchanged": true,
+  "scope": "Own 12 compatibility, 16 invariance, 16 bad-monitor, 10 Hydra configuration controls, one missing-training control and legacy-min contrast. Original classes/spec/parser and Batch/response; HTTP session constructor recorder. No author 37-test harness, full UniRL/Hydra recipe, HTTP/server, RewardService, metrics dashboard, advantages, training, Ray or GPU/NPU."
+}

@@ -107,6 +107,8 @@
 
 ## UniRL
 
+- [监控奖励的目标隔离](unirl-survey.md#新候选的显式监控字段)：#641已有作者实现，原parser／spec自编CPU控制核四聚合排除探针、失败契约及真实Hydra容器构造，非服务／训练验收。
+
 - [AR种子的请求与副本分工](unirl-survey.md#ar-种子配置与逐样本请求)：#507逐请求seed已由报告者让JianhaoYu-AI接手，engine偏移另议；八源文件同旧分析，不因协作回复重跑CPU或认领另一部分。
 
 - [Scheduler子进程环境与依赖版本](unirl-survey.md#scheduler-子进程环境与依赖版本)：#468已有实现，两个原helper接独立dict核恢复，非真实spawn／库映射；memory-saver已演进，真机先核实际版本。

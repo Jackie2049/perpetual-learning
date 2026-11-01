@@ -2362,7 +2362,7 @@ Python3.12.13仅标准库，完整原runtime模块加载但不调用`engine_proc
 
 ## 监控奖励的目标隔离与失败契约
 
-**小权重不是只监控，零权重也不是跨聚合方式的监控契约。** [#419](https://github.com/Tencent-Hunyuan/UniRL/issues/419)已于2026-10-20明确转派GoDiao，继续由社区作者负责。本节只解释当前主线`6fd82cba13f52f394747832344039408699ea378`的行为，不另写实现或认领需求。
+**小权重不是只监控，零权重也不是跨聚合方式的监控契约。** [#419](https://github.com/Tencent-Hunyuan/UniRL/issues/419)已于2026-10-20明确转派GoDiao，继续由社区作者负责。以下历史对照固定主线`6fd82cba13f52f394747832344039408699ea378`；2026-11-01新增[候选的显式监控字段](#新候选的显式监控字段)，区分旧行为与尚未合并的实现，不另写修复或认领需求。
 
 ### 聚合系数与组内标准化
 
@@ -2385,11 +2385,32 @@ Python3.12.13仅标准库，完整原runtime模块加载但不调用`engine_proc
 
 零权重探针若缺失或返回NaN，原解析器仍给该样本`successes=False`；即使另外两项使聚合数值保持0.5，也不代表样本有效。[RewardService](https://github.com/Tencent-Hunyuan/UniRL/blob/6fd82cba13f52f394747832344039408699ea378/unirl/reward/service.py#L125)在附加奖励之前检查失败标志并抛错。`raise_on_failure=False`是后端异常时返回失败响应，不是让这个service忽略失败的开关。
 
-这与维护者在[#419的设计回复](https://github.com/Tencent-Hunyuan/UniRL/issues/419#issuecomment-5573395257)一致：拟议`monitor_rewards`仍属于`required_rewards`、仍须评分且有限，只从目标聚合及总权重排除；全部分量均为监控项应在配置构造时拒绝。10月后续接手方案还选择拒绝监控名与显式权重冲突。**这些是已确定的需求，不是当前RemoteRewardSpec已提供的字段。** “与目标隔离”“探针可用”“自动停止训练”是三项不同能力，不能从第一项推导另外两项。
+这与维护者在[#419的设计回复](https://github.com/Tencent-Hunyuan/UniRL/issues/419#issuecomment-5573395257)一致：拟议`monitor_rewards`仍属于`required_rewards`、仍须评分且有限，只从目标聚合及总权重排除；全部分量均为监控项应在配置构造时拒绝。10月后续接手方案还选择拒绝监控名与显式权重冲突。**这些需求在上述6fd82cba版尚无对应RemoteRewardSpec字段；下方新候选提供了实现。** “与目标隔离”“探针可用”“自动停止训练”是三项不同能力，不能从第一项推导另外两项。
 
 ### 本机验证范围
 
 Python3.12.13/torch2.14.1 CPU，执行固定版三个完整原解析方法和原Sample/Part、Batch/ref、RewardResponse模块；只跳过tensor包聚合入口里的Ray导出。输入JSON、解析器配置属性为本地夹具，未构造HTTP后端、调用服务、运行评分模型、完整trainer/loss/optimizer或设备。上层失败处理为源码追踪，不是服务实测；五模块通过compile。初次harness漏传原Sample.fork必需的sampling_params，补为原DiffusionSamplingParams后通过，不归因为上游错误。[完整复现与hash](../../diary/2026-10-24.md)留日志，无新增永久工具或M5硬件任务。
+
+### 新候选的显式监控字段
+
+GoDiao于2026-11-01新增OPEN／非draft [#641](https://github.com/Tencent-Hunyuan/UniRL/pull/641)，固定head `ec026cd73c73ec4b9ee9cc3feb23e834e90357d6`，API base与实际共同祖先均 `b8e9740e981a68a5556fbeb8225558040a4d47a4`（ahead1／behind0）。两个改动文件为remote.py与奖励README，没有提交作者37项临时测试harness；本机控制独立编写，不将它计为原回归测试或维护者验收。
+
+[原解析器与配置类](https://github.com/Tencent-Hunyuan/UniRL/blob/ec026cd73c73ec4b9ee9cc3feb23e834e90357d6/unirl/reward/remote.py)为监控分量生成`monitor_<name>`明细key，先检查每个required分量的评分是否有效，再在监控项处跳过`scores`／`weights`追加。因此它同时排除weighted_sum的分子／分母及mean／min／max的输入，不是赋一个接近零的权重。required列表仍保留探针，不表示服务端少算一次；原`_wire_identity`的AST没有变化，但这不证明真实服务／缓存的部署行为。
+
+[CPU脚本](../../experiments/unirl-monitor-objective/verify.py)保留两版完整原RemoteRewardBackend／RemoteRewardSpec及原base类、原require、完整Batch模块和原RewardResponse；HTTP Session只用明确的构造／close记录器。Python3.12.13／Torch2.9.1，真实Hydra1.3.2／OmegaConf2.3.1装在独立临时目录，无共享环境改动。八份源码compile／SHA256与以下结果见[JSON](../../experiments/unirl-monitor-objective/result.json)：
+
+| 自编控制 | 本机结果 |
+|---|---|
+| 省略监控字段，四聚合×正常／缺主分量／NaN主分量，共12组 | 两版rewards、component_rewards、successes、errors精确相同 |
+| 两主分量0.8／0.6、权重2／1；探针0、0.1、99、−5，四聚合共16组，每组两行 | 探针变化只进monitor_probe明细，目标始终weighted_sum约0.733333、mean0.7、min0.6、max0.8 |
+| 四聚合×监控缺失／NaN／Inf／bool，共16组，每组一好一坏 | successes为[True,False]，错误指向probe；坏明细补0、各列仍两行，聚合数值相同也不当作有效样本 |
+| 所有训练分量缺失但监控有效，1组 | 聚合0且失败；监控不单独提供可训练目标 |
+| Hydra两种转换模式×合法及四类非法配置，共10组 | 合法通过；未知监控、全监控、监控显式权重即使为0、monitor_明细名冲突均拒绝 |
+| 旧min下probe权重1e−6与新显式监控，1组 | 同主分量／probe0.1下，旧目标0.1、新目标0.6 |
+
+Hydra控制通过内存模块中的**原dataclass**作为`_target_`，不导入完整UniRL包。`_convert_=none`实际保留ListConfig／DictConfig并通过原`__post_init__`；`all`变为list／dict也通过。非法配置均经Hydra抛InstantiationException，根因为原ValueError。它补的是容器与原配置构造相容性，不是ConfigStore注册、真实配方组合或全栈实例化。复现需已有Torch及独立目录内的hydra-core1.3.2／omegaconf2.3.1：`PYTHONPATH=<依赖目录> ../deepinfer-eplb-venv/bin/python experiments/unirl-monitor-objective/verify.py ../unirl-readonly`。
+
+原RewardService在附加奖励前仍按失败标志抛错，本轮只读该调用点，未执行服务。字段名迁移为`reward_monitor_<name>`属于作者说明，dashboard消费、HTTP scorer、组内优势与训练均未运行；重复required名字也仍是作者明确未覆盖的旧问题，不扩展成新候选。本轮没有需要GPU／NPU的执行任务，不另建M5队列、不改配方或对外反馈；以后若实际采用，仍须按固定版本核完整评分与指标链路，不能用解析器不变性单独认证训练。
 
 ## 音频奖励配方的评估协议与后续反证
 
