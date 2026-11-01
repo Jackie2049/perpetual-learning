@@ -1,0 +1,136 @@
+{
+  "head": "edede6a14cadfb7bfcaa00198a8c00fd2ee547f3",
+  "environment": {
+    "python": "3.12.13",
+    "platform": "darwin",
+    "torch": "2.9.1",
+    "torch_git": "5811a8d7da873dd699ff6687092c225caffcf1bb",
+    "pytest": "8.4.2"
+  },
+  "source_sha256_compile": {
+    "verl/utils/fsdp_utils.py": "e3cce0aee2dd35d6aa2e0111a15d7853e8a402353b92eae5f31cd365bcf5103b",
+    "tests/checkpoint_engine/weight_diagnostics.py": "071f58ca08edc013d238aac3b31a3353c7ca1bdd17990fcb53d4b0cfb4732259",
+    "tests/utils/test_fsdp_dtensor_export_on_cpu.py": "b72cf6ae351cb16426882cfecc3452ed9e28c3bb7d3b17e9f72782130aca2681",
+    "tests/checkpoint_engine/test_weight_diagnostics_on_cpu.py": "8ad9a40f310d07d395562cde0d862709138a480a83d202081a1de0d30a9b1dc4",
+    "verl/workers/engine/fsdp/transformer_impl.py": "78ecb69adee6defebce41c7882d3b0ecaa416b14be0d6f4182be7337b381d3cc"
+  },
+  "helper_ast_unchanged": true,
+  "original_native_pytest": {
+    "returncode": 1,
+    "summary": {
+      "passed": 16,
+      "failed": 1,
+      "error": 0,
+      "skipped": 0
+    },
+    "items": [
+      {
+        "name": "test_export_retains_staged_shard_until_npu_completion[npu]",
+        "status": "passed"
+      },
+      {
+        "name": "test_export_retains_staged_shard_until_npu_completion[cuda]",
+        "status": "passed"
+      },
+      {
+        "name": "test_export_retains_staged_shard_until_npu_completion[cpu]",
+        "status": "passed"
+      },
+      {
+        "name": "test_fingerprint_chunk_boundaries_and_layout[dtype0]",
+        "status": "passed"
+      },
+      {
+        "name": "test_fingerprint_chunk_boundaries_and_layout[dtype1]",
+        "status": "passed"
+      },
+      {
+        "name": "test_fingerprint_chunk_boundaries_and_layout[dtype2]",
+        "status": "passed"
+      },
+      {
+        "name": "test_reference_fingerprint_uses_comparison_dtype",
+        "status": "passed"
+      },
+      {
+        "name": "test_empty_and_scalar_fingerprints",
+        "status": "passed"
+      },
+      {
+        "name": "test_mismatch_details_handles_corruption_and_nonfinite",
+        "status": "passed"
+      },
+      {
+        "name": "test_sender_is_lazy_and_preserves_tensor_identity",
+        "status": "passed"
+      },
+      {
+        "name": "test_summarize_distinguishes_export_and_transport",
+        "status": "passed"
+      },
+      {
+        "name": "test_diagnostic_env_does_not_copy_unrelated_settings",
+        "status": "passed"
+      },
+      {
+        "name": "test_incomplete_jsonl_is_reported",
+        "status": "passed"
+      },
+      {
+        "name": "test_loaded_shards_include_uneven_and_empty_slices[2]",
+        "status": "passed"
+      },
+      {
+        "name": "test_loaded_shards_include_uneven_and_empty_slices[8]",
+        "status": "passed"
+      },
+      {
+        "name": "test_source_audit_separates_loading_sharding_and_gathering",
+        "status": "passed"
+      },
+      {
+        "name": "test_source_audit_records_real_dtensor",
+        "status": "failed"
+      }
+    ],
+    "stdout": "................F                                                        [100%]\n=================================== FAILURES ===================================\n____________________ test_source_audit_records_real_dtensor ____________________\ntest_weight_diagnostics_on_cpu.py:166: in test_source_audit_records_real_dtensor\n    dist.init_process_group(\"gloo\", init_method=(tmp_path / \"store\").as_uri(), rank=0, world_size=1)\n/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:81: in wrapper\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:95: in wrapper\n    func_return = func(*args, **kwargs)\n                  ^^^^^^^^^^^^^^^^^^^^^\n/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py:1769: in init_process_group\n    default_pg, _ = _new_process_group_helper(\n/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py:1996: in _new_process_group_helper\n    backend_class = ProcessGroupGloo(\nE   RuntimeError: Cannot resolve 127.0.0.1 to a (local) address\n----------------------------- Captured stderr call -----------------------------\n[W1101 17:01:56.672876000 ProcessGroupGloo.cpp:547] Warning: Unable to resolve hostname to a (local) address. Using the loopback address as fallback. Manually set the network interface to bind to with GLOO_SOCKET_IFNAME. (function operator())\n- generated xml file: <temporary-root>/report.xml -\n=========================== short test summary info ============================\nFAILED test_weight_diagnostics_on_cpu.py::test_source_audit_records_real_dtensor\n1 failed, 16 passed in 0.86s\n",
+    "stderr": ""
+  },
+  "own_controls": {
+    "exact_fingerprint_differs_inside_allclose_tolerance": true,
+    "allclose_mismatch_details": {
+      "expected_dtype": "torch.float32",
+      "received_dtype": "torch.float32",
+      "expected_shape": [
+        1
+      ],
+      "received_shape": [
+        1
+      ],
+      "compared_dtype": "torch.float32",
+      "numel": 1,
+      "cpu_isclose_mismatches": 0,
+      "nonfinite_mismatches": 0,
+      "max_abs_finite": 0.0
+    },
+    "empty_audit": {
+      "compared": 0,
+      "incomplete": 0,
+      "unreadable": 0,
+      "differences": []
+    }
+  },
+  "scope": {
+    "original": "two full byte-identical original test files; complete diagnostic module; original materialize helper AST",
+    "seams": "four empty package initializers; no full fsdp_utils or verl startup; original NPU/CUDA test cases use CPU stand-ins",
+    "real_dtensor_test": "original source_audit_records_real_dtensor uses world_size=1 CPU Gloo and file store if available",
+    "not_run": [
+      "actual exporter method",
+      "NPU/CUDA streams or DMA",
+      "FSDP training or multi-rank transfer",
+      "Ray/HCCL/checkpoint engine",
+      "workflow or shutdown/SIGSEGV reproduction",
+      "performance or allocator peak"
+    ]
+  }
+}

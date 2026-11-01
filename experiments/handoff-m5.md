@@ -421,6 +421,8 @@ M5 最小下一步：先判断是否有获准使用的对应配置、完整 toke
 
 ## verl NPU 参数卸载参考
 
+普通DTensor导出完成参考（2026-11-01，同一NPU入口、非新队列／接单）：[#8443](https://github.com/verl-project/verl/pull/8443)固定head edede6a1／base及祖先2ab35292；[M1原17 CPU参数项](../notebook/frameworks/verl-fsdp2-source-deep-reading.md#导出张量的存活与完成)在本机lo0／沙箱外通过，NPU wait只是CPU替身，真实DTensor仅单rank CPU诊断记录，没有实际exporter／HCCL／NPU或SIGSEGV复现。作者普通导出workaround的production NPU CI仍待验，指纹hash会扰动时序。M5仅未来独立选择已有获准、安全、匹配普通FSDP导出工作时，先固定实际torch／torch-npu／CANN／driver、普通／adapter／merged-LoRA路径及每rank generator消费；在原小预算内区分staged寿命、设备写入完成、发送／接收与应用完成，baseline不启hash，诊断另记比较数量／缺项，实际进程退出与pytest摘要分别保留。缺匹配NPU／授权权重／安全环境、需升级部署或影响专项即停记未测，不应用候选、改同步策略／容差或新开训练／故障矩阵；社区及已建PR的fork head写入仍逐项须用户明确同意，M1不探测服务器。
+
 Packed MoE导出布局参考（2026-11-01，复用NPU入口、非新队列／已接单）：[#8442](https://github.com/verl-project/verl/pull/8442) head3a1ff0432aa3187aabbc700ad5852a658b8656d6／实际父版2ab35292，API目标base a08ea02a已分叉。[M1原转换函数与各版原测试体](../notebook/frameworks/verl-quant-layer-audit.md#packed-专家权重的布局来源)基线2过／候选5过；自编方形gate与down控制在缺标记时shape相同但元素最大差9，True后精确一致。原MRO表达式仅接自编空模块，非FSDP包装／NPU patch／vLLM IPC实测；作者首次sync成功后GRPO仍OOM，另3步蒸馏不算本机证据。
 
 目的为未来已有获准匹配NPU FSDP+vLLM工作中核生产者布局与接收端数值。M5仅在安全可用、资源／权重／配方已获准且独立选用时，固定实际源码／设备栈、模块MRO、text hidden size和packed轴，先核导出名字／shape／逐值参考，再在原预算核真实loader与首次同步后的同输入正确性；不能只按shape或sync无报错认证。缺权限／资源／匹配栈、安全事件未闭环、需新权重／部署或影响专项即停记未测；不自动应用、改TP、推送权重或启动训练。所有社区及既有PR-head写入（含fork）仍逐项须用户明确同意，M1不探测服务器。

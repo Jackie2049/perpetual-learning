@@ -1,0 +1,69 @@
+{
+  "head": "edede6a14cadfb7bfcaa00198a8c00fd2ee547f3",
+  "environment": {
+    "python": "3.12.13",
+    "platform": "darwin",
+    "torch": "2.9.1",
+    "torch_git": "5811a8d7da873dd699ff6687092c225caffcf1bb",
+    "pytest": "8.4.2",
+    "gloo_socket_ifname": "lo0"
+  },
+  "source_sha256_compile": {
+    "verl/utils/fsdp_utils.py": "e3cce0aee2dd35d6aa2e0111a15d7853e8a402353b92eae5f31cd365bcf5103b",
+    "tests/checkpoint_engine/weight_diagnostics.py": "071f58ca08edc013d238aac3b31a3353c7ca1bdd17990fcb53d4b0cfb4732259",
+    "tests/utils/test_fsdp_dtensor_export_on_cpu.py": "b72cf6ae351cb16426882cfecc3452ed9e28c3bb7d3b17e9f72782130aca2681",
+    "tests/checkpoint_engine/test_weight_diagnostics_on_cpu.py": "8ad9a40f310d07d395562cde0d862709138a480a83d202081a1de0d30a9b1dc4",
+    "verl/workers/engine/fsdp/transformer_impl.py": "78ecb69adee6defebce41c7882d3b0ecaa416b14be0d6f4182be7337b381d3cc"
+  },
+  "helper_ast_unchanged": true,
+  "original_native_pytest": {
+    "returncode": -6,
+    "junit_report_available": false,
+    "summary": {
+      "passed": 0,
+      "failed": 0,
+      "error": 0,
+      "skipped": 0
+    },
+    "items": [],
+    "stdout": "................",
+    "stderr": "Fatal Python error: Aborted\n\nCurrent thread 0x00000001fc1c8c80 (most recent call first):\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py\", line 1996 in _new_process_group_helper\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/torch/distributed/distributed_c10d.py\", line 1769 in init_process_group\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/torch/distributed/c10d_logger.py\", line 95 in wrapper\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/torch/distributed/c10d_logger.py\", line 81 in wrapper\n  File \"/private<temporary-root>/test_weight_diagnostics_on_cpu.py\", line 166 in test_source_audit_records_real_dtensor\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/_pytest/python.py\", line 157 in pytest_pyfunc_call\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/pluggy/_execution.py\", line 147 in _multicall\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/pluggy/_manager.py\", line 183 in _hookexec\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/pluggy/_caller.py\", line 197 in __call__\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/_pytest/python.py\", line 1671 in runtest\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/_pytest/runner.py\", line 178 in pytest_runtest_call\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/pluggy/_execution.py\", line 147 in _multicall\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/pluggy/_manager.py\", line 183 in _hookexec\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/pluggy/_caller.py\", line 197 in __call__\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/_pytest/runner.py\", line 246 in <lambda>\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/_pytest/runner.py\", line 344 in from_call\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/_pytest/runner.py\", line 245 in call_and_report\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/_pytest/runner.py\", line 136 in runtestprotocol\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/_pytest/runner.py\", line 117 in pytest_runtest_protocol\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/pluggy/_execution.py\", line 147 in _multicall\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/pluggy/_manager.py\", line 183 in _hookexec\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/pluggy/_caller.py\", line 197 in __call__\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/_pytest/main.py\", line 367 in pytest_runtestloop\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/pluggy/_execution.py\", line 147 in _multicall\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/pluggy/_manager.py\", line 183 in _hookexec\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/pluggy/_caller.py\", line 197 in __call__\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/_pytest/main.py\", line 343 in _main\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/_pytest/main.py\", line 289 in wrap_session\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/_pytest/main.py\", line 336 in pytest_cmdline_main\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/pluggy/_execution.py\", line 147 in _multicall\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/pluggy/_manager.py\", line 183 in _hookexec\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/pluggy/_caller.py\", line 197 in __call__\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 175 in main\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 201 in console_main\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/deepinfer-eplb-venv/lib/python3.12/site-packages/pytest/__main__.py\", line 9 in <module>\n  File \"<frozen runpy>\", line 88 in _run_code\n  File \"<frozen runpy>\", line 198 in _run_module_as_main\n\nExtension modules: numpy._core._multiarray_umath, numpy._core._multiarray_tests, numpy.linalg._umath_linalg, torch._C, torch._C._dynamo.autograd_compiler, torch._C._dynamo.eval_frame, torch._C._dynamo.guards, torch._C._dynamo.utils, torch._C._fft, torch._C._linalg, torch._C._nested, torch._C._nn, torch._C._sparse, torch._C._special (total: 14)\n"
+  },
+  "own_controls": {
+    "exact_fingerprint_differs_inside_allclose_tolerance": true,
+    "allclose_mismatch_details": {
+      "expected_dtype": "torch.float32",
+      "received_dtype": "torch.float32",
+      "expected_shape": [
+        1
+      ],
+      "received_shape": [
+        1
+      ],
+      "compared_dtype": "torch.float32",
+      "numel": 1,
+      "cpu_isclose_mismatches": 0,
+      "nonfinite_mismatches": 0,
+      "max_abs_finite": 0.0
+    },
+    "empty_audit": {
+      "compared": 0,
+      "incomplete": 0,
+      "unreadable": 0,
+      "differences": []
+    }
+  },
+  "scope": {
+    "original": "two full byte-identical original test files; complete diagnostic module; original materialize helper AST",
+    "seams": "four empty package initializers; no full fsdp_utils or verl startup; original NPU/CUDA test cases use CPU stand-ins",
+    "real_dtensor_test": "original source_audit_records_real_dtensor uses world_size=1 CPU Gloo and file store if available",
+    "not_run": [
+      "actual exporter method",
+      "NPU/CUDA streams or DMA",
+      "FSDP training or multi-rank transfer",
+      "Ray/HCCL/checkpoint engine",
+      "workflow or shutdown/SIGSEGV reproduction",
+      "performance or allocator peak"
+    ]
+  }
+}

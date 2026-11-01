@@ -266,6 +266,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [verl FSDP Weight Sync Mechanism: Source Code Analysis](verl-fsdp-weight-sync-mechanism-reading.md)
 - [合并LoRA的睡眠策略与恢复证据](verl-fsdp-weight-sync-mechanism-reading.md#合并-lora-的睡眠策略与恢复证据) — #8046原9策略参数项候选过非权重恢复；vLLM level1 CPU备份与SGLang KV-only分开，漏写根因待实物覆盖核对。
 - [verl FSDP2 Engine Deep Source Reading — Beyond PR Descriptions](verl-fsdp2-source-deep-reading.md)
+  - [导出张量的存活与完成](verl-fsdp2-source-deep-reading.md#导出张量的存活与完成)：#8443原17个CPU参数项通过，NPU wait为CPU回调替身、真实DTensor仅单rank诊断；指纹相同／容差通过／观测覆盖和进程退出分别记，不当NPU根因或性能验收。
   - [NPU卸载复制与固定内存](verl-fsdp2-source-deep-reading.md#npu-卸载的复制策略与固定内存)：新#8372／3／4重叠，原7CPU参数例head过非NPU内存验收；单次D2H与显式CPUOffloadPolicy分开，真机仅条件交M5。
 - [verl 参数转换与缓冲区精度](verl-fsdp2-source-deep-reading.md#参数转换与缓冲区精度)：#8189 原 6 CPU 测试体及 4 组控制；保留 buffer 不是修复既有舍入或迁移训练状态，原转换调用非完整 FSDP 验收。
 - [verl Checkpoint 配置覆盖](verl-checkpoint-management-reading.md#配置字段可覆盖与对象默认值)：#7388仅actor、#7426含critic／SFT；真实Hydra组合与原配置对象构造不等完整保存验收。

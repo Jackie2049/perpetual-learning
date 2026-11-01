@@ -1,6 +1,39 @@
 # verl FSDP2 Engine Deep Source Reading — Beyond PR Descriptions
 
+2026-11-01补充：[导出张量的存活与完成](#导出张量的存活与完成)核#8443：原17个CPU参数项通过，其中NPU等待为CPU回调替身，真实DTensor仅单rank CPU诊断记录；显式lo0／沙箱外对照解决本机Gloo初始化限制，非NPU修复或退出崩溃复现。
+
 2026-10-30补充：[packed边界与尾部padding](#packed-边界的显式传递与尾部-padding)核#8464：15个原CPU参数项在隔离原函数上通过，静态pad形成独立段；配置门控不是forward兼容性检查，空行offset与位置推导表示有别。非attention／梯度或GPU提速验收。
+
+## 导出张量的存活与完成
+
+**返回了完整张量、源分片仍存活、异步写入已完成，是三个不同条件。** likaizheng666-sketch的[已有 #8443](https://github.com/verl-project/verl/pull/8443)在普通FSDP权重导出中加入保守NPU等待。固定head `edede6a14cadfb7bfcaa00198a8c00fd2ee547f3`，API base及实际共同祖先 `2ab35292039a51175a4b3d3b3b2d76e951a0d3e4`，ahead4／behind0；读取时OPEN／非draft，review只有机器人COMMENTED，不当维护者批准。
+
+[原helper](https://github.com/verl-project/verl/blob/edede6a14cadfb7bfcaa00198a8c00fd2ee547f3/verl/utils/fsdp_utils.py)把链式`param.to(device, non_blocking=True).full_tensor()`拆为具名`staged`、`full`，仅当`staged.device.type == "npu"`时调用`torch.npu.synchronize(staged.device)`后返回。局部引用覆盖等待区间；不是仅延长对象寿命而保持异步，也不是对CPU／CUDA加同样等待。逐权重等待可能牺牲重叠，本轮没有测其耗时。
+
+[普通导出调用点](https://github.com/verl-project/verl/blob/edede6a14cadfb7bfcaa00198a8c00fd2ee547f3/verl/workers/engine/fsdp/transformer_impl.py)仍把materialize放在generator expression内，创建generator不等于已经执行完整取数或等待；普通Tensor走原对象。合并LoRA提前返回`_merged_lora_per_tensor_param`，不经过此处新guard；`base_sync_done`的adapter-only分支也有不同路径。这里只读接线，没有执行实际exporter、worker或多rank消费，不据helper测试认证每个rank均已等待。
+
+### 原 CPU 测试与本机执行条件
+
+[复现脚本](../../experiments/verl-export-completion/verify.py)完整保留[三个helper参数项](https://github.com/verl-project/verl/blob/edede6a14cadfb7bfcaa00198a8c00fd2ee547f3/tests/utils/test_fsdp_dtensor_export_on_cpu.py)和[14个诊断参数项](https://github.com/verl-project/verl/blob/edede6a14cadfb7bfcaa00198a8c00fd2ee547f3/tests/checkpoint_engine/test_weight_diagnostics_on_cpu.py)的测试文件字节、imports、参数化和断言；隔离四份空包初始化，FSDP模块仅提供原helper AST，完整诊断模块未改。Python3.12.13／Torch2.9.1／pytest8.4.2，五份完整输入compile／SHA256写入结果。
+
+- 普通沙箱执行：[16过、1失败](../../experiments/verl-export-completion/result.json)。失败在真实CPU DTensor测试的Gloo初始化，报本机地址解析失败，尚未进入记录断言。
+- 为新进程设置`GLOO_SOCKET_IFNAME=lo0`后，沙箱内仍在Gloo初始化native abort，子进程returncode=−6、没有JUnit文件；[失败输出保留](../../experiments/verl-export-completion/result-loopback.json)。验证器已补“无XML仍保存真实进程返回／stderr”，不再以FileNotFoundError遮盖原进程状态。无XML时零计数表示没有报告，不代表没有收集／运行测试。
+- 同一lo0条件、沙箱外一次对照：[17通过、无skip／error、进程退出0](../../experiments/verl-export-completion/result-loopback-unrestricted.json)。只用本机loopback与临时file store，不连接算力服务器，也不改变原测试。复查命令为`GLOO_SOCKET_IFNAME=lo0 ../deepinfer-eplb-venv/bin/python -B experiments/verl-export-completion/verify.py ../verl-packaging-readonly`，需本机相应loopback权限。
+
+三个materialize参数项使用真实CPU张量，但npu／cuda属性与NPU完成回调为原测试替身。回调检查staged弱引用仍活着、模拟写入后消费者可读，函数返回后staged可回收；CPU／CUDA替身不取得新wait。它们不是设备DMA、stream或allocator验收。真实DTensor那一项只在**world_size=1、CPU、Shard(0)**记录本地分片并核对source audit，不是FSDP训练、跨rank all-gather或真实导出器调用。
+
+### 指纹、容差与诊断覆盖
+
+[原诊断模块](https://github.com/verl-project/verl/blob/edede6a14cadfb7bfcaa00198a8c00fd2ee547f3/tests/checkpoint_engine/weight_diagnostics.py)区分loaded／export_shard／sender／received／reference边界；sender按case、update、name对齐，reference还按host／pid对齐。原测试覆盖非连续布局、BF16／FP32／int64、空值／标量、分片空尾、缺来源／未写完JSON等，是记录契约验证，不是已有HCCL传输的现场重建。
+
+两个额外自编控制分别说明：
+
+- `1.0`与FP32的`1.000001`指纹不同，但原`mismatch_details`按rtol1e−5／atol1e−8得到0个isclose差异；精确字节相同与原数值断言通过不是同一种条件。
+- 空临时目录的summarize也返回differences空、incomplete=0，但compared=0；“未发现差异”须同时读取实际比较数量。返回值和comparison.json存在不能独自证明观测覆盖。
+
+fingerprint会做CPU拷贝／hash，因而改变原异步时序；源码先reshape再分块，分块hash也不等价于已测全链路内存上界。不能用开启诊断后指纹相同，反证未加诊断的竞态不存在。
+
+作者报告旧未修改路径3072MB bucket通过、128MB失败，测试性保留staged并等待的控制两者通过，但明确**production guard的NPU CI待验，根因未隔离**。493项general suite退出0及14,364次fingerprint比较是外部报告；后者对应runner超时与事后artifact成功并存，不能据其pytest文字认证CI成功，也不能把本机Gloo abort混为原#8343退出SIGSEGV。真实NPU缺口只补[既有条件交接](../../experiments/handoff-m5.md#verl-npu-参数卸载参考)，不新增算力队列或接管M5；社区及既有PR-head写入仍逐项须用户明确同意。
 
 ## Packed 边界的显式传递与尾部 padding
 
