@@ -1,0 +1,100 @@
+{
+  "revision": "466adbad3433e66beb10ad448a82fa3f8cceab73",
+  "environment": {
+    "python": "3.12.13",
+    "pytest": "8.4.2",
+    "system": "Darwin"
+  },
+  "source_sha256": {
+    "6047ae650be2c3fa84be40aaac4626e6d0d69961:verl/workers/rollout/replica.py": "65d7f89ed1030fed3acd4f589f23ba5bba6e435bda9e277446b67d4bba2e82f6",
+    "466adbad3433e66beb10ad448a82fa3f8cceab73:verl/workers/rollout/replica.py": "61637e6625341659dec1b8bead07dffc80eb154e8f15c5b0fb0329171b60aeca",
+    "466adbad3433e66beb10ad448a82fa3f8cceab73:tests/workers/rollout/test_rollout_server_schedule_guard_on_cpu.py": "579827f7d9c74901f8861c9bb3a22471ac83516c4eeeb622b046590a39a48aa2",
+    "466adbad3433e66beb10ad448a82fa3f8cceab73:verl/workers/rollout/vllm_rollout/vllm_async_server.py": "4e299e4a88f833ab6583c707bffb52628a27a29297a1ee6c635606b101e73a74",
+    "466adbad3433e66beb10ad448a82fa3f8cceab73:verl/workers/rollout/sglang_rollout/async_sglang_server.py": "44319dc78f30b20a189c48f8217220fcdb45738f8321ecd9acb6c2170446e46b",
+    "466adbad3433e66beb10ad448a82fa3f8cceab73:verl/workers/rollout/trtllm_rollout/trtllm_async_server.py": "9db9f96175481eab606a53cc3fceb5fba529bd8a93aaa16b3d2becaaf91c7935"
+  },
+  "original_ast_sha256": {
+    "6047ae650be2c3fa84be40aaac4626e6d0d69961": {
+      "timeout_constant": "bb6f69d1018ba0bde3f8964745aad59dd3b0ea6f19e799a2cfb85f3ceaea2808",
+      "wait_rollout_servers_scheduled": "5a2d4ba4c94ff0cdd1d0d85181cc3b529b8d0933bcfd8752dbe78ff67997bb2b",
+      "_describe_unready_actor": "8f0a81341bf58b5dc60403cae93d05ae75b53161a3a183ac0e9660bdc198f260"
+    },
+    "466adbad3433e66beb10ad448a82fa3f8cceab73": {
+      "timeout_constant": "bb6f69d1018ba0bde3f8964745aad59dd3b0ea6f19e799a2cfb85f3ceaea2808",
+      "wait_rollout_servers_scheduled": "6a2bf3fdef965c21f455fca2d293d9c3868750c40213ec43056732acccaf6f76",
+      "_describe_unready_actor": "8bcdc9f6990d3843b679bacc6c958231029ba44ea7d9bcccd1e83ccef102b4c0"
+    }
+  },
+  "passed_original_test_bodies": [
+    "test_returns_once_every_actor_is_ready",
+    "test_raises_with_state_api_diagnostic_when_unschedulable",
+    "test_raises_with_actor_id_when_state_api_is_unavailable",
+    "test_raises_init_failure_without_waiting_for_pending_actors"
+  ],
+  "own_controls": {
+    "init_failure": [
+      {
+        "revision": "6047ae650be2c3fa84be40aaac4626e6d0d69961",
+        "deadline_s": 0.05,
+        "elapsed_s": 0.05217595770955086,
+        "pending_local_tasks_after_failure": 1,
+        "cancelled_local_tasks": 0
+      },
+      {
+        "revision": "466adbad3433e66beb10ad448a82fa3f8cceab73",
+        "deadline_s": 0.05,
+        "elapsed_s": 0.00011291680857539177,
+        "pending_local_tasks_after_failure": 0,
+        "cancelled_local_tasks": 1
+      }
+    ],
+    "caller_cancellation": {
+      "revision": "466adbad3433e66beb10ad448a82fa3f8cceab73",
+      "outer_cancelled": true,
+      "readiness_local_tasks_still_live": 1,
+      "probe_cleanup": "explicitly cancel and gather the owned local task"
+    },
+    "diagnostic_boundary": {
+      "deadline_s": 0.005,
+      "injected_diagnostic_delay_s": 0.04,
+      "elapsed_s": 0.05012849997729063,
+      "calls": [
+        {
+          "actor_id": "late-ready",
+          "api_timeout_s": 10,
+          "off_event_loop_thread": true
+        }
+      ],
+      "readiness_local_task_cancelled": true,
+      "message": "Rollout server actor(s) still not created after 0s: already-placed target_node=target-0 state=ALIVE required_resources={'CPU': 0.5}. A colocated rollout server is hard-pinned to its training worker's node (NodeAffinity, soft=False); that node has no free slot for it. Check `ray list actors` for PENDING_CREATION servers and either reduce per-node resource requests or use a layout with >=2 usable GPUs per node for cross-node hybrid rollout.",
+      "scope": "Artificial ALIVE snapshot with unresolved readiness; not a real actor diagnosis or timing benchmark"
+    }
+  },
+  "caller_wiring": {
+    "verl/workers/rollout/vllm_rollout/vllm_async_server.py": {
+      "guard_line": 1558,
+      "positional_arguments": [
+        "self.servers",
+        "server_node_ids"
+      ],
+      "scope": "AST wiring only, launch not executed"
+    },
+    "verl/workers/rollout/sglang_rollout/async_sglang_server.py": {
+      "guard_line": 865,
+      "positional_arguments": [
+        "self.servers",
+        "server_node_ids"
+      ],
+      "scope": "AST wiring only, launch not executed"
+    },
+    "verl/workers/rollout/trtllm_rollout/trtllm_async_server.py": {
+      "guard_line": 659,
+      "positional_arguments": [
+        "self.servers",
+        "[node_id]"
+      ],
+      "scope": "AST wiring only, launch not executed"
+    }
+  },
+  "scope": "Original four async test bodies with original fixtures, not native pytest collection/full package imports. Own controls use local asyncio tasks and a state recorder, not Ray ObjectRefs, resource release, dashboard or engine readiness."
+}

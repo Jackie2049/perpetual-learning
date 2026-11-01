@@ -1,5 +1,7 @@
 # verl Worker 生命周期与 Ray 分布式架构源码阅读
 
+2026-11-01接续：[Actor 创建完成与取消边界](#actor-创建完成与取消边界)核#7382新466adbad：四原协程测试体通过，State API退出正常等待路径；构造失败取消与调用方取消不是同一路径，原300秒也不覆盖后置诊断／引擎启动。
+
 2026-11-01接续：[SGLang 分桶张量的引用寿命](#sglang-分桶张量的引用寿命)核#8435：完整原20个CPU参数项在隔离源码接缝下，两处修改才全过；保留跨await存活与接收buffer复用保护，不外推CUDA峰值／训练收益。
 
 2026-11-01接续：[V1结束钩子与加载器清理](#v1-结束钩子与加载器清理)核已有#8474：正常末步不再提前return，后置三项清理并非finally保证；原方法的记录器控制不当真实worker或Ray退出验收。
@@ -278,7 +280,7 @@ python -B experiments/kv-cache-salt-contract/verify.py /path/to/pinned-source
 
 已有OPEN/non-draft [#7382](https://github.com/verl-project/verl/pull/7382)，固定head `8ebc3558c39d5192a6bf312a806c889a2197f293`，父版／共同祖先 `dc709afb7a74fd2645640a4e5f2fdf40166b4fbb`，相对当轮main `3c6d9b43` ahead1／behind5，五文件131增3删。不另实现超时helper或PG方案。主线[vLLM创建路径](https://github.com/verl-project/verl/blob/3c6d9b43b67c74ec343d77874cd8fa6e841523da/verl/workers/rollout/vllm_rollout/vllm_async_server.py#L1534)仍硬节点亲和、随后等待get_master_address；这个调用点没有显式num_gpus请求，不能把原CPU测试字典中的GPU=1当真实actor资源需求。
 
-### Guard 实际覆盖什么
+### 旧轮询版 Guard 的覆盖范围
 
 候选在vLLM、SGLang和TRTLLM创建server actors后、首次启动相关RPC前插入[wait_rollout_servers_scheduled](https://github.com/verl-project/verl/blob/8ebc3558c39d5192a6bf312a806c889a2197f293/verl/workers/rollout/replica.py#L45)。缺省300秒、轮询间隔2秒；只有PENDING_CREATION／DEPENDENCIES_UNREADY留在pending，查不到actor的None也按pending处理。它不是“每个actor都为ALIVE”的断言，更不检查模型加载、HTTP服务或生成请求成功。查不到状态也不单独证明节点没空位。
 
@@ -286,11 +288,33 @@ python -B experiments/kv-cache-salt-contract/verify.py /path/to/pinned-source
 
 CodeRabbit在同一行内评论提出State API依赖和阻塞两项担忧，review状态为COMMENTED，不是批准。独立核对[Ray 2.41.0官方get_actor](https://github.com/ray-project/ray/blob/ray-2.41.0/python/ray/util/state/api.py#L554)确为普通同步函数，构造REST StateApiClient并有独立timeout；[默认值为30秒](https://github.com/ray-project/ray/blob/ray-2.41.0/python/ray/util/state/common.py#L47)。候选未捕获查询异常，它们不会变成None分支的调度诊断。这个固定版本源码核对**不认证报告／部署安装的Ray版本，也不证明任意include_dashboard=False配置必然失败**；后者需区分UI开关、State服务可达性及具体安装，不能直接照抄机器人判断。
 
-### 四个原测试体的验证范围
+### 旧版四个原测试体的验证范围
 
 [复现脚本](../../experiments/verl-server-schedule-guard/verify.py)原样AST装载helper／两常量和原四协程测试体，保留原get_actor替身：ALIVE立即返回、两次pending后ALIVE、持续pending的诊断异常、None持续缺失的异常；四项两次通过且[JSON](../../experiments/verl-server-schedule-guard/result.json)一致。真实asyncio／monotonic／sleep与pytest MonkeyPatch／raises，Python3.12.13、pytest9.1.1；不是原生pytest收集，也没有Ray State HTTP、真实actor或调度器。
 
 五份完整模块AST／compile通过，三调用端各一个await接线仅AST核对，未运行其启动路径。测试里人工填的node0／GPU=1不能补足原报告的资源证据；未验证API异常、所有状态、清理、调度修复或GPU引擎，不继续扩替身矩阵。本题是现有候选的范围审计，不新排M5算力、不改专项或发布反馈；若后续确有获准运行，应先捕获同版真实actor资源／节点快照再判断根因，不能据这四项控制调整GPU布局。另见[组初始化等待与退出](verl-async-logprob-provenance.md#组初始化的等待超时与任务退出)，两者都不能把等待失败自动视为资源已回收，但属于不同启动阶段。
+
+### Actor 创建完成与取消边界
+
+**新版正常等待不再查询 State API，但等待结束仍不是引擎可服务或资源已回收。** 2026-11-01只读[#7382](https://github.com/verl-project/verl/pull/7382)仍open／非draft、作者nataliekung，head `466adbad3433e66beb10ad448a82fa3f8cceab73`，API base及真实祖先 `dc709afb7a74fd2645640a4e5f2fdf40166b4fbb`，ahead3／behind0；相对上节旧8ebc版新增两个提交。PR正文仍描述轮询和旧四测试，不能代表当前实现。旧结果保留为旧版证据，不覆盖新接口。
+
+中间版 `6047ae650be2c3fa84be40aaac4626e6d0d69961` 先改为等待每个server的 `__ray_ready__.remote()`，State API只在超时后用于诊断。最新[helper](https://github.com/verl-project/verl/blob/466adbad3433e66beb10ad448a82fa3f8cceab73/verl/workers/rollout/replica.py#L42)再用 `asyncio.wait(..., return_when=FIRST_EXCEPTION)`；正常没有异常时仍等待全部ready。返回后先对pending task请求cancel，再读取done的result，构造异常可直接传播，不等其余actor耗完deadline。这个cancel针对本地awaitable，不是ray.kill，也不保证远端actor或GPU资源被释放。
+
+三个调用端改为同时传server及其目标节点：vLLM／SGLang收集 `server_node_ids`，TRTLLM传 `[node_id]`；`zip(strict=True)`匹配两列。超时文本报告target_node，不再把尚未放置时可能为空的State node_id当目标位置。vLLM和SGLang的guard仍位于get_master_address／launch_server之前，TRTLLM位于launch_server之前；这些后续RPC及HTTP地址获取不共享本guard的300秒预算。
+
+[增量复查脚本](../../experiments/verl-server-schedule-guard/verify_ready.py)直接编译两个版本原helper／常量AST、候选完整原测试文件中的全部函数节点，保留decorator与断言，四个原协程体均通过：全部ready时禁止State API、pending超时诊断、State API异常fallback、一个构造失败加另一个永久pending时迅速传播。Python3.12.13／pytest8.4.2、真实asyncio，原fixture是本地协程／SimpleNamespace；没有pytest_asyncio安装或原生pytest收集，也无Ray／torch导入。六份完整输入compile／SHA256和三调用端AST接线见[结果](../../experiments/verl-server-schedule-guard/result-ready.json)，调用端未执行。
+
+另有三个自编控制，不能与原四测试或真实Ray测试混计：
+
+| 控制 | 本地观测 | 可支持的判断 |
+|---|---|---|
+| 构造异常加永久pending，deadline 0.05秒 | 中间版约0.052秒后传播、仍有1个未结束task；新版约0.000113秒传播、pending task已取消 | FIRST_EXCEPTION与取消次序修复了该局部路径；数字为夹具观测，不是集群启动性能 |
+| 外层调用cancel | 新版外层为cancelled，内部ready task仍有1个存活 | 无finally覆盖调用方取消路径；不能由构造失败用例推断所有退出都排空 |
+| 超时0.005秒加人为0.04秒诊断延迟，记录器返回ALIVE | get_actor在线程内运行且收到timeout=10，总耗时约0.050秒；报错仍含“has no free slot” | 诊断不在原deadline内，文本也不是独立资源不足证明；人为快照不证明真实actor会出现该组合 |
+
+所有自编pending task在探针finally中显式cancel并gather，没有把asyncio.run最终收尾当成生产helper已负责清理。原诊断用 `wait_for(to_thread(get_actor, ..., timeout=10), timeout=15)`，异常fallback为actor ID、目标节点及unknown。这个独立15秒等待不是原deadline的剩余预算，取消await也不等同中止底层线程；本轮没有等待15秒触发该超时或认证State API／dashboard故障。helper未预留资源、kill actors或回滚部分启动。
+
+作者[回复](https://github.com/verl-project/verl/pull/7382/files)报告在本地Ray有／无dashboard两种设置验证过新ready路线；属作者报告，没有本轮原始集群证据。现有reviews均COMMENTED，既不是最新代码批准，也不补足原问题的required_resources快照。真实Ray ObjectRef取消、远端构造失败与资源释放、实际引擎启动仍须分别核实；条件补[既有M5同步入口](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不新增部署／故障注入或算力队列，不应用候选、替作者修改方案或发布反馈。
 
 ## SGLang 停用后的请求准入
 
