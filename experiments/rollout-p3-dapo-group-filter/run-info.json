@@ -1,0 +1,45 @@
+{
+  "experiment": "P-3：C 类机制（DAPO 组过滤）的收敛净效应示范 —— 同 seed、开关 on/off",
+  "archive_rebuilt": "2026-11-01（复核批的可复跑化收口）",
+  "execution": {
+    "python": "3.9.6（macOS arm64，仅标准库；numpy 未使用）",
+    "commands": [
+      "python3 p3_group_filter_net_effect.py                      # 72.4 s，30 种子 × 300 步 × 5 模式",
+      "python3 lr_sensitivity.py                                  # 216.9 s，三档 lr 各一遍",
+      "python3 p3_group_filter_net_effect.py --verify summary.json # 通过：逐字段相同",
+      "python3 lr_sensitivity.py --verify                         # 通过：逐字段相同"
+    ],
+    "note": "两条 verify 都在本机重跑后执行，非仅比对同一份文件。所有随机性来自 random.Random(seed)，无进程级隐式随机源。 归档格式在收口过程中收紧过一次（逐种子由『每步三元组』改为『增量成本＋准确率序列』），收紧前后重建出的累计曲线逐位一致（0 差异）。"
+  },
+  "classification": "进程内 CPU 模拟；机制内核照 verl 源码抽取，但不是 verl 端到端，不是 GPU 实测。数字不可与论文报值相除（§19.1 规则一）。",
+  "artifacts": {
+    "sha256": {
+      "summary.json": "662682fc5200e15272d30a0eb8eda9c280836d1b7e38fc48fdb0b1db4553fdb9",
+      "lr_sensitivity.json": "0db9f6dd58f755097f2a8cabcc902cbfa2dfeec6af40400c7faf9cc5553f2d47",
+      "p3_group_filter_net_effect.py": "368d90548a98abdd89cd53ff2262bd4de1cdaa6242f572a1aba93eaa20977979",
+      "lr_sensitivity.py": "6218c1b6748c7dec65fcc7ef7949ea7a8e8a8f7c0630c8e98011cafe15b29e81"
+    },
+    "curve_format": "per_seed[] 存 step_costs（每步增量墙钟成本）与 step_has_update（该步是否有更新）以及 acc_curve（准确率，6 位小数），累计曲线可由前两者重建；modes[].curve 为跨种子平均的 [累计墙钟成本, 累计训练步成本, 准确率]。逐步成本与策略、采样无关，故只增量存档，体积从 O(种子×步×3) 降到 O(种子×步)。"
+  },
+  "source_provenance_check": {
+    "date": "2026-11-01",
+    "method": "只读。blobless 克隆 github.com/volcengine/verl（HEAD 8df5baee，3166 个提交）后按对象哈希遍历历史；未对上游做任何写操作。",
+    "resolved": [
+      "机制语义在 verl 主线可定位：`verl/trainer/ppo/v1/replay_buffer.py` 的 `_dapo_filtered_keys`（组内 DAPO 指标全同即判无信号）与 `_terminal_eviction_reasons`（三种终局逐出取并集后清空并补），feature 首见于 c88e875d『#7082 V1 replay buffer eviction/refill handling for stale, DAPO-filtered, and failed rollout groups』（2026-07-23）；随后 7cb65014『#7792 filter V1 DAPO groups by canonical reward by default』（2026-09-08）。本实验的『evict k, refill 2k』对照的是这两个提交里的 sync 档语义。",
+      "`verl/trainer/ppo/core_algos.py:268` 的 `compute_grpo_outcome_advantage` 组内归一（减均值、除 std+1e-6、单样本组 mean=0/std=1）在主 checkout `1a9e711e` 仍可读，与本实验 `grpo_advantages` 逐项一致。"
+    ],
+    "unresolved": [
+      "归档原记的 verl head `80ee82bd` 不在 volcengine/verl 历史内（`git rev-list --all | grep ^80ee82` 为 0），该标识无法解析到任何提交。",
+      "归档原记的三个 blob（`033e06aa`／`1998fb0b`／`8cfdb9e1`）同样在主干历史中检索不到；`verl/trainer/ppo/v1/replay_buffer.py` 首个版本出现在 2026-06-12 的 45632b5f，无法与 2026-03 的提交对应。",
+      "因此『机制内核取自哪一具体版本』只能按主线语义与 feature 提交确认，不能按归档哈希逐字节确认。readme 与主文档已按此改写，不再把本机无法解析的哈希当证据。"
+    ]
+  },
+  "reproducibility_fix_history": {
+    "2026-11-01_original": "首次归档只有 7 个 per_seed 汇总字段、不存逐步曲线；脚本含运行期死代码（`MODE_LENGTH_SIZE` 恒为 0、未被调用的 `rollout()` 与 `Batch.stats`），`lr_sensitivity.json` 无生成脚本。复核批据此把『两次独立运行逐位相同』降级为作者记录。",
+    "2026-11-01_fix": "清理死代码后先实跑一次，与旧归档逐字段比对为 0 差异（证明死代码路径从未执行），再重建归档。重建后 `--verify` 通过。"
+  },
+  "residual": [
+    "只有单机制示范；G2 表另外四个 C 机制（动态频率、成功回放、足数取消、cap 替换）未做同款对照。",
+    "端到端 on/off 需要真实 verl 训练，属 P-1 同栈横评，按分工在 M5 侧算力窗口执行。"
+  ]
+}

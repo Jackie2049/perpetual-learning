@@ -20,12 +20,17 @@ P-1（同栈横评）依赖多卡窗口、按分工属 M5 侧算力事项；P-2 
 
 ## 机制取自真实源码
 
-| 环节 | 出处（verl `80ee82bd` 本地 checkout） | blob |
-|---|---|---|
-| 组内优势 = 减均值／除 std(+1e-6) | `verl/trainer/ppo/core_algos.py:268` `compute_grpo_outcome_advantage` | `1998fb0b` |
-| 无信号判定 = 组内指标全同 | `verl/trainer/ppo/v1/replay_buffer.py:260` `_dapo_filtered_keys` | `033e06aa` |
-| 补偿 = sync "evict k, refill 2k" | `tests/trainer/ppo/v1/test_replay_buffer_on_cpu.py:1041` `test_sync_dapo_refills_twice_and_clears_surplus` | `8cfdb9e1` |
-| 配置面 | `algorithm.filter_groups.{enable, metric, max_num_gen_batches, max_inflight_gen_batches}` | — |
+| 环节 | 出处（verl 主线，只读核对于 2026-11-01） |
+|---|---|
+| 组内优势 = 减均值／除 std(+1e-6)，单样本组取 mean=0／std=1 | `verl/trainer/ppo/core_algos.py:268` `compute_grpo_outcome_advantage`（主 checkout `1a9e711e` 可读，逐项一致） |
+| 无信号判定 = 组内 DAPO 指标全同 | `verl/trainer/ppo/v1/replay_buffer.py` `_dapo_filtered_keys`（feature 首见 `c88e875d` #7082；`7cb65014` #7792 起默认按 canonical reward 过滤） |
+| 补偿 = sync "evict k, refill 2k" | 同文件 `_terminal_eviction_reasons`：陈旧／DAPO 过滤／失败三种终局取并集，清空后补 |
+| 配置面 | `algorithm.filter_groups.{enable, metric, max_num_gen_batches, max_inflight_gen_batches}` |
+
+**出处核对边界（2026-11-01 复核批）**：首次归档写的 verl head `80ee82bd` 与三个 blob（`033e06aa`／`1998fb0b`／`8cfdb9e1`）
+在 `volcengine/verl` 历史中**检索不到**，无法按哈希逐字节确认版本（该文件首版出现在 2026-06-12 的 `45632b5f`，
+与归档所指的 2026-03 提交对不上）。上表因此按**主线语义与 feature 提交**给出出处，不再把本机无法解析的哈希当证据；
+核对方法与全部未解项见 [run-info.json](run-info.json) 的 `source_provenance_check`。
 
 `filter_groups.enable` 默认 false，故"C 开关"在真实系统里就是这一个布尔量——这正是做 on/off 对照的天然接口。
 **注意**：本实验复刻的是判定与补偿的语义，不是 verl 的端到端训练；端到端未跑，也没有 Ray／vLLM／FSDP。
@@ -71,6 +76,7 @@ rollout 短时由 update 主导。不建模并发、排队与长尾。
 
 配对差值（同种子，30 对）：训练步成本到 0.9 的下降 C −63.5（95% CI ±12.9）、B −45.3（±13.7）、A +31.5（±12.9）。
 **2026-11-01 复核批订正**：C／B 两处 CI 原记 ±13.1／±14.0 为笔误，符号与量级不变；A 的 +31.5 是**训练步成本**差，不是墙钟差。复算细节见下节"复核"。
+同批复跑（清理死代码后重建归档）复现出上表全部数字，**结论未变**。
 
 **三条读数**：
 
@@ -97,13 +103,16 @@ rollout 短时由 update 主导。不建模并发、排队与长尾。
 
 **核验能证明什么、不能证明什么**：只能验证统计与内部一致性，**不能验证产物确实由本目录脚本产生**——
 
-1. 机制内核的源码出处**在本机不可复核**：主 checkout 的 verl 是 `1a9e711e`（`v0.8.0-182`），
-   `verl/trainer/ppo/v1/replay_buffer.py` 里已无 `_dapo_filtered_keys`；文中固定的 `80ee82bd` 与三个
-   blob（`033e06aa`／`1998fb0b`／`8cfdb9e1`）在本机没有对象，`git cat-file` 均报 Not a valid object name。
-2. `summary.json` 的 `per_seed` 只存 7 个汇总字段、不存逐步曲线，**无法重跑脚本做逐位比对**。
-3. 脚本本身有运行期死代码（`MODE_LENGTH_SIZE` 恒为 0、`rollout()` 与训练循环并存但只有后者被调用），
-   说明归档物是"结果＋可读脚本"，不是"一键复跑即得同值"的发布件。
-4. 因此下文"两次独立运行逐位相同"降级为**作者记录**，不再作为已验证事实引用。
+1. ~~机制内核的源码出处在本机不可复核~~ → **已按主线定位（2026-11-01 收口）**：归档原记的 `80ee82bd`
+   与三个 blob 确在 `volcengine/verl` 历史中检索不到，但机制本身可定位——`_dapo_filtered_keys` 首见
+   `c88e875d`（#7082）、其后 `7cb65014`（#7792）；`compute_grpo_outcome_advantage` 在主 checkout `1a9e711e`
+   逐项一致。**仍未解决的是"哪一具体版本"，不是"机制是否存在"**。
+2. ~~不存逐步曲线，无法逐位比对~~ → **已补（2026-11-01）**：`summary.json` 现存 30 个种子的逐步曲线，
+   脚本带 `--verify`，实跑核对通过。
+3. ~~脚本有运行期死代码~~ → **已清（2026-11-01）**：`MODE_LENGTH_SIZE`、未被调用的 `rollout()`／`Batch.stats`
+   已删；清理后先实跑一次与旧归档比对，**数值 0 差异**（证明死代码路径从未执行），再重建归档。
+4. "两次独立运行逐位相同"现为**已验证事实**：`python3 p3_group_filter_net_effect.py --verify summary.json`
+   与 `python3 lr_sensitivity.py --verify` 在本机重跑均逐字段相同。
 
 ## 边界与不成立的推论
 
@@ -124,26 +133,31 @@ C 类机制的净效应主要体现在**省生成量**而非**改收敛**，且�
 
 ```sh
 cd experiments/rollout-p3-dapo-group-filter
-python3 p3_group_filter_net_effect.py                 # 30 种子 × 300 步，约 75 秒，输出 summary.json
-python3 -c "import json;d=json.load(open('summary.json'));print(d['modes']['C']['acc_mean'])"
+python3 p3_group_filter_net_effect.py                        # 30 种子 × 300 步，约 72 秒，写 summary.json
+python3 p3_group_filter_net_effect.py --verify summary.json   # 重跑并与归档逐字段比对（不写文件）
+python3 lr_sensitivity.py                                     # 三档 lr，约 217 秒，写 lr_sensitivity.json
+python3 lr_sensitivity.py --verify                            # 同上，比对 lr 表
 ```
 
-仅用 Python 标准库（本机跑在 Python 3.9.6，numpy 未使用）。"两次独立运行关键字段逐位相同"是**作者记录**，2026-11-01 复核批未能复核（见上节"复核"第 4 条）。
-`summary.json` 保存 30 种子的逐项结果与平均收敛曲线，`lr_sensitivity.json` 保存 0.05/0.1/0.2 三档对比。
+仅用 Python 标准库（本机 Python 3.9.6，numpy 未使用）。两条 `--verify` 已于 2026-11-01 在本机重跑通过，
+执行条件与产物 sha256 记在 [run-info.json](run-info.json)。`summary.json` 保存 30 种子的逐项结果、**逐种子逐步曲线**（每步增量成本＋是否有更新＋准确率，累计值可重建）与跨种子平均曲线；`lr_sensitivity.json` 由 [lr_sensitivity.py](lr_sensitivity.py) 生成——
+这张表原先没有生成脚本，是本轮补的。
 
 ## 文件
 
 | 文件 | 内容 |
 |---|---|
-| [p3_group_filter_net_effect.py](p3_group_filter_net_effect.py) | 模拟器 + 实验驱动（单文件，仅标准库） |
-| [summary.json](summary.json) | 主结果：五模式 × 30 种子的终值、收敛速度、逐种子明细、平均曲线 |
-| [lr_sensitivity.json](lr_sensitivity.json) | 学习率 0.05／0.1／0.2 三档的稳健性对比 |
+| [p3_group_filter_net_effect.py](p3_group_filter_net_effect.py) | 模拟器 + 实验驱动（单文件，仅标准库；带 `--verify` 复跑核对） |
+| [summary.json](summary.json) | 主结果：五模式 × 30 种子的终值、收敛速度、逐种子明细与逐步曲线、平均曲线 |
+| [lr_sensitivity.py](lr_sensitivity.py) | 学习率敏感性驱动脚本（模型逻辑复用主脚本，不复制） |
+| [lr_sensitivity.json](lr_sensitivity.json) | 学习率 0.05／0.1／0.2 三档的稳健性对比（由上一条生成） |
+| [run-info.json](run-info.json) | 执行条件、命令、耗时、产物 sha256、源码出处核对结果与未解项 |
 
 ## 未做与下一步
 
 - 未跑任何 GPU 实验；与候选 A–E 的同栈锚点**不可换算**（一个是模拟器，一个是真实训练）。
 - 真正的可控验证需要 `filter_groups.enable` 的端到端 on/off，属于 P-1 同栈横评的一部分，按分工在 M5 侧算力窗口执行。
 - 本实验只有单机制；G2 表另外四篇的 C 机制（动态频率、成功回放、足数取消、cap 替换）没做同样对照。
-- **让归档可复跑**（2026-11-01 复核批识别出的缺口）：把逐步曲线写进 `summary.json`、清掉脚本里的死代码
-  （`MODE_LENGTH_SIZE`／未被调用的 `rollout()`）、并把机制内核的源码出处换成可核对的固定 URL 而非本机 commit——
-  做完之后"复跑即得同值"才能作为已验证事实引用。
+- ~~让归档可复跑~~ → **已于 2026-11-01 完成**：逐步曲线入档、死代码清除、`lr_sensitivity.py` 补生成脚本、
+  两条 `--verify` 实跑通过（见上文"复核"节与 [run-info.json](run-info.json)）。唯一剩下的出处缺口是
+  "归档原记的 commit／blob 无法解析"，已按可核实的主线 feature 提交改写表述。

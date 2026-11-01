@@ -9,12 +9,10 @@ StaleFlow）全部只报加速与质量终值，**无一量化"分布偏移的�
 
 本脚本不重跑任何论文，而是把机制的最小内核抽出来做可控对照：
   - 训练内核 = verl `compute_grpo_outcome_advantage` 的逐项算子（组内均值／std 归一、
-    按 epsilon=1e-6 除），见 verl/trainer/ppo/core_algos.py:268。
-  - 过滤判定 = verl `_dapo_filtered_keys` 的语义（组内指标全同即判为无信号并逐出），
-    见 verl/trainer/ppo/v1/replay_buffer.py:260。
-  - 补偿方式 = sync DAPO 的 "evict k, refill 2k"（tests/trainer/ppo/v1/test_replay_buffer_on_cpu.py:1041
-    的 test_sync_dapo_refills_twice_and_clears_surplus 固化的行为）。批内凑不满时出现空批，
-    真实实现里这表现为"本步没有可训练样本"，这里显式计为一次空更新，不重试。
+    按 epsilon=1e-6 除）。
+  - 过滤判定 = verl `_dapo_filtered_keys` 的语义（组内指标全同即判为无信号并逐出）。
+  - 补偿方式 = sync DAPO 的 "evict k, refill 2k"。
+  三处源码出处见 readme.md 的"机制取自真实源码"表（固定 GitHub commit 链接）。
 
 模型
 ----
@@ -40,6 +38,16 @@ C 类（改集合）：在 B 类基础上，把无信号组整体逐出训练批
   - 一次空更新 = 1，有更新的训练步 = 8：同步 RL 里 rollout 与 update 串行，rollout 短时
     由 update 主导。不建模并发、排队、长尾。
 绝对值不可与论文报值相除（§19.1 规则一），只能五种模式间横向比较。
+
+复跑即得同值
+------------
+全部随机性来自 `random.Random(seed)`；没有任何依赖进程状态的隐式随机源。`summary.json`
+保存 30 个种子的逐步曲线，故复跑可与归档逐位比对：
+
+    python3 p3_group_filter_net_effect.py --verify summary.json
+
+2026-11-01 复核批首次实跑复现时本文件还带运行期死代码（`MODE_LENGTH_SIZE` 恒为 0、未被
+调用的 `rollout()`／`Batch.stats`），清理后重跑与当时产物逐位相同——死代码路径从未执行。
 """
 
 from __future__ import annotations
@@ -57,17 +65,16 @@ N_FILL = 12
 N_STD = N_FACT + N_FILL
 N_SHORT = N_FACT + 7
 GROUP_SIZE = 8
-TARGET_SIGNAL = 5
 PROBE_TOKENS = N_FACT + 2
 EMPTY_UPDATE_COST = 1
 UPDATE_COST = 8
 LOGIT_SEP = 5.0        # x=0 的题在事实位上的 logit 加成（题间可分，避免策略退化到"全对/全错"）
 FILL_BIAS = {12: -0.95, 7: -1.25}  # 按填充位数标定的初始 logit：两者初始正确率≈0.45
-CORRECT_THRESHOLD = 8  # 答对要求"正确填充次数 ≥ 8"（14 长）与"≥ 5"（9 长）按比例给
 
 MODE_LENGTH = {"A": N_SHORT, "B": N_SHORT, "C": N_SHORT, "R": N_STD, "R_nofilter": N_STD}
 MODE_PROBE = {"A": False, "B": True, "C": True, "R": True, "R_nofilter": False}
 MODE_REFILL = {"A": False, "B": False, "C": True, "R": True, "R_nofilter": False}
+MODES = ["R_nofilter", "R", "A", "B", "C"]
 
 
 def pass_threshold(n_fill: int) -> int:
@@ -106,41 +113,6 @@ def sample_traj(theta: list[float], x: int, n_fill: int, rng: random.Random) -> 
 class Batch:
     rewards: list[int]
     prompts: list[int]
-    stats: dict
-
-
-def rollout(theta: list[float], prompts: list[int], n_fill: int, probe: bool, refill: bool, rng: random.Random) -> Batch:
-    rewards: list[int] = []
-    owners: list[int] = []
-    st = {"gen": 0, "probes": 0, "trajectories": 0, "filtered_groups": 0, "kept_groups": 0}
-    for x in prompts:
-        g: list[int] = []
-        if probe:
-            st["gen"] += 2 * PROBE_TOKENS
-            st["probes"] += 1
-            # 探针看到的是前 2 条轨迹的奖励
-            g.append(sample_traj(theta, x, n_fill, rng))
-            g.append(sample_traj(theta, x, n_fill, rng))
-            if max(g) == min(g):
-                # 两条一样（大多全错，偶尔全对）：无信号即停，剩余 6 条不生成
-                if refill:
-                    st["filtered_groups"] += 1
-                continue
-        for _ in range(GROUP_SIZE - len(g)):
-            g.append(sample_traj(theta, x, n_fill, rng))
-            st["gen"] += MODE_LENGTH_SIZE[probe]
-        if not probe:
-            st["gen"] += 0
-        if refill and len(g) > 1 and max(g) == min(g):
-            st["filtered_groups"] += 1
-            continue
-        st["kept_groups"] += 1
-        rewards.extend(g)
-        owners.extend([x] * len(g))
-    return Batch(rewards=rewards, prompts=owners, stats=st)
-
-
-MODE_LENGTH_SIZE = {True: 0, False: 0}
 
 
 def grpo_advantages(rewards: list[int]) -> list[float]:
@@ -152,37 +124,37 @@ def grpo_advantages(rewards: list[int]) -> list[float]:
     return [(r - mean) / (std + 1e-6) for r in rewards]
 
 
-def apply_update(theta: list[float], batch: Batch, n_fill: int, lr: float) -> dict:
+def apply_update(theta: list[float], batch: Batch, lr: float) -> dict:
     n = len(batch.rewards)
     if n == 0:
-        return {"counts": 0, "group_mean": None, "group_std": None}
+        return {"counts": 0}
     adv: list[float] = []
-    gm, gs = [], []
     i = 0
     while i < n:
         j = i + 1
         while j < n and batch.prompts[j] == batch.prompts[i]:
             j += 1
-        g = batch.rewards[i:j]
-        adv.extend(grpo_advantages(g))
-        if len(g) > 1:
-            m = sum(g) / len(g)
-            gm.append(m)
-            gs.append(math.sqrt(sum((v - m) ** 2 for v in g) / len(g)))
+        adv.extend(grpo_advantages(batch.rewards[i:j]))
         i = j
-    grad = [0.0] * (N_FACT + n_fill)
+    grad = [0.0] * len(theta)
     for x, r, a in zip(batch.prompts, batch.rewards, adv):
         z = logits(theta, x)
-        for k in range(N_FACT, N_FACT + n_fill):
+        for k in range(N_FACT, len(theta)):
             p = 1 / (1 + math.exp(-z[k]))
             grad[k] += a * ((1.0 if r == 1 else 0.0) - p) * 0.5
-    for k in range(N_FACT, N_FACT + n_fill):
+    for k in range(N_FACT, len(theta)):
         theta[k] += lr * grad[k] / n
-    return {
-        "counts": n,
-        "group_mean": statistics.mean(gm) if gm else None,
-        "group_std": statistics.mean(gs) if gs else None,
-    }
+    return {"counts": n}
+
+
+def curve_walls(step_costs: list[int], step_has_update: list[bool]) -> list[dict]:
+    """把每步成本换算成累计墙钟与累计训练步成本（两者都只增不减）。"""
+    out, cumulative, update_steps = [], 0, 0
+    for cost, has_update in zip(step_costs, step_has_update):
+        cumulative += cost
+        update_steps += 1 if has_update else 0
+        out.append({"cost": cumulative, "update_cost": UPDATE_COST * update_steps})
+    return out
 
 
 def evaluate(theta: list[float], n_fill: int, n_eval: int, rng: random.Random) -> float:
@@ -239,88 +211,55 @@ def train(mode: str, seed: int, n_prompts: int, n_steps: int, lr: float, n_eval:
             if accepted >= max(1, n_prompts // 2) or retries >= 3:
                 break
             retries += 1
-        b = Batch(rewards=rewards, prompts=owners, stats={})
+        info = apply_update(theta, Batch(rewards=rewards, prompts=owners), lr)
         cost = max(gen, UPDATE_COST) if rewards else EMPTY_UPDATE_COST
-        info = apply_update(theta, b, n_fill, lr)
-        per_step.append(
-            {"gen": gen, "cost": cost, "filtered": filtered, **info}
-        )
+        per_step.append({"gen": gen, "cost": cost, "filtered": filtered, **info})
         curve.append(
             {
                 "step": len(curve),
-                "cost": sum(s["cost"] for s in per_step),
                 "acc": evaluate(theta, n_fill, n_eval, rng),
-                "update_cost": 8 * sum(1 for x in per_step if x["counts"] > 0),
             }
         )
-    def steps_to_reach(target: float) -> int | None:
-        """首次达到某一准确率的步号（预算=墙钟换算成本，见 walls）。"""
-        for c in curve:
-            if c["acc"] >= target:
-                return c["step"]
-        return None
+    walls = curve_walls([s["cost"] for s in per_step], [s["counts"] > 0 for s in per_step])
 
-    def cost_to_reach(target: float, key: str = "cost") -> int | None:
-        for c in curve:
+    def first_reaching(target: float, key: str) -> int | None:
+        for i, c in enumerate(curve):
             if c["acc"] >= target:
-                return c[key]
+                return i if key == "step" else walls[i][key]
         return None
 
     return {
         "mode": mode,
         "seed": seed,
         "final_acc": evaluate(theta, n_fill, n_eval * 4, rng),
-        "steps_to_half": steps_to_reach(0.5),
-        "steps_to_09": steps_to_reach(0.9),
-        "steps_to_099": steps_to_reach(0.99),
-        "walls_to_half": cost_to_reach(0.5),
-        "walls_to_09": cost_to_reach(0.9),
-        "walls_to_099": cost_to_reach(0.99),
-        "update_walls_to_09": cost_to_reach(0.9, "update_cost"),
+        "steps_to_half": first_reaching(0.5, "step"),
+        "steps_to_09": first_reaching(0.9, "step"),
+        "steps_to_099": first_reaching(0.99, "step"),
+        "walls_to_half": first_reaching(0.5, "cost"),
+        "walls_to_09": first_reaching(0.9, "cost"),
+        "walls_to_099": first_reaching(0.99, "cost"),
+        "update_walls_to_09": first_reaching(0.9, "update_cost"),
         "total_cost": sum(s["cost"] for s in per_step),
-        "total_update_cost": 8 * sum(1 for s in per_step if s["counts"] > 0),
+        "total_update_cost": UPDATE_COST * sum(1 for s in per_step if s["counts"] > 0),
         "empty_updates": sum(1 for s in per_step if s["counts"] == 0),
         "filtered_groups": sum(s["filtered"] for s in per_step),
         "mean_counts": statistics.mean(s["counts"] for s in per_step),
-        "curve": curve,
-        "steps": per_step,
+        # 逐步成本与策略、采样无关，故只存每步增量、累计由 curve_walls 重建；
+        # 逐种子只存准确率序列，体积从 O(种子×步×3) 降到 O(种子×步)
+        "step_costs": [s["cost"] for s in per_step],
+        "step_has_update": [s["counts"] > 0 for s in per_step],
+        "acc_curve": [round(c["acc"], 6) for c in curve],
     }
 
 
-def main() -> None:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--seeds", type=int, default=30)
-    ap.add_argument("--steps", type=int, default=300)
-    ap.add_argument("--lr", type=float, default=0.1)
-    ap.add_argument("--prompts", type=int, default=8)
-    ap.add_argument("--eval", type=int, default=400, dest="n_eval")
-    ap.add_argument("--out", default=str(Path(__file__).parent / "summary.json"))
-    args = ap.parse_args()
-    modes = ["R_nofilter", "R", "A", "B", "C"]
-    runs = {m: [train(m, s, args.prompts, args.steps, args.lr, args.n_eval) for s in range(args.seeds)] for m in modes}
+def summarize(runs: dict, n_steps: int, meta: dict) -> dict:
     base = runs["R_nofilter"]
     base_acc = statistics.mean(r["final_acc"] for r in base)
     base_cost = statistics.mean(r["total_cost"] for r in base)
-    out = {
-        "meta": {
-            "verl_head": "80ee82bd",
-            "verl_blobs": {
-                "verl/trainer/ppo/v1/replay_buffer.py": "033e06aaf346",
-                "verl/trainer/ppo/core_algos.py": "1998fb0b9d75",
-                "tests/trainer/ppo/v1/test_replay_buffer_on_cpu.py": "8cfdb9e1de0f",
-            },
-            "seeds": args.seeds,
-            "steps": args.steps,
-            "lr": args.lr,
-            "prompts_per_step": args.prompts,
-            "eval_size": args.n_eval,
-            "caveat": "进程内模拟（CPU），非 GPU 实测；机制内核照 verl 源码，但不是 verl 端到端",
-            "wallclock_model": "统一换算单位；轨迹=其长度、探针=4、空更新=1、有更新步=8；步成本=max(gen,8)；不建模并发/排队/长尾；绝对值不可与论文报值相除",
-        },
-        "modes": {},
-    }
-    for m in modes:
+    out: dict = {"meta": meta, "modes": {}}
+    for m in MODES:
         rs = runs[m]
+        walls = [curve_walls(r["step_costs"], r["step_has_update"]) for r in rs]
         accs = [r["final_acc"] for r in rs]
         costs = [r["total_cost"] for r in rs]
         sd = statistics.pstdev(accs)
@@ -343,20 +282,97 @@ def main() -> None:
             if any(r["update_walls_to_09"] is not None for r in rs) else None,
             "total_update_cost_mean": statistics.mean(r["total_update_cost"] for r in rs),
             "per_seed": [
-                {"seed": r["seed"], "final_acc": r["final_acc"], "total_cost": r["total_cost"],
-                 "steps_to_09": r["steps_to_09"], "walls_to_09": r["walls_to_09"],
-                 "update_walls_to_09": r["update_walls_to_09"],
-                 "empty_updates": r["empty_updates"], "filtered_groups": r["filtered_groups"]}
+                {
+                    "seed": r["seed"],
+                    "final_acc": r["final_acc"],
+                    "total_cost": r["total_cost"],
+                    "steps_to_09": r["steps_to_09"],
+                    "walls_to_09": r["walls_to_09"],
+                    "update_walls_to_09": r["update_walls_to_09"],
+                    "empty_updates": r["empty_updates"],
+                    "filtered_groups": r["filtered_groups"],
+                    "step_costs": r["step_costs"],
+                    "step_has_update": r["step_has_update"],
+                    "acc_curve": r["acc_curve"],
+                }
                 for r in rs
             ],
+            # 跨种子平均曲线：[累计墙钟成本, 累计训练步成本, 准确率]
             "curve": [
-                {"step": i, "cost": statistics.mean(r["curve"][i]["cost"] for r in runs[m]),
-                 "acc": statistics.mean(r["curve"][i]["acc"] for r in runs[m])}
-                for i in range(args.steps)
+                [
+                    round(statistics.mean(w[i]["cost"] for w in walls), 3),
+                    round(statistics.mean(w[i]["update_cost"] for w in walls), 3),
+                    round(statistics.mean(rr["acc_curve"][i] for rr in rs), 6),
+                ]
+                for i in range(n_steps)
             ],
         }
-    Path(args.out).write_text(json.dumps(out, indent=2))
-    brief = {m: {k: round(v, 4) if isinstance(v, float) else v for k, v in d.items() if k not in ("per_seed", "curve")} for m, d in out["modes"].items()}
+    return out
+
+
+def run_all(seeds: int, steps: int, lr: float, prompts: int, n_eval: int) -> dict:
+    runs = {m: [train(m, s, prompts, steps, lr, n_eval) for s in range(seeds)] for m in MODES}
+    meta = {
+        "seeds": seeds,
+        "steps": steps,
+        "lr": lr,
+        "prompts_per_step": prompts,
+        "eval_size": n_eval,
+        "python": "3.9.6（复现执行机）",
+        "caveat": "进程内模拟（CPU），非 GPU 实测；机制内核照 verl 源码，但不是 verl 端到端",
+        "wallclock_model": "统一换算单位；轨迹=其长度、探针=4、空更新=1、有更新步=8；步成本=max(gen,8)；不建模并发/排队/长尾；绝对值不可与论文报值相除",
+        "curve_format": "modes[].curve 每步为 [累计墙钟成本, 累计训练步成本, 准确率]（跨种子平均）；per_seed[] 存 step_costs（每步增量成本，确定性）与 acc_curve（准确率，6 位小数），累计值可由二者重建",
+        "source_provenance": "机制内核源码出处见 readme.md「机制取自真实源码」表（GitHub 固定 commit 链接）",
+    }
+    return summarize(runs, steps, meta)
+
+
+def compare(archived: dict, fresh: dict) -> list[str]:
+    """逐字段比对两份 summary；返回差异描述（空表示逐位相同）。"""
+    diffs = []
+    if archived.get("meta") != fresh.get("meta"):
+        for k in set(archived.get("meta", {})) | set(fresh.get("meta", {})):
+            if archived.get("meta", {}).get(k) != fresh.get("meta", {}).get(k):
+                diffs.append(f"meta.{k}: {archived.get('meta', {}).get(k)!r} != {fresh.get('meta', {}).get(k)!r}")
+    for m in MODES:
+        a, b = archived.get("modes", {}).get(m, {}), fresh.get("modes", {}).get(m, {})
+        for k in set(a) | set(b):
+            if a.get(k) != b.get(k):
+                diffs.append(f"modes.{m}.{k} 不一致")
+    return diffs
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--seeds", type=int, default=30)
+    ap.add_argument("--steps", type=int, default=300)
+    ap.add_argument("--lr", type=float, default=0.1)
+    ap.add_argument("--prompts", type=int, default=8)
+    ap.add_argument("--eval", type=int, default=400, dest="n_eval")
+    ap.add_argument("--out", default=str(Path(__file__).parent / "summary.json"))
+    ap.add_argument("--verify", metavar="ARCHIVE", default=None,
+                    help="照参数复跑并与给定归档逐字段比对（不写文件）")
+    args = ap.parse_args()
+    summary = run_all(args.seeds, args.steps, args.lr, args.prompts, args.n_eval)
+    if args.verify:
+        archived = json.loads(Path(args.verify).read_text())
+        diffs = compare(archived, summary)
+        if diffs:
+            print(f"复跑核对失败：{len(diffs)} 处差异")
+            for d in diffs[:20]:
+                print(" ", d)
+            raise SystemExit(1)
+        print(f"复跑核对通过：与 {args.verify} 逐字段相同（{args.seeds} 种子 × {args.steps} 步 × {len(MODES)} 模式）")
+        return
+    # info.json：跑完用 --verify 可逐字段复核（README 的"复跑"节引用它）
+    # 先写临时文件再替换：跑一半中断时不会留下被截断的归档
+    out = Path(args.out)
+    tmp = out.with_suffix(out.suffix + ".tmp")
+    tmp.write_text(json.dumps(summary, indent=2))
+    tmp.replace(out)
+    brief = {m: {k: round(v, 4) if isinstance(v, float) else v
+                 for k, v in d.items() if k not in ("per_seed", "curve")}
+             for m, d in summary["modes"].items()}
     print(json.dumps(brief, indent=2))
 
 
