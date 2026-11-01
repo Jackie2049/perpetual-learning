@@ -1,6 +1,6 @@
 # verl Reward Integration 源码级深度阅读
 
-2026-11-01接续：[Minerva修订复核](#修订后的-minerva-边界)固定已有#8450新f5d5123：41原参数测试体全过／基线31断言失败，旧末尾星号误删、跨行及冒号前标签问题不再复现。下方10-30负例限旧e8快照；非原生pytest、manager或训练验收，不另修复／发布。
+2026-11-01接续：[句点清理与处理顺序](#句点清理与处理顺序)核#8450新增658a：完整原53项原生pytest通过、前版45过8失败；自编控制仍见尾空白／CRLF／强调内句点边界。旧f5的41项手动测试记录保留，不迁作本轮manager／训练或通用安全验收。
 
 2026-10-26状态纠正：[数学奖励候选关闭与方程后续](#候选关闭与方程后续)确认#8347关闭未合并、主线三个评分文件仍同旧基线；方程提取已有新贡献者认领，不把旧64项通过当成已部署修复。
 
@@ -116,6 +116,32 @@ Python3.12.14、标准库加载完整两版评分器；[新原测试](https://gi
 这仍是格式启发式：新测试明确把未闭合的单个前置`*`视为装饰，不能据此声称任意数学符号边界无损。41个原测试体与八个本地控制分开计数；修订模式两次新进程完整JSON一致，新增`--revised`而保留默认旧e8入口，旧结果JSON未覆盖。执行器变更的默认模式兼容检查与历史JSON完全相同，不计作新候选证据。
 
 复查：`python3.12 -B experiments/verl-math-dapo-markdown/verify.py /path/to/verl-git --revised`，需已有Git blob，脚本禁止lazy fetch。[新结果](../../experiments/verl-math-dapo-markdown/result-revised.json)含函数参数数目、八边界及hash：scorer `ca869f7eaa1a532bfa73aab19c610a77560722458bd87646dee4a72b831cb9af`，原测试 `55c9087466d87e36dd2af739d6047f5dce0d29ffce309d23b9f00f2c8649a631`。本机无依赖安装、verl父包／worker／设备／完整reward manager或训练，不外推数据集误判率或学习质量，不新增M5算力任务，也不向社区写入。
+
+### 句点清理与处理顺序
+
+**句点、尾空白与强调符号的清理不能任意交换顺序。** [#8450](https://github.com/verl-project/verl/pull/8450)于2026-11-01 08:23:25 UTC新增head `658a7781e8dbb35a6e1be1ee9f7fd33da237a702`，直接父版为上节f5d5123，读取时仍OPEN／非draft。API target base仍a08ea02a，GitHub compare确认实际共同祖先仍dc709afb（相对target ahead6／behind22）；不是本机修复或已合并主线行为。
+
+[新helper](https://github.com/verl-project/verl/blob/658a7781e8dbb35a6e1be1ee9f7fd33da237a702/verl/utils/reward_score/math_dapo.py)以`text.rstrip(".")`移除末尾整段ASCII句点，再调用旧Markdown去壳，最后normalizer；ground truth也先过句点helper。它不先去尾空白、不移除中文句号，且不会在强调去壳之后再执行一次句点清理。八个既有函数（包括normalizer、strict box、verify、compute_score和Markdown helper）相对f5的AST不变；新增效果来自`is_correct_minerva`的组合次序，而非这些函数被改写。
+
+[新复现脚本](../../experiments/verl-math-dapo-markdown/verify_period.py)保留完整原评分器和[完整原测试文件](https://github.com/verl-project/verl/blob/658a7781e8dbb35a6e1be1ee9f7fd33da237a702/tests/utils/reward_score/test_math_dapo_minerva_markdown_on_cpu.py)的字节、imports／decorators／断言，在每版新进程中原生pytest：dc709afb基线**14过39失败**、f5前版**45过8失败**、658a新head **53全过**，均无skip／error。旧16个测试函数AST未变，新12参数项中前版失败的是七种句末句点与一个带句点GT，四项答案内部表示已通过。Python3.12.13／pytest8.4.2；三份空包初始化文件只隔离verl父包启动，不是完整verl导入或repo conftest／reward manager测试。[结果与五份源码hash](../../experiments/verl-math-dapo-markdown/result-period.json)
+
+另以完整原`compute_score`做12个自编输入控制，部分结果如下，目标除注明外均为42：
+
+| 输入边界 | f5前版 | 658a新head | 范围 |
+|---|---|---|---|
+| `Answer: 42.`／`Answer: **42**.` | −1 | +1，pred=42 | 句点紧邻结尾、在强调外 |
+| `Answer: 42. `／句点后CRLF | −1 | −1，pred=42. | 空白在句点后，helper当时看不到末点 |
+| `Answer: **42.**` | −1 | −1，pred=42. | 去壳之后才露出句点 |
+| `Answer: $42.$` | +1 | +1 | 既有normalizer已将`.$`替为`$`，不是本次新增收益 |
+| `Answer: 42`，GT=`42.`／`42. ` | 均−1 | 分别+1／−1 | GT清理也受尾空白影响 |
+| 仅`\boxed{42}`，GT=`42.` | −1 | −1 | boxed后备仍按原GT精确比较 |
+| `Answer: .`后有正确box | −1，pred=. | +1，pred=42 | 空提取变INVALID，才释放后备 |
+
+明确错误但有效的`Answer: 41.`即使旁有正确box仍−1；strict boxed的`\boxed{42.}`对42也仍−1，不将Minerva规则外推到所有评分路径。五个直接helper控制另确认`42...→42`、`42. `不变、`42。`不变、`3.14`不变；`gt_need_extract=True`且GT为`\boxed{42.}`的一个控制由错变对。没有以这些有限输入认证通用数学等价、格式覆盖率或安全性。
+
+首次运行的自编预期曾把`$42.$`列为两版均拒绝，原函数实际两版都接受；追到既有SUBSTITUTIONS的`(".$", "$")`后纠正预期并重跑通过，未改评分器、原测试或把此差异计作候选回归。原53项包含旧单输入耗时断言，其通过不升级为通用ReDoS保证。普通人工review仅作者自评COMMENTED，不作独立批准，本日inline反馈读取为空；本轮没有发布发现或补丁。
+
+此题在纯CPU评分契约内收束，不涉及新GPU／NPU缺口或M5算力队列。旧e8／f5脚本与结果均保留；只追加新入口，不改M5专项／环境或拼入#8124 boxed方案。任何社区回复、issue、PR或已有PR的fork head推送仍须用户对该具体动作明确同意。
 
 ## boxed 答案的归一化与选择优先级
 

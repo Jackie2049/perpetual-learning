@@ -1,0 +1,286 @@
+{
+  "head": "658a7781e8dbb35a6e1be1ee9f7fd33da237a702",
+  "previous": "f5d5123b6d34ec1c10ed914b9bd8bab50d714fca",
+  "baseline": "dc709afb7a74fd2645640a4e5f2fdf40166b4fbb",
+  "environment": {
+    "python": "3.12.13",
+    "pytest": "8.4.2"
+  },
+  "source_sha256": {
+    "658a7781e8dbb35a6e1be1ee9f7fd33da237a702:tests/utils/reward_score/test_math_dapo_minerva_markdown_on_cpu.py": "68f006aec3a4ce76c71df32d2539d93ae0efae2ff15df96672c47b493ce280b0",
+    "f5d5123b6d34ec1c10ed914b9bd8bab50d714fca:tests/utils/reward_score/test_math_dapo_minerva_markdown_on_cpu.py": "55c9087466d87e36dd2af739d6047f5dce0d29ffce309d23b9f00f2c8649a631",
+    "dc709afb7a74fd2645640a4e5f2fdf40166b4fbb:verl/utils/reward_score/math_dapo.py": "a1943c1379313cbde933687a496bd3071f9f830cbbb70158e615d21cf31cf713",
+    "f5d5123b6d34ec1c10ed914b9bd8bab50d714fca:verl/utils/reward_score/math_dapo.py": "ca869f7eaa1a532bfa73aab19c610a77560722458bd87646dee4a72b831cb9af",
+    "658a7781e8dbb35a6e1be1ee9f7fd33da237a702:verl/utils/reward_score/math_dapo.py": "f26a05adc57ba0044811b7589d20348044504e20f9ae01eb7c8a530c5ab7a136"
+  },
+  "native_pytest_same_head_tests": {
+    "baseline": {
+      "counts": {
+        "total": 53,
+        "failed": 39,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 14
+      },
+      "returncode": 1,
+      "stdout": "FFFFFFFFFFFFFFFFFF.F..FFFFFFFFFFF.....F..FFFFFFF....F                    [100%]\n- generated xml file: <temporary-test-root>/report.xml -\n=========================== short test summary info ============================\nFAILED test_minerva.py::test_minerva_answer_with_markdown_emphasis_is_accepted[Let me solve it.\\n\\n**Answer:** 42]\nFAILED test_minerva.py::test_minerva_answer_with_markdown_emphasis_is_accepted[Let me solve it.\\n\\n**Answer:**\\n\\n42]\nFAILED test_minerva.py::test_minerva_answer_with_markdown_emphasis_is_accepted[Let me solve it.\\n\\nAnswer: **42**]\nFAILED test_minerva.py::test_minerva_answer_with_markdown_emphasis_is_accepted[Let me solve it.\\n\\nAnswer: *42*]\nFAILED test_minerva.py::test_minerva_answer_with_markdown_emphasis_is_accepted[Let me solve it.\\n\\n__Answer:__ 42]\nFAILED test_minerva.py::test_minerva_answer_with_markdown_emphasis_is_accepted[Let me solve it.\\n\\n`Answer:` 42]\nFAILED test_minerva.py::test_minerva_answer_with_markdown_emphasis_is_accepted[Let me solve it.\\n\\n`Answer:`\\n\\n42]\nFAILED test_minerva.py::test_minerva_answer_with_markdown_emphasis_is_accepted[Let me solve it.\\n\\n**Answer**: 42]\nFAILED test_minerva.py::test_minerva_answer_with_markdown_emphasis_is_accepted[Let me solve it.\\n\\nAnswer: **_42_**]\nFAILED test_minerva.py::test_minerva_extraction_strips_markdown_emphasis[Let me solve it.\\n\\n**Answer:** 42]\nFAILED test_minerva.py::test_minerva_extraction_strips_markdown_emphasis[Let me solve it.\\n\\n**Answer:**\\n\\n42]\nFAILED test_minerva.py::test_minerva_extraction_strips_markdown_emphasis[Let me solve it.\\n\\nAnswer: **42**]\nFAILED test_minerva.py::test_minerva_extraction_strips_markdown_emphasis[Let me solve it.\\n\\nAnswer: *42*]\nFAILED test_minerva.py::test_minerva_extraction_strips_markdown_emphasis[Let me solve it.\\n\\n__Answer:__ 42]\nFAILED test_minerva.py::test_minerva_extraction_strips_markdown_emphasis[Let me solve it.\\n\\n`Answer:` 42]\nFAILED test_minerva.py::test_minerva_extraction_strips_markdown_emphasis[Let me solve it.\\n\\n`Answer:`\\n\\n42]\nFAILED test_minerva.py::test_minerva_extraction_strips_markdown_emphasis[Let me solve it.\\n\\n**Answer**: 42]\nFAILED test_minerva.py::test_minerva_extraction_strips_markdown_emphasis[Let me solve it.\\n\\nAnswer: **_42_**]\nFAILED test_minerva.py::test_wrong_answer_with_markdown_emphasis_is_rejected\nFAILED test_minerva.py::test_leading_asterisk_is_treated_as_formatting - asse...\nFAILED test_minerva.py::test_markdown_marker_between_the_label_and_the_colon_is_accepted[**Answer**: 42]\nFAILED test_minerva.py::test_markdown_marker_between_the_label_and_the_colon_is_accepted[**Answer**:\\n\\n42]\nFAILED test_minerva.py::test_markdown_marker_between_the_label_and_the_colon_is_accepted[__Answer__: 42]\nFAILED test_minerva.py::test_nested_emphasis_wrappers_are_removed - assert Fa...\nFAILED test_minerva.py::test_wrapper_that_spans_the_label_and_the_answer_is_removed[__Answer: 42__]\nFAILED test_minerva.py::test_wrapper_that_spans_the_label_and_the_answer_is_removed[**Answer: 42**]\nFAILED test_minerva.py::test_wrapper_that_spans_the_label_and_the_answer_is_removed[*Answer: 42*]\nFAILED test_minerva.py::test_wrapper_that_spans_the_label_and_the_answer_is_removed[`Answer: 42`]\nFAILED test_minerva.py::test_wrapper_that_is_closed_by_the_label_is_not_stripped_from_the_answer[__Answer__: x__]\nFAILED test_minerva.py::test_wrapper_that_is_closed_by_the_label_is_not_stripped_from_the_answer[__Answer:__ x__]\nFAILED test_minerva.py::test_bare_answer_label_falls_back_to_the_boxed_answer\nFAILED test_minerva.py::test_minerva_answer_followed_by_a_sentence_period_is_accepted[Let me solve it.\\n\\nAnswer: 42.]\nFAILED test_minerva.py::test_minerva_answer_followed_by_a_sentence_period_is_accepted[Let me solve it.\\n\\n**Answer:** 42.]\nFAILED test_minerva.py::test_minerva_answer_followed_by_a_sentence_period_is_accepted[Let me solve it.\\n\\nAnswer: **42**.]\nFAILED test_minerva.py::test_minerva_answer_followed_by_a_sentence_period_is_accepted[Let me solve it.\\n\\n**Answer: 42**.]\nFAILED test_minerva.py::test_minerva_answer_followed_by_a_sentence_period_is_accepted[Let me solve it.\\n\\n__Answer:__ 42.]\nFAILED test_minerva.py::test_minerva_answer_followed_by_a_sentence_period_is_accepted[Let me solve it.\\n\\nAnswer: `42`.]\nFAILED test_minerva.py::test_minerva_answer_followed_by_a_sentence_period_is_accepted[Let me solve it.\\n\\nAnswer: *42*.]\nFAILED test_minerva.py::test_a_ground_truth_with_a_trailing_period_still_matches\n39 failed, 14 passed in 0.05s\n",
+      "stderr": ""
+    },
+    "previous": {
+      "counts": {
+        "total": 53,
+        "failed": 8,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 45
+      },
+      "returncode": 1,
+      "stdout": ".........................................FFFFFFF....F                    [100%]\n- generated xml file: <temporary-test-root>/report.xml -\n=========================== short test summary info ============================\nFAILED test_minerva.py::test_minerva_answer_followed_by_a_sentence_period_is_accepted[Let me solve it.\\n\\nAnswer: 42.]\nFAILED test_minerva.py::test_minerva_answer_followed_by_a_sentence_period_is_accepted[Let me solve it.\\n\\n**Answer:** 42.]\nFAILED test_minerva.py::test_minerva_answer_followed_by_a_sentence_period_is_accepted[Let me solve it.\\n\\nAnswer: **42**.]\nFAILED test_minerva.py::test_minerva_answer_followed_by_a_sentence_period_is_accepted[Let me solve it.\\n\\n**Answer: 42**.]\nFAILED test_minerva.py::test_minerva_answer_followed_by_a_sentence_period_is_accepted[Let me solve it.\\n\\n__Answer:__ 42.]\nFAILED test_minerva.py::test_minerva_answer_followed_by_a_sentence_period_is_accepted[Let me solve it.\\n\\nAnswer: `42`.]\nFAILED test_minerva.py::test_minerva_answer_followed_by_a_sentence_period_is_accepted[Let me solve it.\\n\\nAnswer: *42*.]\nFAILED test_minerva.py::test_a_ground_truth_with_a_trailing_period_still_matches\n8 failed, 45 passed in 0.10s\n",
+      "stderr": ""
+    },
+    "period_head": {
+      "counts": {
+        "total": 53,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 53
+      },
+      "returncode": 0,
+      "stdout": ".....................................................                    [100%]\n- generated xml file: <temporary-test-root>/report.xml -\n53 passed in 0.03s\n",
+      "stderr": ""
+    }
+  },
+  "old_test_function_ast_retained": 16,
+  "unchanged_scorer_helpers_previous_to_head": [
+    "_marker_run",
+    "_strip_markdown_emphasis",
+    "compute_score",
+    "is_correct_strict_box",
+    "last_boxed_only_string",
+    "normalize_final_answer",
+    "remove_boxed",
+    "verify"
+  ],
+  "own_public_entry_controls": [
+    {
+      "name": "plain_period",
+      "text": "Answer: 42.",
+      "ground_truth": "42",
+      "strict": false,
+      "previous": {
+        "score": -1.0,
+        "acc": false,
+        "pred": "42."
+      },
+      "period_head": {
+        "score": 1.0,
+        "acc": true,
+        "pred": "42"
+      }
+    },
+    {
+      "name": "period_then_space",
+      "text": "Answer: 42. ",
+      "ground_truth": "42",
+      "strict": false,
+      "previous": {
+        "score": -1.0,
+        "acc": false,
+        "pred": "42."
+      },
+      "period_head": {
+        "score": -1.0,
+        "acc": false,
+        "pred": "42."
+      }
+    },
+    {
+      "name": "period_then_crlf",
+      "text": "Answer: 42.\r\n",
+      "ground_truth": "42",
+      "strict": false,
+      "previous": {
+        "score": -1.0,
+        "acc": false,
+        "pred": "42."
+      },
+      "period_head": {
+        "score": -1.0,
+        "acc": false,
+        "pred": "42."
+      }
+    },
+    {
+      "name": "period_inside_bold",
+      "text": "Answer: **42.**",
+      "ground_truth": "42",
+      "strict": false,
+      "previous": {
+        "score": -1.0,
+        "acc": false,
+        "pred": "42."
+      },
+      "period_head": {
+        "score": -1.0,
+        "acc": false,
+        "pred": "42."
+      }
+    },
+    {
+      "name": "period_outside_bold",
+      "text": "Answer: **42**.",
+      "ground_truth": "42",
+      "strict": false,
+      "previous": {
+        "score": -1.0,
+        "acc": false,
+        "pred": "42**."
+      },
+      "period_head": {
+        "score": 1.0,
+        "acc": true,
+        "pred": "42"
+      }
+    },
+    {
+      "name": "period_inside_math_dollars",
+      "text": "Answer: $42.$",
+      "ground_truth": "42",
+      "strict": false,
+      "previous": {
+        "score": 1.0,
+        "acc": true,
+        "pred": "42"
+      },
+      "period_head": {
+        "score": 1.0,
+        "acc": true,
+        "pred": "42"
+      }
+    },
+    {
+      "name": "target_period_then_space",
+      "text": "Answer: 42",
+      "ground_truth": "42. ",
+      "strict": false,
+      "previous": {
+        "score": -1.0,
+        "acc": false,
+        "pred": "42"
+      },
+      "period_head": {
+        "score": -1.0,
+        "acc": false,
+        "pred": "42"
+      }
+    },
+    {
+      "name": "target_period",
+      "text": "Answer: 42",
+      "ground_truth": "42.",
+      "strict": false,
+      "previous": {
+        "score": -1.0,
+        "acc": false,
+        "pred": "42"
+      },
+      "period_head": {
+        "score": 1.0,
+        "acc": true,
+        "pred": "42"
+      }
+    },
+    {
+      "name": "boxed_route_with_target_period",
+      "text": "\\boxed{42}",
+      "ground_truth": "42.",
+      "strict": false,
+      "previous": {
+        "score": -1.0,
+        "acc": false,
+        "pred": "42"
+      },
+      "period_head": {
+        "score": -1.0,
+        "acc": false,
+        "pred": "42"
+      }
+    },
+    {
+      "name": "strict_box_does_not_strip_period",
+      "text": "\\boxed{42.}",
+      "ground_truth": "42",
+      "strict": true,
+      "previous": {
+        "score": -1.0,
+        "acc": false,
+        "pred": "42."
+      },
+      "period_head": {
+        "score": -1.0,
+        "acc": false,
+        "pred": "42."
+      }
+    },
+    {
+      "name": "wrong_minerva_still_blocks_box",
+      "text": "Answer: 41.\n\\boxed{42}",
+      "ground_truth": "42",
+      "strict": false,
+      "previous": {
+        "score": -1.0,
+        "acc": false,
+        "pred": "41."
+      },
+      "period_head": {
+        "score": -1.0,
+        "acc": false,
+        "pred": "41"
+      }
+    },
+    {
+      "name": "dot_only_answer_releases_box_fallback",
+      "text": "Answer: .\n\\boxed{42}",
+      "ground_truth": "42",
+      "strict": false,
+      "previous": {
+        "score": -1.0,
+        "acc": false,
+        "pred": "."
+      },
+      "period_head": {
+        "score": 1.0,
+        "acc": true,
+        "pred": "42"
+      }
+    }
+  ],
+  "own_direct_helper_controls": {
+    "42.": "42",
+    "42...": "42",
+    "42. ": "42. ",
+    "42。": "42。",
+    "3.14": "3.14"
+  },
+  "own_extracted_gt_control": {
+    "previous": [
+      false,
+      "42"
+    ],
+    "period_head": [
+      true,
+      "42"
+    ]
+  },
+  "scope": {
+    "original": "complete stdlib scorer and complete byte-identical head tests, native pytest in fresh process per revision",
+    "isolation": "three empty package initializers; no verl package startup/conftest",
+    "not_run": [
+      "reward manager",
+      "model/rollout/training",
+      "arbitrary regex or general ReDoS proof",
+      "GPU/NPU/server access"
+    ]
+  }
+}
