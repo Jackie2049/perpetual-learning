@@ -202,6 +202,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [verl #6717 — Tinker Training Worker Primitives Source Reading](verl-6717-tinker-training-worker-reading.md)
 - [verl #6765 — Per-Step Optimizer Overrides (OptimStepParams) Reading](verl-6765-optim-step-params-reading.md)
 - [verl PR #6779 — Continuous Token for Agentic Rollout (Multi-Turn Tokenization Builder)](verl-6779-continuous-token-agentic-rollout-reading.md)
+- [空首轮响应的切分边界](verl-6779-continuous-token-agentic-rollout-reading.md#17-空首轮响应的切分边界)：#8479原两回归体在输出属性接缝下基线1过1失败／候选2过，CT正确保留runtime不保护最终切片；空列表不等全零mask，非引擎取消／reward验收。
 - [verl 新版 CT tokenizer 回退](verl-6779-continuous-token-agentic-rollout-reading.md#11-新版自动选择与-tokenizer-能力回退)：#8311原172项CPU对照，架构/标记存在性与真实多轮边界分开；旧开关和名称启发式不沿用。
 - [verl 多轮 SFT 的上下文与监督边界](verl-6779-continuous-token-agentic-rollout-reading.md#12-多轮-sft-的上下文与监督边界)：#7807已有#8197；前缀稳定、整段IDs与loss mask分开，四次compile非真实tokenizer或训练验收，不与运行时CT混用。
 - [仅 system 消息的输入契约](verl-6779-continuous-token-agentic-rollout-reading.md#14-仅-system-消息的输入契约)：#7798维护者要求至少一条user；当前VL CT仍有wrapper调用点，不能据旧评论排除，也不据此扩大支持或复用未合并#7726。

@@ -269,6 +269,8 @@ ModelOpt忽略规则参考（2026-10-22，同一量化入口不另排队）：�
 
 ## verl 异步策略一致性补证
 
+空工具首轮参考（2026-11-01，同一入口、不新增队列或代表接单）：[#8479](https://github.com/verl-project/verl/pull/8479) head1fcab32aecf3a7dc9cc4198fc31504df2dd11f0f／base及祖先8df5baee；[M1原状态机／CT与两回归体](../notebook/frameworks/verl-6779-continuous-token-agentic-rollout-reading.md#17-空首轮响应的切分边界)在输出属性接缝下基线1过1失败／候选2过，非Pydantic／真实server或reward验收。若M5未来已有获准匹配ToolAgentLoop任务且独立选用，先核实际空TokenOutput来源、prompt／response／mask／logprob和stop_reason，再只读观察已有后处理／reward／指标是否保留空结果、如何处理非空aborted前缀；不据loss mask零推断没有prompt污染。缺既有安全匹配环境／模型／权限／预算、需部署或影响专项即停记未测；不得为复现自动pause／abort现有请求、触发weight sync、应用候选或新启训练。社区及既有PR-head写入仍逐项须用户明确同意，M1不探测服务器。
+
 IcePop几何均值参考（2026-11-01，同一入口、非新队列／接单）：[#8421](https://github.com/verl-project/verl/pull/8421) headaa5c8c03／base2ab35292；[M1五组原loss自编CPU autograd](../notebook/frameworks/verl-remax-icepop-source-reading.md#icepop-拒绝与几何均值的分母)用固定权重、namespace配置，未跑IcePop生产者／原回归或训练。目的为未来已有获准匹配任务中区分IS零权重、loss_mask／原response长度、sequence优势和诊断mask。M1不探测服务器；M5仅独立选用安全可用且不影响专项的既有任务，先核实际版本／weight生成阈值及零位置、同token logprob、序列优势、原L及最终batch／DP分母，再在原获准预算核同批loss／完整梯度；非单位保留权重时梯度比不保证1，诊断变化不等于拒绝梯度泄漏。缺既有匹配数据／权限／资源，需新部署／下载／训练或影响专项即停记未测，不应用或拼#7916等归约候选／改配方。社区及既有PR-head写入仍逐项须用户明确同意。
 
 GPG尺度参考（2026-11-01，复用本一致性入口、非新队列／接单）：[#8422](https://github.com/verl-project/verl/pull/8422) head7f38292d／base2ab35292；[M1原八CPU参数体](../notebook/frameworks/verl-grpo-core-algos-reading.md#gpg-的组计数与批次缩放)基线2过6失败／候选8过，另有三组数值边界；未跑actor／梯度或设备。目的为日后已有获准匹配GPG任务中区分batch组计数、最终mask／归约分母和真实更新尺度。M1不访问服务器；M5仅安全且不影响专项时独立选用，先只读对齐实际版本、同批score／UID／mask、singleton／f_norm、alpha计算范围及最终token／sequence分母，再在原获准预算核同批梯度／norm；17行同分FP32残差不是训练退化证明。缺已有数据／配方／资源授权、需新训练／改配置／下载部署或影响专项即停记未测，不应用／拼GRPO清零或改变现有任务。社区及既有PR-head写入仍逐项须用户明确同意。

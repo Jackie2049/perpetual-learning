@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-empty-tool-response/verify.py](verl-empty-tool-response/verify.py) | #8479原状态机／CT接原两unittest体，基线1过1失败／候选2过；[结果](verl-empty-tool-response/result.json)另核三组异步／全零mask切分。输出属性载体非Pydantic，非真实取消／reward或训练 | [空首轮切分](../notebook/frameworks/verl-6779-continuous-token-agentic-rollout-reading.md#17-空首轮响应的切分边界) |
 | [verl-r2-padding-balance/verify.py](verl-r2-padding-balance/verify.py) | #7524原helper／三个原CPU参数体手动通过；[结果](verl-r2-padding-balance/result.json)另核三组唯一token–expert计数、无padding和八guard表达式；非packing／MCore dispatch或显存性能 | [R2 padding 负载与总分配](../notebook/frameworks/verl-transferqueue-worker-lifecycle-deep-reading.md#r2-padding-的专家负载与总分配) |
 | [verl-geo-mean-rejection/verify.py](verl-geo-mean-rejection/verify.py) | #8421原两版geo_mean／masked helper五自编CPU autograd控制，[结果](verl-geo-mean-rejection/result.json)核拒绝梯度／原分母／诊断；固定权重非IcePop生产者或原测试，非训练 | [拒绝与几何均值分母](../notebook/frameworks/verl-remax-icepop-source-reading.md#icepop-拒绝与几何均值的分母) |
 | [verl-gpg-group-scale/verify.py](verl-gpg-group-scale/verify.py) | #8422原八CPU参数体：基线2过6失败／候选8过；[结果](verl-gpg-group-scale/result.json)另核三组全等舍入／组内零优势／mask计数边界，无actor loss或训练 | [GPG组计数与缩放](../notebook/frameworks/verl-grpo-core-algos-reading.md#gpg-的组计数与批次缩放) |

@@ -1,5 +1,7 @@
 # verl PR #6779 — Continuous Token for Agentic Rollout (Multi-Turn Tokenization Builder)
 
+2026-11-01接续：[空首轮响应的切分边界](#17-空首轮响应的切分边界)：#8479原两回归体在属性输出接缝下基线1过1失败／候选2过；空列表不等全零mask，守住切分不等真实引擎取消或reward验收。
+
 2026-10-30接续：[启动时模板接缝检查](#16-启动时模板接缝检查)：新#8463把旧sanity开关接到固定对话回放，非逐轨迹比较；历史差异和全部跳过只告警。五个原分类器控制、两种停点与全跳过路径不等真实tokenizer或训练验收。
 
 > 版本提示：下方主体是2026-06-19的#6779历史阅读。2026-10-21核对的#8311源码已采用根model_type精确注册表，AgentLoop以CT作为唯一tokenization路径；旧“默认关闭”和模型名启发式选择不适用于该新版。新增CPU验证与回退边界见[第11节](#11-新版自动选择与-tokenizer-能力回退)。
@@ -1105,3 +1107,26 @@ strict只因boundary抛错，history保留并告警；ignore_strippable会容忍
 Python3.12.13标准库，四份完整源码内存compile；保留原checker全部常量／函数，只省略相对类型导入，并从原continuous_token.py提取完整MergeResult dataclass。五个分类输入使用显式字符decoder，另两项原_simulate_generation断言分别核轮末stop与下轮role stop；全跳过控制的builder是明确失败夹具，不是模型或CT替代实现。两次新进程完整stdout相同，hash及命令见[实验说明](../../experiments/verl-ct-fallback/readme.md#模板接缝分类器的局部控制)。
 
 没有执行原184／40项、真实HF tokenizer／processor、AgentLoopWorker或GRPO；作者这些自测及真实模型表均属外部报告。旧#8311的172项不重跑或累计为本轮结果。第15节的“活跃路径没有消费”限旧3c6d快照；新候选已提出不同的启动检查契约，但尚不能写成主线已接线、逐轨迹校验或use_inference_chat_template也已生效。不竞争实现、改开关／M5环境或新增设备任务；上游写入仍逐项待用户明确同意。
+
+## 17. 空首轮响应的切分边界
+
+**CT 保留了正确的 runtime token，不代表最终 prompt／response 切分就正确。** arun-elr的[#8479](https://github.com/verl-project/verl/pull/8479)对应[#8478](https://github.com/verl-project/verl/issues/8478)，2026-11-01读取OPEN／非draft，head `1fcab32aecf3a7dc9cc4198fc31504df2dd11f0f`，API目标base与实际共同祖先均为 `8df5baeed0f5ecdd7f870d83bc3d79194816e2a9`。两文件只改ToolAgentLoop最终response切片并添两条CPU测试；已有作者，不另立修复。
+
+[原run与生成状态](https://github.com/verl-project/verl/blob/1fcab32aecf3a7dc9cc4198fc31504df2dd11f0f/verl/experimental/agent_loop/tool_agent_loop.py)从prompt构建runtime，再经CT追加生成ID。首轮返回空列表时，runtime仍为prompt，response_mask为空；旧`runtime[-len(response_mask):]`等于`runtime[-0:]`，取出全部prompt，随后才按response_length截短。prompt切片自身仍正确。候选在mask为空时直接返回`[]`，与[同版SingleTurn](https://github.com/verl-project/verl/blob/1fcab32aecf3a7dc9cc4198fc31504df2dd11f0f/verl/experimental/agent_loop/single_turn_agent_loop.py)现有guard一致。
+
+### 空列表与全零掩码
+
+[复查脚本](../../experiments/verl-empty-tool-response/verify.py)装配两版完整原AgentState／AgentData／ToolAgentLoop类、五个原base方法与完整原CT基础builder／MergeResult，通过unittest收集并执行[原两回归体及原server／parser夹具](https://github.com/verl-project/verl/blob/1fcab32aecf3a7dc9cc4198fc31504df2dd11f0f/tests/experimental/agent_loop/test_tool_agent_loop_empty_response_on_cpu.py)。prompt固定`[11,12,13,14,15]`，测试factory绕过初始化；TokenOutput与AgentLoopOutput使用显式属性载体，timer为nullcontext，省略注册／tracing，不验证Pydantic schema。Python3.9.6，无新增依赖。
+
+| 原测试输入 | 基线结果 | 候选结果 |
+|---|---|---|
+| 首轮ids=[]、logprobs=None、aborted | 空响应断言失败，response误含prompt | response／mask为空，logprobs=None，prompt不变，num_turns=2 |
+| 首轮ids=[21,22,23]、三个logprobs | 通过 | 通过，ID／mask／logprobs保留 |
+
+三组自编异步控制分别核空token且stop_reason=None、非空但aborted且response_length=2、非空且无logprobs。空token不需要aborted标签也触发旧问题；非空aborted仍保留生成前缀`[21,22]`及对应mask／logprobs，补丁没有定义重试／丢弃策略。另执行两条原finalizer赋值，给runtime=`[11,12,91,92]`、mask=`[0,0]`时，两版均保留response=`[91,92]`。列表非空表示已有两行上下文，mask值为0只表示不属于模型生成loss位；不能把guard改读成`any(mask)`或按mask之和切token。
+
+### 引擎输出与下游消费
+
+[vLLM server](https://github.com/verl-project/verl/blob/1fcab32aecf3a7dc9cc4198fc31504df2dd11f0f/verl/workers/rollout/vllm_rollout/vllm_async_server.py)在final_res.outputs为空，或提交暂停且拒绝请求时，确有空TokenOutput／aborted分支；这是源码条件，不是本机发动pause／weight sync。[worker后处理](https://github.com/verl-project/verl/blob/1fcab32aecf3a7dc9cc4198fc31504df2dd11f0f/verl/experimental/agent_loop/agent_loop.py)分别由response IDs构造attention mask、由response_mask构造loss mask；因此loss位全零并不能自动删除误放入的prompt。异步_compute_score另按实际response_ids和长度构批，具体reward、解码／指标影响仍取决于消费路径，不从作者报告直接外推所有任务。
+
+运行`python3 experiments/verl-empty-tool-response/verify.py /path/to/verl-git`，需预缓存固定blob、执行禁lazy fetch；[JSON](../../experiments/verl-empty-tool-response/result.json)保存七个版本／路径hash、原测试失败栈和自编控制。原模块导入、Pydantic校验、真实tokenizer／模板、工具执行、多轮、worker后处理／reward、Ray与引擎取消／训练均未执行；作者234项相关测试不计本机通过数。初始化harness漏导Literal导致NameError，补上标准库导入后通过，非候选缺陷；首版与候选CT／base模块hash相同。真实引擎缺口沿[原M5条件参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)保留，不新排GPU任务或改M5环境。

@@ -1,0 +1,176 @@
+{
+  "base": "8df5baeed0f5ecdd7f870d83bc3d79194816e2a9",
+  "head": "1fcab32aecf3a7dc9cc4198fc31504df2dd11f0f",
+  "actual_merge_base": "8df5baeed0f5ecdd7f870d83bc3d79194816e2a9",
+  "python": "3.9.6",
+  "source_sha256": {
+    "8df5baeed0f5ecdd7f870d83bc3d79194816e2a9:verl/utils/tokenizer/continuous_token.py": "1943099099f30b6a47e146ec8af7053be215d03bf23dd8776083712b2a2d01c0",
+    "8df5baeed0f5ecdd7f870d83bc3d79194816e2a9:verl/experimental/agent_loop/agent_loop.py": "e931a80ca4740c18ad8b6b2f9c01e8cd78d1c42c8fe2a491fe21845ecc69cb57",
+    "8df5baeed0f5ecdd7f870d83bc3d79194816e2a9:verl/experimental/agent_loop/tool_agent_loop.py": "c6025fe19ea29151e1926538be8de0d45785e4f2152e54b71e2639f8a0a9ff78",
+    "1fcab32aecf3a7dc9cc4198fc31504df2dd11f0f:tests/experimental/agent_loop/test_tool_agent_loop_empty_response_on_cpu.py": "13ca4a5d0db406fc5a2ab8275ef5e442e44984d9e054f0a04410b0d4db22ee20",
+    "1fcab32aecf3a7dc9cc4198fc31504df2dd11f0f:verl/utils/tokenizer/continuous_token.py": "1943099099f30b6a47e146ec8af7053be215d03bf23dd8776083712b2a2d01c0",
+    "1fcab32aecf3a7dc9cc4198fc31504df2dd11f0f:verl/experimental/agent_loop/agent_loop.py": "e931a80ca4740c18ad8b6b2f9c01e8cd78d1c42c8fe2a491fe21845ecc69cb57",
+    "1fcab32aecf3a7dc9cc4198fc31504df2dd11f0f:verl/experimental/agent_loop/tool_agent_loop.py": "1a2feb21eedbb0049ed89540e657b7163f186f9ba4b0256fdd44798fb7e651af"
+  },
+  "original_unittest_bodies": {
+    "8df5baeed0f5ecdd7f870d83bc3d79194816e2a9": {
+      "tests_run": 2,
+      "passed": 1,
+      "failures": [
+        {
+          "test": "test_empty_first_turn_keeps_prompt_out_of_response",
+          "traceback": "Traceback (most recent call last):\n  File \"/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/async_case.py\", line 65, in _callTestMethod\n    self._callMaybeAsync(method)\n  File \"/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/async_case.py\", line 88, in _callMaybeAsync\n    return self._asyncioTestLoop.run_until_complete(fut)\n  File \"/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/asyncio/base_events.py\", line 642, in run_until_complete\n    return future.result()\n  File \"/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/unittest/async_case.py\", line 102, in _asyncioLoopRunner\n    ret = await awaitable\n  File \"original_ast\", line 80, in test_empty_first_turn_keeps_prompt_out_of_response\nAssertionError\n"
+        }
+      ]
+    },
+    "1fcab32aecf3a7dc9cc4198fc31504df2dd11f0f": {
+      "tests_run": 2,
+      "passed": 2,
+      "failures": []
+    }
+  },
+  "own_async_controls": {
+    "8df5baeed0f5ecdd7f870d83bc3d79194816e2a9": [
+      {
+        "token_ids": [],
+        "stop_reason": null,
+        "cap": 2,
+        "response_ids": [
+          11,
+          12
+        ],
+        "mask": [],
+        "logprobs": null,
+        "num_turns": 2
+      },
+      {
+        "token_ids": [
+          21,
+          22,
+          23
+        ],
+        "stop_reason": "aborted",
+        "cap": 2,
+        "response_ids": [
+          21,
+          22
+        ],
+        "mask": [
+          1,
+          1
+        ],
+        "logprobs": [
+          -0.1,
+          -0.2
+        ],
+        "num_turns": 2
+      },
+      {
+        "token_ids": [
+          21,
+          22,
+          23
+        ],
+        "stop_reason": null,
+        "cap": 8,
+        "response_ids": [
+          21,
+          22,
+          23
+        ],
+        "mask": [
+          1,
+          1,
+          1
+        ],
+        "logprobs": null,
+        "num_turns": 2
+      }
+    ],
+    "1fcab32aecf3a7dc9cc4198fc31504df2dd11f0f": [
+      {
+        "token_ids": [],
+        "stop_reason": null,
+        "cap": 2,
+        "response_ids": [],
+        "mask": [],
+        "logprobs": null,
+        "num_turns": 2
+      },
+      {
+        "token_ids": [
+          21,
+          22,
+          23
+        ],
+        "stop_reason": "aborted",
+        "cap": 2,
+        "response_ids": [
+          21,
+          22
+        ],
+        "mask": [
+          1,
+          1
+        ],
+        "logprobs": [
+          -0.1,
+          -0.2
+        ],
+        "num_turns": 2
+      },
+      {
+        "token_ids": [
+          21,
+          22,
+          23
+        ],
+        "stop_reason": null,
+        "cap": 8,
+        "response_ids": [
+          21,
+          22,
+          23
+        ],
+        "mask": [
+          1,
+          1,
+          1
+        ],
+        "logprobs": null,
+        "num_turns": 2
+      }
+    ]
+  },
+  "own_all_zero_mask_finalizer": {
+    "8df5baeed0f5ecdd7f870d83bc3d79194816e2a9": {
+      "prompt_ids": [
+        11,
+        12
+      ],
+      "response_ids": [
+        91,
+        92
+      ],
+      "mask": [
+        0,
+        0
+      ]
+    },
+    "1fcab32aecf3a7dc9cc4198fc31504df2dd11f0f": {
+      "prompt_ids": [
+        11,
+        12
+      ],
+      "response_ids": [
+        91,
+        92
+      ],
+      "mask": [
+        0,
+        0
+      ]
+    }
+  },
+  "scope": "Original AgentData/AgentState/ToolAgentLoop class (registration and run tracing decorators removed), five original base methods, full original CT base builder and MergeResult; original two unittest bodies collected by unittest with original fakes. TokenOutput and AgentLoopOutput are attribute-only seams, no Pydantic validation; timer is nullcontext, base initialization bypassed by original test factory. No real tokenizer/templates, postprocess, reward, Ray, engine, cancellation or training."
+}
