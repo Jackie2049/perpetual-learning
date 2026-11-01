@@ -126,6 +126,9 @@
 
 | [rollout-p3-dapo-group-filter/](rollout-p3-dapo-group-filter/readme.md) | P-3：C 类机制（verl DAPO 组过滤）的收敛净效应示范——30 种子 × 300 步、五模式逐层叠加的同 seed on/off 对照；进程内模拟（CPU），非端到端 | [§13.28 净效应示范](../notebook/rollout-performance-research.md#1328-p-3c-类机制dapo-组过滤的收敛净效应示范同-seed-开关-onoff2026-11-01-m1-完成) |
 | [rollout-p4-c-mechanisms/](rollout-p4-c-mechanisms/readme.md) | G2 其余四个 C 类机制（动态频率／成功回放／足数取消／cap 替换）的同 seed 单开关对照——30 种子 × 300 步 × 3 档 lr；结论是"省生成量 ≠ 省墙钟"；按论文描述实现（非复现），进程内模拟 | [§13.29 四机制对照](../notebook/rollout-performance-research.md#1329-g2-其余四个-c-类机制的同-seed-单开关对照省生成不等于省墙钟2026-11-01-m1-完成) |
+| [rollout-group-split-tradeoff/](rollout-group-split-tradeoff/readme.md) | §13.30：拆 GRPO 组的分组税量化（积压深度 × 组内离散度）+ verl 组级均衡 LDM 训练侧锚点；进程内 CPU | [§13.30](../notebook/rollout-performance-research.md#1330-拆-grpo-组的分组税与整组均衡训练侧锚点积压深度决定税2026-11-02-m1) |
+| [rollout-group-split-training-side/](rollout-group-split-training-side/readme.md) | §13.31：训练侧拆组的三个候选代价（幅度错配／梯度方向／梯度方差）全部为零且全部通不过识别性检验，撤回上一批解读 | [§13.31](../notebook/rollout-performance-research.md#1331-训练侧拆组到底改变了什么三个候选代价全部为零且全部不及格2026-11-02-第三批-m1) |
+| [rollout-minibatch-composition/](rollout-minibatch-composition/readme.md) | §13.32：mini-batch 组成代价（真实路径已接近最坏组成，组成差异约 5%，而切块数 K=1→8 放大 58 倍）+ 四框架优势归约语义核验（全部按 uid/prompt，无按分区归一化）；含四份源码快照供 anchor 复验 | [§13.32](../notebook/rollout-performance-research.md#1332-训练侧拆组的第二类代价mini-batch-组成与四个框架的归约语义核验2026-11-02-m1) |
 | [kernels/fused_rms_norm/](kernels/fused_rms_norm/) | Fused RMSNorm CUDA/C++ 实现、Python 接口、测试及基准 | [算子实验记录](../notebook/experiments/rtx4090-fused-rmsnorm-cuda.md) |
 | [scripts/](scripts/readme.md) | GPU 实验、故障复现及贡献验证脚本 | [GRPO 排错](../notebook/grpo-training-debugging-guide.md) |
 | [rtx4090/configs/](rtx4090/configs/readme.md) | RTX 4090 DeepSpeed 训练配置 | [训练技巧](../notebook/experiments/rtx4090-training-techniques.md) |

@@ -1,0 +1,71 @@
+{
+ "experiment": "训练侧拆组第二类代价：mini-batch 组成，以及四个框架的归约语义核验",
+ "doc": "notebook/rollout-performance-research.md §13.32（接续 §13.31）",
+ "execution": {
+  "python": "3.9.6（macOS arm64，仅标准库）",
+  "commands": [
+   "python3 train_side_composition.py                 # 约 3 s，覆盖 summary.json",
+   "python3 train_side_composition.py --verify        # 通过：逐字段相同（连跑两次均通过）",
+   "python3 -m unittest test_train_side_composition -v # 20 passed"
+  ],
+  "cross_module_dependency": "LDM 划分复用 experiments/rollout-group-split-tradeoff/group_split_tradeoff.py 的 _karmarkar_karp（已与真实 verl 在 180 组输入上交叉验证分区一致）；本目录不复制第二份。"
+ },
+ "classification": "进程内解析＋数学仿真；非 GPU 实测、非端到端。梯度为随机方向模型，结论是聚合语义的推论。",
+ "source_snapshots": {
+  "verl": {
+   "commit": "1a9e711e",
+   "origin": "本地 checkout /Users/jackiemac/workspace/verl（与 §13.30/§13.31 同一锚点）"
+  },
+  "openrlhf": {
+   "commit": "dc2a7ad326f619fc5a47737ea47d1920ce2c0b53",
+   "origin": "GitHub contents API（ref=该 commit），未克隆"
+  },
+  "skyrl": {
+   "commit": "40606751f3e91072c302cf5ef4507da168f34966",
+   "origin": "GitHub contents API（ref=该 commit），未克隆"
+  },
+  "nemo_rl": {
+   "commit": "6e68b17911b83becacc0c0afaf4be15c43c17873",
+   "origin": "GitHub contents API（ref=该 commit），未克隆"
+  }
+ },
+ "key_readings": {
+  "framework_grouping": {
+   "nemo_rl": "prompt",
+   "openrlhf": "prompt",
+   "skyrl": "prompt",
+   "verl": "uid"
+  },
+  "framework_anchors_all_found": {
+   "nemo_rl": true,
+   "openrlhf": true,
+   "skyrl": true,
+   "verl": true
+  },
+  "noise_ratio_K1": 0.00390625,
+  "noise_ratio_K4": 0.05986161507027629,
+  "noise_ratio_K8": 0.2264535583723087,
+  "noise_ratio_K8_over_K1": 57.97211094331103,
+  "ldm_over_grouped_dp4": 1.0508337376972947,
+  "ldm_over_grouped_dp4_stderr": 0.0033060017146226924,
+  "interleaved_over_ldm_dp4": 1.0000165844495066,
+  "group_purity_intact_ratio": 0.0,
+  "identifiability_composition_ratio_relative_spread": 0.10566593355479728,
+  "identifiability_constant_control_sensitive": false,
+  "negative_control_interleaved_over_contiguous": 1.8774921600685641
+ },
+ "sha256": {
+  "summary.json": "867e78cb57c8b59fca3a7ea7d02a656c0d8f65d5d41c7eb3181140803239dbf0",
+  "train_side_composition.py": "4c541711e890515cdc33a88a1bb4ff6b9dad882f55697469ab7e4de8d91b3159",
+  "test_train_side_composition.py": "5e412c22f5f742a9af12827cae7bef50cafa5fb4d4d8dabfd5902dfec8a2ea6f",
+  "readme.md": "70bda2fc4961f98d6c53d830f6849e2a05794d4382dea80590fab89aa21fb0a9",
+  "source-snapshots/openrlhf/main/openrlhf/trainer/ppo_utils/experience_maker.py": "1defeef7fa22fc8ff6621d76f5a042a57ebfff4f83aa0338ef9a397de8f8563f",
+  "source-snapshots/skyrl/main/skyrl/backends/skyrl_train/utils/ppo_utils.py": "82f14312eeb45b46dde85a5cfd125626cc6083b5019871ddb8ef74fa3bd6ead8",
+  "source-snapshots/nemo_rl/main/nemo_rl/algorithms/advantage_estimator.py": "d4298b400217784e3d5d66ea6337a0786ac077d1a1aaf3d3a8e7bd3a1d66ceb7",
+  "source-snapshots/nemo_rl/main/nemo_rl/algorithms/utils.py": "cafb10929e9cab0fa59dfb127c0db8390d4967d53f95b2d020586437c443b28f",
+  "source-snapshots/verl/main/verl/utils/groupwise.py": "409403d0002ff0d1fd1c41812163b1cfa52a52248677aab00e6ffcf3b937b442",
+  "source-snapshots/verl/main/verl/workers/engine_workers.py": "301323b0a8665d236189c3438b835ee4b2ba8bc8cfced1890684070d403ef7a8",
+  "source-snapshots/verl/main/verl/trainer/ppo/core_algos.py": "369b614f239f237a04a38a40b1877cd6fd14aa7bd5f9ff4fe4d7758b682a6948",
+  "source-snapshots/README.md": "8e3cb1c5fc14a74327fb4827969a533a17abbb84511dcb9452b81cd6eed6ed34"
+ }
+}

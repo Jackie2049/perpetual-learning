@@ -1,0 +1,322 @@
+{
+ "composition": {
+  "block_moment_decomposition": {
+   "mean_abs_residual_cosine": 0.5294675541609117,
+   "mean_between_group_var_over_mean_block_var": 38.31895238710076,
+   "mean_within_block_var_over_mean_block_var": 64.0,
+   "note": "块内样本方差占总方差的比例决定\"块均值沿组均值分布\"的程度；残差余弦≈1 时块内样本相对本块均值的偏离近似同向，此时 Var(v_j) 取样本方差/n 的下限。"
+  },
+  "composition_effect_at_K4": {
+   "dp2": {
+    "grouped_mean": 0.05986161507027629,
+    "interleaved_mean": 0.06288727801454858,
+    "interleaved_over_grouped_mean": 1.0508519848240243,
+    "interleaved_over_ldm_mean": 1.0192640373114024,
+    "interleaved_over_ldm_stderr": 0.0019749316918218768,
+    "ldm_mean": 0.06170561641901359,
+    "ldm_over_grouped_max": 1.0621794721649935,
+    "ldm_over_grouped_mean": 1.031006658404735,
+    "ldm_over_grouped_min": 1.0047202389029068,
+    "ldm_over_grouped_stderr": 0.0027782659901593857,
+    "mean_split_groups": 32,
+    "n_seeds": 30,
+    "theory": {
+     "K": 4,
+     "groups_per_block_interleaved": 8.0,
+     "note": "若每块恰好装 k_g 个完整组，则期望比值为 1 + 2·rho/(k_g − 1)（样本梯度 = 组分量 + 样本分量时）。交错排列下 k_g = N/K，理论上界。",
+     "predicted_interleaved_over_grouped": 1.1428571428571428,
+     "rho": 0.5
+    },
+    "total_groups": 32
+   },
+   "dp4": {
+    "grouped_mean": 0.05986161507027629,
+    "interleaved_mean": 0.06288727801454858,
+    "interleaved_over_grouped_mean": 1.0508519848240243,
+    "interleaved_over_ldm_mean": 1.0000165844495066,
+    "interleaved_over_ldm_stderr": 8.224696839640392e-05,
+    "ldm_mean": 0.06288622383917393,
+    "ldm_over_grouped_max": 1.0857545682424157,
+    "ldm_over_grouped_mean": 1.0508337376972947,
+    "ldm_over_grouped_min": 1.013402811239165,
+    "ldm_over_grouped_stderr": 0.0033060017146226924,
+    "mean_split_groups": 32,
+    "n_seeds": 30,
+    "theory": {
+     "K": 4,
+     "groups_per_block_interleaved": 8.0,
+     "note": "若每块恰好装 k_g 个完整组，则期望比值为 1 + 2·rho/(k_g − 1)（样本梯度 = 组分量 + 样本分量时）。交错排列下 k_g = N/K，理论上界。",
+     "predicted_interleaved_over_grouped": 1.1428571428571428,
+     "rho": 0.5
+    },
+    "total_groups": 32
+   },
+   "dp8": {
+    "grouped_mean": 0.05986161507027629,
+    "interleaved_mean": 0.06288727801454858,
+    "interleaved_over_grouped_mean": 1.0508519848240243,
+    "interleaved_over_ldm_mean": 1.0004848427626991,
+    "interleaved_over_ldm_stderr": 0.00037843605139348144,
+    "ldm_mean": 0.06285696829767798,
+    "ldm_over_grouped_max": 1.0850515591830998,
+    "ldm_over_grouped_mean": 1.0503530342404481,
+    "ldm_over_grouped_min": 1.0117612584730693,
+    "ldm_over_grouped_stderr": 0.0033973989034117966,
+    "mean_split_groups": 32,
+    "n_seeds": 30,
+    "theory": {
+     "K": 4,
+     "groups_per_block_interleaved": 8.0,
+     "note": "若每块恰好装 k_g 个完整组，则期望比值为 1 + 2·rho/(k_g − 1)（样本梯度 = 组分量 + 样本分量时）。交错排列下 k_g = N/K，理论上界。",
+     "predicted_interleaved_over_grouped": 1.1428571428571428,
+     "rho": 0.5
+    },
+    "total_groups": 32
+   }
+  },
+  "composition_effect_note": "同一批样本、同一 K=4，只换块的组成方式。`ldm_over_grouped` 是真实路径相对\"组内连续排列\"的差异；`interleaved_over_ldm` 是\"把同组样本尽可能摊到各块\"相对真实路径的差异，代表组成效应的上界。两者都扣掉了 K 本身带来的放大。",
+  "definition": "ratio = Σ_j Var(v_j) / Var(v̄_full)，v_j 是第 j 块的平均梯度、v̄_full 是全批平均。等价于\"一步 rollout 做 K 次 optimizer step\"时累计承受的噪声方差，除以\"一步看全批\"的噪声方差。K=1 时两块相同，理想值 1.0。",
+  "group_purity_at_K4_dp4": {
+   "intact_ratio_max": 0.0,
+   "intact_ratio_mean": 0.0,
+   "intact_ratio_min": 0.0,
+   "mean_blocks_per_group": 4,
+   "n_seeds": 30,
+   "note": "纯度 0 = 每一组都被摊到了全部 4 个块。这与\"交错排列\"的组成结构一致，所以交错基线没有带来额外噪声；只要还有未拆分的组，纯度就会 >0。"
+  },
+  "negative_control_block_correlated": {
+   "interleaved_over_contiguous": 1.8774921600685641,
+   "note": "人为让每块各有一个共享方向时，交错比应明显偏离 1（远大于 ±1%），否则检验抓不到结构。"
+  },
+  "noise_ratio_by_K": {
+   "K1": {
+    "contiguous_max": 0.00390625,
+    "contiguous_mean": 0.00390625,
+    "contiguous_min": 0.00390625,
+    "n_seeds": 30,
+    "random_mean": 0.00390625
+   },
+   "K2": {
+    "contiguous_max": 0.015593124342037938,
+    "contiguous_mean": 0.015371751059846705,
+    "contiguous_min": 0.01494224400060045,
+    "n_seeds": 30,
+    "random_mean": 0.015371751059846705
+   },
+   "K4": {
+    "contiguous_max": 0.06210281867743794,
+    "contiguous_mean": 0.05986161507027629,
+    "contiguous_min": 0.05801369063357961,
+    "n_seeds": 30,
+    "random_mean": 0.05986161507027629
+   },
+   "K8": {
+    "contiguous_max": 0.2340391305761341,
+    "contiguous_mean": 0.2264535583723087,
+    "contiguous_min": 0.21809102598938165,
+    "n_seeds": 30,
+    "random_mean": 0.2264535583723087
+   }
+  }
+ },
+ "doc": "notebook/rollout-performance-research.md §13.32（接续 §13.31）",
+ "experiment": "训练侧拆组第二类代价：mini-batch 组成，以及四个框架的归约语义核验",
+ "framework_semantics": {
+  "nemo_rl": {
+   "advantage_grouping": "prompt",
+   "anchors": [
+    {
+     "detail": "hit",
+     "found": true,
+     "path": "nemo_rl/algorithms/utils.py"
+    },
+    {
+     "detail": "hit",
+     "found": true,
+     "path": "nemo_rl/algorithms/utils.py"
+    },
+    {
+     "detail": "hit",
+     "found": true,
+     "path": "nemo_rl/algorithms/advantage_estimator.py"
+    }
+   ],
+   "anchors_all_found": true,
+   "commit": "6e68b179",
+   "loss_normalization": "global_token_or_seq",
+   "reading": "torch.unique(prompts) 得组，逐组收集 reward 算 baseline/std（支持 leave-one-out）；GRPO 调用方传的是显式 rollout-group id 的 (b,1) 张量，不是 prompt token。loss 用 global_valid_toks / global_valid_seqs 归一化。",
+   "snapshot_available_locally": true
+  },
+  "openrlhf": {
+   "advantage_grouping": "prompt",
+   "anchors": [
+    {
+     "detail": "hit",
+     "found": true,
+     "path": "openrlhf/trainer/ppo_utils/experience_maker.py"
+    },
+    {
+     "detail": "hit",
+     "found": true,
+     "path": "openrlhf/trainer/ppo_utils/experience_maker.py"
+    },
+    {
+     "detail": "hit",
+     "found": true,
+     "path": "openrlhf/trainer/ppo_utils/experience_maker.py"
+    }
+   ],
+   "anchors_all_found": true,
+   "commit": "dc2a7ad3",
+   "loss_normalization": "ds_train_batch_scale",
+   "reading": "把 rewards reshape 成 (prompt, n_samples) 后按**行**做 mean/std ⇒ 按 prompt 分组；随后有一段全 batch 优势标准化（estimator 为 gae/reinforce/reinforce_baseline 时），那是**跨组整体缩放**，不是按块归一化。DeepSpeed 侧 train_batch_size 乘了 ring_attn×tp，说明\"训练 batch\"是固定规模、与分区无关。",
+   "snapshot_available_locally": true
+  },
+  "skyrl": {
+   "advantage_grouping": "prompt",
+   "anchors": [
+    {
+     "detail": "hit",
+     "found": true,
+     "path": "skyrl/backends/skyrl_train/utils/ppo_utils.py"
+    },
+    {
+     "detail": "hit",
+     "found": true,
+     "path": "skyrl/backends/skyrl_train/utils/ppo_utils.py"
+    }
+   ],
+   "anchors_all_found": true,
+   "commit": "40606751",
+   "loss_normalization": "global_token_or_seq",
+   "reading": "与 verl 同构：按 index 分组累加后算 mean/std，归一化与样本位置无关；另有 minibatch 内 rollout/train logprob 差的**度量**用可加矩（mean/sq_mean）跨 micro-batch 正确归约，属诊断量非优势口径。",
+   "snapshot_available_locally": true
+  },
+  "verl": {
+   "advantage_grouping": "uid",
+   "anchors": [
+    {
+     "detail": "hit",
+     "found": true,
+     "path": "verl/trainer/ppo/core_algos.py"
+    },
+    {
+     "detail": "hit",
+     "found": true,
+     "path": "verl/utils/groupwise.py"
+    },
+    {
+     "detail": "hit",
+     "found": true,
+     "path": "verl/workers/engine_workers.py"
+    }
+   ],
+   "anchors_all_found": true,
+   "commit": "1a9e711e",
+   "loss_normalization": "global_token_or_seq",
+   "reading": "按 index=uid 分组算 mean/std，位置无关；标量版本逐 index 收集（core_algos.py:308-321），向量化版本的 group_mean_std 同样按 uid。loss 用全局 token/seq 归一化后做 DP all_reduce(AVG)。",
+   "snapshot_available_locally": true
+  }
+ },
+ "identifiability": {
+  "composition_ratio_vs_rho": {
+   "levels": [
+    0.0,
+    0.1,
+    0.5,
+    0.9
+   ],
+   "max": 1.1034010735593827,
+   "min": 0.9949476694653205,
+   "param": "组信号强度 rho（组成比值，dp=4, K=4）",
+   "relative_spread": 0.10566593355479728,
+   "sensitive": true,
+   "spread": 0.10845340409406212,
+   "threshold": 0.01
+  },
+  "control_constant": {
+   "levels": [
+    0.0,
+    0.1,
+    0.5,
+    0.9
+   ],
+   "max": 1.0,
+   "min": 1.0,
+   "param": "对照：恒常数指标",
+   "relative_spread": 0.0,
+   "sensitive": false,
+   "spread": 0.0,
+   "threshold": 0.01
+  },
+  "control_group_cosine_vs_rho": {
+   "levels": [
+    0.0,
+    0.1,
+    0.5,
+    0.9
+   ],
+   "max": 0.3079768165569649,
+   "min": 0.28366845419750275,
+   "param": "对照：组均值余弦 vs rho",
+   "relative_spread": 0.08294358025033641,
+   "sensitive": true,
+   "spread": 0.024308362359462155,
+   "threshold": 0.01
+  },
+  "control_noise_ratio_must_respond": {
+   "note": "这条不是识别性检验，是\"指标非退化\"的冒烟检查：K 变它必须变。",
+   "param": "块数 K（不是机制旋钮，只用于确认指标本身能动）",
+   "readings": {
+    "K1": 0.00390625,
+    "K2": 0.015371751059846705,
+    "K4": 0.05986161507027629,
+    "K8": 0.2264535583723087
+   },
+   "sensitive": true
+  },
+  "noise_ratio_vs_rho": {
+   "levels": [
+    0.0,
+    0.1,
+    0.5,
+    0.9
+   ],
+   "max": 0.06279887931445637,
+   "min": 0.05669079035329676,
+   "param": "组信号强度 rho（K=4）",
+   "relative_spread": 0.10013615734147456,
+   "sensitive": true,
+   "spread": 0.006108088961159608,
+   "threshold": 0.01
+  }
+ },
+ "not_partition_local": [
+  [
+   "openrlhf",
+   "experience_maker.py:324-339",
+   "全 batch 优势再整体标准化（estimator 属 gae/reinforce/reinforce_baseline 时）——跨组整体缩放"
+  ],
+  [
+   "nemo_rl",
+   "advantage_estimator.py:341-344、373-376",
+   "全 batch adv 再整体标准化——跨组整体缩放"
+  ],
+  [
+   "skyrl",
+   "worker_utils.py:28-36",
+   "minibatch rollout/train logprob 差的矩用可加量跨 micro-batch 归约——是度量不是优势口径"
+  ]
+ ],
+ "verdict": {
+  "all_four_group_by_uid_or_prompt": true,
+  "composition_effect_reading": "K=4、dp=4 下三条读数：① 把同组样本尽量摊到各块（交错排列）相对真实路径只有 1.0000 倍（标准误 0.0001）——基线本身几乎已经是最坏组成，原因是逐条 LDM 按长度排序后分片，重排结果近似把同组样本均匀摊开；② 真实路径相对\"组内连续排列\"是 1.0508 倍（标准误 0.0033）；③ 后者还含有\"连续排列让组内样本相邻、于是方差被低估\"的估计偏差，构成效应的真实量级应按 ① 读。作为对照，块数从 1 增到 8 会把噪声放大到 57.97 倍。结论：**组成的差异真实存在但只有个位数百分比；把一步拆成 K 次 optimizer step 才是训练侧的主要噪声来源，而这一项与拆不拆组无关。**",
+  "minibatch_composition_is_the_only_remaining_path": "四个快照的优势 mean/std 全部按 uid/prompt 分组，没有框架按分区各自归一化；两处形似按块的标准化（OpenRLHF／NeMo RL）都是全 batch 整体缩放，与分区无关。因此 §13.30 第一批的 0.69／0.41 倍仍是**假设口径**，§13.31 的结论可推广到这四个实现。训练侧剩下的唯一代价路径是 mini-batch 组成。",
+  "no_framework_normalizes_per_partition": true,
+  "what_this_is_not": [
+   "不是\"拆组导致噪声放大\"：块数 K 决定放大，组完整性只决定块的组成。",
+   "不是实测：梯度为随机方向模型，不含真实 token 梯度结构；结论是聚合语义的推论。",
+   "不报耗时、不换算任何论文的墙钟读数。"
+  ]
+ }
+}
