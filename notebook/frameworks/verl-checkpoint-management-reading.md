@@ -1,5 +1,7 @@
 # verl Checkpoint Management 源码级深度阅读
 
+2026-11-01补[SFT迭代器随机流隔离](#sft-迭代器的随机流隔离)：#8434原三CPU测试体基线全失败／候选全过，batch顺序、loader generator与全局CPU RNG分别核；后续base_seed控制仍不同，不把全局状态保留当作完整随机恢复。
+
 2026-10-30补[多角色异步保存的发布与清理](#多角色异步保存的发布与清理)：已有#8056将角色确认、tracker替换和保留清理分开；八组原协调器标准库控制确认清理失败时新指针可能已发布、pending仍留待重试。不是原OmegaConf测试、真实角色写入／恢复或作者H20验收。
 
 2026-10-30接续：[随机状态与恢复顺序](#随机状态与恢复顺序)用四个原生CPU重启对照区分重设seed、独立生成器和构造顺序；模型与优化器状态相同仍不足以保证下一步一致。这是普通PyTorch小模型控制，不是verl恢复缺陷或完整manager验收。
@@ -41,6 +43,28 @@ Python3.12.13／Torch2.9.1（commit `5811a8d7da873dd699ff6687092c225caffcf1bb`�
 ```bash
 python3.12 -B experiments/checkpoint-rng-order/verify.py
 ```
+
+## SFT 迭代器的随机流隔离
+
+**恢复后的 batch 顺序相同，仍可能已经推进了刚加载的全局 CPU RNG。** JonnesLin的[#8434](https://github.com/verl-project/verl/pull/8434)修[#8433](https://github.com/verl-project/verl/issues/8433)，2026-11-01读取OPEN／非draft，固定head `d941a6a81fd79b4261bf1784d66a372a75c183db`，API目标base与实际共同祖先均为 `2ab35292039a51175a4b3d3b3b2d76e951a0d3e4`。候选在[SFT原构造方法](https://github.com/verl-project/verl/blob/d941a6a81fd79b4261bf1784d66a372a75c183db/verl/trainer/sft_trainer.py)为train／val loader分别传独立CPU Generator；已有作者，不叠加epoch恢复或异步保存候选。
+
+| 随机流 | 本候选的控制方式 | 与恢复的关系 |
+|---|---|---|
+| DistributedSampler 的 shuffle | 构造未传seed，仍为0；fit按epoch调用set_epoch | 控制取数顺序，不消费loader generator |
+| train／val loader 的独立 generator | 初始seed为trainer.seed＋dp_rank；trainer.seed＋dp_size＋dp_rank | 为迭代器抽取base_seed，隔离两split及DP rank的随机流，不等于保存其推进位置 |
+| 默认全局 CPU RNG | loader显式generator后不再从此取base_seed | 可保留恢复后的状态，但不自动包含独立generator或设备流 |
+
+[本机脚本](../../experiments/verl-sft-loader-rng/verify.py)隔离执行完整原_build_dataloader，使用真实Torch DistributedSampler、torchdata StatefulDataLoader与OmegaConf，手动调用[三个原测试体](https://github.com/verl-project/verl/blob/d941a6a81fd79b4261bf1784d66a372a75c183db/tests/trainer/test_sft_dataloader_resume_rng_on_cpu.py)：基线三失败（两个CPU RNG断言、一个generator=None的AttributeError），候选三通过。测试数据为64／32个整数、batch4、0worker；同进程重建loader并恢复state_dict与CPU RNG，比较接续两批及后续torch.rand，不是实际重启训练进程或模型恢复。
+
+原engine为MagicMock；设备resolver固定cpu，collator构造为None后由原fixture替换为default_collate。原torch.manual_seed入口仅重定向至真实默认CPU generator.manual_seed，不触全设备seed hook；无pytest原生收集或完整trainer初始化。Python3.12.13／Torch2.9.1／torchdata0.11.0+cpu／OmegaConf2.3.0；作者Torch2.15的三通过另属外部报告。
+
+### 私有状态与后续迭代器
+
+三组自编控制进一步区分保证范围。第一组比较两版、trainer.seed=1／97、epoch0／1的完整batch顺序，均相同，sampler.seed仍0；JSON保存完整顺序hash、每epoch批数及首批。第二组在dp_rank1／dp_size2核train seed2／val seed4：创建val迭代器推进val generator，但train generator及全局CPU状态精确不变。
+
+第三组先完成一次train迭代，再在第二次迭代取三批后保存loader／CPU状态。重建恢复后，下一批和全局CPU RNG相同，但loader.generator状态不同；再新建迭代器时，两侧私有`_base_seed`分别为2109959069025161与4064269471072392264。安装版torchdata的零workerstate_dict保存sampler／dataset／游标等，没有在这条路径恢复loader.generator状态；重新播初始seed不等于回到后续迭代位置。**这是当前Torch／torchdata、整数数据、零worker下的私有状态控制，不是已观察到worker数据增强、模型参数或训练质量分歧**；不据此升级为当前PR修复目标失败，也不另写generator持久化方案。
+
+复查：`python verify.py /path/to/verl-git --deps /path/to/isolated-deps`，脚本位于上述实验目录；需预缓存固定blob，执行禁lazy fetch。[结果](../../experiments/verl-sft-loader-rng/result.json)保留源hash、真实依赖loader源码hash、原失败栈及控制值。旧临时torchdata目录已为空，故仅向新独立临时目录补torchdata／OmegaConf／antlr／PyYAML，不改共享训练环境；结果简化保存格式后复跑，结论一致。模型／optimizer／checkpoint manager、worker随机增强、分布式／设备RNG及训练均未执行，差额沿[原M5恢复参考](../../experiments/handoff-m5.md#verl-训练-checkpoint-发布参考)保留条件，不启动服务器／新训练或修改既有恢复流程。
 
 ## 自定义数据源的保存与恢复边界
 

@@ -1,0 +1,162 @@
+{
+  "base": "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4",
+  "head": "d941a6a81fd79b4261bf1784d66a372a75c183db",
+  "actual_merge_base": "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4",
+  "python": "3.12.13",
+  "torch": "2.9.1",
+  "torch_git": "5811a8d7da873dd699ff6687092c225caffcf1bb",
+  "torchdata": "0.11.0+cpu",
+  "omegaconf": "2.3.0",
+  "source_sha256": {
+    "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4:verl/trainer/sft_trainer.py": "8abbbfa316a37177d48675f89a7014a9eacf51b03a3952ee850c7255a9a0ecce",
+    "d941a6a81fd79b4261bf1784d66a372a75c183db:tests/trainer/test_sft_dataloader_resume_rng_on_cpu.py": "74028cf7b7f766a102e0f71292e4574dec0c85515bf71ce292414d42733dbc8f",
+    "d941a6a81fd79b4261bf1784d66a372a75c183db:verl/trainer/sft_trainer.py": "2d5afb0eb55612ce7533a4ac04258ff6742dacbe54d92feb76afe14927db1ac7"
+  },
+  "torchdata_loader_sha256": "426c3ef475481165f9a7d44238040f81de213a4e8ee58ad8fe734e52a2717830",
+  "original_test_bodies": {
+    "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4": [
+      {
+        "test": "test_building_iterators_does_not_consume_global_cpu_rng",
+        "passed": false,
+        "exception": "AssertionError",
+        "traceback": "Traceback (most recent call last):\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/perpetual-learning-cp-finalize/experiments/verl-sft-loader-rng/verify.py\", line 70, in main\n    ns[name]()\n  File \"original_ast\", line 75, in test_building_iterators_does_not_consume_global_cpu_rng\nAssertionError\n"
+      },
+      {
+        "test": "test_generators_are_seeded_per_dp_rank_and_split_train_from_val",
+        "passed": false,
+        "exception": "AttributeError",
+        "traceback": "Traceback (most recent call last):\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/perpetual-learning-cp-finalize/experiments/verl-sft-loader-rng/verify.py\", line 70, in main\n    ns[name]()\n  File \"original_ast\", line 82, in test_generators_are_seeded_per_dp_rank_and_split_train_from_val\nAttributeError: 'NoneType' object has no attribute 'initial_seed'\n"
+      },
+      {
+        "test": "test_resume_preserves_batches_and_global_cpu_rng",
+        "passed": false,
+        "exception": "AssertionError",
+        "traceback": "Traceback (most recent call last):\n  File \"/Users/jackiemac/Documents/Codex/2026-10-20/new-chat/work/perpetual-learning-cp-finalize/experiments/verl-sft-loader-rng/verify.py\", line 70, in main\n    ns[name]()\n  File \"original_ast\", line 66, in test_resume_preserves_batches_and_global_cpu_rng\nAssertionError\n"
+      }
+    ],
+    "d941a6a81fd79b4261bf1784d66a372a75c183db": [
+      {
+        "test": "test_building_iterators_does_not_consume_global_cpu_rng",
+        "passed": true
+      },
+      {
+        "test": "test_generators_are_seeded_per_dp_rank_and_split_train_from_val",
+        "passed": true
+      },
+      {
+        "test": "test_resume_preserves_batches_and_global_cpu_rng",
+        "passed": true
+      }
+    ]
+  },
+  "own_sampler_order": {
+    "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4": {
+      "1": {
+        "sampler_seed": 0,
+        "epoch_batch_counts": [
+          16,
+          16
+        ],
+        "epoch_first_batches": [
+          [
+            44,
+            46,
+            17,
+            3
+          ],
+          [
+            37,
+            60,
+            10,
+            61
+          ]
+        ],
+        "complete_order_sha256": "919ff33a25a782165d4ee3a1ad415b175af66ed85f8960994f808408bde48fd7"
+      },
+      "97": {
+        "sampler_seed": 0,
+        "epoch_batch_counts": [
+          16,
+          16
+        ],
+        "epoch_first_batches": [
+          [
+            44,
+            46,
+            17,
+            3
+          ],
+          [
+            37,
+            60,
+            10,
+            61
+          ]
+        ],
+        "complete_order_sha256": "919ff33a25a782165d4ee3a1ad415b175af66ed85f8960994f808408bde48fd7"
+      }
+    },
+    "d941a6a81fd79b4261bf1784d66a372a75c183db": {
+      "1": {
+        "sampler_seed": 0,
+        "epoch_batch_counts": [
+          16,
+          16
+        ],
+        "epoch_first_batches": [
+          [
+            44,
+            46,
+            17,
+            3
+          ],
+          [
+            37,
+            60,
+            10,
+            61
+          ]
+        ],
+        "complete_order_sha256": "919ff33a25a782165d4ee3a1ad415b175af66ed85f8960994f808408bde48fd7"
+      },
+      "97": {
+        "sampler_seed": 0,
+        "epoch_batch_counts": [
+          16,
+          16
+        ],
+        "epoch_first_batches": [
+          [
+            44,
+            46,
+            17,
+            3
+          ],
+          [
+            37,
+            60,
+            10,
+            61
+          ]
+        ],
+        "complete_order_sha256": "919ff33a25a782165d4ee3a1ad415b175af66ed85f8960994f808408bde48fd7"
+      }
+    }
+  },
+  "own_train_val_stream": {
+    "train_seed": 2,
+    "val_seed": 4,
+    "val_advanced": true,
+    "train_unchanged": true,
+    "global_cpu_unchanged": true
+  },
+  "own_later_iterator_scope": {
+    "current_batch_equal": true,
+    "global_cpu_equal": true,
+    "loader_generator_equal": false,
+    "future_iterator_base_seed": 2109959069025161,
+    "resumed_future_iterator_base_seed": 4064269471072392264,
+    "scope": "Own zero-worker integer data control after a prior complete iterator; private RNG/base-seed difference is not an observed worker augmentation or model divergence."
+  },
+  "scope": "Complete original _build_dataloader, three original tests manually invoked, real OmegaConf, Torch DistributedSampler, StatefulDataLoader, original mock engine. Device resolver fixed CPU; collator constructor returns None then original test replaces it with default_collate; torch.manual_seed redirected to default CPU only. No pytest collection, actual trainer/manager, workers, dataset randomness, model, optimizer, device RNG, distributed collectives or training."
+}
