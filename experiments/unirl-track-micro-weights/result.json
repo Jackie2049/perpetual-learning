@@ -1,0 +1,801 @@
+{
+  "head": "6cd3c09a90e34643d167ae428b6d6aa5751186b3",
+  "actual_merge_base": "683a59b3cb1f04bea3d93cc79a79cd2552769902",
+  "api_target_base": "da7506200829f0ac9fde2e6c7a71d34fc72732ba",
+  "current_main": "b8e9740e981a68a5556fbeb8225558040a4d47a4",
+  "main_unified_sha256_compile_only": "d2da53dea5143e98f0228465cbde5cc90f014a3c6bf3b123de658354dfe95028",
+  "environment": {
+    "python": "3.12.13",
+    "torch": "2.9.1",
+    "torch_git": "5811a8d7da873dd699ff6687092c225caffcf1bb",
+    "device": "cpu"
+  },
+  "revisions": {
+    "ancestor": {
+      "revision": "683a59b3cb1f04bea3d93cc79a79cd2552769902",
+      "source_sha256": {
+        "unirl/train/unified_model_stack.py": "98965d055546767ddbcec4ffcf1dd6bfbbb1edbe73d6862a6a75b02037e079ac",
+        "unirl/utils/misc.py": "603efab13839a51a0e61ac3564261b02bb9e741752d410b8338391bfe581f5a4",
+        "unirl/train/stack/planner/types.py": "782f9dfb460c1de3f059be51702c76d520f72c74b61db8cde583372a6c39ee87",
+        "unirl/train/stack/base.py": "20d212d93a1652c71ec34314d0f0b1939653f0150db5f971fbcad02d1c4dc38e",
+        "unirl/algorithms/base.py": "def6f7392f19b92a0d3a942fd3fe06e9214557b77a7047aebd70ec704213d26c"
+      },
+      "geometry": {
+        "shared_ragged": [
+          [
+            [
+              0,
+              2
+            ],
+            [
+              2,
+              4
+            ],
+            [
+              4,
+              5
+            ]
+          ]
+        ]
+      },
+      "metrics": {
+        "unweighted_ragged": {
+          "x": 3.3333333333333335
+        }
+      },
+      "backward": [
+        {
+          "mode": "row",
+          "width": 1,
+          "loss": 3.0,
+          "metric": {
+            "local_mean": 3.0
+          },
+          "gradient": [
+            0.2,
+            0.4,
+            0.6000000000000001,
+            0.8,
+            1.0
+          ],
+          "reference_loss": 3.0,
+          "reference_gradient": [
+            0.2,
+            0.4,
+            0.6000000000000001,
+            0.8,
+            1.0
+          ],
+          "gradient_max_error": 0.0,
+          "calls": [
+            {
+              "ids": [
+                0
+              ],
+              "scale": 0.2,
+              "tokens": 1
+            },
+            {
+              "ids": [
+                1
+              ],
+              "scale": 0.2,
+              "tokens": 3
+            },
+            {
+              "ids": [
+                2
+              ],
+              "scale": 0.2,
+              "tokens": 2
+            },
+            {
+              "ids": [
+                3
+              ],
+              "scale": 0.2,
+              "tokens": 4
+            },
+            {
+              "ids": [
+                4
+              ],
+              "scale": 0.2,
+              "tokens": 1
+            }
+          ]
+        },
+        {
+          "mode": "row",
+          "width": 2,
+          "loss": 3.0,
+          "metric": {
+            "local_mean": 3.3333333333333335
+          },
+          "gradient": [
+            0.2,
+            0.4,
+            0.6000000000000001,
+            0.8,
+            1.0
+          ],
+          "reference_loss": 3.0,
+          "reference_gradient": [
+            0.2,
+            0.4,
+            0.6000000000000001,
+            0.8,
+            1.0
+          ],
+          "gradient_max_error": 0.0,
+          "calls": [
+            {
+              "ids": [
+                0,
+                1
+              ],
+              "scale": 0.4,
+              "tokens": 4
+            },
+            {
+              "ids": [
+                2,
+                3
+              ],
+              "scale": 0.4,
+              "tokens": 6
+            },
+            {
+              "ids": [
+                4
+              ],
+              "scale": 0.2,
+              "tokens": 1
+            }
+          ]
+        },
+        {
+          "mode": "row",
+          "width": 5,
+          "loss": 3.0,
+          "metric": {
+            "local_mean": 3.0
+          },
+          "gradient": [
+            0.2,
+            0.4,
+            0.6000000000000001,
+            0.8,
+            1.0
+          ],
+          "reference_loss": 3.0,
+          "reference_gradient": [
+            0.2,
+            0.4,
+            0.6000000000000001,
+            0.8,
+            1.0
+          ],
+          "gradient_max_error": 0.0,
+          "calls": [
+            {
+              "ids": [
+                0,
+                1,
+                2,
+                3,
+                4
+              ],
+              "scale": 1.0,
+              "tokens": 11
+            }
+          ]
+        },
+        {
+          "mode": "token",
+          "width": 1,
+          "loss": 3.0,
+          "metric": {
+            "local_mean": 3.0
+          },
+          "gradient": [
+            0.2,
+            0.4,
+            0.6000000000000001,
+            0.8,
+            1.0
+          ],
+          "reference_loss": 3.090909090909091,
+          "reference_gradient": [
+            0.09090909090909091,
+            0.5454545454545454,
+            0.5454545454545454,
+            1.4545454545454546,
+            0.4545454545454546
+          ],
+          "gradient_max_error": 0.6545454545454545,
+          "calls": [
+            {
+              "ids": [
+                0
+              ],
+              "scale": 0.2,
+              "tokens": 1
+            },
+            {
+              "ids": [
+                1
+              ],
+              "scale": 0.2,
+              "tokens": 3
+            },
+            {
+              "ids": [
+                2
+              ],
+              "scale": 0.2,
+              "tokens": 2
+            },
+            {
+              "ids": [
+                3
+              ],
+              "scale": 0.2,
+              "tokens": 4
+            },
+            {
+              "ids": [
+                4
+              ],
+              "scale": 0.2,
+              "tokens": 1
+            }
+          ]
+        },
+        {
+          "mode": "token",
+          "width": 2,
+          "loss": 3.166666666666667,
+          "metric": {
+            "local_mean": 3.472222222222222
+          },
+          "gradient": [
+            0.1,
+            0.6000000000000001,
+            0.4,
+            1.0666666666666667,
+            1.0
+          ],
+          "reference_loss": 3.090909090909091,
+          "reference_gradient": [
+            0.09090909090909091,
+            0.5454545454545454,
+            0.5454545454545454,
+            1.4545454545454546,
+            0.4545454545454546
+          ],
+          "gradient_max_error": 0.5454545454545454,
+          "calls": [
+            {
+              "ids": [
+                0,
+                1
+              ],
+              "scale": 0.4,
+              "tokens": 4
+            },
+            {
+              "ids": [
+                2,
+                3
+              ],
+              "scale": 0.4,
+              "tokens": 6
+            },
+            {
+              "ids": [
+                4
+              ],
+              "scale": 0.2,
+              "tokens": 1
+            }
+          ]
+        },
+        {
+          "mode": "token",
+          "width": 5,
+          "loss": 3.090909090909091,
+          "metric": {
+            "local_mean": 3.090909090909091
+          },
+          "gradient": [
+            0.09090909090909091,
+            0.5454545454545454,
+            0.5454545454545454,
+            1.4545454545454546,
+            0.4545454545454546
+          ],
+          "reference_loss": 3.090909090909091,
+          "reference_gradient": [
+            0.09090909090909091,
+            0.5454545454545454,
+            0.5454545454545454,
+            1.4545454545454546,
+            0.4545454545454546
+          ],
+          "gradient_max_error": 0.0,
+          "calls": [
+            {
+              "ids": [
+                0,
+                1,
+                2,
+                3,
+                4
+              ],
+              "scale": 1.0,
+              "tokens": 11
+            }
+          ]
+        }
+      ]
+    },
+    "candidate": {
+      "revision": "6cd3c09a90e34643d167ae428b6d6aa5751186b3",
+      "source_sha256": {
+        "unirl/train/unified_model_stack.py": "25e90d32ecf3a9be359e058fbc453bc4dbf084a4c2538825fb63fcdc8a3447a9",
+        "unirl/utils/misc.py": "81ccb7064d1375e9fbb22be2c5be1925c154eaa4b4ca5cfadd5ab14d791c2571",
+        "unirl/train/stack/planner/types.py": "782f9dfb460c1de3f059be51702c76d520f72c74b61db8cde583372a6c39ee87",
+        "unirl/train/stack/base.py": "20d212d93a1652c71ec34314d0f0b1939653f0150db5f971fbcad02d1c4dc38e",
+        "unirl/algorithms/base.py": "def6f7392f19b92a0d3a942fd3fe06e9214557b77a7047aebd70ec704213d26c"
+      },
+      "geometry": {
+        "shared_ragged": [
+          [
+            [
+              0,
+              2
+            ],
+            [
+              2,
+              4
+            ],
+            [
+              4,
+              5
+            ]
+          ]
+        ],
+        "ar": [
+          [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              2,
+              3
+            ],
+            [
+              3,
+              4
+            ],
+            [
+              4,
+              5
+            ]
+          ]
+        ],
+        "image": [
+          [
+            [
+              0,
+              3
+            ],
+            [
+              3,
+              6
+            ],
+            [
+              6,
+              9
+            ],
+            [
+              9,
+              10
+            ]
+          ]
+        ],
+        "two_updates": [
+          [
+            [
+              0,
+              2
+            ],
+            [
+              2,
+              3
+            ]
+          ],
+          [
+            [
+              3,
+              5
+            ],
+            [
+              5,
+              6
+            ]
+          ]
+        ],
+        "anchor_calls": [
+          [
+            0,
+            1
+          ],
+          [
+            2,
+            3
+          ],
+          [
+            4
+          ]
+        ],
+        "packed_anchor": [
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            3,
+            2
+          ],
+          [
+            4,
+            1
+          ]
+        ],
+        "rejections": [
+          "zero_ar",
+          "negative_image",
+          "zero_override",
+          "indivisible_update",
+          "missing_anchor"
+        ]
+      },
+      "metrics": {
+        "unweighted_ragged": {
+          "x": 3.3333333333333335
+        },
+        "weighted_ragged": {
+          "x": 3.0
+        },
+        "tensor_bool_coercion": {
+          "s": 3.0,
+          "b": 0.75,
+          "v": 2.5
+        },
+        "checks": 9
+      },
+      "backward": [
+        {
+          "mode": "row",
+          "width": 1,
+          "loss": 3.0,
+          "metric": {
+            "local_mean": 3.0
+          },
+          "gradient": [
+            0.2,
+            0.4,
+            0.6000000000000001,
+            0.8,
+            1.0
+          ],
+          "reference_loss": 3.0,
+          "reference_gradient": [
+            0.2,
+            0.4,
+            0.6000000000000001,
+            0.8,
+            1.0
+          ],
+          "gradient_max_error": 0.0,
+          "calls": [
+            {
+              "ids": [
+                0
+              ],
+              "scale": 0.2,
+              "tokens": 1
+            },
+            {
+              "ids": [
+                1
+              ],
+              "scale": 0.2,
+              "tokens": 3
+            },
+            {
+              "ids": [
+                2
+              ],
+              "scale": 0.2,
+              "tokens": 2
+            },
+            {
+              "ids": [
+                3
+              ],
+              "scale": 0.2,
+              "tokens": 4
+            },
+            {
+              "ids": [
+                4
+              ],
+              "scale": 0.2,
+              "tokens": 1
+            }
+          ]
+        },
+        {
+          "mode": "row",
+          "width": 2,
+          "loss": 3.0,
+          "metric": {
+            "local_mean": 3.0
+          },
+          "gradient": [
+            0.2,
+            0.4,
+            0.6000000000000001,
+            0.8,
+            1.0
+          ],
+          "reference_loss": 3.0,
+          "reference_gradient": [
+            0.2,
+            0.4,
+            0.6000000000000001,
+            0.8,
+            1.0
+          ],
+          "gradient_max_error": 0.0,
+          "calls": [
+            {
+              "ids": [
+                0,
+                1
+              ],
+              "scale": 0.4,
+              "tokens": 4
+            },
+            {
+              "ids": [
+                2,
+                3
+              ],
+              "scale": 0.4,
+              "tokens": 6
+            },
+            {
+              "ids": [
+                4
+              ],
+              "scale": 0.2,
+              "tokens": 1
+            }
+          ]
+        },
+        {
+          "mode": "row",
+          "width": 5,
+          "loss": 3.0,
+          "metric": {
+            "local_mean": 3.0
+          },
+          "gradient": [
+            0.2,
+            0.4,
+            0.6000000000000001,
+            0.8,
+            1.0
+          ],
+          "reference_loss": 3.0,
+          "reference_gradient": [
+            0.2,
+            0.4,
+            0.6000000000000001,
+            0.8,
+            1.0
+          ],
+          "gradient_max_error": 0.0,
+          "calls": [
+            {
+              "ids": [
+                0,
+                1,
+                2,
+                3,
+                4
+              ],
+              "scale": 1.0,
+              "tokens": 11
+            }
+          ]
+        },
+        {
+          "mode": "token",
+          "width": 1,
+          "loss": 3.0,
+          "metric": {
+            "local_mean": 3.0
+          },
+          "gradient": [
+            0.2,
+            0.4,
+            0.6000000000000001,
+            0.8,
+            1.0
+          ],
+          "reference_loss": 3.090909090909091,
+          "reference_gradient": [
+            0.09090909090909091,
+            0.5454545454545454,
+            0.5454545454545454,
+            1.4545454545454546,
+            0.4545454545454546
+          ],
+          "gradient_max_error": 0.6545454545454545,
+          "calls": [
+            {
+              "ids": [
+                0
+              ],
+              "scale": 0.2,
+              "tokens": 1
+            },
+            {
+              "ids": [
+                1
+              ],
+              "scale": 0.2,
+              "tokens": 3
+            },
+            {
+              "ids": [
+                2
+              ],
+              "scale": 0.2,
+              "tokens": 2
+            },
+            {
+              "ids": [
+                3
+              ],
+              "scale": 0.2,
+              "tokens": 4
+            },
+            {
+              "ids": [
+                4
+              ],
+              "scale": 0.2,
+              "tokens": 1
+            }
+          ]
+        },
+        {
+          "mode": "token",
+          "width": 2,
+          "loss": 3.166666666666667,
+          "metric": {
+            "local_mean": 3.166666666666667
+          },
+          "gradient": [
+            0.1,
+            0.6000000000000001,
+            0.4,
+            1.0666666666666667,
+            1.0
+          ],
+          "reference_loss": 3.090909090909091,
+          "reference_gradient": [
+            0.09090909090909091,
+            0.5454545454545454,
+            0.5454545454545454,
+            1.4545454545454546,
+            0.4545454545454546
+          ],
+          "gradient_max_error": 0.5454545454545454,
+          "calls": [
+            {
+              "ids": [
+                0,
+                1
+              ],
+              "scale": 0.4,
+              "tokens": 4
+            },
+            {
+              "ids": [
+                2,
+                3
+              ],
+              "scale": 0.4,
+              "tokens": 6
+            },
+            {
+              "ids": [
+                4
+              ],
+              "scale": 0.2,
+              "tokens": 1
+            }
+          ]
+        },
+        {
+          "mode": "token",
+          "width": 5,
+          "loss": 3.090909090909091,
+          "metric": {
+            "local_mean": 3.090909090909091
+          },
+          "gradient": [
+            0.09090909090909091,
+            0.5454545454545454,
+            0.5454545454545454,
+            1.4545454545454546,
+            0.4545454545454546
+          ],
+          "reference_loss": 3.090909090909091,
+          "reference_gradient": [
+            0.09090909090909091,
+            0.5454545454545454,
+            0.5454545454545454,
+            1.4545454545454546,
+            0.4545454545454546
+          ],
+          "gradient_max_error": 0.0,
+          "calls": [
+            {
+              "ids": [
+                0,
+                1,
+                2,
+                3,
+                4
+              ],
+              "scale": 1.0,
+              "tokens": 11
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "scope": {
+    "original": "4 complete methods, 4 complete helpers, original 2 result dataclasses; main compile only",
+    "own": "Remote empty base; row Carrier; anchor recorder; linear row/token-mean algorithm with real CPU autograd",
+    "not_run": [
+      "author uncommitted 24-assertion harness",
+      "native Part/packed Segment/TensorRef",
+      "real GRPO/FlowGRPO/LoRA/model forward",
+      "train_track dispatch or backend/optimizer/DP/collective",
+      "ratio parity, hardware memory/time, training quality"
+    ]
+  }
+}

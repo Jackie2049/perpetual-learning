@@ -1,5 +1,7 @@
 # UniRL — 腾讯统一多模态 RL 框架调研
 
+2026-11-01补充：[分轨微批与指标分母](#分轨微批与指标分母)核#301旧候选：原stack方法接自编CPU算法，指标加权修正不改变梯度；五行不等长token目标仍随微批变化。分支behind194且主线已重构，不移植旧实现或将此控制当当前GRPO故障。
+
 2026-11-01接续：[零优势与更新事件](#零优势与更新事件)追当前b8的GRPO→stack→backend：has_backward不是梯度非零，有限零norm仍可执行optimizer／scheduler；复用已有AdamW CPU证据，不重复归一化或诊断器实验。
 
 2026-11-01补充：[多图请求的附件轴与候选轴](#多图请求的附件轴与候选轴)核#417：八个原PNG编码／wire自编控制及三拒绝例，区分scalar／flat／一行nested；不把附件数当生成数，也不迁作真实SGLang／模型验收。
@@ -827,6 +829,37 @@ python -B experiments/scripts/verify_unirl_loss_reduction.py /path/to/UniRL
 [脚本](../../experiments/scripts/verify_unirl_loss_reduction.py)完整执行原 loss_agg 词汇模块，AST 仅选择完整原聚合函数、延后注解，无包壳/假 backend。微批权重是显式单进程算术，不是假装运行生产缩放器。打印完整源码 SHA256：head base.py `f586474992dee187755ae47f431a90dc4857180fa1b1aa01dd8b27e2f59a4f1a`，loss_scale.py `d627ea261f0867d46335a1264622911913ff1d684450b7333aaf0dc67209f13c`，loss_agg.py `8049957fa4ecbf2086afab6e066fa1beeb9d35bdabebfd3d8890f7ee078ecd3f`。
 
 本机环境缺 Ray/Hydra/OmegaConf/Pillow，未补装或导入训练栈，未复跑作者报告的双 rank Gloo/FSDP2 gate、80,640 组差分或 AROPD。这里确认局部目标差异和固定源码路径，不认证候选所有输入 bit-identical、分布式归约、模型梯度或训练收益；不自动采用或新增 M5 必跑事项。
+
+## 分轨微批与指标分母
+
+**指标与累计loss一致，不证明累计梯度等于整批目标。** leviking98z-rgb的[已有 #301](https://github.com/Tencent-Hunyuan/UniRL/pull/301)为统一AR／图像stack增加独立微批大小，并将微批指标按行数份额加权。2026-11-01读取OPEN／非draft，head `6cd3c09a90e34643d167ae428b6d6aa5751186b3`；API target base `da7506200829f0ac9fde2e6c7a71d34fc72732ba`不等于实际共同祖先 `683a59b3cb1f04bea3d93cc79a79cd2552769902`。相对main `b8e9740e981a68a5556fbeb8225558040a4d47a4`为ahead1／behind194，不能把API base当作修复前输入。
+
+[候选原stack](https://github.com/Tencent-Hunyuan/UniRL/blob/6cd3c09a90e34643d167ae428b6d6aa5751186b3/unirl/train/unified_model_stack.py)的`ar_micro_batch_size`和`image_micro_batch_size`省略或null时回退共享值；两轨batch行数可以不同。每次先分等大optimizer更新区间，再在区间内切微批；不要求每轨微批数相同，但更新数须整除各自worker上的总行数。`train_track`把各轨值同时传给anchor准备与训练切片，这是源码接线，不是本轮执行远程训练的结果。
+
+### 原方法与真实 CPU 梯度
+
+[脚本](../../experiments/unirl-track-micro-weights/verify.py)分别执行实际祖先与head的四个完整方法（初始化、切片、anchor准备、backward）、四个完整helper及两个原结果dataclass；十份版本／路径输入compile，另对当前main新路径compile，SHA256及完整数值见[结果](../../experiments/unirl-track-micro-weights/result.json)。Python3.12.13／Torch2.9.1，显式CPU；Remote基类为空，自编Carrier提供行切片，自编线性算法产生按行或按token均值并真实backward。没有native Part／Segment、GRPO／FlowGRPO或模型forward，亦非作者未提交的24断言harness。
+
+五行有效长度`[1,3,2,4,1]`、行loss为`theta_i × [1,2,3,4,5]`，theta初值全1。候选和祖先的backward均按微批行数／当前更新总行数缩放，六组“归约×微批宽度”各版本的loss与梯度逐项相同：
+
+| 局部目标 | 微批宽度 | 累计loss | 祖先报告指标 | 候选报告指标 | 对整批同目标的最大梯度差 |
+|---|---|---|---|---|---|
+| 按行均值 | 2，末批1行 | 3 | 3.333333 | 3 | 0 |
+| 按token均值 | 1 | 3 | 3 | 3 | 0.654545 |
+| 按token均值 | 2，末批1行 | 3.166667 | 3.472222 | 3.166667 | 0.545455 |
+| 按token均值 | 5，整批 | 3.090909 | 3.090909 | 3.090909 | 0 |
+
+整批token目标是`34/11`；微批宽度2时，三个局部均值为`7/4、22/6、5`，按行权重`2/5、2/5、1/5`累加得到`19/6`，不是`34/11`。候选将指标改为`19/6`，并没有改变原有梯度分母。宽度1也不是整批token目标；“默认不变”仅指与旧行为相同，不是旧行为本来就整批等价。以上为原stack接自编局部均值算法的条件验证，不指控真实当前GRPO执行了该旧路径，也不从行均值toy推出所有seq模式／reference-KL都等价。
+
+[原指标reducer](https://github.com/Tencent-Hunyuan/UniRL/blob/6cd3c09a90e34643d167ae428b6d6aa5751186b3/unirl/utils/misc.py)按每个key实际存在且可转数值的条目重新归一化。九组自编控制核普通均值、等权、不等长权重、缺key／非数值排除、零总权重回退、真实CPU标量／向量tensor与bool、空输入和权重长度拒绝。它只有每条字典一个权重；token均值、极值、计数等若需要不同聚合单位，不能仅因该函数支持weights便认为语义自动正确。本轮没有据此增加新reducer或修改指标定义。
+
+### Anchor 几何与版本边界
+
+AR5行／micro1得到五个单行切片，image10行／micro3得到3、3、3、1行；B6／更新数2／micro2得到`[(0,2),(2,3)]`与`[(3,5),(5,6)]`。自编anchor记录器在原`prepare_segment`中接B5／micro2，调用行序`[0,1]、[2,3]、[4]`，原`torch.cat`拼回行号0–4和宽度`[2,2,2,2,1]`。非正分轨值／显式覆盖、不可整除更新、声明anchor却缺字段共五次拒绝通过；这是几何与字段归序，不是模型replay、冻结语义或ratio=1证明。
+
+当前main已改为[stack/unified.py](https://github.com/Tencent-Hunyuan/UniRL/blob/b8e9740e981a68a5556fbeb8225558040a4d47a4/unirl/train/stack/unified.py)，走`update_planner.arrange_many`、`prepare_segment_anchors`和`resolve_loss_scales`，不再是本候选的固定行份额循环；已有[loss-unit学习](#本机聚合函数对照)继续按其版本理解。主线这里只读／compile，不重跑先前resolver控制，更不把旧候选加权与当前归约拼成一个实现。
+
+PR人工review为空；haonan3的讨论提醒defer_grad_sync与最终image微批无backward时的跨rank失败共识问题，属于另一个通信协议边界，本轮未运行或修复。作者的8×H20、image micro2约−20%步时／约+5GB峰值明确来自不同旧base且为单次测量，不是#301当前head实测。本轮不沿用该收益，真机缺口仅补[原M5条件入口](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不移植旧分支、合并通信方案、改M5脚本或排新训练；社区及已建PR的fork head写入仍逐项须用户明确同意。
 
 ## 离线 DPO 的成对布局与零步控制
 

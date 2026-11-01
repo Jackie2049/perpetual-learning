@@ -107,6 +107,8 @@
 
 ## UniRL
 
+- [分轨微批与指标分母](unirl-survey.md#分轨微批与指标分母)：#301原stack接自编CPU算法，指标修正不改变梯度；token目标与微批行权重分开，旧分支behind194，不迁当前主线或硬件报值。
+
 - [按需本地化的键与别名](unirl-survey.md#按需本地化的存储键与别名)：#354原ref／selector元数据控制核reads／skips不对称、空掩码与多span保守性、remap对应前提；非transport／finalizer／性能验收，旧分支behind92。
 
 - [奖励投影与轨迹所有权](unirl-survey.md#奖励请求投影与轨迹所有权)：#313旧分支原request／client／service接自编CPU载体，核保留身份、裁剪字段与reward行几何；behind99，不迁当前API／真实流量或作者性能结论。

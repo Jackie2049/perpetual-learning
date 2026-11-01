@@ -19,6 +19,8 @@ GPU/NPU 的访问、环境与实验由 macbook-M5 Agent 负责。M1 遇到需要
 
 ## UniRL 联合路径的资源与身份边界
 
+分轨微批参考（2026-11-01，同一联合入口、不新排队／接单）：[#301](https://github.com/Tencent-Hunyuan/UniRL/pull/301) head6cd3c09a、实际祖先683a59b3、API target da750620，相对当前main b8e9740e behind194。[M1原四方法／helper](../notebook/frameworks/unirl-survey.md#分轨微批与指标分母)接自编Carrier／算法，真实CPU梯度核指标行加权不修token分母、anchor拼接只证切片行序；非native Part／算法或模型。作者旧base8H20报值不作当前收益。若M5未来独立选用已有获准安全匹配联合训练，先核实际重构后的planner／loss-unit／anchor协议、各轨行数与token单位，再按原小预算核两轨更新切片、真实anchor／logprob／梯度和通信完成点，耗时与显存分列；缺匹配版本／权重／权限／资源、需部署或影响专项即停记未测，不移植旧分支、拼defer-sync方案／改M5环境或新开训练。社区及既有PR-head写入仍逐项须用户明确同意，M1不探测服务器。
+
 按需本地化参考（2026-11-01，沿用下方奖励传输入口、非新队列／接单）：[#354](https://github.com/Tencent-Hunyuan/UniRL/pull/354) headcc8c3f01／祖先c8af5d69，相对main b8e9740e behind92。[M1原TensorRef／mask helper](../notebook/frameworks/unirl-survey.md#按需本地化的存储键与别名)14自编元数据控制＋叶数拒绝，只用自编handle身份，无localize／get_batch／finalizer执行；skips按对象出现、reads按键，keyless／多span保守性与实际搬运另核。作者双H20及合成Sample微基准不当整步收益。
 
 仅M5未来独立选用已有获准安全匹配传输工作时，先核实际可用版本／worker-local分支及autograd限制，不把旧reads/skips接口套main；在原预算核别名／view／多span选择、localize前后对应与所有权、未读句柄回传身份、释放后store状态和真实两跳字节，值／寿命／流量／耗时分列。缺版本／授权模型／环境／资源、需下载部署或影响专项即停记未测，不移植／拼#313、启Ray/NCCL任务或新基准，任何社区及PR-head写入仍逐项须用户明确同意；M1不探测服务器。
