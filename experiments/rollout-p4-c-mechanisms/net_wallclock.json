@@ -1,0 +1,313 @@
+{
+  "target": 0.9,
+  "budgets": {
+    "10": {
+      "base": {
+        "net_wall_mean": 8960,
+        "ratio_vs_base": 1.0,
+        "reached": 0,
+        "paired_diff_mean": 0,
+        "paired_diff_ci95": 0.0,
+        "final_acc_mean_at_budget": 0.6653333333333333
+      },
+      "freq": {
+        "net_wall_mean": 8514.8,
+        "ratio_vs_base": 0.9503124999999999,
+        "reached": 0,
+        "paired_diff_mean": -445.2,
+        "paired_diff_ci95": 99.13400217483404,
+        "final_acc_mean_at_budget": 0.6538333333333334
+      },
+      "replay": {
+        "net_wall_mean": 9270.8,
+        "ratio_vs_base": 1.0346875,
+        "reached": 0,
+        "paired_diff_mean": 310.8,
+        "paired_diff_ci95": 28.46950508253427,
+        "final_acc_mean_at_budget": 0.6691666666666667
+      },
+      "cancel": {
+        "net_wall_mean": 6118.933333333333,
+        "ratio_vs_base": 0.6829166666666667,
+        "reached": 0,
+        "paired_diff_mean": -2841.0666666666666,
+        "paired_diff_ci95": 232.42950035700588,
+        "final_acc_mean_at_budget": 0.7
+      },
+      "cap": {
+        "net_wall_mean": 8960,
+        "ratio_vs_base": 1.0,
+        "reached": 0,
+        "paired_diff_mean": 0,
+        "paired_diff_ci95": 0.0,
+        "final_acc_mean_at_budget": 0.6688333333333334
+      },
+      "_base_reached": 0,
+      "_base_wall_mean": 8960
+    },
+    "20": {
+      "base": {
+        "net_wall_mean": 13260.8,
+        "ratio_vs_base": 1.0,
+        "reached": 30,
+        "paired_diff_mean": 0,
+        "paired_diff_ci95": 0.0,
+        "final_acc_mean_at_budget": 0.9576666666666667
+      },
+      "freq": {
+        "net_wall_mean": 10778.133333333333,
+        "ratio_vs_base": 0.8127815315315315,
+        "reached": 30,
+        "paired_diff_mean": -2482.6666666666665,
+        "paired_diff_ci95": 417.6278922883207,
+        "final_acc_mean_at_budget": 0.9336666666666666
+      },
+      "replay": {
+        "net_wall_mean": 13272.933333333332,
+        "ratio_vs_base": 1.0009149774774775,
+        "reached": 30,
+        "paired_diff_mean": 12.133333333333333,
+        "paired_diff_ci95": 572.148285797724,
+        "final_acc_mean_at_budget": 0.9638333333333333
+      },
+      "cancel": {
+        "net_wall_mean": 8750.933333333332,
+        "ratio_vs_base": 0.6599099099099098,
+        "reached": 30,
+        "paired_diff_mean": -4509.866666666667,
+        "paired_diff_ci95": 527.755110440804,
+        "final_acc_mean_at_budget": 0.9646666666666667
+      },
+      "cap": {
+        "net_wall_mean": 12424.533333333333,
+        "ratio_vs_base": 0.9369369369369369,
+        "reached": 30,
+        "paired_diff_mean": -836.2666666666667,
+        "paired_diff_ci95": 360.2229384906992,
+        "final_acc_mean_at_budget": 0.9635
+      },
+      "_base_reached": 30,
+      "_base_wall_mean": 13260.8
+    },
+    "30": {
+      "base": {
+        "net_wall_mean": 13260.8,
+        "ratio_vs_base": 1.0,
+        "reached": 30,
+        "paired_diff_mean": 0,
+        "paired_diff_ci95": 0.0,
+        "final_acc_mean_at_budget": 0.9846666666666667
+      },
+      "freq": {
+        "net_wall_mean": 10778.133333333333,
+        "ratio_vs_base": 0.8127815315315315,
+        "reached": 30,
+        "paired_diff_mean": -2482.6666666666665,
+        "paired_diff_ci95": 417.6278922883207,
+        "final_acc_mean_at_budget": 0.9635
+      },
+      "replay": {
+        "net_wall_mean": 13272.933333333332,
+        "ratio_vs_base": 1.0009149774774775,
+        "reached": 30,
+        "paired_diff_mean": 12.133333333333333,
+        "paired_diff_ci95": 572.148285797724,
+        "final_acc_mean_at_budget": 0.985
+      },
+      "cancel": {
+        "net_wall_mean": 8750.933333333332,
+        "ratio_vs_base": 0.6599099099099098,
+        "reached": 30,
+        "paired_diff_mean": -4509.866666666667,
+        "paired_diff_ci95": 527.755110440804,
+        "final_acc_mean_at_budget": 0.9853333333333333
+      },
+      "cap": {
+        "net_wall_mean": 12424.533333333333,
+        "ratio_vs_base": 0.9369369369369369,
+        "reached": 30,
+        "paired_diff_mean": -836.2666666666667,
+        "paired_diff_ci95": 360.2229384906992,
+        "final_acc_mean_at_budget": 0.983
+      },
+      "_base_reached": 30,
+      "_base_wall_mean": 13260.8
+    },
+    "50": {
+      "base": {
+        "net_wall_mean": 13260.8,
+        "ratio_vs_base": 1.0,
+        "reached": 30,
+        "paired_diff_mean": 0,
+        "paired_diff_ci95": 0.0,
+        "final_acc_mean_at_budget": 0.994
+      },
+      "freq": {
+        "net_wall_mean": 10778.133333333333,
+        "ratio_vs_base": 0.8127815315315315,
+        "reached": 30,
+        "paired_diff_mean": -2482.6666666666665,
+        "paired_diff_ci95": 417.6278922883207,
+        "final_acc_mean_at_budget": 0.9831666666666666
+      },
+      "replay": {
+        "net_wall_mean": 13272.933333333332,
+        "ratio_vs_base": 1.0009149774774775,
+        "reached": 30,
+        "paired_diff_mean": 12.133333333333333,
+        "paired_diff_ci95": 572.148285797724,
+        "final_acc_mean_at_budget": 0.9946666666666667
+      },
+      "cancel": {
+        "net_wall_mean": 8750.933333333332,
+        "ratio_vs_base": 0.6599099099099098,
+        "reached": 30,
+        "paired_diff_mean": -4509.866666666667,
+        "paired_diff_ci95": 527.755110440804,
+        "final_acc_mean_at_budget": 0.9921666666666666
+      },
+      "cap": {
+        "net_wall_mean": 12424.533333333333,
+        "ratio_vs_base": 0.9369369369369369,
+        "reached": 30,
+        "paired_diff_mean": -836.2666666666667,
+        "paired_diff_ci95": 360.2229384906992,
+        "final_acc_mean_at_budget": 0.9923333333333333
+      },
+      "_base_reached": 30,
+      "_base_wall_mean": 13260.8
+    },
+    "100": {
+      "base": {
+        "net_wall_mean": 13260.8,
+        "ratio_vs_base": 1.0,
+        "reached": 30,
+        "paired_diff_mean": 0,
+        "paired_diff_ci95": 0.0,
+        "final_acc_mean_at_budget": 0.9975
+      },
+      "freq": {
+        "net_wall_mean": 10778.133333333333,
+        "ratio_vs_base": 0.8127815315315315,
+        "reached": 30,
+        "paired_diff_mean": -2482.6666666666665,
+        "paired_diff_ci95": 417.6278922883207,
+        "final_acc_mean_at_budget": 0.9944999999999999
+      },
+      "replay": {
+        "net_wall_mean": 13272.933333333332,
+        "ratio_vs_base": 1.0009149774774775,
+        "reached": 30,
+        "paired_diff_mean": 12.133333333333333,
+        "paired_diff_ci95": 572.148285797724,
+        "final_acc_mean_at_budget": 0.9978333333333333
+      },
+      "cancel": {
+        "net_wall_mean": 8750.933333333332,
+        "ratio_vs_base": 0.6599099099099098,
+        "reached": 30,
+        "paired_diff_mean": -4509.866666666667,
+        "paired_diff_ci95": 527.755110440804,
+        "final_acc_mean_at_budget": 0.9968333333333333
+      },
+      "cap": {
+        "net_wall_mean": 12424.533333333333,
+        "ratio_vs_base": 0.9369369369369369,
+        "reached": 30,
+        "paired_diff_mean": -836.2666666666667,
+        "paired_diff_ci95": 360.2229384906992,
+        "final_acc_mean_at_budget": 0.9966666666666667
+      },
+      "_base_reached": 30,
+      "_base_wall_mean": 13260.8
+    },
+    "200": {
+      "base": {
+        "net_wall_mean": 13260.8,
+        "ratio_vs_base": 1.0,
+        "reached": 30,
+        "paired_diff_mean": 0,
+        "paired_diff_ci95": 0.0,
+        "final_acc_mean_at_budget": 0.9993333333333333
+      },
+      "freq": {
+        "net_wall_mean": 10778.133333333333,
+        "ratio_vs_base": 0.8127815315315315,
+        "reached": 30,
+        "paired_diff_mean": -2482.6666666666665,
+        "paired_diff_ci95": 417.6278922883207,
+        "final_acc_mean_at_budget": 0.996
+      },
+      "replay": {
+        "net_wall_mean": 13272.933333333332,
+        "ratio_vs_base": 1.0009149774774775,
+        "reached": 30,
+        "paired_diff_mean": 12.133333333333333,
+        "paired_diff_ci95": 572.148285797724,
+        "final_acc_mean_at_budget": 0.9993333333333333
+      },
+      "cancel": {
+        "net_wall_mean": 8750.933333333332,
+        "ratio_vs_base": 0.6599099099099098,
+        "reached": 30,
+        "paired_diff_mean": -4509.866666666667,
+        "paired_diff_ci95": 527.755110440804,
+        "final_acc_mean_at_budget": 0.9993333333333333
+      },
+      "cap": {
+        "net_wall_mean": 12424.533333333333,
+        "ratio_vs_base": 0.9369369369369369,
+        "reached": 30,
+        "paired_diff_mean": -836.2666666666667,
+        "paired_diff_ci95": 360.2229384906992,
+        "final_acc_mean_at_budget": 0.9986666666666667
+      },
+      "_base_reached": 30,
+      "_base_wall_mean": 13260.8
+    },
+    "300": {
+      "base": {
+        "net_wall_mean": 13260.8,
+        "ratio_vs_base": 1.0,
+        "reached": 30,
+        "paired_diff_mean": 0,
+        "paired_diff_ci95": 0.0,
+        "final_acc_mean_at_budget": 0.9996666666666667
+      },
+      "freq": {
+        "net_wall_mean": 10778.133333333333,
+        "ratio_vs_base": 0.8127815315315315,
+        "reached": 30,
+        "paired_diff_mean": -2482.6666666666665,
+        "paired_diff_ci95": 417.6278922883207,
+        "final_acc_mean_at_budget": 0.9983333333333333
+      },
+      "replay": {
+        "net_wall_mean": 13272.933333333332,
+        "ratio_vs_base": 1.0009149774774775,
+        "reached": 30,
+        "paired_diff_mean": 12.133333333333333,
+        "paired_diff_ci95": 572.148285797724,
+        "final_acc_mean_at_budget": 0.9991666666666666
+      },
+      "cancel": {
+        "net_wall_mean": 8750.933333333332,
+        "ratio_vs_base": 0.6599099099099098,
+        "reached": 30,
+        "paired_diff_mean": -4509.866666666667,
+        "paired_diff_ci95": 527.755110440804,
+        "final_acc_mean_at_budget": 0.9993333333333333
+      },
+      "cap": {
+        "net_wall_mean": 12424.533333333333,
+        "ratio_vs_base": 0.9369369369369369,
+        "reached": 30,
+        "paired_diff_mean": -836.2666666666667,
+        "paired_diff_ci95": 360.2229384906992,
+        "final_acc_mean_at_budget": 0.999
+      },
+      "_base_reached": 30,
+      "_base_wall_mean": 13260.8
+    }
+  }
+}

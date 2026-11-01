@@ -1,0 +1,42 @@
+{
+  "experiment": "G2 其余四个 C 类机制的同 seed 单开关对照（动态频率／成功回放／足数取消／cap 替换）",
+  "batch": "2026-11-01（M1），支撑主文档 §13.29",
+  "execution": {
+    "python": "3.9.6（macOS arm64，仅标准库；numpy 未使用）",
+    "commands": [
+      "python3 c_mechanisms_ablation.py                         # 约 59 s，5 臂 × 30 种子 × 300 步",
+      "python3 c_mechanisms_ablation.py --verify summary.json     # 通过：逐字段相同",
+      "python3 analyze.py --json net_wallclock.json               # 固定预算 T 的净墙钟扫描，秒级",
+      "python3 lr_sensitivity.py                                  # 约 170 s，三档 lr × 5 臂",
+      "python3 lr_sensitivity.py --verify                         # 通过：逐字段相同"
+    ],
+    "note": "两条 verify 均为本机真重跑后比对，非比对同一份文件。所有随机性来自 random.Random(seed)。"
+  },
+  "classification": "进程内 CPU 模拟【模拟】；四个机制按论文描述实现（非论文复现），不是任何系统的端到端。数字不可与 DART／ProRL Agent／QwenGyre 的报值相除（§19.1 规则一）。",
+  "artifacts_sha256": {
+    "summary.json": "d88356ba2f12c1b43a1f9234417538b02845daf7152e0cad966f455ddd29ced4",
+    "lr_sensitivity.json": "78a72de4c172f2f46267e373d4507718d10a498d61c013f247d0bb32348fb54f",
+    "net_wallclock.json": "4505d640e1e4dbe37ee9810c795882aa4e8ad1286a42caea8dca1d74883a9f6b",
+    "c_mechanisms_ablation.py": "a8df50046fc4ce8c6579b18171c6f9fb1d4ca7ca5af8a3d99245ad673fa27876",
+    "lr_sensitivity.py": "6f12d28004f631e1041a2ddeca8599e31cef022a98261b9fcc7f80b01cf53003",
+    "analyze.py": "0f2dd5dfe4cb06f93100e39edb1a49aae919682a8e6c1838d5789c8088f566e4"
+  },
+  "mechanism_provenance": {
+    "freq": "DART 2609.23866v1，原文 'when a task achieves high success rates (above 0.6), we reduce its rollout frequency from 8 to lower values'（§6.28.5 D10 逐字核）",
+    "replay": "DART 2609.23866v1，原文 'Experience Pool…randomly retrieve a successful trajectory and incorporate it into the training batch'（全败组补旧成功样本）",
+    "cancel": "ProRL Agent 2603.18815v1，原文 'We terminate remaining active jobs once the target number of Informative Prompts is reached'",
+    "cap": "QwenGyre 2609.33848v2，原文 'The default trajectory cap is Jmax=5 per rollout execution'（本实验借用其'路径 cap'形态，阈值取组内答对率 > 0.8）",
+    "boundary": "以上机制均无公开源码（§13.17 G7：ReSpec/DAS 之外，DART/ProRL/QwenGyre 的公开实现本身未定位），因此按论文描述实现，不声称与作者代码一致。"
+  },
+  "known_implementation_choices": [
+    "动态频率用'上一完整组成功率 ≥ 0.75'作为成功率 > 0.6 的在线代理；成功率估计对五个臂用同一规则更新，避免频率/截断自反馈。",
+    "cap 发生在采样之后：只改变进入优势计算的样本条数，不改变生成的 token 数——因此 cap 臂的生成量比恒为 1.000，这是机制语义而非 bug（§13.29 ⑤(b)）。",
+    "足数取消省下的任务数计入 filtered 字段（每臂该字段含义不同：freq/replay/cap 记命中次数，cancel 记取消的任务数）。",
+    "更新成本固定为 8 单位、与批大小无关：这是墙钟模型的简化，使'更新吃掉省额'的幅度成为下界（§13.29 ⑤(a) 已注明）。"
+  ],
+  "residual": [
+    "DART 的高熵 step 筛选、QwenGyre 的角色路径优先级、ProRL Agent 的跨迭代保留均未纳入。",
+    "未覆盖并发／排队／长尾、多卡、真实数据集、async 档位、全败组占比高的负例场景。",
+    "端到端 on/off 需要真实训练，属 P-1 同栈横评，按分工在 M5 侧算力窗口执行。"
+  ]
+}

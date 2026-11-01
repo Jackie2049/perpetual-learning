@@ -125,6 +125,7 @@
 | [verl-8281-gpu-smoke/](verl-8281-gpu-smoke/readme.md) | verl #8281 修复（PR #8313）GPU e2e 训练冒烟：正向 2 step 跑通 + 超长 prompt error 策略 fail-loudly | [handoff-m5 #8281 条目](handoff-m5.md#verl-8281-超长-prompt-截断修复--gpu-e2e-训练冒烟) |
 
 | [rollout-p3-dapo-group-filter/](rollout-p3-dapo-group-filter/readme.md) | P-3：C 类机制（verl DAPO 组过滤）的收敛净效应示范——30 种子 × 300 步、五模式逐层叠加的同 seed on/off 对照；进程内模拟（CPU），非端到端 | [§13.28 净效应示范](../notebook/rollout-performance-research.md#1328-p-3c-类机制dapo-组过滤的收敛净效应示范同-seed-开关-onoff2026-11-01-m1-完成) |
+| [rollout-p4-c-mechanisms/](rollout-p4-c-mechanisms/readme.md) | G2 其余四个 C 类机制（动态频率／成功回放／足数取消／cap 替换）的同 seed 单开关对照——30 种子 × 300 步 × 3 档 lr；结论是"省生成量 ≠ 省墙钟"；按论文描述实现（非复现），进程内模拟 | [§13.29 四机制对照](../notebook/rollout-performance-research.md#1329-g2-其余四个-c-类机制的同-seed-单开关对照省生成不等于省墙钟2026-11-01-m1-完成) |
 | [kernels/fused_rms_norm/](kernels/fused_rms_norm/) | Fused RMSNorm CUDA/C++ 实现、Python 接口、测试及基准 | [算子实验记录](../notebook/experiments/rtx4090-fused-rmsnorm-cuda.md) |
 | [scripts/](scripts/readme.md) | GPU 实验、故障复现及贡献验证脚本 | [GRPO 排错](../notebook/grpo-training-debugging-guide.md) |
 | [rtx4090/configs/](rtx4090/configs/readme.md) | RTX 4090 DeepSpeed 训练配置 | [训练技巧](../notebook/experiments/rtx4090-training-techniques.md) |
