@@ -1,5 +1,7 @@
 # verl Worker 生命周期与 Ray 分布式架构源码阅读
 
+2026-11-01接续：[SGLang 分桶张量的引用寿命](#sglang-分桶张量的引用寿命)核#8435：完整原20个CPU参数项在隔离源码接缝下，两处修改才全过；保留跨await存活与接收buffer复用保护，不外推CUDA峰值／训练收益。
+
 2026-11-01接续：[V1结束钩子与加载器清理](#v1-结束钩子与加载器清理)核已有#8474：正常末步不再提前return，后置三项清理并非finally保证；原方法的记录器控制不当真实worker或Ray退出验收。
 
 2026-10-30接续：[分层导出与base重同步的拒绝边界](#分层导出与-base-重同步的拒绝边界)核#8032新guard；原8项Mock回归候选全过／父版3项未拒绝，不等真实权重释放、恢复或异常回滚验收。另核[后端与部署模式](#配置后端与部署模式)：标准V1的vLLM路径是HYBRID，不能仅因物理同卡部署就套用COLOCATED分支反馈。
@@ -959,6 +961,41 @@ python -B experiments/scripts/verify_verl_bucketed_transfer.py /path/to/verl-git
 输入SHA256：协议模块`58d8198dd6ce3c5743d560d7064820c96b11b9f947475670afd4bf7b518ee954`；原CPU测试`0aaf5ba03e4c75a21556d482d2bce71db0b3cdd4b806cda4b80334e2505c0130`；base…head完整patch `dc67cbc8251489035df1d101d3b910ac25df17bd0da8fb6385c9924d3f316268`。
 
 CUDA IPC、NPU的host→device拷贝、真实vLLM callback/多rank及故障后资源释放仍未测；[作者说明](https://github.com/verl-project/verl/pull/7366)也未声称CUDA或完整vLLM验证。条件补[原M5同步交接](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，仅供日后独立选题，不应用候选、故障注入生产或据此诊断#8250。
+
+## SGLang 分桶张量的引用寿命
+
+**桶已消费，不代表 Python 已释放它的所有引用。** Levius-Fubuki 的 [#8435](https://github.com/verl-project/verl/pull/8435)调整 generator 与 adapter 两处寿命边界，保持 `_compact_for_bucket` 的 view 克隆保护和 DeepSeek V4 融合组规则。2026-11-01只读时为 open、非draft，head `3b1cef9143498004301d4ec941b8acfc816f66e2`，API base及真实共同祖先均为 `2ab35292039a51175a4b3d3b3b2d76e951a0d3e4`，ahead 1／behind 0，reviews为空；已有作者，不另认领或发布候选。
+
+### 克隆次序与消费完成
+
+[原 bucketer](https://github.com/verl-project/verl/blob/3b1cef9143498004301d4ec941b8acfc816f66e2/verl/workers/rollout/sglang_rollout/utils.py)旧版先克隆下一张量，再通过 `_place` 冲刷旧桶，`flushed`、entries与循环局部变量也可能继续引用已消费张量。候选先用普通张量的大小判断是否溢出，yield旧桶，恢复后清空旧桶，再克隆这个普通view；并显式删除暂存局部引用。它已经从上游取到该普通张量才能判断大小，不是“取下一张量前释放所有源引用”的承诺。
+
+融合成员仍收到就克隆：上游可能重复使用同一接收buffer，延后复制会被后续成员覆盖。组完整后整体放入桶，不在组内切开；一组可以大于目标桶大小，未完成的多个组也可能占用暂存。因此桶目标不是整个同步过程的硬性内存上限。已有自有存储仍不额外克隆；全跨度view也须克隆，不能仅用numel等于backing容量判断所有权。
+
+[原 ServerAdapter.update_weights](https://github.com/verl-project/verl/blob/3b1cef9143498004301d4ec941b8acfc816f66e2/verl/workers/rollout/sglang_rollout/sglang_rollout.py)在 `await sgl_update_weights(...)` 返回后才 `del params_batch`，然后请求下一桶。保留跨await所需张量与及时释放已消费桶是两个要求；只修generator不能解除adapter持有，反之也不能解除generator局部引用。
+
+### 同一原测试的四组 CPU 对照
+
+[复现脚本](../../experiments/verl-sglang-bucket-lifetime/verify.py)用固定Git对象的完整原测试文件，原生pytest收集20个参数项；原generator、helper、常量和完整adapter方法均通过AST保真检查。为避开整包导入、设备发现与缺失的Ray，临时包初始化为空，adapter类容器只留下该原方法，`ensure_async_iterator` 来自原文件；SGLang／HTTP记录器由原测试提供。两组混合实现只是本地归因夹具，不是上游分支或可部署版本。Python3.12.13、Torch2.9.1、NumPy2.0.2、pytest8.4.2，不安装异步插件，原测试自行 `asyncio.run`。
+
+| generator | adapter | 通过 | 失败 |
+|---|---|---:|---:|
+| 基线 | 基线 | 14 | 6 |
+| 候选 | 基线 | 19 | 1 |
+| 基线 | 候选 | 14 | 6 |
+| 候选 | 候选 | 20 | 0 |
+
+[完整结果](../../experiments/verl-sglang-bucket-lifetime/result.json)记录六份完整输入hash、源码compile、方法AST hash及逐项JUnit结果，所有组均无error／skip。基线六失败为提前克隆一项、adapter消费后释放一项、同步／异步源×普通／融合桶四项引用寿命；仅改generator时只剩adapter项。仅改adapter仍被generator引用挡住，同样六项失败，不表示adapter修改无效。
+
+十组融合后缀、未完整组拒绝、非DeepSeek opt-in与两项重复buffer值校验在基线也通过；后两项覆盖全跨度view及融合组超过桶目标。adapter测试在await内部核弱引用仍存活，返回后于下一次源拉取前核已释放；这些断言验证CPU对象引用与值保护，不是实际传输、跨进程消费或设备分配器测量。
+
+首轮自编隔离夹具漏保留 `sgl_update_weights` 导入，adapter原测试在monkeypatch处AttributeError，候选19过1失败；补回原导入后取得上表。没有改原测试／生产函数或把该接缝错误判为候选缺陷。
+
+### 外部 CUDA 报告与真实同步缺口
+
+[作者报告](https://github.com/verl-project/verl/pull/8435)另有两测试文件合计28过，本轮只跑其中完整bucketer文件20项。作者单4090／Torch2.12.1+cu130的合成CUDA IPC以128MiB复用buffer、16个view、256MiB桶执行每轮8次更新、各3次：发送端peak allocated为基线768MiB、仅generator640MiB、仅adapter640MiB、两处384MiB，结束均128MiB；HTTP由独立进程CUDA IPC消费者替代，并非真实SGLang训练。该版本也不同于本轮Torch，不把这些数字写作M1测量或总训练内存减半／吞吐收益。
+
+真实SGLang安装确认、CUDA IPC生命周期、设备峰值、量化refit／LoRA／delta路径及异常退出不在上述CPU断言内。差额并入[既有M5同步条件参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，仅供未来独立选择已获准匹配任务；不自动部署、应用候选、探测服务器或新增训练队列，不接管M5专项。社区及既有PR-head写入仍逐项须用户明确同意。
 
 Sources:
 

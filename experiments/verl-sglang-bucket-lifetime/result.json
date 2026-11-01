@@ -1,0 +1,430 @@
+{
+  "scope": "Unchanged complete original bucketer test file; original AST functions and complete adapter method; empty package initializers and simplified class container. Original test supplies HTTP/SGLang stubs. Not full verl import or real IPC/backend.",
+  "environment": {
+    "python": "3.12.13",
+    "torch": "2.9.1",
+    "numpy": "2.0.2",
+    "pytest": "8.4.2"
+  },
+  "source_sha256": {
+    "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4:verl/workers/rollout/sglang_rollout/utils.py": "5bf7568323caffd66f56f8756072dcc662d206debd753b013323c9a375543fd5",
+    "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4:verl/workers/rollout/sglang_rollout/sglang_rollout.py": "39eff75e17cf7dd99cefdc839cd476df6de0827664d3f8b2d629cc956fbf0c79",
+    "3b1cef9143498004301d4ec941b8acfc816f66e2:verl/workers/rollout/sglang_rollout/utils.py": "068bac1ab3369d2ea0580224e0b01094666c973b5a6fcf5013c0dcbe6582fc94",
+    "3b1cef9143498004301d4ec941b8acfc816f66e2:verl/workers/rollout/sglang_rollout/sglang_rollout.py": "611611ebfa04f1e4d293e2fe8931a7aa76c968d86fc349dc3658ab1298ba7cc1",
+    "3b1cef9143498004301d4ec941b8acfc816f66e2:verl/workers/rollout/utils.py": "a9b2d52a1ea749b5d20b4977d777ae1df97a6665957893aaac1b8dbe7ab15fad",
+    "3b1cef9143498004301d4ec941b8acfc816f66e2:tests/checkpoint_engine/test_sglang_fusion_bucketing_on_cpu.py": "85273213a7e220340061455f12c6cdd9c0984cef12fe8cd20f29edc308641ae6"
+  },
+  "ast_sha256": {
+    "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4": {
+      "get_named_tensor_buckets": "cf43ca61d744613d0e3dd3c0ab9f5a55aff2045f0f11299a9ed504e9ceceb8eb",
+      "ServerAdapter.update_weights": "f650ab5218dd1be54cb66dbd5eb4790a6473e88a838e7126fa6a9bc27c709efc"
+    },
+    "3b1cef9143498004301d4ec941b8acfc816f66e2": {
+      "get_named_tensor_buckets": "6132e40e3fc2d03ef078c9bbb542d77863c33a1875bc62766bc5cb7edbfdd307",
+      "ServerAdapter.update_weights": "a3252e8beb5c04191fca71e3829b8490f1ec2dcaa87126010f833006d517707e"
+    }
+  },
+  "runs": [
+    {
+      "label": "base",
+      "generator": "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4",
+      "adapter": "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4",
+      "exit_code": 1,
+      "junit_available": true,
+      "counts": {
+        "passed": 14,
+        "failed": 6,
+        "error": 0,
+        "skipped": 0
+      },
+      "cases": [
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group0]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group1]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group2]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group3]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group4]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group5]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group6]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group7]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group8]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group9]",
+          "status": "passed"
+        },
+        {
+          "name": "test_fusion_grouping_is_opt_in_for_non_deepseek_models",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_incomplete_group_fails_loudly",
+          "status": "passed"
+        },
+        {
+          "name": "test_overflow_yields_before_cloning_next_view",
+          "status": "failed",
+          "message": "assert 2 == 1\n +  where 2 = len([tensor([0, 1, 2, 3, 4, 5, 6, 7], dtype=torch.uint8), tensor([0, 1, 2, 3, 4, 5, 6, 7], dtype=torch.uint8)])"
+        },
+        {
+          "name": "test_adapter_releases_consumed_bucket_after_await",
+          "status": "failed",
+          "message": "AssertionError: adapter retained a consumed bucket\nassert False\n +  where False = all(<generator object test_adapter_releases_consumed_bucket_after_await.<locals>.source.<locals>.<genexpr> at 0x119979ff0>)"
+        },
+        {
+          "name": "test_consumed_bucket_released_before_next_compaction[False-False]",
+          "status": "failed",
+          "message": "AssertionError: consumed bucket still retains tensors\nassert False\n +  where False = all(<generator object test_consumed_bucket_released_before_next_compaction.<locals>.check_compaction.<locals>.<genexpr> at 0x119c11d80>)"
+        },
+        {
+          "name": "test_consumed_bucket_released_before_next_compaction[False-True]",
+          "status": "failed",
+          "message": "AssertionError: consumed bucket still retains tensors\nassert False\n +  where False = all(<generator object test_consumed_bucket_released_before_next_compaction.<locals>.check_compaction.<locals>.<genexpr> at 0x119c11e50>)"
+        },
+        {
+          "name": "test_consumed_bucket_released_before_next_compaction[True-False]",
+          "status": "failed",
+          "message": "AssertionError: consumed bucket still retains tensors\nassert False\n +  where False = all(<generator object test_consumed_bucket_released_before_next_compaction.<locals>.check_compaction.<locals>.<genexpr> at 0x119c12190>)"
+        },
+        {
+          "name": "test_consumed_bucket_released_before_next_compaction[True-True]",
+          "status": "failed",
+          "message": "AssertionError: consumed bucket still retains tensors\nassert False\n +  where False = all(<generator object test_consumed_bucket_released_before_next_compaction.<locals>.check_compaction.<locals>.<genexpr> at 0x119c124d0>)"
+        },
+        {
+          "name": "test_reused_full_span_views_preserve_values[False]",
+          "status": "passed"
+        },
+        {
+          "name": "test_reused_full_span_views_preserve_values[True]",
+          "status": "passed"
+        }
+      ],
+      "stdout_tail": "ct_for_bucket(tensor), tensor_size)]\n                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest_original.py:168: in check_compaction\n    assert all(ref() is None for ref in consumed), \"consumed bucket still retains tensors\"\nE   AssertionError: consumed bucket still retains tensors\nE   assert False\nE    +  where False = all(<generator object test_consumed_bucket_released_before_next_compaction.<locals>.check_compaction.<locals>.<genexpr> at 0x119c124d0>)\n- generated xml file: <temporary-root>/report.xml -\n=========================== short test summary info ============================\nFAILED test_original.py::test_overflow_yields_before_cloning_next_view - asse...\nFAILED test_original.py::test_adapter_releases_consumed_bucket_after_await - ...\nFAILED test_original.py::test_consumed_bucket_released_before_next_compaction[False-False]\nFAILED test_original.py::test_consumed_bucket_released_before_next_compaction[False-True]\nFAILED test_original.py::test_consumed_bucket_released_before_next_compaction[True-False]\nFAILED test_original.py::test_consumed_bucket_released_before_next_compaction[True-True]\n6 failed, 14 passed in 1.40s\n",
+      "stderr": ""
+    },
+    {
+      "label": "generator_only",
+      "generator": "3b1cef9143498004301d4ec941b8acfc816f66e2",
+      "adapter": "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4",
+      "exit_code": 1,
+      "junit_available": true,
+      "counts": {
+        "passed": 19,
+        "failed": 1,
+        "error": 0,
+        "skipped": 0
+      },
+      "cases": [
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group0]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group1]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group2]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group3]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group4]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group5]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group6]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group7]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group8]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group9]",
+          "status": "passed"
+        },
+        {
+          "name": "test_fusion_grouping_is_opt_in_for_non_deepseek_models",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_incomplete_group_fails_loudly",
+          "status": "passed"
+        },
+        {
+          "name": "test_overflow_yields_before_cloning_next_view",
+          "status": "passed"
+        },
+        {
+          "name": "test_adapter_releases_consumed_bucket_after_await",
+          "status": "failed",
+          "message": "AssertionError: adapter retained a consumed bucket\nassert False\n +  where False = all(<generator object test_adapter_releases_consumed_bucket_after_await.<locals>.source.<locals>.<genexpr> at 0x116575630>)"
+        },
+        {
+          "name": "test_consumed_bucket_released_before_next_compaction[False-False]",
+          "status": "passed"
+        },
+        {
+          "name": "test_consumed_bucket_released_before_next_compaction[False-True]",
+          "status": "passed"
+        },
+        {
+          "name": "test_consumed_bucket_released_before_next_compaction[True-False]",
+          "status": "passed"
+        },
+        {
+          "name": "test_consumed_bucket_released_before_next_compaction[True-True]",
+          "status": "passed"
+        },
+        {
+          "name": "test_reused_full_span_views_preserve_values[False]",
+          "status": "passed"
+        },
+        {
+          "name": "test_reused_full_span_views_preserve_values[True]",
+          "status": "passed"
+        }
+      ],
+      "stdout_tail": "e_events.py:691: in run_until_complete\n    return future.result()\n           ^^^^^^^^^^^^^^^\nverl/workers/rollout/sglang_rollout/sglang_rollout.py:56: in update_weights\n    async for params_batch in get_named_tensor_buckets(weights, update_weights_bucket_bytes, fusion_groups=fusion_groups):\nverl/workers/rollout/sglang_rollout/utils.py:65: in get_named_tensor_buckets\n    async for name, tensor in ensure_async_iterator(iterable):\nverl/workers/rollout/sglang_rollout/utils.py:11: in ensure_async_iterator\n    for item in iterable:\n                ^^^^^^^^\ntest_original.py:143: in source\n    assert all(ref() is None for ref in consumed), \"adapter retained a consumed bucket\"\nE   AssertionError: adapter retained a consumed bucket\nE   assert False\nE    +  where False = all(<generator object test_adapter_releases_consumed_bucket_after_await.<locals>.source.<locals>.<genexpr> at 0x116575630>)\n- generated xml file: <temporary-root>/report.xml -\n=========================== short test summary info ============================\nFAILED test_original.py::test_adapter_releases_consumed_bucket_after_await - ...\n1 failed, 19 passed in 0.65s\n",
+      "stderr": ""
+    },
+    {
+      "label": "adapter_only",
+      "generator": "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4",
+      "adapter": "3b1cef9143498004301d4ec941b8acfc816f66e2",
+      "exit_code": 1,
+      "junit_available": true,
+      "counts": {
+        "passed": 14,
+        "failed": 6,
+        "error": 0,
+        "skipped": 0
+      },
+      "cases": [
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group0]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group1]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group2]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group3]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group4]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group5]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group6]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group7]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group8]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group9]",
+          "status": "passed"
+        },
+        {
+          "name": "test_fusion_grouping_is_opt_in_for_non_deepseek_models",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_incomplete_group_fails_loudly",
+          "status": "passed"
+        },
+        {
+          "name": "test_overflow_yields_before_cloning_next_view",
+          "status": "failed",
+          "message": "assert 2 == 1\n +  where 2 = len([tensor([0, 1, 2, 3, 4, 5, 6, 7], dtype=torch.uint8), tensor([0, 1, 2, 3, 4, 5, 6, 7], dtype=torch.uint8)])"
+        },
+        {
+          "name": "test_adapter_releases_consumed_bucket_after_await",
+          "status": "failed",
+          "message": "AssertionError: adapter retained a consumed bucket\nassert False\n +  where False = all(<generator object test_adapter_releases_consumed_bucket_after_await.<locals>.source.<locals>.<genexpr> at 0x10ec79ff0>)"
+        },
+        {
+          "name": "test_consumed_bucket_released_before_next_compaction[False-False]",
+          "status": "failed",
+          "message": "AssertionError: consumed bucket still retains tensors\nassert False\n +  where False = all(<generator object test_consumed_bucket_released_before_next_compaction.<locals>.check_compaction.<locals>.<genexpr> at 0x10ef0dd80>)"
+        },
+        {
+          "name": "test_consumed_bucket_released_before_next_compaction[False-True]",
+          "status": "failed",
+          "message": "AssertionError: consumed bucket still retains tensors\nassert False\n +  where False = all(<generator object test_consumed_bucket_released_before_next_compaction.<locals>.check_compaction.<locals>.<genexpr> at 0x10ef0de50>)"
+        },
+        {
+          "name": "test_consumed_bucket_released_before_next_compaction[True-False]",
+          "status": "failed",
+          "message": "AssertionError: consumed bucket still retains tensors\nassert False\n +  where False = all(<generator object test_consumed_bucket_released_before_next_compaction.<locals>.check_compaction.<locals>.<genexpr> at 0x10ef0e190>)"
+        },
+        {
+          "name": "test_consumed_bucket_released_before_next_compaction[True-True]",
+          "status": "failed",
+          "message": "AssertionError: consumed bucket still retains tensors\nassert False\n +  where False = all(<generator object test_consumed_bucket_released_before_next_compaction.<locals>.check_compaction.<locals>.<genexpr> at 0x10ef0e4d0>)"
+        },
+        {
+          "name": "test_reused_full_span_views_preserve_values[False]",
+          "status": "passed"
+        },
+        {
+          "name": "test_reused_full_span_views_preserve_values[True]",
+          "status": "passed"
+        }
+      ],
+      "stdout_tail": "ct_for_bucket(tensor), tensor_size)]\n                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest_original.py:168: in check_compaction\n    assert all(ref() is None for ref in consumed), \"consumed bucket still retains tensors\"\nE   AssertionError: consumed bucket still retains tensors\nE   assert False\nE    +  where False = all(<generator object test_consumed_bucket_released_before_next_compaction.<locals>.check_compaction.<locals>.<genexpr> at 0x10ef0e4d0>)\n- generated xml file: <temporary-root>/report.xml -\n=========================== short test summary info ============================\nFAILED test_original.py::test_overflow_yields_before_cloning_next_view - asse...\nFAILED test_original.py::test_adapter_releases_consumed_bucket_after_await - ...\nFAILED test_original.py::test_consumed_bucket_released_before_next_compaction[False-False]\nFAILED test_original.py::test_consumed_bucket_released_before_next_compaction[False-True]\nFAILED test_original.py::test_consumed_bucket_released_before_next_compaction[True-False]\nFAILED test_original.py::test_consumed_bucket_released_before_next_compaction[True-True]\n6 failed, 14 passed in 0.83s\n",
+      "stderr": ""
+    },
+    {
+      "label": "both",
+      "generator": "3b1cef9143498004301d4ec941b8acfc816f66e2",
+      "adapter": "3b1cef9143498004301d4ec941b8acfc816f66e2",
+      "exit_code": 0,
+      "junit_available": true,
+      "counts": {
+        "passed": 20,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "cases": [
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group0]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group1]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group2]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group3]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group4]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group5]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group6]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group7]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group8]",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_fusion_group_stays_in_one_bucket[group9]",
+          "status": "passed"
+        },
+        {
+          "name": "test_fusion_grouping_is_opt_in_for_non_deepseek_models",
+          "status": "passed"
+        },
+        {
+          "name": "test_deepseek_v4_incomplete_group_fails_loudly",
+          "status": "passed"
+        },
+        {
+          "name": "test_overflow_yields_before_cloning_next_view",
+          "status": "passed"
+        },
+        {
+          "name": "test_adapter_releases_consumed_bucket_after_await",
+          "status": "passed"
+        },
+        {
+          "name": "test_consumed_bucket_released_before_next_compaction[False-False]",
+          "status": "passed"
+        },
+        {
+          "name": "test_consumed_bucket_released_before_next_compaction[False-True]",
+          "status": "passed"
+        },
+        {
+          "name": "test_consumed_bucket_released_before_next_compaction[True-False]",
+          "status": "passed"
+        },
+        {
+          "name": "test_consumed_bucket_released_before_next_compaction[True-True]",
+          "status": "passed"
+        },
+        {
+          "name": "test_reused_full_span_views_preserve_values[False]",
+          "status": "passed"
+        },
+        {
+          "name": "test_reused_full_span_views_preserve_values[True]",
+          "status": "passed"
+        }
+      ],
+      "stdout_tail": "....................                                                     [100%]\n- generated xml file: <temporary-root>/report.xml -\n20 passed in 0.60s\n",
+      "stderr": ""
+    }
+  ]
+}

@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-sglang-bucket-lifetime/verify.py](verl-sglang-bucket-lifetime/verify.py) | #8435完整原20项CPU参数测试接原AST函数／adapter方法，四组对照[结果](verl-sglang-bucket-lifetime/result.json)为14过6失败／19过1失败／14过6失败／20过；隔离包及原HTTP记录器，非整包／真实IPC或显存测量 | [分桶引用寿命](../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#sglang-分桶张量的引用寿命) |
 | [verl-export-completion/verify.py](verl-export-completion/verify.py) | #8443原17项CPU测试在lo0／沙箱外[全过](verl-export-completion/result-loopback-unrestricted.json)，普通沙箱[16过1环境失败](verl-export-completion/result.json)、显式lo0沙箱内[native abort](verl-export-completion/result-loopback.json)分开保留；NPU wait为原CPU替身，真实DTensor仅单rank诊断，非设备／exporter或竞态根因验收 | [导出存活与完成](../notebook/frameworks/verl-fsdp2-source-deep-reading.md#导出张量的存活与完成) |
 | [unirl-track-micro-weights/verify.py](unirl-track-micro-weights/verify.py) | #301祖先／候选原stack四方法与helper接自编CPU Carrier／算法，六组归约×宽度各版核真实梯度；[结果](unirl-track-micro-weights/result.json)区分指标加权、token分母与anchor几何。非原生训练／作者24断言，旧分支behind194 | [分轨微批与指标分母](../notebook/frameworks/unirl-survey.md#分轨微批与指标分母) |
 | [verl-session-watermark/verify.py](verl-session-watermark/verify.py) | #8203原七方法与19个原CPU参数项通过；[结果](verl-session-watermark/result.json)另核十个人工元数据状态、三拒绝与validation idle，区分session水位／未消费组cap。空基类／记录器，非Ray／TQ消费、作者全套或性能验收 | [双重限流](../notebook/frameworks/verl-transferqueue-worker-lifecycle-deep-reading.md#流式采样的双重限流) |
