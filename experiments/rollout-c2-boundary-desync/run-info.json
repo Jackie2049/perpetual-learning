@@ -1,0 +1,31 @@
+{
+  "experiment": "C2 事件边界拆分约定的可执行性实证",
+  "doc": "notebook/rollout-performance-research.md §21.4",
+  "execution": {
+    "python": "3.9.6（macOS arm64，仅标准库）",
+    "commands": [
+      "python3 c2_split_ablation.py                  # 约 0.1 s，30 种子 × 3 档配置",
+      "python3 c2_split_ablation.py --verify         # 通过：逐字段相同（连跑两次均通过）",
+      "python3 -m unittest test_c2_split_ablation -v # 9 passed"
+    ],
+    "note": "随机性全部来自 random.Random(seed)（任务抖动与批长度），无进程级隐式随机源。"
+  },
+  "classification": "进程内事件图仿真；非 GPU 实测、非端到端。墙钟为任意虚拟秒，不可与论文报值相除（§19.1 规则一）。",
+  "observability_discipline": "五个读法只吃 prefill 起止／bcast 结束／kv_migrate 结束／批起点序列；真值 truth_of() 走仿真内部事件。由 test_truth_is_independent_of_readings 守护。",
+  "artifacts": {
+    "sha256": {
+      "summary.json": "695d27740b7545c518bc37c3454fcc4b14f8e4702fd6296fb49cb50b602ad686",
+      "c2_split_ablation.py": "372ac52576eadea76a5c434abf8411a3b8b947cc871875502733a4135f99f202",
+      "test_c2_split_ablation.py": "4cfaba62cb4ac3d3aef3f970f09bb6267b94d2bbb7799977db16291339e1f7fc"
+    }
+  },
+  "self_check_fixes": [
+    "t1 初版取 max(weight_bcast, kv_migrate)，把 KV 回迁结束算成权重生效，B2 退化为 0；改为只取 weight_bcast。",
+    "批初版只依赖 kv_migrate，抢在 t1 之前开跑，出现 B2 = -6.71 的物理不可能值；加 weight_bcast 与 prefill 依赖。",
+    "相对误差在 B2 恰为 0 时除零出 NaN；改用整段交接时窗做后备分母。"
+  ],
+  "residual": [
+    "只覆盖 sync 接管的 B2/B3 拆分，未覆盖 async 下的 η 分布（C3）。",
+    "三档配置为构造参数，非任何具体系统画像。"
+  ]
+}
