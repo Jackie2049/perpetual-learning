@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-filter-error-boundary/verify.py](verl-filter-error-boundary/verify.py) | #6888原五函数／三fake formatter类，八自编标准库控制，[结果](verl-filter-error-boundary/result.json)核SSLContext不可pickle、逐行过滤与初始化异常；非真实HF／Datasets／spawn／缓存 | [过滤状态与错误边界](../notebook/frameworks/verl-dataproto-data-flow-reading.md#多进程过滤的可序列化状态与错误边界) |
 | [verl-param-offload-ownership/verify.py](verl-param-offload-ownership/verify.py) | #7685原15定义与19原CPU参数体手动执行全过；[结果](verl-param-offload-ownership/result.json)，原pin／broadcast替身，仅存储所有权与快照，非原生pytest／设备通信 | [参数副本所有权](../notebook/frameworks/verl-architecture.md#参数卸载的副本所有权与快照恢复) |
 | [verl-response-row-selection/verify.py](verl-response-row-selection/verify.py) | #7686完整原选行模块／原夹具三CPU参数体与两自编full mask控制；[结果](verl-response-row-selection/result.json)，真实CPU linear／autograd，非CE、原生pytest或TP/SP/CP／Triton验收 | [选行与预测位置](../notebook/frameworks/verl-fused-output-softcap.md#输出头选行与预测位置) |
 | [verl-full-stream-contract/verify.py](verl-full-stream-contract/verify.py) | #7483新增原helper／mode resolver，十组自编CPU布局／CP guard／内层hook选择／context恢复控制；[结果](verl-full-stream-contract/result.json)，metadata／mesh／unwrap为接缝，无GLM／CP或kernel执行 | [完整流与内层hook](../notebook/frameworks/verl-fused-output-softcap.md#完整-thd-流与内层-hook) |

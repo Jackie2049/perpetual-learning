@@ -11,6 +11,35 @@
 
 2026-10-25补充：[多模态特殊 token 检查的 CPU 开销](#多模态特殊-token-检查的-cpu-开销)区分原检查方法、完整processor与训练吞吐；纯文本走多模态processor也可能付出标记计数成本，但不是所有纯文本入口都走此路径。2026-10-26接续[回移候选的绑定条件](#回移候选的绑定条件与评审前提)，不重跑旧微基准。
 
+## 多进程过滤的可序列化状态与错误边界
+
+**能把对象交给worker，与worker使用相同的tokenizer状态，是两个问题。** [verl #6888](https://github.com/verl-project/verl/pull/6888)在2026-11-01读取为OPEN／非draft，作者zhangdw156；固定head `cbf31a27075f5f112241e716e480daf4401b3699`，API目标base与实际共同祖先均为 `2ab35292039a51175a4b3d3b3b2d76e951a0d3e4`。候选针对RLHFDataset长prompt过滤，不是模型加载或GPU训练优化。
+
+### 可重载不等于从原路径恢复全部状态
+
+旧nested closure捕获dataset／live processor，后者可能持有不可pickle的SSLContext。候选的[`maybe_filter_out_long_prompts`](https://github.com/verl-project/verl/blob/cbf31a27075f5f112241e716e480daf4401b3699/verl/utils/dataset/rl_dataset.py)将并行predicate移到模块顶层，以fn_kwargs传配置和重载路径；processor从原source重载，但tokenizer另从**当前live对象的save_pretrained快照**恢复，避免只用原路径丢失运行时词表、特殊token或backend修改。快／慢选择另传；导出前浅复制tokenizer并复制init_kwargs，补padding_side、truncation_side、split_special_tokens。
+
+运行时chat_template（字符串或命名模板字典）另传给浅复制的formatter，让原生模板选择规则处理default／tool／显式名称；不修改进程缓存中的formatter。此方案保存的是这些明确传递／导出的状态，**不是任意processor运行态的完整快照**。媒体hook用绑定dataset类的classmethod和config传递，避免绑定live实例，也保留子类覆盖。
+
+| 条件 | predicate与对象 |
+| --- | --- |
+| 多worker、非空source、tokenizer导出成功 | 顶层函数＋路径／配置；worker进程内缓存重载对象 |
+| worker为None／0／1、source缺失／空、或导出异常 | 单进程local callable使用live对象；fn_kwargs不暴露这些对象 |
+
+单进程分支不要求把live对象变得可pickle；将它们留在local callable，也避开Datasets格式化fingerprint告警时再次触发对象表示问题。并行分支仍要求其余配置及类引用可传递，不是通用序列化沙箱。
+
+### 快照路径寿命与缓存身份
+
+源码用ExitStack持有临时目录，直到同步Dataset.filter返回或抛错才清理。实际worker收到临时路径；计算new_fingerprint时则把该路径替换为导出目录内**相对文件名到文件bytes的哈希**，再与输入dataframe指纹、predicate及其余参数一起哈希。临时目录改名不该制造新缓存身份，导出词表变更应改变身份；这是源码契约，不是本机已执行Arrow缓存复用测试。
+
+### 初始化失败不能降级成坏样本
+
+两个predicate的worker重载、缺source检查，以及运行时状态恢复，都位于样本级try之外；失败应传播。try内的消息构造、模板／tokenization／媒体处理异常才打印诊断并返回False。这样能区分“数据有一行坏了”和“所有worker都无法初始化”；把两者都当False会把环境错误伪装成空数据集。
+
+[本机脚本](../../experiments/verl-filter-error-boundary/verify.py)在Python3.12.13下AST隔离五个完整原函数、保留原体并延后annotations，加载原三fake formatter类，执行八个自编CPU控制：真实SSLContext使pickle抛TypeError；短行保留、超长行排除、None内容打印AttributeError后排除；缺processor source及两个明确抛错的loader均向上传播且无“跳过样本”诊断；source选择核outer优先、inner回退和空路径不可用。三行输入均未被修改。媒体hook仅返回无媒体，loader为故障接缝，不是HF重载。[结果／三输入hash](../../experiments/verl-filter-error-boundary/result.json)保留实际输出与首次夹具module注册失败的纠正。
+
+作者报告55项dataset、20项相关CPU及44项spawn集成控制，使用真实本地tiny tokenizer／Qwen2-VL配置和Parquet；这些是作者结果，不计本机测试。本机缺Transformers／Datasets／tokenizers／OmegaConf，未安装或下载；三完整源仅compile，未执行原测试体、完整dataset、快照导出／哈希／清理、Arrow缓存或worker进程。CPU数据层问题在此收束，不新增M5算力队列，不另实现竞争补丁或写社区；后续依据实质修订或匹配依赖环境再核。
+
 ## SFT 空媒体列与 processor 要求
 
 **把null当空列表，不等于把有媒体列的行改走纯tokenizer路径。** [#8420](https://github.com/verl-project/verl/pull/8420)读取OPEN，head `b11c863ab8d5a2b0fc568c2539779eb82c2455b9`、base `2ab35292039a51175a4b3d3b3b2d76e951a0d3e4`，两文件。[原_build_messages](https://github.com/verl-project/verl/blob/b11c863ab8d5a2b0fc568c2539779eb82c2455b9/verl/utils/dataset/multiturn_sft_dataset.py)先递归复制／转换messages，再按占位符顺序消费images／videos。旧版只在列缺失时取空列表，列值None会在len检查处报错；新版用显式is None回退，保留非None对象，不对NumPy数组做布尔求值。

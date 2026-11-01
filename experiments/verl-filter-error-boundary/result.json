@@ -1,0 +1,64 @@
+{
+  "head": "cbf31a27075f5f112241e716e480daf4401b3699",
+  "base": "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4",
+  "python": "3.12.13",
+  "source_sha256": {
+    "verl/utils/dataset/rl_dataset.py": "115850614b7252c1f6f130787b8b2f8785e9ed7f363f7bf00d5d4154f6b681d4",
+    "tests/utils/dataset/test_rl_dataset_on_cpu.py": "f18c684325c7cf07fe27b1ad17a8ba70ccdd47cc0a6d50d5078b832b5140a0d2",
+    "verl/utils/tokenizer/tokenizer.py": "0b299a9866030e24c024fffe5993cc9111484f02db947e5eaa2931016937f316"
+  },
+  "controls": [
+    {
+      "case": "live_processor_pickle",
+      "error": "TypeError",
+      "detail": "cannot pickle 'SSLContext' object"
+    },
+    {
+      "case": "short_row",
+      "kept": true,
+      "stdout": "",
+      "stderr": "",
+      "input_unchanged": true
+    },
+    {
+      "case": "overlong_row",
+      "kept": false,
+      "stdout": "",
+      "stderr": "",
+      "input_unchanged": true
+    },
+    {
+      "case": "malformed_row",
+      "kept": false,
+      "stdout": "Error processing one of the samples, skipping...\n",
+      "stderr": "Traceback (most recent call last):\n  File \"verl/utils/dataset/rl_dataset.py\", line 257, in _filter_prompt_length_with_processor\n  File \"tests/utils/dataset/test_rl_dataset_on_cpu.py\", line 68, in __call__\nAttributeError: 'NoneType' object has no attribute 'split'\n",
+      "input_unchanged": true
+    },
+    {
+      "case": "missing_processor_source",
+      "error": "ValueError",
+      "detail": "processor_path is required when processor is not provided",
+      "no_row_skip_diagnostic": true
+    },
+    {
+      "case": "processor_load_failure",
+      "error": "ValueError",
+      "detail": "controlled worker initialization failure",
+      "no_row_skip_diagnostic": true
+    },
+    {
+      "case": "tokenizer_load_failure",
+      "error": "ValueError",
+      "detail": "controlled worker initialization failure",
+      "no_row_skip_diagnostic": true
+    },
+    {
+      "case": "reload_source_selection",
+      "outer_preferred": true,
+      "inner_fallback": true,
+      "empty_is_unavailable": true
+    }
+  ],
+  "scope": "Five complete original function definitions; annotations postponed, bodies unchanged. Three original fake formatter classes; no original test body. Eight own controls, real SSLContext/pickle and CPU text-list handling. Media hook returns no media; two loaders deliberately raise. No cache/export/hash execution, actual tokenizer/processor, Dataset.filter, subprocess workers/spawn, Arrow fingerprint/cache, original pytest suite, GPU/NPU, model or training. Three complete inputs compile.",
+  "execution_note": "First harness run failed to resolve an AST-loaded fixture class during pickle (builtins namespace); registered an explicit isolated module, then real SSLContext TypeError and all eight controls passed. Initial offline test-blob read stopped at missing object; explicitly cached only fixed input. No production code modified."
+}

@@ -247,6 +247,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [verl CPPO Async Trainer Incompatibility — Source-Level Analysis](verl-cppo-async-trainer-incompatibility-source-reading.md)
 - [verl CPPO bypass_mode Source-Level Reading](verl-cppo-bypass-source-reading.md)
 - [verl DataProto 数据流架构源码阅读](verl-dataproto-data-flow-reading.md) — 历史结构与[图片对象生命周期](verl-dataproto-data-flow-reading.md#图片字节与解码对象的生命周期)分开；#7400原方法五例/三版真实Pillow对照，非Ray/RSS验收；纠正230KB及零拷贝概括。
+- [多进程过滤的状态与错误边界](verl-dataproto-data-flow-reading.md#多进程过滤的可序列化状态与错误边界)：#6888原predicate八自编CPU控制区分重载失败与坏行；tokenizer快照／路径寿命／内容指纹为源码分析，非实际HF／Datasets或spawn验收。
 - [多语言预分词与类路由](verl-dataproto-data-flow-reading.md#多语言预分词与类路由)：#8030关联官方#49116已合并；真实toy BPE说明round-trip不足认证IDs，已知model_type下显式Qwen2声明仍可被Auto纠正，不当checkpoint／训练质量验收或自动升级理由。
 - [多模态特殊token检查的CPU开销](verl-dataproto-data-flow-reading.md#多模态特殊-token-检查的-cpu-开销) — #8261已有官方修复及#8375回移候选；旧18组成对／局部计时不重跑，新增8次原工厂替身控制核绑定条件，官方5.5.3已有方法，不能照搬机器人缺API前提；非完整processor验收。
 - [verl FSDP Weight Sync Mechanism: Source Code Analysis](verl-fsdp-weight-sync-mechanism-reading.md)
