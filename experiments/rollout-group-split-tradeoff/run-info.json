@@ -1,0 +1,55 @@
+{
+  "experiment": "§15 Q5 拆 GRPO 组的代价与收益（L1 统计 / L2 分组税 / L3 判据）",
+  "doc": "notebook/rollout-performance-research.md §13.30（并补 §15 Q5 与 §11.2 条目 7）",
+  "execution": {
+    "python": "3.9.6（macOS arm64，仅标准库）",
+    "commands": [
+      "python3 group_split_tradeoff.py                  # 约 30 s，覆盖 summary.json",
+      "python3 group_split_tradeoff.py --verify         # 通过：逐字段相同（连跑两次均通过）",
+      "python3 -m unittest test_group_split_tradeoff -v # 13 passed"
+    ],
+    "source_anchors": [
+      "verl 24f25b03 verl/trainer/ppo/core_algos.py:306-321（GRPO 逐 prompt index 减均值除标准差）",
+      "OpenRLHF dc2a7ad3 openrlhf/trainer/ppo_utils/experience_maker.py:256（rewards.reshape(-1, n_samples_per_prompt) 后按组算 std）"
+    ]
+  },
+  "classification": "进程内解析＋仿真；非 GPU 实测、非端到端。墙钟为任意虚拟秒，不可与论文报值相除（§19.1 规则一）。",
+  "key_readings": {
+    "sigma_var_inflation_n8_p2": 1.88,
+    "sigma_var_inflation_n8_p4": 3.05,
+    "chi2_bound_n8_p2": 2.33,
+    "chi2_bound_n8_p4": 7.0,
+    "intra_group_order_flip": 0.0,
+    "cross_group_order_flip_p2": 0.328,
+    "cross_group_order_flip_p4": 0.493,
+    "grouping_tax_no_backlog": 0.0,
+    "grouping_tax_backlog4": 0.437,
+    "grouping_tax_backlog16": 0.547,
+    "grouping_tax_cv0.2": 0.206,
+    "grouping_tax_cv1.5": 0.566,
+    "snr_loss_ratio_p2": 0.271,
+    "verdict": "需逐负载判断（税的上限 61% vs 信噪比损失 27%，取决于积压深度与组内离散度）"
+  },
+  "consistency_with_prev_work": {
+    "candidate_d": "§14 候选 D 实测 AR 下 MIX/H2048=1.000 —— 本模型在\"单批、无排队\"口径下同样给出 0.0，两者是同一事实的两个视角，不矛盾。"
+  },
+  "artifacts": {
+    "sha256": {
+      "summary.json": "fe45d2ca59ae0b42567bf8c552898ab8f3aab11b3f8be7725e58817eb0a8d867",
+      "group_split_tradeoff.py": "a792a8f3915cdca0535f4ae3ef95802808ec979f3a377abca768029ea689140a",
+      "test_group_split_tradeoff.py": "fdb8168b35d44abcefd61dca1a5dab8068d993365e2c86fbc81cc6e306cc3b9d"
+    }
+  },
+  "self_check_fixes": [
+    "组臂与轨迹臂 workload 不等：初版组臂只跑 max(g)、轨迹臂跑全部 n 条，收益被凭空放大；改为两臂吃同一批轨迹。",
+    "_makespan 在 pending 为空时把 now 推到全部结束，吃掉轨迹调度优势，税恒为 0；该特判已删除。",
+    "\"伪零方差率\"把 p=4、n=4（分片 1 条）算成 100%，实为样本标准差定义域外；改为返回 None 并标 fragment_size。",
+    "\"组内排序翻转率\"恒为 ~50%：初版把组内与跨组归一化混在一个指标里；拆成组内翻转（恒 0）与跨组翻转（随 p 上升）。"
+  ],
+  "residual": [
+    "分组税是上界：假设后续轨迹随时可接，未计 KV 搬运与跨批版本一致性成本。",
+    "积压批数是构造参数，语料内无系统报道该量——调度侧结论因此只能是条件式。",
+    "L1 奖励模型为高斯近似（组均值 N(0,1)、单条噪声 N(0,0.25)），未覆盖 0/1 奖励全部分布形态。",
+    "χ² 解析界在仿真中恒高于实测膨胀比（分片共享组均值压缩方差），引用应报仿真值。"
+  ]
+}

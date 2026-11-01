@@ -1,0 +1,150 @@
+{
+ "consistency_with_candidate_d": {
+  "reading": "候选 D 的口径（一批、容量足够、无排队）在本模型下同样给出 0——两者不矛盾：候选 D 说明\"批内长度异质被引擎吸收\"，本模型说明\"组粒度只在有排队时才构成约束\"。真正影响结论的是 backlog 假设。",
+  "single_batch_all_singletons": 0.0,
+  "single_batch_one_group": 0.0
+ },
+ "doc": "notebook/rollout-performance-research.md §13.30",
+ "experiment": "§15 Q5 拆 GRPO 组的代价与收益",
+ "layer1_statistics": {
+  "n16_p1": {
+   "analytic_var_ratio": 1.0,
+   "fragment_size": 16,
+   "note": "",
+   "sigma_mean": 0.4757582536088445,
+   "sigma_var": 0.007647054229845715,
+   "sim_var_ratio": 1.0
+  },
+  "n16_p2": {
+   "analytic_var_ratio": 2.142857142857143,
+   "fragment_size": 8,
+   "note": "",
+   "sigma_mean": 0.4512316731977285,
+   "sigma_var": 0.014945036572953723,
+   "sim_var_ratio": 1.9543521104668888
+  },
+  "n16_p4": {
+   "analytic_var_ratio": 5.0,
+   "fragment_size": 4,
+   "note": "",
+   "sigma_mean": 0.3985646082082925,
+   "sigma_var": 0.0283175095675615,
+   "sim_var_ratio": 3.70306116792542
+  },
+  "n4_p1": {
+   "analytic_var_ratio": 1.0,
+   "fragment_size": 4,
+   "note": "",
+   "sigma_mean": 0.40003429885775393,
+   "sigma_var": 0.028331601042772606,
+   "sim_var_ratio": 1.0
+  },
+  "n4_p2": {
+   "analytic_var_ratio": 3.0,
+   "fragment_size": 2,
+   "note": "",
+   "sigma_mean": 0.2820032490968063,
+   "sigma_var": 0.045340895974286644,
+   "sim_var_ratio": 1.6003647625079456
+  },
+  "n4_p4": {
+   "analytic_var_ratio": null,
+   "fragment_size": 1,
+   "note": "分片样本量 < 2 时样本标准差未定义，本格不可用",
+   "sigma_mean": 0.0,
+   "sigma_var": 0.0,
+   "sim_var_ratio": 0.0
+  },
+  "n8_p1": {
+   "analytic_var_ratio": 1.0,
+   "fragment_size": 8,
+   "note": "",
+   "sigma_mean": 0.4517782181030091,
+   "sigma_var": 0.01491736414896773,
+   "sim_var_ratio": 1.0
+  },
+  "n8_p2": {
+   "analytic_var_ratio": 2.3333333333333335,
+   "fragment_size": 4,
+   "note": "",
+   "sigma_mean": 0.3991838365722193,
+   "sigma_var": 0.02808953983342122,
+   "sim_var_ratio": 1.8830095955903172
+  },
+  "n8_p4": {
+   "analytic_var_ratio": 7.0,
+   "fragment_size": 2,
+   "note": "",
+   "sigma_mean": 0.2825137584287591,
+   "sigma_var": 0.0454985402623197,
+   "sim_var_ratio": 3.050038854583312
+  },
+  "order_flip_rate": {
+   "n8_p1": 0.0,
+   "n8_p2": 0.3279166666666667,
+   "n8_p4": 0.49333333333333335
+  },
+  "pseudo_zero_rate": {
+   "n16_p2": 0.0,
+   "n16_p4": 0.0,
+   "n4_p2": 0.0,
+   "n4_p4": null,
+   "n8_p2": 0.0,
+   "n8_p4": 0.0
+  }
+ },
+ "layer2_grouping_tax": {
+  "backlog1": {
+   "mean": 0.0
+  },
+  "backlog16": {
+   "mean": 0.5465619359703834
+  },
+  "backlog4": {
+   "mean": 0.43733861618397424
+  },
+  "cv0.2": {
+   "max": 0.27676779613871033,
+   "mean": 0.20640203068199053,
+   "min": 0.12133935450436037
+  },
+  "cv0.6": {
+   "max": 0.496717726441848,
+   "mean": 0.43733861618397424,
+   "min": 0.347774570408578
+  },
+  "cv1.5": {
+   "max": 0.6125570450197726,
+   "mean": 0.5655870201183355,
+   "min": 0.5
+  },
+  "n2": {
+   "mean": 0.27708909162761564
+  },
+  "n4": {
+   "mean": 0.38629514138557697
+  },
+  "n8": {
+   "mean": 0.43733861618397424
+  }
+ },
+ "layer3_verdict": {
+  "best_case_grouping_tax": 0.6125570450197726,
+  "note": "判据：拆组能拿回的墙钟（分组税上限）必须超过优势信噪比的相对下降。这是必要条件而非充分条件——它还没算上拆组带来的 KV 搬运、跨批版本一致性与组内比较语义丢失。",
+  "sigma_var_inflation_p2": 1.8830095955903172,
+  "snr_loss_ratio_p2": 0.2712581120109896,
+  "snr_ratio_p2": 0.7287418879890104,
+  "verdict": "需逐负载判断"
+ },
+ "sanitization": {
+  "definition_notes": [
+   "修正后：工作量一次放得下（总量 ≤ 容量）时两种调度必然同 makespan，所以必须有 backlog 才能测出分组税；backlog 是构造参数，不是语料实测值。",
+   "capacity 恒设为\"一批\"的大小；容量低于一组的用例没有物理意义（引擎连一组都放不下），已从结果中剔除。"
+  ],
+  "removed_claims": [
+   "初版把\"伪零方差率\"写成 p=4 时恒为 1.0：那实际是\"4 条拆成 4 片每片 1 条\"，样本标准差未定义（statistics.pstdev 单点返回 0），不是统计现象而是定义域外。",
+   "初版 _makespan 在 pending 为空时把 now 直接推到全部结束，吃掉了轨迹调度的优势；该特判已删除。",
+   "初版 group_vs_traj_rescue 让两臂任务数不同（组臂 n 条、轨迹臂 n×n_per 条），相当于给轨迹臂更多工作，量化出来的\"收益\"不可信；改为两臂吃同一批工作量。"
+  ]
+ }
+}
