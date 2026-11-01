@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-repetition-params/verify.py](verl-repetition-params/verify.py) | #8436两版原异步方法接自编边界记录器，24组／48样本与四server补值控制；[结果](verl-repetition-params/result.json)核请求优先级、验证／greedy。非作者24原测试、真实后端／惩罚公式或概率验收 | [重复惩罚请求优先级](../notebook/frameworks/verl-async-logprob-provenance.md#重复惩罚的请求优先级) |
 | [verl-sft-loader-rng/verify.py](verl-sft-loader-rng/verify.py) | #8434原三CPU测试体接真实torchdata／OmegaConf，基线三失败／候选三通过；[结果](verl-sft-loader-rng/result.json)另核sampler顺序、split流与后续base_seed差额。0worker／Mock engine，非完整模型或训练恢复 | [SFT随机流隔离](../notebook/frameworks/verl-checkpoint-management-reading.md#sft-迭代器的随机流隔离) |
 | [verl-empty-tool-response/verify.py](verl-empty-tool-response/verify.py) | #8479原状态机／CT接原两unittest体，基线1过1失败／候选2过；[结果](verl-empty-tool-response/result.json)另核三组异步／全零mask切分。输出属性载体非Pydantic，非真实取消／reward或训练 | [空首轮切分](../notebook/frameworks/verl-6779-continuous-token-agentic-rollout-reading.md#17-空首轮响应的切分边界) |
 | [verl-r2-padding-balance/verify.py](verl-r2-padding-balance/verify.py) | #7524原helper／三个原CPU参数体手动通过；[结果](verl-r2-padding-balance/result.json)另核三组唯一token–expert计数、无padding和八guard表达式；非packing／MCore dispatch或显存性能 | [R2 padding 负载与总分配](../notebook/frameworks/verl-transferqueue-worker-lifecycle-deep-reading.md#r2-padding-的专家负载与总分配) |

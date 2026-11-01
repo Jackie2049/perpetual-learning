@@ -6,6 +6,8 @@
 
 2026-10-26接续：[独立重启与恢复水位](#独立重启与恢复水位)区分新#8380的容错设计与#8168已有候选API；后者可替换引擎并重新注入权重，不是trainer状态快照或通用反向恢复实现。
 
+2026-11-01补[重复惩罚的请求优先级](#重复惩罚的请求优先级)：#8436移除两条AgentLoop固定1.0；24组自编异步路径／48样本核vLLM默认补值，非作者24原测试或引擎概率验收。greedy分支不关闭惩罚，其他后端不外推。
+
 ## 独立重启与恢复水位
 
 **恢复了服务进程、恢复了策略参数、恢复了同一条训练轨迹，是三个不同目标。** [RFC #8380](https://github.com/verl-project/verl/issues/8380)由HaoWang113于2026-10-26提出，读取时OPEN、0评论。它以driver存活、节点与拓扑／软件版本不变为前提，规划trainer组重建与rollout独立替换，状态不确定时回落磁盘checkpoint。逆向拉权重、optimizer镜像、提交水位、generation fencing仍属设计，不是已完成的框架能力或我方候选。
@@ -185,6 +187,31 @@ rollout配置[默认logprobs_mode](https://github.com/verl-project/verl/blob/187
 即使权重相同，temperature、惩罚项、top-k/top-p/约束处理、tokenizer/template、完整上下文、position/attention mask、模态预处理或数值后端不同，也可能改变可比较的量。#8250报告temperature=1，不能据此将温度假设认作其故障原因；它只是对照时必须锁定的一项。
 
 还要保留逐token残差。两个token的log-prob差为+.2/−.2时均值为0，非逐项一致；mean≈0不是“完全匹配”，也不是精确分布KL。只观测采样token的概率时，更不能排除其余词表区域的差异。
+
+## 重复惩罚的请求优先级
+
+**配置存在，不等于实际请求用了该配置；请求中的默认值也可能压过服务端默认。** taking-lying-flat的[#8436](https://github.com/verl-project/verl/pull/8436)在2026-11-01读取OPEN／非draft，固定head `04280af2b88453fb7e53bb28b73298954a1805f7`，API目标base与实际共同祖先均为 `2ab35292039a51175a4b3d3b3b2d76e951a0d3e4`。它仅删除[experimental AgentLoopWorker](https://github.com/verl-project/verl/blob/04280af2b88453fb7e53bb28b73298954a1805f7/verl/experimental/agent_loop/agent_loop.py)和[V1 AgentLoopWorkerTQ](https://github.com/verl-project/verl/blob/04280af2b88453fb7e53bb28b73298954a1805f7/verl/trainer/ppo/v1/agent_loop_tq.py)构造sampling_params时的`repetition_penalty=1.0`，不新增采样器或配置校验。
+
+[vLLM server原语句](https://github.com/verl-project/verl/blob/04280af2b88453fb7e53bb28b73298954a1805f7/verl/workers/rollout/vllm_rollout/vllm_async_server.py)为`sampling_params.setdefault("repetition_penalty", self.config.get("repetition_penalty", 1.0))`。候选使普通AgentLoop请求不带该键，服务端才会补入rollout配置。以下是执行这条原语句的自编CPU控制，配置penalty=1.2：
+
+| 请求里的键 | 补值后结果 | 含义 |
+|---|---|---|
+| 缺失 | 1.2 | 字典补入配置值；配置也缺失时为1.0 |
+| 显式1.0 | 1.0 | 旧AgentLoop固定值会屏蔽配置 |
+| 显式1.7 | 1.7 | 请求覆盖保留 |
+| 显式None | None | setdefault不验证合法性；不代表引擎接受None |
+
+### 训练验证与 greedy 分支
+
+[脚本](../../experiments/verl-repetition-params/verify.py)隔离执行两版完整generate_sequences、V1完整_run_prompt及greedy／session-settle helper，以真实asyncio任务接显式自编batch、wrapper、trace／trajectory、queue、agent与postprocess记录器，再执行原vLLM setdefault。两版×两条路径×penalty 1／1.2／1.5×训练／验证，共24组调用、48样本；均符合断言。基线每个请求都带1.0，候选均省略该键，服务端补值分别为1／1.2／1.5。不是原DataProto／TensorDict或Ray／TransferQueue调用，也不是作者报告的24项pytest。
+
+每组两样本分别给内部do_sample=True／False。训练的False样本由原greedy helper改成temperature0／top_p1／top_k−1，V1还移除topk_log_probs；但不改重复惩罚，因此候选的greedy请求仍可由服务端补入非1值。验证时该内部开关不触发greedy，T／P／K改用val_kwargs；重复惩罚仍走同一服务端rollout配置回退。内部__do_sample__未转交agent，原logprobs请求保留；这些是字典与调度控制，不是生成token或概率数值对照。
+
+### 后端与概率口径
+
+同版[SGLang generate](https://github.com/verl-project/verl/blob/04280af2b88453fb7e53bb28b73298954a1805f7/verl/workers/rollout/sglang_rollout/async_sglang_server.py)将修改长度／logprobs后的sampling_params放入GenerateReqInput；[TRT-LLM generate](https://github.com/verl-project/verl/blob/04280af2b88453fb7e53bb28b73298954a1805f7/verl/workers/rollout/trtllm_rollout/trtllm_async_server.py)更新sampling_args后构SamplingParams。两份原模块中没有repetition_penalty精确字段引用，未见与vLLM相同的配置补值；静态缺字段不穷尽间接／原生引擎默认，不能把两行删除写成所有后端都已使用配置值。
+
+同一配置在修复前后可能对应不同的实际惩罚参数。对照采样策略与actor重算时，应记录请求补值后的参数、完整生成历史、实际引擎版本和raw／processed logprob口径，不能把本修复推成概率已对齐或#8250原因已定位。这里未执行惩罚公式、SamplingParams验证、真实logits／logprob、HF模板、模型／训练或性能；作者24项及全pre-commit通过属于外部报告。[JSON](../../experiments/verl-repetition-params/result.json)保留七份版本／路径hash、逐样本参数与四补值控制；Python3.12.13／NumPy2.0.2，无Torch导入或设备探测。复查`python verify.py /path/to/verl-git`（脚本位于上述实验目录，预缓存固定blob、禁lazy fetch）。真实缺口补[原M5条件参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不改采样配方／后端环境或新增队列。
 
 ## 采样截断后的支持域与归一化
 

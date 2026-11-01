@@ -1,0 +1,760 @@
+{
+  "base": "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4",
+  "head": "04280af2b88453fb7e53bb28b73298954a1805f7",
+  "actual_merge_base": "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4",
+  "python": "3.12.13",
+  "numpy": "2.0.2",
+  "source_sha256": {
+    "04280af2b88453fb7e53bb28b73298954a1805f7:verl/workers/rollout/vllm_rollout/vllm_async_server.py": "32f1e3bc6fa1bccc7082a0a6901e12a713974dcf78f48129957cfea3679b21ac",
+    "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4:verl/experimental/agent_loop/agent_loop.py": "e931a80ca4740c18ad8b6b2f9c01e8cd78d1c42c8fe2a491fe21845ecc69cb57",
+    "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4:verl/trainer/ppo/v1/agent_loop_tq.py": "255ca2dd6b6149afca8a25df6f1dcd92874cd7a2e3ac503dd88309377ea6eea5",
+    "04280af2b88453fb7e53bb28b73298954a1805f7:verl/experimental/agent_loop/agent_loop.py": "d188a62f8b6627e4aabc19661ae73e1b297961d54af9f8f3535360d28e1c56bc",
+    "04280af2b88453fb7e53bb28b73298954a1805f7:verl/trainer/ppo/v1/agent_loop_tq.py": "58f19d5da3e3ef92e38a42aec296488aae63799e7995722aa0ac5c095dbbffd4",
+    "04280af2b88453fb7e53bb28b73298954a1805f7:verl/workers/rollout/sglang_rollout/async_sglang_server.py": "c941559a8ae9528085858ef361ea1cfed950d91d7e27e366409099d7b551d072",
+    "04280af2b88453fb7e53bb28b73298954a1805f7:verl/workers/rollout/trtllm_rollout/trtllm_async_server.py": "4b06486ce5138672e1efef876de0c4771691b77293c66ea376236961371069e0"
+  },
+  "own_async_matrix": [
+    {
+      "version": "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4",
+      "path": "legacy",
+      "configured_penalty": 1.0,
+      "validate": false,
+      "samples": [
+        {
+          "per_sample_do_sample": true,
+          "request": {
+            "temperature": 0.8,
+            "top_p": 0.9,
+            "top_k": 20,
+            "repetition_penalty": 1.0,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.0
+        },
+        {
+          "per_sample_do_sample": false,
+          "request": {
+            "temperature": 0,
+            "top_p": 1.0,
+            "top_k": -1,
+            "repetition_penalty": 1.0,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.0
+        }
+      ]
+    },
+    {
+      "version": "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4",
+      "path": "legacy",
+      "configured_penalty": 1.0,
+      "validate": true,
+      "samples": [
+        {
+          "per_sample_do_sample": true,
+          "request": {
+            "temperature": 0.2,
+            "top_p": 0.7,
+            "top_k": 3,
+            "repetition_penalty": 1.0,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.0
+        },
+        {
+          "per_sample_do_sample": false,
+          "request": {
+            "temperature": 0.2,
+            "top_p": 0.7,
+            "top_k": 3,
+            "repetition_penalty": 1.0,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.0
+        }
+      ]
+    },
+    {
+      "version": "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4",
+      "path": "legacy",
+      "configured_penalty": 1.2,
+      "validate": false,
+      "samples": [
+        {
+          "per_sample_do_sample": true,
+          "request": {
+            "temperature": 0.8,
+            "top_p": 0.9,
+            "top_k": 20,
+            "repetition_penalty": 1.0,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.0
+        },
+        {
+          "per_sample_do_sample": false,
+          "request": {
+            "temperature": 0,
+            "top_p": 1.0,
+            "top_k": -1,
+            "repetition_penalty": 1.0,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.0
+        }
+      ]
+    },
+    {
+      "version": "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4",
+      "path": "legacy",
+      "configured_penalty": 1.2,
+      "validate": true,
+      "samples": [
+        {
+          "per_sample_do_sample": true,
+          "request": {
+            "temperature": 0.2,
+            "top_p": 0.7,
+            "top_k": 3,
+            "repetition_penalty": 1.0,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.0
+        },
+        {
+          "per_sample_do_sample": false,
+          "request": {
+            "temperature": 0.2,
+            "top_p": 0.7,
+            "top_k": 3,
+            "repetition_penalty": 1.0,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.0
+        }
+      ]
+    },
+    {
+      "version": "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4",
+      "path": "legacy",
+      "configured_penalty": 1.5,
+      "validate": false,
+      "samples": [
+        {
+          "per_sample_do_sample": true,
+          "request": {
+            "temperature": 0.8,
+            "top_p": 0.9,
+            "top_k": 20,
+            "repetition_penalty": 1.0,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.0
+        },
+        {
+          "per_sample_do_sample": false,
+          "request": {
+            "temperature": 0,
+            "top_p": 1.0,
+            "top_k": -1,
+            "repetition_penalty": 1.0,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.0
+        }
+      ]
+    },
+    {
+      "version": "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4",
+      "path": "legacy",
+      "configured_penalty": 1.5,
+      "validate": true,
+      "samples": [
+        {
+          "per_sample_do_sample": true,
+          "request": {
+            "temperature": 0.2,
+            "top_p": 0.7,
+            "top_k": 3,
+            "repetition_penalty": 1.0,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.0
+        },
+        {
+          "per_sample_do_sample": false,
+          "request": {
+            "temperature": 0.2,
+            "top_p": 0.7,
+            "top_k": 3,
+            "repetition_penalty": 1.0,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.0
+        }
+      ]
+    },
+    {
+      "version": "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4",
+      "path": "tq",
+      "configured_penalty": 1.0,
+      "validate": false,
+      "samples": [
+        {
+          "per_sample_do_sample": true,
+          "request": {
+            "temperature": 0.8,
+            "top_p": 0.9,
+            "top_k": 20,
+            "repetition_penalty": 1.0,
+            "logprobs": true,
+            "topk_log_probs": 4
+          },
+          "vllm_default_result": 1.0
+        },
+        {
+          "per_sample_do_sample": false,
+          "request": {
+            "temperature": 0,
+            "top_p": 1.0,
+            "top_k": -1,
+            "repetition_penalty": 1.0,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.0
+        }
+      ]
+    },
+    {
+      "version": "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4",
+      "path": "tq",
+      "configured_penalty": 1.0,
+      "validate": true,
+      "samples": [
+        {
+          "per_sample_do_sample": true,
+          "request": {
+            "temperature": 0.2,
+            "top_p": 0.7,
+            "top_k": 3,
+            "repetition_penalty": 1.0,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.0
+        },
+        {
+          "per_sample_do_sample": false,
+          "request": {
+            "temperature": 0.2,
+            "top_p": 0.7,
+            "top_k": 3,
+            "repetition_penalty": 1.0,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.0
+        }
+      ]
+    },
+    {
+      "version": "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4",
+      "path": "tq",
+      "configured_penalty": 1.2,
+      "validate": false,
+      "samples": [
+        {
+          "per_sample_do_sample": true,
+          "request": {
+            "temperature": 0.8,
+            "top_p": 0.9,
+            "top_k": 20,
+            "repetition_penalty": 1.0,
+            "logprobs": true,
+            "topk_log_probs": 4
+          },
+          "vllm_default_result": 1.0
+        },
+        {
+          "per_sample_do_sample": false,
+          "request": {
+            "temperature": 0,
+            "top_p": 1.0,
+            "top_k": -1,
+            "repetition_penalty": 1.0,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.0
+        }
+      ]
+    },
+    {
+      "version": "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4",
+      "path": "tq",
+      "configured_penalty": 1.2,
+      "validate": true,
+      "samples": [
+        {
+          "per_sample_do_sample": true,
+          "request": {
+            "temperature": 0.2,
+            "top_p": 0.7,
+            "top_k": 3,
+            "repetition_penalty": 1.0,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.0
+        },
+        {
+          "per_sample_do_sample": false,
+          "request": {
+            "temperature": 0.2,
+            "top_p": 0.7,
+            "top_k": 3,
+            "repetition_penalty": 1.0,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.0
+        }
+      ]
+    },
+    {
+      "version": "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4",
+      "path": "tq",
+      "configured_penalty": 1.5,
+      "validate": false,
+      "samples": [
+        {
+          "per_sample_do_sample": true,
+          "request": {
+            "temperature": 0.8,
+            "top_p": 0.9,
+            "top_k": 20,
+            "repetition_penalty": 1.0,
+            "logprobs": true,
+            "topk_log_probs": 4
+          },
+          "vllm_default_result": 1.0
+        },
+        {
+          "per_sample_do_sample": false,
+          "request": {
+            "temperature": 0,
+            "top_p": 1.0,
+            "top_k": -1,
+            "repetition_penalty": 1.0,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.0
+        }
+      ]
+    },
+    {
+      "version": "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4",
+      "path": "tq",
+      "configured_penalty": 1.5,
+      "validate": true,
+      "samples": [
+        {
+          "per_sample_do_sample": true,
+          "request": {
+            "temperature": 0.2,
+            "top_p": 0.7,
+            "top_k": 3,
+            "repetition_penalty": 1.0,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.0
+        },
+        {
+          "per_sample_do_sample": false,
+          "request": {
+            "temperature": 0.2,
+            "top_p": 0.7,
+            "top_k": 3,
+            "repetition_penalty": 1.0,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.0
+        }
+      ]
+    },
+    {
+      "version": "04280af2b88453fb7e53bb28b73298954a1805f7",
+      "path": "legacy",
+      "configured_penalty": 1.0,
+      "validate": false,
+      "samples": [
+        {
+          "per_sample_do_sample": true,
+          "request": {
+            "temperature": 0.8,
+            "top_p": 0.9,
+            "top_k": 20,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.0
+        },
+        {
+          "per_sample_do_sample": false,
+          "request": {
+            "temperature": 0,
+            "top_p": 1.0,
+            "top_k": -1,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.0
+        }
+      ]
+    },
+    {
+      "version": "04280af2b88453fb7e53bb28b73298954a1805f7",
+      "path": "legacy",
+      "configured_penalty": 1.0,
+      "validate": true,
+      "samples": [
+        {
+          "per_sample_do_sample": true,
+          "request": {
+            "temperature": 0.2,
+            "top_p": 0.7,
+            "top_k": 3,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.0
+        },
+        {
+          "per_sample_do_sample": false,
+          "request": {
+            "temperature": 0.2,
+            "top_p": 0.7,
+            "top_k": 3,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.0
+        }
+      ]
+    },
+    {
+      "version": "04280af2b88453fb7e53bb28b73298954a1805f7",
+      "path": "legacy",
+      "configured_penalty": 1.2,
+      "validate": false,
+      "samples": [
+        {
+          "per_sample_do_sample": true,
+          "request": {
+            "temperature": 0.8,
+            "top_p": 0.9,
+            "top_k": 20,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.2
+        },
+        {
+          "per_sample_do_sample": false,
+          "request": {
+            "temperature": 0,
+            "top_p": 1.0,
+            "top_k": -1,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.2
+        }
+      ]
+    },
+    {
+      "version": "04280af2b88453fb7e53bb28b73298954a1805f7",
+      "path": "legacy",
+      "configured_penalty": 1.2,
+      "validate": true,
+      "samples": [
+        {
+          "per_sample_do_sample": true,
+          "request": {
+            "temperature": 0.2,
+            "top_p": 0.7,
+            "top_k": 3,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.2
+        },
+        {
+          "per_sample_do_sample": false,
+          "request": {
+            "temperature": 0.2,
+            "top_p": 0.7,
+            "top_k": 3,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.2
+        }
+      ]
+    },
+    {
+      "version": "04280af2b88453fb7e53bb28b73298954a1805f7",
+      "path": "legacy",
+      "configured_penalty": 1.5,
+      "validate": false,
+      "samples": [
+        {
+          "per_sample_do_sample": true,
+          "request": {
+            "temperature": 0.8,
+            "top_p": 0.9,
+            "top_k": 20,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.5
+        },
+        {
+          "per_sample_do_sample": false,
+          "request": {
+            "temperature": 0,
+            "top_p": 1.0,
+            "top_k": -1,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.5
+        }
+      ]
+    },
+    {
+      "version": "04280af2b88453fb7e53bb28b73298954a1805f7",
+      "path": "legacy",
+      "configured_penalty": 1.5,
+      "validate": true,
+      "samples": [
+        {
+          "per_sample_do_sample": true,
+          "request": {
+            "temperature": 0.2,
+            "top_p": 0.7,
+            "top_k": 3,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.5
+        },
+        {
+          "per_sample_do_sample": false,
+          "request": {
+            "temperature": 0.2,
+            "top_p": 0.7,
+            "top_k": 3,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.5
+        }
+      ]
+    },
+    {
+      "version": "04280af2b88453fb7e53bb28b73298954a1805f7",
+      "path": "tq",
+      "configured_penalty": 1.0,
+      "validate": false,
+      "samples": [
+        {
+          "per_sample_do_sample": true,
+          "request": {
+            "temperature": 0.8,
+            "top_p": 0.9,
+            "top_k": 20,
+            "logprobs": true,
+            "topk_log_probs": 4
+          },
+          "vllm_default_result": 1.0
+        },
+        {
+          "per_sample_do_sample": false,
+          "request": {
+            "temperature": 0,
+            "top_p": 1.0,
+            "top_k": -1,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.0
+        }
+      ]
+    },
+    {
+      "version": "04280af2b88453fb7e53bb28b73298954a1805f7",
+      "path": "tq",
+      "configured_penalty": 1.0,
+      "validate": true,
+      "samples": [
+        {
+          "per_sample_do_sample": true,
+          "request": {
+            "temperature": 0.2,
+            "top_p": 0.7,
+            "top_k": 3,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.0
+        },
+        {
+          "per_sample_do_sample": false,
+          "request": {
+            "temperature": 0.2,
+            "top_p": 0.7,
+            "top_k": 3,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.0
+        }
+      ]
+    },
+    {
+      "version": "04280af2b88453fb7e53bb28b73298954a1805f7",
+      "path": "tq",
+      "configured_penalty": 1.2,
+      "validate": false,
+      "samples": [
+        {
+          "per_sample_do_sample": true,
+          "request": {
+            "temperature": 0.8,
+            "top_p": 0.9,
+            "top_k": 20,
+            "logprobs": true,
+            "topk_log_probs": 4
+          },
+          "vllm_default_result": 1.2
+        },
+        {
+          "per_sample_do_sample": false,
+          "request": {
+            "temperature": 0,
+            "top_p": 1.0,
+            "top_k": -1,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.2
+        }
+      ]
+    },
+    {
+      "version": "04280af2b88453fb7e53bb28b73298954a1805f7",
+      "path": "tq",
+      "configured_penalty": 1.2,
+      "validate": true,
+      "samples": [
+        {
+          "per_sample_do_sample": true,
+          "request": {
+            "temperature": 0.2,
+            "top_p": 0.7,
+            "top_k": 3,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.2
+        },
+        {
+          "per_sample_do_sample": false,
+          "request": {
+            "temperature": 0.2,
+            "top_p": 0.7,
+            "top_k": 3,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.2
+        }
+      ]
+    },
+    {
+      "version": "04280af2b88453fb7e53bb28b73298954a1805f7",
+      "path": "tq",
+      "configured_penalty": 1.5,
+      "validate": false,
+      "samples": [
+        {
+          "per_sample_do_sample": true,
+          "request": {
+            "temperature": 0.8,
+            "top_p": 0.9,
+            "top_k": 20,
+            "logprobs": true,
+            "topk_log_probs": 4
+          },
+          "vllm_default_result": 1.5
+        },
+        {
+          "per_sample_do_sample": false,
+          "request": {
+            "temperature": 0,
+            "top_p": 1.0,
+            "top_k": -1,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.5
+        }
+      ]
+    },
+    {
+      "version": "04280af2b88453fb7e53bb28b73298954a1805f7",
+      "path": "tq",
+      "configured_penalty": 1.5,
+      "validate": true,
+      "samples": [
+        {
+          "per_sample_do_sample": true,
+          "request": {
+            "temperature": 0.2,
+            "top_p": 0.7,
+            "top_k": 3,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.5
+        },
+        {
+          "per_sample_do_sample": false,
+          "request": {
+            "temperature": 0.2,
+            "top_p": 0.7,
+            "top_k": 3,
+            "logprobs": true
+          },
+          "vllm_default_result": 1.5
+        }
+      ]
+    }
+  ],
+  "own_server_default_controls": [
+    {
+      "request": {},
+      "configured": 1.2,
+      "result": 1.2
+    },
+    {
+      "request": {
+        "repetition_penalty": 1.0
+      },
+      "configured": 1.2,
+      "result": 1.0
+    },
+    {
+      "request": {
+        "repetition_penalty": 1.7
+      },
+      "configured": 1.2,
+      "result": 1.7
+    },
+    {
+      "request": {
+        "repetition_penalty": null
+      },
+      "configured": 1.2,
+      "result": null
+    }
+  ],
+  "missing_config_fallback": 1.0,
+  "other_backend_source_only": {
+    "verl/workers/rollout/sglang_rollout/async_sglang_server.py": {
+      "exact_field_ast_mentions": 0,
+      "scope": "Static field search only; not execution or proof about indirect/native defaults."
+    },
+    "verl/workers/rollout/trtllm_rollout/trtllm_async_server.py": {
+      "exact_field_ast_mentions": 0,
+      "scope": "Static field search only; not execution or proof about indirect/native defaults."
+    }
+  },
+  "scope": "Two complete original generate_sequences methods, original TQ _run_prompt, greedy/session-settling helpers, real asyncio tasks, one original vLLM setdefault statement. All batch/wrapper/trace/trajectory/queue/agent/postprocess boundaries are explicit own recorders; no original tests, real DataProto/TensorDict, Ray/TQ, SamplingParams, inference, penalty math, logprob normalization, model, device or training execution."
+}
