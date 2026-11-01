@@ -263,6 +263,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [verl GRPO bypass_mode + TransferQueue + Detach Metrics + Weight Sync 源码级深度阅读](verl-grpo-bypass-mode-reading.md)
 - [verl GRPO Training Core Algorithms — core_algos.py 源码深度阅读](verl-grpo-core-algos-reading.md)：[掩码统计与梯度](verl-grpo-core-algos-reading.md#掩码统计与梯度的数值边界)及[单样本组回退](verl-grpo-core-algos-reading.md#单样本与同分组的不同回退)；区分有限值/梯度、singleton/同分pair，保留CPU复查范围。
   - [GPG组计数与批次缩放](verl-grpo-core-algos-reading.md#gpg-的组计数与批次缩放)：#8422原八参数体基线6失败／候选全过；num_valid按非全等组计数，不是非零奖励或优势条数；舍入残差与mask前计数均未变，非训练验收。
+  - [GDPO分量与最终session](verl-grpo-core-algos-reading.md#gdpo-分量与最终-session)：#8424原math／helper自编CPU控制核分量布局、完整响应坐标及session门；旧函数相对参考差0.309631／候选0，非原四参数项或完整V1验收。
   - [平方概率分块与梯度](verl-grpo-core-algos-reading.md#平方概率分块与空输入梯度)：#8365新23d原18项过／旧13过5失败，空行反向与非正chunk契约已修；2048行非显存上限，无训练／性能验收。
   - [V1 OTB接线与策略身份](verl-grpo-core-algos-reading.md#v1-的-otb-统计接线与策略身份)：#8364原7参数项候选通过；元数据、响应对齐、读入与reference开关分开，原worker mock不认证真实覆盖写入，不自动拼接#8365。
   - [附加字段与有效性](verl-grpo-core-algos-reading.md#估计器附加字段与样本有效性)：#7473三个原测试体候选通过，父版／main仍缺透传；引用传递非统计过滤，V1七字段读取仍未改，非TQ／训练验收。

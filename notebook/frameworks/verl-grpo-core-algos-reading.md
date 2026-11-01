@@ -1,5 +1,7 @@
 # verl GRPO Training Core Algorithms — core_algos.py 源码深度阅读
 
+2026-11-01补[GDPO分量与最终session](#gdpo-分量与最终-session)：#8424的字段接线、完整response长度与session选择分开；原math／helper自编CPU控制中旧session函数偏参考0.309631、候选为0，非原四参数测试或完整V1验收。
+
 2026-10-30接续：[OTB 权重非负与基线精度](#otb-权重非负与基线精度)核#8444：原两参数测试体候选通过，截断能修负权重，但同源logits控制的基线仍由0偏离FP64参考约0.818；非负性、精度与训练收益分别判断。
 
 2026-10-26接续：[k3 近零消去与拒绝阈值](#k3-近零消去与拒绝阈值)复查已有#8386：原新增20参数项基线12过8失败／候选全过；同一长序列夹具从错误保留转为拒绝，仍不是完整训练或GPU验收。
@@ -339,6 +341,30 @@ A = Σ_k A_k  # 维度间解耦
 ```
 
 **优势**: 防止主导reward信号淹没弱信号 → 多reward维度场景
+
+上述简式省略了加权与最终批内归一化。当前实现逐分量调用GRPO，用gdpo_reward_weights加权求和，再按response_mask做masked_whiten并乘mask；分量来源、有效token统计和参与的session集合都影响结果，不能只把总rm_scores改个名字当成GDPO输入。
+
+### GDPO 分量与最终 session
+
+**估计器公式存在，不等于trainer已取齐它需要的字段，也不等于每个session只计一次。** flyingdoubleG的[#8424](https://github.com/verl-project/verl/pull/8424)在2026-11-01读取OPEN／非draft，head `8e4571bec0656a0c68394f3c9fd0dd7b7909acd3`，API目标base与实际共同祖先均为 `2ab35292039a51175a4b3d3b3b2d76e951a0d3e4`。三文件改变V1字段／布局和session门控，未改GDPO／GRPO数学函数；已有作者，不与其他GDPO或CoDaPO候选叠加。
+
+#### 分量取数与响应坐标
+
+[V1 _compute_advantage](https://github.com/verl-project/verl/blob/8e4571bec0656a0c68394f3c9fd0dd7b7909acd3/verl/trainer/ppo/v1/trainer_base.py)按reward worker handles是否为None选择两种布局：colocated路径取各gdpo_reward_keys字段；streaming路径取extra_fields内reward_extra_info。_pop_gdpo_rewards将分量转为非tensor数组；extra_fields非None时优先使用它，不逐key回退到顶层字段；缺失或None才走顶层，自编None控制亦通过。任一样本缺某key时整列不输出，让[原GDPO](https://github.com/verl-project/verl/blob/8e4571bec0656a0c68394f3c9fd0dd7b7909acd3/verl/trainer/ppo/core_algos.py)的现有assert报缺失，而不是静默补零。此选择依赖实际生产者布局与样本顺序，不是schema自动兼容保证。
+
+V1已把真实prompt剥离，候选为GDPO构造宽度0的prompts，并按nested响应offset长度构建attention_mask。后者覆盖完整response，包括工具／上下文行；response_mask只标优化token，两者不能互换。自编六行输入完整长度为[3,4,2,5,3,4]，loss位数为[3,3,2,3,3,4]；记录原GRPO调用输入，确认每个分量放在完整响应末位，而非按loss位数推末位。零宽prompt＋完整响应attention与显式四列prompt的padded布局得到逐token精确相同优势；这只是坐标构造控制，不是生产者／TQ传输实跑。
+
+#### 最终输出决定统计单位
+
+[原session helper](https://github.com/verl-project/verl/blob/8e4571bec0656a0c68394f3c9fd0dd7b7909acd3/verl/trainer/ppo/v1/utils.py)按key.rsplit("_",2)取uid、session及整数index，选各session最大index的输出计算优势，再将标量回填该session所有行并乘各行response_mask。旧门只放GRPO，GDPO直接送全部输出；候选将GDPO加入同一路径。重复中间输出即使携带相同最终reward，也可能改变组统计与最终masked whitening的权重，并非必须先出现“同session行优势不同”。
+
+[自编CPU控制](../../experiments/verl-gdpo-components/verify.py)用两组、每组三个最终session、acc／fmt两分量、权重[1,0.3]，仅为一session增加同reward的中间输出。旧session函数相对只取六最终输出的参考，最大逐token差0.3096314669；候选为0。含下划线uid、重排行顺序及字符串／原Enum GDPO选择均符合预期；重排比较容差1e−6，其余参考精确相等。该问题已由[机器人反馈](https://github.com/verl-project/verl/pull/8424#discussion_r4402116663)提出，[作者回复](https://github.com/verl-project/verl/pull/8424#discussion_r4407562263)说明8e4571b修复；不是本机新发现或维护者批准。
+
+#### 本机验证范围
+
+脚本AST保留完整原GRPO／GDPO、原AdvantageEstimator Enum、四masked函数、两个V1 helper及两版session函数，仅移除注册decorator。两种分量布局、缺prompts的KeyError、缺fmt的原assert、extra_fields优先、reward放置、布局对照和session控制均为自编；plain dict／NumPy为输入，Carrier行选择与直接调用GDPO的compute_advantage adapter是显式接缝。没有执行完整_compute_advantage、原DataProto／TensorDict、TQ、KL／IS、模型、策略loss或训练，不能称为V1对v0完整验收。
+
+当前原测试源码含single／multi输出×两reward布局四参数项；正文23通过和作者多输出测试结果属外部报告，本机未执行或计入。Python3.12.13／Torch2.9.1／NumPy2.0.2，无新依赖或设备seed／探测；[JSON](../../experiments/verl-gdpo-components/result.json)保留五版本／路径hash和控制结果。复查`python verify.py /path/to/verl-git`（脚本在上述实验目录，需预缓存固定blob、禁lazy fetch）。真实生产者／TQ／训练缺口补[原M5条件参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不改其环境、拼接候选或新排GPU任务。
 
 ### 5. GRPO_PASSK (行471)
 

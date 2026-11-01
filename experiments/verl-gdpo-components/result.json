@@ -1,0 +1,114 @@
+{
+  "head": "8e4571bec0656a0c68394f3c9fd0dd7b7909acd3",
+  "base": "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4",
+  "actual_merge_base": "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4",
+  "python": "3.12.13",
+  "torch": "2.9.1",
+  "numpy": "2.0.2",
+  "source_sha256": {
+    "8e4571bec0656a0c68394f3c9fd0dd7b7909acd3:verl/utils/torch_functional.py": "bc7ff798e2f5c06e0121668490739814efc519ff66d4d7dd7c8fc40b4840eb03",
+    "8e4571bec0656a0c68394f3c9fd0dd7b7909acd3:verl/trainer/ppo/core_algos.py": "369b614f239f237a04a38a40b1877cd6fd14aa7bd5f9ff4fe4d7758b682a6948",
+    "8e4571bec0656a0c68394f3c9fd0dd7b7909acd3:verl/trainer/ppo/v1/trainer_base.py": "561c2d9bf5dc1ad60bff6cee15ca92a34a6fdd0e0f478f766263057f6992ec50",
+    "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4:verl/trainer/ppo/v1/utils.py": "88cdc5c859477be0a7d2e45f20e70da61b3f64649ed201af578b3d596aae5315",
+    "8e4571bec0656a0c68394f3c9fd0dd7b7909acd3:verl/trainer/ppo/v1/utils.py": "d80cc2f06f01e201f4180d71e0462482edf1d1166cb22b32b228e453b53cbb27"
+  },
+  "own_layout_controls": [
+    {
+      "acc": [
+        0.0,
+        1.0,
+        2.0,
+        2.0,
+        4.0,
+        0.0
+      ],
+      "fmt": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        2.0,
+        1.0
+      ]
+    },
+    {
+      "acc": [
+        0.0,
+        1.0,
+        2.0,
+        2.0,
+        4.0,
+        0.0
+      ],
+      "fmt": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        2.0,
+        1.0
+      ]
+    }
+  ],
+  "own_missing_key_errors": [
+    {
+      "case": "missing_prompts",
+      "exception": "KeyError",
+      "message": "'prompts'"
+    },
+    {
+      "case": "missing_component",
+      "exception": "AssertionError",
+      "message": "GDPO reward key 'fmt' not found in non_tensor_batch. Available keys: ['uid', 'acc']. Make sure your compute_score returns a dict containing 'fmt'."
+    }
+  ],
+  "own_extra_fields_priority": "Non-None extra_fields wins; incomplete rows omit whole key, no per-key fallback.",
+  "own_none_extra_fields_uses_top_level": true,
+  "own_full_response_lengths": [
+    3,
+    4,
+    2,
+    5,
+    3,
+    4
+  ],
+  "own_loss_token_counts": [
+    3,
+    3,
+    2,
+    3,
+    3,
+    4
+  ],
+  "own_component_positions_equal_full_response_end": true,
+  "own_padded_response_only_exact_equal": true,
+  "own_permuted_session_control": true,
+  "own_string_enum_equivalence": true,
+  "own_multi_output_controls": {
+    "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4": {
+      "max_abs_gap_to_final_session_reference": 0.30963146686553955,
+      "first_token_advantages": [
+        -0.5291001200675964,
+        -0.5291001200675964,
+        0.12258497625589371,
+        1.419453740119934,
+        -0.25153759121894836,
+        1.7351146936416626,
+        -1.12069833278656
+      ]
+    },
+    "8e4571bec0656a0c68394f3c9fd0dd7b7909acd3": {
+      "max_abs_gap_to_final_session_reference": 0.0,
+      "first_token_advantages": [
+        -0.6600725054740906,
+        -0.6600725054740906,
+        -0.08574143052101135,
+        1.1098222732543945,
+        -0.23733298480510712,
+        1.6755696535110474,
+        -1.0742281675338745
+      ]
+    }
+  },
+  "scope": "Original complete GRPO/GDPO and four masked helpers, two original V1 helpers, two original session functions via AST (registry decorators removed). Own plain dict/NumPy layouts, row-selecting Carrier and compute_advantage adapter directly to GDPO; no original tests, DataProto/TensorDict, full _compute_advantage, TQ, KL/IS, models or training."
+}
