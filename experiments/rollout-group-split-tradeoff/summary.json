@@ -7,6 +7,67 @@
  "doc": "notebook/rollout-performance-research.md §13.30",
  "experiment": "§15 Q5 拆 GRPO 组的代价与收益",
  "layer1_statistics": {
+  "advantage_inflation_fixed_offset": {
+   "n8_p2": {
+    "fragment_abs_adv": 1.672810050247656,
+    "inflation": 0.6870454754066136,
+    "whole_abs_adv": 2.4347879581881213
+   },
+   "n8_p4": {
+    "fragment_abs_adv": 1.0,
+    "inflation": 0.4107133833305808,
+    "whole_abs_adv": 2.4347879581881213
+   }
+  },
+  "fragment_scale_mismatch": {
+   "n8_p2": {
+    "mean": 1.3286355320304408,
+    "median": 1.0917447693868423,
+    "n": 4000,
+    "p10": 0.810289079549509,
+    "p90": 2.0088214514266984
+   },
+   "n8_p4": {
+    "mean": 8.642430569549175,
+    "median": 1.7762173669261456,
+    "n": 8000,
+    "p10": 0.8067114360803606,
+    "p90": 9.699996257713886
+   }
+  },
+  "iid_counterfactual": {
+   "max_minus_min_across_group_variance": {
+    "n8_p2": 0.0,
+    "n8_p4": 0.0
+   },
+   "old_max_based_flip_reference": {
+    "n8_p2": 0.3279166666666667,
+    "n8_p4": 0.49333333333333335
+   },
+   "pair_flip_by_group_variance": {
+    "theta_var_0": {
+     "n8_p2": 0.14875,
+     "n8_p4": 0.2425
+    },
+    "theta_var_0.25": {
+     "n8_p2": 0.14875,
+     "n8_p4": 0.2425
+    },
+    "theta_var_1": {
+     "n8_p2": 0.14875,
+     "n8_p4": 0.2425
+    },
+    "theta_var_25": {
+     "n8_p2": 0.14875,
+     "n8_p4": 0.2425
+    },
+    "theta_var_4": {
+     "n8_p2": 0.14875,
+     "n8_p4": 0.2425
+    }
+   },
+   "reading": "翻转率跨五个组难度方差档位的极差只有 p=2 0.0000、p=4 0.0000（噪声级），即该指标对\"组效应\"零敏感。所以 §13.30 结论一不能用翻转率作为\"跨组尺度被打散\"的证据，应改用 `advantage_inflation_fixed_offset`（同一原始偏离在片内被缩放到原来的 0.69／0.41 倍）。"
+  },
   "n16_p1": {
    "analytic_var_ratio": 1.0,
    "fragment_size": 16,
@@ -84,6 +145,10 @@
    "n8_p2": 0.3279166666666667,
    "n8_p4": 0.49333333333333335
   },
+  "pair_flip_rate": {
+   "n8_p2": 0.15281250000000002,
+   "n8_p4": 0.2459375
+  },
   "pseudo_zero_rate": {
    "n16_p2": 0.0,
    "n16_p4": 0.0,
@@ -135,6 +200,65 @@
   "snr_loss_ratio_p2": 0.2712581120109896,
   "snr_ratio_p2": 0.7287418879890104,
   "verdict": "需逐负载判断"
+ },
+ "layer4_train_side_balance": {
+  "by_cv": {
+   "cv0.2": {
+    "grouped_ldm_max": 0.005741247666091659,
+    "grouped_ldm_mean": 0.0008007224789736676,
+    "grouped_vs_no_balance_ratio": 0.02705983897043926,
+    "n_measurements": 90,
+    "no_balance_cut_by_uid_max": 0.09199866622752009,
+    "no_balance_cut_by_uid_mean": 0.029590807241994078,
+    "reading": "组级 LDM 与\"不均衡、按 uid 连续切\"同口径分母；比值即\"分组约束让均衡变差了多少\"——这是组完整性在训练侧的直接定价。"
+   },
+   "cv0.6": {
+    "grouped_ldm_max": 0.011804127912236076,
+    "grouped_ldm_mean": 0.0022552405426516427,
+    "grouped_vs_no_balance_ratio": 0.02729866751698877,
+    "n_measurements": 90,
+    "no_balance_cut_by_uid_max": 0.25523620293572935,
+    "no_balance_cut_by_uid_mean": 0.08261357596476604,
+    "reading": "组级 LDM 与\"不均衡、按 uid 连续切\"同口径分母；比值即\"分组约束让均衡变差了多少\"——这是组完整性在训练侧的直接定价。"
+   },
+   "cv1.2": {
+    "grouped_ldm_max": 0.02726291054440335,
+    "grouped_ldm_mean": 0.0033510608917837973,
+    "grouped_vs_no_balance_ratio": 0.025852438332879576,
+    "n_measurements": 90,
+    "no_balance_cut_by_uid_max": 0.4229083886108313,
+    "no_balance_cut_by_uid_mean": 0.12962262393338195,
+    "reading": "组级 LDM 与\"不均衡、按 uid 连续切\"同口径分母；比值即\"分组约束让均衡变差了多少\"——这是组完整性在训练侧的直接定价。"
+   }
+  },
+  "default_group_split_rate": 0.9965277777777778,
+  "default_group_split_rate_reading": "逐条 LDM 排序跨过组边界，故默认路径几乎必然把每组拆开——这与 §13.30 结论一（拆组破坏跨组尺度）是同一机制在**训练侧**的复现，也解释了为什么 `use_prefix_grouper` 必须改用组级均衡。",
+  "saturation": {
+   "int64_max_workload": 9223372036854775807,
+   "reading": "`int(...item())` 的截断损失只在 exact 值越过 2^63 时出现，对应序列长度 3036988213（3036988212 仍精确、3036988213 已饱和）。所以\"截断改变均衡决策\"这条在可训练范围内不成立；真实可观察的机制是**离散性**——组级均衡一次移动整组 n 条，单组权重是 LDM 的最小不可分单位。",
+   "saturated_at_seqlen": 3036988213,
+   "truncation_loss_at_32768": 0,
+   "truncation_loss_at_512": 0,
+   "workload_at_first_saturated": 9223372042923256057,
+   "workload_at_last_exact": 9223372036849255056
+  },
+  "split_impl": {
+   "cv0.2": {
+    "balanced_split_imbalance": 0.0075918562783335,
+    "naive_split_imbalance": 0.058010585167050335,
+    "ratio": 7.641159558381989
+   },
+   "cv0.6": {
+    "balanced_split_imbalance": 0.021340237910567834,
+    "naive_split_imbalance": 0.16778457090459098,
+    "ratio": 7.862357093099833
+   },
+   "cv1.2": {
+    "balanced_split_imbalance": 0.05109694486179957,
+    "naive_split_imbalance": 0.2662516548432856,
+    "ratio": 5.210715739725903
+   }
+  }
  },
  "sanitization": {
   "definition_notes": [

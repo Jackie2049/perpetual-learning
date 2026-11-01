@@ -121,5 +121,119 @@ class TestCandidateDConsistency(unittest.TestCase):
         self.assertEqual(m.grouping_tax(lens, backlog_groups=1)['grouping_tax'], 0.0)
 
 
+class TestTrainSideBalance(unittest.TestCase):
+    """2026-11-02 第二批：训练侧同栈均衡（verl `use_prefix_grouper` 机制）。
+
+    这一层的数字已与真实 verl `get_seqlen_balanced_partitions` 逐位核对过
+    （同样的输入给出相同的分区和相同的分区权重），所以测试重点是**机制**不是数值。
+    """
+
+    def test_ldm_replication_matches_known_optimal_case(self):
+        """1..16 分 4 片：LDM 应给出每组 34 的完全均衡解（与真实 verl 输出一致）。"""
+        w = list(range(1, 17))
+        parts = m._karmarkar_karp(w, 4)
+        self.assertEqual([sum(w[i] for i in p) for p in parts], [34, 34, 34, 34])
+
+    def test_grouped_keeps_groups_whole(self):
+        """组级均衡的每个分区都由完整的组构成——这是 `use_prefix_grouper` 的成立前提。
+
+        分区单位是**组**：32 组分 4 片，每片 8 组（= 64 条样本）。
+        """
+        lens = m.sample_group_lens(random.Random(0), n_groups=32, cv=0.6)
+        r = m.train_side_balance(lens, 4, grouped=True)
+        self.assertTrue(r['groups_intact'])
+        self.assertEqual(r['partition_sizes'], [8, 8, 8, 8])
+
+    def test_default_path_splits_groups(self):
+        """逐条 LDM 会把同组样本分到不同分区——所以默认路径下不能开 prefix 共享。
+
+        这是负向对照：如果哪天这条断言失败，说明"默认路径不拆组"这个前提变了，
+        正文里"默认路径必然拆组"的表述必须跟着改。
+        """
+        lens = m.sample_group_lens(random.Random(0), n_groups=32, cv=0.6)
+        r = m.train_side_balance(lens, 4, grouped=False)
+        self.assertFalse(r['groups_intact'])
+        self.assertLess(r['groups_intact_count'], r['n_groups'])
+
+    def test_grouped_balance_better_than_no_balance(self):
+        """组级均衡仍显著优于"按 uid 连续切"——否则分组约束等于没做事。"""
+        lens = m.sample_group_lens(random.Random(3), n_groups=32, cv=0.6)
+        flat = [x for g in lens for x in g]
+        w = [m.workload_int64(x) for x in flat]
+        grouped = m.train_side_balance(lens, 4, grouped=True)['imbalance']
+        naive = m._imbalance(m._cut_by_uid_order(w, 4), w)
+        self.assertLess(grouped, naive)
+
+    def test_workload_saturation_is_far_beyond_training_range(self):
+        """int64 饱和点远在可训练范围外，因此"截断改变均衡"这条不成立。"""
+        sat = m.workload_saturation_len()
+        self.assertGreater(sat, 10 ** 9)
+        self.assertLessEqual(m.calculate_workload(sat - 1), m.INT64_MAX)
+        self.assertGreater(m.calculate_workload(sat), m.INT64_MAX)
+        self.assertEqual(m.workload_int64(sat), m.INT64_MAX)
+
+    def test_workload_matches_verl_formula(self):
+        """工作量公式与 verl `seqlen_balancing.py:46` 一致：24576·l + l²。"""
+        for l in (1, 512, 4096):
+            self.assertEqual(m.calculate_workload(l), 24576 * l + l * l)
+
+    def test_splits_cover_all_samples(self):
+        """两种拆分实现都必须无损（拆分只为均衡，不能丢样本）。"""
+        w = [m.workload_int64(x) for x in (100, 200, 150, 50, 300, 250, 180, 120)]
+        for fn in (lambda: m.greedy_split(len(w), 2), lambda: m.karmarkar_split(w, 2)):
+            covered = sorted(i for p in fn() for i in p)
+            self.assertEqual(covered, list(range(len(w))))
+
+
+class TestSigmaBias(unittest.TestCase):
+    def test_splitting_biases_sigma_hat_downward(self):
+        """拆组不只放大 σ̂ 的方差，还把它**系统性压低**（p=2 约 −11.6%）。
+
+        这条以前只记录了方差膨胀（`sim_var_ratio`），漏了期望偏移；
+        偏移方向很关键：σ̂ 偏小会把优势幅度放大，因此"拆组只是噪声变大"的表述是错的。
+        """
+        def mean_sigma(n, p, seed):
+            rng = random.Random(seed)
+            return statistics.mean(
+                statistics.mean(m.sigma_hat_draws(n, p, rng, iters=1)) for _ in range(400)
+            )
+
+        whole = mean_sigma(8, 1, 0)
+        split = mean_sigma(8, 2, 1)
+        deeper = mean_sigma(8, 4, 2)
+        self.assertLess(split, whole)
+        self.assertLess(deeper, split)
+
+
+class TestRetractedMetric(unittest.TestCase):
+    """2026-11-02 第二批：撤回"排序翻转率"作为尺度打散的证据。
+
+    这三条测试的作用是**防止失效指标换个名字回到结论里**：
+    翻转率对组难度方差零敏感 → 它量的不是"跨组尺度"，那结论一就必须换证据。
+    """
+
+    def test_flip_rate_is_not_sensitive_to_group_variance(self):
+        """组难度方差从 0 拉到 25，翻转率几乎不动——所以它不能证明"尺度被打散"。"""
+        r = m._iid_counterfactual(n=8, iters=120, seeds=4)
+        spread = r['max_minus_min_across_group_variance']
+        self.assertLess(spread['n8_p2'], 0.05)
+        self.assertLess(spread['n8_p4'], 0.05)
+
+    def test_flip_rate_stays_high_without_group_effect(self):
+        """组难度方差为 0（两组同分布）时翻转率仍显著大于 0——这是指标失效的直接证据。"""
+        r = m._iid_counterfactual(n=8, iters=120, seeds=4)
+        self.assertGreater(r['pair_flip_by_group_variance']['theta_var_0']['n8_p2'], 0.05)
+        self.assertGreater(r['pair_flip_by_group_variance']['theta_var_0']['n8_p4'], 0.05)
+
+    def test_scale_mismatch_has_identification(self):
+        """尺度错配（分片 σ / 整组 σ）有识别性：p=1 恒为 1，拆得越碎越偏离 1。"""
+        unit = m.fragment_scale_mismatch(8, 1, random.Random(0), iters=200)
+        p2 = m.fragment_scale_mismatch(8, 2, random.Random(0), iters=200)
+        p4 = m.fragment_scale_mismatch(8, 4, random.Random(0), iters=200)
+        self.assertAlmostEqual(unit['median'], 1.0, places=6)
+        self.assertGreater(p2['p90'], 1.2)
+        self.assertGreater(p4['p90'], p2['p90'])
+
+
 if __name__ == '__main__':
     unittest.main()
