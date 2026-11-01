@@ -1,0 +1,89 @@
+{
+  "head": "57916cf0af1ffb0a60263077c3df374a2ee5fe47",
+  "base": "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4",
+  "python": "3.12.13",
+  "numpy": "2.0.2",
+  "pytest": "8.4.2",
+  "source_sha256": {
+    "verl/single_controller/ray/base.py": "41ba88e1d0102bdafeef1489ba019e5c83fd296ee6b9564fc8448df0bdc68e8d",
+    "verl/single_controller/base/worker_group.py": "3723ad4ba93afc8b715287a1e9f8754e4915af6fd93a44e57646beb28a8591ab",
+    "tests/single_controller/test_resource_pool_slots_on_cpu.py": "eb978f03a9bcf9aa292185ef74a89a5d4150609cd624f0c4c1962218f7538079"
+  },
+  "original_test_cases": [
+    {
+      "test": "test_marking_one_slot_keeps_other_slots_and_pg",
+      "parameters": {},
+      "outcome": "passed"
+    },
+    {
+      "test": "test_unequal_bundle_counts_stay_associated_when_pgs_are_reordered",
+      "parameters": {},
+      "outcome": "passed"
+    },
+    {
+      "test": "test_out_of_range_slot_is_rejected",
+      "parameters": {
+        "index": -1
+      },
+      "outcome": "passed"
+    },
+    {
+      "test": "test_out_of_range_slot_is_rejected",
+      "parameters": {
+        "index": 2
+      },
+      "outcome": "passed"
+    },
+    {
+      "test": "test_unknown_pg_and_empty_reason_are_rejected",
+      "parameters": {},
+      "outcome": "passed"
+    },
+    {
+      "test": "test_slot_queries_do_not_allocate_uninitialized_pool",
+      "parameters": {},
+      "outcome": "passed"
+    },
+    {
+      "test": "test_split_and_nested_views_share_masks_in_both_directions",
+      "parameters": {},
+      "outcome": "passed"
+    },
+    {
+      "test": "test_merge_shares_later_marks_with_source_pools",
+      "parameters": {},
+      "outcome": "passed"
+    },
+    {
+      "test": "test_overlapping_pg_merge_is_rejected",
+      "parameters": {},
+      "outcome": "passed"
+    },
+    {
+      "test": "test_extract_preserves_marks_before_and_after_reuse",
+      "parameters": {},
+      "outcome": "passed"
+    },
+    {
+      "test": "test_worker_launch_fails_before_master_or_actor_creation",
+      "parameters": {
+        "subpool": false
+      },
+      "outcome": "passed"
+    },
+    {
+      "test": "test_worker_launch_fails_before_master_or_actor_creation",
+      "parameters": {
+        "subpool": true
+      },
+      "outcome": "passed"
+    },
+    {
+      "test": "test_healthy_subpool_launch_keeps_original_bundle_index",
+      "parameters": {},
+      "outcome": "passed"
+    }
+  ],
+  "scope": "Complete original ResourcePool, RayResourcePool, SubRayResourcePool classes; four original free functions and two full original worker initializer methods. Annotations postponed, production bodies unchanged. Eleven original test functions plus make_pool extracted, only decorators removed; 13 parameters run manually, not native pytest. Original Mock/fake PG fixtures preserved; patch module lookup redirected to isolated module. Platform/device/sorter/Ray import seams; cuda/GPU are inert strings, no device detection. Three full inputs compile. Real CPU Ray integration case, related device-agnostic suite, actual PG/master/actor creation, Ray cluster/scheduler, resource release, failure detection/recovery, process/driver restart, GPU/NPU and training not run.",
+  "execution_note": "Initial offline read of worker_group.py stopped at missing Git blob; explicitly cached fixed source before execution. First harness run and independent repeat both passed all 13 original parameters; no source patch or dependency install."
+}

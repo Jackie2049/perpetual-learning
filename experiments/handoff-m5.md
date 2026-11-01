@@ -425,6 +425,8 @@ Megatron调度恢复参考（2026-10-25，复用本入口非新队列）：[#795
 
 ## verl TransferQueue 启动资源参考
 
+资源槽准入参考（2026-11-01，复用本资源入口、非新队列／已接单）：[#8411](https://github.com/verl-project/verl/pull/8411) head57916cf0af1ffb0a60263077c3df374a2ee5fe47／base2ab35292；[M1原13CPU参数体](../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#资源槽不可用标记与启动拒绝)仅假PG／Mock，非真实Ray或设备恢复。目的为将来已有获准匹配恢复工作中，区分物理设备身份、PG bundle索引、driver本地不可用标记与实际actor状态；M1不探测服务器。若M5独立选用且环境安全、资源／权限已具备，先核映射来源、标记传播／driver生命周期，再在原预算只读观察已有actor及后续创建guard；不得为复现故障自动杀actor、释放PG或缩world。无现成匹配条件、需部署／迁移／故障注入或影响专项即停记未测；不自动应用候选／排训练。所有社区及既有PR-head写入仍逐项须用户明确同意。
+
 VeOmni路由有效性参考（2026-11-01，同一R3入口、不新增任务）：[#8471](https://github.com/verl-project/verl/pull/8471)固定7ad2b4fb／API目标base8e48d72d；[M1原22项CPU控制器与四自编控制](../notebook/frameworks/verl-transferqueue-worker-lifecycle-deep-reading.md#路由值与记录有效性)区分mask与ID合法性，真实topk1 expert0在debug开启时仍被原guard拒绝，非模型／EP验收。若未来已有获准匹配VeOmni R3任务且M5独立选用，先核记录区间内部是否有未知占位、实际mask的生产／TQ保留、同token／层坐标、unpad／pad／SP切片、topk与debug，再按原预算核真实permute／路由与两侧logprob／梯度；CPU通过不认证重复专家安全或性能。缺匹配环境／授权权重／资源、需部署或影响专项即停记未测，不自动应用／修guard、拼接层裁剪、新装VeOmni或开训练；社区及既有PR-head写入仍逐项须用户明确同意，参考非接单。
 
 路由层选择参考（2026-10-24，复用TQ入口，非新增训练队列）：[#8160](https://github.com/verl-project/verl/issues/8160)报告者已有内部实现；[M1固定main3c6d9b4源码学习](../notebook/frameworks/verl-transferqueue-worker-lifecycle-deep-reading.md#路由记录的层选择与全局坐标)只四模块AST/compile，无TQ/模型/通信。若M5日后已有获准匹配Megatron R3+PP工作且独立选用公开实现，先核实际schema、样本键/token顺序、全局层号及真实model router归属；CP/SP布局、末token占位与全层padding完成点另列，不用shape/均值指标认证身份。作者16节点结果不外推本机；缺公开patch、匹配环境/模型/资源，需部署/新schema或影响专项就停记未测，不另写切片映射、改生产数据或启动PP矩阵。任何上游回复/PR/PR-head推送（含fork）须逐项获用户明确同意，交接不代表接单或增加权限。

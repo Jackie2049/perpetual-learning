@@ -15,6 +15,36 @@
 > 2026-06-15 | 源码: verl/single_controller/ + verl/workers/engine_workers.py + verl/checkpoint_engine/ + verl/workers/rollout/
 > 核心: WorkerGroup=Ray actor管理+Dispatch路由 → RolloutMode(HYBRID/COLOCATED/STANDALONE) → Sleep/Wake GPU内存切换 → 3种Weight Sync后端(naive/NCCL/NIXL)
 
+## 资源槽不可用标记与启动拒绝
+
+**在driver中禁止复用一个槽，不等于Ray释放、替换或修复了那块设备。** [verl #8411](https://github.com/verl-project/verl/pull/8411)在2026-11-01核为OPEN／非draft，作者KunWuLuan；固定head `57916cf0af1ffb0a60263077c3df374a2ee5fe47`，API目标base与实际共同祖先均为 `2ab35292039a51175a4b3d3b3b2d76e951a0d3e4`。正文保留了早期draft说明，但不是当前API状态。候选仅加资源槽状态与启动前检查，物理故障诊断／设备到bundle映射仍由调用方负责。
+
+### 状态以原PG和bundle索引为键
+
+[`RayResourcePool`](https://github.com/verl-project/verl/blob/57916cf0af1ffb0a60263077c3df374a2ee5fe47/verl/single_controller/ray/base.py)用placement_group_id与bundle_index标识槽，保存非空reason；越界／不属当前view的槽被拒绝。resource_slots要求PG已初始化，查询不会替调用方分配PG。标记不减world_size、不去掉PG，也不自动选其他槽。
+
+普通split与nested split共享状态字典，view只暴露自己的槽区间；merge与extract复用各PG的内层状态字典，让之后新增标记仍双向可见，重叠PG的merge被拒绝。PG创建时先将process_count绑定PG ID，再按node IP排序，避免不同bundle数量随排序错配；这不是实际设备身份探测。
+
+| 操作 | 保留的身份 | 不提供的效果 |
+| --- | --- | --- |
+| 标记一个槽不可用 | 原PG、原bundle index、其他槽 | 不释放PG，不杀已有actor |
+| 拆出健康subpool | 原bundle index；显式子池world_size | 不把坏槽静默删除后重新编号 |
+| merge／extract复用 | 同driver内各PG标记的共享引用 | 不跨driver同步或持久恢复 |
+
+### guard先于master发现和actor创建
+
+完整池及子池两条初始化路径均在get_placement_groups之后调用assert_slots_available，再发现master地址并创建worker。已经初始化的view若包含坏槽就整次拒绝，而非悄悄减少world_size。健康子池可以继续引用同PG的原bundle1，即使bundle0不可用。
+
+这是创建入口的检查，不是持续监控或原子化的资源租约；它不撤销已经启动的actor，不改变Ray调度，driver重启后也不保留标记。恢复控制器仍须决定何时诊断／标记、如何处理现有任务及何种替代池获准使用，不能以标记列表为空认证物理设备健康。
+
+### 原CPU单元项的覆盖
+
+[复现脚本](../../experiments/verl-slot-availability/verify.py)在Python3.12.13／NumPy2.0.2／pytest8.4.2下AST隔离原ResourcePool、RayResourcePool、SubRayResourcePool完整类、四个自由函数及两个完整worker初始化方法；只延后annotations，生产体不变。原make_pool与11个原测试函数保留体／assert，仅去装饰器后手动执行13参数项，首跑和独立重复均过，非原生pytest。
+
+覆盖单槽重复标记且world4不变、两PG不等计数的排序、越界两项、未知PG／空reason、未初始化查询、split／nested／merge／extract共享、重叠merge拒绝、两创建入口在master／actor前拒绝，以及健康子池以原local_rank=1调用_create_worker。PG及创建回调沿用原Mock；patch目标只重定向到隔离模块，平台／设备名／sorter／Ray为导入接缝，cuda／GPU只是字符串，无设备查询。不同计数的控制只核resource_slots，不认证所有异构计数的worker启动。
+
+[结果／三输入hash](../../experiments/verl-slot-availability/result.json)保存逐项范围。未运行原真实CPU Ray集成例、相关device-agnostic套件、Ray cluster／PG／master／actor创建、真实调度／释放、故障检测／恢复或driver重启；作者两文件合计23通过不计本机覆盖。源码层的GPU故障映射与实际恢复差额只补[原M5资源参考](../../experiments/handoff-m5.md#verl-transferqueue-启动资源参考)，不启动集群、注入设备故障、迁移任务或新增训练队列。
+
 ## V1 结束钩子与加载器清理
 
 **正常运行到最后一步，与异常时也能完成清理，是不同保证。** [verl #8474](https://github.com/verl-project/verl/pull/8474)在2026-11-01读取为OPEN／非draft，head `02eac3e1238d1c1c37350ae600e585d67bfcae74`，API目标base `8df5baeed0f5ecdd7f870d83bc3d79194816e2a9`，两文件。候选将V1末步的`return`改为`break`，使正常末步和循环自然结束都到达`on_train_end → _shutdown_dump_executor → _shutdown_train_dataloader`。这是已有作者的实现，不另竞争修复。[固定源码](https://github.com/verl-project/verl/blob/02eac3e1238d1c1c37350ae600e585d67bfcae74/verl/trainer/ppo/v1/trainer_base.py#L522)
