@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-moe-layout-provenance/verify.py](verl-moe-layout-provenance/verify.py) | #8442原转换函数接各版原测试体：基线2过／候选5过；[结果](verl-moe-layout-provenance/result.json)另核自编矩形／独立方形投影及原MRO表达式，缺标记同shape元素差9。非真实FSDP／NPU／vLLM或IPC | [Packed布局来源](../notebook/frameworks/verl-quant-layer-audit.md#packed-专家权重的布局来源) |
 | [verl-gdpo-components/verify.py](verl-gdpo-components/verify.py) | #8424原GDPO／GRPO／masked及字段／session helper，自编布局与数值控制；[结果](verl-gdpo-components/result.json)核缺key、工具行长度和最终session。Carrier／adapter为接缝，非原四参数测试／完整V1或训练 | [GDPO分量与session](../notebook/frameworks/verl-grpo-core-algos-reading.md#gdpo-分量与最终-session) |
 | [verl-repetition-params/verify.py](verl-repetition-params/verify.py) | #8436两版原异步方法接自编边界记录器，24组／48样本与四server补值控制；[结果](verl-repetition-params/result.json)核请求优先级、验证／greedy。非作者24原测试、真实后端／惩罚公式或概率验收 | [重复惩罚请求优先级](../notebook/frameworks/verl-async-logprob-provenance.md#重复惩罚的请求优先级) |
 | [verl-sft-loader-rng/verify.py](verl-sft-loader-rng/verify.py) | #8434原三CPU测试体接真实torchdata／OmegaConf，基线三失败／候选三通过；[结果](verl-sft-loader-rng/result.json)另核sampler顺序、split流与后续base_seed差额。0worker／Mock engine，非完整模型或训练恢复 | [SFT随机流隔离](../notebook/frameworks/verl-checkpoint-management-reading.md#sft-迭代器的随机流隔离) |

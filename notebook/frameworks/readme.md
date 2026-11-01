@@ -175,6 +175,7 @@ Replay补读：[分块与反向更新边界](unirl-survey.md#replay-分块与反
 - [独立分片head的执行与梯度归属](verl-fused-output-softcap.md#独立分片-head-的执行与梯度归属) — #8091已有#8096/#8097替代方案；FSDP注册方法与显式聚合、梯度布局分开，仅源码/compile，不搬作者GPU报告或旧CPU数学结果。
 
 - [verl 训练与 rollout 的量化层审计](verl-quant-layer-audit.md) — #8132审计/24项CPU单测及新#8306 refit覆盖对照；loader/marker与测试证据不可混用，真机待M5。
+  - [Packed专家权重布局来源](verl-quant-layer-audit.md#packed-专家权重的布局来源)：#8442原CPU测试体基线2过／候选5过；自编方形投影缺标记shape不变而元素差9，非NPU／权重同步验收。
 - [原生混合精度模型的后端选择](verl-quant-layer-audit.md#原生混合精度模型的后端选择) — #8381的FP8顶层／FP4 experts与显式backend分开；Marlin改变activation格式，源码非加载或refit验收。
 - [VeOmni后端RFC分工](verl-quant-layer-audit.md#后端-rfc-的分工与迁移条件) — #8342作者已开#1360，保留现有QAT配置语义、迁移另议；仍待维护者反馈，不另实现或新排算力。
 - [QAT 的 mask 默认与 packed 接口](verl-quant-layer-audit.md#qat-的-mask-默认与-packed-接口) — #8361最终已合并，删除全部spec替换与mask默认helper；原三例只属8a历史版，PR旧正文不作最终Qwen3-MoE／refit验收。

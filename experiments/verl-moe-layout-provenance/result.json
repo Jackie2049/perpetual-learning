@@ -1,0 +1,183 @@
+{
+  "head": "3a1ff0432aa3187aabbc700ad5852a658b8656d6",
+  "api_target_base_observed": "a08ea02a784d7d4982b1d81df36d188a476192bb",
+  "actual_parent_and_merge_base": "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4",
+  "environment": {
+    "python": "3.12.13",
+    "torch": "2.9.1",
+    "torch_git": "5811a8d7da873dd699ff6687092c225caffcf1bb",
+    "device": "cpu"
+  },
+  "source_sha256": {
+    "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4:verl/workers/engine/fsdp/utils.py": "d4d836445d9160834a3bbc91cbf874f3db816c0b86e4fc63352d0e1b0c91a5b7",
+    "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4:tests/workers/rollout/test_vllm_moe_param_converter_on_cpu.py": "4d64c680404c646aa8221a25a5671be358929372ad4c2179c18ce0fd21780532",
+    "3a1ff0432aa3187aabbc700ad5852a658b8656d6:verl/workers/engine/fsdp/utils.py": "883863abee0343493ac9b01fd9375708bbae4699a4b2f486a583af2ec584bbf1",
+    "3a1ff0432aa3187aabbc700ad5852a658b8656d6:tests/workers/rollout/test_vllm_moe_param_converter_on_cpu.py": "c04de044c84e94905e69e4a98a141769a1974db0a3b3f15b9d9328778fd98b52",
+    "3a1ff0432aa3187aabbc700ad5852a658b8656d6:verl/workers/engine/fsdp/transformer_impl.py": "aab1280deb882aa012002c31a74c685a0b015dccf93106d0b3d3fabf83c02ed9"
+  },
+  "original_test_bodies_manual": {
+    "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4": [
+      {
+        "name": "test_qwen_moe_packed_weights_are_expanded_per_expert",
+        "status": "passed"
+      },
+      {
+        "name": "test_gpt_oss_packed_weights_are_not_expanded",
+        "status": "passed"
+      }
+    ],
+    "3a1ff0432aa3187aabbc700ad5852a658b8656d6": [
+      {
+        "name": "test_qwen_moe_packed_weights_are_expanded_per_expert",
+        "status": "passed"
+      },
+      {
+        "name": "test_qwen_moe_npu_gmm_layout_is_normalized_before_expansion",
+        "status": "passed"
+      },
+      {
+        "name": "test_qwen_moe_ambiguous_shape_falls_back_to_standard_layout",
+        "status": "passed"
+      },
+      {
+        "name": "test_qwen_moe_square_weights_use_provenance_not_shape",
+        "status": "passed"
+      },
+      {
+        "name": "test_gpt_oss_packed_weights_are_not_expanded",
+        "status": "passed"
+      }
+    ]
+  },
+  "rectangular_own_control": {
+    "experts": 2,
+    "hidden": 8,
+    "intermediate": 3,
+    "expected_gate": [
+      3,
+      8
+    ],
+    "old_npu_gate": [
+      4,
+      6
+    ],
+    "expected_down": [
+      8,
+      3
+    ],
+    "old_npu_down": [
+      3,
+      8
+    ],
+    "hf_base_head_exact": true,
+    "head_heuristic_exact": true,
+    "head_flag_exact": true,
+    "head_no_metadata_matches_old_wrong_axis": true
+  },
+  "independent_square_projection_controls": {
+    "gate_up": {
+      "hidden": 4,
+      "intermediate": 2,
+      "same_output_shapes_without_flag": true,
+      "max_value_gap_without_flag": 9.0,
+      "flag_matches_hf_values_exactly": true,
+      "first_key": "model.layers.0.mlp.experts.0.gate_proj.weight",
+      "hf_expected_first": [
+        [
+          0.0,
+          1.0,
+          2.0,
+          3.0
+        ],
+        [
+          4.0,
+          5.0,
+          6.0,
+          7.0
+        ]
+      ],
+      "without_flag_first": [
+        [
+          0.0,
+          4.0,
+          8.0,
+          12.0
+        ],
+        [
+          1.0,
+          5.0,
+          9.0,
+          13.0
+        ]
+      ]
+    },
+    "down": {
+      "hidden": 4,
+      "intermediate": 4,
+      "same_output_shapes_without_flag": true,
+      "max_value_gap_without_flag": 9.0,
+      "flag_matches_hf_values_exactly": true,
+      "first_key": "model.layers.0.mlp.experts.0.down_proj.weight",
+      "hf_expected_first": [
+        [
+          0.0,
+          1.0,
+          2.0,
+          3.0
+        ],
+        [
+          4.0,
+          5.0,
+          6.0,
+          7.0
+        ],
+        [
+          8.0,
+          9.0,
+          10.0,
+          11.0
+        ],
+        [
+          12.0,
+          13.0,
+          14.0,
+          15.0
+        ]
+      ],
+      "without_flag_first": [
+        [
+          0.0,
+          4.0,
+          8.0,
+          12.0
+        ],
+        [
+          1.0,
+          5.0,
+          9.0,
+          13.0
+        ],
+        [
+          2.0,
+          6.0,
+          10.0,
+          14.0
+        ],
+        [
+          3.0,
+          7.0,
+          11.0,
+          15.0
+        ]
+      ]
+    }
+  },
+  "original_mro_expression_on_own_modules": {
+    "stock": false,
+    "own_wrapped": true,
+    "own_mixed_tree": true
+  },
+  "gpt_oss_explicit_flag_preserves_identity": true,
+  "unmatched_key_preserves_identity": true,
+  "scope": "Original converter and each revision's original plain test bodies; own value/MRO fixtures. No native verl import, full export entry, FSDP/NPU patch, vLLM loader, IPC, model or training."
+}

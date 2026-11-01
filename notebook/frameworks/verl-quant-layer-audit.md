@@ -10,6 +10,37 @@
 
 2026-10-26接续：[原生混合精度模型的后端选择](#原生混合精度模型的后端选择)追踪新议题#8381。顶层FP8配置不代表experts也为FP8；显式DeepGEMM会阻止自动候选回退，切换Marlin还改变activation精度，不能仅按“成功启动”认证训练与rollout一致。
 
+## Packed 专家权重的布局来源
+
+**正确的导出名字和shape仍可能携带错误的权重值；方形投影尤其需要生产者布局，而不能只看维度。** 2026-11-01只读zgh-99的[#8442](https://github.com/verl-project/verl/pull/8442)，固定head `3a1ff0432aa3187aabbc700ad5852a658b8656d6`。它修改FSDP在线导出的packed MoE拆分，不是量化算法或VeOmni exporter修改。API目标base为 `a08ea02a`，已与候选分叉；本次基线采用实际父版及共同祖先 `2ab35292039a51175a4b3d3b3b2d76e951a0d3e4`，不将移动后的目标分支当作候选父版。
+
+### 拆分轴与显式布局
+
+[转换函数](https://github.com/verl-project/verl/blob/3a1ff0432aa3187aabbc700ad5852a658b8656d6/verl/workers/engine/fsdp/utils.py)说明的两种布局如下，E为专家数、H为hidden size、I为单个专家intermediate size：
+
+| 投影 | HF packed | NPU grouped GEMM packed | 导出到逐专家checkpoint key |
+|---|---|---|---|
+| gate 与 up 合并 | `[E,2I,H]` | `[E,H,2I]` | gate、up各`[I,H]` |
+| down | `[E,H,I]` | `[E,I,H]` | `[H,I]` |
+
+旧函数固定沿dim1拆gate/up、down原样逐专家输出。候选在`npu_gmm_layout=True`时沿dim2拆gate/up并转置，down也转置；输出均contiguous。未显式标记时，`hidden_size`可识别非方形NPU布局，但gate/up在H=2I、down在H=I时没有足够形状信息，保留旧标准布局行为。不传hidden size和标记仍保留旧路径；标记是调用者的布局声明，不是任意输入的布局验证器。GPT-OSS则先于这些分支返回原packed张量。
+
+[原调用点](https://github.com/verl-project/verl/blob/3a1ff0432aa3187aabbc700ad5852a658b8656d6/verl/workers/engine/fsdp/transformer_impl.py)从`text_config`（若存在）取hidden size，并遍历已构造模块的类继承链，查找`NPUQwen3VLMoeTextExperts`。这比只看配置或最终具体类名更贴近生产者：补丁未应用时配置不证明布局，包装产生派生类时具体名字也可能变化。这两类问题及方形歧义已有[作者修订与审查过程](https://github.com/verl-project/verl/pull/8442#discussion_r4411339206)，不是本机新发现或待抢占候选。当前逻辑为模块树全局`any`标记，未逐参数鉴定布局；自编混合模块树只能证明这个选择范围，不能据此断言真实混合模型故障。
+
+### CPU 数值对照
+
+[脚本](../../experiments/verl-moe-layout-provenance/verify.py)提取两版完整原转换函数，各自接本版完整原测试模块，仅移除触发完整verl导入的那条converter import；原断言不变，手动调用无fixture的测试体。Python3.12.13／Torch2.9.1，基线原2项、候选原5项均通过。新增测试使用新签名，不能把它们直接套到旧函数产生的TypeError计为布局回归。五份完整源码compile及SHA256、具体断言结果见[原始结果](../../experiments/verl-moe-layout-provenance/result.json)。
+
+另有自编确定性CPU对照：
+
+- E=2、H=8、I=3时，HF输入两版逐值相同；NPU输入旧gate为`[4,6]`而目标为`[3,8]`，旧down为`[3,8]`而目标为`[8,3]`。候选的hidden-size推断与显式标记两条路径都精确还原同一HF参考。
+- 分别用H=4、I=2的方形gate/up及H=4、I=4的方形down测试。缺显式标记时，两者输出shape都正确、最大元素差均为9；传True后逐值精确一致。**这是两个独立投影条件，不是一个同时采用两个I的模型配置。**
+- 只执行原布局检测赋值右侧，自编stock模块为False、同名专家的动态派生类为True、stock与派生类组成的模块树为True。没有执行真实FSDP class swap或NPU补丁。显式True下GPT-OSS仍保持张量对象身份，未匹配名字也原样通过。
+
+复现：`../deepinfer-eplb-venv/bin/python experiments/verl-moe-layout-provenance/verify.py ../verl-packaging-readonly`。AST隔离避免完整engine的设备搬运；这里验证的是原转换数学、测试断言与类名选择表达式，不是完整FSDP参数导出、vLLM loader、IPC或NPU计算。
+
+作者报告Ascend 910B、Qwen3-VL-30B-A3B、FSDP2+vLLM下，修改后首次权重同步通过并开始generation，但该GRPO运行随后OOM；另一个on-policy distillation配方完成3步。**这些是作者报告，不能算本机真机验收，也不能将首次同步成功写成GRPO闭环。** 真实生产者、包装、接收端与同输入正确性的缺口补[原M5 NPU入口](../../experiments/handoff-m5.md#verl-npu-参数卸载参考)，仅条件参考，不自动应用或新排训练。
+
 ## 专家批量压缩与流式存储寿命
 
 **延迟处理一个生成器的输出时，保存tensor对象不等于保存当时的值；行独立量化允许批处理，也不自动解决输入和输出的存储寿命。** 2026-11-01只读0z5a的[#8473](https://github.com/verl-project/verl/pull/8473)，head `b84cd9ac42a50b1018f48a4afa9987728c225b0c`，API base与实际共同祖先同为 `8df5baeed0f5ecdd7f870d83bc3d79194816e2a9`，OPEN／非draft，两文件249行新增。它批处理trainer侧MXFP4／MXFP8 expert压缩，不是模型计算或rollout调度优化，也未合入下一节#8467的尺度身份修改。

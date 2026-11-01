@@ -411,6 +411,10 @@ M5 最小下一步：先判断是否有获准使用的对应配置、完整 toke
 
 ## verl NPU 参数卸载参考
 
+Packed MoE导出布局参考（2026-11-01，复用NPU入口、非新队列／已接单）：[#8442](https://github.com/verl-project/verl/pull/8442) head3a1ff0432aa3187aabbc700ad5852a658b8656d6／实际父版2ab35292，API目标base a08ea02a已分叉。[M1原转换函数与各版原测试体](../notebook/frameworks/verl-quant-layer-audit.md#packed-专家权重的布局来源)基线2过／候选5过；自编方形gate与down控制在缺标记时shape相同但元素最大差9，True后精确一致。原MRO表达式仅接自编空模块，非FSDP包装／NPU patch／vLLM IPC实测；作者首次sync成功后GRPO仍OOM，另3步蒸馏不算本机证据。
+
+目的为未来已有获准匹配NPU FSDP+vLLM工作中核生产者布局与接收端数值。M5仅在安全可用、资源／权重／配方已获准且独立选用时，固定实际源码／设备栈、模块MRO、text hidden size和packed轴，先核导出名字／shape／逐值参考，再在原预算核真实loader与首次同步后的同输入正确性；不能只按shape或sync无报错认证。缺权限／资源／匹配栈、安全事件未闭环、需新权重／部署或影响专项即停记未测；不自动应用、改TP、推送权重或启动训练。所有社区及既有PR-head写入（含fork）仍逐项须用户明确同意，M1不探测服务器。
+
 Megatron副本去重参考（2026-11-01，复用本入口、非新队列／已接单）：[#7685](https://github.com/verl-project/verl/pull/7685) head81a672a48c1e3b76041b7f07c16343799b971796／base2035f58d；[M1原19CPU参数体](../notebook/frameworks/verl-architecture.md#参数卸载的副本所有权与快照恢复)全过但pin关闭／广播Mock，未执行engine或真实组。目的为将来已有获准匹配Megatron卸载工作中核dense含CP／expert-DP owner及全局src、真实pin／D2H完成与reload广播、snapshot在已卸载／已重载两状态的值和梯度；deduplicated标志不证明组身份一致。M1不探测服务器。M5仅在安全可用、已有获准权重／配方且不影响专项时独立选用，固定实际源码／MCore／设备栈与拓扑，在原最小预算核对同输入重载前后及下一步状态，参数CPU字节、host峰值与步时分开记录。作者rebase前Ascend四步不是当前head验收；缺资源／权限、需下载部署／改环境或影响专项即停记未测，不自动应用、拼候选或复刻32卡。社区及既有PR-head写入仍逐项须用户明确同意。
 
 状态：2026-10-26条件交接，非已接单或新训练队列。目的为区分D2H目标分配与FSDP2显式pin策略。已有[#8372](https://github.com/verl-project/verl/pull/8372) head648423c5、[#8373](https://github.com/verl-project/verl/pull/8373) head340680d3、[#8374](https://github.com/verl-project/verl/pull/8374) head8b7aa26c，共同父版e009360c、当轮main3c6d9b43。两份生产AST同，第三仅模型；[M1原7CPU参数项](../notebook/frameworks/verl-fsdp2-source-deep-reading.md#npu-卸载的复制策略与固定内存)head过／父版4过3预期失败，原Mock非NPU内存验收。FSDP2显式CPUOffloadPolicy仍True，已有#8057另处理。
