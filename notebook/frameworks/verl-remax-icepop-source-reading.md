@@ -3,6 +3,38 @@
 > 2026-06-16 | verl-project/verl | PR #6340 (merged) + PR #5722 (merged) | Source-level deep analysis
 > 2026-10-22 更正：ReMax 使用额外贪心响应的奖励，不是 sampled 最大值；原“奖励最优、零方差、单样本完美、4090 最佳配置”结论撤回。当前 V1 来源与 CPU 验证见[新增节](#v1-贪心会话与-sampled-最大值)。下方 main_ppo_sync 路径是历史阅读，不是当前运行配方；IcePop 部分本轮未复核。
 
+## IcePop 拒绝与几何均值的分母
+
+**IS权重为0，不应通过log(1e−10)继续压低整条序列，也不应留在可反向的policy ratio中。** [问题 #8406](https://github.com/verl-project/verl/issues/8406)已有同作者mirzasnowy的[#8421](https://github.com/verl-project/verl/pull/8421)，2026-11-01核OPEN／非draft；固定head `aa5c8c037f6e04b7722c08cde2af8d04028a4528`，API目标base与实际共同祖先均为 `2ab35292039a51175a4b3d3b3b2d76e951a0d3e4`。这是geo_mean损失的拒绝语义，不是ReMax改动或完整IcePop训练验收。
+
+### 两个分子排除拒绝位置但原分母不变
+
+[`compute_policy_loss_geo_mean`](https://github.com/verl-project/verl/blob/aa5c8c037f6e04b7722c08cde2af8d04028a4528/verl/trainer/ppo/core_algos.py)新增 `loss_mask=response_mask*(rollout_is_weights>0)`，用于clipped log-ratio和log IS权重的求和分子；两处分母仍为原response长度L，而非保留token数。整条无保留token时再把该行loss置零，最后仍torch.mean(pg_losses)。它不修改传入response_mask，也不修#7916讨论的全局minibatch归约；loss_agg_mode参数在这条函数中仍未决定归约。
+
+原问题源于两个不同位置：零权重被log(w+1e−10)近似成约−23并进入序列IS均值；拒绝token的当前logprob也仍参与policy ratio。只修其中一项不足以同时保证拒绝梯度为零和移除这一额外压缩。优势均值和ppo_kl／clipfrac仍按原response_mask计算；函数明确只支持sequence-level advantage，不能据此认证任意逐token优势的拒绝契约。
+
+### 原长度分母限定了保留梯度的含义
+
+自编B=2、正序列优势均为1、logprob等于old logprob、只有第二行索引5位置权重0，其余权重1的CPU控制得到：
+
+| 长度L | 旧拒绝token梯度 | 旧保留梯度相对干净行 | 候选拒绝梯度／保留比 |
+| --- | --- | --- | --- |
+| 16 | −0.00741054 | 0.237137 | 0／1 |
+| 64 | −0.00545180 | 0.697831 | 0／1 |
+| 256 | −0.00178512 | 0.913982 | 0／1 |
+
+旧比值符合exp(log(1e−10)/L)。但“保留比为1”有输入条件：若两行其余IS权重均为4，候选对干净行的序列权重近4，对15个保留token的行近4^(15/16)，保留梯度比约0.917004，拒绝梯度仍为0。修复排除的是拒绝位置的log epsilon污染，不把几何平均改成只按剩余数量重新归一化；这不是另一项新回归。
+
+### 梯度与诊断指标分开
+
+[五组自编控制](../../experiments/verl-geo-mean-rejection/verify.py)另核：一整行拒绝时，FP64旧行仍有16个约3.125e−12非零梯度，候选行全部精确0；总loss等于原函数干净单行loss的一半，约−0.5。原1e−8分母和log(w+1e−10)使FP64参考不逐位等于−0.5，不能拿该理想常数作严格断言。
+
+仅把拒绝位置的logprob提高0.3，候选loss与完整梯度逐位不变，ppo_kl却从0变为约−0.009375、clipfrac约0.03125；同输入的两版诊断指标相同。另一个全正权重、有限padding、正／负序列优势和触发clipping的输入，两版loss／梯度／指标逐位相同。诊断仍含拒绝位置，不等于该位置仍参与loss反向。
+
+本机Python3.12.13／Torch2.9.1，AST隔离两版完整原loss，仅去注册装饰器并延后annotations，使用原masked_sum／masked_mean与真实CPU autograd。config为只含clip字段的namespace，AlgoConfig类型是导入接缝，非真实配置校验；固定权重为输入，不执行IcePop生产者。[结果／四输入hash](../../experiments/verl-geo-mean-rejection/result.json)保留五组观察及首次严格常数断言的纠正。原测试文件只compile／阅读，未执行原回归、vanilla、真实ActorConfig、rollout helper／DataProto或原生pytest；作者24项报告不计本机覆盖。未执行trainer／DP、optimizer、模型／GPU／NPU、训练或非有限输入安全验证。
+
+真实权重生产、mask／序列优势与最终分母的接线条件补[原M5参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，不自动拼全局归约候选、改训练配方或新增训练队列。此节只复核上述固定geo_mean版本，不重新背书下方已撤回的历史组合推荐。
+
 ## Part I: ReMax Algorithm (#6340) — Source-Level Analysis
 
 ### 1. ★★★★★ Core Advantage Function: compute_remax_outcome_advantage

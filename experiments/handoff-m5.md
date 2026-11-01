@@ -269,6 +269,8 @@ ModelOpt忽略规则参考（2026-10-22，同一量化入口不另排队）：�
 
 ## verl 异步策略一致性补证
 
+IcePop几何均值参考（2026-11-01，同一入口、非新队列／接单）：[#8421](https://github.com/verl-project/verl/pull/8421) headaa5c8c03／base2ab35292；[M1五组原loss自编CPU autograd](../notebook/frameworks/verl-remax-icepop-source-reading.md#icepop-拒绝与几何均值的分母)用固定权重、namespace配置，未跑IcePop生产者／原回归或训练。目的为未来已有获准匹配任务中区分IS零权重、loss_mask／原response长度、sequence优势和诊断mask。M1不探测服务器；M5仅独立选用安全可用且不影响专项的既有任务，先核实际版本／weight生成阈值及零位置、同token logprob、序列优势、原L及最终batch／DP分母，再在原获准预算核同批loss／完整梯度；非单位保留权重时梯度比不保证1，诊断变化不等于拒绝梯度泄漏。缺既有匹配数据／权限／资源，需新部署／下载／训练或影响专项即停记未测，不应用或拼#7916等归约候选／改配方。社区及既有PR-head写入仍逐项须用户明确同意。
+
 GPG尺度参考（2026-11-01，复用本一致性入口、非新队列／接单）：[#8422](https://github.com/verl-project/verl/pull/8422) head7f38292d／base2ab35292；[M1原八CPU参数体](../notebook/frameworks/verl-grpo-core-algos-reading.md#gpg-的组计数与批次缩放)基线2过6失败／候选8过，另有三组数值边界；未跑actor／梯度或设备。目的为日后已有获准匹配GPG任务中区分batch组计数、最终mask／归约分母和真实更新尺度。M1不访问服务器；M5仅安全且不影响专项时独立选用，先只读对齐实际版本、同批score／UID／mask、singleton／f_norm、alpha计算范围及最终token／sequence分母，再在原获准预算核同批梯度／norm；17行同分FP32残差不是训练退化证明。缺已有数据／配方／资源授权、需新训练／改配置／下载部署或影响专项即停记未测，不应用／拼GRPO清零或改变现有任务。社区及既有PR-head写入仍逐项须用户明确同意。
 
 输出头选行参考（2026-11-01，同一入口、不新增任务）：[#7686](https://github.com/verl-project/verl/pull/7686) head03e1b295／base祖先2035f58d，[M1三原CPU测试／两自编full-mask控制](../notebook/frameworks/verl-fused-output-softcap.md#输出头选行与预测位置)仅linear投影／平方目标梯度、空图及deferred-SP拒绝；未执行roll／CP／SP、真实Megatron或Triton。作者历史A100结果早于rebase，且有grad norm／cache replay未解释差额，不作当前等价／性能验收。若未来M5独立选择已有获准、安全、匹配任务，先固定实际代码／Core／后端与mask、labels、temperature的shift／pad／CP坐标，核非空／空本地选择、同输入完整梯度张量及SP／非SP TP归约唯一归属，再在原预算比较active比例下完整正确性基线。缺授权／环境／安全资源、需下载部署／扩预算或影响专项即停记未测；不拼Liger／MTP或其他候选、不新增训练／改环境，社区及既有PR-head写入仍逐项待用户明确授权，记录非接单。

@@ -1,0 +1,159 @@
+{
+  "base": "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4",
+  "head": "aa5c8c037f6e04b7722c08cde2af8d04028a4528",
+  "python": "3.12.13",
+  "torch": "2.9.1",
+  "torch_git": "5811a8d7da873dd699ff6687092c225caffcf1bb",
+  "source_sha256": {
+    "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4:verl/trainer/ppo/core_algos.py": "369b614f239f237a04a38a40b1877cd6fd14aa7bd5f9ff4fe4d7758b682a6948",
+    "aa5c8c037f6e04b7722c08cde2af8d04028a4528:verl/trainer/ppo/core_algos.py": "181c00f774b71e9c1a3df8667da0dc7e0d5450e6afbb6099fc3e7fc890c2e03c",
+    "aa5c8c037f6e04b7722c08cde2af8d04028a4528:verl/utils/torch_functional.py": "bc7ff798e2f5c06e0121668490739814efc519ff66d4d7dd7c8fc40b4840eb03",
+    "aa5c8c037f6e04b7722c08cde2af8d04028a4528:tests/trainer/ppo/test_core_algos_on_cpu.py": "5ad8416642eb7fdb37c031b61f6d5d0d8f2eeed9d8b17507dc4845e7e7fbcd6c"
+  },
+  "own_controls": [
+    {
+      "case": "one_zero_weight_unit_kept_weights",
+      "observations": [
+        {
+          "length": 16,
+          "versions": {
+            "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4": {
+              "loss": -0.6185686588287354,
+              "rejected_gradient": -0.007410543039441109,
+              "kept_gradient": -0.007410543039441109,
+              "kept_ratio": 0.23713737726211548,
+              "metrics": {
+                "actor/pg_clipfrac": 0,
+                "actor/ppo_kl": 0,
+                "actor/pg_clipfrac_lower": 0
+              }
+            },
+            "aa5c8c037f6e04b7722c08cde2af8d04028a4528": {
+              "loss": -1,
+              "rejected_gradient": 0,
+              "kept_gradient": -0.03125,
+              "kept_ratio": 1,
+              "metrics": {
+                "actor/pg_clipfrac": 0,
+                "actor/ppo_kl": 0,
+                "actor/pg_clipfrac_lower": 0
+              }
+            }
+          }
+        },
+        {
+          "length": 64,
+          "versions": {
+            "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4": {
+              "loss": -0.8489152789115906,
+              "rejected_gradient": -0.005451801232993603,
+              "kept_gradient": -0.005451801232993603,
+              "kept_ratio": 0.6978305578231812,
+              "metrics": {
+                "actor/pg_clipfrac": 0,
+                "actor/ppo_kl": 0,
+                "actor/pg_clipfrac_lower": 0
+              }
+            },
+            "aa5c8c037f6e04b7722c08cde2af8d04028a4528": {
+              "loss": -1,
+              "rejected_gradient": 0,
+              "kept_gradient": -0.0078125,
+              "kept_ratio": 1,
+              "metrics": {
+                "actor/pg_clipfrac": 0,
+                "actor/ppo_kl": 0,
+                "actor/pg_clipfrac_lower": 0
+              }
+            }
+          }
+        },
+        {
+          "length": 256,
+          "versions": {
+            "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4": {
+              "loss": -0.9569908380508423,
+              "rejected_gradient": -0.0017851204611361027,
+              "kept_gradient": -0.0017851204611361027,
+              "kept_ratio": 0.9139816761016846,
+              "metrics": {
+                "actor/pg_clipfrac": 0,
+                "actor/ppo_kl": 0,
+                "actor/pg_clipfrac_lower": 0
+              }
+            },
+            "aa5c8c037f6e04b7722c08cde2af8d04028a4528": {
+              "loss": -1,
+              "rejected_gradient": 0,
+              "kept_gradient": -0.001953125,
+              "kept_ratio": 1,
+              "metrics": {
+                "actor/pg_clipfrac": 0,
+                "actor/ppo_kl": 0,
+                "actor/pg_clipfrac_lower": 0
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case": "fully_rejected_sequence_float64",
+      "observations": {
+        "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4": {
+          "loss": -0.4999999997875,
+          "rejected_gradient_max": 3.1250000410661187e-12,
+          "rejected_gradient_nonzeros": 16,
+          "clean_half_batch_reference": -0.4999999997375
+        },
+        "aa5c8c037f6e04b7722c08cde2af8d04028a4528": {
+          "loss": -0.4999999997375,
+          "rejected_gradient_max": 0,
+          "rejected_gradient_nonzeros": 0,
+          "clean_half_batch_reference": -0.4999999997375
+        }
+      }
+    },
+    {
+      "case": "all_positive_weights_compatibility",
+      "loss": 0.26016760143993145,
+      "exact_loss_gradient_metrics_equal": true,
+      "finite_padding": true,
+      "sequence_advantages": [
+        1,
+        -0.7
+      ],
+      "metrics": {
+        "actor/pg_clipfrac": 0.20689655165279427,
+        "actor/ppo_kl": 0.029032258054505006,
+        "actor/pg_clipfrac_lower": 0.10344827582639714
+      }
+    },
+    {
+      "case": "rejected_position_still_in_diagnostics",
+      "loss_unchanged": -0.9999999994718749,
+      "gradient_exactly_unchanged": true,
+      "clean_metrics": {
+        "actor/pg_clipfrac": 0,
+        "actor/ppo_kl": 0,
+        "actor/pg_clipfrac_lower": 0
+      },
+      "perturbed_metrics": {
+        "actor/pg_clipfrac": 0.031249999990234374,
+        "actor/ppo_kl": -0.009374999997070314,
+        "actor/pg_clipfrac_lower": 0
+      },
+      "baseline_candidate_metrics_equal": true
+    },
+    {
+      "case": "nonunit_kept_weights_fixed_denominator",
+      "loss": -3.834008080883472,
+      "rejected_gradient": 0,
+      "kept_ratio": 0.917004043252896,
+      "expected_ignoring_log_epsilon": 0.9170040432046712,
+      "interpretation": "No log(1e-10) contribution, but original length denominator remains. The kept-gradient ratio need not be one when other IS weights are not one."
+    }
+  ],
+  "scope": "Two complete original geo_mean loss bodies, registry decorators removed; original masked_sum/mean, real CPU autograd. Annotations postponed, config is an attribute-only namespace; AlgoConfig guard type is an import seam, not validation. Five own control groups with fixed finite weights/log-probs, not original tests or IcePop weight producer. Four full inputs compile. No vanilla loss, actual ActorConfig, original regression/pytest, rollout helper/DataProto, trainer, DP/CP, model, GPU/NPU, optimizer, training, performance or non-finite-input safety executed.",
+  "execution_note": "Initial FP64 full-rejection check wrongly expected loss below/exactly -0.5; original +1e-8 denominator and log(weights+1e-10) make the clean contribution slightly different. Corrected comparison to half of the original clean one-sequence loss; no production function changed. A read-only source command once ran in the personal checkout; corrected cache path, not interpreted as upstream deletion."
+}
