@@ -2,7 +2,7 @@
 
 TransferQueue把训练轨迹的元数据传递与实际字段数据交换分开；它不是verl的权重同步backend。默认SimpleStorage使用Ray actor管理存储单元，并通过ZMQ交换数据。存储单元数量影响启动时的逻辑CPU预留与数据分片，不等于显存容量或吞吐保证。
 
-2026-11-01补[路由值与记录有效性](#路由值与记录有效性)：#8471原22个CPU控制器测试通过，真实expert0与未知占位需要独立mask；debug与数值回退仍有边界，不能代替生产者／EP验收。
+2026-11-01补[R2 padding 的专家负载与总分配](#r2-padding-的专家负载与总分配)：#7524原三个CPU参数体与自编计数区分峰值rank和总token–expert对；EP32峰值240→60同时总数240→1920，不等显存／吞吐收益。另见[路由值与记录有效性](#路由值与记录有效性)：#8471原22个CPU控制器测试通过，真实expert0与未知占位需要独立mask；debug与数值回退仍有边界，不能代替生产者／EP验收。
 
 2026-10-30补[critic可选字段的取数边界](#critic-可选字段的取数边界)：已有#8457针对release/v0.9.1，在优势和指标取数前按use_critic选择values；下游指标已有开关不能保护上游取数。源码／语法核对不是TransferQueue版本兼容或训练验收。
 
@@ -97,9 +97,33 @@ PR另改[Qwen3.5 FSDPTurbo示例](https://github.com/verl-project/verl/blob/7c8d
 
 M1只阅读issue、有限编号/关键词PR检索及上述调用点，对bridge、router工具、Megatron engine与register四个原模块做AST/内存compile；没有执行原测试、worker、TQ、Megatron、collective、路由或性能实验，不造PP/TQ替身来验证尚未公开的patch。版本/hash留[当日日志](../../diary/2026-10-24.md)；需要匹配资源的后续条件补[原TQ交接](../../experiments/handoff-m5.md#verl-transferqueue-启动资源参考)，不新增训练队列或竞争实现。对外协作仍须用户逐项授权。
 
+## R2 padding 的专家负载与总分配
+
+**把 padding 分散到专家，可以降低最忙 rank 的分配数，同时增加总分配数。** EazyReal的[#7524](https://github.com/verl-project/verl/pull/7524)在2026-11-01读取为OPEN／非draft，固定head `a79099997aeb95bbdf1771fd7631bd9e67101c4c`，API目标base与实际共同祖先均为 `3c6d9b43b67c74ec343d77874cd8fa6e841523da`。作者已明确披露此取舍，不能另当新发现的缺陷或GPU优化成果。
+
+[原helper与入口](https://github.com/verl-project/verl/blob/a79099997aeb95bbdf1771fd7631bd9e67101c4c/verl/utils/megatron/router_replay_utils.py)只对`valid_rows=False`的行原地重填top-k。连续分配先轮转EP rank，再轮转rank内专家，每层另加偏移；真实记录行不变。入口仅在`replay_mask is None`且`moe_expert_capacity_factor is None`时启用，显式0也会跳过；不能把“无容量限制”随意解释成数值0，或只凭R2／R3名称判断门是否打开。跳过是为了维持已有capacity selection／token dropping行为，不是已移除padding对capacity的影响。
+
+THD路径为真实route values建全True jagged有效行标记，与routes使用相同quant_align_size、min_local_rows、local_cp_size、cp_layout预处理；BSHD路径从attention_mask.bool()走同一packing。分散发生在CP packing之后、SP scatter之前。此临时有效行标记区分真实token与对齐padding，不是下节R3的rollout记录来源mask；全True输入也不能替代packing后的行对齐验证。
+
+### CPU 分配计数
+
+[脚本](../../experiments/verl-r2-padding-balance/verify.py)AST提取完整原helper及[原参数测试](https://github.com/verl-project/verl/blob/a79099997aeb95bbdf1771fd7631bd9e67101c4c/tests/utils/megatron/test_router_replay_model_walk_on_cpu.py)，保留decorator，手动执行三个原参数体：256专家、K8、两层，EP64／padding8及EP32／padding5、32均通过。断言覆盖真实行保留、padding专家范围／每行互异，以及每层rank和专家分配差至多1；不是原生pytest收集、原模块fixture或整套Megatron测试。
+
+另以240个padding行、256专家、K8、一层做自编布尔`row × expert`计数，每行重复ID折叠成唯一token–expert对，再按连续专家块汇总rank。旧输入均为8个expert0，新输入由原helper产生：
+
+| EP 大小 | 旧最忙 rank 对数 | 新最忙 rank 对数 | 旧总对数 | 新总对数 |
+|---|---|---|---|---|
+| 32 | 240 | 60 | 240 | 1920 |
+| 8 | 240 | 240 | 240 | 1920 |
+| 4 | 240 | 480 | 240 | 1920 |
+
+三组原始top-k索引条目始终都是240×8＝1920；增加的是去重后的token–expert对，不是索引tensor多了8倍元素。这种计数不是实际MCore dispatcher的分配／通信／存储测量，峰值rank均衡也不能单独推导显存峰值、gate梯度或整步性能。自编无padding控制确认原对象／内容不变；原入口guard表达式的八个独立求值确认mask有无×capacity None／0／0.5／1的开关，仅表达式执行，不是完整入口或容量选择实跑。
+
+复查：`python experiments/verl-r2-padding-balance/verify.py /path/to/verl-git`，需预缓存固定Git blob；执行禁lazy fetch。Python3.12.13／Torch2.9.1／pytest8.4.2，[JSON](../../experiments/verl-r2-padding-balance/result.json)保留输入hash及逐组结果。作者59项原mock测试、另73项补充harness和14项hook是作者报告，未计入本机通过数；真实THD／BSHD、CP／SP、Megatron dispatch、capacity／bias更新、训练与GPU显存／时间均未执行。缺口沿[原M5参考](../../experiments/handoff-m5.md#verl-transferqueue-启动资源参考)保留条件，不自动应用候选或新排训练。
+
 ## 路由值与记录有效性
 
-**路由到expert0是有效数据，缺失行填0是存储约定；二者不能只靠同一个值区分。** horcham的[#8471](https://github.com/verl-project/verl/pull/8471)在2026-11-01读取为OPEN／非draft，head `7ad2b4fbd6f0afbd59b89c3022847ebb35bd9b1e`、API目标base `8e48d72de4766228c36623c90f9f5c49ee5b45f3`，五文件。候选为VeOmni R3添加`routed_experts_mask`，表示该token行是否确实记录了rollout路由；不是上节Megatron的层裁剪方案，也不另造竞争实现。
+**路由到expert0是有效数据，缺失行填0是存储约定；二者不能只靠同一个值区分。** horcham的[#8471](https://github.com/verl-project/verl/pull/8471)在2026-11-01读取为OPEN／非draft，head `7ad2b4fbd6f0afbd59b89c3022847ebb35bd9b1e`、API目标base `8e48d72de4766228c36623c90f9f5c49ee5b45f3`，五文件。候选为VeOmni R3添加`routed_experts_mask`，表示该token行是否确实记录了rollout路由；不是前述Megatron的层裁剪方案，也不另造竞争实现。
 
 ### 控制器如何消费掩码
 

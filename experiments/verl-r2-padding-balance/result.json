@@ -1,0 +1,124 @@
+{
+  "head": "a79099997aeb95bbdf1771fd7631bd9e67101c4c",
+  "base": "3c6d9b43b67c74ec343d77874cd8fa6e841523da",
+  "actual_merge_base": "3c6d9b43b67c74ec343d77874cd8fa6e841523da",
+  "python": "3.12.13",
+  "torch": "2.9.1",
+  "torch_git": "5811a8d7da873dd699ff6687092c225caffcf1bb",
+  "pytest": "8.4.2",
+  "source_sha256": {
+    "verl/utils/megatron/router_replay_utils.py": "eb8f58ab9006c88b84ed10d302e9f57f81b6702955a9c056b8311b3e155c3443",
+    "tests/utils/megatron/test_router_replay_model_walk_on_cpu.py": "37faa82bb1caadcfee983d3a76a6132b5ded378931aec3e0ca423f7f78c7d6dc"
+  },
+  "original_parameter_bodies": [
+    {
+      "num_experts": 256,
+      "ep": 64,
+      "padding_rows": 8,
+      "passed": true
+    },
+    {
+      "num_experts": 256,
+      "ep": 32,
+      "padding_rows": 5,
+      "passed": true
+    },
+    {
+      "num_experts": 256,
+      "ep": 32,
+      "padding_rows": 32,
+      "passed": true
+    }
+  ],
+  "own_pair_accounting": [
+    {
+      "ep": 32,
+      "before": {
+        "raw_topk_entries": 1920,
+        "unique_row_expert_pairs": 240,
+        "max_rank_pairs": 240,
+        "min_rank_pairs": 0
+      },
+      "after": {
+        "raw_topk_entries": 1920,
+        "unique_row_expert_pairs": 1920,
+        "max_rank_pairs": 60,
+        "min_rank_pairs": 60
+      }
+    },
+    {
+      "ep": 8,
+      "before": {
+        "raw_topk_entries": 1920,
+        "unique_row_expert_pairs": 240,
+        "max_rank_pairs": 240,
+        "min_rank_pairs": 0
+      },
+      "after": {
+        "raw_topk_entries": 1920,
+        "unique_row_expert_pairs": 1920,
+        "max_rank_pairs": 240,
+        "min_rank_pairs": 240
+      }
+    },
+    {
+      "ep": 4,
+      "before": {
+        "raw_topk_entries": 1920,
+        "unique_row_expert_pairs": 240,
+        "max_rank_pairs": 240,
+        "min_rank_pairs": 0
+      },
+      "after": {
+        "raw_topk_entries": 1920,
+        "unique_row_expert_pairs": 1920,
+        "max_rank_pairs": 480,
+        "min_rank_pairs": 480
+      }
+    }
+  ],
+  "own_no_padding_control": true,
+  "own_original_guard_expression_controls": [
+    {
+      "replay_mask_present": false,
+      "capacity": null,
+      "enabled": true
+    },
+    {
+      "replay_mask_present": false,
+      "capacity": 0.0,
+      "enabled": false
+    },
+    {
+      "replay_mask_present": false,
+      "capacity": 0.5,
+      "enabled": false
+    },
+    {
+      "replay_mask_present": false,
+      "capacity": 1.0,
+      "enabled": false
+    },
+    {
+      "replay_mask_present": true,
+      "capacity": null,
+      "enabled": false
+    },
+    {
+      "replay_mask_present": true,
+      "capacity": 0.0,
+      "enabled": false
+    },
+    {
+      "replay_mask_present": true,
+      "capacity": 0.5,
+      "enabled": false
+    },
+    {
+      "replay_mask_present": true,
+      "capacity": 1.0,
+      "enabled": false
+    }
+  ],
+  "scope": "Complete original helper and one original parameterized test body via AST; three original parameters manually invoked, not native pytest/full module. Own boolean row-expert counting, no-padding identity control, and eight original guard-expression evaluations only. No production entry, packing, CP/SP, Megatron dispatcher, capacity selection, gradients, GPU memory, timing, or training execution."
+}

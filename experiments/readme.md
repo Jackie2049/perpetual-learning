@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-r2-padding-balance/verify.py](verl-r2-padding-balance/verify.py) | #7524原helper／三个原CPU参数体手动通过；[结果](verl-r2-padding-balance/result.json)另核三组唯一token–expert计数、无padding和八guard表达式；非packing／MCore dispatch或显存性能 | [R2 padding 负载与总分配](../notebook/frameworks/verl-transferqueue-worker-lifecycle-deep-reading.md#r2-padding-的专家负载与总分配) |
 | [verl-geo-mean-rejection/verify.py](verl-geo-mean-rejection/verify.py) | #8421原两版geo_mean／masked helper五自编CPU autograd控制，[结果](verl-geo-mean-rejection/result.json)核拒绝梯度／原分母／诊断；固定权重非IcePop生产者或原测试，非训练 | [拒绝与几何均值分母](../notebook/frameworks/verl-remax-icepop-source-reading.md#icepop-拒绝与几何均值的分母) |
 | [verl-gpg-group-scale/verify.py](verl-gpg-group-scale/verify.py) | #8422原八CPU参数体：基线2过6失败／候选8过；[结果](verl-gpg-group-scale/result.json)另核三组全等舍入／组内零优势／mask计数边界，无actor loss或训练 | [GPG组计数与缩放](../notebook/frameworks/verl-grpo-core-algos-reading.md#gpg-的组计数与批次缩放) |
 | [verl-slot-availability/verify.py](verl-slot-availability/verify.py) | #8411原三pool类／四函数／两初始化方法，13原CPU参数体手动全过；[结果](verl-slot-availability/result.json)，原假PG／Mock仅验view共享与启动拒绝，非Ray集群或设备恢复 | [资源槽标记与启动拒绝](../notebook/frameworks/verl-worker-lifecycle-ray-weight-sync-reading.md#资源槽不可用标记与启动拒绝) |
