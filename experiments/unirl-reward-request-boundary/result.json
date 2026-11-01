@@ -1,0 +1,138 @@
+{
+  "head": "fbee2850f8e5127745b84f1d60286111d2911d2a",
+  "actual_merge_base": "8fc283e0eaee9de9f5a7de085872f7a046760ce6",
+  "source_sha256": {
+    "fbee2850f8e5127745b84f1d60286111d2911d2a:unirl/distributed/tensor/batch.py": "574cb025e85e8e183474e601d5e27fd50ca5a5967ed6c85db1dbca713dbbe871",
+    "fbee2850f8e5127745b84f1d60286111d2911d2a:unirl/types/reward.py": "2d95acfd217d82bec0f6648724ec6bd8e1d1b0ed112a4b410fadecfc4872584a",
+    "fbee2850f8e5127745b84f1d60286111d2911d2a:unirl/types/sampling.py": "55e63718e4b9c843f1046b1f6b83ef4b6386350f727a2617584585d3e0aab9d5",
+    "fbee2850f8e5127745b84f1d60286111d2911d2a:unirl/types/sample.py": "e60303b72d28eec1786d20c64fabde395d2cb1c6c43034a37fccf0b3861562a8",
+    "fbee2850f8e5127745b84f1d60286111d2911d2a:unirl/reward/client.py": "21a71b9f0d7c9ad57b59a304413889a1bdcd82cba15f9b378c247a32d2724e75",
+    "fbee2850f8e5127745b84f1d60286111d2911d2a:unirl/reward/service.py": "2a1202e518abe041d7ec0b466511b0e4dc6dbf5f6f1b7dc11d2c749856dbd76c",
+    "8fc283e0eaee9de9f5a7de085872f7a046760ce6:unirl/trainer/diffusion.py": "39795e0cb166b0a7dea346cd980d789068ed261e6a48dbcaf19ded0001023a88",
+    "fbee2850f8e5127745b84f1d60286111d2911d2a:unirl/trainer/diffusion.py": "7e93a101d1eeec2e8b7f6a527de96538b0b2e1945a6e306e342977a7164574a3",
+    "b8e9740e981a68a5556fbeb8225558040a4d47a4:unirl/types/reward.py": "00ab4ad2b7072514f363e4c8cd4f97572a1fc601b152591052fee77ed1ea849b"
+  },
+  "python": "3.12.13",
+  "torch": "2.9.1",
+  "projection": {
+    "generated_value_identity": true,
+    "heavy_fields_absent": true,
+    "response_lengths": [
+      2,
+      4,
+      6,
+      8
+    ],
+    "max_new_tokens": 6
+  },
+  "native_request_rows": {
+    "chunk_concat_exact": true,
+    "select_ids": [
+      "b.1",
+      "a.0"
+    ],
+    "chunk_group_ids": [
+      [
+        "a",
+        "b"
+      ],
+      [
+        "a",
+        "b"
+      ]
+    ]
+  },
+  "original_service_shaping": {
+    "zero": [
+      1.0,
+      1.0,
+      0.0,
+      0.0
+    ],
+    "keep": [
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "soft": [
+      1.0,
+      1.0,
+      0.0,
+      -1.0
+    ]
+  },
+  "fixed_ar_omits_length_shaping": true,
+  "mismatched_segment_length_omits_metadata": true,
+  "original_copy_helper_on_own_carrier": {
+    "input_unchanged": true,
+    "nonreward_identity": true
+  },
+  "client_forwarding": true,
+  "rejected_controls": {
+    "metadata_rows": "RewardRequest.metadata has 1 rows, expected 4.",
+    "paired_length_metadata": "RewardRequest.response_lengths and max_new_tokens must be provided together.",
+    "concat_schema": "RewardRequest.concat requires identical generated keys; item 0 has ['image'], item 1 has ['video'].",
+    "no_parts": "RewardClient.score_and_attach: Sample has no Parts.",
+    "precomputed": "Actor-side reward compute does not accept precomputed rewards on the frontier Part.",
+    "no_generated": "RewardClient.score_and_attach: frontier Part has no generated primitives to score.",
+    "worker_failure": "Reward computation flagged 1 of 4 sample(s) as failure. First few: [(1, 'bad row')]",
+    "worker_reward_count": "Reward backend returned 3 rewards for 4 request rows.",
+    "input_kind": "Reward backend consumes 'image' but the request generated ['video']; check the recipe's reward/model pairing."
+  },
+  "original_dp_geometry_three_cases_per_version": {
+    "base": [
+      {
+        "rollout_dp": 1,
+        "reward_dp": 2,
+        "status": "rejected",
+        "error": "training: reward dp_size=2 must divide batch_size=3 root prompt trees; DP_SCATTER preserves each prompt's whole subtree."
+      },
+      {
+        "rollout_dp": 1,
+        "reward_dp": 4,
+        "status": "rejected",
+        "error": "training: reward dp_size=4 must divide batch_size=3 root prompt trees; DP_SCATTER preserves each prompt's whole subtree."
+      },
+      {
+        "rollout_dp": 2,
+        "reward_dp": 2,
+        "status": "rejected",
+        "error": "training: rollout dp_size=2 must divide batch_size=3 root prompt trees; DP_SCATTER preserves each prompt's whole subtree."
+      }
+    ],
+    "head": [
+      {
+        "rollout_dp": 1,
+        "reward_dp": 2,
+        "status": "accepted"
+      },
+      {
+        "rollout_dp": 1,
+        "reward_dp": 4,
+        "status": "rejected",
+        "error": "training: reward dp_size=4 must divide 6 frontier reward rows."
+      },
+      {
+        "rollout_dp": 2,
+        "reward_dp": 2,
+        "status": "rejected",
+        "error": "training: rollout dp_size=2 must divide batch_size=3 root prompt trees; rollout DP_SCATTER preserves each prompt's whole subtree."
+      }
+    ]
+  },
+  "current_main_static_only": {
+    "sha": "b8e9740e981a68a5556fbeb8225558040a4d47a4",
+    "request_fields": [
+      "generated",
+      "conditioning",
+      "original_prompt",
+      "generation_prompt",
+      "metadata",
+      "sample_ids",
+      "group_ids",
+      "audio_sample_rate"
+    ]
+  },
+  "scope": "Own CPU tensor/carrier/scorer/Handle fixtures; original Batch/RewardRequest/Response, AR class, client, copy helper, two-version geometry functions and service with Remote base/distributed decorators removed. Current-main request AST only. Not native Sample/Part/conditioning, TensorRef views/transport, DP/Ray, author 11 tests, real scoring, bandwidth, gradients or training."
+}

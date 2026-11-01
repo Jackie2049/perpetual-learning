@@ -19,6 +19,10 @@ GPU/NPU 的访问、环境与实验由 macbook-M5 Agent 负责。M1 遇到需要
 
 ## UniRL 联合路径的资源与身份边界
 
+奖励请求投影参考（2026-11-01，同一奖励入口、非新增基准／已接单）：[#313](https://github.com/Tencent-Hunyuan/UniRL/pull/313) headfbee2850／祖先8fc283e0，相对main b8e9740e behind99，旧primitives API不可直接套当前conditioning／双prompt。[M1原request／client／service控制](../notebook/frameworks/unirl-survey.md#奖励请求投影与轨迹所有权)仅CPU tensor、自编Sample／Part／scorer／Handle接缝；核行对齐／截断／附件身份及九拒绝、两版geometry，不是native TensorRef／DP／流量验收。作者私有H20流量−68.29%及调用−0.54%不作本机或整步收益。
+
+若M5日后独立选用已有获准、安全、匹配的奖励slab工作，先固定实际可用实现／API、模型与scorer／拓扑、原Sample身份及截断／分组语义；在原预算内先比较配对输入评分与训练输入ref身份，再记录reward及后续train两跳的实际序列化／localization字节和独立wall time。缺匹配版本／授权权重／资源、安全事件未闭环、需下载部署或影响专项即停记未测，不自动移植、拼候选、启动新训练／MPS或复刻作者矩阵；所有社区及已建PR的fork head写入仍逐项待用户明确同意。M1不探测服务器，交接不增加权限。
+
 多图VLM wire参考（2026-11-01，同一SGLang入口、不新增任务）：[#417](https://github.com/Tencent-Hunyuan/UniRL/pull/417)固定fe40529f／API目标base79d1e8ab；[M1原PNG encoder与wire八控制／三拒绝](../notebook/frameworks/unirl-survey.md#多图请求的附件轴与候选轴)仅CPU编码与scalar／flat／nested[1,N]形状，不是processor／服务或模型。若M5未来已有获准匹配多图任务且独立选用，先固定实际SGLang／模型与processor／tokenizer版本、每prompt附件顺序／mode、有效sampling.n与seed展开、image blocks、prompt IDs／pixel_values／image_grid_thw及replay身份，再沿原小预算核同输入；旧rebase前H20／假processor报告不迁作最终栈。缺环境／授权模型／资源、需下载部署或影响专项即停记未测，不自动安装、套候选、拼CT／FLUX或新增配方矩阵；社区及既有PR-head写入仍逐项须用户明确同意，参考非接单。
 
 SGLang CT条件参考（2026-11-01，沿用本节SGLang环境入口，不新增训练／部署队列）：[#640](https://github.com/Tencent-Hunyuan/UniRL/issues/640)已有ruiling-smartbear，本地no_stop_trim补丁未公开；作者0.5.19／Qwen3-0.6B HTTP两轮只证停止标记文本保留，八replay项属基线，补丁replay／native／视觉／训练未测。[M1主线b8契约](../notebook/frameworks/unirl-survey.md#连续-token-历史与停止文本)仅三个resolver夹具及一个post-resolver注入wire控制。若M5未来本已在获准匹配任务里接续，先固定实际源码／补丁身份、SGLang与模型／tokenizer revision、HTTP或native，分别核生成ID／返回text／下一轮prompt IDs／本轮replay conditions，再看真实logprob；视觉另核图像列表／占位／processor条件，不套文本结论。缺公开patch、现有授权模型／环境／预算或影响专项即保留未测，不自行下载、部署、启动训练或认领RFC；社区写入及已有PR-head推送仍逐项待用户明确同意，记录不代表接单。

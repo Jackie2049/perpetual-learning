@@ -1811,6 +1811,31 @@ wrapper赋给`tokenizer.apply_general_template`，没有写回tokenizer类；mar
 
 固定源码可用`git diff 4fb0b1f7b291f3cd5010597b85d41ed44659ef40...d41122e97e1ab631328c86baad00250c406d2b17 -- unirl/models/hunyuan_image3/compat.py unirl/models/hunyuan_image3/text_embed.py`复查。head SHA256：compat `1ddc093e2b606acbb1a698b95bc85cf9c0da3f603b7d80f70e8cbb7c3107e0fb`、text_embed `446930c6ba85af42b93c7f97737f5325bef644c9c2ba9cd281d8403dd0f2608c`。
 
+## 奖励请求投影与轨迹所有权
+
+**奖励端需要评分数据，不一定需要整条训练轨迹；少传字段与真实跨slab字节减少仍是两种证据。** 2026-11-01只读CjhHa1的OPEN／非draft [#313](https://github.com/Tencent-Hunyuan/UniRL/pull/313)，head `fbee2850f8e5127745b84f1d60286111d2911d2a`、API base与实际共同祖先 `8fc283e0eaee9de9f5a7de085872f7a046760ce6`。相对当前main `b8e9740e981a68a5556fbeb8225558040a4d47a4`为ahead1／behind99，更新评论不等于同步新主线。固定分支的RewardRequest仍用`primitives`；main已经改成`conditioning`及`original_prompt`／`generation_prompt`，因此不能把旧候选当作当前API可直接使用的优化。
+
+[原RewardClient](https://github.com/Tencent-Hunyuan/UniRL/blob/fbee2850f8e5127745b84f1d60286111d2911d2a/unirl/reward/client.py)在driver投影Sample：发送conditioning与frontier生成媒体、metadata、sample/group ID，以及适用时的AR长度列表／max_new_tokens；不把segment张量、轨迹、已有训练字段整体送去评分。worker的[原RewardService.score](https://github.com/Tencent-Hunyuan/UniRL/blob/fbee2850f8e5127745b84f1d60286111d2911d2a/unirl/reward/service.py)只返回标量列表，driver再以FP32 CPU tensor附加到新的frontier，非奖励字段沿原copy helper保留对象。接口缩窄不自动证明真实TensorRef未被重新绑定、搬运或水合；这仍须实际transport验证。
+
+[原请求类型](https://github.com/Tencent-Hunyuan/UniRL/blob/fbee2850f8e5127745b84f1d60286111d2911d2a/unirl/types/reward.py)变成Batch，按行字段声明concat、按共享字段声明shared；生成／条件／metadata／IDs／长度须对齐，长度与cap必须成对，concat还要求模态key一致。与下一节[#517](#行级奖励派发与分组身份)重建单行Sample谱系不同，本候选直接保留原group IDs，但请求分片仍可以把同组行分到不同worker。身份保留不代表组依赖scorer的局部评分等价；原GRPO分组统计继续属于driver的Sample。
+
+### 原代码的 CPU 接缝控制
+
+[脚本](../../experiments/unirl-reward-request-boundary/verify.py)加载固定分支完整原Batch／RewardRequest／RewardResponse、原AR参数类、client、copy helper及service；移除Ray Remote基类／distributed decorator。Sample／Part、modality mapper、scorer与Handle均为明确的自编载体或记录器，媒体为小CPU tensor，不调用原Sample.conditioning或真实primitive转换。Python3.12.13／Torch2.9.1，九份源码compile／SHA256与[结果](../../experiments/unirl-reward-request-boundary/result.json)保留以下边界：
+
+- 四行投影保留CPU生成／条件对象、IDs和长度[2,4,6,8]，请求不含trajectory／segment等字段。原Batch chunk／concat还原值及metadata，乱序select[3,0]同步选中媒体、条件、metadata与长度；分片中仍可同时含a／b两个group。
+- 原worker在cap6、buffer2、奖励全1时，zero给[1,1,0,0]、keep给[1,1,1,1]、soft给[1,1,0,−1]，component明细不随该总分塑形。自编fixed-length AR派生类不传长度；segment长度数量不匹配也不携带该元数据，不能声称所有AR请求都必经截断塑形。
+- 原client与copy helper接自编dataclass后，原输入rewards仍None，新frontier保留trajectory／segment／媒体对象；奖励是CPU FP32。dp_size、可微评分与内存接口只核参数转发，不运行其远端功能。
+- 九个列举的拒绝控制通过：metadata行数、长度／cap不成对、concat模态schema、空parts、已有奖励、无生成媒体、backend失败标志、奖励行数错误及输入模态不匹配。不是任意坏响应／取消／Ray异常的完整验收。
+
+### 根 prompt 与生成行的不同几何
+
+PR正文仍称保留较严格的prompt整除，但当前[diffusion helper](https://github.com/Tencent-Hunyuan/UniRL/blob/fbee2850f8e5127745b84f1d60286111d2911d2a/unirl/trainer/diffusion.py)已把reward检查改为生成行。两版原helper的三组自编控制：3个root×2行、rollout DP1、reward DP2时父版拒绝／候选通过；reward DP4仍拒绝，因为6行不整除4；rollout DP2也仍拒绝，因为3个root不整除2。实际候选区分rollout树、reward行和train行，不按正文一句话将其视为纯带宽改动；本机没有启动trainer或真实DP组。
+
+作者报告私有双H20、SD3.5 Medium DanceGRPO同Sample的5对评分精确相同，跨slab合计流量约1.270GB→0.403GB（−68.29%）、median reward调用约3.182s→3.165s（−0.54%），并明确后者不是吞吐结论。**这是作者配对观测，不是本机或当前main实测；字节降幅不能直接换算整步提速。** 作者11项临时harness／Hydra多配方和3轮e2e未在本机复跑。
+
+复现：`../deepinfer-eplb-venv/bin/python experiments/unirl-reward-request-boundary/verify.py ../unirl-readonly`。未执行native Sample／Part谱系、packed TensorRef视图、Ray／DP／跨slab传输、真实评分、梯度或训练；真机缺口补[原M5联合路径条件入口](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不自动合并旧分支、拼接#517／#641或新排性能任务。
+
 ## 行级奖励派发与分组身份
 
 2026-10-23 阅读已有 [#517](https://github.com/Tencent-Hunyuan/UniRL/pull/517)，open/non-draft，head `fca5a55a0e5b30d108289f7394a7c50850593bf2`、目标 base 与共同祖先 `7a5303647d0c1ec27807124f70939cbb8edde6e9`（ahead 1 / behind 0，2 文件 76 增 10 删）。它为 DiffusionTrainer 增加显式 `reward_dispatch: row`，默认仍为 `prompt_tree`；已有维护者实现，不另立贡献候选。
