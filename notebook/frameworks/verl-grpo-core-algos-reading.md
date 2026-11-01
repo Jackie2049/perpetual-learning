@@ -16,6 +16,38 @@
 
 2026-10-26接续：[平方概率分块与空输入梯度](#平方概率分块与空输入梯度)核#8365新23d891cd：原测试补空行反向及非正chunk拒绝，新版18项通过／旧版13过5失败；撤回当前版本的旧边界风险，CPU结果仍不认证GPU峰值。
 
+## GPG 的组计数与批次缩放
+
+**组内奖励有差异，与奖励数值非零，不是同一种有效性。** [verl #8422](https://github.com/verl-project/verl/pull/8422)在2026-11-01读取为OPEN／非draft，作者Beiciccc；固定head `7f38292d6203706787aa377cf3dce4d067978255`，API目标base与实际共同祖先均为 `2ab35292039a51175a4b3d3b3b2d76e951a0d3e4`。它只修GPG outcome advantage的批次缩放，不改loss、配置或重采样。
+
+[GPG v4 §2.2 Eq.7及附录A](https://arxiv.org/html/2504.02546v4#S2.SS2)讨论将含零贡献样本的批平均乘以 `α=B/(B−M)`，转为所定义有效样本的平均；M指同组全对／全错造成的零贡献样本数，不能换成原始奖励为零的个数。论文另有有效比例阈值及重采样，不能从此候选的alpha修正推断该机制已接入，也不把这条会计恒等式推广为任意奖励／baseline的无偏性证明。
+
+### 按组结构计数而非按奖励编码计数
+
+[`compute_gpg_outcome_advantage`](https://github.com/verl-project/verl/blob/7f38292d6203706787aa377cf3dce4d067978255/verl/trainer/ppo/core_algos.py)先沿token求每行score，再按UID分组。多响应组以原奖励精确相等判断是否全等；非全等时把**整组行数**计入num_valid。singleton沿用零baseline，只有非零score计入。最后alpha为B/num_valid，无有效组时取1，随后仍按原均值、f_norm中心化并乘response_mask；原std计算不充当这里的分母。
+
+下面每例都是两个四响应组，B=8；新旧缩放可增可减，不等同统一调低学习率。
+
+| 分组奖励 | 旧B/count_nonzero(score) | 候选B/num_valid |
+| --- | --- | --- |
+| [1,0,0,0]与[0,0,0,0] | 8 | 2 |
+| [1,−1,−1,−1]与[−1,−1,−1,−1] | 1 | 2 |
+| [1,0,0,0]与[1,1,0,0] | 8/3 | 1 |
+
+这里的num_valid也不是非零中心化优势的条数。自编[0,1,2]与[0,0,0]控制中，第一组中间成员的优势为0，但该非全等组的三行一起计数：候选输出[−2,0,2,0,0,0]，旧版为[−3,0,3,0,0,0]。singleton约定又使n=1不具备多响应组的平移抵消，不能宣称任意奖励编码变换都无影响。
+
+### 计数修正不等于精确清零或mask后计数
+
+三组自编边界保留了两个未改变的契约。其一，精确全等分类没有改中心化减法：本机17行FP32奖励全为0.1时，两版都得到每token约7.45058e−9（68个非零元素）；3行FP64残差为−1.38778e−17，8行两dtype均精确0。原八回归的全等例为0／1，不能据其通过认证所有小数组逐位为零；这是两版共享的舍入观察，不是新候选回归，也未测其optimizer影响。
+
+其二，B与组有效数在最终response_mask之前计算。只保留[1,0,0,0]四行时，候选每行优势为[0.75,−0.25,−0.25,−0.25]；另加四行零奖励、全零response_mask的同分组，原四行优势变成两倍。旧版也有这个倍增。该控制只说明估计器没有从批次计数中删除masked行，不证明trainer会送入此类行，更不替代外层token／sequence分母及分布式归约分析。
+
+### 两版原回归与本机范围
+
+[脚本](../../experiments/verl-gpg-group-scale/verify.py)隔离两版完整原估计器，仅去注册装饰器，原体不变；保留原测试函数及parametrize，手动调用八参数项，基线2过／6断言失败，候选8过。原病例覆盖0/1、±1、小数、混合／全等组和singleton。另有上述三组自编边界（全等小数组含3／8／17行×FP32／FP64），真实CPU张量、无数据／kernel替身。Python3.12.13／Torch2.9.1／NumPy2.0.2／pytest8.4.2，三份完整输入compile，[结果／hash](../../experiments/verl-gpg-group-scale/result.json)保留失败断言与边界数值。
+
+未执行原生pytest、完整注册表／actor loss、backward／optimizer、trainer分批／过滤、重采样、DP归约、模型／GPU／NPU或训练；作者31项CPU结果不计本机覆盖。不把batch alpha当独立局部microbatch系数，不拼#8349的GRPO清零逻辑或其他候选。真实同批次梯度／更新尺度条件只补[原M5参考](../../experiments/handoff-m5.md#verl-异步策略一致性补证)，非新增训练队列或已接单。
+
 ## OTB 权重非负与基线精度
 
 **把负权重截成零能恢复符号约束，不能恢复已丢失的概率信息。** EvanZhuang的[#8444](https://github.com/verl-project/verl/pull/8444)在两个OTB估计器及W-score指标共三处加`.clamp_min(0)`；2026-10-30核为OPEN／非draft，head `615aa6111ce0c5f3ef8ed3bb0614444d9a9223f3`，本节基线取其唯一父提交 `59f9a42c749a49793ee38298f3081beab43d79bc`。不把它与[#8364接线](#v1-的-otb-统计接线与策略身份)、[#8365分块](#平方概率分块与空输入梯度)或logprob精度提案拼成已验收组合。
@@ -330,6 +362,8 @@ A = Σ_k A_k  # 维度间解耦
 # 无clipping, 无ratio → 直接∇logπ · A
 # 最简单的REINFORCE variant
 ```
+
+2026-11-01接续：[GPG的组计数与批次缩放](#gpg-的组计数与批次缩放)核#8422：优势的batch修正、singleton约定和舍入／mask边界必须分别判断，不能仅由无clipping推断尺度正确。
 
 ### 8-14. 其他
 

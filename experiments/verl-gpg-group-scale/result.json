@@ -1,0 +1,240 @@
+{
+  "base": "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4",
+  "head": "7f38292d6203706787aa377cf3dce4d067978255",
+  "python": "3.12.13",
+  "torch": "2.9.1",
+  "torch_git": "5811a8d7da873dd699ff6687092c225caffcf1bb",
+  "numpy": "2.0.2",
+  "pytest": "8.4.2",
+  "source_sha256": {
+    "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4:verl/trainer/ppo/core_algos.py": "369b614f239f237a04a38a40b1877cd6fd14aa7bd5f9ff4fe4d7758b682a6948",
+    "7f38292d6203706787aa377cf3dce4d067978255:verl/trainer/ppo/core_algos.py": "e3ba98a65e77080d8abdccfc29ca3d80fe5212535ec66dd2fdaca31a890dc5cd",
+    "7f38292d6203706787aa377cf3dce4d067978255:tests/trainer/ppo/test_core_algos_on_cpu.py": "3d5dfa6e3d4819b7ac21551de8aaec5760cbdee0ae53787a8554a47f6b97d673"
+  },
+  "original_test_cases": {
+    "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4": [
+      {
+        "case": "mixed_and_all_wrong",
+        "outcome": "assertion_failed",
+        "detail": "Tensor-likes are not close!\n\nMismatched elements: 16 / 32 (50.0%)\nGreatest absolute difference: 4.5 at index (0, 0) (up to 1e-05 allowed)\nGreatest relative difference: 3.0 at index (0, 0) (up to 1.3e-06 allowed)"
+      },
+      {
+        "case": "all_correct_and_mixed",
+        "outcome": "assertion_failed",
+        "detail": "Tensor-likes are not close!\n\nMismatched elements: 16 / 32 (50.0%)\nGreatest absolute difference: 0.2999999523162842 at index (4, 0) (up to 1e-05 allowed)\nGreatest relative difference: 0.19999998807907104 at index (5, 0) (up to 1.3e-06 allowed)"
+      },
+      {
+        "case": "no_identical_group",
+        "outcome": "assertion_failed",
+        "detail": "Tensor-likes are not close!\n\nMismatched elements: 32 / 32 (100.0%)\nGreatest absolute difference: 1.25 at index (0, 0) (up to 1e-05 allowed)\nGreatest relative difference: 1.6666667461395264 at index (1, 0) (up to 1.3e-06 allowed)"
+      },
+      {
+        "case": "plus_minus_one",
+        "outcome": "assertion_failed",
+        "detail": "Tensor-likes are not close!\n\nMismatched elements: 16 / 32 (50.0%)\nGreatest absolute difference: 1.5 at index (0, 0) (up to 1e-05 allowed)\nGreatest relative difference: 0.5 at index (0, 0) (up to 1.3e-06 allowed)"
+      },
+      {
+        "case": "non_binary",
+        "outcome": "assertion_failed",
+        "detail": "Tensor-likes are not close!\n\nMismatched elements: 32 / 64 (50.0%)\nGreatest absolute difference: 0.26249998807907104 at index (0, 0) (up to 1e-05 allowed)\nGreatest relative difference: 0.5 at index (0, 0) (up to 1.3e-06 allowed)"
+      },
+      {
+        "case": "singleton_groups",
+        "outcome": "assertion_failed",
+        "detail": "Tensor-likes are not close!\n\nMismatched elements: 20 / 40 (50.0%)\nGreatest absolute difference: 3.0 at index (0, 0) (up to 1e-05 allowed)\nGreatest relative difference: 1.5 at index (0, 0) (up to 1.3e-06 allowed)"
+      },
+      {
+        "case": "singletons_only",
+        "outcome": "passed"
+      },
+      {
+        "case": "all_identical",
+        "outcome": "passed"
+      }
+    ],
+    "7f38292d6203706787aa377cf3dce4d067978255": [
+      {
+        "case": "mixed_and_all_wrong",
+        "outcome": "passed"
+      },
+      {
+        "case": "all_correct_and_mixed",
+        "outcome": "passed"
+      },
+      {
+        "case": "no_identical_group",
+        "outcome": "passed"
+      },
+      {
+        "case": "plus_minus_one",
+        "outcome": "passed"
+      },
+      {
+        "case": "non_binary",
+        "outcome": "passed"
+      },
+      {
+        "case": "singleton_groups",
+        "outcome": "passed"
+      },
+      {
+        "case": "singletons_only",
+        "outcome": "passed"
+      },
+      {
+        "case": "all_identical",
+        "outcome": "passed"
+      }
+    ]
+  },
+  "own_controls": [
+    {
+      "case": "uniform_fractional_centering",
+      "observations": {
+        "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4": [
+          {
+            "rows": 3,
+            "dtype": "torch.float32",
+            "first": 0,
+            "nonzero_elements": 0
+          },
+          {
+            "rows": 3,
+            "dtype": "torch.float64",
+            "first": -1.3877787807814457e-17,
+            "nonzero_elements": 12
+          },
+          {
+            "rows": 8,
+            "dtype": "torch.float32",
+            "first": 0,
+            "nonzero_elements": 0
+          },
+          {
+            "rows": 8,
+            "dtype": "torch.float64",
+            "first": 0,
+            "nonzero_elements": 0
+          },
+          {
+            "rows": 17,
+            "dtype": "torch.float32",
+            "first": 7.450580596923828e-9,
+            "nonzero_elements": 68
+          },
+          {
+            "rows": 17,
+            "dtype": "torch.float64",
+            "first": 0,
+            "nonzero_elements": 0
+          }
+        ],
+        "7f38292d6203706787aa377cf3dce4d067978255": [
+          {
+            "rows": 3,
+            "dtype": "torch.float32",
+            "first": 0,
+            "nonzero_elements": 0
+          },
+          {
+            "rows": 3,
+            "dtype": "torch.float64",
+            "first": -1.3877787807814457e-17,
+            "nonzero_elements": 12
+          },
+          {
+            "rows": 8,
+            "dtype": "torch.float32",
+            "first": 0,
+            "nonzero_elements": 0
+          },
+          {
+            "rows": 8,
+            "dtype": "torch.float64",
+            "first": 0,
+            "nonzero_elements": 0
+          },
+          {
+            "rows": 17,
+            "dtype": "torch.float32",
+            "first": 7.450580596923828e-9,
+            "nonzero_elements": 68
+          },
+          {
+            "rows": 17,
+            "dtype": "torch.float64",
+            "first": 0,
+            "nonzero_elements": 0
+          }
+        ]
+      },
+      "interpretation": "Group-validity correction does not change the centering subtraction. Exact-zero behavior is reported by row count/dtype, not assumed from valid-group count."
+    },
+    {
+      "case": "zero_centered_member_in_nonuniform_group",
+      "first_token": {
+        "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4": [
+          -3,
+          0,
+          3,
+          0,
+          0,
+          0
+        ],
+        "7f38292d6203706787aa377cf3dce4d067978255": [
+          -2,
+          0,
+          2,
+          0,
+          0,
+          0
+        ]
+      },
+      "interpretation": "The middle member counts with its whole nonuniform group, even though that member has zero centered reward; num_valid is not count_nonzero(advantages)."
+    },
+    {
+      "case": "response_mask_does_not_remove_rows_from_scale",
+      "observations": {
+        "2ab35292039a51175a4b3d3b3b2d76e951a0d3e4": {
+          "without_extra_rows": [
+            3,
+            -1,
+            -1,
+            -1
+          ],
+          "with_extra_masked_rows": [
+            6,
+            -2,
+            -2,
+            -2,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "7f38292d6203706787aa377cf3dce4d067978255": {
+          "without_extra_rows": [
+            0.75,
+            -0.25,
+            -0.25,
+            -0.25
+          ],
+          "with_extra_masked_rows": [
+            1.5,
+            -0.5,
+            -0.5,
+            -0.5,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "interpretation": "Both versions count batch rows and rewards before final response-mask multiplication. This is an estimator boundary, not proof that a trainer supplies such rows."
+    }
+  ],
+  "scope": "Complete original estimator bodies; registry decorators removed only. One original test function and parametrize retained, eight cases manually invoked per version (not native pytest); base 2 pass/6 assertion failures, head 8 pass. Three own boundary groups use real CPU tensors, no data/kernel mocks. Three full source inputs compile. No full module/registry, actor policy-loss/backward/optimizer, trainer batching/filtering, rejection/resampling, DP aggregation, GPU/NPU, model, training or performance executed.",
+  "execution_note": "Eight original regressions matched expected base/head outcomes on first run. Initial eight-row fractional control yielded exact zero on this Torch build; expanded that same boundary group to 3/8/17 rows in FP32/FP64, reporting observed values rather than assuming a residual. Final run repeats all controls successfully. No production function change. Initial result update used an unsupported delete/add-same-path patch and was rejected without changing the file; corrected to a single update."
+}
