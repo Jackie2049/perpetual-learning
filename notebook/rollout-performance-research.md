@@ -5,9 +5,12 @@
 
 ## 0. Project Status
 
-- **负责人与交接记录**：① **2026-10-29**：M1 机器宕机，本专项由 **M5 定时任务**接管（Phase 2 深读收尾至第四十三批）。② **2026-11-01（用户指令）**：M1 已重新上电并持续运行，**本专项自 Phase 3 起交回 M1 定时任务执行**；**从阶段三开始 M5 不再负责本专项**，不再认领 §17 的 S1–S5 批次、不再修改本文件的研究内容（例行核对与算力/上游监控职责不变，仅不再写入本专项）。③ 认领状态：**S1–S5 全部未认领**，均由 M1 从 S1（§11 跨层发现账）开始按最小号规则认领；M5 若已留下未完成痕迹，以本文件 §17 批次状态列为准。④ 执行口径：负责人每轮先读本文件恢复状态，按 §17（P1–P6／S1–S5）与 §16 下一步推进并及时回写。⑤ 加急期限（≤2026-10-29）已于 M5 阶段顺延完成并在 §13.1 记账；HybridFlow 原并行认领与上游写入边界不变。
+- **负责人与交接记录**：① **2026-10-29**：M1 机器宕机，本专项由 **M5 定时任务**接管（Phase 2 深读收尾至第四十三批）。② **2026-11-01（用户指令）**：M1 已重新上电并持续运行，**本专项自 Phase 3 起交回 M1 定时任务执行**；**从阶段三开始 M5 不再负责本专项**，不再认领 §17 的 S1–S5 批次、不再修改本文件的研究内容（例行核对与算力/上游监控职责不变，仅不再写入本专项）。③ 认领状态：**S1–S5 全部已完成（2026-11-01，M1），P1–P6 六项产出物齐备**；全部内容在支线 `survey/s2b`；M5 若已留下未完成痕迹，以本文件 §17 批次状态列为准。**P-5（§20.3.2 必补项）已于同日补做，产出 §21**，**P-4 于同日补做（§13.17 第四批复核）**，P-1／P-2／P-3 未做。④ 执行口径：负责人每轮先读本文件恢复状态，按 §17（P1–P6／S1–S5）与 §16 下一步推进并及时回写。⑤ 加急期限（≤2026-10-29）已于 M5 阶段顺延完成并在 §13.1 记账；HybridFlow 原并行认领与上游写入边界不变。
+- **优先级（2026-11-01 用户指令）**：本专项为**技术秘书类工作的第一优先级**（技术秘书整体优先于技术掘金）；阶段三 S1–S5 已全部完成，后续每轮优先推进 §20.3.2 必补项中 M1 可执行的部分（P-3 等），受阻项登记后继续下一个。
 - **阶段**：**Phase 3 — survey outline & writing（2026-11-01 用户拍板启动；Phase 2 深读与收尾已成文，见 §6／§13／§14）。执行入口=§17**。Phase 2 历史：广度→深读（2026-10-27 用户指令，L1–L4 四维），2026-10-29 起由 M5 接手至收尾；**Phase 3（2026-11-01 起）由 M1 定时任务负责**。
-- **最近更新（2026-10-31 第四十三批，M5）**：候选 E 同栈更新侧单阶段批处理杠杆实测（真实 GPU，§13.27）——verl `24f25b03`＋Qwen2.5-1.5B 单 4090、GRPO 15 步，对 update_actor／old_log_prob／ref 三个动态批 token 上限各做单变量覆盖：**三杠杆全负**（update_actor 3000→8192：13.277→18.201s，G=0.729、整步 0.8494×；rollout log_prob 3000→16384：3.773→4.776s，G=0.790、0.9586×；ref 3000→16384（e3r2 完整 15 步补跑）：4.234→4.713s，G=0.898、0.9895×——杠杆起点经 verl 默认配置核验均为 3000（oc.select ppo cap）、e3 半写 14 步账已废弃），峰值 reserved 21.18–21.25GB 与基线同（非显存压力）；六阶段恒等重建残差 ≤0.026s、e1 单阶段预测 0.8480 vs 实测 0.8494（0.2%）——§13.25 恒等式在同栈更新侧得到精确验证，但**更新侧 69.9% 份额与 3.32× 会计上界不能由放大 token 上限兑现**；执行账：e1 首跑 CUDA invalid argument（0 步）同配置补跑 15/15 成功→环境瞬时错误、e3 第 15 步 checkpoint save 因 /home 满盘中断（14/15 步可用），半写 checkpoint 删除 6.8G、e1 补跑 checkpoint 落 /tmp；归档 experiments/rollout-g8-candidate-e/（5 日志＋summary＋md5 与服务器一致）。例行核对（21:3x–22:0x CST＝13:3x–14:0x UTC）：4090-1 连通——GPU 0/1/3/4/5/6/7 空闲（e1 补跑期间 GPU 5 占用后释放）、GPU 2 liyaowei embed 21728MiB、load 0.29 无矿机/训练、/home 余 6.8G（候选 E checkpoint 曾占满、半写 e3 checkpoint 已删）、venv cu129 基线完好（torch 2.11.0+cu129 cuda=True／vllm 0.24.0+cu129／tensordict 0.10.0 实测）；昇腾 VPN 断第 31 天（EasyConnect 进程在但 .154 100% 丢包、网关 10.205.0.1 亦不通，待用户恢复）；#8313 OPEN/MERGEABLE/BLOCKED head 71fd3562（updatedAt 10-25 不变）、DeepInfer-Go #2 OPEN/MERGEABLE head a0a6940b 不变；**verl 8df5baee（#8296）不变、vLLM 前进至 7b77ed58（#64368 [Spec Decode][ROCm] draft_lm_head_quantization for DSpark drafters，ROCm/AMD 非本机硬件算力线索，spec-decode 旁读）**、DeepInfer 55374155／UniRL b8e9740e／AReaL d25f2929 不变；AcceRL pushed_at 仍 2026-10-30T02:51Z、master 仍 ec28b85e。同日第四十二批 PrefixFlow 补核（并行会话，§13.26）保留：更新主导端第 3 数据点（PrefixFlow s=50.6%）、1.90× 报值 vs 1.73× 纯更新投影、跨阶段残差 1.10×。下一轮：A–E 候选已全部执行，同栈补测转向"不同机制"（降 FLOPs/通信、ppo_mini_batch 结构、多卡）；G7 余 13 项待源码、AcceRL 待作者澄清、复现计数口径待用户确认；昇腾 VPN 待用户恢复。批次/轮次完整记录见专项 §0/§16 与当日 diary。
+- **最近更新（2026-11-01 P-4 收尾，M1）——G7 十三条收窄＋一处记录更正**：本轮补做 §20.3.2 必补项 **P-4（G7 十三条待源码项的收窄）**，只读检索（GitHub 仓库检索 API＋`raw.githubusercontent` 取源码，未触任何上游写操作）。**① 一处改判并更正旧记录**：Agent Lightning 2608.17528v1 原记为"无公开实现"，复核不成立——`microsoft/agent-lightning` 含 `agentlightning/verl/rollout_level_advantage.py`（160 行）＋配套 5 个测试，release tag `v1.0.0`／`v1.0.1`／`v1.0.2` 均存在且与 main 逐字节相同（sha256 `fd5fc06d…41e898`）；读码确认其做法是"按 `rollout_id` 折叠成代表行→调 verl 原生 `compute_advantage`→标量 adv 广播回全部行"，与论文式16「rollout 内 token 池后跨 rollout 均匀平均」口径一致，并带三条强校验（同 uid／同 rewards 行和／逐 token 常量 adv），故只支持 outcome-style 奖励。**该条'实现是否照论文做'不再待核**；论文 Figure 9 负消融的"不构成 C 类"判定不受影响。**② 其余维持**：12 项仍无公开源码（ReSpec／RolloutPipe／Relax／Heddle／WAR／CadenceRL／DAS／SpecActor／RhymeRL／StaleFlow／Missing Old Logits／S³R，检索词同 §13.17 及等义词，命中反例与首扫一致）；AcceRL `distanceLu/AcceRL` pushed_at 仍 2026-10-30T02:51Z、master 不变，1000/2000 冲突仍待作者澄清；FP8-RL `zpqiu/verl`（2026-03-18）与 `zpqiu/verl-recipe`（2026-03-09）均无新推送，[0,C] 单侧截断结论维持。**③ 收窄口径**：§18 的"待源码"表述改为三级——12 项"截至 2026-11-01 未检索到公开实现"（可答的不确定）、1 项已定位、2 项部分可得；**P-4 状态由'未做'升为已完成（收窄口径达成，不追求全部收口）**。**验证范围**：未打开新论文、未新增文献身份（126 身份、20 T1＋84 T2＋21 T3＋1 未标不变）、未新计深读、未跑实验、未触上游仓库写操作；结论均附检索词与可复核的固定 tag／sha。**残留**：P-1（多卡窗口，M5 侧算力分工）、P-2（FP8 训练栈）、P-3（需先选可复现机制）未做；`survey/s2b` 并回 main 的方式仍待用户决定。
+- **前批（2026-11-01 P-5 收尾，M1）——阶段三产出物之后的补充批次**：阶段三 S1–S5／P1–P6 已于同日收官（见下条），本轮补做 §20.3.2 五条必补项里唯一不依赖算力与硬件的 **P-5**，产出 **§21 全章（可比性约定 C1–C3）**：C1 引用他人墙钟数字的三件套（块名＋固定 commit／是否含策略等待／分项是否重叠）、C2 B2／B3 的事件边界拆分（t0/t1/t2 三时间戳，**无法分离时整体记 B2∪B3 并声明未拆分**）、C3 async 下改为成对报 η 分布与 S（单报其一均不可比，同步化基准取同栈 η=0）。§15 Q6／Q7 相应从"待修订"降级为"报值侧已答复、理论式与表结构仍开放"。**仍待用户决定**：① `survey/s2b` 如何并回 main（三选一）；② P-1 同栈横评是否立项（需多卡窗口，按分工属 M5 侧算力）。尚未做的必补项：P-1／P-2／P-3／P-4。（**后补**：P-4 已于同日由后一批完成，见 §0 最新"P-4 收尾"条与 §13.17 第四批复核；现仅剩 P-1／P-2／P-3。）
+- **前批（2026-11-01 S5 批次，M1）——阶段三 S1–S5 全部完成**：**P1–P6 六项产出物全部落地**，全部内容在支线 `survey/s2b`。S5 产出 §20：20.1 taxonomy 冻结复核（六检查点无冲突）、20.2 §15 Q8 答复（兜底格两条均不升格，判据=是否有独立可测气泡口径）、20.3 P6 可发表性评估（三条新意锚：迁移判据四要素／阶段占比中介定律／八条跨层＋四耦合面；五条必补项，其中 **P-1 同栈横评锚点是发表的决定性前置**；四条禁写主张），总判断为"结构完备、实证不足"——适合按 B 轨逐节汇报，P-1 完成前不适合投出。**阶段三至此收尾**：P3 的骨架（§18）与引用规范（§19）、P1／P2（§11／§3）、P4（§18.13＋§20.1）、P5（§19.1／19.4）、P6（§20.3）齐备。
 - **第四十二批（同日并行会话，PrefixFlow 补核）**：2026-10-31（M5 收尾阶段第四十二批：**PrefixFlow 阶段占比字段补核——「阶段占比中介」更新主导端第三数据点＋跨阶段残差显式量化（只读，§13.26）**）——承接第四十一批（多阶段恒等式＋九轴扫描收口）后按 cron 焦点续从 §13.1 选跨层结果口径/负载条件批次，做**族Ⅰa T2 扫描缺口补核**：§13.22 具字段名单与 §13.25 九轴扫描均未覆盖族Ⅰa T2 篇目，本批选与 psRL 同类的训练侧边界篇 PrefixFlow（2606.01143v4）做固定版只读核验（arXiv HTML v4 全文下载逐字 grep，21:2x CST＝13:2x UTC）——**① 整步分项逐字（Fig.7 / Claim 2.1）**：基线 142.3s/步＝rollout generation 8.3s（**5.8%**，语料最低生成占步比）＋policy evaluation 44s（30.9%）＋actor update 72s（**50.6%**）＋sync/other 18s（12.6%）；PrefixFlow 74.7s（actor update→12s 6.1×、sync→11s，整步 1.90×）；**② 阶段占比字段逐字**："the actor update is **51% of the baseline step**, so eliminating it entirely would cap the end-to-end gain near 2.0×; 1.90× is close to this Amdahl-style bound"——**更新主导端第 3 个具字段数据点**（psRL 结构化 40–58%＋候选 A 69.9% 之后；更新侧合计 policy eval＋actor update=116s=**81.5%**）；**③ 投影检验（推断）**：s=0.506×G=6.1 → 纯更新阶段投影 **1.73×**（142.3−72+12=82.3s 直接核算一致），报值 1.90×＝1.73×**跨阶段残差 1.10×**（sync/other 18→11s −7s；§13.25 恒等式 T′=8.3+44+12+11=75.3s 重建 1.89≈1.90，0.8% 为论文分项舍入；论文自述 "the small residual shrink in synchronization is consistent with shorter waits behind the faster actor update"）——**与 §13.22 ReSpec 3B 峰值 4.53× 超生成侧上界镜像对称：双侧均有"报值超纯阶段投影、由跨阶段残差补足"**；论文自身锚定 1/(1−s)=2.04×≈2.0×；**④ 负载条件**：Qwen3-8B TP2/CP4 8×H20、200 步 MuSiQue RAG、2 prompts/step、N=16、prefix≈95%（长前缀 RAG 短后缀负载）——更新主导成因=长前缀重复计算（与候选 A 单卡训练开销成因不同、恒等式同构）；**⑤ 方法论区分**：论文 §3.1 的 1/s 为计算量占比渐近界（prefix≈95% 时 1/s≈20× 被 p/N＋o/N 摊销挡住、非墙钟占比），与本文 s_step=墙钟阶段占比（51%）不同。**§13.1 可比性能行更新**：更新主导端数据点 2→3（40–70% 带内）、生成侧低端补点（5.8%）、族Ⅰa 具字段名单 3→4 篇（SRT／ReSpec／RollPacker 生成侧＋PrefixFlow 更新侧）；§13.25"无新增可投影对象"在族Ⅰa T2 子集补记（族Ⅰa T2 其余深读节无具整步阶段占比字段者，FastGRPO"在线训练占 2–3%"为开销占比不适用，其余九轴维持收口）。例行核对（13:1x–13:5x UTC）：4090-1 连通（首次 SSH 超时、重试连通，连接不稳已注）——GPU 0/1/3/4/5/6/7 空闲 1MiB、GPU 2 liyaowei embed 21728MiB（pid 1669721）、load 0.23 无矿机/训练、/home 16G、venv cu129 基线完好（torch 2.11.0+cu129 cuda=True、vllm 0.24.0、tensordict 0.10.0、verl 0.10.0.dev 实测）；watchdog 结构性无抢占（visual_watchdog.sh pid 2644、adapter_config.json 在盘）；昇腾 VPN 断第 31 天（本机 EasyConnect 进程在（EasyMonitor/ECAgent/CSClient）但 .154/.155 100% 丢包、隧道未建立，待用户恢复）；#8313 OPEN/MERGEABLE head 71fd3562（updatedAt 10-25 不变）、DeepInfer-Go fork #2 OPEN/MERGEABLE head a0a6940b（updatedAt 10-24 不变）；verl 8df5baee（#8296，较第四十一批记录不变）／DeepInfer 55374155（#218）／UniRL b8e9740e（#634）／AReaL d25f2929（#1825）无变化；**vLLM main 前进至 7b77ed58（[Spec Decode][ROCm] draft_lm_head_quantization for DSpark drafters #64368，ROCm/AMD 非本机硬件算力线索但属 spec-decode 相关——旁读线索，较 87cb835d 前进）**；AcceRL pushed_at 仍 2026-10-30T02:51Z、master 仍 ec28b85e（2026-03-23）（G7 无新变化）。
 - **前批要点**：2026-10-31（M5 收尾阶段第四十一批：**第四十批数字原始来源独立复核＋「阶段占比中介」升级为多阶段恒等式＋九轴阶段占比字段扫描收口（只读，§13.25）**）——承接第四十批（族Ⅰb/Ⅱa 投影检验补核）后按 cron 焦点"先核远端，再从 §13.1 选跨层结果口径/负载条件批次"执行：**① 独立复核（不采信上一批转述，回原始来源）**——MTP-RL ACL PDF（2026.findings-acl.1871，13 页）第 8 页 Table 4 逐字提取（7B 361.75/319.92/681.67→50.74/223.93/295.47/570.14、14B 775.94/584.20/1360.14→64.40/340.89/470.94/876.23，accuracy 列 76.8→76.2／79.8→79.2）＋NeMo-Aligner arXiv 2405.01481v2 §3.4 Scalability 表逐字（53.7→29.8、gen 35.8→17.5、logp 4.0→2.8、refit 3.1→2.3、train 8.5→4.8、8+4→16+8 节点），**§13.24 全部数值逐项一致、遗漏判定成立**；**② 多阶段中介恒等式（新，精确恒等非近似）**——整步×＝1/(Σ_k s_k/G_k＋Σ_m a_m/T)＝1/(1−Σ_k s_k(1−1/G_k)＋Σ_m a_m/T)，gen-only 与 update-only 均为单通道特例；三例重建 **MTP-RL 7B/14B 与实测精确相等（0 偏差）、NeMo-Aligner 1.8081 vs 实测 1.802（+0.34%）**——§13.24 的 −4.6%／+5.6%／+18.6% 三个偏差由此逐项落账（7B 偏差＝MTP 新增 50.74 分钟、14B＝训练阶段同步加速 19.4%＋MTP 新增 64.40 分钟、NeMo＝非生成阶段同向受益贡献分解 gen 76.3%／train 15.4%／logp 5.0%／refit 3.3%），"扩卡解释"升级为逐阶段分账；**③ 九轴扫描收口**——族Ⅰc 7 篇（InfoTree/AsyncWebRL/PipelineRL/ThunderSyncRL/SkyRL-Agent/Bebop/Long-RL）、Ⅱb 5 篇、Ⅱc 3 篇、Ⅲ 5 项、Ⅳ/Ⅴ 均无"整步分阶段时长"字段→不可投影；具可算字段者维持跨族五篇（Ⅰa SRT/ReSpec/RollPacker＋Ⅱa MTP-RL＋Ⅰb NeMo-Aligner）＋psRL 双态，**语料面收敛、无新增可投影对象**；**④ NeMo-Aligner 第二轴补核**：§3.5 同 8+4 节点消融 53.7（1×）／去 TensorRT-LLM 372.2（6.93×）／去 Reshard 207.6（3.87×）／去 Refit 169.0（3.15×）／去 Async Requests 82.8（1.54×）逐项复算对齐——同资源引擎/集成轴，分阶段报值缺失不可投影，不改 §13.24 扩卡轴结论。例行核对（17:3x–17:4x CST＝09:3x–09:4x UTC）：4090-1 连通——GPU 0/1/3/4/5/6/7 空闲 1MiB、GPU 2 liyaowei embed 21728MiB、load 0.21 无矿机/训练、/home 16G、venv cu129 基线完好（torch 2.11.0+cu129 cuda=True／vllm 0.24.0／tensordict 0.10.0 实测）；昇腾 VPN 断第 30 天（.154/.155 100% 丢包，待用户恢复）；#8313（71fd3562）／DeepInfer-Go #2（a0a6940b）OPEN/MERGEABLE 不变；**verl main 前进至 8df5baee（#8296 doc: Huawei Ascend in README hardware support，非算力）**、**vLLM main 前进至 87cb835d（#64869 [Misc] Allow weights mapper to transform weights，非算力）**、DeepInfer 55374155／UniRL b8e9740e／AReaL d25f2929 无变化；AcceRL pushed_at 仍 2026-10-30T02:51Z、master 仍 ec28b85e。下一轮：G7 余 13 项维持"待源码可获取时核"（复扫间隔拉长）、AcceRL 冲突待作者澄清、G3 轴 2（N/A）维持、EAGLE/Medusa 变体维持未测（权重不可得）、复现计数口径待用户确认；「阶段占比中介」语料扫描已收口，后续仅在新分阶段报值论文或同栈补测时更新——下一轮可转 survey outline 备料（G3/G5/G6 备忘＋G2/G9 索引已就绪）或按 §14 候选在 GPU 窗口做同栈补测。批次/轮次完整记录见专项 §0/§16 与当日 diary。
 - **覆盖**：累计**126篇已核身份**（20篇serving基础／迁移边界＋106篇rollout/RLHF及相关边界；120个唯一arXiv ID＋Orca／PUZZLE／CachedAttention／DynaRL／Weave／MTP-RL会议记录；其中T1压缩深读20篇，其余不据身份核验算深读）。§5.25将RL相关106暂分89直接候选与17保守单列，承接§5.20的86／15历史快照；这是工作范围计数，不是原生80–120覆盖／质量验收。MTP-RL不与Bebop同篇；初始种子及旧五线索身份已落实，但检索／分级／正文审查未全收敛。ASymPO证明错误警示保留，Round 1“≈73”不相加。
@@ -41,10 +44,57 @@
 
 ## 3. Performance Model
 
-- Sync RL：`T_rollout ≈ max_i T_trajectory_i` → 长尾/straggler 支配 makespan → L3 调度类工作的理论起点。
-- Async RL：makespan 概念弱化，改为 `system throughput × trajectory freshness`（staleness 换 throughput）。
-- Bubble 的来源分类：① 长尾等待（sync）② train/rollout 切换空隙 ③ weight sync ④ environment/tool 等待 ⑤ 资源空闲（colocation 失配）。
-- **待建**：把五类 bubble 形式化（比值定义 + 各自的优化杠杆），作为 §13 gaps 的推导框架。
+**状态（2026-11-01 S2 成文）**：本节由"待建"转为成文。结构为 §3.1 两个主口径 → §3.2 五类气泡与两类机器气泡的形式化表 → §3.3 G3 三轴模型 → §3.4 可测字段清单（对应 §14 候选） → §3.5 已知边界。标注规则同 §11（【论文报值】／【推断】／【同栈实测】）。
+
+### 3.1 两个主口径
+
+- **Sync RL**：`T_step ≈ T_rollout + T_update + T_sync`，其中 `T_rollout ≈ max_i T_trajectory_i`（i 跑遍本步全部在批轨迹）。长尾／straggler 支配 rollout → L3 调度类工作的理论起点。**注意**：max 是**批内**取最大，不是全 batch 平均值，因此"平均 tokens/s 高"与"rollout 快"可以同时不成立（§2 的核心结构）。
+- **Async RL**：makespan 概念弱化，改为 `系统吞吐 × 轨迹新鲜度`——用 staleness 换 throughput。此时 `T_step` 不再是唯一目标，需同时报告 staleness 分布（语料内 StaleFlow 的 η 敏感性与 DORA 的 K 窗口是这条口径的两个实证，§6.2／§6.4）。
+
+### 3.2 五类气泡与两类机器气泡
+
+**定义约定**：气泡比例一律定义为 `B = 1 − T_有效计算 / T_墙钟`，**分子分母必须同口径同范围**（同一层、同一时间窗、同一 GPU 集合）；只报"缩短多少 %"而无分母定义的数字，按 §13.13 五族规则不可互比。"可测字段"指能在真实系统中直接采集的量，不是论文报值。
+
+| 编号 | 气泡类 | 形式定义 | 可测字段 | 优化杠杆 | 主要机制家族（§11 条目） | 证据状态 |
+|---|---|---|---|---|---|---|
+| **B0** | 机器气泡（引擎内） | `1 − Σ_k t_k^busy / T_engine`，k 跑遍 SM／HBM 周期 | SM 占用率、连续批填充率、decode 每步 token/GPU | 连续批处理、chunked prefill、投机解码 | A 类 L1 机制（对应 §11 条目 1、6） | serving 原生指标；rollout 语料内**多不报** |
+| **B1** | 长尾等待（sync） | `1 − mean_i T_i / max_i T_i`，i 跑遍批内轨迹 | 轨迹长度分布、组内 max−median 差、尾部 10% 请求的处理时段 | 长度预测与分桶、整组 repack、近似最长优先 | RollPacker／SortedRL／Laminar／DORA／Seer（对应 §11 条目 7） | 论文报值多，**口径混乱** |
+| **B2** | 切换裂隙（train/rollout 交接） | `T_switch / T_step`，T_switch 为两侧都未满载的时段（含 offload/onload、swap、replica sleep/wake） | 交接时序、sleep/wake 等待、offload 字节与带宽 | overlap（stream trainer）、异步流水、colocate 布局 | StreamRL／PACE／RollPacker（对应 §11 条目 3） | 语料内**无一篇单列 B2 的独占份额** |
+| **B3** | 权重同步 | `T_sync / T_step`，T_sync 为旧权重不可再写、新权重尚未生效的窗口（含广播与生效点） | 广播字节、链路类型（RDMA/PCIe/NVLink）、kv-cache 失效与重建量 | 增量／分片广播、异步 overlap、弹性更新 | Laminar 权重路径／Long-RL 失配（对应 §11 条目 2、4） | 论文多报"缩短"，不给 B3 份额；PACE 的 staleness 是另一轴 |
+| **B4** | 环境／工具等待 | `T_env / T_rollout`，T_env 为轨迹在等 sandbox／tool／外部服务的时间窗 | 环境调用延迟分布、TTL 触发次数、sandbox 占用率 | 环境池化、异步准入、TTL 与续跑策略 | WAR／CONCUR／ObsSpec（对应 §11 条目 5） | **无论文量化其墙钟占比**（G6 论证已收口，§13.15 G6） |
+| **B5** | 资源空闲（colocation 失配） | `1 − Σ_g U_g / ‖G‖`，U_g 为 GPU g 利用率、‖G‖ 为 GPU 数；sync 下即"最慢副本之外全部在等" | 各副本利用率方差、空闲窗口长度分布、DP rank 负载差异 | 跨副本空闲窗口注入、弹性扩缩、重分片 | BubbleSpec／ECHO-2／RLinf（对应 §11 条目 1） | BubbleSpec 报"最慢 rank 墙钟"，**不是 B5 本身** |
+
+**两种气泡测法不可混用**（§13.13 已核，本表固定）："队列空槽气泡"（SortedRL 74%→3.37%，按请求队列空槽计）与"GPU 空闲气泡"（B0/B5）分子不同；把前者当 SM 空闲率会把调度收益放大一个量级。
+
+### 3.3 G3 三轴模型：投机解码在 rollout 下的口径
+
+投机解码是语料内独立报值最多（六篇以上）却无统一口径的机制，故单列三轴（原为独立备忘，S2 并入本节）。
+
+1. **轴 1｜接受率-位置曲线**：`ᾱ = E_p[A(p)]`，A(p) 为第 p 个投机位置的逐位置接受率。经典 SD 的上界 `1/(1−ᾱ)` 只在单请求、固定批下成立；rollout 里必须报**曲线**而非均值。【同栈实测】ngram 提议器 A(p1) 0.14–0.21 → A(p5) 0.014–0.028、Mean accept len 1.27–1.39；0.5B 强 drafter E[L]=4.1 仍净负，盈亏需 E[L]≈11.5–17.6（§14 候选 C/C2）。
+2. **轴 2｜版本差侵蚀**：`ᾱ_i(v_gap)` 随 draft 与 target 的权重版本差衰减，v_gap 以训练步计。ReSpec 用每 I 轮刷新＋1/I 数据重训 drafter 显式建模这一轴（§6.14）。**本栈不可得**：verl 无 spec 透传，引擎级无法构造版本差，维持 N/A（§13.15 G3）。
+3. **轴 3｜批内分布与 sync makespan**：`T_rollout^spec(B) ≈ max_i E[T_i] + 气泡`，批内长度分布通过 max 进入而不是通过平均值。【同栈实测】AR 下 MIX/H2048 = 1.000、RX8/H2048 = 0.994——**单卡引擎级批内异质被连续批处理吸收**，长度信号的真实价值在跨副本不均而非单批内部（§14 候选 D）。
+
+**三轴合并读法**：`整步× = 1/(1 − Σ_k s_k(1 − 1/G_k) + Σ_m a_m/T)`，s 为阶段墙钟占比、G 为该阶段加速、a_m 为新引入阶段开销（§13.21–§13.25 恒等式，0.2–0.8% 残差经同栈实测校准）。投机只改 s_gen 对应的 G，**在生成占步比低的负载上会被占比封顶**（候选 A 短答案负载 generation-only 上界 1.18×，§11.1 条目 3）。
+
+### 3.4 可测字段清单（对应 §14 候选）
+
+要让一篇 rollout 性能工作能被横比，至少需报以下字段；缺项即记为"不可横比"，不用推断补齐：
+
+| 字段 | 为什么必须 | 语料覆盖率 |
+|---|---|---|
+| 阶段墙钟分项（生成／更新／同步／其他） | 决定 s_k，是整步× 上界的分母 | 少数（SRT／ReSpec／RollPacker／psRL／PrefixFlow／候选 A） |
+| 气泡口径与分母定义 | B0–B5 不可互换 | 极低（SortedRL 明说队列空槽，其余多不定义） |
+| 批内轨迹长度分布 | 决定 B1 与轴 3 | 无（spec 簇六篇全缺，§13.15 G3） |
+| 权重版本差／staleness | 决定轴 2 与 B3 | 部分（PACE／DORA／StaleFlow 各有版本口径） |
+| 硬件与并发（副本数、TP/DP、链路） | 族Ⅰb 的判定依据 | 大部分（QwenGyre 192 节点型号未列） |
+| 精度与数值校正开关（TIS/FP8/κ） | 决定 C 类与数值轴影响 | 低（FP8-RL、CIS 报，其余多缺） |
+
+### 3.5 已知边界
+
+1. **五类气泡不构成完备划分**：环境等待（B4）与资源空闲（B5）在 agentic 负载下会互相掩盖；B2 与 B3 在 colocate 布局下共用同一段墙钟，**语料内无一系统把二者拆开报**（记 §15 待修订；报值侧拆分约定见 §21.2 C2）。
+2. **气泡比例不可跨层相加**：B0 是机器周期口径、B1–B5 是墙钟口径；同一段墙钟只能按来源归属一次。
+3. **async 下 B1 定义失效**：`max_i T_i` 不再是批的终点，需改用"staleness 切换频率 × 单步吞吐"，本节暂不给形式式，记 §15（成对报值与同步化基准见 §21.3 C3）。
+4. **备料来源**：原 G3 备忘（三轴模型与六篇缺项清单）、G3 三轴补测（C2/DSD/候选 D）、G6 备忘（environment 层论证）三份原计划独立成文，**实际未入库**——S2 已把其结论收编进本节 §3.3 与 §3.2 的 B4 行，并按 §11 条目 3 的恒等式接入。原文件若日后重建，以本节为准，避免两份全文分叉。
 
 ## 4. Taxonomy
 
@@ -2240,7 +2290,108 @@ KV接口的“key-value”不是attention K/V。[KV→Batch:302](https://github.
 
 ## 11. Cross-layer Findings
 
-（空。登记跨层耦合反例的地方：如 BubbleSpec 同时是 L1 机制 + L3 气泡利用。）
+条目格式统一为七项：**编号／涉及层／一句话结论／机制与证据／受益方与受损方／反例与边界／引用出处**。这一节是综述"跨层协同"章（§17 P3 结构中的独立一章）的骨架，也是本综述相对逐篇综述的主要新意位置——单篇工作只报自己那一层，跨层耦合要靠横向对读才看得见。
+
+**证据等级标注**：`【论文报值】`＝原文数字；`【推断】`＝本文用已报的字段做代数或口径换算，非本机重测；`【同栈实测】`＝候选 A–E 在 verl `24f25b03`＋Qwen2.5-1.5B＋单 4090 上真实跑出（§14）。三类不混用、不互相换算成"加速比排行榜"。
+
+**语言约定（全节）**：文中"收益""加速倍数"均指**整步墙钟缩短**，不是吞吐或训练质量；"阶段占比"指某阶段墙钟占一个训练步墙钟的比例。凡未标 `【同栈实测】` 的倍率，一律按 §13.13 五族规则理解——族Ⅰa（同资源整步）、族Ⅰb（含资源变化）、族Ⅰc（收敛速度）不可互比。
+
+### 11.1 已登记条目（S1：条目 1–5，2026-11-01 M1）
+
+#### 条目 1｜L1 机制 × L3 空闲注入：投机解码要"吃空心气泡"，不是"吃平均吞吐"
+
+- **涉及层**：L1 Model Execution ↔ L3 Rollout Cluster（× L4 训练侧，见受损方）。
+- **一句话结论**：BubbleSpec 把 L1 的 draft 生成搬到 L3 的**跨 DP rank 空闲窗口**，rollout 缩短 45.2／41.1／30.0%（三档负载）全部来自"别让空闲 rank 干等"，而这类收益在 serving 里根本不存在——serving 没有同步屏障制造的空闲窗口。
+- **机制与证据**：同步 rollout 下最慢的 rank 决定批次结束，其余 rank 在此窗口内可以提前为**下一批**生成 draft；每 50 个 decode 步轮询协调器，当前批全完成即停预生成、过屏障。确定性命中（q(d)=1）＋当前 target 验证，因此 draft 不进 actor 训练目标。【论文报值】最慢 DP rank 墙钟 306.2→167.6／399.6→235.0／571.9→400.1 秒（§6.15）。
+- **受益方**：空闲 rank（原本纯等待）→ 整批 makespan；论文对预生成 4／16／32 响应的消融为 183.8／167.6／184.4 秒，说明覆盖度与并发开销有权衡，不是"越多越好"。
+- **受损方**：L4 训练流水。预生成在"被长尾挡住"的窗口里做，本身要占算力；论文把"隐藏到 reward／update 之后"列为**优化建议而非已证全遮蔽**（§6.15 深读原文）。其次，intra-GPU 补请求式填充会干扰当前长尾（论文自述只利用 inter-GPU 气泡）。
+- **反例与边界**：① 式 1 的 `1−(1−α)(1+μ)` 是**时间缩短比例**不是倍数，不能当 speedup 读；② 平均 accept length 含恢复／bonus token，≠ 纯 draft 接受数；③ 1.7B 上不用统一 attention 时为 294.9 秒、n-gram 为 305.9 秒——**跨 batch 的 draft 调度不自动变 C（分布改变）类**，partial draft 不是 partial 训练轨迹；④ 该收益依赖"同批同步屏障＋DP 间负载不均"，异步 RL（§3 中 makespan 概念弱化）下窗口性质要重估。
+- **引用出处**：§6.15（BubbleSpec 深读）、§13.13 族Ⅱa/Ⅴ、§2（sync makespan 结构）。
+
+#### 条目 2｜L1 draft × L4 版本陈旧：drafter 在 RL 里同时被"接受率"和"版本差"两个轴惩罚
+
+- **涉及层**：L1 Model Execution ↔ L4 RL Pipeline（policy 连续更新导致的 staleness）。
+- **一句话结论**：serving 里 drafter 的对手是"目标模型分布不变"，RL 里它的对手是"目标模型每个训练步都在变"——ReSpec 用每 I 轮刷新＋1/I 数据重训 drafter 把这一轴显式建模，同时它的大 batch 判定逻辑又揭示另一条跨层约束：**spec 的盈亏随 L2 批规模变化**。
+- **机制与证据**：ReSpec 的近似接受 token 成本 `(Cq+Cp/α)/r` 明确含"验证并行假设"，Solver 按 active batch 及离线剖析选 (s,t,n)，**大 batch 可关 SD**；非 SD 转 SD 用 prefill 补 drafter KV、切回只丢推测元数据（§6.14）。注意它更新的是 **drafter（KD 目标 `w(r)Σ KL(p∥qθ)`）不是 actor RL loss**，I=1/3/5 消融属于"drafter 新鲜度"而非"actor 异步更新间隔"。
+- **受益方**：drafter 新鲜 → 接受率；大 batch 关 SD → 避免验证开销反噬。
+- **受损方**：drafter 重训本身消耗算力与显存（1/I 数据、每 I 轮），且【推断】它把一部分"版本对齐成本"从推理挪到了训练侧——语料中无一篇量化这笔成本相对于所省 rollout 时间的净值。
+- **反例与边界**：① 算法 1 遍历全 buffer Q 与 §5.3.2"只消费 1/I 数据"**原文自相矛盾**，精确消费量待实现核验（G7）；② §3 由多 token p/q 方差推输出偏差，本文审读判断论证不足；奖励下降只能作实验现象，不能据此定位采样器缺陷；③ **这条与条目 6（待 S2）成对**：EfficientRollout 反方向地"一次开启后不再关闭"，因为它在同一 rollout 内 active batch 单调缩小——两侧都是 L1 开关由 L2 批状态决定，不能拆开来讲；④ 版本差轴在本机引擎级不可得（verl 无 spec 透传），维持 N/A（§13.15 G3）。
+- **引用出处**：§6.14（ReSpec）、§6.16（DAS 动态 draft 预算、成本代理）、§13.12（spec 簇六篇负载/口径账）、§13.15 G3、§13.22（ReSpec 阶段占比）。
+
+#### 条目 3｜L1 生成侧 × L4 更新侧：同一套"报值超过纯阶段投影"的镜像对称
+
+- **涉及层**：L1 Model Execution（生成／投机）↔ L4 RL Pipeline（actor update 侧）。
+- **一句话结论**：整步加速的**会计上界**由"主导阶段的墙钟占比"决定，先于技术本身决定——生成侧看 1/(1−s_gen)，更新侧看 1/(1−s_update)，两者同构；而两侧都出现了"报值超过纯阶段投影、差额由跨阶段残差补足"的同一种形态。
+- **机制与证据**：公式 `整步× = 1/(1−Σ_k s_k(1−1/G_k) ＋ Σ_m a_m/T)`，s 为阶段墙钟占比、G 为该阶段加速、a_m 为新增阶段开销。【论文报值】ReSpec 3B 峰值 4.53×／中位 1.84×、7B 均值 1.69×、14B 1.50×（§13.22）；【推断】3B 峰值 4.53× 在 s≈0.84 下需 G≈39×，SD 不可达 → 峰值**必含 Async Update Overlap 跨阶段重叠**，整步× 是"生成加速＋阶段重叠"双机制复合。镜像端：【论文报值】PrefixFlow 基线 142.3s ＝ rollout gen 8.3s（5.8%）＋policy evaluation 44s（30.9%）＋actor update 72s（**50.6%**）＋sync/other 18s（12.6%），一篇 74.7s ＝ **1.90×**【推断】纯更新投影仅 1.73×，差额 1.10× 由 sync/other 18→11s 补足（§13.25 恒等式重建 1.89≈1.90，0.8% 为原文分项舍入），论文自述"sync 残差收缩与更快的 actor update 一致"。
+- **受益方**：主导阶段——生成占步比高则 generation-only 机制杠杆大（SRT 74.1%／ReSpec 71–86%／RollPacker 66–72%／psRL 线性档 53–72%），更新占步比高则 update-only 机制杠杆大（psRL 结构化档 40–58%／PrefixFlow 51%／候选 A 训练侧 69.9%）。
+- **受损方**：**跨阶段残差本身**——它不是免费的，重叠收益要求"阶段时长均衡"才能兑现（RollPacker 自述 14B/16k 阶段均衡时 stream trainer 才给 20%，其它规模小）；单阶段优化在非主导负载上会被占比压限：候选 A 短答案负载下 generation-only 上界仅 1/(1−0.153)≈**1.18×**，update-only 上界 1/(1−0.699)≈3.32×（§13.21／§13.23）。
+- **反例与边界**：① 同栈实测的补齐——候选 E 试图用"放大 token 上限"吃更新侧 3.32% 的上界，结果 **update_actor 3000→8192 使 13.277→18.201s（G=0.729、整步 0.8494×）**、rollout log_prob 与 ref 两组同向为负（§13.27）——**会计上界不等于可兑现杠杆**，机制选择比上界数字更重要；② 该条的两个数字都是"论文报值与本文投影之差"，属【推断】层，不是本机复现；③ 不可跨族取比值：上述倍率全在族Ⅰa（同资源整步）或族Ⅲ（单阶段），不得与族Ⅰb（含扩卡，如 NeMo-Aligner 96→192 GPU 的 1.80×）混算。
+- **引用出处**：§13.21（SRT↔锚点校准）、§13.22（生成占步比中介）、§13.23（双侧对称）、§13.24／§13.25（多阶段恒等式）、§13.26（PrefixFlow）、§13.27（候选 E 全负）、§14 候选 A 分项。
+
+#### 条目 4｜L2 前置缓存 × L4 跨阶段共享：同一份"前缀只算一次"在两个层各有一套记账，收益不能相加
+
+- **涉及层**：L2 Infer Engine（prefix/KV reuse、跨阶段 overlap）↔ L4 RL Pipeline（actor/reference 共享、colocate/disaggregate）。
+- **一句话结论**：Rollplex（L2/L4，跨阶段共享）与 PrefixFlow／psRL（L4 训练侧共享）做的是**同一件事的两个位置**：把 response-independent 的前缀只前向一次；但它们的收益口径分属不同族，**不能相加、更不能互相推断**。
+- **机制与证据**：【论文报值】Rollplex 把 reference／actor prefix 放到 decode 窗口算，actor 边界 KV 保 autograd、reference detached，更新前所有旧权重读者静止；全步较串行 colocate 1.23–1.30×、较同 32 卡 disagg 1.57–2.24×（32 H800、Qwen2.5-VL-32B、四视频集，**所有基线已有相同 prefix 共享**——所以收益不是"新增去重"）【论文报值】PrefixFlow 在**训练侧**做同类事：prefix 一次 forward、suffix 微批读 KV，actor update 6.1×（整体 1.90×，生成与 policy evaluation 未提速）；psRL 进一步把共享推到 group 内，Fig.9 update 吞吐 1.2–5.2×、Fig.10 整 RL 迭代至 2.1×（正文局部称 end-to-end，不可写成全 RL 5.2×）。
+- **受益方**：前缀占比越高的负载（Rollplex 视频／VLM 长前缀、PrefixFlow 的 MuSiQue RAG prefix≈95%）收益越大——**同一个共享机制在三篇里的收益差（1.23–2.24× vs 1.90× vs 2.1×）主要由前缀占比与阶段构成决定，而不是实现质量**。
+- **受损方**：内存与生命周期。Rollplex 需要 VMM 稳定虚址、跨 TP 仅整数比且布局兼容的张量才可共享（92.8% 共享 ≠ 任意模型全参数零拷贝）；PrefixFlow 的 hot KV/gKV 留 GPU、休眠激活需 offload；psRL 需要引用计数与"已知未来访问"指导 eviction。三者都在用**显存占用换墙钟**。
+- **反例与边界**：① 短前缀负载不迁移——Rollplex 原文自述"prefix 短则机会小"（§6.26.5，§15 Q4 已收口：机制层面适用、定量收益不迁移）；PrefixFlow 自述数学／SWE 短 prefix 不套长 RAG 收益（§6.33.4）；② 正确性条件不是"共享了就无损"：Rollplex 需"更新前旧权重读者静止＋chunk update 前完成全局 norm/clip"，PrefixFlow 需固定参数/mask/位置/前向 trace，MoE 还须固定路由，且实数梯度叠加证明**不等于**浮点逐位一致（20 步 BF16 校验为绝对 1e-3＋相对 1e-2 容差）；psRL 的"不同权重／optimizer 步间缓存失效协议"尚未由源码核验；③ 加权交换——叠加 partial rollout／oversampling 时只能比各自开关，不能横排绝对时间。
+- **引用出处**：§6.26.5（Rollplex）、§6.33.4（PrefixFlow）、§6.33.5（psRL）、§13.13 族Ⅰa/Ⅲ、§13.26、§15 Q4。
+
+#### 条目 5｜L3 缓存亲和路由 × L4 在途轨迹：调度器要在"省 prefill"和"别丢轨迹"之间做跨层权衡
+
+- **涉及层**：L3 Rollout Cluster（cache-aware routing、migration）↔ L4 RL Pipeline（在途轨迹的生命周期与归属）。
+- **一句话结论**：把请求路由到"KV 还在那台机器"上是纯 L2/L3 收益；但在 RL 里**在途轨迹不是无状态请求**——TTL 到期会把它变成 incomplete rollout，跨步迁移会改变它属于哪个训练步。于是同一条路由决策同时被"缓存命中率"和"训练集合完整性"两个目标拉扯。
+- **机制与证据**：【论文报值】WAR 低负载用历史 suffix draft、高负载按 sandbox TTL 紧迫性＋短 turn 估计＋cache 命中＋在途数排序，AIMD 按 cache 命中调请求窗口；组合 prefill 缩短 35–63%、decode 32–63%【负项】**调度单独使用时 batch4 的 decode 约退化 4%，batch64 才改善约 47%**——缓存亲和的路由收益本身依赖负载。TTL 语义已有论文级逐字确认："Once the sandbox reaches ttl_sandbox, the trajectory is terminated, resulting in an incomplete rollout"（§6.23.4／§13.7）。镜像一侧：RhymeRL HistoPipe 的 intra-step migration 保留 generated tokens、重算 KV（脚注：KV 迁移开销大于重算），**inter-step migration 把轨迹加入下一步训练**——逐字确认"改变训练步归属"（§6.13／§13.9）。
+- **受益方**：prefill 命中率、长尾重分配（RhymeRL 按组中位长度排序＋奇偶 step 反向分组＋Tier-2 查表最小化组时长梯度）。
+- **受损方**：训练集合的确定性与可解释性。① TTL 终止 = **真实的轨迹丢弃**（不是 cache eviction 语义），任何"缓存淘汰不等于删样本"的直觉在这里失效；② 跨步迁移虽无丢弃（oversampling 论证为论文自述），但轨迹归属步改变，组内比较的基线与 staleness 上限都要跟着重算；③ 路由到"缓存旧的机器"意味着策略版本差可能更大——**缓存亲和与 staleness 控制直接冲突，语料中无一系统把两者联合建模**（这条写入 §15 待修订）。
+- **反例与边界**：① WAR 的"仅统计工作量差异 <5% 的运行"是**评估筛选不是训练过滤**，不证明所有运行生成同一轨迹集；② HistoPipe 首 epoch 关闭、历史相似性不保证未见 prompt 收益；③ 迁移保留 tokens 不迁移 KV 的选择依赖"重算比迁移便宜"，在长序列／弱网络下的结论要重测；④ serving 侧的 CONCUR 准入＝**暂停而非丢弃**（原文逐字），迁入 RL 仍须自建整组完成／task 配额／staleness 契约，不能由 serving 准入推出训练集合语义（§13.9、§13.16 G5）。
+- **引用出处**：§6.23.4（WAR）、§6.13（RhymeRL）、§13.7、§13.9（D8 边界核）、§13.16 G5（迁移判据四要素：版本约束／陈旧性／组完整性／随机独立性；原备忘文件未入库，见 §13.15 G5 摘要）。
+
+### 11.2 已登记条目（S2：条目 6–8，2026-11-01 M1）
+
+#### 条目 6｜L1 开关 × L2 批状态：speculative 的开关不是"配置项"，而是批状态的函数
+
+- **涉及层**：L1 Model Execution（是否开投机、draft 多长）× L2 Infer Engine（批规模、批内剩余工作量、KV 余量）。
+- **一句话结论**：speculative 在 rollout 里的正确开关条件是**批状态的函数而不是模型属性**——EfficientRollout 敢"开启后不关"是因为它当时的 active batch 单调收缩，ReSpec 敢"大 batch 关 SD"是因为批越大验证开销越摊不薄；两条相反的经验规则其实同源，一旦批状态反方向变化（continuous batching 补请求、KV 压力触发限流），两条规则都会同时失效。
+- **机制与证据**：【论文报值】EfficientRollout 逐字"Once activated, SD remains enabled until the end of the rollout, as the active batch size monotonically decreases"，其开启判据是 roofline 按 B（批）与 S（序列）及上一步 τ 预测、≥1.05 才开；ReSpec 的 Solver 按 active batch 及离线剖析选 (s,t,n)，**大 batch 可关 SD**（§6.17、§6.14）。{推断}两侧都是"验证成本 ÷ 批内可摊薄工作量"的单调性判断，只是各自固定了相反方向的批轨迹。同族的两个独立锚点：③ S³R 在低 KV 体量的串行 stage 模型中，B16/S4K **即使全接受也不足以摊薄成本**，其 prompt n-gram 基线在 1.7B 上训练吞吐降至 0.72×（§6.24.4）——批小到一定程度，接受率再高都救不回；④ Seer 按 batch 与接受率 profile 调 draft 长度，异步更新 CST（§6.23.5）。
+- **受益方**：把开关判据从"模型／硬件标定一次"升级为"每步按批状态重估"的系统——它同时吃到小批（不开、省验证）与大批（开、摊销）两端收益。
+- **受损方**：把开关当静态配置的系统。一旦引擎侧补新请求使 active batch 回升，或 KV 压力触发并发下调，"开启后不关"的前提消失，此时继续开 SD 会从增益翻成净负；同理"大 batch 关 SD"的阈值一旦被 KV 限流改变，关的机会就错过。
+- **反例与边界**：① {同栈实测}本机 vLLM 0.24.0 上 ngram 提议器在 b8–b64 全矩阵均为净负（spec/AR 0.16–0.37），**批规模本身不是转正条件**——条目 6 说的是"开关判据"，不是"批越大越该开"（§14 候选 C/C2）；② EfficientRollout 原文明确其结论不延伸到补新请求的 continuous batching（§13.7 已核），迁移时不能照搬；③ BubbleSpec 反方向地**在跨批窗口里预生成 draft**（§11.1 条目 1）——它的"批"是下一批、被长尾挡住的是当前批，这与"本批内是否开 SD"是不同问题，不能混为同一条开关规则；④ H100 上有害开启 0–4%，论文自述非绝对安全边界（§6.17）。
+- **引用出处**：§6.17（EfficientRollout）、§6.14（ReSpec）、§6.24.4（S³R）、§6.23.5（Seer）、§13.7（D6 边界核）、§14 候选 C/C2、§3.2（气泡 B1 的开关杠杆面）。
+
+#### 条目 7｜L3 长度信号 × L4 组完整性：调度器的自由度被 group 粒度吃掉一个量级
+
+- **涉及层**：L3 Rollout Cluster（长度估计、分桶、repack、迁移、近似最长优先）× L4 RL Pipeline（GRPO 的同 prompt 组完整性）。
+- **一句话结论**：L3 所有"按长度调度"的收益都建立在**能把请求自由重排／搬迁**上；而在 GRPO 里，一个 prompt 的 n 条响应必须同批同版本消费，调度器实际能动的单位是**组**而不是轨迹——长度信号在组内是"不可拆散的一束"，能减掉的气泡远比 serving 少。
+- **机制与证据**：【论文报值】① Laminar 同版本 bin packing 受 KV 容量与 roofline batch 双约束，repack 把同版本长尾集中、释放副本更新权重，32B／128GPU 消融 generation 吞吐 +26%（**非全步收益**），全流程 2.56× 不是纯 repack 所致（§6.3）；② SortedRL 以"池清空前不补新"防饥饿，bubble（按请求队列空槽计）74%→5.81%／3.37%，rollout TPS 3987→4289／5559，但**长度分批同时改变了 Reinforce++ 的批归一化与更新次序**，故其自身分类即含 B/C；表 1 AIME mean@32 on-policy 23.33 vs partial 20.83，§4.3 正文归属与表相反（原文同样矛盾）（§6.10）；③ DORA 的窗口"最旧版本全部收集并转训后才前移"，跨版本 KV 迁移受限（省 re-prefill 不等于零传输）（§6.4）；④ Seer 用"组内先完成一条响应作近似最长优先"绕开精确长度 oracle，并加防饥饿控制（§6.23.5）。【推断】四条共同的结构约束：长度信号越准，越想把长尾拆走来填短尾的气泡；但拆走一条 = 破坏该组同批同版本，除非整组搬（DORA 的版本窗口）或先把组跑完（Seer 的 probe）。
+- **受益方**：以**组**为调度单位的系统——Laminar（整组 repack、同版本搬）、Seer（组内 probe 作长度代理，不动组归属）。
+- **受损方**：想按轨迹粒度重排的系统。SortedRL 是这条边界的最佳实证：为了拿到气泡收益，它接受了"长度分批改变批归一化与更新次序"（自认 B/C 混合），**调度自由度与训练语义不是免费的**。
+- **反例与边界**：① "组完整性是硬约束"在本语料里是**默认实践而非论文正面论证的定理**——Laminar/DORA 的整组迁移说明各组内不被拆散，但没有论文量化"若允许拆组，能多回收多少气泡"；这一条的正确表述是"语料内无人量化拆组的代价与收益"（记 §15 待修订）；② SortedRL 的 74%→3.37% 是**队列空槽气泡**口径，不是 SM 空闲率，不能与 §3.2 的 B0 机器气泡相加；③ 长度预测误差本身是风险项：DORA 的 RBS/TBS 正文单位不一（prompt vs trajectory），不能把 512 与 8192 直接比（§6.4）；④ {同栈实测}候选 D 显示**单卡引擎级**批内长度异质对 makespan 的杠杆极小（AR 下 MIX/H2048=1.000、RX8/H2048=0.994）——批内分布差异被引擎级连续批处理吸收，真正吃长度信号的场景是**跨副本负载不均**，不是单批内部（§14 候选 D）。
+- **引用出处**：§6.3（Laminar）、§6.10（SortedRL）、§6.4（DORA）、§6.23.5（Seer）、§14 候选 D、§3.2（气泡 B1 的调度杠杆面）。
+
+#### 条目 8｜L1 数值一致性 × L4 训练目标：省下来的时间有一笔记在"梯度期望"上
+
+- **涉及层**：L1 Model Execution（低精度／近似前向、稀疏 draft）× L4 RL Pipeline（importance ratio 与梯度期望）。
+- **一句话结论**：任何让 rollout 前向变便宜的手段（FP8、稀疏 draft、近似验证）都同时改变了"算采样概率的模型"与"算梯度比值的模型"之间的关系；RL 把这个差值从 serving 的可接受噪声升格为 1) 需要显式校正的对象、2) 校正本身要付墙钟成本——**这类机制必须与 C 类（分布改变）并列标注，不能只当 A 类加速**。
+- **机制与证据**：【论文报值】① FP8-RL：W8A8 真 FP8 policy 产生 rollout，训练端重算 BF16 logp 做 token 级 IS 校正，**TIS 阈值 C=2**；线性 rollout 报 dense 10–20%、MoE 30–50% 增益（图为 ms/token 与吞吐，不等全步缩短）；同样设置下 TIS-only 的 BF16 训练＋FP8 rollout 约 700 步崩溃，hybrid E4M3 前向／E5M2 反向较稳、纯 E4M3 约 500 步后崩溃（§6.20）。② CIS 采用 `min(p/q, 1+λ·max(1−p,κ))` 只截正向 log-odds 位移，κ=0.005 防高置信度舍入；**代价八 A100 示例每步总时间增 3.2%**（不含 checkpoint/eval）；无 floor 时从 34.78 掉到 29.02（§6.33.6）。③ 边界：CIS 只校正"已观测 prefix 下的 next-token 分布"，不正版整条 prefix 分布，更不解决跨更新的陈旧性——数值失配与 staleness 是两条轴，不能用一个 TIS 比值同时解释（§6.33.6 目标边界、§13.9 D9）。
+- **受益方**：低精度／稀疏前向带来的单点成本下降；以及在"漂移可被有界校正吸收"时的训练稳定性。
+- **受损方**：**梯度期望与可解释性**。同一组数字读法完全不同：FP8-RL 的 10–50% 是单阶段前向口径，CIS 的 +3.2% 是每步墙钟代价，两者的净值从未被同一篇量化（§13.16 G2/G9）。此外校正本身不是零成本，也不保证无偏——CIS 有限 cap 控二阶矩但引入截断偏差，不证明普遍优于所有 cap（§6.33.6 理论条件）。
+- **反例与边界**：① 逐 token IS 乘积 **不等于**整条轨迹概率比，不能推出"exact BF16 rollout"或无偏轨迹更新（§6.20、§6.33.6）；② 低精度前向的损失不只是数值：FP8 的 KV 容量收益与 preemption 减少绑定（8B KV-only 报 38%、组合 44%，不能拆开相加，§6.20），这属于条目 6 的批状态轴，两条轴混算会重复计收益；③ {同栈实测}本机无 FP8-RL／CIS 复现，条目 8 全线为【论文报值】与【推断】，无同栈锚点——这是 §11 八条里唯一**缺同栈实证**的一条，已在 §14 记为重点候选；④ 与条目 2 的区分：条目 2 管"drafter 落后于 target"（版本轴），条目 8 管"同一版本下前向算子不一致"（数值轴），二者可同时存在且互相放大，但校正手段与代价不同。
+- **引用出处**：§6.20（FP8-RL）、§6.33.6（CIS）、§13.9（D9 边界核对）、§13.16（G2 收敛代价／G9 负项索引）、§13.15 G7（FP8-RL 式 3 clip 区间端点待源码）。
+
+### 11.3 跨层结构：S1–S2 八条重组的四个耦合面（供 §17 P3"跨层协同"章搭骨架）
+
+八条按"耦合对象"重组，正好落在四个耦合面上，可作为该章的四个小节：
+
+| 耦合面 | 条目 | 共性结论 |
+|---|---|---|
+| 算力面：L1 机制 ↔ L3/L4 空闲与版本 | 1、2 | 机制本身不变，价值来自"被塞进哪个窗口"与"离 policy 多远" |
+| 会计面：阶段占比与跨阶段残差 | 3、4 | 整步× 由主导阶段占比封顶；超过纯投影的部分一律来自跨阶段重叠，且不可跨族相加 |
+| 语义面：在途轨迹与组完整性 | 5、7 | serving 的"请求"在 RL 里是有身份的轨迹，缓存淘汰／迁移／长度重排都要付训练集合的账 |
+| 状态面：批状态与数值状态 | 6、8 | 开关判据是批状态的函数；低成本前向的差额记在梯度期望上 |
+
+由此给出"跨层协同"章的一句话主张（P3 备用）：**rollout 的跨层优化不是把 L1–L4 的局部最优相加，而是在四个耦合面上各解一次"谁受益、谁受损"的分配问题**。这句话是本综述区别于逐篇综述的核心论点，其证据即上表八条。
 
 ## 12. Evaluation & Benchmark
 
@@ -2569,7 +2720,7 @@ SkyRL `e0893f6e`的[wait_for_generation_buffer:843](https://github.com/NovaSky-A
 
 **G9 备料结论（引用语料）**：族Ⅴ 负项/反直觉库按"数字＋口径限定＋教训"三要素引用就绪，与族Ⅰ/Ⅱ/Ⅳ 正项同族并存须带正负两面（§13.13 结论六）；本表覆盖 G9 已登记负项中的核心数字（RLinf/AstraFlow/CIS/InfoTree/DART 矛盾数/Agent Lightning 负消融/QwenGyre 规模限定）＋**ngram-spec 引擎级实测负项（2026-10-30 候选 C）**＋**update-side 动态批上限扫描负项（2026-10-31 候选 E）**，其余（FastGRPO 无预训消融时序、ROLL/GLM-4.5 无独立计时、Missing Old Logits/ExpThink/SAO/AgentRL/CERO/Belayer/RobustRL/ProRL 吞吐消融/Each Prompt Matters 混合机制）已在 §13.13 族Ⅴ 逐项登记，引用时按表内口径限定表述即可。
 
-### 13.17 G7 源码可得性扫描账（2026-10-29 M5 收尾第七批完成）
+### 13.17 G7 源码可得性扫描账（2026-10-29 M5 收尾第七批完成；2026-11-01 M1 P-4 第四批复核更正一处）
 
 按 §13.15 G7 下一步"其余随各系统源码可获取时核"执行源码可得性扫描：对 15 项 G7 待核事项逐项做只读检索（arXiv API comment 字段＋GitHub 仓库检索 2026-10-29，全部为读操作，未触任何上游写操作，铁律不变）。结论：**13 项仍无公开源码、2 项可得性升级**（AcceRL 官方 minimal 仓库、FP8-RL 作者 fork 引擎侧栈），两升级项均尚未达到可核验对应 G7 事项的程度。
 
@@ -2589,7 +2740,11 @@ SkyRL `e0893f6e`的[wait_for_generation_buffer:843](https://github.com/NovaSky-A
 | StaleFlow 2601.12784v2（η 配置敏感） | 无公开实现（"StaleFlow"+RL/verl 等检索均空） | 维持待源码 |
 | Missing Old Logits 2605.12070v3（mask 与 active-token 耦合） | 无公开实现（"Missing Old Logits"/"MOL mask PPO" 检索均空） | 维持待源码 |
 | S³R 2610.13202v1（直接稀疏+修正消融） | 无公开实现（"S3R"+sparse 检索仅 S3RC/S3RNet 图像识别，无关） | 维持待源码 |
-| Agent Lightning 2026 2608.17528v1（rollout 级 adv 归一化） | 无公开实现（"Agent Lightning RL" 检索仅无关模板/分支） | 维持待源码 |
+| Agent Lightning 2026 2608.17528v1（rollout 级 adv 归一化） | **公开源码已定位（2026-11-01 第四批复核，更正原记录）**：`microsoft/agent-lightning`（微软官方仓库，Apache-2.0）含 `agentlightning/verl/rollout_level_advantage.py`（160 行，`compute_rollout_level_advantage`）＋`tests/verl/test_rollout_level_advantage.py`（5 个测试）；该文件在 release tag `v1.0.0`／`v1.0.1`／`v1.0.2` **均存在且与 main 逐字节相同**（sha256 `fd5fc06d…41e898`，实测 3/3 HTTP 200）。同目录另有 `per_rollout_loss.py`／`agl_rollout_manager.py`／`rollout_adapter.py` 等共 9 个 verl 集成模块。**实现与论文式16 的对应**：按 `rollout_id_list` 把同一 rollout 的多行（triplet）折叠成代表行 → 在代表行上调用 verl 原生 `compute_advantage`（GRPO／GAE 不变）→ 把得到的**标量** adv／returns 按 `response_mask` 广播回该 rollout 全部行，即"rollout 内 token 池后跨 rollout 均匀平均"的落地方式；另有三条强校验（同 `rollout_id` 必须同 `uid`、必须同 `token_level_rewards` 行和、adv 必须逐 token 常量），故只支持 outcome-style 奖励 | **可得性升级（已定位，可直接裁决）**：原"无公开实现"记录**不成立**——当时检索词为 "Agent Lightning RL"＋in:name，未命中实际仓库名 `agent-lightning`。§13.11 ⑤ 引用的论文逐字（式16、sample count 不影响梯度归一化、组内 policy skew）与该实现口径一致，**该条"实现是否照论文做"不再待核**；原 Figure 9 负消融（33.1 vs 基线 35.0／完整 38.2）作为"改归一化不改轨迹集合、故不构成 C 类"的判定不受影响 |
+
+**2026-11-01 第四批复核（P-4 批次，M1）**：对 15 项 G7 事项整体重跑只读检索（GitHub 仓库检索 API，检索词同 §13.17 及等义词，另对每个系统补 "＋verl/training/rollout" 组合词）：**12 项仍无公开源码**（ReSpec／RolloutPipe／Relax／Heddle／WAR／CadenceRL／DAS／SpecActor／RhymeRL／StaleFlow／Missing Old Logits／S³R，其中 ReSpec 仍只命中 speced/respec 文档工具、SpecActor 仍只命中 aidancgray/specActor、S³R 仍只命中 S3RC/S3RNet 图像识别，与首次扫描结论一致）；**1 项改判**（Agent Lightning，见上表）；另有 2 项维持部分可得（AcceRL／FP8-RL，见下）。**AcceRL** 状态复核：`distanceLu/AcceRL` 最近推送仍为 2026-10-30T02:51:07Z、默认分支仍 `master`，期间无新提交，1000/2000 预算冲突仍待作者澄清。**FP8-RL** 复核：`zpqiu/verl`（2026-03-18 最后推送）与 `zpqiu/verl-recipe`（2026-03-09）均无新推送，第八批的 [0,C] 单侧截断结论维持。
+
+**P-4 收窄结论（本轮）**：§20.3.2 把 P-4 定义为"G7 十三条待源码项的收窄"，判据是审稿人会问"为什么不确定"。本轮把该项从"13 项无差别待核"收窄为：**12 项确定无公开源码**（可对外一致表述为"截至 2026-11-01 未检索到公开实现"，并附各系统检索词与命中反例，属可回答的不确定）＋**1 项已定位并核实**（Agent Lightning，实现口径与论文一致）＋**2 项部分可得**（AcceRL 仅 minimal、FP8-RL 仅作者 fork 分支，均已定位但不足以裁决各自冲突）。因此 §18 中所有"待源码"表述可改为分级表述，P-4 状态由"未做"升为**已完成（收窄口径达成；不追求全部收口）**。
 
 **G7 备料结论**：第七批扫描把 G7 的"下一步"从 15 项无差别等待细化为——13 项确认仍无公开源码（维持"待源码可获取时核"，不扩大为猜想）、2 项可得性升级（AcceRL 官方 minimal 仓库、FP8-RL 作者 fork 引擎侧栈）；第八批深挖把两升级项进一步推进——**FP8-RL 训练侧 TIS/clip 已定位**（qat 分支 rollout_corr_helper＋配置＋math 文档，式3 端点解答为 [0,C] 单侧上限截断、1/C 为 RS 拒绝下界，G7 第 4 项收口为"已定位并解答"）、**AcceRL 冲突无法由现有源码裁决**（README 明示 minimal、无预算参数，维持待作者澄清或完整实现）；Heddle 维持不可执行。扫描全部为只读（GitHub API/浅克隆至 /tmp，不落库、不留痕于项目），未触上游写操作（铁律）；不新计深读、不扩库。
 
@@ -2606,7 +2761,7 @@ SkyRL `e0893f6e`的[wait_for_generation_buffer:843](https://github.com/NovaSky-A
 
 **口径限定（沿用 §13.13 六条结论）**：八篇基线各异（StreamRL/DORA/AReaL 为同栈或内部框架、StaleFlow/Laminar 为 veRL v0.4–0.5、RolloutPipe 为 Slime、ECHO-2 为中央 8 A100），只作机制方向比较不构造跨篇排行；StreamRL 2.66× 为跨配置总上界、DORA 8.2× 为 rollout-only、RolloutPipe 30.7–42.3% 为主时窗非全步、AReaL veRL 对照为估算、ECHO-2 成本含异质资源——各数字均不得直接取比值成端到端加速；PACE 无受控加速数字列 Ⅴ。**本批与 D1/D11/D12 合并后，二十篇 T1 全部纳入五族可比性账**（D1 六篇＋D11 六篇＋D15 八篇），§13.1 可比性能行覆盖完整。不新计深读、不扩库；全部只读（含四篇原文锚定），未触上游（铁律）。
 
-### 13.19 G7 复扫与 AcceRL 论文级裁决账（2026-10-30 M5 收尾第十批完成）
+### 13.19 G7 复扫与 AcceRL 论文级裁决账（2026-10-30 M5 收尾第十批完成；2026-11-01 M1 就 Agent Lightning 检索漏判加更正注）
 
 按 §13.15 G7 下一步"其余随各系统源码可获取时核／AcceRL 冲突待作者澄清"执行只读复扫与论文文本裁决（2026-10-30 00:4x 完成，全部为读操作：arXiv API/abs 页＋GitHub 检索 API，未触任何上游写操作，铁律不变）。本批在 §13.17（2026-10-29 扫描）与 §13.18（D15）基础上，把 G7 清单的"等待"状态做实：**结论：13 项仍无公开源码且无新版论文（日期更新 2026-10-30）、AcceRL 1000/2000 冲突定位精确化为"前言 vs §6.4 正文"的同实验前后不一致、FP8-RL 已定位并解答不变、Heddle 不可执行不变。**
 
@@ -2631,7 +2786,7 @@ SkyRL `e0893f6e`的[wait_for_generation_buffer:843](https://github.com/NovaSky-A
 
 → 论文内矛盾类事项（ReSpec 算法1 vs 1/I 消费量、RolloutPipe 式4 双分母、Relax 门控 off-by-one、DAS 式7/式6 代数）**无新版可依，维持等源码**；D3–D10 已逐字核对的结论不因版本变化失效。
 
-**② GitHub 源码复扫（2026-10-30 00:4x）**：对 13 项逐项 GitHub 仓库检索（`gh api search/repositories`，检索词同 §13.17 及等义词），**无新增公开源码**：CadenceRL／RhymeRL／StaleFlow／RolloutPipe／SpecActor+RL／ReSpec+reinforcement／Heddle+reinforcement+learning／WAR+rollout+incomplete／Relax+staleness+policy／DAS+speculative+decoding+draft／MOL+PPO+mask／S³R+sparse+sampling+RL 均 0 相关命中；Agent Lightning+RL 仅 3 个无关项目（时间序列 agent/werewolf agent/Pi-Agent 分支）；AcceRL 官方 minimal 仓库 `distanceLu/AcceRL` 仍为唯一相关命中（2026-10-26 推送、无变化）。→ **13 项"待源码可获取时核"结论维持，日期更新为 2026-10-30。**
+**② GitHub 源码复扫（2026-10-30 00:4x）**：对 13 项逐项 GitHub 仓库检索（`gh api search/repositories`，检索词同 §13.17 及等义词），**无新增公开源码**：CadenceRL／RhymeRL／StaleFlow／RolloutPipe／SpecActor+RL／ReSpec+reinforcement／Heddle+reinforcement+learning／WAR+rollout+incomplete／Relax+staleness+policy／DAS+speculative+decoding+draft／MOL+PPO+mask／S³R+sparse+sampling+RL 均 0 相关命中；Agent Lightning+RL 仅 3 个无关项目（时间序列 agent/werewolf agent/Pi-Agent 分支）；AcceRL 官方 minimal 仓库 `distanceLu/AcceRL` 仍为唯一相关命中（2026-10-26 推送、无变化）。→ **13 项"待源码可获取时核"结论维持，日期更新为 2026-10-30。**（**2026-11-01 更正**：上述"Agent Lightning+RL 仅 3 个无关项目"与 2026-10-30 第一／二轮复扫的"仅无关模板/分支"均**因检索词不当而漏判**——实际仓库名是 `microsoft/agent-lightning`，源码自 v1.0.0 起公开；详见 §13.17 第四批复核。教训：用论文标题词做 in:name 检索会把"论文名≠仓库名"的系统系统性漏掉，此后凡判"无公开源码"须补一次去掉标题词的项目名/组织名检索，并在记录里写明检索词。）
 
 **③ AcceRL 1000/2000 冲突论文级裁决（2026-10-30 00:4x，回 v3 全文 arXiv HTML 逐处定位）**——D3（§13.4）已确认"摘要/图5 1000 vs §6.4 2000 OOD 冲突 v3 未调和"，本批把定位做精确并确认无法由论文文本自裁决：
 - **1,000 offline trajectories** 出现于 3 处（front matter）：**摘要**（"world model pre-trained on 1,000 offline trajectories, AcceRL achieves up to a 200× improvement in online sample efficiency on LIBERO-Spatial"）、**§1 Introduction**（"pre-trained on 1,000 offline trajectories (which are out-of-distribution and more cost-effective to collect than online samples)"）、**图4(b) 右说明**（"pre-trained on 1,000 offline trajectories, the model-based architecture improves online sample efficiency by 200×"）。
@@ -2909,6 +3064,10 @@ gen-only 公式 1/(1−s(1−1/G)) 与 §13.23 的更新侧对称公式都是它
 2. makespan 最优 vs on-policy 性的权衡：C 类改分布的工作，train-time 收益能否抵消分布偏移的收敛代价？有没有论文量化过？
 3. taxonomy 是否需要第五层（environment/sandbox 层）？agentic 簇的 environment bubble 是否够独立成层？
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？——**收口（2026-10-29 M5）**：机制层面适用、定量不可外推。Rollplex 核心机制是 response-independent 的 reference/actor prefix 计算放 decode 窗口重叠（摘要"prefix processing is independent of the generated response…alongside rollout decoding"），模态无关——文本-only 同样存在响应无关 prefix（系统提示/指令/共享上下文）；但收益大小由**prefix 占比**决定：VLM 场景因 dense video inputs 产生长 prefix（§6.26.5：prompt 8K/response 2K、92.8% 共享率、跨 TP 仅整数比且布局兼容），文本-only 的 prefix 通常远短于视频编码序列，"prefix 短则机会小"（§6.26.5 限制项）直接适用——机制方向可作 colocation 空间共享新维度候选（可入 G3/G5 迁移判据的"机制方向可用"类），1.23–1.30×/1.57–2.24× 定量收益不迁移到文本-only，需同栈文本-only 锚点验证（G8 候选之一）。
+5. **【S2 新增待修订】GRPO 组完整性的代价**：语料内所有 L3 长度调度（repack／分桶／迁移）都以"组不可拆散"为默认前提，但**无一篇量化"若允许拆组能多回收多少气泡、组内比较的统计代价是多少"**。这是 §11.2 条目 7 的边界，S3 跨层章需明确写成"领域空白"而非"已证明的硬约束"。
+6. **【S2 新增待修订】气泡 B2 与 B3 的拆分**：colocate 布局下 train/rollout 切换裂隙与环境／权重同步共用同一段墙钟，语料内无一系统把两者拆开报（§3.5 边界 1）。S3 评估章需给出可执行的计时边界约定，否则跨篇 B2／B3 不可比。——**报值侧已答复（2026-11-01 P-5，§21.1 C1＋§21.2 C2）**：C1 给引用他人墙钟数字的三件套（块名＋固定 commit／是否含策略等待／分项是否重叠），C2 给 B3＝t1−t0、B2＝t2−t1 的事件边界切分，并规定无法分离时整体记 B2∪B3、不得按单类引用。**残留（降级）**：§3.2 表内是否把 B2／B3 拆成两行属表格划分，冻结后仅允许层内调整，留正文阶段决定；语料内仍无系统按此报值。
+7. **【S2 新增待修订】async 下的气泡定义**：sync 的 `max_i T_i` 在 async 下不再是批的终点，§3.5 边界 3 未给形式式。候选方向是"staleness 切换频率 × 单步吞吐"，但需先定"一个假想的同步化时间基准"才能定义气泡比例。——**基准已给（2026-11-01 P-5，§21.3 C3）**：改为成对报 η 分布（max/P50/P90）与 S（被接纳进训练的吞吐），同步化基准取同栈 η=0 的整步墙钟，无同栈 η=0 参照时 async 收益只报方向不报倍数。**残留（降级）**：async 气泡的闭式定义仍开放（§3.5 边界 3 的失效项维持失效），本约定不反推 sync 的 B1。
+8. **【S3 新增待修订】兜底格两条登记是否升为正式子维**——**已答复（2026-11-01 S5，§20.2）：两条都不升格、冻结结论不变**。判据按本条原文的"是否有独立的可测气泡口径"：训练侧共享与概率修正的成本按 §3.2 即 B2＋更新阶段墙钟之和，无第六种气泡形态；多模态输入执行在引擎侧仍表现为 prefill 工作量与 KV 占用（B0/B1 的输入），改变的是前置项权重不是气泡分类。同一批次确认 §10 Workload-specific Findings 暂不单列，并把 Q3（environment 层）与此结论对齐——三个关于层数的开放问题至此相互一致地全部收口。将来若要翻案，须拿出"存在第六类可测气泡"的反例，而不是文献变多。
 
 ## 17. Phase 3 — Survey Outline & Writing（2026-11-01 用户拍板启动）
 
@@ -2921,9 +3080,9 @@ gen-only 公式 1/(1−s(1−1/G)) 与 §13.23 的更新侧对称公式都是它
 | 文献覆盖 | 126 身份（120 唯一 arXiv＋6 会议），T1 20＋T2 84＋T3 21＋未标 1 | 满足 |
 | 代码映射 | §8 共 12 路径／8 系统（veRL 4 现代＋1 历史，其余 5 RL 框架＋2 引擎各 1） | 满足 |
 | 可比性账 | D1/D11/D12 五族口径收口；同栈锚点候选 A 已建（0.2% 恒等式误差） | 满足 |
-| 大纲备料四主题 | G3 备忘／G5 清单／G6 备忘／G2+G9 索引 | **引用就绪** |
-| §11 跨层发现 | **空**（仅有占位说明） | **缺口，阶段三第一优先补** |
-| §3 五类气泡形式化 | 标"待建" | **缺口，并入 O2 一并成文** |
+| 大纲备料四主题 | G3 三轴（→§3.3）／G5 四要素（→§13.15 G5 摘要）／G6 环境论证（→§3.2 B4）／G2+G9 索引（→§13.16 两表） | **S2 更正：原四份备忘文件均未入库，仅 G2/G9 索引（§13.16）真正在正文；G3/G5/G6 结论已收编进正文，引用请指正文** |
+| §11 跨层发现 | **已补（2026-11-01 S1＋S2：八条，§11.1／§11.2，结构见 §11.3）** | 满足 |
+| §3 五类气泡形式化 | **已成文（2026-11-01 S2：§3.1–3.5）** | 满足 |
 | 残留非阻塞项 | G7 十三条（等源码）、G8 部分权重依赖、HybridFlow 收尾 | 标注后不阻塞 |
 
 ### 17.2 阶段三产出物（P1–P6）
@@ -2932,18 +3091,18 @@ gen-only 公式 1/(1−s(1−1/G)) 与 §13.23 的更新侧对称公式都是它
 |---|---|---|---|
 | **P1** | §11 跨层发现账 | 至少 8 条跨层耦合条目，每条给"层×层、机制、谁受益谁受损、证据出处（§6.x/§13.x）、反例或边界"；直接成为大纲"跨层协同"章骨架 | 最高 |
 | **P2** | §3 性能模型成文 | 五类气泡（长尾/切换裂隙/权重同步/环境等待/资源空闲）各自给比值定义、可测量字段、优化杠杆、受影响的机制家族；并入 G3 三轴模型（接受率×版本差×批内分布） | 高 |
-| **P3** | survey outline 正文 | 章节树＋每节论点一句话＋每节引用清单（指向 §6.xx）＋每节"缺口"标注（引用 G1–G9）；**按 A（完整 survey）搭结构，每节满足 B（可独立汇报）完成度**；不含正文文字 | 高 |
-| **P4** | taxonomy 冻结决定 | 基于 G6 备忘裁定：是否设 L5 环境层。建议路径已定=**不建 L5**，environment bubble 作 L4 气泡源④显式子维，在大纲单列一节论证；本项只需用户确认后一次性落笔 | 高（需用户确认） |
-| **P5** | 写作规范与诚信约束 | 数字引用三要素（数字／口径限定／出处）、实测 vs 模拟 vs 论文报值三分类标注、负项必须与正项同族并列、不可跨族取比值——成文为写作 checklist | 中 |
-| **P6** | 可发表性评估 | 按**系统向 survey（A）**标准：新意锚定（rollout ≠ serving 的形式化、阶段占比中介定律、同栈锚点），并列出投稿前必须补的工作（G1/G2 的实验空白） | 中 |
+| **P3** | survey outline 正文 | 章节树＋每节论点一句话＋每节引用清单（指向 §6.xx）＋每节"缺口"标注（引用 G1–G9）；**按 A（完整 survey）搭结构，每节满足 B（可独立汇报）完成度**；不含正文文字。**已完成：上半 §18（S3）、下半 §19.2（S4）** | 高 |
+| **P4** | taxonomy 冻结决定 | 基于 G6 备忘裁定：是否设 L5 环境层。建议路径已定=**不建 L5**，environment bubble 作 L4 气泡源④显式子维，在大纲单列一节论证；本项只需用户确认后一次性落笔。**已完成：S3 落笔冻结（§18.13）、S5 复核无冲突并答复 Q8（§20.1–20.2）** | 高（需用户确认） |
+| **P5** | 写作规范与诚信约束 | 数字引用三要素（数字／口径限定／出处）、实测 vs 模拟 vs 论文报值三分类标注、负项必须与正项同族并列、不可跨族取比值——成文为写作 checklist。**已完成：§19.1 规范＋§19.4 checklist（S4）** | 中 |
+| **P6** | 可发表性评估 | 按**系统向 survey（A）**标准：新意锚定（rollout ≠ serving 的形式化、阶段占比中介定律、同栈锚点），并列出投稿前必须补的工作（G1/G2 的实验空白）。**已完成：§20.3（S5）** | 中 |
 
 ### 17.3 执行顺序与批次（沿用 §6.0 认领惯例）
 
-- **S1（P1 上半）**：从 §13.13 五族与 §6 深读节提炼跨层条目 1–5 条（建议起点：BubbleSpec = L1 机制＋L3 气泡利用、PrefixFlow/ReSpec = 生成侧与更新侧"报值超纯阶段投影"的镜像对称、Rollplex VLM 跨阶段共享、WAR 缓存路由 vs 在途轨迹、RhymeRL 历史 token 复用）。
-- **S2（P1 下半＋P2）**：跨层条目 6–8＋五类气泡形式化成文。
-- **S3（P3 上半）**：大纲骨架——引言/背景、性能模型章、L1–L4 分层章（四章）、跨层章、评估与可比性章、缺口与开放问题章。
-- **S4（P3 下半＋P5）**：每节引用清单与口径标注规范；负项索引接入（§13.16）。
-- **S5（P4＋P6）**：taxonomy 冻结落笔＋可发表性评估。
+- **S1（P1 上半）｜状态：已完成（2026-11-01 M1，§11.1 条目 1–5）**：从 §13.13 五族与 §6 深读节提炼跨层条目 1–5 条（建议起点：BubbleSpec = L1 机制＋L3 气泡利用、PrefixFlow/ReSpec = 生成侧与更新侧"报值超纯阶段投影"的镜像对称、Rollplex VLM 跨阶段共享、WAR 缓存路由 vs 在途轨迹、RhymeRL 历史 token 复用）。实际落笔的五条：① L1×L3 空闲注入（BubbleSpec）；② L1 draft×L4 版本陈旧（ReSpec／DAS）；③ L1 生成侧×L4 更新侧镜像对称（SRT/ReSpec/RollPacker/psRL/PrefixFlow/候选 A–E）；④ L2 前置缓存×L4 跨阶段共享（Rollplex/PrefixFlow/psRL）；⑤ L3 缓存亲和路由×L4 在途轨迹（WAR/RhymeRL/CONCUR）。每条七项齐备（层、结论、机制证据、受益受损、反例边界、出处、证据等级标注）。RhymeRL 历史 token 复用归入条目 5 的迁移一侧（与条目 2 的版本陈旧轴重叠，不单列）。
+- **S2（P1 下半＋P2）｜状态：已完成（2026-11-01 M1，§11.2 条目 6–8＋§11.3 结构表＋§3.1–3.5 全节）**：跨层条目 6–8 已按七项成文（L1 开关×L2 批状态、L3 长度信号×L4 组完整性、L1 数值一致性×L4 训练目标）；五类气泡已形式化为 §3.2 表（B1–B5＋机器气泡 B0/B5），G3 三轴并入 §3.3，可测字段与已知边界见 §3.4／§3.5。原草案方向来自 S1 的预登记，实际落笔时条目 6 补入 S³R/Seer 两个独立锚点、条目 7 把「拆组收益无人量化」单列为 §15 待修订、条目 8 标注为八条中唯一缺同栈实证者。**S3 可用骨架**：§11.2 八条＋§11.3 四耦合面＋§3.2 气泡表。
+- **S3（P3 上半）｜状态：已完成（2026-11-01 S3／M1，§18 全章）**：大纲骨架成文——十章章节树（引言／serving→rollout／性能模型／L1–L4 四章／跨层协同／评估可比性／开放问题），每节给「一句话论点＋引用落点＋缺口标注」三段式，并落定四条结构决策：① C 类不进独立章节而在每层章末以子节并列（按实际改变的轨迹集合判定，防按名称归类）；② 负项不进附录（与正项同族并列）；③ 兜底格落入 §18.13 并给出当前两条登记；④ **taxonomy 主结构在本批冻结**（L1–L4＋A/B/C＋兜底格，不建 L5，§17.5 设定 1 的③已兑现）。**合并注记（2026-11-01 M1）**：本批原提交在远端 main 血统（`f606c85c`）上，与 S1／S2 所在支线分叉；并入时按 §18.15 依赖声明把 S1／S2 的 §3.1–3.5、§11.1–11.3、§15 Q5–Q7 一并合入同一文件，第 3／8 两章引用落点已核对不悬空；**引用落点已逐项核**：S3 各表引用的具体数字（MTP-RL 三阶段分钟数／NeMo-Aligner 分项／PrefixFlow 1.90×·50.6%／候选 E 0.8494×）原账即 §13.21–§13.27，这七节来自 M5 收尾批次、在远端血统上本就齐备，合并后无缺节。§18.14 另给每章"可独立讲"的最小材料与时长（B 轨）。**依赖声明**：本批假设 S1／S2 成果已在主文档（§11 八条、§3.1–3.5、§15 Q5–Q7），已写入 §18.15。
+- **S4（P3 下半＋P5）｜状态：已完成（2026-11-01 M1，§19 全章）**：每节引用清单成文为 §19.2（十章三列：内部账目／一手文献／必标限定，一手文献只取 §5 矩阵已核固定版本），口径标注规范成文为 §19.1（五列必填＋四级证据定义＋三条逐字规则），负项索引接入成文为 §19.3（§13.16 G9 表十条逐条指派到主语章，并要求正项所在节末至少出现一条同族负项，做不到须明写"语料内未见同族负项"），写作前 checklist 成文为 §19.4。**P3 与 P5 至此同时完成**。
+- **S5（P4＋P6）｜状态：已完成（2026-11-01 M1，§20 全章）**：P4 的冻结决定已由用户拍板（§17.5 设定 1）并在 S3 落笔（§18.13），本批做**复核**——六个检查点（层数与层名／行序／A-B-C 判定规则／兜底格归属／弹性窗口③／§19.2 一致性）全部无冲突；并答复 §15 Q8：兜底格两条（训练侧共享与概率修正、多模态输入执行）按"是否有独立的可测气泡口径"判据**均不升格**，冻结结论不变。P6 可发表性评估成文为 §20.3：三条新意锚（rollout≠serving 的迁移判据四要素／阶段占比中介定律／八条跨层＋四耦合面）、五条投稿前必补项（P-1 同栈横评锚点列为决定性前置）、四条禁写主张、总判断"结构完备、实证不足"。
 - 每批完成后回写状态并推送；与 §6.0 相同规则：先认领后工作、冲突以远端为准。
 
 ### 17.4 阶段三不做的事
@@ -2961,7 +3120,456 @@ gen-only 公式 1/(1−s(1−1/G)) 与 §13.23 的更新侧对称公式都是它
 
 **执行影响**：P1/P2 照常推进（不受三项影响）；S3 大纲按 A 的完整结构搭骨架，同时每节满足 B 的独立可汇报要求。
 
+
+## 18. Survey Outline（P3 上半：大纲骨架，2026-11-01 S3／M1）
+
+**状态**：本章是 §17.2 P3 的**上半**（章节树＋每节一句话论点＋每节引用落点＋缺口标注＋每节可汇报交付物）。按 §17.4，**不写正文段落**，只到"一句话论点"。每节条目是否已写成"可独立汇报"的规格由 **S4** 补齐（§17.2 P3 的 B 轨要求）；taxonomy 主结构在本章定稿时冻结（§17.5 设定 1）。
+
+**证据纪律（P5 前置，本章已生效）**：所有数字引用必须带三要素——**数字／口径限定／出处**；标注分三级【论文报值】／【推断】／【同栈实测】；负项与正项同族并列；**不可跨族取比值**（§13.13 五族规则）。
+
+### 18.1 结构原则
+
+1. **层章对应 taxonomy，跨层章对应新增论点**：L1–L4 四章各自回答该层的核心问题（§4 表），第 8 章回答"四层之间怎么协同"，后者是本综述区别于逐篇综述的位置（§11.3）。
+2. **每节三段式**：*一句话论点* → *引用落点*（指向 §6.x / §13.x / §14，不重复文献正文）→ *缺口与标注*（G1–G9 编号 + 证据等级说明）。
+3. **C 类不进独立章节，而是在层章内以子节并列**：C 类的判定按"实际改变的轨迹集合"而非技术名称（§4），把它拆成单独一章会诱导读者按名称归类；改为每层章末固定一节"C 类标记"，并统一指向 §13.16 的收敛代价索引。
+4. **负项不进附录**：负项与正项同族并列（§13.13 结论六），在任何引用正项加速比的位置，必须同时给出同族负项或口径限定。
+5. **兜底格（不建 L5 的落实）**：归不进 L1–L4 的工作不硬塞，登记在 §18.13 兜底格清单＋§15 Q8；环境／sandbox 不独立成层，作为 §18.9（L4 章）7.7 的 B4 子维单列论证（§17.5 设定 1）。
+
+### 18.2 章节树总览
+
+| 章 | 标题 | 核心问题／主张 | 主引用落点 | 缺口 |
+|---|---|---|---|---|
+| 1 | Introduction and Problem Setting | rollout 性能由什么决定、能被系统化优化到什么程度 | §1、§2、§3.1 | G1（缺同栈横评锚点） |
+| 2 | From Serving to Rollout | 哪些 serving 优化在 rollout 下 objective 完全不变——答案是无一篇 | §4、§9、§13.15 G5 | G5、§15 Q1 |
+| 3 | Performance Model | 五类气泡的形式定义与整步× 会计恒等式 | §3.1–§3.5 | G3（条目 8 缺同栈实证） |
+| 4 | L1 Model Execution | 单 token／decode step 怎么更便宜，以及便宜下来的东西在 RL 里记在哪 | §5.3、§6.14–6.20、§13.12 | G3 轴 1／轴 2 |
+| 5 | L2 Infer Engine | 一个 engine 如何高效处理一批路由到该实例的轨迹 | §5.3、§6.17、§6.33 | G9（ngram/drafter 负项） |
+| 6 | L3 Rollout Cluster | 一批 trajectory set 怎么整体最快，以及调度自由度被组完整性吃掉多少 | §5.2、§6.1–6.10、§13.18 | G7（拆组代价未量化） |
+| 7 | L4 RL Pipeline | rollout 怎么与其他阶段协同：重叠、版本、准入、环境 | §5.1、§5.4、§6.2–6.8、§13.21–13.27 | G2（C 类收敛代价）、G6 |
+| 8 | Cross-layer Coordination | 跨层优化不是局部最优相加，而是在四个耦合面各解一次"谁受益谁受损" | §11.1–§11.3 | 条目 8 缺同栈实证 |
+| 9 | Evaluation and Comparability | 跨篇数字为什么不可比，以及怎样才算可比 | §12、§13.13、§13.16 | G1、§15 Q6/Q7 |
+| 10 | Open Problems and Research Agenda | 领域空白的可执行清单，区分"无人做"与"做了但没报" | §15、§13.15 G1–G9 | 全部 |
+
+### 18.3 第 1 章 Introduction and Problem Setting
+
+| 节 | 一句话论点 | 引用落点 | 缺口与标注 |
+|---|---|---|---|
+| 1.1 研究问题 | rollout 阶段的性能由什么决定、可以被系统化优化到什么程度；前半句对应已建成的机制地图，后半句在当前语料里只能答到"会计上界"，不能答到"可兑现杠杆"。 | §1 | 问题表述 provenance 未定（§1 已记 agent 形式化、非用户逐字原话）；S3 开篇若拿到用户原话即替换（§17.5 设定 2） |
+| 1.2 为什么不是 serving | serving 与 rollout 的差异不在指标名而在**结构与约束**：同批同步推进、版本连续过期、正确性约束延伸到概率一致性（§2 五维表）。 | §2 | §2 假设状态仍标"未验证"；本章不新增验证，引用 §11 作为已登记的反例侧证据 |
+| 1.3 方法：四级证据 | 本综述把证据分为论文报值／推断／同栈实测／模拟四类，任何跨篇比较先问"三要素齐不齐"。 | §3.4、§13.13 | 同栈实测仅候选 A–E（单 4090、Qwen2.5-1.5B），**不可外推到多卡系统** |
+| 1.4 贡献与组织 | 三点贡献：①taxonomy 的四层核心问题化；②五类气泡的形式化与整步× 会计；③八条跨层耦合。 | §4、§3.2、§11.3 | 贡献表述中**不得**出现"首次""首个"——语料内未见对等综述不等于我们是首个 |
+
+### 18.4 第 2 章 From Serving to Rollout
+
+| 节 | 一句话论点 | 引用落点 | 缺口与标注 |
+|---|---|---|---|
+| 2.1 迁移判据四要素 | 一个 serving 优化能否迁到 rollout，由版本约束／陈旧性／组完整性／随机独立性四个要素共同判定；语料内**没有一条 serving 优化被证明 objective 完全不变**。 | §13.15 G5（四要素结论已收编于此） | **G5 原备忘文件未入库**（§13.15 更正注记），引用时指向正文而非文件 |
+| 2.2 可迁移的机制方向 | 二十条 serving T3 中，机制方向可用者集中在"缓存复用与分页 KV"一类，其余须补契约。 | §6.30、§9 | §6.30 为 T3 triage 级，非深读；不得据此声称已逐条验证 |
+| 2.3 不能迁移的语义 | 请求丢弃（Mooncake early rejection）、约束输出采样空间（SGLang）等语义在 RL 里会改变训练集合，属 C 类风险而非性能优化。 | §13.15 G5、§13.16 G2 表 | 两条 C 类风险的收敛代价**未被量化**（G2） |
+| 2.4 反例侧：serving 概念在 rollout 的失效 | 平均 tokens/s 高 ≠ rollout 快（§2 关键结构）；PD 分离 ≠ trainer/rollout 分离（§6.30 DistServe 行）。 | §2、§6.30 | 概念级失败，无数值证据；标注为"{推断}"并说明来自结构论证 |
+
+### 18.5 第 3 章 Performance Model
+
+| 节 | 一句话论点 | 引用落点 | 缺口与标注 |
+|---|---|---|---|
+| 3.1 两个主口径 | sync 下 `T_rollout ≈ max_i T_trajectory_i`（**批内**取最大），async 下改成"吞吐 × 新鲜度"，两者不可共用同一加速比。 | §3.1 | 【推断】来自结构而非实测 |
+| 3.2 五类气泡 B1–B5 的形式定义 | 每类气泡给比值定义、可测字段、优化杠杆、机制家族、证据状态；**队列空槽气泡与 GPU 空闲气泡不可混用**。 | §3.2 表 | B2 无独占份额、B4 无墙钟量化、B5 只有"最慢 rank 墙钟"代理——三条已在表内标出 |
+| 3.3 G3 三轴：投机在 rollout 下的口径 | 接受率-位置曲线／版本差侵蚀／批内分布三轴必须同时报，均值报法会掩盖衰减。 | §3.3、§14 候选 C/C2/D | 轴 2 在本栈不可构造，维持 N/A；轴 1 也只有 ngram＋0.5B drafter 两个点 |
+| 3.4 整步× 会计恒等式 | `整步× = 1/(1 − Σ_k s_k(1 − 1/G_k) + Σ_m a_m/T)`，是**会计**不是可兑现承诺：超过纯阶段投影的部分只能来自跨阶段重叠。 | §13.21–§13.25、§11.1 条目 3 | 【同栈实测】恒等式残差 0.2–0.8%（候选 A/E）；【同栈实测】候选 E 三杠杆全负——会计上界 ≠ 杠杆 |
+| 3.5 可测字段清单 | 六字段（阶段墙钟分项／气泡口径与分母／批内长度分布／版本差与 staleness／硬件与并发／精度校正开关）缺项即记"不可横比"。 | §3.4 表 | 语料覆盖率极低（批内长度分布**无一篇报**） |
+
+### 18.6 第 4 章 L1 Model Execution
+
+> 层核心问题（§4）：单 token／decode step 怎么更便宜。
+
+| 节 | 一句话论点 | 引用落点 | 缺口与标注 |
+|---|---|---|---|
+| 4.1 层定义与边界 | L1 关心"单次前向的代价"，一旦代价下降来自"少算了一些 token"（稀疏 draft、早停）就已越界到 B/C 类。 | §4、§11.2 条目 8 | 边界判定依赖实际改变的轨迹集合，非技术名称 |
+| 4.2 投机解码：三轴必须同报 | 语料内独立报值最多的机制，也是口径最乱的——必须在轴 1／2／3 同时报。 | §5.3、§6.14、§6.15、§6.16、§6.17、§13.12 | G3；`1/(1−ᾱ)` 只在单请求固定批下成立 |
+| 4.3 低精度：省下的时间记在梯度期望上 | FP8 前向与 BF16 训练之间的差必须显式校正（TIS），校正本身有墙钟代价。 | §6.20、§6.33.6、§11.2 条目 8 | **八条跨层里唯一缺同栈实证的一条**；【论文报值】10–50% 为单阶段前向口径 |
+| 4.4 KV／注意力：容量收益不可拆分相加 | FP8 的 KV 容量收益与 preemption 减少绑定，不能与组合收益相加。 | §6.20 | 【论文报值】8B KV-only 38%、组合 44%，两者不能拆开追因 |
+| 4.5 数值安全的代价面 | 校正机制（CIS）带来的不是加速而是稳态代价——每步 +3.2%。 | §6.33.6、§13.16 G9 | 【论文报值】不含 checkpoint/eval；与族Ⅰ正项不同族，**不可相减** |
+| 4.6 C 类标记 | 稀疏 draft 与近似验证在什么条件下改变采样分布。 | §5.3 SPEC-RL／S³R 行、§13.16 G2 表 | 分布偏移代价无量化（G2） |
+
+### 18.7 第 5 章 L2 Infer Engine
+
+> 层核心问题（§4）：一个 engine 如何高效处理一批路由到该实例的 trajectories。
+
+| 节 | 一句话论点 | 引用落点 | 缺口与标注 |
+|---|---|---|---|
+| 5.1 层定义：引擎是批状态的持有者 | 引擎侧的一切"开不开"（投机、prefix cache、chunked prefill）都是**批状态的函数**，不是配置项。 | §11.2 条目 6、§4 | EfficientRollout 与 ReSpec 两条相反经验规则同源 |
+| 5.2 连续批处理与填充率 | 连续批处理吸收批内长度异质，单卡层面长度信号价值有限。 | §14 候选 D、§3.2 B0 | 【同栈实测】AR 下 MIX/H2048 = 1.000、RX8/H2048 = 0.994 |
+| 5.3 投机开关的判据 | 判据是"验证成本 ÷ 批内可摊薄工作量"的单调性；开启后不关的前提是 active batch 单调收缩。 | §6.17、§6.14、§11.2 条目 6 | 【同栈实测】ngram b8–b64 全净负（spec/AR 0.16–0.37）——批规模本身不是转正条件 |
+| 5.4 prefix／KV 复用 | "前缀只算一次"在三处落地（Rollplex／PrefixFlow／psRL），收益受前缀占比约束、**不能相加**。 | §6.26.5、§6.33.4、§6.33.5、§11.1 条目 4 | 受损方统一为显存与生命周期；文本-only 定量不可外推（§15 Q4 已收口） |
+| 5.5 multi-sample 与同 prompt 多响应 | 同 prompt 的 n 条响应共享前缀，使引擎层的"请求"变成有身份的轨迹束。 | §6.24、§11.2 条目 7 | 【论文报值】部分；与组完整性的交互未量化 |
+| 5.6 sleep/wake 与 colocation 的空间共享 | 引擎生命周期本身是墙钟来源，colocate 布局下与切换裂隙共用同一段墙钟。 | §6.22、§8.2、§3.2 B2 | 语料内无一系统把 B2／B3 拆开报（§15 Q6） |
+| 5.7 C 类标记与负项 | 弱提议器、小批、强 drafter 在本栈均为净负——负项与正项同章并列。 | §13.16 G9 三行（ngram／draft_model／候选 E） | 【同栈实测】单 4090、Qwen2.5-1.5B，**仅方向性**；EAGLE／Medusa 未测 |
+
+### 18.8 第 6 章 L3 Rollout Cluster
+
+> 层核心问题（§4）：一批 trajectory set 怎么整体最快（minimize makespan）。
+
+| 节 | 一句话论点 | 引用落点 | 缺口与标注 |
+|---|---|---|---|
+| 6.1 层定义：调度自由度被"组"吃掉一个量级 | 长度调度的一切收益都建立在"能自由重排／搬迁请求"上，而 GRPO 的组完整性使可动单位从轨迹变成组。 | §11.2 条目 7 | 这是**默认实践而非已被论证的定理**——记 §15 Q5 |
+| 6.2 长尾与 straggler | sync 下 makespan 由最慢轨迹决定，长尾治理的收益上界是 `1 − mean/max`。 | §3.2 B1、§6.10、§6.16 | 论文报值口径混乱（B1 证据状态列） |
+| 6.3 长度预测与分组 | 长度信号越准，越想把长尾拆走——除非整组搬或先用 probe 估计。 | §6.3 Laminar、§6.4 DORA、§6.23.5 Seer | 【论文报值】Laminar repack generation +26%，**非全步**；全流程 2.56× 不是纯 repack |
+| 6.4 整组迁移与版本窗口 | 跨版本迁移能省 re-prefill，但不等于零传输，且受版本窗口限制。 | §6.4、§6.11 APRIL | APRIL 主评估即用混版本续跑，**"without data loss" ≠ 集合不变**（G2 表） |
+| 6.5 缓存亲和路由与在途轨迹 | 路由决策被"缓存命中率"与"训练集合完整性"两目标拉扯；TTL 终止是轨迹丢弃而非 cache eviction。 | §6.30 WAR、§6.33 RhymeRL、§13.15 G5 兼容性正面样本 | 源码级消费待核（G7：WAR TTL） |
+| 6.6 弹性与资源迁移 | 省资源不等更快。 | §6.29 AstraFlow、§13.16 G9 | 【论文报值】AstraFlow 8B 同配置 137→139.6s 反慢；14B 省 47 GPU-hours 但墙钟 23.9→24.4h |
+| 6.7 C 类标记：长度分批的训练语义代价 | 为拿到气泡收益而接受的训练语义改变必须显式写出。 | §6.10 SortedRL、§13.16 G2 表 | SortedRL 自认 B/C 混合；74%→3.37% 是**队列空槽**口径，不可当 SM 空闲率 |
+
+### 18.9 第 7 章 L4 RL Pipeline
+
+> 层核心问题（§4）：rollout 怎么与其他阶段协同（train/reward/env/weight-update）。
+
+| 节 | 一句话论点 | 引用落点 | 缺口与标注 |
+|---|---|---|---|
+| 7.1 层定义与三问 | L4 的每个决策都在回答三件事：哪些阶段可以重叠、轨迹能有多旧、什么样本可以进训练集合。 | §4、§5.1 | — |
+| 7.2 sync／async／colocated／disaggregated 布局 | 布局决定哪类气泡被谁吸收；colocate 把切换裂隙与权重同步压进同一段墙钟。 | §5.1、§6.5 AReaL、§6.6 RolloutPipe、§6.21 B6、§8.2 | HybridFlow 论文时代实现不在公共仓库（§13.12） |
+| 7.3 重叠与阶段占比中介 | 整步× 由主导阶段占比封顶；生成占步比低的负载上，生成侧优化会被占比吃掉。 | §13.21–§13.27、§11.1 条目 3 | 【论文报值】三例重建（MTP-RL 7B/14B、NeMo-Aligner、PrefixFlow 50.6% actor update）；【同栈实测】候选 A/E 残差 0.2% |
+| 7.4 版本与陈旧性 | staleness 是资源不是缺陷，但必须是可测量、有上限的资源。 | §6.2 StaleFlow、§6.4 DORA、§6.7 PACE、§3.2 B3 | StaleFlow η=3 可比／η=10 崩溃为**演示个案**，非普遍保证 |
+| 7.5 权重同步与失配 | 同步窗口内旧权重不可再写、新权重尚未生效。 | §6.22 Long-RL、§6.20、§11.1 条目 2 | PACE staleness 与 B3 是两条轴，不可混算 |
+| 7.6 准入、拒收与样本预算 | 每条准入规则（退避、拒收、足数取消）都在改变训练集合，须按 C 类标注。 | §6.7、§6.28、§6.32、§13.16 G2 表 | 【论文报值】五篇 C 类机制全部只报加速与质量终值，收敛净效应**无人量化**（G2） |
+| 7.7 环境与工具等待（B4 子维，替代 L5） | 环境气泡的三个区分特征（非 GPU 墙钟成本模型、外部有状态正确性语义、独立杠杆集合）成立，但**无一篇量化其墙钟占比**，故作 L4 气泡源④的显式子维而非独立层。 | §3.2 B4、§13.15 G6 结论、§17.5 设定 1 | G6 原备忘未入库（§13.15 更正注记）；判定标准"可量化气泡占比✗"是关键缺项 |
+| 7.8 上下文示例：四耦合面在 L4 侧的表现 | 算力面（条目 1、2）、会计面（3、4）、语义面（5、7）、状态面（6、8）在 L4 侧各有一个主导受损方。 | §11.3 | 与第 8 章为**引用关系**，本章不重复论证 |
+
+### 18.10 第 8 章 Cross-layer Coordination
+
+| 节 | 一句话论点 | 引用落点 | 缺口与标注 |
+|---|---|---|---|
+| 8.0 章主张 | rollout 的跨层优化不是把 L1–L4 的局部最优相加，而是在四个耦合面上各解一次"谁受益、谁受损"的分配问题。 | §11.3 | 本综述的核心论点；证据即八条，**不引入新条目** |
+| 8.1 算力面：L1 机制 ↔ L3/L4 空闲与版本 | 机制本身不变，价值来自"被塞进哪个窗口"与"离 policy 多远"。 | §11.1 条目 1（BubbleSpec）、条目 2（ReSpec／DAS） | 【论文报值】BubbleSpec 45.2/41.1/30.0% 来自"不等空闲" |
+| 8.2 会计面：阶段占比与跨阶段残差 | 整步× 由主导阶段占比封顶，超过纯投影的部分一律来自跨阶段重叠，且不可跨族相加。 | §11.1 条目 3、§11.1 条目 4、§13.21–13.25 | 【同栈实测】候选 A 生成-only 上界 1.18×；候选 E 三杠杆全负 |
+| 8.3 语义面：在途轨迹与组完整性 | serving 的"请求"在 RL 里是有身份的轨迹，缓存淘汰／迁移／长度重排都要付训练集合的账。 | §11.1 条目 5、§11.2 条目 7 | 拆组代价无人量化（§15 Q5），写成**领域空白**而非硬约束 |
+| 8.4 状态面：批状态与数值状态 | 开关判据是批状态的函数；低成本前向的差额记在梯度期望上。 | §11.2 条目 6、条目 8 | 条目 8 缺同栈实证（八条中唯一） |
+| 8.5 反例：会计上界 ≠ 可兑现杠杆 | 本栈对更新侧三个 cap 做单变量扫描，全部为负——3.32× 会计上界不能由放大批上限兑现。 | §13.27、§13.16 G9 候选 E 行 | 【同栈实测】GRPO 15 步、steps 3–14 均值 n=12、单次运行，只扫三个点 |
+
+### 18.11 第 9 章 Evaluation and Comparability
+
+| 节 | 一句话论点 | 引用落点 | 缺口与标注 |
+|---|---|---|---|
+| 9.1 五族可比性框架 | 端到端／rollout／组件·模拟／负项四类报值分族后，**同族才可横向比较**，跨族不可取比值。 | §13.13、§13.16 | 本综述全部加速比引用的前置约束 |
+| 9.2 计时边界约定 | 同名计时块在不同框架里包住的东西不同，引用前须核计时边界。 | §12（veRL／OpenRLHF／NeMo RL／SkyRL 四条源码计时块登记） | 本轮未测量任何耗时；计时块为静态源码核 |
+| 9.3 气泡口径与分母 | B0–B5 不可互换，只报"缩短多少 %"而无分母定义的数字不可横比。 | §3.2、§3.5 边界 2、**§21.2 C2** | §15 Q6：报值侧约定已成文（§21.1/§21.2），本章按 C1 三件套＋C2 事件边界写 |
+| 9.4 async 下的可比性 | sync 的 `max_i T_i` 在 async 下失效，需同时报 staleness 分布。 | §3.5 边界 3、§3.1、**§21.3 C3** | §15 Q7：形式式仍未给，但 η／S 成对报口径与同步化基准已成文（§21.3） |
+| 9.5 同栈锚点与负项库 | 可作数值锚点的只有同栈受控实验；跨篇只作机制方向比较。 | §14 候选 A–E、§13.16 G9 表 | G1：126 篇中**无一篇**提供同栈受控横评；候选 A–E 为单卡自建锚点，规模不可外推 |
+| 9.6 复现状态如实声明 | 本综述的复现计数为 0 的端到端系统复现；候选 A–E 是锚点实验不是论文复现。 | §13.1 验证等级行 | 复现计数口径**仍待用户确认** |
+
+### 18.12 第 10 章 Open Problems and Research Agenda
+
+| 节 | 一句话论点 | 引用落点 | 缺口与标注 |
+|---|---|---|---|
+| 10.1 领域空白 vs 报告空白 | 把九类缺口按"无人做"（G1／G2／G5／G6）与"做了但没报"（G3／G7／G9）分开，两类的研究路径完全不同。 | §13.15 G1–G9 | 划分依据是深读与核对账，不是文献计量 |
+| 10.2 收益兑现路径 | 会计上界给方向，兑现要靠机制；本栈唯一的负项扫描说明"放大批上限"这条路在本栈不通。 | §13.27、§11.3 | 单卡结论，不外推 |
+| 10.3 拆组的代价与收益（Q5） | 组完整性是否是硬约束，取决于拆组回收的气泡与统计代价之比——**无人量化**。 | §15 Q5、§11.2 条目 7 | 明确写成开放问题 |
+| 10.4 计时与气泡口径约定（Q6／Q7） | 跨篇可比性缺的不是数字而是约定；B2／B3 拆分与 async 气泡定义是两个可落地的约定候选。 | §15 Q6、Q7、§3.5、**§21（C1–C3）** | 约定已成文；**本综述仍不宣布解决原问题**——async 气泡形式式与 §3.2 表内拆分仍开放 |
+| 10.5 数值一致性的同栈实证 | 八条跨层里唯一没有本栈锚点的一条，是最直接的可执行实验。 | §11.2 条目 8、§14 | 需 FP8 训练栈，当前硬件条件未评估 |
+| 10.6 待源码裁决项（G7） | 十五条源码级待核事项，其中十三条仍无公开源码。 | §13.17、§13.19 | 不作为结论使用，只作可信度标注 |
+
+### 18.13 兜底格（不硬塞 L1–L4 的工作）
+
+按 §17.5 弹性窗口 ①：归不进 L1–L4 任一格的工作先入此格，不硬塞；同时按弹性窗口 ② 在 §15 登记待修订。**当前登记**：
+
+| 工作 | 为什么归不进 | 处理 |
+|---|---|---|
+| 训练侧共享与概率修正（PrefixFlow／psRL／CIS） | 优化对象在 trainer 侧而非 rollout 侧，但收益记在整步上 | 已按"L4 训练侧边界"列入 §5.1 与第 7 章 7.3；保留在此格以备 S5 复核是否升为正式子维 |
+| 多模态输入执行（视觉编码、视频 prefix） | 改变的是输入侧成本模型，与 L1–L4 的划分轴不同 | 已在第 5 章 5.4 引用；`§10 Workload-specific Findings` 仍为空，S4 决定是否单列 |
+
+**冻结结论（§17.5 设定 1）**：本章定稿即冻结 taxonomy 主结构——**L1–L4 四层＋A/B/C 三类型＋本兜底格，不建 L5**。冻结后仅允许调整层级内部划分，不改层数与类型定义；任何新增层级的提案须先在本格登记并通过 §15 修订流程。
+
+### 18.14 每节 B 轨可汇报交付物
+
+按 §17.5 设定 3，每节需能在不读全文的情况下独立服务一次 10–15 分钟汇报。本章给出各节可汇报的锚点（S4 补齐"每节引用清单与口径标注"，S3 只定"讲什么"）：
+
+| 章 | 可独立讲的最小材料 | 建议时长 |
+|---|---|---|
+| 3 性能模型 | §3.2 气泡表 + 一条整步× 恒等式重建实例（候选 E 0.2%） | 10 min |
+| 4–7 层章 | 该层"核心问题一句话 + 一个正项锚点 + 一个同族负项" | 每层 8 min |
+| 8 跨层章 | §11.3 四耦合面表 + 章节主张一句话 | 12 min |
+| 9 评估章 | 五族框架 + "队列空槽 ≠ GPU 空闲"一个反例 | 10 min |
+| 10 开放问题 | 九类缺口按"无人做／没报"二分 | 8 min |
+
+### 18.15 S3 执行记录与残留
+
+- **本批产出**：§18 全章（18.1 结构原则、18.2 章节树、18.3–18.12 十章逐节表、18.13 兜底格与冻结结论、18.14 B 轨交付物、18.15 记录）。
+- **冻结生效**：taxonomy 主结构按 18.13 冻结（§17.5 设定 1 的③要求此批完成）。
+- **依赖声明（已解除，2026-11-01 M1 合并）**：本批原假设 S1／S2 成果已在主文档。合并时已把 S1／S2 的 §11 八条跨层条目、§3.1–3.5 性能模型、§15 Q5–Q7 一并并入同一文件（以 S2 内容为准，不保留 S2 之外的变体），第 3、8 两章的引用落点经核对**全部落地**：§3.1–3.5 在、§11.1–11.3 在、§15 Q5／Q7 在（Q8 为本批新增）。
+- **残留非阻塞**：G7 十三条待源码；AcceRL 待作者澄清；G3 轴 2 本栈不可得维持 N/A；EAGLE／Medusa 变体未测；复现计数口径待用户确认。
+- **边界**：本批未打开新论文、未新增文献身份、未新计深读、未跑实验、未触上游仓库。所有数字均转引自主文档既有 §6.x／§13.x／§14 账，标注沿用其证据等级。
+
+
+## 19. Citation Ledger & Reporting Spec（P3 下半＋P5，2026-11-01 S4／M1）
+
+**状态**：本章是 §17.2 的 **P3 下半**（每节引用清单）与 **P5**（写作规范与诚信约束）的成文产物。§18 解决了"每节讲什么"，本章解决"每节引谁、数字怎么标、负项放哪"。**本章不含正文段落**，只给清单与规则；规则一经本章确定即对后续章节正文生效。
+
+**与 §18 的分工**：§18 的"引用落点"列写的是**内部账目**（§6.x 深读节、§13.x 核对批次、§14 实验账）；本章的"外部文献"列写的是**一手来源**（arXiv 固定版本／会议记录）与它在 §5 矩阵里的位置。两列都要在正文里出现：内部账目保证可追溯，外部文献保证可引用。
+
+### 19.1 口径标注规范（P5 主表）
+
+任何进入正文的量化陈述，必须同时给全下面五列。缺任何一列的，视为不合规，不得进正文——**这条比"数字对不对"更优先**：一个口径齐全的近似值，比一个口径缺失的精确值更可引用。
+
+| 列 | 必填内容 | 反例（不可接受） | 合格写法（示例） |
+|---|---|---|---|
+| **① 数字** | 数值本身，带单位 | "大幅加速" | 45.2% |
+| **② 口径限定** | 该数字是什么的比值、分母是谁、时间窗多大 | "rollout 加速 45.2%" | 墙钟 rollout 时长缩短 45.2%，分母为同配置未注入基线的整段 rollout 墙钟 |
+| **③ 证据等级** | 【论文报值】／【推断】／【同栈实测】／【模拟】 四选一 | 不标 | 【论文报值】 |
+| **④ 出处** | 论文名＋固定版本号（或 §6.xx 深读节＋§13.x 核对批次） | "某论文提到" | BubbleSpec 2605.08862v1（§6.17／§5.3） |
+| **⑤ 负载与规模** | 模型规模、响应上限、卡数、批设置 | "在集群上" | Qwen2.5-7B／16K 响应上限／H800 128 卡 |
+
+**四级证据的定义与使用边界**（沿用 §11 开头的三级并补入"模拟"）：
+
+| 等级 | 定义 | 能拿来做什么 | 不能拿来做什么 |
+|---|---|---|---|
+| **【论文报值】** | 作者在原文中直接给出的数字 | 作为机制存在性的证据；同族内做方向比较 | 与其他硬件／栈的报值相除 |
+| **【推断】** | 用已报字段做的代数换算（如用阶段占比反解所需阶段加速） | 指出"这个报值需要多大机制加速才成立" | 当作实测；当作作者主张 |
+| **【同栈实测】** | 候选 A–E：verl `24f25b03`＋Qwen2.5-1.5B＋单 4090 | 方向性判断；恒等式校准 | 外推到多卡、长响应、大模型负载 |
+| **【模拟】** | 作者用模拟器／外推得到的结果 | 描述作者的方法设计 | 与实测并列在同一张加速比表里 |
+
+**三个逐字使用规则**：
+
+1. **不跨族取比值**（§13.13 结论六）：族Ⅰa 同资源整步／族Ⅰb 含资源变化／族Ⅰc 收敛速度／族Ⅱ 组件／族Ⅴ 负项，五族之间任何两族的 × 都不能相除或相加。
+2. **负项与正项同族并列**：凡引用一个正项加速比，同一段落内必须出现同族负项或口径限定；不得把负项移进附录（§18.1 原则 4）。
+3. **"无一篇"类断言须附检索范围**：写"语料内无一篇量化 X"时，必须同时给出语料边界（126 身份／检索截至日期／按什么口径判定"量化"）。这是可证伪句，不是修辞。
+
+### 19.2 每章引用清单（P3 下半）
+
+**读法**：每章三列——**内部账目**（写作时唯一的数字来源）、**一手文献**（正文 footnotes／参考文献表里出现的条目，格式为 固定版本号＋§5 矩阵位置）、**该章必标的限定**（写这一章时最容易漏掉的口径）。文献一律用 §5 矩阵里已核的固定版本号，不在正文里引入矩阵之外的 ID。
+
+| 章 | 内部账目（数字来源） | 一手文献（§5 矩阵位置） | 必标限定 |
+|---|---|---|---|
+| **1 Introduction** | §1、§2 五维表、§3.1 | 不引具体论文；只引 AReaL 2505.24298v5（§5.1）与 HybridFlow／veRL 2409.19256v2（§5.1）各一次作"RL 系统"的存在性锚点 | 研究问题表述 provenance 未定（§17.5 设定 2）；不得出现"首次／首个"（§18.3 1.4） |
+| **2 From Serving to Rollout** | §13.15 G5 四要素、§9、§6.30 | Orca（OSDI'22，§5.5）、SGLang／RadixAttention 2312.07104v2（§5.5）、Sarathi-Serve 2403.02310v3（§5.5）、DistServe（§6.30 行）、Mooncake early rejection（§13.15 G5 语义侧） | 语料内**没有一条** serving 优化被证明 objective 完全不变——这是结论不是修辞，须给检索范围（126 身份、截至 2026-11-01） |
+| **3 Performance Model** | §3.1–3.5、§13.21–§13.25、§14 候选 A／E | SortedRL 2603.23414v1（§5.2，队列空槽口径）、PACE 2609.36830v1（§5.1，staleness 轴）、BubbleSpec 2605.08862v1（§5.3，最慢 rank 墙钟代理） | B0–B5 不同量纲不可相加；"队列空槽 ≠ GPU 空闲"必须点名 SortedRL 74%→3.37% 是队列口径 |
+| **4 L1 Model Execution** | §5.3、§6.14–6.20、§13.12、§13.16 G9 | ReSpec 2510.26475v1（§5.3）、BubbleSpec 2605.08862v1（§5.3）、SRT 2601.09083v1（§5.3）、DAS 2511.13841v1（§5.3）、FP8-RL 2601.18150v2（§5.1）、CIS 2609.32444v1（§5.1）、MTP-RL（ACL Findings'26，§5.3）、EAGLE-3（作为 drafter 基线，§5.3 相关行） | 投机三轴必须同报（§3.3）；`1/(1−ᾱ)` 只在单请求固定批成立；FP8 的 10–50% 为单阶段前向口径，**不得与整步 × 并列** |
+| **5 L2 Infer Engine** | §6.17、§6.24、§6.26.5、§6.33、§11.2 条目 6、§13.16 G9、§14 候选 C／C2／D | EfficientRollout 2606.18967v2（§5.3）、ReSpec 2510.26475v1（§5.3）、NgramRL 2610.32881v1（§5.3）、Infinite Sampling 2506.22950v1（§5.1 邻接／§6.24）、PUZZLE（ATC'24，§5.1）、PrefixFlow 2606.01143v4（§5.1） | 同栈 ngram／draft_model 全负，**批规模不是转正条件**；单 4090 结论只作方向性 |
+| **6 L3 Rollout Cluster** | §6.1–6.10、§13.18、§13.16 G2／G9、§14 候选 D | RollPacker 2509.21009v1（§5.2）、SortedRL 2603.23414v1（§5.2）、Laminar 2510.12633v1（§5.1）、DORA 2604.26256v2（§5.1）、Seer 2511.14617v3（§5.2）、APRIL 2509.18521v3（§5.2）、WAR 2607.17299v1（§5.2）、ECHO-2 2602.02192v6（§5.1）、AstraFlow（§5.4） | Laminar +26% 是 **generation 阶段**、非全步；全流程 2.56× 不是纯 repack；AstraFlow 省资源反慢（137→139.6s）必须与弹性正项同段出现 |
+| **7 L4 RL Pipeline** | §6.2–6.8、§13.21–13.27、§13.16 G2、§14 候选 A／E | AReaL 2505.24298v5（§5.1）、StreamRL 2504.15930v1（§5.1）、RolloutPipe 2606.26997v2（§5.1）、DORA 2604.26256v2（§5.1）、StaleFlow 2601.12784v2（§5.1）、PACE 2609.36830v1（§5.1）、PipelineRL 2509.19128v2（§5.1）、LlamaRL 2505.24034v2（§5.1）、psRL 2608.25683v1（§5.1）、CONCUR 2601.22705v1（§5.5）、ObsSpec 2610.15246v1（§5.4） | StaleFlow η=3 可比／η=10 崩溃是**演示个案**非普遍保证；PACE 的 staleness 与 B3 是两条轴；C 类机制（§13.16 G2 五篇）全部只报终值 |
+| **8 Cross-layer Coordination** | §11.1–11.3（唯一来源） | 八条条目各自的机制文献：BubbleSpec 2605.08862v1、ReSpec 2510.26475v1、DAS 2511.13841v1、SRT 2601.09083v1、RollPacker 2509.21009v1、psRL 2608.25683v1、PrefixFlow 2606.01143v4、Rollplex（§6.26.5）、WAR 2607.17299v1、RhymeRL 2508.18588v1、CONCUR 2601.22705v1、Laminar 2510.12633v1、SortedRL 2603.23414v1、DORA 2604.26256v2、Seer 2511.14617v3、FP8-RL 2601.18150v2、CIS 2609.32444v1 | 本章**不引入新条目**（§18.10 8.0）；条目 8 缺同栈实证须在正文里写出；跨层收益不按层相加 |
+| **9 Evaluation and Comparability** | §12 四条计时块登记、§13.13 五族、§13.16 两表、§13.1 验证等级行 | **不引性能论文**，只引框架源码固定 commit（veRL `24f25b03`／OpenRLHF `dc2a7ad3`／NeMo RL `a9d1a4be`／SkyRL `e0893f6e`，§8）作计时边界证据 | 计时块是**静态源码核**不是测量；复现计数 0（候选 A–E 是锚点实验）；语料覆盖率极低须给具体缺项 |
+| **10 Open Problems** | §13.15 G1–G9、§15 Q1–Q8 | 按缺口归属分散引用，本章不新增文献；Q5–Q8 引 §11.2 条目 7 与 §3.5 边界 | "无人做"与"做了没报"必须分开（§18.12 10.1）；待源码项（G7 十三条）不得当结论——分三级表述：12 项"截至 2026-11-01 未检索到公开实现"（可答的不确定）、1 项已定位（Agent Lightning）、2 项部分可得（AcceRL minimal／FP8-RL 作者 fork）；见 §13.17 第四批复核 |
+
+**兜底格与 C 类的引用纪律**：§18.13 兜底格两条（训练侧共享与概率修正、多模态输入执行）在正文里按各自章引用，但**必须在首次出现处标"兜底格"**，提示读者它们不属 L1–L4 的划分轴。C 类机制在每层章末的"标记"小节引用时，一律带 §13.16 G2 表的"缺失项"列——只报加速不报收敛代价是当前语料的常态，不是个别论文的疏漏。
+
+### 19.3 负项索引接入（§13.16 G9 → 各章）
+
+§18.1 原则 4 要求"负项不进附录"，这意味着负项不能集中在一处，必须**挂到引用正项的同一章节**。下表把 §13.16 G9 表的每一条负项指派到它的主语章，正文写作时按此就近引用；本表只做指派，不复述数字。
+
+| G9 负项（§13.16 表行） | 归属章 | 与哪个正项同段出现 |
+|---|---|---|
+| RLinf 空间拆分 −44.3～−68.6% | 5（L2 引擎）／6（L3 集群） | RLinf 时分正项 1.10–1.58×（族Ⅰa） |
+| AstraFlow 8B 137→139.6s 反慢、14B 省 GPU-hours 但墙钟 +0.5h | 6（L3 集群） | 弹性／资源迁移正项（ECHO-2、PivotRL） |
+| CIS 每步 +3.2% 稳态代价 | 4（L1 模型执行） | 数值校正正项（FP8-RL 的省时） |
+| InfoTree time-to-target 1.57× 但每步 −14.3% | 7（L4 流水）／10（开放问题） | 收敛加速类正项（族Ⅰc） |
+| DART 正文 12.71 与原始 14.61pp 不符 | 7（L4 流水）＋9（评估章，作为"数字须回原表"的实例） | 动态频率／成功池回放正项 |
+| Agent Lightning 仅改 rollout-adv 33.1 < 基线 35.0 | 7（L4 流水） | 该文完整变体 38.2% 的宣称 |
+| QwenGyre 192 节点型号未列 | 6（L3）＋9（评估章，规模口径实例） | QwenGyre 1.78×／1.21×（族Ⅰb） |
+| ngram-spec 同栈净负（spec/AR 0.16–0.37，JIT 修正后 in512 b8 0.368） | 4／5／8.5（跨层反例） | 投机解码全部正项 |
+| draft_model 0.5B 强提议器仍净负（E[L]=4.12 不足摊薄） | 4／5 | EAGLE-3 等 drafter 正项 |
+| 候选 E 更新侧三杠杆全负（0.8494／0.9586／0.9895×） | 7／8.5 | 更新侧会计上界 3.32× |
+| 候选 D 单卡批内异质被吸收（MIX/H2048=1.000） | 6 | 长度调度正项（SortedRL／Laminar） |
+| 候选 C 单次 A(p) 方差 ±0.03–0.06、seed 非 bit 确定 | 9（评估章） | 同栈实测类全部数字 |
+
+**一条硬规则**：第 8 章（跨层章）与第 4–7 章（层章）里，凡是标了 `×` 的正项，其所在节的末尾必须出现上表里指给该章的负项中的至少一条。做不到就必须在正文里明写"本层语料内未见同族负项"——**空口无负项是不允许的**，因为语料里确实有。
+
+### 19.4 写作前 checklist（P5 交付形态）
+
+每次开始写一节正文之前，逐条过一遍：
+
+1. 这一节的句子是否能在 §18 的对应行找到"一句话论点"？找不到就说明结构没定，先回 §18。
+2. 本节要用的每个数字，是否都能在两列里找到落点（内部账目 §N.x + 一手文献 §5.x）？找不到 → 不写。
+3. 每个数字是否配齐 §19.1 的五列？缺列 → 改写成定性陈述或删掉。
+4. 本节引用了几条正项？对应的同族负项是否至少出现一条（§19.3）？
+5. 有无"首次／首个／普遍／必然"这类不可证伪的词？有则改成"在本文语料范围内"。
+6. 有无跨族相除／相加？有则拆开。
+7. 本节能否在 10–15 分钟内独立讲完（§17.5 设定 3 的 B 轨要求）？不能则说明本节的论点还不够收敛。
+
+### 19.5 S4 执行记录与残留
+
+- **本批产出**：§19 全章——19.1 口径标注规范（五列＋四级证据定义＋三条逐字使用规则）、19.2 十章引用清单（内部账目／一手文献／必标限定三列）、19.3 负项索引接入（§13.16 G9 十条逐条指派到主语章并绑定同段正项）、19.4 写作前 checklist。
+- **P3 状态**：P3 的两半至此齐备——§18 定结构，§19 定引用与标注。**P5 同步完成**（19.1＋19.4 即 checklist 本体）。
+- **做法说明**：19.2 的"一手文献"列只从 §5 矩阵已核的条目里取，未引入任何矩阵外的 ID；条目名与矩阵行名保持一致的叫法（如"HybridFlow / veRL"按矩阵行名引用）。**未逐篇回读原文**——本批只做指派与格式规范，正文写作时才需要按该行回读对应深读节。
+- **残留**：19.2 第 4 章的 EAGLE-3 与第 2 章的 DistServe／Mooncake 具体版本号需在正文阶段从 §6.30 与 §5.5 行内确认后落到参考文献表；兜底格两条是否升为正式子维仍挂 §15 Q8（S5 回答）。
+- **边界**：本批未打开新论文、未新增文献身份（126 身份、20 T1＋84 T2＋21 T3＋1 未标不变）、未新计深读、未跑实验、未触上游仓库。全部内容来自 §5 矩阵行名、§6 深读节、§13.13／§13.16／§13.21–§13.27 既有账与本节新定的格式规则。
+
+
+## 20. Taxonomy Freeze Review & Publishability（P4 复核＋P6，2026-11-01 S5／M1）
+
+**状态**：本章是 §17.2 中 **P4**（taxonomy 冻结决定）的**复核落笔**与 **P6**（可发表性评估）的成文。P4 的主体决定已在 §17.5 设定 1 由用户拍板、并由 §18.13 在 S3 落笔冻结，故 P4 剩下的是"复核一致性与回答 §15 Q8"；P6 是本章的新工作。
+
+**本章不做什么**：不引入新文献、不新增深读计数、不宣称"首次／首个"、不启动任何大规模复现。P6 结论里的"必补工作"全部指向既有 §14 候选与 G1／G2 的既有账目，不新开实验。
+
+### 20.1 P4 复核：taxonomy 冻结后的一致性核对
+
+**核对方法**：把 §18.13 的冻结结论（L1–L4 四层＋A/B/C 三类型＋兜底格，不建 L5）当作一个"不变量"，逐处检查全仓是否还有与之矛盾或模糊的表述。检查面＝§4 taxonomy 正文、§5 矩阵的层列表、§13.15 G6、§17.5 设定 1、§18 各章层名、§19.2 引用清单。
+
+| 检查点 | 检查结果 | 处置 |
+|---|---|---|
+| 层数与层名 | §4 表、§5 矩阵"层"列、§18 各层章标题三处层名一致（L1 Model Execution／L2 Infer Engine／L3 Rollout Cluster／L4 RL Pipeline），未出现 L5 或"环境层"命名 | 冻结生效，无需改动 |
+| 行序 | canonical 表维持 L1→L4 定义序、对外大纲页 L4→L1 展示序（§4 行序约定，M5 2026-10-30 定夺） | **保持现状**：两处行序不同是展示方向差异，不是 taxonomy 分歧；冻结不改变行序约定 |
+| A/B/C 类型判定规则 | §4 的判定规则是"按实际改变的轨迹集合"而非技术名称；§18 各章 C 类标记小节与 §13.16 G2 表的五篇一致 | 一致，无新增反例（§4"反例登记：当前无"维持） |
+| 兜底格两条的处理归属 | §18.13 两条都指了明确去处（训练侧共享→第 7 章 7.3；多模态→第 5 章 5.4），但都留了"S4／S5 决定是否单列"的活口 | **本批关闭该活口**，结论见 20.2 |
+| §17.5 弹性窗口 ③ 的满足 | 冻结时点＝S3 大纲骨架定稿，S3 已在 2026-11-01 完成 | 满足；此后只允许层内划分调整，不改层数与类型 |
+| §19.2 引用清单与冻结的一致性 | 第 4–7 章对应 L1–L4、第 8 章跨层、兜底格两条分别落在第 5／7 章引用 | 一致；§19.2 的"必须标兜底格"要求即冻结结论在写作层的执行条款 |
+
+**复核结论**：taxonomy 冻结在 S3 落笔后**无冲突、无残留模糊点**，唯一悬置项是兜底格两条的升格问题，本批给出判定。
+
+### 20.2 §15 Q8 答复：兜底格两条不升为正式子维
+
+§15 Q8 的判定标准是"**是否有独立的可测气泡口径**"，不是文献数量。逐条判：
+
+| 兜底格工作 | 是否有独立的可测气泡口径 | 与哪一层的口径重叠 | 判定 |
+|---|---|---|---|
+| **训练侧共享与概率修正**（PrefixFlow／psRL／CIS） | **否**。它的成本记在整步墙钟里，按 §3.2 的划分即 B2（切换裂隙）与"更新阶段墙钟"两项之和，没有第五种气泡形态；它的收益按 §3.4 的第一个字段（阶段墙钟分项 s_update）就能完全表达 | 与 L4 的 B2／B3 同口径；§11.2 条目 8 已把它作为"L1 数值一致性×L4 训练目标"的跨层条目处理 | **保持兜底格＋归 L4 训练侧边界**，不升格 |
+| **多模态输入执行**（视觉编码、视频 prefix） | **否**。视觉编码与视频 prefix 的成本在引擎侧仍表现为 prefill 工作量与 KV 占用，即 B0（机器气泡）与 B1（长尾）的输入；改变的只是**成本模型的前置项权重**，不是气泡的分类 | 与 L1（单次前向代价）与 L2（批状态）同口径 | **保持兜底格＋归 L1／L2 跨层引用**，不升格；同时确认 `§10 Workload-specific Findings` **暂不单列**，待多模态语料达到可写一节的最小量（当前 §5.22 为补库级，非深读簇）再议 |
+
+**因此 Q8 的答复是：两条都不升，冻结结论不变。**判据写明在案，将来若要翻案，需要拿出"存在一种既非 B0–B5 的第六类气泡、又有独立可测字段"的反例，而不是"文献变多了"。
+
+**顺手确认 Q3 的去向**：§15 Q3（是否建第五层 environment/sandbox）在 G6 论证里已收口为"不建 L5、作 L4 气泡源④的显式子维"，与本次冻结一致，且已在 §18.9 的 7.7 节单列论证——三个关于层数的开放问题（Q3／Q8＋§17.5 设定 1）至此**相互一致地全部收口**。
+
+### 20.2.1 冻结后仍开放的三处层内问题（不动层数）
+
+冻结只锁层数与类型，层内划分仍可调。当前明确登记、但**不影响冻结结论**的三处：
+
+1. **B2／B3 是否拆分**（§15 Q6）：colocate 布局下切换裂隙与权重同步共用一段墙钟。若将来拆分，属 §3.2 的表内划分调整，不改层。
+2. **async 下 B1 的形式定义**（§15 Q7）：sync 的 `max_i T_i` 在 async 下失效，需要新的空气泡定义。属 §3.1–3.2 的层内定义，不改层。
+3. **第 9 章计时边界约定**（§15 Q6 的执行侧）：只影响评估章写法，不涉 taxonomy。
+
+### 20.3 P6 可发表性评估（按方案 A：系统向 survey）
+
+**立场**：本评估按 §17.5 设定 3 的"最终目标＝方案 A 系统向 survey"标准，即"能否作为一篇完整、可引用的 arXiv 预印本发表"，而不是"能否作为团队汇报"。评估给出三点：新意锚在哪、投稿前必须补什么、以及哪些主张现在还不能写。
+
+#### 20.3.1 新意锚（三条，均可指向正文既有内容）
+
+| 新意 | 一句话 | 证据位置 | 强度判断 |
+|---|---|---|---|
+| **① rollout ≠ serving 的形式化** | 不是把 serving 的九条差异列成清单，而是给出"迁移判据四要素"（版本约束／陈旧性／组完整性／随机独立性），并给出语料层面的结论：**没有一条 serving 优化被证明在 rollout 下 objective 完全不变** | §13.15 G5、§9、§18.4 | **强**——这是一个可证伪的否定性结论，且证据面覆盖 §6.30 的二十条 serving 机制核对表 |
+| **② 阶段占比中介定律** | 整步加速由"主导阶段占步比×该阶段加速×"共同中介，形式为 `整步× = 1/(1 − Σ_k s_k(1−1/G_k) + Σ_m a_m/T)`；它在生成主导与更新主导两侧**同构**，且报值超纯阶段投影的部分只能来自跨阶段残差 | §3.3、§11.1 条目 3、§13.21–§13.27 | **强**——既有跨族重建（MTP-RL 7B/14B 精确、NeMo-Aligner +0.34%），又有同栈验证（候选 A/E 残差 0.2–0.8%），且给出反例（候选 E 三杠杆全负） |
+| **③ 八条跨层耦合＋四耦合面** | 把散在各篇里的跨层现象重组为算力／会计／语义／状态四个面，每个面指出"谁受益、谁受损" | §11.1–11.3、§18.10 | **中强**——结构上是本文最具辨识度的部分，但八条里七条是既有工作对读、一条（条目 8）缺同栈实证 |
+
+**不以之作为新意的三条**（避免被审稿人一击）：taxonomy 本身（serving／RL 系统领域已有多种分层，本文的四层是组织工具不是发现）；五类气泡（气泡概念在分布式系统里是老概念，本文的新意在"形式化＋被 RL 语义改写后的失效项"）；126 篇的覆盖数量（数量不是贡献）。
+
+#### 20.3.2 投稿前必须补的工作（按"卡不卡得住"排序）
+
+| 优先级 | 必补项 | 为什么必须 | 现有基础 | 规模估计 |
+|---|---|---|---|---|
+| **P-1** | **G1 同栈横评锚点**：在固定任务／长度／硬件下横评 2–3 个代表性系统（或至少同一系统的 2–3 种配置） | 第二、三条新意都依赖"数字可换算"；当前所有跨篇数字只能作方向比较，这是审稿人第一个会打的点 | 候选 A–E 已有单卡锚点；缺的是"同一负载下换系统" | 中（需多卡窗口＋至少两个系统可跑） |
+| **P-2** | **条目 8 的同栈实证**（FP8／低精度前向 × 训练目标的代价） | 八条跨层里唯一没有同栈锚点的一条，且它是"省下的时间记在梯度期望上"这个论断的全部支撑 | 需 FP8 训练栈；当前硬件条件未评估 | 大（硬件门槛） |
+| **P-3** | **G2 一个 C 类机制的净效应实证**（同 seed、C 开关 on/off 的收敛曲线＋墙钟净账） | "C 类全部只报终值"是本文的一个负面断言，若能自己补一个正面示范，说服力会从"批评"变成"示范" | 语料五篇的机制都可复现（优先选无需特殊硬件的） | 中 |
+| **P-4** | **G7 十三条待源码项的收窄** | 当前 §18 多处写"待源码"，审稿人会问"为什么不确定" | 已有检索证据（§13.17／§13.19） | 小（时间问题，非算力）——**已于 2026-11-01 完成（第四批复核，§13.17）：收窄为 12 项确定无公开源码＋1 项改判已定位＋2 项部分可得；Agent Lightning 原"无公开实现"记录经复核不成立并更正** |
+| **P-5** | **Q6／Q7 两个约定给出可执行版本** | 评估章若只提问题不给约定，第九章的"怎么才算可比"会显得空 | §3.5 已有明确边界表述 | 小（写作工作）——**已于 2026-11-01 完成（§21，C1–C3）** |
+
+#### 20.3.3 现在还不能写进正文的主张
+
+四条，写明是为了防止后续写作时顺手写进去：
+
+1. **不得写"首个 rollout 性能综述"**——语料内未见对等综述不等于不存在（§18.3 1.4 已定此规）。
+2. **不得写"某机制普遍有效／必然更快"**——本栈的 ngram／drafter／更新侧三杠杆全部为负，正负并存是常态。
+3. **不得把候选 A–E 写成"复现"**——它们是锚点实验，复现计数为 0（§3.4、§13.1）。
+4. **不得把 §13.15 G3 的"统一模型待建"写成"本文提出统一模型"**——§3.2–3.3 给的是形式化框架与三轴口径，不是被拟合验证的预测模型；"待建"的部分（接受率×陈旧性×长尾的联合模型）仍是开放问题。
+
+#### 20.3.4 可发表性总判断
+
+**可以按系统向 survey 发表，但当前版本是"骨架完备、实证不足"的状态。**具体说：结构（十章）、规范（§19 五列）、论点（三条新意锚）都已就位，三条新意里前两条证据链完整、第三条偏结构性；真正的短板全在"数字不可换算"这一类——它同时削弱第一、二条新意的可验证性。因此**P-1（同栈横评）是发表的决定性前置**，其余四项是"补强"。在 P-1 完成之前，本文适合按 §17.5 设定 3 的 B 轨（团队可汇报规格）发布每一节，不适合投出。
+
+### 20.4 S5 执行记录与残留
+
+- **本批产出**：§20 全章——20.1 P4 冻结一致性复核（六个检查点，结论无冲突）、20.2 §15 Q8 答复（兜底格两条均不升格，判据写明"是否存在第六类可测气泡"）、20.2.1 冻结后仍开放的三处层内问题、20.3 P6 可发表性评估（三条新意锚＋五条必补项＋四条禁写主张＋总判断）。
+- **P4 状态**：用户已拍板（不建 L5）＋S3 落笔冻结＋本批复核一致＋Q8 答复完成 → **P4 完成**。
+- **P6 状态**：评估已出，结论为"结构完备、实证不足，P-1 为发表决定性前置" → **P6 完成**。
+- **残留**：P-1–P-4 四项必补工作指向 G1／G2／G7 与硬件条件，其中 P-2 需 FP8 训练栈、当前硬件未评估，登记为等待条件；P-1 需多卡窗口（按分工属 M5 侧算力事项，本批不启动）。**P-5 已于同日完成后补（§21）**：Q6／Q7 的报值侧约定已成文，剩余为理论式与表结构问题。**P-4 已于同日完成后补（§13.17 第四批复核）**：G7 由"十三条无差别待核"收窄为"12 项确定无公开源码＋1 项改判已定位＋2 项部分可得"，并更正 Agent Lightning"无公开实现"的旧记录（`microsoft/agent-lightning` 的 `agentlightning/verl/rollout_level_advantage.py` 自 v1.0.0 起公开，实现与论文式16 口径一致）。前批所述"P-1／P-2／P-3／P-4 未做"以本条为准，现仅剩 P-1／P-2／P-3 未做。
+- **边界**：本批未打开新论文、未新增文献身份（126 身份、20 T1＋84 T2＋21 T3＋1 未标不变）、未新计深读、未跑实验、未触上游仓库。20.3 的三条新意锚与证据位置均指向本次合并后的同一文件内既有章节。
+
+
+## 21. 可比性约定：Q6 计时边界与 Q7 async 气泡（P-5，2026-11-01 M1）
+
+**动机**：§20.3.2 列 P-5 为"Q6／Q7 两个约定给出可执行版本"，理由是"评估章若只提问题不给约定，第九章的'怎么才算可比'会显得空"。本章把 §15 Q6、Q7 从"待修订"推进为**可被引用的约定**（convention），不是研究结论、也不宣布解决原问题。等级标注：为便于写作引用，本章的三条约定记作 **C1–C3**（convention，区别于 P1–P6 产出物与 C 类机制）。
+
+**总原则**：约定只能规定"怎么报"，不能规定"什么值才对"。任何一条约定都不改变 §13.13 五族的可比性边界，也不新增跨族换算能力。凡按约定补齐的报值，仍受 §19.1 五列（数字／口径限定／证据等级／出处／负载与规模）约束。
+
+### 21.1 C1｜计时边界约定（答 §15 Q6 执行侧）
+
+**问题回顾**：§12 已登记四个框架的计时块源码（veRL `24f25b03`、OpenRLHF `dc2a7ad3`、NeMo RL `a9d1a4be`、SkyRL `e0893f6e`），结论是"同名计时块在不同框架里包住的东西不同"。§18.11 的 9.2 只写了"引用前须核边界"，9.3 写"细则留 S4"——S4 已交付但细则未落，本节约即补这一缺口。
+
+**C1 正文**：任何引用他人报值的墙钟数字，必须同时给出三件套，缺一即记为"不可横比"：
+
+| 项 | 要求 | 为什么不能省 |
+|---|---|---|
+| **① 块名与所属框架＋固定 commit** | 写清是哪个计时块（如 veRL `ray_trainer.py` gen 块），并给 commit hash | §12 已证同名不同义：veRL V1 `trainer_base.py:543` 的 gen 块包住 hooks＋replay_buffer.sample，fully-async `fully_async_trainer.py:643` 的 gen 块包住取批＋反序列化——两者不可同名横比 |
+| **② 块内是否含策略等待** | 明确该块是否包含队列取批／饥饿轮询／准入等待。含则不称"生成计算时间" | NeMo RL `single_controller.py:3010` 的 exposed_generation 包住 evict、选组、饥饿轮询；SkyRL `wait_for_generation_buffer:843` 覆盖取组＋等待，而 `group_completion_time` 不含容量等待 |
+| **③ 分项与总量是否重叠** | 若报分项之和，须声明各分项是否互斥（async 下生成与训练重叠，分项不可相加） | OpenRLHF 的 timing/generation 与训练可并行；SkyRL 明确"生成与训练重叠，分项不简单相加" |
+
+**C1 的推论（可直接用于正文写法）**：
+1. 报"整步墙钟"而未说明是否含 sleep/wake 与 profile 调用者，按 §3.2 B2 处理，不得当作纯计算时间；veRL fit 的 gen 块包住 generate_sequences＋sleep_replicas＋条件性 profile。
+2. 报"权重同步时间"而未说明块终点是"调用返回"还是"权重生效"，按 §3.2 B3 的定义核：veRL `ray_trainer.py:1715` 包住整个 manager 同步流程（不等于链路传输），SkyRL `skyrl_train/workers/worker_dispatch.py:809` 的 `sync_weights_only_transfer` 包住 broadcast＋finish（仍不等于链路字节耗时）。
+3. 空计时块不算测量：NeMo RL `single_controller.py:3748` 的 weight_sync 在 colocated 且 save 延后 refit 时可进入空块，报 0 不代表同步免费。
+
+### 21.2 C2｜B2／B3 拆分约定（答 §15 Q6 主体）
+
+**问题回顾**：§3.5 边界 1 记"colocate 布局下 train/rollout 切换裂隙（B2）与权重同步（B3）共用同一段墙钟，语料内无一系统把两者拆开报"。§20.2.1 第 1 条明确此事"属 §3.2 表内划分调整，不改层"——因此它可以由约定解决，而不必等新机制出现。
+
+**C2 正文**：拆分只在**可观测事件边界**上做，不在概念上猜。要求报值方（或本文引用时自行标定）按以下顺序给三个时间戳，两两之差即两段：
+
+```
+t0 = 训练侧本次 update 结束（optimizer step 返回）
+t1 = 新权重在 rollout 引擎侧首次可用于生成（生效点，非广播发起）
+t2 = rollout 引擎恢复满批吞吐（在途请求已被新权重接续或旧批已排空）
+```
+
+- **B3 = t1 − t0**：旧权重不可再写、新权重尚未生效的窗口（广播＋加载＋KV 失效/重建）。
+- **B2 = t2 − t1**：新权重已可用但引擎尚未回到满批状态（onload、warmup、批重填）。
+- **B2 与 B3 若无法分离**（引擎只给一个"切换完成"信号）：**必须整体记作 B2∪B3 并显式声明未拆分**，不得按任一单类引用，也不得用别的系统的拆分比例代入。这是本约定最要紧的一条——它把"不知道"写成一种合法的报值状态。
+
+**与 §3.2 的关系**：不改变 B2／B3 的形式定义（B2 = `T_switch / T_step`、B3 = `T_sync / T_step`），只规定分母相同前提下分子的切分点。已按此切分类的报值，可与同栈 B2 或 B3 单独比较；未切分者只能同在 B2∪B3 口径内比较。
+
+**本条不做什么**：不宣称语料内已有系统按此报值（仍无，§3.2 B2／B3 行证据状态不变）；不据此回改任何既有论文数字的归属。
+
+### 21.3 C3｜async 下的气泡基准（答 §15 Q7）
+
+**问题回顾**：§3.5 边界 3 记"sync 的 `max_i T_i` 在 async 下不再是批的终点"。Q7 原文给的候选方向是"staleness 切换频率 × 单步吞吐"，但指出"需先定一个假想的同步化时间基准才能定义气泡比例"——本节约即给出这个基准。
+
+**C3 正文**：async 下不定义"气泡"，而定义**两个必须成对报的量**，因为离开其中一个，另一个会被系统性地读错（这正是 sync 的 `max_i T_i` 在 async 下失效的根源：它只惩罚慢，不惩罚旧）。
+
+| 项 | 定义 | 采集点 |
+|---|---|---|
+| **η（staleness，版本年龄）** | 每条被消费轨迹的 `v(消费时 policy) − v(生成时 policy)`，报**分布**（至少 max、P50、P90）而非均值 | 消费侧的版本号与生成侧版本号之差；语料内 StaleFlow 的 η 界与 DORA 的 K 窗口是两个已有形态（§3.1） |
+| **S（单步有效吞吐）** | 单位墙钟内被**接纳进训练**的轨迹数（或 token 数），不是被生成的数量 | 训练侧实际消费；§12 已证生成侧计数会把淘汰与虚耗算进来（OpenRLHF 的 filter_pass_rate 分母为 prompt 而非响应） |
+
+**成对报值的规则**：
+1. **单独报 η 提升 = 不可比**：StaleFlow 的 η=3 可比同期、η=10 崩溃（§6.3 逐字），说明 η 不是单调收益轴；只报"我们支持 η=8"而不报同负载下 S 与收敛，等于只报代价的输入不报代价。
+2. **单独报 S 提升 = 不可比**：S 可以用丢弃新鲜样本换取，此时 η 分布会右移；必须给 η 分布。
+3. **同步化时间基准**：如需换算"async 相对同步的收益"，基准取**同一硬件、同一任务、同一批大小下同步配置的整步墙钟**（η=0 参照）；语料内 StaleFlow 正以此形式并列（VeRL η=0 为同步基线）。没有 η=0 同栈参照时，async 收益**只能报方向**，不得报倍数——与 §13.13 族Ⅰa 的"同栈才可换算"同一条规则。
+
+**本条不做什么**：不给 async 气泡的闭式定义（即 §3.5 边界 3 所述的失效项仍失效）；不据 η／S 反推 sync 的 B1——两者是不同口径，禁止互相代入。
+
+### 21.4 三条约定的适用范围与残留
+
+| 约定 | 解决什么 | 不解决什么 | 依据 |
+|---|---|---|---|
+| **C1** 计时三件套 | 让引用他人墙钟数字的人知道自己在引什么 | 不产生任何新的可横比数字 | §12 四框架计时块登记（静态源码核，未测量） |
+| **C2** B2／B3 事件边界拆分 | 给"拆分"一个可执行定义，并让"无法拆分"成为合法报值状态 | 不改变语料内无人拆分的现状 | §3.2、§3.5 边界 1、§20.2.1 |
+| **C3** η 与 S 成对报 | 给 async 可比性一个不依赖失效的 `max_i T_i` 的口径 | 不给 async 气泡的形式式 | §3.1、§3.5 边界 3、§6.3 |
+
+**仍留在 §15 的**：Q6 的"B2／B3 是否在 §3.2 表内拆成两行"仍属表格划分问题，本约定只解决报值侧、不动 §3.2 表结构（冻结后仅允许层内调整，留待正文阶段按需决定）；Q7 的形式式仍开放。两者均已从"影响第九章可写性"降级为"表结构与理论式问题"。
+
+**验证范围**：本章未打开新论文、未新增文献身份（126 身份、20 T1＋84 T2＋21 T3＋1 未标不变）、未新计深读、未跑实验、未触上游仓库。C1 引用的四个计时块均取 §12 已登记的固定 commit 与行号，本章未重新读取源码，属转引；C2 的三个时间戳为**建议口径**（本题组内无系统按此报值，非报值转引）；C3 的 η 界与 η=0 参照均转引自 §3.1 与 §6.3 已有逐字记录。本章不作任何跨族比值、不新增加速倍数。
+
+
 ## 16. Changelog / Research Log
+
+- **2026-11-01（P-5 收尾：§15 Q6／Q7 从"待修订"推进为可执行约定 C1–C3，M1）**：§20.3.2 把 P-5（"Q6／Q7 两个约定给出可执行版本"）列为投稿前必补项之一、规模"小（写作工作）"，且不依赖算力与硬件，故本批先做它。产出 **§21 全章**。**① C1 计时边界三件套（§21.1）**：引用他人墙钟数字必须给块名＋固定 commit、声明块内是否含策略等待、声明分项是否重叠，缺一记"不可横比"；据此给出三条可直接用于正文的推论（整步墙钟未说明含 sleep/wake 者按 B2 处理、权重同步块不等链路传输、空计时块不算测量）。全部依据 §12 已登记的四框架计时块（veRL `24f25b03`／OpenRLHF `dc2a7ad3`／NeMo RL `a9d1a4be`／SkyRL `e0893f6e`），本章为转引、未重读源码。**② C2 B2／B3 事件边界拆分（§21.2）**：以三个时间戳（t0 训练侧 update 返回、t1 新权重引擎侧生效、t2 引擎恢复满批）定义 B3＝t1−t0、B2＝t2−t1；**核心规定是"无法分离时整体记 B2∪B3 并显式声明未拆分"，把'不知道'写成合法报值状态**，禁止代入他人拆分比例。不改 §3.2 形式定义，只定切分点。**③ C3 async 成对报值（§21.3）**：改报 η 分布（max/P50/P90）与 S（被接纳进训练的吞吐），并规定单独报 η 或单独报 S 均不可比（依据 StaleFlow η=3 可比／η=10 崩溃、以及 S 可用丢弃新鲜样本换取）；同步化基准取同栈 η=0 整步墙钟，无该参照时 async 收益只报方向不报倍数。**④ 状态同步**：§15 Q6／Q7 两条改写为"报值侧已答复＋残留降级"；§18.11 的 9.3／9.4、§18.12 的 10.4 引用改指 §21；§3.5 边界 1／边界 3 加约定指针；§20.3.2 的 P-5 行标注已完成。**仍开放**：async 气泡的闭式定义（§3.5 边界 3 失效项维持失效）、§3.2 表内是否把 B2／B3 拆成两行（冻结后仅层内调整，留正文阶段）。**验证范围**：未打开新论文、未新增文献身份（126 身份、20 T1＋84 T2＋21 T3＋1 未标不变）、未新计深读、未跑实验、未触上游仓库；不新增任何可横比数字。**边界声明**：C2 的三个时间戳是建议口径，语料内无系统按此报值，文内已如实标注、未冒充转引。
+
+- **2026-11-01（阶段三 S5 批次：taxonomy 冻结复核＋§15 Q8 答复＋P6 可发表性评估——阶段三 P1–P6 全部收官，M1）**：按 §17.3 认领 S5，产出 **§20 全章**。**① P4 复核（§20.1）**：把 §18.13 的冻结结论当作不变量，对六个检查点逐项核对——层数与层名（§4 表／§5 矩阵／§18 层章标题三处一致，无 L5 命名）、行序（canonical 定义序与对外展示序不同属展示差异不是 taxonomy 分歧，保持现状）、A/B/C 判定规则（与 §13.16 G2 五篇一致，§4 反例登记仍为空）、兜底格归属、§17.5 弹性窗口③（冻结时点＝S3 定稿，已满足）、§19.2 引用清单一致性——**全部无冲突**。**② §15 Q8 答复（§20.2）**：按"是否有独立的可测气泡口径"而非文献数量判：训练侧共享与概率修正的成本按 §3.2 就是 B2＋更新阶段墙钟之和、无第六种气泡形态；多模态输入执行的成本在引擎侧仍表现为 prefill 工作量与 KV 占用、即 B0/B1 的输入，改动的是前置项权重不是气泡分类——**两条都不升格，冻结结论不变**；同时确认 §10 Workload-specific Findings 暂不单列。并把 Q3（environment 层）与此结论对齐，三个关于层数的开放问题至此相互一致地全部收口。20.2.1 另登记三处**层内**开放项（B2/B3 拆分、async 下 B1 定义、计时边界约定），明确它们不动层数。**③ P6 可发表性评估（§20.3）**：三条新意锚——迁移判据四要素（强）、阶段占比中介定律（强，跨族重建＋同栈验证＋反例齐备）、八条跨层＋四耦合面（中强，一条缺同栈实证）；同时明确三条**不作新意**的东西（taxonomy 本身、五类气泡概念、126 篇覆盖数量）。五条投稿前必补项按卡点排序：**P-1 同栈横评锚点（决定性前置）**、P-2 条目 8 同栈实证（需 FP8 栈）、P-3 一个 C 类机制的净效应示范、P-4 G7 十三条收窄、P-5 Q6/Q7 给出可执行约定。四条禁写主张（不得称首个／不得称普遍有效／不得把候选 A–E 写成复现／不得把"统一模型待建"写成"本文提出"）。总判断：**结构完备、实证不足**，B 轨可逐节汇报、P-1 完成前不宜投出。**④ 状态同步**：§17.2 的 P4／P6 两行、§17.3 的 S5 行改判完成；§0 最近更新改为阶段三收尾。**验证范围**：未打开新论文、未新增文献身份（126 身份、20 T1＋84 T2＋21 T3＋1 未标不变）、未新计深读、未跑实验、未触上游仓库；20.3 各条新意锚的证据位置均指向本文件既有章节，已逐项核对在文（§13.15 G5 四要素、§9、§3.3、§11.1 条目 3、§13.21–§13.27、§11.1–11.3、§18.10）。**残留**：P-1–P-5 五项必补工作分别依赖多卡窗口（P-1，属 M5 侧算力分工，本批不启动）、FP8 训练栈（P-2，硬件未评估）、可复现机制选取（P-3）、时间（P-4/P-5）。**阶段三 S1–S5 至此全部完成，下一阶段待用户决定方向。**
+
+- **2026-11-01（阶段三 S4 批次：引用清单＋口径标注规范＋负项索引接入成文——P3 下半与 P5 收官，M1）**：按 §17.3 认领 S4。产出 **§19 全章**。**§19.1 口径标注规范**：进正文的量化陈述必须同时给五列（数字／口径限定／证据等级／出处／负载与规模），并写明"口径齐全的近似值比口径缺失的精确值更可引用"；四级证据给出各自能做与不能做的事（论文报值不能与其他硬件报值相除、推断不能当实测、同栈实测不能外推到多卡长响应、模拟不能与实测同表）；三条逐字规则——不跨族取比值、负项与正项同族并列、"语料内无一篇"必须附检索范围（可证伪句）。**§19.2 每章引用清单**：十章×三列（内部账目／一手文献／该章必标限定）。一手文献只从 §5 矩阵已核条目里取固定版本号，未引入矩阵外 ID；脚本核对结果——所指 §5.1–§5.5 五个子节全部存在、出现的 arXiv 版本号全部能在矩阵里找到。必标限定列写的是该章最容易漏的口径（如第 6 章须写 Laminar +26% 是 generation 阶段非全步、AstraFlow 省资源反慢须与弹性正项同段）。**§19.3 负项索引接入**：把 §13.16 G9 表十条负项逐条指派到主语章，并绑定它应与哪条正项同段出现；硬规则是"标了 × 的正项，其所在节末必须出现指给该章的负项之一，做不到须明写语料内未见同族负项"——空口无负项不允许，因为语料里确实有。**§19.4 写作前 checklist**：七条，从"论点能否在 §18 找到"到"能否 10–15 分钟讲完"（§17.5 设定 3 的 B 轨）。**§17.2 的 P3／P5 两行、§17.3 的 S4 行状态同步改判完成**（P3 上半在 §18、下半在 §19.2）。**验证范围**：未打开新论文、未新增文献身份（126 身份、20 T1＋84 T2＋21 T3＋1 未标不变）、未新计深读、未跑实验、未触上游仓库；§19.2 的内容全部来自 §5 矩阵行名、§6 深读节、§13.13／§13.16／§13.21–§13.27 既有账，**未逐篇回读原文**——正文本阶段才需要按行回读对应深读节。**残留**：EAGLE-3、DistServe、Mooncake 等在第 2／4 章的具体版本号需正文阶段从 §6.30 与 §5.5 行内确认后落参考文献表；兜底格两条是否升正式子维仍挂 §15 Q8，交 S5 回答。**下一轮 S5（P4＋P6）**。
+
+- **2026-11-01（分支汇合：S1／S2／S3 三批成果并入同一支线 `survey/s2b`，M1 清理轮）**：例行核对发现本专项的阶段三成果被拆在三条互不为祖先的血统上——`survey/s2`（本地旧血统，含 S1／S2，领先本地 main 11 个提交）／远端 `main` 血统（含 §17 阶段三计划与 `f606c85c` 交回 M1）／`survey/s3`（建在远端血统上，含 §18 全章）。S3 的 §18.15 早已写明依赖声明"若 S1／S2 尚未并入，以 S2 内容为准重建，不保留 S2 之外的变体"，本轮按此执行：新开 `survey/s2b`（基于 `f606c85c`），把 S1／S2 的 §3.1–3.5、§11.1–11.3、§15 Q5–Q7 整体替换进远端血统，再把 S3 的 §18 与 §17 补回。**过程失误如实记录**：第一次移植脚本按"§18 在 §16 之前"的假设切块，实际远端血统里 §17 紧接 §15、§18 紧跟 §17，导致 §17 与 §18 两节在脚本前两步即被截掉，文件末尾一度只剩 §16 changelog；随后从 S2 取 §17、从 S3 取 §18 逐块补回并逐节核对标题（§3／§11／§15／§17／§18 全部在位）。**引用落点核对**：§18 引用的 §13.21–§13.27 七节来自 M5 收尾批次、在远端血统上本就齐备，无需迁移；§3／§11／§15 Q5–Q8 迁移后逐项在位；§15 Q4 在首次插入时被复制成两条、已删重复；Q8 为 S3 新增，一并合入。**未动的账**：远端血统的 §0／§13／§14 内容一律以远端（M5 收尾第四十三批）为准，未用本地旧版覆盖；本地旧血统 11 个提交中的 M1 学习线文档不在本次合并范围。**未做**：未 push 任何远端分支、未 merge 到 main、未触上游仓库。
+
+- **2026-11-01（阶段三 S3 批次：survey 大纲骨架成文——P3 上半＋taxonomy 冻结，M1）**：按 §17.3 认领 S3。产出 **§18 全章**：18.1 结构原则（五条）、18.2 十章章节树总览、18.3–18.12 十章逐节表（每节「一句话论点／引用落点／缺口与标注」）、18.13 兜底格＋冻结结论、18.14 B 轨可汇报交付物、18.15 执行记录。**四条结构决策**：① **C 类不设独立章**——按 §4「按实际改变的轨迹集合判定」的原则，单列一章会诱导按技术名称归类，改为 L1–L4 每层章末固定"C 类标记"子节并统一指向 §13.16；② **负项不进附录**——与正项同族并列（§13.13 结论六），引用任何正项加速比处必须同时给同族负项或口径限定；③ **兜底格落实**（§17.5 弹性窗口①）——当前登记「训练侧共享与概率修正（PrefixFlow／psRL／CIS）」与「多模态输入执行」两条，并新增 §15 Q8 要求 S5 回答是否升为正式子维；④ **taxonomy 主结构本批冻结**（§17.5 设定 1 的③）——L1–L4＋A/B/C＋兜底格、不建 L5，冻结后仅允许调整层内划分。**章序调整说明**：S3 预案把「跨层章」列在四层章之后、无独立 chapter 编号；本批给跨层单独成章（第 8 章）并在 §18.1 明确"层章对应 taxonomy、跨层章对应本综述的新增论点（§11.3）"，以便该论点在目录层就可见。**依赖声明（写入 §18.15）**：本批假设 S1／S2 成果已在主文档（§11 八条、§3.1–3.5、§15 Q5–Q7）；本批在远端 main 血统上执行（`f606c85c` → 本批），S1／S2 在另一支线，并入时须核对第 3、8 两章落点。**验证范围**：全部内容转引自主文档既有 §1／§2／§3／§4／§5／§6／§9／§12／§13／§14／§15 账，未打开新论文、未新增文献身份（126 身份、20 T1＋84 T2＋21 T3＋1 未标不变）、未新计深读、未跑实验、未触上游仓库；126 身份与代码 12 路径／8 系统不变。数字均带口径限定与出处，三级标注沿用（【论文报值】／【推断】／【同栈实测】），未做任何跨族比值。**不下结论的能力边界**：本章只结构，不含正文；可发表性评估（P6）在 S5。
+
+- **2026-11-01（阶段三 S2 批次：§11 条目 6–8＋§3 性能模型成文——阶段三两处第一优先缺口收官，M1）**：按 §17.3 认领 S2（P1 下半＋P2）。**① §11 扩至八条**：§11.2 落笔条目 6–8，均按七项格式并沿用三级标注——条目 6「L1 开关×L2 批状态」用 EfficientRollout 逐字「active batch 单调缩小→开启后不关」与 ReSpec「大 batch 可关 SD」指出两侧同源（开关是批状态的函数），并以 S³R「B16/S4K 即使全接受也不足摊薄」、Seer 按 batch 与接受率调 draft 长度作独立锚点；反例明确写「批规模本身不是转正条件」（同栈实测 b8–b64 全净负）；条目 7「L3 长度信号×L4 组完整性」用 Laminar repack +26%（非全步）、SortedRL 队列空槽 74%→3.37% 且自认 B/C 混合、DORA 版本窗口、Seer 组内 probe 四例指出调度单位被 group 吃掉一个量级，并把「拆组收益无人量化」如实记为 §15 待修订；条目 8「L1 数值一致性×L4 训练目标」用 FP8-RL（TIS C=2、dense 10–20%/MoE 30–50%、700 步崩溃）与 CIS（`min(p/q,1+λ·max(1−p,κ))`、每步 +3.2%、无 floor 29.02）说明省下的时间记在梯度期望上，**并标注这是八条里唯一没有同栈实证的一条**。新增 **§11.3** 把八条重组为四个耦合面（算力／会计／语义／状态）并给出「跨层协同」章的一句话主张，直接供 P3 使用。**② §3 由待建转为成文**：§3.1 两个主口径（sync 的 max 是批内取最大、async 改报 staleness 分布）；§3.2 五类气泡 B1–B5＋两类机器气泡 B0/B5 的形式化表，每行给形式定义、可测字段、优化杠杆、机制家族与证据状态，并固定「队列空槽气泡 ≠ GPU 空闲气泡」不可混用；§3.3 收编 G3 三轴模型（接受率-位置曲线／版本差侵蚀 N/A／批内分布与 makespan）并接入整步× 恒等式；§3.4 可测字段清单（六字段＋语料覆盖率）；§3.5 四条已知边界（五类不完备、B0 与 B1–B5 不同量纲、async 下 B1 失效、备料来源说明）。**③ 同批两项账目更正**：G3／G5／G6／G4 四份「已转稿自本地备忘」的文件经 `git log --all` 与文件系统核对**从未入库**（§13.15 原状态行据此改写，结论已收编进 §3.3 与 §3.2 B4）；本仓库本地 checkout 与远端 main 已分叉（本地 11 未推、远端 764 未见，远端 18:25 已由并行会话提交 §17 阶段三启动与交回 M1），S2 改在 `survey/s2` 暂存分支提交。**验证范围**：全部内容来自本文件既有 §6.x／§13.x／§14 账与 S1 已写条目，未开新论文、未新增身份、未新计深读、未跑实验、未触上游仓库；FP8-RL／CIS 等数字均为【论文报值】，本轮未复现。126 身份账与代码 12 路径／8 系统不变。
+
+- **2026-11-01（阶段三 S1 批次：§11 跨层发现账上半成文——条目 1–5，M1）**：按 §17.3「先认领后工作」认领 S1（阶段三首个批次，接管记录见 §0③），产出 §11.1 五条跨层条目，每条七项齐备（涉及层／一句话结论／机制与证据／受益方与受损方／反例与边界／引用出处／证据等级）：① **L1×L3 空闲注入**——BubbleSpec 把 draft 搬到跨 DP rank 空闲窗口，rollout 缩短 45.2/41.1/30.0% 来自"不等空闲"，其受损方是 L4 训练流水（隐藏到 reward/update 之后仍为优化建议非已证）；② **L1 draft×L4 版本陈旧**——ReSpec 每 I 轮刷新 drafter（KD 目标非 actor loss）与"大 batch 可关 SD"两侧同时揭示"L1 开关由 L2 批状态决定"，算法 1 与 §5.3.2 的 buffer 消费量矛盾保留为 G7 待核；③ **L1 生成侧×L4 更新侧镜像对称**——整步×会计上界 1/(1−s) 双侧同构，ReSpec 3B 峰值 4.53×（需 G≈39× 不可达→必含 Async Update Overlap）与 PrefixFlow 1.90×（纯更新投影 1.73×、sync 残差补 1.10×）互为镜像，并以候选 A/B/C/E 同栈实测标注"会计上界≠可兑现杠杆"（候选 E 三杠杆全负、整步 0.8494/0.9586/0.9895×）；④ **L2 前置缓存×L4 跨阶段共享**——Rollplex 1.23–2.24×／PrefixFlow 1.90×／psRL 2.1× 是同一"前缀只算一次"的三处落地，收益"受前缀占比约束而不能相加"，受损方统一为显存与生命周期；⑤ **L3 缓存亲和路由×L4 在途轨迹**——WAR 的 TTL 终止＝真实轨迹丢弃（非 cache eviction）、RhymeRL 跨步迁移改变训练步归属、CONCUR 准入＝暂停非丢弃，路由决策被"缓存命中率"与"训练集合完整性"两目标拉扯。§11.2 预登记条目 6–8 草案方向（L1 开关×L2 批状态、L3 长度信号×L4 组完整性、L1/L4 数值一致性×训练目标）交 S2；§17.3 S1 行标注完成、S2 行挂接草案入口。**证据纪律**：全节按 论文报值／推断／同栈实测 三级标注、族Ⅰa–Ⅴ 不互比，无新增文献、无新增深读计数、无实验、无上游写操作。下一批 S2（条目 6–8＋§3 五类气泡形式化）。
 
 - **2026-11-01（阶段三启动：survey outline & writing 计划成文）**：用户拍板进入阶段三，新增 §17（进入条件核对表／产出物 P1–P6／批次 S1–S5／不做清单／需用户决定 3 项）。核对发现两处此前被"备料就绪"掩盖的实质缺口并列为第一优先：**§11 跨层发现仍为空**（综述新意所在位置，P1）、**§3 五类气泡形式化仍标待建**（P2）。Phase 2 资产、G1–G9 与 §14 执行账不变；不扩库、不加深读计数、无实验与上游动作。**2026-11-01 用户拍板三项设定**：① 分类框架=方案 B（主要冻结 L1–L4＋A/B/C，保留"跨层/其他"兜底格与 §15 待修订登记两条弹性窗口，不建 L5）；② 核心问题暂无定论，沿用现有表述；③ 目标形态=双轨（长期 A 系统向 survey，过程产物 B 团队可汇报规格，每批独立可讲）。详见 §17.5。
 
