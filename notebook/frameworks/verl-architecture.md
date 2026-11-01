@@ -722,6 +722,34 @@ python3.12 -B experiments/verl-packaging-metadata/verify.py /path/to/verl-git
 
 实验是选定原始打包输入的真实元数据生成，不含完整源码树／wheel打包、依赖解析、pip／uv安装、镜像、模型或设备验证；没有安装GPU软件或访问服务器。CPU结论在此收束，不新排M5任务；后续有维护者决策或修订再核入口，不另实现／评论／推既有上游PR-head，社区写入仍需用户逐项明确授权。
 
+## 参数卸载的副本所有权与快照恢复
+
+**参数副本去重以重载广播换主机参数空间，不等于减少全部主机内存。** [verl #7685](https://github.com/verl-project/verl/pull/7685)在2026-11-01核对仍OPEN、非draft；固定head `81a672a48c1e3b76041b7f07c16343799b971796`，目标base与实际共同祖先均为 `2035f58dcb06d8cad4caee107b30f4045d724367`。开关 `deduplicate_param_offload` 默认False，要求param_offload=True且拒绝MegatronFSDP；不是激活卸载，也不去重optimizer或gradient状态。
+
+### 组内零号与全局广播源
+
+[`megatron_utils.py`](https://github.com/verl-project/verl/blob/81a672a48c1e3b76041b7f07c16343799b971796/verl/utils/megatron_utils.py)对dense取含CP的数据副本组，对expert取expert-DP组；接口签名允许时显式排除GTP remat。owner是各自**组内rank0**，广播src则经get_global_rank转换为全局rank；不能一律写全局0，也不能按整个world去重。组只有一个rank时退回原路径。非DDP参数按allreduce属性区分dense／expert，DDP按普通／expert buffer集合区分。
+
+| 路径 | CPU参数存储 | 重载 |
+| --- | --- | --- |
+| 原路径或无副本组 | 每rank保留 | 从自己的CPU数据复制 |
+| 去重组owner | 保留一份，可重复使用DDP backing buffer | 自己复制后参与广播 |
+| 去重组非owner | DDP cpu_data为None；非DDP参数暂为零元素 | 重建存储后接收广播 |
+
+DDP owner先完成blocking D2H再释放原storage，重复卸载检查backing大小，已分配CPU buffer复用并检查shape／dtype；非owner缺组重载会在分配前拒绝。非DDP另保存shape／stride，用empty_strided重建非连续参数。这些是参数存储规则，不是整个进程RSS或allocator峰值保证。
+
+### 快照要带回所有权上下文
+
+CPU snapshot只在owner保存参数clone，非owner位置保留None。恢复到仍已卸载的模型时，先改owner的CPU backing，广播留到随后reload；恢复到已有设备存储的模型则当场广播。[engine接线](https://github.com/verl-project/verl/blob/81a672a48c1e3b76041b7f07c16343799b971796/verl/workers/engine/megatron/transformer_impl.py)统一让save／load checkpoint及export走带组的_load_model／_offload_model；separation worker用partial绑定同组给snapshot／restore。
+
+snapshot的deduplicated标志只检查“保存是否去重”与“恢复是否提供groups”一致，**不认证具体组身份、world size或模型布局相同**；这仍是调用方上下文，不是可任意跨拓扑恢复的持久化checkpoint格式。
+
+### CPU覆盖与设备证据
+
+[复现脚本](../../experiments/verl-param-offload-ownership/verify.py)在Python3.12.13／Torch2.9.1下提取15个完整原定义，原测试体仅去装饰器，手动执行19个参数项全过：组构造3项、DDP往返3项、缺组／backing校验／expert选择各1项、DDP快照6项、非DDP BF16转置参数快照4项；值、stride、backing对象复用及拒绝断言按原测试核对。原fixture关闭pinning，广播由原Mock供给expected，parallel_state／DDP为导入接缝；六完整源compile，非原生pytest、完整engine／真实通信或checkpoint恢复。[结果及输入hash](../../experiments/verl-param-offload-ownership/result.json)保留范围与TypedStorage弃用警告。
+
+作者报告基于早于main rebase的Ascend四步缓存训练：32×32GiB、Qwen3.6-35B-A3B、TP2／PP4／CP4／EP4／ETP1，dense副本组4、expert组2；actor参数CPU计数141.761→65.440GiB，actor+ref节省152.642GiB（53.8%），不是整机内存降低53.8%。设备峰值17.785GiB未变；dedup步时处在两次baseline波动范围，ref reload中位数1.45→1.98s。作者未做严格逐梯度等价；这些旧版短跑不认证当前head数值、收敛或普遍无回归。单节点baseline OOM／候选约900GB峰值也不能与参数字节理论节省直接互换。[M5原卸载参考](../../experiments/handoff-m5.md#verl-npu-参数卸载参考)保留真实组／pin／传输及状态恢复缺口，不新增训练队列。
+
 ## 参考
 
 - [verl GitHub](https://github.com/volcengine/verl)

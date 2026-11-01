@@ -1,0 +1,172 @@
+{
+  "head": "81a672a48c1e3b76041b7f07c16343799b971796",
+  "base": "2035f58dcb06d8cad4caee107b30f4045d724367",
+  "python": "3.12.13",
+  "torch": "2.9.1",
+  "torch_git": "5811a8d7da873dd699ff6687092c225caffcf1bb",
+  "pytest": "8.4.2",
+  "source_sha256": {
+    "verl/utils/megatron_utils.py": "1ace2d8c8670ed6e53849f8077af4d1be8ec3f67e6abb4c01cb21e79ad0bf97d",
+    "tests/utils/megatron/test_param_offload_deduplication.py": "32ed965841924ec2874ecb62eae9a4efe93b985a7adc568398a43a183a60a651",
+    "verl/workers/config/engine.py": "f946cc09b91752784110c6b1a14bdfc900c152f3b066c5438a3ffccf28ed7540",
+    "verl/workers/engine/megatron/transformer_impl.py": "3f36e13cb641d3f79e8063589865a77cda5728853b60e4b7897b8ed15eb697fc",
+    "verl/experimental/separation/engine_workers.py": "7c5fd3aefb57faadd01c436438e2a8db797a50999eddf50f958591e23990cf95",
+    "tests/workers/config/test_engine_config_on_cpu.py": "adedb2bd0486b2fa1761af4c00d82748d17b22d366b6c2ba7c5cba250c755ada"
+  },
+  "extracted_definitions": [
+    "MegatronParamOffloadGroup",
+    "MegatronParamOffloadGroups",
+    "_broadcast_offloaded_parameter",
+    "_can_safely_resize_storage",
+    "_ddp_param_buffer_groups",
+    "_get_megatron_param_replica_process_groups",
+    "_load_ddp_param_buffer",
+    "_load_replicated_parameter",
+    "_make_param_offload_group",
+    "_offload_ddp_param_buffer",
+    "_offload_replicated_parameter",
+    "_parameter_offload_group",
+    "build_megatron_param_offload_groups",
+    "copy_megatron_model_to_cpu",
+    "restore_megatron_model_from_cpu"
+  ],
+  "original_test_cases": [
+    {
+      "test": "test_param_offload_group_builder",
+      "parameters": {
+        "supports_gtp_remat": false
+      },
+      "outcome": "passed"
+    },
+    {
+      "test": "test_param_offload_group_builder",
+      "parameters": {
+        "supports_gtp_remat": true
+      },
+      "outcome": "passed"
+    },
+    {
+      "test": "test_param_offload_group_builder_returns_none_without_replicas",
+      "parameters": {},
+      "outcome": "passed"
+    },
+    {
+      "test": "test_ddp_offload_round_trip",
+      "parameters": {
+        "is_owner": null
+      },
+      "outcome": "passed"
+    },
+    {
+      "test": "test_ddp_offload_round_trip",
+      "parameters": {
+        "is_owner": true
+      },
+      "outcome": "passed"
+    },
+    {
+      "test": "test_ddp_offload_round_trip",
+      "parameters": {
+        "is_owner": false
+      },
+      "outcome": "passed"
+    },
+    {
+      "test": "test_deduplicated_buffer_requires_its_group_on_reload",
+      "parameters": {},
+      "outcome": "passed"
+    },
+    {
+      "test": "test_repeated_default_offload_validates_cpu_backing_size",
+      "parameters": {},
+      "outcome": "passed"
+    },
+    {
+      "test": "test_expert_parameter_uses_expert_replica_group",
+      "parameters": {},
+      "outcome": "passed"
+    },
+    {
+      "test": "test_ddp_snapshot_round_trip",
+      "parameters": {
+        "is_owner": null,
+        "restore_offloaded": false
+      },
+      "outcome": "passed"
+    },
+    {
+      "test": "test_ddp_snapshot_round_trip",
+      "parameters": {
+        "is_owner": true,
+        "restore_offloaded": false
+      },
+      "outcome": "passed"
+    },
+    {
+      "test": "test_ddp_snapshot_round_trip",
+      "parameters": {
+        "is_owner": false,
+        "restore_offloaded": false
+      },
+      "outcome": "passed"
+    },
+    {
+      "test": "test_non_ddp_snapshot_round_trip",
+      "parameters": {
+        "is_owner": true,
+        "restore_offloaded": false
+      },
+      "outcome": "passed"
+    },
+    {
+      "test": "test_non_ddp_snapshot_round_trip",
+      "parameters": {
+        "is_owner": false,
+        "restore_offloaded": false
+      },
+      "outcome": "passed"
+    },
+    {
+      "test": "test_ddp_snapshot_round_trip",
+      "parameters": {
+        "is_owner": null,
+        "restore_offloaded": true
+      },
+      "outcome": "passed"
+    },
+    {
+      "test": "test_ddp_snapshot_round_trip",
+      "parameters": {
+        "is_owner": true,
+        "restore_offloaded": true
+      },
+      "outcome": "passed"
+    },
+    {
+      "test": "test_ddp_snapshot_round_trip",
+      "parameters": {
+        "is_owner": false,
+        "restore_offloaded": true
+      },
+      "outcome": "passed"
+    },
+    {
+      "test": "test_non_ddp_snapshot_round_trip",
+      "parameters": {
+        "is_owner": true,
+        "restore_offloaded": true
+      },
+      "outcome": "passed"
+    },
+    {
+      "test": "test_non_ddp_snapshot_round_trip",
+      "parameters": {
+        "is_owner": false,
+        "restore_offloaded": true
+      },
+      "outcome": "passed"
+    }
+  ],
+  "scope": "15 complete production definitions extracted via AST, decorators retained. All original functions in the focused test module extracted; only decorators removed, bodies/assertions unchanged; 19 parameter cases run manually, not native pytest. Original CPU fixture disables pinning; original broadcast mocks supply expected data. SimpleNamespace parallel-state/DDP import seams, actual CPU tensors/storage/strides. Six complete source files compile. No full module import, config test execution, offload/load engine entry, real Megatron groups/DDP, collective, pinned allocator, device copies/streams, optimizer/gradient equivalence, durable checkpoint, GPU/NPU, training, memory-peak measurement or performance.",
+  "execution_note": "Original TypedStorage deprecation warning emitted; no production source change or warning suppression. Read-only initial diff lazy-fetch failed under restricted proxy; fixed-version source blobs cached separately before offline harness. All 19 cases passed on first harness run and repeat."
+}

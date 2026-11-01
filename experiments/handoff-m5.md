@@ -401,6 +401,8 @@ M5 最小下一步：先判断是否有获准使用的对应配置、完整 toke
 
 ## verl NPU 参数卸载参考
 
+Megatron副本去重参考（2026-11-01，复用本入口、非新队列／已接单）：[#7685](https://github.com/verl-project/verl/pull/7685) head81a672a48c1e3b76041b7f07c16343799b971796／base2035f58d；[M1原19CPU参数体](../notebook/frameworks/verl-architecture.md#参数卸载的副本所有权与快照恢复)全过但pin关闭／广播Mock，未执行engine或真实组。目的为将来已有获准匹配Megatron卸载工作中核dense含CP／expert-DP owner及全局src、真实pin／D2H完成与reload广播、snapshot在已卸载／已重载两状态的值和梯度；deduplicated标志不证明组身份一致。M1不探测服务器。M5仅在安全可用、已有获准权重／配方且不影响专项时独立选用，固定实际源码／MCore／设备栈与拓扑，在原最小预算核对同输入重载前后及下一步状态，参数CPU字节、host峰值与步时分开记录。作者rebase前Ascend四步不是当前head验收；缺资源／权限、需下载部署／改环境或影响专项即停记未测，不自动应用、拼候选或复刻32卡。社区及既有PR-head写入仍逐项须用户明确同意。
+
 状态：2026-10-26条件交接，非已接单或新训练队列。目的为区分D2H目标分配与FSDP2显式pin策略。已有[#8372](https://github.com/verl-project/verl/pull/8372) head648423c5、[#8373](https://github.com/verl-project/verl/pull/8373) head340680d3、[#8374](https://github.com/verl-project/verl/pull/8374) head8b7aa26c，共同父版e009360c、当轮main3c6d9b43。两份生产AST同，第三仅模型；[M1原7CPU参数项](../notebook/frameworks/verl-fsdp2-source-deep-reading.md#npu-卸载的复制策略与固定内存)head过／父版4过3预期失败，原Mock非NPU内存验收。FSDP2显式CPUOffloadPolicy仍True，已有#8057另处理。
 
 缺口为安全可用NPU、匹配torch／torch-npu／CANN／driver和实际故障栈，M1不尝试SSH／VPN。M5仅在未来已有获准匹配任务中独立接续：固定真实提交／依赖、FSDP版本／offload配置及rank并发，先判断失败在初始化pin还是手动卸载，再选择单一候选范围；在原小规模预算内核复制完成后的分片／optimizer值和卸载重载一致性，记录分配失败、可取得的host内存指标与同步／耗时，未知项记unknown。不以CPU断言或单个RSS／cgroup数字认证修复或性能。

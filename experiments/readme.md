@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [verl-param-offload-ownership/verify.py](verl-param-offload-ownership/verify.py) | #7685原15定义与19原CPU参数体手动执行全过；[结果](verl-param-offload-ownership/result.json)，原pin／broadcast替身，仅存储所有权与快照，非原生pytest／设备通信 | [参数副本所有权](../notebook/frameworks/verl-architecture.md#参数卸载的副本所有权与快照恢复) |
 | [verl-response-row-selection/verify.py](verl-response-row-selection/verify.py) | #7686完整原选行模块／原夹具三CPU参数体与两自编full mask控制；[结果](verl-response-row-selection/result.json)，真实CPU linear／autograd，非CE、原生pytest或TP/SP/CP／Triton验收 | [选行与预测位置](../notebook/frameworks/verl-fused-output-softcap.md#输出头选行与预测位置) |
 | [verl-full-stream-contract/verify.py](verl-full-stream-contract/verify.py) | #7483新增原helper／mode resolver，十组自编CPU布局／CP guard／内层hook选择／context恢复控制；[结果](verl-full-stream-contract/result.json)，metadata／mesh／unwrap为接缝，无GLM／CP或kernel执行 | [完整流与内层hook](../notebook/frameworks/verl-fused-output-softcap.md#完整-thd-流与内层-hook) |
 | [verl-head-logit-scale/verify.py](verl-head-logit-scale/verify.py) | #8441原resolver及Torch分块custom autograd，六自编FP32前反向数值控制与四guard边界，[结果](verl-head-logit-scale/result.json)；无adapter／模型／Triton或设备验收 | [输出头缩放与温度](../notebook/frameworks/verl-fused-output-softcap.md#输出头缩放与有效温度) |
