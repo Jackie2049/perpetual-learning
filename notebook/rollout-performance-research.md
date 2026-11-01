@@ -6,7 +6,7 @@
 ## 0. Project Status
 
 - **接管记录（2026-10-29 用户指令）**：M1 机器宕机，本专项自即日起**完全由 M5 定时任务负责**（此前由 M1 定时启动的技术秘书任务以深读为主力推进）。接手方每轮先读本文件恢复状态，按 §6.0 批次表与 §16 下一步推进并及时回写；加急期限（≤2026-10-29）因 M1 停机中断，剩余批次由 M5 顺延完成并在 §13.1 记账；HybridFlow 原并行认领与上游写入边界不变。
-- **阶段**：**Phase 2 — deep research（2026-10-27 用户指令：广度已足（计数另按唯一身份核算），转入论文/项目深读，围绕 rollout 性能与 L1–L4 四维；定时任务以深读为主要工作，2026-10-29 起由 M5 接手）**
+- **阶段**：**Phase 3 — survey outline & writing（2026-11-01 用户拍板启动；Phase 2 深读与收尾已成文，见 §6／§13／§14）。执行入口=§17**。Phase 2 历史：广度→深读（2026-10-27 用户指令，L1–L4 四维），2026-10-29 起由 M5 接手至收尾。
 - **最近更新（2026-10-31 第四十三批，M5）**：候选 E 同栈更新侧单阶段批处理杠杆实测（真实 GPU，§13.27）——verl `24f25b03`＋Qwen2.5-1.5B 单 4090、GRPO 15 步，对 update_actor／old_log_prob／ref 三个动态批 token 上限各做单变量覆盖：**三杠杆全负**（update_actor 3000→8192：13.277→18.201s，G=0.729、整步 0.8494×；rollout log_prob 3000→16384：3.773→4.776s，G=0.790、0.9586×；ref 3000→16384（e3r2 完整 15 步补跑）：4.234→4.713s，G=0.898、0.9895×——杠杆起点经 verl 默认配置核验均为 3000（oc.select ppo cap）、e3 半写 14 步账已废弃），峰值 reserved 21.18–21.25GB 与基线同（非显存压力）；六阶段恒等重建残差 ≤0.026s、e1 单阶段预测 0.8480 vs 实测 0.8494（0.2%）——§13.25 恒等式在同栈更新侧得到精确验证，但**更新侧 69.9% 份额与 3.32× 会计上界不能由放大 token 上限兑现**；执行账：e1 首跑 CUDA invalid argument（0 步）同配置补跑 15/15 成功→环境瞬时错误、e3 第 15 步 checkpoint save 因 /home 满盘中断（14/15 步可用），半写 checkpoint 删除 6.8G、e1 补跑 checkpoint 落 /tmp；归档 experiments/rollout-g8-candidate-e/（5 日志＋summary＋md5 与服务器一致）。例行核对（21:3x–22:0x CST＝13:3x–14:0x UTC）：4090-1 连通——GPU 0/1/3/4/5/6/7 空闲（e1 补跑期间 GPU 5 占用后释放）、GPU 2 liyaowei embed 21728MiB、load 0.29 无矿机/训练、/home 余 6.8G（候选 E checkpoint 曾占满、半写 e3 checkpoint 已删）、venv cu129 基线完好（torch 2.11.0+cu129 cuda=True／vllm 0.24.0+cu129／tensordict 0.10.0 实测）；昇腾 VPN 断第 31 天（EasyConnect 进程在但 .154 100% 丢包、网关 10.205.0.1 亦不通，待用户恢复）；#8313 OPEN/MERGEABLE/BLOCKED head 71fd3562（updatedAt 10-25 不变）、DeepInfer-Go #2 OPEN/MERGEABLE head a0a6940b 不变；**verl 8df5baee（#8296）不变、vLLM 前进至 7b77ed58（#64368 [Spec Decode][ROCm] draft_lm_head_quantization for DSpark drafters，ROCm/AMD 非本机硬件算力线索，spec-decode 旁读）**、DeepInfer 55374155／UniRL b8e9740e／AReaL d25f2929 不变；AcceRL pushed_at 仍 2026-10-30T02:51Z、master 仍 ec28b85e。同日第四十二批 PrefixFlow 补核（并行会话，§13.26）保留：更新主导端第 3 数据点（PrefixFlow s=50.6%）、1.90× 报值 vs 1.73× 纯更新投影、跨阶段残差 1.10×。下一轮：A–E 候选已全部执行，同栈补测转向"不同机制"（降 FLOPs/通信、ppo_mini_batch 结构、多卡）；G7 余 13 项待源码、AcceRL 待作者澄清、复现计数口径待用户确认；昇腾 VPN 待用户恢复。批次/轮次完整记录见专项 §0/§16 与当日 diary。
 - **第四十二批（同日并行会话，PrefixFlow 补核）**：2026-10-31（M5 收尾阶段第四十二批：**PrefixFlow 阶段占比字段补核——「阶段占比中介」更新主导端第三数据点＋跨阶段残差显式量化（只读，§13.26）**）——承接第四十一批（多阶段恒等式＋九轴扫描收口）后按 cron 焦点续从 §13.1 选跨层结果口径/负载条件批次，做**族Ⅰa T2 扫描缺口补核**：§13.22 具字段名单与 §13.25 九轴扫描均未覆盖族Ⅰa T2 篇目，本批选与 psRL 同类的训练侧边界篇 PrefixFlow（2606.01143v4）做固定版只读核验（arXiv HTML v4 全文下载逐字 grep，21:2x CST＝13:2x UTC）——**① 整步分项逐字（Fig.7 / Claim 2.1）**：基线 142.3s/步＝rollout generation 8.3s（**5.8%**，语料最低生成占步比）＋policy evaluation 44s（30.9%）＋actor update 72s（**50.6%**）＋sync/other 18s（12.6%）；PrefixFlow 74.7s（actor update→12s 6.1×、sync→11s，整步 1.90×）；**② 阶段占比字段逐字**："the actor update is **51% of the baseline step**, so eliminating it entirely would cap the end-to-end gain near 2.0×; 1.90× is close to this Amdahl-style bound"——**更新主导端第 3 个具字段数据点**（psRL 结构化 40–58%＋候选 A 69.9% 之后；更新侧合计 policy eval＋actor update=116s=**81.5%**）；**③ 投影检验（推断）**：s=0.506×G=6.1 → 纯更新阶段投影 **1.73×**（142.3−72+12=82.3s 直接核算一致），报值 1.90×＝1.73×**跨阶段残差 1.10×**（sync/other 18→11s −7s；§13.25 恒等式 T′=8.3+44+12+11=75.3s 重建 1.89≈1.90，0.8% 为论文分项舍入；论文自述 "the small residual shrink in synchronization is consistent with shorter waits behind the faster actor update"）——**与 §13.22 ReSpec 3B 峰值 4.53× 超生成侧上界镜像对称：双侧均有"报值超纯阶段投影、由跨阶段残差补足"**；论文自身锚定 1/(1−s)=2.04×≈2.0×；**④ 负载条件**：Qwen3-8B TP2/CP4 8×H20、200 步 MuSiQue RAG、2 prompts/step、N=16、prefix≈95%（长前缀 RAG 短后缀负载）——更新主导成因=长前缀重复计算（与候选 A 单卡训练开销成因不同、恒等式同构）；**⑤ 方法论区分**：论文 §3.1 的 1/s 为计算量占比渐近界（prefix≈95% 时 1/s≈20× 被 p/N＋o/N 摊销挡住、非墙钟占比），与本文 s_step=墙钟阶段占比（51%）不同。**§13.1 可比性能行更新**：更新主导端数据点 2→3（40–70% 带内）、生成侧低端补点（5.8%）、族Ⅰa 具字段名单 3→4 篇（SRT／ReSpec／RollPacker 生成侧＋PrefixFlow 更新侧）；§13.25"无新增可投影对象"在族Ⅰa T2 子集补记（族Ⅰa T2 其余深读节无具整步阶段占比字段者，FastGRPO"在线训练占 2–3%"为开销占比不适用，其余九轴维持收口）。例行核对（13:1x–13:5x UTC）：4090-1 连通（首次 SSH 超时、重试连通，连接不稳已注）——GPU 0/1/3/4/5/6/7 空闲 1MiB、GPU 2 liyaowei embed 21728MiB（pid 1669721）、load 0.23 无矿机/训练、/home 16G、venv cu129 基线完好（torch 2.11.0+cu129 cuda=True、vllm 0.24.0、tensordict 0.10.0、verl 0.10.0.dev 实测）；watchdog 结构性无抢占（visual_watchdog.sh pid 2644、adapter_config.json 在盘）；昇腾 VPN 断第 31 天（本机 EasyConnect 进程在（EasyMonitor/ECAgent/CSClient）但 .154/.155 100% 丢包、隧道未建立，待用户恢复）；#8313 OPEN/MERGEABLE head 71fd3562（updatedAt 10-25 不变）、DeepInfer-Go fork #2 OPEN/MERGEABLE head a0a6940b（updatedAt 10-24 不变）；verl 8df5baee（#8296，较第四十一批记录不变）／DeepInfer 55374155（#218）／UniRL b8e9740e（#634）／AReaL d25f2929（#1825）无变化；**vLLM main 前进至 7b77ed58（[Spec Decode][ROCm] draft_lm_head_quantization for DSpark drafters #64368，ROCm/AMD 非本机硬件算力线索但属 spec-decode 相关——旁读线索，较 87cb835d 前进）**；AcceRL pushed_at 仍 2026-10-30T02:51Z、master 仍 ec28b85e（2026-03-23）（G7 无新变化）。
 - **前批要点**：2026-10-31（M5 收尾阶段第四十一批：**第四十批数字原始来源独立复核＋「阶段占比中介」升级为多阶段恒等式＋九轴阶段占比字段扫描收口（只读，§13.25）**）——承接第四十批（族Ⅰb/Ⅱa 投影检验补核）后按 cron 焦点"先核远端，再从 §13.1 选跨层结果口径/负载条件批次"执行：**① 独立复核（不采信上一批转述，回原始来源）**——MTP-RL ACL PDF（2026.findings-acl.1871，13 页）第 8 页 Table 4 逐字提取（7B 361.75/319.92/681.67→50.74/223.93/295.47/570.14、14B 775.94/584.20/1360.14→64.40/340.89/470.94/876.23，accuracy 列 76.8→76.2／79.8→79.2）＋NeMo-Aligner arXiv 2405.01481v2 §3.4 Scalability 表逐字（53.7→29.8、gen 35.8→17.5、logp 4.0→2.8、refit 3.1→2.3、train 8.5→4.8、8+4→16+8 节点），**§13.24 全部数值逐项一致、遗漏判定成立**；**② 多阶段中介恒等式（新，精确恒等非近似）**——整步×＝1/(Σ_k s_k/G_k＋Σ_m a_m/T)＝1/(1−Σ_k s_k(1−1/G_k)＋Σ_m a_m/T)，gen-only 与 update-only 均为单通道特例；三例重建 **MTP-RL 7B/14B 与实测精确相等（0 偏差）、NeMo-Aligner 1.8081 vs 实测 1.802（+0.34%）**——§13.24 的 −4.6%／+5.6%／+18.6% 三个偏差由此逐项落账（7B 偏差＝MTP 新增 50.74 分钟、14B＝训练阶段同步加速 19.4%＋MTP 新增 64.40 分钟、NeMo＝非生成阶段同向受益贡献分解 gen 76.3%／train 15.4%／logp 5.0%／refit 3.3%），"扩卡解释"升级为逐阶段分账；**③ 九轴扫描收口**——族Ⅰc 7 篇（InfoTree/AsyncWebRL/PipelineRL/ThunderSyncRL/SkyRL-Agent/Bebop/Long-RL）、Ⅱb 5 篇、Ⅱc 3 篇、Ⅲ 5 项、Ⅳ/Ⅴ 均无"整步分阶段时长"字段→不可投影；具可算字段者维持跨族五篇（Ⅰa SRT/ReSpec/RollPacker＋Ⅱa MTP-RL＋Ⅰb NeMo-Aligner）＋psRL 双态，**语料面收敛、无新增可投影对象**；**④ NeMo-Aligner 第二轴补核**：§3.5 同 8+4 节点消融 53.7（1×）／去 TensorRT-LLM 372.2（6.93×）／去 Reshard 207.6（3.87×）／去 Refit 169.0（3.15×）／去 Async Requests 82.8（1.54×）逐项复算对齐——同资源引擎/集成轴，分阶段报值缺失不可投影，不改 §13.24 扩卡轴结论。例行核对（17:3x–17:4x CST＝09:3x–09:4x UTC）：4090-1 连通——GPU 0/1/3/4/5/6/7 空闲 1MiB、GPU 2 liyaowei embed 21728MiB、load 0.21 无矿机/训练、/home 16G、venv cu129 基线完好（torch 2.11.0+cu129 cuda=True／vllm 0.24.0／tensordict 0.10.0 实测）；昇腾 VPN 断第 30 天（.154/.155 100% 丢包，待用户恢复）；#8313（71fd3562）／DeepInfer-Go #2（a0a6940b）OPEN/MERGEABLE 不变；**verl main 前进至 8df5baee（#8296 doc: Huawei Ascend in README hardware support，非算力）**、**vLLM main 前进至 87cb835d（#64869 [Misc] Allow weights mapper to transform weights，非算力）**、DeepInfer 55374155／UniRL b8e9740e／AReaL d25f2929 无变化；AcceRL pushed_at 仍 2026-10-30T02:51Z、master 仍 ec28b85e。下一轮：G7 余 13 项维持"待源码可获取时核"（复扫间隔拉长）、AcceRL 冲突待作者澄清、G3 轴 2（N/A）维持、EAGLE/Medusa 变体维持未测（权重不可得）、复现计数口径待用户确认；「阶段占比中介」语料扫描已收口，后续仅在新分阶段报值论文或同栈补测时更新——下一轮可转 survey outline 备料（G3/G5/G6 备忘＋G2/G9 索引已就绪）或按 §14 候选在 GPU 窗口做同栈补测。批次/轮次完整记录见专项 §0/§16 与当日 diary。
@@ -2910,7 +2910,58 @@ gen-only 公式 1/(1−s(1−1/G)) 与 §13.23 的更新侧对称公式都是它
 3. taxonomy 是否需要第五层（environment/sandbox 层）？agentic 簇的 environment bubble 是否够独立成层？
 4. Rollplex 的 VLM 跨阶段共享是否适用于文本-only 场景（colocation 的空间共享新维度）？——**收口（2026-10-29 M5）**：机制层面适用、定量不可外推。Rollplex 核心机制是 response-independent 的 reference/actor prefix 计算放 decode 窗口重叠（摘要"prefix processing is independent of the generated response…alongside rollout decoding"），模态无关——文本-only 同样存在响应无关 prefix（系统提示/指令/共享上下文）；但收益大小由**prefix 占比**决定：VLM 场景因 dense video inputs 产生长 prefix（§6.26.5：prompt 8K/response 2K、92.8% 共享率、跨 TP 仅整数比且布局兼容），文本-only 的 prefix 通常远短于视频编码序列，"prefix 短则机会小"（§6.26.5 限制项）直接适用——机制方向可作 colocation 空间共享新维度候选（可入 G3/G5 迁移判据的"机制方向可用"类），1.23–1.30×/1.57–2.24× 定量收益不迁移到文本-only，需同栈文本-only 锚点验证（G8 候选之一）。
 
+## 17. Phase 3 — Survey Outline & Writing（2026-11-01 用户拍板启动）
+
+**状态**：2026-11-01 用户确认"阶段二已具备进入阶段三条件"，本阶段启动。本阶段**只写大纲与正文的结构性材料**，不再扩文献库、不再新计深读；实验只在明确列为"行文所需锚点"时按 §14 执行。
+
+### 17.1 进入条件核对（已完成，2026-11-01）
+
+| 条件 | 现状 | 判定 |
+|---|---|---|
+| 文献覆盖 | 126 身份（120 唯一 arXiv＋6 会议），T1 20＋T2 84＋T3 21＋未标 1 | 满足 |
+| 代码映射 | §8 共 12 路径／8 系统（veRL 4 现代＋1 历史，其余 5 RL 框架＋2 引擎各 1） | 满足 |
+| 可比性账 | D1/D11/D12 五族口径收口；同栈锚点候选 A 已建（0.2% 恒等式误差） | 满足 |
+| 大纲备料四主题 | G3 备忘／G5 清单／G6 备忘／G2+G9 索引 | **引用就绪** |
+| §11 跨层发现 | **空**（仅有占位说明） | **缺口，阶段三第一优先补** |
+| §3 五类气泡形式化 | 标"待建" | **缺口，并入 O2 一并成文** |
+| 残留非阻塞项 | G7 十三条（等源码）、G8 部分权重依赖、HybridFlow 收尾 | 标注后不阻塞 |
+
+### 17.2 阶段三产出物（P1–P6）
+
+| 编号 | 产出物 | 内容与验收 | 优先级 |
+|---|---|---|---|
+| **P1** | §11 跨层发现账 | 至少 8 条跨层耦合条目，每条给"层×层、机制、谁受益谁受损、证据出处（§6.x/§13.x）、反例或边界"；直接成为大纲"跨层协同"章骨架 | 最高 |
+| **P2** | §3 性能模型成文 | 五类气泡（长尾/切换裂隙/权重同步/环境等待/资源空闲）各自给比值定义、可测量字段、优化杠杆、受影响的机制家族；并入 G3 三轴模型（接受率×版本差×批内分布） | 高 |
+| **P3** | survey outline 正文 | 章节树＋每节论点一句话＋每节引用清单（指向 §6.xx）＋每节"缺口"标注（引用 G1–G9）；**不含正文文字** | 高 |
+| **P4** | taxonomy 冻结决定 | 基于 G6 备忘裁定：是否设 L5 环境层。建议路径已定=**不建 L5**，environment bubble 作 L4 气泡源④显式子维，在大纲单列一节论证；本项只需用户确认后一次性落笔 | 高（需用户确认） |
+| **P5** | 写作规范与诚信约束 | 数字引用三要素（数字／口径限定／出处）、实测 vs 模拟 vs 论文报值三分类标注、负项必须与正项同族并列、不可跨族取比值——成文为写作 checklist | 中 |
+| **P6** | 可发表性评估 | 现有点位是否够支撑系统向 survey：新意锚定（rollout ≠ serving 的形式化、阶段占比中介定律、同栈锚点），并列出投稿前必须补的工作（G1/G2 的实验空白） | 中 |
+
+### 17.3 执行顺序与批次（沿用 §6.0 认领惯例）
+
+- **S1（P1 上半）**：从 §13.13 五族与 §6 深读节提炼跨层条目 1–5 条（建议起点：BubbleSpec = L1 机制＋L3 气泡利用、PrefixFlow/ReSpec = 生成侧与更新侧"报值超纯阶段投影"的镜像对称、Rollplex VLM 跨阶段共享、WAR 缓存路由 vs 在途轨迹、RhymeRL 历史 token 复用）。
+- **S2（P1 下半＋P2）**：跨层条目 6–8＋五类气泡形式化成文。
+- **S3（P3 上半）**：大纲骨架——引言/背景、性能模型章、L1–L4 分层章（四章）、跨层章、评估与可比性章、缺口与开放问题章。
+- **S4（P3 下半＋P5）**：每节引用清单与口径标注规范；负项索引接入（§13.16）。
+- **S5（P4＋P6）**：taxonomy 冻结落笔＋可发表性评估。
+- 每批完成后回写状态并推送；与 §6.0 相同规则：先认领后工作、冲突以远端为准。
+
+### 17.4 阶段三不做的事
+
+- 不扩文献库、不新增深读计数（大纲引用一律指向现有 §6/§13/§14）；
+- 不写正文段落（P3 只到"每节一句话论点"）；
+- 不在上游仓库发起任何动作（沿用铁律）；
+- 不为凑大纲启动大规模复现；§14 实验仅当"某节缺少唯一锚点"时按候选执行。
+
+### 17.5 需要用户决定的事项
+
+1. **taxonomy 是否冻结**（P4）：建议不建 L5、environment 作 L4 显式子维——确认后 S5 一次性落笔。
+2. **综述的核心问题表述**：现有措辞经考证为 agent 对用户指令的形式化（2026-10-30 取证，M1 宕机导致原始会话不可读）。若用户有更准确原话，S3 大纲开篇前对齐。
+3. **目标形态**：系统向 survey（arXiv 预印本）／技术报告（面向团队）／可发表论文——影响 P3 篇幅与 P6 评估标准。
+
 ## 16. Changelog / Research Log
+
+- **2026-11-01（阶段三启动：survey outline & writing 计划成文）**：用户拍板进入阶段三，新增 §17（进入条件核对表／产出物 P1–P6／批次 S1–S5／不做清单／需用户决定 3 项）。核对发现两处此前被"备料就绪"掩盖的实质缺口并列为第一优先：**§11 跨层发现仍为空**（综述新意所在位置，P1）、**§3 五类气泡形式化仍标待建**（P2）。Phase 2 资产、G1–G9 与 §14 执行账不变；不扩库、不加深读计数、无实验与上游动作。需用户决定：taxonomy 是否冻结（建议不建 L5）、核心问题表述原话、目标形态（survey／技术报告／论文）。
 
 - **2026-10-31（M5 收尾阶段第四十三批：候选 E 同栈更新侧单阶段批处理杠杆实测＋恒等式同栈再验证＋例行核对）**：21:4x–22:1x CST（13:4x–14:1x UTC）完成（§0 最近更新、§13.1 可比性能行更新、§13.27 新账、§14 候选 E 执行账、§13.16 G9 负项行、WORK/diary 同步；真实 GPU 实验，无上游写操作）。承接第四十一批（多阶段恒等式＋九轴收口）后按焦点做同栈补测：并行会话 10:10–10:33 UTC 已跑 e1/e2/e3 三模式（e1 首跑 0 步 CUDA invalid argument；e2 15/15；e3 14/15 末步 checkpoint 因 /home 满盘中断），本批独立复核日志、删除半写 e3 checkpoint（6.8G）、以同配置补跑 e1（checkpoint/日志落 /tmp，15/15 exit=0）、随后以 e3r2 补跑 e3 完整 15 步（/tmp 落盘，exit=0；杠杆起点经 verl 默认配置核验均为 3000——`ref/ref.yaml:24`／`rollout/rollout.yaml:117` 的 log_prob cap 均 oc.select ppo cap）并完成账：**三杠杆全负**——actor cap 3000→8192 使 update_actor 13.277→18.201s（G=0.729）、整步 27.484→32.358s（0.8494×）；rollout log_prob 3000→16384 使 3.773→4.776s（G=0.790）、0.9586×；ref 3000→16384（e3r2 完整 15 步补跑）使 4.234→4.713s（G=0.898）、0.9895×；峰值 reserved 21.18–21.25GB 与基线同（非显存压力）；**六阶段恒等重建残差 ≤0.026s、e1 单阶段预测 0.8480 vs 实测 0.8494（0.2%）**——§13.25 恒等式在同栈更新侧精确成立，但 update-side 3.32× 会计上界不能由放大 token 上限兑现，需不同机制；e1 首跑失败同配置补跑成功→环境瞬时错误非杠杆属性。归档 experiments/rollout-g8-candidate-e/（5 日志＋summary.json＋md5 三方一致）。例行核对（21:3x–22:0x CST）：4090-1 连通（GPU 全空闲、GPU 2 21728MiB、load 0.29、/home 余 6.8G、venv cu129 完好）、昇腾 VPN 断第 31 天（.154 与网关均不通）、#8313 与 DeepInfer-Go #2 不变、verl 8df5baee 不变、vLLM→7b77ed58（#64368 ROCm spec-decode，非本机算力）、DeepInfer/UniRL/AReaL 不变、AcceRL 无新推送。126 身份 20/84/21/1、代码 12 路径／8 系统不变；不新计深读、不扩库；不写 survey 正文、不冻结 taxonomy；复现计数口径仍待用户确认。全部操作=本地文档更新＋ssh 只读/补跑＋md5 核验，未触上游写操作（铁律）；未发评论/PR。
 
