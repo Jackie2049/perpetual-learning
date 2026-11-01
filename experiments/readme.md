@@ -6,6 +6,7 @@
 
 | 位置 | 内容 | 关联记录 |
 |---|---|---|
+| [unirl-localization-mask/verify.py](unirl-localization-mask/verify.py) | #354原TensorRef视图／四key-mask helper，14自编元数据控制＋叶数拒绝；[结果](unirl-localization-mask/result.json)核别名次数、keyless／多span及remap前提。无句柄materialize／transport／Ray或生命周期、性能验收 | [掩码与别名](../notebook/frameworks/unirl-survey.md#按需本地化的存储键与别名) |
 | [unirl-reward-request-boundary/verify.py](unirl-reward-request-boundary/verify.py) | #313原Batch／request／client／service与两版几何接自编CPU载体；[结果](unirl-reward-request-boundary/result.json)核行对齐、截断、对象身份与九拒绝。分支behind99，非native Sample／TensorRef／DP、作者11项或流量／训练验收 | [奖励投影与轨迹所有权](../notebook/frameworks/unirl-survey.md#奖励请求投影与轨迹所有权) |
 | [unirl-monitor-objective/verify.py](unirl-monitor-objective/verify.py) | #641两版原类／parser接56组自编CPU控制；[结果](unirl-monitor-objective/result.json)核四聚合目标隔离、必需探针失败及真实Hydra原spec构造。HTTP Session为记录器，非作者37项／完整配方、服务或训练验收 | [监控奖励新字段](../notebook/frameworks/unirl-survey.md#新候选的显式监控字段) |
 | [verl-moe-layout-provenance/verify.py](verl-moe-layout-provenance/verify.py) | #8442原转换函数接各版原测试体：基线2过／候选5过；[结果](verl-moe-layout-provenance/result.json)另核自编矩形／独立方形投影及原MRO表达式，缺标记同shape元素差9。非真实FSDP／NPU／vLLM或IPC | [Packed布局来源](../notebook/frameworks/verl-quant-layer-audit.md#packed-专家权重的布局来源) |

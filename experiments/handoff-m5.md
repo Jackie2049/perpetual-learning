@@ -19,6 +19,10 @@ GPU/NPU 的访问、环境与实验由 macbook-M5 Agent 负责。M1 遇到需要
 
 ## UniRL 联合路径的资源与身份边界
 
+按需本地化参考（2026-11-01，沿用下方奖励传输入口、非新队列／接单）：[#354](https://github.com/Tencent-Hunyuan/UniRL/pull/354) headcc8c3f01／祖先c8af5d69，相对main b8e9740e behind92。[M1原TensorRef／mask helper](../notebook/frameworks/unirl-survey.md#按需本地化的存储键与别名)14自编元数据控制＋叶数拒绝，只用自编handle身份，无localize／get_batch／finalizer执行；skips按对象出现、reads按键，keyless／多span保守性与实际搬运另核。作者双H20及合成Sample微基准不当整步收益。
+
+仅M5未来独立选用已有获准安全匹配传输工作时，先核实际可用版本／worker-local分支及autograd限制，不把旧reads/skips接口套main；在原预算核别名／view／多span选择、localize前后对应与所有权、未读句柄回传身份、释放后store状态和真实两跳字节，值／寿命／流量／耗时分列。缺版本／授权模型／环境／资源、需下载部署或影响专项即停记未测，不移植／拼#313、启Ray/NCCL任务或新基准，任何社区及PR-head写入仍逐项须用户明确同意；M1不探测服务器。
+
 奖励请求投影参考（2026-11-01，同一奖励入口、非新增基准／已接单）：[#313](https://github.com/Tencent-Hunyuan/UniRL/pull/313) headfbee2850／祖先8fc283e0，相对main b8e9740e behind99，旧primitives API不可直接套当前conditioning／双prompt。[M1原request／client／service控制](../notebook/frameworks/unirl-survey.md#奖励请求投影与轨迹所有权)仅CPU tensor、自编Sample／Part／scorer／Handle接缝；核行对齐／截断／附件身份及九拒绝、两版geometry，不是native TensorRef／DP／流量验收。作者私有H20流量−68.29%及调用−0.54%不作本机或整步收益。
 
 若M5日后独立选用已有获准、安全、匹配的奖励slab工作，先固定实际可用实现／API、模型与scorer／拓扑、原Sample身份及截断／分组语义；在原预算内先比较配对输入评分与训练输入ref身份，再记录reward及后续train两跳的实际序列化／localization字节和独立wall time。缺匹配版本／授权权重／资源、安全事件未闭环、需下载部署或影响专项即停记未测，不自动移植、拼候选、启动新训练／MPS或复刻作者矩阵；所有社区及已建PR的fork head写入仍逐项待用户明确同意。M1不探测服务器，交接不增加权限。

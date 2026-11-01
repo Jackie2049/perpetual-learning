@@ -1,0 +1,53 @@
+{
+  "head": "cc8c3f01d1c1497f473e42f256346fecf57c3397",
+  "actual_merge_base": "c8af5d699c81fb02a0086e34b342b1efacc7d431",
+  "source_sha256": {
+    "unirl/distributed/tensor/batch.py": "574cb025e85e8e183474e601d5e27fd50ca5a5967ed6c85db1dbca713dbbe871",
+    "unirl/distributed/tensor/ref.py": "e6e8d522c30a537aa0490fdb0117e1cdc2ce46b39347c0347fd7c1d4473193b7",
+    "unirl/distributed/utils.py": "5f77a3878ea1223d5a6c5b56c5a14cf6639f3dca9cf1140ccae4d489fe1c863e",
+    "unirl/distributed/group/dispatch.py": "2060a3f38251be3b5490beb789746d766d046d29ee6fc7e72ac0d89d1469ce04",
+    "unirl/distributed/group/handle.py": "ac0a22be2bbacdc32e3e8e199520ee6daee6b379e82b06e929bd4bd421e1a6a6",
+    "unirl/distributed/group/worker.py": "0825a5e8c6c5f5f7b30ba1bf42e11d63af44e8f4e048b58fa137d15035a3158d"
+  },
+  "python": "3.12.13",
+  "torch": "2.9.1",
+  "original_helper_controls": {
+    "reads_view_uses_storage_identity": [
+      "'source:A'"
+    ],
+    "skip_exact_ref": [
+      "'source:B'"
+    ],
+    "skip_new_view_matches_no_occurrence": [
+      "'source:A'",
+      "'source:B'"
+    ],
+    "same_object_alias_one_occurrence_skipped": [
+      "'source:A'",
+      "'source:B'"
+    ],
+    "same_object_alias_all_occurrences_skipped": [
+      "'source:B'"
+    ],
+    "different_refs_share_key_outside_skip": [
+      "'source:A'",
+      "'source:B'"
+    ],
+    "empty_arguments": [],
+    "keyed_ref_empty_mask_not_required": false,
+    "none_mask_requires_keyed_ref": true,
+    "keyless_ref_empty_mask_still_required": true,
+    "multi_span_any_key_requires_whole_ref": true,
+    "object_ref_binary_fallback": [
+      "('object_ref', b'own-object-C')"
+    ],
+    "positional_remap": [
+      "'target:A'"
+    ],
+    "same_count_swapped_structure_is_not_rejected": [
+      "'target:B'"
+    ]
+  },
+  "different_leaf_count_error": "TensorTransport.localize changed the TensorRef tree structure",
+  "scope": "14 own metadata controls plus leaf-count rejection; original Batch/ref module, collect_leaves and four key/mask helpers. Own handle metadata/binary seam, native TensorRef views; no materialization, native transport/localizer, Worker.call, Handle launch/restore/finalizer, Ray/NCCL, autograd, scorer, bandwidth or training. Handle/worker sources compiled and read only."
+}

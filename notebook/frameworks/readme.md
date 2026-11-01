@@ -107,6 +107,8 @@
 
 ## UniRL
 
+- [按需本地化的键与别名](unirl-survey.md#按需本地化的存储键与别名)：#354原ref／selector元数据控制核reads／skips不对称、空掩码与多span保守性、remap对应前提；非transport／finalizer／性能验收，旧分支behind92。
+
 - [奖励投影与轨迹所有权](unirl-survey.md#奖励请求投影与轨迹所有权)：#313旧分支原request／client／service接自编CPU载体，核保留身份、裁剪字段与reward行几何；behind99，不迁当前API／真实流量或作者性能结论。
 
 - [监控奖励的目标隔离](unirl-survey.md#新候选的显式监控字段)：#641已有作者实现，原parser／spec自编CPU控制核四聚合排除探针、失败契约及真实Hydra容器构造，非服务／训练验收。

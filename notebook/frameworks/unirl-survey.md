@@ -1811,6 +1811,31 @@ wrapper赋给`tokenizer.apply_general_template`，没有写回tokenizer类；mar
 
 固定源码可用`git diff 4fb0b1f7b291f3cd5010597b85d41ed44659ef40...d41122e97e1ab631328c86baad00250c406d2b17 -- unirl/models/hunyuan_image3/compat.py unirl/models/hunyuan_image3/text_embed.py`复查。head SHA256：compat `1ddc093e2b606acbb1a698b95bc85cf9c0da3f603b7d80f70e8cbb7c3107e0fb`、text_embed `446930c6ba85af42b93c7f97737f5325bef644c9c2ba9cd281d8403dd0f2608c`。
 
+## 按需本地化的存储键与别名
+
+**跳过一个字段，不一定能跳过它引用的存储；掩码选择正确，也不等于远端引用生命周期已验证。** 2026-11-01只读CjhHa1的OPEN／非draft [#354](https://github.com/Tencent-Hunyuan/UniRL/pull/354)，head `cc8c3f01d1c1497f473e42f256346fecf57c3397`，API base与实际共同祖先 `c8af5d699c81fb02a0086e34b342b1efacc7d431`。相对main b8e9740e为ahead7／behind92；该通用distributed选择器方案与下一节#313的领域请求投影不能自动拼接，也不是当前主线已提供的接口。
+
+[原dispatch helper](https://github.com/Tencent-Hunyuan/UniRL/blob/cc8c3f01d1c1497f473e42f256346fecf57c3397/unirl/distributed/group/dispatch.py)将`reads=`结果内TensorRef的存储键取并集；`skips=`则按**原对象身份及出现次数**判断哪些出现被排除，再保留其他位置仍引用的键。存储身份来自[原ref helper](https://github.com/Tencent-Hunyuan/UniRL/blob/cc8c3f01d1c1497f473e42f256346fecf57c3397/unirl/distributed/tensor/ref.py)：优先handle.store_key，无键时才用object_ref.binary。行视图共享键，但不是同一ref对象；键不是内容hash或字节范围。
+
+[CPU脚本](../../experiments/unirl-localization-mask/verify.py)载入完整原Batch／ref模块、原collect_leaves及四个key／mask helper；原TensorRef.from_handles／slice产生真实元数据视图，handle及object_ref.binary是明确自编记录器，local()设为禁止调用。Python3.12.13／Torch2.9.1，14组自编元数据控制及1个叶数拒绝通过；六源compile／SHA256和[结果](../../experiments/unirl-localization-mask/result.json)可复查。令a引用键A，b引用键B，a_view为a新建行视图：
+
+| 选择方式 | 输入中引用 | 必须解析的键 |
+|---|---|---|
+| reads返回a_view | a、b | A |
+| skips返回原a | a、b | B |
+| skips返回新a_view | a、b | A、B，视图不匹配原出现 |
+| skips返回a一次 | a、a、b | A、B，另一次仍需要A |
+| skips返回a两次 | a、a、b | B |
+| skips返回原a | a、a_view、b | A、B，另一ref仍声明A |
+
+`ref_is_required(ref,None)`保留全量语义；空set只排除有已知键且不相交的ref，**无键ref即使面对空掩码仍需解析**。多span引用只要任一键相交，整个ref就返回required=True；原Worker.call把这个完整ref交给get_batch。因此不能把选择到一个视图／一个键理解为只搬该行范围，或用键个数推算传输字节；本机没有执行get_batch。
+
+控制器先在localize前生成mask，再按前后叶子的对应位置把选中键映射到新键，不重新执行选择器。原remap helper只显式检查ref叶数相同：正常A→target_A通过，少一个叶子抛RuntimeError；故意把同数量的两个目标叶子对调仍按位置选中target_B。**后一控制刻意违反结构对应前提，不是发现真实localizer会错排；叶数检查也不能单独证明语义对应。**
+
+[Handle启动分支](https://github.com/Tencent-Hunyuan/UniRL/blob/cc8c3f01d1c1497f473e42f256346fecf57c3397/unirl/distributed/group/handle.py)仅在worker-local transport且声明selector时走局部路径，并拒绝该路径的grad_mode；否则仍走全量。源码还保留localized参数与passthrough映射以维持句柄寿命。这里对Handle／Worker仅做相关调用点阅读及整源compile，未执行真实localize、Worker.call、返回句柄恢复／finalizer、Ray／NCCL或autograd，不能据helper通过认证其余协议。
+
+作者报告双H20 smoke核评分／截断一致、producer句柄回传及释放后store归零；另用B8、1024px的FLUX形状合成Sample、10次调用中位数报告reward搬运216→96MiB、31.4→12.2ms，train搬运216→120MiB、24.9→21.1ms。**这是作者传输微基准，不是本机、真实FLUX训练或整步吞吐收益。** 复现本机控制：`../deepinfer-eplb-venv/bin/python experiments/unirl-localization-mask/verify.py ../unirl-readonly`。实际传输／生命周期缺口补[原M5条件入口](../../experiments/handoff-m5.md#unirl-联合路径的资源与身份边界)，不自动采用旧selector、改当前API或新排设备任务。
+
 ## 奖励请求投影与轨迹所有权
 
 **奖励端需要评分数据，不一定需要整条训练轨迹；少传字段与真实跨slab字节减少仍是两种证据。** 2026-11-01只读CjhHa1的OPEN／非draft [#313](https://github.com/Tencent-Hunyuan/UniRL/pull/313)，head `fbee2850f8e5127745b84f1d60286111d2911d2a`、API base与实际共同祖先 `8fc283e0eaee9de9f5a7de085872f7a046760ce6`。相对当前main `b8e9740e981a68a5556fbeb8225558040a4d47a4`为ahead1／behind99，更新评论不等于同步新主线。固定分支的RewardRequest仍用`primitives`；main已经改成`conditioning`及`original_prompt`／`generation_prompt`，因此不能把旧候选当作当前API可直接使用的优化。
