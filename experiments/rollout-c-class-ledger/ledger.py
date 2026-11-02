@@ -211,6 +211,8 @@ def load_p3(path: Path) -> Dict[str, Dict[str, List[float]]]:
             "total_cost": [s["total_cost"] for s in ps],
             "prefix_cost": [sum(s["step_costs"][: s["steps_to_09"] + 1]) for s in ps],
             "final_acc": [s["final_acc"] for s in ps],
+            # p3 归档无生成量／轨迹数／每步计数三字段：测不了就不给，也不用别处现算值代替
+            # （p3 的轨迹数由模式长度常数决定，不是可观测的量）。
         }
     return out
 
@@ -226,10 +228,140 @@ def load_p4(path: Path) -> Dict[str, Dict[str, List[float]]]:
             "total_cost": [s["total_cost"] for s in ps],
             "total_gen": [s["total_gen"] for s in ps],
             "n_traj": [s["total_traj"] for s in ps],
+            "mean_counts": [s["mean_counts"] for s in ps],
             "prefix_cost": [sum(s["step_costs"][: s["steps_to_09"] + 1]) for s in ps],
             "final_acc": [s["final_acc"] for s in ps],
         }
     return out
+
+
+# ---------------------------------------------------------------- 口径检查
+#
+# 第三批（2026-11-02）加的四条检查。它们不改任何比值，只回答"这份账自己能不能站住"：
+# 一个机制账可以在数字全对的情况下，把不可测的差读成显著、把跟随量读成独立证据。
+# 每条都配一个能在单测里真的被抓到的负向对照（见 test_ledger.TestAccountChecks）。
+
+
+def ceiling_rate(values: List[float], thr: float = 0.9999) -> float:
+    """落在评测上限（≈1.0）附近的种子比例。上限饱和时准确率差不可读。"""
+    if not values:
+        return 0.0
+    return sum(1 for v in values if v >= thr) / len(values)
+
+
+def ceiling_checks(p3: Dict[str, List[float]], p4: Dict[str, List[float]]) -> Dict:
+    """① 天花板饱和：准确率是主结论之一（"没观察到显著退化"）的唯一来源。"""
+    rows = {}
+    for name, arms, base in (("p4", p4, "base"), ("p3", p3, "R_nofilter")):
+        for arm, v in arms.items():
+            if arm == base:
+                continue
+            rows[f"{name}:{arm}"] = {
+                "base_at_ceiling": ceiling_rate(arms[base]["final_acc"]),
+                "arm_at_ceiling": ceiling_rate(v["final_acc"]),
+                "acc_paired": paired(v["final_acc"], arms[base]["final_acc"]),
+            }
+    return rows
+
+
+def sign_checks(rows: Dict[str, Dict]) -> Dict:
+    """② 离散指标（步数、准确率）的配对数：非零对多少、符号是否 30/30 同向。
+
+    连续量（成本、轨迹、生成量）在逐对配对里会有微小的系统性差；步数是整数，
+    准确率是 1/800 的网格，两者都能给出"零方差"区间——那种区间不说明显著，
+    只说明几乎所有种子打平。
+    """
+    out = {}
+    for name, row in rows.items():
+        acc = row["acc_paired"]
+        steps = row["steps_paired"]
+        out[name] = {
+            "acc_n_nonzero": acc["n"] - acc["n_zero"],
+            "acc_sign": _uniform_sign([acc["mean_diff"]]),
+            "steps_n_nonzero": steps["n"] - steps["n_zero"],
+            "steps_sign": _uniform_sign([steps["mean_diff"]]),
+        }
+    return out
+
+
+def _uniform_sign(diffs: List[float]) -> Optional[int]:
+    """所有差同号则有符号（+1/−1），否则 None。"""
+    if not diffs:
+        return None
+    pos = all(d > 0 for d in diffs)
+    neg = all(d < 0 for d in diffs)
+    return 1 if pos else (-1 if neg else None)
+
+
+def collinear_checks(ledger_rows: Dict[str, Dict]) -> Dict:
+    """③ 共线量的回退一致性：当 A ≡ B 时，一切 |A−B| 恒为 0。
+
+    p4 的墙钟模型里生成量恒等于步成本（`total_gen == total_cost` 逐种子；
+    更新恒 8 单位、非空步的步成本 = max(gen, 8)、而本模型非空步的生成恒 > 8），
+    于是 `paired_total_gen` 与 `paired_total_cost` 逐位相同。这不是两条独立证据，
+    是一条证据被数了两遍。同理 `cap` 的墙钟差恒为 0（生成与成本都没变）——
+    它在墙钟上"省"的 6.3% 只能经收敛路径到达。
+    """
+    out = {}
+    for name, row in ledger_rows.items():
+        cost_diff = row["_cost_diff"]
+        # 逐对比较：哪些"独立字段"的逐种子差与成本差逐位相同。
+        same = {
+            "traj": row["_traj_diff"] == cost_diff,
+            "gen": row["_gen_diff"] == cost_diff,
+            "mean_counts": row["_counts_diff"] == cost_diff,
+        }
+        out[name] = {
+            "gen_equals_cost_total": abs(row["gen_ratio"] - row["cost_ratio"]) < 1e-12
+            if row.get("gen_ratio") is not None
+            else None,
+            "diff_equals_cost_diff": {k: v for k, v in same.items() if v is not None},
+            "identity_columns": sorted(
+                k for k, v in (("traj_ratio", row["_traj_eq"]), ("gen_ratio", row["_gen_eq"])) if v
+            ),
+            "wall_independent_of_gen_and_cost": (
+                abs(row["wall_ratio"] - 1.0) > 1e-12
+                and abs(row["wall_ratio"] - row["cost_ratio"]) > 1e-12
+            ),
+        }
+    return out
+
+
+def degeneracy_checks(rows: Dict[str, Dict]) -> Dict:
+    """④ 独立字段退化：cost_ratio 与 traj_ratio 同时 <1 时，两个字段在这四臂里退化成一个。
+
+    §13.43 的判据把"省每步成本"与"省训练样本"当两条独立读数，但 `freq` 的
+    traj_ratio ≡ cost_ratio（都是 0.277）——每份轨迹长度固定，生成量、轨迹数与
+    步成本同比例缩放。本模型能分开二者的只有 `cap`（traj 0.282 / cost 1.000）。
+    """
+    pairs = ("freq", "replay", "cancel", "cap")
+    out = {"traj_equals_cost": {}, "separating_arms": [], "degenerate_arms": []}
+    for name in pairs:
+        row = rows.get(name)
+        if not row or row.get("traj_ratio") is None:
+            continue
+        equal = abs(row["traj_ratio"] - row["cost_ratio"]) < 1e-9
+        out["traj_equals_cost"][name] = equal
+        if equal:
+            out["degenerate_arms"].append(name)
+        else:
+            out["separating_arms"].append(name)
+    return out
+
+
+def accuracy_resolution(p3_meta: Dict, p4_meta: Dict) -> Dict:
+    """准确率的最小可分辨步长：最终评测的轨迹数决定网格。
+
+    p3 的 final_acc 用 n_eval*4 条、p4 用 n_eval 条；网格粗到 1/800 时，
+    "分布重度集中在平局"与"有真实差异"在单种子上不可分辨（两个值相差 0.005
+    就是网格上相邻的两格）。
+    """
+    return {
+        "p3_eval_trajs_final": p3_meta.get("eval_size", 0) * 4,
+        "p4_eval_trajs_final": p4_meta.get("eval_size", 0),
+        "p3_grid": 1.0 / max(1, p3_meta.get("eval_size", 0) * 4),
+        "p4_grid": 1.0 / max(1, p4_meta.get("eval_size", 0)),
+    }
 
 
 # ---------------------------------------------------------------- 主计算
@@ -259,13 +391,30 @@ def arm_row(arm: Dict[str, List[float]], base: Dict[str, List[float]]) -> Dict:
         if "prefix_cost" in arm and "prefix_cost" in base
         else None
     )
+    # 逐种子差值只在内部用于口径检查，不进归档（归档字段与上一版保持可比）。
+    cost_diff = [a - b for a, b in zip(arm["total_cost"], base["total_cost"])]
+
+    def _diff(key):
+        if key not in arm or key not in base:
+            return None
+        return [a - b for a, b in zip(arm[key], base[key])]
+
     return {
+        "_cost_diff": cost_diff,
+        "_traj_diff": _diff("n_traj"),
+        "_gen_diff": _diff("total_gen"),
+        "_counts_diff": _diff("mean_counts"),
+        "_traj_eq": traj_r is not None and abs(traj_r - cost_r) < 1e-9,
+        "_gen_eq": gen_r is not None and abs(gen_r - cost_r) < 1e-9,
         "gen_ratio": gen_r,
         "cost_ratio": cost_r,
         "wall_ratio": wall_r,
         "steps_ratio": steps_r,
         "traj_ratio": traj_r,
         "prefix_ratio": prefix_r,
+        "gen_paired": paired(arm["total_gen"], base["total_gen"])
+        if gen_r is not None
+        else None,
         "wall_denominators": denominators(arm["walls_to_09"], base["walls_to_09"]),
         "steps_paired": paired(arm["steps_to_09"], base["steps_to_09"]),
         "wall_paired": paired(arm["walls_to_09"], base["walls_to_09"]),
@@ -273,13 +422,27 @@ def arm_row(arm: Dict[str, List[float]], base: Dict[str, List[float]]) -> Dict:
         "gap_from_ratios": gap(wall_r, cost_r),
         "gap_pieces": gap_pieces(wall_r, cost_r, steps_r, prefix_r),
         "wall_bootstrap": bootstrap_ci(arm["walls_to_09"], base["walls_to_09"]),
+        "acc_at_ceiling": ceiling_rate(arm["final_acc"]),
+        "base_acc_at_ceiling": ceiling_rate(base["final_acc"]),
     }
 
 
-def build(p3: Dict, p4: Dict) -> Dict:
+def build(p3: Dict, p4: Dict, meta: Optional[Dict] = None) -> Dict:
     rows = {a: arm_row(v, p4["base"]) for a, v in p4.items() if a != "base"}
     p3_pairs = (("C", "B"), ("B", "R_nofilter"), ("A", "R_nofilter"), ("C", "R_nofilter"))
     p3_rows = {f"{a}_vs_{b}": arm_row(p3[a], p3[b]) for a, b in p3_pairs}
+    meta = meta or {}
+    # 第三批：口径检查（在剔除内部字段之前做，它们要读逐种子差）
+    account = {
+        "ceiling": ceiling_checks(p3, p4),
+        "signs": sign_checks({**rows, **p3_rows}),
+        "collinear": collinear_checks(rows),
+        "degeneracy": degeneracy_checks(rows),
+        "accuracy_grid": accuracy_resolution(meta.get("p3_meta", {}), meta.get("p4_meta", {})),
+    }
+    for row in (*rows.values(), *p3_rows.values()):
+        for k in [k for k in row if k.startswith("_")]:
+            row.pop(k)
     return {
         "meta": {
             "experiment": "C 类机制账：省下的每步成本有多少被吃掉（分层口径＋分母核验）",
@@ -293,6 +456,8 @@ def build(p3: Dict, p4: Dict) -> Dict:
         },
         "p4_arms": rows,
         "p3_pairs": p3_rows,
+        # 只回答"这份账自己能不能站住"，不改上面任何比值。
+        "account_checks": account,
     }
 
 
@@ -302,12 +467,43 @@ def build(p3: Dict, p4: Dict) -> Dict:
 def _close(a, b, tol=1e-9):
     if a is None or b is None:
         return a is b
+    if isinstance(a, str) or isinstance(b, str):
+        return a == b
     return abs(a - b) <= tol * max(1.0, abs(a), abs(b))
+
+
+CHECK_SECTIONS = ("account_checks",)
+
+
+def _deep_diff(prefix: str, want, got, problems: List[str]) -> None:
+    """递归比对两层以上嵌套（bool 用同一性，数值用相对容差）。"""
+    if isinstance(want, dict):
+        if not isinstance(got, dict):
+            problems.append(f"{prefix}: 归档缺子表")
+            return
+        for k, v in want.items():
+            _deep_diff(f"{prefix}.{k}", v, got.get(k), problems)
+    elif isinstance(want, list):
+        if not isinstance(got, list) or len(want) != len(got):
+            problems.append(f"{prefix}: 归档 {got} ≠ 重算 {want}")
+            return
+        for i, (a, b) in enumerate(zip(want, got)):
+            _deep_diff(f"{prefix}[{i}]", a, b, problems)
+    elif isinstance(want, bool) or isinstance(got, bool):
+        if want is not got:
+            problems.append(f"{prefix}: 归档 {got} ≠ 重算 {want}")
+    elif not _close(want, got):
+        problems.append(f"{prefix}: 归档 {got} ≠ 重算 {want}")
 
 
 def verify(archive_path: Path, fresh: Dict) -> List[str]:
     old = json.loads(archive_path.read_text())
     problems: List[str] = []
+    for section in CHECK_SECTIONS:
+        if section not in old:
+            problems.append(f"归档缺 section {section}")
+            continue
+        _deep_diff(section, fresh[section], old[section], problems)
     for section in ("p4_arms", "p3_pairs"):
         if section not in old:
             problems.append(f"归档缺 section {section}")
@@ -349,7 +545,14 @@ def main() -> int:
     ap.add_argument("--verify", metavar="ARCHIVE", default=None)
     a = ap.parse_args()
 
-    result = build(load_p3(Path(a.p3)), load_p4(Path(a.p4)))
+    result = build(
+        load_p3(Path(a.p3)),
+        load_p4(Path(a.p4)),
+        {
+            "p3_meta": json.loads(Path(a.p3).read_text())["meta"],
+            "p4_meta": json.loads(Path(a.p4).read_text())["meta"],
+        },
+    )
 
     if a.verify:
         problems = verify(Path(a.verify), result)
@@ -384,6 +587,27 @@ def main() -> int:
             f"sigma_steps {p['sigma_steps']:+.4f} "
             f"(convergence {'faster' if p['convergence_faster'] else 'slower'})"
         )
+    checks = result["account_checks"]
+    print("\n口径检查（第三批）")
+    # 共线假设是本批归类的前提：若生成量不再恒等于步成本，下面所有"×_ratio 是独立读数"
+    # 的说法都要重做。断言放在打印前，失效就立刻停。
+    for name, c in checks["collinear"].items():
+        assert c["gen_equals_cost_total"], f"{name}: 生成量与步成本不再相等，共线假设失效"
+    for name, c in checks["ceiling"].items():
+        print(
+            f"  ceiling {name:18s} base {c['base_at_ceiling']:.0%} arm {c['arm_at_ceiling']:.0%} "
+            f"Δacc {c['acc_paired']['mean_diff']:+.4f} ± {c['acc_paired']['ci95']:.4f} "
+            f"(非零对 {c['acc_paired']['n'] - c['acc_paired']['n_zero']}/{c['acc_paired']['n']})"
+        )
+    for name, c in checks["collinear"].items():
+        same = ",".join(k for k, v in c["diff_equals_cost_diff"].items() if v)
+        print(
+            f"  collinear {name:7s} 恒等列 {c['identity_columns']} 逐对同差 [{same}] "
+            f"独立墙钟 {c['wall_independent_of_gen_and_cost']}"
+        )
+    dg = checks["degeneracy"]
+    print(f"  degeneracy traj≡cost: {dg['traj_equals_cost']} 可分开的臂 {dg['separating_arms']}")
+    print(f"  accuracy_grid {checks['accuracy_grid']}")
     return 0
 
 

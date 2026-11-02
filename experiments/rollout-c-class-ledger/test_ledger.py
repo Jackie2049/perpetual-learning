@@ -156,5 +156,182 @@ class TestAgainstArchives(unittest.TestCase):
             self.assertTrue(problems, "篡改未被 verify 发现")
 
 
+class TestAccountChecks(unittest.TestCase):
+    """第三批的四条口径检查。每条都配一个负向对照：把检查关掉或换成错的口径时，
+    同一条断言必须失败——否则断言没有约束力。"""
+
+    @classmethod
+    def setUpClass(cls):
+        p3 = json.loads(P3.read_text())
+        p4 = json.loads(P4.read_text())
+        cls.result = ledger.build(
+            ledger.load_p3(P3),
+            ledger.load_p4(P4),
+            {"p3_meta": p3["meta"], "p4_meta": p4["meta"]},
+        )
+
+    # ---- ① 天花板饱和
+
+    def test_p4_accuracy_sits_at_ceiling(self):
+        """p4 的 base 有 28/30 种子最终准确率 = 1.0。此时 Δacc 的区间宽度
+        （±0.0006–0.0011）比评测网格（0.005）还窄——只可能来自"少数种子差一格、多数打平"。"""
+        ceil = self.result["account_checks"]["ceiling"]
+        self.assertAlmostEqual(ceil["p4:freq"]["base_at_ceiling"], 28 / 30, places=6)
+        self.assertAlmostEqual(ceil["p4:freq"]["arm_at_ceiling"], 22 / 30, places=6)
+        self.assertAlmostEqual(ceil["p4:cap"]["arm_at_ceiling"], 24 / 30, places=6)
+
+    def test_p4_nonzero_accuracy_pairs_are_few(self):
+        """freq 只有 8/30 对非零、replay 2/30、cancel 5/30、cap 4/30。"""  # noqa: E501
+        signs = self.result["account_checks"]["signs"]
+        self.assertEqual(signs["freq"]["acc_n_nonzero"], 8)
+        self.assertEqual(signs["replay"]["acc_n_nonzero"], 2)
+        self.assertEqual(signs["cancel"]["acc_n_nonzero"], 5)
+        self.assertEqual(signs["cap"]["acc_n_nonzero"], 4)
+
+    def test_negative_control_ceiling_blind(self):
+        """负向对照：阈值放到 1.0 以上时天花板比例恒为 0，"饱和"就看不见了。"""
+        vals = [0.995, 1.0, 1.0, 0.99]
+        self.assertEqual(ledger.ceiling_rate(vals, thr=1.01), 0.0)
+        self.assertGreater(ledger.ceiling_rate(vals), 0.0)
+
+    # ---- ② 离散指标的符号一致性
+
+    def test_discrete_separation_beats_continuous(self):
+        """p3 的步数差 26–29/30 非零，且与成本差**同向**（同一步数口径），故"删组收敛更快"
+        在会话内是稳的。p4 四臂的步数差 16–24/30 非零、方向一致但更少，且**与墙钟差撞在
+        同一个网格上**——这才是 p4 上不能把"收敛略快"当结论的原因。"""
+        signs = self.result["account_checks"]["signs"]
+        self.assertEqual(signs["C_vs_B"]["steps_sign"], -1)
+        self.assertEqual(signs["B_vs_R_nofilter"]["steps_sign"], -1)
+        self.assertGreaterEqual(signs["C_vs_B"]["steps_n_nonzero"], 25)
+        for arm, expect in {"replay": 19, "cancel": 22, "cap": 16}.items():
+            self.assertEqual(signs[arm]["steps_n_nonzero"], expect)
+
+    def test_negative_control_sign_mix_returns_none(self):
+        """负向对照：混符号时 _uniform_sign 必须返回 None（不能强行给方向）。"""
+        self.assertIsNone(ledger._uniform_sign([1.0, -1.0]))
+        self.assertEqual(ledger._uniform_sign([-2.0, -0.5]), -1)
+        self.assertIsNone(ledger._uniform_sign([]))
+
+    # ---- ③ 共线量的回退一致性
+
+    def test_gen_equals_cost_in_all_p4_arms(self):
+        """p4 的生成量恒等于步成本（逐种子），所以 paired_total_gen 与 paired_total_cost
+        是同一个数——引用时不能当两条独立证据。"""
+        coll = self.result["account_checks"]["collinear"]
+        for arm in ("freq", "replay", "cancel", "cap"):
+            self.assertTrue(coll[arm]["gen_equals_cost_total"])
+            self.assertTrue(coll[arm]["diff_equals_cost_diff"]["gen"])
+        cap = self.result["p4_arms"]["cap"]
+        self.assertEqual(cap["gen_paired"]["mean_diff"], 0.0)
+        self.assertEqual(
+            self.result["p4_arms"]["freq"]["gen_paired"]["mean_diff"],
+            -194308.8,
+        )
+
+    def test_cap_wall_zero_pairs_are_not_a_separation(self):
+        """cap 的生成量与步成本逐对全同（Δ=0），但墙钟差**不是**全零：30 对里只有 14 对
+        打平，其余 16 对差在 ±1.5 个步单位量级。所以它不是"墙钟没变"的证据，
+        而是"离到 0.9 的距离在一个网格上下"——本批因此**不归因**。"""
+        cap = self.result["p4_arms"]["cap"]
+        self.assertEqual(cap["gen_paired"]["n_zero"], cap["gen_paired"]["n"])
+        self.assertEqual(cap["wall_paired"]["n_zero"], 14)
+        self.assertAlmostEqual(cap["wall_ratio"], 0.9369, places=3)
+        self.assertAlmostEqual(cap["cost_ratio"], 1.0, places=9)
+
+    def test_negative_control_collinear_breaks_when_inputs_differ(self):
+        """负向对照：给一个生成量 ≠ 成本的臂，检查必须报 False。"""
+        arm = {"total_gen": [22.0, 33.0], "total_cost": [11.0, 22.0], "walls_to_09": [5.0, 6.0],
+               "steps_to_09": [1.0, 2.0], "n_traj": [1.0, 2.0], "final_acc": [0.5, 0.6],
+               "prefix_cost": [5.0, 6.0]}
+        base = {"total_gen": [10.0, 20.0], "total_cost": [10.0, 20.0], "walls_to_09": [5.0, 6.0],
+                "steps_to_09": [1.0, 2.0], "n_traj": [1.0, 2.0], "final_acc": [0.5, 0.6],
+                "prefix_cost": [5.0, 6.0]}
+        rows = {"x": ledger.arm_row(arm, base)}
+        self.assertFalse(ledger.collinear_checks(rows)["x"]["gen_equals_cost_total"])
+
+    # ---- ④ 独立字段退化
+
+    def test_traj_and_cost_degenerate_for_three_arms(self):
+        """freq／replay／cancel 的 traj_ratio ≡ cost_ratio；只有 cap 能把两者分开
+        （traj 0.282 vs cost 1.000）。故"省样本"这条读法在本模型里只有一个可用实例。"""
+        dg = self.result["account_checks"]["degeneracy"]
+        self.assertEqual(sorted(dg["separating_arms"]), ["cap"])
+        self.assertEqual(sorted(dg["degenerate_arms"]), ["cancel", "freq", "replay"])
+        self.assertAlmostEqual(self.result["p4_arms"]["cap"]["traj_ratio"], 0.2823, places=3)
+
+    def test_negative_control_degeneracy_needs_split_arm(self):
+        """负向对照：若所有臂都 traj≡cost，separating_arms 必须为空。"""
+        rows = {a: {"traj_ratio": 0.5, "cost_ratio": 0.5} for a in ("freq", "cap")}
+        dg = ledger.degeneracy_checks(rows)
+        self.assertEqual(dg["separating_arms"], [])
+        self.assertEqual(sorted(dg["degenerate_arms"]), ["cap", "freq"])
+
+    # ---- 准确率网格
+
+    def test_accuracy_grid_is_coarse_for_p4(self):
+        """p4 最终评测 200 条 ⇒ 网格 0.005；p3 是 1600 条 ⇒ 0.000625。
+        p4 的 Δacc 量级（0.0003–0.0013）低于一个网格。"""
+        grid = self.result["account_checks"]["accuracy_grid"]
+        self.assertAlmostEqual(grid["p4_grid"], 0.005, places=9)
+        self.assertAlmostEqual(grid["p3_grid"], 0.000625, places=9)
+        self.assertLess(abs(self.result["p4_arms"]["freq"]["acc_paired"]["mean_diff"]), grid["p4_grid"])
+
+
+class TestInjectedDefects(unittest.TestCase):
+    """把缺陷真的注入归档输入，检查必须随之改变——检查若对输入不敏感，就是装饰。
+    这里改的是**被测脚本读取的 per_seed**，而不是被测输出。"""
+
+    def _checks(self, mutate):
+        import tempfile
+
+        p4 = json.loads(P4.read_text())
+        mutate(p4)
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "p4.json"
+            path.write_text(json.dumps(p4))
+            return ledger.build(
+                ledger.load_p3(P3), ledger.load_p4(path),
+                {"p3_meta": json.loads(P3.read_text())["meta"], "p4_meta": p4["meta"]},
+            )["account_checks"]
+
+    def test_saturated_accuracy_moves_the_ceiling(self):
+        def mutate(d):
+            for s in d["arms"]["freq"]["per_seed"]:
+                s["final_acc"] = 1.0
+
+        ch = self._checks(mutate)
+        self.assertEqual(ch["ceiling"]["p4:freq"]["arm_at_ceiling"], 1.0)
+        self.assertEqual(ch["signs"]["freq"]["acc_n_nonzero"], 2)  # 只与 base 的 28 个满分打平
+
+    def test_gen_decoupled_from_cost_is_caught(self):
+        def mutate(d):
+            for s in d["arms"]["cap"]["per_seed"]:
+                s["total_gen"] += 100
+
+        ch = self._checks(mutate)
+        self.assertFalse(ch["collinear"]["cap"]["gen_equals_cost_total"])
+        self.assertFalse(ch["collinear"]["cap"]["diff_equals_cost_diff"]["gen"])
+
+    def test_degenerate_traj_is_caught(self):
+        def mutate(d):
+            for s in d["arms"]["cap"]["per_seed"]:
+                s["total_traj"] = s["total_cost"]
+
+        # 基线：cap 的 traj 0.282 / cost 1.000，是本模型里唯一能分开两个字段的臂。
+        base_checks = self._checks(lambda d: None)
+        self.assertEqual(base_checks["degeneracy"]["separating_arms"], ["cap"])
+        # 逐种子置 traj := cost 时，总量比仍为 1.000（30×268800 被 30 整除），
+        # 故总量口径对这一格天生不敏感——这本身就是要记录的局限，不是检查失效。
+        self.assertFalse(self._checks(mutate)["degeneracy"]["traj_equals_cost"]["cap"])
+        # 换逐种子不同值后敏感性才显现：freq 的 traj 不再是 cost 的等比放大。
+        def mutate2(d):
+            for i, s in enumerate(d["arms"]["freq"]["per_seed"]):
+                s["total_cost"] += i * 1000
+                s["total_traj"] = s["total_cost"]
+
+        self.assertFalse(self._checks(mutate2)["degeneracy"]["traj_equals_cost"]["freq"])
+
+
 if __name__ == "__main__":
     unittest.main()
