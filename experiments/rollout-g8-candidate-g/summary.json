@@ -49,6 +49,44 @@
    "val_acc_final": 0.175,
    "max_reserved_gb": 21.2265625
   },
+  "g1n": {
+   "gen": 4.1798,
+   "old_log_prob": 3.7165,
+   "ref": 4.2109,
+   "adv": 0.1101,
+   "update_actor": 13.0952,
+   "update_weights": 1.8158,
+   "step": 27.2329,
+   "throughput": 1533.9836,
+   "tokens": 41786,
+   "step_sd": 0.6717,
+   "n": 12,
+   "window": [
+    3,
+    14
+   ],
+   "stage_sum": 27.1283,
+   "residual": 0.1046,
+   "stage_share_pct": {
+    "gen": 15.3,
+    "old_log_prob": 13.6,
+    "ref": 15.5,
+    "adv": 0.4,
+    "update_actor": 48.1,
+    "update_weights": 6.7,
+    "residual": 0.4
+   },
+   "config": {
+    "train_batch_size": 32,
+    "ppo_mini_batch_size": 16,
+    "rollout_n": 4,
+    "total_epochs": 1,
+    "n_gpus_per_node": 1
+   },
+   "global_samples_per_iter": 128,
+   "val_acc_final": 0.15833333333333333,
+   "max_reserved_gb": 21.23046875
+  },
   "g2": {
    "gen": 3.3353,
    "old_log_prob": 2.7459,
@@ -86,6 +124,44 @@
    "global_samples_per_iter": 128,
    "val_acc_final": 0.15833333333333333,
    "max_reserved_gb": 14.287109375
+  },
+  "g2n": {
+   "gen": 2.9996,
+   "old_log_prob": 2.6852,
+   "ref": 2.3906,
+   "adv": 0.1121,
+   "update_actor": 11.004,
+   "update_weights": 2.2915,
+   "step": 21.5311,
+   "throughput": 974.6802,
+   "tokens": 41838.9167,
+   "step_sd": 1.6572,
+   "n": 12,
+   "window": [
+    3,
+    14
+   ],
+   "stage_sum": 21.483,
+   "residual": 0.0481,
+   "stage_share_pct": {
+    "gen": 13.9,
+    "old_log_prob": 12.5,
+    "ref": 11.1,
+    "adv": 0.5,
+    "update_actor": 51.1,
+    "update_weights": 10.6,
+    "residual": 0.2
+   },
+   "config": {
+    "train_batch_size": 32,
+    "ppo_mini_batch_size": 16,
+    "rollout_n": 4,
+    "total_epochs": 1,
+    "n_gpus_per_node": 2
+   },
+   "global_samples_per_iter": 128,
+   "val_acc_final": 0.16666666666666666,
+   "max_reserved_gb": 14.26171875
   },
   "g2w": {
    "gen": 4.1871,
@@ -162,6 +238,44 @@
    "global_samples_per_iter": 128,
    "val_acc_final": 0.15,
    "max_reserved_gb": 11.05078125
+  },
+  "g4n": {
+   "gen": 2.1577,
+   "old_log_prob": 2.4936,
+   "ref": 1.9456,
+   "adv": 0.1124,
+   "update_actor": 10.4634,
+   "update_weights": 2.9453,
+   "step": 20.1601,
+   "throughput": 517.6019,
+   "tokens": 41690.1667,
+   "step_sd": 0.8457,
+   "n": 12,
+   "window": [
+    3,
+    14
+   ],
+   "stage_sum": 20.1179,
+   "residual": 0.0421,
+   "stage_share_pct": {
+    "gen": 10.7,
+    "old_log_prob": 12.4,
+    "ref": 9.7,
+    "adv": 0.6,
+    "update_actor": 51.9,
+    "update_weights": 14.6,
+    "residual": 0.2
+   },
+   "config": {
+    "train_batch_size": 32,
+    "ppo_mini_batch_size": 16,
+    "rollout_n": 4,
+    "total_epochs": 1,
+    "n_gpus_per_node": 4
+   },
+   "global_samples_per_iter": 128,
+   "val_acc_final": 0.15833333333333333,
+   "max_reserved_gb": 11.087890625
   },
   "g4w": {
    "gen": 5.3365,
@@ -310,6 +424,89 @@
     "update_weights": 1.4443
    },
    "residual": 0.2007
+  }
+ },
+ "numa": {
+  "g1n": {
+   "pair": "g1",
+   "n_gpus": 1,
+   "step_s": 27.2329,
+   "step_sd": 0.6717,
+   "pair_step_s": 27.5314,
+   "step_ratio_vs_pair": 0.9892,
+   "stage_s": {
+    "gen": 4.1798,
+    "old_log_prob": 3.7165,
+    "ref": 4.2109,
+    "adv": 0.1101,
+    "update_actor": 13.0952,
+    "update_weights": 1.8158
+   },
+   "stage_ratio_vs_pair": {
+    "gen": 1.0016,
+    "old_log_prob": 0.989,
+    "ref": 0.9804,
+    "adv": 0.9896,
+    "update_actor": 0.9867,
+    "update_weights": 0.9975
+   },
+   "residual": 0.1046,
+   "val_acc_final": 0.15833333333333333,
+   "max_reserved_gb": 21.23046875
+  },
+  "g2n": {
+   "pair": "g2",
+   "n_gpus": 2,
+   "step_s": 21.5311,
+   "step_sd": 1.6572,
+   "pair_step_s": 22.0087,
+   "step_ratio_vs_pair": 0.9783,
+   "stage_s": {
+    "gen": 2.9996,
+    "old_log_prob": 2.6852,
+    "ref": 2.3906,
+    "adv": 0.1121,
+    "update_actor": 11.004,
+    "update_weights": 2.2915
+   },
+   "stage_ratio_vs_pair": {
+    "gen": 0.8993,
+    "old_log_prob": 0.9779,
+    "ref": 0.9828,
+    "adv": 0.8095,
+    "update_actor": 1.0044,
+    "update_weights": 0.9747
+   },
+   "residual": 0.0481,
+   "val_acc_final": 0.16666666666666666,
+   "max_reserved_gb": 14.26171875
+  },
+  "g4n": {
+   "pair": "g4",
+   "n_gpus": 4,
+   "step_s": 20.1601,
+   "step_sd": 0.8457,
+   "pair_step_s": 16.8783,
+   "step_ratio_vs_pair": 1.1944,
+   "stage_s": {
+    "gen": 2.1577,
+    "old_log_prob": 2.4936,
+    "ref": 1.9456,
+    "adv": 0.1124,
+    "update_actor": 10.4634,
+    "update_weights": 2.9453
+   },
+   "stage_ratio_vs_pair": {
+    "gen": 1.0013,
+    "old_log_prob": 1.1793,
+    "ref": 1.188,
+    "adv": 0.7868,
+    "update_actor": 1.2836,
+    "update_weights": 1.117
+   },
+   "residual": 0.0421,
+   "val_acc_final": 0.15833333333333333,
+   "max_reserved_gb": 11.087890625
   }
  }
 }

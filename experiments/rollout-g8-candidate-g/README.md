@@ -12,7 +12,7 @@
 
 - **repo**：verl `24f25b03`（同候选 A/F），vLLM 0.24.0+cu129
 - **model**：Qwen2.5-1.5B-Instruct
-- **hardware**：4090-1（8×RTX 4090 24GB）；`g1` = GPU 5（NUMA1）；`g2` = GPU 0,1（均 NUMA0）；`g4` = GPU 0,1,3（NUMA0）+ GPU 4（NUMA1）——GPU 2 被他人占用，故 4 卡只能用非连续掩码
+- **hardware**：4090-1（8×RTX 4090 24GB）；`g1` = GPU 5（NUMA1）；`g2` = GPU 0,1（均 NUMA0）；`g4` = GPU 0,1,3（NUMA0）+ GPU 4（NUMA1）——GPU 2 被他人占用，故 4 卡只能用非连续掩码；NUMA 对照：`g1n` = GPU 0（NUMA0）、`g2n` = GPU 5,6（NUMA1）、`g4n` = GPU 4,5,6,7（全 NUMA1）
 - **dataset**：gsm8k `train_sub480` / `test_sub120`
 - **固定项**：`train_batch_size=32` prompts × `rollout.n=4` = 128 samples/迭代；`ppo_mini_batch_size=16`（×n → 64 samples/优化步，2 个优化步/迭代）；`ppo_micro_batch_size_per_gpu=1`；`ppo_epochs=1`；max_prompt 512 / max_response 256；bf16；sdpa；`optimizer_offload=True`；`update_weights_bucket_megabytes=256`；seed=42；lr 1e-6 恒定、无 warmup；`TOTAL_EPOCHS=1` → 15 次迭代
 - **弱扩展差异项**：`g2w` = train batch 64（每卡 32 prompts 不变）、`ppo_mini_batch_size=32`、`TOTAL_EPOCHS=2` → 14 步；`g4w` = train batch 128、`ppo_mini_batch_size=64`、`TOTAL_EPOCHS=4` → 12 步（480/64=7.5、480/128=3.75 步/epoch，末步含终评已从窗口排除）
@@ -29,8 +29,15 @@
 | g4 | 0,1,3,4 | 04:19:13 | 04:26:28 | 0 | 15/15 |
 | g2w | 0,1 | 04:36:20 | 04:48:23 | 0 | 14/14 |
 | g4w | 0,1,3,4 | 04:48:23 | 05:01:51 | 0 | 12/12 |
+| g1n | 0 | 05:08:35 | 05:18:25 | 0 | 15/15 |
+| g2n 首试 | 5,6 | 05:18:25 | 05:19:34 | 1 | 0（NCCL CUDA 217） |
+| g4n 首试 | 4,5,6,7 | 05:19:34 | 05:20:50 | 1 | 0（同错误） |
+| g2n | 5,6 | 05:23:58 | 05:32:28 | 0 | 15/15 |
+| g4n | 4,5,6,7 | 05:32:28 | 05:40:24 | 0 | 15/15 |
+| g4r（A/B 复测） | 0,1,3,4 | 05:47:16 | 05:51:26 | 1 | 3 步（并发 H 占 GPU4，Executor failed） |
+| g4nr（A/B 复测） | 4,5,6,7 | 05:51:26 | 05:53:38 | 1 | 0（并发 H 占显存，KV-cache OOM） |
 
-五份归档日志的 `md5` 与服务器原件逐文件一致（g1 `26c0adfe…`／g2 `90dd57b5…`／g4 `43ffba80…`／g2w `a19d2c34…`／g4w `c60e8c77…`）。五次成功运行结束时均出现 DataLoader worker `signal: Killed`（与候选 A/F 相同的退出清理现象，不影响已输出的 step）。
+八份归档日志的 `md5` 与服务器原件逐文件一致（g1 `26c0adfe…`／g2 `90dd57b5…`／g4 `43ffba80…`／g2w `a19d2c34…`／g4w `c60e8c77…`／g1n `5f8788c2…`／g2n `a4e5f354…`／g4n `0236e680…`）。成功运行结束时均出现 DataLoader worker `signal: Killed`（与候选 A/F 相同的退出清理现象，不影响已输出的 step）。
 
 ## 结果（steps 3–14 均值，n=12）
 
@@ -81,6 +88,39 @@
 
 **跨会话复核补记**：五份日志 md5 与服务器逐字节一致；配置回显（batch/mini/epochs/GPUs）、验证 acc、峰值 reserved 与上表逐项相符。四项**恒等式重建**（§13.25：用 g1 阶段占比与实测 `G_k` 预测整步×）——g2 1.2537 vs 1.2509、g4 1.6351 vs 1.6312、g2w 0.7168 vs 0.7147、g4w 0.5400 vs 0.5372，四配置偏差 ≤0.5%，是该恒等式首次在**多卡配置**上被独立验证。`summary.json` 的弱扩展口径：`parallel_efficiency` 为时间比（0.7147／0.5372），`throughput_efficiency` 为吞吐归一（0.7087／0.5362，正文「弱扩展效率」用后者），差异来自每卡 token 量 ≤0.9%。
 
+## NUMA 对照（同配置换插槽，M5 算力侧第四十七批，2026-11-02 05:08–05:40 UTC）
+
+§13.36 登记的边界是「NUMA 未受控；分离 NUMA 与卡数需在 4,5,6,7 上重跑」。本批补三组**同配置重复、只换插槽**：`g1n` = GPU0（NUMA0）、`g2n` = GPU5,6（NUMA1）、`g4n` = GPU4,5,6,7（全部 NUMA1）。拓扑由 `nvidia-smi topo -m` 确认：GPU0–3 在 NUMA0、GPU4–7 在 NUMA1，跨节点为 `SYS`；GPU4 与 5/6/7 同属 PCIe 根 `0000:c9`，GPU0–3 属 `0000:4a`。
+
+| 模式 | GPU | NUMA | 开始（UTC） | 结束（UTC） | exit | 步数 |
+|---|---|---|---|---|---|---|
+| g1n | 0 | 0 | 05:08:35 | 05:18:25 | 0 | 15/15 |
+| g2n 首试 | 5,6 | 1 | 05:18:25 | 05:19:34 | 1 | 0（NCCL 217） |
+| g4n 首试 | 4,5,6,7 | 1 | 05:19:34 | 05:20:50 | 1 | 0（NCCL 217） |
+| g2n | 5,6 | 1 | 05:23:58 | 05:32:28 | 0 | 15/15 |
+| g4n | 4,5,6,7 | 1 | 05:32:28 | 05:40:24 | 0 | 15/15 |
+
+三份成功日志 md5 与服务器逐文件一致（g1n `5f8788c2…`／g2n `a4e5f354…`／g4n `0236e680…`）；窗口同为 steps 3–14（n=12），配置/数据序/seed=42 与强扩展相同。
+
+| 配对 | 卡数 | 整步（对照 → 本次） | 比值 | gen | old_log_prob | ref | update_actor | update_weights |
+|---|---|---|---|---|---|---|---|---|
+| g1n vs g1 | 1 | 27.531 → 27.233s | **0.989×** | 1.002 | 0.989 | 0.980 | 0.987 | 0.998 |
+| g2n vs g2 | 2 | 22.009 → 21.531s | **0.978×** | 0.899 | 0.978 | 0.983 | 1.004 | 0.975 |
+| g4n vs g4 | 4 | 16.878 → 20.160s | **1.194×（慢 19.4%）** | 1.001 | 1.179 | 1.188 | **1.284** | 1.117 |
+
+**判决一：单卡基线对插槽不敏感。** 27.531→27.233s（−1.1%），各阶段比值 0.98–1.00，与候选 A/F/G 反复测得的 ±0.6–1.1% 稳态带同量级；跨插槽换卡不改变单卡锚点。
+
+**判决二：2 卡结果也与插槽无关，原始均值差是 gen 二态的模式配比。** g2n 原始均值快 2.2%，但两跑的 `gen` 都在 4.18s／2.15s 两态间跳（g2 慢态 7/12 步、g2n 慢态 5/12 步）。按 gen 模式分层后：慢态 23.197 vs 23.268s（+0.3%）、快态 20.345 vs 20.291s（−0.3%），两插槽等价。**这同时确认 §13.36 的 gen 二态在 NUMA1 上同样复现，是「2 副本 × 每副本批量」的调度现象，不是设备映射错误。**
+
+**判决三（最要紧，推翻原边界的方向）：全 NUMA1 的 4 卡跑得比跨 NUMA 的 4 卡慢 19.4%，且慢在所有计算/通信阶段、不慢在 gen。** g4n 20.160s vs g4 16.878s；`gen` 2.16 vs 2.16（1.001）、`old_log_prob` 2.49 vs 2.11（1.179）、`ref` 1.95 vs 1.64（1.188）、`update_actor` 10.46 vs 8.15（1.284；剔除 step 11–12 的 12.2s 尖峰后 10.12 vs 8.15，仍 +24%）、`update_weights` 2.95 vs 2.64（1.117）。**因此「g4 的 1.63× 含跨 NUMA 通信惩罚」不成立——跨 NUMA 的那组反而是快的；1.631× 是「0,1,3,4 放置」下的实测值，不是 NUMA 惩罚后的低估。**
+
+**为什么会反向？** 两个候选，本批不能区分：(a) **主机内存/CPU 本地性**——`NCCL_P2P_DISABLE=1` 下跨卡流量全走主机内存（SHM），若进程页首触落在另一插槽，四卡全在 NUMA1 时每一笔集合通信都要跨 `SYS`，恰好预测「gen 不变、计算/通信阶段齐慢」；(b) **机器状态漂移**——g4 在 04:19–04:26 测量、g4n 在 05:32–05:40，且并行会话 05:25 有一次 candidate-H 失败尝试、各轮 Ray 残留进程也可能占 CPU。区分需要同一空闲窗口内 g4→g4n 交替复测（或 `numactl --membind` 控内存），**本轮未做成，登记为残留**。
+
+**A/B 复测尝试与其失败账**：g4n 结束（05:40:24）后并行 M5 会话开始 candidate H 链；05:46 其 H 链短暂全部退出、GPU 空闲，本会话于 05:47:16 启动 `g4r`（0,1,3,4）→ `g4nr`（4,5,6,7）交替复测，但并行会话随即重试 H，共用 GPU4 并在 4,5,6,7 上分配显存——`g4r` 在 step 3 后 `RuntimeError: Executor failed`（05:51:26），`g4nr` 在 vLLM KV-cache 初始化报 `No available memory for the cache blocks`（0 步，05:53:38）。两次均 exit 1、**不计入数据**；按并发规则本会话此后不再启动 GPU 作业。该冲突本身说明：同一台 8 卡机上两个 4 卡作业不可并行，A/B 复测必须在两会话都空闲的窗口做。
+
+**对主文档的影响**：§13.36 的「NUMA 未受控」边界应改写为「放置敏感，已测得 19.4% 的跨插槽反向差，方向与『跨 NUMA 更慢』相反」；强扩展 1.631× 仍按原放置报，但必须附放置条件。三份日志另记 DataLoader worker `signal: Killed` 退出清理（同候选 A/F/G）。
+
+
 ## 失败与修复：NCCL CUDA 217（peer access）
 
 首两次 2 卡尝试（GPU 5,6）都在模型初始化阶段失败，0 步：
@@ -91,7 +131,9 @@ ncclUnhandledCudaError: Call to CUDA function failed.
 Last error: Cuda failure 217 'peer access is not supported between these two devices'
 ```
 
-根因：`RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1` 下 Ray 通过 `get_accelerator_ids()` 返回的是**物理 GPU id**，而 verl 的 worker 直接把它写进 `LOCAL_RANK` 并 `set_device()`。当 `CUDA_VISIBLE_DEVICES` 是非连续掩码（本机 `0,1,3,4`，GPU 2 被他人占用）时，物理 id 不等于掩码内序号（物理 3 → 序号 2、物理 4 → 序号 3），选错设备后 NCCL 的 SHM 导入触发 CUDA 217。
+根因：`RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1` 下 Ray 通过 `get_accelerator_ids()` 返回的是**物理 GPU id**，而 verl 的 worker 直接把它写进 `LOCAL_RANK` 并 `set_device()`。只要 `CUDA_VISIBLE_DEVICES` 的物理 id 不等于掩码内序号（掩码起点非 0），选错设备后 NCCL 的 SHM 导入就触发 CUDA 217。
+
+**第四十七批对触发条件的修正**：原记录把触发写成「非连续掩码」，本批证伪——`g2n` 首试用的是**连续**的 `5,6`（物理 5,6 → 序号 0,1），同样 0 步、同样 217。同时用最小 torchrun 脚本（2 rank，`set_device(LOCAL_RANK)`，`NCCL_P2P_DISABLE=1`）在 `5,6`／`6,7`／`4,5`／`0,1` 四对卡上做 all-reduce，全部通过——**不是 GPU5–7 的硬件或跨插槽通信限制**。因此触发条件是「掩码起点非 0」，连续只是它的一个特例（`0,1` 恰好物理 id = 序号，故无需补丁）。`0,1,3,4` 与 `4,5,6,7` 都必须打补丁。
 
 修复：`verl-worker-device-map.patch`（本地适配，未提交上游）在 worker 设置 `LOCAL_RANK` 前把物理 id 映射为 `CUDA_VISIBLE_DEVICES` 掩码内的序号：
 
@@ -102,7 +144,7 @@ if str(local_rank) in _ids:
     local_rank = str(_ids.index(str(local_rank)))
 ```
 
-补丁只影响本机非连续卡号场景；连续掩码（0,1）无需它也能跑（g2 即如此），g4 必须。`NCCL_P2P_DISABLE=1` 全程保持（4090 无 P2P）。
+补丁只影响本机「掩码起点非 0」的场景；`0,1` 无需它也能跑（g2 即如此），`0,1,3,4` 与 `4,5,6,7` 必须。`NCCL_P2P_DISABLE=1` 全程保持（4090 无 P2P）。
 
 ## 复现
 
@@ -114,19 +156,23 @@ GPUS=0,1,3,4 bash run-candidate-g.sh           # g4（需先打 verl-worker-devi
 # 弱扩展（每卡 32 prompts 不变）
 GPUS=0,1 MODE=g2w TRAIN_BATCH_SIZE=64 PPO_MINI_BATCH_SIZE=32 TOTAL_EPOCHS=2 RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1 bash run-candidate-g.sh
 GPUS=0,1,3,4 MODE=g4w TRAIN_BATCH_SIZE=128 PPO_MINI_BATCH_SIZE=64 TOTAL_EPOCHS=4 RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1 bash run-candidate-g.sh
+# NUMA 对照（三段串行，脚本已归档为 run-candidate-g-numa-chain.sh）
+RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1 GPUS=0 MODE=g1n bash run-candidate-g.sh
+RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1 GPUS=5,6 MODE=g2n bash run-candidate-g.sh
+RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1 GPUS=4,5,6,7 MODE=g4n bash run-candidate-g.sh
 # 本地解析（日志已归档为 .txt）
-python3 parse-candidate-g.py raw/rollout-g8-candidate-g-g1.txt raw/rollout-g8-candidate-g-g2.txt raw/rollout-g8-candidate-g-g4.txt raw/rollout-g8-candidate-g-g2w.txt raw/rollout-g8-candidate-g-g4w.txt
+python3 parse-candidate-g.py raw/rollout-g8-candidate-g-g*.txt
 ```
 
-`summary.json` 为本轮生成（含强/弱扩展五模式、执行账、失败账、阶段缩放、质量值、吞吐口径与显存）。
+`summary.json` 为本轮生成（含强/弱扩展五模式＋NUMA 对照三模式、执行账、失败账、阶段缩放、质量值、吞吐口径与显存）；`numa` 段按配对给出整步/逐阶段比值。
 
 ## 验证范围与边界
 
 - **真实 GPU 实测**：4090-1，verl `24f25b03` + Qwen2.5-1.5B + gsm8k 短答案子集；强扩展每模式 15 次迭代、弱扩展 14/12 次；单 seed、单次运行。
 - **窗口**：排除预热步 1–2 与含最终验证/testing 的末步；强扩展 steps 3–14（n=12）、g2w 3–13（n=11）、g4w 3–11（n=9）。步间 sd 0.16–1.61s；g2 的 sd 较大（1.6s）来自 gen 二态（见上），不全是响应长度采样波动。
 - **弱扩展改变了全局批与优化轨迹**（B64/B128 vs B32），末步 acc 0.200／0.183 与 g1 的 0.175 不可比，仅记录；性能比较只在同全局批的强扩展内部成立。
-- **NUMA 未受控**：g1 在 GPU5（NUMA1）、g2 在 GPU0,1（同 NUMA0）、g4 跨 NUMA0/1。单卡无跨卡通信，NUMA 差异主要影响主机内存本地性；g2 是最干净的 2 卡同 NUMA 点，g4 的 1.63× 含跨 NUMA 通信因素。若要分离 NUMA 与卡数，需在 NUMA1 的 4,5,6,7 上重跑 g2/g4（本轮未做）。
+- **NUMA 有对照、但放置效应的机制未分离**：g1n（GPU0/NUMA0）与 g1（GPU5/NUMA1）差 −1.1%，g2n 与 g2 分层后 ≤0.3%（见「NUMA 对照」）；**g4n（全 NUMA1）比 g4（跨 NUMA）慢 19.4%，方向与「跨 NUMA 更慢」相反**。候选解释是主机内存/CPU 首触位置相对 GPU 的本地性（P2P 关闭后集合通信全走主机内存）或机器状态漂移，本批不能区分；需同一空闲窗口 g4→g4n 交替复测或 `numactl --membind` 控内存——**本轮因并行会话占用 4,5,6,7 未做，登记为残留**。强扩展 1.631× 只在「0,1,3,4 放置」下成立。
 - **未做内核级 profiling**：`G_k` 是阶段墙钟比值，不是纯计算加速比；「通信吃掉 update_actor 收益」是从阶段缩放与 FSDP 结构推断，不是 NCCL 计时。
 - **质量读数**单 seed/120 样本，仅方向提示；多卡与单卡的差异同时含优化轨迹与数据切分变化，不是性能对比。
-- **补丁为本地适配**：不应视为上游缺陷结论（只在 `RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1` + 非连续掩码下触发）。
+- **补丁为本地适配**：不应视为上游缺陷结论（触发条件是 `RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1` + 掩码起点非 0；最小 NCCL 测试证明设备本身无限制）。
 - 本轮不新增文献身份、不写 survey 正文；实验数据由并行 M5 会话产出，本批独立核验并立账（不把核验算作重跑）。

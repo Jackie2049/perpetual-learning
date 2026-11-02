@@ -3,3 +3,6 @@
 a19d2c34d17113f0d153675057716547  raw/rollout-g8-candidate-g-g2w.txt
 43ffba808775b9a69db3b31b84ca0af7  raw/rollout-g8-candidate-g-g4.txt
 c60e8c77b26dcfad57235000159d735e  raw/rollout-g8-candidate-g-g4w.txt
+5f8788c281a21c6e7b2b9cc4d550cd53  raw/rollout-g8-candidate-g-g1n.txt
+a4e5f3540d7c7b0240f5e1e4c9c73e12  raw/rollout-g8-candidate-g-g2n.txt
+0236e680caaaf6ce63ada00f1a1fd816  raw/rollout-g8-candidate-g-g4n.txt

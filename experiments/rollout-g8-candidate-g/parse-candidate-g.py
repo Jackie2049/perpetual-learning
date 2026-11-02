@@ -19,6 +19,10 @@ Steady-state window is steps 3 .. max_step-1 for every log: steps 1-2 contain
 vLLM/FSDP warmup and the final step includes final validation (+ checkpoint save).
 That yields 3-14 for the 15-step strong runs, 3-13 for the 14-step g2w and
 3-11 for the 12-step g4w.
+
+A trailing `n` (g1n/g2n/g4n) marks the NUMA-control repeat of the same card
+count and workload; those are reported in `summary["numa"]` as paired ratios
+against their non-`n` counterpart, never as extra points on the strong curve.
 """
 import argparse
 import json
@@ -113,36 +117,37 @@ def main():
     modes, meta = {}, {}
     for path in args.logs:
         label = path.rsplit("/", 1)[-1].rsplit(".", 1)[0]
-        m = re.search(r"-(g\d+w?)$", label)
+        m = re.search(r"-(g\d+w?n?)$", label)
         name = m.group(1) if m else label
         modes[name] = steady(load(path))
         meta[name] = extract(path)
 
     def sort_key(k):
         m = re.match(r"g(\d+)", k)
-        return (int(m.group(1)) if m else 0, k.endswith("w"))
+        return (int(m.group(1)) if m else 0, k.endswith("w"), k.endswith("n"))
 
     names = sorted(modes, key=sort_key)
-    base_name = next((n for n in names if not n.endswith("w")), names[0])
+    scale_names = [n for n in names if not n.endswith("n")]
+    base_name = next((n for n in scale_names if not n.endswith("w")), scale_names[0])
     base = modes[base_name]
     print(f"BASE {base_name} n={base['n']} step={base['step']:.3f}s "
           f"(sd {base['step_sd']:.3f}) throughput={base['throughput']:.1f} tok/s")
     print(f"{'stage':15s} {'base_s':>8s}", end="")
-    for name in names:
+    for name in scale_names:
         if name == base_name:
             continue
         print(f" {name+'_s':>9s} {'G':>7s}", end="")
     print()
     for k in STAGES:
         print(f"{k:15s} {base[k]:8.3f}", end="")
-        for name in names:
+        for name in scale_names:
             if name == base_name:
                 continue
             v = modes[name][k]
             print(f" {v:9.3f} {base[k]/v:7.3f}", end="")
         print()
 
-    summary = {"meta": META, "modes": {}, "scaling": {}}
+    summary = {"meta": META, "modes": {}, "scaling": {}, "numa": {}}
     for name in names:
         m = modes[name]
         cfg = meta[name]
@@ -166,7 +171,7 @@ def main():
             "val_acc_final": cfg["val_acc_final"],
             "max_reserved_gb": cfg["max_reserved_gb"],
         }
-        if name == base_name:
+        if name == base_name or name not in scale_names:
             continue
         n = cfg["n_gpus_per_node"] or int(re.match(r"g(\d+)", name).group(1))
         t_ratio = m["step"] / base["step"]
@@ -189,6 +194,23 @@ def main():
             "residual": round(m["step"] - sum(m[k] for k in STAGES), 4),
         }
         summary["scaling"][name] = entry
+    for name in names:
+        if not name.endswith("n") or name[:-1] not in modes:
+            continue
+        m, b = modes[name], modes[name[:-1]]
+        summary["numa"][name] = {
+            "pair": name[:-1],
+            "n_gpus": meta[name]["n_gpus_per_node"],
+            "step_s": round(m["step"], 4),
+            "step_sd": round(m["step_sd"], 4),
+            "pair_step_s": round(b["step"], 4),
+            "step_ratio_vs_pair": round(m["step"] / b["step"], 4),
+            "stage_s": {k: round(m[k], 4) for k in STAGES},
+            "stage_ratio_vs_pair": {k: round(m[k] / b[k], 4) for k in STAGES},
+            "residual": round(m["step"] - sum(m[k] for k in STAGES), 4),
+            "val_acc_final": meta[name]["val_acc_final"],
+            "max_reserved_gb": meta[name]["max_reserved_gb"],
+        }
     print()
     for name in names:
         m = summary["modes"][name]
@@ -201,6 +223,11 @@ def main():
               f"efficiency={v['parallel_efficiency']:.3f} "
               f"time_ratio={v['time_ratio_vs_base']:.3f} "
               f"aggregate_tp={v['aggregate_throughput_ratio']:.3f}x")
+    for name, v in summary["numa"].items():
+        print(f"NUMA {name} ({v['n_gpus']} GPU) vs {v['pair']}: "
+              f"step={v['step_s']:.3f}s ratio={v['step_ratio_vs_pair']:.3f}x "
+              f"gen={v['stage_ratio_vs_pair']['gen']:.3f} "
+              f"update_actor={v['stage_ratio_vs_pair']['update_actor']:.3f}")
     if args.json_out:
         with open(args.json_out, "w") as f:
             json.dump(summary, f, indent=1)
