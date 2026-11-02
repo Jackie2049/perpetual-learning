@@ -1,6 +1,6 @@
 # 技术掘金任务队列
 
-更新时间：2026-11-02。规则见 [AGENTS.md](AGENTS.md)，现场见 [CONTEXT.md](CONTEXT.md)。技术秘书优先；以下外部状态均来自迁移前记录，不代表本次重新查询。
+更新时间：2026-11-03。规则见 [AGENTS.md](AGENTS.md)，现场见 [CONTEXT.md](CONTEXT.md)。技术秘书优先；以下外部状态均来自迁移前记录，不代表本次重新查询。
 
 ## 当前方向与选题原则（2026-11-02 用户指令，覆盖此前的框架与选题范围）
 
@@ -99,6 +99,15 @@
 - **下一步与等待条件**：对外前需用户决定两件事——① 是否提一条**独立小 issue**（附复现脚本，成本低、指向明确）；② 若提 PR，是否同时改签名默认为 `None`（对下游是行为变化，需在读 PR 人的角度说明）。~~另需先补一步未做的核查：检索上游 issue/PR 是否已有人认领该缺陷~~ → **已完成（2026-11-02，独立复核）**：`repo:rllm-org/rllm async_forward` **0 命中**、`use_async` 仅 1 条无关 PR（#460 Daytona），**上游无人认领**。复核同时补了第三点危害：基类 `async_forward` 体内是 `return self.forward(...)`，故**只实现同步的工具被误判为异步时不报错，而是静默返回 coroutine**（未 await 仅 RuntimeWarning）——比原记录的"分支不可达"更实际。见 [独立复核](open-source/rllm/tm-009-independent-review.md)。对外动作全部未做。
 - **停止条件**：上游修复 `has_async` 判定（复现脚本会以非零退出提示结论失效）、配置删除，或用户否决对外动作。
 - **成果入口**：[取证](open-source/rllm/tool-use-async-autodetect.md)、[复现](experiments/rllm-tool-use-async-probe/readme.md)、[候选补丁](open-source/rllm/patches/use-async-autodetect/readme.md)、[独立复核](open-source/rllm/tm-009-independent-review.md)、[pyflag 扫描](tools/pyflag/scan-rllm-4e828c8.json)。
+
+## TM-010 — rLLM Fireworks 后端默认开着的 R3 路由回放拿不到训练帧（B 类：主动发掘）
+
+- **问题与价值**：`rllm/trainer/config/rllm/backend/fireworks.yaml:78` 自 PR #934（2026-10-09 合入）起默认 `router_replay: R3`，但逐 token 路由矩阵在 Tinker/Fireworks 训练路径上**装不进训练帧**——`rllm/trainer/tinker/transform.py:85-87` 用 `model_copy(update={"routing_matrices": ...})` 注入，而 `tinker.ModelInput` 的声明字段只有 `['chunks']`、`from_ints()` 不接受该参数、模型 `frozen=True`+`extra='forbid'`，赋值被 pydantic 拒绝。默认配置下开关在记录数据、训练侧结构上拿不到。同路径另有两处不一致：Python 侧 `AlgorithmConfig.router_replay` 默认 `"disabled"` 与 yaml 的 `R3` 不同源；verl 0.8.0 里 `actor.router_replay.mode='R3'` 语义是"记录到 record_file"，rLLM 又另开 `rollout.enable_rollout_routing_replay=True`，两条通道并存。
+- **优先级 / 负责人 / 状态**：B 类候选（扩池：rLLM 的托管训练后端）；M1 本地取证完成，**等待用户决定是否对外**。
+- **已有证据**（2026-11-03，main `4e828c8`）：[取证](open-source/rllm/fireworks-r3-routing-matrices.md)、[复现](experiments/rllm-fireworks-r3-replay/repro.py)（两阶段，真实 rLLM 类 + 真实 FireworksEngine 打桩 sampler，exit 0＝缺陷在）、[承载检查](experiments/rllm-fireworks-r3-replay/carrier_check.py)（tinker 0.22.2／0.23.0／0.36.0 三版本一致：无字段、`from_ints` 无该参数、赋值抛 `ValidationError`）。**已排除两条旁支**：①"多步累积时矩阵布局错位"实测两个形状都对齐；② verl 蒸馏路径的 `OpenAIEngine.compute_logprobs` 实为已定义。上游 cookbook（`bba676c`）走 `ModelInput.from_ints(..., routing_matrices=...)` 且先做 `build_r3_routing_matrices` 对齐——但它依赖的 tinker 在所有可用版本里也没有该参数，**这不是 rLLM 单方面能改的事**。
+- **下一步与等待条件**：对外前需用户决定 ① 是否提 issue（先问"Fireworks 服务端收到未声明属性是忽略还是报错"）；② 若提，是否连"默认改回 disabled"一起。**未验证项必须先说清**：服务端行为（需真实 Fireworks 账号）、是否已影响线上训练——**不得主张训练出错或性能损失**。
+- **停止条件**：上游改默认值、补上承载字段或改用 cookbook 路线（复现脚本会以非零退出提示结论失效），或用户否决对外动作。
+- **成果入口**：[取证](open-source/rllm/fireworks-r3-routing-matrices.md)、[复现](experiments/rllm-fireworks-r3-replay/readme.md)、[run-info](experiments/rllm-fireworks-r3-replay/run-info.json)。
 
 ## 已闭环与保留方向
 

@@ -1,34 +1,62 @@
 # perpetual-learning — 执行接续
 
-更新时间：2026-11-03。规则入口：[AGENTS.md](AGENTS.md)；任务入口：[技术秘书](queue_tech-secretary.md) / [技术掘金](queue_tech-miner.md)。
+更新时间：2026-11-03（M1 01:3x）。规则入口：[AGENTS.md](AGENTS.md)；任务入口：[技术秘书](queue_tech-secretary.md) / [技术掘金](queue_tech-miner.md)。
 
 ## 当前现场
 
+### M1 本轮（2026-11-03 01:0x–01:3x）：新登记 TM-010
+
+技术秘书侧无新用户任务；TM-001～TM-009 的对外动作均待用户逐项授权、无并行会话占用，按规则从掘金 B 类选题。选了 rLLM 的**训练路径**（TM-009 是同一仓库的工具层）。
+
+**结论**：Fireworks 后端自 PR #934（10-09）默认 `router_replay: R3`，但路由矩阵装不进训练帧——`transform.py:85-87` 用 `model_copy(update=...)` 塞的属性不在 `tinker.ModelInput` 声明字段里（只有 `chunks`、`from_ints()` 无该参数、pydantic frozen+forbid），赋值抛 `ValidationError`。三个 tinker 版本一致。上游 cookbook 用的 `from_ints(routing_matrices=...)` 在所有可用 tinker 版本里也不存在 ⇒ **不是 rLLM 单方面能补的**。
+
+**排除了两条先怀疑的方向**（不写进结论）：多步矩阵布局错位（两形状实测都对齐）、verl 蒸馏 `compute_logprobs` 缺失（实为已定义）。
+
+**未验证**：Fireworks 服务端对未声明属性是忽略还是报错；是否已影响线上训练。**不主张训练出错或性能损失。**
+
+入口：[取证](open-source/rllm/fireworks-r3-routing-matrices.md) · [复现](experiments/rllm-fireworks-r3-replay/readme.md) · [TM-010](queue_tech-miner.md)。对外动作全部未做。
+
+### 上一轮（2026-11-03 00:0x）：TM-009 材料齐备
+
+M1 上一轮把 TM-009 从"已取证待决定"推到"材料齐备待决定"：生产可达性结构化核实（`prod_reachability.py`，`use_async=` 在 `__main__` 外 0 处）、查清 rLLM 两套工具栈、候选补丁就绪并暴露"上游 `test_python_tool` 靠缺陷吞异常才通过"。细节见[取证](open-source/rllm/tool-use-async-autodetect.md)。
+
+### M5 本轮（2026-11-03 00:5x–01:4x CST）：第五十四批 §13.50
+
 M5 本轮（2026-11-03 00:5x–01:4x CST，对应服务器 UTC 2026-11-02 16:5x–17:4x）做了一件此前登记为「未测」的算力事项，**第五十四批 §13.50：真实 rollout 的响应长度结构实测**。现场条件：4090-1 上 liyaowei 的 4 卡 vLLM（GPU 2/3/6/7，100%）＋1 个 EngineCore（GPU 0，20.8 GB）占用，**只有 GPU 1/4/5 空闲**；`/home` 已满（8.1 G 余），`/` 余 188 G，数据全部写 `/tmp`。昇腾 910C VPN 仍断（网关 10.205.0.1 与 192.168.13.154 均 100% 丢包，第 28 天）。
+
 
 **实验内容**：用与 verl 训练一致的采样口径（T=1.0／top_p=1.0／top_k=−1、`max_tokens=256`、chat template、gsm8k `train_sub480` 全 480 prompt × n=8）在单卡上实采 5 档（1.5B／0.5B × cap256／cap1024＋1.5B seed43 重复），共 19,200 条响应、生成耗时 41–65 s/档。**三个结论**：① 构造档 `realistic=(0.60,0.08)` 隐含 ICC ≈0.98，实测只有 **0.450 [0.409,0.489]（1.5B cap256）／0.364 [0.321,0.407]（0.5B）**，且真实**组内离散大于组间离散**（0.166 vs 0.161），方向与构造档相反；② `max_response=256` 截断 **45.3%（1.5B）／60.8%（0.5B）** 的响应——干净组重算出的 ICC 0.174／0.128 是选择偏差、不可引，无截断读数由 1024 臂给出（0.522／0.394）；③ 回代 §13.38 的两个主读数在 1 SE 内不动：`ldm/grouped` 1.0462→1.044–1.048、`interleaved/ldm` 1.0045→1.0027–1.0065。归档 [experiments/rollout-length-structure-real](experiments/rollout-length-structure-real/README.md)，`verify.py` exit 0。
 
 | 执行者 | 当前任务 | 接续入口与核对事项 |
 |---|---|---|
-| M1 | TM-009（掘金 B 类）四件套完成，待用户决定是否对外 | 取证、上游查重、可达性复核、候选补丁均完成：[取证](open-source/rllm/tool-use-async-autodetect.md)、[可达性探针](experiments/rllm-tool-use-async-probe/prod_reachability.py)、[候选补丁](open-source/rllm/patches/use-async-autodetect/readme.md)。**对外动作全部未做**。TS-001 上一轮为 §13.47 机制账收尾（第二十九批），`experiments/rollout-c-class-ledger/` 四轮完成，再往下需新字段或新实验。 |
+| M1 | TM-010（掘金 B 类）取证完成、TM-009 材料齐备，均待用户决定是否对外 | 取证、上游查重、可达性复核、候选补丁均完成：[取证](open-source/rllm/tool-use-async-autodetect.md)、[可达性探针](experiments/rllm-tool-use-async-probe/prod_reachability.py)、[候选补丁](open-source/rllm/patches/use-async-autodetect/readme.md)。**对外动作全部未做**。TS-001 上一轮为 §13.47 机制账收尾（第二十九批），`experiments/rollout-c-class-ledger/` 四轮完成，再往下需新字段或新实验，不在当前授权范围。 |
 | M5 | TS-001 算力支持 | **第五十四批 §13.50 已完成**（见上）。**M5 侧登记的剩余算力事项仍为空**；要再往前只剩需新条件或新立项的：TM-008 的 4 卡 `inflight=1`、`max_inflight_gen_batches>2`、async `wait_for_sampleable`、stale 逐出（前三项要 4 卡以上空闲窗口，本轮只有 3 卡）；P-1 跨系统（AReaL／OpenRLHF／SkyRL，需用户立项）；P-2 FP8 训练侧（待实测）。**下一轮先核对 GPU 归属与占用再启动，不据旧记录假定空闲。** |
 
 ## 未完成操作与并行工作
 
-- **TM-009（掘金 B 类，M1 2026-11-03 完成四件套）**：rLLM `Tool.__call__` 的 `use_async=None` 自动探测失效 + 守卫不可达。**对外动作（issue／PR）全部未做，待用户逐项授权**；需用户决定：① 是否提独立小 issue；② 若提 PR，是否连补丁一起（补丁会让上游 `test_python_tool` 变红）。上游 `rllm-org/rllm` main `4e828c81`（2026-11-02 核对，未变）。见 [TM-009](queue_tech-miner.md) 与[候选补丁](open-source/rllm/patches/use-async-autodetect/readme.md)。
-- **TM-008（掘金 C 类，M5）**：verl V1 `ReplayBuffer.poll_interval` 死值 2.0s。2 卡−3.2%、4 卡−2.0%、DAPO inflight=2 −4.9%／inflight=1 −3.4%、4 卡 DAPO A/B −4.0%（§13.49）。补丁 3 文件 +8/−1，默认 2.0 不变，对 `3fdf2b54`／`4b26c788` dry-run 均 3/3 通过。**对外动作全部未做，待用户逐项授权**；需用户决定「只加可达性」还是「同时改默认 0.1–0.2」。**未测**：4 卡 `inflight=1`、`max_inflight_gen_batches>2`、async `wait_for_sampleable`、stale 逐出。
-- **TM-006 / TM-005（掘金 B 类）**：tiled_mlp 无消费路径（补丁＋FSDP 冒烟完成）、prefix_grouper 在 FSDP 不生效（取证＋影响量化完成）。**对外动作全部未做，待授权**。
+- **TM-010（掘金 B 类，M1 2026-11-03 01:3x）**：rLLM Fireworks 后端默认 `router_replay: R3`，但路由矩阵装不进 `tinker.ModelInput`（无声明字段 / `from_ints` 无该参数 / 赋值被 pydantic 拒）。**未验证项：服务端行为与线上影响**，不得主张训练出错。对外动作全部未做，待用户决定是否提 issue（以及是否连"默认改回 disabled"一起）。见 [TM-010](queue_tech-miner.md)。
+- **TM-009（掘金 B 类，M1 2026-11-03 完成四件套）**：rLLM `Tool.__call__` 的 `use_async=None` 自动探测失效 + 守卫不可达。**对外动作（issue／PR）全部未做，待用户逐项授权**；需用户决定：① 是否提独立小 issue；② 若提 PR，是否连补丁一起（补丁会让上游 `test_python_tool` 变红，需在 PR 里说明或顺带修）。见 [TM-009](queue_tech-miner.md) 与[候选补丁](open-source/rllm/patches/use-async-autodetect/readme.md)。
+- **TM-008（掘金 C 类，M5 2026-11-02 13:0x–13:5x UTC；边界实验 14:02–15:02 UTC）**：verl V1 `ReplayBuffer.poll_interval` 死值 2.0s。2 卡整步 21.686→21.001s（−3.2%）、4 卡 14.216→13.934s（−2.0%）；**0.5 不是通用解**。补丁 3 文件 +8/−1，**默认 2.0 不变**。**2026-11-02 复核前提仍成立，但补丁需按新 `v1/` 结构（`trainer_sync.py`）重放**（M5 23:2x 更正：不需要——dry-run 在 main `3fdf2b54` 与 `4b26c788` 上都 3/3 通过，见 §当前现场 一）。**边界实验（第五十二批，§13.48）**：DAPO 过滤 + `max_inflight_gen_batches=2` 下收益更大（gen −14.0%、整步 −4.9%），但每步多生成 13% 的组（约 2 SE）；补测 DAPO 默认 `inflight=1` 四跑（池化 gen −13.0%、整步 −3.4%、生成组 +5.3%）⇒ **生成量代价随 in-flight 余量缩小（13%→5%）**——PR 风险段必须写这一条。**对外动作全部未做，待用户逐项授权**；另需用户决定"只加可达性"还是"同时改默认 0.1–0.2"。
+- **TM-006（掘金 B 类）**：verl `tiled_mlp` 十引擎无消费点。[补丁就绪](open-source/verl/patches/tiled-mlp-wiring/readme.md)；真机冒烟完成（FSDP2 生效、FSDP1 硬报错、默认梯度检查点下无显存收益）。**对外动作全部未做，待授权**。
+- **TM-005（掘金 B 类）**：verl `use_prefix_grouper` 在 FSDP 上不生效但副作用照常。取证与影响量化（DP 负载不均衡 0–6.6%）已入库。**对外动作全部未做，待用户逐项授权**。
+- `experiments/rllm-tool-use-async-probe/`（TM-009）已入库：`repro.py`／`prod_reachability.py`（本轮新增）／`readme.md`／`run-info.json`；`open-source/rllm/patches/use-async-autodetect/`（本轮新增）含补丁与 readme。复现依赖 uv 建的 Python 3.12 venv（系统 3.9.6 因 PEP 604 无法导入 rllm），依赖清单写在 `run-info.json`。
 - `experiments/rollout-length-structure-real/`（本轮新增）：`sample_lengths.py`／`analyze_lengths.py`／`reanalysis_length_regime.py`／`verify.py`＋`raw/`（5 份逐样本 jsonl.gz＋meta）＋`summary-*.json`／`reanalysis-*.json`／`run-info.json`／`README.md`。服务器侧原始文件在 `/tmp/m5-length/`（非持久）。
-- **推送通道**：先试 `git push`；`github.com:443` 直连历史上多次不通，`gh-proxy.com` 只读，备选 REST API 工具 [tools/git-push-api](tools/git-push-api/readme.md)。`api.github.com`／`gh api` 正常。本轮 `git push` 直连可用。
-- **上游状态（本轮只读核对，均为历史快照）**：verl main `3fdf2b54`（11-02T11:38Z，未变）；verl PR #8313 open、`mergeable=true`、`mergeable_state=blocked`、head `71fd3562` 未变；rLLM main `4e828c81` 未变；UniRL（Tencent-Hunyuan）main `0d07b80b`（11-02T05:56Z，reward monitor 提交，非本专项相关）；vLLM main `45fc9fd0`（非本专项相关）。下一轮重新核对，不据此推断实时状态。
-- **共享 checkout 被并行会话并发使用**：动手前先看 `git log --graph` 与 `git worktree list`，冲突集中在 CONTEXT.md 与当日日志时按「保留双方条目、按时间重排」解决。
+- `tools/pyflag/` 本轮新增 `scan-rllm-4e828c8.json`，readme 加第五类易错点"三态形参"。
+- **`experiments/verl-v1-poll-quantum/`、`verl-tiled-mlp-fsdp-smoke/`、`rollout-g8-gen-bimodality/`、`rollout-c-class-ledger/` 等均已入库**，不重复登记。
+- **`experiments/verl-v1-poll-quantum-dapo/`（M5，第五十二批 §13.48）已入库**：10 份训练日志（`raw/*.txt`，inflight=2 六份＋inflight=1 四份）＋`summary.json`／`summary-inflight1.json`＋`run-poll-dapo.sh`＋`make-summary-dapo.py`＋`md5sums.txt`＋`verification.md`（并行会话独立复核）。服务器跑树 `/tmp/m5-poll-ab/verl`（patched）与原树 `/home/zxw/venvs/rollout-g8-src/verl` 均保留。**同目录的 4 卡补充**见 `experiments/verl-v1-poll-quantum-dapo-g4/`（第二会话，仅 2.0 基线，A/B 因抢卡推迟）。
+- 服务器网络、磁盘、GPU 与上游 PR 状态均是历史记录，不是实时可用条件。M1 不探测远程资源。
+- **推送通道现状（2026-11-03 00:3x）**：`github.com:443` 直连**不通**（两次 75s 超时），`gh-proxy.com` 只代理**只读**（push 报 `No anonymous write access`），`api.github.com` 与 `gh api` 正常。本轮改用 REST API 推送（[tools/git-push-api](tools/git-push-api/readme.md)），远端 main 已推进到 `60869da2` 并与本地对齐。**下次运行先试 `git push`**，仍不通再用该工具；工具会压平本地多层提交。上游 verl 的 GitHub main 实测为 `3fdf2b54`（11-02T11:38Z），**不是** `4b26c788`——后者是 M1 本地 checkout 的 10-18 快照。
+- **共享 checkout 已被并行会话并发使用**：本轮两次出现另一会话在同一目录 commit／reset（TM-008 inflight=1 补测、`01de74f8a` 订正传播）。合并冲突集中在 CONTEXT.md 与当日日志，已按"保留双方条目、按时间重排"解决。**动手前先看 `git log --graph` 与 `git worktree list`**，不要假设 HEAD 还是自己的。
+
 - `diary/2026-08-14.md` 仍为用户未跟踪工作，不代为提交或删除。
 
 ## 恢复入口
 
 - 专项：[rollout 主文档](notebook/rollout-performance-research.md)（§13.50 本轮、§13.38 回代对象）。
 - 真机分工：[实验交接](experiments/handoff-m5.md)、[AReaL 单一负责人交接](open-source/areal/handoff-m5.md)。
-- 本轮成果：[长度结构实验](experiments/rollout-length-structure-real/README.md)。
+- 本轮 M5 成果：[长度结构实验](experiments/rollout-length-structure-real/README.md)。
+- 本轮 M1 成果：[TM-010 取证](open-source/rllm/fireworks-r3-routing-matrices.md)、[复现](experiments/rllm-fireworks-r3-replay/repro.py)、[承载检查](experiments/rllm-fireworks-r3-replay/carrier_check.py)。
+- 上一轮成果：[TM-009 候选补丁](open-source/rllm/patches/use-async-autodetect/readme.md)、[可达性探针](experiments/rllm-tool-use-async-probe/prod_reachability.py)、[取证](open-source/rllm/tool-use-async-autodetect.md)。
 - 历史追溯：[迁移前 WORK.md 固定快照](https://github.com/Jackie2049/perpetual-learning/blob/76edee31b650d27a110fa6f82df5789abb237cfc/WORK.md)；批次结论仍以专项文档和 [diary](diary/readme.md) 为准。
 
 本文件只覆盖式更新执行现场；任务的目标、状态、优先级和等待条件在队列维护，不在此复制研究历史。

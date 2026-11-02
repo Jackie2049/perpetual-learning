@@ -1,0 +1,52 @@
+{
+  "subject_repo": "rllm-org/rllm",
+  "commit": "4e828c81680e5a85b638ceedeaf09d1e90109ca8",
+  "commit_date": "2026-10-09T01:22:20Z",
+  "commit_resolution": "GET /repos/rllm-org/rllm/commits?per_page=1 on 2026-11-03 -> this sha is still main",
+  "probe_date": "2026-11-03",
+  "operator": "M1",
+  "entry_points": {
+    "default": "rllm/trainer/config/rllm/backend/fireworks.yaml:78 (router_replay: R3)",
+    "inject": "rllm/trainer/tinker/transform.py:85-87 (model_copy update=routing_matrices)",
+    "capture": "rllm/engine/rollout/fireworks_engine.py:262-277",
+    "step_field": "rllm/types.py:128",
+    "verl_path": "rllm/trainer/verl/transform.py:210-226 (routed_experts tensor), rllm/trainer/verl/utils.py:191-193"
+  },
+  "python": "3.12.13",
+  "venv": "uv venv -p 3.12 /tmp/rllm-r3-venv",
+  "deps": {
+    "tinker": ["0.22.2 (rllm floor)", "0.23.0", "0.36.0 (PyPI latest; used for the recorded run)"],
+    "tinker-cookbook": "0.4.1",
+    "fireworks-ai": "1.2.20 (rllm pyproject) -- needed only to import FireworksEngine",
+    "verl": "0.8.0 (rllm pyproject) -- inspected for the verl-side contract",
+    "others": ["pydantic 2.12.5", "omegaconf 2.3.1", "hydra-core", "codetiming 1.4.0", "numpy", "openai 3.42.1"]
+  },
+  "rllm_checkout": "full rllm/ (282 files) + tests/ fetched via GitHub contents API at the pinned sha into a local temp tree; nothing installed from PyPI as 'rllm'",
+  "assertions": {
+    "repro.py": [
+      "router_replay=disabled -> datum.model_input.routing_matrices is None",
+      "router_replay=R3 -> datum.model_input.routing_matrices is a list of str with '' placeholders",
+      "tinker.ModelInput declared fields == ['chunks'] (no routing_matrices)",
+      "FireworksEngine parsing surfaces logprobs.content[*].routing_matrix as ['m0','m1','m2'] and Step carries it",
+      "the datum ModelInput still cannot carry it"
+    ],
+    "carrier_check.py": [
+      "ModelInput.from_ints has no routing_matrices parameter (0.22.2/0.23.0/0.36.0)",
+      "assigning the attribute raises pydantic ValidationError on 0.36.0",
+      "verl path element type is a tensor; tinker path element type is str"
+    ]
+  },
+  "negative_controls_run_and_discarded": [
+    "layout misalignment for non-cumulative multi-turn steps: NOT reproduced (both cumulative and re-rendered multi-turn shapes put every matrix on the row predicting its own token)",
+    "teacher engine missing compute_logprobs in the verl distill path: NOT true (openai_engine.py:259 defines it)"
+  ],
+  "not_run": [
+    "any real Fireworks training run (no credentials; out of M1 scope)",
+    "rllm full test suite",
+    "fork push / PR / issue / comment"
+  ],
+  "unverified": [
+    "how the Fireworks training service treats an undeclared extra attribute on ModelInput (ignore vs reject)",
+    "whether any user has been affected in production"
+  ]
+}

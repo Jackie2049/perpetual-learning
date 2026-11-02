@@ -9,11 +9,11 @@
 
 **【价值评估】** 7 / 10 — 集中同一项目的候选、证据和进展，减少误读与重复探索；目录本身不计作上游成果。
 
-**【进展】** 旧一行修复已撤回，继续阅读应以可配置分组的 v2 方案为起点。2026-11-02 新增一条 B 类候选：工具调用的 `use_async=None` 自动探测从未生效（main `4e828c8`，已复现，未对外）。
+**【进展】** 旧一行修复已撤回，继续阅读应以可配置分组的 v2 方案为起点。2026-11-02 新增 B 类候选：工具调用的 `use_async=None` 自动探测从未生效；2026-11-03 新增 B 类候选：Fireworks 后端默认开启的 R3 路由回放没有承载字段。两条均在 main `4e828c8` 复现，**均未对外**。
 
 **【大白话讲明白】**
 
-这里整理我们在 rLLM 上围绕单 Agent 与多 Agent 的 GRPO 分组做过的调查、方案和跟进，以及工具调用层的缺陷取证。先看每份文档的进展和大白话说明，再决定是否深入代码与实验。
+这里整理我们在 rLLM 上围绕单 Agent 与多 Agent 的 GRPO 分组做过的调查、方案和跟进，以及工具调用层、Fireworks 训练路径两条缺陷的取证。先看每份文档的进展和大白话说明，再决定是否深入代码与实验。
 
 **【What–Why–How】**
 
@@ -34,3 +34,4 @@
 - [rllm-605-grpo-grouping-fix.patch](rllm-605-grpo-grouping-fix.patch)
 - [rLLM #605 GRPO Grouping Bug — Revised Fix Proposal (v2)](rllm-605-grpo-grouping-revised-fix-v2.md)
 - [工具调用的 `use_async=None` 自动探测从未生效（B 类，2026-11-02）](tool-use-async-autodetect.md)
+- [Fireworks 默认开启的 R3 路由回放拿不到训练帧（B 类，2026-11-03）](fireworks-r3-routing-matrices.md)
