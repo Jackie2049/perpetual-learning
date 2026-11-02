@@ -100,7 +100,10 @@ def main():
 
     def rebuild(prefix):
         url = f"{API}/git/trees/{base_tree}" + (f":{prefix}" if prefix else "")
-        entries = call("GET", url)["tree"]
+        try:
+            entries = call("GET", url)["tree"]
+        except SystemExit:
+            entries = []  # the directory only exists because of the new files below
         level = []
         for entry in entries:
             child = f"{prefix}/{entry['path']}" if prefix else entry["path"]
