@@ -15,6 +15,10 @@ TZ = ZoneInfo('Asia/Singapore')
 ENTRY = re.compile(r'^## (\d{2}:\d{2}) — ([^\n]+)\n(.*?)(?=^## |\Z)', re.M | re.S)
 DAY = re.compile(r'diary/(\d{4}-\d{2}-\d{2})\.md$')
 HOOKS = 'tools/diary/hooks'
+# 日志是给人读的日报：单条只留结论与材料链接，过程属专项文档。
+ENTRY_SOFT_BYTES = 1500
+ENTRY_HARD_BYTES = 4000
+DAY_SOFT_BYTES = 40 * 1024
 
 
 def git(*args, optional=False):
@@ -86,8 +90,10 @@ def check(now=None):
         day_match = DAY.fullmatch(name)
         if not day_match:
             continue
-        old = entries(git('show', f'HEAD:{name}', optional=True))
-        new = entries(git('show', f':{name}', optional=True))
+        old_text = git('show', f'HEAD:{name}', optional=True)
+        new_text = git('show', f':{name}', optional=True)
+        old = entries(old_text)
+        new = entries(new_text)
         # Reheading is allowed only when the original body survives, one-to-one.
         # A fresh work record must not excuse replacing the rest of the day's history.
         reheaded = Counter(body for key, body in new.items() if key not in old)
@@ -118,7 +124,17 @@ def check(now=None):
                     raise ValueError(f'日志链接应指向仓库内成果：{target}')
                 if path not in tracked and not any(p.startswith(path + '/') for p in tracked):
                     raise ValueError(f'日志链接目标未纳入本次提交或已有版本：{target}')
+            size = len(body.encode())
+            if size > ENTRY_HARD_BYTES:
+                raise ValueError(
+                    f'{name} {time} — {title} 正文 {size} 字节，超过 {ENTRY_HARD_BYTES} 字节硬上限。'
+                    '请把过程、验证范围与环境状态移入专项文档，日志只留结论与材料链接。')
+            if size > ENTRY_SOFT_BYTES:
+                print(f'提示：{name} {time} 正文 {size} 字节（>软上限 {ENTRY_SOFT_BYTES}），建议压缩到结论与关键数字。')
             recent.append(f'{name} {time} — {title}')
+        if len(new_text.encode()) > DAY_SOFT_BYTES >= len(old_text.encode()):
+            print(f'提示：{name} 达 {len(new_text.encode()) // 1024} KB（>软上限 {DAY_SOFT_BYTES // 1024} KB），'
+                  '建议把方法与过程移入专项文档，只保留结论条目。')
     if not recent:
         raise ValueError('本次提交缺少对应日志：请追加工作记录，或补充同一项工作的近期记录，并一起 git add。仅修改索引、回看或旧日志不能代替本项工作记录。')
     print('日志检查通过：' + '; '.join(recent))

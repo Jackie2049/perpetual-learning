@@ -403,6 +403,18 @@ class DiaryTests(unittest.TestCase):
         self.assertEqual(invalid.returncode, 1)
         self.assertIn('日志收尾检查', invalid.stderr)
 
+    def test_oversized_entry_rejected(self):
+        self.record('结论：' + '很长的过程描述；' * 600)
+        self.git('add', 'diary')
+        with self.assertRaisesRegex(ValueError, '硬上限'):
+            diary.check()
+
+    def test_long_entry_warns_but_passes(self):
+        self.record('结论：' + '过程说明；' * 120)
+        self.git('add', 'diary')
+        diary.check()
+        self.assertIn('软上限', self.stdout.getvalue())
+
 
 class FenceTests(unittest.TestCase):
     def test_fence_kinds_indentation_and_longer_closers(self):
