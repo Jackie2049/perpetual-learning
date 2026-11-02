@@ -18,7 +18,7 @@
 | 分布式与通信 | [distributed-nav](distributed-nav/SKILL.md) · [rdma-network-nav](rdma-network-nav/SKILL.md) · [weight-sync-nav](weight-sync-nav/SKILL.md) |
 | 源码导航 | [vllm-v1-nav](vllm-v1-nav/SKILL.md) · [sglang-nav](sglang-nav/SKILL.md) · [megatron-nav](megatron-nav/SKILL.md) |
 | 专题研究 | [interpretability-nav](interpretability-nav/SKILL.md) · [model-merging-nav](model-merging-nav/SKILL.md) |
-| 协作与流程 | [concurrent-writes](concurrent-writes/SKILL.md) |
+| 协作与流程 | [concurrent-writes](concurrent-writes/SKILL.md) · [claim-checks](claim-checks/SKILL.md) |
 
 首页按场景的快捷入口见 [README — 工具沉淀与技能打磨](../README.md#工具沉淀--技能打磨)。
 
