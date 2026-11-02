@@ -1,0 +1,17 @@
+--- /tmp/verl-worker-orig.py	2026-11-02 04:19:09.675681551 +0000
++++ verl/single_controller/base/worker.py	2026-11-02 04:19:09.691681361 +0000
+@@ -277,6 +277,14 @@
+             # so we need to set local rank when the flag is set.
+             device_name = get_resource_name()
+             local_rank = ray.get_runtime_context().get_accelerator_ids()[device_name][0]
++            # candidate-G local adaptation: Ray reports physical GPU ids when
++            # RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1; map them to ordinals
++            # inside the caller-provided CUDA_VISIBLE_DEVICES mask so a non-contiguous
++            # free set (GPU 2 is occupied by another user) selects the right device.
++            _vis = os.environ.get("CUDA_VISIBLE_DEVICES", "")
++            _ids = [x.strip() for x in _vis.split(",") if x.strip()]
++            if str(local_rank) in _ids:
++                local_rank = str(_ids.index(str(local_rank)))
+             os.environ["LOCAL_RANK"] = local_rank
+             get_torch_device().set_device(int(local_rank))
+ 
