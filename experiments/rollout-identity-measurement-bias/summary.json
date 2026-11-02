@@ -1,0 +1,336 @@
+{
+ "config": {
+  "base": {
+   "gen": 4.0,
+   "idle": 1.5,
+   "logp": 1.0,
+   "refit": 0.5,
+   "train": 3.0
+  },
+  "total": 10.0
+ },
+ "q1_self_consistency": {
+  "clean": {
+   "rebuilt": 1.0,
+   "rel_err_pct": 0.0,
+   "truth": 1.0
+  },
+  "idle_folded_no_accel": {
+   "rebuilt": 1.0,
+   "rel_err_pct": 0.0,
+   "truth": 1.0
+  },
+  "idle_half_unmeasured": {
+   "measured_total": 9.25,
+   "rebuilt": 1.275862069,
+   "rel_err_pct": 2.068965517,
+   "truth": 1.25,
+   "truth_total": 10.0
+  }
+ },
+ "q2_hidden_substage": {
+  "hidden_share_scan": [
+   {
+    "hidden_share": 0.0,
+    "over_credited": 1.214285714,
+    "rel_err_pct": 0.0,
+    "truth": 1.214285714
+   },
+   {
+    "hidden_share": 0.1,
+    "over_credited": 1.23255814,
+    "rel_err_pct": 2.325581395,
+    "truth": 1.204545455
+   },
+   {
+    "hidden_share": 0.2,
+    "over_credited": 1.254237288,
+    "rel_err_pct": 5.084745763,
+    "truth": 1.193548387
+   },
+   {
+    "hidden_share": 0.333,
+    "over_credited": 1.290219599,
+    "rel_err_pct": 9.664312663,
+    "truth": 1.17651729
+   },
+   {
+    "hidden_share": 0.5,
+    "over_credited": 1.352941176,
+    "rel_err_pct": 17.647058824,
+    "truth": 1.15
+   }
+  ],
+  "train_G1.5": {
+   "hidden_share_of_block": 0.333333333,
+   "over_credited": 1.176470588,
+   "rel_err_pct": 5.882352941,
+   "truth": 1.111111111
+  },
+  "train_G2.0": {
+   "hidden_share_of_block": 0.333333333,
+   "over_credited": 1.290322581,
+   "rel_err_pct": 9.677419355,
+   "truth": 1.176470588
+  },
+  "train_G3.0": {
+   "hidden_share_of_block": 0.333333333,
+   "over_credited": 1.428571429,
+   "rel_err_pct": 14.285714286,
+   "truth": 1.25
+  }
+ },
+ "q3_denominator_shrink": {
+  "scan": [
+   {
+    "lost_seconds": 0.0,
+    "measured_total": 10.0,
+    "rebuilt": 1.25,
+    "rel_err_pct": 0.0
+   },
+   {
+    "lost_seconds": 0.25,
+    "measured_total": 9.75,
+    "rebuilt": 1.258064516,
+    "rel_err_pct": 0.64516129
+   },
+   {
+    "lost_seconds": 0.5,
+    "measured_total": 9.5,
+    "rebuilt": 1.266666667,
+    "rel_err_pct": 1.333333333
+   },
+   {
+    "lost_seconds": 0.75,
+    "measured_total": 9.25,
+    "rebuilt": 1.275862069,
+    "rel_err_pct": 2.068965517
+   },
+   {
+    "lost_seconds": 1.0,
+    "measured_total": 9.0,
+    "rebuilt": 1.285714286,
+    "rel_err_pct": 2.857142857
+   },
+   {
+    "lost_seconds": 1.5,
+    "measured_total": 8.5,
+    "rebuilt": 1.307692308,
+    "rel_err_pct": 4.615384615
+   }
+  ],
+  "truth": 1.25
+ },
+ "q4_share_sensitivity": {
+  "G1.5": {
+   "R": 1.153846154,
+   "absolute_slope": 0.443786982,
+   "relative_elasticity": 0.384615385,
+   "rows": [
+    {
+     "delta_pp": -5,
+     "ratio": 1.132075472,
+     "rel_err_pct": -1.886792453
+    },
+    {
+     "delta_pp": -2,
+     "ratio": 1.145038168,
+     "rel_err_pct": -0.763358779
+    },
+    {
+     "delta_pp": -1,
+     "ratio": 1.149425287,
+     "rel_err_pct": -0.383141762
+    },
+    {
+     "delta_pp": 0,
+     "ratio": 1.153846154,
+     "rel_err_pct": 0.0
+    },
+    {
+     "delta_pp": 1,
+     "ratio": 1.158301158,
+     "rel_err_pct": 0.386100386
+    },
+    {
+     "delta_pp": 2,
+     "ratio": 1.162790698,
+     "rel_err_pct": 0.775193798
+    },
+    {
+     "delta_pp": 5,
+     "ratio": 1.176470588,
+     "rel_err_pct": 1.960784314
+    }
+   ],
+   "s_true": 0.4
+  },
+  "G2.0": {
+   "R": 1.25,
+   "absolute_slope": 0.78125,
+   "relative_elasticity": 0.625,
+   "rows": [
+    {
+     "delta_pp": -5,
+     "ratio": 1.212121212,
+     "rel_err_pct": -3.03030303
+    },
+    {
+     "delta_pp": -2,
+     "ratio": 1.234567901,
+     "rel_err_pct": -1.234567901
+    },
+    {
+     "delta_pp": -1,
+     "ratio": 1.242236025,
+     "rel_err_pct": -0.621118012
+    },
+    {
+     "delta_pp": 0,
+     "ratio": 1.25,
+     "rel_err_pct": 0.0
+    },
+    {
+     "delta_pp": 1,
+     "ratio": 1.257861635,
+     "rel_err_pct": 0.628930818
+    },
+    {
+     "delta_pp": 2,
+     "ratio": 1.265822785,
+     "rel_err_pct": 1.265822785
+    },
+    {
+     "delta_pp": 5,
+     "ratio": 1.290322581,
+     "rel_err_pct": 3.225806452
+    }
+   ],
+   "s_true": 0.4
+  },
+  "G3.0": {
+   "R": 1.363636364,
+   "absolute_slope": 1.239669421,
+   "relative_elasticity": 0.909090909,
+   "rows": [
+    {
+     "delta_pp": -5,
+     "ratio": 1.304347826,
+     "rel_err_pct": -4.347826087
+    },
+    {
+     "delta_pp": -2,
+     "ratio": 1.339285714,
+     "rel_err_pct": -1.785714286
+    },
+    {
+     "delta_pp": -1,
+     "ratio": 1.351351351,
+     "rel_err_pct": -0.900900901
+    },
+    {
+     "delta_pp": 0,
+     "ratio": 1.363636364,
+     "rel_err_pct": 0.0
+    },
+    {
+     "delta_pp": 1,
+     "ratio": 1.376146789,
+     "rel_err_pct": 0.917431193
+    },
+    {
+     "delta_pp": 2,
+     "ratio": 1.388888889,
+     "rel_err_pct": 1.851851852
+    },
+    {
+     "delta_pp": 5,
+     "ratio": 1.428571429,
+     "rel_err_pct": 4.761904762
+    }
+   ],
+   "s_true": 0.4
+  },
+  "G5.0": {
+   "R": 1.470588235,
+   "absolute_slope": 1.730103806,
+   "relative_elasticity": 1.176470588,
+   "rows": [
+    {
+     "delta_pp": -5,
+     "ratio": 1.388888889,
+     "rel_err_pct": -5.555555556
+    },
+    {
+     "delta_pp": -2,
+     "ratio": 1.436781609,
+     "rel_err_pct": -2.298850575
+    },
+    {
+     "delta_pp": -1,
+     "ratio": 1.453488372,
+     "rel_err_pct": -1.162790698
+    },
+    {
+     "delta_pp": 0,
+     "ratio": 1.470588235,
+     "rel_err_pct": 0.0
+    },
+    {
+     "delta_pp": 1,
+     "ratio": 1.488095238,
+     "rel_err_pct": 1.19047619
+    },
+    {
+     "delta_pp": 2,
+     "ratio": 1.506024096,
+     "rel_err_pct": 2.409638554
+    },
+    {
+     "delta_pp": 5,
+     "ratio": 1.5625,
+     "rel_err_pct": 6.25
+    }
+   ],
+   "s_true": 0.4
+  }
+ },
+ "q5_reported_case": {
+  "base_total": 519.4,
+  "g_train": 1.5,
+  "note": "泄漏把时间从 gen 挪进 train；当 train 加速而 gen 不加速时，被挪过去的时间也被\"加速\"了，倍数虚高",
+  "train_block_leak": [
+   {
+    "leak_seconds": 0.0,
+    "leak_share": 0.0,
+    "rebuilt": 1.233993015,
+    "rel_err_pct": 0.0
+   },
+   {
+    "leak_seconds": 10.388,
+    "leak_share": 0.02,
+    "rebuilt": 1.244228813,
+    "rel_err_pct": 0.829485875
+   },
+   {
+    "leak_seconds": 25.97,
+    "leak_share": 0.05,
+    "rebuilt": 1.259904913,
+    "rel_err_pct": 2.099841521
+   },
+   {
+    "leak_seconds": 51.94,
+    "leak_share": 0.1,
+    "rebuilt": 1.286928369,
+    "rel_err_pct": 4.28976123
+   },
+   {
+    "leak_seconds": 103.88,
+    "leak_share": 0.2,
+    "rebuilt": 1.344608879,
+    "rel_err_pct": 8.964059197
+   }
+  ],
+  "truth_ratio": 1.233993015
+ }
+}

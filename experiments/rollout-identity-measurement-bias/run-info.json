@@ -1,0 +1,19 @@
+{
+ "run": "2026-11-02 M1 — rollout identity measurement bias (§21.9)",
+ "python": "3.9.6 (system)",
+ "deps": "standard library only",
+ "note": "Pure algebra + synthetic stage decomposition; no GPU, no framework, no end-to-end. Virtual seconds only.",
+ "sha256": {
+  "identity_measurement_bias.py": "8949a0cee548a717fb18bc73ff74d06cd2ff3ac65b228b30793a39bdca32dfe1",
+  "test_identity_measurement_bias.py": "eb672021c7c4e01baf1309959874e2ca8256a3ee52d0c5f55a2c9d64507c0deb",
+  "summary.json": "45d6587ab153995108626dc7a6dd1dd77d078348d6704331ebad2a05a3e142a3",
+  "readme.md": "d49b053ad3389fb6445bf5e4724c1f551ea1bbcbe40df1ad758c3a277e011695"
+ },
+ "commands": [
+  "python3 identity_measurement_bias.py",
+  "python3 identity_measurement_bias.py --verify",
+  "python3 -m unittest test_identity_measurement_bias -v"
+ ],
+ "verify_twice_passed": true,
+ "tests": 13
+}
