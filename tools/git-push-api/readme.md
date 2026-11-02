@@ -50,3 +50,24 @@ git reset --hard <新 sha>
 ## 验证范围
 
 2026-11-03 在 perpetual-learning 上真实跑通一次：14 个改动路径 + 5 个目录层，远端 main 从 `ee977b39` 前进到 `60869da2`，随后本地 fetch 对齐。**未在含文件删除/重命名的变更上验证**，也**未在多提交（>1 层）的差异上验证**。新增整个新目录的路径已验证（`tools/git-push-api/` 目录在父提交里不存在时，GET 该层会 404，脚本按空层处理）。
+
+## 核验远端内容时的一个坑（2026-11-03 踩过）
+
+推完之后要核验"内容真的上去了"，**不要用 Contents API**：
+
+```bash
+# 错：对 >1MB 的文件，content 返回空串，解码后是空内容
+curl "https://api.github.com/repos/<owner>/<repo>/contents/<path>?ref=<sha>"
+
+# 对：先取 blob sha，再用 Blob API
+curl "https://api.github.com/repos/<owner>/<repo>/git/trees/<sha>?recursive=1"   # 找 path 的 sha
+curl "https://api.github.com/repos/<owner>/<repo>/git/blobs/<blob_sha>"          # base64 content
+```
+
+**症状**：Contents API 报 `size: 1516668`，但 `base64.b64decode(content)` 得到空串，
+md5 为 `d41d8cd98f00b204e9800998ecf8427e`（空串的 md5）。这会让人误判"内容丢了"。
+
+**最简单的判据**：远端 blob 的 `git hash-object` 与本地
+`git hash-object <file>` 相同即一致——不必解码内容。
+
+**教训**：核验工具本身也会骗人。出现"内容丢失"这种严重结论前，先换一种方式复核一遍。
