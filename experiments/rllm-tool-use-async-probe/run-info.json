@@ -7,7 +7,17 @@
   "entry_point": "rllm/tools/tool_base.py::Tool.__call__",
   "python": "3.12.13",
   "venv": "uv venv --python 3.12 /tmp/rllm-py312",
-  "deps": ["pydantic", "click", "rich", "PyYAML", "tqdm", "pandas", "httpx", "openai", "requests"],
+  "deps": [
+    "pydantic",
+    "click",
+    "rich",
+    "PyYAML",
+    "tqdm",
+    "pandas",
+    "httpx",
+    "openai",
+    "requests"
+  ],
   "assertions": [
     "signature default of use_async is False (docs claim None)",
     "has_async expression is True for a sync-only subclass",
@@ -18,5 +28,30 @@
   ],
   "negative_control": "corrected has_async = type(self).async_forward is not Tool.async_forward; guard raises NotImplementedError as intended",
   "result": "defect reproduced, exit 0",
-  "not_run": ["rllm test suite", "end-to-end agent rollout", "upstream issue/PR search"]
+  "not_run": [
+    "rllm full test suite",
+    "end-to-end agent rollout",
+    "fork push / PR / issue"
+  ],
+  "probes": {
+    "repro.py": "class-level defect reproduction (exit 0 = defect still present)",
+    "prod_reachability.py": "production reachability: call-site AST scan + harness protocol + behavioural trace (exit 0 = defect present AND no production path reaches the auto-detect branch)"
+  },
+  "prod_reachability_findings": {
+    "use_async_keyword_outside_main_blocks": 0,
+    "use_async_calls_inside_main_blocks": 4,
+    "use_async_values_in_main_blocks": [
+      "True"
+    ],
+    "production_constructor_utilization": "rllm/rewards/code_reward.py calls codetool(code=..., timeout=30) with the default use_async=False",
+    "two_tool_stacks": "rllm/tools/* is Tool subclasses dispatched via __call__; rllm/harnesses/tools/* are plain classes dispatched via .execute(sandbox, ...)"
+  },
+  "candidate_patch": {
+    "file": "open-source/rllm/patches/use-async-autodetect/use-async-autodetect.patch",
+    "change": "has_async = self.__class__.async_forward is not Tool.async_forward (+ 3 regression tests)",
+    "tests_with_fix": "3 passed (tests/tools/test_tools.py -k 'auto_detect or use_async')",
+    "tests_without_fix": "2 failed, 1 passed (negative control)",
+    "known_collateral": "tests/tools/test_tools.py::test_python_tool goes red: it calls use_async=True on the sync-only PythonInterpreter and used to pass only because the defect swallowed the error"
+  },
+  "pytest": "9.2.0 installed into /tmp/rllm-py312 on 2026-11-02 for the regression run"
 }

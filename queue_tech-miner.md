@@ -90,12 +90,14 @@
 ## TM-009 — rLLM 工具调用的 `use_async=None` 自动探测失效（B 类：主动发掘）
 
 - **问题与价值**：`rllm/tools/tool_base.py::Tool.__call__` 的文档与 docstring 都声称"`use_async` 为 `None` 时自动选择 async/sync 实现"，但①签名默认值是 `False` 而非 `None`，自动探测分支默认不可达；②`has_async = inspect.isfunction(self.__class__.async_forward) or self.__class__.async_forward is Tool.async_forward` 对**任何子类恒为 True**（`Tool.async_forward` 本身是普通 `async def`，`X is X` 也恒真），于是纯同步工具在 `use_async=None`／`True` 时返回**未被 await 的协程**而非结果，同一个 `if` 里的 `NotImplementedError` 守卫成为不可达代码。仓库内 11 个工具只实现 `forward`、仅 2 个实现 `async_forward`，受影响面正是大多数。
-- **优先级 / 负责人 / 状态**：B 类候选（新框架扩池，2026-11-02 按「范围不限于已熟悉框架」选取）；M1 本地取证完成，**等待用户决定是否对外**。
+- **优先级 / 负责人 / 状态**：B 类候选（新框架扩池，2026-11-02 按「范围不限于已熟悉框架」选取）；M1 取证、查重、可达性复核、候选补丁四项完成，**等待用户决定是否对外**。
 - **已有证据**：main `4e828c8` 静态取证 + 用**真实 `Tool` 类**的最小复现（非手写替身），Python 3.12.13，`exit 0`＝缺陷存在；负向对照（改用 `type(self).async_forward is not Tool.async_forward`）三项行为均转为正确。[取证材料](open-source/rllm/tool-use-async-autodetect.md)、[复现脚本](experiments/rllm-tool-use-async-probe/readme.md)。
 - **影响面边界（决定价值评估为 6 而非更高）**：`grep -rn "use_async=" rllm/` 的命中**全部在各文件 `__main__` 演示块**，生产路径不传该参数，故现有训练/评测不受影响；`tests/tools/test_tools.py:202` 用了 `use_async=True` 但只 `print` 不断言，缺陷因此长期无人发现。**不得描述成"训练结果有问题"**。
+- **可达性复核（2026-11-02，[prod_reachability.py](experiments/rllm-tool-use-async-probe/prod_reachability.py)，exit 0）**：把上面的 grep 印象升级为结构化核对——AST 扫描全包，`use_async=` 出现在 `__main__` 块之外 **0 处**；块内 4 处取值全是 `True`；生产构造点 `code_reward.py` 调 `codetool(code=..., timeout=30)` 走默认同步、正常返回。**并查清 rLLM 有两套互不相干的工具栈**：`rllm/tools/` 的 `Tool` 子类走 `__call__`，`rllm/harnesses/tools/` 的 `BashTool` 等是普通类、协议 `.schema` + `.execute(sandbox, ...)`，agent 主流路径结构上绕开本缺陷。
+- **候选补丁已就绪（2026-11-02）**：[patches/use-async-autodetect](open-source/rllm/patches/use-async-autodetect/readme.md)。`has_async` 改一行 + 三条常量断言测试；修复后 3 passed、未修复 2 failed（负向对照）。**新事实：上游 `test_python_tool` 对纯同步的 `PythonInterpreter` 传 `use_async=True`，过去靠缺陷吞掉才通过，修好后按设计抛 `NotImplementedError` 而变红**——这正是"守卫被测试掩盖"的证据，但怎么改那处测试涉及上游测试意图，留给维护者。
 - **下一步与等待条件**：对外前需用户决定两件事——① 是否提一条**独立小 issue**（附复现脚本，成本低、指向明确）；② 若提 PR，是否同时改签名默认为 `None`（对下游是行为变化，需在读 PR 人的角度说明）。~~另需先补一步未做的核查：检索上游 issue/PR 是否已有人认领该缺陷~~ → **已完成（2026-11-02，独立复核）**：`repo:rllm-org/rllm async_forward` **0 命中**、`use_async` 仅 1 条无关 PR（#460 Daytona），**上游无人认领**。复核同时补了第三点危害：基类 `async_forward` 体内是 `return self.forward(...)`，故**只实现同步的工具被误判为异步时不报错，而是静默返回 coroutine**（未 await 仅 RuntimeWarning）——比原记录的"分支不可达"更实际。见 [独立复核](open-source/rllm/tm-009-independent-review.md)。对外动作全部未做。
 - **停止条件**：上游修复 `has_async` 判定（复现脚本会以非零退出提示结论失效）、配置删除，或用户否决对外动作。
-- **成果入口**：[取证](open-source/rllm/tool-use-async-autodetect.md)、[复现](experiments/rllm-tool-use-async-probe/readme.md)、[pyflag 扫描](tools/pyflag/scan-rllm-4e828c8.json)。
+- **成果入口**：[取证](open-source/rllm/tool-use-async-autodetect.md)、[复现](experiments/rllm-tool-use-async-probe/readme.md)、[候选补丁](open-source/rllm/patches/use-async-autodetect/readme.md)、[独立复核](open-source/rllm/tm-009-independent-review.md)、[pyflag 扫描](tools/pyflag/scan-rllm-4e828c8.json)。
 
 ## 已闭环与保留方向
 

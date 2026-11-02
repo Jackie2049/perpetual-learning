@@ -1,0 +1,72 @@
+diff --git a/rllm/tools/tool_base.py b/rllm/tools/tool_base.py
+index 0403e6e..7b5e0bb 100644
+--- a/rllm/tools/tool_base.py
++++ b/rllm/tools/tool_base.py
+@@ -150,7 +150,7 @@ class Tool:
+             Any: The result of the tool execution, which may be a coroutine if using async_forward
+         """
+ 
+-        has_async = inspect.isfunction(self.__class__.async_forward) or self.__class__.async_forward is Tool.async_forward
++        has_async = self.__class__.async_forward is not Tool.async_forward
+         has_sync = not (inspect.isfunction(self.__class__.forward) and self.__class__.forward is Tool.forward)
+         # Explicit routing based on use_async flag
+         if use_async is True:
+diff --git a/tests/tools/test_tools.py b/tests/tools/test_tools.py
+index a989a2a..af9dbc6 100644
+--- a/tests/tools/test_tools.py
++++ b/tests/tools/test_tools.py
+@@ -4,7 +4,7 @@ import asyncio
+ import pytest
+ 
+ from rllm.tools import tool_registry
+-from rllm.tools.tool_base import ToolOutput
++from rllm.tools.tool_base import Tool, ToolOutput
+ 
+ # Test code for Python interpreter
+ python_test_cases = [
+@@ -250,3 +250,45 @@ def test_search_tool(tool_name: str):
+             print("Test passed!")
+         else:
+             print("Test failed!")
++
++
++class _SyncOnlyTool(Tool):
++    """A tool that only implements the synchronous path."""
++
++    @property
++    def json(self):
++        return {"type": "function", "function": {"name": "sync_only", "description": "synchronous only", "parameters": {}}}
++
++    def forward(self, x):
++        return x * 2
++
++
++class _AsyncOnlyTool(Tool):
++    """A tool that only implements the asynchronous path."""
++
++    @property
++    def json(self):
++        return {"type": "function", "function": {"name": "async_only", "description": "asynchronous only", "parameters": {}}}
++
++    async def async_forward(self, x):
++        return x * 2
++
++
++def test_auto_detect_prefers_sync_implementation():
++    """With use_async=None, a sync-only tool must return its result, not a coroutine."""
++    tool = _SyncOnlyTool(name="sync_only", description="synchronous only")
++    assert tool(3, use_async=None) == 6
++
++
++def test_use_async_true_requires_async_forward():
++    """Explicitly requesting async on a sync-only tool must raise, not return a coroutine."""
++    tool = _SyncOnlyTool(name="sync_only", description="synchronous only")
++    with pytest.raises(NotImplementedError):
++        tool(3, use_async=True)
++
++
++def test_auto_detect_uses_async_implementation():
++    """With use_async=None, an async-only tool must resolve to its async result."""
++    tool = _AsyncOnlyTool(name="async_only", description="asynchronous only")
++    result = tool(3, use_async=None)
++    assert asyncio.run(result) == 6
