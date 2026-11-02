@@ -44,3 +44,5 @@ python3 tools/training_recipe.py --help
 ## 开源文档抬头检查
 
 [contributions/](contributions/readme.md)：校验统一抬头、链接及评分格式，网页构建复用同一解析器；提交时检查暂存内容。
+
+- [anchors/](anchors/readme.md)：核验主文档的数字是否能在实验归档里复现；13 项检查 + 负向对照，`--selftest` 验证检查器真能抓错。**只核"数字是否来自归档"，不核结论对错**。
