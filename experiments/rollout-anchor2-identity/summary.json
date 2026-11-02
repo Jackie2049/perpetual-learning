@@ -1,0 +1,243 @@
+{
+ "placement": {
+  "re-anchor 2+2 轨（§13.45）": {
+   "2卡": {
+    "gen": 1.322,
+    "old_log_prob": 1.608,
+    "ref": 2.023,
+    "adv": 0.805,
+    "update_actor": 1.628,
+    "update_weights": 0.882
+   },
+   "4卡": {
+    "gen": 1.933,
+    "old_log_prob": 2.116,
+    "ref": 3.147,
+    "adv": 1.0,
+    "update_actor": 2.087,
+    "update_weights": 0.77
+   }
+  },
+  "旧锚点 2+0／3+1 轨（§13.36）": {
+   "2卡": {
+    "gen": 1.251,
+    "old_log_prob": 1.368,
+    "ref": 1.766,
+    "adv": 0.804,
+    "update_actor": 1.211,
+    "update_weights": 0.774
+   },
+   "4卡": {
+    "gen": 1.937,
+    "old_log_prob": 1.777,
+    "ref": 2.623,
+    "adv": 0.779,
+    "update_actor": 1.628,
+    "update_weights": 0.69
+   }
+  }
+ },
+ "cited_checks": [
+  {
+   "stage": "gen",
+   "cited": [
+    1.322,
+    1.933
+   ],
+   "source": "2卡=re-anchor／4卡=re-anchor"
+  },
+  {
+   "stage": "old_log_prob",
+   "cited": [
+    1.608,
+    2.116
+   ],
+   "source": "2卡=re-anchor／4卡=re-anchor"
+  },
+  {
+   "stage": "ref",
+   "cited": [
+    2.023,
+    3.147
+   ],
+   "source": "2卡=re-anchor／4卡=re-anchor"
+  },
+  {
+   "stage": "update_actor",
+   "cited": [
+    1.628,
+    2.087
+   ],
+   "source": "2卡=re-anchor／4卡=re-anchor"
+  },
+  {
+   "stage": "update_weights",
+   "cited": [
+    0.882,
+    0.77
+   ],
+   "source": "2卡=re-anchor／4卡=re-anchor"
+  }
+ ],
+ "identity": [
+  {
+   "label": "g1p→g2p（1+1）",
+   "recon_sum_denominator": 1.4485,
+   "recon_seamless_quadratic": 0.6761,
+   "formula_value_if_no_acceleration": 1.0,
+   "actual_step_ratio": 1.5264,
+   "stage_sum_single": 27.4459,
+   "stage_sum_target": 17.9816,
+   "stage_sum_over_step_single": 0.99723,
+   "stage_sum_over_step_target": 0.99725,
+   "g_k": {
+    "gen": 1.322,
+    "old_log_prob": 1.608,
+    "ref": 2.023,
+    "adv": 0.805,
+    "update_actor": 1.628,
+    "update_weights": 0.882
+   },
+   "error_pct": -5.1
+  },
+  {
+   "label": "g1p→g4p（2+2）",
+   "recon_sum_denominator": 1.6429,
+   "recon_seamless_quadratic": 1.0729,
+   "formula_value_if_no_acceleration": 1.0,
+   "actual_step_ratio": 1.9419,
+   "stage_sum_single": 27.4459,
+   "stage_sum_target": 14.1328,
+   "stage_sum_over_step_single": 0.99723,
+   "stage_sum_over_step_target": 0.99717,
+   "g_k": {
+    "gen": 1.933,
+    "old_log_prob": 2.116,
+    "ref": 3.147,
+    "adv": 1.0,
+    "update_actor": 2.087,
+    "update_weights": 0.77
+   },
+   "error_pct": -15.4
+  },
+  {
+   "label": "pbase(2卡)→p4base(4卡)",
+   "recon_sum_denominator": 1.4718,
+   "recon_seamless_quadratic": 0.6889,
+   "formula_value_if_no_acceleration": 1.0,
+   "actual_step_ratio": 1.5325,
+   "stage_sum_single": 21.7353,
+   "stage_sum_target": 14.1717,
+   "stage_sum_over_step_single": 0.99774,
+   "stage_sum_over_step_target": 0.99692,
+   "g_k": {
+    "gen": 1.465,
+    "old_log_prob": 1.488,
+    "ref": 1.797,
+    "adv": 1.264,
+    "update_actor": 1.721,
+    "update_weights": 0.986
+   }
+  },
+  {
+   "label": "poll 2.0→0.1（2 卡）",
+   "recon_sum_denominator": 1.0235,
+   "recon_seamless_quadratic": 0.3486,
+   "formula_value_if_no_acceleration": 1.0,
+   "actual_step_ratio": 1.0373,
+   "stage_sum_single": 21.7353,
+   "stage_sum_target": 20.9512,
+   "stage_sum_over_step_single": 0.99774,
+   "stage_sum_over_step_target": 0.99763,
+   "g_k": {
+    "gen": 1.439,
+    "old_log_prob": 0.997,
+    "ref": 0.981,
+    "adv": 1.265,
+    "update_actor": 0.986,
+    "update_weights": 1.0
+   },
+   "error_pct": -1.33
+  },
+  {
+   "label": "poll 2.0→0.1（4 卡）",
+   "recon_sum_denominator": 1.0148,
+   "recon_seamless_quadratic": 0.2944,
+   "formula_value_if_no_acceleration": 1.0,
+   "actual_step_ratio": 1.0202,
+   "stage_sum_single": 14.1717,
+   "stage_sum_target": 13.8935,
+   "stage_sum_over_step_single": 0.99692,
+   "stage_sum_over_step_target": 0.9971,
+   "g_k": {
+    "gen": 1.226,
+    "old_log_prob": 1.0,
+    "ref": 0.989,
+    "adv": 0.995,
+    "update_actor": 0.984,
+    "update_weights": 0.999
+   },
+   "error_pct": -0.53
+  },
+  {
+   "label": "poll 2.0→0.5（4 卡 DAPO）",
+   "recon_sum_denominator": 1.0384,
+   "recon_seamless_quadratic": 0.2968,
+   "formula_value_if_no_acceleration": 1.0,
+   "actual_step_ratio": 1.0451,
+   "stage_sum_single": 18.5046,
+   "stage_sum_target": 17.708,
+   "stage_sum_over_step_single": 0.99551,
+   "stage_sum_over_step_target": 0.9956,
+   "g_k": {
+    "gen": 1.166,
+    "old_log_prob": 0.977,
+    "ref": 0.988,
+    "adv": 0.994,
+    "update_actor": 0.985,
+    "update_weights": 0.993
+   },
+   "error_pct": -0.64
+  },
+  {
+   "label": "poll 2.0→0.1（4 卡 DAPO）",
+   "recon_sum_denominator": 1.0373,
+   "recon_seamless_quadratic": 0.2958,
+   "formula_value_if_no_acceleration": 1.0,
+   "actual_step_ratio": 1.0416,
+   "stage_sum_single": 18.5046,
+   "stage_sum_target": 17.7675,
+   "stage_sum_over_step_single": 0.99551,
+   "stage_sum_over_step_target": 0.99561,
+   "g_k": {
+    "gen": 1.137,
+    "old_log_prob": 0.992,
+    "ref": 0.992,
+    "adv": 0.991,
+    "update_actor": 0.994,
+    "update_weights": 0.993
+   },
+   "error_pct": -0.41
+  },
+  {
+   "label": "poll 2.0→0.1（2 卡 DAPO inflight=1）",
+   "recon_sum_denominator": 1.0285,
+   "recon_seamless_quadratic": 0.31,
+   "formula_value_if_no_acceleration": 1.0,
+   "actual_step_ratio": 1.0312,
+   "stage_sum_single": 25.1424,
+   "stage_sum_target": 24.3788,
+   "stage_sum_over_step_single": 0.99645,
+   "stage_sum_over_step_target": 0.99633,
+   "g_k": {
+    "gen": 1.119,
+    "old_log_prob": 0.984,
+    "ref": 0.987,
+    "adv": 1.259,
+    "update_actor": 1.004,
+    "update_weights": 1.001
+   },
+   "error_pct": -0.26
+  }
+ ]
+}

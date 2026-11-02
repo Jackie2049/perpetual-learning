@@ -1,0 +1,14 @@
+{
+ "executed": "2026-11-03 M1 定时轮",
+ "kind": "CPU read-only re-accounting, no GPU",
+ "inputs": [
+  "../rollout-g8-candidate-g/reanchor-summary.json",
+  "../rollout-g8-candidate-g/summary.json",
+  "../verl-v1-poll-quantum/summary.json",
+  "../verl-v1-poll-quantum-dapo-g4/summary-rerun.json",
+  "../verl-v1-poll-quantum-dapo/summary-inflight1.json"
+ ],
+ "scripts": ["check_identity.py", "negative_control.py"],
+ "verified": "check_identity.py --verify exit 0; negative_control.py exit 0",
+ "changed_nothing": "不改任何原归档与主文档既有读数"
+}
