@@ -4,7 +4,9 @@
 
 @../AGENTS.md
 
-@../WORK.md
+@../CONTEXT.md
+
+任务优先级与状态按需读取 [技术秘书队列](../queue_tech-secretary.md) 和 [技术掘金队列](../queue_tech-miner.md)。
 
 本仓库 Agent 技能在 [skills/](../skills/readme.md)，不在 `.claude/skills/` 下重复维护。
 

@@ -48,7 +48,7 @@
 - [2026 年 6 月贡献行动计划](oss-contribution-action-plan-2026-06.md)
 - [贡献挖掘 SOP](SOP.md)
 
-以上计划、分数与 Issue/PR 状态均为历史记录，不能作为当前优先级或贡献成效的证明。近期工作安排见 [WORK.md](../WORK.md)。
+以上计划、分数与 Issue/PR 状态均为历史记录，不能作为当前优先级或贡献成效的证明。近期工作安排见 [CONTEXT.md](../CONTEXT.md)。
 
 ## 组织方式
 

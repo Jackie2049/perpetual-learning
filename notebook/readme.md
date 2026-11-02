@@ -1,6 +1,6 @@
 # 技术学习笔记
 
-这里保存 perpetual-learning 的技术学习、源码阅读与实验理解。当前工作上下文见 [WORK.md](../WORK.md)，完整项目介绍见 [README.md](../README.md)。
+这里保存 perpetual-learning 的技术学习、源码阅读与实验理解。当前工作上下文见 [CONTEXT.md](../CONTEXT.md)，完整项目介绍见 [README.md](../README.md)。
 
 ## 板块职责
 

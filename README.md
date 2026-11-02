@@ -6,6 +6,8 @@
 
 打开 [智能引擎工作台 ↗](https://jackie2049.github.io/perpetual-learning/) ，在这个工作台网页上，可以浏览近期进展、搜索相关信息、回看工作日志与待定事项。
 
+管理入口：[Agent 规则](AGENTS.md) · [执行接续](CONTEXT.md) · [技术秘书队列](queue_tech-secretary.md) · [技术掘金队列](queue_tech-miner.md)
+
 ## 运作机制
 
 【核心工作】本项目的 Agent 线程应始终围绕3个核心工作展开，即**技术秘书**、**技术掘金**、**经验沉淀**：
@@ -27,7 +29,7 @@
 【日志机制】本项目的 Agent 线程应及时记录**工作日志**、**近期上下文**
 
 - **工作日志**：每轮工作结束后（定时任务触发、用户主动提问分别算一轮工作），及时记录 [工作日志](diary/readme.md)。
-- **近期上下文**：为了方便快速回看上下文，以及跨会话、跨机器之间的Agent协作，持续维护[近期上下文](WORK.md)
+- **近期上下文**：为了方便快速回看上下文，以及跨会话、跨机器之间的Agent协作，持续维护[近期上下文](CONTEXT.md)
 
 
 
@@ -50,7 +52,7 @@
 | ---------------------------- | -------- | ------------------------------------ |
 | [README.md](README.md)       | 项目总览     | 本页                                   |
 | [AGENTS.md](AGENTS.md)       | Agent 内核 | 工作原则、行为方式、执行边界                       |
-| [WORK.md](WORK.md)           | 近期上下文    | 当前的需求、进展、下一步规划                       |
+| [CONTEXT.md](CONTEXT.md)           | 近期上下文    | 当前的需求、进展、下一步规划                       |
 | [notebook/](notebook/)       | 笔记       | [笔记总览](notebook/readme.md)           |
 | [tools/](tools/)             | 工具       | [工具总览](tools/readme.md)              |
 | [experiments/](experiments/) | 实验       | [实验总览](experiments/readme.md)        |
