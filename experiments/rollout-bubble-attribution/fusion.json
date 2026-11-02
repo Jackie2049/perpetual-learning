@@ -1,0 +1,514 @@
+{
+ "and_rule": {
+  "asymmetry": "背景命中一旦接近缓存命中的量级，真空泡全部被漏判（recall 1→0），而缓存命中一票不反判（specificity 恒 1）——AND 的错误方向是单向的：宁可漏报，不会把活算成空转",
+  "cost": "单向不是免费的：漏报的真空泡会原样留在\"资源空闲\"读数里，等于退回 §21.11 那条镜像；判据只把能确认的那部分从气泡里摘出来",
+  "failure_direction": {
+   "bg_rel_0.00": {
+    "bg_hits_per_tick": 0.0,
+    "lpc_false_idle": 30,
+    "lpc_n": 30,
+    "nlpc_missed": 0,
+    "nlpc_n": 30,
+    "nlpc_recall": 1.0
+   },
+   "bg_rel_0.01": {
+    "bg_hits_per_tick": 2.4055,
+    "lpc_false_idle": 30,
+    "lpc_n": 30,
+    "nlpc_missed": 0,
+    "nlpc_n": 30,
+    "nlpc_recall": 1.0
+   },
+   "bg_rel_0.05": {
+    "bg_hits_per_tick": 12.0275,
+    "lpc_false_idle": 30,
+    "lpc_n": 30,
+    "nlpc_missed": 0,
+    "nlpc_n": 30,
+    "nlpc_recall": 1.0
+   },
+   "bg_rel_0.25": {
+    "bg_hits_per_tick": 60.1375,
+    "lpc_false_idle": 30,
+    "lpc_n": 30,
+    "nlpc_missed": 0,
+    "nlpc_n": 30,
+    "nlpc_recall": 1.0
+   },
+   "bg_rel_1.00": {
+    "bg_hits_per_tick": 240.55,
+    "lpc_false_idle": 30,
+    "lpc_n": 30,
+    "nlpc_missed": 30,
+    "nlpc_n": 30,
+    "nlpc_recall": 0.0
+   }
+  },
+  "high": {
+   "fused_accuracy": 0.5,
+   "lpc_occupancy_abs_within_thr": true,
+   "lpc_occupancy_ratio_mean": 0.372959746,
+   "lpc_specificity": 0.0,
+   "nlpc_recall": 1.0,
+   "note_works_here": "绝对值判定在高低两档都判 LPC 没在算 ⇒ 两档都失效；从相对比值看只有低负载档 LPC 在对侧",
+   "ratio_rule_accuracy": 0.5
+  },
+  "low": {
+   "fused_accuracy": 1.0,
+   "lpc_occupancy_abs_within_thr": true,
+   "lpc_occupancy_ratio_mean": 0.498314452,
+   "lpc_specificity": 1.0,
+   "nlpc_recall": 1.0,
+   "note_works_here": "绝对值判定在高低两档都判 LPC 没在算 ⇒ 两档都失效；从相对比值看只有低负载档 LPC 在对侧",
+   "ratio_rule_accuracy": 1.0
+  },
+  "reference_matters": {
+   "high": {
+    "abs_threshold_accuracy": 0.5,
+    "ratio_threshold_accuracy": 0.5
+   },
+   "low": {
+    "abs_threshold_accuracy": 1.0,
+    "ratio_threshold_accuracy": 1.0
+   }
+  },
+  "reference_note": "同一个占用率通道，基准取\"忙段绝对值的一半\"还是\"忙段均值的一半\"（=相对比值），在高负载下等价、在低负载下不等价——报约定里必须写清用哪一个"
+ },
+ "channel_families": {
+  "high": {
+   "D_occupancy": {
+    "in_window_ratio_diff": 0.2,
+    "run_lpc_mean": 0.372959746,
+    "run_nlpc_mean": 0.124925846,
+    "same_verdict_30seeds": 30,
+    "separates_at_this_threshold": false
+   },
+   "E_inflight": {
+    "in_window_ratio_diff": 7.5,
+    "run_lpc_mean": 0.2502148,
+    "run_nlpc_mean": 0.018490422,
+    "same_verdict_30seeds": 30,
+    "separates_at_this_threshold": false
+   },
+   "H_hits": {
+    "in_window_ratio_diff": 60.0,
+    "run_lpc_mean": 0.249298578,
+    "run_nlpc_mean": 0.0,
+    "same_verdict_30seeds": 30,
+    "separates_at_this_threshold": false
+   },
+   "I_prefill": {
+    "in_window_ratio_diff": 8.0,
+    "run_lpc_mean": 0.251711106,
+    "run_nlpc_mean": 0.0,
+    "same_verdict_30seeds": 30,
+    "separates_at_this_threshold": false
+   }
+  },
+  "low": {
+   "D_occupancy": {
+    "in_window_ratio_diff": 0.2,
+    "run_lpc_mean": 0.498314452,
+    "run_nlpc_mean": 0.166374037,
+    "same_verdict_30seeds": 16,
+    "separates_at_this_threshold": false
+   },
+   "E_inflight": {
+    "in_window_ratio_diff": 7.5,
+    "run_lpc_mean": 1.965331053,
+    "run_nlpc_mean": 0.146654905,
+    "same_verdict_30seeds": 0,
+    "separates_at_this_threshold": true
+   },
+   "H_hits": {
+    "in_window_ratio_diff": 60.0,
+    "run_lpc_mean": 1.993381076,
+    "run_nlpc_mean": 0.0,
+    "same_verdict_30seeds": 0,
+    "separates_at_this_threshold": true
+   },
+   "I_prefill": {
+    "in_window_ratio_diff": 8.0,
+    "run_lpc_mean": 2.001844868,
+    "run_nlpc_mean": 0.0,
+    "same_verdict_30seeds": 0,
+    "separates_at_this_threshold": true
+   }
+  },
+  "note": "\"同答案\"不只看数值差：高负载下四条通道在两语义上都判\"没在算\"（D、E 是占用率类，H、I 的计数也低于忙段一半）；低负载下阈值（忙段均值的一半）恰好落在两语义之间，连占用率类也分开了——所以\"哪类通道能分\"依赖阈值位置，不是通道的固有属性。真正与语义绑定的只有一条：真空泡的计数为 0"
+ },
+ "config": {
+  "busy": {
+   "high": {
+    "D_occupancy": 0.85,
+    "E_inflight": 32.0,
+    "H_hits": 240.0,
+    "I_prefill": 32.0
+   },
+   "low": {
+    "D_occupancy": 0.6,
+    "E_inflight": 4.0,
+    "H_hits": 30.0,
+    "I_prefill": 4.0
+   }
+  },
+  "in_window": {
+   "run_lpc": {
+    "D_occupancy": 0.3,
+    "E_inflight": 8.0,
+    "H_hits": 60.0,
+    "I_prefill": 8.0
+   },
+   "run_nlpc": {
+    "D_occupancy": 0.1,
+    "E_inflight": 0.5,
+    "H_hits": 0.0,
+    "I_prefill": 0.0
+   }
+  },
+  "replicas": 4,
+  "seeds": 30,
+  "sigma": 0.25,
+  "threshold": 0.5,
+  "ticks": 300,
+  "windows": {
+   "high": [
+    [
+     20,
+     80
+    ],
+    [
+     140,
+     200
+    ],
+    [
+     250,
+     270
+    ]
+   ],
+   "low": [
+    [
+     20,
+     40
+    ],
+    [
+     140,
+     160
+    ],
+    [
+     250,
+     262
+    ]
+   ]
+  }
+ },
+ "identifiability": {
+  "bg_hits_0": {
+   "levels_separable": 2,
+   "of": 2
+  },
+  "bg_hits_60": {
+   "levels_separable": 0,
+   "of": 2
+  },
+  "note": "背景命中 0 时两级都分得开、背景命中等于缓存命中量级时两级都分不开；若后者仍分得开，说明判据读的不是\"有没有活\"（§13.30／§13.31 撤回指标的同一类教训）"
+ },
+ "min_conditions": {
+  "idle_high": {
+   "replica_ticks": 560,
+   "share": 0.466666667,
+   "window_ticks": 140
+  },
+  "idle_low": {
+   "replica_ticks": 208,
+   "share": 0.173333333,
+   "window_ticks": 52
+  },
+  "note": "副本少时命中计数折算后逼近零，AND 自然漏报——这是 recall 的代价而不是误判；采样间隔只决定窗口能不能看见，接 §21.11",
+  "replicas_1": {
+   "h_ratio_mean": 0.06203269,
+   "h_ratio_min": 0.055598456,
+   "in_window_hits_per_tick": 15.0,
+   "n": 10,
+   "says_still_working": 10
+  },
+  "replicas_2": {
+   "h_ratio_mean": 0.124144343,
+   "h_ratio_min": 0.117322794,
+   "in_window_hits_per_tick": 30.0,
+   "n": 10,
+   "says_still_working": 10
+  },
+  "replicas_4": {
+   "h_ratio_mean": 0.24907195,
+   "h_ratio_min": 0.242383702,
+   "in_window_hits_per_tick": 60.0,
+   "n": 10,
+   "says_still_working": 10
+  },
+  "replicas_8": {
+   "h_ratio_mean": 0.499049721,
+   "h_ratio_min": 0.492204751,
+   "in_window_hits_per_tick": 120.0,
+   "n": 10,
+   "says_still_working": 5
+  },
+  "sampling": {
+   "sampling_10s": [
+    {
+     "phase_visible_rate": 0.2,
+     "two_sample_phase_rate": 0.0,
+     "w_over_k": 0.2,
+     "window_s": 2
+    },
+    {
+     "phase_visible_rate": 0.5,
+     "two_sample_phase_rate": 0.0,
+     "w_over_k": 0.5,
+     "window_s": 5
+    },
+    {
+     "phase_visible_rate": 1.0,
+     "two_sample_phase_rate": 0.0,
+     "w_over_k": 1.0,
+     "window_s": 10
+    },
+    {
+     "phase_visible_rate": 1.0,
+     "two_sample_phase_rate": 1.0,
+     "w_over_k": 2.0,
+     "window_s": 20
+    },
+    {
+     "phase_visible_rate": 1.0,
+     "two_sample_phase_rate": 1.0,
+     "w_over_k": 4.0,
+     "window_s": 40
+    }
+   ],
+   "sampling_1s": [
+    {
+     "phase_visible_rate": 1.0,
+     "two_sample_phase_rate": 1.0,
+     "w_over_k": 2.0,
+     "window_s": 2
+    },
+    {
+     "phase_visible_rate": 1.0,
+     "two_sample_phase_rate": 1.0,
+     "w_over_k": 5.0,
+     "window_s": 5
+    },
+    {
+     "phase_visible_rate": 1.0,
+     "two_sample_phase_rate": 1.0,
+     "w_over_k": 10.0,
+     "window_s": 10
+    },
+    {
+     "phase_visible_rate": 1.0,
+     "two_sample_phase_rate": 1.0,
+     "w_over_k": 20.0,
+     "window_s": 20
+    },
+    {
+     "phase_visible_rate": 1.0,
+     "two_sample_phase_rate": 1.0,
+     "w_over_k": 40.0,
+     "window_s": 40
+    }
+   ],
+   "sampling_20s": [
+    {
+     "phase_visible_rate": 0.1,
+     "two_sample_phase_rate": 0.0,
+     "w_over_k": 0.1,
+     "window_s": 2
+    },
+    {
+     "phase_visible_rate": 0.25,
+     "two_sample_phase_rate": 0.0,
+     "w_over_k": 0.25,
+     "window_s": 5
+    },
+    {
+     "phase_visible_rate": 0.5,
+     "two_sample_phase_rate": 0.0,
+     "w_over_k": 0.5,
+     "window_s": 10
+    },
+    {
+     "phase_visible_rate": 1.0,
+     "two_sample_phase_rate": 0.0,
+     "w_over_k": 1.0,
+     "window_s": 20
+    },
+    {
+     "phase_visible_rate": 1.0,
+     "two_sample_phase_rate": 1.0,
+     "w_over_k": 2.0,
+     "window_s": 40
+    }
+   ],
+   "sampling_5s": [
+    {
+     "phase_visible_rate": 0.4,
+     "two_sample_phase_rate": 0.0,
+     "w_over_k": 0.4,
+     "window_s": 2
+    },
+    {
+     "phase_visible_rate": 1.0,
+     "two_sample_phase_rate": 0.0,
+     "w_over_k": 1.0,
+     "window_s": 5
+    },
+    {
+     "phase_visible_rate": 1.0,
+     "two_sample_phase_rate": 1.0,
+     "w_over_k": 2.0,
+     "window_s": 10
+    },
+    {
+     "phase_visible_rate": 1.0,
+     "two_sample_phase_rate": 1.0,
+     "w_over_k": 4.0,
+     "window_s": 20
+    },
+    {
+     "phase_visible_rate": 1.0,
+     "two_sample_phase_rate": 1.0,
+     "w_over_k": 8.0,
+     "window_s": 40
+    }
+   ]
+  },
+  "sampling_note": "相位是全枚举不是随机抽样；两列分别是\"至少采到一次\"与\"至少采到两次\"的相位占比"
+ },
+ "relative_vs_absolute": {
+  "high": {
+   "abs_cut": 0.425,
+   "absolute_says_same": true,
+   "busy_occupancy": 0.85,
+   "lpc_window_above_abs_cut": false,
+   "lpc_window_occupancy": 0.3,
+   "nlpc_window_occupancy": 0.1,
+   "relative_says_same": true
+  },
+  "low": {
+   "abs_cut": 0.3,
+   "absolute_says_same": false,
+   "busy_occupancy": 0.6,
+   "lpc_window_above_abs_cut": true,
+   "lpc_window_occupancy": 0.3,
+   "nlpc_window_occupancy": 0.1,
+   "relative_says_same": false
+  },
+  "note": "两个口径在高负载下都失效、在低负载下都可能碰到边界；报\"某段时间设备利用率掉到 X%\"时必须同时给忙段基准，否则\"掉下来\"没有含义"
+ },
+ "threshold_sweep": {
+  "D_occupancy": [
+   {
+    "separated_10seeds": 0,
+    "threshold": 0.1
+   },
+   {
+    "separated_10seeds": 10,
+    "threshold": 0.2
+   },
+   {
+    "separated_10seeds": 10,
+    "threshold": 0.3
+   },
+   {
+    "separated_10seeds": 0,
+    "threshold": 0.4
+   },
+   {
+    "separated_10seeds": 0,
+    "threshold": 0.5
+   },
+   {
+    "separated_10seeds": 0,
+    "threshold": 0.6
+   },
+   {
+    "separated_10seeds": 0,
+    "threshold": 0.8
+   },
+   {
+    "separated_10seeds": 0,
+    "threshold": 0.95
+   }
+  ],
+  "E_inflight": [
+   {
+    "separated_10seeds": 10,
+    "threshold": 0.1
+   },
+   {
+    "separated_10seeds": 10,
+    "threshold": 0.2
+   },
+   {
+    "separated_10seeds": 0,
+    "threshold": 0.3
+   },
+   {
+    "separated_10seeds": 0,
+    "threshold": 0.4
+   },
+   {
+    "separated_10seeds": 0,
+    "threshold": 0.5
+   },
+   {
+    "separated_10seeds": 0,
+    "threshold": 0.6
+   },
+   {
+    "separated_10seeds": 0,
+    "threshold": 0.8
+   },
+   {
+    "separated_10seeds": 0,
+    "threshold": 0.95
+   }
+  ],
+  "H_hits": [
+   {
+    "separated_10seeds": 10,
+    "threshold": 0.1
+   },
+   {
+    "separated_10seeds": 10,
+    "threshold": 0.2
+   },
+   {
+    "separated_10seeds": 0,
+    "threshold": 0.3
+   },
+   {
+    "separated_10seeds": 0,
+    "threshold": 0.4
+   },
+   {
+    "separated_10seeds": 0,
+    "threshold": 0.5
+   },
+   {
+    "separated_10seeds": 0,
+    "threshold": 0.6
+   },
+   {
+    "separated_10seeds": 0,
+    "threshold": 0.8
+   },
+   {
+    "separated_10seeds": 0,
+    "threshold": 0.95
+   }
+  ],
+  "note": "占用率类的可分辨区间是一条**阈值带**（落在两语义的占用率之间），带外一律同答案；计数类的可分辨区间是整条 [0,1) 除了 0——因为真空泡的计数恒为 0"
+ }
+}

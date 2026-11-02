@@ -1,8 +1,8 @@
 {
- "run": "2026-11-02 M1 — rollout bubble attribution: resolution limits & mirror unidentifiability (§21.11)",
+ "run": "2026-11-02 M1 — rollout bubble attribution: resolution limits & mirror unidentifiability (§21.11); external-evidence channels & capacity (§21.12)",
  "python": "3.9.6 (system)",
  "deps": "standard library only",
- "note": "In-process synthetic busy/idle traces; no GPU, no engine, no real monitoring data. Tick units only. resolution_limits.py reuses classifiers()/longest_run() from bubble_attribution.py.",
+ "note": "In-process synthetic busy/idle traces plus four synthetic evidence channels; no GPU, no engine, no real monitoring data. Three scripts share the directory; each has its own archive (summary.json / resolution.json / fusion.json).",
  "sha256": {
   "bubble_attribution.py": "706b1bc5a7c3e78fe442d6a55f52475a78e414e9ca444adb23156ddbb1816f10",
   "test_bubble_attribution.py": "3277cdf6534c1b106745350bc38f2f856ee8080dcb0660afd2b8a610fe5f23d0",
@@ -11,7 +11,11 @@
   "resolution_limits.py": "3240593d5418a958633133004e67607b8e2aa83838a9882ed824355799e07468",
   "test_resolution_limits.py": "36a27a8c91c79749f535df19600f9dd6f2e421731ce521db9b4b496c9f405091",
   "resolution.json": "dfa0e241bc8b3733e5343c6baa52d37d3c5c874c2641506c6dbbaf42318ad6a5",
-  "readme-resolution.md": "bddf46ff780710f8d7309327d53b639d96ba32d9a6b8517cad419de258986ef9"
+  "readme-resolution.md": "bddf46ff780710f8d7309327d53b639d96ba32d9a6b8517cad419de258986ef9",
+  "fusion_evidence.py": "f71c7dff598fc78c317b9739ed9c9dc69493baf53f3c61dc6ccf0c55ed44bef0",
+  "test_fusion_evidence.py": "3088659f6bdd6ebaabf52f92605c7090e854b38814c349d8d5398b796b2c7ab9",
+  "fusion.json": "ac8db2523a78bb870fd2ebb428a8623bff41ef554fa81b36350ef9433cbc032b",
+  "readme-fusion.md": "5b0fd3caa67ea962df11fd6fb902ad707ceda8ba775ebf048b937a71fb139ba2"
  },
  "commands": [
   "python3 bubble_attribution.py",
@@ -19,14 +23,20 @@
   "python3 -m unittest test_bubble_attribution -v",
   "python3 resolution_limits.py",
   "python3 resolution_limits.py --verify",
-  "python3 -m unittest test_resolution_limits -v"
+  "python3 -m unittest test_resolution_limits -v",
+  "python3 fusion_evidence.py",
+  "python3 fusion_evidence.py --verify",
+  "python3 -m unittest test_fusion_evidence -v"
  ],
  "verify_twice_passed": true,
  "tests": {
   "bubble_attribution": 12,
-  "resolution_limits": 14
+  "resolution_limits": 14,
+  "fusion_evidence": 12
  },
  "negative_controls": [
-  "replace support_spectrum with round(w/k) approximation -> TestSupportSpectrum must fail (observed: 2 failures)"
+  "replace support_spectrum with round(w/k) approximation -> TestSupportSpectrum must fail (observed: 2 failures)",
+  "fusion: raise background hits to cache-hit magnitude -> identifiability must flip (2 levels separable -> 0)",
+  "fusion: sampling gate must separate 'visible once' from 'visible twice' (w/k = 1 vs 2)"
  ]
 }
