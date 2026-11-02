@@ -23,6 +23,7 @@
 | [training_recipe.py](training_recipe.py) | 根据输入生成训练配置和启动命令 | Python；本次仅检查 CLI 帮助，生成命令仍需对应框架验证 |
 | [ai_infra_cheatsheet.py](ai_infra_cheatsheet.py) | 按主题查阅常用命令 | Python；历史命令需结合当前环境核对 |
 | [inference_estimator.py](inference_estimator.py) | LLM 推理性能估算（显存/吞吐/延迟） | Python；数值为估算，基于 50% 计算利用率与 60% 带宽利用率假设，非实测 |
+| [git-push-api](git-push-api/readme.md) | `git push` 连不上 github.com 时改用 REST API 推送 | Python 3 + 已登录的 `gh`；实测跑通一次，会压平本地多层提交，未覆盖删除/重命名 |
 
 示例（在项目根目录执行）：
 

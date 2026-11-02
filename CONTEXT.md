@@ -30,7 +30,8 @@ TS-001：§13.43 四轮已完成，再往下需新字段或新实验；P-1 缺�
 - **`experiments/verl-v1-poll-quantum/`、`verl-tiled-mlp-fsdp-smoke/`、`rollout-g8-gen-bimodality/`、`rollout-c-class-ledger/` 等均已入库**，不重复登记。
 - **`experiments/verl-v1-poll-quantum-dapo/`（M5，第五十二批 §13.48）已入库**：10 份训练日志（`raw/*.txt`，inflight=2 六份＋inflight=1 四份）＋`summary.json`／`summary-inflight1.json`＋`run-poll-dapo.sh`＋`make-summary-dapo.py`＋`md5sums.txt`＋`verification.md`（并行会话独立复核）。服务器跑树 `/tmp/m5-poll-ab/verl`（patched）与原树 `/home/zxw/venvs/rollout-g8-src/verl` 均保留。**同目录的 4 卡补充**见 `experiments/verl-v1-poll-quantum-dapo-g4/`（第二会话，仅 2.0 基线，A/B 因抢卡推迟）。
 - 服务器网络、磁盘、GPU 与上游 PR 状态均是历史记录，不是实时可用条件。M1 不探测远程资源。
-- **推送通道现状（2026-11-02 23:2x）**：`github.com` 直连正常，`git fetch`／`push` 可用；远端 main 已是真实历史（不再是 API 重放副本）。上游 verl 的 GitHub main 实测为 `3fdf2b54`（11-02T11:38Z），**不是** `4b26c788`——后者是 M1 本地 checkout 的 origin 快照（10-18）。
+- **推送通道现状（2026-11-03 00:3x）**：`github.com:443` 直连**不通**（两次 75s 超时），`gh-proxy.com` 只代理**只读**（push 报 `No anonymous write access`），`api.github.com` 与 `gh api` 正常。本轮改用 REST API 推送（[tools/git-push-api](tools/git-push-api/readme.md)），远端 main 已推进到 `60869da2` 并与本地对齐。**下次运行先试 `git push`**，仍不通再用该工具；工具会压平本地多层提交。上游 verl 的 GitHub main 实测为 `3fdf2b54`（11-02T11:38Z），**不是** `4b26c788`——后者是 M1 本地 checkout 的 10-18 快照。
+- **共享 checkout 已被并行会话并发使用**：本轮两次出现另一会话在同一目录 commit／reset（TM-008 inflight=1 补测、`01de74f8a` 订正传播）。合并冲突集中在 CONTEXT.md 与当日日志，已按"保留双方条目、按时间重排"解决。**动手前先看 `git log --graph` 与 `git worktree list`**，不要假设 HEAD 还是自己的。
 - `diary/2026-08-14.md` 仍为用户未跟踪工作，不代为提交或删除。
 
 ## 恢复入口
