@@ -1,19 +1,32 @@
 {
- "run": "2026-11-02 M1 — rollout bubble attribution identifiability (§21.10)",
+ "run": "2026-11-02 M1 — rollout bubble attribution: resolution limits & mirror unidentifiability (§21.11)",
  "python": "3.9.6 (system)",
  "deps": "standard library only",
- "note": "In-process synthetic busy/idle traces; no GPU, no engine, no real monitoring data. Tick units only.",
+ "note": "In-process synthetic busy/idle traces; no GPU, no engine, no real monitoring data. Tick units only. resolution_limits.py reuses classifiers()/longest_run() from bubble_attribution.py.",
  "sha256": {
   "bubble_attribution.py": "706b1bc5a7c3e78fe442d6a55f52475a78e414e9ca444adb23156ddbb1816f10",
   "test_bubble_attribution.py": "3277cdf6534c1b106745350bc38f2f856ee8080dcb0660afd2b8a610fe5f23d0",
   "summary.json": "202538a2e1b385ff3368e299cf6384fd3e3f0821f1efdeef3e87123aa3139f49",
-  "readme.md": "7e811730b9666d4f3f0e28f9dfe4e910e30751b116e3a14f14dcb6bae5ee120c"
+  "readme.md": "7e811730b9666d4f3f0e28f9dfe4e910e30751b116e3a14f14dcb6bae5ee120c",
+  "resolution_limits.py": "3240593d5418a958633133004e67607b8e2aa83838a9882ed824355799e07468",
+  "test_resolution_limits.py": "36a27a8c91c79749f535df19600f9dd6f2e421731ce521db9b4b496c9f405091",
+  "resolution.json": "dfa0e241bc8b3733e5343c6baa52d37d3c5c874c2641506c6dbbaf42318ad6a5",
+  "readme-resolution.md": "bddf46ff780710f8d7309327d53b639d96ba32d9a6b8517cad419de258986ef9"
  },
  "commands": [
   "python3 bubble_attribution.py",
   "python3 bubble_attribution.py --verify",
-  "python3 -m unittest test_bubble_attribution -v"
+  "python3 -m unittest test_bubble_attribution -v",
+  "python3 resolution_limits.py",
+  "python3 resolution_limits.py --verify",
+  "python3 -m unittest test_resolution_limits -v"
  ],
  "verify_twice_passed": true,
- "tests": 12
+ "tests": {
+  "bubble_attribution": 12,
+  "resolution_limits": 14
+ },
+ "negative_controls": [
+  "replace support_spectrum with round(w/k) approximation -> TestSupportSpectrum must fail (observed: 2 failures)"
+ ]
 }

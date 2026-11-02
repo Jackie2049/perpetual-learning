@@ -1,0 +1,2484 @@
+{
+ "additivity_mass": {
+  "additive_reads_not_mass": true,
+  "calib_only": {
+   "is_bubble": false,
+   "share": 0.25
+  },
+  "tail_contribution": 0.0,
+  "true_bubble_share_in_union": 0.375,
+  "union": {
+   "share": 0.625,
+   "sum_of_parts": 0.625
+  },
+  "walk_only": {
+   "is_bubble": true,
+   "share": 0.375
+  }
+ },
+ "component_mass": {
+  "note": "全体同时的长窗口在三个统计量上与 B3 逐位相同——§21.10 的判据把\"运行时驱动重叠\"也归进 B2/B3 族",
+  "window_120": {
+   "bubble_share": 0.3,
+   "concentration": 0.0,
+   "longest_run": 120,
+   "simultaneity": 1.0
+  },
+  "window_30": {
+   "bubble_share": 0.075,
+   "concentration": 0.0,
+   "longest_run": 30,
+   "simultaneity": 1.0
+  },
+  "window_60": {
+   "bubble_share": 0.15,
+   "concentration": 0.0,
+   "longest_run": 60,
+   "simultaneity": 1.0
+  }
+ },
+ "config": {
+  "ratio_ref": 4.0,
+  "replicas": 4,
+  "seeds": 30,
+  "ticks": 400
+ },
+ "cross_scale": {
+  "note": "该档 n_ticks = ⌈400/tick⌉、副本恒忙，份额是\"trace 内空转格占比\"，随 tick 一起变；不能与主表 0.075（同一 400 格口径）横比",
+  "tick10_s": {
+   "B2": {
+    "bubble_share": 0.03,
+    "longest_run": 3,
+    "n_ticks": 40,
+    "win_ticks": 1
+   },
+   "B3": {
+    "bubble_share": 0.03,
+    "longest_run": 3,
+    "n_ticks": 40,
+    "win_ticks": 1
+   },
+   "share_ratio_B3_over_B2": 1.0,
+   "tie": true
+  },
+  "tick1_s": {
+   "B2": {
+    "bubble_share": 0.06,
+    "longest_run": 2,
+    "n_ticks": 400,
+    "win_ticks": 2
+   },
+   "B3": {
+    "bubble_share": 0.23,
+    "longest_run": 16,
+    "n_ticks": 400,
+    "win_ticks": 8
+   },
+   "share_ratio_B3_over_B2": 3.833333333,
+   "tie": false
+  },
+  "tick20_s": {
+   "B2": {
+    "bubble_share": 0.025,
+    "longest_run": 3,
+    "n_ticks": 20,
+    "win_ticks": 1
+   },
+   "B3": {
+    "bubble_share": 0.025,
+    "longest_run": 3,
+    "n_ticks": 20,
+    "win_ticks": 1
+   },
+   "share_ratio_B3_over_B2": 1.0,
+   "tie": true
+  },
+  "tick2_s": {
+   "B2": {
+    "bubble_share": 0.03,
+    "longest_run": 1,
+    "n_ticks": 200,
+    "win_ticks": 1
+   },
+   "B3": {
+    "bubble_share": 0.115,
+    "longest_run": 8,
+    "n_ticks": 200,
+    "win_ticks": 4
+   },
+   "share_ratio_B3_over_B2": 3.833333333,
+   "tie": false
+  },
+  "tick5_s": {
+   "B2": {
+    "bubble_share": 0.03,
+    "longest_run": 2,
+    "n_ticks": 80,
+    "win_ticks": 1
+   },
+   "B3": {
+    "bubble_share": 0.0575,
+    "longest_run": 6,
+    "n_ticks": 80,
+    "win_ticks": 2
+   },
+   "share_ratio_B3_over_B2": 1.916666667,
+   "tie": false
+  }
+ },
+ "mirror_boundary": {
+  "replicas_16": {
+   "share_ratio_upper_bound": 16.0
+  },
+  "replicas_2": {
+   "share_ratio_upper_bound": 2.0
+  },
+  "replicas_4": {
+   "share_ratio_upper_bound": 4.0
+  },
+  "replicas_8": {
+   "share_ratio_upper_bound": 8.0
+  }
+ },
+ "mirror_context": {
+  "A": {
+   "bubble_share": 0.625,
+   "concentration": 0.0,
+   "free_ticks": 250,
+   "longest_run": 250,
+   "simultaneity": 1.0
+  },
+  "B": {
+   "bubble_share": 0.625,
+   "concentration": 0.0,
+   "free_ticks": 250,
+   "longest_run": 250,
+   "simultaneity": 1.0
+  },
+  "identical_instance": true,
+  "label_A": "空闲全来自运行时重叠 —— 照 §21.10 判据属 B2/B3 族（同时性=1）",
+  "label_B": "同一轨迹，若重叠段的空闲来自请求命中前缀缓存，则是正常的计算，不是气泡",
+  "same_conc": true,
+  "same_free_ticks": true,
+  "same_share": true,
+  "same_sim": true,
+  "share_ratio": 1.0
+ },
+ "mirror_length": {
+  "A": {
+   "bubble_share": 0.02,
+   "concentration": 0.0,
+   "free_ticks": 8,
+   "longest_run": 1,
+   "simultaneity": 1.0
+  },
+  "B": {
+   "bubble_share": 0.1,
+   "concentration": 0.0,
+   "free_ticks": 40,
+   "longest_run": 1,
+   "simultaneity": 1.0
+  },
+  "same_conc": true,
+  "same_free_ticks": false,
+  "same_share": false,
+  "same_sim": true,
+  "share_ratio": 5.0
+ },
+ "mirror_misaligned": {
+  "aligned": {
+   "bubble_share": 0.625,
+   "concentration": 0.0,
+   "longest_run": 250,
+   "simultaneity": 1.0
+  },
+  "note": "两条物理上都是\"资源空闲 + 正常工作\"，只有对齐关系不同；判据读不出对齐，读数却随对齐变化",
+  "share_delta": 0.1,
+  "shifted_by_40": {
+   "bubble_share": 0.725,
+   "concentration": 0.0,
+   "longest_run": 290,
+   "simultaneity": 1.0
+  }
+ },
+ "ratio_curve": {
+  "sweep": [
+   {
+    "hit_rate": 0.0,
+    "ratio": 1.0,
+    "support_b2": [
+     1
+    ],
+    "support_b3": [
+     1
+    ]
+   },
+   {
+    "hit_rate": 0.0,
+    "ratio": 1.2,
+    "support_b2": [
+     1
+    ],
+    "support_b3": [
+     1,
+     2
+    ]
+   },
+   {
+    "hit_rate": 0.0,
+    "ratio": 1.5,
+    "support_b2": [
+     1
+    ],
+    "support_b3": [
+     1,
+     2
+    ]
+   },
+   {
+    "hit_rate": 1.0,
+    "ratio": 2.0,
+    "support_b2": [
+     1
+    ],
+    "support_b3": [
+     2
+    ]
+   },
+   {
+    "hit_rate": 1.0,
+    "ratio": 2.5,
+    "support_b2": [
+     1
+    ],
+    "support_b3": [
+     2,
+     3
+    ]
+   },
+   {
+    "hit_rate": 1.0,
+    "ratio": 3.0,
+    "support_b2": [
+     1
+    ],
+    "support_b3": [
+     3
+    ]
+   },
+   {
+    "hit_rate": 1.0,
+    "ratio": 4.0,
+    "support_b2": [
+     1
+    ],
+    "support_b3": [
+     4
+    ]
+   },
+   {
+    "hit_rate": 1.0,
+    "ratio": 5.0,
+    "support_b2": [
+     1
+    ],
+    "support_b3": [
+     5
+    ]
+   },
+   {
+    "hit_rate": 1.0,
+    "ratio": 6.0,
+    "support_b2": [
+     1
+    ],
+    "support_b3": [
+     6
+    ]
+   },
+   {
+    "hit_rate": 1.0,
+    "ratio": 8.0,
+    "support_b2": [
+     1
+    ],
+    "support_b3": [
+     8
+    ]
+   }
+  ],
+  "tau_b2_s": 10,
+  "tick_s": 10
+ },
+ "rule_circularity": {
+  "assigned_bucket": "B5",
+  "bubble_share": 0.266875,
+  "concentration": 0.00256496,
+  "free_ticks": 292,
+  "note": "四类都不是的轨迹同样得到确定答案——判据的输出不是\"识别\"，是\"强制归类\"",
+  "simultaneity": 0.0
+ },
+ "same_scale": {
+  "inverse_formula": "读到的份额 = min({#m : s/k ≤ m < (s+w)/k}) / ⌈period/k⌉；反解 w 不单调——短窗整段消失（支撑 0），长窗被钉成 ⌈period/k⌉ 分之一取整",
+  "tick10_s": {
+   "measured_share": 0.3,
+   "min_span_ticks": 3,
+   "period_ticks": 10,
+   "support_set": [
+    3
+   ],
+   "true_duty": 0.3,
+   "window_lost": false
+  },
+  "tick1_s": {
+   "measured_share": 0.3,
+   "min_span_ticks": 30,
+   "period_ticks": 100,
+   "support_set": [
+    30
+   ],
+   "true_duty": 0.3,
+   "window_lost": false
+  },
+  "tick20_s": {
+   "measured_share": 0.2,
+   "min_span_ticks": 1,
+   "period_ticks": 5,
+   "support_set": [
+    1,
+    2
+   ],
+   "true_duty": 0.3,
+   "window_lost": false
+  },
+  "tick2_s": {
+   "measured_share": 0.3,
+   "min_span_ticks": 15,
+   "period_ticks": 50,
+   "support_set": [
+    15
+   ],
+   "true_duty": 0.3,
+   "window_lost": false
+  },
+  "tick50_s": {
+   "measured_share": 0.0,
+   "min_span_ticks": 0,
+   "period_ticks": 2,
+   "support_set": [
+    0,
+    1
+   ],
+   "true_duty": 0.3,
+   "window_lost": true
+  },
+  "tick5_s": {
+   "measured_share": 0.3,
+   "min_span_ticks": 6,
+   "period_ticks": 20,
+   "support_set": [
+    6
+   ],
+   "true_duty": 0.3,
+   "window_lost": false
+  }
+ },
+ "tau_threshold": {
+  "ratio_ref": 4.0,
+  "tick10_s": {
+   "alias_free": [
+    1,
+    2
+   ],
+   "ambiguous_band": [],
+   "min_tau_b2_full_accuracy": 10,
+   "min_tau_b3_full_accuracy": 40.0,
+   "never_separable": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+   ],
+   "sweep": [
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      0,
+      1
+     ],
+     "tau_b2_s": 1,
+     "tau_b3_s": 4.0
+    },
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      0,
+      1
+     ],
+     "tau_b2_s": 2,
+     "tau_b3_s": 8.0
+    },
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      1,
+      2
+     ],
+     "tau_b2_s": 3,
+     "tau_b3_s": 12.0
+    },
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      1,
+      2
+     ],
+     "tau_b2_s": 4,
+     "tau_b3_s": 16.0
+    },
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      2
+     ],
+     "tau_b2_s": 5,
+     "tau_b3_s": 20.0
+    },
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      2,
+      3
+     ],
+     "tau_b2_s": 6,
+     "tau_b3_s": 24.0
+    },
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      2,
+      3
+     ],
+     "tau_b2_s": 7,
+     "tau_b3_s": 28.0
+    },
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      3,
+      4
+     ],
+     "tau_b2_s": 8,
+     "tau_b3_s": 32.0
+    },
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      3,
+      4
+     ],
+     "tau_b2_s": 9,
+     "tau_b3_s": 36.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      1
+     ],
+     "support_b3": [
+      4
+     ],
+     "tau_b2_s": 10,
+     "tau_b3_s": 40.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      1,
+      2
+     ],
+     "support_b3": [
+      4,
+      5
+     ],
+     "tau_b2_s": 11,
+     "tau_b3_s": 44.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      1,
+      2
+     ],
+     "support_b3": [
+      4,
+      5
+     ],
+     "tau_b2_s": 12,
+     "tau_b3_s": 48.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      1,
+      2
+     ],
+     "support_b3": [
+      5,
+      6
+     ],
+     "tau_b2_s": 13,
+     "tau_b3_s": 52.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      1,
+      2
+     ],
+     "support_b3": [
+      5,
+      6
+     ],
+     "tau_b2_s": 14,
+     "tau_b3_s": 56.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      1,
+      2
+     ],
+     "support_b3": [
+      6
+     ],
+     "tau_b2_s": 15,
+     "tau_b3_s": 60.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      1,
+      2
+     ],
+     "support_b3": [
+      6,
+      7
+     ],
+     "tau_b2_s": 16,
+     "tau_b3_s": 64.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      1,
+      2
+     ],
+     "support_b3": [
+      6,
+      7
+     ],
+     "tau_b2_s": 17,
+     "tau_b3_s": 68.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      1,
+      2
+     ],
+     "support_b3": [
+      7,
+      8
+     ],
+     "tau_b2_s": 18,
+     "tau_b3_s": 72.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      1,
+      2
+     ],
+     "support_b3": [
+      7,
+      8
+     ],
+     "tau_b2_s": 19,
+     "tau_b3_s": 76.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      2
+     ],
+     "support_b3": [
+      8
+     ],
+     "tau_b2_s": 20,
+     "tau_b3_s": 80.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      2,
+      3
+     ],
+     "support_b3": [
+      8,
+      9
+     ],
+     "tau_b2_s": 21,
+     "tau_b3_s": 84.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      2,
+      3
+     ],
+     "support_b3": [
+      8,
+      9
+     ],
+     "tau_b2_s": 22,
+     "tau_b3_s": 88.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      2,
+      3
+     ],
+     "support_b3": [
+      9,
+      10
+     ],
+     "tau_b2_s": 23,
+     "tau_b3_s": 92.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      2,
+      3
+     ],
+     "support_b3": [
+      9,
+      10
+     ],
+     "tau_b2_s": 24,
+     "tau_b3_s": 96.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      2,
+      3
+     ],
+     "support_b3": [
+      10
+     ],
+     "tau_b2_s": 25,
+     "tau_b3_s": 100.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      2,
+      3
+     ],
+     "support_b3": [
+      10,
+      11
+     ],
+     "tau_b2_s": 26,
+     "tau_b3_s": 104.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      2,
+      3
+     ],
+     "support_b3": [
+      10,
+      11
+     ],
+     "tau_b2_s": 27,
+     "tau_b3_s": 108.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      2,
+      3
+     ],
+     "support_b3": [
+      11,
+      12
+     ],
+     "tau_b2_s": 28,
+     "tau_b3_s": 112.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      2,
+      3
+     ],
+     "support_b3": [
+      11,
+      12
+     ],
+     "tau_b2_s": 29,
+     "tau_b3_s": 116.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      3
+     ],
+     "support_b3": [
+      12
+     ],
+     "tau_b2_s": 30,
+     "tau_b3_s": 120.0
+    }
+   ]
+  },
+  "tick1_s": {
+   "alias_free": [],
+   "ambiguous_band": [],
+   "min_tau_b2_full_accuracy": 1,
+   "min_tau_b3_full_accuracy": 4.0,
+   "never_separable": [],
+   "sweep": [
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      1
+     ],
+     "support_b3": [
+      4
+     ],
+     "tau_b2_s": 1,
+     "tau_b3_s": 4.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      2
+     ],
+     "support_b3": [
+      8
+     ],
+     "tau_b2_s": 2,
+     "tau_b3_s": 8.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      3
+     ],
+     "support_b3": [
+      12
+     ],
+     "tau_b2_s": 3,
+     "tau_b3_s": 12.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      4
+     ],
+     "support_b3": [
+      16
+     ],
+     "tau_b2_s": 4,
+     "tau_b3_s": 16.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      5
+     ],
+     "support_b3": [
+      20
+     ],
+     "tau_b2_s": 5,
+     "tau_b3_s": 20.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      6
+     ],
+     "support_b3": [
+      24
+     ],
+     "tau_b2_s": 6,
+     "tau_b3_s": 24.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      7
+     ],
+     "support_b3": [
+      28
+     ],
+     "tau_b2_s": 7,
+     "tau_b3_s": 28.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      8
+     ],
+     "support_b3": [
+      32
+     ],
+     "tau_b2_s": 8,
+     "tau_b3_s": 32.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      9
+     ],
+     "support_b3": [
+      36
+     ],
+     "tau_b2_s": 9,
+     "tau_b3_s": 36.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      10
+     ],
+     "support_b3": [
+      40
+     ],
+     "tau_b2_s": 10,
+     "tau_b3_s": 40.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      11
+     ],
+     "support_b3": [
+      44
+     ],
+     "tau_b2_s": 11,
+     "tau_b3_s": 44.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      12
+     ],
+     "support_b3": [
+      48
+     ],
+     "tau_b2_s": 12,
+     "tau_b3_s": 48.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      13
+     ],
+     "support_b3": [
+      52
+     ],
+     "tau_b2_s": 13,
+     "tau_b3_s": 52.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      14
+     ],
+     "support_b3": [
+      56
+     ],
+     "tau_b2_s": 14,
+     "tau_b3_s": 56.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      15
+     ],
+     "support_b3": [
+      60
+     ],
+     "tau_b2_s": 15,
+     "tau_b3_s": 60.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      16
+     ],
+     "support_b3": [
+      64
+     ],
+     "tau_b2_s": 16,
+     "tau_b3_s": 64.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      17
+     ],
+     "support_b3": [
+      68
+     ],
+     "tau_b2_s": 17,
+     "tau_b3_s": 68.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      18
+     ],
+     "support_b3": [
+      72
+     ],
+     "tau_b2_s": 18,
+     "tau_b3_s": 72.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      19
+     ],
+     "support_b3": [
+      76
+     ],
+     "tau_b2_s": 19,
+     "tau_b3_s": 76.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      20
+     ],
+     "support_b3": [
+      80
+     ],
+     "tau_b2_s": 20,
+     "tau_b3_s": 80.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      21
+     ],
+     "support_b3": [
+      84
+     ],
+     "tau_b2_s": 21,
+     "tau_b3_s": 84.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      22
+     ],
+     "support_b3": [
+      88
+     ],
+     "tau_b2_s": 22,
+     "tau_b3_s": 88.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      23
+     ],
+     "support_b3": [
+      92
+     ],
+     "tau_b2_s": 23,
+     "tau_b3_s": 92.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      24
+     ],
+     "support_b3": [
+      96
+     ],
+     "tau_b2_s": 24,
+     "tau_b3_s": 96.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      25
+     ],
+     "support_b3": [
+      100
+     ],
+     "tau_b2_s": 25,
+     "tau_b3_s": 100.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      26
+     ],
+     "support_b3": [
+      104
+     ],
+     "tau_b2_s": 26,
+     "tau_b3_s": 104.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      27
+     ],
+     "support_b3": [
+      108
+     ],
+     "tau_b2_s": 27,
+     "tau_b3_s": 108.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      28
+     ],
+     "support_b3": [
+      112
+     ],
+     "tau_b2_s": 28,
+     "tau_b3_s": 112.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      29
+     ],
+     "support_b3": [
+      116
+     ],
+     "tau_b2_s": 29,
+     "tau_b3_s": 116.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      30
+     ],
+     "support_b3": [
+      120
+     ],
+     "tau_b2_s": 30,
+     "tau_b3_s": 120.0
+    }
+   ]
+  },
+  "tick20_s": {
+   "alias_free": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "ambiguous_band": [],
+   "min_tau_b2_full_accuracy": 20,
+   "min_tau_b3_full_accuracy": 80.0,
+   "never_separable": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "sweep": [
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      0,
+      1
+     ],
+     "tau_b2_s": 1,
+     "tau_b3_s": 4.0
+    },
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      0,
+      1
+     ],
+     "tau_b2_s": 2,
+     "tau_b3_s": 8.0
+    },
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      0,
+      1
+     ],
+     "tau_b2_s": 3,
+     "tau_b3_s": 12.0
+    },
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      0,
+      1
+     ],
+     "tau_b2_s": 4,
+     "tau_b3_s": 16.0
+    },
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      1
+     ],
+     "tau_b2_s": 5,
+     "tau_b3_s": 20.0
+    },
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      1,
+      2
+     ],
+     "tau_b2_s": 6,
+     "tau_b3_s": 24.0
+    },
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      1,
+      2
+     ],
+     "tau_b2_s": 7,
+     "tau_b3_s": 28.0
+    },
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      1,
+      2
+     ],
+     "tau_b2_s": 8,
+     "tau_b3_s": 32.0
+    },
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      1,
+      2
+     ],
+     "tau_b2_s": 9,
+     "tau_b3_s": 36.0
+    },
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      2
+     ],
+     "tau_b2_s": 10,
+     "tau_b3_s": 40.0
+    },
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      2,
+      3
+     ],
+     "tau_b2_s": 11,
+     "tau_b3_s": 44.0
+    },
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      2,
+      3
+     ],
+     "tau_b2_s": 12,
+     "tau_b3_s": 48.0
+    },
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      2,
+      3
+     ],
+     "tau_b2_s": 13,
+     "tau_b3_s": 52.0
+    },
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      2,
+      3
+     ],
+     "tau_b2_s": 14,
+     "tau_b3_s": 56.0
+    },
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      3
+     ],
+     "tau_b2_s": 15,
+     "tau_b3_s": 60.0
+    },
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      3,
+      4
+     ],
+     "tau_b2_s": 16,
+     "tau_b3_s": 64.0
+    },
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      3,
+      4
+     ],
+     "tau_b2_s": 17,
+     "tau_b3_s": 68.0
+    },
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      3,
+      4
+     ],
+     "tau_b2_s": 18,
+     "tau_b3_s": 72.0
+    },
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      3,
+      4
+     ],
+     "tau_b2_s": 19,
+     "tau_b3_s": 76.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      1
+     ],
+     "support_b3": [
+      4
+     ],
+     "tau_b2_s": 20,
+     "tau_b3_s": 80.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      1,
+      2
+     ],
+     "support_b3": [
+      4,
+      5
+     ],
+     "tau_b2_s": 21,
+     "tau_b3_s": 84.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      1,
+      2
+     ],
+     "support_b3": [
+      4,
+      5
+     ],
+     "tau_b2_s": 22,
+     "tau_b3_s": 88.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      1,
+      2
+     ],
+     "support_b3": [
+      4,
+      5
+     ],
+     "tau_b2_s": 23,
+     "tau_b3_s": 92.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      1,
+      2
+     ],
+     "support_b3": [
+      4,
+      5
+     ],
+     "tau_b2_s": 24,
+     "tau_b3_s": 96.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      1,
+      2
+     ],
+     "support_b3": [
+      5
+     ],
+     "tau_b2_s": 25,
+     "tau_b3_s": 100.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      1,
+      2
+     ],
+     "support_b3": [
+      5,
+      6
+     ],
+     "tau_b2_s": 26,
+     "tau_b3_s": 104.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      1,
+      2
+     ],
+     "support_b3": [
+      5,
+      6
+     ],
+     "tau_b2_s": 27,
+     "tau_b3_s": 108.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      1,
+      2
+     ],
+     "support_b3": [
+      5,
+      6
+     ],
+     "tau_b2_s": 28,
+     "tau_b3_s": 112.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      1,
+      2
+     ],
+     "support_b3": [
+      5,
+      6
+     ],
+     "tau_b2_s": 29,
+     "tau_b3_s": 116.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      1,
+      2
+     ],
+     "support_b3": [
+      6
+     ],
+     "tau_b2_s": 30,
+     "tau_b3_s": 120.0
+    }
+   ]
+  },
+  "tick2_s": {
+   "alias_free": [],
+   "ambiguous_band": [
+    3,
+    5,
+    7,
+    9,
+    11,
+    13,
+    15,
+    17,
+    19,
+    21,
+    23,
+    25,
+    27,
+    29
+   ],
+   "min_tau_b2_full_accuracy": 2,
+   "min_tau_b3_full_accuracy": 8.0,
+   "never_separable": [
+    1
+   ],
+   "sweep": [
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      2
+     ],
+     "tau_b2_s": 1,
+     "tau_b3_s": 4.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      1
+     ],
+     "support_b3": [
+      4
+     ],
+     "tau_b2_s": 2,
+     "tau_b3_s": 8.0
+    },
+    {
+     "hit_rate": 0.833333333,
+     "lost_rate": 0.166666667,
+     "support_b2": [
+      1,
+      2
+     ],
+     "support_b3": [
+      6
+     ],
+     "tau_b2_s": 3,
+     "tau_b3_s": 12.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      2
+     ],
+     "support_b3": [
+      8
+     ],
+     "tau_b2_s": 4,
+     "tau_b3_s": 16.0
+    },
+    {
+     "hit_rate": 0.833333333,
+     "lost_rate": 0.166666667,
+     "support_b2": [
+      2,
+      3
+     ],
+     "support_b3": [
+      10
+     ],
+     "tau_b2_s": 5,
+     "tau_b3_s": 20.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      3
+     ],
+     "support_b3": [
+      12
+     ],
+     "tau_b2_s": 6,
+     "tau_b3_s": 24.0
+    },
+    {
+     "hit_rate": 0.833333333,
+     "lost_rate": 0.166666667,
+     "support_b2": [
+      3,
+      4
+     ],
+     "support_b3": [
+      14
+     ],
+     "tau_b2_s": 7,
+     "tau_b3_s": 28.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      4
+     ],
+     "support_b3": [
+      16
+     ],
+     "tau_b2_s": 8,
+     "tau_b3_s": 32.0
+    },
+    {
+     "hit_rate": 0.833333333,
+     "lost_rate": 0.166666667,
+     "support_b2": [
+      4,
+      5
+     ],
+     "support_b3": [
+      18
+     ],
+     "tau_b2_s": 9,
+     "tau_b3_s": 36.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      5
+     ],
+     "support_b3": [
+      20
+     ],
+     "tau_b2_s": 10,
+     "tau_b3_s": 40.0
+    },
+    {
+     "hit_rate": 0.833333333,
+     "lost_rate": 0.166666667,
+     "support_b2": [
+      5,
+      6
+     ],
+     "support_b3": [
+      22
+     ],
+     "tau_b2_s": 11,
+     "tau_b3_s": 44.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      6
+     ],
+     "support_b3": [
+      24
+     ],
+     "tau_b2_s": 12,
+     "tau_b3_s": 48.0
+    },
+    {
+     "hit_rate": 0.833333333,
+     "lost_rate": 0.166666667,
+     "support_b2": [
+      6,
+      7
+     ],
+     "support_b3": [
+      26
+     ],
+     "tau_b2_s": 13,
+     "tau_b3_s": 52.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      7
+     ],
+     "support_b3": [
+      28
+     ],
+     "tau_b2_s": 14,
+     "tau_b3_s": 56.0
+    },
+    {
+     "hit_rate": 0.833333333,
+     "lost_rate": 0.166666667,
+     "support_b2": [
+      7,
+      8
+     ],
+     "support_b3": [
+      30
+     ],
+     "tau_b2_s": 15,
+     "tau_b3_s": 60.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      8
+     ],
+     "support_b3": [
+      32
+     ],
+     "tau_b2_s": 16,
+     "tau_b3_s": 64.0
+    },
+    {
+     "hit_rate": 0.833333333,
+     "lost_rate": 0.166666667,
+     "support_b2": [
+      8,
+      9
+     ],
+     "support_b3": [
+      34
+     ],
+     "tau_b2_s": 17,
+     "tau_b3_s": 68.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      9
+     ],
+     "support_b3": [
+      36
+     ],
+     "tau_b2_s": 18,
+     "tau_b3_s": 72.0
+    },
+    {
+     "hit_rate": 0.833333333,
+     "lost_rate": 0.166666667,
+     "support_b2": [
+      9,
+      10
+     ],
+     "support_b3": [
+      38
+     ],
+     "tau_b2_s": 19,
+     "tau_b3_s": 76.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      10
+     ],
+     "support_b3": [
+      40
+     ],
+     "tau_b2_s": 20,
+     "tau_b3_s": 80.0
+    },
+    {
+     "hit_rate": 0.833333333,
+     "lost_rate": 0.166666667,
+     "support_b2": [
+      10,
+      11
+     ],
+     "support_b3": [
+      42
+     ],
+     "tau_b2_s": 21,
+     "tau_b3_s": 84.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      11
+     ],
+     "support_b3": [
+      44
+     ],
+     "tau_b2_s": 22,
+     "tau_b3_s": 88.0
+    },
+    {
+     "hit_rate": 0.833333333,
+     "lost_rate": 0.166666667,
+     "support_b2": [
+      11,
+      12
+     ],
+     "support_b3": [
+      46
+     ],
+     "tau_b2_s": 23,
+     "tau_b3_s": 92.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      12
+     ],
+     "support_b3": [
+      48
+     ],
+     "tau_b2_s": 24,
+     "tau_b3_s": 96.0
+    },
+    {
+     "hit_rate": 0.833333333,
+     "lost_rate": 0.166666667,
+     "support_b2": [
+      12,
+      13
+     ],
+     "support_b3": [
+      50
+     ],
+     "tau_b2_s": 25,
+     "tau_b3_s": 100.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      13
+     ],
+     "support_b3": [
+      52
+     ],
+     "tau_b2_s": 26,
+     "tau_b3_s": 104.0
+    },
+    {
+     "hit_rate": 0.833333333,
+     "lost_rate": 0.166666667,
+     "support_b2": [
+      13,
+      14
+     ],
+     "support_b3": [
+      54
+     ],
+     "tau_b2_s": 27,
+     "tau_b3_s": 108.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      14
+     ],
+     "support_b3": [
+      56
+     ],
+     "tau_b2_s": 28,
+     "tau_b3_s": 112.0
+    },
+    {
+     "hit_rate": 0.833333333,
+     "lost_rate": 0.166666667,
+     "support_b2": [
+      14,
+      15
+     ],
+     "support_b3": [
+      58
+     ],
+     "tau_b2_s": 29,
+     "tau_b3_s": 116.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      15
+     ],
+     "support_b3": [
+      60
+     ],
+     "tau_b2_s": 30,
+     "tau_b3_s": 120.0
+    }
+   ]
+  },
+  "tick5_s": {
+   "alias_free": [
+    1
+   ],
+   "ambiguous_band": [
+    6,
+    7,
+    8,
+    9,
+    11,
+    12,
+    13,
+    14,
+    16,
+    17,
+    18,
+    19,
+    21,
+    22,
+    23,
+    24,
+    26,
+    27,
+    28,
+    29
+   ],
+   "min_tau_b2_full_accuracy": 5,
+   "min_tau_b3_full_accuracy": 20.0,
+   "never_separable": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "sweep": [
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      0,
+      1
+     ],
+     "tau_b2_s": 1,
+     "tau_b3_s": 4.0
+    },
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      1,
+      2
+     ],
+     "tau_b2_s": 2,
+     "tau_b3_s": 8.0
+    },
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      2,
+      3
+     ],
+     "tau_b2_s": 3,
+     "tau_b3_s": 12.0
+    },
+    {
+     "hit_rate": 0.0,
+     "lost_rate": 1.0,
+     "support_b2": [
+      0,
+      1
+     ],
+     "support_b3": [
+      3,
+      4
+     ],
+     "tau_b2_s": 4,
+     "tau_b3_s": 16.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      1
+     ],
+     "support_b3": [
+      4
+     ],
+     "tau_b2_s": 5,
+     "tau_b3_s": 20.0
+    },
+    {
+     "hit_rate": 0.966666667,
+     "lost_rate": 0.033333333,
+     "support_b2": [
+      1,
+      2
+     ],
+     "support_b3": [
+      4,
+      5
+     ],
+     "tau_b2_s": 6,
+     "tau_b3_s": 24.0
+    },
+    {
+     "hit_rate": 0.966666667,
+     "lost_rate": 0.033333333,
+     "support_b2": [
+      1,
+      2
+     ],
+     "support_b3": [
+      5,
+      6
+     ],
+     "tau_b2_s": 7,
+     "tau_b3_s": 28.0
+    },
+    {
+     "hit_rate": 0.966666667,
+     "lost_rate": 0.033333333,
+     "support_b2": [
+      1,
+      2
+     ],
+     "support_b3": [
+      6,
+      7
+     ],
+     "tau_b2_s": 8,
+     "tau_b3_s": 32.0
+    },
+    {
+     "hit_rate": 0.966666667,
+     "lost_rate": 0.033333333,
+     "support_b2": [
+      1,
+      2
+     ],
+     "support_b3": [
+      7,
+      8
+     ],
+     "tau_b2_s": 9,
+     "tau_b3_s": 36.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      2
+     ],
+     "support_b3": [
+      8
+     ],
+     "tau_b2_s": 10,
+     "tau_b3_s": 40.0
+    },
+    {
+     "hit_rate": 0.966666667,
+     "lost_rate": 0.033333333,
+     "support_b2": [
+      2,
+      3
+     ],
+     "support_b3": [
+      8,
+      9
+     ],
+     "tau_b2_s": 11,
+     "tau_b3_s": 44.0
+    },
+    {
+     "hit_rate": 0.966666667,
+     "lost_rate": 0.033333333,
+     "support_b2": [
+      2,
+      3
+     ],
+     "support_b3": [
+      9,
+      10
+     ],
+     "tau_b2_s": 12,
+     "tau_b3_s": 48.0
+    },
+    {
+     "hit_rate": 0.966666667,
+     "lost_rate": 0.033333333,
+     "support_b2": [
+      2,
+      3
+     ],
+     "support_b3": [
+      10,
+      11
+     ],
+     "tau_b2_s": 13,
+     "tau_b3_s": 52.0
+    },
+    {
+     "hit_rate": 0.966666667,
+     "lost_rate": 0.033333333,
+     "support_b2": [
+      2,
+      3
+     ],
+     "support_b3": [
+      11,
+      12
+     ],
+     "tau_b2_s": 14,
+     "tau_b3_s": 56.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      3
+     ],
+     "support_b3": [
+      12
+     ],
+     "tau_b2_s": 15,
+     "tau_b3_s": 60.0
+    },
+    {
+     "hit_rate": 0.966666667,
+     "lost_rate": 0.033333333,
+     "support_b2": [
+      3,
+      4
+     ],
+     "support_b3": [
+      12,
+      13
+     ],
+     "tau_b2_s": 16,
+     "tau_b3_s": 64.0
+    },
+    {
+     "hit_rate": 0.966666667,
+     "lost_rate": 0.033333333,
+     "support_b2": [
+      3,
+      4
+     ],
+     "support_b3": [
+      13,
+      14
+     ],
+     "tau_b2_s": 17,
+     "tau_b3_s": 68.0
+    },
+    {
+     "hit_rate": 0.966666667,
+     "lost_rate": 0.033333333,
+     "support_b2": [
+      3,
+      4
+     ],
+     "support_b3": [
+      14,
+      15
+     ],
+     "tau_b2_s": 18,
+     "tau_b3_s": 72.0
+    },
+    {
+     "hit_rate": 0.966666667,
+     "lost_rate": 0.033333333,
+     "support_b2": [
+      3,
+      4
+     ],
+     "support_b3": [
+      15,
+      16
+     ],
+     "tau_b2_s": 19,
+     "tau_b3_s": 76.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      4
+     ],
+     "support_b3": [
+      16
+     ],
+     "tau_b2_s": 20,
+     "tau_b3_s": 80.0
+    },
+    {
+     "hit_rate": 0.966666667,
+     "lost_rate": 0.033333333,
+     "support_b2": [
+      4,
+      5
+     ],
+     "support_b3": [
+      16,
+      17
+     ],
+     "tau_b2_s": 21,
+     "tau_b3_s": 84.0
+    },
+    {
+     "hit_rate": 0.966666667,
+     "lost_rate": 0.033333333,
+     "support_b2": [
+      4,
+      5
+     ],
+     "support_b3": [
+      17,
+      18
+     ],
+     "tau_b2_s": 22,
+     "tau_b3_s": 88.0
+    },
+    {
+     "hit_rate": 0.966666667,
+     "lost_rate": 0.033333333,
+     "support_b2": [
+      4,
+      5
+     ],
+     "support_b3": [
+      18,
+      19
+     ],
+     "tau_b2_s": 23,
+     "tau_b3_s": 92.0
+    },
+    {
+     "hit_rate": 0.966666667,
+     "lost_rate": 0.033333333,
+     "support_b2": [
+      4,
+      5
+     ],
+     "support_b3": [
+      19,
+      20
+     ],
+     "tau_b2_s": 24,
+     "tau_b3_s": 96.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      5
+     ],
+     "support_b3": [
+      20
+     ],
+     "tau_b2_s": 25,
+     "tau_b3_s": 100.0
+    },
+    {
+     "hit_rate": 0.966666667,
+     "lost_rate": 0.033333333,
+     "support_b2": [
+      5,
+      6
+     ],
+     "support_b3": [
+      20,
+      21
+     ],
+     "tau_b2_s": 26,
+     "tau_b3_s": 104.0
+    },
+    {
+     "hit_rate": 0.966666667,
+     "lost_rate": 0.033333333,
+     "support_b2": [
+      5,
+      6
+     ],
+     "support_b3": [
+      21,
+      22
+     ],
+     "tau_b2_s": 27,
+     "tau_b3_s": 108.0
+    },
+    {
+     "hit_rate": 0.966666667,
+     "lost_rate": 0.033333333,
+     "support_b2": [
+      5,
+      6
+     ],
+     "support_b3": [
+      22,
+      23
+     ],
+     "tau_b2_s": 28,
+     "tau_b3_s": 112.0
+    },
+    {
+     "hit_rate": 0.966666667,
+     "lost_rate": 0.033333333,
+     "support_b2": [
+      5,
+      6
+     ],
+     "support_b3": [
+      23,
+      24
+     ],
+     "tau_b2_s": 29,
+     "tau_b3_s": 116.0
+    },
+    {
+     "hit_rate": 1.0,
+     "lost_rate": 0.0,
+     "support_b2": [
+      6
+     ],
+     "support_b3": [
+      24
+     ],
+     "tau_b2_s": 30,
+     "tau_b3_s": 120.0
+    }
+   ]
+  }
+ }
+}
