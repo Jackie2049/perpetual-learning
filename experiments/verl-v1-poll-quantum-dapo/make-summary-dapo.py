@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """TM-008 边界实验：把 DAPO 过滤 + 多 in-flight 的 poll A/B 训练日志解析成 summary.json。
 
-Usage: python3 make-summary-dapo.py [raw_dir]
+Usage: python3 make-summary-dapo.py [raw_dir] [--group=main|inflight1]
+
+``main`` 是六跑的 inflight=2 组（写 summary.json），``inflight1`` 是 DAPO 默认
+``max_inflight_gen_batches=1`` 的两跑（写 summary-inflight1.json）。
 
 与 `experiments/verl-v1-poll-quantum/make-summary.py` 同口径（逐 step 一行 `key:value - ...`，
 稳态窗口 steps 3..14），另外加入本实验特有的三个量：
@@ -49,6 +52,18 @@ CONTROLS = {
     "dp200b": "dp200",
     "dp010b": "dp010",
 }
+# 第二组：DAPO 默认的 max_inflight_gen_batches=1（投机空间更小），只测 2.0/0.1 两点
+RUNS_I1 = [
+    ("di1base", "2 GPU (0,1), patched tree, poll_interval=2.0, filter on, inflight=1"),
+    ("di1p010", "2 GPU (0,1), patched tree, poll_interval=0.1, filter on, inflight=1"),
+    ("di1basec", "repeat of di1base"),
+    ("di1p010c", "repeat of di1p010"),
+]
+CONTROLS_I1 = {"di1p010": "di1base", "di1basec": "di1base", "di1p010c": "di1p010"}
+GROUPS = {
+    "main": (RUNS, CONTROLS, "summary.json"),
+    "inflight1": (RUNS_I1, CONTROLS_I1, "summary-inflight1.json"),
+}
 WINDOW = range(3, 15)
 TRAIN_BATCH = 32
 
@@ -89,9 +104,15 @@ def stats(values):
 
 
 def main():
-    raw = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else "raw")
+    argv = [a for a in sys.argv[1:] if not a.startswith("--")]
+    group = "main"
+    for a in sys.argv[1:]:
+        if a.startswith("--group="):
+            group = a.split("=", 1)[1]
+    runs, controls, filename = GROUPS[group]
+    raw = pathlib.Path(argv[0] if argv else "raw")
     out = {}
-    for mode, desc in RUNS:
+    for mode, desc in runs:
         path = raw / f"rollout-poll-dapo-{mode}.txt"
         if not path.exists():
             print(f"missing {path}")
@@ -132,7 +153,7 @@ def main():
             "numeric": {key: [r.get(key) for s, r in sorted(steps.items())] for key in NUM_KEYS},
         }
 
-    for mode, control in CONTROLS.items():
+    for mode, control in controls.items():
         if mode not in out or control not in out:
             continue
         a, b = out[control], out[mode]
@@ -162,11 +183,11 @@ def main():
         }
 
     text = json.dumps(out, indent=2, ensure_ascii=False)
-    target = raw.parent / "summary.json"
+    target = raw.parent / filename
     target.write_text(text + "\n")
 
     print("mode    gen(s)      step(s)     evicted  surplus  gen'd  useful  vs control(step)")
-    for mode, _desc in RUNS:
+    for mode, _desc in runs:
         if mode not in out:
             continue
         r = out[mode]
