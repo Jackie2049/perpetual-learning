@@ -38,6 +38,15 @@ def entries(text):
     return result
 
 
+def archived(day):
+    """按新格式迁移后，原文按条目逐字保存在 diary/archive/<day>.md。"""
+    for ref in (':', 'HEAD:'):
+        text = git('show', f'{ref}diary/archive/{day}.md', optional=True)
+        if text:
+            return entries(text)
+    return {}
+
+
 def without_fenced_code(text):
     prose, fence = [], None
     for line in text.splitlines(keepends=True):
@@ -100,7 +109,12 @@ def check(now=None):
         for key, body in old.items():
             if key not in new:
                 if reheaded[body] == 0:
-                    raise ValueError(f'{name} 移除已有日志：{key[0]} — {key[1]}。请保留原记录并追加纠正；需要迁移/删除时先由用户决定。')
+                    kept = archived(day_match[1])
+                    if kept.get(key) != body:
+                        raise ValueError(
+                            f'{name} 移除已有日志：{key[0]} — {key[1]}。'
+                            f'请保留原记录并追加纠正；按新格式迁移时，先把原文完整存入 '
+                            f'diary/archive/{day_match[1]}.md 并一起暂存。')
                 reheaded[body] -= 1
             elif body and not new[key]:
                 raise ValueError(f'{name} 清空已有日志：{key[0]} — {key[1]}。请保留原记录并追加纠正。')

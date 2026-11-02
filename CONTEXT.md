@@ -8,23 +8,13 @@
 
 | 执行者 | 当前任务 | 接续入口与核对事项 |
 |---|---|---|
-<<<<<<< Updated upstream
-| M1 | TS-001 rollout 专项 | 最新为 **§21.8**（C3 同步化基准不可从 trace 内取：trace 内的 η=0 步只可能是冷启动，做基准会把 1.10–8.53× 全读成 1.000×；§21.3 的 C3 已增补第 5、6 条）；此前 §13.40（`use_prefix_grouper` 死代码）／§13.38／§13.39。先读主文档 §0/§16 再选已授权补强项。 |
-| M5 | TS-001 算力支持 | 最新：第四十八批候选 H（update_weights bucket 扫描，2 卡双传输）已完成并回写专项；bucket 16× 跨度无效应（−1.2%／−2.6%），负扩展由副本数决定；方法学：多卡必须先设 `RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1`（否则 update_actor +40.5%）。实验目录仍为未跟踪，由该会话自行提交。按分工核对占用及实验归属后接续，不能仅据旧记录启动。 |
+| M1 | TS-001 rollout 专项 | 最新为 **§21.8**（C3 同步化基准不可从 trace 内取：trace 内的 η=0 步只可能是冷启动，做基准会把 1.10–8.53× 全读成 1.000×；§21.3 的 C3 已增补第 5、6 条）；此前 §13.41（候选 H）／§13.40（`use_prefix_grouper` 死代码）／§13.38／§13.39。先读主文档 §0/§16 再选已授权补强项。 |
+| M5 | TS-001 算力支持 | 最新：第四十八批候选 H（update_weights bucket 扫描，2 卡双传输，§13.41）已完成并回写专项；bucket 16× 跨度无效应（−1.2%／−2.6%），负扩展由副本数决定；方法学：多卡必须先设 `RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1`（否则 update_actor +40.5%）。实验目录仍为未跟踪，由该会话自行提交。按分工核对占用及实验归属后接续，不能仅据旧记录启动。 |
 
 ## 未完成操作与并行工作
 
-- `experiments/rollout-g8-candidate-h/`（第四十八批候选 H）已完成，目录仍为未跟踪，由该会话自行提交；本会话保留原状，不代为提交或删除。
+- `experiments/rollout-g8-candidate-h/`（第四十八批候选 H，§13.41）已完成，目录仍为未跟踪，由该会话自行提交；本会话保留原状，不代为提交或删除。
 - `experiments/rollout-real-example-configs/`（§13.40）已完成并入库。`experiments/rollout-c3-sync-baseline/`（§21.8）**是本会话的工作**，已于 2026-11-02 14:4x 连同主文档 §21.8／§0／§16 与 diary 一并提交；此前 CONTEXT 记作"另一并行会话"有误，已更正。
-=======
-| M1 | TS-001 rollout 专项 | 合并后最新为 §13.38 基准偏差与 §13.39 PP 边界模型；§16 changelog 修复已保留。先读主文档 §0/§16 再选已授权补强项。 |
-| M5 | TS-001 算力支持 | 最新：第四十八批候选 H（update_weights bucket 扫描，2 卡双传输，§13.41）已归档并回写专项；bucket 16× 跨度无效应（−1.2%／−2.6%），负扩展由副本数决定；方法学：多卡必须先设 `RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1`（否则 update_actor +40.5%）。按分工核对占用及实验归属后接续，不能仅据旧记录启动。 |
-
-## 未完成操作与并行工作
-
-- 迁移前工作区未跟踪的 `experiments/rollout-g8-candidate-h/` 已由 M5 会话完成第四十八批并随本轮提交（六日志＋summary＋双组脚本）。
-- 原记录提及并行 `experiments/rollout-real-example-configs/` 与专项编号冲突风险；是否仍运行未知，接续方先核对实际文件及主文档。
->>>>>>> Stashed changes
 - 服务器网络、磁盘、GPU 与上游 PR 状态均是历史记录，不是实时可用条件。M1 不探测远程资源。
 - 历史记录曾提及 `diary/2026-08-14.md` 为用户未跟踪工作；本次状态输出未显示它，不据此推断被删除或已归档。
 

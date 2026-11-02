@@ -403,6 +403,27 @@ class DiaryTests(unittest.TestCase):
         self.assertEqual(invalid.returncode, 1)
         self.assertIn('日志收尾检查', invalid.stderr)
 
+    def test_removed_entries_allowed_when_archived_verbatim(self):
+        path = self.committed_records()
+        original = path.read_text()
+        Path('diary/archive').mkdir()
+        Path(f"diary/archive/{path.stem}.md").write_text(original)
+        day = self.now.strftime('%Y-%m-%d')
+        path.write_text(f'# {day} 工作日志\n\n## 00:00 — 合并后的结论标题\n\n结果一与结果二合并。\n')
+        self.git('add', 'diary')
+        diary.check()
+
+    def test_archive_with_changed_body_does_not_excuse_removal(self):
+        path = self.committed_records()
+        original = path.read_text()
+        Path('diary/archive').mkdir()
+        Path(f"diary/archive/{path.stem}.md").write_text(original.replace('结果一。', '改写后的结果。'))
+        day = self.now.strftime('%Y-%m-%d')
+        path.write_text(f'# {day} 工作日志\n\n## 00:00 — 合并后的结论标题\n\n结果一与结果二合并。\n')
+        self.git('add', 'diary')
+        with self.assertRaisesRegex(ValueError, '移除已有日志'):
+            diary.check()
+
     def test_oversized_entry_rejected(self):
         self.record('结论：' + '很长的过程描述；' * 600)
         self.git('add', 'diary')
