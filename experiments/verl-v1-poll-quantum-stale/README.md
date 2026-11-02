@@ -111,6 +111,8 @@ drop 臂每步丢掉上一步的整批 32 组（生成组/步 64）；`wait` 是
 | `summary-wait.json` | 由 `make-summary-wait.py` 从 wait raw 重算（零逐出时 `off_policy_evicted` 记为缺失，生成组按 32 计） |
 | `run-stale-wait.sh` | wait 运行脚本（`STRATEGY=wait`，其余同 `run-stale-ab.sh`） |
 | `make-summary-wait.py` | wait 组的解析与汇总 |
+| `verify-wait.py` | wait 四跑的独立复核（不同解析路径、按跑分层 bootstrap、代码层结构断言），exit 0 |
+| `verification-wait.md` | 独立复核记录：1e-9 对账、md5 4/4、wait 永不逐出与 threshold=1 屏障的代码证据、口径提示 |
 
 ## 复现
 
