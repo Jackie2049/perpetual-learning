@@ -1,0 +1,146 @@
+{
+  "inputs": {
+    "reanchor": "experiments/rollout-g8-candidate-g/reanchor-summary.json",
+    "ab": "experiments/rollout-g8-candidate-g/ab-summary.json"
+  },
+  "anchor": [
+    {
+      "mode": "g2p",
+      "n_gpus": 2,
+      "step_measured_s": 18.0311,
+      "step_projected_s": 17.954476201674574,
+      "speedup_measured": 1.5264,
+      "speedup_projected": 1.5328823682103894,
+      "speedup_residual_pct": 0.004246834519385123,
+      "speedup_residual_abs": 0.006482368210389389,
+      "stage_sum_s": 17.9815,
+      "half_residual_s": -0.027023798325426895,
+      "half_residual_pct_of_step": -0.0014987326522190492,
+      "full_residual_s": -0.04959999999999809,
+      "full_residual_pct_of_step": -0.0027508027796417354,
+      "share_of_total_half_residual": 0.35268152866366026,
+      "per_stage_projected_s": {
+        "gen": 3.1631232503593854,
+        "old_log_prob": 2.358355619130543,
+        "ref": 2.116268723120273,
+        "adv": 0.1113,
+        "update_actor": 8.1563133640553,
+        "update_weights": 2.0491152450090744
+      }
+    },
+    {
+      "mode": "g4p",
+      "n_gpus": 4,
+      "step_measured_s": 14.1729,
+      "step_projected_s": 14.132792352660712,
+      "speedup_measured": 1.9419,
+      "speedup_projected": 1.9473929364580629,
+      "speedup_residual_pct": 0.0028286402276445077,
+      "speedup_residual_abs": 0.005492936458062925,
+      "stage_sum_s": 14.1329,
+      "half_residual_s": -0.00010764733928780856,
+      "half_residual_pct_of_step": -7.595293785168071e-06,
+      "full_residual_s": -0.040000000000000924,
+      "full_residual_pct_of_step": -0.002822287605218475,
+      "share_of_total_half_residual": 0.0026839604521594353,
+      "per_stage_projected_s": {
+        "gen": 2.162468318419283,
+        "old_log_prob": 1.7921451864454843,
+        "ref": 1.3602567361464157,
+        "adv": 0.1113,
+        "update_actor": 6.361431926007572,
+        "update_weights": 2.345190185641958
+      }
+    }
+  ],
+  "identity": [
+    {
+      "mode": "g2p",
+      "speedup_from_formula_stagesum": 1.5286383012075941,
+      "speedup_from_time_addition": 1.5286383012075941,
+      "formula_vs_addition_abs_diff": 0.0,
+      "speedup_from_formula_stepsum": 1.5264042064847199,
+      "stepsum_vs_addition_abs_diff": 0.0022340947228742802,
+      "stage_sum_s": 27.445899999999998,
+      "step_s": 27.5221,
+      "unaccounted_share": 0.002768684075706434
+    },
+    {
+      "mode": "g4p",
+      "speedup_from_formula_stagesum": 1.9420012206457482,
+      "speedup_from_time_addition": 1.9420012206457482,
+      "formula_vs_addition_abs_diff": 0.0,
+      "speedup_from_formula_stepsum": 1.936949455451451,
+      "stepsum_vs_addition_abs_diff": 0.005051765194297175,
+      "stage_sum_s": 27.445899999999998,
+      "step_s": 27.5221,
+      "unaccounted_share": 0.002768684075706434
+    }
+  ],
+  "placement": [
+    {
+      "mode": "pA1",
+      "placement": "A(0,1,3,4)",
+      "step_s": 16.9469,
+      "stage_sum_s": 16.9057,
+      "residual_s": -0.0411999999999999,
+      "residual_pct": -0.0024311230962594872
+    },
+    {
+      "mode": "pB1",
+      "placement": "B(4,5,6,7)",
+      "step_s": 19.8365,
+      "stage_sum_s": 19.796,
+      "residual_s": -0.040500000000001535,
+      "residual_pct": -0.0020416908224738
+    },
+    {
+      "mode": "pA2",
+      "placement": "A(0,1,3,4)",
+      "step_s": 17.107,
+      "stage_sum_s": 17.066,
+      "residual_s": -0.04100000000000037,
+      "residual_pct": -0.0023966797217513515
+    },
+    {
+      "mode": "pB2",
+      "placement": "B(4,5,6,7)",
+      "step_s": 19.7736,
+      "stage_sum_s": 19.7335,
+      "residual_s": -0.040099999999998914,
+      "residual_pct": -0.0020279564672087487
+    },
+    {
+      "mode": "pA3",
+      "placement": "A(0,1,3,4)",
+      "step_s": 16.4628,
+      "stage_sum_s": 16.4207,
+      "residual_s": -0.04210000000000136,
+      "residual_pct": -0.002557280656996462
+    },
+    {
+      "mode": "pB3",
+      "placement": "B(4,5,6,7)",
+      "step_s": 19.694,
+      "stage_sum_s": 19.6522,
+      "residual_s": -0.041799999999998505,
+      "residual_pct": -0.002122473849903448
+    },
+    {
+      "mode": "pA4",
+      "placement": "A(0,1,3,4)",
+      "step_s": 16.9128,
+      "stage_sum_s": 16.8719,
+      "residual_s": -0.0409000000000006,
+      "residual_pct": -0.0024182867414029967
+    },
+    {
+      "mode": "pB4",
+      "placement": "B(4,5,6,7)",
+      "step_s": 19.5156,
+      "stage_sum_s": 19.4758,
+      "residual_s": -0.03979999999999961,
+      "residual_pct": -0.0020393941257250414
+    }
+  ]
+}

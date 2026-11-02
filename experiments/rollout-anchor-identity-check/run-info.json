@@ -1,0 +1,20 @@
+{
+  "generated_utc": "2026-11-02T13:00:49Z",
+  "purpose": "会计面定量可证伪点的同栈实测复核（§11.4 判据二 / §13.46）",
+  "script": "identity_check.py",
+  "inputs": {
+    "experiments/rollout-g8-candidate-g/reanchor-summary.json": {
+      "sha256": "76981f5c6ef6b6ce8d2339596ee0a169c4942ce1d0ccd78699328974b07a3776",
+      "bytes": 10432
+    },
+    "experiments/rollout-g8-candidate-g/ab-summary.json": {
+      "sha256": "21416ef0cea78a1e26d4541f7a9860b7716667314cc0f6a52a425c76ccc0902f",
+      "bytes": 7062
+    }
+  },
+  "notes": [
+    "只读两份既有归档，做四则运算；不重算任何原始计时",
+    "STAGES 顺序＝§13.45 分项表；adv 在恒等式中 G≡1（构造选择，非实测比值）",
+    "份额分母：分项和 Σt_k（正确）；整步 T（对照，会造出伪偏移）"
+  ]
+}
