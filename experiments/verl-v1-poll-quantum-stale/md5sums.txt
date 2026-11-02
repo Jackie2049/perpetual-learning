@@ -5,3 +5,10 @@
 8dc8c2ecbc7ee07f41a0944e60533107  run-stale-ab.sh
 2da6f01d208688fc0bdff27e919f07ca  make-summary-stale.py
 97cb5a6dc369d176383684261d053576  summary.json
+712da99f32a2a0487fb0546b80f802f3  raw/rollout-poll-stale-swt200.txt
+5c5da46bdf804e33ada14c66d5f3fc2a  raw/rollout-poll-stale-swt010.txt
+4ba7d292afbe00e05e4685fe959d2c65  raw/rollout-poll-stale-swt200b.txt
+428273839be3f9fa9508a5de6dacdeb8  raw/rollout-poll-stale-swt010b.txt
+ba01fddf381c5df42bb7a8f6ae346e25  run-stale-wait.sh
+1a3592ea7c64aeb4783b81573342f214  make-summary-wait.py
+ca3c65c8a322f9da8a2f9389c108d9df  summary-wait.json

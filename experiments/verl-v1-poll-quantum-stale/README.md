@@ -60,10 +60,42 @@ TM-008 的边界清单里最后一条可以在 2 卡上测的通道：`ReplayBuf
 2. **收益幅度最小的一档**：整步 −2.1%（sync 固定批 −3.2%、DAPO −4.9%、默认 async −1.9%），且 run 级证据只有 ≈1 SE。原因是本配置每步生成量翻倍，量子占整步的比例被摊薄；且 gen 收益有一部分没有传导到整步。
 3. **PR 写法**：风险/边界段可以写"在 `max_off_policy_threshold=1` 的严格 async 下，收益仍在但最小（−2.1%，≈1 SE）；该配置本身每步丢弃一整批，轮询不是补偿手段"。
 
+## 补测：`max_off_policy_strategy=wait`（dropless）（2026-11-03，M5 第二会话）
+
+drop 臂每步丢掉上一步的整批 32 组（生成组/步 64）；`wait` 是同一阈值下的 dropless 替代——`ReplayBufferAsync._has_enough_samples` 在任一批次跨度达到阈值时阻塞采样，等旧批次跑完再选。配置、机器、树与上面完全相同，唯一变量是 `max_off_policy_strategy=wait`（阈值仍 1、poll 2.0／0.1、15 步）。
+
+| 运行 | 窗口（UTC） | poll | gen | 整步 | 逐出组/步 | 生成组/步 |
+|---|---|---|---|---|---|---|
+| swt200 | 20:53–21:02 | 2.0 | 3.070±1.03 | 22.119±1.33 | 0 | 32 |
+| swt010 | 21:02–21:10 | 0.1 | 2.174±0.23 | 21.065±0.81 | 0 | 32 |
+| swt200b | 21:10–21:19 | 2.0 | 3.232±1.06 | 22.527±0.91 | 0 | 32 |
+| swt010b | 21:19–21:28 | 0.1 | 2.180±0.20 | 21.094±0.81 | 0 | 32 |
+
+四跑 15/15 步、exit 0；`trajectory_spans/mean` 与 `trajectory_staleness/mean` 恒为 1.00，`off_policy/evicted_samples` 指标缺失（零逐出）。
+
+**读数一：量子还在，两态更干净。** 2.0 臂 gen 严格两态 **4.24／2.22（差 2.02s，两跑同形）**，0.1 臂落在 1.85–2.51s（无量子）。与 drop 的 2.43／4.43 是同一机制。
+
+**读数二：poll 收益比 drop 大。** 池化 gen **3.151→2.177（−0.974s，−30.9%）**、整步 **22.323→21.079（−1.243s，−5.6%）**。重复性：2.0 臂两跑差 0.408s、0.1 臂差 0.029s ⇒ −1.24s 约 3× 2.0 臂跨跑极差、远大于 0.1 臂，强于 drop 臂的 ≈1 SE。
+
+**读数三：wait 在本窗口支配 drop（方向性）。** 同机同树、相邻窗口（drop 19:53–20:29，wait 20:53–21:28）：
+
+| poll | 策略 | gen | 整步 | 生成组/步 |
+|---|---|---|---|---|
+| 2.0 | drop | 3.506 | 22.473 | 64 |
+| 2.0 | wait | 3.151 | 22.323 | 32 |
+| 0.1 | drop | 2.786 | 21.997 | 64 |
+| 0.1 | wait | 2.177 | 21.079 | 32 |
+
+两档下 wait 都比 drop 快（2.0：−0.15s；0.1：−0.92s），且生成量减半、零丢弃。**这是跨窗口比较，只作方向性证据**；同策略 A/B 才是主读数。机制上符合预期：drop 要额外生成被丢弃的 32 组再补抽，wait 只需等旧批次跑完。
+
+**对 TM-008 的含义**：轮询收益在 wait 通道同样成立（−5.6%），且 `wait` 消除了 §13.53 的主要成本（每步丢一整批）。若关心 async 的 on-policy 严格性，`wait` 比"靠 poll 补偿 drop"更有效。
+
+**本节边界**：wait 只测 threshold=1（阻塞条件"任一批次跨度≥阈值"，threshold>1 未测）；跨策略比较来自不同窗口；单 seed、每臂两跑。
+
 ## 边界
 
 - 单栈单点：1.5B／gsm8k 短答案／单 seed／15 步／`n=4`；2+0 放置，绝对步时不可跨窗口比。
-- 只测了 threshold=1 与 2（2 是 4 步冒烟、零逐出）；`max_off_policy_strategy=wait`（dropless）与 `separate_async` 未测。
+- 只测了 threshold=1 与 2（2 是 4 步冒烟、零逐出）；`wait` 已补测（见上，仅 threshold=1）；`separate_async` 与 threshold>1 的 `wait` 未测。
 - 每臂两跑，run 级噪声 ±0.4s 量级；整步差 0.475s 小于 2.0 臂跨跑极差 0.835s。
 - 未做任何上游写操作。
 
@@ -75,6 +107,10 @@ TM-008 的边界清单里最后一条可以在 2 卡上测的通道：`ReplayBuf
 | `summary.json` | 由 `make-summary-stale.py` 从 raw 重算：相位均值/sd、逐出与生成量、spans/staleness |
 | `run-stale-ab.sh` | 运行脚本（`MODE`／`POLL`／`THRESHOLD`／`STEPS`／`GPUS` 可覆盖；threshold=2 的冒烟用 `THRESHOLD=2 STEPS=4`） |
 | `make-summary-stale.py` | 日志解析与汇总 |
+| `raw/rollout-poll-stale-{swt200,swt010,swt200b,swt010b}.txt` | wait 策略四份训练日志（15 步、exit 0），md5 见 `md5sums.txt` |
+| `summary-wait.json` | 由 `make-summary-wait.py` 从 wait raw 重算（零逐出时 `off_policy_evicted` 记为缺失，生成组按 32 计） |
+| `run-stale-wait.sh` | wait 运行脚本（`STRATEGY=wait`，其余同 `run-stale-ab.sh`） |
+| `make-summary-wait.py` | wait 组的解析与汇总 |
 
 ## 复现
 
@@ -82,6 +118,10 @@ TM-008 的边界清单里最后一条可以在 2 卡上测的通道：`ReplayBuf
 # 服务器（patched 树已由 TM-008 建好）
 MODE=st1p200 POLL=2.0 THRESHOLD=1 STEPS=15 GPUS=4,5 bash run-stale-ab.sh
 MODE=st1p010 POLL=0.1 THRESHOLD=1 STEPS=15 GPUS=4,5 bash run-stale-ab.sh
+# wait（dropless）
+MODE=swt200 POLL=2.0 THRESHOLD=1 STEPS=15 GPUS=4,5 bash run-stale-wait.sh
+MODE=swt010 POLL=0.1 THRESHOLD=1 STEPS=15 GPUS=4,5 bash run-stale-wait.sh
 # 本地
 python3 make-summary-stale.py raw/
+python3 make-summary-wait.py raw/
 ```
