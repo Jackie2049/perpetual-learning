@@ -1,0 +1,206 @@
+{
+ "batch": "candidate-h",
+ "date_utc": "2026-11-02",
+ "purpose": "update_weights bucket-size sweep at the candidate A/G workload (2 GPUs)",
+ "stack": {
+  "repo": "verl 24f25b03",
+  "engine": "vLLM 0.24.0+cu129",
+  "model": "Qwen2.5-1.5B-Instruct",
+  "hardware": "4090-1 GPU 0,1 (2x RTX 4090 24GB), NUMA0",
+  "data": "gsm8k train_sub480/test_sub120",
+  "config": "GRPO batch32 prompts x n=4 = 128 samples/iter, mini 16, micro 1, ppo_epochs=1, max_prompt512 max_response256, bf16, optimizer_offload=True, seed=42, lr 1e-6 constant, TOTAL_EPOCHS=1 -> 15 iters"
+ },
+ "window_steps": [
+  3,
+  14
+ ],
+ "groups": {
+  "A_socket_transport": {
+   "env": "no RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES; NCCL_SHM_DISABLE=1 (SHM transport aborts with CUDA 217 on this host)",
+   "base": {
+    "n": 12,
+    "step_s": 27.4166,
+    "stages": {
+     "gen": 3.1659,
+     "old_log_prob": 3.5633,
+     "ref": 2.3582,
+     "adv": 0.1106,
+     "update_actor": 15.4561,
+     "update_weights": 2.7129
+    },
+    "bucket_mb": 256,
+    "val_acc_final": 0.15,
+    "max_reserved_gb": 14.2578125
+   },
+   "modes": {
+    "h1024": {
+     "step_s": 27.4261,
+     "step_x": 1.0003,
+     "stages": {
+      "gen": 3.1659,
+      "old_log_prob": 3.5547,
+      "ref": 2.3978,
+      "adv": 0.1126,
+      "update_actor": 15.4764,
+      "update_weights": 2.6693
+     },
+     "G": {
+      "gen": 1.0,
+      "old_log_prob": 1.0024,
+      "ref": 0.9835,
+      "adv": 0.9822,
+      "update_actor": 0.9987,
+      "update_weights": 1.0163
+     },
+     "update_weights_identity": 1.0016,
+     "stage_sum": 27.3767,
+     "residual_s": 0.0494,
+     "config": {
+      "train_batch_size": 32,
+      "ppo_mini_batch_size": 16,
+      "rollout_n": 4,
+      "total_epochs": 1,
+      "n_gpus_per_node": 2,
+      "bucket_mb": 1024,
+      "val_acc_final": 0.175,
+      "max_reserved_gb": 14.28515625
+     }
+    },
+    "h4096": {
+     "step_s": 27.9415,
+     "step_x": 1.0191,
+     "stages": {
+      "gen": 3.5031,
+      "old_log_prob": 3.5424,
+      "ref": 2.3402,
+      "adv": 0.1103,
+      "update_actor": 15.7515,
+      "update_weights": 2.6429
+     },
+     "G": {
+      "gen": 0.9038,
+      "old_log_prob": 1.0059,
+      "ref": 1.0077,
+      "adv": 1.0024,
+      "update_actor": 0.9812,
+      "update_weights": 1.0265
+     },
+     "update_weights_identity": 1.0026,
+     "stage_sum": 27.8903,
+     "residual_s": 0.0512,
+     "config": {
+      "train_batch_size": 32,
+      "ppo_mini_batch_size": 16,
+      "rollout_n": 4,
+      "total_epochs": 1,
+      "n_gpus_per_node": 2,
+      "bucket_mb": 4096,
+      "val_acc_final": 0.13333333333333333,
+      "max_reserved_gb": 14.255859375
+     }
+    }
+   }
+  },
+  "B_shm_transport": {
+   "env": "RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1; NCCL_SHM_DISABLE=0 (same transport as archived g1/g2/g4/g2n/g4n)",
+   "base": {
+    "n": 12,
+    "step_s": 21.6079,
+    "stages": {
+     "gen": 2.9978,
+     "old_log_prob": 2.7122,
+     "ref": 2.4093,
+     "adv": 0.1447,
+     "update_actor": 10.9984,
+     "update_weights": 2.295
+    },
+    "bucket_mb": 256,
+    "val_acc_final": 0.125,
+    "max_reserved_gb": 14.26171875
+   },
+   "modes": {
+    "n1024": {
+     "step_s": 22.2409,
+     "step_x": 1.0293,
+     "stages": {
+      "gen": 3.5083,
+      "old_log_prob": 2.7574,
+      "ref": 2.4436,
+      "adv": 0.1132,
+      "update_actor": 11.0922,
+      "update_weights": 2.2718
+     },
+     "G": {
+      "gen": 0.8545,
+      "old_log_prob": 0.9836,
+      "ref": 0.9859,
+      "adv": 1.2781,
+      "update_actor": 0.9915,
+      "update_weights": 1.0102
+     },
+     "update_weights_identity": 1.0011,
+     "stage_sum": 22.1865,
+     "residual_s": 0.0545,
+     "config": {
+      "train_batch_size": 32,
+      "ppo_mini_batch_size": 16,
+      "rollout_n": 4,
+      "total_epochs": 1,
+      "n_gpus_per_node": 2,
+      "bucket_mb": 1024,
+      "val_acc_final": 0.18333333333333332,
+      "max_reserved_gb": 14.259765625
+     }
+    },
+    "n4096": {
+     "step_s": 21.3699,
+     "step_x": 0.989,
+     "stages": {
+      "gen": 2.8271,
+      "old_log_prob": 2.71,
+      "ref": 2.4399,
+      "adv": 0.1103,
+      "update_actor": 10.9657,
+      "update_weights": 2.268
+     },
+     "G": {
+      "gen": 1.0604,
+      "old_log_prob": 1.0008,
+      "ref": 0.9874,
+      "adv": 1.3114,
+      "update_actor": 1.003,
+      "update_weights": 1.0119
+     },
+     "update_weights_identity": 1.0012,
+     "stage_sum": 21.3211,
+     "residual_s": 0.0488,
+     "config": {
+      "train_batch_size": 32,
+      "ppo_mini_batch_size": 16,
+      "rollout_n": 4,
+      "total_epochs": 1,
+      "n_gpus_per_node": 2,
+      "bucket_mb": 4096,
+      "val_acc_final": 0.15833333333333333,
+      "max_reserved_gb": 14.26171875
+     }
+    }
+   }
+  }
+ },
+ "verdict": {
+  "bucket_effect_A": "update_weights 2.713/2.669/2.643 s for 256/1024/4096 MB (-2.6% over 16x); whole step dominated by gen/actor drift",
+  "bucket_effect_B": "update_weights 2.295/2.272/2.268 s for 256/1024/4096 MB (-1.2% over 16x); whole step within 21.37-22.24 s (gen bimodality)",
+  "transport_effect_at_256": "socket vs SHM: step 27.417 vs 21.608 (+26.9%), update_actor 15.456 vs 10.998 (+40.5%), update_weights 2.713 vs 2.295 (+18.2%)",
+  "replication_vs_g2": "n256 vs g2: step 21.608 vs 22.009 (-1.8%), update_actor 10.998 vs 10.956 (+0.4%), update_weights 2.295 vs 2.351 (-2.4%)",
+  "conclusion": "bucket size is not a meaningful update_weights lever; the negative multi-engine scaling (g1 1.82 -> g2 2.35 -> g4 2.64 s) is replica/protocol-bound, consistent with batch 46's 'determined by replica count'"
+ },
+ "md5": {
+  "h256": "1873d331a316e757082af5e86564eec1",
+  "h1024": "fdb44baf94280423ea57c4fb0f77dbd3",
+  "h4096": "02e174cbdf0cbdf14af66ae62ed69287",
+  "n256": "800381d59c9111939e0ce79d652ef345",
+  "n1024": "6e382e65870a61c15b6801c18894138a",
+  "n4096": "9f05c3f8e22d1fd638037bdd7c3f9da0"
+ }
+}
