@@ -1,6 +1,6 @@
 # 新意锚② 的可换算性复核与 P-6 重建形式（2026-11-03 M1 第三十一／三十二批）
 
-CPU 只读复算，不跑 GPU、不改任何既有读数。核对材料：第三十一批 [check_identity.py](check_identity.py)（`--verify` exit 0）、[negative_control.py](negative_control.py)（exit 0）、[summary.json](summary.json)；第三十二批 [check_reconstruct_form.py](check_reconstruct_form.py)（`--verify` exit 0）、[negative_control_form.py](negative_control_form.py)（4/4 注入抓到，exit 0）、[p6-form.json](p6-form.json)；[run-info.json](run-info.json)。正文落笔：[主文档 §20.3.6／§20.3.7](../../notebook/rollout-performance-research.md)、[§11.6](../../notebook/rollout-performance-research.md)。
+CPU 只读复算，不跑 GPU、不改任何既有读数。核对材料：第三十一批 [check_identity.py](check_identity.py)（`--verify` exit 0）、[negative_control.py](negative_control.py)（exit 0）、[summary.json](summary.json)；第三十二/三十三批 [check_reconstruct_form.py](check_reconstruct_form.py)（`--verify` exit 0）、[negative_control_form.py](negative_control_form.py)（4/4 注入抓到，exit 0）、[p6-form.json](p6-form.json)；[run-info.json](run-info.json)。正文落笔：[主文档 §20.3.6／§20.3.7／§20.3.8](../../notebook/rollout-performance-research.md)、[§11.6](../../notebook/rollout-performance-research.md)。
 
 ## 为什么要做
 
@@ -65,3 +65,17 @@ CPU 只读复算，不跑 GPU、不改任何既有读数。核对材料：第三
 **两个限定（必须随结论写）**：① 本栈两侧缺口几乎相同（|差| ≤0.08%），第一项单独就接近整步比——这是数据事实不是恒等；负向对照把两侧缺口拉开 20%，第一项偏 20%，乘上缺口之比才回到 0。② 单栈单点，只有两个加卡臂同时含大小效应，显著程度不外推。
 
 **负向对照（`negative_control_form.py`，4/4 抓到）**：份额换回目标侧 → 误差 −15.4%；谎报 `update_actor` 无加速 → −54.9%；缺口拉开 20% → 第一项偏 20%、完整式偏 0、方向写反偏 −36%；本栈缺口方向写反只差 0.006%（记录"缺口因子≈1"的含义，不是检验项）。
+
+## 第三十三批（§20.3.8）：给形式加一条 async 轨迹与一个同配置重复臂
+
+前一版的 8 个臂**全部落在 sync 路径上**，所以"这个形式不挑执行模式"其实没被检验过。本批只补两行归档、不改形式本身：
+
+| 臂 | 实测整步比 | 两侧缺口 | 缺口差 | 第一项单独 | 完整式 |
+|---|---|---|---|---|---|
+| async 2 卡 poll 2.0→0.1（两跑池化） | 1.0194 | 0.99455／0.99428 | −0.027% | +0.029% | **+0.049%** |
+| g4 vs g4n（同配置重复，2+2 与 0,1,3,4） | 0.8372 | 0.99762／0.99791 | +0.029% | −0.024% | **−0.060%** |
+
+- **async 一条的作用**：`colocate_async` 的整步结构与 sync 不同（生成与训练同卡共置、同一 patched 树只改 poll 配置），重建误差 0.049%，仍在 0.1% 内 ⇒ 形式的成立**不依赖 sync 的步结构**。
+- **g4 vs g4n 一条的作用**：这是本栈缺口差最大的一个臂（0.029%），且加速只有 1.19× ⇒ 第二项的贡献相对最重，正是 §20.3.7 限定① 说的"第一项单独接近靠数据巧合、完整式靠恒等"的最小样本检验。误差 0.06%，方向、量级都对。
+- **进不了主结论的原因**：同配置重复臂的"加速"是运行间噪声（同一配置两次跑），不能当机制效应；跨放置臂（`pbase→p4base`）差 0.163%，按 §20.3.7 的约定只作对照。
+- 两臂都写进 `p6-form.json`，`check_reconstruct_form.py --verify` 对主结论臂用 0.1% 阈值、对这两行只打印不判定。

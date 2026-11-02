@@ -135,6 +135,40 @@
    "err_f2_pct": 0.01,
    "err_f3_pct": 0.019,
    "gap_two_sides_pct": -0.012
+  },
+  {
+   "label": "async 2 卡 poll 2.0→0.1（两跑池化）",
+   "group": "单轴·async",
+   "actual_step_ratio": 1.0194,
+   "actual_stage_sum_ratio": 1.0197,
+   "gap_base": 0.99455,
+   "gap_target": 0.99428,
+   "recon_stage_sum_target": 20.6903,
+   "true_stage_sum_target": 20.6903,
+   "f1": 1.0174,
+   "f2": 1.0197,
+   "f3": 1.0199,
+   "err_f1_pct": -0.196,
+   "err_f2_pct": 0.029,
+   "err_f3_pct": 0.049,
+   "gap_two_sides_pct": -0.027
+  },
+  {
+   "label": "g4 vs g4n（同配置重复，2+2 与 0,1,3,4）",
+   "group": "同配置重复",
+   "actual_step_ratio": 0.8372,
+   "actual_stage_sum_ratio": 0.837,
+   "gap_base": 0.99762,
+   "gap_target": 0.99791,
+   "recon_stage_sum_target": 20.118,
+   "true_stage_sum_target": 20.118,
+   "f1": 0.8306,
+   "f2": 0.837,
+   "f3": 0.8367,
+   "err_f1_pct": -0.788,
+   "err_f2_pct": -0.024,
+   "err_f3_pct": -0.06,
+   "gap_two_sides_pct": 0.029
   }
  ]
 }

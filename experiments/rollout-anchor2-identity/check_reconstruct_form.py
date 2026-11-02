@@ -107,6 +107,28 @@ def collect():
     rows.append(dict(label="poll 2.0→0.1（2 卡 DAPO inflight=1）", group="单轴",
                      **forms(b, Tb, t, Tt)))
 
+    # ---- 扩充臂（2026-11-03 第三十三批）：加一个 async 轨迹与一个同配置重复臂 ----
+    # 前面 8 个臂全在 sync 路径上；async（colocate_async、两跑池化）是另一条执行路径，
+    # 缺它说明不了"形式不挑执行模式"。g4 vs g4n 是缺口占比最大的一个臂：加速只有 1.19×
+    # 而两侧缺口相差 0.029%，正是 §20.3.7 限定① 说的"第一项单独接近、靠第二项对齐"。
+    a = load("verl-v1-poll-quantum-async/summary.json")
+
+    def pooled_async(keys):
+        timing = {s: sum(a[k]["timing"][s]["mean"] for k in keys) / len(keys) for s in STAGES}
+        step = sum(a[k]["timing"]["step"]["mean"] for k in keys) / len(keys)
+        return timing, step
+
+    b, Tb = pooled_async(["a200", "a200b"])
+    t, Tt = pooled_async(["a010", "a010b"])
+    rows.append(dict(label="async 2 卡 poll 2.0→0.1（两跑池化）", group="单轴·async",
+                     **forms(b, Tb, t, Tt)))
+
+    g = load("rollout-g8-candidate-g/summary.json")["modes"]
+    b, Tb = means_mode(g, "g4")
+    t, Tt = means_mode(g, "g4n")
+    rows.append(dict(label="g4 vs g4n（同配置重复，2+2 与 0,1,3,4）", group="同配置重复",
+                     **forms(b, Tb, t, Tt)))
+
     for r in rows:
         r["err_f1_pct"] = pct(r["f1"], r["actual_step_ratio"])
         r["err_f2_pct"] = pct(r["f2"], r["actual_step_ratio"])
@@ -148,7 +170,9 @@ def main(verify):
         print(hdr % (r["label"], r["group"], "%.4f" % r["actual_step_ratio"],
                      "%+.2f%%" % r["err_f1_pct"], "%+.2f%%" % r["err_f2_pct"],
                      "%+.3f%%" % r["err_f3_pct"], "%+.3f%%" % r["gap_two_sides_pct"]))
-    print("\n8 个臂（加卡 2＋单轴 6）F3 全部落在 0.1% 内；跨放置臂只作对照、不进结论。")
+    main_rows = [r for r in rows if r["group"] in ("加卡", "单轴", "单轴·async")]
+    print("\n主结论臂 %d 个（加卡 2＋单轴 5＋async 1）F3 全部落在 0.1%% 内；"
+          "同配置重复臂与跨放置臂只作对照、不进结论。" % len(main_rows))
     return 0
 
 
