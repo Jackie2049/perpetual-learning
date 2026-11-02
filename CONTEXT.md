@@ -4,18 +4,19 @@
 
 ## 当前现场
 
-本次会话完成 §13.43（C 类机制账，落地 §18.9 的下一候选），待后续指令；本次维护不启动、暂停或接管其他会话的自主运行。其他执行者的进程状态未核实，以下仅为已有记录。
+M1 本轮完成 §13.43（C 类机制账，落地 §18.9 的下一候选）；M5 本轮完成 §13.44（gen 二态隔离，4090-1 真机三轮，插桩已还原）。待后续指令；本次维护不启动、暂停或接管其他会话的自主运行。其他执行者的进程状态未核实，以下仅为已有记录。
 
 | 执行者 | 当前任务 | 接续入口与核对事项 |
 |---|---|---|
 | M1 | TS-001 rollout 专项 | 最新为 **§13.43**（从 §13.28／§13.29 归档 per_seed 重算，不重新训练：L1 生成量／L2 每步成本／L3 步数／L4 墙钟分层，缺口 `gap = 1−(1−r)/(1−κ)`；**七机制无一属"每步兑现型"**——`freq` 每步省 72.3% 而墙钟只省 18.7%（gap −1.93）、`cap` 每步省 0 却墙钟省 6.3%、`cancel` 每步省 1.6% 却墙钟省 34.0%、§13.28 删组每步省 44.9% 而到 0.9 墙钟慢 2.7%；归四类 I–IV；**两处订正**——§13.29 墙钟比列 `cancel` 0.660 是基线/臂应为 1.515、§13.28"只再省 3.5%"是总成本比之比）；§18.9 7.6 已改写为分栏要求＋四类收益来源。此前 §21.12／§21.11／§21.10／§21.9／§21.8／§13.41／§13.40。**气泡可辨识性线（§21.10–§21.12）与 7.6 骨架线均暂无可再补的口子**；下一候选剩 G2/G9 负项索引的进一步实证。 |
-| M5 | TS-001 算力支持 | 最新：第四十九批候选 G 放置效应机制（**§13.42**）——同一空闲窗口 A/B/A/B 复现 16.3% 差（排除漂移），taskset 2×2 排除主机 CPU/内存本地性；NCCL SHM all-reduce 带宽随「每 socket 最多 rank 数」下降（4+0 3.08／3+1 4.09／1+3 4.07／2+2 5.99 GB/s），端到端 2+2 放置 4 卡整步 14.167s＝1.944×（效率 0.486）、2 卡 1+1 18.403s＝1.496×（0.748）；§13.36 的 1.631×／1.251× 引用处必须附放置条件，后续多卡锚点建议固定 `0,1,4,5`。剩余：gen 二态隔离（逐引擎计时）未做。此前第四十八批候选 H（bucket 扫描，§13.41）。按分工核对占用及实验归属后接续，不能仅据旧记录启动。 |
+| M5 | TS-001 算力支持 | 最新：第五十批 gen 二态隔离（**§13.44**，4090-1 真机三轮，10:04–10:37 UTC）——逐请求计时 30 步：29 个干净训练轮**全部 64/64**、派发窗 ≤0.09s、生成跨度 1.49–2.26s（生成侧无二态）；V1 相位拆分：慢态多出的 2.01s 全在 `replay_buffer.sample` 等待（4.045 vs 2.033s）、`sleep` 恒 0.12s；机制＝`ReplayBuffer.poll_interval` 默认 2.0s 轮询量子（`wait=ceil(就绪/2.0)×2.0`）；因果干预 poll 2.0→0.1：gen 3.243→2.159s、整步 21.925→20.776s、其余阶段 Δ≤0.02s。§13.36 的「2 副本 × 每副本批量调度」与 §13.42 判决五的机制表述已按此改写。**插桩为本地追加，5 文件已还原、md5 与备份一致。** 剩余：把多卡锚点按 2+2 放置重报（§13.36 的 1.631×／1.251× 引用处须附放置条件）。此前 §13.42（候选 G 放置效应）／§13.41（候选 H bucket）。按分工核对占用及实验归属后接续，不能仅据旧记录启动。 |
 
 ## 未完成操作与并行工作
 
 - **TM-006（掘金 B 类，M1 2026-11-02 17:3x）**：verl `tiled_mlp` 配置在 `verl/workers/engine/` 下 10 个引擎全部无消费点（正式配置项＋官方文档齐全，配置完全无效且无提示；无副作用）。工具沉淀为 [tools/pyflag](tools/pyflag/readme.md)。**对外动作全部未做，待授权**。
 - **TM-005（掘金 B 类，M1 2026-11-02 16:1x）**：verl `use_prefix_grouper` 在 FSDP 引擎上不生效但副作用照常生效；取证材料与影响量化（DP 负载不均衡 0–6.6%）均已入库，**对外动作（issue／评论／PR）全部未做，待用户逐项授权**。见 [TM-005](queue_tech-miner.md) 与 [evidence](open-source/verl/evidence/prefix-grouper-inert/readme.md)。
 
+- **`experiments/rollout-g8-gen-bimodality/`（第五十批，§13.44）已入库**：3 份训练日志＋逐请求/相位 JSONL（gz）＋`summary.json`＋插桩/还原脚本＋md5；服务器 verl 树的插桩已回滚（`llm_server.py`／`ray_trainer.py`／`v1/trainer_base.py`／`v1/trainer_sync.py`／`v1/replay_buffer.py` 五文件 md5 与备份一致，全树无 `_m5_log` 残留）。
 - `experiments/rollout-g8-candidate-h/`（第四十八批候选 H，§13.41）已入库（commit `cec0382`），此前"仍未跟踪"的记录已过期。本会话本批（第四十九批）的 `experiments/rollout-g8-candidate-g/`（README 新增小节＋`ab-summary.json`＋10 份训练日志＋微基准/链路日志＋md5sums）已随本批提交。
 - `experiments/rollout-bubble-attribution/`（§21.10／§21.11／§21.12）是本会话的工作，已入库；本批新增 `fusion_evidence.py`／`test_fusion_evidence.py`／`fusion.json`／`readme-fusion.md`，`run-info.json` 已同时覆盖三批的 sha256。三套脚本共用目录但各自独立归档（`summary.json`／`resolution.json`／`fusion.json`）。
 - `experiments/rollout-c-class-ledger/`（§13.43）为本批新增：`ledger.py`／`test_ledger.py`／`ledger.json`／`readme.md`／`run-info.json`；只读引用 `rollout-p3-dapo-group-filter/summary.json` 与 `rollout-p4-c-mechanisms/summary.json`，**未修改那两批的归档**（sha256 已记入本批 run-info.json 的 `input_sha256`）。
