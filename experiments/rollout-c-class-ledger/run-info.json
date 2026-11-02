@@ -1,21 +1,37 @@
 {
   "experiment": "C 类机制账：省下的每步成本有多少被吃掉（§13.43）",
-  "batch": "2026-11-02（M1），支撑主文档 §13.43 与 §18.9 第 7 章 7.6 节论点骨架",
+  "batch": "2026-11-02（M1）第二十三批立账、第二十四批订正；支撑主文档 §13.43 与 §18.9 第 7 章 7.6 节论点骨架",
+  "revision": {
+    "round_1": "立账；引入派生量 gap 并误读为「收敛代价」",
+    "round_2": "强制恒等式核对：gap ≡ 1 − wall_ratio/cost_ratio（步数被约掉），推翻第一轮三条核心读法；新增 traj_ratio 与 sigma_steps，重写收益来源四类；订正 §13.43 与 §18.9 7.6",
+    "superseded_after_round_2": [
+      "gap 是收敛代价的度量",
+      "gap<0 ⇒ 收敛变快；gap=1 ⇒ 全部被收敛吃掉",
+      "cap 的墙钟收益全部来自收敛变快（实为省样本，traj_ratio 0.282）",
+      "cancel 的收益几乎全部来自收敛（实为省每轮固定成本，traj_ratio 0.984）",
+      "freq 墙钟省额里有 15.5pp 不能由每步省解释（该 pp 不可拆）"
+    ]
+  },
   "execution": {
     "python": "3.9.6（macOS 15.4.1 arm64，仅标准库；numpy 未使用）",
     "commands": [
       "python3 ledger.py                          # 秒级，只读两批归档，写 ledger.json",
       "python3 ledger.py --verify ledger.json      # 通过：逐字段一致（连跑两次均通过）",
-      "python3 -m unittest test_ledger -v          # 15 tests，OK（含 5 条负向对照）"
+      "python3 -m unittest test_ledger -v          # 16 tests，OK（含 6 条负向对照）"
     ],
-    "note": "本批不重新训练。所有数字来自 rollout-p3-dapo-group-filter/summary.json 与 rollout-p4-c-mechanisms/summary.json 的 per_seed，由 ledger.py 重算；verify 为真重算后比对，非比对同一份文件。"
+    "note": "本批不重新训练、不重跑上游实验。所有数字来自 rollout-p3-dapo-group-filter/summary.json 与 rollout-p4-c-mechanisms/summary.json 的 per_seed，由 ledger.py 重算；verify 为真重算后比对，非比对同一份文件。两个输入文件的 sha256 与上一版一致，证明未改动归档。"
+  },
+  "key_identity": {
+    "statement": "gap = 1 − (1−r)/(1−kappa) ≡ 1 − wall_ratio/cost_ratio",
+    "derivation": "1−r ≡ wall_ratio，1−kappa ≡ cost_ratio，故步数被完全约掉",
+    "consequence": "gap 与 steps_ratio 之间不存在映射；收敛方向必须单独读 steps_ratio / sigma_steps"
   },
   "classification": "进程内 CPU 重算，不产生新实验数据；上游数据本身是进程内模拟，非 GPU、非端到端。数字不可与论文报值相除（§19.1 规则一）。",
   "artifacts_sha256": {
-    "ledger.py": "ae8fb78ddb132040a5968665d21cc0a3b5d33be66ba89044a7ac449fab360efe",
-    "test_ledger.py": "71a4afca5c0a79d6e89d3fb98225074418ed869437f13eb4f86adb00915faa55",
-    "ledger.json": "985d5cff5398e7d009f12ebd7e2652addcf1026e8a6d8dc36be0b94b1cebd723",
-    "readme.md": "b5a3b3f34eea361af869931015fa5de16df7ffc5d76c8f799bdf38e795b29104"
+    "ledger.py": "021f39b29ae15d58ecf44e4f97460188799f8387440e20533f887743ba25526b",
+    "test_ledger.py": "18f265e90a85e63db4212d8d625608951bfc73b43926704362cd716101487562",
+    "ledger.json": "8785098be6e15d914c60ef07877c04ef51e352f028b7b2ecc180785b1be48025",
+    "readme.md": "6dd0da52d8bc17027102cd327ee30c83cdff1dfb9119ba3df8d629f023e1b61e"
   },
   "input_sha256": {
     "experiments/rollout-p3-dapo-group-filter/summary.json": "662682fc5200e15272d30a0eb8eda9c280836d1b7e38fc48fdb0b1db4553fdb9",
@@ -26,13 +42,31 @@
       "target": "主文档 §13.29 表（第 3104 行）『到 0.9 墙钟比』列",
       "issue": "分母混用：freq/replay/cap 为臂/基线，cancel 的 0.660 为基线/臂（应为 1.515）",
       "evidence": "ledger.json p4_arms.*.wall_denominators 三口径；cancel ratio_denom_base=0.6599 而 ratio_base_over_arm=1.5154",
-      "impact": "方向不变（cancel 仍把节省带满），但同列语义需注明"
+      "impact": "方向不变（cancel 仍把节省带满），但同列语义需注明",
+      "round": 1,
+      "still_valid": true
     },
     {
       "target": "主文档 §13.28 ⑤(a)『C 相对 B 只再省 3.5%』",
       "issue": "该句用总成本比之比（0.314/0.359），未看『到目标准确率的墙钟』——后者 C/B = 1.027（慢 2.7%）",
       "evidence": "ledger.json p3_pairs.C_vs_B cost_ratio=0.5511、steps_ratio=0.9647、wall_ratio=1.0267",
-      "impact": "结论（删组不带来墙钟优势）不变，且理由更硬：每步省 44.9% 被收敛变慢全部吃掉"
+      "impact": "结论（删组不带来墙钟优势）不变；但第二轮更正其理由——steps_ratio 0.965 说明收敛是变快的，吃掉项在每步成本与墙钟之间",
+      "round": 1,
+      "still_valid": true,
+      "reason_revised": true
+    },
+    {
+      "target": "主文档 §13.43 ①②③⑥⑦ 与 §18.9 7.6 整行",
+      "issue": "把派生量 gap 读作收敛代价，并据此给 cap/cancel/C vs B 下了三句与 steps_ratio/traj_ratio 矛盾的机理判词",
+      "evidence": "单测 test_gap_reduces_to_one_minus_ratio_of_ratios（gap ≡ 1 − wall/cost）；freq gap −1.93 vs steps_ratio 1.070；C_vs_B gap 1.0 vs steps_ratio 0.965；cap traj_ratio 0.282；cancel traj_ratio 0.984",
+      "impact": "收益来源四类按 gap 符号归类 → 改按可观测字段直接读数；G2『gap 就是收敛代价的度量』撤回，改为『需四字段同报，语料内齐全者为零』",
+      "round": 2,
+      "still_valid": true
     }
+  ],
+  "known_limits": [
+    "更新成本恒 8 单位是上游模拟的模型假设，真实系统 update 随批规模变化",
+    "cancel 的收益落在哪个分项，上游归档无字段，标未定",
+    "traj_ratio 只在 p4 有（p3 归档不含 total_traj），故 §13.28 五模式无法做同一区分"
   ]
 }

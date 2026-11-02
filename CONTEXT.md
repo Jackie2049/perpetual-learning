@@ -8,7 +8,7 @@ M1 本轮完成 §13.43（C 类机制账，落地 §18.9 的下一候选）；M5
 
 | 执行者 | 当前任务 | 接续入口与核对事项 |
 |---|---|---|
-| M1 | TS-001 rollout 专项 | 最新为 **§13.43**（从 §13.28／§13.29 归档 per_seed 重算，不重新训练：L1 生成量／L2 每步成本／L3 步数／L4 墙钟分层，缺口 `gap = 1−(1−r)/(1−κ)`；**七机制无一属"每步兑现型"**——`freq` 每步省 72.3% 而墙钟只省 18.7%（gap −1.93）、`cap` 每步省 0 却墙钟省 6.3%、`cancel` 每步省 1.6% 却墙钟省 34.0%、§13.28 删组每步省 44.9% 而到 0.9 墙钟慢 2.7%；归四类 I–IV；**两处订正**——§13.29 墙钟比列 `cancel` 0.660 是基线/臂应为 1.515、§13.28"只再省 3.5%"是总成本比之比）；§18.9 7.6 已改写为分栏要求＋四类收益来源。此前 §21.12／§21.11／§21.10／§21.9／§21.8／§13.41／§13.40。**气泡可辨识性线（§21.10–§21.12）与 7.6 骨架线均暂无可再补的口子**；下一候选剩 G2/G9 负项索引的进一步实证。 |
+| M1 | TS-001 rollout 专项 | 最新为 **§13.43 第二十四批订正**：**派生量 `gap` 化简后 `≡ 1 − wall_ratio/cost_ratio`，步数被约掉**——"`gap<0` ⇒ 收敛变快／`gap=1` ⇒ 全部被吃掉"两条读法**作废**（反例 `freq` gap −1.93 而 `steps_ratio` 1.070 变慢；`C` vs `B` gap 1.0 而 `steps_ratio` 0.965 变快）；**`cap` 改为"省样本"**（`traj_ratio` 0.282）、`cancel` 的"收益在收敛"不成立（轨迹 0.984，真实机制每轮固定成本、分项未定）；四类收益来源改按 `cost_ratio`／`traj_ratio`／`wall_ratio` 直接读数归类；**G2 撤回"`gap` 是收敛代价的度量"**，改为需四字段同报、语料内齐全者为零。同日第二十三批立账记录保留在 §16，其 ②③ 的数字不变、①④⑥ 的读法已推翻。此前 **§21.13**（§21 八批实证横向总览）／§21.12／§21.11／§21.10／§21.9／§21.8／§13.41／§13.40。**气泡可辨识性这条线（§21.10–§21.13）暂无可再补的口子**，C 类机制账已做了两轮（立账＋订正）。 |
 | M5 | TS-001 算力支持 | 最新：第五十一批多卡锚点按 2+2 重报（**§13.45**，4090-1 真机，10:59–11:24 UTC）——同配置重测 g1p／g2p(1+1)／g4p(2+2)＝27.522／18.031／14.173s＝**1.526／1.942×**（效率 0.763／0.485），各 15/15 步、exit 0；g4p vs pC1＝1.0004×（各阶段 ≤1.4%）、g2p vs pD1＝0.980×（差全在 gen 慢/快态配比，分层后 ≤1.2%，§13.44 机制第三次复现）。§13.36 的 1.251／1.631× 降级为 2+0／3+1 放置值（同卡数慢 22.1%／19.1%），多卡锚点自此固定 2+2（0,1,4,5）／1+1（0,4）。最佳放置下 update_actor G=2.087、update_weights 0.770 仍负扩展，加卡收益递减结论不变。**M5 登记的剩余算力事项已清空**（弱扩展按 2+2 重测为可选残留）。此前 §13.44（gen 二态＝2.0s 轮询量子）／§13.42（候选 G 放置效应）／§13.41（候选 H bucket）。按分工核对占用及实验归属后接续，不能仅据旧记录启动。 |
 
 ## 未完成操作与并行工作
@@ -19,7 +19,7 @@ M1 本轮完成 §13.43（C 类机制账，落地 §18.9 的下一候选）；M5
 - **`experiments/rollout-g8-gen-bimodality/`（第五十批，§13.44）已入库**：3 份训练日志＋逐请求/相位 JSONL（gz）＋`summary.json`＋插桩/还原脚本＋md5；服务器 verl 树的插桩已回滚（`llm_server.py`／`ray_trainer.py`／`v1/trainer_base.py`／`v1/trainer_sync.py`／`v1/replay_buffer.py` 五文件 md5 与备份一致，全树无 `_m5_log` 残留）。
 - `experiments/rollout-g8-candidate-h/`（第四十八批候选 H，§13.41）已入库（commit `cec0382`），此前"仍未跟踪"的记录已过期。本会话本批（第四十九批）的 `experiments/rollout-g8-candidate-g/`（README 新增小节＋`ab-summary.json`＋10 份训练日志＋微基准/链路日志＋md5sums）已随本批提交。
 - `experiments/rollout-bubble-attribution/`（§21.10／§21.11／§21.12）是本会话的工作，已入库；本批新增 `fusion_evidence.py`／`test_fusion_evidence.py`／`fusion.json`／`readme-fusion.md`，`run-info.json` 已同时覆盖三批的 sha256。三套脚本共用目录但各自独立归档（`summary.json`／`resolution.json`／`fusion.json`）。
-- `experiments/rollout-c-class-ledger/`（§13.43）为本批新增：`ledger.py`／`test_ledger.py`／`ledger.json`／`readme.md`／`run-info.json`；只读引用 `rollout-p3-dapo-group-filter/summary.json` 与 `rollout-p4-c-mechanisms/summary.json`，**未修改那两批的归档**（sha256 已记入本批 run-info.json 的 `input_sha256`）。
+- `experiments/rollout-c-class-ledger/`（§13.43）为本批新增并同日两次写入：`ledger.py`／`test_ledger.py`／`ledger.json`／`readme.md`／`run-info.json`；第二十四批新增 `gap_pieces`／`traj_ratio`／bootstrap，`run-info.json` 已记录两轮 revision 与三条 superseded 读法。只读引用 `rollout-p3-dapo-group-filter/summary.json` 与 `rollout-p4-c-mechanisms/summary.json`，**未修改那两批的归档**（sha256 已记入本批 run-info.json 的 `input_sha256`，且与上一版一致）。
 - 服务器网络、磁盘、GPU 与上游 PR 状态均是历史记录，不是实时可用条件。M1 不探测远程资源。
 - `diary/2026-08-14.md` 仍为用户未跟踪工作，不代为提交或删除。
 
