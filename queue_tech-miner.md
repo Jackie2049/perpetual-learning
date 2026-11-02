@@ -76,6 +76,15 @@
 - **停止条件**：无新框架待扫时暂停；不为凑数反复扫同一批仓库。
 - **成果入口**：[工具说明](tools/pyflag/readme.md)、[扫描报告](tools/pyflag/)。
 
+## TM-008 — verl V1 采样等待的 `poll_interval` 不可配置（C 类：优化 PR）
+
+- **问题与价值**：`ReplayBuffer.__init__(poll_interval=2.0)` 是采样等待的轮询间隔（`_wait_for_next_poll` → `time.sleep`），但生产构造路径 `_build_replay_buffer` 不传该值、`trainer.v1.sampler` 没有这个键、文档参数表也未列，内置 buffer 只能取默认 2.0s；用户只能写自定义 sampler 子类才能改。默认值把采样等待按 2.0s 量子化：§13.44 已证明这是 2 卡 `timing_s/gen` 二态的唯一来源。与 TM-005／006 同族（配置不接线），区别是默认值本身有可测代价，且补丁可做成零行为变化（默认不变、只加可达性）。
+- **优先级 / 负责人 / 状态**：C 类候选，**M5 本地实测与补丁已完成**；对外（issue／PR）待用户逐项授权。
+- **已有证据**（2026-11-02，4090-1，verl `24f25b03`＋Qwen2.5-1.5B＋gsm8k，15 步，steps 3–14）：2 卡默认整步 21.785s／gen 3.165s（6/12 步 >3s）；补丁＋默认值 2.0 的对照为 21.686s（补丁惰性）；`poll_interval=0.5` → 21.033s（−3.0%）、gen 2.370s、0/12 慢步；`0.1` → 21.001s（−3.2%）、gen 2.199s。4 卡（2+2）默认 14.216s／gen 2.161s（恒定多等约 0.4s）→ 0.1 后 13.934s（−2.0%）／gen 1.763s。**0.5 不是通用解**：4 卡生成跨度约 1.6s，0.5 仍在 2.0 边界取整，必须 0.1–0.2。轮询开销没有可测惩罚（p050 vs p010 每步差约 16 次 `kv_list`，整步差 −0.03±0.26s）。数值差异不超过同行为两次运行的噪声（pbase vs p200 已差 reward 0.1161 vs 0.1146）。见 [experiments/verl-v1-poll-quantum](experiments/verl-v1-poll-quantum/README.md)。
+- **本地补丁**：[poll-interval-config.patch](experiments/verl-v1-poll-quantum/poll-interval-config.patch)（3 文件 +8/−1：配置键、传给 buffer、`_step_had_idle` 阈值与轮询间隔解耦）。默认 2.0 不变 ⇒ 本补丁不改变现有行为；调小为显式 opt-in。
+- **下一步与等待条件**：对外前需用户决定两件事——① 只做配置可达性＋文档（默认 2.0），还是同时把默认改到 0.1–0.2；② 是否需要先在带 DAPO 过滤／refill 或 async trainer 的配方上补一组对照（当前边界：固定批配置下集合不随等待时机变化，过滤/refill 下未测）。对外动作全部未做。
+- **停止条件**：上游已支持该键或改了默认（脚本/代码核对会发现），或用户否决对外动作。
+
 ## 已闭环与保留方向
 
 - **TM-004 — AReaL prompt_mean：终止修复候选。** M5 单一负责人；2026-10-20 实测跨 M 与 token_mean 一致，不构成 defect，修复撤销，不提 issue/PR。M1 不继续修改脚本或演化并行方案，用户明确的只读 review 除外。证据及分工：[handoff](open-source/areal/handoff-m5.md)、[tracker](open-source/areal/tracker.md)。AReaL 的长期学习偏好仍保留，新的问题应独立登记。

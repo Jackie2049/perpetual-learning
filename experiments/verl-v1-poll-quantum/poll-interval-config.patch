@@ -1,0 +1,38 @@
+--- a/verl/trainer/config/ppo_trainer.yaml
++++ b/verl/trainer/config/ppo_trainer.yaml
+@@ -292,6 +292,11 @@
+       # Whether sync trainers replace failed groups that have no trajectories
+       sync_refill_failed_groups: False
+ 
++      # Poll interval (seconds) for the built-in replay buffer's sample wait.
++      # Lower values reduce sample-detection latency at the cost of more
++      # TransferQueue metadata polls. Ignored by custom samplers.
++      poll_interval: 2.0
++
+       # Custom sampler config
+       custom_sampler:
+ 
+--- a/verl/trainer/ppo/v1/trainer_base.py
++++ b/verl/trainer/ppo/v1/trainer_base.py
+@@ -171,6 +171,7 @@
+             filter_groups_metric = self._resolve_filter_groups_metric()
+             sync_refill_failed_groups = bool(sampler_config.get("sync_refill_failed_groups", False))
+             replay_buffer_kwargs.update(
++                poll_interval=sampler_config.get("poll_interval", 2.0),
+                 filter_groups_metric=filter_groups_metric,
+                 sync_refill_failed_groups=sync_refill_failed_groups,
+             )
+--- a/verl/trainer/ppo/v1/trainer_separate_async.py
++++ b/verl/trainer/ppo/v1/trainer_separate_async.py
+@@ -267,8 +267,10 @@
+ 
+     def _step_had_idle(self) -> bool:
+         """Whether waiting for sampleable prompts."""
++        # A shorter sample poll must not turn every short wait into an idle step,
++        # so the idle heuristic keeps a floor independent of the poll cadence.
+         poll_interval = getattr(self.replay_buffer, "poll_interval", 2.0)
+-        return self._step_sample_wait_seconds > poll_interval
++        return self._step_sample_wait_seconds > max(poll_interval, 0.5)
+ 
+     def _adapt_switch_threshold(self, had_idle: bool) -> None:
+         config = self.hybrid_rollout_config

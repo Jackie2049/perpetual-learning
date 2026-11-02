@@ -1,0 +1,130 @@
+{
+  "experiment": "verl V1 采样等待的 2.0s 轮询量子：poll_interval 不可配置 + 同栈 A/B（TM-008）",
+  "batch": "2026-11-02 M5 算力侧（TM-008 首轮）；承接 §13.44 的机制读数，对上游 main 3fdf2b54 的代码面核对",
+  "execution": {
+    "machine": "4090-1（8×RTX 4090 24GB）；2 卡 GPU 0,1（同 NUMA）；4 卡 GPU 0,1,4,5（2+2 放置）",
+    "stack": "verl 0.10.0.dev（verl-24f25b03 树，服务器 /home/zxw/venvs/rollout-g8-src/verl）+ vLLM 0.24.0 + torch 2.11.0+cu129",
+    "model_data": "Qwen2.5-1.5B-Instruct；gsm8k train_sub480 / test_sub120",
+    "load": "train_batch_size=32 prompts × rollout.n=4 = 128 samples/step；ppo_mini_batch_size=16；micro=1；max_prompt 512 / max_response 256；bf16；sdpa；optimizer_offload=True；update_weights_bucket=256MB；seed 42；15 步",
+    "env": "RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1；NCCL_P2P_DISABLE=1；NCCL_SHM_DISABLE=0；ROLLOUT_GPU_MEM_UTIL=0.20",
+    "windows_utc": {
+      "pbase": "13:03:33–13:12:03",
+      "p200": "13:12:14–13:20:38",
+      "p050": "13:20:49–13:29:02",
+      "p010": "13:29:13–13:37:21",
+      "p4base": "13:39:46–13:46:18",
+      "p4p010": "13:46:29–13:52:49"
+    },
+    "commands": [
+      "cp -a /home/zxw/venvs/rollout-g8-src/verl /tmp/m5-poll-ab/verl",
+      "python3 apply_poll_patch.py /tmp/m5-poll-ab/verl",
+      "MODE=pbase SRC=…/verl bash run-poll-ab.sh          # 原树，默认 2.0，GPU 0,1",
+      "MODE=p200  SRC=/tmp/m5-poll-ab/verl POLL=2.0 bash run-poll-ab.sh",
+      "MODE=p050  SRC=/tmp/m5-poll-ab/verl POLL=0.5 bash run-poll-ab.sh",
+      "MODE=p010  SRC=/tmp/m5-poll-ab/verl POLL=0.1 bash run-poll-ab.sh",
+      "MODE=p4base SRC=…/verl GPUS=0,1,4,5 bash run-poll-ab.sh",
+      "MODE=p4p010 SRC=/tmp/m5-poll-ab/verl POLL=0.1 GPUS=0,1,4,5 bash run-poll-ab.sh",
+      "python3 make-summary.py                              # 本地，读 raw/，写 summary.json"
+    ]
+  },
+  "upstream_code_identity": {
+    "repo": "verl-project/verl",
+    "main_commit": "3fdf2b548882a8aeccf0842c2150d9c9f1790a55",
+    "main_timestamp": "2026-11-02T11:38:17Z",
+    "replay_buffer_blob": "08e05ec488225b8b60a339e732f0b1d7edad88d8",
+    "finding": "_build_replay_buffer 不传 poll_interval；ppo_trainer.yaml 的 trainer.v1.sampler 无该键；docs/advance/v1_async_trainer.md 参数表未列；transfer_queue 0.1.9.dev0 无阻塞等待接口",
+    "server_tree_vs_main": "replay_buffer.py 的 poll 相关代码逐行相同（服务器树与 main 的差异只在 filter_groups_metric / max_off_policy_threshold=None 等无关处）"
+  },
+  "results": {
+    "two_gpu": {
+      "pbase": {
+        "gen_mean": 3.165,
+        "gen_sd": 1.052,
+        "gen_gt3s": 6,
+        "step_mean": 21.785,
+        "step_sd": 1.671
+      },
+      "p200": {
+        "gen_mean": 2.997,
+        "gen_sd": 1.039,
+        "gen_gt3s": 5,
+        "step_mean": 21.686,
+        "step_sd": 1.515
+      },
+      "p050": {
+        "gen_mean": 2.37,
+        "gen_sd": 0.257,
+        "gen_gt3s": 0,
+        "step_mean": 21.033,
+        "step_sd": 0.934,
+        "step_delta_vs_p200": -0.653
+      },
+      "p010": {
+        "gen_mean": 2.199,
+        "gen_sd": 0.234,
+        "gen_gt3s": 0,
+        "step_mean": 21.001,
+        "step_sd": 0.859,
+        "step_delta_vs_p200": -0.686,
+        "gen_delta_vs_p200": -0.798
+      }
+    },
+    "four_gpu_2plus2": {
+      "p4base": {
+        "gen_mean": 2.161,
+        "gen_sd": 0.009,
+        "step_mean": 14.216,
+        "step_sd": 0.147
+      },
+      "p4p010": {
+        "gen_mean": 1.763,
+        "gen_sd": 0.037,
+        "step_mean": 13.934,
+        "step_sd": 0.431,
+        "step_delta_vs_base": -0.282,
+        "gen_delta_vs_base": -0.398
+      }
+    },
+    "phase_residual_s": {
+      "2gpu": [
+        0.049,
+        0.049,
+        0.05,
+        0.05
+      ],
+      "4gpu": [
+        0.044,
+        0.04
+      ]
+    },
+    "numerical_noise": {
+      "note": "同 seed 下两次同行为运行（pbase vs p200）的逐步指标已有差异：rewards 均值 0.1161 vs 0.1146、max|Δ| 0.086；p200 vs p010 为 0.1146 vs 0.1120、max|Δ| 0.070。改 poll 的差异不超过同行为运行噪声。",
+      "caveat": "固定批配置下 32 prompts 在飞、目标 32，sample() 返回集合与等待时机无关；DAPO 过滤/refill 或 max_inflight_gen_batches>1 时采样时机可能改变可选组，未测。"
+    }
+  },
+  "patch": {
+    "files": [
+      "verl/trainer/config/ppo_trainer.yaml",
+      "verl/trainer/ppo/v1/trainer_base.py",
+      "verl/trainer/ppo/v1/trainer_separate_async.py"
+    ],
+    "default_unchanged": true,
+    "idle_threshold_floor_s": 0.5,
+    "note": "默认 2.0 不变，只新增可达性；调小是显式 opt-in。_step_had_idle 阈值与轮询间隔解耦，避免调小后把短等待判为 idle。"
+  },
+  "limitations": [
+    "单 seed、单模型、单任务、sync V1 trainer；未跑 ReplayBufferAsync 的实际行为",
+    "轮询开销只给了统计上界（p050 vs p010），未直接测 kv_list 耗时",
+    "数值一致性是“差异不超过同行为运行噪声”，不是逐位相同；生成侧跨运行非确定",
+    "未做任何上游写操作"
+  ],
+  "artifacts_sha256": {
+    "README.md": "34f297a3022c7d2588eba1b3c81aeede213b57f48273c62071dd3c1b1d21a486",
+    "apply_poll_patch.py": "fde79748267858d765d5c4ed4d2ffcc11d9eb08d8f6c90640527d66feda04a83",
+    "run-poll-ab.sh": "cdabdd56a6daf97d39bdfab4f2f9c18ddc6a610bc6c7b81ccd96444bd0714685",
+    "make-summary.py": "a0630d636e6550f55f2f587624fd13e11869f0cbd664f7cc9dc503e82da206c9",
+    "poll-interval-config.patch": "e0375489108e385f45c9ab0d2b4dcd960619431fd7708ed805729e036c6ca7bf",
+    "summary.json": "7c84f78eaf33e7cfcec1c4112028beb4d6fb75e1c30a07aa55b448ab7faf1369",
+    "md5sums.txt": "66392ce1b7f57b176ee1d2b8bc821bc046a009c8c08a01f78e78d8068c9d561d"
+  }
+}
