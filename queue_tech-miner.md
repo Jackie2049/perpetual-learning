@@ -92,7 +92,7 @@
 - **优先级 / 负责人 / 状态**：B 类候选（新框架扩池，2026-11-02 按「范围不限于已熟悉框架」选取）；M1 本地取证完成，**等待用户决定是否对外**。
 - **已有证据**：main `4e828c8` 静态取证 + 用**真实 `Tool` 类**的最小复现（非手写替身），Python 3.12.13，`exit 0`＝缺陷存在；负向对照（改用 `type(self).async_forward is not Tool.async_forward`）三项行为均转为正确。[取证材料](open-source/rllm/tool-use-async-autodetect.md)、[复现脚本](experiments/rllm-tool-use-async-probe/readme.md)。
 - **影响面边界（决定价值评估为 6 而非更高）**：`grep -rn "use_async=" rllm/` 的命中**全部在各文件 `__main__` 演示块**，生产路径不传该参数，故现有训练/评测不受影响；`tests/tools/test_tools.py:202` 用了 `use_async=True` 但只 `print` 不断言，缺陷因此长期无人发现。**不得描述成"训练结果有问题"**。
-- **下一步与等待条件**：对外前需用户决定两件事——① 是否提一条**独立小 issue**（附复现脚本，成本低、指向明确）；② 若提 PR，是否同时改签名默认为 `None`（对下游是行为变化，需在读 PR 人的角度说明）。**另需先补一步未做的核查：检索上游 issue/PR 是否已有人认领该缺陷**。对外动作全部未做。
+- **下一步与等待条件**：对外前需用户决定两件事——① 是否提一条**独立小 issue**（附复现脚本，成本低、指向明确）；② 若提 PR，是否同时改签名默认为 `None`（对下游是行为变化，需在读 PR 人的角度说明）。~~另需先补一步未做的核查：检索上游 issue/PR 是否已有人认领该缺陷~~ → **已完成（2026-11-02，独立复核）**：`repo:rllm-org/rllm async_forward` **0 命中**、`use_async` 仅 1 条无关 PR（#460 Daytona），**上游无人认领**。复核同时补了第三点危害：基类 `async_forward` 体内是 `return self.forward(...)`，故**只实现同步的工具被误判为异步时不报错，而是静默返回 coroutine**（未 await 仅 RuntimeWarning）——比原记录的"分支不可达"更实际。见 [独立复核](open-source/rllm/tm-009-independent-review.md)。对外动作全部未做。
 - **停止条件**：上游修复 `has_async` 判定（复现脚本会以非零退出提示结论失效）、配置删除，或用户否决对外动作。
 - **成果入口**：[取证](open-source/rllm/tool-use-async-autodetect.md)、[复现](experiments/rllm-tool-use-async-probe/readme.md)、[pyflag 扫描](tools/pyflag/scan-rllm-4e828c8.json)。
 
