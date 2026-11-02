@@ -1,0 +1,19 @@
+{
+ "run": "2026-11-02 M1 — rollout bubble attribution identifiability (§21.10)",
+ "python": "3.9.6 (system)",
+ "deps": "standard library only",
+ "note": "In-process synthetic busy/idle traces; no GPU, no engine, no real monitoring data. Tick units only.",
+ "sha256": {
+  "bubble_attribution.py": "706b1bc5a7c3e78fe442d6a55f52475a78e414e9ca444adb23156ddbb1816f10",
+  "test_bubble_attribution.py": "3277cdf6534c1b106745350bc38f2f856ee8080dcb0660afd2b8a610fe5f23d0",
+  "summary.json": "202538a2e1b385ff3368e299cf6384fd3e3f0821f1efdeef3e87123aa3139f49",
+  "readme.md": "7e811730b9666d4f3f0e28f9dfe4e910e30751b116e3a14f14dcb6bae5ee120c"
+ },
+ "commands": [
+  "python3 bubble_attribution.py",
+  "python3 bubble_attribution.py --verify",
+  "python3 -m unittest test_bubble_attribution -v"
+ ],
+ "verify_twice_passed": true,
+ "tests": 12
+}

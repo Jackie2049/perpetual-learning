@@ -1,0 +1,710 @@
+{
+ "additivity": {
+  "disjoint_windows": {
+   "ratio": {
+    "max": 1.0,
+    "mean": 1.0,
+    "min": 1.0,
+    "n": 30,
+    "std": 0.0
+   },
+   "share_B3": {
+    "max": 0.035,
+    "mean": 0.035,
+    "min": 0.035,
+    "n": 30,
+    "std": 0.0
+   },
+   "share_B5": {
+    "max": 0.0375,
+    "mean": 0.0375,
+    "min": 0.0375,
+    "n": 30,
+    "std": 0.0
+   },
+   "share_mixed": {
+    "max": 0.0725,
+    "mean": 0.0725,
+    "min": 0.0725,
+    "n": 30,
+    "std": 0.0
+   },
+   "share_sum": {
+    "max": 0.0725,
+    "mean": 0.0725,
+    "min": 0.0725,
+    "n": 30,
+    "std": 0.0
+   }
+  },
+  "note": "不重叠时可加（ratio≈1）；重叠时并集只计一次（delta≈0）。§3.5 边界 2 讲的是跨层量纲不同不能相加，与此处不冲突",
+  "overlapping_idle": {
+   "delta": {
+    "max": 0.0,
+    "mean": 0.0,
+    "min": 0.0,
+    "n": 30,
+    "std": 0.0
+   },
+   "share_base": {
+    "max": 0.035,
+    "mean": 0.035,
+    "min": 0.035,
+    "n": 30,
+    "std": 0.0
+   },
+   "share_with_overlap": {
+    "max": 0.035,
+    "mean": 0.035,
+    "min": 0.035,
+    "n": 30,
+    "std": 0.0
+   }
+  }
+ },
+ "config": {
+  "replicas": 4,
+  "seeds": 30,
+  "ticks": 400
+ },
+ "confounders": {
+  "B3_frag0.00": {
+   "bubble_share": {
+    "max": 0.075,
+    "mean": 0.075,
+    "min": 0.075,
+    "n": 30,
+    "std": 0.0
+   },
+   "concentration": {
+    "max": 0.0,
+    "mean": 0.0,
+    "min": 0.0,
+    "n": 30,
+    "std": 0.0
+   },
+   "free_ticks": {
+    "max": 30,
+    "mean": 30.0,
+    "min": 30,
+    "n": 30,
+    "std": 0.0
+   },
+   "simultaneity": {
+    "max": 1.0,
+    "mean": 1.0,
+    "min": 1.0,
+    "n": 30,
+    "std": 0.0
+   }
+  },
+  "B3_frag0.02": {
+   "bubble_share": {
+    "max": 0.105625,
+    "mean": 0.094020833,
+    "min": 0.089375,
+    "n": 30,
+    "std": 0.003507548
+   },
+   "concentration": {
+    "max": 0.003378222,
+    "mean": 0.001219739,
+    "min": 5.9259e-05,
+    "n": 30,
+    "std": 0.000849124
+   },
+   "free_ticks": {
+    "max": 75,
+    "mean": 59.333333333,
+    "min": 51,
+    "n": 30,
+    "std": 5.319666397
+   },
+   "simultaneity": {
+    "max": 0.588235294,
+    "mean": 0.509340994,
+    "min": 0.4,
+    "n": 30,
+    "std": 0.043267009
+   }
+  },
+  "B3_frag0.05": {
+   "bubble_share": {
+    "max": 0.131875,
+    "mean": 0.120958333,
+    "min": 0.110625,
+    "n": 30,
+    "std": 0.005233588
+   },
+   "concentration": {
+    "max": 0.007269977,
+    "mean": 0.002282345,
+    "min": 0.000100509,
+    "n": 30,
+    "std": 0.001806389
+   },
+   "free_ticks": {
+    "max": 114,
+    "mean": 98.266666667,
+    "min": 85,
+    "n": 30,
+    "std": 7.450680753
+   },
+   "simultaneity": {
+    "max": 0.352941176,
+    "mean": 0.306967545,
+    "min": 0.263157895,
+    "n": 30,
+    "std": 0.022958291
+   }
+  },
+  "B3_frag0.10": {
+   "bubble_share": {
+    "max": 0.181875,
+    "mean": 0.167604167,
+    "min": 0.155625,
+    "n": 30,
+    "std": 0.007242496
+   },
+   "concentration": {
+    "max": 0.006272189,
+    "mean": 0.002058407,
+    "min": 4.6436e-05,
+    "n": 30,
+    "std": 0.001700638
+   },
+   "free_ticks": {
+    "max": 179,
+    "mean": 157.066666667,
+    "min": 143,
+    "n": 30,
+    "std": 7.816575374
+   },
+   "simultaneity": {
+    "max": 0.20979021,
+    "mean": 0.191446345,
+    "min": 0.167597765,
+    "n": 30,
+    "std": 0.009265834
+   }
+  },
+  "B3_free0.01": {
+   "bubble_share": {
+    "max": 0.005,
+    "mean": 0.005,
+    "min": 0.005,
+    "n": 30,
+    "std": 0.0
+   },
+   "free_ticks": {
+    "max": 2,
+    "mean": 2.0,
+    "min": 2,
+    "n": 30,
+    "std": 0.0
+   },
+   "longest_run": {
+    "max": 1,
+    "mean": 1.0,
+    "min": 1,
+    "n": 30,
+    "std": 0.0
+   },
+   "recovered_share_minus_true": -0.005,
+   "simultaneity": {
+    "max": 1.0,
+    "mean": 1.0,
+    "min": 1.0,
+    "n": 30,
+    "std": 0.0
+   }
+  },
+  "B3_free0.05": {
+   "bubble_share": {
+    "max": 0.01,
+    "mean": 0.01,
+    "min": 0.01,
+    "n": 30,
+    "std": 0.0
+   },
+   "free_ticks": {
+    "max": 4,
+    "mean": 4.0,
+    "min": 4,
+    "n": 30,
+    "std": 0.0
+   },
+   "longest_run": {
+    "max": 2,
+    "mean": 2.0,
+    "min": 2,
+    "n": 30,
+    "std": 0.0
+   },
+   "recovered_share_minus_true": -0.04,
+   "simultaneity": {
+    "max": 1.0,
+    "mean": 1.0,
+    "min": 1.0,
+    "n": 30,
+    "std": 0.0
+   }
+  },
+  "B3_free0.20": {
+   "bubble_share": {
+    "max": 0.05,
+    "mean": 0.05,
+    "min": 0.05,
+    "n": 30,
+    "std": 0.0
+   },
+   "free_ticks": {
+    "max": 20,
+    "mean": 20.0,
+    "min": 20,
+    "n": 30,
+    "std": 0.0
+   },
+   "longest_run": {
+    "max": 10,
+    "mean": 10.0,
+    "min": 10,
+    "n": 30,
+    "std": 0.0
+   },
+   "recovered_share_minus_true": -0.15,
+   "simultaneity": {
+    "max": 1.0,
+    "mean": 1.0,
+    "min": 1.0,
+    "n": 30,
+    "std": 0.0
+   }
+  },
+  "B3_free0.50": {
+   "bubble_share": {
+    "max": 0.125,
+    "mean": 0.12125,
+    "min": 0.085,
+    "n": 30,
+    "std": 0.009325299
+   },
+   "free_ticks": {
+    "max": 50,
+    "mean": 48.5,
+    "min": 34,
+    "n": 30,
+    "std": 3.730119717
+   },
+   "longest_run": {
+    "max": 44,
+    "mean": 27.666666667,
+    "min": 25,
+    "n": 30,
+    "std": 6.249597688
+   },
+   "recovered_share_minus_true": -0.37875,
+   "simultaneity": {
+    "max": 1.0,
+    "mean": 1.0,
+    "min": 1.0,
+    "n": 30,
+    "std": 0.0
+   }
+  },
+  "mixed_B3_B4": {
+   "bubble_share": {
+    "max": 0.084375,
+    "mean": 0.083958333,
+    "min": 0.075,
+    "n": 30,
+    "std": 0.001785458
+   },
+   "concentration": {
+    "max": 0.012345679,
+    "mean": 0.011719872,
+    "min": 0.0,
+    "n": 30,
+    "std": 0.002505116
+   },
+   "free_ticks": {
+    "max": 45,
+    "mean": 44.333333333,
+    "min": 30,
+    "n": 30,
+    "std": 2.856732319
+   },
+   "simultaneity": {
+    "max": 1.0,
+    "mean": 0.680555556,
+    "min": 0.666666667,
+    "n": 30,
+    "std": 0.062219999
+   }
+  },
+  "mixed_minus_pure_sim": -0.319444444
+ },
+ "rule_accuracy": {
+  "B2": {
+   "hits": {
+    "conc_high": 0,
+    "neither": 0,
+    "sim_high": 30
+   },
+   "n": 30,
+   "share_conc_high": 0.0,
+   "share_sim_high": 1.0
+  },
+  "B3": {
+   "hits": {
+    "conc_high": 0,
+    "neither": 0,
+    "sim_high": 30
+   },
+   "n": 30,
+   "share_conc_high": 0.0,
+   "share_sim_high": 1.0
+  },
+  "B4": {
+   "hits": {
+    "conc_high": 30,
+    "neither": 0,
+    "sim_high": 0
+   },
+   "n": 30,
+   "share_conc_high": 1.0,
+   "share_sim_high": 0.0
+  },
+  "B5": {
+   "hits": {
+    "conc_high": 0,
+    "neither": 30,
+    "sim_high": 0
+   },
+   "n": 30,
+   "share_conc_high": 0.0,
+   "share_sim_high": 0.0
+  },
+  "mixed_B3_B4": {
+   "hits": {
+    "conc_high": 0,
+    "neither": 0,
+    "sim_high": 30
+   },
+   "n": 30,
+   "share_conc_high": 0.0,
+   "share_sim_high": 1.0
+  }
+ },
+ "shape_space": {
+  "B2": {
+   "bubble_share": {
+    "max": 0.075,
+    "mean": 0.072333333,
+    "min": 0.065,
+    "n": 30,
+    "std": 0.002780267
+   },
+   "concentration": {
+    "max": 0.0,
+    "mean": 0.0,
+    "min": 0.0,
+    "n": 30,
+    "std": 0.0
+   },
+   "free_ticks": {
+    "max": 30,
+    "mean": 28.933333333,
+    "min": 26,
+    "n": 30,
+    "std": 1.112106834
+   },
+   "longest_run": {
+    "max": 5,
+    "mean": 2.966666667,
+    "min": 2,
+    "n": 30,
+    "std": 0.9278575
+   },
+   "simultaneity": {
+    "max": 1.0,
+    "mean": 1.0,
+    "min": 1.0,
+    "n": 30,
+    "std": 0.0
+   }
+  },
+  "B3": {
+   "bubble_share": {
+    "max": 0.075,
+    "mean": 0.075,
+    "min": 0.075,
+    "n": 30,
+    "std": 0.0
+   },
+   "concentration": {
+    "max": 0.0,
+    "mean": 0.0,
+    "min": 0.0,
+    "n": 30,
+    "std": 0.0
+   },
+   "free_ticks": {
+    "max": 30,
+    "mean": 30.0,
+    "min": 30,
+    "n": 30,
+    "std": 0.0
+   },
+   "longest_run": {
+    "max": 15,
+    "mean": 15.0,
+    "min": 15,
+    "n": 30,
+    "std": 0.0
+   },
+   "simultaneity": {
+    "max": 1.0,
+    "mean": 1.0,
+    "min": 1.0,
+    "n": 30,
+    "std": 0.0
+   }
+  },
+  "B4": {
+   "bubble_share": {
+    "max": 0.075,
+    "mean": 0.075,
+    "min": 0.075,
+    "n": 30,
+    "std": 0.0
+   },
+   "concentration": {
+    "max": 1.0,
+    "mean": 1.0,
+    "min": 1.0,
+    "n": 30,
+    "std": 0.0
+   },
+   "free_ticks": {
+    "max": 120,
+    "mean": 120.0,
+    "min": 120,
+    "n": 30,
+    "std": 0.0
+   },
+   "longest_run": {
+    "max": 120,
+    "mean": 120.0,
+    "min": 120,
+    "n": 30,
+    "std": 0.0
+   },
+   "simultaneity": {
+    "max": 0.0,
+    "mean": 0.0,
+    "min": 0.0,
+    "n": 30,
+    "std": 0.0
+   }
+  },
+  "B5": {
+   "bubble_share": {
+    "max": 0.075,
+    "mean": 0.075,
+    "min": 0.075,
+    "n": 30,
+    "std": 0.0
+   },
+   "concentration": {
+    "max": 0.0,
+    "mean": 0.0,
+    "min": 0.0,
+    "n": 30,
+    "std": 0.0
+   },
+   "free_ticks": {
+    "max": 120,
+    "mean": 120.0,
+    "min": 120,
+    "n": 30,
+    "std": 0.0
+   },
+   "longest_run": {
+    "max": 30,
+    "mean": 30.0,
+    "min": 30,
+    "n": 30,
+    "std": 0.0
+   },
+   "simultaneity": {
+    "max": 0.0,
+    "mean": 0.0,
+    "min": 0.0,
+    "n": 30,
+    "std": 0.0
+   }
+  },
+  "busy": {
+   "bubble_share": {
+    "max": 0.0,
+    "mean": 0.0,
+    "min": 0.0,
+    "n": 30,
+    "std": 0.0
+   },
+   "concentration": {
+    "max": NaN,
+    "mean": NaN,
+    "min": NaN,
+    "n": 0,
+    "std": NaN
+   },
+   "free_ticks": {
+    "max": 0,
+    "mean": 0.0,
+    "min": 0,
+    "n": 30,
+    "std": 0.0
+   },
+   "longest_run": {
+    "max": 0,
+    "mean": 0.0,
+    "min": 0,
+    "n": 30,
+    "std": 0.0
+   },
+   "simultaneity": {
+    "max": NaN,
+    "mean": NaN,
+    "min": NaN,
+    "n": 0,
+    "std": NaN
+   }
+  },
+  "mixed_B3_B4": {
+   "bubble_share": {
+    "max": 0.084375,
+    "mean": 0.083958333,
+    "min": 0.075,
+    "n": 30,
+    "std": 0.001785458
+   },
+   "concentration": {
+    "max": 0.012345679,
+    "mean": 0.011719872,
+    "min": 0.0,
+    "n": 30,
+    "std": 0.002505116
+   },
+   "free_ticks": {
+    "max": 45,
+    "mean": 44.333333333,
+    "min": 30,
+    "n": 30,
+    "std": 2.856732319
+   },
+   "longest_run": {
+    "max": 15,
+    "mean": 15.0,
+    "min": 15,
+    "n": 30,
+    "std": 0.0
+   },
+   "simultaneity": {
+    "max": 1.0,
+    "mean": 0.680555556,
+    "min": 0.666666667,
+    "n": 30,
+    "std": 0.062219999
+   }
+  }
+ },
+ "tick_granularity": {
+  "events": {
+   "B2_window_s": 2,
+   "B3_window_s": 8,
+   "n_windows": 12
+  },
+  "tick10_s": {
+   "B2": {
+    "bubble_share": 0.93,
+    "longest_run": 3,
+    "simultaneity": 1.0,
+    "win_ticks": 1
+   },
+   "B3": {
+    "bubble_share": 0.93,
+    "longest_run": 3,
+    "simultaneity": 1.0,
+    "win_ticks": 1
+   },
+   "order_B3_gt_B2": false,
+   "tie": true
+  },
+  "tick1_s": {
+   "B2": {
+    "bubble_share": 0.06,
+    "longest_run": 2,
+    "simultaneity": 1.0,
+    "win_ticks": 2
+   },
+   "B3": {
+    "bubble_share": 0.23,
+    "longest_run": 16,
+    "simultaneity": 1.0,
+    "win_ticks": 8
+   },
+   "order_B3_gt_B2": true,
+   "tie": false
+  },
+  "tick20_s": {
+   "B2": {
+    "bubble_share": 0.975,
+    "longest_run": 3,
+    "simultaneity": 1.0,
+    "win_ticks": 1
+   },
+   "B3": {
+    "bubble_share": 0.975,
+    "longest_run": 3,
+    "simultaneity": 1.0,
+    "win_ticks": 1
+   },
+   "order_B3_gt_B2": false,
+   "tie": true
+  },
+  "tick2_s": {
+   "B2": {
+    "bubble_share": 0.53,
+    "longest_run": 1,
+    "simultaneity": 1.0,
+    "win_ticks": 1
+   },
+   "B3": {
+    "bubble_share": 0.615,
+    "longest_run": 8,
+    "simultaneity": 1.0,
+    "win_ticks": 4
+   },
+   "order_B3_gt_B2": true,
+   "tie": false
+  },
+  "tick5_s": {
+   "B2": {
+    "bubble_share": 0.83,
+    "longest_run": 2,
+    "simultaneity": 1.0,
+    "win_ticks": 1
+   },
+   "B3": {
+    "bubble_share": 0.8575,
+    "longest_run": 6,
+    "simultaneity": 1.0,
+    "win_ticks": 2
+   },
+   "order_B3_gt_B2": true,
+   "tie": false
+  }
+ }
+}
