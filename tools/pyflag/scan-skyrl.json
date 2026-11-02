@@ -1,0 +1,935 @@
+{
+ "flags": [
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "pprint_registry",
+     "file": "skyrl-gym/skyrl_gym/envs/registration.py",
+     "func": "pprint_registry",
+     "line": 320,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "pprint",
+     "file": "skyrl-gym/skyrl_gym/envs/registration.py",
+     "func": "pprint",
+     "line": 113,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "pprint_registry",
+     "file": "skyrl-gym/skyrl_gym/envs/registration.py",
+     "func": "pprint_registry",
+     "line": 320,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "pprint",
+     "file": "skyrl-gym/skyrl_gym/envs/registration.py",
+     "func": "pprint",
+     "line": 113,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "disable_print",
+   "mode": "never",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 8,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "disable_tqdm",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 50,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_dp",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 10,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_linting",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 8,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_lora",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 39,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "init_configs",
+     "file": "skyrl/backends/skyrl_train/workers/megatron/megatron_worker.py",
+     "func": "init_configs",
+     "line": 240,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "init_configs",
+     "file": "skyrl/backends/skyrl_train/workers/megatron/megatron_worker.py",
+     "func": "init_configs",
+     "line": 240,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "enable_mtp",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "skyrl/backends/skyrl_train/workers/megatron/megatron_worker.py",
+     "how": "keyword",
+     "line": 1038
+    },
+    {
+     "file": "skyrl/backends/skyrl_train/workers/megatron/megatron_worker.py",
+     "how": "keyword",
+     "line": 2142
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 6,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "VLLMServerActor",
+     "file": "skyrl/backends/skyrl_train/inference_servers/vllm_server_actor.py",
+     "func": "__init__",
+     "line": 184,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "set_external_servers",
+     "file": "skyrl/train/utils/vllm_metrics_scraper.py",
+     "func": "set_external_servers",
+     "line": 263,
+     "param_default": "unspecified"
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "VLLMServerActor",
+     "file": "skyrl/backends/skyrl_train/inference_servers/vllm_server_actor.py",
+     "func": "__init__",
+     "line": 184,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "set_external_servers",
+     "file": "skyrl/train/utils/vllm_metrics_scraper.py",
+     "func": "set_external_servers",
+     "line": 263,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "False",
+    "unspecified"
+   ],
+   "flag": "enable_pd",
+   "mode": "mixed",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 64,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_prefix_caching",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 17,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_build_and_serve_vllm_server",
+     "file": "skyrl/backends/skyrl_train/inference_servers/vllm_server_actor.py",
+     "func": "_build_and_serve_vllm_server",
+     "line": 754,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_build_and_serve_vllm_server",
+     "file": "skyrl/backends/skyrl_train/inference_servers/vllm_server_actor.py",
+     "func": "_build_and_serve_vllm_server",
+     "line": 754,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "enable_ray_prometheus_stats",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "skyrl/backends/skyrl_train/inference_servers/vllm_server_actor.py",
+     "how": "keyword",
+     "line": 896
+    },
+    {
+     "file": "skyrl/backends/skyrl_train/inference_servers/vllm_server_actor.py",
+     "how": "keyword",
+     "line": 489
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 21,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_return_routed_experts",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 59,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_return_sample_support_set",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 61,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward",
+     "file": "skyrl/backends/skyrl_train/workers/model_wrapper.py",
+     "func": "forward",
+     "line": 316,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward",
+     "file": "skyrl/backends/skyrl_train/workers/model_wrapper.py",
+     "func": "forward",
+     "line": 316,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "enable_sample_support_replay",
+   "mode": "never",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 46,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_score_centering",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 24,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_acting_token_decay",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 5,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_bias",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 38,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "Qwen4ExpGatedResidual",
+     "file": "skyrl/backends/skyrl_train/patches/megatron/qwen4_exp/modules.py",
+     "func": "__init__",
+     "line": 83,
+     "param_default": true
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "Qwen4ExpGatedResidual",
+     "file": "skyrl/backends/skyrl_train/patches/megatron/qwen4_exp/modules.py",
+     "func": "__init__",
+     "line": 83,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_combine",
+   "mode": "always",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 9,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_conversation_multi_turn",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 69,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_decoupled_grad",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 3,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "process_bird",
+     "file": "integrations/arctic_rl/envs/preprocess_bird.py",
+     "func": "process_bird",
+     "line": 315,
+     "param_default": true
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "process_bird",
+     "file": "integrations/arctic_rl/envs/preprocess_bird.py",
+     "func": "process_bird",
+     "line": 315,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_descriptions",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "integrations/arctic_rl/envs/preprocess_bird.py",
+     "how": "keyword",
+     "line": 729
+    },
+    {
+     "file": "integrations/arctic_rl/envs/preprocess_bird.py",
+     "how": "keyword",
+     "line": 674
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 4,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "build_engine_runtime_env",
+     "file": "skyrl/backends/skyrl_train/inference_servers/engine_utils.py",
+     "func": "build_engine_runtime_env",
+     "line": 25,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "build_engine_runtime_env",
+     "file": "skyrl/backends/skyrl_train/inference_servers/engine_utils.py",
+     "func": "build_engine_runtime_env",
+     "line": 25,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_expandable_segments",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "skyrl/backends/skyrl_train/inference_servers/server_group.py",
+     "how": "keyword",
+     "line": 151
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 16,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "get_llm_for_sequence_regression",
+     "file": "skyrl/backends/skyrl_train/workers/model_wrapper.py",
+     "func": "get_llm_for_sequence_regression",
+     "line": 634,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "HFModelWrapper",
+     "file": "skyrl/backends/skyrl_train/workers/model_wrapper.py",
+     "func": "__init__",
+     "line": 131,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "get_llm_for_sequence_regression",
+     "file": "skyrl/backends/skyrl_train/workers/model_wrapper.py",
+     "func": "get_llm_for_sequence_regression",
+     "line": 634,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "HFModelWrapper",
+     "file": "skyrl/backends/skyrl_train/workers/model_wrapper.py",
+     "func": "__init__",
+     "line": 131,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_flash_attention_2",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "skyrl/backends/skyrl_train/workers/fsdp/fsdp_worker.py",
+     "how": "keyword",
+     "line": 70
+    },
+    {
+     "file": "skyrl/backends/skyrl_train/workers/fsdp/fsdp_worker.py",
+     "how": "keyword",
+     "line": 279
+    },
+    {
+     "file": "skyrl/backends/skyrl_train/workers/fsdp/fsdp_worker.py",
+     "how": "keyword",
+     "line": 346
+    }
+   ],
+   "producers_total": 3,
+   "reads_nontest": 16,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_fp16",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 9,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_fused_kernels",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 3,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "HFModelWrapper",
+     "file": "skyrl/backends/skyrl_train/workers/model_wrapper.py",
+     "func": "__init__",
+     "line": 131,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "HFModelWrapper",
+     "file": "skyrl/backends/skyrl_train/workers/model_wrapper.py",
+     "func": "__init__",
+     "line": 131,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_liger_kernel",
+   "mode": "never",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 3,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "should_use_meta_init",
+     "file": "skyrl/backends/skyrl_train/distributed/fsdp_utils.py",
+     "func": "should_use_meta_init",
+     "line": 57,
+     "param_default": true
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "should_use_meta_init",
+     "file": "skyrl/backends/skyrl_train/distributed/fsdp_utils.py",
+     "func": "should_use_meta_init",
+     "line": 57,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_meta_tensor",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "skyrl/backends/skyrl_train/workers/fsdp/fsdp_worker.py",
+     "how": "keyword",
+     "line": 66
+    },
+    {
+     "file": "skyrl/backends/skyrl_train/workers/fsdp/fsdp_worker.py",
+     "how": "keyword",
+     "line": 275
+    },
+    {
+     "file": "skyrl/backends/skyrl_train/workers/fsdp/fsdp_worker.py",
+     "how": "keyword",
+     "line": 342
+    }
+   ],
+   "producers_total": 3,
+   "reads_nontest": 5,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_mup",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 10,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "apply_monkey_patch",
+     "file": "skyrl/backends/skyrl_train/distributed/ulysses/monkey_patch.py",
+     "func": "apply_monkey_patch",
+     "line": 127,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "apply_monkey_patch",
+     "file": "skyrl/backends/skyrl_train/distributed/ulysses/monkey_patch.py",
+     "func": "apply_monkey_patch",
+     "line": 127,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_parent_class",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "skyrl/backends/skyrl_train/workers/worker.py",
+     "how": "keyword",
+     "line": 168
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 6,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_raw_content",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 21,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_kpool_topk_in_query_chunks",
+     "file": "skyrl/backends/skyrl_train/patches/megatron/mcore_ext/dsa_kpool.py",
+     "func": "_kpool_topk_in_query_chunks",
+     "line": 172,
+     "param_default": "unspecified"
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_kpool_topk_in_query_chunks",
+     "file": "skyrl/backends/skyrl_train/patches/megatron/mcore_ext/dsa_kpool.py",
+     "func": "_kpool_topk_in_query_chunks",
+     "line": 172,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "unspecified"
+   ],
+   "flag": "use_relu",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "skyrl/backends/skyrl_train/patches/megatron/mcore_ext/dsa_kpool.py",
+     "how": "positional",
+     "line": 304
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 16,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "apply_monkey_patch",
+     "file": "skyrl/backends/skyrl_train/distributed/ulysses/monkey_patch.py",
+     "func": "apply_monkey_patch",
+     "line": 127,
+     "param_default": true
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "apply_monkey_patch",
+     "file": "skyrl/backends/skyrl_train/distributed/ulysses/monkey_patch.py",
+     "func": "apply_monkey_patch",
+     "line": 127,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_remove_padding",
+   "mode": "always",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 2,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "timeout_limit",
+     "file": "skyrl-agent/skyrl_agent/tasks/verifiers/py_functional.py",
+     "func": "timeout_limit",
+     "line": 51,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "decorator",
+     "file": "skyrl-agent/skyrl_agent/tasks/verifiers/py_functional.py",
+     "func": "decorator",
+     "line": 70,
+     "param_default": "unspecified"
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "timeout_limit",
+     "file": "skyrl-agent/skyrl_agent/tasks/verifiers/py_functional.py",
+     "func": "timeout_limit",
+     "line": 51,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "decorator",
+     "file": "skyrl-agent/skyrl_agent/tasks/verifiers/py_functional.py",
+     "func": "decorator",
+     "line": 70,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "False",
+    "unspecified"
+   ],
+   "flag": "use_signals",
+   "mode": "mixed",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 5,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "HFModelWrapper",
+     "file": "skyrl/backends/skyrl_train/workers/model_wrapper.py",
+     "func": "__init__",
+     "line": 131,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "HFModelWrapper",
+     "file": "skyrl/backends/skyrl_train/workers/model_wrapper.py",
+     "func": "__init__",
+     "line": 131,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_torch_compile",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "skyrl/backends/skyrl_train/workers/fsdp/fsdp_worker.py",
+     "how": "keyword",
+     "line": 70
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 6,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "with_attention",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 6,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "with_bias",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 14,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_sample_support_from_flat_logprobs",
+     "file": "skyrl/backends/skyrl_train/inference_servers/vllm_server_actor.py",
+     "func": "_sample_support_from_flat_logprobs",
+     "line": 97,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_sample_support_from_flat_logprobs",
+     "file": "skyrl/backends/skyrl_train/inference_servers/vllm_server_actor.py",
+     "func": "_sample_support_from_flat_logprobs",
+     "line": 97,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "with_member_logprobs",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "skyrl/backends/skyrl_train/inference_servers/vllm_server_actor.py",
+     "how": "keyword",
+     "line": 673
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 6,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "with_nvrtc",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 3,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "with_padding",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 13,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "with_process_fn",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 4,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "with_shared_experts",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 2,
+   "silently_inert": false
+  }
+ ],
+ "root": "NovaSky-AI-SkyRL"
+}

@@ -59,6 +59,23 @@
 - **停止条件**：用户否决对外动作，或上游补上接线／删除该选项（脚本会返回 1 提示结论失效）。
 - **成果入口**：[取证材料](open-source/verl/evidence/prefix-grouper-inert/readme.md)、[影响量化](experiments/verl-prefix-grouper-side-effects/readme.md)、[tracker](open-source/verl/tracker.md)。
 
+## TM-006 — verl `tiled_mlp` 配置无消费路径（B 类：主动发掘）
+
+- **问题与价值**：`actor_rollout_ref.model.tiled_mlp` 有正式配置项与官方文档，但 `verl/workers/engine/` 下 **10 个引擎目录全部 grep 为 0**，生产调用点从不传 `use_tiled_mlp` ⇒ 配置完全无效且无提示。比 TM-005 更干净（无副作用）。
+- **优先级 / 负责人 / 状态**：B 类候选，M1 取证完成，**等待用户决定是否对外**。
+- **已有证据**：[取证材料](open-source/verl/evidence/tiled-mlp-unwired/readme.md)；[pyflag 扫描](tools/pyflag/scan-verl-6879e1ab07.json)（`mode=never`）。
+- **下一步与等待条件**：这条不涉及路线分歧（不像 prefix_grouper 那样有 MAGI 替代），"补 3 行接线"或"配置校验期拒绝"都不需要架构决策。**对外仍需用户逐项授权**。
+- **停止条件**：用户否决，或上游接上／删除该配置。
+- **成果入口**：[取证](open-source/verl/evidence/tiled-mlp-unwired/readme.md)、[工具](tools/pyflag/readme.md)。
+
+## TM-007 — 跨框架布尔开关静默失效扫描（B 类：方法沉淀）
+
+- **问题与价值**：TM-005/006 是同一类模式的两个实例。已把方法沉淀为 [tools/pyflag](tools/pyflag/readme.md)，在三个框架上跑过：verl 37 个开关／8 个失效（2 个已人工确认为真）、SkyRL 39／7（`use_liger_kernel`、`use_remove_padding` 确认为真）、OpenRLHF 5／0。
+- **优先级 / 负责人 / 状态**：方法已留在 `tools/`（复用价值明确）；**SkyRL 的两条尚未做完整取证**，作为后续候选。
+- **下一步与等待条件**：SkyRL 两条若要对外，需补齐取证材料与影响面；`use_remove_padding` 是 `mode=always`（默认 True 且无人传），属"关不掉"而非"开不了"，结论表述要区分。
+- **停止条件**：无新框架待扫时暂停；不为凑数反复扫同一批仓库。
+- **成果入口**：[工具说明](tools/pyflag/readme.md)、[扫描报告](tools/pyflag/)。
+
 ## 已闭环与保留方向
 
 - **TM-004 — AReaL prompt_mean：终止修复候选。** M5 单一负责人；2026-10-20 实测跨 M 与 token_mean 一致，不构成 defect，修复撤销，不提 issue/PR。M1 不继续修改脚本或演化并行方案，用户明确的只读 review 除外。证据及分工：[handoff](open-source/areal/handoff-m5.md)、[tracker](open-source/areal/tracker.md)。AReaL 的长期学习偏好仍保留，新的问题应独立登记。

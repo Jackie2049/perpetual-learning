@@ -1,0 +1,1275 @@
+{
+ "flags": [
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "receive_tensor",
+     "file": "verl/checkpoint_engine/kimi_checkpoint_engine.py",
+     "func": "receive_tensor",
+     "line": 66,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "receive_tensor",
+     "file": "verl/checkpoint_engine/kimi_checkpoint_engine.py",
+     "func": "receive_tensor",
+     "line": 66,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "disable_h2d_buffer",
+   "mode": "never",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 4,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "enable_activation_offloading",
+     "file": "verl/utils/activation_offload.py",
+     "func": "enable_activation_offloading",
+     "line": 500,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "ActivationHandler",
+     "file": "verl/utils/activation_offload.py",
+     "func": "__init__",
+     "line": 417,
+     "param_default": "unspecified"
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "enable_activation_offloading",
+     "file": "verl/utils/activation_offload.py",
+     "func": "enable_activation_offloading",
+     "line": 500,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "ActivationHandler",
+     "file": "verl/utils/activation_offload.py",
+     "func": "__init__",
+     "line": 417,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "False",
+    "unspecified"
+   ],
+   "flag": "enable_ckpt",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "verl/workers/engine/fsdp/transformer_impl.py",
+     "how": "positional",
+     "line": 483
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 9,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_fp32_compute",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 2,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_hybrid_replicas",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 20,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_resource_pool",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 33,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_switch",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 32,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_process_single_message",
+     "file": "verl/utils/dataset/multiturn_sft_dataset.py",
+     "func": "_process_single_message",
+     "line": 187,
+     "param_default": null
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "sanity_check",
+     "file": "verl/utils/dataset/multiturn_sft_dataset.py",
+     "func": "sanity_check",
+     "line": 425,
+     "param_default": "unspecified"
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_process_single_message",
+     "file": "verl/utils/dataset/multiturn_sft_dataset.py",
+     "func": "_process_single_message",
+     "line": 187,
+     "param_default": null
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "sanity_check",
+     "file": "verl/utils/dataset/multiturn_sft_dataset.py",
+     "func": "sanity_check",
+     "line": 425,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "None",
+    "unspecified"
+   ],
+   "flag": "enable_thinking",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "verl/utils/dataset/multiturn_sft_dataset.py",
+     "how": "keyword",
+     "line": 304
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 35,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "install_nvfp4_cutlass_compressed_tensors_patch",
+     "file": "verl/utils/vllm/vllm_fp4_utils.py",
+     "func": "install_nvfp4_cutlass_compressed_tensors_patch",
+     "line": 370,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "__init__",
+     "file": "verl/utils/vllm/vllm_fp4_utils.py",
+     "func": "__init__",
+     "line": 381,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "install_nvfp4_cutlass_compressed_tensors_patch",
+     "file": "verl/utils/vllm/vllm_fp4_utils.py",
+     "func": "install_nvfp4_cutlass_compressed_tensors_patch",
+     "line": 370,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "__init__",
+     "file": "verl/utils/vllm/vllm_fp4_utils.py",
+     "func": "__init__",
+     "line": 381,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False",
+    "unspecified"
+   ],
+   "flag": "use_a16",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "verl/experimental/separation/ray_trainer.py",
+     "how": "positional",
+     "line": 75
+    },
+    {
+     "file": "verl/utils/vllm/vllm_nvfp4_per_token_utils.py",
+     "how": "keyword",
+     "line": 58
+    },
+    {
+     "file": "verl/utils/profiler/performance.py",
+     "how": "positional",
+     "line": 101
+    },
+    {
+     "file": "verl/workers/rollout/trtllm_rollout/trtllm_async_server.py",
+     "how": "positional",
+     "line": 535
+    },
+    {
+     "file": "verl/workers/rollout/sglang_rollout/async_sglang_server.py",
+     "how": "positional",
+     "line": 794
+    },
+    {
+     "file": "verl/workers/rollout/sglang_rollout/sglang_pd_replica.py",
+     "how": "positional",
+     "line": 51
+    },
+    {
+     "file": "verl/workers/rollout/sglang_rollout/http_server_engine.py",
+     "how": "positional",
+     "line": 623
+    },
+    {
+     "file": "verl/workers/rollout/vllm_rollout/vllm_pd_replica.py",
+     "how": "positional",
+     "line": 49
+    },
+    {
+     "file": "verl/workers/rollout/vllm_rollout/delta_weight_transfer.py",
+     "how": "positional",
+     "line": 212
+    },
+    {
+     "file": "verl/workers/rollout/vllm_rollout/vllm_async_server.py",
+     "how": "positional",
+     "line": 1573
+    },
+    {
+     "file": "verl/workers/engine/mindspeed/transformer_impl.py",
+     "how": "positional",
+     "line": 65
+    },
+    {
+     "file": "verl/workers/engine/mindspeed/transformer_impl.py",
+     "how": "positional",
+     "line": 99
+    }
+   ],
+   "producers_total": 12,
+   "reads_nontest": 6,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "acc_reward",
+     "file": "verl/utils/reward_score/geo3k.py",
+     "func": "acc_reward",
+     "line": 25,
+     "param_default": true
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "acc_reward",
+     "file": "verl/utils/reward_score/geo3k.py",
+     "func": "acc_reward",
+     "line": 25,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_boxed",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "verl/utils/reward_score/geo3k.py",
+     "how": "positional",
+     "line": 34
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 4,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_cache",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 26,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_checkpoint_opt_param_scheduler",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 9,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward_micro_batch_with_prefix_grouper",
+     "file": "verl/trainer/ppo/prefix_grouper_utils.py",
+     "func": "forward_micro_batch_with_prefix_grouper",
+     "line": 150,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward_micro_batch_with_prefix_grouper",
+     "file": "verl/trainer/ppo/prefix_grouper_utils.py",
+     "func": "forward_micro_batch_with_prefix_grouper",
+     "line": 150,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_chunking_entropy",
+   "mode": "never",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 3,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_cpu_initialization",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 9,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "validate_config",
+     "file": "verl/utils/config.py",
+     "func": "validate_config",
+     "line": 122,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "compute_data_metrics",
+     "file": "verl/trainer/ppo/metric_utils.py",
+     "func": "compute_data_metrics",
+     "line": 429,
+     "param_default": true
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "validate_config",
+     "file": "verl/utils/config.py",
+     "func": "validate_config",
+     "line": 122,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "compute_data_metrics",
+     "file": "verl/trainer/ppo/metric_utils.py",
+     "func": "compute_data_metrics",
+     "line": 429,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True",
+    "unspecified"
+   ],
+   "flag": "use_critic",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "verl/experimental/separation/ray_trainer.py",
+     "how": "keyword",
+     "line": 739
+    },
+    {
+     "file": "verl/experimental/one_step_off_policy/main_ppo.py",
+     "how": "keyword",
+     "line": 52
+    },
+    {
+     "file": "verl/trainer/main_ppo_v0.py",
+     "how": "keyword",
+     "line": 179
+    },
+    {
+     "file": "verl/trainer/main_ppo.py",
+     "how": "keyword",
+     "line": 181
+    },
+    {
+     "file": "verl/trainer/ppo/ray_trainer.py",
+     "how": "keyword",
+     "line": 1772
+    },
+    {
+     "file": "verl/trainer/ppo/v1/trainer_base.py",
+     "how": "keyword",
+     "line": 1949
+    }
+   ],
+   "producers_total": 6,
+   "reads_nontest": 51,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_dist_checkpointing",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 36,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "get_rng_state",
+     "file": "verl/utils/checkpoint/megatron_checkpoint_manager.py",
+     "func": "get_rng_state",
+     "line": 265,
+     "param_default": true
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "get_rng_state",
+     "file": "verl/utils/checkpoint/megatron_checkpoint_manager.py",
+     "func": "get_rng_state",
+     "line": 265,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_dist_ckpt",
+   "mode": "always",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 3,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_distributed_optimizer",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 47,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "rearrange_micro_batches",
+     "file": "verl/utils/seqlen_balancing.py",
+     "func": "rearrange_micro_batches",
+     "line": 348,
+     "param_default": true
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "rearrange_micro_batches",
+     "file": "verl/utils/seqlen_balancing.py",
+     "func": "rearrange_micro_batches",
+     "line": 348,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_dynamic_bsz_balance",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "verl/utils/seqlen_balancing.py",
+     "how": "keyword",
+     "line": 545
+    },
+    {
+     "file": "verl/workers/engine/utils.py",
+     "how": "keyword",
+     "line": 112
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 7,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "preprocess_bshd_engine",
+     "file": "verl/models/mcore/util.py",
+     "func": "preprocess_bshd_engine",
+     "line": 588,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "preprocess_bshd_engine",
+     "file": "verl/models/mcore/util.py",
+     "func": "preprocess_bshd_engine",
+     "line": 588,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_fp8_padding",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "verl/models/mcore/model_forward.py",
+     "how": "keyword",
+     "line": 268
+    },
+    {
+     "file": "verl/models/mcore/model_forward.py",
+     "how": "keyword",
+     "line": 289
+    },
+    {
+     "file": "verl/models/mcore/model_forward.py",
+     "how": "keyword",
+     "line": 320
+    },
+    {
+     "file": "verl/trainer/distillation/megatron/losses.py",
+     "how": "keyword",
+     "line": 374
+    },
+    {
+     "file": "verl/trainer/distillation/megatron/losses.py",
+     "how": "keyword",
+     "line": 377
+    }
+   ],
+   "producers_total": 5,
+   "reads_nontest": 10,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "patch_forward_with_backends",
+     "file": "verl/models/transformers/monkey_patch.py",
+     "func": "patch_forward_with_backends",
+     "line": 234,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "apply_monkey_patch",
+     "file": "verl/models/transformers/monkey_patch.py",
+     "func": "apply_monkey_patch",
+     "line": 294,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "patch_forward_with_backends",
+     "file": "verl/models/transformers/monkey_patch.py",
+     "func": "patch_forward_with_backends",
+     "line": 234,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "apply_monkey_patch",
+     "file": "verl/models/transformers/monkey_patch.py",
+     "func": "apply_monkey_patch",
+     "line": 294,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_fused_kernels",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "verl/models/transformers/monkey_patch.py",
+     "how": "keyword",
+     "line": 554
+    },
+    {
+     "file": "verl/workers/engine/fsdp/transformer_impl.py",
+     "how": "keyword",
+     "line": 328
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 69,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "__call__",
+     "file": "verl/single_controller/ray/base.py",
+     "func": "__call__",
+     "line": 381,
+     "param_default": true
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "__call__",
+     "file": "verl/single_controller/ray/base.py",
+     "func": "__call__",
+     "line": 381,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_gpu",
+   "mode": "always",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 41,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "wrap_model_chunks_with_layerwise_aware_ddp",
+     "file": "verl/utils/megatron_utils.py",
+     "func": "wrap_model_chunks_with_layerwise_aware_ddp",
+     "line": 72,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "wrap_model_chunks_with_layerwise_aware_ddp",
+     "file": "verl/utils/megatron_utils.py",
+     "func": "wrap_model_chunks_with_layerwise_aware_ddp",
+     "line": 72,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_layer_wise_distributed_optimizer",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "verl/utils/megatron_utils.py",
+     "how": "keyword",
+     "line": 370
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 26,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_megatron_fsdp",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 23,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "get_init_weight_context_manager",
+     "file": "verl/utils/fsdp_utils.py",
+     "func": "get_init_weight_context_manager",
+     "line": 64,
+     "param_default": true
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "get_init_weight_context_manager",
+     "file": "verl/utils/fsdp_utils.py",
+     "func": "get_init_weight_context_manager",
+     "line": 64,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_meta_tensor",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "verl/workers/engine/fsdp/transformer_impl.py",
+     "how": "keyword",
+     "line": 270
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 3,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_no_sync_for_gradient_accumulation",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 9,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_download",
+     "file": "verl/utils/dataset/rl_dataset.py",
+     "func": "_download",
+     "line": 162,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_download",
+     "file": "verl/utils/dataset/rl_dataset.py",
+     "func": "_download",
+     "line": 162,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_origin_parquet",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "verl/utils/dataset/rl_dataset.py",
+     "how": "keyword",
+     "line": 281
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 3,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_precision_aware_optimizer",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 25,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "apply_monkey_patch",
+     "file": "verl/models/transformers/monkey_patch.py",
+     "func": "apply_monkey_patch",
+     "line": 294,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "apply_monkey_patch",
+     "file": "verl/models/transformers/monkey_patch.py",
+     "func": "apply_monkey_patch",
+     "line": 294,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_prefix_grouper",
+   "mode": "never",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 10,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_qwen3_next_chunk_sync_internal",
+     "file": "verl/models/transformers/npu_patch.py",
+     "func": "_qwen3_next_chunk_sync_internal",
+     "line": 434,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_qwen3_next_chunk_sync_internal",
+     "file": "verl/models/transformers/npu_patch.py",
+     "func": "_qwen3_next_chunk_sync_internal",
+     "line": 434,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_qk_l2norm_in_kernel",
+   "mode": "never",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 4,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "apply_monkey_patch",
+     "file": "verl/models/transformers/monkey_patch.py",
+     "func": "apply_monkey_patch",
+     "line": 294,
+     "param_default": true
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "apply_monkey_patch",
+     "file": "verl/models/transformers/monkey_patch.py",
+     "func": "apply_monkey_patch",
+     "line": 294,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_remove_padding",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "verl/workers/engine/fsdp/transformer_impl.py",
+     "how": "keyword",
+     "line": 328
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 119,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "copy_to_local",
+     "file": "verl/utils/fs.py",
+     "func": "copy_to_local",
+     "line": 195,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "copy_to_local",
+     "file": "verl/utils/fs.py",
+     "func": "copy_to_local",
+     "line": 195,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_shm",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "verl/experimental/fully_async_policy/fully_async_main.py",
+     "how": "keyword",
+     "line": 57
+    },
+    {
+     "file": "verl/experimental/one_step_off_policy/main_ppo.py",
+     "how": "keyword",
+     "line": 60
+    },
+    {
+     "file": "verl/utils/dataset/rl_dataset.py",
+     "how": "keyword",
+     "line": 167
+    },
+    {
+     "file": "verl/workers/config/model.py",
+     "how": "keyword",
+     "line": 156
+    },
+    {
+     "file": "verl/workers/config/model.py",
+     "how": "keyword",
+     "line": 179
+    },
+    {
+     "file": "verl/workers/config/model.py",
+     "how": "keyword",
+     "line": 160
+    },
+    {
+     "file": "verl/workers/engine/fsdp/transformer_impl.py",
+     "how": "keyword",
+     "line": 354
+    },
+    {
+     "file": "verl/trainer/main_eval.py",
+     "how": "keyword",
+     "line": 43
+    },
+    {
+     "file": "verl/trainer/ppo/metric_utils.py",
+     "how": "keyword",
+     "line": 165
+    }
+   ],
+   "producers_total": 9,
+   "reads_nontest": 57,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "timeout_limit",
+     "file": "verl/utils/py_functional.py",
+     "func": "timeout_limit",
+     "line": 56,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "decorator",
+     "file": "verl/utils/py_functional.py",
+     "func": "decorator",
+     "line": 75,
+     "param_default": "unspecified"
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "timeout_limit",
+     "file": "verl/utils/py_functional.py",
+     "func": "timeout_limit",
+     "line": 56,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "decorator",
+     "file": "verl/utils/py_functional.py",
+     "func": "decorator",
+     "line": 75,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "False",
+    "unspecified"
+   ],
+   "flag": "use_signals",
+   "mode": "mixed",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 12,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "is_platform_available",
+     "file": "verl/plugin/platform/platform_rocm.py",
+     "func": "is_platform_available",
+     "line": 30,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "is_platform_available",
+     "file": "verl/plugin/platform/platform_cuda.py",
+     "func": "is_platform_available",
+     "line": 41,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "is_platform_available",
+     "file": "verl/plugin/platform/platform_npu.py",
+     "func": "is_platform_available",
+     "line": 60,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "is_platform_available",
+     "file": "verl/plugin/platform/platform_rocm.py",
+     "func": "is_platform_available",
+     "line": 30,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "is_platform_available",
+     "file": "verl/plugin/platform/platform_cuda.py",
+     "func": "is_platform_available",
+     "line": 41,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "is_platform_available",
+     "file": "verl/plugin/platform/platform_npu.py",
+     "func": "is_platform_available",
+     "line": 60,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_smi_check",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "verl/plugin/platform/platform_manager.py",
+     "how": "keyword",
+     "line": 106
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 12,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "apply_monkey_patch",
+     "file": "verl/models/transformers/monkey_patch.py",
+     "func": "apply_monkey_patch",
+     "line": 294,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "apply_monkey_patch",
+     "file": "verl/models/transformers/monkey_patch.py",
+     "func": "apply_monkey_patch",
+     "line": 294,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_tiled_mlp",
+   "mode": "never",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 3,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_top_left_mask",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 13,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "get_free_port",
+     "file": "verl/utils/net_utils.py",
+     "func": "get_free_port",
+     "line": 73,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "get_free_port",
+     "file": "verl/utils/net_utils.py",
+     "func": "get_free_port",
+     "line": 73,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "with_alive_sock",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "verl/workers/rollout/sglang_rollout/async_sglang_server.py",
+     "how": "keyword",
+     "line": 232
+    },
+    {
+     "file": "verl/workers/rollout/sglang_rollout/sglang_pd_replica.py",
+     "how": "keyword",
+     "line": 117
+    },
+    {
+     "file": "verl/workers/rollout/vllm_rollout/vllm_pd_replica.py",
+     "how": "keyword",
+     "line": 134
+    },
+    {
+     "file": "verl/workers/rollout/vllm_rollout/vllm_pd_replica.py",
+     "how": "keyword",
+     "line": 166
+    },
+    {
+     "file": "verl/workers/rollout/vllm_rollout/vllm_async_server.py",
+     "how": "keyword",
+     "line": 226
+    },
+    {
+     "file": "verl/workers/rollout/vllm_rollout/vllm_async_server.py",
+     "how": "keyword",
+     "line": 228
+    },
+    {
+     "file": "verl/workers/rollout/vllm_rollout/vllm_async_server.py",
+     "how": "keyword",
+     "line": 229
+    }
+   ],
+   "producers_total": 7,
+   "reads_nontest": 10,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "with_optimizer",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 3,
+   "silently_inert": false
+  }
+ ],
+ "root": "verl-project-verl-6879e1a"
+}

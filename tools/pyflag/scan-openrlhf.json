@@ -1,0 +1,127 @@
+{
+ "flags": [
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "disable_ds_ckpt",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 18,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_ds_universal_ckpt",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 4,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_fast",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 12,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "Actor",
+     "file": "openrlhf/models/actor.py",
+     "func": "__init__",
+     "line": 76,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "Actor",
+     "file": "openrlhf/models/actor.py",
+     "func": "__init__",
+     "line": 76,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_liger_kernel",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "openrlhf/cli/train_sft.py",
+     "how": "keyword",
+     "line": 19
+    },
+    {
+     "file": "openrlhf/cli/train_dpo.py",
+     "how": "keyword",
+     "line": 20
+    },
+    {
+     "file": "openrlhf/trainer/ray/ppo_actor.py",
+     "how": "keyword",
+     "line": 513
+    },
+    {
+     "file": "openrlhf/trainer/ray/launcher.py",
+     "how": "keyword",
+     "line": 108
+    }
+   ],
+   "producers_total": 4,
+   "reads_nontest": 12,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "init_process_group",
+     "file": "openrlhf/trainer/ray/vllm_worker_wrap.py",
+     "func": "init_process_group",
+     "line": 2,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "init_process_group",
+     "file": "openrlhf/trainer/ray/vllm_worker_wrap.py",
+     "func": "init_process_group",
+     "line": 2,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_ray",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "openrlhf/trainer/ray/ppo_actor.py",
+     "how": "keyword",
+     "line": 130
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 10,
+   "silently_inert": false
+  }
+ ],
+ "root": "OpenRLHF-OpenRLHF"
+}
