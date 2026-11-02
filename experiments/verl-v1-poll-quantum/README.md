@@ -121,6 +121,8 @@
 | `apply_poll_patch.py` | 补丁应用脚本（三处精确替换，各命中一次） |
 | `poll-interval-config.patch` | 三个文件的 unified diff（相对路径 a/ b/） |
 | `make-summary.py` | 日志解析与汇总 |
+| `raw/rollout-poll-main-smoke-main-3fdf2b54.txt` | main `3fdf2b54` 上的 3 步接线冒烟日志（exit 0，非计时测量） |
+| `run-main-smoke.sh` | 冒烟运行脚本（含 TransferQueue 显式容量；device-map 适配需在树上打，见下节） |
 
 ## 复现
 
@@ -135,3 +137,13 @@ MODE=p010  SRC=/tmp/m5-poll-ab/verl POLL=0.1 bash run-poll-ab.sh
 # 本地
 python3 make-summary.py            # 读 raw/，写 summary.json
 ```
+
+## 补丁在 main `3fdf2b54` 上的运行时冒烟（2026-11-03，M5 第二会话）
+
+补丁此前只在 `24f25b03` 快照树上实跑过；`v1/` 重构出 `trainer_sync.py`／`trainer_colocate_async.py` 后，pending 的说法是"dry-run 3/3 通过，但 DAPO 派发循环在新结构上未实跑复核"。本冒烟只补这一步，**不是效果复现**。
+
+- **树与补丁**：`git clone --depth 1` 取 volcengine/verl main `3fdf2b548882`（2026-11-02T11:38Z），`patch -p1 --fuzz=0` 应用 `poll-interval-config.patch`，3/3 命中、RC=0。
+- **运行**：GPU 4,5（2+0），同 §13.48 的 DAPO 配置，`trainer.v1.sampler.poll_interval=0.1`、`max_inflight_gen_batches=2`、`trainer.total_training_steps=3`；**3/3 步完成、exit 0**（20:38:50–20:43:26Z，含启动约 4.6 分钟）。
+- **接线证据**：① 解析后的配置 dump 含 `'poll_interval': 0.1`（`trainer.v1.sampler` 段）与 `'max_inflight_gen_batches': 2`；② `_build_replay_buffer` 全树只有 `trainer_base.py:140` 一处定义（`trainer_sync`／`trainer_colocate_async` 不覆写），`trainer_base.py:146/170` 从 `config.trainer.v1.sampler` 取值并传给 `ReplayBuffer`，`replay_buffer.py:157/409` 存下并用于 `time.sleep`；③ 3 步均带 DAPO 逐出（evicted 148／138／98 组）。
+- **两处环境适配（不属于补丁，列出以免误读）**：① `++transfer_queue.backend.SimpleStorage.total_storage_size=100000`——main 的 yaml 把 `null` 注释为 unlimited，但服务器 venv 的 TransferQueue 在 `null` 上直接 `TypeError`（`math.ceil(None / n)`），属版本错配；② `verl/single_controller/base/worker.py` 的本地 device-map 适配（与 `24f25b03` 实验树同一段：`NOSET=1` 时 Ray 报物理卡号，需折算成 `CUDA_VISIBLE_DEVICES` 内的 ordinal），否则 GPU 4,5 这种非连续掩码会 `invalid device ordinal`。
+- **边界**：3 步只是接线冒烟，不是计时测量，也不重新估计效应量（无对照臂、单跑）；绝对步时不可与 15 步实验比。`3fdf2b54` 上"效应大小是否同量级"仍需完整 A/B。
