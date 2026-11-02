@@ -1,0 +1,21 @@
+{
+ "run": "2026-11-02 M1 — rollout C3 sync-baseline identifiability (§21.8)",
+ "python": "3.9.6 (system)",
+ "deps": "standard library only",
+ "seeds": 30,
+ "steps": 200,
+ "note": "CPU in-process event-driven simulation; no GPU, no engine, no end-to-end. Virtual seconds only.",
+ "sha256": {
+  "c3_sync_baseline.py": "a58636c0917dd41fbc48d6f88435295d931b7887b4cdd732189a806a7298d057",
+  "test_c3_sync_baseline.py": "a331cab05f3db94253da74e5f60964d5eccab101d1474cc1084db8acf5178d2c",
+  "summary.json": "0914f48e9fdc6f50908acf022e0db101c3751dff9b84f9fd8e4b5011dbd234c9",
+  "readme.md": "8690cb01294bc417bfef4973cac19905344829ff72aaafaa0690f0115e14ff5b"
+ },
+ "commands": [
+  "python3 c3_sync_baseline.py",
+  "python3 c3_sync_baseline.py --verify",
+  "python3 -m unittest test_c3_sync_baseline -v"
+ ],
+ "verify_twice_passed": true,
+ "tests": 20
+}
