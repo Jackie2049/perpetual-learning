@@ -12,7 +12,7 @@
 
 - **repo**：verl `24f25b03`（同候选 A/F），vLLM 0.24.0+cu129
 - **model**：Qwen2.5-1.5B-Instruct
-- **hardware**：4090-1（8×RTX 4090 24GB）；`g1` = GPU 5（NUMA1）；`g2` = GPU 0,1（均 NUMA0）；`g4` = GPU 0,1,3（NUMA0）+ GPU 4（NUMA1）——GPU 2 被他人占用，故 4 卡只能用非连续掩码；NUMA 对照：`g1n` = GPU 0（NUMA0）、`g2n` = GPU 5,6（NUMA1）、`g4n` = GPU 4,5,6,7（全 NUMA1）
+- **hardware**：4090-1（8×RTX 4090 24GB）；`g1` = GPU 5（NUMA1）；`g2` = GPU 0,1（均 NUMA0）；`g4` = GPU 0,1,3（NUMA0）+ GPU 4（NUMA1）——GPU 2 被他人占用，故 4 卡只能用非连续掩码；NUMA 对照：`g1n` = GPU 0（NUMA0）、`g2n` = GPU 5,6（NUMA1）、`g4n` = GPU 4,5,6,7（全 NUMA1）；**2+2 重报（第五十一批）**：`g1p` = GPU 0、`g2p` = GPU 0,4（1+1）、`g4p` = GPU 0,1,4,5（2+2）
 - **dataset**：gsm8k `train_sub480` / `test_sub120`
 - **固定项**：`train_batch_size=32` prompts × `rollout.n=4` = 128 samples/迭代；`ppo_mini_batch_size=16`（×n → 64 samples/优化步，2 个优化步/迭代）；`ppo_micro_batch_size_per_gpu=1`；`ppo_epochs=1`；max_prompt 512 / max_response 256；bf16；sdpa；`optimizer_offload=True`；`update_weights_bucket_megabytes=256`；seed=42；lr 1e-6 恒定、无 warmup；`TOTAL_EPOCHS=1` → 15 次迭代
 - **弱扩展差异项**：`g2w` = train batch 64（每卡 32 prompts 不变）、`ppo_mini_batch_size=32`、`TOTAL_EPOCHS=2` → 14 步；`g4w` = train batch 128、`ppo_mini_batch_size=64`、`TOTAL_EPOCHS=4` → 12 步（480/64=7.5、480/128=3.75 步/epoch，末步含终评已从窗口排除）
@@ -167,8 +167,23 @@
 
 **材料**：[跨会话核验附录](cross-session-verify-2026-11-02.md)、`ab-summary.json`、`raw/rollout-g8-candidate-g-p*.txt`（10 份训练日志）、`raw/g8-comm-probe.txt`、`raw/chain-*.txt`、`raw/gpu-sampler-0844-0924.txt`（另一会话启动的环境采样，覆盖 pB4 起）、`raw/md5sums.txt`；脚本 `run-candidate-g-ab.sh`、`run-candidate-g-ab-cpu.sh`、`run-candidate-g-spread.sh`、`run-g8-comm-probe.sh`、`g8-comm-compute-probe.py`、`parse-candidate-g-ab.py`。**11 份训练日志（含 pD1）的 md5 已与服务器 `/tmp` 原件逐文件复核一致**；`md5sums.txt` 不含自身。
 
+## 2+2 重报（M5 算力侧第五十一批，2026-11-02 10:59–11:24 UTC）
 
+**目的**：§13.42 的 2+2 锚点（pC1 14.167s、pD1 18.403s）是单次运行，而主文档 §13.36 的 1.631×／1.251× 来自 3+1／2+0 放置。本批在同一空闲窗口按固定放置重测三个锚点，既检验 2+2 的可重复性，也把多卡锚点统一到 1+1／2+2。
 
+**执行账**：g1p（GPU 0）10:59:21–11:09:19Z、g2p（0,4）11:09:29–11:17:03Z、g4p（0,1,4,5）11:17:13–11:23:54Z，全部 exit 0、15/15 步。日志 md5 与服务器原件一致（`da81fd4d…`／`d6513a59…`／`762ca07f…`）。末步 checkpoint 各 9.1G，归档前删除；同批清掉今日早前 19 个候选 G 跑留下的 173G 临时 checkpoint（日志已归档，checkpoint 不入归档范围）。
+
+| 模式 | 放置 | 整步 | 中位 | 步间 sd | 整步× | 并行效率 | gen | old_log_prob | ref | adv | update_actor | update_weights | 残差 | 末步 acc |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| g1p | 1 卡（0） | 27.522s | 27.786 | 0.632 | 1.000 | 1.000 | 4.181 | 3.792 | 4.281 | 0.111 | 13.274 | 1.806 | +0.076 | 0.150 |
+| g2p | 1+1（0,4） | 18.031s | 18.290 | 1.328 | **1.526×** | **0.763** | 3.163 | 2.358 | 2.116 | 0.138 | 8.156 | 2.049 | +0.050 | 0.150 |
+| g4p | 2+2（0,1,4,5） | 14.173s | 14.186 | 0.105 | **1.942×** | **0.485** | 2.163 | 1.792 | 1.360 | 0.111 | 6.361 | 2.345 | +0.040 | 0.175 |
+
+**跨窗口复现**：g4p vs pC1 = 14.173 vs 14.167s（**1.0004×**，各阶段 ≤1.4%）；g2p vs pD1 = 18.031 vs 18.403s（0.980×），原始差全在 gen 的慢/快态配比（g2p 慢态 6/12 步 vs pD1 8/12；分层后慢态 19.218 vs 19.282s＝+0.3%、快态 16.845 vs 16.645s＝+1.2%）——§13.44 轮询量子机制的第三次独立复现。
+
+**判决**：2+2 可作 canonical 多卡锚点（4 卡 1.942×／0.485、2 卡 1.526×／0.763）；旧 1.251×／1.631× 只作 2+0／3+1 放置值（同卡数慢 22.1%／19.1%）；最佳放置下加卡仍远非线性，`update_actor` G=2.087、`update_weights` 0.770 仍负扩展——「加卡收益递减、更新侧吃收益」不变。弱扩展（1.417／2.145×）仍旧放置，读作下界，按 2+2 重测登记为残留。
+
+**材料**：`raw/rollout-g8-candidate-g-g{1p,2p,4p}.txt`、`reanchor-summary.json`、`parse-candidate-g-reanchor.py`、`run-candidate-g-2plus2-reanchor.sh`。
 
 ## 失败与修复：NCCL CUDA 217（peer access）
 
@@ -218,6 +233,13 @@ bash run-candidate-g-ab-cpu.sh
 bash run-candidate-g-spread.sh
 # 2 卡跨节点（1+1）
 RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1 GPUS=0,4 MODE=pD1 bash run-candidate-g.sh
+# 2+2 重报（三段串行：单卡 → 1+1 → 2+2；脚本已归档为 run-candidate-g-2plus2-reanchor.sh）
+bash run-candidate-g-2plus2-reanchor.sh
+# 本地解析重报（含与 pC1／pD1 的跨窗口对照）
+python3 parse-candidate-g-reanchor.py raw/rollout-g8-candidate-g-g1p.txt \
+  raw/rollout-g8-candidate-g-g2p.txt raw/rollout-g8-candidate-g-g4p.txt \
+  --reference raw/rollout-g8-candidate-g-pD1.txt \
+  --reference raw/rollout-g8-candidate-g-pC1.txt --json-out reanchor-summary.json
 # 通信/算力微基准（4 卡/2 卡 × 六种放置 + socket 对照）
 bash run-g8-comm-probe.sh
 # 本地解析放置实验

@@ -1,0 +1,264 @@
+{
+ "meta": {
+  "batch": "candidate-g placement re-anchor (2+2)",
+  "executed_utc": "2026-11-02",
+  "stack": "verl 24f25b03 + vLLM 0.24.0+cu129, Qwen2.5-1.5B-Instruct, gsm8k train_sub480/test_sub120, 4090-1",
+  "window_rule": "steps 3 .. max_step-1 (drop 2 warmup steps and the final validation/save step)",
+  "placement": {
+   "g1p": "1 \u5361\uff08GPU 0\uff09",
+   "g2p": "1+1\uff08GPU 0,4\uff09",
+   "g4p": "2+2\uff08GPU 0,1,4,5\uff09",
+   "pD1": "1+1\uff08GPU 0,4\uff09",
+   "pC1": "2+2\uff08GPU 0,1,4,5\uff09"
+  },
+  "note": "Same workload as the candidate-G strong-scaling runs; default ReplayBuffer poll interval kept so the anchors stay comparable with \u00a713.36/\u00a713.42."
+ },
+ "modes": {
+  "g1p": {
+   "gen": 4.1807,
+   "old_log_prob": 3.792,
+   "ref": 4.281,
+   "adv": 0.1113,
+   "update_actor": 13.2744,
+   "update_weights": 1.8065,
+   "step": 27.5221,
+   "throughput": 1508.0213,
+   "step_sd": 0.6323,
+   "step_median": 27.7864,
+   "gen_modes": {
+    "slow_steps": 12,
+    "fast_steps": 0,
+    "slow_step_mean": 27.5221,
+    "fast_step_mean": null
+   },
+   "n": 12,
+   "window": [
+    3,
+    14
+   ],
+   "stage_sum": 27.4459,
+   "residual": 0.0762,
+   "config": {
+    "train_batch_size": 32,
+    "ppo_mini_batch_size": 16,
+    "rollout_n": 4,
+    "n_gpus_per_node": 1,
+    "val_acc_final": 0.15,
+    "max_reserved_gb": 21.236328125
+   },
+   "placement": "1 \u5361\uff08GPU 0\uff09"
+  },
+  "g2p": {
+   "gen": 3.1633,
+   "old_log_prob": 2.3583,
+   "ref": 2.1163,
+   "adv": 0.1382,
+   "update_actor": 8.1563,
+   "update_weights": 2.0492,
+   "step": 18.0311,
+   "throughput": 1154.859,
+   "step_sd": 1.3281,
+   "step_median": 18.2904,
+   "gen_modes": {
+    "slow_steps": 6,
+    "fast_steps": 6,
+    "slow_step_mean": 19.2177,
+    "fast_step_mean": 16.8446
+   },
+   "n": 12,
+   "window": [
+    3,
+    14
+   ],
+   "stage_sum": 17.9815,
+   "residual": 0.0496,
+   "config": {
+    "train_batch_size": 32,
+    "ppo_mini_batch_size": 16,
+    "rollout_n": 4,
+    "n_gpus_per_node": 2,
+    "val_acc_final": 0.15,
+    "max_reserved_gb": 14.26171875
+   },
+   "placement": "1+1\uff08GPU 0,4\uff09"
+  },
+  "g4p": {
+   "gen": 2.1625,
+   "old_log_prob": 1.7922,
+   "ref": 1.3602,
+   "adv": 0.1113,
+   "update_actor": 6.3613,
+   "update_weights": 2.3453,
+   "step": 14.1729,
+   "throughput": 734.2232,
+   "step_sd": 0.1049,
+   "step_median": 14.1862,
+   "gen_modes": {
+    "slow_steps": 0,
+    "fast_steps": 12,
+    "slow_step_mean": null,
+    "fast_step_mean": 14.1729
+   },
+   "n": 12,
+   "window": [
+    3,
+    14
+   ],
+   "stage_sum": 14.1329,
+   "residual": 0.04,
+   "config": {
+    "train_batch_size": 32,
+    "ppo_mini_batch_size": 16,
+    "rollout_n": 4,
+    "n_gpus_per_node": 4,
+    "val_acc_final": 0.175,
+    "max_reserved_gb": 11.064453125
+   },
+   "placement": "2+2\uff08GPU 0,1,4,5\uff09"
+  },
+  "pD1": {
+   "gen": 3.4985,
+   "old_log_prob": 2.3695,
+   "ref": 2.1244,
+   "adv": 0.11,
+   "update_actor": 8.1872,
+   "update_weights": 2.064,
+   "step": 18.4026,
+   "throughput": 1142.9442,
+   "step_sd": 1.3492,
+   "step_median": 19.1869,
+   "gen_modes": {
+    "slow_steps": 8,
+    "fast_steps": 4,
+    "slow_step_mean": 19.2817,
+    "fast_step_mean": 16.6446
+   },
+   "n": 12,
+   "window": [
+    3,
+    14
+   ],
+   "stage_sum": 18.3536,
+   "residual": 0.0491,
+   "config": {
+    "train_batch_size": 32,
+    "ppo_mini_batch_size": 16,
+    "rollout_n": 4,
+    "n_gpus_per_node": 2,
+    "val_acc_final": 0.16666666666666666,
+    "max_reserved_gb": 14.248046875
+   },
+   "placement": "1+1\uff08GPU 0,4\uff09"
+  },
+  "pC1": {
+   "gen": 2.1509,
+   "old_log_prob": 1.8176,
+   "ref": 1.342,
+   "adv": 0.11,
+   "update_actor": 6.3622,
+   "update_weights": 2.3432,
+   "step": 14.1669,
+   "throughput": 741.3551,
+   "step_sd": 0.176,
+   "step_median": 14.1569,
+   "gen_modes": {
+    "slow_steps": 0,
+    "fast_steps": 12,
+    "slow_step_mean": null,
+    "fast_step_mean": 14.1669
+   },
+   "n": 12,
+   "window": [
+    3,
+    14
+   ],
+   "stage_sum": 14.1258,
+   "residual": 0.0411,
+   "config": {
+    "train_batch_size": 32,
+    "ppo_mini_batch_size": 16,
+    "rollout_n": 4,
+    "n_gpus_per_node": 4,
+    "val_acc_final": 0.15833333333333333,
+    "max_reserved_gb": 11.091796875
+   },
+   "placement": "2+2\uff08GPU 0,1,4,5\uff09"
+  }
+ },
+ "scaling": {
+  "g2p": {
+   "n_gpus": 2,
+   "speedup": 1.5264,
+   "parallel_efficiency": 0.7632,
+   "aggregate_throughput_ratio": 1.5316,
+   "stage_scaling": {
+    "gen": 1.3217,
+    "old_log_prob": 1.6079,
+    "ref": 2.0229,
+    "adv": 0.8055,
+    "update_actor": 1.6275,
+    "update_weights": 0.8816
+   },
+   "stage_time_ratio": {
+    "gen": 0.7566,
+    "old_log_prob": 0.6219,
+    "ref": 0.4943,
+    "adv": 1.2415,
+    "update_actor": 0.6144,
+    "update_weights": 1.1344
+   }
+  },
+  "g4p": {
+   "n_gpus": 4,
+   "speedup": 1.9419,
+   "parallel_efficiency": 0.4855,
+   "aggregate_throughput_ratio": 1.9475,
+   "stage_scaling": {
+    "gen": 1.9333,
+    "old_log_prob": 2.1159,
+    "ref": 3.1472,
+    "adv": 0.9996,
+    "update_actor": 2.0867,
+    "update_weights": 0.7703
+   },
+   "stage_time_ratio": {
+    "gen": 0.5173,
+    "old_log_prob": 0.4726,
+    "ref": 0.3177,
+    "adv": 1.0004,
+    "update_actor": 0.4792,
+    "update_weights": 1.2983
+   }
+  }
+ },
+ "cross_run": {
+  "g4p": {
+   "reference": "pC1",
+   "step_s": 14.1729,
+   "reference_step_s": 14.1669,
+   "ratio": 1.0004,
+   "stage_ratio": {
+    "gen": 1.0054,
+    "old_log_prob": 0.986,
+    "ref": 1.0136,
+    "adv": 1.012,
+    "update_actor": 0.9999,
+    "update_weights": 1.0009
+   }
+  },
+  "g2p": {
+   "reference": "pD1",
+   "step_s": 18.0311,
+   "reference_step_s": 18.4026,
+   "ratio": 0.9798,
+   "stage_ratio": {
+    "gen": 0.9042,
+    "old_log_prob": 0.9953,
+    "ref": 0.9962,
+    "adv": 1.2557,
+    "update_actor": 0.9962,
+    "update_weights": 0.9928
+   }
+  }
+ }
+}

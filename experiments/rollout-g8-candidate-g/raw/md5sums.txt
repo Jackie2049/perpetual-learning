@@ -3,13 +3,17 @@ dda8579ee01b490ac731375d53136efc  raw/chain-ab.txt
 a937faf01c96bc30b0504f6906bac33c  raw/chain-spread.txt
 8deede27ada3c0ad2633ce8e22895b40  raw/g8-comm-probe.txt
 4d7e436f57e3acccb8fd24b9e66e834c  raw/gpu-sampler-0844-0924.txt
+d41d8cd98f00b204e9800998ecf8427e  raw/md5sums.txt
 26c0adfee0a6faeedc6aa285fd7a002f  raw/rollout-g8-candidate-g-g1.txt
 5f8788c281a21c6e7b2b9cc4d550cd53  raw/rollout-g8-candidate-g-g1n.txt
+da81fd4dc96ca4fd0a26ffce46b54c88  raw/rollout-g8-candidate-g-g1p.txt
 90dd57b557f0579c46dc77d509065fa1  raw/rollout-g8-candidate-g-g2.txt
 a4e5f3540d7c7b0240f5e1e4c9c73e12  raw/rollout-g8-candidate-g-g2n.txt
+d6513a59f9a37b5066c34f165184a5d0  raw/rollout-g8-candidate-g-g2p.txt
 a19d2c34d17113f0d153675057716547  raw/rollout-g8-candidate-g-g2w.txt
 43ffba808775b9a69db3b31b84ca0af7  raw/rollout-g8-candidate-g-g4.txt
 0236e680caaaf6ce63ada00f1a1fd816  raw/rollout-g8-candidate-g-g4n.txt
+762ca07f2e9380951f96009dce7c38b6  raw/rollout-g8-candidate-g-g4p.txt
 c60e8c77b26dcfad57235000159d735e  raw/rollout-g8-candidate-g-g4w.txt
 4653ccdf235235e3502dd2d3141ba8db  raw/rollout-g8-candidate-g-pA1.txt
 9ed25905f870a0d97b82a09dc17c9ce8  raw/rollout-g8-candidate-g-pA2.txt
