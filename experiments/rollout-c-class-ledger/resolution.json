@@ -1,0 +1,484 @@
+{
+  "meta": {
+    "experiment": "C 类机制账收尾：⑩ 的四处未定，哪些能被归档里未用过的字段定下来",
+    "update_unit": 8.0,
+    "sources": {
+      "p3": "/Users/jackiemac/workspace/perpetual-learning/experiments/rollout-p3-dapo-group-filter/summary.json",
+      "p4": "/Users/jackiemac/workspace/perpetual-learning/experiments/rollout-p4-c-mechanisms/summary.json"
+    },
+    "caveat": "全部为对既有 CPU 进程内模拟归档的重算，非 GPU、非端到端；不新增训练"
+  },
+  "p4_step_cost_face": {
+    "base": {
+      "distinct_step_cost_values": [
+        896
+      ],
+      "step_cost_is_constant": true,
+      "total_cost_mean": 268800,
+      "total_traj_mean": 19200,
+      "total_gen_mean": 268800,
+      "mechanism_touches_task_count": false,
+      "task_count_is_separately_recorded": false
+    },
+    "freq": {
+      "distinct_step_cost_values": [
+        224,
+        308,
+        392,
+        476,
+        560,
+        644,
+        728,
+        812,
+        896
+      ],
+      "step_cost_is_constant": false,
+      "total_cost_mean": 74491.2,
+      "total_traj_mean": 5320.8,
+      "total_gen_mean": 74491.2,
+      "mechanism_touches_task_count": true,
+      "task_count_is_separately_recorded": false
+    },
+    "replay": {
+      "distinct_step_cost_values": [
+        896,
+        910,
+        924,
+        938,
+        952,
+        966,
+        980,
+        994
+      ],
+      "step_cost_is_constant": false,
+      "total_cost_mean": 269110.8,
+      "total_traj_mean": 19222.2,
+      "total_gen_mean": 269110.8,
+      "mechanism_touches_task_count": false,
+      "task_count_is_separately_recorded": false
+    },
+    "cancel": {
+      "distinct_step_cost_values": [
+        448,
+        560,
+        672,
+        784,
+        896
+      ],
+      "step_cost_is_constant": false,
+      "total_cost_mean": 264577.6,
+      "total_traj_mean": 18898.4,
+      "total_gen_mean": 264577.6,
+      "mechanism_touches_task_count": true,
+      "task_count_is_separately_recorded": false
+    },
+    "cap": {
+      "distinct_step_cost_values": [
+        896
+      ],
+      "step_cost_is_constant": true,
+      "total_cost_mean": 268800,
+      "total_traj_mean": 5420,
+      "total_gen_mean": 268800,
+      "mechanism_touches_task_count": false,
+      "task_count_is_separately_recorded": false
+    }
+  },
+  "p3_update_separation": {
+    "R_nofilter": {
+      "n_seeds": 30,
+      "update_cost_is_fixed_8": false,
+      "update_cost_values": [
+        896
+      ],
+      "n_update_steps": 9000,
+      "n_floor_steps": 0,
+      "total_update_cost": 8064000,
+      "total_cost": 8064000,
+      "upd_fraction": 1.0,
+      "empty_update_share": 0.0,
+      "sum_step_costs": 8064000
+    },
+    "R": {
+      "n_seeds": 30,
+      "update_cost_is_fixed_8": false,
+      "update_cost_values": [
+        400,
+        484,
+        548,
+        568,
+        592,
+        632,
+        652,
+        676,
+        696,
+        716,
+        736,
+        760
+      ],
+      "n_update_steps": 4068,
+      "n_floor_steps": 4932,
+      "total_update_cost": 2889696,
+      "total_cost": 2894628,
+      "upd_fraction": 0.998296154117213,
+      "empty_update_share": 0.548,
+      "sum_step_costs": 2894628
+    },
+    "A": {
+      "n_seeds": 30,
+      "update_cost_is_fixed_8": false,
+      "update_cost_values": [
+        576
+      ],
+      "n_update_steps": 9000,
+      "n_floor_steps": 0,
+      "total_update_cost": 5184000,
+      "total_cost": 5184000,
+      "upd_fraction": 1.0,
+      "empty_update_share": 0.0,
+      "sum_step_costs": 5184000
+    },
+    "B": {
+      "n_seeds": 30,
+      "update_cost_is_fixed_8": false,
+      "update_cost_values": [
+        280,
+        334,
+        388,
+        398,
+        442,
+        452,
+        472,
+        496,
+        506,
+        516,
+        526,
+        560
+      ],
+      "n_update_steps": 9000,
+      "n_floor_steps": 0,
+      "total_update_cost": 4600046,
+      "total_cost": 4600046,
+      "upd_fraction": 1.0,
+      "empty_update_share": 0.0,
+      "sum_step_costs": 4600046
+    },
+    "C": {
+      "n_seeds": 30,
+      "update_cost_is_fixed_8": false,
+      "update_cost_values": [
+        280,
+        334,
+        388,
+        398,
+        442,
+        452,
+        472,
+        496,
+        506,
+        516,
+        526,
+        560
+      ],
+      "n_update_steps": 4732,
+      "n_floor_steps": 4268,
+      "total_update_cost": 2530888,
+      "total_cost": 2535156,
+      "upd_fraction": 0.9983164744102533,
+      "empty_update_share": 0.4742222222222222,
+      "sum_step_costs": 2535156
+    }
+  },
+  "p3_reconcile": {
+    "C_vs_B": {
+      "pair": "C vs B",
+      "A": {
+        "steps_counted_mean": 62.93333333333333,
+        "mean_step_cost_to_09": 502.5733252974964,
+        "upd_side_mean_step": 502.5733252974964,
+        "gen_side_mean_step": 0.0,
+        "upd_share_of_step_cost": 1.0,
+        "walls_to_09_mean": 31662.533333333333
+      },
+      "B": {
+        "steps_counted_mean": 65.2,
+        "mean_step_cost_to_09": 472.96868170291344,
+        "upd_side_mean_step": 472.96868170291344,
+        "gen_side_mean_step": 0.0,
+        "upd_share_of_step_cost": 1.0,
+        "walls_to_09_mean": 30838.8
+      },
+      "steps_ratio": 0.9652351738241308,
+      "wall_ratio": 1.0267109398982235,
+      "mean_step_cost_ratio_to_09": 1.0625932429352238,
+      "delta_mean_step_cost": 29.604643594582967,
+      "delta_from_update_term": 29.604643594582967,
+      "delta_from_gen_side": 0.0,
+      "gen_share_of_step_delta": 0.0
+    },
+    "C_vs_R_nofilter": {
+      "pair": "C vs R_nofilter",
+      "A": {
+        "steps_counted_mean": 62.93333333333333,
+        "mean_step_cost_to_09": 502.5733252974964,
+        "upd_side_mean_step": 502.5733252974964,
+        "gen_side_mean_step": 0.0,
+        "upd_share_of_step_cost": 1.0,
+        "walls_to_09_mean": 31662.533333333333
+      },
+      "B": {
+        "steps_counted_mean": 70.86666666666666,
+        "mean_step_cost_to_09": 896.0,
+        "upd_side_mean_step": 896.0,
+        "gen_side_mean_step": 0.0,
+        "upd_share_of_step_cost": 1.0,
+        "walls_to_09_mean": 63496.53333333333
+      },
+      "steps_ratio": 0.8880526810912512,
+      "wall_ratio": 0.4986497950544282,
+      "mean_step_cost_ratio_to_09": 0.5609077291266701,
+      "delta_mean_step_cost": -393.4266747025036,
+      "delta_from_update_term": -393.4266747025036,
+      "delta_from_gen_side": 0.0,
+      "gen_share_of_step_delta": -0.0
+    },
+    "B_vs_R_nofilter": {
+      "pair": "B vs R_nofilter",
+      "A": {
+        "steps_counted_mean": 65.2,
+        "mean_step_cost_to_09": 472.96868170291344,
+        "upd_side_mean_step": 472.96868170291344,
+        "gen_side_mean_step": 0.0,
+        "upd_share_of_step_cost": 1.0,
+        "walls_to_09_mean": 30838.8
+      },
+      "B": {
+        "steps_counted_mean": 70.86666666666666,
+        "mean_step_cost_to_09": 896.0,
+        "upd_side_mean_step": 896.0,
+        "gen_side_mean_step": 0.0,
+        "upd_share_of_step_cost": 1.0,
+        "walls_to_09_mean": 63496.53333333333
+      },
+      "steps_ratio": 0.9200376293508938,
+      "wall_ratio": 0.48567690834565247,
+      "mean_step_cost_ratio_to_09": 0.5278668322577159,
+      "delta_mean_step_cost": -423.03131829708656,
+      "delta_from_update_term": -423.03131829708656,
+      "delta_from_gen_side": 0.0,
+      "gen_share_of_step_delta": -0.0
+    },
+    "R_vs_R_nofilter": {
+      "pair": "R vs R_nofilter",
+      "A": {
+        "steps_counted_mean": 61.666666666666664,
+        "mean_step_cost_to_09": 698.0440337758171,
+        "upd_side_mean_step": 698.0440337758171,
+        "gen_side_mean_step": 0.0,
+        "upd_share_of_step_cost": 1.0,
+        "walls_to_09_mean": 43047.066666666666
+      },
+      "B": {
+        "steps_counted_mean": 70.86666666666666,
+        "mean_step_cost_to_09": 896.0,
+        "upd_side_mean_step": 896.0,
+        "gen_side_mean_step": 0.0,
+        "upd_share_of_step_cost": 1.0,
+        "walls_to_09_mean": 63496.53333333333
+      },
+      "steps_ratio": 0.8701787394167451,
+      "wall_ratio": 0.6779435727724769,
+      "mean_step_cost_ratio_to_09": 0.7790670019819387,
+      "delta_mean_step_cost": -197.95596622418293,
+      "delta_from_update_term": -197.95596622418293,
+      "delta_from_gen_side": 0.0,
+      "gen_share_of_step_delta": -0.0
+    },
+    "A_vs_R_nofilter": {
+      "pair": "A vs R_nofilter",
+      "A": {
+        "steps_counted_mean": 74.8,
+        "mean_step_cost_to_09": 576.0,
+        "upd_side_mean_step": 576.0,
+        "gen_side_mean_step": 0.0,
+        "upd_share_of_step_cost": 1.0,
+        "walls_to_09_mean": 43084.8
+      },
+      "B": {
+        "steps_counted_mean": 70.86666666666666,
+        "mean_step_cost_to_09": 896.0,
+        "upd_side_mean_step": 896.0,
+        "gen_side_mean_step": 0.0,
+        "upd_share_of_step_cost": 1.0,
+        "walls_to_09_mean": 63496.53333333333
+      },
+      "steps_ratio": 1.0555032925682033,
+      "wall_ratio": 0.6785378309367021,
+      "mean_step_cost_ratio_to_09": 0.6428571428571429,
+      "delta_mean_step_cost": -320.0,
+      "delta_from_update_term": -320.0,
+      "delta_from_gen_side": 0.0,
+      "gen_share_of_step_delta": -0.0
+    }
+  },
+  "p3_decomposition_degenerate": {
+    "n_seed_mode_cells": 150,
+    "min_update_share": 1.0,
+    "max_update_share": 1.0,
+    "gen_side_always_zero": true,
+    "why": "步成本 = max(生成, 更新)；p3 上更新恒为最大项 ⇒ 生成侧被完全吸收，按此分解得 Δgen ≡ 0。这是恒等式的结果，不是'生成侧没省'的证据。p3 因此只能把'省额在墙钟上如何兑现'算清，不能把'省额属于生成侧还是更新侧'分开。"
+  },
+  "p3_internal_consistency": {
+    "R_nofilter": {
+      "n_seeds": 30,
+      "n_inconsistent_seeds": 0,
+      "bad_seeds": []
+    },
+    "R": {
+      "n_seeds": 30,
+      "n_inconsistent_seeds": 0,
+      "bad_seeds": []
+    },
+    "A": {
+      "n_seeds": 30,
+      "n_inconsistent_seeds": 0,
+      "bad_seeds": []
+    },
+    "B": {
+      "n_seeds": 30,
+      "n_inconsistent_seeds": 0,
+      "bad_seeds": []
+    },
+    "C": {
+      "n_seeds": 30,
+      "n_inconsistent_seeds": 0,
+      "bad_seeds": []
+    }
+  },
+  "p4_internal_consistency": {
+    "base": {
+      "n_seeds": 30,
+      "n_inconsistent_seeds": 0,
+      "bad_seeds": []
+    },
+    "freq": {
+      "n_seeds": 30,
+      "n_inconsistent_seeds": 0,
+      "bad_seeds": []
+    },
+    "replay": {
+      "n_seeds": 30,
+      "n_inconsistent_seeds": 0,
+      "bad_seeds": []
+    },
+    "cancel": {
+      "n_seeds": 30,
+      "n_inconsistent_seeds": 0,
+      "bad_seeds": []
+    },
+    "cap": {
+      "n_seeds": 30,
+      "n_inconsistent_seeds": 0,
+      "bad_seeds": []
+    }
+  },
+  "threshold_grid": {
+    "p4": {
+      "eval_size": 200,
+      "grid": 0.005,
+      "rebuild_mismatch_seeds": 0,
+      "margin_above_threshold": {
+        "base": {
+          "mean": 0.02016666666666667,
+          "max": 0.04999999999999993
+        },
+        "freq": {
+          "mean": 0.015166666666666669,
+          "max": 0.039999999999999925
+        },
+        "replay": {
+          "mean": 0.020000000000000007,
+          "max": 0.05499999999999994
+        },
+        "cancel": {
+          "mean": 0.02016666666666666,
+          "max": 0.05999999999999994
+        },
+        "cap": {
+          "mean": 0.016833333333333336,
+          "max": 0.039999999999999925
+        }
+      }
+    },
+    "p3": {
+      "eval_size": 400,
+      "grid": 0.0025,
+      "mismatch_modes": {
+        "R_nofilter": 0,
+        "R": 0,
+        "A": 0,
+        "B": 0,
+        "C": 0
+      },
+      "margin_above_threshold": {
+        "R_nofilter": {
+          "mean": 0.0072499999999999865,
+          "max": 0.03249999999999997
+        },
+        "R": {
+          "mean": 0.008999999999999989,
+          "max": 0.03500000000000003
+        },
+        "A": {
+          "mean": 0.0071666666666666545,
+          "max": 0.022499999999999964
+        },
+        "B": {
+          "mean": 0.007999999999999981,
+          "max": 0.03500000000000003
+        },
+        "C": {
+          "mean": 0.004666666666666652,
+          "max": 0.01749999999999996
+        }
+      }
+    }
+  },
+  "p4_curve_area": {
+    "base": {
+      "n": 30,
+      "mean_diff_area": 0.0,
+      "ci95": 0.0,
+      "n_negative": 0,
+      "n_positive": 0
+    },
+    "freq": {
+      "n": 30,
+      "mean_diff_area": 1.3846666666666836,
+      "ci95": 0.19663312379449474,
+      "n_negative": 0,
+      "n_positive": 30
+    },
+    "replay": {
+      "n": 30,
+      "mean_diff_area": -0.15683333333333457,
+      "ci95": 0.3346197587426643,
+      "n_negative": 18,
+      "n_positive": 12
+    },
+    "cancel": {
+      "n": 30,
+      "mean_diff_area": -0.47616666666667223,
+      "ci95": 0.2544296024278078,
+      "n_negative": 22,
+      "n_positive": 8
+    },
+    "cap": {
+      "n": 30,
+      "mean_diff_area": 0.16516666666667099,
+      "ci95": 0.06500496849858438,
+      "n_negative": 6,
+      "n_positive": 24
+    }
+  }
+}
