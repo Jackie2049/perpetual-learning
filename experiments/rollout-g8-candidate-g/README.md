@@ -181,9 +181,19 @@
 
 **跨窗口复现**：g4p vs pC1 = 14.173 vs 14.167s（**1.0004×**，各阶段 ≤1.4%）；g2p vs pD1 = 18.031 vs 18.403s（0.980×），原始差全在 gen 的慢/快态配比（g2p 慢态 6/12 步 vs pD1 8/12；分层后慢态 19.218 vs 19.282s＝+0.3%、快态 16.845 vs 16.645s＝+1.2%）——§13.44 轮询量子机制的第三次独立复现。
 
-**判决**：2+2 可作 canonical 多卡锚点（4 卡 1.942×／0.485、2 卡 1.526×／0.763）；旧 1.251×／1.631× 只作 2+0／3+1 放置值（同卡数慢 22.1%／19.1%）；最佳放置下加卡仍远非线性，`update_actor` G=2.087、`update_weights` 0.770 仍负扩展——「加卡收益递减、更新侧吃收益」不变。弱扩展（1.417／2.145×）仍旧放置，读作下界，按 2+2 重测登记为残留。
+**判决**：2+2 可作 canonical 多卡锚点（4 卡 1.942×／0.485、2 卡 1.526×／0.763）；旧 1.251×／1.631× 只作 2+0／3+1 放置值（同卡数慢 22.1%／19.1%）；最佳放置下加卡仍远非线性，`update_actor` G=2.087、`update_weights` 0.770 仍负扩展——「加卡收益递减、更新侧吃收益」不变。
 
-**材料**：`raw/rollout-g8-candidate-g-g{1p,2p,4p}.txt`、`reanchor-summary.json`、`parse-candidate-g-reanchor.py`、`run-candidate-g-2plus2-reanchor.sh`。
+**弱扩展同向重测**（每卡 32 prompts 固定，配置同 g2w／g4w 只换放置；g2wp 11:29:58–11:40:24Z 14/14 步、g4wp 11:40:34–11:52:19Z 12/12 步，均 exit 0，md5 `0d9529d0…`／`b325bf45…`）：
+
+| 模式 | 放置 | 卡数 | 全局 batch | 整步 | 步间 sd | 每 GPU 吞吐 | 聚合吞吐 | 聚合×（vs g1p） | 弱扩展效率 | 相对旧放置 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| g1p | 单卡 | 1 | 32 | 27.522s | 0.632 | 1508.0 | 1508.0 | 1.000 | 1.000 | — |
+| g2wp | 1+1（0,4） | 2 | 64 | 31.702s | 0.642 | 1319.1 | 2638.1 | **1.749×** | **0.868** | 0.823×（vs g2w 38.520s） |
+| g4wp | 2+2（0,1,4,5） | 4 | 128 | 42.246s | 1.093 | 991.0 | 3963.9 | **2.629×** | **0.651** | 0.824×（vs g4w 51.246s） |
+
+逐阶段比值（新 ÷ 旧）：`gen` 0.9995／0.9548、`old_log_prob` 0.900／0.834、`ref` 0.871／0.878、`update_actor` 0.748／0.777、`update_weights` 0.902／0.907——**收益全在集合通信阶段，`gen` 基本不动**，与强扩展的放置效应同源。4 卡聚合仍只到 2.63×，加卡提吞吐同样次线性。
+
+**材料**：`raw/rollout-g8-candidate-g-g{1p,2p,4p,2wp,4wp}.txt`、`reanchor-summary.json`、`parse-candidate-g-reanchor.py`、`run-candidate-g-2plus2-reanchor.sh`、`run-candidate-g-weak-2plus2.sh`。
 
 ## 失败与修复：NCCL CUDA 217（peer access）
 
@@ -235,11 +245,16 @@ bash run-candidate-g-spread.sh
 RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1 GPUS=0,4 MODE=pD1 bash run-candidate-g.sh
 # 2+2 重报（三段串行：单卡 → 1+1 → 2+2；脚本已归档为 run-candidate-g-2plus2-reanchor.sh）
 bash run-candidate-g-2plus2-reanchor.sh
-# 本地解析重报（含与 pC1／pD1 的跨窗口对照）
+# 弱扩展按最佳放置重测（两段串行：1+1 batch 64；2+2 batch 128；归档为 run-candidate-g-weak-2plus2.sh）
+bash run-candidate-g-weak-2plus2.sh
+# 本地解析重报（含与 pC1／pD1／g2w／g4w 的跨窗口对照）
 python3 parse-candidate-g-reanchor.py raw/rollout-g8-candidate-g-g1p.txt \
   raw/rollout-g8-candidate-g-g2p.txt raw/rollout-g8-candidate-g-g4p.txt \
+  raw/rollout-g8-candidate-g-g2wp.txt raw/rollout-g8-candidate-g-g4wp.txt \
   --reference raw/rollout-g8-candidate-g-pD1.txt \
-  --reference raw/rollout-g8-candidate-g-pC1.txt --json-out reanchor-summary.json
+  --reference raw/rollout-g8-candidate-g-pC1.txt \
+  --reference raw/rollout-g8-candidate-g-g2w.txt \
+  --reference raw/rollout-g8-candidate-g-g4w.txt --json-out reanchor-summary.json
 # 通信/算力微基准（4 卡/2 卡 × 六种放置 + socket 对照）
 bash run-g8-comm-probe.sh
 # 本地解析放置实验

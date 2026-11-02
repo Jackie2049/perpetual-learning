@@ -24,6 +24,8 @@ import statistics
 
 STAGES = ["gen", "old_log_prob", "ref", "adv", "update_actor", "update_weights"]
 PLACEMENT = {"g1p": "1 卡（GPU 0）", "g2p": "1+1（GPU 0,4）", "g4p": "2+2（GPU 0,1,4,5）",
+             "g2wp": "1+1（GPU 0,4）", "g4wp": "2+2（GPU 0,1,4,5）",
+             "g2w": "2+0（GPU 0,1）", "g4w": "3+1（GPU 0,1,3,4）",
              "pD1": "1+1（GPU 0,4）", "pC1": "2+2（GPU 0,1,4,5）"}
 
 
@@ -89,7 +91,7 @@ def extract(path):
 
 def label_of(path):
     base = path.rsplit("/", 1)[-1].rsplit(".", 1)[0]
-    m = re.search(r"-(g\d+p|p[CD]\d)$", base)
+    m = re.search(r"-(g\d+w?p|g\d+w|p[CD]\d)$", base)
     return m.group(1) if m else base
 
 
@@ -109,6 +111,7 @@ def main():
 
     base = modes["g1p"]
     primaries = [n for n in ("g1p", "g2p", "g4p") if n in modes]
+    weak = [n for n in ("g2wp", "g4wp") if n in modes]
     summary = {
         "meta": {
             "batch": "candidate-g placement re-anchor (2+2)",
@@ -122,7 +125,7 @@ def main():
                     "default ReplayBuffer poll interval kept so the anchors stay "
                     "comparable with §13.36/§13.42.",
         },
-        "modes": {}, "scaling": {}, "cross_run": {},
+        "modes": {}, "scaling": {}, "weak_scaling": {}, "cross_run": {},
     }
 
     for name, m in modes.items():
@@ -152,7 +155,22 @@ def main():
             "stage_time_ratio": {k: round(m[k] / base[k], 4) for k in STAGES},
         }
 
-    pairs = [("g4p", "pC1"), ("g2p", "pD1")]
+    for name in weak:
+        m = modes[name]
+        n = meta[name]["n_gpus_per_node"]
+        # Weak scaling: per-GPU batch fixed, global batch = n x base batch.
+        summary["weak_scaling"][name] = {
+            "n_gpus": n,
+            "global_batch": meta[name]["train_batch_size"],
+            "speedup_work_normalized": round(n * base["step"] / m["step"], 4),
+            "parallel_efficiency": round(base["step"] / m["step"], 4),
+            "aggregate_throughput_ratio": round(m["throughput"] * n / base["throughput"], 4),
+            "per_gpu_throughput_ratio": round(m["throughput"] / base["throughput"], 4),
+            "stage_time_ratio": {k: round(m[k] / base[k], 4) for k in STAGES},
+            "stage_scaling": {k: round(base[k] / m[k], 4) for k in STAGES},
+        }
+
+    pairs = [("g4p", "pC1"), ("g2p", "pD1"), ("g2wp", "g2w"), ("g4wp", "g4w")]
     for new, old in pairs:
         if new in modes and old in modes:
             a, b = modes[new], modes[old]
@@ -177,6 +195,13 @@ def main():
         print(f"cross-run {new} vs {ref['reference']}: step {ref['step_s']:.3f}s -> "
               f"{ref['reference_step_s']:.3f}s = {ref['ratio']:.3f}x "
               f"(stage ratios {ref['stage_ratio']})")
+    for name in weak:
+        m, w = modes[name], summary["weak_scaling"][name]
+        n = w["n_gpus"]
+        print(f"weak {name} ({n} GPU, batch {w['global_batch']}, "
+              f"{PLACEMENT.get(name, '?')}): step={m['step']:.3f}s "
+              f"aggregate_tp={w['aggregate_throughput_ratio']:.3f}x "
+              f"eff={w['parallel_efficiency']:.3f}")
     for name in modes:
         cfg = meta[name]
         print(f"cfg {name}: batch={cfg['train_batch_size']} mini={cfg['ppo_mini_batch_size']} "

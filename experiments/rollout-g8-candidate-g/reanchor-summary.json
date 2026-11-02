@@ -8,8 +8,12 @@
    "g1p": "1 \u5361\uff08GPU 0\uff09",
    "g2p": "1+1\uff08GPU 0,4\uff09",
    "g4p": "2+2\uff08GPU 0,1,4,5\uff09",
+   "g2wp": "1+1\uff08GPU 0,4\uff09",
+   "g4wp": "2+2\uff08GPU 0,1,4,5\uff09",
    "pD1": "1+1\uff08GPU 0,4\uff09",
-   "pC1": "2+2\uff08GPU 0,1,4,5\uff09"
+   "pC1": "2+2\uff08GPU 0,1,4,5\uff09",
+   "g2w": "2+0\uff08GPU 0,1\uff09",
+   "g4w": "3+1\uff08GPU 0,1,3,4\uff09"
   },
   "note": "Same workload as the candidate-G strong-scaling runs; default ReplayBuffer poll interval kept so the anchors stay comparable with \u00a713.36/\u00a713.42."
  },
@@ -116,6 +120,74 @@
    },
    "placement": "2+2\uff08GPU 0,1,4,5\uff09"
   },
+  "g2wp": {
+   "gen": 4.185,
+   "old_log_prob": 4.3965,
+   "ref": 4.4805,
+   "adv": 0.2134,
+   "update_actor": 16.258,
+   "update_weights": 2.0576,
+   "step": 31.7024,
+   "throughput": 1319.0583,
+   "step_sd": 0.6418,
+   "step_median": 31.6398,
+   "gen_modes": {
+    "slow_steps": 11,
+    "fast_steps": 0,
+    "slow_step_mean": 31.7024,
+    "fast_step_mean": null
+   },
+   "n": 11,
+   "window": [
+    3,
+    13
+   ],
+   "stage_sum": 31.591,
+   "residual": 0.1114,
+   "config": {
+    "train_batch_size": 64,
+    "ppo_mini_batch_size": 32,
+    "rollout_n": 4,
+    "n_gpus_per_node": 2,
+    "val_acc_final": 0.20833333333333334,
+    "max_reserved_gb": 14.17578125
+   },
+   "placement": "1+1\uff08GPU 0,4\uff09"
+  },
+  "g4wp": {
+   "gen": 5.0954,
+   "old_log_prob": 5.5076,
+   "ref": 4.8527,
+   "adv": 0.3904,
+   "update_actor": 23.747,
+   "update_weights": 2.3836,
+   "step": 42.2459,
+   "throughput": 990.971,
+   "step_sd": 1.0927,
+   "step_median": 41.8765,
+   "gen_modes": {
+    "slow_steps": 9,
+    "fast_steps": 0,
+    "slow_step_mean": 42.2459,
+    "fast_step_mean": null
+   },
+   "n": 9,
+   "window": [
+    3,
+    11
+   ],
+   "stage_sum": 41.9767,
+   "residual": 0.2692,
+   "config": {
+    "train_batch_size": 128,
+    "ppo_mini_batch_size": 64,
+    "rollout_n": 4,
+    "n_gpus_per_node": 4,
+    "val_acc_final": 0.2,
+    "max_reserved_gb": 11.990234375
+   },
+   "placement": "2+2\uff08GPU 0,1,4,5\uff09"
+  },
   "pD1": {
    "gen": 3.4985,
    "old_log_prob": 2.3695,
@@ -183,6 +255,74 @@
     "max_reserved_gb": 11.091796875
    },
    "placement": "2+2\uff08GPU 0,1,4,5\uff09"
+  },
+  "g2w": {
+   "gen": 4.1871,
+   "old_log_prob": 4.8833,
+   "ref": 5.1417,
+   "adv": 0.1851,
+   "update_actor": 21.7319,
+   "update_weights": 2.2815,
+   "step": 38.5199,
+   "throughput": 1079.8448,
+   "step_sd": 0.5218,
+   "step_median": 38.4377,
+   "gen_modes": {
+    "slow_steps": 11,
+    "fast_steps": 0,
+    "slow_step_mean": 38.5199,
+    "fast_step_mean": null
+   },
+   "n": 11,
+   "window": [
+    3,
+    13
+   ],
+   "stage_sum": 38.4107,
+   "residual": 0.1092,
+   "config": {
+    "train_batch_size": 64,
+    "ppo_mini_batch_size": 32,
+    "rollout_n": 4,
+    "n_gpus_per_node": 2,
+    "val_acc_final": 0.2,
+    "max_reserved_gb": 14.2578125
+   },
+   "placement": "2+0\uff08GPU 0,1\uff09"
+  },
+  "g4w": {
+   "gen": 5.3365,
+   "old_log_prob": 6.6018,
+   "ref": 5.525,
+   "adv": 0.3924,
+   "update_actor": 30.56,
+   "update_weights": 2.6291,
+   "step": 51.2456,
+   "throughput": 816.9133,
+   "step_sd": 1.2315,
+   "step_median": 51.7912,
+   "gen_modes": {
+    "slow_steps": 9,
+    "fast_steps": 0,
+    "slow_step_mean": 51.2456,
+    "fast_step_mean": null
+   },
+   "n": 9,
+   "window": [
+    3,
+    11
+   ],
+   "stage_sum": 51.0448,
+   "residual": 0.2007,
+   "config": {
+    "train_batch_size": 128,
+    "ppo_mini_batch_size": 64,
+    "rollout_n": 4,
+    "n_gpus_per_node": 4,
+    "val_acc_final": 0.18333333333333332,
+    "max_reserved_gb": 12.0078125
+   },
+   "placement": "3+1\uff08GPU 0,1,3,4\uff09"
   }
  },
  "scaling": {
@@ -231,6 +371,56 @@
    }
   }
  },
+ "weak_scaling": {
+  "g2wp": {
+   "n_gpus": 2,
+   "global_batch": 64,
+   "speedup_work_normalized": 1.7363,
+   "parallel_efficiency": 0.8681,
+   "aggregate_throughput_ratio": 1.7494,
+   "per_gpu_throughput_ratio": 0.8747,
+   "stage_time_ratio": {
+    "gen": 1.001,
+    "old_log_prob": 1.1594,
+    "ref": 1.0466,
+    "adv": 1.9178,
+    "update_actor": 1.2248,
+    "update_weights": 1.139
+   },
+   "stage_scaling": {
+    "gen": 0.999,
+    "old_log_prob": 0.8625,
+    "ref": 0.9555,
+    "adv": 0.5214,
+    "update_actor": 0.8165,
+    "update_weights": 0.878
+   }
+  },
+  "g4wp": {
+   "n_gpus": 4,
+   "global_batch": 128,
+   "speedup_work_normalized": 2.6059,
+   "parallel_efficiency": 0.6515,
+   "aggregate_throughput_ratio": 2.6285,
+   "per_gpu_throughput_ratio": 0.6571,
+   "stage_time_ratio": {
+    "gen": 1.2188,
+    "old_log_prob": 1.4524,
+    "ref": 1.1336,
+    "adv": 3.5081,
+    "update_actor": 1.7889,
+    "update_weights": 1.3194
+   },
+   "stage_scaling": {
+    "gen": 0.8205,
+    "old_log_prob": 0.6885,
+    "ref": 0.8822,
+    "adv": 0.2851,
+    "update_actor": 0.559,
+    "update_weights": 0.7579
+   }
+  }
+ },
  "cross_run": {
   "g4p": {
    "reference": "pC1",
@@ -258,6 +448,34 @@
     "adv": 1.2557,
     "update_actor": 0.9962,
     "update_weights": 0.9928
+   }
+  },
+  "g2wp": {
+   "reference": "g2w",
+   "step_s": 31.7024,
+   "reference_step_s": 38.5199,
+   "ratio": 0.823,
+   "stage_ratio": {
+    "gen": 0.9995,
+    "old_log_prob": 0.9003,
+    "ref": 0.8714,
+    "adv": 1.1528,
+    "update_actor": 0.7481,
+    "update_weights": 0.9018
+   }
+  },
+  "g4wp": {
+   "reference": "g4w",
+   "step_s": 42.2459,
+   "reference_step_s": 51.2456,
+   "ratio": 0.8244,
+   "stage_ratio": {
+    "gen": 0.9548,
+    "old_log_prob": 0.8343,
+    "ref": 0.8783,
+    "adv": 0.9948,
+    "update_actor": 0.7771,
+    "update_weights": 0.9066
    }
   }
  }

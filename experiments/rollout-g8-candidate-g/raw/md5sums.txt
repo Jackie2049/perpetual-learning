@@ -11,10 +11,12 @@ da81fd4dc96ca4fd0a26ffce46b54c88  raw/rollout-g8-candidate-g-g1p.txt
 a4e5f3540d7c7b0240f5e1e4c9c73e12  raw/rollout-g8-candidate-g-g2n.txt
 d6513a59f9a37b5066c34f165184a5d0  raw/rollout-g8-candidate-g-g2p.txt
 a19d2c34d17113f0d153675057716547  raw/rollout-g8-candidate-g-g2w.txt
+0d9529d00d07a2f3aff8ea4126aed537  raw/rollout-g8-candidate-g-g2wp.txt
 43ffba808775b9a69db3b31b84ca0af7  raw/rollout-g8-candidate-g-g4.txt
 0236e680caaaf6ce63ada00f1a1fd816  raw/rollout-g8-candidate-g-g4n.txt
 762ca07f2e9380951f96009dce7c38b6  raw/rollout-g8-candidate-g-g4p.txt
 c60e8c77b26dcfad57235000159d735e  raw/rollout-g8-candidate-g-g4w.txt
+b325bf45727cfcde20ccd24fb7db0406  raw/rollout-g8-candidate-g-g4wp.txt
 4653ccdf235235e3502dd2d3141ba8db  raw/rollout-g8-candidate-g-pA1.txt
 9ed25905f870a0d97b82a09dc17c9ce8  raw/rollout-g8-candidate-g-pA2.txt
 d07ddd6f38e40ae9ca964c9d9e75ef11  raw/rollout-g8-candidate-g-pA3.txt
