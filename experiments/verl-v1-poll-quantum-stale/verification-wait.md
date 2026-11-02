@@ -30,7 +30,7 @@
 1. **wait 永不逐出**。`ReplayBufferAsync._stale_terminal_keys` 首行 `if partition_id == "val" or self.max_off_policy_strategy != "drop": return set()`；`_terminal_eviction_reasons` 随之给出空 stale 集，`_evict_terminal_groups` 不会发出 `off_policy/evicted_samples`。日志里该键**整体缺失**（不是值为 0），与此一致。
 2. **threshold=1 的 wait 是完整屏障**。`_has_enough_samples` 对 `pending_keys | running_keys` 用 `(global_steps - prompt_global_steps + 1) >= threshold` 判定：阈值 1 时任何在飞批次都满足，采样必须等它变 terminal。因此 `trajectory_spans == 1` 是**结构必然**，四跑 12/12 步恒 1.00 不构成经验证据，只验证代码按预期跑。
 
-含义：本实验测的是**最保守的 dropless 设置**（严格按步对齐、零丢弃）；`threshold>1` 的 wait 是"允许少量跨步但不丢批"，行为不同，未测。
+含义：本实验测的是**最保守的 dropless 设置**（严格按步对齐、零丢弃）。`threshold=2` 的 wait（允许一步重叠）已由同一实验补测，见 [README 补测二](README.md#补测二wait--threshold2允许一步重叠轮询收益缩到噪声内但整步比-t1-屏障低约-14s2026-11-03m5-第三会话) 与 [verification-wait-t2.md](verification-wait-t2.md)；`threshold≥3` 结构上等同默认 async。
 
 ## 四、口径提示
 

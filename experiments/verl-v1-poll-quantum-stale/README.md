@@ -90,12 +90,37 @@ drop 臂每步丢掉上一步的整批 32 组（生成组/步 64）；`wait` 是
 
 **对 TM-008 的含义**：轮询收益在 wait 通道同样成立（−5.6%），且 `wait` 消除了 §13.53 的主要成本（每步丢一整批）。若关心 async 的 on-policy 严格性，`wait` 比"靠 poll 补偿 drop"更有效。
 
-**本节边界**：wait 只测 threshold=1（阻塞条件"任一批次跨度≥阈值"，threshold>1 未测）；跨策略比较来自不同窗口；单 seed、每臂两跑。
+**本节边界**：本节的 wait 只测 threshold=1（threshold=2 见下一节）；跨策略比较来自不同窗口；单 seed、每臂两跑。
+
+## 补测二：`wait` + threshold=2（允许一步重叠）——轮询收益缩到噪声内，但整步比 t=1 屏障低约 1.4s（2026-11-03，M5 第三会话）
+
+**为什么只补 threshold=2**：`prepare_step()` 在 `sample()` **之前**派发本步新批（tag 用当前步号），所以 threshold=1 会连"本步刚派发的批"一起等（span 1 ≥ 1）⇒ 完整屏障；threshold=2 时本步批（span 1）不阻塞、上一步批（span 2）阻塞 ⇒ **允许一步重叠**；threshold≥3 时自然跨度 1–2 永不阻塞 ⇒ 等同默认 async（§13.51 已测）。故 t=2 是本管道深度下唯一不同的 dropless 机制。
+
+**配置**：同 t=1（colocate_async、GPU 4,5、Qwen2.5-1.5B、gsm8k、15 步、`n=4`、patched 树），唯一变量 `max_off_policy_threshold=2`；poll 2.0／0.1 交替各两跑，21:32–22:05Z，**4/4 exit 0**。
+
+| 运行 | poll | gen 均值±sd | 整步±sd | span 均值 | staleness 均值 | 逐出组/步 |
+|---|---|---|---|---|---|---|
+| swt2p200 | 2.0 | 1.738±1.25 | 20.908±1.57 | 1.62 | 0.38 | 0 |
+| swt2p200b | 2.0 | 1.740±1.26 | 20.879±1.79 | 1.63 | 0.37 | 0 |
+| swt2p010 | 0.1 | 1.388±0.29 | 20.656±0.95 | 1.91 | 0.09 | 0 |
+| swt2p010b | 0.1 | 1.330±0.36 | 20.679±0.85 | 1.93 | 0.07 | 0 |
+
+**读数一：量子还在，但只落在少数步。** 2.0 臂 gen 呈**三态** 0.21–0.26／2.21–2.26／4.27–4.31s（12 步里 4／7／1），0.1 臂连续 0.74–1.87s。解释：t=2 不再等本步新批，"立即有样本"的步 gen 只有 ~0.2s；需要等上一步批时按 2s 量子取整。
+
+**读数二：池化收益与噪声不可分。** gen **1.739→1.359（−0.380，−21.9%）**、整步 **20.893→20.667（−0.226，−1.1%）**；步级分层 bootstrap 95% CI 为 **Δstep [−0.943, +0.512]s、Δgen [−0.881, +0.126]s，均跨 0** ⇒ 本样本量下**不能说 poll 0.1 在 t=2 有可检出收益**。这与 t=1 的 −1.24s（CI [−1.786, −0.724]）形成对照：**屏障越强，量子暴露越多**。
+
+**独立复核的留一检验（比"与噪声不可分"更强）**：去掉 step 3 后 Δgen 变为 −0.164s、Δstep 变为 **+0.019s** ⇒ 这笔收益完全来自窗口首步的一次两量子等待，steady state（steps 4–14）两臂整步差约为 0；同法对 t=1 只把 −1.243 削到 −1.120。**t=2 下轮询基本无效，不是效应被噪声掩盖。** 见 [verification-wait-t2.md](verification-wait-t2.md)。
+
+**读数四：跨权重更新的轨迹随 poll 变小而增多（独立复核新增）。** `trajectory_spans` 数的是轨迹**生成时跨越的权重版本数**（不是派发步差）：2.0 臂 span=2 的窗口步 **18/24**（span 均值 1.62、staleness 均值 0.38），0.1 臂 **24/24**（1.92、0.08）。两臂最坏 lag 都恒为 1，差别在分布——2.0 有 4/12 步是"单版本轨迹"但平均落后 ~0.4 个版本；0.1 几乎每步都有轨迹跨更新、但最新那段 token 是当前版本。机制上，2s 等待把整步往后推，给在飞生成更多时间在下次权重更新前跑完，于是更少轨迹被更新切成两段。**跨臂是管道时序的相关性，不是单变量因果**；不能简单说哪一档更 on-policy。
+
+**读数三：dropless 的实用档位。** 绝对步时 20.9（2.0）／20.7（0.1）s，比 t=1 的 22.3／21.1 低 **1.43／0.41s**，且与默认 async（§13.51 的 21.2／20.8）相当——即"允许一步重叠的 dropless"能拿掉屏障成本，同时保持零逐出、每步 32 组。**跨窗口比较，方向性证据**；机制上由派发时序直接支持。
+
+**本节边界**：threshold 只测 2（t≥3 为结构等价默认 async，未实测）；相邻窗口；单 seed、每臂两跑；2+0 放置。
 
 ## 边界
 
 - 单栈单点：1.5B／gsm8k 短答案／单 seed／15 步／`n=4`；2+0 放置，绝对步时不可跨窗口比。
-- 只测了 threshold=1 与 2（2 是 4 步冒烟、零逐出）；`wait` 已补测（见上，仅 threshold=1）；`separate_async` 与 threshold>1 的 `wait` 未测。
+- 只测了 drop 的 threshold=1 与 2（2 是 4 步冒烟、零逐出）；`wait` 已补测 threshold=1（屏障）与 2（一步重叠），threshold≥3 的 `wait` 结构上等同默认 async、未单独实测；`separate_async` 未测。
 - 每臂两跑，run 级噪声 ±0.4s 量级；整步差 0.475s 小于 2.0 臂跨跑极差 0.835s。
 - 未做任何上游写操作。
 
@@ -111,8 +136,12 @@ drop 臂每步丢掉上一步的整批 32 组（生成组/步 64）；`wait` 是
 | `summary-wait.json` | 由 `make-summary-wait.py` 从 wait raw 重算（零逐出时 `off_policy_evicted` 记为缺失，生成组按 32 计） |
 | `run-stale-wait.sh` | wait 运行脚本（`STRATEGY=wait`，其余同 `run-stale-ab.sh`） |
 | `make-summary-wait.py` | wait 组的解析与汇总 |
-| `verify-wait.py` | wait 四跑的独立复核（不同解析路径、按跑分层 bootstrap、代码层结构断言），exit 0 |
+| `verify-wait.py` | wait 四跑的独立复核（不同解析路径、按跑分层 bootstrap、代码层结构断言）；`--group t1/t2`，t2 时同时生成 summary，exit 0 |
 | `verification-wait.md` | 独立复核记录：1e-9 对账、md5 4/4、wait 永不逐出与 threshold=1 屏障的代码证据、口径提示 |
+| `raw/rollout-poll-stale-{swt2p200,swt2p010,swt2p200b,swt2p010b}.txt` | wait＋threshold=2 四份训练日志（15 步、exit 0），md5 见 `md5sums.txt` |
+| `summary-wait-t2.json` | t=2 汇总（由 `verify-wait.py --group t2 --write-summary` 生成） |
+| `verify-wait-t2.py` | t=2 四跑的**第二份独立复核**（整行单正则扫描、5000 次 bootstrap seed 11、span=2 分布硬断言），exit 0 |
+| `verification-wait-t2.md` | t=2 独立复核记录：12 值 1e-9 对账、md5 4/4、留一检验（t2 收益为窗口首步瞬态）、span=2 分布与 staleness 的权衡 |
 
 ## 复现
 
@@ -123,7 +152,11 @@ MODE=st1p010 POLL=0.1 THRESHOLD=1 STEPS=15 GPUS=4,5 bash run-stale-ab.sh
 # wait（dropless）
 MODE=swt200 POLL=2.0 THRESHOLD=1 STEPS=15 GPUS=4,5 bash run-stale-wait.sh
 MODE=swt010 POLL=0.1 THRESHOLD=1 STEPS=15 GPUS=4,5 bash run-stale-wait.sh
+# wait + threshold=2（一步重叠）
+MODE=swt2p200 POLL=2.0 THRESHOLD=2 STEPS=15 GPUS=4,5 bash run-stale-wait.sh
+MODE=swt2p010 POLL=0.1 THRESHOLD=2 STEPS=15 GPUS=4,5 bash run-stale-wait.sh
 # 本地
 python3 make-summary-stale.py raw/
 python3 make-summary-wait.py raw/
+python3 verify-wait.py --group t2 --write-summary   # t=2 汇总＋结构复核
 ```
