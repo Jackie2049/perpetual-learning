@@ -235,5 +235,78 @@ class TestRetractedMetric(unittest.TestCase):
         self.assertGreater(p4['p90'], p2['p90'])
 
 
+class TestPolicyInvariance(unittest.TestCase):
+    """Layer 2b：排队顺序归引擎、归还粒度归 L4，两者不是同一条轴。"""
+
+    def test_no_backlog_hides_every_policy(self):
+        """一批装得下时任何排队顺序都无事可排，六档税全为 0。"""
+        lens = m.sample_group_lens(random.Random(0))
+        for p in m.POLICIES:
+            self.assertEqual(m._makespan_by_policy(lens, 1, p)['tax'], 0.0)
+
+    def test_fifo_and_lof_differ_in_makespan(self):
+        """换排队顺序确实改变两臂的 makespan。"""
+        lens = m.sample_group_lens(random.Random(3))
+        a = m._makespan_by_policy(lens, 4, m.POLICY_FIFO)
+        b = m._makespan_by_policy(lens, 4, m.POLICY_LOF)
+        self.assertNotAlmostEqual(a['group_makespan'], b['group_makespan'], places=6)
+
+    def test_lof_raises_tax_because_traj_arm_benefits_more(self):
+        """长度优先让两臂都更快，但轨迹臂受益更多 ⇒ 税**上升**。
+        若这条反过来，说明本层排程把顺序轴吃掉了。"""
+        lens = m.sample_group_lens(random.Random(0))
+        a = m._makespan_by_policy(lens, 4, m.POLICY_FIFO)
+        b = m._makespan_by_policy(lens, 4, m.POLICY_LOF)
+        self.assertGreater(b['tax'], a['tax'])
+        self.assertLess(b['group_makespan'], a['group_makespan'])
+        self.assertLess(b['traj_makespan'], a['traj_makespan'])
+
+    def test_homogeneous_load_is_zero_for_every_policy(self):
+        lens = [[50.0] * 8] * 16
+        for p in m.POLICIES:
+            self.assertAlmostEqual(m._makespan_by_policy(lens, 4, p)['tax'], 0.0, places=12)
+
+
+class TestPolicyLayerDefectsAreCaught(unittest.TestCase):
+    def test_negative_control_has_identification(self):
+        """两个不可实现对照必须把税推离基线，否则本层对"换了轴"不敏感。"""
+        nc = m.policy_invariance_negative_control()
+        self.assertTrue(nc['detects_two_arm_resort'])
+        self.assertTrue(nc['detects_sorted_arrival'])
+        self.assertTrue(nc['zero_load_clean'])
+
+    def test_order_matters_so_the_layer_is_not_vacuous(self):
+        """本层的识别性：若把组的排队顺序**换成到达顺序**（即取消策略），
+        组臂 makespan 必须与按长度优先不同。否则说明排程器根本没吃顺序，
+        前面那些"税随策略移动"的读数就都是假象。
+        """
+        lens = m.sample_group_lens(random.Random(7), n_groups=8)
+        n_per = len(lens[0])
+        cap = len(lens) * n_per
+
+        def makespan_with_explicit_order(ordered):
+            free, running, pending, now, end = cap, [], list(ordered), 0.0, 0.0
+            while pending or running:
+                for r in list(pending):
+                    if n_per <= free:
+                        running.append((now + r['last'], n_per, None))
+                        free -= n_per
+                        pending.remove(r)
+                if not running:
+                    break
+                running.sort()
+                t, s, _ = running.pop(0)
+                now = max(now, t)
+                end = max(end, t)
+                free += s
+            return max(end, 1e-9)
+
+        order = [{'gid': (b, i), 'lens': g, 'last': max(g), 'first': min(g),
+                  'arrival': 0.0} for b in range(4) for i, g in enumerate(lens)]
+        as_arrived = makespan_with_explicit_order(order)
+        by_length = makespan_with_explicit_order(m._group_order(order, m.POLICY_LOF))
+        self.assertLess(by_length, as_arrived - 1.0)
+
+
 if __name__ == '__main__':
     unittest.main()

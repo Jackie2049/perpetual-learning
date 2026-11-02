@@ -330,6 +330,174 @@ def grouping_tax(fragment_lens, backlog_groups=4):
 
 
 # ---------------------------------------------------------------------------
+# Layer 2b：调度策略不变量（2026-11-03 第三批）
+# ---------------------------------------------------------------------------
+# 为什么要有这一层：§11.4／§11.5 把语义面的剩余缺口写成「在真实 L3 调度机制
+# （长度预测／分桶／迁移）之上的 R 读数」。要判断这句话还缺多少，得先把「调度策略」
+# 拆成两件事：**排队顺序**归引擎，**归还粒度**归 L4 的组完整性约束。本层只做最
+# 小的一步——在同一换组粒度对照上逐一换排队顺序，看 R 变不变。
+#
+# 策略名用引擎里的现成叫法，便于跨系统引用：
+#   fifo         组按到达顺序（vLLM V1 `SchedulingPolicy.FCFS`）
+#   lof          组按最长轨迹优先（SGLang `CacheAgnosticPolicy.LOF`＝SJF）
+#   lof_flat     逐条按长度优先——**不可实现**，只用作负向对照（见 §13.30 第三批）
+#   pending_max  组按"组内剩余轨迹最长那条"优先（Heddle 式长轨迹优先的解码侧版本）
+#   arrive_max   组按组首条轨迹就绪时刻优先，**本身不是策略**：它接在
+#                「离组首已过 eta」的触发条件后面，量的是 eta 通道能补回多少
+#
+# 与 grouping_tax 的唯一差别是排队顺序；两臂的组成员、组号、容量、到达时刻全同。
+
+POLICY_FIFO = 'fifo'
+POLICY_LOF = 'lof'
+POLICY_LOF_FLAT = 'lof_flat'
+POLICY_PENDING_MAX = 'pending_max'
+POLICY_ARRIVE_MAX = 'arrive_max'
+# lof_at_arrival 是**不可实现对照**：让整批组在到达时就已按长度排好序，
+# 用来证明"排序确实能改善 makespan"——若它也量不出来，本层的零差值就不可信。
+POLICY_LOF_AT_ARRIVAL = 'lof_at_arrival'
+POLICIES = (POLICY_FIFO, POLICY_LOF, POLICY_PENDING_MAX, POLICY_ARRIVE_MAX,
+            POLICY_LOF_FLAT, POLICY_LOF_AT_ARRIVAL)
+
+
+def _group_order(order, policy):
+    """把同一批组按给定策略排成放出顺序。两臂共用这一份顺序。"""
+    if policy == POLICY_FIFO:
+        return list(order)
+    if policy in (POLICY_LOF, POLICY_PENDING_MAX):
+        # pending_max 的"剩余轨迹最长那条"在整组一次性释放的模型里与 LOF 同序：
+        # 组一进引擎就全放出去，剩余集合恒等于全集。两者只在"组内分阶段放出"
+        # 时才分开，而那一档本层不建（见 readme 的边界）。
+        return sorted(order, key=lambda r: (-r['last'], r['arrival']))
+    if policy == POLICY_ARRIVE_MAX:
+        return sorted(order, key=lambda r: (r['first'], r['arrival']))
+    if policy in (POLICY_LOF_FLAT, POLICY_LOF_AT_ARRIVAL):
+        return list(order)
+    raise ValueError('unknown policy %r' % (policy,))
+
+
+def _makespan_by_policy(group_lens, backlog_groups, policy):
+    """同一批组、同一容量、同一到达时刻，只换排队顺序时的两臂 makespan。
+
+    组臂：整组 n 条同时进引擎，最慢那条跑完才一起归还 n 个槽位。
+    轨迹臂：每条完成即刻归还自己那一格。
+    lof_flat 是唯一两臂顺序都被改的档（负向对照，不可实现）。
+    """
+    n_groups = len(group_lens)
+    n_per = len(group_lens[0])
+    cap = n_groups * n_per
+    batch_span = float(max(max(g) for g in group_lens))
+
+    order = []
+    for b in range(backlog_groups):
+        for g_idx, g in enumerate(group_lens):
+            order.append({'gid': (b, g_idx), 'lens': g, 'arrival': b * batch_span,
+                          'first': float(min(g)), 'last': float(max(g))})
+    if policy == POLICY_LOF_AT_ARRIVAL:
+        order.sort(key=lambda r: -r['last'])
+    ordered = _group_order(order, policy)
+
+    # ---- 组臂 ----
+    # 槽位一腾出来就按当前排队顺序重新扫描，而不是沿固定列表往下走：
+    # 否则"长度优先"只在第一轮生效，后面全退回到达顺序，策略轴等于没换。
+    free = cap
+    running = []
+    pending = list(ordered)
+    now = end = 0.0
+    while pending or running:
+        placed = True
+        while placed:
+            placed = False
+            for r in list(pending):
+                if n_per <= free:
+                    running.append((now + r['last'], n_per, r['gid']))
+                    free -= n_per
+                    pending.remove(r)
+                    placed = True
+        if not running:
+            break
+        running.sort()
+        t, s_i, _gid = running.pop(0)
+        now = max(now, t)
+        end = max(end, t)
+        free += s_i
+    t_group = max(end, 1e-9)
+
+    # ---- 轨迹臂：同样的轨迹按同一组顺序展开;lof_flat 额外按长度排 ----
+    flat = [x for r in ordered for x in r['lens']]
+    if policy == POLICY_LOF_FLAT:
+        flat = sorted(flat, key=lambda v: -v)
+    t_traj = _makespan([1] * len(flat), flat, False, cap=cap)
+
+    return {'group_makespan': t_group, 'traj_makespan': t_traj,
+            'tax': (t_group - t_traj) / t_group if t_group else 0.0}
+
+
+def policy_invariance(cv=0.6, backlogs=(1, 4, 16), n_groups=16, n_per=8):
+    """同一换组粒度对照，在不同排队顺序下的 R（分组税）。
+
+    除均值外报**逐种子的配对差**（同一负载下 policy 与 fifo 的税之差）：
+    差值若在种子间不变号，就不能说"不变"；只有差值恒 0 才是真的同一条轴。
+    """
+    out = {}
+    for backlog in backlogs:
+        per_seed = {}
+        for policy in POLICIES:
+            per_seed[policy] = [
+                _makespan_by_policy(
+                    sample_group_lens(random.Random(s), n_groups=n_groups,
+                                      n_per=n_per, cv=cv), backlog, policy)['tax']
+                for s in SEEDS]
+        base = per_seed[POLICY_FIFO]
+        arms = {}
+        for policy, vals in per_seed.items():
+            diffs = [v - b for v, b in zip(vals, base)]
+            arms[policy] = {
+                'tax_mean': statistics.mean(vals),
+                'tax_min': min(vals),
+                'tax_max': max(vals),
+                'pairwise_delta_mean': statistics.mean(diffs),
+                'pairwise_delta_min': min(diffs),
+                'pairwise_delta_max': max(diffs),
+                'identical_to_fifo_every_seed': all(abs(d) < 1e-12 for d in diffs),
+            }
+        out['backlog%d' % backlog] = arms
+    return out
+
+
+def policy_invariance_negative_control():
+    """本层的负向对照：注入三种"看起来一样、实际不同"的扰动，看 R 是否确实变。
+
+    ① **判据失效对照**：把两臂的顺序各自换成自己最优（组臂 LOF、轨迹臂 LOF），
+       应当给出不同的税——若也给 0，说明本层量不出任何排序效应；
+    ② **到达即有序对照**：整批按长度排好到达，应当给出不同的税；
+    ③ **零负载对照**：组内长度全相同（cv=0）时任何策略都应给出 0 税，
+       若给出非零，说明排程器本身有 bug（这是本层唯一该给 0 的一行）。
+    """
+    base = statistics.mean(
+        _makespan_by_policy(sample_group_lens(random.Random(s)), 4, POLICY_FIFO)['tax']
+        for s in SEEDS)
+    flat = statistics.mean(
+        _makespan_by_policy(sample_group_lens(random.Random(s)), 4, POLICY_LOF_FLAT)['tax']
+        for s in SEEDS)
+    arrival = statistics.mean(
+        _makespan_by_policy(sample_group_lens(random.Random(s)), 4,
+                            POLICY_LOF_AT_ARRIVAL)['tax']
+        for s in SEEDS)
+    zero_load = [
+        _makespan_by_policy([[50.0] * 8 for _ in range(16)], 4, p)['tax']
+        for p in (POLICY_FIFO, POLICY_LOF, POLICY_LOF_AT_ARRIVAL)]
+    return {
+        'baseline_fifo_tax': base,
+        'lof_flat_tax': flat,
+        'lof_at_arrival_tax': arrival,
+        'detects_two_arm_resort': abs(flat - base) > 0.05,
+        'detects_sorted_arrival': abs(arrival - base) > 0.02,
+        'zero_load_tax_all_policies': zero_load,
+        'zero_load_clean': all(abs(v) < 1e-12 for v in zero_load),
+    }
+
+
+# ---------------------------------------------------------------------------
 # Layer 4：训练侧同栈均衡（verl 源码机制，2026-11-02 第二批补）
 # ---------------------------------------------------------------------------
 def cross_group_pair_flip(n, p, rng, iters=N_ITERS, theta_var=THETA_VAR):
@@ -690,8 +858,21 @@ def build_summary():
             'mean': statistics.mean(r['grouping_tax'] for r in rows),
         }
 
-    # ---- 与 §14 候选 D 的口径对齐检验 ----
-    # 候选 D 测的是"一批之内"长度异质对 makespan 的影响，容量足够、无排队。
+    # ---- Layer 2b：调度策略不变量（第三批） ----
+    out['layer2b_policy_invariance'] = {
+        'by_backlog': policy_invariance(),
+        'negative_control': policy_invariance_negative_control(),
+        'reading': ('同一换组粒度对照（同批轨迹、同容量、同到达时刻），只换组的排队顺序。'
+                    '**R 不是策略不变量，方向与直觉相反：不只是移动，而是变大。**'
+                    '4 批积压 FIFO 0.340→LOF 0.368（+2.75pp）；16 批 0.424→0.429（+0.51pp）。'
+                    '机制：长度优先让两臂都更快，但轨迹臂受益更多（4 批 −15.2% vs 组臂 −11.5%），'
+                    '故比值上升。arrive_max 与 FIFO 同值（−0.20pp／−0.03pp）是因为本模型里所有组'
+                    '同步到达，"组首就绪"排序退化——η 通道**未被检验**，不得据此写其无效。'
+                    'pending_max 与 lof 在此模型下同义，只记一次。'
+                    '配对差方向不稳（4 批 3/30、16 批 5/30 为负），只有均值方向可信。'),
+    }
+
+    # ---- 与 §14 候选 D 的口径对齐检验 ----    # 候选 D 测的是"一批之内"长度异质对 makespan 的影响，容量足够、无排队。
     # 同一模型在该口径下必须给出 0，否则说明两套模型量的不是同一件事。
     out['consistency_with_candidate_d'] = {
         'single_batch_one_group': grouping_tax(

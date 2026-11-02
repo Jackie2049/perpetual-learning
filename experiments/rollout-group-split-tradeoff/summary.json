@@ -193,6 +193,192 @@
    "mean": 0.43733861618397424
   }
  },
+ "layer2b_policy_invariance": {
+  "by_backlog": {
+   "backlog1": {
+    "arrive_max": {
+     "identical_to_fifo_every_seed": true,
+     "pairwise_delta_max": 0.0,
+     "pairwise_delta_mean": 0.0,
+     "pairwise_delta_min": 0.0,
+     "tax_max": 0.0,
+     "tax_mean": 0.0,
+     "tax_min": 0.0
+    },
+    "fifo": {
+     "identical_to_fifo_every_seed": true,
+     "pairwise_delta_max": 0.0,
+     "pairwise_delta_mean": 0.0,
+     "pairwise_delta_min": 0.0,
+     "tax_max": 0.0,
+     "tax_mean": 0.0,
+     "tax_min": 0.0
+    },
+    "lof": {
+     "identical_to_fifo_every_seed": true,
+     "pairwise_delta_max": 0.0,
+     "pairwise_delta_mean": 0.0,
+     "pairwise_delta_min": 0.0,
+     "tax_max": 0.0,
+     "tax_mean": 0.0,
+     "tax_min": 0.0
+    },
+    "lof_at_arrival": {
+     "identical_to_fifo_every_seed": true,
+     "pairwise_delta_max": 0.0,
+     "pairwise_delta_mean": 0.0,
+     "pairwise_delta_min": 0.0,
+     "tax_max": 0.0,
+     "tax_mean": 0.0,
+     "tax_min": 0.0
+    },
+    "lof_flat": {
+     "identical_to_fifo_every_seed": true,
+     "pairwise_delta_max": 0.0,
+     "pairwise_delta_mean": 0.0,
+     "pairwise_delta_min": 0.0,
+     "tax_max": 0.0,
+     "tax_mean": 0.0,
+     "tax_min": 0.0
+    },
+    "pending_max": {
+     "identical_to_fifo_every_seed": true,
+     "pairwise_delta_max": 0.0,
+     "pairwise_delta_mean": 0.0,
+     "pairwise_delta_min": 0.0,
+     "tax_max": 0.0,
+     "tax_mean": 0.0,
+     "tax_min": 0.0
+    }
+   },
+   "backlog16": {
+    "arrive_max": {
+     "identical_to_fifo_every_seed": false,
+     "pairwise_delta_max": 0.014746890729865958,
+     "pairwise_delta_mean": -0.00030809758876496616,
+     "pairwise_delta_min": -0.02079377161730872,
+     "tax_max": 0.4936240055171936,
+     "tax_mean": 0.42359573745050727,
+     "tax_min": 0.37402137827906184
+    },
+    "fifo": {
+     "identical_to_fifo_every_seed": true,
+     "pairwise_delta_max": 0.0,
+     "pairwise_delta_mean": 0.0,
+     "pairwise_delta_min": 0.0,
+     "tax_max": 0.48420321498445673,
+     "tax_mean": 0.4239038350392722,
+     "tax_min": 0.3729903352730398
+    },
+    "lof": {
+     "identical_to_fifo_every_seed": false,
+     "pairwise_delta_max": 0.015571016423873985,
+     "pairwise_delta_mean": 0.0051272539849997285,
+     "pairwise_delta_min": -0.004851728179047499,
+     "tax_max": 0.49023517565406727,
+     "tax_mean": 0.42903108902427195,
+     "tax_min": 0.37435398875065096
+    },
+    "lof_at_arrival": {
+     "identical_to_fifo_every_seed": false,
+     "pairwise_delta_max": 0.015571016423873985,
+     "pairwise_delta_mean": 0.0051272539849997285,
+     "pairwise_delta_min": -0.004851728179047499,
+     "tax_max": 0.49023517565406727,
+     "tax_mean": 0.42903108902427195,
+     "tax_min": 0.37435398875065096
+    },
+    "lof_flat": {
+     "identical_to_fifo_every_seed": false,
+     "pairwise_delta_max": 0.06797551395297935,
+     "pairwise_delta_mean": 0.04955514127365669,
+     "pairwise_delta_min": 0.036853331287788116,
+     "tax_max": 0.5276768597675585,
+     "tax_mean": 0.4734589763129289,
+     "tax_min": 0.42282116854401597
+    },
+    "pending_max": {
+     "identical_to_fifo_every_seed": false,
+     "pairwise_delta_max": 0.015571016423873985,
+     "pairwise_delta_mean": 0.0051272539849997285,
+     "pairwise_delta_min": -0.004851728179047499,
+     "tax_max": 0.49023517565406727,
+     "tax_mean": 0.42903108902427195,
+     "tax_min": 0.37435398875065096
+    }
+   },
+   "backlog4": {
+    "arrive_max": {
+     "identical_to_fifo_every_seed": false,
+     "pairwise_delta_max": 0.09779446671739711,
+     "pairwise_delta_mean": -0.0019608342138245083,
+     "pairwise_delta_min": -0.0686907775060247,
+     "tax_max": 0.42473963733958947,
+     "tax_mean": 0.3382135810870922,
+     "tax_min": 0.26807398764106277
+    },
+    "fifo": {
+     "identical_to_fifo_every_seed": true,
+     "pairwise_delta_max": 0.0,
+     "pairwise_delta_mean": 0.0,
+     "pairwise_delta_min": 0.0,
+     "tax_max": 0.38919172668008023,
+     "tax_mean": 0.34017441530091674,
+     "tax_min": 0.2705222712704644
+    },
+    "lof": {
+     "identical_to_fifo_every_seed": false,
+     "pairwise_delta_max": 0.07337079903655869,
+     "pairwise_delta_mean": 0.027509630223713593,
+     "pairwise_delta_min": -0.02113721415027925,
+     "tax_max": 0.42414738842561317,
+     "tax_mean": 0.3676840455246303,
+     "tax_min": 0.3314027410639877
+    },
+    "lof_at_arrival": {
+     "identical_to_fifo_every_seed": false,
+     "pairwise_delta_max": 0.07337079903655869,
+     "pairwise_delta_mean": 0.027509630223713593,
+     "pairwise_delta_min": -0.02113721415027925,
+     "tax_max": 0.42414738842561317,
+     "tax_mean": 0.3676840455246303,
+     "tax_min": 0.3314027410639877
+    },
+    "lof_flat": {
+     "identical_to_fifo_every_seed": false,
+     "pairwise_delta_max": 0.21733078995712396,
+     "pairwise_delta_mean": 0.1594420340878985,
+     "pairwise_delta_min": 0.10524961817606704,
+     "tax_max": 0.5464377166369162,
+     "tax_mean": 0.4996164493888152,
+     "tax_min": 0.432631955505466
+    },
+    "pending_max": {
+     "identical_to_fifo_every_seed": false,
+     "pairwise_delta_max": 0.07337079903655869,
+     "pairwise_delta_mean": 0.027509630223713593,
+     "pairwise_delta_min": -0.02113721415027925,
+     "tax_max": 0.42414738842561317,
+     "tax_mean": 0.3676840455246303,
+     "tax_min": 0.3314027410639877
+    }
+   }
+  },
+  "negative_control": {
+   "baseline_fifo_tax": 0.34017441530091674,
+   "detects_sorted_arrival": true,
+   "detects_two_arm_resort": true,
+   "lof_at_arrival_tax": 0.3676840455246303,
+   "lof_flat_tax": 0.4996164493888152,
+   "zero_load_clean": true,
+   "zero_load_tax_all_policies": [
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  "reading": "同一换组粒度对照（同批轨迹、同容量、同到达时刻），只换组的排队顺序。**R 不是策略不变量，方向与直觉相反：不只是移动，而是变大。**4 批积压 FIFO 0.340→LOF 0.368（+2.75pp）；16 批 0.424→0.429（+0.51pp）。机制：长度优先让两臂都更快，但轨迹臂受益更多（4 批 −15.2% vs 组臂 −11.5%），故比值上升。arrive_max 与 FIFO 同值（−0.20pp／−0.03pp）是因为本模型里所有组同步到达，\"组首就绪\"排序退化——η 通道**未被检验**，不得据此写其无效。pending_max 与 lof 在此模型下同义，只记一次。配对差方向不稳（4 批 3/30、16 批 5/30 为负），只有均值方向可信。"
+ },
  "layer3_verdict": {
   "best_case_grouping_tax": 0.6125570450197726,
   "note": "判据：拆组能拿回的墙钟（分组税上限）必须超过优势信噪比的相对下降。这是必要条件而非充分条件——它还没算上拆组带来的 KV 搬运、跨批版本一致性与组内比较语义丢失。",

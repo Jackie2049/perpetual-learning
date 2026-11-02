@@ -1,12 +1,12 @@
 {
-  "experiment": "§15 Q5 拆 GRPO 组的代价与收益（L1 统计 / L2 分组税 / L3 判据 / L4 训练侧同栈均衡）",
+  "experiment": "§15 Q5 拆 GRPO 组的代价与收益（L1 统计 / L2 分组税 / L2b 调度策略 / L3 判据 / L4 训练侧同栈均衡）",
   "doc": "notebook/rollout-performance-research.md §13.30（并补 §15 Q5 与 §11.2 条目 7）",
   "execution": {
     "python": "3.9.6（macOS arm64，仅标准库）",
     "commands": [
-      "python3 group_split_tradeoff.py                  # 约 30 s，覆盖 summary.json",
-      "python3 group_split_tradeoff.py --verify         # 通过：逐字段相同（连跑两次均通过）",
-      "python3 -m unittest test_group_split_tradeoff -v # 24 passed"
+      "python3 group_split_tradeoff.py                  # 约 40 s，覆盖 summary.json",
+      "python3 group_split_tradeoff.py --verify         # 通过：逐字段相同",
+      "python3 -m unittest test_group_split_tradeoff -v # 30 passed"
     ],
     "source_anchors": [
       "verl 24f25b03 verl/trainer/ppo/core_algos.py:306-321（GRPO 逐 prompt index 减均值除标准差）",
@@ -15,7 +15,10 @@
       "verl 1a9e711e verl/utils/seqlen_balancing.py:49-262（karmarkar_karp + get_seqlen_balanced_partitions，equal_size 分支）",
       "verl 1a9e711e verl/utils/seqlen_balancing.py:554-621（get_group_balanced_partitions：组先聚合、再对组做 LDM）",
       "verl 1a9e711e verl/trainer/ppo/ray_trainer.py:1145-1213（_balance_batch：默认逐条 LDM；use_prefix_grouper 时改组级，并强制 num_groups % dp_size == 0）",
-      "verl 1a9e711e verl/trainer/ppo/v1/trainer_base.py:1370-1394（V1 trainer 无分组感知，纯逐条 LDM）"
+      "verl 1a9e711e verl/trainer/ppo/v1/trainer_base.py:1370-1394（V1 trainer 无分组感知，纯逐条 LDM）",
+      "vLLM v1/core/sched/request_queue.py:16-17（SchedulingPolicy: FCFS / PRIORITY）",
+      "SGLang srt/managers/schedule_policy.py:170-174（CacheAgnosticPolicy: FCFS / LOF / RANDOM / ROUTING_KEY）",
+      "SGLang srt/managers/schedule_policy.py:155-166（CacheAwarePolicy: LPM / DFS_WEIGHT）"
     ],
     "cross_validation": {
       "what": "_karmarkar_karp 复刻 vs 真实 get_seqlen_balanced_partitions(equal_size=True)",
@@ -56,7 +59,16 @@
     "advantage_amplitude_ratio_p4": 0.411,
     "retracted_cross_group_flip_p2": 0.328,
     "retracted_cross_group_flip_p4": 0.493,
-    "flip_rate_sensitivity_to_group_variance_spread": 0.0
+    "flip_rate_sensitivity_to_group_variance_spread": 0.0,
+    "policy_tax_fifo_backlog4_thirdbatch": 0.3402,
+    "policy_tax_lof_backlog4_thirdbatch": 0.3677,
+    "policy_tax_lof_minus_fifo_backlog4_pp": 2.75,
+    "policy_tax_fifo_backlog16_thirdbatch": 0.4239,
+    "policy_tax_lof_backlog16_thirdbatch": 0.429,
+    "policy_group_arm_drop_lof_backlog4_pct": 11.5,
+    "policy_traj_arm_drop_lof_backlog4_pct": 15.2,
+    "policy_lof_pairwise_negative_backlog4": "3/30",
+    "policy_lof_pairwise_negative_backlog16": "5/30"
   },
   "consistency_with_prev_work": {
     "candidate_d": "§14 候选 D 实测 AR 下 MIX/H2048=1.000 —— 本模型在\"单批、无排队\"口径下同样给出 0.0，两者是同一事实的两个视角，不矛盾。",
@@ -64,9 +76,9 @@
   },
   "artifacts": {
     "sha256": {
-      "summary.json": "294f9531aff87b5ee22dd0290bc21420ab5acc4c211e87b6bc00aa44451da2d5",
-      "group_split_tradeoff.py": "33a8a89030853eca76b8fdff35ef1ff5185be66c64753a71475ccd4c68450b88",
-      "test_group_split_tradeoff.py": "20284c4c4f55d2740b519c82843483422cf09bda9f2b32bb73ba6e0a5ee00ba5"
+      "summary.json": "09466197a80701f43ece06430f152ccb6fed49b978d4b7e62249489d22d2de59",
+      "group_split_tradeoff.py": "08ec030a3baac927bdbadf69fa0d8e7e05ed2ab36b9af0ed999df5060dfbfb9a",
+      "test_group_split_tradeoff.py": "33112d857df20065f11811fb3e5c560fce38ef54f23b4f1cb6952e33f433097a"
     }
   },
   "self_check_fixes": [
@@ -77,7 +89,9 @@
     "组完整性检查口径错：初版用「按 uid 连续布局的下标」去判 LDM 重排后的分区，两套坐标系混用导致默认路径被判成「恒不拆组」。改为按 uid 连续布局判，并与真实 verl 180 组交叉验证确认分区一致。",
     "饱和长度二分初版给出 3036988213（早一位）：不变式 lo..hi 的边界维护写错；改为 workload(lo)<=MAX<workload(hi) 的显式二分后得 3036988213，与手算一致。",
     "L1 只报了 σ̂ 的方差膨胀，漏报期望偏移：拆组让 σ̂ 系统性偏小（p=2 −11.6%、p=4 −37.5%），方向与原结论的作用相反（σ̂ 偏小放大优势幅度），已补测试 test_splitting_biases_sigma_hat_downward。",
-    "**（最严重）\"跨组排序翻转率\"无效**：识别性检验显示它对组难度方差零敏感（0→25 极差 0.0），组难度方差为 0 时仍给 0.15/0.24，说明量的是估计噪声而非尺度错配。已撤回该证据，改用 fragment_scale_mismatch（分片 σ / 整组 σ）与 advantage_inflation_fixed_offset（同一原始偏离的幅度倍数）；三条测试 TestRetractedMetric 防止它回流。"
+    "**（最严重）\"跨组排序翻转率\"无效**：识别性检验显示它对组难度方差零敏感（0→25 极差 0.0），组难度方差为 0 时仍给 0.15/0.24，说明量的是估计噪声而非尺度错配。已撤回该证据，改用 fragment_scale_mismatch（分片 σ / 整组 σ）与 advantage_inflation_fixed_offset（同一原始偏离的幅度倍数）；三条测试 TestRetractedMetric 防止它回流。",
+    "（第三批）初稿在 reading 字段先写结论「fifo/lof/pending_max/arrive_max 逐种子配对差恒 0——排队顺序不改变分组税」再跑数。实际 LOF 在 4 批积压下抬税 2.75pp、配对差 3/30 为负（16 批 5/30）。已按读数改写为「R 随策略移动且方向是变大」，并记录单负载方向不稳。",
+    "（第三批）曾把「固定 pending 列表不重排」诊断为吞掉策略轴的 bug 并写进测试，连续两次断言失败后核清：释放的槽位总落入列表首部的组，两种写法在本模型下完全等价，不存在该 bug。改为用「到达顺序 vs 长度优先」做识别性对照。"
   ],
   "residual": [
     "分组税是上界：假设后续轨迹随时可接，未计 KV 搬运与跨批版本一致性成本。",
@@ -85,6 +99,10 @@
     "L1 奖励模型为高斯近似（组均值 N(0,1)、单条噪声 N(0,0.25)），未覆盖 0/1 奖励全部分布形态。",
     "χ² 解析界在仿真中恒高于实测膨胀比（分片共享组均值压缩方差），引用应报仿真值。",
     "L4 输入长度分布为构造参数（cv 扫描），未从任何训练日志取真实积压/长度分布。",
-    "L4 只分训练侧（DP 分区均衡）；rollout 侧的组粒度占用已在 L2 处理，两侧不可相加。"
+    "L4 只分训练侧（DP 分区均衡）；rollout 侧的组粒度占用已在 L2 处理，两侧不可相加。",
+    "（第三批）只换排队顺序一维：长度预测误差、分桶、迁移、抢占、KV 搬运均未建，它们才是真实 L3 调度机制的主体。",
+    "（第三批）arrive_max 因所有组同步到达而退化，η 通道（组首已跑完而组尾未到齐）未被检验，不得据此写其无效。",
+    "（第三批）pending_max 与 lof 在本模型下同义，不是两条独立证据。",
+    "（第三批）单负载配对差方向不稳（4 批 3/30、16 批 5/30 为负），只有均值方向可信。"
   ]
 }

@@ -106,3 +106,31 @@ python3 tools/anchors/verify_anchors.py --selftest # 负向对照，证明检查
 四跑均值给 16.0%——**16.3% 恰好是结果一里 B 慢于 A 的组间差**，两对不同的跑次被写进同一句。
 这类错误里每个数字都真实存在，只有写明分母才看得出来。`--selftest` 因此增加两组：
 组间差必须只用不绑定四跑（混入 taskset 格会变 16.89%）、SHM 时间比必须能与错误模型值区分。
+
+## 附：push_dryrun.py — 推送前预演"会删掉什么"
+
+**为什么需要**：`tools/git-push-api/push_via_api.py` 在 base 不在本地时，会把
+「远端有、HEAD 无」的文件判为删除。2026-11-03 因此**误删过并行会话的 7 个实验文件**
+——它们已下载到工作区，但**未提交进 HEAD**，于是被当作不存在。
+
+```bash
+python3 tools/anchors/push_dryrun.py            # 用远端当前 main 作 base
+python3 tools/anchors/push_dryrun.py <base_sha> # 指定 base
+```
+
+退出码：**0 = 安全；1 = 会删除文件，不要推**。
+
+### 判据永远是 HEAD，不是工作区
+
+这是那次事故的核心：**工作区有文件 ≠ 它会被推上去**。
+
+正确的顺序：
+```
+下载/修改文件 → git add + git commit → push_dryrun 预演 → 推送
+```
+我跳过了中间两步，直接推，于是刚下载的文件被当成"远端多出来的"删掉了。
+
+### 有效性验证
+
+用真实事故场景测过：从本地 clone 里删掉 `summary-wait-t2.json` 并提交后运行，
+正确报出 1 个待删文件并返回 1。**不是只会说"安全"的摆设。**
