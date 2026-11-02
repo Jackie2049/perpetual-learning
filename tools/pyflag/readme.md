@@ -78,3 +78,47 @@ python3 -m unittest test_scan_unwired_flags -v       # 10 个用例，含 4 条�
 "有消费者无生产者"是**必要条件**，不是充分条件。说"这个开关是死代码"之前，
 至少要排除：① 间接传参（`**kwargs` / 配置对象属性）；② 插件或动态注册；
 ③ 下游 fork 的调用约定。本工具只负责把候选缩到几条，结论仍要人读代码。
+
+## 附：scan_test_assertions.py — 测试能不能失败
+
+另一个同类扫描器，起因是 rLLM 的 `tests/tools/test_tools.py` **有 0 个 assert**——它只 `print`，
+失败也只打印一行。于是上游一个真实的分派缺陷被"测试通过"掩盖了很久。
+
+```bash
+python3 scan_test_assertions.py <repo_root> [--json]
+```
+
+输出四类：
+
+| 字段 | 含义 |
+|---|---|
+| `files_no_assert` | 零断言且**看不出委托**——真候选 |
+| `files_no_assert_but_may_delegate` | 零断言，但源码里有 `check_allclose` / `validate=` / `verify=` 等——**可能把校验委托出去了，需人读** |
+| `files_assert_in_text_only` | 文本里有 "assert" 但 AST 里零个——多半在注释或字符串里 |
+| `files_print_as_check` | `if ...: print("fail...")` 且该分支无 assert/raise |
+
+2026-11-03 在三个框架上跑过：
+
+| 仓库 | 测试文件 | 零断言 | 可能委托 | print 当判据 |
+|---|---|---|---|---|
+| rLLM `4e828c8` | 104 | 1 | 1 | **1** |
+| SkyRL main | 337 | 6 | 1 | 1 |
+| verl `6879e17` | 257 | 8 | 5 | 4 |
+
+### 已知假阳性（必须人读复核）
+
+- **`test_import.py` 这类是合法的**：import 成功即通过，本来就不该有断言。
+- **委托型**：`test_correctness_on_gpu.py` 把 `check_allclose=True` 传给下游 worker，
+  断言在别的模块里。扫描器只能标"可能委托"，不能判定。
+- **框架型**：某些参数化 / fixture 断言写在 conftest 里。
+
+### 这条扫描的定位
+
+**它只筛候选，不下判决。** "零断言"是"可能掩盖缺陷"的必要条件，不是充分条件；
+反过来，有断言的测试也可能断言写错。真正确认需要：**把被测代码改坏，看测试会不会红**。
+
+### 一个真实的代价
+
+rLLM 那个例子里，`test_python_tool` 之所以"过"，恰恰是因为缺陷吞掉了异常——
+**测试不但没覆盖缺陷，还依赖缺陷才通过**。这类"靠 bug 才绿"的测试，比没有测试更危险，
+因为它给出的是**错误的信心**。
