@@ -110,6 +110,37 @@ check('poll inflight=3：整步变化', -4.5, INFLIGHT3,
       tol=0.15, note='§13.52；必须用两臂全部跑次，只取一条会得 -2.98%')
 
 
+# ---- 放置一致性：同一节里的 G_k 必须来自同一套放置 ----
+# 两套放置的分阶段 G_k 差别很大（update_actor 2 卡 1.628 vs 1.211），
+# 混用不会报错但会让"加卡收益"的叙述失真。这里检查 §20.3.5 引用的五对值
+# 是否都落在 re-anchor（1+1/2+2）这一套上。
+
+G_OLD = 'experiments/rollout-g8-candidate-g/summary.json'
+
+def _placement_check():
+    new = json.loads((ROOT / G_REANCHOR).read_text(encoding='utf-8'))
+    old = json.loads((ROOT / G_OLD).read_text(encoding='utf-8'))
+    pairs = [
+        ('ref', 2.023, 3.147),
+        ('update_actor', 1.628, 2.087),
+        ('update_weights', 0.882, 0.770),
+    ]
+    bad = []
+    for stage, c2, c4 in pairs:
+        n2 = new['scaling']['g2p']['stage_scaling'][stage]
+        n4 = new['scaling']['g4p']['stage_scaling'][stage]
+        o2 = old['scaling']['g2']['stage_scaling'][stage]
+        o4 = old['scaling']['g4']['stage_scaling'][stage]
+        to_new = abs(n2 - c2) < 0.002 and abs(n4 - c4) < 0.002
+        to_old = abs(o2 - c2) < 0.002 and abs(o4 - c4) < 0.002
+        if not to_new:
+            bad.append({'stage': stage, 'claim': (c2, c4),
+                        'reanchor': (round(n2,3), round(n4,3)),
+                        'old_placement': (round(o2,3), round(o4,3)),
+                        'also_old': to_old})
+    return bad
+
+
 def selftest():
     """负向对照：故意写错声称值，检查器必须报 FAIL。
 
@@ -125,8 +156,18 @@ def selftest():
         ('把 1.526 报成 1.53（差 0.004）', 1.53, real),
         ('把 1.526 报成 1.527（差 0.001，容差内）', 1.527, real),
     ]
-    print('负向对照（检查器应当抓出前两个）：')
     all_ok = True
+    # 负向对照二：故意引旧放置的值，放置一致性检查必须抓出
+    new = json.loads((ROOT / G_REANCHOR).read_text(encoding='utf-8'))
+    old = json.loads((ROOT / G_OLD).read_text(encoding='utf-8'))
+    o2 = old['scaling']['g2']['stage_scaling']['update_actor']
+    n2 = new['scaling']['g2p']['stage_scaling']['update_actor']
+    caught_placement = abs(o2 - n2) > 0.002
+    print(f"   {'OK  ' if caught_placement else 'FAIL'}  旧放置 update_actor={o2:.3f} vs 新放置={n2:.3f}"
+          f"  -> {'可被区分' if caught_placement else '无法区分（检查无效）'}")
+    all_ok &= caught_placement
+
+    print('负向对照（检查器应当抓出前两个）：')
     for name, claim, got in cases:
         caught = abs(got - claim) > 0.0015
         expect_caught = name != cases[2][0]
@@ -164,7 +205,20 @@ def main():
         print(f"{flag}  {c['name']:36s} 声称 {c['claim']:<8} 重算 {got:.4f}")
         ok, bad = (ok + 1, bad) if same else (ok, bad + 1)
 
-    print(f"\n{ok} 一致 / {bad} 不一致 / {skip} 跳过（共 {len(CHECKS)} 项）")
+    # 放置一致性（单独一类：不是"数字对不对"，而是"来自哪一套放置"）
+    print()
+    pbad = _placement_check()
+    if pbad:
+        for b in pbad:
+            print(f"FAIL  放置一致性：{b['stage']} 声称 {b['claim']} "
+                  f"→ re-anchor {b['reanchor']}，旧放置 {b['old_placement']}"
+                  f"{'（该值属于旧放置！）' if b['also_old'] else ''}")
+        bad += len(pbad)
+    else:
+        print("OK    放置一致性：§20.3.5 引用的 G_k 全部来自 re-anchor（1+1/2+2）同一套")
+        ok += 1
+
+    print(f"\n{ok} 一致 / {bad} 不一致 / {skip} 跳过（共 {len(CHECKS)} 项检查 + 1 项放置一致性）")
     return 0 if bad == 0 else 1
 
 
