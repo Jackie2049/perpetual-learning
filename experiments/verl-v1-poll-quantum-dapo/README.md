@@ -181,7 +181,7 @@ TM-008 的补丁只加了可达性（默认 2.0 不变），但它的验证边�
 - **`max_inflight_gen_batches` 测了 1、2、3**：1（DAPO 默认）下生成量代价约 +5%、整步 −3.4%；2 下 +13%、−4.9%；3 下 +17%、−4.5%。更高档未测。
 - **stale 逐出通道已单独补测（2026-11-03，[stale 实验](../verl-v1-poll-quantum-stale/README.md)）**：本配置 `stale_uids` 恒空；async + `max_off_policy_threshold=1` 下每步丢弃整批 32 组，逐出量与 poll 无关，整步 −2.1%（≈1 SE，§13.53）。
 - **13% 生成量差是 2 SE 级**：重复两次方向一致，但不是精确标定。
-- **补丁对当前上游 main 仍可用**：main 现为 `3fdf2b54`（M1 引用的 `4b26c788` 是其本地旧快照），`v1/` 已重构出 `trainer_sync.py`／`trainer_colocate_async.py`（`PPOTrainer` 薄子类，不覆写 `_build_replay_buffer`）；对两棵树的三目标文件 `patch -p1 --dry-run --fuzz=0` 均 3/3、RC=0（两次独立核对）。但**本批测的 DAPO 派发循环在新结构上仍未实跑复核**——测的是 `24f25b03` 树。
+- **补丁对当前上游 main 仍可用**：main 现为 `3fdf2b54`（M1 引用的 `4b26c788` 是其本地旧快照），`v1/` 已重构出 `trainer_sync.py`／`trainer_colocate_async.py`（`PPOTrainer` 薄子类，不覆写 `_build_replay_buffer`）；对两棵树的三目标文件 `patch -p1 --dry-run --fuzz=0` 均 3/3、RC=0（两次独立核对）。**2026-11-03 已补运行时冒烟**：在 main `3fdf2b54` 上实跑 3 步（DAPO filter、poll 0.1、inflight=2），3/3 exit 0，见 [固定批实验 README](../verl-v1-poll-quantum/README.md#补丁在-main-3fdf2b54-上的运行时冒烟2026-11-03m5-第二会话)。**但本批的计时读数仍来自 `24f25b03` 树**，`3fdf2b54` 上的效应量未重新测量。
 - 未做任何上游写操作；`filter_groups.metric` 的文档不一致单独记录，不据此提 issue。
 
 ## 材料
