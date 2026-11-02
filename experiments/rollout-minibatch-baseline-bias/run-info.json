@@ -1,0 +1,49 @@
+{
+ "experiment": "§13.32 残留收口：mini-batch 组成基准的估计偏差与长度相关性",
+ "doc": "notebook/rollout-performance-research.md §13.38（接续 §13.32）",
+ "execution": {
+  "python": "3.9.6（macOS arm64，仅标准库）",
+  "commands": [
+   "python3 minibatch_baseline_bias.py                  # 约 5 s，覆盖 summary.json",
+   "python3 minibatch_baseline_bias.py --verify         # 通过：逐字段相同（连跑两次均通过）",
+   "python3 -m unittest test_minibatch_baseline_bias -v # 31 passed",
+   "python3 negative_controls.py                        # 4 组负向对照 ALL PASSED",
+   "python3 xcheck_verl.py                              # 120 例分区逐位一致"
+  ],
+  "cross_module_dependency": "梯度模型与块统计量复用 experiments/rollout-minibatch-composition；LDM 复刻复用 experiments/rollout-group-split-tradeoff（已与真实 verl 180 组交叉验证）"
+ },
+ "classification": "进程内解析＋数学仿真；非 GPU 实测、非端到端。梯度为随机方向模型，长度为构造分布；墙钟不报，所有倍数为梯度方差比。",
+ "source_snapshots": {
+  "verl": {
+   "commit": "1a9e711e",
+   "origin": "本地 checkout /Users/jackiemac/workspace/perpetual-learning/verl"
+  }
+ },
+ "key_readings": {
+  "ldm_over_grouped_degenerate": 1.0508337376972947,
+  "ldm_over_grouped_realistic": 1.04617340287591,
+  "ldm_over_grouped_iid": 1.0456565396593516,
+  "interleaved_over_ldm_realistic": 1.0044799595364589,
+  "baseline_bias_factor_8groups_per_block": 1.0411764705882354,
+  "baseline_share_of_raw_degenerate": 0.8100224861180474,
+  "real_composition_excess_degenerate": 0.009275341291187011,
+  "real_share_of_raw_realistic": 0.9795685046076782,
+  "groups_per_block_ldm_realistic": 29.841666666666665,
+  "groups_per_block_grouped": 8,
+  "bias_crossover_rho": 0.12,
+  "theory_vs_empirical_block_var_ratio": [
+   0.9604519774011299,
+   0.9577858411244206
+  ],
+  "identifiability_all_pass": true,
+  "interleaved_upper_bound_holds": true
+ },
+ "sha256": {
+  "minibatch_baseline_bias.py": "bcd0cca5948e76585136db7d63ad15fb4e68c32a32bd31565dbe16bacf086d4f",
+  "test_minibatch_baseline_bias.py": "5c28c5e6f5a493fe4cf9dab05c6ef4345feed0649ce16cfcc47bca330d36ab0f",
+  "negative_controls.py": "1a19440a6e25cf547f23188cc8f112abf3f765436e5cc149c5e737b12da10e2e",
+  "xcheck_verl.py": "940eb8db52cca01db98a8459568f1a5ca4884cb072e0b41c833d99d75642d686",
+  "readme.md": "ac78f7c0d6fb928050f9162b84e70a04c7f2e7c31c98627a684bb37aa099c54d",
+  "summary.json": "667a8bce49875d5b4d708e40f7373522bc8f7abf523adfd90b0b3da0c51c57f1"
+ }
+}

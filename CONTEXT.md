@@ -8,7 +8,7 @@
 
 | 执行者 | 当前任务 | 接续入口与核对事项 |
 |---|---|---|
-| M1 | TS-001 rollout 专项 | 原记录最新为 §13.37（force_group_size 生产者核查）；先读主文档 §0/§16，核对并行 PP 气泡工作是否已提交，再选已授权补强项。 |
+| M1 | TS-001 rollout 专项 | 合并后最新为 §13.38 基准偏差与 §13.39 PP 边界模型；§16 changelog 修复已保留。先读主文档 §0/§16 再选已授权补强项。 |
 | M5 | TS-001 算力支持 | 原记录最新为候选 G NUMA 对照；A/B 复测曾因并行 candidate-H 共用 GPU4 而失败，不能计入数据。按分工核对占用及实验归属后接续，不能仅据旧记录启动。 |
 
 ## 未完成操作与并行工作
@@ -25,3 +25,5 @@
 - 历史追溯：[迁移前 WORK.md 固定快照](https://github.com/Jackie2049/perpetual-learning/blob/76edee31b650d27a110fa6f82df5789abb237cfc/WORK.md)；批次结论仍以专项文档和 [diary](diary/readme.md) 为准。
 
 本文件只覆盖式更新执行现场；任务的目标、状态、优先级和等待条件在队列维护，不在此复制研究历史。
+
+并行更新追溯：[合并前远端 WORK 快照](https://github.com/Jackie2049/perpetual-learning/blob/55f70f4/WORK.md)。§13.39 已有独立实验结果，不据旧待办重复启动。
