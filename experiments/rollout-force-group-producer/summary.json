@@ -1,0 +1,140 @@
+{
+  "anchors": [
+    {
+      "name": "read_defaults_to_1",
+      "needle": "force_group_size = tu.get_non_tensor_data(data=data, key=\"force_group_size\", default=1)",
+      "ok": true,
+      "path": "verl/workers/engine/utils.py",
+      "present": true
+    },
+    {
+      "name": "prepare_signature_has_no_param",
+      "needle": "def prepare_micro_batches(",
+      "ok": true,
+      "path": "verl/workers/engine/utils.py",
+      "present": true
+    },
+    {
+      "name": "group_branch_exists",
+      "needle": "if force_group_size > 1:",
+      "ok": true,
+      "path": "verl/utils/seqlen_balancing.py",
+      "present": true
+    },
+    {
+      "name": "engine_config_field_absent",
+      "needle": "force_group_size",
+      "ok": true,
+      "path": "verl/workers/config/engine.py",
+      "present": false
+    }
+  ],
+  "default_key_blocks": [
+    {
+      "blocks": [
+        {
+          "contains_force_group_size": false,
+          "keys": [
+            "use_remove_padding",
+            "use_dynamic_bsz",
+            "max_token_len_per_gpu",
+            "micro_batch_size_per_gpu",
+            "use_fused_kernels"
+          ],
+          "line": 335
+        },
+        {
+          "contains_force_group_size": false,
+          "keys": [
+            "use_remove_padding",
+            "use_dynamic_bsz",
+            "max_token_len_per_gpu",
+            "micro_batch_size_per_gpu",
+            "use_fused_kernels"
+          ],
+          "line": 389
+        }
+      ],
+      "found": true,
+      "label": "train_batch",
+      "path": "verl/workers/engine_workers.py"
+    },
+    {
+      "blocks": [
+        {
+          "contains_force_group_size": false,
+          "keys": [
+            "use_remove_padding",
+            "use_dynamic_bsz",
+            "max_token_len_per_gpu",
+            "micro_batch_size_per_gpu",
+            "use_fused_kernels"
+          ],
+          "line": 335
+        },
+        {
+          "contains_force_group_size": false,
+          "keys": [
+            "use_remove_padding",
+            "use_dynamic_bsz",
+            "max_token_len_per_gpu",
+            "micro_batch_size_per_gpu",
+            "use_fused_kernels"
+          ],
+          "line": 389
+        }
+      ],
+      "found": true,
+      "label": "infer_batch",
+      "path": "verl/workers/engine_workers.py"
+    },
+    {
+      "blocks": [
+        {
+          "contains_force_group_size": false,
+          "keys": [
+            "use_remove_padding",
+            "use_dynamic_bsz",
+            "max_token_len_per_gpu",
+            "micro_batch_size_per_gpu",
+            "use_fused_kernels"
+          ],
+          "line": 134
+        }
+      ],
+      "found": true,
+      "label": "tinker",
+      "path": "verl/workers/engine_workers_tinker.py"
+    }
+  ],
+  "producer_count": 0,
+  "producer_files": [],
+  "reader_files": [
+    "verl/utils/seqlen_balancing.py",
+    "verl/workers/engine/utils.py"
+  ],
+  "test_producer_files": [
+    "tests/utils/test_prepare_micro_batches_with_group_size.py"
+  ],
+  "test_producer_lines": {
+    "tests/utils/test_prepare_micro_batches_with_group_size.py": [
+      64
+    ]
+  },
+  "tq_writeback": {
+    "exists": true,
+    "only_non_tensor_data_synced": true,
+    "path": "verl/utils/transferqueue_utils.py",
+    "train_mini_batch_returns_metrics_only": true
+  },
+  "verdict": {
+    "always_default_1_is_structural": true,
+    "anchors_all_hold": true,
+    "default_keys_never_inject_it": true,
+    "no_producer_in_production_code": true,
+    "only_writer_is_test": true,
+    "tq_writeback_cannot_carry_it": true
+  },
+  "verl_missing": false,
+  "verl_root": "/Users/jackiemac/workspace/perpetual-learning/verl"
+}

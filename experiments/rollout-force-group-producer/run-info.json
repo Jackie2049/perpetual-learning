@@ -1,0 +1,53 @@
+{
+  "experiment": "§13.37 force_group_size 有没有生产者：把 §13.35 的残留从「只核到 engine 入口」升级为全仓判据",
+  "doc": "notebook/rollout-performance-research.md §13.37",
+  "supports": "§13.35 判决一的残留（「ray trainer 不在该 checkout 的 enable 流程里，只核到 engine 入口，不作全局保证」）",
+  "execution": {
+    "python": "3.9.6（macOS arm64，仅标准库）",
+    "commands": [
+      "VERL_ROOT=../../verl python3 check_producers.py            # 约 0.1 s，覆盖 summary.json",
+      "VERL_ROOT=../../verl python3 check_producers.py --verify    # 通过：10 个字段逐字段相同（连跑两次均通过）",
+      "python3 negative_control.py                                 # 11/11 通过（5 应命中 + 6 应不命中）",
+      "python3 -m unittest test_check_producers -v                 # 7 passed"
+    ],
+    "verl_revision": "1a9e711e328d2d6c0ccb00514cd772ef6f59b31c（2026-07-14）",
+    "source_anchors": [
+      "verl 1a9e711e verl/workers/engine/utils.py:57（prepare_micro_batches 形参里没有 force_group_size）",
+      "verl 1a9e711e verl/workers/engine/utils.py:71（读取点，default=1）",
+      "verl 1a9e711e verl/utils/seqlen_balancing.py:348-446（rearrange_micro_batches 的 force_group_size>1 分支真实存在）",
+      "verl 1a9e711e verl/workers/engine_workers.py:335,389（train_batch / infer_batch 的 default_keys，五个键均不含它）",
+      "verl 1a9e711e verl/workers/engine_workers_tinker.py:134（tinker 同形 default_keys）",
+      "verl 1a9e711e verl/workers/config/engine.py:77-107（EngineConfig 无 force_group_size 字段，用户无法从 yaml 配置）",
+      "verl 1a9e711e verl/utils/transferqueue_utils.py:135-152（输出非张量键进 extra_info）与 111-132（extra_info 回注 batch）",
+      "verl 1a9e711e verl/workers/engine_workers.py:315-320（train_mini_batch 只回 metrics，键不进输出）",
+      "verl 1a9e711e verl/single_controller/base/decorator.py:425（@register 全部套 tqbridge，TransferQueue 通道对所有注册方法生效）",
+      "引入史：80eb57ea（#5438，2026-03-10 解除 use_dynamic_bsz 下的禁用并透传）、c3fc222a（#5424，2026-02-27 no-padding 分组，EngineConfig 只加 forward_only/param_offload）"
+    ]
+  },
+  "verdict": {
+    "no_producer_in_production_code": true,
+    "only_writer_is_test": true,
+    "anchors_all_hold": true,
+    "default_keys_never_inject_it": true,
+    "tq_writeback_cannot_carry_it": true,
+    "always_default_1_is_structural": true
+  },
+  "scope": {
+    "static_source_only": true,
+    "executes_verl": false,
+    "gives_timing_numbers": false,
+    "not_gpu": true,
+    "not_end_to_end": true
+  },
+  "self_check_corrections": [
+    "第一版写入方正则只抓位置参数与 key=\"...\" 两种写法，漏掉 `assign_non_tensor(td, force_group_size=4)` 这种 kwargs 写法——正是 engine_workers.py:345 默认键注入的同形；由 negative_control.py 抓出，已补齐第三种写法。",
+    "scan() 第一版挂了 functools.lru_cache，导致同一进程内注入写入方后第二次 build() 仍返回旧的「计数 0」，正向可行性检验因而假通过；已移除缓存，并把「注入后必须翻成 false」固化为单测。",
+    "build() 对不存在的 root 曾可能静默返回空集合；已改为返回 verl_missing=True 并把判决强制为 false（「没扫到」不等于「没有」），单测守住。"
+  ],
+  "sha256": {
+    "check_producers.py": "d08abf2b010c2efe86faaa32dca5c37eae1bbb425ade8f3601768577a8958f97",
+    "negative_control.py": "a69e66f133ca3937bb146df39294fdbcfe19ec9d6ec45fcddc0d0455102cc557",
+    "test_check_producers.py": "f1a41d5363677a616df76ee0fc2533cee3cbe46a6f22fea94e1afccaa7a70276",
+    "summary.json": "c05aa7a386d9cfe6f3c369b226d58e5262c8dfd84fcc8f6cc2dfea0916a9b9a5"
+  }
+}
