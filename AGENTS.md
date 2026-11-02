@@ -57,6 +57,7 @@ README 面向读者呈现项目说明、能力、内容与导航；临时整理�
 - 保留已有知识、代码、实验和技能，按 README 中的目录职责组织内容。大范围搬迁或合并依据用户确认的整理方案执行。
 - `notebook/` 保存技术学习笔记：`fundamentals/` 为基础知识，`frameworks/` 为框架架构与源码理解，`experiments/` 为实验记录，`roadmap.md` 为规划，`knowledge-map.md` 为知识整理与总览；其他已有专题继续保留。总览见 [notebook/readme.md](notebook/readme.md)。
 - `tools/` 只持续沉淀有明确复用价值的工具。先检索已有实现与成熟方案，优先复用或扩展；一次性、纯实验性或低价值重复脚本归入 `tools/legacy/`。每个工具说明使用场景、输入输出、依赖和验证范围；不能用文件数量衡量能力增长。见 [tools/readme.md](tools/readme.md)。
+- `skills/` 沉淀可复用的 Agent 技能（`skills/<name>/SKILL.md`），与 `tools/` 分工：工具是可执行脚本，技能是流程、导航与约束说明。见 [skills/readme.md](skills/readme.md)。
 - `open-source/<framework>/` 按目标开源项目分类，保存候选、贡献方案、补丁、Issue/PR 与评论草稿、验证和跟进记录；与 `notebook/frameworks/` 的源码学习通过链接关联。`diary/` 延续按日期记录的方式，见 [diary/readme.md](diary/readme.md)。
 - `experiments/` 统一保存实验源码、执行脚本、配置、环境快照和原始结果；`notebook/experiments/` 保存分析、结论和经验。新实验优先按课题组织，并互相链接，见 [实验总览](experiments/readme.md)。
 - 实验配置随对应实验组织，RTX 4090 DeepSpeed 配置在 `experiments/rtx4090/configs/`，不设置独立的根目录 configs/。新增或移动内容时同步更新调用路径、板块索引及首页相关导航。

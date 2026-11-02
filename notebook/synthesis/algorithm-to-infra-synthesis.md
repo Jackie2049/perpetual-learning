@@ -266,7 +266,7 @@ notebook/
 
 tools/                   → 357 Python scripts (validators, diagnostics, generators)
 
-.claude/skills/          → 5 skills (gpu-experiment, vllm-v1-nav, inference-perf, megatron-nav, sglang-nav)
+skills/                  → 5 skills (gpu-experiment, vllm-v1-nav, inference-perf, megatron-nav, sglang-nav)
 ```
 
 ### 6.2 Proposed Evolution: Knowledge → Skills

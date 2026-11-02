@@ -4,7 +4,7 @@
 
 ## 什么是 Claude Code Skill
 
-一个 Skill 是: YAML frontmatter 描述 + Markdown 指令体，存放于 `.claude/skills/<name>/SKILL.md`。当用户提及匹配的关键词时自动加载。
+一个 Skill 是: YAML frontmatter 描述 + Markdown 指令体，存放于 `skills/<name>/SKILL.md`。当用户提及匹配的关键词时自动加载。
 
 ## 候选 Skills (按优先级)
 

@@ -23,7 +23,7 @@
 - 源码笔记链接实际代码位置与版本，贡献方案及进展放在 [open-source/](../open-source/README.md)。
 - 实验笔记说明问题、环境、命令、结果、结论及局限，并链接脚本和必要结果文件；真实实践的经验先跟随实验保存。
 - [experiments/](../experiments/readme.md) 保存实验源码、脚本、配置、环境和原始结果；这里保存分析、结论与经验，两者互相链接。
-- 可复用工具见 [tools/](../tools/readme.md)，历史实验性脚本见 [tools/legacy/](../tools/legacy/readme.md)。
+- 可复用工具见 [tools/](../tools/readme.md)，历史实验性脚本见 [tools/legacy/](../tools/legacy/readme.md)；Agent 技能见 [skills/](../skills/readme.md)。
 
 ## 已有内容导航
 

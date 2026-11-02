@@ -86,7 +86,7 @@ rules:
 - [ ] Knowledge source loading needs automation
 
 ### Conversion steps:
-1. Create `.claude/skills/` directory with YAML skill definitions
+1. Create `skills/` directory with YAML skill definitions
 2. Map each tool's modes to skill command patterns
 3. Define trigger conditions for each skill
 4. Create knowledge source loading rules
@@ -164,10 +164,10 @@ All tools produce structured text output with:
 
 ## 7. Next Steps
 
-1. Create `.claude/skills/rtx4090-training.yaml` skill definition
-2. Create `.claude/skills/grpo-debug.yaml` skill definition
-3. Create `.claude/skills/cross-framework-avoidance.yaml` skill definition
-4. Create `.claude/skills/distributed-nav.yaml` skill definition
+1. Create `skills/rtx4090-training.yaml` skill definition
+2. Create `skills/grpo-debug.yaml` skill definition
+3. Create `skills/cross-framework-avoidance.yaml` skill definition
+4. Create `skills/distributed-nav.yaml` skill definition
 5. Test skill invocations with actual tool runs
 6. Refine trigger conditions based on usage patterns
 7. Add skill documentation to README

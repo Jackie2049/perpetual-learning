@@ -173,4 +173,4 @@ SGLang vs vLLM架构对比:
 ## 工具
 
 - SGLang源码: ~/rollout-infra/sglang/ (shallow clone)
-- Skill: `.claude/skills/sglang-nav/SKILL.md`
+- Skill: [skills/sglang-nav/SKILL.md](../../skills/sglang-nav/SKILL.md)
