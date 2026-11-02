@@ -19,7 +19,8 @@ M5 本轮（2026-11-03 00:5x–01:4x CST，对应服务器 UTC 2026-11-02 16:5x�
 - **TM-008（掘金 C 类，M5）**：verl V1 `ReplayBuffer.poll_interval` 死值 2.0s。2 卡−3.2%、4 卡−2.0%、DAPO inflight=2 −4.9%／inflight=1 −3.4%、4 卡 DAPO A/B −4.0%（§13.49）。补丁 3 文件 +8/−1，默认 2.0 不变，对 `3fdf2b54`／`4b26c788` dry-run 均 3/3 通过。**对外动作全部未做，待用户逐项授权**；需用户决定「只加可达性」还是「同时改默认 0.1–0.2」。**未测**：4 卡 `inflight=1`、`max_inflight_gen_batches>2`、async `wait_for_sampleable`、stale 逐出。
 - **TM-006 / TM-005（掘金 B 类）**：tiled_mlp 无消费路径（补丁＋FSDP 冒烟完成）、prefix_grouper 在 FSDP 不生效（取证＋影响量化完成）。**对外动作全部未做，待授权**。
 - `experiments/rollout-length-structure-real/`（本轮新增）：`sample_lengths.py`／`analyze_lengths.py`／`reanalysis_length_regime.py`／`verify.py`＋`raw/`（5 份逐样本 jsonl.gz＋meta）＋`summary-*.json`／`reanalysis-*.json`／`run-info.json`／`README.md`。服务器侧原始文件在 `/tmp/m5-length/`（非持久）。
-- **推送通道**：先试 `git push`；`github.com:443` 直连历史上多次不通，`gh-proxy.com` 只读，备选 REST API 工具 [tools/git-push-api](tools/git-push-api/readme.md)。`api.github.com`／`gh api` 正常。
+- **推送通道**：先试 `git push`；`github.com:443` 直连历史上多次不通，`gh-proxy.com` 只读，备选 REST API 工具 [tools/git-push-api](tools/git-push-api/readme.md)。`api.github.com`／`gh api` 正常。本轮 `git push` 直连可用。
+- **上游状态（本轮只读核对，均为历史快照）**：verl main `3fdf2b54`（11-02T11:38Z，未变）；verl PR #8313 open、`mergeable=true`、`mergeable_state=blocked`、head `71fd3562` 未变；rLLM main `4e828c81` 未变；UniRL（Tencent-Hunyuan）main `0d07b80b`（11-02T05:56Z，reward monitor 提交，非本专项相关）；vLLM main `45fc9fd0`（非本专项相关）。下一轮重新核对，不据此推断实时状态。
 - **共享 checkout 被并行会话并发使用**：动手前先看 `git log --graph` 与 `git worktree list`，冲突集中在 CONTEXT.md 与当日日志时按「保留双方条目、按时间重排」解决。
 - `diary/2026-08-14.md` 仍为用户未跟踪工作，不代为提交或删除。
 
