@@ -82,8 +82,19 @@
 - **优先级 / 负责人 / 状态**：C 类候选，**M5 本地实测与补丁已完成**；对外（issue／PR）待用户逐项授权。
 - **已有证据**（2026-11-02，4090-1，verl `24f25b03`＋Qwen2.5-1.5B＋gsm8k，15 步，steps 3–14）：2 卡默认整步 21.785s／gen 3.165s（6/12 步 >3s）；补丁＋默认值 2.0 的对照为 21.686s（补丁惰性）；`poll_interval=0.5` → 21.033s（−3.0%）、gen 2.370s、0/12 慢步；`0.1` → 21.001s（−3.2%）、gen 2.199s。4 卡（2+2）默认 14.216s／gen 2.161s（恒定多等约 0.4s）→ 0.1 后 13.934s（−2.0%）／gen 1.763s。**0.5 不是通用解**：4 卡生成跨度约 1.6s，0.5 仍在 2.0 边界取整，必须 0.1–0.2。轮询开销没有可测惩罚（p050 vs p010 每步差约 16 次 `kv_list`，整步差 −0.03±0.26s）。数值差异不超过同行为两次运行的噪声（pbase vs p200 已差 reward 0.1161 vs 0.1146）。见 [experiments/verl-v1-poll-quantum](experiments/verl-v1-poll-quantum/README.md)。
 - **本地补丁**：[poll-interval-config.patch](experiments/verl-v1-poll-quantum/poll-interval-config.patch)（3 文件 +8/−1：配置键、传给 buffer、`_step_had_idle` 阈值与轮询间隔解耦）。默认 2.0 不变 ⇒ 本补丁不改变现有行为；调小为显式 opt-in。
+- **2026-11-02 时效性复核（M1，针对 `origin/main` `4b26c788`，本地检出落后 361 个提交）**：前提**仍然成立**。`verl/trainer/ppo/v1/replay_buffer.py` 的 `__init__` 仍有 `poll_interval: float = 2.0`，`_wait_for_next_poll` 仍直接 `time.sleep(self.poll_interval)`；`trainer_base.py::_build_replay_buffer` 的 `replay_buffer_kwargs` 依旧不含该键；`ppo_trainer.yaml` 的 `trainer.v1.sampler` 段（约 292–312 行）仍无 `poll_interval`。**注意补丁需重放**：上游 `v1/` 已重构出 `trainer_sync.py`，patch 的其余两个 hunk 上下文需按新文件重做后再应用。
 - **下一步与等待条件**：对外前需用户决定两件事——① 只做配置可达性＋文档（默认 2.0），还是同时把默认改到 0.1–0.2；② 是否需要先在带 DAPO 过滤／refill 或 async trainer 的配方上补一组对照（当前边界：固定批配置下集合不随等待时机变化，过滤/refill 下未测）。对外动作全部未做。
 - **停止条件**：上游已支持该键或改了默认（脚本/代码核对会发现），或用户否决对外动作。
+
+## TM-009 — rLLM 工具调用的 `use_async=None` 自动探测失效（B 类：主动发掘）
+
+- **问题与价值**：`rllm/tools/tool_base.py::Tool.__call__` 的文档与 docstring 都声称"`use_async` 为 `None` 时自动选择 async/sync 实现"，但①签名默认值是 `False` 而非 `None`，自动探测分支默认不可达；②`has_async = inspect.isfunction(self.__class__.async_forward) or self.__class__.async_forward is Tool.async_forward` 对**任何子类恒为 True**（`Tool.async_forward` 本身是普通 `async def`，`X is X` 也恒真），于是纯同步工具在 `use_async=None`／`True` 时返回**未被 await 的协程**而非结果，同一个 `if` 里的 `NotImplementedError` 守卫成为不可达代码。仓库内 11 个工具只实现 `forward`、仅 2 个实现 `async_forward`，受影响面正是大多数。
+- **优先级 / 负责人 / 状态**：B 类候选（新框架扩池，2026-11-02 按「范围不限于已熟悉框架」选取）；M1 本地取证完成，**等待用户决定是否对外**。
+- **已有证据**：main `4e828c8` 静态取证 + 用**真实 `Tool` 类**的最小复现（非手写替身），Python 3.12.13，`exit 0`＝缺陷存在；负向对照（改用 `type(self).async_forward is not Tool.async_forward`）三项行为均转为正确。[取证材料](open-source/rllm/tool-use-async-autodetect.md)、[复现脚本](experiments/rllm-tool-use-async-probe/readme.md)。
+- **影响面边界（决定价值评估为 6 而非更高）**：`grep -rn "use_async=" rllm/` 的命中**全部在各文件 `__main__` 演示块**，生产路径不传该参数，故现有训练/评测不受影响；`tests/tools/test_tools.py:202` 用了 `use_async=True` 但只 `print` 不断言，缺陷因此长期无人发现。**不得描述成"训练结果有问题"**。
+- **下一步与等待条件**：对外前需用户决定两件事——① 是否提一条**独立小 issue**（附复现脚本，成本低、指向明确）；② 若提 PR，是否同时改签名默认为 `None`（对下游是行为变化，需在读 PR 人的角度说明）。**另需先补一步未做的核查：检索上游 issue/PR 是否已有人认领该缺陷**。对外动作全部未做。
+- **停止条件**：上游修复 `has_async` 判定（复现脚本会以非零退出提示结论失效）、配置删除，或用户否决对外动作。
+- **成果入口**：[取证](open-source/rllm/tool-use-async-autodetect.md)、[复现](experiments/rllm-tool-use-async-probe/readme.md)、[pyflag 扫描](tools/pyflag/scan-rllm-4e828c8.json)。
 
 ## 已闭环与保留方向
 

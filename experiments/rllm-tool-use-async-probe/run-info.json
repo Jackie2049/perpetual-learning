@@ -1,0 +1,22 @@
+{
+  "subject_repo": "rllm-org/rllm",
+  "commit": "4e828c81680e5a85b638ceedeaf09d1e90109ca8",
+  "commit_date": "2026-10-08",
+  "probe_date": "2026-11-02",
+  "operator": "M1",
+  "entry_point": "rllm/tools/tool_base.py::Tool.__call__",
+  "python": "3.12.13",
+  "venv": "uv venv --python 3.12 /tmp/rllm-py312",
+  "deps": ["pydantic", "click", "rich", "PyYAML", "tqdm", "pandas", "httpx", "openai", "requests"],
+  "assertions": [
+    "signature default of use_async is False (docs claim None)",
+    "has_async expression is True for a sync-only subclass",
+    "sync-only tool returns 6 on the default call path",
+    "sync-only tool returns an un-awaited coroutine for use_async=None",
+    "sync-only tool returns an un-awaited coroutine for use_async=True instead of raising NotImplementedError",
+    "async-only tool resolves to 6 once the coroutine is awaited"
+  ],
+  "negative_control": "corrected has_async = type(self).async_forward is not Tool.async_forward; guard raises NotImplementedError as intended",
+  "result": "defect reproduced, exit 0",
+  "not_run": ["rllm test suite", "end-to-end agent rollout", "upstream issue/PR search"]
+}

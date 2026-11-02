@@ -1,0 +1,401 @@
+{
+ "flags": [
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "DeepseekQwenChatTemplateParser",
+     "file": "rllm/parser/chat_template_parser.py",
+     "func": "__init__",
+     "line": 188,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "QwenChatTemplateParser",
+     "file": "rllm/parser/chat_template_parser.py",
+     "func": "__init__",
+     "line": 375,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "DeepSeekV32ExpChatTemplateParser",
+     "file": "rllm/parser/chat_template_parser.py",
+     "func": "__init__",
+     "line": 875,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "DeepseekQwenChatTemplateParser",
+     "file": "rllm/parser/chat_template_parser.py",
+     "func": "__init__",
+     "line": 188,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "QwenChatTemplateParser",
+     "file": "rllm/parser/chat_template_parser.py",
+     "func": "__init__",
+     "line": 375,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "DeepSeekV32ExpChatTemplateParser",
+     "file": "rllm/parser/chat_template_parser.py",
+     "func": "__init__",
+     "line": 875,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "disable_thinking",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "rllm/parser/chat_template_parser.py",
+     "how": "keyword",
+     "line": 109
+    },
+    {
+     "file": "rllm/parser/chat_template_parser.py",
+     "how": "keyword",
+     "line": 112
+    },
+    {
+     "file": "rllm/parser/chat_template_parser.py",
+     "how": "keyword",
+     "line": 115
+    }
+   ],
+   "producers_total": 3,
+   "reads_nontest": 29,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_run_train",
+     "file": "rllm/cli/train.py",
+     "func": "_run_train",
+     "line": 158,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_run_eval",
+     "file": "rllm/cli/eval.py",
+     "func": "_run_eval",
+     "line": 80,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_run_train",
+     "file": "rllm/cli/train.py",
+     "func": "_run_train",
+     "line": 158,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_run_eval",
+     "file": "rllm/cli/eval.py",
+     "func": "_run_eval",
+     "line": 80,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "enable_ui",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "rllm/cli/train.py",
+     "how": "keyword",
+     "line": 656
+    },
+    {
+     "file": "rllm/cli/eval.py",
+     "how": "keyword",
+     "line": 678
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 19,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "__call__",
+     "file": "rllm/tools/tool_base.py",
+     "func": "__call__",
+     "line": 137,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "__call__",
+     "file": "rllm/tools/tool_base.py",
+     "func": "__call__",
+     "line": 137,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_async",
+   "mode": "never",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 13,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_gpu",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 13,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_native_function_calling",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 6,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "balance_batch",
+     "file": "rllm/trainer/verl/utils.py",
+     "func": "balance_batch",
+     "line": 310,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "balance_batch",
+     "file": "rllm/trainer/verl/utils.py",
+     "func": "balance_batch",
+     "line": 310,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_prefix_grouper",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "rllm/trainer/verl/verl_backend.py",
+     "how": "keyword",
+     "line": 600
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 5,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "start_profiling",
+     "file": "rllm/trainer/verl/utils.py",
+     "func": "start_profiling",
+     "line": 367,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "stop_profiling",
+     "file": "rllm/trainer/verl/utils.py",
+     "func": "stop_profiling",
+     "line": 373,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "start_profiling",
+     "file": "rllm/trainer/verl/utils.py",
+     "func": "start_profiling",
+     "line": 367,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "stop_profiling",
+     "file": "rllm/trainer/verl/utils.py",
+     "func": "stop_profiling",
+     "line": 373,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_reference_policy",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "rllm/trainer/verl/verl_backend.py",
+     "how": "positional",
+     "line": 860
+    },
+    {
+     "file": "rllm/trainer/verl/verl_backend.py",
+     "how": "positional",
+     "line": 868
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 21,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "SandboxTaskHooks",
+     "file": "rllm/hooks.py",
+     "func": "__init__",
+     "line": 215,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_run_eval",
+     "file": "rllm/cli/eval.py",
+     "func": "_run_eval",
+     "line": 80,
+     "param_default": true
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "SandboxTaskHooks",
+     "file": "rllm/hooks.py",
+     "func": "__init__",
+     "line": 215,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_run_eval",
+     "file": "rllm/cli/eval.py",
+     "func": "_run_eval",
+     "line": 80,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_snapshot",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "rllm/cli/eval.py",
+     "how": "keyword",
+     "line": 678
+    },
+    {
+     "file": "rllm/eval/runner.py",
+     "how": "keyword",
+     "line": 101
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 15,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "primeintellect_check_correctness",
+     "file": "rllm/rewards/code_reward.py",
+     "func": "primeintellect_check_correctness",
+     "line": 176,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "primeintellect_check_correctness",
+     "file": "rllm/rewards/code_reward.py",
+     "func": "primeintellect_check_correctness",
+     "line": 176,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_tci",
+   "mode": "never",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 2,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_tool",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 3,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "with_env_dir",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 5,
+   "silently_inert": false
+  }
+ ],
+ "root": "rllm"
+}

@@ -61,9 +61,17 @@ python3 -m unittest test_scan_unwired_flags -v       # 10 个用例，含 4 条�
 | verl | `6879e1ab07` | 37 | 8 | `use_prefix_grouper`、`use_tiled_mlp` **确认为真**；`use_chunking_entropy` 也在同一批不可达路径上 |
 | SkyRL | main | 39 | 7 | `use_liger_kernel`、`use_remove_padding` **确认为真** |
 | OpenRLHF | main | 5 | 0 | 修掉三处假阳性后归零（详见测试用例） |
+| rLLM | `4e828c8` | 11 | 2 | `use_tci` 是**零调用者的死代码**（不是用户可配开关）；`use_async` 是**假阳性**——形参默认 `False` 但文档写 `None`、演示块传 `True`，扫不到 `None` 这条路径。人工复核后另立 B 类候选 [tool-use-async-autodetect](../../open-source/rllm/tool-use-async-autodetect.md) |
 
 报告存档：`scan-verl-project-verl-6879e1ab07.json`、`scan-NovaSky-AI-SkyRL.json`、
-`scan-OpenRLHF-OpenRLHF.json`。
+`scan-OpenRLHF-OpenRLHF.json`、`scan-rllm-4e828c8.json`。
+
+## 第五类易错点：三态形参
+
+`use_async: bool | None = None` 这类**三态形参**是扫描的盲区。工具只认 `= True/False`，
+所以把默认写成 `False`、却在文档里宣称"默认 None、自动探测"的代码，会被报成
+"默认 False 且无人传 ⇒ 分支永不执行"，看起来像漏报，实际是**默认值与文档不符**这一
+不同的问题。rLLM 的例子正是如此：真缺陷不在"没人传"，而在"传了 `None` 也判不对"。
 
 ## 判定的分量
 
