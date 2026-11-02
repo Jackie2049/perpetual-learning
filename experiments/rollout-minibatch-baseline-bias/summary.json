@@ -1,0 +1,372 @@
+{
+ "baseline_bias": {
+  "bias_direction_vs_rho": {
+   "crossover_rho": 0.12,
+   "note": "ratio = E[s²_8组/块] / E[s²_32组/块]。ratio > 1 表示\"8 组/块的基准\"反而把方差读大（ρ 小、样本独立时层内自由度占比高）；ratio < 1 才是\"基准被压低\"（ρ 大、组决定样本时）。本实验默认 ρ=0.5 落在 < 1 一侧，所以\"基准偏差让 1.0508 虚高\"成立，但**这是带条件的结论**。",
+   "rho_to_ratio": {
+    "0.00": 1.0119047619047619,
+    "0.10": 1.0011778563015312,
+    "0.20": 0.9906759906759907,
+    "0.30": 0.9803921568627451,
+    "0.40": 0.9703196347031963,
+    "0.50": 0.9604519774011299,
+    "0.60": 0.9507829977628636,
+    "0.70": 0.9413067552602435,
+    "0.80": 0.9320175438596491,
+    "0.90": 0.9229098805646035,
+    "1.00": 0.9139784946236559
+   }
+  },
+  "bias_factor_by_groups_per_block": {
+   "m16": 1.0132521974306965,
+   "m24": 1.004367201426025,
+   "m28": 1.0018656006091757,
+   "m30": 1.00086948806672,
+   "m32": 1.0,
+   "m8": 1.0411764705882354
+  },
+  "by_regime": {
+   "degenerate": {
+    "grouped_noise_mean": 0.05986161507027629,
+    "grouped_noise_stderr": 0.0001864225374133685,
+    "interleaved_noise_mean": 0.06288727801454858,
+    "interleaved_noise_stderr": 2.2012502856615247e-05,
+    "interleaved_over_ldm_mean": 1.0000165844495066,
+    "interleaved_over_ldm_stderr": 8.224696839640392e-05,
+    "ldm_noise_mean": 0.06288622383917393,
+    "ldm_noise_stderr": 2.026365437036663e-05,
+    "ldm_over_grouped_max": 1.0857545682424157,
+    "ldm_over_grouped_mean": 1.0508337376972947,
+    "ldm_over_grouped_min": 1.013402811239165,
+    "ldm_over_grouped_stderr": 0.0033060017146226924,
+    "mean_blocks_per_group_ldm": 4,
+    "mean_groups_per_block_grouped": 8.0,
+    "mean_groups_per_block_ldm": 32,
+    "n_seeds": 30
+   },
+   "iid": {
+    "grouped_noise_mean": 0.05986161507027629,
+    "grouped_noise_stderr": 0.0001864225374133685,
+    "interleaved_noise_mean": 0.06288727801454858,
+    "interleaved_noise_stderr": 2.2012502856615247e-05,
+    "interleaved_over_ldm_mean": 1.0049661998813486,
+    "interleaved_over_ldm_stderr": 0.0005376015668173741,
+    "ldm_noise_mean": 0.06257686302466821,
+    "ldm_noise_stderr": 2.8801796618795696e-05,
+    "ldm_over_grouped_max": 1.0759671713282022,
+    "ldm_over_grouped_mean": 1.0456565396593516,
+    "ldm_over_grouped_min": 1.0104682049180649,
+    "ldm_over_grouped_stderr": 0.0032224425255713133,
+    "mean_blocks_per_group_ldm": 3.5927083333333334,
+    "mean_groups_per_block_grouped": 8.0,
+    "mean_groups_per_block_ldm": 28.741666666666667,
+    "n_seeds": 30
+   },
+   "realistic": {
+    "grouped_noise_mean": 0.05986161507027629,
+    "grouped_noise_stderr": 0.0001864225374133685,
+    "interleaved_noise_mean": 0.06288727801454858,
+    "interleaved_noise_stderr": 2.2012502856615247e-05,
+    "interleaved_over_ldm_mean": 1.0044799595364589,
+    "interleaved_over_ldm_stderr": 0.0007061481400066239,
+    "ldm_noise_mean": 0.06260757940062171,
+    "ldm_noise_stderr": 4.2294863437641445e-05,
+    "ldm_over_grouped_max": 1.0830119512436882,
+    "ldm_over_grouped_mean": 1.04617340287591,
+    "ldm_over_grouped_min": 1.006008659820013,
+    "ldm_over_grouped_stderr": 0.0033042313499186257,
+    "mean_blocks_per_group_ldm": 3.730208333333333,
+    "mean_groups_per_block_grouped": 8.0,
+    "mean_groups_per_block_ldm": 29.841666666666665,
+    "n_seeds": 30
+   },
+   "strong_corr": {
+    "grouped_noise_mean": 0.05986161507027629,
+    "grouped_noise_stderr": 0.0001864225374133685,
+    "interleaved_noise_mean": 0.06288727801454858,
+    "interleaved_noise_stderr": 2.2012502856615247e-05,
+    "interleaved_over_ldm_mean": 1.0034779098430164,
+    "interleaved_over_ldm_stderr": 0.0005187753997248994,
+    "ldm_noise_mean": 0.06266968683063795,
+    "ldm_noise_stderr": 3.1066098856034805e-05,
+    "ldm_over_grouped_max": 1.0821808190793172,
+    "ldm_over_grouped_mean": 1.0472158453464524,
+    "ldm_over_grouped_min": 1.010205704539095,
+    "ldm_over_grouped_stderr": 0.003324060797042062,
+    "mean_blocks_per_group_ldm": 3.8604166666666666,
+    "mean_groups_per_block_grouped": 8.0,
+    "mean_groups_per_block_ldm": 30.883333333333333,
+    "n_seeds": 30
+   }
+  },
+  "decomposition": {
+   "baseline_bias_excess": 0.04117647058823537,
+   "baseline_bias_factor": 1.0411764705882354,
+   "baseline_share_of_raw": 0.8100224861180474,
+   "denominator_groups_per_block": 8,
+   "note": "§13.32 的 `ldm_over_grouped` 是「32 组/块的分子 ÷ 8 组/块的分母」。把 8 组/块那一侧的方差压低（4.12%）扣掉，剩下的 0.93% 才是真实组成效应——也就是「同组被摊到各块」本身值多少。",
+   "numerator_groups_per_block": 32.0,
+   "raw_excess": 0.05083373769729471,
+   "reading": "§13.32 的 1.0508（degenerate 长度结构）",
+   "real_composition_excess": 0.009275341291187011,
+   "real_share_of_raw": 0.1899775138819526,
+   "shrinkage_vs_degenerate": {
+    "degenerate": 1.0,
+    "iid": 0.8981542913729387,
+    "realistic": 0.9083220114732437,
+    "strong_corr": 0.9288289133412504
+   }
+  },
+  "interleaved_vs_ldm_per_seed": {
+   "degenerate": {
+    "fraction_at_or_above_one": 0.5,
+    "fraction_at_or_below_one": 0.5,
+    "max": 1.0009298939923994,
+    "mean": 1.0000165844495066,
+    "min": 0.9991943713799597,
+    "n_seeds": 30
+   },
+   "iid": {
+    "fraction_at_or_above_one": 0.9333333333333333,
+    "fraction_at_or_below_one": 0.06666666666666667,
+    "max": 1.0120156257231192,
+    "mean": 1.0049661998813486,
+    "min": 0.9984356800396934,
+    "n_seeds": 30
+   },
+   "realistic": {
+    "fraction_at_or_above_one": 0.9,
+    "fraction_at_or_below_one": 0.1,
+    "max": 1.0166502417374874,
+    "mean": 1.0044799595364589,
+    "min": 0.9979363942352149,
+    "n_seeds": 30
+   },
+   "strong_corr": {
+    "fraction_at_or_above_one": 0.9333333333333333,
+    "fraction_at_or_below_one": 0.06666666666666667,
+    "max": 1.010340143645845,
+    "mean": 1.0034779098430164,
+    "min": 0.9971967998163609,
+    "n_seeds": 30
+   }
+  },
+  "realistic_decomposition": {
+   "baseline_bias_excess": 0.0009433916681069743,
+   "baseline_bias_factor": 1.000943391668107,
+   "baseline_share_of_raw": 0.02043149539232183,
+   "denominator_groups_per_block": 8,
+   "mean_groups_per_block_numerator": 29.841666666666665,
+   "note": "真实长度下 LDM 把同组摊到各块（块内组数 29.8/32），分母的 8 组/块与它几乎同构，基准偏差只剩 0.09%，所以读数里 98% 是真实组成效应。这正是 §13.32「真实路径已接近最坏组成」的定量版本，也说明 1.0508 与 1.0462 的差不是噪声，而是口径差。",
+   "raw_excess": 0.046173402875909986,
+   "reading": "真实长度结构（同 prompt 的 n 条响应长度相关）",
+   "real_composition_excess": 0.04518738180830151,
+   "real_share_of_raw": 0.9795685046076782
+  },
+  "theory": {
+   "between_group_var_share": 0.5,
+   "deficit_relative": -0.039548022598870136,
+   "expected_ratio_block_over_full": 0.9604519774011299,
+   "expected_within_var_block": 0.8888888888888888,
+   "expected_within_var_full": 0.9254901960784314,
+   "groups_per_block": 8,
+   "note": "deficit_relative < 0 表示基准把噪声读数压低；块内组数越少压得越多，见 groups_per_block 与 N/K 的关系。",
+   "within_var_share": 0.5
+  },
+  "theory_check": {
+   "empirical_block_over_full_var": 0.9577858411244206,
+   "theory_block_over_full_var": 0.9604519774011299
+  }
+ },
+ "config": {
+  "group_size": 8,
+  "k_blocks": 4,
+  "length_regimes": {
+   "degenerate": {
+    "cv_group": 0.0,
+    "cv_in": 0.0
+   },
+   "iid": {
+    "cv_group": 0.45,
+    "cv_in": 0.45
+   },
+   "realistic": {
+    "cv_group": 0.6,
+    "cv_in": 0.08
+   },
+   "strong_corr": {
+    "cv_group": 1.0,
+    "cv_in": 0.05
+   }
+  },
+  "main_regime": "realistic",
+  "n_groups": 32,
+  "rho_group": 0.5,
+  "seeds": 30
+ },
+ "data_order_evidence": {
+  "all_found": true,
+  "verl/trainer/config/actor/actor.yaml": {
+   "found": true,
+   "snippet": "shuffle: false",
+   "why": "actor 迭代不打乱 ⇒ mini-batch 是重排后数组的连续切片"
+  },
+  "verl/trainer/ppo/ray_trainer.py": {
+   "found": true,
+   "snippet": "batch = batch.repeat(repeat_times=self.config.actor_rollout_ref.rollout.n, interleave=True)",
+   "why": "同组 n 条响应在数据顺序里连续排列"
+  },
+  "verl/utils/seqlen_balancing.py": {
+   "found": true,
+   "snippet": "def karmarkar_karp(",
+   "why": "LDM 按长度排序后等分入堆，再反复合并 spread 最大的两组"
+  }
+ },
+ "doc": "notebook/rollout-performance-research.md §13.38（接续 §13.32）",
+ "experiment": "§13.32 残留收口：「组内连续排列」基准的估计偏差与长度相关性",
+ "identifiability": {
+  "control_constant": {
+   "levels": [
+    {
+     "level": 0.0,
+     "value": 1.0
+    },
+    {
+     "level": 0.1,
+     "value": 1.0
+    },
+    {
+     "level": 0.5,
+     "value": 1.0
+    },
+    {
+     "level": 0.9,
+     "value": 1.0
+    }
+   ],
+   "metric_scale": "relative_spread",
+   "must_be_insensitive": true,
+   "param": "rho",
+   "pass": true,
+   "relative_spread": 0.0,
+   "sensitive": false
+  },
+  "control_group_span": {
+   "levels": [
+    {
+     "level": 0.0,
+     "value": 184.88333333333333
+    },
+    {
+     "level": 0.1,
+     "value": 184.88333333333333
+    },
+    {
+     "level": 0.5,
+     "value": 184.88333333333333
+    },
+    {
+     "level": 0.9,
+     "value": 184.88333333333333
+    }
+   ],
+   "metric_scale": "relative_spread",
+   "must_be_insensitive": true,
+   "param": "rho",
+   "pass": true,
+   "relative_spread": 0.0,
+   "sensitive": false
+  },
+  "interleaved_over_ldm_vs_rho": {
+   "levels": [
+    {
+     "level": 0.0,
+     "value": 1.000616528566878
+    },
+    {
+     "level": 0.1,
+     "value": 1.0013132341340742
+    },
+    {
+     "level": 0.5,
+     "value": 1.0044799595364589
+    },
+    {
+     "level": 0.9,
+     "value": 1.007837086725243
+    }
+   ],
+   "metric_scale": "deviation_from_one",
+   "must_be_insensitive": false,
+   "param": "rho",
+   "pass": true,
+   "relative_spread": 0.921331919820133,
+   "sensitive": true
+  },
+  "ldm_over_grouped_vs_rho": {
+   "levels": [
+    {
+     "level": 0.0,
+     "value": 1.0005480500298891
+    },
+    {
+     "level": 0.1,
+     "value": 1.0089908823637361
+    },
+    {
+     "level": 0.5,
+     "value": 1.04617340287591
+    },
+    {
+     "level": 0.9,
+     "value": 1.0876153596055866
+    }
+   ],
+   "metric_scale": "relative_spread",
+   "must_be_insensitive": false,
+   "param": "rho",
+   "pass": true,
+   "relative_spread": 0.0800534019740873,
+   "sensitive": true
+  }
+ },
+ "length_sweep": {
+  "degenerate": {
+   "gap_to_interleaved": -1.6584449506584775e-05,
+   "interleaved_over_ldm": 1.0000165844495066,
+   "ldm_over_grouped": 1.0508337376972947
+  },
+  "iid": {
+   "gap_to_interleaved": -0.00496619988134861,
+   "interleaved_over_ldm": 1.0049661998813486,
+   "ldm_over_grouped": 1.0456565396593516
+  },
+  "realistic": {
+   "gap_to_interleaved": -0.004479959536458855,
+   "interleaved_over_ldm": 1.0044799595364589,
+   "ldm_over_grouped": 1.04617340287591
+  },
+  "strong_corr": {
+   "gap_to_interleaved": -0.0034779098430164357,
+   "interleaved_over_ldm": 1.0034779098430164,
+   "ldm_over_grouped": 1.0472158453464524
+  }
+ },
+ "verdict": {
+  "all_verl_anchors_found": true,
+  "baseline_bias_direction": "grouped 基准的块内样本方差系统性偏小（每块只装 8 个组、组这一层的离差被吃掉），解析值 0.9605、实测 0.9578，两者一致。它让 ldm/grouped 系统性偏大。",
+  "headline": "§13.32 的 1.0508 站得住，但它的口径要改三处。(1) 量级：换成真实长度结构（同 prompt 的 n 条响应长度相关、LDM 会把同组摊到各块）后读数是 1.0462；1.0508 是「长度全同」对照档的值，偏高 0.44%。(2) 这个比值的分子分母块结构不同——分子（真实 LDM）每块装 32 个组、分母（组内连续排列）每块只装 8 个组，后者把块内方差压低 4.12%，使读数虚高；扣掉后「同组被摊开」本身只值 0.93%。(3)「交错排列是上界」只在平均意义上成立，逐种子有 10% 的种子读数低于 1。",
+  "how_much_in_realistic": {
+   "delta_from_degenerate": -0.004660334821384726,
+   "delta_relative": -0.004434892651616784,
+   "ldm_over_grouped": 1.04617340287591,
+   "rho_induced_floor": 1.1428571428571428,
+   "vs_degenerate": 1.0508337376972947,
+   "vs_iid": 1.0456565396593516
+  },
+  "identifiability_all_pass": true,
+  "interleaved_over_ldm_iid": 1.0049661998813486,
+  "interleaved_over_ldm_realistic": 1.0044799595364589,
+  "interleaved_upper_bound_holds": true
+ }
+}
