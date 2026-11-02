@@ -69,6 +69,40 @@
    "gap_two_sides_pct": -0.011
   },
   {
+   "label": "poll 2.0→0.2（2 卡）",
+   "group": "单轴",
+   "actual_step_ratio": 1.0045,
+   "actual_stage_sum_ratio": 1.0045,
+   "gap_base": 0.99774,
+   "gap_target": 0.99774,
+   "recon_stage_sum_target": 21.6374,
+   "true_stage_sum_target": 21.6374,
+   "f1": 1.0038,
+   "f2": 1.0045,
+   "f3": 1.0045,
+   "err_f1_pct": -0.07,
+   "err_f2_pct": 0.0,
+   "err_f3_pct": 0.0,
+   "gap_two_sides_pct": 0.0
+  },
+  {
+   "label": "poll 2.0→0.5（2 卡）",
+   "group": "单轴",
+   "actual_step_ratio": 1.0357,
+   "actual_stage_sum_ratio": 1.0358,
+   "gap_base": 0.99774,
+   "gap_target": 0.99764,
+   "recon_stage_sum_target": 20.9833,
+   "true_stage_sum_target": 20.9833,
+   "f1": 1.027,
+   "f2": 1.0358,
+   "f3": 1.0359,
+   "err_f1_pct": -0.84,
+   "err_f2_pct": 0.01,
+   "err_f3_pct": 0.019,
+   "gap_two_sides_pct": -0.01
+  },
+  {
    "label": "poll 2.0→0.1（4 卡）",
    "group": "单轴",
    "actual_step_ratio": 1.0202,
@@ -156,6 +190,13 @@
   {
    "label": "g4 vs g4n（同配置重复，2+2 与 0,1,3,4）",
    "group": "同配置重复",
+   "source_alignment": {
+    "base": "summary.json:g4",
+    "target": "summary.json:g4n",
+    "same_file": true,
+    "same_stack": true,
+    "same_window_rule": true
+   },
    "actual_step_ratio": 0.8372,
    "actual_stage_sum_ratio": 0.837,
    "gap_base": 0.99762,

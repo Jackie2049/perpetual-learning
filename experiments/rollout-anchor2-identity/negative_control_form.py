@@ -72,6 +72,23 @@ results.append(("④ 缺口差 20%：F2 偏离、F3 仍准、F3 写反被抓",
                 abs(err4) > 5 and abs(err4b) < 0.1 and abs(err4_rev) > 5,
                 "F2 %+.2f%%，F3 %+.3f%%，写反 %+.2f%%" % (err4, err4b, err4_rev)))
 
+# 5. 配对错档：同配置重复臂的基线若取成 re-anchor 的 g4p（4 卡加卡轨），实测比从 0.8372 变 0.7030。
+#    这一组同时说明两件事：错误配对会静默产出一个"看着像真的"数（所以检查器必须锁同一份归档）；
+#    而 F3 对这种错配对照样闭合（−0.06% → 记录值），即**形式的闭合不能代替配对正确**。
+g_old = crf.load("rollout-g8-candidate-g/summary.json")["modes"]
+b_ok, Tb_ok = crf.means_mode(g_old, "g4")
+t_ok, Tt_ok = crf.means_mode(g_old, "g4n")
+r_ok = crf.forms(b_ok, Tb_ok, t_ok, Tt_ok)
+r_wrong = crf.forms(b, Tb, t_ok, Tt_ok)      # b/Tb 是上面的 g1p —— 连卡数都对不上，更该被抓
+r_g4p = crf.forms(crf.means_mode(re_a, "g4p")[0], crf.means_mode(re_a, "g4p")[1], t_ok, Tt_ok)
+results.append(("⑤ 同配置重复臂配对错档（g4p vs g4n）",
+                abs(r_ok["actual_step_ratio"] - 0.8372) < 1e-3
+                and abs(r_g4p["actual_step_ratio"] - 0.8372) > 0.1
+                and abs(r_wrong["actual_step_ratio"] - 0.8372) > 0.5,
+                "正确 %.4f，g4p 配错 %.4f，g1p 配错 %.4f"
+                % (r_ok["actual_step_ratio"], r_g4p["actual_step_ratio"],
+                   r_wrong["actual_step_ratio"])))
+
 ok = True
 for name, caught, detail in results:
     print("[%-40s] %s  %s" % (name, "抓到" if caught else "漏过", detail))

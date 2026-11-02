@@ -88,6 +88,10 @@ def collect():
 
     for rel, base, mod, name in [
         ("verl-v1-poll-quantum/summary.json", "pbase", "p010", "poll 2.0→0.1（2 卡）"),
+        # 2026-11-03 第三十四批：同一份归档里的另外两档（此前只取了 2.0→0.1）。它们与 pbase
+        # 同一批跑（各 n=12 步、同一窗口规则），是"同节点配对"的中间效应量。
+        ("verl-v1-poll-quantum/summary.json", "pbase", "p200", "poll 2.0→0.2（2 卡）"),
+        ("verl-v1-poll-quantum/summary.json", "pbase", "p050", "poll 2.0→0.5（2 卡）"),
         ("verl-v1-poll-quantum/summary.json", "p4base", "p4p010", "poll 2.0→0.1（4 卡）"),
     ]:
         d = load(rel)
@@ -123,10 +127,30 @@ def collect():
     rows.append(dict(label="async 2 卡 poll 2.0→0.1（两跑池化）", group="单轴·async",
                      **forms(b, Tb, t, Tt)))
 
+    # 同配置重复臂的两跑分属两份归档：`g4` 在 re-anchor 2+2 轨（同 g1p/g2p/g4p），`g4n` 只在
+    # 更早那份 summary.json 里。命名一致不等于同一棵树/同一窗口——对齐（或对不上）逐项打印，
+    # 对不上就按"跨归档并列"标注，不让读者以为它是同节点配对。
+    re_meta = load("rollout-g8-candidate-g/reanchor-summary.json")["meta"]
+    old_meta = load("rollout-g8-candidate-g/summary.json")["meta"]
+
+    def stack_key(meta):
+        # 两份 meta 的 stack 串只差 "single node " 这个前缀（机器同为 4090-1），按成分比不按原文比
+        return sorted(p.strip().replace("single node ", "")
+                      for p in meta.get("stack", "").split(",") if p.strip())
+
+    same_stack = stack_key(re_meta) == stack_key(old_meta)
+    same_window = re_meta.get("window_rule") == old_meta.get("window_rule")
+    # 同配置重复臂（`g4` 与 `g4n`）必须取**同一份归档**：re-anchor 的 `g4p` 是加卡轨里的 4 卡
+    # 测量，与 summary.json 的 `g4`／`g4n`（非连续掩码 0,1,3,4、GPU 2 被占时跑的）不同批。
+    # 拿 `g4p` 配 `g4n` 会得到 0.7030，与 §20.3.8 引的 0.8372 差 1.19 倍——那是配对错，不是形式错。
+    # 上面混搭会静默给出一个"看着像真的"比值，故此处打印一份配对自检并要求两份 meta 的栈一致。
     g = load("rollout-g8-candidate-g/summary.json")["modes"]
     b, Tb = means_mode(g, "g4")
     t, Tt = means_mode(g, "g4n")
     rows.append(dict(label="g4 vs g4n（同配置重复，2+2 与 0,1,3,4）", group="同配置重复",
+                     source_alignment={"base": "summary.json:g4", "target": "summary.json:g4n",
+                                       "same_file": True, "same_stack": same_stack,
+                                       "same_window_rule": same_window},
                      **forms(b, Tb, t, Tt)))
 
     for r in rows:

@@ -1,6 +1,6 @@
 # 新意锚② 的可换算性复核与 P-6 重建形式（2026-11-03 M1 第三十一／三十二批）
 
-CPU 只读复算，不跑 GPU、不改任何既有读数。核对材料：第三十一批 [check_identity.py](check_identity.py)（`--verify` exit 0）、[negative_control.py](negative_control.py)（exit 0）、[summary.json](summary.json)；第三十二/三十三批 [check_reconstruct_form.py](check_reconstruct_form.py)（`--verify` exit 0）、[negative_control_form.py](negative_control_form.py)（4/4 注入抓到，exit 0）、[p6-form.json](p6-form.json)；[run-info.json](run-info.json)。正文落笔：[主文档 §20.3.6／§20.3.7／§20.3.8](../../notebook/rollout-performance-research.md)、[§11.6](../../notebook/rollout-performance-research.md)。
+CPU 只读复算，不跑 GPU、不改任何既有读数。核对材料：第三十一批 [check_identity.py](check_identity.py)（`--verify` exit 0）、[negative_control.py](negative_control.py)（exit 0）、[summary.json](summary.json)；第三十二/三十三/三十四批 [check_reconstruct_form.py](check_reconstruct_form.py)（`--verify` exit 0）、[negative_control_form.py](negative_control_form.py)（5/5 注入抓到，exit 0）、[p6-form.json](p6-form.json)；[run-info.json](run-info.json)。正文落笔：[主文档 §20.3.6／§20.3.7／§20.3.8／§20.3.9](../../notebook/rollout-performance-research.md)、[§11.6](../../notebook/rollout-performance-research.md)。
 
 ## 为什么要做
 
@@ -64,7 +64,7 @@ CPU 只读复算，不跑 GPU、不改任何既有读数。核对材料：第三
 
 **两个限定（必须随结论写）**：① 本栈两侧缺口几乎相同（|差| ≤0.08%），第一项单独就接近整步比——这是数据事实不是恒等；负向对照把两侧缺口拉开 20%，第一项偏 20%，乘上缺口之比才回到 0。② 单栈单点，只有两个加卡臂同时含大小效应，显著程度不外推。
 
-**负向对照（`negative_control_form.py`，4/4 抓到）**：份额换回目标侧 → 误差 −15.4%；谎报 `update_actor` 无加速 → −54.9%；缺口拉开 20% → 第一项偏 20%、完整式偏 0、方向写反偏 −36%；本栈缺口方向写反只差 0.006%（记录"缺口因子≈1"的含义，不是检验项）。
+**负向对照（`negative_control_form.py`，5/5 抓到）**：份额换回目标侧 → 误差 −15.4%；谎报 `update_actor` 无加速 → −54.9%；缺口拉开 20% → 第一项偏 20%、完整式偏 0、方向写反偏 −36%；本栈缺口方向写反只差 0.006%（记录"缺口因子≈1"的含义，不是检验项）；同配置重复臂基线错档（`g4p` 配 `g4n`）→ 0.7030 vs 正确 0.8372（见第三十四批）。
 
 ## 第三十三批（§20.3.8）：给形式加一条 async 轨迹与一个同配置重复臂
 
@@ -79,3 +79,21 @@ CPU 只读复算，不跑 GPU、不改任何既有读数。核对材料：第三
 - **g4 vs g4n 一条的作用**：这是本栈缺口差最大的一个臂（0.029%），且加速只有 1.19× ⇒ 第二项的贡献相对最重，正是 §20.3.7 限定① 说的"第一项单独接近靠数据巧合、完整式靠恒等"的最小样本检验。误差 0.06%，方向、量级都对。
 - **进不了主结论的原因**：同配置重复臂的"加速"是运行间噪声（同一配置两次跑），不能当机制效应；跨放置臂（`pbase→p4base`）差 0.163%，按 §20.3.7 的约定只作对照。
 - 两臂都写进 `p6-form.json`，`check_reconstruct_form.py --verify` 对主结论臂用 0.1% 阈值、对这两行只打印不判定。
+
+## 第三十四批（§20.3.9）：补同节点配对的两档，并修掉同配置重复臂的配对错档
+
+第三十三批把 async 与同配置重复两行加进来之后，`check_reconstruct_form.py` 里其实留了一个**没人看出来的错配**：同配置重复臂原本写成 `reanchor-summary.json` 的 **`g4p`** 配 `summary.json` 的 **`g4n`**，给出实测比 **0.7030 / 误差 −0.142%**，而 §20.3.8 正文引的是 **0.8372 / −0.060%**。两个数不是同一个臂（`--verify` 对对照臂只打印不判定，所以这个错一直没有触发红灯——这本身是检查器设计上的漏洞，本批一并记下）。
+
+**根因（配对错档）**：`g4p` 是 re-anchor 2+2 轨里的 4 卡加卡测量（14.17s），`g4`／`g4n` 是更早那份归档里非连续掩码 `0,1,3,4`、GPU 2 被占时的两跑（16.88s／20.16s）。同名 `g4p`／`g4` 都是"2+2 放置"，但**不是同一次测量**。这一族错法与第三十三批上一轮记的"只取两条跑"、"两套放置混用"是同一类：数字都对，错在**它们不是一对**。
+
+**改了什么**：
+1. 同配置重复臂改取**同一份归档**的 `g4` vs `g4n`（`source_alignment` 里写明 `same_file/same_stack/same_window_rule` 三项自检），复原 0.8372。
+2. **新增两个同节点配对臂**（此前只取了 2 卡 `2.0→0.1`，同一份归档里其实还有 `p200`／`p050` 两档，各 n=12 步、与 `pbase` 同批）：`2.0→0.2` 实测 **1.0045**（F3 +0.000%）、`2.0→0.5` 实测 **1.0357**（F3 +0.019%）。
+3. 负向对照加第 ⑤ 组：`g4p` 配 `g4n` 给 0.7030、`g1p` 配 `g4n` 给 1.3652，正确配对 0.8372——三者必须区分开（**形式的闭合不能代替配对正确**：错配的那一对，F3 照样闭合）。
+
+**为什么第 2 项值得补**：`2.0→0.2` 是全表效应最小的一臂（1.0045，整步只差 0.45%），它把限定① 从另一头压实——F2 与 F3 在这个臂上都给到 +0.00% 量级，说明"两侧缺口几乎相同"的那部分修正在这批数据上确实不承担主要误差；而 `2.0→0.5` 落在 `0.1` 与 `0.2` 之间（1.0357），三档连起来是同一基线、同一批跑的一条剂量线：`0.2 → 0.5 → 0.1` 的加速分别是 1.0045／1.0357／1.0373，**`0.5` 与 `0.1` 几乎等价**（与 §13.49 在 4 卡 DAPO 上看到的"0.5 与 0.1 墙钟等价"一致）。
+
+**核对产物**：`check_reconstruct_form.py --verify` exit 0（主结论臂扩到 **10 个**：加卡 2＋单轴 7＋async 1，F3 全在 0.1% 内）；`negative_control_form.py` **5/5** 抓到 exit 0；`check_identity.py --verify` 与 `negative_control.py` 重跑仍 exit 0。
+
+**边界不变**：仍是单栈单点（verl `24f25b03`＋Qwen2.5-1.5B／gsm8k 短答案／4090-1），只读复算、未跑 GPU、未改任何既有读数；锚② 强度仍「中强」，跨系统仍归 P-1。新增两档与同配置重复臂都**不进主结论句**，作用是把适用面的检验做严。
+
