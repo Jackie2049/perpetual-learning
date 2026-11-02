@@ -12,7 +12,7 @@ M1 本轮（2026-11-03 00:0x）把 TM-009 从"已取证待决定"推到"材料�
 
 **三、候选补丁就绪，并暴露一个比缺陷更有说服力的事实**。补丁只改 `has_async` 一行（`self.__class__.async_forward is not Tool.async_forward`）+ 三条常量断言测试；修复后 3 passed、未修复 2 failed（负向对照有效）。但**上游既有的 `test_python_tool` 由绿转红**——它拿纯同步的 `PythonInterpreter` 调 `use_async=True`，过去靠缺陷吞掉才"通过"。那处未擅自改（涉及上游测试意图），留给维护者。价值评分**维持 6 不因加补丁上调**。
 
-TS-001：§13.43 四轮已完成，再往下需新字段或新实验；P-1 缺跨系统、P-2 需 FP8 栈，均待用户立项。**M5 并行会话已归档 4 卡（2+2）DAPO poll 基线**（`experiments/verl-v1-poll-quantum-dapo-g4/`，A/B 因并发推迟）。
+TS-001：§13.43 四轮已完成，再往下需新字段或新实验；P-1 缺跨系统、P-2 **已订正为「推理侧可用、训练侧未测」**（原「需 FP8 栈」源于推断错误，见 [订正](notebook/frameworks/sm89-fp8-availability-correction.md)），均待用户立项。**M5 并行会话已归档 4 卡（2+2）DAPO poll 基线**（`experiments/verl-v1-poll-quantum-dapo-g4/`，A/B 因并发推迟）。
 
 | 执行者 | 当前任务 | 接续入口与核对事项 |
 |---|---|---|
