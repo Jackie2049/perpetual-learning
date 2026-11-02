@@ -1,9 +1,14 @@
 1c645b756f04032efe599a38b9d1c0c5  raw/rollout-poll-dapo-dbase.txt
+35edab463f587dd59f544ad8d153e28b  raw/rollout-poll-dapo-di1base.txt
+20c404e4b015c95a7c5742e1831c3b18  raw/rollout-poll-dapo-di1basec.txt
+1623454efebeece8f14c8a94a0a248e8  raw/rollout-poll-dapo-di1p010.txt
+f84913ed35b59b9bb85a9fa659674a39  raw/rollout-poll-dapo-di1p010c.txt
 c08980c9fa4745e2842052ff0b144c71  raw/rollout-poll-dapo-dp010.txt
 1f3ae6bed9166f0017065328576510f5  raw/rollout-poll-dapo-dp010b.txt
 21eb220c9a43a6ac2183b27d8541a221  raw/rollout-poll-dapo-dp050.txt
 2792218e11b9c8320ca180d1c6bf468c  raw/rollout-poll-dapo-dp200.txt
 75da9393b17aec50df8d59d7980066b0  raw/rollout-poll-dapo-dp200b.txt
 9f64ecdffd67fdb94137ba30c288751b  run-poll-dapo.sh
-89e471aec59c83be08050261b92a8669  make-summary-dapo.py
+16686603abc78a5d37d12cf3dc549d0e  make-summary-dapo.py
 50055d98e61f6cc32d64ff69f050b008  summary.json
+70aa3c67463acceb77d5b1dbe495e905  summary-inflight1.json
