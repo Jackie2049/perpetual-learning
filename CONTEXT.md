@@ -16,6 +16,8 @@
 
 **核对产物**：既有 L1–L4 读数**逐位不变**（新旧 summary 对比仅新增 `layer2b_policy_invariance`）；`--verify` exit 0、30 个单测通过、`run-info.json` 三份 sha256 已更新并复核一致。识别性三对照全过（`lof_flat` +15.9pp 且 30/30 全正、`lof_at_arrival` +2.75pp、零负载六档全零）。
 
+**推送（07:2x）**：`git push` 直连仍不通（75s 超时），用 git-push-api 推到远端 main **`1088bbe91`**；**推前核清远端 `da6b69c7` 与本地 `fcf093e5` 树相同（`32e30e03`）**，diff 只有本轮 11 个路径；逐文件 blob 已核对、本地已 reset 对齐。
+
 入口：[§13.30 第三批](notebook/rollout-performance-research.md) · [§11.4](notebook/rollout-performance-research.md) · [§11.5](notebook/rollout-performance-research.md) · [实验](experiments/rollout-group-split-tradeoff/readme.md) · [TS-001](queue_tech-secretary.md)。只读仿真、未跑 GPU、未改任何测量值。对外动作全部未做。
 
 ### M1 上一轮（2026-11-03 06:0x）：TS-001 补强——按 §19.4 第 8 条把核验扩到放置效应，抓出一处分母串用
