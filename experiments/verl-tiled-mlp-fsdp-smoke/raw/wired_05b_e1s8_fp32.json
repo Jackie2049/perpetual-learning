@@ -1,0 +1,35 @@
+{
+  "strategy": "fsdp2",
+  "enabled": true,
+  "shards": 8,
+  "seq_len": 8192,
+  "batch": 1,
+  "use_orig_params": false,
+  "reshard_after_forward": true,
+  "ok": false,
+  "mlp_class": "Qwen2MLP",
+  "mlp_forward_before_init": "forward",
+  "init_s": 2.5,
+  "init_log_tail": [
+    "TiledMLP monkey patch applied to: Qwen2MLP (shards=8)",
+    "Monkey patch state_dict in AutoModelForCausalLMWithValueHead. ",
+    "Monkey patch _flash_attention_forward in transformers.integrations.flash_attention",
+    "Skipping monkey patch for Qwen2ForCausalLM as use_fused_kernels is False or fused_kernels_backend is None"
+  ],
+  "mlp_forward_after_init": "tiled_forward",
+  "patched": true,
+  "param_fingerprint": 77355.72123849392,
+  "param_numel": 494032768,
+  "error_type": "OutOfMemoryError",
+  "error": "CUDA out of memory. Tried to allocate 3.50 GiB. GPU 0 has a total capacity of 23.52 GiB of which 271.69 MiB is free. Including non-PyTorch memory, this process has 23.24 GiB memory in use. Of the allocated memory 21.49 GiB is allocated by PyTorch, and 883.05 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)",
+  "traceback_tail": [
+    "    attn_output, attn_weights = attention_interface(",
+    "                                ^^^^^^^^^^^^^^^^^^^^",
+    "  File \"/home/zxw/miniconda3/envs/verl-e2e/lib/python3.12/site-packages/transformers/integrations/sdpa_attention.py\", line 92, in sdpa_attention_forward",
+    "    attn_output = torch.nn.functional.scaled_dot_product_attention(",
+    "                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 3.50 GiB. GPU 0 has a total capacity of 23.52 GiB of which 271.69 MiB is free. Including non-PyTorch memory, this process has 23.24 GiB memory in use. Of the allocated memory 21.49 GiB is allocated by PyTorch, and 883.05 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)"
+  ],
+  "step_s": 0.48,
+  "peak_mem_bytes": 23719831552
+}

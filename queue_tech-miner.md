@@ -62,11 +62,11 @@
 ## TM-006 — verl `tiled_mlp` 配置无消费路径（B 类：主动发掘）
 
 - **问题与价值**：`actor_rollout_ref.model.tiled_mlp` 有正式配置项与官方文档，但 `verl/workers/engine/` 下 **10 个引擎目录全部 grep 为 0**，生产调用点从不传 `use_tiled_mlp` ⇒ 配置完全无效且无提示。比 TM-005 更干净（无副作用）。
-- **优先级 / 负责人 / 状态**：B 类候选，M1 取证完成，**等待用户决定是否对外**。
-- **已有证据**：[取证材料](open-source/verl/evidence/tiled-mlp-unwired/readme.md)；[pyflag 扫描](tools/pyflag/scan-verl-6879e1ab07.json)（`mode=never`）。
-- **下一步与等待条件**：这条不涉及路线分歧（不像 prefix_grouper 那样有 MAGI 替代），"补 3 行接线"或"配置校验期拒绝"都不需要架构决策。**本地补丁已就绪**：[patches/tiled-mlp-wiring](open-source/verl/patches/tiled-mlp-wiring/readme.md)（`patch -p1` 干跑/应用均 exit 0，修复前后调用参数已脚本对比）。**对外仍需用户逐项授权**；提交前还需 M5 侧跑一次 FSDP2 冒烟，并确认 fsdp1 下开启是否会静默出错。
+- **优先级 / 负责人 / 状态**：B 类候选，M1 取证 + M5 真机冒烟均完成，**等待用户决定是否对外**。
+- **已有证据**：[取证材料](open-source/verl/evidence/tiled-mlp-unwired/readme.md)；[pyflag 扫描](tools/pyflag/scan-verl-6879e1ab07.json)（`mode=never`）；**M5 4090 真机冒烟（2026-11-02）**：补齐丁后 FSDP2 下 `enabled=True` 真实 patch 到 MLP 类、前反向跑通、fp64 数值精确等价；**不打补丁时与 `enabled=False` 逐位相同**；**FSDP1 下开启硬报错**（storage 越界）；**verl 默认梯度检查点开启时无显存收益**（5.46 GB 不变），关掉才 16.39 → 8.74 GB（−46.7%，4 片饱和）。见 [experiments/verl-tiled-mlp-fsdp-smoke](experiments/verl-tiled-mlp-fsdp-smoke/readme.md)。
+- **下一步与等待条件**：这条不涉及路线分歧（不像 prefix_grouper 那样有 MAGI 替代），"补 3 行接线"或"配置校验期拒绝"都不需要架构决策。**本地补丁已就绪且真机验证完成**：[patches/tiled-mlp-wiring](open-source/verl/patches/tiled-mlp-wiring/readme.md)。**若提 PR，建议同时加一条配置期校验**（`tiled_mlp.enabled=True` 且 `strategy != "fsdp2"` 时抛明确错误），否则把 FSDP1 的静默无效换成难懂的运行期崩溃；PR 描述也不能笼统写「省显存」。**对外仍需用户逐项授权**。
 - **停止条件**：用户否决，或上游接上／删除该配置。
-- **成果入口**：[取证](open-source/verl/evidence/tiled-mlp-unwired/readme.md)、[工具](tools/pyflag/readme.md)。
+- **成果入口**：[取证](open-source/verl/evidence/tiled-mlp-unwired/readme.md)、[工具](tools/pyflag/readme.md)、[真机冒烟](experiments/verl-tiled-mlp-fsdp-smoke/readme.md)。
 
 ## TM-007 — 跨框架布尔开关静默失效扫描（B 类：方法沉淀）
 

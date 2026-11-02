@@ -1,0 +1,104 @@
+{
+  "dtype": "float64",
+  "rows": [
+    {
+      "tokens": 16,
+      "shards": 4,
+      "chunks_returned": 4,
+      "last_shard_reached": true,
+      "out_max_abs": 0.0,
+      "xgrad_max_abs": 0.0,
+      "wgrad_max_abs": 1.7763568394002505e-15,
+      "wgrad_norm": 116.84635121505346,
+      "error": null
+    },
+    {
+      "tokens": 18,
+      "shards": 4,
+      "chunks_returned": 4,
+      "last_shard_reached": true,
+      "out_max_abs": 1.942890293094024e-16,
+      "xgrad_max_abs": 1.942890293094024e-16,
+      "wgrad_max_abs": 1.7763568394002505e-15,
+      "wgrad_norm": 120.9772481802196,
+      "error": null
+    },
+    {
+      "tokens": 17,
+      "shards": 4,
+      "chunks_returned": 4,
+      "last_shard_reached": true,
+      "out_max_abs": 9.71445146547012e-17,
+      "xgrad_max_abs": 1.942890293094024e-16,
+      "wgrad_max_abs": 1.3322676295501878e-15,
+      "wgrad_norm": 119.23912691424341,
+      "error": null
+    },
+    {
+      "tokens": 9,
+      "shards": 4,
+      "chunks_returned": 3,
+      "last_shard_reached": false,
+      "out_max_abs": 3.0531133177191805e-16,
+      "xgrad_max_abs": 2.7755575615628914e-16,
+      "wgrad_max_abs": 1.7763568394002505e-15,
+      "wgrad_norm": 89.21643179890394,
+      "error": null
+    },
+    {
+      "tokens": 5,
+      "shards": 4,
+      "chunks_returned": 3,
+      "last_shard_reached": false,
+      "out_max_abs": 2.220446049250313e-16,
+      "xgrad_max_abs": 2.7755575615628914e-16,
+      "wgrad_max_abs": 1.3322676295501878e-15,
+      "wgrad_norm": 63.92884097169114,
+      "error": null
+    },
+    {
+      "tokens": 3,
+      "shards": 4,
+      "chunks_returned": 3,
+      "last_shard_reached": false,
+      "out_max_abs": 1.1102230246251565e-16,
+      "xgrad_max_abs": 1.942890293094024e-16,
+      "wgrad_max_abs": 8.881784197001252e-16,
+      "wgrad_norm": 41.43359084060271,
+      "error": null
+    },
+    {
+      "tokens": 1,
+      "shards": 4,
+      "chunks_returned": 1,
+      "last_shard_reached": false,
+      "out_max_abs": 0.0,
+      "xgrad_max_abs": 0.0,
+      "wgrad_max_abs": 0.0,
+      "wgrad_norm": 13.517557903925605,
+      "error": null
+    },
+    {
+      "tokens": 64,
+      "shards": 8,
+      "chunks_returned": 8,
+      "last_shard_reached": true,
+      "out_max_abs": 0.0,
+      "xgrad_max_abs": 0.0,
+      "wgrad_max_abs": 4.440892098500626e-15,
+      "wgrad_norm": 265.2732780890366,
+      "error": null
+    },
+    {
+      "tokens": 64,
+      "shards": 16,
+      "chunks_returned": 16,
+      "last_shard_reached": true,
+      "out_max_abs": 0.0,
+      "xgrad_max_abs": 0.0,
+      "wgrad_max_abs": 4.440892098500626e-15,
+      "wgrad_norm": 265.2732780890366,
+      "error": null
+    }
+  ]
+}

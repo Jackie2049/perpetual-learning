@@ -1,0 +1,49 @@
+{
+  "strategy": "fsdp2",
+  "enabled": true,
+  "shards": 16,
+  "seq_len": 8192,
+  "batch": 1,
+  "use_orig_params": false,
+  "reshard_after_forward": true,
+  "ok": true,
+  "mlp_class": "Qwen2MLP",
+  "mlp_forward_before_init": "forward",
+  "init_s": 2.5,
+  "init_log_tail": [
+    "TiledMLP monkey patch applied to: Qwen2MLP (shards=16)",
+    "Monkey patch state_dict in AutoModelForCausalLMWithValueHead. ",
+    "Monkey patch _flash_attention_forward in transformers.integrations.flash_attention",
+    "Skipping monkey patch for Qwen2ForCausalLM as use_fused_kernels is False or fused_kernels_backend is None"
+  ],
+  "mlp_forward_after_init": "tiled_forward",
+  "patched": true,
+  "param_fingerprint": 77355.72123849392,
+  "param_numel": 494032768,
+  "step_s": 1.35,
+  "grad_norms": {
+    "mlp": 0.0005146447196841185,
+    "other": 0.0005342376553072876,
+    "tensors": 290
+  },
+  "metrics": {},
+  "model_output_keys": [
+    "log_probs"
+  ],
+  "logprobs": {
+    "nested": true,
+    "numel": 8192,
+    "sum": -90820.1015625,
+    "first": [
+      -12.077766,
+      -9.568563,
+      -6.367632,
+      -2.014572,
+      -0.773258,
+      -0.64715,
+      -10.154486,
+      -8.523258
+    ]
+  },
+  "peak_mem_bytes": 8741606400
+}

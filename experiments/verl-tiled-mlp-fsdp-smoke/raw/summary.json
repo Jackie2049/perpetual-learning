@@ -1,0 +1,101 @@
+{
+  "pairs": [
+    {
+      "label": "fsdp2 16tok s4 vs baseline",
+      "candidate": "wired_fsdp2_e1_s4",
+      "baseline": "base_fsdp2_e0",
+      "same_init": true,
+      "both_ok": true,
+      "mlp_grad_rel": 9.114089498460652e-06,
+      "other_grad_rel": 0.0,
+      "mlp_grad": 0.002485499381977877,
+      "other_grad": 0.051823208574933104
+    },
+    {
+      "label": "fsdp2 16tok s8 vs baseline",
+      "candidate": "wired_fsdp2_e1_s8",
+      "baseline": "base_fsdp2_e0",
+      "same_init": true,
+      "both_ok": true,
+      "mlp_grad_rel": 6.0157896405828967e-05,
+      "other_grad_rel": 0.0,
+      "mlp_grad": 0.002485626250172111,
+      "other_grad": 0.051823208574933104
+    },
+    {
+      "label": "fsdp2 16tok s16 vs baseline",
+      "candidate": "wired_fsdp2_s16",
+      "baseline": "base_fsdp2_e0",
+      "same_init": true,
+      "both_ok": true,
+      "mlp_grad_rel": 3.130414850114153e-05,
+      "other_grad_rel": 0.0,
+      "mlp_grad": 0.0024853989233878967,
+      "other_grad": 0.051823208574933104
+    },
+    {
+      "label": "fsdp2 18tok s4 vs baseline",
+      "candidate": "wired_fsdp2_uneven",
+      "baseline": "base_fsdp2_e0_n18",
+      "same_init": true,
+      "both_ok": true,
+      "mlp_grad_rel": 0.0014645971538302595,
+      "other_grad_rel": 0.0011663327463084842,
+      "mlp_grad": 0.002599553569646109,
+      "other_grad": 0.05381380536639943
+    },
+    {
+      "label": "fsdp2 3tok s4 vs baseline",
+      "candidate": "wired_fsdp2_e1_n3",
+      "baseline": "base_fsdp2_e0_n3",
+      "same_init": true,
+      "both_ok": true,
+      "mlp_grad_rel": 7.0873266864781e-05,
+      "other_grad_rel": 0.0,
+      "mlp_grad": 0.005261214565798773,
+      "other_grad": 0.13757610456371933
+    },
+    {
+      "label": "fsdp2 5tok s4 vs baseline",
+      "candidate": "wired_fsdp2_e1_n5",
+      "baseline": "base_fsdp2_e0_n5",
+      "same_init": true,
+      "both_ok": true,
+      "mlp_grad_rel": 2.1362989762256948e-06,
+      "other_grad_rel": 0.0,
+      "mlp_grad": 0.004395180282166299,
+      "other_grad": 0.09817607382044213
+    },
+    {
+      "label": "UNPATCHED 16tok s4 vs baseline",
+      "candidate": "unwired_fsdp2_e1",
+      "baseline": "base_fsdp2_e0",
+      "same_init": true,
+      "both_ok": true,
+      "mlp_grad_rel": 0.0,
+      "other_grad_rel": 0.0,
+      "mlp_grad": 0.0024854767291205213,
+      "other_grad": 0.051823208574933104
+    }
+  ],
+  "fsdp1": {
+    "wired_fsdp1_e1_s4": {
+      "ok": false,
+      "patched": true,
+      "error_type": "RuntimeError",
+      "error": "setStorage: sizes [64, 128], strides [1, 64], storage offset 131328, and itemsize 2 requiring a storage size of 279040 are out of bounds for storage of size 0"
+    },
+    "wired_fsdp1_e1_orig": {
+      "ok": false,
+      "patched": true,
+      "error_type": "RuntimeError",
+      "error": "expected mat1 and mat2 to have the same dtype, but got: c10::BFloat16 != float"
+    },
+    "wired_fsdp1_e1_noresh": {
+      "ok": false,
+      "patched": true,
+      "error_type": "RuntimeError",
+      "error": "setStorage: sizes [64, 128], strides [1, 64], storage offset 131328, and itemsize 2 requiring a storage size of 279040 are out of bounds for storage of size 0"
+    }
+  }
+}

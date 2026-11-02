@@ -1,0 +1,34 @@
+{
+  "strategy": "fsdp",
+  "enabled": true,
+  "shards": 4,
+  "seq_len": 8,
+  "batch": 2,
+  "use_orig_params": false,
+  "reshard_after_forward": true,
+  "ok": false,
+  "mlp_forward_before_init": "forward",
+  "init_s": 1.2,
+  "init_log_tail": [
+    "TiledMLP monkey patch applied to: Qwen3MLP (shards=4)",
+    "Monkey patch state_dict in AutoModelForCausalLMWithValueHead. ",
+    "Monkey patch _flash_attention_forward in transformers.integrations.flash_attention",
+    "Skipping monkey patch for Qwen3ForCausalLM as use_fused_kernels is False or fused_kernels_backend is None"
+  ],
+  "mlp_forward_after_init": "tiled_forward",
+  "patched": true,
+  "param_fingerprint": 834.592643737793,
+  "param_numel": 328512,
+  "error_type": "RuntimeError",
+  "error": "setStorage: sizes [64, 128], strides [1, 64], storage offset 131328, and itemsize 2 requiring a storage size of 279040 are out of bounds for storage of size 0",
+  "traceback_tail": [
+    "    return forward_call(*args, **kwargs)",
+    "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "  File \"/home/zxw/miniconda3/envs/verl-e2e/lib/python3.12/site-packages/torch/nn/modules/linear.py\", line 134, in forward",
+    "    return F.linear(input, self.weight, self.bias)",
+    "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "RuntimeError: setStorage: sizes [64, 128], strides [1, 64], storage offset 131328, and itemsize 2 requiring a storage size of 279040 are out of bounds for storage of size 0"
+  ],
+  "step_s": 0.92,
+  "peak_mem_bytes": 20038144
+}
