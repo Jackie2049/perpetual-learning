@@ -129,6 +129,7 @@
 | [rollout-group-split-tradeoff/](rollout-group-split-tradeoff/readme.md) | §13.30：拆 GRPO 组的分组税量化（积压深度 × 组内离散度）+ verl 组级均衡 LDM 训练侧锚点；进程内 CPU | [§13.30](../notebook/rollout-performance-research.md#1330-拆-grpo-组的分组税与整组均衡训练侧锚点积压深度决定税2026-11-02-m1) |
 | [rollout-group-split-training-side/](rollout-group-split-training-side/readme.md) | §13.31：训练侧拆组的三个候选代价（幅度错配／梯度方向／梯度方差）全部为零且全部通不过识别性检验，撤回上一批解读 | [§13.31](../notebook/rollout-performance-research.md#1331-训练侧拆组到底改变了什么三个候选代价全部为零且全部不及格2026-11-02-第三批-m1) |
 | [rollout-minibatch-composition/](rollout-minibatch-composition/readme.md) | §13.32：mini-batch 组成代价（真实路径已接近最坏组成，组成差异约 5%，而切块数 K=1→8 放大 58 倍）+ 四框架优势归约语义核验（全部按 uid/prompt，无按分区归一化）；含四份源码快照供 anchor 复验 | [§13.32](../notebook/rollout-performance-research.md#1332-训练侧拆组的第二类代价mini-batch-组成与四个框架的归约语义核验2026-11-02-m1) |
+| [rollout-pg-boundaries/](rollout-pg-boundaries/readme.md) | §13.34：PrefixGrouper 的微批边界——mini-batch 层割点 0% 落在组内（默认逐条 99.9%），micro-batch 层按长度排名重切使 81.3% 的组被切开、前缀开销 3.62×；LDM／micro-batch 分区与真实 verl 逐位核对（120/120、40/40） | [主文档 §13.34](../notebook/rollout-performance-research.md) |
 | [kernels/fused_rms_norm/](kernels/fused_rms_norm/) | Fused RMSNorm CUDA/C++ 实现、Python 接口、测试及基准 | [算子实验记录](../notebook/experiments/rtx4090-fused-rmsnorm-cuda.md) |
 | [scripts/](scripts/readme.md) | GPU 实验、故障复现及贡献验证脚本 | [GRPO 排错](../notebook/grpo-training-debugging-guide.md) |
 | [rtx4090/configs/](rtx4090/configs/readme.md) | RTX 4090 DeepSpeed 训练配置 | [训练技巧](../notebook/experiments/rtx4090-training-techniques.md) |

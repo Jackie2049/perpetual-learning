@@ -1,0 +1,1639 @@
+{
+  "constants": {
+    "flop_model": "prefix O(L^2) + suffix O(L) + cross O(prefix*suffix)",
+    "n_groups": 32,
+    "prefix_lens": [
+      128,
+      512,
+      2048
+    ],
+    "response_len": 1024,
+    "seq_gauss": [
+      2200.0,
+      0.45
+    ],
+    "workload": "calculate_workload(l) = 24576*l + l**2"
+  },
+  "counterfactuals": {
+    "baseline_over_no_share_equals_one_over_n": true,
+    "default_balancing_fragments_per_group": 1.4259259259259258,
+    "fragments_per_group_grows_as_budget_shrinks": true
+  },
+  "identifiability": {
+    "fragments_per_group_default_budget": 4.3125,
+    "fragments_per_group_loose_budget": 1,
+    "fragments_per_group_n4_default_budget": 2.34375,
+    "micro_cut_with_singleton_groups": 0.0,
+    "mini_cut_with_singleton_groups": 0.0,
+    "reading": "单例组下两层切开率恒为 0、real/baseline 恒为 1——这是「无组可切」的负向对照；预算装得下整批时每组的片段数归 1，说明切分开销确实只来自 micro-batch 边界。",
+    "real_over_baseline_singleton_groups": 1.0
+  },
+  "layer1_cut_points": {
+    "by_balancing": {
+      "default_per_sample": {
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 0.9991869918699187,
+        "mini_cut": 0.9991869918699187
+      },
+      "prefix_grouper": {
+        "micro_cut_default_budget": 0.8132476035084248,
+        "micro_cut_loose_budget": 0.0,
+        "mini_cut": 0.0
+      }
+    },
+    "n_cases": 60,
+    "rows": [
+      {
+        "balancing": "prefix_grouper",
+        "dp": 1,
+        "micro_cut_default_budget": 0.0,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 4,
+        "mini_cut": 0.0,
+        "mini_groups": 1,
+        "n_per": 4
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 1,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 1.0,
+        "mini_bs": 4,
+        "mini_cut": 1.0,
+        "mini_groups": 1,
+        "n_per": 4
+      },
+      {
+        "balancing": "prefix_grouper",
+        "dp": 1,
+        "micro_cut_default_budget": 0.8148148148148148,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 8,
+        "mini_cut": 0.0,
+        "mini_groups": 2,
+        "n_per": 4
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 1,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 1.0,
+        "mini_bs": 8,
+        "mini_cut": 1.0,
+        "mini_groups": 2,
+        "n_per": 4
+      },
+      {
+        "balancing": "prefix_grouper",
+        "dp": 1,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 16,
+        "mini_cut": 0.0,
+        "mini_groups": 4,
+        "n_per": 4
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 1,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 1.0,
+        "mini_bs": 16,
+        "mini_cut": 1.0,
+        "mini_groups": 4,
+        "n_per": 4
+      },
+      {
+        "balancing": "prefix_grouper",
+        "dp": 1,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 32,
+        "mini_cut": 0.0,
+        "mini_groups": 8,
+        "n_per": 4
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 1,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 1.0,
+        "mini_bs": 32,
+        "mini_cut": 1.0,
+        "mini_groups": 8,
+        "n_per": 4
+      },
+      {
+        "balancing": "prefix_grouper",
+        "dp": 2,
+        "micro_cut_default_budget": 0.0,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 4,
+        "mini_cut": 0.0,
+        "mini_groups": 1,
+        "n_per": 4
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 2,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 1.0,
+        "mini_bs": 4,
+        "mini_cut": 1.0,
+        "mini_groups": 1,
+        "n_per": 4
+      },
+      {
+        "balancing": "prefix_grouper",
+        "dp": 2,
+        "micro_cut_default_budget": 0.7692307692307693,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 8,
+        "mini_cut": 0.0,
+        "mini_groups": 2,
+        "n_per": 4
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 2,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 1.0,
+        "mini_bs": 8,
+        "mini_cut": 1.0,
+        "mini_groups": 2,
+        "n_per": 4
+      },
+      {
+        "balancing": "prefix_grouper",
+        "dp": 2,
+        "micro_cut_default_budget": 0.9871794871794872,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 16,
+        "mini_cut": 0.0,
+        "mini_groups": 4,
+        "n_per": 4
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 2,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 1.0,
+        "mini_bs": 16,
+        "mini_cut": 1.0,
+        "mini_groups": 4,
+        "n_per": 4
+      },
+      {
+        "balancing": "prefix_grouper",
+        "dp": 2,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 32,
+        "mini_cut": 0.0,
+        "mini_groups": 8,
+        "n_per": 4
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 2,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 0.975609756097561,
+        "mini_bs": 32,
+        "mini_cut": 0.975609756097561,
+        "mini_groups": 8,
+        "n_per": 4
+      },
+      {
+        "balancing": "prefix_grouper",
+        "dp": 4,
+        "micro_cut_default_budget": 0.0,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 4,
+        "mini_cut": 0.0,
+        "mini_groups": 1,
+        "n_per": 4
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 4,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 1.0,
+        "mini_bs": 4,
+        "mini_cut": 1.0,
+        "mini_groups": 1,
+        "n_per": 4
+      },
+      {
+        "balancing": "prefix_grouper",
+        "dp": 4,
+        "micro_cut_default_budget": 0.8148148148148148,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 8,
+        "mini_cut": 0.0,
+        "mini_groups": 2,
+        "n_per": 4
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 4,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 1.0,
+        "mini_bs": 8,
+        "mini_cut": 1.0,
+        "mini_groups": 2,
+        "n_per": 4
+      },
+      {
+        "balancing": "prefix_grouper",
+        "dp": 4,
+        "micro_cut_default_budget": 0.9852941176470589,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 16,
+        "mini_cut": 0.0,
+        "mini_groups": 4,
+        "n_per": 4
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 4,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 1.0,
+        "mini_bs": 16,
+        "mini_cut": 1.0,
+        "mini_groups": 4,
+        "n_per": 4
+      },
+      {
+        "balancing": "prefix_grouper",
+        "dp": 4,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 32,
+        "mini_cut": 0.0,
+        "mini_groups": 8,
+        "n_per": 4
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 4,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 1.0,
+        "mini_bs": 32,
+        "mini_cut": 1.0,
+        "mini_groups": 8,
+        "n_per": 4
+      },
+      {
+        "balancing": "prefix_grouper",
+        "dp": 8,
+        "micro_cut_default_budget": 0.0,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 4,
+        "mini_cut": 0.0,
+        "mini_groups": 1,
+        "n_per": 4
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 8,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 1.0,
+        "mini_bs": 4,
+        "mini_cut": 1.0,
+        "mini_groups": 1,
+        "n_per": 4
+      },
+      {
+        "balancing": "prefix_grouper",
+        "dp": 8,
+        "micro_cut_default_budget": 0.8148148148148148,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 8,
+        "mini_cut": 0.0,
+        "mini_groups": 2,
+        "n_per": 4
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 8,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 1.0,
+        "mini_bs": 8,
+        "mini_cut": 1.0,
+        "mini_groups": 2,
+        "n_per": 4
+      },
+      {
+        "balancing": "prefix_grouper",
+        "dp": 8,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 16,
+        "mini_cut": 0.0,
+        "mini_groups": 4,
+        "n_per": 4
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 8,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 1.0,
+        "mini_bs": 16,
+        "mini_cut": 1.0,
+        "mini_groups": 4,
+        "n_per": 4
+      },
+      {
+        "balancing": "prefix_grouper",
+        "dp": 1,
+        "micro_cut_default_budget": 0.7692307692307693,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 8,
+        "mini_cut": 0.0,
+        "mini_groups": 1,
+        "n_per": 8
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 1,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 1.0,
+        "mini_bs": 8,
+        "mini_cut": 1.0,
+        "mini_groups": 1,
+        "n_per": 8
+      },
+      {
+        "balancing": "prefix_grouper",
+        "dp": 1,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 16,
+        "mini_cut": 0.0,
+        "mini_groups": 2,
+        "n_per": 8
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 1,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 1.0,
+        "mini_bs": 16,
+        "mini_cut": 1.0,
+        "mini_groups": 2,
+        "n_per": 8
+      },
+      {
+        "balancing": "prefix_grouper",
+        "dp": 1,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 32,
+        "mini_cut": 0.0,
+        "mini_groups": 4,
+        "n_per": 8
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 1,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 1.0,
+        "mini_bs": 32,
+        "mini_cut": 1.0,
+        "mini_groups": 4,
+        "n_per": 8
+      },
+      {
+        "balancing": "prefix_grouper",
+        "dp": 1,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 64,
+        "mini_cut": 0.0,
+        "mini_groups": 8,
+        "n_per": 8
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 1,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 1.0,
+        "mini_bs": 64,
+        "mini_cut": 1.0,
+        "mini_groups": 8,
+        "n_per": 8
+      },
+      {
+        "balancing": "prefix_grouper",
+        "dp": 2,
+        "micro_cut_default_budget": 0.7924528301886793,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 8,
+        "mini_cut": 0.0,
+        "mini_groups": 1,
+        "n_per": 8
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 2,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 1.0,
+        "mini_bs": 8,
+        "mini_cut": 1.0,
+        "mini_groups": 1,
+        "n_per": 8
+      },
+      {
+        "balancing": "prefix_grouper",
+        "dp": 2,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 16,
+        "mini_cut": 0.0,
+        "mini_groups": 2,
+        "n_per": 8
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 2,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 1.0,
+        "mini_bs": 16,
+        "mini_cut": 1.0,
+        "mini_groups": 2,
+        "n_per": 8
+      },
+      {
+        "balancing": "prefix_grouper",
+        "dp": 2,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 32,
+        "mini_cut": 0.0,
+        "mini_groups": 4,
+        "n_per": 8
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 2,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 1.0,
+        "mini_bs": 32,
+        "mini_cut": 1.0,
+        "mini_groups": 4,
+        "n_per": 8
+      },
+      {
+        "balancing": "prefix_grouper",
+        "dp": 2,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 64,
+        "mini_cut": 0.0,
+        "mini_groups": 8,
+        "n_per": 8
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 2,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 1.0,
+        "mini_bs": 64,
+        "mini_cut": 1.0,
+        "mini_groups": 8,
+        "n_per": 8
+      },
+      {
+        "balancing": "prefix_grouper",
+        "dp": 4,
+        "micro_cut_default_budget": 0.7924528301886793,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 8,
+        "mini_cut": 0.0,
+        "mini_groups": 1,
+        "n_per": 8
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 4,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 1.0,
+        "mini_bs": 8,
+        "mini_cut": 1.0,
+        "mini_groups": 1,
+        "n_per": 8
+      },
+      {
+        "balancing": "prefix_grouper",
+        "dp": 4,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 16,
+        "mini_cut": 0.0,
+        "mini_groups": 2,
+        "n_per": 8
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 4,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 1.0,
+        "mini_bs": 16,
+        "mini_cut": 1.0,
+        "mini_groups": 2,
+        "n_per": 8
+      },
+      {
+        "balancing": "prefix_grouper",
+        "dp": 4,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 32,
+        "mini_cut": 0.0,
+        "mini_groups": 4,
+        "n_per": 8
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 4,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 1.0,
+        "mini_bs": 32,
+        "mini_cut": 1.0,
+        "mini_groups": 4,
+        "n_per": 8
+      },
+      {
+        "balancing": "prefix_grouper",
+        "dp": 4,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 64,
+        "mini_cut": 0.0,
+        "mini_groups": 8,
+        "n_per": 8
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 4,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 1.0,
+        "mini_bs": 64,
+        "mini_cut": 1.0,
+        "mini_groups": 8,
+        "n_per": 8
+      },
+      {
+        "balancing": "prefix_grouper",
+        "dp": 8,
+        "micro_cut_default_budget": 0.8571428571428571,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 8,
+        "mini_cut": 0.0,
+        "mini_groups": 1,
+        "n_per": 8
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 8,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 1.0,
+        "mini_bs": 8,
+        "mini_cut": 1.0,
+        "mini_groups": 1,
+        "n_per": 8
+      },
+      {
+        "balancing": "prefix_grouper",
+        "dp": 8,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 16,
+        "mini_cut": 0.0,
+        "mini_groups": 2,
+        "n_per": 8
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 8,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 1.0,
+        "mini_bs": 16,
+        "mini_cut": 1.0,
+        "mini_groups": 2,
+        "n_per": 8
+      },
+      {
+        "balancing": "prefix_grouper",
+        "dp": 8,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 0.0,
+        "mini_bs": 32,
+        "mini_cut": 0.0,
+        "mini_groups": 4,
+        "n_per": 8
+      },
+      {
+        "balancing": "default_per_sample",
+        "dp": 8,
+        "micro_cut_default_budget": 1.0,
+        "micro_cut_loose_budget": 1.0,
+        "mini_bs": 32,
+        "mini_cut": 1.0,
+        "mini_groups": 4,
+        "n_per": 8
+      }
+    ]
+  },
+  "layer1_views_equal_partitions": {
+    "reading": "组级 LDM 把组连续排好、分区大小恰好等于 B/dp，所以 dispatch 的连续 chunk 与分区逐一相等——「同一 uid 不跨 rank」在当前快照里由**分区大小 = B/dp** 兑现，而不是由 dispatch 逐分区取兑现。一旦 batch 布局不是「组连续」，这个巧合就不成立。",
+    "views": 120,
+    "views_equal_to_one_partition": 120
+  },
+  "layer2_iteration": {
+    "mismatch_cases": 0,
+    "reading": "整除是真实代码的硬断言（tensordict_utils.py:588），所以本表只列可达组合；`total_num_iterations` 与实际批数在这些组合里恒等——mini-batch 层的风险不在丢样本，在**重复样本**（epoch 内同一段被再次切开时，若 shuffle=False，同一 mini-batch 在 epoch 内重复出现，组必然再次落在同一批里，这是确定性重复而不是边界问题，故不计入代价）。",
+    "rows": [
+      {
+        "dp": 1,
+        "epochs": 1,
+        "mini_bs": 8,
+        "mini_groups": 1,
+        "mismatch": 0,
+        "n_batches": 32,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 32,
+        "view_len": 256
+      },
+      {
+        "dp": 1,
+        "epochs": 2,
+        "mini_bs": 8,
+        "mini_groups": 1,
+        "mismatch": 0,
+        "n_batches": 64,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 64,
+        "view_len": 256
+      },
+      {
+        "dp": 1,
+        "epochs": 3,
+        "mini_bs": 8,
+        "mini_groups": 1,
+        "mismatch": 0,
+        "n_batches": 96,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 96,
+        "view_len": 256
+      },
+      {
+        "dp": 1,
+        "epochs": 1,
+        "mini_bs": 16,
+        "mini_groups": 2,
+        "mismatch": 0,
+        "n_batches": 16,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 16,
+        "view_len": 256
+      },
+      {
+        "dp": 1,
+        "epochs": 2,
+        "mini_bs": 16,
+        "mini_groups": 2,
+        "mismatch": 0,
+        "n_batches": 32,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 32,
+        "view_len": 256
+      },
+      {
+        "dp": 1,
+        "epochs": 3,
+        "mini_bs": 16,
+        "mini_groups": 2,
+        "mismatch": 0,
+        "n_batches": 48,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 48,
+        "view_len": 256
+      },
+      {
+        "dp": 1,
+        "epochs": 1,
+        "mini_bs": 32,
+        "mini_groups": 4,
+        "mismatch": 0,
+        "n_batches": 8,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 8,
+        "view_len": 256
+      },
+      {
+        "dp": 1,
+        "epochs": 2,
+        "mini_bs": 32,
+        "mini_groups": 4,
+        "mismatch": 0,
+        "n_batches": 16,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 16,
+        "view_len": 256
+      },
+      {
+        "dp": 1,
+        "epochs": 3,
+        "mini_bs": 32,
+        "mini_groups": 4,
+        "mismatch": 0,
+        "n_batches": 24,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 24,
+        "view_len": 256
+      },
+      {
+        "dp": 1,
+        "epochs": 1,
+        "mini_bs": 64,
+        "mini_groups": 8,
+        "mismatch": 0,
+        "n_batches": 4,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 4,
+        "view_len": 256
+      },
+      {
+        "dp": 1,
+        "epochs": 2,
+        "mini_bs": 64,
+        "mini_groups": 8,
+        "mismatch": 0,
+        "n_batches": 8,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 8,
+        "view_len": 256
+      },
+      {
+        "dp": 1,
+        "epochs": 3,
+        "mini_bs": 64,
+        "mini_groups": 8,
+        "mismatch": 0,
+        "n_batches": 12,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 12,
+        "view_len": 256
+      },
+      {
+        "dp": 2,
+        "epochs": 1,
+        "mini_bs": 8,
+        "mini_groups": 1,
+        "mismatch": 0,
+        "n_batches": 16,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 16,
+        "view_len": 128
+      },
+      {
+        "dp": 2,
+        "epochs": 2,
+        "mini_bs": 8,
+        "mini_groups": 1,
+        "mismatch": 0,
+        "n_batches": 32,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 32,
+        "view_len": 128
+      },
+      {
+        "dp": 2,
+        "epochs": 3,
+        "mini_bs": 8,
+        "mini_groups": 1,
+        "mismatch": 0,
+        "n_batches": 48,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 48,
+        "view_len": 128
+      },
+      {
+        "dp": 2,
+        "epochs": 1,
+        "mini_bs": 16,
+        "mini_groups": 2,
+        "mismatch": 0,
+        "n_batches": 8,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 8,
+        "view_len": 128
+      },
+      {
+        "dp": 2,
+        "epochs": 2,
+        "mini_bs": 16,
+        "mini_groups": 2,
+        "mismatch": 0,
+        "n_batches": 16,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 16,
+        "view_len": 128
+      },
+      {
+        "dp": 2,
+        "epochs": 3,
+        "mini_bs": 16,
+        "mini_groups": 2,
+        "mismatch": 0,
+        "n_batches": 24,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 24,
+        "view_len": 128
+      },
+      {
+        "dp": 2,
+        "epochs": 1,
+        "mini_bs": 32,
+        "mini_groups": 4,
+        "mismatch": 0,
+        "n_batches": 4,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 4,
+        "view_len": 128
+      },
+      {
+        "dp": 2,
+        "epochs": 2,
+        "mini_bs": 32,
+        "mini_groups": 4,
+        "mismatch": 0,
+        "n_batches": 8,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 8,
+        "view_len": 128
+      },
+      {
+        "dp": 2,
+        "epochs": 3,
+        "mini_bs": 32,
+        "mini_groups": 4,
+        "mismatch": 0,
+        "n_batches": 12,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 12,
+        "view_len": 128
+      },
+      {
+        "dp": 2,
+        "epochs": 1,
+        "mini_bs": 64,
+        "mini_groups": 8,
+        "mismatch": 0,
+        "n_batches": 2,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 2,
+        "view_len": 128
+      },
+      {
+        "dp": 2,
+        "epochs": 2,
+        "mini_bs": 64,
+        "mini_groups": 8,
+        "mismatch": 0,
+        "n_batches": 4,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 4,
+        "view_len": 128
+      },
+      {
+        "dp": 2,
+        "epochs": 3,
+        "mini_bs": 64,
+        "mini_groups": 8,
+        "mismatch": 0,
+        "n_batches": 6,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 6,
+        "view_len": 128
+      },
+      {
+        "dp": 4,
+        "epochs": 1,
+        "mini_bs": 8,
+        "mini_groups": 1,
+        "mismatch": 0,
+        "n_batches": 8,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 8,
+        "view_len": 64
+      },
+      {
+        "dp": 4,
+        "epochs": 2,
+        "mini_bs": 8,
+        "mini_groups": 1,
+        "mismatch": 0,
+        "n_batches": 16,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 16,
+        "view_len": 64
+      },
+      {
+        "dp": 4,
+        "epochs": 3,
+        "mini_bs": 8,
+        "mini_groups": 1,
+        "mismatch": 0,
+        "n_batches": 24,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 24,
+        "view_len": 64
+      },
+      {
+        "dp": 4,
+        "epochs": 1,
+        "mini_bs": 16,
+        "mini_groups": 2,
+        "mismatch": 0,
+        "n_batches": 4,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 4,
+        "view_len": 64
+      },
+      {
+        "dp": 4,
+        "epochs": 2,
+        "mini_bs": 16,
+        "mini_groups": 2,
+        "mismatch": 0,
+        "n_batches": 8,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 8,
+        "view_len": 64
+      },
+      {
+        "dp": 4,
+        "epochs": 3,
+        "mini_bs": 16,
+        "mini_groups": 2,
+        "mismatch": 0,
+        "n_batches": 12,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 12,
+        "view_len": 64
+      },
+      {
+        "dp": 4,
+        "epochs": 1,
+        "mini_bs": 32,
+        "mini_groups": 4,
+        "mismatch": 0,
+        "n_batches": 2,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 2,
+        "view_len": 64
+      },
+      {
+        "dp": 4,
+        "epochs": 2,
+        "mini_bs": 32,
+        "mini_groups": 4,
+        "mismatch": 0,
+        "n_batches": 4,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 4,
+        "view_len": 64
+      },
+      {
+        "dp": 4,
+        "epochs": 3,
+        "mini_bs": 32,
+        "mini_groups": 4,
+        "mismatch": 0,
+        "n_batches": 6,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 6,
+        "view_len": 64
+      },
+      {
+        "dp": 4,
+        "epochs": 1,
+        "mini_bs": 64,
+        "mini_groups": 8,
+        "mismatch": 0,
+        "n_batches": 1,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 1,
+        "view_len": 64
+      },
+      {
+        "dp": 4,
+        "epochs": 2,
+        "mini_bs": 64,
+        "mini_groups": 8,
+        "mismatch": 0,
+        "n_batches": 2,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 2,
+        "view_len": 64
+      },
+      {
+        "dp": 4,
+        "epochs": 3,
+        "mini_bs": 64,
+        "mini_groups": 8,
+        "mismatch": 0,
+        "n_batches": 3,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 3,
+        "view_len": 64
+      },
+      {
+        "dp": 8,
+        "epochs": 1,
+        "mini_bs": 8,
+        "mini_groups": 1,
+        "mismatch": 0,
+        "n_batches": 4,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 4,
+        "view_len": 32
+      },
+      {
+        "dp": 8,
+        "epochs": 2,
+        "mini_bs": 8,
+        "mini_groups": 1,
+        "mismatch": 0,
+        "n_batches": 8,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 8,
+        "view_len": 32
+      },
+      {
+        "dp": 8,
+        "epochs": 3,
+        "mini_bs": 8,
+        "mini_groups": 1,
+        "mismatch": 0,
+        "n_batches": 12,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 12,
+        "view_len": 32
+      },
+      {
+        "dp": 8,
+        "epochs": 1,
+        "mini_bs": 16,
+        "mini_groups": 2,
+        "mismatch": 0,
+        "n_batches": 2,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 2,
+        "view_len": 32
+      },
+      {
+        "dp": 8,
+        "epochs": 2,
+        "mini_bs": 16,
+        "mini_groups": 2,
+        "mismatch": 0,
+        "n_batches": 4,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 4,
+        "view_len": 32
+      },
+      {
+        "dp": 8,
+        "epochs": 3,
+        "mini_bs": 16,
+        "mini_groups": 2,
+        "mismatch": 0,
+        "n_batches": 6,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 6,
+        "view_len": 32
+      },
+      {
+        "dp": 8,
+        "epochs": 1,
+        "mini_bs": 32,
+        "mini_groups": 4,
+        "mismatch": 0,
+        "n_batches": 1,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 1,
+        "view_len": 32
+      },
+      {
+        "dp": 8,
+        "epochs": 2,
+        "mini_bs": 32,
+        "mini_groups": 4,
+        "mismatch": 0,
+        "n_batches": 2,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 2,
+        "view_len": 32
+      },
+      {
+        "dp": 8,
+        "epochs": 3,
+        "mini_bs": 32,
+        "mini_groups": 4,
+        "mismatch": 0,
+        "n_batches": 3,
+        "n_per": 8,
+        "tail_per_epoch": 0,
+        "total_num_iterations_formula": 3,
+        "view_len": 32
+      }
+    ]
+  },
+  "layer3_budget_sweep": {
+    "first_budget_with_single_fragment": 583822,
+    "full_batch_tokens": 583822,
+    "rows": [
+      {
+        "best_per_mb_over_baseline": 1.0,
+        "budget_fraction_of_full": 1.0,
+        "budget_tokens": 583822,
+        "fragments_per_group": 1,
+        "real_over_baseline": 1.0,
+        "real_over_no_share": 0.125
+      },
+      {
+        "best_per_mb_over_baseline": 1.0,
+        "budget_fraction_of_full": 0.8,
+        "budget_tokens": 467058,
+        "fragments_per_group": 1,
+        "real_over_baseline": 1.0,
+        "real_over_no_share": 0.125
+      },
+      {
+        "best_per_mb_over_baseline": 1.0,
+        "budget_fraction_of_full": 0.6,
+        "budget_tokens": 350293,
+        "fragments_per_group": 1,
+        "real_over_baseline": 1.0,
+        "real_over_no_share": 0.125
+      },
+      {
+        "best_per_mb_over_baseline": 1.0,
+        "budget_fraction_of_full": 0.5,
+        "budget_tokens": 291911,
+        "fragments_per_group": 1,
+        "real_over_baseline": 1.0,
+        "real_over_no_share": 0.125
+      },
+      {
+        "best_per_mb_over_baseline": 1.0,
+        "budget_fraction_of_full": 0.4,
+        "budget_tokens": 233529,
+        "fragments_per_group": 1,
+        "real_over_baseline": 1.0,
+        "real_over_no_share": 0.125
+      },
+      {
+        "best_per_mb_over_baseline": 1.0,
+        "budget_fraction_of_full": 0.3,
+        "budget_tokens": 175147,
+        "fragments_per_group": 1,
+        "real_over_baseline": 1.0,
+        "real_over_no_share": 0.125
+      },
+      {
+        "best_per_mb_over_baseline": 1.0,
+        "budget_fraction_of_full": 0.2,
+        "budget_tokens": 116764,
+        "fragments_per_group": 2,
+        "real_over_baseline": 2.0,
+        "real_over_no_share": 0.25
+      },
+      {
+        "best_per_mb_over_baseline": 1.0,
+        "budget_fraction_of_full": 0.1,
+        "budget_tokens": 58382,
+        "fragments_per_group": 2.96875,
+        "real_over_baseline": 2.96875,
+        "real_over_no_share": 0.37109375
+      }
+    ]
+  },
+  "layer3_prefix_cost": {
+    "default_16384": {
+      "128": {
+        "1": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 1.6989583333333333,
+          "n_cases": 120,
+          "real_over_baseline": 1.6989583333333333,
+          "real_over_no_share": 0.21236979166666667
+        },
+        "2": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 2.7705729166666666,
+          "n_cases": 120,
+          "real_over_baseline": 2.7705729166666666,
+          "real_over_no_share": 0.3463216145833333
+        },
+        "4": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 4.286458333333333,
+          "n_cases": 120,
+          "real_over_baseline": 4.286458333333333,
+          "real_over_no_share": 0.5358072916666666
+        },
+        "8": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 5.714236111111111,
+          "n_cases": 90,
+          "real_over_baseline": 5.714236111111111,
+          "real_over_no_share": 0.7142795138888889
+        }
+      },
+      "2048": {
+        "1": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 1.6989583333333333,
+          "n_cases": 120,
+          "real_over_baseline": 1.6989583333333333,
+          "real_over_no_share": 0.21236979166666667
+        },
+        "2": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 2.7705729166666666,
+          "n_cases": 120,
+          "real_over_baseline": 2.7705729166666666,
+          "real_over_no_share": 0.3463216145833333
+        },
+        "4": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 4.286458333333333,
+          "n_cases": 120,
+          "real_over_baseline": 4.286458333333333,
+          "real_over_no_share": 0.5358072916666666
+        },
+        "8": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 5.714236111111111,
+          "n_cases": 90,
+          "real_over_baseline": 5.714236111111111,
+          "real_over_no_share": 0.7142795138888889
+        }
+      },
+      "512": {
+        "1": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 1.6989583333333333,
+          "n_cases": 120,
+          "real_over_baseline": 1.6989583333333333,
+          "real_over_no_share": 0.21236979166666667
+        },
+        "2": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 2.7705729166666666,
+          "n_cases": 120,
+          "real_over_baseline": 2.7705729166666666,
+          "real_over_no_share": 0.3463216145833333
+        },
+        "4": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 4.286458333333333,
+          "n_cases": 120,
+          "real_over_baseline": 4.286458333333333,
+          "real_over_no_share": 0.5358072916666666
+        },
+        "8": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 5.714236111111111,
+          "n_cases": 90,
+          "real_over_baseline": 5.714236111111111,
+          "real_over_no_share": 0.7142795138888889
+        }
+      }
+    },
+    "loose": {
+      "128": {
+        "1": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 1,
+          "n_cases": 120,
+          "real_over_baseline": 1.0,
+          "real_over_no_share": 0.125
+        },
+        "2": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 1,
+          "n_cases": 120,
+          "real_over_baseline": 1.0,
+          "real_over_no_share": 0.125
+        },
+        "4": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 1,
+          "n_cases": 120,
+          "real_over_baseline": 1.0,
+          "real_over_no_share": 0.125
+        },
+        "8": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 1,
+          "n_cases": 90,
+          "real_over_baseline": 1.0,
+          "real_over_no_share": 0.125
+        }
+      },
+      "2048": {
+        "1": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 1,
+          "n_cases": 120,
+          "real_over_baseline": 1.0,
+          "real_over_no_share": 0.125
+        },
+        "2": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 1,
+          "n_cases": 120,
+          "real_over_baseline": 1.0,
+          "real_over_no_share": 0.125
+        },
+        "4": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 1,
+          "n_cases": 120,
+          "real_over_baseline": 1.0,
+          "real_over_no_share": 0.125
+        },
+        "8": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 1,
+          "n_cases": 90,
+          "real_over_baseline": 1.0,
+          "real_over_no_share": 0.125
+        }
+      },
+      "512": {
+        "1": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 1,
+          "n_cases": 120,
+          "real_over_baseline": 1.0,
+          "real_over_no_share": 0.125
+        },
+        "2": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 1,
+          "n_cases": 120,
+          "real_over_baseline": 1.0,
+          "real_over_no_share": 0.125
+        },
+        "4": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 1,
+          "n_cases": 120,
+          "real_over_baseline": 1.0,
+          "real_over_no_share": 0.125
+        },
+        "8": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 1,
+          "n_cases": 90,
+          "real_over_baseline": 1.0,
+          "real_over_no_share": 0.125
+        }
+      }
+    },
+    "tight_4096": {
+      "128": {
+        "1": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 4.857291666666667,
+          "n_cases": 120,
+          "real_over_baseline": 4.857291666666667,
+          "real_over_no_share": 0.6071614583333333
+        },
+        "2": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 6.388541666666667,
+          "n_cases": 120,
+          "real_over_baseline": 6.388541666666667,
+          "real_over_no_share": 0.7985677083333333
+        },
+        "4": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 7.2,
+          "n_cases": 120,
+          "real_over_baseline": 7.2,
+          "real_over_no_share": 0.9
+        },
+        "8": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 7.579166666666667,
+          "n_cases": 90,
+          "real_over_baseline": 7.579166666666667,
+          "real_over_no_share": 0.9473958333333333
+        }
+      },
+      "2048": {
+        "1": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 4.857291666666667,
+          "n_cases": 120,
+          "real_over_baseline": 4.857291666666667,
+          "real_over_no_share": 0.6071614583333333
+        },
+        "2": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 6.388541666666667,
+          "n_cases": 120,
+          "real_over_baseline": 6.388541666666667,
+          "real_over_no_share": 0.7985677083333333
+        },
+        "4": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 7.2,
+          "n_cases": 120,
+          "real_over_baseline": 7.2,
+          "real_over_no_share": 0.9
+        },
+        "8": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 7.579166666666667,
+          "n_cases": 90,
+          "real_over_baseline": 7.579166666666667,
+          "real_over_no_share": 0.9473958333333333
+        }
+      },
+      "512": {
+        "1": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 4.857291666666667,
+          "n_cases": 120,
+          "real_over_baseline": 4.857291666666667,
+          "real_over_no_share": 0.6071614583333333
+        },
+        "2": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 6.388541666666667,
+          "n_cases": 120,
+          "real_over_baseline": 6.388541666666667,
+          "real_over_no_share": 0.7985677083333333
+        },
+        "4": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 7.2,
+          "n_cases": 120,
+          "real_over_baseline": 7.2,
+          "real_over_no_share": 0.9
+        },
+        "8": {
+          "baseline_over_no_share": 0.125,
+          "best_per_mb_over_baseline": 1.0,
+          "fragments_per_group": 7.579166666666667,
+          "n_cases": 90,
+          "real_over_baseline": 7.579166666666667,
+          "real_over_no_share": 0.9473958333333333
+        }
+      }
+    }
+  },
+  "layer4_composition": {
+    "group_in_single_minibatch_continuous": 1.0,
+    "group_in_single_minibatch_random": 0.0
+  },
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29
+  ],
+  "verdict": {
+    "budget_sweep": {
+      "first_budget_with_single_fragment": 583822,
+      "full_batch_tokens": 583822
+    },
+    "default_per_sample": {
+      "micro_cut_default_budget": 1.0,
+      "mini_cut": 0.9991869918699187
+    },
+    "headline": "组级均衡下 mini-batch 层的割点全部落在组之间（0.0%），组完整性由这一层兑现；损失来自 micro-batch 层——它按长度排名重切、不看组，默认 16384 预算下每组平均被切成 3.62 段，前缀块开销是「整组共享」的 3.62 倍；而默认逐条均衡在 mini-batch 层就已切开 99.9% 的组。",
+    "prefix_grouper": {
+      "best_per_mb_over_baseline_default_16384": 1.0,
+      "fragments_per_group_default_16384": 3.617556423611111,
+      "micro_cut_default_budget": 0.8132476035084248,
+      "micro_cut_loose_budget": 0.0,
+      "mini_cut": 0.0,
+      "real_over_baseline_default_16384": 3.617556423611111,
+      "real_over_baseline_loose": 1.0
+    }
+  }
+}

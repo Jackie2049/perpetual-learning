@@ -1,0 +1,72 @@
+{
+  "experiment": "§13.33 PrefixGrouper 下的微批边界成本（组完整性在哪一层被保住）",
+  "doc": "notebook/rollout-performance-research.md §13.33",
+  "execution": {
+    "python": "3.9.6（macOS arm64，仅标准库）",
+    "commands": [
+      "python3 pg_boundaries.py                  # 约 12 s，覆盖 summary.json",
+      "python3 pg_boundaries.py --verify         # 通过：逐字段相同（连跑两次均通过）",
+      "python3 -m unittest test_pg_boundaries -v # 22 passed",
+      "/tmp/verl-seqlb-venv/bin/python xcheck_verl.py  # 与真实 verl 交叉验证"
+    ],
+    "cross_validation": {
+      "environment": "uv venv（Python 3.12）＋ CPU torch 2.15.0，直接 import verl 源码 1a9e711e",
+      "ldm": "_karmarkar_karp vs get_seqlen_balanced_partitions：120/120 完全一致（组级 + 逐条两个层级）",
+      "micro_split": "micro_split vs rearrange_micro_batches：40/40 分区完全一致（长度取整数）",
+      "group_balanced_partitions": "4 分区、每组完整",
+      "scope": "只跑切分算法，未初始化模型或引擎"
+    },
+    "source_anchors": [
+      "verl 1a9e711e verl/trainer/ppo/ray_trainer.py:1160-1212（_balance_batch 的 prefix_grouper 分支，跳过分区内重排）",
+      "verl 1a9e711e verl/trainer/ppo/ray_trainer.py:1209-1212（默认逐条 LDM：轻的排两端）",
+      "verl 1a9e711e verl/utils/seqlen_balancing.py:46,394-466,554-624",
+      "verl 1a9e711e verl/workers/engine/utils.py:63,71（use_dynamic_bsz_balance=True、force_group_size 默认 1）",
+      "verl 1a9e711e verl/workers/engine_workers.py:244-302",
+      "verl 1a9e711e verl/utils/tensordict_utils.py:588-612",
+      "verl 1a9e711e verl/single_controller/base/decorator.py:250-252",
+      "verl 1a9e711e verl/trainer/ppo/prefix_grouper_utils.py:59-72",
+      "verl 1a9e711e verl/trainer/config/actor/actor.yaml:102,118"
+    ]
+  },
+  "classification": "进程内切分形状复刻＋FLOP 口径；非 GPU 实测、非端到端。墙钟未测，不可与论文报值相除（§19.1 规则一）。切分算法与真实 verl 逐位一致，但长度分布是构造参数。",
+  "key_readings": {
+    "mini_cut_prefix_grouper": 0.0,
+    "mini_cut_default_per_sample": 0.9992,
+    "micro_cut_prefix_grouper_default_budget": 0.8132,
+    "micro_cut_prefix_grouper_loose_budget": 0.0,
+    "fragments_per_group_default_16384": 3.6176,
+    "real_over_baseline_default_16384": 3.6176,
+    "real_over_baseline_tight_4096": 7.2,
+    "real_over_baseline_loose": 1.0,
+    "best_per_mb_over_baseline_default_16384": 1.0,
+    "dispatch_views_equal_to_partition": "120/120",
+    "group_in_single_minibatch_continuous": 1.0,
+    "group_in_single_minibatch_random": 0.0,
+    "iteration_mismatch_cases": 0,
+    "budget_sweep_first_single_fragment_tokens": 583822
+  },
+  "self_check_fixes": [
+    "第一版把 _balance_batch 的分区直接当 rank 视图，得出「组几乎不会被切开」；真实 dispatch 是连续 chunk，分区只决定重排顺序。",
+    "第二版把 micro-batch 当成连续切；rearrange_micro_batches 按长度排名做 LDM，且 use_dynamic_bsz_balance 默认 True。复刻后与真实实现 40/40 一致。",
+    "组大小与样本长度混用量纲，使 real 口径出现负 FLOP；改为「一次遍历里前缀算几遍」。",
+    "交叉验证用浮点长度，真实实现用 attention_mask.sum() 且 torch.arange 会截断到 0 长度；改为整数长度后 40/40 一致。",
+    "「前缀越长共享收益越大」被当作对照，但本口径下 baseline/no_share 恒为 1/n，该对照必然失败；换成 =1/n 恒等与预算单调两条。",
+    "LDM 复刻的 Set.__lt__ 平手比较用 (w, idx)，verl 用 (idx, w)；已改为同序。"
+  ],
+  "residual": [
+    "「切开的片段之间完全不能共享」是上界口径；best_per_mb 给下界（1.0×），真实值在这之间，上游 prefix_grouper 的 forward 未在本机验证。",
+    "no_share 列不是真实默认路径（use_remove_padding=true 时前缀本就只算一次），只能作相对刻度。",
+    "长度分布是构造参数（均值 2200、CV 0.45、整数化），未从训练日志取值。",
+    "PP 气泡（被跳过的「小微批排两端」）的真实收益未测。",
+    "dispatch 视图与分区恰好相等依赖「组连续 + 分区大小 = B/dp」，不是稳健设计；uid 顺序被上游打乱时该等式不成立。"
+  ],
+  "artifacts": {
+    "sha256": {
+      "summary.json": "c241dc71003eac08da1f34d623753a416e0cb31c273a06336042b3f841dde466",
+      "pg_boundaries.py": "29c54d7dde9cfff0d3ba5b0d7ec6f6a620d580f9fdcb21637f3cd69625ff4b8c",
+      "test_pg_boundaries.py": "f3417b388e8b9ac44b3b542f564bc6144eab0374c77de13ca5020c4c7df4afd7",
+      "xcheck_verl.py": "fe24248d49002c3b51c70ef539ee1c90f82c026e33185080d4e0d6fd5aec047d",
+      "readme.md": "9126d1c668bdca47ecd015a5ab475eaccc35da3b52bf2699e38c375c51f4ef1d"
+    }
+  }
+}
