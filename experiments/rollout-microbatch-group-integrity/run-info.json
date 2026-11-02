@@ -1,0 +1,72 @@
+{
+  "experiment": "§13.35 micro-batch 层的组完整性：可达上限与可接线收益",
+  "doc": "notebook/rollout-performance-research.md §13.35",
+  "execution": {
+    "python": "3.9.6（macOS arm64，仅标准库）",
+    "commands": [
+      "python3 microbatch_group_integrity.py             # 约 3 s，覆盖 summary.json",
+      "python3 microbatch_group_integrity.py --verify    # 通过：逐字段相同（连跑两次均通过）",
+      "python3 -m unittest test_microbatch_group_integrity -v   # 15 passed",
+      "VERL_ROOT=../../verl /tmp/verl-seqlb-venv/bin/python xcheck_verl.py"
+    ],
+    "cross_validation": {
+      "environment": "uv venv（Python 3.12）＋ CPU torch 2.15.0，直接 import verl 源码 1a9e711e",
+      "cases": 8,
+      "partition_equal": "7/7 可切形态分区完全一致（force_group_size=1 / =n、无 vPP / vPP=2 / vPP=4）",
+      "infeasible": "1 个形态（force_group_size=8、vPP=3、预算 16384）真实实现 AssertionError(num_micro_batches<=num_groups)，模型记 infeasible——两侧同时判不可行",
+      "scope": "只跑切分算法，未初始化模型或引擎"
+    },
+    "source_anchors": [
+      "verl 1a9e711e verl/utils/seqlen_balancing.py:348-466（rearrange_micro_batches 全形状）",
+      "verl 1a9e711e verl/utils/seqlen_balancing.py:396-409（num_groups 定义、assert num_micro_batches <= num_groups）",
+      "verl 1a9e711e verl/utils/seqlen_balancing.py:412（roundup_divisible / num_batches_divided_by）",
+      "verl 1a9e711e verl/workers/engine/utils.py:57-94（prepare_micro_batches，无 force_group_size 形参）",
+      "verl 1a9e711e verl/workers/engine/utils.py:63,71（use_dynamic_bsz_balance 默认 True、force_group_size 读非张量键默认 1）",
+      "verl 1a9e711e verl/workers/engine_workers.py:334-345（update_actor 注入的五个默认键，不含 force_group_size）",
+      "verl 1a9e711e verl/workers/engine/fsdp/transformer_impl.py:650-652（未透传 use_dynamic_bsz_balance）",
+      "verl 1a9e711e verl/workers/engine/megatron/transformer_impl.py:703-711（num_batches_divided_by 来源）",
+      "verl 1a9e711e verl/trainer/ppo/ray_trainer.py:1160-1212（_balance_batch 组级 LDM 与跳过重排）"
+    ]
+  },
+  "classification": "进程内切分形状复刻＋前缀块 FLOP 口径；非 GPU 实测、非端到端。墙钟未测，所有倍数都是 FLOP 比值，不可与论文报值相除（§19.1 规则一）。切分算法与真实 verl 逐位一致，但长度分布是构造参数。",
+  "key_readings": {
+    "fragments_per_group_current_default_16384": 2.8,
+    "fragments_per_group_ideal_minibatch_default_16384": 1.0,
+    "current_over_wholebatch_default_16384": 3.6918203514862227,
+    "ideal_minibatch_over_wholebatch_default_16384": 1.4443480147537426,
+    "ideal_over_current_mean_720_cases": 0.46827100117914383,
+    "ideal_over_current_range": [0.16243654822335024, 1.0],
+    "vpp2_n_micro_ratio_grouped_over_per_sample": 0.4199709513435004,
+    "vpp4_n_micro_ratio_grouped_over_per_sample": 0.387037037037037,
+    "vpp2_load_imbalance_per_sample": 0.08891294919319769,
+    "vpp2_load_imbalance_grouped": 0.1696004934112436,
+    "vpp3_infeasible_cases": 9,
+    "vpp4_infeasible_cases": 3,
+    "vpp2_imbalance_flip": {"mini_groups=2": [0.0159, 0.0005], "mini_groups=4": [0.0125, 0.1855], "mini_groups=8": [0.0101, 0.3227]},
+    "budget_sweep_per_sample_vs_grouped_n_micro": {"100%": [2, 2], "35%": [4, 4], "10%": [10, 8], "5%": [20, 8]}
+  },
+  "self_check_fixes": [
+    "「整批共享」与「mini-batch 内组共享」混用同一个分母，使 §13.34 的 3.62× 被读成落差；改为三参照点分列 + 单测钉死「可达上限/外参照 = 每 mini-batch 组数」。",
+    "vPP 顶破 num_groups 时替它 rescale；真实代码是 assert，改为记 infeasible 并交 xcheck 确认真实行为。",
+    "交叉验证长度上界取 6000 触发 max_token_len >= max_seq_len 前置断言，误报真实不可行；长度上界压到预算内，该断言单列为非本批口径。",
+    "交叉验证只按异常消息分类，而 assert num_micro_batches <= num_groups 无消息文本；改按模型侧是否同样顶破上限判定。",
+    "识别性检验用 details[0]（仅 mini_groups=2）代表整层，漏掉 vPP=4 的失败案例；改为遍历 vPP∈{2,4} 全部组合。",
+    "单测期望值先写成「比值 = mini-batch 组数」，实为整条 rank 视图的 B/dp/n；改用其自身解析式并补结构测试。"
+  ],
+  "residual": [
+    "A 段（force_group_size 无 TRAIN 调用方写入）只核到 engine 入口；ray trainer 不在该 checkout 的 enable 流程里，未核到上游调用点。",
+    "可达上限口径沿用 §13.34 的上界假设（碎片之间不共享）；若上游 prefix_grouper 能按碎片共享，现状更接近可达上限，0.47 倍应视为收益上限。",
+    "未计墙钟与 PP 气泡：vPP 约束的真实代价是气泡时长，本批只量批数与不均衡，故不能说「接线一定亏」。",
+    "长度分布是构造参数（均值 2200、CV 0.45、整数化）；组内不齐整的负载未扫。",
+    "只覆盖 verl 1a9e711e；force_group_size 的 RM 语义来自上游注释，未核 RM 训练路径。"
+  ],
+  "artifacts": {
+    "sha256": {
+      "summary.json": "bb8b7195cfe41743e8a588b547fd45939c07af10ce4a7669fc617fa541403ced",
+      "microbatch_group_integrity.py": "95fb967ed690cc1d3c428f6b3fb2533a90726fec7fbd4fc76a81491fd90c5e7a",
+      "test_microbatch_group_integrity.py": "b1818a359586f7511ed01baa77603062d8fb3e993967ec14ba87e702846a836e",
+      "xcheck_verl.py": "79aee28a3d05115ad8f0813fdf1b7c49e1a4e7c431b81da00d79c8d294aca92d",
+      "readme.md": "d6610e66c3ddadf48c39fa2abf78d98ccadcab5efa6c714945a6215a2d32114e"
+    }
+  }
+}
