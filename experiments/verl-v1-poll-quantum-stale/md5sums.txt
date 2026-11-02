@@ -12,3 +12,12 @@
 ba01fddf381c5df42bb7a8f6ae346e25  run-stale-wait.sh
 1a3592ea7c64aeb4783b81573342f214  make-summary-wait.py
 ca3c65c8a322f9da8a2f9389c108d9df  summary-wait.json
+83a2c0e0812534a6c0eb05a5c2a92c8a  raw/rollout-poll-stale-swt2p010.txt
+15466658ffda45ddc771bba7f65811ec  raw/rollout-poll-stale-swt2p010b.txt
+5df19f341ca598db11fe2b21687fad8a  raw/rollout-poll-stale-swt2p200.txt
+a19cc480e50a9775ac71329ad9606b48  raw/rollout-poll-stale-swt2p200b.txt
+5979e6ef1d4d7a4caa54a1411717014f  summary-wait-t2.json
+45bdd70097df86ef2b16157b6431ed33  verify-wait.py
+cfba0d7b85f55fa0a12c10cb4c67141b  verification-wait.md
+d443c59d6345d469eb8729d77ac7d06a  verify-wait-t2.py
+4a36f114c3d104a53d01b57a3318e352  verification-wait-t2.md

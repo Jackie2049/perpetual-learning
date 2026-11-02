@@ -4131,7 +4131,30 @@ A 组（socket 传输，对照）：h256／h1024／h4096 整步 27.417／27.426�
 
 **对 TM-008 的含义**：补丁适用面覆盖 stale 通道（方向一致），但这是已测形态里收益最小的一档（固定批 −3.2%、DAPO −4.9%、默认 async −1.9%、本档 −2.1%）；PR 边界段应写明"更严格的 `max_off_policy_threshold` 不会让轮询收益变大，那个配置的成本来自逐出本身"。
 
-**边界**：单栈单点（1.5B／gsm8k／单 seed／15 步／`n=4`）；2+0 放置；threshold 只测 1 与 2（2 是 4 步冒烟）；`max_off_policy_strategy=wait`（dropless）与 `separate_async` 未测；每臂两跑给 ±0.4s 级分辨力。材料 [experiments/verl-v1-poll-quantum-stale](../../experiments/verl-v1-poll-quantum-stale/README.md)（四份原始日志＋md5、解析脚本、`summary.json`）。
+**边界**：单栈单点（1.5B／gsm8k／单 seed／15 步／`n=4`）；2+0 放置；threshold 只测 1 与 2（2 是 4 步冒烟）；`separate_async` 未测；每臂两跑给 ±0.4s 级分辨力。材料 [experiments/verl-v1-poll-quantum-stale](../../experiments/verl-v1-poll-quantum-stale/README.md)（四份原始日志＋md5、解析脚本、`summary.json`）。
+
+#### 13.53 补记：`wait`（dropless）两档——t=1 是屏障、收益最大；t=2 允许一步重叠、收益落进噪声但绝对步时最低
+
+**机制（从代码读，不是从数据反推）**：`prepare_step()` 在 `sample()` **之前**调用 `_add_batch_to_generate()` 派发本步新批（tag 用当前 `global_steps`），而 `ReplayBufferAsync._has_enough_samples` 在 `strategy=="wait"` 时对 `pending|running` 用 `(global_steps - prompt_global_steps + 1) >= threshold` 判阻塞。因此：**t=1 连本步刚派发的批（span 1）一起等 ⇒ 完整屏障**，且 `_stale_terminal_keys` 对非 `drop` 返回空集 ⇒ **wait 永不逐出**；**t=2 只等上一步的批（span 2）⇒ 允许一步重叠**；**t≥3 时自然跨度 1–2 永不阻塞 ⇒ 等同默认 async（§13.51）**。t=2 是本管道深度下唯一不同的 dropless 机制。
+
+机器、栈、数据、放置同 §13.53（4090-1 GPU 4,5、Qwen2.5-1.5B、gsm8k、15 步、`n=4`、colocate_async＋warmup=1、patched 树），两档各四跑、poll 2.0／0.1 交替，**8/8 exit 0**（t=1：20:53–21:28Z；t=2：21:32–22:05Z）。
+
+| 档位 | poll | gen 均值（steps 3–14） | 整步均值 | 生成组/步 | 逐出 | span 均值 |
+|---|---|---|---|---|---|---|
+| t=1 | 2.0 | 3.151 | 22.323 | 32 | 0 | 1.00 |
+| t=1 | 0.1 | 2.177 | 21.079 | 32 | 0 | 1.00 |
+| t=2 | 2.0 | 1.739 | 20.893 | 32 | 0 | 1.63 |
+| t=2 | 0.1 | 1.359 | 20.667 | 32 | 0 | 1.92 |
+
+**读数一：t=1 的量子被屏障放大。** 2.0 臂 gen 严格两态 4.24／2.22（差 2.02s），池化 **gen −0.974s（−30.9%）、整步 −1.243s（−5.6%）**；步级分层 bootstrap 95% CI 为 Δstep [−1.786, −0.724]、Δgen [−1.392, −0.566]，**不含 0**。但这是已测形态里收益最大也最"贵"的一档：绝对步时比默认 async 高约 1.1s（屏障把本步新批也等掉）。
+
+**读数二：t=2 的量子只落在少数步。** 2.0 臂 gen 呈三态 **0.21–0.26／2.21–2.26／4.27–4.31s（12 步 4／7／1）**，0.1 臂连续 0.74–1.87s；池化 **gen −0.380s（−21.9%）、整步 −0.226s（−1.1%）**，bootstrap CI 为 Δstep **[−0.943, +0.512]**、Δgen **[−0.881, +0.126]**，**均跨 0** ⇒ 本样本量下**不能声称 poll 0.1 在 t=2 有可检出收益**。对照 t=1 说明：**屏障越强，轮询量子暴露得越多**；没有屏障时，2s 轮询只在"恰好要等上一步批"的步上多摊一个量子。
+
+**读数三：dropless 的实用档位是 t=2。** t=2 绝对步时 20.9／20.7s，比 t=1 低 **1.43／0.41s**，与默认 async（§13.51：21.2／20.8s）相当，同时保持零逐出、零丢弃、每步 32 组；span 均值 1.6–1.9、staleness 均值 0.07–0.38 说明多数轨迹只触到上一步版本，属"一步重叠"而非严格同步。**跨窗口比较，只作方向性证据**；机制由派发时序直接支持。对 TM-008 的 PR 边界段：轮询收益随阻塞强度变化（固定批 −3.2%、DAPO −4.9%、默认 async −1.9%、evicting t=1 −2.1%、屏障 wait t=1 −5.6%、一步重叠 wait t=2 ≈0），**不能把某一档的百分比当通用常数**。
+
+**复核**：wait t=1 四跑由第二会话独立复算（`verify-wait.py`，不同解析路径），与 `summary-wait.json` 在 1e-9 内一致、md5 12/12；t=2 四跑由本会话 `verify-wait.py --group t2` 复核（span≤2、零逐出、md5 4/4 与服务器一致），`summary-wait-t2.json` 由该脚本生成；并行会话另写了独立解析器复核同一批日志，池化读数一致。
+
+**边界**：单栈单点、单 seed、每臂两跑；t≥3 的 wait 未实测（结构等价默认 async 是代码推断）；两档来自相邻窗口而非交错；2+0 放置，绝对步时不可跨窗口比。
 
 ## 14. Reproduction Candidates
 
