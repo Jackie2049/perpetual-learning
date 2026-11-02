@@ -1,0 +1,60 @@
+{
+  "script": "/tmp/m5-length/sample_lengths.py",
+  "script_sha256": "45ba1dc7a2de2946518f0068695338ce17081e62ab693a4b263d82c0ccf7402b",
+  "argv": {
+    "model": "/home/zxw/models/Qwen2.5-1.5B-Instruct",
+    "data": "/home/zxw/data/gsm8k/train_sub480.parquet",
+    "out": "raw/qwen15b_gsm8k_n8_cap1024.jsonl.gz",
+    "meta": "raw/qwen15b_gsm8k_n8_cap1024.meta.json",
+    "n_samples": 8,
+    "max_tokens": 1024,
+    "max_prompt_tokens": 512,
+    "max_model_len": 4096,
+    "gpu_mem": 0.45,
+    "temperature": 1.0,
+    "top_p": 1.0,
+    "top_k": -1,
+    "seed": 42,
+    "limit": 0
+  },
+  "model": "/home/zxw/models/Qwen2.5-1.5B-Instruct",
+  "model_files": {
+    "config.json": {
+      "size": 660,
+      "mtime": 1793306186
+    },
+    "generation_config.json": {
+      "size": 242,
+      "mtime": 1793306186
+    },
+    "model.safetensors": {
+      "size": 3087467144,
+      "mtime": 1793306714
+    },
+    "tokenizer.json": {
+      "size": 7031645,
+      "mtime": 1793306187
+    },
+    "tokenizer_config.json": {
+      "size": 7305,
+      "mtime": 1793306187
+    },
+    "vocab.json": {
+      "size": 2776833,
+      "mtime": 1793306187
+    }
+  },
+  "data": "/home/zxw/data/gsm8k/train_sub480.parquet",
+  "data_sha256": "306a46e2de1d97bc9ff581b261ca6ec1ed39765e6d546634cd4260674dc54868",
+  "vllm": "0.24.0",
+  "torch": "2.11.0+cu129",
+  "gpu": "NVIDIA GeForce RTX 4090",
+  "python": "3.10.12",
+  "host": "4090-1",
+  "cuda_visible_devices": "1",
+  "n_prompts": 480,
+  "n_records": 3840,
+  "gen_seconds": 64.6,
+  "wall_seconds": 90.7,
+  "started_unix": 1793639249
+}
