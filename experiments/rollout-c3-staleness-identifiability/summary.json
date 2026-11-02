@@ -1,0 +1,1636 @@
+{
+ "configs": {
+  "async-deep": {
+   "T": 1.0,
+   "engine_lag": 3,
+   "gen_rate": 2.5,
+   "mode": "async",
+   "stale_window": 20,
+   "sync_extra": 0.2
+  },
+  "async-stale": {
+   "T": 1.0,
+   "engine_lag": 1,
+   "gen_rate": 1.5,
+   "mode": "async",
+   "stale_window": 8,
+   "sync_extra": 0.2
+  },
+  "async-starved": {
+   "T": 1.0,
+   "engine_lag": 1,
+   "gen_rate": 0.5,
+   "mode": "async",
+   "stale_window": 8,
+   "sync_extra": 0.2
+  },
+  "sync": {
+   "T": 1.0,
+   "mode": "sync",
+   "sync_extra": 0.2
+  },
+  "sync-pipelined": {
+   "T": 1.0,
+   "mode": "sync",
+   "pipeline": true,
+   "sync_extra": 0.2
+  }
+ },
+ "elastic_window": {
+  "rate0.5_window8": {
+   "fifo": {
+    "eta_max": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "std": 0.0
+    },
+    "eta_mean": {
+     "max": 0.99,
+     "mean": 0.99,
+     "min": 0.99,
+     "std": 0.0
+    },
+    "idle_ratio": {
+     "max": 0.5,
+     "mean": 0.5,
+     "min": 0.5,
+     "std": 0.0
+    }
+   },
+   "fifo_is_zero": false,
+   "lifo": {
+    "eta_max": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "std": 0.0
+    },
+    "eta_mean": {
+     "max": 0.99,
+     "mean": 0.99,
+     "min": 0.99,
+     "std": 0.0
+    },
+    "idle_ratio": {
+     "max": 0.5,
+     "mean": 0.5,
+     "min": 0.5,
+     "std": 0.0
+    }
+   },
+   "lifo_is_zero": false,
+   "order_matters": false
+  },
+  "rate1_window8": {
+   "fifo": {
+    "eta_max": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "std": 0.0
+    },
+    "eta_mean": {
+     "max": 0.995,
+     "mean": 0.995,
+     "min": 0.995,
+     "std": 0.0
+    },
+    "idle_ratio": {
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "std": 0.0
+    }
+   },
+   "fifo_is_zero": false,
+   "lifo": {
+    "eta_max": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "std": 0.0
+    },
+    "eta_mean": {
+     "max": 0.995,
+     "mean": 0.995,
+     "min": 0.995,
+     "std": 0.0
+    },
+    "idle_ratio": {
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "std": 0.0
+    }
+   },
+   "lifo_is_zero": false,
+   "order_matters": false
+  },
+  "rate2_window0": {
+   "fifo": {
+    "eta_max": {
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "std": 0.0
+    },
+    "eta_mean": {
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "std": 0.0
+    },
+    "idle_ratio": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "std": 0.0
+    }
+   },
+   "fifo_is_zero": true,
+   "lifo": {
+    "eta_max": {
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "std": 0.0
+    },
+    "eta_mean": {
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "std": 0.0
+    },
+    "idle_ratio": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "std": 0.0
+    }
+   },
+   "lifo_is_zero": true,
+   "order_matters": false
+  },
+  "rate2_window32": {
+   "fifo": {
+    "eta_max": {
+     "max": 31.0,
+     "mean": 31.0,
+     "min": 31.0,
+     "std": 0.0
+    },
+    "eta_mean": {
+     "max": 28.82,
+     "mean": 28.82,
+     "min": 28.82,
+     "std": 0.0
+    },
+    "idle_ratio": {
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "std": 0.0
+    }
+   },
+   "fifo_is_zero": false,
+   "lifo": {
+    "eta_max": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "std": 0.0
+    },
+    "eta_mean": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "std": 0.0
+    },
+    "idle_ratio": {
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "std": 0.0
+    }
+   },
+   "lifo_is_zero": false,
+   "order_matters": true
+  },
+  "rate2_window8": {
+   "fifo": {
+    "eta_max": {
+     "max": 7.0,
+     "mean": 7.0,
+     "min": 7.0,
+     "std": 0.0
+    },
+    "eta_mean": {
+     "max": 6.92,
+     "mean": 6.92,
+     "min": 6.92,
+     "std": 0.0
+    },
+    "idle_ratio": {
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "std": 0.0
+    }
+   },
+   "fifo_is_zero": false,
+   "lifo": {
+    "eta_max": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "std": 0.0
+    },
+    "eta_mean": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "std": 0.0
+    },
+    "idle_ratio": {
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "std": 0.0
+    }
+   },
+   "lifo_is_zero": false,
+   "order_matters": true
+  },
+  "rate5_window32": {
+   "fifo": {
+    "eta_max": {
+     "max": 31.0,
+     "mean": 31.0,
+     "min": 31.0,
+     "std": 0.0
+    },
+    "eta_mean": {
+     "max": 30.505,
+     "mean": 30.505,
+     "min": 30.505,
+     "std": 0.0
+    },
+    "idle_ratio": {
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "std": 0.0
+    }
+   },
+   "fifo_is_zero": false,
+   "lifo": {
+    "eta_max": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "std": 0.0
+    },
+    "eta_mean": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "std": 0.0
+    },
+    "idle_ratio": {
+     "max": 0.0,
+     "mean": 0.0,
+     "min": 0.0,
+     "std": 0.0
+    }
+   },
+   "lifo_is_zero": false,
+   "order_matters": true
+  }
+ },
+ "identifiability": {
+  "bias": {
+   "async-deep": {
+    "engine_weight": {
+     "max": {
+      "max": -19.0,
+      "mean": -19.0,
+      "min": -19.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": -18.57,
+      "mean": -18.57,
+      "min": -18.57,
+      "std": 0.0
+     },
+     "p50": {
+      "max": -19.0,
+      "mean": -19.0,
+      "min": -19.0,
+      "std": 0.0
+     },
+     "p90": {
+      "max": -19.0,
+      "mean": -19.0,
+      "min": -19.0,
+      "std": 0.0
+     }
+    },
+    "max_only": {
+     "max": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 0.43,
+      "mean": 0.43,
+      "min": 0.43,
+      "std": 0.0
+     }
+    },
+    "trainer_step": {
+     "max": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p50": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p90": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     }
+    }
+   },
+   "async-stale": {
+    "engine_weight": {
+     "max": {
+      "max": -7.0,
+      "mean": -7.0,
+      "min": -7.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": -6.815,
+      "mean": -6.815,
+      "min": -6.815,
+      "std": 0.0
+     },
+     "p50": {
+      "max": -7.0,
+      "mean": -7.0,
+      "min": -7.0,
+      "std": 0.0
+     },
+     "p90": {
+      "max": -7.0,
+      "mean": -7.0,
+      "min": -7.0,
+      "std": 0.0
+     }
+    },
+    "max_only": {
+     "max": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 0.185,
+      "mean": 0.185,
+      "min": 0.185,
+      "std": 0.0
+     }
+    },
+    "trainer_step": {
+     "max": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p50": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p90": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     }
+    }
+   },
+   "async-starved": {
+    "engine_weight": {
+     "max": {
+      "max": -1.0,
+      "mean": -1.0,
+      "min": -1.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": -0.99,
+      "mean": -0.99,
+      "min": -0.99,
+      "std": 0.0
+     },
+     "p50": {
+      "max": -1.0,
+      "mean": -1.0,
+      "min": -1.0,
+      "std": 0.0
+     },
+     "p90": {
+      "max": -1.0,
+      "mean": -1.0,
+      "min": -1.0,
+      "std": 0.0
+     }
+    },
+    "max_only": {
+     "max": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 0.01,
+      "mean": 0.01,
+      "min": 0.01,
+      "std": 0.0
+     }
+    },
+    "trainer_step": {
+     "max": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p50": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p90": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     }
+    }
+   },
+   "sync": {
+    "engine_weight": {
+     "max": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p50": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p90": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     }
+    },
+    "max_only": {
+     "max": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     }
+    },
+    "trainer_step": {
+     "max": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p50": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p90": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     }
+    }
+   },
+   "sync-pipelined": {
+    "engine_weight": {
+     "max": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p50": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p90": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     }
+    },
+    "max_only": {
+     "max": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     }
+    },
+    "trainer_step": {
+     "max": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p50": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p90": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     }
+    }
+   }
+  },
+  "eta_distribution_spread": {
+   "async-deep": {
+    "max": 19.0,
+    "min": 1.0,
+    "std": 2.206386772
+   },
+   "async-stale": {
+    "max": 7.0,
+    "min": 0.0,
+    "std": 0.872496866
+   },
+   "async-starved": {
+    "max": 1.0,
+    "min": 0.0,
+    "std": 0.099560989
+   },
+   "sync": {
+    "max": 0.0,
+    "min": 0.0,
+    "std": 0.0
+   },
+   "sync-pipelined": {
+    "max": 0.0,
+    "min": 0.0,
+    "std": 0.0
+   }
+  },
+  "max_only_breadth": {
+   "async-deep": {
+    "max_only_reports_p50": false,
+    "true_max_minus_p50": 0.0
+   },
+   "async-stale": {
+    "max_only_reports_p50": false,
+    "true_max_minus_p50": 0.0
+   }
+  },
+  "per_config": {
+   "async-deep": {
+    "engine_weight": {
+     "max": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p50": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p90": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     }
+    },
+    "max_only": {
+     "max": {
+      "max": 19.0,
+      "mean": 19.0,
+      "min": 19.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 19.0,
+      "mean": 19.0,
+      "min": 19.0,
+      "std": 0.0
+     },
+     "p50": {
+      "max": NaN,
+      "mean": NaN,
+      "min": NaN,
+      "std": NaN
+     },
+     "p90": {
+      "max": NaN,
+      "mean": NaN,
+      "min": NaN,
+      "std": NaN
+     }
+    },
+    "trainer_step": {
+     "max": {
+      "max": 19.0,
+      "mean": 19.0,
+      "min": 19.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 18.57,
+      "mean": 18.57,
+      "min": 18.57,
+      "std": 0.0
+     },
+     "p50": {
+      "max": 19.0,
+      "mean": 19.0,
+      "min": 19.0,
+      "std": 0.0
+     },
+     "p90": {
+      "max": 19.0,
+      "mean": 19.0,
+      "min": 19.0,
+      "std": 0.0
+     }
+    },
+    "true": {
+     "max": {
+      "max": 19.0,
+      "mean": 19.0,
+      "min": 19.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 18.57,
+      "mean": 18.57,
+      "min": 18.57,
+      "std": 0.0
+     },
+     "p50": {
+      "max": 19.0,
+      "mean": 19.0,
+      "min": 19.0,
+      "std": 0.0
+     },
+     "p90": {
+      "max": 19.0,
+      "mean": 19.0,
+      "min": 19.0,
+      "std": 0.0
+     }
+    }
+   },
+   "async-stale": {
+    "engine_weight": {
+     "max": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p50": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p90": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     }
+    },
+    "max_only": {
+     "max": {
+      "max": 7.0,
+      "mean": 7.0,
+      "min": 7.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 7.0,
+      "mean": 7.0,
+      "min": 7.0,
+      "std": 0.0
+     },
+     "p50": {
+      "max": NaN,
+      "mean": NaN,
+      "min": NaN,
+      "std": NaN
+     },
+     "p90": {
+      "max": NaN,
+      "mean": NaN,
+      "min": NaN,
+      "std": NaN
+     }
+    },
+    "trainer_step": {
+     "max": {
+      "max": 7.0,
+      "mean": 7.0,
+      "min": 7.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 6.815,
+      "mean": 6.815,
+      "min": 6.815,
+      "std": 0.0
+     },
+     "p50": {
+      "max": 7.0,
+      "mean": 7.0,
+      "min": 7.0,
+      "std": 0.0
+     },
+     "p90": {
+      "max": 7.0,
+      "mean": 7.0,
+      "min": 7.0,
+      "std": 0.0
+     }
+    },
+    "true": {
+     "max": {
+      "max": 7.0,
+      "mean": 7.0,
+      "min": 7.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 6.815,
+      "mean": 6.815,
+      "min": 6.815,
+      "std": 0.0
+     },
+     "p50": {
+      "max": 7.0,
+      "mean": 7.0,
+      "min": 7.0,
+      "std": 0.0
+     },
+     "p90": {
+      "max": 7.0,
+      "mean": 7.0,
+      "min": 7.0,
+      "std": 0.0
+     }
+    }
+   },
+   "async-starved": {
+    "engine_weight": {
+     "max": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p50": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p90": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     }
+    },
+    "max_only": {
+     "max": {
+      "max": 1.0,
+      "mean": 1.0,
+      "min": 1.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 1.0,
+      "mean": 1.0,
+      "min": 1.0,
+      "std": 0.0
+     },
+     "p50": {
+      "max": NaN,
+      "mean": NaN,
+      "min": NaN,
+      "std": NaN
+     },
+     "p90": {
+      "max": NaN,
+      "mean": NaN,
+      "min": NaN,
+      "std": NaN
+     }
+    },
+    "trainer_step": {
+     "max": {
+      "max": 1.0,
+      "mean": 1.0,
+      "min": 1.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 0.99,
+      "mean": 0.99,
+      "min": 0.99,
+      "std": 0.0
+     },
+     "p50": {
+      "max": 1.0,
+      "mean": 1.0,
+      "min": 1.0,
+      "std": 0.0
+     },
+     "p90": {
+      "max": 1.0,
+      "mean": 1.0,
+      "min": 1.0,
+      "std": 0.0
+     }
+    },
+    "true": {
+     "max": {
+      "max": 1.0,
+      "mean": 1.0,
+      "min": 1.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 0.99,
+      "mean": 0.99,
+      "min": 0.99,
+      "std": 0.0
+     },
+     "p50": {
+      "max": 1.0,
+      "mean": 1.0,
+      "min": 1.0,
+      "std": 0.0
+     },
+     "p90": {
+      "max": 1.0,
+      "mean": 1.0,
+      "min": 1.0,
+      "std": 0.0
+     }
+    }
+   },
+   "sync": {
+    "engine_weight": {
+     "max": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p50": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p90": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     }
+    },
+    "max_only": {
+     "max": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p50": {
+      "max": NaN,
+      "mean": NaN,
+      "min": NaN,
+      "std": NaN
+     },
+     "p90": {
+      "max": NaN,
+      "mean": NaN,
+      "min": NaN,
+      "std": NaN
+     }
+    },
+    "trainer_step": {
+     "max": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p50": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p90": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     }
+    },
+    "true": {
+     "max": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p50": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p90": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     }
+    }
+   },
+   "sync-pipelined": {
+    "engine_weight": {
+     "max": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p50": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p90": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     }
+    },
+    "max_only": {
+     "max": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p50": {
+      "max": NaN,
+      "mean": NaN,
+      "min": NaN,
+      "std": NaN
+     },
+     "p90": {
+      "max": NaN,
+      "mean": NaN,
+      "min": NaN,
+      "std": NaN
+     }
+    },
+    "trainer_step": {
+     "max": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p50": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p90": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     }
+    },
+    "true": {
+     "max": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "mean": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p50": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     },
+     "p90": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "std": 0.0
+     }
+    }
+   }
+  },
+  "verdict_order": {
+   "engine_weight": {
+    "hit": 0,
+    "n": 30
+   },
+   "max_only": {
+    "hit": 30,
+    "n": 30
+   },
+   "trainer_step": {
+    "hit": 30,
+    "n": 30
+   },
+   "true": {
+    "hit": 30,
+    "n": 30
+   }
+  },
+  "verdict_stale_gt_sync": {
+   "async-deep": {
+    "engine_weight": {
+     "hit": 0,
+     "n": 30
+    },
+    "max_only": {
+     "hit": 30,
+     "n": 30
+    },
+    "trainer_step": {
+     "hit": 30,
+     "n": 30
+    },
+    "true": {
+     "hit": 30,
+     "n": 30
+    }
+   },
+   "async-stale": {
+    "engine_weight": {
+     "hit": 0,
+     "n": 30
+    },
+    "max_only": {
+     "hit": 30,
+     "n": 30
+    },
+    "trainer_step": {
+     "hit": 30,
+     "n": 30
+    },
+    "true": {
+     "hit": 30,
+     "n": 30
+    }
+   }
+  }
+ },
+ "seeds": 30,
+ "single_s": {
+  "async-deep": {
+   "active_ratio": {
+    "max": 0.833333333,
+    "mean": 0.833333333,
+    "min": 0.833333333,
+    "std": 0.0
+   },
+   "drop_rate": {
+    "max": 0.2675,
+    "mean": 0.250895833,
+    "min": 0.230625,
+    "std": 0.009844813
+   },
+   "eta_max": {
+    "max": 19.0,
+    "mean": 19.0,
+    "min": 19.0,
+    "std": 0.0
+   },
+   "gennum_ratio": {
+    "max": 1.365187713,
+    "mean": 1.335150545,
+    "min": 1.299756296,
+    "std": 0.017532805
+   },
+   "idle_ratio": {
+    "max": 0.0,
+    "mean": 0.0,
+    "min": 0.0,
+    "std": 0.0
+   },
+   "s_c3": {
+    "max": 24.62,
+    "mean": 23.971333333,
+    "min": 23.44,
+    "std": 0.315034025
+   },
+   "speedup_vs_sync": {
+    "max": 1.2,
+    "mean": 1.2,
+    "min": 1.2,
+    "std": 0.0
+   }
+  },
+  "async-stale": {
+   "active_ratio": {
+    "max": 0.833333333,
+    "mean": 0.833333333,
+    "min": 0.833333333,
+    "std": 0.0
+   },
+   "drop_rate": {
+    "max": 0.2675,
+    "mean": 0.250895833,
+    "min": 0.230625,
+    "std": 0.009844813
+   },
+   "eta_max": {
+    "max": 7.0,
+    "mean": 7.0,
+    "min": 7.0,
+    "std": 0.0
+   },
+   "gennum_ratio": {
+    "max": 1.365187713,
+    "mean": 1.335150545,
+    "min": 1.299756296,
+    "std": 0.017532805
+   },
+   "idle_ratio": {
+    "max": 0.0,
+    "mean": 0.0,
+    "min": 0.0,
+    "std": 0.0
+   },
+   "s_c3": {
+    "max": 24.62,
+    "mean": 23.971333333,
+    "min": 23.44,
+    "std": 0.315034025
+   },
+   "speedup_vs_sync": {
+    "max": 1.2,
+    "mean": 1.2,
+    "min": 1.2,
+    "std": 0.0
+   }
+  },
+  "async-starved": {
+   "active_ratio": {
+    "max": 1.666666667,
+    "mean": 1.666666667,
+    "min": 1.666666667,
+    "std": 0.0
+   },
+   "drop_rate": {
+    "max": 0.28875,
+    "mean": 0.254458333,
+    "min": 0.22,
+    "std": 0.014546608
+   },
+   "eta_max": {
+    "max": 1.0,
+    "mean": 1.0,
+    "min": 1.0,
+    "std": 0.0
+   },
+   "gennum_ratio": {
+    "max": 1.405975395,
+    "mean": 1.341804306,
+    "min": 1.282051282,
+    "std": 0.026396565
+   },
+   "idle_ratio": {
+    "max": 0.5,
+    "mean": 0.5,
+    "min": 0.5,
+    "std": 0.0
+   },
+   "s_c3": {
+    "max": 12.48,
+    "mean": 11.928666667,
+    "min": 11.38,
+    "std": 0.23274573
+   },
+   "speedup_vs_sync": {
+    "max": 0.616296296,
+    "mean": 0.597135608,
+    "min": 0.57628259,
+    "std": 0.007817748
+   }
+  },
+  "indistinguishable_by_s_alone": {
+   "async-stale|async-deep": {
+    "eta_max_diff": -12.0,
+    "s_diff_rel": 0.0
+   },
+   "sync-pipelined|async-deep": {
+    "eta_max_diff": -19.0,
+    "s_diff_rel": 0.0
+   },
+   "sync-pipelined|async-stale": {
+    "eta_max_diff": -7.0,
+    "s_diff_rel": 0.0
+   }
+  },
+  "sync": {
+   "active_ratio": {
+    "max": 1.0,
+    "mean": 1.0,
+    "min": 1.0,
+    "std": 0.0
+   },
+   "drop_rate": {
+    "max": 0.2675,
+    "mean": 0.250895833,
+    "min": 0.230625,
+    "std": 0.009844813
+   },
+   "eta_max": {
+    "max": 0.0,
+    "mean": 0.0,
+    "min": 0.0,
+    "std": 0.0
+   },
+   "gennum_ratio": {
+    "max": 1.365187713,
+    "mean": 1.335150545,
+    "min": 1.299756296,
+    "std": 0.017532805
+   },
+   "idle_ratio": {
+    "max": 0.0,
+    "mean": 0.0,
+    "min": 0.0,
+    "std": 0.0
+   },
+   "s_c3": {
+    "max": 20.516666667,
+    "mean": 19.976111111,
+    "min": 19.533333333,
+    "std": 0.262528354
+   },
+   "speedup_vs_sync": {
+    "max": 1.0,
+    "mean": 1.0,
+    "min": 1.0,
+    "std": 0.0
+   }
+  },
+  "sync-pipelined": {
+   "active_ratio": {
+    "max": 0.833333333,
+    "mean": 0.833333333,
+    "min": 0.833333333,
+    "std": 0.0
+   },
+   "drop_rate": {
+    "max": 0.2675,
+    "mean": 0.250895833,
+    "min": 0.230625,
+    "std": 0.009844813
+   },
+   "eta_max": {
+    "max": 0.0,
+    "mean": 0.0,
+    "min": 0.0,
+    "std": 0.0
+   },
+   "gennum_ratio": {
+    "max": 1.365187713,
+    "mean": 1.335150545,
+    "min": 1.299756296,
+    "std": 0.017532805
+   },
+   "idle_ratio": {
+    "max": 0.0,
+    "mean": 0.0,
+    "min": 0.0,
+    "std": 0.0
+   },
+   "s_c3": {
+    "max": 24.62,
+    "mean": 23.971333333,
+    "min": 23.44,
+    "std": 0.315034025
+   },
+   "speedup_vs_sync": {
+    "max": 1.2,
+    "mean": 1.2,
+    "min": 1.2,
+    "std": 0.0
+   }
+  }
+ },
+ "steps": 200,
+ "variant_narratives": {
+  "direction_conflict": {
+   "async-deep": {
+    "honest_vs_async_base": 0,
+    "honest_vs_gen_num": 0,
+    "n": 30
+   },
+   "async-stale": {
+    "honest_vs_async_base": 0,
+    "honest_vs_gen_num": 0,
+    "n": 30
+   },
+   "sync": {
+    "honest_vs_async_base": 30,
+    "honest_vs_gen_num": 0,
+    "n": 30
+   },
+   "sync-pipelined": {
+    "honest_vs_async_base": 0,
+    "honest_vs_gen_num": 0,
+    "n": 30
+   }
+  },
+  "per_config": {
+   "async-deep": {
+    "async_base": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "n_ge_1": 30,
+     "std": 0.0
+    },
+    "gen_num": {
+     "max": 1.2,
+     "mean": 1.2,
+     "min": 1.2,
+     "n_ge_1": 30,
+     "std": 0.0
+    },
+    "honest": {
+     "max": 1.2,
+     "mean": 1.2,
+     "min": 1.2,
+     "n_ge_1": 30,
+     "std": 0.0
+    }
+   },
+   "async-stale": {
+    "async_base": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "n_ge_1": 30,
+     "std": 0.0
+    },
+    "gen_num": {
+     "max": 1.2,
+     "mean": 1.2,
+     "min": 1.2,
+     "n_ge_1": 30,
+     "std": 0.0
+    },
+    "honest": {
+     "max": 1.2,
+     "mean": 1.2,
+     "min": 1.2,
+     "n_ge_1": 30,
+     "std": 0.0
+    }
+   },
+   "sync": {
+    "async_base": {
+     "max": 0.833333333,
+     "mean": 0.833333333,
+     "min": 0.833333333,
+     "n_ge_1": 0,
+     "std": 0.0
+    },
+    "gen_num": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "n_ge_1": 30,
+     "std": 0.0
+    },
+    "honest": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "n_ge_1": 30,
+     "std": 0.0
+    }
+   },
+   "sync-pipelined": {
+    "async_base": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "n_ge_1": 30,
+     "std": 0.0
+    },
+    "gen_num": {
+     "max": 1.2,
+     "mean": 1.2,
+     "min": 1.2,
+     "n_ge_1": 30,
+     "std": 0.0
+    },
+    "honest": {
+     "max": 1.2,
+     "mean": 1.2,
+     "min": 1.2,
+     "n_ge_1": 30,
+     "std": 0.0
+    }
+   }
+  }
+ }
+}

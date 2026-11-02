@@ -1,0 +1,21 @@
+{
+ "run": "2026-11-02 M1 — rollout C3 staleness identifiability",
+ "python": "3.9.6 (system)",
+ "deps": "standard library only",
+ "seeds": 30,
+ "steps": 200,
+ "note": "CPU in-process event-graph simulation; no GPU, no engine, no end-to-end. Virtual seconds only.",
+ "sha256": {
+  "c3_staleness_identifiability.py": "0bbd893c6062bc4315a5f4c592c269e37d10717eedf58942f1a037eb93c2c197",
+  "test_c3_staleness_identifiability.py": "a718bb8c83f7d9b22e1634f8b862765f6e58015a4bb8598c0e97fa20a29fb104",
+  "summary.json": "91862e37fa3b2ca02e682b147689f9b3df6ac371504eb9073815d3095655c972",
+  "readme.md": "bfccea6b3419cb16e8cba9b3a87eb78f4fd109d9e38fd287053956716a6597c3"
+ },
+ "commands": [
+  "python3 c3_staleness_identifiability.py",
+  "python3 c3_staleness_identifiability.py --verify",
+  "python3 -m unittest test_c3_staleness_identifiability -v"
+ ],
+ "verify_twice_passed": true,
+ "tests": 16
+}
