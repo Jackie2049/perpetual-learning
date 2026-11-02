@@ -1,0 +1,20 @@
+{
+ "run": "2026-11-02 M1 — verl use_prefix_grouper training-side side effects",
+ "python": "3.9.6 (system)",
+ "deps": "standard library only (upstream functions injected with a minimal torch stub)",
+ "upstream": "verl-project/verl @ 6879e1ab07 ; verl/utils/seqlen_balancing.py",
+ "note": "Runs the UPSTREAM partition source verbatim (AST-extracted), not a reimplementation. No GPU, no verl run.",
+ "sha256": {
+  "group_balance_cost.py": "794fbc2dfa6e462c01aee2126bcfaa8400c21039b5db45b5cb66e433f31ef3a1",
+  "test_group_balance_cost.py": "74f81183f9275ac3f5825f43315de2b0e8b9f9f7a08c80335061fb9679ee09cf",
+  "summary.json": "b8ba882297445989ae3d59adec0b9f472dbfbc474ab70d8678714b26dbdb22cf",
+  "upstream-seqlen_balancing.py": "f0536d757a8c8eb1a15d63e7174a8995ebbf180481845576f1817ee6020b4902"
+ },
+ "commands": [
+  "python3 group_balance_cost.py",
+  "python3 group_balance_cost.py --verify",
+  "python3 -m unittest test_group_balance_cost -v"
+ ],
+ "verify_twice_passed": true,
+ "tests": 10
+}

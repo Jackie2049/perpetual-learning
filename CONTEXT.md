@@ -13,7 +13,7 @@
 
 ## 未完成操作与并行工作
 
-- **TM-005（掘金 B 类，M1 2026-11-02 16:1x）**：verl `use_prefix_grouper` 在 FSDP 引擎上不生效但副作用照常生效；取证材料已入库，**对外动作（issue／评论／PR）全部未做，待用户逐项授权**。见 [TM-005](queue_tech-miner.md) 与 [evidence](open-source/verl/evidence/prefix-grouper-inert/readme.md)。
+- **TM-005（掘金 B 类，M1 2026-11-02 16:1x）**：verl `use_prefix_grouper` 在 FSDP 引擎上不生效但副作用照常生效；取证材料与影响量化（DP 负载不均衡 0–6.6%）均已入库，**对外动作（issue／评论／PR）全部未做，待用户逐项授权**。见 [TM-005](queue_tech-miner.md) 与 [evidence](open-source/verl/evidence/prefix-grouper-inert/readme.md)。
 
 - `experiments/rollout-g8-candidate-h/`（第四十八批候选 H，§13.41）目录仍未跟踪，由该会话自行提交；本会话保留原状。
 - `experiments/rollout-bubble-attribution/`（§21.10／§21.11）是本会话的工作，已入库；`resolution_limits.py`／`test_resolution_limits.py`／`resolution.json`／`readme-resolution.md` 为本批新增，`run-info.json` 已同时覆盖两批的 sha256。
