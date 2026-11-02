@@ -1,0 +1,135 @@
+{
+ "batch": "candidate-f",
+ "date_utc": "2026-10-31",
+ "verified_utc": "2026-11-02",
+ "window_steps": [
+  3,
+  14
+ ],
+ "stack": {
+  "repo": "verl 24f25b03",
+  "engine": "vLLM 0.24.0+cu129",
+  "model": "Qwen2.5-1.5B-Instruct",
+  "hardware": "4090-1 GPU5 single RTX 4090 24GB",
+  "data": "gsm8k train_sub480/test_sub120",
+  "config": "GRPO batch32 prompts x n=4 = 128 samples/iter, micro_batch=1, ppo_epochs=1, max_prompt512 max_response256, bf16, optimizer_offload=True, bucket=256, seed=42, lr 1e-6 constant (lr_warmup_steps_ratio=0), TOTAL_EPOCHS=1 -> 15 iterations"
+ },
+ "lever": "actor_rollout_ref.actor.ppo_mini_batch_size (normalized x rollout.n=4 -> samples per optimizer step; total samples per iteration fixed at 128)",
+ "base": {
+  "n": 12,
+  "step_s": 27.4836,
+  "step_sd": 0.7075,
+  "stages": {
+   "gen": 4.1766,
+   "old_log_prob": 3.7725,
+   "ref": 4.2338,
+   "adv": 0.1102,
+   "update_actor": 13.2765,
+   "update_weights": 1.8092
+  },
+  "unaccounted_s": 0.1047,
+  "seqlen_mean": 42000.6,
+  "max_reserved_gb": 21.236328125,
+  "note": "candidate A 90-step log, first-15-step window; TOTAL_EPOCHS 6 vs 1 but seed=42/constant lr/no warmup",
+  "final_val_acc_step90": 0.49166666666666664,
+  "initial_val_acc_step0": 0.09166666666666666
+ },
+ "modes": {
+  "f2": {
+   "ppo_mini_batch_size": 32,
+   "samples_per_optimizer_step": 128,
+   "optimizer_steps_per_iter": 1,
+   "log": "raw/rollout-g8-candidate-f-f2.txt",
+   "n": 12,
+   "step_s": 27.374,
+   "step_sd": 0.6417,
+   "step_sem": 0.1852,
+   "step_x_vs_base": 1.004,
+   "stages": {
+    "gen": 4.179,
+    "old_log_prob": 3.7441,
+    "ref": 4.2312,
+    "adv": 0.1111,
+    "update_actor": 13.2441,
+    "update_weights": 1.7906
+   },
+   "G": {
+    "gen": 0.9994,
+    "old_log_prob": 1.0076,
+    "ref": 1.0006,
+    "adv": 0.9912,
+    "update_actor": 1.0025,
+    "update_weights": 1.0104
+   },
+   "seqlen_mean": 41901.8,
+   "update_actor_per_optimizer_step_s": 13.2441,
+   "update_actor_s_per_kTok": 0.3161,
+   "max_reserved_gb": 21.236328125,
+   "final_val_acc_step15": 0.13333333333333333
+  },
+  "f16": {
+   "ppo_mini_batch_size": 16,
+   "samples_per_optimizer_step": 64,
+   "optimizer_steps_per_iter": 2,
+   "log": "raw/rollout-g8-candidate-f-f16.txt",
+   "n": 12,
+   "step_s": 27.3719,
+   "step_sd": 0.6601,
+   "step_sem": 0.1905,
+   "step_x_vs_base": 1.0041,
+   "stages": {
+    "gen": 4.1754,
+    "old_log_prob": 3.751,
+    "ref": 4.2368,
+    "adv": 0.1104,
+    "update_actor": 13.2212,
+    "update_weights": 1.8016
+   },
+   "G": {
+    "gen": 1.0003,
+    "old_log_prob": 1.0057,
+    "ref": 0.9993,
+    "adv": 0.9977,
+    "update_actor": 1.0042,
+    "update_weights": 1.0042
+   },
+   "seqlen_mean": 41791.7,
+   "update_actor_per_optimizer_step_s": 6.6106,
+   "update_actor_s_per_kTok": 0.3164,
+   "max_reserved_gb": 21.236328125,
+   "final_val_acc_step15": 0.15
+  },
+  "f1": {
+   "ppo_mini_batch_size": 8,
+   "samples_per_optimizer_step": 32,
+   "optimizer_steps_per_iter": 4,
+   "log": "raw/rollout-g8-candidate-f-f1.txt",
+   "n": 12,
+   "step_s": 27.4473,
+   "step_sd": 0.7013,
+   "step_sem": 0.2024,
+   "step_x_vs_base": 1.0013,
+   "stages": {
+    "gen": 4.181,
+    "old_log_prob": 3.7336,
+    "ref": 4.2119,
+    "adv": 0.1126,
+    "update_actor": 13.3082,
+    "update_weights": 1.7914
+   },
+   "G": {
+    "gen": 0.9989,
+    "old_log_prob": 1.0104,
+    "ref": 1.0052,
+    "adv": 0.9783,
+    "update_actor": 0.9976,
+    "update_weights": 1.01
+   },
+   "seqlen_mean": 41833.8,
+   "update_actor_per_optimizer_step_s": 3.3271,
+   "update_actor_s_per_kTok": 0.3181,
+   "max_reserved_gb": 21.234375,
+   "final_val_acc_step15": 0.21666666666666667
+  }
+ }
+}

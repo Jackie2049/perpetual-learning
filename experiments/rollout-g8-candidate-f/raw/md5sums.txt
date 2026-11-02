@@ -1,0 +1,6 @@
+b8b84d281afe83f9dd95334c4c1ad17e  raw/rollout-g8-candidate-f-f1.txt
+48596ce8adfc39cd017fc6203c0503e3  raw/rollout-g8-candidate-f-f16.txt
+7d902b39a18dc1ff2f8dd2e6da1afb7a  raw/rollout-g8-candidate-f-f2.txt
+94521b0a8386040527844d51d9588522  summary.json
+fa0e2c744cb0b980757808e01f18cf6d  run-candidate-f.sh
+6a794105932635d56c490ec3d941a31e  parse-candidate-f.py
