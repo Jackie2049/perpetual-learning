@@ -120,6 +120,55 @@
 
 **对主文档的影响**：§13.36 的「NUMA 未受控」边界应改写为「放置敏感，已测得 19.4% 的跨插槽反向差，方向与『跨 NUMA 更慢』相反」；强扩展 1.631× 仍按原放置报，但必须附放置条件。三份日志另记 DataLoader worker `signal: Killed` 退出清理（同候选 A/F/G）。
 
+## 放置效应的机制（M5 算力侧第四十九批，2026-11-02 08:00–09:33 UTC）
+
+**目的**：上一节登记了两个候选——(a) 主机内存/CPU 首触本地性、(b) 机器状态漂移——并留下两项待办：同窗口交替复测、`numactl --membind` 控内存。本节把前者做掉并定位机制；`numactl` 在本机未安装，改用 `taskset` 把整棵进程树绑到单个 NUMA 节点的 CPU 作近似（默认 first-touch 下内存随 CPU 节点走）。主文档见 [§13.42](../../notebook/rollout-performance-research.md#1342-候选-g-的-194-放置差从哪来nccl-shm-带宽随跨-socket-分布上升2-2-放置把-4-卡整步压到-1417s2026-11-02-m5-算力侧第四十九批)。
+
+**执行账（同一空闲窗口）**：pA1 08:00:00–08:07:16、pB1 08:07:16–08:15:12、pA2 08:15:22–08:22:49、pB2 08:23:00–08:30:52；taskset 四格 pB3 08:32:58–08:40:52、pB4 08:41:02–08:48:45、pA4 08:48:55–08:56:21、pA3 08:56:32–09:03:31；预测检验 pC1 09:07:22–09:14:03、pC2 09:14:13–09:21:27；2 卡预测 pD1 09:25:17–09:32:50。全部 exit 0、15/15 步，结束时 GPU 释放回 1MiB（GPU2 仍为他人 embed 21728 MiB）。配置同强扩展（batch 32×n=4、15 步、seed 42）；pD1 为 2 卡（batch 32×n=4 不变）。
+
+**训练结果（steps 3–14，n=12）**
+
+| 模式 | GPU 放置 | CPU 绑定 | 整步 | sd | gen | old_log_prob | ref | update_actor | update_weights |
+|---|---|---|---|---|---|---|---|---|---|
+| pA1 | 0,1,3,4（3+1） | 不绑 | 16.947s | 0.543 | 2.158 | 2.096 | 1.640 | 8.278 | 2.593 |
+| pA2 | 3+1 | 不绑 | 17.107s | 0.561 | 2.161 | 2.144 | 1.638 | 8.421 | 2.588 |
+| pA4 | 3+1 | node0（3/4 本地） | 16.913s | 0.693 | 2.157 | 2.048 | 1.588 | 8.328 | 2.605 |
+| pA3 | 3+1 | node1（1/4 本地） | 16.463s | 0.100 | 2.157 | 2.027 | 1.567 | 8.029 | 2.532 |
+| pB1 | 4,5,6,7（4+0） | 不绑 | 19.837s | 0.103 | 2.156 | 2.470 | 1.938 | 10.140 | 2.981 |
+| pB2 | 4+0 | 不绑 | 19.774s | 0.141 | 2.155 | 2.487 | 1.923 | 10.094 | 2.965 |
+| pB3 | 4+0 | node1（4/4 本地） | 19.694s | 0.171 | 2.158 | 2.455 | 1.893 | 10.088 | 2.951 |
+| pB4 | 4+0 | node0（0/4 本地） | 19.516s | 0.588 | 2.151 | 2.396 | 1.860 | 10.092 | 2.869 |
+| pC2 | 3,4,5,6（1+3） | 不绑 | 16.738s | 0.084 | 2.158 | 2.095 | 1.629 | 8.099 | 2.606 |
+| pC1 | 0,1,4,5（2+2） | 不绑 | **14.167s** | 0.176 | 2.151 | 1.818 | 1.342 | 6.362 | 2.343 |
+| pD1 | 0,4（2 卡 1+1） | 不绑 | 18.403s | 1.349 | 3.498 | 2.370 | 2.124 | 8.187 | 2.064 |
+
+2 卡对照（同配置、同窗口前测）：g2（0,1，2+0）22.009s、g2n（5,6，2+0）21.531s；按 gen 二态分层后 pD1 vs g2：慢态（gen 4.17s）23.197→19.282s、快态（gen 2.15s）20.345→16.645s，两态都改善 17–18%，**pD1 的收益不是 gen 配比造成的**。
+
+**微基准（`g8-comm-compute-probe.py`，`NCCL_P2P_DISABLE=1`、SHM 开、64MB all-reduce）**
+
+| 放置 | 带宽 | 时间 | 时间／4+0 | max(卡数/节点)/4 | bf16 matmul | 对应整步 |
+|---|---|---|---|---|---|---|
+| 4+0（4,5,6,7） | 3.08 GB/s | 20.305 ms | 1.000 | 1.000 | 172.7 TFLOPS | 19.71s |
+| 3+1（0,1,3,4） | 4.09 GB/s | 15.295 ms | 0.753 | 0.750 | 168.2 TFLOPS | 16.86s |
+| 1+3（3,4,5,6） | 4.07 GB/s | 15.352 ms | 0.756 | 0.750 | 176.0 TFLOPS | 16.74s |
+| 2+2（0,1,4,5） | 5.99 GB/s | 10.431 ms | 0.514 | 0.500 | 171.1 TFLOPS | 14.17s |
+
+2 卡：2+0（0,1 或 4,5）7.48 GB/s、1+1（0,4）13.48 GB/s（时间比 0.555，模型 0.500）。**完成时间 ∝ 单 socket 最多 rank 数**，四格误差 ≤2.8%；带宽 × max 卡数 ≈ 常数（4 卡 12.0–12.3、2 卡 13.5–15.0 GB/s）。`NCCL_SHM_DISABLE=1`（socket 传输）两次方向相反（先 3+1 1.68 vs 4+0 1.27，后 1.60 vs 1.76），不作结论。
+
+**判决**
+1. **放置效应可复现、不是漂移**：A 组 16.947／17.107s、B 组 19.837／19.774s，组内 ≤0.9%、组间 16.3%；原始 19.4% 在同一区间。
+2. **主机 CPU/内存本地性被否定**：taskset 四格变化 ≤2.9%、方向不随本地卡数走；A−B 差在每对绑定下保持（1.154／1.196）。
+3. **计算/时钟被排除**：六种放置 matmul 168–176 TFLOPS 全同、gen 2.151–2.161s 全同；环境采样（12s，覆盖 pB4 起）SM 2.73–2.75GHz、37–41°C、114–128W（限 450W）。
+4. **机制在 NCCL SHM 主机路径的「每 socket 集中度」**：慢的是集合通信（A→B 的 +2.89s 有 99% 落在 update_actor／update_weights／old_log_prob／ref），且带宽随 max 卡数/节点下降。
+5. **最佳放置更新多卡锚点**：4 卡 2+2 **14.167s（强扩展 1.944×、效率 0.486）**、2 卡 1+1 18.403s（1.496×、0.748）；`update_weights` 仍负扩展（0.777／0.882）。§13.36 的 1.631×／0.408、1.251×／0.626 必须附放置条件。
+6. **gen 二态跨放置复现**（2+0 与 1+1 都是 4.17／2.15s 两态）→ 与放置无关；机制仍未隔离。
+
+**边界**：单 seed、单次运行（除 A/B 各两次）；`taskset` 不是 mempolicy（`numactl` 缺失），只否定「首触本地性」；微基准是 all-reduce 不是 FSDP all-gather/reduce-scatter，仅方向证据；两组的卡各挂在一个 PEX88048 fabric 下（`4a:02.0→4b/4c/4d/4e` 与 `c9:02.0→ca/cb/cc/cd`），「在交换机后」不是差异，差异是 rank 是否跨 fabric——核验附录把前者当区分特征，此处更正；全 NUMA0 的 4 卡格因 GPU2 被占用不可得；4090 无 P2P、`NCCL_P2P_DISABLE=1` 是前提。
+
+**材料**：[跨会话核验附录](cross-session-verify-2026-11-02.md)、`ab-summary.json`、`raw/rollout-g8-candidate-g-p*.txt`（10 份训练日志）、`raw/g8-comm-probe.txt`、`raw/chain-*.txt`、`raw/gpu-sampler-0844-0924.txt`（另一会话启动的环境采样，覆盖 pB4 起）、`raw/md5sums.txt`；脚本 `run-candidate-g-ab.sh`、`run-candidate-g-ab-cpu.sh`、`run-candidate-g-spread.sh`、`run-g8-comm-probe.sh`、`g8-comm-compute-probe.py`、`parse-candidate-g-ab.py`。
+
+
+
 
 ## 失败与修复：NCCL CUDA 217（peer access）
 
@@ -162,6 +211,17 @@ RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1 GPUS=5,6 MODE=g2n bash run-candida
 RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1 GPUS=4,5,6,7 MODE=g4n bash run-candidate-g.sh
 # 本地解析（日志已归档为 .txt）
 python3 parse-candidate-g.py raw/rollout-g8-candidate-g-g*.txt
+# 放置 A/B/A/B（run-candidate-g-ab.sh）与 taskset 2×2（run-candidate-g-ab-cpu.sh）
+RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1 bash run-candidate-g-ab.sh
+bash run-candidate-g-ab-cpu.sh
+# 预测检验（run-candidate-g-spread.sh：pC1=0,1,4,5 2+2；pC2=3,4,5,6 1+3）
+bash run-candidate-g-spread.sh
+# 2 卡跨节点（1+1）
+RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1 GPUS=0,4 MODE=pD1 bash run-candidate-g.sh
+# 通信/算力微基准（4 卡/2 卡 × 六种放置 + socket 对照）
+bash run-g8-comm-probe.sh
+# 本地解析放置实验
+python3 parse-candidate-g-ab.py raw/rollout-g8-candidate-g-p*.txt --json-out ab-summary.json
 ```
 
 `summary.json` 为本轮生成（含强/弱扩展五模式＋NUMA 对照三模式、执行账、失败账、阶段缩放、质量值、吞吐口径与显存）；`numa` 段按配对给出整步/逐阶段比值。
@@ -171,7 +231,7 @@ python3 parse-candidate-g.py raw/rollout-g8-candidate-g-g*.txt
 - **真实 GPU 实测**：4090-1，verl `24f25b03` + Qwen2.5-1.5B + gsm8k 短答案子集；强扩展每模式 15 次迭代、弱扩展 14/12 次；单 seed、单次运行。
 - **窗口**：排除预热步 1–2 与含最终验证/testing 的末步；强扩展 steps 3–14（n=12）、g2w 3–13（n=11）、g4w 3–11（n=9）。步间 sd 0.16–1.61s；g2 的 sd 较大（1.6s）来自 gen 二态（见上），不全是响应长度采样波动。
 - **弱扩展改变了全局批与优化轨迹**（B64/B128 vs B32），末步 acc 0.200／0.183 与 g1 的 0.175 不可比，仅记录；性能比较只在同全局批的强扩展内部成立。
-- **NUMA 有对照、但放置效应的机制未分离**：g1n（GPU0/NUMA0）与 g1（GPU5/NUMA1）差 −1.1%，g2n 与 g2 分层后 ≤0.3%（见「NUMA 对照」）；**g4n（全 NUMA1）比 g4（跨 NUMA）慢 19.4%，方向与「跨 NUMA 更慢」相反**。候选解释是主机内存/CPU 首触位置相对 GPU 的本地性（P2P 关闭后集合通信全走主机内存）或机器状态漂移，本批不能区分；需同一空闲窗口 g4→g4n 交替复测或 `numactl --membind` 控内存——**本轮因并行会话占用 4,5,6,7 未做，登记为残留**。强扩展 1.631× 只在「0,1,3,4 放置」下成立。
+- **NUMA 有对照、且放置效应的机制已定位（见上节，§13.42）**：g1n（GPU0/NUMA0）与 g1（GPU5/NUMA1）差 −1.1%，g2n 与 g2 分层后 ≤0.3%；**g4n（全 NUMA1）比 g4（跨 NUMA）慢 19.4%，方向与「跨 NUMA 更慢」相反**。第四十九批在同一窗口复现 16.3%，并用 taskset 2×2 排除主机 CPU/内存本地性、用微基准定位到 NCCL SHM 带宽随「每 socket 最多 rank 数」下降（4+0 3.08／3+1 4.09／1+3 4.07／2+2 5.99 GB/s）。**因此强扩展必须附放置条件**：3+1 的 1.631×（效率 0.408）与 2+2 的 1.944×（0.486）、2 卡 2+0 的 1.251× 与 1+1 的 1.496×（0.748）是不同放置下的两组读数，不可混用。
 - **未做内核级 profiling**：`G_k` 是阶段墙钟比值，不是纯计算加速比；「通信吃掉 update_actor 收益」是从阶段缩放与 FSDP 结构推断，不是 NCCL 计时。
 - **质量读数**单 seed/120 样本，仅方向提示；多卡与单卡的差异同时含优化轨迹与数据切分变化，不是性能对比。
 - **补丁为本地适配**：不应视为上游缺陷结论（触发条件是 `RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1` + 掩码起点非 0；最小 NCCL 测试证明设备本身无限制）。
