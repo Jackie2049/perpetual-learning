@@ -1,0 +1,101 @@
+{
+ "apply_monkey_patch_defs": [
+  {
+   "file": "verl/models/transformers/monkey_patch.py",
+   "func": "apply_prefix_grouper_patch",
+   "line": 57,
+   "params": []
+  },
+  {
+   "file": "verl/models/transformers/monkey_patch.py",
+   "func": "apply_monkey_patch",
+   "line": 294,
+   "params": [
+    "model",
+    "ulysses_sp_size",
+    "use_remove_padding",
+    "use_fused_kernels",
+    "fused_kernels_backend",
+    "use_prefix_grouper",
+    "use_tiled_mlp",
+    "tiled_mlp_shards"
+   ]
+  }
+ ],
+ "dependency_declares_prefix_grouper": [],
+ "engine_side_consumer_has_producer": false,
+ "example_enables_both": true,
+ "flag_read_sites": {
+  "config": [
+   {
+    "file": "verl/workers/config/actor.py",
+    "line": 172
+   }
+  ],
+  "engine_or_model": [
+   {
+    "file": "verl/experimental/fully_async_policy/fully_async_rollouter.py",
+    "line": 377
+   },
+   {
+    "file": "verl/models/transformers/monkey_patch.py",
+    "line": 300
+   },
+   {
+    "file": "verl/models/transformers/monkey_patch.py",
+    "line": 327
+   }
+  ],
+  "trainer": [
+   {
+    "file": "verl/experimental/fully_async_policy/fully_async_trainer.py",
+    "line": 107
+   },
+   {
+    "file": "verl/experimental/one_step_off_policy/ray_trainer.py",
+    "line": 118
+   },
+   {
+    "file": "verl/trainer/ppo/ray_trainer.py",
+    "line": 367
+   },
+   {
+    "file": "verl/trainer/ppo/ray_trainer.py",
+    "line": 1185
+   },
+   {
+    "file": "verl/trainer/ppo/ray_trainer.py",
+    "line": 1197
+   },
+   {
+    "file": "verl/trainer/ppo/ray_trainer.py",
+    "line": 1238
+   }
+  ]
+ },
+ "has_engine_side_propagation": false,
+ "pg_patch_guarded_by_param": {
+  "call_line": 328,
+  "if_name": "use_prefix_grouper"
+ },
+ "prefix_grouper_utils": {
+  "exists": true,
+  "file": "verl/trainer/ppo/prefix_grouper_utils.py",
+  "imported_by": []
+ },
+ "production_call_sites": [
+  {
+   "file": "verl/workers/engine/fsdp/transformer_impl.py",
+   "kwargs": [
+    "model",
+    "use_remove_padding",
+    "ulysses_sp_size",
+    "use_fused_kernels",
+    "fused_kernels_backend"
+   ],
+   "line": 328
+  }
+ ],
+ "production_passes_flag": false,
+ "readme_says_incompatible_dynamic_bsz": true
+}

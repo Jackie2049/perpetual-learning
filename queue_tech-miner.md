@@ -50,6 +50,15 @@
 - **停止条件**：没有新证据时停止例行重复检查；上游行动仍需用户明确授权。
 - **成果入口**：[贡献入口](open-source/README.md)、[生态判断](notebook/frameworks/deepseek-ecosystem-pr-adoption.md)。
 
+## TM-005 — verl `use_prefix_grouper` 失效取证（B 类：主动发掘）
+
+- **问题与价值**：`actor.use_prefix_grouper=True` 在 FSDP 引擎上**不启用前缀共享前向**（引擎侧无生产者），但 `ray_trainer` 仍按该开关做组级均衡并跳过批内重排——用户只付约束代价、拿不到加速，且无任何提示。官方示例还同时开了 README 声明互斥的 `use_dynamic_bsz=True`。
+- **优先级 / 负责人 / 状态**：B 类候选，M1 本地取证完成，**等待用户决定是否对外**。
+- **已有证据**：对 main `6879e1ab07`（2026-11-02）的 AST 静态取证，脚本自证 exit=0、干净环境复现通过；上游 #7202 曾修此接线但**关闭未合并**，维护者表态转向 MAGI attention（#6689 仍 open）。
+- **下一步与等待条件**：① 是否以「文档／示例修订」为最小对外动作（成本最低、最可能被接受）；② 是否接受"维护者已选 MAGI 路线、补接线大概率被再关"的判断而不提修复类 issue。**两者都需用户逐项授权，不得自行发布**。
+- **停止条件**：用户否决对外动作，或上游补上接线／删除该选项（脚本会返回 1 提示结论失效）。
+- **成果入口**：[取证材料](open-source/verl/evidence/prefix-grouper-inert/readme.md)、[tracker](open-source/verl/tracker.md)。
+
 ## 已闭环与保留方向
 
 - **TM-004 — AReaL prompt_mean：终止修复候选。** M5 单一负责人；2026-10-20 实测跨 M 与 token_mean 一致，不构成 defect，修复撤销，不提 issue/PR。M1 不继续修改脚本或演化并行方案，用户明确的只读 review 除外。证据及分工：[handoff](open-source/areal/handoff-m5.md)、[tracker](open-source/areal/tracker.md)。AReaL 的长期学习偏好仍保留，新的问题应独立登记。
