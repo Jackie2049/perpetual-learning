@@ -179,7 +179,7 @@ TM-008 的补丁只加了可达性（默认 2.0 不变），但它的验证边�
 - **单栈单点**：1.5B／gsm8k 短答案／单 seed／15 步／`n=4`。过滤率与生成量都由准确率决定，换任务或换模型会改变两臂的对比基数。`inflight=2` 每臂两跑、`inflight=1` 每臂两跑（其中一对与并行会话的 4 卡作业重叠，只能当一致性检查）、`inflight=3` 每臂两跑（GPU 4,5，干净窗口）。
 - **只测 sync V1 trainer**（stale 逐出补测除外）：`ReplayBufferAsync` 的 `wait_for_sampleable` 分支另测，见下节。
 - **`max_inflight_gen_batches` 测了 1、2、3**：1（DAPO 默认）下生成量代价约 +5%、整步 −3.4%；2 下 +13%、−4.9%；3 下 +17%、−4.5%。更高档未测。
-- **未测 `max_off_policy_threshold`／陈旧度逐出**：本配置没有触发 stale 逐出（`stale_uids` 恒空），所以"轮询改变可选集合"的另一条通道（越界组被作废）没有覆盖。
+- **stale 逐出通道已单独补测（2026-11-03，[stale 实验](../verl-v1-poll-quantum-stale/README.md)）**：本配置 `stale_uids` 恒空；async + `max_off_policy_threshold=1` 下每步丢弃整批 32 组，逐出量与 poll 无关，整步 −2.1%（≈1 SE，§13.53）。
 - **13% 生成量差是 2 SE 级**：重复两次方向一致，但不是精确标定。
 - **补丁对当前上游 main 仍可用**：main 现为 `3fdf2b54`（M1 引用的 `4b26c788` 是其本地旧快照），`v1/` 已重构出 `trainer_sync.py`／`trainer_colocate_async.py`（`PPOTrainer` 薄子类，不覆写 `_build_replay_buffer`）；对两棵树的三目标文件 `patch -p1 --dry-run --fuzz=0` 均 3/3、RC=0（两次独立核对）。但**本批测的 DAPO 派发循环在新结构上仍未实跑复核**——测的是 `24f25b03` 树。
 - 未做任何上游写操作；`filter_groups.metric` 的文档不一致单独记录，不据此提 issue。

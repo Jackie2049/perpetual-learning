@@ -4109,6 +4109,27 @@ A 组（socket 传输，对照）：h256／h1024／h4096 整步 27.417／27.426�
 
 **边界**：单栈单点（1.5B／gsm8k 短答案／单 seed／15 步／`n=4`）；2+0 放置，GPU 4,5 窗口与 depth 1／2 的 GPU 0,1 窗口**不可直接比绝对步时**，只读臂内差（depth 3 基线整步 26.96 比 depth 2 的 26.53 慢约 1.6%，是窗口差不是深度效应）；每臂两跑给 ±0.4s 级分辨力；depth 4+ 未测。材料 [experiments/verl-v1-poll-quantum-dapo](../../experiments/verl-v1-poll-quantum-dapo/README.md#补测max_inflight_gen_batches3-2026-11-03m5-第五十六批)（四份原始日志、`summary-inflight3.json`、`analyze_inflight3.py`）。
 
+### 13.53 stale 逐出通道打开后量子仍在、但整步只剩 −2.1%：threshold=1 每步丢整批，轮询收不回被丢弃的生成（2026-11-03 M5 算力侧第五十七批）
+
+**接续 §13.51 的未测清单**（stale 逐出路径）。`ReplayBufferAsync` 的 stale 逐出只在 `max_off_policy_threshold` 生效（sync 的 `_terminal_eviction_reasons` 恒返回空集，`max_off_policy_strategy` 是 no-op），默认阈值 8 在本规模从未触发。本轮先用 **threshold=2 做 4 步冒烟：零逐出**——`trajectory_spans/max` 恰为 2，`2 > 2` 不成立，说明 warmup=1 的 async 管道自然跨度就是 1–2；阈值降到 **1** 后，上一步派发的整批变成 span 2 被丢弃，逐出通道才真正打开。机器与栈同 §13.51（4090-1 GPU 4,5、2+0、verl `24f25b03`＋patched 副本、Qwen2.5-1.5B、gsm8k、`train_batch_size=32`、`n=4`、`colocate_async`＋warmup=1、**不开 DAPO filter**），变量为 `max_off_policy_threshold=1` 与 poll。四跑交替、15 步/跑、**4/4 exit 0**，单跑约 9 分钟；每步 `training/off_policy/evicted_samples=32`、`evicted_samples_staleness/mean=2.0`，被选轨迹 span 恒为 1。
+
+| 运行（steps 3–14，n=12） | poll | gen 均值±sd | 整步±sd | 撞量子步数 | 逐出/步 | 生成组/步 |
+|---|---|---|---|---|---|---|
+| st1p200 | 2.0 | 3.262±1.03 | 22.055±1.60 | **5/12** | 32.0 | 64.0 |
+| st1p010 | 0.1 | 2.725±0.23 | 22.022±0.84 | 0/12 | 32.0 | 64.0 |
+| st1p200b | 2.0 | 3.750±0.95 | 22.890±1.33 | **8/12** | 32.0 | 64.0 |
+| st1p010b | 0.1 | 2.847±0.30 | 21.973±0.79 | 0/12 | 32.0 | 64.0 |
+
+**读数一：量子形态和默认 async 完全一致。** poll=2.0 两跑的 gen 是严格两态——快态 2.43／2.47s、慢态 4.43／4.39s，**差 2.00／1.92s**；0.1 臂 0/12 步进入慢态，gen 2.37–3.36s，逐 step sd 0.23／0.30。**逐出计数两臂完全相同（32.0/步）**——轮询只改等待、不改逐出量，符合代码（`global_steps` 在 `sample()` 内固定，越界判定与轮询时机无关）。
+
+**读数二：整步只剩 −2.1%，gen 收益没有全额传导。** 池化 gen **3.506→2.786s（−0.720，−20.5%）**、整步 **22.473→21.997s（−0.475，−2.1%）**。其余相位合计 +0.22s（`update_weights` +0.125 约为其 run 级 SE 的 1.8 倍、无机制解释，按噪声处理），相位和与整步残差两臂 0.12–0.14s。**重复性**：2.0 臂两跑整步 22.055／22.890（差 0.835s，撞量子 5 次 vs 8 次），0.1 臂 22.022／21.973（差 0.049s）⇒ **−0.475s 小于 2.0 臂自身跨跑极差，只能当方向性证据（≈1 SE）**，与 §13.48 的"单跑 ±0.4s"同一条读法。
+
+**读数三：这个配置本身才是大头。** threshold=1 让每步丢掉上一步整批（32 组）再补抽 32 组 ⇒ 生成组/步 **64**，是默认 async（~32–35）的两倍。对照 §13.51 的默认 async 2.0 臂（gen 1.58–1.74s、整步 21.0–21.4s），本配置 2.0 臂 gen 3.51s、整步 22.47s——**每步多花约 1.1s 墙钟换"绝对 on-policy"**；poll 调小只能收回约 0.5s，**收不回被丢弃的 32 组**。想让 async 既省又不丢数据，要改 `max_off_policy_threshold`／`max_inflight_gen_batches` 的配比，不是靠轮询补偿。
+
+**对 TM-008 的含义**：补丁适用面覆盖 stale 通道（方向一致），但这是已测形态里收益最小的一档（固定批 −3.2%、DAPO −4.9%、默认 async −1.9%、本档 −2.1%）；PR 边界段应写明"更严格的 `max_off_policy_threshold` 不会让轮询收益变大，那个配置的成本来自逐出本身"。
+
+**边界**：单栈单点（1.5B／gsm8k／单 seed／15 步／`n=4`）；2+0 放置；threshold 只测 1 与 2（2 是 4 步冒烟）；`max_off_policy_strategy=wait`（dropless）与 `separate_async` 未测；每臂两跑给 ±0.4s 级分辨力。材料 [experiments/verl-v1-poll-quantum-stale](../../experiments/verl-v1-poll-quantum-stale/README.md)（四份原始日志＋md5、解析脚本、`summary.json`）。
+
 ## 14. Reproduction Candidates
 
 （登记模板：为什么值得复现 / repo / model / hardware / dataset / expected cost / key metric / stopping condition。**当前不启动 GPU 实验**；以下为算力窗口出现时的执行入口候选，按 D12 五族与 G8 下一步选取，均为 4090-1 可执行规模。已有可借力资源：M5 4090-1（8×RTX 4090 24GB）、本地 veRL 源码（§8 固定版本）；**前置条件**：4090-1 无自有 verl e2e 环境（/home/zxw 下 verl-* 均为 zxw 用户工作目录、conda 仅 gpu-infra，不借用他人环境）→ 候选 A/B 需自建环境（约 30–60 分钟 pip 安装）；/data 满（95G 余）→ 模型下载与缓存需预留 ≥20G；GPU 空闲窗口受 cl watchdog 抢占、非稳定 → 执行前须确认 cl 训练结束且有连续 ≥2h 窗口。）

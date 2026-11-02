@@ -63,7 +63,7 @@ M1 上一轮把 TM-009 从"已取证待决定"推到"材料齐备待决定"：�
 
 **§13.52 `max_inflight_gen_batches=3` 已测**：GPU 4,5（同 socket＝2+0）、同一 patched 树、DAPO filter on、2.0／0.1 交替各两跑、15 步/跑、4/4 exit 0（18:59–19:39 UTC）。池化 gen **8.589→7.357s（−14.3%）**、整步 **26.964→25.738s（−4.5%）**、生成组 **113.7→133.0（+17.0%）**；其余相位 |Δ|≤0.5%。臂内 FE 斜率 38.8／44.2 ms/组，固定等待 −1.97／−2.04s、多生成 +0.75／+0.83s，残差 ≈−0.01s。跨深度 +5.3%→+13.1%→+17.0%、净收益 −0.96→−1.29→−1.23s ⇒ **depth 2 之后饱和**；depth 2→3 增量 <1 SE，不外推。**方法订正**：跨臂共斜率被处理效应压低（21.2 vs 38.8），同族分析按臂内固定效应报。归档 [experiments/verl-v1-poll-quantum-dapo](experiments/verl-v1-poll-quantum-dapo/README.md#补测max_inflight_gen_batches3-2026-11-03m5-第五十六批)，四份日志 md5 与服务器一致。
 
-**stale 逐出补测（第五十七批，进行中/已完成见下）**：`ReplayBufferAsync` 的 stale 逐出只在 `max_off_policy_threshold` 生效；threshold=2 冒烟 4 步仍是 span≤2、零逐出，**threshold=1 才触发**（每步丢弃整批 32 组、staleness=2、生成量翻倍）。A/B 四跑（2.0／0.1 各两跑，15 步）在 GPU 4,5 上跑。
+**§13.53 stale 逐出通道已测**：threshold=2 冒烟 4 步**零逐出**（span 恰为 2，warmup=1 的自然跨度就是 1–2）；threshold=1 才触发——每步丢弃上一步整批 32 组、staleness=2、生成组/步 64。四跑 A/B（2.0／0.1 各两跑，15 步，4/4 exit 0，19:53–20:29 UTC）：2.0 臂 gen 严格两态 2.43/2.47 与 4.43/4.39（差 2.00/1.92s），撞量子 5/12、8/12 步；0.1 臂 0/12。池化 **gen 3.506→2.786s（−20.5%）、整步 22.473→21.997s（−2.1%）**；2.0 臂两跑整步差 0.835s、0.1 臂差 0.049s ⇒ −0.475s ≈1 SE，只作方向性证据。**逐出量与 poll 无关（两臂都 32/步）**；threshold=1 本身每步多花约 1.1s，轮询收不回被丢弃的批次。归档 [experiments/verl-v1-poll-quantum-stale](experiments/verl-v1-poll-quantum-stale/README.md)，md5 与服务器一致。
 
 ### M5 上一轮（2026-11-03 02:0x–02:4x CST）：第五十五批 §13.51
 
@@ -80,7 +80,7 @@ M1 上一轮把 TM-009 从"已取证待决定"推到"材料齐备待决定"：�
 | 执行者 | 当前任务 | 接续入口与核对事项 |
 |---|---|---|
 | M1 | TS-001 第三十三批（§20.3.8：P-6 加 async 与同配置重复臂）完成；TM-010／TM-009 待用户决定是否对外 | 取证、上游查重、可达性复核、候选补丁均完成：[取证](open-source/rllm/tool-use-async-autodetect.md)、[可达性探针](experiments/rllm-tool-use-async-probe/prod_reachability.py)、[候选补丁](open-source/rllm/patches/use-async-autodetect/readme.md)。**对外动作全部未做**。TS-001 再往前只剩 P-1 跨系统（需用户立项），`experiments/rollout-c-class-ledger/` 四轮完成、再往下需新字段或新实验，不在当前授权范围。 |
-| M5 | TS-001 算力支持 | **第五十六批 §13.52 已完成；第五十七批（stale 逐出 threshold=1 A/B）运行中**（见上）。TM-008 剩余未测：4 卡 `inflight=1`（需 ≥4 卡空闲窗口）、`separate_async`（需独立 rollout 池＋非 naive backend）。P-1 跨系统（AReaL／OpenRLHF／SkyRL，需用户立项）；P-2 FP8 训练侧（待实测）。**下一轮先核对 GPU 归属与占用再启动，不据旧记录假定空闲。** |
+| M5 | TS-001 算力支持 | **第五十六批 §13.52、第五十七批 §13.53 已完成**（见上）。TM-008 剩余未测：4 卡 `inflight=1`（需 ≥4 卡空闲窗口）、`separate_async`（需独立 rollout 池＋非 naive backend）、`max_off_policy_strategy=wait`（dropless）。P-1 跨系统（AReaL／OpenRLHF／SkyRL，需用户立项）；P-2 FP8 训练侧（待实测）。**下一轮先核对 GPU 归属与占用再启动，不据旧记录假定空闲。** |
 
 ## 未完成操作与并行工作
 
@@ -95,12 +95,13 @@ M1 上一轮把 TM-009 从"已取证待决定"推到"材料齐备待决定"：�
 - **TM-008（掘金 C 类，M5）**：verl V1 `ReplayBuffer.poll_interval` 死值 2.0s。已测：2 卡 sync 固定批 −3.2%、2 卡 DAPO inflight=2 −4.9%／inflight=1 −3.4%、4 卡 DAPO −4.0%、**2 卡 colocate_async −1.9%（≈2 SE，§13.51）**。补丁 3 文件 +8/−1，默认 2.0 不变，对 `3fdf2b54`／`4b26c788` dry-run 均 3/3 通过。**对外动作全部未做，待用户逐项授权**；需用户决定「只加可达性」还是「同时改默认 0.1–0.2」。
 - **TM-006（掘金 B 类）**：verl `tiled_mlp` 十引擎无消费点。[补丁就绪](open-source/verl/patches/tiled-mlp-wiring/readme.md)；真机冒烟完成（FSDP2 生效、FSDP1 硬报错、默认梯度检查点下无显存收益）。**对外动作全部未做，待授权**。
 - **TM-005（掘金 B 类）**：verl `use_prefix_grouper` 在 FSDP 上不生效但副作用照常。取证与影响量化（DP 负载不均衡 0–6.6%）已入库。**对外动作全部未做，待用户逐项授权**。
-- `experiments/verl-v1-poll-quantum-async/`（本轮新增）：`run-async-ab.sh`／`run-chain.sh`／`make-summary-async.py`／`verify.py`＋`raw/`（4 份控制台日志＋md5）＋`summary.json`／`README.md`。服务器侧原始日志在 `/tmp/rollout-poll-async-*.log`、patched 树在 `/tmp/m5-poll-ab/verl`（均非持久）。
+- `experiments/verl-v1-poll-quantum-async/`（上轮新增）：`run-async-ab.sh`／`run-chain.sh`／`make-summary-async.py`／`verify.py`＋`raw/`（4 份控制台日志＋md5）＋`summary.json`／`README.md`。服务器侧原始日志在 `/tmp/rollout-poll-async-*.log`、patched 树在 `/tmp/m5-poll-ab/verl`（均非持久）。
+- `experiments/verl-v1-poll-quantum-stale/`（本轮新增）：`run-stale-ab.sh`／`make-summary-stale.py`＋`raw/`（4 份日志＋md5）＋`summary.json`／`README.md`；服务器侧日志 `/tmp/rollout-poll-stale-*.log`（非持久）。
 - `experiments/rllm-tool-use-async-probe/`（TM-009）已入库：`repro.py`／`prod_reachability.py`／`readme.md`／`run-info.json`；`open-source/rllm/patches/use-async-autodetect/` 含补丁与 readme。复现依赖 uv 建的 Python 3.12 venv（系统 3.9.6 因 PEP 604 无法导入 rllm）。
 - `experiments/rollout-length-structure-real/`（第五十四批）：`sample_lengths.py`／`analyze_lengths.py`／`reanalysis_length_regime.py`／`verify.py`＋`raw/`＋`summary-*.json`／`README.md`。服务器侧原始文件在 `/tmp/m5-length/`（非持久）。
 - `tools/pyflag/` 新增 `scan-rllm-4e828c8.json`，readme 加第五类易错点"三态形参"。
 - **`experiments/verl-v1-poll-quantum/`、`verl-v1-poll-quantum-dapo/`、`verl-v1-poll-quantum-dapo-g4/`、`verl-tiled-mlp-fsdp-smoke/`、`rollout-g8-gen-bimodality/`、`rollout-c-class-ledger/` 等均已入库**，不重复登记。
-- **上游状态（本轮只读核对，均为历史快照）**：verl main `3fdf2b54`（11-02T11:38Z，未变）；verl PR #8313 open、`mergeable=true`、`mergeable_state=blocked`、head `71fd3562` 未变；rLLM main `4e828c81` 未变。下一轮重新核对，不据此推断实时状态。
+- **上游状态（本轮只读核对，均为历史快照）**：verl main `3fdf2b54`（11-02T11:38Z，未变）；verl PR #8313 open、`mergeable=true`、**`mergeable_state=unstable`**（11-03 04:3x 核对，此前记的 `blocked` 已变，说明有 CI 检查未过；非本 Agent 动作）、head `71fd3562` 未变；rLLM main `4e828c81` 本轮未复核。下一轮重新核对，不据此推断实时状态。
 - 服务器网络、磁盘、GPU 与上游 PR 状态均是历史记录，不是实时可用条件。M1 不探测远程资源。
 - **共享 checkout 被并行会话并发使用**：动手前先看 `git log --graph` 与 `git worktree list`，冲突集中在 CONTEXT.md 与当日日志时按「保留双方条目、按时间重排」解决。
 - `diary/2026-08-14.md` 仍为用户未跟踪工作，不代为提交或删除。

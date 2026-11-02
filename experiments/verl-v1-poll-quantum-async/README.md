@@ -80,7 +80,7 @@ colocate_async 下 2 卡每步仍有 **1.4–1.7s** 在等 sampleable 组（poll
 - **补丁的适用面不是「仅 sync」**：colocate_async 的 `wait_for_sampleable` 走同一个轮询循环，2 卡上 8–9/12 步撞量子；调到 0.1 后量子消失，gen −16.7%（run 级 −3.4 SE）。
 - **对外表述建议**：2 卡同栈收益 sync −3.2%、colocate_async **−1.9%（≈2 SE，单跑 −0.7%～−3.0%）**；机制上只有 gen 通道可归因（−0.28s/步），不要把整步差全算给轮询。
 - **工作量可比**：两臂响应长度 222–224、`global_seqlen/mean` 20919–20998、`response/aborted_ratio=0.0`；async 的 off-policy 指标 `trajectory_spans ≈1.8–1.9`、`staleness ≈0.10–0.19`，属正常重叠训练，不是同轨迹复读。
-- **未覆盖**：`separate_async`（需要独立 rollout 池＋非 naive checkpoint backend，且≥4 卡）；stale 逐出路径（默认阈值 8 未触发，实测 staleness 仅 0.1 量级）；`max_inflight_gen_batches>2`（sync DAPO 路径）；4 卡 `inflight=1`（本轮仍只有 3 卡空闲）。
+- **未覆盖**：`separate_async`（需要独立 rollout 池＋非 naive checkpoint backend，且≥4 卡）；4 卡 `inflight=1`（本轮仍只有 3 卡空闲）。**已另测**：stale 逐出路径见 [stale 实验](../verl-v1-poll-quantum-stale/README.md)（threshold=1，整步 −2.1%，§13.53）；`max_inflight_gen_batches>2` 见 [DAPO 补测](../verl-v1-poll-quantum-dapo/README.md)（depth 3，整步 −4.5%，§13.52）。
 - **放置口径**：2+0（GPU 4,5 同 socket）。绝对步时不可直接与 §13.45 的 1+1／2+2 锚点混用；本实验只读同窗口 A/B 比值。
 
 ## 复现
