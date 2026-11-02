@@ -64,7 +64,7 @@
 - **问题与价值**：`actor_rollout_ref.model.tiled_mlp` 有正式配置项与官方文档，但 `verl/workers/engine/` 下 **10 个引擎目录全部 grep 为 0**，生产调用点从不传 `use_tiled_mlp` ⇒ 配置完全无效且无提示。比 TM-005 更干净（无副作用）。
 - **优先级 / 负责人 / 状态**：B 类候选，M1 取证完成，**等待用户决定是否对外**。
 - **已有证据**：[取证材料](open-source/verl/evidence/tiled-mlp-unwired/readme.md)；[pyflag 扫描](tools/pyflag/scan-verl-6879e1ab07.json)（`mode=never`）。
-- **下一步与等待条件**：这条不涉及路线分歧（不像 prefix_grouper 那样有 MAGI 替代），"补 3 行接线"或"配置校验期拒绝"都不需要架构决策。**对外仍需用户逐项授权**。
+- **下一步与等待条件**：这条不涉及路线分歧（不像 prefix_grouper 那样有 MAGI 替代），"补 3 行接线"或"配置校验期拒绝"都不需要架构决策。**本地补丁已就绪**：[patches/tiled-mlp-wiring](open-source/verl/patches/tiled-mlp-wiring/readme.md)（`patch -p1` 干跑/应用均 exit 0，修复前后调用参数已脚本对比）。**对外仍需用户逐项授权**；提交前还需 M5 侧跑一次 FSDP2 冒烟，并确认 fsdp1 下开启是否会静默出错。
 - **停止条件**：用户否决，或上游接上／删除该配置。
 - **成果入口**：[取证](open-source/verl/evidence/tiled-mlp-unwired/readme.md)、[工具](tools/pyflag/readme.md)。
 

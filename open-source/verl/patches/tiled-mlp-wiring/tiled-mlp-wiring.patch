@@ -1,0 +1,22 @@
+--- a/verl/workers/engine/fsdp/transformer_impl.py	2026-11-02 18:36:36
++++ b/verl/workers/engine/fsdp/transformer_impl.py	2026-11-02 18:36:37
+@@ -325,12 +325,19 @@
+             )
+ 
+             use_fused_kernels = self.model_config.use_fused_kernels
++            # ModelConfig declares `tiled_mlp: {"enabled": False, "num_shards": 4}` and
++            # docs/examples/config.rst documents it, but this call never forwarded it,
++            # so apply_monkey_patch's `if use_tiled_mlp:` branch was unreachable and
++            # setting the option had no effect.
++            _tiled_mlp = getattr(self.model_config, "tiled_mlp", None) or {}
+             apply_monkey_patch(
+                 model=module,
+                 use_remove_padding=self.use_remove_padding,
+                 ulysses_sp_size=self.ulysses_sequence_parallel_size,
+                 use_fused_kernels=use_fused_kernels,
+                 fused_kernels_backend=fused_kernels_backend,
++                use_tiled_mlp=bool(_tiled_mlp.get("enabled", False)),
++                tiled_mlp_shards=int(_tiled_mlp.get("num_shards", 4)),
+             )
+ 
+             # some parameters may not in torch_dtype
