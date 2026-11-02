@@ -1,10 +1,24 @@
 # perpetual-learning — 执行接续
 
-更新时间：2026-11-03（M1 02:0x）。规则入口：[AGENTS.md](AGENTS.md)；任务入口：[技术秘书](queue_tech-secretary.md) / [技术掘金](queue_tech-miner.md)。
+更新时间：2026-11-03（M1 03:0x）。规则入口：[AGENTS.md](AGENTS.md)；任务入口：[技术秘书](queue_tech-secretary.md) / [技术掘金](queue_tech-miner.md)。
 
 ## 当前现场
 
-### M1 本轮（2026-11-03 02:0x）：TS-001 补强——锚② 的可换算性复核（§20.3.6／§11.6）
+### M1 本轮（2026-11-03 03:0x）：TS-001 补强——P-6 完成，整步比的可重建形式（§20.3.7／§11.6）
+
+技术秘书侧无新用户任务；TM-001～TM-010 对外动作仍全部待用户逐项授权。TS-001 优先，承接上一批（§20.3.6）留下的投稿前必补项 P-6。
+
+**结论**：形式为 `整步比 = [1/(Σ_k s_k^基线/G_k)] × (δ^基线/δ^目标)`，`s_k^基线 = t_k^基线/Σt^基线`、`δ = S/T`（计时缺口）。**是代数恒等不是拟合**（由 `Σ_k s_k^基线·(T^基线/t_k^基线) = 1/δ^基线` 化简）。同栈 **8 个臂**（2 加卡＋6 单轴）误差 **≤0.04%**，加卡臂由旧式的 −5.1%／−15.4% 变为 −0.007%／+0.010%；跨放置对照臂 0.16%，只作对照。
+
+**旧式失效的机理（本批新增诊断）**：同一算子把份额取在**目标侧**时，`Σ_k s_k^目标·(T^目标/t_k^目标) = 1/δ^目标`，式子退化为 `δ^目标·(S^目标/S^基线)`，连加速倍数都不是。问题**不是"用了份额"，而是份额取了加速之后的那一侧**——效应被提前算进权重，越大算得越少。
+
+**两个限定已写进正文**：① 本栈两侧缺口几乎相同（|差| ≤0.08%），第一项单独就接近整步比，但这是**数据事实不是恒等**（负向对照把缺口拉开 20%，第一项偏 20%、完整式偏 0）；② 单栈单点，显著程度不外推。**锚② 强度保持「中强」不回调**——补的是形式可用，跨系统仍是 P-1。
+
+**核对产物**：`check_reconstruct_form.py --verify` exit 0、`negative_control_form.py` 4/4 注入抓到 exit 0；上一批的 `check_identity.py --verify`／`negative_control.py` 重跑仍 exit 0，未破坏既有结论。
+
+入口：[§20.3.7](notebook/rollout-performance-research.md) · [§11.6](notebook/rollout-performance-research.md) · [归档](experiments/rollout-anchor2-identity/README.md) · [TS-001](queue_tech-secretary.md)。对外动作全部未做。
+
+### 上一轮（2026-11-03 02:0x）：TS-001 补强——锚② 的可换算性复核（§20.3.6／§11.6）
 
 技术秘书侧无新用户任务；TM-001～TM-010 对外动作仍全部待用户逐项授权。TS-001 优先，按其"在已有范围内筛选仍有明确新增信息的补强项"继续，选的是 §20.3.5 里一句一直被当已核实的话。
 
@@ -41,13 +55,14 @@ M5 本轮（2026-11-03 00:5x–01:4x CST，对应服务器 UTC 2026-11-02 16:5x�
 
 | 执行者 | 当前任务 | 接续入口与核对事项 |
 |---|---|---|
-| M1 | TS-001 第三十一批（§20.3.6／§11.6）完成；TM-010／TM-009 待用户决定是否对外 | 取证、上游查重、可达性复核、候选补丁均完成：[取证](open-source/rllm/tool-use-async-autodetect.md)、[可达性探针](experiments/rllm-tool-use-async-probe/prod_reachability.py)、[候选补丁](open-source/rllm/patches/use-async-autodetect/readme.md)。**对外动作全部未做**。TS-001 上一轮为 §13.47 机制账收尾（第二十九批），`experiments/rollout-c-class-ledger/` 四轮完成，再往下需新字段或新实验，不在当前授权范围。 |
+| M1 | TS-001 第三十二批（§20.3.7／§11.6，P-6 完成）完成；TM-010／TM-009 待用户决定是否对外 | 取证、上游查重、可达性复核、候选补丁均完成：[取证](open-source/rllm/tool-use-async-autodetect.md)、[可达性探针](experiments/rllm-tool-use-async-probe/prod_reachability.py)、[候选补丁](open-source/rllm/patches/use-async-autodetect/readme.md)。**对外动作全部未做**。TS-001 上一轮为 §13.47 机制账收尾（第二十九批），`experiments/rollout-c-class-ledger/` 四轮完成，再往下需新字段或新实验，不在当前授权范围。 |
 | M5 | TS-001 算力支持 | **第五十四批 §13.50 已完成**（见上）。**M5 侧登记的剩余算力事项仍为空**；要再往前只剩需新条件或新立项的：TM-008 的 4 卡 `inflight=1`、`max_inflight_gen_batches>2`、async `wait_for_sampleable`、stale 逐出（前三项要 4 卡以上空闲窗口，本轮只有 3 卡）；P-1 跨系统（AReaL／OpenRLHF／SkyRL，需用户立项）；P-2 FP8 训练侧（待实测）。**下一轮先核对 GPU 归属与占用再启动，不据旧记录假定空闲。** |
 
 ## 未完成操作与并行工作
 
 - **推送状态（2026-11-03 02:4x）**：`git fetch` 与本机到 github.com 直连仍不通，本轮改用 [git-push-api](tools/git-push-api/readme.md) 经 REST API 推送成功——**远端 main 已是 `198bb82e`，内容包含本地全部提交**（tree 哈希 `f84f0253…` 与本地 HEAD 逐位相同）。副作用：远端与本地**提交链 SHA 分叉**（API 重建了 commit 对象），`git status` 仍显示 `ahead 4`，**这是显示问题不是数据问题**。下轮网络恢复后执行 `git fetch origin && git reset --hard origin/main` 对齐；**不要**手工写 commit 对象（本轮试过，父提交缺失导致 `Failed to traverse parents`，已回滚）。
 
+- **TS-001 第三十二批（M1 2026-11-03 03:0x）**：§20.3.7／§11.6 已落笔，P-6 完成。**下一次触碰锚② 前必须知道的（更新）**：可发表形式是 §20.3.7 那个式子（份额取**基线侧**、乘两侧缺口之比），不要再写"恒等式已获同栈实测校验"，也**不要**把份额取在目标侧——那是被否掉的旧式。强度「中强」、跨系统仍缺 P-1。
 - **TS-001 第三十一批（M1 2026-11-03 02:0x）**：§20.3.6／§11.6 已落笔；`experiments/rollout-anchor2-identity/` 已入库（`check_identity.py --verify` exit 0、`negative_control.py` exit 0）。**推送（2026-11-03 02:1x–02:2x）**：`git push` 直连 github.com:443 仍不通（75s 超时），用 [tools/git-push-api](tools/git-push-api/readme.md) 分两次推到远端 main `9bc7cd05`；本地为 `b1c8e4786`＋`5d0e48b86`（树相同、SHA 不同，API 以远端父提交重建）。**两次推送合起来才完整**——第一次推的是工作树，第二次补上了收尾写进 CONTEXT／diary 的两处；逐文件 blob 已核对一致。**下次运行先 `gh api` 取远端 sha，本地未对齐属已知偏差**。
   **下一次触碰锚② 前必须知道的**：不能写"恒等式已获同栈实测校验"——乘积式重建不出整步比，`G_k≡1` 时给 1。可发表写法是"逐阶段秒数相加 + 计时缺口"。
   **P-6 是新增的投稿前必补项**（给出能重建整步比的形式），属写作与分析，不需算力。
@@ -72,7 +87,8 @@ M5 本轮（2026-11-03 00:5x–01:4x CST，对应服务器 UTC 2026-11-02 16:5x�
 - 专项：[rollout 主文档](notebook/rollout-performance-research.md)（§13.50 本轮、§13.38 回代对象）。
 - 真机分工：[实验交接](experiments/handoff-m5.md)、[AReaL 单一负责人交接](open-source/areal/handoff-m5.md)。
 - 本轮 M5 成果：[长度结构实验](experiments/rollout-length-structure-real/README.md)。
-- 本轮 M1 成果：[锚② 复核归档](experiments/rollout-anchor2-identity/README.md)、[§20.3.6](notebook/rollout-performance-research.md)、[§11.6](notebook/rollout-performance-research.md)。
+- 本轮 M1 成果：[P-6 重建形式](experiments/rollout-anchor2-identity/check_reconstruct_form.py)、[负向对照](experiments/rollout-anchor2-identity/negative_control_form.py)、[§20.3.7](notebook/rollout-performance-research.md)、[§11.6](notebook/rollout-performance-research.md)。
+- 上一轮 M1 成果：[锚② 复核归档](experiments/rollout-anchor2-identity/README.md)、[§20.3.6](notebook/rollout-performance-research.md)。
 - 上一轮 M1 成果：[TM-010 取证](open-source/rllm/fireworks-r3-routing-matrices.md)、[复现](experiments/rllm-fireworks-r3-replay/repro.py)、[承载检查](experiments/rllm-fireworks-r3-replay/carrier_check.py)。
 - 上一轮成果：[TM-009 候选补丁](open-source/rllm/patches/use-async-autodetect/readme.md)、[可达性探针](experiments/rllm-tool-use-async-probe/prod_reachability.py)、[取证](open-source/rllm/tool-use-async-autodetect.md)。
 - 历史追溯：[迁移前 WORK.md 固定快照](https://github.com/Jackie2049/perpetual-learning/blob/76edee31b650d27a110fa6f82df5789abb237cfc/WORK.md)；批次结论仍以专项文档和 [diary](diary/readme.md) 为准。

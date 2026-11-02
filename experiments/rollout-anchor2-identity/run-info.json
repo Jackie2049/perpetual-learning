@@ -8,7 +8,20 @@
   "../verl-v1-poll-quantum-dapo-g4/summary-rerun.json",
   "../verl-v1-poll-quantum-dapo/summary-inflight1.json"
  ],
- "scripts": ["check_identity.py", "negative_control.py"],
- "verified": "check_identity.py --verify exit 0; negative_control.py exit 0",
- "changed_nothing": "不改任何原归档与主文档既有读数"
+ "scripts": [
+  "check_identity.py",
+  "negative_control.py",
+  "check_reconstruct_form.py",
+  "negative_control_form.py"
+ ],
+ "verified": "check_identity.py --verify exit 0; negative_control.py exit 0; check_reconstruct_form.py --verify exit 0; negative_control_form.py exit 0（4/4 注入被抓到）",
+ "changed_nothing": "不改任何原归档与主文档既有读数",
+ "batches": [
+  "第三十一批 §20.3.6 锚② 可换算性复核（check_identity.py）",
+  "第三十二批 §20.3.7 P-6 整步比可重建形式（check_reconstruct_form.py）"
+ ],
+ "outputs": [
+  "summary.json",
+  "p6-form.json"
+ ]
 }
