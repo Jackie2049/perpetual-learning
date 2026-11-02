@@ -122,7 +122,7 @@
 
 ## 放置效应的机制（M5 算力侧第四十九批，2026-11-02 08:00–09:33 UTC）
 
-**目的**：上一节登记了两个候选——(a) 主机内存/CPU 首触本地性、(b) 机器状态漂移——并留下两项待办：同窗口交替复测、`numactl --membind` 控内存。本节把前者做掉并定位机制；`numactl` 在本机未安装，改用 `taskset` 把整棵进程树绑到单个 NUMA 节点的 CPU 作近似（默认 first-touch 下内存随 CPU 节点走）。主文档见 [§13.42](../../notebook/rollout-performance-research.md#1342-候选-g-的-194-放置差从哪来nccl-shm-带宽随跨-socket-分布上升2-2-放置把-4-卡整步压到-1417s2026-11-02-m5-算力侧第四十九批)。
+**目的**：上一节登记了两个候选——(a) 主机内存/CPU 首触本地性、(b) 机器状态漂移——并留下两项待办：同窗口交替复测、`numactl --membind` 控内存。本节把前者做掉并定位机制；`numactl` 在本机未安装，改用 `taskset` 把整棵进程树绑到单个 NUMA 节点的 CPU 作近似（默认 first-touch 下内存随 CPU 节点走）。主文档见 [§13.42](../../notebook/rollout-performance-research.md#1342-候选-g-的-194-放置差从哪来nccl-shm-带宽随跨-socket-分布上升22-放置把-4-卡整步压到-1417s2026-11-02-m5-算力侧第四十九批)。
 
 **执行账（同一空闲窗口）**：pA1 08:00:00–08:07:16、pB1 08:07:16–08:15:12、pA2 08:15:22–08:22:49、pB2 08:23:00–08:30:52；taskset 四格 pB3 08:32:58–08:40:52、pB4 08:41:02–08:48:45、pA4 08:48:55–08:56:21、pA3 08:56:32–09:03:31；预测检验 pC1 09:07:22–09:14:03、pC2 09:14:13–09:21:27；2 卡预测 pD1 09:25:17–09:32:50。全部 exit 0、15/15 步，结束时 GPU 释放回 1MiB（GPU2 仍为他人 embed 21728 MiB）。配置同强扩展（batch 32×n=4、15 步、seed 42）；pD1 为 2 卡（batch 32×n=4 不变）。
 
@@ -165,7 +165,7 @@
 
 **边界**：单 seed、单次运行（除 A/B 各两次）；`taskset` 不是 mempolicy（`numactl` 缺失），只否定「首触本地性」；微基准是 all-reduce 不是 FSDP all-gather/reduce-scatter，仅方向证据；两组的卡各挂在一个 PEX88048 fabric 下（`4a:02.0→4b/4c/4d/4e` 与 `c9:02.0→ca/cb/cc/cd`），「在交换机后」不是差异，差异是 rank 是否跨 fabric——核验附录把前者当区分特征，此处更正；全 NUMA0 的 4 卡格因 GPU2 被占用不可得；4090 无 P2P、`NCCL_P2P_DISABLE=1` 是前提。
 
-**材料**：[跨会话核验附录](cross-session-verify-2026-11-02.md)、`ab-summary.json`、`raw/rollout-g8-candidate-g-p*.txt`（10 份训练日志）、`raw/g8-comm-probe.txt`、`raw/chain-*.txt`、`raw/gpu-sampler-0844-0924.txt`（另一会话启动的环境采样，覆盖 pB4 起）、`raw/md5sums.txt`；脚本 `run-candidate-g-ab.sh`、`run-candidate-g-ab-cpu.sh`、`run-candidate-g-spread.sh`、`run-g8-comm-probe.sh`、`g8-comm-compute-probe.py`、`parse-candidate-g-ab.py`。
+**材料**：[跨会话核验附录](cross-session-verify-2026-11-02.md)、`ab-summary.json`、`raw/rollout-g8-candidate-g-p*.txt`（10 份训练日志）、`raw/g8-comm-probe.txt`、`raw/chain-*.txt`、`raw/gpu-sampler-0844-0924.txt`（另一会话启动的环境采样，覆盖 pB4 起）、`raw/md5sums.txt`；脚本 `run-candidate-g-ab.sh`、`run-candidate-g-ab-cpu.sh`、`run-candidate-g-spread.sh`、`run-g8-comm-probe.sh`、`g8-comm-compute-probe.py`、`parse-candidate-g-ab.py`。**11 份训练日志（含 pD1）的 md5 已与服务器 `/tmp` 原件逐文件复核一致**；`md5sums.txt` 不含自身。
 
 
 

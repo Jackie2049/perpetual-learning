@@ -3,7 +3,6 @@ dda8579ee01b490ac731375d53136efc  raw/chain-ab.txt
 a937faf01c96bc30b0504f6906bac33c  raw/chain-spread.txt
 8deede27ada3c0ad2633ce8e22895b40  raw/g8-comm-probe.txt
 4d7e436f57e3acccb8fd24b9e66e834c  raw/gpu-sampler-0844-0924.txt
-d41d8cd98f00b204e9800998ecf8427e  raw/md5sums.txt
 26c0adfee0a6faeedc6aa285fd7a002f  raw/rollout-g8-candidate-g-g1.txt
 5f8788c281a21c6e7b2b9cc4d550cd53  raw/rollout-g8-candidate-g-g1n.txt
 90dd57b557f0579c46dc77d509065fa1  raw/rollout-g8-candidate-g-g2.txt
