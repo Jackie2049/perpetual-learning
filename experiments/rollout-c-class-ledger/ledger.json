@@ -1,0 +1,352 @@
+{
+  "meta": {
+    "experiment": "C 类机制账：省下的每步成本有多少被吃掉（分层口径＋分母核验）",
+    "update_cost_fixed": 8.0,
+    "pass_cost_model": "步成本 = max(生成, 更新)；更新恒 8 单位 ⇒ 更新吃掉省额是下界",
+    "sources": {
+      "p3": "experiments/rollout-p3-dapo-group-filter/summary.json",
+      "p4": "experiments/rollout-p4-c-mechanisms/summary.json"
+    },
+    "caveat": "全部数字来自两批进程内模拟归档，非 GPU、非端到端；不可与论文报值相除"
+  },
+  "p4_arms": {
+    "freq": {
+      "gen_ratio": 0.277125,
+      "cost_ratio": 0.277125,
+      "wall_ratio": 0.8127815315315315,
+      "steps_ratio": 1.070048309178744,
+      "wall_denominators": {
+        "diff_denom_base": -2482.666666666666,
+        "ratio_denom_base": 0.8127815315315315,
+        "ratio_of_totals": 0.8127815315315315,
+        "ratio_base_over_arm": 1.2303429165223414
+      },
+      "steps_paired": {
+        "n": 30,
+        "mean_diff": 0.9666666666666667,
+        "ci95": 0.7308517678116473,
+        "n_zero": 6,
+        "mean_arm": 14.766666666666667,
+        "mean_base": 13.8
+      },
+      "wall_paired": {
+        "n": 30,
+        "mean_diff": -2482.6666666666665,
+        "ci95": 424.76734778218974,
+        "n_zero": 0,
+        "mean_arm": 10778.133333333333,
+        "mean_base": 13260.8
+      },
+      "acc_paired": {
+        "n": 30,
+        "mean_diff": -0.0013333333333333346,
+        "ci95": 0.0011445395935598107,
+        "n_zero": 22,
+        "mean_arm": 0.9983333333333332,
+        "mean_base": 0.9996666666666667
+      },
+      "gap_from_ratios": {
+        "kappa": 0.7228749999999999,
+        "r": 0.18721846846846846,
+        "gap": -1.9329058422427834,
+        "amplification": -2.673914358973244
+      }
+    },
+    "replay": {
+      "gen_ratio": 1.00115625,
+      "cost_ratio": 1.00115625,
+      "wall_ratio": 1.0009149774774775,
+      "steps_ratio": 0.9758454106280193,
+      "wall_denominators": {
+        "diff_denom_base": 12.133333333333212,
+        "ratio_denom_base": 1.0009149774774775,
+        "ratio_of_totals": 1.0009149774774775,
+        "ratio_base_over_arm": 0.9990858589410028
+      },
+      "steps_paired": {
+        "n": 30,
+        "mean_diff": -0.3333333333333333,
+        "ci95": 0.632732685532363,
+        "n_zero": 11,
+        "mean_arm": 13.466666666666667,
+        "mean_base": 13.8
+      },
+      "wall_paired": {
+        "n": 30,
+        "mean_diff": 12.133333333333333,
+        "ci95": 581.9293068879682,
+        "n_zero": 0,
+        "mean_arm": 13272.933333333332,
+        "mean_base": 13260.8
+      },
+      "acc_paired": {
+        "n": 30,
+        "mean_diff": -0.0005000000000000004,
+        "ci95": 0.0007203032566976192,
+        "n_zero": 28,
+        "mean_arm": 0.9991666666666666,
+        "mean_base": 0.9996666666666667
+      },
+      "gap_from_ratios": {
+        "kappa": -0.0011562499999999698,
+        "r": -0.0009149774774774855,
+        "gap": null,
+        "amplification": null
+      }
+    },
+    "cancel": {
+      "gen_ratio": 0.9842916666666667,
+      "cost_ratio": 0.9842916666666667,
+      "wall_ratio": 0.6599099099099099,
+      "steps_ratio": 0.9492753623188406,
+      "wall_denominators": {
+        "diff_denom_base": -4509.866666666667,
+        "ratio_denom_base": 0.6599099099099098,
+        "ratio_of_totals": 0.6599099099099099,
+        "ratio_base_over_arm": 1.5153583617747441
+      },
+      "steps_paired": {
+        "n": 30,
+        "mean_diff": -0.7,
+        "ci95": 0.5491699902224443,
+        "n_zero": 8,
+        "mean_arm": 13.1,
+        "mean_base": 13.8
+      },
+      "wall_paired": {
+        "n": 30,
+        "mean_diff": -4509.866666666667,
+        "ci95": 536.7772188589188,
+        "n_zero": 0,
+        "mean_arm": 8750.933333333332,
+        "mean_base": 13260.8
+      },
+      "acc_paired": {
+        "n": 30,
+        "mean_diff": -0.00033333333333333365,
+        "ci95": 0.0009318839320619547,
+        "n_zero": 25,
+        "mean_arm": 0.9993333333333333,
+        "mean_base": 0.9996666666666667
+      },
+      "gap_from_ratios": {
+        "kappa": 0.015708333333333324,
+        "r": 0.34009009009009006,
+        "gap": 0.3295585726691005,
+        "amplification": 20.97985608503559
+      }
+    },
+    "cap": {
+      "gen_ratio": 1.0,
+      "cost_ratio": 1.0,
+      "wall_ratio": 0.9369369369369369,
+      "steps_ratio": 0.9323671497584541,
+      "wall_denominators": {
+        "diff_denom_base": -836.2666666666664,
+        "ratio_denom_base": 0.9369369369369369,
+        "ratio_of_totals": 0.9369369369369369,
+        "ratio_base_over_arm": 1.0673076923076923
+      },
+      "steps_paired": {
+        "n": 30,
+        "mean_diff": -0.9333333333333333,
+        "ci95": 0.40890741254060364,
+        "n_zero": 14,
+        "mean_arm": 12.866666666666667,
+        "mean_base": 13.8
+      },
+      "wall_paired": {
+        "n": 30,
+        "mean_diff": -836.2666666666667,
+        "ci95": 366.3810416363808,
+        "n_zero": 14,
+        "mean_arm": 12424.533333333333,
+        "mean_base": 13260.8
+      },
+      "acc_paired": {
+        "n": 30,
+        "mean_diff": -0.0006666666666666673,
+        "ci95": 0.0006186179132593598,
+        "n_zero": 26,
+        "mean_arm": 0.9990000000000001,
+        "mean_base": 0.9996666666666667
+      },
+      "gap_from_ratios": {
+        "kappa": 0.0,
+        "r": 0.06306306306306309,
+        "gap": null,
+        "amplification": null
+      }
+    }
+  },
+  "p3_pairs": {
+    "C_vs_B": {
+      "gen_ratio": null,
+      "cost_ratio": 0.5511153584116333,
+      "wall_ratio": 1.0267109398982235,
+      "steps_ratio": 0.9646936656282451,
+      "wall_denominators": {
+        "diff_denom_base": 823.7333333333336,
+        "ratio_denom_base": 1.0267109398982235,
+        "ratio_of_totals": 1.0267109398982235,
+        "ratio_base_over_arm": 0.9739839726448505
+      },
+      "steps_paired": {
+        "n": 30,
+        "mean_diff": -2.2666666666666666,
+        "ci95": 1.1036873342576539,
+        "n_zero": 4,
+        "mean_arm": 61.93333333333333,
+        "mean_base": 64.2
+      },
+      "wall_paired": {
+        "n": 30,
+        "mean_diff": 823.7333333333333,
+        "ci95": 956.7035020321993,
+        "n_zero": 1,
+        "mean_arm": 31662.533333333333,
+        "mean_base": 30838.8
+      },
+      "acc_paired": {
+        "n": 30,
+        "mean_diff": 0.00275000000000003,
+        "ci95": 0.0005772713758530805,
+        "n_zero": 0,
+        "mean_arm": 0.9986041666666668,
+        "mean_base": 0.9958541666666666
+      },
+      "gap_from_ratios": {
+        "kappa": 0.4488846415883667,
+        "r": -0.026710939898223485,
+        "gap": 1.0,
+        "amplification": 1.8145021450356507
+      }
+    },
+    "B_vs_R_nofilter": {
+      "gen_ratio": null,
+      "cost_ratio": 0.5704422123015873,
+      "wall_ratio": 0.48567690834565247,
+      "steps_ratio": 0.9188931297709924,
+      "wall_denominators": {
+        "diff_denom_base": -32657.733333333334,
+        "ratio_denom_base": 0.48567690834565247,
+        "ratio_of_totals": 0.48567690834565247,
+        "ratio_base_over_arm": 2.05898197508766
+      },
+      "steps_paired": {
+        "n": 30,
+        "mean_diff": -5.666666666666667,
+        "ci95": 1.7438172775030094,
+        "n_zero": 1,
+        "mean_arm": 64.2,
+        "mean_base": 69.86666666666666
+      },
+      "wall_paired": {
+        "n": 30,
+        "mean_diff": -32657.733333333334,
+        "ci95": 1293.7280078590072,
+        "n_zero": 0,
+        "mean_arm": 30838.8,
+        "mean_base": 63496.53333333333
+      },
+      "acc_paired": {
+        "n": 30,
+        "mean_diff": 0.002458333333333314,
+        "ci95": 0.000687299535385403,
+        "n_zero": 2,
+        "mean_arm": 0.9958541666666666,
+        "mean_base": 0.9933958333333334
+      },
+      "gap_from_ratios": {
+        "kappa": 0.4295577876984127,
+        "r": 0.5143230916543475,
+        "gap": 0.14859577732497864,
+        "amplification": 0.3459273270801598
+      }
+    },
+    "A_vs_R_nofilter": {
+      "gen_ratio": null,
+      "cost_ratio": 0.6428571428571429,
+      "wall_ratio": 0.6785378309367021,
+      "steps_ratio": 1.0562977099236641,
+      "wall_denominators": {
+        "diff_denom_base": -20411.73333333333,
+        "ratio_denom_base": 0.6785378309367021,
+        "ratio_of_totals": 0.6785378309367021,
+        "ratio_base_over_arm": 1.4737571796395326
+      },
+      "steps_paired": {
+        "n": 30,
+        "mean_diff": 3.933333333333333,
+        "ci95": 1.6437086559344598,
+        "n_zero": 2,
+        "mean_arm": 73.8,
+        "mean_base": 69.86666666666666
+      },
+      "wall_paired": {
+        "n": 30,
+        "mean_diff": -20411.733333333334,
+        "ci95": 1173.2825341295882,
+        "n_zero": 0,
+        "mean_arm": 43084.8,
+        "mean_base": 63496.53333333333
+      },
+      "acc_paired": {
+        "n": 30,
+        "mean_diff": -0.0025208333333333463,
+        "ci95": 0.0010547392248207502,
+        "n_zero": 1,
+        "mean_arm": 0.9908750000000001,
+        "mean_base": 0.9933958333333334
+      },
+      "gap_from_ratios": {
+        "kappa": 0.3571428571428571,
+        "r": 0.32146216906329794,
+        "gap": -0.05550329256820308,
+        "amplification": -0.15540921919096864
+      }
+    },
+    "C_vs_R_nofilter": {
+      "gen_ratio": null,
+      "cost_ratio": 0.3143794642857143,
+      "wall_ratio": 0.4986497950544282,
+      "steps_ratio": 0.8864503816793893,
+      "wall_denominators": {
+        "diff_denom_base": -31834.0,
+        "ratio_denom_base": 0.4986497950544282,
+        "ratio_of_totals": 0.4986497950544282,
+        "ratio_base_over_arm": 2.00541544370002
+      },
+      "steps_paired": {
+        "n": 30,
+        "mean_diff": -7.933333333333334,
+        "ci95": 1.638327078717262,
+        "n_zero": 1,
+        "mean_arm": 61.93333333333333,
+        "mean_base": 69.86666666666666
+      },
+      "wall_paired": {
+        "n": 30,
+        "mean_diff": -31834.0,
+        "ci95": 1486.1377086471455,
+        "n_zero": 0,
+        "mean_arm": 31662.533333333333,
+        "mean_base": 63496.53333333333
+      },
+      "acc_paired": {
+        "n": 30,
+        "mean_diff": 0.005208333333333344,
+        "ci95": 0.0007343739351504436,
+        "n_zero": 0,
+        "mean_arm": 0.9986041666666668,
+        "mean_base": 0.9933958333333334
+      },
+      "gap_from_ratios": {
+        "kappa": 0.6856205357142857,
+        "r": 0.5013502049455718,
+        "gap": -0.5861398459577671,
+        "amplification": -0.8549041567827622
+      }
+    }
+  }
+}

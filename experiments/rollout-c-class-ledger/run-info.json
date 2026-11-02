@@ -1,0 +1,38 @@
+{
+  "experiment": "C 类机制账：省下的每步成本有多少被吃掉（§13.42）",
+  "batch": "2026-11-02（M1），支撑主文档 §13.42 与 §18.9 第 7 章 7.6 节论点骨架",
+  "execution": {
+    "python": "3.9.6（macOS 15.4.1 arm64，仅标准库；numpy 未使用）",
+    "commands": [
+      "python3 ledger.py                          # 秒级，只读两批归档，写 ledger.json",
+      "python3 ledger.py --verify ledger.json      # 通过：逐字段一致（连跑两次均通过）",
+      "python3 -m unittest test_ledger -v          # 15 tests，OK（含 5 条负向对照）"
+    ],
+    "note": "本批不重新训练。所有数字来自 rollout-p3-dapo-group-filter/summary.json 与 rollout-p4-c-mechanisms/summary.json 的 per_seed，由 ledger.py 重算；verify 为真重算后比对，非比对同一份文件。"
+  },
+  "classification": "进程内 CPU 重算，不产生新实验数据；上游数据本身是进程内模拟，非 GPU、非端到端。数字不可与论文报值相除（§19.1 规则一）。",
+  "artifacts_sha256": {
+    "ledger.py": "ae8fb78ddb132040a5968665d21cc0a3b5d33be66ba89044a7ac449fab360efe",
+    "test_ledger.py": "71a4afca5c0a79d6e89d3fb98225074418ed869437f13eb4f86adb00915faa55",
+    "ledger.json": "985d5cff5398e7d009f12ebd7e2652addcf1026e8a6d8dc36be0b94b1cebd723",
+    "readme.md": "cfe927f8b5f6cf1884ddc7fd4ada97377d098def8cbf7ef8b9747120da0cd1c4"
+  },
+  "input_sha256": {
+    "experiments/rollout-p3-dapo-group-filter/summary.json": "662682fc5200e15272d30a0eb8eda9c280836d1b7e38fc48fdb0b1db4553fdb9",
+    "experiments/rollout-p4-c-mechanisms/summary.json": "d88356ba2f12c1b43a1f9234417538b02845daf7152e0cad966f455ddd29ced4"
+  },
+  "corrections_issued": [
+    {
+      "target": "主文档 §13.29 表（第 3104 行）『到 0.9 墙钟比』列",
+      "issue": "分母混用：freq/replay/cap 为臂/基线，cancel 的 0.660 为基线/臂（应为 1.515）",
+      "evidence": "ledger.json p4_arms.*.wall_denominators 三口径；cancel ratio_denom_base=0.6599 而 ratio_base_over_arm=1.5154",
+      "impact": "方向不变（cancel 仍把节省带满），但同列语义需注明"
+    },
+    {
+      "target": "主文档 §13.28 ⑤(a)『C 相对 B 只再省 3.5%』",
+      "issue": "该句用总成本比之比（0.314/0.359），未看『到目标准确率的墙钟』——后者 C/B = 1.027（慢 2.7%）",
+      "evidence": "ledger.json p3_pairs.C_vs_B cost_ratio=0.5511、steps_ratio=0.9647、wall_ratio=1.0267",
+      "impact": "结论（删组不带来墙钟优势）不变，且理由更硬：每步省 44.9% 被收敛变慢全部吃掉"
+    }
+  ]
+}
