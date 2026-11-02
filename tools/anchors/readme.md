@@ -23,15 +23,26 @@ python3 tools/anchors/verify_anchors.py --selftest # 负向对照，证明检查
 
 **数字对得上，结论仍可能解读错**——这是两件事。本脚本只负责前一件。
 
-## 当前覆盖（13 项，4 条链）
+## 当前覆盖（14 项，5 条链）
 
 | 链 | 检查项 | 归档 |
 |---|---|---|
 | 候选 G（同栈多卡） | 整步加速 1.526／1.942、并行效率 0.763／0.485、逐阶段 `G_k` 3 项 | `experiments/rollout-g8-candidate-g/reanchor-summary.json` |
 | 会计恒等式 | 训练块加速 1.5／2.0／3.0 倍时的高报 5.88／9.68／14.29% | `experiments/rollout-identity-measurement-bias/summary.json` |
 | 气泡归因 | B3／B5 同时性、B4 集中度 | `experiments/rollout-bubble-attribution/summary.json` |
+| poll inflight=3 | 整步变化 −4.5% | `experiments/verl-v1-poll-quantum-dapo/summary-inflight3.json` |
 
-2026-11-03 实跑：**13 一致 / 0 不一致 / 0 跳过**。
+2026-11-03 实跑：**14 一致 / 0 不一致 / 0 跳过**。
+
+### 一次差点误报（务必记住）
+
+加 poll inflight=3 那条检查时，我从归档里只取了 `i3p200` 和 `i3p010` 两条跑，
+算出整步变化 **−2.98%**，与主文档的 **−4.5%** 对不上，一度判定"发现不一致"。
+
+实际归档有**四条跑**（每臂两条），用两臂完整均值重算是 **−4.54%**，与主文档一致。
+
+**教训**：核对前先确认**归档里有几条跑、主文档用的是哪几条**。这就是 claim-checks
+第 1 条（分母是不是同一个东西）——在"核对"这个动作里同样适用。
 
 ## 负向对照（重要）
 

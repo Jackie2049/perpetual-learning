@@ -95,6 +95,21 @@ check('气泡归因：B4 集中度', 1.00, BUBBLE,
       tol=0.01)
 
 
+INFLIGHT3 = 'experiments/verl-v1-poll-quantum-dapo/summary-inflight3.json'
+
+
+def _arm_mean(d, names):
+    """两臂各自取**全部跑次**的均值——只取一条会算错（本脚本作者踩过）。"""
+    vals = [d[n]['timing']['step']['mean'] for n in names]
+    return sum(vals) / len(vals)
+
+
+check('poll inflight=3：整步变化', -4.5, INFLIGHT3,
+      lambda d: (_arm_mean(d, ['i3p010', 'i3p010b']) /
+                 _arm_mean(d, ['i3p200', 'i3p200b']) - 1) * 100,
+      tol=0.15, note='§13.52；必须用两臂全部跑次，只取一条会得 -2.98%')
+
+
 def selftest():
     """负向对照：故意写错声称值，检查器必须报 FAIL。
 
