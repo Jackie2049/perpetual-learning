@@ -369,7 +369,7 @@ Megatron is fundamentally designed for multi-GPU distributed training. On RTX 40
 |---------|--------|--------|
 | torch.compile | Works (with caveats) | Training throughput +2-3x |
 | CUDA graphs | Refactoring (#187740-187749) | May change stream safety assumptions |
-| SM89 FP8 | Blocked (#184119) | FP8 training not available on RTX 4090 |
+| SM89 FP8 | ~~Blocked (#184119)~~ **已订正** | ~~FP8 training not available on RTX 4090~~ → **推断有误**：#184119 是「避免 pre-sm90 的 fp8→bf16 prologue fusion」的**安全护栏**（closed 未合并），不等于 FP8 不可用；vLLM #43914／#40127 把 SM89 设为 Triton FP8 的**允许下界**。准确说法：推理侧 Triton FP8 在 SM89 可用，**训练侧未测**。见 [订正记录](sm89-fp8-availability-correction.md) |
 | FSDP2 | Works (memory leak #6468) | Single-GPU FSDP2 = identity wrapping |
 | Muon optimizer | Community implementations | Available via DeepSpeed/Megatron |
 
