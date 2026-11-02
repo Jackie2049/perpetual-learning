@@ -18,7 +18,7 @@
 
 - `experiments/rollout-g8-candidate-h/`（第四十八批候选 H，§13.41）已入库（commit `cec0382`），此前"仍未跟踪"的记录已过期。本会话本批（第四十九批）的 `experiments/rollout-g8-candidate-g/`（README 新增小节＋`ab-summary.json`＋10 份训练日志＋微基准/链路日志＋md5sums）已随本批提交。
 - `experiments/rollout-bubble-attribution/`（§21.10／§21.11／§21.12）是本会话的工作，已入库；本批新增 `fusion_evidence.py`／`test_fusion_evidence.py`／`fusion.json`／`readme-fusion.md`，`run-info.json` 已同时覆盖三批的 sha256。三套脚本共用目录但各自独立归档（`summary.json`／`resolution.json`／`fusion.json`）。
-- `experiments/rollout-c-class-ledger/`（§13.43）为本批新增：`ledger.py`／`test_ledger.py`／`ledger.json`／`readme.md`／`run-info.json`；只读引用 `rollout-p3-dapo-group-filter/summary.json` 与 `rollout-p4-c-mechanisms/summary.json`，**未修改那两批的归档**（sha256 记入本批 run-info.json 的 `input_sha256`）。
+- `experiments/rollout-c-class-ledger/`（§13.43）为本批新增：`ledger.py`／`test_ledger.py`／`ledger.json`／`readme.md`／`run-info.json`；只读引用 `rollout-p3-dapo-group-filter/summary.json` 与 `rollout-p4-c-mechanisms/summary.json`，**未修改那两批的归档**（sha256 已记入本批 run-info.json 的 `input_sha256`）。
 - 服务器网络、磁盘、GPU 与上游 PR 状态均是历史记录，不是实时可用条件。M1 不探测远程资源。
 - `diary/2026-08-14.md` 仍为用户未跟踪工作，不代为提交或删除。
 

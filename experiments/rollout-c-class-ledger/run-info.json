@@ -1,6 +1,6 @@
 {
-  "experiment": "C 类机制账：省下的每步成本有多少被吃掉（§13.42）",
-  "batch": "2026-11-02（M1），支撑主文档 §13.42 与 §18.9 第 7 章 7.6 节论点骨架",
+  "experiment": "C 类机制账：省下的每步成本有多少被吃掉（§13.43）",
+  "batch": "2026-11-02（M1），支撑主文档 §13.43 与 §18.9 第 7 章 7.6 节论点骨架",
   "execution": {
     "python": "3.9.6（macOS 15.4.1 arm64，仅标准库；numpy 未使用）",
     "commands": [
@@ -15,7 +15,7 @@
     "ledger.py": "ae8fb78ddb132040a5968665d21cc0a3b5d33be66ba89044a7ac449fab360efe",
     "test_ledger.py": "71a4afca5c0a79d6e89d3fb98225074418ed869437f13eb4f86adb00915faa55",
     "ledger.json": "985d5cff5398e7d009f12ebd7e2652addcf1026e8a6d8dc36be0b94b1cebd723",
-    "readme.md": "cfe927f8b5f6cf1884ddc7fd4ada97377d098def8cbf7ef8b9747120da0cd1c4"
+    "readme.md": "b5a3b3f34eea361af869931015fa5de16df7ffc5d76c8f799bdf38e795b29104"
   },
   "input_sha256": {
     "experiments/rollout-p3-dapo-group-filter/summary.json": "662682fc5200e15272d30a0eb8eda9c280836d1b7e38fc48fdb0b1db4553fdb9",
