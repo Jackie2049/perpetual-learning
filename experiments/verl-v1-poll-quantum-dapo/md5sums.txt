@@ -8,7 +8,14 @@ c08980c9fa4745e2842052ff0b144c71  raw/rollout-poll-dapo-dp010.txt
 21eb220c9a43a6ac2183b27d8541a221  raw/rollout-poll-dapo-dp050.txt
 2792218e11b9c8320ca180d1c6bf468c  raw/rollout-poll-dapo-dp200.txt
 75da9393b17aec50df8d59d7980066b0  raw/rollout-poll-dapo-dp200b.txt
+a4efcf58714ec02c9c0dbe6c85622bf0  raw/rollout-poll-dapo-i3p200.txt
+75198fbdb9ebeed9ae6259ab6996896c  raw/rollout-poll-dapo-i3p010.txt
+8ccefd10fb0c3be4e6edf8edff68a51e  raw/rollout-poll-dapo-i3p200b.txt
+7a6e1a00fa38ddba755d3df0ed33d62c  raw/rollout-poll-dapo-i3p010b.txt
 9f64ecdffd67fdb94137ba30c288751b  run-poll-dapo.sh
-16686603abc78a5d37d12cf3dc549d0e  make-summary-dapo.py
+96b7b67cbc9749e4a09b6fa27da1ad5f  make-summary-dapo.py
+a4453805003ec1459c1846338e8e51c1  analyze_inflight3.py
 50055d98e61f6cc32d64ff69f050b008  summary.json
 70aa3c67463acceb77d5b1dbe495e905  summary-inflight1.json
+b86a343aff2b58e519d1c16635a0b27e  summary-inflight3.json
+3034920f3ea257b989e2caf733ec4b4d  inflight3-analysis.json

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """TM-008 边界实验：把 DAPO 过滤 + 多 in-flight 的 poll A/B 训练日志解析成 summary.json。
 
-Usage: python3 make-summary-dapo.py [raw_dir] [--group=main|inflight1]
+Usage: python3 make-summary-dapo.py [raw_dir] [--group=main|inflight1|inflight3]
 
 ``main`` 是六跑的 inflight=2 组（写 summary.json），``inflight1`` 是 DAPO 默认
-``max_inflight_gen_batches=1`` 的两跑（写 summary-inflight1.json）。
+``max_inflight_gen_batches=1`` 的两跑（写 summary-inflight1.json），``inflight3``
+是 2026-11-03 补测的 ``max_inflight_gen_batches=3`` 四跑（写 summary-inflight3.json）。
 
 与 `experiments/verl-v1-poll-quantum/make-summary.py` 同口径（逐 step 一行 `key:value - ...`，
 稳态窗口 steps 3..14），另外加入本实验特有的三个量：
@@ -60,9 +61,18 @@ RUNS_I1 = [
     ("di1p010c", "repeat of di1p010"),
 ]
 CONTROLS_I1 = {"di1p010": "di1base", "di1basec": "di1base", "di1p010c": "di1p010"}
+# 第三组：max_inflight_gen_batches=3（2026-11-03 补测），测 2.0/0.1 两点
+RUNS_I3 = [
+    ("i3p200", "2 GPU (4,5), patched tree, poll_interval=2.0, filter on, inflight=3"),
+    ("i3p010", "2 GPU (4,5), patched tree, poll_interval=0.1, filter on, inflight=3"),
+    ("i3p200b", "repeat of i3p200"),
+    ("i3p010b", "repeat of i3p010"),
+]
+CONTROLS_I3 = {"i3p010": "i3p200", "i3p200b": "i3p200", "i3p010b": "i3p010"}
 GROUPS = {
     "main": (RUNS, CONTROLS, "summary.json"),
     "inflight1": (RUNS_I1, CONTROLS_I1, "summary-inflight1.json"),
+    "inflight3": (RUNS_I3, CONTROLS_I3, "summary-inflight3.json"),
 }
 WINDOW = range(3, 15)
 TRAIN_BATCH = 32
