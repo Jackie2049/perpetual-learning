@@ -1,0 +1,595 @@
+{
+  "counterfactuals": {
+    "budget_1024x_n_default": 1,
+    "budget_1024x_n_grouped": 1,
+    "grouped_never_splits_groups": true,
+    "noop_identical": true,
+    "whole_batch_per_group": 1.0
+  },
+  "identifiability": {
+    "bubble_by_pp": [
+      {
+        "bubble_default": 0.0,
+        "bubble_grouped": 0.0,
+        "n_default": 548,
+        "n_grouped": 128,
+        "pp": 1,
+        "ratio": null
+      },
+      {
+        "bubble_default": 0.0018214936247723523,
+        "bubble_grouped": 0.007751937984496138,
+        "n_default": 548,
+        "n_grouped": 128,
+        "pp": 2,
+        "ratio": 4.255813953488288
+      },
+      {
+        "bubble_default": 0.005444646098003658,
+        "bubble_grouped": 0.022900763358778664,
+        "n_default": 548,
+        "n_grouped": 128,
+        "pp": 4,
+        "ratio": 4.206106870228993
+      },
+      {
+        "bubble_default": 0.012612612612612595,
+        "bubble_grouped": 0.051851851851851816,
+        "n_default": 548,
+        "n_grouped": 128,
+        "pp": 8,
+        "ratio": 4.111111111111114
+      },
+      {
+        "bubble_default": 0.026642984014209614,
+        "bubble_grouped": 0.1048951048951049,
+        "n_default": 548,
+        "n_grouped": 128,
+        "pp": 16,
+        "ratio": 3.9370629370629335
+      }
+    ],
+    "by_budget": [
+      {
+        "budget": 24576,
+        "n_default_median": 17,
+        "n_grouped_median": 17,
+        "statuses": [
+          "ok"
+        ]
+      },
+      {
+        "budget": 98304,
+        "n_default_median": 5,
+        "n_grouped_median": 5,
+        "statuses": [
+          "ok"
+        ]
+      },
+      {
+        "budget": 393216,
+        "n_default_median": 2,
+        "n_grouped_median": 2,
+        "statuses": [
+          "ok"
+        ]
+      },
+      {
+        "budget": 1572864,
+        "n_default_median": 1,
+        "n_grouped_median": 1,
+        "statuses": [
+          "ok"
+        ]
+      },
+      {
+        "budget": 25165824,
+        "n_default_median": 1,
+        "n_grouped_median": 1,
+        "statuses": [
+          "ok"
+        ]
+      }
+    ],
+    "by_group_size": [
+      {
+        "n": 1,
+        "n_default_median": 4,
+        "n_grouped_median": 4
+      },
+      {
+        "n": 2,
+        "n_default_median": 7,
+        "n_grouped_median": 7
+      },
+      {
+        "n": 4,
+        "n_default_median": 13,
+        "n_grouped_median": 13
+      },
+      {
+        "n": 5,
+        "n_default_median": 17,
+        "n_grouped_median": 17
+      },
+      {
+        "n": 10,
+        "n_default_median": 32,
+        "n_grouped_median": 32
+      }
+    ]
+  },
+  "pp_bubble": [
+    {
+      "batch_rank": 160,
+      "bubble_default": 0.0,
+      "bubble_grouped": 0.0,
+      "bubble_ratio": null,
+      "n_default": 16,
+      "n_grouped": 16,
+      "name": "qwen3_8b_fsdp",
+      "pp": 1,
+      "worse": false
+    },
+    {
+      "batch_rank": 320,
+      "bubble_default": 0.02941176470588236,
+      "bubble_grouped": 0.02941176470588236,
+      "bubble_ratio": 1.0,
+      "n_default": 33,
+      "n_grouped": 33,
+      "name": "qwen3_8b_megatron",
+      "pp": 2,
+      "worse": false
+    },
+    {
+      "batch_rank": 40,
+      "bubble_default": 0.0,
+      "bubble_grouped": 0.0,
+      "bubble_ratio": null,
+      "n_default": 5,
+      "n_grouped": 5,
+      "name": "qwen2_5_32b_fsdp",
+      "pp": 1,
+      "worse": false
+    },
+    {
+      "batch_rank": 128,
+      "bubble_default": 0.0,
+      "bubble_grouped": 0.0,
+      "bubble_ratio": null,
+      "n_default": 20,
+      "n_grouped": 16,
+      "name": "qwen3_30b_a3b_fsdp",
+      "pp": 1,
+      "worse": false
+    },
+    {
+      "batch_rank": 64,
+      "bubble_default": 0.052631578947368474,
+      "bubble_grouped": 0.11111111111111116,
+      "bubble_ratio": 2.11111111111111,
+      "n_default": 18,
+      "n_grouped": 8,
+      "name": "qwen3_30b_a3b_megatron_vpp2",
+      "pp": 2,
+      "worse": true
+    },
+    {
+      "batch_rank": 10,
+      "bubble_default": 0.0,
+      "bubble_grouped": 0.0,
+      "bubble_ratio": null,
+      "n_default": 2,
+      "n_grouped": 2,
+      "name": "qwen3_5_35b_fsdp",
+      "pp": 1,
+      "worse": false
+    },
+    {
+      "batch_rank": 2048,
+      "bubble_default": 0.026548672566371723,
+      "bubble_grouped": 0.1048951048951049,
+      "bubble_ratio": 3.951048951048945,
+      "n_default": 550,
+      "n_grouped": 128,
+      "name": "hy_v3_megatron_pp16",
+      "pp": 16,
+      "worse": true
+    }
+  ],
+  "prefix_grouper_dead_path": {
+    "dropped_by": "044bbba2 [BREAKING][misc] refactor: deprecate workers, migrate to engines (#6067)",
+    "head": "1a9e711e",
+    "knob_never_forwarded": [
+      "verl/workers/engine/fsdp/transformer_impl.py:300-306（apply_monkey_patch 唯一调用点，未传 use_prefix_grouper）",
+      "verl/models/transformers/monkey_patch.py:297（形参默认 False）"
+    ],
+    "knob_read": [
+      "verl/trainer/ppo/ray_trainer.py:367（只影响 _balance_batch 的分组）"
+    ],
+    "prefix_grouper_never_constructed": "verl/trainer/ppo/prefix_grouper_utils.py:46 的 build_pg_from_micro_batch 零调用方",
+    "proof_wiring_existed_before": [
+      "044bbba2^:verl/workers/actor/dp_actor.py:130-141（PG forward 分支）",
+      "044bbba2^:verl/workers/fsdp_workers.py:934,969,988（把 use_prefix_grouper 传给 apply_monkey_patch）"
+    ],
+    "shipped_example_contradiction": "examples/prefix_grouper/run_qwen3_8b_fsdp.sh:56 设 use_dynamic_bsz=True，而同一目录 README「Limitations」第 2 条写 Incompatible with use_dynamic_bsz=True",
+    "utils_never_imported": "verl/trainer/ppo/prefix_grouper_utils.py 全仓无 import"
+  },
+  "real_configs": [
+    {
+      "backend": "fsdp",
+      "batch_rank": 160,
+      "budget": 24576,
+      "budget_bound": false,
+      "dp": 8,
+      "dynamic_bsz": true,
+      "mini_bs": 256,
+      "n": 5,
+      "n_default_median": 16,
+      "n_grouped_median": 16,
+      "n_groups_median": 32,
+      "name": "qwen3_8b_fsdp",
+      "per_group_default_median": 4.5625,
+      "per_group_grouped_median": 1.0,
+      "pp": 1,
+      "samples_per_micro_micro": 10.0,
+      "statuses": [
+        "ok"
+      ],
+      "vpp": null
+    },
+    {
+      "backend": "megatron",
+      "batch_rank": 320,
+      "budget": 24576,
+      "budget_bound": false,
+      "dp": 4,
+      "dynamic_bsz": true,
+      "mini_bs": 256,
+      "n": 5,
+      "n_default_median": 33,
+      "n_grouped_median": 33,
+      "n_groups_median": 64,
+      "name": "qwen3_8b_megatron",
+      "per_group_default_median": 4.765625,
+      "per_group_grouped_median": 1.0,
+      "pp": 2,
+      "samples_per_micro_micro": 9.696969696969697,
+      "statuses": [
+        "ok"
+      ],
+      "vpp": null
+    },
+    {
+      "backend": "fsdp",
+      "batch_rank": 40,
+      "budget": 16384,
+      "budget_bound": false,
+      "dp": 16,
+      "dynamic_bsz": true,
+      "mini_bs": 128,
+      "n": 5,
+      "n_default_median": 5,
+      "n_grouped_median": 5,
+      "n_groups_median": 8,
+      "name": "qwen2_5_32b_fsdp",
+      "per_group_default_median": 3.375,
+      "per_group_grouped_median": 1.0,
+      "pp": 1,
+      "samples_per_micro_micro": 8.0,
+      "statuses": [
+        "ok"
+      ],
+      "vpp": null
+    },
+    {
+      "backend": "fsdp",
+      "batch_rank": 128,
+      "budget": 32768,
+      "budget_bound": true,
+      "dp": 8,
+      "dynamic_bsz": true,
+      "mini_bs": 128,
+      "n": 8,
+      "n_default_median": 20,
+      "n_grouped_median": 16,
+      "n_groups_median": 16,
+      "name": "qwen3_30b_a3b_fsdp",
+      "per_group_default_median": 7.0,
+      "per_group_grouped_median": 1.0,
+      "pp": 1,
+      "samples_per_micro_micro": 6.4,
+      "statuses": [
+        "ok"
+      ],
+      "vpp": null
+    },
+    {
+      "backend": "megatron",
+      "batch_rank": 64,
+      "budget": 30720,
+      "budget_bound": true,
+      "dp": 2,
+      "dynamic_bsz": true,
+      "mini_bs": 16,
+      "n": 8,
+      "n_default_median": 18,
+      "n_grouped_median": 8,
+      "n_groups_median": 8,
+      "name": "qwen3_30b_a3b_megatron_vpp2",
+      "per_group_default_median": 7.125,
+      "per_group_grouped_median": 1.0,
+      "pp": 2,
+      "samples_per_micro_micro": 3.5555555555555554,
+      "statuses": [
+        "ok"
+      ],
+      "vpp": 2
+    },
+    {
+      "backend": "fsdp",
+      "batch_rank": 10,
+      "budget": 16384,
+      "budget_bound": false,
+      "dp": 8,
+      "dynamic_bsz": true,
+      "mini_bs": 16,
+      "n": 5,
+      "n_default_median": 2,
+      "n_grouped_median": 2,
+      "n_groups_median": 2,
+      "name": "qwen3_5_35b_fsdp",
+      "per_group_default_median": 2.0,
+      "per_group_grouped_median": 1.0,
+      "pp": 1,
+      "samples_per_micro_micro": 5.0,
+      "statuses": [
+        "ok"
+      ],
+      "vpp": null
+    },
+    {
+      "backend": "megatron",
+      "batch_rank": 2048,
+      "budget": 30720,
+      "budget_bound": true,
+      "dp": 1,
+      "dynamic_bsz": true,
+      "mini_bs": 128,
+      "n": 16,
+      "n_default_median": 550,
+      "n_grouped_median": 128,
+      "n_groups_median": 128,
+      "name": "hy_v3_megatron_pp16",
+      "per_group_default_median": 15.8984375,
+      "per_group_grouped_median": 1.0,
+      "pp": 16,
+      "samples_per_micro_micro": 3.7236363636363636,
+      "statuses": [
+        "ok"
+      ],
+      "vpp": null
+    },
+    {
+      "backend": "megatron",
+      "budget": 10240,
+      "dp": 1,
+      "dynamic_bsz": true,
+      "mini_bs": 32,
+      "n": 8,
+      "name": "dsv3_671b_megatron_pp12",
+      "pp": 12,
+      "statuses": [
+        "shape"
+      ],
+      "vpp": null
+    },
+    {
+      "backend": "megatron",
+      "budget": 4096,
+      "dp": 4,
+      "dynamic_bsz": false,
+      "mini_bs": 32,
+      "n": 5,
+      "name": "qwen3_5_35b_bshd_static",
+      "pp": 2,
+      "statuses": [
+        "static_bsz"
+      ],
+      "vpp": null
+    },
+    {
+      "backend": "megatron",
+      "budget": 4096,
+      "dp": 16,
+      "dynamic_bsz": false,
+      "mini_bs": 32,
+      "n": 5,
+      "name": "qwen3_5_397b_bshd_static",
+      "pp": 2,
+      "statuses": [
+        "static_bsz"
+      ],
+      "vpp": null
+    },
+    {
+      "backend": "megatron",
+      "budget": 8192,
+      "dp": 16,
+      "dynamic_bsz": false,
+      "mini_bs": 64,
+      "n": 6,
+      "name": "qwen3_5_122b_bshd_static",
+      "pp": 2,
+      "statuses": [
+        "static_bsz"
+      ],
+      "vpp": null
+    }
+  ],
+  "structure": [
+    {
+      "backend": "fsdp",
+      "batch_rank": 160,
+      "budget": 24576,
+      "dynamic_bsz": true,
+      "grouped_n": 17,
+      "grouped_status": "ok",
+      "groups_rank": 32,
+      "max_seq": 3072,
+      "name": "qwen3_8b_fsdp",
+      "pp": 1,
+      "shape_ok": true,
+      "vpp": null
+    },
+    {
+      "backend": "megatron",
+      "batch_rank": 320,
+      "budget": 24576,
+      "dynamic_bsz": true,
+      "grouped_n": 31,
+      "grouped_status": "ok",
+      "groups_rank": 64,
+      "max_seq": 3072,
+      "name": "qwen3_8b_megatron",
+      "pp": 2,
+      "shape_ok": true,
+      "vpp": null
+    },
+    {
+      "backend": "fsdp",
+      "batch_rank": 40,
+      "budget": 16384,
+      "dynamic_bsz": true,
+      "grouped_n": 4,
+      "grouped_status": "ok",
+      "groups_rank": 8,
+      "max_seq": 2048,
+      "name": "qwen2_5_32b_fsdp",
+      "pp": 1,
+      "shape_ok": true,
+      "vpp": null
+    },
+    {
+      "backend": "fsdp",
+      "batch_rank": 128,
+      "budget": 32768,
+      "dynamic_bsz": true,
+      "grouped_n": 16,
+      "grouped_status": "ok",
+      "groups_rank": 16,
+      "max_seq": 6144,
+      "name": "qwen3_30b_a3b_fsdp",
+      "pp": 1,
+      "shape_ok": true,
+      "vpp": null
+    },
+    {
+      "backend": "megatron",
+      "batch_rank": 64,
+      "budget": 30720,
+      "dynamic_bsz": true,
+      "grouped_n": 8,
+      "grouped_status": "ok",
+      "groups_rank": 8,
+      "max_seq": 10240,
+      "name": "qwen3_30b_a3b_megatron_vpp2",
+      "pp": 2,
+      "shape_ok": true,
+      "vpp": 2
+    },
+    {
+      "backend": "fsdp",
+      "batch_rank": 10,
+      "budget": 16384,
+      "dynamic_bsz": true,
+      "grouped_n": 2,
+      "grouped_status": "ok",
+      "groups_rank": 2,
+      "max_seq": 3072,
+      "name": "qwen3_5_35b_fsdp",
+      "pp": 1,
+      "shape_ok": true,
+      "vpp": null
+    },
+    {
+      "backend": "megatron",
+      "batch_rank": 2048,
+      "budget": 30720,
+      "dynamic_bsz": true,
+      "grouped_n": 128,
+      "grouped_status": "ok",
+      "groups_rank": 128,
+      "max_seq": 10240,
+      "name": "hy_v3_megatron_pp16",
+      "pp": 16,
+      "shape_ok": true,
+      "vpp": null
+    },
+    {
+      "backend": "megatron",
+      "batch_rank": 256,
+      "budget": 10240,
+      "dynamic_bsz": true,
+      "grouped_n": null,
+      "grouped_status": "shape",
+      "groups_rank": 32,
+      "max_seq": 10240,
+      "name": "dsv3_671b_megatron_pp12",
+      "pp": 12,
+      "shape_ok": true,
+      "vpp": null
+    },
+    {
+      "backend": "megatron",
+      "batch_rank": 40,
+      "budget": 4096,
+      "dynamic_bsz": false,
+      "groups_rank": 8,
+      "max_seq": 3072,
+      "name": "qwen3_5_35b_bshd_static",
+      "pp": 2,
+      "shape_ok": true,
+      "vpp": null
+    },
+    {
+      "backend": "megatron",
+      "batch_rank": 10,
+      "budget": 4096,
+      "dynamic_bsz": false,
+      "groups_rank": 2,
+      "max_seq": 3072,
+      "name": "qwen3_5_397b_bshd_static",
+      "pp": 2,
+      "shape_ok": true,
+      "vpp": null
+    },
+    {
+      "backend": "megatron",
+      "batch_rank": 24,
+      "budget": 8192,
+      "dynamic_bsz": false,
+      "groups_rank": 4,
+      "max_seq": 7336,
+      "name": "qwen3_5_122b_bshd_static",
+      "pp": 2,
+      "shape_ok": true,
+      "vpp": null
+    }
+  ],
+  "verdict": {
+    "bubble_ratio_max": 3.951048951048945,
+    "cap_violations": [],
+    "dynamic_bsz_configs": 7,
+    "micro_batches_range": [
+      2,
+      550
+    ],
+    "pp_configs_total": 7,
+    "pp_configs_worse_under_grouping": 2,
+    "prefix_grouper_reachable_at_head": false,
+    "shape_violations": [],
+    "static_bsz_configs": 3
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "experiment": "§13.36 verl 官方 example 的真实配置：前缀共享线已死、micro-batch 批数与 PP 气泡的真实读数",
+  "doc": "notebook/rollout-performance-research.md §13.36（并回填 §13.34／§13.35 的可达性、§15 Q5）",
+  "execution": {
+    "python": "3.9.6（macOS arm64，仅标准库）",
+    "commands": [
+      "python3 real_example_configs.py                  # 约 60 s，覆盖 summary.json",
+      "python3 real_example_configs.py --verify         # 连跑两次均通过：逐字段相同",
+      "python3 -m unittest test_real_example_configs    # 25 passed（约 63 s）",
+      "VERL_ROOT=../../verl /tmp/verl-seqlb-venv/bin/python xcheck_verl.py"
+    ],
+    "cross_validation": {
+      "what": "num_micro_batches 的批数与 micro_split 的分区 vs 真实 rearrange_micro_batches",
+      "environment": "uv venv（Python 3.12＋CPU torch 2.15.0＋tensordict），直接 import verl 源码",
+      "result": "10 个形态：9 个可切形态分区逐位一致、1 个形态两侧同判不可行（cap）；不一致 0",
+      "scope": "只跑切分算法，未初始化任何模型或引擎"
+    },
+    "source_anchors_head_1a9e711e": [
+      "verl/utils/seqlen_balancing.py:402-414（num_groups → min(组数, ceil(total/budget)) → roundup → assert）",
+      "verl/utils/seqlen_balancing.py:416-462（group-level LDM、use_dynamic_bsz_balance 排序与两端摆放）",
+      "verl/workers/engine/utils.py:71-77（force_group_size 读非张量键默认 1；max_token_len = 预算 × sp_size）",
+      "verl/workers/engine/fsdp/transformer_impl.py:300-306（apply_monkey_patch 唯一调用点，未传 use_prefix_grouper）",
+      "verl/models/transformers/monkey_patch.py:291-297（apply_monkey_patch 形参 use_prefix_grouper 默认 False）",
+      "verl/models/transformers/monkey_patch.py:40-72（_create_prefix_grouper_wrapper／apply_prefix_grouper_patch）",
+      "verl/trainer/ppo/prefix_grouper_utils.py:46（build_pg_from_micro_batch 全仓零调用方）",
+      "verl/trainer/ppo/ray_trainer.py:367,1160,1201（use_prefix_grouper 只影响 _balance_batch 的分组与是否跳过分区内重排）"
+    ],
+    "source_anchors_dropped_wiring": [
+      "044bbba2 [BREAKING][misc] refactor: deprecate workers, migrate to engines (#6067)",
+      "044bbba2^:verl/workers/actor/dp_actor.py:130-141（PG forward 分支，迁移后随文件删除）",
+      "044bbba2^:verl/workers/fsdp_workers.py:934,969,988（把 use_prefix_grouper 传给 apply_monkey_patch，迁移后随文件删除）"
+    ],
+    "artifacts_sha256": {
+      "real_example_configs.py": "7f8e657684b40311c14c0edf2c35368e95e7cd73ac19dcb2fc143f720f0e00ac",
+      "test_real_example_configs.py": "6dffa723e098fc9d00f38237a2cf81ce65f4e4703c6a7f44aa7e789b26c7d8f1",
+      "xcheck_verl.py": "2da2ef1d4d56d6bcad0364c6cb672083112c49bb7586ea4f31cbd6fd5e8e3758",
+      "summary.json": "caa40d4f51ac9e5c7af985fab12800293741e2beb33691bd05cfef1adb57388c"
+    }
+  },
+  "classification": "配置抽取（静态，逐条抄自官方脚本）＋ 切分形状计数复刻（CPU）＋ PP 气泡计数公式。**非 GPU 实测、非端到端**；不含任何墙钟，所有「倍数」都是批数或占比之比（§19.1）。",
+  "key_readings": {
+    "prefix_grouper_reachable_at_head": false,
+    "configs_dynamic_bsz": 7,
+    "configs_static_bshd": 3,
+    "configs_shape_violation": 1,
+    "configs_budget_bound": 3,
+    "micro_batches_per_rank_min": 2,
+    "micro_batches_per_rank_max": 550,
+    "per_group_fragments_default_min": 2.0,
+    "per_group_fragments_default_max": 15.9,
+    "per_group_fragments_grouped": 1.0,
+    "pp_bubble_ratio_vpp2": 2.111,
+    "pp_bubble_ratio_pp16": 3.951,
+    "counterfactual_noop_identical": true,
+    "counterfactual_grouped_never_splits": true
+  },
+  "self_check_fixes": [
+    "**口径混用（最严重）**：初版把 `ppo_max_token_len_per_gpu` 当成「长度上限」去喂 max_seq_len，并据此算出两组形状冲突；实际它是每个 micro-batch 的 token 预算，两个量不同。改为分字段抄录，形状冲突降为 1 个（dsv3_671b 的 budget 恰好等于 prompt+response）。",
+    "**前缀块分母写成「组完整/逐条」**：初版报 ratio = 组完整 / 逐条 LDM 的每组段数，读出来是 0.06–0.5，看起来是「省 50%–94%」。但这条线在 HEAD 上根本没有调用方，且默认逐条 LDM 本身就会把同组样本聚到同一批（4.94 段是「5 条样本散在 17 个批」的必然），不是可回收的浪费。改为只报计数，并把结论降级为「这条线的收益在 HEAD 上不可达」。",
+    "**`num_micro_batches` 的组完整分支传错参**：初版用 group_lens 当 batch_len 再取 min(n_groups, ceil(...))，等于把分母换了一次；真实代码的 num_groups 是 `batch // force_group_size`。改为与源码同序同式。",
+    "**`grouped_is_fewer` 指标无效**：初版用它当「组完整是否更省」的判据，但它只在 ceil > 组数时才为真，几乎恒 False，读不出东西。改为直接报 `budget_bound`（ceil 是否超过组数）。",
+    "**identifiability 用完整分区算**：单个 hy_v3 案例的 LDM 在 2048 样本上要 4.5 s，identifiability 重复调用使 build_summary 涨到 408 s。改为只算批数（`_counts_only`），identifiability 降到 0.01 s；并给 30 种子加缓存，build_summary 59.6 s。",
+    "**三处单测期望值写错**：① 断言顺序用例把预算 150 配 max_seq 200，自己触发了 shape；② 组完整分区用例用了 n_micro > 组数的组合；③ 「轻批排两端」用例用两条样本测，实际上重批落在第 0 位是正确的（排序后再 `[::2][::-1] + [1::2]`）。三处都改成与被测语义一致的常数期望。"
+  ],
+  "residual": [
+    "长度分布是构造参数（0.8×(prompt+response)、组级 sd 0.25、组内 sd 0.15），不是从训练日志取的；批数对预算与总长的比值敏感，真实配置的实际 token 分布可能给出不同批数。",
+    "dp 取的是「能让 mini-batch 至少留下一个完整组」的最小值（由 example 脚本的 GPU 数与 TP/PP 推定），不是脚本显式声明；dp 变化只影响每个 rank 看到的样本数，不改变「每组前缀块」的口径。",
+    "PP 气泡用 1F1B 的 `1 − m/(m+p−1)`，不含 interleaved／VPP 调度、不含实际 stage 时长不均衡；本实验只报占比比值，不能当实测气泡。",
+    "前缀共享线死掉的结论只覆盖本 checkout 的 engine 路径（`1a9e711e`）；`examples/prefix_grouper/` 的脚本仍在仓库里且与自身 README 的兼容性声明矛盾，说明该功能处于「文档/示例在、实现未接线」状态，未核上游是否有计划恢复。",
+    "未测：真实训练里 `_balance_batch` 的组级分组（ray_trainer.py:1160 起的原生分支）实际是否会触发、以及它独立于前缀共享是否仍有价值。"
+  ]
+}
