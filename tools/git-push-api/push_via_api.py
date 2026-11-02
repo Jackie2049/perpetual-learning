@@ -74,8 +74,28 @@ def main():
     if "-m" in sys.argv:
         msg = open(sys.argv[sys.argv.index("-m") + 1]).read()
 
-    parts = [p for p in git("diff", "--name-status", "-z", base, "HEAD").decode().split("\0") if p]
-    changed = {parts[i + 1]: parts[i] for i in range(0, len(parts), 2)}
+    have_base = subprocess.call(["git", "-C", str(ROOT), "cat-file", "-e", f"{base}^{{commit}}"],
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0
+    if have_base:
+        parts = [p for p in git("diff", "--name-status", "-z", base, "HEAD").decode().split("\0") if p]
+        changed = {parts[i + 1]: parts[i] for i in range(0, len(parts), 2)}
+    else:
+        # Base was created by this script on an earlier push, so it is not in the
+        # local object store. Fall back to comparing the remote tree with HEAD.
+        print(f"base {base[:8]} not local; deriving changed paths from the API")
+        toc = call("GET", f"{API}/git/trees/{base}?recursive=1").get("tree", [])
+        remote_blobs = {e["path"]: e["sha"] for e in toc if e["type"] == "blob"}
+        local_blobs = {}
+        for line in git("ls-tree", "-r", "HEAD").decode().splitlines():
+            meta, path = line.split("\t", 1)
+            local_blobs[path] = meta.split()[2]
+        changed = {}
+        for path, sha in local_blobs.items():
+            if remote_blobs.get(path) != sha:
+                changed[path] = "M" if path in remote_blobs else "A"
+        for path in remote_blobs:
+            if path not in local_blobs:
+                changed[path] = "D"
     print(f"{len(changed)} path(s) changed vs {base[:8]}")
 
     new_blobs = {}
