@@ -9,7 +9,7 @@
 
 **【价值评估】** 7 / 10 — 外部 PR 合入率高（最近 100 关闭 PR 合并率 94%，接受 CMU/NTU/个人社区 PR）；本次扫描锁定未认领候选 #523，学习见 [调研笔记](../../notebook/frameworks/unirl-survey.md)。
 
-**【进展】** 2026-10-22 首次贡献扫描：扫 73+ open issues + open PRs，甄别出未认领候选 [#523](https://github.com/Tencent-Hunyuan/UniRL/issues/523)（unified stack 跳过 anchor-freeze/prepare_part，纯 CPU 可验证结构修复）。**修复已推送 fork 并建 PR 供审阅：[Jackie2049/UniRL#1](https://github.com/Jackie2049/UniRL/pull/1)**（分支 fix-523-anchor-lifecycle @ 04101ad5；CPU 单测 3 项 + AST 断言通过；主仓库未动，向上游提交待用户授权）；#567/#581 为需 GPU/需协调的次要候选。热门 RFC（#419/#423/#453/#520/#368）已被社区认领，不重复推进。详见 [tracker](tracker.md)。
+**【进展】** 2026-10-22 首次贡献扫描：扫 73+ open issues + open PRs，甄别出未认领候选 [#523](https://github.com/Tencent-Hunyuan/UniRL/issues/523)（unified stack 跳过 anchor-freeze/prepare_part，纯 CPU 可验证结构修复）。**修复已推送 fork 并建 PR 供审阅：[Jackie2049/UniRL#1](https://github.com/Jackie2049/UniRL/pull/1)**（分支 fix-523-anchor-lifecycle @ 04101ad5；CPU 单测 3 项 + AST 断言通过）。**上游 PR [#629](https://github.com/Tencent-Hunyuan/UniRL/pull/629) 已按用户 2026-11-02 指示重新打开**（作者 Jackie2049，+8/−2 单文件；重开后 OPEN／MERGEABLE，仅 BEHIND 主干、等维护者 review）；#567/#581 为需 GPU/需协调的次要候选。热门 RFC（#419/#423/#453/#520/#368）已被社区认领，不重复推进。详见 [tracker](tracker.md)。
 
 **【大白话讲明白】**
 
