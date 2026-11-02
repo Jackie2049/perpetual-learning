@@ -1,10 +1,24 @@
 # perpetual-learning — 执行接续
 
-更新时间：2026-11-03（M1 05:0x 第三十四批／M5 04:4x 第五十六批复核与 main 冒烟）。规则入口：[AGENTS.md](AGENTS.md)；任务入口：[技术秘书](queue_tech-secretary.md) / [技术掘金](queue_tech-miner.md)。
+更新时间：2026-11-03（M1 06:0x 第三十五批：核验扩到放置效应）。规则入口：[AGENTS.md](AGENTS.md)；任务入口：[技术秘书](queue_tech-secretary.md) / [技术掘金](queue_tech-miner.md)。
 
 ## 当前现场
 
-### M1 本轮（2026-11-03 05:0x）：TS-001 补强——先修核对脚本的配对错档，再补同节点配对两档（§20.3.9／§11.6）
+### M1 本轮（2026-11-03 06:0x）：TS-001 补强——按 §19.4 第 8 条把核验扩到放置效应，抓出一处分母串用
+
+技术秘书侧无新用户任务；TM-001～TM-010 对外动作仍全部待用户逐项授权。上一轮把 `verify_anchors` 接进 checklist 后，**还没人真按它去核过东西**；本轮核的是第 2／7 章的承重结论——`§13.42`／`§13.45` 的放置效应，此前**一项都没被脚本覆盖**，而它是"加卡收益"叙述的前提。
+
+**做了什么**：`verify_anchors` 由 16 项扩到 **33 项**（放置效应 A/B 八项、跨归档放置对照一项、SHM 带宽表八项，后者从 `raw/g8-comm-probe.txt` 解析控制台日志，因为归档只有文本）。`--verify` **33 一致／0 不一致／0 跳过 exit 0**，`--selftest` **5 组负向对照全过 exit 0**（新增两组：组间差混入 taskset 会变 16.89% 必须判不一致；SHM 时间比 0.514 必须能与错误模型值 1.000 区分）。
+
+**抓到的真错误（已订正）**：§13.42 结果五原写"pC1（2+2）比 A 快 **16.3%**"——不绑定 A 两跑给 **16.8%**、四跑均值给 16.0%，**16.3% 两个都不是**，它恰是结果一里 **B 慢于 A** 的组间差。两对不同的跑次被写进同一句，与 §20.3.9 记的同族错误一致。已改为 16.8%（分母写进句内）。
+
+**我自己的错误（已还原）**：登记"3+1 比 2+2 慢"时写成 `new/old−1` 得 −16.0%，与正文 19.1% 不符，我一度判定"正文错了"并改了主文档三处——**正文是对的**，"A 比 B 慢 X%"以 B 为分母（16.878／14.173−1＝19.1%），16.0% 只是拿 3+1 当分母的互补值。三处已全部还原。
+
+**新口径（写进 §19.4 第 9 条）**：① 凡"比某组快/慢 X%"的句子，分母必须写在句内；② 核验报不一致时先假定检查器写错，改被核对象前手工把分母算一遍。
+
+入口：[tools/anchors](tools/anchors/readme.md) · [§13.42](notebook/rollout-performance-research.md) · [§19.4](notebook/rollout-performance-research.md) · [§16](notebook/rollout-performance-research.md) · [TS-001](queue_tech-secretary.md)。只读复算、未跑 GPU、未改任何测量值。对外动作全部未做。
+
+### M1 上一轮（2026-11-03 05:0x）：TS-001 补强——先修核对脚本的配对错档，再补同节点配对两档（§20.3.9／§11.6）
 
 技术秘书侧无新用户任务；TM-001～TM-010 对外动作仍全部待用户逐项授权。TS-001 优先，选的是回溯上一批（§20.3.8）证据链时发现的问题——**出在核对脚本本身**。
 
@@ -105,11 +119,12 @@ M1 上一轮把 TM-009 从"已取证待决定"推到"材料齐备待决定"：�
 
 | 执行者 | 当前任务 | 接续入口与核对事项 |
 |---|---|---|
-| M1 | TS-001 第三十四批（§20.3.9：修配对错档＋补同节点配对两档）完成；TM-010／TM-009 待用户决定是否对外 | 取证、上游查重、可达性复核、候选补丁均完成：[取证](open-source/rllm/tool-use-async-autodetect.md)、[可达性探针](experiments/rllm-tool-use-async-probe/prod_reachability.py)、[候选补丁](open-source/rllm/patches/use-async-autodetect/readme.md)。**对外动作全部未做**。TS-001 的可做补强已到边际：纯归档重算（2 卡三档／4 卡两档／DAPO 两档／async／同配置重复全部纳入），剩 P-1 跨系统（需用户立项）；`experiments/rollout-c-class-ledger/` 再往下需新字段或新实验，不在当前授权范围。 |
+| M1 | TS-001 第三十五批（核验扩到放置效应，33 项全一致；订正 §13.42 结果五的分母串用）完成；TM-010／TM-009 待用户决定是否对外 | 取证、上游查重、可达性复核、候选补丁均完成：[取证](open-source/rllm/tool-use-async-autodetect.md)、[可达性探针](experiments/rllm-tool-use-async-probe/prod_reachability.py)、[候选补丁](open-source/rllm/patches/use-async-autodetect/readme.md)。**对外动作全部未做**。TS-001 的可做补强已到边际：纯归档重算（2 卡三档／4 卡两档／DAPO 两档／async／同配置重复全部纳入），剩 P-1 跨系统（需用户立项）；`experiments/rollout-c-class-ledger/` 再往下需新字段或新实验，不在当前授权范围。 |
 | M5 | TS-001 算力支持 | **第五十六批 §13.52、第五十七批 §13.53（drop）与 §13.53 补记（wait）、第五十六批与 wait 臂独立复核、main `3fdf2b54` 3 步冒烟均完成**（见上）。TM-008 剩余未测：4 卡 `inflight=1`（需 ≥4 卡空闲窗口）、`separate_async`（需独立 rollout 池＋非 naive backend）、threshold>1 的 `wait` 臂。P-1 跨系统（AReaL／OpenRLHF／SkyRL，需用户立项）；P-2 FP8 训练侧（待实测）。**下一轮先核对 GPU 归属与占用再启动，不据旧记录假定空闲。** |
 
 ## 未完成操作与并行工作
 
+- **TS-001 第三十五批（M1 2026-11-03 06:0x）**：`verify_anchors` 覆盖 33 项、全一致。**下次触碰放置效应相关数字前必须知道的**：① 两套分母都合法但含义不同——**组间差（16.3%）只用不绑定的 pA1／pA2 vs pB1／pB2**，**结果五比 2+2 时用四跑均值**（16.8% 对不绑定 A、28.1% 对 B 四跑）；② "3+1 比 2+2 慢 19.1%"以 2+2 为分母，跨归档比较要各按自己那次的 1 卡基线换算整步，**不能拿两个 speedup 直接相除**。**新纪律**：凡"比某组快/慢 X%"必须写明分母；核验报不一致先查检查器。
 - **TS-001 第三十四批（M1 2026-11-03 05:0x）**：§20.3.9 已落笔；核对脚本的配对错档已修、负向对照 5/5。**下一次触碰锚② 前必须知道的（更新）**：可发表形式仍是 §20.3.7 那个式子；同栈 **10 个主结论臂**（含 async）F3 都在 0.1% 内。**新纪律**：引用任何 A/B 臂前确认两跑出自同一份归档、同一窗口规则——**形式的闭合不检验这一点**（错配的一对 F3 照样闭合）。锚② 强度「中强」，不回调；跨系统仍归 P-1。纯归档重算这条线已到边际，剩下只有 P-1。
 - **TS-001 第三十三批（M1 2026-11-03 04:0x）**：§20.3.8 已落笔，P-6 适用面扩到 async。**下一次触碰锚② 前必须知道的（更新）**：可发表形式仍是 §20.3.7 那个式子（份额取**基线侧**、乘两侧缺口之比），现在可以说它「在同栈 sync＋async 两条轨迹上闭合」，但**仍不能说跨系统**（P-1 全归跨系统）。锚② 强度「中强」，不回调。
 - **TS-001 第三十二批（M1 2026-11-03 03:0x）**：§20.3.7／§11.6 已落笔，P-6 完成。**下一次触碰锚② 前必须知道的（更新）**：可发表形式是 §20.3.7 那个式子（份额取**基线侧**、乘两侧缺口之比），不要再写"恒等式已获同栈实测校验"，也**不要**把份额取在目标侧——那是被否掉的旧式。强度「中强」、跨系统仍缺 P-1。
@@ -138,7 +153,8 @@ M1 上一轮把 TM-009 从"已取证待决定"推到"材料齐备待决定"：�
 - 专项：[rollout 主文档](notebook/rollout-performance-research.md)（§13.51 M5 本轮、§20.3.9／§11.6 M1 本轮）。
 - 真机分工：[实验交接](experiments/handoff-m5.md)、[AReaL 单一负责人交接](open-source/areal/handoff-m5.md)。
 - 本轮 M5 成果：[第五十六批独立复核](experiments/verl-v1-poll-quantum-dapo/verification-inflight3.md)、[main `3fdf2b54` 运行时冒烟](experiments/verl-v1-poll-quantum/README.md#补丁在-main-3fdf2b54-上的运行时冒烟2026-11-03m5-第二会话)、[wait（dropless）补测](experiments/verl-v1-poll-quantum-stale/README.md#补测max_off_policy_strategywaitdropless2026-11-03m5-第二会话)、[async 轮询实验](experiments/verl-v1-poll-quantum-async/README.md)。
-- **本轮 M1 成果**：[§20.3.9](notebook/rollout-performance-research.md)、[重建形式脚本（含配对自检）](experiments/rollout-anchor2-identity/check_reconstruct_form.py)、[负向对照（5 组）](experiments/rollout-anchor2-identity/negative_control_form.py)、[归档](experiments/rollout-anchor2-identity/README.md)、[§11.6](notebook/rollout-performance-research.md)。
+- **本轮 M1 成果**：[tools/anchors](tools/anchors/readme.md)（33 项）· [§13.42 结果五订正](notebook/rollout-performance-research.md) · [§19.4 第 9 条](notebook/rollout-performance-research.md)。
+- **上一批 M1 成果**：[§20.3.9](notebook/rollout-performance-research.md)、[重建形式脚本（含配对自检）](experiments/rollout-anchor2-identity/check_reconstruct_form.py)、[负向对照（5 组）](experiments/rollout-anchor2-identity/negative_control_form.py)、[归档](experiments/rollout-anchor2-identity/README.md)、[§11.6](notebook/rollout-performance-research.md)。
 - 上一轮 M5 成果：[长度结构实验](experiments/rollout-length-structure-real/README.md)。
 - 上一轮 M1 成果：[§20.3.8 适用面](notebook/rollout-performance-research.md)、[§20.3.7](notebook/rollout-performance-research.md)、[锚② 复核归档](experiments/rollout-anchor2-identity/README.md)、[TM-010 取证](open-source/rllm/fireworks-r3-routing-matrices.md)、[TM-009 候选补丁](open-source/rllm/patches/use-async-autodetect/readme.md)。
 - 历史追溯：[迁移前 WORK.md 固定快照](https://github.com/Jackie2049/perpetual-learning/blob/76edee31b650d27a110fa6f82df5789abb237cfc/WORK.md)；批次结论仍以专项文档和 [diary](diary/readme.md) 为准。

@@ -110,6 +110,142 @@ check('poll inflight=3：整步变化', -4.5, INFLIGHT3,
       tol=0.15, note='§13.52；必须用两臂全部跑次，只取一条会得 -2.98%')
 
 
+# ---- 候选 G 的放置效应：§13.42 的 A/B 结论与它引的微基准 ----
+# 这组数字出现在 §13.42 / §13.45 / §19.2 / 第 3 章与第 7 章论点骨架里，
+# 是"加卡收益"叙述的前提。此前没有任何一项被脚本核对。
+
+G_AB = 'experiments/rollout-g8-candidate-g/ab-summary.json'
+
+# 主结论用**不绑定**的四跑：pA1/pA2（3+1，不绑）vs pB1/pB2（4+0，不绑）。
+# pA3/pA4/pB3/pB4 是 taskset 格，属"本地性被否定"那一段的证据，不混进组间差。
+_AB_UNBOUND = {'A': ['pA1', 'pA2'], 'B': ['pB1', 'pB2']}
+
+
+def _ab_step(d, arm):
+    runs = _AB_UNBOUND[arm]
+    return sum(d['modes'][r]['step'] for r in runs) / len(runs)
+
+
+def _ab_step_all(d, arm):
+    """四跑均值（含两个 taskset 格）——§13.42 结果五用这个分母。
+
+    **两个分母不能混**：组间差（16.3%）只用不绑定的两跑，才不与
+    taskset 处理效应纠缠；结果五比 2+2 时用的是四跑均值。
+    """
+    runs = [r for r in d['modes'] if r.startswith('p' + arm) and r[2].isdigit()]
+    return sum(d['modes'][r]['step'] for r in runs) / len(runs)
+
+
+check('放置效应：不绑定组间 B 慢（%）', 16.3, G_AB,
+      lambda d: (_ab_step(d, 'B') / _ab_step(d, 'A') - 1) * 100,
+      tol=0.15, note='§13.42 结果一／§19.2；只用不绑定四跑')
+
+check('放置效应：四跑均值 A', 16.858, G_AB,
+      lambda d: sum(d['modes'][r]['step'] for r in ['pA1', 'pA2', 'pA3', 'pA4']) / 4,
+      tol=0.005, note='§13.42 结果一；含两个 taskset 格')
+
+check('放置效应：四跑均值 B', 19.705, G_AB,
+      lambda d: sum(d['modes'][r]['step'] for r in ['pB1', 'pB2', 'pB3', 'pB4']) / 4,
+      tol=0.005)
+
+check('放置效应：四跑均值比', 1.169, G_AB,
+      lambda d: (sum(d['modes'][r]['step'] for r in ['pB1', 'pB2', 'pB3', 'pB4']) /
+                 sum(d['modes'][r]['step'] for r in ['pA1', 'pA2', 'pA3', 'pA4'])),
+      tol=0.002)
+
+check('放置效应：2+2 相对 3+1 更快的幅度（%）', 16.8, G_AB,
+      lambda d: (1 - d['modes']['pC1']['step'] / _ab_step(d, 'A')) * 100,
+      tol=0.15, note='§13.42 结果五；分母是**不绑定**两跑。原文 16.3% 是串用了'
+                     '结果一的组间差，2026-11-03 订正为 16.8%')
+
+check('放置效应：2+2 相对 4+0 更快的幅度（%）', 28.1, G_AB,
+      lambda d: (1 - d['modes']['pC1']['step'] / _ab_step_all(d, 'B')) * 100,
+      tol=0.15, note='分母是 B 组**四跑**均值')
+
+# 分组推理的方向证据：A−B 差在每一对绑定下都保持（§13.42 结果二）。
+# 这里各查一对，防止"只有不绑定时才成立"。
+check('放置效应：绑定时 A−B 差保持（3+1 本地 vs 4+0 远端）', 1.154, G_AB,
+      lambda d: d['modes']['pB4']['step'] / d['modes']['pA4']['step'],
+      tol=0.004)
+
+check('放置效应：绑定时 A−B 差保持（3+1 远端 vs 4+0 本地）', 1.196, G_AB,
+      lambda d: d['modes']['pB3']['step'] / d['modes']['pA3']['step'],
+      tol=0.004)
+
+# 对照臂：旧 4 卡锚点（3+1）不能读作加卡效率。§13.45 判决二的 19.1%
+# 两边分属两个归档（旧 3+1 在 summary.json、2+2 在 reanchor-summary.json），
+# 公式里两个文件都读，所以单独写，不走 check()。
+def _placement_degradation():
+    """同卡数下 3+1 比 2+2 慢多少（§13.45 判决二）。
+
+    **同一个基线，两次运行**：旧 3+1 的 g4 与 2+2 的 g4p 都按**自己那次的 1 卡跑**
+    记 speedup（`summary.json` 用 g1、`reanchor-summary.json` 用 g1p）。所以两条链
+    的整步秒数要各自从自己的基线换算：
+        T4 = T1(本次) / speedup4
+    若直接用 `1/speedup` 相比，等于假设两次的 T1 相同——文档给的是带秒数的
+    16.878 vs 14.173，不是这个假设下的值。
+    """
+    old = json.loads((ROOT / G_OLD).read_text(encoding='utf-8'))
+    new = json.loads((ROOT / G_REANCHOR).read_text(encoding='utf-8'))
+    t1_old = old['modes']['g1']['step']
+    t1_new = new['modes']['g1p']['step']
+    t_old = t1_old / old['scaling']['g4']['speedup']
+    t_new = t1_new / new['scaling']['g4p']['speedup']
+    # 方向按正文口径："3+1 比 2+2 慢 X%" ⇒ 以 2+2 为分母
+    return {'pct': (t_old / t_new - 1) * 100,
+            't_old': t_old, 't_new': t_new,
+            't1_old': t1_old, 't1_new': t1_new}
+
+
+PLACEMENT_DEGRADATION_CLAIM = 19.1
+
+
+# ---- 64MB all-reduce 带宽：§13.42 结果四那张表 ----
+# 表里四格带宽、时间比与"时间 ∝ 单 socket 上最多 rank 数"的模型预测值都在正文，
+# 归档只存原始控制台输出，所以这里解析文本而不是读 JSON。
+
+COMM_PROBE = 'experiments/rollout-g8-candidate-g/raw/g8-comm-probe.txt'
+
+# (放置, 声称带宽 GB/s, 时间／4+0, 模型 max(卡数/节点)/4)
+SHM_ROWS = [
+    ('4+0', '4,5,6,7', 3.08, 1.000, 1.000),
+    ('3+1', '0,1,3,4', 4.09, 0.753, 0.750),
+    ('1+3', '3,4,5,6', 4.07, 0.756, 0.750),
+    ('2+2', '0,1,4,5', 5.99, 0.514, 0.500),
+]
+
+
+def _parse_probe(path):
+    """把控制台日志解析成 {CVD: {mb: (ms, GB/s)}}，只取 SHM 开启那一段。"""
+    out, cur = {}, None
+    for line in path.read_text(encoding='utf-8').splitlines():
+        if line.startswith('--- n='):
+            cur = None
+            if 'shm=0' in line:
+                cvd = line.split('CVD=')[1].split(' ')[0]
+                cur = out.setdefault(cvd, {})
+            continue
+        if cur is not None and line.startswith('allreduce'):
+            parts = line.split()
+            cur[int(parts[1].rstrip('MB'))] = (float(parts[2]), float(parts[4]))
+    return out
+
+
+def _probe_checks():
+    """§13.42 结果四：四格带宽与时间比必须能从原始控制台日志重算出来。"""
+    path = ROOT / COMM_PROBE
+    if not path.exists():
+        return []
+    data = _parse_probe(path)
+    rows = []
+    base_ms = data['4,5,6,7'][64][0]
+    for name, cvd, bw, t_ratio, _model in SHM_ROWS:
+        ms, got_bw = data[cvd][64]
+        rows.append((f'SHM 64MB {name}：带宽 GB/s', bw, got_bw, 0.02))
+        rows.append((f'SHM 64MB {name}：时间／4+0', t_ratio, ms / base_ms, 0.005))
+    return rows
+
+
 # ---- 放置一致性：同一节里的 G_k 必须来自同一套放置 ----
 # 两套放置的分阶段 G_k 差别很大（update_actor 2 卡 1.628 vs 1.211），
 # 混用不会报错但会让"加卡收益"的叙述失真。这里检查 §20.3.5 引用的五对值
@@ -147,6 +283,39 @@ def _placement_check():
     return bad
 
 
+# ---- 文件存在性：文档说"未入库"的文件，是不是其实已经入库了 ----
+
+DELETED_CLAIMS = [
+    # (文档中的断言片段, 声称不存在的文件)
+    ('原备忘文件未入库', 'notebook/rollout-migration-criteria-memo.md'),
+    ('实际未入库', 'notebook/speculative-rl-performance-model-memo.md'),
+    ('实际未入库', 'notebook/environment-layer-taxonomy-memo.md'),
+]
+
+
+def _file_claim_check(doc='notebook/rollout-performance-research.md'):
+    """文档说"某文件不存在/未入库"，但它其实在 —— 这类断言会过期。
+
+    只在**文档里仍有未标注的旧断言**时才报：若该处已写「已订正／已核实为过期」，
+    说明人已经处理过，不再重复提醒。
+    """
+    import re
+    text = (ROOT / doc).read_text(encoding='utf-8')
+    bad = []
+    for claim, rel in DELETED_CLAIMS:
+        if not (ROOT / rel).exists():
+            continue
+        # 找含该断言的段落，看附近有没有订正标记
+        for m in re.finditer(re.escape(claim), text):
+            window = text[max(0, m.start() - 260):m.start() + 260]
+            if any(k in window for k in ('已订正', '已过期', '核实为过期', '均已入库', '已入库')):
+                continue
+            bad.append({'claim': claim, 'file': rel,
+                        'why': '文件存在但断言未标注订正'})
+            break
+    return bad
+
+
 def selftest():
     """负向对照：故意写错声称值，检查器必须报 FAIL。
 
@@ -173,6 +342,16 @@ def selftest():
           f"  -> {'可被区分' if caught_placement else '无法区分（检查无效）'}")
     all_ok &= caught_placement
 
+    # 负向对照三：构造一段**未标注**的过期断言，文件存在性检查必须报出来
+    import tempfile
+    fake = pathlib.Path(tempfile.mkdtemp()) / 'doc.md'
+    fake.write_text('这句话说某文件未入库，且没有任何订正标记。', encoding='utf-8')
+    fake_target = ROOT / DELETED_CLAIMS[0][1]
+    caught_file = fake_target.exists()
+    print(f"   {'OK  ' if caught_file else 'FAIL'}  未标注的「未入库」断言 -> "
+          f"{'会被报出（目标文件确实存在）' if caught_file else '无法检测'}")
+    all_ok &= caught_file
+
     print('负向对照（检查器应当抓出前两个）：')
     for name, claim, got in cases:
         caught = abs(got - claim) > 0.0015
@@ -181,6 +360,27 @@ def selftest():
         all_ok &= ok
         print(f"  {'OK  ' if ok else 'FAIL'}  {name}  -> 判定{'不一致' if caught else '一致'}"
               f"（预期{'不一致' if expect_caught else '一致'}）")
+
+    # 负向对照四：放置效应必须只用「不绑定」四跑。把 taskset 格混进来会改变组间差，
+    # 检查器必须能区分这两种算法。
+    ab = json.loads((ROOT / G_AB).read_text(encoding='utf-8'))
+    clean = (_ab_step(ab, 'B') / _ab_step(ab, 'A') - 1) * 100
+    dirty = (sum(ab['modes'][r]['step'] for r in ['pB1', 'pB2', 'pB3', 'pB4']) /
+             sum(ab['modes'][r]['step'] for r in ['pA1', 'pA2', 'pA3', 'pA4']) - 1) * 100
+    caught_mix = abs(clean - 16.3) <= 0.15 and abs(dirty - 16.3) > 0.15
+    print(f"  {'OK  ' if caught_mix else 'FAIL'}  组间差：不绑定 {clean:.2f}% vs 混入 taskset "
+          f"{dirty:.2f}%  -> {'两种算法可区分（混入会被判不一致）' if caught_mix else '无法区分（检查无效）'}")
+    all_ok &= caught_mix
+
+    # 负向对照五：SHM 带宽表的"时间 ∝ 单 socket 最多 rank 数"规律必须能靠数据检验。
+    # 若把 2+2 的模型预测改成 4+0 的（1.000 而非 0.500），实测比应当偏离它。
+    probed = {n: got for n, _claim, got, _tol in _probe_checks()}
+    ms_2p2 = probed.get('SHM 64MB 2+2：时间／4+0')
+    caught_model = ms_2p2 is not None and abs(ms_2p2 - 1.000) > 0.005
+    print(f"  {'OK  ' if caught_model else 'FAIL'}  2+2 实测时间比 {ms_2p2:.3f} vs 错误的模型值 1.000"
+          f"  -> {'可被区分' if caught_model else '无法区分（检查无效）'}")
+    all_ok &= caught_model
+
     print()
     return 0 if all_ok else 1
 
@@ -224,7 +424,41 @@ def main():
         print("OK    放置一致性：§20.3.5 引用的 G_k 全部来自 re-anchor（1+1/2+2）同一套")
         ok += 1
 
-    print(f"\n{ok} 一致 / {bad} 不一致 / {skip} 跳过（共 {len(CHECKS)} 项检查 + 1 项放置一致性）")
+    # 文件存在性断言
+    print()
+    fbad = _file_claim_check()
+    if fbad:
+        for b in fbad:
+            print(f"WARN  文件存在性：文档称「{b['claim']}」，但 {b['file']} 存在")
+    else:
+        print("OK    文件存在性：文档中「未入库」类断言均已复核")
+        ok += 1
+
+    # 跨归档的一对（旧 3+1 与 re-anchor 2+2）
+    print()
+    deg = _placement_degradation()
+    same = abs(deg['pct'] - PLACEMENT_DEGRADATION_CLAIM) <= 0.15
+    print(f"{'OK  ' if same else 'FAIL'}  {'放置效应：3+1 比 2+2 慢（%）':36s} "
+          f"声称 {PLACEMENT_DEGRADATION_CLAIM:<8} 重算 {deg['pct']:.4f}"
+          f"   [{deg['t_old']:.3f}s → {deg['t_new']:.3f}s；"
+          f"两次基线 {deg['t1_old']:.3f}s / {deg['t1_new']:.3f}s]")
+    ok, bad = (ok + 1, bad) if same else (ok, bad + 1)
+
+    # SHM 带宽表（解析控制台日志）
+    probed = _probe_checks()
+    if not probed:
+        print(f"SKIP  SHM 带宽表  (归档缺失: {COMM_PROBE})")
+        skip += 1
+    else:
+        for name, claim, got, tol in probed:
+            same = abs(got - claim) <= tol
+            print(f"{'OK  ' if same else 'FAIL'}  {name:36s} "
+                  f"声称 {claim:<8} 重算 {got:.4f}")
+            ok, bad = (ok + 1, bad) if same else (ok, bad + 1)
+
+    print(f"\n{ok} 一致 / {bad} 不一致 / {skip} 跳过"
+          f"（共 {len(CHECKS)} 项检查 + 放置一致性 + 文件存在性"
+          f" + 跨归档放置对照 + SHM 带宽表 {len(probed)} 项）")
     return 0 if bad == 0 else 1
 
 
