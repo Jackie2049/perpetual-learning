@@ -27,19 +27,8 @@ import sys
 
 ANSI = re.compile(r"\x1b\[[0-9;]*m")
 NP = re.compile(r"^np\.(?:float64|int64|float32)\((.*)\)$")
-GROUPS = {
-    # threshold=1: _has_enough_samples blocks on any in-flight key, so spans are
-    # structurally pinned to 1 and no stale group can ever be selected.
-    "t1": {"runs": ["swt200", "swt200b", "swt010", "swt010b"], "max_span": 1},
-    # threshold=2: the batch dispatched by prepare_step() in the current step has
-    # span 1 and no longer blocks; the previous step's batch (span 2) does. One
-    # step of overlap is allowed, so spans may reach 2 but never 3.
-    "t2": {"runs": ["swt2p200", "swt2p200b", "swt2p010", "swt2p010b"], "max_span": 2},
-}
-ARM = {
-    "swt200": "2.0", "swt200b": "2.0", "swt010": "0.1", "swt010b": "0.1",
-    "swt2p200": "2.0", "swt2p200b": "2.0", "swt2p010": "0.1", "swt2p010b": "0.1",
-}
+RUNS = ["swt200", "swt200b", "swt010", "swt010b"]
+ARM = {"swt200": "2.0", "swt200b": "2.0", "swt010": "0.1", "swt010b": "0.1"}
 EXPECT_POLL = {"2.0": 2.0, "0.1": 0.1}
 WINDOW = range(3, 15)
 TRAIN_BATCH = 32
@@ -103,24 +92,16 @@ def bootstrap_diff(stratified, iters=4000, seed=7):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--group", choices=sorted(GROUPS), default="t1")
     ap.add_argument("--raw", default="raw")
-    ap.add_argument("--summary", default=None)
-    ap.add_argument("--write-summary", action="store_true")
+    ap.add_argument("--summary", default="summary-wait.json")
     args = ap.parse_args()
-
-    group = GROUPS[args.group]
-    group_runs = group["runs"]
-    max_span = group["max_span"]
-    default_summary = "summary-wait.json" if args.group == "t1" else f"summary-wait-{args.group}.json"
-    summary_path = pathlib.Path(args.summary or default_summary)
 
     raw = pathlib.Path(args.raw)
     failures = []
     per_run = {}
     strat = {"2.0": [], "0.1": []}
 
-    for run in group_runs:
+    for run in RUNS:
         path = raw / f"rollout-poll-stale-{run}.txt"
         if not path.exists():
             failures.append(f"missing log {path}")
@@ -134,17 +115,15 @@ def main():
         if resolved is None or abs(resolved - EXPECT_POLL[arm]) > TOL:
             failures.append(f"{run}: resolved poll {resolved} != {EXPECT_POLL[arm]}")
 
-        # --- structural checks specific to strategy=wait ---
+        # --- structural checks specific to strategy=wait, threshold=1 ---
         spans = [r["training/off_policy/trajectory_spans/mean"] for r in win]
         spans_max = [r["training/off_policy/trajectory_spans/max"] for r in win]
         stale_max = [r["training/off_policy/trajectory_staleness_worst/max"] for r in win]
         has_evict_metric = any("training/off_policy/evicted_samples" in r for r in win)
-        if max_span == 1 and (any(abs(v - 1.0) > TOL for v in spans) or any(v != 1 for v in spans_max)):
+        if any(abs(v - 1.0) > TOL for v in spans) or any(v != 1 for v in spans_max):
             failures.append(f"{run}: spans not identically 1.0 (mean={sorted(set(spans))}, max={sorted(set(spans_max))})")
-        if max_span > 1 and (any(v > max_span for v in spans) or any(v > max_span for v in spans_max)):
-            failures.append(f"{run}: spans exceed {max_span} (mean={sorted(set(spans))}, max={sorted(set(spans_max))})")
-        if any(v > max_span for v in stale_max):
-            failures.append(f"{run}: staleness_worst/max > {max_span} ({sorted(set(stale_max))})")
+        if any(v > 1 for v in stale_max):
+            failures.append(f"{run}: staleness_worst/max > 1 ({sorted(set(stale_max))})")
         if has_evict_metric:
             failures.append(f"{run}: off_policy/evicted_samples present — wait should never evict")
 
@@ -155,7 +134,6 @@ def main():
             "staleness_worst_max": max(stale_max),
             "evicted_metric_present": has_evict_metric,
             "generated_groups": TRAIN_BATCH,
-            "window": win,
         }
         for key in PHASES + ["step"]:
             values = [r[f"timing_s/{key}"] for r in win]
@@ -167,56 +145,16 @@ def main():
 
     arms = {}
     for arm in ("2.0", "0.1"):
-        arm_runs = [r for r in group_runs if ARM[r] == arm and r in per_run]
-        if not arm_runs:
+        runs = [r for r in RUNS if ARM[r] == arm and r in per_run]
+        if not runs:
             continue
-        arms[arm] = {"runs": arm_runs}
+        arms[arm] = {"runs": runs}
         for key in PHASES + ["step"]:
-            arms[arm][key] = statistics.fmean(per_run[r][key]["mean"] for r in arm_runs)
-        arms[arm]["gen_per_group_ms"] = statistics.fmean(per_run[r]["gen_per_group_ms"] for r in arm_runs)
-
-    if args.write_summary:
-        def st(values):
-            return {"n": len(values), "mean": statistics.fmean(values),
-                    "sd": statistics.stdev(values) if len(values) > 1 else 0.0,
-                    "min": min(values), "max": max(values)}
-
-        summary = {"window": [min(WINDOW), max(WINDOW)], "group": args.group, "runs": {}, "arms": arms,
-                   "pooled_delta": {}}
-        for run in group_runs:
-            if run not in per_run:
-                continue
-            rec = per_run[run]
-            win = rec["window"]
-            summary["runs"][run] = {
-                "description": f"2 GPU (4,5), patched tree, poll_interval={rec['resolved']}, "
-                               f"colocate_async, threshold={max_span}, strategy=wait",
-                "resolved_poll_interval": rec["resolved"],
-                "steps_seen": rec["steps"],
-                "timing": {key: st([r[f"timing_s/{key}"] for r in win]) for key in PHASES + ["step"]},
-                "off_policy_evicted": None,
-                "generated_groups": st([float(TRAIN_BATCH)] * len(win)),
-                "gen_per_group_ms": rec["gen_per_group_ms"],
-                "spans": st([r["training/off_policy/trajectory_spans/mean"] for r in win]),
-                "staleness": st([r["training/off_policy/trajectory_staleness/mean"] for r in win]),
-                "aborted_ratio": st([r["response/aborted_ratio"] for r in win]),
-            }
-        for arm, a in arms.items():
-            a["evicted_mean"] = 0.0
-            a["generated_mean"] = float(TRAIN_BATCH)
-            a.pop("gen_per_group_ms", None)
-        if "2.0" in arms and "0.1" in arms:
-            for key in ("gen", "step", "evicted_mean", "generated_mean"):
-                a, b = arms["2.0"][key], arms["0.1"][key]
-                summary["pooled_delta"][key] = {
-                    "control": a, "mode": b, "delta": b - a,
-                    "ratio": (b / a) if a else None,
-                }
-        summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False) + "\n")
-        print(f"wrote {summary_path}")
+            arms[arm][key] = statistics.fmean(per_run[r][key]["mean"] for r in runs)
+        arms[arm]["gen_per_group_ms"] = statistics.fmean(per_run[r]["gen_per_group_ms"] for r in runs)
 
     print(f"{'run':9s} {'poll':>4s} {'gen':>8s} {'step':>8s} {'old_lp':>8s} {'ref':>7s} {'upd_act':>8s} {'upd_w':>7s}  spans")
-    for run in group_runs:
+    for run in RUNS:
         if run not in per_run:
             continue
         r = per_run[run]
@@ -233,7 +171,7 @@ def main():
             a, b = arms["2.0"][key], arms["0.1"][key]
             print(f"{key:16s} {a:9.3f} {b:9.3f} {b - a:+9.3f} {b / a:8.3f}")
         gen_series = {"2.0": [], "0.1": []}
-        for run in group_runs:
+        for run in RUNS:
             if run not in per_run:
                 continue
             _, steps = parse(raw / f"rollout-poll-stale-{run}.txt")
@@ -244,6 +182,7 @@ def main():
         print(f"bootstrap Δgen  95% CI: [{lo_g:+.3f}, {hi_g:+.3f}] s")
 
         # compare against the executor's summary if present
+        summary_path = pathlib.Path(args.summary)
         if not summary_path.exists():
             print(f"\nnote: {summary_path} not found — skipping summary comparison")
         else:
@@ -261,7 +200,7 @@ def main():
                 gen_mine = summary["arms"][arm].get("generated_mean")
                 if gen_mine is not None and abs(gen_mine - TRAIN_BATCH) > TOL:
                     failures.append(f"summary arm {arm} generated_mean {gen_mine} != {TRAIN_BATCH}")
-            for run in group_runs:
+            for run in RUNS:
                 if run not in per_run or run not in summary.get("runs", {}):
                     continue
                 for key in ("gen", "step"):
@@ -276,7 +215,7 @@ def main():
         for item in failures:
             print("  -", item)
         return 1
-    print(f"\nPASS: 4/4 runs, 12-step window, spans<={max_span}, staleness<={max_span}, zero-eviction structure")
+    print("\nPASS: 4/4 runs, 12-step window, spans==1, staleness<=1, zero-eviction structure, summary matches")
     return 0
 
 
