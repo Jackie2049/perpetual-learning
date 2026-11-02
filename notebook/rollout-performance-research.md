@@ -4053,6 +4053,27 @@ A 组（socket 传输，对照）：h256／h1024／h4096 整步 27.417／27.426�
 
 **边界**：单数据集（gsm8k）、两个小模型（Qwen2.5-1.5B/0.5B-Instruct）、单栈（vLLM 0.24.0）、两个种子；纯推理静态切面，未跑 RL 训练（策略演化下长度会漂移）。ICC 为一因素随机效应估计，右偏长度另报对数尺度（0.32–0.50，结论不变）。回代沿用 §13.38 的梯度 ρ=0.5，长度只进入 LDM 排序、不进入梯度结构。材料 [experiments/rollout-length-structure-real](../../experiments/rollout-length-structure-real/README.md)（5 份逐样本记录＋meta 含模型/数据 sha256＋统计与回代脚本＋`verify.py` exit 0）。
 
+### 13.51 采样轮询量子在 async trainer 上同样生效：colocate_async 8–9/12 步撞 2.0s，但整步只 −1.9%，因为真实等待本就有 0.75–1.9s（2026-11-03 M5 算力侧第五十五批）
+
+**接续 §13.44／§13.49 与 TM-008 的未测清单**（「async trainer 的 `wait_for_sampleable` 分支」）。上游 `ReplayBufferAsync.wait_for_sampleable` 与 sync 的 `ReplayBuffer.sample` **共用同一个 `_wait_for_next_poll` → `time.sleep(poll_interval)`**；本轮 patched 树的 `replay_buffer.py` 与 pristine **逐字节相同**（`diff -q` rc=0），只加配置接线，所以 A/B 比的正是同一个 sleep 循环的时间量子。机器为 4090-1 的 GPU 4,5（同一 socket＝2+0 放置；liyaowei 的 4 卡 vLLM＋1 个 EngineCore 占 0/2/3/6/7，本轮仍只有 3 卡空闲），栈与任务配置同 §13.44，唯一变量是 `trainer.v1.trainer_mode=colocate_async`（`num_warmup_batches=1`）与 `poll_interval`。四跑按 2.0／0.1 交替，15 步/跑，**4/4 exit 0**，单跑约 8m20s。
+
+| 运行（steps 3–14，n=12） | poll | gen 均值 | gen>2s 步数 | gen 范围 | 整步 | 响应长度 |
+|---|---|---|---|---|---|---|
+| a200 | 2.0 | 1.741±0.913 | **9/12** | 0.219–2.255 | 21.401±0.991 | 223.5 |
+| a010 | 0.1 | 1.379±0.354 | 0/12 | 0.746–1.870 | 20.752±0.982 | 222.2 |
+| a200b | 2.0 | 1.580±0.996 | **8/12** | 0.222–2.330 | 21.024±0.984 | 223.3 |
+| a010b | 0.1 | 1.386±0.343 | 0/12 | 0.935–1.888 | 20.867±0.926 | 223.4 |
+
+**读数一：量子在 async 上照样出现，且暴露面更大。** poll=2.0 臂的 gen 是干净两态：0.22s 或 2.23–2.33s，中间无取值；12 个稳态步里 9 步（a200）／8 步（a200b）撞量子。作为对照，§13.44 的同步 trainer 2 卡是 6/12 步进入慢态（慢态 3.165s＝2.0 量子＋1.1s 底噪，两态位置不同但撞量子的机制相同）。两态之差恰为 2.0s；2.245 ≈ 2.0＋0.245 轮询往返底噪。
+
+**读数二：2.245s 不能读成「浪费 2.0s」。** poll=0.1 臂没有任何一步落在 2.2s 附近，gen 变成 0.75–1.89s（均值 1.38）——那些撞量子的步里，下游真实需要的等待是 0.7–1.9s，量子只是把它**向上取整**到 2.0，超额只有 `2.0 − 真实等待`（约 0.1–1.3s/步）。这与 §13.49 在 4 卡同步上得到的「平均等待 ≈ 0.59×poll」同构：**二态幅度 ≠ 收益**，同一条陷阱在 async 上复现。
+
+**读数三：整步收益小于同步，且只有 gen 相位可归因。** 池化（两次重复的 run 均值）gen 1.660→1.383s＝**−16.7%**（run 级 SE 0.081，约 −3.4 SE），整步 21.212→20.809s＝**−1.9%**（run 级 SE 0.197，约 −2.0 SE）；单跑整步差为 −0.649s（−3.0%）与 −0.157s（−0.7%），重复间差异接近效应本身，故整步口径只算弱到中等证据。相位差里 gen −0.278s 是机制项；update_actor −0.210s **不是**——a200 的 11.683 比 a200b 的 11.420 慢 0.26s，而 a010／a010b 为 11.307／11.376，两个 0.1 臂彼此一致、两个 2.0 臂不一致，且 `global_seqlen/mean` 两臂差 <0.4%（20919–20998），解释不了 1.8% 的相位差；update_weights +0.082s，其余 |Δ|≤0.02s。
+
+**读数四：async 没有消掉等待本身。** 即使 poll=0.1，colocate_async 每步仍有 1.4–1.7s 在等 sampleable 组——与同步 2 卡 3.2s 同一量级，但构成不同（同步等整批 32 prompt，async 每步两次 16 prompt 小批）。「换成 async 就不用等生成」在本规模不成立，量子只是把其中一部分放大成整 2.0s。另记 off-policy 状态：`response/aborted_ratio=0.0`（本规模下 partial rollout 实际未发生）、`trajectory_spans≈1.8–1.9`、`staleness≈0.10–0.19`，属正常重叠训练，不是同轨迹复读。
+
+**边界**：单栈单点（1.5B／gsm8k 短答案／单 seed／15 步／`n=4`）；2+0 放置，绝对步时不可与 §13.45 的 1+1／2+2 锚点混用，只读同窗口比值；每臂两跑给 ±0.4s 级分辨力。**未测**：`separate_async`（需独立 rollout 池＋非 naive checkpoint backend）、stale 逐出路径（默认阈值 8 未达到）、`max_inflight_gen_batches>2`、4 卡 `inflight=1`（需 ≥4 卡空闲窗口）。收尾时每次运行结束、解释器退出会打印一条 `DataLoader worker … killed by signal`（`multiprocessing._exit_function` 的 join），发生在 15/15 步之后，属退出期清理，不是训练故障。材料 [experiments/verl-v1-poll-quantum-async](../../experiments/verl-v1-poll-quantum-async/README.md)（四份原始日志＋md5、解析与独立校验脚本，`verify.py` exit 0）。
+
 ## 14. Reproduction Candidates
 
 （登记模板：为什么值得复现 / repo / model / hardware / dataset / expected cost / key metric / stopping condition。**当前不启动 GPU 实验**；以下为算力窗口出现时的执行入口候选，按 D12 五族与 G8 下一步选取，均为 4090-1 可执行规模。已有可借力资源：M5 4090-1（8×RTX 4090 24GB）、本地 veRL 源码（§8 固定版本）；**前置条件**：4090-1 无自有 verl e2e 环境（/home/zxw 下 verl-* 均为 zxw 用户工作目录、conda 仅 gpu-infra，不借用他人环境）→ 候选 A/B 需自建环境（约 30–60 分钟 pip 安装）；/data 满（95G 余）→ 模型下载与缓存需预留 ≥20G；GPU 空闲窗口受 cl watchdog 抢占、非稳定 → 执行前须确认 cl 训练结束且有连续 ≥2h 窗口。）
