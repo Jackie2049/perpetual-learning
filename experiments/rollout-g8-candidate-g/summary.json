@@ -1,61 +1,15 @@
 {
- "batch": "candidate-g",
- "date_utc": "2026-11-02",
- "executed_utc": "2026-11-02T03:39:48Z..04:26:28Z (parallel M5 session)",
- "verified_utc": "2026-11-02",
- "window_steps": [
-  3,
-  14
- ],
- "stack": {
-  "repo": "verl 24f25b03",
-  "engine": "vLLM 0.24.0+cu129",
-  "model": "Qwen2.5-1.5B-Instruct",
-  "hardware": "4090-1 RTX 4090 24GB; g1=GPU5 (NUMA1), g2=GPU0,1 (both NUMA0), g4=GPU0,1,3 (NUMA0)+GPU4 (NUMA1)",
-  "data": "gsm8k train_sub480/test_sub120",
-  "config": "GRPO batch32 prompts x n=4 = 128 samples/iter fixed; ppo_mini_batch_size=16 (x n = 64 samples/optimizer step, 2 optimizer steps/iter); micro_batch=1; ppo_epochs=1; max_prompt512 max_response256; bf16; sdpa; optimizer_offload=True; update_weights bucket=256MB; seed=42; lr 1e-6 constant; TOTAL_EPOCHS=1 -> 15 iterations"
+ "meta": {
+  "batch": "candidate-g",
+  "executed_utc": "2026-11-02",
+  "stack": "verl 24f25b03 + vLLM 0.24.0+cu129, Qwen2.5-1.5B-Instruct, gsm8k train_sub480/test_sub120, single node 4090-1",
+  "window_rule": "steps 3 .. max_step-1 (drop 2 warmup steps and the final validation/save step)",
+  "semantics": {
+   "strong": "global batch fixed; speedup = T1/Tn; efficiency = speedup/n",
+   "weak": "per-GPU batch fixed (n x global batch); speedup = n*T1/Tn; parallel_efficiency = T1/Tn (time-based); throughput_efficiency = aggregate_throughput_ratio/n (work-normalized; README quotes this)"
+  },
+  "note": "NCCL_P2P_DISABLE=1 on consumer 4090: communication stages are worst-case. Multi-GPU runs used the non-contiguous mask 0,1,3,4 (GPU 2 occupied) with a local worker.py physical->ordinal patch."
  },
- "lever": "NGPUS_PER_NODE (1/2/4) with global batch fixed (strong scaling); per-GPU batch shrinks 128->64->32 samples/iter",
- "execution": {
-  "g1": {
-   "gpus": "5",
-   "start": "2026-11-02T03:39:48Z",
-   "end": "2026-11-02T03:49:42Z",
-   "exit": 0,
-   "log": "raw/rollout-g8-candidate-g-g1.txt"
-  },
-  "g2": {
-   "gpus": "0,1",
-   "start": "2026-11-02T04:09:57Z",
-   "end": "2026-11-02T04:18:32Z",
-   "exit": 0,
-   "log": "raw/rollout-g8-candidate-g-g2.txt"
-  },
-  "g4": {
-   "gpus": "0,1,3,4",
-   "start": "2026-11-02T04:19:13Z",
-   "end": "2026-11-02T04:26:28Z",
-   "exit": 0,
-   "log": "raw/rollout-g8-candidate-g-g4.txt"
-  }
- },
- "failed_attempts": [
-  {
-   "label": "g2 (first attempt)",
-   "gpus": "5,6",
-   "outcome": "failed at model init, 0 steps",
-   "error": "NCCL CUDA failure 217 'peer access is not supported between these two devices' (DistBackendError in _sync_params_and_buffers)"
-  },
-  {
-   "label": "g2dbg",
-   "gpus": "5,6",
-   "start": "2026-11-02T04:06:39Z",
-   "end": "2026-11-02T04:07:53Z",
-   "exit": 1,
-   "outcome": "same NCCL CUDA 217 with NCCL_DEBUG=INFO; root cause = Ray reports physical GPU ids under RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1 while verl sets LOCAL_RANK to that physical id"
-  }
- ],
- "env_fix": "local patch experiments/rollout-g8-candidate-g/verl-worker-device-map.patch maps Ray physical GPU ids to ordinals inside CUDA_VISIBLE_DEVICES; needed for non-contiguous masks (0,1,3,4 since GPU2 is occupied by another user). With the patch, g2/g4 pass init.",
  "modes": {
   "g1": {
    "gen": 4.1732,
@@ -66,10 +20,34 @@
    "update_weights": 1.8203,
    "step": 27.5314,
    "throughput": 1523.6626,
+   "tokens": 41962,
    "step_sd": 0.7546,
    "n": 12,
+   "window": [
+    3,
+    14
+   ],
    "stage_sum": 27.429,
-   "residual": 0.1024
+   "residual": 0.1024,
+   "stage_share_pct": {
+    "gen": 15.2,
+    "old_log_prob": 13.6,
+    "ref": 15.6,
+    "adv": 0.4,
+    "update_actor": 48.2,
+    "update_weights": 6.6,
+    "residual": 0.4
+   },
+   "config": {
+    "train_batch_size": 32,
+    "ppo_mini_batch_size": 16,
+    "rollout_n": 4,
+    "total_epochs": 1,
+    "n_gpus_per_node": 1
+   },
+   "global_samples_per_iter": 128,
+   "val_acc_final": 0.175,
+   "max_reserved_gb": 21.2265625
   },
   "g2": {
    "gen": 3.3353,
@@ -80,10 +58,72 @@
    "update_weights": 2.3509,
    "step": 22.0087,
    "throughput": 954.0549,
+   "tokens": 41884.4167,
    "step_sd": 1.6048,
    "n": 12,
+   "window": [
+    3,
+    14
+   ],
    "stage_sum": 21.9594,
-   "residual": 0.0494
+   "residual": 0.0494,
+   "stage_share_pct": {
+    "gen": 15.2,
+    "old_log_prob": 12.5,
+    "ref": 11.1,
+    "adv": 0.6,
+    "update_actor": 49.8,
+    "update_weights": 10.7,
+    "residual": 0.2
+   },
+   "config": {
+    "train_batch_size": 32,
+    "ppo_mini_batch_size": 16,
+    "rollout_n": 4,
+    "total_epochs": 1,
+    "n_gpus_per_node": 2
+   },
+   "global_samples_per_iter": 128,
+   "val_acc_final": 0.15833333333333333,
+   "max_reserved_gb": 14.287109375
+  },
+  "g2w": {
+   "gen": 4.1871,
+   "old_log_prob": 4.8833,
+   "ref": 5.1417,
+   "adv": 0.1851,
+   "update_actor": 21.7319,
+   "update_weights": 2.2815,
+   "step": 38.5199,
+   "throughput": 1079.8448,
+   "tokens": 83192.4545,
+   "step_sd": 0.5218,
+   "n": 11,
+   "window": [
+    3,
+    13
+   ],
+   "stage_sum": 38.4107,
+   "residual": 0.1092,
+   "stage_share_pct": {
+    "gen": 10.9,
+    "old_log_prob": 12.7,
+    "ref": 13.3,
+    "adv": 0.5,
+    "update_actor": 56.4,
+    "update_weights": 5.9,
+    "residual": 0.3
+   },
+   "config": {
+    "train_batch_size": 64,
+    "ppo_mini_batch_size": 32,
+    "rollout_n": 4,
+    "total_epochs": 2,
+    "n_gpus_per_node": 2
+   },
+   "global_samples_per_iter": 256,
+   "val_acc_final": 0.2,
+   "max_reserved_gb": 14.2578125
   },
   "g4": {
    "gen": 2.155,
@@ -94,17 +134,83 @@
    "update_weights": 2.6367,
    "step": 16.8783,
    "throughput": 618.0531,
+   "tokens": 41733.25,
    "step_sd": 0.1561,
    "n": 12,
+   "window": [
+    3,
+    14
+   ],
    "stage_sum": 16.8381,
-   "residual": 0.0401
+   "residual": 0.0401,
+   "stage_share_pct": {
+    "gen": 12.8,
+    "old_log_prob": 12.5,
+    "ref": 9.7,
+    "adv": 0.8,
+    "update_actor": 48.3,
+    "update_weights": 15.6,
+    "residual": 0.2
+   },
+   "config": {
+    "train_batch_size": 32,
+    "ppo_mini_batch_size": 16,
+    "rollout_n": 4,
+    "total_epochs": 1,
+    "n_gpus_per_node": 4
+   },
+   "global_samples_per_iter": 128,
+   "val_acc_final": 0.15,
+   "max_reserved_gb": 11.05078125
+  },
+  "g4w": {
+   "gen": 5.3365,
+   "old_log_prob": 6.6018,
+   "ref": 5.525,
+   "adv": 0.3924,
+   "update_actor": 30.56,
+   "update_weights": 2.6291,
+   "step": 51.2456,
+   "throughput": 816.9133,
+   "tokens": 167393.3333,
+   "step_sd": 1.2315,
+   "n": 9,
+   "window": [
+    3,
+    11
+   ],
+   "stage_sum": 51.0448,
+   "residual": 0.2007,
+   "stage_share_pct": {
+    "gen": 10.4,
+    "old_log_prob": 12.9,
+    "ref": 10.8,
+    "adv": 0.8,
+    "update_actor": 59.6,
+    "update_weights": 5.1,
+    "residual": 0.4
+   },
+   "config": {
+    "train_batch_size": 128,
+    "ppo_mini_batch_size": 64,
+    "rollout_n": 4,
+    "total_epochs": 4,
+    "n_gpus_per_node": 4
+   },
+   "global_samples_per_iter": 512,
+   "val_acc_final": 0.18333333333333332,
+   "max_reserved_gb": 12.0078125
   }
  },
  "scaling": {
   "g2": {
+   "n_gpus": 2,
+   "scale_kind": "strong (global batch fixed)",
+   "time_ratio_vs_base": 0.7994,
    "speedup": 1.2509,
    "parallel_efficiency": 0.6255,
-   "throughput_ratio": 0.6262,
+   "throughput_efficiency": 0.6262,
+   "per_gpu_throughput_ratio": 0.6262,
    "aggregate_throughput_ratio": 1.2523,
    "stage_scaling": {
     "gen": 1.2512,
@@ -114,13 +220,51 @@
     "update_actor": 1.2113,
     "update_weights": 0.7743
    },
-   "residual": 0.0494,
-   "scale_kind": "strong (global batch fixed)"
+   "stage_time_ratio": {
+    "gen": 0.7992,
+    "old_log_prob": 0.7307,
+    "ref": 0.5664,
+    "adv": 1.2438,
+    "update_actor": 0.8256,
+    "update_weights": 1.2915
+   },
+   "residual": 0.0494
+  },
+  "g2w": {
+   "n_gpus": 2,
+   "scale_kind": "weak (per-GPU batch fixed; global batch scaled)",
+   "time_ratio_vs_base": 1.3991,
+   "speedup": 1.4295,
+   "parallel_efficiency": 0.7147,
+   "throughput_efficiency": 0.7087,
+   "per_gpu_throughput_ratio": 0.7087,
+   "aggregate_throughput_ratio": 1.4174,
+   "stage_scaling": {
+    "gen": 0.9967,
+    "old_log_prob": 0.7695,
+    "ref": 0.8353,
+    "adv": 0.6012,
+    "update_actor": 0.6107,
+    "update_weights": 0.7979
+   },
+   "stage_time_ratio": {
+    "gen": 1.0033,
+    "old_log_prob": 1.2995,
+    "ref": 1.1971,
+    "adv": 1.6633,
+    "update_actor": 1.6375,
+    "update_weights": 1.2534
+   },
+   "residual": 0.1092
   },
   "g4": {
+   "n_gpus": 4,
+   "scale_kind": "strong (global batch fixed)",
+   "time_ratio_vs_base": 0.6131,
    "speedup": 1.6312,
    "parallel_efficiency": 0.4078,
-   "throughput_ratio": 0.4056,
+   "throughput_efficiency": 0.4056,
+   "per_gpu_throughput_ratio": 0.4056,
    "aggregate_throughput_ratio": 1.6225,
    "stage_scaling": {
     "gen": 1.9366,
@@ -130,23 +274,42 @@
     "update_actor": 1.6281,
     "update_weights": 0.6904
    },
-   "residual": 0.0401,
-   "scale_kind": "strong (global batch fixed)"
-  }
- },
- "quality": {
-  "val_acc_step15": {
-   "g1": 0.175,
-   "g2": 0.15833333333333333,
-   "g4": 0.15
+   "stage_time_ratio": {
+    "gen": 0.5164,
+    "old_log_prob": 0.5627,
+    "ref": 0.3813,
+    "adv": 1.283,
+    "update_actor": 0.6142,
+    "update_weights": 1.4485
+   },
+   "residual": 0.0401
   },
-  "note": "single seed / 120 samples; direction only, not a significance claim"
- },
- "max_reserved_gb": {
-  "g1": 21.2265625,
-  "g2": 14.287109375,
-  "g4": 11.05078125
- },
- "throughput_caliber": "perf/throughput in verl logs is per-GPU normalized: total tokens/step/NGPUS (g1 1523.7=tokens/step; g2 954.1=(tokens/step)/2; g4 618.1=(tokens/step)/4). Aggregate throughput ratio = per-GPU ratio x NGPUS, reported as aggregate_throughput_ratio.",
- "notes": "Steps 1-2 warmup, step 15 includes final validation and is excluded; all runs end with DataLoader worker 'signal: Killed' cleanup (same as candidates A/F). /home 100% full, logs and checkpoints to /tmp."
+  "g4w": {
+   "n_gpus": 4,
+   "scale_kind": "weak (per-GPU batch fixed; global batch scaled)",
+   "time_ratio_vs_base": 1.8614,
+   "speedup": 2.149,
+   "parallel_efficiency": 0.5372,
+   "throughput_efficiency": 0.5362,
+   "per_gpu_throughput_ratio": 0.5362,
+   "aggregate_throughput_ratio": 2.1446,
+   "stage_scaling": {
+    "gen": 0.782,
+    "old_log_prob": 0.5692,
+    "ref": 0.7774,
+    "adv": 0.2836,
+    "update_actor": 0.4343,
+    "update_weights": 0.6924
+   },
+   "stage_time_ratio": {
+    "gen": 1.2788,
+    "old_log_prob": 1.7568,
+    "ref": 1.2864,
+    "adv": 3.5255,
+    "update_actor": 2.3027,
+    "update_weights": 1.4443
+   },
+   "residual": 0.2007
+  }
+ }
 }
