@@ -118,6 +118,12 @@ check('poll inflight=3：整步变化', -4.5, INFLIGHT3,
 G_OLD = 'experiments/rollout-g8-candidate-g/summary.json'
 
 def _placement_check():
+    """放置一致性：同一节引用的 G_k 必须来自**同一次测量**。
+
+    口径与 experiments/rollout-anchor2-identity 的 source_alignment 一致：
+    same_file（同一份归档）/ same_stack（同一栈）/ same_window_rule（同一窗口规则）。
+    本脚本只覆盖"同一份归档"这一项——另两项需要各归档的 meta，登记在那边。
+    """
     new = json.loads((ROOT / G_REANCHOR).read_text(encoding='utf-8'))
     old = json.loads((ROOT / G_OLD).read_text(encoding='utf-8'))
     pairs = [
@@ -135,8 +141,8 @@ def _placement_check():
         to_old = abs(o2 - c2) < 0.002 and abs(o4 - c4) < 0.002
         if not to_new:
             bad.append({'stage': stage, 'claim': (c2, c4),
-                        'reanchor': (round(n2,3), round(n4,3)),
-                        'old_placement': (round(o2,3), round(o4,3)),
+                        'reanchor': (round(n2, 3), round(n4, 3)),
+                        'old_placement': (round(o2, 3), round(o4, 3)),
                         'also_old': to_old})
     return bad
 
