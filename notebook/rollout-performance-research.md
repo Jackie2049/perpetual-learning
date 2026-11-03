@@ -3,6 +3,35 @@
 > 本文件是本专题唯一的 canonical knowledge base。任何会话/Agent 接手时**只读本文件**即应在 10–20 分钟内恢复研究状态；详细证据存放于链接指向的材料，但恢复研究状态不依赖它们。
 > 远景（非当前任务）：systems-oriented survey《Efficient Rollout Systems for LLM Post-Training》。**当前阶段禁止**撰写正文/Introduction/Related Work、冻结 taxonomy、批量生成低价值摘要、启动大规模复现、在外部主仓库发 issue/PR/comment。
 
+## 导航（22 个顶层节）
+
+> 本节是目录，不含结论。锚点由标题按 GitHub 规则生成。
+
+| § | 标题 | 作用 |
+|---|---|---|
+| [0](#0-project-status) | Project Status | 当前状态、最近批次、接续入口 |
+| [1](#1-research-question--scope) | Research Question & Scope | 研究问题与范围界定 |
+| [2](#2-serving-vs-rollout核心工作假设持续验证修正) | Serving vs Rollout（核心工作假设，持续验证/修正） | Serving 与 Rollout 的核心差异假设 |
+| [3](#3-performance-model) | Performance Model | 性能模型：主口径、五类气泡、G3 三轴 |
+| [4](#4-taxonomy) | Taxonomy | 四层 taxonomy（L1–L4） |
+| [5](#5-literature-matrix) | Literature Matrix | 文献矩阵：126 身份、深度标注 |
+| [6](#6-paper-deep-reads) | Paper Deep Reads | 论文深读（T1／T2 逐篇） |
+| [7](#7-code--system-landscape) | Code & System Landscape | 代码与系统盘点 |
+| [8](#8-paper--mechanism--code-mapping) | Paper → Mechanism → Code Mapping | 论文→机制→代码映射 |
+| [9](#9-serving--rollout-transfer) | Serving → Rollout Transfer | Serving→Rollout 迁移判据 |
+| [10](#10-workload-specific-findings) | Workload-specific Findings | 负载相关发现 |
+| [11](#11-cross-layer-findings) | Cross-layer Findings | **八条跨层耦合＋四耦合面**（新意锚③） |
+| [12](#12-evaluation--benchmark) | Evaluation & Benchmark | 评估与基准、计时边界 |
+| [13](#13-research-gaps--ideas) | Research Gaps / Ideas | 研究缺口与实验账（G1–G9、各批实验结论） |
+| [14](#14-reproduction-candidates) | Reproduction Candidates | 复现候选 A–H |
+| [15](#15-open-questions) | Open Questions | 开放问题 Q1–Q8 |
+| [16](#16-changelog--research-log) | Changelog / Research Log | 变更日志与研究日志（每批流水） |
+| [17](#17-phase-3--survey-outline--writing2026-11-01-用户拍板启动) | Phase 3 — Survey Outline & Writing（2026-11-01 用户拍板启动 | 阶段三范围、产出物 P1–P6、批次 S1–S5 |
+| [18](#18-survey-outlinep3-上半大纲骨架2026-11-01-s3m1) | Survey Outline（P3 上半：大纲骨架，2026-11-01 S3／M1） | Survey 十章大纲骨架 |
+| [19](#19-citation-ledger--reporting-specp3-下半p52026-11-01-s4m1) | Citation Ledger & Reporting Spec（P3 下半＋P5，2026-11-01 | 引用清单与报值口径规范（C1 五列） |
+| [20](#20-taxonomy-freeze-review--publishabilityp4-复核p62026-11-01-s5m1) | Taxonomy Freeze Review & Publishability（P4 复核＋P6，202 | Taxonomy 冻结复核与可发表性评估（必补项 P-1–P-5） |
+| [21](#21-可比性约定q6-计时边界与-q7-async-气泡p-52026-11-01-m1) | 可比性约定：Q6 计时边界与 Q7 async 气泡（P-5，2026-11-01 M1） | **可比性约定 C1–C3** 及其可执行性实证 |
+
 ## 0. Project Status
 
 - **最近更新（2026-11-03 第三十四批，M1）——补同节点配对两档＋修掉同配置重复臂的配对错档（新增 §20.3.9）**：回溯上一批时发现**核对脚本本身**有一处静默错配——同配置重复臂写成 re-anchor 的 `g4p` 配 `summary.json` 的 `g4n`（0.7030／−0.142%），而正文引的是 `g4` vs `g4n`（0.8372／−0.060%）；根因是两次测量不同批（独占窗口重跑 vs GPU 2 被占时的非连续掩码），**同名放置不等于同一对**。修法是改取同一份归档并写 `same_file／same_stack／same_window_rule` 自检，负向对照加第 ⑤ 组要求三种配对可区分。**顺带补同一份归档里被漏掉的两档**（2 卡 `2.0→0.2`＝1.0045、`2.0→0.5`＝1.0357，F3 +0.000%／+0.019%）：三档连成同一基线的剂量线，`0.5` 与 `0.1` 差 0.15%，与 §13.49 的"0.5≈0.1"独立吻合。**判决**：主结论臂由 8 个扩到 **10 个**（F3 全在 0.1% 内）；锚② 仍「中强」不回调、跨系统仍归 P-1；新增项都不进主结论句。只读复算、未跑 GPU；`check_reconstruct_form.py --verify` exit 0、`negative_control_form.py` 5/5 exit 0。
