@@ -211,6 +211,7 @@ def load_p3(path: Path) -> Dict[str, Dict[str, List[float]]]:
             "total_cost": [s["total_cost"] for s in ps],
             "prefix_cost": [sum(s["step_costs"][: s["steps_to_09"] + 1]) for s in ps],
             "final_acc": [s["final_acc"] for s in ps],
+            "acc_curve": [s["acc_curve"] for s in ps],
             # p3 归档无生成量／轨迹数／每步计数三字段：测不了就不给，也不用别处现算值代替
             # （p3 的轨迹数由模式长度常数决定，不是可观测的量）。
         }
@@ -231,6 +232,7 @@ def load_p4(path: Path) -> Dict[str, Dict[str, List[float]]]:
             "mean_counts": [s["mean_counts"] for s in ps],
             "prefix_cost": [sum(s["step_costs"][: s["steps_to_09"] + 1]) for s in ps],
             "final_acc": [s["final_acc"] for s in ps],
+            "acc_curve": [s["acc_curve"] for s in ps],
         }
     return out
 
@@ -364,6 +366,232 @@ def accuracy_resolution(p3_meta: Dict, p4_meta: Dict) -> Dict:
     }
 
 
+# ---------------------------------------------------------------- 第五批：L3 收敛层的阈值
+#
+# `steps_ratio` 与 `wall_ratio` 都读"累计成本到某一刻"，而**那个时刻由阈值决定**。
+# 第五批把阈值当基线要素之一：同一份账挪一下阈值，读数动多少、谁翻号、到点那一步
+# 还剩多少余量。检查只报读数，不改任何比值——判读规则见 ledger.py 顶部与 readme 第五批。
+
+
+DEFAULT_THRESHOLDS = (0.85, 0.87, 0.9, 0.93, 0.95)
+REFERENCE_THRESHOLD = 0.9
+
+
+def _key(t: float) -> str:
+    """阈值在归档里的键名固定两位小数：0.9 → "0.90"，与 0.85／0.95 同形。"""
+    return f"{t:.2f}"
+
+
+def first_cross(curve: List[float], thr: float) -> Optional[int]:
+    """首次达到 thr 的步号（0 基）；整条都没达到返回 None。
+
+    未达阈值**不能当 0 步**：那会把"没收敛"读成"收敛极快"。调用方必须先看
+    `zero_margin_arms`，再在 `n_miss` 非零时换 `limit_completed` 口径（见 threshold_probe）。
+    """
+    for i, v in enumerate(curve):
+        if v >= thr:
+            return i
+    return None
+
+
+def _flatten_after_cross(curve: List[float], thr: float) -> List[float]:
+    """仅用于记录错误判据的单测对照；不参与任何读数（见 curve_tail 的说明）。"""
+    i = first_cross(curve, thr)
+    if i is None:
+        return list(curve)
+    return list(curve[: i + 1]) + [curve[i]] * (len(curve) - i - 1)
+
+
+def _cross_or_complete(curve: List[float], thr: float) -> int:
+    """未达阈值时按"跑满全程"计（阈值越高，未达标的曲线占比越高，读数随之上移）。"""
+    i = first_cross(curve, thr)
+    return len(curve) if i is None else i
+
+
+def steps_at(arm_curves: List[List[float]], base_curves: List[List[float]],
+             thr: float, complete_at_end: bool = False) -> Dict:
+    """某一阈值下 `steps_ratio` 的按种子配对读数。
+
+    返回的是**比率**（Σ臂步数 / Σ基线步数），与 `arm_row` 的 `steps_ratio` 同口径；
+    另附配对中位数与同号比例——只报比率会把"一半种子正、一半负"读成一次干净位移。
+    """
+    f = _cross_or_complete if complete_at_end else first_cross
+    if complete_at_end:
+        num = sum(f(c, thr) for c in arm_curves)
+        den = sum(f(c, thr) for c in base_curves)
+        diffs = [f(a, thr) - f(b, thr) for a, b in zip(arm_curves, base_curves)]
+        missing = 0
+    else:
+        na = [first_cross(c, thr) for c in arm_curves]
+        nb = [first_cross(c, thr) for c in base_curves]
+        missing = sum(1 for x in (*na, *nb) if x is None)
+        num = sum(x for x in na if x is not None)
+        den = sum(x for x in nb if x is not None)
+        diffs = [a - b for a, b in zip(na, nb) if a is not None and b is not None]
+    ratio = (num / den) if den else None
+    n = len(diffs)
+    pos = sum(1 for d in diffs if d > 0)
+    neg = sum(1 for d in diffs if d < 0)
+    return {
+        "steps_ratio": ratio,
+        "n_pairs": n,
+        "n_miss": missing,
+        "same_sign_arm_slower": (pos / n) if n else None,
+        "n_ties": sum(1 for d in diffs if d == 0),
+        "median_paired_diff": sorted(diffs)[n // 2] if n else None,
+    }
+
+
+def threshold_band(arm_curves: List[List[float]], base_curves: List[List[float]],
+                   thresholds=DEFAULT_THRESHOLDS) -> Dict:
+    """`steps_ratio` 随阈值移动的摆幅、是否翻号，以及阈值的"余量"。
+
+    摆幅（`span_pp`）是**基线带宽**，不是显著性：它量的是"同一个机制账换个阈值读
+    会差多少"，与种子抽样误差无关（后者见 `steps_at` 的 `n_pairs`）。
+    """
+    rows = {_key(t): steps_at(arm_curves, base_curves, t) for t in thresholds}
+    vals = [r["steps_ratio"] for r in rows.values() if r["steps_ratio"] is not None]
+    signs = {v > 1 for v in vals}
+    # 余量：每个种子恰跨过阈值的两条曲线，到点那一步的读数离阈值还有多远
+    margins = []
+    for a, b in zip(arm_curves, base_curves):
+        for c in (a, b):
+            i = first_cross(c, REFERENCE_THRESHOLD)
+            if i is not None:
+                margins.append(c[i] - REFERENCE_THRESHOLD)
+    margins.sort()
+    n = len(margins)
+    return {
+        "by_threshold": rows,
+        "span_pp": round(100 * (max(vals) - min(vals)), 3) if vals else None,
+        "sign_flip": len(signs) > 1,
+        "min_margin": margins[0] if margins else None,
+        "median_margin": margins[n // 2] if n else None,
+        "max_margin": margins[-1] if margins else None,
+        "margin_n": n,
+    }
+
+
+def level_matched_steps(arm_curves: List[List[float]], base_curves: List[List[float]],
+                        thresholds=DEFAULT_THRESHOLDS) -> Dict:
+    """同一**水平**上的步数差：`steps_ratio` 漂移里有多少是"水平一致、步号换算"。
+
+    `steps_ratio = Σ步数(臂) / Σ步数(基线)` 的关键性质：**分子分母在同一阈值上**，
+    所以它比较的从来不是两臂同一个准确率水平——阈值抬高时两臂各自往后挪，而挪多少
+    取决于各自曲线的斜率。把差值按阈值逐档报出来、再看同号比例与零重叠种子数，
+    就能把"曲线形状不同"与"阈值选择"分开：同号比例在所有档上都一样高 ⇒ 差的符号
+    是形状决定的；绝对值随阈值近似单调放大 ⇒ 量级是阈值决定的。
+    """
+    rows = {}
+    for t in thresholds:
+        diffs = []
+        for a, b in zip(arm_curves, base_curves):
+            ia, ib = first_cross(a, t), first_cross(b, t)
+            if ia is None or ib is None:
+                continue
+            diffs.append(ia - ib)
+        n = len(diffs)
+        rows[_key(t)] = {
+            "mean_steps_arm_minus_base": mean(diffs) if n else None,
+            "n_pairs": n,
+            "arm_slower_frac": (sum(1 for d in diffs if d > 0) / n) if n else None,
+            "n_ties": sum(1 for d in diffs if d == 0),
+        }
+    vals = [r["mean_steps_arm_minus_base"] for r in rows.values()
+            if r["mean_steps_arm_minus_base"] is not None]
+    return {
+        "by_threshold": rows,
+        "span_steps": (max(vals) - min(vals)) if vals else None,
+        "sign_flip": len({v > 0 for v in vals}) > 1 if vals else None,
+    }
+
+
+def curve_tail(arm_curves: List[List[float]], base_curves: List[List[float]],
+               base_thr: float = REFERENCE_THRESHOLD) -> Dict:
+    """到点之后的曲线还有多长、走到什么水平——**只做描述，不参与任何计数**。
+
+    第五批原想用"把到点后的曲线压平，摆幅应塌到 0"作负向对照，**判据本身是错的**：
+    曲线上任何一个高于阈值的新高点都会把首次跨过时刻往后推，压平到"到点那一步的值"
+    等于抹掉此后所有新高，读数必然移动。压平只能在**水平**上取值而不能在**步号**上，
+    这不是"读的是别的东西"。本轮记下这件事，用 `accuracy_at` 的换读法代替压平对照。
+    """
+    lengths, rise = [], []
+    for c in arm_curves + base_curves:
+        i = first_cross(c, base_thr)
+        if i is None:
+            continue
+        lengths.append(len(c) - i - 1)
+        rise.append(max(c[i:]) - c[i])
+    lengths.sort()
+    rise.sort()
+    n = len(lengths)
+    return {
+        "tail_len_median": lengths[n // 2] if n else None,
+        "tail_rise_at_thr_median": rise[n // 2] if n else None,
+        "n_curves": n,
+    }
+
+
+def accuracy_at(curve: List[float], step: int, fallback: float) -> float:
+    """第 step 步的轨迹累计准确率；超出曲线长度时退回 final_acc（两批曲线长度不一）。"""
+    return curve[step] if 0 <= step < len(curve) else fallback
+
+
+def threshold_transfer(arm_curves: List[List[float]], base_curves: List[List[float]],
+                       arm_final: List[float], base_final: List[float],
+                       thresholds=DEFAULT_THRESHOLDS) -> Dict:
+    """把"0.9 步数"换到曲线上真实的第 k 步去读：各阈值的 `steps_ratio` 能否被同一个步号复现。
+
+    每一步的累计准确率在曲线上只取一个值，所以不同阈值落在不同步号上；如果"到 0.9"
+    这条读数的漂移**纯粹来自曲线还在往上爬**，那么每个阈值对应到的步区间的准确率水平
+    应当一致。本函数只做这一件事：报每个阈值对应的**两臂到点步区间的准确率中位数**，
+    以及它们与阈值本身的距离——距离随阈值单调放大、而准确率区间不随阈值单调移动，
+    说明漂移是"阈值挪了、步号跟着挪"，不是"收敛变快了"。
+    """
+    rows = {}
+    for t in thresholds:
+        lo_a, hi_a, lo_b, hi_b = [], [], [], []
+        for a, b, fa, fb in zip(arm_curves, base_curves, arm_final, base_final):
+            ia, ib = first_cross(a, t), first_cross(b, t)
+            if ia is None or ib is None:
+                continue
+            lo_a.append(accuracy_at(a, ia - 1 if ia else 0, fa))
+            hi_a.append(accuracy_at(a, ia, fa))
+            lo_b.append(accuracy_at(b, ib - 1 if ib else 0, fb))
+            hi_b.append(accuracy_at(b, ib, fb))
+        med = lambda xs: sorted(xs)[len(xs) // 2] if xs else None
+        rows[_key(t)] = {
+            "arm_band_acc": [med(lo_a), med(hi_a)],
+            "base_band_acc": [med(lo_b), med(hi_b)],
+            "n": len(lo_a),
+        }
+    return rows
+
+
+def convergence_checks(p3: Dict, p4: Dict, thresholds=DEFAULT_THRESHOLDS) -> Dict:
+    """⑤ L3 收敛层的阈值敏感性：`steps_ratio` 的摆幅、符号与余量。
+
+    第五批做的事是把"到点余量"从"读数会不会漂"里分开——两者方向可以相反：
+    余量大只说明扫参不改变到点那一步，不说明整列读数稳。四臂与 p3 四对一并报，
+    引用 `steps_ratio` 时必须带上阈值（§13.47.1）。
+    """
+    out = {}
+    for name, arms, base in (("p4", p4, "base"), ("p3", p3, "R_nofilter")):
+        for arm, v in arms.items():
+            if arm == base:
+                continue
+            a, b = v["acc_curve"], arms[base]["acc_curve"]
+            key = arm if name == "p4" else f"{arm}_vs_{base}"
+            band = threshold_band(a, b, thresholds)
+            band["level_matched"] = level_matched_steps(a, b, thresholds)
+            band["tail"] = curve_tail(a, b)
+            band["band_accuracy"] = threshold_transfer(
+                a, b, v["final_acc"], arms[base]["final_acc"], thresholds
+            )
+            out[f"{name}:{key}"] = band
+    return out
+
+
 # ---------------------------------------------------------------- 主计算
 
 
@@ -439,6 +667,7 @@ def build(p3: Dict, p4: Dict, meta: Optional[Dict] = None) -> Dict:
         "collinear": collinear_checks(rows),
         "degeneracy": degeneracy_checks(rows),
         "accuracy_grid": accuracy_resolution(meta.get("p3_meta", {}), meta.get("p4_meta", {})),
+        "threshold_band": convergence_checks(p3, p4),
     }
     for row in (*rows.values(), *p3_rows.values()):
         for k in [k for k in row if k.startswith("_")]:

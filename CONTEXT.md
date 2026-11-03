@@ -1,10 +1,30 @@
 # perpetual-learning — 执行接续
 
-更新时间：2026-11-03（M1 16:0x–16:3x 第五批：C 类账的收敛阈值带宽——`steps_ratio` 在 0.85–0.95 之间摆 1.7–18.2pp、p3 的 `A` 翻号；M1 15:0x–16:0x 第四十二批：把分桶探针的分档判据补到真实负载上，§13.30 第四批 cap256 的"反号"作废；M1 14:2x 第四十一批：分桶探针读数按符号稳定性分档；M5 07:4x 第五十八批 separate_async）。规则入口：[AGENTS.md](AGENTS.md)；任务入口：[技术秘书](queue_tech-secretary.md) / [技术掘金](queue_tech-miner.md)。
+更新时间：2026-11-03（M1 16:4x–19:0x 第五批补遗：上一轮那个"未定位的失败"是判据错了——改成"同水平步数差"后，p4 四臂的形状只值 0.3–3.1 步、量级由阈值定，检查已接进 `ledger.py` 并双向验证；M1 16:0x–16:3x 第五批：C 类账的收敛阈值带宽——`steps_ratio` 在 0.85–0.95 之间摆 1.7–18.2pp、p3 的 `A` 翻号；M1 15:0x–16:0x 第四十二批：把分桶探针的分档判据补到真实负载上，§13.30 第四批 cap256 的"反号"作废）。规则入口：[AGENTS.md](AGENTS.md)；任务入口：[技术秘书](queue_tech-secretary.md) / [技术掘金](queue_tech-miner.md)。
 
 ## 当前现场
 
-### M1 本轮（2026-11-03 16:0x–16:3x）：C 类账的"收敛快慢"还带着一个阈值——0.85–0.95 之间摆 1.7–18.2pp，p3 的 `A` 会翻号
+### M1 本轮（2026-11-03 16:4x–19:0x）：上一轮那个"未定位的失败"是判据错了；阈值摆幅拆开后，p4 的形状只值 0.3–3.1 步
+
+技术秘书侧无新用户任务；TM 系列对外动作仍全部待用户逐项授权。本轮接的是上一轮自己写下的"**下轮必看**：先做最小复现"。结论是：**代码没错，判据错了**；顺带把阈值这一列的读数拆成两半，并把它正式接进 `ledger.py`。
+
+**一、107.005 不是 bug，是那条判据的答案。** `first_cross` 找"**首次**达到阈值"的步号。曲线 0.80→0.88→**0.91**→0.96→0.99 在 0.9 上第 2 步到点；把到点之后压平到 0.91，此后任何更高阈值都再也跨不过去。压平按"到点那一步的值"取值，等于抹掉此后所有新高——**"压平后摆幅应为 0"在数学上不成立**。上一轮记的"同一段代码单独 `exec` 行为不一致"是排查时抄漏了输入变换。这条错误判据已用单测钉住。
+
+**二、替代读数：同一水平上的步数差。** 逐种子算"到阈值步数(臂) − 到阈值步数(基线)"，就是 `steps_ratio` 分子分母真正比较的量。八臂五档：**p4 四臂只摆 0.3–3.1 步**（`freq` +0.30→+3.43、`cancel` −0.97→−0.57、`cap` −0.43→−0.73、`replay` −0.23→−0.50），而比率摆 1.7–18.2pp ⇒ `freq` 的"慢 2.4%→20.6%"里形状只值 0.3→3.4 步，其余是阈值挪动本身。p3 的量级大得多（`R` −6.1→−17.2 步、`C` −6.1→−10.9、`A` −1.3→+11.3）。
+
+**三、方向由形状定、量级由阈值定。** 八臂同水平差的符号五档都不翻；**唯一翻号的 p3 `A` 在两种量上都翻**（−1.3→+11.3 步，0.85 上 15 负/10 正/5 平、0.95 上 27 正/3 负）⇒ 阈值挪动不制造方向，只放大已有方向。
+
+**四、`steps_ratio` 比的不是同一水平。** 它在同一阈值上比两臂步数，而"臂到 0.9"与"基线到 0.9"是两条曲线上两次取值：p4 两臂到点准确率几乎相同（差 −0.005～0.000），p3 的 `R`／`C` 已差 0.02–0.03。归档新增 `band_accuracy` 记每个阈值的两臂到点准确率区间。
+
+**改了什么**：`ledger.py` 新增 `threshold_band()`／`level_matched_steps()`／`threshold_transfer()`／`curve_tail()` 并接入 `account_checks` 第五项；`ledger.json` 新增 608 字段、**旧字段 0 变化 0 删除**（扁平比对＋`--verify` 逐字段一致）；`test_ledger.py` 新增 `TestThresholdBand`（6 条，含两条"记录错误判据"的负向对照）与 1 条注入测试；§13.47.1 增"补遗"小节、§11.4 第四实例与 §18.9 7.6 行同步补"方向由形状定、量级由阈值定"；实验 readme 第五批补遗一节（含八臂表）；TS-001 条文补遗。
+
+**核对产物**：两文件 **54 passed**（`test_ledger` 30→37）；四条注入（`first_cross` 未达记 0 步／`sign_flip` 恒 False／`level_matched` 拿臂自比／`span_pp` 恒 0）**全部被测红**，恢复后全过。只读既有归档、未跑 GPU、未触上游。
+
+**留给下一轮的三条**：① **负向对照的预期值本身也要先验**——"理论值应为 0"如果不成立，检查会永远红，而这次被记成"代码 bug"查了一整轮；② 阈值摆幅与基线顺序带宽是**同一族问题**（"设置项比效应还宽"），判据已在四处各写一遍（`effect_exceeds_band`、`threshold_band`、`n_identical`、`same_sign_fraction`），**该抽到共享工具了**（第四十二批起就在记，仍未做）；③ `wall_ratio` 依赖同一个阈值，本轮只核了 `steps_ratio`，`wall_ratio` 的同水平拆解未做。
+
+入口：[§13.47.1 补遗](notebook/rollout-performance-research.md) · [readme 第五批补遗](experiments/rollout-c-class-ledger/readme.md) · [ledger.py](experiments/rollout-c-class-ledger/ledger.py) · [归档](experiments/rollout-c-class-ledger/ledger.json) · [test_ledger.py](experiments/rollout-c-class-ledger/test_ledger.py) · [TS-001](queue_tech-secretary.md) · [diary](diary/2026-11-03.md)。
+
+### M1 上一轮（2026-11-03 16:0x–16:3x）：C 类账的"收敛快慢"还带着一个阈值——0.85–0.95 之间摆 1.7–18.2pp，p3 的 `A` 会翻号
 
 技术秘书侧无新用户任务；TM 系列对外动作仍全部待用户逐项授权。上一轮确立的口径是"**配对差必须同时报符号分布与基线抖动**"。本轮把同一类问题搬到另一条线上：§13.43／§13.47 的 C 类机制账**整个 L3 收敛层建在一个 0.9 阈值上**，而 §18.9 7.6 正要把"步数"这条读数写进 survey 正文。第四批判定三说"到点余量 2–4 格 ⇒ 阈值更稳"——那条量的是**到点那一步离隔壁多远**，本轮量的是**整列读数会不会随阈值漂**。
 
@@ -16,7 +36,7 @@
 
 **改了什么**：新增 §13.47.1（五档表＋三条读数＋三条引用规则）；§13.47 判定三加收窄指向；§18.9 7.6 补"步数这一列必须带阈值"；§11.4「同一句话差一个量级」补第四个实例（阈值也是基线要素）；实验 readme 增第五批一节；两个独立脚本入库。
 
-**⚠ 一个没定位的失败（下轮必看）**：本想把上面两条做成 `ledger.py` 的 `account_checks` 第五项（`threshold_band()`／`threshold_shift()`）并配负向对照。**失败**——把曲线在到点之后压平（理论上摆幅应为 0）后，函数仍报 `span_pp=107.005`。已排除：数据本身（函数内部 `num`／`den` 求和正确，`0`／`31`）、源码与 AST 一致、无重复定义、无变量遮蔽、工作区无 `__pycache__`（缓存在 `~/Library/Caches/com.apple.python`）；把同一段代码单独 `exec` 出来跑，行为又不一致。**未定位**。已把 `ledger.py`／`ledger.json`／`test_ledger.py` 全部 `git checkout` 回退（回退后 `--verify` exit 0、`test_ledger` 30 passed、`test_resolution` 17 passed），结论只由**不 import `ledger` 的两个独立脚本**产出。**下次要做成正式检查，先做最小复现。**
+**⚠ 一个没定位的失败（已于 19:0x 定位：判据错了，见本轮）**：本想把上面两条做成 `ledger.py` 的 `account_checks` 第五项（`threshold_band()`／`threshold_shift()`）并配负向对照。**失败**——把曲线在到点之后压平（理论上摆幅应为 0）后，函数仍报 `span_pp=107.005`。已排除：数据本身（函数内部 `num`／`den` 求和正确，`0`／`31`）、源码与 AST 一致、无重复定义、无变量遮蔽、工作区无 `__pycache__`（缓存在 `~/Library/Caches/com.apple.python`）；把同一段代码单独 `exec` 出来跑，行为又不一致。**未定位**。已把 `ledger.py`／`ledger.json`／`test_ledger.py` 全部 `git checkout` 回退（回退后 `--verify` exit 0、`test_ledger` 30 passed、`test_resolution` 17 passed），结论只由**不 import `ledger` 的两个独立脚本**产出。**下次要做成正式检查，先做最小复现。**
 
 入口：[§13.47.1](notebook/rollout-performance-research.md) · [readme 第五批](experiments/rollout-c-class-ledger/readme.md) · [threshold_probe.py](experiments/rollout-c-class-ledger/threshold_probe.py) · [threshold_near.py](experiments/rollout-c-class-ledger/threshold_near.py) · [TS-001](queue_tech-secretary.md) · [diary](diary/2026-11-03.md)。只读归档、未跑 GPU、未触上游。
 
@@ -287,13 +307,14 @@ M1 上一轮把 TM-009 从"已取证待决定"推到"材料齐备待决定"：�
 
 | 执行者 | 当前任务 | 接续入口与核对事项 |
 |---|---|---|
-| M1 | TS-001 第五批（C 类账的收敛阈值带宽，§13.47.1）完成；此前第四十二批（真实负载上的策略位移分档，§13.30 第五批）；TM-010／TM-009／TM-011 待用户决定 | 取证、上游查重、可达性复核、候选补丁均完成：[取证](open-source/rllm/tool-use-async-autodetect.md)、[可达性探针](experiments/rllm-tool-use-async-probe/prod_reachability.py)、[候选补丁](open-source/rllm/patches/use-async-autodetect/readme.md)。**对外动作全部未做**。**第四十批把 §13.30 第一批的六个 `R` 读数作废并按正确组臂重算**（43.7／54.7／20.6／56.6／27.7／38.6 → 34.0／42.4／14.7→44.9／17.3→34.0），第二／三／四批不受影响。**第四十一批把分桶探针的 16 格读数按符号稳定性分档**：只有 cap1024 ≥4 批六格稳定（19–20/20 同号），cap256 各档符号在种子间翻转 ⇒ **不再引用 cap256 的均值当效应**；并核出 TM-011 立项前置是**改造排程器**（容量与批绑定、同步到达、单批内乱序零效应），不是加分桶逻辑。**第四十二批把同一分档判据补到真实负载**：FIFO 基线自身换序就动 0.7–11.7pp，§13.30 第四批 cap256 的"反号"（−0.95／−0.39pp）落在带宽内⇒**不可引用、方向未定**；可引用的只有 cap1024（cv 0.30–0.36）六格 28–30/30 同号。`R` 的量级读数（2.7%／11.4%）不受影响。TS-001 的可做补强已到边际：纯归档重算、语义面排队顺序维、真实长度负载维都已纳入。语义面剩余缺口仍是**长度预测误差／分桶／迁移／抢占／KV 搬运**，P-1 跨系统需用户立项。 |
+| M1 | TS-001 第五批补遗（阈值摆幅拆成同水平步数差，§13.47.1 补遗）完成，阈值检查已接进 `ledger.py`；此前第五批（C 类账的收敛阈值带宽，§13.47.1）；此前第四十二批（真实负载上的策略位移分档，§13.30 第五批）；TM-010／TM-009／TM-011 待用户决定 | 取证、上游查重、可达性复核、候选补丁均完成：[取证](open-source/rllm/tool-use-async-autodetect.md)、[可达性探针](experiments/rllm-tool-use-async-probe/prod_reachability.py)、[候选补丁](open-source/rllm/patches/use-async-autodetect/readme.md)。**对外动作全部未做**。**第四十批把 §13.30 第一批的六个 `R` 读数作废并按正确组臂重算**（43.7／54.7／20.6／56.6／27.7／38.6 → 34.0／42.4／14.7→44.9／17.3→34.0），第二／三／四批不受影响。**第四十一批把分桶探针的 16 格读数按符号稳定性分档**：只有 cap1024 ≥4 批六格稳定（19–20/20 同号），cap256 各档符号在种子间翻转 ⇒ **不再引用 cap256 的均值当效应**；并核出 TM-011 立项前置是**改造排程器**（容量与批绑定、同步到达、单批内乱序零效应），不是加分桶逻辑。**第四十二批把同一分档判据补到真实负载**：FIFO 基线自身换序就动 0.7–11.7pp，§13.30 第四批 cap256 的"反号"（−0.95／−0.39pp）落在带宽内⇒**不可引用、方向未定**；可引用的只有 cap1024（cv 0.30–0.36）六格 28–30/30 同号。`R` 的量级读数（2.7%／11.4%）不受影响。TS-001 的可做补强已到边际：纯归档重算、语义面排队顺序维、真实长度负载维都已纳入。语义面剩余缺口仍是**长度预测误差／分桶／迁移／抢占／KV 搬运**，P-1 跨系统需用户立项。 |
 | M5 | TS-001 算力支持 | **第五十八批 §13.54：separate_async 跑通并测完（4/4 exit 0，整步差 +0.010s ⇒ poll 不在关键路径）**；此前第五十六批 §13.52、第五十七批 §13.53（drop）与 §13.53 补记（wait t=1／t=2）、第五十六批与 wait 臂独立复核、main `3fdf2b54` 3 步冒烟均完成（见上）。TM-008 剩余未测只剩 4 卡 `inflight=1`（需 ≥4 卡空闲窗口）与 `wait` 的 t≥3 档（结构上等同默认 async）。**separate_async 的两条本机前置必须记住**：不能设 `RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1`（checkpoint 组会撞「多 rank 同卡」），且需 `NCCL_SHM_DISABLE=1` 规避训练侧 CUDA 217；cupy 装在 `/tmp/cupy-pkgs`。P-1 跨系统（AReaL／OpenRLHF／SkyRL，需用户立项）；P-2 FP8 训练侧（待实测）。**下一轮先核对 GPU 归属与占用再启动，不据旧记录假定空闲。** |
 
 
 ## 未完成操作与并行工作
 
 - **均值不能代替符号分布（2026-11-03 第四十一批新增）**：分桶探针报的是 20 个种子的**均值**，而同一个均值既可能来自"全同向"，也可能来自"一半正一半负正好抵消"。引用任何配对差之前必须同时看**同号比例**与**种子间 sd**——本轮据此把 16 格读数劈成两半（cap256 各档 3/13、13/7、10/8、5/15、10/10，全部不能当方向性结论）。第二个判据是**基线自身的抖动**：FIFO 臂的读数随传入顺序就能动 1.4–5.5pp（同组集合只换序），效应小于这个带宽时不该下结论。`effect_exceeds_band` 只是**判读门槛不是显著性检验**，且每格仅 20 种子、未做 CI／置换。
+- **设置项也要先验预期值（2026-11-03 第五批补遗新增）**：负向对照"把曲线压平到点之后、摆幅应为 0"**在数学上不成立**——压平按到点那一步的值取值，抹掉此后所有新高，更高阈值再也跨不过去，所以它必然报大摆幅。这条曾被当成代码 bug 查了一整轮。判据：**先独立算出"正确实现下这个输入该给什么"，再拿它当断言**；否则检查永远红、而红的原因会被归到实现上。要问"快慢几步"读**同水平步数差**（逐种子"到阈值步数(臂)−(基线)"），`steps_ratio` 只用于同一阈值内的相对比较；p4 的 0.3–3.4 步落在 ±1.5 步分辨力内，不可再细读。
 - **凡配对差必须同时报符号分布与基线抖动（第四十二批扩展，覆盖构造档与真实档两处）**：真实 rollout 负载上，FIFO 臂**组集合固定、只换传入顺序**，`R` 就动 **0.7–11.7pp**（4 批档中位 2.8–4.0pp）；§13.30 第四批的 +1.99／−0.95／+0.44／−0.39pp **全部落在带宽内或带边**，且 cap256 低积压有 11–19/30 个种子两臂读数完全相等（`n_identical`，无分辨率）。另外核过"到达序"这个假设**不是**原因：换成随机序配对差几乎不动（逐种子同号 23–30/30）。⇒ 判读顺序是：**先看 `n_identical` 有没有吃掉大半种子 → 再看同号比例 → 再看 |效应| 是否超过带宽**；三步任一不过就只能写"方向未定"。带宽是判读门槛，不是显著性检验（未做 CI／置换）。
 - **问"分桶有没有用"之前先问工具能不能问（第四十一批新增）**：本排程器三条结构约束使"哪些组进同一批"**不可变**——`cap = n_groups * n_per`（容量=单批轨迹数）、`arrival = b * batch_span`（同步到达）、单批内乱序对 `group_makespan` 零影响。故任何"排序"实验测到的都只是排序，**测不到分桶**。TM-011 若立项，前置是改造排程器（独立到达流＋批窗口可分离＋容量与批解绑），未改造前不接分桶分支。
 - **回退只能按路径（2026-11-03 第三十八批新增）**：`git checkout -- .` 会把**未提交的改动**一起抹掉（本轮实际发生一次，cap 修正与测试全丢）。回退自己的试探性改动必须写全路径 `git checkout -- <file>`；动手前先 `git status --short` 确认哪些是你的、哪些是并行会话的。
@@ -334,7 +355,8 @@ M1 上一轮把 TM-009 从"已取证待决定"推到"材料齐备待决定"：�
 - 真机分工：[实验交接](experiments/handoff-m5.md)、[AReaL 单一负责人交接](open-source/areal/handoff-m5.md)。
 - 本轮 M5 成果：[separate_async 轮询实验](experiments/verl-v1-poll-quantum-separate/README.md)（4 跑＋2 步冒烟、`verify.py` 34 项 PASS、md5 5/5）。
 - 上一轮 M5 成果：[第五十六批独立复核](experiments/verl-v1-poll-quantum-dapo/verification-inflight3.md)、[main `3fdf2b54` 运行时冒烟](experiments/verl-v1-poll-quantum/README.md#补丁在-main-3fdf2b54-上的运行时冒烟2026-11-03m5-第二会话)、[wait（dropless）补测](experiments/verl-v1-poll-quantum-stale/README.md#补测max_off_policy_strategywaitdropless2026-11-03m5-第二会话)、[async 轮询实验](experiments/verl-v1-poll-quantum-async/README.md)。
-- **本轮 M1 成果**：[§13.30 第五批（真实负载上的符号稳定性与基线带宽）](notebook/rollout-performance-research.md) · [real_lengths_policy.py](experiments/rollout-group-split-tradeoff/real_lengths_policy.py) · [归档](experiments/rollout-group-split-tradeoff/real-lengths-summary.json) · [实验 readme 第五批](experiments/rollout-group-split-tradeoff/readme.md) · [TM-011](queue_tech-miner.md)。
+- **本轮 M1 成果**：[§13.47.1 补遗（阈值摆幅拆成同水平步数差）](notebook/rollout-performance-research.md) · [readme 第五批补遗](experiments/rollout-c-class-ledger/readme.md) · [ledger.py](experiments/rollout-c-class-ledger/ledger.py) · [归档](experiments/rollout-c-class-ledger/ledger.json)。
+- 上一批 M1 成果：[§13.30 第五批（真实负载上的符号稳定性与基线带宽）](notebook/rollout-performance-research.md) · [real_lengths_policy.py](experiments/rollout-group-split-tradeoff/real_lengths_policy.py) · [归档](experiments/rollout-group-split-tradeoff/real-lengths-summary.json) · [实验 readme 第五批](experiments/rollout-group-split-tradeoff/readme.md) · [TM-011](queue_tech-miner.md)。
 - 上一批 M1 成果：[分桶探针第三版（符号稳定性＋基线噪声带）](experiments/rollout-group-split-tradeoff/bucketing-probe.md) · [探针脚本](experiments/rollout-group-split-tradeoff/bucketing_probe.py) · [归档](experiments/rollout-group-split-tradeoff/bucketing-probe.json) · [测试（新增 6 条）](experiments/rollout-group-split-tradeoff/test_group_split_tradeoff.py) · [TM-011 停止条件改写](queue_tech-miner.md)。
 - 上一批 M1 成果：[§13.30 第四批（真实长度上的 `R` 与策略反号）](notebook/rollout-performance-research.md) · [§11.4／§11.5 同步收窄](notebook/rollout-performance-research.md) · [实验 readme](experiments/rollout-group-split-tradeoff/readme.md) · [读数脚本](experiments/rollout-group-split-tradeoff/real_lengths_policy.py) · [归档](experiments/rollout-group-split-tradeoff/real-lengths-summary.json) · [run-info](experiments/rollout-group-split-tradeoff/run-info.json)。
 - 上一批 M1 成果：[§13.30 第三批（调度策略维）](notebook/rollout-performance-research.md) · [§11.4／§11.5 订正](notebook/rollout-performance-research.md)。

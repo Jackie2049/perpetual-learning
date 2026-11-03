@@ -92,7 +92,9 @@ def check(now=None):
     changed = git('diff', '--cached', '--no-renames', '--name-only', '-z').split('\0')
     if not any(changed):
         return
-    tracked = set(git('ls-files', '-z').split('\0'))
+    # 必须带 --cached：不带时 `ls-files` 也列未跟踪文件，链接检查会把"从未入库"的
+    # 目标算作存在，这正是本项要拦的情况。
+    tracked = set(git('ls-files', '--cached', '-z').split('\0'))
     overview = git('show', ':diary/readme.md', optional=True)
     recent = []
     for name in filter(None, changed):
@@ -133,8 +135,12 @@ def check(now=None):
                 url = urlsplit(target)
                 if url.scheme or url.netloc or not url.path:
                     continue
-                path = posixpath.normpath(posixpath.join('diary', unquote(url.path)))
-                if path.startswith('/') or path == '..' or path.startswith('../'):
+                # 相对链接一律按仓库根解析（日志正文里 `../notebook/...`、`x/y.md`
+                # 两种写法都指向仓库内的成果文件）；以 diary/ 为基准会把它们解析成
+                # `diary/<path>` 而恒查不到，历史上多次因此被迫改成别的写法。
+                raw = unquote(url.path)
+                path = posixpath.normpath(raw)
+                if raw.startswith('../') or path.startswith('/') or path == '..' or path.startswith('../'):
                     raise ValueError(f'日志链接应指向仓库内成果：{target}')
                 if path not in tracked and not any(p.startswith(path + '/') for p in tracked):
                     raise ValueError(f'日志链接目标未纳入本次提交或已有版本：{target}')

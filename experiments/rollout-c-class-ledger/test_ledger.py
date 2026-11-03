@@ -278,6 +278,89 @@ class TestAccountChecks(unittest.TestCase):
         self.assertLess(abs(self.result["p4_arms"]["freq"]["acc_paired"]["mean_diff"]), grid["p4_grid"])
 
 
+class TestThresholdBand(unittest.TestCase):
+    """第五批的 L3 阈值检查。断言全部写死常数，不取被测输出自证。
+
+    两条来自本批自查的错误判据都留在这里当负向对照：① 把 `_cross_or_complete`
+    当成默认口径（未达阈值记全程）；② 用"压平到点之后"当摆幅应为 0 的对照。
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.th = ledger.build(ledger.load_p3(P3), ledger.load_p4(P4))["account_checks"][
+            "threshold_band"
+        ]
+
+    def test_freq_span_matches_probe(self):
+        """`freq` 五档 1.024→1.206、摆幅 18.2pp——与独立脚本 threshold_probe.py 同值。"""
+        f = self.th["p4:freq"]
+        self.assertAlmostEqual(f["by_threshold"]["0.85"]["steps_ratio"], 1.0243, places=3)
+        self.assertAlmostEqual(f["by_threshold"]["0.95"]["steps_ratio"], 1.2064, places=3)
+        self.assertAlmostEqual(f["span_pp"], 18.174, places=2)
+        self.assertFalse(f["sign_flip"])
+
+    def test_only_p3_A_flips_sign(self):
+        flips = sorted(k for k, v in self.th.items() if v["sign_flip"])
+        self.assertEqual(flips, ["p3:A_vs_R_nofilter"])
+        a = self.th["p3:A_vs_R_nofilter"]["by_threshold"]
+        self.assertLess(a["0.85"]["steps_ratio"], 1.0)
+        self.assertGreater(a["0.87"]["steps_ratio"], 1.0)
+        self.assertAlmostEqual(a["0.87"]["steps_ratio"], 1.0053, places=4)
+
+    def test_level_matched_span_is_narrow_for_p4(self):
+        """四臂在同一水平上的步数差跨阈值只摆 0.3–3.1 步（比率口径是 1.7–18.2pp）。
+
+        即：`freq` 的"慢 2.4%→20.6%"里，形状只贡献 0.3→3.4 步，其余是阈值挪动本身。
+        """
+        for arm, want in (("freq", 3.13), ("replay", 0.33), ("cancel", 0.40), ("cap", 0.60)):
+            lm = self.th[f"p4:{arm}"]["level_matched"]
+            self.assertAlmostEqual(lm["span_steps"], want, places=2)
+        lm = self.th["p4:freq"]["level_matched"]["by_threshold"]
+        self.assertAlmostEqual(lm["0.85"]["mean_steps_arm_minus_base"], 0.30, places=2)
+        self.assertAlmostEqual(lm["0.95"]["mean_steps_arm_minus_base"], 3.43, places=2)
+
+    def test_level_matched_sign_is_shape_determined(self):
+        """方向不是阈值给的：`freq` 五档都 ≥0、`cap` 五档都 <0，与 `steps_ratio` 的符号一致。"""
+        for key in ("p4:freq", "p4:cap", "p3:R_vs_R_nofilter"):
+            self.assertFalse(self.th[key]["level_matched"]["sign_flip"], key)
+        self.assertGreaterEqual(
+            min(
+                r["mean_steps_arm_minus_base"]
+                for r in self.th["p4:freq"]["level_matched"]["by_threshold"].values()
+            ),
+            0.0,
+        )
+        self.assertLess(
+            max(
+                r["mean_steps_arm_minus_base"]
+                for r in self.th["p4:cap"]["level_matched"]["by_threshold"].values()
+            ),
+            0.0,
+        )
+
+    def test_negative_control_cross_or_complete_shifts_ratios(self):
+        """负向对照①：两种"未达阈值"的口径给出不同读数 ⇒ 不能混用；默认口径遇到
+        未达阈值的曲线必须留下 `n_miss`，而不是把它当 0 步。"""
+        arms, base = [[0.1, 0.5, 0.95, 1.0]], [[0.2, 0.6, 0.98, 1.0]]
+        self.assertAlmostEqual(ledger.steps_at(arms, base, 0.9)["steps_ratio"], 2 / 2)
+        self.assertAlmostEqual(
+            ledger.steps_at(arms, base, 0.9, complete_at_end=True)["steps_ratio"], 3 / 3
+        )
+        miss = ledger.steps_at([[0.1, 0.2, 0.3]], [[0.1, 0.2, 0.3]], 0.9)
+        self.assertEqual(miss["n_miss"], 2)
+        self.assertIsNone(miss["steps_ratio"])
+
+    def test_negative_control_flatten_after_cross_moves_crossings(self):
+        """负向对照②（记录本批的错误判据）：曲线 0.80→0.88→0.91→0.96→0.99，把 0.9 之后
+        压平到 0.91，首次跨过 0.93 的时刻就从第 3 步挪到"永不"——**压平不可能保持摆幅为 0**。
+        断言这条对照本身失败，防止以后又把它当"应给 0"的检验放回去。"""
+        c = [0.80, 0.88, 0.91, 0.96, 0.99]
+        flat = ledger._flatten_after_cross(c, 0.9)
+        self.assertEqual(flat, [0.80, 0.88, 0.91, 0.91, 0.91])
+        self.assertEqual(ledger.first_cross(c, 0.93), 3)
+        self.assertIsNone(ledger.first_cross(flat, 0.93))
+
+
 class TestInjectedDefects(unittest.TestCase):
     """把缺陷真的注入归档输入，检查必须随之改变——检查若对输入不敏感，就是装饰。
     这里改的是**被测脚本读取的 per_seed**，而不是被测输出。"""
@@ -331,6 +414,29 @@ class TestInjectedDefects(unittest.TestCase):
                 s["total_traj"] = s["total_cost"]
 
         self.assertFalse(self._checks(mutate2)["degeneracy"]["traj_equals_cost"]["freq"])
+
+    def test_threshold_band_follows_the_curve(self):
+        """注入：把 `freq` 每条曲线的 0.90 以上整体拉高一档（到点更早），
+        `steps_ratio` 五档必须一起下移、且 `level_matched` 的档间形状跟着变——
+        检查若读的是缓存或写死的常数，这条会照样绿。"""
+
+        def mutate(d):
+            for s in d["arms"]["freq"]["per_seed"]:
+                s["acc_curve"] = [min(1.0, v + 0.05) for v in s["acc_curve"]]
+
+        before = self._checks(lambda d: None)["threshold_band"]["p4:freq"]
+        after = self._checks(mutate)["threshold_band"]["p4:freq"]
+        for t in ("0.85", "0.90", "0.95"):
+            self.assertLess(
+                after["by_threshold"][t]["steps_ratio"], before["by_threshold"][t]["steps_ratio"]
+            )
+        self.assertNotAlmostEqual(
+            after["level_matched"]["by_threshold"]["0.95"]["mean_steps_arm_minus_base"],
+            before["level_matched"]["by_threshold"]["0.95"]["mean_steps_arm_minus_base"],
+            places=1,
+        )
+        # 天花板钳位后不应出现新的缺省对（每种子都仍能跨过 0.9）
+        self.assertEqual(after["by_threshold"]["0.90"]["n_miss"], 0)
 
 
 if __name__ == "__main__":
