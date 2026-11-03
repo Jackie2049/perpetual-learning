@@ -150,5 +150,14 @@
   "readings_unchanged": "加守卫后 `group_split_tradeoff.py --verify` 与 `real_lengths_policy.py --verify` 均逐字段相同，`summary.json` sha256 未变 ⇒ 归档里从未出现过参差组，历史读数不受影响。",
   "tests": "TestRaggedGroupsAreRejected 三条：参差输入必须 raise／去掉守卫后同一输入确实得负税（负向对照）／等大组下六档策略 × 缓冲非负。合计 33 passed（原 30）。",
   "boundary": "只拒绝了非法输入，没有建立\"真实负载会不会出现参差组\"的模型；真实 rollout 每 prompt 固定 n 条，参差组属调用侧违约，不是被测现象。"
+ },
+ "legacy_group_arm_check": {
+  "why": "第四十批：§13.30 第一批那张表的 R 出自 grouping_tax 的退化组臂（整组被拆成各自独立的单条任务，一完成就归还全部槽位）。本脚本并列旧路径与正确组臂（_group_makespan）并给出守护用例。",
+  "script_sha256": {
+   "legacy_group_arm_check.py": "24e24969c466dc33286de861546fe070ae8bb14b831c91941f9066a2ad0c923f",
+   "legacy-group-arm-check.json": "972b6bd6704422dc674d346551d3e2d3911a58427812e4793dbead9d9c8a97bf",
+   "test_group_split_tradeoff.py": "e2c05076c162cd4f6edd0b795c7de38ff35fac3a987722cabb953772b4b457f9"
+  },
+  "note": "旧组臂在等大组上只会让组臂更快 ⇒ 税恒 ≤ 新路径、不会变号；提交说明里提到的\"负税 −33%\"其实是参差输入的例子（第三十九批守卫管的事），本条订正初稿照抄过它，已在 §13.30 第四十批记下。"
  }
 }
