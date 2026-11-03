@@ -487,8 +487,12 @@ def main():
         try:
             got = c['compute'](json.loads(path.read_text(encoding='utf-8')))
         except (KeyError, TypeError, ZeroDivisionError) as e:
-            print(f"SKIP  {c['name']}  (归档结构不符: {type(e).__name__})")
-            skip += 1
+            # **不能降级成 SKIP**：SKIP 不计入不一致，一个读错键的检查会静默
+            # 变成"归档缺失"而整体仍报安全。2026-11-03 实测：故意改坏一个键名，
+            # 输出只是 跳过+1、退出码不变。
+            # 归档存在但结构对不上 ⇒ 检查本身的缺陷，按 FAIL 计。
+            print(f"FAIL  {c['name']:36s} 归档存在但结构不符: {type(e).__name__}: {e}")
+            bad += 1
             continue
         same = abs(got - c['claim']) <= c['tol']
         flag = 'OK  ' if same else 'FAIL'

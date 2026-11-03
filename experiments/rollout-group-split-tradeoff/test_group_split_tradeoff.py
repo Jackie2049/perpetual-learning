@@ -235,6 +235,47 @@ class TestRetractedMetric(unittest.TestCase):
         self.assertGreater(p4['p90'], p2['p90'])
 
 
+class TestRaggedGroupsAreRejected(unittest.TestCase):
+    """组大小参差会让 `n_per` 只取自第 0 组，组臂的占用与归还量对不上。
+
+    2026-11-03 发现：参差输入能静默量出**负税**（−33%），而"整组归还只会更慢"
+    的定义下负税不可能。这里把输入约束钉成断言，避免下游再拿负数当读数。
+    """
+
+    def test_ragged_groups_raise(self):
+        ragged = [[50.0, 50.0, 250.0, 250.0], [100.0] * 4 + [300.0] * 4]
+        with self.assertRaises(ValueError):
+            m._makespan_by_policy(ragged, 1, m.POLICY_FIFO)
+        with self.assertRaises(ValueError):
+            m.grouping_tax(ragged, backlog_groups=1)
+
+    def test_negative_tax_before_the_guard(self):
+        """负向对照：去掉守卫后同一输入确实量出负税——证明守卫拦的是真问题。
+
+        这里直接复现"n_per 取自第 0 组"的旧行为（不调用被守卫的函数）。
+        """
+        ragged = [[50.0, 50.0, 250.0, 250.0], [100.0] * 4 + [300.0] * 4]
+        n_per = len(ragged[0])
+        dur = [max(g) for g in ragged]
+        unguarded = m._makespan([n_per] * len(dur), dur, True, cap=len(ragged) * n_per)
+        flat = [x for g in ragged for x in g]
+        traj = m._makespan([1] * len(flat), flat, False, cap=len(ragged) * n_per)
+        self.assertLess((unguarded - traj) / unguarded, -0.1)
+
+    def test_equal_size_groups_never_negative(self):
+        """等大组下税恒非负——这是 `R` 能当上界引用的前提。"""
+        for seed in range(60):
+            rng = random.Random(seed)
+            n_groups, n_per = rng.randint(2, 6), rng.randint(2, 8)
+            groups = [[max(1.0, rng.lognormvariate(4.0, 1.2)) for _ in range(n_per)]
+                      for _ in range(n_groups)]
+            for backlog in (1, 2, 4):
+                for p in m.POLICIES:
+                    self.assertGreaterEqual(
+                        m._makespan_by_policy(groups, backlog, p)['tax'], 0.0,
+                        '%s seed=%d backlog=%d' % (p, seed, backlog))
+
+
 class TestPolicyInvariance(unittest.TestCase):
     """Layer 2b：排队顺序归引擎、归还粒度归 L4，两者不是同一条轴。"""
 

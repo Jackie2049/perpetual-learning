@@ -81,8 +81,8 @@
  "artifacts": {
   "sha256": {
    "summary.json": "09466197a80701f43ece06430f152ccb6fed49b978d4b7e62249489d22d2de59",
-   "group_split_tradeoff.py": "08ec030a3baac927bdbadf69fa0d8e7e05ed2ab36b9af0ed999df5060dfbfb9a",
-   "test_group_split_tradeoff.py": "33112d857df20065f11811fb3e5c560fce38ef54f23b4f1cb6952e33f433097a"
+   "group_split_tradeoff.py": "351885e2fa036251cb02342a17e8b6e1923d64b8e6de6234b74416e5748020e8",
+   "test_group_split_tradeoff.py": "d24dd5f36998eb0a5d876ef5295a242e5369dd0585ef5515b165b6a6ff8eefa3"
   }
  },
  "self_check_fixes": [
@@ -119,9 +119,9 @@
    "qwen05b_gsm8k_n8_cap1024.jsonl.gz": "857934b7642e924bdb27ed0b3041757bbaadcca179aa59d4673dff499845223d"
   },
   "script_sha256": {
-   "real_lengths_policy.py": "42c0807007ab9779243a7e10afe4c2bad654ec8b967c1e9ad1e694ea796f0865",
+   "real_lengths_policy.py": "680be7fa54a8ad7b0bdcd956405bbda2b7929b3a61895c3d96430f97c9f7994d",
    "test_real_lengths_policy.py": "fe918006413977056392b1d95ad63f9d9d6ddb7f53d7e7834e856ac770ffb73a",
-   "real-lengths-summary.json": "939cf679ff9224516c88fe6cffc73a689894e7ff6dac7833cec7a2482a52da30"
+   "real-lengths-summary.json": "88d92d665f48840f04b5870cb076a60c71fbb11a794359db72ca996357d6e38e"
   },
   "calibration": "构造档复现第三批：FIFO 0.3402 / LOF 0.3677（正文 34.0% / 36.8%）",
   "identifiability": {
@@ -132,7 +132,7 @@
    "真实档 16 批积压是合成负载：30 个种子无放回抽 16 组当一批、再复制 16 批。",
    "第四批只换负载来源，排程器与前三批完全相同。",
    "R 仍是上界（无 KV 搬运、无跨批版本一致性）。",
-   "2026-11-03 订正：describe() 曾把 max_response 写死 256，cap1024 两档被读成与 cap256 同一对截断率；现按本档上限判定并新增 max_response 字段，TestTruncationUsesArmCap 两条守住。R 与移位读数不变（truncated_fraction 是描述性字段，不进排程）。此时 summary 的 sha256 为 939cf679（与上面 script_sha256 记录一致）。…"
+   "2026-11-03 订正：describe() 曾把 max_response 写死 256，cap1024 两档被读成与 cap256 同一对截断率；现按本档上限判定并新增 max_response 字段，TestTruncationUsesArmCap 四条守住（含 build_summary() 的接线 spy——只测常量映射会自证，不验证接线）。R 与移位读数不变（truncated_fraction 是描述性字段，不进排程）。此时 summary 的 sha256 为 88d92d66…（与上面 script_sha256 记录一致）。"
   ]
  },
  "corrections": [
@@ -142,5 +142,13 @@
    "fix": "按本档 max_response 判定（arm_cap），归档新增 max_response 字段",
    "impact": "仅 truncated/描述性字段变化 6 个；R 与位移读数逐位不变"
   }
- ]
+ ],
+ "ragged_group_guard": {
+  "date": "2026-11-03",
+  "what": "`_makespan_by_policy` 与 `grouping_tax` 只从第 0 组取 n_per，组大小参差时组臂的占用/归还量不匹配，能静默量出负税（例 [[50,50,250,250],[100]*4+[300]*4] 在 1 批积压下 −33.3%）。两者现直接 raise ValueError。",
+  "why_it_matters": "\"整组归还只会更慢\"的定义下负税不可能；`R` 被文中当作上界引用，负值会让这个说法失效。",
+  "readings_unchanged": "加守卫后 `group_split_tradeoff.py --verify` 与 `real_lengths_policy.py --verify` 均逐字段相同，`summary.json` sha256 未变 ⇒ 归档里从未出现过参差组，历史读数不受影响。",
+  "tests": "TestRaggedGroupsAreRejected 三条：参差输入必须 raise／去掉守卫后同一输入确实得负税（负向对照）／等大组下六档策略 × 缓冲非负。合计 33 passed（原 30）。",
+  "boundary": "只拒绝了非法输入，没有建立\"真实负载会不会出现参差组\"的模型；真实 rollout 每 prompt 固定 n 条，参差组属调用侧违约，不是被测现象。"
+ }
 }

@@ -118,6 +118,15 @@
 - **停止条件**：上游改默认值、补上承载字段或改用 cookbook 路线（复现脚本会以非零退出提示结论失效），或用户否决对外动作。
 - **成果入口**：[取证](open-source/rllm/fireworks-r3-routing-matrices.md)、[复现](experiments/rllm-fireworks-r3-replay/readme.md)、[run-info](experiments/rllm-fireworks-r3-replay/run-info.json)。
 
+## TM-011 — 长度预测／分桶对"组粒度代价"的作用：需要建模型才能回答（B 类：主动发掘，内部研究项）
+
+- **问题与价值**：§11.5 把语义面剩余缺口写成"真实 L3 调度机制（长度预测／分桶／迁移）之上的 `R` 读数"。第三批量了**排队顺序**这一维，第四批换到真实负载，第三十九批试了"逐条补位"的上限——但**分桶本身没被建模**。若分桶能把组成本 `max(g)` 压下去，它对组粒度代价的作用可能比排队顺序大得多。
+- **优先级 / 负责人 / 状态**：候选（TS-001 语义面的后续）；**未立项**，M1 第三十九批只做了备料。
+- **已有证据**（2026-11-03）：真实 1.5B cap256 上 FIFO `R` 4 批 2.4%／16 批 10.8%，"两臂各自按长度排"（`lof_flat`，**不可实现**）12.9%／13.8%；**真实组最大 cv 仅 0.07**（组内极差 85 token），四个组级策略在同一负载上读数可完全相同 ⇒ **组级排序在组成本齐平时无事可排**。见 [CONTEXT 第三十九批](CONTEXT.md)。
+- **下一步与等待条件**：要立项需先定义两件事——① 分桶粒度（按预测长度分 K 桶，K 与桶宽都是参数）；② 预测误差如何映射到组序（真实长度预测误差分布需要有来源或显式假设）。**不得用 `lof_flat` 当分桶代理**：它是"两臂各自最优"，不对应任何可实现策略。
+- **停止条件**：若建模后发现分桶对 `R` 的作用在所有可及负载上都小于 1pp，记否定结论并关闭；若需要真实系统的长度预测器数据而拿不到，登记等待条件而非自行编造。
+- **成果入口**：[实验](experiments/rollout-group-split-tradeoff/readme.md)、[排程器](experiments/rollout-group-split-tradeoff/group_split_tradeoff.py)、[run-info](experiments/rollout-group-split-tradeoff/run-info.json)。
+
 ## 已闭环与保留方向
 
 - **TM-004 — AReaL prompt_mean：终止修复候选。** M5 单一负责人；2026-10-20 实测跨 M 与 token_mean 一致，不构成 defect，修复撤销，不提 issue/PR。M1 不继续修改脚本或演化并行方案，用户明确的只读 review 除外。证据及分工：[handoff](open-source/areal/handoff-m5.md)、[tracker](open-source/areal/tracker.md)。AReaL 的长期学习偏好仍保留，新的问题应独立登记。

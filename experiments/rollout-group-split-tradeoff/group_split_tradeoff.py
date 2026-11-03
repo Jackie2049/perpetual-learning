@@ -303,6 +303,10 @@ def grouping_tax(fragment_lens, backlog_groups=4):
     """
     n_per = len(fragment_lens[0])
     n_groups = len(fragment_lens)
+    if any(len(g) != n_per for g in fragment_lens):
+        raise ValueError(
+            'fragment_lens 必须等大（每组 %d 条），实际各组大小为 %s'
+            % (n_per, sorted({len(g) for g in fragment_lens})))
     cap = n_groups * n_per
     flat = []
     for b in range(backlog_groups):
@@ -381,9 +385,18 @@ def _makespan_by_policy(group_lens, backlog_groups, policy):
     组臂：整组 n 条同时进引擎，最慢那条跑完才一起归还 n 个槽位。
     轨迹臂：每条完成即刻归还自己那一格。
     lof_flat 是唯一两臂顺序都被改的档（负向对照，不可实现）。
+
+    组必须等大：n_per 由第 0 组取、组臂按它占/还槽位。组大小参差时组臂的
+    归还量与占用不匹配，会量出**负税**（如 [[50,50,250,250],[100]*4+[300]*4]
+    在 1 批积压下得 −33%）。负税在"整组归还只会更慢"的定义下不可能，是输入
+    违约的产物，所以这里直接拒绝，不静默算下去（2026-11-03 加）。
     """
     n_groups = len(group_lens)
     n_per = len(group_lens[0])
+    if any(len(g) != n_per for g in group_lens):
+        raise ValueError(
+            'group_lens 必须等大（每组 %d 条），实际各组大小为 %s'
+            % (n_per, sorted({len(g) for g in group_lens})))
     cap = n_groups * n_per
     batch_span = float(max(max(g) for g in group_lens))
 
