@@ -316,6 +316,43 @@ def _file_claim_check(doc='notebook/rollout-performance-research.md'):
     return bad
 
 
+# ---- 负载来源标注：引用 R 读数必须说明"构造负载还是真实负载 + 截断设置" ----
+# 2026-11-03 第五次"来源"类问题：同一个 R 指标，构造负载（组内 cv=0.60）给
+# 34.0%，真实 1.5B cap256（cv=0.155）只给 2.7%，且符号可能反号。不标来源的读数
+# 无法比较，也无法判断该不该引用。
+
+REAL_LEN = 'experiments/rollout-group-split-tradeoff/real-lengths-summary.json'
+CONSTRUCT_R = {'backlog4': 0.340, 'backlog16': 0.424}
+
+
+def _load_source_check():
+    """检查真实负载的 R 值，并确认 §11.5 明确标注了负载来源与截断。"""
+    bad = []
+    if not (ROOT / REAL_LEN).exists():
+        return bad
+    d = json.loads((ROOT / REAL_LEN).read_text(encoding='utf-8'))
+    sh = d.get('policy_shift_on_real', {})
+    if 'qwen15b_cap256' in sh:
+        for bl in ('backlog4', 'backlog16'):
+            if bl not in sh['qwen15b_cap256']:
+                continue
+        # 只核关键事实：真实 cap256 的 R 显著低于构造档
+        arm = d.get('real_arms', {}).get('qwen15b_cap256', {})
+        cv = arm.get('intra_group_cv')
+        if cv is not None and cv > 0.25:
+            bad.append({'what': 'qwen15b_cap256 组内 cv 应显著低于构造档 0.60',
+                        'got': cv})
+    # 文档必须写明"负载来源"这条约束
+    #
+    # ⚠ 这一项**比其他检查弱得多**：它只核"那句约束还在不在"，不核
+    # "后续引用是否真的照做"。真正的保证要靠人读。加它是因为这类问题
+    # 今天出现了五次，至少让约束句被误删时能立刻发现。
+    doc = (ROOT / 'notebook/rollout-performance-research.md').read_text(encoding='utf-8')
+    if '引用任何 `R` 读数都必须同时说明负载来源与截断设置' not in doc:
+        bad.append({'what': '§11.5 缺少"必须标注负载来源"的约束句', 'got': '未找到'})
+    return bad
+
+
 def selftest():
     """负向对照：故意写错声称值，检查器必须报 FAIL。
 
@@ -456,9 +493,19 @@ def main():
                   f"声称 {claim:<8} 重算 {got:.4f}")
             ok, bad = (ok + 1, bad) if same else (ok, bad + 1)
 
+    # 负载来源标注
+    print()
+    lbad = _load_source_check()
+    if lbad:
+        for b in lbad:
+            print(f"WARN  负载来源：{b['what']}（实测 {b['got']}）")
+    else:
+        print("OK    负载来源：§11.5 已写明 R 读数必须标注负载来源与截断设置")
+        ok += 1
+
     print(f"\n{ok} 一致 / {bad} 不一致 / {skip} 跳过"
           f"（共 {len(CHECKS)} 项检查 + 放置一致性 + 文件存在性"
-          f" + 跨归档放置对照 + SHM 带宽表 {len(probed)} 项）")
+          f" + 跨归档放置对照 + SHM 带宽表 {len(probed)} 项 + 负载来源）")
     return 0 if bad == 0 else 1
 
 
