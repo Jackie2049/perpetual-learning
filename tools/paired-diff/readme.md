@@ -141,3 +141,22 @@ pd.sign_flip_around(values, 1.0) # 比率读数是否穿过 1
 - **部分种子无读数**：过半种子的基线带宽为 0，有效带宽由剩下的少数种子撑起。
 
 这两个量 `paired_diff` 自己看不见——带宽是调用方算出来的，工具只收到一个数。所以判据留在**产生带宽的那一层**（[`band_floor.py`](../../experiments/rollout-group-split-tradeoff/band_floor.py)，档名 `no_reading`／`degenerate`／`usable` 写进 `real-lengths-summary.json`）。本工具这边要守的是：**调用方传入 `band=0.0` 时必须同时说明这个 0 是哪一种**，否则"效应超出带宽"这句话没有内容。
+
+**这三个档名的代价位也量了**（`calibrate_thresholds.py` 的 `band_floor` 一节）：`no_reading` 要求**全部** 30 个种子的 `R` 都为 0，只要有一个种子抽到非零就翻档——所以它很严，`usable` 很松。真实 16 格里 `usable` 的格子零种子计数从 0/30 到 4/30 不等，**引用时必须同时给 `n_r_identically_zero`，不能只报档名**。
+
+**门槛到底误判多少（2026-11-04 第十批）**
+---
+
+前面几节说 `min_active=0.5`、`min_same_active=0.8`"是判读门槛不是显著性检验"。这句只交代了性质，没交代**代价位**。现在量了，见 [`calibrate_thresholds.py`](../../experiments/rollout-c-class-ledger/calibrate_thresholds.py)（`--json` 写 `threshold-calibration.json`，13 条守护测试在 `test_threshold_calibration.py`）：
+
+| 已知真相（每格 4000 列 × 20 种子） | 判出 `stable` | 判出 `mixed` | 判出 `thin` | 判出 `no_resolution` |
+|---|---|---|---|---|
+| 每种子同向 | 1.000 | **0.000** | 0 | 0 |
+| 明显混杂 | 0.018 | 0.982 | 0 | 0 |
+| 表态少但同向 | 0 | **0.000** | 1.000 | 0 |
+| 纯掷硬币（无信息） | **0.011** | 0.989 | 0 | 0 |
+| 全零 | 0 | 0 | 0 | 1.000 |
+
+**假阳为 0**：真同向／真 `thin` 的列从不被报成 `mixed`，所以把 `consistent_but_thin` 读成"方向混杂"的责任在引用方，不在门槛。**唯一的假阴是 1.1%**，而且它就是二项分布本身：`stable` 只要求表态种子里 ≥80% 同号，20 个硬币双侧 ≥16 个同号的概率是 1.18%，实测 1.1% 与之吻合。⇒ 这是「20 个种子」这个样本量给的分辨力上限，**压下去只能加种子，不能挪门槛**。
+
+另注意：`min_same_active` 从 0.8 调到 0.55 时，那个假阴从 1.1% 跳到 **82.2%**——门槛对这类输入的敏感度是断崖式的，不是线性的。改动它之前先跑一次 `calibrate_thresholds.py` 看表。

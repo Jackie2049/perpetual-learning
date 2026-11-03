@@ -1,0 +1,212 @@
+{
+ "band_floor": {
+  "_verdict": "真相\"每个种子 R 恒 0\"时，只要有 1 个种子抽到非零，整格就不再判 no_reading。实测见 p_nonzero 各行——这是结构性上限，不是门槛调松能解决的；引用 band_floor 时必须同时看 n_r_identically_zero 的计数，不能只看档名。",
+  "n_seeds": 30,
+  "trials": 1000,
+  "trials_per_seed": 12,
+  "truth_all_zero": {
+   "p_nonzero=0.00": {
+    "dist": {
+     "degenerate": 0.0,
+     "no_reading": 1.0,
+     "usable": 0.0
+    },
+    "expected_nonzero_seeds": 0.0
+   },
+   "p_nonzero=0.05": {
+    "dist": {
+     "degenerate": 0.758,
+     "no_reading": 0.242,
+     "usable": 0.0
+    },
+    "expected_nonzero_seeds": 1.5
+   },
+   "p_nonzero=0.10": {
+    "dist": {
+     "degenerate": 0.961,
+     "no_reading": 0.039,
+     "usable": 0.0
+    },
+    "expected_nonzero_seeds": 3.0
+   },
+   "p_nonzero=0.20": {
+    "dist": {
+     "degenerate": 0.997,
+     "no_reading": 0.001,
+     "usable": 0.002
+    },
+    "expected_nonzero_seeds": 6.0
+   },
+   "p_nonzero=0.50": {
+    "dist": {
+     "degenerate": 0.422,
+     "no_reading": 0.0,
+     "usable": 0.578
+    },
+    "expected_nonzero_seeds": 15.0
+   }
+  }
+ },
+ "doc": "门槛校准：已知真相下的档位分布，量的是判据误判率而不是测试灵敏度。real_cells 是同一判据在真实归档 16 格上的落点，只读不重算。",
+ "real_cells": {
+  "qwen05b_cap1024": {
+   "backlog16": {
+    "band_floor": "usable",
+    "band_median_pp": 1.177,
+    "n_band_zero": 0,
+    "n_r_identically_zero": 0
+   },
+   "backlog2": {
+    "band_floor": "usable",
+    "band_median_pp": 7.735,
+    "n_band_zero": 0,
+    "n_r_identically_zero": 0
+   },
+   "backlog4": {
+    "band_floor": "usable",
+    "band_median_pp": 4.023,
+    "n_band_zero": 0,
+    "n_r_identically_zero": 0
+   },
+   "backlog8": {
+    "band_floor": "usable",
+    "band_median_pp": 2.211,
+    "n_band_zero": 0,
+    "n_r_identically_zero": 0
+   }
+  },
+  "qwen05b_cap256": {
+   "backlog16": {
+    "band_floor": "usable",
+    "band_median_pp": 1.288,
+    "n_band_zero": 0,
+    "n_r_identically_zero": 0
+   },
+   "backlog2": {
+    "band_floor": "no_reading",
+    "band_median_pp": 0.0,
+    "n_band_zero": 30,
+    "n_r_identically_zero": 30
+   },
+   "backlog4": {
+    "band_floor": "degenerate",
+    "band_median_pp": 0.0,
+    "n_band_zero": 22,
+    "n_r_identically_zero": 22
+   },
+   "backlog8": {
+    "band_floor": "usable",
+    "band_median_pp": 2.148,
+    "n_band_zero": 0,
+    "n_r_identically_zero": 0
+   }
+  },
+  "qwen15b_cap1024": {
+   "backlog16": {
+    "band_floor": "usable",
+    "band_median_pp": 1.091,
+    "n_band_zero": 0,
+    "n_r_identically_zero": 0
+   },
+   "backlog2": {
+    "band_floor": "usable",
+    "band_median_pp": 6.48,
+    "n_band_zero": 0,
+    "n_r_identically_zero": 0
+   },
+   "backlog4": {
+    "band_floor": "usable",
+    "band_median_pp": 3.828,
+    "n_band_zero": 0,
+    "n_r_identically_zero": 0
+   },
+   "backlog8": {
+    "band_floor": "usable",
+    "band_median_pp": 2.118,
+    "n_band_zero": 0,
+    "n_r_identically_zero": 0
+   }
+  },
+  "qwen15b_cap256": {
+   "backlog16": {
+    "band_floor": "usable",
+    "band_median_pp": 1.245,
+    "n_band_zero": 0,
+    "n_r_identically_zero": 0
+   },
+   "backlog2": {
+    "band_floor": "no_reading",
+    "band_median_pp": 0.0,
+    "n_band_zero": 30,
+    "n_r_identically_zero": 30
+   },
+   "backlog4": {
+    "band_floor": "usable",
+    "band_median_pp": 2.832,
+    "n_band_zero": 4,
+    "n_r_identically_zero": 4
+   },
+   "backlog8": {
+    "band_floor": "usable",
+    "band_median_pp": 1.904,
+    "n_band_zero": 0,
+    "n_r_identically_zero": 0
+   }
+  }
+ },
+ "sign_regime": {
+  "_verdict": {
+   "false_mixed_rate": 0.0,
+   "false_stable_on_coin_rate": 0.0107,
+   "note": "门槛 0.5／0.8 是判读门槛；上表给出它们在已知真相上的档位分布。stable 行的 mixed 列 = 真同向却被报方向混杂；coin 行的 stable 列 = 真无信息却被报稳定。两者都应≤0.05 才配当结论句的依据。"
+  },
+  "all_zero": {
+   "consistent_but_thin": 0.0,
+   "mixed": 0.0,
+   "n": 20,
+   "no_resolution": 1.0,
+   "stable": 0.0,
+   "trials": 4000
+  },
+  "coin": {
+   "consistent_but_thin": 0.0,
+   "mixed": 0.9892,
+   "n": 20,
+   "no_resolution": 0.0,
+   "stable": 0.0107,
+   "trials": 4000
+  },
+  "mixed": {
+   "consistent_but_thin": 0.0,
+   "mixed": 0.9818,
+   "n": 20,
+   "no_resolution": 0.0,
+   "stable": 0.0182,
+   "trials": 4000
+  },
+  "stable": {
+   "consistent_but_thin": 0.0,
+   "mixed": 0.0,
+   "n": 20,
+   "no_resolution": 0.0,
+   "stable": 1.0,
+   "trials": 4000
+  },
+  "thin_same": {
+   "consistent_but_thin": 1.0,
+   "mixed": 0.0,
+   "n": 20,
+   "no_resolution": 0.0,
+   "stable": 0.0,
+   "trials": 4000
+  },
+  "thin_zero_mix": {
+   "consistent_but_thin": 0.2675,
+   "mixed": 0.0,
+   "n": 20,
+   "no_resolution": 0.7325,
+   "stable": 0.0,
+   "trials": 4000
+  }
+ }
+}
