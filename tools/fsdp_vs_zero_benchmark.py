@@ -343,7 +343,7 @@ def check_gpu_available() -> bool:
 def check_remote_gpu() -> bool:
     """检查远程GPU服务器是否在线"""
     servers = [
-        ("University", "sshpass -p 'adspzxw123' ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 zxw@219.223.198.62 echo online"),
+        ("University", _uni_ssh_cmd()),
         ("Matpool", "ssh -p 28959 -o ConnectTimeout=5 root@hz-t3.matpool.com echo online"),
     ]
     for name, cmd in servers:
@@ -357,6 +357,16 @@ def check_remote_gpu() -> bool:
         except Exception as e:
             print(f"  {name} server: OFFLINE ({str(e)[:100]})")
     return False
+
+
+def _uni_ssh_cmd():
+    """高校服务器探活命令：密码从 GPU_SSH_PASS 读，不硬编码（AGENTS.md：凭据不入库）。"""
+    pw = os.environ.get('GPU_SSH_PASS')
+    if not pw:
+        return None
+    return ('sshpass -p ' + shlex.quote(pw) +
+            ' ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 '
+            'zxw@219.223.198.62 echo online')
 
 
 def print_experiment_info(exp_name: str) -> None:

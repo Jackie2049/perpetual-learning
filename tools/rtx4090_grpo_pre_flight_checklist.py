@@ -68,6 +68,19 @@ MUST_NOT = [
 ]
 
 
+def _uni_ssh_cmd():
+    """高校服务器探活命令：密码从 GPU_SSH_PASS 读，不硬编码（AGENTS.md：凭据不入库）。
+
+    未设置环境变量时返回 None，调用方应跳过该项而不是拿空密码去连。
+    """
+    pw = os.environ.get('GPU_SSH_PASS')
+    if not pw:
+        return None
+    return ('sshpass -p ' + shlex.quote(pw) +
+            ' ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 '
+            'zxw@219.223.198.62 hostname')
+
+
 def check_system():
     """Check system-level prerequisites."""
     results = []
@@ -607,7 +620,7 @@ def run_mode_full():
     print(f"{'='*60}")
 
     servers = [
-        ("University server", "sshpass -p 'adspzxw123' ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 zxw@219.223.198.62 hostname"),
+        ("University server", _uni_ssh_cmd()),
         ("Matpool server", "ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -p 28959 root@hz-t3.matpool.com hostname"),
     ]
 

@@ -28,7 +28,13 @@ log_warn() { echo "${YELLOW}[WARN]${NC} $1"; }
 
 # GPU SSH config
 if [ "$GPU_TYPE" = "university" ]; then
-    SSH_CMD="sshpass -p 'adspzxw123' ssh -o StrictHostKeyChecking=no zxw@219.233.198.62"
+    # 凭据不入库（AGENTS.md）。优先从环境变量读；未设置时跳过探活而不是硬编码。
+    if [ -n "${GPU_SSH_PASS:-}" ]; then
+        SSH_CMD="sshpass -p "$GPU_SSH_PASS" ssh -o StrictHostKeyChecking=no zxw@219.233.198.62"
+    else
+        echo "警告：GPU_SSH_PASS 未设置，跳过高校服务器探活" >&2
+        SSH_CMD="true"
+    fi
     CONDA_CMD="source ~/anaconda3/bin/activate llm"
 elif [ "$GPU_TYPE" = "matpool" ]; then
     SSH_CMD="ssh -o StrictHostKeyChecking=no -p 28959 root@hz-t3.matpool.com"
