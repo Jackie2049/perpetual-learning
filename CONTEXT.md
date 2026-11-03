@@ -18,7 +18,7 @@
 
 **核对产物**：两文件 **54 passed**；`group_split_tradeoff.py --verify`／`legacy_group_arm_check.py --verify`／`real_lengths_policy.py --verify`（约 10 分钟重算）**三处均 exit 0**；`verify_anchors --verify` 34 一致／0 不一致；三次注入（`same_sign_fraction` 恒 1.0／敏感度不换序／`effect_exceeds_band` 恒 True）**全部被抓到**。只读仿真、未跑 GPU、未触上游。
 
-**⚠ 推送状态：已恢复。** 上一轮记的"连不上 GitHub"已解除——开工时 `curl https://github.com` 返回 200，`git ls-remote` 确认远端 main 即 `150cee212`，本地与 `origin/main` 对齐，**无积压未推送提交**。
+**⚠ 推送状态：已恢复但直连不稳。** 上轮记的"连不上 GitHub"已解除——开工时 `curl` 200、`git ls-remote` 与 `git fetch` 均通；但 `git push`／`curl` 随即在 75s 后超时（同一次会话内时通时不通），而 **`gh api` 始终可用**。本轮按既有约定走 [git-push-api](tools/git-push-api/readme.md)：预演（`push_dryrun` 2752/2752）＋差异核对（8 个文件全为修改、0 删除）后推到远端 main **`d9180a03`**，8/8 个 blob 逐一核对一致，再用 gh-proxy 取回对象、本地 main 对齐（本地 `ec45f7ddb` 与远端同树不同 SHA）。**下次仍先试直连，不通再走 API；API 推送前必须先预演并核 `git diff --name-status <远端sha> HEAD` 没有删除项。**
 
 **留给下一轮的两条**：① 探针仍不建模"分桶改变批组成"（本轮已把这一条变成 TM-011 的立项前置，不再是模糊缺口）；② 真实档每格 20 种子、未做 CI／置换检验，`effect_exceeds_band` 只是判读门槛不是显著性——引用时措辞要守住这条。
 
