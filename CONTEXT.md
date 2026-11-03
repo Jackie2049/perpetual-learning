@@ -1,4 +1,4 @@
-更新时间：2026-11-04（M1 **第十批（门槛校准）**：`sign_regime` 与 `band_floor` 的"判读门槛"此前只写了性质、没写给代价位。实测在已知真相上 **`sign_regime` 假阳为 0**（真同向／真 `thin` 的列从不被判成 `mixed`），唯一假阴 1.1% **就是二项分布本身**（`stable` 只要求表态种子 ≥80% 同号，20 硬币双侧 ≥16 同号 = 1.18%）⇒ 是样本量上限不是门槛问题。**`band_floor` 两边不对称**：`no_reading` 要求 30 个种子全零（p=0.05 时只剩 24%），`usable` 松到过半非零就算 ⇒ 真实 `usable` 格子零种子计数 0/30–4/30 不等，**引用必须同时报 `n_r_identically_zero`**。M1 04:1x 第十一批：给 `fifo_band` 加 `no_reading`／`degenerate`／`usable` 三档（16 格 13／1／2，成因是 cap256 截断贴顶）。
+更新时间：2026-11-04（M1 **第十批（门槛校准）**：`sign_regime` 与 `band_floor` 的"判读门槛"此前只写了性质、没写给代价位。实测在已知真相上 **`sign_regime` 假阳为 0**（真同向／真 `thin` 的列从不被判成 `mixed`），唯一假阴 1.1% **就是二项分布本身**（`stable` 只要求表态种子 ≥80% 同号，20 硬币双侧 ≥16 同号 = 1.18%）⇒ 是样本量上限不是门槛问题。**`band_floor` 两边不对称**：`no_reading` 要求 30 个种子全零（p=0.05 时只剩 24%），`usable` 松到过半非零就算 ⇒ 真实 `usable` 格子零种子计数 0/30–4/30 不等，**引用必须同时报 `n_r_identically_zero`**。M1 04:1x 第十一批：给 `fifo_band` 加 `no_reading`／`degenerate`／`usable` 三档（16 格 usable 13／no_reading 2／degenerate 1，成因是 cap256 截断贴顶）。
 
 ## 当前现场
 
