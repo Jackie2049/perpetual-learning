@@ -1,0 +1,71 @@
+{
+ "guard": {
+  "backlog2": {
+   "fixed": 0.0,
+   "legacy": -1.0,
+   "policy": 0.0
+  }
+ },
+ "paper_batch1": {
+  "cv0.2_backlog4_claimed": 0.206,
+  "cv0.6_backlog16_claimed": 0.547,
+  "cv0.6_backlog4_claimed": 0.437,
+  "cv1.2_backlog4_claimed": 0.566
+ },
+ "sweep": {
+  "cv0.2_backlog1": {
+   "fixed_mean": 0.0,
+   "fixed_minus_policy": 0.0,
+   "legacy_mean": 0.0,
+   "policy_mean": 0.0
+  },
+  "cv0.2_backlog16": {
+   "fixed_mean": 0.2099757754327819,
+   "fixed_minus_policy": 0.0,
+   "legacy_mean": 0.2974663210272393,
+   "policy_mean": 0.2099757754327819
+  },
+  "cv0.2_backlog4": {
+   "fixed_mean": 0.14669136290628373,
+   "fixed_minus_policy": 0.0,
+   "legacy_mean": 0.20640203068199053,
+   "policy_mean": 0.14669136290628373
+  },
+  "cv0.6_backlog1": {
+   "fixed_mean": 0.0,
+   "fixed_minus_policy": 0.0,
+   "legacy_mean": 0.0,
+   "policy_mean": 0.0
+  },
+  "cv0.6_backlog16": {
+   "fixed_mean": 0.4239038350392722,
+   "fixed_minus_policy": 0.0,
+   "legacy_mean": 0.5465619359703834,
+   "policy_mean": 0.4239038350392722
+  },
+  "cv0.6_backlog4": {
+   "fixed_mean": 0.34017441530091674,
+   "fixed_minus_policy": 0.0,
+   "legacy_mean": 0.43733861618397424,
+   "policy_mean": 0.34017441530091674
+  },
+  "cv1.2_backlog1": {
+   "fixed_mean": 0.0,
+   "fixed_minus_policy": 0.0,
+   "legacy_mean": 0.0,
+   "policy_mean": 0.0
+  },
+  "cv1.2_backlog16": {
+   "fixed_mean": 0.5373599237374106,
+   "fixed_minus_policy": 0.0,
+   "legacy_mean": 0.6626258506077842,
+   "policy_mean": 0.5373599237374106
+  },
+  "cv1.2_backlog4": {
+   "fixed_mean": 0.4305179048307805,
+   "fixed_minus_policy": 0.0,
+   "legacy_mean": 0.5432901594777237,
+   "policy_mean": 0.4305179048307805
+  }
+ }
+}

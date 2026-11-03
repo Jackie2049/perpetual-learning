@@ -121,6 +121,29 @@ class TestCandidateDConsistency(unittest.TestCase):
         self.assertEqual(m.grouping_tax(lens, backlog_groups=1)['grouping_tax'], 0.0)
 
 
+class TestGroupArmGroupsByGroupNotMember(unittest.TestCase):
+    """2026-11-03：`grouping_tax` 的组臂曾按**成员**分组而不是按**整组**分组。
+
+    `_makespan` 的 `slot_counts` 是逐"任务"的槽位数；组臂传入的是
+    `[n_per] * len(group_dur)`——每个任务占 n_per 个槽，但每个任务**各自**是一组。
+    于是 `group_left` 每个 key 的值都是 1，任务一完成就把 n_per 个槽还回去，
+    归还粒度在组臂上退化成逐条，L1–L2 两批的分组税读数因此偏低。
+    这两条测试钉住"组臂真的按整组归还"。
+    """
+
+    def test_uniform_groups_have_no_tax(self):
+        """组内全同、组间全同 → 两种粒度都是同一个 makespan，税为 0。"""
+        self.assertEqual(
+            m.grouping_tax([[100.0] * 8] * 4, backlog_groups=4)['grouping_tax'], 0.0)
+
+    def test_group_arm_never_beats_trajectory_arm(self):
+        """负税在"整组归还只会更慢"的定义下不可能；按成员分组时会给出 −300%。"""
+        lens = [[100.0] * 8, [100.0] * 8, [200.0] * 8, [200.0] * 8]
+        r = m.grouping_tax(lens, backlog_groups=2)
+        self.assertGreaterEqual(r['group_makespan'], r['traj_makespan'] - 1e-9)
+        self.assertGreaterEqual(r['grouping_tax'], 0.0)
+
+
 class TestTrainSideBalance(unittest.TestCase):
     """2026-11-02 第二批：训练侧同栈均衡（verl `use_prefix_grouper` 机制）。
 
@@ -274,6 +297,52 @@ class TestRaggedGroupsAreRejected(unittest.TestCase):
                     self.assertGreaterEqual(
                         m._makespan_by_policy(groups, backlog, p)['tax'], 0.0,
                         '%s seed=%d backlog=%d' % (p, seed, backlog))
+
+
+class TestGroupArmReturnsWholeGroup(unittest.TestCase):
+    """2026-11-03 第四十批：`grouping_tax` 的组臂曾按**成员**而不是按**整组**归还。
+
+    旧写法 `_makespan([n_per] * k, dur, True)` 让每个"任务"各自成组，一完成就把
+    `n_per` 个槽位全还回去——组臂的粒度退化成逐条，`R` 在积压 ≥2 批时被抬高，
+    甚至量出负税（"整组归还只会更慢"下不可能）。这三条钉住修正后的口径。
+
+    与参差无关：这里**组是等大的**，坏的只是组臂的分组方式。
+    """
+
+    def test_group_arm_matches_policy_layer(self):
+        """修正后 `grouping_tax` 的 FIFO 栏必须与 `_makespan_by_policy` 逐位相同。"""
+        for seed in range(10):
+            lens = m.sample_group_lens(random.Random(seed), n_groups=16, n_per=8, cv=0.6)
+            self.assertAlmostEqual(m.grouping_tax(lens, backlog_groups=4)['grouping_tax'],
+                                   m._makespan_by_policy(lens, 4, m.POLICY_FIFO)['tax'],
+                                   places=12)
+
+    def test_backlogged_group_arm_never_negative(self):
+        """等大组、有积压时税必须非负——旧路径在这里给出 −200%。"""
+        groups = [[50.0, 250.0], [50.0, 250.0]]
+        for backlog in (1, 2, 4):
+            self.assertGreaterEqual(m.grouping_tax(groups, backlog_groups=backlog)['grouping_tax'],
+                                    0.0, 'backlog=%d' % backlog)
+        self.assertAlmostEqual(m.grouping_tax(groups, backlog_groups=4)['grouping_tax'], 0.3)
+
+    def test_old_arm_undercounts_on_backlog(self):
+        """负向对照：旧组臂会**低估** `R`，在"组最长者挤在一起"的负载上最明显。
+
+        旧写法让每个成员各自成组、各自归还，组臂不被整组扣住，于是组臂更容易
+        排进空槽 ⇒ 税偏低甚至归零。`[[400,400],[40,40]]` 积压 4 批：旧 45.0%、
+        正确 0.0%（组臂本来就一批装得下，不该有税）。
+        """
+        groups = [[400.0, 400.0], [40.0, 40.0]]
+        n_per, cap, b = 2, 4, 4
+        dur = [max(g) for _ in range(b) for g in groups]
+        flat = [x for _ in range(b) for g in groups for x in g]
+        old_group = m._makespan([n_per] * len(dur), dur, True, cap=cap)
+        traj = m._makespan([1] * len(flat), flat, False, cap=cap)
+        new_group = m._group_makespan(dur, n_per, cap)
+        old_tax = (old_group - traj) / old_group
+        new_tax = (new_group - traj) / new_group
+        self.assertGreater(old_tax, new_tax + 0.2)
+        self.assertEqual(new_tax, 0.0)
 
 
 class TestPolicyInvariance(unittest.TestCase):
