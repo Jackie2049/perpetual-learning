@@ -76,3 +76,25 @@ pd.sign_flip_around(values, 1.0) # 比率读数是否穿过 1
 | `experiments/rollout-group-split-tradeoff/real_lengths_policy.py` | 同上（真实负载侧） |
 | `experiments/rollout-c-class-ledger/ledger.py` | `sign_counts`、`span`、`sign_flip_around(…, 1.0)`、`sign_flip`（步号，相对零） |
 | `experiments/rollout-c-class-ledger/wall_threshold_band.py` | `span`、`sign_flip_around`、`sign_counts` |
+
+舍入口径与刻度（2026-11-03 第三批）
+---
+
+第七批的逐值对照只覆盖**计数**。`same_sign_fraction` 与 `sd_pp` 是写进正文的读数（同号占比、种子间标准差），此前没有逐值对照，也不知道舍入口径。本批补了两条声明和一条实测：
+
+**一、第 3 位小数是 `round(x, 3)`，对精确平局取偶。** 内建 `round` 对 `x.xxx5` 取偶：`0.3125 → 0.312`、`0.0625 → 0.062`，而"保留三位小数"的人类读法是 `0.313`／`0.063`。**归档里出现平局时，第 3 位取决于用的是哪一种**——这一点必须写明，不能靠"我们一直用 round"默认。
+
+**二、真实输入里不存在平局。** 差值来自浮点除法与求和，末位不会恰好落在 5 上。96 条真实输入列 + 8 条构造平局列实测：真实列 `sd_pp` 落在舍入平局上的个数为 **0**。⇒ 上述取偶口径目前不影响任何已发布读数；`rounding_cases()` 把构造平局与两种读法的差都留成可复现的样例。
+
+**三、`TOL` 是绝对容差，必须和刻度一起引用。** 比率型读数在不同刻度上的"零"不一样：
+
+| 调用点 | 刻度 | `TOL` 相当于容忍多大的原始偏差 |
+|---|---|---|
+| `real_lengths_policy`／`bucketing_probe`（`v - 1`） | 原量纲 | 1e-12 |
+| `steps_ratio`／`wall_ratio` 摆幅（`100 * (v - 1)`） | pp | **1e-14** |
+
+两者相差 100 倍。同一个"0 个 identical"在原量纲上成立，不代表在 pp 刻度上也成立。`across_scale(samples, ref=1.0)` 一次给出两个刻度下的计数，用于说明差异（不是用来统一口径——各脚本各自归档、各自 `--verify`，口径锁定不改）。
+
+**盲区扫描扩到六份归档。** 第七批只核了 `ledger.json`。本批扫 `ledger.json`、`wall-threshold-band.json`、`resolution.json`、`bucketing-probe.json`、`real-lengths-summary.json`、`legacy-group-arm-check.json` 的每一个 float（共 1907 个），对 ref=0 与 ref=1 各查 `0 < |v-ref| < TOL`：**全部 0 命中**。
+
+**旧版实现改为从 git 取。** 第七批把旧版手写实现嵌在对照脚本里，另留了三条 `/tmp/old_*.py` 常量——那三个文件是临时产物，换台机器就不存在。现在 `old_source_at(relpath)` 直接 `git show <TOOL_COMMIT>^:<path>`，核对不再依赖任何人先跑过某个命令。

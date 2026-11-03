@@ -338,7 +338,25 @@ python3 wall_threshold_band.py --verify            # 通过：8 对参考阈值�
 python3 -m unittest test_wall_threshold_band -v    # 5 tests，含 3 条负向对照
 
 python3 compare_old_new_impl.py                    # 第七批：两版实现逐值对照（真实 96 列 + 合成 210 列）
-python3 -m unittest test_cross_script_consistency -v   # 第七批：13 tests，含 1 条注入对照
+python3 -m unittest test_cross_script_consistency -v   # 第八批：23 tests，含 3 条注入对照
 ```
 
 执行条件与 sha256 见 [run-info.json](run-info.json)。全部为 CPU 进程内重算，**未跑 GPU、未触上游写操作、未新增文献身份**。
+
+## 第八批：非计数输出的逐值对照、舍入口径与盲区扫描（2026-11-03 M1）
+
+第七批的逐值对照只覆盖**计数**。`same_sign_fraction` 与 `sd_pp` 是写进正文的两个读数，此前既没有逐值对照，也没写清舍入口径。本批补三条，全部在 `compare_old_new_impl.py` 内（`--verbose` 之外的默认输出就带结果），**零归档改动**。
+
+**一、`same_sign_fraction`／`sd_pp` 逐值对照零分歧。** 真实 96 列 + 合成 210 列 + 8 条构造舍入列，旧版手写实现与共享库逐值相同。对照自身两次注入均被测红：把 `sd_pp` 的 scale 从 100 改成 10 → 192 处分歧；`same_sign_fraction` 恒 1.0 → 45 处分歧。
+
+**二、第 3 位小数取偶，且真实输入从不落在平局上。** 内建 `round` 对精确平局取偶（`0.3125 → 0.312`、`0.0625 → 0.062`），人类读法是 `0.313`／`0.063`——**若归档里出现平局，第 3 位取决于用的是哪一种**。实测：真实输入列里 `sd_pp` 落在平局上的个数为 **0**（差值来自浮点除法与求和，末位不会恰好落 5）。⇒ 这条口径目前不影响任何已发布读数，但已写成断言（`test_real_inputs_never_land_on_a_tie`），将来落到平局会立刻变红。
+
+**三、盲区扫描扩到六份归档。** 第七批只在 `ledger.json` 上核过"`0 < |v-ref| < TOL` 会被吞成 identical"。本批扫 `ledger.json`、`wall-threshold-band.json`、`resolution.json`、`bucketing-probe.json`、`real-lengths-summary.json`、`legacy-group-arm-check.json` 的每一个 float（**1907 个**），ref=0 与 ref=1 各查一遍：**0 命中**。负向对照：向扫描器种进一个 0.9999999999995，立即报出。
+
+**四、`TOL` 必须和刻度一起引用。** 同一列比率，`real_lengths_policy`／`bucketing_probe` 用原量纲（`v - 1`），`steps_ratio`／`wall_ratio` 摆幅用 pp（`100 * (v-1)`）——`1e-12` 在前者容忍 1e-12 的偏差、在后者只容忍 1e-14，**差 100 倍**。`across_scale()` 一次给出两刻度下的计数；本批真实比率列在两刻度下的 `n_identical` 全为 0（差异是口径层面的，不是数据层面的）。
+
+**五、旧版实现改为从 git 取。** 第七批在对照脚本里嵌了 `old_*` 手写实现，另留三条 `/tmp/old_*.py` 常量——临时文件不在仓库里，换台机器就消失。现改为 `old_source_at(relpath)` 直接 `git show 038fc2e3b^:<path>`，并用测试钉住"取到的确实没有 `import paired_diff`"。
+
+**六、覆盖面自查（本批最后一处自查）。** "真实列零分歧"这句话对**计数**而言，在整数步号列上是**自动成立**的：40 列步号全为整数，旧版 `d == 0` 与新版 `|d| <= TOL` 在整数输入下精确等价，它们根本没检验容差。真正检验容差的只有 56 列浮点比率列，其中相对 1 翻号的只有 2 列。这不等于是覆盖缺陷（合成边界列专测容差边界），但**不能把"96 列零分歧"读成"96 列都在检验容差"**。输出里已把这条覆盖面直接打出来。
+
+**核对产物**：`test_cross_script_consistency` 13 → **23 passed**；两目录合计 **144 passed**（c-class 82 + group-split 62）；`paired_diff.py --selftest` 通过；六份归档 `--verify` 全部逐字段一致。

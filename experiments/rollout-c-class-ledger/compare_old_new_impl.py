@@ -21,10 +21,12 @@
 import argparse
 import importlib.util
 import json
+import os
 import random
 import statistics
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -34,9 +36,6 @@ import paired_diff  # noqa: E402
 
 # 引入共享工具的提交；其父提交即"旧版"
 TOOL_COMMIT = '038fc2e3b'
-OLD_LEDGER_PATH = '/tmp/old_ledger.py'
-OLD_BUCKET_PATH = '/tmp/old_bucketing.py'
-OLD_REAL_PATH = '/tmp/old_real.py'
 
 
 def _load_module(path, name):
@@ -44,6 +43,19 @@ def _load_module(path, name):
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
+
+
+def old_source_at(relpath, commit=TOOL_COMMIT):
+    """从 git 取出**抽共享工具之前**（`commit^`）的脚本原文。
+
+    第七批把旧版手写实现写成 `old_*` 函数直接嵌在本文件里，另留了三条
+    `/tmp/old_*.py` 常量——那三个文件是本机临时产物、不在仓库里，换台机器就
+    不存在，"旧版实现"于是变成一份不会随着上游变动的手抄本。这里改成从 git
+    直接取原文件（含完整上下文与依赖），核对性因此不依赖任何人先跑过某个命令。
+    """
+    return subprocess.run(
+        ['git', '-C', str(ROOT), 'show', '%s^:%s' % (commit, relpath)],
+        check=True, capture_output=True, text=True).stdout
 
 
 # ---------------------------------------------------------------- 旧版实现
@@ -264,6 +276,132 @@ def compare_spans():
     return issues
 
 
+# ---------------------------------------------------------------- 第八批：舍入与刻度
+# 第七批的对照只覆盖**计数**。`same_sign_fraction` 与 `sd_pp` 这两个"非计数"的
+# 输出没有逐值对照，而它们恰恰是写进正文的读数（同号占比、种子间 sd）。这里补两件：
+# ① 逐值比对（旧版手写 vs 共享实现）——预期**零分歧**，包括平局输入；
+# ② 把平局的口径**量出来**：`round` 取偶 vs 人类读法（四舍五入）差多少。
+
+def rounding_columns():
+    """覆盖舍入的输入列：全同向、半数、平局、极小数、大数。
+
+    平局只有靠**二进制可精确表示**的值才造得出来（1.2375 = 99/80、0.3125 = 5/16）；
+    真实差值来自浮点除法与求和，末位永远不会恰好落在 5 上，这也是"碰到平局"
+    从未在归档里发生的原因。
+    """
+    return {
+        'ssf_5of16': [0.1] * 5 + [-0.1] * 11,        # 同号占比 0.3125（平局）
+        'ssf_all_pos': [0.1] * 16,
+        'ssf_half': [0.1] * 8 + [-0.1] * 8,
+        'mean_tie_1_2375': [0.2] * 10 + [0.3] * 6,   # mean+1 = 1.2375（平局）
+        'tiny_diffs': [1e-9, 2e-9, -1e-9],
+        'large_diffs': [12345.6789, -12345.1111],
+        'single_point': [0.5],
+        'two_points': [0.0, 0.0001],
+    }
+
+
+def compare_ssf_sd(diffs):
+    """`same_sign_fraction` 与 `sd_pp` 两列输出逐值比对（旧版 vs 新版）。"""
+    if not diffs:
+        return []
+    issues = []
+    old_b = old_sign_counts_bucketing(diffs)
+    old_r = old_sign_counts_real(diffs)
+    new = new_sign_counts(diffs)
+    for who, old in (('bucketing', old_b), ('real', old_r)):
+        for key in ('same_sign_fraction', 'sd_pp'):
+            if old.get(key) != new.get(key):
+                issues.append(('%s.%s' % (who, key), old.get(key), new.get(key), 'RATIO'))
+    return issues
+
+
+def rounding_audit(real_cols):
+    """把"平局怎么舍入"从声明变成数字。
+
+    - `tie_inputs_found`：所有被对照的输入列里，`sd_pp` 的末位落在 5 上的个数。
+      真实数据为 **0**——这就是"平局不会发生"的实测依据，而不是推测。
+    - `half_up_vs_builtin`：构造平局时两种读法的差。有差 ⇒ 若将来真出现平局，
+      归档里的第 3 位小数取决于用的是哪一个，必须写明。
+    """
+    cases, half_up, builtin = paired_diff.rounding_cases()
+    tie_hits = []
+    for name, diffs in real_cols.items():
+        s = paired_diff.sd_pp(diffs)
+        if s is None:
+            continue
+        scaled = s * 1000.0
+        frac = abs(scaled - round(scaled))
+        if abs(frac - 0.5) < 1e-6:
+            tie_hits.append((name, s))
+    return {
+        'tie_inputs_found': tie_hits,
+        'half_up_vs_builtin': {
+            k: {'value': cases[k], 'half_up': half_up[k], 'builtin': builtin[k]} for k in cases},
+    }
+
+
+# ---------------------------------------------------------------- 第八批：盲区扫描
+# 第七批发现"距 1 不到 TOL 的比率在重新定基时被吞成 0、记成 identical"，但只核了
+# `ledger.json`。这里扫**全部六份归档**的每一个 float，分别对 ref=0（差值）与
+# ref=1（比率）各查一遍。
+
+ARCHIVES = [
+    'experiments/rollout-c-class-ledger/ledger.json',
+    'experiments/rollout-c-class-ledger/wall-threshold-band.json',
+    'experiments/rollout-c-class-ledger/resolution.json',
+    'experiments/rollout-group-split-tradeoff/bucketing-probe.json',
+    'experiments/rollout-group-split-tradeoff/real-lengths-summary.json',
+    'experiments/rollout-group-split-tradeoff/legacy-group-arm-check.json',
+]
+
+
+def _floats(obj, path=''):
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            yield from _floats(v, path + '/' + k)
+    elif isinstance(obj, list):
+        for i, v in enumerate(obj):
+            yield from _floats(v, path + '/%d' % i)
+    elif isinstance(obj, float) and not isinstance(obj, bool):
+        yield path, obj
+
+
+def blind_spot_scan(paths=None):
+    """每份归档里 `0 < |v - ref| < TOL`（ref=0 或 1）的成员——它们会被吞成 identical。"""
+    out = {}
+    for rel in (paths or ARCHIVES):
+        p = ROOT / rel
+        if not p.exists():
+            out[rel] = {'error': 'missing'}
+            continue
+        data = json.loads(p.read_text())
+        hits_zero, hits_one, n_float = [], [], 0
+        for path, v in _floats(data):
+            n_float += 1
+            if 1e-30 < abs(v - 0.0) < paired_diff.TOL:
+                hits_zero.append((path, v))
+            if 1e-30 < abs(v - 1.0) < paired_diff.TOL:
+                hits_one.append((path, v))
+        out[rel] = {'n_float': n_float, 'near_zero': hits_zero, 'near_one': hits_one}
+    return out
+
+
+def scale_audit(real_cols):
+    """同一列比率、两种刻度下的 `n_identical`——说明"相同"这个词必须带刻度。
+
+    `real_lengths_policy`／`bucketing_probe` 用原量纲（`v - 1`），
+    `steps_ratio`／`wall_ratio` 的摆幅用 pp；两者容忍的偏差差 100 倍。
+    """
+    rows = []
+    for name, vals in sorted(real_cols.items()):
+        if not name.startswith('flipcol:'):
+            continue          # 只有比率型列适用
+        sc = paired_diff.across_scale(vals, ref=1.0)
+        rows.append((name, sc['raw']['n_identical'], sc['pp']['n_identical']))
+    return rows
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--verbose', action='store_true')
@@ -314,11 +452,58 @@ def main():
     for row in span_issues[:5]:
         print('   ', row)
 
-    # 判定：真实列必须零分歧；合成分歧只允许出现在"容差边界"这一类
-    ok = (not real_issues) and (not span_issues)
+    # ---- 第八批：same_sign_fraction／sd_pp 逐值 + 舍入口径
+    rnd = rounding_columns()
+    ssf_issues = []
+    for name, diffs in sorted(list(real.items()) + list(synth.items()) + list(rnd.items())):
+        for it in compare_ssf_sd(diffs):
+            ssf_issues.append((name,) + it)
+    print()
+    print('same_sign_fraction／sd_pp 逐值（真实 %d + 合成 %d + 舍入用例 %d 列）：%d 处分歧'
+          % (len(real), len(synth), len(rnd), len(ssf_issues)))
+    for row in ssf_issues[:10]:
+        print('   ', row)
+
+    audit = rounding_audit(dict(list(real.items()) + list(rnd.items())))
+    print('真实输入里 sd_pp 落在舍入平局上的个数：%d' % len(audit['tie_inputs_found']))
+    for k, v in audit['half_up_vs_builtin'].items():
+        print('   平局 %-16s 值=%-8s 四舍五入=%s  内建 round=%s%s'
+              % (k, v['value'], v['half_up'], v['builtin'],
+                 '  ← 两种读法不同' if v['half_up'] != v['builtin'] else ''))
+
+    # ---- 第八批：盲区扫描 + 刻度
+    scan = blind_spot_scan()
+    blind_total = 0
+    print()
+    print('盲区扫描（0 < |v-ref| < TOL 的浮点数）：')
+    for rel, row in scan.items():
+        if 'error' in row:
+            print('   %-64s %s' % (rel, row['error']))
+            continue
+        n = len(row['near_zero']) + len(row['near_one'])
+        blind_total += n
+        print('   %-64s %d 个 float，ref=0 近零 %d，ref=1 近一 %d'
+              % (rel.split('/')[-1], row['n_float'], len(row['near_zero']),
+                 len(row['near_one'])))
+    for row in scale_audit(real):
+        if row[1] != row[2]:
+            print('   刻度敏感：%s raw=%d pp=%d' % row)
+
+    ok = (not real_issues) and (not span_issues) and (not ssf_issues)
     print()
     print('真实归档列零分歧：%s' % ('是' if not real_issues else '否'))
     print('极差／翻号零分歧：%s' % ('是' if not span_issues else '否'))
+    print('same_sign_fraction／sd_pp 零分歧：%s' % ('是' if not ssf_issues else '否'))
+    print('盲区命中：%d 个（0 = 既有归档无一落进 |v-ref| < TOL）' % blind_total)
+    # 覆盖自查：既有「真实列零分歧」只对**计数**是同一句话——整数步号 40 列
+    # 走的是精确等价路径，旧版 `d == 0` 与新版天然同答；真正检验容差的只有
+    # 那些贴着 1 的浮点比率列。这里把覆盖面写出来，避免再次把"零分歧"读大。
+    n_int = sum(1 for d in real.values() if all(float(x) == int(x) for x in d))
+    n_ratio = len(real) - n_int
+    n_flip = sum(1 for n, d in real.items()
+                 if not n.startswith('steps:') and paired_diff.sign_flip_around(d, 1.0))
+    print('覆盖：整数步号列 %d（精确等价路径，不检验容差）／浮点比率列 %d，'
+          '其中相对 1 翻号 %d 列' % (n_int, n_ratio, n_flip))
     print('结论：%s' % ('PASS' if ok else 'FAIL'))
     sys.exit(0 if ok else 1)
 

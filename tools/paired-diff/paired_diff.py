@@ -27,6 +27,11 @@
     st = summarize_paired(diffs, scale=100)        # 百分数口径
     ok = exceeds_band(effect, band)                 # 判读门槛
 
+**容差必须和刻度一起引用。** 第⑩条是 2026-11-03 第八批补上的：`TOL` 是绝对容差，
+而比率型读数（`v` 与 1 比较）在不同刻度上有**不同的零**——`steps_ratio` 差 1e-13 与
+`wall_ratio` 差 1e-13×100 是两个不同的容差口径。直接把 `v` 喂给 `sign_counts` 会把
+"恰好等于 1"记成正号；必须先用 `around(v, ref)` 平移成 `v - ref` 再归类。
+
 自检：
     python3 paired_diff.py --selftest
 """
@@ -37,6 +42,9 @@ import sys
 # 绝对容差。R／准确率在 [0,1]，步数在 [0,300]：1e-12 相当于"精确相等"。
 # 不改这个值，除非同时重算所有引用它的归档（见 readme 的「口径锁定」）。
 TOL = 1e-12
+
+# 归档落盘的小数位数。ratio／pp 一律 3 位，swing（极差）也 3 位。
+_NDIGITS = 3
 
 
 def _tol(tol):
@@ -103,6 +111,64 @@ def summarize_paired(diffs, scale=100.0, tol=None, with_mean=True):
     out['min_pp'] = round(min(diffs) * scale, 3) if diffs else None
     out['max_pp'] = round(max(diffs) * scale, 3) if diffs else None
     return out
+
+
+def across_scale(samples, ref=1.0):
+    """把"比率型"读数换到各处实际使用的**刻度**上，与 `ref` 相减后归类。
+
+    第⑩条：比率读数的"相同"依赖刻度。同一列 `v`（`R` 的比值、窗口成本比）在
+    三处被喂进判据时口径不同：
+
+      - `real_lengths_policy`／`bucketing_probe`：`v - 1.0`，刻度 1（原量纲）；
+      - `steps_ratio`／`wall_ratio` 的摆幅：`pp` 刻度，`100 * (v - 1)`；
+      - `wall_ratio_at`：先 `v - 1` 再乘 100，与上一条等价。
+
+    `1e-12` 在"原量纲"上只吞掉 1e-14 的偏差，在 `pp` 刻度上却吞掉 1e-12 的偏差——
+    **两者相差 100 倍**。这不是 bug（各脚本各自归档、各自 `--verify`），但不能拿
+    一个刻度的 `n_identical` 去解释另一个刻度，也不能把"某刻度上 0 个相同"读成
+    "另一刻度上也是 0 个"。
+
+    返回两个刻度下的计数，供对照脚本逐字段比对。
+    """
+    out = {}
+    for label, scale in (('raw', 1.0), ('pp', 100.0)):
+        shifted = [scale * (v - ref) for v in samples]
+        c = sign_counts(shifted)
+        out[label] = {
+            'scale': scale,
+            'n_positive': c['n_positive'],
+            'n_negative': c['n_negative'],
+            'n_identical': c['n_identical'],
+            'tol_effective': TOL / scale,   # 原量纲上相当于容忍多大的偏差
+        }
+    return out
+
+
+def rounding_cases():
+    """构造两组"舍入会分岔"的输入，用来验证 `half_up` 与内建 `round` 的差异确实存在。
+
+    存在的理由是：`round(x, 3)` 对**精确的 x.xxx5** 取偶（1.0125→1.012、
+    0.3125→0.312），而人写的"保留三位小数的百分数"读作 `1.013`／`0.313`。
+    在真实数据上碰不到——差值本身是浮点计算结果，最后一位永远不会恰好落在
+    5 上——所以这是**口径声明**而不是缺陷修复。
+
+    返回 `(inputs, half_up, builtin)` 三元组；差值集合为
+    `[0.2]*10 + [0.3]*6` 时，`mean + 1.0 == 1.2375`（二进制可精确表示，是真正的平局）。
+    """
+    from decimal import Decimal
+
+    def _half_up(x, ndigits):
+        q = Decimal(1).scaleb(-ndigits)
+        return float(Decimal(repr(x)).quantize(q, rounding='ROUND_HALF_UP'))
+
+    cases = {
+        'ratio_mean': 1.2375,
+        'ssf': 5 / 16,          # 0.3125，5 正 11 负
+        'small': 0.0625,
+    }
+    return (cases,
+            {k: _half_up(v, _NDIGITS) for k, v in cases.items()},
+            {k: round(v, _NDIGITS) for k, v in cases.items()})
 
 
 def unresolved(diffs, tol=None, identical_floor=0.5):
@@ -216,6 +282,23 @@ def _selftest():
     check('resolution', resolution_limit([2, 2, 1]) == 1)
     check('resolution none', resolution_limit([0, 0]) is None)
     check('sd needs two points', sd_pp([1.0]) is None)
+
+    # ⑨ 舍入与刻度（本文件第八批补）：这两条**不是**在修 bug，是在声明口径。
+    #    它们保证：① `round(x,3)` 对精确平局取偶，所以"1.2375 → 1.238"是巧合、
+    #    不是规则；② 同一列比率在原量纲与 pp 刻度上容忍的偏差相差 100 倍。
+    cases, half_up, builtin = rounding_cases()
+    check('half_up differs from builtin on exact tie',
+          half_up['ssf'] != builtin['ssf'])
+    check('ratio tie happens to agree',
+          half_up['ratio_mean'] == builtin['ratio_mean'])
+    # ⑩ 刻度：同一列 `v` 在 raw／pp 两个刻度上的 n_identical 可以不同
+    near1 = [1.0 + 5e-13, 1.0 + 5e-11]   # raw: 一个 identical 一个正；pp: 两个都正
+    sc = across_scale(near1, ref=1.0)
+    check('raw sees one identical', sc['raw']['n_identical'] == 1)
+    check('pp sees none identical', sc['pp']['n_identical'] == 0)
+    check('tol scales with the ruler',
+          abs(sc['raw']['tol_effective'] - 1e-12) < 1e-24
+          and abs(sc['pp']['tol_effective'] - 1e-14) < 1e-26)
 
     if not ok:
         sys.exit(1)

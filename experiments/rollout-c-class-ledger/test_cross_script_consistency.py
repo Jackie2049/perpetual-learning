@@ -267,3 +267,118 @@ class TestOldVersusNewImplementation(unittest.TestCase):
             self.assertTrue(found, '注入的正号偏差没被对照抓到')
         finally:
             C.new_sign_counts = orig
+
+
+class TestRoundingAndScale(unittest.TestCase):
+    """④ 舍入口径与刻度（第八批补）——第七批留下的"`same_sign_fraction`／`sd_pp` 未逐值对照"。
+
+    这两条**不是在修 bug**。它们把两个此前只用文字约定、没有断言的口径钉住：
+    ① 第 3 位小数的舍入对**精确平局**取偶（`1.0125 → 1.012`），所以"1.2375 → 1.238"
+       是巧合不是规则；② 同一列比率在原量纲与 pp 刻度上容忍的偏差差 100 倍。
+    两条都配了"若不成立必须红"的断言，避免只写注释。
+    """
+
+    def test_builtin_round_is_half_even_on_exact_tie(self):
+        cases, half_up, builtin = paired_diff.rounding_cases()
+        # 内建 round 对精确平局取偶：0.3125 → 0.312（偶），0.0625 → 0.062（偶）
+        self.assertEqual(builtin['ssf'], 0.312)
+        self.assertEqual(builtin['small'], 0.062)
+        # 四舍五入读法不同，且这正是"若出现平局必须写明用的是哪一个"的理由
+        self.assertEqual(half_up['ssf'], 0.313)
+        self.assertNotEqual(half_up['ssf'], builtin['ssf'])
+        # 而 1.2375 两种读法恰好都到 1.238——平局不一定分岔，不能据单个样例下结论
+        self.assertEqual(half_up['ratio_mean'], builtin['ratio_mean'])
+        self.assertEqual(cases['ssf'], 0.3125)
+
+    def test_real_inputs_never_land_on_a_tie(self):
+        """真实输入里不存在舍入平局——这才是"归档小数位可靠"的实测依据。
+
+        若哪天有列落到平局上，本断言会红，提醒去确认用的是哪种舍入。
+        """
+        import compare_old_new_impl as C
+        audit = C.rounding_audit(C.real_columns())
+        self.assertEqual(audit['tie_inputs_found'], [],
+                         '真实输入里出现了 sd_pp 舍入平局，须确认舍入口径')
+
+    def test_tolerance_effective_differs_by_scale(self):
+        """同一个 TOL，在原量纲与 pp 刻度上容忍的偏差差 100 倍。"""
+        sc = paired_diff.across_scale([1.0 + 5e-13, 1.0 + 5e-11], ref=1.0)
+        self.assertAlmostEqual(sc['raw']['tol_effective'], paired_diff.TOL, delta=0)
+        self.assertAlmostEqual(sc['pp']['tol_effective'], paired_diff.TOL / 100, delta=0)
+        # 5e-13 在 raw 上被吞掉（identical）、在 pp 上不被吞（positive）
+        self.assertEqual(sc['raw']['n_identical'], 1)
+        self.assertEqual(sc['pp']['n_identical'], 0)
+
+    def test_injection_scale_mismatch_is_caught(self):
+        """注入：把 `sd_pp` 的 scale 从 100 改成 10，逐值对照必须报分歧。"""
+        import compare_old_new_impl as C
+        orig_pd = C.paired_diff.sd_pp
+        orig_func = paired_diff.sd_pp
+        C.paired_diff.sd_pp = lambda d, scale=100.0: orig_func(d, scale=10.0)
+        try:
+            diffs = [0.1, -0.2, 0.3, 0.05]
+            self.assertTrue(C.compare_ssf_sd(diffs), '刻度错位没被抓到')
+        finally:
+            C.paired_diff.sd_pp = orig_pd
+
+    def test_injection_ssf_constant_is_caught(self):
+        """注入：`same_sign_fraction` 恒 1.0，逐值对照必须报分歧。"""
+        import compare_old_new_impl as C
+        orig = C.paired_diff.same_sign_fraction
+        C.paired_diff.same_sign_fraction = lambda d, tol=None: 1.0
+        try:
+            diffs = [0.1] * 5 + [-0.1] * 11     # 真实同号占比 0.688，不是 1.0
+            self.assertTrue(C.compare_ssf_sd(diffs), 'ssf 恒 1.0 没被抓到')
+        finally:
+            C.paired_diff.same_sign_fraction = orig
+
+
+class TestBlindSpotScan(unittest.TestCase):
+    """⑤ 盲区扫描覆盖**全部六份归档**（第七批只核了 `ledger.json`）。"""
+
+    def test_all_archives_present_and_scanned(self):
+        import compare_old_new_impl as C
+        scan = C.blind_spot_scan()
+        self.assertEqual(len(scan), 6)
+        for rel, row in scan.items():
+            self.assertNotIn('error', row, rel)
+            # 空扫的"0 命中"什么也没证明——每份都要真数到浮点数
+            self.assertGreater(row['n_float'], 10, '%s 只扫到 %d 个 float' % (rel, row['n_float']))
+
+    def test_no_archive_lands_in_blind_spot(self):
+        import compare_old_new_impl as C
+        for rel, row in C.blind_spot_scan().items():
+            self.assertEqual(row['near_zero'], [], rel)
+            self.assertEqual(row['near_one'], [], rel)
+
+    def test_scan_really_detects_a_planted_value(self):
+        """负向对照：同一扫描器喂一个种进盲区的值，必须报出来。"""
+        import compare_old_new_impl as C
+        import tempfile, json, os
+        with tempfile.NamedTemporaryFile('w', suffix='.json', delete=False) as f:
+            json.dump({'a': 0.9999999999995, 'b': 1.0000000000002, 'c': 1.0}, f)
+            path = f.name
+        try:
+            scan = C.blind_spot_scan([path])
+            row = list(scan.values())[0]
+            self.assertEqual(len(row['near_one']), 2, row)
+        finally:
+            os.unlink(path)
+
+
+class TestOldSourceFromGit(unittest.TestCase):
+    """⑥ 旧版实现从 git 取（第八批遗留③），不再依赖 `/tmp/old_*.py` 手抄本。"""
+
+    def test_old_source_comes_from_git(self):
+        import compare_old_new_impl as C
+        src = C.old_source_at('experiments/rollout-group-split-tradeoff/bucketing_probe.py')
+        self.assertIn('def ', src)
+        self.assertGreater(len(src), 1000)
+
+    def test_old_source_predates_shared_tool(self):
+        """取到的确实是**抽共享工具之前**的版本：那时还没有 `import paired_diff`。"""
+        import compare_old_new_impl as C
+        src = C.old_source_at('experiments/rollout-c-class-ledger/ledger.py')
+        self.assertNotIn('import paired_diff', src)
+        here = (HERE / 'ledger.py').read_text()
+        self.assertIn('import paired_diff', here)
