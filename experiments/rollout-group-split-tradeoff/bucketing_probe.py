@@ -1,11 +1,38 @@
 #!/usr/bin/env python3
 """分桶探针：组的排队顺序能改变 R 多少（接 TM-011）
 
-复用 grouping_tax，只换组的入队顺序。**不是分桶模型**——它只量"给定组的集合
-改顺序"的效应，不建模"哪些组被放进同一批"。
+复用 `_makespan_by_policy`，只换组的入队顺序。**不是分桶模型**——它只量"给定组的
+集合改顺序"的效应，不建模"哪些组被放进同一批"。
+
+## 2026-11-03 订正（第二版）
+
+旧版把「长度优先（LOF）」与「10 次随机打乱的中位数」比，读出均值 5.95pp。
+那个比法有两个坑，都是本版实测出来的：
+
+  1. **基线泄漏**：`_makespan_by_policy` 的轨迹臂同样吃组的顺序，所以随机打乱
+     **自己也会改 R**（组间 100–400 均匀时，随机序之间的极差就有 2.5–3.5pp）。
+     5.95pp 里有一块是"随机序碰巧更亏"。
+  2. **配对错位**：若让两臂共用同一份乱序，乱序就被当成两臂共有的派发次序，
+     而 FIFO 的定义是"按到达顺序"。这样配出来的差在真实负载上是 −6.3pp，
+     换成"各臂按自己的顺序"后同样的负载给出反向的读数。
+
+本版：FIFO 臂吃**原顺序**、LOF 臂吃**按组最大降序**，两者吃同一批轨迹；
+同时给出两个口径：
+
+  * 绝对差  `R_fifo − R_lof`（pp）——直接可加；
+  * 相对比  `R_lof / R_fifo`——与 §13.30 已有的臂间读数同口径
+    （退化种子两臂完全相同，比值恒 1，会稀释均值，故另报 `*_live`）。
+
+两个负载来源：
+
+  * `synthetic`：旧版的构造负载（组间 100–400 均匀）；
+  * `real`：已入库的 `rollout-length-structure-real/raw` 的 `response_tokens`，
+    按 `prompt_idx` 聚组（480 组 × n=8），四档 = {0.5B, 1.5B} × {cap256, cap1024}。
 
 用法：python3 bucketing_probe.py
 """
+import collections
+import gzip
 import importlib.util
 import json
 import pathlib
@@ -13,6 +40,9 @@ import random
 import statistics
 
 HERE = pathlib.Path(__file__).resolve().parent
+ROOT = HERE.parent.parent
+RAW = ROOT / 'experiments' / 'rollout-length-structure-real' / 'raw'
+
 spec = importlib.util.spec_from_file_location('g', HERE / 'group_split_tradeoff.py')
 M = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(M)
@@ -20,11 +50,18 @@ spec.loader.exec_module(M)
 SEEDS = 20
 N_GROUPS = 16
 N_PER = 8
-CV = 0.07          # 真实 1.5B cap256 的组内 cv（§13.30 第四批）
-BACKLOG = 4
+CV = 0.07          # 真实 1.5B cap256 的组最大 cv（§13.30 第四批）
+BACKLOGS = (2, 4, 8, 16)
+REAL_FILES = (
+    'qwen05b_gsm8k_n8',
+    'qwen05b_gsm8k_n8_cap1024',
+    'qwen15b_gsm8k_n8',
+    'qwen15b_gsm8k_n8_cap1024',
+)
 
 
 def make_load(seed):
+    """构造负载：16 组 × 8 条，组间 100–400 均匀，组内 cv 0.07。"""
     rng = random.Random(seed)
     out = []
     for _ in range(N_GROUPS):
@@ -33,35 +70,136 @@ def make_load(seed):
     return out
 
 
-def main():
-    wins, gains = 0, []
-    for s in range(SEEDS):
-        groups = make_load(s)
-        rng = random.Random(s + 1000)
-        lof = M.grouping_tax(sorted(groups, key=lambda g: -max(g)),
-                             backlog_groups=BACKLOG)['grouping_tax']
-        rnd = []
-        for _ in range(10):
-            g = groups[:]
-            rng.shuffle(g)
-            rnd.append(M.grouping_tax(g, backlog_groups=BACKLOG)['grouping_tax'])
-        med = statistics.median(rnd)
-        if lof < med:
-            wins += 1
-        gains.append(med - lof)
+def load_real(name):
+    """真实负载：按 prompt_idx 聚组，返回 [[len, ...], ...]。"""
+    groups = collections.defaultdict(list)
+    with gzip.open(RAW / (name + '.jsonl.gz'), 'rt') as fh:
+        for line in fh:
+            r = json.loads(line)
+            groups[r['prompt_idx']].append(float(r['response_tokens']))
+    return [groups[k] for k in sorted(groups)]
 
-    out = {
-        'seeds': SEEDS, 'n_groups': N_GROUPS, 'n_per': N_PER,
-        'cv': CV, 'backlog': BACKLOG,
-        'wins': wins,
-        'gain_pp_mean': round(statistics.mean(gains) * 100, 2),
-        'gain_pp_median': round(statistics.median(gains) * 100, 2),
-        'gain_pp_min': round(min(gains) * 100, 2),
-        'gain_pp_max': round(max(gains) * 100, 2),
+
+def tax(groups, policy, backlog):
+    return M._makespan_by_policy(groups, backlog, policy)['tax']
+
+
+def arms(groups, backlog, rng):
+    """两臂四量：FIFO 吃原顺序、LOF 吃按组最大降序，两者吃同一批轨迹。
+
+    返回 dict，含两条 makespan、R 与两臂各自的相对变化。R 的差与两臂之比
+    是恒等关系（`R1 − R0 = (T0/G0) − (T1/G1)`），这里一并给出，免得读者再去
+    猜"是不是某一臂被选得更好"。
+    """
+    order = list(groups)
+    rng.shuffle(order)
+    # LOF 是确定性的（按组最大降序），`order` 只用来给种子加独立复本
+    fifo = M._makespan_by_policy(groups, backlog, M.POLICY_FIFO)
+    lof = M._makespan_by_policy(order, backlog, M.POLICY_LOF)
+    g0, t0, g1, t1 = (fifo['group_makespan'], fifo['traj_makespan'],
+                      lof['group_makespan'], lof['traj_makespan'])
+    return {
+        'R_fifo': fifo['tax'],
+        'R_lof': lof['tax'],
+        'abs': fifo['tax'] - lof['tax'],
+        'rel': lof['tax'] / fifo['tax'] if fifo['tax'] else 1.0,
+        'group_gain': 1.0 - g1 / g0,
+        'traj_gain': 1.0 - t1 / t0,
     }
-    print(json.dumps(out, indent=1, ensure_ascii=False))
-    (HERE / 'bucketing-probe.json').write_text(
-        json.dumps(out, indent=1, ensure_ascii=False) + '\n', encoding='utf-8')
+
+
+def summarize(rows):
+    diffs = [r['abs'] for r in rows]
+    rels = [r['rel'] for r in rows]
+    same = sum(1 for r in rows if abs(r['abs']) < 1e-12)
+    live = [r for r in rows if abs(r['abs']) >= 1e-12]
+    return {
+        'n': len(rows),
+        'identical': same,
+        'abs_pp_mean': round(statistics.mean(diffs) * 100, 3),
+        'abs_pp_median': round(statistics.median(diffs) * 100, 3),
+        # 正号 = LOF 让 R 变小（变好），负号 = 变大（变差）
+        'abs_wins': sum(1 for r in rows if r['abs'] > 0),
+        'rel_mean': round(statistics.mean(rels), 4),
+        'rel_median': round(statistics.median(rels), 4),
+        # 退化种子的比值恒 1.0，混进均值会把**变差**的臂的平均比拉到 1 以下，
+        # 看上去像变好了。相对比只在"两臂确实不同"的种子上读。
+        'rel_mean_live': round(statistics.mean([r['rel'] for r in live]), 4)
+        if live else None,
+        'rel_median_live': round(statistics.median([r['rel'] for r in live]), 4)
+        if live else None,
+        # R 的变化由两臂组臂/轨迹臂 makespan 之比**代数决定**（无自由参数）：
+        #   R = 1 − T/G ⇒ R1 − R0 = (T0/G0) − (T1/G1)
+        # 这里给出改序后组臂与轨迹臂各自的相对变化，用来判断"哪一臂更受益"。
+        'group_arm_gain_mean': round(statistics.mean(r['group_gain'] for r in rows), 4),
+        'traj_arm_gain_mean': round(statistics.mean(r['traj_gain'] for r in rows), 4),
+    }
+
+
+def synthetic_block():
+    """构造负载：FIFO 基线、配对绝对差、配对相对比、随机序自身的离散度。"""
+    out = []
+    for backlog in BACKLOGS:
+        rows, spreads = [], []
+        for s in range(SEEDS):
+            groups = make_load(s)
+            r = arms(groups, backlog, random.Random(s + 5000))
+            r['R_fifo_arrival'] = r['R_fifo']
+            rng = random.Random(s + 1000)
+            shuf = []
+            for _ in range(10):
+                g = groups[:]
+                rng.shuffle(g)
+                shuf.append(tax(g, M.POLICY_FIFO, backlog))
+            spreads.append(max(shuf) - min(shuf))
+            rows.append(r)
+        stat = summarize(rows)
+        stat.update({
+            'backlog': backlog,
+            'R_fifo_mean': round(statistics.mean(r['R_fifo'] for r in rows), 4),
+            'shuffle_spread_pp_mean': round(statistics.mean(spreads) * 100, 3),
+        })
+        out.append(stat)
+    return out
+
+
+def real_block():
+    """真实负载：每个文件抽 16 组、四档积压，配对读顺序效应。"""
+    out = []
+    for name in REAL_FILES:
+        corpus = load_real(name)
+        cv = statistics.pstdev([max(g) for g in corpus]) / statistics.mean(
+            [max(g) for g in corpus])
+        for backlog in BACKLOGS:
+            rows = []
+            for s in range(SEEDS):
+                rng = random.Random(s)
+                picks = sorted(rng.sample(range(len(corpus)), N_GROUPS))
+                groups = [corpus[i] for i in picks]
+                rows.append(arms(groups, backlog, random.Random(s + 5000)))
+            stat = summarize(rows)
+            stat.update({
+                'file': name,
+                'backlog': backlog,
+                'group_max_cv': round(cv, 3),
+                'n_pool_groups': len(corpus),
+                'R_fifo_mean': round(statistics.mean(r['R_fifo'] for r in rows), 4),
+                'R_lof_mean': round(statistics.mean(r['R_lof'] for r in rows), 4),
+            })
+            out.append(stat)
+    return out
+
+
+def main():
+    result = {
+        'seeds': SEEDS, 'n_groups': N_GROUPS, 'n_per': N_PER,
+        'cv_synthetic': CV, 'backlogs': list(BACKLOGS),
+        'synthetic': synthetic_block(),
+        'real': real_block(),
+    }
+    text = json.dumps(result, indent=1, ensure_ascii=False)
+    print(text)
+    (HERE / 'bucketing-probe.json').write_text(text + '\n', encoding='utf-8')
     return 0
 
 

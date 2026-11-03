@@ -1,10 +1,26 @@
 # perpetual-learning — 执行接续
 
-更新时间：2026-11-03（M1 13:1x 第四十批 §13.30 第一批 `R` 作废重算；M1 12:0x 第三十九批 排程器输入守卫＋分桶缺口备料；M1 11:1x 第三十八批 归档字段复核；M5 07:4x 第五十八批 separate_async）。规则入口：[AGENTS.md](AGENTS.md)；任务入口：[技术秘书](queue_tech-secretary.md) / [技术掘金](queue_tech-miner.md)。
+更新时间：2026-11-03（M1 13:2x 第四十批补遗：分桶探针配对法再修一处＋`grouping_tax` 组臂修复落地；M1 13:1x 第四十批 §13.30 第一批 `R` 作废重算；M1 12:0x 第三十九批 排程器输入守卫＋分桶缺口备料；M5 07:4x 第五十八批 separate_async）。规则入口：[AGENTS.md](AGENTS.md)；任务入口：[技术秘书](queue_tech-secretary.md) / [技术掘金](queue_tech-miner.md)。
 
 ## 当前现场
 
-### M1 本轮（2026-11-03 13:0x–13:2x）：§13.30 第一批的 `R` 六个读数作废并重算——组臂归还粒度曾经退化
+### M1 本轮（2026-11-03 13:1x–13:3x）：分桶探针的两处口径再修一次，并把 `grouping_tax` 组臂修复与档案一起落地
+
+技术秘书侧无新用户任务；TM 系列对外动作仍全部待用户逐项授权。本轮接的是 `7b2f8db3b`（"组级排序平均降 R 5.95pp"）→ `e5d3386b9`（并行会话推翻为"真实负载上方向相反"）这条接力。**不再改结论，只把探针做对，顺带把上一条遗留的组臂修复提交掉。**
+
+**一、5.95pp 除基线泄漏外还有第二处配对错位。** 现行版让两臂共用同一份乱序——那个乱序被当成两臂共有的派发次序，而 `FIFO` 的定义是"按到达顺序"。改成 FIFO 臂吃原顺序后读数稳定下来：真实 1.5B cap1024 四档 **−3.34／−6.33／−2.93／−1.44pp**，1.5B cap256 四档 **−0.24／−1.97／+0.54／+1.23pp**。**与并行会话的订正逐格一致**（两边独立重写，落在同一组数上），说明这条订正确实是口径问题而不是随机性。
+
+**二、探针现在把两臂各自的增益一并归档，机制因此闭合。** `R1 − R0 = (T0/G0) − (T1/G1)` 是代数恒等，符号由"哪一臂被排得更整齐"直接决定：1.5B cap256 4 批组臂 +0.3%／轨迹臂 +2.3%（`R` 升）、16 批组臂 +1.8%／轨迹臂 +0.4%（`R` 降）；cap1024 两档都是轨迹臂赢。**这与 §13.30 第四批"随积压加深受益方换人"一致，只是换了算法**（那边逐对拆臂，这边用恒等式）。
+
+**三、`grouping_tax` 的组臂修复与档案落地。** 上一轮核出的"组臂归还粒度退化"（旧路径 `R` 低约 22%）现已在 `group_split_tradeoff.py` 中修好（新增 `_group_makespan`），负向对照两条测试在未修代码上 FAIL（`−3.0 != 0.0`）；`summary.json` 重算后只有 `layer2_grouping_tax` 与 `layer3_verdict.best_case_grouping_tax` 变，其余逐位不变。修正后 `grouping_tax` 与口径正确的 `_makespan_by_policy` **逐位相同**。`legacy_group_arm_check.py` 的守护用例原用 4 组 × 4 条（cap 恰等于工作量、旧路径也给 0，等于没守），已改成 4 组 × 8 条 × 2 批，旧路径给 **−100%**。
+
+**核对产物**：`pytest` **48 passed**；`group_split_tradeoff.py --verify`／`real_lengths_policy.py --verify`／`legacy_group_arm_check.py --verify` 三处均 exit 0。只读仿真、未跑 GPU、未触上游。
+
+**留给下一轮的两条**：① 探针仍不建模"分桶改变批组成"，TM-011 的停止条件已按否定读数改写（只排序有害、要救回来必须建模组成）；② 真实档每格 16 组 × 20 次，不主张 0.1pp 级精度。
+
+入口：[bucketing-probe.md](experiments/rollout-group-split-tradeoff/bucketing-probe.md) · [legacy_group_arm_check.py](experiments/rollout-group-split-tradeoff/legacy_group_arm_check.py) · [TM-011](queue_tech-miner.md) · [diary](diary/2026-11-03.md)。
+
+### M1 上一轮（2026-11-03 13:0x–13:2x）：§13.30 第一批的 `R` 六个读数作废并重算——组臂归还粒度曾经退化
 
 技术秘书侧无新用户任务；TM 系列对外动作仍全部待用户逐项授权。本轮做的是**核并行会话的结论**：它的提交说明说 `grouping_tax` 旧组臂"量出负税 −33%"，我按规矩两边各算一遍，核出两件事。
 
@@ -16,7 +32,7 @@
 
 **核对产物**：两文件 **48 passed**；`legacy_group_arm_check.py --verify` exit 0；`verify_anchors --verify` 34 一致／0 不一致；`group_split_tradeoff.py --verify` exit 0。只读重算、未跑 GPU、未改任何测量值。
 
-**未接手并行会话在写的东西**：`bucketing_probe.py`／`bucketing-probe.*`／`group_split_tradeoff.py` 的 `_group_makespan`／`summary.json`／`queue_tech-miner.md` 的 TM-011 段当时都在工作区未提交，本轮**没动它们**（只改了 `readme.md` 的 L2 段与 `notebook`）。
+**未接手并行会话在写的东西**：`bucketing_probe.py`／`bucketing-probe.*`／`group_split_tradeoff.py` 的 `_group_makespan`／`summary.json`／`queue_tech-miner.md` 的 TM-011 段当时都在工作区未提交，本轮**没动它们**（只改了 `readme.md` 的 L2 段与 `notebook`）。→ **已于 13:3x 由下一轮落地**（探针配对法＋组臂修复＋TM-011 改写），见上一条。
 
 入口：[§13.30 第四十批](notebook/rollout-performance-research.md) · [legacy_group_arm_check.py](experiments/rollout-group-split-tradeoff/legacy_group_arm_check.py) · [归档](experiments/rollout-group-split-tradeoff/legacy-group-arm-check.json) · [diary](diary/2026-11-03.md) · [TS-001](queue_tech-secretary.md)。
 

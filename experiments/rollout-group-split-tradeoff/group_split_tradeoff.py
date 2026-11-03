@@ -285,6 +285,34 @@ def _makespan(slot_counts, durations, group_level, cap=None, slo=None):
     return max(end, 1e-9)
 
 
+def _group_makespan(group_durs, n_per, cap):
+    """组臂：每个"任务"就是**一整组**，占 n_per 个槽，最慢那条跑完才整组归还。
+
+    与 `_makespan(group_level=True)` 的区别：那里一个组由 n_per 个成员任务拼成，
+    组号取 `i // n_per`；这里每个任务本身就是一组，组号就是它自己的下标。
+    两条路径都必须让 `group_left` 的初值等于**该组的成员数**，否则一组只有
+    1 个成员时任务一完成就归还整组槽位，粒度退化成逐条。
+    """
+    free = cap
+    running = []
+    pending = list(range(len(group_durs)))
+    now = end = 0.0
+    while pending or running:
+        for i in list(pending):
+            if n_per <= free:
+                running.append((now + group_durs[i], i))
+                free -= n_per
+                pending.remove(i)
+        if not running:
+            break
+        running.sort()
+        t, _i = running.pop(0)
+        now = max(now, t)
+        end = max(end, t)
+        free += n_per
+    return max(end, 1e-9)
+
+
 def grouping_tax(fragment_lens, backlog_groups=4):
     """**分组税**：同一 workload 在"整组原子"与"逐条连续"两种粒度下的 makespan 比。
 
@@ -314,11 +342,15 @@ def grouping_tax(fragment_lens, backlog_groups=4):
             flat.extend(g)
 
     # ---- 组臂：以组为单位排程，一组占 n_per slot，时长 = 组最大 ----
+    # 时限必须用 grouping_tax 自己的定义（组最大），不能借 n_per 的槽位数去凑
+    # 组：`_makespan` 的 slot_counts 是逐任务的，`[n_per] * k` 表示 k 个**各自独立**
+    # 的单槽任务，每个任务一完成就把 n_per 个槽还回去——归还粒度退化成逐条，
+    # 组臂凭空变快、量出负税（2026-11-03 修）。
     group_dur = []
     for b in range(backlog_groups):
         for g in fragment_lens:
             group_dur.append(max(g))
-    t_group = _makespan([n_per] * len(group_dur), group_dur, True, cap=cap)
+    t_group = _group_makespan(group_dur, n_per, cap)
 
     # ---- 轨迹臂：同样的轨迹逐条排程 ----
     t_traj = _makespan([1] * len(flat), flat, False, cap=cap)
