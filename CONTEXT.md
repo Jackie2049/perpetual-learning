@@ -4,6 +4,10 @@
 
 ## 当前现场
 
+> **只读最上面一节 `### M1 本轮` 即可恢复现场。** 下面 20+ 个 `###` 是历史批次叙述
+> （按时间倒序）——**它们已在 `diary/` 与专项文档留档，此处仅为交接连续性的冗余副本**。
+> 判断"现在该做什么"看 `## 未完成操作与并行工作` 与两个队列，不要从头读到尾。
+
 ### M1 本轮（2026-11-03 21:0x）：归档不变 ≠ 两版实现相同——补做逐值对照与跨脚本一致性
 
 技术秘书侧无新用户任务；TM 系列对外动作仍全部待用户逐项授权。本轮接第六批自己写下的两条「留给下一轮」：① 共享判据缺**跨脚本一致性**测试；③「抽完没有回归」只有归档比对这一条证据，**两版实现的逐值对照还没做**。两条都是纯 CPU 重算，不新开实验、不改任何测量值。
@@ -397,18 +401,6 @@ M1 上一轮把 TM-009 从"已取证待决定"推到"材料齐备待决定"：�
 
 - 专项：[rollout 主文档](notebook/rollout-performance-research.md)（§13.54 M5 本轮、§13.30 第三批／§11.4／§11.5 M1 本轮）。
 - 真机分工：[实验交接](experiments/handoff-m5.md)、[AReaL 单一负责人交接](open-source/areal/handoff-m5.md)。
-- 本轮 M5 成果：[separate_async 轮询实验](experiments/verl-v1-poll-quantum-separate/README.md)（4 跑＋2 步冒烟、`verify.py` 34 项 PASS、md5 5/5）。
-- 上一轮 M5 成果：[第五十六批独立复核](experiments/verl-v1-poll-quantum-dapo/verification-inflight3.md)、[main `3fdf2b54` 运行时冒烟](experiments/verl-v1-poll-quantum/README.md#补丁在-main-3fdf2b54-上的运行时冒烟2026-11-03m5-第二会话)、[wait（dropless）补测](experiments/verl-v1-poll-quantum-stale/README.md#补测max_off_policy_strategywaitdropless2026-11-03m5-第二会话)、[async 轮询实验](experiments/verl-v1-poll-quantum-async/README.md)。
-- **本轮 M1 成果**：[§13.47.2（wall_ratio 的阈值拆解）](notebook/rollout-performance-research.md) · [readme 第六批](experiments/rollout-c-class-ledger/readme.md) · [wall_threshold_band.py](experiments/rollout-c-class-ledger/wall_threshold_band.py) · [归档](experiments/rollout-c-class-ledger/wall-threshold-band.json) · [测试](experiments/rollout-c-class-ledger/test_wall_threshold_band.py) · [paired-diff](tools/paired-diff/readme.md)。
-- 上一批 M1 成果：[§13.47.1 补遗（阈值摆幅拆成同水平步数差）](notebook/rollout-performance-research.md) · [readme 第五批补遗](experiments/rollout-c-class-ledger/readme.md) · [ledger.py](experiments/rollout-c-class-ledger/ledger.py) · [归档](experiments/rollout-c-class-ledger/ledger.json)。
-- 上一批 M1 成果：[§13.30 第五批（真实负载上的符号稳定性与基线带宽）](notebook/rollout-performance-research.md) · [real_lengths_policy.py](experiments/rollout-group-split-tradeoff/real_lengths_policy.py) · [归档](experiments/rollout-group-split-tradeoff/real-lengths-summary.json) · [实验 readme 第五批](experiments/rollout-group-split-tradeoff/readme.md) · [TM-011](queue_tech-miner.md)。
-- 上一批 M1 成果：[分桶探针第三版（符号稳定性＋基线噪声带）](experiments/rollout-group-split-tradeoff/bucketing-probe.md) · [探针脚本](experiments/rollout-group-split-tradeoff/bucketing_probe.py) · [归档](experiments/rollout-group-split-tradeoff/bucketing-probe.json) · [测试（新增 6 条）](experiments/rollout-group-split-tradeoff/test_group_split_tradeoff.py) · [TM-011 停止条件改写](queue_tech-miner.md)。
-- 上一批 M1 成果：[§13.30 第四批（真实长度上的 `R` 与策略反号）](notebook/rollout-performance-research.md) · [§11.4／§11.5 同步收窄](notebook/rollout-performance-research.md) · [实验 readme](experiments/rollout-group-split-tradeoff/readme.md) · [读数脚本](experiments/rollout-group-split-tradeoff/real_lengths_policy.py) · [归档](experiments/rollout-group-split-tradeoff/real-lengths-summary.json) · [run-info](experiments/rollout-group-split-tradeoff/run-info.json)。
-- 上一批 M1 成果：[§13.30 第三批（调度策略维）](notebook/rollout-performance-research.md) · [§11.4／§11.5 订正](notebook/rollout-performance-research.md)。
-- 上一批 M1 成果：[tools/anchors](tools/anchors/readme.md)（33 项）· [§13.42 结果五订正](notebook/rollout-performance-research.md) · [§19.4 第 9 条](notebook/rollout-performance-research.md)。
-- **上一批 M1 成果**：[§20.3.9](notebook/rollout-performance-research.md)、[重建形式脚本（含配对自检）](experiments/rollout-anchor2-identity/check_reconstruct_form.py)、[负向对照（5 组）](experiments/rollout-anchor2-identity/negative_control_form.py)、[归档](experiments/rollout-anchor2-identity/README.md)、[§11.6](notebook/rollout-performance-research.md)。
-- 上一轮 M5 成果：[长度结构实验](experiments/rollout-length-structure-real/README.md)。
-- 上一轮 M1 成果：[§20.3.8 适用面](notebook/rollout-performance-research.md)、[§20.3.7](notebook/rollout-performance-research.md)、[锚② 复核归档](experiments/rollout-anchor2-identity/README.md)、[TM-010 取证](open-source/rllm/fireworks-r3-routing-matrices.md)、[TM-009 候选补丁](open-source/rllm/patches/use-async-autodetect/readme.md)。
 - 历史追溯：[迁移前 WORK.md 固定快照](https://github.com/Jackie2049/perpetual-learning/blob/76edee31b650d27a110fa6f82df5789abb237cfc/WORK.md)；批次结论仍以专项文档和 [diary](diary/readme.md) 为准。
 
 本文件只覆盖式更新执行现场；任务的目标、状态、优先级和等待条件在队列维护，不在此复制研究历史。
