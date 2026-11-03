@@ -1,0 +1,12 @@
+{
+ "seeds": 20,
+ "n_groups": 16,
+ "n_per": 8,
+ "cv": 0.07,
+ "backlog": 4,
+ "wins": 18,
+ "gain_pp_mean": 5.95,
+ "gain_pp_median": 6.6,
+ "gain_pp_min": -1.67,
+ "gain_pp_max": 12.83
+}
