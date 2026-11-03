@@ -164,6 +164,90 @@ def seed_resampled_tax(groups, n_groups, backlogs, policy, seeds=SEEDS, rng_seed
     return vals
 
 
+def policy_sign_stability(groups, n_groups, backlog, policy, seeds=SEEDS, rng_seed=0):
+    """配对差在**种子间**是否同号（§13.30 第五批，2026-11-03 M1）。
+
+    本脚本此前只报配对差的均值，而均值既可能来自"每个种子都同向"，也可能来自
+    "一半正一半负正好抵消"。分桶探针（`bucketing_probe.seed_sign_stability`）已在
+    同一问题上栽过一次，这里把同一判据补到真实负载上。
+
+    `identical` 是本档的分辨率刹车：两臂 R 完全相等的种子占比。截断档低积压时
+    R 本就接近 0，两臂一起落在 0 上——那不是"一致"，是这一格**没有分辨率**。
+    """
+    rng = random.Random(rng_seed)
+    diffs = []
+    for _ in range(len(seeds)):
+        pick = rng.sample(groups, n_groups)
+        base = _makespan_by_policy(pick, backlog, POLICY_FIFO)['tax']
+        alt = _makespan_by_policy(pick, backlog, policy)['tax']
+        diffs.append(alt - base)
+    pos = sum(1 for d in diffs if d > 1e-12)
+    neg = sum(1 for d in diffs if d < -1e-12)
+    return {
+        'mean_pp': round(100 * statistics.mean(diffs), 3),
+        'n_positive': pos,
+        'n_negative': neg,
+        'n_identical': len(diffs) - pos - neg,
+        'same_sign_fraction': round(max(pos, neg) / float(len(diffs)), 3),
+        'sd_pp': round(100 * statistics.stdev(diffs), 3) if len(diffs) > 1 else None,
+        'min_pp': round(100 * min(diffs), 3),
+        'max_pp': round(100 * max(diffs), 3),
+    }
+
+
+def fifo_reorder_band(groups, n_groups, backlog, seeds=SEEDS, trials=12, rng_seed=0):
+    """同一批组、只换传入顺序，FIFO 臂 R 的极差（pp）。
+
+    `FIFO` 的定义是"按到达顺序"，而到达顺序在本层就是传入列表的顺序。真实负载
+    没有"到达"这一维，本脚本按 `prompt_idx` 排——这是一个**假设**。这里把假设的
+    价格量出来：组集合固定、只打乱顺序，FIFO 自己的读数能差多少。
+    """
+    rng = random.Random(rng_seed)
+    bands = []
+    for s in range(len(seeds)):
+        pick = rng.sample(groups, n_groups)
+        vals = []
+        for t in range(trials):
+            sh = list(pick)
+            random.Random(s * 7919 + t).shuffle(sh)
+            vals.append(_makespan_by_policy(sh, backlog, POLICY_FIFO)['tax'])
+        bands.append(max(vals) - min(vals))
+    bands.sort()
+    return {
+        'median_pp': round(100 * statistics.median(bands), 3),
+        'mean_pp': round(100 * statistics.mean(bands), 3),
+        'p90_pp': round(100 * bands[int(0.9 * (len(bands) - 1))], 3),
+        'max_pp': round(100 * max(bands), 3),
+    }
+
+
+def arrival_assumption_shift(groups, n_groups, backlog, policy, seeds=SEEDS, rng_seed=0):
+    """把「到达顺序」从 prompt_idx 序换成随机序，配对差是否还同向。
+
+    上一条只量了 FIFO 臂自身的抖动；配对差 `delta = R_lof − R_fifo` 里 FIFO 臂的
+    那一份同样会跟着序走。若 delta 的符号依赖"我们选了哪一种到达序"，那它就不是
+    负载的性质。`n_same_sign` 是逐种子两边同号的计数。
+    """
+    rng = random.Random(rng_seed)
+    a, b = [], []
+    for s in range(len(seeds)):
+        pick = rng.sample(groups, n_groups)
+        a.append(_makespan_by_policy(pick, backlog, policy)['tax']
+                 - _makespan_by_policy(pick, backlog, POLICY_FIFO)['tax'])
+        sh = list(pick)
+        random.Random(777 + s).shuffle(sh)
+        b.append(_makespan_by_policy(sh, backlog, policy)['tax']
+                 - _makespan_by_policy(sh, backlog, POLICY_FIFO)['tax'])
+    same = sum(1 for x, y in zip(a, b)
+               if (x > 1e-12 and y > 1e-12) or (x < -1e-12 and y < -1e-12))
+    return {
+        'prompt_order_pp': round(100 * statistics.mean(a), 3),
+        'shuffled_order_pp': round(100 * statistics.mean(b), 3),
+        'n_same_sign': same,
+        'n_total': len(a),
+    }
+
+
 def paired_policy_delta(groups, n_groups, backlog, policy, seeds=SEEDS):
     """逐种子配对差：同一批抽到的组，只换排队顺序，看 R 怎么动。
 
@@ -335,6 +419,17 @@ def build_summary():
             'full_batch': full,
             'n16_resampled': sub,
         }
+        # 符号稳定性与到达顺序假设（§13.30 第五批）：四档四积压全做，
+        # 不是只给 cap256——上一批恰恰是在 cap256 那两档上把均值当效应。
+        st = {}
+        for b in (2, 4, 8, 16):
+            st['backlog%d' % b] = {
+                'lof_sign': policy_sign_stability(groups, N_GROUPS_CONSTRUCT, b, POLICY_LOF),
+                'fifo_band': fifo_reorder_band(groups, N_GROUPS_CONSTRUCT, b),
+                'arrival_shift': arrival_assumption_shift(groups, N_GROUPS_CONSTRUCT, b,
+                                                        POLICY_LOF),
+            }
+        out['real_arms'][label]['sign_stability'] = st
         # 策略位移：取主档（cap256）做逐种子配对差
         if label.endswith('cap256'):
             shift = {}

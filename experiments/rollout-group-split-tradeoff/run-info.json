@@ -2,15 +2,17 @@
  "experiment": "§15 Q5 拆 GRPO 组的代价与收益（L1 统计 / L2 分组税 / L2b 调度策略 / L3 判据 / L4 训练侧同栈均衡）",
  "doc": "notebook/rollout-performance-research.md §13.30（并补 §15 Q5 与 §11.2 条目 7）",
  "execution": {
-  "python": "3.9.6（macOS arm64，仅标准库）；第四批用时 约 30 min",
+  "python": "3.9.6（macOS arm64，仅标准库）；第五批用时 约 17 min",
   "commands": [
    "python3 group_split_tradeoff.py                  # 约 40 s，覆盖 summary.json",
    "python3 group_split_tradeoff.py --verify         # 通过：逐字段相同",
    "python3 -m unittest test_group_split_tradeoff -v # 30 passed",
    "python3 real_lengths_policy.py                  # 第四批：约 30 min（30 种子 × 4 档 × ICC/并列/离散度三组对照）",
    "python3 real_lengths_policy.py --verify         # 通过：逐字段相同",
-   "python3 -m unittest test_real_lengths_policy -v # 10 passed",
-   "python3 -m pytest test_real_lengths_policy.py test_group_split_tradeoff.py -q  # 43 passed（本文件 10 个，含截断上限 4 条）"
+   "python3 real_lengths_policy.py                  # 第五批：约 17 min（新增符号稳定性、基线带宽、到达序对照：4 档 × 4 积压）",
+   "python3 real_lengths_policy.py --verify         # 通过：逐字段相同",
+   "python3 -m unittest test_real_lengths_policy -v # 15 passed（第五批新增 5 条）",
+   "python3 -m pytest test_real_lengths_policy.py test_group_split_tradeoff.py -q  # 59 passed（本文件 15，另一文件 44）"
   ],
   "source_anchors": [
    "verl 24f25b03 verl/trainer/ppo/core_algos.py:306-321（GRPO 逐 prompt index 减均值除标准差）",
@@ -182,5 +184,27 @@
    "bucketing-probe.json": "58e779fc986e64361cb6bb029cfd5d088d6bce8c9a0afc22ba8e83ff656745fa"
   },
   "boundary": "每格 16 组 × 20 次，不主张 0.1pp 级精度；沿用 _makespan_by_policy 的既有假设（slot 单位、整组归还、无 KV 搬运）。"
+ },
+ "sign_stability_checks": {
+  "date": "2026-11-03",
+  "what": "§13.30 第五批：把分桶探针的两条判据（同号比例、基线顺序带宽）补到真实 rollout 负载上，用于判第四批的策略位移能不能当结论。不加新实验、不改任何测量值。",
+  "fields_added": [
+   "real_arms.*.sign_stability.backlog{2,4,8,16}.lof_sign",
+   "...backlog{2,4,8,16}.fifo_band",
+   "...backlog{2,4,8,16}.arrival_shift"
+  ],
+  "readings": "真实档 FIFO 组集合固定、只换顺序，R 极差中位 1.09-4.02pp、最大 11.65pp；第四批报的 +1.99/-0.95/+0.44/-0.39pp 全部落在各格带宽内或带边；cap1024 六格 28-30/30 同号（方向为 R 变大），cap256 各格符号混杂或 11-19/30 种子两臂相等；把到达序从 prompt_idx 换成随机序，配对差几乎不动（逐种子同号 23-30/30）。",
+  "conclusion": "cap256（RL 实际配置）上第四批的'深积压反号'不可引用，方向未定；只有 cap1024（cv 0.30-0.36）六格可引用。",
+  "archive_purity": "旧字段 369 个 0 变化 0 删除，新增 256 个。",
+  "negative_controls": [
+   "把 d>1e-12 改成 d>=0 → 两臂恒等时 n_identical 报 0（test_identical_arms_report_no_resolution 失败）",
+   "删掉 shuffle → 带宽恒 0（test_fifo_band_actually_shuffles 失败）"
+  ],
+  "sha256": {
+   "real_lengths_policy.py": "04dc6aabfaed5327f8727021b504f10f0679099bc2ec358d9726b29df76a8c0d",
+   "test_real_lengths_policy.py": "1e3b9bfe0c09f3dbe4188778a3d11429fc51de936b82cfc21c28942333c67103",
+   "real-lengths-summary.json": "04c714d00c808702008889426c29f4521eb8d3ba9193a497806e95073cfff338"
+  },
+  "boundary": "带宽是判读门槛不是显著性检验（未做 CI／置换）；真实负载的到达顺序仍没有独立于样本的物理含义；每档 16 组 × 30 种子，不主张 0.1pp 级精度。"
  }
 }

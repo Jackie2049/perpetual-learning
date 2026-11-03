@@ -11,6 +11,7 @@
 """
 
 import json
+import os
 import random
 import statistics
 import unittest
@@ -121,6 +122,58 @@ class TestTruncationUsesArmCap(unittest.TestCase):
                 self.assertLess(frac, 0.01, label)      # 实测 0.03%／0.65%
             else:
                 self.assertGreater(frac, 0.4, label)    # 实测 45.3%／60.8%
+
+
+class TestSignStabilityDiagnostics(unittest.TestCase):
+    """§13.30 第五批：均值不够，还要看符号与基线抖动。
+
+    上一批在 cap256 两档上把「−0.95pp（27/30 为负）」写成方向性结论，本批补的
+    三个诊断是判它能不能当结论用的门槛。每条都配一个**在把被测代码改坏时必须
+    变红**的断言。
+    """
+
+    @staticmethod
+    def _flat_groups():
+        """组内长度全同 → 两臂读数恒等，用于造"无分辨率"的输入。"""
+        return [[100.0] * 8 for _ in range(16)]
+
+    def test_identical_arms_report_no_resolution(self):
+        """负向对照：两臂完全相同时 `n_identical` 必须吃掉全部种子。
+
+        若实现把"差为 0"错算成正号（例如写成 `d >= 0`），这里会报 30 个阳性、
+        `same_sign_fraction` 报 1.0——一个本无分辨率的格子被读成"稳定"。
+        """
+        st = r.policy_sign_stability(self._flat_groups(), 16, 4, m.POLICY_LOF, seeds=SEEDS)
+        self.assertEqual(st['n_identical'], len(SEEDS))
+        self.assertEqual(st['n_positive'], 0)
+        self.assertEqual(st['n_negative'], 0)
+
+    def test_sign_counts_sum_to_seed_count(self):
+        """三态计数必须闭合，且符号混杂的格子不能报满分同号。"""
+        groups = r.load_real_groups(os.path.join(r.REAL_DIR, 'qwen15b_gsm8k_n8.jsonl.gz'))
+        st = r.policy_sign_stability(groups, 16, 8, m.POLICY_LOF, seeds=SEEDS)
+        self.assertEqual(st['n_positive'] + st['n_negative'] + st['n_identical'], len(SEEDS))
+        # 8 批这一格在 30 个种子上符号混杂
+        self.assertLess(st['same_sign_fraction'], 0.8)
+
+    def test_fifo_band_is_zero_on_identical_groups(self):
+        """负向对照：组内长度全同时换序不改变 FIFO 读数，带宽必须是 0。"""
+        band = r.fifo_reorder_band(self._flat_groups(), 16, 4, seeds=SEEDS)
+        self.assertEqual(band['max_pp'], 0.0)
+
+    def test_fifo_band_actually_shuffles(self):
+        """负向对照：若实现忘了 shuffle，带宽恒 0，这条会失败。"""
+        groups = r.load_real_groups(os.path.join(r.REAL_DIR, 'qwen15b_gsm8k_n8.jsonl.gz'))
+        band = r.fifo_reorder_band(groups, 16, 4, seeds=list(range(6)))
+        self.assertGreater(band['max_pp'], 0.5)
+
+    def test_arrival_shift_reports_both_orders(self):
+        """到达顺序假设的对照：两种到达序都要给出读数，不能只报一种。"""
+        groups = r.load_real_groups(os.path.join(r.REAL_DIR, 'qwen05b_gsm8k_n8_cap1024.jsonl.gz'))
+        sh = r.arrival_assumption_shift(groups, 16, 4, m.POLICY_LOF, seeds=list(range(10)))
+        self.assertEqual(sh['n_total'], 10)
+        # cap1024 4 批是本批符号最稳的一格：换到达序后绝大多数种子仍同号
+        self.assertGreaterEqual(sh['n_same_sign'], 8)
 
 
 if __name__ == '__main__':
