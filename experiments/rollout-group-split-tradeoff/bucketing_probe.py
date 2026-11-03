@@ -108,6 +108,57 @@ def arms(groups, backlog, rng):
     }
 
 
+def seed_sign_stability(rows):
+    """配对差在**种子间**是否同号。
+
+    均值不看符号分布：20 个种子若一半 +、一半 −，均值可以很小也可以很大，
+    但结论"LOF 让 R 变小"只有在**每个种子都同向**时才算稳定。这里报同号
+    比例与符号区间，让读者能判断均值是不是靠少数种子撑起来的。
+    """
+    diffs = [r['abs'] for r in rows]
+    pos = sum(1 for d in diffs if d > 1e-12)
+    neg = sum(1 for d in diffs if d < -1e-12)
+    return {
+        'n_positive': pos,
+        'n_negative': neg,
+        'same_sign_fraction': round(max(pos, neg) / len(diffs), 3),
+        # 差值的种子间标准差：与 |均值| 相当就说明符号在种子间不稳
+        'sd_pp': round(statistics.stdev(diffs) * 100, 3) if len(diffs) > 1 else None,
+        'min_pp': round(min(diffs) * 100, 3),
+        'max_pp': round(max(diffs) * 100, 3),
+    }
+
+
+def fifo_order_sensitivity(groups, backlog, trials=30, seed=0):
+    """同一批组、只换传入顺序，FIFO 臂的 R 极差（pp）。
+
+    FIFO 的定义是"按到达顺序"，但"到达顺序"在本层就是传入列表的顺序。
+    真实负载里每个种子抽到的是**不同的 16 组**，抽出来再按 prompt_idx 排序，
+    所以种子间的 FIFO 基线同时混了"抽到哪些组"和"它们谁先到"两个来源。
+    这里把第二个来源单独量出来：组集合固定、只打乱顺序。
+    """
+    vals = []
+    for s in range(trials):
+        shuffled = list(groups)
+        random.Random(seed * 100003 + s).shuffle(shuffled)
+        vals.append(M._makespan_by_policy(shuffled, backlog, M.POLICY_FIFO)['tax'])
+    return {
+        'min': round(min(vals), 4),
+        'max': round(max(vals), 4),
+        'spread_pp': round((max(vals) - min(vals)) * 100, 3),
+    }
+
+
+def effect_exceeds_band(effect_pp, band_pp):
+    """配对差的绝对值是否超出 FIFO 自身的顺序敏感度。
+
+    这是一个**判读门槛，不是显著性检验**：它只回答"读到的排序效应是否大到
+    无法用 FIFO 基线自身的顺序抖动解释"。真正的显著性还要看符号在种子间
+    是否稳定（`seed_sign_stability`），两者缺一都不能下结论。
+    """
+    return abs(effect_pp) > abs(band_pp)
+
+
 def summarize(rows):
     diffs = [r['abs'] for r in rows]
     rels = [r['rel'] for r in rows]
@@ -120,6 +171,7 @@ def summarize(rows):
         'abs_pp_median': round(statistics.median(diffs) * 100, 3),
         # 正号 = LOF 让 R 变小（变好），负号 = 变大（变差）
         'abs_wins': sum(1 for r in rows if r['abs'] > 0),
+        'sign_stability': seed_sign_stability(rows),
         'rel_mean': round(statistics.mean(rels), 4),
         'rel_median': round(statistics.median(rels), 4),
         # 退化种子的比值恒 1.0，混进均值会把**变差**的臂的平均比拉到 1 以下，
@@ -171,12 +223,14 @@ def real_block():
         cv = statistics.pstdev([max(g) for g in corpus]) / statistics.mean(
             [max(g) for g in corpus])
         for backlog in BACKLOGS:
-            rows = []
+            rows, fifo_spreads = [], []
             for s in range(SEEDS):
                 rng = random.Random(s)
                 picks = sorted(rng.sample(range(len(corpus)), N_GROUPS))
                 groups = [corpus[i] for i in picks]
                 rows.append(arms(groups, backlog, random.Random(s + 5000)))
+                fifo_spreads.append(
+                    fifo_order_sensitivity(groups, backlog, seed=s)['spread_pp'])
             stat = summarize(rows)
             stat.update({
                 'file': name,
@@ -185,6 +239,9 @@ def real_block():
                 'n_pool_groups': len(corpus),
                 'R_fifo_mean': round(statistics.mean(r['R_fifo'] for r in rows), 4),
                 'R_lof_mean': round(statistics.mean(r['R_lof'] for r in rows), 4),
+                # 同组集合下 FIFO 自身的顺序敏感度均值：|配对差| 若落在这个带里，
+                # 说明读到的"排序效应"与基线自身的顺序抖动不可区分。
+                'fifo_order_spread_pp_mean': round(statistics.mean(fifo_spreads), 3),
             })
             out.append(stat)
     return out

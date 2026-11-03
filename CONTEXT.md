@@ -1,12 +1,32 @@
 # perpetual-learning — 执行接续
 
-更新时间：2026-11-03（M1 13:2x 第四十批补遗：分桶探针配对法再修一处＋`grouping_tax` 组臂修复落地；M1 13:1x 第四十批 §13.30 第一批 `R` 作废重算；M1 12:0x 第三十九批 排程器输入守卫＋分桶缺口备料；M5 07:4x 第五十八批 separate_async）。规则入口：[AGENTS.md](AGENTS.md)；任务入口：[技术秘书](queue_tech-secretary.md) / [技术掘金](queue_tech-miner.md)。
+更新时间：2026-11-03（M1 14:2x 第四十一批：分桶探针读数按符号稳定性分档，TM-011 停止条件改为"先改排程器再谈立项"；M1 13:2x 第四十批补遗：分桶探针配对法再修一处＋`grouping_tax` 组臂修复落地；M5 07:4x 第五十八批 separate_async）。规则入口：[AGENTS.md](AGENTS.md)；任务入口：[技术秘书](queue_tech-secretary.md) / [技术掘金](queue_tech-miner.md)。
 
 ## 当前现场
 
-### M1 本轮（2026-11-03 13:1x–13:3x）：分桶探针的两处口径再修一次，并把 `grouping_tax` 组臂修复与档案一起落地
+### M1 本轮（2026-11-03 14:0x–14:3x）：分桶探针的均值读数分档——只有 cap1024 ≥4 批站得住，并核出 TM-011 立项前置是改造排程器
 
-技术秘书侧无新用户任务；TM 系列对外动作仍全部待用户逐项授权。本轮接的是 `7b2f8db3b`（"组级排序平均降 R 5.95pp"）→ `e5d3386b9`（并行会话推翻为"真实负载上方向相反"）这条接力。**不再改结论，只把探针做对，顺带把上一条遗留的组臂修复提交掉。**
+技术秘书侧无新用户任务；TM 系列对外动作仍全部待用户逐项授权。本轮接 TM-011 的备料，**不新开实验**，只给已有探针补两条判读量，然后重新分档。
+
+**一、FIFO 基线自己就依赖"到达顺序"。** `FIFO` 的定义是"按到达顺序"，而在本排程器里到达顺序**就是传入列表的顺序**；真实负载每个种子抽到不同的 16 组，于是种子间的 FIFO 基线混了"抽到哪些组"和"谁先到"两个来源。把后者单独量出来（组集合固定、只打乱顺序）：同批组只换顺序，`R` 就动 **1.4–5.5pp**（1.5B cap1024 4 批最大 5.52pp）。
+
+**二、符号稳定性把 16 格劈成两半。** 用 `same_sign_fraction` 与种子间 sd 判读：**只有 cap1024 且积压 ≥4 批的六格是 19–20/20 同号**（方向"长度优先让 `R` 变大"）；**cap256（RL 实际配置）各档符号在种子间翻转**（3/13、13/7、10/8、14/5、10/10）；两档 cap1024 2 批 sd 是均值的两倍以上（6.27／6.62）。⇒ 上一版正文的"−1.97／+0.54／+1.23pp"是**把均值当效应**，这些格子不支持方向性结论。主导结论"只排序有害"**只在 cap1024 ≥4 批成立**。
+
+**三、TM-011 立项前置是改造排程器，不是加分桶逻辑。** 核了三条硬约束：① `cap = n_groups * n_per` 恒等于单批轨迹总数；② 组到达 `arrival = b * batch_span`（同步到达）；③ 单批内组臂一次放下全部组（乱序 10 次 `group_makespan` 全同）。⇒ **"哪些组进同一批"在本模型里不是可改的变量**，分桶改的正是批组成。这不是"分桶没用"，是**这个工具问不了这个问题**。停止条件已改写：立项前置＝独立到达流＋批窗口可分离＋容量与批解绑。
+
+**改了什么**：`bucketing_probe.py` 新增 `seed_sign_stability()`／`fifo_order_sensitivity()`／`effect_exceeds_band()`；`bucketing-probe.json` 新增 136 字段、**旧字段 0 变化 0 删除**（已 diff）；`test_group_split_tradeoff.py` 新增 6 条（两个类）；`bucketing-probe.md` 增第三版章节、第二版表加"不要单独引用"标记、一句话结论收窄；TM-011 增第四十一批条文并给第二版条文加订正指向。
+
+**核对产物**：两文件 **54 passed**；`group_split_tradeoff.py --verify`／`legacy_group_arm_check.py --verify`／`real_lengths_policy.py --verify`（约 10 分钟重算）**三处均 exit 0**；`verify_anchors --verify` 34 一致／0 不一致；三次注入（`same_sign_fraction` 恒 1.0／敏感度不换序／`effect_exceeds_band` 恒 True）**全部被抓到**。只读仿真、未跑 GPU、未触上游。
+
+**⚠ 推送状态：已恢复。** 上一轮记的"连不上 GitHub"已解除——开工时 `curl https://github.com` 返回 200，`git ls-remote` 确认远端 main 即 `150cee212`，本地与 `origin/main` 对齐，**无积压未推送提交**。
+
+**留给下一轮的两条**：① 探针仍不建模"分桶改变批组成"（本轮已把这一条变成 TM-011 的立项前置，不再是模糊缺口）；② 真实档每格 20 种子、未做 CI／置换检验，`effect_exceeds_band` 只是判读门槛不是显著性——引用时措辞要守住这条。
+
+入口：[bucketing-probe.md](experiments/rollout-group-split-tradeoff/bucketing-probe.md) · [bucketing_probe.py](experiments/rollout-group-split-tradeoff/bucketing_probe.py) · [TM-011](queue_tech-miner.md) · [diary](diary/2026-11-03.md)。
+
+### M1 上一轮（2026-11-03 13:1x–13:3x）：分桶探针的两处口径再修一次，并把 `grouping_tax` 组臂修复与档案一起落地
+
+技术秘书侧无新用户任务；TM 系列对外动作仍全部待用户逐项授权。本轮接的是 `7b2f8db3b`（"组级排序平均降 R 5.95pp"）→ `e5d3386b9`（并行会话推翻为"真实负载上方向相反"）这条接力。**不再改结论，只把探针做对，顺带把上一条遗留的组臂修复提交掉。**（**注**：该轮的 cap256 读数已由本轮第四十一批订正为"符号不稳"，见上。）
 
 **一、5.95pp 除基线泄漏外还有第二处配对错位。** 现行版让两臂共用同一份乱序——那个乱序被当成两臂共有的派发次序，而 `FIFO` 的定义是"按到达顺序"。改成 FIFO 臂吃原顺序后读数稳定下来：真实 1.5B cap1024 四档 **−3.34／−6.33／−2.93／−1.44pp**，1.5B cap256 四档 **−0.24／−1.97／+0.54／+1.23pp**。**与并行会话的订正逐格一致**（两边独立重写，落在同一组数上），说明这条订正确实是口径问题而不是随机性。
 
@@ -231,12 +251,14 @@ M1 上一轮把 TM-009 从"已取证待决定"推到"材料齐备待决定"：�
 
 | 执行者 | 当前任务 | 接续入口与核对事项 |
 |---|---|---|
-| M1 | TS-001 第四十批（§13.30 第一批 `R` 作废重算）完成；TM-010／TM-009 待用户决定是否对外 | 取证、上游查重、可达性复核、候选补丁均完成：[取证](open-source/rllm/tool-use-async-autodetect.md)、[可达性探针](experiments/rllm-tool-use-async-probe/prod_reachability.py)、[候选补丁](open-source/rllm/patches/use-async-autodetect/readme.md)。**对外动作全部未做**。**第四十批把 §13.30 第一批的六个 `R` 读数作废并按正确组臂重算**（43.7／54.7／20.6／56.6／27.7／38.6 → 34.0／42.4／14.7→44.9／17.3→34.0），第二／三／四批不受影响。TS-001 的可做补强已到边际：纯归档重算、语义面排队顺序维、真实长度负载维都已纳入。**第三十九批试过**语义面的"逐条补位"上限档（真实负载 1.5B cap256：4 批 2.4%→12.9%、16 批 10.8%→13.8%），**不足以成篇**——真实组最大 cv 只有 0.07，组级排队无事可排；要成篇需另建分桶／预测误差模型，已登记为后续候选。语义面剩余缺口仍是**长度预测误差／分桶／迁移／抢占／KV 搬运**，P-1 跨系统需用户立项。 |
+| M1 | TS-001 第四十一批（分桶探针读数分档＋TM-011 立项前置）完成；TM-010／TM-009／TM-011 待用户决定 | 取证、上游查重、可达性复核、候选补丁均完成：[取证](open-source/rllm/tool-use-async-autodetect.md)、[可达性探针](experiments/rllm-tool-use-async-probe/prod_reachability.py)、[候选补丁](open-source/rllm/patches/use-async-autodetect/readme.md)。**对外动作全部未做**。**第四十批把 §13.30 第一批的六个 `R` 读数作废并按正确组臂重算**（43.7／54.7／20.6／56.6／27.7／38.6 → 34.0／42.4／14.7→44.9／17.3→34.0），第二／三／四批不受影响。**第四十一批把分桶探针的 16 格读数按符号稳定性分档**：只有 cap1024 ≥4 批六格稳定（19–20/20 同号），cap256 各档符号在种子间翻转 ⇒ **不再引用 cap256 的均值当效应**；并核出 TM-011 立项前置是**改造排程器**（容量与批绑定、同步到达、单批内乱序零效应），不是加分桶逻辑。TS-001 的可做补强已到边际：纯归档重算、语义面排队顺序维、真实长度负载维都已纳入。语义面剩余缺口仍是**长度预测误差／分桶／迁移／抢占／KV 搬运**，P-1 跨系统需用户立项。 |
 | M5 | TS-001 算力支持 | **第五十八批 §13.54：separate_async 跑通并测完（4/4 exit 0，整步差 +0.010s ⇒ poll 不在关键路径）**；此前第五十六批 §13.52、第五十七批 §13.53（drop）与 §13.53 补记（wait t=1／t=2）、第五十六批与 wait 臂独立复核、main `3fdf2b54` 3 步冒烟均完成（见上）。TM-008 剩余未测只剩 4 卡 `inflight=1`（需 ≥4 卡空闲窗口）与 `wait` 的 t≥3 档（结构上等同默认 async）。**separate_async 的两条本机前置必须记住**：不能设 `RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1`（checkpoint 组会撞「多 rank 同卡」），且需 `NCCL_SHM_DISABLE=1` 规避训练侧 CUDA 217；cupy 装在 `/tmp/cupy-pkgs`。P-1 跨系统（AReaL／OpenRLHF／SkyRL，需用户立项）；P-2 FP8 训练侧（待实测）。**下一轮先核对 GPU 归属与占用再启动，不据旧记录假定空闲。** |
 
 
 ## 未完成操作与并行工作
 
+- **均值不能代替符号分布（2026-11-03 第四十一批新增）**：分桶探针报的是 20 个种子的**均值**，而同一个均值既可能来自"全同向"，也可能来自"一半正一半负正好抵消"。引用任何配对差之前必须同时看**同号比例**与**种子间 sd**——本轮据此把 16 格读数劈成两半（cap256 各档 3/13、13/7、10/8、5/15、10/10，全部不能当方向性结论）。第二个判据是**基线自身的抖动**：FIFO 臂的读数随传入顺序就能动 1.4–5.5pp（同组集合只换序），效应小于这个带宽时不该下结论。`effect_exceeds_band` 只是**判读门槛不是显著性检验**，且每格仅 20 种子、未做 CI／置换。
+- **问"分桶有没有用"之前先问工具能不能问（第四十一批新增）**：本排程器三条结构约束使"哪些组进同一批"**不可变**——`cap = n_groups * n_per`（容量=单批轨迹数）、`arrival = b * batch_span`（同步到达）、单批内乱序对 `group_makespan` 零影响。故任何"排序"实验测到的都只是排序，**测不到分桶**。TM-011 若立项，前置是改造排程器（独立到达流＋批窗口可分离＋容量与批解绑），未改造前不接分桶分支。
 - **回退只能按路径（2026-11-03 第三十八批新增）**：`git checkout -- .` 会把**未提交的改动**一起抹掉（本轮实际发生一次，cap 修正与测试全丢）。回退自己的试探性改动必须写全路径 `git checkout -- <file>`；动手前先 `git status --short` 确认哪些是你的、哪些是并行会话的。
 - **负向对照必须在「把被测代码改坏」的条件下运行（2026-11-03 第三十八批新增）**：只读产物（归档 json）或只测常量映射都不算负向对照——当天两版测试在撤掉修正后照样全绿。断言要落在被改坏的那根线上；检查器读的键先去归档里核一遍存在（第 34 项就读了个从不存在的 `intra_group_cv`）。
 - **别人说某条路径坏了，也要两边各算一遍（第四十批新增）**：并行会话的提交说明说旧组臂"量出负税 −33%"，我照抄进正文并当负向对照，**测试连红两轮**才发现那是参差输入的例子、与组臂分组方式无关。判据：**任何"某路径给出怪值"的说法，先在同口径下把旧路径与新路径各跑一遍**，再看怪值出现在哪一侧、是否换号；负税在等大组上结构性不可能（旧路径只会让组臂更快）。
@@ -275,7 +297,8 @@ M1 上一轮把 TM-009 从"已取证待决定"推到"材料齐备待决定"：�
 - 真机分工：[实验交接](experiments/handoff-m5.md)、[AReaL 单一负责人交接](open-source/areal/handoff-m5.md)。
 - 本轮 M5 成果：[separate_async 轮询实验](experiments/verl-v1-poll-quantum-separate/README.md)（4 跑＋2 步冒烟、`verify.py` 34 项 PASS、md5 5/5）。
 - 上一轮 M5 成果：[第五十六批独立复核](experiments/verl-v1-poll-quantum-dapo/verification-inflight3.md)、[main `3fdf2b54` 运行时冒烟](experiments/verl-v1-poll-quantum/README.md#补丁在-main-3fdf2b54-上的运行时冒烟2026-11-03m5-第二会话)、[wait（dropless）补测](experiments/verl-v1-poll-quantum-stale/README.md#补测max_off_policy_strategywaitdropless2026-11-03m5-第二会话)、[async 轮询实验](experiments/verl-v1-poll-quantum-async/README.md)。
-- **本轮 M1 成果**：[§13.30 第四批（真实长度上的 `R` 与策略反号）](notebook/rollout-performance-research.md) · [§11.4／§11.5 同步收窄](notebook/rollout-performance-research.md) · [实验 readme](experiments/rollout-group-split-tradeoff/readme.md) · [读数脚本](experiments/rollout-group-split-tradeoff/real_lengths_policy.py) · [归档](experiments/rollout-group-split-tradeoff/real-lengths-summary.json) · [run-info](experiments/rollout-group-split-tradeoff/run-info.json)。
+- **本轮 M1 成果**：[分桶探针第三版（符号稳定性＋基线噪声带）](experiments/rollout-group-split-tradeoff/bucketing-probe.md) · [探针脚本](experiments/rollout-group-split-tradeoff/bucketing_probe.py) · [归档](experiments/rollout-group-split-tradeoff/bucketing-probe.json) · [测试（新增 6 条）](experiments/rollout-group-split-tradeoff/test_group_split_tradeoff.py) · [TM-011 停止条件改写](queue_tech-miner.md)。
+- 上一批 M1 成果：[§13.30 第四批（真实长度上的 `R` 与策略反号）](notebook/rollout-performance-research.md) · [§11.4／§11.5 同步收窄](notebook/rollout-performance-research.md) · [实验 readme](experiments/rollout-group-split-tradeoff/readme.md) · [读数脚本](experiments/rollout-group-split-tradeoff/real_lengths_policy.py) · [归档](experiments/rollout-group-split-tradeoff/real-lengths-summary.json) · [run-info](experiments/rollout-group-split-tradeoff/run-info.json)。
 - 上一批 M1 成果：[§13.30 第三批（调度策略维）](notebook/rollout-performance-research.md) · [§11.4／§11.5 订正](notebook/rollout-performance-research.md)。
 - 上一批 M1 成果：[tools/anchors](tools/anchors/readme.md)（33 项）· [§13.42 结果五订正](notebook/rollout-performance-research.md) · [§19.4 第 9 条](notebook/rollout-performance-research.md)。
 - **上一批 M1 成果**：[§20.3.9](notebook/rollout-performance-research.md)、[重建形式脚本（含配对自检）](experiments/rollout-anchor2-identity/check_reconstruct_form.py)、[负向对照（5 组）](experiments/rollout-anchor2-identity/negative_control_form.py)、[归档](experiments/rollout-anchor2-identity/README.md)、[§11.6](notebook/rollout-performance-research.md)。

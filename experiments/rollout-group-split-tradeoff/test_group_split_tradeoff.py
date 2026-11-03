@@ -14,6 +14,14 @@ import unittest
 
 import group_split_tradeoff as m
 
+# 分桶探针的稳健性判据住在 bucketing_probe.py，不复抄一份到测试里——
+# 抄一份就成了"照答卷判卷"，探针改了口径测试也不会红。
+import bucketing_probe as bp
+from bucketing_probe import (
+    effect_exceeds_band,
+    fifo_order_sensitivity as m_fifo_order_sensitivity,
+)
+
 
 class TestSchedulerInvariants(unittest.TestCase):
     def test_homogeneous_groups_have_no_tax(self):
@@ -416,6 +424,81 @@ class TestPolicyLayerDefectsAreCaught(unittest.TestCase):
         as_arrived = makespan_with_explicit_order(order)
         by_length = makespan_with_explicit_order(m._group_order(order, m.POLICY_LOF))
         self.assertLess(by_length, as_arrived - 1.0)
+
+
+class TestSeedSignStability(unittest.TestCase):
+    """配对差的均值不能代替符号分布（2026-11-03 判读纪律）。
+
+    分桶探针报的是 20 个种子的**均值**。均值可以很小、也可以很大，同一个数
+    既可能来自"20 个种子全同向"，也可能来自"10 正 10 负刚好抵消"。这两者
+    的科学含义完全不同，所以同号比例必须与均值一并报出。
+    """
+
+    def _rows(self, diffs):
+        return [{'abs': d, 'rel': 1.0} for d in diffs]
+
+    def test_balanced_means_are_reported_as_unstable(self):
+        """10 正 10 负、均值≈0 的输入必须报成"不稳"，而不是沉默地给 0。"""
+        diffs = [0.01] * 10 + [-0.01] * 10
+        st = bp.seed_sign_stability(self._rows(diffs))
+        self.assertEqual(st['n_positive'], 10)
+        self.assertEqual(st['n_negative'], 10)
+        self.assertLess(st['same_sign_fraction'], 0.6)
+
+    def test_one_sided_and_centred_means_are_distinguishable(self):
+        """均值相同、符号分布不同：这两个输入必须给出不同的 same_sign_fraction。
+
+        这是本类测试的关键——若只看均值，`+0.05` 与"一半 +0.1、一半 0"分不开。
+        """
+        one_sided = [0.05] * 20
+        mixed = [0.10] * 10 + [0.0] * 10
+        a = bp.seed_sign_stability(self._rows(one_sided))
+        b = bp.seed_sign_stability(self._rows(mixed))
+        self.assertEqual(a['same_sign_fraction'], 1.0)
+        self.assertLess(b['same_sign_fraction'], 1.0)
+
+    def test_outlier_driven_mean_shows_large_sd(self):
+        """均值由单个种子撑起时 sd 必须远大于均值，读的人要能一眼看出来。"""
+        diffs = [0.001] * 19 + [0.40]
+        st = bp.seed_sign_stability(self._rows(diffs))
+        mean_pp = sum(diffs) / len(diffs) * 100
+        self.assertGreater(st['sd_pp'], 3 * mean_pp)
+
+
+class TestFifoOrderSensitivity(unittest.TestCase):
+    """FIFO 基线自身的顺序敏感度必须被量出来（2026-11-03）。
+
+    FIFO 的定义是"按到达顺序"，而到达顺序在本层就是传入列表的顺序。探针每
+    个种子抽到**不同的 16 组**并按 prompt_idx 排序，于是"抽到哪些组"与"它们
+    谁先到"混在一起。这里把后者单独量出来：组集合固定、只打乱顺序。
+    """
+
+    def test_reordering_the_same_set_moves_fifo_reading(self):
+        """固定组集合只换顺序，FIFO 的 R 必须真的会动——否则本检查是空转。"""
+        groups = m.sample_group_lens(random.Random(3), n_groups=16, n_per=8)
+        sens = m_fifo_order_sensitivity(groups, 4)
+        self.assertGreater(sens['spread_pp'], 0.5)
+
+    def test_homogeneous_load_has_zero_sensitivity(self):
+        """零负载（组内、组间全同）下换顺序不该改变任何东西——负向对照。
+
+        若这里报出非零极差，说明读到的"顺序敏感度"是数值抖动或实现缺陷，
+        不是真效应。
+        """
+        groups = [[200.0] * 8 for _ in range(16)]
+        sens = m_fifo_order_sensitivity(groups, 4)
+        self.assertLess(sens['spread_pp'], 1e-6)
+
+    def test_sensitivity_band_can_flag_a_within_noise_effect(self):
+        """判读规则的自检：效应小于同集合的顺序极差时，应被判成"落在噪声带内"。
+
+        取真实极差当门槛，构造一个比它小的效应，确认判据给出 False；再取一个
+        明显更大的效应，确认给出 True。两个方向都要测，否则"永远 True"也能过。
+        """
+        groups = m.sample_group_lens(random.Random(11), n_groups=16, n_per=8)
+        band = m_fifo_order_sensitivity(groups, 4)['spread_pp']
+        self.assertFalse(effect_exceeds_band(band * 0.5, band))
+        self.assertTrue(effect_exceeds_band(band * 2.0, band))
 
 
 if __name__ == '__main__':
