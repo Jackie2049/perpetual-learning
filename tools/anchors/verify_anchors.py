@@ -554,6 +554,9 @@ def main():
         print("OK    负载来源：§11.5 已写明 R 读数必须标注负载来源与截断设置")
         ok += 1
 
+    print("\n复核结论前先过一遍 skills/claim-checks 的速查表"
+          "（9 条，按\"你在写什么\"索引；只查最容易踩的那条）。")
+
     print(f"\n{ok} 一致 / {bad} 不一致 / {skip} 跳过"
           f"（共 {len(CHECKS)} 项检查 + 放置一致性 + 文件存在性"
           f" + 跨归档放置对照 + SHM 带宽表 {len(probed)} 项 + 负载来源）")
