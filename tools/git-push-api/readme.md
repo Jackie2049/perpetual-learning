@@ -71,3 +71,28 @@ md5 为 `d41d8cd98f00b204e9800998ecf8427e`（空串的 md5）。这会让人误�
 `git hash-object <file>` 相同即一致——不必解码内容。
 
 **教训**：核验工具本身也会骗人。出现"内容丢失"这种严重结论前，先换一种方式复核一遍。
+
+## ⚠ 推送前必须先预演（两次真实事故）
+
+**这个工具会删除文件**：`base not local` 分支把「远端有、HEAD 无」判为 `D`。
+工作区里下载/新建的文件**如果没提交进 HEAD，就会被当作不存在而删掉**。
+
+已发生两次：
+
+| 时间 | 事故 | 后果 |
+|---|---|---|
+| 2026-11-03 06:4x | 下载了并行会话 25 个实验文件但未提交 | **误删 7 个**（已恢复） |
+| 2026-11-03 07:36 | 同上 | M5 的 diary 三条 + §13.53 补记 + TM-008 两条被回退（已恢复） |
+
+**推送前跑一次预演**：
+
+```bash
+REMOTE=$(curl -sS https://api.github.com/repos/Jackie2049/perpetual-learning/git/ref/heads/main \
+         | python3 -c "import json,sys;print(json.load(sys.stdin)['object']['sha'])")
+python3 tools/anchors/push_dryrun.py "$REMOTE"
+```
+
+退出码 **0 = 安全；1 = 会删文件，不要推**。
+
+**正确顺序**：下载/修改 → `git add` + `git commit` → 预演 → 推送。
+判据永远是 **HEAD**，不是工作区。
