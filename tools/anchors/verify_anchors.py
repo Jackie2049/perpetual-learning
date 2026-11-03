@@ -371,6 +371,33 @@ def _load_source_check():
     return bad
 
 
+# ---- 孤儿文档：板块根目录下的 md 有没有被该板块的索引引用 ----
+# 2026-11-03 连续四次「产出没接进导航」（push_dryrun、claim-checks、
+# decompose.py、pending-candidates-brief）。这条把它变成可扫的检查。
+#
+# 只扫**板块根目录**的散文件，不扫子目录——子目录有自己的 readme，
+# 由上一层索引指向即可。
+
+ORPHAN_BOARDS = ['open-source', 'tools']
+ORPHAN_SKIP = {'README.md', 'readme.md', 'WRITING.md', 'SOP.md'}
+
+
+def _orphan_check():
+    bad = []
+    for board in ORPHAN_BOARDS:
+        d = ROOT / board
+        idx = d / ('README.md' if (d / 'README.md').exists() else 'readme.md')
+        if not idx.exists():
+            continue
+        text = idx.read_text(encoding='utf-8')
+        for f in sorted(d.glob('*.md')):
+            if f.name in ORPHAN_SKIP:
+                continue
+            if f.name not in text:
+                bad.append({'board': board, 'file': f.name})
+    return bad
+
+
 def selftest():
     """负向对照：故意写错声称值，检查器必须报 FAIL。
 
@@ -552,6 +579,16 @@ def main():
             print(f"WARN  负载来源：{b['what']}（实测 {b['got']}）")
     else:
         print("OK    负载来源：§11.5 已写明 R 读数必须标注负载来源与截断设置")
+        ok += 1
+
+    # 孤儿文档
+    print()
+    obad = _orphan_check()
+    if obad:
+        for b in obad:
+            print(f"WARN  孤儿文档：{b['board']}/{b['file']} 未被该板块索引引用")
+    else:
+        print("OK    孤儿文档：open-source／tools 根目录的 md 都被索引引用")
         ok += 1
 
     print("\n复核结论前先过一遍 skills/claim-checks 的速查表"

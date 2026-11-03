@@ -1,6 +1,6 @@
 # GPU Experiment Queue — 7-Framework Focus (2026-06-16 Update)
 > 等待 GPU 可用时执行的实验列表。按优先级排序。
-> 高校服务器 (优先): `sshpass -p 'adspzxw123' ssh -o StrictHostKeyChecking=no zxw@219.233.198.62`
+> 高校服务器 (优先): `ssh -o StrictHostKeyChecking=no zxw@219.233.198.62`（**密码不入库，见本地凭据管理**）
 > 矩池云 (备用): `ssh -p 28959 root@hz-t3.matpool.com` (密码见MEMORY)
 > 目标GPU: RTX 4090 (SM89, 24GB) / A100 (SM80) / H100 (SM90)
 

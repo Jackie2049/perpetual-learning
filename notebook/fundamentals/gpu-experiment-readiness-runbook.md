@@ -10,21 +10,21 @@
 
 ```bash
 # 1. Verify GPU online and SM version
-sshpass -p 'adspzxw123' ssh -o StrictHostKeyChecking=no zxw@219.233.198.62 \
+ssh -o StrictHostKeyChecking=no zxw@219.233.198.62 \
   "nvidia-smi --query-gpu=name,memory.total,compute_cap --format=csv,noheader"
 
 # 2. Check conda env exists with vLLM + torch
-sshpass -p 'adspzxw123' ssh zxw@219.233.198.62 \
+ssh zxw@219.233.198.62 \
   "conda activate rollout; python -c 'import torch; import vllm; print(torch.cuda.get_device_capability())'"
 
 # 3. Verify key scripts are on server
-sshpass -p 'adspzxw123' ssh zxw@219.233.198.62 \
+ssh zxw@219.233.198.62 \
   "ls ~/rollout-infra/tools/sm89_batch_invariance_repro.py ~/rollout-infra/tools/profile_vllm_budget.py"
 ```
 
 **If prerequisites fail**, sync the repo first:
 ```bash
-sshpass -p 'adspzxw123' ssh zxw@219.233.198.62 \
+ssh zxw@219.233.198.62 \
   "cd ~/rollout-infra && git pull origin main"
 ```
 
@@ -455,7 +455,7 @@ Total time: ~4 hours → Can complete all in one GPU session!
 ### University Server (219.233.198.62) — PREFERRED
 ```bash
 # Login
-sshpass -p 'adspzxw123' ssh -o StrictHostKeyChecking=no zxw@219.233.198.62
+ssh -o StrictHostKeyChecking=no zxw@219.233.198.62
 
 # Features:
 # - More GPU hours (university schedule)
