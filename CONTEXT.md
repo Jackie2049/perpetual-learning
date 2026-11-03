@@ -1,10 +1,28 @@
-更新时间：2026-11-04（M1 **第十批（门槛校准）**：`sign_regime` 与 `band_floor` 的"判读门槛"此前只写了性质、没写给代价位。实测在已知真相上 **`sign_regime` 假阳为 0**（真同向／真 `thin` 的列从不被判成 `mixed`），唯一假阴 1.1% **就是二项分布本身**（`stable` 只要求表态种子 ≥80% 同号，20 硬币双侧 ≥16 同号 = 1.18%）⇒ 是样本量上限不是门槛问题。**`band_floor` 两边不对称**：`no_reading` 要求 30 个种子全零（p=0.05 时只剩 24%），`usable` 松到过半非零就算 ⇒ 真实 `usable` 格子零种子计数 0/30–4/30 不等，**引用必须同时报 `n_r_identically_zero`**。M1 04:1x 第十一批：给 `fifo_band` 加 `no_reading`／`degenerate`／`usable` 三档（16 格 usable 13／no_reading 2／degenerate 1，成因是 cap256 截断贴顶）。
+更新时间：2026-11-04（M1 **第十二批**：审第十一批的 `band_floor` 三档判据——判定成立，但 readme 说的"与 `fifo_reorder_band` 同一 rng 种子、同一 shuffle 序列"**执行层面不成立**（两处都写死 `s * 7919 + t`、不含 `rng_seed`，`rng_seed=0` 时恰好等价）。已统一种子式子，`band_floor.py` 改为直接调归档用的 `fifo_band_floor`、自算分解只做 **crosscheck**（16/16 ok），并**补掉第十一批自记的边界缺口**——搜出恰好 15/30 的输入，两侧各注入一次钉住"过半=严格多于一半"。归档重算旧字段 **0 变化**、新增 48。此前第十批（门槛校准）：`sign_regime` 与 `band_floor` 的"判读门槛"此前只写性质、没写代价位——`sign_regime` 假阳为 0、唯一假阴 1.1% 即二项分布本身；`band_floor` 两边不对称，引用 `usable` 时必须同时报 `n_r_identically_zero`。M1 04:1x 第十一批：`fifo_band` 加 `no_reading`／`degenerate`／`usable` 三档，成因是 cap256 截断贴顶。）
 
 ## 当前现场
 
 > **只读最上面一节 `### M1 本轮` 即可恢复现场。** 下面 20+ 个 `###` 是历史批次叙述
 > （按时间倒序）——**它们已在 `diary/` 与专项文档留档，此处仅为交接连续性的冗余副本**。
 > 判断"现在该做什么"看 `## 未完成操作与并行工作` 与两个队列，不要从头读到尾。
+
+### M1 本轮（2026-11-04 04:3x–05:1x）：第十二批——审 `band_floor` 三档判据，补掉它自记的边界缺口，抓出一处「同口径」名不副实
+
+**一、接第十一批的「留给下一轮」①：`band_floor` 判据未审。** 三档判定本身成立，但 readme 里"与 `fifo_reorder_band` 同一 rng 种子、同一 shuffle 序列"**在执行层面不成立**——两边都写死 `s * 7919 + t`、**不含 `rng_seed`**，且两处各写一份。`rng_seed=0`（当前全部调用）时恰好等价，换任何非零种子就会静默错位。已统一为 `rng_seed * 100003 + s * 7919 + t` 两处注明。
+
+**二、`band_floor.py` 不再自算一份。** 改为直接调 `RL.fifo_band_floor` 取归档用的值，自算分解只做**交叉核对**（新增 `crosscheck` 字段，不一致退出码 1）。16 格 **crosscheck 全 ok**，与 `real-lengths-summary.json` 逐格一致，分布 `usable` 13／`no_reading` 2／`degenerate` 1。
+
+**三、补掉第十一批自记的边界缺口。** 它记"`>`→`>=` 时 5 条全绿、恰为一半没有用例"。本轮搜出**恰好 15/30 的输入**（40 组里 33 组贴顶）：`test_exactly_half_zero_band_is_still_usable`（15/30 ⇒ `usable`，即"过半"= 严格多于一半）与 `test_one_more_zero_band_flips_to_degenerate`（34 组贴顶 ⇒ 18/30 ⇒ `degenerate`）。**两侧各注入一次**：`>`→`>=` 前一条红、`* 2 >`→`+ 1 >` 后一条红。
+
+**四、归档同步。** 改 shuffle 种子式子后重算：`real-lengths-summary.json` 旧字段 **673 个 0 变化 0 删除**、新增 48；`--verify` 逐字段相同；`bucketing_probe.py` 重跑与归档一致。**第十批「留给下一轮」②（`fifo_band_floor` 有源码无归档字段）已关闭**；`band-floor.json` 是 `band_floor.py --json` 的产物，不入库（一条命令可重生成，且有 crosscheck）。
+
+**五、协作现场。** 开工时工作区那份第十批改动已被另一会话提交（`c9545ed2d`／`14e3f6cc2`／`f685d58f9`／`69724d5b6`），本轮开工阶段的源文件编辑也被一并带走（内容一致，已 grep 核对）。它后续又做了**门槛校准**（`calibrate_thresholds.py` 等，CONTEXT 顶部为第十批（门槛校准）），对应第十一批「留给下一轮」②——**已由它完成，本轮不重复**。
+
+**核对产物**：`test_group_split_tradeoff` 58 passed、`test_real_lengths_policy` 23 passed（两套 **81 passed**）、C 类 72 passed；`real_lengths_policy.py --verify` 逐字段相同；`band_floor.py --json` exit 0（16/16 ok）；`compare_old_new_impl.py` PASS；`paired_diff --selftest` 通过。只读仿真重算、未跑 GPU、未触上游。
+
+**留给下一轮**：① `no_reading` 只说"这一格问不出来"，**未回答换抽样（放宽 `n_groups`／换负载档）能否问得出来**——需另立实验；② 探针侧仍无覆盖面下限检查（第九批遗留②）；③ 语义面剩余缺口（长度预测误差／分桶／迁移／抢占／KV 搬运）与 P-1 跨系统都需新模型或用户立项；纯归档重算这条线已到边际。
+
+入口：[band_floor](experiments/rollout-group-split-tradeoff/band_floor.py) · [实验 readme 第十一批](experiments/rollout-group-split-tradeoff/readme.md) · [diary](diary/2026-11-04.md) · [TS-001](queue_tech-secretary.md) · [TM-011](queue_tech-miner.md)。
 
 ### M1 上上轮（2026-11-04 04:1x）：第十一批——带宽为 0 有两种成因，`fifo_band` 加三档准入
 
