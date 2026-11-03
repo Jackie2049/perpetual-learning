@@ -74,5 +74,5 @@ they modify algorithm logic not hardware paths. However:
 - FP8 KV cache on H20-3e would complement SGLang's RolloutKV pinning
 
 ## Reference
-- Server: 10.26.6.88:31954 (root, password JDF+H200@sribd)
+- Server: 10.26.6.88:31954 (root；**密码不入库，见本地凭据管理**。2026-11-03 从本文件移除)
 - Observed: 2026-07-14, nvidia-smi reports NVIDIA H20-3e, 143771 MiB total

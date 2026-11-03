@@ -14,7 +14,8 @@ Usage:
   python experiments/scripts/run_all_gpu_tests.py --category cuda_race
 
   # Run via SSH
-  sshpass -p 'JDF+H200@sribd' ssh root@10.26.6.88 -p 31954 \
+  # 密码不入库（AGENTS.md）：先 export GPU_SSH_PASS=...
+  sshpass -p "$GPU_SSH_PASS" ssh root@10.26.6.88 -p 31954 \
     "cd /jiangdingfeng/zy/Termius/rollout && source activate env-rollout && python experiments/scripts/run_all_gpu_tests.py --all"
 """
 
