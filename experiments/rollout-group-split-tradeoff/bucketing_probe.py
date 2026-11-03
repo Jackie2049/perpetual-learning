@@ -164,8 +164,8 @@ def effect_exceeds_band(effect_pp, band_pp):
 def summarize(rows):
     diffs = [r['abs'] for r in rows]
     rels = [r['rel'] for r in rows]
-    same = sum(1 for r in rows if abs(r['abs']) < 1e-12)
-    live = [r for r in rows if abs(r['abs']) >= 1e-12]
+    same = paired_diff.sign_counts(diffs)['n_identical']
+    live = [r for r in rows if abs(r['abs']) > paired_diff.TOL]
     return {
         'n': len(rows),
         'identical': same,
@@ -190,9 +190,14 @@ def summarize(rows):
     }
 
 
-def synthetic_block():
-    """构造负载：FIFO 基线、配对绝对差、配对相对比、随机序自身的离散度。"""
-    out = []
+def iter_rows():
+    """逐格产生 `(格子名, rows)`——与 `synthetic_block`／`real_block` 完全同一批行。
+
+    第九批拆出来的：`summarize` 的输入行（逐种子 `{'abs', 'rel', 'group_gain', ...}`）
+    是"喂给判据的那一列"，但归档里只有汇总后的计数。要做逐值对照，必须能把同一
+    批行喂给**旧版** `summarize`／`seed_sign_stability` 再比，所以把产生行的循环
+    抽成这个生成器。`synthetic_block`／`real_block` 改为消费它，读数逐位不变。
+    """
     for backlog in BACKLOGS:
         rows, spreads = [], []
         for s in range(SEEDS):
@@ -207,21 +212,11 @@ def synthetic_block():
                 shuf.append(tax(g, M.POLICY_FIFO, backlog))
             spreads.append(max(shuf) - min(shuf))
             rows.append(r)
-        stat = summarize(rows)
-        stat.update({
-            'backlog': backlog,
-            'R_fifo_mean': round(statistics.mean(r['R_fifo'] for r in rows), 4),
-            'shuffle_spread_pp_mean': round(statistics.mean(spreads) * 100, 3),
-        })
-        out.append(stat)
-    return out
+        yield 'synthetic/backlog%d' % backlog, rows, spreads
 
-
-def real_block():
-    """真实负载：每个文件抽 16 组、四档积压，配对读顺序效应。"""
-    out = []
     for name in REAL_FILES:
         corpus = load_real(name)
+        n_pool = len(corpus)
         cv = statistics.pstdev([max(g) for g in corpus]) / statistics.mean(
             [max(g) for g in corpus])
         for backlog in BACKLOGS:
@@ -233,19 +228,46 @@ def real_block():
                 rows.append(arms(groups, backlog, random.Random(s + 5000)))
                 fifo_spreads.append(
                     fifo_order_sensitivity(groups, backlog, seed=s)['spread_pp'])
-            stat = summarize(rows)
-            stat.update({
-                'file': name,
-                'backlog': backlog,
-                'group_max_cv': round(cv, 3),
-                'n_pool_groups': len(corpus),
-                'R_fifo_mean': round(statistics.mean(r['R_fifo'] for r in rows), 4),
-                'R_lof_mean': round(statistics.mean(r['R_lof'] for r in rows), 4),
-                # 同组集合下 FIFO 自身的顺序敏感度均值：|配对差| 若落在这个带里，
-                # 说明读到的"排序效应"与基线自身的顺序抖动不可区分。
-                'fifo_order_spread_pp_mean': round(statistics.mean(fifo_spreads), 3),
-            })
-            out.append(stat)
+            yield 'real/%s/backlog%d' % (name, backlog), rows, (cv, n_pool, fifo_spreads)
+
+
+def synthetic_block():
+    """构造负载：FIFO 基线、配对绝对差、配对相对比、随机序自身的离散度。"""
+    out = []
+    for cell, rows, spreads in iter_rows():
+        if not cell.startswith('synthetic/'):
+            continue
+        stat = summarize(rows)
+        stat.update({
+            'backlog': int(cell.rsplit('backlog', 1)[1]),
+            'R_fifo_mean': round(statistics.mean(r['R_fifo'] for r in rows), 4),
+            'shuffle_spread_pp_mean': round(statistics.mean(spreads) * 100, 3),
+        })
+        out.append(stat)
+    return out
+
+
+def real_block():
+    """真实负载：每个文件抽 16 组、四档积压，配对读顺序效应。"""
+    out = []
+    for cell, rows, extra in iter_rows():
+        if not cell.startswith('real/'):
+            continue
+        cv, n_pool, fifo_spreads = extra
+        name = cell.split('/')[1]
+        stat = summarize(rows)
+        stat.update({
+            'file': name,
+            'backlog': int(cell.rsplit('backlog', 1)[1]),
+            'group_max_cv': round(cv, 3),
+            'n_pool_groups': n_pool,
+            'R_fifo_mean': round(statistics.mean(r['R_fifo'] for r in rows), 4),
+            'R_lof_mean': round(statistics.mean(r['R_lof'] for r in rows), 4),
+            # 同组集合下 FIFO 自身的顺序敏感度均值：|配对差| 若落在这个带里，
+            # 说明读到的"排序效应"与基线自身的顺序抖动不可区分。
+            'fifo_order_spread_pp_mean': round(statistics.mean(fifo_spreads), 3),
+        })
+        out.append(stat)
     return out
 
 

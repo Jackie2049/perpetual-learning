@@ -241,8 +241,11 @@ def arrival_assumption_shift(groups, n_groups, backlog, policy, seeds=SEEDS, rng
         random.Random(777 + s).shuffle(sh)
         b.append(_makespan_by_policy(sh, backlog, policy)['tax']
                  - _makespan_by_policy(sh, backlog, POLICY_FIFO)['tax'])
+    # 这一处要看两边是否落在同侧，不能逐列套 sign_counts（那是"某一列自身 vs 0"），
+    # 所以只借它的容差常量，不借分类函数。
     same = sum(1 for x, y in zip(a, b)
-               if (x > 1e-12 and y > 1e-12) or (x < -1e-12 and y < -1e-12))
+               if (x > paired_diff.TOL and y > paired_diff.TOL)
+               or (x < -paired_diff.TOL and y < -paired_diff.TOL))
     return {
         'prompt_order_pp': round(100 * statistics.mean(a), 3),
         'shuffled_order_pp': round(100 * statistics.mean(b), 3),

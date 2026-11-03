@@ -9,16 +9,22 @@
 本文件的做法：**同一列输入，分别喂给旧版（`git show 038fc2e3b^:` 取出的手写实现）
 与新版（`tools/paired-diff`），逐值比对**。输入分三类：
 
-  ① 三个脚本的**真实输入列**（从各自归档反解出逐种子的 `diffs`）——证明已发布读数一致；
+  ① 五个脚本的**真实输入列**（从源 summary 逐种子重算出喂给判据的 `diffs`）——证明已发布读数一致；
   ② 边界合成列——容差上、恰等于容差、整数步号、全零、单点、空列；
   ③ 随机列（固定种子）——覆盖真实数据没走到的小数区间。
 
 任何一处分歧都会被报出来，并附带"这处分歧是否已在真实归档中出现"。
 
+**旧版实现的取材方式（第九批改）**：① 沿用的三处手写实现是 `git show 038fc2e3b^:` 取出
+原文件后**逐字抽出**函数体并 `exec`，不再由本文件手抄一份；② 分桶探针与真实负载脚本的旧版
+直接从 `git show 038fc2e3b^:` 加载整个模块。手抄本一旦与上游漂移，"零分歧"证明的就是
+两份抄本一致，而不是"抽工具没有改变语义"。
+
 运行：cd experiments/rollout-c-class-ledger && python3 compare_old_new_impl.py [--verbose]
 """
 
 import argparse
+import ast
 import importlib.util
 import json
 import os
@@ -58,43 +64,167 @@ def old_source_at(relpath, commit=TOOL_COMMIT):
         check=True, capture_output=True, text=True).stdout
 
 
+def load_old_module(relpath, commit=TOOL_COMMIT, name=None):
+    """从 git 取出 `commit^` 时刻的**整个脚本**并 import（第九批）。
+
+    第七／八批只把"旧版实现"从 git 取出来看，实际对照的仍是本文件里的一份手抄
+    副本——抄错一处、或者上游后来又改了这个函数，对照照样全绿。这里把旧版脚本
+    本身加载进来当被测对象：`bucketing_probe.seed_sign_stability`、
+    `bucketing_probe.summarize`、`real_lengths_policy.fifo_reorder_band` 三处
+    直接取旧版对象，不再手抄。
+    """
+    src = old_source_at(relpath, commit)
+    modname = name or ('old_' + Path(relpath).stem)
+    spec = importlib.util.spec_from_loader(modname, loader=None)
+    mod = importlib.util.module_from_spec(spec)
+    mod.__dict__['__file__'] = str(ROOT / relpath)
+    sys.modules[modname] = mod
+    exec(compile(src, str(ROOT / relpath) + ' @ %s^' % commit, 'exec'), mod.__dict__)
+    return mod
+
+
+def _old_module(relpath, commit=TOOL_COMMIT):
+    """从 `commit^` 取出**整个脚本**并 import（第九批）。
+
+    分桶探针与真实负载脚本被抽走判据的，直接换成旧版对象——本文件不再手抄一份
+    "旧版实现"：手抄本一旦与上游漂移，"零分歧"证明的只是两份抄本一致。
+    """
+    src = old_source_at(relpath, commit)
+    name = 'old_' + Path(relpath).stem
+    spec = importlib.util.spec_from_loader(name, loader=None)
+    mod = importlib.util.module_from_spec(spec)
+    mod.__dict__['__file__'] = str(ROOT / relpath)
+    sys.modules[name] = mod
+    sys.path.insert(0, str(ROOT / os.path.dirname(relpath)))
+    exec(compile(src, '<old %s @ %s^>' % (relpath, commit), 'exec'), mod.__dict__)
+    return mod
+
+
+def _extract_old(relpath, funcs, commit=TOOL_COMMIT):
+    """从 `commit^` 的原文件里抽出指定顶层 def（连同模块级常量）并 `exec`。
+
+    旧源码里的 import、模块级常量与被抽的函数体都保留——`ledger.steps_at` 依赖
+    `first_cross`，靠这个把它一起带进来；整份文件又带 argparse 主程序与相对路径
+    常量，所以不能整份 exec。
+    """
+    src = old_source_at(relpath, commit)
+    tree = ast.parse(src)
+    keep = [n for n in tree.body
+            if isinstance(n, (ast.FunctionDef, ast.Import, ast.ImportFrom, ast.Assign))
+            and not (isinstance(n, ast.FunctionDef) and n.name not in funcs)]
+    ns = {}
+    ns['__file__'] = str(ROOT / relpath)
+    sys.path.insert(0, str(ROOT / os.path.dirname(relpath)))
+    exec(compile(ast.Module(body=keep, type_ignores=[]), '<old %s>' % relpath, 'exec'), ns)
+    return {name: ns[name] for name in funcs}
+
+
 # ---------------------------------------------------------------- 旧版实现
-# 三处手写实现都是"同一族判据、各写一遍"，语义按当时的代码原样复刻。
+# 三处手写实现都是"同一族判据、各写一遍"，语义直接取自抽工具之前的那版源码。
+
+def _old_handwritten():
+    lg = _extract_old('experiments/rollout-c-class-ledger/ledger.py',
+                      {'steps_at', 'first_cross', '_cross_or_complete'})
+    bl_mod = _old_module('experiments/rollout-group-split-tradeoff/bucketing_probe.py')
+    rl_mod = _old_module('experiments/rollout-group-split-tradeoff/real_lengths_policy.py')
+    return (lg, bl_mod.seed_sign_stability, rl_mod.policy_sign_stability)
+
+
+(_OLD_LEDGER_MOD, _OLD_SEED_SIGN_STABILITY, _OLD_POLICY_SIGN_STABILITY) = _old_handwritten()
+_OLD_STEPS_AT = _OLD_LEDGER_MOD['steps_at']
+_OLD_FIRST_CROSS = _OLD_LEDGER_MOD['first_cross']
+OLD_DONE = 10.0        # 造出来的曲线里"早已到点"的那一段长度
+_OLD_BUCKETING = None    # 惰性加载，见 old_bucketing()
+_OLD_REAL_LENGTHS = None
+
+
+def old_bucketing():
+    """旧版 `bucketing_probe` 模块（含 `summarize`／`seed_sign_stability`）。"""
+    global _OLD_BUCKETING
+    if _OLD_BUCKETING is None:
+        _OLD_BUCKETING = _old_module('experiments/rollout-group-split-tradeoff/bucketing_probe.py')
+    return _OLD_BUCKETING
+
+
+def old_real_lengths():
+    """旧版 `real_lengths_policy` 模块（含 `fifo_reorder_band`）。"""
+    global _OLD_REAL_LENGTHS
+    if _OLD_REAL_LENGTHS is None:
+        _OLD_REAL_LENGTHS = _old_module('experiments/rollout-group-split-tradeoff/real_lengths_policy.py')
+    return _OLD_REAL_LENGTHS
+
 
 def old_sign_counts_bucketing(diffs):
     """`bucketing_probe.seed_sign_stability` 旧版（相对 1e-12，无 identical 返回）。"""
-    pos = sum(1 for d in diffs if d > 1e-12)
-    neg = sum(1 for d in diffs if d < -1e-12)
-    return {
-        'n_positive': pos,
-        'n_negative': neg,
-        'same_sign_fraction': round(max(pos, neg) / len(diffs), 3),
-        'sd_pp': round(statistics.stdev(diffs) * 100, 3) if len(diffs) > 1 else None,
-    }
+    rows = [{'abs': d, 'rel': 1.0} for d in diffs]
+    return _OLD_SEED_SIGN_STABILITY(rows)
 
 
 def old_sign_counts_real(diffs):
-    """`real_lengths_policy.policy_sign_stability` 旧版（同上，多一个 n_identical）。"""
-    pos = sum(1 for d in diffs if d > 1e-12)
-    neg = sum(1 for d in diffs if d < -1e-12)
+    """`real_lengths_policy.policy_sign_stability` 旧版（同上，多一个 n_identical）。
+
+    旧版签名带排程参数（`groups, n_groups, backlog, policy`）、内部自己抽种子，
+    喂不了任意列；但它那一段计数逻辑与分桶探针的旧版**逐行相同**，所以这里沿用
+    抽取出来的分桶旧版。旧版没有"容忍差值"这个键，`n_identical` 恒为 0——这本身
+    就是第五批修好的那个分辨率刹车。
+    """
+    rows = [{'abs': d, 'rel': 1.0} for d in diffs]
+    out = dict(_OLD_SEED_SIGN_STABILITY(rows))
+    # 旧版把 |d| < 1e-12 的种子既不算正也不算负，`n_identical` 本来是可以由此推出的；
+    # 早先写成恒 0，把它读成了"旧版没有分辨率刹车"，于是每个含并列的列都被报成分歧。
+    out['n_identical'] = len(diffs) - out['n_positive'] - out['n_negative']
+    return out
+
+
+def _old_stats_ledger(diffs):
+    """旧版 `ledger.steps_at` 读的"同号比例／并列数"，用旧版 `steps_at` 本身算出来。
+
+    旧 `steps_at` 收的是**准确率曲线**，我们要的是它读出的那列配对差；所以把差值
+    编码进曲线（见下面的 `_old_curve_for`），交给旧函数，再把它的两个计数键取回来：
+    `same_sign_arm_slower`（这里换算成 `same_sign_arm_slower` 的原义 = 正号占比）
+    与 `n_ties`（`d == 0` 的个数）。
+    """
+    if not diffs:
+        return {'same_sign_arm_slower': None, 'n_ties': 0, 'n_pairs': 0}
+    curves = [_old_curve_for(d) for d in diffs]
+    base = [_old_curve_for(0) for _ in diffs]
+    out = _OLD_STEPS_AT(curves, base, PROBE_THR)
     return {
-        'n_positive': pos,
-        'n_negative': neg,
-        'n_identical': len(diffs) - pos - neg,
-        'same_sign_fraction': round(max(pos, neg) / float(len(diffs)), 3),
-        'sd_pp': round(100 * statistics.stdev(diffs), 3) if len(diffs) > 1 else None,
+        'same_sign_arm_slower': out['same_sign_arm_slower'],
+        'n_ties': out['n_ties'],
+        'n_pairs': out['n_pairs'],
     }
 
 
-def old_stats_ledger(diffs):
-    """`ledger.steps_at` 旧版：**整数精确相等**，没有容差。"""
-    n = len(diffs)
-    pos = sum(1 for d in diffs if d > 0)
-    neg = sum(1 for d in diffs if d < 0)
-    return {
-        'same_sign_arm_slower': (pos / n) if n else None,
-        'n_ties': sum(1 for d in diffs if d == 0),
-    }
+def _all_integral(diffs):
+    """整列差值是否**逐个**都是整数步号（浮点 2.0 也算、-1.0 也算）。"""
+    return bool(diffs) and all(float(d).is_integer() for d in diffs)
+
+
+# ---------------------------------------------------------------- 步号差值的曲线编码
+# 旧 `steps_at` 的入参是准确率曲线，取 `first_cross(curve, thr)` 当步号。差值可正
+# 可负，而步号必须非负——所以对每个差值造一对曲线：
+#   臂：`[0.0]*K + [PROBE_THR]`，在第 K 步到点；
+#   基线：`[0.0]*K0 + [PROBE_THR]`，K0 固定。
+# 于是 `first_cross(臂) − first_cross(基线) = K − K0`，取 `K = K0 + d` 即可还原差值。
+# 曲线元素一律 ≥ PROBE_THR 的只会出现在第 K 步，前面全是 0.0 —— **首元素必须低于
+# 阈值**，这是本函数前两版踩的坑（把 0.0 当首元素、结果恒首达 0）。
+
+PROBE_THR = 0.90
+K0 = 50          # 基线到点的步号；差值 d 对应臂在第 K0+d 步到点
+
+
+def _old_curve_for(d, k0=K0):
+    """差值 `d` → 曲线：在第 `k0 + d` 步才跨过 `PROBE_THR`。"""
+    k = k0 + int(round(d))
+    if k < 0:
+        raise ValueError('差值 %r 超出可编码范围（步号不能为负）' % (d,))
+    return [0.0] * k + [PROBE_THR]
+
+
+def recover_old_step(curve):
+    """`first_cross(curve, PROBE_THR)` —— 用旧版函数取回点在第几步。"""
+    return _OLD_FIRST_CROSS(curve, PROBE_THR)
 
 
 def old_span(vals):
@@ -201,7 +331,92 @@ def real_columns():
     return cols
 
 
-# ---------------------------------------------------------------- 边界输入列
+# ---------------------------------------------------------------- 第九批：分桶探针与真实负载
+# 第七／八批的对照只覆盖 C 类账那两个脚本。分桶探针（`bucketing_probe`）与真实负载
+# 脚本（`real_lengths_policy`）的**真实输入列**当时没纳入，而 §13.30 第四十一／四十二批
+# 的读数正是从这两处来的。这里补两件事：
+#   ① 真实输入列：重跑这两个脚本的负载产生过程，拿到逐种子的配对差，喂给新旧两版；
+#   ② 非计数输出：`summarize` 里的 identical 与同号占比，逐格比对。
+
+class ProbeCache:
+    """惰性、只算一次的分桶探针真实输入（跑一次约数分钟）。"""
+
+    def __init__(self):
+        self._cells = None
+
+    def cells(self):
+        if self._cells is None:
+            import bucketing_probe as BP
+            self._cells = list(BP.iter_rows())
+        return self._cells
+
+    def columns(self):
+        """逐格逐种子配对差：`(格子, 每种子 FIFO−LOF)`。"""
+        return {'probe:%s' % cell: [r['abs'] for r in rows]
+                for cell, rows, _ in self.cells()}
+
+
+_PROBE = ProbeCache()
+
+
+def new_summarize(rows):
+    import bucketing_probe as BP
+    return BP.summarize(rows)
+
+
+def compare_probe_cells(cells):
+    """分桶探针的**每格输出**新旧比对：`summarize` 的非计数部分 + 真实输入列。
+
+    比对的是归档里真实存在的键：`identical`（旧版手写 `abs(d) < 1e-12`）、
+    `abs_pp_mean`／`abs_pp_median`、`sign_stability` 里的同号比例与 sd。计数部分
+    由上一条 `compare()` 负责，这里只管"非计数输出"。
+    """
+    old_mod = old_bucketing()
+    issues, n_cells, n_rows = [], 0, 0
+    keys = ('identical', 'abs_pp_mean', 'abs_pp_median',
+            'sign_stability.n_positive', 'sign_stability.n_negative',
+            'sign_stability.same_sign_fraction', 'sign_stability.sd_pp',
+            'sign_stability.min_pp', 'sign_stability.max_pp')
+
+    def _get(d, path):
+        for part in path.split('.'):
+            if not isinstance(d, dict) or part not in d:
+                return '<missing>'
+            d = d[part]
+        return d
+
+    for cell, rows, _ in cells:
+        n_cells += 1
+        n_rows += len(rows)
+        old = old_mod.summarize(rows)
+        new = new_summarize(rows)
+        for k in keys:
+            if _get(old, k) != _get(new, k):
+                issues.append((cell, k, _get(old, k), _get(new, k), 'PROBE'))
+    return issues, n_cells, n_rows
+
+
+def compare_real_lengths_band():
+    """真实负载脚本 `fifo_reorder_band` 新旧比对（同一组集合、同一随机序）。
+
+    `policy_sign_stability` 旧版签名要求排程参数、内部自抽种子，喂不了任意列，
+    它的计数段与分桶探针旧版逐行相同（已由 `old_sign_counts_real` 覆盖）；真正
+    只在 `real_lengths_policy` 里出现的、能被单独重跑的是 `fifo_reorder_band`。
+    """
+    import real_lengths_policy as R
+    old_mod = old_real_lengths()
+    issues, n_cells = [], 0
+    for name in [a[0] for a in R.REAL_ARMS]:
+        g = R.load_real_groups(os.path.join(R.REAL_DIR, dict(R.REAL_ARMS)[name]))
+        for backlog in (4, 16):
+            n_cells += 1
+            a = old_mod.fifo_reorder_band(g, R.N_GROUPS_CONSTRUCT, backlog)
+            b = R.fifo_reorder_band(g, R.N_GROUPS_CONSTRUCT, backlog)
+            for k in a:
+                if a[k] != b.get(k):
+                    issues.append(('band:%s@%d' % (name, backlog), k, a[k], b.get(k), 'BAND'))
+    return issues, n_cells
+
 
 def boundary_columns():
     TOL = paired_diff.TOL
@@ -231,9 +446,24 @@ def random_columns(n=200, seed=20261103):
 
 # ---------------------------------------------------------------- 比对
 
-def compare(diffs, verbose=False):
-    """返回该列的比对结果：新增的分歧项（若两版一致则为空）。"""
+def compare(diffs, verbose=False, probe=False):
+    """返回该列的比对结果（两版一致则为空）。
+
+    `probe=True` 用于分桶探针那一侧的格子：旧版 `seed_sign_stability` 报的是
+    "相对 1e-12 的正负计数"，**没有 identical 这个键**——两者在新版里的差别正好就是
+    第五批修掉的分辨率刹车，不是抽工具引入的回归。所以那一侧只比 `summarize`
+    里真实存在的键（见 `compare_probe_cells`），这里不比计数——**但正负计数仍要
+    比**，否则"探针这一侧零分歧"会变成一句没内容的话。
+    """
     issues = []
+    if diffs:
+        old_b = old_sign_counts_bucketing(diffs)
+        new = new_sign_counts(diffs)
+        for key in ('n_positive', 'n_negative'):
+            if old_b[key] != new[key]:
+                issues.append(('bucketing.%s' % key, old_b[key], new[key], 'COUNT'))
+    if probe:
+        return issues
     old_b = old_sign_counts_bucketing(diffs) if diffs else None
     old_r = old_sign_counts_real(diffs) if diffs else None
     new = new_sign_counts(diffs) if diffs else None
@@ -249,11 +479,15 @@ def compare(diffs, verbose=False):
             issues.append(('bucketing.ssf', old_b['same_sign_fraction'],
                            new['same_sign_fraction'], 'RATIO'))
         # 步号口径：旧版用整数精确相等
-        if all(isinstance(d, int) or (isinstance(d, float) and d == int(d)) for d in diffs):
-            old_l = old_stats_ledger([int(d) for d in diffs])
+        if _all_integral(diffs):
+            old_l = _old_stats_ledger(diffs)
             new_l_ties = paired_diff.sign_counts(diffs)['n_identical']
             if old_l['n_ties'] != new_l_ties:
                 issues.append(('ledger.n_ties', old_l['n_ties'], new_l_ties, 'COUNT'))
+            new_pos_frac = paired_diff.sign_counts(diffs)['n_positive'] / float(len(diffs))
+            if old_l['same_sign_arm_slower'] != new_pos_frac:
+                issues.append(('ledger.same_sign_arm_slower',
+                               old_l['same_sign_arm_slower'], new_pos_frac, 'RATIO'))
     if verbose:
         print('   old(bucket)=%r' % (old_b,))
         print('   new        =%r' % (new,))
@@ -489,11 +723,49 @@ def main():
         if row[1] != row[2]:
             print('   刻度敏感：%s raw=%d pp=%d' % row)
 
-    ok = (not real_issues) and (not span_issues) and (not ssf_issues)
+    # ---- 第九批：分桶探针与真实负载的真实输入列 + 非计数输出
+    # 只算一次，后面三处（输入列、每格输出、平局审计）复用同一批行。
+    probe_cells = _PROBE.cells()
+    probe_cols = _PROBE.columns()
+    probe_issues = []
+    for name, diffs in sorted(probe_cols.items()):
+        for it in compare(diffs, args.verbose, probe=True):
+            probe_issues.append((name,) + it)
+        for it in compare_ssf_sd(diffs):
+            probe_issues.append((name,) + it)
+    cell_issues, n_cells, n_rows = compare_probe_cells(probe_cells)
+    band_issues, n_band = compare_real_lengths_band()
+    print()
+    print('分桶探针真实输入列（%d 格／%d 个种子对）：%d 处分歧（正负计数 + ssf/sd_pp）'
+          % (len(probe_cols), n_rows, len(probe_issues)))
+    for row in probe_issues[:10]:
+        print('   ', row)
+    print('分桶探针每格输出（%d 格，含 identical／同号占比／sd／极值）：%d 处分歧'
+          % (n_cells, len(cell_issues)))
+    for row in cell_issues[:10]:
+        print('   ', row)
+    # 这一侧的新旧差别里，只有 identical 是**结构性的**：旧版 `seed_sign_stability`
+    # 没有这个键（第五批才补的分辨率刹车）。同号占比与 sd 必须逐值相同。
+    new_ident = sum(new_summarize(rows)['identical'] for _, rows, _ in probe_cells)
+    old_ident = sum(old_sign_counts_bucketing([r['abs'] for r in rows])['n_identical']
+                    for _, rows, _ in probe_cells)
+    print('identical 这一侧：旧版 %d、新版 %d（差值是第五批补的分辨率刹车，不是回归）'
+          % (old_ident, new_ident))
+    print('真实负载 fifo_reorder_band（%d 格）：%d 处分歧' % (n_band, len(band_issues)))
+    for row in band_issues[:10]:
+        print('   ', row)
+
+    # 平局审计扩到分桶探针：sd_pp 是在 pp 刻度上做第 3 位小数舍入的
+    probe_audit = rounding_audit(probe_cols)
+    print('分桶探针里 sd_pp 落在舍入平局上的个数：%d' % len(probe_audit['tie_inputs_found']))
+
+    ok = (not real_issues) and (not span_issues) and (not ssf_issues) \
+        and (not probe_issues) and (not cell_issues) and (not band_issues)
     print()
     print('真实归档列零分歧：%s' % ('是' if not real_issues else '否'))
     print('极差／翻号零分歧：%s' % ('是' if not span_issues else '否'))
     print('same_sign_fraction／sd_pp 零分歧：%s' % ('是' if not ssf_issues else '否'))
+    print('分桶探针零分歧：%s' % ('是' if not (probe_issues or cell_issues or band_issues) else '否'))
     print('盲区命中：%d 个（0 = 既有归档无一落进 |v-ref| < TOL）' % blind_total)
     # 覆盖自查：既有「真实列零分歧」只对**计数**是同一句话——整数步号 40 列
     # 走的是精确等价路径，旧版 `d == 0` 与新版天然同答；真正检验容差的只有
@@ -502,8 +774,22 @@ def main():
     n_ratio = len(real) - n_int
     n_flip = sum(1 for n, d in real.items()
                  if not n.startswith('steps:') and paired_diff.sign_flip_around(d, 1.0))
-    print('覆盖：整数步号列 %d（精确等价路径，不检验容差）／浮点比率列 %d，'
+    print('覆盖：C 类账整数步号列 %d（精确等价路径，不检验容差）／浮点比率列 %d，'
           '其中相对 1 翻号 %d 列' % (n_int, n_ratio, n_flip))
+    # 分桶探针那一侧同样要报覆盖面：2 级以下积压的配对差经常整列落在容差内，
+    # 那些格只检验"两版是否都把它读成 identical"，检验不了正负分类。
+    _n_tiny = sum(1 for d in probe_cols.values()
+                  if all(abs(x) <= paired_diff.TOL for x in d) and d)
+    _n_both = sum(1 for d in probe_cols.values()
+                  if any(x > paired_diff.TOL for x in d)
+                  and any(x < -paired_diff.TOL for x in d))
+    print('覆盖：分桶探针 %d 格里 %d 格整列落在容差内（只检验 identical 一侧）、'
+          '%d 格同时含正负（检验正负分类）、其余 %d 格单侧'
+          % (len(probe_cols), _n_tiny, _n_both, len(probe_cols) - _n_tiny - _n_both))
+    n_identical_total = sum(paired_diff.sign_counts(d)['n_identical']
+                            for d in list(real.values()) + list(probe_cols.values()))
+    print('identical 种子合计（C 类账 %d 列 + 分桶探针 %d 列）：%d'
+          % (len(real), len(probe_cols), n_identical_total))
     print('结论：%s' % ('PASS' if ok else 'FAIL'))
     sys.exit(0 if ok else 1)
 

@@ -382,3 +382,160 @@ class TestOldSourceFromGit(unittest.TestCase):
         self.assertNotIn('import paired_diff', src)
         here = (HERE / 'ledger.py').read_text()
         self.assertIn('import paired_diff', here)
+
+
+# ---------------------------------------------------------------- 第九批
+# 第八批收尾记的第一条遗留：分桶探针与真实负载两处的真实输入列**没有**逐值对照。
+# 下面的测试钉住本批新增的三条线，重点是"对照本身能不能失败"。
+
+class TestOldImplExecutedNotTranscribed(unittest.TestCase):
+    """旧版实现是**执行出来的**，不是本文件另抄的一份。"""
+
+    def test_old_seed_sign_stability_comes_from_old_file(self):
+        """旧版函数对象的源码里不应出现共享工具——它就是抽工具之前那份。"""
+        import inspect
+        import compare_old_new_impl as C
+        # 函数是从 git 里 `exec` 出来的，没有可直接取源码的文件；改读它自己带的路径标记
+        self.assertIn('bucketing_probe.py', C._OLD_SEED_SIGN_STABILITY.__code__.co_filename)
+        src = C.old_source_at('experiments/rollout-group-split-tradeoff/bucketing_probe.py')
+        self.assertIn('1e-12', src)
+        self.assertNotIn('paired_diff', src)
+        self.assertIn('def seed_sign_stability', src)
+
+    def test_old_steps_at_keeps_zero_tie_semantics(self):
+        """旧版 `steps_at` 用 `d == 0` 记并列；差 1e-13 步也是步号，不是并列。"""
+        import compare_old_new_impl as C
+        st = C._old_stats_ledger([0, 1, -1, 0, 2])
+        self.assertEqual(st['n_ties'], 2)
+        self.assertEqual(st['n_pairs'], 5)
+        # 同一份编码经旧版 `first_cross` 还原后必须逐个回到原差值
+        for d in (0, 1, -1, 3, -3):
+            curve = C._old_curve_for(d)
+            self.assertEqual(C.recover_old_step(curve) - C.K0, d)
+
+    def test_old_steps_at_on_empty_column(self):
+        import compare_old_new_impl as C
+        st = C._old_stats_ledger([])
+        self.assertEqual(st['n_pairs'], 0)
+        self.assertIsNone(st['same_sign_arm_slower'])
+
+    def test_old_same_sign_matches_new_positive_share(self):
+        """旧版 `steps_at` 的 `same_sign_arm_slower` 就是新版的正号占比。"""
+        import compare_old_new_impl as C
+        diffs = [0, 1, -1, 0, 2]
+        old = C._old_stats_ledger(diffs)
+        new = C.new_sign_counts(diffs)
+        self.assertAlmostEqual(old['same_sign_arm_slower'],
+                               new['n_positive'] / float(len(diffs)))
+        self.assertEqual(old['n_ties'], new['n_identical'])
+
+
+class TestProbeColumnsCoverage(unittest.TestCase):
+    """分桶探针的真实输入列必须真被扫到，且覆盖正负两侧。"""
+
+    @classmethod
+    def setUpClass(cls):
+        import compare_old_new_impl as C
+        cls.cols = C._PROBE.columns()
+
+    def test_probe_columns_present(self):
+        # 20 格 = 构造 4 档 + 真实 4 文件 × 4 档
+        self.assertEqual(len(self.cols), 20)
+        for name, diffs in self.cols.items():
+            self.assertGreater(len(diffs), 5, name)
+
+    def test_probe_columns_span_both_signs(self):
+        """全同向的列检验不了正负分类——真实列里必须有一批两向都有。"""
+        both = [n for n, d in self.cols.items()
+                if any(x > paired_diff.TOL for x in d) and any(x < -paired_diff.TOL for x in d)]
+        self.assertGreaterEqual(len(both), 3, both)
+
+    def test_probe_columns_have_identical_seeds(self):
+        """`identical` 一侧也要有输入可检验（否则 identical 分支等于没测）。"""
+        self.assertGreater(sum(paired_diff.sign_counts(d)['n_identical']
+                               for d in self.cols.values()), 0)
+
+
+class TestProbeCellOutputs(unittest.TestCase):
+    """每格的非计数输出（identical／同号占比／sd）新旧一致，且注入能被抓到。"""
+
+    @classmethod
+    def setUpClass(cls):
+        import compare_old_new_impl as C
+        cls.C = C
+        cls.cells = C._PROBE.cells()
+
+    def test_no_divergence_on_cells(self):
+        issues, n_cells, n_rows = self.C.compare_probe_cells(self.cells)
+        self.assertEqual(n_cells, 20)
+        self.assertGreater(n_rows, 200)
+        self.assertEqual(issues, [])
+
+    def test_injected_sign_counter_is_caught(self):
+        """负向对照：把新版 `summarize` 的同号计数改坏，比对必须报。
+
+        注意断言要落在**被比对的那根线**上：本函数比的键里含
+        `sign_stability.n_positive`，注入就落在这里。若只改 `identical`，比对按
+        设计不看它（旧版没有这个键），那是"注入没抓到"的假结论。
+        """
+        import bucketing_probe as BP
+        saved = BP.summarize
+
+        def broken(rows):
+            # `summarize` 里 group_gain 是逐行求和拿到的，替身行只要带这几个键即可
+            out = saved([{'abs': r['abs'], 'rel': r['rel'], 'group_gain': 0.0,
+                          'traj_gain': 0.0} for r in rows])
+            out['sign_stability'] = dict(out['sign_stability'])
+            out['sign_stability']['n_positive'] += 1
+            return out
+
+        BP.summarize = broken
+        try:
+            issues, _, _ = self.C.compare_probe_cells(self.cells[:3])
+        finally:
+            BP.summarize = saved
+        self.assertTrue(issues, '把 n_positive 偏 +1 后仍报零分歧')
+        self.assertTrue(all(it[1] == 'sign_stability.n_positive' for it in issues), issues)
+
+
+class TestToleranceSourceNotHardcoded(unittest.TestCase):
+    """分桶探针与真实负载脚本的容差必须来自共享工具，不能各写一个 `1e-12`。"""
+
+    def test_no_bare_tolerance_in_the_two_probes(self):
+        import re
+        for name in ('bucketing_probe.py', 'real_lengths_policy.py'):
+            src = (HERE.parent / 'rollout-group-split-tradeoff' / name).read_text()
+            hits = [ln for ln in src.splitlines()
+                    if re.search(r'[<>]=?\s*[-]?1e-12|[-]?1e-12\s*[<>]', ln)]
+            self.assertEqual(hits, [], '%s 还有硬写的容差：%r' % (name, hits))
+
+    def test_module_level_tol_change_reaches_both_probes(self):
+        """把 `paired_diff.TOL` 调松，探针脚本读数必须跟着变。
+
+        第八批只测了 `sign_counts` 这一层；本测试测**脚本用它**的那一段：
+        容差若在脚本里被写成字面量，注入 `TOL=1e-3` 时脚本读数不动，这里变红。
+        `real_lengths_policy` 的唯一一处字面量（`arrival_assumption_shift` 的两列
+        同侧判定）无法从外部喂入，改由下一条测试读源码断言。
+        """
+        import bucketing_probe as BP
+        rows = [{'abs': 5e-4, 'rel': 1.0, 'group_gain': 0.0, 'traj_gain': 0.0},
+                {'abs': -5e-4, 'rel': 1.0, 'group_gain': 0.0, 'traj_gain': 0.0},
+                {'abs': 0.1, 'rel': 1.0, 'group_gain': 0.0, 'traj_gain': 0.0}]
+        saved = paired_diff.TOL
+        try:
+            tight_b = BP.summarize(rows)['identical']
+            paired_diff.TOL = 1e-3
+            loose_b = BP.summarize(rows)['identical']
+        finally:
+            paired_diff.TOL = saved
+        self.assertEqual(tight_b, 0, '1e-12 下 5e-4 不该算相同')
+        self.assertEqual(loose_b, 2, 'TOL=1e-3 下两个 5e-4 必须记为相同')
+
+    def test_arrival_shift_uses_shared_tolerance(self):
+        """两列同侧判定那处也必须借共享容差（它不是单列分类，不能直接套 sign_counts）。"""
+        import inspect
+        import real_lengths_policy as R
+        src = inspect.getsource(R.arrival_assumption_shift)
+        self.assertIn('paired_diff.TOL', src)
+        self.assertNotIn('1e-12', src)
+

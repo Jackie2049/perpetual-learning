@@ -337,8 +337,8 @@ python3 wall_threshold_band.py                     # 第六批：wall_ratio 的�
 python3 wall_threshold_band.py --verify            # 通过：8 对参考阈值逐位复现 ledger.json
 python3 -m unittest test_wall_threshold_band -v    # 5 tests，含 3 条负向对照
 
-python3 compare_old_new_impl.py                    # 第七批：两版实现逐值对照（真实 96 列 + 合成 210 列）
-python3 -m unittest test_cross_script_consistency -v   # 第八批：23 tests，含 3 条注入对照
+python3 compare_old_new_impl.py                    # 第七→九批：两版实现逐值对照（真实 96 + 合成 210 + 探针 20 格 + 真实负载 8 格；约 6 分钟）
+python3 -m unittest test_cross_script_consistency -v   # 第九批：35 tests，含 5 条注入对照（约 4 分钟）
 ```
 
 执行条件与 sha256 见 [run-info.json](run-info.json)。全部为 CPU 进程内重算，**未跑 GPU、未触上游写操作、未新增文献身份**。
@@ -360,3 +360,26 @@ python3 -m unittest test_cross_script_consistency -v   # 第八批：23 tests，
 **六、覆盖面自查（本批最后一处自查）。** "真实列零分歧"这句话对**计数**而言，在整数步号列上是**自动成立**的：40 列步号全为整数，旧版 `d == 0` 与新版 `|d| <= TOL` 在整数输入下精确等价，它们根本没检验容差。真正检验容差的只有 56 列浮点比率列，其中相对 1 翻号的只有 2 列。这不等于是覆盖缺陷（合成边界列专测容差边界），但**不能把"96 列零分歧"读成"96 列都在检验容差"**。输出里已把这条覆盖面直接打出来。
 
 **核对产物**：`test_cross_script_consistency` 13 → **23 passed**；两目录合计 **144 passed**（c-class 82 + group-split 62）；`paired_diff.py --selftest` 通过；六份归档 `--verify` 全部逐字段一致。
+
+## 第九批：把分桶探针与真实负载也纳入逐值对照——顺手抓到对照脚本自己的三处错（2026-11-03 M1）
+
+第八批收尾记的遗留是「**分桶探针与真实负载脚本的真实输入列仍未纳入逐值对照**」。这两处正是 §13.30 第四十一／四十二批读数（16 格分档、cap256 作废）的来源，而它们此前的证据只有"归档 `--verify` 不变"——那是**同一条链路重算自己**，证明不了判据没被改动。
+
+**一、把两处的真实输入列接进来。** `bucketing_probe` 原本把"产生逐种子行 → `summarize`"写死在 `synthetic_block()`／`real_block()` 里，归档只留汇总量，反解不出输入列。新增 `iter_rows()` 生成器，两个 block 改为消费它——**读数逐位不变**（`bucketing-probe.json` 前后逐字段相同，`--verify` 通过）。对照脚本据此拿到 20 格／400 个种子对的配对差，连同真实负载脚本的 `fifo_reorder_band`（8 格）一起喂给新旧两版：**全部零分歧**。
+
+**二、每格的非计数输出也做了对照。** 9 个键（`identical`、`abs_pp_mean`／`median`、`sign_stability` 的五个）在 20 格上新旧一致。**唯独 `identical` 一处不同，而且是有意的**：旧版 `seed_sign_stability` 没有"容忍差值"这一档，`|d| < 1e-12` 的种子既不记正也不记负；新版把它记成 `n_identical`（60 个种子）。这是第五批补的分辨率刹车，不是抽工具引入的回归——对照脚本把它单独打印出来，不混进"零分歧"。
+
+**三、第二个探针脚本里还有一处硬写的容差。** 第六批把判据抽进 `tools/paired-diff` 时，`bucketing_probe.summarize` 的 `abs(r['abs']) < 1e-12` 与 `real_lengths_policy.arrival_assumption_shift` 的两列同侧判定仍是字面量。⇒ **把 `TOL` 注入成 1e-3 时这两个脚本的读数根本不动**，第六批那条"注入被测红"只覆盖了直接调用共享函数的那一层。现两处都改为 `paired_diff.TOL`，并补 `TestToleranceSourceNotHardcoded` 两条（源码里不再有裸 `1e-12`；模块级 `TOL` 改松后 `summarize` 的 `identical` 跟着变）。
+
+**四、旧版实现不再是手抄本。** 第八批虽然改成从 `git show` 取源码，但对照用的仍是本文件里嵌的一份手抄实现。现在 `_extract_old()` 从 `commit^` 的原文件里抽出函数体直接执行（`ledger.steps_at`、`bucketing_probe.seed_sign_stability` 及其依赖），两个探针脚本则整份 import 旧版模块。若上游函数改了，对照自动跟着变；抄错不再能"零分歧"。
+
+**五、（本批最该记的）对照脚本自己错了四次，前三次都被"零分歧"掩盖。**
+
+1. **`n_pairs` 恒为 1**：把整列差值塞进一条曲线。
+2. **首元素取 0.0**：`first_cross` 恒返回 0，正负全被压平——而测试读的是 `n_ties`，两侧都恒为 0 也"相等"，等于自己和自己比。
+3. **`old_sign_counts_real` 把 `n_identical` 写死 0**：于是每个含并列的列都被报成分歧（34 列）。旧版其实**可以**由 `len − pos − neg` 推出来。
+4. **`probe=True` 分支一开始直接 `return []`**：探针那一侧的"零分歧"是没有内容的。
+
+⇒ 判据：**对照脚本必须先用"已知答案"的输入自证**（本批补了 `n_pairs`／`same_sign_arm_slower` 的逐值断言——`[0,1,-1,0,2]` 必须给 `n_pairs=5`、`n_ties=2`、正号占比 0.4），再谈真实数据上的零分歧。
+
+**核对产物**：`test_cross_script_consistency` **35 passed**（新增 12 条）；六份归档 `--verify` 全部逐字段一致；`compare_old_new_impl.py` **PASS**（真实 96 列 + 合成 210 列 + 探针 20 格 + 真实负载 8 格，全部零分歧）。只读重算、未跑 GPU、未触上游。

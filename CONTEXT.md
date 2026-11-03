@@ -1,6 +1,4 @@
-更新时间：2026-11-03（M1 22:2x **第八批**：推送恢复（积压 16 个提交已推 `878600d56`）；补第七批遗留三条——`same_sign_fraction`／`sd_pp` 逐值对照零分歧（两次注入被测红）、盲区扫描扩到**六份归档 1907 个 float 全 0 命中**、旧版实现改从 `git show` 取；量出两条口径：第 3 位小数对精确平局**取偶**（真实输入 0 次落在平局上）、`TOL` 在原量纲与 pp 刻度上**差 100 倍**。本批自我纠正一处：96 列里 **40 列是整数步号、根本没检验容差**。M1 21:0x 第七批：两版实现逐值对照 + 跨脚本一致性，测试 121 → 134 passed。）
-
-更新时间：2026-11-03（M1 21:0x 第七批：**两版实现逐值对照**——同一列输入喂旧版手写实现与 `tools/paired-diff`，真实 96 列／2480 个差值／332 个 identical 种子全零分歧；**跨脚本一致性测试** 13 条把「同一列差在各调用点给同一计数」钉住，测试 121 → 134 passed；本批两个错误都出在对照脚本自己身上（「0 列 PASS」、p3 基线配成 `R` 自比）。M1 20:0x–20:3x 第六批：同一族配对差判据抽成 `tools/paired-diff`（五个脚本改接、五份归档 `--verify` 逐字段不变），并补 `wall_ratio` 的阈值拆解（§13.47.2；摆幅 2.2–9.5pp，`replay` 总量比穿过 1.0 但逐种子方向稳、真正翻的只有 `C vs B`））。规则入口：[AGENTS.md](AGENTS.md)；任务入口：[技术秘书](queue_tech-secretary.md) / [技术掘金](queue_tech-miner.md)。
+更新时间：2026-11-04（M1 **第九批**：接第八批遗留「分桶探针与真实负载未纳入逐值对照」——`bucketing_probe` 抽出 `iter_rows()` 生成器（归档逐字段不变），对照脚本因此拿到 **20 格／400 个种子对**，连同 `real_lengths_policy.fifo_reorder_band` 8 格一起对照，**全部零分歧**；每格 9 个非计数键一致，唯一差别是 `identical`（旧版无此档、新版记 60 个种子，属第五批的分辨率刹车）。**顺带修掉一处真缺口**：两个探针脚本仍硬写 `1e-12`，把 `TOL` 注入成 1e-3 时读数不动 ⇒ 已接共享工具。本批**对照脚本自己错了四次**（前三次被"零分歧"掩盖）。测试 23 → **35 passed**，六份归档 `--verify` 全一致。M1 22:2x 第八批：推送恢复（积压 16 个提交已推）；补第七批遗留三条——`same_sign_fraction`／`sd_pp` 逐值对照、盲区扫描扩到六份归档、旧版实现改从 git 取。）
 
 ## 当前现场
 
@@ -23,6 +21,24 @@
 **留给下一轮的三条**：① 真实输入"无舍入平局"只实测了 96 列 + 8 条构造列，**新数据出现平局时第 3 位取决于取偶还是四舍五入**，建议在写进正文的读数旁标注；② 两刻度差异在既有数据上全为 0，**只说明口径存在、不说明已发生**，若将来某份归档出现 `raw` 与 `pp` 计数不同，需要先判断是哪一侧写错了刻度；③ `compare_old_new_impl` 的真实列仍只覆盖 p3／p4 的 C 类账，**分桶探针与真实负载脚本的真实输入列仍未纳入逐值对照**（第七批记为遗留③的另一半，本批只做了"从 git 取"这部分）。
 
 入口：[两版对照](experiments/rollout-c-class-ledger/compare_old_new_impl.py) · [跨脚本测试](experiments/rollout-c-class-ledger/test_cross_script_consistency.py) · [readme 第八批](experiments/rollout-c-class-ledger/readme.md) · [paired-diff](tools/paired-diff/readme.md) · [TS-001](queue_tech-secretary.md) · [diary](diary/2026-11-03.md)。
+
+### M1 本轮（2026-11-04 00:0x）：分桶探针与真实负载纳入逐值对照；两个探针脚本的容差接进共享工具
+
+技术秘书侧无新用户任务；TM 系列对外动作仍全部待用户逐项授权。本轮接第八批自己写下的「留给下一轮」①②：分桶探针与真实负载脚本的真实输入列没有逐值对照。**不新开实验、不改任何测量值。**
+
+**一、先让输入列能被取到。** `bucketing_probe` 原先把"产生逐种子行 → `summarize`"写死在 `synthetic_block()`／`real_block()` 里，归档只留汇总量。抽出 `iter_rows()` 生成器后两个 block 改为消费它，**`bucketing-probe.json` 前后逐字段相同**（`--verify` 通过）。对照脚本据此拿到 20 格／400 个种子对的配对差。
+
+**二、两个探针也对照完了。** `bucketing_probe` 20 格 + `real_lengths_policy.fifo_reorder_band` 8 格，新旧两版**全部零分歧**；每格 9 个非计数键（`identical`／`abs_pp_mean`／`median`／同号占比／sd／极值）一致。**唯一差别是 `identical`**：旧版 `seed_sign_stability` 没有"容忍差值"这一档，新版记 60 个种子——那是第五批补的分辨率刹车，已在输出里单列，不混进"零分歧"。
+
+**三、抓到一个真缺口：两个探针脚本里还有硬写的容差。** `bucketing_probe.summarize` 的 `abs(r['abs']) < 1e-12`、`real_lengths_policy.arrival_assumption_shift` 的两列同侧判定都是字面量 ⇒ **把 `TOL` 注入成 1e-3，这两个脚本的读数根本不动**。第六批那条"注入被测红"只覆盖了直接调用共享函数的那一层。两处已改为 `paired_diff.TOL`，补 `TestToleranceSourceNotHardcoded`（源码无裸 `1e-12` + 模块级 `TOL` 改松后 `summarize` 的 `identical` 跟着变）。
+
+**四、本批的错误都在对照脚本自己身上，前三次被"零分歧"掩盖**：① `n_pairs` 恒 1（整列塞进一条曲线）；② 曲线首元素取 0.0 ⇒ `first_cross` 恒返回 0，正负全被压平，而测试读的是 `n_ties`（两侧都是 0 ⇒ 自己和自己比）；③ `old_sign_counts_real` 把 `n_identical` 写死 0，导致每个含并列的列都被报成分歧（34 列）；④ `probe=True` 分支一开始直接 `return []`，那一侧的"零分歧"没有内容。⇒ 判据写进 readme：**对照脚本必须先用"已知答案"的输入自证**（`[0,1,-1,0,2]` 必须给 `n_pairs=5`、`n_ties=2`、正号占比 0.4），再谈真实数据。
+
+**核对产物**：`test_cross_script_consistency` 23 → **35 passed**；六份归档 `--verify` 全部逐字段一致（含 `real_lengths_policy --verify` 约 10 分钟真实负载重算）；`compare_old_new_impl.py` **PASS**。只读重算、未跑 GPU、未触上游。
+
+**留给下一轮**：① `real_lengths_policy.policy_sign_stability` 旧版签名要排程参数、喂不了任意列，本批用"同一段计数逻辑"间接覆盖而未逐值；② 对照脚本已有自证用例，但**覆盖面下限（真实列不足 40 即 FAIL）只对 C 类账成立**，探针那一侧还没有下限检查；③ M1 这条线（纯归档重算 + 判据一致性）已到边际，语义面剩余缺口仍是长度预测误差／分桶／迁移／抢占／KV 搬运，P-1 跨系统需用户立项。
+
+入口：[readme 第九批](experiments/rollout-c-class-ledger/readme.md) · [两版对照](experiments/rollout-c-class-ledger/compare_old_new_impl.py) · [跨脚本测试](experiments/rollout-c-class-ledger/test_cross_script_consistency.py) · [bucketing_probe](experiments/rollout-group-split-tradeoff/bucketing_probe.py) · [TS-001](queue_tech-secretary.md) · [diary](diary/2026-11-04.md)。
 
 ### M1 上一轮（2026-11-03 21:0x）：归档不变 ≠ 两版实现相同——补做逐值对照与跨脚本一致性
 
@@ -365,7 +381,7 @@ M1 上一轮把 TM-009 从"已取证待决定"推到"材料齐备待决定"：�
 
 | 执行者 | 当前任务 | 接续入口与核对事项 |
 |---|---|---|
-| M1 | TS-001 第六批（同一族配对差判据抽成 `tools/paired-diff`；`wall_ratio` 的阈值拆解，§13.47.2）完成；此前第五批补遗（阈值摆幅拆成同水平步数差，§13.47.1 补遗）；此前第五批（C 类账的收敛阈值带宽）；此前第四十二批（真实负载上的策略位移分档）；TM-010／TM-009／TM-011 待用户决定 | 取证、上游查重、可达性复核、候选补丁均完成：[取证](open-source/rllm/tool-use-async-autodetect.md)、[可达性探针](experiments/rllm-tool-use-async-probe/prod_reachability.py)、[候选补丁](open-source/rllm/patches/use-async-autodetect/readme.md)。**对外动作全部未做**。**第六批**：五个脚本改接共享判据后五份归档 `--verify` 逐字段不变、测试 121 passed；`wall_ratio` 摆幅 2.2–9.5pp，总量比穿过 1.0 的 `replay` 逐种子方向仍稳（18–20/30），真正翻的只有 `C vs B`，`cap` 是 14–23/30 种子无分辨率。**第四十批把 §13.30 第一批的六个 `R` 读数作废并按正确组臂重算**（43.7／54.7／20.6／56.6／27.7／38.6 → 34.0／42.4／14.7→44.9／17.3→34.0），第二／三／四批不受影响。**第四十一批把分桶探针的 16 格读数按符号稳定性分档**：只有 cap1024 ≥4 批六格稳定（19–20/20 同号），cap256 各档符号在种子间翻转 ⇒ **不再引用 cap256 的均值当效应**；并核出 TM-011 立项前置是**改造排程器**（容量与批绑定、同步到达、单批内乱序零效应），不是加分桶逻辑。**第四十二批把同一分档判据补到真实负载**：FIFO 基线自身换序就动 0.7–11.7pp，§13.30 第四批 cap256 的"反号"（−0.95／−0.39pp）落在带宽内⇒**不可引用、方向未定**；可引用的只有 cap1024（cv 0.30–0.36）六格 28–30/30 同号。`R` 的量级读数（2.7%／11.4%）不受影响。TS-001 的可做补强已到边际：纯归档重算、语义面排队顺序维、真实长度负载维都已纳入。语义面剩余缺口仍是**长度预测误差／分桶／迁移／抢占／KV 搬运**，P-1 跨系统需用户立项。 |
+| M1 | TS-001 第九批（分桶探针与真实负载纳入逐值对照；两个探针脚本的硬写容差接入共享工具）完成；此前第六批（同一族配对差判据抽成 `tools/paired-diff`；`wall_ratio` 的阈值拆解，§13.47.2）；此前第五批补遗（阈值摆幅拆成同水平步数差，§13.47.1 补遗）；此前第五批（C 类账的收敛阈值带宽）；此前第四十二批（真实负载上的策略位移分档）；TM-010／TM-009／TM-011 待用户决定 | 取证、上游查重、可达性复核、候选补丁均完成：[取证](open-source/rllm/tool-use-async-autodetect.md)、[可达性探针](experiments/rllm-tool-use-async-probe/prod_reachability.py)、[候选补丁](open-source/rllm/patches/use-async-autodetect/readme.md)。**对外动作全部未做**。**第六批**：五个脚本改接共享判据后五份归档 `--verify` 逐字段不变、测试 121 passed；`wall_ratio` 摆幅 2.2–9.5pp，总量比穿过 1.0 的 `replay` 逐种子方向仍稳（18–20/30），真正翻的只有 `C vs B`，`cap` 是 14–23/30 种子无分辨率。**第四十批把 §13.30 第一批的六个 `R` 读数作废并按正确组臂重算**（43.7／54.7／20.6／56.6／27.7／38.6 → 34.0／42.4／14.7→44.9／17.3→34.0），第二／三／四批不受影响。**第四十一批把分桶探针的 16 格读数按符号稳定性分档**：只有 cap1024 ≥4 批六格稳定（19–20/20 同号），cap256 各档符号在种子间翻转 ⇒ **不再引用 cap256 的均值当效应**；并核出 TM-011 立项前置是**改造排程器**（容量与批绑定、同步到达、单批内乱序零效应），不是加分桶逻辑。**第四十二批把同一分档判据补到真实负载**：FIFO 基线自身换序就动 0.7–11.7pp，§13.30 第四批 cap256 的"反号"（−0.95／−0.39pp）落在带宽内⇒**不可引用、方向未定**；可引用的只有 cap1024（cv 0.30–0.36）六格 28–30/30 同号。`R` 的量级读数（2.7%／11.4%）不受影响。TS-001 的可做补强已到边际：纯归档重算、语义面排队顺序维、真实长度负载维都已纳入。语义面剩余缺口仍是**长度预测误差／分桶／迁移／抢占／KV 搬运**，P-1 跨系统需用户立项。 |
 | M5 | TS-001 算力支持 | **第五十八批 §13.54：separate_async 跑通并测完（4/4 exit 0，整步差 +0.010s ⇒ poll 不在关键路径）**；此前第五十六批 §13.52、第五十七批 §13.53（drop）与 §13.53 补记（wait t=1／t=2）、第五十六批与 wait 臂独立复核、main `3fdf2b54` 3 步冒烟均完成（见上）。TM-008 剩余未测只剩 4 卡 `inflight=1`（需 ≥4 卡空闲窗口）与 `wait` 的 t≥3 档（结构上等同默认 async）。**separate_async 的两条本机前置必须记住**：不能设 `RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1`（checkpoint 组会撞「多 rank 同卡」），且需 `NCCL_SHM_DISABLE=1` 规避训练侧 CUDA 217；cupy 装在 `/tmp/cupy-pkgs`。P-1 跨系统（AReaL／OpenRLHF／SkyRL，需用户立项）；P-2 FP8 训练侧（待实测）。**下一轮先核对 GPU 归属与占用再启动，不据旧记录假定空闲。** |
 
 
