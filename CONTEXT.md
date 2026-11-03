@@ -16,6 +16,8 @@
 
 **核对产物**：`pytest` **48 passed**；`group_split_tradeoff.py --verify`／`real_lengths_policy.py --verify`／`legacy_group_arm_check.py --verify` 三处均 exit 0。只读仿真、未跑 GPU、未触上游。
 
+**⚠ 推送未完成**：提交 `d7eeba0e6` 已在本地 main，但 `git push` 与 `git ls-remote` 均在 75s 后超时（`curl https://github.com` 20s 无响应，无代理配置）——本机当前连不上 GitHub。**恢复条件**：网络恢复后执行 `git push origin main`，先 `git log origin/main..main` 核对没有把并行会话的提交一起推上去。
+
 **留给下一轮的两条**：① 探针仍不建模"分桶改变批组成"，TM-011 的停止条件已按否定读数改写（只排序有害、要救回来必须建模组成）；② 真实档每格 16 组 × 20 次，不主张 0.1pp 级精度。
 
 入口：[bucketing-probe.md](experiments/rollout-group-split-tradeoff/bucketing-probe.md) · [legacy_group_arm_check.py](experiments/rollout-group-split-tradeoff/legacy_group_arm_check.py) · [TM-011](queue_tech-miner.md) · [diary](diary/2026-11-03.md)。
