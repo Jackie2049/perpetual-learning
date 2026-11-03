@@ -322,5 +322,54 @@ class TestBandFloor(unittest.TestCase):
         self.assertEqual(floor['band_floor'], 'degenerate')
 
 
+class TestSamplingReach(unittest.TestCase):
+    """`no_reading` 是"这个负载问不出来"还是"这一次抽样问不出来"（第十四批，2026-11-04）。
+
+    第十一批把 `no_reading` 写成"这一格问不出来"，但没分清两件事：负载上**每条路**
+    都排不出先后（换抽样也没用），还是这次 `n_groups` 太小、每次都抽不到能排的组
+    （加大就问得出来）。这里是纯解析与纯函数的守护，不跑真实负载——真实读数在
+    [sampling-reach.json](sampling-reach.json) 与 readme 第十四批。
+
+    负向对照落在哪根线：把 `free_share_min` 的 `n_free<=0` 分支改成返回 1（"总能问
+    出来"），`test_no_free_group_means_never` 即红；把 `sampling_floor` 的
+    `n_r_zero == SEED_COUNT` 判据改成 `>= 1`，`test_n16_matches_archive_verdict` 即红。
+    """
+
+    def test_no_free_group_means_never(self):
+        """没有一组的组最大低于上限 ⇒ 无论 n_groups 多大都问不出来（返回 None）。"""
+        import sampling_reach as s
+        self.assertIsNone(s.free_share_min(n_total=480, n_free=0, share=0.5))
+
+    def test_min_n_is_monotone_and_bounded(self):
+        """n_free 越大、要求越松，所需 n_groups 越小；且不超过总量。"""
+        import sampling_reach as s
+        self.assertLess(s.free_share_min(480, 67, 0.5), s.free_share_min(480, 67, 0.9))
+        self.assertLess(s.free_share_min(480, 67, 0.5), s.free_share_min(480, 28, 0.5))
+        self.assertLessEqual(s.free_share_min(480, 400, 0.9), 480)
+
+    def test_pinned_groups_never_reach_any_n(self):
+        """构造输入：16 组全贴顶时任何 n_groups 都 `no_reading`——与真实 cap256 同形。"""
+        import sampling_reach as s
+        lens = [250.0, 252.0, 254.0, 256.0, 256.0, 256.0, 256.0, 256.0]
+        groups = [list(lens) for _ in range(16)]
+        for n in (4, 8, 16):
+            floor = s.sampling_floor(groups, 256.0, n, 2)
+            self.assertEqual(floor['band_floor'], 'no_reading', 'n=%d' % n)
+
+    def test_n16_matches_archive_verdict(self):
+        """自检：本脚本 n_groups=16 的三档与归档用的 `fifo_band_floor` 一致。
+
+        **必须逐格一致**，否则"扫描结论"与"归档结论"会各说各话。只核 cap256 积压 2
+        这一格（最快一格）；其余 16 格在 `sampling_reach.py` 的 `at_n16` 里逐格列出。
+        """
+        import sampling_reach as s
+        groups = r.load_real_groups(os.path.join(r.REAL_DIR, 'qwen15b_gsm8k_n8.jsonl.gz'))
+        mine = s.sampling_floor(groups, 256.0, 16, 2)
+        official = r.fifo_band_floor(groups, 16, 2, seeds=SEEDS)
+        self.assertEqual(mine['band_floor'], official['band_floor'])
+        self.assertEqual(mine['n_r_identically_zero'], official['n_r_identically_zero'])
+        self.assertEqual(mine['n_band_zero'], official['n_band_zero'])
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -68,6 +68,17 @@ pd.sign_flip_around(values, 1.0) # 比率读数是否穿过 1
 
 **第二个要防的坑**：带宽为 `0.0` 不一定是"基线很稳"。`qwen15b_cap256` 积压 2 的 `fifo_band` 中位／均值／最大全是 0，因为低积压时该格 `R` 本就恒为 0——**噪声为零的带宽不构成门槛**，`|效应| > 0` 在这里没有判读意义。三档诊断（`no_reading`／`degenerate`／`usable`）在 [band_floor.py](../../experiments/rollout-group-split-tradeoff/band_floor.py)，真实档 16 格里 2 格 `no_reading`、1 格 `degenerate`、13 格 `usable`。
 
+**这个坑已经变成代码拒绝（2026-11-04 第十四批）**：`exceeds_band(effect, 0.0)` 现在**抛 `ValueError`**，不再恒真。带宽为 0 有两种成因——`baseline_stable`（抽样里确实有非零读数，只是每次换序结果相同：这时"效应 > 0"可以说）与 `no_reading`（每个种子的读数都恒为 0，样本结构使其必然如此：这一格问不出来）——判词相反，而 `exceeds_band` 只看得到那个 0。要断言一个为 0 的带宽，用 `band_floor_pass(effect, band, zero_kind=...)`：
+
+| 调用 | 返回值 |
+|---|---|
+| `band_floor_pass(0.02, 0.0, zero_kind='baseline_stable')` | `True` |
+| `band_floor_pass(0.02, 0.0, zero_kind='no_reading')` | `False`（问不出来不是证据） |
+| `band_floor_pass(0.02, 0.0)`（未声明） | `ValueError` |
+| `band_floor_pass(1.5, 1.0, ...)` | 与 `exceeds_band(1.5, 1.0)` 逐位相同 |
+
+为什么不在工具里自动判断：成因只有**产生带宽的那一层**知道（要数逐种子的读数是不是全零），工具收到的只是一个数。所以工具这边能做的是**拒绝猜测**——这是"判据留在调用方"与"工具层不静默"之间唯一能同时满足的写法。
+
 两个口径要点
 ---
 

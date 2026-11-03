@@ -36,8 +36,10 @@
     python3 paired_diff.py --selftest
 """
 
+import math
 import statistics
 import sys
+from math import comb
 
 # 绝对容差。R／准确率在 [0,1]，步数在 [0,300]：1e-12 相当于"精确相等"。
 # 不改这个值，除非同时重算所有引用它的归档（见 readme 的「口径锁定」）。
@@ -273,8 +275,86 @@ def exceeds_band(effect, band, strict=True):
 
     只需判断"能不能用基线抖动解释"，不回答"效应是否真实存在"。`strict=True`
     取严格大于：效应恰等于带宽时按"解释得了"处理，不能算过门槛。
+
+    **带宽恰为 0 时抛 `ValueError`**（2026-11-04 第十四批）。带宽为 0 有两种成因：
+    确实观察到了非零读数、只是每次换序结果相同（`baseline_stable`），与每个种子
+    的读数恒为 0、这一格根本没有读数（`no_reading`）——判词相反，而本函数只看得到
+    那个 0。要断言一个为 0 的带宽，请用 `band_floor_pass(..., zero_kind=...)`。
     """
+    if abs(band) == 0.0:
+        _reject_zero_band(None)
     return abs(effect) > abs(band) if strict else abs(effect) >= abs(band)
+
+
+def _reject_zero_band(zero_kind):
+    raise ValueError(
+        'band=0.0 时不能直接调 exceeds_band——带宽为 0 有两种成因，判词相反。'
+        '确认后二选一：band_floor_pass(effect, 0.0, zero_kind="baseline_stable")'
+        '（确实观察到了非零读数、只是换序不动）或 zero_kind="no_reading"'
+        '（每个种子读数恒为 0，这一格问不出来）。实际传入：%r' % (zero_kind,))
+
+
+def band_floor_pass(effect, band, zero_kind=None, strict=True):
+    """`exceeds_band` 的带宽为 0 情形的显式版本。
+
+    带宽 > 0：与 `exceeds_band` 逐位相同。
+    带宽 == 0：只有声明 `zero_kind='baseline_stable'` 才按"非零效应即超门槛"作答；
+    `'no_reading'`、未声明或未知成因一律返回 **False**（问不出来不是证据）。
+    """
+    if abs(band) != 0.0:
+        return abs(effect) > abs(band) if strict else abs(effect) >= abs(band)
+    if zero_kind == 'baseline_stable':
+        return abs(effect) > 0.0 if strict else True
+    if zero_kind == 'no_reading':
+        return False
+    _reject_zero_band(zero_kind)
+    return False  # 不可达：_reject_zero_band 必然抛出
+
+
+def falsy_rate(n_truth, passes=None, min_true_frac=0.5, two_sided=False):
+    """判据取"**多少单位满足**"时，它在无信息输入上的判真概率（2026-11-04 第十五批）。
+
+    门槛都写成常数（`min_same_active=0.8`、`tally * 2 > n`），而**判据真正被用在
+    多少个单位上逐格不同**：真实 16 格里表态种子 3–27 个、带宽非零种子 0–30 个。
+    0.8 在 3 个单位上等价于"三个全中"（概率 0.51），在 27 个单位上等价于
+    "≤5 个输"（概率 0.0024）——**常数本身不交代这一点，单位数才交代**。
+
+    `n_truth`：真值下全部符合条件的单位数（如真相全同号时的表态种子数）。
+    `passes(tally, n)`：调用方的**真实判据**，传进来而不是在这里复写一份——
+    复写会漂，正如 `band_floor` 与 `fifo_reorder_band` 各写一份种子式子那次。
+    `tally` 指**某一指定侧**的计数（同号数、带宽为零的种子数）；缺省按"过半数"。
+
+    `two_sided`：判据对 `tally` 与 `n − tally` 谁大谁小都成立（`stable` 的"同号占比"、
+    `band_floor` 的"过半"都是）。双侧判据在两侧各算一次再相加；单侧（"全部为零"）只
+    算一侧。**必须由调用方声明**——本函数第一版想自动判，结果 `stable` 的镜像侧
+    在 n=20 时恰好差一个种子不通，自动判判成单侧，把误判率少算了一半
+    （精确值 0.0059 vs 蒙特卡洛 0.0117）。
+
+    无信息输入模型：每个单位独立以 `min_true_frac`（掷硬币取 0.5）落在判据想要的
+    那一侧。返回 `units_needed`（最小的 tally）、`all_units_rate`（全部满足，幂运算
+    精确）、`consistency_rate`（判真概率，**精确枚举**、不做正态近似——本函数的全部
+    意义就是小 n 的尾巴）。
+    """
+    n = int(n_truth)
+    if n <= 0:
+        raise ValueError('n_truth 必须为正整数（判据至少要有一个单位才谈得上误报率）')
+    if passes is None:
+        passes = lambda tally, total: tally * 2 > total  # noqa: E731
+    p = float(min_true_frac)
+    needed = next((i for i in range(1, n + 1) if passes(i, n)), n + 1)
+    if needed > n:
+        raise ValueError('判据在 n=%d 个单位上恒假，无法给出判真率' % n)
+    pmf = [comb(n, i) * (p ** i) * ((1.0 - p) ** (n - i)) for i in range(n + 1)]
+    rate = sum(pmf[i] for i in range(n + 1) if passes(i, n))
+    if two_sided:
+        rate *= 2
+    return {
+        'n_units': n,
+        'units_needed': needed,
+        'two_sided': bool(two_sided),
+        'all_units_rate': round(p ** n, 6),
+        'consistency_rate': round(min(rate, 1.0), 6),
+    }
 
 
 def span(values):
@@ -350,6 +430,23 @@ def _selftest():
     # ⑥ 判读门槛：恰等于带宽不过门槛
     check('band strict', not exceeds_band(1.0, 1.0))
     check('band over', exceeds_band(1.5, 1.0))
+    # ⑥b 带宽恰为 0 时**拒绝作答**：两种成因判词相反，而这个函数分不出是哪一种。
+    try:
+        exceeds_band(0.02, 0.0)
+        check('zero band raises', False)
+    except ValueError:
+        check('zero band raises', True)
+    check('zero band stable', band_floor_pass(0.02, 0.0, zero_kind='baseline_stable'))
+    check('zero band unreadable', not band_floor_pass(0.02, 0.0, zero_kind='no_reading'))
+    try:
+        band_floor_pass(0.02, 0.0)
+        check('zero band undeclared raises', False)
+    except ValueError:
+        check('zero band undeclared raises', True)
+    # 非零带宽时 band_floor_pass 与 exceeds_band 逐位相同（两个分支不能各行其是）
+    check('nonzero band delegates',
+          band_floor_pass(1.5, 1.0) == exceeds_band(1.5, 1.0)
+          and band_floor_pass(1.0, 1.0) == exceeds_band(1.0, 1.0))
     # ⑦ 极差与翻号
     check('span', span([1.0, 1.2, 0.9]) == 0.3 or abs(span([1.0, 1.2, 0.9]) - 0.3) < 1e-12)
     check('flip', sign_flip([1.0, -0.1, 0.5]))

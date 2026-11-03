@@ -158,13 +158,15 @@ def fifo_order_sensitivity(groups, backlog, trials=30, seed=0):
     }
 
 
-def effect_exceeds_band(effect_pp, band_pp):
+def effect_exceeds_band(effect_pp, band_pp, zero_kind=None):
     """配对差的绝对值是否超出 FIFO 自身的顺序敏感度。
 
-    判据实现已收到 `tools/paired-diff`（`exceeds_band`），这里只保留原来的入口名，
-    避免调用方与既有归档键漂移；口径（严格大于、判读门槛非显著性）见那里。
+    判据实现已收到 `tools/paired-diff`（`exceeds_band`／`band_floor_pass`），这里只
+    保留原来的入口名，避免调用方与既有归档键漂移；口径（严格大于、判读门槛非显著
+    性）见那里。**带宽恰为 0 时必须给 `zero_kind`**（`'baseline_stable'` 或
+    `'no_reading'`）——两种成因判词相反，本函数分不出是哪一种（2026-11-04 第十四批）。
     """
-    return paired_diff.exceeds_band(effect_pp, band_pp)
+    return paired_diff.band_floor_pass(effect_pp, band_pp, zero_kind=zero_kind)
 
 
 def summarize(rows):
