@@ -18,7 +18,7 @@
 
 **核对产物**：两文件 **134 passed**（本文件新增 13 条）；`ledger.json`／`wall-threshold-band.json` 两处 `--verify` 逐字段一致；`paired_diff.py --selftest` 通过。**零归档改动**。只读既有归档与源 summary、未跑 GPU、未触上游。
 
-**⚠ 推送仍未恢复**：本轮开工时 `git ls-remote` 仍报 `SSL certificate problem: self signed certificate`，`gh api` 报 `tls: handshake failure`——**两条通道都不通**。按规则不用 `--insecure` 绕过、不反复重试。本地积压提交继续增加。
+**⚠ 推送仍未恢复**：本轮开工时 `git ls-remote` 仍报 `SSL certificate problem: self signed certificate`，`gh api` 报 `tls: handshake failure`——**两条通道都不通**。按规则不用 `--insecure` 绕过、不反复重试。暂存前积压 13 个提交，本轮提交后为 **14 个**（`git log origin/main..main` 实测）。
 
 **留给下一轮的三条**：① 跨脚本一致性目前只覆盖「计数」这一层，**`same_sign_fraction` 与 `sd_pp` 的舍入**还没做逐值对照；② 盲区那条（`|v-1| < TOL` 被吞）只在 `ledger.json` 上核过，**另外三份归档还没扫**；③ `compare_old_new_impl.py` 只对照了 p3／p4 的 C 类账，**分桶探针与真实负载脚本的判据没有逐值对照**，且旧版实现是硬编码 `/tmp/old_*.py` 临时路径，应改成从 git 直接取。
 
