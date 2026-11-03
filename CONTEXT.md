@@ -59,7 +59,7 @@
 
 **五、顺手抓到的坑。** `qwen15b_cap256` 积压 2 的 `fifo_band` 中位／均值／最大**全是 0**（低积压时该格 `R` 恒为 0）⇒ **噪声为零的带宽不构成门槛**，只看 `exceeds_band` 的布尔值会把这一格读成"效应超带宽"。
 
-**核对产物**：三处注入全部被测红后恢复（`sign_regime` 档名、探针档名换成"全列 ssf<0.5 即 mixed"）；写测试时自己踩了一次边界（样本表态占比 0.533 被正确判成 `mixed`，是**断言写错不是实现错**）。`test_group_split_tradeoff` 54 passed、`test_real_lengths_policy` 18 passed、C 类 94 passed、`verify_anchors --verify` 34 一致／0 不一致、`paired_diff --selftest` 通过。只读仿真重算、未跑 GPU、未触上游。
+**核对产物**：四处注入全部被测红后恢复（含 `compare_old_new_impl` 的 off-by-one：把 `identical` 判据改成恒真即 FAIL；该脚本此前在收尾处取 `seed_sign_stability()["n_identical"]` 会 `KeyError`，第九批的 PASS 是在那行之前打印的，`identical` 从未进入判定——第十批改成两版各按自己的判据数并纳入 PASS/FAIL）（`sign_regime` 档名、探针档名换成"全列 ssf<0.5 即 mixed"）；写测试时自己踩了一次边界（样本表态占比 0.533 被正确判成 `mixed`，是**断言写错不是实现错**）。`test_group_split_tradeoff` 54 passed、`test_real_lengths_policy` 18 passed、C 类 94 passed、`verify_anchors --verify` 34 一致／0 不一致、`paired_diff --selftest` 通过。只读仿真重算、未跑 GPU、未触上游。
 
 **留给下一轮**：① 四档门槛（0.5／0.8）是判读门槛，**没有用已知真相的模拟校准过假阳率**——若将来要写进 survey 正文，需要先量"在真实同号率下这个门槛误判多少"；② `real_lengths_policy.policy_sign_stability` 的旧版签名仍喂不了任意列（第九批遗留①），本批又给它加了一个字段，**逐值对照的口子又宽了一点**；③ `compare_old_new_impl` 的覆盖面下限（真实列不足 40 即 FAIL）**仍只对 C 类账成立**，探针那一侧没有下限检查（第九批遗留②）。
 
