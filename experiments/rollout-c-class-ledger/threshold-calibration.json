@@ -48,6 +48,147 @@
   }
  },
  "doc": "门槛校准：已知真相下的档位分布，量的是判据误判率而不是测试灵敏度。real_cells 是同一判据在真实归档 16 格上的落点，只读不重算。",
+ "effect_band_ratio": {
+  "note": "真方向已知（所有种子同向），真效应量 = ratio × 该种子带宽。方向一列的分母是全部 replications；`mixed` 在这里是**假阳**（真值同向却被报方向混杂），`no_resolution` 是漏报（真方向存在却被报\"什么也不能说\"）。",
+  "replications": 400,
+  "rows": {
+   "ratio=0.20": {
+    "correct_direction_rate": 0.0925,
+    "dist": {
+     "consistent_but_thin": 0.0,
+     "mixed": 0.9075,
+     "no_resolution": 0.0,
+     "stable": 0.0925
+    },
+    "n": 30,
+    "trials_per_seed": 12
+   },
+   "ratio=0.25": {
+    "correct_direction_rate": 0.1525,
+    "dist": {
+     "consistent_but_thin": 0.0,
+     "mixed": 0.8475,
+     "no_resolution": 0.0,
+     "stable": 0.1525
+    },
+    "n": 30,
+    "trials_per_seed": 12
+   },
+   "ratio=0.30": {
+    "correct_direction_rate": 0.37,
+    "dist": {
+     "consistent_but_thin": 0.0,
+     "mixed": 0.63,
+     "no_resolution": 0.0,
+     "stable": 0.37
+    },
+    "n": 30,
+    "trials_per_seed": 12
+   },
+   "ratio=0.40": {
+    "correct_direction_rate": 0.815,
+    "dist": {
+     "consistent_but_thin": 0.0,
+     "mixed": 0.185,
+     "no_resolution": 0.0,
+     "stable": 0.815
+    },
+    "n": 30,
+    "trials_per_seed": 12
+   },
+   "ratio=0.50": {
+    "correct_direction_rate": 0.9925,
+    "dist": {
+     "consistent_but_thin": 0.0,
+     "mixed": 0.0075,
+     "no_resolution": 0.0,
+     "stable": 0.9925
+    },
+    "n": 30,
+    "trials_per_seed": 12
+   },
+   "ratio=0.71": {
+    "correct_direction_rate": 1.0,
+    "dist": {
+     "consistent_but_thin": 0.0,
+     "mixed": 0.0,
+     "no_resolution": 0.0,
+     "stable": 1.0
+    },
+    "n": 30,
+    "trials_per_seed": 12
+   },
+   "ratio=1.00": {
+    "correct_direction_rate": 1.0,
+    "dist": {
+     "consistent_but_thin": 0.0,
+     "mixed": 0.0,
+     "no_resolution": 0.0,
+     "stable": 1.0
+    },
+    "n": 30,
+    "trials_per_seed": 12
+   },
+   "ratio=2.00": {
+    "correct_direction_rate": 1.0,
+    "dist": {
+     "consistent_but_thin": 0.0,
+     "mixed": 0.0,
+     "no_resolution": 0.0,
+     "stable": 1.0
+    },
+    "n": 30,
+    "trials_per_seed": 12
+   },
+   "ratio=4.00": {
+    "correct_direction_rate": 1.0,
+    "dist": {
+     "consistent_but_thin": 0.0,
+     "mixed": 0.0,
+     "no_resolution": 0.0,
+     "stable": 1.0
+    },
+    "n": 30,
+    "trials_per_seed": 12
+   }
+  }
+ },
+ "real_band_ratios": {
+  "_summary": {
+   "counting": "逐种子 |效应|／带宽 的**中位**。两格带宽全为 0（两个模型 cap256 积压 2）无定义，记为 null；0.5B cap256 积压 8 的中位恰为 0.00（该格效应与带宽都被个别种子撑起）。",
+   "median_abs_ratio": 1.17,
+   "n_cells_measured": 14,
+   "n_cells_with_zero_band": 2,
+   "range_abs_ratio": [
+    0.0,
+    2.03
+   ]
+  },
+  "qwen05b_cap1024": {
+   "backlog16": 1.78,
+   "backlog2": 0.38,
+   "backlog4": 2.03,
+   "backlog8": 1.79
+  },
+  "qwen05b_cap256": {
+   "backlog16": -0.27,
+   "backlog2": null,
+   "backlog4": 1.38,
+   "backlog8": 0.0
+  },
+  "qwen15b_cap1024": {
+   "backlog16": 1.17,
+   "backlog2": 0.72,
+   "backlog4": 1.24,
+   "backlog8": 1.3
+  },
+  "qwen15b_cap256": {
+   "backlog16": -0.59,
+   "backlog2": null,
+   "backlog4": 0.71,
+   "backlog8": -0.1
+  }
+ },
  "real_cells": {
   "qwen05b_cap1024": {
    "backlog16": {

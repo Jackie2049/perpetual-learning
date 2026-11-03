@@ -135,6 +135,121 @@ def calibrate_band_floor(n_seeds=30, trials=1000, seed=11, n_trials_per_seed=12)
     }
 
 
+def _band_ratio_scene(rng, ratio, n=30, trials=12, sd_band=0.02):
+    """一个"真方向已知、真效应 = `ratio` × 本种子带宽"的格子。
+
+    逐种子配三组读数：
+
+      - `base_i`：FIFO 臂换序后的 `trials` 个读数，宽 `w_i = max−min` 就是**这一格
+        拿到的带宽**；
+      - `alt_i`：对照臂读数 = 同一 `base_i` **逐点**加上 `ratio·w_i`（真效应）再加一份
+        独立噪声 `ε_i`。逐点平移保证"真效应"确实是 `ratio·w_i`，**独立噪声保证两臂
+        不再是同一个数平移出来的**——否则每个种子的配对差恒为正、`sign_regime`
+        永远判 `stable`，扫描就退化成常量（本函数第一版正是这样，见 readme）。
+
+    `ε` 的尺度与 `base_i` 的抖动同阶（`sd_band`），所以 |均值差| 大致仍是 `ratio·w_i`，
+    而**逐种子的符号会因 `ε` 而抖动**——这才是要量的漏报。
+
+    `n=30`／`trials=12` 对齐真实档（`fifo_reorder_band` 每种子 12 次换序、每格 30 种子）。
+    """
+    diffs, bands = [], []
+    for _ in range(n):
+        base = _draw_signed(rng, trials, 0.5, sd_band)
+        w = max(base) - min(base)
+        eps = _draw_signed(rng, 1, 0.0, sd_band)[0]
+        diffs.append(ratio * w + eps)
+        bands.append(w)
+    return diffs, bands
+
+
+def effect_band_ratio(n=30, trials=12, replications=400, seed=13):
+    """`sign_regime` 的漏报：真方向已知、效应量只有 `ratio` 倍带宽时会怎样。
+
+    **为什么要补这一条。** 上面那条校准把"已知真相"设成"每个种子都明显同向"，
+    于是 `stable` 的假阳是 0——但**那个 0 是在效应远大于噪声的条件下取到的**。
+    真实归档里"效应是否超带宽"恰恰是每个格子都要问的问题，而那些格子的
+    |效应|／带宽 中位只有 **0.71**（16 格实测，见 `real_cells` 的 `band_ratio`）。
+    ⇒ 本函数扫 `ratio`，量出**当真方向存在、但被噪声盖住时**，`sign_regime`
+    还判不判得出方向。
+
+    单列一格时，30 个种子上的"|效应|"**波动很大**：每个种子只有 12 次换序，
+    带宽由极值决定，本身就是随机数，所以 `ratio=0.71` 的一格既不保证每个种子都
+    看得出方向，也不保证均值看得出。这正是要量的东西——它决定"档名是 `stable`"
+    能不能当"方向已确定"的证据。
+    """
+    rng = random.Random(seed)
+    rows = {}
+    for ratio in (0.20, 0.25, 0.30, 0.40, 0.50, 0.71, 1.0, 2.0, 4.0):
+        dist = {'stable': 0, 'mixed': 0, 'consistent_but_thin': 0, 'no_resolution': 0}
+        agree_with_mean = 0           # 判 `stable`／`thin` 且方向与真方向一致
+        for _ in range(replications):
+            diffs, _ = _band_ratio_scene(rng, ratio, n=n, trials=trials)
+            r = paired_diff.sign_regime(diffs)
+            dist[r['regime']] += 1
+            if r['regime'] in ('stable', 'consistent_but_thin') and diffs and sum(diffs) > 0:
+                agree_with_mean += 1
+        rows['ratio=%.2f' % ratio] = {
+            'dist': {k: round(v / float(replications), 4) for k, v in dist.items()},
+            # "判出方向且方向正确"的联合比率：既要求给出方向，也要求给对
+            'correct_direction_rate': round(agree_with_mean / float(replications), 4),
+            'n': n,
+            'trials_per_seed': trials,
+        }
+    return {
+        'replications': replications,
+        'note': ('真方向已知（所有种子同向），真效应量 = ratio × 该种子带宽。'
+                 '方向一列的分母是全部 replications；`mixed` 在这里是**假阳**'
+                 '（真值同向却被报方向混杂），`no_resolution` 是漏报'
+                 '（真方向存在却被报"什么也不能说"）。'),
+        'rows': rows,
+    }
+
+
+def real_band_ratios():
+    """真实 16 格逐种子的 |效应|／带宽比值——**实测值，不是本脚本算的**。
+
+    2026-11-04 M1 用真实负载逐种子重算过一次（`real_lengths_policy` 的
+    `POLICY_LOF` 减 `POLICY_FIFO` 作效应，同一种子 12 次换序的 FIFO 极差作带宽，
+    30 种子／格，四个负载 × 四档积压，约 3.5 分钟）。逐种子的中位比值：
+
+    | 负载 | 2 批 | 4 批 | 8 批 | 16 批 |
+    |---|---|---|---|---|
+    | 1.5B cap256 | —（带宽全 0） | 0.71 | −0.10 | −0.59 |
+    | 1.5B cap1024 | 0.72 | 1.24 | 1.30 | 1.17 |
+    | 0.5B cap256 | —（带宽全 0） | 1.38 | 0.00 | −0.27 |
+    | 0.5B cap1024 | 0.38 | 2.03 | 1.79 | 1.78 |
+
+    **符号是本格实测的 LOF−FIFO 方向**，负值说明该格"长度优先"让 `R` 变小；
+    这里的用途只是**量级**——真实格的 |效应| 与带宽同阶，多数在 0.4–2.0 之间。
+    逐种子的原始配对差与带宽没有入库（归档只留汇总），所以本表是**一次性实测**
+    记录，不随脚本重算；重跑方法见 `readme.md` 第十一批。
+    """
+    measured = {
+        'qwen15b_cap256':  [None, 0.71, -0.10, -0.59],
+        'qwen15b_cap1024': [0.72, 1.24, 1.30, 1.17],
+        'qwen05b_cap256':  [None, 1.38, 0.00, -0.27],
+        'qwen05b_cap1024': [0.38, 2.03, 1.79, 1.78],
+    }
+    backlogs = (2, 4, 8, 16)
+    out = {}
+    vals = []
+    for label, row in measured.items():
+        out[label] = {'backlog%d' % b: v for b, v in zip(backlogs, row)}
+        vals.extend(v for v in row if v is not None)
+    vals.sort()
+    absvals = sorted(abs(v) for v in vals)
+    out['_summary'] = {
+        'n_cells_measured': len(vals),
+        'n_cells_with_zero_band': 2,
+        'median_abs_ratio': round(absvals[len(absvals) // 2], 2),
+        'range_abs_ratio': [absvals[0], absvals[-1]],
+        'counting': ('逐种子 |效应|／带宽 的**中位**。两格带宽全为 0（两个模型 cap256 '
+                     '积压 2）无定义，记为 null；0.5B cap256 积压 8 的中位恰为 0.00'
+                     '（该格效应与带宽都被个别种子撑起）。'),
+    }
+    return out
+
+
 def real_cells(n_groups=16, backlog_range=(2, 4, 8, 16)):
     """真实档 16 格的 `n_r_identically_zero` 落在"全零"连续统的哪个位置（只读归档）。
 
@@ -169,6 +284,9 @@ def build():
         'sign_regime': calibrate_regime(),
         'band_floor': calibrate_band_floor(),
         'real_cells': real_cells(),
+        # 第十一批新增两条：校准覆盖面的缺口（上面那条把真值设成"效应远大于噪声"）
+        'effect_band_ratio': effect_band_ratio(),
+        'real_band_ratios': real_band_ratios(),
     }
 
 
@@ -203,6 +321,17 @@ def main(argv):
                                        c['band_floor'], c['n_r_identically_zero'],
                                        c['band_median_pp'])
             for b, c in sorted(cells.items(), key=lambda kv: int(kv[0][7:])))))
+    eb = out['effect_band_ratio']
+    print('== 真方向已知、效应量 = ratio × 带宽：%d 次重复 ==' % eb['replications'])
+    for name, row in eb['rows'].items():
+        print('  %-12s stable=%.3f mixed=%.3f thin=%.3f no_res=%.3f  | 方向判对=%.3f'
+              % (name, row['dist']['stable'], row['dist']['mixed'],
+                 row['dist']['consistent_but_thin'], row['dist']['no_resolution'],
+                 row['correct_direction_rate']))
+    rb = out['real_band_ratios']['_summary']
+    print('== 真实格逐种子 |效应|／带宽（实测记录）==  %d 格，中位 |比值| %.2f，范围 %.2f–%.2f'
+          % (rb['n_cells_measured'], rb['median_abs_ratio'],
+             rb['range_abs_ratio'][0], rb['range_abs_ratio'][1]))
     return 0
 
 

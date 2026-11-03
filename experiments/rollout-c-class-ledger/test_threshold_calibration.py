@@ -125,6 +125,86 @@ class TestRealCellsAreReportedWithCounts(unittest.TestCase):
         self.assertEqual(c['n_band_zero'], 22)
 
 
+class TestEffectBandRatioSweep(unittest.TestCase):
+    """真方向已知、但效应量只有带宽的若干倍时，`sign_regime` 还判不判得出方向。
+
+    第十批那条校准把真值设成"每个种子都明显同向、效应远大于噪声"，所以
+    `stable` 的假阳才是 0。真实归档里"效应是否超带宽"恰恰是每格要问的问题，而
+    真实格的中位 |效应|／带宽 只有 0.76–1.17（两条独立测量，见 readme 第十一批）。
+    本类钉住扫描曲线的两个拐点。
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.out = C.effect_band_ratio(replications=400)
+        cls.rows = cls.out['rows']
+
+    def test_far_below_band_is_reported_as_mixed(self):
+        """真方向全程一致、但效应只有 0.2 倍带宽时，多数被报 `mixed`。
+
+        这是**假阳**：档名会被读成"方向混杂"，而真相是全程同向。第十批"假阳为 0"
+        只在效应 ≳1 倍带宽时成立，不能推广。
+        """
+        row = self.rows['ratio=0.20']
+        self.assertGreater(row['dist']['mixed'], 0.8)
+        self.assertLess(row['correct_direction_rate'], 0.2)
+
+    def test_at_one_band_it_always_gives_the_true_direction(self):
+        """效应等于带宽时不再误报——拐点在 0.4–0.5 倍之间。"""
+        self.assertGreater(self.rows['ratio=0.40']['dist']['stable'], 0.7)
+        self.assertGreater(self.rows['ratio=0.50']['dist']['stable'], 0.95)
+        self.assertEqual(self.rows['ratio=1.00']['dist']['stable'], 1.0)
+        self.assertEqual(self.rows['ratio=1.00']['dist']['mixed'], 0.0)
+
+    def test_inflection_is_near_the_analytic_threshold(self):
+        """解析预测：逐种子 d = ratio·w + ε，`stable` 要求表态种子 ≥80% 同号
+        ⇒ 拐点在 E[P(d>0)] = 0.8 处，算得 ratio ≈ 0.30。实测应落在 0.25–0.40。"""
+        self.assertGreater(self.rows['ratio=0.30']['dist']['mixed'], 0.4)
+        self.assertLess(self.rows['ratio=0.40']['dist']['mixed'], 0.4)
+        self.assertLess(self.rows['ratio=0.20']['dist']['mixed'],
+                        self.rows['ratio=0.30']['dist']['mixed'] + 1.0)
+
+    def test_scene_has_noise_otherwise_the_sweep_is_constant(self):
+        """第一版把对照臂写成"基线逐点平移"，配对差恒为正 ⇒ **每一档**都 100% `stable`。
+
+        判据只能落在**低倍率**那几行：ratio≥0.5 时本来就该 100% `stable`（第二条
+        测试正面钉住了这一点），拿它当"没有噪声"的证据是把正确行为当缺陷。
+        """
+        for name in ('ratio=0.20', 'ratio=0.25', 'ratio=0.30'):
+            self.assertGreater(self.rows[name]['dist']['mixed'], 0.5,
+                               '%s 上没出现 mixed ⇒ 场景可能没有独立噪声' % name)
+
+
+class TestRealBandRatios(unittest.TestCase):
+    """真实格的 |效应|／带宽 是**实测记录**，引用的只有量级。"""
+
+    def test_measured_ratios_are_same_order_as_band(self):
+        rb = C.real_band_ratios()['_summary']
+        self.assertEqual(rb['n_cells_measured'], 14)
+        self.assertGreaterEqual(rb['median_abs_ratio'], 0.5)
+        self.assertLessEqual(rb['median_abs_ratio'], 2.0)
+        # 有几格远小于 1（0.01／0.30），这正是"档名稳定 ≠ 效应超带宽"的来源
+        self.assertLess(rb['range_abs_ratio'][0], 0.1)
+
+    def test_archived_stable_cells_include_sub_band_ones(self):
+        """归档里判 `stable` 的格子里，有 |效应| < 带宽 的——两条判据独立。"""
+        import json
+        import os
+        path = os.path.join(os.path.dirname(C.OUT_PATH), '..',
+                            'rollout-group-split-tradeoff', 'real-lengths-summary.json')
+        with open(path) as f:
+            arch = json.load(f)
+        sub_band_stable = []
+        for label, arm in arch['real_arms'].items():
+            for b in (2, 4, 8, 16):
+                c = arm['sign_stability']['backlog%d' % b]
+                band = c['fifo_band']['median_pp']
+                if c['lof_sign']['regime'] == 'stable' and band:
+                    if abs(c['lof_sign']['mean_pp']) < band:
+                        sub_band_stable.append((label, b))
+        self.assertEqual(len(sub_band_stable), 3, sub_band_stable)
+
+
 class TestCalibrationIsNotTheInjectionTest(unittest.TestCase):
     """校准量的是判据误判率，不能拿注入测试代替；反之亦然。"""
 
