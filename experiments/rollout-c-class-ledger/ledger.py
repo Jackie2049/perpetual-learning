@@ -73,6 +73,8 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent.parent / 'tools' / 'paired-diff'))
+import paired_diff  # noqa: E402  配对差判读的共享判据（符号分布／翻号／极差）
 UPD_FIXED = 8.0  # 两批实验共用的墙钟模型常量（归档 meta 逐字）
 
 
@@ -430,14 +432,13 @@ def steps_at(arm_curves: List[List[float]], base_curves: List[List[float]],
         diffs = [a - b for a, b in zip(na, nb) if a is not None and b is not None]
     ratio = (num / den) if den else None
     n = len(diffs)
-    pos = sum(1 for d in diffs if d > 0)
-    neg = sum(1 for d in diffs if d < 0)
+    counts = paired_diff.sign_counts(diffs)
     return {
         "steps_ratio": ratio,
         "n_pairs": n,
         "n_miss": missing,
-        "same_sign_arm_slower": (pos / n) if n else None,
-        "n_ties": sum(1 for d in diffs if d == 0),
+        "same_sign_arm_slower": (counts["n_positive"] / n) if n else None,
+        "n_ties": counts["n_identical"],  # 步号是整数，容差内相等即恰好相等
         "median_paired_diff": sorted(diffs)[n // 2] if n else None,
     }
 
@@ -451,8 +452,8 @@ def threshold_band(arm_curves: List[List[float]], base_curves: List[List[float]]
     """
     rows = {_key(t): steps_at(arm_curves, base_curves, t) for t in thresholds}
     vals = [r["steps_ratio"] for r in rows.values() if r["steps_ratio"] is not None]
-    signs = {v > 1 for v in vals}
-    # 余量：每个种子恰跨过阈值的两条曲线，到点那一步的读数离阈值还有多远
+    # 摆幅与翻号由共享判据给（`tools/paired-diff`）：这是"同一个设置换个阈值差多少"，
+    # 与基线带宽同族；含恰等于零的读数一并计入翻号的两侧。
     margins = []
     for a, b in zip(arm_curves, base_curves):
         for c in (a, b):
@@ -461,10 +462,11 @@ def threshold_band(arm_curves: List[List[float]], base_curves: List[List[float]]
                 margins.append(c[i] - REFERENCE_THRESHOLD)
     margins.sort()
     n = len(margins)
+    ratio_span = paired_diff.span(vals)
     return {
         "by_threshold": rows,
-        "span_pp": round(100 * (max(vals) - min(vals)), 3) if vals else None,
-        "sign_flip": len(signs) > 1,
+        "span_pp": round(100 * ratio_span, 3) if ratio_span is not None else None,
+        "sign_flip": bool(paired_diff.sign_flip_around(vals, 1.0)) if vals else False,
         "min_margin": margins[0] if margins else None,
         "median_margin": margins[n // 2] if n else None,
         "max_margin": margins[-1] if margins else None,
@@ -499,10 +501,11 @@ def level_matched_steps(arm_curves: List[List[float]], base_curves: List[List[fl
         }
     vals = [r["mean_steps_arm_minus_base"] for r in rows.values()
             if r["mean_steps_arm_minus_base"] is not None]
+    step_span = paired_diff.span(vals)
     return {
         "by_threshold": rows,
-        "span_steps": (max(vals) - min(vals)) if vals else None,
-        "sign_flip": len({v > 0 for v in vals}) > 1 if vals else None,
+        "span_steps": step_span,
+        "sign_flip": bool(paired_diff.sign_flip(vals)) if vals else None,
     }
 
 

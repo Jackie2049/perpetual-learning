@@ -38,10 +38,14 @@ import json
 import pathlib
 import random
 import statistics
+import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 RAW = ROOT / 'experiments' / 'rollout-length-structure-real' / 'raw'
+
+sys.path.insert(0, str(ROOT / 'tools' / 'paired-diff'))
+import paired_diff  # noqa: E402  配对差判读的共享判据（符号分布／带宽／门槛）
 
 spec = importlib.util.spec_from_file_location('g', HERE / 'group_split_tradeoff.py')
 M = importlib.util.module_from_spec(spec)
@@ -116,14 +120,13 @@ def seed_sign_stability(rows):
     比例与符号区间，让读者能判断均值是不是靠少数种子撑起来的。
     """
     diffs = [r['abs'] for r in rows]
-    pos = sum(1 for d in diffs if d > 1e-12)
-    neg = sum(1 for d in diffs if d < -1e-12)
+    counts = paired_diff.sign_counts(diffs)
     return {
-        'n_positive': pos,
-        'n_negative': neg,
-        'same_sign_fraction': round(max(pos, neg) / len(diffs), 3),
+        'n_positive': counts['n_positive'],
+        'n_negative': counts['n_negative'],
+        'same_sign_fraction': paired_diff.same_sign_fraction(diffs),
         # 差值的种子间标准差：与 |均值| 相当就说明符号在种子间不稳
-        'sd_pp': round(statistics.stdev(diffs) * 100, 3) if len(diffs) > 1 else None,
+        'sd_pp': paired_diff.sd_pp(diffs),
         'min_pp': round(min(diffs) * 100, 3),
         'max_pp': round(max(diffs) * 100, 3),
     }
@@ -152,11 +155,10 @@ def fifo_order_sensitivity(groups, backlog, trials=30, seed=0):
 def effect_exceeds_band(effect_pp, band_pp):
     """配对差的绝对值是否超出 FIFO 自身的顺序敏感度。
 
-    这是一个**判读门槛，不是显著性检验**：它只回答"读到的排序效应是否大到
-    无法用 FIFO 基线自身的顺序抖动解释"。真正的显著性还要看符号在种子间
-    是否稳定（`seed_sign_stability`），两者缺一都不能下结论。
+    判据实现已收到 `tools/paired-diff`（`exceeds_band`），这里只保留原来的入口名，
+    避免调用方与既有归档键漂移；口径（严格大于、判读门槛非显著性）见那里。
     """
-    return abs(effect_pp) > abs(band_pp)
+    return paired_diff.exceeds_band(effect_pp, band_pp)
 
 
 def summarize(rows):

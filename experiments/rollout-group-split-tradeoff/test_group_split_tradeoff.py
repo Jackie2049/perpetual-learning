@@ -21,6 +21,7 @@ from bucketing_probe import (
     effect_exceeds_band,
     fifo_order_sensitivity as m_fifo_order_sensitivity,
 )
+import paired_diff
 
 
 class TestSchedulerInvariants(unittest.TestCase):
@@ -499,6 +500,33 @@ class TestFifoOrderSensitivity(unittest.TestCase):
         band = m_fifo_order_sensitivity(groups, 4)['spread_pp']
         self.assertFalse(effect_exceeds_band(band * 0.5, band))
         self.assertTrue(effect_exceeds_band(band * 2.0, band))
+
+
+class TestSharedTolerance(unittest.TestCase):
+    """容差是判据的一部分，必须落在测试的射程里（2026-11-03 抽共享工具时补）。
+
+    把判据收到 `tools/paired-diff` 之后做了一次注入：把 `TOL` 从 1e-12 改成 1e-3，
+    **113 个测试全绿**。原因不在判据写错，而在既有测试的配对差一律取 0 或明显
+    非零——从来没有造出"小于 1e-3 但大于 1e-12"的差值，容差挪到哪儿都一样过。
+    这组测试专门造边界样本：差值小于旧容差、大于新容差，必须从 `n_identical`
+    搬到 `n_positive`。
+    """
+
+    def test_tolerance_boundary_is_not_identical(self):
+        """1e-6 的差：远大于 1e-12，必须记成正向，不能算"两臂相同"。"""
+        self.assertEqual(paired_diff.sign_counts([1e-6])['n_positive'], 1)
+        self.assertEqual(paired_diff.sign_counts([-1e-6])['n_negative'], 1)
+
+    def test_tolerance_boundary_shows_in_summary(self):
+        """同一批种子，同号占比必须能被 1e-6 级的差推动。"""
+        st = paired_diff.summarize_paired([1e-6, 1e-6, -1e-6, 0.0], scale=1.0)
+        self.assertEqual((st['n_positive'], st['n_negative'], st['n_identical']), (2, 1, 1))
+        self.assertGreater(st['same_sign_fraction'], 0.0)
+        self.assertFalse(paired_diff.unresolved([1e-6, 1e-6, -1e-6, 0.0]))
+
+    def test_tolerance_still_absorbs_roundoff(self):
+        """1e-13 仍在容差内：这是"精确相等"的写法，不是分辨率提升。"""
+        self.assertEqual(paired_diff.sign_counts([1e-13])['n_identical'], 1)
 
 
 if __name__ == '__main__':

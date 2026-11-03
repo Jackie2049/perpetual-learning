@@ -36,6 +36,10 @@ import random
 import statistics
 import sys
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
+    os.path.abspath(__file__)))), 'tools', 'paired-diff'))
+import paired_diff  # noqa: E402  配对差判读的共享判据（符号分布／带宽／门槛）
+
 from group_split_tradeoff import (POLICIES, POLICY_FIFO, POLICY_LOF, POLICY_LOF_FLAT,
                                   _makespan_by_policy, sample_group_lens)
 
@@ -181,15 +185,14 @@ def policy_sign_stability(groups, n_groups, backlog, policy, seeds=SEEDS, rng_se
         base = _makespan_by_policy(pick, backlog, POLICY_FIFO)['tax']
         alt = _makespan_by_policy(pick, backlog, policy)['tax']
         diffs.append(alt - base)
-    pos = sum(1 for d in diffs if d > 1e-12)
-    neg = sum(1 for d in diffs if d < -1e-12)
+    counts = paired_diff.sign_counts(diffs)
     return {
         'mean_pp': round(100 * statistics.mean(diffs), 3),
-        'n_positive': pos,
-        'n_negative': neg,
-        'n_identical': len(diffs) - pos - neg,
-        'same_sign_fraction': round(max(pos, neg) / float(len(diffs)), 3),
-        'sd_pp': round(100 * statistics.stdev(diffs), 3) if len(diffs) > 1 else None,
+        'n_positive': counts['n_positive'],
+        'n_negative': counts['n_negative'],
+        'n_identical': counts['n_identical'],
+        'same_sign_fraction': paired_diff.same_sign_fraction(diffs),
+        'sd_pp': paired_diff.sd_pp(diffs),
         'min_pp': round(100 * min(diffs), 3),
         'max_pp': round(100 * max(diffs), 3),
     }
