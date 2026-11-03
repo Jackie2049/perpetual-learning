@@ -1,10 +1,30 @@
 # perpetual-learning — 执行接续
 
-更新时间：2026-11-03（M5 07:4x 第五十八批 separate_async；M1 07:0x 第三十六批 调度策略维）。规则入口：[AGENTS.md](AGENTS.md)；任务入口：[技术秘书](queue_tech-secretary.md) / [技术掘金](queue_tech-miner.md)。
+更新时间：2026-11-03（M1 09:1x 第三十七批：把 `R` 搬到真实长度上量；M5 07:4x 第五十八批 separate_async）。规则入口：[AGENTS.md](AGENTS.md)；任务入口：[技术秘书](queue_tech-secretary.md) / [技术掘金](queue_tech-miner.md)。
 
 ## 当前现场
 
-### M1 本轮（2026-11-03 07:0x）：TS-001 补强——清掉语义面里一句从没被量过的推断（§13.30 第三批／§11.4／§11.5）
+### M1 本轮（2026-11-03 08:0x–09:1x）：TS-001 补强——把 `R` 搬到真实 rollout 长度上，第三批的结论在真实负载上**反号**（§13.30 第四批／§11.4／§11.5）
+
+技术秘书侧无新用户任务；TM-001～TM-010 对外动作仍全部待用户逐项授权。TS-001 优先，选的是上一轮留下的最直接的一处前提缺口：§13.30 前三批的负载全是 `sample_group_lens` **组内独立抖动**（组内相关 ≈0），而 M5 的 §13.50 已实测真实响应长度**组内高度相关**（ICC 0.36–0.52）、cap256 截断 45%／61%。组原子成本是 `max(g)`、逐条是全部 `g`，这个差直接由组内结构决定 ⇒ **`R` 从没在真实负载上量过**，第三批「更强的调度让 `R` 变大」也没做过前提检验。
+
+**做法（纯 CPU 重算，真实长度数据早已随 §13.50 入库）**：不改排程器，只把 `experiments/rollout-length-structure-real/raw/*.jsonl.gz` 的 `response_tokens` 按 `prompt_idx` 聚组（480 组 × n=8，四档）替换负载来源。**先做口径校验**——构造档复现第三批 **0.3402／0.3677**（正文 34.0%／36.8%），排程器没漂。
+
+**三条结论**：
+
+1. **量级**：RL 实际配置（1.5B cap256、组内 cv 0.155）上 `R` 只有 **2.7%（4 批）／11.4%（16 批）**，是构造档的三分之一到十分之一；不截断档（cv 0.30–0.36）回到 21.8%／33.4%。**截断把组内离散压扁，是主要塑形因素。**
+2. **符号**：第三批「更强调度抬税」在真实档**深积压上反号**——16 批 1.5B **11.4%→10.4%（27/30 为负）**、0.5B 5.6%→5.2%（18/30）；4 批仍为正（+1.99pp）。
+3. **归因**：逐对拆两臂——1.5B 4 批时组臂只 −0.45%（5/30）、轨迹臂 −2.5%，比值升；16 批时组臂 −1.60%（27/30）、轨迹臂只 −0.55%，比值降。**同一负载随积压加深，受益方就换人**；第三批两档恰好都在前者。控制变量：ICC 只改量级（四档位移恒正）、截断并列不是原因（量化到 5／20 格同号）、**离散度扫描在 cv 0.25–0.40（4 批）／0.40–0.60（16 批）之间翻转**。
+
+**本轮一处自查**：初稿写「16 批积压下组臂快 1.60%、轨迹臂只快 0.55%，所以比值下降」——**只对 16 批成立**。补上臂拆分后才发现 4 批是**轨迹臂**受益更多，原来那句是拿一个档的现象解释两档，已按逐档读数重写。
+
+**核对产物**：`real_lengths_policy.py --verify` exit 0；单测 **36 个通过**（新增 6 个，含「高 cv 抬税／低 cv 降税」两条负向对照）；`group_split_tradeoff.py --verify` 仍 exit 0（既有 L1–L4 **逐位不变**）。三组识别性全过（构造档复现／零负载六档全零／`lof_flat` 在真实档 30/30 全正）。
+
+**并行会话（08:3x）**：另一会话整理了我上一轮留下的 §11.5 三处重复（`dfe83d7a2`）与「未入库」性质澄清（`b17dbbfd8`），不影响本批结论；本轮编辑已基于最新文件状态，无冲突。
+
+入口：[§13.30 第四批](notebook/rollout-performance-research.md) · [§11.4](notebook/rollout-performance-research.md) · [§11.5](notebook/rollout-performance-research.md) · [实验](experiments/rollout-group-split-tradeoff/readme.md) · [归档](experiments/rollout-group-split-tradeoff/real-lengths-summary.json) · [TS-001](queue_tech-secretary.md)。只读仿真、未跑 GPU、未改任何测量值。对外动作全部未做。
+
+### M1 上一轮（2026-11-03 07:0x）：TS-001 补强——清掉语义面里一句从没被量过的推断（§13.30 第三批／§11.4／§11.5）
 
 技术秘书侧无新用户任务；TM-001～TM-010 对外动作仍全部待用户逐项授权。TS-001 优先，选的是 §11.4／§11.5 里**最像结论、其实只是推断**的一句：「长度预测／分桶／迁移本来就部分补偿了组粒度，**`R` 在它们之上会变小**」。§13.30 前两批的排程器只有 FIFO 一种排队顺序——这句话没有任何读数。
 
@@ -145,14 +165,15 @@ M1 上一轮把 TM-009 从"已取证待决定"推到"材料齐备待决定"：�
 
 | 执行者 | 当前任务 | 接续入口与核对事项 |
 |---|---|---|
-| M1 | TS-001 第三十六批（量化调度策略维，推翻"R 会变小"）完成；TM-010／TM-009 待用户决定是否对外 | 取证、上游查重、可达性复核、候选补丁均完成：[取证](open-source/rllm/tool-use-async-autodetect.md)、[可达性探针](experiments/rllm-tool-use-async-probe/prod_reachability.py)、[候选补丁](open-source/rllm/patches/use-async-autodetect/readme.md)。**对外动作全部未做**。TS-001 的可做补强已到边际：纯归档重算与语义面排队顺序维都已纳入；语义面剩余缺口是**长度预测误差／分桶／迁移／抢占／KV 搬运**（需建模型，非纯重算），P-1 跨系统需用户立项。 |
+| M1 | TS-001 第三十七批（真实长度上的 `R` 与策略反号）完成；TM-010／TM-009 待用户决定是否对外 | 取证、上游查重、可达性复核、候选补丁均完成：[取证](open-source/rllm/tool-use-async-autodetect.md)、[可达性探针](experiments/rllm-tool-use-async-probe/prod_reachability.py)、[候选补丁](open-source/rllm/patches/use-async-autodetect/readme.md)。**对外动作全部未做**。TS-001 的可做补强已到边际：纯归档重算、语义面排队顺序维、真实长度负载维都已纳入；语义面剩余缺口是**长度预测误差／分桶／迁移／抢占／KV 搬运**（需建模型，非纯重算），P-1 跨系统需用户立项。 |
 | M5 | TS-001 算力支持 | **第五十八批 §13.54：separate_async 跑通并测完（4/4 exit 0，整步差 +0.010s ⇒ poll 不在关键路径）**；此前第五十六批 §13.52、第五十七批 §13.53（drop）与 §13.53 补记（wait t=1／t=2）、第五十六批与 wait 臂独立复核、main `3fdf2b54` 3 步冒烟均完成（见上）。TM-008 剩余未测只剩 4 卡 `inflight=1`（需 ≥4 卡空闲窗口）与 `wait` 的 t≥3 档（结构上等同默认 async）。**separate_async 的两条本机前置必须记住**：不能设 `RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1`（checkpoint 组会撞「多 rank 同卡」），且需 `NCCL_SHM_DISABLE=1` 规避训练侧 CUDA 217；cupy 装在 `/tmp/cupy-pkgs`。P-1 跨系统（AReaL／OpenRLHF／SkyRL，需用户立项）；P-2 FP8 训练侧（待实测）。**下一轮先核对 GPU 归属与占用再启动，不据旧记录假定空闲。** |
 
 
 ## 未完成操作与并行工作
 
 - **推送前必须预演（2026-11-03，已发生两次误删）**：`tools/git-push-api/push_via_api.py` 在 base 不在本地时会把「远端有、HEAD 无」判为删除。**工作区有文件 ≠ HEAD 有文件**。推送前先跑 `python3 tools/anchors/push_dryrun.py <远端 main sha>`，退出码 1 就不要推。两次事故：各误删 7 个实验文件与 M5 的多条记录（均已恢复）。正确顺序：下载/修改 → `git add`+`commit` → 预演 → 推送。
-- **TS-001 第三十六批（M1 2026-11-03 07:0x）**：§13.30 第三批已落笔，§11.4 表行与第 3 条、§11.5 缺口表与注记均已同步。**下次触碰语义面 `R` 前必须知道的**：① **不要再写"`R` 会在更强调度下变小"**——已实测为**变大**（4 批 34.0%→36.8%）；② 正确表述是"调度器补偿绝对 makespan，不补偿 `R`"；③ `arrive_max` 在本模型退化成 FIFO，**η 通道仍是完全未测的**，不得据 `arrive_max` 的读数写 η 无效；④ `pending_max` 与 `lof` 同义，不许当两条证据引用；⑤ 第三批的 34.0%／42.4% 与第一批的 43.7%／54.7% **参数不同，不可相减**。语义面剩余缺口 = 长度预测误差／分桶／迁移／抢占／KV 搬运（需新建模型）。
+- **TS-001 第三十七批（M1 2026-11-03 08:0x–09:1x）**：§13.30 第四批已落笔，§11.4 表行与第 3 条、§11.5 缺口表与注记均已同步。**下次触碰语义面 `R` 前必须知道的（更新，覆盖第三十六批的口径）**：① 「更强调度抬税」**不是无条件结论**——它只在组内离散度较高（cv≳0.4–0.6，翻转点随积压深度移动）时成立；真实 RL 短答案负载（cap256、cv 0.13–0.16）深积压上**方向相反**（1.5B 11.4%→10.4%，27/30 为负）。② `R` 的**量级**也远低于构造档：真实 cap256 上只有 **2.7%（4 批）／11.4%（16 批）**，构造档是 34.0%／42.4%。③ **ICC 只改量级、不改符号**（组内 cv 固定 0.6 时四档位移恒正）；截断造成的并列也**不是**原因（量化到 5／20 格同号）。④ 机制是两臂空等的相对厚薄：同一负载加深积压，受益方就从轨迹臂换成组臂，**不能拿一档的现象解释两档**（本轮初稿即犯此错）。⑤ 真实档的 16 批积压是**合成负载**，真实训练积压深度无语料报值——反号只在"深积压＋低离散"象限成立，**不能写成"第三批错了"**。⑥ `R` 小 ≠ 拆组无价值（`R` 仍是上界）。语义面剩余缺口 = 长度预测误差／分桶／迁移／抢占／KV 搬运（需新建模型）。
+- **TS-001 第三十六批（M1 2026-11-03 07:0x）**：§13.30 第三批已落笔，§11.4 表行与第 3 条、§11.5 缺口表与注记均已同步。**下次触碰语义面 `R` 前必须知道的**：① **不要再写"`R` 会在更强调度下变小"**——在构造档上实测为**变大**（4 批 34.0%→36.8%；但见第三十七批：真实负载可反号）；② 构造档上的正确表述是"调度器补偿绝对 makespan，不补偿 `R`"；③ `arrive_max` 在本模型退化成 FIFO，**η 通道仍是完全未测的**，不得据 `arrive_max` 的读数写 η 无效；④ `pending_max` 与 `lof` 同义，不许当两条证据引用；⑤ 第三批的 34.0%／42.4% 与第一批的 43.7%／54.7% **参数不同，不可相减**。
 - **TS-001 第三十五批（M1 2026-11-03 06:0x）**：`verify_anchors` 覆盖 33 项、全一致。**下次触碰放置效应相关数字前必须知道的**：① 两套分母都合法但含义不同——**组间差（16.3%）只用不绑定的 pA1／pA2 vs pB1／pB2**，**结果五比 2+2 时用四跑均值**（16.8% 对不绑定 A、28.1% 对 B 四跑）；② "3+1 比 2+2 慢 19.1%"以 2+2 为分母，跨归档比较要各按自己那次的 1 卡基线换算整步，**不能拿两个 speedup 直接相除**。**新纪律**：凡"比某组快/慢 X%"必须写明分母；核验报不一致先查检查器。
 - **TS-001 第三十四批（M1 2026-11-03 05:0x）**：§20.3.9 已落笔；核对脚本的配对错档已修、负向对照 5/5。**下一次触碰锚② 前必须知道的（更新）**：可发表形式仍是 §20.3.7 那个式子；同栈 **10 个主结论臂**（含 async）F3 都在 0.1% 内。**新纪律**：引用任何 A/B 臂前确认两跑出自同一份归档、同一窗口规则——**形式的闭合不检验这一点**（错配的一对 F3 照样闭合）。锚② 强度「中强」，不回调；跨系统仍归 P-1。纯归档重算这条线已到边际，剩下只有 P-1。
 - **TS-001 第三十三批（M1 2026-11-03 04:0x）**：§20.3.8 已落笔，P-6 适用面扩到 async。**下一次触碰锚② 前必须知道的（更新）**：可发表形式仍是 §20.3.7 那个式子（份额取**基线侧**、乘两侧缺口之比），现在可以说它「在同栈 sync＋async 两条轨迹上闭合」，但**仍不能说跨系统**（P-1 全归跨系统）。锚② 强度「中强」，不回调。
@@ -184,7 +205,8 @@ M1 上一轮把 TM-009 从"已取证待决定"推到"材料齐备待决定"：�
 - 真机分工：[实验交接](experiments/handoff-m5.md)、[AReaL 单一负责人交接](open-source/areal/handoff-m5.md)。
 - 本轮 M5 成果：[separate_async 轮询实验](experiments/verl-v1-poll-quantum-separate/README.md)（4 跑＋2 步冒烟、`verify.py` 34 项 PASS、md5 5/5）。
 - 上一轮 M5 成果：[第五十六批独立复核](experiments/verl-v1-poll-quantum-dapo/verification-inflight3.md)、[main `3fdf2b54` 运行时冒烟](experiments/verl-v1-poll-quantum/README.md#补丁在-main-3fdf2b54-上的运行时冒烟2026-11-03m5-第二会话)、[wait（dropless）补测](experiments/verl-v1-poll-quantum-stale/README.md#补测max_off_policy_strategywaitdropless2026-11-03m5-第二会话)、[async 轮询实验](experiments/verl-v1-poll-quantum-async/README.md)。
-- **本轮 M1 成果**：[§13.30 第三批（调度策略维）](notebook/rollout-performance-research.md) · [§11.4／§11.5 订正](notebook/rollout-performance-research.md) · [实验 readme](experiments/rollout-group-split-tradeoff/readme.md) · [run-info](experiments/rollout-group-split-tradeoff/run-info.json)。
+- **本轮 M1 成果**：[§13.30 第四批（真实长度上的 `R` 与策略反号）](notebook/rollout-performance-research.md) · [§11.4／§11.5 同步收窄](notebook/rollout-performance-research.md) · [实验 readme](experiments/rollout-group-split-tradeoff/readme.md) · [读数脚本](experiments/rollout-group-split-tradeoff/real_lengths_policy.py) · [归档](experiments/rollout-group-split-tradeoff/real-lengths-summary.json) · [run-info](experiments/rollout-group-split-tradeoff/run-info.json)。
+- 上一批 M1 成果：[§13.30 第三批（调度策略维）](notebook/rollout-performance-research.md) · [§11.4／§11.5 订正](notebook/rollout-performance-research.md)。
 - 上一批 M1 成果：[tools/anchors](tools/anchors/readme.md)（33 项）· [§13.42 结果五订正](notebook/rollout-performance-research.md) · [§19.4 第 9 条](notebook/rollout-performance-research.md)。
 - **上一批 M1 成果**：[§20.3.9](notebook/rollout-performance-research.md)、[重建形式脚本（含配对自检）](experiments/rollout-anchor2-identity/check_reconstruct_form.py)、[负向对照（5 组）](experiments/rollout-anchor2-identity/negative_control_form.py)、[归档](experiments/rollout-anchor2-identity/README.md)、[§11.6](notebook/rollout-performance-research.md)。
 - 上一轮 M5 成果：[长度结构实验](experiments/rollout-length-structure-real/README.md)。
