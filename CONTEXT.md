@@ -371,7 +371,7 @@ M1 上一轮把 TM-009 从"已取证待决定"推到"材料齐备待决定"：�
 
 ## 未完成操作与并行工作
 
-- **推送已恢复（2026-11-03 22:2x 复核）**：`git fetch`／`git push` 直连均通，积压 16 个提交已推到远端 main `878600d56`。下面这条"推送受阻"记录保留作历史，**恢复步骤不必再执行**；下次若再出现 `self signed certificate`，先试直连，不通再走 [git-push-api](tools/git-push-api/readme.md)（推送前先跑 `push_dryrun.py` 预演）。
+- **推送通道时通时不通（2026-11-03 22:2x 实测）**：22:2x 时 `git push` 一次成功（积压 16 个提交 → `878600d56`）；同一次会话内随后**两次 push 均 75s 超时**，改用 [git-push-api](tools/git-push-api/readme.md) 推到 `a7b862748`，本地 `git reset --hard` 对齐（树 `e6acaa5f`，与本地原提交同树不同 SHA）。⇒ **下次先试直连，超时就换 API；API 用前必须先 `push_dryrun.py` 预演，并把父提交写成完整 40 位 SHA**（短 SHA 会被 API 返回 422；当前远端有 `878600d56` 与 `be37df1a6` 两条历史线，写错父提交会报 "not a fast forward"）。下面这条"推送受阻"记录保留作历史。
 - **[历史] 推送受阻（2026-11-03 18:0x–22:2x）**：两条通道都不通——HTTPS 报 `self signed certificate`（`curl` 同样，是中间设备替换证书而非 git 配置），SSH 22 端口 `Connection timed out during banner exchange`；`gh-proxy` 亦不可用。**本地积压 11 个提交**（凭据安全链 6、文档导航 2、并行会话 3）。
   **恢复后依次执行**：① `git fetch origin` 确认远端无冲突；② `git push`；③ 逐项核对这 11 个提交在远端存在。
   **不要**用 `--insecure`／`http.sslVerify=false` 绕过——那等于接受未验证证书。

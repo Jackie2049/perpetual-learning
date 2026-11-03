@@ -8,7 +8,7 @@
 
 ```bash
 # 以远端当前 main 为父提交，把本地 HEAD 的差异推上去
-python3 tools/git-push-api/push_via_api.py <远端当前 main 的 sha> -m /tmp/commit-msg.txt
+python3 tools/git-push-api/push_via_api.py <40 位完整/远端当前 main 的 sha> -m /tmp/commit-msg.txt
 ```
 
 跑完远端 main 会指向一个新的 commit。**它的 SHA 与本地不同**（消息、树相同，父提交与提交时间可能不同），所以之后要：
@@ -36,7 +36,7 @@ git reset --hard <新 sha>
 
 ## 输入输出与依赖
 
-- 输入：远端父提交 sha、可选 commit message 文件。
+- 输入：远端父提交 sha（**必须 40 位**，短 SHA 会被 API 返回 422）、可选 commit message 文件。父提交写错时表现为 `PATCH refs/heads/main → 422 Update is not a fast forward`；此时先 `gh api repos/<owner>/<repo>/commits/main --jq .sha` 核对远端头，**不要**用 force。
 - 输出：新的 commit sha 与更新后的 `refs/heads/main`。
 - 依赖：`gh` 已登录、`python3`（仅标准库）、GitHub token 有 `repo` scope。
 
