@@ -39,7 +39,7 @@
 
 **留给下一轮**：① 真实格的逐种子配对差与带宽**没入库**，本批只能把比值写成常量；要不要给 `real_lengths_policy` 加逐种子字段，等下一次真正需要按格引用时再决定（加了会动 `--verify` 的重算时长）；② `sd_band=0.02` 是选定的量级参数，拐点位置依赖它，换负载量级要重跑；③ 前两批留的两条仍有效（`no_reading` 的"换抽样能否问得出来"未答；20 种子分辨力上限 1.1% 要压只能加种子）；④ 语义面剩余缺口仍是长度预测误差／分桶／迁移／抢占／KV 搬运，P-1 跨系统需用户立项。
 
-入口：[校准脚本](experiments/rollout-c-class-ledger/calibrate_thresholds.py) · [校准归档](experiments/rollout-c-class-ledger/threshold-calibration.json) · [C 类账 readme 第十一批](experiments/rollout-c-class-ledger/readme.md) · [§13.30 第十一批补充二](notebook/rollout-performance-research.md) · [TM-011](queue_tech-miner.md) · [TS-001](queue_tech-secretary.md) · [diary](diary/2026-11-04.md)。
+入口：[校准脚本](experiments/rollout-c-class-ledger/calibrate_thresholds.py) · [校准归档](experiments/rollout-c-class-ledger/threshold-calibration.json) · [C 类账 readme 第十一批（第十三批）](experiments/rollout-c-class-ledger/readme.md) · [§13.30 第十一批补充二](notebook/rollout-performance-research.md) · [TM-011](queue_tech-miner.md) · [TS-001](queue_tech-secretary.md) · [diary](diary/2026-11-04.md)。
 
 ### M1 上一轮（2026-11-04 04:3x–05:1x）：第十二批——审 `band_floor` 三档判据，补掉它自记的边界缺口，抓出一处「同口径」名不副实
 

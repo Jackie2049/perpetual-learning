@@ -432,7 +432,7 @@ python3 -m unittest test_cross_script_consistency -v   # 第九批：35 tests，
 
 **核对产物**：新增 `calibrate_thresholds.py`（`--json` 写 `threshold-calibration.json`，`--verify` 逐字段可复算）与 `test_threshold_calibration.py` **13 passed**；两次注入均被测红后恢复——`sign_regime` 的 `min_same_active` 0.8→0.55 ⇒ 3 条红（coin 行 `stable` 从 1.1% 跳到 82.2%），`band_floor` 判据 `== 0.0`→`<= 0.05` ⇒ 3 条红。注入前先打印被改的行号与原文（同族坑已犯三次）。只读归档与合成数据、未跑 GPU、未触上游。
 
-## 第十一批：上一批的"假阳为 0"只在效应远大于带宽时成立（2026-11-04 M1）
+## 第十一批：上一批的"假阳为 0"只在效应远大于带宽时成立（2026-11-04 M1，全文批号第十三批）
 
 第十批给出了 `sign_regime` 的四档门槛在**已知真相**上的误判率，结论是"假阳为 0"。本批回头核那个 0 是在什么条件下取到的，补上了一条此前没有的轴。**不改任何已发布读数、不改 `sign_regime` 的判据与门槛、不动两份探针归档**；新增的只有校准脚本里的两段与归档的两个键。
 
