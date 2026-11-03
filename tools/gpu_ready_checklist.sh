@@ -30,7 +30,8 @@ log_warn() { echo "${YELLOW}[WARN]${NC} $1"; }
 if [ "$GPU_TYPE" = "university" ]; then
     # 凭据不入库（AGENTS.md）。优先从环境变量读；未设置时跳过探活而不是硬编码。
     if [ -n "${GPU_SSH_PASS:-}" ]; then
-        SSH_CMD="sshpass -p "$GPU_SSH_PASS" ssh -o StrictHostKeyChecking=no zxw@219.233.198.62"
+        # 用单引号包住密码，避免含空格时被拆成多个参数
+        SSH_CMD="sshpass -p '$GPU_SSH_PASS' ssh -o StrictHostKeyChecking=no zxw@219.233.198.62"
     else
         echo "警告：GPU_SSH_PASS 未设置，跳过高校服务器探活" >&2
         SSH_CMD="true"

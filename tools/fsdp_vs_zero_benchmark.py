@@ -22,6 +22,7 @@ import argparse
 import json
 import os
 import subprocess
+import shlex
 import sys
 import time
 from dataclasses import dataclass
@@ -347,6 +348,9 @@ def check_remote_gpu() -> bool:
         ("Matpool", "ssh -p 28959 -o ConnectTimeout=5 root@hz-t3.matpool.com echo online"),
     ]
     for name, cmd in servers:
+        if cmd is None:
+            print(f"  {name} server: SKIP（GPU_SSH_PASS 未设置）")
+            continue
         try:
             result = subprocess.run(cmd, shell=True, capture_output=True, timeout=10)
             if result.returncode == 0:

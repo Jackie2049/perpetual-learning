@@ -25,6 +25,7 @@ import sys
 import os
 import json
 import subprocess
+import shlex
 import importlib
 
 # ─── MUST DO Rules (16 total) ──────────────────────────────────────────────
@@ -625,6 +626,9 @@ def run_mode_full():
     ]
 
     for name, cmd in servers:
+        if cmd is None:
+            print(f"  ⏭  {name}: SKIP（GPU_SSH_PASS 未设置）")
+            continue
         try:
             result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=15)
             if result.returncode == 0:
