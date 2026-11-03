@@ -539,3 +539,35 @@ class TestToleranceSourceNotHardcoded(unittest.TestCase):
         self.assertIn('paired_diff.TOL', src)
         self.assertNotIn('1e-12', src)
 
+
+
+class TestFalsyRateMatchesSignRegime(unittest.TestCase):
+    """`falsy_rate` 与 `sign_regime` 必须**同一判据**——量的是同一条线（第十五批）。
+
+    判据写成两份就会漂（`band_floor` 与 `fifo_reorder_band` 各写一份种子式子
+    那次）。这里用蒙特卡洛把两个实现钉在一起：掷硬币输入上，`sign_regime` 判
+    `stable` 的频率必须等于 `falsy_rate` 精确算出的概率。
+    """
+
+    def test_monte_carlo_agrees_with_enumeration_at_20_units(self):
+        import random
+        rng = random.Random(23)
+        trials = 40000
+        hits = 0
+        for _ in range(trials):
+            diffs = [rng.choice((1.0, -1.0)) * rng.uniform(0.01, 0.2) for _ in range(20)]
+            if paired_diff.sign_regime(diffs)['regime'] == 'stable':
+                hits += 1
+        measured = hits / float(trials)
+        exact = paired_diff.falsy_rate(20, passes=lambda t, n: t / float(n) >= 0.8,
+                                       min_true_frac=0.5, two_sided=True)['consistency_rate']
+        se = (exact * (1 - exact) / trials) ** 0.5
+        self.assertLess(abs(measured - exact), 4 * se + 1e-4,
+                        '蒙特卡洛 %.4f vs 精确 %.4f' % (measured, exact))
+
+    def test_small_unit_counts_are_not_collapsed_to_one_rate(self):
+        """3 个与 27 个表态种子上的误判率**差两个数量级**——不许当成同一个数。"""
+        rule = lambda t, n: t / float(n) >= 0.8  # noqa: E731
+        small = paired_diff.falsy_rate(3, passes=rule, two_sided=True)['consistency_rate']
+        big = paired_diff.falsy_rate(27, passes=rule, two_sided=True)['consistency_rate']
+        self.assertGreater(small, 100 * big)

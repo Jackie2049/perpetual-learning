@@ -205,6 +205,133 @@ class TestRealBandRatios(unittest.TestCase):
         self.assertEqual(len(sub_band_stable), 3, sub_band_stable)
 
 
+class TestFalsyRateKnownAnswers(unittest.TestCase):
+    """`paired_diff.falsy_rate` 的**已知答案**（期望值手算，不从被测输出反推）。
+
+    - 判据全真 ⇒ 概率 1；判据全假 ⇒ **必须拒绝**，不能悄悄给 0（给 0 会被读成
+      "这个门槛很严"，实际是问错了问题）。
+    - 全部单位都要满足（`tally == n`）⇒ 掷硬币下 0.5ⁿ。
+    - n=2 上的"过半数"是双侧："两中"与"零中"都过 ⇒ 0.75。
+    """
+
+    def test_always_true_predicate_is_certainty(self):
+        for n in (1, 3, 19, 30):
+            r = paired_diff.falsy_rate(n, passes=lambda t, m: True)
+            self.assertEqual(r['consistency_rate'], 1.0, n)
+            self.assertEqual(r['units_needed'], 1, n)
+
+    def test_always_false_predicate_is_rejected_not_zero(self):
+        with self.assertRaises(ValueError):
+            paired_diff.falsy_rate(10, passes=lambda t, m: False)
+
+    def test_zero_units_is_rejected(self):
+        with self.assertRaises(ValueError):
+            paired_diff.falsy_rate(0)
+
+    def test_all_units_must_pass_is_half_to_the_n(self):
+        for n, expected in ((3, 0.125), (4, 0.0625), (5, 0.03125)):
+            r = paired_diff.falsy_rate(n, passes=lambda t, m: t == m)
+            self.assertAlmostEqual(r['consistency_rate'], expected, places=6)
+            self.assertFalse(r['two_sided'])
+            self.assertEqual(r['units_needed'], n)
+
+    def test_two_sided_flag_doubles_the_rate(self):
+        """n=2、掷硬币、判据是"两个都要"：单侧 0.25，声明 `two_sided` 后 0.5。
+
+        有意用这条而不是"过半数"：`falsy_rate` 的缺省判据是**严格过半数**
+        （`tally * 2 > n`），n=2 时要两个都满足，**恰好一半不算过半**——写
+        "0.75" 是错的（本测试第一版就这么写了）。双侧的含义是"两侧各量一次再相加"，
+        与"过半数"是否含平局是两件事。
+        """
+        rule = lambda t, m: t == m  # noqa: E731
+        one = paired_diff.falsy_rate(2, passes=rule)
+        two = paired_diff.falsy_rate(2, passes=rule, two_sided=True)
+        self.assertAlmostEqual(one['consistency_rate'], 0.25, places=6)
+        self.assertAlmostEqual(two['consistency_rate'], 0.5, places=6)
+        self.assertFalse(one['two_sided'])
+        self.assertTrue(two['two_sided'])
+
+    def test_stable_rule_at_20_matches_batch_13_monte_carlo(self):
+        """20 个掷硬币种子判 `stable`：精确 0.0118，第十三批 4000 次实测 0.0107。
+
+        两个独立算法对不对得上的检查。
+        """
+        def stable(t, n):
+            return t / float(n) >= 0.8
+        r = paired_diff.falsy_rate(20, passes=stable, two_sided=True)
+        self.assertAlmostEqual(r['consistency_rate'], 0.011818, places=6)
+        se = (0.0118 * (1 - 0.0118) / 4000) ** 0.5
+        self.assertLess(abs(0.0107 - r['consistency_rate']), 4 * se + 1e-4)
+
+
+class TestUnitCountMovesTheVerdict(unittest.TestCase):
+    """同一个 0.8 门槛，表态种子数不同 ⇒ 误判率差两个数量级（2026-11-04 第十五批）。
+
+    **这是第十三批"假阳为 0"的覆盖面缺口**：那个 0 是在"20 个种子全部表态"的
+    场景里取的，而真实 16 格里表态种子只有 3–27 个。
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.out = C.calibrate_units()
+        cls.cells = C.real_cell_units()
+
+    def test_more_active_seeds_is_strictly_safer(self):
+        """3 个种子时掷硬币判 `stable` 是 25%，27 个时只有 0.15%——差两个数量级。"""
+        rows = self.out['by_active_seeds']
+        self.assertAlmostEqual(rows['n_active=3']['consistency_rate'], 0.25, places=6)
+        self.assertAlmostEqual(rows['n_active=27']['consistency_rate'], 0.001514, places=6)
+        self.assertGreater(rows['n_active=3']['consistency_rate'],
+                           100 * rows['n_active=27']['consistency_rate'])
+
+    def test_exact_enumeration_agrees_with_monte_carlo(self):
+        """精确枚举 vs 20000 次蒙特卡洛：n=20 上须在 4 个标准误内。"""
+        chk = self.out['_check_n20']
+        se = (chk['exact_rate'] * (1 - chk['exact_rate']) / chk['monte_carlo_trials']) ** 0.5
+        self.assertLess(abs(chk['monte_carlo_rate'] - chk['exact_rate']), 4 * se + 1e-4)
+
+    def test_threshold_jumps_between_adjacent_counts(self):
+        """门槛的**锯齿**：19 个种子要 16 个（0.842），18 个种子只要 15 个（0.833）。
+
+        ⇒ "0.8" 的实际严格程度在相邻表态数之间会跳，读 `stable` 不能只看比例。
+        """
+        rule = lambda t, n: t / float(n) >= 0.8  # noqa: E731
+        a = paired_diff.falsy_rate(19, passes=rule)
+        b = paired_diff.falsy_rate(18, passes=rule)
+        self.assertEqual((a['units_needed'], b['units_needed']), (16, 15))
+        self.assertGreater(a['units_needed'] / 19.0, b['units_needed'] / 18.0)
+
+    def test_thinnest_stable_cell_is_the_thinnest_in_the_archive(self):
+        """真实 16 格里最脆的 `stable` 是 0.5B cap256 积压 16：18/19 同号、余量 2 个种子。
+
+        它也是唯一一格 `n_active < 20` ⇒ 第十三批的覆盖面缺口在这里不是抽象的。
+        """
+        stable = [(c['margin_seeds'], label, b, c['n_active'], c['n_same_sign'])
+                  for label, cells in self.cells.items()
+                  for b, c in cells.items() if c['regime'] == 'stable']
+        self.assertEqual(min(stable), (2, 'qwen05b_cap256', 'backlog16', 19, 18))
+
+    def test_no_stable_cell_has_too_few_units_to_be_trusted(self):
+        """没有任何一格在表态 3 个种子上判 `stable`——3 个时误判率 25%。
+
+        守护用：将来若某批把表态 3 个的格判成 `stable`，本测试先红。
+        """
+        for label, cells in self.cells.items():
+            for b, c in cells.items():
+                if c['regime'] == 'stable':
+                    self.assertGreaterEqual(c['n_active'], 19, '%s %s' % (label, b))
+
+    def test_calibration_coverage_gap_is_real(self):
+        """第十三批的六种场景全是"20 个种子"；真实格里确有空缺在 3–19 之间。"""
+        # 校准场景 `thin_same` 的表态种子数是 20//6 = 3，但那**是刻意只让 3 个表态**，
+        # 不是"表态比例恰好落在 3"——所以缺口的准确说法是：**没有任何场景扫表态数**。
+        thin_active = max(1, 20 // 6)
+        self.assertEqual(thin_active, 3)
+        thin_cells = [c for cells in self.cells.values() for c in cells.values()
+                      if 0 < c['n_active'] < 20]
+        self.assertGreaterEqual(len(thin_cells), 2)
+
+
 class TestCalibrationIsNotTheInjectionTest(unittest.TestCase):
     """校准量的是判据误判率，不能拿注入测试代替；反之亦然。"""
 

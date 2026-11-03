@@ -135,6 +135,89 @@ def calibrate_band_floor(n_seeds=30, trials=1000, seed=11, n_trials_per_seed=12)
     }
 
 
+from math import comb
+
+
+def calibrate_units(active_seeds=(3, 4, 5, 19, 26, 27, 30), seed=17):
+    """判据的**单位数**：同一个 0.8 门槛，在 3 个与 30 个表态种子上等价于什么。
+
+    **为什么要补这一条（2026-11-04 第十五批）。** 第十三批量出的"`stable` 假阳为 0"
+    是在"20 个种子**全部表态**"的场景里取到的；而真实 16 格里表态种子只有 **3–27** 个
+    （0.5B cap256 积压 2 一个都没有、1.5B cap256 积压 2 只有 3 个），那几格恰恰就是
+    判 `stable` 的地方。⇒ **那个 0 没有覆盖判据被实际使用的参数区间。**
+
+    `sign_regime` 的 `stable` 条件是"表态种子同号占比 ≥ 0.8"。掷硬币输入（真值无信息）
+    下，它取决于**表态种子的个数**：3 个种子要三个全中（概率 0.51），27 个要 ≥22 个
+    同号（概率 0.00076）——**同一个常数、同一个判据，误报率差三个数量级**。
+
+    本函数精确枚举（`paired_diff.falsy_rate`，判据用 `sign_regime` 那一句原样传入），
+    另附 20 种子的蒙特卡洛复核（与第十三批的 0.0107 对得上才配对）。
+    """
+    def stable_rule(tally, n):  # 与 `paired_diff.sign_regime` 的 stable 分支逐字相同
+        return tally / float(n) >= 0.8
+
+    rows = {}
+    for n in active_seeds:
+        r = paired_diff.falsy_rate(n, passes=stable_rule, min_true_frac=0.5, two_sided=True)
+        rows['n_active=%d' % n] = r
+    # 蒙特卡洛复核：n=20 时精确值应落在第十三批实测 0.0107 的量级上
+    rng = random.Random(seed)
+    trials = 20000
+    n20 = 0
+    for _ in range(trials):
+        diffs = [rng.choice((1.0, -1.0)) * rng.uniform(0.01, 0.2) for _ in range(20)]
+        if paired_diff.sign_regime(diffs)['regime'] == 'stable':
+            n20 += 1
+    exact20 = paired_diff.falsy_rate(20, passes=stable_rule, min_true_frac=0.5,
+                                        two_sided=True)
+    return {
+        'by_active_seeds': rows,
+        '_check_n20': {
+            'monte_carlo_rate': round(n20 / float(trials), 4),
+            'monte_carlo_trials': trials,
+            'exact_rate': exact20['consistency_rate'],
+            'unit_needs': exact20['units_needed'],
+        },
+        '_verdict': ('同一个 0.8 门槛随表态种子数移动两个数量级：3 个种子时掷硬币输入'
+                     '有 25% 被判 stable，27 个时只有 0.15%。⇒ 报"假阳为 0"必须同时报'
+                     '表态种子数；`stable` 只在表态种子数足够多时才算方向已定。'),
+    }
+
+
+def real_cell_units(backlog_range=(2, 4, 8, 16)):
+    """真实 16 格逐格：判据实际用在了多少个单位上、无信息输入下会判成什么（只读归档）。"""
+    path = os.path.join(HERE, '..', 'rollout-group-split-tradeoff', 'real-lengths-summary.json')
+    with open(path) as f:
+        arch = json.load(f)
+    out = {}
+
+    def stable_rule(tally, n):
+        return tally / float(n) >= 0.8
+
+    for label, arm in sorted(arch['real_arms'].items()):
+        cells = {}
+        for b in backlog_range:
+            c = arm['sign_stability']['backlog%d' % b]
+            lof = c['lof_sign']
+            n_active = lof['n_positive'] + lof['n_negative']
+            same = max(lof['n_positive'], lof['n_negative'])
+            row = {
+                'regime': lof['regime'],
+                'n_active': n_active,
+                'n_same_sign': same,
+            }
+            if n_active:
+                fr = paired_diff.falsy_rate(n_active, passes=stable_rule,
+                                            min_true_frac=0.5, two_sided=True)
+                row['units_needed_for_stable'] = fr['units_needed']
+                row['coin_stable_rate'] = fr['consistency_rate']
+                # 离掉档还差几个种子：判 `stable` 的格子里这个数最小者最脆
+                row['margin_seeds'] = same - fr['units_needed']
+            cells['backlog%d' % b] = row
+        out[label] = cells
+    return out
+
+
 def _band_ratio_scene(rng, ratio, n=30, trials=12, sd_band=0.02):
     """一个"真方向已知、真效应 = `ratio` × 本种子带宽"的格子。
 
@@ -287,6 +370,9 @@ def build():
         # 第十一批新增两条：校准覆盖面的缺口（上面那条把真值设成"效应远大于噪声"）
         'effect_band_ratio': effect_band_ratio(),
         'real_band_ratios': real_band_ratios(),
+        # 第十五批新增：门槛被用在**多少个单位**上（第十三批的覆盖面缺口）
+        'units': calibrate_units(),
+        'real_cell_units': real_cell_units(),
     }
 
 

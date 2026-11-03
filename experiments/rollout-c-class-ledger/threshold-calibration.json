@@ -189,6 +189,141 @@
    "backlog8": -0.1
   }
  },
+ "real_cell_units": {
+  "qwen05b_cap1024": {
+   "backlog16": {
+    "coin_stable_rate": 0.001431,
+    "margin_seeds": 6,
+    "n_active": 30,
+    "n_same_sign": 30,
+    "regime": "stable",
+    "units_needed_for_stable": 24
+   },
+   "backlog2": {
+    "coin_stable_rate": 0.001431,
+    "margin_seeds": -3,
+    "n_active": 30,
+    "n_same_sign": 21,
+    "regime": "mixed",
+    "units_needed_for_stable": 24
+   },
+   "backlog4": {
+    "coin_stable_rate": 0.001431,
+    "margin_seeds": 6,
+    "n_active": 30,
+    "n_same_sign": 30,
+    "regime": "stable",
+    "units_needed_for_stable": 24
+   },
+   "backlog8": {
+    "coin_stable_rate": 0.001431,
+    "margin_seeds": 6,
+    "n_active": 30,
+    "n_same_sign": 30,
+    "regime": "stable",
+    "units_needed_for_stable": 24
+   }
+  },
+  "qwen05b_cap256": {
+   "backlog16": {
+    "coin_stable_rate": 0.004425,
+    "margin_seeds": 2,
+    "n_active": 19,
+    "n_same_sign": 18,
+    "regime": "stable",
+    "units_needed_for_stable": 16
+   },
+   "backlog2": {
+    "n_active": 0,
+    "n_same_sign": 0,
+    "regime": "no_resolution"
+   },
+   "backlog4": {
+    "coin_stable_rate": 0.06543,
+    "margin_seeds": 1,
+    "n_active": 11,
+    "n_same_sign": 10,
+    "regime": "consistent_but_thin",
+    "units_needed_for_stable": 9
+   },
+   "backlog8": {
+    "coin_stable_rate": 0.004425,
+    "margin_seeds": -6,
+    "n_active": 19,
+    "n_same_sign": 10,
+    "regime": "mixed",
+    "units_needed_for_stable": 16
+   }
+  },
+  "qwen15b_cap1024": {
+   "backlog16": {
+    "coin_stable_rate": 0.001431,
+    "margin_seeds": 5,
+    "n_active": 30,
+    "n_same_sign": 29,
+    "regime": "stable",
+    "units_needed_for_stable": 24
+   },
+   "backlog2": {
+    "coin_stable_rate": 0.001431,
+    "margin_seeds": -3,
+    "n_active": 30,
+    "n_same_sign": 21,
+    "regime": "mixed",
+    "units_needed_for_stable": 24
+   },
+   "backlog4": {
+    "coin_stable_rate": 0.001431,
+    "margin_seeds": 4,
+    "n_active": 30,
+    "n_same_sign": 28,
+    "regime": "stable",
+    "units_needed_for_stable": 24
+   },
+   "backlog8": {
+    "coin_stable_rate": 0.001431,
+    "margin_seeds": 4,
+    "n_active": 30,
+    "n_same_sign": 28,
+    "regime": "stable",
+    "units_needed_for_stable": 24
+   }
+  },
+  "qwen15b_cap256": {
+   "backlog16": {
+    "coin_stable_rate": 0.001514,
+    "margin_seeds": 5,
+    "n_active": 27,
+    "n_same_sign": 27,
+    "regime": "stable",
+    "units_needed_for_stable": 22
+   },
+   "backlog2": {
+    "coin_stable_rate": 0.25,
+    "margin_seeds": 0,
+    "n_active": 3,
+    "n_same_sign": 3,
+    "regime": "consistent_but_thin",
+    "units_needed_for_stable": 3
+   },
+   "backlog4": {
+    "coin_stable_rate": 0.002494,
+    "margin_seeds": 3,
+    "n_active": 26,
+    "n_same_sign": 24,
+    "regime": "stable",
+    "units_needed_for_stable": 21
+   },
+   "backlog8": {
+    "coin_stable_rate": 0.001514,
+    "margin_seeds": -5,
+    "n_active": 27,
+    "n_same_sign": 17,
+    "regime": "mixed",
+    "units_needed_for_stable": 22
+   }
+  }
+ },
  "real_cells": {
   "qwen05b_cap1024": {
    "backlog16": {
@@ -348,6 +483,66 @@
    "no_resolution": 0.7325,
    "stable": 0.0,
    "trials": 4000
+  }
+ },
+ "units": {
+  "_check_n20": {
+   "exact_rate": 0.011818,
+   "monte_carlo_rate": 0.0114,
+   "monte_carlo_trials": 20000,
+   "unit_needs": 16
+  },
+  "_verdict": "同一个 0.8 门槛随表态种子数移动两个数量级：3 个种子时掷硬币输入有 25% 被判 stable，27 个时只有 0.15%。⇒ 报\"假阳为 0\"必须同时报表态种子数；`stable` 只在表态种子数足够多时才算方向已定。",
+  "by_active_seeds": {
+   "n_active=19": {
+    "all_units_rate": 2e-06,
+    "consistency_rate": 0.004425,
+    "n_units": 19,
+    "two_sided": true,
+    "units_needed": 16
+   },
+   "n_active=26": {
+    "all_units_rate": 0.0,
+    "consistency_rate": 0.002494,
+    "n_units": 26,
+    "two_sided": true,
+    "units_needed": 21
+   },
+   "n_active=27": {
+    "all_units_rate": 0.0,
+    "consistency_rate": 0.001514,
+    "n_units": 27,
+    "two_sided": true,
+    "units_needed": 22
+   },
+   "n_active=3": {
+    "all_units_rate": 0.125,
+    "consistency_rate": 0.25,
+    "n_units": 3,
+    "two_sided": true,
+    "units_needed": 3
+   },
+   "n_active=30": {
+    "all_units_rate": 0.0,
+    "consistency_rate": 0.001431,
+    "n_units": 30,
+    "two_sided": true,
+    "units_needed": 24
+   },
+   "n_active=4": {
+    "all_units_rate": 0.0625,
+    "consistency_rate": 0.125,
+    "n_units": 4,
+    "two_sided": true,
+    "units_needed": 4
+   },
+   "n_active=5": {
+    "all_units_rate": 0.03125,
+    "consistency_rate": 0.375,
+    "n_units": 5,
+    "two_sided": true,
+    "units_needed": 4
+   }
   }
  }
 }
