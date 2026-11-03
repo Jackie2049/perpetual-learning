@@ -44,6 +44,7 @@
 
 ## 跨项目规划与方法
 
+- **[待授权候选一览](pending-candidates-brief.md)** —— 4 条已取证完成、只差用户点头的上游候选（verl `tiled_mlp`／rLLM `use_async`／verl `prefix_grouper`／rLLM Fireworks R3），含影响面、上游查重结果与发布建议。**对外动作前先看这份。**
 - [贡献机会与能力匹配](open-source-contribution-opportunities.md)
 - [2026 年 6 月贡献行动计划](oss-contribution-action-plan-2026-06.md)
 - [贡献挖掘 SOP](SOP.md)
