@@ -1,4 +1,4 @@
-更新时间：2026-11-04（M1 **第十批**：开工时工作区有一份未提交、无日志的分母拆分改动——先核实再留用。**核实成立**（163 测试全过），但它依据的读法**过度概括**了：`same_sign_fraction` 分母里混着 identical 种子，「低 ssf ⇒ 方向混杂」只对一半。实测两份归档的 32 个真实格：`real-lengths-summary.json`（30 种子）16 格里带重复的是 **8 格**（`stable` 3／`mixed` 2／`consistent_but_thin` 2／`no_resolution` 1），`bucketing-probe.json`（20 种子）16 格为 `stable` 8／`mixed` 5／`consistent_but_thin` 2／`no_resolution` 1、带重复 6 格中 3 格表态种子同号。**同一个低 ssf 可能来自「方向混杂」，也可能来自「方向一致、只是没分辨率」，判词相反。**新增四档 `sign_regime()`（`stable`／`mixed`／`consistent_but_thin`／`no_resolution`）并写进两份归档（每格 3 个新键：分桶 **+60 字段**、真实负载 **+48 字段**，两份 0 改动 0 删除），订正 §13.30 第五批「cap256 各格符号混杂」的判词（**结论不变**：cap256 八个格子的效应量全在带宽内或带宽退化，无一格可主张方向）。顺手抓到：带宽为 0 时 `exceeds_band` 恒真，`qwen15b_cap256` 积压 2 那格会被读成"效应超带宽"。M1 02:5x 第九批：分桶探针与真实负载纳入逐值对照——20 格／400 个种子对全部零分歧，并修掉两个探针脚本的硬写容差。）
+更新时间：2026-11-04（M1 **第十一批**：给 `fifo_band` 加三档准入——**带宽为 0 有两种成因**，此前归档里分不出来。第五批只记了一句「噪声为零的带宽不构成门槛」，没有变成判据，于是 `fifo_band = 0` 的格子看起来和「基线换序完全不动」一样，而后者恰是最强的「效应显著」信号。新增 `no_reading`（每个种子 `R` 都恒为 0 ⇒ 问不出来）／`degenerate`（过半种子带宽为 0）／`usable`，16 格实测 **13／1／2**：`no_reading` 是两个模型 cap256 积压 2，`degenerate` 是 0.5B cap256 积压 4（22/30 带宽为 0）。机制是**截断贴顶**——cap256 组最大 **86.0%（1.5B）／94.2%（0.5B）** 恰等于上限（cap1024 只 0.2%／4.8%）。**不改任何已发布读数**，唯一收窄是 0.5B cap256 积压 4 的 `stable` 建在 `degenerate` 带宽上。旧字段相对原始 HEAD **0 变化 0 删除**、新增 96 个。另记 `exceeds_band(|效应|, 0.0)` 恒真、而工具层分不出是哪种 0 ⇒ 判据只能留在产生带宽那一层。M1 03:1x 第十批：同号占比分母拆开、四档 `sign_regime` 进两份归档，并修掉第九批 `compare_old_new_impl.py` 的假正 PASS（收尾处 `KeyError`，那句 PASS 从没打印出来）。）
 
 ## 当前现场
 
@@ -6,7 +6,33 @@
 > （按时间倒序）——**它们已在 `diary/` 与专项文档留档，此处仅为交接连续性的冗余副本**。
 > 判断"现在该做什么"看 `## 未完成操作与并行工作` 与两个队列，不要从头读到尾。
 
-### M1 本轮（2026-11-04 03:1x）：第十批——同号占比分母拆开、四档 `sign_regime`；并修好上一批遗留的崩溃与三处计数错
+### M1 本轮（2026-11-04 04:1x）：第十一批——带宽为 0 有两种成因，`fifo_band` 加三档准入
+
+**一、为什么补这一层。** 第五批给出带宽判读口径 `|效应| > 带宽` 后，自己留了一句"噪声为零的带宽不构成门槛"——但那只是提醒，没有变成字段。归档里 `fifo_band = 0` 的格子于是和"基线换序完全不动"**长得一样**，而后者恰是最强的"效应显著"信号。新增 [`band_floor.py`](experiments/rollout-group-split-tradeoff/band_floor.py) 三档：`no_reading`（**每个种子**的 FIFO `R` 都恒为 0 ⇒ 这一格问不出来）／`degenerate`（过半种子带宽为 0）／`usable`。
+
+**二、16 格实测 13／1／2（按归档逐格核过，与独立脚本 16/16 一致）。**
+
+| 负载 | 2 批 | 4 批 | 8 批 | 16 批 |
+|---|---|---|---|---|
+| 1.5B cap256 | **`no_reading`** | usable（4/30 带宽为 0） | usable | usable |
+| 0.5B cap256 | **`no_reading`** | **`degenerate`**（22/30） | usable | usable |
+| 1.5B／0.5B cap1024 | usable | usable | usable | usable |
+
+**三、机制是截断贴顶，不是"基线稳"。** cap256 的组最大 **86.0%（1.5B）／94.2%（0.5B）** 恰好等于 `max_response`（cap1024 只 0.2%／4.8%）⇒ 抽 16 组时组最大全等的概率约 0.09／0.38 ⇒ 组间齐平、任何顺序都无事可排，`R ≡ 0`。这是第三十九批"组最大 cv 仅 0.07、组级排队无事可排"的同一个几何事实的另一个后果。
+
+**四、不改读数，改理由。** cap256 六格仍无一格可主张方向（第五批结论与第十批判词都不变）；唯一收窄是 **0.5B cap256 积压 4 的 `stable` 建在 `degenerate` 带宽上**——方向稳定性可引用，效应量不可引用。
+
+**五、判据归属。** `exceeds_band(|效应|, 0.0)` 对所有非零效应返回 True，而带宽是调用方算出的一个数，`paired_diff` 收到时已分不出这个 0 是哪种 ⇒ 判据只能留在产生带宽的那一层；工具 readme 只记一条要求"传 `band=0.0` 时必须说明是哪种 0"。
+
+**核对产物**：`real-lengths-summary.json` 相对原始 HEAD **旧字段 0 变化 0 删除**、新增 96 个；`band_floor.py` exit 0（16/16 `crosscheck: ok`）；负向对照三次注入——压成恒 `usable` ⇒ 4 条红、`n_r_zero` 恒真 ⇒ 3 条红、**过半边界 `>`→`>=` ⇒ 5 条全绿（当时无边界用例）**，同批已由并行会话补 `test_exactly_half_zero_band_is_still_usable`／`test_one_more_zero_band_flips_to_degenerate` 两侧钉住。只读仿真重算、未跑 GPU、未触上游。
+
+**推送**：`f685d58f9` 已推，`origin/main..main` 归零（直连一次成功）。
+
+**留给下一轮**：① `no_reading` 只说"这一格问不出来"，**未回答"换一种抽样（放宽 `n_groups`／换负载档）能否问得出来"**——要答需另立实验；② 四档 `sign_regime` 门槛（0.5／0.8）与三档 `band_floor` 门槛（0.5）都未做假阳率模拟校准，都是判读门槛不是显著性检验；③ 并发重算前先 `ps`（三进程并发把 10 分钟拖到 48 分钟）；④ 语义面剩余缺口仍是长度预测误差／分桶／迁移／抢占／KV 搬运，P-1 跨系统需用户立项。
+
+入口：[实验 readme 第十一批](experiments/rollout-group-split-tradeoff/readme.md) · [band_floor.py](experiments/rollout-group-split-tradeoff/band_floor.py) · [§13.30 第五批](notebook/rollout-performance-research.md) · [paired-diff](tools/paired-diff/readme.md) · [TS-001](queue_tech-secretary.md) · [TM-011](queue_tech-miner.md) · [diary](diary/2026-11-04.md)。
+
+### M1 上一轮（2026-11-04 03:1x）：第十批——同号占比分母拆开、四档 `sign_regime`；并修好上一批遗留的崩溃与三处计数错
 
 **一、开工时工作区有一份未提交、无日志的改动**（`paired_diff` 新增 `resolve_active_fraction`／`same_sign_fraction_active`，两个探针脚本接上），先核实再留用。核实成立（当时 163 测试全过），但它依据的读法**过度概括**：`same_sign_fraction` 分母里混着 identical 种子，"低 ssf ⇒ 方向混杂"只对一半——同一个低值也可能是"方向一致、只是没分辨率"。
 
@@ -24,11 +50,13 @@
 
 **五、修掉上一批遗留的三处错。** ① **已提交的 `compare_old_new_impl.py` 在收尾处 `KeyError` 崩掉**——第九批那句"PASS"从没打印出来（`identical` 两版都有，出处不同：旧版 `summarize` 自己数、新版取容差档；`seed_sign_stability` 的返回值里没有这个键）。已修并把"两版相等"纳入 PASS/FAIL，注入 off-by-one 实测 FAIL。② 三处文档（本条头、TS-001、日志）把 30 种子与 20 种子两个口径的"几个格子"混写，已按上表改写。③ `bucketing_probe.py` 的 `regime` 曾是手写一行式（档名 `matched` 不在词表里、且只看全列 ssf），已统一走 `paired_diff.sign_regime()`。
 
-**六、一条口径（第十批新增）**：带宽为 `0.0` 不一定是"基线很稳"。低积压时该格 `R` 恒为 0，`exceeds_band` 对所有非零效应一律通过。并行会话已建 `band_floor.py`（`no_reading`／`degenerate`／`usable` 三档），**跑通但未审其判据，本轮不接手**。
+**六、一条口径（第十批新增）**：带宽为 `0.0` 不一定是"基线很稳"。低积压时该格 `R` 恒为 0，`exceeds_band` 对所有非零效应一律通过。并列会话已建 `band_floor.py`（`no_reading`／`degenerate`／`usable` 三档），**已于上一轮（第十一批）审过判据并接进归档**——见最上面一节。
 
 **核对产物**：两目录 **171 passed**；两份归档 `--verify` exit 0；`paired_diff --selftest` 通过；`compare_old_new_impl.py` PASS。只读仿真重算、未跑 GPU、未触上游。
 
-**留给下一轮**：① `band_floor.py` 的判据未审（三档门槛是拍的还是量出来的）；② `fifo_band_floor` 已接进 `real_lengths_policy.py` 但**归档里还没有这个字段**（源码与归档不同步），要么重算要么先别引用；③ 四档门槛 `0.5`／`0.8` 未做假阳率模拟校准。
+**留给下一轮**：① ~~`band_floor.py` 的三档门槛未审~~ **已于第十一批审过并入档**（见最上面一节）；② 四档门槛 `0.5`／`0.8` 未做假阳率模拟校准；③ 三个 `real_lengths_policy.py` 进程曾同时重算（本会话与并行会话各起一到两个），把单次约 10 分钟拖到近一小时——**并发重算前先 `ps` 看一眼**。
+
+**本轮已补上并发遗留**：`fifo_band_floor` 接进源码后归档没跟着重算（源码与归档不同步），本会话已于 04:1x 重算完成——`real_arms.*.sign_stability.*.band_floor` 现在在归档里，16 格分布为 `usable` 13／`no_reading` 2／`degenerate` 1，**旧字段相对原始 HEAD 0 变化 0 删除**。
 
 入口：[paired-diff](tools/paired-diff/readme.md) · [实验 readme](experiments/rollout-group-split-tradeoff/readme.md) · [§13.30](notebook/rollout-performance-research.md) · [TM-011](queue_tech-miner.md) · [TS-001](queue_tech-secretary.md) · [diary](diary/2026-11-04.md)。
 
@@ -48,7 +76,7 @@
 
 入口：[两版对照](experiments/rollout-c-class-ledger/compare_old_new_impl.py) · [跨脚本测试](experiments/rollout-c-class-ledger/test_cross_script_consistency.py) · [readme 第八批](experiments/rollout-c-class-ledger/readme.md) · [paired-diff](tools/paired-diff/readme.md) · [TS-001](queue_tech-secretary.md) · [diary](diary/2026-11-03.md)。
 
-### M1 本轮（2026-11-04 02:0x–02:5x）：先核实工作区那份未提交的拆分，再修掉判据里的过度概括（第十批）
+### M1 上一轮（2026-11-04 02:0x–02:5x）：先核实工作区那份未提交的拆分，再修掉判据里的过度概括（第十批前半）
 **一、开工时的处境。** 工作区有 8 个文件未提交（`paired_diff` 新增 `resolve_active_fraction`／`same_sign_fraction_active`，两个探针脚本接上、两份归档新增字段），**无提交、无 CONTEXT、无日志**。按规则先核实能否成立再决定留用或回退，不接着做未核实的东西。
 
 **二、核实成立，但读法过度概括。** 163 测试（分桶 69＋C 类 94）与 `--selftest` 全过。但原读法「全列 ssf 低 ⇒ 方向混杂」只对一半：分母里混着 identical 种子，**"方向一致、只是没分辨率"会得到同样的低分**。实测两份归档 36 格：真实档 16 格里 10 格带重复，**7 格的表态种子其实同号**（`qwen15b_cap256` 积压 2：30 个种子里 27 个相等、表态 3 个全同向；`qwen05b_cap256` 积压 4：19 个相等、表态 11 个里 10 正 1 负），只有 3 格真混杂。
@@ -430,7 +458,9 @@ M1 上一轮把 TM-009 从"已取证待决定"推到"材料齐备待决定"：�
 
 ## 未完成操作与并行工作
 
-- **推送通道时通时不通（2026-11-03 22:2x 实测）**：22:2x 时 `git push` 一次成功（积压 16 个提交 → `878600d56`）；同一次会话内随后**两次 push 均 75s 超时**，改用 [git-push-api](tools/git-push-api/readme.md) 推到 `a7b862748`，本地 `git reset --hard` 对齐（树 `e6acaa5f`，与本地原提交同树不同 SHA）。⇒ **下次先试直连，超时就换 API；API 用前必须先 `push_dryrun.py` 预演，并把父提交写成完整 40 位 SHA**（短 SHA 会被 API 返回 422；当前远端有 `878600d56` 与 `be37df1a6` 两条历史线，写错父提交会报 "not a fast forward"）。下面这条"推送受阻"记录保留作历史。
+- **带宽为 `0.0` 不一定是「基线很稳」（2026-11-04 第十一批新增）**：`exceeds_band(|效应|, 0.0)` 对所有非零效应返回 True，所以 `fifo_band = 0` 的格子最容易被读成「效应远超基线抖动」。0 有两种成因，判词相反：`no_reading`（**每个种子**的 `R` 都恒为 0，打乱顺序也不变 ⇒ 这一格问不出来）、`degenerate`（过半种子带宽为 0 ⇒ 带宽由少数种子撑起）。档名在 `real-lengths-summary.json` 的 `real_arms.*.sign_stability.*.band_floor`，可 `python3 band_floor.py` 复算并逐格交叉核对（不一致 exit 1）。**引用任何 `|效应| > 带宽` 之前先读这一档**；带宽是调用方算出的一个数，`paired_diff` 收到时已分不出是哪种 0，所以判据不在工具层。**已知未做**：`no_reading` 只说明「这一格问不出来」，没有回答「换一种抽样（放宽 `n_groups`／换负载档）能否问得出来」。
+- **截断会同时压扁两个维（同批）**：cap256 的组最大 86.0%／94.2% 恰等于 `max_response`（cap1024 只 0.2%／4.8%），于是 ① 组间齐平 ⇒ 组级排队顺序无事可排（第三十九批）、② 16 组组最大全等 ⇒ 基线带宽为 0（本批）。在截断负载上做「组级排序」实验，连噪声都测不到——这是 TM-011 若立项必须选不截断负载档的理由。
+- **推送通道时通时不通（2026-11-03 22:2x 实测）**：22:2x 时 `git push` 一次成功（积压 16 个提交 → `878600d56`）；同一次会话内随后**两次 push 均 75s 超时**，改用 [git-push-api](tools/git-push-api/readme.md) 推到 `a7b862748`，本地 `git reset --hard` 对齐（树 `e6acaa5f`，与本地原提交同树不同 SHA）。⇒ **下次先试直连，超时就换 API；API 用前必须先 `push_dryrun.py` 预演，并把父提交写成完整 40 位 SHA**（短 SHA 会被 API 返回 422；当前远端有 `878600d56` 与 `be37df1a6` 两条历史线，写错父提交会报 "not a fast forward"）。下面这条"推送受阻"记录保留作历史。**2026-11-04 04:4x 复核**：直连一次成功（`9becde235..f685d58f9`），`origin/main..main` 归零。
 - **[历史] 推送受阻（2026-11-03 18:0x–22:2x）**：两条通道都不通——HTTPS 报 `self signed certificate`（`curl` 同样，是中间设备替换证书而非 git 配置），SSH 22 端口 `Connection timed out during banner exchange`；`gh-proxy` 亦不可用。**本地积压 11 个提交**（凭据安全链 6、文档导航 2、并行会话 3）。
   **恢复后依次执行**：① `git fetch origin` 确认远端无冲突；② `git push`；③ 逐项核对这 11 个提交在远端存在。
   **不要**用 `--insecure`／`http.sslVerify=false` 绕过——那等于接受未验证证书。
