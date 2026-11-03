@@ -20,6 +20,9 @@
     "n_positive": 8,
     "n_negative": 12,
     "same_sign_fraction": 0.6,
+    "resolve_active_fraction": 1.0,
+    "same_sign_fraction_active": 0.6,
+    "regime": "mixed",
     "sd_pp": 2.318,
     "min_pp": -5.841,
     "max_pp": 3.195
@@ -44,6 +47,9 @@
     "n_positive": 8,
     "n_negative": 12,
     "same_sign_fraction": 0.6,
+    "resolve_active_fraction": 1.0,
+    "same_sign_fraction_active": 0.6,
+    "regime": "mixed",
     "sd_pp": 1.407,
     "min_pp": -3.369,
     "max_pp": 1.78
@@ -68,6 +74,9 @@
     "n_positive": 15,
     "n_negative": 5,
     "same_sign_fraction": 0.75,
+    "resolve_active_fraction": 1.0,
+    "same_sign_fraction_active": 0.75,
+    "regime": "mixed",
     "sd_pp": 0.903,
     "min_pp": -1.499,
     "max_pp": 2.619
@@ -92,6 +101,9 @@
     "n_positive": 20,
     "n_negative": 0,
     "same_sign_fraction": 1.0,
+    "resolve_active_fraction": 1.0,
+    "same_sign_fraction_active": 1.0,
+    "regime": "stable",
     "sd_pp": 0.266,
     "min_pp": 0.154,
     "max_pp": 1.278
@@ -118,6 +130,9 @@
     "n_positive": 0,
     "n_negative": 0,
     "same_sign_fraction": 0.0,
+    "resolve_active_fraction": 0.0,
+    "same_sign_fraction_active": null,
+    "regime": "no_resolution",
     "sd_pp": 0.0,
     "min_pp": 0.0,
     "max_pp": 0.0
@@ -146,6 +161,9 @@
     "n_positive": 0,
     "n_negative": 5,
     "same_sign_fraction": 0.25,
+    "resolve_active_fraction": 0.25,
+    "same_sign_fraction_active": 1.0,
+    "regime": "consistent_but_thin",
     "sd_pp": 1.564,
     "min_pp": -4.59,
     "max_pp": 0.0
@@ -174,6 +192,9 @@
     "n_positive": 10,
     "n_negative": 8,
     "same_sign_fraction": 0.5,
+    "resolve_active_fraction": 0.9,
+    "same_sign_fraction_active": 0.556,
+    "regime": "mixed",
     "sd_pp": 0.896,
     "min_pp": -1.367,
     "max_pp": 2.002
@@ -202,6 +223,9 @@
     "n_positive": 14,
     "n_negative": 5,
     "same_sign_fraction": 0.7,
+    "resolve_active_fraction": 0.95,
+    "same_sign_fraction_active": 0.737,
+    "regime": "mixed",
     "sd_pp": 0.715,
     "min_pp": -0.83,
     "max_pp": 2.221
@@ -230,6 +254,9 @@
     "n_positive": 10,
     "n_negative": 10,
     "same_sign_fraction": 0.5,
+    "resolve_active_fraction": 1.0,
+    "same_sign_fraction_active": 0.5,
+    "regime": "mixed",
     "sd_pp": 6.267,
     "min_pp": -11.575,
     "max_pp": 12.715
@@ -258,6 +285,9 @@
     "n_positive": 0,
     "n_negative": 20,
     "same_sign_fraction": 1.0,
+    "resolve_active_fraction": 1.0,
+    "same_sign_fraction_active": 1.0,
+    "regime": "stable",
     "sd_pp": 3.001,
     "min_pp": -13.385,
     "max_pp": -3.712
@@ -286,6 +316,9 @@
     "n_positive": 0,
     "n_negative": 20,
     "same_sign_fraction": 1.0,
+    "resolve_active_fraction": 1.0,
+    "same_sign_fraction_active": 1.0,
+    "regime": "stable",
     "sd_pp": 1.287,
     "min_pp": -6.454,
     "max_pp": -1.736
@@ -314,6 +347,9 @@
     "n_positive": 0,
     "n_negative": 20,
     "same_sign_fraction": 1.0,
+    "resolve_active_fraction": 1.0,
+    "same_sign_fraction_active": 1.0,
+    "regime": "stable",
     "sd_pp": 0.535,
     "min_pp": -3.071,
     "max_pp": -1.046
@@ -342,6 +378,9 @@
     "n_positive": 0,
     "n_negative": 2,
     "same_sign_fraction": 0.1,
+    "resolve_active_fraction": 0.1,
+    "same_sign_fraction_active": 1.0,
+    "regime": "consistent_but_thin",
     "sd_pp": 0.804,
     "min_pp": -3.32,
     "max_pp": 0.0
@@ -370,6 +409,9 @@
     "n_positive": 3,
     "n_negative": 13,
     "same_sign_fraction": 0.65,
+    "resolve_active_fraction": 0.8,
+    "same_sign_fraction_active": 0.812,
+    "regime": "stable",
     "sd_pp": 1.926,
     "min_pp": -5.762,
     "max_pp": 0.391
@@ -398,6 +440,9 @@
     "n_positive": 13,
     "n_negative": 7,
     "same_sign_fraction": 0.65,
+    "resolve_active_fraction": 1.0,
+    "same_sign_fraction_active": 0.65,
+    "regime": "mixed",
     "sd_pp": 1.05,
     "min_pp": -1.257,
     "max_pp": 2.382
@@ -426,6 +471,9 @@
     "n_positive": 16,
     "n_negative": 4,
     "same_sign_fraction": 0.8,
+    "resolve_active_fraction": 1.0,
+    "same_sign_fraction_active": 0.8,
+    "regime": "stable",
     "sd_pp": 0.95,
     "min_pp": -0.293,
     "max_pp": 2.846
@@ -454,6 +502,9 @@
     "n_positive": 5,
     "n_negative": 15,
     "same_sign_fraction": 0.75,
+    "resolve_active_fraction": 1.0,
+    "same_sign_fraction_active": 0.75,
+    "regime": "mixed",
     "sd_pp": 6.616,
     "min_pp": -14.165,
     "max_pp": 7.549
@@ -482,6 +533,9 @@
     "n_positive": 0,
     "n_negative": 20,
     "same_sign_fraction": 1.0,
+    "resolve_active_fraction": 1.0,
+    "same_sign_fraction_active": 1.0,
+    "regime": "stable",
     "sd_pp": 4.018,
     "min_pp": -15.264,
     "max_pp": -0.136
@@ -510,6 +564,9 @@
     "n_positive": 1,
     "n_negative": 19,
     "same_sign_fraction": 0.95,
+    "resolve_active_fraction": 1.0,
+    "same_sign_fraction_active": 0.95,
+    "regime": "stable",
     "sd_pp": 1.962,
     "min_pp": -7.495,
     "max_pp": 0.494
@@ -538,6 +595,9 @@
     "n_positive": 1,
     "n_negative": 19,
     "same_sign_fraction": 0.95,
+    "resolve_active_fraction": 1.0,
+    "same_sign_fraction_active": 0.95,
+    "regime": "stable",
     "sd_pp": 0.858,
     "min_pp": -2.811,
     "max_pp": 0.069

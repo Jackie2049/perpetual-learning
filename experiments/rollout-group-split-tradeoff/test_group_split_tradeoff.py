@@ -8,11 +8,15 @@
     python3 -m unittest test_group_split_tradeoff -v
 """
 
+import json
+import os
 import random
 import statistics
 import unittest
 
 import group_split_tradeoff as m
+
+EXP_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # 分桶探针的稳健性判据住在 bucketing_probe.py，不复抄一份到测试里——
 # 抄一份就成了"照答卷判卷"，探针改了口径测试也不会红。
@@ -527,6 +531,151 @@ class TestSharedTolerance(unittest.TestCase):
     def test_tolerance_still_absorbs_roundoff(self):
         """1e-13 仍在容差内：这是"精确相等"的写法，不是分辨率提升。"""
         self.assertEqual(paired_diff.sign_counts([1e-13])['n_identical'], 1)
+
+
+class TestSameSignDenominator(unittest.TestCase):
+    """`same_sign_fraction` 的分母要能分开看（2026-11-03 第十批）。
+
+    触发点是核对分桶探针存档时发现的：`same_sign_fraction` 把 identical 种子留在
+    分母里，于是**同一个 0.1** 既可能是"9 正 1 负"（方向混杂），也可能是"18 个
+    相同、2 个同向"（方向一致但没分辨率）。这两种解读完全相反，只看 ssf 分不出来。
+    新加的两档把分母拆开，测试钉住拆分后的读数对这两件事给不同的答案。
+    """
+
+    def test_same_ssf_two_opposite_readings(self):
+        """0.1 的 ssf：方向混杂 vs 没分辨率，必须能被区分。"""
+        mixed = [0.1] * 9 + [-0.1] * 1 + [0.0] * 10      # 9 正 1 负 10 相同
+        thin = [0.1] * 2 + [0.0] * 18                    # 2 正 18 相同
+        a, b = paired_diff.summarize_paired(mixed), paired_diff.summarize_paired(thin)
+        self.assertEqual(a['same_sign_fraction'], 0.45)
+        self.assertEqual(b['same_sign_fraction'], 0.1)
+        # 表态占比把两者分开了：前者一半种子在表态，后者只有两成
+        self.assertEqual(a['resolve_active_fraction'], 0.5)
+        self.assertEqual(b['resolve_active_fraction'], 0.1)
+        # 只在表态种子里算：前者 0.9（混杂），后者 1.0（一致）
+        self.assertEqual(a['same_sign_fraction_active'], 0.9)
+        self.assertEqual(b['same_sign_fraction_active'], 1.0)
+
+    def test_all_identical_has_no_active_reading(self):
+        """全部相同——没有种子在表态，`same_sign_fraction_active` 必须是 None 而不是 0。"""
+        st = paired_diff.summarize_paired([0.0] * 20)
+        self.assertEqual(st['resolve_active_fraction'], 0.0)
+        self.assertIsNone(st['same_sign_fraction_active'])
+
+    def test_active_fraction_is_not_a_copy_of_ssf(self):
+        """负向对照：把 active 档写成直接复用 ssf，必须被测出。
+
+        `thin` 那格里 ssf=0.1、active=1.0，两者不等；若实现退化成同一个值，
+        这里会失败——避免"加了个字段但其实没算"。
+        """
+        thin = [0.1] * 2 + [0.0] * 18
+        st = paired_diff.summarize_paired(thin)
+        self.assertNotEqual(st['same_sign_fraction'], st['same_sign_fraction_active'])
+
+    def test_archive_fields_keep_original_ssf(self):
+        """归档里的 ssf 口径不改：仍是全列做分母（既有字段不动）。"""
+        diffs = [0.1] * 9 + [-0.1] + [0.0] * 10
+        self.assertEqual(paired_diff.same_sign_fraction(diffs), 0.45)
+
+    def test_active_is_never_below_ssf(self):
+        """不变式：active 档的分母是 `n - identical ≤ n`、分子相同，所以恒 ≥ 全列 ssf。
+
+        穷举小样本确认这条不等式——它决定了"两者之差"只能读作"被 identical
+        吃掉的量"，而不是一个可能往两个方向偏的修正。
+        """
+        for pos in range(0, 8):
+            for neg in range(0, 8):
+                for ident in range(0, 5):
+                    if pos + neg == 0:
+                        continue
+                    diffs = [0.1] * pos + [-0.1] * neg + [0.0] * ident
+                    self.assertGreaterEqual(
+                        paired_diff.same_sign_fraction_active(diffs),
+                        paired_diff.same_sign_fraction(diffs),
+                        msg='pos=%d neg=%d identical=%d' % (pos, neg, ident))
+
+
+class TestSignRegimeInArchive(unittest.TestCase):
+    """`sign_stability` 必须把四档档名写进归档（2026-11-04 第十批）。
+
+    核对两份探针时发现：10 个带重复的格子里有 7 格的**表态种子是同号的**，
+    旧的三步把它们一律读成"符号混杂"。档名进归档后，引用时直接取档名，
+    不必再手拼 `n_identical` 与 `same_sign_fraction` 两个数。
+    """
+
+    def test_archive_carries_regime(self):
+        with open(os.path.join(EXP_DIR, 'bucketing-probe.json')) as f:
+            doc = json.load(f)
+        cells = [c['sign_stability'] for c in doc['synthetic']]
+        cells += [c['sign_stability'] for c in doc['real']]
+        self.assertEqual(len(cells), 20)
+        for cell in cells:
+            self.assertIn(cell['regime'],
+                          ('stable', 'mixed', 'consistent_but_thin', 'no_resolution'))
+            # 档名必须与归档里已存的三个量为同一口径：stable/mixed 要求表态占比 ≥ 0.5
+            if cell['regime'] in ('stable', 'mixed'):
+                self.assertGreaterEqual(cell['resolve_active_fraction'], 0.5)
+            if cell['regime'] == 'no_resolution':
+                active = cell['resolve_active_fraction']
+                same_active = cell['same_sign_fraction_active']
+                self.assertTrue(active < 0.5 or (same_active is not None and same_active < 0.8),
+                                msg='no_resolution 但表态种子是同号的：%r' % (cell,))
+
+    def test_thin_but_consistent_cells_are_not_labelled_mixed(self):
+        """负向对照：这 7 格若被写成 `mixed`/`no_resolution`，断言失败。
+
+        它们的共同点是"表态占比 < 0.5 且表态种子同号"——旧口径下全列 ssf 低，
+        看着像混杂。这里把它们的档名固定，改回旧的判断方式即变红。
+        """
+        with open(os.path.join(EXP_DIR, 'bucketing-probe.json')) as f:
+            doc = json.load(f)
+        cells = [c['sign_stability'] for c in doc['real']]
+        thin = [c for c in cells
+                if c['resolve_active_fraction'] < 0.5
+                and (c['same_sign_fraction_active'] or 0) >= 0.8]
+        self.assertGreaterEqual(len(thin), 2)
+        for c in thin:
+            self.assertEqual(c['regime'], 'consistent_but_thin')
+            # 它们的全列 ssf 低于 0.5——正是"看着像混杂"的来源
+            self.assertLess(c['same_sign_fraction'], 0.5)
+
+
+class TestBandFloor(unittest.TestCase):
+    """带宽为 0 不等于"基线很稳"（2026-11-04 第十批）。
+
+    `exceeds_band(|效应|, 0)` 对所有非零效应恒真，于是低积压截断档会被读成
+    "效应超出带宽"。这里把三档钉住：`no_reading`（每格 R 恒为 0）、
+    `degenerate`（过半种子带宽为 0）、`usable`。
+    """
+
+    def test_verdict_is_not_a_copy_of_band_median(self):
+        """三档必须给出不同答案——若实现退化成"中位数为 0 就 no_reading"，
+        第二组（中位 0 但并非全部为 0）会被误判成 `no_reading`。"""
+        import band_floor as bf
+        # 全部为 0 ⇒ 这一格问不出来
+        self.assertEqual(bf.band_floor_verdict([0.0] * 10, 10, 10), 'no_reading')
+        # 过半为 0 但不是全部 ⇒ 只有部分种子看得出，不等于没有读数
+        self.assertEqual(bf.band_floor_verdict([0.0] * 6 + [1.0] * 4, 3, 10), 'degenerate')
+        # 少数为 0 ⇒ 带宽是个真门槛
+        self.assertEqual(bf.band_floor_verdict([0.0] * 4 + [1.0] * 6, 0, 10), 'usable')
+
+    def test_truncated_arms_have_degenerate_band(self):
+        """截断档的组最大大量贴顶，带宽因此退化；不截断档不该退化。
+
+        这条是**机制**断言：cap256 的 pinch（组最大恰为上限的组占比）远高于
+        cap1024，正是"任何顺序都无事可排"的成因。数值取归档同一次抽样。
+        """
+        import band_floor as bf
+        out = bf.diagnose()
+        for label, arm in out['arms'].items():
+            if arm['cap'] == 256:
+                self.assertGreater(arm['truncation_pinch'], 0.5, msg=label)
+            else:
+                self.assertLess(arm['truncation_pinch'], 0.1, msg=label)
+        # 三档都出现过——否则这套三档没有真实用例
+        verdicts = {c['band_floor'] for arm in out['arms'].values()
+                    for c in arm['cells'].values()}
+        self.assertEqual(verdicts, {'no_reading', 'degenerate', 'usable'})
 
 
 if __name__ == '__main__':

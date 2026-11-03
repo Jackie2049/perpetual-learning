@@ -367,7 +367,7 @@ python3 -m unittest test_cross_script_consistency -v   # 第九批：35 tests，
 
 **一、把两处的真实输入列接进来。** `bucketing_probe` 原本把"产生逐种子行 → `summarize`"写死在 `synthetic_block()`／`real_block()` 里，归档只留汇总量，反解不出输入列。新增 `iter_rows()` 生成器，两个 block 改为消费它——**读数逐位不变**（`bucketing-probe.json` 前后逐字段相同，`--verify` 通过）。对照脚本据此拿到 20 格／400 个种子对的配对差，连同真实负载脚本的 `fifo_reorder_band`（8 格）一起喂给新旧两版：**全部零分歧**。
 
-**二、每格的非计数输出也做了对照。** 9 个键（`identical`、`abs_pp_mean`／`median`、`sign_stability` 的五个）在 20 格上新旧一致。**唯独 `identical` 一处不同，而且是有意的**：旧版 `seed_sign_stability` 没有"容忍差值"这一档，`|d| < 1e-12` 的种子既不记正也不记负；新版把它记成 `n_identical`（60 个种子）。这是第五批补的分辨率刹车，不是抽工具引入的回归——对照脚本把它单独打印出来，不混进"零分歧"。
+**二、每格的非计数输出也做了对照。** 9 个键（`identical`、`abs_pp_mean`／`median`、`sign_stability` 的五个）在 20 格上新旧一致，**`identical` 两版都是 60 个种子**。> **第十批订正**：本节初稿写的是"旧版没有 `identical` 这一档、新版补了 60 个"，**这是错的**。旧版的 `summarize` 一直有这个字段（自己数 `abs(d) < 1e-12`），只是 `seed_sign_stability` 的**返回值**里没有——两者的出处不同而已。第九批的对照脚本在收尾处直接取 `seed_sign_stability(...)["n_identical"]`，于是 `KeyError` 崩掉、根本没跑出 PASS；第十批修成"两版各按自己的判据数"，并把**相等**纳入 PASS/FAIL（注入 off-by-one 后实测 FAIL）。
 
 **三、第二个探针脚本里还有一处硬写的容差。** 第六批把判据抽进 `tools/paired-diff` 时，`bucketing_probe.summarize` 的 `abs(r['abs']) < 1e-12` 与 `real_lengths_policy.arrival_assumption_shift` 的两列同侧判定仍是字面量。⇒ **把 `TOL` 注入成 1e-3 时这两个脚本的读数根本不动**，第六批那条"注入被测红"只覆盖了直接调用共享函数的那一层。现两处都改为 `paired_diff.TOL`，并补 `TestToleranceSourceNotHardcoded` 两条（源码里不再有裸 `1e-12`；模块级 `TOL` 改松后 `summarize` 的 `identical` 跟着变）。
 

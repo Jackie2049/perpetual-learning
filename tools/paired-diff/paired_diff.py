@@ -72,11 +72,17 @@ def sign_counts(diffs, tol=None):
 
 
 def same_sign_fraction(diffs, tol=None):
-    """多数方向的占比。**注意它在 n_identical 很大时会虚高**——见 unresolved()。
+    """多数方向的占比（**全列做分母**，identical 的种子也留在分母里）。
 
-    两臂读数完全相同的种子既不是正也不是负，却留在分母里；30 个种子里 20 个相同、
-    剩下 10 个里 9 正 1 负，这个函数给 0.9，看着像"9 成种子同向"。所以引用它
-    之前必须先看 `n_identical`。
+    这个口径**只会把读数压向 0**：identical 的种子既不算正也不算负，却占着分母。
+    20 个种子里 18 个相同、余下 2 个同向 ⇒ 给 0.1，看着像"方向混杂"，其实是
+    "没分辨率"。真实例：`qwen15b_gsm8k_n8` 积压 2（18 个相同，表态的 2 个全同向，
+    表态口径给 1.0）。
+
+    所以 ssf **不能单独引用**：必须同时报 `resolve_active_fraction()`（有多少种子
+    在表态）与 `same_sign_fraction_active()`（只在表态种子里的占比）。全列 ssf 恒
+    ≤ 表态口径（分母 `n_active ≤ n`、分子相同），两者之差就是"被 identical 压掉的
+    那部分"。三者一起看，"没分辨率"与"方向混杂"才分得开。
     """
     tol = _tol(tol)
     c = sign_counts(diffs, tol)
@@ -84,6 +90,72 @@ def same_sign_fraction(diffs, tol=None):
     if not n:
         return None
     return round(max(c['n_positive'], c['n_negative']) / float(n), 3)
+
+
+def resolve_active_fraction(diffs, tol=None):
+    """有多少比例的种子**真的在表态**（非 identical）。配套 `same_sign_fraction` 用。
+
+    同一个 ssf 可能来自"方向混杂"也可能来自"没分辨率"，两者解读相反。本函数给出
+    `n_active / n`：小于约 0.5 时 ssf 一律不应单独引用（分母里大半种子没表态）。
+    """
+    c = sign_counts(diffs, _tol(tol))
+    n = len(diffs)
+    if not n:
+        return None
+    return round((c['n_positive'] + c['n_negative']) / float(n), 3)
+
+
+def same_sign_fraction_active(diffs, tol=None):
+    """只在**表态的种子**里算多数方向占比；全为 identical 时返回 None。
+
+    `same_sign_fraction` 用全列做分母，本函数用 `n_active` 做分母。因为
+    `n_active ≤ n` 且分子相同，**`active ≥ ssf` 恒成立**（已穷举验证）——两者之差
+    度量"这一格被 identical 吃掉了多少"，不会出现反向修正。归档里仍写全列口径的
+    ssf（既有字段不动），引用时两者一起看。
+    """
+    c = sign_counts(diffs, _tol(tol))
+    active = c['n_positive'] + c['n_negative']
+    if not active:
+        return None
+    return round(max(c['n_positive'], c['n_negative']) / float(active), 3)
+
+
+def sign_regime(diffs, tol=None, min_active=0.5, min_same_active=0.8):
+    """把一格配对差分成四档，**取代"先看 n_identical"这一步**。
+
+    旧的三步把"重复比例高"直接读成"没分辨率"。这只在"表态的种子方向也混杂"时
+    成立；表态种子若方向一致，高重复恰恰说明**方向稳定、只是分辨率薄**。两者对
+    引用的要求不同（都没法主张效应量，但后者不该被写成"方向混杂"或不稳）。
+
+    `min_active`／`min_same_active` 是**判读门槛不是显著性检验**（未做 CI／置换），
+    与 `exceeds_band` 同性质。判词：
+
+      - `no_resolution`：表态占比 < `min_active`，且表态种子内也不一致（< `min_same_active`）。
+        两臂大多相等、表态的少数又各说各话 —— 什么也不能说。
+      - `consistent_but_thin`：表态占比 < `min_active`，但表态种子内一致。
+        方向一致，**分辨率不足**，不能主张效应量，也不能写"方向混杂"。
+      - `mixed`：表态占比够，但表态种子内不同号 —— 真正的方向混杂。
+      - `stable`：表态占比够，且表态种子内一致。
+
+    返回 `regime` 与判读所需的三个数，便于归档与复核时直接引用而不是手读。
+    """
+    c = sign_counts(diffs, _tol(tol))
+    n = len(diffs)
+    n_active = c['n_positive'] + c['n_negative']
+    frac_active = round(n_active / float(n), 3) if n else None
+    frac_same_active = same_sign_fraction_active(diffs, tol)
+    if not n_active:
+        regime = 'no_resolution'
+    elif frac_active < min_active:
+        regime = 'consistent_but_thin' if frac_same_active >= min_same_active else 'no_resolution'
+    else:
+        regime = 'stable' if frac_same_active >= min_same_active else 'mixed'
+    return {
+        'regime': regime,
+        'resolve_active_fraction': frac_active,
+        'same_sign_fraction_active': frac_same_active,
+        'n_identical': c['n_identical'],
+    }
 
 
 def sd_pp(diffs, scale=100.0):
@@ -105,8 +177,14 @@ def summarize_paired(diffs, scale=100.0, tol=None, with_mean=True):
     out = {}
     if with_mean:
         out['mean'] = round(statistics.mean(diffs) * scale, 3) if diffs else None
-    out.update(sign_counts(diffs, tol))
+    c = sign_counts(diffs, tol)
+    out.update(c)
     out['same_sign_fraction'] = same_sign_fraction(diffs, tol)
+    # 与 ssf 配套的三个量：分母里有多少种子在表态、只在表态种子里算的同号占比、
+    # 以及 ssf 被 identical 压低了多少（前者减后者）。
+    out['n_active'] = c['n_positive'] + c['n_negative']
+    out['resolve_active_fraction'] = resolve_active_fraction(diffs, tol)
+    out['same_sign_fraction_active'] = same_sign_fraction_active(diffs, tol)
     out['sd_pp'] = sd_pp(diffs, scale)
     out['min_pp'] = round(min(diffs) * scale, 3) if diffs else None
     out['max_pp'] = round(max(diffs) * scale, 3) if diffs else None
@@ -174,10 +252,14 @@ def rounding_cases():
 def unresolved(diffs, tol=None, identical_floor=0.5):
     """这一格是否根本没有分辨率：`n_identical` 占掉了 `identical_floor` 以上的种子。
 
-    第三条判读下来才知道，`same_sign_fraction` 在低积压档会**结构性虚高**：
-    两臂 `R` 都落在 0 附近，差值在容差内，全部记为 `n_identical`，同号占比看似
-    稳定。§13.30 第五批的原话是"`n_identical` 是分辨率刹车"——这里把刹车变成
-    判定：超过一半种子两臂读数相同，就不该报方向。
+    **注意方向**（2026-11-03 第十批订正）：identical 留在分母里会让
+    `same_sign_fraction` **偏低**，不是"虚高"——分母变大、分子不变，读数只会被
+    往下压（`qwen15b_gsm8k_n8` 积压 2 给了 0.1，而表态的 2 个种子全同向）。原
+    docstring 写的是"结构性虚高"，方向写反了。
+
+    这里把"刹车"变成判定：超过一半种子两臂读数相同，就不该报方向。但**不该报方向
+    不等于"方向混杂"**——那两件事由 `sign_regime()` 分开判（`consistent_but_thin`
+    与 `mixed`）。本函数保留为"有没有分辨率"的布尔问句，档名请用 `sign_regime()`。
     """
     tol = _tol(tol)
     if not diffs:
@@ -299,6 +381,21 @@ def _selftest():
     check('tol scales with the ruler',
           abs(sc['raw']['tol_effective'] - 1e-12) < 1e-24
           and abs(sc['pp']['tol_effective'] - 1e-14) < 1e-26)
+
+    # ⑪ 四档分档（本文件第十批补）：同样的"重复很多"，方向一致与方向混杂必须分开。
+    #    这两格全列 ssf 分别是 0.1 与 0.25，旧的三步都会读成"没分辨率"。
+    thin = sign_regime([0.1] * 2 + [0.0] * 18)
+    check('thin but consistent', thin['regime'] == 'consistent_but_thin'
+          and thin['same_sign_fraction_active'] == 1.0)
+    check('high duplicate + mixed active is no_resolution',
+          sign_regime([0.1] * 5 + [-0.1] * 4 + [0.0] * 11)['regime'] == 'no_resolution')
+    check('high duplicate but enough active stays mixed',
+          sign_regime([0.1] * 7 + [-0.1] * 6 + [0.0] * 7)['regime'] == 'mixed')
+    check('all identical is no_resolution',
+          sign_regime([0.0] * 20)['regime'] == 'no_resolution')
+    check('mixed when active fraction is enough',
+          sign_regime([0.1] * 10 + [-0.1] * 10)['regime'] == 'mixed')
+    check('stable', sign_regime([0.1] * 18 + [-0.1] * 2)['regime'] == 'stable')
 
     if not ok:
         sys.exit(1)

@@ -192,6 +192,15 @@ def policy_sign_stability(groups, n_groups, backlog, policy, seeds=SEEDS, rng_se
         'n_negative': counts['n_negative'],
         'n_identical': counts['n_identical'],
         'same_sign_fraction': paired_diff.same_sign_fraction(diffs),
+        # 与分桶探针同一口径（第十批）：全列 ssf 的分母里混着 identical 种子，
+        # 恒 ≤ 表态口径。两者之差就是"被 identical 压掉的那部分"，不能都把低值
+        # 读成"方向混杂"。
+        'resolve_active_fraction': paired_diff.resolve_active_fraction(diffs),
+        'same_sign_fraction_active': paired_diff.same_sign_fraction_active(diffs),
+        # 四档分档：档名本身进归档，判读不靠手拼上面两个数。`stable` 之外的四档
+        # 都不能主张方向，但含义不同——`consistent_but_thin` 是分辨率不足（表态的
+        # 种子同向），`no_resolution` 是表态种子自己也混杂或没种子表态。
+        'regime': paired_diff.sign_regime(diffs)['regime'],
         'sd_pp': paired_diff.sd_pp(diffs),
         'min_pp': round(100 * min(diffs), 3),
         'max_pp': round(100 * max(diffs), 3),
@@ -212,7 +221,7 @@ def fifo_reorder_band(groups, n_groups, backlog, seeds=SEEDS, trials=12, rng_see
         vals = []
         for t in range(trials):
             sh = list(pick)
-            random.Random(s * 7919 + t).shuffle(sh)
+            random.Random(rng_seed * 100003 + s * 7919 + t).shuffle(sh)
             vals.append(_makespan_by_policy(sh, backlog, POLICY_FIFO)['tax'])
         bands.append(max(vals) - min(vals))
     bands.sort()
@@ -222,6 +231,46 @@ def fifo_reorder_band(groups, n_groups, backlog, seeds=SEEDS, trials=12, rng_see
         'p90_pp': round(100 * bands[int(0.9 * (len(bands) - 1))], 3),
         'max_pp': round(100 * max(bands), 3),
     }
+
+
+def fifo_band_floor(groups, n_groups, backlog, seeds=SEEDS, trials=12, rng_seed=0):
+    """`fifo_reorder_band` 的带宽是不是一个**能用的门槛**（2026-11-04 第十一批）。
+
+    `exceeds_band(|效应|, 带宽)` 在带宽为 0 时对所有非零效应一律通过。而带宽为 0
+    有**两种完全不同**的原因，`fifo_reorder_band` 只报汇总值，看不出是哪一种：
+
+    - 组最大全部贴到 `max_response` ⇒ 16 组的 `max(g)` 相同 ⇒ 组臂与轨迹臂都只受
+      同一条约束、`R` 恒等 0，**打乱顺序也不会变**。这不是"基线稳"，是问不出来。
+    - 其余种子带宽 > 0、只有部分种子为 0 ⇒ 带宽被少数种子撑起，`|效应| > 带宽`
+      只能读成"部分种子看得出"。
+
+    抽样与 `fifo_reorder_band` 逐种子相同（同 rng 种子、同 shuffle 序列），只是不
+    在这里汇总；汇总值请仍取 `fifo_reorder_band`，两处各算一份会漂。
+    """
+    rng = random.Random(rng_seed)
+    n_band_zero = n_r_zero = 0
+    for s in range(len(seeds)):
+        pick = rng.sample(groups, n_groups)
+        vals = []
+        for t in range(trials):
+            sh = list(pick)
+            # 与 `fifo_reorder_band` 必须是同一条 shuffle 种子序列；两处都写
+            # `rng_seed * 100003 + s * 7919 + t`，改一处就一起改。
+            random.Random(rng_seed * 100003 + s * 7919 + t).shuffle(sh)
+            vals.append(_makespan_by_policy(sh, backlog, POLICY_FIFO)['tax'])
+        if max(vals) - min(vals) == 0.0:
+            n_band_zero += 1
+        if max(vals) == 0.0:
+            n_r_zero += 1
+    if n_r_zero == len(seeds):
+        verdict = 'no_reading'
+    elif n_band_zero * 2 > len(seeds):
+        verdict = 'degenerate'
+    else:
+        verdict = 'usable'
+    return {'n_band_zero': n_band_zero,
+            'n_r_identically_zero': n_r_zero,
+            'band_floor': verdict}
 
 
 def arrival_assumption_shift(groups, n_groups, backlog, policy, seeds=SEEDS, rng_seed=0):
@@ -432,6 +481,10 @@ def build_summary():
             st['backlog%d' % b] = {
                 'lof_sign': policy_sign_stability(groups, N_GROUPS_CONSTRUCT, b, POLICY_LOF),
                 'fifo_band': fifo_reorder_band(groups, N_GROUPS_CONSTRUCT, b),
+                # 带宽是不是一个能用的门槛（第十一批）：带宽为 0 时
+                # `exceeds_band` 对所有非零效应一律通过，而这里的 0 可能是
+                # "组最大全部贴顶、R 恒等 0"。既有 `fifo_band` 字段口径不变。
+                'band_floor': fifo_band_floor(groups, N_GROUPS_CONSTRUCT, b),
                 'arrival_shift': arrival_assumption_shift(groups, N_GROUPS_CONSTRUCT, b,
                                                         POLICY_LOF),
             }

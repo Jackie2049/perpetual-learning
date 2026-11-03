@@ -744,12 +744,13 @@ def main():
           % (n_cells, len(cell_issues)))
     for row in cell_issues[:10]:
         print('   ', row)
-    # 这一侧的新旧差别里，只有 identical 是**结构性的**：旧版 `seed_sign_stability`
-    # 没有这个键（第五批才补的分辨率刹车）。同号占比与 sd 必须逐值相同。
+    # `identical` 两版都有，只是**出处不同**：旧版由 `summarize` 自己数
+    # （`abs(d) < 1e-12`），新版调 `paired_diff.sign_counts` 的容差档；旧版
+    # `seed_sign_stability` 内部**没有**这个键（那是它的返回字段，不是 summarize 的）。
+    # 所以这里按各自判据分别数，比的仍然是同一个量：落在容差内的种子数。
     new_ident = sum(new_summarize(rows)['identical'] for _, rows, _ in probe_cells)
-    old_ident = sum(old_sign_counts_bucketing([r['abs'] for r in rows])['n_identical']
-                    for _, rows, _ in probe_cells)
-    print('identical 这一侧：旧版 %d、新版 %d（差值是第五批补的分辨率刹车，不是回归）'
+    old_ident = sum(1 for _, rows, _ in probe_cells for r in rows if abs(r['abs']) < 1e-12)
+    print('identical 这一侧：旧版 %d、新版 %d（两版都有此档，必须相等）'
           % (old_ident, new_ident))
     print('真实负载 fifo_reorder_band（%d 格）：%d 处分歧' % (n_band, len(band_issues)))
     for row in band_issues[:10]:
@@ -760,12 +761,17 @@ def main():
     print('分桶探针里 sd_pp 落在舍入平局上的个数：%d' % len(probe_audit['tie_inputs_found']))
 
     ok = (not real_issues) and (not span_issues) and (not ssf_issues) \
-        and (not probe_issues) and (not cell_issues) and (not band_issues)
+        and (not probe_issues) and (not cell_issues) and (not band_issues) \
+        and old_ident == new_ident
     print()
     print('真实归档列零分歧：%s' % ('是' if not real_issues else '否'))
     print('极差／翻号零分歧：%s' % ('是' if not span_issues else '否'))
     print('same_sign_fraction／sd_pp 零分歧：%s' % ('是' if not ssf_issues else '否'))
     print('分桶探针零分歧：%s' % ('是' if not (probe_issues or cell_issues or band_issues) else '否'))
+    # 两版都有 identical 这一档（出处不同：旧版由 summarize 自己数、新版取容差档），
+    # 所以它必须**相等**并进入 PASS/FAIL——上一版只打印不判定。
+    print('分桶探针 identical 一致：%s（旧版 %d／新版 %d）'
+          % ('是' if old_ident == new_ident else '否', old_ident, new_ident))
     print('盲区命中：%d 个（0 = 既有归档无一落进 |v-ref| < TOL）' % blind_total)
     # 覆盖自查：既有「真实列零分歧」只对**计数**是同一句话——整数步号 40 列
     # 走的是精确等价路径，旧版 `d == 0` 与新版天然同答；真正检验容差的只有

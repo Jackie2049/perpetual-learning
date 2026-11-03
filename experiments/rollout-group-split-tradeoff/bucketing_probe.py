@@ -125,6 +125,12 @@ def seed_sign_stability(rows):
         'n_positive': counts['n_positive'],
         'n_negative': counts['n_negative'],
         'same_sign_fraction': paired_diff.same_sign_fraction(diffs),
+        # 低积压格两臂经常完全相等，全列 ssf 的分母里混着这些种子，读数恒 ≤
+        # 表态口径（2026-11-03 第十批）。这两档把分母分开报，`regime` 把两者
+        # 压成一个可复算的档名——"方向混杂"与"分辨率不足"不能共用一句判词。
+        'resolve_active_fraction': paired_diff.resolve_active_fraction(diffs),
+        'same_sign_fraction_active': paired_diff.same_sign_fraction_active(diffs),
+        'regime': paired_diff.sign_regime(diffs)['regime'],
         # 差值的种子间标准差：与 |均值| 相当就说明符号在种子间不稳
         'sd_pp': paired_diff.sd_pp(diffs),
         'min_pp': round(min(diffs) * 100, 3),

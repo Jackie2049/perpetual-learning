@@ -17,6 +17,7 @@ import paired_diff as pd
 
 pd.sign_counts(diffs)            # {'n_positive', 'n_negative', 'n_identical'}
 pd.same_sign_fraction(diffs)     # 多数方向占比——引用前先看 n_identical
+pd.sign_regime(diffs)            # 四档：stable／mixed／consistent_but_thin／no_resolution
 pd.summarize_paired(diffs, scale=100)   # 上面这些 + sd/min/max
 pd.exceeds_band(effect, band)    # 判读门槛：|效应| > 基线自身抖动？
 pd.unresolved(diffs)             # 这一格是不是根本没分辨率
@@ -29,11 +30,43 @@ pd.sign_flip_around(values, 1.0) # 比率读数是否穿过 1
 判读三步（次序不能换）
 ---
 
-1. **`n_identical` 有没有吃掉大半种子** —— 两臂读数完全相同不是"一致"，是这一格没有分辨率（低积压时 `R` 本来就接近 0，两臂一起落在 0 上）。
+1. **`n_identical` 有没有吃掉大半种子** —— 两臂读数完全相同不是"一致"，是这一格可能没有分辨率（低积压时 `R` 本来就接近 0，两臂一起落在 0 上）。
 2. **`same_sign_fraction`** —— 均值是不是靠少数种子撑起来的。
 3. **`|效应| > 带宽`** —— 效应是否大到无法用基线自身抖动解释。
 
 三步任一不过就只能写"方向未定"。`exceeds_band` 是判读门槛，**不是显著性检验**：它没做 CI 或置换。
+
+### 第 1 步的一处过度概括（2026-11-04 第十批订正）
+
+原来的第 1 步把"重复比例高"直接判成"没分辨率"，且只给"方向未定"一个出口。这不成立：**表态的种子若方向一致，高重复说明的是"方向稳定、分辨率薄"，不是"方向混杂"**——两者都不能主张效应量，但写成同一句话会读错机制。
+
+拆开要靠两个量（`summarize_paired` 已一并给出）：
+
+| 量 | 含义 |
+|---|---|
+| `resolve_active_fraction` | 有多少比例的种子**在表态**（非 identical），即 `n_active / n` |
+| `same_sign_fraction_active` | **只在表态种子**里的多数方向占比；没有种子表态时返回 `None` |
+| `same_sign_fraction`（全列） | 全列做分母，恒 **≤** 表态口径——identical 只会把读数往下压 |
+
+`sign_regime(diffs)` 把两者压成一个档名，已直接写进两份探针归档：
+
+| 档 | 条件 | 能说什么 |
+|---|---|---|
+| `stable` | 表态占比 ≥ 0.5 且表态种子里同号 | 可主张方向（效应量仍要过带宽） |
+| `mixed` | 表态占比 ≥ 0.5 但表态种子里不同号 | 真正的方向混杂 |
+| `consistent_but_thin` | 表态占比 < 0.5 但表态种子里同号 | **分辨率不足**；不是"混杂"，也不是"不稳" |
+| `no_resolution` | 没有种子表态，或表态的自己也混杂 | 什么也不能说 |
+
+门槛 `min_active=0.5`、`min_same_active=0.8` 是**判读门槛不是显著性检验**，与 `exceeds_band` 同性质。
+
+**真实负载上的差别不是修辞**（2026-11-04 第十批，数字取自两份归档，可直接复核）：
+
+- `real-lengths-summary.json`（30 种子，§13.30 第五批那张 16 格表）：带重复（`n_identical ≥ 1`）的是 **8 格**（`stable` 3／`mixed` 2／`consistent_but_thin` 2／`no_resolution` 1），无重复的 8 格是 `stable` 6／`mixed` 2。按旧口径只看全列 ssf，那 8 格会被一律读成"符号混杂"。
+- `bucketing-probe.json`（20 种子，16 个真实格）：`stable` **8**／`mixed` **5**／`consistent_but_thin` **2**／`no_resolution` **1**；带重复的 6 格里表态种子同号的是 3 格。
+
+最典型的是 `qwen15b_cap256` 积压 2（30 个种子里 27 个重复、表态的 3 个**全同向**）与 `qwen05b_cap256` 积压 4（19 个重复、表态的 11 个里 10 正 1 负），它们都属**分辨率不足**而不是"方向混杂"。**结论本身不变**——这些格子要么效应量落在带宽内、要么带宽退化为 0，仍不可引用；变的是**判词**，不能拿它们当"符号不稳"的证据。
+
+**第二个要防的坑**：带宽为 `0.0` 不一定是"基线很稳"。`qwen15b_cap256` 积压 2 的 `fifo_band` 中位／均值／最大全是 0，因为低积压时该格 `R` 本就恒为 0——**噪声为零的带宽不构成门槛**，`|效应| > 0` 在这里没有判读意义。三档诊断（`no_reading`／`degenerate`／`usable`）在 [band_floor.py](../../experiments/rollout-group-split-tradeoff/band_floor.py)，真实档 16 格里 2 格 `no_reading`、1 格 `degenerate`、13 格 `usable`。
 
 两个口径要点
 ---
@@ -98,3 +131,13 @@ pd.sign_flip_around(values, 1.0) # 比率读数是否穿过 1
 **盲区扫描扩到六份归档。** 第七批只核了 `ledger.json`。本批扫 `ledger.json`、`wall-threshold-band.json`、`resolution.json`、`bucketing-probe.json`、`real-lengths-summary.json`、`legacy-group-arm-check.json` 的每一个 float（共 1907 个），对 ref=0 与 ref=1 各查 `0 < |v-ref| < TOL`：**全部 0 命中**。
 
 **旧版实现改为从 git 取。** 第七批把旧版手写实现嵌在对照脚本里，另留了三条 `/tmp/old_*.py` 常量——那三个文件是临时产物，换台机器就不存在。现在 `old_source_at(relpath)` 直接 `git show <TOOL_COMMIT>^:<path>`，核对不再依赖任何人先跑过某个命令。
+
+**带宽为 0 不等于"基线很稳"（2026-11-04 第十一批，落在实验层不在本工具）**
+---
+
+`exceeds_band(|效应|, 0)` 对所有非零效应一律返回 True，所以带宽为 0 的格子最容易被读成"效应显著超出基线抖动"。而 0 有两种成因，判词相反：
+
+- **抽样结构性无读数**：这一格所有种子的基线读数都恰好相同（例如负载被截断压到同一个上限），打乱输入顺序也不会变。这不是"基线稳"，是**这一格问不出来**。
+- **部分种子无读数**：过半种子的基线带宽为 0，有效带宽由剩下的少数种子撑起。
+
+这两个量 `paired_diff` 自己看不见——带宽是调用方算出来的，工具只收到一个数。所以判据留在**产生带宽的那一层**（[`band_floor.py`](../../experiments/rollout-group-split-tradeoff/band_floor.py)，档名 `no_reading`／`degenerate`／`usable` 写进 `real-lengths-summary.json`）。本工具这边要守的是：**调用方传入 `band=0.0` 时必须同时说明这个 0 是哪一种**，否则"效应超出带宽"这句话没有内容。

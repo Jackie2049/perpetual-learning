@@ -175,6 +175,152 @@ class TestSignStabilityDiagnostics(unittest.TestCase):
         # cap1024 4 批是本批符号最稳的一格：换到达序后绝大多数种子仍同号
         self.assertGreaterEqual(sh['n_same_sign'], 8)
 
+    def test_no_resolution_cell_reports_zero_active(self):
+        """两臂恒等时：没有种子在表态，ssf 与 active 档都必须反映这一点。
+
+        第十批：`same_sign_fraction` 保留 identical 在分母（既有字段不动），
+        但配套的 `resolve_active_fraction` 必须为 0、`same_sign_fraction_active`
+        必须为 None——不能因为"全部为 0"就报一个像模像样的同号占比。
+        """
+        st = r.policy_sign_stability(self._flat_groups(), 16, 4, m.POLICY_LOF, seeds=SEEDS)
+        self.assertEqual(st['resolve_active_fraction'], 0.0)
+        self.assertIsNone(st['same_sign_fraction_active'])
+        # 负向对照：若把 active 档写成复用全列 ssf，下面这条会变成 0.0 而失败
+        self.assertNotEqual(st['same_sign_fraction_active'], st['same_sign_fraction'])
+
+    def test_low_backlog_cell_active_fraction_exceeds_ssf(self):
+        """低积压格：identical 吃掉大半种子，active 档必须高于全列 ssf。
+
+        1.5B cap256 积压 2 是 18/20 个种子两臂相等的一格；全列 ssf 只有 0.1，
+        看上去像"方向混杂"，而表态的种子里其实是同向的。两档必须分开。
+        """
+        groups = r.load_real_groups(os.path.join(r.REAL_DIR, 'qwen15b_gsm8k_n8.jsonl.gz'))
+        st = r.policy_sign_stability(groups, 16, 2, m.POLICY_LOF, seeds=SEEDS)
+        self.assertGreaterEqual(st['n_identical'], 15)
+        self.assertLessEqual(st['resolve_active_fraction'], 0.25)
+        self.assertGreater(st['same_sign_fraction_active'],
+                           st['same_sign_fraction'])
+        # 第十批：这一格的档名必须是 `consistent_but_thin` 而不是 `no_resolution`。
+        # 两者的判词不同——前者说"方向一致但没分辨率"，后者说"什么也不能说"；
+        # 旧的三步把两者并成一句"符号混杂"。把分档写成按全列 ssf 判断时这条会红
+        # （全列 ssf=0.1 且表态占比 0.25，两种错误实现都会给 no_resolution 或 mixed）。
+        self.assertEqual(st['regime'], 'consistent_but_thin')
+
+    def test_regime_is_not_derived_from_full_denominator_ssf(self):
+        """负向对照：档名不能由图省事的全列 ssf 决定。
+
+        这一格表态的种子 3 个全同向、27 个重复 ⇒ 全列 ssf=0.1（看着像混杂），
+        `same_sign_fraction_active`=1.0。若 `sign_regime` 退化成只看全列 ssf，
+        档名会落到 `mixed`/`no_resolution`，本断言即失败。
+        """
+        st = r.policy_sign_stability(self._flat_groups(), 16, 4, m.POLICY_LOF, seeds=SEEDS)
+        self.assertEqual(st['regime'], 'no_resolution')
+
+
+class TestBandFloor(unittest.TestCase):
+    """带宽为 0 是不是"基线很稳"（第十一批，2026-11-04）。
+
+    `exceeds_band(|效应|, 0)` 对所有非零效应一律通过，所以带宽为 0 的格子最容易被
+    读成"效应显著超出基线抖动"。而这里的 0 有两种成因，判词完全不同：
+
+      - 组最大全部贴 `max_response` ⇒ `R` 恒等 0，**打乱顺序也不变** ⇒ `no_reading`；
+      - 只有部分种子为 0 ⇒ 带宽由少数种子撑起 ⇒ `degenerate`。
+
+    两条负向对照都落在"把分档实现改坏"的那根线上：把 `no_reading` 并进 `usable`、
+    或把 `degenerate` 并进 `usable`，对应断言即红。
+    """
+
+    @staticmethod
+    def _pinned_groups(n_groups=16, n_per=8):
+        """16 组的组最大全部相等 ⇒ 任何顺序下组臂与轨迹臂都只受同一条约束。
+
+        这就是 cap256 档的形态：86%／94% 的组最大恰好等于 256，于是抽 16 组时
+        组最大全等的概率约 0.09／0.38——整格 `R ≡ 0` 不是"很稳"，是问不出来。
+        """
+        lens = [100.0, 103.0, 107.0, 111.0, 115.0, 120.0, 126.0, 133.0]
+        return [[x for x in lens[:n_per]] for _ in range(n_groups)]
+
+    def test_pinned_groups_are_no_reading(self):
+        """负向对照：撤掉 `no_reading` 档（并进 `usable`），这条即红。"""
+        floor = r.fifo_band_floor(self._pinned_groups(), 16, 4, seeds=SEEDS)
+        self.assertEqual(floor['n_r_identically_zero'], len(SEEDS))
+        self.assertEqual(floor['band_floor'], 'no_reading')
+
+    def test_mixed_pinned_and_ladder_scores_degenerate(self):
+        """14 组贴顶 + 2 组组最大略低 ⇒ 只有抽到那一组的种子带宽为 0。
+
+        这就是 `qwen05b_cap256` 积压 4 的形态：22/30 个种子带宽为 0、8 个不为 0。
+        负向对照：把 `degenerate` 并进 `usable`，这条即红。
+        """
+        pinned = [[250.0, 252.0, 254.0, 256.0, 256.0, 256.0, 256.0, 256.0]] * 14
+        lower = [[150.0, 170.0, 190.0, 210.0, 230.0, 236.0, 243.0, 251.0]] * 2
+        floor = r.fifo_band_floor(pinned + lower, 16, 4, seeds=SEEDS)
+        self.assertGreater(floor['n_band_zero'], 0)
+        self.assertLess(floor['n_r_identically_zero'], len(SEEDS))
+        self.assertEqual(floor['band_floor'], 'degenerate')
+
+    def test_uniform_groups_inside_are_not_enough(self):
+        """组内每条都相同也不产生税：`R` 需要组**内部**有极差，不是组间有差。
+
+        `[[100]*8, [200]*8, ...]` 四个组两两不同，税却是 0——组臂按整组放时
+        每条同时完成、轨迹臂也一完成就还格子，两者 makespan 相同。所以构造
+        "带宽退化"的输入必须让组内长短不一，否则连 `usable` 都谈不上。
+        """
+        uniform = [[100.0 * (i + 1)] * 8 for i in range(16)]
+        floor = r.fifo_band_floor(uniform, 16, 4, seeds=SEEDS)
+        self.assertEqual(floor['n_r_identically_zero'], len(SEEDS))
+        self.assertEqual(floor['band_floor'], 'no_reading')
+
+    def test_constructed_load_is_usable(self):
+        """构造档（组最大 100–400 均匀）带宽不为 0：分档不能把所有格子都报成退化。"""
+        groups = m.sample_group_lens(random.Random(0), n_groups=16, n_per=8, cv=0.6)
+        floor = r.fifo_band_floor(groups, 16, 4, seeds=SEEDS)
+        self.assertEqual(floor['n_band_zero'], 0)
+        self.assertEqual(floor['band_floor'], 'usable')
+
+    def test_real_cap256_low_backlog_is_no_reading(self):
+        """实测格（归档里的形态）：cap256 积压 2 → `no_reading`；cap256 积压 4 → `degenerate`。
+
+        这两格正是先前"带宽为 0／过半为 0"的那两个，判词不同：
+        积压 2 整格问不出来，积压 4 仍有 8 个种子给出非零带宽。
+        """
+        groups = r.load_real_groups(os.path.join(r.REAL_DIR, 'qwen05b_gsm8k_n8.jsonl.gz'))
+        low = r.fifo_band_floor(groups, 16, 2, seeds=SEEDS)
+        self.assertEqual(low['band_floor'], 'no_reading')
+        mid = r.fifo_band_floor(groups, 16, 4, seeds=SEEDS)
+        self.assertEqual(mid['band_floor'], 'degenerate')
+
+    def test_exactly_half_zero_band_is_still_usable(self):
+        """**边界本身**：恰好一半种子带宽为 0 时判 `usable`，不是 `degenerate`。
+
+        第十一批 readme 自记的缺口——此前的构造全是"严格过半"或"全部"，把边界
+        从 `>` 改成 `>=` 时 5 条测试全绿。这里用实测搜到的输入钉住边界：40 组里
+        33 组贴顶，30 个抽样种子中恰好 15 个抽到全贴顶的 16 组（另 15 个抽到梯子组）。
+
+        「过半」在这里是**严格多于一半**的意思：一半为 0 说明还有一半种子在表态，
+        带宽仍有含量。改判据（`>` → `>=`）时这条会红。
+        """
+        pinned = [[250.0, 252.0, 254.0, 256.0, 256.0, 256.0, 256.0, 256.0]]
+        ladder = [[50.0, 100.0, 150.0, 200.0, 230.0, 240.0, 250.0, 255.0]]
+        groups = pinned * 33 + ladder * 7
+        floor = r.fifo_band_floor(groups, 16, 4, seeds=SEEDS)
+        self.assertEqual(floor['n_band_zero'], len(SEEDS) // 2)
+        self.assertLess(floor['n_r_identically_zero'], len(SEEDS))
+        self.assertEqual(floor['band_floor'], 'usable')
+
+    def test_one_more_zero_band_flips_to_degenerate(self):
+        """边界另一侧：把同一个输入多推一组贴顶，带宽为 0 的种子过半 ⇒ `degenerate`。
+
+        与上一条成对——只测一侧的话，"`>` 恒真"或"`>` 恒假"都只会有一种失败。
+        """
+        pinned = [[250.0, 252.0, 254.0, 256.0, 256.0, 256.0, 256.0, 256.0]]
+        ladder = [[50.0, 100.0, 150.0, 200.0, 230.0, 240.0, 250.0, 255.0]]
+        groups = pinned * 34 + ladder * 6
+        floor = r.fifo_band_floor(groups, 16, 4, seeds=SEEDS)
+        self.assertGreater(floor['n_band_zero'], len(SEEDS) // 2)
+        self.assertLess(floor['n_r_identically_zero'], len(SEEDS))
+        self.assertEqual(floor['band_floor'], 'degenerate')
+
 
 if __name__ == '__main__':
     unittest.main()
