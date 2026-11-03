@@ -1,0 +1,58 @@
+{
+ "capacity": {
+  "K1": {
+   "b2_share": 0.0,
+   "b5_share": 0.0,
+   "comp_share": 1.0
+  },
+  "K2": {
+   "b2_share": 0.0,
+   "b5_share": 0.0,
+   "comp_share": 1.0
+  },
+  "K4": {
+   "b2_share": 0.0,
+   "b5_share": 0.0,
+   "comp_share": 1.0
+  },
+  "K8": {
+   "b2_share": 0.0,
+   "b5_share": 0.0,
+   "comp_share": 1.0
+  }
+ },
+ "config": {
+  "seeds": 30
+ },
+ "partition_check": {
+  "covers_completely": true,
+  "max_deviation_from_1": 0.0
+ },
+ "speed_ratio": {
+  "rate0.3": {
+   "b2_share": 0.0,
+   "b5_share": 0.0,
+   "comp_share": 1.0
+  },
+  "rate0.5": {
+   "b2_share": 0.0,
+   "b5_share": 0.0,
+   "comp_share": 1.0
+  },
+  "rate1.0": {
+   "b2_share": 0.0,
+   "b5_share": 0.0,
+   "comp_share": 1.0
+  },
+  "rate2.0": {
+   "b2_share": 0.0,
+   "b5_share": 0.0,
+   "comp_share": 1.0
+  },
+  "rate4.0": {
+   "b2_share": 0.0,
+   "b5_share": 0.0,
+   "comp_share": 1.0
+  }
+ }
+}

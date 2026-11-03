@@ -326,22 +326,40 @@ CONSTRUCT_R = {'backlog4': 0.340, 'backlog16': 0.424}
 
 
 def _load_source_check():
-    """检查真实负载的 R 值，并确认 §11.5 明确标注了负载来源与截断。"""
+    """检查真实负载的 R 值，并确认 §11.5 明确标注了负载来源与截断。
+
+    2026-11-03 订正：这里原本读 `arm['intra_group_cv']`，而归档从来没有这个键
+    （真正的键是 `structure['cv_within_pooled']`），于是 `cv` 恒为 None、这一段
+    判据从未生效——检查在报 OK，但它那半条什么也没核。
+    """
     bad = []
     if not (ROOT / REAL_LEN).exists():
         return bad
     d = json.loads((ROOT / REAL_LEN).read_text(encoding='utf-8'))
-    sh = d.get('policy_shift_on_real', {})
-    if 'qwen15b_cap256' in sh:
-        for bl in ('backlog4', 'backlog16'):
-            if bl not in sh['qwen15b_cap256']:
-                continue
-        # 只核关键事实：真实 cap256 的 R 显著低于构造档
-        arm = d.get('real_arms', {}).get('qwen15b_cap256', {})
-        cv = arm.get('intra_group_cv')
-        if cv is not None and cv > 0.25:
-            bad.append({'what': 'qwen15b_cap256 组内 cv 应显著低于构造档 0.60',
-                        'got': cv})
+    arm = d.get('real_arms', {}).get('qwen15b_cap256', {})
+    cv = arm.get('structure', {}).get('cv_within_pooled')
+    if cv is None:
+        bad.append({'what': '真实主档缺少组内 cv（cv_within_pooled）', 'got': '键不存在'})
+    elif not cv < 0.4:
+        bad.append({'what': 'qwen15b_cap256 组内 cv 应显著低于构造档 0.60',
+                    'got': round(cv, 4)})
+    # 真实档的 R 必须显著低于构造档，否则"真实负载只有构造档约三分之一"这句话失去依据
+    sub = arm.get('n16_resampled', {})
+    for bl, want in CONSTRUCT_R.items():
+        got = (sub.get(bl) or {}).get('fifo', {}).get('mean')
+        if got is None:
+            bad.append({'what': f'真实主档缺少 {bl} 的 FIFO 均值', 'got': '键不存在'})
+        elif not got < want / 2:
+            bad.append({'what': f'{bl} 真实档 R 应低于构造档的一半', 'got': round(got, 4)})
+    # 截断率必须按本档 max_response 判定，不能四档同一对值
+    for label, a in d.get('real_arms', {}).items():
+        st = a.get('structure', {})
+        cap = st.get('max_response')
+        if cap is None:
+            bad.append({'what': f'{label} 缺少 max_response', 'got': '键不存在'})
+        elif label.endswith('cap1024') and st.get('truncated_fraction', 1.0) > 0.05:
+            bad.append({'what': f'{label} 截断率应按 1024 上限判定', 'got': round(
+                st['truncated_fraction'], 4)})
     # 文档必须写明"负载来源"这条约束
     #
     # ⚠ 这一项**比其他检查弱得多**：它只核"那句约束还在不在"，不核
@@ -417,6 +435,35 @@ def selftest():
     print(f"  {'OK  ' if caught_model else 'FAIL'}  2+2 实测时间比 {ms_2p2:.3f} vs 错误的模型值 1.000"
           f"  -> {'可被区分' if caught_model else '无法区分（检查无效）'}")
     all_ok &= caught_model
+
+    # 负向对照六：负载来源检查必须真能报问题。2026-11-03 之前它读了一个不存在的键，
+    # 于是永远 OK——这里用一份"cap1024 被按 256 判截断、且主档 cv 键缺失"的假归档，
+    # 检查必须同时抓出这两点。
+    global REAL_LEN
+    real_backup = REAL_LEN
+    try:
+        fake_dir = pathlib.Path(tempfile.mkdtemp())
+        fake_judge = {
+            'real_arms': {
+                'qwen15b_cap256': {'structure': {'cv_within_pooled': None,
+                                                 'max_response': 256.0,
+                                                 'truncated_fraction': 0.4529},
+                                   'n16_resampled': {}},
+                'qwen15b_cap1024': {'structure': {'truncated_fraction': 0.4523}},
+            }
+        }
+        rel = pathlib.Path('tools/anchors/.fake-real-len.json')
+        (ROOT / rel).write_text(json.dumps(fake_judge), encoding='utf-8')
+        REAL_LEN = str(rel)
+        caught_source = len(_load_source_check()) >= 3
+    finally:
+        REAL_LEN = real_backup
+        for p in (ROOT / 'tools/anchors/.fake-real-len.json',):
+            if p.exists():
+                p.unlink()
+    print(f"  {'OK  ' if caught_source else 'FAIL'}  负载来源检查对坏归档"
+          f"  -> {'会报出（缺 cv、R 未显著更低、cap1024 截断率超限）' if caught_source else '抓不到（检查无效）'}")
+    all_ok &= caught_source
 
     print()
     return 0 if all_ok else 1

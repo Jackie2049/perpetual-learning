@@ -277,7 +277,7 @@
    }
   }
  },
- "reading": "待读数落笔后回填（见 build 后人工核对）。",
+ "reading": "§13.30 第四批读数：① 真实档 R 小于构造档——1.5B cap256 4 批 2.7%／16 批 11.4%，构造档同口径 34.0%／42.4%；cap1024 两档 21.8–23.9%／29.5–33.4%（截断率 0.03%／0.65%，cap256 为 45.3%／60.8%）。② LOF−FIFO 在低 cv 深积压上反号：1.5B cap256 16 批 −0.95pp（27/30 为负）、0.5B −0.39pp（18/30），4 批两档仍为正（+1.99pp／+0.44pp）。③ 符号由组内离散度决定、不由 ICC 决定：cv 扫描 4 批 −2.77pp（cv0.10）→+6.07pp（cv1.00），翻转点在 cv 0.25–0.40；ICC 扫描（cv 固定 0.6）符号恒正。④ 两臂收益要逐档读：1.5B 4 批组臂 −0.45%／轨迹臂 −2.5%，16 批组臂 −1.60%／轨迹臂 −0.55%——积压加深后受益方换人。",
  "real_arms": {
   "qwen05b_cap1024": {
    "full_batch": {
@@ -357,9 +357,10 @@
     "grand_mean": 323.1927083333333,
     "groups_with_ties_fraction": 0.0875,
     "icc1": 0.46912062524246123,
+    "max_response": 1024.0,
     "n_groups": 480,
     "n_per_group": 8,
-    "truncated_fraction": 0.6072916666666667
+    "truncated_fraction": 0.006510416666666667
    }
   },
   "qwen05b_cap256": {
@@ -440,6 +441,7 @@
     "grand_mean": 232.0484375,
     "groups_with_ties_fraction": 0.8895833333333333,
     "icc1": 0.44276264764335677,
+    "max_response": 256.0,
     "n_groups": 480,
     "n_per_group": 8,
     "truncated_fraction": 0.6078125
@@ -523,9 +525,10 @@
     "grand_mean": 267.50026041666666,
     "groups_with_ties_fraction": 0.13333333333333333,
     "icc1": 0.5812846852268067,
+    "max_response": 1024.0,
     "n_groups": 480,
     "n_per_group": 8,
-    "truncated_fraction": 0.45234375
+    "truncated_fraction": 0.00026041666666666666
    }
   },
   "qwen15b_cap256": {
@@ -606,6 +609,7 @@
     "grand_mean": 217.07057291666666,
     "groups_with_ties_fraction": 0.7770833333333333,
     "icc1": 0.5185594885345456,
+    "max_response": 256.0,
     "n_groups": 480,
     "n_per_group": 8,
     "truncated_fraction": 0.45286458333333335

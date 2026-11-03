@@ -2,14 +2,15 @@
  "experiment": "§15 Q5 拆 GRPO 组的代价与收益（L1 统计 / L2 分组税 / L2b 调度策略 / L3 判据 / L4 训练侧同栈均衡）",
  "doc": "notebook/rollout-performance-research.md §13.30（并补 §15 Q5 与 §11.2 条目 7）",
  "execution": {
-  "python": "3.9.6（macOS arm64，仅标准库）；第四批用时 约 11 min",
+  "python": "3.9.6（macOS arm64，仅标准库）；第四批用时 约 30 min",
   "commands": [
    "python3 group_split_tradeoff.py                  # 约 40 s，覆盖 summary.json",
    "python3 group_split_tradeoff.py --verify         # 通过：逐字段相同",
    "python3 -m unittest test_group_split_tradeoff -v # 30 passed",
-   "python3 real_lengths_policy.py                  # 第四批：约 11 min（30 种子 × 4 档 × ICC/并列/离散度三组对照）",
+   "python3 real_lengths_policy.py                  # 第四批：约 30 min（30 种子 × 4 档 × ICC/并列/离散度三组对照）",
    "python3 real_lengths_policy.py --verify         # 通过：逐字段相同",
-   "python3 -m unittest test_real_lengths_policy -v # 6 passed"
+   "python3 -m unittest test_real_lengths_policy -v # 10 passed",
+   "python3 -m pytest test_real_lengths_policy.py test_group_split_tradeoff.py -q  # 40 passed（含截断上限 4 条）"
   ],
   "source_anchors": [
    "verl 24f25b03 verl/trainer/ppo/core_algos.py:306-321（GRPO 逐 prompt index 减均值除标准差）",
@@ -118,9 +119,9 @@
    "qwen05b_gsm8k_n8_cap1024.jsonl.gz": "857934b7642e924bdb27ed0b3041757bbaadcca179aa59d4673dff499845223d"
   },
   "script_sha256": {
-   "real_lengths_policy.py": "55724ed9f0491b56432bb444df6fa3bb59032a7a2e3e7f0d6d811162cb016ea1",
-   "test_real_lengths_policy.py": "95c83c4350ab968ed1580d3869ad130c2eca43d9840ff17a87d2d4bdc811d263",
-   "real-lengths-summary.json": "5423ce17289bcc57a8e870304dce5d56d4b7e8411416b26cfb4a408537122986"
+   "real_lengths_policy.py": "42c0807007ab9779243a7e10afe4c2bad654ec8b967c1e9ad1e694ea796f0865",
+   "test_real_lengths_policy.py": "fe918006413977056392b1d95ad63f9d9d6ddb7f53d7e7834e856ac770ffb73a",
+   "real-lengths-summary.json": "939cf679ff9224516c88fe6cffc73a689894e7ff6dac7833cec7a2482a52da30"
   },
   "calibration": "构造档复现第三批：FIFO 0.3402 / LOF 0.3677（正文 34.0% / 36.8%）",
   "identifiability": {
@@ -130,7 +131,16 @@
   "notes": [
    "真实档 16 批积压是合成负载：30 个种子无放回抽 16 组当一批、再复制 16 批。",
    "第四批只换负载来源，排程器与前三批完全相同。",
-   "R 仍是上界（无 KV 搬运、无跨批版本一致性）。"
+   "R 仍是上界（无 KV 搬运、无跨批版本一致性）。",
+   "2026-11-03 订正：describe() 曾把 max_response 写死 256，cap1024 两档被读成与 cap256 同一对截断率；现按本档上限判定并新增 max_response 字段，TestTruncationUsesArmCap 两条守住。R 与移位读数不变（truncated_fraction 是描述性字段，不进排程）。此时 summary 的 sha256 为 939cf679（与上面 script_sha256 记录一致）。…"
   ]
- }
+ },
+ "corrections": [
+  {
+   "date": "2026-11-03",
+   "what": "describe() 截断上限写死 256，cap1024 两档被读成 cap256 的截断率",
+   "fix": "按本档 max_response 判定（arm_cap），归档新增 max_response 字段",
+   "impact": "仅 truncated/描述性字段变化 6 个；R 与位移读数逐位不变"
+  }
+ ]
 }

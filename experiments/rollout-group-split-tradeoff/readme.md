@@ -295,10 +295,20 @@ cv 回到 0.30–0.36，税回到 22–33%，仍低于构造档。
 ③ `lof_flat`（两臂各自按长度排，不可实现）在真实档仍显著为正（4 批 +10.7pp、16 批 +3.05pp，
 **逐种子 30/30 全正**）⇒ 反号不是度量为零。
 
+### 截断口径（2026-11-03 订正）
+
+`describe()` 初版把截断上限写死 `256.0`，四个臂因此被读成**同一对**截断率：cap1024 两档
+报 45.2%／60.7%，而 §13.50 实测是 **0.03%／0.65%**（那两个数其实是 cap256 两档的）。
+已改为 `describe(groups, cap=arm_cap(label))` 并按档名路由，归档新增 `max_response` 字段。
+**重跑只有 6 个字段变化（两处 `truncated_fraction`＋四个 `max_response`），所有 `R` 与
+位移读数逐位不变**——`truncated_fraction` 是描述性字段，不进任何排程。
+
 ### 本批新增文件
 
 `real_lengths_policy.py`（读数脚本，`--verify` exit 0）、`real-lengths-summary.json`（归档）、
-`test_real_lengths_policy.py`（6 个单测，含"高 cv 抬税／低 cv 降税"两条负向对照）。
+`test_real_lengths_policy.py`（10 个单测：6 个主读数／负向对照 ＋ 4 个截断上限，后者含一条
+**接线 spy**——用 spy 截获 `describe()` 实际收到的 `cap`，确认 `build_summary()` 四档分别传入
+256／1024）。
 
 ## 复现
 
@@ -307,9 +317,9 @@ python3 group_split_tradeoff.py             # 约 40 s，覆盖 summary.json
 python3 group_split_tradeoff.py --verify    # 重跑并与归档逐字段比对
 python3 -m unittest test_group_split_tradeoff -v   # 30 个测试
 
-python3 real_lengths_policy.py              # 第四批：约 11 min（30 种子 × 4 档 × 多组对照）
+python3 real_lengths_policy.py              # 第四批：约 30 min（30 种子 × 4 档 × 多组对照）
 python3 real_lengths_policy.py --verify     # 与 real-lengths-summary.json 逐字段比对
-python3 -m unittest test_real_lengths_policy -v    # 6 个测试
+python3 -m unittest test_real_lengths_policy -v    # 10 个测试
 ```
 
 执行条件与产物 sha256 见 [run-info.json](run-info.json)。

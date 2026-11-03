@@ -58,6 +58,11 @@ REAL_ARMS = (
 )
 
 
+def arm_cap(label):
+    """该档的 max_response：截断率必须按它判定，不能一律用 256。"""
+    return 1024.0 if 'cap1024' in label else 256.0
+
+
 def _sample_icc_group_lens(rng, icc, n_groups=16, n_per=8, cv=0.6, mean_len=50.0):
     """组内长度 = 组均值 + 组内抖动，组间/组内方差按目标 ICC 配比。
 
@@ -107,8 +112,12 @@ def load_real_groups(path):
     return [groups[k] for k in sorted(groups)]
 
 
-def describe(groups):
-    """负载结构描述：与 §13.50 同口径（组间/组内方差、ICC），便于与那批读数对齐。"""
+def describe(groups, cap=256.0):
+    """负载结构描述：与 §13.50 同口径（组间/组内方差、ICC1），便于与那批读数对齐。
+
+    cap 是该档的 max_response。截断按"撞到本档上限"判定——写死 256 会把 cap1024 档
+    读成 60%／45% 截断，而它其实几乎不截断（0.65%／0.03%）。
+    """
     flat_per_group = [statistics.mean(g) for g in groups]
     grand = statistics.mean(flat_per_group)
     var_between = statistics.pvariance(flat_per_group)
@@ -124,7 +133,8 @@ def describe(groups):
         'cv_between': statistics.pstdev(flat_per_group) / grand if grand else 0.0,
         'cv_within_pooled': (var_within ** 0.5) / grand if grand else 0.0,
         'icc1': icc,
-        'truncated_fraction': sum(1 for g in groups for v in g if v >= 256.0) / float(
+        'max_response': cap,
+        'truncated_fraction': sum(1 for g in groups for v in g if v >= cap) / float(
             sum(len(g) for g in groups)),
         'groups_with_ties_fraction': ties,
     }
@@ -175,6 +185,19 @@ def paired_policy_delta(groups, n_groups, backlog, policy, seeds=SEEDS):
         'n_positive': sum(1 for d in deltas if d > 0),
         'n_total': len(deltas),
     }
+
+
+def build_real_arm_structure():
+    """四个真实档的负载结构（只读 jsonl 并描述，不排程）。
+
+    单独成函数是为了能被测试直接调用：截断率按本档上限判定的接线要能用
+    便宜的方式核，而不是靠跑完整 build（约半小时）。
+    """
+    out = {}
+    for label, fname in REAL_ARMS:
+        groups = load_real_groups(os.path.join(REAL_DIR, fname))
+        out[label] = describe(groups, cap=arm_cap(label))
+    return out
 
 
 def build_summary():
@@ -284,10 +307,11 @@ def build_summary():
         out['tie_controlled']['res%.0f' % res] = row
 
     # ---- 臂 B：真实长度 ----
+    structure = build_real_arm_structure()
     for label, fname in REAL_ARMS:
         path = os.path.join(REAL_DIR, fname)
         groups = load_real_groups(path)
-        desc = describe(groups)
+        desc = structure[label]
         # 全量：把 480 组当作一批，直接排程
         full = tax_table(groups)
         # 同组数（16 组）重抽，与构造档可比
@@ -342,7 +366,14 @@ def build_summary():
             out['policy_shift_on_real'][label] = shift
 
     out['reading'] = (
-        '待读数落笔后回填（见 build 后人工核对）。')
+        '§13.30 第四批读数：① 真实档 R 小于构造档——1.5B cap256 4 批 2.7%／16 批 11.4%，'
+        '构造档同口径 34.0%／42.4%；cap1024 两档 21.8–23.9%／29.5–33.4%（截断率 0.03%／0.65%，'
+        'cap256 为 45.3%／60.8%）。② LOF−FIFO 在低 cv 深积压上反号：1.5B cap256 16 批 '
+        '−0.95pp（27/30 为负）、0.5B −0.39pp（18/30），4 批两档仍为正（+1.99pp／+0.44pp）。'
+        '③ 符号由组内离散度决定、不由 ICC 决定：cv 扫描 4 批 −2.77pp（cv0.10）→'
+        '+6.07pp（cv1.00），翻转点在 cv 0.25–0.40；ICC 扫描（cv 固定 0.6）符号恒正。'
+        '④ 两臂收益要逐档读：1.5B 4 批组臂 −0.45%／轨迹臂 −2.5%，16 批组臂 −1.60%／'
+        '轨迹臂 −0.55%——积压加深后受益方换人。')
     return out
 
 
