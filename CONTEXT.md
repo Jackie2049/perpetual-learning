@@ -32,7 +32,7 @@
 
 **一处操作事故（已恢复）**：为回退自己的一次失败重构用了 `git checkout -- .`，**连带回退了未提交的改动**（cap 修正与测试）。核后确认并行会话的提交都在、文档修正也已被其提交采纳，丢失内容已全部重做。**下次只按路径回退：`git checkout -- <file>`，不用 `.`。**
 
-**核对产物**：`real_lengths_policy.py --verify` exit 0；两个测试文件 **40 passed**；`verify_anchors.py --verify` **34 一致／0 不一致 exit 0**，`--selftest` **6 组全过 exit 0**。
+**核对产物**：`real_lengths_policy.py --verify` exit 0；两个测试文件 **43 passed**；`verify_anchors.py --verify` **34 一致／0 不一致 exit 0**，`--selftest` **6 组全过 exit 0**。
 
 入口：[§13.30 第四批](notebook/rollout-performance-research.md) · [real_lengths_policy.py](experiments/rollout-group-split-tradeoff/real_lengths_policy.py) · [test_real_lengths_policy.py](experiments/rollout-group-split-tradeoff/test_real_lengths_policy.py) · [verify_anchors.py](tools/anchors/verify_anchors.py) · [diary](diary/2026-11-03.md) · [TS-001](queue_tech-secretary.md)。只读复算、未跑 GPU、未改任何测量值。对外动作全部未做。
 
