@@ -303,6 +303,21 @@ p3 的步成本 = `max(生成, 更新)`（同一模型），符号上可分解�
 - **比率读数的翻号参考点是 1，不是 0。** 把 `steps_ratio` 交给对零的 `sign_flip` 会一律返回 False，直接把 p3 `A` 的翻号读丢（0.978 → 1.005 明明翻了）。由 `test_only_p3_A_flips_sign` 拦下——这一条是**现有测试**抓到的，不是新补的。
 - **`def f(tol=TOL)` 把值绑进默认参数**，改 `TOL` 不生效、也无法从外部收紧容差。改成调用时解析后才发现更早的问题：**注入 `TOL=1e-3` 时 113 个测试全绿**，因为既有测试的配对差一律取 0 或明显非零，从没造出"小于 1e-3 但大于 1e-12"的差值。补 `TestSharedTolerance` 三条边界测试后该注入才被测红。
 
+## 第七批：抽出来的实现到底是不是原来那份（2026-11-03 M1）
+
+第六批的验收线是"五份归档 `--verify` 逐字段不变"。这条线回答的是**改接没改变已发布读数**，**回答不了**"共享实现与原先手写的那份是同一个判据"——如果某个脚本在容差边界上本来就会与旧版分岔，而既有数据恰好没落进那条缝，归档比对看不出来。本批补两件事，都不改任何测量值。
+
+**一、两版实现逐值对照**（[compare_old_new_impl.py](compare_old_new_impl.py)）。同一列输入分别喂旧版手写实现与 `tools/paired-diff`，输入分三类：源 summary **逐种子重算的真实列**（96 列／2480 个差值，含 **332 个 identical 种子**）、边界合成列（恰等于容差／容差内／整数步号／全零／单点／空列）、210 组随机列；极差与翻号另做 200 组逐值。**全部零分歧**。对照自身做过注入（正号计数偏 +1 → FAIL，清除后 PASS）。
+
+**二、跨脚本一致性测试**（[test_cross_script_consistency.py](test_cross_script_consistency.py)，13 条）。钉住三件事：同一列差在各调用点给的计数逐字段相同；比率必须平移后再交给 `sign_counts`；整数步号的 `d == 0` 与浮点比率的 `|d| <= TOL` 等价但不可共用键名。本文件合计 **72**（`test_ledger` 37 + `test_resolution` 17 + `test_wall_threshold_band` 5 + 本文件 13），两文件 **134 passed**。
+
+**本批抓到两处，都是 `compare_old_new_impl.py` 自己的错，值得记**：
+
+1. **第一版从归档反解真实列，读出"0 列、PASS"。** `wall-threshold-band.json` 与 `ledger.json` 只保留**计数与汇总量**，没有逐种子差值元组，反解不出输入列。**一个没扫到东西的 PASS 什么也没证明**——已加"真实列不足 40 即 FAIL"的覆盖下限，并改成从 `wall_threshold_band.load()` 读的那两份源 summary 逐种子重算。
+2. **p3 的基线是 `R_nofilter`，不是第一个条目。** 第一版拿 `R` 当基线，等于 `R` 自己和自己比，五个阈值全部读出 `30/30 identical`——看着像"p3 全无分辨率"的强结论，其实是配错基线。对照 `ledger.py:259` 之后才修好。
+
+**跨脚本的三条已知差异（不是 bug，但键名不能混用）**：距 1 不到 `TOL` 的比率会在重新定基时被吞掉（`1.0+1e-13` 减出来 9.99e-14），记成 identical；既有归档 353 个比率无一落进这条盲区（3 个恰为 1.0，都正确记为 identical）。整数步号与非整数差值的边界口径不同（`5e-13` 步在步号口径记非并列、在比率口径记相同）。
+
 ## 复现
 
 ```bash
@@ -321,6 +336,9 @@ python3 threshold_near.py                          # 第五批：小扰动下两
 python3 wall_threshold_band.py                     # 第六批：wall_ratio 的阈值拆解
 python3 wall_threshold_band.py --verify            # 通过：8 对参考阈值逐位复现 ledger.json
 python3 -m unittest test_wall_threshold_band -v    # 5 tests，含 3 条负向对照
+
+python3 compare_old_new_impl.py                    # 第七批：两版实现逐值对照（真实 96 列 + 合成 210 列）
+python3 -m unittest test_cross_script_consistency -v   # 第七批：13 tests，含 1 条注入对照
 ```
 
 执行条件与 sha256 见 [run-info.json](run-info.json)。全部为 CPU 进程内重算，**未跑 GPU、未触上游写操作、未新增文献身份**。
