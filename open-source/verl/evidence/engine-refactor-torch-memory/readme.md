@@ -98,9 +98,9 @@ TorchMemoryProfiler(..., tool_config=<dict>)   → AttributeError: 'dict' object
 
 | 批次 | 信号族 | 找的是 |
 |---|---|---|
-| [配置消费点](engine-refactor-config-consumers/readme.md) | 字段还在、引擎侧没人读 | 3 条真失效（`tiled_mlp`、`freeze_vision_tower`、`use_prefix_grouper`） |
-| [接口面](engine-refactor-api-surface/readme.md) | 名字没了但文档仍在教 | 3 个名字（`update_policy` 等）+ profiler critic 侧 stage 缺口 |
-| [启动配置键](engine-refactor-shell-config/readme.md) | 键被删、命令行还在传 | 1 处启动即报错、2 处传了没人读 |
+| [配置消费点](../engine-refactor-config-consumers/readme.md) | 字段还在、引擎侧没人读 | 3 条真失效（`tiled_mlp`、`freeze_vision_tower`、`use_prefix_grouper`） |
+| [接口面](../engine-refactor-api-surface/readme.md) | 名字没了但文档仍在教 | 3 个名字（`update_policy` 等）+ profiler critic 侧 stage 缺口 |
+| [启动配置键](../engine-refactor-shell-config/readme.md) | 键被删、命令行还在传 | 1 处启动即报错、2 处传了没人读 |
 | **本批** | **名字两边都在，值的形状变了** | 示例缺 `enable`（沉默失败）+ 容器 dict 下传（硬失败） |
 
 前三批都能靠文本/符号比对发现；本批必须**把真实配置真正喂进调用链**才看得见。
