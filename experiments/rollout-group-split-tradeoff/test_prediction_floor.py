@@ -129,6 +129,36 @@ class TestSensitivity(unittest.TestCase):
         self.assertEqual(got['n_same_order'], got['n_seeds'])
 
 
+class TestIdentityBoundaryIsOnTheRightLine(unittest.TestCase):
+    """恒等式的失效边界落在**记录标准**，不在判据写法。
+
+    2026-11-04 复核时踩过：把 `floor_predict` 的 `>=` 改成 `>`，12 条测试**全绿**。
+    原因是那条不是边界——恰好等于 `c` 的样本，两种写法都给回 `c`，`max` 照样精确。
+    真正让恒等式失效的是撞顶样本被记成**小于** `c` 的值（引擎按 `c−1` 截断或按字节
+    计）：预测给 `c`、真值只有 `c−1`，组最大被高估。
+    """
+
+    def test_equal_to_cap_is_not_a_boundary(self):
+        """恰好等于 c：`>=` 与 `>` 都给精确预测 ⇒ 这一侧不能当负向对照。"""
+        g = [256.0, 100.0]
+        self.assertEqual(max(pf.floor_predict(g, 256.0)), max(g))
+        strict = [256.0 if x > 256.0 else x for x in g]     # 注入后的写法
+        self.assertEqual(max(strict), max(g))
+
+    def test_below_cap_breaks_the_identity(self):
+        """撞顶样本记在 c−1：预测给 c ⇒ 组最大被高估 ⇒ 恒等式失效。"""
+        got = pf.group_max_identity(([255.0, 100.0],), 256.0,
+                                    predict=pf.predict_under(lambda x, c: x >= c - 1.0))
+        self.assertFalse(got['all_exact'])
+
+    def test_self_check_reports_both_sides(self):
+        got = pf.identity_self_check(GROUPS, 256.0)
+        self.assertTrue(got['all_exact'], got)
+        self.assertTrue(got['boundary_below_cap_breaks'], got)
+        self.assertTrue(got['boundary_at_or_above_cap_holds'], got)
+        self.assertTrue(got['ok'], got)
+
+
 class TestTautologicalErrorIsMarked(unittest.TestCase):
     """逐条侧误差在本数据上结构性为 0，归档必须写明它是同义反复。"""
 

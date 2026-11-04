@@ -125,13 +125,16 @@ def degraded_predict(g, c):
 
 # ---------------------------------------------------------------- 恒等式（本批的核心读数）
 
-def group_max_identity(groups, cap):
+def group_max_identity(groups, cap, predict=None):
     """`max(floor_predict(g)) == max(g)` 在多少组上成立——本批的承重读数。
 
     不抽样、**全部组**都算：这条恒等式若只在抽样上成立，就不能当结构结论。
+    `predict` 缺省用 `floor_predict`；传入别的记录标准时同一个判据要能报出失效
+    （见 `identity_self_check` 的边界两侧）。
     """
+    predict = predict or (lambda g, c: floor_predict(g, c))
     n_exact = sum(1 for g in groups
-                  if max(floor_predict(g, cap)) == max(g))
+                  if max(predict(g, cap)) == max(g))
     never = sum(1 for g in groups if max(g) < cap)
     all_cap = sum(1 for g in groups if min(g) >= cap)
     return {
@@ -522,6 +525,41 @@ def identity_check(groups, label):
     return out
 
 
+def predict_under(record_rule):
+    """按另一种**记录标准** `record_rule` 造一个预测器，返回 `f(g, c)`。
+
+    "撞顶样本按 `x >= c` 记录"是本批数据的既成事实，不是判据能选的变量；要让
+    `floor_predict` 的判据真的失效，只能换成别种记录标准——例如某引擎把撞顶样本记在
+    `c−1`，那时预测给 `c`、真值只有 `c−1`，组最大被**高估**。
+    """
+    return lambda g, c: [c if record_rule(x, c) else x for x in g]
+
+
+def identity_self_check(groups, cap):
+    """承重读数的自检：`--verify` 也要复查它，不能只靠归档比对。
+
+    `--verify` 原先只复查 `tax_canonical`；恒等式只作为 `arms.*.group_max_identity`
+    跟着归档比对——而归档比对是"重算两个数再比"，改坏 `floor_predict` 时两侧一起变
+    就看不出来。这里把恒等式连同它的**失效边界**一起固定成常量判据。
+
+    边界是记录标准、不是判据写法：`>=` 改 `>` 在本数据上等价（恰好等于 `c` 的样本两种
+    写法都给回 `c`，`max` 照样精确），所以那条路测不出设计意图。
+    """
+    full = group_max_identity(groups, cap)
+    below = group_max_identity(([cap - 1.0, 1.0],), cap,
+                               predict=predict_under(lambda x, c: x >= c - 1.0))
+    above = group_max_identity(([cap, 1.0],), cap,
+                               predict=predict_under(lambda x, c: x >= c))
+    return {
+        'n_floor_max_exact': full['n_floor_max_exact'],
+        'n_groups': full['n_groups'],
+        'all_exact': full['all_exact'],
+        'boundary_below_cap_breaks': not below['all_exact'],
+        'boundary_at_or_above_cap_holds': above['all_exact'],
+        'ok': (full['all_exact'] and not below['all_exact'] and above['all_exact']),
+    }
+
+
 def build():
     t0 = time.time()
     out = {'experiment': 'prediction-floor', 'batch': '第十七批', 'date': '2026-11-04',
@@ -546,6 +584,7 @@ def build():
         }
         out['check'][label] = {
             'tax_canonical': tax_canonical_check(groups[:N_ID_GROUPS], N_ID_BACKLOG),
+            'group_max_identity': identity_self_check(groups, cap),
         }
     out['seconds'] = round(time.time() - t0, 1)
     return out
