@@ -1,0 +1,20 @@
+{
+ "arm_json": [
+  "arm-au.json",
+  "arm-cu.json",
+  "arm-cv.json"
+ ],
+ "judge_exit": 0,
+ "not_evidence_for": [
+  "critic_update/compute_values behaviour on real msprobe",
+  "any timing",
+  "any GPU-side claim"
+ ],
+ "what_this_is": "plumbing fixture, NOT a measurement: a stand-in run_qwen3_4b_fsdp.sh printed a 2-step log shape and wrote the msprobe dump tree for the actor_update arm only",
+ "why": "proves run-critic-pdbg.sh (preflight + auto site patch + arm JSON) and verify-critic-pdbg.py (pre-registered verdict) work end to end on this CPU, so the GPU window only has to produce the real logs",
+ "wrapper_rc": {
+  "au": 0,
+  "cu": 0,
+  "cv": 0
+ }
+}

@@ -1,0 +1,20 @@
+--- a/verl/utils/model.py
++++ b/verl/utils/model.py
+@@ -472,7 +472,7 @@
+             pretrained_model_name_or_path=local_path,
+             torch_dtype=torch_dtype,
+             config=model_config,
+-            attn_implementation="flash_attention_2",
++            attn_implementation="sdpa",
+             trust_remote_code=trust_remote_code,
+         )
+         return model
+@@ -497,7 +497,7 @@
+         pretrained_model_name_or_path=local_path,
+         torch_dtype=torch_dtype,
+         config=model_config,
+-        attn_implementation="flash_attention_2",
++        attn_implementation="sdpa",
+         trust_remote_code=trust_remote_code,
+     )
+     # vlm models
