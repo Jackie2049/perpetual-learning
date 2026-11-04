@@ -13,6 +13,16 @@ GPU/NPU 的访问、环境与实验由 macbook-M5 Agent 负责。M1 遇到需要
 - 实验结论回写对应主笔记与 diary，并在本页链接结果：保留版本、配置、命令、原始日志/失败、真实执行范围。没有采到的字段写 unknown，不能由依赖 pin 或历史机器记录补齐。
 - **上游硬门槛（2026-10-24 用户三次重申后的全体 Agent 铁律，详见 AGENTS.md「对外主仓库行动的硬门槛」）**：未获用户对**具体动作**的明确同意，任何会话不得在外部项目主仓库回复/评论（含 review comment）、新建 issue、新建 PR、**修改已有 PR 的代码（含推送其 head 分支——即使分支在用户自己 fork 上，推送即对上游可见）**。判断权不在 Agent：主仓库有他人共同参与，未经确认的自主对外动作后果不可承担；不因过往授权、惯例或其他会话先例延伸。准备动作（本地代码、patch、fork 独立分支、回复草稿）不受限。交接任务涉及上游时必须附带本边界；交接不增加对外操作权限，也不将 CPU 学习的未测项自动变成必跑任务。
 
+## verl profiler 真机验证（2026-11-04 M5，**已关闭**）
+
+原交接两项（`torch_memory` 快照是否真落盘、msprobe import 冒烟）已在 `4090-1` 单卡完成，材料见 [experiments/verl-torch-memory-gpu-smoke](verl-torch-memory-gpu-smoke/readme.md)：
+
+- **落盘**：`tool=torch_memory` + `steps=[1]` + `actor.profiler.enable=True`，2 步 PPO → `save_path/step1/torch_memory_rank0_pid*.pickle` 23.5 MB（39 segments、`device_traces` 撞 100k 上限）。
+- **沉默失败复现**：同一配置只去掉 `enable`（官方示例形状）→ 2 步 exit 0、`save_path` 目录都不建。`steps=[2]` 时落 `step2/`、无 `step1/`。
+- **OOM 观察者**：`_oom_observer_attached=True`（torch 2.11.0+cu129 有 `_cuda_attach_out_of_memory_observer`），但驱动日志里没有对应行 ⇒ 判它挂没挂只能看进程内状态。
+- **msprobe**：共用 venv 未装、也未改动；用 `pip --target /tmp/m5-msprobe-target` 装 mindstudio-probe 26.2.0 + matplotlib 等 8 个依赖后 `from msprobe.pytorch import PrecisionDebugger` 可用。`import msprobe` 在空 cwd **建 0 个目录**（import 期副作用这条假设关闭）；`stages=[actor_update]` 真跑 dump 14 MB，`stages=[critic_update]`（白名单接受、本跑次无产生者）**零 dump、零 warning**。
+- **仍未测**：OOM 时是否**真**落 snapshot（需人为制造 OOM）、NPU 侧等价性、带 critic 的真跑里 `critic_update` 的行为（本轮配方无 critic）。**未触上游。**
+
 ## verl DSA 依赖兼容参考
 
 状态：仅条件交接，不代表接单或新增训练队列。目的为在已有获准DSV4/DSA工作中识别[#8238](https://github.com/verl-project/verl/issues/8238)的Frontend版本/有效输入边界，非自动升级或启动Pro。固定证据见[原专题](../notebook/frameworks/verl-6791-dsv4-megatron-lite-reading.md#dsa-奇数输出与依赖版本)：verl3c6d9b4锁Frontend1.26.0/CUTLASS DSL4.6.2，Megatron43e45e13传min(topk,压缩KV宽度)；官方#407已合并，1.27 tag f77fbc3d包含奇数标量存储回退。M1仅三模块AST/compile与锁文件解析，没有cuDNN导入、kernel/模型或硬件执行；H100/GB200均为外部报告。

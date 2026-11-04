@@ -1,0 +1,10 @@
+=== pdbg arm=pda stages=[actor_update] src=/tmp/m5-main-smoke/verl gpu=1 prof=/tmp/m5-msprobe/prof-pda start 2026-11-04T09:15:04Z ===
+=== pdbg arm=pda exit=0 end 2026-11-04T09:18:17Z ===
+--- dump tree ---
+/tmp/m5-msprobe/prof-pda
+/tmp/m5-msprobe/prof-pda/step_1
+/tmp/m5-msprobe/prof-pda/step_1/actor_update
+/tmp/m5-msprobe/prof-pda/step_1/actor_update/step0
+/tmp/m5-msprobe/prof-pda/step_1/actor_update/step0/rank0
+--- PrecisionDebugger / msprobe mentions ---
+55

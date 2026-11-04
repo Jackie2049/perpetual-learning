@@ -1,0 +1,6 @@
+=== torchmem arm=en src=/tmp/m5-main-smoke/verl gpu=1 prof=/tmp/m5-torchmem/prof-s2 start 2026-11-04T09:23:19Z ===
+=== torchmem arm=en exit=0 end 2026-11-04T09:26:22Z ===
+--- prof tree ---
+/tmp/m5-torchmem/prof-s2
+/tmp/m5-torchmem/prof-s2/step2
+/tmp/m5-torchmem/prof-s2/step2/torch_memory_rank0_pid2486586.pickle

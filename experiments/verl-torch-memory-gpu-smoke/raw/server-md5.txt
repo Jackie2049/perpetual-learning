@@ -1,0 +1,14 @@
+# 本地归档把 .log 改名为 .txt（本仓库 .gitignore 吞 *.log），内容逐字节未变；
+# 服务端原文件名即对应行左侧名字把 .txt 换回 .log。
+c9a856e8dee316f3a59222edf7c838e6  run-en.txt
+d6c79620dcee322c85a4df62092109d8  run-ex.txt
+f5ac7aacce5689b5f907dbe374067452  run-en-fail1.txt
+7add1041f7cd9dc83c7ee1ec19593083  nohup-en.out
+09bffa9dc4c7e7f5f94c0e803ef0978e  nohup-ex.out
+d70e48c20d9b666ecf496d55f907c832  probe-profiler-path.json
+d81deb9fb0716404edd13faa1d089e61  run-pda.txt
+fd4a3eaa5c94d941843940915684a7a8  run-pdc.txt
+45d8207e910539d5ffdcbf23f2c08117  nohup-pda.out
+8289e237cfa2969008ff3b2ce3dcc8af  nohup-pdc.out
+1e2e330f28d1957708e7fbfb89bbacbb  config.json
+028522b04263087d6abbab33e8ba0e6d  run-pdbg.sh

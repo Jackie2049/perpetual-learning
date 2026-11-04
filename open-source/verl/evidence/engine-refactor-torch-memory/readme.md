@@ -9,7 +9,7 @@
 
 **【价值评估】** 5 / 10 — 比第三、四批（3/10）高。第一条是**用户照着官方示例操作得不到结果**（沉默失败，无报错、无日志）；第三条是**会抛异常的硬失败**，但只在 `tool=torch_memory`/`npu` 且走到 `run_ppo` 的 v1 分支时才触发，默认配置不受影响。方法上的价值最高：前四批都靠"名字在不在"判断，这一段两边名字完全一样（`start_profile`/`stop_profile`/`ProfilerConfig`），坏的是**配置从"直接读 yaml"换成"先转 dataclass 再往回传"之后，两级 `ProfilerConfig` 只有一级被正确填充**——只有把配置真的喂进调用链才看得见。
 
-**【进展】** 2026-11-04 M1 本地完成。真实 `ppo_trainer.yaml` + 真实 `omega_conf_to_dataclass` + 真实 `DistProfiler` 调用链，CPU 上复现，**两个脚本各带负向对照**（10/10、3/3 PASS）。**未跑训练、未上 GPU/NPU、未触上游**（无 issue／comment／PR）。复现与归档见 [实验目录](../../../../experiments/verl-6067-torch-memory-path/readme.md)。
+**【进展】** 2026-11-04 M1 本地完成。真实 `ppo_trainer.yaml` + 真实 `omega_conf_to_dataclass` + 真实 `DistProfiler` 调用链，CPU 上复现，**两个脚本各带负向对照**（10/10、3/3 PASS）。**未跑训练、未上 GPU/NPU、未触上游**（无 issue／comment／PR）。复现与归档见 [实验目录](../../../../experiments/verl-6067-torch-memory-path/readme.md)。**同日 M5 在 4090-1 真机补记（2026-11-04）**：加 `actor.profiler.enable=True` 后快照**确实落盘**（22.4 MB pickle、39 segments）；官方示例形状（无 `enable`）**一张也不写、目录都不建**；`steps=[2]` 落在 `step2/`、无 `step1/`；OOM 观察者**确实挂在分配器上**（`_oom_observer_attached=True`），但驱动日志里没有任何 `[torch_memory]` 行；容器 dict 的 `AttributeError` 逐字复现，**默认 v1 真跑不触发**（5 个训练臂全部 exit 0）。真机材料见 [experiments/verl-torch-memory-gpu-smoke](../../../../experiments/verl-torch-memory-gpu-smoke/readme.md)。
 
 **【大白话讲明白】**
 
@@ -104,3 +104,17 @@ TorchMemoryProfiler(..., tool_config=<dict>)   → AttributeError: 'dict' object
 | **本批** | **名字两边都在，值的形状变了** | 示例缺 `enable`（沉默失败）+ 容器 dict 下传（硬失败） |
 
 前三批都能靠文本/符号比对发现；本批必须**把真实配置真正喂进调用链**才看得见。
+
+## 六、真机补记（2026-11-04 M5，`4090-1` 单卡）
+
+CPU 阶段列为"需 GPU"的三项已全部关闭，另加两条 M1 没提的读数：
+
+| 读数 | 配置 | 结果 |
+|---|---|---|
+| 快照是否落盘 | `tool=torch_memory` + `steps=[1]` + `actor.profiler.enable=True` | `save_path/step1/torch_memory_rank0_pid*.pickle`，23,494,044 B；39 segments、`device_traces` 1×100,000（撞 `trace_alloc_max_entries` 上限） |
+| 官方示例形状 | 同上，**只去掉 `enable`**（`steps=[1]` 保留） | 2 步 exit 0，`save_path` **目录都不存在** ⇒ 沉默失败真机复现 |
+| 窗口是否跟配置走 | `steps=[2]` | 落在 `step2/`，**无 `step1/`** |
+| OOM 观察者 | 构造 `DistProfiler(tool=torch_memory, enable=True)` | `_oom_observer_attached=True`；本机 torch 2.11.0+cu129 有 `_cuda_attach_out_of_memory_observer`。**但驱动日志里一条 `[torch_memory]` 都没有**（成功行与失败 warning 都没有）⇒ 别拿日志判断它挂没挂 |
+| 容器 dict | `tool_config={torch_memory: ...}` | `AttributeError: 'dict' object has no attribute 'trace_alloc_max_entries'` 逐字复现；**但默认 v1 路径不会走到**——真跑 `tool=torch_memory` 的 5 个臂全部 exit 0 |
+
+⇒ 对外口径要收窄一处：第三条的"启动期硬失败"是**调用点依赖**的，不是"选了 `torch_memory` 就走 v1 必崩"。真机材料（脚本、15 份原始日志、md5 对照）见 [experiments/verl-torch-memory-gpu-smoke](../../../../experiments/verl-torch-memory-gpu-smoke/readme.md)。**本轮仍未触上游**。

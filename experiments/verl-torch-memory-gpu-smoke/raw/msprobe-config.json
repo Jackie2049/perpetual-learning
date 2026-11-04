@@ -1,0 +1,25 @@
+{
+    "task": "statistics",
+    "dump_path": "/tmp/m5-msprobe/dump",
+    "rank": [],
+    "step": [],
+    "level": "L1",
+    "extra_info": true,
+    "async_dump": false,
+    "statistics": {
+        "scope": [],
+        "list": [],
+        "data_mode": ["all"],
+        "summary_mode": "statistics"
+    },
+    "tensor": {
+        "scope": [],
+        "list": [],
+        "data_mode": ["all"]
+    },
+    "acc_check": {
+        "white_list": [],
+        "black_list": [],
+        "error_data_path": "./"
+    }
+}

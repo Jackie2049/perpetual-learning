@@ -1,0 +1,15 @@
+{
+ "verl_file": "/tmp/m5-main-smoke/verl/verl/__init__.py",
+ "torch": "2.11.0+cu129",
+ "cuda": true,
+ "cuda_oom_observer_symbol": true,
+ "tool_config_cls": "TorchMemoryToolConfig",
+ "A_construct": "ok",
+ "A_impl": "TorchMemoryProfiler",
+ "A_oom_observer_attached": true,
+ "A_check_enable": true,
+ "B_construct": "raised AttributeError: 'dict' object has no attribute 'trace_alloc_max_entries'",
+ "C_check_enable": false,
+ "C_start_return": "None",
+ "C_impl_this_step": false
+}

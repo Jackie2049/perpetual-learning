@@ -1,0 +1,2 @@
+{"pickle":"/tmp/m5-torchmem/prof-en/step1/torch_memory_rank0_pid2387464.pickle","sha256":"155b747bd4e05b5032436309c8c501761e91f0b070420276aa3affb1826eca9f","bytes":23494044,"keys":["allocator_settings","device_traces","external_annotations","segments"],"segments_len":39,"device_traces_len":1,"device_traces_0_len":100000,"torch":"2.11.0+cu129","cuda_available":true,"has_cuda_oom_observer_symbol":true}
+OK

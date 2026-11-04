@@ -1,0 +1,5 @@
+=== pdbg arm=pdc stages=[critic_update] src=/tmp/m5-main-smoke/verl gpu=1 prof=/tmp/m5-msprobe/prof-pdc start 2026-11-04T09:19:14Z ===
+=== pdbg arm=pdc exit=0 end 2026-11-04T09:21:51Z ===
+--- dump tree ---
+--- PrecisionDebugger / msprobe mentions ---
+20
