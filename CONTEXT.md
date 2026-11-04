@@ -1,10 +1,36 @@
-更新时间：2026-11-04（M1 **技术掘金：rLLM A 类这一批已被全部认领；转做 issue #945／PR #946 的独立复核**）。TS-001 连续两批记「到边际、无新输入应停」，本轮按渠道轮转做掘金：先扫 rLLM 开放 issue 找 A 类可捡活，筛出的三条（#916 单 rollout 优势恒零／#945 倒计时奖励可白拿满分／#929 空 `\boxed{}` 拿满分）**全部已有对应 PR**（#917／#946／#930＋#948），**没有可捡的活，不重复认领**。改做独立复核：在 main `4e828c81` 的**真实 `compute_score`** 上复现 #945 的四类漏洞（四例全得 1.0），并对 PR #946 的补丁跑回归搜索——**22639 条**在 main 上得 1.0 的合法答案中，补丁后失去满分的 **0 条**；**负向对照**（补丁改成"拒绝一切"）报出 **159** 条，证明搜索有分辨力。**一处必须收窄**：issue 说的"指数链挂死"，实测 `44**19**2` 瞬时、`44**19**5` **2.1 秒**，而 `44**19**35` 值约 10^45 位、**跑不完故未复现**，不得写成"必然长期挂死"。此前第十七批（语义面：截断本身就是组的长度预测，`R` 在截断上界与全真值之间逐位相同）见下方历史节。
+更新时间：2026-11-04（M1 **技术掘金：把 `tiled_mlp` 单条回归查成一类——#6067 引擎重构的配置消费点体检**）。把 `044bbba2`（#6067，2026-04-20 BREAKING）删掉的两个 worker 文件里的 **102 个 `config.*` 读取路径**逐条在当前 main 上核对：文本扫描报 **30 条**候选，人工判定后**真失效 3 条**——`tiled_mlp`、**`freeze_vision_tower`（本轮新发现）**、`use_prefix_grouper`；26 条是改名／换父配置后照常生效（`actor.fsdp_config → actor.engine`、`log_prob_* → ppo_*`），**1 条是搬了家**（MTP 关闭时的 `num_nextn_predict_layers` 清零搬进 `HFModelConfig.__post_init__`）。**`freeze_vision_tower` 是 2025-09 由 PR #3178 合入的真实特性**（VL 模型冻结视觉塔省显存），随同一次重构丢了接线、全仓无替代，而 `actor.yaml:51-52` 与 Ascend 参数表仍写着它 ⇒ 开 `true` 后视觉塔照常训练、显存不省、**不报错**。另记一条**行为契约变化**（不列失效）：MTP 在 FSDP 上从 `raise NotImplementedError` 变成静默清零。**两处自检**：① `lost` 判据把 config 声明行当成读取点，3 条真失效全部自证"有人读"；② `\btiled_mlp\b` 匹配不上 `use_tiled_mlp`，负向自检第一次失败，改子串匹配后通过。此前 rLLM #945／PR #946 复核见下方历史节。
 
 ## 当前现场
 
 > **只读最上面一节 `### M1 本轮` 即可恢复现场。** 下面 20+ 个 `###` 是历史批次叙述
 > （按时间倒序）——**它们已在 `diary/` 与专项文档留档，此处仅为交接连续性的冗余副本**。
 > 判断"现在该做什么"看 `## 未完成操作与并行工作` 与两个队列，不要从头读到尾。
+
+### M1 本轮（2026-11-04 11:3x–12:0x）：把 `tiled_mlp` 的单条回归查成一类——#6067 配置消费点体检
+
+**一、为什么做。** 上一批自己在 TM-006 第②条写下"下一步最值项：查同期重构还丢了哪些配置"，且已尝试过一次自动化比对（`config_sweep.py`，候选几乎全是假阳性、脚本已删）。本批换做法：**先只做文本级定位，再把判据逐条写死**。
+
+**二、读数。** `044bbba2^` 的两个 worker 文件里 `config.<role>.<key>` 读取路径去重 **102 个**；在当前 main 的 `verl/workers/engine/**` + `verl/trainer/**` 查叶子名，报 **30 条**"字段还在、引擎侧查不到读取"。逐条判定：
+
+| 判定 | 条数 | 代表 |
+|---|---|---|
+| **真失效** | **3** | `tiled_mlp`、**`freeze_vision_tower`**、`use_prefix_grouper` |
+| 改名／换父配置后生效 | 26 | `actor.fsdp_config → actor.engine`（dataclass 整体换位）、`log_prob_* → ppo_*`（engine_workers 改名）、`rollout.free_cache_engine` 由 rollout 层读 |
+| 搬了家 | 1 | MTP 关闭时 `num_nextn_predict_layers` 清零 → `HFModelConfig.__post_init__:235-243` |
+
+⇒ **是一"类"回归，但不是"一片"**：写"几十个配置全失效"会是错的，这也是本批最需要守住的口径。
+
+**三、新发现：`actor.freeze_vision_tower`。** 旧实现两处（actor `:545-553`、critic `:1554-1562`）调用同文件的 `get_vl_model_vision_tower()` 冻结视觉塔并置 `use_orig_params=True`；该辅助函数随文件删除，`git grep vision_tower HEAD -- "*.py"` 全仓只剩 `config/actor.py:161` 一行声明。而 `actor.yaml:51-52` 的注释与 `docs/ascend_tutorial/.../parameter_and_metrics.md:45` 的参数表都还写着它。特性来源 PR [#3178](https://github.com/verl-project/verl/pull/3178)（2025-09，issue #2526）。
+
+**四、一条不是失效、但语义变了（不列入对外材料）。** 旧 `fsdp_workers.py:429-432` 是 `if mtp.enable: raise NotImplementedError("MTP is not supported in FSDP")`，新代码只保留清零、丢掉报错 ⇒ FSDP 上开 MTP 不再报错。不影响默认配置，且是否有意需维护者判断，故只记录、不主张。
+
+**五、本批两处错（都由自检抓出）。** ① `lost` 判据的读取搜索范围包含 `verl/workers/config/`，字段**声明行**被算成读取，3 条真失效全部报"对不上"；② 修掉①后写 `--selftest`，注入 `apply(use_tiled_mlp=True)` 仍报"没有读取"——`\btiled_mlp\b` 匹配不上 `use_tiled_mlp`（`_` 是单词字符）。改子串匹配后自检通过、正式判定 7 条 **0 不一致**。⇒ **自检失败时暴露的是工具，不是被测对象。**
+
+**核对产物**：`scan_consumers.py`（102 路径／30 候选）、`verify_findings.py`（7 条判定 exit 0）、`--selftest` 通过；verl main `1a9e711e`、父提交 `044bbba2^`、Python 3.12.13。**纯静态，未跑 verl、未上 GPU、未触上游**。
+
+**留给下一轮**：① TM-006 对外可选三条（删配置项＋文档／补 `freeze_vision_tower` 接线／加"字段有、消费者无"的加载期告警，与 TM-007 的 pyflag 同源），**均待用户逐项授权**；② `freeze_vision_tower` 的显存对照需 VL 模型真机（M5 范围）；③ #6067 另外 71 个改动文件的**语义变化**未扫——本次只覆盖配置消费点，MTP 那条是读 diff 才发现；④ TS-001 侧仍停在「等用户立项」。
+
+入口：[类回归体检](open-source/verl/evidence/engine-refactor-config-consumers/readme.md) · [实验 readme](experiments/verl-6067-config-consumer-scan/readme.md) · [扫描脚本](experiments/verl-6067-config-consumer-scan/scan_consumers.py) · [判定脚本](experiments/verl-6067-config-consumer-scan/verify_findings.py) · [TM-006](queue_tech-miner.md) · [tracker](open-source/verl/tracker.md) · [diary](diary/2026-11-04.md)。
 
 ### M1 本轮（2026-11-04 10:5x–11:2x）：掘金渠道轮转——rLLM 三条 A 类全被认领，改做 #945／PR #946 复核
 

@@ -1,0 +1,1712 @@
+{
+  "summary": {
+    "repo": "/Users/jackiemac/workspace/perpetual-learning/verl",
+    "parent": "044bbba2^",
+    "n_reads": 102,
+    "n_candidates": 30,
+    "candidates": [
+      "actor_ref:actor.fsdp_config",
+      "actor_ref:actor.ppo_micro_batch_size",
+      "actor_ref:actor.ppo_micro_batch_size_per_gpu",
+      "actor_ref:model.custom_chat_template",
+      "actor_ref:model.fsdp_config",
+      "actor_ref:ref.fsdp_config",
+      "actor_ref:ref.log_prob_max_token_len_per_gpu",
+      "actor_ref:ref.log_prob_micro_batch_size",
+      "actor_ref:ref.log_prob_micro_batch_size_per_gpu",
+      "actor_ref:ref.log_prob_use_dynamic_bsz",
+      "actor_ref:rollout.data_parallel_size",
+      "actor_ref:rollout.free_cache_engine",
+      "actor_ref:rollout.load_format",
+      "actor_ref:rollout.log_prob_micro_batch_size",
+      "actor_ref:rollout.log_prob_micro_batch_size_per_gpu",
+      "megatron:actor.megatron.dist_checkpointing_prefix",
+      "megatron:actor.ppo_micro_batch_size",
+      "megatron:actor.ppo_micro_batch_size_per_gpu",
+      "megatron:model.custom_chat_template",
+      "megatron:model.mtp.mtp_loss_scaling_factor",
+      "megatron:ref.log_prob_max_token_len_per_gpu",
+      "megatron:ref.log_prob_micro_batch_size",
+      "megatron:ref.log_prob_micro_batch_size_per_gpu",
+      "megatron:ref.log_prob_use_dynamic_bsz",
+      "megatron:ref.megatron.dist_checkpointing_prefix",
+      "megatron:rollout.data_parallel_size",
+      "megatron:rollout.free_cache_engine",
+      "megatron:rollout.load_format",
+      "megatron:rollout.log_prob_micro_batch_size",
+      "megatron:rollout.log_prob_micro_batch_size_per_gpu"
+    ]
+  },
+  "rows": [
+    {
+      "source": "actor_ref",
+      "key": "actor",
+      "old_lines": [
+        952
+      ],
+      "leaf_still_declared": false,
+      "current_readers": [
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/torchtitan/transformer_impl.py",
+        "verl/workers/engine/veomni/transformer_impl.py",
+        "verl/trainer/config/config.py",
+        "verl/trainer/constants_ppo.py",
+        "verl/trainer/distillation/losses.py",
+        "verl/trainer/main_ppo_v0.py",
+        "verl/trainer/ppo/core_algos.py",
+        "verl/trainer/ppo/metric_utils.py",
+        "verl/trainer/ppo/prefix_grouper_utils.py",
+        "verl/trainer/ppo/ray_trainer.py",
+        "verl/trainer/ppo/rollout_corr_helper.py",
+        "verl/trainer/ppo/utils.py",
+        "verl/trainer/ppo/v1/trainer_base.py",
+        "verl/trainer/ppo/v1/trainer_separate_async.py"
+      ],
+      "verdict": "字段已消失"
+    },
+    {
+      "source": "actor_ref",
+      "key": "actor.checkpoint",
+      "old_lines": [
+        1007
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/base.py",
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/torchtitan/transformer_impl.py",
+        "verl/workers/engine/veomni/transformer_impl.py",
+        "verl/trainer/config/config.py",
+        "verl/trainer/main_ppo_v0.py",
+        "verl/trainer/ppo/ray_trainer.py",
+        "verl/trainer/ppo/utils.py",
+        "verl/trainer/ppo/v1/trainer_base.py",
+        "verl/trainer/ppo/v1/trainer_colocate_async.py",
+        "verl/trainer/ppo/v1/trainer_separate_async.py",
+        "verl/trainer/ppo/v1/trainer_sync.py",
+        "verl/trainer/sft_trainer.py",
+        "verl/trainer/sft_trainer_ray.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "actor_ref",
+      "key": "actor.fsdp_config",
+      "old_lines": [
+        906
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "actor_ref",
+      "key": "actor.fsdp_config.fsdp_size",
+      "old_lines": [
+        178
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/fsdp/utils.py",
+        "verl/workers/engine/veomni/transformer_impl.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "actor_ref",
+      "key": "actor.optim",
+      "old_lines": [
+        905
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/veomni/transformer_impl.py",
+        "verl/trainer/ppo/ray_trainer.py",
+        "verl/trainer/ppo/v1/trainer_base.py",
+        "verl/trainer/sft_trainer.py",
+        "verl/trainer/sft_trainer_ray.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "actor_ref",
+      "key": "actor.ppo_epochs",
+      "old_lines": [
+        1049
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/trainer/ppo/ray_trainer.py",
+        "verl/trainer/ppo/v1/trainer_base.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "actor_ref",
+      "key": "actor.ppo_micro_batch_size",
+      "old_lines": [
+        260,
+        261,
+        264
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "actor_ref",
+      "key": "actor.ppo_micro_batch_size_per_gpu",
+      "old_lines": [
+        264,
+        266,
+        267,
+        269,
+        271,
+        273
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "actor_ref",
+      "key": "actor.ppo_mini_batch_size",
+      "old_lines": [
+        253,
+        254,
+        255,
+        256,
+        267,
+        268,
+        271,
+        272
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/trainer/ppo/ray_trainer.py",
+        "verl/trainer/ppo/v1/trainer_base.py",
+        "verl/trainer/ppo/v1/trainer_separate_async.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "actor_ref",
+      "key": "actor.qat",
+      "old_lines": [
+        290
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/megatron/transformer_impl.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "actor_ref",
+      "key": "actor.strategy",
+      "old_lines": [
+        374,
+        608
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/automodel/utils.py",
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/fsdp/utils.py",
+        "verl/trainer/constants_ppo.py",
+        "verl/trainer/distillation/losses.py",
+        "verl/trainer/main_ppo_v0.py",
+        "verl/trainer/ppo/core_algos.py",
+        "verl/trainer/ppo/v1/replay_buffer.py",
+        "verl/trainer/ppo/v1/trainer_base.py",
+        "verl/trainer/ppo/v1/trainer_separate_async.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "actor_ref",
+      "key": "model",
+      "old_lines": [
+        699
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/automodel/utils.py",
+        "verl/workers/engine/base.py",
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/mindspeed/transformer_impl.py",
+        "verl/workers/engine/mindspeed/utils.py",
+        "verl/workers/engine/torchtitan/transformer_impl.py",
+        "verl/workers/engine/torchtitan/utils.py",
+        "verl/workers/engine/utils.py",
+        "verl/workers/engine/veomni/transformer_impl.py",
+        "verl/workers/engine/veomni/utils.py",
+        "verl/trainer/config/algorithm.py",
+        "verl/trainer/config/config.py",
+        "verl/trainer/distillation/losses.py",
+        "verl/trainer/main_eval.py",
+        "verl/trainer/main_generation_server.py",
+        "verl/trainer/main_ppo.py",
+        "verl/trainer/main_ppo_v0.py",
+        "verl/trainer/ppo/metric_utils.py",
+        "verl/trainer/ppo/padding_utils.py",
+        "verl/trainer/ppo/prefix_grouper_utils.py",
+        "verl/trainer/ppo/ray_trainer.py",
+        "verl/trainer/ppo/rollout_corr_helper.py",
+        "verl/trainer/ppo/utils.py",
+        "verl/trainer/ppo/v1/agent_loop_tq.py",
+        "verl/trainer/ppo/v1/replay_buffer.py",
+        "verl/trainer/ppo/v1/trainer_base.py",
+        "verl/trainer/ppo/v1/trainer_separate_async.py",
+        "verl/trainer/sft_trainer.py",
+        "verl/trainer/sft_trainer_ray.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "actor_ref",
+      "key": "model.custom_chat_template",
+      "old_lines": [
+        387,
+        389,
+        1413,
+        1415
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "actor_ref",
+      "key": "model.exclude_modules",
+      "old_lines": [
+        539
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/fsdp/transformer_impl.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "actor_ref",
+      "key": "model.fsdp_config",
+      "old_lines": [
+        1529
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "actor_ref",
+      "key": "model.fsdp_config.forward_prefetch",
+      "old_lines": [
+        1576
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/veomni/transformer_impl.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "actor_ref",
+      "key": "model.fsdp_config.fsdp_size",
+      "old_lines": [
+        1342
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/fsdp/utils.py",
+        "verl/workers/engine/veomni/transformer_impl.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "actor_ref",
+      "key": "model.fsdp_config.optimizer_offload",
+      "old_lines": [
+        1366
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/torchtitan/transformer_impl.py",
+        "verl/workers/engine/veomni/transformer_impl.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "actor_ref",
+      "key": "model.fsdp_config.param_offload",
+      "old_lines": [
+        1365
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/torchtitan/transformer_impl.py",
+        "verl/workers/engine/veomni/transformer_impl.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "actor_ref",
+      "key": "model.fsdp_config.wrap_policy",
+      "old_lines": [
+        1544
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/fsdp/transformer_impl.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "actor_ref",
+      "key": "model.lora_alpha",
+      "old_lines": [
+        537,
+        1518
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/trainer/sft_trainer.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "actor_ref",
+      "key": "model.lora_rank",
+      "old_lines": [
+        536,
+        1517
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/veomni/transformer_impl.py",
+        "verl/trainer/main_ppo_v0.py",
+        "verl/trainer/ppo/ray_trainer.py",
+        "verl/trainer/ppo/v1/trainer_base.py",
+        "verl/trainer/sft_trainer.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "actor_ref",
+      "key": "model.path",
+      "old_lines": [
+        561,
+        911,
+        961,
+        964,
+        1403
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/automodel/utils.py",
+        "verl/workers/engine/base.py",
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/torchtitan/transformer_impl.py",
+        "verl/workers/engine/veomni/transformer_impl.py",
+        "verl/trainer/config/config.py",
+        "verl/trainer/distillation/fsdp/losses.py",
+        "verl/trainer/main_eval.py",
+        "verl/trainer/main_generation_server.py",
+        "verl/trainer/main_ppo.py",
+        "verl/trainer/main_ppo_v0.py",
+        "verl/trainer/ppo/core_algos.py",
+        "verl/trainer/ppo/metric_utils.py",
+        "verl/trainer/ppo/ray_trainer.py",
+        "verl/trainer/ppo/reward.py",
+        "verl/trainer/ppo/v1/replay_buffer.py",
+        "verl/trainer/ppo/v1/trainer_base.py",
+        "verl/trainer/sft_trainer.py",
+        "verl/trainer/sft_trainer_ray.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "actor_ref",
+      "key": "model.target_modules",
+      "old_lines": [
+        538,
+        1519
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/fsdp/transformer_impl.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "actor_ref",
+      "key": "model.tokenizer_path",
+      "old_lines": [
+        1407
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/mindspeed/utils.py",
+        "verl/trainer/config/config.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "actor_ref",
+      "key": "profiler",
+      "old_lines": [
+        211
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/veomni/transformer_impl.py",
+        "verl/trainer/sft_trainer.py",
+        "verl/trainer/sft_trainer_ray.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "actor_ref",
+      "key": "ref",
+      "old_lines": [
+        992,
+        993,
+        998,
+        1138
+      ],
+      "leaf_still_declared": false,
+      "current_readers": [
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/mindspeed/utils.py",
+        "verl/workers/engine/veomni/transformer_impl.py",
+        "verl/trainer/main_ppo_v0.py",
+        "verl/trainer/ppo/metric_utils.py",
+        "verl/trainer/ppo/utils.py",
+        "verl/trainer/ppo/v1/trainer_base.py"
+      ],
+      "verdict": "字段已消失"
+    },
+    {
+      "source": "actor_ref",
+      "key": "ref.fsdp_config",
+      "old_lines": [
+        980
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "actor_ref",
+      "key": "ref.log_prob_max_token_len_per_gpu",
+      "old_lines": [
+        1189
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "actor_ref",
+      "key": "ref.log_prob_micro_batch_size",
+      "old_lines": [
+        283,
+        284,
+        285
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "actor_ref",
+      "key": "ref.log_prob_micro_batch_size_per_gpu",
+      "old_lines": [
+        285,
+        1186
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "actor_ref",
+      "key": "ref.log_prob_use_dynamic_bsz",
+      "old_lines": [
+        1190
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "actor_ref",
+      "key": "ref.use_fused_kernels",
+      "old_lines": [
+        995
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/veomni/transformer_impl.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "actor_ref",
+      "key": "ref.use_prefix_grouper",
+      "old_lines": [
+        997
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/trainer/ppo/ray_trainer.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "actor_ref",
+      "key": "ref.use_remove_padding",
+      "old_lines": [
+        994
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/torchtitan/transformer_impl.py",
+        "verl/workers/engine/veomni/transformer_impl.py",
+        "verl/trainer/sft_trainer.py",
+        "verl/trainer/sft_trainer_ray.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "actor_ref",
+      "key": "rollout",
+      "old_lines": [
+        150,
+        698,
+        1138
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/veomni/transformer_impl.py",
+        "verl/trainer/main_generation_server.py",
+        "verl/trainer/main_ppo.py",
+        "verl/trainer/main_ppo_v0.py",
+        "verl/trainer/ppo/core_algos.py",
+        "verl/trainer/ppo/metric_utils.py",
+        "verl/trainer/ppo/ray_trainer.py",
+        "verl/trainer/ppo/rollout_corr_helper.py",
+        "verl/trainer/ppo/utils.py",
+        "verl/trainer/ppo/v1/agent_loop_tq.py",
+        "verl/trainer/ppo/v1/replay_buffer.py",
+        "verl/trainer/ppo/v1/trainer_base.py",
+        "verl/trainer/ppo/v1/trainer_colocate_async.py",
+        "verl/trainer/ppo/v1/trainer_separate_async.py",
+        "verl/trainer/ppo/v1/trainer_sync.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "actor_ref",
+      "key": "rollout.data_parallel_size",
+      "old_lines": [
+        703
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "actor_ref",
+      "key": "rollout.free_cache_engine",
+      "old_lines": [
+        805,
+        859,
+        866,
+        880
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "actor_ref",
+      "key": "rollout.load_format",
+      "old_lines": [
+        750
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "actor_ref",
+      "key": "rollout.log_prob_micro_batch_size",
+      "old_lines": [
+        277,
+        278,
+        281
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "actor_ref",
+      "key": "rollout.log_prob_micro_batch_size_per_gpu",
+      "old_lines": [
+        281
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "actor_ref",
+      "key": "rollout.n",
+      "old_lines": [
+        253
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/trainer/main_generation_server.py",
+        "verl/trainer/ppo/core_algos.py",
+        "verl/trainer/ppo/metric_utils.py",
+        "verl/trainer/ppo/ray_trainer.py",
+        "verl/trainer/ppo/v1/agent_loop_tq.py",
+        "verl/trainer/ppo/v1/replay_buffer.py",
+        "verl/trainer/ppo/v1/trainer_base.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "actor_ref",
+      "key": "rollout.name",
+      "old_lines": [
+        592,
+        713,
+        729,
+        733
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/torchtitan/transformer_impl.py",
+        "verl/workers/engine/torchtitan/utils.py",
+        "verl/workers/engine/veomni/transformer_impl.py",
+        "verl/workers/engine/veomni/utils.py",
+        "verl/trainer/config/config.py",
+        "verl/trainer/distillation/losses.py",
+        "verl/trainer/main_generation_server.py",
+        "verl/trainer/ppo/core_algos.py",
+        "verl/trainer/ppo/metric_utils.py",
+        "verl/trainer/ppo/prefix_grouper_utils.py",
+        "verl/trainer/ppo/ray_trainer.py",
+        "verl/trainer/ppo/reward.py",
+        "verl/trainer/ppo/utils.py",
+        "verl/trainer/ppo/v1/replay_buffer.py",
+        "verl/trainer/ppo/v1/trainer_base.py",
+        "verl/trainer/ppo/v1/utils.py",
+        "verl/trainer/sft_trainer.py",
+        "verl/trainer/sft_trainer_ray.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "actor_ref",
+      "key": "rollout.pipeline_model_parallel_size",
+      "old_lines": [
+        704
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/mindspeed/utils.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "actor_ref",
+      "key": "rollout.temperature",
+      "old_lines": [
+        1142,
+        1159,
+        1188
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/torchtitan/transformer_impl.py",
+        "verl/trainer/main_generation_server.py",
+        "verl/trainer/ppo/core_algos.py",
+        "verl/trainer/ppo/prefix_grouper_utils.py",
+        "verl/trainer/ppo/ray_trainer.py",
+        "verl/trainer/ppo/v1/agent_loop_tq.py",
+        "verl/trainer/ppo/v1/trainer_base.py",
+        "verl/trainer/sft_trainer.py",
+        "verl/trainer/sft_trainer_ray.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "actor_ref",
+      "key": "rollout.tensor_model_parallel_size",
+      "old_lines": [
+        703
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/mindspeed/utils.py",
+        "verl/trainer/main_generation_server.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "actor_ref",
+      "key": "rollout_n",
+      "old_lines": [
+        1369
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/torchtitan/transformer_impl.py",
+        "verl/trainer/ppo/ray_trainer.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "actor",
+      "old_lines": [
+        630
+      ],
+      "leaf_still_declared": false,
+      "current_readers": [
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/torchtitan/transformer_impl.py",
+        "verl/workers/engine/veomni/transformer_impl.py",
+        "verl/trainer/config/config.py",
+        "verl/trainer/constants_ppo.py",
+        "verl/trainer/distillation/losses.py",
+        "verl/trainer/main_ppo_v0.py",
+        "verl/trainer/ppo/core_algos.py",
+        "verl/trainer/ppo/metric_utils.py",
+        "verl/trainer/ppo/prefix_grouper_utils.py",
+        "verl/trainer/ppo/ray_trainer.py",
+        "verl/trainer/ppo/rollout_corr_helper.py",
+        "verl/trainer/ppo/utils.py",
+        "verl/trainer/ppo/v1/trainer_base.py",
+        "verl/trainer/ppo/v1/trainer_separate_async.py"
+      ],
+      "verdict": "字段已消失"
+    },
+    {
+      "source": "megatron",
+      "key": "actor.checkpoint",
+      "old_lines": [
+        672
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/base.py",
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/torchtitan/transformer_impl.py",
+        "verl/workers/engine/veomni/transformer_impl.py",
+        "verl/trainer/config/config.py",
+        "verl/trainer/main_ppo_v0.py",
+        "verl/trainer/ppo/ray_trainer.py",
+        "verl/trainer/ppo/utils.py",
+        "verl/trainer/ppo/v1/trainer_base.py",
+        "verl/trainer/ppo/v1/trainer_colocate_async.py",
+        "verl/trainer/ppo/v1/trainer_separate_async.py",
+        "verl/trainer/ppo/v1/trainer_sync.py",
+        "verl/trainer/sft_trainer.py",
+        "verl/trainer/sft_trainer_ray.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "actor.load_weight",
+      "old_lines": [
+        442,
+        487
+      ],
+      "leaf_still_declared": false,
+      "current_readers": [],
+      "verdict": "字段已消失"
+    },
+    {
+      "source": "megatron",
+      "key": "actor.megatron",
+      "old_lines": [
+        414
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/__init__.py",
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/megatron/utils.py",
+        "verl/workers/engine/mindspeed/transformer_impl.py",
+        "verl/workers/engine/mindspeed/utils.py",
+        "verl/trainer/constants_ppo.py",
+        "verl/trainer/distillation/losses.py",
+        "verl/trainer/distillation/megatron/losses.py",
+        "verl/trainer/main_ppo_v0.py",
+        "verl/trainer/ppo/core_algos.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "actor.megatron.context_parallel_size",
+      "old_lines": [
+        309
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/mindspeed/transformer_impl.py",
+        "verl/workers/engine/mindspeed/utils.py",
+        "verl/workers/engine/torchtitan/transformer_impl.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "actor.megatron.dist_checkpointing_path",
+      "old_lines": [
+        446
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/megatron/transformer_impl.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "actor.megatron.dist_checkpointing_prefix",
+      "old_lines": [
+        448
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "megatron",
+      "key": "actor.megatron.dtype",
+      "old_lines": [
+        603
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/mindspeed/utils.py",
+        "verl/workers/engine/torchtitan/transformer_impl.py",
+        "verl/workers/engine/torchtitan/utils.py",
+        "verl/workers/engine/veomni/transformer_impl.py",
+        "verl/trainer/distillation/fsdp/losses.py",
+        "verl/trainer/distillation/megatron/losses.py",
+        "verl/trainer/ppo/core_algos.py",
+        "verl/trainer/ppo/metric_utils.py",
+        "verl/trainer/ppo/padding_utils.py",
+        "verl/trainer/ppo/prefix_grouper_utils.py",
+        "verl/trainer/ppo/ray_trainer.py",
+        "verl/trainer/ppo/rollout_corr_helper.py",
+        "verl/trainer/ppo/v1/agent_loop_tq.py",
+        "verl/trainer/ppo/v1/replay_buffer.py",
+        "verl/trainer/ppo/v1/trainer_base.py",
+        "verl/trainer/sft_trainer.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "actor.megatron.expert_model_parallel_size",
+      "old_lines": [
+        310
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/mindspeed/utils.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "actor.megatron.expert_tensor_parallel_size",
+      "old_lines": [
+        311
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/mindspeed/utils.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "actor.megatron.pipeline_model_parallel_size",
+      "old_lines": [
+        306
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/mindspeed/utils.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "actor.megatron.seed",
+      "old_lines": [
+        334
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/megatron/utils.py",
+        "verl/workers/engine/mindspeed/utils.py",
+        "verl/workers/engine/torchtitan/transformer_impl.py",
+        "verl/workers/engine/utils.py",
+        "verl/workers/engine/veomni/transformer_impl.py",
+        "verl/trainer/main_ppo.py",
+        "verl/trainer/ppo/metric_utils.py",
+        "verl/trainer/ppo/ray_trainer.py",
+        "verl/trainer/ppo/utils.py",
+        "verl/trainer/ppo/v1/trainer_base.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "actor.megatron.tensor_model_parallel_size",
+      "old_lines": [
+        305
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/mindspeed/utils.py",
+        "verl/trainer/main_generation_server.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "actor.megatron.use_dist_checkpointing",
+      "old_lines": [
+        443,
+        688
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/megatron/transformer_impl.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "actor.megatron.use_distributed_optimizer",
+      "old_lines": [
+        427,
+        684
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/mindspeed/utils.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "actor.megatron.use_mbridge",
+      "old_lines": [
+        697
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/megatron/transformer_impl.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "actor.megatron.virtual_pipeline_model_parallel_size",
+      "old_lines": [
+        307
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/mindspeed/utils.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "actor.optim",
+      "old_lines": [
+        608
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/veomni/transformer_impl.py",
+        "verl/trainer/ppo/ray_trainer.py",
+        "verl/trainer/ppo/v1/trainer_base.py",
+        "verl/trainer/sft_trainer.py",
+        "verl/trainer/sft_trainer_ray.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "actor.optim.use_checkpoint_opt_param_scheduler",
+      "old_lines": [
+        685
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/megatron/transformer_impl.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "actor.ppo_epochs",
+      "old_lines": [
+        798
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/trainer/ppo/ray_trainer.py",
+        "verl/trainer/ppo/v1/trainer_base.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "actor.ppo_micro_batch_size",
+      "old_lines": [
+        377,
+        379
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "megatron",
+      "key": "actor.ppo_micro_batch_size_per_gpu",
+      "old_lines": [
+        379,
+        787
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "megatron",
+      "key": "actor.ppo_mini_batch_size",
+      "old_lines": [
+        374,
+        375
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/trainer/ppo/ray_trainer.py",
+        "verl/trainer/ppo/v1/trainer_base.py",
+        "verl/trainer/ppo/v1/trainer_separate_async.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "actor.router_replay",
+      "old_lines": [
+        328
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/veomni/transformer_impl.py",
+        "verl/trainer/ppo/ray_trainer.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "actor.router_replay.mode",
+      "old_lines": [
+        914,
+        917,
+        929,
+        932
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/base.py",
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/mindspeed/utils.py",
+        "verl/workers/engine/torchtitan/transformer_impl.py",
+        "verl/workers/engine/utils.py",
+        "verl/workers/engine/veomni/transformer_impl.py",
+        "verl/trainer/config/algorithm.py",
+        "verl/trainer/distillation/losses.py",
+        "verl/trainer/ppo/core_algos.py",
+        "verl/trainer/ppo/ray_trainer.py",
+        "verl/trainer/ppo/rollout_corr_helper.py",
+        "verl/trainer/ppo/v1/replay_buffer.py",
+        "verl/trainer/ppo/v1/trainer_base.py",
+        "verl/trainer/ppo/v1/trainer_separate_async.py",
+        "verl/trainer/sft_trainer.py",
+        "verl/trainer/sft_trainer_ray.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "model",
+      "old_lines": [
+        262,
+        537
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/automodel/utils.py",
+        "verl/workers/engine/base.py",
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/mindspeed/transformer_impl.py",
+        "verl/workers/engine/mindspeed/utils.py",
+        "verl/workers/engine/torchtitan/transformer_impl.py",
+        "verl/workers/engine/torchtitan/utils.py",
+        "verl/workers/engine/utils.py",
+        "verl/workers/engine/veomni/transformer_impl.py",
+        "verl/workers/engine/veomni/utils.py",
+        "verl/trainer/config/algorithm.py",
+        "verl/trainer/config/config.py",
+        "verl/trainer/distillation/losses.py",
+        "verl/trainer/main_eval.py",
+        "verl/trainer/main_generation_server.py",
+        "verl/trainer/main_ppo.py",
+        "verl/trainer/main_ppo_v0.py",
+        "verl/trainer/ppo/metric_utils.py",
+        "verl/trainer/ppo/padding_utils.py",
+        "verl/trainer/ppo/prefix_grouper_utils.py",
+        "verl/trainer/ppo/ray_trainer.py",
+        "verl/trainer/ppo/rollout_corr_helper.py",
+        "verl/trainer/ppo/utils.py",
+        "verl/trainer/ppo/v1/agent_loop_tq.py",
+        "verl/trainer/ppo/v1/replay_buffer.py",
+        "verl/trainer/ppo/v1/trainer_base.py",
+        "verl/trainer/ppo/v1/trainer_separate_async.py",
+        "verl/trainer/sft_trainer.py",
+        "verl/trainer/sft_trainer_ray.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "model.custom_chat_template",
+      "old_lines": [
+        140,
+        142
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "megatron",
+      "key": "model.external_lib",
+      "old_lines": [
+        583,
+        1188
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/trainer/config/config.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "model.mtp",
+      "old_lines": [
+        638
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/trainer/ppo/v1/trainer_base.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "model.mtp.enable",
+      "old_lines": [
+        638
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/mindspeed/utils.py",
+        "verl/workers/engine/torchtitan/transformer_impl.py",
+        "verl/workers/engine/torchtitan/utils.py",
+        "verl/workers/engine/utils.py",
+        "verl/workers/engine/veomni/transformer_impl.py",
+        "verl/trainer/config/algorithm.py",
+        "verl/trainer/main_ppo.py",
+        "verl/trainer/main_ppo_v0.py",
+        "verl/trainer/ppo/ray_trainer.py",
+        "verl/trainer/ppo/utils.py",
+        "verl/trainer/ppo/v1/trainer_base.py",
+        "verl/trainer/ppo/v1/trainer_colocate_async.py",
+        "verl/trainer/ppo/v1/trainer_separate_async.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "model.mtp.mtp_loss_scaling_factor",
+      "old_lines": [
+        160
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "megatron",
+      "key": "model.path",
+      "old_lines": [
+        616,
+        650,
+        1205
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/automodel/utils.py",
+        "verl/workers/engine/base.py",
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/torchtitan/transformer_impl.py",
+        "verl/workers/engine/veomni/transformer_impl.py",
+        "verl/trainer/config/config.py",
+        "verl/trainer/distillation/fsdp/losses.py",
+        "verl/trainer/main_eval.py",
+        "verl/trainer/main_generation_server.py",
+        "verl/trainer/main_ppo.py",
+        "verl/trainer/main_ppo_v0.py",
+        "verl/trainer/ppo/core_algos.py",
+        "verl/trainer/ppo/metric_utils.py",
+        "verl/trainer/ppo/ray_trainer.py",
+        "verl/trainer/ppo/reward.py",
+        "verl/trainer/ppo/v1/replay_buffer.py",
+        "verl/trainer/ppo/v1/trainer_base.py",
+        "verl/trainer/sft_trainer.py",
+        "verl/trainer/sft_trainer_ray.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "ref",
+      "old_lines": [
+        657,
+        908
+      ],
+      "leaf_still_declared": false,
+      "current_readers": [
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/mindspeed/utils.py",
+        "verl/workers/engine/veomni/transformer_impl.py",
+        "verl/trainer/main_ppo_v0.py",
+        "verl/trainer/ppo/metric_utils.py",
+        "verl/trainer/ppo/utils.py",
+        "verl/trainer/ppo/v1/trainer_base.py"
+      ],
+      "verdict": "字段已消失"
+    },
+    {
+      "source": "megatron",
+      "key": "ref.load_weight",
+      "old_lines": [
+        486,
+        487
+      ],
+      "leaf_still_declared": false,
+      "current_readers": [],
+      "verdict": "字段已消失"
+    },
+    {
+      "source": "megatron",
+      "key": "ref.log_prob_max_token_len_per_gpu",
+      "old_lines": [
+        885
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "megatron",
+      "key": "ref.log_prob_micro_batch_size",
+      "old_lines": [
+        387,
+        388
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "megatron",
+      "key": "ref.log_prob_micro_batch_size_per_gpu",
+      "old_lines": [
+        388,
+        883
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "megatron",
+      "key": "ref.log_prob_use_dynamic_bsz",
+      "old_lines": [
+        886
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "megatron",
+      "key": "ref.megatron",
+      "old_lines": [
+        414
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/__init__.py",
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/megatron/utils.py",
+        "verl/workers/engine/mindspeed/transformer_impl.py",
+        "verl/workers/engine/mindspeed/utils.py",
+        "verl/trainer/constants_ppo.py",
+        "verl/trainer/distillation/losses.py",
+        "verl/trainer/distillation/megatron/losses.py",
+        "verl/trainer/main_ppo_v0.py",
+        "verl/trainer/ppo/core_algos.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "ref.megatron.dist_checkpointing_path",
+      "old_lines": [
+        492
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/megatron/transformer_impl.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "ref.megatron.dist_checkpointing_prefix",
+      "old_lines": [
+        494
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "megatron",
+      "key": "ref.megatron.use_dist_checkpointing",
+      "old_lines": [
+        489
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/megatron/transformer_impl.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "ref.megatron.use_distributed_optimizer",
+      "old_lines": [
+        475
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/mindspeed/utils.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "rollout",
+      "old_lines": [
+        270,
+        536,
+        908
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/veomni/transformer_impl.py",
+        "verl/trainer/main_generation_server.py",
+        "verl/trainer/main_ppo.py",
+        "verl/trainer/main_ppo_v0.py",
+        "verl/trainer/ppo/core_algos.py",
+        "verl/trainer/ppo/metric_utils.py",
+        "verl/trainer/ppo/ray_trainer.py",
+        "verl/trainer/ppo/rollout_corr_helper.py",
+        "verl/trainer/ppo/utils.py",
+        "verl/trainer/ppo/v1/agent_loop_tq.py",
+        "verl/trainer/ppo/v1/replay_buffer.py",
+        "verl/trainer/ppo/v1/trainer_base.py",
+        "verl/trainer/ppo/v1/trainer_colocate_async.py",
+        "verl/trainer/ppo/v1/trainer_separate_async.py",
+        "verl/trainer/ppo/v1/trainer_sync.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "rollout.data_parallel_size",
+      "old_lines": [
+        540
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "megatron",
+      "key": "rollout.free_cache_engine",
+      "old_lines": [
+        724,
+        750,
+        770
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "megatron",
+      "key": "rollout.load_format",
+      "old_lines": [
+        569
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "megatron",
+      "key": "rollout.log_prob_micro_batch_size",
+      "old_lines": [
+        378,
+        380
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "megatron",
+      "key": "rollout.log_prob_micro_batch_size_per_gpu",
+      "old_lines": [
+        380
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [],
+      "verdict": "候选失效（字段在、引擎/trainer 不读）"
+    },
+    {
+      "source": "megatron",
+      "key": "rollout.n",
+      "old_lines": [
+        374
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/trainer/main_generation_server.py",
+        "verl/trainer/ppo/core_algos.py",
+        "verl/trainer/ppo/metric_utils.py",
+        "verl/trainer/ppo/ray_trainer.py",
+        "verl/trainer/ppo/v1/agent_loop_tq.py",
+        "verl/trainer/ppo/v1/replay_buffer.py",
+        "verl/trainer/ppo/v1/trainer_base.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "rollout.name",
+      "old_lines": [
+        562,
+        566
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/torchtitan/transformer_impl.py",
+        "verl/workers/engine/torchtitan/utils.py",
+        "verl/workers/engine/veomni/transformer_impl.py",
+        "verl/workers/engine/veomni/utils.py",
+        "verl/trainer/config/config.py",
+        "verl/trainer/distillation/losses.py",
+        "verl/trainer/main_generation_server.py",
+        "verl/trainer/ppo/core_algos.py",
+        "verl/trainer/ppo/metric_utils.py",
+        "verl/trainer/ppo/prefix_grouper_utils.py",
+        "verl/trainer/ppo/ray_trainer.py",
+        "verl/trainer/ppo/reward.py",
+        "verl/trainer/ppo/utils.py",
+        "verl/trainer/ppo/v1/replay_buffer.py",
+        "verl/trainer/ppo/v1/trainer_base.py",
+        "verl/trainer/ppo/v1/utils.py",
+        "verl/trainer/sft_trainer.py",
+        "verl/trainer/sft_trainer_ray.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "rollout.pipeline_model_parallel_size",
+      "old_lines": [
+        541
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/mindspeed/utils.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "rollout.temperature",
+      "old_lines": [
+        887,
+        912,
+        927
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/torchtitan/transformer_impl.py",
+        "verl/trainer/main_generation_server.py",
+        "verl/trainer/ppo/core_algos.py",
+        "verl/trainer/ppo/prefix_grouper_utils.py",
+        "verl/trainer/ppo/ray_trainer.py",
+        "verl/trainer/ppo/v1/agent_loop_tq.py",
+        "verl/trainer/ppo/v1/trainer_base.py",
+        "verl/trainer/sft_trainer.py",
+        "verl/trainer/sft_trainer_ray.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "rollout.tensor_model_parallel_size",
+      "old_lines": [
+        540
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/mindspeed/utils.py",
+        "verl/trainer/main_generation_server.py"
+      ],
+      "verdict": "有读取"
+    },
+    {
+      "source": "megatron",
+      "key": "rollout_n",
+      "old_lines": [
+        1083
+      ],
+      "leaf_still_declared": true,
+      "current_readers": [
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/torchtitan/transformer_impl.py",
+        "verl/trainer/ppo/ray_trainer.py"
+      ],
+      "verdict": "有读取"
+    }
+  ]
+}

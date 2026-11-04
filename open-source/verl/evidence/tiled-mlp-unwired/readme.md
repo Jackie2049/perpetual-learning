@@ -2,6 +2,8 @@
 
 <!-- contribution-summary:start -->
 > **2026-11-04 更新（本条最重要的新事实）：这不是一开始就写错的配置，而是一次重构回归。** 同目录的结论建立在 `6879e1ab07`（2026-11-02）快照上；补查历史后：PR [#4649](https://github.com/verl-project/verl/pull/4649)（2026-01-04 合入）**当年真的把接线做在 `verl/workers/fsdp_workers.py` 里**（`tiled_mlp_config → use_tiled_mlp / tiled_mlp_shards`，并在 `_build_model_optimizer` 里带 FSDP1 拒绝），该文件于 [#6067](https://github.com/verl-project/verl/pull/6067)（2026-04-20，"deprecate workers, migrate to engines"，BREAKING）整体删除，**接线没有跟着迁到新引擎** `verl/workers/engine/fsdp/transformer_impl.py`（该文件自 2025-09 存在至今从未出现 `tiled_mlp`）。⇒ 2026-01-04 到 2026-04-20 之间这个选项**是有效的**，回归窗口从重构那天起。复核脚本与证据：[experiments/verl-tiled-mlp-regression](../../../../experiments/verl-tiled-mlp-regression/readme.md)。**若将来对外提这条，必须写成"重构回归"而不是"从没接上"**——后者会让维护者以为配置一直无效，也会错过"同期可能还有别的选项一起丢了"这个更有用的线索。
+>
+> **2026-11-04 追加（"别的选项"已经查完）：同一次重构还丢了 `actor.freeze_vision_tower`，见 [engine-refactor-config-consumers](../engine-refactor-config-consumers/readme.md)。** 那次体检把两个被删 worker 文件里的 30 条文本候选逐条核对，**真失效只有 3 条**（`tiled_mlp`、`freeze_vision_tower`、`use_prefix_grouper`），另 26 条是改名/换位置后照常生效、1 条搬进了 `HFModelConfig`。⇒ 这是一"类"回归，但不是"一片"：写"几十个配置全失效"会是错的。
 
 
 **【仓库】** [verl-project/verl](https://github.com/verl-project/verl)（LLM 后训练 / RL 训练框架，Apache-2.0）

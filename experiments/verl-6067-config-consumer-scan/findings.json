@@ -1,0 +1,81 @@
+{
+  "n": 7,
+  "n_mismatch": 0,
+  "rows": [
+    {
+      "key": "tiled_mlp",
+      "expect": "lost",
+      "old": "verl/workers/fsdp_workers.py:913-915 取值、:935-936/:989-990/:1481-1482 转发进 apply_monkey_patch",
+      "note": "HFModelConfig 仍声明 tiled_mlp；FSDP 引擎 _build_module 的 apply_monkey_patch 不传 use_tiled_mlp",
+      "verdict": "ok",
+      "where": {
+        "engine_or_trainer_readers": [],
+        "config_declarations": [
+          "verl/workers/config/critic.py",
+          "verl/workers/config/model.py"
+        ]
+      }
+    },
+    {
+      "key": "freeze_vision_tower",
+      "expect": "lost",
+      "old": "verl/workers/fsdp_workers.py:545-553（actor）与 :1554-1562（critic）冻结视觉塔",
+      "note": "actor.yaml 仍暴露该键；旧实现文件顶部的 get_vl_model_vision_tower 也随文件删除，main 无替代",
+      "verdict": "ok",
+      "where": {
+        "engine_or_trainer_readers": [],
+        "config_declarations": [
+          "verl/workers/config/actor.py"
+        ]
+      }
+    },
+    {
+      "key": "num_nextn_predict_layers",
+      "expect": "moved",
+      "old": "verl/workers/fsdp_workers.py:429-432 在 FSDP 上强制清零（MTP 开启时抛 NotImplementedError）；megatron_workers.py:163-164 在 MTP 关闭时清零",
+      "note": "FSDP 侧的'清零'搬进了 HFModelConfig.__post_init__（MTP 关闭时统一清零），所以这条不是失效、是搬了家；旧代码的 raise NotImplementedError 已改成静默清零",
+      "verdict": "ok",
+      "where": {
+        "moved_to": true,
+        "engine_readers": []
+      }
+    },
+    {
+      "key": "use_prefix_grouper",
+      "expect": "lost",
+      "old": "verl/workers/fsdp_workers.py:934 传给 apply_monkey_patch；:969-997 写进 ref 配置",
+      "note": "TM-005 已单独取证；本条只作同源复核",
+      "verdict": "ok",
+      "where": {
+        "engine_or_trainer_readers": [],
+        "config_declarations": [
+          "verl/workers/config/actor.py"
+        ]
+      }
+    },
+    {
+      "key": "mtp_loss_scaling_factor",
+      "expect": "wired",
+      "old": "verl/workers/megatron_workers.py:160 写入 override_transformer_config",
+      "note": "check_mtp_config 在新引擎侧接回",
+      "verdict": "ok",
+      "where": "verl/utils/megatron_utils.py /model_config\\.mtp\\.mtp_loss_scaling_factor/"
+    },
+    {
+      "key": "log_prob_micro_batch_size",
+      "expect": "renamed",
+      "old": "verl/workers/fsdp_workers.py:283-285 就地整除并按 GPU 折算",
+      "note": "engine_workers 把 ref.log_prob_micro_batch_size 改名成 ppo_micro_batch_size",
+      "verdict": "ok",
+      "where": "verl/workers/engine_workers.py /pop\\(\\s*\"log_prob_micro_batch_size\"/"
+    },
+    {
+      "key": "fsdp_size",
+      "expect": "renamed",
+      "old": "verl/workers/fsdp_workers.py:178 用来建 device mesh",
+      "note": "actor.fsdp_config 整体变成 actor.engine（FSDPEngineConfig.fsdp_size）",
+      "verdict": "ok",
+      "where": "verl/workers/engine/fsdp/transformer_impl.py /fsdp_size/"
+    }
+  ]
+}
