@@ -27,7 +27,11 @@ export HF_ENDPOINT=https://hf-mirror.com
 export CUDA_VISIBLE_DEVICES=${TRAIN_GPUS},${ROLLOUT_GPU}
 export PYTHONUNBUFFERED=1
 export NCCL_P2P_DISABLE=1
-export NCCL_SHM_DISABLE=${NCCL_SHM_DISABLE:-0}
+# separate_async cannot run with SHM all-reduce: without NOSET the FSDP broadcast
+# hits "Cuda failure 217 'peer access is not supported'".  Default it to 1 so that
+# the README's bare smoke command (`bash run-sep-bound.sh`) is runnable; set
+# NCCL_SHM_DISABLE=0 explicitly only if you are deliberately testing that path.
+export NCCL_SHM_DISABLE=${NCCL_SHM_DISABLE:-1}
 if [ "${NOSET:-0}" = "1" ]; then export RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1; fi
 export RAY_TMPDIR=/tmp/ray-${MODE}
 export MODEL_PATH=/home/zxw/models/Qwen2.5-0.5B-Instruct

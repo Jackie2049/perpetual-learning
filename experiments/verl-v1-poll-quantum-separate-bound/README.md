@@ -2,7 +2,7 @@
 
 2026-11-03 起草、2026-11-04 补完并入库（M5 算力侧）。同专项其余模式见 [sync](../verl-v1-poll-quantum/README.md)、[DAPO](../verl-v1-poll-quantum-dapo/README.md)、[4 卡](../verl-v1-poll-quantum-dapo-g4/README.md)、[colocate_async](../verl-v1-poll-quantum-async/README.md)、[stale 通道](../verl-v1-poll-quantum-stale/README.md)、[separate_async 已完成的区间](../verl-v1-poll-quantum-separate/README.md)。
 
-> **状态：零读数。** 本目录只有准备物料与离线自检，**没有任何 GPU 运行**，不得把这里的任何数字或预期当作实测。2026-11-04 因两条算力链路同时不可达（见文末「阻塞」）先归档，避免准备物料丢失。
+> **状态：零读数。** 本目录只有准备物料与离线自检，**没有任何 GPU 运行**，不得把这里的任何数字或预期当作实测。2026-11-04 因两条算力链路同时不可达（见文末「阻塞」）先归档，避免准备物料丢失；同日 13:5x 的无卡轮又用**上一轮真日志**把两个解析器三路互核（40 项断言全过），并修掉三个会在窗口里炸的坑（最后一步缺口、缺相位键的 traceback、冒烟默认撞 CUDA 217），见「13:5x 轮」一节。
 
 ## 要补的口子
 
@@ -53,21 +53,43 @@
 - **必须 `NCCL_SHM_DISABLE=1`**：去掉 NOSET 后训练侧 FSDP 广播撞 `Cuda failure 217 'peer access is not supported'`。代价是集合通信退化为 socket，**绝对步时不可与其他批次比**。
 - `nccl_checkpoint_engine` 加载期 `import cupy`，venv 没有 ⇒ 装到 `/tmp/cupy-pkgs`（`/home` 长期接近满，不写它）。
 
-## 本轮（2026-11-04）对准备物料做的三处修改
+## 2026-11-04 12:5x 轮：对准备物料做的三处修改
 
 1. **TransferQueue 容量 512 → 1536**：`SimpleStorage` 把 `total_storage_size` 摊到 8 个单元，512 就是 64/单元，**正好等于本配置一步的 64 条**，会构造性复现上一轮冒烟撞到的 `Storage capacity exceeded: N existing + 1 new > N`（当时是 16/步对 16 容量）。1536 ⇒ 192/单元 = 三步余量。
 2. **`verify-bound.py` 的判定拆成三类**：机械有效性（缺步、配置漂移、`step ≠ Σ相位 + 缺口`）→ exit 1；测量有效但区间没翻 → **exit 2**（GATE 挡住 A/B）；两者都过 → exit 0。效应量改为 INFO 打印、不再参与 pass/fail。原来的写法把"区间没翻转"也报成 FAIL，窗口里极易被误读成"数据有问题"。
 3. **新增 `selftest-bound.py`**：用真实控制台日志格式合成 4 组夹具，把两个解析器当黑盒跑，10 项断言全过（`exit 0`）。它当场抓出两个错——夹具写成双引号键（真实配置是单引号），以及上面那条 0.1 臂门槛写错。
 
+## 2026-11-04 13:5x 轮（无卡轮）：真日志离线核对，抓到三个会在窗口里炸的坑
+
+两条算力链路仍不可达（见文末「阻塞」）。本轮不重复探测，改把"只有窗口才能验"的部分尽量提前验掉。**四个真问题，都不是数据问题，两个会直接浪费窗口。**
+
+**一、真日志核对：解析器可以提前验，不必等窗口。** 新增 [`crosscheck-real-logs.py`](crosscheck-real-logs.py)，拿**上一轮 separate_async 的真实控制台日志**（`../verl-v1-poll-quantum-separate/raw/sa{20,01}{a,b}.txt`，同一 mode／同一机器／同一脚本家族，只有负载不同）跑三个**互相独立**的解析器（本目录两个 + 那份已发布的 `summary.json`）：
+
+- **40 项断言全过**：4 个文件 × 6 个关键指标（gen／step／old_log_prob／update_actor／update_weights／response_length），三路均值逐位一致（差 <1e-9）；
+- **`np.float64(...)` 形态确实存在**：每个日志 **104 处** repr，两条解析路径都正确取值——原先记的"窗口期才能核对"可以关掉；
+- **控制台没有污染**：每份日志 8 条 step 行，解析出 8 步，`logged == parsed`，不存在 EngineCore 尾巴被当成 step 行；
+- **配置抽取在真 dump 上可读**（`trainer_mode=separate_async`、`poll_interval`、`parameter_sync_step=4`、`max_response_length=256`——那是旧配置的值，新配置应读成 1／1024）。
+
+**二、缺口判据会把好数据判死（已修）。** 旧版把 `step ≠ Σ相位 + 缺口` 的检查套在**步 3–8**，而步 8 是最后一步。实测归档日志：sync／DAPO／colocate 三种模式的**最后一步都额外吞进收尾工作**（比相位和多 **+3.9～+7.6 s**），separate_async 只是恰好干净（+0.03 s）。⇒ 本模式的最后一步一旦也带上测试／存盘，整批数据会被判成机械无效。现改为**最后一步不进门、只打 INFO**，并加负向对照：同一份"最后一步 +6 s"夹具，旧版 **rc=1（4 条失败）**、新版 **rc=0**。
+
+**三、缺相位键会直接抛 traceback（已修）。** 旧版用 `sum(steps[s][k] for k in …)` 取相位和，任一键缺失就是 `KeyError` 栈——在窗口里表现为"脚本崩了"，而不是"哪一项缺了"。现先做存在性检查（点名字段）再算缺口。另外阈值从写死的 `0.1 s` 改为 `max(0.1 s, 中位步长 × 2%)`：真日志稳态缺口只有 **0.027–0.035 s**，但步长本身会变，固定阈值会把固定开销误判成坏账。
+
+顺带核清一条**不能混用**的事实：sync／DAPO／colocate 日志里有 `timing_s/ref`（≈2.4 s）而本模式没有——所以"用 5 个相位去套所有模式"本身就会造出 ~2.4 s 的假缺口。判据只能按模式写。
+
+**四、冒烟命令默认会撞 CUDA 217（已修）。** 协议里的冒烟是直接 `bash run-sep-bound.sh`，而脚本原来 `NCCL_SHM_DISABLE=${…:-0}`——默认值 0 与"本模式必须 1"矛盾（A/B 链脚本自己导出了 1，冒烟路径没有）。直接跑冒烟会死在 FSDP 广播，且现场看起来像"受测树坏了"。现默认改为 **1**。
+
 ## 离线自检
 
 ```
-python3 selftest-bound.py        # 10 PASS / 0 FAIL, exit 0
-python3 -m py_compile make-summary-bound.py verify-bound.py selftest-bound.py
+python3 selftest-bound.py        # 14 PASS / 0 FAIL, exit 0
+python3 crosscheck-real-logs.py  # 40 PASS / 0 FAIL, exit 0（真日志三路互核）
+python3 -m py_compile make-summary-bound.py verify-bound.py selftest-bound.py crosscheck-real-logs.py
 bash -n run-sep-bound.sh run-sep-bound-ab.sh run-sep-bound-05.sh
 ```
 
-自检覆盖：①区间翻转的夹具 → `verify` exit 0 且池化 Δstep = Δgen = 0.9 s；②没翻转的夹具 → exit 2 且 GATE 点名 2.0 臂；③少一步 → exit 1；④账对不上（每步凭空多 0.5 s）→ exit 1。
+自检覆盖：①区间翻转的夹具 → `verify` exit 0 且池化 Δstep = Δgen = 0.9 s；②没翻转的夹具 → exit 2 且 GATE 点名 2.0 臂；③少一步 → exit 1；④账对不上（每步凭空多 0.5 s）→ exit 1；⑤只有最后一步多 6 s → **仍 exit 0**（不收尾工作影响）；⑥缺一个相位键 → exit 1 且点名字段、无 traceback。
+
+**仍未验的两件事**（只能窗口验）：新配置本身的 `parameter_sync_step=1`／`max_response_length=1024` 在真 dump 里的打印形态（旧日志是 4／256，解析路径一致但值不同），以及 64 条/步下稳态缺口是否仍在阈值内——冒烟 3 步会顺带打出这两个数。
 
 ## 边界与已知风险
 
@@ -76,15 +98,15 @@ bash -n run-sep-bound.sh run-sep-bound-ab.sh run-sep-bound-05.sh
 - 负载是否真翻区间**只有 GATE 能答**；本目录不预设它一定翻。翻不了本身就是一条结论（写进 §13.54 的边界，而不是把 A/B 硬解释成"量子无效"）。
 - `TQ_SIZE` 余量是按"一步 64 条"算的；若把 `NORM_RESP` 抬到 32（128 条/步），容量要同步抬到 3072。
 
-## 阻塞（2026-11-04，本轮实测）
+## 阻塞（2026-11-04 12:5x 与 13:5x 两次实测，结果相同）
 
 | 通路 | 结果 | 备注 |
 |---|---|---|
-| `4090-1` = `219.223.198.62:22` | ICMP 100% 丢包、TCP 超时 | **公网直连、不经 VPN**；外网正常（GitHub 443 可达） |
+| `4090-1` = `219.223.198.62:22` | ICMP 100% 丢包、`nc` TCP 超时 | **公网直连、不经 VPN**；外网正常（GitHub 443 可达） |
 | 昇腾 VPN 网关 `10.205.0.1` | 2 包全丢 | |
 | `192.168.13.154/155/156:22` | 全超时 | |
 
-本轮只探一次、未重试。恢复条件＝用户侧恢复 4090-1 所在网段（历史上有过约 28 h 的电信段路由断裂）或恢复昇腾 VPN；两者都不需要本 Agent 再做动作。
+两轮各只探一次、未重试。恢复条件＝用户侧恢复 4090-1 所在网段（历史上有过约 28 h 的电信段路由断裂）或恢复昇腾 VPN；两者都不需要本 Agent 再做动作。
 
 ## 与既有结论的关系
 

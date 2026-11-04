@@ -16,6 +16,16 @@ the pre-registered hypothesis, not a validity condition.
 
 Deliberately different from make-summary-bound.py: it splits a step line on
 " - ", keeps only keys of interest, and recomputes means with a plain mean.
+
+Gap calibration (2026-11-04, from the 49 archived logs, no GPU): in
+separate_async the middle steady steps close to 0.027-0.035 s, while sync /
+DAPO / colocate logs carry `timing_s/ref` -- a phase this mode does not log --
+so a fixed 5-key sum would report a bogus ~2.4 s gap if the key list ever
+drifted.  The *last* step is excluded from the gate: in three other modes it
+absorbs end-of-run work (+3.9 to +7.6 s over the phase sum) even though
+separate_async's last step happened to stay clean.  The threshold is
+max(0.1 s, 2% of the median steady step), so a longer step cannot turn real
+fixed overhead into a false mechanical failure.
 """
 import pathlib
 import re
@@ -24,6 +34,8 @@ import sys
 ANSI = re.compile(r"\x1b\[[0-9;]*m")
 RUNS = {"sb20a": 2.0, "sb01a": 0.1, "sb20b": 2.0, "sb01b": 0.1}
 WINDOW = set(range(3, 9))
+PHASES = ("timing_s/gen", "timing_s/old_log_prob", "timing_s/adv",
+          "timing_s/update_actor", "timing_s/update_weights")
 WANT = ["timing_s/gen", "timing_s/step", "timing_s/old_log_prob",
         "timing_s/update_actor", "timing_s/update_weights", "response_length/mean"]
 fails, gate_fails = [], []
@@ -115,12 +127,20 @@ def main():
         window = [s for s in sorted(steps) if s in WINDOW]
         check(f"{name}: steady window steps 3-8 present", window == sorted(WINDOW), str(window))
         steady[name] = {k: mean([steps[s][k] for s in window if k in steps[s]]) for k in WANT}
-        gaps = [steps[s]["timing_s/step"] - sum(
-            steps[s][k] for k in ("timing_s/gen", "timing_s/old_log_prob",
-                                  "timing_s/adv", "timing_s/update_actor",
-                                  "timing_s/update_weights")) for s in window]
-        check(f"{name}: step = sum(phases) + gap, gap<0.1s", max(gaps) < 0.1,
-              f"max gap={max(gaps):.3f}")
+        missing = {s: [k for k in PHASES if k not in steps[s]] for s in window}
+        missing = {s: v for s, v in missing.items() if v}
+        check(f"{name}: all in-step phases logged", not missing,
+              str(missing) if missing else f"{len(PHASES)}/5")
+        if not missing:
+            gap_steps = [s for s in window if s != max(steps)]
+            gaps = [steps[s]["timing_s/step"] - sum(steps[s][k] for k in PHASES) for s in gap_steps]
+            gap_max = max(0.1, 0.02 * mean([steps[s]["timing_s/step"] for s in gap_steps]))
+            check(f"{name}: step = sum(phases) + gap (last step excluded)",
+                  max(gaps) < gap_max, f"max gap={max(gaps):.3f}s vs threshold {gap_max:.3f}s")
+            info(f"{name} steady gap", f"median={mean(gaps):.3f}s max={max(gaps):.3f}s")
+            if max(steps) in window:
+                lg = steps[max(steps)]["timing_s/step"] - sum(steps[max(steps)][k] for k in PHASES)
+                info(f"{name} last-step gap (not gated)", f"{lg:+.3f}s")
 
     # Regime gate: with poll=2.0 the *only* way `timing_s/gen` can reach 1.9 s in
     # separate_async is that the trainer slept in `_wait_for_next_poll`, so a

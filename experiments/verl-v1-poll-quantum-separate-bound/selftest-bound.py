@@ -13,6 +13,8 @@ verdict:
   no-flip      both arms ~0.03 s of gen  -> verify exit 2 (gate), never 0
   short-run    one run has 7 steps       -> verify exit 1 (mechanical)
   broken-gap   step != sum(phases)+gap   -> verify exit 1 (mechanical)
+  last-step    +6 s end-of-run overhead  -> verify exit 0 (last step not gated)
+  nophase      one phase key missing     -> verify exit 1, no traceback
 
 The fixtures live in a temp dir and are deleted; nothing here is measurement.
 """
@@ -33,7 +35,8 @@ def check(name, cond, detail=""):
         fails.append(name)
 
 
-def log_text(poll, gen, phases, steps=8, step_pad=0.0, drop_last=False):
+def log_text(poll, gen, phases, steps=8, step_pad=0.0, last_pad=0.0,
+             drop_phase=None, drop_last=False):
     """One console log: resolved-config lines + one 'step:' line per step."""
     lines = [
         "{'trainer': {'v1': {'trainer_mode': 'separate_async', "
@@ -46,9 +49,10 @@ def log_text(poll, gen, phases, steps=8, step_pad=0.0, drop_last=False):
             continue
         # noise so that the two arms are not bit-identical runs
         gen_s = gen + (0.02 if s % 2 else -0.02)
-        steps_total = gen_s + sum(phases.values()) + step_pad
+        pad = step_pad + (last_pad if s == steps else 0.0)
+        steps_total = gen_s + sum(phases.values()) + pad
         parts = [f"step:{s}", f"timing_s/gen:{round(gen_s, 3)}"]
-        parts += [f"timing_s/{k}:{v}" for k, v in phases.items()]
+        parts += [f"timing_s/{k}:{v}" for k, v in phases.items() if k != drop_phase]
         parts += [f"timing_s/step:{round(steps_total, 3)}",
                   "response_length/mean:410.0",
                   "training/off_policy/trajectory_spans/mean:1.0",
@@ -71,7 +75,9 @@ def build(root, gen20, gen01, **kw):
         drop = kw.get("drop_last") and name == "sb01b"
         pad = kw.get("step_pad", 0.0) if poll == 2.0 else 0.0
         (raw / f"{name}.txt").write_text(
-            log_text(poll, gen, PHASES, step_pad=pad, drop_last=drop))
+            log_text(poll, gen, PHASES, step_pad=pad,
+                     last_pad=kw.get("last_pad", 0.0),
+                     drop_phase=kw.get("drop_phase"), drop_last=drop))
     return raw
 
 
@@ -121,6 +127,24 @@ def main():
     raw = build(root, gen20=4.0, gen01=3.1, step_pad=0.5)
     r = run("verify-bound.py", raw)
     check("broken gap -> verify exit 1 (mechanical)", r.returncode == 1, f"rc={r.returncode}")
+
+    # 5. end-of-run work inflates only the last step (seen as +6.4 s in sync/DAPO/
+    #    colocate logs) -> must not be read as a mechanical failure
+    root = case("laststep")
+    raw = build(root, gen20=4.0, gen01=3.1, last_pad=6.0)
+    r = run("verify-bound.py", raw)
+    check("last-step overhead -> verify exit 0 (excluded from gate)",
+          r.returncode == 0, f"rc={r.returncode}")
+    check("last-step overhead -> reported as INFO",
+          "last-step gap (not gated)" in r.stdout)
+
+    # 6. a phase key disappears from the log -> named failure, not a KeyError traceback
+    root = case("nophase")
+    raw = build(root, gen20=4.0, gen01=3.1, drop_phase="adv")
+    r = run("verify-bound.py", raw)
+    check("missing phase -> verify exit 1 (mechanical)", r.returncode == 1, f"rc={r.returncode}")
+    check("missing phase -> named, no traceback",
+          "all in-step phases logged" in r.stdout and "Traceback" not in r.stderr)
 
     print(f"\n{len(fails)} failure(s)")
     return 1 if fails else 0
