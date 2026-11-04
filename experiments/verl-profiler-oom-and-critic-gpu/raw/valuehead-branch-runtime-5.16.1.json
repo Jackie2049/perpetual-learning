@@ -1,0 +1,75 @@
+{
+ "checkpoint_has_score_head": false,
+ "checks": [
+  {
+   "got": "Qwen2ForTokenClassification",
+   "name": "resolved_class",
+   "ok": true,
+   "want": "Qwen2ForTokenClassification"
+  },
+  {
+   "got": 1,
+   "name": "num_labels",
+   "ok": true,
+   "want": 1
+  },
+  {
+   "got": false,
+   "name": "checkpoint_is_causal_lm",
+   "ok": true,
+   "want": false
+  },
+  {
+   "got": true,
+   "name": "loaded_has_score_head",
+   "ok": true,
+   "want": true
+  },
+  {
+   "got": false,
+   "name": "v_head_absent",
+   "ok": true,
+   "want": false
+  },
+  {
+   "got": [
+    1,
+    4,
+    1
+   ],
+   "name": "logits_shape",
+   "ok": true,
+   "want": [
+    1,
+    4,
+    1
+   ]
+  },
+  {
+   "got": [
+    1,
+    4
+   ],
+   "name": "squeezed_shape",
+   "ok": true,
+   "want": [
+    1,
+    4
+   ]
+  }
+ ],
+ "failed": [],
+ "flash_attention_2_path": {
+  "raised": "ImportError: FlashAttention2 has been toggled on, but it cannot be used due to the following error: the package for FlashAttention2 doesn't seem to be installed.",
+  "surfaced": "RuntimeError: model(...) is not a value head model, please install trl to make it valid [wrapping ImportError]"
+ },
+ "platform": "darwin",
+ "python_version": "3.12.16",
+ "score_head_param_names": [
+  "score.weight",
+  "score.bias"
+ ],
+ "score_head_params": 33,
+ "torch_version": "2.15.0",
+ "transformers_version": "5.16.1"
+}

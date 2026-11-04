@@ -165,11 +165,17 @@ def selftest():
         from transformers import AutoModelForTokenClassification, Qwen2Config as _Qwen2Config
 
         m = AutoModelForTokenClassification._model_mapping
-        real.append(("real_qwen2_mapped", type(_Qwen2Config()) in m, True))
-        real.append(("real_qwen2_resolves",
-                     getattr(m.get(type(_Qwen2Config()), None), "__name__", None),
-                     "Qwen2ForTokenClassification"))
-        real.append(("real_unmapped_config", type(transformers.PretrainedConfig()) in m, False))
+        # Same (name, ok, got, want) shape as `case()`: rows with a different arity used to reach
+        # the reporting loop only when transformers was importable, i.e. on the server, and would
+        # have crashed the self-test there while passing on a bare python3.9 box.
+        def real_case(name, got, want):
+            results.append((name, got == want, got, want))
+
+        real_case("real_qwen2_mapped", type(_Qwen2Config()) in m, True)
+        real_case("real_qwen2_resolves",
+                  getattr(m.get(type(_Qwen2Config()), None), "__name__", None),
+                  "Qwen2ForTokenClassification")
+        real_case("real_unmapped_config", type(transformers.PretrainedConfig()) in m, False)
         info.append(("real_trl_import_path", trl_import_path()))
     except Exception as exc:
         skipped.append(f"transformers real-mapping cases skipped: {type(exc).__name__}: {exc}")

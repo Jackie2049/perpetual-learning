@@ -1,0 +1,10 @@
+[selftest] PASS mapped_no_trl_is_usable: got={'branch': 'token_classification', 'trl_required': False, 'usable': True} want={'branch': 'token_classification', 'trl_required': False, 'usable': True}
+[selftest] PASS unmapped_with_trl_is_usable: got={'branch': 'trl_valuehead', 'trl_required': True, 'usable': True} want={'branch': 'trl_valuehead', 'trl_required': True, 'usable': True}
+[selftest] PASS unmapped_no_trl_aborts: got={'branch': 'trl_valuehead', 'trl_required': True, 'usable': False} want={'branch': 'trl_valuehead', 'trl_required': True, 'usable': False}
+[selftest] PASS lookup_mapped: got=(True, <class '__main__.selftest.<locals>._ResolvedCls'>) want=(True, <class '__main__.selftest.<locals>._ResolvedCls'>)
+[selftest] PASS lookup_unmapped: got=(False, None) want=(False, None)
+[selftest] PASS real_qwen2_mapped: got=True want=True
+[selftest] PASS real_qwen2_resolves: got=Qwen2ForTokenClassification want=Qwen2ForTokenClassification
+[selftest] PASS real_unmapped_config: got=False want=False
+[selftest] INFO real_trl_import_path: None
+[selftest] 8/8 passed

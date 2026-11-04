@@ -35,4 +35,32 @@ for arm in au cu cv; do
 done
 
 python3 "$HERE/../verify-critic-pdbg.py" --out "$OUT" | tee "$OUT/judge.txt"
-echo "judge_rc=${PIPESTATUS[0]}"
+JUDGE_RC=${PIPESTATUS[0]}
+echo "judge_rc=$JUDGE_RC"
+
+# Negative control for the import-based dependency check: keep the --target directory, delete the
+# package inside it. An existence-only preflight would accept this and die inside step 1; the
+# import check must refuse in seconds. Nothing here reaches a GPU either way.
+BROKEN=$WORK/broken
+rm -rf "$BROKEN"; cp -R "$TREE" "$BROKEN"
+rm -rf "$BROKEN/msprobe/msprobe"
+SRC=$BROKEN/src \
+MSPROBE_TARGET=$BROKEN/msprobe \
+TRL_TARGET=$BROKEN/trl \
+MSPROBE_CONFIG=$BROKEN/msprobe/config.json \
+MODEL_PATH=$BROKEN/model \
+TRAIN_FILE=$BROKEN/data/train.parquet \
+TEST_FILE=$BROKEN/data/test.parquet \
+ARM=cu G=0 OUT=$OUT/broken AUTO_PATCH=1 \
+bash "$HERE/../run-critic-pdbg.sh" > "$OUT/wrap-broken-msprobe.txt" 2>&1
+BROKEN_RC=$?
+if [ "$BROKEN_RC" = "65" ]; then
+  echo "negative_control=PASS (dir present, package gone -> exit 65 before any run)"
+else
+  echo "negative_control=FAIL (expected 65, got $BROKEN_RC)"
+fi
+
+if [ "$JUDGE_RC" = "0" ] && [ "$BROKEN_RC" = "65" ]; then
+  exit 0
+fi
+exit 1

@@ -18,7 +18,8 @@
 #   1. load_valuehead_model hardcodes attn_implementation="flash_attention_2" and this box
 #      has no flash-attn -> the tree is site-patched to "sdpa" by patch-critic-sdpa.py
 #      (idempotent; AUTO_PATCH=1 applies it, AUTO_PATCH=0 aborts instead of mutating).
-#   2. msprobe + trl live in /tmp --target dirs and /home is full -> preflight checks them.
+#   2. msprobe + trl live in /tmp --target dirs and /home is full -> preflight checks them, and
+#      for msprobe (the one hard dependency) it imports it rather than only stat-ing the directory.
 #
 # Output: the training log, plus `arm-<ARM>.json` -- machine-readable (exit code, dump
 # inventory with sizes, warning counts, step counts, tree patch state, dependency presence)
@@ -98,6 +99,23 @@ for dep in "$SRC/verl/utils/model.py" "$SCRIPT_DIR/patch-critic-sdpa.py" \
     exit 65
   fi
 done
+
+# The loop above only proves the paths exist. A partially cleaned /tmp -- the exact failure mode
+# this preflight exists for -- leaves the directory in place with a broken import, and that import
+# error would only surface inside the first training step, minutes after the window opened. Import
+# msprobe here with the same interpreter and PYTHONPATH the run uses; the config is parsed too
+# because the profiler reads it at start(), not at import.
+if ! python3 -c "from msprobe.pytorch import PrecisionDebugger" >"$OUT/msprobe-import.log" 2>&1; then
+  echo "[preflight] msprobe does not import with this interpreter/PYTHONPATH -> $OUT/msprobe-import.log" >&2
+  echo "[preflight] without it the profiler is a no-op and the au positive arm cannot dump -> abort" >&2
+  echo "[preflight]   reinstall: python3 -m pip install --no-deps --target $MSPROBE_DIR mindstudio-probe" >&2
+  echo "[preflight]              (+ matplotlib 3.10.9 pyparsing cycler kiwisolver fonttools python-dateutil packaging pillow)" >&2
+  exit 65
+fi
+if ! python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$MSPROBE_CONFIG" >/dev/null 2>&1; then
+  echo "[preflight] $MSPROBE_CONFIG is not valid JSON -> the tool cannot start collecting" >&2
+  exit 65
+fi
 
 python3 "$SCRIPT_DIR/patch-critic-sdpa.py" --tree "$SRC" --check >/dev/null 2>&1
 FA2_RC=$?
@@ -271,6 +289,7 @@ out = {
     "valuehead_branch": valuehead,
     "deps": {
         "msprobe_config": os.path.exists(E["M5_MSPROBE_CONFIG"]),
+        "msprobe_import_ok": True,
         "trl_target": os.path.exists(E["M5_TRL"]),
         "model": os.path.exists(E["M5_MODEL_PATH"]),
         "train_file": os.path.exists(E["M5_TRAIN_FILE"]),

@@ -57,6 +57,25 @@ token-classification 模型**不报错**（随机初始化 `score` 头）。Qwen
 每臂 `arm-<ARM>.json` 增记 `valuehead_branch`（判定只报告、不门控，自检 14/14）。**trl 0.27.0 的两条导入路径与 `pretrained_model`／`v_head` 都在**，
 回退分支本身成立，只是这条路用不到。**未跑、未上卡、未触上游。**
 
+**2026-11-05 05:0x 无卡轮：real-mapping 分支第一次真跑，抓到一个只在服务器上才会出现的崩；msprobe 预检从 stat 改成 import**。
+本轮仍双链路不可达（4090-1 ICMP 100%＋`:22` 超时、昇腾网关 2 包全丢），零 GPU 读数。本机原来只有 python 3.9，这一轮用
+python-build-standalone 3.12.16 ＋ `transformers==5.16.1` ＋ `torch 2.15.0` 建了一次性 venv（`/tmp/m5-trf-venv`），把上一轮写的
+"real-mapping 分支第一次执行在服务器上"提前执行掉，结果有三条：
+① **探针自检在服务器上会崩**——`selftest()` 的 `case()` 存 4 元组、real-mapping 三行存 3 元组，报告循环一律解包 4 个 ⇒ 只要
+`transformers` 能 import 就 `ValueError` exit 1；本机无 transformers 时三行被 skip，所以 04:0x 的"5/5"是绿的。旧版原样复现见
+[raw/probe-selftest-prefix-crash.txt](verl-profiler-oom-and-critic-gpu/raw/probe-selftest-prefix-crash.txt)，修复后同环境 **8/8**
+（[raw/probe-selftest-transformers-5.16.1.txt](verl-profiler-oom-and-critic-gpu/raw/probe-selftest-transformers-5.16.1.txt)）。wrapper 只调
+`--model`，所以这个崩不会烧窗口，但说明"自检通过"的覆盖面取决于跑自检的机器。
+② **分支结论变成运行时读数**：新增 [repro-valuehead-branch.py](verl-profiler-oom-and-critic-gpu/repro-valuehead-branch.py)，用真实
+`Qwen2ForCausalLM` 存 tiny checkpoint，再按 `load_valuehead_model` 同组实参调 `AutoModelForTokenClassification.from_pretrained`，
+**7/7**：解析 `Qwen2ForTokenClassification`、`num_labels=1`、checkpoint 无 `score.*` 而载入后有（33 参数＝hidden 32＋bias）、
+前向 `(1,4,1)`→`squeeze(-1)` 得 `(1,4)`、无 `v_head`。**顺带一条对窗口有用的**：不打 sdpa 补丁时 FA2 抛 `ImportError`，而 verl 的
+`except BaseException` 会把它翻成 `RuntimeError: ... please install trl ...` ⇒ **报错指向错误的包**。
+③ **preflight 的 msprobe 检查原来只 `-e` 目录**：目录在、包被清一半会放行，错误要到第一个训练步（模型加载之后）才出现。现改为
+用同一解释器/PYTHONPATH 执行 `from msprobe.pytorch import PrecisionDebugger` 并解析 `MSPROBE_CONFIG`，失败 exit 65 并打印重装命令；
+mock 夹具补了可导入 stub，`run-mock.sh` 新增负向对照（**目录保留、包删掉 → 必须 exit 65**，实测 PASS），三臂管线仍 rc=0／judge exit 0。
+**边界**：本机 torch 2.15.0（服务器 2.11.0+cu129），tiny 随机权重只证明"能载入＋头是新的＋形状对"，sdpa↔FA2 数值等价仍未测。**未上卡、未触上游。**
+
 ## verl DSA 依赖兼容参考
 
 状态：仅条件交接，不代表接单或新增训练队列。目的为在已有获准DSV4/DSA工作中识别[#8238](https://github.com/verl-project/verl/issues/8238)的Frontend版本/有效输入边界，非自动升级或启动Pro。固定证据见[原专题](../notebook/frameworks/verl-6791-dsv4-megatron-lite-reading.md#dsa-奇数输出与依赖版本)：verl3c6d9b4锁Frontend1.26.0/CUTLASS DSL4.6.2，Megatron43e45e13传min(topk,压缩KV宽度)；官方#407已合并，1.27 tag f77fbc3d包含奇数标量存储回退。M1仅三模块AST/compile与锁文件解析，没有cuDNN导入、kernel/模型或硬件执行；H100/GB200均为外部报告。

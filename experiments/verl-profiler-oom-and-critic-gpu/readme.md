@@ -77,7 +77,7 @@ logger.setLevel(os.getenv("VERL_LOGGING_LEVEL", "WARN"))   # :29  默认 WARN �
 - **`critic.use_dynamic_bsz` 继承 actor 为 True** ⇒ `critic.ppo_micro_batch_size_per_gpu=1` 这条是**惰性的**，真正约束显存的是 `ppo_max_token_len_per_gpu=3000`。写结论时不要把 micro batch 当变量。
 - 两个会在窗口里直接炸的点（都不是上游缺陷，但脚本必须带住）：
   1. `load_valuehead_model` 在 `verl/utils/model.py:475` 与 `:500` **写死 `attn_implementation="flash_attention_2"`**，且调用点（`workers/engine/fsdp/transformer_impl.py:304`）不传该参数 ⇒ 本机没装 FA2 时 critic 建模型即失败，而 `+actor_rollout_ref.model.override_config.attn_implementation=sdpa` **只作用于 actor/rollout**，救不了 critic。补丁原先只手改在服务端 `/tmp/m5-main-smoke/verl` 上（未入库）⇒ **重建树后必须重打**；2026-11-05 起由 [patch-critic-sdpa.py](patch-critic-sdpa.py) 幂等完成，`run-critic-pdbg.sh` 预检会自动调用（见下节）。
-  2. msprobe 与 trl 都装在 `/tmp` 的 `--target` 目录（`/tmp/m5-msprobe-target`、`/tmp/m5-trl-0.27.0`），共享 venv 未动；`/home` 100% 满时这两个目录也可能被清掉。
+  2. msprobe 与 trl 都装在 `/tmp` 的 `--target` 目录（`/tmp/m5-msprobe-target`、`/tmp/m5-trl-0.27.0`），共享 venv 未动；`/home` 100% 满时这两个目录也可能被清掉。**2026-11-05 05:0x 起：trl 只按分支条件检查（见下），msprobe 则真 import 一次**——目录还在、包被清一半的情况，旧的存在性检查会放行，错误要到第一个训练步才出现。
 
 ## 窗口前置（2026-11-05 M5 无卡轮）：两件怕丢的东西变成可复跑，判定先写死
 
@@ -184,7 +184,23 @@ logger.setLevel(os.getenv("VERL_LOGGING_LEVEL", "WARN"))   # :29  默认 WARN �
 
 **三、判定不动。** `verify-critic-pdbg.py` 只把 `valuehead_branch` 打进 reported（`_branch_label()`：记录到类名／`undecidable (...)`／`not-recorded`），**不进任何门槛**——预登记是在没有这个字段时写的，分支也不改变 P1–P3 问的事。自检 12 → **14**，新增两条钉住这一点：`valuehead_branch` 缺失 → 仍 exit 0；改成 `trl_valuehead` → 仍 exit 0。
 
-**边界（与本节结论一起引用）**：① 这是对**固定版本源码**的核对（verl `31cfccb4`、transformers 5.16.1 wheel、trl 0.27.0 wheel，两个 wheel 的 sha256 在 [raw/valuehead-branch-evidence.json](raw/valuehead-branch-evidence.json)），**不是运行时读数**；② 本机解释器是 3.9，`transformers 5.16.1` 装不上，所以探针的 real-mapping 分支**第一次执行是在服务器上**——因此失败方向必须是保守的：任何异常都归 `undecidable`，沿用严格规则，最坏是丢一个窗口，不会静默换成错分支；③ trl 0.27.0 两条导入路径都在（`trl/experimental/ppo/__init__.py:16`、`trl/__init__.py:46` 的废弃导入），类有 `pretrained_model`／`v_head`（`modeling_value_head.py:634/678`）⇒ 回退分支本身是成立的，只是这条路用不到。
+**边界（与本节结论一起引用）**：① 这是对**固定版本源码**的核对（verl `31cfccb4`、transformers 5.16.1 wheel、trl 0.27.0 wheel，两个 wheel 的 sha256 在 [raw/valuehead-branch-evidence.json](raw/valuehead-branch-evidence.json)），**不是运行时读数**；② ~~本机解释器是 3.9，`transformers 5.16.1` 装不上，所以探针的 real-mapping 分支第一次执行是在服务器上~~ —— **05:0x 轮已在本机执行完毕**（见下节），且失败方向仍保持保守：任何异常都归 `undecidable`，沿用严格规则；③ trl 0.27.0 两条导入路径都在（`trl/experimental/ppo/__init__.py:16`、`trl/__init__.py:46` 的废弃导入），类有 `pretrained_model`／`v_head`（`modeling_value_head.py:634/678`）⇒ 回退分支本身是成立的，只是这条路用不到。
+
+## 2026-11-05 05:0x 无卡轮：real-mapping 分支第一次真跑——**探针自检在服务器上会崩，preflight 的 msprobe 检查也只是 stat**
+
+两条算力链路仍不可达（4090-1 ICMP 100% 丢包＋`:22` 超时，昇腾网关 2 包全丢），本轮仍是零 GPU 读数。上一轮写的边界②说"real-mapping 分支第一次执行是在服务器上"——这次把它提前到本机：用 python-build-standalone 3.12.16 ＋ `transformers==5.16.1` ＋ `torch 2.15.0` 建了一个一次性 venv（`/tmp/m5-trf-venv`，系统 python 仍是 3.9）。
+
+**一、真跑立刻抓到一个只在服务器上才会出现的崩。** 探针的 `selftest()` 里，`case()` 存的是 4 元组 `(name, ok, got, want)`，而 real-mapping 那三行存的是 3 元组 `(name, got, want)`；报告循环 `for name, ok, got, want in results` 一概解包 4 个 ⇒ **只要 `transformers` 能 import 就 `ValueError: not enough values to unpack (expected 4, got 3)`**。本机 3.9 没有 transformers，三行被 skip，所以 04:0x 的"自检 5/5"看起来是绿的；**同一份脚本到了服务器（有 transformers）自检会 exit 1**。原样复现抓在 [raw/probe-selftest-prefix-crash.txt](raw/probe-selftest-prefix-crash.txt)（`git show HEAD:` 的旧版直接跑），修复后同一环境 **8/8**（[raw/probe-selftest-transformers-5.16.1.txt](raw/probe-selftest-transformers-5.16.1.txt)）。wrapper 只调 `--model`，所以这个崩不会烧窗口；但它说明**"自检通过"的覆盖面依赖于跑自检的机器**。
+
+**二、分支结论从源码阅读变成运行时读数。** 新增 [repro-valuehead-branch.py](repro-valuehead-branch.py)：用真实 `Qwen2ForCausalLM` 存一份 tiny checkpoint（hidden 32／2 层／vocab 128），再按 `load_valuehead_model` 的**同一组实参**调 `AutoModelForTokenClassification.from_pretrained(..., config=cfg, attn_implementation="sdpa")`，`cfg.num_labels=1` 与 dropout 覆盖照抄 `transformer_impl.py:291-300`。读数 [raw/valuehead-branch-runtime-5.16.1.json](raw/valuehead-branch-runtime-5.16.1.json) **7/7**：
+- 解析类 `Qwen2ForTokenClassification`、`num_labels=1`；checkpoint 里**没有** `score.*`，载入后**有**（`score.weight`/`score.bias` 共 33 参数＝hidden 32＋bias）⇒ 全新 1 维头；
+- 前向 `logits` 形状 `(1,4,1)`、`squeeze(-1)` 后 `(1,4)`，模块上没有 `v_head` ⇒ `prepare_model_outputs` 走的是 `output.logits.squeeze(-1)` 那一支；
+- **未打补丁的 FA2 路径**（verl 原样）在本机抛 `ImportError: ... FlashAttention2 ... doesn't seem to be installed`，而 verl 的 `except BaseException` 会把它转成 **`RuntimeError: model(...) is not a value head model, please install trl to make it valid`** ⇒ 不打 sdpa 补丁时窗口里的报错**指向错误的包**；这也给"预检必须打补丁"补了一条独立理由。
+
+**三、preflight 的 msprobe 检查从"stat 目录"改成"真 import"。** 上一轮刚因为 `/tmp` 可能被清一部分把 trl 降级成条件依赖，但**硬依赖 msprobe 仍只检查 `-e $MSPROBE_DIR`**——目录在、包被清一半时预检放行，错误会在第一个训练步（模型加载之后，几分钟）才出现。现在预检用**与跑批相同的解释器和 PYTHONPATH** 执行 `from msprobe.pytorch import PrecisionDebugger`，并解析 `MSPROBE_CONFIG`（profiler 在 `start()` 才读它）；失败 exit 65，写明重装命令。夹具补了可导入的 stub 包，`mock/run-mock.sh` 增加负向对照：**目录保留、包删掉 → 必须 exit 65**（结果 `negative_control=PASS`），三臂管线仍 rc=0／judge exit 0。
+
+**边界**：本机 torch 2.15.0 与服务器 2.11.0+cu129 不同版本，movement 在 transformers 的 lookup/载入逻辑，与 torch 版本无关，但**不是服务器上的读数**；tiny checkpoint 是随机初始化的，证明的是"能载入＋头是新的＋形状对"，**不证明 0.5B 真权重的数值行为**；sdpa 与 FA2 的数值等价仍未测（需要真机）；`/tmp` 里那个 venv 是一次性物料，重建命令见下节复现。
+
 
 ## 复现
 
@@ -202,7 +218,15 @@ python3 verify-critic-pdbg.py --out <OUT>
 python3 verify-critic-pdbg.py --selftest   # 14 项，含"cu 冒 dump → 2"与"valuehead_branch 不进门槛"
 # critic 用哪条分支建模型（预检内部会调，也可单独跑；只读 config.json，不需要 GPU）
 python3 probe-valuehead-branch.py --model /home/zxw/models/Qwen2.5-0.5B-Instruct --json /tmp/vh.json
-python3 probe-valuehead-branch.py --selftest   # 5 项（real-mapping 两条要有 transformers 才跑）
+python3 probe-valuehead-branch.py --selftest   # 5 项（无 transformers）／8 项（有 transformers，real-mapping 会真跑）
+# 分支的运行时复现（要 transformers 5.16.1 + torch；本机没有 3.10+ 时先建一次性 venv）
+#   curl -sL -H 'Accept: application/octet-stream' \
+#     https://api.github.com/repos/astral-sh/python-build-standalone/releases/assets/<ASSET_ID> \
+#     | tar xz -C /tmp            # github.com:443 断时走 api.github.com 的 asset 端点
+#   /tmp/python/bin/python3 -m venv /tmp/m5-trf-venv
+#   /tmp/m5-trf-venv/bin/pip install transformers==5.16.1 torch
+/tmp/m5-trf-venv/bin/python repro-valuehead-branch.py --json raw/valuehead-branch-runtime-5.16.1.json  # 7 项
+/tmp/m5-trf-venv/bin/python repro-valuehead-branch.py --selftest   # 注入错误读数必须全部变红
 # 判定用的日志计数器：拿仓库里全部真日志验（不需要 GPU、不需要服务器）
 python3 check-log-counters.py --selftest                             # 6 项，含负向对照
 python3 check-log-counters.py --verify --out raw/log-counter-check.json
@@ -227,7 +251,7 @@ python3 probe-critic-model-resolve.py --tree /tmp/verl-pre6067 --preset pre6067 
 
 - 探针与跑批：[probe-oom-dump.py](probe-oom-dump.py) · [run-oom-probe.sh](run-oom-probe.sh) · [run-critic-pdbg.sh](run-critic-pdbg.sh)（**未跑真机**）
 - 树内适配：[patch-critic-sdpa.py](patch-critic-sdpa.py) · 真上游文件验证 [raw/critic-sdpa-patch.json](raw/critic-sdpa-patch.json)／[.diff](raw/critic-sdpa-patch.diff)
-- 判定与把关：[verify-critic-pdbg.py](verify-critic-pdbg.py) · [check-log-counters.py](check-log-counters.py) · [verify-oom-archive.py](verify-oom-archive.py) · [compose_check.py](compose_check.py) · [probe-critic-model-resolve.py](probe-critic-model-resolve.py) · [probe-valuehead-branch.py](probe-valuehead-branch.py) · [raw/valuehead-branch-evidence.json](raw/valuehead-branch-evidence.json)（分支核对与 preflight 四档实测） · [raw/compose-check.json](raw/compose-check.json)（`3fdf2b54`）· [raw/compose-check-main-31cfccb4.json](raw/compose-check-main-31cfccb4.json)（当前 main）· [raw/critic-model-resolve-main-31cfccb4.json](raw/critic-model-resolve-main-31cfccb4.json)／[raw/critic-model-resolve-pre6067.json](raw/critic-model-resolve-pre6067.json)
+- 判定与把关：[verify-critic-pdbg.py](verify-critic-pdbg.py) · [check-log-counters.py](check-log-counters.py) · [verify-oom-archive.py](verify-oom-archive.py) · [compose_check.py](compose_check.py) · [probe-critic-model-resolve.py](probe-critic-model-resolve.py) · [probe-valuehead-branch.py](probe-valuehead-branch.py) · [repro-valuehead-branch.py](repro-valuehead-branch.py) · [raw/valuehead-branch-evidence.json](raw/valuehead-branch-evidence.json)（分支核对与 preflight 四档实测） · [raw/valuehead-branch-runtime-5.16.1.json](raw/valuehead-branch-runtime-5.16.1.json)（transformers 5.16.1 上的运行时读数） · [raw/probe-selftest-prefix-crash.txt](raw/probe-selftest-prefix-crash.txt)（旧版自检在服务器环境下的崩） · [raw/probe-selftest-transformers-5.16.1.txt](raw/probe-selftest-transformers-5.16.1.txt)（修复后 8/8） · [raw/compose-check.json](raw/compose-check.json)（`3fdf2b54`）· [raw/compose-check-main-31cfccb4.json](raw/compose-check-main-31cfccb4.json)（当前 main）· [raw/critic-model-resolve-main-31cfccb4.json](raw/critic-model-resolve-main-31cfccb4.json)／[raw/critic-model-resolve-pre6067.json](raw/critic-model-resolve-pre6067.json)
 - 原始读数：`raw/result-{attached,nocap,unranked}.json` · `raw/nocap.stderr` · [raw/log-counter-check.json](raw/log-counter-check.json)（104 份真日志的计数器对照）
 - 管线夹具（**非读数**）：[raw/mock-run/](raw/mock-run/README.json)（旧形状，掩盖了计数器问题）· [raw/mock-run-real-shape/](raw/mock-run-real-shape/README.json)（真日志形状）· [mock/](mock/make-mock-tree.sh)
 - 上游对应：[证据文档](../../open-source/verl/evidence/engine-refactor-torch-memory/readme.md) · [M5 交接](../handoff-m5.md)

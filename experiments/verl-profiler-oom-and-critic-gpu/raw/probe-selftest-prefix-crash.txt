@@ -1,0 +1,16 @@
+[selftest] PASS mapped_no_trl_is_usable: got={'branch': 'token_classification', 'trl_required': False, 'usable': True} want={'branch': 'token_classification', 'trl_required': False, 'usable': True}
+[selftest] PASS unmapped_with_trl_is_usable: got={'branch': 'trl_valuehead', 'trl_required': True, 'usable': True} want={'branch': 'trl_valuehead', 'trl_required': True, 'usable': True}
+[selftest] PASS unmapped_no_trl_aborts: got={'branch': 'trl_valuehead', 'trl_required': True, 'usable': False} want={'branch': 'trl_valuehead', 'trl_required': True, 'usable': False}
+[selftest] PASS lookup_mapped: got=(True, <class '__main__.selftest.<locals>._ResolvedCls'>) want=(True, <class '__main__.selftest.<locals>._ResolvedCls'>)
+[selftest] PASS lookup_unmapped: got=(False, None) want=(False, None)
+Traceback (most recent call last):
+  File "/tmp/old-probe.py", line 220, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/tmp/old-probe.py", line 198, in main
+    return selftest()
+           ^^^^^^^^^^
+  File "/tmp/old-probe.py", line 180, in selftest
+    for name, ok, got, want in results:
+        ^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 4, got 3)

@@ -14,11 +14,21 @@ DEST=${1:?usage: make-mock-tree.sh <dest-dir>}
 rm -rf "$DEST"
 mkdir -p "$DEST"/{model,data,msprobe,trl,src/verl/utils,src/examples/grpo_trainer}
 
-# preflight only checks existence; every file is a placeholder
+# "preflight only checks existence" is no longer true for msprobe: the wrapper imports it, so the
+# fixture needs an importable package at $DEST/msprobe/msprobe/pytorch. run-mock.sh deletes this
+# subtree to prove the preflight still aborts when only the --target directory survives a cleanup.
 printf '{"model_type":"qwen2"}\n' > "$DEST/model/config.json"
 printf 'not-a-parquet\n' > "$DEST/data/train.parquet"
 printf 'not-a-parquet\n' > "$DEST/data/test.parquet"
 printf '{"dump_path":"%s/mock-dump"}\n' "$DEST" > "$DEST/msprobe/config.json"
+mkdir -p "$DEST/msprobe/msprobe/pytorch"
+printf '' > "$DEST/msprobe/msprobe/__init__.py"
+cat > "$DEST/msprobe/msprobe/pytorch/__init__.py" <<'PY'
+# stand-in for mindstudio-probe's entry point -- fixture only
+class PrecisionDebugger:
+    def __init__(self, *args, **kwargs):
+        pass
+PY
 
 # The site patch needs `def load_valuehead_model(` at column 0 with exactly two FA2 anchors
 # inside the block and one identical literal outside it (the outside one must stay untouched).
