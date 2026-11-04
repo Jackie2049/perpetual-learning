@@ -73,7 +73,9 @@ python3 verify_findings.py /path/to/SkyRL --selftest             # 8 条注入�
 
 - **扫描只查了 `1089e18` 这一个 HEAD**（浅克隆深度 1）。历史归属是走 GitHub contents API 逐版本取文件的：
   覆盖了 `model_wrapper.py` 的全部 18 次提交，但**没有**对 `fsdp_worker.py` 自己的提交历史做独立遍历，
-  也不是全仓 bisect。⇒ 能说「这 18 个 ref 上没接过线」，不能说「整个历史上从没有过」。
+  也不是全仓 bisect。同类查询对 `skyrl/backends/skyrl_train/workers/model_wrapper.py` 的第 2 页返回 0 条，
+  说明这 18 个就是该路径可查的全部提交（GitHub 按路径查历史有 100 条上限，这里远未触顶）。
+  ⇒ 能说「该文件自 2026-02-16 起没接过线」，不能说「整个仓库历史上从没有过」。
 - **没有跑任何训练**。`use_liger_kernel` 那条的「配不了」是读代码读出来的，
   没有真跑一次确认 Hydra 报错——本仓库的配置系统不是 Hydra 直配，构造路径比 verl 长。
 - **`skyrl-agent/examples/run_verl/*.sh` 里的 `actor_rollout_ref.model.use_remove_padding=True`
