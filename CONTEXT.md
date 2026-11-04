@@ -1,9 +1,29 @@
-更新时间：2026-11-04（M5 13:5x–14:1x 无卡轮：两条算力链路仍不可达，用上一轮真日志把 rollout-bound 的两个解析器三路互核（40/40），修掉三个会在窗口里炸的坑）。M1 本轮为 **技术掘金：同一 #6067 重构的第三个信号族——被删掉的启动配置键**：`trainer.use_legacy_worker_impl` 被删后全仓仍有 4 处引用——**1 处 unprefixed ⇒ Hydra 合并期直接报错**（真实 hydra 1.3.8 复现）、**2 处带 `+` ⇒ 不报错但读取点 0 处**、1 处 Ascend 参数表仍列为可配。上一批查的是**配置消费点**（字段在、没人读），本批换信号族查**接口与文档引用**：10 个被删生产模块的 **50 个公开方法/函数名**里，**32 个仍有同名定义**、**13 条"main 无定义但 `docs/blog/` 以外的文档仍在教"（去重 3 个名：`update_policy`／`update_critic`／`compute_values`）**、5 个无定义也无引用。**关键限定：代码侧调用点 0 处**（`verl/**` 非测试 + `tests/` + `examples/`），⇒ **无静默失效，只是文档欠债**；`dpo_extension.rst`／`ray_trainer.rst` #6067 根本没碰。真正的发现是**装饰器字符串常量**这一层：旧 worker 给 critic 两个 RPC 挂了 `annotate(role="compute_values"|"critic_update")`，重构后 `verl/**` 各 **0 处**，而前端白名单 `_STAGE_TO_ROLE` 仍接受、`strict: False` 下**连 warn 都没有** ⇒ 配了不报错也不采（**能不能采到要 NPU+msprobe，属 M5**）。此前 rLLM #945／PR #946 复核见下方历史节。规则入口：[AGENTS.md](AGENTS.md)；任务入口：[技术秘书](queue_tech-secretary.md) / [技术掘金](queue_tech-miner.md)。
+更新时间：2026-11-04（M5 14:5x–15:1x 无卡轮：两条算力链路仍不可达；把 “profiler critic 侧 stage 能不能采到”这条必须真机的交接拆成静态定死——白名单 6 个 stage 里 **3 个没有任何触发者**（`compute_values`／`critic_update` 是 #6067 回归，`compute_rm_score` 从来没接过），触发路径唯一且 dump 目录只在 `start()` 里创建 ⇒ NPU 只剩“import 是否自行落盘”一条假设。此前 M5 13:5x–14:1x 无卡轮：两条算力链路仍不可达，用上一轮真日志把 rollout-bound 的两个解析器三路互核（40/40），修掉三个会在窗口里炸的坑）。M1 本轮为 **技术掘金：同一 #6067 重构的第三个信号族——被删掉的启动配置键**：`trainer.use_legacy_worker_impl` 被删后全仓仍有 4 处引用——**1 处 unprefixed ⇒ Hydra 合并期直接报错**（真实 hydra 1.3.8 复现）、**2 处带 `+` ⇒ 不报错但读取点 0 处**、1 处 Ascend 参数表仍列为可配。上一批查的是**配置消费点**（字段在、没人读），本批换信号族查**接口与文档引用**：10 个被删生产模块的 **50 个公开方法/函数名**里，**32 个仍有同名定义**、**13 条"main 无定义但 `docs/blog/` 以外的文档仍在教"（去重 3 个名：`update_policy`／`update_critic`／`compute_values`）**、5 个无定义也无引用。**关键限定：代码侧调用点 0 处**（`verl/**` 非测试 + `tests/` + `examples/`），⇒ **无静默失效，只是文档欠债**；`dpo_extension.rst`／`ray_trainer.rst` #6067 根本没碰。真正的发现是**装饰器字符串常量**这一层：旧 worker 给 critic 两个 RPC 挂了 `annotate(role="compute_values"|"critic_update")`，重构后 `verl/**` 各 **0 处**，而前端白名单 `_STAGE_TO_ROLE` 仍接受、`strict: False` 下**连 warn 都没有** ⇒ 配了不报错也不采（**能不能采到要 NPU+msprobe，属 M5**）。此前 rLLM #945／PR #946 复核见下方历史节。规则入口：[AGENTS.md](AGENTS.md)；任务入口：[技术秘书](queue_tech-secretary.md) / [技术掘金](queue_tech-miner.md)。
 ## 当前现场
 
 > **只读最上面几节（最近两轮 M5 与 M1）即可恢复现场。** 之后的旧批次只留标题索引
 > （2026-11-04 瘦身，正文在 `diary/` 与专项文档）。
 > 判断"现在该做什么"看 `## 未完成操作与并行工作` 与两个队列，不要从头读到尾。
+
+### M5 本轮（2026-11-04 14:5x–15:1x CST）：无卡轮——把"只能真机定级"拆成静态定死 + 一条 import 冒烟
+
+**连通性（本轮只探一次，未重试）**：`4090-1`（`219.223.198.62`）ICMP 2 包全丢 + `:22` TCP 超时（公网直连，非 VPN）；昇腾网关 `10.205.0.1` 2 包全丢、`192.168.13.154/155/156:22` 全超时。外网正常 ⇒ 本机无恙，恢复只在用户侧；这是同日第四次两条链路同时不可达。
+
+**一、接手的是 M1 登记的 profiler 交接，但先把"必须 NPU + msprobe"这一半压到最小。** 白名单 `_STAGE_TO_ROLE`（`precision_debugger_profile.py:26`）6 个 stage 逐个找触发者：main `7454326` 上只有 actor 侧 3 个有（`engine_workers.py:751/758/768`）；`compute_values`、`critic_update`、**`compute_rm_score`** 一个都没有。对照 #6067 父提交 `6eeb5711`：前两个在 FSDP（`:1677`／`:1697`）与 Megatron（`:1249`／`:1266`）两套 worker 上**都挂过**装饰器 ⇒ **重构回归**；`compute_rm_score` 在父提交里**也一处没有** ⇒ **从来没接过**（M1 上一轮只点了前两个）。
+
+**二、触发路径唯一，旁路逐条排除。** 只有 `@DistProfiler.annotate(role=<字面量>)` 能进 `start(stage=…)`；`start_profile(stage=…)` 全仓 **0 处**，2 处 `start_profile(role="train", …)`（`ray_trainer.py:1132`、`trainer_base.py:1430`）的 `role` 只是标签——`start()` 首参是 `stage`、函数体不读 `kwargs["role"]`。`msprobe` 全仓只 2 处（`import_utils.py:75` 探测、`precision_debugger_profile.py:208` 懒 import），`PrecisionDebugger` 只在 `start()` 的 `:215` 构造，dump 目录也只在 `:211-212` 才 `makedirs` ⇒ **不调用 `start()` 磁盘上不会有任何东西**。
+
+**三、机制比"删了个装饰器"复杂：不是补三行能修的。** 新引擎里 critic 训练走 `TrainingWorker.train_batch`（`engine_workers.py:377`），装饰器在但 role 是 `train_batch`——不在白名单，判 unknown 后丢弃，**且与用户配置无关地每步刷一条 warning**；critic 取值前向走 `infer_batch`（`:433`）无装饰器。`TrainingWorker` 同时服务 `Role.Critic`（`trainer_base.py:813`）与 SFT（`sft_trainer_ray.py:138`）⇒ 补装饰器要先解决"这个 worker 现在扮演谁"，属设计选择。
+
+**四、文档面同时对上。** Ascend en 文档 `## Supported stages`（`:78`，bullet `:81-87`）与 6 处配置注释（`profiler/config.py:205`、`actor.yaml:316`、`critic.yaml:225`、`ppo_trainer.yaml:451`、`ref.yaml:164`、`rollout.yaml:460`）把 6 个 stage 全列为可选；文档 `:240-241` 用含 critic 两 stage 的 L0 组合报过 3–4× 开销，当前 main 上那组已不可复现。`strict=True` 也救不了——三个名字都在白名单里。**订正一处引用**：`docs/` 在 `7454326` 上 `find -name "*_zh*"` 命中 0 条，M1 引的 `precision_debugger_zh.md` 无法核对，本文只引 en 文档。
+
+**产物**：[证据](open-source/verl/evidence/precision-debugger-stage-producers/readme.md) · [实验](experiments/verl-precision-debugger-stages/readme.md) · `scan_stage_producers.py`（AST + 逐行正则兜底、`--preset main|pre6067`、`--selftest` 4/4、两棵树判定 exit 0）· 两棵树 JSON。
+
+**真机需求已降级**：不再需要"带 critic 的 PPO 小步训练"，只需"import msprobe + 正常跑一步 + 不配置也不启动采集，确认 `save_path` 无 `step_*/`"，且**优先级低于所有已排队算力实验**。**边界**：纯静态，未跑 verl、未上 GPU/NPU；唯一残留假设是 msprobe 的 import 期副作用。
+
+**本轮自己抓出的四个脚本坑**：① `SkipManager.annotate(role="rollout")` 被误算成触发者（匹配面太宽，和上一轮 `\btiled_mlp\b` 同型）；② 把 `self` 当成 `start()` 首参，判定差点反读；③ 本机 Python 3.9 解析不了 9 个文件，其中含父提交的 `fsdp_workers.py`——**差点漏掉两个 critic 装饰器**，改正则兜底后补回 6 条且与 `grep` 逐行一致；④ 兜底分支 `src` 跨文件残留。
+
+**留给下一轮**：① rollout-bound A/B、4 卡 `inflight=1`、profiler 冒烟都等窗口；② **CONTEXT 已 175KB，超过 150KB 软告警**，增量主要在 M1 批次段，建议由写入者按"已归档"精减（本轮只删了自己一条已被 diary/handoff 覆盖的 3 行小节）；③ 对外动作（文档标注或加载期校验）待用户逐项授权。
 
 ### M1 本轮（2026-11-04 13:0x–13:4x）：同一次重构的第二个信号族——接口名与文档引用
 

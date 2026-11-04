@@ -1,0 +1,265 @@
+{
+  "root": "/tmp/verl-pre6067",
+  "stage_map_line": 26,
+  "stage_map": {
+    "actor_update": "actor",
+    "actor_compute_log_prob": "actor",
+    "ref_compute_log_prob": "ref",
+    "compute_values": "critic",
+    "critic_update": "critic",
+    "compute_rm_score": "reward_model"
+  },
+  "per_stage": {
+    "actor_update": {
+      "role": "actor",
+      "producers": [
+        {
+          "file": "verl/workers/engine_workers.py",
+          "line": 646,
+          "role": "actor_update",
+          "owner": "DistProfiler",
+          "owner_class": "ActorRolloutRefWorker",
+          "function": "update_actor",
+          "qualname": "ActorRolloutRefWorker.update_actor",
+          "via": "ast"
+        },
+        {
+          "file": "verl/workers/fsdp_workers.py",
+          "line": 1028,
+          "role": "actor_update",
+          "owner": "DistProfiler",
+          "owner_class": null,
+          "function": "update_actor",
+          "qualname": "update_actor",
+          "via": "regex"
+        },
+        {
+          "file": "verl/workers/megatron_workers.py",
+          "line": 777,
+          "role": "actor_update",
+          "owner": "DistProfiler",
+          "owner_class": "ActorRolloutRefWorker",
+          "function": "update_actor",
+          "qualname": "ActorRolloutRefWorker.update_actor",
+          "via": "ast"
+        }
+      ],
+      "skipped_by_design": false
+    },
+    "actor_compute_log_prob": {
+      "role": "actor",
+      "producers": [
+        {
+          "file": "verl/workers/engine_workers.py",
+          "line": 638,
+          "role": "actor_compute_log_prob",
+          "owner": "DistProfiler",
+          "owner_class": "ActorRolloutRefWorker",
+          "function": "compute_log_prob",
+          "qualname": "ActorRolloutRefWorker.compute_log_prob",
+          "via": "ast"
+        },
+        {
+          "file": "verl/workers/fsdp_workers.py",
+          "line": 1124,
+          "role": "actor_compute_log_prob",
+          "owner": "DistProfiler",
+          "owner_class": null,
+          "function": "compute_log_prob",
+          "qualname": "compute_log_prob",
+          "via": "regex"
+        },
+        {
+          "file": "verl/workers/megatron_workers.py",
+          "line": 899,
+          "role": "actor_compute_log_prob",
+          "owner": "DistProfiler",
+          "owner_class": "ActorRolloutRefWorker",
+          "function": "compute_log_prob",
+          "qualname": "ActorRolloutRefWorker.compute_log_prob",
+          "via": "ast"
+        }
+      ],
+      "skipped_by_design": false
+    },
+    "ref_compute_log_prob": {
+      "role": "ref",
+      "producers": [
+        {
+          "file": "verl/workers/engine_workers.py",
+          "line": 631,
+          "role": "ref_compute_log_prob",
+          "owner": "DistProfiler",
+          "owner_class": "ActorRolloutRefWorker",
+          "function": "compute_ref_log_prob",
+          "qualname": "ActorRolloutRefWorker.compute_ref_log_prob",
+          "via": "ast"
+        },
+        {
+          "file": "verl/workers/fsdp_workers.py",
+          "line": 1176,
+          "role": "ref_compute_log_prob",
+          "owner": "DistProfiler",
+          "owner_class": null,
+          "function": "compute_ref_log_prob",
+          "qualname": "compute_ref_log_prob",
+          "via": "regex"
+        },
+        {
+          "file": "verl/workers/megatron_workers.py",
+          "line": 873,
+          "role": "ref_compute_log_prob",
+          "owner": "DistProfiler",
+          "owner_class": "ActorRolloutRefWorker",
+          "function": "compute_ref_log_prob",
+          "qualname": "ActorRolloutRefWorker.compute_ref_log_prob",
+          "via": "ast"
+        }
+      ],
+      "skipped_by_design": false
+    },
+    "compute_values": {
+      "role": "critic",
+      "producers": [
+        {
+          "file": "verl/workers/fsdp_workers.py",
+          "line": 1677,
+          "role": "compute_values",
+          "owner": "DistProfiler",
+          "owner_class": null,
+          "function": "compute_values",
+          "qualname": "compute_values",
+          "via": "regex"
+        },
+        {
+          "file": "verl/workers/megatron_workers.py",
+          "line": 1249,
+          "role": "compute_values",
+          "owner": "DistProfiler",
+          "owner_class": "CriticWorker",
+          "function": "compute_values",
+          "qualname": "CriticWorker.compute_values",
+          "via": "ast"
+        }
+      ],
+      "skipped_by_design": false
+    },
+    "critic_update": {
+      "role": "critic",
+      "producers": [
+        {
+          "file": "verl/workers/fsdp_workers.py",
+          "line": 1697,
+          "role": "critic_update",
+          "owner": "DistProfiler",
+          "owner_class": null,
+          "function": "update_critic",
+          "qualname": "update_critic",
+          "via": "regex"
+        },
+        {
+          "file": "verl/workers/megatron_workers.py",
+          "line": 1266,
+          "role": "critic_update",
+          "owner": "DistProfiler",
+          "owner_class": "CriticWorker",
+          "function": "update_critic",
+          "qualname": "CriticWorker.update_critic",
+          "via": "ast"
+        }
+      ],
+      "skipped_by_design": false
+    },
+    "compute_rm_score": {
+      "role": "reward_model",
+      "producers": [],
+      "skipped_by_design": false
+    }
+  },
+  "unmapped_roles": [
+    "env_finish_rollout",
+    "env_init",
+    "env_init_simulator",
+    "env_interact_step",
+    "env_reset_envs_to_state_ids",
+    "rollout_generate",
+    "train_batch"
+  ],
+  "annotate_without_literal_role": [],
+  "start_profile_calls_with_stage_kwarg": [],
+  "start_profile_role_kwarg_calls": [
+    {
+      "file": "verl/experimental/vla/rob_ray_trainer.py",
+      "line": 117,
+      "kwargs": [
+        "profile_step",
+        "role"
+      ],
+      "positional": 0
+    },
+    {
+      "file": "verl/experimental/vla/sac/sac_ray_trainer.py",
+      "line": 108,
+      "kwargs": [
+        "profile_step",
+        "role"
+      ],
+      "positional": 0
+    },
+    {
+      "file": "verl/trainer/main_ppo_sync.py",
+      "line": 1109,
+      "kwargs": [
+        "profile_step",
+        "role"
+      ],
+      "positional": 0
+    },
+    {
+      "file": "verl/trainer/ppo/ray_trainer.py",
+      "line": 1025,
+      "kwargs": [
+        "profile_step",
+        "role"
+      ],
+      "positional": 0
+    }
+  ],
+  "start_first_positional": "stage",
+  "start_reads_role": false,
+  "start_line": 169,
+  "msprobe_import_sites": [
+    {
+      "file": "verl/utils/import_utils.py",
+      "line": 75,
+      "text": "msprobe_spec = importlib.util.find_spec(\"msprobe\")"
+    },
+    {
+      "file": "verl/utils/profiler/precision_debugger_profile.py",
+      "line": 194,
+      "text": "from msprobe.pytorch import PrecisionDebugger"
+    }
+  ],
+  "documented_stages": null,
+  "documented_stages_file": null,
+  "unparsed_files": [
+    "verl/model_merger/base_model_merger.py",
+    "verl/tools/utils/tool_registry.py",
+    "verl/trainer/distillation/losses.py",
+    "verl/utils/model.py",
+    "verl/utils/tokenizer.py",
+    "verl/utils/metric/utils.py",
+    "verl/workers/fsdp_workers.py",
+    "verl/workers/config/distillation.py",
+    "verl/workers/engine/torchtitan/utils.py"
+  ],
+  "producers_via_regex": [
+    "verl/workers/fsdp_workers.py:1028",
+    "verl/workers/fsdp_workers.py:1074",
+    "verl/workers/fsdp_workers.py:1124",
+    "verl/workers/fsdp_workers.py:1176",
+    "verl/workers/fsdp_workers.py:1677",
+    "verl/workers/fsdp_workers.py:1697"
+  ],
+  "other_profiler_wrappers": []
+}

@@ -1,0 +1,155 @@
+{
+  "root": "/tmp/verl-main-7454326",
+  "stage_map_line": 26,
+  "stage_map": {
+    "actor_update": "actor",
+    "actor_compute_log_prob": "actor",
+    "ref_compute_log_prob": "ref",
+    "compute_values": "critic",
+    "critic_update": "critic",
+    "compute_rm_score": "reward_model"
+  },
+  "per_stage": {
+    "actor_update": {
+      "role": "actor",
+      "producers": [
+        {
+          "file": "verl/workers/engine_workers.py",
+          "line": 768,
+          "role": "actor_update",
+          "owner": "DistProfiler",
+          "owner_class": "ActorRolloutRefWorker",
+          "function": "update_actor",
+          "qualname": "ActorRolloutRefWorker.update_actor",
+          "via": "ast"
+        }
+      ],
+      "skipped_by_design": false
+    },
+    "actor_compute_log_prob": {
+      "role": "actor",
+      "producers": [
+        {
+          "file": "verl/workers/engine_workers.py",
+          "line": 758,
+          "role": "actor_compute_log_prob",
+          "owner": "DistProfiler",
+          "owner_class": "ActorRolloutRefWorker",
+          "function": "compute_log_prob",
+          "qualname": "ActorRolloutRefWorker.compute_log_prob",
+          "via": "ast"
+        }
+      ],
+      "skipped_by_design": false
+    },
+    "ref_compute_log_prob": {
+      "role": "ref",
+      "producers": [
+        {
+          "file": "verl/workers/engine_workers.py",
+          "line": 751,
+          "role": "ref_compute_log_prob",
+          "owner": "DistProfiler",
+          "owner_class": "ActorRolloutRefWorker",
+          "function": "compute_ref_log_prob",
+          "qualname": "ActorRolloutRefWorker.compute_ref_log_prob",
+          "via": "ast"
+        }
+      ],
+      "skipped_by_design": false
+    },
+    "compute_values": {
+      "role": "critic",
+      "producers": [],
+      "skipped_by_design": false
+    },
+    "critic_update": {
+      "role": "critic",
+      "producers": [],
+      "skipped_by_design": false
+    },
+    "compute_rm_score": {
+      "role": "reward_model",
+      "producers": [],
+      "skipped_by_design": false
+    }
+  },
+  "unmapped_roles": [
+    "forward_backward",
+    "train_batch"
+  ],
+  "annotate_without_literal_role": [],
+  "start_profile_calls_with_stage_kwarg": [],
+  "start_profile_role_kwarg_calls": [
+    {
+      "file": "verl/trainer/ppo/ray_trainer.py",
+      "line": 1132,
+      "kwargs": [
+        "profile_step",
+        "role"
+      ],
+      "positional": 0
+    },
+    {
+      "file": "verl/trainer/ppo/v1/trainer_base.py",
+      "line": 1430,
+      "kwargs": [
+        "profile_step",
+        "role"
+      ],
+      "positional": 0
+    }
+  ],
+  "start_first_positional": "stage",
+  "start_reads_role": false,
+  "start_line": 183,
+  "msprobe_import_sites": [
+    {
+      "file": "verl/utils/import_utils.py",
+      "line": 75,
+      "text": "msprobe_spec = importlib.util.find_spec(\"msprobe\")"
+    },
+    {
+      "file": "verl/utils/profiler/precision_debugger_profile.py",
+      "line": 208,
+      "text": "from msprobe.pytorch import PrecisionDebugger"
+    }
+  ],
+  "documented_stages": [
+    "actor_update",
+    "actor_compute_log_prob",
+    "ref_compute_log_prob",
+    "compute_values",
+    "critic_update",
+    "compute_rm_score"
+  ],
+  "documented_stages_file": "docs/ascend_tutorial/en/dev_guide/precision_analysis/precision_debugger.md",
+  "unparsed_files": [
+    "verl/model_merger/base_model_merger.py",
+    "verl/tools/tool_registry.py",
+    "verl/trainer/distillation/losses.py",
+    "verl/trainer/ppo/v1/replay_buffer.py",
+    "verl/utils/model.py",
+    "verl/utils/metric/utils.py",
+    "verl/utils/tokenizer/tokenizer.py",
+    "verl/workers/config/distillation.py",
+    "verl/workers/engine/torchtitan/utils.py"
+  ],
+  "producers_via_regex": [],
+  "other_profiler_wrappers": [
+    {
+      "file": "verl/experimental/agent_loop/agent_loop.py",
+      "line": 1262,
+      "role": "rollout",
+      "owner": "SkipManager",
+      "qualname": "AgentLoopManager.generate_sequences"
+    },
+    {
+      "file": "verl/experimental/fully_async_policy/fully_async_rollouter.py",
+      "line": 306,
+      "role": "async_rollout",
+      "owner": "SkipManager",
+      "qualname": "FullyAsyncAgentLoopManager.generate_sequences_single"
+    }
+  ]
+}
