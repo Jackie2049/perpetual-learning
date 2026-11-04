@@ -16,11 +16,14 @@ Usage:
 
 import ast
 import json
+import os
 import re
 import sys
 
-CURRENT_ENGINE = "transformer_impl_main_74543265.py"
-PRE_REFACTOR_WORKER = "fsdp_workers_pre_refactor_63e8a0d1.py"
+HERE = os.path.dirname(os.path.abspath(__file__))
+# Resolved against this file so the script also runs when invoked by path.
+CURRENT_ENGINE = os.path.join(HERE, "transformer_impl_main_74543265.py")
+PRE_REFACTOR_WORKER = os.path.join(HERE, "fsdp_workers_pre_refactor_63e8a0d1.py")
 CALL = "apply_monkey_patch"
 
 # Facts this script claims. Each is a constant expectation, so a change upstream

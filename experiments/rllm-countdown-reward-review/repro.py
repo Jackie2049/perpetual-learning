@@ -21,11 +21,15 @@ import ast
 import json
 import operator
 import random
+import os
 import signal
 import sys
 import types
 
-SNAPSHOT = "countdown_reward_main_4e828c8.py"
+HERE = os.path.dirname(os.path.abspath(__file__))
+# Resolved against this file so the script also runs when invoked by path from
+# another directory, not only from its own folder.
+SNAPSHOT = os.path.join(HERE, "countdown_reward_main_4e828c8.py")
 
 # Exactly the text of PR #946's hunk, so a mismatch raises instead of silently
 # "verifying" an unchanged file. See the PR's diff for this hunk.

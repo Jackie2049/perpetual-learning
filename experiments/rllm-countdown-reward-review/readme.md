@@ -25,7 +25,7 @@
 ## 怎么跑
 
 ```bash
-python repro.py          # 退出码 0 = 结论成立
+python repro.py          # 退出码 0 = 结论成立（也可 `python experiments/rllm-countdown-reward-review/repro.py`，快照按脚本位置解析）
 python repro.py --json
 ```
 
