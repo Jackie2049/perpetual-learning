@@ -1,4 +1,4 @@
-更新时间：2026-11-04（M5 13:5x–14:1x 无卡轮：两条算力链路仍不可达，用上一轮真日志把 rollout-bound 的两个解析器三路互核（40/40），修掉三个会在窗口里炸的坑；M1 **技术掘金：同一 #6067 重构的接口面体检——文档还在教的 3 个名字 + 1 个 profiler 结构性缺口**）。上一批查的是**配置消费点**（字段在、没人读），本批换信号族查**接口与文档引用**：10 个被删生产模块的 **50 个公开方法/函数名**里，**32 个仍有同名定义**、**13 条"main 无定义但 `docs/blog/` 以外的文档仍在教"（去重 3 个名：`update_policy`／`update_critic`／`compute_values`）**、5 个无定义也无引用。**关键限定：代码侧调用点 0 处**（`verl/**` 非测试 + `tests/` + `examples/`），⇒ **无静默失效，只是文档欠债**；`dpo_extension.rst`／`ray_trainer.rst` #6067 根本没碰。真正的发现是**装饰器字符串常量**这一层：旧 worker 给 critic 两个 RPC 挂了 `annotate(role="compute_values"|"critic_update")`，重构后 `verl/**` 各 **0 处**，而前端白名单 `_STAGE_TO_ROLE` 仍接受、`strict: False` 下**连 warn 都没有** ⇒ 配了不报错也不采（**能不能采到要 NPU+msprobe，属 M5**）。此前 rLLM #945／PR #946 复核见下方历史节。规则入口：[AGENTS.md](AGENTS.md)；任务入口：[技术秘书](queue_tech-secretary.md) / [技术掘金](queue_tech-miner.md)。
+更新时间：2026-11-04（M5 13:5x–14:1x 无卡轮：两条算力链路仍不可达，用上一轮真日志把 rollout-bound 的两个解析器三路互核（40/40），修掉三个会在窗口里炸的坑）。M1 本轮为 **技术掘金：同一 #6067 重构的第三个信号族——被删掉的启动配置键**：`trainer.use_legacy_worker_impl` 被删后全仓仍有 4 处引用——**1 处 unprefixed ⇒ Hydra 合并期直接报错**（真实 hydra 1.3.8 复现）、**2 处带 `+` ⇒ 不报错但读取点 0 处**、1 处 Ascend 参数表仍列为可配。上一批查的是**配置消费点**（字段在、没人读），本批换信号族查**接口与文档引用**：10 个被删生产模块的 **50 个公开方法/函数名**里，**32 个仍有同名定义**、**13 条"main 无定义但 `docs/blog/` 以外的文档仍在教"（去重 3 个名：`update_policy`／`update_critic`／`compute_values`）**、5 个无定义也无引用。**关键限定：代码侧调用点 0 处**（`verl/**` 非测试 + `tests/` + `examples/`），⇒ **无静默失效，只是文档欠债**；`dpo_extension.rst`／`ray_trainer.rst` #6067 根本没碰。真正的发现是**装饰器字符串常量**这一层：旧 worker 给 critic 两个 RPC 挂了 `annotate(role="compute_values"|"critic_update")`，重构后 `verl/**` 各 **0 处**，而前端白名单 `_STAGE_TO_ROLE` 仍接受、`strict: False` 下**连 warn 都没有** ⇒ 配了不报错也不采（**能不能采到要 NPU+msprobe，属 M5**）。此前 rLLM #945／PR #946 复核见下方历史节。规则入口：[AGENTS.md](AGENTS.md)；任务入口：[技术秘书](queue_tech-secretary.md) / [技术掘金](queue_tech-miner.md)。
 ## 当前现场
 
 > **只读最上面两节（最近一轮 M5 与 M1）即可恢复现场。** 下面 20+ 个 `###` 是历史批次叙述
@@ -27,9 +27,38 @@
 
 **核对产物**：`scan_api_surface.py`（50 名，可复现）、`verify_findings.py` 7 条 **0 不一致** exit 0、`--selftest` 注入同名 def 后四条判定**全部翻转**；另两条 `doc_drift` 的手工注入也翻 False（未固化进脚本）。verl main `74543265`（2026-11-04 fetch）、父提交 `044bbba2^`、Python 3.12.13。**纯静态，未跑 verl、未上 GPU/NPU、未触上游**。
 
-**留给下一轮**：① **#6067 两次体检都只覆盖"被整份删除的文件"**，另外 71 个文件的语义变化仍未扫，第三次要换信号族（例如被改写的函数体前后对照），否则只是重复；② profiler 缺口已登记 [M5 交接](experiments/handoff-m5.md)，最小对照是"`stages: [actor_update]` 有 dump vs `stages: [critic_update]` 是否同样有"；③ TM-006 对外两条（删配置项／补 `freeze_vision_tower` 接线）仍待用户逐项授权；④ TS-001 侧仍停在「等用户立项」。
+**留给下一轮**：① ~~两次体检都只覆盖"被整份删除的文件"，第三次要换信号族~~ **已于同日第四段换到启动配置键**（见下条）；仍未扫的是 71 个被改文件里**函数体被改写**那一类，若再做须先说明它不是重复；② profiler 缺口已登记 [M5 交接](experiments/handoff-m5.md)，最小对照是"`stages: [actor_update]` 有 dump vs `stages: [critic_update]` 是否同样有"；③ TM-006 对外两条（删配置项／补 `freeze_vision_tower` 接线）仍待用户逐项授权；④ TS-001 侧仍停在「等用户立项」。
 
 入口：[接口面体检](open-source/verl/evidence/engine-refactor-api-surface/readme.md) · [实验 readme](experiments/verl-6067-api-surface-scan/readme.md) · [扫描脚本](experiments/verl-6067-api-surface-scan/scan_api_surface.py) · [判定脚本](experiments/verl-6067-api-surface-scan/verify_findings.py) · [M5 交接](experiments/handoff-m5.md) · [TM-006](queue_tech-miner.md) · [tracker](open-source/verl/tracker.md) · [diary](diary/2026-11-04.md)。
+### M1 本轮（2026-11-04 14:0x–14:4x）：同一次重构的第三个信号族——被删掉的启动配置键，还有谁在传
+**一、为什么做。** 上一次自己在「留给下一轮」写的是"71 个被改文件语义变化仍未扫，第三次要换信号族，否则只是重复"。挑了一格最像"改动而非删除"的：`verl/trainer/config/ppo_trainer.yaml` 在 #6067 里 **94 → 93 个叶子键**，唯一被删的是 `trainer.use_legacy_worker_impl`（旧 worker / 新引擎的开关，旧实现已整份删了）。**删了配置键，命令行里还在写的脚本不会自己消失。**
+
+**二、读数。** 全仓（15 种后缀）4 处引用，按"会不会失败"分三档：
+
+| 档 | 处数 | 位置 |
+|---|---|---|
+| `INVOKE / COMPOSE_FAIL`（**启动即报错**） | **1** | `tests/special_e2e/run_fully_async_policy_genrm.sh:177`（无 `+` 前缀，2026-04-27 新增、晚于 #6067） |
+| `INVOKE / SILENT_OK`（不报错，也**不生效**） | 2 | `run_fully_async_policy_opd.sh:240`、`examples/grpo_trainer/run_qwen3_30b_veomni.sh:102`（都带 `+`） |
+| `DOC_TABLE_CELL` | 1 | Ascend `parameter_and_metrics.md:368`，默认值仍写 `auto` |
+| 代码侧读取点 | **0** | 两条 `+` 传进去的字段无人消费 |
+
+**三、先说限定。** ① **"不报错"恰好是最安全的一档**——`+k` 只是让 Hydra 收下新字段，`verl/**` 对这个键 0 读取，写成"两个脚本坏了"是夸大；② **会失败的那条不在任何 CI 命令里**（`genrm` 脚本没被 `.github/workflows` 引用，`opd` 被引用但带 `+`）⇒ 是"谁手动跑谁撞墙"，不是"CI 现在红的"；③ `docs/workers/engine_workers.rst:221` 已标 `(removed)`，被扫描器按豁免档正确排除。
+
+**四、关键证据是真实复现，不是推断。** `hydra_repro.py` 用最小树跑 hydra **1.3.8**：键在＋unprefixed＝OK、键缺＋unprefixed＝**FAIL**（`ConfigCompositionException: Could not override`）、键缺＋`+`＝OK、存在的键（负向对照）＝OK。顺带否掉一条反驳：同一条 `defaults` 链上 `cfg.trainer.<新键> = …` 抛 `ConfigAttributeError`，不是 open dict。
+
+**五、为什么前两批扫不到（这是本批最该记住的一条）。** 配置消费点问"字段还有人读吗"——字段已从 yaml 消失就不进候选；接口面查 `def`——Hydra 键不是 `def`。⇒ **"删掉的东西"要按它的形状找消费者**：删文件看引用、删字段看读取点、**删配置键看命令行与参数表**。
+
+**六、顺带一条未计入的候选。** `scripts/megatron_merge_lora.py` 在 #6067 里新写的两行调 `engine.bridge.save_weights` / `save_hf_weights`；这两个方法由第三方包（`mbridge`／`megatron.bridge`）提供，本机未安装 ⇒ **静态判不了**。旁证两个方向都有（引擎自身只调 `export_*`；但 `megatron_checkpoint_manager.py:993-1015` 仍在 `inspect.signature` 里探测 `save_weights`），故只记"需装包/真机才能判"，不进对外材料。
+
+**七、本批自己三处工具错误（都已修）。** ① `git grep -l -- '*.sh' …` 把 glob 当**待匹配文本**，整轮读出"0 处引用"；② `entry_context` 把引号里的 `"${VERL_ROOT}/examples/data_preprocess/geo3k.py"` 当启动命令，三个命中全解析错；③ 自检的"假注入"——`write_text(x.replace(...))` 在 `replace` 没命中时照样写出，"注入了"是假的，现在先比替换前后字符串。
+
+**核对产物**：`scan_shell_refs.py`／`verify_findings.py`（4 判定 + 3 自证 **0 不一致**）／`--selftest`（3 扰动全部被捕捉）／`hydra_repro.py` **4/4 PASS**。verl main `74543265`（2026-11-04 fetch）、Python 3.12.13、hydra 1.3.8（一次性 venv `/tmp/hydra-probe-venv`）。**未装 verl、未跑训练、未上 GPU/NPU、未触上游**。
+
+**留给下一轮**：① 启动配置键这一族已查完（1 键、4 处），对外三条最小动作**均待用户逐项授权**；② `megatron_merge_lora.py` 的 bridge 两行需装 `mbridge` 或真机，不在 M1 范围；③ 71 个被改文件里**函数体被改写**的那一类仍未扫，若再做须先说明它不是对前三段的重复；④ TM-006 前两段的两条对外候选不变；⑤ TS-001 侧仍停在「等用户立项」（M1 侧已无纯归档重算可做）。
+
+入口：[启动配置键体检](open-source/verl/evidence/engine-refactor-shell-config/readme.md) · [实验](experiments/verl-6067-shell-config-scan/readme.md) · [扫描](experiments/verl-6067-shell-config-scan/scan_shell_refs.py) · [判定](experiments/verl-6067-shell-config-scan/verify_findings.py) · [Hydra 复现](experiments/verl-6067-shell-config-scan/hydra_repro.py) · [TM-006](queue_tech-miner.md) · [tracker](open-source/verl/tracker.md) · [diary](diary/2026-11-04.md)。
+
+### M5 本轮（2026-11-04 12:5x–13:0x CST）：两条算力通路都不可达，回退到准备物料并入库
 
 
 ### M5 本轮（2026-11-04 13:5x–14:1x CST）：无卡轮继续，把"只能窗口验"的部分提前验掉，抓出三个坑

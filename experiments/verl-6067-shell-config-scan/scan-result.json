@@ -1,0 +1,122 @@
+{
+  "refactor": "044bbba2",
+  "boot_configs": [
+    "verl/trainer/config/ppo_trainer.yaml"
+  ],
+  "removed_keys": [
+    "trainer.use_legacy_worker_impl"
+  ],
+  "keys": {
+    "trainer.use_legacy_worker_impl": {
+      "n_hits": 4,
+      "by_kind": {
+        "DOC_TABLE_CELL": 1,
+        "INVOKE/SILENT_OK": 2,
+        "INVOKE/COMPOSE_FAIL": 1
+      },
+      "hits": [
+        {
+          "file": "docs/ascend_tutorial/dev_guide/model_dev/parameter_and_metrics.md",
+          "line": 368,
+          "kind": "DOC_TABLE_CELL",
+          "pkg_entry": null,
+          "text": "| `trainer.use_legacy_worker_impl` | `auto` | 是否使用旧版 worker 实现 |"
+        },
+        {
+          "file": "examples/grpo_trainer/run_qwen3_30b_veomni.sh",
+          "line": 102,
+          "kind": "INVOKE",
+          "pkg_entry": "verl.trainer.main_ppo",
+          "text": "+trainer.use_legacy_worker_impl=disable",
+          "config_chain": {
+            "files": [
+              "verl/trainer/config/ppo_trainer.yaml",
+              "verl/trainer/config/legacy_reward_impl.yaml"
+            ],
+            "root_keys": [
+              "actor_rollout_ref",
+              "algorithm",
+              "custom_reward_function",
+              "defaults",
+              "global_profiler",
+              "ray_kwargs",
+              "reward_model",
+              "sandbox_fusion",
+              "skip",
+              "trainer",
+              "transfer_queue"
+            ],
+            "has_record_root": true
+          },
+          "consumed_by": "SILENT_OK"
+        },
+        {
+          "file": "tests/special_e2e/run_fully_async_policy_genrm.sh",
+          "line": 177,
+          "kind": "INVOKE",
+          "pkg_entry": "verl.experimental.fully_async_policy.fully_async_main",
+          "text": "trainer.use_legacy_worker_impl=disable \\",
+          "config_chain": {
+            "files": [
+              "verl/experimental/fully_async_policy/config/fully_async_ppo_trainer.yaml",
+              "verl/trainer/config/ppo_trainer.yaml",
+              "verl/trainer/config/legacy_reward_impl.yaml"
+            ],
+            "root_keys": [
+              "actor_rollout_ref",
+              "algorithm",
+              "async_training",
+              "custom_reward_function",
+              "data",
+              "defaults",
+              "global_profiler",
+              "hydra",
+              "ray_kwargs",
+              "reward_model",
+              "rollout",
+              "sandbox_fusion",
+              "skip",
+              "trainer",
+              "transfer_queue"
+            ],
+            "has_record_root": true
+          },
+          "consumed_by": "COMPOSE_FAIL"
+        },
+        {
+          "file": "tests/special_e2e/run_fully_async_policy_opd.sh",
+          "line": 240,
+          "kind": "INVOKE",
+          "pkg_entry": "verl.experimental.fully_async_policy.fully_async_main",
+          "text": "+trainer.use_legacy_worker_impl=disable",
+          "config_chain": {
+            "files": [
+              "verl/experimental/fully_async_policy/config/fully_async_ppo_trainer.yaml",
+              "verl/trainer/config/ppo_trainer.yaml",
+              "verl/trainer/config/legacy_reward_impl.yaml"
+            ],
+            "root_keys": [
+              "actor_rollout_ref",
+              "algorithm",
+              "async_training",
+              "custom_reward_function",
+              "data",
+              "defaults",
+              "global_profiler",
+              "hydra",
+              "ray_kwargs",
+              "reward_model",
+              "rollout",
+              "sandbox_fusion",
+              "skip",
+              "trainer",
+              "transfer_queue"
+            ],
+            "has_record_root": true
+          },
+          "consumed_by": "SILENT_OK"
+        }
+      ]
+    }
+  }
+}

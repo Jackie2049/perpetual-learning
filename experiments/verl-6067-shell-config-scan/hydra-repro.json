@@ -1,0 +1,45 @@
+[
+  {
+    "override": "trainer.use_legacy_worker_impl=disable",
+    "result": "OK",
+    "trainer": {
+      "device": "cuda",
+      "use_legacy_worker_impl": "disable",
+      "n_gpus_per_node": 8
+    },
+    "case": "A_present_unprefixed",
+    "expected": "OK",
+    "matches": true
+  },
+  {
+    "override": "trainer.use_legacy_worker_impl=disable",
+    "result": "FAIL",
+    "error": "ConfigCompositionException: Could not override 'trainer.use_legacy_worker_impl'.",
+    "case": "B_absent_unprefixed",
+    "expected": "FAIL",
+    "matches": true
+  },
+  {
+    "override": "+trainer.use_legacy_worker_impl=disable",
+    "result": "OK",
+    "trainer": {
+      "device": "cuda",
+      "n_gpus_per_node": 8,
+      "use_legacy_worker_impl": "disable"
+    },
+    "case": "C_absent_prefixed",
+    "expected": "OK",
+    "matches": true
+  },
+  {
+    "override": "trainer.device=npu",
+    "result": "OK",
+    "trainer": {
+      "device": "npu",
+      "n_gpus_per_node": 8
+    },
+    "case": "D_control_existing_key",
+    "expected": "OK",
+    "matches": true
+  }
+]
