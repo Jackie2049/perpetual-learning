@@ -1,0 +1,42 @@
+{
+  "model": "/home/zxw/models/Qwen2.5-0.5B-Instruct",
+  "vllm": "0.24.0",
+  "prompts": 4,
+  "n": 32,
+  "max_tokens": 1536,
+  "rows": [
+    {
+      "repeat": 0,
+      "wall_s": 4.7836,
+      "n_seqs": 128,
+      "prompt_tokens": 301,
+      "gen_tokens": 90388,
+      "total_tokens": 90689,
+      "gen_tok_per_s": 18895.5,
+      "total_tok_per_s": 18958.5,
+      "mean_resp_len": 706.2
+    },
+    {
+      "repeat": 1,
+      "wall_s": 4.4529,
+      "n_seqs": 128,
+      "prompt_tokens": 301,
+      "gen_tokens": 81248,
+      "total_tokens": 81549,
+      "gen_tok_per_s": 18246.2,
+      "total_tok_per_s": 18313.8,
+      "mean_resp_len": 634.8
+    },
+    {
+      "repeat": 2,
+      "wall_s": 4.3791,
+      "n_seqs": 128,
+      "prompt_tokens": 301,
+      "gen_tokens": 78065,
+      "total_tokens": 78366,
+      "gen_tok_per_s": 17826.6,
+      "total_tok_per_s": 17895.3,
+      "mean_resp_len": 609.9
+    }
+  ]
+}
