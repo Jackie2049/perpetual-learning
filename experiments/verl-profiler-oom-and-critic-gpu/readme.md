@@ -165,6 +165,27 @@ logger.setLevel(os.getenv("VERL_LOGGING_LEVEL", "WARN"))   # :29  默认 WARN �
 
 **边界（与本轮结论一起引用）**：替身 worker 只有真实类体里的属性名，**不是真 worker 实例**；未装 msprobe、未跑训练、未上卡。它证明的是"这条解析路径在 `TrainingWorker` 上不可能拿到模型"，而不是"msprobe 在真机上会怎么表现"。另外，三臂真机跑的 P2／P3（`cu`／`cv` 零 dump）**两种原因都能满足**——没有装饰器，或者装饰器在但模型解析不出来——本轮把后者从推断变成静态可查，但三臂本身只给行为侧证据，分不出是哪一个原因。
 
+## 2026-11-05 04:0x 无卡轮：critic 的模型构建分支查清了——**trl 不在这条路上，而 preflight 一直把它当硬依赖**
+
+三臂的每个窗口前置都逐轮在收口，但这轮翻的是另一种性质的隐患：**不是"跑起来会不会错"，而是"依赖清单本身对不对"**。`run-critic-pdbg.sh` 从 01:0x 起把 `/tmp/m5-trl-0.27.0` 和 msprobe 一起放在同一个 `for dep in ...` 里，任缺即 `exit 65`。如果服务器 `/tmp` 被清掉一部分（`/home` 100% 满，这不是假设），**一个本来能跑的好窗口会被自己的预检判死**。
+
+**一、读数：Qwen2 critic 走第一分支，trl 全程不 import。** `verl/utils/model.py:load_valuehead_model`（`:467`）先试 `AutoModelForTokenClassification.from_pretrained(...)`（`:471`），只有它抛异常（`:479` 的 `except BaseException`）才落到 trl 的 `AutoModelForCausalLMWithValueHead`（`:488`）。而 transformers 的 `_get_model_class`（`auto_factory.py:178`）只做 `model_mapping[type(config)]` 一次查表，`config.architectures` **只用来在候选类列表里挑一个**（`:184-187`）——所以拿一份 causal-LM 权重去建 token-classification 模型**不会报错**，只会随机初始化 `score` 头并告警。Qwen2 在映射里（`modeling_auto.py:1686` 的 `("qwen2", "Qwen2ForTokenClassification")`），引擎又在调用前把 `hf_config.num_labels` 设成 1（`transformer_impl.py:294`）⇒ 路径固定为第一分支，`trl` 一次都不会被 import。
+
+**二、所以依赖名册要分两类。** msprobe 仍是**硬依赖**（没有它 profiler 是 no-op，`au` 正臂不可能出 dump，窗口会白烧成"无效跑"）；trl 只在**回退分支**才需要。[probe-valuehead-branch.py](probe-valuehead-branch.py) 只读 `config.json`（不加载权重、不碰 GPU）回答这个问题，wrapper 按它的退出码分派：
+
+| 探针结论 | trl 目录 | wrapper 行为 | 含义 |
+|---|---|---|---|
+| 分支 1（`rc=0`） | 缺失 | **继续** | 这正是此前的误杀：trl 不在路径上 |
+| 分支 2 不可用（`rc=65`） | 缺失 | 中止 65 | 真需要，并打印确切的 `pip install --target` 命令行 |
+| 不可判定（`rc=2`） | 缺失 | 中止 65 | 未知一律沿用旧严格规则 |
+| 不可判定（`rc=2`） | 在 | 继续 | 未知但回退件在 |
+
+四行都由桩替换探针实测（不是推断），并且每臂的 `arm-<ARM>.json` 现在记 `valuehead_branch`（含 `resolved_class`），证据页可以写"critic 是 `Qwen2ForTokenClassification` ＋ 全新 1 维头"，而不是笼统的"一个 value model"。
+
+**三、判定不动。** `verify-critic-pdbg.py` 只把 `valuehead_branch` 打进 reported（`_branch_label()`：记录到类名／`undecidable (...)`／`not-recorded`），**不进任何门槛**——预登记是在没有这个字段时写的，分支也不改变 P1–P3 问的事。自检 12 → **14**，新增两条钉住这一点：`valuehead_branch` 缺失 → 仍 exit 0；改成 `trl_valuehead` → 仍 exit 0。
+
+**边界（与本节结论一起引用）**：① 这是对**固定版本源码**的核对（verl `31cfccb4`、transformers 5.16.1 wheel、trl 0.27.0 wheel，两个 wheel 的 sha256 在 [raw/valuehead-branch-evidence.json](raw/valuehead-branch-evidence.json)），**不是运行时读数**；② 本机解释器是 3.9，`transformers 5.16.1` 装不上，所以探针的 real-mapping 分支**第一次执行是在服务器上**——因此失败方向必须是保守的：任何异常都归 `undecidable`，沿用严格规则，最坏是丢一个窗口，不会静默换成错分支；③ trl 0.27.0 两条导入路径都在（`trl/experimental/ppo/__init__.py:16`、`trl/__init__.py:46` 的废弃导入），类有 `pretrained_model`／`v_head`（`modeling_value_head.py:634/678`）⇒ 回退分支本身是成立的，只是这条路用不到。
+
 ## 复现
 
 ```bash
@@ -178,7 +199,10 @@ python3 verify-oom-archive.py --selftest # 7 项注入，全部被捕捉
 SRC=/tmp/m5-main-smoke/verl G=4 ARM=cu bash run-critic-pdbg.sh
 # 判定（本机，CPU，只读 arm-*.json）：0=符合预登记 1=无效跑 2=被推翻
 python3 verify-critic-pdbg.py --out <OUT>
-python3 verify-critic-pdbg.py --selftest   # 12 项，含"cu 冒 dump → 2"
+python3 verify-critic-pdbg.py --selftest   # 14 项，含"cu 冒 dump → 2"与"valuehead_branch 不进门槛"
+# critic 用哪条分支建模型（预检内部会调，也可单独跑；只读 config.json，不需要 GPU）
+python3 probe-valuehead-branch.py --model /home/zxw/models/Qwen2.5-0.5B-Instruct --json /tmp/vh.json
+python3 probe-valuehead-branch.py --selftest   # 5 项（real-mapping 两条要有 transformers 才跑）
 # 判定用的日志计数器：拿仓库里全部真日志验（不需要 GPU、不需要服务器）
 python3 check-log-counters.py --selftest                             # 6 项，含负向对照
 python3 check-log-counters.py --verify --out raw/log-counter-check.json
@@ -203,7 +227,7 @@ python3 probe-critic-model-resolve.py --tree /tmp/verl-pre6067 --preset pre6067 
 
 - 探针与跑批：[probe-oom-dump.py](probe-oom-dump.py) · [run-oom-probe.sh](run-oom-probe.sh) · [run-critic-pdbg.sh](run-critic-pdbg.sh)（**未跑真机**）
 - 树内适配：[patch-critic-sdpa.py](patch-critic-sdpa.py) · 真上游文件验证 [raw/critic-sdpa-patch.json](raw/critic-sdpa-patch.json)／[.diff](raw/critic-sdpa-patch.diff)
-- 判定与把关：[verify-critic-pdbg.py](verify-critic-pdbg.py) · [check-log-counters.py](check-log-counters.py) · [verify-oom-archive.py](verify-oom-archive.py) · [compose_check.py](compose_check.py) · [probe-critic-model-resolve.py](probe-critic-model-resolve.py) · [raw/compose-check.json](raw/compose-check.json)（`3fdf2b54`）· [raw/compose-check-main-31cfccb4.json](raw/compose-check-main-31cfccb4.json)（当前 main）· [raw/critic-model-resolve-main-31cfccb4.json](raw/critic-model-resolve-main-31cfccb4.json)／[raw/critic-model-resolve-pre6067.json](raw/critic-model-resolve-pre6067.json)
+- 判定与把关：[verify-critic-pdbg.py](verify-critic-pdbg.py) · [check-log-counters.py](check-log-counters.py) · [verify-oom-archive.py](verify-oom-archive.py) · [compose_check.py](compose_check.py) · [probe-critic-model-resolve.py](probe-critic-model-resolve.py) · [probe-valuehead-branch.py](probe-valuehead-branch.py) · [raw/valuehead-branch-evidence.json](raw/valuehead-branch-evidence.json)（分支核对与 preflight 四档实测） · [raw/compose-check.json](raw/compose-check.json)（`3fdf2b54`）· [raw/compose-check-main-31cfccb4.json](raw/compose-check-main-31cfccb4.json)（当前 main）· [raw/critic-model-resolve-main-31cfccb4.json](raw/critic-model-resolve-main-31cfccb4.json)／[raw/critic-model-resolve-pre6067.json](raw/critic-model-resolve-pre6067.json)
 - 原始读数：`raw/result-{attached,nocap,unranked}.json` · `raw/nocap.stderr` · [raw/log-counter-check.json](raw/log-counter-check.json)（104 份真日志的计数器对照）
 - 管线夹具（**非读数**）：[raw/mock-run/](raw/mock-run/README.json)（旧形状，掩盖了计数器问题）· [raw/mock-run-real-shape/](raw/mock-run-real-shape/README.json)（真日志形状）· [mock/](mock/make-mock-tree.sh)
 - 上游对应：[证据文档](../../open-source/verl/evidence/engine-refactor-torch-memory/readme.md) · [M5 交接](../handoff-m5.md)

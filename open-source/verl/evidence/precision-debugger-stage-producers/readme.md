@@ -9,7 +9,7 @@
 
 **【价值评估】** 6 / 10 — 用户可见后果明确（照文档配 `critic_update` 会静默无输出，且 `strict=False` 下连 warning 都没有），但只影响 Ascend 上的精度采集，不影响训练正确性；静态可证到"没有触发点"，NPU 侧只剩"import 是否自己落盘"这一条假设。
 
-**【进展】** 2026-11-04 M5 无卡轮完成，纯静态（verl main `7454326` 与父提交 `6eeb5711` 两棵树互核，脚本 4/4 自检 + 两棵树判定全一致）。**2026-11-05 M5 无卡轮补第二层证据**：即使把装饰器补回去，critic 的模型在新引擎的 `TrainingWorker` 上**解析不出来**（解析表与父提交逐字相同，但落点从 `CriticWorker.critic_module` 变成了 `engine.module`），`start()` 会打一条 "model not resolved" 并返回 False、零 dump ⇒ 最小修法必须同时覆盖解析链（形状已在本地验证）。**未触上游**：未建 issue、未评论、未开 PR。复现见[静态扫描实验](../../../../experiments/verl-precision-debugger-stages/readme.md)与[解析链探针](../../../../experiments/verl-profiler-oom-and-critic-gpu/readme.md)。
+**【进展】** 2026-11-04 M5 无卡轮完成，纯静态（verl main `7454326` 与父提交 `6eeb5711` 两棵树互核，脚本 4/4 自检 + 两棵树判定全一致）。**2026-11-05 M5 无卡轮补第二层证据**：即使把装饰器补回去，critic 的模型在新引擎的 `TrainingWorker` 上**解析不出来**（解析表与父提交逐字相同，但落点从 `CriticWorker.critic_module` 变成了 `engine.module`），`start()` 会打一条 "model not resolved" 并返回 False、零 dump ⇒ 最小修法必须同时覆盖解析链（形状已在本地验证）。**2026-11-05 04:0x 再补一条**：这条解析链要拿到的模型由 `AutoModelForTokenClassification` 建成（Qwen2 在映射里、引擎先设 `num_labels=1` ⇒ 全新 1 维头），trl 的 value-head 包装只是回退分支、从不被执行 ⇒ 真机实验的 trl 依赖降级为"可缺省"。**未触上游**：未建 issue、未评论、未开 PR。复现见[静态扫描实验](../../../../experiments/verl-precision-debugger-stages/readme.md)与[解析链探针](../../../../experiments/verl-profiler-oom-and-critic-gpu/readme.md)。
 
 **【大白话讲明白】**
 
@@ -98,6 +98,16 @@ os.makedirs(dump_path, exist_ok=True)                  # 在模型检查之后
 **候选修法的形状已在本地验证，未改动上游**：给每个 role 的候选链**末尾**追加 `"engine.module"` 后，critic 两臂解析成功，actor／ref 两个正对照读数不变（原候选先命中）。即便如此，仍需先有装饰器与 role 身份，所以最小可靠做法仍是"文档标注 + 加载期一次 warning"，而不是偷偷补一行。
 
 **边界**：替身 worker 只带真实类体里的属性名，不是真 worker 实例；未装 msprobe、未跑训练、未上卡。它证明"这条解析路径在 `TrainingWorker` 上拿不到模型"，不证明真机上 msprobe 如何表现。自检 8/8（抽取完整、3.9 语法垫片恰 1 处、基线 None、三种扰动各自翻转、表恢复、unknown stage 仍被拒）。
+
+### 三·补二（2026-11-05，M5，CPU 静态）：critic 的模型由 `AutoModelForTokenClassification` 建，**不是 trl 的 value-head 包装**
+
+这一节与 profiler 缺陷本身无关，是为了让真机跑的**依赖名册**说对：崩溃点 `load_valuehead_model` 是一条两分支的回退链，跑之前得知道走哪条。
+
+`verl/utils/model.py:load_valuehead_model`（`:467`）先试 `AutoModelForTokenClassification.from_pretrained(..., config=model_config)`（`:471`），只有在 `except BaseException`（`:479`）里才 import trl 的 `AutoModelForCausalLMWithValueHead`（`:488`）。而 transformers 的 `_get_model_class`（`auto_factory.py:178`）只做一次 `model_mapping[type(config)]`，`config.architectures` **仅用于在候选类列表里挑一个**（`:184-187`）⇒ 用 causal-LM 权重去建 token-classification 模型**不会抛异常**，只会随机初始化 `score` 头。Qwen2 在映射里（`modeling_auto.py:1686` 的 `("qwen2", "Qwen2ForTokenClassification")`），引擎在调用前又把 `hf_config.num_labels` 设成 1（`transformer_impl.py:294`）⇒ **分支 1 恒胜，trl 全程不被 import**。
+
+对"critic 侧到底有没有在训练"这件事有两处用途：① 下游 `prepare_model_outputs` 按 `hasattr(module, "v_head")` 分派（`transformer_impl.py:1538`／`:1559`），Qwen2 这条走的是 `output.logits.squeeze(-1)` ⇒ critic 的 value 头是**从零训练的全新 1 维头**，不是预训练 value model；② 真机实验的 trl 依赖可以被降级为"仅回退分支需要"，不再拿它当预检门槛（否则 `/tmp` 被清一部分就会误杀窗口）。
+
+**边界**：这是对固定版本源码的核对（verl `31cfccb4`、transformers 5.16.1、trl 0.27.0，两个 wheel 的 sha256 与行号在 [实验读数](../../../../experiments/verl-profiler-oom-and-critic-gpu/raw/valuehead-branch-evidence.json)），**不是运行时读数**；本机解释器 3.9 装不上 transformers 5.16.1，real-mapping 分支第一次执行在服务器上，因此探针把任何异常都归"不可判定"，由调用方沿用严格规则。
 
 
 ## 四、文档与配置里的同一张表

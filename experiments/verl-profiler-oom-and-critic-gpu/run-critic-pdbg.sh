@@ -41,7 +41,9 @@ rm -rf "$PROF"
 mkdir -p "$OUT"
 
 export PATH=/home/zxw/venvs/rollout-g8/bin:$PATH
-export PYTHONPATH=${MSPROBE_TARGET:-/tmp/m5-msprobe-target}:${TRL_TARGET:-/tmp/m5-trl-0.27.0}
+export MSPROBE_DIR=${MSPROBE_TARGET:-/tmp/m5-msprobe-target}
+export TRL_DIR=${TRL_TARGET:-/tmp/m5-trl-0.27.0}
+export PYTHONPATH=$MSPROBE_DIR:$TRL_DIR
 export TRL_EXPERIMENTAL_SILENCE=1
 cd "$SRC"
 export VERL_USE_UV=0
@@ -82,11 +84,17 @@ case "$ARM" in
 esac
 
 # --- preflight: every item below aborts the run in its first minutes, so check in seconds
-for dep in "$SRC/verl/utils/model.py" "$SCRIPT_DIR/patch-critic-sdpa.py" "${PYTHONPATH%%:*}" "${PYTHONPATH##*:}" \
+# msprobe is a hard requirement: without it the profiler tool is a no-op and the `au` positive
+# control cannot fire, which would burn the window to learn "invalid run".
+for dep in "$SRC/verl/utils/model.py" "$SCRIPT_DIR/patch-critic-sdpa.py" \
+           "$SCRIPT_DIR/probe-valuehead-branch.py" "$MSPROBE_DIR" \
            "$MSPROBE_CONFIG" "$MODEL_PATH" "$TRAIN_FILE" "$TEST_FILE"; do
   if [ ! -e "$dep" ]; then
     echo "[preflight] MISSING: $dep" >&2
     echo "[preflight] /tmp --target dirs and datasets do not survive a host cleanup -> reinstall before spending a window" >&2
+    echo "[preflight]   tree:   curl -L 'https://codeload.github.com/verl-project/verl/tar.gz/<SHA>' | tar xz -C /tmp" >&2
+    echo "[preflight]   msprobe: python3 -m pip install --no-deps --target $MSPROBE_DIR mindstudio-probe" >&2
+    echo "[preflight]            (+ matplotlib 3.10.9 pyparsing cycler kiwisolver fonttools python-dateutil packaging pillow)" >&2
     exit 65
   fi
 done
@@ -111,6 +119,30 @@ case $FA2_RC in
   *)
     echo "[preflight] patch-critic-sdpa.py --check rc=$FA2_RC (anchor shape changed?) -> inspect verl/utils/model.py by hand" >&2
     exit 65 ;;
+esac
+
+# trl is a *conditional* dependency: `load_valuehead_model` tries
+# AutoModelForTokenClassification first and only falls back to trl's value-head wrapper when that
+# raises. For a config class that is in the token-classification mapping (qwen2 is, in the pinned
+# transformers) branch 1 wins and trl is never imported -- so a wiped /tmp/m5-trl-0.27.0 must not
+# abort an otherwise good window. The probe reads config.json only (no weights, no GPU) and its
+# "undecidable" answer keeps the old strict rule, so an unknown can only be conservative.
+VH_JSON=$OUT/valuehead-branch.json
+python3 "$SCRIPT_DIR/probe-valuehead-branch.py" --model "$MODEL_PATH" --json "$VH_JSON" >"$OUT/valuehead-branch.log" 2>&1
+VH_RC=$?
+case $VH_RC in
+  0) echo "[preflight] value-head branch: $(grep -o '"branch": "[a-z_]*"' "$VH_JSON" 2>/dev/null | head -1)" ;;
+  65)
+    echo "[preflight] critic model needs the trl value-head fallback and $TRL_DIR is missing" >&2
+    echo "[preflight] install it: python3 -m pip install --no-deps --target $TRL_DIR trl==0.27.0" >&2
+    exit 65 ;;
+  *)
+    if [ ! -e "$TRL_DIR" ]; then
+      echo "[preflight] value-head branch undecidable (probe rc=$VH_RC) and $TRL_DIR is missing" >&2
+      echo "[preflight] cannot rule out the trl fallback -> strict rule aborts instead of risking the window" >&2
+      exit 65
+    fi
+    echo "[preflight] value-head branch undecidable (probe rc=$VH_RC); continuing because $TRL_DIR exists" >&2 ;;
 esac
 
 EXTRA=(
@@ -159,7 +191,7 @@ echo "critic_timing_lines=$(grep -c 'timing_s/update_critic' "$LOG" 2>/dev/null)
 M5_ARM=$ARM M5_STAGES=$STAGES M5_RC=$RC M5_SRC=$SRC M5_G=$G M5_PROF=$PROF M5_LOG=$LOG \
 M5_FA2_STATE=$FA2_STATE M5_START=$START M5_END=$END M5_MSPROBE_CONFIG=$MSPROBE_CONFIG \
 M5_MODEL_PATH=$MODEL_PATH M5_TRAIN_FILE=$TRAIN_FILE M5_TEST_FILE=$TEST_FILE \
-M5_TRL=${TRL_TARGET:-/tmp/m5-trl-0.27.0} M5_PATCH_SCRIPT=$SCRIPT_DIR/patch-critic-sdpa.py \
+M5_VH_JSON=$VH_JSON M5_TRL=$TRL_DIR M5_PATCH_SCRIPT=$SCRIPT_DIR/patch-critic-sdpa.py \
 python3 - > "$ARM_JSON.tmp" <<'PY'
 import hashlib
 import importlib.util
@@ -189,6 +221,14 @@ step_numbers = sorted({int(m.group(1)) for line in text.splitlines() if "timing_
                        for m in [step_re.search(line)] if m})
 model_py = Path(E["M5_SRC"]) / "verl" / "utils" / "model.py"
 model_text = model_py.read_text() if model_py.is_file() else None
+
+# Which branch of load_valuehead_model built the critic (see probe-valuehead-branch.py). Recorded
+# so the evidence page can say "Qwen2ForTokenClassification with a fresh 1-label head", not "a
+# value model" in the abstract; `deps.trl_target` then reads as a fallback's presence, not a need.
+try:
+    valuehead = json.loads(Path(E["M5_VH_JSON"]).read_text())
+except Exception as exc:
+    valuehead = {"decided": False, "error": f"{type(exc).__name__}: {exc}"}
 
 # The tree state comes from the same classifier the preflight uses, so V4 gates on "the
 # value-head block is patched" rather than on a file-wide literal count. Upstream 3fdf2b54 /
@@ -228,6 +268,7 @@ out = {
     "dump_file_count": len(dumps),
     "dump_files": dumps,
     "fa2": fa2,
+    "valuehead_branch": valuehead,
     "deps": {
         "msprobe_config": os.path.exists(E["M5_MSPROBE_CONFIG"]),
         "trl_target": os.path.exists(E["M5_TRL"]),

@@ -70,6 +70,15 @@ def load_arms(out_dir, arms=ARMS):
     return data, missing
 
 
+def _branch_label(vh):
+    """Human label for the recorded value-head branch (reporting only)."""
+    if not isinstance(vh, dict):
+        return "not-recorded"
+    if vh.get("decided") is False:
+        return f"undecidable ({str(vh.get('error'))[:60]})"
+    return vh.get("resolved_class") or vh.get("branch") or "not-recorded"
+
+
 def judge(data, missing, min_steps=2):
     checks, reported = [], {}
 
@@ -99,6 +108,9 @@ def judge(data, missing, min_steps=2):
     reported["au_update_critic_occurrences"] = data["au"].get("update_critic_occurrences")
     reported["values_timing_occurrences"] = {a: data[a].get("values_timing_occurrences") for a in ARMS}
     reported["update_critic_any_mention"] = {a: data[a].get("update_critic_any_mention") for a in ARMS}
+    # Informational: which branch of load_valuehead_model built the critic. Not gated -- the
+    # verdict was pre-registered without it, and the branch does not change what P1-P3 ask.
+    reported["valuehead_branch"] = {a: _branch_label(data[a].get("valuehead_branch")) for a in ARMS}
 
     # --- gated outcomes -----------------------------------------------------------------
     au_files = [f for f in data["au"].get("dump_files", [])]
@@ -204,6 +216,11 @@ def selftest():
     run_case("outside_literal_not_counted",
              lambda a: a["au"].update(fa2={"state": "patched", "flash_attention_2_left": 1,
                                            "anchors_in_block": 0, "anchors_outside_block": 1}), 0)
+    # The value-head branch is reported, never gated: an arm JSON written before this field
+    # existed (or one whose probe could not decide) must still be judged on V/P alone.
+    run_case("valuehead_branch_absent", lambda a: [a[k].pop("valuehead_branch", None) for k in ARMS], 0)
+    run_case("valuehead_branch_trl", lambda a: [a[k].update(valuehead_branch={"branch": "trl_valuehead",
+                                                                             "decided": True}) for k in ARMS], 0)
 
     failed = [r for r in results if not r[1]]
     for name, ok, got, want in results:

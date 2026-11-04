@@ -1,0 +1,102 @@
+{
+ "checked_at_utc": "2026-11-04T20:05:18Z",
+ "question": "Does verl's load_valuehead_model reach its trl fallback for this critic model, i.e. is /tmp/m5-trl-0.27.0 a hard dependency of the critic three-arm run?",
+ "answer": "No for a Qwen2 critic: AutoModelForTokenClassification is in the mapping, so branch 1 builds the model and trl is never imported. trl stays a fallback only.",
+ "verl_tree": {
+  "commit": "31cfccb4",
+  "source": "/tmp/verl-31cfccb4 (codeload tarball)"
+ },
+ "anchors": {
+  "verl/utils/model.py": {
+   "load_valuehead_model_def_line": 467,
+   "branch1_token_classification_call_line": 471,
+   "branch1_falls_through_on": "except BaseException (line 479)",
+   "branch2_trl_import_line": 488,
+   "trl_import_forms": [
+    "trl.experimental.ppo",
+    "trl"
+   ]
+  },
+  "verl/workers/engine/fsdp/transformer_impl.py": {
+   "hf_config_num_labels_1_line": 294,
+   "load_valuehead_model_call_line": 298,
+   "v_head_sniffing_lines": [
+    1538,
+    1559
+   ],
+   "note": "prepare_model_outputs branches on hasattr(module,'v_head'); the token-classification path reads output.logits.squeeze(-1)"
+  },
+  "verl/trainer/ppo/v1/trainer_base.py": {
+   "critic_model_type_line": 279,
+   "value": "value_model"
+  },
+  "transformers/models/auto/modeling_auto.py": {
+   "qwen2_token_classification_entry_line": 1686,
+   "entry": "(\"qwen2\", \"Qwen2ForTokenClassification\")"
+  },
+  "transformers/models/auto/auto_factory.py": {
+   "_get_model_class_line": 178,
+   "resolution": "model_mapping[type(config)] (line 179); architectures only disambiguates a list of candidates (184-187), so a causal-LM checkpoint does not make it fail",
+   "_LazyAutoMapping___contains___line": 657,
+   "_LazyAutoMapping_get_line": 626
+  },
+  "trl-0.27.0": {
+   "experimental_ppo_export_line": 16,
+   "top_level_deprecated_export_line": 46,
+   "class_def_line": 634,
+   "v_head_attr_line": 678,
+   "pretrained_model_attr": "set by PreTrainedModelWrapper.__init__; forward returns (lm_logits, loss, value)"
+  }
+ },
+ "wheels": {
+  "transformers-5.16.1-py3-none-any.whl": "2f2d5b98a5ad3718713653734298fa620754ed683702a635ebb587df3ed29c7e",
+  "trl-0.27.0-py3-none-any.whl": "0947241f74b67f60f0fce6d149afbb85ef2faf95078ec221d6a7958d2bdfb7ef"
+ },
+ "reproduce": [
+  "python3 -m pip download --no-deps --python-version 3.12 --only-binary=:all: --dest . transformers==5.16.1 trl==0.27.0",
+  "unzip -q transformers-5.16.1-py3-none-any.whl 'transformers/models/auto/*' -d t",
+  "grep -n '(\"qwen2\", \"Qwen2ForTokenClassification\")' t/transformers/models/auto/modeling_auto.py",
+  "sed -n '178,191p' t/transformers/models/auto/auto_factory.py",
+  "unzip -q trl-0.27.0-py3-none-any.whl -d x && grep -rn AutoModelForCausalLMWithValueHead x/trl/__init__.py x/trl/experimental/ppo/__init__.py"
+ ],
+ "wrapper_branch_matrix": [
+  {
+   "probe_rc": 0,
+   "probe_says": "branch 1 (token_classification)",
+   "trl_dir": "absent",
+   "wrapper_rc": 0,
+   "meaning": "was the false abort: trl is not on this path, the run may proceed"
+  },
+  {
+   "probe_rc": 65,
+   "probe_says": "branch 2 (trl) and unusable",
+   "trl_dir": "absent",
+   "wrapper_rc": 65,
+   "meaning": "real abort, message prints the exact pip install line"
+  },
+  {
+   "probe_rc": 2,
+   "probe_says": "undecidable",
+   "trl_dir": "absent",
+   "wrapper_rc": 65,
+   "meaning": "unknown keeps the old strict rule"
+  },
+  {
+   "probe_rc": 2,
+   "probe_says": "undecidable",
+   "trl_dir": "present",
+   "wrapper_rc": 0,
+   "meaning": "unknown but the fallback is installed"
+  }
+ ],
+ "selftests": {
+  "probe-valuehead-branch.py --selftest": "5/5 (transformers real-mapping cases skipped locally: no transformers under python 3.9)",
+  "verify-critic-pdbg.py --selftest": "14/14 (2 new cases pin 'valuehead_branch is reported, never gated')",
+  "mock/run-mock.sh": "three arms wrapper rc=0, judge exit 0 (pipeline fixture, not a reading)"
+ },
+ "boundary": [
+  "Source inspection of the pinned wheel + verl tree; nothing was executed on a GPU or with real weights.",
+  "The binding runtime answer is the probe's own reading on the window (it writes raw/arm-<ARM>.json.valuehead_branch).",
+  "Local interpreter is python 3.9, so transformers 5.16.1 cannot be imported here; the probe's real-mapping cases run for the first time on the server. Any exception there is classified 'undecidable', which keeps the strict trl rule -> the failure direction is a lost window, never a silently wrong branch."
+ ]
+}

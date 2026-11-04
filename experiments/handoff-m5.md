@@ -47,6 +47,16 @@ GPU/NPU 的访问、环境与实验由 macbook-M5 Agent 负责。M1 遇到需要
 
 **2026-11-05 02:0x 无卡轮：判定读的数拿真日志验过，改了两处**。① **`steps_seen` 原实现会误判**：`^step:` 在带 Ray 前缀的真日志上 104/104 读到 0 ⇒ V2（`≥2`）必挂，正常跑会被判无效。改为数"带 `- ` 分隔的步行且含 `timing_s/step`"的**不同步号**，裸行与带前缀都成立；随手去掉锚点也错（103/104 读错：`timing_s/step:8.2`、`global_step_46`）。② **V4 收窄到分类器**：原读全文件 FA2 字面量计数，现读 `patch-critic-sdpa.py analyze() → state == patched`（与预检同一判定），文件级计数降为信息字段。③ 夹具改成真日志形状（`mock/make-mock-tree.sh`，产物 `raw/mock-run-real-shape/`），旧的裸行夹具保留在 `raw/mock-run/` 作为反例。④ 组合把关在**当前 main `31cfccb4`** 重跑（8 个配置 yaml 自 `3fdf2b54` 有变动，均为删 QAT／改注释）：三臂全过、负向对照失败、17 个回读键与旧批一致。**仍未上卡，零 GPU 读数。**
 
+**2026-11-05 04:0x 无卡轮：依赖名册纠了一条——trl 不是硬依赖，别再拿它当预检门槛**。`load_valuehead_model`（`verl/utils/model.py:467`）先试
+`AutoModelForTokenClassification`（`:471`），只有 `except BaseException`（`:479`）才落到 trl（`:488`）；而 transformers `_get_model_class`
+（`auto_factory.py:178`）只查 `model_mapping[type(config)]`，`config.architectures` 只用于在候选类里挑一个 ⇒ 拿 causal-LM 权重建
+token-classification 模型**不报错**（随机初始化 `score` 头）。Qwen2 在映射里（`modeling_auto.py:1686`），引擎又先设 `num_labels=1`
+（`transformer_impl.py:294`）⇒ **分支 1 恒胜，trl 全程不 import**。原文"8 个依赖任缺即 exit 65"因此在 trl 目录被清时会误杀一个好窗口；
+现在 [probe-valuehead-branch.py](../verl-profiler-oom-and-critic-gpu/probe-valuehead-branch.py)（只读 `config.json`）决定 trl 是必需／可缺省／不可判定
+（不可判定一律沿用严格规则），msprobe 仍是硬依赖（没有它 profiler 是 no-op、`au` 正臂不可能出 dump）。四档行为已用桩探针实测，
+每臂 `arm-<ARM>.json` 增记 `valuehead_branch`（判定只报告、不门控，自检 14/14）。**trl 0.27.0 的两条导入路径与 `pretrained_model`／`v_head` 都在**，
+回退分支本身成立，只是这条路用不到。**未跑、未上卡、未触上游。**
+
 ## verl DSA 依赖兼容参考
 
 状态：仅条件交接，不代表接单或新增训练队列。目的为在已有获准DSV4/DSA工作中识别[#8238](https://github.com/verl-project/verl/issues/8238)的Frontend版本/有效输入边界，非自动升级或启动Pro。固定证据见[原专题](../notebook/frameworks/verl-6791-dsv4-megatron-lite-reading.md#dsa-奇数输出与依赖版本)：verl3c6d9b4锁Frontend1.26.0/CUTLASS DSL4.6.2，Megatron43e45e13传min(topk,压缩KV宽度)；官方#407已合并，1.27 tag f77fbc3d包含奇数标量存储回退。M1仅三模块AST/compile与锁文件解析，没有cuDNN导入、kernel/模型或硬件执行；H100/GB200均为外部报告。
