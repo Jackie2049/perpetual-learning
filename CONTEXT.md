@@ -1,10 +1,36 @@
-更新时间：2026-11-04（M1 **技术掘金：把 `tiled_mlp` 单条回归查成一类——#6067 引擎重构的配置消费点体检**）。把 `044bbba2`（#6067，2026-04-20 BREAKING）删掉的两个 worker 文件里的 **102 个 `config.*` 读取路径**逐条在当前 main 上核对：文本扫描报 **30 条**候选，人工判定后**真失效 3 条**——`tiled_mlp`、**`freeze_vision_tower`（本轮新发现）**、`use_prefix_grouper`；26 条是改名／换父配置后照常生效（`actor.fsdp_config → actor.engine`、`log_prob_* → ppo_*`），**1 条是搬了家**（MTP 关闭时的 `num_nextn_predict_layers` 清零搬进 `HFModelConfig.__post_init__`）。**`freeze_vision_tower` 是 2025-09 由 PR #3178 合入的真实特性**（VL 模型冻结视觉塔省显存），随同一次重构丢了接线、全仓无替代，而 `actor.yaml:51-52` 与 Ascend 参数表仍写着它 ⇒ 开 `true` 后视觉塔照常训练、显存不省、**不报错**。另记一条**行为契约变化**（不列失效）：MTP 在 FSDP 上从 `raise NotImplementedError` 变成静默清零。**两处自检**：① `lost` 判据把 config 声明行当成读取点，3 条真失效全部自证"有人读"；② `\btiled_mlp\b` 匹配不上 `use_tiled_mlp`，负向自检第一次失败，改子串匹配后通过。此前 rLLM #945／PR #946 复核见下方历史节。
+更新时间：2026-11-04（M1 **技术掘金：同一 #6067 重构的接口面体检——文档还在教的 3 个名字 + 1 个 profiler 结构性缺口**）。上一批查的是**配置消费点**（字段在、没人读），本批换信号族查**接口与文档引用**：10 个被删生产模块的 **50 个公开方法/函数名**里，**32 个仍有同名定义**、**13 条"main 无定义但 `docs/blog/` 以外的文档仍在教"（去重 3 个名：`update_policy`／`update_critic`／`compute_values`）**、5 个无定义也无引用。**关键限定：代码侧调用点 0 处**（`verl/**` 非测试 + `tests/` + `examples/`），⇒ **无静默失效，只是文档欠债**；`dpo_extension.rst`／`ray_trainer.rst` #6067 根本没碰。真正的发现是**装饰器字符串常量**这一层：旧 worker 给 critic 两个 RPC 挂了 `annotate(role="compute_values"|"critic_update")`，重构后 `verl/**` 各 **0 处**，而前端白名单 `_STAGE_TO_ROLE` 仍接受、`strict: False` 下**连 warn 都没有** ⇒ 配了不报错也不采（**能不能采到要 NPU+msprobe，属 M5**）。此前 rLLM #945／PR #946 复核见下方历史节。
 
 ## 当前现场
 
 > **只读最上面一节 `### M1 本轮` 即可恢复现场。** 下面 20+ 个 `###` 是历史批次叙述
 > （按时间倒序）——**它们已在 `diary/` 与专项文档留档，此处仅为交接连续性的冗余副本**。
 > 判断"现在该做什么"看 `## 未完成操作与并行工作` 与两个队列，不要从头读到尾。
+
+### M1 本轮（2026-11-04 13:0x–13:4x）：同一次重构的第二个信号族——接口名与文档引用
+
+**一、为什么做。** 上一批自己写下的"#6067 另外 71 个改动文件的语义变化未扫"太大，收窄到可做的一格：**被整份删除的那 10 个模块里，除了配置字段，还有哪些"名字"没了但外面还在用**。这与配置消费点互补——配置的消费者是引擎代码，接口名的消费者是**文档、下游脚本、装饰器**。
+
+**二、读数。** 50 个公开方法/函数名 → 32 仍有同名定义；13 条"无定义但非历史文档仍引用"（去重 **3 个名字**：`update_policy`、`update_critic`、`compute_values`）；5 个无定义无引用；`docs/blog/` 引用 0 条。
+
+| 名字 | main 里现在是什么 | 文档在哪还教 |
+|---|---|---|
+| `update_policy` | `update_actor`（`engine_workers.py:656`） | `perf_tuning.rst:135`、`dpo_extension.rst:18` |
+| `update_critic` | **无同名 RPC**；trainer 调 `critic_wg.train_mini_batch`（`ray_trainer.py:1359`） | `ray_trainer.rst:194`、`perf_tuning.rst:135` |
+| `compute_values` | **无同名 RPC**；trainer 调 `critic_wg.infer_batch`（`ray_trainer.py:1221`） | `ray_trainer.rst:162`、`precision_debugger_zh.md:48/85` |
+
+**三、必须先说的限定。** 这三个名字在**代码侧没有任何调用点**（`verl/**` 非测试、`tests/`、`examples/` 全 0）⇒ 没有静默失效、不影响训练结果。而且 `dpo_extension.rst` 与 `ray_trainer.rst` **#6067 根本没碰**，属存量文档没跟上重构，不是这次造成的回归。⇒ **对外不主张提 issue**，价值评级 4/10。
+
+**四、真正的发现：装饰器 role 是字符串常量，任何符号级扫描都看不见。** 旧 `fsdp_workers.py:1677/1697` 给 critic 两个 RPC 挂了 `@DistProfiler.annotate(role="compute_values")`／`(role="critic_update")`；重构后 `verl/**` 这两串**各 0 处**（engine 侧只剩 `actor_update`／`actor_compute_log_prob`／`ref_compute_log_prob`），但前端白名单 `_STAGE_TO_ROLE`（`precision_debugger_profile.py:26-33`）**仍接受**这两个 stage，`strict: False` 下**连 warn 都没有** ⇒ 用户配了"不报错也不采"。**口径只能写到"前端接受、后端无触发点"**：`_MODEL_ATTRS_BY_ROLE` 里 critic 的解析路径还在，实际采不采得到要 NPU + msprobe。
+
+**五、两条存量文档漂移（不属 #6067）。** ① `perf_tuning.rst:140-141` 说 values 前向的 token 上限由 `critic.forward_micro_batch_size_per_gpu` 控制，而 main 里真正的 token 上限是 `critic.forward_max_token_len_per_gpu`（`critic.yaml:49`），文档全文 0 次提及；② 同文档把归一化代码指向 `engine_workers.py`（#6067 改的链接），但新目标文件里没有归一化逻辑（`ppo_mini_batch_size` 只有 `:511` 一处赋值）。
+
+**六、本批自己三处错（都由复核抓出）。** ① 判定脚本三条文档正则**凭记忆写**（中英文混写成"和"、路径拼成 `docs/advanced/../`、行首符号写成 `-` 而原文是 `*`），全 MISMATCH；② `critic-infer-token-cap` 一条**方向写反**（我先写"文档提 `forward_max_token_len_per_gpu` 但 main 没有"，复核 `critic.yaml:49` 发现 main 里**有的正是它**）；③ `_STAGE_TO_ROLE` 初读成"删了 critic 域"，实际是"表里留着、删掉的是装饰器"——两者对外分量完全不同。
+
+**核对产物**：`scan_api_surface.py`（50 名，可复现）、`verify_findings.py` 7 条 **0 不一致** exit 0、`--selftest` 注入同名 def 后四条判定**全部翻转**；另两条 `doc_drift` 的手工注入也翻 False（未固化进脚本）。verl main `74543265`（2026-11-04 fetch）、父提交 `044bbba2^`、Python 3.12.13。**纯静态，未跑 verl、未上 GPU/NPU、未触上游**。
+
+**留给下一轮**：① **#6067 两次体检都只覆盖"被整份删除的文件"**，另外 71 个文件的语义变化仍未扫，第三次要换信号族（例如被改写的函数体前后对照），否则只是重复；② profiler 缺口已登记 [M5 交接](experiments/handoff-m5.md)，最小对照是"`stages: [actor_update]` 有 dump vs `stages: [critic_update]` 是否同样有"；③ TM-006 对外两条（删配置项／补 `freeze_vision_tower` 接线）仍待用户逐项授权；④ TS-001 侧仍停在「等用户立项」。
+
+入口：[接口面体检](open-source/verl/evidence/engine-refactor-api-surface/readme.md) · [实验 readme](experiments/verl-6067-api-surface-scan/readme.md) · [扫描脚本](experiments/verl-6067-api-surface-scan/scan_api_surface.py) · [判定脚本](experiments/verl-6067-api-surface-scan/verify_findings.py) · [M5 交接](experiments/handoff-m5.md) · [TM-006](queue_tech-miner.md) · [tracker](open-source/verl/tracker.md) · [diary](diary/2026-11-04.md)。
 
 ### M1 本轮（2026-11-04 11:3x–12:0x）：把 `tiled_mlp` 的单条回归查成一类——#6067 配置消费点体检
 

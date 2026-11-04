@@ -1,0 +1,851 @@
+{
+  "summary": {
+    "repo": "/Users/jackiemac/workspace/perpetual-learning/verl",
+    "parent": "044bbba2^",
+    "n_names": 50,
+    "n_still_defined": 32,
+    "n_gone_referenced": 13,
+    "n_gone_doc_historical_only": 0,
+    "n_gone_no_doc": 5,
+    "candidates": [
+      "compute_values",
+      "update_critic",
+      "update_policy"
+    ]
+  },
+  "rows": [
+    {
+      "module": "verl/workers/actor/base.py",
+      "name": "compute_log_prob",
+      "old_lines": [
+        39
+      ],
+      "current_definitions": [
+        "verl/workers/engine_workers.py"
+      ],
+      "doc_references_active": [
+        "docs/advance/dpo_extension.rst",
+        "docs/ascend_tutorial/dev_guide/performance/ascend_profiling_en.rst",
+        "docs/ascend_tutorial/dev_guide/performance/ascend_profiling_zh.rst",
+        "docs/data/transfer_queue.md",
+        "docs/perf/perf_tuning.rst",
+        "docs/workers/engine_workers.rst",
+        "docs/workers/sglang_worker.rst"
+      ],
+      "doc_references_historical": [
+        "docs/blog/v0.7.md"
+      ],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/actor/base.py",
+      "name": "update_policy",
+      "old_lines": [
+        54
+      ],
+      "current_definitions": [],
+      "doc_references_active": [
+        "docs/advance/dpo_extension.rst",
+        "docs/ascend_tutorial/dev_guide/performance/ascend_profiling_en.rst",
+        "docs/ascend_tutorial/dev_guide/performance/ascend_profiling_zh.rst",
+        "docs/perf/perf_tuning.rst"
+      ],
+      "doc_references_historical": [],
+      "verdict": "gone_referenced"
+    },
+    {
+      "module": "verl/workers/actor/dp_actor.py",
+      "name": "compute_log_prob",
+      "old_lines": [
+        427
+      ],
+      "current_definitions": [
+        "verl/workers/engine_workers.py"
+      ],
+      "doc_references_active": [
+        "docs/advance/dpo_extension.rst",
+        "docs/ascend_tutorial/dev_guide/performance/ascend_profiling_en.rst",
+        "docs/ascend_tutorial/dev_guide/performance/ascend_profiling_zh.rst",
+        "docs/data/transfer_queue.md",
+        "docs/perf/perf_tuning.rst",
+        "docs/workers/engine_workers.rst",
+        "docs/workers/sglang_worker.rst"
+      ],
+      "doc_references_historical": [
+        "docs/blog/v0.7.md"
+      ],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/actor/dp_actor.py",
+      "name": "update_policy",
+      "old_lines": [
+        513
+      ],
+      "current_definitions": [],
+      "doc_references_active": [
+        "docs/advance/dpo_extension.rst",
+        "docs/ascend_tutorial/dev_guide/performance/ascend_profiling_en.rst",
+        "docs/ascend_tutorial/dev_guide/performance/ascend_profiling_zh.rst",
+        "docs/perf/perf_tuning.rst"
+      ],
+      "doc_references_historical": [],
+      "verdict": "gone_referenced"
+    },
+    {
+      "module": "verl/workers/actor/megatron_actor.py",
+      "name": "compute_log_prob",
+      "old_lines": [
+        204
+      ],
+      "current_definitions": [
+        "verl/workers/engine_workers.py"
+      ],
+      "doc_references_active": [
+        "docs/advance/dpo_extension.rst",
+        "docs/ascend_tutorial/dev_guide/performance/ascend_profiling_en.rst",
+        "docs/ascend_tutorial/dev_guide/performance/ascend_profiling_zh.rst",
+        "docs/data/transfer_queue.md",
+        "docs/perf/perf_tuning.rst",
+        "docs/workers/engine_workers.rst",
+        "docs/workers/sglang_worker.rst"
+      ],
+      "doc_references_historical": [
+        "docs/blog/v0.7.md"
+      ],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/actor/megatron_actor.py",
+      "name": "forward_backward_batch",
+      "old_lines": [
+        399
+      ],
+      "current_definitions": [
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/base.py",
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/torchtitan/transformer_impl.py",
+        "verl/workers/engine/veomni/transformer_impl.py"
+      ],
+      "doc_references_active": [
+        "docs/ascend_tutorial/dev_guide/performance/ascend_profiling_en.rst",
+        "docs/ascend_tutorial/dev_guide/performance/ascend_profiling_zh.rst",
+        "docs/workers/torchtitan_workers.rst"
+      ],
+      "doc_references_historical": [
+        "docs/blog/v0.7.md"
+      ],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/actor/megatron_actor.py",
+      "name": "make_minibatch_iterator",
+      "old_lines": [
+        339
+      ],
+      "current_definitions": [],
+      "doc_references_active": [],
+      "doc_references_historical": [],
+      "verdict": "gone_no_doc"
+    },
+    {
+      "module": "verl/workers/actor/megatron_actor.py",
+      "name": "update_policy",
+      "old_lines": [
+        769
+      ],
+      "current_definitions": [],
+      "doc_references_active": [
+        "docs/advance/dpo_extension.rst",
+        "docs/ascend_tutorial/dev_guide/performance/ascend_profiling_en.rst",
+        "docs/ascend_tutorial/dev_guide/performance/ascend_profiling_zh.rst",
+        "docs/perf/perf_tuning.rst"
+      ],
+      "doc_references_historical": [],
+      "verdict": "gone_referenced"
+    },
+    {
+      "module": "verl/workers/critic/base.py",
+      "name": "compute_values",
+      "old_lines": [
+        33
+      ],
+      "current_definitions": [],
+      "doc_references_active": [
+        "docs/ascend_tutorial/dev_guide/precision_analysis/precision_debugger_zh.md",
+        "docs/perf/perf_tuning.rst"
+      ],
+      "doc_references_historical": [],
+      "verdict": "gone_referenced"
+    },
+    {
+      "module": "verl/workers/critic/base.py",
+      "name": "update_critic",
+      "old_lines": [
+        38
+      ],
+      "current_definitions": [],
+      "doc_references_active": [
+        "docs/perf/perf_tuning.rst",
+        "docs/workers/ray_trainer.rst"
+      ],
+      "doc_references_historical": [],
+      "verdict": "gone_referenced"
+    },
+    {
+      "module": "verl/workers/critic/dp_critic.py",
+      "name": "compute_values",
+      "old_lines": [
+        153
+      ],
+      "current_definitions": [],
+      "doc_references_active": [
+        "docs/ascend_tutorial/dev_guide/precision_analysis/precision_debugger_zh.md",
+        "docs/perf/perf_tuning.rst"
+      ],
+      "doc_references_historical": [],
+      "verdict": "gone_referenced"
+    },
+    {
+      "module": "verl/workers/critic/dp_critic.py",
+      "name": "update_critic",
+      "old_lines": [
+        192
+      ],
+      "current_definitions": [],
+      "doc_references_active": [
+        "docs/perf/perf_tuning.rst",
+        "docs/workers/ray_trainer.rst"
+      ],
+      "doc_references_historical": [],
+      "verdict": "gone_referenced"
+    },
+    {
+      "module": "verl/workers/critic/megatron_critic.py",
+      "name": "compute_values",
+      "old_lines": [
+        89
+      ],
+      "current_definitions": [],
+      "doc_references_active": [
+        "docs/ascend_tutorial/dev_guide/precision_analysis/precision_debugger_zh.md",
+        "docs/perf/perf_tuning.rst"
+      ],
+      "doc_references_historical": [],
+      "verdict": "gone_referenced"
+    },
+    {
+      "module": "verl/workers/critic/megatron_critic.py",
+      "name": "forward_backward_batch",
+      "old_lines": [
+        159
+      ],
+      "current_definitions": [
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/base.py",
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/torchtitan/transformer_impl.py",
+        "verl/workers/engine/veomni/transformer_impl.py"
+      ],
+      "doc_references_active": [
+        "docs/ascend_tutorial/dev_guide/performance/ascend_profiling_en.rst",
+        "docs/ascend_tutorial/dev_guide/performance/ascend_profiling_zh.rst",
+        "docs/workers/torchtitan_workers.rst"
+      ],
+      "doc_references_historical": [
+        "docs/blog/v0.7.md"
+      ],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/critic/megatron_critic.py",
+      "name": "make_minibatch_iterator",
+      "old_lines": [
+        149
+      ],
+      "current_definitions": [],
+      "doc_references_active": [],
+      "doc_references_historical": [],
+      "verdict": "gone_no_doc"
+    },
+    {
+      "module": "verl/workers/critic/megatron_critic.py",
+      "name": "update_critic",
+      "old_lines": [
+        305
+      ],
+      "current_definitions": [],
+      "doc_references_active": [
+        "docs/perf/perf_tuning.rst",
+        "docs/workers/ray_trainer.rst"
+      ],
+      "doc_references_historical": [],
+      "verdict": "gone_referenced"
+    },
+    {
+      "module": "verl/workers/fsdp_workers.py",
+      "name": "compute_log_prob",
+      "old_lines": [
+        1125
+      ],
+      "current_definitions": [
+        "verl/workers/engine_workers.py"
+      ],
+      "doc_references_active": [
+        "docs/advance/dpo_extension.rst",
+        "docs/ascend_tutorial/dev_guide/performance/ascend_profiling_en.rst",
+        "docs/ascend_tutorial/dev_guide/performance/ascend_profiling_zh.rst",
+        "docs/data/transfer_queue.md",
+        "docs/perf/perf_tuning.rst",
+        "docs/workers/engine_workers.rst",
+        "docs/workers/sglang_worker.rst"
+      ],
+      "doc_references_historical": [
+        "docs/blog/v0.7.md"
+      ],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/fsdp_workers.py",
+      "name": "compute_ref_log_prob",
+      "old_lines": [
+        1177
+      ],
+      "current_definitions": [
+        "verl/workers/engine_workers.py"
+      ],
+      "doc_references_active": [
+        "docs/perf/perf_tuning.rst",
+        "docs/workers/engine_workers.rst"
+      ],
+      "doc_references_historical": [],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/fsdp_workers.py",
+      "name": "compute_values",
+      "old_lines": [
+        1678
+      ],
+      "current_definitions": [],
+      "doc_references_active": [
+        "docs/ascend_tutorial/dev_guide/precision_analysis/precision_debugger_zh.md",
+        "docs/perf/perf_tuning.rst"
+      ],
+      "doc_references_historical": [],
+      "verdict": "gone_referenced"
+    },
+    {
+      "module": "verl/workers/fsdp_workers.py",
+      "name": "create_device_mesh",
+      "old_lines": [
+        104
+      ],
+      "current_definitions": [
+        "verl/workers/engine/fsdp/utils.py"
+      ],
+      "doc_references_active": [],
+      "doc_references_historical": [],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/fsdp_workers.py",
+      "name": "dump_memory_snapshot",
+      "old_lines": [
+        1297
+      ],
+      "current_definitions": [
+        "verl/utils/memory_utils.py"
+      ],
+      "doc_references_active": [],
+      "doc_references_historical": [],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/fsdp_workers.py",
+      "name": "generate_sequences",
+      "old_lines": [
+        1075
+      ],
+      "current_definitions": [
+        "verl/trainer/ppo/v1/agent_loop_tq.py",
+        "verl/workers/rollout/base.py",
+        "verl/workers/rollout/hf_rollout.py",
+        "verl/workers/rollout/naive/naive_rollout.py",
+        "verl/workers/rollout/vllm_rollout/vllm_rollout.py"
+      ],
+      "doc_references_active": [
+        "docs/advance/dpo_extension.rst",
+        "docs/data/transfer_queue.md",
+        "docs/extend_guide.rst",
+        "docs/hybrid_flow.rst",
+        "docs/single_controller.rst",
+        "docs/workers/sglang_worker.rst"
+      ],
+      "doc_references_historical": [],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/fsdp_workers.py",
+      "name": "get_sharding_strategy",
+      "old_lines": [
+        114
+      ],
+      "current_definitions": [
+        "verl/workers/engine/fsdp/utils.py"
+      ],
+      "doc_references_active": [],
+      "doc_references_historical": [],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/fsdp_workers.py",
+      "name": "get_vl_model_vision_tower",
+      "old_lines": [
+        133
+      ],
+      "current_definitions": [],
+      "doc_references_active": [],
+      "doc_references_historical": [],
+      "verdict": "gone_no_doc"
+    },
+    {
+      "module": "verl/workers/fsdp_workers.py",
+      "name": "init_model",
+      "old_lines": [
+        888,
+        1645
+      ],
+      "current_definitions": [
+        "verl/workers/engine_workers.py"
+      ],
+      "doc_references_active": [
+        "docs/advance/async-on-policy-distill.md",
+        "docs/workers/engine_workers.rst"
+      ],
+      "doc_references_historical": [],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/fsdp_workers.py",
+      "name": "load_checkpoint",
+      "old_lines": [
+        1259,
+        1745
+      ],
+      "current_definitions": [
+        "verl/experimental/fully_async_policy/fully_async_rollouter.py",
+        "verl/utils/checkpoint/checkpoint_handler.py",
+        "verl/utils/checkpoint/checkpoint_manager.py",
+        "verl/utils/checkpoint/fsdp_checkpoint_manager.py",
+        "verl/utils/checkpoint/megatron_checkpoint_manager.py",
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/base.py",
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/torchtitan/transformer_impl.py",
+        "verl/workers/engine/veomni/transformer_impl.py",
+        "verl/workers/engine_workers.py"
+      ],
+      "doc_references_active": [
+        "docs/advance/checkpoint.rst",
+        "docs/workers/engine_workers.rst"
+      ],
+      "doc_references_historical": [],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/fsdp_workers.py",
+      "name": "save_checkpoint",
+      "old_lines": [
+        1210,
+        1730
+      ],
+      "current_definitions": [
+        "verl/utils/checkpoint/checkpoint_handler.py",
+        "verl/utils/checkpoint/checkpoint_manager.py",
+        "verl/utils/checkpoint/fsdp_checkpoint_manager.py",
+        "verl/utils/checkpoint/megatron_checkpoint_manager.py",
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/base.py",
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/torchtitan/transformer_impl.py",
+        "verl/workers/engine/veomni/transformer_impl.py",
+        "verl/workers/engine_workers.py"
+      ],
+      "doc_references_active": [
+        "docs/examples/config.rst",
+        "docs/workers/engine_workers.rst"
+      ],
+      "doc_references_historical": [],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/fsdp_workers.py",
+      "name": "start_profile",
+      "old_lines": [
+        1287
+      ],
+      "current_definitions": [
+        "verl/utils/profiler/profile.py"
+      ],
+      "doc_references_active": [],
+      "doc_references_historical": [],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/fsdp_workers.py",
+      "name": "stop_profile",
+      "old_lines": [
+        1292
+      ],
+      "current_definitions": [
+        "verl/utils/profiler/profile.py"
+      ],
+      "doc_references_active": [],
+      "doc_references_historical": [],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/fsdp_workers.py",
+      "name": "update_actor",
+      "old_lines": [
+        1029
+      ],
+      "current_definitions": [
+        "verl/workers/engine_workers.py"
+      ],
+      "doc_references_active": [
+        "docs/workers/engine_workers.rst",
+        "docs/workers/ray_trainer.rst"
+      ],
+      "doc_references_historical": [],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/fsdp_workers.py",
+      "name": "update_critic",
+      "old_lines": [
+        1698
+      ],
+      "current_definitions": [],
+      "doc_references_active": [
+        "docs/perf/perf_tuning.rst",
+        "docs/workers/ray_trainer.rst"
+      ],
+      "doc_references_historical": [],
+      "verdict": "gone_referenced"
+    },
+    {
+      "module": "verl/workers/megatron_workers.py",
+      "name": "async_calls_finalize_fn_exec",
+      "old_lines": [
+        985
+      ],
+      "current_definitions": [],
+      "doc_references_active": [],
+      "doc_references_historical": [],
+      "verdict": "gone_no_doc"
+    },
+    {
+      "module": "verl/workers/megatron_workers.py",
+      "name": "compute_log_prob",
+      "old_lines": [
+        900
+      ],
+      "current_definitions": [
+        "verl/workers/engine_workers.py"
+      ],
+      "doc_references_active": [
+        "docs/advance/dpo_extension.rst",
+        "docs/ascend_tutorial/dev_guide/performance/ascend_profiling_en.rst",
+        "docs/ascend_tutorial/dev_guide/performance/ascend_profiling_zh.rst",
+        "docs/data/transfer_queue.md",
+        "docs/perf/perf_tuning.rst",
+        "docs/workers/engine_workers.rst",
+        "docs/workers/sglang_worker.rst"
+      ],
+      "doc_references_historical": [
+        "docs/blog/v0.7.md"
+      ],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/megatron_workers.py",
+      "name": "compute_ref_log_prob",
+      "old_lines": [
+        874
+      ],
+      "current_definitions": [
+        "verl/workers/engine_workers.py"
+      ],
+      "doc_references_active": [
+        "docs/perf/perf_tuning.rst",
+        "docs/workers/engine_workers.rst"
+      ],
+      "doc_references_historical": [],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/megatron_workers.py",
+      "name": "compute_values",
+      "old_lines": [
+        1250
+      ],
+      "current_definitions": [],
+      "doc_references_active": [
+        "docs/ascend_tutorial/dev_guide/precision_analysis/precision_debugger_zh.md",
+        "docs/perf/perf_tuning.rst"
+      ],
+      "doc_references_historical": [],
+      "verdict": "gone_referenced"
+    },
+    {
+      "module": "verl/workers/megatron_workers.py",
+      "name": "dump_memory_snapshot",
+      "old_lines": [
+        1001
+      ],
+      "current_definitions": [
+        "verl/utils/memory_utils.py"
+      ],
+      "doc_references_active": [],
+      "doc_references_historical": [],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/megatron_workers.py",
+      "name": "generate_sequences",
+      "old_lines": [
+        824
+      ],
+      "current_definitions": [
+        "verl/trainer/ppo/v1/agent_loop_tq.py",
+        "verl/workers/rollout/base.py",
+        "verl/workers/rollout/hf_rollout.py",
+        "verl/workers/rollout/naive/naive_rollout.py",
+        "verl/workers/rollout/vllm_rollout/vllm_rollout.py"
+      ],
+      "doc_references_active": [
+        "docs/advance/dpo_extension.rst",
+        "docs/data/transfer_queue.md",
+        "docs/extend_guide.rst",
+        "docs/hybrid_flow.rst",
+        "docs/single_controller.rst",
+        "docs/workers/sglang_worker.rst"
+      ],
+      "doc_references_historical": [],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/megatron_workers.py",
+      "name": "init_model",
+      "old_lines": [
+        578,
+        1179
+      ],
+      "current_definitions": [
+        "verl/workers/engine_workers.py"
+      ],
+      "doc_references_active": [
+        "docs/advance/async-on-policy-distill.md",
+        "docs/workers/engine_workers.rst"
+      ],
+      "doc_references_historical": [],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/megatron_workers.py",
+      "name": "load_checkpoint",
+      "old_lines": [
+        945,
+        1297
+      ],
+      "current_definitions": [
+        "verl/experimental/fully_async_policy/fully_async_rollouter.py",
+        "verl/utils/checkpoint/checkpoint_handler.py",
+        "verl/utils/checkpoint/checkpoint_manager.py",
+        "verl/utils/checkpoint/fsdp_checkpoint_manager.py",
+        "verl/utils/checkpoint/megatron_checkpoint_manager.py",
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/base.py",
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/torchtitan/transformer_impl.py",
+        "verl/workers/engine/veomni/transformer_impl.py",
+        "verl/workers/engine_workers.py"
+      ],
+      "doc_references_active": [
+        "docs/advance/checkpoint.rst",
+        "docs/workers/engine_workers.rst"
+      ],
+      "doc_references_historical": [],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/megatron_workers.py",
+      "name": "load_pretrained_model",
+      "old_lines": [
+        966
+      ],
+      "current_definitions": [],
+      "doc_references_active": [],
+      "doc_references_historical": [],
+      "verdict": "gone_no_doc"
+    },
+    {
+      "module": "verl/workers/megatron_workers.py",
+      "name": "save_checkpoint",
+      "old_lines": [
+        970,
+        1309
+      ],
+      "current_definitions": [
+        "verl/utils/checkpoint/checkpoint_handler.py",
+        "verl/utils/checkpoint/checkpoint_manager.py",
+        "verl/utils/checkpoint/fsdp_checkpoint_manager.py",
+        "verl/utils/checkpoint/megatron_checkpoint_manager.py",
+        "verl/workers/engine/automodel/transformer_impl.py",
+        "verl/workers/engine/base.py",
+        "verl/workers/engine/fsdp/transformer_impl.py",
+        "verl/workers/engine/megatron/transformer_impl.py",
+        "verl/workers/engine/torchtitan/transformer_impl.py",
+        "verl/workers/engine/veomni/transformer_impl.py",
+        "verl/workers/engine_workers.py"
+      ],
+      "doc_references_active": [
+        "docs/examples/config.rst",
+        "docs/workers/engine_workers.rst"
+      ],
+      "doc_references_historical": [],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/megatron_workers.py",
+      "name": "set_random_seed",
+      "old_lines": [
+        88
+      ],
+      "current_definitions": [
+        "verl/workers/engine/megatron/utils.py"
+      ],
+      "doc_references_active": [],
+      "doc_references_historical": [],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/megatron_workers.py",
+      "name": "start_profile",
+      "old_lines": [
+        991
+      ],
+      "current_definitions": [
+        "verl/utils/profiler/profile.py"
+      ],
+      "doc_references_active": [],
+      "doc_references_historical": [],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/megatron_workers.py",
+      "name": "stop_profile",
+      "old_lines": [
+        996
+      ],
+      "current_definitions": [
+        "verl/utils/profiler/profile.py"
+      ],
+      "doc_references_active": [],
+      "doc_references_historical": [],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/megatron_workers.py",
+      "name": "update_actor",
+      "old_lines": [
+        778
+      ],
+      "current_definitions": [
+        "verl/workers/engine_workers.py"
+      ],
+      "doc_references_active": [
+        "docs/workers/engine_workers.rst",
+        "docs/workers/ray_trainer.rst"
+      ],
+      "doc_references_historical": [],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/megatron_workers.py",
+      "name": "update_critic",
+      "old_lines": [
+        1267
+      ],
+      "current_definitions": [],
+      "doc_references_active": [
+        "docs/perf/perf_tuning.rst",
+        "docs/workers/ray_trainer.rst"
+      ],
+      "doc_references_historical": [],
+      "verdict": "gone_referenced"
+    },
+    {
+      "module": "verl/workers/sharding_manager/base.py",
+      "name": "postprocess_data",
+      "old_lines": [
+        34
+      ],
+      "current_definitions": [
+        "verl/utils/torch_functional.py",
+        "verl/utils/ulysses.py"
+      ],
+      "doc_references_active": [],
+      "doc_references_historical": [],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/sharding_manager/base.py",
+      "name": "preprocess_data",
+      "old_lines": [
+        31
+      ],
+      "current_definitions": [
+        "verl/utils/ulysses.py"
+      ],
+      "doc_references_active": [],
+      "doc_references_historical": [],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/sharding_manager/fsdp_ulysses.py",
+      "name": "postprocess_data",
+      "old_lines": [
+        64
+      ],
+      "current_definitions": [
+        "verl/utils/torch_functional.py",
+        "verl/utils/ulysses.py"
+      ],
+      "doc_references_active": [],
+      "doc_references_historical": [],
+      "verdict": "still_defined"
+    },
+    {
+      "module": "verl/workers/sharding_manager/fsdp_ulysses.py",
+      "name": "preprocess_data",
+      "old_lines": [
+        52
+      ],
+      "current_definitions": [
+        "verl/utils/ulysses.py"
+      ],
+      "doc_references_active": [],
+      "doc_references_historical": [],
+      "verdict": "still_defined"
+    }
+  ]
+}

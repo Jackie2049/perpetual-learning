@@ -1,0 +1,103 @@
+{
+  "n": 7,
+  "n_mismatch": 0,
+  "mismatch": [],
+  "rows": [
+    {
+      "name": "update_policy",
+      "expect": "gone_but_doc_only",
+      "ok": true,
+      "detail": {
+        "defs": 0,
+        "docs": {
+          "docs/perf/perf_tuning.rst": 1,
+          "docs/advance/dpo_extension.rst": 1
+        }
+      },
+      "note": "代码侧统一改成 `update_actor`（engine_workers.py:656），文档仍写 actor 的方法名",
+      "old": "verl/workers/actor/{base,dp_actor,megatron_actor}.py（base:54、dp:513、megatron:769）"
+    },
+    {
+      "name": "update_critic",
+      "expect": "needs_hardware",
+      "ok": true,
+      "detail": {
+        "defs": 0,
+        "docs": {
+          "docs/workers/ray_trainer.rst": 1,
+          "docs/perf/perf_tuning.rst": 1
+        }
+      },
+      "note": "两件事：① `update_actor` 有同名 RPC 但 `update_critic` 没有，trainer 改成 `critic_wg.train_mini_batch`（ray_trainer.py:1359）；② 更要紧的是 profiler role：旧 worker 的 `@DistProfiler.annotate(role=\"critic_update\")`随文件删除，engine_workers 只有 actor_update / actor_compute_log_prob /ref_compute_log_prob 三个 role ⇒ 文档里 critic_update 这类 stage 在前端**仍被接受**（_STAGE_TO_ROLE 里还在，precision_debugger_profile.py:31），但没有任何装饰器会触发它。实际有没有 dump 要 NPU + msprobe 才能读",
+      "old": "verl/workers/critic/{base,dp_critic,megatron_critic}.py + fsdp_workers.py:1698"
+    },
+    {
+      "name": "compute_values",
+      "expect": "needs_hardware",
+      "ok": true,
+      "detail": {
+        "defs": 0,
+        "docs": {
+          "docs/ascend_tutorial/dev_guide/precision_analysis/precision_debugger_zh.md": 1,
+          "docs/perf/perf_tuning.rst": 1,
+          "docs/workers/ray_trainer.rst": 1
+        }
+      },
+      "note": "同上：值推理改成 `critic_wg.infer_batch`（ray_trainer.py:1221），doc 里的 stage 名仍在 _STAGE_TO_ROLE 里但无装饰器；critic 的**前端 stage 名**在 `_STAGE_TO_ROLE` 里留着是有意为之的话需要 maintainer 判断",
+      "old": "verl/workers/critic/{base,dp_critic,megatron_critic}.py + fsdp_workers.py:1678（旧 worker 的 RPC，带 role=\"compute_values\" 装饰器）"
+    },
+    {
+      "name": "critic_update",
+      "expect": "drift_check_decorator",
+      "ok": true,
+      "detail": {
+        "annotate_role_hits": 0
+      },
+      "note": "这条扫描器看不见（`critic_update` 从来不是一个函数名，只是一个装饰器 role）。判据：main 的 verl/** 里 `role=\"critic_update\"` / `role=\"compute_values\"` 出现次数必须为 0",
+      "old": "verl/workers/fsdp_workers.py:1697 `@DistProfiler.annotate(role=\"critic_update\")`；megatron_workers.py 的 update_critic 同"
+    },
+    {
+      "name": "workers/fsdp_workers.py#L120-L122",
+      "expect": "renamed",
+      "ok": true,
+      "detail": {
+        "defs": null,
+        "docs": {
+          "docs/perf/perf_tuning.rst": 2
+        }
+      },
+      "note": "#6067 把链接整体替换成 `verl/workers/engine_workers.py`（无行号）。旧锚点指向的是 `get_sharding_strategy()`，而 #6067 的说明写的是'batch size normalization'——改指向新文件后，那个文件里其实没有 normaliz* / 整除逻辑（`git grep ppo_mini_batch_size` 在 engine_workers.py 只有 :511 一处赋值）。文档本身没坏（链接可达），坏的是它点名的内容",
+      "old": "docs/perf/perf_tuning.rst 里指向 `fsdp_workers.py#L120-L122` 的两个行号锚点"
+    },
+    {
+      "name": "critic-infer-token-cap",
+      "expect": "doc_drift",
+      "ok": true,
+      "detail": {
+        "docs": {
+          "docs/perf/perf_tuning.rst": 2
+        },
+        "main_uses": {
+          "verl/trainer/config/critic/critic.yaml": 1
+        }
+      },
+      "note": "文档把 token 上限挂在 `forward_micro_batch_size_per_gpu`（个数）上；main 的 critic 配置里另有 `forward_max_token_len_per_gpu`（critic.yaml:49）才是 token 上限，而文档全文一次都没提它。属存量文档漂移，**不是 #6067 造成的**（#6067 只改了 perf_tuning 的两处链接）",
+      "old": "docs/perf/perf_tuning.rst:140-141 —— 告诉用户 values 前向的 token 上限由 `critic.forward_micro_batch_size_per_gpu` 控制"
+    },
+    {
+      "name": "mkdocs/ray_trainer.rst-critic-doc",
+      "expect": "doc_drift",
+      "ok": true,
+      "detail": {
+        "docs": {
+          "docs/workers/ray_trainer.rst": 2
+        },
+        "main_uses": {
+          "verl/trainer/ppo/ray_trainer.py": 2
+        }
+      },
+      "note": "ray_trainer.rst 展示了 critic 的调用序列；main 里实际是 infer_batch / train_mini_batch。这份文档 #6067 根本没碰（不是回归，是**重构后没跟上的存量文档**）",
+      "old": "docs/workers/ray_trainer.rst 的 `critic_wg.compute_values/update_critic` 调用示例"
+    }
+  ]
+}

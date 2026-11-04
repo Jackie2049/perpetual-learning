@@ -417,6 +417,18 @@ M5 最小下一步：先判断是否有获准使用的对应配置、完整 toke
 
 停止条件：缺私有材料/配对身份就记录“待资料”，不启动原报告的长训练，也不以公共 toy 或另一模型称已复现 #8250。对照有差异只能缩小范围；没有原始观测前，不设计新的修复、不发布旧诊断稿或承诺治愈阈值。完成标准是可追溯的配对证据，或明确缺失材料清单。
 
+## verl 精度调试器 critic 侧 stage 是否还采得到（只读参考，2026-11-04，M1）
+
+目的：[#6067](https://github.com/verl-project/verl/pull/6067)（`044bbba2`，2026-04-20）整份删掉旧 worker 后，critic 两个 RPC 上的 `@DistProfiler.annotate(role="compute_values")`（旧 `fsdp_workers.py:1677`）与 `(role="critic_update")`（`:1697`）一起消失；main `74543265` 的 `verl/**` 里这两串**各 0 处**（engine 侧只剩 `actor_update`／`actor_compute_log_prob`／`ref_compute_log_prob`）。但前端白名单 `verl/utils/profiler/precision_debugger_profile.py:26-33` 的 `_STAGE_TO_ROLE` **仍接受**这两个 stage，`strict: False`（默认）下连 warn 都没有。⇒ 用户照 [precision_debugger_zh.md](https://github.com/verl-project/verl/blob/main/docs/ascend_tutorial/dev_guide/precision_analysis/precision_debugger_zh.md) 配 `stages: [..., compute_values, critic_update]`，最坏情况是"配了不报错、也没采到"。
+
+已有验证（M1，纯静态）：`git grep 'role="compute_values"'` / `'role="critic_update"'` 在 `verl/**` 均为 0；`_STAGE_TO_ROLE` 两条仍在；engine_workers 只有三个 actor 侧 role。**没有**在 NPU 上跑过训练、没有 msprobe、没有实际 dump 目录可看。取证：[evidence/engine-refactor-api-surface](../open-source/verl/evidence/engine-refactor-api-surface/readme.md)。
+
+缺少的条件：Ascend NPU + CANN + 已装 msprobe，以及一次可跑通的最小 PPO（有 critic）小步数训练。
+
+最小下一步（M5 在已有获准、安全、不挤占专项时独立选用）：固定 verl 版本与 CANN／torch-npu／msprobe 版本，跑两个对照——① `stages: [actor_update]`（已知有装饰器）确认 dump 目录出现 `step_N/actor_update`；② `stages: [critic_update]`（无装饰器）看是否**同样**出现 `step_N/critic_update`。②若为空即坐实"前端接受、后端不触发"，②若不为空说明还有别的触发路径（例如按 role 解析而非装饰器），则 M1 的静态结论需要收窄。**不要**为此改动上游代码或提交 issue。
+
+停止条件：缺 NPU／msprobe／可运行 PPO；或影响 AReaL、#523、#8313、DeepInfer 等专项即停记未测。M1 按分工不访问服务器、不探测连接。任何上游可见写入仍须用户对**这一具体动作**明确同意。
+
 ## verl 激活卸载重载顺序参考
 
 状态：只留匹配条件参考，不代表接单或新增必跑训练。已有[#8277](https://github.com/verl-project/verl/pull/8277) head `8c227d6abceb21da69b49a62262709a3ca158056`、base／祖先4b26c788；[M1原CPU测试体](../notebook/frameworks/verl-architecture.md#激活卸载的反向入口与重载顺序)head五项通过、初稿4过1失败，基线单一辅助输出反向在旧helper参数适配后报重载前pop。仅原RecordingOffloadHandler与真实CPU autograd，不含异步stream／传输、checkpoint、FSDP或原Qwen3.5 27B。
