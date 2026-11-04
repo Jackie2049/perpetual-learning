@@ -492,7 +492,20 @@ def shadowed_arms(path, tree):
 
 
 def main():
-    args = [a for a in sys.argv[1:] if not a.startswith('--')]
+    # `--json <path>`: the value after the flag is a file path, not the repo root.
+    # Filtering every non-`--` token into `args` made `--json /tmp/x.json` look
+    # like two positional args, so the tool printed usage and exited 2.
+    argv = sys.argv[1:]
+    json_at = None
+    for i, a in enumerate(argv):
+        if a == '--json':
+            json_at = i
+            break
+    named = None
+    if json_at is not None and json_at + 1 < len(argv) and not argv[json_at + 1].startswith('--'):
+        named = argv[json_at + 1]
+    skip = {json_at + 1} if named else set()
+    args = [a for i, a in enumerate(argv) if not a.startswith('--') and i not in skip]
     if len(args) != 1:
         print(__doc__)
         return 2
@@ -525,8 +538,6 @@ def main():
         # `--json <path>` writes there; a bare `--json` writes next to the tool.
         # A bare flag used to name the file after root.name, which is '' when the
         # target is `.` — that produced `scan-.json` and silently overwrote it.
-        i = sys.argv.index('--json')
-        named = sys.argv[i + 1] if i + 1 < len(sys.argv) and not sys.argv[i + 1].startswith('--') else None
         out = pathlib.Path(named) if named else (
             pathlib.Path(__file__).parent / ('scan-%s.json' % (root.name or 'repo')))
         out.parent.mkdir(parents=True, exist_ok=True)

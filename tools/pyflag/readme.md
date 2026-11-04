@@ -6,15 +6,22 @@
 **生产者**（调用点传值），那它在本快照里不可达：用户设了也没用。这类问题不看
 代码很难发现——开关名在 config、trainer、engine 里各出现一次，grep 起来"到处都在用"。
 
-工具只做只读静态分析（AST），不导入、不运行目标仓库。
+工具只做只读静态分析（AST），不导入、不运行目标仓库。C++ 版是正则级结构分析，
+不做符号解析，见下文。
 
 ## 怎么用
 
 ```bash
-python3 scan_unwired_flags.py /path/to/repo          # 打印 JSON 报告
-python3 scan_unwired_flags.py /path/to/repo --json   # 同时落盘 scan-<repo>.json
-python3 -m unittest test_scan_unwired_flags -v       # 10 个用例，含 4 条易错点
+python3 scan_unwired_flags.py /path/to/repo               # 打印 JSON 报告
+python3 scan_unwired_flags.py /path/to/repo --json <path>  # 同时落盘到指定路径
+python3 scan_unwired_flags.py /path/to/repo --json         # 裸用 → scan-<repo>.json（写到脚本目录）
+python3 -m unittest test_scan_unwired_flags -v             # 14 个用例，含 7 条易错点
 ```
+
+C++ 仓库用 `scan_cpp_flags.py`，见下文「C++ 版」。
+
+**2026-11-05 修**：`--json <path>` 原来会把路径当第二个位置参数，工具直接打用法并 `exit 2`
+（`args` 收集了所有非 `--` 开头的词）。现在解析器显式跳过 `--json` 后面那个词。
 
 自动发现的开关：形参带 `= True/False` 默认值、且名字以 `use_` / `enable_` /
 `disable_` / `no_` / `with_` 开头。
@@ -294,6 +301,51 @@ SkyRL 2026-11-04（`1089e18`）的 7 条里，靠这一条排除掉的是 `enabl
 所以把默认写成 `False`、却在文档里宣称"默认 None、自动探测"的代码，会被报成
 "默认 False 且无人传 ⇒ 分支永不执行"，看起来像漏报，实际是**默认值与文档不符**这一
 不同的问题。rLLM 的例子正是如此：真缺陷不在"没人传"，而在"传了 `None` 也判不对"。
+
+## C++ 版：scan_cpp_flags.py（2026-11-05 第五批：llama.cpp）
+
+Python 版从**函数形参默认值**出发；C++ 里这类开关的主要形态是**结构体成员默认值**
+（`struct X { bool f = false; }`），所以单开一个脚本，三步口径不变：
+**字段声明 → 消费者（出现在 `if`/三目/`&&`/`||` 里）→ 生产者（被赋值 / 传成实参 / 聚合初始化）**。
+
+```bash
+python3 scan_cpp_flags.py --selftest                       # 7/7，含 3 条负向对照
+python3 scan_cpp_flags.py /path/to/repo [--json <path>] [--min-members N]
+```
+
+读法与 Python 版一致：`unwritten` = 有消费者、无写入。**同理只是候选，不是缺陷清单。**
+
+### 已跑过的快照
+
+| 仓库 | 快照 | 文件 | 有分支字段 | `unwritten` | 人工结论 |
+|---|---|---|---|---|---|
+| llama.cpp | `3de52ac3` | 1574 | 1636 | **37** | 逐条归因后**真缺陷 0 条**（[证据](../../open-source/llamacpp/evidence/cpp-fields-triage-2026-11.md)）。同日 Python 版扫它的 250 个 `.py`：7 个开关 / 0 条失效 ⇒ **对 llama.cpp 用 Python 版没有信息量** |
+
+耗时约 **4 分钟**。37 条里 15 条是 ggml 后端/内核参数结构体、4 条测试夹具、4 条同名局部变量，
+其余各自能指到真实写入点。
+
+### C++ 特有的三类写入形态（都是"报没人写、实际写了"的真反例）
+
+1. **单行 `if` 里赋值**：`/**/ if (v == "jsonl") { params.x = true; }`。
+   这一行既是条件行又是写入行；先判消费者会把整个字段记成"只读"。⇒ 必须先判
+   "本字段在这行有没有被写"，再决定它是不是纯消费者。
+2. **`/* name */ value` 聚合初始化**：`chat_params = { /* allow_image */ mtmd_cap.vision, … }`。
+   剥掉注释后整行只剩 `mtmd_cap.vision,`，字段名根本不出现。⇒ 要回看**未剥注释的原始行**。
+3. **位置实参**：`slots.push_back({"tower_pos", 1, 1, true})`（第四项是 `in_place`），
+   而同结构体在另一个文件只传三项。⇒ 没有通用修法，只能人工复核——这也是"`unwritten`
+   必须人读"的又一条理由。
+
+### 第十二类易错点：引用绑定的写入（C++ 版）
+
+`server-schema.cpp` 的 `field_bool(name, bool &)` 在构造时**按引用绑定字段**，真正的写入
+发生在 `field_bool::eval` 里的 `val = data.at(n).get<bool>()`。源码里通篇只出现
+`params.sampling.reasoning_control`，没有 `x.field = ` 这样的形式 ⇒ 扫描器报 `unwritten`，
+实际完全接通。**这是第八类（签名里没有 ≠ 收不到）在 C++ 里的同族问题：绑定 ≠ 赋值。**
+
+### 第十三类：只认 `=` 会漏掉 `++` / `--` / 构造函数初始化列表
+
+`req_count++`、`n_attempts++`、`enabled_(enabled)`、`/*.shares_model =*/`（注释名带点号）
+这四种写法在 llama.cpp 里都存在。本批是人工复核补上的，尚未进扫描器默认判据。
 
 ## 判定的分量
 

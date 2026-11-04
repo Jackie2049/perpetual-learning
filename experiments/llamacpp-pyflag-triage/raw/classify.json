@@ -1,0 +1,582 @@
+{
+ "root": "/tmp/llama-scan",
+ "buckets": {
+  "CTOR_MEMBER_INIT": 2,
+  "ggml 后端/gen kernel 参数结构体": 15,
+  "LOCAL_VAR": 4,
+  "JSON_PARSED": 1,
+  "测试夹具": 4,
+  "REMOVED_BY_DESIGN": 1,
+  "POSITIONAL_AGGREGATE": 1,
+  "STRUCT_CTOR_ARG": 1,
+  "JSON_OR_CTOR": 1,
+  "第三方 vendored 代码（httplib 等）": 1,
+  "INCREMENT_ONLY": 2,
+  "WIRED": 1,
+  "DESIGNATED_INIT": 2,
+  "DEAD_BRANCH_UPSTREAM": 1
+ },
+ "entries": [
+  {
+   "field": "_dotall",
+   "n_consumers": 1,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "common/json-schema-to-grammar.cpp"
+   ],
+   "mention_files": [
+    "common/json-schema-to-grammar.cpp"
+   ],
+   "bucket": "CTOR_MEMBER_INIT",
+   "why": "写入在构造函数初始化列表 `_dotall(dotall)`（json-schema-to-grammar.cpp:843）"
+  },
+  {
+   "field": "_reference",
+   "n_consumers": 1,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "ggml/src/ggml-sycl/dpct/helper.hpp"
+   ],
+   "mention_files": [
+    "ggml/src/ggml-sycl/dpct/helper.hpp"
+   ],
+   "bucket": "ggml 后端/gen kernel 参数结构体",
+   "why": "字段由 kernel 生成器或后端 host 代码填写，取值来自设备能力探测而非用户配置"
+  },
+  {
+   "field": "a_layer",
+   "n_consumers": 2,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "src/llama-model-loader.h"
+   ],
+   "mention_files": [
+    "src/llama-model-loader.h",
+    "tests/test-quant-type-selection.cpp"
+   ],
+   "bucket": "LOCAL_VAR",
+   "why": "比较器里的局部变量（llama-model-loader.h:54），由 sscanf 写"
+  },
+  {
+   "field": "blocks_found_in_stage",
+   "n_consumers": 1,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "tools/mtmd/clip.cpp"
+   ],
+   "mention_files": [
+    "tools/mtmd/clip.cpp"
+   ],
+   "bucket": "LOCAL_VAR",
+   "why": "同名局部变量（clip.cpp:3271 `int blocks_found_in_stage = 0;`），扫描器把它误当成某结构体的字段"
+  },
+  {
+   "field": "default_subgroup_size",
+   "n_consumers": 1,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "ggml/src/ggml-vulkan/ggml-vulkan-types.h"
+   ],
+   "mention_files": [
+    "ggml/src/ggml-vulkan/ggml-vulkan-types.h",
+    "ggml/src/ggml-vulkan/ggml-vulkan.cpp"
+   ],
+   "bucket": "ggml 后端/gen kernel 参数结构体",
+   "why": "字段由 kernel 生成器或后端 host 代码填写，取值来自设备能力探测而非用户配置"
+  },
+  {
+   "field": "defer_loading",
+   "n_consumers": 1,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "common/chat.h"
+   ],
+   "mention_files": [
+    "common/chat.cpp",
+    "common/chat.h",
+    "tests/test-chat.cpp",
+    "tools/server/server-chat.cpp"
+   ],
+   "bucket": "JSON_PARSED",
+   "why": "写入在 chat.cpp:673-684（从请求 JSON 解析），扫描器的正则没识别 json 取值路径"
+  },
+  {
+   "field": "eligible",
+   "n_consumers": 1,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "ggml/src/ggml-cuda/gated-delta-net-mma.cuh"
+   ],
+   "mention_files": [
+    "ggml/src/ggml-cuda/gated-delta-net-mma.cu",
+    "ggml/src/ggml-cuda/gated-delta-net-mma.cuh",
+    "ggml/src/ggml-openvino/utils.cpp",
+    "tests/test-backend-ops.cpp"
+   ],
+   "bucket": "ggml 后端/gen kernel 参数结构体",
+   "why": "字段由 kernel 生成器或后端 host 代码填写，取值来自设备能力探测而非用户配置"
+  },
+  {
+   "field": "enabled_",
+   "n_consumers": 2,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "tools/mtmd/mtmd-helper.cpp"
+   ],
+   "mention_files": [
+    "tools/mtmd/mtmd-helper.cpp"
+   ],
+   "bucket": "CTOR_MEMBER_INIT",
+   "why": "写入在构造函数初始化列表 `enabled_(enabled)`（mtmd-helper.cpp:99）"
+  },
+  {
+   "field": "enabled_by_default",
+   "n_consumers": 1,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "tests/test-backend-sampler.cpp"
+   ],
+   "mention_files": [
+    "tests/test-backend-sampler.cpp"
+   ],
+   "bucket": "测试夹具",
+   "why": "只在 tests/ 下使用，无用户面"
+  },
+  {
+   "field": "etm",
+   "n_consumers": 1,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "ggml/src/ggml-hexagon/htp/htp-ctx.h"
+   ],
+   "mention_files": [
+    "ggml/src/ggml-hexagon/htp/htp-ctx.h",
+    "ggml/src/ggml-hexagon/htp/main.c"
+   ],
+   "bucket": "ggml 后端/gen kernel 参数结构体",
+   "why": "字段由 kernel 生成器或后端 host 代码填写，取值来自设备能力探测而非用户配置"
+  },
+  {
+   "field": "filter_allowed_keys",
+   "n_consumers": 1,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "common/preset.h"
+   ],
+   "mention_files": [
+    "common/preset.cpp",
+    "common/preset.h"
+   ],
+   "bucket": "REMOVED_BY_DESIGN",
+   "why": "配套白名单在 #24739（552258c535，2026-06-18 router rework）里被有意移除，残留的 `if (filter_allowed_keys && ...)` 永不进入；上游 #27929 正在讨论是否恢复远程 preset 白名单 ⇒ 属于已知未决事项，不是新发现"
+  },
+  {
+   "field": "host_import_failed",
+   "n_consumers": 1,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "ggml/src/ggml-vulkan/ggml-vulkan-types.h"
+   ],
+   "mention_files": [
+    "ggml/src/ggml-vulkan/ggml-vulkan-buffers.cpp",
+    "ggml/src/ggml-vulkan/ggml-vulkan-types.h"
+   ],
+   "bucket": "ggml 后端/gen kernel 参数结构体",
+   "why": "字段由 kernel 生成器或后端 host 代码填写，取值来自设备能力探测而非用户配置"
+  },
+  {
+   "field": "in_place",
+   "n_consumers": 3,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "tools/mtmd/models/models.h"
+   ],
+   "mention_files": [
+    "tools/mtmd/clip.cpp",
+    "tools/mtmd/models/drama3-gen.cpp",
+    "tools/mtmd/models/models.h",
+    "tools/server/server-models.h"
+   ],
+   "bucket": "POSITIONAL_AGGREGATE",
+   "why": "写入是位置实参的第四项：drama3-gen.cpp:12/15/16 `push_back({\"tower_pos\", 1, 1, true})`；扫描器只认带注释名的聚合初始化与 `.field =`，位置形式看不到"
+  },
+  {
+   "field": "inst_stride",
+   "n_consumers": 1,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "ggml/src/ggml-et/ggml-et-uberkernel-common.h"
+   ],
+   "mention_files": [
+    "ggml/src/ggml-et/et-kernels/src/uberkernel.c",
+    "ggml/src/ggml-et/ggml-et-uberkernel-common.h"
+   ],
+   "bucket": "ggml 后端/gen kernel 参数结构体",
+   "why": "字段由 kernel 生成器或后端 host 代码填写，取值来自设备能力探测而非用户配置"
+  },
+  {
+   "field": "is_copy",
+   "n_consumers": 1,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "tools/export-lora/export-lora.cpp"
+   ],
+   "mention_files": [
+    "tools/export-lora/export-lora.cpp"
+   ],
+   "bucket": "STRUCT_CTOR_ARG",
+   "why": "tensor_transformation 由构造实参初始化（export-lora.cpp 的转换表），扫描器没跟上它的构造点"
+  },
+  {
+   "field": "is_dir",
+   "n_consumers": 5,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "tools/server/server-tools.cpp"
+   ],
+   "mention_files": [
+    "tools/server/server-tools.cpp",
+    "vendor/cpp-httplib/httplib.cpp",
+    "vendor/cpp-httplib/httplib.h"
+   ],
+   "bucket": "LOCAL_VAR",
+   "why": "同名局部变量（server-tools.cpp:179/506），结构体 list_entry 的那份由调用方按位置传入"
+  },
+  {
+   "field": "is_inference",
+   "n_consumers": 2,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "common/chat-auto-parser.h"
+   ],
+   "mention_files": [
+    "common/chat-auto-parser.h",
+    "common/parsers/gpt-oss.cpp",
+    "common/parsers/llm-jp-harmony.cpp"
+   ],
+   "bucket": "JSON_OR_CTOR",
+   "why": "由解析模板时的上下文决定，consumer 在 common/parsers/* 里按它分支"
+  },
+  {
+   "field": "is_supported",
+   "n_consumers": 7,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "ggml/src/ggml-openvino/ggml-openvino.cpp"
+   ],
+   "mention_files": [
+    "common/subproc.cpp",
+    "common/subproc.h",
+    "ggml/src/ggml-openvino/ggml-openvino.cpp",
+    "ggml/src/ggml-sycl/fattn-onednn.cpp",
+    "tools/server/server-connect.cpp",
+    "tools/server/server-context.cpp",
+    "tools/server/server-models.cpp",
+    "tools/server/server-tools.cpp"
+   ],
+   "bucket": "ggml 后端/gen kernel 参数结构体",
+   "why": "字段由 kernel 生成器或后端 host 代码填写，取值来自设备能力探测而非用户配置"
+  },
+  {
+   "field": "log_differences",
+   "n_consumers": 3,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "ggml/src/ggml-et/ggml-et-cpu-compare.h"
+   ],
+   "mention_files": [
+    "ggml/src/ggml-et/ggml-et-cpu-compare.cpp",
+    "ggml/src/ggml-et/ggml-et-cpu-compare.h",
+    "ggml/src/ggml-et/ggml-et-ops.cpp"
+   ],
+   "bucket": "ggml 后端/gen kernel 参数结构体",
+   "why": "字段由 kernel 生成器或后端 host 代码填写，取值来自设备能力探测而非用户配置"
+  },
+  {
+   "field": "max_missed_pongs_",
+   "n_consumers": 2,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "vendor/cpp-httplib/httplib.h"
+   ],
+   "mention_files": [
+    "vendor/cpp-httplib/httplib.cpp",
+    "vendor/cpp-httplib/httplib.h"
+   ],
+   "bucket": "第三方 vendored 代码（httplib 等）",
+   "why": "不属于 llama.cpp 自己的配置面"
+  },
+  {
+   "field": "mem_buffer_owned",
+   "n_consumers": 1,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "ggml/src/ggml.c"
+   ],
+   "mention_files": [
+    "ggml/src/ggml.c"
+   ],
+   "bucket": "ggml 后端/gen kernel 参数结构体",
+   "why": "字段由 kernel 生成器或后端 host 代码填写，取值来自设备能力探测而非用户配置"
+  },
+  {
+   "field": "n_attempts",
+   "n_consumers": 1,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "tools/server/server-models-sched.h"
+   ],
+   "mention_files": [
+    "tools/server/server-models-sched.cpp",
+    "tools/server/server-models-sched.h"
+   ],
+   "bucket": "INCREMENT_ONLY",
+   "why": "写入是 `meta.memory.n_attempts++`（server-models-sched.cpp:434）"
+  },
+  {
+   "field": "nsg_coopk_dp4a_q4_k_bin_c2",
+   "n_consumers": 1,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "ggml/src/ggml-opencl/ggml-opencl.cpp"
+   ],
+   "mention_files": [
+    "ggml/src/ggml-opencl/ggml-opencl.cpp"
+   ],
+   "bucket": "ggml 后端/gen kernel 参数结构体",
+   "why": "字段由 kernel 生成器或后端 host 代码填写，取值来自设备能力探测而非用户配置"
+  },
+  {
+   "field": "nsg_coopk_dp4a_q4_k_bin_c4",
+   "n_consumers": 1,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "ggml/src/ggml-opencl/ggml-opencl.cpp"
+   ],
+   "mention_files": [
+    "ggml/src/ggml-opencl/ggml-opencl.cpp"
+   ],
+   "bucket": "ggml 后端/gen kernel 参数结构体",
+   "why": "字段由 kernel 生成器或后端 host 代码填写，取值来自设备能力探测而非用户配置"
+  },
+  {
+   "field": "order_dependent",
+   "n_consumers": 1,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "tests/test-model-resolution.cpp"
+   ],
+   "mention_files": [
+    "tests/test-model-resolution.cpp"
+   ],
+   "bucket": "测试夹具",
+   "why": "只在 tests/ 下使用，无用户面"
+  },
+  {
+   "field": "paren_depth",
+   "n_consumers": 3,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "common/json-schema-to-grammar.cpp"
+   ],
+   "mention_files": [
+    "common/json-schema-to-grammar.cpp"
+   ],
+   "bucket": "LOCAL_VAR",
+   "why": "函数内局部变量（json-schema-to-grammar.cpp:439），与字段同名不同作用域"
+  },
+  {
+   "field": "parent_active",
+   "n_consumers": 2,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "ggml/src/ggml-webgpu/pre_wgsl.hpp"
+   ],
+   "mention_files": [
+    "ggml/src/ggml-webgpu/pre_wgsl.hpp"
+   ],
+   "bucket": "ggml 后端/gen kernel 参数结构体",
+   "why": "字段由 kernel 生成器或后端 host 代码填写，取值来自设备能力探测而非用户配置"
+  },
+  {
+   "field": "prefix_mask",
+   "n_consumers": 1,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "ggml/src/ggml-cuda/top-k.cu"
+   ],
+   "mention_files": [
+    "ggml/src/ggml-cuda/top-k.cu"
+   ],
+   "bucket": "ggml 后端/gen kernel 参数结构体",
+   "why": "字段由 kernel 生成器或后端 host 代码填写，取值来自设备能力探测而非用户配置"
+  },
+  {
+   "field": "reasoning_control",
+   "n_consumers": 2,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "common/common.h"
+   ],
+   "mention_files": [
+    "common/common.h",
+    "common/sampling.cpp",
+    "tools/server/server-common.cpp",
+    "tools/server/server-context.cpp",
+    "tools/server/server-schema.cpp"
+   ],
+   "bucket": "WIRED",
+   "why": "server 每请求下发（server-common.cpp:1530）、schema 绑定引用（server-schema.cpp:351）、守卫真的读它（sampling.cpp:315）⇒ 已接线，扫描器漏判是因为写入发生在 std::string → json → 解析回 field_bool 的引用赋值，不是直接的 `x.field = `"
+  },
+  {
+   "field": "req_count",
+   "n_consumers": 5,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "tools/server/server-models.h"
+   ],
+   "mention_files": [
+    "tools/server/server-models-sched.cpp",
+    "tools/server/server-models.cpp",
+    "tools/server/server-models.h"
+   ],
+   "bucket": "INCREMENT_ONLY",
+   "why": "写入是 `mapping[name].req_count++`（server-models.cpp:1699）与 `--`（:1731），扫描器只认 `=` 赋值"
+  },
+  {
+   "field": "shares_model",
+   "n_consumers": 1,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "common/fit.h"
+   ],
+   "mention_files": [
+    "common/common.cpp",
+    "common/fit.cpp",
+    "common/fit.h"
+   ],
+   "bucket": "DESIGNATED_INIT",
+   "why": "写入在 common.cpp:1284 `/*.shares_model =*/ !has_draft`（注释名带点号），扫描器的注释名正则没覆盖 `.` 前缀"
+  },
+  {
+   "field": "show_key_map_stats",
+   "n_consumers": 1,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "common/ngram-map.h"
+   ],
+   "mention_files": [
+    "common/ngram-map.cpp",
+    "common/ngram-map.h"
+   ],
+   "bucket": "DEAD_BRANCH_UPSTREAM",
+   "why": "唯一的写入机会是构造函数，而 common_ngram_map 的构造函数只接 4 个形参、不含该字段（ngram-map.h:72-75）；全仓 0 处赋值 ⇒ `if (map.show_key_map_stats)` 恒假。字段与分支由 #19253（b4d05a3d2f，2026-02-02）同一次提交引入，是开发者调试用开关，未接命令行"
+  },
+  {
+   "field": "supported_with_jinja",
+   "n_consumers": 1,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "tests/test-chat-template.cpp"
+   ],
+   "mention_files": [
+    "tests/test-chat-template.cpp"
+   ],
+   "bucket": "测试夹具",
+   "why": "只在 tests/ 下使用，无用户面"
+  },
+  {
+   "field": "throw_exception",
+   "n_consumers": 2,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "tests/testing.h"
+   ],
+   "mention_files": [
+    "tests/testing.h"
+   ],
+   "bucket": "测试夹具",
+   "why": "只在 tests/ 下使用，无用户面"
+  },
+  {
+   "field": "topk_blocks",
+   "n_consumers": 1,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "src/models/models.h"
+   ],
+   "mention_files": [
+    "src/models/minimax-m3.cpp",
+    "src/models/models.h"
+   ],
+   "bucket": "DESIGNATED_INIT",
+   "why": "写入在 minimax-m3.cpp:29 `/*.topk_blocks =*/ (int) hparams.indexer_top_k`（注释名带点号）"
+  },
+  {
+   "field": "use_cpu_result",
+   "n_consumers": 1,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "ggml/src/ggml-et/ggml-et-cpu-compare.h"
+   ],
+   "mention_files": [
+    "ggml/src/ggml-et/ggml-et-cpu-compare.cpp",
+    "ggml/src/ggml-et/ggml-et-cpu-compare.h",
+    "ggml/src/ggml-et/ggml-et-ops.cpp"
+   ],
+   "bucket": "ggml 后端/gen kernel 参数结构体",
+   "why": "字段由 kernel 生成器或后端 host 代码填写，取值来自设备能力探测而非用户配置"
+  },
+  {
+   "field": "zdnn_device_ref_count",
+   "n_consumers": 1,
+   "n_writers": 0,
+   "n_forwarders": 0,
+   "decl_files": [
+    "ggml/src/ggml-zdnn/common.hpp"
+   ],
+   "mention_files": [
+    "ggml/src/ggml-zdnn/common.hpp",
+    "ggml/src/ggml-zdnn/ggml-zdnn.cpp"
+   ],
+   "bucket": "ggml 后端/gen kernel 参数结构体",
+   "why": "字段由 kernel 生成器或后端 host 代码填写，取值来自设备能力探测而非用户配置"
+  }
+ ]
+}

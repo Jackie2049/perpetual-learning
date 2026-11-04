@@ -25,6 +25,7 @@
 | [inference_estimator.py](inference_estimator.py) | LLM 推理性能估算（显存/吞吐/延迟） | Python；数值为估算，基于 50% 计算利用率与 60% 带宽利用率假设，非实测 |
 | [git-push-api](git-push-api/readme.md) | `git push` 连不上 github.com 时改用 REST API 推送 | Python 3 + 已登录的 `gh`；实测跑通一次，会压平本地多层提交，未覆盖删除/重命名 |
 | [paired-diff](paired-diff/readme.md) | 配对差判读的共享判据：符号分布、基线带宽、判读门槛、翻号参考点 | 仅标准库；五个实验脚本改接后归档 `--verify` 逐字段不变、测试 113→121 passed、四组注入全部被测红 |
+| [pyflag](pyflag/readme.md) | 扫描「配置项有没有生产者」：开关有分支但全仓无人传值/写入。Python 版（AST）+ C++ 版（结构体字段） | 仅标准库；Python 版 14 个单测、C++ 版 selftest 7/7；已跑过 9 个快照，累计 101 条候选→4 条真缺陷，**只出候选不出结论** |
 
 示例（在项目根目录执行）：
 

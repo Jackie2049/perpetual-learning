@@ -1,0 +1,68 @@
+{
+ "root": "/tmp/llama-scan",
+ "guard_line": "if (!params.reasoning_budget_start.empty() && !params.reasoning_budget_end.empty() && (params.grammar_lazy || params.reasoning_budget_tokens >= 0 || params.reasoning_control)) {",
+ "checks": [
+  {
+   "name": "apply 在 FORCING 状态真的改写 logits（采样器存在时是活的）",
+   "got": true,
+   "want": true,
+   "ok": true
+  },
+  {
+   "name": "apply 在 IDLE 状态不动手",
+   "got": 0,
+   "want": 0,
+   "ok": true
+  },
+  {
+   "name": "control=True 在默认请求下会建采样器（本字段确实接线）",
+   "got": true,
+   "want": true,
+   "ok": true
+  },
+  {
+   "name": "control=False 在同样请求下不建（两档确实有差别）",
+   "got": false,
+   "want": false,
+   "ok": true
+  },
+  {
+   "name": "显式预算不依赖 control（对照）",
+   "got": true,
+   "want": true,
+   "ok": true
+  },
+  {
+   "name": "lazy grammar 不依赖 control（对照）",
+   "got": true,
+   "want": true,
+   "ok": true
+  },
+  {
+   "name": "模板没有 thinking 标记时不建（对照：守卫真的看那两个向量）",
+   "got": false,
+   "want": false,
+   "ok": true
+  }
+ ],
+ "data": {
+  "apply_changes_forcing": 4,
+  "apply_changes_idle": 0,
+  "sampler_built": {
+   "control=True, 无预算（server 默认）": true,
+   "control=False, 无预算": false,
+   "control=True, budget=256": true,
+   "control=False, lazy grammar": true,
+   "control=True, 模板无 thinking 标记": false,
+   "control=True, 无 thinking 起始标记": false
+  }
+ },
+ "guard_python": "not reasoning_budget_start_empty  and  not reasoning_budget_end_empty  and  (grammar_lazy  or  reasoning_budget_tokens >= 0  or  reasoning_control)",
+ "apply_python": "def apply(ctx, cur_p):\n    if ctx[\"state\"] != \"FORCING\":\n        return 0\n    if ctx[\"force_pos\"] >= len(ctx[\"forced_tokens\"]):\n        return 0\n    forced = ctx[\"forced_tokens\"][ctx[\"force_pos\"]]\n    nzw = 0\n    for i in range(len(cur_p)):\n        if cur_p[i][\"id\"] != forced:\n            cur_p[i][\"logit\"] = \"-inf\"\n            nzw += 1\n    return nzw",
+ "apply_transpilation": [
+  "param smpl->ctx -> ctx（由调用方传入同名对象）",
+  "forced_tokens[force_pos] 取值 -> forced",
+  "logit = -INFINITY -> 字符串 \"-inf\"（只保留\"被改写\"这一事实）"
+ ],
+ "verdict": "WIRED_AS_DOCUMENTED"
+}
