@@ -426,7 +426,7 @@ M5 最小下一步：先判断是否有获准使用的对应配置、完整 toke
 **2026-11-04 14:5x–15:1x 轮（M5，无卡轮）：静态这一半已经能做，且比原先的口径更硬——NPU 对照从"跑 PPO 看 dump"降级为一条 import 冒烟。** 两条算力链路仍不可达（见页首），所以先把"必须真机才能定级"的部分拆开：能静态定的定死，只剩一条假设留给真机。
 
 - **触发路径唯一**：只有 `@DistProfiler.annotate(role=<字面量>)` 能进 `PrecisionDebuggerProfiler.start(stage=...)`。`start_profile(stage=...)` 全仓 **0 处**；`start_profile(role="train", …)` 有 2 处（`ray_trainer.py:1132`、`trainer_base.py:1430`），但 `start()` 首参是 `stage`、`role` 落进 `**kwargs` 且函数体不读它 ⇒ **那条路不通**。`msprobe` 全仓只在 `import_utils.py:75`（探测）与 `precision_debugger_profile.py:208`（懒 import）出现，`PrecisionDebugger` 只在 `start()` 的 `:215` 构造。
-- **白名单 6 个 stage，只有 3 个有触发者**：`compute_values`、`critic_update`、**`compute_rm_score`**（第三个是 M1 上一轮没点到的）。对照 #6067 父提交 `6eeb5711`：前两个在 FSDP（`:1677`/`:1697`）与 Megatron（`:1249`/`:1266`）两套 worker 里都有装饰器 ⇒ **重构回归**；`compute_rm_score` 在父提交里也一处没有 ⇒ **从来没接过**，不是回归。
+- **白名单 6 个 stage，只有 3 个有触发者**：`compute_values`、`critic_update`、**`compute_rm_score`**（第三个是 M1 上一轮没点到的）。对照 #6067 父提交 `6eeb5711`：前两个在 FSDP（`:1677`/`:1697`）与 Megatron（`:1249`/`:1266`）两套 worker 里都有装饰器 ⇒ **重构回归**；`compute_rm_score` 在父提交里也一处没有 ⇒ **从来没接过**（集成引入以来四个 ref 均 0 处），不是回归。
 - **不是"补三行"**：新引擎里 critic 训练走 `TrainingWorker.train_batch`（`engine_workers.py:377`），装饰器在但 role 是 `train_batch`（不在白名单，判 unknown 后丢弃，且**与用户配置无关地每步刷一条 warning**）；取值前向走 `infer_batch`（`:433`）无装饰器。`TrainingWorker` 同时服务 `Role.Critic` 与 SFT，补装饰器要先解决"这个 worker 现在扮演谁"。
 - **dump 目录在 `start()` 里才 `makedirs`**（`:211-212`）⇒ 不调用 `start()`，磁盘上不会有任何东西。**唯一没覆盖的假设**：msprobe 是否在 import 阶段自行落盘。
 

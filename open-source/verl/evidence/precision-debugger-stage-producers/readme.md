@@ -38,6 +38,8 @@ verl 有一套给昇腾 NPU 用的"精度调试器"，能让训练停在某几�
 | `critic_update` | critic | **无** | **fsdp:1697 / megatron:1266** | **重构回归** |
 | `compute_rm_score` | reward_model | **无** | **无** | **从来没接过** |
 
+**历史核对（把“从来没接过”限定清楚）**：msprobe 集成由 [#5186](https://github.com/verl-project/verl/pull/5186) 于 2026-04-03 引入（`b4c82633`），该文件此后只被 #5986（`f8b0dd26`，2026-04-14）与 #7104（`7898ab49`）改过。查四个 ref——集成引入点 `b4c82633`、`f8b0dd26`、重构父提交 `6eeb5711`、main `7454326`：`role="compute_rm_score"` **四处都是 0**，而 `role="compute_values"`／`"critic_update"` 在前三个 ref 上各 2 处、main 上 0 处 ⇒ 本表“从来没接过”的口径是**自 msprobe 集成引入以来**，不是“verl 历史上从没有过”；critic 两条的“回归”在集成引入当天就成立。
+
 这张表把上一轮的两条读数各推进一格：① critic 两个 stage 的消失确实是 #6067 造成的（上一轮只说"engine 侧 0 处"，本批在父提交上找到了对应装饰器）；② 白名单里还有第三个死名字 `compute_rm_score`，它**不是**回归——父提交的 FSDP／Megatron worker 里都没有它，全仓只有白名单、配置注释和文档在提它。
 
 ## 二、触发路径只有一条，且已逐条排除旁路

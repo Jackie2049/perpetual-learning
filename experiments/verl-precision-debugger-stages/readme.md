@@ -9,7 +9,7 @@
 | main `7454326`（2026-11-04） | 3 个（actor 侧） | **`compute_values`、`critic_update`、`compute_rm_score`** |
 | #6067 父提交 `6eeb5711`（2026-04-20） | 5 个 | `compute_rm_score` |
 
-⇒ **两条是重构回归**（critic 的取值与更新，当时 FSDP 与 Megatron 两套 worker 都挂了装饰器），**一条是从来没接过**（reward model）。触发路径只有一条——`@DistProfiler.annotate(role=<字面量>)`：`start_profile(stage=...)` 全仓 0 处，`start_profile(role="train")` 有 2 处但那个 `role` 只是标签（`PrecisionDebuggerProfiler.start()` 首参是 `stage`，且不读 `kwargs["role"]`）。而 6 份配置注释与 Ascend 文档把 6 个 stage 都当作可选值列给用户。
+⇒ **两条是重构回归**（critic 的取值与更新，当时 FSDP 与 Megatron 两套 worker 都挂了装饰器），**一条是从来没接过**（reward model；msprobe 集成 2026-04-03 引入以来四个 ref 均 0 处）。触发路径只有一条——`@DistProfiler.annotate(role=<字面量>)`：`start_profile(stage=...)` 全仓 0 处，`start_profile(role="train")` 有 2 处但那个 `role` 只是标签（`PrecisionDebuggerProfiler.start()` 首参是 `stage`，且不读 `kwargs["role"]`）。而 6 份配置注释与 Ascend 文档把 6 个 stage 都当作可选值列给用户。
 
 ## 文件
 
@@ -30,6 +30,12 @@ curl -sL https://codeload.github.com/verl-project/verl/tar.gz/6eeb5711babe178ca3
 python3 scan_stage_producers.py --selftest                                   # 4/4 PASS
 python3 scan_stage_producers.py --root /tmp/verl-main-7454326 --preset main  # exit 0
 python3 scan_stage_producers.py --root /tmp/verl-pre6067 --preset pre6067    # exit 0
+# 历史限定（"从来没接过"的适用范围）：msprobe 集成引入点与之后一次改动
+for sha in b4c826332b f8b0dd26c4; do
+  curl -sL https://codeload.github.com/verl-project/verl/tar.gz/$sha | tar -xz -C /tmp/v-$sha --strip-components=1
+  grep -rn 'role="compute_rm_score"' /tmp/v-$sha/verl/ | wc -l   # 期望 0
+  grep -rn 'role="compute_values"\|role="critic_update"' /tmp/v-$sha/verl/ | wc -l  # 期望 4（fsdp 2 + megatron 2）
+done
 ```
 
 本轮环境：macOS arm64，本机 Python 3.9.6（**低于 verl 源码的语法版本**，见下"脚本自身的坑"第③条）。**未跑 verl、未上 GPU/NPU、未触上游**。
