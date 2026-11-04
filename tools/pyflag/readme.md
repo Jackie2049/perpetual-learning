@@ -66,6 +66,17 @@ python3 -m unittest test_scan_unwired_flags -v       # 10 个用例，含 4 条�
 报告存档：`scan-verl-project-verl-6879e1ab07.json`、`scan-NovaSky-AI-SkyRL.json`、
 `scan-OpenRLHF-OpenRLHF.json`、`scan-rllm-4e828c8.json`。
 
+## 已跑过的快照（2026-11-04 扩池）
+
+| 仓库 | 快照 | 发现开关 | 判为失效 | 人工结论 |
+|---|---|---|---|---|
+| SGLang | `27aedf7f` | **386** | **34** | **总量不能直接用**：排名前三的 `enable_cfg_parallel`／`use_decode_cuda_graph`／`use_zigzag_page_table` 都是**属性传参**（第五类），`mode=mixed` 只是多个消费者默认值不一致。逐条取证后只有一条真失效：`fused_moe_router_shim` 的 `enable_deterministic_inference`（见 [TM-013](../../queue_tech-miner.md)） |
+| TRL | main（2026-11-04） | **6** | **0** | 全仓 `use_*/enable_*/disable_*` 形参默认值只有 **1 处** ⇒ **这个框架不适合当 pyflag 对象**，勿再扫 |
+
+**这一批最大的方法教训**：仓库越大、读到的路径越间接，`silently_inert` 里的**属性传参误报占比越高**。SGLang 386→34 看着像"问题很多"，实际逐条看是"开关很多、间接传参很多"。⇒ **报结论前先做两问分桶**（是不是某个 config 字段？有没有位置参数调用？），报总量没有意义。
+
+**跑 SGLang 的耗时**：`python3 scan_unwired_flags.py <sglang>` 约 **10.5 分钟**（8000+ 文件），且 `--json` 落盘到**脚本所在目录** `tools/pyflag/scan-<root>.json`，不是被测仓库里——第一次找错了地方。
+
 ## 第五类易错点：生产者是**属性**（或位置参数），不是关键字
 
 `enable_sample_support_replay`、`enable_pd` 在 SkyRL 上都报「无生产者」，但两者都**能生效**：

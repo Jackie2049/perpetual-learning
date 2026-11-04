@@ -1,0 +1,156 @@
+{
+ "flags": [
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_sleep_mode",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 38,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "build_teacher_inputs_from_texts",
+     "file": "trl/experimental/gold/gold_trainer.py",
+     "func": "build_teacher_inputs_from_texts",
+     "line": 176,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_prepare_dataset_with_original_text",
+     "file": "trl/experimental/gold/gold_trainer.py",
+     "func": "_prepare_dataset_with_original_text",
+     "line": 2515,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "tokenize_with_original_text",
+     "file": "trl/experimental/gold/gold_trainer.py",
+     "func": "tokenize_with_original_text",
+     "line": 2557,
+     "param_default": "unspecified"
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "build_teacher_inputs_from_texts",
+     "file": "trl/experimental/gold/gold_trainer.py",
+     "func": "build_teacher_inputs_from_texts",
+     "line": 176,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_prepare_dataset_with_original_text",
+     "file": "trl/experimental/gold/gold_trainer.py",
+     "func": "_prepare_dataset_with_original_text",
+     "line": 2515,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "tokenize_with_original_text",
+     "file": "trl/experimental/gold/gold_trainer.py",
+     "func": "tokenize_with_original_text",
+     "line": 2557,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "True",
+    "unspecified"
+   ],
+   "flag": "use_extended_uld",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "trl/experimental/gold/gold_trainer.py",
+     "how": "keyword",
+     "line": 2979
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 45,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "prepare_model_for_kbit_training",
+     "file": "trl/experimental/utils.py",
+     "func": "prepare_model_for_kbit_training",
+     "line": 818,
+     "param_default": true
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "prepare_model_for_kbit_training",
+     "file": "trl/experimental/utils.py",
+     "func": "prepare_model_for_kbit_training",
+     "line": 818,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_gradient_checkpointing",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "trl/experimental/utils.py",
+     "how": "keyword",
+     "line": 911
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 5,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_pin_memory",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 12,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_qk_l2norm_in_kernel",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 5,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_streams",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 30,
+   "silently_inert": false
+  }
+ ],
+ "root": "trl-main"
+}

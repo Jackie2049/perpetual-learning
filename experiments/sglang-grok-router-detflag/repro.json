@@ -1,0 +1,101 @@
+{
+ "behavior": {
+  "flag_changes_kernel": true,
+  "kernel_under_topk_call": "tensorcore",
+  "kernel_with_flag_forced_true": "cudacore",
+  "shape": {
+   "bs": 512,
+   "hidden_dim": 1024,
+   "num_experts": 8
+  }
+ },
+ "checks": [
+  {
+   "name": "形参数存在且默认 False",
+   "pass": true
+  },
+  {
+   "name": "grok.py 用 partial 只钉住 moe_softcapping",
+   "pass": true
+  },
+  {
+   "name": "grok.py 从不提这个开关",
+   "pass": true
+  },
+  {
+   "name": "唯一调用点不传该关键字",
+   "pass": true
+  },
+  {
+   "name": "调用点只按关键字传（无位置参数覆盖）",
+   "pass": true
+  },
+  {
+   "name": "该形参真的能改变走到哪个内核",
+   "pass": true
+  },
+  {
+   "name": "同仓四个对照文件仍在、且仍直读执行配置（否则证据页那张表要重写）",
+   "pass": true
+  }
+ ],
+ "facts": {
+  "direct_read_sites_elsewhere": {
+   "python/sglang/srt/layers/moe/mega_gate.py": 1,
+   "python/sglang/srt/models/deepseek_v2.py": 2,
+   "python/sglang/srt/models/gpt_oss.py": 1,
+   "python/sglang/srt/models/kimi_k3.py": 1
+  },
+  "flag_param_default_false": true,
+  "grok_binds_partial_with_softcapping": true,
+  "grok_flag_reference_count": 0,
+  "shim_binding_sites": [],
+  "shim_found": true,
+  "shim_params": [
+   "moe_softcapping",
+   "hidden_states",
+   "gating_output",
+   "topk",
+   "renormalize",
+   "correction_bias",
+   "enable_deterministic_inference"
+  ],
+  "topk_call_kwargs": [
+   "hidden_states",
+   "gating_output",
+   "topk",
+   "renormalize"
+  ],
+  "topk_call_passes_flag": false,
+  "topk_call_positional_args": null
+ },
+ "history": [
+  {
+   "date": "2025-03-13",
+   "note": "引入 fused_moe_router_shim（GroK-1 elementwise kernels #4398）",
+   "ref": "c6d7f8d370"
+  },
+  {
+   "date": "2025-08-23",
+   "note": "shim 增强（correction_bias / tensorcore 分支）",
+   "ref": "86d10d220f"
+  },
+  {
+   "date": "2025-10-09",
+   "note": "**加入 enable_deterministic_inference 形参**，同提交未改任何调用点",
+   "ref": "9b8ebb2798"
+  },
+  {
+   "date": "2026-07-14",
+   "note": "MoE 内核迁到 sglang.kernels（RFC #29630 Phase 2.5），形参原样搬走",
+   "ref": "ee464fedc6"
+  },
+  {
+   "date": "2026-10-20",
+   "note": "kernels 按计算重新分组（#45112）",
+   "ref": "693d333306"
+  }
+ ],
+ "root": "/private/tmp/sglang-probe/sglang-main",
+ "verdict": "DEFECT_PRESENT"
+}
