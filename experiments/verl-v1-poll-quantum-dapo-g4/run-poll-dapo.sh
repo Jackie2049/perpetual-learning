@@ -48,6 +48,11 @@ EXTRA=(
   "algorithm.filter_groups.enable=True"
   "algorithm.filter_groups.metric=acc"
   "algorithm.filter_groups.max_inflight_gen_batches=${INFLIGHT}"
+  # The base recipe pinned this False up to verl 24f25b03 and no longer does; the
+  # rollout default is True. Every archived poll batch was measured with False, so
+  # pass it explicitly — leaving it out silently changes the generation-side config
+  # the archived numbers were taken under.
+  "actor_rollout_ref.rollout.enable_chunked_prefill=False"
 )
 if [ -n "$POLL" ]; then
   EXTRA+=("trainer.v1.sampler.poll_interval=${POLL}")

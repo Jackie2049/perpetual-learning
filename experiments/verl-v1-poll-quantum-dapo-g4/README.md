@@ -128,6 +128,31 @@ wait_idle() {  # 等 0,1,4,5 回到 ~1 MiB
 4. **臂间用服务器端链式脚本串起来，不要由会话逐臂 SSH 启动。** 本批 6 跑在同一窗口内 6/6 exit 0：每臂结束后等 GPU 回落、清 `RAY_TMPDIR`/checkpoint 目录，再起下一臂。首轮的三次失败全部来自"上一臂残留 + 别的会话恰好启动"。
 5. **每臂跑两次，第二次就是负对照。** 同配置两跑的截距差 −0.155s（CI 跨 0）给出"什么都不改"时的分辨率；没有这个对照，−0.74s 的整步差很容易被单次运行的 0.97s 跨跑差吃掉。
 
+## 2026-11-05 无卡轮：4 卡 `inflight=1` 的准备——base recipe 少了一个钉，臂会静默换配置
+
+**为什么做这个。** TM-008 只剩 4 卡 `inflight=1` 一条没测，而它要 4 张空闲卡（本机最稀缺的资源）。这条臂是针对 verl `24f25b03` 准备、并在该树上跑到 6/6 exit 0 的；此后 main 已到 `31cfccb4`。开跑脚本 `run-poll-dapo.sh` **完全靠环境变量**驱动 `examples/grpo_trainer/run_qwen3_4b_fsdp.sh` 去拼命令行——环境变量被改名、recipe 少一条 override，结果都不是报错，而是**训练了另一套配置**。这类失败烧掉的是整个 4 卡窗口。
+
+**一、真的少了一条：`enable_chunked_prefill`。** 逐行 diff 该 recipe（`24f25b03` vs `31cfccb4`）只有一处差异——`actor_rollout_ref.rollout.enable_chunked_prefill=False` 被删掉了；而它的默认值是 **True**（`verl/workers/config/rollout.py:291` 与 `_generated_ppo_trainer.yaml:287`，两个版本都相同）。⇒ 同一份 wrapper 在 main 上会把 `True` 交给引擎，而本目录归档的七跑全部是 `False`。
+
+**二、这不是"vLLM V1 反正总开着"那类空转。** vLLM 0.24 的 `EngineArgs` 里该字段是 `bool | None = None`，`None` 才回落到 `is_chunked_prefill_supported`；显式 `False` 走另一条分支——`_set_default_chunked_prefill_and_prefix_caching_args` 打 `warning_once("This model does not officially support disabling chunked prefill…")`，调度器也不再切分 prefill。verl 侧唯一读该值的分支（`_validate_configs` 把 `max_num_batched_tokens` 抬到 `max_model_len`）在本臂上是**空转**：默认 8192 > `max_model_len` 2048，条件不成立。⇒ **在 verl 的配置面完全看不到变化**（回读 `max_num_batched_tokens` 两档都是 8192），变化只在引擎手里。
+
+**三、钉回去，并把"钉还在不在"变成检查。** `run-poll-dapo.sh` 现在显式传 `False`（附原因），与归档批次逐条对齐。新增 [preflight-g4.py](preflight-g4.py) 在 CPU 上走完整条链：桩 `python3` 让 `run-poll-dapo.sh` → recipe **打印真实 argv**（override 表不在检查脚本里重抄，wrapper 是唯一来源），再用这份 argv 做 Hydra 组合并回读生效值。
+
+| 读数（[raw/preflight-g4.json](raw/preflight-g4.json)） | 值 |
+|---|---|
+| 捕获到的 override | 58 条（recipe 47 + wrapper 11），尾部实参 10 条全在 |
+| 与归档树 `24f25b03` 的 recipe 逐键比对 | **相同**（`drift.same=true`）。`n_old=59` 多的那条是"recipe 与 wrapper 都钉了 `False`"的重复出现，按 Hydra 末次生效合并 |
+| 去掉这个钉再看（[raw/preflight-g4-nopin.json](raw/preflight-g4-nopin.json)） | 恰好少一条 `…enable_chunked_prefill=False`，main 上生效值 `true`；同一次检查的 `capture.problems` 直接点名 |
+| poll 补丁对 `31cfccb4` | 3 个文件全部 `--fuzz=0` 通过（yaml／`trainer_base.py`／`trainer_separate_async.py`） |
+| 两臂组合 | base／poll 均成功，18 个预登记键全中 |
+| `trainer.v1.sampler.poll_interval` | 未打补丁树**不存在**（buffer 用构造默认 2.0，正确基线）；打补丁树回读 `0.1` |
+| 负向对照 | 编造键 `algorithm.filter_groups.no_such_field` 如期组合失败 |
+| 自检 | 7/7 |
+
+**边界。** 本轮**零 GPU 读数**："生效值"是 Hydra 解析出来的配置，不是 vLLM 运行时的行为；vLLM 那段是从 tag `v0.24.0` 的 `vllm/engine/arg_utils.py` 与 `vllm/config/model.py` 源码读的，没有执行。本机只有 bash 3.2，recipe 的 `set -xeuo pipefail` ＋ 空 `EXTRA=()` 在 3.2 下是 unbound-variable 错误，本地用"只去掉 `-u`"的副本跑（服务器 bash ≥4 不需要），替换方式记进读数。另记一条对归档的提醒：按源码，生成式 decoder 模型的 `is_chunked_prefill_supported` 为真（`model.py:1790-1791`），所以本目录用 `False` 的七跑会命中 `arg_utils.py:2472-2480` 那条 `warning_once("This model does not officially support disabling chunked prefill…")`——**七跑各 15 步全部 exit 0**，但若将来决定改用默认 `True`，归档数值就不可直接对比，该臂必须在同一窗口内重取基线。
+
+**本批三处自错（都已改）。** ① 本地适配写成 `set -xe pipefail`：`set` 把 `pipefail` 当成**位置参数**，`"$@"` 的 10 条尾部 override 被吃掉，捕获只剩 48 条——这正是"看起来在检查、其实换了对象"，现已是自检项 `eaten_tail_detected`；② 自检把注入打在 `rollout.n` 上，而受检键是 `actor_rollout_ref.rollout.n`，于是"值被改"这条判据**没被覆盖**却报绿；③ `+` 前缀检查拿 `key` 去比 `key=value` 列表，真实运行与自检双双击出误报。
+
 ## 材料
 
 | 文件 | 内容 |
@@ -139,9 +164,12 @@ wait_idle() {  # 等 0,1,4,5 回到 ~1 MiB
 | `make-summary-g4.py` | 解析与汇总（`--group=main\|rerun`，同臂重复自动合并） |
 | `decompose-gen.py` | 等待/工作量拆分（共同斜率 + bootstrap CI） |
 | `run-poll-dapo.sh` | 运行脚本（`GPUS`／`MODE`／`POLL`／`SRC`／`INFLIGHT` 可覆盖） |
+| `preflight-g4.py` | 开窗前检查：捕获真实 argv（桩 `python3`）→ 逐键对齐归档树 → Hydra 组合两臂并回读 → 负向对照；`--selftest` 7/7 |
+| `raw/preflight-g4.json` | 本轮读数（`31cfccb4`，含与 `24f25b03` recipe 的逐键比对） |
+| `raw/preflight-g4-nopin.json` | 对照：去掉 `enable_chunked_prefill` 这个钉时的漂移与 main 上生效值 `true` |
 | `sha256sums.txt` | 本目录文件的 sha256；六份原始日志与服务器逐文件一致 |
 
 ## 下一步
 
-- 4 卡 DAPO 的 A/B 已闭环，**M5 侧登记项清空**。若要把生成量代价也定下来，需每臂 ≥4 跑（本批分辨力不够），判据是看 +6.4% 能否越过 2 SE。
+- 4 卡 DAPO 的 A/B 已闭环。未测只剩 **4 卡 `inflight=1`**（需 ≥4 张空闲卡），其开窗前检查已就绪：`/tmp/hydra-probe-venv/bin/python3 preflight-g4.py --tree <verl树> --compare-script <归档树同名脚本> --out raw/preflight-g4.json`。若要把生成量代价也定下来，需每臂 ≥4 跑（本批分辨力不够），判据是看 +6.4% 能否越过 2 SE。
 - TM-008 的 PR 风险段用 2 卡 +13.1% 的生成量代价与 4 卡 −4.0% 的整步收益，并注明"等待收益 ≈0.59×量子、随配置变"。**对外动作仍未做，待用户逐项授权。**

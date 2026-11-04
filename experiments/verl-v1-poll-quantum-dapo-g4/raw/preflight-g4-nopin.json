@@ -1,0 +1,22 @@
+{
+  "what": "run-poll-dapo.sh with the enable_chunked_prefill pin removed (the wrapper as it stood before this round)",
+  "old_script": "24f25b03 - the tree the archived 4-card batch trained on",
+  "new_script": "31cfccb4 - current verl main",
+  "n_old": 58,
+  "n_new": 57,
+  "capture_problems": [
+    "actor_rollout_ref.rollout.enable_chunked_prefill: not passed (wanted 'False')"
+  ],
+  "drift": {
+    "removed": [
+      "actor_rollout_ref.rollout.enable_chunked_prefill=False"
+    ],
+    "added": [],
+    "changed": [],
+    "same": false
+  },
+  "effective_on_main_without_pin": {
+    "actor_rollout_ref.rollout.enable_chunked_prefill": true,
+    "actor_rollout_ref.rollout.max_num_batched_tokens": 8192
+  }
+}

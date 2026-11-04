@@ -1,4 +1,4 @@
-更新时间：2026-11-05 05:1x（**M5 无卡轮：critic 的 value-head 分支在本机真跑**——python-build-standalone 3.12.16＋`transformers 5.16.1`＋`torch 2.15.0` 的一次性 venv 把上一轮“real-mapping 首次在服务器上”提前执行：探针自检在**有 transformers 的环境里会 `ValueError`**（3 元组 vs 4 元组，已修，8/8）、真实 tiny `Qwen2ForCausalLM` 复现 `load_valuehead_model` 第一分支 **7/7**（全新 `score` 头 33 参数、`(1,4,1)`→`squeeze(-1)`）、**未打 sdpa 补丁时 FA2 失败被 verl 翻成“please install trl”**（指向错误的包）、preflight 的 msprobe 检查由 stat 改为真 import；零 GPU 读数、未触上游。此前 **M1 04:0x TM-016：LMDeploy 扩池第三批——38 个开关／5 条 `silently_inert`，逐条取证后真缺陷 0 条**（`3228395546`，负结论、不对外）。历史轮次见下方 ### 小节与 [diary](diary/2026-11-05.md)，任务状态见 [技术秘书](queue_tech-secretary.md)／[技术掘金](queue_tech-miner.md)。
+更新时间：2026-11-05 06:1x（**M5 无卡轮：4 卡 `inflight=1` 臂的开窗前检查——main 的 base recipe 少了一个钉，臂会静默换配置**：`24f25b03→31cfccb4` 逐行 diff 只差 `actor_rollout_ref.rollout.enable_chunked_prefill=False` 被删，而默认值是 True ⇒ 归档七跑是 False、在 main 上会变 True；vLLM 0.24 里该值是 `bool|None=None`、显式 False 才走"手动关闭"分支（`warning_once`＋调度器不切分 prefill），而 verl 侧唯一的依赖分支（`_validate_configs` 抬 `max_num_batched_tokens`）在本臂空转（8192>2048）⇒ **配置面回读看不出差别、差别在引擎**；已钉回 False，新增 `preflight-g4.py`（桩 `python3` 捕获真实 argv → 与归档树逐键对齐 → Hydra 组合两臂回读 18 键 → 负向对照，自检 7/7；读数 58 条 override／`drift.same=true`／poll 补丁对 `31cfccb4` 3/3 通过；对照去掉钉恰好少一条）；**零 GPU 读数**。双链路仍不可达：4090-1 公网路径 100% 丢包＋`:22` 超时，昇腾本机**没有** `10.205.0.0/24` 与 `192.168.13.0/24` 的路由 ⇒ VPN 未连通，非服务端抖动。）此前 **M5 05:1x 无卡轮：critic 的 value-head 分支在本机真跑**——python-build-standalone 3.12.16＋`transformers 5.16.1`＋`torch 2.15.0` 的一次性 venv 把上一轮“real-mapping 首次在服务器上”提前执行：探针自检在**有 transformers 的环境里会 `ValueError`**（3 元组 vs 4 元组，已修，8/8）、真实 tiny `Qwen2ForCausalLM` 复现 `load_valuehead_model` 第一分支 **7/7**（全新 `score` 头 33 参数、`(1,4,1)`→`squeeze(-1)`）、**未打 sdpa 补丁时 FA2 失败被 verl 翻成“please install trl”**（指向错误的包）、preflight 的 msprobe 检查由 stat 改为真 import；零 GPU 读数、未触上游。此前 **M1 04:0x TM-016：LMDeploy 扩池第三批——38 个开关／5 条 `silently_inert`，逐条取证后真缺陷 0 条**（`3228395546`，负结论、不对外）。历史轮次见下方 ### 小节与 [diary](diary/2026-11-05.md)，任务状态见 [技术秘书](queue_tech-secretary.md)／[技术掘金](queue_tech-miner.md)。
 
 ### M1 本轮（2026-11-05 04:0x）：TM-016——LMDeploy 扩池，5 条「静默失效」没有一条能对外
 
@@ -67,7 +67,29 @@
 
 > **推送已恢复（2026-11-04 16:2x）**：此前积压的 5 个本地提交（`b850df424`／`ab204152f`／`db7a7aeed`／`3860b0b6b`／`9816bf5f8`）与本轮提交已全部推上远端 main。`git push` 仍连不上 `github.com:443`（75 s 超时），改用 [REST 推送工具](tools/git-push-api/readme.md)（`api.github.com` 正常）；远端新提交 `01c8bf13` 的 SHA 与旧本地不同（消息与树相同），已 fetch 并 `reset --hard` 对齐，本地树 `618e2a82` 与推送内容一致、`--verify` 通过。⇒ **下次网络同样断开时优先走 `tools/git-push-api`，不要反复等直连。**
 
-### M5 本轮（2026-11-05 05:0x CST）：无卡轮——value-head 分支在本机真跑，**探针自检在服务器上会崩**
+### M5 本轮（2026-11-05 06:0x CST）：无卡轮——4 卡 `inflight=1` 臂的开窗前检查，**主分支的 base recipe 少了一个钉**
+
+**连通性（只探一次＋45 s 后复探一次，均失败）**：`4090-1` ICMP 100% 丢包＋`:22` TCP 超时（走 default 路由，公网路径断，与 10-28 同类）；昇腾网关 `10.205.0.1` 2 包全丢、`192.168.13.154:22` 超时，且 `netstat -rn` 里**根本没有** `10.205.0.0/24`／`192.168.13.0/24` 的路由 ⇒ **昇腾 VPN 本机未连通**，不是服务端抖动。本轮**零 GPU／NPU 读数**。
+
+**为什么换到这件事。** critic 三臂已连续五轮只能做无卡准备，再加静态打磨没有增量；而 TM-008 只剩 4 卡 `inflight=1` 一条没测，要的是 4 张空闲卡——本机最稀缺的资源（11-04 起长期只有 1/4/5 空闲）。这条臂是针对 `24f25b03` 准备的，main 已到 `31cfccb4`。
+
+**一、失败模式是"不报错，训练另一套配置"。** `run-poll-dapo.sh` 完全靠环境变量驱动 `examples/grpo_trainer/run_qwen3_4b_fsdp.sh` 拼命令行（19 个变量＋recipe 里的 47 条 override）。env 改名或 recipe 少一条 override，都不会抛错。
+
+**二、真的少了一条。** 逐行 diff 该 recipe（`24f25b03` vs `31cfccb4`）**只有一处**差异：`actor_rollout_ref.rollout.enable_chunked_prefill=False` 被删。其默认值是 **True**（`verl/workers/config/rollout.py:291`、`_generated_ppo_trainer.yaml:287`，两版本相同）⇒ 同一份 wrapper 在 main 上把 `True` 交给引擎，而本目录归档的七跑全是 `False`。
+
+**三、不是"vLLM V1 反正总开着"那类空转。** vLLM 0.24 的 `EngineArgs` 里该字段是 `bool | None = None`，`None` 才回落到 `is_chunked_prefill_supported`；显式 `False` 走另一条分支——`_set_default_chunked_prefill_and_prefix_caching_args` 打 `warning_once("This model does not officially support disabling chunked prefill…")`，调度器也不再切分 prefill（`vllm/engine/arg_utils.py`，tag `v0.24.0`，**源码阅读、未执行**）。verl 侧唯一读该值的分支（`_validate_configs` 把 `max_num_batched_tokens` 抬到 `max_model_len`）在本臂**空转**：默认 8192 > 2048，条件不成立 ⇒ **配置面回读两档都是 8192，差别只在引擎手里**。
+
+**四、把判定做成检查（`preflight-g4.py`，自检 7/7）。** 关键设计：override 表**不在检查脚本里重抄**。桩 `python3` 让 wrapper→recipe **打印真实 argv**，再拿这份 argv 做 Hydra 组合与回读——env 层与 override 层同时在检。读数（[preflight-g4.json](experiments/verl-v1-poll-quantum-dapo-g4/raw/preflight-g4.json)）：58 条 override（recipe 47＋wrapper 11）／与归档树逐键 **`drift.same=true`**／poll 补丁对 `31cfccb4` 三文件 3/3 `--fuzz=0` 通过／两臂组合 18 个预登记键全中／`trainer.v1.sampler.poll_interval` 未打补丁树**不存在**（buffer 用构造默认 2.0）、打补丁树回读 `0.1`／负向对照如期失败。对照读数（[preflight-g4-nopin.json](experiments/verl-v1-poll-quantum-dapo-g4/raw/preflight-g4-nopin.json)）：去掉那个钉恰好少一条 override，main 上生效值 `true`。
+
+**五、本批三处自错（都已改）。** ① 本地 bash-3.2 适配写成 `set -xe pipefail`——`set` 把 `pipefail` 当**位置参数**，`"$@"` 的 10 条尾部 override 被吃掉，捕获只剩 48 条（"看起来在检查、其实换了对象"），现已是自检项；② 自检注入打在 `rollout.n` 上而受检键是 `actor_rollout_ref.rollout.n` ⇒ "值被改"这条判据**没被覆盖却报绿**；③ `+` 前缀检查拿 `key` 比 `key=value` 列表，真实运行与自检双双击出误报。
+
+**边界**：零 GPU 读数；"生效值"是 Hydra 解析结果，不是 vLLM 运行时行为；本机只有 bash 3.2，recipe 的空 `EXTRA=()` 在 `set -u` 下报错，本地用"只去掉 `-u`"的副本（服务器 bash ≥4 不需要），替换方式记进读数；归档那七跑实际用的是 `False`，而按源码生成式 decoder 的 `is_chunked_prefill_supported` 为真（`model.py:1790-1791`）⇒ 会命中 `arg_utils.py:2472-2480` 那条"手动关闭 chunked prefill 可能崩或算错"的 `warning_once`（七跑各 15 步 exit 0；若改用默认 `True` 则归档数值不可直接对比）。
+
+**留给下一轮**：① critic 三臂仍需**单卡窗口**；② 4 卡 `inflight=1` 仍需 ≥4 卡窗口，开窗前先跑 `preflight-g4.py`；③ 服务端 `/tmp/m5-oom` 原始文件 md5 仍未做；④ 昇腾需用户重连 VPN（本机无路由），无 NPU 事项；⑤ 对外动作仍待用户逐项授权，本轮**未触上游**。
+
+**产物**：[实验 README](experiments/verl-v1-poll-quantum-dapo-g4/README.md#2026-11-05-无卡轮4-卡-inflight1-的准备base-recipe-少了一个钉臂会静默换配置) · [preflight-g4.py](experiments/verl-v1-poll-quantum-dapo-g4/preflight-g4.py) · [读数](experiments/verl-v1-poll-quantum-dapo-g4/raw/preflight-g4.json) · [无钉对照](experiments/verl-v1-poll-quantum-dapo-g4/raw/preflight-g4-nopin.json) · `run-poll-dapo.sh`（已钉回） · [TM-008](queue_tech-miner.md) · [handoff](experiments/handoff-m5.md)。
+
+### M5 上一轮（2026-11-05 05:0x CST）：无卡轮——value-head 分支在本机真跑，**探针自检在服务器上会崩**
 
 **连通性（只探一次，未重试）**：`4090-1` ICMP 100% 丢包＋`:22` TCP 超时；昇腾网关 `10.205.0.1` 2 包全丢。本轮**零 GPU 读数**。
 
