@@ -1,0 +1,1486 @@
+{
+ "flags": [
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "disable_cache_status",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 3,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "serve",
+     "file": "lmdeploy/serve/openai/api_server.py",
+     "func": "serve",
+     "line": 257,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "serve",
+     "file": "lmdeploy/serve/openai/api_server.py",
+     "func": "serve",
+     "line": 257,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "disable_fastapi_docs",
+   "mode": "never",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 6,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "disable_prefix_cache_block_drop",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 19,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "disable_ue8m0_cast",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 11,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_abort_handling",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 8,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_deterministic",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 51,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_empty",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 15,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_ep",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 31,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_fp32_compute",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 18,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "visualize_pipe_out",
+     "file": "lmdeploy/pytorch/tools/utils.py",
+     "func": "visualize_pipe_out",
+     "line": 129,
+     "param_default": true
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "visualize_pipe_out",
+     "file": "lmdeploy/pytorch/tools/utils.py",
+     "func": "visualize_pipe_out",
+     "line": 129,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "enable_meta",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "lmdeploy/pytorch/tools/utils.py",
+     "how": "keyword",
+     "line": 226
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 4,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_prefix_caching",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 166,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_return_routed_experts",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 56,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "preprocess",
+     "file": "lmdeploy/serve/core/async_engine.py",
+     "func": "preprocess",
+     "line": 465,
+     "param_default": null
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "make_response_parser",
+     "file": "autotest/utils/tool_reasoning_definitions.py",
+     "func": "make_response_parser",
+     "line": 640,
+     "param_default": null
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "attach_decoded_validation",
+     "file": "autotest/utils/tool_reasoning_definitions.py",
+     "func": "attach_decoded_validation",
+     "line": 1247,
+     "param_default": null
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "preprocess",
+     "file": "lmdeploy/serve/core/async_engine.py",
+     "func": "preprocess",
+     "line": 465,
+     "param_default": null
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "make_response_parser",
+     "file": "autotest/utils/tool_reasoning_definitions.py",
+     "func": "make_response_parser",
+     "line": 640,
+     "param_default": null
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "attach_decoded_validation",
+     "file": "autotest/utils/tool_reasoning_definitions.py",
+     "func": "attach_decoded_validation",
+     "line": 1247,
+     "param_default": null
+    }
+   ],
+   "defaults": [
+    "None"
+   ],
+   "flag": "enable_thinking",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "autotest/utils/tool_reasoning_definitions.py",
+     "how": "keyword",
+     "line": 1236
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 148,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "internvl_vl_testcase",
+     "file": "autotest/tools/pipeline/mllm_case.py",
+     "func": "internvl_vl_testcase",
+     "line": 267,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "MiniCPM_vl_testcase",
+     "file": "autotest/tools/pipeline/mllm_case.py",
+     "func": "MiniCPM_vl_testcase",
+     "line": 356,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "Qwen_vl_testcase",
+     "file": "autotest/tools/pipeline/mllm_case.py",
+     "func": "Qwen_vl_testcase",
+     "line": 426,
+     "param_default": true
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "internvl_vl_testcase",
+     "file": "autotest/tools/pipeline/mllm_case.py",
+     "func": "internvl_vl_testcase",
+     "line": 267,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "MiniCPM_vl_testcase",
+     "file": "autotest/tools/pipeline/mllm_case.py",
+     "func": "MiniCPM_vl_testcase",
+     "line": 356,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "Qwen_vl_testcase",
+     "file": "autotest/tools/pipeline/mllm_case.py",
+     "func": "Qwen_vl_testcase",
+     "line": 426,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "enable_video_mixed",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "autotest/tools/pipeline/mllm_case.py",
+     "how": "keyword",
+     "line": 256
+    },
+    {
+     "file": "autotest/tools/pipeline/mllm_case.py",
+     "how": "keyword",
+     "line": 257
+    },
+    {
+     "file": "autotest/tools/pipeline/mllm_case.py",
+     "how": "keyword",
+     "line": 259
+    },
+    {
+     "file": "autotest/tools/pipeline/mllm_case.py",
+     "how": "keyword",
+     "line": 261
+    }
+   ],
+   "producers_total": 4,
+   "reads_nontest": 14,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "no_drop",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 29,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "start_loop",
+     "file": "lmdeploy/serve/core/async_engine.py",
+     "func": "start_loop",
+     "line": 814,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "start_loop",
+     "file": "lmdeploy/serve/core/async_engine.py",
+     "func": "start_loop",
+     "line": 814,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_async_api",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "lmdeploy/pipeline.py",
+     "how": "keyword",
+     "line": 94
+    },
+    {
+     "file": "lmdeploy/serve/openai/api_server.py",
+     "how": "keyword",
+     "line": 223
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 4,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "precompute_shared_token_inputs",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "precompute_shared_token_inputs",
+     "line": 147,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "fused_recurrent_gated_delta_rule_fwd",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "fused_recurrent_gated_delta_rule_fwd",
+     "line": 259,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "fused_recurrent_gated_delta_rule_default_main",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "fused_recurrent_gated_delta_rule_default_main",
+     "line": 342,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "fused_recurrent_gated_delta_rule_transposed_main",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "fused_recurrent_gated_delta_rule_transposed_main",
+     "line": 485,
+     "param_default": "unspecified"
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "precompute_shared_token_inputs",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "precompute_shared_token_inputs",
+     "line": 147,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "fused_recurrent_gated_delta_rule_fwd",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "fused_recurrent_gated_delta_rule_fwd",
+     "line": 259,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "fused_recurrent_gated_delta_rule_default_main",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "fused_recurrent_gated_delta_rule_default_main",
+     "line": 342,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "fused_recurrent_gated_delta_rule_transposed_main",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "fused_recurrent_gated_delta_rule_transposed_main",
+     "line": 485,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "False",
+    "unspecified"
+   ],
+   "flag": "use_beta",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "how": "keyword",
+     "line": 809
+    },
+    {
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "how": "positional",
+     "line": 539
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 18,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "indexed_chunk_kda",
+     "file": "lmdeploy/pytorch/kernels/cuda/indexed_chunk_gated_delta.py",
+     "func": "indexed_chunk_kda",
+     "line": 45,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "indexed_chunk_kda",
+     "file": "lmdeploy/pytorch/kernels/cuda/indexed_chunk_gated_delta.py",
+     "func": "indexed_chunk_kda",
+     "line": 45,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_beta_sigmoid_in_kernel",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "lmdeploy/pytorch/backends/cuda/kda.py",
+     "how": "keyword",
+     "line": 365
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 11,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_cache",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 9,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "require_fa3_for_speculative_decoding",
+     "file": "lmdeploy/pytorch/backends/cuda/attention/__init__.py",
+     "func": "require_fa3_for_speculative_decoding",
+     "line": 28,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "use_fa3_warning",
+     "file": "lmdeploy/pytorch/backends/cuda/attention/__init__.py",
+     "func": "use_fa3_warning",
+     "line": 44,
+     "param_default": "unspecified"
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "require_fa3_for_speculative_decoding",
+     "file": "lmdeploy/pytorch/backends/cuda/attention/__init__.py",
+     "func": "require_fa3_for_speculative_decoding",
+     "line": 28,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "use_fa3_warning",
+     "file": "lmdeploy/pytorch/backends/cuda/attention/__init__.py",
+     "func": "use_fa3_warning",
+     "line": 44,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "unspecified"
+   ],
+   "flag": "use_fa3",
+   "mode": "mixed",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 26,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_flash_mla",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 37,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "rms_scale",
+     "file": "lmdeploy/pytorch/nn/norm.py",
+     "func": "rms_scale",
+     "line": 16,
+     "param_default": true
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "rms_scale",
+     "file": "lmdeploy/pytorch/nn/norm.py",
+     "func": "rms_scale",
+     "line": 16,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_fp32",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "lmdeploy/pytorch/models/deepseek_v4.py",
+     "how": "keyword",
+     "line": 443
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 3,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_fp8",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 18,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "precompute_shared_token_inputs",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "precompute_shared_token_inputs",
+     "line": 147,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "fused_recurrent_gated_delta_rule_fwd",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "fused_recurrent_gated_delta_rule_fwd",
+     "line": 259,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "fused_recurrent_gated_delta_rule_default_main",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "fused_recurrent_gated_delta_rule_default_main",
+     "line": 342,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "fused_recurrent_gated_delta_rule_transposed_main",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "fused_recurrent_gated_delta_rule_transposed_main",
+     "line": 485,
+     "param_default": "unspecified"
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "precompute_shared_token_inputs",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "precompute_shared_token_inputs",
+     "line": 147,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "fused_recurrent_gated_delta_rule_fwd",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "fused_recurrent_gated_delta_rule_fwd",
+     "line": 259,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "fused_recurrent_gated_delta_rule_default_main",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "fused_recurrent_gated_delta_rule_default_main",
+     "line": 342,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "fused_recurrent_gated_delta_rule_transposed_main",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "fused_recurrent_gated_delta_rule_transposed_main",
+     "line": 485,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "False",
+    "unspecified"
+   ],
+   "flag": "use_g",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "how": "keyword",
+     "line": 809
+    },
+    {
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "how": "positional",
+     "line": 539
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 33,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "indexed_chunk_kda",
+     "file": "lmdeploy/pytorch/kernels/cuda/indexed_chunk_gated_delta.py",
+     "func": "indexed_chunk_kda",
+     "line": 45,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "indexed_chunk_kda",
+     "file": "lmdeploy/pytorch/kernels/cuda/indexed_chunk_gated_delta.py",
+     "func": "indexed_chunk_kda",
+     "line": 45,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_gate_in_kernel",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "lmdeploy/pytorch/backends/cuda/kda.py",
+     "how": "keyword",
+     "line": 365
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 11,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_build_stream_tool_call_payload",
+     "file": "autotest/utils/tool_reasoning_definitions.py",
+     "func": "_build_stream_tool_call_payload",
+     "line": 1008,
+     "param_default": "unspecified"
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_build_stream_tool_call_payload",
+     "file": "autotest/utils/tool_reasoning_definitions.py",
+     "func": "_build_stream_tool_call_payload",
+     "line": 1008,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "unspecified"
+   ],
+   "flag": "use_input_ids",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "autotest/utils/tool_reasoning_definitions.py",
+     "how": "keyword",
+     "line": 941
+    },
+    {
+     "file": "autotest/utils/tool_reasoning_definitions.py",
+     "how": "keyword",
+     "line": 1104
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 27,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "fused_recurrent_gated_delta_rule_fwd",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "fused_recurrent_gated_delta_rule_fwd",
+     "line": 259,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "fused_recurrent_gated_delta_rule_default_main",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "fused_recurrent_gated_delta_rule_default_main",
+     "line": 342,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "fused_recurrent_gated_delta_rule_transposed_main",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "fused_recurrent_gated_delta_rule_transposed_main",
+     "line": 485,
+     "param_default": "unspecified"
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "fused_recurrent_gated_delta_rule_fwd",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "fused_recurrent_gated_delta_rule_fwd",
+     "line": 259,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "fused_recurrent_gated_delta_rule_default_main",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "fused_recurrent_gated_delta_rule_default_main",
+     "line": 342,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "fused_recurrent_gated_delta_rule_transposed_main",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "fused_recurrent_gated_delta_rule_transposed_main",
+     "line": 485,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "False",
+    "unspecified"
+   ],
+   "flag": "use_output_state_indices",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "how": "keyword",
+     "line": 809
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 7,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "fill_compress_state",
+     "file": "lmdeploy/pytorch/kernels/cuda/v4_compressor.py",
+     "func": "fill_compress_state",
+     "line": 752,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "fill_compress_state",
+     "file": "lmdeploy/pytorch/kernels/cuda/v4_compressor.py",
+     "func": "fill_compress_state",
+     "line": 752,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_pdl",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "lmdeploy/pytorch/kernels/cuda/v4_compressor.py",
+     "how": "keyword",
+     "line": 993
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 24,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "Qwen3VLVisionPatchMerger",
+     "file": "lmdeploy/pytorch/models/qwen3_vl.py",
+     "func": "__init__",
+     "line": 215,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "Qwen3OmniMoeVisionPatchMerger",
+     "file": "lmdeploy/pytorch/models/qwen3_omni_moe_thinker.py",
+     "func": "__init__",
+     "line": 304,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "Qwen3_5VisionPatchMerger",
+     "file": "lmdeploy/pytorch/models/qwen3_5.py",
+     "func": "__init__",
+     "line": 152,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "Qwen3VLVisionPatchMerger",
+     "file": "lmdeploy/pytorch/models/qwen3_vl.py",
+     "func": "__init__",
+     "line": 215,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "Qwen3OmniMoeVisionPatchMerger",
+     "file": "lmdeploy/pytorch/models/qwen3_omni_moe_thinker.py",
+     "func": "__init__",
+     "line": 304,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "Qwen3_5VisionPatchMerger",
+     "file": "lmdeploy/pytorch/models/qwen3_5.py",
+     "func": "__init__",
+     "line": 152,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_postshuffle_norm",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "lmdeploy/pytorch/models/qwen3_vl.py",
+     "how": "keyword",
+     "line": 282
+    },
+    {
+     "file": "lmdeploy/pytorch/models/qwen3_vl.py",
+     "how": "keyword",
+     "line": 291
+    },
+    {
+     "file": "lmdeploy/pytorch/models/qwen3_omni_moe_thinker.py",
+     "how": "keyword",
+     "line": 362
+    },
+    {
+     "file": "lmdeploy/pytorch/models/qwen3_omni_moe_thinker.py",
+     "how": "keyword",
+     "line": 369
+    },
+    {
+     "file": "lmdeploy/pytorch/models/qwen3_5.py",
+     "how": "keyword",
+     "line": 216
+    }
+   ],
+   "producers_total": 5,
+   "reads_nontest": 17,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "build_eval_longtext_params",
+     "file": "autotest/utils/pytest_layout_utils.py",
+     "func": "build_eval_longtext_params",
+     "line": 185,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "build_eval_longtext_params",
+     "file": "autotest/utils/pytest_layout_utils.py",
+     "func": "build_eval_longtext_params",
+     "line": 185,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_proxy",
+   "mode": "never",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 4,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "indexed_chunk_kda",
+     "file": "lmdeploy/pytorch/kernels/cuda/indexed_chunk_gated_delta.py",
+     "func": "indexed_chunk_kda",
+     "line": 45,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "precompute_shared_token_inputs",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "precompute_shared_token_inputs",
+     "line": 147,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "load_global_qk",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "load_global_qk",
+     "line": 196,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward",
+     "file": "lmdeploy/pytorch/backends/cuda/gated_delta_rule.py",
+     "func": "forward",
+     "line": 439,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "prepare_inputs",
+     "file": "lmdeploy/pytorch/backends/cuda/gated_delta_rule.py",
+     "func": "prepare_inputs",
+     "line": 484,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "chunk_gated_delta_rule",
+     "file": "lmdeploy/pytorch/backends/cuda/gated_delta_rule.py",
+     "func": "chunk_gated_delta_rule",
+     "line": 527,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "indexed_chunk_kda",
+     "file": "lmdeploy/pytorch/kernels/cuda/indexed_chunk_gated_delta.py",
+     "func": "indexed_chunk_kda",
+     "line": 45,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "precompute_shared_token_inputs",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "precompute_shared_token_inputs",
+     "line": 147,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "load_global_qk",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "load_global_qk",
+     "line": 196,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward",
+     "file": "lmdeploy/pytorch/backends/cuda/gated_delta_rule.py",
+     "func": "forward",
+     "line": 439,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "prepare_inputs",
+     "file": "lmdeploy/pytorch/backends/cuda/gated_delta_rule.py",
+     "func": "prepare_inputs",
+     "line": 484,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "chunk_gated_delta_rule",
+     "file": "lmdeploy/pytorch/backends/cuda/gated_delta_rule.py",
+     "func": "chunk_gated_delta_rule",
+     "line": 527,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False",
+    "unspecified"
+   ],
+   "flag": "use_qk_l2norm_in_kernel",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "how": "positional",
+     "line": 539
+    },
+    {
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "how": "positional",
+     "line": 414
+    },
+    {
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "how": "positional",
+     "line": 584
+    },
+    {
+     "file": "lmdeploy/pytorch/backends/gated_delta_rule.py",
+     "how": "keyword",
+     "line": 132
+    },
+    {
+     "file": "lmdeploy/pytorch/backends/gated_delta_rule.py",
+     "how": "keyword",
+     "line": 144
+    },
+    {
+     "file": "lmdeploy/pytorch/backends/gated_delta_rule.py",
+     "how": "keyword",
+     "line": 176
+    },
+    {
+     "file": "lmdeploy/pytorch/backends/cuda/kda.py",
+     "how": "keyword",
+     "line": 365
+    },
+    {
+     "file": "lmdeploy/pytorch/backends/cuda/gated_delta_rule.py",
+     "how": "keyword",
+     "line": 459
+    },
+    {
+     "file": "lmdeploy/pytorch/backends/cuda/gated_delta_rule.py",
+     "how": "keyword",
+     "line": 514
+    }
+   ],
+   "producers_total": 9,
+   "reads_nontest": 73,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "fused_recurrent_gated_delta_rule_fwd",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "fused_recurrent_gated_delta_rule_fwd",
+     "line": 259,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "fused_recurrent_gated_delta_rule_default_main",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "fused_recurrent_gated_delta_rule_default_main",
+     "line": 342,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "fused_recurrent_gated_delta_rule_transposed_main",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "fused_recurrent_gated_delta_rule_transposed_main",
+     "line": 485,
+     "param_default": "unspecified"
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "fused_recurrent_gated_delta_rule_fwd",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "fused_recurrent_gated_delta_rule_fwd",
+     "line": 259,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "fused_recurrent_gated_delta_rule_default_main",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "fused_recurrent_gated_delta_rule_default_main",
+     "line": 342,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "fused_recurrent_gated_delta_rule_transposed_main",
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "func": "fused_recurrent_gated_delta_rule_transposed_main",
+     "line": 485,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "False",
+    "unspecified"
+   ],
+   "flag": "use_state_indices",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "lmdeploy/pytorch/kernels/cuda/gated_delta_rule.py",
+     "how": "keyword",
+     "line": 809
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 5,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "dynamic_preprocess",
+     "file": "lmdeploy/vl/model/internvl.py",
+     "func": "dynamic_preprocess",
+     "line": 38,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "dynamic_preprocess",
+     "file": "lmdeploy/vl/model/internvl.py",
+     "func": "dynamic_preprocess",
+     "line": 38,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_thumbnail",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "lmdeploy/vl/model/internvl.py",
+     "how": "keyword",
+     "line": 143
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 3,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "infer",
+     "file": "lmdeploy/pipeline.py",
+     "func": "infer",
+     "line": 96,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "infer",
+     "file": "lmdeploy/pipeline.py",
+     "func": "infer",
+     "line": 96,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_tqdm",
+   "mode": "never",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 5,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "with_gdr",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 5,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "load_vl_model",
+     "file": "lmdeploy/vl/model/builder.py",
+     "func": "load_vl_model",
+     "line": 37,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "load_vl_model",
+     "file": "lmdeploy/vl/model/builder.py",
+     "func": "load_vl_model",
+     "line": 37,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "with_llm",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "lmdeploy/lite/apis/calibrate.py",
+     "how": "keyword",
+     "line": 251
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 42,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "prepare_kpool_decode_metadata",
+     "file": "lmdeploy/pytorch/kernels/cuda/kpool.py",
+     "func": "prepare_kpool_decode_metadata",
+     "line": 666,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "kpool_decode_metadata_cuda",
+     "file": "lmdeploy/pytorch/backends/cuda/kpool.py",
+     "func": "kpool_decode_metadata_cuda",
+     "line": 87,
+     "param_default": true
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "prepare_kpool_decode_metadata",
+     "file": "lmdeploy/pytorch/kernels/cuda/kpool.py",
+     "func": "prepare_kpool_decode_metadata",
+     "line": 666,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "kpool_decode_metadata_cuda",
+     "file": "lmdeploy/pytorch/backends/cuda/kpool.py",
+     "func": "kpool_decode_metadata_cuda",
+     "line": 87,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "with_scores",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "lmdeploy/pytorch/backends/cuda/kpool.py",
+     "how": "positional",
+     "line": 89
+    },
+    {
+     "file": "lmdeploy/pytorch/models/glm5_next.py",
+     "how": "positional",
+     "line": 1528
+    },
+    {
+     "file": "lmdeploy/pytorch/models/glm5_next.py",
+     "how": "positional",
+     "line": 981
+    }
+   ],
+   "producers_total": 3,
+   "reads_nontest": 8,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "parse_requirements",
+     "file": "setup.py",
+     "func": "parse_requirements",
+     "line": 63,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "gen_packages_items",
+     "file": "setup.py",
+     "func": "gen_packages_items",
+     "line": 120,
+     "param_default": "unspecified"
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "parse_requirements",
+     "file": "setup.py",
+     "func": "parse_requirements",
+     "line": 63,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "gen_packages_items",
+     "file": "setup.py",
+     "func": "gen_packages_items",
+     "line": 120,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "True",
+    "unspecified"
+   ],
+   "flag": "with_version",
+   "mode": "mixed",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 3,
+   "silently_inert": true
+  }
+ ],
+ "root": "lmdeploy-main"
+}

@@ -1,0 +1,236 @@
+{
+ "commit": "3228395546dfb2f6427faf39ec0c0c285f4c378a",
+ "commit_date": "2026-11-03T08:30:15Z",
+ "findings": {
+  "disable_fastapi_docs": {
+   "verdict": "REACHABLE_BOTH_ROUTES",
+   "why": "DP 模式下 launch_server 用 **kwargs 把 CLI 值转发回 serve()；非 DP 模式 CLI 直调 serve()（形参直收）⇒ 两条路由都通，不是缺陷",
+   "checks": [
+    {
+     "name": "A1.api_param",
+     "ok": true,
+     "detail": "api_server.serve() 形参表含该键"
+    },
+    {
+     "name": "A2.api_consumes",
+     "ok": true,
+     "detail": "api_server:389 True 分支把三处 URL 置 None"
+    },
+    {
+     "name": "A2c.negative_else_branch",
+     "ok": true,
+     "detail": "负向对照：False 分支 docs_url='/'"
+    },
+    {
+     "name": "A3.cli_flag",
+     "ok": true,
+     "detail": "cli/utils.py 定义 store_true"
+    },
+    {
+     "name": "A4.alias_call_site",
+     "ok": true,
+     "detail": "别名 ['run_api_server']，调用点 1 处"
+    },
+    {
+     "name": "A5.launch_call_site",
+     "ok": true,
+     "detail": "launch_server() 1 处"
+    },
+    {
+     "name": "A6.api_call_passes_keyword",
+     "ok": true,
+     "detail": "非 DP 路由（别名调用）写了 disable_fastapi_docs=args.disable_fastapi_docs"
+    },
+    {
+     "name": "A6b.launch_call_passes_keyword",
+     "ok": true,
+     "detail": "DP 路由（launch_server）写了 disable_fastapi_docs=args.disable_fastapi_docs"
+    },
+    {
+     "name": "A6c.sig_parse_sanity",
+     "ok": true,
+     "detail": "同法解析 launch_server 形参得 ['num_nodes', 'node_rank', 'model_path', 'backend_config', 'proxy_url', 'server_port', 'kwargs'] ⇒ 不是解析器瞎了"
+    },
+    {
+     "name": "A7.launch_server_lacks_named_param",
+     "ok": true,
+     "detail": "launch_server 具名形参**不含**该键（期望 False）"
+    },
+    {
+     "name": "A8.launch_server_has_kwargs",
+     "ok": true,
+     "detail": "launch_server 签名含 **kwargs"
+    },
+    {
+     "name": "A9.kwargs_forwarded_to_serve",
+     "ok": true,
+     "detail": "kwargs → cur_server_kwargs → _run_server(**kwargs) → serve(model_path, **kwargs)"
+    }
+   ],
+   "failed": []
+  },
+  "use_fa3": {
+   "verdict": "MODULE_GLOBAL_PROBE",
+   "why": "import 期硬件探测结果，非用户开关；形参版本那处有生产者",
+   "checks": [
+    {
+     "name": "B1.module_level_assign",
+     "ok": true,
+     "detail": "模块级 use_fa3 = False"
+    },
+    {
+     "name": "B2.set_by_probe",
+     "ok": true,
+     "detail": "探测 SM80+ 且 CUDA>=12.3 时置 True"
+    },
+    {
+     "name": "B3.consumers_take_global",
+     "ok": true,
+     "detail": "两个消费者的形参表为空 ⇒ 只能读全局"
+    },
+    {
+     "name": "B4.param_version_produced",
+     "ok": true,
+     "detail": "FlashMLAImpl(use_fa3=use_fa3) 共 3 处（有生产者）"
+    },
+    {
+     "name": "B4c.negative_no_cli",
+     "ok": true,
+     "detail": "负向对照：无 --use-fa3 命令行入口"
+    },
+    {
+     "name": "B5.module_level_only_initial",
+     "ok": true,
+     "detail": "模块顶层赋值行号 [15]（应为 :15）"
+    },
+    {
+     "name": "B5b.exactly_two_assignments",
+     "ok": true,
+     "detail": "全文件真赋值点 [15, 22]（应为 :15 初值 + :22 探测）"
+    },
+    {
+     "name": "B5c.no_env_entry",
+     "ok": true,
+     "detail": "无 os.environ 入口"
+    }
+   ],
+   "failed": []
+  },
+  "use_proxy": {
+   "verdict": "TEST_ONLY",
+   "why": "消费者与生产者都在 autotest，用户面为零",
+   "checks": [
+    {
+     "name": "C1.consumer_param",
+     "ok": true,
+     "detail": "形参在 autotest/utils"
+    },
+    {
+     "name": "C2.consumer_branches",
+     "ok": true,
+     "detail": "按它分支"
+    },
+    {
+     "name": "C3.files",
+     "ok": true,
+     "detail": "全仓只出现在 ['autotest/evaluate/test_api_evaluate.py', 'autotest/utils/pytest_layout_utils.py']"
+    },
+    {
+     "name": "C4.producers_in_tests",
+     "ok": true,
+     "detail": "2 个生产者全在 autotest"
+    },
+    {
+     "name": "C4c.negative_package_empty",
+     "ok": true,
+     "detail": "负向对照：lmdeploy/ 包内 0 处"
+    }
+   ],
+   "failed": []
+  },
+  "use_tqdm": {
+   "verdict": "LIBRARY_PARAM_REACHABLE_VIA_CALL",
+   "why": "仓内生产者只在 benchmark；但 Pipeline(...)(..., use_tqdm=True) 经 __call__ 透传可达",
+   "checks": [
+    {
+     "name": "D1.param_default_false",
+     "ok": true,
+     "detail": "默认 False"
+    },
+    {
+     "name": "D2.consumes_as_pbar",
+     "ok": true,
+     "detail": "True ⇒ 建 tqdm 进度条"
+    },
+    {
+     "name": "D3.pbar_reaches_infer_loop",
+     "ok": true,
+     "detail": "pbar 真的进了 _infer"
+    },
+    {
+     "name": "D4.package_definition_only",
+     "ok": true,
+     "detail": "lmdeploy/ 内只有 pipeline.py：['lmdeploy/pipeline.py']"
+    },
+    {
+     "name": "D5.producers_in_benchmark",
+     "ok": true,
+     "detail": "2 个仓内生产者在 benchmark/"
+    },
+    {
+     "name": "D6.dunder_call_forwards_kwargs",
+     "ok": true,
+     "detail": "Pipeline.__call__ → self.infer(..., **kwargs)"
+    },
+    {
+     "name": "D6c.negative_single_param",
+     "ok": true,
+     "detail": "负向对照：形参声明全文件 1 处"
+    },
+    {
+     "name": "D7.no_cli_entry",
+     "ok": true,
+     "detail": "没有 --use-tqdm 命令行入口（只能作为 Python API 关键字）"
+    }
+   ],
+   "failed": []
+  },
+  "with_version": {
+   "verdict": "SETUP_INTERNAL",
+   "why": "setup.py 内部 helper，无用户面；docstring 与默认值不一致只是文档问题",
+   "checks": [
+    {
+     "name": "E1.def_in_setup",
+     "ok": true,
+     "detail": "定义在 setup.py"
+    },
+    {
+     "name": "E2.consumes_branch",
+     "ok": true,
+     "detail": "函数体按它分支"
+    },
+    {
+     "name": "E3.only_setup_py",
+     "ok": true,
+     "detail": "全仓只出现在 ['setup.py']"
+    },
+    {
+     "name": "E3c.negative_grep_alive",
+     "ok": true,
+     "detail": "负向对照：宽 grep 能找到 parse_requirements 的其他出现处"
+    },
+    {
+     "name": "E4.docstring_default_false",
+     "ok": true,
+     "detail": "docstring 写 default=False"
+    },
+    {
+     "name": "E5.code_default_true",
+     "ok": true,
+     "detail": "真实默认 True ⇒ docstring 与代码不一致（但无外部面）"
+    }
+   ],
+   "failed": []
+  }
+ }
+}

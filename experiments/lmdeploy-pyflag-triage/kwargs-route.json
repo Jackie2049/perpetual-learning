@@ -1,0 +1,53 @@
+{
+ "on": {
+  "cli_sends_key": true,
+  "cli_value": true,
+  "collected_value": true,
+  "serve_received": true,
+  "fastapi_urls": {
+   "docs_url": null,
+   "redoc_url": null,
+   "openapi_url": null
+  },
+  "docs_disabled": true
+ },
+ "off": {
+  "cli_sends_key": true,
+  "cli_value": false,
+  "collected_value": false,
+  "serve_received": false,
+  "fastapi_urls": {
+   "docs_url": "/",
+   "redoc_url": "redoc",
+   "openapi_url": "openapi_url"
+  },
+  "docs_disabled": false
+ },
+ "checks": [
+  {
+   "name": "P1.cli_sends_key",
+   "ok": true,
+   "detail": "CLI 的 launch_server 调用里有该实参"
+  },
+  {
+   "name": "P2.value_survives_collect",
+   "ok": true,
+   "detail": "kwargs 收集段原样保留该值"
+  },
+  {
+   "name": "P3.value_reaches_serve",
+   "ok": true,
+   "detail": "经 _run_server 转发后 serve() 收到 True / False"
+  },
+  {
+   "name": "P4.docs_off_when_true",
+   "ok": true,
+   "detail": "True 时三处 URL {'docs_url': None, 'redoc_url': None, 'openapi_url': None}"
+  },
+  {
+   "name": "P5.docs_on_when_false",
+   "ok": true,
+   "detail": "False 时 docs_url '/'"
+  }
+ ]
+}

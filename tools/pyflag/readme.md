@@ -110,16 +110,49 @@ python3 -m unittest test_scan_unwired_flags -v       # 10 个用例，含 4 条�
 扫描耗时 **2 分 42 秒**（5976 个 `.py`）。读数归档 `scan-vllm-da0b6ac2.json`，逐条判定见
 [experiments/vllm-pyflag-triage](../../experiments/vllm-pyflag-triage/README.md)（`verify_findings.py` 37 checks、8 条注入全部命中目标条）。
 
-**按 SGLang → vLLM 两次的同一形状收拢**：
+## 已跑过的快照（2026-11-05 扩池第三批：LMDeploy）
 
-| 大仓库（>5000 文件） | 开关 | `silently_inert` | 真缺陷 | 误报/结构原因 |
+| 仓库 | 快照 | 发现开关 | 判为失效 | 人工结论 |
+|---|---|---|---|---|
+| LMDeploy | `3228395546` | **38** | **5** | 逐条取证后**真缺陷 0 条**：1 条 `**kwargs` 转发误判（`disable_fastapi_docs`，通路已在 CPU 上跑通）、1 条 import 期硬件探测全局（`use_fa3`）、2 条测试/内部形参（`use_proxy`／`with_version`）、1 条库参数经 `__call__` 透传可达（`use_tqdm`）⇒ **负结论，不对外**（[TM-016](../../queue_tech-miner.md)） |
+
+扫描耗时 **16.5 秒**（1113 个 `.py`）。读数归档 `scan-lmdeploy-main.json`，逐条判定见
+[experiments/lmdeploy-pyflag-triage](../../experiments/lmdeploy-pyflag-triage/README.md)（`verify_findings.py` 39 checks / selftest 8/8、
+`probe_kwargs_route.py` 7/7 含 2 条负向对照）。
+
+**按 SGLang → vLLM → LMDeploy 三次的同一形状收拢**：
+
+| 大仓库（>1000 文件） | 开关 | `silently_inert` | 真缺陷 | 误报/结构原因 |
 |---|---|---|---|---|
 | SGLang `27aedf7f` | 386 | 34 | 2 | 32（5 类） |
 | vLLM `da0b6ac2` | 263 | 12 | 1 | 11（4 类） |
+| LMDeploy `32283955` | 38 | 5 | **0** | 5（5 类） |
 
-⇒ 真缺陷率 **< 6%**。两次都是「**属性转发**」与「**config 字典键**」占多数，而且都能用**同一条判据**排除：
-这个名字是不是某个 config 字段？有没有 `self.x = x` 再往下传？**所以扫描器的输出只能当候选入口，
-分桶（是不是 config 字段 / 有没有属性转发 / 在哪一层消费）比总量更有信息量。**
+⇒ 真缺陷率 **< 6%**；LMDeploy 这一批是**全 0**（详见 [证据页](../../open-source/lmdeploy/evidence/inert-flags-triage-2026-11.md)）。
+前两批是「**属性转发**」与「**config 字典键**」占多数，第三批换成「**`**kwargs` 兜底**」「**别名调用**」与
+「**测试目录／模块级全局**」。**共同点是：扫描器的输出只能当候选入口，分桶（是不是 config 字段 /
+有没有属性转发 / 签名有没有 `**kwargs` / 调用点是别名还是原名 / 在哪一层消费）比总量更有信息量。**
+
+## 第八类易错点：签名里没有该键 ≠ 收不到（`**kwargs` 兜底）
+
+`def launch_server(num_nodes, node_rank, model_path, backend_config, proxy_url, server_port, **kwargs)`
+—— 具名形参里**没有** `disable_fastapi_docs`，只看签名会判"断在这里"。但函数体里
+`cur_server_kwargs.update(kwargs)` 把它原样收下、再 `serve(model_path, **kwargs)` 交给真正的消费者。
+LMDeploy 的 `disable_fastapi_docs` 就是这样：`probe_kwargs_route.py` 把这三段真实源码在 CPU 上串起来跑，
+`True` 时 FastAPI 三个 URL 全变 `None`、`False` 时 `docs_url='/'`。
+
+⇒ **判「收不到」之前先看签名有没有 `**kwargs`，再看 kwargs 有没有被转发到消费者。**
+`silently_inert=True` 只能说明"没有按同名关键字传"，说明不了"值到不了"。
+
+## 第九类易错点：调用点写的是别名
+
+`from lmdeploy.serve.openai.api_server import serve as run_api_server` 之后，调用点写的是
+`run_api_server(`。按原名 `serve` 找调用点读到 **0 处**——同一份文件里明明传了值。
+LMDeploy 的 `disable_fastapi_docs` 第一版判据当场停在这上面（A4/A5 两条红）。
+
+⇒ 找调用点前先把 `from ... import x as y` 的别名表建出来，所有 `y(` 都要算成对 `x` 的调用。
+同类还有 `**kwargs` 兜底与 `getattr(ns, name)`——三者共同点：**名字与调用形式不是一一对应的**。
+
 
 ## 第七类易错点：`text.count(name)` 会把 docstring、告警文案、`if name:` 一起算进去
 

@@ -1,0 +1,200 @@
+{
+ "root": "lmdeploy-main",
+ "commit": "3228395546dfb2f6427faf39ec0c0c285f4c378a",
+ "commit_date": "2026-11-03T08:30:15Z",
+ "commit_subject": "[Fix] Disable top-k filtering by default (#5079)",
+ "py_files": 1113,
+ "scan_seconds": 16.5,
+ "flags_total": 38,
+ "silently_inert": [
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "serve",
+     "file": "lmdeploy/serve/openai/api_server.py",
+     "func": "serve",
+     "line": 257,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "serve",
+     "file": "lmdeploy/serve/openai/api_server.py",
+     "func": "serve",
+     "line": 257,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "disable_fastapi_docs",
+   "mode": "never",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 6,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "require_fa3_for_speculative_decoding",
+     "file": "lmdeploy/pytorch/backends/cuda/attention/__init__.py",
+     "func": "require_fa3_for_speculative_decoding",
+     "line": 28,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "use_fa3_warning",
+     "file": "lmdeploy/pytorch/backends/cuda/attention/__init__.py",
+     "func": "use_fa3_warning",
+     "line": 44,
+     "param_default": "unspecified"
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "require_fa3_for_speculative_decoding",
+     "file": "lmdeploy/pytorch/backends/cuda/attention/__init__.py",
+     "func": "require_fa3_for_speculative_decoding",
+     "line": 28,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "use_fa3_warning",
+     "file": "lmdeploy/pytorch/backends/cuda/attention/__init__.py",
+     "func": "use_fa3_warning",
+     "line": 44,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "unspecified"
+   ],
+   "flag": "use_fa3",
+   "mode": "mixed",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 26,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "build_eval_longtext_params",
+     "file": "autotest/utils/pytest_layout_utils.py",
+     "func": "build_eval_longtext_params",
+     "line": 185,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "build_eval_longtext_params",
+     "file": "autotest/utils/pytest_layout_utils.py",
+     "func": "build_eval_longtext_params",
+     "line": 185,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_proxy",
+   "mode": "never",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 4,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "infer",
+     "file": "lmdeploy/pipeline.py",
+     "func": "infer",
+     "line": 96,
+     "param_default": false
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "infer",
+     "file": "lmdeploy/pipeline.py",
+     "func": "infer",
+     "line": 96,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_tqdm",
+   "mode": "never",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 5,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "parse_requirements",
+     "file": "setup.py",
+     "func": "parse_requirements",
+     "line": 63,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "gen_packages_items",
+     "file": "setup.py",
+     "func": "gen_packages_items",
+     "line": 120,
+     "param_default": "unspecified"
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "parse_requirements",
+     "file": "setup.py",
+     "func": "parse_requirements",
+     "line": 63,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "gen_packages_items",
+     "file": "setup.py",
+     "func": "gen_packages_items",
+     "line": 120,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "True",
+    "unspecified"
+   ],
+   "flag": "with_version",
+   "mode": "mixed",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 3,
+   "silently_inert": true
+  }
+ ],
+ "note": "原始 pyflag 读数，未经人工判定。判定见 findings.json"
+}
