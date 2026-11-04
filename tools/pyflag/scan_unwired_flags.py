@@ -345,6 +345,152 @@ def scan_many(root, flags):
     return report
 
 
+def shadowed_arms(path, tree):
+    """If/elif arms that can never fire because an earlier arm switches on a sibling
+    constexpr that every call site pins to the literal True.
+
+    Reported only when all of these hold:
+      * the arm's condition reduces to exactly one name (the flag), possibly wrapped
+        in `cutlass.const_expr(...)`;
+      * an earlier arm in the same chain tests a *different* parameter of the same
+        function;
+      * some call site of that function passes the sibling the literal True, and no
+        call site passes it anything that could be False (literal False, a bare
+        name, an expression). `f(flag=flag)` counts as pure forwarding only when the
+        body never reassigns that parameter — otherwise it is a computed value.
+
+    One pass over the tree, no per-call rescan. Known false positive, measured on
+    the TensorRT-LLM snapshot: when a function has several call sites and one of
+    them omits the sibling while another pins it True, the sibling is reported as
+    pinned although the omitting site may keep the arm alive. 9 hits, 1 such false
+    positive (`has_bias` in m3_lowm_splitk.py). Treat output as a candidate list.
+
+    See readme 第十一类.
+    """
+    import ast as _ast
+
+    def sole_name(expr):
+        while isinstance(expr, _ast.Call) and len(expr.args) == 1 and not expr.keywords:
+            fn = expr.func
+            if isinstance(fn, _ast.Attribute) and fn.attr == 'const_expr':
+                expr = expr.args[0]
+                continue
+            break
+        return expr.id if isinstance(expr, _ast.Name) else None
+
+    params_of = {}
+    defaults = {}        # func_name -> {param: literal value, when statically known}
+    rebound = {}
+    chains = []          # (func_name, [If, If, ...]) per if/elif chain
+    calls = []           # (host_func_name, callee_name, {kw: kind})
+
+    def visit(node, host):
+        if isinstance(node, (_ast.FunctionDef, _ast.AsyncFunctionDef)):
+            a = node.args
+            ps = {x.arg for x in a.args + a.kwonlyargs}
+            params_of[node.name] = ps
+            re_ = set()
+            for st in _ast.walk(node):
+                if isinstance(st, (_ast.Assign, _ast.AnnAssign, _ast.AugAssign)):
+                    tgts = st.targets if isinstance(st, _ast.Assign) else [st.target]
+                    for t in tgts:
+                        if isinstance(t, _ast.Name) and t.id in ps:
+                            re_.add(t.id)
+            rebound[node.name] = re_
+            d = {}
+            for arg, df in zip(a.args[len(a.args) - len(a.defaults):], a.defaults):
+                d[arg.arg] = df
+            for arg, df in zip(a.kwonlyargs, a.kw_defaults):
+                if df is not None:
+                    d[arg.arg] = df
+            defaults[node.name] = d
+            host = node.name
+        if isinstance(node, _ast.If):
+            chain = [node]
+            cur = node
+            while len(cur.orelse) == 1 and isinstance(cur.orelse[0], _ast.If):
+                cur = cur.orelse[0]
+                chain.append(cur)
+            if len(chain) > 1:
+                chains.append((host, chain))
+        if isinstance(node, _ast.Call):
+            f = node.func
+            callee = f.id if isinstance(f, _ast.Name) else getattr(f, 'attr', None)
+            if callee:
+                kinds = {}
+                for kw in node.keywords:
+                    if not kw.arg:
+                        continue
+                    v = kw.value
+                    if isinstance(v, _ast.Constant) and v.value is True:
+                        kinds[kw.arg] = 'true'
+                    elif (isinstance(v, _ast.Name) and v.id == kw.arg
+                          and kw.arg in params_of.get(host, ())
+                          and kw.arg not in rebound.get(host, ())):
+                        # Pure forwarding only applies when the name is really the
+                        # *caller's* parameter. In `run_splitk_dense_swiglu` the
+                        # argument `b_swiglu=True` is a decision, not a forward,
+                        # even though the callee has a parameter of that name.
+                        kinds[kw.arg] = 'forward'
+                    else:
+                        kinds[kw.arg] = 'maybe_false'
+                calls.append((host, callee, kinds))
+        for ch in _ast.iter_child_nodes(node):
+            visit(ch, host)
+
+    visit(tree, None)
+
+    pinned = {}
+    for host, callee, kinds in calls:
+        if host == callee:
+            # A recursive/self-named call is not an external decision about the
+            # callee's parameters.
+            continue
+        st = pinned.setdefault(callee, {'true': set(), 'maybe_false': set(),
+                                        'named': set()})
+        for name, kind in kinds.items():
+            st['named'].add(name)
+            if kind == 'true':
+                st['true'].add(name)
+            elif kind == 'maybe_false':
+                st['maybe_false'].add(name)
+
+    # A parameter every call site omits runs on its default. A False default makes
+    # the sibling False everywhere; a True default makes the arm dead by
+    # construction (pyflag reports that as mode "always"), so only False is folded
+    # in here. Omitting cannot override an explicit value.
+    for callee, st in pinned.items():
+        for name, df in defaults.get(callee, {}).items():
+            if name in st['named']:
+                continue
+            if isinstance(df, _ast.Constant) and df.value is False:
+                st['maybe_false'].add(name)
+
+    out = []
+    for host, chain in chains:
+        ps = params_of.get(host, set())
+        st = pinned.get(host, {'true': set(), 'maybe_false': set()})
+        for i, arm in enumerate(chain[1:], 1):
+            flag = sole_name(arm.test)
+            if not flag or flag not in ps:
+                continue
+            for prev in chain[:i]:
+                sib = sole_name(prev.test)
+                if not sib or sib == flag or sib not in ps:
+                    continue
+                if sib in st['true'] and sib not in st['maybe_false']:
+                    out.append({
+                        'file': str(path),
+                        'flag': flag,
+                        'arm_lineno': arm.lineno,
+                        'shadowed_by': sib,
+                        'sibling_line': prev.lineno,
+                        'func': host,
+                    })
+                    break
+    return out
+
+
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
     if len(args) != 1:
@@ -356,11 +502,35 @@ def main():
         return 2
 
     report = scan_many(root, discover_flags(root))
+    # 第十一类：同一 if/elif 链上前面的 arm 恒真 ⇒ 后面的 arm 是死的。
+    # 只要该 flag 同时被判为 silently_inert，就把它升级成 shadowed_arms 候选。
+    import ast as _ast
+    shadow = []
+    inert_names = {f['flag'] for f in report['flags'] if f['silently_inert']}
+    for p in root.rglob('*.py'):
+        if '.git' in p.parts:
+            continue
+        try:
+            tree = _ast.parse(p.read_text(errors='replace'))
+        except (SyntaxError, UnicodeDecodeError):
+            continue
+        for rec in shadowed_arms(p, tree):
+            if rec['flag'] in inert_names:
+                rec['file'] = str(p.relative_to(root))
+                shadow.append(rec)
+    report['shadowed_arms'] = shadow
 
     text = json.dumps(report, indent=1, ensure_ascii=False, sort_keys=True)
     if '--json' in sys.argv:
-        (pathlib.Path(__file__).parent / ('scan-%s.json' % root.name)).write_text(
-            text + '\n', encoding='utf-8')
+        # `--json <path>` writes there; a bare `--json` writes next to the tool.
+        # A bare flag used to name the file after root.name, which is '' when the
+        # target is `.` — that produced `scan-.json` and silently overwrote it.
+        i = sys.argv.index('--json')
+        named = sys.argv[i + 1] if i + 1 < len(sys.argv) and not sys.argv[i + 1].startswith('--') else None
+        out = pathlib.Path(named) if named else (
+            pathlib.Path(__file__).parent / ('scan-%s.json' % (root.name or 'repo')))
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(text + '\n', encoding='utf-8')
     print(text)
     return 0
 

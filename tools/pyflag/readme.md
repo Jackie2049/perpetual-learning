@@ -133,6 +133,35 @@ python3 -m unittest test_scan_unwired_flags -v       # 10 个用例，含 4 条�
 「**测试目录／模块级全局**」。**共同点是：扫描器的输出只能当候选入口，分桶（是不是 config 字段 /
 有没有属性转发 / 签名有没有 `**kwargs` / 调用点是别名还是原名 / 在哪一层消费）比总量更有信息量。**
 
+## 已跑过的快照（2026-11-05 扩池第四批：TensorRT-LLM）
+
+| 仓库 | 快照 | 发现开关 | 判为失效 | 人工结论 |
+|---|---|---|---|---|
+| TensorRT-LLM | `f6405a5965` | **352** | **35** | 逐条归因后**真缺陷 1 条**：`use_split_scale_stages`——形参在、两处 `elif` 在、同族四个兄弟 constexpr 在调用点都显式传了 `True`，只有它没传，而兄弟分支恒先命中 ⇒ 两处 `elif` 永不执行；合入 PR 当天（`4bbe1af6`）即如此，非回归。其余 34 条分 17 类结构原因（`self.` 属性 5、同文件构造器 6、死代码 3、计算值 2、`**dict` 2、构建脚本 2、配置字典 2、`getattr` 2、量化内部 2，其余各 1）。**这一条是新增的 `shadowed_arms` 自己扫出来的**，见第十一类 |
+
+扫描耗时 **12 分 39 秒**（6084 个 `.py`），读数归档
+[scan-trtllm-f6405a5965.json](scan-trtllm-f6405a5965.json)，逐条归因见
+[experiments/trtllm-pyflag-triage](../../experiments/trtllm-pyflag-triage/README.md)
+（`verify_findings.py` 28 checks / selftest 6/6，`probe_split_scale.py` 9/9 / selftest 2/2，
+`classify.py` 35 条全覆盖）。
+
+**四批扩池的同一形状**：
+
+| 仓库 | 文件 | 开关 | 失效 | 真缺陷 | 真缺陷率 |
+|---|---|---|---|---|---|
+| SGLang `27aedf7f` | — | 386 | 34 | 2 | 5.9% |
+| vLLM `da0b6ac2` | 5976 | 263 | 12 | 1 | 8.3% |
+| LMDeploy `32283955` | 1113 | 38 | 5 | 0 | 0% |
+| TensorRT-LLM `f6405a59` | 6084 | 352 | 35 | **1** | **2.9%** |
+
+⇒ 失效条目里真缺陷的比例稳定在 **0–8%**。四批合计 **64 条候选 → 4 条真缺陷**。
+**总量没有任何判据价值，分桶才是产出**；而且每换一个框架，占多数的那几类就换一批。
+
+**归档命名注意（已修）**：`--json` 原来固定写 `scan-<目录名>.json`，而目标写成 `.` 时目录名是空串
+⇒ 落成 `scan-.json` 并**互相覆盖**。第四批上真的踩了：两次扫描结果都写进同一个 `scan-.json`。
+现在 `--json <path>` 写到指定路径，裸 `--json` 写 `scan-<repo|repo>.json`；`readme` 与
+`scan_unwired_flags.py --json ../scan-trtllm-<sha>.json` 都可用。
+
 ## 第八类易错点：签名里没有该键 ≠ 收不到（`**kwargs` 兜底）
 
 `def launch_server(num_nodes, node_rank, model_path, backend_config, proxy_url, server_port, **kwargs)`
@@ -153,6 +182,73 @@ LMDeploy 的 `disable_fastapi_docs` 第一版判据当场停在这上面（A4/A5
 ⇒ 找调用点前先把 `from ... import x as y` 的别名表建出来，所有 `y(` 都要算成对 `x` 的调用。
 同类还有 `**kwargs` 兜底与 `getattr(ns, name)`——三者共同点：**名字与调用形式不是一一对应的**。
 
+
+## 第十类易错点：`**dict` 展开——发送端兜底
+
+第八类是**接收端**兜底（签名有 `**kwargs`）；这是它的镜像：**发送端把值塞进字典再展开**。
+
+```python
+prepare_kwargs = {"batch_size": ..., "use_causal_mask": key.mask_type == "causal", ...}
+prepare_routes = _PrepareBsrRoutes(**prepare_kwargs)
+```
+
+TensorRT-LLM 的 `use_causal_mask` 就这样被判成 `silently_inert`。字典字面量里的键是**字符串**，
+AST 里 `ast.Call.keywords` 是空的，任何按关键字实参找生产者的写法都读不到。
+
+⇒ 判「没有生产者」时，除了看 `**kwargs`（接收端），还要看本文件／本仓有没有
+`{"<name>": ...}` 这样的字典键，以及该字典是否被 `**` 展开到消费者。
+
+## 第十一类易错点：兄弟开关恒先命中——分支写了但永远走不到
+
+这是本工具**唯一一类能产出高价值真缺陷、但结构上完全看不见**的情况：
+
+```python
+if cutlass.const_expr(use_b_byte_offset):
+    ...
+elif cutlass.const_expr(use_split_scale_stages):   # ← 永远轮不到
+    ...
+```
+
+`use_split_scale_stages` 有声明、有分支、确实没生产者，看起来和普通误报一样。区别在于
+**同一 `if/elif` 链上前面的 arm 在所有真实调用点都恒真** ⇒ 这段代码不但没人传值，连带着
+`elif` 之后的兜底也一并失效。
+
+⇒ 单看「有没有生产者」不够，还要看**同一个 if/elif 链**。**这一步 2026-11-05 已自动化**：
+报告的 `shadowed_arms` 字段列出「某条 arm 被同链前面的兄弟条件遮蔽」的位置，判据是
+
+- arm 的条件正好是**一个**名字（可包一层 `cutlass.const_expr(...)`）；
+- 同一 if/elif 链前面有另一条 arm，条件是**同一个函数**的另一个形参；
+- 该形参在**某个调用点**被传字面量 `True`，且**没有任何调用点**传可能为 False 的值
+  （字面 `False`、裸变量名、任意表达式都算可能为 False）；
+- `f(flag=flag)` 只在函数体没重新赋值该形参时才算"纯转发"，否则是计算值。
+
+TensorRT-LLM `f6405a5965` 上全仓命中 15 条、非测试 9 条，人工复核 **1 条假阳性**
+（同一函数多个调用点里有一个省略了兄弟参数，而省略走的是默认值——见下）。
+**已知假阳性必须当候选读**，不要直接当结论。
+
+关于默认值：调用点**省略**某个参数时走的是默认值。`False` 默认会折进"可能为 False"；
+`True` 默认不折进"钉死"，因为那属于"这段代码天生就走不到"，pyflag 已经在 `mode=always`
+里报过，重复计数没有收益。
+
+**已实现**：`scan_unwired_flags.py` 的 `shadowed_arms()`，对**已经判为 `silently_inert` 的 flag**
+再查一遍同一 `if/elif` 链。只在一个前提下报警：arm 的条件**恰好就是这个 flag 名**、前面某条 arm
+测的是同函数的**另一个形参**、且该形参**至少一个调用点传了字面量 `True`、没有任何调用点传字面量
+`False` 或别的字面量**（`has = bias is not None` 这种计算值、以及只做透传的 `f(x=x)` 调用点都不算
+决定）。宁可漏报：不做多跳前向解析，命中为空是预期的假阴性而不是 bug。`--json` 输出多一个
+`shadowed_arms` 键，与 flag 表并列。
+
+⇒ 这条判据的价值在于**它抓到的那一类结构上完全看不见**：前四批 63 条候选里没有一条能用
+「有没有生产者」判出来（真缺陷只有 4 条），而这条判据第一次跑就命中了 `use_split_scale_stages`。
+
+**在真快照上的读数（TensorRT-LLM `f6405a5965`，`git status` 干净）**：两个文件各命中 2 条，
+合计 4 处死分支——主文件 `:2668`／`:2675`（`use_split_scale_stages`）与孪生文件 `:3050`／`:3057`，
+分别被 `use_sfb_stage_byte_offset`／`use_sfa_stage_byte_offset` 挡。主文件另命中 2 处
+`use_split_operand_stages`（`:2661`／`:2692`），但这个 flag 本身**不在** `silently_inert` 名单里，
+扫描器只对 inert 入选者升级，所以最终归档里只有 4 条 `use_split_scale_stages`。
+
+**这条判据只认一种机制**：调用点把兄弟**字面量置真**。本例 PV 调用点 `:4522` 是另一种——
+`stage_sfa_from_smem=False` 让整个 `if` 块进不去，与兄弟无关，记在 `F1h.pv_dead_by_enclosing_guard`。
+⇒ **命中为空不代表分支可活**，只代表"不是兄弟挡路"；反之命中也不代表其它调用点没有别的死法。
 
 ## 第七类易错点：`text.count(name)` 会把 docstring、告警文案、`if name:` 一起算进去
 

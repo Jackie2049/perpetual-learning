@@ -184,6 +184,71 @@ class TestPitfallDefaultIsNotProducer(unittest.TestCase):
         self.assertTrue(r['silently_inert'])
 
 
+class TestShadowedArms(unittest.TestCase):
+    """第十一类：同一 if/elif 链上，前面的 arm 被调用点钉死为 True。"""
+
+    SRC = textwrap.dedent("""
+        def kernel(stage, use_sfa_byte_offset=False, use_split_scale=False, other=0):
+            if use_sfa_byte_offset:
+                base = 1
+            elif use_split_scale:
+                base = 2
+            else:
+                base = 3
+            return base
+
+        def caller():
+            return kernel(1, use_sfa_byte_offset=True)
+    """)
+
+    def test_pinned_sibling_shadows_later_arm(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = pathlib.Path(d)
+            (root / 'k.py').write_text(self.SRC)
+            hits = m.shadowed_arms(root / 'k.py', ast.parse(self.SRC))
+        self.assertEqual([(h['flag'], h['shadowed_by']) for h in hits],
+                         [('use_split_scale', 'use_sfa_byte_offset')], hits)
+
+    def test_false_at_any_call_site_keeps_arm_alive(self):
+        src = self.SRC + textwrap.dedent("""
+        def caller2():
+            return kernel(1, use_sfa_byte_offset=False)
+        """)
+        with tempfile.TemporaryDirectory() as d:
+            root = pathlib.Path(d)
+            (root / 'k.py').write_text(src)
+            hits = m.shadowed_arms(root / 'k.py', ast.parse(src))
+        self.assertEqual(hits, [])
+
+    def test_computed_value_keeps_arm_alive(self):
+        src = self.SRC + textwrap.dedent("""
+        def caller3(bias):
+            has = bias is not None
+            return kernel(1, use_sfa_byte_offset=has)
+        """)
+        with tempfile.TemporaryDirectory() as d:
+            root = pathlib.Path(d)
+            (root / 'k.py').write_text(src)
+            hits = m.shadowed_arms(root / 'k.py', ast.parse(src))
+        self.assertEqual(hits, [], "a bare name may be False at runtime")
+
+    def test_forwarding_call_is_not_a_decision(self):
+        src = self.SRC + textwrap.dedent("""
+        def mid(use_sfa_byte_offset=False):
+            return kernel(1, use_sfa_byte_offset=use_sfa_byte_offset)
+
+        def caller():
+            return mid(use_sfa_byte_offset=True)
+        """)
+        with tempfile.TemporaryDirectory() as d:
+            root = pathlib.Path(d)
+            (root / 'k.py').write_text(src)
+            hits = m.shadowed_arms(root / 'k.py', ast.parse(src))
+        # mid() forwards, so the only deciding call pins nothing at kernel();
+        # the arm is reported only because caller() pins it one hop up.
+        self.assertTrue(all(h['flag'] == 'use_split_scale' for h in hits), hits)
+
+
 class TestRealSnapshotsIfPresent(unittest.TestCase):
     """真实快照在我机器上时才跑；缺失就跳过，不让测试依赖网络。"""
 

@@ -1,0 +1,717 @@
+[
+ {
+  "flag": "enable_attn_logit_softcapping",
+  "mode": "mixed",
+  "reads_nontest": 44,
+  "consumers": [
+   [
+    "cpp/kernels/fmha_v2/setup.py",
+    4139,
+    "enumerate_hgmma_flash_warpspec_kernels"
+   ],
+   [
+    "cpp/kernels/fmha_v2/setup.py",
+    4307,
+    "enumerate_qgmma_flash_warpspec_kernels"
+   ]
+  ],
+  "indirect_producers": [],
+  "verdict": "FP_BUILD_TIME_FIELD",
+  "evidence": "cpp/kernels/fmha_v2/setup.py:2058",
+  "why": "kernel_spec.enable_attn_logit_softcapping: an attribute of the kernel spec, inlined into C++"
+ },
+ {
+  "flag": "enable_lm_head_tp_in_adp",
+  "mode": "never",
+  "reads_nontest": 97,
+  "consumers": [
+   [
+    "tensorrt_llm/mapping.py",
+    42,
+    "__init__"
+   ]
+  ],
+  "indirect_producers": [
+   [
+    "tests/unittest/_torch/modeling_v2/test_modeling_v2_routing.py",
+    391,
+    "dict-key",
+    "{**_layout(4, True, 1, 4), \"enable_lm_head_tp_in_adp\": True},"
+   ],
+   [
+    "tests/integration/defs/accuracy/test_disaggregated_serving.py",
+    2256,
+    "dict-key",
+    "\"enable_lm_head_tp_in_adp\": True,"
+   ],
+   [
+    "tests/integration/defs/accuracy/test_disaggregated_serving.py",
+    2844,
+    "dict-key",
+    "\"enable_lm_head_tp_in_adp\": False,"
+   ],
+   [
+    "tensorrt_llm/_torch/_experimental/modeling_v2/models/gpt_oss/routing.py",
+    95,
+    "getattr",
+    "lm_head_tp_in_adp = bool(getattr(mapping, \"enable_lm_head_tp_in_adp\", False))"
+   ],
+   [
+    "tensorrt_llm/_torch/_experimental/modeling_v2/models/gpt_oss/gpt_oss_120b__sm_10x__default/modeling.py",
+    295,
+    "getattr",
+    "assert not getattr(m, \"enable_lm_head_tp_in_adp\", False), ("
+   ],
+   [
+    "tensorrt_llm/_torch/_experimental/modeling_v2/models/deepseek_v3/routing.py",
+    139,
+    "getattr",
+    "if getattr(mapping, \"enable_lm_head_tp_in_adp\", False):"
+   ]
+  ],
+  "verdict": "FP_POSITIONAL",
+  "evidence": "tensorrt_llm/mapping.py:633",
+  "why": "Mapping.copy-style constructor forwards it as a positional arg"
+ },
+ {
+  "flag": "enable_log",
+  "mode": "mixed",
+  "reads_nontest": 3,
+  "consumers": [
+   [
+    "tensorrt_llm/_torch/distributed/communicator.py",
+    1148,
+    "log_op"
+   ],
+   [
+    "tensorrt_llm/_torch/distributed/communicator.py",
+    1151,
+    "wrapper"
+   ]
+  ],
+  "indirect_producers": [],
+  "verdict": "INTERNAL_DECORATOR",
+  "evidence": "tensorrt_llm/_torch/distributed/communicator.py:1148",
+  "why": "log_op(func, enable_log=False): parameter of an internal decorator"
+ },
+ {
+  "flag": "enable_multi_cta",
+  "mode": "never",
+  "reads_nontest": 25,
+  "consumers": [
+   [
+    "tensorrt_llm/_torch/kernels/blackwell/top_k/filtered_top_k_varlen_util.py",
+    108,
+    "__init__"
+   ],
+   [
+    "tensorrt_llm/_torch/_experimental/modeling_v2/models/glm_moe_dsa/glm_5_2_nvfp4__sm_103__tep4/kernels/attention/filtered_top_k_varlen_util.py",
+    39,
+    "__init__"
+   ]
+  ],
+  "indirect_producers": [],
+  "verdict": "FP_SAME_FILE_CONSTRUCTOR",
+  "evidence": "tensorrt_llm/_torch/kernels/blackwell/top_k/filtered_top_k_decode_varlen.py:863",
+  "why": "constructed with enable_multi_cta=True and :910 with False in the same file"
+ },
+ {
+  "flag": "enable_r0",
+  "mode": "always",
+  "reads_nontest": 37,
+  "consumers": [
+   [
+    "tensorrt_llm/_torch/kernels/blackwell/top_k/gvr_topk_decode.py",
+    311,
+    "__init__"
+   ]
+  ],
+  "indirect_producers": [],
+  "verdict": "FP_SELF_ATTR",
+  "evidence": "tensorrt_llm/_torch/kernels/blackwell/top_k/gvr_topk_decode.py:513",
+  "why": "stored as self.enable_r0 then branched on via self."
+ },
+ {
+  "flag": "enable_rl_control_endpoints",
+  "mode": "never",
+  "reads_nontest": 16,
+  "consumers": [
+   [
+    "tensorrt_llm/serve/openai_server.py",
+    585,
+    "__init__"
+   ]
+  ],
+  "indirect_producers": [],
+  "verdict": "INTERNAL_DEPRECATED",
+  "evidence": "tensorrt_llm/serve/openai_server.py:606",
+  "why": "logs 'RL control endpoints are deprecated'; no CLI path in the snapshot sets it"
+ },
+ {
+  "flag": "enable_smem_cache",
+  "mode": "never",
+  "reads_nontest": 9,
+  "consumers": [
+   [
+    "tensorrt_llm/_torch/kernels/blackwell/top_k/gvr_topk_decode.py",
+    311,
+    "__init__"
+   ]
+  ],
+  "indirect_producers": [],
+  "verdict": "FP_SELF_ATTR",
+  "evidence": "tensorrt_llm/_torch/kernels/blackwell/top_k/gvr_topk_decode.py:396",
+  "why": "stored as self.enable_smem_cache then branched on via self."
+ },
+ {
+  "flag": "no_fire",
+  "mode": "never",
+  "reads_nontest": 10,
+  "consumers": [
+   [
+    "tensorrt_llm/_torch/moe/kernels/cutedsl_megamoe/helpers/flag_batch.py",
+    36,
+    "accumulate"
+   ],
+   [
+    "tensorrt_llm/_torch/moe/kernels/cutedsl_megamoe/helpers/flag_batch.py",
+    85,
+    "accumulate"
+   ]
+  ],
+  "indirect_producers": [],
+  "verdict": "FP_COMPUTED",
+  "evidence": "tensorrt_llm/_torch/moe/kernels/cutedsl_megamoe/kernel_src/rubin/inference/mega/block_scaled_swap_ab_fc12_epilogue.py:2025",
+  "why": "no_fire = not publish: a constexpr derived from the epilogue's publish flag"
+ },
+ {
+  "flag": "use_3rdparty_cache",
+  "mode": "never",
+  "reads_nontest": 2,
+  "consumers": [
+   [
+    "scripts/build_wheel.py",
+    950,
+    "main"
+   ]
+  ],
+  "indirect_producers": [],
+  "verdict": "BUILD_SCRIPT",
+  "evidence": "scripts/build_wheel.py:970",
+  "why": "no click flag in this snapshot; parameter only in build_wheel main()"
+ },
+ {
+  "flag": "use_batched_store",
+  "mode": "always",
+  "reads_nontest": 8,
+  "consumers": [
+   [
+    "tensorrt_llm/_torch/attention/kernels/blackwell/paged_mqa_logits/fp4_paged_mqa_logits.py",
+    518,
+    "__init__"
+   ]
+  ],
+  "indirect_producers": [],
+  "verdict": "FP_SELF_ATTR",
+  "evidence": "tensorrt_llm/_torch/attention/kernels/blackwell/paged_mqa_logits/fp4_paged_mqa_logits.py:611",
+  "why": "stored as self.use_batched_store, branched via self."
+ },
+ {
+  "flag": "use_bias_at_final",
+  "mode": "always",
+  "reads_nontest": 3,
+  "consumers": [
+   [
+    "tensorrt_llm/_torch/visual_gen/models/ltx23/ltx23_core/audio_vae/vocoder.py",
+    20,
+    "__init__"
+   ]
+  ],
+  "indirect_producers": [],
+  "verdict": "FP_CONFIG_DICT",
+  "evidence": "tensorrt_llm/_torch/visual_gen/models/ltx23/ltx23_core/audio_vae/vocoder.py:92",
+  "why": "kwargs = {key: cfg[key] ...} with \"use_bias_at_final\" in the whitelist"
+ },
+ {
+  "flag": "use_causal_mask",
+  "mode": "never",
+  "reads_nontest": 10,
+  "consumers": [
+   [
+    "tensorrt_llm/_torch/attention/backends/prims_ts/kernels/fmha_decode/block_sparse_prepare.py",
+    972,
+    "__init__"
+   ]
+  ],
+  "indirect_producers": [
+   [
+    "tensorrt_llm/_torch/attention/backends/prims_ts/_block_sparse/compiler.py",
+    92,
+    "dict-key",
+    "\"use_causal_mask\": key.mask_type == \"causal\","
+   ]
+  ],
+  "verdict": "FP_DICT_EXPANSION",
+  "evidence": "tensorrt_llm/_torch/attention/backends/prims_ts/_block_sparse/compiler.py:92",
+  "why": "\"use_causal_mask\": key.mask_type == \"causal\" then (**prepare_kwargs) at :106"
+ },
+ {
+  "flag": "use_ccache",
+  "mode": "never",
+  "reads_nontest": 8,
+  "consumers": [
+   [
+    "scripts/build_wheel.py",
+    950,
+    "main"
+   ]
+  ],
+  "indirect_producers": [],
+  "verdict": "BUILD_SCRIPT",
+  "evidence": "scripts/build_wheel.py:968",
+  "why": "CLI arg exists (--use_ccache at :1765) and main() receives it; build-script only"
+ },
+ {
+  "flag": "use_combine",
+  "mode": "always",
+  "reads_nontest": 22,
+  "consumers": [
+   [
+    "tensorrt_llm/_torch/modules/qwen4_exp/hyper_connection.py",
+    120,
+    "__init__"
+   ]
+  ],
+  "indirect_producers": [],
+  "verdict": "FP_SAME_FILE_CONSTRUCTOR",
+  "evidence": "tensorrt_llm/_torch/models/modeling_qwen4_exp.py:253",
+  "why": "HyperConnection constructed with use_combine=True/False in the model file"
+ },
+ {
+  "flag": "use_count_native_expert_metadata",
+  "mode": "never",
+  "reads_nontest": 13,
+  "consumers": [
+   [
+    "tensorrt_llm/_torch/moe/fused_moe/cutedsl/grouped_gemm/nvfp4.py",
+    356,
+    "run_moe_nvfp4_impl"
+   ]
+  ],
+  "indirect_producers": [],
+  "verdict": "FP_SAME_FILE_CONSTRUCTOR",
+  "evidence": "tensorrt_llm/_torch/moe/fused_moe/cutedsl/runners.py:297",
+  "why": "runner passes use_count_native_expert_metadata=True"
+ },
+ {
+  "flag": "use_custom_cublas_mm",
+  "mode": "never",
+  "reads_nontest": 107,
+  "consumers": [
+   [
+    "tensorrt_llm/_torch/modules/megamoe_shared_mlp.py",
+    75,
+    "__init__"
+   ]
+  ],
+  "indirect_producers": [
+   [
+    "tensorrt_llm/_torch/_experimental/modeling_v2/models/minimax_m3/minimax_m3_nvfp4__sm_107__tp2/ops/gemm/m3_ugpu_head.py",
+    88,
+    "getattr",
+    "or getattr(lm_head, \"use_custom_cublas_mm\", False)"
+   ],
+   [
+    "tensorrt_llm/_torch/_experimental/modeling_v2/models/glm_moe_dsa/glm_5_2_nvfp4__sm_103__tp8/kernels/attention_output_tail/tail.py",
+    152,
+    "getattr",
+    "getattr(o_proj, \"use_custom_cublas_mm\", False)"
+   ],
+   [
+    "tensorrt_llm/_torch/_experimental/modeling_v2/models/glm_moe_dsa/glm_5_2_nvfp4__sm_107__tp16/_mtp.py",
+    332,
+    "getattr",
+    "use_custom_cublas_mm=getattr(lm_head, \"use_custom_cublas_mm\", False),"
+   ],
+   [
+    "tensorrt_llm/_torch/models/modeling_utils.py",
+    670,
+    "getattr",
+    "use_custom_cublas_mm=getattr(model, 'use_custom_cublas_mm',"
+   ],
+   [
+    "tensorrt_llm/_torch/models/modeling_speculative.py",
+    1481,
+    "getattr",
+    "use_custom_cublas_mm=getattr(lm_head, \"use_custom_cublas_mm\","
+   ],
+   [
+    "tensorrt_llm/_torch/modules/linear.py",
+    2495,
+    "getattr",
+    "if getattr(module, \"use_custom_cublas_mm\", False):"
+   ]
+  ],
+  "verdict": "FP_GETATTR",
+  "evidence": "tensorrt_llm/_torch/models/modeling_utils.py:670",
+  "why": "getattr(model, 'use_custom_cublas_mm', ...) threads the value from the module"
+ },
+ {
+  "flag": "use_direct_expert_metadata",
+  "mode": "never",
+  "reads_nontest": 17,
+  "consumers": [
+   [
+    "tensorrt_llm/_torch/moe/fused_moe/communication/deep_ep_low_latency.py",
+    201,
+    "dispatch"
+   ]
+  ],
+  "indirect_producers": [],
+  "verdict": "FP_DICT_KEY",
+  "evidence": "tensorrt_llm/_torch/moe/fused_moe/moe_scheduler.py:666",
+  "why": "dispatch_kwargs[\"use_direct_expert_metadata\"] = use_deep_ep_direct_metadata"
+ },
+ {
+  "flag": "use_direct_split_k_reduce",
+  "mode": "never",
+  "reads_nontest": 10,
+  "consumers": [
+   [
+    "tensorrt_llm/_torch/kernels/blackwell/dense_gemm_persistent.py",
+    200,
+    "__init__"
+   ]
+  ],
+  "indirect_producers": [],
+  "verdict": "FP_SAME_FILE_CONSTRUCTOR",
+  "evidence": "tensorrt_llm/_torch/kernels/rubin/dense_bf16_gemm_persistent.py:97",
+  "why": "Rubin variant constructs the kernel with use_direct_split_k_reduce=True"
+ },
+ {
+  "flag": "use_environ",
+  "mode": "never",
+  "reads_nontest": 3,
+  "consumers": [
+   [
+    "tensorrt_llm/bench/utils/__init__.py",
+    125,
+    "run_process"
+   ]
+  ],
+  "indirect_producers": [],
+  "verdict": "PRIVATE_HELPER",
+  "evidence": "tensorrt_llm/bench/utils/__init__.py:146",
+  "why": "run_process(...) private helper; callers pass env= directly"
+ },
+ {
+  "flag": "use_fp8_kv_cache",
+  "mode": "never",
+  "reads_nontest": 5,
+  "consumers": [
+   [
+    "tensorrt_llm/quantization/mode.py",
+    256,
+    "from_description"
+   ]
+  ],
+  "indirect_producers": [],
+  "verdict": "INTERNAL_TELEMETRY",
+  "evidence": "tensorrt_llm/quantization/mode.py:285",
+  "why": "QuantMode.from_description internal helper; same matrix as use_int8_kv_cache"
+ },
+ {
+  "flag": "use_gemm_woq_plugin",
+  "mode": "never",
+  "reads_nontest": 2,
+  "consumers": [
+   [
+    "tensorrt_llm/models/convert_utils.py",
+    502,
+    "get_tllm_linear_weight"
+   ]
+  ],
+  "indirect_producers": [],
+  "verdict": "DEAD_CODE",
+  "evidence": "tensorrt_llm/models/convert_utils.py:502",
+  "why": "same function as use_weight_only: a parameter of an uncalled converter helper"
+ },
+ {
+  "flag": "use_gemma_rms_norm",
+  "mode": "never",
+  "reads_nontest": 14,
+  "consumers": [
+   [
+    "tensorrt_llm/_torch/attention/qk_norm_attention.py",
+    151,
+    "__init__"
+   ]
+  ],
+  "indirect_producers": [
+   [
+    "tensorrt_llm/_torch/_experimental/modeling_v2/models/kimi_k3_vl/kimi_k3_mxfp4__sm_100__tp16_moetp16ep1/modeling.py",
+    2811,
+    "getattr",
+    "and not getattr(attn, \"use_gemma_rms_norm\", True)"
+   ],
+   [
+    "tensorrt_llm/_torch/_experimental/modeling_v2/models/kimi_k3_vl/kimi_k3_mxfp4__sm_100__tp16_moetp4ep4/modeling.py",
+    2901,
+    "getattr",
+    "and not getattr(attn, \"use_gemma_rms_norm\", True)"
+   ]
+  ],
+  "verdict": "FP_GETATTR",
+  "evidence": "tensorrt_llm/_torch/_experimental/modeling_v2/models/kimi_k3_vl/kimi_k3_mxfp4__sm_100__tp16_moetp16ep1/modeling.py:2811",
+  "why": "getattr(attn, \"use_gemma_rms_norm\", True) reads it off the attention module"
+ },
+ {
+  "flag": "use_graph_tensor_cores",
+  "mode": "mixed",
+  "reads_nontest": 16,
+  "consumers": [
+   [
+    "tensorrt_llm/_torch/attention/backends/flashinfer.py",
+    2074,
+    "_use_tensor_cores"
+   ]
+  ],
+  "indirect_producers": [],
+  "verdict": "FP_COMPUTED",
+  "evidence": "tensorrt_llm/_torch/attention/backends/flashinfer.py:2262",
+  "why": "computed as self.is_cuda_graph and head_dim > 128, then passed internally"
+ },
+ {
+  "flag": "use_int8_kv_cache",
+  "mode": "never",
+  "reads_nontest": 4,
+  "consumers": [
+   [
+    "tensorrt_llm/quantization/mode.py",
+    256,
+    "from_description"
+   ]
+  ],
+  "indirect_producers": [],
+  "verdict": "INTERNAL_TELEMETRY",
+  "evidence": "tensorrt_llm/quantization/mode.py:285",
+  "why": "QuantMode.from_description internal helper; the user-facing path is the quant mode flags"
+ },
+ {
+  "flag": "use_int8_woq_per_channel",
+  "mode": "never",
+  "reads_nontest": 17,
+  "consumers": [
+   [
+    "tensorrt_llm/_torch/custom_ops/torch_custom_ops.py",
+    417,
+    "_"
+   ]
+  ],
+  "indirect_producers": [],
+  "verdict": "FP_SAME_FILE_CONSTRUCTOR",
+  "evidence": "tensorrt_llm/_torch/moe/fused_moe/cutlass/w8a16.py:38",
+  "why": "FusedMoeOpFlags(use_int8_woq_per_channel=True) at the op-flag table"
+ },
+ {
+  "flag": "use_last_number",
+  "mode": "always",
+  "reads_nontest": 3,
+  "consumers": [
+   [
+    "tensorrt_llm/scaffolding/contrib/Dynasor/evaluator.py",
+    416,
+    "extract_answer"
+   ]
+  ],
+  "indirect_producers": [],
+  "verdict": "DEAD_CODE",
+  "evidence": "tensorrt_llm/scaffolding/contrib/Dynasor/evaluator.py:416",
+  "why": "extract_answer has zero callers in the whole snapshot; Dynasor is not imported anywhere"
+ },
+ {
+  "flag": "use_locality_domain",
+  "mode": "always",
+  "reads_nontest": 24,
+  "consumers": [
+   [
+    "tensorrt_llm/_torch/locality_domain_utils.py",
+    260,
+    "optional_locality_domain_mem_pool"
+   ]
+  ],
+  "indirect_producers": [],
+  "verdict": "FP_SELF_ATTR",
+  "evidence": "tensorrt_llm/_torch/modules/linear.py:4731",
+  "why": "use_locality_domain = self.partition_plan.enabled (computed from runtime state)"
+ },
+ {
+  "flag": "use_lower_bound",
+  "mode": "mixed",
+  "reads_nontest": 13,
+  "consumers": [
+   [
+    "tensorrt_llm/_torch/_experimental/modeling_v2/models/kimi_k3_vl/ops/ssm/kda_decode.py",
+    118,
+    "reference"
+   ]
+  ],
+  "indirect_producers": [],
+  "verdict": "FP_SELF_ATTR",
+  "evidence": "tensorrt_llm/_torch/_experimental/modeling_v2/models/kimi_k3_vl/ops/ssm/kda_decode.py:110",
+  "why": "threaded through the kernel signature and stored, branched via the stored value"
+ },
+ {
+  "flag": "use_mix",
+  "mode": "always",
+  "reads_nontest": 92,
+  "consumers": [
+   [
+    "tensorrt_llm/_torch/modules/qwen4_exp/hyper_connection.py",
+    120,
+    "__init__"
+   ]
+  ],
+  "indirect_producers": [],
+  "verdict": "FP_SAME_FILE_CONSTRUCTOR",
+  "evidence": "tensorrt_llm/_torch/models/modeling_qwen4_exp.py:252",
+  "why": "HyperConnection constructed with use_mix=True in the model file"
+ },
+ {
+  "flag": "use_paged_kv",
+  "mode": "never",
+  "reads_nontest": 101,
+  "consumers": [
+   [
+    "tensorrt_llm/_torch/attention/backends/prims_ts/kernels/fmha_context/fmha_kernel.py",
+    2769,
+    "__init__"
+   ]
+  ],
+  "indirect_producers": [
+   [
+    "tensorrt_llm/_torch/attention/backends/prims_ts/context.py",
+    298,
+    "dict-key",
+    "\"use_paged_kv\": True,"
+   ]
+  ],
+  "verdict": "FP_CONFIG_OBJECT",
+  "evidence": "tensorrt_llm/_torch/attention/backends/prims_ts/kernels/fmha_decode/fmha_decode_config.py:4529",
+  "why": "cfg.use_paged_kv = True assigned on the compiled config object"
+ },
+ {
+  "flag": "use_replay_state_update",
+  "mode": "never",
+  "reads_nontest": 84,
+  "consumers": [
+   [
+    "tensorrt_llm/_torch/attention/backends/sparse/glm_kpool/cache_manager.py",
+    66,
+    "__init__"
+   ],
+   [
+    "tensorrt_llm/_torch/pyexecutor/kv_cache/mamba_cache_manager/legacy.py",
+    1601,
+    "__init__"
+   ],
+   [
+    "tensorrt_llm/_torch/modules/kimi_kda/cache_manager.py",
+    937,
+    "__init__"
+   ]
+  ],
+  "indirect_producers": [],
+  "verdict": "FP_EXPLICIT_NONE",
+  "evidence": "tensorrt_llm/_torch/pyexecutor/_util.py:3998",
+  "why": "passed explicitly as use_replay_state_update=None (a sentinel, still a producer)"
+ },
+ {
+  "flag": "use_split_scale_stages",
+  "mode": "never",
+  "reads_nontest": 6,
+  "consumers": [
+   [
+    "tensorrt_llm/_torch/attention/backends/fp4_mla/fp4_mla_cutedsl_mufu16_fused_v_transpose.py",
+    2934,
+    "_issue_mxf4nvf4_mma_tile_from_base"
+   ],
+   [
+    "tensorrt_llm/_torch/attention/backends/fp4_mla/fp4_mla_cutedsl_mufu16.py",
+    2552,
+    "_issue_mxf4nvf4_mma_tile_from_base"
+   ]
+  ],
+  "indirect_producers": [],
+  "verdict": "LIVE_DEFECT",
+  "evidence": "tensorrt_llm/_torch/attention/backends/fp4_mla/fp4_mla_cutedsl_mufu16.py:2588",
+  "why": "sibling constexprs passed at :3066-3069, this one never passed; both elif unreachable"
+ },
+ {
+  "flag": "use_system_prompt",
+  "mode": "never",
+  "reads_nontest": 97,
+  "consumers": [
+   [
+    "tensorrt_llm/_torch/visual_gen/models/cosmos3/pipeline_cosmos3.py",
+    1205,
+    "_tokenize_prompt"
+   ]
+  ],
+  "indirect_producers": [
+   [
+    "tests/unittest/_torch/visual_gen/test_cosmos3_distilled.py",
+    1100,
+    "dict-key",
+    "pipeline, {\"output_type\": \"video\", \"use_system_prompt\": False}"
+   ],
+   [
+    "tests/unittest/_torch/visual_gen/test_cosmos3_distilled.py",
+    1455,
+    "dict-key",
+    "merged = self._merged_extra_params({\"video\": b\"fake\", \"use_system_prompt\": False"
+   ],
+   [
+    "tensorrt_llm/_torch/visual_gen/models/cosmos3/defaults.py",
+    732,
+    "dict-key",
+    "\"use_system_prompt\": ExtraParamSchema("
+   ]
+  ],
+  "verdict": "FP_CONFIG_DICT",
+  "evidence": "tensorrt_llm/_torch/visual_gen/models/cosmos3/pipeline_cosmos3.py:1079",
+  "why": "extra_params.get(\"use_system_prompt\") -> request field -> _tokenize_prompt"
+ },
+ {
+  "flag": "use_system_resolver",
+  "mode": "always",
+  "reads_nontest": 13,
+  "consumers": [
+   [
+    "scripts/attribution/scan/map_dependencies.py",
+    36,
+    "__init__"
+   ]
+  ],
+  "indirect_producers": [],
+  "verdict": "INTERNAL_SCRIPT",
+  "evidence": "scripts/attribution/scan/map_dependencies.py:147",
+  "why": "only used inside the attribution script; every pass is os-scanner internal"
+ },
+ {
+  "flag": "use_weight_only",
+  "mode": "never",
+  "reads_nontest": 12,
+  "consumers": [
+   [
+    "tensorrt_llm/models/convert_utils.py",
+    502,
+    "get_tllm_linear_weight"
+   ]
+  ],
+  "indirect_producers": [],
+  "verdict": "DEAD_CODE",
+  "evidence": "tensorrt_llm/models/convert_utils.py:502",
+  "why": "get_tllm_linear_weight has zero callers; the legacy TRT converter path is gone"
+ }
+]
