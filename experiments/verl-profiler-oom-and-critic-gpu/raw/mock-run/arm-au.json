@@ -1,0 +1,43 @@
+{
+ "arm": "au",
+ "deps": {
+  "model": true,
+  "msprobe_config": true,
+  "test_file": true,
+  "train_file": true,
+  "trl_target": true
+ },
+ "dump_file_count": 3,
+ "dump_files": [
+  {
+   "path": "step_1/actor_update/step0/rank0/construct.json",
+   "size": 2
+  },
+  {
+   "path": "step_1/actor_update/step0/rank0/dump.json",
+   "size": 7
+  },
+  {
+   "path": "step_1/actor_update/step0/rank0/stack.json",
+   "size": 7
+  }
+ ],
+ "end_utc": "2026-11-04T17:04:11Z",
+ "exit_code": 0,
+ "fa2": {
+  "flash_attention_2_left": 0,
+  "model_py_sha256": "61c238723aa927ff120e797b4db21ab824fd712c3b345ad093b1ee5dff5a6798",
+  "state": "patched-now"
+ },
+ "gpu": "4",
+ "log": "/tmp/m5-wrap-out/run-au.log",
+ "log_bytes": 244,
+ "prof": "/tmp/m5-wrap-out/prof-au",
+ "src": "/tmp/m5-wrap-fake/src",
+ "stages": "[actor_update]",
+ "start_utc": "2026-11-04T17:04:11Z",
+ "steps_seen": 2,
+ "train_batch_warnings": 2,
+ "unknown_stage_warnings": 2,
+ "update_critic_occurrences": 2
+}

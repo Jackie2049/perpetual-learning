@@ -1,0 +1,115 @@
+{
+ "apply": {
+  "action": "apply",
+  "anchor_lines": [],
+  "anchors_in_block": 0,
+  "anchors_outside_block": 0,
+  "block": [
+   467,
+   510
+  ],
+  "file": "/tmp/m5-real-tree/verl/utils/model.py",
+  "func_count": 1,
+  "impl": "sdpa",
+  "impl_in_block": 2,
+  "impl_lines": [
+   475,
+   500
+  ],
+  "lines_rewritten": 2,
+  "pre": {
+   "anchor_lines": [
+    475,
+    500
+   ],
+   "anchors_in_block": 2,
+   "impl_in_block": 0
+  },
+  "sha256_after": "61c238723aa927ff120e797b4db21ab824fd712c3b345ad093b1ee5dff5a6798",
+  "sha256_before": "a13d8595499da87abee759fb5d5a31b5e70327c6c0523d49c86798832670d78f",
+  "state": "patched"
+ },
+ "check_after_revert": {
+  "action": "check",
+  "anchor_lines": [
+   475,
+   500
+  ],
+  "anchors_in_block": 2,
+  "anchors_outside_block": 0,
+  "block": [
+   467,
+   510
+  ],
+  "file": "/tmp/m5-real-tree/verl/utils/model.py",
+  "func_count": 1,
+  "impl": "sdpa",
+  "impl_in_block": 0,
+  "impl_lines": [],
+  "sha256_after": "a13d8595499da87abee759fb5d5a31b5e70327c6c0523d49c86798832670d78f",
+  "sha256_before": "a13d8595499da87abee759fb5d5a31b5e70327c6c0523d49c86798832670d78f",
+  "state": "unpatched"
+ },
+ "check_unpatched": {
+  "action": "check",
+  "anchor_lines": [
+   475,
+   500
+  ],
+  "anchors_in_block": 2,
+  "anchors_outside_block": 0,
+  "block": [
+   467,
+   510
+  ],
+  "file": "/tmp/m5-real-tree/verl/utils/model.py",
+  "func_count": 1,
+  "impl": "sdpa",
+  "impl_in_block": 0,
+  "impl_lines": [],
+  "sha256_after": "a13d8595499da87abee759fb5d5a31b5e70327c6c0523d49c86798832670d78f",
+  "sha256_before": "a13d8595499da87abee759fb5d5a31b5e70327c6c0523d49c86798832670d78f",
+  "state": "unpatched"
+ },
+ "exit_codes": {
+  "apply": 0,
+  "check_after_revert": 1,
+  "check_unpatched": 1,
+  "revert": 0
+ },
+ "revert": {
+  "action": "revert",
+  "anchor_lines": [
+   475,
+   500
+  ],
+  "anchors_in_block": 2,
+  "anchors_outside_block": 0,
+  "block": [
+   467,
+   510
+  ],
+  "file": "/tmp/m5-real-tree/verl/utils/model.py",
+  "func_count": 1,
+  "impl": "sdpa",
+  "impl_in_block": 0,
+  "impl_lines": [],
+  "lines_rewritten": 2,
+  "pre": {
+   "anchor_lines": [],
+   "anchors_in_block": 0,
+   "impl_in_block": 2
+  },
+  "sha256_after": "a13d8595499da87abee759fb5d5a31b5e70327c6c0523d49c86798832670d78f",
+  "sha256_before": "61c238723aa927ff120e797b4db21ab824fd712c3b345ad093b1ee5dff5a6798",
+  "state": "unpatched"
+ },
+ "upstream": {
+  "commit": "3fdf2b548882",
+  "fetched_at_utc": "2026-11-04T16:59Z",
+  "fetched_via": "raw.githubusercontent.com (read-only)",
+  "file": "verl/utils/model.py",
+  "repo": "verl-project/verl",
+  "sha256": "a13d8595499da87abee759fb5d5a31b5e70327c6c0523d49c86798832670d78f"
+ }
+}

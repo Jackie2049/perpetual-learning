@@ -6,26 +6,39 @@
 #   cu  stages=[critic_update]   whitelisted, no decorator anywhere -> expect NO dump
 #   cv  stages=[compute_values]  whitelisted, no decorator anywhere -> expect NO dump
 #
-# The run is PPO with a real critic (adv_estimator=gae, critic.enable auto-true,
-# critic.model.path set), so "critic_update collected nothing" cannot be explained by
+# The run is PPO with a real critic (adv_estimator=gae + critic.enable=True +
+# critic.model.path), so "critic_update collected nothing" cannot be explained by
 # "this run had no critic".
 #
 # Also counts the `Unknown precision_debugger stage: train_batch` warnings: the critic
-# trains through TrainingWorker.train_batch, whose decorator role is not in the
-# whitelist, which warns on every call regardless of the user's stage list.
+# trains through TrainingWorker.train_batch, whose decorator role is not in the whitelist,
+# which warns on every call regardless of the user's stage list.
+#
+# Window guards (each of these kills a run in the first minutes otherwise):
+#   1. load_valuehead_model hardcodes attn_implementation="flash_attention_2" and this box
+#      has no flash-attn -> the tree is site-patched to "sdpa" by patch-critic-sdpa.py
+#      (idempotent; AUTO_PATCH=1 applies it, AUTO_PATCH=0 aborts instead of mutating).
+#   2. msprobe + trl live in /tmp --target dirs and /home is full -> preflight checks them.
+#
+# Output: the training log, plus `arm-<ARM>.json` -- machine-readable (exit code, dump
+# inventory with sizes, warning counts, step counts, tree patch state, dependency presence)
+# and written even when the run fails. verify-critic-pdbg.py judges that JSON, so no number
+# reaches the archive by hand.
 #
 # msprobe + its matplotlib deps live in /tmp/m5-msprobe-target, trl (value head, needed by
 # verl's FSDP critic) in /tmp/m5-trl-0.27.0 (PYTHONPATH only; the shared venv is untouched).
-# Local tree adaptation: load_valuehead_model hardcodes attn_implementation="flash_attention_2"
-# (not installed here) -> patched to "sdpa" in this tree only. Recorded in the README.
 set -uo pipefail
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 SRC=${SRC:-/tmp/m5-main-smoke/verl}
 ARM=${ARM:-cu}
 G=${G:-4}
 OUT=${OUT:-/tmp/m5-pdbg-critic}
+AUTO_PATCH=${AUTO_PATCH:-1}
 PROF=$OUT/prof-$ARM
 LOG=$OUT/run-$ARM.log
+ARM_JSON=$OUT/arm-$ARM.json
 rm -rf "$PROF"
+mkdir -p "$OUT"
 
 export PATH=/home/zxw/venvs/rollout-g8/bin:$PATH
 export PYTHONPATH=${MSPROBE_TARGET:-/tmp/m5-msprobe-target}:${TRL_TARGET:-/tmp/m5-trl-0.27.0}
@@ -40,9 +53,9 @@ export NCCL_SHM_DISABLE=0
 export RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1
 export RAY_TMPDIR=/tmp/ray-pdbg-critic-$ARM
 
-export MODEL_PATH=/home/zxw/models/Qwen2.5-0.5B-Instruct
-export TRAIN_FILE=/home/zxw/data/gsm8k/train_sub480.parquet
-export TEST_FILE=/home/zxw/data/gsm8k/test_sub120.parquet
+export MODEL_PATH=${MODEL_PATH:-/home/zxw/models/Qwen2.5-0.5B-Instruct}
+export TRAIN_FILE=${TRAIN_FILE:-/home/zxw/data/gsm8k/train_sub480.parquet}
+export TEST_FILE=${TEST_FILE:-/home/zxw/data/gsm8k/test_sub120.parquet}
 export NGPUS_PER_NODE=1
 export TRAIN_BATCH_SIZE=8
 export PPO_MINI_BATCH_SIZE=8
@@ -59,6 +72,8 @@ export TEST_FREQ=1000
 export PROJECT_NAME=m5_pdbg_critic
 export EXPERIMENT_NAME=pdbg_critic_$ARM
 
+export MSPROBE_CONFIG=${MSPROBE_CONFIG:-/tmp/m5-msprobe/config.json}
+
 case "$ARM" in
   au) STAGES="[actor_update]" ;;
   cu) STAGES="[critic_update]" ;;
@@ -66,11 +81,43 @@ case "$ARM" in
   *) echo "unknown ARM=$ARM" >&2; exit 64 ;;
 esac
 
+# --- preflight: every item below aborts the run in its first minutes, so check in seconds
+for dep in "$SRC/verl/utils/model.py" "${PYTHONPATH%%:*}" "${PYTHONPATH##*:}" \
+           "$MSPROBE_CONFIG" "$MODEL_PATH" "$TRAIN_FILE" "$TEST_FILE"; do
+  if [ ! -e "$dep" ]; then
+    echo "[preflight] MISSING: $dep" >&2
+    echo "[preflight] /tmp --target dirs and datasets do not survive a host cleanup -> reinstall before spending a window" >&2
+    exit 65
+  fi
+done
+
+python3 "$SCRIPT_DIR/patch-critic-sdpa.py" --tree "$SRC" --check >/dev/null 2>&1
+FA2_RC=$?
+case $FA2_RC in
+  0) FA2_STATE=already-patched ;;
+  1)
+    if [ "$AUTO_PATCH" = "1" ]; then
+      echo "[preflight] value-head attn_implementation is still flash_attention_2 -> site patching to sdpa"
+      if ! python3 "$SCRIPT_DIR/patch-critic-sdpa.py" --tree "$SRC"; then
+        echo "[preflight] site patch failed -> abort before touching the GPU" >&2
+        exit 65
+      fi
+      FA2_STATE=patched-now
+    else
+      echo "[preflight] tree is not sdpa-patched and AUTO_PATCH=0" >&2
+      echo "[preflight] the critic will die in load_valuehead_model (no flash-attn on this box)" >&2
+      exit 65
+    fi ;;
+  *)
+    echo "[preflight] patch-critic-sdpa.py --check rc=$FA2_RC (anchor shape changed?) -> inspect verl/utils/model.py by hand" >&2
+    exit 65 ;;
+esac
+
 EXTRA=(
   "global_profiler.tool=precision_debugger"
   "global_profiler.steps=[1]"
   "global_profiler.save_path=$PROF"
-  "global_profiler.global_tool_config.precision_debugger.config_path=/tmp/m5-msprobe/config.json"
+  "global_profiler.global_tool_config.precision_debugger.config_path=$MSPROBE_CONFIG"
   "global_profiler.global_tool_config.precision_debugger.stages=$STAGES"
   "global_profiler.global_tool_config.precision_debugger.strict=False"
   "actor_rollout_ref.actor.profiler.enable=True"
@@ -87,7 +134,8 @@ EXTRA=(
   "++transfer_queue.backend.SimpleStorage.total_storage_size=100000"
 )
 
-echo "=== pdbg-critic arm=$ARM stages=$STAGES src=$SRC gpu=$G prof=$PROF start $(date -u +%FT%TZ) ==="
+START=$(date -u +%FT%TZ)
+echo "=== pdbg-critic arm=$ARM stages=$STAGES src=$SRC gpu=$G prof=$PROF fa2=$FA2_STATE start $START ==="
 bash examples/grpo_trainer/run_qwen3_4b_fsdp.sh \
   "${EXTRA[@]}" \
   "actor_rollout_ref.actor.fsdp_config.model_dtype=bf16" \
@@ -98,12 +146,78 @@ bash examples/grpo_trainer/run_qwen3_4b_fsdp.sh \
   'trainer.logger=["console"]' \
   "trainer.default_local_dir=$OUT/ckpt-$ARM" > "$LOG" 2>&1
 RC=$?
-echo "=== pdbg-critic arm=$ARM exit=$RC end $(date -u +%FT%TZ) ==="
+END=$(date -u +%FT%TZ)
+echo "=== pdbg-critic arm=$ARM exit=$RC end $END ==="
 echo "--- dump tree ---"
 find "$PROF" -maxdepth 5 2>/dev/null | head -30
 echo "--- counts ---"
 echo "unknown_stage_warnings=$(grep -c 'Unknown precision_debugger stage' "$LOG" 2>/dev/null)"
 echo "train_batch_warnings=$(grep -c 'Unknown precision_debugger stage: train_batch' "$LOG" 2>/dev/null)"
 echo "critic_steps=$(grep -c 'update_critic' "$LOG" 2>/dev/null)"
+
+# --- machine-readable arm summary -------------------------------------------------------
+M5_ARM=$ARM M5_STAGES=$STAGES M5_RC=$RC M5_SRC=$SRC M5_G=$G M5_PROF=$PROF M5_LOG=$LOG \
+M5_FA2_STATE=$FA2_STATE M5_START=$START M5_END=$END M5_MSPROBE_CONFIG=$MSPROBE_CONFIG \
+M5_MODEL_PATH=$MODEL_PATH M5_TRAIN_FILE=$TRAIN_FILE M5_TEST_FILE=$TEST_FILE \
+M5_TRL=${TRL_TARGET:-/tmp/m5-trl-0.27.0} \
+python3 - > "$ARM_JSON.tmp" <<'PY'
+import hashlib
+import json
+import os
+import re
+import sys
+from pathlib import Path
+
+E = os.environ
+prof = Path(E["M5_PROF"])
+log = Path(E["M5_LOG"])
+dumps = []
+if prof.is_dir():
+    for p in sorted(prof.rglob("*")):
+        if p.is_file():
+            dumps.append({"path": str(p.relative_to(prof)), "size": p.stat().st_size})
+
+text = log.read_text(errors="replace") if log.is_file() else ""
+steps = [int(m.group(1)) for m in re.finditer(r"^step:(\d+)", text, re.M)]
+model_py = Path(E["M5_SRC"]) / "verl" / "utils" / "model.py"
+model_text = model_py.read_text() if model_py.is_file() else None
+
+out = {
+    "arm": E["M5_ARM"],
+    "stages": E["M5_STAGES"],
+    "src": E["M5_SRC"],
+    "gpu": E["M5_G"],
+    "prof": E["M5_PROF"],
+    "log": E["M5_LOG"],
+    "log_bytes": len(text),
+    "start_utc": E["M5_START"],
+    "end_utc": E["M5_END"],
+    "exit_code": int(E["M5_RC"]),
+    "steps_seen": max(steps) if steps else 0,
+    "update_critic_occurrences": text.count("update_critic"),
+    "unknown_stage_warnings": text.count("Unknown precision_debugger stage"),
+    "train_batch_warnings": text.count("Unknown precision_debugger stage: train_batch"),
+    "dump_file_count": len(dumps),
+    "dump_files": dumps,
+    "fa2": {
+        "state": E["M5_FA2_STATE"],
+        "model_py_sha256": hashlib.sha256(model_text.encode()).hexdigest() if model_text is not None else None,
+        "flash_attention_2_left": (model_text.count('attn_implementation="flash_attention_2"')
+                                   if model_text is not None else None),
+    },
+    "deps": {
+        "msprobe_config": os.path.exists(E["M5_MSPROBE_CONFIG"]),
+        "trl_target": os.path.exists(E["M5_TRL"]),
+        "model": os.path.exists(E["M5_MODEL_PATH"]),
+        "train_file": os.path.exists(E["M5_TRAIN_FILE"]),
+        "test_file": os.path.exists(E["M5_TEST_FILE"]),
+    },
+}
+json.dump(out, sys.stdout, indent=1, sort_keys=True)
+sys.stdout.write("\n")
+PY
+mv "$ARM_JSON.tmp" "$ARM_JSON"
+echo "arm_summary=$ARM_JSON"
+
 rm -rf "$OUT/ckpt-$ARM"
 exit $RC

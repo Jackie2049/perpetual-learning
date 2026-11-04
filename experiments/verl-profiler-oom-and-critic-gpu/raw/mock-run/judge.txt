@@ -1,0 +1,25 @@
+  [ ok ] arms_present: 3/3
+  [ ok ] V1:au:exit0: exit_code=0
+  [ ok ] V2:au:steps: steps_seen=2 (need >= 2)
+  [ ok ] V4:au:sdpa_patch: flash_attention_2_left=0
+  [ ok ] V1:cu:exit0: exit_code=0
+  [ ok ] V2:cu:steps: steps_seen=2 (need >= 2)
+  [ ok ] V4:cu:sdpa_patch: flash_attention_2_left=0
+  [ ok ] V1:cv:exit0: exit_code=0
+  [ ok ] V2:cv:steps: steps_seen=2 (need >= 2)
+  [ ok ] V4:cv:sdpa_patch: flash_attention_2_left=0
+  [ ok ] V3:cu:critic_ran: update_critic_occurrences=2
+  [ ok ] V3:cv:critic_ran: update_critic_occurrences=2
+  [ ok ] P1:au_dump_present: 3 file(s) under step_*/actor_update/ of 3 total
+  [ ok ] P1:au_expected_names: names=['construct.json', 'dump.json', 'stack.json']
+  [ ok ] P2:cu_no_dump: 0 dump file(s)
+  [ ok ] P3:cv_no_dump: 0 dump file(s)
+  -- reported, not gated --
+  au_train_batch_warnings = 2
+  au_unknown_stage_warnings = 2
+  au_update_critic_occurrences = 2
+  cu_train_batch_warnings = 2
+  cu_unknown_stage_warnings = 2
+  cv_train_batch_warnings = 2
+  cv_unknown_stage_warnings = 2
+[verdict] VALID RUN, pre-registered outcome met: actor_update dumps, critic_update/compute_values write nothing
