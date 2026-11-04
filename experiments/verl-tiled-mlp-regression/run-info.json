@@ -1,0 +1,38 @@
+{
+  "date": "2026-11-04",
+  "agent": "M1",
+  "task": "tiled_mlp wiring: regression check and history",
+  "upstream": {
+    "repo": "verl-project/verl",
+    "main_sha": "745432653d15af14954af1e055c8aeed72afa064",
+    "main_committed": "2026-11-04T02:07:42Z",
+    "wiring_pr": 4649,
+    "wiring_merged": "2026-01-04T06:55:52Z",
+    "wiring_merge_sha": "dcc11f295485e0f1bb48739c3f08f4a1779616ca",
+    "deletion_commit": "044bbba2 (PR #6067, 2026-04-20, BREAKING: deprecate workers, migrate to engines)",
+    "pre_refactor_snapshot_sha": "63e8a0d1 (2026-03-26, last version of verl/workers/fsdp_workers.py)"
+  },
+  "files": {
+    "transformer_impl_main_74543265.py": "verl/workers/engine/fsdp/transformer_impl.py at main",
+    "fsdp_workers_pre_refactor_63e8a0d1.py": "verl/workers/fsdp_workers.py as of 63e8a0d1",
+    "check_wiring.py": "AST comparison of apply_monkey_patch call sites"
+  },
+  "results": {
+    "current_call_sites": 1,
+    "current_forwards_use_tiled_mlp": false,
+    "current_lines_mentioning_tiled_mlp": [],
+    "pre_refactor_call_sites": 2,
+    "pre_refactor_forwards_use_tiled_mlp": true,
+    "pre_refactor_lines_mentioning_tiled_mlp": 23,
+    "pre_refactor_has_fsdp1_refusal": true,
+    "python_files_scanned": 704,
+    "python_files_mentioning_tiled_mlp": 6,
+    "negative_control_reports_not_lost": true
+  },
+  "verified_scope": "static AST + text over two snapshots; no verl run, no GPU",
+  "not_done": [
+    "not run verl; no runtime confirmation",
+    "no sweep for other config keys lost in the same refactor",
+    "no upstream issue, PR or comment"
+  ]
+}

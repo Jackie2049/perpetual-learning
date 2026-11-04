@@ -1,6 +1,9 @@
 # 把 `tiled_mlp` 配置接到 FSDP 引擎（本地补丁，未提交上游）
 
 <!-- contribution-summary:start -->
+> **2026-11-04 更新：本补丁修的是"重构回归"，描述口径要改。** 补查历史后确认：该选项在 2026-01-04（PR [#4649](https://github.com/verl-project/verl/pull/4649)）到 2026-04-20 之间**是有效的**——接线当时做在 `verl/workers/fsdp_workers.py`；该文件被 [#6067](https://github.com/verl-project/verl/pull/6067)（BREAKING，"deprecate workers, migrate to engines"）整体删除时，接线没有迁到新引擎。⇒ 补丁内容不变、验证不变，但**对外表述必须写成"引擎重构丢了 `tiled_mlp` 的接线"**，不是"配置从未接上"。另：原实现的 FSDP1 拒绝（`if use_tiled_mlp and strategy == "fsdp": raise`）也随文件消失，而新引擎在 `_build_module()` 里**先**建模型（`transformer_impl.py:322` 调 `apply_monkey_patch`）、**之后**才按 `strategy` 分支（421／448 行）——所以补丁若只接接线，`actor_rollout_ref.actor.strategy=fsdp`（`dp_actor.yaml:26` 的默认值）下会先打上 TiledMLP 再走 FSDP1，需要把那条拒绝一起补回。证据：[experiments/verl-tiled-mlp-regression](../../../../experiments/verl-tiled-mlp-regression/readme.md)。
+
+
 **【仓库】** [verl-project/verl](https://github.com/verl-project/verl)（LLM 后训练 / RL 训练框架，Apache-2.0）
 
 **【贡献点】** `actor_rollout_ref.model.tiled_mlp` 有配置项与官方文档，但 FSDP 引擎调用 `apply_monkey_patch` 时从不传 `use_tiled_mlp`，配置完全无效。本补丁把配置接到调用点（3 行逻辑）。**本地补丁，未提交、未开 PR**——证据与验证见 [verify_patch.py](verify_patch.py)、问题取证见 [../../evidence/tiled-mlp-unwired/readme.md](../../evidence/tiled-mlp-unwired/readme.md)
