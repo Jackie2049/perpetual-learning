@@ -45,13 +45,17 @@ verl 有个省显存的开关：把 MLP 拆成几片算。今年一月有人做�
 | 生产调用点 `apply_monkey_patch` 个数（FSDP 引擎） | **1**（`transformer_impl.py:322`） |
 | 该调用传的关键字 | `model, use_remove_padding, ulysses_sp_size, use_fused_kernels, fused_kernels_backend`——**无 `use_tiled_mlp`** |
 | 其他引擎（megatron／torchtitan／veomni／automodel／mindspeed） | 逐个查 `transformer_impl.py` 内 `tiled_mlp` 计数均为 0 |
-| 删除前的 `fsdp_workers.py` | 2 处 `apply_monkey_patch`，`tiled_mlp` 出现 **23 行**，含取值（`:913-915`）与转发（`:935-936`、`:503-504`、`:1481-1482`） |
+| 删除前的 `fsdp_workers.py` | 2 处 `apply_monkey_patch`，`tiled_mlp` 出现 **23 行**，含三处取值与三处转发：**actor**（`:913-915` → `:935-936`）、**ref**（`:972-976` → `:989-990`，且 ref 可覆盖 model 的取值）、**critic**（`:1454-1456` → `:1481-1482`），另有两处 FSDP1 拒绝（`:374` actor、`:1459` critic） |
 
 ## 一处不要写错的口径
 
 - **不能说"配置项从来没接上"**。它在 2026-01-04 到 2026-04-20 是有效的；`open-source/verl/evidence/tiled-mlp-unwired/` 的原表述基于 2026-11-02 快照，已在本批加了更新说明。
 - **不能推断"用户在这期间开过就一定生效"**：生效窗口与"哪个版本的用户实际跑过"是两件事，本批没有版本使用数据。
 - **FSDP1 守卫也丢了**，且新引擎**先建模型再分支**（`transformer_impl.py:322` 在 `:421`／`:448` 的策略分支之前），而 `dp_actor.yaml:26` 的默认 `strategy` 是 `fsdp`（FSDP1）。⇒ 只补接线不补守卫，默认配置下会先打 TiledMLP 后走 FSDP1。这一点是补丁评估此前没有覆盖的，已写进 [补丁说明](../../open-source/verl/patches/tiled-mlp-wiring/readme.md) 的更新块。
+
+## 一条只在本批记录、未做扫描的线索
+
+删除的 13 个生产文件里，配置读取远不止 `tiled_mlp`（`megatron.*` 20 余项、`fsdp_config.*`、`router_replay.mode`、`mtp.*` 等）。**本批只核了 `tiled_mlp` 一个**，没有对同期重构做逐项比对——那需要按"删除前读过的路径 ↔ 现在谁在读"逐条人工核，静态 grep 报出来的多半是改名或改层级的假阳性。⇒ 这一条留在队列（TM-006 第②条），不写成结论。
 
 ## 复现
 
