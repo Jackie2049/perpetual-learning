@@ -1,0 +1,6 @@
+[36m(TaskRunnerV1 pid=4242)[0m step:0 - val-core/openai/gsm8k/acc/mean@1:np.float64(0.075) - val-aux/num_turns/min:np.int64(2)
+[36m(TaskRunnerV1 pid=4242)[0m step:1 - global_seqlen/min:8616.0 - timing_s/gen:np.float64(2.11) - timing_s/values:np.float64(0.31) - timing_s/update_critic:np.float64(0.52) - timing_s/update_actor:np.float64(3.02) - timing_s/step:np.float64(8.21)
+[36m(TaskRunnerV1 pid=4242)[0m step:2 - global_seqlen/min:8616.0 - timing_s/gen:np.float64(2.04) - timing_s/values:np.float64(0.30) - timing_s/update_critic:np.float64(0.51) - timing_s/update_actor:np.float64(3.00) - timing_s/step:np.float64(8.11)
+[36m(TaskRunnerV1 pid=4242)[0m WARNING:verl.utils.profiler.precision_debugger_profile:Unknown precision_debugger stage: train_batch
+[36m(TaskRunnerV1 pid=4242)[0m WARNING:verl.utils.profiler.precision_debugger_profile:Unknown precision_debugger stage: train_batch
+saving to /tmp/m5-critic-mock/out/ckpt-x/global_step_46/actor
