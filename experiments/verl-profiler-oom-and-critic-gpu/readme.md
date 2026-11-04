@@ -111,6 +111,8 @@ logger.setLevel(os.getenv("VERL_LOGGING_LEVEL", "WARN"))   # :29  默认 WARN �
 
 **边界**：`sdpa` 只是文本替换，critic 侧**数值等价未测**；本轮**零 GPU 读数**；`raw/mock-run/` 里的一切都不得当作 critic 行为的证据。窗口里真正的答案仍来自三份真日志。
 
+**四、上游现状只读复核（2026-11-05 01:1x，不改变任何结论）。** 最新 main 已前移到 `31cfccb4`（2026-11-04T12:54Z，`#8463`）。两点与窗口直接相关：① `verl/utils/model.py` 在 `main` 与 `3fdf2b54` **逐字节相同**（sha256 `a13d8595…`，475／500 两处 FA2 都在）⇒ 即使窗口里改用最新 main 建树，`patch-critic-sdpa.py` 同样适用，锚点数仍是 2；② `verl/workers/engine_workers.py`（903 行）的 `@DistProfiler.annotate` 只有 **4 个 role**：`train_batch`（`:377`）、`ref_compute_log_prob`（`:751`）、`actor_compute_log_prob`（`:758`）、`actor_update`（`:768`）——**仍无 `critic_update`／`compute_values`**，静态结论在最新 main 上不变。**边界**：本轮只核了 `model.py` 与这一个 worker 文件，**不是全仓重扫**；`compute_rm_score` 在该文件里 0 处，但它本来就不在这个 worker 里产生。
+
 ## 复现
 
 ```bash

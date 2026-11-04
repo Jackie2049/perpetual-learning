@@ -39,7 +39,7 @@
 
 **三、wrapper 加固 + 端到端自检。** `run-critic-pdbg.sh` 开跑前检查 7 个依赖（树、msprobe／trl 两个 `--target`、config json、模型、两份数据）+ 树补丁状态（`AUTO_PATCH=1` 自动打、`=0` 中止），失败 exit 65——秒级失败而不是几分钟后死在建模型；每臂结束写 `arm-<ARM>.json`（dump 清单带字节数、warning 计数、步数、树 sha 与 FA2 残留数、依赖在否），**失败也写**。本机用假 example 脚本把整条管线跑通：三臂 wrapper rc=0、judge exit 0（产物 `raw/mock-run/`，**管线夹具不是读数**）。
 
-**边界**：`sdpa` 只是文本替换，critic 侧**数值等价未测**；本轮**零 GPU 读数**，`raw/mock-run/` 里的一切不得当作 critic 行为证据；真正的答案仍来自三份真日志。
+**边界**：`sdpa` 只是文本替换，critic 侧**数值等价未测**；本轮**零 GPU 读数**，`raw/mock-run/` 里的一切不得当作 critic 行为证据；真正的答案仍来自三份真日志。 **上游只读复核（同日 01:1x）**：main 已到 `31cfccb4`，但 `verl/utils/model.py` 与 `3fdf2b54` **逐字节相同**（sha256 `a13d8595…`）⇒ 换最新 main 建树也照样适用；`engine_workers.py`（903 行）的 `annotate` 仍只有 `train_batch`／`ref_compute_log_prob`／`actor_compute_log_prob`／`actor_update` 四个 role，**没有** `critic_update`／`compute_values`（只核这两个文件，非全仓重扫）。
 
 **产物**：[实验 README](experiments/verl-profiler-oom-and-critic-gpu/readme.md) · `patch-critic-sdpa.py` · `verify-critic-pdbg.py` · `run-critic-pdbg.sh` · `raw/critic-sdpa-patch.json`／`.diff`（真上游文件） · `raw/mock-run/`（夹具） · [handoff](experiments/handoff-m5.md)。
 

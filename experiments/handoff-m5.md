@@ -43,7 +43,7 @@ GPU/NPU 的访问、环境与实验由 macbook-M5 Agent 负责。M1 遇到需要
 ② `verify-critic-pdbg.py` 把判定**先写死**：有效性 V1–V4（exit 0、≥2 步、cu/cv 日志有 `update_critic`、树里 FA2 归零）不过 → exit 1 无效跑；
 `au` 没 dump 或 dump 落错 stage → exit 1；`cu`／`cv` 出现任何 dump → **exit 2 推翻静态结论**；`train_batch` warning 只报告不门控。自检 10/10。
 每臂写 `arm-<ARM>.json`（dump 清单带字节数、warning 计数、步数、树状态、依赖在否），**失败也写**，判定只读它。
-本机用假 example 脚本跑通 三臂 wrapper rc=0 → judge exit 0（`raw/mock-run/`，**管线夹具不是读数**）。**未跑、未上卡、未触上游。**
+本机用假 example 脚本跑通 三臂 wrapper rc=0 → judge exit 0（`raw/mock-run/`，**管线夹具不是读数**）。**上游现状只读复核（同日）**：main 已到 `31cfccb4`，但 `verl/utils/model.py` 与 `3fdf2b54` **逐字节相同**（sha256 `a13d8595…`）⇒ 换最新 main 建树也照样适用；`engine_workers.py` 的 `annotate` 仍只有 `train_batch`／`ref_compute_log_prob`／`actor_compute_log_prob`／`actor_update` 四个 role，**没有** `critic_update`／`compute_values`（只核这一个文件，非全仓重扫）。**未跑、未上卡、未触上游。**
 
 ## verl DSA 依赖兼容参考
 
