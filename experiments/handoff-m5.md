@@ -39,7 +39,7 @@ GPU/NPU 的访问、环境与实验由 macbook-M5 Agent 负责。M1 遇到需要
 **2026-11-05 无卡轮补齐两件怕丢的事**：① `patch-critic-sdpa.py` —— 只在 `load_valuehead_model` 块内把两处 FA2 换成 `sdpa`，
 幂等、`--check`／`--revert`、锚点数≠2 即 exit 2（上游改了形状就拒绝假装修好）。用真上游文件 `3fdf2b54`（sha256 `a13d8595…`）验证：
 `--check` 报第 475／500 行两块内锚点、块外 0、exit 1；`apply` 精确改 2 行；`--revert` 回到逐字节相同；自检 18/18。
-`run-critic-pdbg.sh` 预检（7 个依赖 + 树补丁状态，`AUTO_PATCH=1` 自动打／`=0` 中止）失败即 exit 65，秒级而不是烧窗口。
+`run-critic-pdbg.sh` 预检（8 个依赖含树内适配脚本本身 + 树补丁状态，`AUTO_PATCH=1` 自动打／`=0` 中止）失败即 exit 65，秒级而不是烧窗口。
 ② `verify-critic-pdbg.py` 把判定**先写死**：有效性 V1–V4（exit 0、≥2 步、cu/cv 日志有 `timing_s/update_critic`、树分类器状态 `patched`）不过 → exit 1 无效跑；
 `au` 没 dump 或 dump 落错 stage → exit 1；`cu`／`cv` 出现任何 dump → **exit 2 推翻静态结论**；`train_batch` warning 只报告不门控。自检 12/12。
 每臂写 `arm-<ARM>.json`（dump 清单带字节数、warning 计数、步数、树状态、依赖在否），**失败也写**，判定只读它。

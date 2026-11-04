@@ -82,7 +82,7 @@ case "$ARM" in
 esac
 
 # --- preflight: every item below aborts the run in its first minutes, so check in seconds
-for dep in "$SRC/verl/utils/model.py" "${PYTHONPATH%%:*}" "${PYTHONPATH##*:}" \
+for dep in "$SRC/verl/utils/model.py" "$SCRIPT_DIR/patch-critic-sdpa.py" "${PYTHONPATH%%:*}" "${PYTHONPATH##*:}" \
            "$MSPROBE_CONFIG" "$MODEL_PATH" "$TRAIN_FILE" "$TEST_FILE"; do
   if [ ! -e "$dep" ]; then
     echo "[preflight] MISSING: $dep" >&2
@@ -196,13 +196,16 @@ model_text = model_py.read_text() if model_py.is_file() else None
 # upstream adds one elsewhere, a file-wide counter would report a false failure.
 fa2 = {}
 if model_text is not None:
-    spec = importlib.util.spec_from_file_location("patch_critic_sdpa", E["M5_PATCH_SCRIPT"])
-    pcs = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(pcs)
-    fa2 = pcs.analyze(model_text, "sdpa")
-    fa2["flash_attention_2_left"] = model_text.count('attn_implementation="flash_attention_2"')
-    fa2["model_py_sha256"] = hashlib.sha256(model_text.encode()).hexdigest()
-    fa2["preflight_state"] = E["M5_FA2_STATE"]
+    try:
+        spec = importlib.util.spec_from_file_location("patch_critic_sdpa", E["M5_PATCH_SCRIPT"])
+        pcs = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(pcs)
+        fa2 = pcs.analyze(model_text, "sdpa")
+        fa2["flash_attention_2_left"] = model_text.count('attn_implementation="flash_attention_2"')
+        fa2["model_py_sha256"] = hashlib.sha256(model_text.encode()).hexdigest()
+        fa2["preflight_state"] = E["M5_FA2_STATE"]
+    except Exception as exc:  # keep the summary complete: V4 then fails loudly, judge still runs
+        fa2 = {"state": None, "error": f"{type(exc).__name__}: {exc}"}
 
 out = {
     "arm": E["M5_ARM"],
@@ -236,8 +239,14 @@ out = {
 json.dump(out, sys.stdout, indent=1, sort_keys=True)
 sys.stdout.write("\n")
 PY
-mv "$ARM_JSON.tmp" "$ARM_JSON"
-echo "arm_summary=$ARM_JSON"
+# Only replace the arm summary when the generator actually produced one: a truncated file would
+# crash the judge instead of letting it return a verdict.
+if [ -s "$ARM_JSON.tmp" ]; then
+  mv "$ARM_JSON.tmp" "$ARM_JSON"
+  echo "arm_summary=$ARM_JSON"
+else
+  echo "[warn] arm summary is empty -- no $ARM_JSON written; fix before judging this arm" >&2
+fi
 
 rm -rf "$OUT/ckpt-$ARM"
 exit $RC

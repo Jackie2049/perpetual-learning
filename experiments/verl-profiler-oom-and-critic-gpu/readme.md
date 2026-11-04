@@ -107,7 +107,7 @@ logger.setLevel(os.getenv("VERL_LOGGING_LEVEL", "WARN"))   # :29  默认 WARN �
 
 自检 **10/10**：干净夹具 exit 0，`au` 缺 dump／dump 落在别的 stage 目录／臂缺失／某臂 exit≠0／步数不足／没有 critic／树丢补丁全部 exit 1，`cu`／`cv` 冒 dump 全部 exit 2。
 
-**三、wrapper 也加固了。** `run-critic-pdbg.sh` 开跑前检查 7 个依赖（树、msprobe／trl 两个 `--target`、config json、模型、两份数据）并**在秒级失败**，再查树是否已打补丁（`AUTO_PATCH=1` 自动打，`=0` 则中止而不是擅自改树）；每臂结束写 `arm-<ARM>.json`。用**假 example 脚本**在本机把整条管线跑通（三个臂 wrapper rc=0、judge exit 0），产物在 [raw/mock-run/](raw/mock-run/README.json)——**那是管线夹具，不是读数**，只证明预检、自动打补丁、JSON 生成与判定能接上。
+**三、wrapper 也加固了。** `run-critic-pdbg.sh` 开跑前检查 8 个依赖（树、树内适配脚本、msprobe／trl 两个 `--target`、config json、模型、两份数据）并**在秒级失败**，再查树是否已打补丁（`AUTO_PATCH=1` 自动打，`=0` 则中止而不是擅自改树）；每臂结束写 `arm-<ARM>.json`。用**假 example 脚本**在本机把整条管线跑通（三个臂 wrapper rc=0、judge exit 0），产物在 [raw/mock-run/](raw/mock-run/README.json)——**那是管线夹具，不是读数**，只证明预检、自动打补丁、JSON 生成与判定能接上。
 
 **边界**：`sdpa` 只是文本替换，critic 侧**数值等价未测**；本轮**零 GPU 读数**；`raw/mock-run/` 里的一切都不得当作 critic 行为的证据。窗口里真正的答案仍来自三份真日志。
 
@@ -138,6 +138,8 @@ logger.setLevel(os.getenv("VERL_LOGGING_LEVEL", "WARN"))   # :29  默认 WARN �
 **五、顺手关掉两个"窗口里才发现"的外部前提。** ① 组合把关原是在 `3fdf2b54` 上做的，而 `3fdf2b54 → 31cfccb4` 之间 **8 个配置 yaml 变了**（`actor/actor.yaml`、`engine/fsdp.yaml`、`engine/megatron.yaml`、`rollout/rollout.yaml` 与四个 `_generated_*`），全部是删 QAT 段与改注释——但仍重跑了一遍：`31cfccb4` 上**三臂组合成功、负向对照如期失败、17 个回读键与旧批次逐键相同**（hydra 1.3.8／omegaconf 2.3.1，旧批 1.3.2／2.3.0），读数在 [raw/compose-check-main-31cfccb4.json](raw/compose-check-main-31cfccb4.json)；树用 `codeload` tarball 取，`verl/utils/model.py` sha256 仍是 `a13d8595…` 可对上。② wrapper 调用的 `examples/grpo_trainer/run_qwen3_4b_fsdp.sh` 在 `31cfccb4` 上仍在（200，5368 B），且脚本读取的 25 个环境变量**覆盖 wrapper 设置的全部键**（`MODEL_PATH`／`TRAIN_FILE`／`TEST_FILE`／`NGPUS_PER_NODE`／批大小／长度／`ROLLOUT_*`／`SAVE_FREQ`／`TEST_FREQ`／`PROJECT_NAME`／`EXPERIMENT_NAME`／`VERL_USE_UV`）⇒ 没有"脚本改签名"这类静默错配。
 
 **边界（本轮仍然全部适用）**：零 GPU 读数，`raw/mock-run-real-shape/` 仍是管线夹具；`104/104` 与 `1432 步`统计的是**仓库里已归档的日志**，不是新跑的结果；新计数器在真机日志上会给出什么，要等窗口给出第一份 critic 日志才算实测。另外，**旧夹具 `raw/mock-run/` 的 arm JSON 是旧 schema**（`fa2.state` 记的是预检状态 `already-patched` 而不是分类器状态），拿现在的 judge 去判它会得到 `exit 1 INVALID RUN` 与 `fa2.state=already-patched` 的明细——这是**有意 fail-loud**：混用新旧 arm JSON 时会直接说不合格，而不是静默放过。
+
+**六、顺带把 wrapper 的两条失败路径补住**（都不是读数）：① 预检原来只查树与 `/tmp` 依赖，**不查 `patch-critic-sdpa.py` 自己**——缺了会走成"`--check` rc=2（锚点形状变了？）"，把排查引向错的地方；现把它列进依赖，报 `MISSING: …/patch-critic-sdpa.py`（exit 65，秒级）。② arm JSON 原来是 `python3 … > tmp` 之后**无条件** `mv`，生成器中途失败会把空/截断文件顶上去，judge 读它直接抛异常而不是给判定；现改为只在文件非空时才替换。两条都用同一套夹具验过：`/tmp/m5-isolated` 里只放 wrapper、不放适配脚本 → `MISSING`＋exit 65；正常夹具三臂 rc=0／judge 0 不变。
 
 ## 复现
 
