@@ -1,0 +1,38 @@
+{
+  "date": "2026-11-04",
+  "agent": "M1",
+  "task": "independent review of rllm issue #945 and PR #946",
+  "upstream": {
+    "repo": "rllm-org/rllm",
+    "main_sha": "4e828c81",
+    "main_committed": "2026-10-09T01:22:20Z",
+    "checked_at": "2026-11-04",
+    "issue": 945,
+    "pr": 946,
+    "pr_state": "open, no maintainer response, changed file: rllm/rewards/countdown_reward.py (+3 -2)"
+  },
+  "environment": {
+    "python": "3.12.13",
+    "interpreter": "uv venv at /tmp/rllm-py312",
+    "rllm_installed": false,
+    "note": "compute_score runs verbatim; the two rllm imports are stubbed"
+  },
+  "files": {
+    "countdown_reward_main_4e828c8.py": "copy of upstream rllm/rewards/countdown_reward.py at main 4e828c81",
+    "repro.py": "issue reproduction + PR 946 regression search"
+  },
+  "results": {
+    "issue_cases_reproduced": "4/4 score 1.0 on main, legal control also 1.0",
+    "exponent_chain_44_19_2_seconds": 0.0,
+    "exponent_chain_44_19_5_seconds": 2.15,
+    "exponent_chain_44_19_35": "not reproduced: about 10**45 digits, cannot finish",
+    "regression_search_legal_answers_compared": 22639,
+    "regression_search_found": 0,
+    "negative_control_reject_all_regressions": 159
+  },
+  "not_done": [
+    "no real training run; impact of the exploit on learned policies unmeasured",
+    "no run of the rllm test suite",
+    "no fork branch, PR, comment or issue created upstream"
+  ]
+}

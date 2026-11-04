@@ -35,3 +35,4 @@
 - [rLLM #605 GRPO Grouping Bug — Revised Fix Proposal (v2)](rllm-605-grpo-grouping-revised-fix-v2.md)
 - [工具调用的 `use_async=None` 自动探测从未生效（B 类，2026-11-02）](tool-use-async-autodetect.md)
 - [Fireworks 默认开启的 R3 路由回放拿不到训练帧（B 类，2026-11-03）](fireworks-r3-routing-matrices.md)
+- [倒计时奖励可被 `1.5*2` 这类答案白拿满分：issue #945 复核与 PR #946 评估（第三方复核，2026-11-04）](countdown-reward-review-945.md)
