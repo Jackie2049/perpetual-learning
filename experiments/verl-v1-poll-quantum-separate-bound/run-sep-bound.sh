@@ -15,6 +15,9 @@ SYNC_STEP=${SYNC_STEP:-1}
 MINI_BATCH=${MINI_BATCH:-4}
 NORM_RESP=${NORM_RESP:-16}
 MAX_RESP=${MAX_RESP:-1024}
+# 8 = the calibration config (never fires); 1 = stale-drop arm that forces the trainer
+# to wait for a fresh batch after each weight sync (see README "stale-wait 臂").
+THRESH=${THRESH:-8}
 # SimpleStorage splits total_storage_size over 8 units, so per-unit capacity = TQ_SIZE/8.
 # n=16 x batch 4 = 64 samples/step: 512 would be exactly one step (64) and reproduce the
 # known overflow "capacity exceeded: N existing + 1 new > N"; 1536 = 192/unit = 3 steps.
@@ -41,14 +44,14 @@ export TRAIN_BATCH_SIZE=$((SYNC_STEP*MINI_BATCH))
 EXTRA=()
 if [ -n "$POLL" ]; then EXTRA+=("trainer.v1.sampler.poll_interval=${POLL}"); fi
 LOG=/tmp/${MODE}.log
-echo "=== $MODE start $(date -u +%FT%TZ) cuda=$CUDA_VISIBLE_DEVICES steps=$STEPS poll=${POLL:-default} n=$NORM_RESP maxresp=$MAX_RESP sync=$SYNC_STEP mini=$MINI_BATCH src=$SRC ==="
+echo "=== $MODE start $(date -u +%FT%TZ) cuda=$CUDA_VISIBLE_DEVICES steps=$STEPS poll=${POLL:-default} n=$NORM_RESP maxresp=$MAX_RESP sync=$SYNC_STEP mini=$MINI_BATCH thresh=$THRESH src=$SRC ==="
 python3 -u -m verl.trainer.main_ppo \
   "${EXTRA[@]}" \
   trainer.use_v1=True \
   trainer.v1.trainer_mode=separate_async \
   trainer.v1.separate_async.num_warmup_batches=1 \
   trainer.v1.separate_async.parameter_sync_step=${SYNC_STEP} \
-  trainer.v1.sampler.max_off_policy_threshold=8 \
+  trainer.v1.sampler.max_off_policy_threshold=${THRESH} \
   trainer.v1.sampler.max_off_policy_strategy=drop \
   transfer_queue.enable=True \
   ++transfer_queue.backend.SimpleStorage.total_storage_size=${TQ_SIZE} \
