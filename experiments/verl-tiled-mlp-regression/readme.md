@@ -60,8 +60,7 @@ verl 有个省显存的开关：把 MLP 拆成几片算。今年一月有人做�
 ## 复现
 
 ```bash
-cd experiments/verl-tiled-mlp-regression
-python3 check_wiring.py          # 需要 Python 3.10+（快照里有 match 语句）；本机用 3.12
+python3 experiments/verl-tiled-mlp-regression/check_wiring.py   # 任意目录可跑；需要 Python 3.10+（快照里有 match 语句），本机用 3.12
 ```
 
 快照：`transformer_impl_main_74543265.py`、`fsdp_workers_pre_refactor_63e8a0d1.py`（都来自上游 raw 内容，只读）。
