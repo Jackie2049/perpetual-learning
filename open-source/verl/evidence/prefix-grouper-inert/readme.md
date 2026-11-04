@@ -9,7 +9,7 @@
 
 **【价值评估】** 6 / 10 — 取证严格可复跑（AST 静态判定，无需 GPU 与依赖），影响面明确且用户无感知；但上游维护者已明确表态转向 MAGI attention，接受路径不乐观，价值主要在"消除错误认知"而非"推动修复"。
 
-**【进展】** 已完成对 main `6879e1ab07`（2026-11-02）的静态取证并通过脚本自证；影响面已量化（DP 负载不均衡 0–6.6%，批越大越小）；**未发布任何 issue／评论**，发布须逐项授权。
+**【进展】** 已完成对 main `6879e1ab07`（2026-11-02）的静态取证并通过脚本自证；影响面已量化（DP 负载不均衡 0–6.6%，批越大越小）；**2026-11-05 在 `31cfccb4` 上补了运行时复测**（纯 CPU，真实模块 + 正向对照），并把历史归属订正为"#6067 前有效、#6067 后失效"；**未发布任何 issue／评论**，发布须逐项授权。
 
 **【大白话讲明白】**
 
@@ -22,8 +22,8 @@ verl 有一个叫 PrefixGrouper 的加速选项：GRPO 里同一个 prompt 会�
 **【What–Why–How】**
 
 - **What：** verl `main` 上 `actor.use_prefix_grouper=True` 的实际生效范围；以及 `examples/prefix_grouper/run_qwen3_8b_fsdp.sh` 与 `examples/prefix_grouper/README.md` 的不一致。
-- **Why：** `apply_prefix_grouper_patch()` 只在 `apply_monkey_patch(..., use_prefix_grouper=True)` 时被调用（`verl/models/transformers/monkey_patch.py:327`）；而全仓唯一非测试调用点 `verl/workers/engine/fsdp/transformer_impl.py:328`（`_build_module`）**只传 5 个参数，不含该开关**。`verl/trainer/ppo/prefix_grouper_utils.py` 未被任何模块导入；`prefix_grouper` 也不在 `setup.py`／依赖声明里。因此引擎侧永远走不到那条 `if`。
-- **How：** 本目录脚本对上游快照做 AST／文本静态取证，`production_passes_flag=False`、`has_engine_side_propagation=False`、示例 `use_prefix_grouper=True` 与 `use_dynamic_bsz=True` 并存。**边界**：这是静态代码取证，**未运行 verl、未在 GPU 上实测**；结论只覆盖 FSDP 引擎（Megatron 引擎路径未核），只覆盖该 commit；若上游补上引擎侧接线或删除该选项，脚本会返回 1 提示结论失效。
+- **Why：** `apply_prefix_grouper_patch()` 只在 `apply_monkey_patch(..., use_prefix_grouper=True)` 时被调用（`verl/models/transformers/monkey_patch.py:327`）；而全仓唯一非测试调用点 `verl/workers/engine/fsdp/transformer_impl.py:322`（`_build_module`）**只传 5 个参数，不含该开关**。`verl/trainer/ppo/prefix_grouper_utils.py` 未被任何模块导入；`prefix_grouper` 也不在 `setup.py`／依赖声明里。因此引擎侧永远走不到那条 `if`。**失效起点是 #6067**：它删掉的 `verl/workers/actor/dp_actor.py` 在 `044bbba2^` 上真的 import 过 `forward_micro_batch_with_prefix_grouper`（见 §四点五）。
+- **How：** 本目录脚本对上游快照做 AST／文本静态取证，`production_passes_flag=False`、`has_engine_side_propagation=False`、示例 `use_prefix_grouper=True` 与 `use_dynamic_bsz=True` 并存。**2026-11-05 追加运行时复测**（main `31cfccb4`，纯 CPU，真实模块 + 真实 `LlamaForCausalLM`，带正向对照），并订正历史归属为"#6067 前有效、#6067 后失效"。**边界**：静态取证 + CPU 运行时复测，**未运行训练、未在 GPU 上实测**；结论只覆盖 FSDP 引擎（Megatron 引擎路径未核）；若上游补上引擎侧接线或删除该选项，脚本会返回 1 提示结论失效。
 <!-- contribution-summary:end -->
 
 ## 一、证据
@@ -84,9 +84,27 @@ python3 verify_prefix_grouper_inert.py verl-project-verl-6879e1ab07/ --json-out
 1. **文档／示例修订**（成本最低、最可能被接受）：示例脚本同时开两个互斥开关是明确的自相矛盾，改掉不需要架构决策。
 2. **让失效可见**（比静默失效好）：要么在引擎侧接线，要么在看到 `use_prefix_grouper=True` 时至少警告"该选项在当前引擎上不生效"。目前是**静默地只生效一半**。
 
+## 四点五、更新（2026-11-05，M1）：运行时复测 + 历史归属订正——这是重构回归，不是"从没接过"
+
+在 main `31cfccb4`（2026-11-04）上重跑，并把静态结论换成**运行时对照**（[实验](../../../experiments/verl-inert-flags-runtime/readme.md)、`probe.py`）。
+
+**一、结论不变，证据变强。** `verl/workers/` 里把 `prefix_grouper=` 喂进模型前向的地方仍是 **0**；`prefix_grouper_utils.py` 的导入方仍是 **0**。正向对照：`use_prefix_grouper=True` 时模块全局 `_PREFIX_GROUPER_PATCHED` 确实 `False→True` ⇒ **补丁机器是活的，只是没人调用它**。
+
+**二、历史归属要改口。** 本文原写"引擎侧永远走不到那条 `if`"，读起来像"从没接过"。实际链路是：
+
+- `d6bc6296`（2026-01-05，[#4368](https://github.com/verl-project/verl/pull/4368)）引入 `prefix_grouper_utils.py`；
+- `044bbba2^` 上 `verl/workers/actor/dp_actor.py:138` 真的 `from … import forward_micro_batch_with_prefix_grouper`，同文件 **8 处**读 `self.use_prefix_grouper`；
+- `044bbba2`（2026-04-20，[#6067](https://github.com/verl-project/verl/pull/6067)）删掉 `dp_actor.py`，新引擎没有等价前向入口。
+
+⇒ 正确表述是 **"#6067 前有效、#6067 后失效"**，与 `tiled_mlp` 同形；对外不能写"这个选项从没生效过"。
+
+**三、`role` 形参这条不成立。** 旧 worker 的 `_build_model_optimizer(... role="actor")` 确实存在，但 `apply_monkey_patch` **在 `044bbba2^` 上就已经没有 `role` 形参**（基线里相同的 8 个参数），两个文件中至少有一个在旧代码里就已经对不上；`_build_model_optimizer` 里那次调用也不传 `role`。所以"迁移时丢了 `role`"不是一条可用的证据，本条不主张。
+
+**四、仍未做**：真机验证、`verl/experimental/` 下三个 trainer 的行为、Megatron 引擎路径。
+
 ## 四、边界与未核项
 
-- **静态取证，未运行 verl、未上 GPU**；结论只覆盖 FSDP 引擎路径，Megatron 引擎未核。
+- **本文原批为静态取证，未上 GPU**；2026-11-05 的运行时复测是**纯 CPU 导入真实模块**（真实 `LlamaForCausalLM` 驱动真实补丁函数），同样未上 GPU。结论只覆盖 FSDP 引擎路径，Megatron 引擎未核。
 - 只覆盖 `6879e1ab07` 这一个 commit；脚本会在结论失效时返回 1，但仍需人工复核上游改动。
 - 未核 `verl/experimental/` 下两个 trainer 是否也以同样方式读该开关（脚本显示它们也读，但未判定其后的行为）。
 - **未发布任何上游内容**（issue／评论／PR 均无）。按用户铁律，任何对外可见动作须逐项授权。

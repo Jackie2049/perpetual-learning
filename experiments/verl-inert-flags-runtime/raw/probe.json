@@ -1,0 +1,118 @@
+{
+  "meta": {
+    "verl_file": "/tmp/verl-6067-w3/verl/__init__.py",
+    "verl_version": "0.10.0.dev",
+    "torch": "2.15.0",
+    "transformers": "5.22.1",
+    "python": "3.12.13",
+    "verl_git": "/Users/jackiemac/workspace/verl"
+  },
+  "tiled_mlp.fsdp_call_site": {
+    "value": "apply_monkey_patch( model=module, use_remove_padding=self.use_remove_padding, ulysses_sp_size=self.ulysses_sequence_parallel_size, use_fused_kernels=use_fused_kernels, fused_kernels_backend=fused_kernels_backend, )"
+  },
+  "tiled_mlp.fsdp_passes_use_tiled_mlp": {
+    "value": false
+  },
+  "tiled_mlp.fsdp_passes_use_prefix_grouper": {
+    "value": false
+  },
+  "tiled_mlp.all_apply_monkey_patch_call_sites": {
+    "value": [
+      "/tmp/verl-6067-w3/verl/models/transformers/monkey_patch.py:294:def apply_monkey_patch(",
+      "/tmp/verl-6067-w3/verl/workers/engine/fsdp/transformer_impl.py:322:            apply_monkey_patch("
+    ]
+  },
+  "tiled_mlp.forward_before_patch": {
+    "value": "LlamaMLP.forward"
+  },
+  "tiled_mlp.forward_after_patch": {
+    "value": "_patch_mlp_class.<locals>.tiled_forward"
+  },
+  "tiled_mlp.forward_rewritten_by_flag": {
+    "value": true
+  },
+  "tiled_mlp.max_logit_diff_patched_vs_unpatched": {
+    "value": 5.960464477539063e-08,
+    "note": "must be ~0: TiledMLP is a memory optimisation, not a numerics change"
+  },
+  "prefix.apply_monkey_patch_params": {
+    "value": [
+      "model",
+      "ulysses_sp_size",
+      "use_remove_padding",
+      "use_fused_kernels",
+      "fused_kernels_backend",
+      "use_prefix_grouper",
+      "use_tiled_mlp",
+      "tiled_mlp_shards"
+    ]
+  },
+  "prefix.has_role_param": {
+    "value": false
+  },
+  "prefix.accepts_role_kwarg": {
+    "value": false
+  },
+  "prefix.patcher_global_before": {
+    "value": false
+  },
+  "prefix.patcher_global_after": {
+    "value": true
+  },
+  "prefix.patcher_runs": {
+    "value": true,
+    "note": "the flag is not a no-op at the patch level"
+  },
+  "prefix.engine_forward_producers": {
+    "value": [],
+    "note": "empty => no worker ever uses the patched path"
+  },
+  "prefix.prefix_grouper_utils_referenced_by": {
+    "value": [],
+    "note": "empty => the shared-prefix forward is dead code"
+  },
+  "prefix.trainer_side_consumers": {
+    "value": [
+      "/tmp/verl-6067-w3/verl/trainer/ppo/ray_trainer.py:367:        self.use_prefix_grouper = self.config.actor_rollout_ref.actor.get(\"use_prefix_grouper\", False)",
+      "/tmp/verl-6067-w3/verl/trainer/ppo/ray_trainer.py:1185:        When use_prefix_grouper is enabled, uses group-level balancing to keep samples with",
+      "/tmp/verl-6067-w3/verl/trainer/ppo/ray_trainer.py:1197:        if getattr(self, \"use_prefix_grouper\", False) and \"uid\" in batch.non_tensor_batch:",
+      "/tmp/verl-6067-w3/verl/trainer/ppo/ray_trainer.py:1238:        if not getattr(self, \"use_prefix_grouper\", False):"
+    ]
+  },
+  "prefix.history_old_worker_used_utils": {
+    "value": [
+      "044bbba2^:verl/workers/actor/dp_actor.py:138:                from verl.trainer.ppo.prefix_grouper_utils import forward_micro_batch_with_prefix_grouper"
+    ],
+    "note": "at 044bbba2^ (pre-#6067)"
+  },
+  "prefix.history_utils_added": {
+    "value": "d6bc6296 2026-01-05 [fsdp] feat: integrate PrefixGrouper for GRPO training acceleration (#4368)"
+  },
+  "prefix.history_old_dp_actor_reads": {
+    "value": [
+      "044bbba2^:verl/workers/actor/dp_actor.py:79:        self.use_prefix_grouper = self.config.get(\"use_prefix_grouper\", False)",
+      "044bbba2^:verl/workers/actor/dp_actor.py:81:            print(f\"{role} use_prefix_grouper={self.use_prefix_grouper}\")",
+      "044bbba2^:verl/workers/actor/dp_actor.py:110:            assert not (self.use_fused_kernels or self.use_prefix_grouper), (",
+      "044bbba2^:verl/workers/actor/dp_actor.py:112:                f\"{self.use_fused_kernels=} or {self.use_prefix_grouper=} for now.\"",
+      "044bbba2^:verl/workers/actor/dp_actor.py:130:        if self.use_prefix_grouper:",
+      "044bbba2^:verl/workers/actor/dp_actor.py:461:        if self.use_prefix_grouper:",
+      "044bbba2^:verl/workers/actor/dp_actor.py:529:        if self.use_prefix_grouper and \"prompts\" in data.batch.keys():",
+      "044bbba2^:verl/workers/actor/dp_actor.py:545:        if self.use_prefix_grouper and \"uid\" in data.non_tensor_batch.keys():"
+    ]
+  },
+  "prefix.history_dp_actor_exists_on_main": {
+    "value": false
+  },
+  "verdict": {
+    "tiled_mlp.engine_flag_inert": true,
+    "tiled_mlp.machinery_works_when_flag_passed": true,
+    "tiled_mlp.numerically_equivalent": true,
+    "tiled_mlp.machinery_alive": true,
+    "prefix.no_role_param": true,
+    "prefix.patch_is_not_noop": true,
+    "prefix.no_engine_forward_producer": true,
+    "prefix.utils_module_unreferenced": true,
+    "prefix.trainer_still_reads_flag": true,
+    "prefix.runtime_path_inert": true
+  }
+}

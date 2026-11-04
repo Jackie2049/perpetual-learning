@@ -1,0 +1,52 @@
+{
+  "tiled_mlp": {
+    "n_hits": 20,
+    "docs": [],
+    "examples": [
+      "docs/examples/config.rst:267:- ``actor_rollout_ref.model.tiled_mlp``: TiledMLP configuration for memory-efficient",
+      "docs/examples/config.rst:271:  - ``actor_rollout_ref.model.tiled_mlp.enabled``: Whether to enable TiledMLP.",
+      "docs/examples/config.rst:273:  - ``actor_rollout_ref.model.tiled_mlp.num_shards``: Number of shards to split"
+    ],
+    "generated_yaml": [
+      "verl/trainer/config/_generated_ppo_veomni_trainer.yaml:440:    tiled_mlp:",
+      "verl/trainer/config/_generated_ppo_veomni_trainer.yaml:674:    tiled_mlp:",
+      "verl/trainer/config/_generated_ppo_trainer.yaml:431:    tiled_mlp:",
+      "verl/trainer/config/_generated_ppo_trainer.yaml:661:    tiled_mlp:",
+      "verl/trainer/config/_generated_ppo_torchtitan_trainer.yaml:416:    tiled_mlp:",
+      "verl/trainer/config/_generated_ppo_torchtitan_trainer.yaml:631:    tiled_mlp:",
+      "verl/trainer/config/_generated_ppo_megatron_trainer.yaml:461:    tiled_mlp:",
+      "verl/trainer/config/_generated_ppo_megatron_trainer.yaml:719:    tiled_mlp:"
+    ],
+    "config_yaml": [
+      "verl/trainer/config/model/hf_model.yaml:72:tiled_mlp:"
+    ]
+  },
+  "use_prefix_grouper": {
+    "n_hits": 12,
+    "docs": [],
+    "examples": [],
+    "generated_yaml": [
+      "verl/trainer/config/_generated_ppo_veomni_trainer.yaml:104:    use_prefix_grouper: false",
+      "verl/trainer/config/_generated_ppo_trainer.yaml:96:    use_prefix_grouper: false",
+      "verl/trainer/config/_generated_ppo_torchtitan_trainer.yaml:85:    use_prefix_grouper: false",
+      "verl/trainer/config/_generated_ppo_megatron_trainer.yaml:127:    use_prefix_grouper: false"
+    ],
+    "config_yaml": [
+      "verl/trainer/config/actor/actor.yaml:106:use_prefix_grouper: false"
+    ]
+  },
+  "freeze_vision_tower": {
+    "n_hits": 7,
+    "docs": [],
+    "examples": [],
+    "generated_yaml": [
+      "verl/trainer/config/_generated_ppo_veomni_trainer.yaml:87:    freeze_vision_tower: false",
+      "verl/trainer/config/_generated_ppo_trainer.yaml:79:    freeze_vision_tower: false",
+      "verl/trainer/config/_generated_ppo_torchtitan_trainer.yaml:68:    freeze_vision_tower: false",
+      "verl/trainer/config/_generated_ppo_megatron_trainer.yaml:110:    freeze_vision_tower: false"
+    ],
+    "config_yaml": [
+      "verl/trainer/config/actor/actor.yaml:52:freeze_vision_tower: false"
+    ]
+  }
+}
