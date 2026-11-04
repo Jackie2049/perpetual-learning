@@ -1,0 +1,176 @@
+{
+ "root": "sglang 27aedf7f",
+ "n_inert": 34,
+ "verdicts": [
+  {
+   "flag": "use_logits_buffer",
+   "n": 1,
+   "label": "TOPIC_ESCAPE_FAILS_OPEN"
+  },
+  {
+   "flag": "use_dsa",
+   "n": 1,
+   "label": "INTERNAL_PRODUCER"
+  },
+  {
+   "flag": "enable_deterministic_inference",
+   "n": 1,
+   "label": "TM013_DUP"
+  },
+  {
+   "flag": "use_scale",
+   "n": 2,
+   "label": "INTERNAL_OR_DEFAULT"
+  },
+  {
+   "flag": "use_vit_decoder",
+   "n": 2,
+   "label": "INTERNAL_OR_DEFAULT"
+  },
+  {
+   "flag": "use_3d_conv",
+   "n": 2,
+   "label": "INTERNAL_OR_DEFAULT"
+  },
+  {
+   "flag": "no_embed_class",
+   "n": 2,
+   "label": "INTERNAL_OR_DEFAULT"
+  },
+  {
+   "flag": "enable_linear_replayssm",
+   "n": 3,
+   "label": "INTERNAL_OR_DEFAULT"
+  },
+  {
+   "flag": "enable_linear_replayssm_spec",
+   "n": 3,
+   "label": "INTERNAL_OR_DEFAULT"
+  },
+  {
+   "flag": "use_clc_scheduler",
+   "n": 3,
+   "label": "KERNEL_CONSTEXPR"
+  },
+  {
+   "flag": "use_zigzag_page_table",
+   "n": 3,
+   "label": "KERNEL_CONSTEXPR"
+  },
+  {
+   "flag": "enable_sampling",
+   "n": 3,
+   "label": "INTERNAL_OR_DEFAULT"
+  },
+  {
+   "flag": "enable_python",
+   "n": 3,
+   "label": "INTERNAL_OR_DEFAULT"
+  },
+  {
+   "flag": "use_ulysses_low",
+   "n": 3,
+   "label": "INTERNAL_OR_DEFAULT"
+  },
+  {
+   "flag": "use_front_boi_token",
+   "n": 3,
+   "label": "INTERNAL_OR_DEFAULT"
+  },
+  {
+   "flag": "use_ptx",
+   "n": 3,
+   "label": "INTERNAL_OR_DEFAULT"
+  },
+  {
+   "flag": "use_abs_pos",
+   "n": 3,
+   "label": "INTERNAL_OR_DEFAULT"
+  },
+  {
+   "flag": "use_decode_cuda_graph",
+   "n": 4,
+   "label": "ATTR_PASSING"
+  },
+  {
+   "flag": "disable_a2v_cross_attn",
+   "n": 4,
+   "label": "ATTR_PASSING"
+  },
+  {
+   "flag": "disable_v2a_cross_attn",
+   "n": 4,
+   "label": "ATTR_PASSING"
+  },
+  {
+   "flag": "enable_kv_cache_copy",
+   "n": 4,
+   "label": "ATTR_PASSING"
+  },
+  {
+   "flag": "enable_cfg_parallel",
+   "n": 4,
+   "label": "ATTR_PASSING"
+  },
+  {
+   "flag": "use_flash_attn",
+   "n": 4,
+   "label": "ATTR_PASSING"
+  },
+  {
+   "flag": "enable_bmm",
+   "n": 5,
+   "label": "KERNEL_CONSTEXPR"
+  },
+  {
+   "flag": "with_multiple_kernels",
+   "n": 5,
+   "label": "KERNEL_CONSTEXPR"
+  },
+  {
+   "flag": "enable_stochastic_rounding",
+   "n": 5,
+   "label": "KERNEL_CONSTEXPR"
+  },
+  {
+   "flag": "use_beta_sigmoid_in_kernel",
+   "n": 5,
+   "label": "KERNEL_CONSTEXPR"
+  },
+  {
+   "flag": "use_fast_rsqrt",
+   "n": 5,
+   "label": "KERNEL_CONSTEXPR"
+  },
+  {
+   "flag": "use_safe_gate",
+   "n": 5,
+   "label": "KERNEL_CONSTEXPR"
+  },
+  {
+   "flag": "use_seg_plan",
+   "n": 5,
+   "label": "KERNEL_CONSTEXPR"
+  },
+  {
+   "flag": "disable_recompute",
+   "n": 5,
+   "label": "KERNEL_CONSTEXPR"
+  },
+  {
+   "flag": "use_sliding_window",
+   "n": 6,
+   "label": "CONFIG_DEFAULT"
+  },
+  {
+   "flag": "enable_lm_head_fp32",
+   "n": 6,
+   "label": "CONFIG_DEFAULT"
+  },
+  {
+   "flag": "use_hybrid_layers",
+   "n": 6,
+   "label": "CONFIG_DEFAULT"
+  }
+ ]
+}

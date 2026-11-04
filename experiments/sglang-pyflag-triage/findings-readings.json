@@ -1,0 +1,322 @@
+{
+ "reads": {
+  "use_dsa": [
+   {
+    "file": "python/sglang/srt/mem_cache/memory_pool.py",
+    "line": 4107,
+    "func": "__init__",
+    "reads": []
+   },
+   {
+    "file": "python/sglang/srt/mem_cache/memory_pool.py",
+    "line": 4649,
+    "func": "__init__",
+    "reads": []
+   }
+  ],
+  "use_scale": [
+   {
+    "file": "python/sglang/multimodal_gen/runtime/models/vaes/minimax_h3_video_vae/base_module.py",
+    "line": 171,
+    "func": "__init__",
+    "reads": []
+   }
+  ],
+  "enable_linear_replayssm": [
+   {
+    "file": "python/sglang/srt/mem_cache/memory_pool.py",
+    "line": 650,
+    "func": "__init__",
+    "reads": []
+   }
+  ],
+  "use_clc_scheduler": [
+   {
+    "file": "python/sglang/kernels/ops/attention/flash_attn/cute/sm100_hd256_2cta_fmha_forward.py",
+    "line": 52,
+    "func": "__init__",
+    "reads": []
+   }
+  ],
+  "enable_linear_replayssm_spec": [
+   {
+    "file": "python/sglang/srt/mem_cache/memory_pool.py",
+    "line": 650,
+    "func": "__init__",
+    "reads": []
+   }
+  ],
+  "use_3d_conv": [
+   {
+    "file": "python/sglang/multimodal_gen/runtime/models/vaes/minimax_h3_video_vae/klvae.py",
+    "line": 1220,
+    "func": "__init__",
+    "reads": []
+   }
+  ],
+  "no_embed_class": [
+   {
+    "file": "python/sglang/srt/models/deepseek_janus_pro.py",
+    "line": 699,
+    "func": "__init__",
+    "reads": []
+   }
+  ],
+  "use_vit_decoder": [
+   {
+    "file": "python/sglang/multimodal_gen/runtime/models/vaes/minimax_h3_video_vae/klvae.py",
+    "line": 1220,
+    "func": "__init__",
+    "reads": []
+   }
+  ],
+  "enable_cfg_parallel": [
+   {
+    "file": "python/sglang/multimodal_gen/runtime/pipelines_core/stages/model_specific_stages/mova.py",
+    "line": 245,
+    "func": "_cfg_combine",
+    "reads": []
+   },
+   {
+    "file": "python/sglang/multimodal_gen/runtime/pipelines_core/stages/model_specific_stages/mova.py",
+    "line": 433,
+    "func": "_apply_guidance_rescale",
+    "reads": []
+   }
+  ],
+  "enable_deterministic_inference": [
+   {
+    "file": "python/sglang/kernels/ops/moe/router.py",
+    "line": 338,
+    "func": "fused_moe_router_shim",
+    "reads": []
+   }
+  ],
+  "enable_sampling": [
+   {
+    "file": "python/sglang/srt/hardware_backend/mlx/model_runner.py",
+    "line": 165,
+    "func": "__init__",
+    "reads": []
+   }
+  ],
+  "enable_kv_cache_copy": [
+   {
+    "file": "python/sglang/srt/mem_cache/memory_pool.py",
+    "line": 2158,
+    "func": "__init__",
+    "reads": []
+   }
+  ],
+  "disable_v2a_cross_attn": [
+   {
+    "file": "python/sglang/multimodal_gen/runtime/pipelines_core/stages/model_specific_stages/ltx_2/denoising.py",
+    "line": 1343,
+    "func": "_build_ltx2_model_kwargs",
+    "reads": []
+   }
+  ],
+  "enable_stochastic_rounding": [
+   {
+    "file": "python/sglang/kernels/ops/mamba/triton_ops/mamba_ssm.py",
+    "line": 351,
+    "func": "selective_state_update",
+    "reads": []
+   }
+  ],
+  "use_flash_attn": [
+   {
+    "file": "python/sglang/srt/models/internvl.py",
+    "line": 509,
+    "func": "__init__",
+    "reads": []
+   },
+   {
+    "file": "python/sglang/srt/models/interns1.py",
+    "line": 27,
+    "func": "__init__",
+    "reads": []
+   }
+  ],
+  "use_decode_cuda_graph": [
+   {
+    "file": "python/sglang/srt/lora/backend/triton_v2_backend.py",
+    "line": 168,
+    "func": "prepare_lora_batch",
+    "reads": []
+   }
+  ],
+  "use_front_boi_token": [
+   {
+    "file": "python/sglang/multimodal_gen/runtime/pipelines_core/stages/model_specific_stages/hunyuan_image3/tokenizer.py",
+    "line": 306,
+    "func": "encode_sequence",
+    "reads": []
+   }
+  ],
+  "use_ptx": [
+   {
+    "file": "python/sglang/kernels/ops/attention/flash_attn/cute/flash_fwd_mla_sm100.py",
+    "line": 2433,
+    "func": "mma_inner",
+    "reads": []
+   }
+  ],
+  "disable_a2v_cross_attn": [
+   {
+    "file": "python/sglang/multimodal_gen/runtime/pipelines_core/stages/model_specific_stages/ltx_2/denoising.py",
+    "line": 1343,
+    "func": "_build_ltx2_model_kwargs",
+    "reads": []
+   }
+  ],
+  "use_beta_sigmoid_in_kernel": [
+   {
+    "file": "python/sglang/kernels/ops/attention/linear/kda_ptx_prefill/__init__.py",
+    "line": 78,
+    "func": "chunk_kda_fwd",
+    "reads": []
+   }
+  ],
+  "use_abs_pos": [
+   {
+    "file": "python/sglang/srt/models/deepseek_ocr.py",
+    "line": 752,
+    "func": "__init__",
+    "reads": []
+   }
+  ],
+  "use_logits_buffer": [
+   {
+    "file": "python/sglang/srt/layers/logits_processor.py",
+    "line": 1005,
+    "func": "_get_logits",
+    "reads": [
+     {
+      "kind": "branch",
+      "line": 1046
+     },
+     {
+      "kind": "branch",
+      "line": 1047
+     },
+     {
+      "kind": "forward",
+      "line": 1071,
+      "to": "_gather_softcap_fused"
+     }
+    ]
+   }
+  ],
+  "disable_recompute": [
+   {
+    "file": "python/sglang/kernels/ops/attention/linear/kda_ptx_prefill/__init__.py",
+    "line": 78,
+    "func": "chunk_kda_fwd",
+    "reads": []
+   }
+  ],
+  "enable_python": [
+   {
+    "file": "python/sglang/srt/entrypoints/openai/tool_server.py",
+    "line": 144,
+    "func": "__init__",
+    "reads": []
+   }
+  ],
+  "use_seg_plan": [
+   {
+    "file": "python/sglang/kernels/ops/attention/vattn_asm_gfx950/__init__.py",
+    "line": 558,
+    "func": "mtp_verify_attn_fwd_asm",
+    "reads": []
+   }
+  ],
+  "use_fast_rsqrt": [
+   {
+    "file": "python/sglang/kernels/ops/attention/helion/kda_decode.py",
+    "line": 67,
+    "func": "_helion_fused_recurrent_kda_packed_decode_body",
+    "reads": []
+   }
+  ],
+  "use_safe_gate": [
+   {
+    "file": "python/sglang/kernels/ops/attention/linear/kda_nvidia_prefill/fuse_kernel123_persistent.py",
+    "line": 1472,
+    "func": "make_host_function",
+    "reads": []
+   }
+  ],
+  "use_ulysses_low": [
+   {
+    "file": "python/sglang/multimodal_gen/runtime/distributed/parallel_groups.py",
+    "line": 25,
+    "func": "set_seq_parallel_pg_by_sp_groups",
+    "reads": []
+   }
+  ],
+  "with_multiple_kernels": [
+   {
+    "file": "python/sglang/srt/utils/bench_utils.py",
+    "line": 46,
+    "func": "bench_kineto",
+    "reads": []
+   }
+  ]
+ },
+ "use_logits_buffer_branch": {
+  "use_logits_buffer=True": {
+   "returned": "graph_buffer<-logits",
+   "fell_back_to_float": false,
+   "kernel_calls": []
+  },
+  "use_logits_buffer=False": {
+   "returned": "logits.float",
+   "fell_back_to_float": true,
+   "kernel_calls": []
+  }
+ },
+ "use_logits_buffer_caller": {
+  "get_logits_fn_call": {
+   "line": 657,
+   "use_logits_buffer": "num_chunks == 1"
+  },
+  "chunk_count_in_scope": "num_chunks = (total_size + chunk_size - 1) // chunk_size",
+  "num_chunks_binding": [
+   {
+    "line": 601,
+    "target": "num_chunks"
+   }
+  ],
+  "num_chunks_reads_in_call": 5
+ },
+ "logprob_chunking_defaults": {
+  "SGLANG_ENABLE_LOGPROB_CHUNK": "EnvBool(True)",
+  "SGLANG_LOGPROB_CHUNK_SIZE": "EnvInt(2048)"
+ },
+ "use_dsa_producers": {
+  "producers": [
+   {
+    "line": 5245,
+    "text": "use_dsa=True,"
+   }
+  ],
+  "n": 1
+ },
+ "use_zigzag_chain": {
+  "backend_passes_inner_fn_to_cp": true,
+  "cp_module_passes_true": true,
+  "backend_default_false": true
+ },
+ "mismatches": [],
+ "verdict_counts": {
+  "ATTR_PASSING": 6,
+  "CONFIG_DEFAULT": 3,
+  "INTERNAL_OR_DEFAULT": 12,
+  "INTERNAL_PRODUCER": 1,
+  "KERNEL_CONSTEXPR": 10,
+  "TM013_DUP": 1,
+  "TOPIC_ESCAPE_FAILS_OPEN": 1
+ }
+}

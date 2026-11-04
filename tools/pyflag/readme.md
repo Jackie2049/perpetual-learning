@@ -75,6 +75,30 @@ python3 -m unittest test_scan_unwired_flags -v       # 10 个用例，含 4 条�
 
 **这一批最大的方法教训**：仓库越大、读到的路径越间接，`silently_inert` 里的**属性传参误报占比越高**。SGLang 386→34 看着像"问题很多"，实际逐条看是"开关很多、间接传参很多"。⇒ **报结论前先做两问分桶**（是不是某个 config 字段？有没有位置参数调用？），报总量没有意义。
 
+**第二批（2026-11-04，同一快照 `27aedf7f`）：把 34 条**全部归档分类**，真缺陷只剩 2 条。**
+用 [build_triage.py](../../experiments/sglang-pyflag-triage/build_triage.py) 按**消费者所在位置**分桶：
+内核启动器 2 / 配置 dataclass 3 / `__init__` 里存 self 8 / 源码分支 21；再用
+[verify_findings.py](../../experiments/sglang-pyflag-triage/verify_findings.py) 把 34 条逐条绑到可 grep 的事实（形参的每一处读取分「分支 / 转发 / self 属性」），并做 3 条负向对照。结论：
+
+| 标签 | 条数 | 含义 |
+|---|---|---|
+| `KERNEL_CONSTEXPR` | 10 | Triton/cute 核的 `constexpr`，不传即默认，两条路径等价 |
+| `INTERNAL_OR_DEFAULT` | 12 | 真正生产者是模块级常量 / `**kwargs` / 默认值，不是前端选项 |
+| `ATTR_PASSING` | 6 | 属性传参（第五类误报） |
+| `CONFIG_DEFAULT` | 3 | HF 配置 dataclass 字段 |
+| `INTERNAL_PRODUCER` | 1 | `use_dsa`：子类内部传 `use_dsa=True` |
+| `TM013_DUP` | 1 | 第一批那条 |
+| **`TOPIC_ESCAPE_FAILS_OPEN`** | **1** | **新发现：`use_logits_buffer` 默认值在唯一调用点不可达**（[证据](../../open-source/sglang/evidence/logits-buffer-escape-hatch.md)） |
+
+**新学到的两类"工具看不见的生产者"**（已能机械判出，不必逐条读）：
+
+1. **回调参数**：`cp_strategy.run_attention(q, forward_batch, dev, _inner_fn, backend=…)` 把内部函数
+   当参数传下去，`srt/layers/cp/zigzag.py` 再 `use_zigzag_page_table=True` 调回来。⇒ 名字的生产者
+   藏在一个**不透明实参**里。判据：消费者所在函数的名字是否作为实参出现在别的调用里。
+2. **调用点用「别的东西」代替了形参的语义**：`_get_logits(..., use_logits_buffer=True)` 的注释说
+   「形状不匹配就跳过」，调用点却按「块数」传值。⇒ **形参有生产者、但语义被掏空**，
+   这是 pyflag 结构上看不见的一类，只能读注释与调用点。
+
 **跑 SGLang 的耗时**：`python3 scan_unwired_flags.py <sglang>` 约 **10.5 分钟**（8000+ 文件），且 `--json` 落盘到**脚本所在目录** `tools/pyflag/scan-<root>.json`，不是被测仓库里——第一次找错了地方。
 
 ## 第五类易错点：生产者是**属性**（或位置参数），不是关键字

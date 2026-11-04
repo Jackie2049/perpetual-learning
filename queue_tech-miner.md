@@ -1,4 +1,4 @@
-更新时间：2026-11-04（M1 **TM-013 新登记：SGLang 扩池扫出第一条真失效**——pyflag 在 SGLang `27aedf7f` 上跑出 386 开关／34 条 `silently_inert`，但排在最前的三条都是**属性传参**误报（`mode=mixed` 只是「多个消费者默认值不一致」），逐条取证后真正可核的是 `fused_moe_router_shim` 的 `enable_deterministic_inference` 形参：**注释说它为了在确定性推理时让开 tensorcore 内核，但从来没有调用点传它**（`grok.py:149` 的 partial 只钉第一个位置参数、`topk.py:3239` 只传四个无关关键字）⇒ `--enable-deterministic-inference` 对 Grok 的 MoE 路由没有影响，不报错不打日志。CPU 上用**真实源码**跑出行为分叉（照 `topk.py` 走 tensorcore、强制 `True` 走 cudacore），同仓四处同类路径都直读执行配置让路（`mega_gate`／`deepseek_v2`／`gpt_oss`／`kimi_k3`），只有这条走样。形参由 `9b8ebb2798`（2025-10-09）顺带加入、同提交未改调用点 ⇒ **加的时候就没接**，不是重构回归。价值 5/10，对外待用户授权。此前 M1 **TM-007：SkyRL 7 条 pyflag 候选逐条取证**——真失效只剩 `use_liger_kernel`（配不了也没人配，对外 3/10），`use_remove_padding` 降级为不可配；M5 **TM-008 rollout-bound 区间已执行**：三个负载点 GATE 全未过（生成余量 4.5–4.7×）⇒ 区间在本机不可达（负结论），改换等待来源后量子回到关键路径（gen +0.544 s、整步 +0.789 s／+7.9%）。）
+更新时间：2026-11-04（M1 **TM-014 新登记：SGLang 34 条 `silently_inert` 全量归档，真缺陷只剩 2 条**——按消费者位置分桶（内核 2／配置 3／运行时开关 8／源码 21）+ 逐条绑事实，新发现 `use_logits_buffer` 的默认值在唯一调用点不可达（`num_chunks == 1` ⇒ 输入超 2048 行恒 `False`，注释里的形状判据被绕过）；不影响正确性，3/10。此前 **TM-013**——pyflag 在 SGLang `27aedf7f` 上跑出 386 开关／34 条 `silently_inert`，但排在最前的三条都是**属性传参**误报（`mode=mixed` 只是「多个消费者默认值不一致」），逐条取证后真正可核的是 `fused_moe_router_shim` 的 `enable_deterministic_inference` 形参：**注释说它为了在确定性推理时让开 tensorcore 内核，但从来没有调用点传它**（`grok.py:149` 的 partial 只钉第一个位置参数、`topk.py:3239` 只传四个无关关键字）⇒ `--enable-deterministic-inference` 对 Grok 的 MoE 路由没有影响，不报错不打日志。CPU 上用**真实源码**跑出行为分叉（照 `topk.py` 走 tensorcore、强制 `True` 走 cudacore），同仓四处同类路径都直读执行配置让路（`mega_gate`／`deepseek_v2`／`gpt_oss`／`kimi_k3`），只有这条走样。形参由 `9b8ebb2798`（2025-10-09）顺带加入、同提交未改调用点 ⇒ **加的时候就没接**，不是重构回归。价值 5/10，对外待用户授权。此前 M1 **TM-007：SkyRL 7 条 pyflag 候选逐条取证**——真失效只剩 `use_liger_kernel`（配不了也没人配，对外 3/10），`use_remove_padding` 降级为不可配；M5 **TM-008 rollout-bound 区间已执行**：三个负载点 GATE 全未过（生成余量 4.5–4.7×）⇒ 区间在本机不可达（负结论），改换等待来源后量子回到关键路径（gen +0.544 s、整步 +0.789 s／+7.9%）。）
 
 ## 当前方向与选题原则（2026-11-02 用户指令，覆盖此前的框架与选题范围）
 
@@ -192,6 +192,18 @@
 - **下一步与等待条件**：两种最小修法都准备好了（调用点按 `get_exec()` 传值；或 shim 内直读，与四处惯例统一，本仓库倾向后者）。**对外（issue／PR）待用户逐项授权，未授权前不建 fork 分支、不评论、不开 PR。**
 - **停止条件**：上游给调用点接上值、或删掉该形参、或明确说明这是有意设计（`repro.py` 会以 exit 1 提示结论失效），或用户否决对外动作。
 - **成果入口**：[证据](open-source/sglang/evidence/grok-router-detflag.md)、[实验](experiments/sglang-grok-router-detflag/README.md)、[复现](experiments/sglang-grok-router-detflag/repro.py)、[读数](experiments/sglang-grok-router-detflag/repro.json)、[pyflag 扫描](tools/pyflag/scan-sglang-main.json)。
+- **同批后续（2026-11-04）**：SGLang 那 34 条 `silently_inert` 已全量归档，见 [TM-014](#tm-014--sglanguse_logits_buffer-的默认值在唯一调用点不可达b-类主动发掘) 与 [分类账](experiments/sglang-pyflag-triage/README.md)；本条的 `enable_deterministic_inference` 是其中唯一一条已在第一批取证的。
+
+## TM-014 — SGLang：`use_logits_buffer` 的默认值在唯一调用点不可达（B 类：主动发掘）
+
+- **渠道 / 仓库 / 来源**：B 类（主动发掘）；[sgl-project/sglang](https://github.com/sgl-project/sglang) `27aedf7f`（2026-11-04）；来源是 TM-013 那批 pyflag 读数里**唯一一条新的源码层候选**（34 条 `silently_inert` 已全部归档分类）。
+- **问题与价值**：`python/sglang/srt/layers/logits_processor.py:1011` 的 `_get_logits(..., use_logits_buffer: bool = True)` 只控制一件事——算完 lm_head 的结果要不要直接收进 graph 复用的 `next_token_logits_buffer`。它唯一的调用点 `python/sglang/srt/layers/logprob_processor.py:657` 显式传 `use_logits_buffer=num_chunks == 1`，而 `num_chunks` 按 `SGLANG_LOGPROB_CHUNK_SIZE`（默认 **2048**）切块 ⇒ **输入 logprob 超过 2048 行就恒为 `False`，默认值 `True` 在这条链上不可达**。注释（`:1411-1412`）声明的是「形状不匹配时才跳过」，调用点用的是「块数」，两者语义不同。
+- **已有证据**：[证据页](open-source/sglang/evidence/logits-buffer-escape-hatch.md) · [实验（含 34 条分类账）](experiments/sglang-pyflag-triage/README.md) · [build_triage.py](experiments/sglang-pyflag-triage/build_triage.py) · [verify_findings.py](experiments/sglang-pyflag-triage/verify_findings.py) · 读数 [triage-buckets.json](experiments/sglang-pyflag-triage/triage-buckets.json) / [findings-readings.json](experiments/sglang-pyflag-triage/findings-readings.json)。**CPU 行为分叉**：取 `_copy_logits_to_buffer` 的真实源码执行两条分支，`True` → 复用 graph buffer，`False` → `logits.float()` 新分配；`--selftest` **3/3**（等价分支 / 删函数 / 误判注入全红）。
+- **边界**：**不影响正确性**（函数体内的形状与 dtype 比对仍在）；**未上真机**，两条分支的显存峰值差异与省下的 cast 一个数都没有；**调用点是否故意保守**（多块复用同一 buffer 会 alias）本仓库无定论 ⇒ 不建议直接改代码。
+- **价值评估**：**3/10** —— 缺陷真、位置明确、可证伪，但收益面窄且需维护者确认设计意图。
+- **下一步与等待条件**：两种可能的最小动作（调用点改成形状判据／删掉形参改内部判据）**都不先写**，等用户决定是否对外；对外（issue／PR）**待用户逐项授权**，未授权前不建 fork 分支、不评论、不开 PR。
+- **停止条件**：上游把调用点改成按形状判定、或删掉该形参、或明确说明「多块一律不复用」是有意设计（`verify_findings.py` 会以 exit 1 提示结论失效），或用户否决对外动作。
+- **成果入口**：同上。**同批顺带结论**：34 条 `silently_inert` 里真缺陷只有 2 条（本条 + TM-013），其余 32 条按 5 类结构原因归档；`use_dsa` 有内部生产者（子类传 `use_dsa=True`），`use_zigzag_page_table` 的生产者藏在 CP 的回调实参里。
 
 ## 已闭环与保留方向
 

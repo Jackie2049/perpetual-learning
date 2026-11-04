@@ -9,7 +9,7 @@
 
 **【价值评估】** 7 / 10 — 集中同一项目的候选、证据和进展，减少误读与重复探索；目录本身不计作上游成果。
 
-**【进展】** 历史草稿保留；2026-11-04 新增 Grok 路由确定性形参无生产者的静态取证（7/7 判据 + CPU 行为分叉），对外动作待用户授权。
+**【进展】** 历史草稿保留；2026-11-04 新增两条静态取证：Grok 路由确定性形参零生产者（TM-013）、`use_logits_buffer` 默认值在唯一调用点不可达（TM-014，同批把 34 条 `silently_inert` 全部归档分类）。对外动作待用户授权。
 
 **【大白话讲明白】**
 
@@ -30,3 +30,5 @@
 
 - [SGLang #28676 MoE Cache Clobber — Comment Draft](sglang-28676-moe-cache-clobber-comment-draft.md)
 - [Grok 路由的确定性逃生口没有接线](evidence/grok-router-detflag.md) — `fused_moe_router_shim` 的 `enable_deterministic_inference` 形参零生产者；2026-11-04 静态 7/7 + CPU 行为分叉，对外待用户授权（TM-013）
+- [`use_logits_buffer` 的默认值在唯一调用点永远拿不到](evidence/logits-buffer-escape-hatch.md) — 调用点传 `num_chunks == 1`，注释里的形状判据被绕过；不影响正确性，3/10（TM-014）
+- [pyflag 34 条 `silently_inert` 的分类账](../../experiments/sglang-pyflag-triage/README.md) — 真缺陷只剩 2 条（含 TM-013），其余按 5 类结构原因归档，3 条负向对照

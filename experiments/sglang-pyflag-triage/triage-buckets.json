@@ -1,0 +1,1781 @@
+{
+ "root": "sglang-src",
+ "n_flags": 386,
+ "n_inert": 34,
+ "buckets": {
+  "config_dataclass": 3,
+  "kernel_launcher": 2,
+  "runtime_kill_switch": 8,
+  "source_candidate": 21
+ },
+ "rows": [
+  {
+   "flag": "use_sliding_window",
+   "mode": "always",
+   "reads_nontest": 157,
+   "defaults": [
+    "True"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/srt/configs/iquest_q1.py",
+     "line": 9,
+     "func": "__init__",
+     "call_name": "IQuestQ1Config",
+     "param_default": true,
+     "stored_in_self": true,
+     "kind": "config_dataclass"
+    },
+    {
+     "file": "python/sglang/srt/configs/flint.py",
+     "line": 12,
+     "func": "__init__",
+     "call_name": "FlintConfig",
+     "param_default": true,
+     "stored_in_self": true,
+     "kind": "config_dataclass"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/srt/configs/flint.py": [
+     {
+      "line": 96,
+      "text": "self.use_sliding_window = use_sliding_window"
+     },
+     {
+      "line": 97,
+      "text": "self.sliding_window = sliding_window if use_sliding_window else None"
+     }
+    ],
+    "python/sglang/srt/configs/iquest_q1.py": [
+     {
+      "line": 90,
+      "text": "if not use_sliding_window:"
+     },
+     {
+      "line": 131,
+      "text": "self.sliding_window = sliding_window if use_sliding_window else None"
+     },
+     {
+      "line": 133,
+      "text": "self.use_sliding_window = use_sliding_window"
+     },
+     {
+      "line": 202,
+      "text": "use_sliding_window=window is not None,"
+     }
+    ]
+   },
+   "n_src_consumers": 0,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 2,
+   "bucket": "config_dataclass"
+  },
+  {
+   "flag": "enable_lm_head_fp32",
+   "mode": "always",
+   "reads_nontest": 9,
+   "defaults": [
+    "True"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/srt/configs/iquest_q1.py",
+     "line": 9,
+     "func": "__init__",
+     "call_name": "IQuestQ1Config",
+     "param_default": true,
+     "stored_in_self": true,
+     "kind": "config_dataclass"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/srt/configs/iquest_q1.py": [
+     {
+      "line": 100,
+      "text": "if enable_lm_head_fp32 is not True:"
+     },
+     {
+      "line": 101,
+      "text": "raise ValueError(\"IQuest Q1 requires enable_lm_head_fp32=True.\")"
+     },
+     {
+      "line": 155,
+      "text": "self.enable_lm_head_fp32 = enable_lm_head_fp32"
+     }
+    ]
+   },
+   "n_src_consumers": 0,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 1,
+   "bucket": "config_dataclass"
+  },
+  {
+   "flag": "use_hybrid_layers",
+   "mode": "always",
+   "reads_nontest": 4,
+   "defaults": [
+    "True"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/srt/configs/iquest_q1.py",
+     "line": 9,
+     "func": "__init__",
+     "call_name": "IQuestQ1Config",
+     "param_default": true,
+     "stored_in_self": true,
+     "kind": "config_dataclass"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/srt/configs/iquest_q1.py": [
+     {
+      "line": 79,
+      "text": "if not use_hybrid_layers:"
+     },
+     {
+      "line": 132,
+      "text": "self.use_hybrid_layers = use_hybrid_layers"
+     },
+     {
+      "line": 201,
+      "text": "use_hybrid_layers=True,"
+     }
+    ]
+   },
+   "n_src_consumers": 0,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 1,
+   "bucket": "config_dataclass"
+  },
+  {
+   "flag": "use_zigzag_page_table",
+   "mode": "mixed",
+   "reads_nontest": 3,
+   "defaults": [
+    "False",
+    "unspecified"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/srt/layers/attention/trtllm_mha_backend.py",
+     "line": 1794,
+     "func": "forward_extend",
+     "call_name": "forward_extend",
+     "param_default": "unspecified",
+     "stored_in_self": false,
+     "kind": "kernel_launcher"
+    },
+    {
+     "file": "python/sglang/srt/layers/attention/trtllm_mha_backend.py",
+     "line": 2023,
+     "func": "_trtllm_context_attn",
+     "call_name": "_trtllm_context_attn",
+     "param_default": false,
+     "stored_in_self": false,
+     "kind": "kernel_launcher"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/srt/layers/attention/trtllm_mha_backend.py": [
+     {
+      "line": 2030,
+      "text": "use_zigzag_page_table=False,"
+     },
+     {
+      "line": 2037,
+      "text": "if use_zigzag_page_table:"
+     }
+    ]
+   },
+   "n_src_consumers": 0,
+   "n_kernel_consumers": 2,
+   "n_config_consumers": 0,
+   "bucket": "kernel_launcher"
+  },
+  {
+   "flag": "enable_bmm",
+   "mode": "always",
+   "reads_nontest": 2,
+   "defaults": [
+    "True"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/srt/batch_invariant_ops/batch_invariant_ops.py",
+     "line": 1170,
+     "func": "enable_batch_invariant_mode",
+     "call_name": "enable_batch_invariant_mode",
+     "param_default": true,
+     "stored_in_self": false,
+     "kind": "kernel_launcher"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/srt/batch_invariant_ops/batch_invariant_ops.py": [
+     {
+      "line": 1170,
+      "text": "def enable_batch_invariant_mode(enable_bmm: bool = True):"
+     },
+     {
+      "line": 1192,
+      "text": "if enable_bmm:"
+     }
+    ]
+   },
+   "n_src_consumers": 0,
+   "n_kernel_consumers": 1,
+   "n_config_consumers": 0,
+   "bucket": "kernel_launcher"
+  },
+  {
+   "flag": "use_dsa",
+   "mode": "never",
+   "reads_nontest": 117,
+   "defaults": [
+    "False"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/srt/mem_cache/memory_pool.py",
+     "line": 4107,
+     "func": "__init__",
+     "call_name": "HybridLinearKVPool",
+     "param_default": false,
+     "stored_in_self": true,
+     "kind": "init_stored_flag"
+    },
+    {
+     "file": "python/sglang/srt/mem_cache/memory_pool.py",
+     "line": 4649,
+     "func": "__init__",
+     "call_name": "MLATokenToKVPool",
+     "param_default": false,
+     "stored_in_self": true,
+     "kind": "init_stored_flag"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/srt/mem_cache/memory_pool.py": [
+     {
+      "line": 4154,
+      "text": "self.use_dsa = use_dsa"
+     },
+     {
+      "line": 4181,
+      "text": "elif use_dsa:"
+     },
+     {
+      "line": 4186,
+      "text": "\"HybridLinearKVPool with use_dsa requires index_head_dim and kv_cache_dim\""
+     },
+     {
+      "line": 4539,
+      "text": "assert self.use_dsa, \"set_index_k_scale_buffer called when use_dsa is False\""
+     },
+     {
+      "line": 4546,
+      "text": "assert self.use_dsa, ("
+     },
+     {
+      "line": 4547,
+      "text": "\"get_index_k_with_scale_buffer called when use_dsa is False\""
+     },
+     {
+      "line": 4556,
+      "text": "assert self.use_dsa, ("
+     },
+     {
+      "line": 4557,
+      "text": "\"get_broadcastable_index_k_with_scale_buffer called when use_dsa is False\""
+     },
+     {
+      "line": 4566,
+      "text": "if not self.use_dsa or not hasattr("
+     },
+     {
+      "line": 4581,
+      "text": "assert self.use_dsa, \"get_index_k_scale_buffer called when use_dsa is False\""
+     },
+     {
+      "line": 4591,
+      "text": "assert self.use_dsa, \"get_compress_tail_buffers called when use_dsa is False\""
+     },
+     {
+      "line": 4608,
+      "text": "assert self.use_dsa, ("
+     },
+     {
+      "line": 4609,
+      "text": "\"kpool_decode_update_index_cache called when use_dsa is False\""
+     },
+     {
+      "line": 4634,
+      "text": "assert self.use_dsa, ("
+     },
+     {
+      "line": 4635,
+      "text": "\"set_compress_tail_for_request called when use_dsa is False\""
+     },
+     {
+      "line": 4678,
+      "text": "self.use_dsa = use_dsa"
+     },
+     {
+      "line": 4681,
+      "text": "use_dsa"
+     },
+     {
+      "line": 4705,
+      "text": "if not use_dsa:"
+     },
+     {
+      "line": 4883,
+      "text": "and (self.use_dsa or self.dsa_kv_cache_store_fp8)"
+     },
+     {
+      "line": 4885,
+      "text": "if _is_hip and self.use_dsa and self.dtype == fp8_dtype:"
+     },
+     {
+      "line": 5245,
+      "text": "use_dsa=True,"
+     }
+    ]
+   },
+   "n_src_consumers": 2,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 0,
+   "bucket": "runtime_kill_switch"
+  },
+  {
+   "flag": "use_scale",
+   "mode": "always",
+   "reads_nontest": 52,
+   "defaults": [
+    "True"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/multimodal_gen/runtime/models/vaes/minimax_h3_video_vae/base_module.py",
+     "line": 171,
+     "func": "__init__",
+     "call_name": "TransformerBlock",
+     "param_default": true,
+     "stored_in_self": true,
+     "kind": "init_stored_flag"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/multimodal_gen/runtime/models/vaes/minimax_h3_video_vae/base_module.py": [
+     {
+      "line": 190,
+      "text": "self.use_scale = use_scale"
+     },
+     {
+      "line": 214,
+      "text": "if use_scale:"
+     },
+     {
+      "line": 229,
+      "text": "if use_scale:"
+     },
+     {
+      "line": 241,
+      "text": "if self.use_scale:"
+     },
+     {
+      "line": 252,
+      "text": "if self.use_scale:"
+     }
+    ]
+   },
+   "n_src_consumers": 1,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 0,
+   "bucket": "runtime_kill_switch"
+  },
+  {
+   "flag": "enable_linear_replayssm",
+   "mode": "never",
+   "reads_nontest": 51,
+   "defaults": [
+    "False"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/srt/mem_cache/memory_pool.py",
+     "line": 650,
+     "func": "__init__",
+     "call_name": "MambaPool",
+     "param_default": false,
+     "stored_in_self": true,
+     "kind": "init_stored_flag"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/srt/mem_cache/memory_pool.py": [
+     {
+      "line": 664,
+      "text": "enable_linear_replayssm_spec: bool = False,"
+     },
+     {
+      "line": 680,
+      "text": "self.enable_linear_replayssm = enable_linear_replayssm"
+     },
+     {
+      "line": 687,
+      "text": "self.enable_linear_replayssm_spec = enable_linear_replayssm_spec"
+     },
+     {
+      "line": 689,
+      "text": "enable_linear_replayssm_spec and cache_params.is_kda"
+     },
+     {
+      "line": 691,
+      "text": "_replayssm_on = enable_linear_replayssm or enable_linear_replayssm_spec"
+     },
+     {
+      "line": 785,
+      "text": "and enable_linear_replayssm_spec"
+     },
+     {
+      "line": 790,
+      "text": "if enable_linear_replayssm_spec"
+     },
+     {
+      "line": 796,
+      "text": "ring_dtype = conv_dtype if enable_linear_replayssm_spec else ssm_dtype"
+     },
+     {
+      "line": 839,
+      "text": "if enable_linear_replayssm_spec and cache_params.is_kda:"
+     },
+     {
+      "line": 870,
+      "text": "elif enable_linear_replayssm_spec and ring_dtype != torch.float32:"
+     },
+     {
+      "line": 901,
+      "text": "if enable_linear_replayssm_spec:"
+     },
+     {
+      "line": 1059,
+      "text": "if enable_linear_replayssm"
+     },
+     {
+      "line": 1064,
+      "text": "if enable_linear_replayssm_spec and not self.replayssm_spec_fold"
+     },
+     {
+      "line": 1069,
+      "text": "if enable_linear_replayssm_spec and not self.replayssm_spec_fold"
+     },
+     {
+      "line": 1074,
+      "text": "if enable_linear_replayssm_spec and not self.replayssm_spec_fold"
+     },
+     {
+      "line": 1407,
+      "text": "enable_linear_replayssm_spec: bool = False,"
+     },
+     {
+      "line": 1443,
+      "text": "enable_linear_replayssm=enable_linear_replayssm,"
+     },
+     {
+      "line": 1446,
+      "text": "enable_linear_replayssm_spec=enable_linear_replayssm_spec,"
+     },
+     {
+      "line": 1467,
+      "text": "enable_linear_replayssm_spec: bool = False,"
+     },
+     {
+      "line": 1484,
+      "text": "enable_linear_replayssm=enable_linear_replayssm,"
+     },
+     {
+      "line": 1487,
+      "text": "enable_linear_replayssm_spec=enable_linear_replayssm_spec,"
+     }
+    ]
+   },
+   "n_src_consumers": 1,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 0,
+   "bucket": "runtime_kill_switch"
+  },
+  {
+   "flag": "use_clc_scheduler",
+   "mode": "never",
+   "reads_nontest": 35,
+   "defaults": [
+    "False"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/kernels/ops/attention/flash_attn/cute/sm100_hd256_2cta_fmha_forward.py",
+     "line": 52,
+     "func": "__init__",
+     "call_name": "BlackwellFusedMultiHeadAttentionForward",
+     "param_default": false,
+     "stored_in_self": true,
+     "kind": "init_stored_flag"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/kernels/ops/attention/flash_attn/cute/sm100_hd256_2cta_fmha_forward.py": [
+     {
+      "line": 143,
+      "text": "self.use_clc_scheduler = False"
+     },
+     {
+      "line": 150,
+      "text": "self.sched_warp_id = self.empty_warp_id[0] if use_clc_scheduler else None"
+     },
+     {
+      "line": 196,
+      "text": "if cutlass.const_expr(self.use_clc_scheduler):"
+     },
+     {
+      "line": 416,
+      "text": "if cutlass.const_expr(self.use_clc_scheduler):"
+     },
+     {
+      "line": 751,
+      "text": "if cutlass.const_expr(self.use_clc_scheduler):"
+     },
+     {
+      "line": 857,
+      "text": "if cutlass.const_expr(self.use_clc_scheduler):"
+     },
+     {
+      "line": 1658,
+      "text": "if cutlass.const_expr(self.use_clc_scheduler):"
+     },
+     {
+      "line": 1671,
+      "text": "if cutlass.const_expr(self.use_clc_scheduler):"
+     }
+    ]
+   },
+   "n_src_consumers": 1,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 0,
+   "bucket": "runtime_kill_switch"
+  },
+  {
+   "flag": "enable_linear_replayssm_spec",
+   "mode": "never",
+   "reads_nontest": 33,
+   "defaults": [
+    "False"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/srt/mem_cache/memory_pool.py",
+     "line": 650,
+     "func": "__init__",
+     "call_name": "MambaPool",
+     "param_default": false,
+     "stored_in_self": true,
+     "kind": "init_stored_flag"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/srt/mem_cache/memory_pool.py": [
+     {
+      "line": 687,
+      "text": "self.enable_linear_replayssm_spec = enable_linear_replayssm_spec"
+     },
+     {
+      "line": 689,
+      "text": "enable_linear_replayssm_spec and cache_params.is_kda"
+     },
+     {
+      "line": 691,
+      "text": "_replayssm_on = enable_linear_replayssm or enable_linear_replayssm_spec"
+     },
+     {
+      "line": 785,
+      "text": "and enable_linear_replayssm_spec"
+     },
+     {
+      "line": 790,
+      "text": "if enable_linear_replayssm_spec"
+     },
+     {
+      "line": 796,
+      "text": "ring_dtype = conv_dtype if enable_linear_replayssm_spec else ssm_dtype"
+     },
+     {
+      "line": 839,
+      "text": "if enable_linear_replayssm_spec and cache_params.is_kda:"
+     },
+     {
+      "line": 870,
+      "text": "elif enable_linear_replayssm_spec and ring_dtype != torch.float32:"
+     },
+     {
+      "line": 901,
+      "text": "if enable_linear_replayssm_spec:"
+     },
+     {
+      "line": 1064,
+      "text": "if enable_linear_replayssm_spec and not self.replayssm_spec_fold"
+     },
+     {
+      "line": 1069,
+      "text": "if enable_linear_replayssm_spec and not self.replayssm_spec_fold"
+     },
+     {
+      "line": 1074,
+      "text": "if enable_linear_replayssm_spec and not self.replayssm_spec_fold"
+     },
+     {
+      "line": 1446,
+      "text": "enable_linear_replayssm_spec=enable_linear_replayssm_spec,"
+     },
+     {
+      "line": 1487,
+      "text": "enable_linear_replayssm_spec=enable_linear_replayssm_spec,"
+     }
+    ]
+   },
+   "n_src_consumers": 1,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 0,
+   "bucket": "runtime_kill_switch"
+  },
+  {
+   "flag": "use_3d_conv",
+   "mode": "never",
+   "reads_nontest": 21,
+   "defaults": [
+    "False"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/multimodal_gen/runtime/models/vaes/minimax_h3_video_vae/klvae.py",
+     "line": 1220,
+     "func": "__init__",
+     "call_name": "AutoencoderKLLegacy",
+     "param_default": false,
+     "stored_in_self": true,
+     "kind": "init_stored_flag"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/multimodal_gen/runtime/models/vaes/minimax_h3_video_vae/klvae.py": [
+     {
+      "line": 221,
+      "text": "\"use_3d_conv\": self.use_3d_conv,"
+     },
+     {
+      "line": 919,
+      "text": "process_image or not self.use_3d_conv or frame_num is not None"
+     },
+     {
+      "line": 922,
+      "text": "if process_image or not self.use_3d_conv:"
+     },
+     {
+      "line": 923,
+      "text": "if not self.use_3d_conv and z.ndim == 5:"
+     },
+     {
+      "line": 930,
+      "text": "if self.use_3d_conv:"
+     },
+     {
+      "line": 972,
+      "text": "If self.use_3d_conv is True, it should be in shape B * (D, 1, H', W')."
+     },
+     {
+      "line": 1227,
+      "text": "use_3d_conv=False,"
+     },
+     {
+      "line": 1255,
+      "text": "if not use_3d_conv or not use_vit_decoder:"
+     },
+     {
+      "line": 1257,
+      "text": "\"this release only supports use_3d_conv=True with use_vit_decoder=True\""
+     },
+     {
+      "line": 1266,
+      "text": "self.use_3d_conv = use_3d_conv"
+     },
+     {
+      "line": 1327,
+      "text": "if self.use_3d_conv and input.ndim == 4:"
+     },
+     {
+      "line": 1330,
+      "text": "if process_image or not self.use_3d_conv:"
+     },
+     {
+      "line": 1337,
+      "text": "if process_image and self.use_3d_conv:"
+     }
+    ]
+   },
+   "n_src_consumers": 1,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 0,
+   "bucket": "runtime_kill_switch"
+  },
+  {
+   "flag": "no_embed_class",
+   "mode": "never",
+   "reads_nontest": 7,
+   "defaults": [
+    "False"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/srt/models/deepseek_janus_pro.py",
+     "line": 699,
+     "func": "__init__",
+     "call_name": "VisionTransformer",
+     "param_default": false,
+     "stored_in_self": true,
+     "kind": "init_stored_flag"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/srt/models/deepseek_janus_pro.py": [
+     {
+      "line": 779,
+      "text": "self.no_embed_class = ("
+     },
+     {
+      "line": 780,
+      "text": "no_embed_class  # don't embed prefix positions (includes reg)"
+     },
+     {
+      "line": 808,
+      "text": "num_patches if no_embed_class else num_patches + self.num_prefix_tokens"
+     },
+     {
+      "line": 909,
+      "text": "num_prefix_tokens=0 if self.no_embed_class else self.num_prefix_tokens,"
+     },
+     {
+      "line": 921,
+      "text": "if self.no_embed_class:"
+     }
+    ]
+   },
+   "n_src_consumers": 1,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 0,
+   "bucket": "runtime_kill_switch"
+  },
+  {
+   "flag": "use_vit_decoder",
+   "mode": "never",
+   "reads_nontest": 7,
+   "defaults": [
+    "False"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/multimodal_gen/runtime/models/vaes/minimax_h3_video_vae/klvae.py",
+     "line": 1220,
+     "func": "__init__",
+     "call_name": "AutoencoderKLLegacy",
+     "param_default": false,
+     "stored_in_self": true,
+     "kind": "init_stored_flag"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/multimodal_gen/runtime/models/vaes/minimax_h3_video_vae/klvae.py": [
+     {
+      "line": 1243,
+      "text": "use_vit_decoder=False,"
+     },
+     {
+      "line": 1255,
+      "text": "if not use_3d_conv or not use_vit_decoder:"
+     },
+     {
+      "line": 1257,
+      "text": "\"this release only supports use_3d_conv=True with use_vit_decoder=True\""
+     },
+     {
+      "line": 1301,
+      "text": "self.use_vit_decoder = use_vit_decoder"
+     },
+     {
+      "line": 1322,
+      "text": "if self.use_vit_decoder:"
+     }
+    ]
+   },
+   "n_src_consumers": 1,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 0,
+   "bucket": "runtime_kill_switch"
+  },
+  {
+   "flag": "enable_cfg_parallel",
+   "mode": "mixed",
+   "reads_nontest": 236,
+   "defaults": [
+    "unspecified"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/multimodal_gen/runtime/pipelines_core/stages/model_specific_stages/mova.py",
+     "line": 245,
+     "func": "_cfg_combine",
+     "call_name": "_cfg_combine",
+     "param_default": "unspecified",
+     "stored_in_self": false,
+     "kind": "source_branch"
+    },
+    {
+     "file": "python/sglang/multimodal_gen/runtime/pipelines_core/stages/model_specific_stages/mova.py",
+     "line": 433,
+     "func": "_apply_guidance_rescale",
+     "call_name": "_apply_guidance_rescale",
+     "param_default": "unspecified",
+     "stored_in_self": false,
+     "kind": "source_branch"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/multimodal_gen/runtime/pipelines_core/stages/model_specific_stages/mova.py": [
+     {
+      "line": 210,
+      "text": "if get_global_server_args().enable_cfg_parallel:"
+     },
+     {
+      "line": 245,
+      "text": "def _cfg_combine(self, pos, neg, guidance_scale, cfg_rank, enable_cfg_parallel):"
+     },
+     {
+      "line": 246,
+      "text": "if not enable_cfg_parallel:"
+     },
+     {
+      "line": 439,
+      "text": "enable_cfg_parallel,"
+     },
+     {
+      "line": 443,
+      "text": "if enable_cfg_parallel:"
+     },
+     {
+      "line": 533,
+      "text": "if enable_cfg_parallel:"
+     },
+     {
+      "line": 597,
+      "text": "enable_cfg_parallel,"
+     },
+     {
+      "line": 604,
+      "text": "enable_cfg_parallel,"
+     },
+     {
+      "line": 613,
+      "text": "enable_cfg_parallel,"
+     },
+     {
+      "line": 620,
+      "text": "enable_cfg_parallel,"
+     },
+     {
+      "line": 1000,
+      "text": "if get_global_server_args().enable_cfg_parallel:"
+     }
+    ]
+   },
+   "n_src_consumers": 2,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 0,
+   "bucket": "source_candidate"
+  },
+  {
+   "flag": "enable_deterministic_inference",
+   "mode": "never",
+   "reads_nontest": 149,
+   "defaults": [
+    "False"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/kernels/ops/moe/router.py",
+     "line": 338,
+     "func": "fused_moe_router_shim",
+     "call_name": "fused_moe_router_shim",
+     "param_default": false,
+     "stored_in_self": false,
+     "kind": "source_branch"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/kernels/ops/moe/router.py": [
+     {
+      "line": 366,
+      "text": "and not enable_deterministic_inference"
+     }
+    ]
+   },
+   "n_src_consumers": 1,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 0,
+   "bucket": "source_candidate"
+  },
+  {
+   "flag": "enable_sampling",
+   "mode": "never",
+   "reads_nontest": 33,
+   "defaults": [
+    "False"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/srt/hardware_backend/mlx/model_runner.py",
+     "line": 165,
+     "func": "__init__",
+     "call_name": "MlxModelRunner",
+     "param_default": false,
+     "stored_in_self": false,
+     "kind": "source_branch"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/srt/hardware_backend/mlx/model_runner.py": [
+     {
+      "line": 161,
+      "text": "_enable_sampling = False"
+     },
+     {
+      "line": 184,
+      "text": "self._enable_sampling = enable_sampling"
+     },
+     {
+      "line": 194,
+      "text": "mx.random.key(sampling_rng_seed) if enable_sampling else None"
+     },
+     {
+      "line": 914,
+      "text": "if self._enable_sampling:"
+     },
+     {
+      "line": 1194,
+      "text": "if not self._enable_sampling:"
+     }
+    ]
+   },
+   "n_src_consumers": 1,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 0,
+   "bucket": "source_candidate"
+  },
+  {
+   "flag": "enable_kv_cache_copy",
+   "mode": "never",
+   "reads_nontest": 15,
+   "defaults": [
+    "False"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/srt/mem_cache/memory_pool.py",
+     "line": 2158,
+     "func": "__init__",
+     "call_name": "MHATokenToKVPool",
+     "param_default": false,
+     "stored_in_self": false,
+     "kind": "source_branch"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/srt/mem_cache/memory_pool.py": [
+     {
+      "line": 2275,
+      "text": "if enable_kv_cache_copy and not self.use_hnd:"
+     },
+     {
+      "line": 3335,
+      "text": "\"KV copy not initialized. Set enable_kv_cache_copy=True in __init__\""
+     },
+     {
+      "line": 3675,
+      "text": "enable_kv_cache_copy=False,"
+     },
+     {
+      "line": 4177,
+      "text": "enable_kv_cache_copy=enable_kv_cache_copy,"
+     },
+     {
+      "line": 6329,
+      "text": "\"sub-pools must be built with enable_kv_cache_copy=True first.\""
+     }
+    ]
+   },
+   "n_src_consumers": 1,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 0,
+   "bucket": "source_candidate"
+  },
+  {
+   "flag": "disable_v2a_cross_attn",
+   "mode": "never",
+   "reads_nontest": 13,
+   "defaults": [
+    "False"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/multimodal_gen/runtime/pipelines_core/stages/model_specific_stages/ltx_2/denoising.py",
+     "line": 1343,
+     "func": "_build_ltx2_model_kwargs",
+     "call_name": "_build_ltx2_model_kwargs",
+     "param_default": false,
+     "stored_in_self": false,
+     "kind": "source_branch"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/multimodal_gen/runtime/pipelines_core/stages/model_specific_stages/ltx_2/denoising.py": [
+     {
+      "line": 1372,
+      "text": "if disable_v2a_cross_attn:"
+     },
+     {
+      "line": 1373,
+      "text": "kwargs[\"disable_v2a_cross_attn\"] = True"
+     },
+     {
+      "line": 1392,
+      "text": "\"skip_v2a_cross_attn\": pass_spec.disable_v2a_cross_attn,"
+     },
+     {
+      "line": 1423,
+      "text": "if pass_spec.disable_v2a_cross_attn:"
+     },
+     {
+      "line": 1424,
+      "text": "model_kwargs[\"disable_v2a_cross_attn\"] = True"
+     },
+     {
+      "line": 2097,
+      "text": "disable_v2a_cross_attn=skip_v2a_cross_attn_for_video_gt,"
+     },
+     {
+      "line": 2104,
+      "text": "disable_v2a_cross_attn=skip_v2a_cross_attn_for_video_gt,"
+     },
+     {
+      "line": 2120,
+      "text": "disable_v2a_cross_attn=skip_v2a_cross_attn_for_video_gt,"
+     },
+     {
+      "line": 2131,
+      "text": "disable_v2a_cross_attn=True,"
+     }
+    ]
+   },
+   "n_src_consumers": 1,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 0,
+   "bucket": "source_candidate"
+  },
+  {
+   "flag": "enable_stochastic_rounding",
+   "mode": "never",
+   "reads_nontest": 13,
+   "defaults": [
+    "False"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/kernels/ops/mamba/triton_ops/mamba_ssm.py",
+     "line": 351,
+     "func": "selective_state_update",
+     "call_name": "selective_state_update",
+     "param_default": false,
+     "stored_in_self": false,
+     "kind": "source_branch"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/kernels/ops/mamba/triton_ops/mamba_ssm.py": [
+     {
+      "line": 370,
+      "text": "enable_stochastic_rounding=False,"
+     },
+     {
+      "line": 403,
+      "text": "if enable_stochastic_rounding and state.dtype != torch.float16:"
+     },
+     {
+      "line": 494,
+      "text": "if enable_stochastic_rounding"
+     },
+     {
+      "line": 564,
+      "text": "USE_RS_ROUNDING=enable_stochastic_rounding,"
+     }
+    ]
+   },
+   "n_src_consumers": 1,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 0,
+   "bucket": "source_candidate"
+  },
+  {
+   "flag": "use_flash_attn",
+   "mode": "always",
+   "reads_nontest": 12,
+   "defaults": [
+    "True"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/srt/models/internvl.py",
+     "line": 509,
+     "func": "__init__",
+     "call_name": "InternVLChatModel",
+     "param_default": true,
+     "stored_in_self": false,
+     "kind": "source_branch"
+    },
+    {
+     "file": "python/sglang/srt/models/interns1.py",
+     "line": 27,
+     "func": "__init__",
+     "call_name": "InternS1ForConditionalGeneration",
+     "param_default": true,
+     "stored_in_self": false,
+     "kind": "source_branch"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/srt/models/interns1.py": [
+     {
+      "line": 31,
+      "text": "use_flash_attn=True,"
+     },
+     {
+      "line": 52,
+      "text": "config.vision_config.use_flash_attn = True if use_flash_attn else False"
+     },
+     {
+      "line": 54,
+      "text": "\"flash_attention_2\" if use_flash_attn else \"eager\""
+     }
+    ],
+    "python/sglang/srt/models/internvl.py": [
+     {
+      "line": 513,
+      "text": "use_flash_attn=True,"
+     },
+     {
+      "line": 531,
+      "text": "config.vision_config.use_flash_attn = True if use_flash_attn else False"
+     },
+     {
+      "line": 533,
+      "text": "\"flash_attention_2\" if use_flash_attn else \"eager\""
+     }
+    ]
+   },
+   "n_src_consumers": 2,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 0,
+   "bucket": "source_candidate"
+  },
+  {
+   "flag": "use_decode_cuda_graph",
+   "mode": "mixed",
+   "reads_nontest": 11,
+   "defaults": [
+    "unspecified"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/srt/lora/backend/triton_v2_backend.py",
+     "line": 168,
+     "func": "prepare_lora_batch",
+     "call_name": "prepare_lora_batch",
+     "param_default": "unspecified",
+     "stored_in_self": false,
+     "kind": "source_branch"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/srt/lora/backend/triton_v2_backend.py": [
+     {
+      "line": 179,
+      "text": "if use_decode_cuda_graph:"
+     }
+    ]
+   },
+   "n_src_consumers": 1,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 0,
+   "bucket": "source_candidate"
+  },
+  {
+   "flag": "use_front_boi_token",
+   "mode": "always",
+   "reads_nontest": 11,
+   "defaults": [
+    "True"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/multimodal_gen/runtime/pipelines_core/stages/model_specific_stages/hunyuan_image3/tokenizer.py",
+     "line": 306,
+     "func": "encode_sequence",
+     "call_name": "encode_sequence",
+     "param_default": true,
+     "stored_in_self": false,
+     "kind": "source_branch"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/multimodal_gen/runtime/pipelines_core/stages/model_specific_stages/hunyuan_image3/tokenizer.py": [
+     {
+      "line": 61,
+      "text": "self.use_front_boi_token = kwargs.get(\"use_front_boi_token\", True)"
+     },
+     {
+      "line": 79,
+      "text": "use_front_boi_token=self.use_front_boi_token,"
+     },
+     {
+      "line": 115,
+      "text": "self.use_front_boi_token = vae_image_info.use_front_boi_token"
+     },
+     {
+      "line": 126,
+      "text": "use_front_boi_token=self.use_front_boi_token,"
+     },
+     {
+      "line": 314,
+      "text": "use_front_boi_token=True,"
+     },
+     {
+      "line": 378,
+      "text": "if source.get(\"front_boi\", use_front_boi_token):"
+     },
+     {
+      "line": 395,
+      "text": "if not source.get(\"front_boi\", use_front_boi_token):"
+     },
+     {
+      "line": 431,
+      "text": "if source.get(\"front_boi\", use_front_boi_token):"
+     },
+     {
+      "line": 449,
+      "text": "if not source.get(\"front_boi\", use_front_boi_token):"
+     },
+     {
+      "line": 583,
+      "text": "front_boi=section.get(\"use_front_boi_token\", False),"
+     },
+     {
+      "line": 595,
+      "text": "front_boi=section.get(\"use_front_boi_token\", False),"
+     }
+    ]
+   },
+   "n_src_consumers": 1,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 0,
+   "bucket": "source_candidate"
+  },
+  {
+   "flag": "use_ptx",
+   "mode": "always",
+   "reads_nontest": 11,
+   "defaults": [
+    "True"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/kernels/ops/attention/flash_attn/cute/flash_fwd_mla_sm100.py",
+     "line": 2433,
+     "func": "mma_inner",
+     "call_name": "mma_inner",
+     "param_default": true,
+     "stored_in_self": false,
+     "kind": "source_branch"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/kernels/ops/attention/flash_attn/cute/flash_fwd_mla_sm100.py": [
+     {
+      "line": 2184,
+      "text": "use_ptx_gemm_QK = not self.is_topk_gather"
+     },
+     {
+      "line": 2185,
+      "text": "use_ptx_gemm_QvV = not self.is_topk_gather"
+     },
+     {
+      "line": 2186,
+      "text": "use_ptx_gemm_PVt = not self.is_topk_gather"
+     },
+     {
+      "line": 2203,
+      "text": "if const_expr(use_ptx_gemm_QK):"
+     },
+     {
+      "line": 2224,
+      "text": "if const_expr(use_ptx_gemm_QvV):"
+     },
+     {
+      "line": 2244,
+      "text": "if const_expr(use_ptx_gemm_PVt):"
+     },
+     {
+      "line": 2278,
+      "text": "mma_fn, gemm_QK, pipeline_K, tSrQ, sQ, tSrK, sK, use_ptx=use_ptx_gemm_QK"
+     },
+     {
+      "line": 2281,
+      "text": "mma_fn, gemm_QvV, pipeline_V, tSrQv, sQv, tSrV, sV, use_ptx=use_ptx_gemm_QvV"
+     },
+     {
+      "line": 2284,
+      "text": "mma_fn, gemm_PVt, pipeline_V, tOrP, sP, tOrVt, sVt, use_ptx=use_ptx_gemm_PVt"
+     },
+     {
+      "line": 2459,
+      "text": "if const_expr(use_ptx):"
+     }
+    ]
+   },
+   "n_src_consumers": 1,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 0,
+   "bucket": "source_candidate"
+  },
+  {
+   "flag": "disable_a2v_cross_attn",
+   "mode": "never",
+   "reads_nontest": 10,
+   "defaults": [
+    "False"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/multimodal_gen/runtime/pipelines_core/stages/model_specific_stages/ltx_2/denoising.py",
+     "line": 1343,
+     "func": "_build_ltx2_model_kwargs",
+     "call_name": "_build_ltx2_model_kwargs",
+     "param_default": false,
+     "stored_in_self": false,
+     "kind": "source_branch"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/multimodal_gen/runtime/pipelines_core/stages/model_specific_stages/ltx_2/denoising.py": [
+     {
+      "line": 1370,
+      "text": "if disable_a2v_cross_attn:"
+     },
+     {
+      "line": 1371,
+      "text": "kwargs[\"disable_a2v_cross_attn\"] = True"
+     },
+     {
+      "line": 1391,
+      "text": "\"skip_a2v_cross_attn\": pass_spec.disable_a2v_cross_attn,"
+     },
+     {
+      "line": 1421,
+      "text": "if pass_spec.disable_a2v_cross_attn:"
+     },
+     {
+      "line": 1422,
+      "text": "model_kwargs[\"disable_a2v_cross_attn\"] = True"
+     },
+     {
+      "line": 2130,
+      "text": "disable_a2v_cross_attn=True,"
+     }
+    ]
+   },
+   "n_src_consumers": 1,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 0,
+   "bucket": "source_candidate"
+  },
+  {
+   "flag": "use_beta_sigmoid_in_kernel",
+   "mode": "never",
+   "reads_nontest": 9,
+   "defaults": [
+    "False"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/kernels/ops/attention/linear/kda_ptx_prefill/__init__.py",
+     "line": 78,
+     "func": "chunk_kda_fwd",
+     "call_name": "chunk_kda_fwd",
+     "param_default": false,
+     "stored_in_self": false,
+     "kind": "source_branch"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/kernels/ops/attention/linear/kda_ptx_prefill/__init__.py": [
+     {
+      "line": 118,
+      "text": "use_beta_sigmoid_in_kernel=True accepts beta logits and fuses sigmoid."
+     },
+     {
+      "line": 137,
+      "text": "if allow_neg_eigval and use_beta_sigmoid_in_kernel:"
+     },
+     {
+      "line": 141,
+      "text": "\"use_beta_sigmoid_in_kernel=False\""
+     },
+     {
+      "line": 204,
+      "text": "use_beta_sigmoid_in_kernel=use_beta_sigmoid_in_kernel,"
+     }
+    ]
+   },
+   "n_src_consumers": 1,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 0,
+   "bucket": "source_candidate"
+  },
+  {
+   "flag": "use_abs_pos",
+   "mode": "always",
+   "reads_nontest": 8,
+   "defaults": [
+    "True"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/srt/models/deepseek_ocr.py",
+     "line": 752,
+     "func": "__init__",
+     "call_name": "ImageEncoderViT",
+     "param_default": true,
+     "stored_in_self": false,
+     "kind": "source_branch"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/srt/models/deepseek_ocr.py": [
+     {
+      "line": 784,
+      "text": "use_abs_pos (bool): If True, use absolute positional embeddings."
+     },
+     {
+      "line": 801,
+      "text": "if use_abs_pos:"
+     }
+    ]
+   },
+   "n_src_consumers": 1,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 0,
+   "bucket": "source_candidate"
+  },
+  {
+   "flag": "use_logits_buffer",
+   "mode": "always",
+   "reads_nontest": 7,
+   "defaults": [
+    "True"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/srt/layers/logits_processor.py",
+     "line": 1005,
+     "func": "_get_logits",
+     "call_name": "_get_logits",
+     "param_default": true,
+     "stored_in_self": false,
+     "kind": "source_branch"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/srt/layers/logits_processor.py": [
+     {
+      "line": 1047,
+      "text": "if use_logits_buffer and not self.do_tensor_parallel_all_gather"
+     },
+     {
+      "line": 1072,
+      "text": "logits, logits_metadata, use_logits_buffer"
+     },
+     {
+      "line": 1112,
+      "text": "use_buffer=use_logits_buffer,"
+     }
+    ]
+   },
+   "n_src_consumers": 1,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 0,
+   "bucket": "source_candidate"
+  },
+  {
+   "flag": "disable_recompute",
+   "mode": "never",
+   "reads_nontest": 5,
+   "defaults": [
+    "False"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/kernels/ops/attention/linear/kda_ptx_prefill/__init__.py",
+     "line": 78,
+     "func": "chunk_kda_fwd",
+     "call_name": "chunk_kda_fwd",
+     "param_default": false,
+     "stored_in_self": false,
+     "kind": "source_branch"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/kernels/ops/attention/linear/kda_ptx_prefill/__init__.py": [
+     {
+      "line": 132,
+      "text": "if cp_context is not None or disable_recompute:"
+     },
+     {
+      "line": 135,
+      "text": "\"and disable_recompute are training-side knobs it does not implement\""
+     }
+    ]
+   },
+   "n_src_consumers": 1,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 0,
+   "bucket": "source_candidate"
+  },
+  {
+   "flag": "enable_python",
+   "mode": "always",
+   "reads_nontest": 5,
+   "defaults": [
+    "True"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/srt/entrypoints/openai/tool_server.py",
+     "line": 144,
+     "func": "__init__",
+     "call_name": "DemoToolServer",
+     "param_default": true,
+     "stored_in_self": false,
+     "kind": "source_branch"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/srt/entrypoints/openai/tool_server.py": [
+     {
+      "line": 144,
+      "text": "def __init__(self, *, enable_python: bool = True):"
+     },
+     {
+      "line": 155,
+      "text": "if enable_python:"
+     },
+     {
+      "line": 188,
+      "text": "super().__init__(enable_python=False)"
+     }
+    ]
+   },
+   "n_src_consumers": 1,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 0,
+   "bucket": "source_candidate"
+  },
+  {
+   "flag": "use_seg_plan",
+   "mode": "always",
+   "reads_nontest": 4,
+   "defaults": [
+    "True"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/kernels/ops/attention/vattn_asm_gfx950/__init__.py",
+     "line": 558,
+     "func": "mtp_verify_attn_fwd_asm",
+     "call_name": "mtp_verify_attn_fwd_asm",
+     "param_default": true,
+     "stored_in_self": false,
+     "kind": "source_branch"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/kernels/ops/attention/vattn_asm_gfx950/__init__.py": [
+     {
+      "line": 570,
+      "text": "use_seg_plan=True,"
+     },
+     {
+      "line": 574,
+      "text": "use_seg_plan=False forces the fixed per-sequence split of #37465 (used by the tests as the"
+     },
+     {
+      "line": 581,
+      "text": "if use_seg_plan:  # bs=1 too: the plan sizes segments by length"
+     }
+    ]
+   },
+   "n_src_consumers": 1,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 0,
+   "bucket": "source_candidate"
+  },
+  {
+   "flag": "use_fast_rsqrt",
+   "mode": "never",
+   "reads_nontest": 3,
+   "defaults": [
+    "False"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/kernels/ops/attention/helion/kda_decode.py",
+     "line": 67,
+     "func": "_helion_fused_recurrent_kda_packed_decode_body",
+     "call_name": "_helion_fused_recurrent_kda_packed_decode_body",
+     "param_default": false,
+     "stored_in_self": false,
+     "kind": "source_branch"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/kernels/ops/attention/helion/kda_decode.py": [
+     {
+      "line": 151,
+      "text": "if use_fast_rsqrt:"
+     },
+     {
+      "line": 163,
+      "text": "if use_fast_rsqrt:"
+     }
+    ]
+   },
+   "n_src_consumers": 1,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 0,
+   "bucket": "source_candidate"
+  },
+  {
+   "flag": "use_safe_gate",
+   "mode": "never",
+   "reads_nontest": 3,
+   "defaults": [
+    "False"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/kernels/ops/attention/linear/kda_nvidia_prefill/fuse_kernel123_persistent.py",
+     "line": 1472,
+     "func": "make_host_function",
+     "call_name": "make_host_function",
+     "param_default": false,
+     "stored_in_self": false,
+     "kind": "source_branch"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/kernels/ops/attention/linear/kda_nvidia_prefill/fuse_kernel123_persistent.py": [
+     {
+      "line": 1479,
+      "text": "use_safe_gate=False,"
+     },
+     {
+      "line": 1492,
+      "text": "_USE_SAFE_GATE = 1 if use_safe_gate else 0"
+     }
+    ]
+   },
+   "n_src_consumers": 1,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 0,
+   "bucket": "source_candidate"
+  },
+  {
+   "flag": "use_ulysses_low",
+   "mode": "always",
+   "reads_nontest": 3,
+   "defaults": [
+    "True"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/multimodal_gen/runtime/distributed/parallel_groups.py",
+     "line": 25,
+     "func": "set_seq_parallel_pg_by_sp_groups",
+     "call_name": "set_seq_parallel_pg_by_sp_groups",
+     "param_default": true,
+     "stored_in_self": false,
+     "kind": "source_branch"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/multimodal_gen/runtime/distributed/parallel_groups.py": [
+     {
+      "line": 61,
+      "text": "if use_ulysses_low:"
+     }
+    ]
+   },
+   "n_src_consumers": 1,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 0,
+   "bucket": "source_candidate"
+  },
+  {
+   "flag": "with_multiple_kernels",
+   "mode": "never",
+   "reads_nontest": 2,
+   "defaults": [
+    "False"
+   ],
+   "consumers": [
+    {
+     "file": "python/sglang/srt/utils/bench_utils.py",
+     "line": 46,
+     "func": "bench_kineto",
+     "call_name": "bench_kineto",
+     "param_default": false,
+     "stored_in_self": false,
+     "kind": "source_branch"
+    }
+   ],
+   "name_reads": {
+    "python/sglang/srt/utils/bench_utils.py": [
+     {
+      "line": 127,
+      "text": "if not with_multiple_kernels:"
+     }
+    ]
+   },
+   "n_src_consumers": 1,
+   "n_kernel_consumers": 0,
+   "n_config_consumers": 0,
+   "bucket": "source_candidate"
+  }
+ ]
+}
