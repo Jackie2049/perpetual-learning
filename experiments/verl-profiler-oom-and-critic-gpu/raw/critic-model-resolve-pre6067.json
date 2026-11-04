@@ -1,0 +1,123 @@
+{
+ "cases": [
+  {
+   "case": "critic_update on old composite worker",
+   "expected": "module",
+   "got": "FakeModule",
+   "ok": true,
+   "stage": "critic_update"
+  },
+  {
+   "case": "compute_values on old composite worker",
+   "expected": "module",
+   "got": "FakeModule",
+   "ok": true,
+   "stage": "compute_values"
+  }
+ ],
+ "critic_stage_decorators": {
+  "compute_values": [
+   "verl/workers/megatron_workers.py",
+   "verl/workers/fsdp_workers.py"
+  ],
+  "critic_update": [
+   "verl/workers/megatron_workers.py",
+   "verl/workers/fsdp_workers.py"
+  ]
+ },
+ "parse_mode": {
+  "CriticWorker": "regex-fallback(py39)"
+ },
+ "preset": "pre6067",
+ "py39_shims": {
+  "counts": {
+   "_get_candidate_attrs": 0,
+   "_is_valid_model": 0,
+   "_normalize_stage": 0,
+   "_resolve_attr": 0,
+   "_resolve_model": 0,
+   "_should_collect": 0,
+   "start": 0
+  },
+  "total": 0
+ },
+ "sha256": {
+  "verl/utils/profiler/precision_debugger_profile.py": "a3d92b45780bb9ccef5a2a72b5fd06bb1a53ba18ca88884ce94e3da340a7219d",
+  "verl/workers/fsdp_workers.py": "8c981f746ea6d7958e69a14c43fb625609a7c557bde500f6464b6ddfb0735a10"
+ },
+ "staticmethods": [
+  "_is_valid_model",
+  "_normalize_stage",
+  "_resolve_attr"
+ ],
+ "tables": {
+  "_MODEL_ATTRS_BY_ROLE": {
+   "actor": [
+    "actor.engine.module",
+    "actor.actor_module",
+    "actor.actor_module_fsdp",
+    "actor_module_fsdp",
+    "actor_module"
+   ],
+   "critic": [
+    "critic.engine.module",
+    "critic.critic_module",
+    "critic_module_fsdp",
+    "critic_module"
+   ],
+   "ref": [
+    "ref.engine.module",
+    "ref.actor_module",
+    "ref_policy.actor_module",
+    "ref_module_fsdp",
+    "ref_module",
+    "ref_policy.ref_module"
+   ],
+   "reward_model": [
+    "reward_model.engine.module",
+    "reward_model_module_fsdp",
+    "reward_model_module",
+    "rm.reward_model_module"
+   ]
+  },
+  "_STAGE_TO_ROLE": {
+   "actor_compute_log_prob": "actor",
+   "actor_update": "actor",
+   "compute_rm_score": "reward_model",
+   "compute_values": "critic",
+   "critic_update": "critic",
+   "ref_compute_log_prob": "ref"
+  }
+ },
+ "tree": "/tmp/verl-pre6067",
+ "verdict": {
+  "decorators_present": {
+   "compute_values": true,
+   "critic_update": true
+  },
+  "resolution_ok_on_old_layout": true
+ },
+ "worker_attrs": {
+  "CriticWorker": [
+   "_is_lora",
+   "_is_offload_optimizer",
+   "_is_offload_param",
+   "_register_dispatch_collect_info",
+   "checkpoint_manager",
+   "config",
+   "critic",
+   "critic_lr_scheduler",
+   "critic_model_config",
+   "critic_module",
+   "critic_optimizer",
+   "device_mesh",
+   "flops_counter",
+   "processor",
+   "tokenizer",
+   "ulysses_device_mesh",
+   "ulysses_sequence_parallel_size",
+   "ulysses_sharding_manager",
+   "use_orig_params"
+  ]
+ }
+}

@@ -1,0 +1,15 @@
+{
+ "what_this_is": "plumbing fixture, NOT a measurement: run-mock.sh builds a fake tree, runs run-critic-pdbg.sh for all three arms, then verify-critic-pdbg.py",
+ "why": "same end-to-end check as raw/mock-run/, but the stand-in script now prints logs in the shape REAL Ray console output has (ANSI task prefix, step-0 validation line, timing_s/step marker, an unrelated `global_step_46` path), so the fixture can actually exercise the log counters",
+ "what_the_previous_fixture_missed": "raw/mock-run/ used bare `step:1 - ...` lines. The wrapper's steps_seen came from re.finditer(r'^step:(\\d+)', text, re.M), which matches 0 lines in all 104 archived real logs -> every real arm would have been judged INVALID. The bare-line fixture passed, so the end-to-end check could not see it",
+ "counter_evidence": "raw/log-counter-check.json (check-log-counters.py --verify): 104/104 archived step-logs read 0 with the old anchored counter; the new counter equals the per-step marker on every one of them; an unanchored max() disagrees on 103/104",
+ "v4_rule_change": "V4 used to gate on a file-wide count of attn_implementation=\"flash_attention_2\" (== 0). It now gates on the same classifier the preflight uses (patch-critic-sdpa.py analyze() -> state == 'patched'), and the file-wide count is kept for information. This fixture deliberately keeps two FA2 literals outside the value-head block, so fa2.flash_attention_2_left=2 with state=patched -- the negative control for that rule change",
+ "judge_exit": 0,
+ "wrapper_rc": {"au": 0, "cu": 0, "cv": 0},
+ "not_evidence_for": [
+  "critic_update/compute_values behaviour on real msprobe",
+  "any timing",
+  "any GPU-side claim",
+  "that upstream verl/utils/model.py has outside-block FA2 literals (it has none; the fixture adds them on purpose)"
+ ]
+}

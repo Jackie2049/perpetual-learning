@@ -1,0 +1,18 @@
+[preflight] value-head attn_implementation is still flash_attention_2 -> site patching to sdpa
+[critic-sdpa] apply: state=patched anchors_before=2 lines_before=[8, 12] sha=72f8a202061c
+=== pdbg-critic arm=au stages=[actor_update] src=/tmp/m5-critic-mock/tree/src gpu=0 prof=/tmp/m5-critic-mock/out/prof-au fa2=patched-now start 2026-11-04T18:04:04Z ===
+=== pdbg-critic arm=au exit=0 end 2026-11-04T18:04:04Z ===
+--- dump tree ---
+/tmp/m5-critic-mock/out/prof-au
+/tmp/m5-critic-mock/out/prof-au/step_1
+/tmp/m5-critic-mock/out/prof-au/step_1/actor_update
+/tmp/m5-critic-mock/out/prof-au/step_1/actor_update/step0
+/tmp/m5-critic-mock/out/prof-au/step_1/actor_update/step0/rank0
+/tmp/m5-critic-mock/out/prof-au/step_1/actor_update/step0/rank0/dump.json
+/tmp/m5-critic-mock/out/prof-au/step_1/actor_update/step0/rank0/stack.json
+/tmp/m5-critic-mock/out/prof-au/step_1/actor_update/step0/rank0/construct.json
+--- counts ---
+unknown_stage_warnings=2
+train_batch_warnings=2
+critic_timing_lines=2
+arm_summary=/tmp/m5-critic-mock/out/arm-au.json

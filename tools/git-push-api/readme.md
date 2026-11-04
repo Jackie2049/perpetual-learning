@@ -34,6 +34,13 @@ git reset --hard <新 sha>
 
 所以脚本只重建"改动文件所在路径上的目录"，其余目录直接复用父提交里的 tree sha；每个目录一层请求，并对 500/502 做指数退避重试。
 
+**2026-11-05 修掉的一处真事故**：脚本原来按"本地有没有那个父提交"分两条路——本地有就 `git diff base HEAD`。
+可**本地 checkout 落后于远端**时（并行会话刚推了几个提交），这条路只看本地差异，**远端独有、本地缺的文件不会被算成删除**，
+于是重建出的目录少条目，`POST /git/trees` 连续报 `422 Invalid tree info`。更糟的是后来放宽 fallback 时，
+把**任何** GET 失败（含限流）都当成"目录不存在"，等于造一棵删空既有文件的树。
+现在一律走内容比对（远端 `git trees?recursive=1` vs 本地 `ls-tree -r`），且只有 **404** 才当"目录新建"。
+**操作提示**：本地落后远端时不要直接推——脚本会照本地内容把远端覆盖掉（本次就因此把并行会话的 3 个提交内容覆盖回旧版，事后靠 `git show <远端sha>:<file>` 逐文件恢复）。**推送前先核对本地是否落后。**
+
 ## 输入输出与依赖
 
 - 输入：远端父提交 sha（**必须 40 位**，短 SHA 会被 API 返回 422）、可选 commit message 文件。父提交写错时表现为 `PATCH refs/heads/main → 422 Update is not a fast forward`；此时先 `gh api repos/<owner>/<repo>/commits/main --jq .sha` 核对远端头，**不要**用 force。

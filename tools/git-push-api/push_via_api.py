@@ -70,32 +70,28 @@ def retry_tree(prefix, level, attempts=4):
 
 def main():
     base = sys.argv[1]
+    if len(base) != 40:
+        raise SystemExit(f"base must be a full 40-char sha (got {len(base)}): {base}")
     msg = git("log", "-1", "--format=%B", "HEAD").decode()
     if "-m" in sys.argv:
         msg = open(sys.argv[sys.argv.index("-m") + 1]).read()
 
-    have_base = subprocess.call(["git", "-C", str(ROOT), "cat-file", "-e", f"{base}^{{commit}}"],
-                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0
-    if have_base:
-        parts = [p for p in git("diff", "--name-status", "-z", base, "HEAD").decode().split("\0") if p]
-        changed = {parts[i + 1]: parts[i] for i in range(0, len(parts), 2)}
-    else:
-        # Base was created by this script on an earlier push, so it is not in the
-        # local object store. Fall back to comparing the remote tree with HEAD.
-        print(f"base {base[:8]} not local; deriving changed paths from the API")
-        toc = call("GET", f"{API}/git/trees/{base}?recursive=1").get("tree", [])
-        remote_blobs = {e["path"]: e["sha"] for e in toc if e["type"] == "blob"}
-        local_blobs = {}
-        for line in git("ls-tree", "-r", "HEAD").decode().splitlines():
-            meta, path = line.split("\t", 1)
-            local_blobs[path] = meta.split()[2]
-        changed = {}
-        for path, sha in local_blobs.items():
-            if remote_blobs.get(path) != sha:
-                changed[path] = "M" if path in remote_blobs else "A"
-        for path in remote_blobs:
-            if path not in local_blobs:
-                changed[path] = "D"
+    # 远端与本地一律按内容比对：只用本地 `git diff base HEAD` 会漏掉"远端有、本地没有"
+    # 的文件（base 不是本地祖先时更是如此），而漏掉删除会让重建出的目录树少条目，
+    # POST /git/trees 以 422 Invalid tree info 拒绝。
+    toc = call("GET", f"{API}/git/trees/{base}?recursive=1").get("tree", [])
+    remote_blobs = {e["path"]: e["sha"] for e in toc if e["type"] == "blob"}
+    local_blobs = {}
+    for line in git("ls-tree", "-r", "HEAD").decode().splitlines():
+        meta, path = line.split("\t", 1)
+        local_blobs[path] = meta.split()[2]
+    changed = {}
+    for path, sha in local_blobs.items():
+        if remote_blobs.get(path) != sha:
+            changed[path] = "M" if path in remote_blobs else "A"
+    for path in remote_blobs:
+        if path not in local_blobs:
+            changed[path] = "D"
     print(f"{len(changed)} path(s) changed vs {base[:8]}")
 
     new_blobs = {}
@@ -122,15 +118,22 @@ def main():
         url = f"{API}/git/trees/{base_tree}" + (f":{prefix}" if prefix else "")
         try:
             entries = call("GET", url)["tree"]
-        except SystemExit:
-            entries = []  # the directory only exists because of the new files below
+        except SystemExit as exc:
+            if "-> 404" not in str(exc):
+                raise
+            # 只有 404 才说明"这个目录只因下面新增的文件才存在"。其它状态（429 限流、
+            # 502）当成空目录会造出一棵删掉既有文件的树，POST /git/trees 随后以
+            # 422 Invalid tree info 拒绝——2026-11-05 实际踩到过一次。
+            entries = []
         level = []
         for entry in entries:
             child = f"{prefix}/{entry['path']}" if prefix else entry["path"]
             if entry["type"] == "tree":
                 sha = rebuild(child) if child in touched else entry["sha"]
+                if sha is None:  # 子树被删空
+                    continue
                 level.append({"path": entry["path"], "mode": "040000", "type": "tree", "sha": sha})
-            elif child not in changed:  # changed files are re-added below
+            elif child not in changed and entry["mode"] != "160000":  # 改动文件在下面重加
                 level.append({"path": entry["path"], "mode": entry["mode"],
                               "type": "blob", "sha": entry["sha"]})
         seen_trees = {e["path"] for e in level if e["type"] == "tree"}
@@ -146,6 +149,10 @@ def main():
                     level.append({"path": child, "mode": "040000", "type": "tree",
                                   "sha": rebuild(f"{prefix}/{child}" if prefix else child)})
         level.sort(key=lambda e: e["path"])
+        if not level:
+            # 该目录下所有条目都被删干净：GitHub 不接受空 tree，调用方用 None 表示"删掉这一项"
+            print(f"  tree   {prefix}: empty -> dropped")
+            return None
         result = retry_tree(prefix, level)
         print(f"  tree   {prefix or '<root>'}: {len(level)} entries -> {result['sha'][:8]}")
         return result["sha"]
