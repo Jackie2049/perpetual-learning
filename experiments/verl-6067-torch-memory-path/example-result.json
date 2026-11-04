@@ -1,0 +1,88 @@
+{
+  "overrides": [
+    "global_profiler.tool=torch_memory",
+    "global_profiler.save_path=./mem_snapshots",
+    "global_profiler.global_tool_config.torch_memory.trace_alloc_max_entries=100000",
+    "global_profiler.global_tool_config.torch_memory.stack_depth=32"
+  ],
+  "roles": {
+    "actor_rollout_ref.actor": {
+      "tool": "torch_memory",
+      "enable": false,
+      "save_path": "./mem_snapshots"
+    },
+    "actor_rollout_ref.rollout": {
+      "tool": "torch_memory",
+      "enable": false,
+      "save_path": "./mem_snapshots"
+    },
+    "critic": {
+      "tool": "torch_memory",
+      "enable": false,
+      "save_path": "./mem_snapshots"
+    }
+  },
+  "dist_profiler": {
+    "enable": false,
+    "dumps": []
+  },
+  "all_roles_enable_false": true,
+  "enable_forced": {
+    "actor_save_path": "./mem_snapshots",
+    "global_save_path": "./mem_snapshots",
+    "dumps": [
+      {
+        "out_dir": "./mem_snapshots",
+        "tag": "torch_memory",
+        "sub_dir": "step1"
+      }
+    ]
+  },
+  "checks": [
+    {
+      "name": "示例脚本的 overrides 让三个角色的 profiler.enable 都是 False",
+      "ok": true,
+      "evidence": {
+        "actor_rollout_ref.actor": {
+          "tool": "torch_memory",
+          "enable": false,
+          "save_path": "./mem_snapshots"
+        },
+        "actor_rollout_ref.rollout": {
+          "tool": "torch_memory",
+          "enable": false,
+          "save_path": "./mem_snapshots"
+        },
+        "critic": {
+          "tool": "torch_memory",
+          "enable": false,
+          "save_path": "./mem_snapshots"
+        }
+      }
+    },
+    {
+      "name": "该配置下 DistProfiler.check_enable() 为 False（start 不会推进窗口，后端不会被调用）",
+      "ok": true,
+      "evidence": {
+        "enable": false,
+        "dumps": []
+      }
+    },
+    {
+      "name": "手工打开 enable 后快照写到角色级 save_path，与 global_profiler.save_path 一致",
+      "ok": true,
+      "evidence": {
+        "dumps": [
+          {
+            "out_dir": "./mem_snapshots",
+            "tag": "torch_memory",
+            "sub_dir": "step1"
+          }
+        ],
+        "expected": "./mem_snapshots",
+        "profile_save_path_env_var_used": false
+      }
+    }
+  ],
+  "n_fail": 0
+}

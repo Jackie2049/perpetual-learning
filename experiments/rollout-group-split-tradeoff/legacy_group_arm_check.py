@@ -31,7 +31,9 @@ OUT_PATH = os.path.join(HERE, 'legacy-group-arm-check.json')
 
 SEEDS = list(range(30))
 N_GROUPS, N_PER = 16, 8
-CVS = (0.2, 0.6, 1.2)
+# cv=1.5 是 §13.30 首批扫描的端点（`group_split_tradeoff.py` 的 L2 扫描也是 0.2/0.6/1.5），
+# 2026-11-04 补齐后 sweep 成为全连续扫描；此前只到 1.2，端点 44.9% 只能在台账里手工重算。
+CVS = (0.2, 0.6, 1.2, 1.5)
 BACKLOGS = (1, 4, 16)
 
 
@@ -91,24 +93,65 @@ def build():
             }
     # §13.30 第一批正文的两条口径：
     #   无积压 0.0%、4 批 43.7%、16 批 54.7%（cv 0.6 档）
-    #   cv 0.2→1.5 时 20.6%→56.6%（4 批档，按正文引用值登记）
+    #   cv 0.2→1.5 时 20.6%→56.6%（4 批档）
+    # 端点登记名原先写作 `cv1.2_...`，与正文的 1.5 不符（键名只是引用标签，
+    # 读数始终是 unpack 扫描端点 1.5 的值）；2026-11-04 改名并补 1.2 档做中间点核对。
     out['paper_batch1'] = {
         'cv0.6_backlog4_claimed': 0.437,
         'cv0.6_backlog16_claimed': 0.547,
         'cv0.2_backlog4_claimed': 0.206,
-        'cv1.2_backlog4_claimed': 0.566,
+        'cv1.2_backlog4_claimed': 0.543,
+        'cv1.5_backlog4_claimed': 0.566,
+        'cv0.2_max_backlog4_claimed': 0.183,
+        'cv1.5_max_backlog4_claimed': 0.527,
     }
+    # 与"换了先验、换了一批随机数"的申报隔离：`_group_makespan` 与 `_makespan_by_policy`
+    # 是两条独立实现，逐种子必须给出同一个税（原先只比均值）。
+    for cv in CVS:
+        for b in BACKLOGS:
+            diffs = []
+            for s in SEEDS:
+                lens = sample_group_lens(random.Random(s), n_groups=N_GROUPS,
+                                         n_per=N_PER, cv=cv)
+                diffs.append(abs(fixed_group_arm(lens, b)
+                                 - _makespan_by_policy(lens, b, POLICY_FIFO)['tax']))
+            out.setdefault('arm_crosscheck', {})['cv%.1f_backlog%d' % (cv, b)] = {
+                'max_abs_diff': max(diffs),
+                'all_within_1e-12': max(diffs) < 1e-12,
+            }
+
+    # 正文引用的六个订正数必须有归档字段托底。2026-11-03 第四十批把它们写进台账，
+    # 但 44.9%（cv 1.5、4 批）与 56.3%（cv 1.5、16 批）当时**不在任何归档里**——
+    # 脚本 cv 扫描只到 1.2，读者无从复核。这里逐值对账，容差 5e-4（正文四位小数）。
+    claimed = {
+        'cv0.6_backlog4': 0.340, 'cv0.6_backlog16': 0.424,
+        'cv0.2_backlog4': 0.147, 'cv1.5_backlog4': 0.449,
+        'cv1.5_backlog16': 0.563,
+    }
+    for key, want in claimed.items():
+        got = out['sweep'][key]['fixed_mean']
+        out.setdefault('claims_vs_sweep', {})[key] = {
+            'claimed': want, 'archived': got,
+            'match_within_5e-4': abs(got - want) <= 5e-4,
+        }
     return out
 
 
 def main(argv):
     out = build()
+    # 交叉核对必须是发布的前置条件，不是打印出来给人看的附注：
+    # 两条组臂实现对不上时，`sweep` 里的 fixed 列就不能当成"正确口径"。
+    bad = sorted(k for k, v in out['arm_crosscheck'].items() if not v['all_within_1e-12'])
+    bad += sorted(k for k, v in out['claims_vs_sweep'].items() if not v['match_within_5e-4'])
     text = json.dumps(out, ensure_ascii=False, indent=1, sort_keys=True)
     if '--verify' in argv:
         with open(OUT_PATH) as f:
             ok = json.load(f) == json.loads(text)
         print('VERIFY OK: 逐字段相同' if ok else 'VERIFY FAIL: 与归档不一致')
         return 0 if ok else 1
+    if bad:
+        print('AUDIT FAIL：%s' % ', '.join(bad))
+        return 1
     with open(OUT_PATH, 'w') as f:
         f.write(text + '\n')
     g = out['guard']['backlog2']

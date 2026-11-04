@@ -1,4 +1,81 @@
 {
+ "arm_crosscheck": {
+  "cv0.2_backlog1": {
+   "all_within_1e-12": true,
+   "max_abs_diff": 0.0
+  },
+  "cv0.2_backlog16": {
+   "all_within_1e-12": true,
+   "max_abs_diff": 0.0
+  },
+  "cv0.2_backlog4": {
+   "all_within_1e-12": true,
+   "max_abs_diff": 0.0
+  },
+  "cv0.6_backlog1": {
+   "all_within_1e-12": true,
+   "max_abs_diff": 0.0
+  },
+  "cv0.6_backlog16": {
+   "all_within_1e-12": true,
+   "max_abs_diff": 0.0
+  },
+  "cv0.6_backlog4": {
+   "all_within_1e-12": true,
+   "max_abs_diff": 0.0
+  },
+  "cv1.2_backlog1": {
+   "all_within_1e-12": true,
+   "max_abs_diff": 0.0
+  },
+  "cv1.2_backlog16": {
+   "all_within_1e-12": true,
+   "max_abs_diff": 0.0
+  },
+  "cv1.2_backlog4": {
+   "all_within_1e-12": true,
+   "max_abs_diff": 0.0
+  },
+  "cv1.5_backlog1": {
+   "all_within_1e-12": true,
+   "max_abs_diff": 0.0
+  },
+  "cv1.5_backlog16": {
+   "all_within_1e-12": true,
+   "max_abs_diff": 0.0
+  },
+  "cv1.5_backlog4": {
+   "all_within_1e-12": true,
+   "max_abs_diff": 0.0
+  }
+ },
+ "claims_vs_sweep": {
+  "cv0.2_backlog4": {
+   "archived": 0.14669136290628373,
+   "claimed": 0.147,
+   "match_within_5e-4": true
+  },
+  "cv0.6_backlog16": {
+   "archived": 0.4239038350392722,
+   "claimed": 0.424,
+   "match_within_5e-4": true
+  },
+  "cv0.6_backlog4": {
+   "archived": 0.34017441530091674,
+   "claimed": 0.34,
+   "match_within_5e-4": true
+  },
+  "cv1.5_backlog16": {
+   "archived": 0.5628639577641376,
+   "claimed": 0.563,
+   "match_within_5e-4": true
+  },
+  "cv1.5_backlog4": {
+   "archived": 0.4485993585521746,
+   "claimed": 0.449,
+   "match_within_5e-4": true
+  }
+ },
  "guard": {
   "backlog2": {
    "fixed": 0.0,
@@ -8,9 +85,12 @@
  },
  "paper_batch1": {
   "cv0.2_backlog4_claimed": 0.206,
+  "cv0.2_max_backlog4_claimed": 0.183,
   "cv0.6_backlog16_claimed": 0.547,
   "cv0.6_backlog4_claimed": 0.437,
-  "cv1.2_backlog4_claimed": 0.566
+  "cv1.2_backlog4_claimed": 0.543,
+  "cv1.5_backlog4_claimed": 0.566,
+  "cv1.5_max_backlog4_claimed": 0.527
  },
  "sweep": {
   "cv0.2_backlog1": {
@@ -66,6 +146,24 @@
    "fixed_minus_policy": 0.0,
    "legacy_mean": 0.5432901594777237,
    "policy_mean": 0.4305179048307805
+  },
+  "cv1.5_backlog1": {
+   "fixed_mean": 0.0,
+   "fixed_minus_policy": 0.0,
+   "legacy_mean": 0.0,
+   "policy_mean": 0.0
+  },
+  "cv1.5_backlog16": {
+   "fixed_mean": 0.5628639577641376,
+   "fixed_minus_policy": 0.0,
+   "legacy_mean": 0.6877550087559158,
+   "policy_mean": 0.5628639577641376
+  },
+  "cv1.5_backlog4": {
+   "fixed_mean": 0.4485993585521746,
+   "fixed_minus_policy": 0.0,
+   "legacy_mean": 0.5655870201183355,
+   "policy_mean": 0.4485993585521746
   }
  }
 }

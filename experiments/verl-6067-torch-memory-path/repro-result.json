@@ -1,0 +1,193 @@
+{
+  "repo": "/tmp/verl-6067-w3",
+  "commits": {
+    "head": "745432653d15af14954af1e055c8aeed72afa064",
+    "refactor": "044bbba27e5861e1212727aba67813cccb2db291",
+    "parent": "6eeb5711babe178ca3cc3caba7c9f158efa9fcd6",
+    "revert_pr": "78afaa5be4bda08c29cf8919650657c1a427054e",
+    "separation_pr": "84ac897d70d5d48820731b5fb89ba317f4ea31f3"
+  },
+  "entry_points": {
+    "old_classes": {
+      "ActorRolloutRefWorker": [
+        "compute_log_prob",
+        "compute_ref_log_prob",
+        "dump_memory_snapshot",
+        "generate_sequences",
+        "init_model",
+        "load_checkpoint",
+        "rollout_mode",
+        "save_checkpoint",
+        "start_profile",
+        "stop_profile",
+        "update_actor"
+      ],
+      "CriticWorker": [
+        "compute_values",
+        "init_model",
+        "load_checkpoint",
+        "save_checkpoint",
+        "update_critic"
+      ]
+    },
+    "new_classes": {
+      "TrainingWorker": [
+        "infer_batch",
+        "load_checkpoint",
+        "reset",
+        "save_checkpoint",
+        "set_loss_fn",
+        "to",
+        "train_batch",
+        "train_mini_batch"
+      ],
+      "ActorRolloutRefWorker": [
+        "compute_log_prob",
+        "compute_ref_log_prob",
+        "execute_checkpoint_engine",
+        "init_model",
+        "load_checkpoint",
+        "save_checkpoint",
+        "set_loss_fn",
+        "to",
+        "update_actor",
+        "update_weights"
+      ]
+    },
+    "old_snapshot_methods": [
+      "dump_memory_snapshot"
+    ],
+    "new_snapshot_methods": [],
+    "removed_snapshot_methods": [
+      "dump_memory_snapshot"
+    ]
+  },
+  "config": {
+    "global_tool": "torch_memory",
+    "global_save_path": "outputs/profile",
+    "critic": {
+      "type": "ProfilerConfig",
+      "tool": "torch_memory",
+      "enable": true,
+      "save_path": "outputs/profile",
+      "tool_config_torch_memory_type": "TorchMemoryToolConfig",
+      "memory_snapshot_num_steps": 1
+    },
+    "actor": {
+      "tool": "torch_memory",
+      "enable": true,
+      "save_path": "outputs/profile"
+    }
+  },
+  "probes": {
+    "dist_profiler_chain": {
+      "impl": "TorchMemoryProfiler",
+      "start_kwargs": {
+        "profile_step": 1,
+        "role": "train"
+      },
+      "dumps": [
+        {
+          "out_dir": "outputs/profile",
+          "tag": "torch_memory",
+          "sub_dir": "step1"
+        }
+      ]
+    },
+    "old_worker_call_shape": {
+      "error": "AttributeError: 'TorchMemoryProfiler' object has no attribute 'dump_memory_snapshot'",
+      "dumps": []
+    },
+    "target_instantiate": {
+      "tool": "torch_memory",
+      "tool_config_container_type": "dict",
+      "inner_type": "TorchMemoryToolConfig",
+      "ok": false,
+      "error": "AttributeError: 'dict' object has no attribute 'trace_alloc_max_entries'"
+    }
+  },
+  "checks": [
+    {
+      "name": "父提交的 worker 类有 dump_memory_snapshot",
+      "ok": true,
+      "evidence": [
+        "dump_memory_snapshot"
+      ]
+    },
+    {
+      "name": "当前 main 的 worker 类没有任何 snapshot 方法",
+      "ok": true,
+      "evidence": []
+    },
+    {
+      "name": "critic 的 profiler 配置走到了 TorchMemoryProfiler",
+      "ok": true,
+      "evidence": "TorchMemoryProfiler"
+    },
+    {
+      "name": "role 级 tool_config 里有 torch_memory 的 dataclass（带 memory_snapshot_num_steps）",
+      "ok": true,
+      "evidence": "TorchMemoryToolConfig"
+    },
+    {
+      "name": "start_profile/stop_profile 这一环**确实能**写出快照",
+      "ok": true,
+      "evidence": [
+        {
+          "out_dir": "outputs/profile",
+          "tag": "torch_memory",
+          "sub_dir": "step1"
+        }
+      ]
+    },
+    {
+      "name": "写出的路径是 save_path 下的 step 子目录（不是哨兵 '???'）",
+      "ok": true,
+      "evidence": [
+        {
+          "out_dir": "outputs/profile",
+          "tag": "torch_memory",
+          "sub_dir": "step1"
+        }
+      ]
+    },
+    {
+      "name": "旧 worker 那种显式 dump 调用打在新后端上会 AttributeError（#6198 修的就是它）",
+      "ok": true,
+      "evidence": "AttributeError: 'TorchMemoryProfiler' object has no attribute 'dump_memory_snapshot'"
+    },
+    {
+      "name": "走 _target_ instantiate 且不显式传 tool_config 时，容器 dict 被当参数传入 ⇒ 后端构造期 AttributeError",
+      "ok": true,
+      "evidence": {
+        "tool": "torch_memory",
+        "tool_config_container_type": "dict",
+        "inner_type": "TorchMemoryToolConfig",
+        "ok": false,
+        "error": "AttributeError: 'dict' object has no attribute 'trace_alloc_max_entries'"
+      }
+    },
+    {
+      "name": "[selftest] 不选工具 ⇒ 后端是 _NoOpProfiler 且不写（证明能写不是探针自说自话）",
+      "ok": true,
+      "evidence": {
+        "impl": "_NoOpProfiler",
+        "start_kwargs": {
+          "profile_step": 1
+        },
+        "dumps": []
+      }
+    },
+    {
+      "name": "[selftest] memory_snapshot_num_steps=2 时单步不写（窗口判据确实在生效）",
+      "ok": true,
+      "evidence": []
+    }
+  ],
+  "n_fail": 0,
+  "not_covered": [
+    "快照文件是否真的落盘（CPU 上 MemorySnapshotSampler 直接返回 None）",
+    "OOM 观察者是否真的挂到分配器上（需要 CUDA/NPU）",
+    "端到端 run_ppo 冒烟（需要 GPU + 数据）"
+  ]
+}

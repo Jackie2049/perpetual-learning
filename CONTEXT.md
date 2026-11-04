@@ -1,9 +1,28 @@
-更新时间：2026-11-04（M5 14:5x–15:1x 无卡轮：两条算力链路仍不可达；把 “profiler critic 侧 stage 能不能采到”这条必须真机的交接拆成静态定死——白名单 6 个 stage 里 **3 个没有任何触发者**（`compute_values`／`critic_update` 是 #6067 回归，`compute_rm_score` 从来没接过、自集成引入以来四个 ref 均 0 处），触发路径唯一且 dump 目录只在 `start()` 里创建 ⇒ NPU 只剩“import 是否自行落盘”一条假设。此前 M5 13:5x–14:1x 无卡轮：两条算力链路仍不可达，用上一轮真日志把 rollout-bound 的两个解析器三路互核（40/40），修掉三个会在窗口里炸的坑）。M1 本轮为 **技术掘金：同一 #6067 重构的第三个信号族——被删掉的启动配置键**：`trainer.use_legacy_worker_impl` 被删后全仓仍有 4 处引用——**1 处 unprefixed ⇒ Hydra 合并期直接报错**（真实 hydra 1.3.8 复现）、**2 处带 `+` ⇒ 不报错但读取点 0 处**、1 处 Ascend 参数表仍列为可配。上一批查的是**配置消费点**（字段在、没人读），本批换信号族查**接口与文档引用**：10 个被删生产模块的 **50 个公开方法/函数名**里，**32 个仍有同名定义**、**13 条"main 无定义但 `docs/blog/` 以外的文档仍在教"（去重 3 个名：`update_policy`／`update_critic`／`compute_values`）**、5 个无定义也无引用。**关键限定：代码侧调用点 0 处**（`verl/**` 非测试 + `tests/` + `examples/`），⇒ **无静默失效，只是文档欠债**；`dpo_extension.rst`／`ray_trainer.rst` #6067 根本没碰。真正的发现是**装饰器字符串常量**这一层：旧 worker 给 critic 两个 RPC 挂了 `annotate(role="compute_values"|"critic_update")`，重构后 `verl/**` 各 **0 处**，而前端白名单 `_STAGE_TO_ROLE` 仍接受、`strict: False` 下**连 warn 都没有** ⇒ 配了不报错也不采（**能不能采到要 NPU+msprobe，属 M5**）。此前 rLLM #945／PR #946 复核见下方历史节。规则入口：[AGENTS.md](AGENTS.md)；任务入口：[技术秘书](queue_tech-secretary.md) / [技术掘金](queue_tech-miner.md)。
+更新时间：2026-11-04（M1 15:5x–16:1x 技术秘书第十八批：**正文引用的 `R` 端点在归档里不存在**——`legacy_group_arm_check.py` 的 cv 扫描止于 1.2，正文写的 44.9%／56.3%／63.4%（cv 1.5）只有台账可查；补到 1.5 并新增 `claims_vs_sweep`（正文五个引用值硬对账、不一致 exit 1，改坏 0.449→0.430 已验）与 `arm_crosscheck`（两条组臂实现 36 组逐种子比对 <1e-12）。**读数不变**，56＋29 测试通过。⇒ "对台账"这一类到此为止。此前 M5 14:5x–15:1x 无卡轮：两条算力链路仍不可达；把 “profiler critic 侧 stage 能不能采到”这条必须真机的交接拆成静态定死——白名单 6 个 stage 里 **3 个没有任何触发者**（`compute_values`／`critic_update` 是 #6067 回归，`compute_rm_score` 从来没接过、自集成引入以来四个 ref 均 0 处），触发路径唯一且 dump 目录只在 `start()` 里创建 ⇒ NPU 只剩“import 是否自行落盘”一条假设。此前 M5 13:5x–14:1x 无卡轮：两条算力链路仍不可达，用上一轮真日志把 rollout-bound 的两个解析器三路互核（40/40），修掉三个会在窗口里炸的坑）。M1 本轮为 **技术掘金：同一 #6067 重构的第三个信号族——被删掉的启动配置键**：`trainer.use_legacy_worker_impl` 被删后全仓仍有 4 处引用——**1 处 unprefixed ⇒ Hydra 合并期直接报错**（真实 hydra 1.3.8 复现）、**2 处带 `+` ⇒ 不报错但读取点 0 处**、1 处 Ascend 参数表仍列为可配。上一批查的是**配置消费点**（字段在、没人读），本批换信号族查**接口与文档引用**：10 个被删生产模块的 **50 个公开方法/函数名**里，**32 个仍有同名定义**、**13 条"main 无定义但 `docs/blog/` 以外的文档仍在教"（去重 3 个名：`update_policy`／`update_critic`／`compute_values`）**、5 个无定义也无引用。**关键限定：代码侧调用点 0 处**（`verl/**` 非测试 + `tests/` + `examples/`），⇒ **无静默失效，只是文档欠债**；`dpo_extension.rst`／`ray_trainer.rst` #6067 根本没碰。真正的发现是**装饰器字符串常量**这一层：旧 worker 给 critic 两个 RPC 挂了 `annotate(role="compute_values"|"critic_update")`，重构后 `verl/**` 各 **0 处**，而前端白名单 `_STAGE_TO_ROLE` 仍接受、`strict: False` 下**连 warn 都没有** ⇒ 配了不报错也不采（**能不能采到要 NPU+msprobe，属 M5**）。此前 rLLM #945／PR #946 复核见下方历史节。规则入口：[AGENTS.md](AGENTS.md)；任务入口：[技术秘书](queue_tech-secretary.md) / [技术掘金](queue_tech-miner.md) 本段之前 M1 本轮为 **技术掘金：同一 #6067 重构的第五个信号族——`torch_memory` 快照链路**：#6198 删掉 trainer 每步的 `dump_memory_snapshot` 调用、声称能力已并入 `DistProfiler`；用真实 `ppo_trainer.yaml` + 真实 `omega_conf_to_dataclass` + 真实 `DistProfiler.start/stop` 在 CPU 上验完——**链路本身是通的**（写 1 张到 `save_path/stepN/`，两条负向对照全过）；**① 官方示例 `run_qwen2_5_vl_7b_torch_memory.sh` 没给 `*.profiler.enable=True`，三个角色 enable 全 False ⇒ 一步都不写**（示例 2026-08-31／文档 2026-09-08 都晚于 #6198，属欠债非回归）；**② 不带 `dataclass_type` 的 `omega_conf_to_dataclass(cfg.profiler)` 把容器 dict 整体下传 ⇒ 启动期 `AttributeError`**（`main_ppo.py:187`、`engine_workers.py:645-647`；默认 `tool=None` 不受影响）。两个脚本 10/10、3/3 PASS，纯 CPU、未触上游。规则入口：[AGENTS.md](AGENTS.md)；任务入口：[技术秘书](queue_tech-secretary.md) / [技术掘金](queue_tech-miner.md)。
 ## 当前现场
 
+> **待办（2026-11-04 15:2x）**：本地 main 有 **3 个未推提交**（`b850df424` TM-006 第五段、`ab204152f` 合并远端 M5 msprobe 轮、`db7a7aeed` 推送受阻记录）。`git push` 与 `git fetch` 均在 `github.com:443` 75 s 超时，`curl https://github.com` 也超时；断网前已成功 fetch 到 `a13b9c042`，冲突已解。⇒ 网络恢复后直接 `git push origin main`，无需重做内容。
 > **只读最上面几节（最近两轮 M5 与 M1）即可恢复现场。** 之后的旧批次只留标题索引
 > （2026-11-04 瘦身，正文在 `diary/` 与专项文档）。
 > 判断"现在该做什么"看 `## 未完成操作与并行工作` 与两个队列，不要从头读到尾。
+
+### M1 本轮（2026-11-04 15:5x–16:1x）：TS-001 第十八批——正文引用的数，归档里有没有托底
+
+**一、为什么做。** TS-001 的「下一步」明写 M1 这条线已到边际：纯归档重算、判据一致性、带宽／可读性诊断都做过。剩下的不是再接一层诊断，而是问一个从没问过的问题——**每批都在跑 `--verify`，但它只证明"已归档的字段没变"，证明不了"正文写的那个数在归档里存在"**。
+
+**二、读数：一处真缺口。** 挑第四十批订正那组 `R`（14.7／34.0／42.4／44.9／56.3／63.4）逐个对到字段：`legacy_group_arm_check.py` 的 `CVS = (0.2, 0.6, 1.2)` **止于 1.2**，而正文与 readme 写的是 `cv 0.2→1.5` ⇒ **44.9%（cv 1.5、4 批）、56.3% 与最大 63.4%（cv 1.5、16 批）三个数在任何归档文件里都不存在**，只有台账。
+
+**三、读数本身没错，是托底没了。** 两条独立实现（`summary.json` 的 L2 扫描、审计脚本自带的 `fixed_group_arm`）重算 1.5 端点一致：4 批 **0.4486**、16 批 **0.5629**、16 批最大 **0.6336**。
+
+**四、改动三处，读数不变。** ① `CVS` 补到 1.5；② 新增 `claims_vs_sweep`，把正文五个引用值逐值对账、不一致 **exit 1**（负向对照：0.449→0.430 报 `AUDIT FAIL`）；③ 新增 `arm_crosscheck`，两条组臂实现逐种子比对 36 组、最大差 <1e-12，把第四十批"修正后逐位相同"从一句断言变成检查项。
+
+**五、不沿用的断言。** 脚本事后自证"正文六个数逐项对上旧路径"，但归档里 cv 1.2 旧路径是 0.5433／0.6626，与正文的 1.5 端点、"上限 61%"对不上 ⇒ 本轮**只把能复现的端点做成字段**，不宣称旧路径值可逐项复核。
+
+**核对产物**：`legacy_group_arm_check.py`（`--verify` exit 0；归档新增 73 行、既有字段 0 变 0 删）、`test_group_split_tradeoff.py` **56 passed**、`test_real_lengths_policy.py` **29 passed**。纯 CPU 重算，未跑 GPU、未触上游。
+
+**留给下一轮**：① **"对台账"这一类到此为止**——`band_floor`／`sign_regime` 的引用值自带 `n_*` 字段，`threshold-calibration.json`／`sampling-reach.json`／`prediction-floor.json` 各自独立成档且 `--verify` 覆盖，扫下来只这一处；② TS-001 仍停在「纯归档重算已到边际，下一轮无新输入应转 P-1 立项讨论或语义面新模型」；③ TM-006 对外候选（配置键删除／`freeze_vision_tower` 接线／torch_memory 示例缺 `enable`／容器 dict 下传）**均待用户逐项授权**。
+
+入口：[审计脚本](experiments/rollout-group-split-tradeoff/legacy_group_arm_check.py) · [归档](experiments/rollout-group-split-tradeoff/legacy-group-arm-check.json) · [TS-001](queue_tech-secretary.md) · [diary](diary/2026-11-04.md)。
 
 ### M5 本轮（2026-11-04 14:5x–15:1x CST）：无卡轮——把"只能真机定级"拆成静态定死 + 一条 import 冒烟
 
@@ -77,6 +96,31 @@
 **留给下一轮**：① 启动配置键这一族已查完（1 键、4 处），对外三条最小动作**均待用户逐项授权**；② `megatron_merge_lora.py` 的 bridge 两行需装 `mbridge` 或真机，不在 M1 范围；③ 71 个被改文件里**函数体被改写**的那一类仍未扫，若再做须先说明它不是对前三段的重复；④ TM-006 前两段的两条对外候选不变；⑤ TS-001 侧仍停在「等用户立项」（M1 侧已无纯归档重算可做）。
 
 入口：[启动配置键体检](open-source/verl/evidence/engine-refactor-shell-config/readme.md) · [实验](experiments/verl-6067-shell-config-scan/readme.md) · [扫描](experiments/verl-6067-shell-config-scan/scan_shell_refs.py) · [判定](experiments/verl-6067-shell-config-scan/verify_findings.py) · [Hydra 复现](experiments/verl-6067-shell-config-scan/hydra_repro.py) · [TM-006](queue_tech-miner.md) · [tracker](open-source/verl/tracker.md) · [diary](diary/2026-11-04.md)。
+
+### M1 本轮（2026-11-04 15:0x–15:4x）：同一次重构的第五个信号族——名字都在，但值的形状变了
+
+**一、为什么做。** 前四段（配置消费点／接口名与文档／启动配置键）都靠"名字还在不在"判断。这一段换到最像"没改动"的一格：`torch_memory` 的显存快照。旧办法是 trainer 每步喊一声 `actor_rollout_wg.dump_memory_snapshot(...)`（#3099，2025-08-20）；#6198（2026-04-29，收 #6181）把这声喊整段删掉，PR 说明写"capabilities are fully integrated in DistProfiler"，并给出配方 `tool=torch_memory` + `save_path` + `steps` + **`actor.profiler.enable=True`**。**两边的方法名、类名、配置类名一模一样**，所以任何文本扫描都会答"没问题"。
+
+**二、读数（三层，都由脚本判定，不靠人眼）。**
+
+| 层 | 读数 | 结论 |
+|---|---|---|
+| 入口面（AST，父提交 vs main 两个 worker 类） | 父提交有 `dump_memory_snapshot`；main 的两个 worker 类 **0 个** snapshot 方法 | 旧入口整体消失 |
+| 新链路（真实配置 → `DistProfiler.start/stop`） | **写 1 张**：`outputs/profile/step1/`，tag `torch_memory` | **通**，不是"删了就没了" |
+| 官方示例（照抄 overrides 渲染） | `actor`／`rollout`／`critic` 的 `profiler.enable` **全为 False** | **一步都不写**（沉默失败） |
+| 容器 dict 下传（只给 `config` 不给 `tool_config`） | `AttributeError: 'dict' object has no attribute 'trace_alloc_max_entries'` | **启动期硬失败**（仅 `tool=torch_memory`/`npu`） |
+
+**三、必须先说的限定。** ① `enable=False` 这条**不是新回归**：示例最后修改 2026-08-31、文档 `docs/perf/verl_profiler_system.md` 最后修改 2026-09-08，都晚于 #6198，只是没补那一项 ⇒ 属**文档/示例欠债**，对外只能写"照示例操作拿不到快照，配方缺 `enable=True`"，不能写"示例坏了"。② 容器 dict 那条是**推断不是日志**：CPU 上证明了"配置喂进去会崩"，但没跑 `run_ppo`。③ 旧 worker 的显式调用现在会 `AttributeError`——这正是 #6198 处理过的事（#6067 之后 trainer 里那条调用已被 `hasattr` 挡成静默跳过），本段只作时间线证据。
+
+**四、本批自己两处错（都由复核抓出）。** ① 第一版探针按 `cfg=compose(ppo_trainer)` 原样跑，没带 `global_profiler.tool=torch_memory`，于是后端是 `_NoOpProfiler`，"不写"成了同义反复——补上 overrides 后才看到真读数；② 一开始把"容器 dict 下传"的调用点写成 `main_ppo.py:157-158` 与 `engine_workers.py:174-176`，逐个 `sed` 核行号后改为 `:187`（v1 分支）与 `:645-647`，并核清 `:155-166` 的 `TrainingWorker` 是**显式取内层**、实测正常——原先那句会把一个能工作的调用点也列进问题清单。
+
+**五、为什么前四段扫不到。** 前三段问"字段还有没有人读""`def` 还在不在""yaml 键有没有被删"。这一段的名字全在，坏的是**配置从"直接读 yaml"换成"先转 dataclass 再往回传"之后，两级 `ProfilerConfig` 只有一级被正确填充**（角色级 → 工具级 `tool_config.<name>`）。⇒ **这一类只能把真实配置喂进真实调用链，然后 spy 住唯一写盘点。**
+
+**核对产物**：`repro_torch_memory.py` **10/10 PASS**（含两条 selftest 扰动）、`probe_official_example.py` **3/3 PASS**，读数落在同目录两份 JSON。verl main `74543265`（2026-11-04 fetch）、父提交 `6eeb5711`、Python 3.12.13 + ray 2.59.0／omegaconf 2.3.1／hydra 1.3.8／torch 2.15.0。**纯 CPU，未跑训练、未上 GPU/NPU、未触上游**。
+
+**留给下一轮**：① 对外三条（示例补 `enable=True`／文档配方同步／修容器 dict 下传）**均待用户逐项授权**；② 快照是否真落盘、OOM 观察者是否挂上分配器，需 GPU/NPU（M5 范围，最小目标 `tool=torch_memory` + `actor.profiler.enable=True` + `steps=[1]`，看 `save_path/step1/*.pickle`）；③ 前四段的对外候选不变，仍待用户逐项授权；④ TS-001 侧仍停在「等用户立项」。
+
+入口：[证据](open-source/verl/evidence/engine-refactor-torch-memory/readme.md) · [实验](experiments/verl-6067-torch-memory-path/readme.md) · [复现](experiments/verl-6067-torch-memory-path/repro_torch_memory.py) · [示例探针](experiments/verl-6067-torch-memory-path/probe_official_example.py) · [TM-006](queue_tech-miner.md) · [tracker](open-source/verl/tracker.md) · [diary](diary/2026-11-04.md)。
 
 ### M5 本轮（2026-11-04 12:5x–13:0x CST）：两条算力通路都不可达，回退到准备物料并入库
 
@@ -233,6 +277,7 @@
 
 | 段 | 一句话 |
 |---|---|
+| M1 上一轮（2026-11-04 13:0x–15:4x）：#6067 三次体检（接口面／启动配置键／torch_memory 快照） | 三个信号族：50 个旧接口名里 13 条仍在文档里、`use_legacy_worker_impl` 删后 4 处引用、torch_memory 链路通但示例缺 `enable` |
 | M1 上一轮（2026-11-04 09:0x–10:0x）：第十七批——截断本身就是组的长度预测，它对 `R` 没有剩余空间 | 第十五、十六两批都记「这条线已到边际，下一轮应转语义面新模型」。§11.5 语义面缺口四项（长度预测误差／分桶／迁移／抢占／KV 搬运）里，**长度预测**是唯一不需用户立项、能… |
 | M1 上一轮（2026-11-04 08:0x–08:5x）：第十六批——`band_floor` 那一侧的判据也有单位数问题，而且它**不单调** | 第十五批留给下一轮的第①条：`band_floor` 的 `no_reading`（"全部 30 个种子恒零"）与 `degenerate`（"过半"）还没接到 `falsy_r… |
 | M1 上一轮（2026-11-04 07:0x–08:0x）：第十五批——同一个门槛，判据被用在多少个单位上？ | 第十三批的结论是"`stable` 假阳为 0、假阴 1.1%，且 1.1% 就是二项分布本身"。拉出真实 16 格一看：**表态种子只有 3–27 个**（1.5B cap25… |
