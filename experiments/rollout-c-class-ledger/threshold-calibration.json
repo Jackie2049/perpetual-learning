@@ -47,6 +47,81 @@
    }
   }
  },
+ "band_floor_units": {
+  "_verdict": "`degenerate` 的\"过半\"随种子数移动，但**不单调**：3 个种子时门槛取 2，掷硬币输入 100% 判 degenerate（判据失去分辨力，退到 usable 只要 1 个种子不同号）；4 个种子 62.5%、5 个又回到 100%；30 个种子上 85.5%。`no_reading` 一侧与单位数无关（n 个种子全零 ⇒ 2^-n），第十三批那 24% 是**真非零比例**造成的——两件事本批才分开。蒙特卡洛经完整判据（含no_reading 优先）得出的是另一个量：n=3 时 degenerate 只占 44.5%、usable 55.5%，与枚举的 100% 不同源，不可互相充当复核。真实格带宽非零种子 0–30 个，3 个种子那档在本归档里没有踩中。",
+  "by_seed_count": {
+   "n_seeds=10": {
+    "coin_degenerate_rate": 0.753906,
+    "coin_usable_rate": 1.0,
+    "degenerate_units_needed": 6
+   },
+   "n_seeds=15": {
+    "coin_degenerate_rate": 1.0,
+    "coin_usable_rate": 1.0,
+    "degenerate_units_needed": 8
+   },
+   "n_seeds=20": {
+    "coin_degenerate_rate": 0.823803,
+    "coin_usable_rate": 1.0,
+    "degenerate_units_needed": 11
+   },
+   "n_seeds=3": {
+    "coin_degenerate_rate": 1.0,
+    "coin_usable_rate": 1.0,
+    "degenerate_units_needed": 2,
+    "monte_carlo_conditional_on_reading": {
+     "degenerate": 0.4534,
+     "usable": 0.5466
+    },
+    "monte_carlo_dist": {
+     "degenerate": 0.399,
+     "no_reading": 0.12,
+     "usable": 0.481
+    },
+    "monte_carlo_trials": 1000
+   },
+   "n_seeds=30": {
+    "coin_degenerate_rate": 0.855536,
+    "coin_usable_rate": 1.0,
+    "degenerate_units_needed": 16,
+    "monte_carlo_conditional_on_reading": {
+     "degenerate": 0.438,
+     "usable": 0.562
+    },
+    "monte_carlo_dist": {
+     "degenerate": 0.438,
+     "no_reading": 0.0,
+     "usable": 0.562
+    },
+    "monte_carlo_trials": 1000
+   },
+   "n_seeds=4": {
+    "coin_degenerate_rate": 0.625,
+    "coin_usable_rate": 1.0,
+    "degenerate_units_needed": 3
+   },
+   "n_seeds=5": {
+    "coin_degenerate_rate": 1.0,
+    "coin_usable_rate": 1.0,
+    "degenerate_units_needed": 3,
+    "monte_carlo_conditional_on_reading": {
+     "degenerate": 0.4922,
+     "usable": 0.5078
+    },
+    "monte_carlo_dist": {
+     "degenerate": 0.476,
+     "no_reading": 0.033,
+     "usable": 0.491
+    },
+    "monte_carlo_trials": 1000
+   }
+  },
+  "no_reading_all_zero": {
+   "coin_rate": 0.0,
+   "n_seeds": 30,
+   "units_needed": 30
+  }
+ },
  "doc": "门槛校准：已知真相下的档位分布，量的是判据误判率而不是测试灵敏度。real_cells 是同一判据在真实归档 16 格上的落点，只读不重算。",
  "effect_band_ratio": {
   "note": "真方向已知（所有种子同向），真效应量 = ratio × 该种子带宽。方向一列的分母是全部 replications；`mixed` 在这里是**假阳**（真值同向却被报方向混杂），`no_resolution` 是漏报（真方向存在却被报\"什么也不能说\"）。",
@@ -150,6 +225,176 @@
     },
     "n": 30,
     "trials_per_seed": 12
+   }
+  }
+ },
+ "real_band_floor_units": {
+  "qwen05b_cap1024": {
+   "backlog16": {
+    "band_floor": "usable",
+    "coin_degenerate_rate": 0.855536,
+    "n_band_nonzero": 30,
+    "n_band_zero": 0,
+    "n_r_identically_zero": 0,
+    "seeds_to_flip": 16,
+    "seeds_to_flip_direction": "进入 degenerate",
+    "units_needed_for_degenerate": 16
+   },
+   "backlog2": {
+    "band_floor": "usable",
+    "coin_degenerate_rate": 0.855536,
+    "n_band_nonzero": 30,
+    "n_band_zero": 0,
+    "n_r_identically_zero": 0,
+    "seeds_to_flip": 16,
+    "seeds_to_flip_direction": "进入 degenerate",
+    "units_needed_for_degenerate": 16
+   },
+   "backlog4": {
+    "band_floor": "usable",
+    "coin_degenerate_rate": 0.855536,
+    "n_band_nonzero": 30,
+    "n_band_zero": 0,
+    "n_r_identically_zero": 0,
+    "seeds_to_flip": 16,
+    "seeds_to_flip_direction": "进入 degenerate",
+    "units_needed_for_degenerate": 16
+   },
+   "backlog8": {
+    "band_floor": "usable",
+    "coin_degenerate_rate": 0.855536,
+    "n_band_nonzero": 30,
+    "n_band_zero": 0,
+    "n_r_identically_zero": 0,
+    "seeds_to_flip": 16,
+    "seeds_to_flip_direction": "进入 degenerate",
+    "units_needed_for_degenerate": 16
+   }
+  },
+  "qwen05b_cap256": {
+   "backlog16": {
+    "band_floor": "usable",
+    "coin_degenerate_rate": 0.855536,
+    "n_band_nonzero": 30,
+    "n_band_zero": 0,
+    "n_r_identically_zero": 0,
+    "seeds_to_flip": 16,
+    "seeds_to_flip_direction": "进入 degenerate",
+    "units_needed_for_degenerate": 16
+   },
+   "backlog2": {
+    "band_floor": "no_reading",
+    "coin_degenerate_rate": 0.855536,
+    "n_band_nonzero": 0,
+    "n_band_zero": 30,
+    "n_r_identically_zero": 30,
+    "seeds_to_flip": 15,
+    "seeds_to_flip_direction": "掉出 degenerate",
+    "units_needed_for_degenerate": 16
+   },
+   "backlog4": {
+    "band_floor": "degenerate",
+    "coin_degenerate_rate": 0.855536,
+    "n_band_nonzero": 8,
+    "n_band_zero": 22,
+    "n_r_identically_zero": 22,
+    "seeds_to_flip": 7,
+    "seeds_to_flip_direction": "掉出 degenerate",
+    "units_needed_for_degenerate": 16
+   },
+   "backlog8": {
+    "band_floor": "usable",
+    "coin_degenerate_rate": 0.855536,
+    "n_band_nonzero": 30,
+    "n_band_zero": 0,
+    "n_r_identically_zero": 0,
+    "seeds_to_flip": 16,
+    "seeds_to_flip_direction": "进入 degenerate",
+    "units_needed_for_degenerate": 16
+   }
+  },
+  "qwen15b_cap1024": {
+   "backlog16": {
+    "band_floor": "usable",
+    "coin_degenerate_rate": 0.855536,
+    "n_band_nonzero": 30,
+    "n_band_zero": 0,
+    "n_r_identically_zero": 0,
+    "seeds_to_flip": 16,
+    "seeds_to_flip_direction": "进入 degenerate",
+    "units_needed_for_degenerate": 16
+   },
+   "backlog2": {
+    "band_floor": "usable",
+    "coin_degenerate_rate": 0.855536,
+    "n_band_nonzero": 30,
+    "n_band_zero": 0,
+    "n_r_identically_zero": 0,
+    "seeds_to_flip": 16,
+    "seeds_to_flip_direction": "进入 degenerate",
+    "units_needed_for_degenerate": 16
+   },
+   "backlog4": {
+    "band_floor": "usable",
+    "coin_degenerate_rate": 0.855536,
+    "n_band_nonzero": 30,
+    "n_band_zero": 0,
+    "n_r_identically_zero": 0,
+    "seeds_to_flip": 16,
+    "seeds_to_flip_direction": "进入 degenerate",
+    "units_needed_for_degenerate": 16
+   },
+   "backlog8": {
+    "band_floor": "usable",
+    "coin_degenerate_rate": 0.855536,
+    "n_band_nonzero": 30,
+    "n_band_zero": 0,
+    "n_r_identically_zero": 0,
+    "seeds_to_flip": 16,
+    "seeds_to_flip_direction": "进入 degenerate",
+    "units_needed_for_degenerate": 16
+   }
+  },
+  "qwen15b_cap256": {
+   "backlog16": {
+    "band_floor": "usable",
+    "coin_degenerate_rate": 0.855536,
+    "n_band_nonzero": 30,
+    "n_band_zero": 0,
+    "n_r_identically_zero": 0,
+    "seeds_to_flip": 16,
+    "seeds_to_flip_direction": "进入 degenerate",
+    "units_needed_for_degenerate": 16
+   },
+   "backlog2": {
+    "band_floor": "no_reading",
+    "coin_degenerate_rate": 0.855536,
+    "n_band_nonzero": 0,
+    "n_band_zero": 30,
+    "n_r_identically_zero": 30,
+    "seeds_to_flip": 15,
+    "seeds_to_flip_direction": "掉出 degenerate",
+    "units_needed_for_degenerate": 16
+   },
+   "backlog4": {
+    "band_floor": "usable",
+    "coin_degenerate_rate": 0.855536,
+    "n_band_nonzero": 26,
+    "n_band_zero": 4,
+    "n_r_identically_zero": 4,
+    "seeds_to_flip": 12,
+    "seeds_to_flip_direction": "进入 degenerate",
+    "units_needed_for_degenerate": 16
+   },
+   "backlog8": {
+    "band_floor": "usable",
+    "coin_degenerate_rate": 0.855536,
+    "n_band_nonzero": 30,
+    "n_band_zero": 0,
+    "n_r_identically_zero": 0,
+    "seeds_to_flip": 16,
+    "seeds_to_flip_direction": "进入 degenerate",
+    "units_needed_for_degenerate": 16
    }
   }
  },

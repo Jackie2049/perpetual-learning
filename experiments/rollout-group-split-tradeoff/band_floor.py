@@ -36,7 +36,8 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
-import real_lengths_policy as RL  # noqa: E402
+import real_lengths_policy as RL  # noqa: E402  （它已把 tools/paired-diff 放进 sys.path）
+import paired_diff  # noqa: E402  过半数判据的唯一出处
 from group_split_tradeoff import POLICY_FIFO, _makespan_by_policy  # noqa: E402
 
 SEEDS = RL.SEEDS
@@ -81,7 +82,9 @@ def band_floor_verdict(bands, zero_reading, n_total):
     if n_total and zero_reading == n_total:
         return 'no_reading'
     n_zero = sum(1 for b in bands if b == 0.0)
-    if n_total and n_zero * 2 > n_total:
+    # 过半数这一行取自共享判据（2026-11-04 第十六批）；此前本文件与
+    # `RL.fifo_band_floor` 各写一遍，`crosscheck` 比的其实是两份抄本。
+    if n_total and paired_diff.band_floor_rule('degenerate')(n_zero, n_total):
         return 'degenerate'
     return 'usable'
 

@@ -262,9 +262,11 @@ def fifo_band_floor(groups, n_groups, backlog, seeds=SEEDS, trials=12, rng_seed=
             n_band_zero += 1
         if max(vals) == 0.0:
             n_r_zero += 1
+    # 判据不在本文件复写（2026-11-04 第十六批）：`over_half` 与它的补集都来自
+    # `paired_diff.band_floor_rule`，三条分支的顺序仍是 no_reading → 过半数 → 其余。
     if n_r_zero == len(seeds):
         verdict = 'no_reading'
-    elif n_band_zero * 2 > len(seeds):
+    elif paired_diff.band_floor_rule('degenerate')(n_band_zero, len(seeds)):
         verdict = 'degenerate'
     else:
         verdict = 'usable'

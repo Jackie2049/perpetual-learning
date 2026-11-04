@@ -118,6 +118,7 @@ pd.sign_flip_around(values, 1.0) # 比率读数是否穿过 1
 |---|---|
 | `experiments/rollout-group-split-tradeoff/bucketing_probe.py` | `sign_counts`、`same_sign_fraction`、`sd_pp`、`exceeds_band` |
 | `experiments/rollout-group-split-tradeoff/real_lengths_policy.py` | 同上（真实负载侧） |
+| `experiments/rollout-group-split-tradeoff/band_floor.py`／`sampling_reach.py` | `band_floor_rule`（`degenerate` 的过半判据，与 `fifo_band_floor` 同一份） |
 | `experiments/rollout-c-class-ledger/ledger.py` | `sign_counts`、`span`、`sign_flip_around(…, 1.0)`、`sign_flip`（步号，相对零） |
 | `experiments/rollout-c-class-ledger/wall_threshold_band.py` | `span`、`sign_flip_around`、`sign_counts` |
 
@@ -142,6 +143,21 @@ pd.sign_flip_around(values, 1.0) # 比率读数是否穿过 1
 **盲区扫描扩到六份归档。** 第七批只核了 `ledger.json`。本批扫 `ledger.json`、`wall-threshold-band.json`、`resolution.json`、`bucketing-probe.json`、`real-lengths-summary.json`、`legacy-group-arm-check.json` 的每一个 float（共 1907 个），对 ref=0 与 ref=1 各查 `0 < |v-ref| < TOL`：**全部 0 命中**。
 
 **旧版实现改为从 git 取。** 第七批把旧版手写实现嵌在对照脚本里，另留了三条 `/tmp/old_*.py` 常量——那三个文件是临时产物，换台机器就不存在。现在 `old_source_at(relpath)` 直接 `git show <TOOL_COMMIT>^:<path>`，核对不再依赖任何人先跑过某个命令。
+
+> **⚠ 2026-11-04 第十六批（C 类账记作第十三批）：`band_floor` 那一侧的"过半"同样随单位数移动，而且**不单调**。**
+>
+> 3 个种子时门槛取 2，2/3 与 3/3 都在过半数侧且两侧都算 ⇒ 掷硬币输入 **100%** 判 `degenerate`，退到 `usable` 只需 1 个种子不同号；4 个种子 62.5%、5 个又回 100%、30 个是 **85.6%**。⇒ **"种子越多判据越稳"在过半判据上是错的**；单位数小到门槛恒被越过时，档名的误判率比档名本身更有信息。`no_reading` 一侧与单位数无关（n 个种子全零 ⇒ `2^-n`）。
+>
+> 同批把那个门槛的**四处抄本收成一份**：`fifo_band_floor`（归档用）、`band_floor.py` 的 `band_floor_verdict`（自检）、`sampling_reach.py` 的副本、`calibrate_thresholds.py` 的合成场景此前各写一遍 `tally * 2 > n`，于是 `band_floor.py` 的 `crosscheck` 比的是两份抄本、改一处不改另一处照报 `ok`。现在统一到：
+>
+> ```python
+> pd.band_floor_rule('degenerate')(16, 30)   # True  —— 与原式 tally*2 > n 逐点相同
+> pd.band_floor_rule('usable')(15, 30)       # True  —— 同一 passes 取反，不是另写一份
+> pd.band_floor_rule('no_reading')           # ValueError —— 那一档不是"过半"，不在这里
+> pd.falsy_rate(3, passes=pd.band_floor_rule('degenerate'), two_sided=True)['consistency_rate']  # 1.0
+> ```
+>
+> 四处改接后三份归档 `--verify` 与 16/16 `crosscheck` 逐字段不变。详见 [C 类账 readme 第十三批](../../experiments/rollout-c-class-ledger/readme.md)。
 
 **带宽为 0 不等于"基线很稳"（2026-11-04 第十一批，落在实验层不在本工具）**
 ---

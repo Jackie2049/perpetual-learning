@@ -526,3 +526,16 @@ cap1024 只有 0.2%／4.8% ⇒ 截断档这 16 组的 `max(g)` 几乎全相同�
 **七、本批自己两处错（都已修）。** ① `sampling_floor` 里对同一条抽样调了两次 `_band_of_pick`（一次取带宽、一次判零），读数对但白跑一倍时间——已改成一次调用返回两个值；② 自检"n=16 的扫描项必须与 `at_n16` 逐字段相同"写成了比较 `free_per_pick_median` 之外的全部键，但那个键本来就应该相同——判据写松了，等于没检查。现改为排除键为空（全字段比较），并在 `--json` 时把布尔结果一起写进输出。
 
 **核对产物**：`test_zero_band_guard.py` **9 passed**（新增）；`test_real_lengths_policy` 新增 `TestSamplingReach` 4 条；探针两套 **85 passed**、C 类目录全部通过；`paired_diff --selftest` 通过。**两处注入各红 3 条**后恢复：① 撤掉 `exceeds_band` 的零带宽守卫（`if abs(band) == 0.0:` → `if False and ...`）；② 把 `band_floor_pass` 的 `no_reading` 分支改成 `return True`。只读仿真重算与真实负载抽样、未跑 GPU、未触上游。
+
+## 第十六批（2026-11-04，M1）：`degenerate` 的门槛也被用在多少个种子上——而且它不单调
+
+**为什么补这一条。** 第十五批（[C 类账 readme](../../experiments/rollout-c-class-ledger/readme.md)）把 `sign_regime` 那一侧接到 `falsy_rate`，本目录这侧的"过半"没接。补上后发现同一批判据在两个单位数上给出相反的直觉：
+
+- **`no_reading` 与单位数无关**：要求 n 个种子全部零读数 ⇒ 无信息输入下概率恒为 `2^-n`。
+- **`degenerate` 随单位数移动，但不单调**：3 个种子时门槛取 2，而 2/3 与 3/3 都落在过半数侧、两侧都算 ⇒ 掷硬币输入 **100%** 判 `degenerate`，退到 `usable` 只要 1 个种子不同号；4 个种子降到 62.5%、5 个又回 100%、30 个是 **85.6%**。⇒ **"种子越多判据越稳"这句话在过半判据上是错的。**
+
+**真实 16 格（分母是全部种子 30）**：两个模型 cap256 积压 2 是 30/30（`no_reading`）；**0.5B cap256 积压 4 判 `degenerate`，22/30、门槛 16，再少 6 个零就降到 15**；**1.5B cap256 积压 4 判 `usable` 但带 4/30 个零**，离门槛 12 个；其余 12 格 0/30。**没有一格用到 3 个种子**，所以 100% 那档在本归档里没踩中。⇒ **引用 `band_floor` 必须同报 `n_band_zero`**，`usable` 两个字在 22/30 与 0/30 上强度差一个量级。
+
+**同批把门槛的四处抄本收成一份**：`real_lengths_policy.fifo_band_floor`（归档用）、本目录 `band_floor.py` 的 `band_floor_verdict`（自检）、`sampling_reach.py` 的同名副本，以及 C 类账 `calibrate_thresholds.py` 的合成场景，此前各写一遍 `tally * 2 > n` —— `band_floor.py` 的 `crosscheck` 比的是两份抄本。现统一到 `paired_diff.band_floor_rule('degenerate' | 'usable')`（`usable` 是同一 `passes` 的补集，不是另写一份）。
+
+**这一批不改任何已发布读数**：`band_floor.py` 16/16 `crosscheck=ok`、`sampling_reach.py --json` 归档不变、`real-lengths-summary.json` 未重算（只读）。注入 `band_floor.py` 的过半数行改回内联式子 ⇒ **0 条红**，因为原式与新式语义等价——它不是测试弱，是那个改法本身无害；要抓"规则写错"得注入规则本身（改成 `>=` ⇒ 5 条红）。

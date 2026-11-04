@@ -311,6 +311,26 @@ def band_floor_pass(effect, band, zero_kind=None, strict=True):
     return False  # 不可达：_reject_zero_band 必然抛出
 
 
+def band_floor_rule(kind):
+    """`n_r_zero * 2 > n` ⇔ 过半数种子带宽为 0 ⇔ `degenerate`（2026-11-04 第十六批）。
+
+    这是 `band_floor` 那三行判词里与 `units` 有关的一行，判据本身**只有这一处**：
+    `real_lengths_policy.fifo_band_floor`、`band_floor.py` 的 `band_floor_verdict`、
+    `sampling_reach.py` 的同名副本，以及 `calibrate_thresholds` 的合成场景，都从这里取
+    （此前是四处各写一遍 `* 2 >`）。它同时是 `falsy_rate(n, passes=..., two_sided=True)`
+    的现成输入——"过半"两侧都算，这一点与 `stable` 的同号占比相同。
+
+    `kind='degenerate'` 与原式逐字相同；`kind='usable'` 是它的补集（**不是**取反后的
+    另一份式子——补集由同一个 `passes` 取反得到，两档之和恒为 1）。
+    """
+    over_half = lambda tally, n: tally * 2 > n  # noqa: E731
+    if kind == 'degenerate':
+        return over_half
+    if kind == 'usable':
+        return lambda tally, n: not over_half(tally, n)
+    raise ValueError("band_floor_rule 只认 'degenerate' / 'usable'，收到 %r" % (kind,))
+
+
 def falsy_rate(n_truth, passes=None, min_true_frac=0.5, two_sided=False):
     """判据取"**多少单位满足**"时，它在无信息输入上的判真概率（2026-11-04 第十五批）。
 
@@ -318,6 +338,11 @@ def falsy_rate(n_truth, passes=None, min_true_frac=0.5, two_sided=False):
     多少个单位上逐格不同**：真实 16 格里表态种子 3–27 个、带宽非零种子 0–30 个。
     0.8 在 3 个单位上等价于"三个全中"（概率 0.51），在 27 个单位上等价于
     "≤5 个输"（概率 0.0024）——**常数本身不交代这一点，单位数才交代**。
+
+    **另一条触发条件（2026-11-04 第十六批）**：判据的单位总数本身随格变化时，
+    同一个"过半"在 3 个单位上只是"两个赢"——掷硬币输入下 `degenerate` 有 **100%**
+    （门槛取 2，2/3 与 3/3 全落在过半数且双侧都算），退到 `usable` 只要 **1 个**种子
+    不同号。这一类"单位数小到判据失去分辨力"的格子，**别名的误判率比档名更有信息**。
 
     `n_truth`：真值下全部符合条件的单位数（如真相全同号时的表态种子数）。
     `passes(tally, n)`：调用方的**真实判据**，传进来而不是在这里复写一份——

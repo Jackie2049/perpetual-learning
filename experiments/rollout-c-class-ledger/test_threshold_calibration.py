@@ -332,6 +332,99 @@ class TestUnitCountMovesTheVerdict(unittest.TestCase):
         self.assertGreaterEqual(len(thin_cells), 2)
 
 
+class TestBandFloorRuleIsShared(unittest.TestCase):
+    """`degenerate` 的"过半"必须只有一处实现（2026-11-04 第十六批）。
+
+    此前 `fifo_band_floor`、`band_floor_verdict`、`sampling_reach` 与校准场景各写一遍
+    `* 2 >`，于是 `band_floor.py` 的 `crosscheck` 比的是两份抄本，改一处不改另一处
+    它照样报 `ok`。这里把四个入口钉在同一个函数上。
+    """
+
+    def test_rule_matches_the_original_expression(self):
+        for n in range(1, 31):
+            for t in range(0, n + 1):
+                self.assertEqual(paired_diff.band_floor_rule('degenerate')(t, n), t * 2 > n)
+
+    def test_usable_is_the_exact_complement(self):
+        """`usable` 不能是另写的一份式子——两档之和恒为 1，没中间地带。"""
+        over, under = (paired_diff.band_floor_rule('degenerate'),
+                       paired_diff.band_floor_rule('usable'))
+        for n in range(1, 31):
+            for t in range(0, n + 1):
+                self.assertEqual(over(t, n) != under(t, n), True)
+        self.assertEqual(over(15, 30), False)   # 恰过半不算
+        self.assertEqual(over(16, 30), True)
+
+    def test_unknown_rule_name_is_rejected(self):
+        with self.assertRaises(ValueError):
+            paired_diff.band_floor_rule('no_reading')
+
+    def test_archived_verdict_reproduces_through_the_shared_rule(self):
+        """真实 16 格的 `degenerate` 判定，用共享规则从计数复算必须一致。"""
+        out = C.real_band_floor_units()
+        for label, cells in out.items():
+            for b, row in cells.items():
+                if row['band_floor'] == 'degenerate':
+                    self.assertTrue(paired_diff.band_floor_rule('degenerate')(
+                        row['n_band_zero'], 30), (label, b))
+                elif row['band_floor'] == 'usable':
+                    self.assertFalse(paired_diff.band_floor_rule('degenerate')(
+                        row['n_band_zero'], 30), (label, b))
+
+
+class TestBandFloorUnitCount(unittest.TestCase):
+    """`degenerate` 的门槛随种子数移动——但**不单调**，与 `stable` 不同。"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.out = C.band_floor_units(seed_count=4000)
+
+    def test_three_seeds_cannot_distinguish_degenerate(self):
+        """3 个种子时门槛取 2，掷硬币输入 100% 判 degenerate，退到 usable 只要 1 个不同号。"""
+        row = self.out['by_seed_count']['n_seeds=3']
+        self.assertEqual(row['degenerate_units_needed'], 2)
+        self.assertEqual(row['coin_degenerate_rate'], 1.0)
+        self.assertEqual(row['coin_usable_rate'], 1.0)
+
+    def test_threshold_is_not_monotone_in_seed_count(self):
+        """4 个种子 62.5% < 3 个与 5 个的 100%——"种子越多越安全"这句话在这里是错的。"""
+        r = self.out['by_seed_count']
+        self.assertLess(r['n_seeds=4']['coin_degenerate_rate'], 0.7)
+        self.assertEqual(r['n_seeds=5']['coin_degenerate_rate'], 1.0)
+
+    def test_thirty_seeds_is_not_reassuring_under_coin_flips(self):
+        """30 个种子上仍有 85.6%——过半判据在无信息输入下偏向 `degenerate` 一侧。"""
+        self.assertAlmostEqual(
+            self.out['by_seed_count']['n_seeds=30']['coin_degenerate_rate'], 0.8555, places=3)
+
+    def test_monte_carlo_and_enumeration_are_different_quantities(self):
+        """完整判据（no_reading 优先）与枚举器说的不是同一件事，**不可互为复核**。
+
+        枚举器只看 `tally`：3 个种子上"过半者"有 3/3 与 2/3 两种，双侧都算 ⇒ 100%。
+        完整判据里"三个种子全零"先落 `no_reading`，剩下两条尾巴各占一半 ⇒ 44.5%。
+        本批第一版把后者写成对前者的"蒙特卡洛复核"，数字没错、关系错了。
+        """
+        row = self.out['by_seed_count']['n_seeds=3']
+        cond = row['monte_carlo_conditional_on_reading']
+        self.assertAlmostEqual(cond['degenerate'], 0.4451, delta=0.04)
+        self.assertAlmostEqual(cond['degenerate'] + cond['usable'], 1.0, places=6)
+        self.assertEqual(row['coin_degenerate_rate'], 1.0)
+        self.assertGreater(row['coin_degenerate_rate'] - cond['degenerate'], 0.4)
+
+    def test_no_reading_side_does_not_move_with_units(self):
+        """`no_reading` 要求全部种子零 ⇒ 概率 2^-n；这一侧与"被用在几个单位上"无关。"""
+        self.assertEqual(self.out['no_reading_all_zero']['units_needed'], 30)
+        self.assertEqual(self.out['no_reading_all_zero']['coin_rate'], 0.0)
+
+    def test_only_one_real_cell_sits_near_the_threshold(self):
+        """真实 16 格里，`degenerate`/`usable` 边界附近只有 0.5B cap256 积压 4（22 零，差 7）。"""
+        out = C.real_band_floor_units()
+        near = [(label, b, row['n_band_zero']) for label, cells in out.items()
+                for b, row in cells.items() if 0 < row['n_band_zero'] < 30]
+        self.assertEqual(near, [('qwen05b_cap256', 'backlog4', 22),
+                                ('qwen15b_cap256', 'backlog4', 4)])
+
+
 class TestCalibrationIsNotTheInjectionTest(unittest.TestCase):
     """校准量的是判据误判率，不能拿注入测试代替；反之亦然。"""
 

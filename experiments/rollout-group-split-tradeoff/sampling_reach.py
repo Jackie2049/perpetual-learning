@@ -42,7 +42,8 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
-import real_lengths_policy as RL  # noqa: E402
+import real_lengths_policy as RL  # noqa: E402  （它已把 tools/paired-diff 放进 sys.path）
+import paired_diff  # noqa: E402  过半数判据的唯一出处
 from group_split_tradeoff import POLICY_FIFO, _makespan_by_policy  # noqa: E402
 
 OUT_PATH = os.path.join(HERE, 'sampling-reach.json')
@@ -76,7 +77,7 @@ def sampling_floor(groups, cap, n_groups, backlog, rng_seed=0):
     n_band_zero = sum(1 for b in bands if b == 0.0)
     if n_r_zero == SEED_COUNT:
         verdict = 'no_reading'
-    elif n_band_zero * 2 > SEED_COUNT:
+    elif paired_diff.band_floor_rule('degenerate')(n_band_zero, SEED_COUNT):
         verdict = 'degenerate'
     else:
         verdict = 'usable'
