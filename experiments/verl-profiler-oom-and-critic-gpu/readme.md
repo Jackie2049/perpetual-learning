@@ -141,6 +141,30 @@ logger.setLevel(os.getenv("VERL_LOGGING_LEVEL", "WARN"))   # :29  默认 WARN �
 
 **六、顺带把 wrapper 的两条失败路径补住**（都不是读数）：① 预检原来只查树与 `/tmp` 依赖，**不查 `patch-critic-sdpa.py` 自己**——缺了会走成"`--check` rc=2（锚点形状变了？）"，把排查引向错的地方；现把它列进依赖，报 `MISSING: …/patch-critic-sdpa.py`（exit 65，秒级）。② arm JSON 原来是 `python3 … > tmp` 之后**无条件** `mv`，生成器中途失败会把空/截断文件顶上去，judge 读它直接抛异常而不是给判定；现改为只在文件非空时才替换。两条都用同一套夹具验过：`/tmp/m5-isolated` 里只放 wrapper、不放适配脚本 → `MISSING`＋exit 65；正常夹具三臂 rc=0／judge 0 不变。
 
+## 2026-11-05 03:0x 无卡轮：critic 的第二个拦路点——**就算把装饰器补回去，模型也解析不出来**
+
+前几轮把 critic 三臂的窗口前置做得差不多了，但证据页第三节那句"补装饰器要动引擎层的 role 身份，属设计选择"一直是**推断**。这一轮把它换成可执行的读数：`PrecisionDebuggerProfiler.start()` 在真正构造 msprobe 之前还要过一道 `_resolve_model(self_instance, stage)`，它按 `_MODEL_ATTRS_BY_ROLE[role]` 在**worker 对象**上找模型，最后兜底 `self.module`。新引擎里 critic 是一个独立的 `TrainingWorker`（`trainer_base.py`：`Role.Critic -> TrainingWorker`），模型在 `self.engine.module`，**既没有 `self.critic` 也没有 `self.module`** ⇒ 四条 critic 候选链全部落空。
+
+读数由 [probe-critic-model-resolve.py](probe-critic-model-resolve.py) 产出：用 AST 从**真实文件**里抽出 `_STAGE_TO_ROLE`、`_MODEL_ATTRS_BY_ROLE`、`_resolve_model`／`start` 等方法源码执行（不需要 torch／msprobe／GPU），替身 worker 的属性名**从同一棵树里的真实类体读出来**，不是手写。
+
+| 检查 | 当前 main `31cfccb4` | 父提交 `6eeb5711` |
+|---|---|---|
+| `_STAGE_TO_ROLE`／`_MODEL_ATTRS_BY_ROLE` 字面量 | 与父提交**完全相同**（4 个 role／19 条候选逐项相等） | — |
+| critic 两个 stage 的装饰器字面量（全仓 `verl/**/*.py`） | `critic_update` 0／`compute_values` 0 | `fsdp_workers.py`＋`megatron_workers.py` 各 2 处 |
+| critic 的模型解析 | `TrainingWorker` 上 `critic_update`／`compute_values` 都 **None** | `CriticWorker` 上命中 `critic_module` ⇒ **Module** |
+| actor／ref 正对照 | 命中（`ActorRolloutRefWorker.actor.engine.module`、`.ref.engine.module`） | — |
+| `start(stage="critic_update", model=None)` | 返回 **False**、打一条 `PrecisionDebugger model not resolved for stage 'critic_update'`、**不建目录**（`os.makedirs` 在模型检查之后） | — |
+
+三点需要写进口径：
+
+1. **解析表不是这次坏的，是 worker 布局变了。** 两棵树的表逐字相同；旧 `CriticWorker` 有 `self.critic_module`，新 `TrainingWorker` 只有 `self.engine`（AST 读出 11 个 `self.*` 赋值，无 `module`、无 `critic`）。所以这是一个**双缺口**：装饰器丢了，解析链的落点也没了。
+2. **同一个 `train_batch` 同时服务 actor 和 critic**（`ActorRolloutRefWorker.update_actor → self.actor.train_mini_batch → self.train_batch`）⇒ 给 `train_batch` 写一个**字面量** role 无论写哪个角色都会错一边，这也是"role 身份"问题的具体形状。
+3. **候选修法可以在本机验**：给每个 role 的候选链**末尾**追加 `"engine.module"` 后，critic 两臂解析成功，actor／ref 两个正对照读数**不变**（表里原候选先命中）。这只是形状验证，**没有改动上游任何文件**。
+
+自检 **8/8**（抽取完整、3.9 语法垫片恰好 1 处、基线为 None、三种扰动各自翻转、表恢复、unknown stage 仍被拒）；两棵树的读数在 [raw/critic-model-resolve-main-31cfccb4.json](raw/critic-model-resolve-main-31cfccb4.json) 与 [raw/critic-model-resolve-pre6067.json](raw/critic-model-resolve-pre6067.json)（父提交文件含 `match` 语句，本机 Python 3.9 走正则兜底，读数里记 `parse_mode`）。
+
+**边界（与本轮结论一起引用）**：替身 worker 只有真实类体里的属性名，**不是真 worker 实例**；未装 msprobe、未跑训练、未上卡。它证明的是"这条解析路径在 `TrainingWorker` 上不可能拿到模型"，而不是"msprobe 在真机上会怎么表现"。另外，三臂真机跑的 P2／P3（`cu`／`cv` 零 dump）**两种原因都能满足**——没有装饰器，或者装饰器在但模型解析不出来——本轮把后者从推断变成静态可查，但三臂本身只给行为侧证据，分不出是哪一个原因。
+
 ## 复现
 
 ```bash
@@ -167,13 +191,19 @@ python3 patch-critic-sdpa.py --tree <verl 树> --selftest   # 18 项
 #   git -C <verl 检出> worktree add --detach /tmp/verl-3fdf2b5 3fdf2b548882
 python3 compose_check.py --tree /tmp/verl-3fdf2b5 --out raw/compose-check.json
 python3 compose_check.py --selftest    # 负向对照能否被打翻
+# critic 的模型解析（本机，CPU；两棵树各一份读数，0=结论成立 2=上游已变）
+python3 probe-critic-model-resolve.py --selftest
+python3 probe-critic-model-resolve.py --tree /tmp/verl-31cfccb4 --preset main \
+  --json raw/critic-model-resolve-main-31cfccb4.json
+python3 probe-critic-model-resolve.py --tree /tmp/verl-pre6067 --preset pre6067 \
+  --json raw/critic-model-resolve-pre6067.json
 ```
 
 ## 产物
 
 - 探针与跑批：[probe-oom-dump.py](probe-oom-dump.py) · [run-oom-probe.sh](run-oom-probe.sh) · [run-critic-pdbg.sh](run-critic-pdbg.sh)（**未跑真机**）
 - 树内适配：[patch-critic-sdpa.py](patch-critic-sdpa.py) · 真上游文件验证 [raw/critic-sdpa-patch.json](raw/critic-sdpa-patch.json)／[.diff](raw/critic-sdpa-patch.diff)
-- 判定与把关：[verify-critic-pdbg.py](verify-critic-pdbg.py) · [check-log-counters.py](check-log-counters.py) · [verify-oom-archive.py](verify-oom-archive.py) · [compose_check.py](compose_check.py) · [raw/compose-check.json](raw/compose-check.json)（`3fdf2b54`）· [raw/compose-check-main-31cfccb4.json](raw/compose-check-main-31cfccb4.json)（当前 main）
+- 判定与把关：[verify-critic-pdbg.py](verify-critic-pdbg.py) · [check-log-counters.py](check-log-counters.py) · [verify-oom-archive.py](verify-oom-archive.py) · [compose_check.py](compose_check.py) · [probe-critic-model-resolve.py](probe-critic-model-resolve.py) · [raw/compose-check.json](raw/compose-check.json)（`3fdf2b54`）· [raw/compose-check-main-31cfccb4.json](raw/compose-check-main-31cfccb4.json)（当前 main）· [raw/critic-model-resolve-main-31cfccb4.json](raw/critic-model-resolve-main-31cfccb4.json)／[raw/critic-model-resolve-pre6067.json](raw/critic-model-resolve-pre6067.json)
 - 原始读数：`raw/result-{attached,nocap,unranked}.json` · `raw/nocap.stderr` · [raw/log-counter-check.json](raw/log-counter-check.json)（104 份真日志的计数器对照）
 - 管线夹具（**非读数**）：[raw/mock-run/](raw/mock-run/README.json)（旧形状，掩盖了计数器问题）· [raw/mock-run-real-shape/](raw/mock-run-real-shape/README.json)（真日志形状）· [mock/](mock/make-mock-tree.sh)
 - 上游对应：[证据文档](../../open-source/verl/evidence/engine-refactor-torch-memory/readme.md) · [M5 交接](../handoff-m5.md)

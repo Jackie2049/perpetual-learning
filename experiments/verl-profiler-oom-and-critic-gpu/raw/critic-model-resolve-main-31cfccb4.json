@@ -1,0 +1,183 @@
+{
+ "cases": [
+  {
+   "case": "critic_update on TrainingWorker",
+   "expected": "none",
+   "got": "none",
+   "ok": true,
+   "stage": "critic_update"
+  },
+  {
+   "case": "compute_values on TrainingWorker",
+   "expected": "none",
+   "got": "none",
+   "ok": true,
+   "stage": "compute_values"
+  },
+  {
+   "case": "actor_update on ActorRolloutRefWorker",
+   "expected": "module",
+   "got": "FakeModule",
+   "ok": true,
+   "stage": "actor_update"
+  },
+  {
+   "case": "actor_compute_log_prob",
+   "expected": "module",
+   "got": "FakeModule",
+   "ok": true,
+   "stage": "actor_compute_log_prob"
+  },
+  {
+   "case": "ref_compute_log_prob",
+   "expected": "module",
+   "got": "FakeModule",
+   "ok": true,
+   "stage": "ref_compute_log_prob"
+  },
+  {
+   "case": "FIX: critic_update with engine.module fallback",
+   "expected": "module",
+   "got": "FakeModule",
+   "ok": true,
+   "stage": "critic_update"
+  },
+  {
+   "case": "FIX: compute_values with engine.module fallback",
+   "expected": "module",
+   "got": "FakeModule",
+   "ok": true,
+   "stage": "compute_values"
+  },
+  {
+   "case": "FIX: actor_update unchanged",
+   "expected": "module",
+   "got": "FakeModule",
+   "ok": true,
+   "stage": "actor_update"
+  },
+  {
+   "case": "FIX: ref_compute_log_prob unchanged",
+   "expected": "module",
+   "got": "FakeModule",
+   "ok": true,
+   "stage": "ref_compute_log_prob"
+  }
+ ],
+ "critic_stage_decorators": {},
+ "parse_mode": {
+  "ActorRolloutRefWorker": "ast",
+  "TrainingWorker": "ast"
+ },
+ "preset": "main",
+ "py39_shims": {
+  "counts": {
+   "_get_candidate_attrs": 0,
+   "_is_valid_model": 0,
+   "_normalize_stage": 0,
+   "_resolve_attr": 0,
+   "_resolve_model": 1,
+   "_should_collect": 0,
+   "start": 0
+  },
+  "total": 1
+ },
+ "sha256": {
+  "verl/trainer/ppo/v1/trainer_base.py": "371026ded89b51dbe52a23cb1e20bfdcfcb77cf9a531dcf15acff92b074f029c",
+  "verl/utils/profiler/precision_debugger_profile.py": "102892e06de436002f1916ad5c4b5ade513f5b4415dd65c96da8a2debd83b405",
+  "verl/workers/engine_workers.py": "23c8053c2b3c555de5b37fbe27b7be664cf5b884e6c64ea7be1cd85402b30dfe"
+ },
+ "start_with_unresolved_model": {
+  "dump_root_created": false,
+  "returned": false,
+  "warnings": [
+   "PrecisionDebugger model not resolved for stage 'critic_update'"
+  ]
+ },
+ "staticmethods": [
+  "_is_valid_model",
+  "_normalize_stage",
+  "_resolve_attr"
+ ],
+ "tables": {
+  "_MODEL_ATTRS_BY_ROLE": {
+   "actor": [
+    "actor.engine.module",
+    "actor.actor_module",
+    "actor.actor_module_fsdp",
+    "actor_module_fsdp",
+    "actor_module"
+   ],
+   "critic": [
+    "critic.engine.module",
+    "critic.critic_module",
+    "critic_module_fsdp",
+    "critic_module"
+   ],
+   "ref": [
+    "ref.engine.module",
+    "ref.actor_module",
+    "ref_policy.actor_module",
+    "ref_module_fsdp",
+    "ref_module",
+    "ref_policy.ref_module"
+   ],
+   "reward_model": [
+    "reward_model.engine.module",
+    "reward_model_module_fsdp",
+    "reward_model_module",
+    "rm.reward_model_module"
+   ]
+  },
+  "_STAGE_TO_ROLE": {
+   "actor_compute_log_prob": "actor",
+   "actor_update": "actor",
+   "compute_rm_score": "reward_model",
+   "compute_values": "critic",
+   "critic_update": "critic",
+   "ref_compute_log_prob": "ref"
+  }
+ },
+ "tree": "/tmp/verl-31cfccb4",
+ "verdict": {
+  "actor_positive_controls_ok": true,
+  "candidate_fix_works": true,
+  "critic_decorators_absent": true,
+  "resolution_none_on_training_worker": true,
+  "start_path_confirms": true
+ },
+ "worker_attrs": {
+  "ActorRolloutRefWorker": [
+   "_is_actor",
+   "_is_ref",
+   "_is_rollout",
+   "_omega_profiler_config",
+   "actor",
+   "base_sync_done",
+   "checkpoint_engine",
+   "config",
+   "distillation_config",
+   "distillation_enabled",
+   "enable_routing_replay",
+   "layered_summon",
+   "loss_fn",
+   "peft_merge",
+   "ref",
+   "role",
+   "rollout"
+  ],
+  "TrainingWorker": [
+   "checkpoint_config",
+   "config",
+   "device_name",
+   "engine",
+   "engine_config",
+   "flops_counter",
+   "loss_fn",
+   "model_config",
+   "optimizer_config",
+   "profiler_config",
+   "profiler_tool_config"
+  ]
+ }
+}
