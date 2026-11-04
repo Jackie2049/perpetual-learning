@@ -66,7 +66,29 @@ python3 -m unittest test_scan_unwired_flags -v       # 10 个用例，含 4 条�
 报告存档：`scan-verl-project-verl-6879e1ab07.json`、`scan-NovaSky-AI-SkyRL.json`、
 `scan-OpenRLHF-OpenRLHF.json`、`scan-rllm-4e828c8.json`。
 
-## 第五类易错点：三态形参
+## 第五类易错点：生产者是**属性**（或位置参数），不是关键字
+
+`enable_sample_support_replay`、`enable_pd` 在 SkyRL 上都报「无生产者」，但两者都**能生效**：
+
+```python
+sample_support_replay = self.cfg.algorithm.enable_sample_support_replay   # 读配置字段
+self.model(..., enable_sample_support_replay=sample_support_replay)       # 传给形参
+```
+
+工具按形参名找调用点，看到的是「形参 `enable_sample_support_replay` 没人传同名关键字」，
+而真正被配置的是**同名的 dataclass 字段**。⇒ 报 silently_inert 的条目里，
+**「名字同时是某个 config 字段」的那几条要先按字段查一遍读取点**，再判断是不是失效。
+
+SkyRL 2026-11-04（`1089e18`）的 7 条里，靠这一条排除掉的是 `enable_sample_support_replay`
+与 `enable_pd` 两条；`use_liger_kernel` 恰好相反——它在 config 里**没有**字段，
+所以「无生产者」是真的。逐条判定与脚本见
+[experiments/skyrl-pyflag-triage](../../experiments/skyrl-pyflag-triage/readme.md)。
+
+同类补充：**位置参数也是生产者**。`Qwen4ExpFinalMixer` 用
+`super().__init__(config, use_combine=False)` 传值，工具只认 `use_combine=...` 关键字，
+于是把内部形参报成「无人传」。
+
+## 第六类易错点：三态形参
 
 `use_async: bool | None = None` 这类**三态形参**是扫描的盲区。工具只认 `= True/False`，
 所以把默认写成 `False`、却在文档里宣称"默认 None、自动探测"的代码，会被报成

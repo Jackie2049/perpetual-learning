@@ -92,10 +92,11 @@
 ## TM-007 — 跨框架布尔开关静默失效扫描（B 类：方法沉淀）
 
 - **问题与价值**：TM-005/006 是同一类模式的两个实例。已把方法沉淀为 [tools/pyflag](tools/pyflag/readme.md)，在三个框架上跑过：verl 37 个开关／8 个失效（2 个已人工确认为真）、SkyRL 39／7（`use_liger_kernel`、`use_remove_padding` 确认为真）、OpenRLHF 5／0。
-- **优先级 / 负责人 / 状态**：方法已留在 `tools/`（复用价值明确）；**SkyRL 的两条尚未做完整取证**，作为后续候选。
-- **下一步与等待条件**：SkyRL 两条若要对外，需补齐取证材料与影响面；`use_remove_padding` 是 `mode=always`（默认 True 且无人传），属"关不掉"而非"开不了"，结论表述要区分。
-- **停止条件**：无新框架待扫时暂停；不为凑数反复扫同一批仓库。
-- **成果入口**：[工具说明](tools/pyflag/readme.md)、[扫描报告](tools/pyflag/)。
+- **优先级 / 负责人 / 状态**：方法已留在 `tools/`（复用价值明确）；**SkyRL 7 条已逐条取证完毕（2026-11-04），真失效只有 `use_liger_kernel` 1 条**，对外待用户决定。
+- **2026-11-04 追加（M1）——SkyRL 7 条降到 1 条真失效；`use_remove_padding` 那条降级**：在当前 HEAD `1089e18` 重跑 pyflag（38 个开关、7 条 `silently_inert`，与 2026-11-02 那批同名同量），逐条绑定 2–3 条源码事实判定，脚本 0 不一致、`--selftest` 8 条注入全翻转。**7 条分档**：**DEAD 1 条**（`use_liger_kernel`——全仓零关键字实参、`config.py` 无该字段、docstring 却写 `Defaults to False`；`model_wrapper.py` 全部 18 次提交里它的计数恒为 3（docstring+默认值+分支）、同版本 `fsdp_worker.py` 恒为 0 ⇒ **这 18 个 ref 上从没接过线**，不是重构漏的）；**NOT_USER_FACING 1 条**（`use_remove_padding`——`monkey_patch.py:153` 是 `if use_remove_padding or ulysses_sp_size > 1:`，唯一调用点 `worker.py:168` 又在 `sp > 1` 守卫内 ⇒ 形参**不产生任何观测差异**，`mode=always` 的真身是第二个或项，**原记「确认为真」要降级**）；INDIRECT_PRODUCER 2 条（`enable_sample_support_replay`／`enable_pd`：配置字段读出后传给同名形参，属工具盲区）；PUBLIC_HELPER_API 1 条（`disable_print` 是 `pprint_registry` 的返回字符串开关，skyrl-gym 独立发包）；FALSE_POSITIVE 1 条（`use_combine` 是 Megatron patch 的内部形参，子类走**位置参数** `super().__init__(config, use_combine=False)`）；DEPRECATED_BY_DESIGN 1 条（`use_signals`，docstring 标 Deprecated）。**影响面**：`use_liger_kernel` 配不了也没人配 ⇒ 当前无用户训练受影响，对外价值 **3/10**，与 verl 那类「字段在、消费者没了」的回归不是一回事。**本批自己两处错（都已修，判据已进文档）**：① v1 用 `"use_liger_kernel=" in text` 子串匹配，把 `model_wrapper.py:148` 的**形参默认值声明行**算成生产者，读数当场反了——正是 pyflag 自己写的「形参默认值不是生产者」那条；② 差点把 `skyrl-agent/examples/run_verl/*.sh` 里 **verl 的 Hydra 键** `actor_rollout_ref.model.use_remove_padding=True` 与 SkyRL 的形参混算成「有生产者」。
+- **下一步与等待条件**：① `use_liger_kernel` 若要对外，最小动作只有「删掉那个形参与分支」或「把它接进 `fsdp_worker.py` 的构造」，**对外待用户逐项授权**；② 其余 6 条**不建议对外**（分别是内部形参／弃用开关／工具盲区／公开 API／非用户开关）；③ 方法侧的新沉淀已写入 [pyflag readme 第五类易错点](tools/pyflag/readme.md)：**同名 config 字段的属性传参**与**位置参数**都会让扫描器误报。
+- **停止条件**：无新框架待扫时暂停；不为凑数反复扫同一批仓库。当前三个框架都已跑到「候选 ≤ 1 条真失效」，**再扫应换新框架而非重扫**。
+- **成果入口**：[工具说明](tools/pyflag/readme.md)、[扫描报告](tools/pyflag/)、[SkyRL 逐条取证](experiments/skyrl-pyflag-triage/readme.md)。
 
 ## TM-008 — verl V1 采样等待的 `poll_interval` 不可配置（C 类：优化 PR）
 

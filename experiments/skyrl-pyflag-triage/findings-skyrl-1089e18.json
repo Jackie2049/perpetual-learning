@@ -1,0 +1,174 @@
+{
+ "root": "/private/tmp/skyrl-latest",
+ "all_ok": true,
+ "findings": [
+  {
+   "flag": "use_liger_kernel",
+   "verdict": "DEAD",
+   "note": "用户无法开启 Liger Kernel；分支只能走 AutoModelForCausalLM",
+   "facts": [
+    {
+     "fact": "无任何 `use_liger_kernel=` 传参",
+     "expected": true,
+     "got": true,
+     "error": "",
+     "ok": true
+    },
+    {
+     "fact": "config 无该字段",
+     "expected": true,
+     "got": true,
+     "error": "",
+     "ok": true
+    },
+    {
+     "fact": "消费者分支真实存在",
+     "expected": true,
+     "got": true,
+     "error": "",
+     "ok": true
+    }
+   ],
+   "all_ok": true
+  },
+  {
+   "flag": "use_remove_padding",
+   "verdict": "NOT_USER_FACING",
+   "note": "`mode=always` 的真身是第二个或项；该形参不产生观测差异，也不是用户配置项",
+   "facts": [
+    {
+     "fact": "无 `use_remove_padding=` 传参",
+     "expected": true,
+     "got": true,
+     "error": "",
+     "ok": true
+    },
+    {
+     "fact": "分支含 `or ulysses_sp_size > 1`",
+     "expected": true,
+     "got": true,
+     "error": "",
+     "ok": true
+    },
+    {
+     "fact": "唯一调用点在 sp>1 守卫内",
+     "expected": true,
+     "got": true,
+     "error": "",
+     "ok": true
+    }
+   ],
+   "all_ok": true
+  },
+  {
+   "flag": "enable_sample_support_replay",
+   "verdict": "INDIRECT_PRODUCER",
+   "note": "pyflag 已知盲区（属性传参）：配置真读得到，功能可达",
+   "facts": [
+    {
+     "fact": "配置字段→形参的间接传值存在",
+     "expected": true,
+     "got": true,
+     "error": "",
+     "ok": true
+    },
+    {
+     "fact": "有 FSDP 专属注释",
+     "expected": true,
+     "got": true,
+     "error": "",
+     "ok": true
+    }
+   ],
+   "all_ok": true
+  },
+  {
+   "flag": "disable_print",
+   "verdict": "PUBLIC_HELPER_API",
+   "note": "仓库内零调用 ≠ 包外零调用；不是配置开关",
+   "facts": [
+    {
+     "fact": "docstring 定义其为返回字符串的公开 API",
+     "expected": true,
+     "got": true,
+     "error": "",
+     "ok": true
+    },
+    {
+     "fact": "skyrl-gym 独立发布包",
+     "expected": true,
+     "got": true,
+     "error": "",
+     "ok": true
+    }
+   ],
+   "all_ok": true
+  },
+  {
+   "flag": "use_combine",
+   "verdict": "FALSE_POSITIVE_LOCAL_PARAM",
+   "note": "内部形参；调用点走位置参数，工具的「无生产者」是匹配不足",
+   "facts": [
+    {
+     "fact": "不是配置键",
+     "expected": true,
+     "got": true,
+     "error": "",
+     "ok": true
+    },
+    {
+     "fact": "子类以位置参数传 False",
+     "expected": true,
+     "got": true,
+     "error": "",
+     "ok": true
+    }
+   ],
+   "all_ok": true
+  },
+  {
+   "flag": "enable_pd",
+   "verdict": "INDIRECT_PRODUCER",
+   "note": "mode=mixed 由多消费者默认值不一致产生；链路本身是通的",
+   "facts": [
+    {
+     "fact": "setup.py 有两处 enable_pd=True",
+     "expected": true,
+     "got": true,
+     "error": "",
+     "ok": true
+    },
+    {
+     "fact": "分支读 ie_cfg.enable_pd",
+     "expected": true,
+     "got": true,
+     "error": "",
+     "ok": true
+    }
+   ],
+   "all_ok": true
+  },
+  {
+   "flag": "use_signals",
+   "verdict": "DEPRECATED_BY_DESIGN",
+   "note": "弃用开关保留兼容，无人传 True 属预期",
+   "facts": [
+    {
+     "fact": "docstring 标注 Deprecated",
+     "expected": true,
+     "got": true,
+     "error": "",
+     "ok": true
+    },
+    {
+     "fact": "默认走多进程实现",
+     "expected": true,
+     "got": true,
+     "error": "",
+     "ok": true
+    }
+   ],
+   "all_ok": true
+  }
+ ]
+}

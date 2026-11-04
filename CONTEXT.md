@@ -1,4 +1,4 @@
-更新时间：2026-11-04（M1 15:5x–16:1x 技术秘书第十八批：**正文引用的 `R` 端点在归档里不存在**——`legacy_group_arm_check.py` 的 cv 扫描止于 1.2，正文写的 44.9%／56.3%／63.4%（cv 1.5）只有台账可查；补到 1.5 并新增 `claims_vs_sweep`（正文五个引用值硬对账、不一致 exit 1，改坏 0.449→0.430 已验）与 `arm_crosscheck`（两条组臂实现 36 组逐种子比对 <1e-12）。**读数不变**，56＋29 测试通过。⇒ "对台账"这一类到此为止。此前 M5 14:5x–15:1x 无卡轮：两条算力链路仍不可达；把 “profiler critic 侧 stage 能不能采到”这条必须真机的交接拆成静态定死——白名单 6 个 stage 里 **3 个没有任何触发者**（`compute_values`／`critic_update` 是 #6067 回归，`compute_rm_score` 从来没接过、自集成引入以来四个 ref 均 0 处），触发路径唯一且 dump 目录只在 `start()` 里创建 ⇒ NPU 只剩“import 是否自行落盘”一条假设。此前 M5 13:5x–14:1x 无卡轮：两条算力链路仍不可达，用上一轮真日志把 rollout-bound 的两个解析器三路互核（40/40），修掉三个会在窗口里炸的坑）。M1 本轮为 **技术掘金：同一 #6067 重构的第三个信号族——被删掉的启动配置键**：`trainer.use_legacy_worker_impl` 被删后全仓仍有 4 处引用——**1 处 unprefixed ⇒ Hydra 合并期直接报错**（真实 hydra 1.3.8 复现）、**2 处带 `+` ⇒ 不报错但读取点 0 处**、1 处 Ascend 参数表仍列为可配。上一批查的是**配置消费点**（字段在、没人读），本批换信号族查**接口与文档引用**：10 个被删生产模块的 **50 个公开方法/函数名**里，**32 个仍有同名定义**、**13 条"main 无定义但 `docs/blog/` 以外的文档仍在教"（去重 3 个名：`update_policy`／`update_critic`／`compute_values`）**、5 个无定义也无引用。**关键限定：代码侧调用点 0 处**（`verl/**` 非测试 + `tests/` + `examples/`），⇒ **无静默失效，只是文档欠债**；`dpo_extension.rst`／`ray_trainer.rst` #6067 根本没碰。真正的发现是**装饰器字符串常量**这一层：旧 worker 给 critic 两个 RPC 挂了 `annotate(role="compute_values"|"critic_update")`，重构后 `verl/**` 各 **0 处**，而前端白名单 `_STAGE_TO_ROLE` 仍接受、`strict: False` 下**连 warn 都没有** ⇒ 配了不报错也不采（**能不能采到要 NPU+msprobe，属 M5**）。此前 rLLM #945／PR #946 复核见下方历史节。规则入口：[AGENTS.md](AGENTS.md)；任务入口：[技术秘书](queue_tech-secretary.md) / [技术掘金](queue_tech-miner.md) 本段之前 M1 本轮为 **技术掘金：同一 #6067 重构的第五个信号族——`torch_memory` 快照链路**：#6198 删掉 trainer 每步的 `dump_memory_snapshot` 调用、声称能力已并入 `DistProfiler`；用真实 `ppo_trainer.yaml` + 真实 `omega_conf_to_dataclass` + 真实 `DistProfiler.start/stop` 在 CPU 上验完——**链路本身是通的**（写 1 张到 `save_path/stepN/`，两条负向对照全过）；**① 官方示例 `run_qwen2_5_vl_7b_torch_memory.sh` 没给 `*.profiler.enable=True`，三个角色 enable 全 False ⇒ 一步都不写**（示例 2026-08-31／文档 2026-09-08 都晚于 #6198，属欠债非回归）；**② 不带 `dataclass_type` 的 `omega_conf_to_dataclass(cfg.profiler)` 把容器 dict 整体下传 ⇒ 启动期 `AttributeError`**（`main_ppo.py:187`、`engine_workers.py:645-647`；默认 `tool=None` 不受影响）。两个脚本 10/10、3/3 PASS，纯 CPU、未触上游。规则入口：[AGENTS.md](AGENTS.md)；任务入口：[技术秘书](queue_tech-secretary.md) / [技术掘金](queue_tech-miner.md)。
+更新时间：2026-11-04（M1 17:0x 技术掘金 **TM-007：SkyRL 那 7 条「静默失效」逐条查证**——在当前 HEAD `1089e18` 重跑 pyflag（38 个开关、7 条 `silently_inert`，与 2026-11-02 同名同量），逐条绑定源码事实判定：**真失效只剩 1 条 `use_liger_kernel`**（全仓零关键字实参、`config.py` 无该字段、docstring 却写 `Defaults to False`；`model_wrapper.py` 全部 18 次提交里计数恒为 3、同版本 `fsdp_worker.py` 恒为 0 ⇒ 这 18 个 ref 上从没接过线），**原记「`use_remove_padding` 确认为真」降级为 NOT_USER_FACING**（分支是 `use_remove_padding or ulysses_sp_size > 1`，唯一调用点又在 `sp > 1` 守卫内 ⇒ 形参不产生观测差异）；其余 5 条分别是属性传参盲区 2、内部形参位置参数 1、公开 helper 1、弃用开关 1。**对外价值 3/10、不建议对外**（配不了也没人配 ⇒ 无用户受影响）。本批两处自错已修：子串匹配把**形参默认值声明行**算成生产者（读数当场反了）、差点把 verl 的 Hydra 键当成 SkyRL 形参的生产者。此前 M1 15:5x–16:1x 技术秘书第十八批：**正文引用的 `R` 端点在归档里不存在**——`legacy_group_arm_check.py` 的 cv 扫描止于 1.2，正文写的 44.9%／56.3%／63.4%（cv 1.5）只有台账可查；补到 1.5 并新增 `claims_vs_sweep`（正文五个引用值硬对账、不一致 exit 1，改坏 0.449→0.430 已验）与 `arm_crosscheck`（两条组臂实现 36 组逐种子比对 <1e-12）。**读数不变**，56＋29 测试通过。⇒ "对台账"这一类到此为止。此前 M5 14:5x–15:1x 无卡轮：两条算力链路仍不可达；把 “profiler critic 侧 stage 能不能采到”这条必须真机的交接拆成静态定死——白名单 6 个 stage 里 **3 个没有任何触发者**（`compute_values`／`critic_update` 是 #6067 回归，`compute_rm_score` 从来没接过、自集成引入以来四个 ref 均 0 处），触发路径唯一且 dump 目录只在 `start()` 里创建 ⇒ NPU 只剩“import 是否自行落盘”一条假设。此前 M5 13:5x–14:1x 无卡轮：两条算力链路仍不可达，用上一轮真日志把 rollout-bound 的两个解析器三路互核（40/40），修掉三个会在窗口里炸的坑）。M1 上一轮为 **技术掘金：同一 #6067 重构的第三个信号族——被删掉的启动配置键**：`trainer.use_legacy_worker_impl` 被删后全仓仍有 4 处引用——**1 处 unprefixed ⇒ Hydra 合并期直接报错**（真实 hydra 1.3.8 复现）、**2 处带 `+` ⇒ 不报错但读取点 0 处**、1 处 Ascend 参数表仍列为可配。上一批查的是**配置消费点**（字段在、没人读），本批换信号族查**接口与文档引用**：10 个被删生产模块的 **50 个公开方法/函数名**里，**32 个仍有同名定义**、**13 条"main 无定义但 `docs/blog/` 以外的文档仍在教"（去重 3 个名：`update_policy`／`update_critic`／`compute_values`）**、5 个无定义也无引用。**关键限定：代码侧调用点 0 处**（`verl/**` 非测试 + `tests/` + `examples/`），⇒ **无静默失效，只是文档欠债**。真正的发现是**装饰器字符串常量**这一层：旧 worker 给 critic 两个 RPC 挂了 `annotate(role="compute_values"|"critic_update")`，重构后 `verl/**` 各 **0 处**，而前端白名单 `_STAGE_TO_ROLE` 仍接受、`strict: False` 下**连 warn 都没有** ⇒ 配了不报错也不采（**能不能采到要 NPU+msprobe，属 M5**）。此前 rLLM #945／PR #946 复核见下方历史节。规则入口：[AGENTS.md](AGENTS.md)；任务入口：[技术秘书](queue_tech-secretary.md) / [技术掘金](queue_tech-miner.md) 本段之前 M1 本轮为 **技术掘金：同一 #6067 重构的第五个信号族——`torch_memory` 快照链路**：#6198 删掉 trainer 每步的 `dump_memory_snapshot` 调用、声称能力已并入 `DistProfiler`；用真实 `ppo_trainer.yaml` + 真实 `omega_conf_to_dataclass` + 真实 `DistProfiler.start/stop` 在 CPU 上验完——**链路本身是通的**（写 1 张到 `save_path/stepN/`，两条负向对照全过）；**① 官方示例 `run_qwen2_5_vl_7b_torch_memory.sh` 没给 `*.profiler.enable=True`，三个角色 enable 全 False ⇒ 一步都不写**（示例 2026-08-31／文档 2026-09-08 都晚于 #6198，属欠债非回归）；**② 不带 `dataclass_type` 的 `omega_conf_to_dataclass(cfg.profiler)` 把容器 dict 整体下传 ⇒ 启动期 `AttributeError`**（`main_ppo.py:187`、`engine_workers.py:645-647`；默认 `tool=None` 不受影响）。两个脚本 10/10、3/3 PASS，纯 CPU、未触上游。规则入口：[AGENTS.md](AGENTS.md)；任务入口：[技术秘书](queue_tech-secretary.md) / [技术掘金](queue_tech-miner.md)。
 ## 当前现场
 
 > **推送已恢复（2026-11-04 16:2x）**：此前积压的 5 个本地提交（`b850df424`／`ab204152f`／`db7a7aeed`／`3860b0b6b`／`9816bf5f8`）与本轮提交已全部推上远端 main。`git push` 仍连不上 `github.com:443`（75 s 超时），改用 [REST 推送工具](tools/git-push-api/readme.md)（`api.github.com` 正常）；远端新提交 `01c8bf13` 的 SHA 与旧本地不同（消息与树相同），已 fetch 并 `reset --hard` 对齐，本地树 `618e2a82` 与推送内容一致、`--verify` 通过。⇒ **下次网络同样断开时优先走 `tools/git-push-api`，不要反复等直连。**
@@ -6,7 +6,36 @@
 > （2026-11-04 瘦身，正文在 `diary/` 与专项文档）。
 > 判断"现在该做什么"看 `## 未完成操作与并行工作` 与两个队列，不要从头读到尾。
 
-### M1 本轮（2026-11-04 15:5x–16:1x）：TS-001 第十八批——正文引用的数，归档里有没有托底
+### M1 本轮（2026-11-04 17:0x）：TM-007——SkyRL 那 7 条「静默失效」逐条查证，真失效只剩 1 条
+
+**一、为什么做。** TM-007 上一条记录只有「`use_liger_kernel`、`use_remove_padding` **确认为真**」这五个字，没写**在哪个 ref、用哪条事实**确认。两轮之后没人能复核。A 类扫 issue 这批已被认领完、算力链路仍不可达，正好把这条方法学补成可复跑的东西。
+
+**二、读数：扫描稳定，结论要大改。** SkyRL `1089e18`（2026-11-04）重跑 pyflag：38 个开关、7 条 `silently_inert`，与 2026-11-02 那批**同名同量**。逐条按「可 grep 的事实」判定后：
+
+| 判定 | 条数 | 开关 | 依据 |
+|---|---|---|---|
+| **DEAD** | **1** | `use_liger_kernel` | 零关键字实参；`config.py` **无该字段**；`fsdp_worker.py` 传 15 个关键字偏偏没有它 |
+| **NOT_USER_FACING** | 1 | `use_remove_padding` | 分支是 `… or ulysses_sp_size > 1`，唯一调用点又在 `sp > 1` 守卫内 ⇒ 形参不产生观测差异 |
+| INDIRECT_PRODUCER | 2 | `enable_sample_support_replay`／`enable_pd` | 配置字段读出后传给同名形参（`worker.py:1122→1166`／`setup.py:94→133,155`） |
+| PUBLIC_HELPER_API | 1 | `disable_print` | `pprint_registry` 的返回字符串开关；skyrl-gym 独立发包 |
+| FALSE_POSITIVE | 1 | `use_combine` | Megatron patch 内部形参；子类走**位置参数** `super().__init__(config, use_combine=False)` |
+| DEPRECATED_BY_DESIGN | 1 | `use_signals` | docstring 标 `(Deprecated)`，默认走多进程 |
+
+⇒ **原记「两条确认为真」要改成一条**：`use_remove_padding` 确实从没被传过，但分支有第二个或项，`mode=always` 的真身在那里，谈不上「设了没用」。
+
+**三、影响面必须写清。** `use_liger_kernel` **配不了也没人配**（config 无字段、依赖里也没有 liger）⇒ 当前没有任何用户的训练受影响。它是「看着能配的开关」，不是 verl 那种「字段在、消费者没了」的回归。对外价值 **3/10**，不建议单独提。
+
+**四、历史归属只说到能做到的一步。** `model_wrapper.py` **全部 18 次提交**（2026-02-16 → 2026-10-30，GitHub contents API 逐版本取文件）里计数恒为 3（docstring／默认值／分支），同版本 `fsdp_worker.py` 恒为 0。**没有**遍历 `fsdp_worker.py` 自己的历史，也不是全仓 bisect。
+
+**五、本批两处自错（都已修）。** ① v1 用 `"use_liger_kernel=" in text` 判「有生产者」，命中的正是 `model_wrapper.py:148` 的**形参默认值声明行**——而这恰好是 pyflag readme 自己写的易错点第 4 条，读数当场反了；现改为「跳过 `def` 行 + 要求前面有 `调用名(`」。② 差点把 `skyrl-agent/examples/run_verl/*.sh` 里 **verl 的 Hydra 键** `actor_rollout_ref.model.use_remove_padding=True` 当成 SkyRL 形参的生产者。
+
+**核对产物**：`verify_findings.py` 7 条判定 **0 不一致** exit 0、`--selftest` **8 条注入全部翻转**；扫描与判定 JSON 归档在同一目录。**纯静态，未跑训练、未上 GPU/NPU、未触上游。**
+
+**留给下一轮**：① `use_liger_kernel` 若要对外，最小动作只有「删掉形参与分支」或「接进 `fsdp_worker.py`」，**待用户逐项授权**；② 其余 6 条不建议对外；③ 方法沉淀已写进 [pyflag readme 第五类易错点](tools/pyflag/readme.md)；三个框架都跑到「候选 ≤ 1 条真失效」，**再扫应换新框架而非重扫**；④ TS-001 侧仍停在「等用户立项」。
+
+入口：[逐条取证](experiments/skyrl-pyflag-triage/readme.md) · [判定脚本](experiments/skyrl-pyflag-triage/verify_findings.py) · [pyflag](tools/pyflag/readme.md) · [TM-007](queue_tech-miner.md) · [diary](diary/2026-11-04.md)。
+
+### M1 上一轮（2026-11-04 15:5x–16:1x）：TS-001 第十八批——正文引用的数，归档里有没有托底
 
 **一、为什么做。** TS-001 的「下一步」明写 M1 这条线已到边际：纯归档重算、判据一致性、带宽／可读性诊断都做过。剩下的不是再接一层诊断，而是问一个从没问过的问题——**每批都在跑 `--verify`，但它只证明"已归档的字段没变"，证明不了"正文写的那个数在归档里存在"**。
 
@@ -24,7 +53,7 @@
 
 入口：[审计脚本](experiments/rollout-group-split-tradeoff/legacy_group_arm_check.py) · [归档](experiments/rollout-group-split-tradeoff/legacy-group-arm-check.json) · [TS-001](queue_tech-secretary.md) · [diary](diary/2026-11-04.md)。
 
-### M5 本轮（2026-11-04 14:5x–15:1x CST）：无卡轮——把"只能真机定级"拆成静态定死 + 一条 import 冒烟
+### M5 上一轮（2026-11-04 14:5x–15:1x CST）：无卡轮——把"只能真机定级"拆成静态定死 + 一条 import 冒烟
 
 **连通性（本轮只探一次，未重试）**：`4090-1`（`219.223.198.62`）ICMP 2 包全丢 + `:22` TCP 超时（公网直连，非 VPN）；昇腾网关 `10.205.0.1` 2 包全丢、`192.168.13.154/155/156:22` 全超时。外网正常 ⇒ 本机无恙，恢复只在用户侧；这是同日第四次两条链路同时不可达。
 
@@ -44,7 +73,7 @@
 
 **留给下一轮**：① rollout-bound A/B、4 卡 `inflight=1`、profiler 冒烟都等窗口；② **CONTEXT 已 175KB，超过 150KB 软告警**，增量主要在 M1 批次段，建议由写入者按"已归档"精减（本轮只删了自己一条已被 diary/handoff 覆盖的 3 行小节）；③ 对外动作（文档标注或加载期校验）待用户逐项授权。
 
-### M1 本轮（2026-11-04 13:0x–13:4x）：同一次重构的第二个信号族——接口名与文档引用
+### M1（2026-11-04 13:0x–13:4x）：同一次重构的第二个信号族——接口名与文档引用
 
 **一、为什么做。** 上一批自己写下的"#6067 另外 71 个改动文件的语义变化未扫"太大，收窄到可做的一格：**被整份删除的那 10 个模块里，除了配置字段，还有哪些"名字"没了但外面还在用**。这与配置消费点互补——配置的消费者是引擎代码，接口名的消费者是**文档、下游脚本、装饰器**。
 
@@ -69,7 +98,7 @@
 **留给下一轮**：① ~~两次体检都只覆盖"被整份删除的文件"，第三次要换信号族~~ **已于同日第四段换到启动配置键**（见下条）；仍未扫的是 71 个被改文件里**函数体被改写**那一类，若再做须先说明它不是重复；② profiler 缺口已登记 [M5 交接](experiments/handoff-m5.md)，最小对照是"`stages: [actor_update]` 有 dump vs `stages: [critic_update]` 是否同样有"；③ TM-006 对外两条（删配置项／补 `freeze_vision_tower` 接线）仍待用户逐项授权；④ TS-001 侧仍停在「等用户立项」。
 
 入口：[接口面体检](open-source/verl/evidence/engine-refactor-api-surface/readme.md) · [实验 readme](experiments/verl-6067-api-surface-scan/readme.md) · [扫描脚本](experiments/verl-6067-api-surface-scan/scan_api_surface.py) · [判定脚本](experiments/verl-6067-api-surface-scan/verify_findings.py) · [M5 交接](experiments/handoff-m5.md) · [TM-006](queue_tech-miner.md) · [tracker](open-source/verl/tracker.md) · [diary](diary/2026-11-04.md)。
-### M1 本轮（2026-11-04 14:0x–14:4x）：同一次重构的第三个信号族——被删掉的启动配置键，还有谁在传
+### M1（2026-11-04 14:0x–14:4x）：同一次重构的第三个信号族——被删掉的启动配置键，还有谁在传
 **一、为什么做。** 上一次自己在「留给下一轮」写的是"71 个被改文件语义变化仍未扫，第三次要换信号族，否则只是重复"。挑了一格最像"改动而非删除"的：`verl/trainer/config/ppo_trainer.yaml` 在 #6067 里 **94 → 93 个叶子键**，唯一被删的是 `trainer.use_legacy_worker_impl`（旧 worker / 新引擎的开关，旧实现已整份删了）。**删了配置键，命令行里还在写的脚本不会自己消失。**
 
 **二、读数。** 全仓（15 种后缀）4 处引用，按"会不会失败"分三档：
@@ -97,7 +126,7 @@
 
 入口：[启动配置键体检](open-source/verl/evidence/engine-refactor-shell-config/readme.md) · [实验](experiments/verl-6067-shell-config-scan/readme.md) · [扫描](experiments/verl-6067-shell-config-scan/scan_shell_refs.py) · [判定](experiments/verl-6067-shell-config-scan/verify_findings.py) · [Hydra 复现](experiments/verl-6067-shell-config-scan/hydra_repro.py) · [TM-006](queue_tech-miner.md) · [tracker](open-source/verl/tracker.md) · [diary](diary/2026-11-04.md)。
 
-### M1 本轮（2026-11-04 15:0x–15:4x）：同一次重构的第五个信号族——名字都在，但值的形状变了
+### M1（2026-11-04 15:0x–15:4x）：同一次重构的第五个信号族——名字都在，但值的形状变了
 
 **一、为什么做。** 前四段（配置消费点／接口名与文档／启动配置键）都靠"名字还在不在"判断。这一段换到最像"没改动"的一格：`torch_memory` 的显存快照。旧办法是 trainer 每步喊一声 `actor_rollout_wg.dump_memory_snapshot(...)`（#3099，2025-08-20）；#6198（2026-04-29，收 #6181）把这声喊整段删掉，PR 说明写"capabilities are fully integrated in DistProfiler"，并给出配方 `tool=torch_memory` + `save_path` + `steps` + **`actor.profiler.enable=True`**。**两边的方法名、类名、配置类名一模一样**，所以任何文本扫描都会答"没问题"。
 
@@ -122,10 +151,7 @@
 
 入口：[证据](open-source/verl/evidence/engine-refactor-torch-memory/readme.md) · [实验](experiments/verl-6067-torch-memory-path/readme.md) · [复现](experiments/verl-6067-torch-memory-path/repro_torch_memory.py) · [示例探针](experiments/verl-6067-torch-memory-path/probe_official_example.py) · [TM-006](queue_tech-miner.md) · [tracker](open-source/verl/tracker.md) · [diary](diary/2026-11-04.md)。
 
-### M5 本轮（2026-11-04 12:5x–13:0x CST）：两条算力通路都不可达，回退到准备物料并入库
-
-
-### M5 本轮（2026-11-04 13:5x–14:1x CST）：无卡轮继续，把"只能窗口验"的部分提前验掉，抓出三个坑
+### M5（2026-11-04 13:5x–14:1x CST）：无卡轮继续，把"只能窗口验"的部分提前验掉，抓出三个坑
 
 **连通性（本轮实测，只探一次）**：`4090-1`（`219.223.198.62:22`）`nc` TCP 超时（12:5x 轮 ICMP 也 100% 丢包）——**公网直连、不经 VPN**，不能按"VPN 掉线"解释；昇腾网关 `10.205.0.1` 2 包全丢、`192.168.13.154/155/156:22` 全超时。外网正常 ⇒ 本机无恙，恢复只在用户侧（10-28 有过约 28 h 电信段断裂先例）。**未重试、未空转**。
 
@@ -139,12 +165,12 @@
 
 入口：[实验准备与判定规则](experiments/verl-v1-poll-quantum-separate-bound/README.md) · [真日志互核](experiments/verl-v1-poll-quantum-separate-bound/crosscheck-real-logs.py) · [离线自检](experiments/verl-v1-poll-quantum-separate-bound/selftest-bound.py) · [TM-008](queue_tech-miner.md) · [真机交接](experiments/handoff-m5.md)。对外动作全部未做。
 
-### M5 上一轮（2026-11-04 12:5x–13:0x CST）：两条算力通路都不可达，回退到准备物料并入库
+### M5（2026-11-04 12:5x–13:0x CST）：两条算力通路都不可达，回退到准备物料并入库
 
 **做了什么**：把上一会话中断时留下的未跟踪目录 `experiments/verl-v1-poll-quantum-separate-bound/` 补完并入库——§13.54 最后一个空格（separate_async 在 rollout **成为瓶颈**、训练步真的在 `sample()` 上等的区间未测）。**三处实改**：① `total_storage_size` 512→1536（512 恰好等于本配置一步 64 条，会构造性复现 `Storage capacity exceeded`）；② `verify-bound.py` 判定拆三类（机械无效 exit 1／区间没翻 **exit 2**／全过 exit 0），效应量改 INFO；③ 新增 `selftest-bound.py`（10 项断言）。**自检抓到两个错**：夹具用双引号键（真实是单引号）；**0.1 臂原门槛「稳态 gen 均值 < 1.9 s」是错的**——rollout-bound 区间真实等待本身可超 2 s，会把好数据判死，已改为只用 2.0 臂「过半数稳态步 ≥1.9 s」作 GATE。细节见 [diary](diary/2026-11-04.md) 与本轮 README。
 
 
-### M1 本轮（2026-11-04 11:3x–12:0x）：把 `tiled_mlp` 的单条回归查成一类——#6067 配置消费点体检
+### M1（2026-11-04 11:3x–12:0x）：把 `tiled_mlp` 的单条回归查成一类——#6067 配置消费点体检
 
 **一、为什么做。** 上一批自己在 TM-006 第②条写下"下一步最值项：查同期重构还丢了哪些配置"，且已尝试过一次自动化比对（`config_sweep.py`，候选几乎全是假阳性、脚本已删）。本批换做法：**先只做文本级定位，再把判据逐条写死**。
 
@@ -170,7 +196,7 @@
 
 入口：[类回归体检](open-source/verl/evidence/engine-refactor-config-consumers/readme.md) · [实验 readme](experiments/verl-6067-config-consumer-scan/readme.md) · [扫描脚本](experiments/verl-6067-config-consumer-scan/scan_consumers.py) · [判定脚本](experiments/verl-6067-config-consumer-scan/verify_findings.py) · [TM-006](queue_tech-miner.md) · [tracker](open-source/verl/tracker.md) · [diary](diary/2026-11-04.md)。
 
-### M1 本轮（2026-11-04 10:5x–11:2x）：掘金渠道轮转——rLLM 三条 A 类全被认领，改做 #945／PR #946 复核
+### M1（2026-11-04 10:5x–11:2x）：掘金渠道轮转——rLLM 三条 A 类全被认领，改做 #945／PR #946 复核
 
 **一、为什么换轨。** TS-001 第十五到第十七批连续记录「已到边际，下一轮若无新输入应停在这里等用户立项」。按 AGENTS 的渠道要求（技术掘金不能只剩扫 issue），本轮先做 A 类的快速扫描，再看是否转向 B/C 类深度工作。
 
@@ -200,7 +226,7 @@
 
 入口：[复核](open-source/rllm/countdown-reward-review-945.md) · [复现](experiments/rllm-countdown-reward-review/repro.py) · [run-info](experiments/rllm-countdown-reward-review/run-info.json) · [TM-012](queue_tech-miner.md) · [diary](diary/2026-11-04.md)。
 
-### M1 本轮（2026-11-04 10:2x–10:5x）：收尾——批号消歧、队列去重、注入方向复核
+### M1（2026-11-04 10:2x–10:5x）：收尾——批号消歧、队列去重、注入方向复核
 
 **三件事，都不改任何读数。**
 
@@ -218,7 +244,7 @@
 
 入口：[§13.30 第十七批补充（含批号归属）](notebook/rollout-performance-research.md) · [实验 readme 复核补记](experiments/rollout-group-split-tradeoff/readme.md) · [TS-001](queue_tech-secretary.md) · [TM-011](queue_tech-miner.md) · [diary](diary/2026-11-04.md)。
 
-### M1 本轮（2026-11-04 04:45）：门槛校准——`sign_regime` 假阳为 0，`band_floor` 的严松不对称
+### M1（2026-11-04 04:45）：门槛校准——`sign_regime` 假阳为 0，`band_floor` 的严松不对称
 
 **一、为什么做。** 第十／十一批把 `sign_regime` 四档与 `band_floor` 三档写进归档时，三处文档都只写"是判读门槛不是显著性检验"，并在「留给下一轮」记了"未做假阳率模拟校准"。**那句性质说明没有信息量**：判据的"性质"和"代价位"是两件事。
 
@@ -243,7 +269,7 @@
 
 入口：[校准脚本](experiments/rollout-c-class-ledger/calibrate_thresholds.py) · [校准归档](experiments/rollout-c-class-ledger/threshold-calibration.json) · [C 类账 readme 第十批](experiments/rollout-c-class-ledger/readme.md) · [paired-diff](tools/paired-diff/readme.md) · [TS-001](queue_tech-secretary.md) · [diary](diary/2026-11-04.md)。
 
-### M5 本轮（2026-11-03 03:0x–04:3x CST）：第五十六批 §13.52 + 第五十七批（stale 逐出补测）
+### M5（2026-11-03 03:0x–04:3x CST）：第五十六批 §13.52 + 第五十七批（stale 逐出补测）
 
 **§13.52 `max_inflight_gen_batches=3` 已测**：GPU 4,5（同 socket＝2+0）、同一 patched 树、DAPO filter on、2.0／0.1 交替各两跑、15 步/跑、4/4 exit 0（18:59–19:39 UTC）。池化 gen **8.589→7.357s（−14.3%）**、整步 **26.964→25.738s（−4.5%）**、生成组 **113.7→133.0（+17.0%）**；其余相位 |Δ|≤0.5%。臂内 FE 斜率 38.8／44.2 ms/组，固定等待 −1.97／−2.04s、多生成 +0.75／+0.83s，残差 ≈−0.01s。跨深度 +5.3%→+13.1%→+17.0%、净收益 −0.96→−1.29→−1.23s ⇒ **depth 2 之后饱和**；depth 2→3 增量 <1 SE，不外推。**方法订正**：跨臂共斜率被处理效应压低（21.2 vs 38.8），同族分析按臂内固定效应报。归档 [experiments/verl-v1-poll-quantum-dapo](experiments/verl-v1-poll-quantum-dapo/README.md#补测max_inflight_gen_batches3-2026-11-03m5-第五十六批)，四份日志 md5 与服务器一致。
 
@@ -251,7 +277,7 @@
 
 **§13.53 stale 逐出通道已测**：threshold=2 冒烟 4 步**零逐出**（span 恰为 2，warmup=1 的自然跨度就是 1–2）；threshold=1 才触发——每步丢弃上一步整批 32 组、staleness=2、生成组/步 64。四跑 A/B（2.0／0.1 各两跑，15 步，4/4 exit 0，19:53–20:29 UTC）：2.0 臂 gen 严格两态 2.43/2.47 与 4.43/4.39（差 2.00/1.92s），撞量子 5/12、8/12 步；0.1 臂 0/12。池化 **gen 3.506→2.786s（−20.5%）、整步 22.473→21.997s（−2.1%）**；2.0 臂两跑整步差 0.835s、0.1 臂差 0.049s ⇒ −0.475s ≈1 SE，只作方向性证据。**逐出量与 poll 无关（两臂都 32 组/步）**；threshold=1 本身每步多花约 1.1–1.5s，轮询收不回被丢弃的批次。归档 [experiments/verl-v1-poll-quantum-stale](experiments/verl-v1-poll-quantum-stale/README.md)，md5 与服务器一致。
 
-### M5 本轮补记（2026-11-03 04:1x–05:3x CST，第二会话）：第五十六批独立复核 + main 树运行时冒烟 + `wait` 臂
+### M5 补记（2026-11-03 04:1x–05:3x CST，第二会话）：第五十六批独立复核 + main 树运行时冒烟 + `wait` 臂
 
 **独立复核第五十六批**：另写 `verify-inflight3.py`（不同解析路径、按跑分层 bootstrap），逐跑/池化/生成组/有效率全部与 `summary-inflight3.json` 在 1e-12 内一致；md5 12/12、服务器 raw 与本地 4/4 字节一致；四跑均 15/15 步。臂内 FE 斜率 38.79／43.69 ms/组、固定等待 −1.98／−2.07s（原值 −1.97／−2.04）。**口径提示**：`observed = fixed_wait + generation_cost` 是定义式，残差≈0 不算独立证据；独立的只有斜率 CI（36.2–40.8 ms/组）与"跨臂共斜率被压低"。入口 [verification-inflight3.md](experiments/verl-v1-poll-quantum-dapo/verification-inflight3.md)、`verify-inflight3.py` exit 0。
 
@@ -261,7 +287,7 @@
 
 **wait 臂独立复核（第二会话，只读）**：另写 `verify-wait.py`（逐 token 切分、按跑分层 4000 次 bootstrap），逐跑/池化 gen、step 与 `summary-wait.json` 在 **1e-9** 内一致；md5 12/12、服务器 raw 与本地 4/4 字节一致；四跑 15/15 步。bootstrap（步级、按跑分层）Δstep **[−1.786, −0.724]s**、Δgen **[−1.392, −0.566]s**，两臂只有两跑 ⇒ **没有 run 级 CI**，−1.24s 只能说窗口内稳定。**代码层两条独立证据**：① `_stale_terminal_keys` 在 `strategy != "drop"` 时直接返回空集 ⇒ wait 永不逐出，`evicted_samples` 键是**缺失而非 0**；② `_has_enough_samples` 用 `>= threshold`，threshold=1 时任何在飞批次都阻塞采样 ⇒ **完整屏障**，`spans==1` 是结构必然不是经验发现；threshold>1 的 wait 行为不同、未测。**口径**：跨策略表同时变了策略与每步生成量（32 vs 64）、且相邻窗口，只作方向性。入口 [verification-wait.md](experiments/verl-v1-poll-quantum-stale/verification-wait.md)、`verify-wait.py` exit 0。
 
-### M5 本轮（2026-11-03 06:5x–07:4x CST）：第五十八批 §13.54——separate_async 跑通，轮询量子不进关键路径
+### M5（2026-11-03 06:5x–07:4x CST）：第五十八批 §13.54——separate_async 跑通，轮询量子不进关键路径
 
 **GPU 现场（启动前核对）**：GPU 0 为 liyaowei 的 Embedding EngineCore（20.8 G）、2/3/6/7 为其 4 卡 Qwen3-VL-32B vLLM（各 23.3 G，已跑 5.4 h）⇒ **只有 1/4/5 空闲，4 卡 `inflight=1` 的窗口仍不具备**。改用 2 train（4,5 同 socket）＋1 rollout（1）。**昇腾**：网关 `10.205.0.1` 与 `192.168.13.154` 本轮各 2 包／1 包全丢，仍不可用；只记一次、未重试，无 NPU 任务待办。
 
