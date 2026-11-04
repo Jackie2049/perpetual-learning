@@ -9,7 +9,7 @@
 
 **【价值评估】** 5 / 10 — 比第三、四批（3/10）高。第一条是**用户照着官方示例操作得不到结果**（沉默失败，无报错、无日志）；第三条是**会抛异常的硬失败**，但只在 `tool=torch_memory`/`npu` 且走到 `run_ppo` 的 v1 分支时才触发，默认配置不受影响。方法上的价值最高：前四批都靠"名字在不在"判断，这一段两边名字完全一样（`start_profile`/`stop_profile`/`ProfilerConfig`），坏的是**配置从"直接读 yaml"换成"先转 dataclass 再往回传"之后，两级 `ProfilerConfig` 只有一级被正确填充**——只有把配置真的喂进调用链才看得见。
 
-**【进展】** 2026-11-04 M1 本地完成。真实 `ppo_trainer.yaml` + 真实 `omega_conf_to_dataclass` + 真实 `DistProfiler` 调用链，CPU 上复现，**两个脚本各带负向对照**（10/10、3/3 PASS）。**未跑训练、未上 GPU/NPU、未触上游**（无 issue／comment／PR）。复现与归档见 [实验目录](../../../../experiments/verl-6067-torch-memory-path/readme.md)。**同日 M5 在 4090-1 真机补记（2026-11-04）**：加 `actor.profiler.enable=True` 后快照**确实落盘**（22.4 MB pickle、39 segments）；官方示例形状（无 `enable`）**一张也不写、目录都不建**；`steps=[2]` 落在 `step2/`、无 `step1/`；OOM 观察者**确实挂在分配器上**（`_oom_observer_attached=True`），但驱动日志里没有任何 `[torch_memory]` 行；容器 dict 的 `AttributeError` 逐字复现，**默认 v1 真跑不触发**（5 个训练臂全部 exit 0）。真机材料见 [experiments/verl-torch-memory-gpu-smoke](../../../../experiments/verl-torch-memory-gpu-smoke/readme.md)。
+**【进展】** 2026-11-04 M1 本地完成。真实 `ppo_trainer.yaml` + 真实 `omega_conf_to_dataclass` + 真实 `DistProfiler` 调用链，CPU 上复现，**两个脚本各带负向对照**（10/10、3/3 PASS）。**未跑训练、未上 GPU/NPU、未触上游**（无 issue／comment／PR）。复现与归档见 [实验目录](../../../../experiments/verl-6067-torch-memory-path/readme.md)。**同日 M5 在 4090-1 两次真机补记（2026-11-04）**：① 16:5x 轮——加 `actor.profiler.enable=True` 后快照**确实落盘**（22.4 MB pickle、39 segments）；官方示例形状（无 `enable`）**一张也不写、目录都不建**；`steps=[2]` 落在 `step2/`、无 `step1/`；OOM 观察者**确实挂在分配器上**（`_oom_observer_attached=True`），但驱动日志里没有任何 `[torch_memory]` 行；容器 dict 的 `AttributeError` 逐字复现，**默认 v1 真跑不触发**（5 个训练臂全部 exit 0）。真机材料见 [experiments/verl-torch-memory-gpu-smoke](../../../../experiments/verl-torch-memory-gpu-smoke/readme.md)。② 18:0x 轮（2026-11-05 核对）——**人为造 OOM 后快照确实落盘**：rank 0 写 6275 B pickle（4 个 key、1 段、trace 1×3），不挂观察者的 rank 3 在 5 次 poll 里一个文件也没有；**"挂上了却无日志"的原因查清**——attach 是 INFO（默认被挡），OOM 是 ERROR（默认可见），而"dump 成功 → 路径"那条 INFO 因 `memory_utils` 用 `getLogger(__file__)`＋默认 WARN 而**永远不出现**，最小改面是让 `_on_out_of_memory` 使用被丢掉的返回值打一行路径。见 [同目录](../../../../experiments/verl-profiler-oom-and-critic-gpu/readme.md)；`verify-oom-archive.py` 49 项 exit 0。
 
 **【大白话讲明白】**
 
@@ -118,3 +118,24 @@ CPU 阶段列为"需 GPU"的三项已全部关闭，另加两条 M1 没提的读
 | 容器 dict | `tool_config={torch_memory: ...}` | `AttributeError: 'dict' object has no attribute 'trace_alloc_max_entries'` 逐字复现；**但默认 v1 路径不会走到**——真跑 `tool=torch_memory` 的 5 个臂全部 exit 0 |
 
 ⇒ 对外口径要收窄一处：第三条的"启动期硬失败"是**调用点依赖**的，不是"选了 `torch_memory` 就走 v1 必崩"。真机材料（脚本、15 份原始日志、md5 对照）见 [experiments/verl-torch-memory-gpu-smoke](../../../../experiments/verl-torch-memory-gpu-smoke/readme.md)。**本轮仍未触上游**。
+
+## 七、OOM 快照真机三臂（2026-11-04 18:0x 采集，2026-11-05 00:0x 核对）
+
+第六节最后一条"OOM 观察者挂上了但日志 0 条"只回答了**挂没挂**，没回答**OOM 时写不写**。补三臂（同一脚本、同一张卡、同一棵树，只有 rank 与日志配置不同；dump 走出厂 `_on_out_of_memory` → `MemorySnapshotSampler.dump_memory_snapshot`）：
+
+| 臂 | 观察者 | 落盘 | 说明 |
+|---|---|---|---|
+| `attached`（rank 0，`ranks=[0]`） | 挂上 | **1 个 pickle，6275 B**，`oom_<ts>/torch_memory_oom_rank0_pid*.pickle` | 4 个 key（`allocator_settings`/`device_traces`/`external_annotations`/`segments`）、1 段、trace 1×3；0 s 就完整，20 s 不变 |
+| `nocap`（同上，不装日志 handler） | 挂上 | **1 个，6275 B** | 进程内 0 条记录，**stderr 有 3 条 ERROR** ⇒ 默认配置下 OOM 路径是可见的 |
+| `unranked`（rank 3，`ranks=[0]`） | **不挂** | **0 个（5 次 poll 全空）** | 负向对照；不挂是结构性保证（`torch_memory_profile.py:80-81` 只在 `_should_profile_this_rank()` 为真时调用） |
+
+**两条口径修正**：
+
+1. 第六节"别拿日志判断它挂没挂"仍成立，但原因要写全：**attach 成功提示是 INFO**（`torch_memory_profile.py:110`），默认 root WARNING 挡掉；而 **OOM 路径的三条是 ERROR**，默认就能经 `logging.lastResort` 打到 stderr。两条读的是不同事件，不矛盾。
+2. **dump 成功也没有人告诉你在哪。** `dump_memory_snapshot` 成功后会打 `[memory_visualize] dumped: <path>`（`memory_utils.py:321`），但这个模块的 logger 是 `logging.getLogger(__file__)`（`:28`，名字是文件路径，不在 `verl.*` 层级）且默认 `VERL_LOGGING_LEVEL=WARN`（`:29`）⇒ **即便把 root 与 `verl` 都调到 DEBUG 也不会出现**（`attached` 臂 4 条记录里 0 条来自 `memory_utils`，与该静态读法一致）。OOM 现场用户只看到 "dumping allocator snapshot"，看不到落盘路径或"dump 失败"。第三份交叉核对：16:5x 的 3 份真 PPO 日志（快照确实写了 23.5 MB）里 `[memory_visualize]` 与 `dumped:` **各 0 条**（`torch_memory` 的 10 处命中全是 Hydra 配置回显）⇒ 抑制对周期性 `stop()` 的 dump 同样成立。
+
+**最小可改面（对外动作，未授权）**：`_on_out_of_memory` 丢掉了 `dump_memory_snapshot` 的返回值——拿到 `Path` 后按 ERROR 打一行路径、返回 `None` 时补一行失败提示，两行即可。不建议动 `getLogger(__file__)`：全仓 56 处同写法，属既有约定。
+
+**边界**：类级探针，不是真训练 OOM——分配器几乎为空（free 24.836 / total 25.251 GB，`allocated≈5e-7`），所以只有 1 段 3 条 trace；`oom_request_seconds` 0.145（attached）/0.178（nocap）vs 0.005（unranked）只说明"空分配器下 dump 约 0.14–0.18 s"，**单跑无重复，不可外推到真训练**。NPU 分支走 `device.memory._snapshot()`（`memory_utils.py:313-318`），行为不同未测。本轮 4090-1 自 18:12 起不可达，服务端原始文件**未做 md5 互核**。
+
+材料：[experiments/verl-profiler-oom-and-critic-gpu](../../../../experiments/verl-profiler-oom-and-critic-gpu/readme.md)（`verify-oom-archive.py` 49 项 exit 0、`--selftest` 7/7）。**未触上游。**

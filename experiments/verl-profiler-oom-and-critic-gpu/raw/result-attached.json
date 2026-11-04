@@ -1,0 +1,95 @@
+{
+  "arm": "attached",
+  "verl_file": "/tmp/m5-main-smoke/verl/verl/__init__.py",
+  "torch": "2.11.0+cu129",
+  "cuda_device": "NVIDIA GeForce RTX 4090",
+  "rank": 0,
+  "config_ranks": [
+    0
+  ],
+  "should_profile_this_rank": true,
+  "oom_observer_attached_after_init": true,
+  "has_cuda_attach_api": true,
+  "files_before": [],
+  "mem_before": {
+    "free_bytes": 24836243456,
+    "total_bytes": 25250627584
+  },
+  "oom_raised": true,
+  "except_class": "OutOfMemoryError",
+  "oom_msg": "CUDA out of memory. Tried to allocate 931.32 GiB. GPU 0 has a total capacity of 23.52 GiB of which 23.13 GiB is free. Including non-PyTorch memory, this process has 386.00 MiB memory in use. Of the allocated memory 512 bytes is allocated by PyTorch, and 2.00 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)",
+  "oom_request_seconds": 0.145,
+  "files_after": {
+    "0s": [
+      "oom_20261104-100119-420536/",
+      "oom_20261104-100119-420536/torch_memory_oom_rank0_pid2515486.pickle (6275 B)"
+    ],
+    "1s": [
+      "oom_20261104-100119-420536/",
+      "oom_20261104-100119-420536/torch_memory_oom_rank0_pid2515486.pickle (6275 B)"
+    ],
+    "3s": [
+      "oom_20261104-100119-420536/",
+      "oom_20261104-100119-420536/torch_memory_oom_rank0_pid2515486.pickle (6275 B)"
+    ],
+    "10s": [
+      "oom_20261104-100119-420536/",
+      "oom_20261104-100119-420536/torch_memory_oom_rank0_pid2515486.pickle (6275 B)"
+    ],
+    "20s": [
+      "oom_20261104-100119-420536/",
+      "oom_20261104-100119-420536/torch_memory_oom_rank0_pid2515486.pickle (6275 B)"
+    ]
+  },
+  "final_files": [
+    "oom_20261104-100119-420536/",
+    "oom_20261104-100119-420536/torch_memory_oom_rank0_pid2515486.pickle (6275 B)"
+  ],
+  "snapshots": [
+    {
+      "path": "oom_20261104-100119-420536/torch_memory_oom_rank0_pid2515486.pickle",
+      "bytes": 6275,
+      "keys": [
+        "allocator_settings",
+        "device_traces",
+        "external_annotations",
+        "segments"
+      ],
+      "device_traces": [
+        3
+      ],
+      "segments": 1
+    }
+  ],
+  "log_lines": [
+    {
+      "level": "INFO",
+      "logger": "verl.utils.profiler.torch_memory_profile",
+      "msg": "[torch_memory] CUDA OOM snapshot observer attached"
+    },
+    {
+      "level": "ERROR",
+      "logger": "verl.utils.profiler.torch_memory_profile",
+      "msg": "[torch_memory] CUDA OOM on device 0: requested=1000001765376 total=25250627584 free=24836243456; dumping allocator snapshot"
+    },
+    {
+      "level": "ERROR",
+      "logger": "verl.utils.profiler.torch_memory_profile",
+      "msg": "[torch_memory] Python stack at OOM:\n  File \"/tmp/m5-oom/probe-oom-dump.py\", line 168, in <module>\n    main()\n  File \"/tmp/m5-oom/probe-oom-dump.py\", line 102, in main\n    _huge = torch.empty(int(1e12), dtype=torch.uint8, device=\"cuda\")\n  File \"/tmp/m5-main-smoke/verl/verl/utils/profiler/torch_memory_profile.py\", line 131, in _on_out_of_memory\n    logger.error(\"[torch_memory] Python stack at OOM:\\n%s\", \"\".join(traceback.format_stack()))\n"
+    },
+    {
+      "level": "ERROR",
+      "logger": "verl.utils.profiler.torch_memory_profile",
+      "msg": "[torch_memory] allocator memory at OOM: {'total_memory_gb': 23.5164794921875, 'reserved_memory_gb': 0.001953125, 'allocated_memory_gb': 4.76837158203125e-07, 'cached_memory_gb': 0.0019526481628417969, 'max_memory_allocated_gb': 4.76837158203125e-07, 'max_memory_reserved_gb': 0.001953125}"
+    }
+  ],
+  "log_counts_by_logger_level": {
+    "verl.utils.profiler.torch_memory_profile:INFO": 1,
+    "verl.utils.profiler.torch_memory_profile:ERROR": 3
+  },
+  "cuda_alive_after_oom": true,
+  "mem_after": {
+    "free_bytes": 24836243456,
+    "total_bytes": 25250627584
+  }
+}

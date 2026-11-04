@@ -1,0 +1,71 @@
+{
+  "arm": "attached-nocapture",
+  "verl_file": "/tmp/m5-main-smoke/verl/verl/__init__.py",
+  "torch": "2.11.0+cu129",
+  "cuda_device": "NVIDIA GeForce RTX 4090",
+  "rank": 0,
+  "config_ranks": [
+    0
+  ],
+  "should_profile_this_rank": true,
+  "oom_observer_attached_after_init": true,
+  "has_cuda_attach_api": true,
+  "files_before": [],
+  "mem_before": {
+    "free_bytes": 24836243456,
+    "total_bytes": 25250627584
+  },
+  "oom_raised": true,
+  "except_class": "OutOfMemoryError",
+  "oom_msg": "CUDA out of memory. Tried to allocate 931.32 GiB. GPU 0 has a total capacity of 23.52 GiB of which 23.13 GiB is free. Including non-PyTorch memory, this process has 386.00 MiB memory in use. Of the allocated memory 512 bytes is allocated by PyTorch, and 2.00 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)",
+  "oom_request_seconds": 0.178,
+  "files_after": {
+    "0s": [
+      "oom_20261104-100422-541802/",
+      "oom_20261104-100422-541802/torch_memory_oom_rank0_pid2526741.pickle (6275 B)"
+    ],
+    "1s": [
+      "oom_20261104-100422-541802/",
+      "oom_20261104-100422-541802/torch_memory_oom_rank0_pid2526741.pickle (6275 B)"
+    ],
+    "3s": [
+      "oom_20261104-100422-541802/",
+      "oom_20261104-100422-541802/torch_memory_oom_rank0_pid2526741.pickle (6275 B)"
+    ],
+    "10s": [
+      "oom_20261104-100422-541802/",
+      "oom_20261104-100422-541802/torch_memory_oom_rank0_pid2526741.pickle (6275 B)"
+    ],
+    "20s": [
+      "oom_20261104-100422-541802/",
+      "oom_20261104-100422-541802/torch_memory_oom_rank0_pid2526741.pickle (6275 B)"
+    ]
+  },
+  "final_files": [
+    "oom_20261104-100422-541802/",
+    "oom_20261104-100422-541802/torch_memory_oom_rank0_pid2526741.pickle (6275 B)"
+  ],
+  "snapshots": [
+    {
+      "path": "oom_20261104-100422-541802/torch_memory_oom_rank0_pid2526741.pickle",
+      "bytes": 6275,
+      "keys": [
+        "allocator_settings",
+        "device_traces",
+        "external_annotations",
+        "segments"
+      ],
+      "device_traces": [
+        3
+      ],
+      "segments": 1
+    }
+  ],
+  "log_lines": [],
+  "log_counts_by_logger_level": {},
+  "cuda_alive_after_oom": true,
+  "mem_after": {
+    "free_bytes": 24836243456,
+    "total_bytes": 25250627584
+  }
+}

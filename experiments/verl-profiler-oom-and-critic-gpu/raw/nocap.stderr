@@ -1,0 +1,10 @@
+ERROR:2026-11-04 10:04:22,541:[torch_memory] CUDA OOM on device 0: requested=1000001765376 total=25250627584 free=24836243456; dumping allocator snapshot
+ERROR:2026-11-04 10:04:22,542:[torch_memory] Python stack at OOM:
+  File "/tmp/m5-oom/probe-oom-dump.py", line 174, in <module>
+    main()
+  File "/tmp/m5-oom/probe-oom-dump.py", line 108, in main
+    _huge = torch.empty(int(1e12), dtype=torch.uint8, device="cuda")
+  File "/tmp/m5-main-smoke/verl/verl/utils/profiler/torch_memory_profile.py", line 131, in _on_out_of_memory
+    logger.error("[torch_memory] Python stack at OOM:\n%s", "".join(traceback.format_stack()))
+
+ERROR:2026-11-04 10:04:22,543:[torch_memory] allocator memory at OOM: {'total_memory_gb': 23.5164794921875, 'reserved_memory_gb': 0.001953125, 'allocated_memory_gb': 4.76837158203125e-07, 'cached_memory_gb': 0.0019526481628417969, 'max_memory_allocated_gb': 4.76837158203125e-07, 'max_memory_reserved_gb': 0.001953125}
