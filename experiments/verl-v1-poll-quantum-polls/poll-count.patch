@@ -1,0 +1,62 @@
+--- a/verl/trainer/ppo/v1/replay_buffer.py	2026-11-04 20:54:41
++++ b/verl/trainer/ppo/v1/replay_buffer.py	2026-11-05 07:06:34
+@@ -155,6 +155,8 @@
+         self.max_off_policy_strategy = max_off_policy_strategy
+         self.sampler_kwargs = sampler_kwargs
+         self.poll_interval = poll_interval
++        # Blocking polls taken by the current sample() call (see poll-count.patch).
++        self._blocking_polls = 0
+         self.refill_fn = refill_fn
+         self.filter_groups_metric = filter_groups_metric
+         self.train_batch_size = train_batch_size
+@@ -406,6 +408,7 @@
+         return KVBatchMeta(partition_id=partition_id, keys=keys, tags=tags)
+ 
+     def _wait_for_next_poll(self, partition_id: str, last_debug_time: float) -> float:
++        self._blocking_polls += 1
+         time.sleep(self.poll_interval)
+         now = time.time()
+         if now - last_debug_time > VERL_REPLAY_BUFFER_DEBUG_INTERVAL_SECONDS:
+@@ -438,6 +441,7 @@
+             dict: Auxiliary metrics.
+         """
+         last_debug_time = time.time()
++        self._blocking_polls = 0
+         eviction_metrics: dict = {}
+         dapo_enabled = partition_id != "val" and self.filter_groups_metric is not None
+         refill_credit = 0
+@@ -508,6 +512,7 @@
+             if not self.sync_refill_failed_groups:
+                 message += " Enable trainer.v1.sampler.sync_refill_failed_groups to replace failed groups."
+             raise RuntimeError(message)
++        eviction_metrics[f"{self._metrics_prefix(partition_id)}/sampler/blocking_polls"] = self._blocking_polls
+         return self._materialize_batch(partition_id, selected_prompt_uids, partition_snapshot), eviction_metrics
+ 
+ 
+@@ -567,6 +572,7 @@
+         Returns the sampleable uids and the eviction metrics accrued while waiting.
+         """
+         last_debug_time = time.time()
++        self._blocking_polls = 0
+         eviction_metrics: dict = {}
+ 
+         while True:
+@@ -585,6 +591,7 @@
+ 
+             sampleable_keys = self._sampleable_terminal_keys(partition_id, eviction_reasons)
+             if self._has_enough_samples(global_steps, partition_id, target_count, sampleable_keys):
++                eviction_metrics[f"{self._metrics_prefix(partition_id)}/sampler/blocking_polls"] = self._blocking_polls
+                 return sampleable_keys, eviction_metrics
+ 
+             last_debug_time = self._wait_for_next_poll(partition_id, last_debug_time)
+--- a/verl/trainer/ppo/v1/utils.py	2026-11-04 20:54:41
++++ b/verl/trainer/ppo/v1/utils.py	2026-11-05 07:06:34
+@@ -47,6 +47,8 @@
+                 "validation/filter_groups/discarded_surplus_samples",
+                 "training/rollout_failure/evicted_samples",
+                 "validation/rollout_failure/evicted_samples",
++                "training/sampler/blocking_polls",
++                "validation/sampler/blocking_polls",
+                 "training/rollout_logprobs_mismatch_count",
+             ],
+             "last": [

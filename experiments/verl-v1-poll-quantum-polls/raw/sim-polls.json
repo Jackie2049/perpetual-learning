@@ -1,0 +1,1206 @@
+{
+  "tree": "/tmp/m5-pollcount-tree",
+  "patched": true,
+  "checks": [
+    {
+      "check": "fast path takes 0 polls",
+      "ok": true,
+      "detail": {
+        "sleeps": [
+          0
+        ],
+        "metric": 0
+      }
+    },
+    {
+      "check": "arrival inside first quantum -> 1 poll per step",
+      "ok": true,
+      "detail": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "check": "arrival at 5.0s with P=2.0 -> 3 polls",
+      "ok": true,
+      "detail": [
+        3
+      ]
+    },
+    {
+      "check": "DAPO refill: >1 blocking poll per step",
+      "ok": true,
+      "detail": {
+        "polls": [
+          3,
+          3,
+          3,
+          3
+        ],
+        "evicted": [
+          27,
+          28,
+          27,
+          25
+        ]
+      }
+    },
+    {
+      "check": "P=0.1 takes at least as many polls as P=2.0",
+      "ok": true,
+      "detail": {
+        "p010": [
+          18,
+          19,
+          21,
+          21
+        ],
+        "p200": [
+          3,
+          3,
+          3,
+          3
+        ]
+      }
+    },
+    {
+      "check": "inflight=2 polls <= inflight=1 polls",
+      "ok": true,
+      "detail": {
+        "inflight1": [
+          2,
+          3,
+          2,
+          2
+        ],
+        "inflight2": [
+          2,
+          3,
+          2,
+          2
+        ]
+      }
+    },
+    {
+      "check": "counter resets per step",
+      "ok": true,
+      "detail": [
+        3,
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "check": "metric key present iff tree is patched",
+      "ok": true,
+      "detail": {
+        "patched": true,
+        "metrics": [
+          3,
+          3,
+          3,
+          3
+        ]
+      }
+    },
+    {
+      "check": "aggregator sums the poll key",
+      "ok": true,
+      "detail": {
+        "registered": true,
+        "patched": true
+      }
+    }
+  ],
+  "failed": 0,
+  "compare": {
+    "scenarios": 120,
+    "rows": 480,
+    "diffs": [],
+    "inert": true,
+    "poll_summary": [
+      {
+        "scenario": "dapo=False,inflight=1,P=2.0,d=0.6,f=0.0",
+        "polls_per_step": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "scenario": "dapo=False,inflight=1,P=2.0,d=1.0,f=0.0",
+        "polls_per_step": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "scenario": "dapo=False,inflight=1,P=2.0,d=2.5,f=0.0",
+        "polls_per_step": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "scenario": "dapo=False,inflight=1,P=2.0,d=5.0,f=0.0",
+        "polls_per_step": [
+          3,
+          3,
+          3,
+          3
+        ]
+      },
+      {
+        "scenario": "dapo=False,inflight=1,P=0.5,d=0.6,f=0.0",
+        "polls_per_step": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "scenario": "dapo=False,inflight=1,P=0.5,d=1.0,f=0.0",
+        "polls_per_step": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "scenario": "dapo=False,inflight=1,P=0.5,d=2.5,f=0.0",
+        "polls_per_step": [
+          5,
+          5,
+          5,
+          5
+        ]
+      },
+      {
+        "scenario": "dapo=False,inflight=1,P=0.5,d=5.0,f=0.0",
+        "polls_per_step": [
+          10,
+          10,
+          10,
+          10
+        ]
+      },
+      {
+        "scenario": "dapo=False,inflight=1,P=0.1,d=0.6,f=0.0",
+        "polls_per_step": [
+          6,
+          6,
+          6,
+          7
+        ]
+      },
+      {
+        "scenario": "dapo=False,inflight=1,P=0.1,d=1.0,f=0.0",
+        "polls_per_step": [
+          11,
+          10,
+          11,
+          11
+        ]
+      },
+      {
+        "scenario": "dapo=False,inflight=1,P=0.1,d=2.5,f=0.0",
+        "polls_per_step": [
+          25,
+          26,
+          26,
+          26
+        ]
+      },
+      {
+        "scenario": "dapo=False,inflight=1,P=0.1,d=5.0,f=0.0",
+        "polls_per_step": [
+          51,
+          51,
+          50,
+          50
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=2.0,d=0.6,f=0.0",
+        "polls_per_step": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=2.0,d=0.6,f=0.5",
+        "polls_per_step": [
+          2,
+          3,
+          2,
+          2
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=2.0,d=0.6,f=0.75",
+        "polls_per_step": [
+          4,
+          4,
+          5,
+          4
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=2.0,d=1.0,f=0.0",
+        "polls_per_step": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=2.0,d=1.0,f=0.5",
+        "polls_per_step": [
+          2,
+          3,
+          2,
+          2
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=2.0,d=1.0,f=0.75",
+        "polls_per_step": [
+          4,
+          4,
+          5,
+          4
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=2.0,d=2.5,f=0.0",
+        "polls_per_step": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=2.0,d=2.5,f=0.5",
+        "polls_per_step": [
+          4,
+          6,
+          4,
+          4
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=2.0,d=2.5,f=0.75",
+        "polls_per_step": [
+          8,
+          8,
+          10,
+          8
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=2.0,d=5.0,f=0.0",
+        "polls_per_step": [
+          3,
+          3,
+          3,
+          3
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=2.0,d=5.0,f=0.5",
+        "polls_per_step": [
+          6,
+          9,
+          6,
+          6
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=2.0,d=5.0,f=0.75",
+        "polls_per_step": [
+          12,
+          12,
+          15,
+          12
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=0.5,d=0.6,f=0.0",
+        "polls_per_step": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=0.5,d=0.6,f=0.5",
+        "polls_per_step": [
+          4,
+          6,
+          4,
+          4
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=0.5,d=0.6,f=0.75",
+        "polls_per_step": [
+          8,
+          8,
+          10,
+          8
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=0.5,d=1.0,f=0.0",
+        "polls_per_step": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=0.5,d=1.0,f=0.5",
+        "polls_per_step": [
+          4,
+          6,
+          4,
+          4
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=0.5,d=1.0,f=0.75",
+        "polls_per_step": [
+          8,
+          8,
+          10,
+          8
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=0.5,d=2.5,f=0.0",
+        "polls_per_step": [
+          5,
+          5,
+          5,
+          5
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=0.5,d=2.5,f=0.5",
+        "polls_per_step": [
+          10,
+          15,
+          10,
+          10
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=0.5,d=2.5,f=0.75",
+        "polls_per_step": [
+          20,
+          20,
+          25,
+          20
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=0.5,d=5.0,f=0.0",
+        "polls_per_step": [
+          10,
+          10,
+          10,
+          10
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=0.5,d=5.0,f=0.5",
+        "polls_per_step": [
+          20,
+          30,
+          20,
+          20
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=0.5,d=5.0,f=0.75",
+        "polls_per_step": [
+          40,
+          40,
+          50,
+          40
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=0.1,d=0.6,f=0.0",
+        "polls_per_step": [
+          6,
+          6,
+          6,
+          7
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=0.1,d=0.6,f=0.5",
+        "polls_per_step": [
+          12,
+          18,
+          14,
+          14
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=0.1,d=0.6,f=0.75",
+        "polls_per_step": [
+          24,
+          27,
+          35,
+          28
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=0.1,d=1.0,f=0.0",
+        "polls_per_step": [
+          11,
+          10,
+          11,
+          11
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=0.1,d=1.0,f=0.5",
+        "polls_per_step": [
+          21,
+          32,
+          22,
+          22
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=0.1,d=1.0,f=0.75",
+        "polls_per_step": [
+          41,
+          44,
+          55,
+          40
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=0.1,d=2.5,f=0.0",
+        "polls_per_step": [
+          25,
+          26,
+          26,
+          26
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=0.1,d=2.5,f=0.5",
+        "polls_per_step": [
+          51,
+          78,
+          50,
+          50
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=0.1,d=2.5,f=0.75",
+        "polls_per_step": [
+          103,
+          102,
+          125,
+          100
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=0.1,d=5.0,f=0.0",
+        "polls_per_step": [
+          51,
+          51,
+          50,
+          50
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=0.1,d=5.0,f=0.5",
+        "polls_per_step": [
+          102,
+          151,
+          100,
+          100
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=1,P=0.1,d=5.0,f=0.75",
+        "polls_per_step": [
+          203,
+          200,
+          251,
+          204
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=2.0,d=0.6,f=0.0",
+        "polls_per_step": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=2.0,d=0.6,f=0.5",
+        "polls_per_step": [
+          2,
+          3,
+          2,
+          2
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=2.0,d=0.6,f=0.75",
+        "polls_per_step": [
+          3,
+          3,
+          3,
+          3
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=2.0,d=1.0,f=0.0",
+        "polls_per_step": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=2.0,d=1.0,f=0.5",
+        "polls_per_step": [
+          2,
+          3,
+          2,
+          2
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=2.0,d=1.0,f=0.75",
+        "polls_per_step": [
+          3,
+          3,
+          3,
+          3
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=2.0,d=2.5,f=0.0",
+        "polls_per_step": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=2.0,d=2.5,f=0.5",
+        "polls_per_step": [
+          4,
+          6,
+          4,
+          4
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=2.0,d=2.5,f=0.75",
+        "polls_per_step": [
+          6,
+          6,
+          6,
+          6
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=2.0,d=5.0,f=0.0",
+        "polls_per_step": [
+          3,
+          3,
+          3,
+          3
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=2.0,d=5.0,f=0.5",
+        "polls_per_step": [
+          6,
+          9,
+          6,
+          6
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=2.0,d=5.0,f=0.75",
+        "polls_per_step": [
+          9,
+          9,
+          9,
+          9
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=0.5,d=0.6,f=0.0",
+        "polls_per_step": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=0.5,d=0.6,f=0.5",
+        "polls_per_step": [
+          4,
+          6,
+          4,
+          4
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=0.5,d=0.6,f=0.75",
+        "polls_per_step": [
+          6,
+          6,
+          6,
+          6
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=0.5,d=1.0,f=0.0",
+        "polls_per_step": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=0.5,d=1.0,f=0.5",
+        "polls_per_step": [
+          4,
+          6,
+          4,
+          4
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=0.5,d=1.0,f=0.75",
+        "polls_per_step": [
+          6,
+          6,
+          6,
+          6
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=0.5,d=2.5,f=0.0",
+        "polls_per_step": [
+          5,
+          5,
+          5,
+          5
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=0.5,d=2.5,f=0.5",
+        "polls_per_step": [
+          10,
+          15,
+          10,
+          10
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=0.5,d=2.5,f=0.75",
+        "polls_per_step": [
+          15,
+          15,
+          15,
+          15
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=0.5,d=5.0,f=0.0",
+        "polls_per_step": [
+          10,
+          10,
+          10,
+          10
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=0.5,d=5.0,f=0.5",
+        "polls_per_step": [
+          20,
+          30,
+          20,
+          20
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=0.5,d=5.0,f=0.75",
+        "polls_per_step": [
+          30,
+          30,
+          30,
+          30
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=0.1,d=0.6,f=0.0",
+        "polls_per_step": [
+          6,
+          6,
+          6,
+          7
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=0.1,d=0.6,f=0.5",
+        "polls_per_step": [
+          12,
+          18,
+          14,
+          14
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=0.1,d=0.6,f=0.75",
+        "polls_per_step": [
+          18,
+          19,
+          21,
+          21
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=0.1,d=1.0,f=0.0",
+        "polls_per_step": [
+          11,
+          10,
+          11,
+          11
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=0.1,d=1.0,f=0.5",
+        "polls_per_step": [
+          21,
+          32,
+          22,
+          22
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=0.1,d=1.0,f=0.75",
+        "polls_per_step": [
+          31,
+          33,
+          33,
+          33
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=0.1,d=2.5,f=0.0",
+        "polls_per_step": [
+          25,
+          26,
+          26,
+          26
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=0.1,d=2.5,f=0.5",
+        "polls_per_step": [
+          51,
+          78,
+          50,
+          50
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=0.1,d=2.5,f=0.75",
+        "polls_per_step": [
+          77,
+          78,
+          75,
+          75
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=0.1,d=5.0,f=0.0",
+        "polls_per_step": [
+          51,
+          51,
+          50,
+          50
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=0.1,d=5.0,f=0.5",
+        "polls_per_step": [
+          102,
+          151,
+          100,
+          100
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=2,P=0.1,d=5.0,f=0.75",
+        "polls_per_step": [
+          153,
+          150,
+          150,
+          150
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=2.0,d=0.6,f=0.0",
+        "polls_per_step": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=2.0,d=0.6,f=0.5",
+        "polls_per_step": [
+          2,
+          3,
+          2,
+          2
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=2.0,d=0.6,f=0.75",
+        "polls_per_step": [
+          3,
+          3,
+          3,
+          3
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=2.0,d=1.0,f=0.0",
+        "polls_per_step": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=2.0,d=1.0,f=0.5",
+        "polls_per_step": [
+          2,
+          3,
+          2,
+          2
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=2.0,d=1.0,f=0.75",
+        "polls_per_step": [
+          3,
+          3,
+          3,
+          3
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=2.0,d=2.5,f=0.0",
+        "polls_per_step": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=2.0,d=2.5,f=0.5",
+        "polls_per_step": [
+          4,
+          6,
+          4,
+          4
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=2.0,d=2.5,f=0.75",
+        "polls_per_step": [
+          6,
+          6,
+          6,
+          6
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=2.0,d=5.0,f=0.0",
+        "polls_per_step": [
+          3,
+          3,
+          3,
+          3
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=2.0,d=5.0,f=0.5",
+        "polls_per_step": [
+          6,
+          9,
+          6,
+          6
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=2.0,d=5.0,f=0.75",
+        "polls_per_step": [
+          9,
+          9,
+          9,
+          9
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=0.5,d=0.6,f=0.0",
+        "polls_per_step": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=0.5,d=0.6,f=0.5",
+        "polls_per_step": [
+          4,
+          6,
+          4,
+          4
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=0.5,d=0.6,f=0.75",
+        "polls_per_step": [
+          6,
+          6,
+          6,
+          6
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=0.5,d=1.0,f=0.0",
+        "polls_per_step": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=0.5,d=1.0,f=0.5",
+        "polls_per_step": [
+          4,
+          6,
+          4,
+          4
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=0.5,d=1.0,f=0.75",
+        "polls_per_step": [
+          6,
+          6,
+          6,
+          6
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=0.5,d=2.5,f=0.0",
+        "polls_per_step": [
+          5,
+          5,
+          5,
+          5
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=0.5,d=2.5,f=0.5",
+        "polls_per_step": [
+          10,
+          15,
+          10,
+          10
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=0.5,d=2.5,f=0.75",
+        "polls_per_step": [
+          15,
+          15,
+          15,
+          15
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=0.5,d=5.0,f=0.0",
+        "polls_per_step": [
+          10,
+          10,
+          10,
+          10
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=0.5,d=5.0,f=0.5",
+        "polls_per_step": [
+          20,
+          30,
+          20,
+          20
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=0.5,d=5.0,f=0.75",
+        "polls_per_step": [
+          30,
+          30,
+          30,
+          30
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=0.1,d=0.6,f=0.0",
+        "polls_per_step": [
+          6,
+          6,
+          6,
+          7
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=0.1,d=0.6,f=0.5",
+        "polls_per_step": [
+          12,
+          18,
+          14,
+          14
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=0.1,d=0.6,f=0.75",
+        "polls_per_step": [
+          18,
+          19,
+          21,
+          21
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=0.1,d=1.0,f=0.0",
+        "polls_per_step": [
+          11,
+          10,
+          11,
+          11
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=0.1,d=1.0,f=0.5",
+        "polls_per_step": [
+          21,
+          32,
+          22,
+          22
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=0.1,d=1.0,f=0.75",
+        "polls_per_step": [
+          31,
+          33,
+          33,
+          33
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=0.1,d=2.5,f=0.0",
+        "polls_per_step": [
+          25,
+          26,
+          26,
+          26
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=0.1,d=2.5,f=0.5",
+        "polls_per_step": [
+          51,
+          78,
+          50,
+          50
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=0.1,d=2.5,f=0.75",
+        "polls_per_step": [
+          77,
+          78,
+          75,
+          75
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=0.1,d=5.0,f=0.0",
+        "polls_per_step": [
+          51,
+          51,
+          50,
+          50
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=0.1,d=5.0,f=0.5",
+        "polls_per_step": [
+          102,
+          151,
+          100,
+          100
+        ]
+      },
+      {
+        "scenario": "dapo=True,inflight=3,P=0.1,d=5.0,f=0.75",
+        "polls_per_step": [
+          153,
+          150,
+          150,
+          150
+        ]
+      }
+    ]
+  }
+}

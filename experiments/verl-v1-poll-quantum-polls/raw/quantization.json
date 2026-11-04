@@ -1,0 +1,573 @@
+{
+  "model": "gen_i(P) = ceil(D_i/P)*P + c, D_i taken from the P=0.1 leg",
+  "quantization_signature": {
+    "cluster_tolerance_s": 0.1,
+    "2gpu_fixed_batch_P2.0": {
+      "clusters": [
+        {
+          "n": 6,
+          "mean": 2.1575,
+          "spread": 0.0115
+        },
+        {
+          "n": 6,
+          "mean": 4.1717,
+          "spread": 0.0294
+        }
+      ],
+      "gaps": [
+        2.0142
+      ]
+    },
+    "2gpu_fixed_batch_P0.5": {
+      "clusters": [
+        {
+          "n": 7,
+          "mean": 2.1621,
+          "spread": 0.0498
+        },
+        {
+          "n": 5,
+          "mean": 2.6606,
+          "spread": 0.0272
+        }
+      ],
+      "gaps": [
+        0.4985
+      ]
+    },
+    "4gpu_fixed_batch_P2.0": {
+      "clusters": [
+        {
+          "n": 12,
+          "mean": 2.1607,
+          "spread": 0.0264
+        }
+      ],
+      "gaps": []
+    }
+  },
+  "paired": {
+    "2gpu_fixed_batch_P2.0": [
+      {
+        "step": 3,
+        "D_from_P010": 2.3946,
+        "pred": 4.0,
+        "measured": 4.1822,
+        "resid": 0.1822
+      },
+      {
+        "step": 4,
+        "D_from_P010": 2.0696,
+        "pred": 4.0,
+        "measured": 4.1661,
+        "resid": 0.1661
+      },
+      {
+        "step": 5,
+        "D_from_P010": 1.8719,
+        "pred": 2.0,
+        "measured": 2.1567,
+        "resid": 0.1567
+      },
+      {
+        "step": 6,
+        "D_from_P010": 2.3896,
+        "pred": 4.0,
+        "measured": 4.1548,
+        "resid": 0.1548
+      },
+      {
+        "step": 7,
+        "D_from_P010": 2.4169,
+        "pred": 4.0,
+        "measured": 2.1574,
+        "resid": -1.8426
+      },
+      {
+        "step": 8,
+        "D_from_P010": 2.2832,
+        "pred": 4.0,
+        "measured": 2.1566,
+        "resid": -1.8434
+      },
+      {
+        "step": 9,
+        "D_from_P010": 1.9667,
+        "pred": 2.0,
+        "measured": 2.1628,
+        "resid": 0.1628
+      },
+      {
+        "step": 10,
+        "D_from_P010": 2.4015,
+        "pred": 4.0,
+        "measured": 2.1513,
+        "resid": -1.8487
+      },
+      {
+        "step": 11,
+        "D_from_P010": 2.3791,
+        "pred": 4.0,
+        "measured": 4.1768,
+        "resid": 0.1768
+      },
+      {
+        "step": 12,
+        "D_from_P010": 2.3649,
+        "pred": 4.0,
+        "measured": 4.1842,
+        "resid": 0.1842
+      },
+      {
+        "step": 13,
+        "D_from_P010": 1.7793,
+        "pred": 2.0,
+        "measured": 2.1603,
+        "resid": 0.1603
+      },
+      {
+        "step": 14,
+        "D_from_P010": 2.0719,
+        "pred": 4.0,
+        "measured": 4.1661,
+        "resid": 0.1661
+      }
+    ],
+    "4gpu_fixed_batch_P2.0": [
+      {
+        "step": 3,
+        "D_from_P010": 1.775,
+        "pred": 2.0,
+        "measured": 2.1636,
+        "resid": 0.1636
+      },
+      {
+        "step": 4,
+        "D_from_P010": 1.7786,
+        "pred": 2.0,
+        "measured": 2.1602,
+        "resid": 0.1602
+      },
+      {
+        "step": 5,
+        "D_from_P010": 1.7672,
+        "pred": 2.0,
+        "measured": 2.1525,
+        "resid": 0.1525
+      },
+      {
+        "step": 6,
+        "D_from_P010": 1.7715,
+        "pred": 2.0,
+        "measured": 2.1523,
+        "resid": 0.1523
+      },
+      {
+        "step": 7,
+        "D_from_P010": 1.6921,
+        "pred": 2.0,
+        "measured": 2.1786,
+        "resid": 0.1786
+      },
+      {
+        "step": 8,
+        "D_from_P010": 1.7814,
+        "pred": 2.0,
+        "measured": 2.1776,
+        "resid": 0.1776
+      },
+      {
+        "step": 9,
+        "D_from_P010": 1.7914,
+        "pred": 2.0,
+        "measured": 2.1574,
+        "resid": 0.1574
+      },
+      {
+        "step": 10,
+        "D_from_P010": 1.7837,
+        "pred": 2.0,
+        "measured": 2.1548,
+        "resid": 0.1548
+      },
+      {
+        "step": 11,
+        "D_from_P010": 1.7776,
+        "pred": 2.0,
+        "measured": 2.1603,
+        "resid": 0.1603
+      },
+      {
+        "step": 12,
+        "D_from_P010": 1.7876,
+        "pred": 2.0,
+        "measured": 2.1577,
+        "resid": 0.1577
+      },
+      {
+        "step": 13,
+        "D_from_P010": 1.6805,
+        "pred": 2.0,
+        "measured": 2.1567,
+        "resid": 0.1567
+      },
+      {
+        "step": 14,
+        "D_from_P010": 1.7681,
+        "pred": 2.0,
+        "measured": 2.1571,
+        "resid": 0.1571
+      }
+    ]
+  },
+  "negative_controls": {
+    "real": {
+      "n": 12,
+      "median_offset_c": 0.1615,
+      "max_dev_from_c": 2.0103,
+      "sd": 0.8716,
+      "within_0.05": 9,
+      "within_0.25": 9
+    },
+    "variants": {
+      "grid_1.0": {
+        "n": 12,
+        "median_offset_c": 0.6588,
+        "max_dev_from_c": 1.5075,
+        "sd": 0.8363,
+        "within_0.05": 0,
+        "within_0.25": 0
+      },
+      "grid_0.5": {
+        "n": 12,
+        "median_offset_c": 0.9088,
+        "max_dev_from_c": 1.2575,
+        "sd": 0.9,
+        "within_0.05": 0,
+        "within_0.25": 0
+      },
+      "grid_3.0": {
+        "n": 12,
+        "median_offset_c": 0.1588,
+        "max_dev_from_c": 1.0254,
+        "sd": 1.0071,
+        "within_0.05": 0,
+        "within_0.25": 0
+      },
+      "shuffled_pairing": {
+        "median_max_dev": 2.0204,
+        "min_max_dev": 1.9992,
+        "median_within_0.25": 7.0
+      }
+    }
+  },
+  "dapo_multi_round": {
+    "2gpu_dapo_inflight1": {
+      "rows": [
+        {
+          "step": 3,
+          "D_from_P010": 6.878,
+          "pred": 8.0,
+          "measured": 8.6281,
+          "resid": 0.6281
+        },
+        {
+          "step": 4,
+          "D_from_P010": 6.428,
+          "pred": 8.0,
+          "measured": 6.4815,
+          "resid": -1.5185
+        },
+        {
+          "step": 5,
+          "D_from_P010": 7.5675,
+          "pred": 8.0,
+          "measured": 12.8888,
+          "resid": 4.8888
+        },
+        {
+          "step": 6,
+          "D_from_P010": 6.2655,
+          "pred": 8.0,
+          "measured": 8.5534,
+          "resid": 0.5534
+        },
+        {
+          "step": 7,
+          "D_from_P010": 6.6585,
+          "pred": 8.0,
+          "measured": 6.4278,
+          "resid": -1.5722
+        },
+        {
+          "step": 8,
+          "D_from_P010": 6.186,
+          "pred": 8.0,
+          "measured": 6.8549,
+          "resid": -1.1451
+        },
+        {
+          "step": 9,
+          "D_from_P010": 7.9372,
+          "pred": 8.0,
+          "measured": 6.4213,
+          "resid": -1.5787
+        },
+        {
+          "step": 10,
+          "D_from_P010": 5.5286,
+          "pred": 6.0,
+          "measured": 6.4519,
+          "resid": 0.4519
+        },
+        {
+          "step": 11,
+          "D_from_P010": 6.205,
+          "pred": 8.0,
+          "measured": 8.4996,
+          "resid": 0.4996
+        },
+        {
+          "step": 12,
+          "D_from_P010": 6.3956,
+          "pred": 8.0,
+          "measured": 6.4466,
+          "resid": -1.5534
+        },
+        {
+          "step": 13,
+          "D_from_P010": 6.315,
+          "pred": 8.0,
+          "measured": 8.5021,
+          "resid": 0.5021
+        },
+        {
+          "step": 14,
+          "D_from_P010": 6.1217,
+          "pred": 8.0,
+          "measured": 6.4588,
+          "resid": -1.5412
+        }
+      ],
+      "stats": {
+        "n": 12,
+        "median_offset_c": -0.3466,
+        "max_dev_from_c": 5.2354,
+        "sd": 1.7916,
+        "within_0.05": 0,
+        "within_0.25": 0
+      }
+    },
+    "2gpu_dapo_inflight2": {
+      "rows": [
+        {
+          "step": 3,
+          "D_from_P010": 8.6282,
+          "pred": 10.0,
+          "measured": 10.8929,
+          "resid": 0.8929
+        },
+        {
+          "step": 4,
+          "D_from_P010": 8.4608,
+          "pred": 10.0,
+          "measured": 8.5455,
+          "resid": -1.4545
+        },
+        {
+          "step": 5,
+          "D_from_P010": 8.1918,
+          "pred": 10.0,
+          "measured": 6.4775,
+          "resid": -3.5225
+        },
+        {
+          "step": 6,
+          "D_from_P010": 6.6974,
+          "pred": 8.0,
+          "measured": 8.5476,
+          "resid": 0.5476
+        },
+        {
+          "step": 7,
+          "D_from_P010": 8.3191,
+          "pred": 10.0,
+          "measured": 8.5117,
+          "resid": -1.4883
+        },
+        {
+          "step": 8,
+          "D_from_P010": 7.0756,
+          "pred": 8.0,
+          "measured": 11.307,
+          "resid": 3.307
+        },
+        {
+          "step": 9,
+          "D_from_P010": 6.8651,
+          "pred": 8.0,
+          "measured": 10.8905,
+          "resid": 2.8905
+        },
+        {
+          "step": 10,
+          "D_from_P010": 6.5503,
+          "pred": 8.0,
+          "measured": 8.5819,
+          "resid": 0.5819
+        },
+        {
+          "step": 11,
+          "D_from_P010": 6.896,
+          "pred": 8.0,
+          "measured": 6.544,
+          "resid": -1.456
+        },
+        {
+          "step": 12,
+          "D_from_P010": 6.6316,
+          "pred": 8.0,
+          "measured": 8.6779,
+          "resid": 0.6779
+        },
+        {
+          "step": 13,
+          "D_from_P010": 5.5844,
+          "pred": 6.0,
+          "measured": 8.5403,
+          "resid": 2.5403
+        },
+        {
+          "step": 14,
+          "D_from_P010": 6.9979,
+          "pred": 8.0,
+          "measured": 8.525,
+          "resid": 0.525
+        }
+      ],
+      "stats": {
+        "n": 12,
+        "median_offset_c": 0.5647,
+        "max_dev_from_c": 4.0873,
+        "sd": 1.9453,
+        "within_0.05": 3,
+        "within_0.25": 4
+      }
+    },
+    "4gpu_dapo_inflight2": {
+      "rows": [
+        {
+          "step": 3,
+          "D_from_P010": 7.0446,
+          "pred": 8.0,
+          "measured": 6.5168,
+          "resid": -1.4832
+        },
+        {
+          "step": 4,
+          "D_from_P010": 6.3641,
+          "pred": 8.0,
+          "measured": 8.7393,
+          "resid": 0.7393
+        },
+        {
+          "step": 5,
+          "D_from_P010": 6.4944,
+          "pred": 8.0,
+          "measured": 6.5162,
+          "resid": -1.4838
+        },
+        {
+          "step": 6,
+          "D_from_P010": 4.7546,
+          "pred": 6.0,
+          "measured": 6.5261,
+          "resid": 0.5261
+        },
+        {
+          "step": 7,
+          "D_from_P010": 5.8969,
+          "pred": 6.0,
+          "measured": 6.8641,
+          "resid": 0.8641
+        },
+        {
+          "step": 8,
+          "D_from_P010": 6.4688,
+          "pred": 8.0,
+          "measured": 6.5092,
+          "resid": -1.4908
+        },
+        {
+          "step": 9,
+          "D_from_P010": 6.8811,
+          "pred": 8.0,
+          "measured": 6.5206,
+          "resid": -1.4794
+        },
+        {
+          "step": 10,
+          "D_from_P010": 5.0601,
+          "pred": 6.0,
+          "measured": 8.5625,
+          "resid": 2.5625
+        },
+        {
+          "step": 11,
+          "D_from_P010": 6.0654,
+          "pred": 8.0,
+          "measured": 6.659,
+          "resid": -1.341
+        },
+        {
+          "step": 12,
+          "D_from_P010": 5.8558,
+          "pred": 6.0,
+          "measured": 8.5637,
+          "resid": 2.5637
+        },
+        {
+          "step": 13,
+          "D_from_P010": 6.1233,
+          "pred": 8.0,
+          "measured": 4.353,
+          "resid": -3.647
+        },
+        {
+          "step": 14,
+          "D_from_P010": 5.2856,
+          "pred": 6.0,
+          "measured": 6.4774,
+          "resid": 0.4774
+        }
+      ],
+      "stats": {
+        "n": 12,
+        "median_offset_c": -0.4318,
+        "max_dev_from_c": 3.2152,
+        "sd": 1.7795,
+        "within_0.05": 0,
+        "within_0.25": 0
+      }
+    }
+  },
+  "paired_stats": {
+    "2gpu_fixed_batch_P2.0": {
+      "n": 12,
+      "median_offset_c": 0.1615,
+      "max_dev_from_c": 2.0103,
+      "sd": 0.8716,
+      "within_0.05": 9,
+      "within_0.25": 9
+    },
+    "4gpu_fixed_batch_P2.0": {
+      "n": 12,
+      "median_offset_c": 0.1576,
+      "max_dev_from_c": 0.021,
+      "sd": 0.0083,
+      "within_0.05": 12,
+      "within_0.25": 12
+    }
+  }
+}
