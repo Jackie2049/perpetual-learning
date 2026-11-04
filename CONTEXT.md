@@ -1,10 +1,24 @@
-更新时间：2026-11-04（M1 **技术掘金：把 `tiled_mlp` 单条回归查成一类——#6067 引擎重构的配置消费点体检**）。把 `044bbba2`（#6067，2026-04-20 BREAKING）删掉的两个 worker 文件里的 **102 个 `config.*` 读取路径**逐条在当前 main 上核对：文本扫描报 **30 条**候选，人工判定后**真失效 3 条**——`tiled_mlp`、**`freeze_vision_tower`（本轮新发现）**、`use_prefix_grouper`；26 条是改名／换父配置后照常生效（`actor.fsdp_config → actor.engine`、`log_prob_* → ppo_*`），**1 条是搬了家**（MTP 关闭时的 `num_nextn_predict_layers` 清零搬进 `HFModelConfig.__post_init__`）。**`freeze_vision_tower` 是 2025-09 由 PR #3178 合入的真实特性**（VL 模型冻结视觉塔省显存），随同一次重构丢了接线、全仓无替代，而 `actor.yaml:51-52` 与 Ascend 参数表仍写着它 ⇒ 开 `true` 后视觉塔照常训练、显存不省、**不报错**。另记一条**行为契约变化**（不列失效）：MTP 在 FSDP 上从 `raise NotImplementedError` 变成静默清零。**两处自检**：① `lost` 判据把 config 声明行当成读取点，3 条真失效全部自证"有人读"；② `\btiled_mlp\b` 匹配不上 `use_tiled_mlp`，负向自检第一次失败，改子串匹配后通过。此前 rLLM #945／PR #946 复核见下方历史节。
+更新时间：2026-11-04（M5 12:5x–13:0x 无卡轮：两条算力链路都不可达，补完 rollout-bound 实验准备；M1 11:3x–12:0x：把 `tiled_mlp` 单条回归查成一类——#6067 配置消费点体检）。规则入口：[AGENTS.md](AGENTS.md)；任务入口：[技术秘书](queue_tech-secretary.md) / [技术掘金](queue_tech-miner.md)。
 
 ## 当前现场
 
-> **只读最上面一节 `### M1 本轮` 即可恢复现场。** 下面 20+ 个 `###` 是历史批次叙述
+> **只读最上面两节（最近一轮 M5 与 M1）即可恢复现场。** 下面 20+ 个 `###` 是历史批次叙述
 > （按时间倒序）——**它们已在 `diary/` 与专项文档留档，此处仅为交接连续性的冗余副本**。
 > 判断"现在该做什么"看 `## 未完成操作与并行工作` 与两个队列，不要从头读到尾。
+
+### M5 本轮（2026-11-04 12:5x–13:0x CST）：两条算力通路都不可达，回退到准备物料并入库
+
+**连通性（本轮实测，只探一次）**：`4090-1`（`219.223.198.62:22`）ICMP 100% 丢包、TCP 超时——**这是公网直连、不经 VPN**，不能按"VPN 掉线"解释；同时昇腾 VPN 网关 `10.205.0.1` 2 包全丢、`192.168.13.154/155/156:22` 全超时。外网正常（GitHub `443` 可建连）⇒ 排除本机断网。历史上 4090-1 有过约 28 h 的电信段路由断裂（10-28），本次属同类，恢复与否只在用户侧。
+
+**做了什么**：把上一会话中断时留下的未跟踪目录 `experiments/verl-v1-poll-quantum-separate-bound/` 补完并入库。这是 §13.54 明确留下的最后一个空格——separate_async 已证「rollout 领先」区间里量子不进关键路径，**rollout 成为瓶颈、训练步真的在 `sample()` 上等**的区间未测。
+
+**三处实改**：① `total_storage_size` **512→1536**（`SimpleStorage` 摊到 8 单元，512 就是 64/单元，**恰好等于本配置一步的 64 条**，会构造性复现上一轮冒烟撞到的 `Storage capacity exceeded: N existing + 1 new > N`）；② `verify-bound.py` 判定拆成「机械有效性→exit 1／区间没翻→**exit 2**／全过→exit 0」三类，效应量改 INFO 打印——原来的写法把"区间没翻转"也报 FAIL，窗口期极易误读成数据有问题；③ 新增 `selftest-bound.py`（合成日志、黑盒跑两个解析器，**10 项断言 exit 0**）。
+
+**自检抓到两个错（都是我自己的）**：夹具用双引号键（真实配置 dump 是单引号）；更有价值的是 **0.1 臂原门槛「稳态 gen 均值 < 1.9 s」是错的**——rollout-bound 区间里真实等待本身可能超过 2 s，这条会把好数据判死。已改为只用 2.0 臂「过半数稳态步 ≥1.9 s」作 GATE（poll=2.0 时 gen 超过 1.9 s 的唯一途径就是进了睡眠循环），0.1 臂退为对照只打印。
+
+**边界**：本目录**零读数**，没有任何 GPU 运行，不得引用为实测；翻不翻区间只有 GATE 能答，翻不了也要写成负结论（"该区间在 0.5B 量级不可达"）。自检只验证解析与判定逻辑，真日志的 `np.float64(...)` 形态、控制台混入的 EngineCore 尾巴仍需窗口期核对。绝对步时受 `NCCL_SHM_DISABLE=1` 影响，不可与其他批次比。
+
+入口：[实验准备与预登记判定规则](experiments/verl-v1-poll-quantum-separate-bound/README.md) · [离线自检](experiments/verl-v1-poll-quantum-separate-bound/selftest-bound.py) · [TM-008](queue_tech-miner.md) · [真机交接](experiments/handoff-m5.md)。对外动作全部未做。
 
 ### M1 本轮（2026-11-04 11:3x–12:0x）：把 `tiled_mlp` 的单条回归查成一类——#6067 配置消费点体检
 
@@ -712,7 +726,7 @@ M1 上一轮把 TM-009 从"已取证待决定"推到"材料齐备待决定"：�
 | 执行者 | 当前任务 | 接续入口与核对事项 |
 |---|---|---|
 | M1 | TS-001 第十七批（语义面：截断本身就是组的长度预测——`max(撞顶记 c、其余记真值) == max(g)` 在四条负载 480/480 精确，故 `R` 用截断上界与用全真值**逐位相同**，§11.5「长度预测误差」在组粒度上关掉；敏感性：打坏预测后 `R` 动 21/30、30/30、5/30）完成；此前第十六批（`band_floor` 的单位数：过半门槛随种子数移动且**不单调**；四处抄本收成 `paired_diff.band_floor_rule`）；此前第十五批（判据的单位数）、第十四批（抽样可读性）、第十三批（判据独立性）、第十批（四档 `sign_regime`）；第六批（判据抽成 `tools/paired-diff`）；TM-010／TM-009／TM-011 待用户决定 | **第十五批**：第十三批"`stable` 假阳为 0、假阴 1.1%"是在**20 个种子全部表态**下取的，而判据真实被用在 **3–27 个表态种子**上——同一 `min_same_active=0.8` 下掷硬币输入被判 `stable` 的概率 **3 个：25%／27 个：0.15%**（差两个数量级，且带锯齿：19 要 16 个、18 只要 15 个）。真实 9 个 `stable` 格最脆是 **0.5B cap256 积压 16（19／18，余量 2 个种子）**；3 表态那格落 `consistent_but_thin`，25% **没踩中但已落守护测试**。判据落成 `paired_diff.falsy_rate(n_truth, passes=…, two_sided=…)`（精确枚举、判据恒假抛 `ValueError`、双侧须显式声明）。**不改任何档名、任何效应量**；归档 +210 行 0 删除、`--verify` OK；六套件 31／37／68／85 passed，两次注入各红 2／3 条。**第十四批**：两个 `no_reading` 格的可读性**不随 `n_groups` 单调**（4／8 组 `degenerate`、16 组全零、32／64 全零），机制是非贴顶组池 67/480 与 28/480、解析下界 5／12，反事实下带宽 4.33／5.83pp；判词改成"这次抽样里能排的组被淹了"，建议先换积压档。**`exceeds_band(effect, 0.0)` 现在抛 `ValueError`**，改用 `band_floor_pass(..., zero_kind=...)`。**不改任何已发布读数**（全量 `--verify` 逐字段相同）。取证、上游查重、可达性复核、候选补丁均完成：[取证](open-source/rllm/tool-use-async-autodetect.md)、[可达性探针](experiments/rllm-tool-use-async-probe/prod_reachability.py)、[候选补丁](open-source/rllm/patches/use-async-autodetect/readme.md)。**对外动作全部未做**。**第六批**：五个脚本改接共享判据后五份归档 `--verify` 逐字段不变、测试 121 passed；`wall_ratio` 摆幅 2.2–9.5pp，总量比穿过 1.0 的 `replay` 逐种子方向仍稳（18–20/30），真正翻的只有 `C vs B`，`cap` 是 14–23/30 种子无分辨率。**第四十批把 §13.30 第一批的六个 `R` 读数作废并按正确组臂重算**（43.7／54.7／20.6／56.6／27.7／38.6 → 34.0／42.4／14.7→44.9／17.3→34.0），第二／三／四批不受影响。**第四十二批把同一分档判据补到真实负载**：FIFO 基线自身换序就动 0.7–11.7pp，§13.30 第四批 cap256 的"反号"（−0.95／−0.39pp）落在带宽内⇒**不可引用、方向未定**；可引用的只有 cap1024（cv 0.30–0.36）六格 28–30/30 同号。`R` 的量级读数（2.7%／11.4%）不受影响。**TS-001 的可做补强已到边际**：纯归档重算、语义面排队顺序维、真实长度负载维、带宽与可读性诊断都已纳入。语义面剩余缺口仍是**长度预测误差／分桶／迁移／抢占／KV 搬运**，P-1 跨系统需用户立项。 |
-| M5 | TS-001 算力支持 | **第五十八批 §13.54：separate_async 跑通并测完（4/4 exit 0，整步差 +0.010s ⇒ poll 不在关键路径）**；此前第五十六批 §13.52、第五十七批 §13.53（drop）与 §13.53 补记（wait t=1／t=2）、第五十六批与 wait 臂独立复核、main `3fdf2b54` 3 步冒烟均完成（见上）。TM-008 剩余未测只剩 4 卡 `inflight=1`（需 ≥4 卡空闲窗口）与 `wait` 的 t≥3 档（结构上等同默认 async）。**separate_async 的两条本机前置必须记住**：不能设 `RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1`（checkpoint 组会撞「多 rank 同卡」），且需 `NCCL_SHM_DISABLE=1` 规避训练侧 CUDA 217；cupy 装在 `/tmp/cupy-pkgs`。P-1 跨系统（AReaL／OpenRLHF／SkyRL，需用户立项）；P-2 FP8 训练侧（待实测）。**下一轮先核对 GPU 归属与占用再启动，不据旧记录假定空闲。** |
+| M5 | TS-001 算力支持 | **本轮（11-04）：两条通路都不可达（4090-1 公网直连 100% 丢包、昇腾网关全丢），无 GPU 工作；补完并入库 separate_async 的 rollout-bound 实验准备（零读数，`selftest-bound.py` 10/10）**。**下一次有窗口时按该目录 README 的协议走：先核 GPU 归属 → 冒烟 3 步过 GATE（2.0 臂过半数稳态步 gen ≥1.9s）→ 才跑 A/B**；GATE 不过先抬 `MAX_RESP=1536`／`NORM_RESP=32`，别把"没翻区间"写成"量子无效"。此前第五十八批 §13.54：separate_async 跑通并测完（4/4 exit 0，整步差 +0.010s ⇒ poll 不在关键路径）；第五十六批 §13.52、第五十七批 §13.53（drop）与 §13.53 补记（wait t=1／t=2）、第五十六批与 wait 臂独立复核、main `3fdf2b54` 3 步冒烟均完成（见上）。TM-008 剩余未测只剩 4 卡 `inflight=1`（需 ≥4 卡空闲窗口）与 `wait` 的 t≥3 档（结构上等同默认 async）。**separate_async 的两条本机前置必须记住**：不能设 `RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES=1`（checkpoint 组会撞「多 rank 同卡」），且需 `NCCL_SHM_DISABLE=1` 规避训练侧 CUDA 217；cupy 装在 `/tmp/cupy-pkgs`。P-1 跨系统（AReaL／OpenRLHF／SkyRL，需用户立项）；P-2 FP8 训练侧（待实测）。**下一轮先核对 GPU 归属与占用再启动，不据旧记录假定空闲。** |
 
 
 ## 未完成操作与并行工作
@@ -754,6 +768,8 @@ M1 上一轮把 TM-009 从"已取证待决定"推到"材料齐备待决定"：�
 - **推送通道（2026-11-03 03:0x 更新）**：`git fetch`／`git push` 直连**已恢复**。M1 本轮先 commit 再 push 被拒（API 分叉），`git fetch` 后与 `origin/main`（M5 第五十五批）合并、冲突按「保留双方、按时间重排」解决，已推至 **`f006fbf94`**，本地 origin/main 一致。约定不变：先试 `git push`，不通再用 [git-push-api](tools/git-push-api/readme.md)；API 推送会重建 commit 对象，与本地同树不同 SHA 属已知偏差。
 - **TM-010（掘金 B 类，M1 2026-11-03 01:3x）**：rLLM Fireworks 后端默认 `router_replay: R3`，但路由矩阵装不进 `tinker.ModelInput`（无声明字段 / `from_ints` 无该参数 / 赋值被 pydantic 拒）。**未验证项：服务端行为与线上影响**，不得主张训练出错。对外动作全部未做，待用户决定是否提 issue（以及是否连"默认改回 disabled"一起）。见 [TM-010](queue_tech-miner.md)。
 - **TM-009（掘金 B 类，M1 2026-11-03 完成四件套）**：rLLM `Tool.__call__` 的 `use_async=None` 自动探测失效 + 守卫不可达。**对外动作（issue／PR）全部未做，待用户逐项授权**；需用户决定：① 是否提独立小 issue；② 若提 PR，是否连补丁一起（补丁会让上游 `test_python_tool` 变红）。上游 `rllm-org/rllm` main `4e828c81`（2026-11-02 核对，未变）。见 [TM-009](queue_tech-miner.md) 与[候选补丁](open-source/rllm/patches/use-async-autodetect/readme.md)。
+- **separate_async rollout-bound 实验（M5 2026-11-04 准备就绪，未执行）**：[目录](experiments/verl-v1-poll-quantum-separate-bound/README.md) 含三份跑批脚本、`make-summary-bound.py`、`verify-bound.py`（exit 0/1/2 三态）、`selftest-bound.py`（10/10）。**窗口到来时的三条纪律**：① 先 `nvidia-smi --query-compute-apps` 核 4,5,1 三卡归属，不据旧记录假定空闲；② `/tmp/m5-main-smoke/verl` 与 `/tmp/cupy-pkgs` 都在 `/tmp` **不持久**，缺了要重建受测树；③ **GATE 不过就不跑 A/B**——2.0 臂过半数稳态步 gen <1.9s 说明负载没把训练逼进 `sample()`，先抬 `MAX_RESP`／`NORM_RESP`，且不得把这一情况写成"量子不存在"。归档时日志改名 `.txt`（`.gitignore` 吞 `*.log`）。
+- **算力连通性（2026-11-04 M5 实测）**：4090-1 公网直连 100% 丢包＋22 端口超时，昇腾网关与 .154/.155/.156 全不可达，外网/GitHub 正常 ⇒ 本机网络无恙，恢复只在用户侧。下一轮先用 `nc -vz -G 10 219.223.198.62 22` 核一次再决定是否开工，不据本轮快照推断实时状态。
 - **TM-008（掘金 C 类，M5）**：verl V1 `ReplayBuffer.poll_interval` 死值 2.0s。已测：2 卡 sync 固定批 −3.2%、2 卡 DAPO inflight=2 −4.9%／inflight=1 −3.4%、4 卡 DAPO −4.0%、**2 卡 colocate_async −1.9%（≈2 SE，§13.51）**。补丁 3 文件 +8/−1，默认 2.0 不变，对 `3fdf2b54`／`4b26c788` dry-run 均 3/3 通过，并在 `3fdf2b54` 上实跑 3 步冒烟（exit 0，非计时）。**对外动作全部未做，待用户逐项授权**；需用户决定「只加可达性」还是「同时改默认 0.1–0.2」。
 - **TM-006（掘金 B 类）**：verl `tiled_mlp` 十引擎无消费点。[补丁就绪](open-source/verl/patches/tiled-mlp-wiring/readme.md)；真机冒烟完成（FSDP2 生效、FSDP1 硬报错、默认梯度检查点下无显存收益）。**对外动作全部未做，待授权**。
 - **TM-005（掘金 B 类）**：verl `use_prefix_grouper` 在 FSDP 上不生效但副作用照常。取证与影响量化（DP 负载不均衡 0–6.6%）已入库。**对外动作全部未做，待用户逐项授权**。
@@ -771,6 +787,7 @@ M1 上一轮把 TM-009 从"已取证待决定"推到"材料齐备待决定"：�
 
 ## 恢复入口
 
+- 本轮 M5 成果（无卡轮）：[rollout-bound 实验准备](experiments/verl-v1-poll-quantum-separate-bound/README.md)（零读数、[离线自检](experiments/verl-v1-poll-quantum-separate-bound/selftest-bound.py) 10/10）。
 - 专项：[rollout 主文档](notebook/rollout-performance-research.md)（§13.54 M5 本轮、§13.30 第三批／§11.4／§11.5 M1 本轮）。
 - 真机分工：[实验交接](experiments/handoff-m5.md)、[AReaL 单一负责人交接](open-source/areal/handoff-m5.md)。
 - 历史追溯：[迁移前 WORK.md 固定快照](https://github.com/Jackie2049/perpetual-learning/blob/76edee31b650d27a110fa6f82df5789abb237cfc/WORK.md)；批次结论仍以专项文档和 [diary](diary/readme.md) 为准。
