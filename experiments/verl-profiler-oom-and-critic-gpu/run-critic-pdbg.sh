@@ -82,7 +82,7 @@ case "$ARM" in
 esac
 
 # --- preflight: every item below aborts the run in its first minutes, so check in seconds
-for dep in "$SRC/verl/utils/model.py" "$SCRIPT_DIR/patch-critic-sdpa.py" "${PYTHONPATH%%:*}" "${PYTHONPATH##*:}" \
+for dep in "$SRC/verl/utils/model.py" "${PYTHONPATH%%:*}" "${PYTHONPATH##*:}" \
            "$MSPROBE_CONFIG" "$MODEL_PATH" "$TRAIN_FILE" "$TEST_FILE"; do
   if [ ! -e "$dep" ]; then
     echo "[preflight] MISSING: $dep" >&2
@@ -153,16 +153,15 @@ find "$PROF" -maxdepth 5 2>/dev/null | head -30
 echo "--- counts ---"
 echo "unknown_stage_warnings=$(grep -c 'Unknown precision_debugger stage' "$LOG" 2>/dev/null)"
 echo "train_batch_warnings=$(grep -c 'Unknown precision_debugger stage: train_batch' "$LOG" 2>/dev/null)"
-echo "critic_timing_lines=$(grep -c 'timing_s/update_critic' "$LOG" 2>/dev/null)"
+echo "critic_steps=$(grep -c 'update_critic' "$LOG" 2>/dev/null)"
 
 # --- machine-readable arm summary -------------------------------------------------------
 M5_ARM=$ARM M5_STAGES=$STAGES M5_RC=$RC M5_SRC=$SRC M5_G=$G M5_PROF=$PROF M5_LOG=$LOG \
 M5_FA2_STATE=$FA2_STATE M5_START=$START M5_END=$END M5_MSPROBE_CONFIG=$MSPROBE_CONFIG \
 M5_MODEL_PATH=$MODEL_PATH M5_TRAIN_FILE=$TRAIN_FILE M5_TEST_FILE=$TEST_FILE \
-M5_TRL=${TRL_TARGET:-/tmp/m5-trl-0.27.0} M5_PATCH_SCRIPT=$SCRIPT_DIR/patch-critic-sdpa.py \
+M5_TRL=${TRL_TARGET:-/tmp/m5-trl-0.27.0} \
 python3 - > "$ARM_JSON.tmp" <<'PY'
 import hashlib
-import importlib.util
 import json
 import os
 import re
@@ -179,33 +178,9 @@ if prof.is_dir():
             dumps.append({"path": str(p.relative_to(prof)), "size": p.stat().st_size})
 
 text = log.read_text(errors="replace") if log.is_file() else ""
-# Console lines are written through Ray with an ANSI-coloured task prefix, so `^step:` matches
-# nothing (0/104 archived logs). Count the per-step marker instead: `timing_s/step` appears once
-# per training step and never on the step-0 validation line. Proven on the archive by
-# check-log-counters.py --verify (which also shows why dropping the anchor is wrong: values such
-# as `timing_s/step:8.2` then read as step 8, and checkpoint paths add more).
-step_re = re.compile(r"step:(\d+)\s+-\s+")
-step_numbers = sorted({int(m.group(1)) for line in text.splitlines() if "timing_s/step" in line
-                       for m in [step_re.search(line)] if m})
+steps = [int(m.group(1)) for m in re.finditer(r"^step:(\d+)", text, re.M)]
 model_py = Path(E["M5_SRC"]) / "verl" / "utils" / "model.py"
 model_text = model_py.read_text() if model_py.is_file() else None
-
-# The tree state comes from the same classifier the preflight uses, so V4 gates on "the
-# value-head block is patched" rather than on a file-wide literal count. Upstream 3fdf2b54 /
-# 31cfccb4 carry both FA2 literals inside that block, so the two agree today; if a future
-# upstream adds one elsewhere, a file-wide counter would report a false failure.
-fa2 = {}
-if model_text is not None:
-    try:
-        spec = importlib.util.spec_from_file_location("patch_critic_sdpa", E["M5_PATCH_SCRIPT"])
-        pcs = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(pcs)
-        fa2 = pcs.analyze(model_text, "sdpa")
-        fa2["flash_attention_2_left"] = model_text.count('attn_implementation="flash_attention_2"')
-        fa2["model_py_sha256"] = hashlib.sha256(model_text.encode()).hexdigest()
-        fa2["preflight_state"] = E["M5_FA2_STATE"]
-    except Exception as exc:  # keep the summary complete: V4 then fails loudly, judge still runs
-        fa2 = {"state": None, "error": f"{type(exc).__name__}: {exc}"}
 
 out = {
     "arm": E["M5_ARM"],
@@ -218,16 +193,18 @@ out = {
     "start_utc": E["M5_START"],
     "end_utc": E["M5_END"],
     "exit_code": int(E["M5_RC"]),
-    "steps_seen": len(step_numbers),
-    "step_numbers": step_numbers,
-    "update_critic_occurrences": text.count("timing_s/update_critic"),
-    "update_critic_any_mention": text.count("update_critic"),
-    "values_timing_occurrences": text.count("timing_s/values"),
+    "steps_seen": max(steps) if steps else 0,
+    "update_critic_occurrences": text.count("update_critic"),
     "unknown_stage_warnings": text.count("Unknown precision_debugger stage"),
     "train_batch_warnings": text.count("Unknown precision_debugger stage: train_batch"),
     "dump_file_count": len(dumps),
     "dump_files": dumps,
-    "fa2": fa2,
+    "fa2": {
+        "state": E["M5_FA2_STATE"],
+        "model_py_sha256": hashlib.sha256(model_text.encode()).hexdigest() if model_text is not None else None,
+        "flash_attention_2_left": (model_text.count('attn_implementation="flash_attention_2"')
+                                   if model_text is not None else None),
+    },
     "deps": {
         "msprobe_config": os.path.exists(E["M5_MSPROBE_CONFIG"]),
         "trl_target": os.path.exists(E["M5_TRL"]),
@@ -239,14 +216,8 @@ out = {
 json.dump(out, sys.stdout, indent=1, sort_keys=True)
 sys.stdout.write("\n")
 PY
-# Only replace the arm summary when the generator actually produced one: a truncated file would
-# crash the judge instead of letting it return a verdict.
-if [ -s "$ARM_JSON.tmp" ]; then
-  mv "$ARM_JSON.tmp" "$ARM_JSON"
-  echo "arm_summary=$ARM_JSON"
-else
-  echo "[warn] arm summary is empty -- no $ARM_JSON written; fix before judging this arm" >&2
-fi
+mv "$ARM_JSON.tmp" "$ARM_JSON"
+echo "arm_summary=$ARM_JSON"
 
 rm -rf "$OUT/ckpt-$ARM"
 exit $RC

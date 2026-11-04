@@ -1,0 +1,25 @@
+{
+  "cases": [
+    {
+      "case": "unset",
+      "config_value": "<absent>",
+      "parsed": false
+    },
+    {
+      "case": "true",
+      "config_value": true,
+      "parsed": true
+    },
+    {
+      "case": "false",
+      "config_value": false,
+      "parsed": false
+    }
+  ],
+  "forwards": {
+    "scheduler_passes_to_worker": true,
+    "worker_stores_attr": true,
+    "backend_branches": true
+  },
+  "verdict": "WIRED"
+}

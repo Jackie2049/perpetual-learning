@@ -1,0 +1,303 @@
+{
+  "upstream": "/tmp/vllm-scan-20261105",
+  "checks": [
+    {
+      "name": "F1.fs_declares_parameter",
+      "ok": true,
+      "detail": "fs/manager.py:117"
+    },
+    {
+      "name": "F1.obj_declares_parameter",
+      "ok": true,
+      "detail": "obj/manager.py:114"
+    },
+    {
+      "name": "F1.fs_branches_on_flag",
+      "ok": true,
+      "detail": "fs/manager.py:143"
+    },
+    {
+      "name": "F1.obj_branches_on_flag",
+      "ok": true,
+      "detail": "obj/manager.py:142"
+    },
+    {
+      "name": "F1.single_construction_path",
+      "ok": true,
+      "detail": "spec.py:433（共 1 处）"
+    },
+    {
+      "name": "F1.factory_expands_tier_config",
+      "ok": true,
+      "detail": "factory.py:96"
+    },
+    {
+      "name": "F1.docs_advertise_key",
+      "ok": true,
+      "detail": "docs/features/kv_offloading_usage.md:248"
+    },
+    {
+      "name": "F1.no_assignment_anywhere",
+      "ok": true,
+      "detail": "17 occurrences, 0 assignments"
+    },
+    {
+      "name": "F1.no_alternative_passthrough",
+      "ok": true,
+      "detail": "fs×4 obj×4（声明+docstring+分支+告警文案）"
+    },
+    {
+      "name": "F2.parameter_exists",
+      "ok": true,
+      "detail": "vllm/entrypoints/pooling/scoring/io_processor.py:853"
+    },
+    {
+      "name": "F2.branch_exists",
+      "ok": true,
+      "detail": "vllm/entrypoints/pooling/scoring/io_processor.py:884"
+    },
+    {
+      "name": "F2.think_block_reachable",
+      "ok": true,
+      "detail": "vllm/entrypoints/pooling/scoring/io_processor.py:885"
+    },
+    {
+      "name": "F2.calls_present",
+      "ok": true,
+      "detail": "4 call sites"
+    },
+    {
+      "name": "F2.no_call_passes_flag",
+      "ok": true,
+      "detail": "kwarg 传参处: []"
+    },
+    {
+      "name": "F2.not_overridden_elsewhere",
+      "ok": true,
+      "detail": "embed/io_processor.py 只调用、不重定义"
+    },
+    {
+      "name": "F3.config_read_by_producer",
+      "ok": true,
+      "detail": "connector:153"
+    },
+    {
+      "name": "F3.producer_forwards_it",
+      "ok": true,
+      "detail": "connector:232"
+    },
+    {
+      "name": "F3.consumer_stores_it",
+      "ok": true,
+      "detail": "worker.py:49"
+    },
+    {
+      "name": "F3.consumer_branches_on_it",
+      "ok": true,
+      "detail": "disk_backend.py:104"
+    },
+    {
+      "name": "F4.config_field_exists",
+      "ok": true,
+      "detail": "config/model.py:313"
+    },
+    {
+      "name": "F4.runner_reads_config_field",
+      "ok": true,
+      "detail": "model_runner.py:507"
+    },
+    {
+      "name": "F4.flag_reaches_consumer",
+      "ok": true,
+      "detail": "sample/sampler.py:83"
+    },
+    {
+      "name": "F5.use_mix.decl_and_branch",
+      "ok": true,
+      "detail": "vllm/models/qwen4_exp/common/hyperconnection.py:167/185"
+    },
+    {
+      "name": "F5.use_abs_pos.decl_and_branch",
+      "ok": true,
+      "detail": "vllm/model_executor/models/deepencoder.py:246/282"
+    },
+    {
+      "name": "F5.use_sliding_window.decl_and_branch",
+      "ok": true,
+      "detail": "vllm/models/flint/configs.py:40/73"
+    },
+    {
+      "name": "F5.use_grads.decl_and_branch",
+      "ok": true,
+      "detail": "vllm/transformers_utils/processors/cohere_asr.py:54/162"
+    },
+    {
+      "name": "F6.fused_declared",
+      "ok": true,
+      "detail": "vllm/model_executor/kernels/mhc/tilelang_kernels.py:1387"
+    },
+    {
+      "name": "F6.splits_declared",
+      "ok": true,
+      "detail": "vllm/model_executor/kernels/mhc/tilelang_kernels.py:1381"
+    },
+    {
+      "name": "F6.fused_has_literal_producers",
+      "ok": true,
+      "detail": "True×1 False×3"
+    },
+    {
+      "name": "F6.splits_fed_from_local_vars",
+      "ok": true,
+      "detail": "local×2 False×2"
+    },
+    {
+      "name": "F7.declared",
+      "ok": true,
+      "detail": "vllm/model_executor/layers/quantization/compressed_tensors/triton_scaled_mm.py:187"
+    },
+    {
+      "name": "F7.branch",
+      "ok": true,
+      "detail": "vllm/model_executor/layers/quantization/compressed_tensors/triton_scaled_mm.py:216"
+    },
+    {
+      "name": "F7.not_called_from_library",
+      "ok": true,
+      "detail": "库内非 def 行的调用点: 无（只有 `def` 那条）"
+    },
+    {
+      "name": "F7.producer_is_test_only",
+      "ok": true,
+      "detail": "测试里 True/False 两档都跑"
+    },
+    {
+      "name": "F8.reads_extra_config_key",
+      "ok": true,
+      "detail": "vllm/v1/kv_offload/tiering/kvcr/manager.py:289"
+    },
+    {
+      "name": "F8.param_declared",
+      "ok": true,
+      "detail": "vllm/v1/kv_offload/tiering/kvcr/manager.py:304"
+    },
+    {
+      "name": "F8.forwarded_internally",
+      "ok": true,
+      "detail": "vllm/v1/kv_offload/tiering/kvcr/manager.py:426"
+    }
+  ],
+  "n_checks": 37,
+  "n_failed": 0,
+  "findings": [
+    {
+      "id": "F1",
+      "flag": "enable_kv_events",
+      "verdict": "TRUE_DEFECT",
+      "anchors": {
+        "fs_param_line": 117,
+        "obj_param_line": 114,
+        "fs_branch_line": 143,
+        "obj_branch_line": 142,
+        "docs_line": 248
+      },
+      "occurrences_outside_tests": 17,
+      "assignments_outside_tests": 0
+    },
+    {
+      "id": "F2",
+      "flag": "no_thinking",
+      "verdict": "TEMPLATE_FLAG_UNREACHABLE",
+      "anchors": {
+        "param_line": 853,
+        "branch_line": 884,
+        "think_line": 885,
+        "call_sites": [
+          954,
+          960,
+          1002,
+          1008
+        ]
+      }
+    },
+    {
+      "id": "F3",
+      "flag": "use_page_cache",
+      "verdict": "WIRED_NOT_A_DEFECT",
+      "anchors": {
+        "read_line": 153,
+        "forward_line": 232,
+        "store_line": 49,
+        "branch_line": 104
+      }
+    },
+    {
+      "id": "F4",
+      "flag": "enable_trace_replay",
+      "verdict": "INDIRECT_PRODUCER",
+      "anchors": {
+        "field_line": 313,
+        "producer_line": 507,
+        "consumer_line": 83
+      }
+    },
+    {
+      "id": "F5",
+      "verdict": "MODEL_INTERNAL_DEFAULT",
+      "flags": {
+        "use_mix": {
+          "file": "vllm/models/qwen4_exp/common/hyperconnection.py",
+          "decl_line": 167,
+          "branch_line": 185
+        },
+        "use_abs_pos": {
+          "file": "vllm/model_executor/models/deepencoder.py",
+          "decl_line": 246,
+          "branch_line": 282
+        },
+        "use_sliding_window": {
+          "file": "vllm/models/flint/configs.py",
+          "decl_line": 40,
+          "branch_line": 73
+        },
+        "use_grads": {
+          "file": "vllm/transformers_utils/processors/cohere_asr.py",
+          "decl_line": 54,
+          "branch_line": 162
+        }
+      }
+    },
+    {
+      "id": "F6",
+      "verdict": "INTERNAL_TABLE_LOCAL",
+      "flags": {
+        "use_fused_tilelang": {
+          "decl_line": 1387,
+          "producers": 4
+        },
+        "use_pre_gemm_splits": {
+          "decl_line": 1381,
+          "producers": 4
+        }
+      }
+    },
+    {
+      "id": "F7",
+      "verdict": "TEST_ONLY_KNOB",
+      "anchors": {
+        "decl_line": 187,
+        "branch_line": 216,
+        "call_lines": []
+      }
+    },
+    {
+      "id": "F8",
+      "verdict": "CONFIG_DICT_PRODUCER",
+      "anchors": {
+        "read_line": 289,
+        "decl_line": 304,
+        "forward_line": 426
+      }
+    }
+  ]
+}

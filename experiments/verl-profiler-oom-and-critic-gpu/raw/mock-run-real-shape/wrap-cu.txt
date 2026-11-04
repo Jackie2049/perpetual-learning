@@ -1,8 +1,0 @@
-=== pdbg-critic arm=cu stages=[critic_update] src=/tmp/m5-critic-mock/tree/src gpu=0 prof=/tmp/m5-critic-mock/out/prof-cu fa2=already-patched start 2026-11-04T18:04:04Z ===
-=== pdbg-critic arm=cu exit=0 end 2026-11-04T18:04:04Z ===
---- dump tree ---
---- counts ---
-unknown_stage_warnings=2
-train_batch_warnings=2
-critic_timing_lines=2
-arm_summary=/tmp/m5-critic-mock/out/arm-cu.json

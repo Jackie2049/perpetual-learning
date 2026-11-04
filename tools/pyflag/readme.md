@@ -101,6 +101,42 @@ python3 -m unittest test_scan_unwired_flags -v       # 10 个用例，含 4 条�
 
 **跑 SGLang 的耗时**：`python3 scan_unwired_flags.py <sglang>` 约 **10.5 分钟**（8000+ 文件），且 `--json` 落盘到**脚本所在目录** `tools/pyflag/scan-<root>.json`，不是被测仓库里——第一次找错了地方。
 
+## 已跑过的快照（2026-11-05 扩池第二批：vLLM）
+
+| 仓库 | 快照 | 发现开关 | 判为失效 | 人工结论 |
+|---|---|---|---|---|
+| vLLM | `da0b6ac2` | **263** | **12** | 逐条取证后**真缺陷 1 条**（`enable_kv_events`，[TM-015](../../queue_tech-miner.md)）；1 条模板硬编码（`no_thinking`）；其余 10 条四类结构原因。**同一批里也证明了它会误报**：`use_page_cache` 被报成 `never`，实际经 `self.use_page_cache` 属性转发接通 |
+
+扫描耗时 **2 分 42 秒**（5976 个 `.py`）。读数归档 `scan-vllm-da0b6ac2.json`，逐条判定见
+[experiments/vllm-pyflag-triage](../../experiments/vllm-pyflag-triage/README.md)（`verify_findings.py` 37 checks、8 条注入全部命中目标条）。
+
+**按 SGLang → vLLM 两次的同一形状收拢**：
+
+| 大仓库（>5000 文件） | 开关 | `silently_inert` | 真缺陷 | 误报/结构原因 |
+|---|---|---|---|---|
+| SGLang `27aedf7f` | 386 | 34 | 2 | 32（5 类） |
+| vLLM `da0b6ac2` | 263 | 12 | 1 | 11（4 类） |
+
+⇒ 真缺陷率 **< 6%**。两次都是「**属性转发**」与「**config 字典键**」占多数，而且都能用**同一条判据**排除：
+这个名字是不是某个 config 字段？有没有 `self.x = x` 再往下传？**所以扫描器的输出只能当候选入口，
+分桶（是不是 config 字段 / 有没有属性转发 / 在哪一层消费）比总量更有信息量。**
+
+## 第七类易错点：`text.count(name)` 会把 docstring、告警文案、`if name:` 一起算进去
+
+判定「某处没有传这个值」时最自然的写法是 `src.count("enable_kv_events=") == 0`。但**同一个名字**在
+形参声明（`enable_kv_events: bool = False,`）、docstring 续行、`if enable_kv_events:` 分支、
+告警文案（`"enable_kv_events is set on secondary tier ..."`）里都会出现。vLLM 那一轮第一版判据用
+`count(...) == 3` 判「每个 tier 各 3 处」，实际各 4 处（多一处告警文案），当场报 MISMATCH。
+
+⇒ **「有没有生产者」必须逐行分类判**：先排除 `def` 行、docstring、`if flag:`、字符串字面量，剩下的才算赋值。
+这与第四类（形参默认值不是生产者）是同一个坑的另一种触发方式。
+
+## 自检的第二个坑：注入必须让**对应那条判据**变红
+
+vLLM 那一轮的第一版自检写成 `ok = False if inj else ok`——8 条注入「全部被抓住」，但**一条判据都没参与**，
+红的是同一个 verdict 变量。改法是把注入绑到具体 check 上（`inj_fail(name, cond)`），
+并在自检输出里打印**红的是哪几条**：若红的不是目标那条，说明这条判据根本没在看那个东西。
+
 ## 第五类易错点：生产者是**属性**（或位置参数），不是关键字
 
 `enable_sample_support_replay`、`enable_pd` 在 SkyRL 上都报「无生产者」，但两者都**能生效**：

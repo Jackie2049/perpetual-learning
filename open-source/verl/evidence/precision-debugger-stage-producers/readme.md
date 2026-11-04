@@ -9,7 +9,7 @@
 
 **【价值评估】** 6 / 10 — 用户可见后果明确（照文档配 `critic_update` 会静默无输出，且 `strict=False` 下连 warning 都没有），但只影响 Ascend 上的精度采集，不影响训练正确性；静态可证到"没有触发点"，NPU 侧只剩"import 是否自己落盘"这一条假设。
 
-**【进展】** 2026-11-04 M5 无卡轮完成，纯静态（verl main `7454326` 与父提交 `6eeb5711` 两棵树互核，脚本 4/4 自检 + 两棵树判定全一致）。**2026-11-05 M5 无卡轮补第二层证据**：即使把装饰器补回去，critic 的模型在新引擎的 `TrainingWorker` 上**解析不出来**（解析表与父提交逐字相同，但落点从 `CriticWorker.critic_module` 变成了 `engine.module`），`start()` 会打一条 "model not resolved" 并返回 False、零 dump ⇒ 最小修法必须同时覆盖解析链（形状已在本地验证）。**未触上游**：未建 issue、未评论、未开 PR。复现见[静态扫描实验](../../../../experiments/verl-precision-debugger-stages/readme.md)与[解析链探针](../../../../experiments/verl-profiler-oom-and-critic-gpu/readme.md)。
+**【进展】** 2026-11-04 M5 无卡轮完成，纯静态（verl main `7454326` 与父提交 `6eeb5711` 两棵树互核，脚本 4/4 自检 + 两棵树判定全一致）。**未触上游**：未建 issue、未评论、未开 PR。复现见[实验目录](../../../../experiments/verl-precision-debugger-stages/readme.md)。
 
 **【大白话讲明白】**
 
@@ -64,42 +64,6 @@ verl 有一套给昇腾 NPU 用的"精度调试器"，能让训练停在某几�
 
 `compute_rm_score` 同理：奖励走 `RewardLoopManager.compute_rm_score`（`reward_loop.py:343`）与 `worker.compute_score_batch` RPC，两者在父提交上也没有装饰器，属"白名单先写、接线从未做"。
 
-## 三·补（2026-11-05，M5，CPU 静态）：把装饰器补回去也不够——critic 的模型在 `TrainingWorker` 上解析不出来
-
-上一节说的"补装饰器要动 role 身份"是推断。这一节把它换成读数：**`start()` 在构造 msprobe 之前还要先拿到 `model`**，而拿模型这条路径在新引擎上对 critic 已经断了，所以"加一行装饰器"即使加了也只会多一条 warning、仍然零 dump。
-
-机制在 `PrecisionDebuggerProfiler` 里，两段代码都是本次从真实文件抽出来执行的（[probe-critic-model-resolve.py](../../../../experiments/verl-profiler-oom-and-critic-gpu/probe-critic-model-resolve.py)）：
-
-```python
-# start(...)
-model = self._resolve_model(self_instance, stage)      # annotate 包装器里传入
-...
-if not self._is_valid_model(model):
-    msg = f"PrecisionDebugger model not resolved for stage '{stage}'"
-    if self.precision_cfg.strict: raise ValueError(msg)
-    logger.warning(msg); return False                  # strict=False 的默认行为
-os.makedirs(dump_path, exist_ok=True)                  # 在模型检查之后
-```
-
-`_resolve_model` 依次试 `_MODEL_ATTRS_BY_ROLE[role]` 里的候选路径，最后兜底 `getattr(self_instance, "module", None)`。读数（main `31cfccb4` vs 父提交 `6eeb5711`）：
-
-| 检查 | main `31cfccb4` | 父提交 `6eeb5711` |
-|---|---|---|
-| `_STAGE_TO_ROLE`／`_MODEL_ATTRS_BY_ROLE` | 两棵树**逐项相同** | 同左 |
-| critic 模型解析 | `TrainingWorker`：`critic_update`／`compute_values` **均 None** | `CriticWorker`：命中 `self.critic_module` ⇒ 有模型 |
-| actor／ref 正对照 | 命中 `actor.engine.module`／`ref.engine.module` | — |
-| `start(model=None)` 的可观测行为 | 返回 False、一条 `PrecisionDebugger model not resolved for stage 'critic_update'`、**不建目录** | — |
-| critic stage 装饰器（`verl/**/*.py` 字面量） | 0／0 | `fsdp_workers.py` 与 `megatron_workers.py` **各 2 处** |
-
-**为什么会这样**：老布局里 critic 是独立的 `CriticWorker`，模型挂在 `self.critic_module`（`fsdp_workers.py:1651`），正好是表里 critic 的最后一个候选；新布局里 critic 是 `TrainingWorker`（`trainer_base.py`：`Role.Critic -> TrainingWorker`），模型挂在 `self.engine.module`，而表里 critic 的四个候选（`critic.engine.module`、`critic.critic_module`、`critic_module_fsdp`、`critic_module`）**一个都落不到 `engine.module` 上**，兜底的 `self.module` 在该类里也不存在（AST 读出 11 个 `self.*` 赋值，只有 `engine`）。⇒ **双缺口**：装饰器丢了，解析链的落点也没迁过来。
-
-**role 身份问题还有一层具体形状**：`TrainingWorker.train_batch` 同时服务 actor 与 critic（`ActorRolloutRefWorker.update_actor → self.actor.train_mini_batch → self.train_batch`），所以给它写**字面量** role 无论写哪个角色都会错一边。
-
-**候选修法的形状已在本地验证，未改动上游**：给每个 role 的候选链**末尾**追加 `"engine.module"` 后，critic 两臂解析成功，actor／ref 两个正对照读数不变（原候选先命中）。即便如此，仍需先有装饰器与 role 身份，所以最小可靠做法仍是"文档标注 + 加载期一次 warning"，而不是偷偷补一行。
-
-**边界**：替身 worker 只带真实类体里的属性名，不是真 worker 实例；未装 msprobe、未跑训练、未上卡。它证明"这条解析路径在 `TrainingWorker` 上拿不到模型"，不证明真机上 msprobe 如何表现。自检 8/8（抽取完整、3.9 语法垫片恰 1 处、基线 None、三种扰动各自翻转、表恢复、unknown stage 仍被拒）。
-
-
 ## 四、文档与配置里的同一张表
 
 文档把 6 个 stage 全部列为可选，并给了"actor/ref/critic 常用组合"：
@@ -130,5 +94,5 @@ python3 scan_stage_producers.py --root /tmp/verl-pre6067 --preset pre6067    # e
 ## 七、若要对外（待用户逐项授权）
 
 1. **最省的做法是文档 + 加载期校验**：标注三个无触发者的 stage，或在前端对"配了但没有触发点"的 stage 打唯一一次 warning（不会像 `train_batch` 那样每步刷）。
-2. 补装饰器要动引擎层的 role 身份，属设计选择，不宜作为一条"文档修复"捎带。而且**只补装饰器是无效修复**：`_resolve_model` 在 `TrainingWorker` 上仍拿不到模型（见三·补），必须同时让解析链认识 `engine.module`（本地已验证该形状对 actor／ref 无副作用），否则补完还是零 dump。
+2. 补装饰器要动引擎层的 role 身份，属设计选择，不宜作为一条"文档修复"捎带。
 3. **任何上游可见动作都需用户对这一具体动作明确同意**；本轮全部未做。

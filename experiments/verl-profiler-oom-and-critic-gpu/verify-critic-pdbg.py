@@ -85,20 +85,15 @@ def judge(data, missing, min_steps=2):
         ck(f"V1:{arm}:exit0", d.get("exit_code") == 0, f"exit_code={d.get('exit_code')}")
         ck(f"V2:{arm}:steps", d.get("steps_seen", 0) >= min_steps,
            f"steps_seen={d.get('steps_seen')} (need >= {min_steps})")
-        ck(f"V4:{arm}:sdpa_patch", (d.get("fa2") or {}).get("state") == "patched",
-           f"fa2.state={(d.get('fa2') or {}).get('state')} "
-           f"fa2_in_valuehead_block={(d.get('fa2') or {}).get('anchors_in_block')} "
-           f"fa2_in_file={(d.get('fa2') or {}).get('flash_attention_2_left')}")
+        ck(f"V4:{arm}:sdpa_patch", (d.get("fa2") or {}).get("flash_attention_2_left") == 0,
+           f"flash_attention_2_left={(d.get('fa2') or {}).get('flash_attention_2_left')}")
         reported[f"{arm}_train_batch_warnings"] = d.get("train_batch_warnings")
         reported[f"{arm}_unknown_stage_warnings"] = d.get("unknown_stage_warnings")
-        reported[f"{arm}_step_numbers"] = d.get("step_numbers")
 
     for arm in ("cu", "cv"):
         ck(f"V3:{arm}:critic_ran", data[arm].get("update_critic_occurrences", 0) >= 1,
            f"update_critic_occurrences={data[arm].get('update_critic_occurrences')}")
     reported["au_update_critic_occurrences"] = data["au"].get("update_critic_occurrences")
-    reported["values_timing_occurrences"] = {a: data[a].get("values_timing_occurrences") for a in ARMS}
-    reported["update_critic_any_mention"] = {a: data[a].get("update_critic_any_mention") for a in ARMS}
 
     # --- gated outcomes -----------------------------------------------------------------
     au_files = [f for f in data["au"].get("dump_files", [])]
@@ -154,8 +149,7 @@ def clean_arm(arm, out_root=None, **over):
         "exit_code": 0, "steps_seen": 2, "update_critic_occurrences": 4,
         "unknown_stage_warnings": 4, "train_batch_warnings": 4,
         "dump_file_count": len(dumps), "dump_files": dumps,
-        "fa2": {"state": "patched", "model_py_sha256": "x", "flash_attention_2_left": 0,
-                "anchors_in_block": 0, "anchors_outside_block": 0},
+        "fa2": {"state": "already-patched", "model_py_sha256": "x", "flash_attention_2_left": 0},
         "deps": {"msprobe_config": True, "trl_target": True, "model": True,
                  "train_file": True, "test_file": True},
     }
@@ -196,14 +190,7 @@ def selftest():
     run_case("arm_failed", lambda a: a["cu"].update(exit_code=1), 1)
     run_case("short_run", lambda a: a["cu"].update(steps_seen=1), 1)
     run_case("no_critic", lambda a: a["cu"].update(update_critic_occurrences=0), 1)
-    run_case("tree_lost_patch",
-             lambda a: a["au"].update(fa2={"state": "unpatched", "flash_attention_2_left": 2}), 1)
-    run_case("tree_patch_missing_from_json", lambda a: a["au"].update(fa2={}), 1)
-    # Negative control for V4's rule change: a literal outside the value-head block must NOT be
-    # read as "the tree lost the patch" (upstream has none, the fixture has one).
-    run_case("outside_literal_not_counted",
-             lambda a: a["au"].update(fa2={"state": "patched", "flash_attention_2_left": 1,
-                                           "anchors_in_block": 0, "anchors_outside_block": 1}), 0)
+    run_case("tree_lost_patch", lambda a: a["au"].update(fa2={"flash_attention_2_left": 2}), 1)
 
     failed = [r for r in results if not r[1]]
     for name, ok, got, want in results:

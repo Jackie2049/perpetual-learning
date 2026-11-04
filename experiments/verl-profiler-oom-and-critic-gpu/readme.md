@@ -1,6 +1,6 @@
 # verl profiler：OOM 时快照是否真落盘（真机三臂）
 
-更新：2026-11-04 18:0x CST 采集（上一会话中断，未入库）；2026-11-05 00:0x CST 核对、判定脚本与文档；**2026-11-05 01:0x CST 无卡轮：critic 三臂的树内适配与判定做成可复跑脚本（零 GPU 读数）**；**2026-11-05 02:0x CST 无卡轮：判定读的日志计数器拿 104 份真日志验过一遍——原实现会把有效跑判成无效，已修（零 GPU 读数）**。
+更新：2026-11-04 18:0x CST 采集（上一会话中断，未入库）；2026-11-05 00:0x CST 核对、判定脚本与文档；**2026-11-05 01:0x CST 无卡轮：critic 三臂的树内适配与判定做成可复跑脚本（零 GPU 读数）**。
 
 回答 [M5 交接](../handoff-m5.md) 里"`torch_memory` 的自动 OOM 快照只在**观察者挂上了**这一步验过、OOM 时是否真写文件未测"这一格。上一轮（11-04 16:5x）在 2 步 PPO 里只拿到 `_oom_observer_attached=True`、驱动日志 0 条 `[torch_memory]`，没有制造 OOM。
 
@@ -100,70 +100,18 @@ logger.setLevel(os.getenv("VERL_LOGGING_LEVEL", "WARN"))   # :29  默认 WARN �
 
 | 类别 | 检查 | 不过的处理 |
 |---|---|---|
-| 有效性 V1–V4 | 三臂 exit 0；`steps_seen ≥ 2`；`cu`/`cv` 日志里出现 `timing_s/update_critic` ⇒ 真有 critic；树的分类器状态 `fa2.state == patched` | **exit 1 无效跑**，三臂什么也不能证明 |
+| 有效性 V1–V4 | 三臂 exit 0；`steps_seen ≥ 2`；`cu`/`cv` 日志里出现 `update_critic`（v1 打的是 `timing_s/update_critic`）⇒ 真有 critic；树里 `flash_attention_2_left == 0` | **exit 1 无效跑**，三臂什么也不能证明 |
 | 门控 P1 | `au` 在 `step_*/actor_update/` 下至少有 `construct.json`／`stack.json`／`dump.json` | exit 1（正臂不亮，plumbing 假设不成立） |
 | 门控 P2／P3 | `cu`／`cv` 的 dump 文件数 **= 0** | **exit 2 推翻**：某 stage 真有产生者，静态结论要重写 |
 | 只报告 | 三臂的 `Unknown precision_debugger stage: train_batch` 条数（静态说法是它与用户配置无关地每步刷一条，含 `au`）、dump 清单、窗口时间 | 不参与判定；为 0 就不要引用那条说法 |
 
 自检 **10/10**：干净夹具 exit 0，`au` 缺 dump／dump 落在别的 stage 目录／臂缺失／某臂 exit≠0／步数不足／没有 critic／树丢补丁全部 exit 1，`cu`／`cv` 冒 dump 全部 exit 2。
 
-**三、wrapper 也加固了。** `run-critic-pdbg.sh` 开跑前检查 8 个依赖（树、树内适配脚本、msprobe／trl 两个 `--target`、config json、模型、两份数据）并**在秒级失败**，再查树是否已打补丁（`AUTO_PATCH=1` 自动打，`=0` 则中止而不是擅自改树）；每臂结束写 `arm-<ARM>.json`。用**假 example 脚本**在本机把整条管线跑通（三个臂 wrapper rc=0、judge exit 0），产物在 [raw/mock-run/](raw/mock-run/README.json)——**那是管线夹具，不是读数**，只证明预检、自动打补丁、JSON 生成与判定能接上。
+**三、wrapper 也加固了。** `run-critic-pdbg.sh` 开跑前检查 7 个依赖（树、msprobe／trl 两个 `--target`、config json、模型、两份数据）并**在秒级失败**，再查树是否已打补丁（`AUTO_PATCH=1` 自动打，`=0` 则中止而不是擅自改树）；每臂结束写 `arm-<ARM>.json`。用**假 example 脚本**在本机把整条管线跑通（三个臂 wrapper rc=0、judge exit 0），产物在 [raw/mock-run/](raw/mock-run/README.json)——**那是管线夹具，不是读数**，只证明预检、自动打补丁、JSON 生成与判定能接上。
 
 **边界**：`sdpa` 只是文本替换，critic 侧**数值等价未测**；本轮**零 GPU 读数**；`raw/mock-run/` 里的一切都不得当作 critic 行为的证据。窗口里真正的答案仍来自三份真日志。
 
 **四、上游现状只读复核（2026-11-05 01:1x，不改变任何结论）。** 最新 main 已前移到 `31cfccb4`（2026-11-04T12:54Z，`#8463`）。两点与窗口直接相关：① `verl/utils/model.py` 在 `main` 与 `3fdf2b54` **逐字节相同**（sha256 `a13d8595…`，475／500 两处 FA2 都在）⇒ 即使窗口里改用最新 main 建树，`patch-critic-sdpa.py` 同样适用，锚点数仍是 2；② `verl/workers/engine_workers.py`（903 行）的 `@DistProfiler.annotate` 只有 **4 个 role**：`train_batch`（`:377`）、`ref_compute_log_prob`（`:751`）、`actor_compute_log_prob`（`:758`）、`actor_update`（`:768`）——**仍无 `critic_update`／`compute_values`**，静态结论在最新 main 上不变。**边界**：本轮只核了 `model.py` 与这一个 worker 文件，**不是全仓重扫**；`compute_rm_score` 在该文件里 0 处，但它本来就不在这个 worker 里产生。
-
-## 2026-11-05 02:0x 无卡轮：判定用的日志计数器拿真日志验了一遍——**原来的会误判**
-
-上一轮把判定预登记下来，但**判定读的数**没有拿真日志核过。本轮（两条算力链路仍不可达：4090-1 ICMP 100% 丢包＋`:22` 超时，昇腾网关 2 包全丢）只做这件事，仍是**零 GPU 读数**。
-
-**一、`steps_seen` 在真实日志上恒为 0 ⇒ 有效跑会被判无效。** 原实现是 `re.finditer(r"^step:(\d+)", text, re.M)`，而 Ray 写控制台时每行前面都有 `<ANSI>((TaskRunnerV1 pid=…)<ANSI> ` 前缀，**没有任何一行以 `step:` 开头**。V2 的门槛是 `steps_seen ≥ 2`，所以一个完全正常的两步跑会拿到 0，判 `exit 1 无效跑`——窗口白烧，而且预登记的判定还被"看起来跑过了"掩盖。
-
-读数不是靠推理，是把仓库里**全部 104 份真控制台日志**过一遍（[check-log-counters.py](check-log-counters.py) `--verify`，逐文件表在 [raw/log-counter-check.json](raw/log-counter-check.json)）：
-
-| 计数器 | 读数 |
-|---|---|
-| 旧计数器（`^step:`）为 0 的日志 | **104 / 104** |
-| 新计数器（每个训练步的 `timing_s/step` 标记）与标记数一致 | **104 / 104**（合计 **1432** 个训练步） |
-| 随手去掉行首锚点（在任何位置找 `step:N`）与真值不一致 | **103 / 104**（g8-g4w：`naive_max=58` 而真值 12；`run-pda`：46 对 2） |
-
-⇒ "只要把锚点去掉就行"也是错的：`timing_s/step:8.2` 里的 `step:8`、checkpoint 路径 `global_step_46` 都会被当成步号。**判据只能是"带 `- ` 分隔的步行 ＋ `timing_s/step` 标记"**，它对裸行与带前缀两种形状都成立。
-
-**二、为什么上一轮的端到端自检没抓到：夹具不是真日志的形状。** 假 example 脚本打印的是裸 `step:1 - …`（[raw/mock-run/](raw/mock-run/README.json)），于是旧计数器在夹具上给出 2、在真机上给出 0。⇒ **端到端跑通只证明管线接上了，不证明读数是真日志能长出来的**。新夹具改成真形状（ANSI＋`TaskRunnerV1 pid=` 前缀、`step:0` 验证行无 `timing_s/*`、混入 `global_step_46` 路径），见 [mock/make-mock-tree.sh](mock/make-mock-tree.sh) 与 [raw/mock-run-real-shape/](raw/mock-run-real-shape/README.json)。
-
-**三、新夹具当场又抓出第二处：V4 数错了范围。** V4 原来要求**全文件** `attn_implementation="flash_attention_2"` 计数为 0；夹具在 `load_valuehead_model` 块外故意留了一处（上游目前块外恰好 0 处，所以线上一直没暴露），于是树明明已打好补丁也判 `flash_attention_2_left=2`。现改为读**预检用的同一个分类器**（`patch-critic-sdpa.py` 的 `analyze()` → `state == "patched"`），文件级计数保留作信息字段；负向对照 `outside_literal_not_counted`（state=patched 且文件里有 1 处块外字面量）必须 exit 0。
-
-**四、`timing_s/update_critic` 这条 V3 前提补了静态证据。** `use_critic = need_critic(config)`，配置里显式 `critic.enable=True` ⇒ 恒 True（`utils.py:98`）；步内 `marked_timer("values")`（`trainer_base.py:595`）与 `("update_critic")`（`:604`）都在 `if self.use_critic` 下，且**不受 `critic_warmup` 影响**（那只挡 `update_actor`）；`_compute_metrics`（`:1885`）把整个 `timing_raw` 交给 `compute_timing_metrics`（`:1963`），后者输出 `timing_s/{k}` ⇒ 有 critic 时**每步各出现一次**。
-
-**五、顺手关掉两个"窗口里才发现"的外部前提。** ① 组合把关原是在 `3fdf2b54` 上做的，而 `3fdf2b54 → 31cfccb4` 之间 **8 个配置 yaml 变了**（`actor/actor.yaml`、`engine/fsdp.yaml`、`engine/megatron.yaml`、`rollout/rollout.yaml` 与四个 `_generated_*`），全部是删 QAT 段与改注释——但仍重跑了一遍：`31cfccb4` 上**三臂组合成功、负向对照如期失败、17 个回读键与旧批次逐键相同**（hydra 1.3.8／omegaconf 2.3.1，旧批 1.3.2／2.3.0），读数在 [raw/compose-check-main-31cfccb4.json](raw/compose-check-main-31cfccb4.json)；树用 `codeload` tarball 取，`verl/utils/model.py` sha256 仍是 `a13d8595…` 可对上。② wrapper 调用的 `examples/grpo_trainer/run_qwen3_4b_fsdp.sh` 在 `31cfccb4` 上仍在（200，5368 B），且脚本读取的 25 个环境变量**覆盖 wrapper 设置的全部键**（`MODEL_PATH`／`TRAIN_FILE`／`TEST_FILE`／`NGPUS_PER_NODE`／批大小／长度／`ROLLOUT_*`／`SAVE_FREQ`／`TEST_FREQ`／`PROJECT_NAME`／`EXPERIMENT_NAME`／`VERL_USE_UV`）⇒ 没有"脚本改签名"这类静默错配。
-
-**边界（本轮仍然全部适用）**：零 GPU 读数，`raw/mock-run-real-shape/` 仍是管线夹具；`104/104` 与 `1432 步`统计的是**仓库里已归档的日志**，不是新跑的结果；新计数器在真机日志上会给出什么，要等窗口给出第一份 critic 日志才算实测。另外，**旧夹具 `raw/mock-run/` 的 arm JSON 是旧 schema**（`fa2.state` 记的是预检状态 `already-patched` 而不是分类器状态），拿现在的 judge 去判它会得到 `exit 1 INVALID RUN` 与 `fa2.state=already-patched` 的明细——这是**有意 fail-loud**：混用新旧 arm JSON 时会直接说不合格，而不是静默放过。
-
-**六、顺带把 wrapper 的两条失败路径补住**（都不是读数）：① 预检原来只查树与 `/tmp` 依赖，**不查 `patch-critic-sdpa.py` 自己**——缺了会走成"`--check` rc=2（锚点形状变了？）"，把排查引向错的地方；现把它列进依赖，报 `MISSING: …/patch-critic-sdpa.py`（exit 65，秒级）。② arm JSON 原来是 `python3 … > tmp` 之后**无条件** `mv`，生成器中途失败会把空/截断文件顶上去，judge 读它直接抛异常而不是给判定；现改为只在文件非空时才替换。两条都用同一套夹具验过：`/tmp/m5-isolated` 里只放 wrapper、不放适配脚本 → `MISSING`＋exit 65；正常夹具三臂 rc=0／judge 0 不变。
-
-## 2026-11-05 03:0x 无卡轮：critic 的第二个拦路点——**就算把装饰器补回去，模型也解析不出来**
-
-前几轮把 critic 三臂的窗口前置做得差不多了，但证据页第三节那句"补装饰器要动引擎层的 role 身份，属设计选择"一直是**推断**。这一轮把它换成可执行的读数：`PrecisionDebuggerProfiler.start()` 在真正构造 msprobe 之前还要过一道 `_resolve_model(self_instance, stage)`，它按 `_MODEL_ATTRS_BY_ROLE[role]` 在**worker 对象**上找模型，最后兜底 `self.module`。新引擎里 critic 是一个独立的 `TrainingWorker`（`trainer_base.py`：`Role.Critic -> TrainingWorker`），模型在 `self.engine.module`，**既没有 `self.critic` 也没有 `self.module`** ⇒ 四条 critic 候选链全部落空。
-
-读数由 [probe-critic-model-resolve.py](probe-critic-model-resolve.py) 产出：用 AST 从**真实文件**里抽出 `_STAGE_TO_ROLE`、`_MODEL_ATTRS_BY_ROLE`、`_resolve_model`／`start` 等方法源码执行（不需要 torch／msprobe／GPU），替身 worker 的属性名**从同一棵树里的真实类体读出来**，不是手写。
-
-| 检查 | 当前 main `31cfccb4` | 父提交 `6eeb5711` |
-|---|---|---|
-| `_STAGE_TO_ROLE`／`_MODEL_ATTRS_BY_ROLE` 字面量 | 与父提交**完全相同**（4 个 role／19 条候选逐项相等） | — |
-| critic 两个 stage 的装饰器字面量（全仓 `verl/**/*.py`） | `critic_update` 0／`compute_values` 0 | `fsdp_workers.py`＋`megatron_workers.py` 各 2 处 |
-| critic 的模型解析 | `TrainingWorker` 上 `critic_update`／`compute_values` 都 **None** | `CriticWorker` 上命中 `critic_module` ⇒ **Module** |
-| actor／ref 正对照 | 命中（`ActorRolloutRefWorker.actor.engine.module`、`.ref.engine.module`） | — |
-| `start(stage="critic_update", model=None)` | 返回 **False**、打一条 `PrecisionDebugger model not resolved for stage 'critic_update'`、**不建目录**（`os.makedirs` 在模型检查之后） | — |
-
-三点需要写进口径：
-
-1. **解析表不是这次坏的，是 worker 布局变了。** 两棵树的表逐字相同；旧 `CriticWorker` 有 `self.critic_module`，新 `TrainingWorker` 只有 `self.engine`（AST 读出 11 个 `self.*` 赋值，无 `module`、无 `critic`）。所以这是一个**双缺口**：装饰器丢了，解析链的落点也没了。
-2. **同一个 `train_batch` 同时服务 actor 和 critic**（`ActorRolloutRefWorker.update_actor → self.actor.train_mini_batch → self.train_batch`）⇒ 给 `train_batch` 写一个**字面量** role 无论写哪个角色都会错一边，这也是"role 身份"问题的具体形状。
-3. **候选修法可以在本机验**：给每个 role 的候选链**末尾**追加 `"engine.module"` 后，critic 两臂解析成功，actor／ref 两个正对照读数**不变**（表里原候选先命中）。这只是形状验证，**没有改动上游任何文件**。
-
-自检 **8/8**（抽取完整、3.9 语法垫片恰好 1 处、基线为 None、三种扰动各自翻转、表恢复、unknown stage 仍被拒）；两棵树的读数在 [raw/critic-model-resolve-main-31cfccb4.json](raw/critic-model-resolve-main-31cfccb4.json) 与 [raw/critic-model-resolve-pre6067.json](raw/critic-model-resolve-pre6067.json)（父提交文件含 `match` 语句，本机 Python 3.9 走正则兜底，读数里记 `parse_mode`）。
-
-**边界（与本轮结论一起引用）**：替身 worker 只有真实类体里的属性名，**不是真 worker 实例**；未装 msprobe、未跑训练、未上卡。它证明的是"这条解析路径在 `TrainingWorker` 上不可能拿到模型"，而不是"msprobe 在真机上会怎么表现"。另外，三臂真机跑的 P2／P3（`cu`／`cv` 零 dump）**两种原因都能满足**——没有装饰器，或者装饰器在但模型解析不出来——本轮把后者从推断变成静态可查，但三臂本身只给行为侧证据，分不出是哪一个原因。
 
 ## 复现
 
@@ -178,12 +126,7 @@ python3 verify-oom-archive.py --selftest # 7 项注入，全部被捕捉
 SRC=/tmp/m5-main-smoke/verl G=4 ARM=cu bash run-critic-pdbg.sh
 # 判定（本机，CPU，只读 arm-*.json）：0=符合预登记 1=无效跑 2=被推翻
 python3 verify-critic-pdbg.py --out <OUT>
-python3 verify-critic-pdbg.py --selftest   # 12 项，含"cu 冒 dump → 2"
-# 判定用的日志计数器：拿仓库里全部真日志验（不需要 GPU、不需要服务器）
-python3 check-log-counters.py --selftest                             # 6 项，含负向对照
-python3 check-log-counters.py --verify --out raw/log-counter-check.json
-# 整条管线（预检→自动补丁→跑→arm JSON→判定）用真形状夹具跑一遍，不需要 GPU
-bash mock/run-mock.sh /tmp/m5-critic-mock
+python3 verify-critic-pdbg.py --selftest   # 10 项，含"cu 冒 dump → 2"
 # 树内适配（独立可用）：--check 只读，--revert 逆操作，锚点形状变了 exit 2
 python3 patch-critic-sdpa.py --tree <verl 树> --check
 python3 patch-critic-sdpa.py --tree <verl 树> --selftest   # 18 项
@@ -191,19 +134,13 @@ python3 patch-critic-sdpa.py --tree <verl 树> --selftest   # 18 项
 #   git -C <verl 检出> worktree add --detach /tmp/verl-3fdf2b5 3fdf2b548882
 python3 compose_check.py --tree /tmp/verl-3fdf2b5 --out raw/compose-check.json
 python3 compose_check.py --selftest    # 负向对照能否被打翻
-# critic 的模型解析（本机，CPU；两棵树各一份读数，0=结论成立 2=上游已变）
-python3 probe-critic-model-resolve.py --selftest
-python3 probe-critic-model-resolve.py --tree /tmp/verl-31cfccb4 --preset main \
-  --json raw/critic-model-resolve-main-31cfccb4.json
-python3 probe-critic-model-resolve.py --tree /tmp/verl-pre6067 --preset pre6067 \
-  --json raw/critic-model-resolve-pre6067.json
 ```
 
 ## 产物
 
 - 探针与跑批：[probe-oom-dump.py](probe-oom-dump.py) · [run-oom-probe.sh](run-oom-probe.sh) · [run-critic-pdbg.sh](run-critic-pdbg.sh)（**未跑真机**）
 - 树内适配：[patch-critic-sdpa.py](patch-critic-sdpa.py) · 真上游文件验证 [raw/critic-sdpa-patch.json](raw/critic-sdpa-patch.json)／[.diff](raw/critic-sdpa-patch.diff)
-- 判定与把关：[verify-critic-pdbg.py](verify-critic-pdbg.py) · [check-log-counters.py](check-log-counters.py) · [verify-oom-archive.py](verify-oom-archive.py) · [compose_check.py](compose_check.py) · [probe-critic-model-resolve.py](probe-critic-model-resolve.py) · [raw/compose-check.json](raw/compose-check.json)（`3fdf2b54`）· [raw/compose-check-main-31cfccb4.json](raw/compose-check-main-31cfccb4.json)（当前 main）· [raw/critic-model-resolve-main-31cfccb4.json](raw/critic-model-resolve-main-31cfccb4.json)／[raw/critic-model-resolve-pre6067.json](raw/critic-model-resolve-pre6067.json)
-- 原始读数：`raw/result-{attached,nocap,unranked}.json` · `raw/nocap.stderr` · [raw/log-counter-check.json](raw/log-counter-check.json)（104 份真日志的计数器对照）
-- 管线夹具（**非读数**）：[raw/mock-run/](raw/mock-run/README.json)（旧形状，掩盖了计数器问题）· [raw/mock-run-real-shape/](raw/mock-run-real-shape/README.json)（真日志形状）· [mock/](mock/make-mock-tree.sh)
+- 判定与把关：[verify-critic-pdbg.py](verify-critic-pdbg.py) · [verify-oom-archive.py](verify-oom-archive.py) · [compose_check.py](compose_check.py) · [raw/compose-check.json](raw/compose-check.json)
+- 原始读数：`raw/result-{attached,nocap,unranked}.json` · `raw/nocap.stderr`
+- 管线夹具（**非读数**）：[raw/mock-run/](raw/mock-run/README.json)
 - 上游对应：[证据文档](../../open-source/verl/evidence/engine-refactor-torch-memory/readme.md) · [M5 交接](../handoff-m5.md)

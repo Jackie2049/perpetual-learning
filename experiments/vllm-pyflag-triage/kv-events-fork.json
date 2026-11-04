@@ -1,0 +1,70 @@
+{
+  "fs": {
+    "source_lines": 11,
+    "cases": [
+      {
+        "enable_kv_events": false,
+        "global_kv_events": false,
+        "events": null,
+        "logs": []
+      },
+      {
+        "enable_kv_events": true,
+        "global_kv_events": false,
+        "events": null,
+        "logs": [
+          [
+            "warning",
+            "enable_kv_events is set on secondary tier 'fs' but KV cache events are disabled globally; the tier will not emit events."
+          ]
+        ]
+      },
+      {
+        "enable_kv_events": false,
+        "global_kv_events": true,
+        "events": null,
+        "logs": []
+      },
+      {
+        "enable_kv_events": true,
+        "global_kv_events": true,
+        "events": [],
+        "logs": []
+      }
+    ]
+  },
+  "obj": {
+    "source_lines": 11,
+    "cases": [
+      {
+        "enable_kv_events": false,
+        "global_kv_events": false,
+        "events": null,
+        "logs": []
+      },
+      {
+        "enable_kv_events": true,
+        "global_kv_events": false,
+        "events": null,
+        "logs": [
+          [
+            "warning",
+            "enable_kv_events is set on secondary tier 'fs' but KV cache events are disabled globally; the tier will not emit events."
+          ]
+        ]
+      },
+      {
+        "enable_kv_events": false,
+        "global_kv_events": true,
+        "events": null,
+        "logs": []
+      },
+      {
+        "enable_kv_events": true,
+        "global_kv_events": true,
+        "events": [],
+        "logs": []
+      }
+    ]
+  }
+}

@@ -1,0 +1,185 @@
+{
+  "root": "vllm main da0b6ac2 (2026-11-05)",
+  "n_flags": 263,
+  "n_inert": 12,
+  "inert": [
+    {
+      "flag": "enable_kv_events",
+      "mode": "never",
+      "defaults": [
+        "False"
+      ],
+      "consumers": [
+        {
+          "file": "vllm/v1/kv_offload/tiering/obj/manager.py",
+          "line": 106,
+          "func": "__init__"
+        },
+        {
+          "file": "vllm/v1/kv_offload/tiering/fs/manager.py",
+          "line": 109,
+          "func": "__init__"
+        }
+      ]
+    },
+    {
+      "flag": "enable_telemetry",
+      "mode": "never",
+      "defaults": [
+        "False"
+      ],
+      "consumers": [
+        {
+          "file": "vllm/v1/kv_offload/tiering/kvcr/manager.py",
+          "line": 293,
+          "func": "__init__"
+        }
+      ]
+    },
+    {
+      "flag": "enable_trace_replay",
+      "mode": "never",
+      "defaults": [
+        "False"
+      ],
+      "consumers": [
+        {
+          "file": "vllm/v1/worker/cpu/sampler.py",
+          "line": 544,
+          "func": "__init__"
+        },
+        {
+          "file": "vllm/v1/worker/gpu/sample/sampler.py",
+          "line": 43,
+          "func": "__init__"
+        }
+      ]
+    },
+    {
+      "flag": "no_thinking",
+      "mode": "always",
+      "defaults": [
+        "True"
+      ],
+      "consumers": [
+        {
+          "file": "vllm/entrypoints/pooling/scoring/io_processor.py",
+          "line": 848,
+          "func": "format_docs_prompts_func"
+        }
+      ]
+    },
+    {
+      "flag": "use_abs_pos",
+      "mode": "always",
+      "defaults": [
+        "True"
+      ],
+      "consumers": [
+        {
+          "file": "vllm/model_executor/models/deepencoder.py",
+          "line": 233,
+          "func": "__init__"
+        }
+      ]
+    },
+    {
+      "flag": "use_fused_tilelang",
+      "mode": "never",
+      "defaults": [
+        "False"
+      ],
+      "consumers": [
+        {
+          "file": "vllm/model_executor/kernels/mhc/tilelang_kernels.py",
+          "line": 1373,
+          "func": "dispatch"
+        }
+      ]
+    },
+    {
+      "flag": "use_grads",
+      "mode": "never",
+      "defaults": [
+        "False"
+      ],
+      "consumers": [
+        {
+          "file": "vllm/transformers_utils/processors/cohere_asr.py",
+          "line": 32,
+          "func": "__init__"
+        }
+      ]
+    },
+    {
+      "flag": "use_heuristic",
+      "mode": "always",
+      "defaults": [
+        "True"
+      ],
+      "consumers": [
+        {
+          "file": "vllm/model_executor/layers/quantization/compressed_tensors/triton_scaled_mm.py",
+          "line": 177,
+          "func": "triton_scaled_mm"
+        }
+      ]
+    },
+    {
+      "flag": "use_mix",
+      "mode": "always",
+      "defaults": [
+        "True"
+      ],
+      "consumers": [
+        {
+          "file": "vllm/models/qwen4_exp/common/hyperconnection.py",
+          "line": 162,
+          "func": "__init__"
+        }
+      ]
+    },
+    {
+      "flag": "use_page_cache",
+      "mode": "never",
+      "defaults": [
+        "False"
+      ],
+      "consumers": [
+        {
+          "file": "vllm/v1/simple_kv_offload/disk_backend.py",
+          "line": 81,
+          "func": "init"
+        }
+      ]
+    },
+    {
+      "flag": "use_pre_gemm_splits",
+      "mode": "never",
+      "defaults": [
+        "False"
+      ],
+      "consumers": [
+        {
+          "file": "vllm/model_executor/kernels/mhc/tilelang_kernels.py",
+          "line": 1373,
+          "func": "dispatch"
+        }
+      ]
+    },
+    {
+      "flag": "use_sliding_window",
+      "mode": "always",
+      "defaults": [
+        "True"
+      ],
+      "consumers": [
+        {
+          "file": "vllm/models/flint/configs.py",
+          "line": 21,
+          "func": "__init__"
+        }
+      ]
+    }
+  ]
+}
