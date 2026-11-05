@@ -1,0 +1,1823 @@
+{
+ "flags": [
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "register_with_transformers",
+     "file": "deepspeed/runtime/sequence_parallel/ulysses_sp.py",
+     "func": "register_with_transformers",
+     "line": 396,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "disable_in_eval",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 11,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "GroupedExperts",
+     "file": "deepspeed/moe/ep_experts.py",
+     "func": "__init__",
+     "line": 471,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "GroupedExperts",
+     "file": "deepspeed/moe/ep_experts.py",
+     "func": "__init__",
+     "line": 471,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "disable_triton_grouped_mm",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "deepspeed/module_inject/auto_ep_layer.py",
+     "how": "keyword",
+     "line": 637
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 17,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "DSUNet",
+     "file": "deepspeed/model_implementations/diffusers/unet.py",
+     "func": "__init__",
+     "line": 13,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "DSVAE",
+     "file": "deepspeed/model_implementations/diffusers/vae.py",
+     "func": "__init__",
+     "line": 13,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "DSClipEncoder",
+     "file": "deepspeed/model_implementations/transformers/clip_encoder.py",
+     "func": "__init__",
+     "line": 13,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "generic_injection",
+     "file": "deepspeed/module_inject/replace_module.py",
+     "func": "generic_injection",
+     "line": 86,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "apply",
+     "file": "deepspeed/module_inject/containers/unet.py",
+     "func": "apply",
+     "line": 31,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "apply",
+     "file": "deepspeed/module_inject/containers/vae.py",
+     "func": "apply",
+     "line": 36,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_cuda_graph",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "deepspeed/module_inject/auto_ep_layer.py",
+     "how": "positional",
+     "line": 1210
+    },
+    {
+     "file": "deepspeed/module_inject/auto_ep_layer.py",
+     "how": "positional",
+     "line": 1217
+    },
+    {
+     "file": "deepspeed/module_inject/replace_module.py",
+     "how": "keyword",
+     "line": 163
+    },
+    {
+     "file": "deepspeed/module_inject/replace_module.py",
+     "how": "keyword",
+     "line": 179
+    },
+    {
+     "file": "deepspeed/module_inject/layers.py",
+     "how": "positional",
+     "line": 974
+    },
+    {
+     "file": "deepspeed/module_inject/layers.py",
+     "how": "positional",
+     "line": 906
+    },
+    {
+     "file": "deepspeed/module_inject/layers.py",
+     "how": "positional",
+     "line": 1006
+    },
+    {
+     "file": "deepspeed/module_inject/layers.py",
+     "how": "positional",
+     "line": 1195
+    },
+    {
+     "file": "deepspeed/module_inject/layers.py",
+     "how": "positional",
+     "line": 1296
+    },
+    {
+     "file": "deepspeed/module_inject/layers.py",
+     "how": "positional",
+     "line": 2345
+    },
+    {
+     "file": "deepspeed/module_inject/layers.py",
+     "how": "positional",
+     "line": 1017
+    },
+    {
+     "file": "deepspeed/module_inject/auto_ep_comm.py",
+     "how": "positional",
+     "line": 529
+    },
+    {
+     "file": "deepspeed/module_inject/auto_ep_comm.py",
+     "how": "positional",
+     "line": 538
+    },
+    {
+     "file": "deepspeed/module_inject/containers/unet.py",
+     "how": "keyword",
+     "line": 33
+    },
+    {
+     "file": "deepspeed/module_inject/containers/vae.py",
+     "how": "keyword",
+     "line": 38
+    },
+    {
+     "file": "deepspeed/runtime/chunked_cross_entropy.py",
+     "how": "positional",
+     "line": 234
+    },
+    {
+     "file": "deepspeed/runtime/chunked_cross_entropy.py",
+     "how": "positional",
+     "line": 238
+    },
+    {
+     "file": "deepspeed/runtime/data_pipeline/data_routing/basic_layer.py",
+     "how": "positional",
+     "line": 87
+    },
+    {
+     "file": "deepspeed/runtime/data_pipeline/data_routing/basic_layer.py",
+     "how": "positional",
+     "line": 99
+    },
+    {
+     "file": "deepspeed/runtime/data_pipeline/data_routing/basic_layer.py",
+     "how": "positional",
+     "line": 105
+    },
+    {
+     "file": "deepspeed/runtime/domino/transformer.py",
+     "how": "positional",
+     "line": 51
+    },
+    {
+     "file": "deepspeed/runtime/domino/async_linear.py",
+     "how": "positional",
+     "line": 89
+    },
+    {
+     "file": "deepspeed/runtime/sequence_parallel/ulysses_sp.py",
+     "how": "positional",
+     "line": 768
+    },
+    {
+     "file": "deepspeed/runtime/zero/linear.py",
+     "how": "positional",
+     "line": 159
+    },
+    {
+     "file": "deepspeed/runtime/zero/linear.py",
+     "how": "positional",
+     "line": 222
+    },
+    {
+     "file": "deepspeed/runtime/activation_checkpointing/checkpointing.py",
+     "how": "positional",
+     "line": 1072
+    },
+    {
+     "file": "deepspeed/inference/engine.py",
+     "how": "keyword",
+     "line": 417
+    },
+    {
+     "file": "deepspeed/ops/triton_ops/fused_rotary_pos_emb.py",
+     "how": "positional",
+     "line": 242
+    },
+    {
+     "file": "deepspeed/ops/triton_ops/fused_rotary_pos_emb.py",
+     "how": "positional",
+     "line": 240
+    },
+    {
+     "file": "deepspeed/ops/triton_ops/fused_rms_norm.py",
+     "how": "positional",
+     "line": 279
+    },
+    {
+     "file": "deepspeed/ops/triton_ops/swiglu_triton.py",
+     "how": "positional",
+     "line": 471
+    },
+    {
+     "file": "deepspeed/ops/triton_ops/swiglu_triton.py",
+     "how": "positional",
+     "line": 489
+    },
+    {
+     "file": "deepspeed/ops/triton_ops/autoep_fused_token_ops.py",
+     "how": "positional",
+     "line": 468
+    },
+    {
+     "file": "deepspeed/ops/triton_ops/group_gemm_triton.py",
+     "how": "positional",
+     "line": 489
+    },
+    {
+     "file": "deepspeed/ops/deepspeed4science/evoformer_attn.py",
+     "how": "positional",
+     "line": 106
+    },
+    {
+     "file": "deepspeed/ops/transformer/transformer.py",
+     "how": "positional",
+     "line": 420
+    },
+    {
+     "file": "deepspeed/ops/transformer/inference/diffusers_attention.py",
+     "how": "positional",
+     "line": 184
+    },
+    {
+     "file": "deepspeed/ops/transformer/inference/moe_inference.py",
+     "how": "positional",
+     "line": 155
+    },
+    {
+     "file": "deepspeed/sequence/cross_entropy.py",
+     "how": "positional",
+     "line": 305
+    },
+    {
+     "file": "deepspeed/sequence/cross_entropy.py",
+     "how": "positional",
+     "line": 257
+    },
+    {
+     "file": "deepspeed/sequence/cross_entropy.py",
+     "how": "positional",
+     "line": 28
+    },
+    {
+     "file": "deepspeed/sequence/cross_entropy.py",
+     "how": "positional",
+     "line": 263
+    },
+    {
+     "file": "deepspeed/sequence/vocab_parallel_ops.py",
+     "how": "positional",
+     "line": 427
+    },
+    {
+     "file": "deepspeed/sequence/vocab_parallel_ops.py",
+     "how": "positional",
+     "line": 449
+    },
+    {
+     "file": "deepspeed/sequence/linear_cross_entropy.py",
+     "how": "positional",
+     "line": 284
+    },
+    {
+     "file": "deepspeed/sequence/layer.py",
+     "how": "positional",
+     "line": 550
+    },
+    {
+     "file": "deepspeed/sequence/layer.py",
+     "how": "positional",
+     "line": 553
+    },
+    {
+     "file": "deepspeed/sequence/layer.py",
+     "how": "positional",
+     "line": 558
+    },
+    {
+     "file": "deepspeed/sequence/layer.py",
+     "how": "positional",
+     "line": 578
+    },
+    {
+     "file": "deepspeed/sequence/layer.py",
+     "how": "positional",
+     "line": 460
+    },
+    {
+     "file": "deepspeed/sequence/fpdt_layer.py",
+     "how": "positional",
+     "line": 1145
+    },
+    {
+     "file": "deepspeed/sequence/fpdt_layer.py",
+     "how": "positional",
+     "line": 1152
+    },
+    {
+     "file": "deepspeed/moe/ep_tp_dispatch.py",
+     "how": "positional",
+     "line": 356
+    },
+    {
+     "file": "deepspeed/moe/ep_kernels.py",
+     "how": "positional",
+     "line": 376
+    },
+    {
+     "file": "deepspeed/moe/ep_kernels.py",
+     "how": "positional",
+     "line": 386
+    },
+    {
+     "file": "deepspeed/moe/ep_kernels.py",
+     "how": "positional",
+     "line": 344
+    },
+    {
+     "file": "deepspeed/moe/ep_kernels.py",
+     "how": "positional",
+     "line": 359
+    }
+   ],
+   "producers_total": 57,
+   "reads_nontest": 63,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_expert_tensor_parallelism",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 8,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_offloading",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 2,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_qkv_quantization",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 2,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_sanity_checks",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 13,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_timing",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 19,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "attention",
+     "file": "deepspeed/module_inject/containers/gptj.py",
+     "func": "attention",
+     "line": 110,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "attention",
+     "file": "deepspeed/module_inject/containers/opt.py",
+     "func": "attention",
+     "line": 133,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "attention",
+     "file": "deepspeed/module_inject/containers/llama.py",
+     "func": "attention",
+     "line": 193,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "mlp",
+     "file": "deepspeed/module_inject/containers/llama.py",
+     "func": "mlp",
+     "line": 205,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "attention",
+     "file": "deepspeed/module_inject/containers/gptneo.py",
+     "func": "attention",
+     "line": 123,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "attention",
+     "file": "deepspeed/module_inject/containers/bert.py",
+     "func": "attention",
+     "line": 57,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "attention",
+     "file": "deepspeed/module_inject/containers/clip.py",
+     "func": "attention",
+     "line": 47,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "attention",
+     "file": "deepspeed/module_inject/containers/internlm.py",
+     "func": "attention",
+     "line": 152,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "mlp",
+     "file": "deepspeed/module_inject/containers/internlm.py",
+     "func": "mlp",
+     "line": 168,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "attention",
+     "file": "deepspeed/module_inject/containers/llama2.py",
+     "func": "attention",
+     "line": 133,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "mlp",
+     "file": "deepspeed/module_inject/containers/llama2.py",
+     "func": "mlp",
+     "line": 145,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "initialize_tensors",
+     "file": "deepspeed/module_inject/containers/base.py",
+     "func": "initialize_tensors",
+     "line": 140,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "attention",
+     "file": "deepspeed/module_inject/containers/distil_bert.py",
+     "func": "attention",
+     "line": 53,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "initialize_tensors",
+     "file": "deepspeed/module_inject/containers/features/hybrid_engine.py",
+     "func": "initialize_tensors",
+     "line": 23,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "initialize_tensors",
+     "file": "deepspeed/module_inject/containers/features/meta_tensor.py",
+     "func": "initialize_tensors",
+     "line": 25,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_training",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "deepspeed/model_implementations/transformers/ds_llama2.py",
+     "how": "positional",
+     "line": 45
+    },
+    {
+     "file": "deepspeed/model_implementations/transformers/ds_llama2.py",
+     "how": "positional",
+     "line": 55
+    },
+    {
+     "file": "deepspeed/model_implementations/transformers/ds_transformer.py",
+     "how": "positional",
+     "line": 163
+    },
+    {
+     "file": "deepspeed/model_implementations/transformers/ds_transformer.py",
+     "how": "positional",
+     "line": 178
+    },
+    {
+     "file": "deepspeed/module_inject/containers/base.py",
+     "how": "keyword",
+     "line": 142
+    },
+    {
+     "file": "deepspeed/module_inject/containers/base.py",
+     "how": "keyword",
+     "line": 143
+    },
+    {
+     "file": "deepspeed/module_inject/containers/features/hybrid_engine.py",
+     "how": "keyword",
+     "line": 30
+    },
+    {
+     "file": "deepspeed/module_inject/containers/features/meta_tensor.py",
+     "how": "keyword",
+     "line": 26
+    },
+    {
+     "file": "deepspeed/runtime/hybrid_engine.py",
+     "how": "keyword",
+     "line": 118
+    },
+    {
+     "file": "deepspeed/ops/deepspeed4science/evoformer_attn.py",
+     "how": "positional",
+     "line": 29
+    },
+    {
+     "file": "deepspeed/ops/transformer/inference/moe_inference.py",
+     "how": "positional",
+     "line": 293
+    }
+   ],
+   "producers_total": 11,
+   "reads_nontest": 52,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_bias",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 30,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_cache",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 42,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "apply_folding_correction_to_grad_buffer",
+     "file": "deepspeed/module_inject/auto_ep_folding.py",
+     "func": "apply_folding_correction_to_grad_buffer",
+     "line": 470,
+     "param_default": true
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "apply_folding_correction_to_grad_buffer",
+     "file": "deepspeed/module_inject/auto_ep_folding.py",
+     "func": "apply_folding_correction_to_grad_buffer",
+     "line": 470,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_correction_marker",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "deepspeed/runtime/zero/stage_1_and_2.py",
+     "how": "keyword",
+     "line": 1235
+    },
+    {
+     "file": "deepspeed/runtime/zero/stage3.py",
+     "how": "keyword",
+     "line": 1622
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 10,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "generate_permute_indices",
+     "file": "deepspeed/moe/ep_kernels.py",
+     "func": "generate_permute_indices",
+     "line": 186,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "generate_permute_indices",
+     "file": "deepspeed/moe/ep_kernels.py",
+     "func": "generate_permute_indices",
+     "line": 186,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_cpu",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "deepspeed/module_inject/auto_ep_layer.py",
+     "how": "keyword",
+     "line": 418
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 84,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "flatten_dense_tensors_aligned",
+     "file": "deepspeed/runtime/zero/stage_1_and_2.py",
+     "func": "flatten_dense_tensors_aligned",
+     "line": 1397,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "flatten_dense_tensors_aligned",
+     "file": "deepspeed/runtime/zero/stage_1_and_2.py",
+     "func": "flatten_dense_tensors_aligned",
+     "line": 1397,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_cpu_data",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "deepspeed/runtime/zero/stage_1_and_2.py",
+     "how": "keyword",
+     "line": 514
+    },
+    {
+     "file": "deepspeed/runtime/zero/stage_1_and_2.py",
+     "how": "keyword",
+     "line": 505
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 4,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_cpu_offload",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 49,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_cuda_events",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 8,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_cuda_flash",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 3,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_cuda_pinned_tensor",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 35,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "validate_folding_global",
+     "file": "deepspeed/module_inject/auto_ep_folding.py",
+     "func": "validate_folding_global",
+     "line": 184,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "validate_autoep_config",
+     "file": "deepspeed/module_inject/auto_ep_config.py",
+     "func": "validate_autoep_config",
+     "line": 105,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_autoep_zero12_dp_ranks",
+     "file": "deepspeed/checkpoint/autoep_universal.py",
+     "func": "_autoep_zero12_dp_ranks",
+     "line": 244,
+     "param_default": "unspecified"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "validate_folding_global",
+     "file": "deepspeed/module_inject/auto_ep_folding.py",
+     "func": "validate_folding_global",
+     "line": 184,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_autoep_zero12_dp_ranks",
+     "file": "deepspeed/checkpoint/autoep_universal.py",
+     "func": "_autoep_zero12_dp_ranks",
+     "line": 244,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "False",
+    "unspecified"
+   ],
+   "flag": "use_data_before_expert_parallel",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "deepspeed/module_inject/auto_ep_config.py",
+     "how": "keyword",
+     "line": 161
+    },
+    {
+     "file": "deepspeed/checkpoint/autoep_universal.py",
+     "how": "positional",
+     "line": 273
+    },
+    {
+     "file": "deepspeed/checkpoint/autoep_universal.py",
+     "how": "positional",
+     "line": 330
+    },
+    {
+     "file": "deepspeed/runtime/engine.py",
+     "how": "keyword",
+     "line": 854
+    }
+   ],
+   "producers_total": 4,
+   "reads_nontest": 55,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "set_deepspeed_parallelism",
+     "file": "deepspeed/module_inject/auto_ep_layer.py",
+     "func": "set_deepspeed_parallelism",
+     "line": 898,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_create_expert_and_data_parallel",
+     "file": "deepspeed/utils/groups.py",
+     "func": "_create_expert_and_data_parallel",
+     "line": 375,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_get_expert_parallel_ranks",
+     "file": "deepspeed/utils/groups.py",
+     "func": "_get_expert_parallel_ranks",
+     "line": 549,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "set_deepspeed_parallelism",
+     "file": "deepspeed/moe/layer.py",
+     "func": "set_deepspeed_parallelism",
+     "line": 86,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_create_process_groups",
+     "file": "deepspeed/moe/layer.py",
+     "func": "_create_process_groups",
+     "line": 89,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_create_expert_and_data_parallel",
+     "file": "deepspeed/utils/groups.py",
+     "func": "_create_expert_and_data_parallel",
+     "line": 375,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_get_expert_parallel_ranks",
+     "file": "deepspeed/utils/groups.py",
+     "func": "_get_expert_parallel_ranks",
+     "line": 549,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_data_before_expert_parallel_",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "deepspeed/module_inject/auto_ep_layer.py",
+     "how": "keyword",
+     "line": 934
+    },
+    {
+     "file": "deepspeed/runtime/engine.py",
+     "how": "keyword",
+     "line": 872
+    },
+    {
+     "file": "deepspeed/utils/groups.py",
+     "how": "positional",
+     "line": 660
+    },
+    {
+     "file": "deepspeed/moe/layer.py",
+     "how": "keyword",
+     "line": 87
+    },
+    {
+     "file": "deepspeed/moe/layer.py",
+     "how": "keyword",
+     "line": 96
+    }
+   ],
+   "producers_total": 5,
+   "reads_nontest": 35,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_convert_to_deepspeed_param",
+     "file": "deepspeed/runtime/zero/partition_parameters.py",
+     "func": "_convert_to_deepspeed_param",
+     "line": 1270,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "ds_summary",
+     "file": "deepspeed/runtime/zero/partition_parameters.py",
+     "func": "ds_summary",
+     "line": 1645,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_convert_to_deepspeed_param",
+     "file": "deepspeed/runtime/zero/partition_parameters.py",
+     "func": "_convert_to_deepspeed_param",
+     "line": 1270,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "ds_summary",
+     "file": "deepspeed/runtime/zero/partition_parameters.py",
+     "func": "ds_summary",
+     "line": 1645,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False",
+    "unspecified"
+   ],
+   "flag": "use_debug_name",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "deepspeed/runtime/zero/partitioned_param_coordinator.py",
+     "how": "keyword",
+     "line": 441
+    },
+    {
+     "file": "deepspeed/runtime/zero/partitioned_param_coordinator.py",
+     "how": "keyword",
+     "line": 442
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 4,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_ds_attention",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 2,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "GroupedExperts",
+     "file": "deepspeed/moe/ep_experts.py",
+     "func": "__init__",
+     "line": 471,
+     "param_default": true
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "GroupedExperts",
+     "file": "deepspeed/moe/ep_experts.py",
+     "func": "__init__",
+     "line": 471,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_grouped_mm",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "deepspeed/module_inject/auto_ep_layer.py",
+     "how": "keyword",
+     "line": 637
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 52,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_hpz",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 3,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_input_stats",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 1,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "HFOPTLayerPolicy",
+     "file": "deepspeed/module_inject/containers/opt.py",
+     "func": "__init__",
+     "line": 106,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "BLOOMLayerPolicy",
+     "file": "deepspeed/module_inject/containers/bloom.py",
+     "func": "__init__",
+     "line": 108,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_load_prefix",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 8,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_multi_rank_bucket_allreduce",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 14,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_mup",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 10,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "get_hp_fragment_mapping",
+     "file": "deepspeed/utils/tensor_fragment.py",
+     "func": "get_hp_fragment_mapping",
+     "line": 378,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "link_hp_params",
+     "file": "deepspeed/utils/mixed_precision_linkage.py",
+     "func": "link_hp_params",
+     "line": 11,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_init_lp_to_hp_mapping",
+     "file": "deepspeed/utils/mixed_precision_linkage.py",
+     "func": "_init_lp_to_hp_mapping",
+     "line": 40,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_init_lp_to_hp_mapping",
+     "file": "deepspeed/utils/mixed_precision_linkage.py",
+     "func": "_init_lp_to_hp_mapping",
+     "line": 40,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_offload",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "deepspeed/runtime/bf16_optimizer.py",
+     "how": "keyword",
+     "line": 344
+    },
+    {
+     "file": "deepspeed/runtime/zero/stage_1_and_2.py",
+     "how": "keyword",
+     "line": 843
+    },
+    {
+     "file": "deepspeed/utils/mixed_precision_linkage.py",
+     "how": "keyword",
+     "line": 21
+    },
+    {
+     "file": "deepspeed/utils/mixed_precision_linkage.py",
+     "how": "positional",
+     "line": 29
+    }
+   ],
+   "producers_total": 4,
+   "reads_nontest": 14,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "get_checkpoint_hidden_states_offloading_ctx_manager",
+     "file": "deepspeed/runtime/activation_checkpointing/offload_activations.py",
+     "func": "get_checkpoint_hidden_states_offloading_ctx_manager",
+     "line": 507,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "CheckpointHiddenStatesOffload",
+     "file": "deepspeed/runtime/activation_checkpointing/offload_activations.py",
+     "func": "__init__",
+     "line": 399,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_pin_memory",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "deepspeed/runtime/activation_checkpointing/offload_activations.py",
+     "how": "keyword",
+     "line": 515
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 18,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_quantized_weights",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 3,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_reentrant",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 120,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_residual",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 21,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "top1gating",
+     "file": "deepspeed/moe/sharded_moe.py",
+     "func": "top1gating",
+     "line": 216,
+     "param_default": true
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "top1gating",
+     "file": "deepspeed/moe/sharded_moe.py",
+     "func": "top1gating",
+     "line": 216,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_rts",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "deepspeed/moe/sharded_moe.py",
+     "how": "positional",
+     "line": 575
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 22,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_all_gather_sequential",
+     "file": "deepspeed/runtime/zero/partition_parameters.py",
+     "func": "_all_gather_sequential",
+     "line": 1373,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_all_gather_coalesced",
+     "file": "deepspeed/runtime/zero/partition_parameters.py",
+     "func": "_all_gather_coalesced",
+     "line": 1446,
+     "param_default": "unspecified"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_all_gather_sequential",
+     "file": "deepspeed/runtime/zero/partition_parameters.py",
+     "func": "_all_gather_sequential",
+     "line": 1373,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_all_gather_coalesced",
+     "file": "deepspeed/runtime/zero/partition_parameters.py",
+     "func": "_all_gather_coalesced",
+     "line": 1446,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "unspecified"
+   ],
+   "flag": "use_secondary_tensor",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "deepspeed/runtime/zero/partition_parameters.py",
+     "how": "positional",
+     "line": 1599
+    },
+    {
+     "file": "deepspeed/runtime/zero/partition_parameters.py",
+     "how": "positional",
+     "line": 1601
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 19,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "get_checkpoint_hidden_states_offloading_ctx_manager",
+     "file": "deepspeed/runtime/activation_checkpointing/offload_activations.py",
+     "func": "get_checkpoint_hidden_states_offloading_ctx_manager",
+     "line": 507,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_ActivationOffloadEngine",
+     "file": "deepspeed/runtime/activation_checkpointing/offload_activations.py",
+     "func": "__init__",
+     "line": 65,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "CheckpointHiddenStatesOffload",
+     "file": "deepspeed/runtime/activation_checkpointing/offload_activations.py",
+     "func": "__init__",
+     "line": 399,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_ActivationOffloadEngine",
+     "file": "deepspeed/runtime/activation_checkpointing/offload_activations.py",
+     "func": "__init__",
+     "line": 65,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_streams",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "deepspeed/runtime/activation_checkpointing/offload_activations.py",
+     "how": "keyword",
+     "line": 515
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 34,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_tp_model_init",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 4,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward",
+     "file": "deepspeed/ops/transformer/inference/triton/matmul_ext.py",
+     "func": "forward",
+     "line": 136,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward",
+     "file": "deepspeed/ops/transformer/inference/triton/matmul_ext.py",
+     "func": "forward",
+     "line": 230,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_check_parity",
+     "file": "deepspeed/ops/transformer/inference/triton/matmul_ext.py",
+     "func": "_check_parity",
+     "line": 438,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward",
+     "file": "deepspeed/ops/transformer/inference/triton/matmul_ext.py",
+     "func": "forward",
+     "line": 230,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_triton",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "deepspeed/ops/transformer/inference/triton/matmul_ext.py",
+     "how": "keyword",
+     "line": 152
+    },
+    {
+     "file": "deepspeed/ops/transformer/inference/triton/matmul_ext.py",
+     "how": "keyword",
+     "line": 450
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 90,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_triton_attention",
+     "file": "deepspeed/ops/transformer/inference/triton/attention.py",
+     "func": "_triton_attention",
+     "line": 184,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_triton_attention",
+     "file": "deepspeed/ops/transformer/inference/triton/attention.py",
+     "func": "_triton_attention",
+     "line": 184,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_triton_flash",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "deepspeed/ops/transformer/inference/triton/attention.py",
+     "how": "keyword",
+     "line": 159
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 4,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "mlp_gemm_func",
+     "file": "deepspeed/ops/transformer/inference/triton/ops.py",
+     "func": "mlp_gemm_func",
+     "line": 54,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "qkv_gemm_func",
+     "file": "deepspeed/ops/transformer/inference/triton/ops.py",
+     "func": "qkv_gemm_func",
+     "line": 100,
+     "param_default": true
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "mlp_gemm_func",
+     "file": "deepspeed/ops/transformer/inference/triton/ops.py",
+     "func": "mlp_gemm_func",
+     "line": 54,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "qkv_gemm_func",
+     "file": "deepspeed/ops/transformer/inference/triton/ops.py",
+     "func": "qkv_gemm_func",
+     "line": 100,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_triton_ln",
+   "mode": "always",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 5,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_triton_ops",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 26,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "top1gating",
+     "file": "deepspeed/moe/sharded_moe.py",
+     "func": "top1gating",
+     "line": 216,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "MOELayer",
+     "file": "deepspeed/moe/sharded_moe.py",
+     "func": "__init__",
+     "line": 617,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "MoE",
+     "file": "deepspeed/moe/layer.py",
+     "func": "__init__",
+     "line": 38,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "top1gating",
+     "file": "deepspeed/moe/sharded_moe.py",
+     "func": "top1gating",
+     "line": 216,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "MOELayer",
+     "file": "deepspeed/moe/sharded_moe.py",
+     "func": "__init__",
+     "line": 617,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_tutel",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "deepspeed/moe/sharded_moe.py",
+     "how": "positional",
+     "line": 575
+    },
+    {
+     "file": "deepspeed/moe/layer.py",
+     "how": "keyword",
+     "line": 73
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 17,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "init_z1_and_2",
+     "file": "deepspeed/compile/init_z1_and_2.py",
+     "func": "init_z1_and_2",
+     "line": 100,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "add_z1_reduce_fw",
+     "file": "deepspeed/compile/passes/zero_1_and_2_compile.py",
+     "func": "add_z1_reduce_fw",
+     "line": 23,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "init_z1_and_2",
+     "file": "deepspeed/compile/init_z1_and_2.py",
+     "func": "init_z1_and_2",
+     "line": 100,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "add_z1_reduce_fw",
+     "file": "deepspeed/compile/passes/zero_1_and_2_compile.py",
+     "func": "add_z1_reduce_fw",
+     "line": 23,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_z2",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "deepspeed/runtime/engine.py",
+     "how": "keyword",
+     "line": 5859
+    },
+    {
+     "file": "deepspeed/compile/passes/zero_1_and_2_compile.py",
+     "how": "keyword",
+     "line": 70
+    },
+    {
+     "file": "deepspeed/compile/passes/zero_1_and_2_compile.py",
+     "how": "keyword",
+     "line": 77
+    }
+   ],
+   "producers_total": 3,
+   "reads_nontest": 8,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "with_grad",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 34,
+   "silently_inert": false
+  }
+ ],
+ "root": "tm025-deepspeed",
+ "shadowed_arms": []
+}

@@ -1,0 +1,30 @@
+[
+ {
+  "id": "baseline_holds",
+  "caught": true,
+  "failed": []
+ },
+ {
+  "id": "inj_triton_mlp_noneable",
+  "caught": true,
+  "failed": [
+   "R1.triton_mlp_attn_nw_never_none",
+   "R4.triton_path_unreachable"
+  ]
+ },
+ {
+  "id": "inj_bert_limit_removed",
+  "caught": true,
+  "failed": [
+   "R8.triton_only_bert"
+  ]
+ },
+ {
+  "id": "inj_ds_mlp_always_none",
+  "caught": true,
+  "failed": [
+   "R2.ds_mlp_none_only_if_set_empty"
+  ]
+ }
+]
+SELFTEST OK: 4/4

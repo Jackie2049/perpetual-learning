@@ -1,10 +1,51 @@
 更新时间：2026-11-05 12:1x（**M5 无卡轮：窗口的读数侧补齐，并把「预期 ≥2」这条判据证伪**——[read-polls.py](experiments/verl-v1-poll-quantum-dapo-g4/read-polls.py) 从 console 日志读 `training/sampler/blocking_polls`／`timing_s/gen`／生成组数，自检 **12/12**；**七个归档跑逐位对账**（gen 6.791／5.822／5.974、整步 18.588／17.786／17.846、work 122.7／108.8／128.7 与 `summary.json` 一致），七跑全部 `counter absent` ⇒ `--expect-counter` 在真实日志上实测 exit 2。**新结论**：`wait = ceil(D/P)·P − D ∈ [0,P)`，`D=0.4 s` 与 `D=10.4 s` 在 P=2.0 下等待都是 1.6 s ⇒ 墙钟只看得到 `D mod P`，**给不出轮询次数**，原「预期 ≥2／若恒 1 则斜率差不能归因轮数」**作废**（n=1 与 n=6 可同斜率）。判据换成①臂内回归系数 ≈P ②跨臂恒等式残差 ≈0，并**新增校准臂** `INFLIGHT=2`（gen 有归档值 6.791 s）先验计数器。两条链路仍断（4090-1 第 9 跳后全丢＋`:22` 超时；昇腾无 VPN 路由）。）。此前各轮见下一行与 `###`。
+更新时间：2026-11-05 12:1x（**M1 TM-025：DeepSpeed 扩池第九批——44 个开关 / 1 条候选，顺着它撞出一处 2023 年就存在的签名不匹配，但入口链上不可达**。pyflag 扫 `7e58feb6`（1167 个 `.py`、29 秒）只有 1 条 `silently_inert`（`use_triton_ln`，`mode=always`：形参在形参表末尾、三个调用点全按位置传且刚好停在它前一位 ⇒ 恒真、`else` 是死代码）。**真正有价值的是顺着它的消费者再走一跳**：`gelu_gemm.py:42` 用 **8 个位置实参**调用 `self.fused_gemm_gelu`，而 triton 版本有 **12 个形参、11 个必填**。E2E 四档臂（执行真实类体 + 真实 triton 函数，只桩 `matmul_ext` 与 C++ 内核）：A 臂（fp16∧triton）**`TypeError: missing 3 required positional arguments: 'q_int8', 'async_op', 'transposed_mode'`**，B（关 triton）／C（bf16）／D（未装 triton）全部正常 ⇒ 只在 triton 分支发生。**但 9 条可达性判据证明用户撞不到**：`module_inject/containers/base.py:122-124` 在 `use_triton=True` 时非 BERT 容器直接 `raise NotImplementedError("Triton kernels are only for BERT-like models yet")`，而 `TritonMLP.__init__`（`triton/mlp.py:24`）**无条件**给 `attn_nw` 赋 `nn.Parameter` ⇒ 三元条件（fp16 ∧ triton ∧ attn_nw is None）不可同时成立。历史：PR #3748（`69d1b9f9`，2023-06-23）引入时签名就是 12 个、调用点就是 8 个 ⇒ **从第一天起就不匹配，不是回归**。方法产出三条：① **先证存在、再证可达、最后才定价值**（E2E 读数很硬，一度准备写成"用户会崩"，是可达性检查按回的；门槛不在崩溃文件里，只在容器层）；② **判"参数错位"必须同时看函数指针指向谁**（RMSNorm 分支指向 C++ 的 `rms_qkv_gemm_*`，签名本来就不同——一次误报被这条挡掉）；③ **开关密度是筛选信号**（1167 文件仅 44 个形参式开关，配置面在 pydantic dataclass 里 ⇒ pyflag 不适合此类仓库）。**5 处自错全由自检抓出**，最要紧的是判据太松（R2 注入 `if True: attn_nw = None` 时照样全绿）。四个探针 **40 条判据 / 13 条注入**全过，`raw/snapshot/` 存 10 个源文件、**无克隆也能复现**。价值 **4/10**，**不对外**（缺陷确凿但从未可达；修法要动公开签名，采纳概率低，不值得占用授权额度）。纯静态 + CPU 源码执行，**未装 DeepSpeed、未上 GPU、未启用 triton、未触上游**。）
 更新时间：2026-11-05 11:4x（**M1 TM-024：SGLang 路由网关的 Python 启动器——108 个配置字段没有一个被悄悄丢掉**。`RouterArgs` 108 字段 → `fields_to_remove` 22 个 → `Router(**kwargs)` 86 个；传给 Rust 的关键字**全部**在 pyo3 签名的 90 个形参里（0 个 `TypeError` 风险），只由 Rust 默认值提供的额外字段 **0** 个。**最要紧的一处**：`tokenizer_cache_*` 四个字段不在 `Router::new` 签名里，但 `to_router_config()` 真读它们 ⇒ 用构造函数形参表当基准会误报 4 条；**比对的另一端要取"值真正被消费的那段代码"**。两处自错（`start()` 切片漏掉 config 组装段、对照臂漏同步删 passed）都由重跑抓出。价值 **2/10**，**不对外**。本轮 **github.com:443 不可达**，文件走 contents API 逐个取、只核 4 个文件；纯静态、未编译 Rust、未触上游。）此前：（**M1 TM-023：FastVideo 扩池第八批——65 个开关 / 8 条候选，真缺陷 0 条**。2118 个 `.py`（快照 `36dc971d`）扫出 65 个开关；逐条绑行号后 **R3 内部默认 4**（`use_bf16`／`use_128x4_sf_layout`／`use_queue_mode`／`use_nvfp4` 转发型）、**R5 独立子工程内部 4**（全在 `fastvideo-kernel/`，自带 pyproject）⇒ **真缺陷 0 条**。方法产出三条：① **多包仓库按包分组**（混在一起会把子工程内部的包装算漏）；② **backend impl 类工厂是内部默认高发区**（接收端 `**extra_impl_args`、发送端只传公共参数）；③ **`mode=always` 与 `producers_total` 回答不同问题**（`use_128x4_sf_layout` 三处调用点全显式传 `True`）。**两处判据错**都由重跑抓出（声明形态凭印象写错；把 docstring 提及算成生产者，改用 AST）。价值 **3/10**，**不对外**。纯静态 + 全仓扫描，未装 fastvideo、未跑推理、未触上游。）此前：（**M1 TM-022：AReaL `use_cpu` 的 CPU 回退开关既打不开、也不用打**——唯一调用点 `moe/utils.py:212` 传 5 个位置实参不含它、全仓零生产者；`kernels.py:5-7` **顶层 `import triton`** ⇒ 无 Triton 的机器整模块进不来（本机实测），其测试用 `skipif(not HAS_TRITON)` 静默跳过。**但那段 CPU 实现本身是对的**：抄本（`check_snapshot.py` 双向断言）在**上游自己的缓冲口径** `round_up(总 token + E×对齐, 对齐)`（`utils.py:204-205`）下与 GPU 排布**逐位相同**（3 档 + 2550 组随机输入全对），只有把缓冲压到 token 总数时才抛 `RuntimeError`。⇒ 「开关不可达 + 实现可用」，**不是坏掉的回退**。**3 处自错**都由对照抓出，最要紧的是①用 `m_offsets[-1]` 当缓冲 ⇒ 四档全崩、差点写成"一跑就崩"。价值 **3/10**，**不对外**。纯 CPU、抄本口径、**未装 areal、未触上游**。）此前：（**M1 TM-021：MLC-LLM `mlc_llm router` 的子服务器恒开 debug 端点、用户关不掉**。`router/router.py:82` 给每个 `PopenServer` 传 `enable_debug=True`，而 `Router.__init__` 的形参表与 `cli/router.py` 的 10 个参数里**都没有**这个开关 ⇒ 用 router 部署时 `/debug/reset_engine`（重置引擎、清运行数据）、`/debug/cuda_profiler_start|stop`、`/debug/dump_event_trace`、`/debug/dump_engine_metrics` 恒可用且关不掉；同仓 `mlc_llm serve` 有 `--enable-debug`（默认关）⇒ **两条部署路径不一致**。四跳全取**真实函数体**在 CPU 上执行（`PopenServer`／`requests`／`fastapi` 用替身，清单进读数）：C1 两档都 `True`、C1 对照项 `prefix_cache_mode` 随档变（`radix`/`disable`）⇒ 读数不是死的；C2 `True` 档 argv 含 `--enable-debug`（**2 次**）；C3 `interface/serve.py:124` 真挂 debug 路由、`openai_entrypoints.py:139/140/206/314` 真读它。**历史：不是回归**——router 由 `5c9ebcb5`（#3064，2024-12-16）落地即如此，`git log -S` 此后无人动过这一行；`PopenServer` 的默认值由 `0b2cbb2c`（#2417）从 `False` 改 `True` **并在同一提交里加了第二处追加** ⇒ `--enable-debug` 被追加两次，但 `store_true` 幂等、真 argparse 三形状实测无害（5/5）。**5 处自错**，最要紧的是「把函数体截到 `subprocess.Popen(` 之前」——argv 恰只在那里拼，截掉后读数成了「两支都没有该 flag」，**看着像结论成立**，已加"抓不到 argv 就抛异常"的守卫。自检 **5 项 / 6 注入全过**。价值 **5/10**（端点标为 debug 用途、默认只绑 `127.0.0.1` ⇒ **不能写成安全漏洞**）。**不对外**，三个最小动作 (a)改注释/(b)把开关接出来/(c)删重复追加 待用户逐项授权。纯 CPU、未起服务、未发 HTTP、未触上游。）
 更新时间：2026-11-05 09:2x（**M1 TM-020：verl `algorithm.filter_groups.metric` 的三份说明互相不自洽，两个名字在 V1 上零写入点**。V1 组过滤按**名字**去 `extra_fields.reward_extra_info` 取键（`replay_buffer.py:299` 的 `filter_groups_metric not in reward_extra_info`），取不到抛 `RuntimeError`。而「能填哪些名字」有三份不同说明：配置 docstring（`reward` canonical／`acc`／`score`／**`seq_reward`**）、`docs/algo/dapo.md:80`（举例 `score / seq_reward / seq_final_reward`）、随仓库脚本 `grpo_qwen35_35b_megatron_async.sh:64`（**`response_filter`**）。**后三个在 V1 零写入点**——真 `ReplayBuffer`（`stub_env.py` 只替身 `transfer_queue`／`SkipManager`，判定是上游原文）按上游 CPU 测试同一套写盘顺序造「2 条同分轨迹的组」跑：`reward`／`acc` ran，`score` 只在 `math_dapo` scorerd 下 ran（gsm8k 等走 `float(res)` 只给 `acc`），`seq_reward`／`seq_final_reward`／`response_filter` **给多少键都 raised**；缺**一条**轨迹的键也整组抛。**上游单测只测过 `acc`(13 处) 与 `reward`(1 处)** ⇒ CI 抓不到。**历史（决定对外措辞）**：docstring 自 `c936ec7`(2025-07-04) 就写着 `seq_reward`，直到 `7e9875249`(2026-10-12) 才改；**DAPO recipe 的 `dapo_ray_trainer.py:240` 真有 `if metric_name == "seq_final_reward":` 分支**（verl-recipe 仓）⇒ 这些名字在 V1 之前有主；V1 自 `c88e875`(2026-07-23) 引入起只认字面键 ⇒ **名字搬进 V1 后语义没跟上**；#7792(`7cb6501`,2026-09-08) 改注释时**留了一个 `seq_reward`**。⇒ 对外只能写「说明与实现没对齐」，**不能写「开关坏了」**。价值 **5/10**（官方 recipe 全用 `acc` 不触发；但崩在第一步且报错会误导）。**自检 8/8、负向对照 4/4**（A 夹具丢键／B uid 含下划线／C 改坏 canonical 常量／D 所有名字都可读，四种破坏各让指定检查变红）。**不对外**（上游查重 `filter_groups.metric` 0 条、`seq_reward`／`seq_final_reward` 各 8 条无关）。纯 CPU、**未装 ray/torch、未跑训练、未触上游**。）
 更新时间：2026-11-05 08:4x（**M5 无卡轮：计数器补丁的死登记已删，4 卡臂加了"树必须是受测树"的硬门槛**——`validation/sampler/blocking_polls` 永不可达（全仓 `partition_id="val"` 只有 `_validate()`，且 `batch, _ = replay_buffer.sample(...)` 丢弃 metrics），补丁 +9→**+8 行**（`sha256=4c142752…`）；上一版自检只数键名，现改为**执行真实 `MetricsAggregator`**（喂 2 与 3：打补丁树 **5.0**=sum、未打补丁 **2.5**=weighted_avg），并加"注册了 validation 键 ⇔ val 调用点保留 metrics"不变量；sim 扩到**两个 buffer 类**（含 `wait_for_sampleable`）**12/12**、惰性仍 **480 行逐字段相同**。新增 [prep-tree.sh](experiments/verl-v1-poll-quantum-dapo-g4/prep-tree.sh)（复制＋两补丁＋4 标记）、`run-poll-dapo.sh` 的 `CHECK_TREE=1`（缺任一补丁 **exit 65**，`CHECK_ONLY=1` 只查树）、[preflight-g4.py](experiments/verl-v1-poll-quantum-dapo-g4/preflight-g4.py) 必填 `--run-tree`（树标记＋在受测树本体跑 sim＋守卫 0/65 双对照），自检 **11/11**；读数 [preflight-g4-instrumented.json](experiments/verl-v1-poll-quantum-dapo-g4/raw/preflight-g4-instrumented.json) `ok=true`。**零 GPU 读数；计数器仍未在服务器上执行过；双链路仍断**（4090-1 100% 丢包＋`:22` 超时，昇腾无 VPN 路由）。）。此前各轮摘要见下一行与 `###` 小节。
 更新时间：2026-11-05 08:1x（**M1 TM-019：MLC-LLM 扩池第六批——真缺陷 0 条**；两条候选都是扫描器把工厂转发当成决策者，已修进 pyflag 第十三类。完整叙述见 [实验](experiments/mlcllm-pyflag-triage/README.md) 与 [diary](diary/2026-11-05.md)。）此前各轮摘要见下方 `###` 小节与 [diary](diary/2026-11-05.md)，任务状态见 [技术秘书](queue_tech-secretary.md)／[技术掘金](queue_tech-miner.md)。
 
-### M1 本轮（2026-11-05 11:4x）：TM-024——SGLang 路由网关的配置通路，**108 个字段一个都没漏**
+### M5 本轮（2026-11-05 11:5x–12:1x CST）：无卡轮——窗口读数侧补齐；「预期 ≥2」这条判据被证伪
+
+**连通性（探两次，间隔 60 s）**：`4090-1` ICMP 100% 丢包、`:22` 超时，`traceroute` 第 9 跳（`59.43.80.141`，电信骨干）之后全无回应 ⇒ 公网路径断；昇腾网关 2 包全丢、本机 `netstat -rn` 无 `10.205.0.0/24`／`192.168.13.0/24` 路由 ⇒ VPN 未连。本轮**零 GPU／NPU 读数**。
+
+**为什么做这个。** 上一轮把「树必须是受测树」做成硬门槛，产出侧却仍空着：没有任何东西把 `training/sampler/blocking_polls` 从 1240 行、带 ANSI 与 `(TaskRunnerV1 pid=…)` 前缀的日志里读出来，「没有计数器」与「计数器为 0」肉眼分不开。且本页原判据（**预期 ≥2；若恒 1，斜率差不能归因轮数**）从未推导过。
+
+**一、[read-polls.py](experiments/verl-v1-poll-quantum-dapo-g4/read-polls.py)，自检 12/12。** 行首锚点（防 `timing_s/step:8.2` 读成 `step:8`）、缺席报 `absent` 不报 0、`--expect-counter` **exit 2**、`np.float64(...)`、重复步取末次、两路恒等式、回归复原，每条都有注入对照。
+
+**二、七个归档跑当场对账。** gen／整步／work 与 `summary.json`／`decompose-gen.py` **逐位相同**（work 差常数额 32＝train batch size，`--selected-groups` 补）；七跑全 `counter absent`，加 `--expect-counter` 实测 exit 2 ⇒ 真实数据上的负向对照。读数 [read-polls-archive.json](experiments/verl-v1-poll-quantum-dapo-g4/raw/read-polls-archive.json)。
+
+**三、原判据为什么作废。** `wait = ceil(D/P)·P − D` 的值恒在 `[0,P)`：`D=0.4 s`（1 次轮询）与 `D=10.4 s`（6 次轮询）在 P=2.0 下等待**都是 1.6 s**，A/B 之差一样 ⇒ 归档测到的 1.07–1.14 s 只是 `E[P − (D mod P)]`（相位均匀应 0.5，4 卡 0.53–0.57），**不含 n 的信息**。n=1 与 n=6 可同斜率 ⇒「≥2」与「若恒 1 就不能归因轮数」都没依据。**这是必须上计数器的理由，从断言变成证明。**
+
+**四、判据换成两条（预登记）。** ① 臂内回归 `gen ~ 1 + work + polls`，`poll` 系数应 = P ± se；② 跨臂 `gen(2.0) − gen(0.1) = 2.0·n̄₂ − 0.1·n̄₀.₁ + b·Δwork`（`b = 31.8 ms/组`），残差 ≈0。**新增校准臂** `INFLIGHT=2`／默认 2.0（gen 有归档值 6.791 s）：唯一能用已知墙钟先验计数器的配置；两条都过，`inflight=1` 的读数才可用。
+
+**边界**：零 GPU 读数；归档上验的是**解析**不是计数器本身；判据是预登记，本轮无法执行。
+
+**留给下一轮**：① critic 三臂仍需单卡窗口；② 4 卡窗口改成「校准臂＋`inflight=1` 正题臂（＋可选 0.1 细轮询臂）」，`prep-tree.sh → preflight --run-tree → run-poll-dapo.sh` 不变，读数用 `read-polls.py --expect-counter`；③ 服务端 `/tmp/m5-oom` md5 未做；④ 昇腾需用户重连 VPN；⑤ 对外动作待用户逐项授权，本轮**未触上游**。
+
+**产物**：[read-polls.py](experiments/verl-v1-poll-quantum-dapo-g4/read-polls.py) · [归档读数](experiments/verl-v1-poll-quantum-dapo-g4/raw/read-polls-archive.json) · [4 卡 README](experiments/verl-v1-poll-quantum-dapo-g4/README.md) · [TM-008](queue_tech-miner.md) · [diary](diary/2026-11-05.md)。
+
+### M1 本轮（2026-11-05 12:1x）：TM-025——DeepSpeed 的 triton `fused_gemm_gelu` 签名从 2023 年就对不上，**但用户撞不到**
+
+**一、为什么做。** 扩池第九批。前八批扫完推理六框架 + AReaL + FastVideo，训练侧名单里还有 DeepSpeed。按用户 2026-11-02 的指令，范围是整个主流生态，不该只在熟悉的框架里打转。
+
+**二、扫描读数。** `7e58feb6`（2026-11-05 02:26 UTC）、1167 个 `.py`、**29 秒** → **44 个开关 / 1 条 `silently_inert`**（`use_triton_ln`，`mode=always`）。这个密度明显低于前面几批（SGLang 386、TRT-LLM 352）——不是问题少，而是 DeepSpeed 的配置面在 **pydantic dataclass**（`deepspeed/inference/config.py`）里，pyflag 只认形参默认值。⇒ **dataclass 驱动的仓库不该再用 pyflag 扫**。
+
+**三、顺着候选再走一跳。** 读 `use_triton_ln` 的消费者时注意到同文件的 `fused_gemm_gelu` 也有这个形参，于是去读它的调用点：`op_binding/gelu_gemm.py:42` 只传 **8 个位置实参**，而 `triton/ops.py:17` 的 `fused_gemm_gelu` 有 **12 个形参、11 个必填**。C++ 等价签名恰好 8 个（`input, weight, scale, bias, out, out_scale, dtype, transpose`）⇒ 那 8 个实参是照 C++ 内核写的；triton 版本的 12 个形参里有 **7 个函数体从未使用**（像是从 `mlp_gemm_func` 抄了签名、只写了 C++ 那 8 个参数对应的实现）。
+
+**四、E2E 确认会崩。** 执行真实的 `GELUGemmOp` 类体与真实的 triton 函数（只桩 `matmul_ext` 与 C++ 内核），四档臂：A（fp16∧triton）**`TypeError: missing 3 required positional arguments: 'q_int8', 'async_op', 'transposed_mode'`**；B（关 triton）／C（bf16）／D（未装 triton）全部正常返回。
+
+**五、但可达性把结论按回原位。** 9 条判据，决定性的是 **R8**：`module_inject/containers/base.py:122-124` 在 `use_triton=True` 时非 BERT 容器直接 `raise NotImplementedError("Triton kernels are only for BERT-like models yet")`；而 `TritonMLP.__init__`（`triton/mlp.py:24`）**无条件**给 `attn_nw` 赋 `nn.Parameter` ⇒ "triton ∧ `attn_nw is None`"在同一实例上不可同时成立。`hybrid_engine` 虽然用 `set_empty_params=True`（会置 None），但它**不传** `use_triton`（默认 False）。
+
+**六、历史归属。** `git log --follow` 只有两次提交：PR [#3748](https://github.com/deepspeedai/DeepSpeed/pull/3748)（`69d1b9f9`，2023-06-23）引入时签名就是 12 个、**同一提交**里的调用点就是 8 个；#5490（`645639bc`，2024-10-09）只重排过。⇒ **从第一天起就不匹配，不是回归**。上游查重四组关键词无相关 issue。
+
+**七、本批 5 处自错（全由自检抓出）。** ① 判据把"结论成立"当失败（C4 写成"绑不上 = FAIL"，而绑不上正是要找的事实）；② 边界差一（形参在末尾、调用点停在前一位，应 `<=` 不是 `<`）；③ 注入让 `inspect.bind` 抛异常把探针崩掉；④ **判据太松**——R2 只查"有 None 赋值也有 Parameter 赋值"，注入 `if True: self.attn_nw = None` 时**照样全绿**，收紧为"None 那条必须带 `set_empty_params` 守卫"；⑤ **先入为主把 RMSNorm 分支当错位**——那条分支的指针指向 C++ 的 `rms_qkv_gemm_*`，签名本来就不同。
+
+**八、价值与判断。** **4/10，不对外**：缺陷确凿、可机读、可证伪，但从未可达，没有用户被挡住；修法（删 4 个未用必填形参）要动公开签名，DeepSpeed 近期无 Triton 活跃开发，采纳概率低，**不值得占用用户的授权额度**。
+
+入口：[实验](experiments/deepspeed-pyflag-triage/README.md) · [证据页](open-source/deepspeed/evidence/triton-fused-gemm-gelu-argshift.md) · [use_triton_ln 17 条](experiments/deepspeed-pyflag-triage/probe_use_triton_ln.py) · [签名对齐 9 条](experiments/deepspeed-pyflag-triage/probe_gelu_argshift.py) · [E2E 四档臂](experiments/deepspeed-pyflag-triage/probe_gelu_e2e.py) · [可达性 9 条](experiments/deepspeed-pyflag-triage/probe_reachability.py) · [pyflag 第九批](tools/pyflag/readme.md) · [TM-025](queue_tech-miner.md) · [diary](diary/2026-11-05.md)。
+
+### M1 上一轮（2026-11-05 11:4x）：TM-024——SGLang 路由网关的配置通路，**108 个字段一个都没漏**
 
 **一、为什么做。** 接 TM-021 的同族形状：两层字段表之间会不会漏。路由网关正是这种结构——Python `RouterArgs`（**108** 字段）→ `Router.from_args` 逐个转换（先剔 **22** 个）→ Rust `Router::new`（**90** 形参）。
 
@@ -225,25 +266,6 @@
 
 > **推送已恢复（2026-11-04 16:2x）**：此前积压的 5 个本地提交（`b850df424`／`ab204152f`／`db7a7aeed`／`3860b0b6b`／`9816bf5f8`）与本轮提交已全部推上远端 main。`git push` 仍连不上 `github.com:443`（75 s 超时），改用 [REST 推送工具](tools/git-push-api/readme.md)（`api.github.com` 正常）；远端新提交 `01c8bf13` 的 SHA 与旧本地不同（消息与树相同），已 fetch 并 `reset --hard` 对齐，本地树 `618e2a82` 与推送内容一致、`--verify` 通过。⇒ **下次网络同样断开时优先走 `tools/git-push-api`，不要反复等直连。**
 
-### M5 本轮（2026-11-05 11:5x–12:1x CST）：无卡轮——窗口读数侧补齐；「预期 ≥2」这条判据被证伪
-
-**连通性（探两次，间隔 60 s）**：`4090-1` ICMP 100% 丢包、`:22` 超时，`traceroute` 第 9 跳（`59.43.80.141`，电信骨干）之后全无回应 ⇒ 公网路径断；昇腾网关 2 包全丢、本机 `netstat -rn` 无 `10.205.0.0/24`／`192.168.13.0/24` 路由 ⇒ VPN 未连。本轮**零 GPU／NPU 读数**。
-
-**为什么做这个。** 上一轮把「树必须是受测树」做成硬门槛，产出侧却仍空着：没有任何东西把 `training/sampler/blocking_polls` 从 1240 行、带 ANSI 与 `(TaskRunnerV1 pid=…)` 前缀的日志里读出来，「没有计数器」与「计数器为 0」肉眼分不开。且本页原判据（**预期 ≥2；若恒 1，斜率差不能归因轮数**）从未推导过。
-
-**一、[read-polls.py](experiments/verl-v1-poll-quantum-dapo-g4/read-polls.py)，自检 12/12。** 行首锚点（防 `timing_s/step:8.2` 读成 `step:8`）、缺席报 `absent` 不报 0、`--expect-counter` **exit 2**、`np.float64(...)`、重复步取末次、两路恒等式、回归复原，每条都有注入对照。
-
-**二、七个归档跑当场对账。** gen／整步／work 与 `summary.json`／`decompose-gen.py` **逐位相同**（work 差常数额 32＝train batch size，`--selected-groups` 补）；七跑全 `counter absent`，加 `--expect-counter` 实测 exit 2 ⇒ 真实数据上的负向对照。读数 [read-polls-archive.json](experiments/verl-v1-poll-quantum-dapo-g4/raw/read-polls-archive.json)。
-
-**三、原判据为什么作废。** `wait = ceil(D/P)·P − D` 的值恒在 `[0,P)`：`D=0.4 s`（1 次轮询）与 `D=10.4 s`（6 次轮询）在 P=2.0 下等待**都是 1.6 s**，A/B 之差一样 ⇒ 归档测到的 1.07–1.14 s 只是 `E[P − (D mod P)]`（相位均匀应 0.5，4 卡 0.53–0.57），**不含 n 的信息**。n=1 与 n=6 可同斜率 ⇒「≥2」与「若恒 1 就不能归因轮数」都没依据。**这是必须上计数器的理由，从断言变成证明。**
-
-**四、判据换成两条（预登记）。** ① 臂内回归 `gen ~ 1 + work + polls`，`poll` 系数应 = P ± se；② 跨臂 `gen(2.0) − gen(0.1) = 2.0·n̄₂ − 0.1·n̄₀.₁ + b·Δwork`（`b = 31.8 ms/组`），残差 ≈0。**新增校准臂** `INFLIGHT=2`／默认 2.0（gen 有归档值 6.791 s）：唯一能用已知墙钟先验计数器的配置；两条都过，`inflight=1` 的读数才可用。
-
-**边界**：零 GPU 读数；归档上验的是**解析**不是计数器本身；判据是预登记，本轮无法执行。
-
-**留给下一轮**：① critic 三臂仍需单卡窗口；② 4 卡窗口改成「校准臂＋`inflight=1` 正题臂（＋可选 0.1 细轮询臂）」，`prep-tree.sh → preflight --run-tree → run-poll-dapo.sh` 不变，读数用 `read-polls.py --expect-counter`；③ 服务端 `/tmp/m5-oom` md5 未做；④ 昇腾需用户重连 VPN；⑤ 对外动作待用户逐项授权，本轮**未触上游**。
-
-**产物**：[read-polls.py](experiments/verl-v1-poll-quantum-dapo-g4/read-polls.py) · [归档读数](experiments/verl-v1-poll-quantum-dapo-g4/raw/read-polls-archive.json) · [4 卡 README](experiments/verl-v1-poll-quantum-dapo-g4/README.md) · [TM-008](queue_tech-miner.md) · [diary](diary/2026-11-05.md)。
 
 ### M5 本轮（2026-11-05 08:0x–08:4x CST）：无卡轮——窗口里读不到计数器等于没跑：死登记删除 + 受测树硬门槛
 

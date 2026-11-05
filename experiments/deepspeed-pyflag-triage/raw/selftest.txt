@@ -1,0 +1,40 @@
+[
+ {
+  "id": "baseline_holds",
+  "caught": true,
+  "failed": []
+ },
+ {
+  "id": "inj_arity9",
+  "caught": true,
+  "failed": [
+   "C1.call_arity_is_8",
+   "C7.cpp_positions_correct"
+  ]
+ },
+ {
+  "id": "inj_triton_8params",
+  "caught": true,
+  "failed": [
+   "C2.triton_has_12",
+   "C4.arity_mismatch"
+  ]
+ },
+ {
+  "id": "inj_keyword_call",
+  "caught": true,
+  "failed": [
+   "C1.call_arity_is_8",
+   "C7.cpp_positions_correct",
+   "C8.arg7_is_bool_arg8_is_transposed"
+  ]
+ },
+ {
+  "id": "inj_triton_unselectable",
+  "caught": true,
+  "failed": [
+   "C9.triton_branch_selectable"
+  ]
+ }
+]
+SELFTEST OK: 5/5

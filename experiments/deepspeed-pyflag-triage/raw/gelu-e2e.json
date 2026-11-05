@@ -1,0 +1,61 @@
+{
+ "arms": [
+  {
+   "arm": "A_fp16_triton_on",
+   "pointer": "fused_gemm_gelu",
+   "outcome": "TypeError",
+   "error": "fused_gemm_gelu() missing 3 required positional arguments: 'q_int8', 'async_op', and 'transposed_mode'",
+   "triton_calls": 0
+  },
+  {
+   "arm": "B_fp16_triton_off",
+   "pointer": "cpp_kernel",
+   "outcome": "returned",
+   "output": "CPP_OUTPUT",
+   "triton_calls": 0
+  },
+  {
+   "arm": "C_bf16_triton_on",
+   "pointer": "cpp_kernel",
+   "outcome": "returned",
+   "output": "CPP_OUTPUT",
+   "triton_calls": 0
+  },
+  {
+   "arm": "D_fp16_triton_on_no_triton_installed",
+   "pointer": "cpp_kernel",
+   "outcome": "returned",
+   "output": "CPP_OUTPUT",
+   "triton_calls": 0
+  }
+ ],
+ "checks": [
+  {
+   "id": "E1.A_selects_triton",
+   "ok": true,
+   "detail": "A 臂指针 = fused_gemm_gelu"
+  },
+  {
+   "id": "E2.A_raises_TypeError",
+   "ok": true,
+   "detail": "A 臂结果 = TypeError: fused_gemm_gelu() missing 3 required positional arguments: 'q_int8', 'async_op', and 'transposed_mode'"
+  },
+  {
+   "id": "E3.B_succeeds",
+   "ok": true,
+   "detail": "B 臂（关 triton）结果 = returned"
+  },
+  {
+   "id": "E4.C_succeeds",
+   "ok": true,
+   "detail": "C 臂（bf16）结果 = returned"
+  },
+  {
+   "id": "E5.D_falls_back",
+   "ok": true,
+   "detail": "D 臂（未装 triton）结果 = returned，指针 = cpp_kernel"
+  }
+ ],
+ "verdict": "E2E_CONFIRMED",
+ "failed": []
+}

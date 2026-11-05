@@ -516,3 +516,25 @@ MLC-LLM 7→2（修复后 0）。C++ 口径：llama.cpp 1636 字段→37、MLC-L
 读数归档：[scan-mlc-llm-44fd06d04f.json](scan-mlc-llm-44fd06d04f.json)（修复后）、
 [scan-cpp-mlc-llm-44fd06d04f.json](scan-cpp-mlc-llm-44fd06d04f.json)；
 修复前那份在 [experiments/mlcllm-pyflag-triage/raw/scan-py.json](../../experiments/mlcllm-pyflag-triage/raw/scan-py.json)。
+
+## 已跑过的快照（2026-11-05 扩池第九批：DeepSpeed，训练+推理）
+
+| 仓库 | 快照 | 文件 | 发现开关 | 判为失效 | 人工结论 |
+|---|---|---|---|---|---|
+| DeepSpeed | `7e58feb6` | 1167 | **44** | **1** | `use_triton_ln` 恒真、`else` 死代码（形参在末尾、调用点按位置传且停在它前一位）；**真缺陷 0 条**。但顺着它的消费者读出本条之外的一个更强形态：`fused_gemm_gelu` 8 个实参对 11 个必填形参，E2E 会 `TypeError`，**但入口链上不可达**（[TM-025](../../queue_tech-miner.md)） |
+
+扫描耗时 **29 秒**，读数 [scan-deepspeed-7e58feb6.json](scan-deepspeed-7e58feb6.json)，
+逐条判定见 [experiments/deepspeed-pyflag-triage](../../experiments/deepspeed-pyflag-triage/README.md)
+（4 个探针 40 条判据 / 13 条注入，`raw/snapshot/` 存 10 个源文件副本，无克隆也能跑）。
+
+**本批两条方法读数（值得记）**：
+
+1. **开关密度本身就是筛选信号**：DeepSpeed 1167 个文件只有 44 个形参式开关，而 SGLang 386、TRT-LLM 352。原因是 DeepSpeed 的配置面主要在 **JSON + pydantic dataclass**（`deepspeed/inference/config.py`），pyflag 只认形参默认值。
+   ⇒ **pyflag 适合"形参即配置"的仓库；dataclass 驱动的仓库不该再扫**（与前一批 TRL 的 6 个开关同类，但原因不同：TRL 是根本没几个开关，DeepSpeed 是开关都在 config 类里）。
+2. **扫描结果可以是入口，不是产出**：本批唯一那条候选价值很低，但它把注意力引到了同一条调用链上更强的一处形态。**"这批没什么可报"不等于"这条链没什么可看"**——顺着消费者再走一跳的成本很低。
+
+## 第九类补充：判"参数错位"必须同时看函数指针指向谁
+
+`qkv_gemm.py` / `mlp_gemm.py` 的 RMSNorm 分支只传 7 / 11 个位置实参，而形参表是 LayerNorm 形状的 11 / 17 个 —— 单看这一点会判成"位置错位、会算错"。实际那个分支里 `self.qkv_gemm_func` 指向的是 **C++ 的 `rms_qkv_gemm_fp16`**（`qkv_gemm.py:36`），签名本来就不同。
+
+⇒ **同一条语句里的形参表，取决于运行时函数指针指向哪个实现。** 静态判断"位置实参对不对"时，必须先把每条分支上指针的赋值来源列出来；否则会把"按分支切换实现"误读成"参数错位"。这一条直接把本批的一次误报挡掉了。

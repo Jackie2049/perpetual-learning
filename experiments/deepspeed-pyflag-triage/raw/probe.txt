@@ -1,0 +1,11 @@
+[PASS] C1.call_arity_is_8                   gelu_gemm.py:42 位置实参 8 个：['input', 'weight', "weight.scale if hasattr(weight, 'scale') else torch.empty(1)", 'bias', 'weight_out', "weight_out.scale if hasattr(weight_out, 'scale') else torch.empty(1)", 'self.config.dtype == torch.int8', 'self.config.transposed_mode']
+[PASS] C2.triton_has_12                     triton 形参 12 个：['input', 'weight', 'weight_scale', 'bias', 'weight_out', 'weight_out_scale', 'epsilon', 'pre_layer_norm', 'q_int8', 'async_op', 'transposed_mode', 'use_triton_ln']
+[PASS] C3.cpp_has_8                         C++ 等价签名 8 个：['input', 'weight', 'scale', 'bias', 'out', 'out_scale', 'dtype', 'transpose']
+[PASS] C4.arity_mismatch                    调用点 8 个实参 / triton 必填 11 个 / 绑定：TypeError: missing a required argument: 'q_int8'
+[PASS] C5.docstring                         形参表前 8 个：['input', 'weight', 'weight_scale', 'bias', 'weight_out', 'weight_out_scale', 'epsilon', 'pre_layer_norm']；缺的必填：['q_int8', 'async_op', 'transposed_mode']
+[PASS] C7.cpp_positions_correct             C++ 第 7/8 个实参 → dtype/transpose
+[PASS] C8.arg7_is_bool_arg8_is_transposed   [6]=self.config.dtype == torch.int8   [7]=self.config.transposed_mode
+[PASS] C9.triton_branch_selectable          __init__ 里的赋值：['self.fused_gemm_gelu = self.inference_module.fused_gemm_gelu_int8', 'self.fused_gemm_gelu = self.gelu_gemm_fallback', 'self.fused_gemm_gelu = _triton_fused_gemm_gelu', 'self.fused_gemm_gelu = self.inference_module.fused_gemm_gelu_fp16', 'self.fused_gemm_gelu = self.inference_module.fused_gemm_gelu_bf16', 'self.fused_gemm_gelu = self.inference_module.fused_gemm_gelu_fp32']
+[PASS] C10.fn_asserts_on_param_11           函数体 assert：['assert not transposed_mode']
+
+verdict: ARG_SHIFT  (9 checks, 0 failed)

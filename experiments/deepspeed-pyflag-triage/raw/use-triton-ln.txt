@@ -1,0 +1,19 @@
+[PASS] C1.fused_gemm_gelu.param         line=17 idx=11 default=True
+[PASS] C1.mlp_gemm_func.param           line=54 idx=16 default=True
+[PASS] C1.qkv_gemm_func.param           line=100 idx=10 default=True
+[PASS] C2.fused_gemm_gelu.branch_observed 读取行=[]（函数体不使用该形参）
+[PASS] C2.mlp_gemm_func.branch_observed 读取行=[74]
+[PASS] C2.qkv_gemm_func.branch_observed 读取行=[116]
+[PASS] C3.qkv_gemm_func.no_keyword      deepspeed/ops/transformer/inference/op_binding/qkv_gemm.py: 2 个调用点，带该关键字的 0 个
+[PASS] C3.qkv_gemm_func.has_call        deepspeed/ops/transformer/inference/op_binding/qkv_gemm.py: 2 个 self.qkv_gemm_func(...) 调用
+[PASS] C3.mlp_gemm_func.no_keyword      deepspeed/ops/transformer/inference/op_binding/mlp_gemm.py: 2 个调用点，带该关键字的 0 个
+[PASS] C3.mlp_gemm_func.has_call        deepspeed/ops/transformer/inference/op_binding/mlp_gemm.py: 2 个 self.mlp_gemm_func(...) 调用
+[PASS] C3.fused_gemm_gelu.no_keyword    deepspeed/ops/transformer/inference/op_binding/gelu_gemm.py: 1 个调用点，带该关键字的 0 个
+[PASS] C3.fused_gemm_gelu.has_call      deepspeed/ops/transformer/inference/op_binding/gelu_gemm.py: 1 个 self.fused_gemm_gelu(...) 调用
+[PASS] C4.fused_gemm_gelu.unreachable   最多次位置实参=8 <= 形参位置=11 ⇒ 该位置从未被实参覆盖
+[PASS] C4.mlp_gemm_func.unreachable     最多次位置实参=16 <= 形参位置=16 ⇒ 该位置从未被实参覆盖
+[PASS] C4.qkv_gemm_func.unreachable     最多次位置实参=10 <= 形参位置=10 ⇒ 该位置从未被实参覆盖
+[PASS] C5.no_keyword_anywhere           其他调用点=[]
+[PASS] C6.branches_differ               if/else 两支分别调 triton layer_norm 与 LayerNormOp
+
+verdict: UNREACHABLE  (17 checks, 0 failed)

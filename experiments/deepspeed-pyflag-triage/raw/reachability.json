@@ -1,0 +1,52 @@
+{
+ "checks": [
+  {
+   "id": "R1.triton_mlp_attn_nw_never_none",
+   "ok": true,
+   "detail": "TritonMLP 的 attn_nw 赋值：[(24, 'nn.Parameter(torch.empty(self.config.hidden_size, dtype=data_type_fp, device=device), requires_grad=False)', None)]"
+  },
+  {
+   "id": "R2.ds_mlp_none_only_if_set_empty",
+   "ok": true,
+   "detail": "DeepSpeedMLP 的 attn_nw 赋值：[(34, 'None', 'self.config.set_empty_params'), (45, 'nn.Parameter(torch.empty(self.config.hidden_size, dtype=data_type_fp, device=device), requires_grad=False)', None)]"
+  },
+  {
+   "id": "R3.triton_selects_triton_mlp",
+   "ok": true,
+   "detail": "ds_transformer 里 use_triton 分支 → TritonMLP，else → DeepSpeedMLP"
+  },
+  {
+   "id": "R4.triton_path_unreachable",
+   "ok": true,
+   "detail": "⇒ 'triton 路径 ∧ attn_nw is None' 在同一实例上不可同时成立"
+  },
+  {
+   "id": "R5.geluop_ignores_mlp_class",
+   "ok": true,
+   "detail": "gelu_gemm.py 全文不出现 attn_nw ⇒ 指针选择与 MLP 类无关"
+  },
+  {
+   "id": "R6.hybrid_engine_sets_empty_params",
+   "ok": true,
+   "detail": "hybrid_engine 的 DeepSpeedInferenceConfig 带 set_empty_params=True"
+  },
+  {
+   "id": "R7.hybrid_engine_does_not_set_use_triton",
+   "ok": true,
+   "detail": "hybrid_engine 不传 use_triton（默认 False）⇒ 该组合需用户显式打开 triton"
+  },
+  {
+   "id": "R8.triton_only_bert",
+   "ok": true,
+   "detail": "containers/base.py：use_triton 且非 BERT ⇒ raise NotImplementedError"
+  },
+  {
+   "id": "R9.bert_has_layernorm",
+   "ok": true,
+   "detail": "bert.py 存在=True，含 LayerNorm=True"
+  }
+ ],
+ "verdict": "UNREACHABLE_IN_PRACTICE",
+ "summary": "TypeError 真实存在（E2E 已证），但 user-facing 路径上不可达：use_triton=True 只允许 BERT 容器（否则 NotImplementedError），而 TritonMLP 的 attn_nw 恒为 Parameter",
+ "failed": []
+}

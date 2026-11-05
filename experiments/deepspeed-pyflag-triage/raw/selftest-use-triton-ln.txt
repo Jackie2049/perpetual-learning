@@ -1,0 +1,36 @@
+[
+ {
+  "id": "baseline_holds",
+  "caught": true,
+  "failed": []
+ },
+ {
+  "id": "inj_keyword_at_call",
+  "caught": true,
+  "failed": [
+   "C3.qkv_gemm_func.no_keyword"
+  ]
+ },
+ {
+  "id": "inj_default_false",
+  "caught": true,
+  "failed": [
+   "C1.mlp_gemm_func.param"
+  ]
+ },
+ {
+  "id": "inj_branches_same",
+  "caught": true,
+  "failed": [
+   "C6.branches_differ"
+  ]
+ },
+ {
+  "id": "inj_keyword_other_file",
+  "caught": true,
+  "failed": [
+   "C5.no_keyword_anywhere"
+  ]
+ }
+]
+SELFTEST OK: 5/5

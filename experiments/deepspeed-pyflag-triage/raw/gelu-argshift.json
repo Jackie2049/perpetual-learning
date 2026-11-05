@@ -1,0 +1,54 @@
+{
+ "snapshot": "7e58feb65f6bfb17671ef1b19dfbf123b569ad48",
+ "finding": "triton.fused_gemm_gelu positional arg shift",
+ "verdict": "ARG_SHIFT",
+ "call_site": "deepspeed/ops/transformer/inference/op_binding/gelu_gemm.py:42",
+ "checks": [
+  {
+   "id": "C1.call_arity_is_8",
+   "ok": true,
+   "detail": "gelu_gemm.py:42 位置实参 8 个：['input', 'weight', \"weight.scale if hasattr(weight, 'scale') else torch.empty(1)\", 'bias', 'weight_out', \"weight_out.scale if hasattr(weight_out, 'scale') else torch.empty(1)\", 'self.config.dtype == torch.int8', 'self.config.transposed_mode']"
+  },
+  {
+   "id": "C2.triton_has_12",
+   "ok": true,
+   "detail": "triton 形参 12 个：['input', 'weight', 'weight_scale', 'bias', 'weight_out', 'weight_out_scale', 'epsilon', 'pre_layer_norm', 'q_int8', 'async_op', 'transposed_mode', 'use_triton_ln']"
+  },
+  {
+   "id": "C3.cpp_has_8",
+   "ok": true,
+   "detail": "C++ 等价签名 8 个：['input', 'weight', 'scale', 'bias', 'out', 'out_scale', 'dtype', 'transpose']"
+  },
+  {
+   "id": "C4.arity_mismatch",
+   "ok": true,
+   "detail": "调用点 8 个实参 / triton 必填 11 个 / 绑定：TypeError: missing a required argument: 'q_int8'"
+  },
+  {
+   "id": "C5.docstring",
+   "ok": true,
+   "detail": "形参表前 8 个：['input', 'weight', 'weight_scale', 'bias', 'weight_out', 'weight_out_scale', 'epsilon', 'pre_layer_norm']；缺的必填：['q_int8', 'async_op', 'transposed_mode']"
+  },
+  {
+   "id": "C7.cpp_positions_correct",
+   "ok": true,
+   "detail": "C++ 第 7/8 个实参 → dtype/transpose"
+  },
+  {
+   "id": "C8.arg7_is_bool_arg8_is_transposed",
+   "ok": true,
+   "detail": "[6]=self.config.dtype == torch.int8   [7]=self.config.transposed_mode"
+  },
+  {
+   "id": "C9.triton_branch_selectable",
+   "ok": true,
+   "detail": "__init__ 里的赋值：['self.fused_gemm_gelu = self.inference_module.fused_gemm_gelu_int8', 'self.fused_gemm_gelu = self.gelu_gemm_fallback', 'self.fused_gemm_gelu = _triton_fused_gemm_gelu', 'self.fused_gemm_gelu = self.inference_module.fused_gemm_gelu_fp16', 'self.fused_gemm_gelu = self.inference_module.fused_gemm_gelu_bf16', 'self.fused_gemm_gelu = self.inference_module.fused_gemm_gelu_fp32']"
+  },
+  {
+   "id": "C10.fn_asserts_on_param_11",
+   "ok": true,
+   "detail": "函数体 assert：['assert not transposed_mode']"
+  }
+ ],
+ "failed": []
+}

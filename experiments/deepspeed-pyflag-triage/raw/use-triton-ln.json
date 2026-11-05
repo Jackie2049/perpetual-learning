@@ -1,0 +1,93 @@
+{
+ "snapshot": "7e58feb65f6bfb17671ef1b19dfbf123b569ad48",
+ "finding": "use_triton_ln",
+ "verdict": "UNREACHABLE",
+ "checks": [
+  {
+   "id": "C1.fused_gemm_gelu.param",
+   "ok": true,
+   "detail": "line=17 idx=11 default=True"
+  },
+  {
+   "id": "C1.mlp_gemm_func.param",
+   "ok": true,
+   "detail": "line=54 idx=16 default=True"
+  },
+  {
+   "id": "C1.qkv_gemm_func.param",
+   "ok": true,
+   "detail": "line=100 idx=10 default=True"
+  },
+  {
+   "id": "C2.fused_gemm_gelu.branch_observed",
+   "ok": true,
+   "detail": "读取行=[]（函数体不使用该形参）"
+  },
+  {
+   "id": "C2.mlp_gemm_func.branch_observed",
+   "ok": true,
+   "detail": "读取行=[74]"
+  },
+  {
+   "id": "C2.qkv_gemm_func.branch_observed",
+   "ok": true,
+   "detail": "读取行=[116]"
+  },
+  {
+   "id": "C3.qkv_gemm_func.no_keyword",
+   "ok": true,
+   "detail": "deepspeed/ops/transformer/inference/op_binding/qkv_gemm.py: 2 个调用点，带该关键字的 0 个"
+  },
+  {
+   "id": "C3.qkv_gemm_func.has_call",
+   "ok": true,
+   "detail": "deepspeed/ops/transformer/inference/op_binding/qkv_gemm.py: 2 个 self.qkv_gemm_func(...) 调用"
+  },
+  {
+   "id": "C3.mlp_gemm_func.no_keyword",
+   "ok": true,
+   "detail": "deepspeed/ops/transformer/inference/op_binding/mlp_gemm.py: 2 个调用点，带该关键字的 0 个"
+  },
+  {
+   "id": "C3.mlp_gemm_func.has_call",
+   "ok": true,
+   "detail": "deepspeed/ops/transformer/inference/op_binding/mlp_gemm.py: 2 个 self.mlp_gemm_func(...) 调用"
+  },
+  {
+   "id": "C3.fused_gemm_gelu.no_keyword",
+   "ok": true,
+   "detail": "deepspeed/ops/transformer/inference/op_binding/gelu_gemm.py: 1 个调用点，带该关键字的 0 个"
+  },
+  {
+   "id": "C3.fused_gemm_gelu.has_call",
+   "ok": true,
+   "detail": "deepspeed/ops/transformer/inference/op_binding/gelu_gemm.py: 1 个 self.fused_gemm_gelu(...) 调用"
+  },
+  {
+   "id": "C4.fused_gemm_gelu.unreachable",
+   "ok": true,
+   "detail": "最多次位置实参=8 <= 形参位置=11 ⇒ 该位置从未被实参覆盖"
+  },
+  {
+   "id": "C4.mlp_gemm_func.unreachable",
+   "ok": true,
+   "detail": "最多次位置实参=16 <= 形参位置=16 ⇒ 该位置从未被实参覆盖"
+  },
+  {
+   "id": "C4.qkv_gemm_func.unreachable",
+   "ok": true,
+   "detail": "最多次位置实参=10 <= 形参位置=10 ⇒ 该位置从未被实参覆盖"
+  },
+  {
+   "id": "C5.no_keyword_anywhere",
+   "ok": true,
+   "detail": "其他调用点=[]"
+  },
+  {
+   "id": "C6.branches_differ",
+   "ok": true,
+   "detail": "if/else 两支分别调 triton layer_norm 与 LayerNormOp"
+  }
+ ],
+ "failed": []
+}

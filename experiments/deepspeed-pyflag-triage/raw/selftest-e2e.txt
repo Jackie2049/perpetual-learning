@@ -1,0 +1,23 @@
+[
+ {
+  "id": "baseline_confirmed",
+  "caught": true,
+  "failed": []
+ },
+ {
+  "id": "inj_arity_fixed",
+  "caught": true,
+  "failed": [
+   "E2.A_raises_TypeError"
+  ]
+ },
+ {
+  "id": "inj_triton_unselectable",
+  "caught": true,
+  "failed": [
+   "E1.A_selects_triton",
+   "E2.A_raises_TypeError"
+  ]
+ }
+]
+SELFTEST OK: 3/3

@@ -1,5 +1,5 @@
-更新时间：2026-11-05（M1 **TM-021 本轮：MLC-LLM `mlc_llm router` 的子服务器恒开 debug 端点、用户关不掉**——`router/router.py:82` 的 `PopenServer(..., enable_debug=True, ...)` 写死，`Router` 形参与 `cli/router.py` 的 10 个参数里都没有这个开关；同仓 `mlc_llm serve` 有 `--enable-debug`（默认关）⇒ 两条部署路径不一致。四跳全部取真实函数体在 CPU 上执行：C1 两档都传 `True`（对照项 `prefix_cache_mode` 随档变 ⇒ 读数不是死的）、C2 `True` 档 argv 含 `--enable-debug`（**2 次**）、C3 `interface/serve.py:124` 真挂 debug 路由。历史：router 由 `5c9ebcb5`（#3064，2024-12-16）落地即如此，此后无人动过 ⇒ **不是回归**。顺带查明重复追加幂等无害（真 argparse 三形状 5/5）。**5 处自错**，其中「把函数体截到 `Popen(...)` 之前」给出**看起来对**的假读数，已加守卫。`--selftest` 5 项 / 6 注入全过。价值 **5/10**，**不对外**（待用户逐项授权）。零 GPU、未起服务、未发 HTTP、未触上游。此前 TM-020：verl `algorithm.filter_groups.metric` 的三份说明互相不自洽（详见下方条目）。
-）
+更新时间：2026-11-05（M1 **TM-025 本轮：DeepSpeed 扩池第九批——44 个开关 / 1 条候选，顺着它撞出一处 2023 年就存在的签名不匹配**。pyflag 扫 `7e58feb6`（1167 个 `.py`，29 秒）只有 1 条 `silently_inert`（`use_triton_ln`，mode=always：形参在末尾、调用点按位置传且刚好停在它前一位 ⇒ 恒真、`else` 死代码）。**真正有价值的是顺着它的消费者再走一跳**：`gelu_gemm.py:42` 用 8 个位置实参调用 `fused_gemm_gelu`，而 triton 版本有 12 个形参、11 个必填 ⇒ E2E 四档臂里 A 臂（fp16∧triton）**`TypeError: missing 3 required positional arguments`**，B/C/D 三臂正常。**但 9 条可达性判据证明用户撞不到**：`containers/base.py:122-124` 在 `use_triton=True` 时只允许 BERT 容器（否则 `NotImplementedError`），而 `TritonMLP` 的 `attn_nw` 无条件赋 `nn.Parameter` ⇒ 三元条件不可同时成立。历史：PR #3748（`69d1b9f9`，2023-06-23）引入时就是这样，**不是回归**。方法产出三条：① **先证存在、再证可达、最后定价值**（途中一度准备写成"用户会崩"，是可达性检查按回的）；② **判"参数错位"必须同时看函数指针指向谁**（RMSNorm 分支指向 C++ 的 `rms_qkv_gemm_*`，签名本来就不同——一次误报被这条挡掉）；③ **开关密度是筛选信号**（1167 文件仅 44 个形参式开关，配置面在 pydantic dataclass 里 ⇒ pyflag 不适合此类仓库）。**5 处自错全由自检抓出**，最要紧的是判据太松（`if True: attn_nw = None` 时 R2 照样全绿）。4 个探针 **40 条判据 / 13 条注入**全过，`raw/snapshot/` 存 10 个源文件（无克隆也能跑）。价值 **4/10**，**不对外**（缺陷确凿但从未可达；修法要动公开签名，采纳概率低，不值得占用授权额度）。纯静态 + CPU 源码执行，**未装 DeepSpeed、未上 GPU、未启用 triton、未触上游**。
+）此前 TM-021：MLC-LLM `mlc_llm router` 的子服务器恒开 debug 端点、用户关不掉——`router/router.py:82` 的 `PopenServer(..., enable_debug=True, ...)` 写死，`Router` 形参与 `cli/router.py` 的 10 个参数里都没有这个开关；同仓
 
 ## 当前方向与选题原则（2026-11-02 用户指令，覆盖此前的框架与选题范围）
 
@@ -357,6 +357,23 @@
 - **停止条件**：上游改变 `fields_to_remove` 语义或 Rust 签名（`probe.py` 的 P2/P3 会变红）。
 - **边界**：本轮 **github.com:443 不可达**，文件走 `api.github.com` contents API 逐个取、只核 4 个文件，**没有整仓 AST 扫描**；纯静态，未编译 Rust、未启动网关、未触上游。
 - **成果入口**：[实验](experiments/sglang-router-args-plumbing/README.md) · [判据 8 条](experiments/sglang-router-args-plumbing/probe.py) · [读数](experiments/sglang-router-args-plumbing/raw/probe.json) · [证据页](open-source/sglang/evidence/sgl-router-args-plumbing.md) · [diary](diary/2026-11-05.md)。
+
+## TM-025 — DeepSpeed：triton `fused_gemm_gelu` 从 2023 年引入起签名就对不上，但入口链上不可达（B 类：主动发掘／扩池第九批）
+
+- **渠道 / 仓库 / 来源**：B 类（主动发掘）；[deepspeedai/DeepSpeed](https://github.com/deepspeedai/DeepSpeed) `7e58feb6`（2026-11-05 02:26 UTC）；来源是 pyflag 扩池第九批（扫描只出 1 条候选 `use_triton_ln`，顺着它的消费者再走一跳撞见本条）。
+- **优先级 / 负责人 / 状态**：B 类扩池；M1；**已闭环（存在但不可达，2026-11-05）**。
+- **问题**：`op_binding/gelu_gemm.py:42` 用 **8 个位置实参**调用 `self.fused_gemm_gelu`，而 triton 实现 `triton/ops.py:17` 有 **12 个形参、11 个必填**。`dtype=fp16 ∧ use_triton ∧ attn_nw is None` 时指针指向 triton 版本 ⇒ `TypeError: missing 3 required positional arguments: 'q_int8', 'async_op', 'transposed_mode'`。C++ 等价签名恰好 8 个（`input, weight, scale, bias, out, out_scale, dtype, transpose`）⇒ 那 8 个实参是照 C++ 内核写的。
+- **读数（E2E，CPU 执行真实类体与真实函数）**：A 臂（fp16∧triton）`TypeError`；B（关 triton）／C（bf16）／D（未装 triton）三臂全部正常返回 ⇒ 只在 triton 分支发生。
+- **可达性（9 条判据，`probe_reachability.py`）**：**决定性的是 R8** —— `module_inject/containers/base.py:122-124`：`use_triton=True` 时非 BERT 容器直接 `raise NotImplementedError("Triton kernels are only for BERT-like models yet")`；而 `TritonMLP.__init__`（`triton/mlp.py:24`）**无条件**给 `attn_nw` 赋 `nn.Parameter` ⇒ 三元条件不可同时成立。`hybrid_engine` 虽然用 `set_empty_params=True`（会让 `attn_nw=None`），但它**不传** `use_triton`（默认 False）。
+- **历史归属**：`fused_gemm_gelu` 由 PR [#3748](https://github.com/deepspeedai/DeepSpeed/pull/3748)（`69d1b9f9`，2023-06-23）引入时就是 12 个形参，**同一提交**里的调用点就是 8 个实参；此后该文件只被 #5490（`645639bc`，2024-10-09）重排过，签名未变 ⇒ **从第一天起就不匹配，不是回归**。
+- **价值评估**：**4/10** —— 缺陷确凿、可机读、可证伪；但从未可达，没有用户被挡住。**不对外**：DeepSpeed 近期无 Triton 相关活跃开发，且最小修法（删 4 个未用必填形参）会动到公开签名的函数，采纳概率低，不值得占用用户授权额度。
+- **方法产出（本批真正的东西）**：
+  1. **先证存在、再证可达、最后定价值** —— 途中一度准备写成"fp16+triton 用户会崩"（E2E 读数非常硬），是可达性检查把它按回原位。**"一段代码会抛异常"与"用户会撞到它"是两个问题**，后者要用入口控制流单独证明；本条的入口门槛不在崩溃文件里，只在容器层。
+  2. **判"参数错位"必须同时看函数指针指向谁** —— `qkv_gemm.py`/`mlp_gemm.py` 的 RMSNorm 分支只传 7/11 个实参、形参表却是 11/17 个，单看会判成"错位会算错"；实际那个分支的指针指向 C++ 的 `rms_qkv_gemm_*`，签名本来就不同。**一次误报就是被这条挡掉的。**
+  3. **开关密度是筛选信号** —— DeepSpeed 1167 个文件只有 44 个形参式开关（配置面在 pydantic dataclass 里）⇒ **pyflag 适合"形参即配置"的仓库，dataclass 驱动的仓库不该再扫**。
+- **5 处自错（都由自检抓出）**：① 判据把"结论成立"当失败，退出码语义反了；② C4 边界差一（形参在末尾、调用点停在前一位，应 `<=` 不是 `<`）；③ 注入把实参改成 9 个后 `inspect.bind` 直接抛异常把探针崩掉 ⇒ 三处 `bind` 都包 try；④ **判据太松**：R2 只查"有 None 赋值也有 Parameter 赋值"，注入 `if True: attn_nw = None` 时照样全绿 ⇒ 收紧为"None 那条必须带 `set_empty_params` 守卫"；⑤ 先入为主把 RMSNorm 分支当错位（见方法产出 2）。
+- **停止条件**：上游删掉那 4 个未用必填形参、或放开 BERT 限制（`probe_reachability.py` 的 R8 会变红提示结论失效）、或用户要求重新评估。
+- **成果入口**：[实验](experiments/deepspeed-pyflag-triage/README.md) · [`use_triton_ln` 判据 17 条](experiments/deepspeed-pyflag-triage/probe_use_triton_ln.py) · [签名对齐 9 条](experiments/deepspeed-pyflag-triage/probe_gelu_argshift.py) · [E2E 四档臂](experiments/deepspeed-pyflag-triage/probe_gelu_e2e.py) · [可达性 9 条](experiments/deepspeed-pyflag-triage/probe_reachability.py) · [读数](experiments/deepspeed-pyflag-triage/raw/) · [源文件快照](experiments/deepspeed-pyflag-triage/raw/snapshot/) · [证据页](open-source/deepspeed/evidence/triton-fused-gemm-gelu-argshift.md) · [pyflag 第九批](tools/pyflag/readme.md) · [diary](diary/2026-11-05.md)。
 
 ## 已闭环与保留方向
 
