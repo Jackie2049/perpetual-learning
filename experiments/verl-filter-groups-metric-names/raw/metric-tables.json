@@ -1,0 +1,267 @@
+{
+  "verl_head_marker": "0.10.0.dev",
+  "tables": {
+    "written_static": {
+      "acc": [
+        "verl/experimental/reward_loop/reward_manager/dapo.py:104",
+        "verl/experimental/reward_loop/reward_manager/gdpo.py:88",
+        "verl/experimental/reward_loop/reward_manager/limited.py:447",
+        "verl/experimental/reward_loop/reward_manager/limited.py:458",
+        "verl/experimental/reward_loop/reward_manager/limited.py:467",
+        "verl/experimental/reward_loop/reward_manager/naive.py:95",
+        "verl/experimental/reward_loop/reward_manager/remote.py:126"
+      ],
+      "error": [
+        "verl/experimental/reward_loop/reward_manager/limited.py:466"
+      ],
+      "overlong": [
+        "verl/experimental/reward_loop/reward_manager/dapo.py:117"
+      ],
+      "overlong_reward": [
+        "verl/experimental/reward_loop/reward_manager/dapo.py:116"
+      ],
+      "timeout": [
+        "verl/experimental/reward_loop/reward_manager/limited.py:457"
+      ]
+    },
+    "dynamic_writers": [
+      "verl/experimental/reward_loop/reward_manager/dapo.py:101",
+      "verl/experimental/reward_loop/reward_manager/gdpo.py:85",
+      "verl/experimental/reward_loop/reward_manager/limited.py:444",
+      "verl/experimental/reward_loop/reward_manager/naive.py:92",
+      "verl/experimental/reward_loop/reward_manager/remote.py:123"
+    ],
+    "scorer_literal_keys": {
+      "acc": [
+        "verl/utils/reward_score/math_dapo.py:275"
+      ],
+      "pred": [
+        "verl/utils/reward_score/math_dapo.py:275"
+      ],
+      "score": [
+        "verl/utils/reward_score/math_dapo.py:275"
+      ]
+    },
+    "config_docstring": [
+      "reward",
+      "acc",
+      "score",
+      "seq_reward"
+    ],
+    "yaml_comment": [
+      "acc",
+      "reward"
+    ],
+    "repo_doc_examples": {
+      "acc": [
+        "docs/algo/dapo.md:80"
+      ],
+      "score": [
+        "docs/algo/dapo.md:80"
+      ],
+      "seq_final_reward": [
+        "docs/algo/dapo.md:80"
+      ],
+      "seq_reward": [
+        "docs/algo/dapo.md:80"
+      ]
+    },
+    "script_values": {
+      "verl/experimental/fully_async_policy/shell/dapo_30b_a3b_base_math_fsdp.sh": "acc",
+      "verl/experimental/fully_async_policy/shell/grpo_qwen35_35b_megatron_async.sh": "response_filter"
+    },
+    "canonical_metric": "reward"
+  },
+  "claims_vs_reachable": [
+    {
+      "name": "acc",
+      "reachable_via": "reward_extra_info",
+      "sources": [
+        "config_docstring",
+        "repo_docs",
+        "script",
+        "yaml_comment"
+      ],
+      "where": [
+        "verl/experimental/fully_async_policy/shell/dapo_30b_a3b_base_math_fsdp.sh"
+      ]
+    },
+    {
+      "name": "response_filter",
+      "reachable_via": "none",
+      "sources": [
+        "script"
+      ],
+      "where": [
+        "verl/experimental/fully_async_policy/shell/grpo_qwen35_35b_megatron_async.sh"
+      ]
+    },
+    {
+      "name": "reward",
+      "reachable_via": "rm_scores(canonical)",
+      "sources": [
+        "config_docstring",
+        "yaml_comment"
+      ],
+      "where": []
+    },
+    {
+      "name": "score",
+      "reachable_via": "reward_extra_info",
+      "sources": [
+        "config_docstring",
+        "repo_docs"
+      ],
+      "where": []
+    },
+    {
+      "name": "seq_final_reward",
+      "reachable_via": "none",
+      "sources": [
+        "repo_docs"
+      ],
+      "where": [
+        "docs/algo/dapo.md:80"
+      ]
+    },
+    {
+      "name": "seq_reward",
+      "reachable_via": "none",
+      "sources": [
+        "config_docstring",
+        "repo_docs"
+      ],
+      "where": []
+    }
+  ],
+  "runtime": {
+    "generous": [
+      {
+        "metric": "acc",
+        "outcome": "ran",
+        "filtered": [
+          "probeuid"
+        ],
+        "counts": {
+          "1.0": 1
+        }
+      },
+      {
+        "metric": "response_filter",
+        "outcome": "raised",
+        "error": "Finished groups are missing DAPO metric 'response_filter': ['probeuid']"
+      },
+      {
+        "metric": "reward",
+        "outcome": "ran",
+        "filtered": [
+          "probeuid"
+        ],
+        "counts": {
+          "1.0": 1
+        }
+      },
+      {
+        "metric": "score",
+        "outcome": "ran",
+        "filtered": [
+          "probeuid"
+        ],
+        "counts": {
+          "1.0": 1
+        }
+      },
+      {
+        "metric": "seq_final_reward",
+        "outcome": "raised",
+        "error": "Finished groups are missing DAPO metric 'seq_final_reward': ['probeuid']"
+      },
+      {
+        "metric": "seq_reward",
+        "outcome": "raised",
+        "error": "Finished groups are missing DAPO metric 'seq_reward': ['probeuid']"
+      }
+    ],
+    "acc_only": [
+      {
+        "metric": "acc",
+        "outcome": "ran",
+        "filtered": [
+          "probeuid"
+        ],
+        "counts": {
+          "1.0": 1
+        }
+      },
+      {
+        "metric": "response_filter",
+        "outcome": "raised",
+        "error": "Finished groups are missing DAPO metric 'response_filter': ['probeuid']"
+      },
+      {
+        "metric": "reward",
+        "outcome": "ran",
+        "filtered": [
+          "probeuid"
+        ],
+        "counts": {
+          "1.0": 1
+        }
+      },
+      {
+        "metric": "score",
+        "outcome": "raised",
+        "error": "Finished groups are missing DAPO metric 'score': ['probeuid']"
+      },
+      {
+        "metric": "seq_final_reward",
+        "outcome": "raised",
+        "error": "Finished groups are missing DAPO metric 'seq_final_reward': ['probeuid']"
+      },
+      {
+        "metric": "seq_reward",
+        "outcome": "raised",
+        "error": "Finished groups are missing DAPO metric 'seq_reward': ['probeuid']"
+      }
+    ]
+  },
+  "partial_key_case": {
+    "metric": "acc",
+    "outcome": "raised",
+    "error": "Finished groups are missing DAPO metric 'acc': ['probeuid']"
+  },
+  "upstream_test_metrics": {
+    "<非字面量>": [
+      "test_replay_buffer_on_cpu.py:66"
+    ],
+    "acc": [
+      "test_replay_buffer_on_cpu.py:1032",
+      "test_replay_buffer_on_cpu.py:1047",
+      "test_replay_buffer_on_cpu.py:1076",
+      "test_replay_buffer_on_cpu.py:1104",
+      "test_replay_buffer_on_cpu.py:1126",
+      "test_replay_buffer_on_cpu.py:1168",
+      "test_replay_buffer_on_cpu.py:1192",
+      "test_replay_buffer_on_cpu.py:298",
+      "test_replay_buffer_on_cpu.py:720",
+      "test_replay_buffer_on_cpu.py:741",
+      "test_replay_buffer_on_cpu.py:894",
+      "test_replay_buffer_on_cpu.py:923",
+      "test_replay_buffer_on_cpu.py:980"
+    ],
+    "reward": [
+      "test_replay_buffer_on_cpu.py:963"
+    ]
+  },
+  "summary": {
+    "unreachable_claims": [
+      "response_filter",
+      "seq_final_reward",
+      "seq_reward"
+    ],
+    "docstring_claims_unreachable": [
+      "seq_reward"
+    ],
+    "upstream_test_metrics_not_in_table": []
+  }
+}

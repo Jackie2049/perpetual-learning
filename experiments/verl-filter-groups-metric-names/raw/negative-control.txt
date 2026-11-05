@@ -1,0 +1,6 @@
+PASS A 夹具丢 extra_info   期望失败检查=['② acc 可读时 ran（正向对照）'] 实际失败=['② acc 可读时 ran（正向对照）']
+PASS B uid 含下划线   期望失败检查=['② acc 可读时 ran（正向对照）'] 实际失败=['② acc 可读时 ran（正向对照）', "④ canonical 'reward' 不依赖 extra_info"]
+PASS C canonical 常量被改坏   期望失败检查=['⑧ 上游测试用的 metric 名都能在表①找到'] 实际失败=['⑧ 上游测试用的 metric 名都能在表①找到']
+PASS D 所有名字都可读   期望失败检查=['③ 无人写的名字 raised（负向对照）', '⑤ 缺一条轨迹的键就整组抛'] 实际失败=['③ 无人写的名字 raised（负向对照）', '⑤ 缺一条轨迹的键就整组抛', '⑦ 不可达声称名在 acc-only 输入下全部 raised']
+
+negative_control 4/4

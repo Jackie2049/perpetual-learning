@@ -1,4 +1,4 @@
-更新时间：2026-11-05（M1 **TM-019 已闭环：MLC-LLM 扩池第六批——7 个 Python 开关 / 22 个 C++ 字段，真缺陷 0 条；产出是扫描器自己被"工厂转发"骗了两次**。Python 版 415 个 `.py`／**4.0 秒** → 7 开关 / 2 条 `silently_inert`；C++ 版 88 个 C/C++／**0.5 秒** → 22 字段 / 1 条 `unwritten`。两条 Python 候选同一根因：`interface/router.py:17` 的 `serve()` 把 `enable_prefix_cache` 原样递给 `Router(...)`，老扫描器把"透传"当"决策"⇒ 报无人传；真决策在 `router/router.py:86`。`probe_router_chain.py` 三处真实源码在 CPU 上跑四跳（真 `Router.__init__`→两台 `PopenServer` 的 `prefix_cache_mode` 为 `radix/radix` 与 `disable/disable`；真 `serve()`→`Router(...)` 收到 True/False；真 argparse 两档对），selftest **8/8**。`enable_tracing` 同形四跳。**修进 pyflag**：关键字实参算消费、只转发的形参标 `forwarded` 不算决策者、容器键位写入单列 `container_writes` 只作线索；回归 verl（8）/SkyRL（7）/OpenRLHF（0）三份归档逐条不变，单测 **16 passed**。**两处自错**：① 探针第一版基线读成 `<absent>`——`uvicorn` 替身是空模块、真 `serve()` 末尾 `uvicorn.run` 抛异常，那一轮被记成失败；`--selftest` 注入空转的红灯抓出它，我一度准备写成真缺陷；② `F1c` 用"最后一段 docstring 之后"取代码切错位置。C++ 那条 `is_decode` 是聚合初始化里用注释写的字段名（TM-018 第二类形态）。六批合计真缺陷 **4 条**。**不对外**（上游查重 0 条）。此前 TM-018：llama.cpp C++ 版 37 条候选 0 条真缺陷（详见下方条目）。
+更新时间：2026-11-05（M1 **TM-020 本轮：verl `algorithm.filter_groups.metric` 的三份说明互相不自洽**——V1 组过滤按**名字**去 `extra_fields.reward_extra_info` 取键，取不到抛 `RuntimeError`；而配置 docstring 写 `"acc", "score", "seq_reward"`、`docs/algo/dapo.md:80` 举例 `seq_reward / seq_final_reward`、随仓库脚本用 `response_filter`，**这三个名字在 V1 零写入点**。真 `ReplayBuffer` 上跑（只替身 tq 与 SkipManager，判定是上游原文）：`reward`／`acc` ran，`score` 只在 `math_dapo` scorer 下 ran，`seq_reward`／`seq_final_reward`／`response_filter` **无论给多少键都 raised**；上游单测只测过 `acc`（13 处）与 `reward`（1 处）⇒ CI 抓不到。历史：docstring 自 `c936ec7`（2025-07-04）就写着 `seq_reward`，而 DAPO recipe 的 `dapo_ray_trainer.py:240` **真有** `seq_final_reward` 分支 ⇒ **名字搬进 V1 后语义没跟上**，对外只能写「说明与实现没对齐」，不能写「开关坏了」。自检 **8/8**、负向对照 **4/4**、零 GPU、未触上游。此前 TM-019：MLC-LLM 扩池第六批真缺陷 0 条（详见下方条目）。
 ）
 
 ## 当前方向与选题原则（2026-11-02 用户指令，覆盖此前的框架与选题范围）
@@ -58,6 +58,19 @@
 - **下一步与等待条件**：① 是否以「文档／示例修订」为最小对外动作（成本最低、最可能被接受）；② 是否接受"维护者已选 MAGI 路线、补接线大概率被再关"的判断而不提修复类 issue。**两者都需用户逐项授权，不得自行发布**。
 - **停止条件**：用户否决对外动作，或上游补上接线／删除该选项（脚本会返回 1 提示结论失效）。
 - **成果入口**：[取证材料](open-source/verl/evidence/prefix-grouper-inert/readme.md)、[影响量化](experiments/verl-prefix-grouper-side-effects/readme.md)、[tracker](open-source/verl/tracker.md)。
+
+## TM-020 — verl `algorithm.filter_groups.metric`：三份说明互相不自洽，两个名字在 V1 上零写入点（B 类：主动发掘）
+
+- **渠道 / 仓库 / 来源**：B 类（主动发掘）；[verl](https://github.com/verl-project/verl) main `31cfccb4`（2026-11-04）；来源是 §13.49 结尾「顺带记一个文档不一致」的扩查（当时只记了 `seq_final_reward` 这一句，未查证）。
+- **问题与价值**：V1 的 `ReplayBuffer._dapo_filtered_keys` 拿配置里的字符串去 `extra_fields.reward_extra_info` 按**名字**取键，取不到抛 `RuntimeError: Finished groups are missing DAPO metric '<名字>'`。而「能填哪些名字」有三份不同说明：配置 docstring（`"reward"` canonical／`acc`／`score`／**`seq_reward`**）、`docs/algo/dapo.md:80`（举例 `score / seq_reward / seq_final_reward`）、随仓库脚本 `grpo_qwen35_35b_megatron_async.sh:64`（**`response_filter`**）。**后三个名字在 V1 零写入点**，照填在第一个训练步就崩。
+- **优先级 / 负责人 / 状态**：B 类候选；M1 本地取证完成，**等待用户决定是否对外**。
+- **读数（2026-11-05，CPU 只读）**：三表抽取 + 真 `ReplayBuffer` 运行（`stub_env.py` 只替身 `transfer_queue`／`SkipManager`，判定逻辑是上游原文，按上游 CPU 测试同一套写盘顺序造组）——`reward`／`acc` ran；`score` 在「只有 `acc`」的真实输入下 raised；`seq_reward`／`seq_final_reward`／`response_filter` **无论给多少键都 raised**（不是「scorer 没给」，是没人写）。缺**一条**轨迹的键也整组抛。**上游单测只测过 `acc`（13 处）与 `reward`（1 处）**，所以 CI 抓不到。
+- **历史归属（重要，决定对外措辞）**：docstring 的 `seq_reward` 从文件拆出那天（`c936ec7`，2025-07-04）就在，直到 `7e9875249`（2026-10-12）才改；**DAPO recipe 的 `dapo_ray_trainer.py:240` 真有 `if metric_name == "seq_final_reward":` 分支**（verl-recipe 仓）⇒ 这些名字在 V1 之前**是有主的**；V1 自 `c88e875`（2026-07-23）引入起只认字面键 ⇒ **名字被搬进 V1 之后语义没跟上，文档慢了两轮**。#7792（`7cb6501`，2026-09-08）改注释时**留了一个 `seq_reward`**。⇒ 对外必须写「说明与实现没对齐」，**不能写「这些开关坏了」**。
+- **价值评估**：**5/10** —— 影响面窄（仓内 recipe 全用 `acc`，官方路径不触发），但崩在第一步、报错信息会把用户引向「我的 scorer 少返回一个键」这一错误结论；修复成本极低（删注释／改文档／加一行配置校验）。
+- **上游查重（2026-11-05，只读 GitHub API）**：`filter_groups.metric` 0 条；`seq_reward`／`seq_final_reward` 各 8 条均无关；`filter_groups` 16 条无人提过。
+- **下一步与等待条件**：对外前需用户决定 ① 走哪条最小动作——(a) 只改 docstring + `docs/algo/dapo.md`（最低风险）；(b) 加「名字不是 `reward` 就要求 scorer 返回该键」的加载期校验并给可读报错（更有用，但要动代码）；(c) 都做；② 或判定「影响面太窄，不对外」。**对外（issue／PR）待用户逐项授权，未授权前不建 fork 分支、不评论、不开 PR。**
+- **停止条件**：上游把注释改齐（`⑦`／`⑧` 自检会变红）、或给 V1 补上 `seq_*` 语义、或用户否决对外动作。
+- **成果入口**：[实验与复现](experiments/verl-filter-groups-metric-names/README.md) · [读数](experiments/verl-filter-groups-metric-names/raw/metric-tables.json) · [自检 8/8](experiments/verl-filter-groups-metric-names/raw/selftest.txt) · [负向对照 4/4](experiments/verl-filter-groups-metric-names/raw/negative-control.txt) · [三表扫描](experiments/verl-filter-groups-metric-names/probe_metric_tables.py) · [证据页](open-source/verl/evidence/filter-groups-metric-names.md) · [TM-005](queue_tech-miner.md) · [diary](diary/2026-11-05.md)。
 
 ## TM-006 — verl `tiled_mlp` 配置无消费路径（B 类：主动发掘）
 

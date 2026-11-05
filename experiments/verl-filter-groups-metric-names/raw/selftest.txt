@@ -1,0 +1,10 @@
+PASS ① 表① 含 acc   [['acc', 'error', 'overlong', 'overlong_reward', 'pred', 'score', 'timeout']]
+PASS ② acc 可读时 ran（正向对照）   [{'metric': 'acc', 'outcome': 'ran', 'filtered': ['probeuid'], 'counts': {0.0: 1}}]
+PASS ③ 无人写的名字 raised（负向对照）   [{'metric': 'no_such_metric_xyz', 'outcome': 'raised', 'error': "Finished groups are missing DAPO metric 'no_such_metric_xyz': ['probeuid']"}]
+PASS ④ canonical 'reward' 不依赖 extra_info   [{'metric': 'reward', 'outcome': 'ran', 'filtered': ['probeuid'], 'counts': {1.0: 1}}]
+PASS ⑤ 缺一条轨迹的键就整组抛   [{'metric': 'acc', 'outcome': 'raised', 'error': "Finished groups are missing DAPO metric 'acc': ['probeuid']"}]
+PASS ⑥ 伪造键会改变可达集合
+PASS ⑦ 不可达声称名在 acc-only 输入下全部 raised   [{'acc': 'ran', 'response_filter': 'raised', 'reward': 'ran', 'score': 'raised', 'seq_final_reward': 'raised', 'seq_reward': 'raised'}]
+PASS ⑧ 上游测试用的 metric 名都能在表①找到   [[]]
+
+selftest 8/8
