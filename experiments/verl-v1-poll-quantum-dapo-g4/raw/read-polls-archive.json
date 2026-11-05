@@ -1,0 +1,297 @@
+{
+ "b_per_group_used": 0.0318,
+ "runs": [
+  {
+   "counter": "absent",
+   "log": "raw/rollout-poll-dapo-g4base.txt",
+   "meta": {
+    "counter_lines": 0,
+    "duplicate_steps": 0,
+    "log": "raw/rollout-poll-dapo-g4base.txt",
+    "poll": 2.0,
+    "step_lines": 16,
+    "steps": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15
+    ]
+   },
+   "poll": 2.0,
+   "regression": null,
+   "summary": {
+    "gen_mean": 6.5203169582722085,
+    "n": 12,
+    "step_mean": 18.51824370631948,
+    "window": [
+     3,
+     14
+    ],
+    "work_mean": 114.83333333333333
+   }
+  },
+  {
+   "counter": "absent",
+   "log": "raw/rollout-poll-dapo-g4baseR.txt",
+   "meta": {
+    "counter_lines": 0,
+    "duplicate_steps": 0,
+    "log": "raw/rollout-poll-dapo-g4baseR.txt",
+    "poll": 2.0,
+    "step_lines": 16,
+    "steps": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15
+    ]
+   },
+   "poll": 2.0,
+   "regression": null,
+   "summary": {
+    "gen_mean": 6.900648895961543,
+    "n": 12,
+    "step_mean": 18.72527888417244,
+    "window": [
+     3,
+     14
+    ],
+    "work_mean": 122.66666666666667
+   }
+  },
+  {
+   "counter": "absent",
+   "log": "raw/rollout-poll-dapo-g4baseR2.txt",
+   "meta": {
+    "counter_lines": 0,
+    "duplicate_steps": 0,
+    "log": "raw/rollout-poll-dapo-g4baseR2.txt",
+    "poll": 2.0,
+    "step_lines": 16,
+    "steps": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15
+    ]
+   },
+   "poll": 2.0,
+   "regression": null,
+   "summary": {
+    "gen_mean": 6.681732234855493,
+    "n": 12,
+    "step_mean": 18.450806214163702,
+    "window": [
+     3,
+     14
+    ],
+    "work_mean": 120.5
+   }
+  },
+  {
+   "counter": "absent",
+   "log": "raw/rollout-poll-dapo-g4p050R.txt",
+   "meta": {
+    "counter_lines": 0,
+    "duplicate_steps": 0,
+    "log": "raw/rollout-poll-dapo-g4p050R.txt",
+    "poll": 0.5,
+    "step_lines": 16,
+    "steps": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15
+    ]
+   },
+   "poll": 0.5,
+   "regression": null,
+   "summary": {
+    "gen_mean": 5.547584426434089,
+    "n": 12,
+    "step_mean": 17.304005932373304,
+    "window": [
+     3,
+     14
+    ],
+    "work_mean": 108.83333333333333
+   }
+  },
+  {
+   "counter": "absent",
+   "log": "raw/rollout-poll-dapo-g4p050R2.txt",
+   "meta": {
+    "counter_lines": 0,
+    "duplicate_steps": 0,
+    "log": "raw/rollout-poll-dapo-g4p050R2.txt",
+    "poll": 0.5,
+    "step_lines": 16,
+    "steps": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15
+    ]
+   },
+   "poll": 0.5,
+   "regression": null,
+   "summary": {
+    "gen_mean": 6.096447001366566,
+    "n": 12,
+    "step_mean": 18.26851721278702,
+    "window": [
+     3,
+     14
+    ],
+    "work_mean": 122.5
+   }
+  },
+  {
+   "counter": "absent",
+   "log": "raw/rollout-poll-dapo-g4p010R.txt",
+   "meta": {
+    "counter_lines": 0,
+    "duplicate_steps": 0,
+    "log": "raw/rollout-poll-dapo-g4p010R.txt",
+    "poll": 0.1,
+    "step_lines": 16,
+    "steps": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15
+    ]
+   },
+   "poll": 0.1,
+   "regression": null,
+   "summary": {
+    "gen_mean": 6.024543961665283,
+    "n": 12,
+    "step_mean": 17.836279101048905,
+    "window": [
+     3,
+     14
+    ],
+    "work_mean": 128.66666666666666
+   }
+  },
+  {
+   "counter": "absent",
+   "log": "raw/rollout-poll-dapo-g4p010R2.txt",
+   "meta": {
+    "counter_lines": 0,
+    "duplicate_steps": 0,
+    "log": "raw/rollout-poll-dapo-g4p010R2.txt",
+    "poll": 0.1,
+    "step_lines": 16,
+    "steps": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15
+    ]
+   },
+   "poll": 0.1,
+   "regression": null,
+   "summary": {
+    "gen_mean": 5.9235832941097515,
+    "n": 12,
+    "step_mean": 17.855385662211727,
+    "window": [
+     3,
+     14
+    ],
+    "work_mean": 130.16666666666666
+   }
+  }
+ ],
+ "steady": [
+  3,
+  14
+ ],
+ "two_path": null
+}

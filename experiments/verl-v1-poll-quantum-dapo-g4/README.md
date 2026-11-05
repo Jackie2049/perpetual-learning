@@ -177,6 +177,47 @@ wait_idle() {  # 等 0,1,4,5 回到 ~1 MiB
 
 **边界。** 零 GPU 读数；计数器仍未在服务器上执行过；`CHECK_TREE` 默认开启会挡住"在未打补丁树上重跑旧配置"，需要时显式 `CHECK_TREE=0`（preflight 的 argv 捕获就是这么做的，因为它只跑 recipe 不看运行树）。
 
+## 2026-11-05 无卡轮（三）：窗口的**读数侧**补上了；顺带证明本页原来那条判据推不出来
+
+**为什么做这个。** 上一轮把"树必须是受测树"做成了硬门槛，但产出侧还是空的：仓里没有任何东西从 console 日志里读 `training/sampler/blocking_polls`。日志是 1240 行、带 ANSI 与 `(TaskRunnerV1 pid=…)` 前缀，「这一步没有计数器」和「计数器等于 0」肉眼分不开。更麻烦的是下面「下一步」里那条判据——**预期 ≥2；若恒 1，斜率差不能归因轮数**——它从来没被推导过。本轮查了一遍：**按量化模型，墙钟给不出轮询次数**，所以这条判据不成立。
+
+**一、解析器 [read-polls.py](read-polls.py)，自检 12/12。** 三件事只有它做：
+- step 行必须**行首**匹配（`^(?:\([^)]*\))?step:N - `，且至少 4 个 ` - `）。记忆里的那个坑——`timing_s/step:8.2` 被读成 `step:8`——是 S3 负向对照，去掉锚点即红。
+- 计数器**缺席报 `absent`、不报 0**；`--expect-counter` 直接 **exit 2**。窗口在未打补丁的树上跑完会死在这里，而不是交出一个"0 次轮询"的假读数。
+- 同一步里取 `timing_s/gen`、`timing_s/step`、`training/filter_groups/{evicted_samples,discarded_surplus_samples}`，`work = evicted + surplus + 32`（32 是 train batch size，trainer 不打印，用 `--selected-groups` 补）。
+
+另两条是"读到之后怎么算"：臂内回归 `gen ~ 1 + work + polls`（系数应 ≈ P）与跨臂恒等式（见第四节）。自检的 S5／S6 是拿植入的已知系数反查这两条。
+
+**二、拿七个归档跑当场对账（不是自证）。** 六跑 + 首轮，`--steady 3:14`：
+
+| poll 臂 | gen（本工具） | 页面归档值 | 整步（本工具） | 归档 | work（本工具） | 归档分解表 |
+|---|---|---|---|---|---|---|
+| 2.0 | **6.791** | 6.791 | **18.588** | 18.588 | **122.7／120.5** | 122.7／120.5 |
+| 0.5 | **5.822** | 5.822 | **17.786** | 17.787 | **108.8／122.5** | 108.8／122.5 |
+| 0.1 | **5.974** | 5.974 | **17.846** | 17.846 | **128.7／130.2** | 128.7／130.2 |
+
+八项读数逐位相同 ⇒ 解析路径与独立的 `make-summary-g4.py`／`decompose-gen.py` 一致。**七跑全部 `counter absent`**（它们跑在原树上），这是真实数据上的负向对照：对这七个日志加 `--expect-counter` 会 exit 2。读数：[raw/read-polls-archive.json](raw/read-polls-archive.json)。
+
+**三、本页原来的「预期 ≥2」为什么推不出来。** 量化模型（§13.50）是 `wait = ceil(D/P)·P − D`，`D` 是"这批数据什么时候齐"。这个量**永远落在 `[0, P)`**，与 `ceil` 了几次无关：
+
+- `D = 0.4 s`、`P = 2.0` ⇒ 1 次轮询、等待 1.6 s；
+- `D = 10.4 s`、`P = 2.0` ⇒ 6 次轮询、等待同样 **1.6 s**。
+
+两者 A/B 省下的时间一模一样。所以归档测到的 1.07–1.14 s 只是 `E[P − (D mod P)]`（4 卡 0.53–0.57 个格；相位均匀时 0.5，吻合），**它不含任何关于 n 的信息**。⇒「预期 ≥2」没有依据；「若恒 1，斜率差不能归因轮数」同样没有依据——n=1 与 n=6 可以有相同斜率。**这是必须上计数器的理由，本轮把它从"断言"变成"证明"。**
+
+**四、窗口里真正能检验的两条（预登记）。**
+
+| 判据 | 形式 | 失败含义 |
+|---|---|---|
+| **单位**：一次轮询 = 一次 P 秒 sleep | 臂内回归 `gen ~ 1 + work + polls`，`poll` 系数 = P ± se | 系数不 ≈ P ⇒ 计数器数的不是 `_wait_for_next_poll`，`inflight=1` 的读数不能拿来解释 −4.0% |
+| **两路一致**：墙钟 vs 计数器 | `gen(2.0) − gen(0.1) = 2.0·n̄₂ − 0.1·n̄₀.₁ + b·Δwork`（`b = 31.8 ms/组`），残差 ≈ 0 | 残差超噪声 ⇒ 两路测的不是同一段等待 |
+
+**校准臂（新增，值一跑）。** `INFLIGHT=2`、poll 保持默认 2.0：这个配置的 gen 已有归档值 **6.791 s**，是唯一能在"墙钟已知"前提下先验计数器的臂。两条判据都过，`inflight=1` 的读数才算数；不过就先停下，别拿它解释斜率差。
+
+**五、口径。** ① `--expect-counter` 只挡"树没打补丁"，挡不住"计数器数错次数"——后者只能靠第四节的回归。② `work` 含常数额 32，别拿去和别的批次比绝对组数（斜率不受影响）。③ 跨臂恒等式的参考臂可用归档的 0.1 臂，但跨批次截距噪声有 −0.155 s（同配置两跑之差），相对 1.1 s 的效应可接受，窗口内自取更好。
+
+**边界。** 零 GPU 读数；`read-polls.py` 在归档上验的是**解析**，不是计数器本身——计数器依然从未在 GPU 上执行过；第四节的判据是预登记，本轮无法执行。
+
 ## 材料
 
 | 文件 | 内容 |
@@ -190,6 +231,8 @@ wait_idle() {  # 等 0,1,4,5 回到 ~1 MiB
 | `run-poll-dapo.sh` | 运行脚本（`GPUS`／`MODE`／`POLL`／`SRC`／`INFLIGHT` 可覆盖；`CHECK_TREE=1` 守卫，`CHECK_ONLY=1` 只查树） |
 | `prep-tree.sh` | 生成受测副本：复制干净树 → 打两个补丁 → 自检 4 标记（`FORCE=1` 覆盖已存在目录） |
 | `preflight-g4.py` | 开窗前检查：捕获真实 argv（桩 `python3`）→ 逐键对齐归档树 → Hydra 组合两臂并回读 → 负向对照 → 受测树标记 + sim + 守卫正/负对照；`--selftest` 11/11 |
+| `read-polls.py` | 窗口读数侧：解析 console 日志里的 `training/sampler/blocking_polls`／`timing_s/gen`／生成组数；`--expect-counter` 对未打补丁的树 exit 2；臂内回归与跨臂恒等式；`--selftest` 12/12 |
+| `raw/read-polls-archive.json` | 七个归档跑的解析读数（与本页归档值逐位相同；七跑均 `counter absent`） |
 | `raw/preflight-g4.json` | 上一轮读数（`31cfccb4`，含与 `24f25b03` recipe 的逐键比对） |
 | `raw/preflight-g4-instrumented.json` | 本轮读数：`--run-tree` 上的标记／sim 12/12／守卫 0 与 65 双通过 |
 | `raw/preflight-g4-nopin.json` | 对照：去掉 `enable_chunked_prefill` 这个钉时的漂移与 main 上生效值 `true` |
@@ -197,12 +240,18 @@ wait_idle() {  # 等 0,1,4,5 回到 ~1 MiB
 
 ## 下一步
 
-- 4 卡 DAPO 的 A/B 已闭环。未测只剩 **4 卡 `inflight=1`**（需 ≥4 张空闲卡）。开窗前流程（三条命令，任一检查失败都会在碰 GPU 前退出）：
+- 4 卡 DAPO 的 A/B 已闭环。未测只剩 **4 卡 `inflight=1`**（需 ≥4 张空闲卡）。开窗前流程（任一检查失败都会在碰 GPU 前退出）：
   ```bash
   bash prep-tree.sh /home/zxw/venvs/rollout-g8-src/verl /tmp/m5-g4i1/verl
   /tmp/hydra-probe-venv/bin/python3 preflight-g4.py --tree <干净树> --run-tree /tmp/m5-g4i1/verl \
       --sim-python /home/zxw/venvs/rollout-g8/bin/python3 --compare-script <归档树同名脚本> --out raw/preflight-g4.json
+  # 校准臂（墙钟已知：gen 应复现 6.791s）——先验计数器
+  MODE=g4cal GPUS=0,1,4,5 INFLIGHT=2 SRC=/tmp/m5-g4i1/verl bash run-poll-dapo.sh
+  # 正题臂
   MODE=g4i1 GPUS=0,1,4,5 INFLIGHT=1 SRC=/tmp/m5-g4i1/verl bash run-poll-dapo.sh
+  # 读数：缺席即 exit 2；两条判据见上一节第四节
+  python3 read-polls.py --log /tmp/rollout-poll-dapo-g4cal.log=2.0 \
+      --log /tmp/rollout-poll-dapo-g4i1.log=2.0 --expect-counter --json raw/read-polls-window.json
   ```
-  跑后每步读 `training/sampler/blocking_polls`（预期 ≥2；若恒 1，斜率差不能归因轮数）。若要把生成量代价也定下来，需每臂 ≥4 跑（本批分辨力不够），判据是看 +6.4% 能否越过 2 SE。
+  要跑跨臂恒等式，再补一个 `MODE=g4i1p010 POLL=0.1 INFLIGHT=1` 的细轮询臂（同一窗口，约 7–8 分钟/跑）。**读数的解释规则已换成「臂内回归系数 ≈ P + 跨臂恒等式残差 ≈ 0」；原来的「预期 ≥2／若恒 1 则不能归因轮数」已作废**（理由见上一节第三节）。若要把生成量代价也定下来，需每臂 ≥4 跑（本批分辨力不够），判据是看 +6.4% 能否越过 2 SE。
 - TM-008 的 PR 风险段用 2 卡 +13.1% 的生成量代价与 4 卡 −4.0% 的整步收益，并注明"等待收益 ≈0.59×量子、随配置变"。**对外动作仍未做，待用户逐项授权。**
