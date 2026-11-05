@@ -1,0 +1,8 @@
+  ok   S1.planted_grid_recovers_s
+  ok   S2.continuous_rejected
+  ok   S3.consecutive_counts
+  ok   S4.tail_bound_bites
+  ok   S5.threshold_matters
+  ok   S6.staircase_mediation
+  ok   S7.reader_contract
+selftest: 7/7 passed

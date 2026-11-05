@@ -1,4 +1,5 @@
 更新时间：2026-11-05 14:2x（**M1 TM-026：NeMo-RL 扩池第十批——`use_preserving_dataset` 能配上，但锁定版本下已经不改变任何数据**。pyflag 扫 `d82b79c`（1096 个 `.py`、53 秒）→ **34 个开关 / 1 条**（`use_preserving_dataset`，`mode=never`）。**三段分开看**：① 能配上——`dataset_class(**data_config)` + 注册表直绑类 + `TypedDict` 不做运行时校验，键一路到达形参；② **没有效果**——仓库 `uv.lock` 锁 `datasets==5.0.1`，两档输出的 `tools` 逐字节相同、`sft_processor` 的 `token_ids` 也相同；③ **曾经有效**——`datasets<=4.6` 下关闭档补出 `strict: null` 与 `expr/precision: null`，开启档保留原结构，分界 **4.6.0 → 4.7.0**（异构嵌套 dict 退回 `Json`、不补键）。**历史归属**：按仓库锁 2025-09→2025-12 是 4.0.0、2026-01→2026-10 是 4.4.1（开关有效），**2026-10-21 的 #3286 起 5.0.1**（空转）⇒ **不是回归，是依赖升级让特性静默失效**，代码 diff 里什么都没有。**2 处自错全由自检抓出**：① 把旧版补齐行为当普遍事实（注入后仍绿）；② 拿"两样本键集相同"当判据（新版本就各自不同）⇒ 改为"两档输出是否逐字节相同"。**方法产出**："能配上"与"有效果"是两个判据；**效果判据必须挂依赖版本**。价值 **4/10，不对外**（当前无用户受影响；可提的只有文档按版本澄清／钉依赖上限／删开关，属维护者决定）。纯 CPU，探针在两组锁定版本上各 **12/0**、自检 2/2，**未装 nemo_rl 本体、未跑训练、未触上游**。产物：[实验](experiments/nemo-rl-pyflag-triage/README.md)、[证据页](open-source/nemo-rl/evidence/preserving-dataset-version-drift.md)、[版本矩阵](experiments/nemo-rl-pyflag-triage/raw/version-matrix.json)。）
+更新时间：2026-11-05 14:2x（**M5 无卡轮：墙钟的分层读数直接给出每步轮询次数——判据再改一版**。`gen` 是分级的、层间距=一次轮询：2 卡固定批 `P=2.0` 两层 2.158／4.174（s=2.016）⇒ **1–2 次**，`P=0.5` 两层 2.162／2.660（s=0.497）⇒ **4–5 次**，`P=0.1` 七层（s=0.102）⇒ **17–23 次**；4 卡 DAPO（`inflight=2`）三条日志三层、s=**2.130／2.134／2.164**、每步 **2–4 次众数 3**。**DAPO 臂的多一次轮询是 2.13–2.16 s 而不是 2.00 s**（固定批 +0.015）。**`work` 是中介**：同层内 `gen~work` 只 1.5／1.6／2.2 ms/组，合并 29.1–53.1 ⇒ 粗臂回归带 `work` 会把 `polls` 的 se 抬 1.1–1.6 倍、把 `work` 报成 2–3 ms/组。判据改版：①`gen ~ 1 + polls`（不带 work）、系数=同期层间距；②计数器逐步差=层号逐步差；③两臂斜率差=1.9 s（无截距漂移）；④`s₂n̄₂ − s₀.₁n̄₀.₁`，粗臂绝对次数由 `tail ≤ 0.5 s` 钉住（实测 0.03–0.17）、细臂 ±1。订正 11:5x 轮「墙钟给不出次数」（只对 A/B 之差成立）与 07:0x 轮 `c=0.1625`（那是令 `s≡P` 的结果；放开 s 得 2.0142／0.143，次数不变）。**零 GPU 读数；双链路仍断**（4090-1 100% 丢包+`:22` 超时；昇腾无 VPN 路由，需用户重连）。）
 更新时间：2026-11-05 13:5x（**M5 无卡轮：计数器补丁在窗口树上打不上——已修，整条开窗链首次在 `24f25b03` 上跑绿**。`poll-count.patch` 的 `utils.py` hunk 原来只在 `31cfccb4` 上验过（上下文带着该版本才有的 `training/rollout_logprobs_mismatch_count`）⇒ 对窗口真正要跑的 `24f25b03`（`/home/zxw/venvs/rollout-g8-src/verl`）`--fuzz=0` **打不上**、`prep-tree.sh` exit 5；改成插在 `validation/filter_groups/discarded_surplus_samples` 与 `training/rollout_failure/evicted_samples` 之间（前后各 1 行、两提交逐字相同），仍 **+8 行**、新 `sha256=8ba750d9…`，三个提交（`24f25b03`／`c0e7551`／`31cfccb4`）都过。sim 另修两处版本漂移（`24f25b03` 的 `max_off_policy_threshold` 不接受 `None`→传 8；DAPO 分类器走 `kv_batch_get(["extra_fields"])`→桩补形状），两树 12/12。新增 [verify-counter-routing.py](experiments/verl-v1-poll-quantum-dapo-g4/verify-counter-routing.py)（自检 5/5、11 项：`sample()`→`metrics`→`MetricsAggregator`→`logger.log`，写侧字面量=读侧 `POLL_KEY`，归档日志兄弟键证明真通）。**preflight 首次在窗口树上 `ok=true`**（59 overrides／两臂 0 problems／sim 12/12／守卫 0/65），开窗命令改用 rollout venv 解释器。**零 GPU 读数；双链路仍断**（4090-1 100% 丢包＋`:22` 超时；昇腾无 VPN 路由）。）。此前各轮见下一行与 `###`。
 更新时间：2026-11-05 13:4x（**M1 TM-007 追加：SkyRL HEAD 重扫 + 整仓历史——`use_liger_kernel` 从仓库第一个提交起就没接过线**。HEAD `f854d6d9`（972 个 `.py`）报 41 个开关 / 7 条候选，**判定与 11-04 批逐条相同**（真失效 1 条）；`probe.py` **13 条判据 + 11 条注入**全过。新读数全在历史上：**1458 个提交全扫（每条提交一次 `git grep`，27 秒），历史提及 4647 处、关键字实参 0 处**；文件按 rename 链三段（`skyrl_train/models.py` → `skyrl_train/model_wrapper.py` → `backends/.../workers/model_wrapper.py`）共 38 条提交，**每一版都带形参**，最早出现在 `b3280d84`（2025-06-24，仓库第一个提交）⇒ **不是重构漏接线**，上一批「只能说自 2026-02-16 起」的边界关掉。可达性四侧否掉（`reach-liger.py` **6/6**）：配置 dataclass 无字段（Hydra 结构化配置会拒）、两处 `HFModelWrapper(...)` 都不传、`pyproject.toml` 与根 `uv.lock` 无 `liger-kernel`（唯一提到的是 `skyrl-agent/uv.lock`，另一个子工程）、本机 import 失败且正向对照 `json` 可导入。**方法产出两条**：① 注入自检必须写明「期望哪一条红」——`L5` 把声明文件自己算成生产者、`S1`／`P1` 数行不数出现次数，起初都被「变红了就算过」掩盖；② 自检临时树建在实验目录下会被「扫全仓」的判据扫进去 ⇒ **负向对照被自己的产物污染**。**5 处自错全由自检抓出**。价值 **3/10，不对外**（无用户受影响；改法涉「要不要支持 Liger」的产品决定）。**TM-007 停止条件同步收窄**：同一 HEAD 重复扫描没有增量，新信息只能来自换信号源（历史／可达性／运行时）。纯静态 + 本机 import，**未跑训练、未触上游**。产物：[实验](experiments/skyrl-pyflag-head-audit/README.md)、[证据页](open-source/skyrl/evidence/pyflag-head-audit-2026-11.md)。）
 更新时间：2026-11-05 12:1x（**M5 无卡轮：窗口的读数侧补齐，并把「预期 ≥2」这条判据证伪**——[read-polls.py](experiments/verl-v1-poll-quantum-dapo-g4/read-polls.py) 从 console 日志读 `training/sampler/blocking_polls`／`timing_s/gen`／生成组数，自检 **12/12**；**七个归档跑逐位对账**（gen 6.791／5.822／5.974、整步 18.588／17.786／17.846、work 122.7／108.8／128.7 与 `summary.json` 一致），七跑全部 `counter absent` ⇒ `--expect-counter` 在真实日志上实测 exit 2。**新结论**：`wait = ceil(D/P)·P − D ∈ [0,P)`，`D=0.4 s` 与 `D=10.4 s` 在 P=2.0 下等待都是 1.6 s ⇒ 墙钟只看得到 `D mod P`，**给不出轮询次数**，原「预期 ≥2／若恒 1 则斜率差不能归因轮数」**作废**（n=1 与 n=6 可同斜率）。判据换成①臂内回归系数 ≈P ②跨臂恒等式残差 ≈0，并**新增校准臂** `INFLIGHT=2`（gen 有归档值 6.791 s）先验计数器。两条链路仍断（4090-1 第 9 跳后全丢＋`:22` 超时；昇腾无 VPN 路由）。）。此前各轮见下一行与 `###`。
@@ -7,7 +8,26 @@
 更新时间：2026-11-05 09:2x（**M1 TM-020：verl `algorithm.filter_groups.metric` 的三份说明互相不自洽，两个名字在 V1 上零写入点**。V1 组过滤按**名字**去 `extra_fields.reward_extra_info` 取键（`replay_buffer.py:299` 的 `filter_groups_metric not in reward_extra_info`），取不到抛 `RuntimeError`。而「能填哪些名字」有三份不同说明：配置 docstring（`reward` canonical／`acc`／`score`／**`seq_reward`**）、`docs/algo/dapo.md:80`（举例 `score / seq_reward / seq_final_reward`）、随仓库脚本 `grpo_qwen35_35b_megatron_async.sh:64`（**`response_filter`**）。**后三个在 V1 零写入点**——真 `ReplayBuffer`（`stub_env.py` 只替身 `transfer_queue`／`SkipManager`，判定是上游原文）按上游 CPU 测试同一套写盘顺序造「2 条同分轨迹的组」跑：`reward`／`acc` ran，`score` 只在 `math_dapo` scorerd 下 ran（gsm8k 等走 `float(res)` 只给 `acc`），`seq_reward`／`seq_final_reward`／`response_filter` **给多少键都 raised**；缺**一条**轨迹的键也整组抛。**上游单测只测过 `acc`(13 处) 与 `reward`(1 处)** ⇒ CI 抓不到。**历史（决定对外措辞）**：docstring 自 `c936ec7`(2025-07-04) 就写着 `seq_reward`，直到 `7e9875249`(2026-10-12) 才改；**DAPO recipe 的 `dapo_ray_trainer.py:240` 真有 `if metric_name == "seq_final_reward":` 分支**（verl-recipe 仓）⇒ 这些名字在 V1 之前有主；V1 自 `c88e875`(2026-07-23) 引入起只认字面键 ⇒ **名字搬进 V1 后语义没跟上**；#7792(`7cb6501`,2026-09-08) 改注释时**留了一个 `seq_reward`**。⇒ 对外只能写「说明与实现没对齐」，**不能写「开关坏了」**。价值 **5/10**（官方 recipe 全用 `acc` 不触发；但崩在第一步且报错会误导）。**自检 8/8、负向对照 4/4**（A 夹具丢键／B uid 含下划线／C 改坏 canonical 常量／D 所有名字都可读，四种破坏各让指定检查变红）。**不对外**（上游查重 `filter_groups.metric` 0 条、`seq_reward`／`seq_final_reward` 各 8 条无关）。纯 CPU、**未装 ray/torch、未跑训练、未触上游**。）
 更新时间：2026-11-05 08:1x（**M1 TM-019：MLC-LLM 扩池第六批——真缺陷 0 条**；两条候选都是扫描器把工厂转发当成决策者，已修进 pyflag 第十三类。完整叙述见 [实验](experiments/mlcllm-pyflag-triage/README.md) 与 [diary](diary/2026-11-05.md)。）此前各轮摘要见下方 `###` 小节与 [diary](diary/2026-11-05.md)，任务状态见 [技术秘书](queue_tech-secretary.md)／[技术掘金](queue_tech-miner.md)。
 
-### M5 本轮（2026-11-05 11:5x–12:1x CST）：无卡轮——窗口读数侧补齐；「预期 ≥2」这条判据被证伪
+### M5 本轮（2026-11-05 14:0x–14:2x CST）：无卡轮——墙钟的**分层读数**直接给出每步轮询次数；判据再改一版
+
+**为什么做这个。** 11:5x 轮证明「A/B 之差给不出 n」，据此把计数器当成唯一出路；但 `gen` 的**绝对值**里有没有次数信息从没问过。07:0x 轮已量到「两簇 + 间隔 ≈P + 偏移 `c=0.1625`」，本轮把窗口判据按这条重做。
+
+**一、[analyze-gen-levels.py](experiments/verl-v1-poll-quantum-dapo-g4/analyze-gen-levels.py)，自检 7/7。** 从 `gen` 的层结构反推次数：`gen = n·s + tail`（`s`=一次轮询的周期，`tail`=`sample()` 里非轮询那段）。做法：按候选阈值聚类 → 对层均值拟合网格（相邻层必须差恰好 1 次、`tail` 落在 `[0, tail_bound]`、残差 `rms` < 0.15 个量子，否则判废）。**十条归档，七条给出网格**：2 卡 `P=2.0` s=2.017／2.015、tails 0.14 ⇒ 次数 1／2（各半）；`P=0.5` s=0.497 ⇒ 4／5；`P=0.1` s=0.102、七层 ⇒ 17–23；4 卡 DAPO 三条 s=2.130／2.134／2.164 ⇒ 2–4、众数 3（一条 10/12 步是 3）。`ab-p4base` 只有一层（次数恒定，2.160=1 次），`g4p010R` 与 `ab-p4p010` 的量子与 `tail` 抖动同量级 ⇒ 解不出（**这是能力边界，不是缺陷**）。
+
+**二、DAPO 的多一次轮询是 2.13–2.16 s。** 固定批 `s−P=+0.015`，DAPO `+0.13–0.16`（三条日志跨 log 散布 ±0.011）。DAPO 一步多轮派发（07:0x 轮：单轮公式对 DAPO 只有 0–4/12），两种读法（每轮循环开销更大／多轮里每多一次轮询多带一段非 sleep 工作）对判据给出同一个数。⇒ 判据①的期望系数要按**同期层间距**取，不能写 P；细臂有效周期 0.24 s（≈20–25 次，不是 60）。
+
+**三、`work` 是中介变量。** 同层内 `gen~work` 斜率 1.5／1.6／2.2 ms/组，合并 29.1–53.1。用层值反推的次数当替身计数器干跑：`gen ~ 1 + polls` 给 2.130（se 0.057）／2.103（0.065）／2.274（0.057）；换成注册的 `1 + work + polls`，se 涨到 0.089／0.102／0.063、`work` 系数掉到 2–3 ms/组（不是 31.8）⇒ 把中介当协变量调整会同时抬高目标系数的 se 与把中介系数按到 0。
+
+**四、判据改版（取代 11:5x 那四条）。** ①臂内 `gen ~ 1 + polls`（**不带 work**），系数 = 同期层间距（粗臂 2.13–2.16）；②计数器**逐步差** = 层号逐步差（不回归、能定位到步）；③两臂斜率差 = `P₂−P₀.₁` = 1.9 s（**无截距漂移**）；④绝对层 `s₂n̄₂ − s₀.₁n̄₀.₁`，粗臂绝对次数由 `tail ≤ 0.5 s` 钉住、细臂 ±1（0.24 s/次权重）。**①抓不到"每次都多/少 1"**（常数进截距），那条只能靠②④。
+
+**五、订正两处。** ① 11:5x 轮「墙钟给不出轮询次数」过强——只对 A/B 之差与斜率反推成立。② 07:0x 轮 `c=0.1625±0.0048` 是令 `s≡P` 的结果；放开 `s`，两簇给 `s=2.0142／c=0.143`，**次数相同**，差 0.02 s 落在同配置两跑抖动内，不另立机制。
+
+**边界。** 零 GPU 读数；`tail ≤ 0.5 s` 是假设（实测 0.03–0.17），只影响绝对次数、不影响层差；DAPO 的 s 是三条日志的均值±跨 log 散布；计数器语义仍只有 `sim-loop.py` 的虚拟时钟证据。
+
+**留给下一轮**：① 窗口仍等 4 卡（判据换成上面四条，读数加 `analyze-gen-levels.py` 层对账）；② critic 三臂仍需单卡；③ `/tmp/m5-oom` md5 未做；④ **昇腾需用户重连 VPN**；⑤ 对外动作待用户逐项授权，本轮**未触上游**。
+
+**产物**：[分析脚本](experiments/verl-v1-poll-quantum-dapo-g4/analyze-gen-levels.py) · [读数](experiments/verl-v1-poll-quantum-dapo-g4/raw/gen-levels.txt) · [JSON](experiments/verl-v1-poll-quantum-dapo-g4/raw/gen-levels.json) · [自检](experiments/verl-v1-poll-quantum-dapo-g4/raw/gen-levels-selftest.txt) · [4 卡 README 无卡轮（五）](experiments/verl-v1-poll-quantum-dapo-g4/README.md) · [TM-008](queue_tech-miner.md) · [diary](diary/2026-11-05.md)。
+### M5 上一轮（2026-11-05 11:5x–12:1x CST）：无卡轮——窗口读数侧补齐；「预期 ≥2」这条判据被证伪
 
 **连通性（探两次，间隔 60 s）**：`4090-1` ICMP 100% 丢包、`:22` 超时，`traceroute` 第 9 跳（`59.43.80.141`，电信骨干）之后全无回应 ⇒ 公网路径断；昇腾网关 2 包全丢、本机 `netstat -rn` 无 `10.205.0.0/24`／`192.168.13.0/24` 路由 ⇒ VPN 未连。本轮**零 GPU／NPU 读数**。
 
@@ -197,135 +217,31 @@
 
 ### M5 本轮（2026-11-05 06:0x CST）：无卡轮——4 卡 `inflight=1` 臂的开窗前检查，**主分支的 base recipe 少了一个钉**
 
-**连通性（只探一次＋45 s 后复探一次，均失败）**：`4090-1` ICMP 100% 丢包＋`:22` TCP 超时（走 default 路由，公网路径断，与 10-28 同类）；昇腾网关 `10.205.0.1` 2 包全丢、`192.168.13.154:22` 超时，且 `netstat -rn` 里**根本没有** `10.205.0.0/24`／`192.168.13.0/24` 的路由 ⇒ **昇腾 VPN 本机未连通**，不是服务端抖动。本轮**零 GPU／NPU 读数**。
-
-**为什么换到这件事。** critic 三臂已连续五轮只能做无卡准备，再加静态打磨没有增量；而 TM-008 只剩 4 卡 `inflight=1` 一条没测，要的是 4 张空闲卡——本机最稀缺的资源（11-04 起长期只有 1/4/5 空闲）。这条臂是针对 `24f25b03` 准备的，main 已到 `31cfccb4`。
-
-**一、失败模式是"不报错，训练另一套配置"。** `run-poll-dapo.sh` 完全靠环境变量驱动 `examples/grpo_trainer/run_qwen3_4b_fsdp.sh` 拼命令行（19 个变量＋recipe 里的 47 条 override）。env 改名或 recipe 少一条 override，都不会抛错。
-
-**二、真的少了一条。** 逐行 diff 该 recipe（`24f25b03` vs `31cfccb4`）**只有一处**差异：`actor_rollout_ref.rollout.enable_chunked_prefill=False` 被删。其默认值是 **True**（`verl/workers/config/rollout.py:291`、`_generated_ppo_trainer.yaml:287`，两版本相同）⇒ 同一份 wrapper 在 main 上把 `True` 交给引擎，而本目录归档的七跑全是 `False`。
-
-**三、不是"vLLM V1 反正总开着"那类空转。** vLLM 0.24 的 `EngineArgs` 里该字段是 `bool | None = None`，`None` 才回落到 `is_chunked_prefill_supported`；显式 `False` 走另一条分支——`_set_default_chunked_prefill_and_prefix_caching_args` 打 `warning_once("This model does not officially support disabling chunked prefill…")`，调度器也不再切分 prefill（`vllm/engine/arg_utils.py`，tag `v0.24.0`，**源码阅读、未执行**）。verl 侧唯一读该值的分支（`_validate_configs` 把 `max_num_batched_tokens` 抬到 `max_model_len`）在本臂**空转**：默认 8192 > 2048，条件不成立 ⇒ **配置面回读两档都是 8192，差别只在引擎手里**。
-
-**四、把判定做成检查（`preflight-g4.py`，自检 7/7）。** 关键设计：override 表**不在检查脚本里重抄**。桩 `python3` 让 wrapper→recipe **打印真实 argv**，再拿这份 argv 做 Hydra 组合与回读——env 层与 override 层同时在检。读数（[preflight-g4.json](experiments/verl-v1-poll-quantum-dapo-g4/raw/preflight-g4.json)）：58 条 override（recipe 47＋wrapper 11）／与归档树逐键 **`drift.same=true`**／poll 补丁对 `31cfccb4` 三文件 3/3 `--fuzz=0` 通过／两臂组合 18 个预登记键全中／`trainer.v1.sampler.poll_interval` 未打补丁树**不存在**（buffer 用构造默认 2.0）、打补丁树回读 `0.1`／负向对照如期失败。对照读数（[preflight-g4-nopin.json](experiments/verl-v1-poll-quantum-dapo-g4/raw/preflight-g4-nopin.json)）：去掉那个钉恰好少一条 override，main 上生效值 `true`。
-
-**五、本批三处自错（都已改）。** ① 本地 bash-3.2 适配写成 `set -xe pipefail`——`set` 把 `pipefail` 当**位置参数**，`"$@"` 的 10 条尾部 override 被吃掉，捕获只剩 48 条（"看起来在检查、其实换了对象"），现已是自检项；② 自检注入打在 `rollout.n` 上而受检键是 `actor_rollout_ref.rollout.n` ⇒ "值被改"这条判据**没被覆盖却报绿**；③ `+` 前缀检查拿 `key` 比 `key=value` 列表，真实运行与自检双双击出误报。
-
-**边界**：零 GPU 读数；"生效值"是 Hydra 解析结果，不是 vLLM 运行时行为；本机只有 bash 3.2，recipe 的空 `EXTRA=()` 在 `set -u` 下报错，本地用"只去掉 `-u`"的副本（服务器 bash ≥4 不需要），替换方式记进读数；归档那七跑实际用的是 `False`，而按源码生成式 decoder 的 `is_chunked_prefill_supported` 为真（`model.py:1790-1791`）⇒ 会命中 `arg_utils.py:2472-2480` 那条"手动关闭 chunked prefill 可能崩或算错"的 `warning_once`（七跑各 15 步 exit 0；若改用默认 `True` 则归档数值不可直接对比）。
-
-**留给下一轮**：① critic 三臂仍需**单卡窗口**；② 4 卡 `inflight=1` 仍需 ≥4 卡窗口，开窗前先跑 `preflight-g4.py`；③ 服务端 `/tmp/m5-oom` 原始文件 md5 仍未做；④ 昇腾需用户重连 VPN（本机无路由），无 NPU 事项；⑤ 对外动作仍待用户逐项授权，本轮**未触上游**。
-
-**产物**：[实验 README](experiments/verl-v1-poll-quantum-dapo-g4/README.md#2026-11-05-无卡轮4-卡-inflight1-的准备base-recipe-少了一个钉臂会静默换配置) · [preflight-g4.py](experiments/verl-v1-poll-quantum-dapo-g4/preflight-g4.py) · [读数](experiments/verl-v1-poll-quantum-dapo-g4/raw/preflight-g4.json) · [无钉对照](experiments/verl-v1-poll-quantum-dapo-g4/raw/preflight-g4-nopin.json) · `run-poll-dapo.sh`（已钉回） · [TM-008](queue_tech-miner.md) · [handoff](experiments/handoff-m5.md)。
+结论：4 卡 `inflight=1` 开窗前检查——base recipe 少了 `enable_chunked_prefill=False` 这个钉（默认 True 会静默换配置），已在 wrapper 钉回并加 preflight（自检 7/7）。 完整叙述见 [handoff-m5](experiments/handoff-m5.md) 与 [diary](diary/2026-11-05.md)。
 
 ### M5 上一轮（2026-11-05 05:0x CST）：无卡轮——value-head 分支在本机真跑，**探针自检在服务器上会崩**
 
-**连通性（只探一次，未重试）**：`4090-1` ICMP 100% 丢包＋`:22` TCP 超时；昇腾网关 `10.205.0.1` 2 包全丢。本轮**零 GPU 读数**。
-
-**为什么做这个。** 04:0x 的结论（Qwen2 走 `AutoModelForTokenClassification` 第一分支、trl 全程不 import）建立在固定版本**源码阅读**上，当时写的边界是“本机 py3.9 装不上 transformers，real-mapping 分支第一次执行在服务器上”。这条边界把“探针本身是否能跑”留给了稀缺资源去验证——正是前几轮反复在收口的那类风险。
-
-**一、真跑立刻抓到一个只在服务器上才会出现的崩。** `probe-valuehead-branch.py` 的 `selftest()` 里 `case()` 存 4 元组、real-mapping 三行存 3 元组，报告循环 `for name, ok, got, want in results` 一律解包 4 个 ⇒ **只要 `transformers` 能 import 就 `ValueError` exit 1**。旧版原样复现见 `raw/probe-selftest-prefix-crash.txt`，修复后同一 venv **8/8**（`raw/probe-selftest-transformers-5.16.1.txt`）。wrapper 只调 `--model`，所以不烧窗口，但说明**“自检通过”的覆盖面取决于跑自检的机器**。
-
-**二、分支结论从源码阅读变成运行时读数。** `repro-valuehead-branch.py`：真实 `Qwen2ForCausalLM` 存 tiny checkpoint（hidden 32／2 层／vocab 128），按 `load_valuehead_model` 同组实参调 `AutoModelForTokenClassification.from_pretrained(..., config=cfg, attn_implementation="sdpa")`，`num_labels=1` 与 dropout 覆盖照抄 `transformer_impl.py:291-300`。读数 `raw/valuehead-branch-runtime-5.16.1.json` **7/7**；`score` 新头只有 33 参数（hidden 32＋bias）；前向 `(1,4,1)`→`(1,4)` ⇒ `prepare_model_outputs` 走 `output.logits.squeeze(-1)`。**未打补丁的 FA2 路径**抛 `ImportError: ... FlashAttention2 ...`，verl 的 `except BaseException` 把它翻成 `RuntimeError: ... please install trl ...` ⇒ 窗口里不打补丁时的报错**指向错误的包**。
-
-**三、preflight 的 msprobe 检查原来是 stat。** 目录在、包被清一半时会放行，错误要到第一个训练步（模型加载之后）才出现。现用同一解释器/PYTHONPATH 执行 `from msprobe.pytorch import PrecisionDebugger` 并解析 `MSPROBE_CONFIG`，失败 exit 65；mock 夹具补可导入 stub，`run-mock.sh` 新增“目录在、包删掉 → 必须 65”的负向对照（PASS），三臂管线仍 rc=0／judge exit 0。
-
-**边界**：本机 torch 2.15.0（服务器 2.11.0+cu129）；tiny 随机权重只证明“能载入＋头是新的＋形状对”，**不证明 0.5B 真权重数值行为**；sdpa↔FA2 数值等价仍未测；`/tmp/m5-trf-venv` 是一次性物料，重建命令见实验 README。
-
-**留给下一轮**：① critic 三臂仍需**单卡窗口**（依赖名册现在按证据分档、msprobe 预检真 import）；② 4 卡 `inflight=1` 仍需 ≥4 卡窗口；③ 服务端 `/tmp/m5-oom` 原始文件 md5 仍未做；④ 昇腾仍未探、无 NPU 事项；⑤ 对外动作仍待用户逐项授权。
-
-**产物**：[实验 README](experiments/verl-profiler-oom-and-critic-gpu/readme.md) · `repro-valuehead-branch.py`（自检 2/2；读数 7/7） · `raw/valuehead-branch-runtime-5.16.1.json` · `raw/probe-selftest-prefix-crash.txt` · `raw/probe-selftest-transformers-5.16.1.txt` · `run-critic-pdbg.sh`（msprobe 真 import） · `mock/run-mock.sh`（负向对照） · [handoff](experiments/handoff-m5.md)。
+结论：value-head 分支在本机真跑（7/7），探针自检在服务器上会崩的问题已定位并修（8/8）——三臂仍只差一张空闲卡。 完整叙述见 [handoff-m5](experiments/handoff-m5.md) 与 [diary](diary/2026-11-05.md)。
 
 ### M5 上一轮（2026-11-05 04:0x CST）：无卡轮——critic 的模型构建分支查清，**preflight 把 trl 当硬依赖是误设**
 
-**连通性（只探一次，未重试）**：`4090-1` ICMP 100% 丢包＋`:22` TCP 超时；昇腾网关 `10.205.0.1` 2 包全丢、`192.168.13.154:22` 超时。本轮**零 GPU 读数**。
-
-**为什么做这个。** 三臂的每个"会在窗口里炸"的前提都收口到只剩开跑，但**依赖名册本身**从没被问过。`run-critic-pdbg.sh` 从 01:0x 起把 `/tmp/m5-trl-0.27.0` 和 msprobe 放进同一个 `for dep` 循环，任缺即 `exit 65`——服务器 `/home` 100% 满、`/tmp` 被清一部分不是假设 ⇒ **一个本来能跑的好窗口会被自己的预检判死**。
-
-**一、读数：Qwen2 critic 走第一分支，trl 全程不 import。** `load_valuehead_model`（`verl/utils/model.py:467`）先试 `AutoModelForTokenClassification`（`:471`），只有 `except BaseException`（`:479`）才 import trl（`:488`）。而 transformers 的 `_get_model_class`（`auto_factory.py:178`）只做 `model_mapping[type(config)]` 一次查表，`config.architectures` **只用于在候选类列表里挑一个**（`:184-187`）⇒ 拿 causal-LM 权重去建 token-classification 模型**不报错**（随机初始化 `score` 头）。Qwen2 在映射里（`modeling_auto.py:1686`），引擎又在调用前把 `hf_config.num_labels` 设成 1（`transformer_impl.py:294`）⇒ 分支 1 恒胜。
-
-**二、顺带一条对证据页有用的口径。** 下游 `prepare_model_outputs` 按 `hasattr(module,'v_head')` 分派（`:1538`／`:1559`），Qwen2 走 `output.logits.squeeze(-1)` ⇒ critic 的 value 头是**从零训练的全新 1 维头**，不是预训练 value model；写材料时不能笼统说"加载了 value model"。
-
-**三、依赖名册改成两类。** msprobe 仍是硬依赖（没有它 profiler 是 no-op、`au` 正臂不可能出 dump，窗口会白烧成"无效跑"）；trl 只在回退分支才需要。新探针 [probe-valuehead-branch.py](experiments/verl-profiler-oom-and-critic-gpu/probe-valuehead-branch.py) 只读 `config.json`（不加载权重、不碰 GPU），wrapper 按它的退出码分派，四档行为用桩探针**实测**过：分支 1＋trl 缺 → 继续（原误杀）；分支 2＋trl 缺 → 中止 65 并打印确切安装命令；不可判定＋trl 缺 → 中止（沿用旧严格规则）；不可判定＋trl 在 → 继续。
-
-**四、判定不动。** `verify-critic-pdbg.py` 只把 `valuehead_branch` 打进 reported（不进任何门槛），自检 12→**14**，新增两条钉住"缺失或改成 `trl_valuehead` 都仍 exit 0"。每臂 `arm-<ARM>.json` 记 `valuehead_branch`（含 `resolved_class`）。
-
-**边界**：对**固定版本源码**的核对（verl `31cfccb4`、transformers 5.16.1、trl 0.27.0，两个 wheel 的 sha256 与行号进 [读数](experiments/verl-profiler-oom-and-critic-gpu/raw/valuehead-branch-evidence.json)），**不是运行时读数**；本机解释器 3.9 装不上 transformers 5.16.1，探针的 real-mapping 分支**第一次执行在服务器上** ⇒ 失败方向必须保守：任何异常都归"不可判定"、沿用严格规则，最坏丢一个窗口，不会静默换错分支。trl 0.27.0 两条导入路径与 `pretrained_model`／`v_head` 都在，回退分支本身成立，只是这条路用不到。
-
-**留给下一轮**：① critic 三臂仍需**单卡窗口**（依赖名册现在也按证据分档了）；② 4 卡 `inflight=1` 仍需 ≥4 卡窗口；③ 服务端 `/tmp/m5-oom` 原始文件 md5 仍未做；④ 昇腾仍未探、无 NPU 事项；⑤ 对外动作仍待用户逐项授权，本轮**未触上游**。
-
-**产物**：[实验 README](experiments/verl-profiler-oom-and-critic-gpu/readme.md) · `probe-valuehead-branch.py`（自检 5/5） · [读数](experiments/verl-profiler-oom-and-critic-gpu/raw/valuehead-branch-evidence.json) · [证据页三·补二](open-source/verl/evidence/precision-debugger-stage-producers/readme.md) · [handoff](experiments/handoff-m5.md)。
+结论：critic 的模型构建分支查清——`trl` 不是硬依赖（Qwen2 critic 走 `AutoModelForTokenClassification` + 新 score 头，7/7），探针自检 3-vs-4 元组崩溃已修 8/8，preflight 改 import msprobe。 完整叙述见 [handoff-m5](experiments/handoff-m5.md) 与 [diary](diary/2026-11-05.md)。
 
 ### M5 上一轮（2026-11-05 03:0x CST）：无卡轮——critic 不是"少一行装饰器"，补上也解析不出模型
 
-**连通性（只探一次，未重试）**：`4090-1` ICMP 100% 丢包＋`:22` TCP 超时；昇腾网关 `10.205.0.1` 2 包全丢、`192.168.13.154:22` 超时。本轮**零 GPU 读数**。
-
-**为什么做这个。** 证据页第三节一直写着"补装饰器要动引擎层的 role 身份，属设计选择"——这是**推断**，而且它默认了"补上装饰器就能采到"。本轮把这条链路走完：`PrecisionDebuggerProfiler.start()` 在 `os.makedirs` 与构造 msprobe **之前**先要 `_resolve_model(self_instance, stage)`，它按 `_MODEL_ATTRS_BY_ROLE[role]` 在 worker 对象上找模型、兜底 `self.module`。
-
-**一、读数：解析在新 worker 上必然失败。** 探针 [probe-critic-model-resolve.py](experiments/verl-profiler-oom-and-critic-gpu/probe-critic-model-resolve.py) 用 AST 从**真实文件**抽 `_STAGE_TO_ROLE`／`_MODEL_ATTRS_BY_ROLE`／`_resolve_model`／`start` 等方法源码执行（CPU、无 torch／msprobe／GPU），替身 worker 的属性名**从同一棵树的真实类体读出**：`TrainingWorker` 只有 11 个 `self.*` 赋值，含 `engine`，**不含 `module`、不含 `critic`** ⇒ `critic_update`／`compute_values` 解析均 **None**；`start(model=None)` 返回 False、打一条 `PrecisionDebugger model not resolved for stage 'critic_update'`、**不建目录**（`makedirs` 在模型检查之后）。正对照：`ActorRolloutRefWorker` 的 `actor.engine.module`／`ref.engine.module` 都命中 ⇒ 不是表全坏，是 critic 那一支没有落点。
-
-**二、这不是"表坏了"，是 worker 布局变了。** 两棵树的 `_STAGE_TO_ROLE`／`_MODEL_ATTRS_BY_ROLE` **逐项相同**；父提交 `6eeb5711` 的 `CriticWorker` 有 `self.critic_module`（`fsdp_workers.py:1651`），正好是表里 critic 的最后一个候选 ⇒ 旧布局能解析，新布局（`Role.Critic -> TrainingWorker`）不能。⇒ **双缺口**：装饰器丢了，解析链的落点也没迁。
-
-**三、role 身份问题还有一层具体形状。** `train_batch` 同时服务 actor 与 critic（`ActorRolloutRefWorker.update_actor → self.actor.train_mini_batch → self.train_batch`）⇒ 给它写字面量 role 无论写哪个角色都会错一边。
-
-**四、候选修法的形状已验证（未改上游）。** 给每个 role 的候选链**末尾**追加 `"engine.module"` 后，critic 两臂解析成功，actor／ref 两个正对照读数**不变**（原候选先命中）。但装饰器与 role 身份仍要解决 ⇒ 最小可靠对外做法仍是"文档标注＋加载期一次 warning"，不是偷偷补一行。
-
-**边界**：替身不是真 worker；未装 msprobe、未跑训练、未上卡。它证明的是"这条解析路径在 `TrainingWorker` 上拿不到模型"，不是真机上 msprobe 的行为。三臂真机跑的 P2／P3（`cu`／`cv` 零 dump）**两种原因都能满足**（没有装饰器，或装饰器在但解析失败），本轮把后者从推断变成静态可查。
-
-**留给下一轮**：① critic 三臂仍需**单卡窗口**（判定与计数器都已验过，本轮又堵掉一个"补丁无效"的岔路）；② 4 卡 `inflight=1` 仍需 ≥4 卡窗口；③ 服务端 `/tmp/m5-oom` 原始文件 md5 仍未做；④ 昇腾仍未探、无 NPU 事项；⑤ 对外动作仍待用户逐项授权，本轮**未触上游**。
-
-**产物**：[实验 README](experiments/verl-profiler-oom-and-critic-gpu/readme.md) · `probe-critic-model-resolve.py`（自检 8/8） · [main 读数](experiments/verl-profiler-oom-and-critic-gpu/raw/critic-model-resolve-main-31cfccb4.json) · [父提交读数](experiments/verl-profiler-oom-and-critic-gpu/raw/critic-model-resolve-pre6067.json) · [证据页三·补](open-source/verl/evidence/precision-debugger-stage-producers/readme.md) · [handoff](experiments/handoff-m5.md)。
+结论：critic 不是“少一行装饰器”——`_resolve_model` 在新引擎（critic 是独立 `TrainingWorker`，只有 `engine.module`）上解析 None，补装饰器也采不到；候选修法已本地验证对 actor/ref 无副作用。 完整叙述见 [handoff-m5](experiments/handoff-m5.md) 与 [diary](diary/2026-11-05.md)。
 
 ### M5 上一轮（2026-11-05 02:0x CST）：无卡轮——critic 判定的**读数**拿 104 份真日志验了一遍，两处会误判的都改掉
 
-**连通性（只探一次，未重试）**：`4090-1` ICMP 100% 丢包＋`:22` TCP 超时；昇腾网关 `10.205.0.1` 2 包全丢、`192.168.13.154:22` 超时。本轮**零 GPU 读数**。
-
-**为什么做这个。** 01:0x 把判定预登记了，但**判定读的数**没拿真日志核过。预登记只保证"不按结果挑标准"，不保证"量出来的东西是它声称的那个量"。
-
-**一、`steps_seen` 在原实现下恒为 0 ⇒ 有效跑会被判无效。** 原实现 `re.finditer(r"^step:(\d+)", text, re.M)`，而 Ray 写控制台时每行都有 `<ANSI>(TaskRunnerV1 pid=…)<ANSI> ` 前缀，**没有一行以 `step:` 开头**。读数来自全仓 **104 份真控制台日志**（[check-log-counters.py](experiments/verl-profiler-oom-and-critic-gpu/check-log-counters.py) `--verify`，逐文件表 `raw/log-counter-check.json`）：旧计数器 **104/104 读到 0**；新计数器（每个训练步一个 `timing_s/step` 标记，取不同步号）与标记数 **104/104 一致**，合计 **1432 步**；随手去掉行首锚点也有 **103/104** 读错（g8-g4w 读到 58 而真值 12、`run-pda` 读到 46 而真值 2——`timing_s/step:8.2` 与 `global_step_46` 都会被当成步号）。⇒ 判据只能是"带 `- ` 分隔的步行 ＋ `timing_s/step`"，它对裸行与带前缀两种形状都成立。V2 门槛（`≥2`）不动，只换量法。
-
-**二、为什么上一轮的端到端自检没抓到：夹具不是真日志的形状。** 假 example 脚本打印裸 `step:1 - …`，旧计数器在夹具上给 2、在真机上给 0。新夹具（[mock/make-mock-tree.sh](experiments/verl-profiler-oom-and-critic-gpu/mock/make-mock-tree.sh)）改成真形状后，端到端跑通（三臂 rc=0、judge exit 0），**当场又抓出第二处**：V4 原来数**全文件** `attn_implementation="flash_attention_2"` 计数，夹具在 `load_valuehead_model` 块外留了一处（上游目前块外恰好 0，所以线上没暴露）⇒ 树已打好补丁也判 `flash_attention_2_left=2`。现改为读预检用的同一分类器（`patch-critic-sdpa.py analyze() → state == "patched"`），文件级计数保留作信息；负向对照 `outside_literal_not_counted` 必须 exit 0。旧夹具 `raw/mock-run/` 保留作反例，新读数在 `raw/mock-run-real-shape/README.json`。
-
-**三、V3 前提补了静态证据。** `use_critic = need_critic(config)`，显式 `critic.enable=True` ⇒ 恒 True（`utils.py:98`）；`marked_timer("values")`（`trainer_base.py:595`）与 `("update_critic")`（`:604`）都在 `if self.use_critic` 下、**不受 `critic_warmup` 影响**；`_compute_metrics`（`:1885`）把整个 `timing_raw` 交给 `compute_timing_metrics`（`:1963`）⇒ 有 critic 时每步各一条 `timing_s/update_critic`。计数器也改成只数这个键（不再数裸词）。
-
-**四、两个外部前提顺手关掉。** ① 组合把关原在 `3fdf2b54` 上做，而到当前 main `31cfccb4` 之间 **8 个配置 yaml 变了**（`actor/actor.yaml`、`engine/fsdp.yaml`、`engine/megatron.yaml`、`rollout/rollout.yaml` ＋ 四个 `_generated_*`），全部是删 QAT 段与改注释 ⇒ 仍重跑：**三臂组合成功、负向对照如期失败、17 个回读键与旧批次逐键相同**（hydra 1.3.8／omegaconf 2.3.1 对旧批 1.3.2／2.3.0），读数 `raw/compose-check-main-31cfccb4.json`；树用 `codeload` tarball 取，`verl/utils/model.py` sha256 仍 `a13d8595…`。② wrapper 调用的 `examples/grpo_trainer/run_qwen3_4b_fsdp.sh` 在 `31cfccb4` 仍在（5368 B），其 25 个环境变量覆盖 wrapper 设置的全部键 ⇒ 没有"脚本改签名"这类静默错配。
-
-**边界**：`104/104`、`1432 步`统计的是**仓库里已归档的日志**，不是新跑的结果；新计数器在真机 critic 日志上会给出什么，要等窗口的第一份日志才算实测；`raw/mock-run-real-shape/` 仍是管线夹具。
-
-**留给下一轮**：① critic 三臂仍需**单卡窗口**（开跑成本已压到分钟级、预检秒级失败、判定与计数器都已验过）；② 4 卡 `inflight=1` 仍需 ≥4 卡窗口；③ 服务端 `/tmp/m5-oom` 原始文件 md5 仍未做（18:12 后不可达）；④ 昇腾仍未探、无 NPU 事项；⑤ 对外动作（OOM 路径打一行 dump 路径／示例补 `enable=True`／profiler 文档）仍待用户逐项授权，本轮**未触上游**。
-
-**产物**：[实验 README](experiments/verl-profiler-oom-and-critic-gpu/readme.md) · `check-log-counters.py`（`--verify` 104 份日志／`--selftest` 6/6） · `raw/log-counter-check.json` · `mock/`（真形状夹具＋`run-mock.sh`） · `raw/mock-run-real-shape/` · `raw/compose-check-main-31cfccb4.json` · [handoff](experiments/handoff-m5.md)。
+结论：判定的读数为真日志验出两处会误判——`^step:` 配 ANSI 前缀使 104 份日志全部读成 0、V4 数全文件字面量；已改为“带 ` - ` 的步行 + 每步一个 `timing_s/step` 标记”。 完整叙述见 [handoff-m5](experiments/handoff-m5.md) 与 [diary](diary/2026-11-05.md)。
 
 ### M5 本轮（2026-11-05 01:0x CST）：无卡轮——critic 三臂的窗口前置做成脚本与预登记
 
-**连通性（只探一次，未重试）**：`4090-1` ICMP 100% 丢包＋`:22` TCP 超时；昇腾网关 `10.205.0.1` 2 包全丢、`192.168.13.154:22` 超时；`api.github.com` 200。本轮**零 GPU 读数**。
-
-**为什么做这个。** 上一轮把 critic 三臂写成"已备未跑"，但两个前提只活在服务器 `/tmp`：手改的 FA2→sdpa 树、`--target` 装的 msprobe／trl；而且**当时没有预登记判定**——跑完再商量"算不算通过"，等于让窗口自己给自己打分。这一轮只补这两件，不假装有卡。
-
-**一、树内适配变成脚本（`patch-critic-sdpa.py`）。** 只在 `load_valuehead_model` 块内把两处 `attn_implementation="flash_attention_2"` 换成 `"sdpa"`，块外一个字不动；`--check` 只读、`--revert` 逆操作、**锚点数≠`--expect`(2) 即 exit 2**（上游改了形状就拒绝假装修好——否则一个"自称打好补丁"的树会烧掉整个窗口）。用**真上游文件**验证：`verl-project/verl` `3fdf2b548882` 的 `verl/utils/model.py`（sha256 `a13d8595…`，raw.githubusercontent 只读取回）——`--check` 报 `unpatched`／2 处锚点在第 **475／500** 行／函数块 467–510／块外 0 ⇒ exit 1；`apply` 精确改 **2** 行、块外 0 ⇒ exit 0；`--revert` 回到**逐字节**相同（sha256 与上游一致）；再 `--check` 又回 exit 1。自检 **18/18**（块外同字面量不被改、二次 apply sha 不变、1 锚点／3 锚点／函数不存在全 exit 2 且不写文件、树不存在 exit 3）。
-
-**二、判定预登记（`verify-critic-pdbg.py`）。** 只读每臂的 `arm-<ARM>.json`：有效性 V1–V4＝三臂 exit 0、`steps_seen ≥ 2`、`cu`/`cv` 日志里出现 `update_critic`（v1 打的是 `timing_s/update_critic`，所以"没采到"不能是"没有 critic"）、树里 `flash_attention_2_left == 0`；不过 → **exit 1 无效跑**。门控 P1＝`au` 在 `step_*/actor_update/` 下必须有 `construct.json`／`stack.json`／`dump.json`（否则 exit 1）；P2／P3＝`cu`／`cv` dump 文件数必须为 **0**，否则 **exit 2 推翻静态结论**。`Unknown precision_debugger stage: train_batch` 条数（静态说法是与用户配置无关地每步一条，含 `au`）**只报告不门控**。自检 **10/10**。
-
-**三、wrapper 加固 + 端到端自检。** `run-critic-pdbg.sh` 开跑前检查 7 个依赖（树、msprobe／trl 两个 `--target`、config json、模型、两份数据）+ 树补丁状态（`AUTO_PATCH=1` 自动打、`=0` 中止），失败 exit 65——秒级失败而不是几分钟后死在建模型；每臂结束写 `arm-<ARM>.json`（dump 清单带字节数、warning 计数、步数、树 sha 与 FA2 残留数、依赖在否），**失败也写**。本机用假 example 脚本把整条管线跑通：三臂 wrapper rc=0、judge exit 0（产物 `raw/mock-run/`，**管线夹具不是读数**）。
-
-**边界**：`sdpa` 只是文本替换，critic 侧**数值等价未测**；本轮**零 GPU 读数**，`raw/mock-run/` 里的一切不得当作 critic 行为证据；真正的答案仍来自三份真日志。 **上游只读复核（同日 01:1x）**：main 已到 `31cfccb4`，但 `verl/utils/model.py` 与 `3fdf2b54` **逐字节相同**（sha256 `a13d8595…`）⇒ 换最新 main 建树也照样适用；`engine_workers.py`（903 行）的 `annotate` 仍只有 `train_batch`／`ref_compute_log_prob`／`actor_compute_log_prob`／`actor_update` 四个 role，**没有** `critic_update`／`compute_values`（只核这两个文件，非全仓重扫）。
-
-**产物**：[实验 README](experiments/verl-profiler-oom-and-critic-gpu/readme.md) · `patch-critic-sdpa.py` · `verify-critic-pdbg.py` · `run-critic-pdbg.sh` · `raw/critic-sdpa-patch.json`／`.diff`（真上游文件） · `raw/mock-run/`（夹具） · [handoff](experiments/handoff-m5.md)。
-
-**留给下一轮**：① critic 三臂仍需**单卡窗口**（本轮已把开跑成本压到几分钟，预检 + 自动补丁 + 自动判定）；② 4 卡 `inflight=1` 仍需 ≥4 卡空闲窗口；③ 服务端 `/tmp/m5-oom` 原始文件 md5 未做（18:12 后不可达）；④ 昇腾仍未探、无 NPU 事项；⑤ 对外动作（OOM 路径打一行 dump 路径／示例补 `enable=True`／profiler 文档）仍待用户逐项授权，本轮**未触上游**。
+结论：critic 三臂的窗口前置做成脚本与预登记（FA2→sdpa 幂等补丁、judge 预登记、每臂 JSON、假 example 三臂 rc=0）。 完整叙述见 [handoff-m5](experiments/handoff-m5.md) 与 [diary](diary/2026-11-05.md)。
 
 ### M5 本轮（2026-11-05 00:0x CST）：无卡轮——接手 OOM 探针并把它做成可复跑的判定
 
-**连通性**：`4090-1` ICMP 100% 丢包＋`:22` 超时（11-04 15:58 那个窗口已在 18:12 后关闭；上一会话 18:12 的产物就是这轮接手的存档）；昇腾网关 `10.205.0.1` 2 包全丢；`api.github.com` 200 但 `github.com:443` 超时 ⇒ 推送走 [REST 工具](tools/git-push-api/readme.md)。**未重试、未空转**。
-
-**一、三臂 OOM 探针（上一会话采集，本轮核对）**：`attached`（rank 0、`ranks=[0]`，root DEBUG＋Capture）与 `nocap`（同配置不装 handler）**各写 1 个 6275 B pickle**（`oom_<ts>/torch_memory_oom_rank0_pid*.pickle`，key＝`allocator_settings`/`device_traces`/`external_annotations`/`segments`，1 段、trace 1×3；0 s 即完整，1/3/10/20 s 不变）；`unranked`（rank 3、`ranks=[0]`）**5 次 poll 全空**。不挂是结构性保证（`torch_memory_profile.py:80-81`）。三臂同一张 4090、分配器几乎为空（free 24.836／total 25.251 GB）。
-
-**二、"挂上却无日志"＋一个新缺口**：attach 是 **INFO**（`torch_memory_profile.py:110`，默认 WARN 挡掉）；OOM 三条是 **ERROR**，默认经 `lastResort` 打到 stderr（`nocap` 臂实测 3 条）。而 `dump_memory_snapshot` 成功后的 `[memory_visualize] dumped: <path>`（`memory_utils.py:321`）**永远不打印**：该模块 `logger = logging.getLogger(__file__)`（`:28`，名字是文件路径，不在 `verl.*` 层级）＋ `VERL_LOGGING_LEVEL` 默认 **WARN**（`:29`）⇒ root 与 `verl` 都调 DEBUG 也不出现（`attached` 臂 4 条记录里 0 条来自 `memory_utils`）。**第三方交叉核对**：16:5x 三份真 PPO 日志里快照确实写了 23.5 MB，`[memory_visualize]`／`dumped:` **各 0 条**（`torch_memory` 的 10 处命中全是 Hydra 配置回显）⇒ 对周期性 `stop()` 一样成立。最小改面＝`_on_out_of_memory` 用掉被丢弃的返回值打一行路径、`None` 时补一行失败；不动 `getLogger(__file__)`（全仓 56 处同写法）。**未授权。**
-
-**三、critic 三臂：已备、未跑**。`run-critic-pdbg.sh` 只换 `precision_debugger.stages`（`au` 正臂、`cu`/`cv` 被测），配方 `gae`＋`critic.enable=True`＋`critic.model.path`。本轮 `compose_check.py` 在 main `3fdf2b54`（worktree `/tmp/verl-3fdf2b5`）上组合把关：35 条 override（10 基础配方＋17 探针 EXTRA＋7 收尾参数＋1 `stages`）**三臂全过**、负向对照（`critic.fsdp.no_such_field=1`）**如期失败**；回读确认生效值 `gae`（基础配方的 `grpo` 被 EXTRA 覆盖，顺序要紧）、`critic.fsdp.model_dtype=bf16`、`critic.forward_max_token_len_per_gpu=3000`。两个窗口杀手：① `load_valuehead_model` **写死** `attn_implementation="flash_attention_2"`（`verl/utils/model.py:475`／`:500`，调用点不传，`+actor_rollout_ref.model.override_config.attn_implementation=sdpa` 只救 actor/rollout）⇒ 服务端树上的本地补丁**重建树后必须重打**；② `critic.use_dynamic_bsz` 继承 actor 为 True ⇒ `critic.ppo_micro_batch_size_per_gpu=1` 是惰性键。
-
-**产物**：[实验 README](experiments/verl-profiler-oom-and-critic-gpu/readme.md) · `verify-oom-archive.py`（**49 项 exit 0**、`--selftest` 7/7）· `compose_check.py`（三臂＋负向对照）· `raw/`（3 份 result JSON、`nocap.stderr`、`compose-check.json`）· [M1 证据第七节](open-source/verl/evidence/engine-refactor-torch-memory/readme.md) · [handoff](experiments/handoff-m5.md)。
-
-**留给下一轮**：① 4 卡 `inflight=1` 仍需 ≥4 卡窗口（11-04 只有 1/4/5 空闲，且服务器现不可达）；② critic 三臂需单卡窗口＋树上的 FA2→sdpa 补丁在位；③ 本轮未重跑 GPU、**服务端原始文件未做 md5**（18:12 后不可达）；④ 昇腾仍未探、无 NPU 事项；⑤ 对外动作（OOM 路径补一行 dump 路径；示例补 `enable=True`）仍待用户逐项授权，本轮**未触上游**。
+结论：OOM 探针做成可复跑判定（快照真落盘 6275 B、不挂观察者无文件；“挂上无日志”是 logger 名用文件路径＋默认 WARN）。 完整叙述见 [handoff-m5](experiments/handoff-m5.md) 与 [diary](diary/2026-11-05.md)。
 
 ### M5（2026-11-04 16:5x–17:3x）profiler 真机两验已归档
 

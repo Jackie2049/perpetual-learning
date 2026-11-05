@@ -1,0 +1,33 @@
+log                                          P   n   thr  lv  levels (s)                       s       (s-P)  tails (sd)
+rollout-poll-ab-p200.txt                   2.0  15  0.02   2  2.158/4.174                      2.017  +0.017  0.141/0.140 (sd 0.000, rms 0.004q)
+    counts/step: 1 2 2 2 1 2 1 2 1 1 2 1 1 1 1
+rollout-poll-ab-pbase.txt                  2.0  15  0.02   2  2.158/4.173                      2.015  +0.015  0.143/0.143 (sd 0.000, rms 0.004q)
+    counts/step: 1 2 2 2 1 2 1 1 1 1 2 2 1 2 1
+rollout-poll-ab-p4base.txt                 2.0  15   -    1  2.160                            no grid (needs >=2 levels)
+rollout-poll-ab-p050.txt                   0.5  15  0.05   2  2.162/2.660                      0.497  -0.003  0.174/0.175 (sd 0.000, rms 0.024q)
+    counts/step: 5 5 5 5 4 5 4 4 4 5 5 4 4 4 4
+rollout-poll-ab-p010.txt                   0.1  15  0.02   7  1.779/1.873/1.967/2.071/2.176/2.281/2.391 0.102  +0.002  0.045/0.037/0.029/0.031/0.034/0.037/0.045 (sd 0.006, rms 0.102q)
+    counts/step: 21 22 23 20 18 23 23 22 19 23 23 23 17 20 18
+rollout-poll-ab-p4p010.txt                 0.1  15  0.10   2  1.766/1.900                      0.134  +0.034  0.024/0.024 (sd 0.000, rms 0.241q)  <- REJECTED (off-grid)
+    counts/step: 13 14 13 13 13 13 13 13 13 13 13 13 13 13 13
+rollout-poll-dapo-g4base.txt               2.0  12  0.20   3  4.322/6.534/8.582                2.130  +0.130  0.062/0.144/0.062 (sd 0.039, rms 0.032q)
+    work slope: pooled=37.0 ms/group (se 8.8), within-level=1.5 ms/group
+    counts/step: 4 3 3 3 3 3 3 3 3 3 2 3
+    dry run of criterion (1) on the recovered counts: poll-only coef 2.130 (se 0.057) vs 1+work+polls coef 2.044 (se 0.089, work 2.4 ms/group se 1.9)
+rollout-poll-dapo-g4baseR.txt              2.0  12  0.35   3  4.353/6.574/8.622                2.134  +0.134  0.085/0.172/0.086 (sd 0.041, rms 0.050q)
+    work slope: pooled=53.1 ms/group (se 13.1), within-level=1.6 ms/group
+    counts/step: 3 4 3 3 3 3 3 4 3 4 2 3
+    dry run of criterion (1) on the recovered counts: poll-only coef 2.103 (se 0.065) vs 1+work+polls coef 2.026 (se 0.102, work 3.2 ms/group se 3.2)
+rollout-poll-dapo-g4baseR2.txt             2.0  12  0.20   2  6.492/8.766                      2.164  +0.164  0.000/0.110 (sd 0.055, rms 0.023q)
+    work slope: pooled=29.1 ms/group (se 14.5), within-level=2.2 ms/group
+    counts/step: 3 3 3 3 3 4 3 3 3 3 3 3
+    dry run of criterion (1) on the recovered counts: poll-only coef 2.274 (se 0.057) vs 1+work+polls coef 2.227 (se 0.063, work 2.2 ms/group se 1.5)
+rollout-poll-dapo-g4p010R.txt              0.1  12   -    1  6.025                            no grid (needs >=2 levels)
+
+pooled spacing by config (fits only):
+  2card        P=2.0  s=2.016 ± 0.001  (s-P=+0.016, 2 log(s))
+  2card        P=0.5  s=0.497 ± 0.000  (s-P=-0.003, 1 log(s))
+  2card        P=0.1  s=0.102 ± 0.000  (s-P=+0.002, 1 log(s))
+  4card-dapo   P=2.0  s=2.143 ± 0.009  (s-P=+0.143, 3 log(s))
+
+wrote raw/gen-levels.json
