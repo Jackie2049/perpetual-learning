@@ -1,0 +1,10 @@
+P1.args_fields_counted                               PASS  — RouterArgs 字段 108 个
+P1.fields_to_remove_parsed                           PASS  — 移除清单 22 个
+P2.rust_signature_parsed                             PASS  — pyo3 signature 默认值 90 个 / fn new 形参 90 个
+P2.two_lists_agree                                   PASS  — 两份清单一致
+P2.no_bogus_kwarg                                    PASS  — 传了但 Rust 构造函数不收的：0（未触发 TypeError）
+P3.start_slice_located                               PASS  — start() 切片 22708 字符，含 config 组装与 server::startup
+P3.every_args_field_reaches_rust                     PASS  — 未传给 Rust 的 22 个（与移除清单逐一相同：True）；只由 Rust 默认值的额外字段 0 个；移除清单里在组装段另有去处的 22 个；两类都无去处的：0
+P4.control_converted_read_removed                    PASS  — 把这四个已转换字段的读取全部改名后，判据能把它们从"有去处"里认出来：True
+
+verdict: ALL_ARGS_REACH_RUST -> /Users/jackiemac/workspace/perpetual-learning/experiments/sglang-router-args-plumbing/raw/probe.json

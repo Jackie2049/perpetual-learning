@@ -343,6 +343,18 @@
 - **停止条件**：上游删掉这些形参或给它们接线（`verify_findings.py` 相应判据会变红）。
 - **成果入口**：[实验](experiments/fastvideo-pyflag-triage/README.md) · [判据 24 条](experiments/fastvideo-pyflag-triage/verify_findings.py) · [8 条归因](experiments/fastvideo-pyflag-triage/classify.py) · [读数](experiments/fastvideo-pyflag-triage/raw/scan-fastvideo.json) · [扫描归档](tools/pyflag/scan-fastvideo-36dc971d.json) · [证据页](open-source/fastvideo/evidence/pyflag-2026-11.md) · [diary](diary/2026-11-05.md)。
 
+## TM-024 — SGLang 路由网关：Python 启动器 108 个配置字段没有一个被悄悄丢掉（B 类：主动发掘，负结论）
+
+- **渠道 / 仓库 / 来源**：B 类；[sgl-project/sglang](https://github.com/sgl-project/sglang) `1942c5f0`（2026-11-04）；来源是 [TM-021](queue_tech-miner.md) 的同族形状——路由网关有两层字段表（Python `RouterArgs` 108 个 / Rust `Router::new` 90 个形参），中间靠 `Router.from_args` 逐个转换，这类地方最容易漏。
+- **优先级 / 负责人 / 状态**：B 类；M1；**已闭环（负结论，2026-11-05）**。
+- **读数**：108 个字段中 **86** 个直接进 `Router(**kwargs)`、**22** 个先被转换或只在 Python 侧用（`mini_lb`／`test_external_dp_routing`）；传给 Rust 的关键字**全部**在 pyo3 签名内（0 个 `TypeError` 风险）；只由 Rust 默认值提供的额外字段 **0** 个。
+- **本批最要紧的一处**：`tokenizer_cache_*` 四个字段**不在** `Router::new` 签名里，但 `to_router_config()`（`lib.rs:626-630`）真读它们 ⇒ 用"构造函数形参表"当基准会误报 4 条。**方法：比对的另一端要取"值真正被消费的那段代码"。**
+- **两处自错（都由重跑抓出）**：① `start()` 切片按"下一个 `    }`"收尾，把整个 `to_router_config()` 漏掉，凭空多出 22 个"无去处"；② 对照臂只把字段从 `fields` 删、忘了同步从移除清单与 `passed` 删，导致判据永远不报红。
+- **价值评估**：**2/10** —— 无缺陷。**不对外**。
+- **停止条件**：上游改变 `fields_to_remove` 语义或 Rust 签名（`probe.py` 的 P2/P3 会变红）。
+- **边界**：本轮 **github.com:443 不可达**，文件走 `api.github.com` contents API 逐个取、只核 4 个文件，**没有整仓 AST 扫描**；纯静态，未编译 Rust、未启动网关、未触上游。
+- **成果入口**：[实验](experiments/sglang-router-args-plumbing/README.md) · [判据 8 条](experiments/sglang-router-args-plumbing/probe.py) · [读数](experiments/sglang-router-args-plumbing/raw/probe.json) · [证据页](open-source/sglang/evidence/sgl-router-args-plumbing.md) · [diary](diary/2026-11-05.md)。
+
 ## 已闭环与保留方向
 
 - **TM-004 — AReaL prompt_mean：终止修复候选。** M5 单一负责人；2026-10-20 实测跨 M 与 token_mean 一致，不构成 defect，修复撤销，不提 issue/PR。M1 不继续修改脚本或演化并行方案，用户明确的只读 review 除外。证据及分工：[handoff](open-source/areal/handoff-m5.md)、[tracker](open-source/areal/tracker.md)。AReaL 的长期学习偏好仍保留，新的问题应独立登记。

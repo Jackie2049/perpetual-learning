@@ -1,0 +1,82 @@
+{
+  "verdict": "ALL_ARGS_REACH_RUST",
+  "counts": {
+    "args_fields": 108,
+    "removed_before_rust": 22,
+    "passed_to_rust": 86,
+    "rust_new_params": 90,
+    "rust_default_only_fields": [],
+    "tokenizer_cache_read_in_config_mapping": {
+      "tokenizer_cache_enable_l0": true,
+      "tokenizer_cache_l0_max_entries": true,
+      "tokenizer_cache_enable_l1": true,
+      "tokenizer_cache_l1_max_memory": true
+    },
+    "removed_fields_with_other_destination": [
+      "redis_pool_max",
+      "redis_url",
+      "mini_lb",
+      "jwt_issuer",
+      "oracle_tns_alias",
+      "oracle_password",
+      "control_plane_api_keys",
+      "jwt_audience",
+      "oracle_wallet_path",
+      "oracle_connect_descriptor",
+      "oracle_pool_min",
+      "jwt_role_mapping",
+      "postgres_db_url",
+      "redis_retention_days",
+      "oracle_pool_max",
+      "jwt_role_claim",
+      "jwt_jwks_uri",
+      "test_external_dp_routing",
+      "postgres_pool_max",
+      "control_plane_audit_enabled",
+      "oracle_pool_timeout_secs",
+      "oracle_username"
+    ]
+  },
+  "checks": [
+    {
+      "check": "P1.args_fields_counted",
+      "ok": true,
+      "detail": "RouterArgs 字段 108 个"
+    },
+    {
+      "check": "P1.fields_to_remove_parsed",
+      "ok": true,
+      "detail": "移除清单 22 个"
+    },
+    {
+      "check": "P2.rust_signature_parsed",
+      "ok": true,
+      "detail": "pyo3 signature 默认值 90 个 / fn new 形参 90 个"
+    },
+    {
+      "check": "P2.two_lists_agree",
+      "ok": true,
+      "detail": "两份清单一致"
+    },
+    {
+      "check": "P2.no_bogus_kwarg",
+      "ok": true,
+      "detail": "传了但 Rust 构造函数不收的：0（未触发 TypeError）"
+    },
+    {
+      "check": "P3.start_slice_located",
+      "ok": true,
+      "detail": "start() 切片 22708 字符，含 config 组装与 server::startup"
+    },
+    {
+      "check": "P3.every_args_field_reaches_rust",
+      "ok": true,
+      "detail": "未传给 Rust 的 22 个（与移除清单逐一相同：True）；只由 Rust 默认值的额外字段 0 个；移除清单里在组装段另有去处的 22 个；两类都无去处的：0"
+    },
+    {
+      "check": "P4.control_converted_read_removed",
+      "ok": true,
+      "detail": "把这四个已转换字段的读取全部改名后，判据能把它们从\"有去处\"里认出来：True"
+    }
+  ]
+}
