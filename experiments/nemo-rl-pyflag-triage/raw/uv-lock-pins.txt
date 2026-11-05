@@ -1,0 +1,9 @@
+# 摘自 NVIDIA-NeMo/RL@d82b79c 的 uv.lock
+name = "datasets"
+version = "5.0.1"
+name = "transformers"
+version = "5.5.4"
+name = "transformers"
+version = "5.12.1"
+name = "transformers"
+version = "5.16.1"

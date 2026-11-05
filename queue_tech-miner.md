@@ -377,6 +377,27 @@
 - **停止条件**：上游删掉那 4 个未用必填形参、或放开 BERT 限制（`probe_reachability.py` 的 R8 会变红提示结论失效）、或用户要求重新评估。
 - **成果入口**：[实验](experiments/deepspeed-pyflag-triage/README.md) · [`use_triton_ln` 判据 17 条](experiments/deepspeed-pyflag-triage/probe_use_triton_ln.py) · [签名对齐 9 条](experiments/deepspeed-pyflag-triage/probe_gelu_argshift.py) · [E2E 四档臂](experiments/deepspeed-pyflag-triage/probe_gelu_e2e.py) · [可达性 9 条](experiments/deepspeed-pyflag-triage/probe_reachability.py) · [读数](experiments/deepspeed-pyflag-triage/raw/) · [源文件快照](experiments/deepspeed-pyflag-triage/raw/snapshot/) · [证据页](open-source/deepspeed/evidence/triton-fused-gemm-gelu-argshift.md) · [pyflag 第九批](tools/pyflag/readme.md) · [diary](diary/2026-11-05.md)。
 
+## TM-026 — NeMo-RL：`use_preserving_dataset` 可配，但锁定版本下已经不改变任何数据（B 类：主动发掘／扩池第十批）
+
+- **渠道 / 仓库 / 来源**：B 类（主动发掘）；[NVIDIA-NeMo/RL](https://github.com/NVIDIA-NeMo/RL) `d82b79c58f17`（2026-11-05 04:30 UTC）；来源是 pyflag 扩池第十批（1096 个 `.py`、53 秒 → **34 个开关 / 1 条候选**）。
+- **优先级 / 负责人 / 状态**：B 类扩池；M1；**已闭环（登记即定性，2026-11-05）**。
+- **问题**：`oai_format_dataset.py:141` 用 `use_preserving_dataset` 决定走 HF `Dataset` 还是自定义 `PreservingDataset`（后者为了不把异构 tool schema 补齐成 `None`）。官方 `docs/guides/sft.md:527-544` 专门写了"异构工具 schema 必须打开它"。
+- **三段读数（必须分开看，混在一起会判错）**：
+  1. **能配上**：`load_response_dataset` 用 `dataset_class(**data_config)`、`DATASET_REGISTRY["openai_format"]` 直接绑类、`ResponseDatasetConfig` 是 `TypedDict`（不做运行时校验）⇒ 键一路到达形参（4 条判据）。
+  2. **没有效果**：仓库 `uv.lock` 锁定 `datasets==5.0.1`，两档输出的 `tools` **逐字节相同**，`sft_processor` 产出的 `token_ids` 也相同。
+  3. **曾经有效**：`datasets<=4.6.0` 下关闭档给样本 1 补出 `strict: null`、给 `parameters.properties` 补出 `expr: null, precision: null`；开启档保留原结构。分界在 **4.6.0 → 4.7.0**（4.7 起异构嵌套 dict 退回 `Json(decode=True)`，原样往返、不补键）。
+- **历史归属（决定"谁受影响"）**：按仓库锁，2025-09→2025-12 是 `datasets 4.0.0`、2026-01→2026-10 是 `4.4.1`（这两个区间开关有效）、**2026-10-21 的 #3286（`4fdd49c225`）起是 5.0.1**（开关空转）。代码一行没改 ⇒ **不是回归，是依赖升级让特性静默失效**。
+- **还有一条无害差异**：混合数据（部分样本带 tools）下，锁定版本里关闭档给出 `tools: null`、开启档无该键；下游 `datum_dict.get("tools", None)` + `if tools is not None` ⇒ 两者等价。
+- **价值评估**：**4/10，不对外**。缺陷可机读、可证伪、关系数据正确性；但当前锁定版本下无用户受影响。可提的只有"文档与实现脱节"与一行依赖约束，属维护者的产品决定（与 TM-020 同构）。
+- **方法产出（本批真正的东西）**：
+  1. **"能不能配上"与"配上有没有效果"是两个判据** —— pyflag 只回答第一个。本批候选在第一个上成立、第二个才是否定的；只按扫描器报 `mode=never` 就写"配置无效"会判错。
+  2. **效果判据必须挂依赖版本** —— 第一版判据是"关闭档会补齐缺失键"，在锁定版本上**注入后仍全绿**，是自检抓出来的。外部库行为不能当恒定真值。
+  3. **有文档专节的开关比高密度候选更值得追** —— 34 个开关只有 1 条候选，但这条有文档、有测试、有历史 issue（#2116／#2515），信息量远超其余 33 条。
+- **2 处自错（都由自检抓出）**：① 把旧版 `datasets` 的补齐行为当普遍事实；② 拿"两样本键集相同"当"HFC 补齐"的判据，而新版两样本键集本来就各自不同 ⇒ 改成比较"两档输出是否逐字节相同"。
+- **停止条件**：上游把 `datasets` 上限钉回 `<4.7`、或删掉该开关、或 `probe_preserving_dataset.py` 在锁定版本上报 FAIL（说明上游又改了行为），或用户要求重新评估。
+- **对外**：三个最小动作 (a) 文档按版本澄清 /(b) 依赖上限 /(c) 删开关，**均待用户逐项授权**；本轮未触上游，上游查重（`use_preserving_dataset` 7 条、`PreservingDataset` 6 条）**无人报过版本漂移**。
+- **成果入口**：[实验](experiments/nemo-rl-pyflag-triage/README.md) · [探针](experiments/nemo-rl-pyflag-triage/probe_preserving_dataset.py) · [锁定版本读数](experiments/nemo-rl-pyflag-triage/raw/probe-datasets-5.0.1.json) · [历史锁定读数](experiments/nemo-rl-pyflag-triage/raw/probe-datasets-4.0.0.json) · [版本矩阵](experiments/nemo-rl-pyflag-triage/raw/version-matrix.json) · [证据页](open-source/nemo-rl/evidence/preserving-dataset-version-drift.md) · [pyflag 第十类](tools/pyflag/readme.md) · [diary](diary/2026-11-05.md)。
+
 ## 已闭环与保留方向
 
 - **TM-004 — AReaL prompt_mean：终止修复候选。** M5 单一负责人；2026-10-20 实测跨 M 与 token_mean 一致，不构成 defect，修复撤销，不提 issue/PR。M1 不继续修改脚本或演化并行方案，用户明确的只读 review 除外。证据及分工：[handoff](open-source/areal/handoff-m5.md)、[tracker](open-source/areal/tracker.md)。AReaL 的长期学习偏好仍保留，新的问题应独立登记。

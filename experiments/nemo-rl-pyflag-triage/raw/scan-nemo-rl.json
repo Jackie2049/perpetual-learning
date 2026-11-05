@@ -1,0 +1,1288 @@
+{
+ "flags": [
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "get_quantization_layer_spec",
+     "file": "nemo_rl/modelopt/models/policy/workers/utils.py",
+     "func": "get_quantization_layer_spec",
+     "line": 240,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "get_quantization_mamba_stack_spec",
+     "file": "nemo_rl/modelopt/models/policy/workers/utils.py",
+     "func": "get_quantization_mamba_stack_spec",
+     "line": 261,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "get_quantization_layer_spec",
+     "file": "nemo_rl/modelopt/models/policy/workers/utils.py",
+     "func": "get_quantization_layer_spec",
+     "line": 240,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "get_quantization_mamba_stack_spec",
+     "file": "nemo_rl/modelopt/models/policy/workers/utils.py",
+     "func": "get_quantization_mamba_stack_spec",
+     "line": 261,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "disable_modelopt_layer_spec",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "nemo_rl/modelopt/models/policy/workers/megatron_quant_policy_worker.py",
+     "how": "positional",
+     "line": 136
+    },
+    {
+     "file": "nemo_rl/modelopt/models/policy/workers/megatron_quant_policy_worker.py",
+     "how": "positional",
+     "line": 139
+    },
+    {
+     "file": "nemo_rl/modelopt/models/policy/workers/megatron_quant_policy_worker.py",
+     "how": "positional",
+     "line": 179
+    },
+    {
+     "file": "nemo_rl/modelopt/models/policy/workers/megatron_quant_policy_worker.py",
+     "how": "positional",
+     "line": 182
+    }
+   ],
+   "producers_total": 4,
+   "reads_nontest": 15,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "megatron_forward_backward",
+     "file": "nemo_rl/models/megatron/train.py",
+     "func": "megatron_forward_backward",
+     "line": 507,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_hidden_capture",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "nemo_rl/models/policy/workers/megatron_policy_worker.py",
+     "how": "keyword",
+     "line": 2233
+    },
+    {
+     "file": "nemo_rl/models/policy/workers/megatron_policy_worker.py",
+     "how": "keyword",
+     "line": 1546
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 8,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_loras",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 12,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "megatron_forward_backward",
+     "file": "nemo_rl/models/megatron/train.py",
+     "func": "megatron_forward_backward",
+     "line": 507,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_opd_full_capture",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "nemo_rl/models/policy/workers/megatron_policy_worker.py",
+     "how": "keyword",
+     "line": 3025
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 7,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_quantizer",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 7,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "process_microbatch",
+     "file": "nemo_rl/models/automodel/data.py",
+     "func": "process_microbatch",
+     "line": 268,
+     "param_default": "unspecified"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "process_microbatch",
+     "file": "nemo_rl/models/automodel/data.py",
+     "func": "process_microbatch",
+     "line": 268,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "unspecified"
+   ],
+   "flag": "enable_seq_packing",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "nemo_rl/models/automodel/data.py",
+     "how": "positional",
+     "line": 200
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 68,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_torch_compile",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 8,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_generate_texts",
+     "file": "nemo_rl/evals/eval.py",
+     "func": "_generate_texts",
+     "line": 455,
+     "param_default": "unspecified"
+    }
+   ],
+   "container_writes": [
+    {
+     "file": "tests/unit/evals/test_eval.py",
+     "line": 62
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_generate_texts",
+     "file": "nemo_rl/evals/eval.py",
+     "func": "_generate_texts",
+     "line": 455,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "unspecified"
+   ],
+   "flag": "use_async",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "nemo_rl/evals/eval.py",
+     "how": "positional",
+     "line": 382
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 76,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_async_rollouts",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 56,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward",
+     "file": "nemo_rl/models/automodel/draft/draft_qwen3.py",
+     "func": "forward",
+     "line": 191,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_forward_backbone",
+     "file": "nemo_rl/models/automodel/draft/draft_qwen3.py",
+     "func": "_forward_backbone",
+     "line": 456,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_cache",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 13,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "print_projection_map_examples",
+     "file": "tools/x_token/minimal_projection_via_multitoken.py",
+     "func": "print_projection_map_examples",
+     "line": 57,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "add_multitoken_mappings",
+     "file": "tools/x_token/minimal_projection_via_multitoken.py",
+     "func": "add_multitoken_mappings",
+     "line": 125,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_canonicalization",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "tools/x_token/minimal_projection_via_multitoken.py",
+     "how": "keyword",
+     "line": 678
+    },
+    {
+     "file": "tools/x_token/minimal_projection_via_multitoken.py",
+     "how": "keyword",
+     "line": 695
+    },
+    {
+     "file": "tools/x_token/minimal_projection_via_multitoken.py",
+     "how": "keyword",
+     "line": 872
+    }
+   ],
+   "producers_total": 3,
+   "reads_nontest": 18,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_cuda",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 23,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_fault_tolerance",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 17,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_validate_opd_full_loss_config",
+     "file": "nemo_rl/algorithms/loss/loss_functions.py",
+     "func": "_validate_opd_full_loss_config",
+     "line": 1343,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "DPOLossFn",
+     "file": "nemo_rl/algorithms/loss/loss_functions.py",
+     "func": "__init__",
+     "line": 1709,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "model_forward",
+     "file": "nemo_rl/models/megatron/train.py",
+     "func": "model_forward",
+     "line": 158,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward_with_post_processing_fn",
+     "file": "nemo_rl/models/megatron/train.py",
+     "func": "forward_with_post_processing_fn",
+     "line": 297,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "megatron_forward_backward",
+     "file": "nemo_rl/models/megatron/train.py",
+     "func": "megatron_forward_backward",
+     "line": 507,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_validate_opd_full_loss_config",
+     "file": "nemo_rl/algorithms/loss/loss_functions.py",
+     "func": "_validate_opd_full_loss_config",
+     "line": 1343,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "model_forward",
+     "file": "nemo_rl/models/megatron/train.py",
+     "func": "model_forward",
+     "line": 158,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False",
+    "unspecified"
+   ],
+   "flag": "use_fused_linear_logprobs",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "nemo_rl/algorithms/dpo.py",
+     "how": "keyword",
+     "line": 335
+    },
+    {
+     "file": "nemo_rl/algorithms/loss/loss_functions.py",
+     "how": "positional",
+     "line": 375
+    },
+    {
+     "file": "nemo_rl/models/policy/workers/megatron_policy_worker.py",
+     "how": "keyword",
+     "line": 2718
+    },
+    {
+     "file": "nemo_rl/models/policy/workers/megatron_policy_worker.py",
+     "how": "keyword",
+     "line": 2233
+    },
+    {
+     "file": "nemo_rl/models/policy/workers/megatron_policy_worker.py",
+     "how": "keyword",
+     "line": 1546
+    },
+    {
+     "file": "nemo_rl/models/megatron/train.py",
+     "how": "keyword",
+     "line": 380
+    }
+   ],
+   "producers_total": 6,
+   "reads_nontest": 108,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "RayVirtualCluster",
+     "file": "nemo_rl/distributed/virtual_cluster.py",
+     "func": "__init__",
+     "line": 932,
+     "param_default": true
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "RayVirtualCluster",
+     "file": "nemo_rl/distributed/virtual_cluster.py",
+     "func": "__init__",
+     "line": 932,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_gpus",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "research/template_project/single_update.py",
+     "how": "keyword",
+     "line": 77
+    },
+    {
+     "file": "research/flow_grpo/run_flow_grpo.py",
+     "how": "keyword",
+     "line": 91
+    },
+    {
+     "file": "tools/refit_verifier.py",
+     "how": "keyword",
+     "line": 338
+    },
+    {
+     "file": "tools/refit_verifier.py",
+     "how": "keyword",
+     "line": 752
+    },
+    {
+     "file": "nemo_rl/evals/eval.py",
+     "how": "keyword",
+     "line": 138
+    },
+    {
+     "file": "nemo_rl/environments/reward_model_environment.py",
+     "how": "keyword",
+     "line": 149
+    },
+    {
+     "file": "nemo_rl/algorithms/xtoken_off_policy_distillation.py",
+     "how": "keyword",
+     "line": 421
+    },
+    {
+     "file": "nemo_rl/algorithms/rm.py",
+     "how": "keyword",
+     "line": 239
+    },
+    {
+     "file": "nemo_rl/algorithms/grpo.py",
+     "how": "keyword",
+     "line": 1140
+    },
+    {
+     "file": "nemo_rl/algorithms/grpo.py",
+     "how": "keyword",
+     "line": 1337
+    },
+    {
+     "file": "nemo_rl/algorithms/grpo.py",
+     "how": "keyword",
+     "line": 1360
+    },
+    {
+     "file": "nemo_rl/algorithms/sft_v2.py",
+     "how": "keyword",
+     "line": 685
+    },
+    {
+     "file": "nemo_rl/algorithms/sft.py",
+     "how": "keyword",
+     "line": 379
+    },
+    {
+     "file": "nemo_rl/algorithms/ppo.py",
+     "how": "keyword",
+     "line": 597
+    },
+    {
+     "file": "nemo_rl/algorithms/ppo.py",
+     "how": "keyword",
+     "line": 744
+    },
+    {
+     "file": "nemo_rl/algorithms/ppo.py",
+     "how": "keyword",
+     "line": 758
+    },
+    {
+     "file": "nemo_rl/algorithms/opd.py",
+     "how": "keyword",
+     "line": 803
+    },
+    {
+     "file": "nemo_rl/algorithms/dpo.py",
+     "how": "keyword",
+     "line": 290
+    },
+    {
+     "file": "nemo_rl/algorithms/distillation.py",
+     "how": "keyword",
+     "line": 382
+    },
+    {
+     "file": "nemo_rl/algorithms/distillation.py",
+     "how": "keyword",
+     "line": 469
+    },
+    {
+     "file": "nemo_rl/algorithms/distillation.py",
+     "how": "keyword",
+     "line": 480
+    },
+    {
+     "file": "nemo_rl/algorithms/single_controller_utils/setup.py",
+     "how": "keyword",
+     "line": 588
+    },
+    {
+     "file": "nemo_rl/algorithms/single_controller_utils/setup.py",
+     "how": "keyword",
+     "line": 599
+    },
+    {
+     "file": "nemo_rl/algorithms/single_controller_utils/setup.py",
+     "how": "keyword",
+     "line": 471
+    }
+   ],
+   "producers_total": 24,
+   "reads_nontest": 121,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_kl_in_reward",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 54,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "packed_broadcast_producer",
+     "file": "nemo_rl/utils/packed_tensor.py",
+     "func": "packed_broadcast_producer",
+     "line": 40,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "broadcast_weights_for_collective",
+     "file": "nemo_rl/models/policy/lm_policy.py",
+     "func": "broadcast_weights_for_collective",
+     "line": 1401,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "broadcast_weights_for_collective",
+     "file": "nemo_rl/models/policy/workers/automodel_policy_worker.py",
+     "func": "broadcast_weights_for_collective",
+     "line": 1506,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_broadcast_weights_for_collective",
+     "file": "nemo_rl/models/policy/workers/automodel_policy_worker.py",
+     "func": "_broadcast_weights_for_collective",
+     "line": 1541,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "broadcast_weights_for_collective",
+     "file": "nemo_rl/models/policy/workers/megatron_policy_worker.py",
+     "func": "broadcast_weights_for_collective",
+     "line": 3989,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_broadcast_weights_for_collective",
+     "file": "nemo_rl/models/policy/workers/megatron_policy_worker.py",
+     "func": "_broadcast_weights_for_collective",
+     "line": 4026,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "packed_broadcast_producer",
+     "file": "nemo_rl/utils/packed_tensor.py",
+     "func": "packed_broadcast_producer",
+     "line": 40,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_legacy_packing",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "nemo_rl/weight_sync/collective_weight_synchronizer.py",
+     "how": "keyword",
+     "line": 145
+    },
+    {
+     "file": "nemo_rl/models/policy/workers/automodel_policy_worker.py",
+     "how": "keyword",
+     "line": 1565
+    },
+    {
+     "file": "nemo_rl/models/policy/workers/automodel_policy_worker.py",
+     "how": "keyword",
+     "line": 1528
+    },
+    {
+     "file": "nemo_rl/models/policy/workers/megatron_policy_worker.py",
+     "how": "keyword",
+     "line": 4035
+    },
+    {
+     "file": "nemo_rl/models/policy/workers/megatron_policy_worker.py",
+     "how": "keyword",
+     "line": 4013
+    }
+   ],
+   "producers_total": 5,
+   "reads_nontest": 23,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_multiple_dataloader",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 32,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "RolloutManager",
+     "file": "nemo_rl/experience/rollout_manager.py",
+     "func": "__init__",
+     "line": 2172,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_load_training_data",
+     "file": "nemo_rl/algorithms/single_controller_utils/setup.py",
+     "func": "_load_training_data",
+     "line": 1641,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_iter_rollout_groups",
+     "file": "nemo_rl/algorithms/async_utils/trajectory_collector.py",
+     "func": "_iter_rollout_groups",
+     "line": 1507,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_run_rollout_batch_worker",
+     "file": "nemo_rl/algorithms/async_utils/trajectory_collector.py",
+     "func": "_run_rollout_batch_worker",
+     "line": 1589,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_collect_rollout_batch",
+     "file": "nemo_rl/algorithms/async_utils/trajectory_collector.py",
+     "func": "_collect_rollout_batch",
+     "line": 1826,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_collect",
+     "file": "nemo_rl/algorithms/async_utils/trajectory_collector.py",
+     "func": "_collect",
+     "line": 943,
+     "param_default": "unspecified"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "RolloutManager",
+     "file": "nemo_rl/experience/rollout_manager.py",
+     "func": "__init__",
+     "line": 2172,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_load_training_data",
+     "file": "nemo_rl/algorithms/single_controller_utils/setup.py",
+     "func": "_load_training_data",
+     "line": 1641,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_iter_rollout_groups",
+     "file": "nemo_rl/algorithms/async_utils/trajectory_collector.py",
+     "func": "_iter_rollout_groups",
+     "line": 1507,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_run_rollout_batch_worker",
+     "file": "nemo_rl/algorithms/async_utils/trajectory_collector.py",
+     "func": "_run_rollout_batch_worker",
+     "line": 1589,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_collect_rollout_batch",
+     "file": "nemo_rl/algorithms/async_utils/trajectory_collector.py",
+     "func": "_collect_rollout_batch",
+     "line": 1826,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_collect",
+     "file": "nemo_rl/algorithms/async_utils/trajectory_collector.py",
+     "func": "_collect",
+     "line": 943,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "False",
+    "unspecified"
+   ],
+   "flag": "use_nemo_gym",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "nemo_rl/algorithms/single_controller_utils/setup.py",
+     "how": "keyword",
+     "line": 2343
+    },
+    {
+     "file": "nemo_rl/algorithms/async_utils/trajectory_collector.py",
+     "how": "keyword",
+     "line": 1602
+    },
+    {
+     "file": "nemo_rl/algorithms/async_utils/trajectory_collector.py",
+     "how": "keyword",
+     "line": 1880
+    },
+    {
+     "file": "nemo_rl/algorithms/async_utils/trajectory_collector.py",
+     "how": "keyword",
+     "line": 964
+    }
+   ],
+   "producers_total": 4,
+   "reads_nontest": 234,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "OpenAIFormatDataset",
+     "file": "nemo_rl/data/datasets/response_datasets/oai_format_dataset.py",
+     "func": "__init__",
+     "line": 122,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "OpenAIFormatDataset",
+     "file": "nemo_rl/data/datasets/response_datasets/oai_format_dataset.py",
+     "func": "__init__",
+     "line": 122,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_preserving_dataset",
+   "mode": "never",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 9,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "print_projection_map_examples",
+     "file": "tools/x_token/minimal_projection_via_multitoken.py",
+     "func": "print_projection_map_examples",
+     "line": 57,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "add_multitoken_mappings",
+     "file": "tools/x_token/minimal_projection_via_multitoken.py",
+     "func": "add_multitoken_mappings",
+     "line": 125,
+     "param_default": "unspecified"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "print_projection_map_examples",
+     "file": "tools/x_token/minimal_projection_via_multitoken.py",
+     "func": "print_projection_map_examples",
+     "line": 57,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "add_multitoken_mappings",
+     "file": "tools/x_token/minimal_projection_via_multitoken.py",
+     "func": "add_multitoken_mappings",
+     "line": 125,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "False",
+    "unspecified"
+   ],
+   "flag": "use_raw_tokens",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "tools/x_token/minimal_projection_via_multitoken.py",
+     "how": "keyword",
+     "line": 678
+    },
+    {
+     "file": "tools/x_token/minimal_projection_via_multitoken.py",
+     "how": "keyword",
+     "line": 695
+    },
+    {
+     "file": "tools/x_token/minimal_projection_via_multitoken.py",
+     "how": "keyword",
+     "line": 872
+    }
+   ],
+   "producers_total": 3,
+   "reads_nontest": 13,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "compute_transition_logprob",
+     "file": "research/flow_grpo/flow_grpo/models/pipeline.py",
+     "func": "compute_transition_logprob",
+     "line": 218,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "compute_transition_logprob",
+     "file": "research/flow_grpo/flow_grpo/models/policy/workers/flow_grpo_worker.py",
+     "func": "compute_transition_logprob",
+     "line": 662,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "compute_transition_logprob",
+     "file": "research/flow_grpo/flow_grpo/models/pipeline.py",
+     "func": "compute_transition_logprob",
+     "line": 218,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "compute_transition_logprob",
+     "file": "research/flow_grpo/flow_grpo/models/policy/workers/flow_grpo_worker.py",
+     "func": "compute_transition_logprob",
+     "line": 662,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_reference",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "research/flow_grpo/flow_grpo/models/policy/workers/flow_grpo_worker.py",
+     "how": "keyword",
+     "line": 681
+    },
+    {
+     "file": "research/flow_grpo/flow_grpo/models/policy/workers/flow_grpo_worker.py",
+     "how": "keyword",
+     "line": 722
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 24,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward_with_post_processing_fn",
+     "file": "nemo_rl/models/megatron/train.py",
+     "func": "forward_with_post_processing_fn",
+     "line": 297,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "megatron_forward_backward",
+     "file": "nemo_rl/models/megatron/train.py",
+     "func": "megatron_forward_backward",
+     "line": 507,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward_with_post_processing_fn",
+     "file": "nemo_rl/models/megatron/train.py",
+     "func": "forward_with_post_processing_fn",
+     "line": 297,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "megatron_forward_backward",
+     "file": "nemo_rl/models/megatron/train.py",
+     "func": "megatron_forward_backward",
+     "line": 507,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_router_replay",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "nemo_rl/models/policy/workers/megatron_policy_worker.py",
+     "how": "keyword",
+     "line": 2718
+    },
+    {
+     "file": "nemo_rl/models/policy/workers/megatron_policy_worker.py",
+     "how": "keyword",
+     "line": 2233
+    },
+    {
+     "file": "nemo_rl/models/policy/workers/megatron_policy_worker.py",
+     "how": "keyword",
+     "line": 1546
+    }
+   ],
+   "producers_total": 3,
+   "reads_nontest": 24,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_triton",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 13,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_init_placement_groups",
+     "file": "nemo_rl/distributed/virtual_cluster.py",
+     "func": "_init_placement_groups",
+     "line": 1002,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_create_placement_groups_internal",
+     "file": "nemo_rl/distributed/virtual_cluster.py",
+     "func": "_create_placement_groups_internal",
+     "line": 1046,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_init_placement_groups",
+     "file": "nemo_rl/distributed/virtual_cluster.py",
+     "func": "_init_placement_groups",
+     "line": 1002,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_create_placement_groups_internal",
+     "file": "nemo_rl/distributed/virtual_cluster.py",
+     "func": "_create_placement_groups_internal",
+     "line": 1046,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_unified_pg",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "nemo_rl/models/generation/vllm/vllm_generation.py",
+     "how": "keyword",
+     "line": 224
+    },
+    {
+     "file": "nemo_rl/models/generation/vllm/vllm_generation.py",
+     "how": "keyword",
+     "line": 344
+    },
+    {
+     "file": "nemo_rl/models/generation/sglang/sglang_generation.py",
+     "how": "keyword",
+     "line": 104
+    },
+    {
+     "file": "nemo_rl/models/generation/megatron/megatron_generation.py",
+     "how": "keyword",
+     "line": 107
+    },
+    {
+     "file": "nemo_rl/models/generation/trtllm/trtllm_generation.py",
+     "how": "keyword",
+     "line": 104
+    }
+   ],
+   "producers_total": 5,
+   "reads_nontest": 17,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "with_dense",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 3,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "with_draft",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 23,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "with_extras",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 3,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "with_hdo_attrs",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 5,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "with_image",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 11,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "with_monitor",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 7,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "with_optimizer",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 6,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "with_routes",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 15,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "with_tools",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 3,
+   "silently_inert": false
+  }
+ ],
+ "root": "NVIDIA-NeMo-RL-d82b79c",
+ "shadowed_arms": []
+}

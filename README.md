@@ -110,6 +110,7 @@ AI 技术是探索范围，Infra 是优先方向。下面提供常用主题的�
 | verl        | [源码索引](notebook/frameworks/readme.md#verl) · [RL Infra](notebook/frameworks/verl-rl-infra-reading.md)      | [verl 贡献](open-source/verl/readme.md) · [Tracker](open-source/verl/tracker.md)    |
 | AReaL       | [源码索引](notebook/frameworks/readme.md#areal)                                                                | [AReaL 贡献](open-source/areal/readme.md) · [Tracker](open-source/areal/tracker.md) |
 | DeepSpeed   | [源码索引](notebook/frameworks/readme.md#deepspeed)                                                            | [DeepSpeed 贡献](open-source/deepspeed/readme.md)                                   |
+| NeMo-RL     | 相关理解随具体候选链接                                                                                                | [NeMo-RL 贡献](open-source/nemo-rl/readme.md)                                       |
 | Megatron    | [源码索引](notebook/frameworks/readme.md#megatron) · [张量并行](notebook/frameworks/megatron-tp-source-reading.md) | —                                                                                 |
 | PyTorch     | [源码索引](notebook/frameworks/readme.md#pytorch)                                                              | [PyTorch 贡献](open-source/pytorch/readme.md)                                       |
 | rLLM        | [源码索引](notebook/frameworks/readme.md#rllm)                                                                 | [rLLM 贡献](open-source/rllm/readme.md)                                             |

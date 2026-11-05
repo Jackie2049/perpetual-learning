@@ -1,0 +1,25 @@
+{
+  "_note": "同一份异构 tool 数据，靠 OpenAIFormatDataset 真跑后比较两档第 1 样本的 tools（判断开关有没有改变数据）；off_fn0 为关闭档第 1 样本的 tool.function 实得内容",
+  "probe": "raw/version-matrix.py (与 probe_preserving_dataset.py 同一套取材)",
+  "rows": [
+    {"datasets": "3.6.0", "same": false, "off_fn0_strict": null, "off_fn0_has_null_params": true},
+    {"datasets": "4.0.0", "same": false, "off_fn0_strict": null, "off_fn0_has_null_params": true},
+    {"datasets": "4.2.0", "same": false, "off_fn0_strict": null, "off_fn0_has_null_params": true},
+    {"datasets": "4.4.0", "same": false, "off_fn0_strict": null, "off_fn0_has_null_params": true},
+    {"datasets": "4.4.1", "same": false, "off_fn0_strict": null, "off_fn0_has_null_params": true},
+    {"datasets": "4.5.0", "same": false, "off_fn0_strict": null, "off_fn0_has_null_params": true},
+    {"datasets": "4.6.0", "same": false, "off_fn0_strict": null, "off_fn0_has_null_params": true},
+    {"datasets": "4.7.0", "same": true,  "off_fn0_strict": "<absent>", "off_fn0_has_null_params": false},
+    {"datasets": "4.8.4", "same": true,  "off_fn0_strict": "<absent>", "off_fn0_has_null_params": false},
+    {"datasets": "5.0.1", "same": true,  "off_fn0_strict": "<absent>", "off_fn0_has_null_params": false}
+  ],
+  "boundary": "4.6.0 → 4.7.0",
+  "upstream_locks": [
+    {"commit": "6fe56b01d7", "date": "2025-09-26", "event": "#1181 引入 use_preserving_dataset", "datasets": "4.0.0"},
+    {"commit": "7e5df0cc8c", "date": "2025-12-13", "event": "数据集模块重构", "datasets": "4.0.0"},
+    {"commit": "967d2c8565", "date": "2026-01-22", "event": "train/val 拆分", "datasets": "4.4.1"},
+    {"commit": "174fa2011b", "date": "2026-02-04", "event": "preference 数据集拆分", "datasets": "4.4.1"},
+    {"commit": "4fdd49c225", "date": "2026-10-21", "event": "#3286 xtoken 对齐", "datasets": "5.0.1"},
+    {"commit": "d82b79c58f17", "date": "2026-11-05", "event": "HEAD（本次取样）", "datasets": "5.0.1"}
+  ]
+}

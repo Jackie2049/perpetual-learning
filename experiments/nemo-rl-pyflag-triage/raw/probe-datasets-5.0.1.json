@@ -1,0 +1,140 @@
+{
+  "upstream_commit": "d82b79c58f175917182ed7f53283ae590af67924",
+  "repo": "NVIDIA-NeMo/RL",
+  "env": {
+    "python": "3.13.13",
+    "datasets": "5.0.1",
+    "transformers": "5.12.1"
+  },
+  "snapshots": {
+    "snapshot-data-init.py": "1aca949b5b2961b80f166cfd4837fbbb52b7a1d1095cc0f741fb8df1e6abf609",
+    "snapshot-datasets-utils.py": "85942310fa7ed9b60bd1ba9df7bc96e38d9deafe54e173884b376a7a4361b77a",
+    "snapshot-interfaces.py": "031df7145eb4efc145ef88cf4146995be4f7db1d5cd5bdf693f39d62bcd97b79",
+    "snapshot-llm_message_utils.py": "37704bc95a21a44cc47260463e3ec124b0c61c9e01676dcdf09909b238fc4e7e",
+    "snapshot-multimodal_utils.py": "6abcf09c01c87fdfec0e8c1cf098b0d0fdc0d4e5c3b6ab2ee251b2245573e7ea",
+    "snapshot-oai_format_dataset.py": "59832b1a114a18f34ec684886bd4b9d22ad1847b544aada369cba1610a81d8a5",
+    "snapshot-processors.py": "d6a747c9861e6a86edf7e67992941a5823da13521dc503bec8edb3ea237a6b22",
+    "snapshot-response_datasets-init.py": "0db4a3fb5f8fbc09fe22c6c51e496cfaaa70158610199461dbd6eb9d37d8446c"
+  },
+  "substitutes": [
+    "RawDataset（上游基类，只提供 set_task_spec/set_processor）",
+    "torch.Tensor（仅类注解）",
+    "nemo_rl.data.multimodal_utils 四个名字（本案走纯文本路径，不触多模态）",
+    "nemo_rl.distributed.batched_data_dict.BatchedDataDict"
+  ],
+  "checks": [
+    {
+      "name": "CF(锁 5.0.1)-01 两档都构造成功、样本数正确（读数不是 <absent>）",
+      "ok": true,
+      "got": [
+        2,
+        2
+      ],
+      "want": 2
+    },
+    {
+      "name": "CF(锁 5.0.1)-02 开启档确实走 PreservingDataset，关闭档走 HF Dataset",
+      "ok": true,
+      "got": [
+        "PreservingDataset",
+        "Dataset"
+      ],
+      "want": [
+        "PreservingDataset",
+        "Dataset"
+      ]
+    },
+    {
+      "name": "CF(锁 5.0.1)-03 关闭档在检测到 tools 时告警指名该开关、开启档不告警",
+      "ok": true,
+      "got": {
+        "off": 1,
+        "on": 0
+      },
+      "want": {
+        "off": "≥1",
+        "on": 0
+      }
+    },
+    {
+      "name": "CF-04 锁定版本下两档输出逐字节相同 ⇒ 开关不改变任何数据",
+      "ok": true,
+      "got": {
+        "same": true,
+        "off_fn0_keys": [
+          "description",
+          "name",
+          "parameters"
+        ],
+        "on_fn0_keys": [
+          "description",
+          "name",
+          "parameters"
+        ]
+      },
+      "want": "same=True"
+    },
+    {
+      "name": "CF-05 关闭档也未给样本 1 补出 `strict`（datasets 5.x 对异构 dict 退回 Json 类型）",
+      "ok": true,
+      "got": [
+        "description",
+        "name",
+        "parameters"
+      ],
+      "want": "无 strict"
+    },
+    {
+      "name": "DS-01 tools 确实进了 chat template（渲染文本含 TOOLS=）",
+      "ok": true,
+      "got": {
+        "off": true,
+        "on": true
+      },
+      "want": true
+    },
+    {
+      "name": "DS-02 锁定版本下两档训练样本逐字节相同（开关对 loss 输入无影响）",
+      "ok": true,
+      "got": {
+        "blob_same": true,
+        "ids_same": true
+      },
+      "want": {
+        "blob_same": true,
+        "ids_same": true
+      }
+    },
+    {
+      "name": "CH-01 注册表把 'openai_format' 直接绑到 OpenAIFormatDataset（无 partial/包装）",
+      "ok": true,
+      "got": "在位",
+      "want": "在位"
+    },
+    {
+      "name": "CH-02 构造点是 dataset_class(**data_config)，配置键直接成关键字实参",
+      "ok": true,
+      "got": "在位",
+      "want": "在位"
+    },
+    {
+      "name": "CH-03 上游 unsupported-key 告警清单（_BEHAVIORAL_DATASET_CONFIG_KEYS）里没有这个键",
+      "ok": true,
+      "got": "不在清单里",
+      "want": "不在清单里（⇒ 写错也不会有提示，只能靠本条探针）"
+    },
+    {
+      "name": "CH-04 ResponseDatasetConfig(TypedDict) 无该字段，但 TypedDict 不做运行时校验 ⇒ 不拦截",
+      "ok": true,
+      "got": "无字段",
+      "want": "无字段"
+    },
+    {
+      "name": "CH-05 官方 sft 指南把它写成可用的公开开关",
+      "ok": true,
+      "got": "出现",
+      "want": "出现"
+    }
+  ],
+  "failed": 0
+}

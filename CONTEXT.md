@@ -1,3 +1,4 @@
+更新时间：2026-11-05 14:2x（**M1 TM-026：NeMo-RL 扩池第十批——`use_preserving_dataset` 能配上，但锁定版本下已经不改变任何数据**。pyflag 扫 `d82b79c`（1096 个 `.py`、53 秒）→ **34 个开关 / 1 条**（`use_preserving_dataset`，`mode=never`）。**三段分开看**：① 能配上——`dataset_class(**data_config)` + 注册表直绑类 + `TypedDict` 不做运行时校验，键一路到达形参；② **没有效果**——仓库 `uv.lock` 锁 `datasets==5.0.1`，两档输出的 `tools` 逐字节相同、`sft_processor` 的 `token_ids` 也相同；③ **曾经有效**——`datasets<=4.6` 下关闭档补出 `strict: null` 与 `expr/precision: null`，开启档保留原结构，分界 **4.6.0 → 4.7.0**（异构嵌套 dict 退回 `Json`、不补键）。**历史归属**：按仓库锁 2025-09→2025-12 是 4.0.0、2026-01→2026-10 是 4.4.1（开关有效），**2026-10-21 的 #3286 起 5.0.1**（空转）⇒ **不是回归，是依赖升级让特性静默失效**，代码 diff 里什么都没有。**2 处自错全由自检抓出**：① 把旧版补齐行为当普遍事实（注入后仍绿）；② 拿"两样本键集相同"当判据（新版本就各自不同）⇒ 改为"两档输出是否逐字节相同"。**方法产出**："能配上"与"有效果"是两个判据；**效果判据必须挂依赖版本**。价值 **4/10，不对外**（当前无用户受影响；可提的只有文档按版本澄清／钉依赖上限／删开关，属维护者决定）。纯 CPU，探针在两组锁定版本上各 **12/0**、自检 2/2，**未装 nemo_rl 本体、未跑训练、未触上游**。产物：[实验](experiments/nemo-rl-pyflag-triage/README.md)、[证据页](open-source/nemo-rl/evidence/preserving-dataset-version-drift.md)、[版本矩阵](experiments/nemo-rl-pyflag-triage/raw/version-matrix.json)。）
 更新时间：2026-11-05 13:5x（**M5 无卡轮：计数器补丁在窗口树上打不上——已修，整条开窗链首次在 `24f25b03` 上跑绿**。`poll-count.patch` 的 `utils.py` hunk 原来只在 `31cfccb4` 上验过（上下文带着该版本才有的 `training/rollout_logprobs_mismatch_count`）⇒ 对窗口真正要跑的 `24f25b03`（`/home/zxw/venvs/rollout-g8-src/verl`）`--fuzz=0` **打不上**、`prep-tree.sh` exit 5；改成插在 `validation/filter_groups/discarded_surplus_samples` 与 `training/rollout_failure/evicted_samples` 之间（前后各 1 行、两提交逐字相同），仍 **+8 行**、新 `sha256=8ba750d9…`，三个提交（`24f25b03`／`c0e7551`／`31cfccb4`）都过。sim 另修两处版本漂移（`24f25b03` 的 `max_off_policy_threshold` 不接受 `None`→传 8；DAPO 分类器走 `kv_batch_get(["extra_fields"])`→桩补形状），两树 12/12。新增 [verify-counter-routing.py](experiments/verl-v1-poll-quantum-dapo-g4/verify-counter-routing.py)（自检 5/5、11 项：`sample()`→`metrics`→`MetricsAggregator`→`logger.log`，写侧字面量=读侧 `POLL_KEY`，归档日志兄弟键证明真通）。**preflight 首次在窗口树上 `ok=true`**（59 overrides／两臂 0 problems／sim 12/12／守卫 0/65），开窗命令改用 rollout venv 解释器。**零 GPU 读数；双链路仍断**（4090-1 100% 丢包＋`:22` 超时；昇腾无 VPN 路由）。）。此前各轮见下一行与 `###`。
 更新时间：2026-11-05 13:4x（**M1 TM-007 追加：SkyRL HEAD 重扫 + 整仓历史——`use_liger_kernel` 从仓库第一个提交起就没接过线**。HEAD `f854d6d9`（972 个 `.py`）报 41 个开关 / 7 条候选，**判定与 11-04 批逐条相同**（真失效 1 条）；`probe.py` **13 条判据 + 11 条注入**全过。新读数全在历史上：**1458 个提交全扫（每条提交一次 `git grep`，27 秒），历史提及 4647 处、关键字实参 0 处**；文件按 rename 链三段（`skyrl_train/models.py` → `skyrl_train/model_wrapper.py` → `backends/.../workers/model_wrapper.py`）共 38 条提交，**每一版都带形参**，最早出现在 `b3280d84`（2025-06-24，仓库第一个提交）⇒ **不是重构漏接线**，上一批「只能说自 2026-02-16 起」的边界关掉。可达性四侧否掉（`reach-liger.py` **6/6**）：配置 dataclass 无字段（Hydra 结构化配置会拒）、两处 `HFModelWrapper(...)` 都不传、`pyproject.toml` 与根 `uv.lock` 无 `liger-kernel`（唯一提到的是 `skyrl-agent/uv.lock`，另一个子工程）、本机 import 失败且正向对照 `json` 可导入。**方法产出两条**：① 注入自检必须写明「期望哪一条红」——`L5` 把声明文件自己算成生产者、`S1`／`P1` 数行不数出现次数，起初都被「变红了就算过」掩盖；② 自检临时树建在实验目录下会被「扫全仓」的判据扫进去 ⇒ **负向对照被自己的产物污染**。**5 处自错全由自检抓出**。价值 **3/10，不对外**（无用户受影响；改法涉「要不要支持 Liger」的产品决定）。**TM-007 停止条件同步收窄**：同一 HEAD 重复扫描没有增量，新信息只能来自换信号源（历史／可达性／运行时）。纯静态 + 本机 import，**未跑训练、未触上游**。产物：[实验](experiments/skyrl-pyflag-head-audit/README.md)、[证据页](open-source/skyrl/evidence/pyflag-head-audit-2026-11.md)。）
 更新时间：2026-11-05 12:1x（**M5 无卡轮：窗口的读数侧补齐，并把「预期 ≥2」这条判据证伪**——[read-polls.py](experiments/verl-v1-poll-quantum-dapo-g4/read-polls.py) 从 console 日志读 `training/sampler/blocking_polls`／`timing_s/gen`／生成组数，自检 **12/12**；**七个归档跑逐位对账**（gen 6.791／5.822／5.974、整步 18.588／17.786／17.846、work 122.7／108.8／128.7 与 `summary.json` 一致），七跑全部 `counter absent` ⇒ `--expect-counter` 在真实日志上实测 exit 2。**新结论**：`wait = ceil(D/P)·P − D ∈ [0,P)`，`D=0.4 s` 与 `D=10.4 s` 在 P=2.0 下等待都是 1.6 s ⇒ 墙钟只看得到 `D mod P`，**给不出轮询次数**，原「预期 ≥2／若恒 1 则斜率差不能归因轮数」**作废**（n=1 与 n=6 可同斜率）。判据换成①臂内回归系数 ≈P ②跨臂恒等式残差 ≈0，并**新增校准臂** `INFLIGHT=2`（gen 有归档值 6.791 s）先验计数器。两条链路仍断（4090-1 第 9 跳后全丢＋`:22` 超时；昇腾无 VPN 路由）。）。此前各轮见下一行与 `###`。
@@ -26,76 +27,10 @@
 
 **产物**：[read-polls.py](experiments/verl-v1-poll-quantum-dapo-g4/read-polls.py) · [归档读数](experiments/verl-v1-poll-quantum-dapo-g4/raw/read-polls-archive.json) · [4 卡 README](experiments/verl-v1-poll-quantum-dapo-g4/README.md) · [TM-008](queue_tech-miner.md) · [diary](diary/2026-11-05.md)。
 
-### M1 本轮（2026-11-05 12:1x）：TM-025——DeepSpeed 的 triton `fused_gemm_gelu` 签名从 2023 年就对不上，**但用户撞不到**
-
-**一、为什么做。** 扩池第九批。前八批扫完推理六框架 + AReaL + FastVideo，训练侧名单里还有 DeepSpeed。按用户 2026-11-02 的指令，范围是整个主流生态，不该只在熟悉的框架里打转。
-
-**二、扫描读数。** `7e58feb6`（2026-11-05 02:26 UTC）、1167 个 `.py`、**29 秒** → **44 个开关 / 1 条 `silently_inert`**（`use_triton_ln`，`mode=always`）。这个密度明显低于前面几批（SGLang 386、TRT-LLM 352）——不是问题少，而是 DeepSpeed 的配置面在 **pydantic dataclass**（`deepspeed/inference/config.py`）里，pyflag 只认形参默认值。⇒ **dataclass 驱动的仓库不该再用 pyflag 扫**。
-
-**三、顺着候选再走一跳。** 读 `use_triton_ln` 的消费者时注意到同文件的 `fused_gemm_gelu` 也有这个形参，于是去读它的调用点：`op_binding/gelu_gemm.py:42` 只传 **8 个位置实参**，而 `triton/ops.py:17` 的 `fused_gemm_gelu` 有 **12 个形参、11 个必填**。C++ 等价签名恰好 8 个（`input, weight, scale, bias, out, out_scale, dtype, transpose`）⇒ 那 8 个实参是照 C++ 内核写的；triton 版本的 12 个形参里有 **7 个函数体从未使用**（像是从 `mlp_gemm_func` 抄了签名、只写了 C++ 那 8 个参数对应的实现）。
-
-**四、E2E 确认会崩。** 执行真实的 `GELUGemmOp` 类体与真实的 triton 函数（只桩 `matmul_ext` 与 C++ 内核），四档臂：A（fp16∧triton）**`TypeError: missing 3 required positional arguments: 'q_int8', 'async_op', 'transposed_mode'`**；B（关 triton）／C（bf16）／D（未装 triton）全部正常返回。
-
-**五、但可达性把结论按回原位。** 9 条判据，决定性的是 **R8**：`module_inject/containers/base.py:122-124` 在 `use_triton=True` 时非 BERT 容器直接 `raise NotImplementedError("Triton kernels are only for BERT-like models yet")`；而 `TritonMLP.__init__`（`triton/mlp.py:24`）**无条件**给 `attn_nw` 赋 `nn.Parameter` ⇒ "triton ∧ `attn_nw is None`"在同一实例上不可同时成立。`hybrid_engine` 虽然用 `set_empty_params=True`（会置 None），但它**不传** `use_triton`（默认 False）。
-
-**六、历史归属。** `git log --follow` 只有两次提交：PR [#3748](https://github.com/deepspeedai/DeepSpeed/pull/3748)（`69d1b9f9`，2023-06-23）引入时签名就是 12 个、**同一提交**里的调用点就是 8 个；#5490（`645639bc`，2024-10-09）只重排过。⇒ **从第一天起就不匹配，不是回归**。上游查重四组关键词无相关 issue。
-
-**七、本批 5 处自错（全由自检抓出）。** ① 判据把"结论成立"当失败（C4 写成"绑不上 = FAIL"，而绑不上正是要找的事实）；② 边界差一（形参在末尾、调用点停在前一位，应 `<=` 不是 `<`）；③ 注入让 `inspect.bind` 抛异常把探针崩掉；④ **判据太松**——R2 只查"有 None 赋值也有 Parameter 赋值"，注入 `if True: self.attn_nw = None` 时**照样全绿**，收紧为"None 那条必须带 `set_empty_params` 守卫"；⑤ **先入为主把 RMSNorm 分支当错位**——那条分支的指针指向 C++ 的 `rms_qkv_gemm_*`，签名本来就不同。
-
-**八、价值与判断。** **4/10，不对外**：缺陷确凿、可机读、可证伪，但从未可达，没有用户被挡住；修法（删 4 个未用必填形参）要动公开签名，DeepSpeed 近期无 Triton 活跃开发，采纳概率低，**不值得占用用户的授权额度**。
-
-入口：[实验](experiments/deepspeed-pyflag-triage/README.md) · [证据页](open-source/deepspeed/evidence/triton-fused-gemm-gelu-argshift.md) · [use_triton_ln 17 条](experiments/deepspeed-pyflag-triage/probe_use_triton_ln.py) · [签名对齐 9 条](experiments/deepspeed-pyflag-triage/probe_gelu_argshift.py) · [E2E 四档臂](experiments/deepspeed-pyflag-triage/probe_gelu_e2e.py) · [可达性 9 条](experiments/deepspeed-pyflag-triage/probe_reachability.py) · [pyflag 第九批](tools/pyflag/readme.md) · [TM-025](queue_tech-miner.md) · [diary](diary/2026-11-05.md)。
-
-### M1 上一轮（2026-11-05 11:4x）：TM-024——SGLang 路由网关的配置通路，**108 个字段一个都没漏**
-
-**一、为什么做。** 接 TM-021 的同族形状：两层字段表之间会不会漏。路由网关正是这种结构——Python `RouterArgs`（**108** 字段）→ `Router.from_args` 逐个转换（先剔 **22** 个）→ Rust `Router::new`（**90** 形参）。
-
-**二、读数。** 86 个字段直接进 `Router(**kwargs)`，**全部**命中 pyo3 签名的 90 个形参（0 个 `TypeError` 风险）；22 个剔掉的里 19 个在 `to_router_config()` 里被真读、其余（`mini_lb`／`test_external_dp_routing`）只有 Python 侧用；只由 Rust 默认值提供的额外字段 **0** 个 ⇒ **没有静默丢弃**。
-
-**三、最要紧的一处：比对的另一端取哪儿。** `tokenizer_cache_enable_l0` 等四个字段**不在** `Router::new` 的签名里，却出现在 `to_router_config()` 的 `.tokenizer_cache(config::TokenizerCacheConfig { ... })`（`lib.rs:626-630`）。⇒ 拿构造函数形参表当基准会报 4 条假缺陷；取"整个 config 组装段"才是 0。
-
-**四、两处自错（都由重跑抓出）。** ① `start()` 切片按"下一个 `    }`"收尾，而 `to_router_config()` 是紧邻的前一个方法 ⇒ 整个组装段被漏掉，读数凭空多出 22 个"无去处"；改成"从 `pub fn to_router_config` 到 `server::startup(`"。② 对照臂只把字段从 `fields` 删、忘了同步从移除清单与 `passed` 删 ⇒ 判据永远不报红。最终对照改成**只改读取侧**（把四处 `self.tokenizer_cache_*` 改名）。
-
-**五、受阻。** **github.com:443 本轮不可达**（`curl 28`，多次重试均失败），文件改走 `api.github.com` 的 contents API 逐个取 ⇒ **没有整仓 AST 扫描**，只核 4 个文件（`router_args.py`／`sr_router.py`／`bind_lib.rs`／`test_pyo3.py`，均存逐字节快照）。纯静态、**未编译 Rust、未启动网关、未发请求、未触上游**。
-
-**六、价值与判断。** **2/10，不对外**：没有可提的缺陷。留下的是方法——**核对"配置到达下层"时，另一端的取景范围决定结论**。
-
-入口：[实验](experiments/sglang-router-args-plumbing/README.md) · [判据](experiments/sglang-router-args-plumbing/probe.py) · [读数](experiments/sglang-router-args-plumbing/raw/probe.json) · [证据页](open-source/sglang/evidence/sgl-router-args-plumbing.md) · [TM-024](queue_tech-miner.md) · [diary](diary/2026-11-05.md)。
-
-### M1 上一轮（2026-11-05 11:2x）：TM-023——FastVideo 扩池第八批，**8 条候选没有一条是缺陷**
-
-**一、为什么选 FastVideo。** 前七批：SGLang／vLLM／LMDeploy／TensorRT-LLM／llama.cpp／MLC-LLM（LLM 推理六批）＋ AReaL（RL 训练）。视频生成是生态里另一个大块，形状也不同：**一张 `FastVideoArgs` 配置面 + 一堆按 backend 实例化的 impl 类 + 一个独立的内核子工程**。
-
-**二、读数。** `36dc971d`（2026-11-04，2118 个 `.py`）→ **65 个开关 / 8 条 `silently_inert`**。逐条绑行号后 **真缺陷 0 条**：**R3 内部默认 4**（`use_bf16` 是 SLA 两个 impl 类的 dtype 选择；`use_128x4_sf_layout` 三个调用点全显式传 `True`；`use_queue_mode` 由 `from_fastvideo_args` 吃默认；`use_nvfp4` 是 `kwargs.pop` 默认 + 原样转发的转发型）、**R5 独立子工程内部 4**（`use_high_prec_o`／`use_qat_qkv_backward`／`enable_smoothing_k`／`enable_smoothing_q`，全在 `fastvideo-kernel/`）。
-
-**三、方法产出（真东西）。** ① **多包仓库按包分组**：`fastvideo-kernel/` 自带 `pyproject.toml` 与自己的调用约定，与主包混在一起数"零生产者"会把子工程内部的包装算漏。② **backend impl 类工厂是内部默认的高发区**：接收端 `**extra_impl_args`／`**kwargs`、发送端只传公共参数——这是第七类易错点（`**kwargs` 兜底）的**接收侧镜像**，不该按"失效"处理。③ **`mode=always` 与 `producers_total` 回答的不是同一件事**。
-
-**四、本批两处判据错（都由重跑抓出）。** ① 拿 `use_high_prec_o: bool = False` 当声明形态，实际是位置默认参数 `use_high_prec_o=False,`（`:1243`）——**判据里的字面形态要现读源码**。② "外部生产者只应在测试里"把 `uniproc_executor.py` 一行 **docstring 提及**算成生产者 ⇒ 改用 AST，只认真实赋值与调用关键字。
-
-**五、价值与判断。** **3/10，不对外**：8 条里没有一条造成"配了没反应"。
-
-**核对产物**：`verify_findings.py` **24 checks / 0 failed**、`--selftest` **3/3**、`classify.py` 8 条全覆盖。纯静态 + 全仓扫描，**未装 fastvideo、未跑推理、未上 GPU/NPU、未触上游**。
-
-入口：[实验](experiments/fastvideo-pyflag-triage/README.md) · [判据](experiments/fastvideo-pyflag-triage/verify_findings.py) · [归因](experiments/fastvideo-pyflag-triage/classify.py) · [读数](experiments/fastvideo-pyflag-triage/raw/scan-fastvideo.json) · [证据页](open-source/fastvideo/evidence/pyflag-2026-11.md) · [TM-023](queue_tech-miner.md) · [diary](diary/2026-11-05.md)。
-
-### M1 上一轮（2026-11-05 11:1x）：TM-022——AReaL 的 CPU 回退开关**打不开，但也不用打**
-
-**一、为什么做。** AReaL 扩池第七批（TM-019 的下一批，已同批入库）把 `use_cpu` 判成"真不可达"后留了半句：那段 CPU 实现本身是不是好的？这决定它该被删掉还是该被接线。
-
-**二、三段事实。** ① 唯一调用点 `areal/experimental/models/archon/moe/utils.py:212` 传 5 个位置实参、不含 `use_cpu`，全仓（含 `tests/`）零生产者；② `kernels.py:5-7` **顶层 `import triton`** ⇒ 没有 Triton 的机器连模块都进不来（本机实测 `ModuleNotFoundError`），其测试 `test_moe_common.py` 用 `skipif(not HAS_TRITON)` 静默跳过，CI 不会红；③ `fill_indices_cpu` 起笔用**对齐后**的 `write_offsets[e]`、累加用**未对齐**的 `length`——两个口径确实不一致。
-
-**三、读数（纯 CPU，抄本）。** 把 `fill_indices_cpu` 与 `generate_permute_indices` 算偏移那几行逐行抄出（`check_snapshot.py` 双向断言抄本与快照一致，3 条注入自检全过；上游源码逐字节快照在 `raw/upstream/`）。在**上游自己的缓冲口径** `round_up(总 token + E×对齐, 对齐)`（`utils.py:204-205`）下，抄本与 GPU 排布**逐位相同**——A/B/C 三档 0 点差异，另跑 2550 组随机输入（R∈{1,2,4,8}、E∈{1,4,16,64}、对齐∈{1,8,16,64}）全对、写入条数恒等于 token 总数。只有把缓冲压到 token 总数时才抛 `RuntimeError: upper bound and lower bound inconsistent with step sign`。
-
-**四、结论口径。** 「**开关不可达 + 实现可用**」，**不是**"坏掉的回退"。上一批"CPU 实现从未执行过"仍然成立，本批补的是它是**可用但不可达**。
-
-**五、本批三处自错。** ① 用 `m_offsets[-1]`（对齐后总量）当缓冲 ⇒ 四个档位全崩，差点写成"一跑就崩"；换成上游真实口径后 0 差异——**同一段代码两种口径给出相反结论，差别只在缓冲从哪来**。② 把"抄本与 GPU 排布必须有差异"写成期望 ⇒ 三档 0 差异、判据自己红。③ "与位置脱节"自洽判据隐含 rank-major 假设（实际是 expert-major、段内 rank 序），把正确实现打成"脱节 10 处"，已删。
-
-**六、价值与判断。** **3/10，不对外**：无配置字段、无 CLI、默认关闭、开发期调试开关 ⇒ 无用户受影响。留下的是方法结论：**报"回退路径坏了"之前，先把调用方实际给的缓冲/参数口径对齐**。
-
-**核对产物**：`probe.py` 6 类 15 条判据全 PASS（含两个改坏对照）、`check_snapshot.py` 4 条 PASS + 注入自检 **3/3**。纯 CPU、抄本口径；**真实模块在本机 import 不进来**，没有"AReaL 在本机跑起来"的读数。未装 areal、未上 GPU/NPU、未触上游。
-
-入口：[实验](experiments/areal-use-cpu-fallback/README.md) · [探针](experiments/areal-use-cpu-fallback/probe.py) · [抄本一致性](experiments/areal-use-cpu-fallback/check_snapshot.py) · [读数](experiments/areal-use-cpu-fallback/raw/probe.json) · [证据页](open-source/areal/evidence/use-cpu-fallback-2026-11.md) · [TM-022](queue_tech-miner.md) · [diary](diary/2026-11-05.md)。
-
+### M1（2026-11-05 12:1x）：TM-025——DeepSpeed `fused_gemm_gelu` 签名从 2023 年引入起就对不上调用点（8 实参 vs 11 必填形参，E2E 四档臂 A 臂 `TypeError`），**但入口链上不可达**（容器层只允许 BERT，而 `TritonMLP.attn_nw` 无条件赋 `nn.Parameter`）。非回归；价值 4/10，不对外。方法：先证存在、再证可达、最后定价值。完整叙述见 [实验](experiments/deepspeed-pyflag-triage/README.md) 与 [证据页](open-source/deepspeed/evidence/triton-fused-gemm-gelu-argshift.md)。
+### M1（2026-11-05 11:4x）：TM-024——SGLang 路由网关 `RouterArgs` 108 字段 → Rust `Router::new` 90 形参，**没有一个被静默丢掉**；最要紧的是"比对的另一端要取值真正被消费的那段代码"（`tokenizer_cache_*` 四字段不在构造签名里但 `to_router_config()` 真读）。价值 2/10，不对外。见 [实验](experiments/sglang-router-args-plumbing/README.md)。
+### M1（2026-11-05 11:2x）：TM-023——FastVideo 扩池第八批：65 开关 / 8 候选，**真缺陷 0 条**（R3 内部默认 4／R5 独立子工程 4）。方法：多包仓库按包分组、backend impl 工厂是内部默认高发区。价值 3/10，不对外。见 [实验](experiments/fastvideo-pyflag-triage/README.md)。
+### M1（2026-11-05 11:1x）：TM-022——AReaL `use_cpu` 回退开关**打不开但也不用打**：唯一调用点不传、全仓零生产者，`kernels.py` 顶层 `import triton` ⇒ 无 Triton 机器整模块进不来；但抄本在上游缓冲口径下与 GPU 排布逐位相同 ⇒ "不可达 + 实现可用"，不是坏回退。价值 3/10，不对外。见 [实验](experiments/areal-use-cpu-fallback/README.md)。
 ### M1 上一轮（2026-11-05 10:0x）：TM-021——`mlc_llm router` 的子服务器恒开 debug 端点，**四跳读数里第一次出现"看起来对"的假答案**
 
 **一、为什么做。** TM-019 的结论是"MLC-LLM 那条 `enable_debug` 扫成 `producers_total=1`，看着正常"。本轮顺着这条生产者往下走：如果它接的是**字面量**，那"有人传"就不等于"配得动"。
@@ -116,50 +51,8 @@
 
 ### M1（2026-11-05 09:2x）：TM-020——verl `algorithm.filter_groups.metric` 的三份说明互不自洽，`seq_reward`／`seq_final_reward`／`response_filter` 在 V1 零写入点（照填第一步就 `RuntimeError`）；上游单测只测过 `acc`/`reward` 所以 CI 抓不到。**价值 5/10，不对外**（只能写"说明与实现没对齐"）。自检 8/8、负向对照 4/4。完整叙述见 [实验](experiments/verl-filter-groups-metric-names/README.md) 与 [证据页](open-source/verl/evidence/filter-groups-metric-names.md)。
 
-### M1 上一轮（2026-11-05 08:1x）：TM-019——MLC-LLM 扩池第六批，**两条候选都是扫描器自己的误判**
-
-**一、为什么选 MLC-LLM。** 五批之后常规池只剩两个没扫的：MLC-LLM 与训练侧（AReaL / NeMo-RL / slime）。MLC-LLM 是推理部署引擎里唯一"配置面在 Python、C++ 只管服务"的架构，能检验前五批的排除判据在这种形状上还成不成立。
-
-**二、读数。** `44fd06d0`（2026-10-30）Python 415 个 `.py`／**4.0 秒** → **7 个开关 / 2 条 `silently_inert`**；C++ 88 个 C/C++／**0.5 秒** → **22 个有消费者字段 / 1 条 `unwritten`**。逐条绑行号后**真缺陷 0 条**。
-
-**三、两条候选是同一个根因：工厂函数被当成了决策者。** `interface/router.py:17` 的 `serve()` 函数体里没有 `if enable_prefix_cache:`，但这个名字出现在 `router_type(..., enable_prefix_cache=enable_prefix_cache, ...)`（`:38`）的实参位置 ⇒ 老扫描器把它记成消费者，再因为"没人按关键字传给它"报 `silently_inert`。真决策在 `router/router.py:86`。
-
-**四、四跳在 CPU 上真跑。** `probe_router_chain.py` 取三处**真实源码**（真 `Router.__init__` 含它的 `start_server` 闭包、真 `interface.router.serve`、真 argparse），第三方模块用替身（清单进读数）：`True` → 两台 `PopenServer` 都拿到 `radix`、`False` → 都拿到 `disable`；`Router(...)` 两档都收到原值。`verdict: WIRED`，selftest **8/8**。
-
-**五、本批最要紧的一处自错：探针第一版给了反向读数。** 第一版把 `uvicorn` 换成了空模块，而真 `serve()` 末尾是 `uvicorn.run(app, ...)` ⇒ `AttributeError`，那一轮被记成失败、读数成了 `<absent>`，**我一度准备把它写成一条真缺陷**。是 `--selftest` 的红灯抓出来的：反事实注入本该让读数翻转，它却没动——因为基线本来就是 `<absent>`。⇒ 与 TM-017 的 `sed` 事故同类，而且更狠：**判据红也不代表源码坏**。
-
-**六、修进工具（真产出）。** ① 名字作为**调用关键字实参**出现也算消费；② 只把形参转给下游的消费者标 `forwarded`、落 `deciding_consumers`，`silently_inert` 只看决策者；③ 容器键位写入单列 `container_writes`，**只作线索、不进 `producers_total`**（字典写了键 ≠ 下游真读到）。回归 verl（8）/SkyRL（7）/OpenRLHF（0）三份归档 `silently_inert` **逐条相同**；单测 16 passed。
-
-**七、另两条不是缺陷。** `enable_disaggregation` 是**编译期按模型接**：38 个 `create_generic` 调用点里只有 3 个（llama／llama4／nemotron）显式传、其余 35 个吃默认 `False`；`dispatch_kv_cache_creation.py` 那两行 `kwargs.pop(...)` / `kwargs[...] = ...` 的 `kwargs` 是**具名形参**（不是 `**kwargs`）。C++ 的 `PrefillInput::is_decode` 写入在 `batch_prefill_base.cc:238` 的聚合初始化第四项 `/*is_decode=*/true`（TM-018 第二类形态），三处消费者真读它。C++ 只有 22 个字段可判**不是方法失效**——MLC-LLM 的 C++ 是服务层。
-
-**核对产物**：`verify_findings.py` **21 checks 0 failed / selftest 4 注入全红**、`probe_router_chain.py` **8/8**（含仓库内快照副本，无克隆也能跑）、`probe_container_write.py` **5/5**、`classify.py` 7/7 全覆盖、`scan_cpp_flags.py --selftest` 7/7。**纯静态 + CPU 源码执行，未装 mlc_llm、未建 TVM、未起服务、未上 GPU/NPU、未触上游。**
-
-**留给下一轮**：① TM-019 是负结论，**不对外**；② 常规扫描池六批已扫完（SGLang／vLLM／LMDeploy／TensorRT-LLM／llama.cpp／MLC-LLM），剩下**训练侧**（AReaL／NeMo-RL／slime／DeepSpeed）未扫；③ TM-015（vLLM `enable_kv_events`）、TM-017（TRT-LLM `use_split_scale_stages`）仍待用户逐项授权；④ TS-001 仍停在「等用户立项」，M5 侧 critic 三臂与 4 卡臂仍等窗口。
-
-入口：[实验](experiments/mlcllm-pyflag-triage/README.md) · [判定](experiments/mlcllm-pyflag-triage/verify_findings.py) · [四跳探针](experiments/mlcllm-pyflag-triage/probe_router_chain.py) · [编译期探针](experiments/mlcllm-pyflag-triage/probe_container_write.py) · [7 条归因](experiments/mlcllm-pyflag-triage/classify.py) · [读数](experiments/mlcllm-pyflag-triage/raw/) · [证据页](open-source/mlcllm/evidence/pyflag-2026-11.md) · [工具第十三类](tools/pyflag/readme.md) · [TM-019](queue_tech-miner.md) · [diary](diary/2026-11-05.md)。
-
-### M1 上一轮（2026-11-05 04:0x）：TM-016——LMDeploy 扩池，5 条「静默失效」没有一条能对外
-
-**一、为什么做。** TM-015 留给下一轮的第③条：SGLang 与 vLLM 已扫完 → 换池取 LMDeploy，检验前两批的排除判据在新形状上还成不成立。
-
-**二、读数。** `3228395546`（2026-11-03，1113 个 `.py`、**16.5 秒**）：**38 个开关／5 条 `silently_inert`**，逐条绑行号后**真缺陷 0 条**。
-
-**三、最像缺陷的那条也是通的，这是本批最要紧的。** `--disable-fastapi-docs` 从 CLI 一路传到 `serve()`，而 `launch_server` 的九个具名形参里**没有它**——只看签名会判"断在这里"。实际 `cur_server_kwargs.update(kwargs)` → `_run_server` → `serve(model_path, **kwargs)` 一路转发。`probe_kwargs_route.py` 把这三段**真实源码**取出来在 CPU 上串起来跑：`True` → FastAPI 三个 URL 全 `None`、`False` → `docs_url='/'`，**7/7**，并配两条负向对照（收集段换成空 dict／分支换成永远开都要让对应判据变红）。
-
-**四、历史归属：不存在"值曾被吞掉"的版本。** `--disable-fastapi-docs` 由 #2540（`6f34738db0`，2024-10-08）引入；`launch_server` 由 #3414（`776aa1b686`，2025-05-19）引入、**入即 `**kwargs` 转发**。上游查重：#2540／#4263 都在**加**这个功能，无 issue 说它不生效。
-
-**五、另外四条各属一类结构原因。** `use_fa3` 是 import 期 SM/CUDA 探测的模块级全局（真赋值只有 `:15`/`:22`）；`use_proxy` 消费者与 2 个生产者都在 `autotest/`；`use_tqdm` 仓内生产者只在 `benchmark/`，但 `Pipeline.__call__` 透传 `**kwargs` → `infer`；`with_version` 是 `setup.py` 内部 helper（docstring `default=False` vs 代码 `True`，无用户面）。
-
-**六、方法读数（真产出）。** 新增两类易错点并写进 pyflag readme：**第八类 `**kwargs` 兜底**（签名里没有 ≠ 收不到）、**第九类别名调用**（`from X import f as g` 后按 `f` 找读到 0 处）。三批真缺陷率：SGLang 34→2、vLLM 12→1、LMDeploy 5→0。
-
-**七、本批五个自错（已改，都由自检/复核抓出）。** ① 多行调用的关键字实参只看首行 → 读到空集；② 自证 check 要求签名解析器"看见 `disable_fastapi_docs`"，与结论自相矛盾；③ 「别名找得到」与「调用点传了值」混在一条判据 → 注入时连带变红；④ `x = ...` 三种假阳性（形参默认值／关键字实参／续行实参）让赋值点集合反复横跳；⑤ 先剥三引号再剥注释 → docstring 收尾行的 `#` 截断、三引号配不上对。
-
-**核对产物**：`verify_findings.py` **39 checks 0 failed**、`--selftest` **8/8**（红错地方也算失败）；`probe_kwargs_route.py` **7/7**（2 条负向对照）。**纯静态 + CPU 源码执行，未装 lmdeploy、未起服务、未上 GPU/NPU、未触上游。**
-
-**留给下一轮**：① TM-016 是负结论，**不对外**，无需用户授权动作；② 下一批换池只剩 TensorRT-LLM／llama.cpp／MLC（LMDeploy 已扫）；③ TM-015（vLLM `enable_kv_events`）仍待用户逐项授权；④ TS-001 仍停在「等用户立项」，M5 侧 critic 三臂仍等单卡窗口。
-
-入口：[实验](experiments/lmdeploy-pyflag-triage/README.md) · [证据页](open-source/lmdeploy/evidence/inert-flags-triage-2026-11.md) · [TM-016](queue_tech-miner.md)。
-
+### M1（2026-11-05 08:1x）：TM-019——MLC-LLM 扩池第六批：7 个 Python 开关 / 22 个 C++ 字段，**真缺陷 0 条**；两条候选都是"工厂函数被当成决策者"。本批最要紧的自错是探针第一版给了**反向读数**（把 `uvicorn` 换成空模块导致 `serve()` 崩），差点被写成真缺陷。工具修进第十三类（调用关键字实参算消费、区分 forwarded 与 deciding consumer）。见 [实验](experiments/mlcllm-pyflag-triage/README.md)。
+### M1（2026-11-05 04:0x）：TM-016——LMDeploy 5 条「静默失效」没有一条能对外；最像缺陷的 `--disable-fastapi-docs` 实际经 `**kwargs` 一路转发且 7/7 实测分叉。方法：新增第八类 `**kwargs` 兜底与第九类别名调用。见 [实验](experiments/lmdeploy-pyflag-triage/README.md)。
 ### M1 本轮（2026-11-05 03:0x）：TM-015——vLLM 扩池，263 个开关里 12 条静默失效、真缺陷 1 条
 
 **一、为什么选 vLLM。** pyflag 在 verl／SkyRL／OpenRLHF／rLLM 与 SGLang 上都做到「候选 ≤1–2 条」，readme 写明「再扫应换新框架而非重扫」。vLLM 是常规扫描池里最大且完全没扫过的对象，按扩池要求本轮只纳入它一个。
@@ -206,6 +99,35 @@
 ### M1（2026-11-05 07:4x）：TM-018——llama.cpp 扩池，1636 个 C++ 字段 / 37 条 `unwritten`、**真缺陷 0 条**。方法产出：单行 `if` 内赋值、`/* name */ value` 聚合初始化、位置实参、**第十二类「引用绑定 ≠ 赋值」**。完整叙述见 [实验](experiments/llamacpp-pyflag-triage/README.md) 与 [diary](diary/2026-11-05.md)。
 
 ## 当前现场
+
+### M1 本轮（2026-11-05 14:0x–14:2x）：TM-026——NeMo-RL 的 `use_preserving_dataset` 在锁定版本下已经不改变任何数据
+
+**一、为什么选它。** 扩池第十批。训练侧名单里 NeMo-RL 还没扫过（AReaL／FastVideo／DeepSpeed 已扫）。`github.com:443` 本轮不可达，源码走 `api.github.com` tarball（20.7 MB），`raw/snapshot-*` 存逐字节副本。
+
+**二、读数。** `d82b79c58f17`（2026-11-05 04:30 UTC）、1096 个 `.py`、**53 秒** → **34 个开关 / 1 条 `silently_inert`**（`use_preserving_dataset`，`mode=never`）。密度与 AReaL（42）、DeepSpeed（44）同档，再次印证"配置面在 TypedDict／dataclass 里的仓库，pyflag 覆盖有限"。
+
+**三、为什么这一条值得追。** 它有**官方文档专节**（`docs/guides/sft.md:527-544` 明写"异构工具 schema 必须打开它，否则会补 None"）、有**专门的测试文件**、有**用户提过的 issue**（#2116 是当年用它时崩在数据集合并上，由 #2515 修掉）。扫描器只报"零生产者"，回答不了"配了它到底有没有用"。
+
+**四、三段读数必须分开。**
+- **能配上**：`load_response_dataset` 用 `dataset_class(**data_config)`；`DATASET_REGISTRY["openai_format"]` 直接绑类；`ResponseDatasetConfig` 是 `TypedDict`，运行时不做校验 ⇒ 键一路到达形参。
+- **没有效果**：仓库 `uv.lock` 锁 `datasets==5.0.1`，两档输出的 `tools` **逐字节相同**，`sft_processor` 产出的 `token_ids` 也相同。
+- **曾经有效**：`datasets<=4.6.0` 关闭档给样本 1 补出 `strict: null`、给 `parameters.properties` 补出 `expr: null, precision: null`；开启档保留原结构。
+
+**五、版本矩阵（10 个版本，真跑两档）。** 3.6.0／4.0.0／4.2.0／4.4.0／4.4.1／4.5.0／4.6.0 → 两档不同；4.7.0／4.8.4／5.0.1 → **两档相同**。分界 **4.6.0 → 4.7.0**：`datasets` 对同层结构不一致的嵌套 dict 退回 `Json(decode=True)`，原样往返、不补键。
+
+**六、历史归属。** 上游锁的时间线：#1181（`6fe56b01d7`，2025-09-26）引入时是 **4.0.0**；`967d2c8565`（2026-01-22）起 **4.4.1**；**#3286（`4fdd49c225`，2026-10-21）起 5.0.1**。⇒ 2025-09 至 2026-10 之间按锁装环境时开关有效，之后空转。代码一行没改 ⇒ **不是回归**。
+
+**七、还有一条无害差异。** 混合数据（部分样本带 tools）下，锁定版本里关闭档给出 `tools: null`、开启档无该键；下游 `datum_dict.get("tools", None)` + `if tools is not None` ⇒ 等价。
+
+**八、本批 2 处自错（都由自检抓出）。** ① 第一版判据"关闭档两样本键集相同"把旧版行为当普遍事实，在锁定版本上**注入后仍绿**；② 新版两样本键集本来就各自不同，改成比较"两档输出是否逐字节相同"才是这个开关的定义。
+
+**九、价值与判断。** **4/10，不对外**：缺陷可机读、可证伪、关系数据正确性；但当前锁定版本下无用户受影响。三个最小动作 (a) 文档按版本澄清 /(b) 钉 `datasets<4.7` /(c) 删开关，**均待用户逐项授权**。上游查重（`use_preserving_dataset` 7 条、`PreservingDataset` 6 条）无人报过版本漂移。
+
+**核对产物**：同一份探针在 `datasets 5.0.1`+`transformers 5.12.1`（上游锁）与 `datasets 4.0.0`+`transformers 5.5.4`（#1181 时锁）上各 **12 checks / 0 failed**，`--selftest` 两条注入均命中。**纯 CPU，未装 nemo_rl 本体、未跑训练、未上 GPU/NPU、未触上游。**
+
+**留给下一轮**：① TM-026 是负结论（对当前锁定版本而言），**不对外**；② 训练侧还剩 slime／OpenRLHF／TRL 未扫（TRL 6 个开关已知低密度）；③ TM-015（vLLM `enable_kv_events`）、TM-017（TRT-LLM `use_split_scale_stages`）、TM-026 三个动作仍待用户逐项授权；④ TS-001 仍停在「等用户立项」。
+
+入口：[实验](experiments/nemo-rl-pyflag-triage/README.md) · [探针](experiments/nemo-rl-pyflag-triage/probe_preserving_dataset.py) · [锁定版本读数](experiments/nemo-rl-pyflag-triage/raw/probe-datasets-5.0.1.json) · [历史锁定读数](experiments/nemo-rl-pyflag-triage/raw/probe-datasets-4.0.0.json) · [版本矩阵](experiments/nemo-rl-pyflag-triage/raw/version-matrix.json) · [证据页](open-source/nemo-rl/evidence/preserving-dataset-version-drift.md) · [nemo-rl 索引](open-source/nemo-rl/readme.md) · [pyflag 第十类](tools/pyflag/readme.md) · [TM-026](queue_tech-miner.md) · [diary](diary/2026-11-05.md)。
 
 > **推送已恢复（2026-11-04 16:2x）**：此前积压的 5 个本地提交（`b850df424`／`ab204152f`／`db7a7aeed`／`3860b0b6b`／`9816bf5f8`）与本轮提交已全部推上远端 main。`git push` 仍连不上 `github.com:443`（75 s 超时），改用 [REST 推送工具](tools/git-push-api/readme.md)（`api.github.com` 正常）；远端新提交 `01c8bf13` 的 SHA 与旧本地不同（消息与树相同），已 fetch 并 `reset --hard` 对齐，本地树 `618e2a82` 与推送内容一致、`--verify` 通过。⇒ **下次网络同样断开时优先走 `tools/git-push-api`，不要反复等直连。**
 

@@ -1,0 +1,152 @@
+# Copyright (c) 2025, NVIDIA CORPORATION.  All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+import os
+from dataclasses import dataclass
+from typing import Any, NotRequired, Optional, Protocol, TypedDict, Union
+
+import torch
+from transformers.tokenization_utils_base import PreTrainedTokenizerBase
+
+from nemo_rl.data.multimodal_utils import PackedTensor
+
+# OpenAI-API-like message log, but every messsage may contain associated tensors (i.e. tokenized strings and logprobs) in addition to the original "content" string
+LLMMessageLogType = list[dict[str, Union[str, torch.Tensor]]]
+VLMMessageLogType = list[dict[str, Union[str, torch.Tensor, PackedTensor]]]
+
+# Flattened message log where all tensors and data are concatenated together for a conversation
+# Converts a conversation from list-of-turns format to key-value format with concatenated tensors
+FlatMessagesType = dict[str, Union[list[str], torch.Tensor, PackedTensor]]
+
+PathLike = Union[str, "os.PathLike[Any]"]
+TokenizerType = PreTrainedTokenizerBase
+
+
+@dataclass(frozen=True)
+class NemoGymSourceIdentity:
+    """Filesystem identity used to cache agent names from one Gym dataset."""
+
+    path: str
+    device: int
+    inode: int
+    ctime_ns: int
+    mtime_ns: int
+    size: int
+
+    @classmethod
+    def from_stat(cls, path: str, stat: os.stat_result) -> "NemoGymSourceIdentity":
+        """Build a source identity snapshot from a resolved path and stat result."""
+        return cls(
+            path=path,
+            device=stat.st_dev,
+            inode=stat.st_ino,
+            ctime_ns=stat.st_ctime_ns,
+            mtime_ns=stat.st_mtime_ns,
+            size=stat.st_size,
+        )
+
+    def matches(self, stat: os.stat_result) -> bool:
+        """Return whether ``stat`` still describes the same source contents."""
+        return self == self.from_stat(self.path, stat)
+
+
+class DatumSpec(TypedDict):
+    message_log: LLMMessageLogType | VLMMessageLogType
+    length: int  # total (concatenated) length of the message tensors
+    extra_env_info: Optional[dict[str, Any]]
+    loss_multiplier: float  # multiplier for the loss for this datum. 0 to mask out (say the sample is invalid)
+    idx: int
+    task_name: NotRequired[str]
+    # One binary value per message; assistant turns only.
+    message_loss_mask: NotRequired[list[int]]
+    # Raw tool schemas for native chat rendering.
+    tools: NotRequired[list[dict[str, Any]]]
+    stop_strings: NotRequired[list[str]]  # Optional stop strings for generation
+    __extra__: NotRequired[Any]  # This allows additional fields of any type
+
+
+class PreferenceDatumSpec(TypedDict):
+    message_log_chosen: LLMMessageLogType | VLMMessageLogType
+    message_log_rejected: LLMMessageLogType | VLMMessageLogType
+    length_chosen: int
+    length_rejected: int
+    loss_multiplier: float
+    idx: int
+    task_name: NotRequired[str]
+
+
+@dataclass
+class TaskDataSpec:
+    task_name: Optional[str] = None
+    # prompt
+    prompt_file: Optional[PathLike] = None
+
+    system_prompt_file: Optional[PathLike] = None
+    # TODO(rohitrango): Move model-specific media controls to ProcessorInterface.
+    num_frames: Optional[int] = None
+    video_sampling_style: Optional[str] = None
+    video_target_num_patches: Optional[int] = None
+    video_temporal_patch_size: Optional[int] = None
+    video_maintain_aspect_ratio: Optional[bool] = None
+    pad_audio_to_hop_length: Optional[bool] = None
+    min_generation_tokens: Optional[int] = None
+    image_max_num_tiles: Optional[int] = None
+
+    def __post_init__(self) -> None:
+        def load_prompt_file(
+            prompt_file: Optional[PathLike],
+        ) -> Optional[str]:
+            """Load prompt from file if it exists, otherwise return as is."""
+            if prompt_file is None:
+                return None
+            if os.path.exists(prompt_file):
+                with open(prompt_file, "r", encoding="utf-8") as f:
+                    return f.read()
+            else:
+                raise FileNotFoundError(f"Prompt file {prompt_file} not found")
+
+        # Load prompts from files if they exist
+        self.system_prompt = load_prompt_file(self.system_prompt_file)
+        self.prompt = load_prompt_file(self.prompt_file)
+
+    def copy_defaults(self, from_spec: "TaskDataSpec") -> None:
+        """Apply default values from another Task instance for any None attributes."""
+        default_attrs = {
+            "system_prompt": from_spec.system_prompt,
+            "prompt": from_spec.prompt,
+        }
+
+        for attr_name, default_value in default_attrs.items():
+            if getattr(self, attr_name) is None:
+                setattr(self, attr_name, default_value)
+
+
+class TaskDataProcessFnCallable(Protocol):
+    """A callable that processes a loaded datum dictionary into a DatumSpec."""
+
+    def __call__(
+        self,
+        datum_dict: dict[str, Any],
+        task_data_spec: TaskDataSpec,
+        tokenizer: TokenizerType,
+        max_seq_length: int | None,
+        idx: int,
+    ) -> DatumSpec:
+        raise NotImplementedError("Task data process not implemented")
+
+
+class TaskDataPreProcessFnCallable(Protocol):
+    """A callable that processes a loaded raw datum dictionary into a dictionary with required format for further processing."""
+
+    def __call__(self, datum_dict: dict[str, Any]) -> dict[str, Any]:
+        raise NotImplementedError("Task data preprocess not implemented")

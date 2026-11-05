@@ -1,0 +1,26 @@
+Loaded dataset using standard approach: 3 samples.
+Using PreservingDataset to preserve heterogeneous tool argument schemas without None-filling.
+Loaded dataset using PreservingDataset: 3 samples.
+{
+ "datasets": "4.0.0",
+ "rows": [
+  {
+   "row": 0,
+   "same": false,
+   "off_tools": "[{'type': 'function', 'function': {'name': 'search', 'description': 'search the ",
+   "on_has_tools_key": true
+  },
+  {
+   "row": 1,
+   "same": false,
+   "off_tools": "[{'type': 'function', 'function': {'name': 'calc', 'description': 'calculator', ",
+   "on_has_tools_key": true
+  },
+  {
+   "row": 2,
+   "same": false,
+   "off_tools": "None",
+   "on_has_tools_key": false
+  }
+ ]
+}
