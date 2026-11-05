@@ -1,0 +1,12 @@
+[selftest] liger_producer_added: 变红 ['L3', 'L5'] 期望 ['L3', 'L5'] -> PASS
+[selftest] liger_config_field: 变红 ['L4'] 期望 ['L4'] -> PASS
+[selftest] liger_branch_removed: 变红 ['L2'] 期望 ['L2'] -> PASS
+[selftest] remove_padding_guard_dropped: 变红 ['R1'] 期望 ['R1'] -> PASS
+[selftest] remove_padding_passed_at_callsite: 变红 ['R2'] 期望 ['R2'] -> PASS
+[selftest] ssr_kwarg_removed: 变红 ['S1'] 期望 ['S1'] -> PASS
+[selftest] pd_true_arg_removed: 变红 ['P1'] 期望 ['P1'] -> PASS
+[selftest] combine_subclass_now_true: 变红 ['C1'] 期望 ['C1'] -> PASS
+[selftest] gated_residual_gets_explicit_arg: 变红 ['C2'] 期望 ['C2'] -> PASS
+[selftest] signals_docstring_unmarked: 变红 ['G1'] 期望 ['G1'] -> PASS
+[selftest] pprint_docstring_changed: 变红 ['D1'] 期望 ['D1'] -> PASS
+[selftest] ALL PASS (11 条注入)

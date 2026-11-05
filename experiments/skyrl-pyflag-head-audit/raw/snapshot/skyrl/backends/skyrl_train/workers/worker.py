@@ -1,0 +1,1855 @@
+import asyncio
+import logging
+import os
+import socket
+from collections import defaultdict
+from contextlib import contextmanager
+from ctypes import CDLL, POINTER, Structure, c_char_p, c_int, c_ulong, c_void_p
+from datetime import timedelta
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type
+
+import ray
+import torch
+import torch.distributed
+import torch.nn as nn
+from loguru import logger
+from omegaconf import OmegaConf
+from ray import ObjectRef
+from ray.util.placement_group import (
+    placement_group,
+    placement_group_table,
+)
+from ray.util.scheduling_strategies import PlacementGroupSchedulingStrategy
+from torch.optim import Optimizer
+from torch.optim.lr_scheduler import LRScheduler
+from transformers import PreTrainedModel
+
+from skyrl.backends.skyrl_train.distributed.dispatch import (
+    ActorInfo,
+    Dispatch,
+    DispatchRegistry,
+    MeshRank,
+    WorkerOutput,
+)
+from skyrl.backends.skyrl_train.distributed.strategy import DistributedStrategy
+from skyrl.backends.skyrl_train.distributed.ulysses import (
+    apply_monkey_patch,
+    set_ulysses_sequence_parallel_group,
+)
+from skyrl.backends.skyrl_train.training_batch import (
+    TrainingInputBatch,
+    TrainingOutputBatch,
+)
+from skyrl.backends.skyrl_train.utils.io import io
+from skyrl.backends.skyrl_train.utils.ppo_utils import (
+    PolicyLossRegistry,
+    PolicyLossType,
+    compute_approx_kl,
+    ppo_critic_loss,
+    score_centering_weight,
+)
+from skyrl.backends.skyrl_train.utils.profiler import Profiler
+from skyrl.backends.skyrl_train.utils.sample_support import (
+    SAMPLE_SUPPORT_FIELD,
+    SCORE_CENTERING_SCORES_KEY,
+)
+from skyrl.backends.skyrl_train.utils.sample_support_replay import (
+    score_centering_loss_inputs,
+    score_centering_metrics,
+)
+from skyrl.backends.skyrl_train.utils.torch_utils import masked_mean
+from skyrl.backends.skyrl_train.workers.worker_utils import (
+    BaseBatchIterator,
+    BatchIterator,
+    TokenBasedBatchIterator,
+    all_reduce_metrics,
+    compute_minibatch_rollout_logprob_diff_metrics,
+    get_microbatch_iterator,
+    reduce_metrics,
+)
+from skyrl.env_vars import (
+    SKYRL_RAY_PG_TIMEOUT_IN_S,
+    SKYRL_WORKER_NCCL_TIMEOUT_IN_S,
+)
+from skyrl.train.config import TorchProfilerConfig, TrainerConfig
+from skyrl.train.dataset.replay_buffer import Experience
+from skyrl.train.utils import deadline
+from skyrl.train.utils.utils import (
+    ResolvedPlacementGroup,
+    configure_ray_worker_logging,
+    get_ray_pg_ready_with_timeout,
+    ray_noset_visible_devices,
+)
+
+_SET_AFFINITY = False
+
+# Allocation/free events kept in the ``record_memory`` history ring buffer. Live
+# blocks in a snapshot keep their allocation stacks regardless of this cap; it
+# bounds only the event trace, which otherwise grows without limit over a run.
+MEMORY_HISTORY_MAX_ENTRIES = 100_000
+
+if TYPE_CHECKING:
+    from skyrl.backends.skyrl_train.inference_servers.remote_inference_client import (
+        RemoteInferenceClient,
+    )
+    from skyrl.train.config.config import InferenceEngineConfig
+
+
+# Adapted from OpenRLHF: https://github.com/OpenRLHF/OpenRLHF/blob/main/openrlhf/trainer/ray/launcher.py#L17
+class DistributedTorchRayActor:
+    def __init__(
+        self, world_size, rank, local_rank, master_addr, master_port, sequence_parallel_size, record_memory=False
+    ):
+        logging.basicConfig(
+            format="%(asctime)s %(levelname)-8s %(message)s",
+            level=logging.INFO,
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+        self._world_size = world_size
+        self._rank = rank
+        self._local_rank = local_rank
+        self._master_addr = master_addr if master_addr else self._get_current_node_ip()
+        self._master_port = master_port if master_port else self._get_free_port()
+        os.environ["MASTER_ADDR"] = self._master_addr
+        os.environ["MASTER_PORT"] = str(self._master_port)
+        os.environ["WORLD_SIZE"] = str(self._world_size)
+        os.environ["RANK"] = str(self._rank)
+        # NOTE: Ray will automatically set the CUDA_VISIBLE_DEVICES
+        # environment variable for each actor, so always set device to 0
+        # os.environ["LOCAL_RANK"] = str(self._local_rank)
+        os.environ["LOCAL_RANK"] = str(ray.get_gpu_ids()[0]) if ray_noset_visible_devices() else "0"
+        self.sequence_parallel_size: int = sequence_parallel_size
+
+        self.record_memory = record_memory
+        if record_memory:
+            torch.cuda.memory._record_memory_history(max_entries=MEMORY_HISTORY_MAX_ENTRIES)
+
+        # Redirect worker output to log file (infra logs shouldn't pollute driver stdout)
+        from skyrl.train.utils.ray_logging import redirect_actor_output_to_file
+
+        redirect_actor_output_to_file()
+        configure_ray_worker_logging()
+
+    def get_node_local_rank(self):
+        return self._local_rank
+
+    def init_worker_process_group(self):
+        if not torch.distributed.is_initialized():
+            # Default torch dist pg init timeout is 10 minutes (600 seconds)
+            torch.distributed.init_process_group(
+                backend="cpu:gloo,cuda:nccl", timeout=timedelta(seconds=SKYRL_WORKER_NCCL_TIMEOUT_IN_S)
+            )
+
+        # setup device mesh
+        # TODO: Support TP / PP for additional backends
+        # NOTE (sumanthrh): Device mesh and mesh rank are rank specific attributes. For the current way the strategy is defined,
+        # it is only meant to interact with worker state; not hold worker state. Thus, this should live outside the strategy object.
+        # This device mesh can be common across all the strategies we use
+        dp_size = self._world_size // self.sequence_parallel_size
+        device_mesh = torch.distributed.device_mesh.init_device_mesh(
+            "cuda", mesh_shape=(dp_size, self.sequence_parallel_size), mesh_dim_names=("dp", "sp")
+        )
+        self.device_mesh = device_mesh
+        self.mesh_rank = MeshRank(
+            dp=self.device_mesh.get_local_rank(mesh_dim="dp"),
+            sp=self.device_mesh.get_local_rank(mesh_dim="sp"),
+            tp=0,
+            pp=0,
+            world_size=self._world_size,
+            dp_size=self.device_mesh.size(0),
+            pp_size=1,
+        )
+
+    def _seq_parallel_monkey_patch(self, model: PreTrainedModel, use_parent_class: bool = False):
+        # NOTE (sumanthrh): This sets a global variable that is used during the forward pass for sequence parallelism
+        # This works because each worker is it's own process and thus different worker types are isolated
+        # TODO (sumanthrh): We should re-visit this and see if we should adopt a context-manager pattern for sequence parallelism
+        if self.sequence_parallel_size > 1:
+            set_ulysses_sequence_parallel_group(self.device_mesh["sp"].get_group())
+            apply_monkey_patch(
+                model=model, ulysses_sp_size=self.sequence_parallel_size, use_parent_class=use_parent_class
+            )
+
+    def get_mesh_rank(self):
+        return self.mesh_rank
+
+    def get_gpu_id(self):
+        return ray.get_gpu_ids()[0]
+
+    @staticmethod
+    def _get_current_node_ip():
+        address = ray._private.services.get_node_ip_address()
+        # strip ipv6 address
+        return address.strip("[]")
+
+    def get_ray_node_id(self):
+        return ray.get_runtime_context().get_node_id()
+
+    @staticmethod
+    def _get_free_port():
+        with socket.socket() as sock:
+            sock.bind(("", 0))
+            return sock.getsockname()[1]
+
+    def get_master_addr_port(self):
+        return self._master_addr, self._master_port
+
+    # TODO(tgriggs): For numa affinity, pass in the Worker._local_rank for the second arg here. Distinguish 'rank' and 'local_rank' differ here.
+    def _set_numa_affinity(self, rank):
+        def local_rank_to_real_gpu_id(local_rank):
+            cuda_visible_devices = [
+                int(x) for x in os.environ.get("CUDA_VISIBLE_DEVICES", "0,1,2,3,4,5,6,7").split(",")
+            ]
+            return cuda_visible_devices[local_rank]
+
+        rank = local_rank_to_real_gpu_id(rank)
+
+        global _SET_AFFINITY
+        if _SET_AFFINITY:
+            return
+
+        from ctypes.util import find_library
+
+        class bitmask_t(Structure):
+            _fields_ = [
+                ("size", c_ulong),
+                ("maskp", POINTER(c_ulong)),
+            ]
+
+        try:
+            LIBNUMA = CDLL(find_library("numa"))
+        except Exception as e:
+            logger.error(f"Skipping NUMA affinity setup because libnuma is not installed: {e}")
+            _SET_AFFINITY = True
+            return
+
+        LIBNUMA.numa_parse_nodestring.argtypes = [c_char_p]
+        LIBNUMA.numa_parse_nodestring.restype = POINTER(bitmask_t)
+        LIBNUMA.numa_run_on_node_mask.argtypes = [POINTER(bitmask_t)]
+        LIBNUMA.numa_run_on_node_mask.restype = c_int
+        LIBNUMA.numa_set_membind.argtypes = [POINTER(bitmask_t)]
+        LIBNUMA.numa_set_membind.restype = c_void_p
+        LIBNUMA.numa_num_configured_nodes.argtypes = []
+        LIBNUMA.numa_num_configured_nodes.restype = c_int
+
+        def numa_bind(nid: int):
+            bitmask = LIBNUMA.numa_parse_nodestring(bytes(str(nid), "ascii"))
+            LIBNUMA.numa_run_on_node_mask(bitmask)
+            LIBNUMA.numa_set_membind(bitmask)
+
+        # Only bind to NUMA nodes that actually have CPUs. On Grace-Blackwell (GB200),
+        # GPU HBM is exposed as additional CPU-less NUMA nodes (e.g. 34 nodes total, only
+        # nodes 0-1 have CPUs).
+        cpu_nodes = []
+        node_root = "/sys/devices/system/node"
+        try:
+            node_names = sorted(
+                (n for n in os.listdir(node_root) if n.startswith("node") and n[4:].isdigit()),
+                key=lambda n: int(n[4:]),
+            )
+        except OSError:
+            node_names = []
+        for name in node_names:
+            try:
+                with open(os.path.join(node_root, name, "cpulist")) as f:
+                    if f.read().strip():
+                        cpu_nodes.append(int(name[4:]))
+            except OSError:
+                continue
+        if not cpu_nodes:
+            cpu_nodes = [0]
+
+        def gpu_numa_node():
+            """NUMA node of the GPU this worker owns, or None if it can't be determined.
+
+            Ray masks CUDA_VISIBLE_DEVICES down to this worker's single GPU, so cuda:0 is
+            that GPU and its PCI affinity is the exact answer -- no rank-to-socket heuristic
+            needed (and none works: with one visible device, GPU-count-based sharding sends
+            every rank but 0 to the last node).
+            """
+            try:
+                props = torch.cuda.get_device_properties(0)
+                bdf = f"{props.pci_domain_id:04x}:{props.pci_bus_id:02x}:{props.pci_device_id:02x}.0"
+            except Exception:
+                return None
+            pci_dev = f"/sys/bus/pci/devices/{bdf}"
+            try:
+                with open(f"{pci_dev}/numa_node") as f:
+                    nid = int(f.read().strip())
+                if nid in cpu_nodes:
+                    return nid
+            except (OSError, ValueError):
+                pass
+            # `numa_node` is -1 on single-socket hosts and can name a CPU-less HBM node on
+            # GB200; `local_cpulist` still points at the CPUs closest to the device.
+            try:
+                with open(f"{pci_dev}/local_cpulist") as f:
+                    cpulist = f.read().strip()
+                if not cpulist:
+                    return None
+                first_cpu = int(cpulist.split(",")[0].split("-")[0])
+                for entry in os.listdir(f"/sys/devices/system/cpu/cpu{first_cpu}"):
+                    if entry.startswith("node") and entry[4:].isdigit():
+                        nid = int(entry[4:])
+                        return nid if nid in cpu_nodes else None
+            except (OSError, ValueError):
+                return None
+            return None
+
+        target_nid = gpu_numa_node()
+        if target_nid is None:
+            # Fall back to spreading local ranks evenly over the CPU-bearing nodes.
+            num_gpu_per_numa_node = max(1, 8 // len(cpu_nodes))
+            target_nid = cpu_nodes[min(len(cpu_nodes) - 1, self._local_rank // num_gpu_per_numa_node)]
+        numa_bind(target_nid)
+        _SET_AFFINITY = True
+
+
+class Worker(DistributedTorchRayActor):
+    def __init__(self, cfg: TrainerConfig, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.cfg = cfg
+        # Populated by init_model when torch profiling is enabled.
+        self.profiler = None
+
+        if self.cfg.algorithm.temperature is None:
+            raise ValueError("`cfg.algorithm.temperature` must be set")
+
+    def init_model(self, *args, **kwargs):
+        """Initialize worker state (model, and optimizer if applicable) on worker."""
+        raise NotImplementedError()
+
+    def empty_cache(self) -> None:
+        """Empty this worker's CUDA allocator cache."""
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+    def _set_expandable_segments(self, enabled: bool) -> None:
+        """Toggle PyTorch's CUDA ``expandable_segments`` allocator at runtime.
+
+        No-op when disabled via ``trainer.use_expandable_segments`` or when CUDA is
+        unavailable. Expandable segments reduce fragmentation across the offload/backload
+        and forward/backward cycles, but are incompatible with ``cudaIpcGetMemHandle``,
+        so callers turn this OFF around CUDA-IPC weight sync (see
+        :meth:`_expandable_segments_disabled_for_sync`) and back ON afterward.
+
+        Enabling is done *after* model init so the model weights stay in standard CUDA
+        memory (IPC-compatible); only later allocations use expandable segments.
+        """
+        if not self.cfg.use_expandable_segments:
+            return
+        if not torch.cuda.is_available():
+            return
+        setting = f"expandable_segments:{enabled}"
+        try:
+            # PyTorch 2.7+ exposes the accelerator-generic API; fall back otherwise.
+            if hasattr(torch._C, "_accelerator_setAllocatorSettings"):
+                torch._C._accelerator_setAllocatorSettings(setting)
+            else:
+                torch.cuda.memory._set_allocator_settings(setting)
+        except Exception as e:
+            logger.warning(f"Failed to set {setting!r}: {e}")
+
+    @contextmanager
+    def _expandable_segments_disabled_for_sync(self, force: bool = False):
+        """Disable expandable_segments for the duration of CUDA-IPC weight sync.
+
+        By default only toggles under ``colocate_all`` (the colocated IPC path, which
+        only shares CUDA memory when trainer and inference share GPUs); under
+        non-colocated runs the push backends use NCCL broadcast, which has its own
+        buffers and is unaffected. ``force`` comes from the trainer engine's
+        ``skyrl_force_disable_expandable_segments``, for backends that CUDA-IPC share
+        regardless of colocation: sharded_rdt shares every gathered group with its
+        sidecar producer over ``reduce_tensor``/CUDA IPC, and expandable-segment
+        (VMM) memory makes that export/rebuild ~5-10x slower per storage
+        (measured: publish rebuild 7.2s/rank/sync at 30B, the dominant
+        weight-sync cost). :meth:`_set_expandable_segments` itself no-ops when
+        the feature is disabled.
+        """
+        toggle = (force or self.cfg.placement.colocate_all) and self.cfg.use_expandable_segments
+        if toggle:
+            self._set_expandable_segments(False)
+            # The setting only affects NEW segment creation; freed blocks inside
+            # existing expandable segments are still eligible for reuse. Release
+            # cached segments so the gather buffers allocated during the sync
+            # land in fresh, IPC-fast classic segments. Once per process: later
+            # syncs re-use the classic blocks the first sync created (identical
+            # allocation sizes), and a per-sync empty_cache costs ~0.5-1s at
+            # 235B allocator scale.
+            if not getattr(self, "_ipc_segment_cache_flushed", False):
+                self._ipc_segment_cache_flushed = True
+                torch.cuda.empty_cache()
+        try:
+            yield
+        finally:
+            if toggle:
+                self._set_expandable_segments(True)
+
+    def set_algorithm_config(self, **kwargs) -> None:
+        for key, value in kwargs.items():
+            setattr(self.cfg.algorithm, key, value)
+
+    # ------------------------------------------------------------------
+    # torch.profiler RPCs, dispatched via WorkerDispatch pass_through.
+    # ------------------------------------------------------------------
+
+    def start_profile(self, config: Optional[dict] = None) -> None:
+        """Arm the configured profiler, or build a one-off profiling session.
+
+        The normal trainer path initializes ``self.profiler`` with the worker
+        model. Tinker's runtime endpoint instead sends a serialized
+        ``TorchProfilerConfig`` here, so each requested session gets a fresh
+        profiler and cannot inherit a previous schedule.
+        """
+        if config is not None:
+            self.profiler = Profiler(TorchProfilerConfig(**config))
+        if self.profiler is not None:
+            self.profiler.start()
+
+    def profile_step(self) -> Optional[str]:
+        """Advance the profiler schedule and return a recoverable worker error."""
+        if self.profiler is not None:
+            self.profiler.step()
+            return getattr(self.profiler, "last_error", None)
+        return None
+
+    def stop_profile(self) -> None:
+        """Stop and release the profiler after the training loop."""
+        profiler = self.profiler
+        if profiler is None:
+            return
+        profiler.stop()
+        profiler.close()
+        self.profiler = None
+
+    def dump_profiler_summary(self):
+        """Return this rank's last-window kernel summary, or None."""
+        return self.profiler.get_kernel_summary() if self.profiler is not None else None
+
+    def get_device_name(self) -> str:
+        """Returns this worker's CUDA device name, e.g. ``"NVIDIA B200"``, or ``""`` without a GPU."""
+        return torch.cuda.get_device_name() if torch.cuda.is_available() else ""
+
+    def _get_module_for_offload(self):
+        """Return the model module(s) to be offloaded/backloaded. Megatron offloads `self.actor_module`. FSDP workers use `self.model` directly."""
+        return self.model
+
+    def offload_to_cpu(self, offload_optimizer: bool = True, offload_model: bool = True):
+        """Offload all worker state to CPU.
+
+        After this function runs, only temporary reserved memory and torch's pre-loaded cuda kernels (~ GB) will remain.
+
+        Args:
+            offload_optimizer: Whether to offload optimizer state (no-op when there is no optimizer, e.g. Ref worker).
+            offload_model: Whether to offload model parameters.
+        """
+        self._set_numa_affinity(torch.distributed.get_rank() % torch.cuda.device_count())
+        self.strategy.offload_to_cpu(
+            self._get_module_for_offload(),
+            self.optimizer,
+            offload_optimizer=offload_optimizer,
+            offload_model=offload_model,
+        )
+
+    def backload_to_gpu(self, backload_optimizer: bool = True, backload_model: bool = True):
+        """Backload worker state to GPU.
+
+        Args:
+            backload_optimizer: Whether to backload optimizer state (no-op when there is no optimizer).
+            backload_model: Whether to backload model parameters.
+        """
+        self.strategy.backload_to_gpu(
+            self._get_module_for_offload(),
+            self.optimizer,
+            backload_optimizer=backload_optimizer,
+            backload_model=backload_model,
+        )
+
+    def get_cuda_memory(self) -> Dict[str, Any]:
+        """Get CUDA memory usage on worker's CUDA device."""
+        torch.cuda.synchronize()
+        free, total = torch.cuda.mem_get_info()
+        return {
+            "allocated": torch.cuda.memory_allocated(),
+            "reserved": torch.cuda.memory_reserved(),
+            "free": free,
+            "total": total,
+        }
+
+    def save_memory_snapshot(self, tag: str = ""):
+        """Save a snapshot of memory usage on the Worker's CUDA device.
+
+        No-ops if record_memory is False.
+
+        Args:
+            tag: Label for the snapshot (e.g., "forward_backward", "optim_step")
+
+        .. note::
+            This function should be called on all the ranks in the worker group simultaneously.
+        """
+        if not self.record_memory:
+            return
+
+        # Track snapshot count for unique filenames
+        if not hasattr(self, "_snapshot_count"):
+            self._snapshot_count = 0
+        self._snapshot_count += 1
+
+        rank = torch.distributed.get_rank()
+        save_path = os.path.join(self.cfg.ckpt_path, "memory_snapshots")
+        if self._local_rank == 0 and not io.exists(save_path):
+            io.makedirs(save_path, exist_ok=True)
+        torch.distributed.barrier()
+
+        tag_str = f"_{tag}" if tag else ""
+        file_name = f"rank_{rank}{tag_str}_{self._snapshot_count}.pickle"
+        record_memory_path = os.path.join(save_path, file_name)
+        if io.exists(record_memory_path):
+            # seeing issues if we don't remove the file first
+            io.remove(record_memory_path)
+        torch.cuda.memory._dump_snapshot(record_memory_path)
+
+    async def init_weight_sync_state(
+        self,
+        inference_engine_client: "RemoteInferenceClient",
+        inference_engine_cfg: "InferenceEngineConfig",
+    ):
+        """Build this rank's weight source and rendezvous its trainer engine.
+
+        After this, ``broadcast_to_inference_engines`` is one
+        ``engine.send_weights()`` call per sync — the engine owns the whole round
+        trip (start / update / finish, the barriers, and the non-sender
+        collective replay).
+
+        .. note::
+            This function must be called on all the ranks in the worker group
+            simultaneously: rank 0 blocks driving the inference-side handshake
+            while the others reach the collectives it needs.
+        """
+        from skyrl.backends.skyrl_train.weight_sync.weight_senders import (
+            build_trainer_engine,
+        )
+
+        assert inference_engine_client is not None
+        # Cache the client so per-sync broadcast_to_inference_engines calls can
+        # pass None instead of re-shipping it: the client carries the HF
+        # tokenizer (~10MB, 0.13s pickle + 0.34s unpickle), which otherwise
+        # rides every sync's RPC fan-out. Workers only use its static parts
+        # (server URLs, cfg flags); the driver's live copy owns weight_version.
+        self._weight_sync_inference_client = inference_engine_client
+
+        # Fetch the total inference world size from the servers.
+        inference_world_size, _ = await inference_engine_client.get_world_size()
+
+        # Off the event loop, on every rank: rank 0 drives the inference-side
+        # handshake with blocking HTTP while the others return immediately.
+        #
+        # Rendezvous happens HERE, not on the first send. sharded_rdt requires
+        # that: deferring it deadlocks, because rank 0 would block in the
+        # inference-side init RPC while the other ranks spin in gather
+        # collectives, and the producer sidecars -- sharing those ranks' GPUs --
+        # could then never finish NIXL agent creation, since libfabric's CUDA
+        # probe blocks behind the spinning kernels. Every rank is inside this
+        # method here, so that window is empty.
+        self._weight_sync_engine = await self._weight_sync_thread(
+            build_trainer_engine,
+            ie_cfg=inference_engine_cfg,
+            colocate_all=self.cfg.placement.colocate_all,
+            rank=torch.distributed.get_rank(),
+            inference_world_size=inference_world_size,
+            source_factory=self._build_weight_source,
+            draft_source_factory=self._build_draft_weight_source,
+            server_urls=list(inference_engine_client.server_urls),
+            data_parallel_size=int(inference_engine_client.data_parallel_size),
+            base_model_path=self.cfg.policy.model.path,
+        )
+
+        # # Register signal handlers for termination only on rank 0
+        # NOTE (sumanthrh): This doesn't work yet, and is thus commented out.
+        # The better way is to just have this specified in __del__, but there is
+        # no guarattee that __del__ will be called in general. Ray also doesn't
+        # explictly call __del__ when the actor shuts down.
+        # It's commented out so that we can fix this in the future.
+        # atexit.register(self._handle_termination)
+
+        torch.distributed.barrier()
+
+    def _build_weight_source(self, dtype: "torch.dtype", backend: str) -> Any:
+        """Build this worker's ``WeightSource`` over the live model.
+
+        Implemented per training backend, and passed to ``build_trainer_engine``
+        as its ``source_factory``. ``backend`` only picks between the plain
+        source and sharded RDT's ownership-aware subclass.
+        """
+        raise NotImplementedError()
+
+    def _build_draft_weight_source(self, dtype: "torch.dtype") -> Any:
+        """Build the ``WeightSource`` for vLLM's MTP drafter, synced in its own session.
+
+        Only backends whose model carries the MTP head implement it.
+        """
+        raise NotImplementedError(f"{type(self).__name__} cannot sync the spec-decode drafter's weights.")
+
+    def _weight_sync_thread(self, fn, *args, **kwargs):
+        """Run ``fn`` off the event loop with **this rank's** CUDA device selected.
+
+        Every weight-sync entry point is fully synchronous -- it blocks on
+        collectives and, on rank 0, on blocking HTTP -- so it must not run on the
+        worker's event loop. But the current CUDA device is thread-local and
+        defaults to 0, and under
+        ``RAY_EXPERIMENTAL_NOSET_CUDA_VISIBLE_DEVICES`` this rank's device is not
+        0, so the NCCL communicator, the IPC handles and the gather collectives
+        would all land on the wrong GPU. Capture it on the main thread, where it
+        is correct, and select it inside the thread.
+        """
+        device = torch.cuda.current_device() if torch.cuda.is_available() else None
+
+        def run():
+            if device is not None:
+                torch.cuda.set_device(device)
+            return fn(*args, **kwargs)
+
+        return asyncio.to_thread(run)
+
+    def _should_reset_prefix_cache(self, inference_engine_cfg) -> bool:
+        """Whether this sync should clear the inference engines' prefix cache.
+
+        Always for synchronous training; for fully-async only when
+        ``clear_kv_cache_on_weight_sync`` is set (otherwise in-flight requests
+        keep generating against their cached prefixes across the sync).
+        """
+        return inference_engine_cfg.enable_prefix_caching and (
+            not self.cfg.fully_async.enabled or self.cfg.fully_async.clear_kv_cache_on_weight_sync
+        )
+
+    def _reset_prefix_cache_task(self, inference_engine_client, inference_engine_cfg):
+        """Fire the prefix-cache reset from rank 0, or return None.
+
+        Returned rather than awaited so the caller can overlap it with the send.
+        """
+        if not self._should_reset_prefix_cache(inference_engine_cfg):
+            return None
+        if torch.distributed.get_rank() != 0:
+            return None
+        return inference_engine_client.reset_prefix_cache(reset_running_requests=True)
+
+    async def _sync_weights_to_inference_engines(
+        self,
+        inference_engine_client,
+        inference_engine_cfg,
+    ) -> None:
+        """Run one weight sync: the engine's round trip, plus the worker-side
+        memory bracket around it.
+
+        Three things the engine cannot do for itself, each decided by a
+        capability declared on it (see ``weight_senders.SkyrlTrainerCapabilities``):
+
+        * the prefix-cache reset, unless the engine handles it internally
+          (checkpoint-delta does, inside its own pause bracket);
+        * the ``expandable_segments`` toggle, a trainer-process allocator setting;
+        * ``empty_cache`` afterwards.
+        """
+        from skyrl.backends.skyrl_train.weight_sync.weight_senders import (
+            maybe_set_reset_prefix_cache,
+        )
+
+        engine = self._weight_sync_engine
+        maybe_set_reset_prefix_cache(engine, self._should_reset_prefix_cache(inference_engine_cfg))
+
+        cache_reset_task = None
+        if not engine.skyrl_handles_prefix_cache_reset:
+            cache_reset_task = self._reset_prefix_cache_task(inference_engine_client, inference_engine_cfg)
+
+        torch.cuda.empty_cache()
+
+        # Under colocate_all the CUDA-IPC path calls cudaIpcGetMemHandle, which
+        # is incompatible with the VMM addresses expandable segments use; some
+        # engines (sharded_rdt) share GPU memory on every run and ask for the
+        # toggle unconditionally.
+        with self._expandable_segments_disabled_for_sync(force=engine.skyrl_force_disable_expandable_segments):
+            await self._weight_sync_thread(engine.send_weights)
+
+        if cache_reset_task is not None:
+            await cache_reset_task
+        # An engine whose send buffers are reused next step declares
+        # empty_cache_after_send=False: scrubbing them back to CUDA costs
+        # 0.25-0.53s per rank at 235B and buys nothing. Under colocation an
+        # inference engine wants the physical memory, so empty regardless.
+        if engine.skyrl_empty_cache_after_send or self.cfg.placement.colocate_all:
+            torch.cuda.empty_cache()
+        torch.distributed.barrier()
+
+    def forward(self, *args, **kwargs) -> WorkerOutput:
+        """Run forward pass on the input batch.
+
+        Each worker subclass declares its own concrete signature and returns a
+        :class:`WorkerOutput` so callers can program against a uniform API.
+        """
+        raise NotImplementedError()
+
+    def _forward_micro_batch(self, micro_batch: TrainingInputBatch) -> TrainingOutputBatch:
+        raise NotImplementedError()
+
+    def save_checkpoint(self, ckpt_dir: str, tokenizer=None):
+        self.strategy.save_checkpoint(
+            model=self.model,
+            optimizer=self.optimizer,
+            scheduler=self.scheduler,
+            ckpt_dir=ckpt_dir,
+            node_local_rank=self.get_node_local_rank(),
+            tokenizer=tokenizer,
+        )
+
+    def finalize_pending_saves(self):
+        """Block until any in-flight async checkpoint write completes (no-op otherwise)."""
+        finalize = getattr(self.strategy, "finalize_pending_saves", None)
+        if finalize is not None:
+            finalize()
+
+    def release_optimizer_state_files(self):
+        """Delete optimizer state kept in files (Megatron ``optimizer_offload_to_disk``) at the end of training."""
+        release = getattr(self.strategy, "release_optimizer_state_files", None)
+        if release is not None and getattr(self, "optimizer", None) is not None:
+            release(self.optimizer)
+
+    def load_checkpoint(self, ckpt_dir: str, load_optimizer_states: bool = True, load_lr_scheduler_states: bool = True):
+        _, states = self.strategy.load_checkpoint(
+            model=self.model,
+            optimizer=self.optimizer if load_optimizer_states else None,
+            scheduler=self.scheduler if load_lr_scheduler_states else None,
+            ckpt_dir=ckpt_dir,
+            load_optimizer_states=load_optimizer_states,
+            load_lr_scheduler_states=load_lr_scheduler_states,
+        )
+        return states
+
+    def save_hf_model(self, export_dir: str, tokenizer):
+        # Save model in HuggingFace safetensors format
+        self.strategy.save_hf_model(
+            self.model,
+            export_dir,
+            tokenizer=tokenizer,
+        )
+
+    def get_lr(self) -> Optional[float]:
+        """
+        Get current learning rate from optimizer. Returns None when the worker was
+        initialized with ``policy.inference_only_init=True`` (no optimizer constructed).
+        """
+        if self.optimizer is None:
+            return None
+        return self.optimizer.param_groups[0]["lr"]
+
+    def set_lr(self, learning_rate: float) -> None:
+        """
+        Set learning rate for the optimizer.
+
+        This directly updates the optimizer's param_groups, bypassing the scheduler.
+        Useful for external learning rate schedules (e.g., from Tinker). No-op when
+        ``policy.inference_only_init=True`` (no optimizer constructed).
+        """
+        if self.optimizer is None:
+            return
+        for param_group in self.optimizer.param_groups:
+            param_group["lr"] = learning_rate
+
+
+# adapted from OpenReasonerZero: https://github.com/Open-Reasoner-Zero/Open-Reasoner-Zero/blob/main/orz/ppo/actors.py
+class PPORayActorGroup:
+    """
+    A group of ray actors
+    Functions start with 'async' should return list of object refs
+
+    Args:
+        cfg: config object for workers
+        num_nodes (int): Number of nodes for this actor group.
+        num_gpus_per_node (int): Number of gpus for this actor group.
+        ray_actor_type (Type[Worker]): PPO model type that this actor group serve on.
+        pg (ResolvedPlacementGroup, optional): Placement group to schedule actor on.
+            If none, create new placement group automatically. Defaults to None.
+        num_gpus_per_actor (float, optional): Number of gpus allocated for each actor.
+            If < 1.0, multiple models can share same gpu. Defaults to 1.
+    """
+
+    def __init__(
+        self,
+        cfg: TrainerConfig,
+        num_nodes,
+        num_gpus_per_node,
+        ray_actor_type: Type[Worker],
+        pg: Optional[ResolvedPlacementGroup] = None,
+        num_gpus_per_actor: float = 1.0,
+        resources: Optional[Dict[str, float]] = None,
+        num_resources_per_node: Optional[int] = None,
+        colocate_all: bool = False,
+        sequence_parallel_size: int = 1,
+        record_memory: bool = False,
+    ) -> None:
+        """
+        Args:
+            pg: Placement group for the worker group. Accepts a single PlacementGroup, or None.
+                Note that if colocate_all is True, the number of bundles in the placement group must match world_size.
+        """
+        self.cfg = cfg
+        self._num_nodes = num_nodes
+        self._num_gpus_per_node = num_gpus_per_node
+        self.ray_actor_type = ray_actor_type
+
+        # custom resources, see https://docs.ray.io/en/latest/ray-core/scheduling/resources.html
+        self._resources = resources
+        self._num_resources_per_node = num_resources_per_node
+
+        self.colocate_all = colocate_all
+        self.sequence_parallel_size = sequence_parallel_size
+        self.record_memory = record_memory
+        self._last_dp_size: Optional[int] = None
+        self._initiate_actors(pg, num_gpus_per_actor)
+
+    def _initiate_actors(self, pg: Optional[ResolvedPlacementGroup], num_gpus_per_actor: float):
+        """Initialize Ray actors in the worker group.
+
+        Args:
+            pg: A single placement group for the worker group, or None.
+            num_gpus_per_actor: The number of gpus to allocate per actor.
+        """
+        world_size = self._num_nodes * self._num_gpus_per_node
+
+        # Extract raw Ray PlacementGroup and pre-computed reordered indices from ResolvedPlacementGroup.
+        # Only use reordered indices when the PG has one bundle per GPU (single-GPU bundles),
+        # i.e. the bundle count matches world_size. Multi-GPU bundles (whole-node bundles)
+        # don't need reordering since each bundle already represents a full node.
+        reordered_bundle_indices = []
+        raw_pg = None
+        if pg is not None:
+            assert isinstance(pg, ResolvedPlacementGroup), f"pg must be a `ResolvedPlacementGroup` got {type(pg)}."
+            raw_pg = pg.pg
+            if len(placement_group_table(raw_pg)["bundles"]) == world_size:
+                reordered_bundle_indices = pg.reordered_bundle_indices
+
+        if self.colocate_all:
+            assert (
+                raw_pg is not None
+            ), "if colocate_all is True, the shared placement group must be provided to PPORayActorGroup"
+            pg_data = placement_group_table(raw_pg)
+            assert len(pg_data["bundles"]) == world_size, (
+                f"if colocate_all is True, the number of bundles in the placement group "
+                f"must match world_size. Got {len(pg_data['bundles'])} bundles but world_size={world_size}"
+            )
+
+        # If no PG provided, create one internally
+        if raw_pg is None and self._num_gpus_per_node > 1:
+            bundles = [{"GPU": self._num_gpus_per_node, "CPU": self._num_gpus_per_node} for _ in range(self._num_nodes)]
+            if self._resources:
+                resources_name = list(self._resources.keys())[0]
+                for i in range(len(bundles)):
+                    bundles[i][resources_name] = self._num_resources_per_node
+
+            raw_pg = placement_group(bundles, strategy="PACK")
+            get_ray_pg_ready_with_timeout(raw_pg, timeout=SKYRL_RAY_PG_TIMEOUT_IN_S)
+
+        def _scheduling_strategy_for_rank(rank):
+            if reordered_bundle_indices:
+                return PlacementGroupSchedulingStrategy(
+                    placement_group=raw_pg,
+                    placement_group_bundle_index=reordered_bundle_indices[rank],
+                )
+            elif raw_pg is not None:
+                return PlacementGroupSchedulingStrategy(
+                    placement_group=raw_pg,
+                    placement_group_bundle_index=rank // self._num_gpus_per_node,
+                )
+            # else we are in the single gpu case per node case in which case we don't need to set
+            # bundle indices
+            return None
+
+        sched = _scheduling_strategy_for_rank(0)
+        actor_options = {
+            "num_cpus": num_gpus_per_actor,
+            "num_gpus": num_gpus_per_actor,
+            "resources": self._resources,
+        }
+        if sched is not None:
+            actor_options["scheduling_strategy"] = sched
+
+        master_actor = self.ray_actor_type.options(**actor_options).remote(
+            cfg=self.cfg,
+            world_size=world_size,
+            rank=0,
+            local_rank=0,
+            master_addr=None,
+            master_port=None,
+            sequence_parallel_size=self.sequence_parallel_size,
+            record_memory=self.record_memory,
+        )
+        self._actor_handlers = [master_actor]
+
+        if world_size > 1:
+            master_addr, master_port = ray.get(master_actor.get_master_addr_port.remote())
+            for rank in range(1, world_size):
+                local_rank = rank % self._num_gpus_per_node
+
+                sched = _scheduling_strategy_for_rank(rank)
+                actor_options = {
+                    "num_cpus": num_gpus_per_actor,
+                    "num_gpus": num_gpus_per_actor,
+                    "resources": self._resources,
+                }
+                if sched is not None:
+                    actor_options["scheduling_strategy"] = sched
+
+                worker_actor = self.ray_actor_type.options(**actor_options).remote(
+                    cfg=self.cfg,
+                    world_size=world_size,
+                    rank=rank,
+                    local_rank=local_rank,
+                    master_addr=master_addr,
+                    master_port=master_port,
+                    sequence_parallel_size=self.sequence_parallel_size,
+                    record_memory=self.record_memory,
+                )
+                self._actor_handlers.append(worker_actor)
+
+        # Initialize process group
+        logger.info("Initializing process group for RayActorGroup")
+        ray.get([actor.init_worker_process_group.remote() for actor in self._actor_handlers])
+        logger.info("Initialized process group for RayActorGroup")
+        self.actor_infos = [ActorInfo(actor, ray.get(actor.get_mesh_rank.remote())) for actor in self._actor_handlers]
+        if self.actor_infos:
+            self._last_dp_size = self.actor_infos[0].rank.dp_size
+        logger.info(f"Mesh Ranks: {[actor_info.rank for actor_info in self.actor_infos]}")
+
+    def async_init_model(
+        self,
+        *args,
+        **kwargs,
+    ) -> List[ObjectRef]:
+        """Asynchronously initialize worker state (model, and optimizer if applicable) from model path
+        on all the workers.
+
+        Returns:
+            A list of ray object refs.
+        """
+        return [actor.init_model.remote(*args, **kwargs) for actor in self._actor_handlers]
+
+    def get_dp_size(self) -> int:
+        """Return the current or last-known data-parallel size for this actor group."""
+        if self.actor_infos:
+            self._last_dp_size = self.actor_infos[0].rank.dp_size
+            return self._last_dp_size
+        if self._last_dp_size is None:
+            raise RuntimeError("Cannot determine data-parallel size before actor group initialization.")
+        return self._last_dp_size
+
+    def offload_to_cpu(self, nonblocking: bool = False, offload_optimizer: bool = True, offload_model: bool = True):
+        """Offload all worker state to CPU.
+
+        Args:
+            nonblocking: Whether this operation is synchronous or asynchronous.
+                If `nonblocking=True`, then the function returns a list of object refs.
+            offload_optimizer: Whether to offload optimizer state.
+            offload_model: Whether to offload model parameters.
+        """
+        refs = [
+            actor.offload_to_cpu.remote(offload_optimizer=offload_optimizer, offload_model=offload_model)
+            for actor in self._actor_handlers
+        ]
+        if nonblocking:
+            return refs
+        return deadline.ray_get(refs, "offload_to_cpu")
+
+    def backload_to_gpu(self, nonblocking: bool = False, backload_optimizer: bool = True, backload_model: bool = True):
+        """Backload worker state to GPU
+
+        Args:
+            nonblocking: Whether this operation is synchronous or asynchronous.
+                If `nonblocking=True`, then the function returns a list of ObjectRefs.
+            backload_optimizer: Whether to backload optimizer state.
+            backload_model: Whether to backload model parameters.
+        """
+        refs = [
+            actor.backload_to_gpu.remote(backload_optimizer=backload_optimizer, backload_model=backload_model)
+            for actor in self._actor_handlers
+        ]
+        if nonblocking:
+            return refs
+        return deadline.ray_get(refs, "backload_to_gpu")
+
+    def async_run_ray_method(self, dispatch_type: str, method_name: str, *args: Any, **kwargs: Any) -> List[ObjectRef]:
+        """Run a method on all actors using specified dispatch type asynchronously.
+
+        Args:
+            dispatch_type: Type of dispatch to use ("mesh" or "pass_through")
+            method_name: Name of the method to call on actors
+            *args: Positional arguments to pass to the method
+            **kwargs: Keyword arguments to pass to the method
+
+        Returns:
+            List of object references
+        """
+        dispatch_class: Dispatch = DispatchRegistry.get(dispatch_type)
+        # validate the dispatch args to be sent to `.dispatch`
+        args, kwargs = dispatch_class.validate_dispatch_args(*args, **kwargs)
+
+        # Dispatch the method call
+        object_refs = dispatch_class.dispatch(self.actor_infos, method_name, *args, **kwargs)
+        return object_refs
+
+
+class PolicyWorkerBase(Worker):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.model: nn.Module = None
+        self.scheduler: LRScheduler = None
+        self.optimizer: Optimizer = None
+        self.strategy: DistributedStrategy = None
+        self.mesh_rank: MeshRank = None
+        self.policy_loss_fn: Callable = PolicyLossRegistry.get(self.cfg.algorithm.policy_loss_type)
+
+    def forward_backward(
+        self,
+        data: TrainingInputBatch,
+        loss_fn: Optional[str] = None,
+        loss_fn_config: Optional[Dict[str, Any]] = None,
+        return_per_token_outputs: bool = True,
+    ) -> WorkerOutput:
+        """
+        Perform forward and backward passes for a batch, handling micro-batching internally.
+
+        The batch is split into micro batches based on micro_train_batch_size_per_gpu.
+        Gradients accumulate across micro batches. Gradient scaling happens at optim_step.
+
+        Args:
+            data: TrainingInputBatch (already DP-sharded by WorkerDispatch/MeshDispatch)
+            loss_fn: Optional loss function name (e.g., "cross_entropy", "ppo").
+                     If provided, overrides the config's policy_loss_type.
+            loss_fn_config: Optional config overrides for the loss function
+                           (e.g., {"clip_low_threshold": 0.9} for PPO)
+            return_per_token_outputs: When False, skip building per-token
+                ``loss_fn_outputs`` (logprobs / elementwise NLL) for callers that
+                consume only scalar ``metrics`` (e.g. the SFT trainer).
+
+        Returns:
+            :class:`WorkerOutput` with per-sample ``loss_fn_outputs`` and scalar
+            ``metrics`` (all-reduced across DP).
+        """
+        microbatch_iterator = get_microbatch_iterator(
+            data,
+            micro_batch_size=self.cfg.micro_train_batch_size_per_gpu,
+            max_tokens_per_microbatch=self.cfg.max_tokens_per_microbatch,
+        )
+        all_metrics = defaultdict(list)
+        loss_fn_output_batches = []  # per-microbatch; restored to input order below
+
+        for microbatch in microbatch_iterator:
+            experience = BaseBatchIterator.batch_to_experience(microbatch)
+            microbatch_weight = len(microbatch) / len(data)
+            metrics = self._forward_backward_micro(
+                experience,
+                microbatch_weight,
+                loss_fn=loss_fn,
+                loss_fn_config=loss_fn_config,
+                return_per_token_outputs=return_per_token_outputs,
+            )
+
+            # Extract loss_fn_outputs before reduce_metrics (it's not a scalar metric)
+            loss_fn_output_batches.append(metrics.pop("loss_fn_outputs", []))
+
+            for k, v in metrics.items():
+                all_metrics[k].append(v)
+
+        # Token-based batching packs samples into microbatches out of input order and
+        # appends padding microbatches, so per-sample outputs must be mapped back to
+        # their input positions (and padding entries dropped) before returning.
+        if not any(loss_fn_output_batches):
+            all_loss_fn_outputs = []
+        elif isinstance(microbatch_iterator, TokenBasedBatchIterator):
+            all_loss_fn_outputs = microbatch_iterator.reorder_and_combine_items(loss_fn_output_batches)
+        else:
+            all_loss_fn_outputs = [item for batch in loss_fn_output_batches for item in batch]
+
+        # Reduce across microbatches and all-reduce metrics across DP ranks.
+        # Loss metrics are pre-scaled sums, so keep the same sum-reduction
+        # shape for RL and SFT.
+        result = reduce_metrics(all_metrics, sum_loss_metrics=True)
+
+        # Token-based batching diagnostics: total microbatches this rank ran and how many
+        # were purely-padding (added to equalize the microbatch count across DP ranks).
+        # Added before all-reduce so they are averaged across DP (num_microbatches is
+        # identical on every rank; num_padding_microbatches reports the per-rank average).
+        if self.cfg.max_tokens_per_microbatch > 0:
+            result["num_microbatches"] = float(len(microbatch_iterator))
+            result["num_padding_microbatches"] = float(getattr(microbatch_iterator, "num_padding_microbatches", 0))
+
+        dp_group = self.device_mesh.get_group("dp")
+        result = all_reduce_metrics(result, self.strategy, group=dp_group, sum_loss_metrics=True)
+
+        return WorkerOutput(loss_fn_outputs=all_loss_fn_outputs, metrics=result)
+
+    def _forward_backward_micro(
+        self,
+        experience: Experience,
+        microbatch_weight: float,
+        loss_fn: Optional[str] = None,
+        loss_fn_config: Optional[Dict[str, Any]] = None,
+        return_per_token_outputs: bool = True,
+    ) -> Dict[str, float]:
+        """
+        Perform forward and backward pass for one micro batch.
+
+        Args:
+            experience: Experience object for one micro batch
+            microbatch_weight: Weight of the micro batch in the overall batch
+            loss_fn: Optional train loss function name to use instead of config default.
+                Public Tinker aliases such as ``ppo`` should be normalized by the backend
+                before reaching the worker.
+            loss_fn_config: Optional config overrides for the resolved train loss function.
+            return_per_token_outputs: When False, skip building per-token
+                ``loss_fn_outputs`` when callers read only ``metrics``.
+
+        Returns:
+            Metrics dict for the worker's local micro batch
+        """
+        self.model.train()
+
+        experience.to_device(torch.cuda.current_device())
+
+        sequences = experience.sequences
+        old_action_log_probs = experience.action_log_probs
+        base_action_log_probs = (
+            experience.base_action_log_probs if experience.base_action_log_probs is not None else None
+        )
+        advantages = experience.advantages
+        num_actions = experience.num_actions
+        attention_mask = experience.attention_mask
+        loss_mask = experience.loss_mask
+        response_mask = experience.response_mask
+        rollout_action_logprobs = experience.rollout_logprobs
+        sample_support_replay = self.cfg.algorithm.enable_sample_support_replay
+
+        # Determine which loss function to use
+        resolved_loss_name = loss_fn if loss_fn is not None else self.cfg.algorithm.policy_loss_type
+        if loss_fn is not None:
+            # Use the provided loss function (Tinker API style)
+            current_loss_fn = PolicyLossRegistry.get(loss_fn)
+        else:
+            # Fall back to config default
+            current_loss_fn = self.policy_loss_fn
+
+        # Build config for loss function, applying any overrides
+        loss_config = self.cfg.algorithm
+        if loss_fn_config:
+            # Create a copy of the config and apply overrides
+            # TODO: Fix nested overrides
+            from dataclasses import asdict
+
+            new_loss_config = OmegaConf.merge(OmegaConf.create(asdict(loss_config)), OmegaConf.create(loss_fn_config))
+            # NOTE: users can provide a custom loss config class, so we need to use the same class after applying overrides
+            loss_config = type(loss_config).from_dict_config(new_loss_config)
+        centering_weight = (
+            score_centering_weight(resolved_loss_name, loss_config)
+            if self.cfg.algorithm.enable_score_centering
+            else None
+        )
+        # The FSDP forward returns logit positions, so action t is scored one column earlier.
+        action_positions = slice(-num_actions - 1, -1)
+
+        # TODO (sumanthrh): don't think this does anything for fsdp rn because autocast happens internally
+        with torch.autocast(dtype=torch.bfloat16, device_type="cuda"):
+            # actor loss
+            action_log_probs, output = self.model(
+                sequences,
+                num_actions,
+                attention_mask=attention_mask,
+                temperature=self.cfg.algorithm.temperature,
+                return_output=True,
+                compute_entropy=True,
+                entropy_requires_grad=self.cfg.algorithm.use_entropy_loss,
+                pixel_values=experience.pixel_values,
+                image_grid_thw=experience.image_grid_thw,
+                sample_support=experience.rollout_sample_support if sample_support_replay else None,
+                loss_mask=loss_mask if sample_support_replay else None,
+                enable_sample_support_replay=sample_support_replay,
+                centering_weight=centering_weight,
+            )
+            # loss function
+            # TODO: recompute advantages
+            centering_inputs = None
+            loss_rollout_logprobs, score_centering_kwargs = rollout_action_logprobs, {}
+            if centering_weight is not None:
+                centering_inputs = score_centering_loss_inputs(
+                    output[SCORE_CENTERING_SCORES_KEY], action_positions, rollout_action_logprobs, advantages
+                )
+                loss_rollout_logprobs = centering_inputs.sampler_logprobs
+                score_centering_kwargs = centering_inputs.loss_kwargs()
+            policy_loss, loss_metrics = current_loss_fn(
+                action_log_probs,
+                old_action_log_probs,
+                advantages,
+                config=loss_config,
+                loss_mask=loss_mask,
+                rollout_logprobs=loss_rollout_logprobs,
+                **score_centering_kwargs,
+            )
+
+        # SFT objectives contain their complete loss and need no RL KL/entropy terms.
+        if resolved_loss_name == PolicyLossType.CROSS_ENTROPY:
+            # Policy loss masks are pre-scaled to achieve the correct reduction
+            # when summing across the entire minibatch (see `DefaultCollator`).
+            # FSDP averages loss value over DP ranks by default,
+            # so we multiply by dp_size to recover the correct sum reduction across workers.
+            grad_sum_correction_factor = self.mesh_rank.dp_size
+            loss = policy_loss * grad_sum_correction_factor
+            unscaled_loss = policy_loss
+            self.strategy.backward(loss, self.model, self.optimizer)
+
+            # Only build per-token outputs for callers that consume them.
+            if return_per_token_outputs:
+                # Tinker consumes per-token NLL.
+                with torch.no_grad():
+                    elementwise_loss = -action_log_probs
+                    if loss_mask is not None:
+                        elementwise_loss = elementwise_loss * loss_mask
+
+                # Build per-sequence loss_fn_outputs (matches Tinker's ForwardBackwardOutput
+                # structure). Trim to actual response length per sample (Tinker expects
+                # variable-length arrays that align with the input weights, not padded to
+                # batch max). Compute valid_lens vectorized on GPU, then move tensors to CPU
+                # exactly once before iterating in Python — avoids ~3N GPU->CPU syncs.
+                batch_size = action_log_probs.shape[0]
+                seq_len = action_log_probs.shape[1]
+                if response_mask is not None:
+                    valid_lens_t = response_mask.sum(dim=-1).long()
+                elif loss_mask is not None:
+                    valid_lens_t = (loss_mask > 0).sum(dim=-1).long()
+                else:
+                    valid_lens_t = torch.full((batch_size,), seq_len, device=action_log_probs.device, dtype=torch.long)
+
+                action_log_probs_cpu = action_log_probs.detach().cpu()
+                elementwise_loss_cpu = elementwise_loss.detach().cpu()
+                valid_lens = valid_lens_t.cpu().tolist()
+
+                loss_fn_outputs = []
+                for i in range(batch_size):
+                    valid_len = valid_lens[i]
+                    loss_fn_outputs.append(
+                        {
+                            "logprobs": action_log_probs_cpu[i, -valid_len:].tolist() if valid_len > 0 else [],
+                            "elementwise_loss": (
+                                elementwise_loss_cpu[i, -valid_len:].tolist() if valid_len > 0 else []
+                            ),
+                        }
+                    )
+            else:
+                loss_fn_outputs = [{} for _ in range(action_log_probs.shape[0])]
+
+            status = {
+                "loss": unscaled_loss.item(),
+                "response_length": num_actions,
+                "lr": self.scheduler.get_last_lr()[0],
+                "loss_fn_outputs": loss_fn_outputs,
+            }
+        else:
+            # RL path: add optional KL/entropy terms
+            # entropy loss
+            with torch.set_grad_enabled(self.cfg.algorithm.use_entropy_loss):
+                # batch_size, seqlen
+                entropy_BS = output["entropy"]
+                entropy_BS = entropy_BS[:, -num_actions - 1 : -1]
+                entropy = masked_mean(entropy_BS, loss_mask)
+
+            if self.cfg.algorithm.use_entropy_loss:
+                entropy_loss_term = entropy * self.cfg.algorithm.entropy_loss_coef
+            else:
+                entropy_loss_term = torch.tensor(0.0)
+
+            # kl loss
+            if self.cfg.algorithm.use_kl_loss:
+                kl_loss = compute_approx_kl(
+                    action_log_probs,
+                    base_action_log_probs,
+                    loss_mask=loss_mask,
+                    kl_estimator_type=self.cfg.algorithm.kl_estimator_type,
+                )
+                kl_loss = masked_mean(kl_loss, loss_mask, dim=-1).mean()
+            else:
+                kl_loss = torch.tensor(0.0)
+            kl_loss_term = kl_loss * self.cfg.algorithm.kl_loss_coef
+
+            # DP all-reduce averages gradients, but policy losses are pre-scaled sums
+            # (see `apply_loss_reduction_to_advantages_minibatch`), so we multiply by
+            # dp_size to recover the correct sum reduction across workers.
+            grad_sum_correction_factor = self.mesh_rank.dp_size
+
+            # NOTE: The KL and entropy loss terms are not pre-scaled,
+            # so we just average them across microbatches and DP workers.
+            loss = policy_loss * grad_sum_correction_factor + (kl_loss_term - entropy_loss_term) * microbatch_weight
+            unscaled_loss = loss / grad_sum_correction_factor
+            self.strategy.backward(loss, self.model, self.optimizer)
+
+            # Build per-sequence loss_fn_outputs with logprobs.
+            batch_size = action_log_probs.shape[0]
+            seq_len = action_log_probs.shape[1]
+
+            if response_mask is not None:
+                valid_lens = response_mask.sum(dim=1).int().tolist()
+            elif loss_mask is not None:
+                valid_lens = (loss_mask > 0).sum(dim=1).int().tolist()
+            else:
+                valid_lens = [seq_len] * batch_size
+
+            detached_log_probs = action_log_probs.detach().cpu()
+            loss_fn_outputs = []
+            for i, valid_len in enumerate(valid_lens):
+                loss_fn_outputs.append(
+                    {
+                        "logprobs": detached_log_probs[i, -valid_len:].tolist() if valid_len > 0 else [],
+                    }
+                )
+
+            status = {
+                "final_loss": unscaled_loss.item(),
+                "policy_loss": policy_loss.item(),
+                "policy_entropy": entropy.item(),
+                "response_length": num_actions,
+                "policy_lr": self.scheduler.get_last_lr()[0],
+                "loss_fn_outputs": loss_fn_outputs,
+            }
+            for k, v in loss_metrics.items():
+                status["loss_metrics/" + k] = v
+            if centering_inputs is not None:
+                status.update(
+                    score_centering_metrics(
+                        output[SCORE_CENTERING_SCORES_KEY], centering_inputs, action_positions, loss_mask
+                    )
+                )
+            if self.cfg.algorithm.use_kl_loss:
+                status["policy_kl"] = kl_loss.item()
+            status.update(
+                compute_minibatch_rollout_logprob_diff_metrics(action_log_probs, rollout_action_logprobs, loss_mask)
+            )
+
+        return status
+
+    def optim_step(self) -> float:
+        """
+        Perform optimizer step.
+
+        Returns:
+            The gradient norm (before scaling, after clipping)
+        """
+        # Perform optimizer step (includes gradient clipping)
+        grad_norm = self.strategy.optimizer_step(self.optimizer, self.model, self.scheduler, name="actor")
+
+        if grad_norm is not None:
+            grad_norm = grad_norm.detach().cpu().item()
+        return grad_norm
+
+    def forward(
+        self,
+        data: TrainingInputBatch,
+        loss_fn: Optional[str] = None,
+        loss_fn_config: Optional[Dict[str, Any]] = None,
+        return_per_token_outputs: bool = True,
+    ) -> WorkerOutput:
+        """Run forward pass.
+
+        - When ``loss_fn`` is None: runs inference in micro batches of
+          ``micro_forward_batch_size_per_gpu`` and returns a :class:`WorkerOutput`
+          with per-sample ``loss_fn_outputs`` (``logprobs`` key) and empty
+          ``metrics``.
+        - When ``loss_fn`` is set (e.g., ``"cross_entropy"``): runs the loss in ``no_grad`` mode
+          (no backward), iterating over micro-batches of ``micro_forward_batch_size_per_gpu``,
+          and returns a :class:`WorkerOutput` with per-sample ``loss_fn_outputs`` plus
+          ``metrics`` (e.g. ``"loss"``).  Metrics are all-reduced across the DP group
+          to mirror :meth:`forward_backward`.
+
+        ``return_per_token_outputs=False`` skips building the per-token
+        ``loss_fn_outputs`` on the loss path for callers that read only
+        ``metrics`` (e.g. SFT eval); it has no effect on the inference path.
+        """
+        if loss_fn is None:
+            # Inference forward path: run in micro batches and emit per-sample logprobs.
+            # Uses token-based micro-batching when `max_tokens_per_microbatch > 0`, otherwise
+            # falls back to fixed sample-count chunking. `reorder_and_combine_batches` restores
+            # the original sample order (and strips padding) for the token-based iterator.
+            microbatch_iterator = get_microbatch_iterator(
+                data,
+                micro_batch_size=self.cfg.micro_forward_batch_size_per_gpu,
+                max_tokens_per_microbatch=self.cfg.max_tokens_per_microbatch,
+            )
+            outputs = [self._forward_micro_batch(micro_batch) for micro_batch in microbatch_iterator]
+            output = microbatch_iterator.reorder_and_combine_batches(outputs)
+            if output.device is not None and output.device != torch.device("cpu"):
+                output = output.to("cpu")
+            row_tensor = output["output"]
+            loss_fn_outputs = [{"logprobs": row_tensor[i].tolist()} for i in range(row_tensor.shape[0])]
+            return WorkerOutput(loss_fn_outputs=loss_fn_outputs, metrics={})
+
+        micro_batch_size = self.cfg.micro_forward_batch_size_per_gpu
+        all_metrics = defaultdict(list)
+        all_loss_fn_outputs: List[Dict[str, Any]] = []
+
+        for micro_batch in BatchIterator(data, micro_batch_size, drop_last=False):
+            metrics = self._forward_micro_with_loss(
+                micro_batch,
+                loss_fn=loss_fn,
+                loss_fn_config=loss_fn_config,
+                return_per_token_outputs=return_per_token_outputs,
+            )
+            if "loss_fn_outputs" in metrics:
+                all_loss_fn_outputs.extend(metrics.pop("loss_fn_outputs"))
+            for k, v in metrics.items():
+                all_metrics[k].append(v)
+
+        result = reduce_metrics(all_metrics, sum_loss_metrics=True)
+        dp_group = self.device_mesh.get_group("dp")
+        result = all_reduce_metrics(result, self.strategy, group=dp_group, sum_loss_metrics=True)
+
+        return WorkerOutput(loss_fn_outputs=all_loss_fn_outputs, metrics=result)
+
+    def _forward_micro_with_loss(
+        self,
+        experience: Experience,
+        loss_fn: str,
+        loss_fn_config: Optional[Dict[str, Any]] = None,
+        return_per_token_outputs: bool = True,
+    ) -> Dict[str, Any]:
+        """Forward-only counterpart of :meth:`_forward_backward_micro`'s SFT branch.
+
+        Runs the model + loss under ``torch.no_grad()`` (no backward, no KL/entropy terms),
+        and returns the same metrics shape as the SFT branch of ``_forward_backward_micro``,
+        minus ``lr`` (no optimizer state involved).
+
+        Args:
+            experience: Experience object for one micro batch.
+            loss_fn: Eval loss function name (e.g., "cross_entropy").
+            loss_fn_config: Optional config overrides for the resolved loss function.
+            return_per_token_outputs: When False, skip building per-token
+                ``loss_fn_outputs`` when callers read only ``metrics``.
+        """
+        self.model.eval()
+        experience.to_device(torch.cuda.current_device())
+
+        sequences = experience.sequences
+        old_action_log_probs = experience.action_log_probs
+        advantages = experience.advantages
+        num_actions = experience.num_actions
+        attention_mask = experience.attention_mask
+        loss_mask = experience.loss_mask
+        response_mask = experience.response_mask
+        rollout_action_logprobs = experience.rollout_logprobs
+        sample_support_replay = self.cfg.algorithm.enable_sample_support_replay
+
+        current_loss_fn = PolicyLossRegistry.get(loss_fn)
+
+        # Build config for loss function, applying any overrides
+        loss_config = self.cfg.algorithm
+        if loss_fn_config:
+            from dataclasses import asdict
+
+            new_loss_config = OmegaConf.merge(OmegaConf.create(asdict(loss_config)), OmegaConf.create(loss_fn_config))
+            loss_config = type(loss_config).from_dict_config(new_loss_config)
+
+        with torch.no_grad(), torch.autocast(dtype=torch.bfloat16, device_type="cuda"):
+            action_log_probs, _ = self.model(
+                sequences,
+                num_actions,
+                attention_mask=attention_mask,
+                temperature=self.cfg.algorithm.temperature,
+                return_output=True,
+                compute_entropy=False,
+                entropy_requires_grad=False,
+                pixel_values=experience.pixel_values,
+                image_grid_thw=experience.image_grid_thw,
+                sample_support=experience.rollout_sample_support if sample_support_replay else None,
+                loss_mask=loss_mask if sample_support_replay else None,
+                enable_sample_support_replay=sample_support_replay,
+            )
+            policy_loss, _ = current_loss_fn(
+                action_log_probs,
+                old_action_log_probs,
+                advantages,
+                config=loss_config,
+                loss_mask=loss_mask,
+                rollout_logprobs=rollout_action_logprobs,
+            )
+
+            # Only build per-token outputs for callers that consume them.
+            if return_per_token_outputs:
+                elementwise_loss = -action_log_probs
+                if loss_mask is not None:
+                    elementwise_loss = elementwise_loss * loss_mask
+
+                # Compute valid_lens vectorized on GPU, then move tensors to CPU
+                # exactly once before iterating in Python. Avoids ~3N GPU->CPU syncs
+                # per micro-batch (item()/cpu()/tolist() inside the per-sample loop).
+                batch_size = action_log_probs.shape[0]
+                seq_len = action_log_probs.shape[1]
+                if response_mask is not None:
+                    valid_lens_t = response_mask.sum(dim=-1).long()
+                elif loss_mask is not None:
+                    valid_lens_t = (loss_mask > 0).sum(dim=-1).long()
+                else:
+                    valid_lens_t = torch.full((batch_size,), seq_len, device=action_log_probs.device, dtype=torch.long)
+
+                action_log_probs_cpu = action_log_probs.detach().cpu()
+                elementwise_loss_cpu = elementwise_loss.detach().cpu()
+                valid_lens = valid_lens_t.cpu().tolist()
+
+                loss_fn_outputs = []
+                for i in range(batch_size):
+                    valid_len = valid_lens[i]
+                    loss_fn_outputs.append(
+                        {
+                            "logprobs": action_log_probs_cpu[i, -valid_len:].tolist() if valid_len > 0 else [],
+                            "elementwise_loss": (
+                                elementwise_loss_cpu[i, -valid_len:].tolist() if valid_len > 0 else []
+                            ),
+                        }
+                    )
+            else:
+                loss_fn_outputs = [{} for _ in range(action_log_probs.shape[0])]
+
+        return {
+            "loss": policy_loss.item(),
+            "response_length": num_actions,
+            "loss_fn_outputs": loss_fn_outputs,
+        }
+
+    def _forward_micro_batch(self, micro_batch: TrainingInputBatch) -> TrainingOutputBatch:
+        device = torch.cuda.current_device()
+        micro_batch.to(device)
+        self.model.eval()
+        sequences = micro_batch["sequences"]
+        response_length = micro_batch.metadata["response_length"]
+        attention_mask = micro_batch["attention_mask"]
+        pixel_values = micro_batch.get("pixel_values", None)
+        image_grid_thw = micro_batch.get("image_grid_thw", None)
+        sample_support_replay = self.cfg.algorithm.enable_sample_support_replay
+
+        with torch.no_grad(), torch.autocast(dtype=torch.bfloat16, device_type="cuda"):
+            policy_logprob = self.model(
+                sequences,
+                response_length,
+                attention_mask,
+                return_output=False,
+                temperature=self.cfg.algorithm.temperature,
+                pixel_values=pixel_values,
+                image_grid_thw=image_grid_thw,
+                # Replay the rollout support when recomputing the policy ratio.
+                sample_support=micro_batch.get(SAMPLE_SUPPORT_FIELD) if sample_support_replay else None,
+                loss_mask=micro_batch.get("loss_mask") if sample_support_replay else None,
+                enable_sample_support_replay=sample_support_replay,
+            )
+        policy_logprob = policy_logprob.to("cpu")
+        output = TrainingOutputBatch(
+            {"output": policy_logprob},
+        )
+        output.metadata = micro_batch.metadata
+        return output
+
+    # ------------------------------------------------------------------
+    # Multi-LoRA / adapter-store interface
+    # ------------------------------------------------------------------
+
+    def _resolve_lora_sync_target(self, model_id: Optional[str]) -> tuple[str, str]:
+        """Return ``(lora_name, lora_sync_path)`` for a given Tinker ``model_id``.
+
+        The single-tenant fallback (``model_id is None``) uses the default
+        shared adapter name + shared sync path. Multi-tenant routes through
+        ``os.path.basename`` on ``lora_sync_path`` so each adapter is written to
+        its own subdir and registered on the inference engine under that name.
+        """
+        from skyrl.backends.skyrl_train.inference_servers.remote_inference_client import (
+            SKYRL_LORA_ADAPTER_NAME,
+        )
+
+        base_sync_path = self.cfg.policy.model.lora.lora_sync_path
+        safe_model_id = os.path.basename(model_id) if model_id is not None else None
+        if safe_model_id:
+            return safe_model_id, os.path.join(base_sync_path, safe_model_id)
+        return SKYRL_LORA_ADAPTER_NAME, base_sync_path
+
+    def swap_to_adapter(self, model_id: str) -> None:
+        """Make ``model_id`` the live LoRA adapter on this worker."""
+        return None
+
+    def adapter_store_state(self) -> dict:
+        """Diagnostic snapshot of the adapter store. Backends without an
+        adapter store report it as disabled."""
+        return {"enabled": False}
+
+    def _adapter_store_unsupported(self, op: str) -> None:
+        raise NotImplementedError(
+            f"{type(self).__name__}.{op} is not implemented: multi-tenant LoRA "
+            "adapter management (the adapter store) is currently only supported "
+            "on the Megatron backend. The FSDP backend supports a single LoRA "
+            "adapter (or full fine-tuning) per worker group."
+        )
+
+    def prime_optimizer_state(self) -> None:
+        """Materialise optimizer state so it can be snapshotted into the
+        pristine adapter slot. Only meaningful for adapter-store backends."""
+        self._adapter_store_unsupported("prime_optimizer_state")
+
+    def register_pristine_adapter(self) -> None:
+        """Capture the freshly-initialised LoRA state as the pristine slot."""
+        self._adapter_store_unsupported("register_pristine_adapter")
+
+    def register_adapter(self, model_id: str) -> None:
+        """Register a new LoRA adapter slot keyed by ``model_id``."""
+        self._adapter_store_unsupported("register_adapter")
+
+    def delete_adapter(self, model_id: str) -> None:
+        """Remove the LoRA adapter slot keyed by ``model_id``."""
+        self._adapter_store_unsupported("delete_adapter")
+
+
+class CriticWorkerBase(Worker):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.model: nn.Module = None
+        self.scheduler: LRScheduler = None
+        self.optimizer: Optimizer = None
+        self.strategy: DistributedStrategy = None
+        self.mesh_rank: MeshRank = None
+        self.critic_loss_fn: Callable = ppo_critic_loss
+        self._micro_batches_accumulated = 0
+
+    def forward_backward(self, data: TrainingInputBatch) -> WorkerOutput:
+        """
+        Perform forward and backward passes for a batch, handling micro-batching internally.
+
+        The batch is split into micro batches based on micro_train_batch_size_per_gpu,
+        or by token count if max_tokens_per_microbatch is configured.
+        Gradients accumulate across micro batches. Gradient scaling happens at optim_step.
+
+        Args:
+            data: TrainingInputBatch (already DP-sharded by WorkerDispatch/MeshDispatch)
+
+        Returns:
+            :class:`WorkerOutput` with empty ``loss_fn_outputs`` and scalar
+            ``metrics`` (all-reduced across DP).
+        """
+        use_token_batching = self.cfg.max_tokens_per_microbatch > 0
+        microbatch_iterator = get_microbatch_iterator(
+            data,
+            micro_batch_size=self.cfg.micro_train_batch_size_per_gpu,
+            max_tokens_per_microbatch=self.cfg.max_tokens_per_microbatch,
+        )
+        all_metrics = defaultdict(list)
+
+        for microbatch in microbatch_iterator:
+            experience = BaseBatchIterator.batch_to_experience(microbatch)
+
+            if use_token_batching:
+                # With token-based batching, microbatches may have different sizes.
+                # Scale loss by microbatch_weight so gradients are correctly weighted.
+                microbatch_weight = len(microbatch) / len(data)
+                metrics = self._forward_backward_micro(experience, microbatch_weight=microbatch_weight)
+            else:
+                metrics = self._forward_backward_micro(experience)
+                self._micro_batches_accumulated += 1
+
+            for k, v in metrics.items():
+                all_metrics[k].append(v)
+
+        # reduce metrics across micro batches
+        result = reduce_metrics(all_metrics)
+
+        # all reduce metrics across DP workers
+        result = all_reduce_metrics(result, self.strategy)
+
+        return WorkerOutput(metrics=result)
+
+    def _forward_backward_micro(
+        self, experience: Experience, microbatch_weight: Optional[float] = None
+    ) -> Dict[str, float]:
+        """
+        Perform forward and backward pass for one micro batch.
+
+        Args:
+            experience: Experience object for one micro batch
+            microbatch_weight: If provided, scale loss by this weight before backward.
+                Used with token-based batching where microbatches have variable sizes.
+                If None, loss is unscaled (gradient scaling happens at optim_step time).
+
+        Returns:
+            All-reduced metrics dict for this micro batch
+        """
+        self.model.train()
+
+        experience.to_device(torch.cuda.current_device())
+
+        sequences = experience.sequences
+        old_values = experience.values
+        returns = experience.returns
+        num_actions = experience.num_actions
+        attention_mask = experience.attention_mask
+        loss_mask = experience.loss_mask
+
+        with torch.autocast(dtype=torch.bfloat16, device_type="cuda"):
+            # critic loss
+            values, _ = self.model(
+                sequences,
+                num_actions=num_actions,
+                attention_mask=attention_mask,
+                return_output=True,
+            )
+            # loss function
+            loss, clipfrac = self.critic_loss_fn(
+                values,
+                old_values,
+                returns,
+                config=self.cfg.algorithm,
+                loss_mask=loss_mask,
+            )
+
+        if microbatch_weight is not None:
+            # Token-based batching: scale loss by weight so gradients are properly weighted
+            loss = loss * microbatch_weight
+        # else: NO loss scaling here - gradient scaling happens at optim_step
+        self.strategy.backward(loss, self.model, self.optimizer)
+
+        status = {
+            "critic_loss": loss.item(),
+            "values_mean": masked_mean(values, loss_mask).item(),
+            "values_clipfrac": clipfrac,
+            "critic_lr": self.scheduler.get_last_lr()[0],
+        }
+
+        return status
+
+    def optim_step(self) -> float:
+        """
+        Scale gradients by 1/micro_batches_accumulated, perform optimizer step, and reset counter.
+
+        Returns:
+            The gradient norm (before scaling, after clipping)
+        """
+        # Scale accumulated gradients by 1/N to get correct average
+        # NOTE: When using token-based batching, loss is pre-scaled by microbatch_weight
+        # in forward_backward, so _micro_batches_accumulated stays 0 and no scaling needed.
+        if self._micro_batches_accumulated > 0:
+            scale = 1.0 / self._micro_batches_accumulated
+            for param in self.model.parameters():
+                if param.grad is not None:
+                    param.grad.mul_(scale)
+
+        # Perform optimizer step (includes gradient clipping)
+        grad_norm = self.strategy.optimizer_step(self.optimizer, self.model, self.scheduler, name="critic")
+
+        # Reset counter for next accumulation cycle
+        self._micro_batches_accumulated = 0
+
+        if grad_norm is not None:
+            grad_norm = grad_norm.detach().cpu().item()
+        return grad_norm
+
+    def _forward_micro_batch(
+        self,
+        micro_batch: TrainingInputBatch,
+    ) -> TrainingOutputBatch:
+        """Generates critic values."""
+        device = torch.cuda.current_device()
+        micro_batch.to(device)
+        sequences = micro_batch["sequences"]
+        response_length = micro_batch.metadata["response_length"]
+        attention_mask = micro_batch["attention_mask"]
+        self.model.eval()
+        with torch.no_grad(), torch.autocast(dtype=torch.bfloat16, device_type="cuda"):
+            value = self.model(
+                sequences,
+                response_length,
+                attention_mask,
+            )
+        self.model.train()  # reset model state
+        value = value.to("cpu")
+        output = TrainingOutputBatch(
+            {"output": value},
+        )
+        output.metadata = micro_batch.metadata
+        return output
+
+    def forward(self, data: TrainingInputBatch) -> WorkerOutput:
+        """Run inference forward pass.
+
+        Returns a :class:`WorkerOutput` whose ``loss_fn_outputs`` carries one
+        per-sample dict with key ``"values"``.
+        """
+        # Run in micro batches and emit per-sample values.
+        # Uses token-based micro-batching when `max_tokens_per_microbatch > 0`; otherwise fixed
+        # sample-count chunking. `reorder_and_combine_batches` restores original sample order.
+        microbatch_iterator = get_microbatch_iterator(
+            data,
+            micro_batch_size=self.cfg.micro_forward_batch_size_per_gpu,
+            max_tokens_per_microbatch=self.cfg.max_tokens_per_microbatch,
+        )
+        outputs = [self._forward_micro_batch(micro_batch) for micro_batch in microbatch_iterator]
+        output = microbatch_iterator.reorder_and_combine_batches(outputs)
+        if output.device is not None and output.device != torch.device("cpu"):
+            output = output.to("cpu")
+        row_tensor = output["output"]
+        loss_fn_outputs = [{"values": row_tensor[i].tolist()} for i in range(row_tensor.shape[0])]
+        return WorkerOutput(loss_fn_outputs=loss_fn_outputs, metrics={})
+
+
+class RefWorkerBase(Worker):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.model: nn.Module = None
+        # Ref does not train. Expose ``None`` defaults so inherited methods (e.g. offload_to_cpu) work.
+        self.optimizer = None
+        self.scheduler = None
+
+    def forward(self, data: TrainingInputBatch) -> WorkerOutput:
+        """Run inference forward pass.
+
+        Returns a :class:`WorkerOutput` whose ``loss_fn_outputs`` carries one
+        per-sample dict with key ``"logprobs"``.
+        """
+        # Run in micro batches and emit per-sample logprobs.
+        # Uses token-based micro-batching when `max_tokens_per_microbatch > 0`; otherwise fixed
+        # sample-count chunking. `reorder_and_combine_batches` restores original sample order.
+        microbatch_iterator = get_microbatch_iterator(
+            data,
+            micro_batch_size=self.cfg.micro_forward_batch_size_per_gpu,
+            max_tokens_per_microbatch=self.cfg.max_tokens_per_microbatch,
+        )
+        outputs = [self._forward_micro_batch(micro_batch) for micro_batch in microbatch_iterator]
+        output = microbatch_iterator.reorder_and_combine_batches(outputs)
+        if output.device is not None and output.device != torch.device("cpu"):
+            output = output.to("cpu")
+        row_tensor = output["output"]
+        loss_fn_outputs = [{"logprobs": row_tensor[i].tolist()} for i in range(row_tensor.shape[0])]
+        return WorkerOutput(loss_fn_outputs=loss_fn_outputs, metrics={})
+
+    def _forward_micro_batch(self, micro_batch: TrainingInputBatch) -> TrainingOutputBatch:
+        device = torch.cuda.current_device()
+        micro_batch.to(device)
+        sequences = micro_batch["sequences"]
+        response_length = micro_batch.metadata["response_length"]
+        attention_mask = micro_batch["attention_mask"]
+        pixel_values = micro_batch.get("pixel_values", None)
+        image_grid_thw = micro_batch.get("image_grid_thw", None)
+        sample_support_replay = self.cfg.algorithm.enable_sample_support_replay
+        with torch.no_grad(), torch.autocast(dtype=torch.bfloat16, device_type="cuda"):
+            log_probs = self.model(
+                sequences,
+                response_length,
+                attention_mask,
+                return_output=False,
+                # Match policy temperature for support-conditioned KL.
+                temperature=self.cfg.algorithm.temperature if sample_support_replay else 1.0,
+                pixel_values=pixel_values,
+                image_grid_thw=image_grid_thw,
+                sample_support=micro_batch.get(SAMPLE_SUPPORT_FIELD) if sample_support_replay else None,
+                loss_mask=micro_batch.get("loss_mask") if sample_support_replay else None,
+                enable_sample_support_replay=sample_support_replay,
+            )
+        log_probs = log_probs.to("cpu")
+        output = TrainingOutputBatch(
+            {"output": log_probs},
+        )
+        output.metadata = micro_batch.metadata
+        return output

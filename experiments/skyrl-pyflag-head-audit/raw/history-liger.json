@@ -1,0 +1,230 @@
+{
+ "repo_head": "f854d6d98f6657738432c8ccf4b33fbef121025b",
+ "history_scope": "HEAD 可达的全部提交（1458 个 rev），不区分分支",
+ "repo_total_commits": 1458,
+ "file_history_commits": 38,
+ "file_history_has_param": 38,
+ "oldest_commit_in_repo_file": "b3280d84|2025-06-24|SkyRL-Train + SkyGym code (#27)",
+ "newest_commit_in_repo_file": "b408bafa|2026-10-30|[feat][tinker] Honour train_attn/train_mlp from Tinker's LoraConfig on the skyrl-train backend (#2464)",
+ "path_segments_old_to_new": [
+  {
+   "oldest_rev": "8805e756",
+   "path": "skyrl-train/skyrl_train/models.py",
+   "commits": 5,
+   "date": "2025-10-01"
+  },
+  {
+   "oldest_rev": "0c18fb5b",
+   "path": "skyrl-train/skyrl_train/model_wrapper.py",
+   "commits": 15,
+   "date": "2026-01-05"
+  },
+  {
+   "oldest_rev": "b408bafa",
+   "path": "skyrl/backends/skyrl_train/workers/model_wrapper.py",
+   "commits": 18,
+   "date": "2026-10-30"
+  }
+ ],
+ "checks": {
+  "H1_param_in_head": true,
+  "H2_no_kwarg_ever": true,
+  "H3_param_in_every_version": true,
+  "H4_path_renames_tracked": true,
+  "H2_sensitivity": true
+ },
+ "producer_hits": [],
+ "distinct_mentions": 4647,
+ "per_commit": [
+  {
+   "commit": "b408bafa|2026-10-30|[feat][tinker] Honour train_attn/train_mlp from Tinker's LoraConfig on the skyrl-train backend (#2464)",
+   "path": "skyrl/backends/skyrl_train/workers/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "e303d385|2026-10-26|[skyrl-train] Score centering over the recorded sample support (#2484)",
+   "path": "skyrl/backends/skyrl_train/workers/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "4d3c1eef|2026-10-22|[skyrl-train] Carry sample support as CSR from capture through replay (#2483)",
+   "path": "skyrl/backends/skyrl_train/workers/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "33d240fd|2026-09-22|[feat][sample-support] Report policy entropy over the recorded support with sample support replay (#2241)",
+   "path": "skyrl/backends/skyrl_train/workers/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "73439294|2026-09-22|[feat][sample-support] Add sample replay support for FSDP with Ulysses SP (#2240)",
+   "path": "skyrl/backends/skyrl_train/workers/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "19b0e132|2026-07-01|[refactor] Remove legacy inference codepath (#1835)",
+   "path": "skyrl/backends/skyrl_train/workers/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "8cd5f165|2026-06-01|[chore] Rename `use_sample_packing` to `remove_microbatch_padding` (#1738)",
+   "path": "skyrl/backends/skyrl_train/workers/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "fd7459bd|2026-05-29|[bug] Fix meta-init bf16 cast corrupting rotary `inv_freq` under sequence parallelism (#1725)",
+   "path": "skyrl/backends/skyrl_train/workers/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "4c6793f9|2026-05-07|[train] Default to chunked logprobs for Megatron (#1610)",
+   "path": "skyrl/backends/skyrl_train/workers/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "be293394|2026-04-29|[qoc][trainer] Remove dead code in workers (#1595)",
+   "path": "skyrl/backends/skyrl_train/workers/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "f83573cf|2026-04-20|[docs][example] VLM Examples (#1531)",
+   "path": "skyrl/backends/skyrl_train/workers/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "5cf22c5c|2026-04-13|[multimodal] add language_model_only flag for models like qwen3.5 (#1487)",
+   "path": "skyrl/backends/skyrl_train/workers/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "bcf680f2|2026-04-04|[dependencies] Upgrade transformers to >=5.0.0,<=5.3.0 (#1426)",
+   "path": "skyrl/backends/skyrl_train/workers/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "92764a75|2026-03-26|[train] Multi-modal inputs support in FSDP2 (#1331)",
+   "path": "skyrl/backends/skyrl_train/workers/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "abe814f9|2026-03-13|[train][AsyncRL] Use keep mode for pause and resume  (#1179)",
+   "path": "skyrl/backends/skyrl_train/workers/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "a168f69b|2026-03-11|[lint] Add isort to pre-commit (#1267)",
+   "path": "skyrl/backends/skyrl_train/workers/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "954b2ee2|2026-03-10|[train] Skip `output_router_logits` for granitemoehybrid models (#1295)",
+   "path": "skyrl/backends/skyrl_train/workers/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "2c1cf9e4|2026-02-15|[2/N] Add back skyrl code to top level and delete skyrl-train and skyrl-tx to get git history (#1139)",
+   "path": "skyrl/backends/skyrl_train/workers/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "0c18fb5b|2026-01-05|Remove deepspeed (#827)",
+   "path": "skyrl-train/skyrl_train/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "7add17d7|2025-12-31|[skyrl-train] fix critic model kwargs (#823)",
+   "path": "skyrl-train/skyrl_train/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "03c38ad9|2025-12-31|[skyrl-train] Add megatron tests to e2e CI (#809)",
+   "path": "skyrl-train/skyrl_train/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "901fc9cc|2025-12-28|[skyrl-train] Megatron LoRA (#743)",
+   "path": "skyrl-train/skyrl_train/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "8b415c6a|2025-12-01|[train] Fix LoRA + PPO  (#538)",
+   "path": "skyrl-train/skyrl_train/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "098674df|2025-11-20|Revert \"[skyrl-train] Updated RoPE Configuration for HF Models transformers) w. backward-compatible support for vLLM (#690)\" (#695)",
+   "path": "skyrl-train/skyrl_train/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "ad2b975a|2025-11-20|[skyrl-train] Updated RoPE Configuration for HF Models (transformers) w. backward-compatible support for vLLM (#690)",
+   "path": "skyrl-train/skyrl_train/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "2e9e4be3|2025-11-17|[skyrl-train] Add entropy loss (#622)",
+   "path": "skyrl-train/skyrl_train/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "7372dc9b|2025-10-31|[skyrl-train] Add YaRN support for VLLM and HF (#561)",
+   "path": "skyrl-train/skyrl_train/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "3c585f10|2025-10-22|[GPTOSS] Integrate Unsloth's flex attention implementation for attention sink (#515)",
+   "path": "skyrl-train/skyrl_train/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "62a6e120|2025-10-16|[Fix] Fix entropy calculation without sample packing (#490)",
+   "path": "skyrl-train/skyrl_train/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "9f1dac4f|2025-10-15|[train][Dist] Support sequence parallelism without sample packing (#480)",
+   "path": "skyrl-train/skyrl_train/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "f0b80eb7|2025-10-07|LoRA support for FSDP (#340)",
+   "path": "skyrl-train/skyrl_train/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "bcc2cccb|2025-10-07|Fix `torch.autocast` incompatibility with DeepSpeed (#212)",
+   "path": "skyrl-train/skyrl_train/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "7b11f6d5|2025-10-03|Rename classes with overloaded / incorrect names (#359)",
+   "path": "skyrl-train/skyrl_train/model_wrapper.py",
+   "has_param": true
+  },
+  {
+   "commit": "8805e756|2025-10-01|Remove reward model codepath (#374)",
+   "path": "skyrl-train/skyrl_train/models.py",
+   "has_param": true
+  },
+  {
+   "commit": "a2dc9b6e|2025-09-25|[trainer] Changed logging inside of skyrl_train folder from print() statement to use logger.log from the loguru package (UPDATE) (#343)",
+   "path": "skyrl-train/skyrl_train/models.py",
+   "has_param": true
+  },
+  {
+   "commit": "3ebc76ee|2025-07-08|[Cleanup] Remove unused `normalize_reward` codepath in CriticModel (#51)",
+   "path": "skyrl-train/skyrl_train/models.py",
+   "has_param": true
+  },
+  {
+   "commit": "a9cf9182|2025-07-03|Make deepspeed optional, so it is not initialized if FSDP backend is used (#59)",
+   "path": "skyrl-train/skyrl_train/models.py",
+   "has_param": true
+  },
+  {
+   "commit": "b3280d84|2025-06-24|SkyRL-Train + SkyGym code (#27)",
+   "path": "skyrl-train/skyrl_train/models.py",
+   "has_param": true
+  }
+ ]
+}

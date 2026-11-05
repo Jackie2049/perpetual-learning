@@ -1,0 +1,6 @@
+PASS H1_param_in_head
+PASS H2_no_kwarg_ever
+PASS H3_param_in_every_version
+PASS H4_path_renames_tracked
+HEAD f854d6d98｜仓库 1458 个提交、1458 个 rev 扫过｜该文件 38 条提交（含形参 38 条）｜历史提及 4647 处、关键字实参 0 处
+[selftest] 生产者判据正负各 3 例：PASS

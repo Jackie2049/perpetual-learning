@@ -1,0 +1,98 @@
+{
+ "snapshot": "/Users/jackiemac/workspace/perpetual-learning/experiments/skyrl-pyflag-head-audit/raw/snapshot",
+ "checks": [
+  {
+   "id": "L1",
+   "group": "use_liger_kernel",
+   "desc": "形参 `use_liger_kernel=False` 在 HFModelWrapper.__init__ 形参表里",
+   "ok": true,
+   "detail": "def __init__ @[131], 形参 @[148]"
+  },
+  {
+   "id": "L2",
+   "group": "use_liger_kernel",
+   "desc": "分支 `if use_liger_kernel:` 存在，且 import 真实存在",
+   "ok": true,
+   "detail": "分支 @[181], import @[182]"
+  },
+  {
+   "id": "L3",
+   "group": "use_liger_kernel",
+   "desc": "fsdp_worker 两处 HFModelWrapper(...) 均不传该关键字",
+   "ok": true,
+   "detail": "调用点 @[70, 346], 传了该键的 @[]"
+  },
+  {
+   "id": "L4",
+   "group": "use_liger_kernel",
+   "desc": "配置 dataclass 里没有 use_liger_kernel 字段",
+   "ok": true,
+   "detail": "config.py 命中行 []"
+  },
+  {
+   "id": "L5",
+   "group": "use_liger_kernel",
+   "desc": "声明文件之外的非测试 .py 里没有任何人传这个关键字",
+   "ok": true,
+   "detail": "全仓非模型包装文件里命中 0 处 [], 生产者 []"
+  },
+  {
+   "id": "R1",
+   "group": "use_remove_padding",
+   "desc": "apply_monkey_patch 的分支是 `use_remove_padding or ulysses_sp_size > 1`",
+   "ok": true,
+   "detail": "def @[127], 分支 @[153]"
+  },
+  {
+   "id": "R2",
+   "group": "use_remove_padding",
+   "desc": "唯一调用点在 sequence_parallel_size > 1 守卫内且不传该形参",
+   "ok": true,
+   "detail": "守卫 @[167], 调用 @[169], 调用段含该名=False"
+  },
+  {
+   "id": "S1",
+   "group": "enable_sample_support_replay",
+   "desc": "配置里有字段，worker 取局部变量后按关键字传给 forward",
+   "ok": true,
+   "detail": "config 字段 @[1171], worker 赋值 @[1127], 关键字实参 4 处（期望 4）"
+  },
+  {
+   "id": "P1",
+   "group": "enable_pd",
+   "desc": "配置里有 enable_pd 字段，setup/main_base 读 `ie_cfg.enable_pd` 后显式传 True",
+   "ok": true,
+   "detail": "config @[1531], setup 读 [94], 显式 True 3 处（期望 3）, main_base 读 @[297]"
+  },
+  {
+   "id": "C1",
+   "group": "use_combine",
+   "desc": "基类形参默认 True，子类用位置参数传 False",
+   "ok": true,
+   "detail": "基类 @[83], 子类 @[108], super @[116]"
+  },
+  {
+   "id": "C2",
+   "group": "use_combine",
+   "desc": "生产构造点 Qwen4ExpGatedResidual(config) 走默认 True（只有 2 处）",
+   "ok": true,
+   "detail": "生产构造点 [97, 98]"
+  },
+  {
+   "id": "G1",
+   "group": "use_signals",
+   "desc": "形参 docstring 标 (Deprecated)，默认 False，所有调用点都用默认",
+   "ok": true,
+   "detail": "签名 @[51], (Deprecated) @[57]"
+  },
+  {
+   "id": "D1",
+   "group": "disable_print",
+   "desc": "pprint 是公开 helper：docstring 明写返回字符串而不是打印",
+   "ok": true,
+   "detail": "def pprint @[113], docstring @[126]"
+  }
+ ],
+ "passed": 13,
+ "total": 13
+}

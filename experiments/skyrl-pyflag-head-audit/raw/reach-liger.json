@@ -1,0 +1,23 @@
+{
+ "checkout": "/tmp/skyrl-full2",
+ "E1_config_field_absent": true,
+ "E2_call_sites": 2,
+ "E2_any_call_passes_it": false,
+ "E3_in_pyproject": false,
+ "E3_in_uv_lock_root": false,
+ "E3_in_skyrl_agent_lock": true,
+ "E3_other_manifests_mentioning_liger": [
+  "skyrl-agent/uv.lock"
+ ],
+ "E4_liger_importable_here": false,
+ "branch_is_lazy_import": true,
+ "E4_positive_control_json_importable": true,
+ "checks": {
+  "E1_config_field_absent": true,
+  "E2_no_call_passes_it": true,
+  "E3_not_a_runtime_dependency": true,
+  "E4_liger_absent_here": true,
+  "E4_positive_control_works": true,
+  "E3_branch_is_lazy_import": true
+ }
+}

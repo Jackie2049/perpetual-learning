@@ -1,0 +1,15 @@
+PASS L1  形参 `use_liger_kernel=False` 在 HFModelWrapper.__init__ 形参表里  |  def __init__ @[131], 形参 @[148]
+PASS L2  分支 `if use_liger_kernel:` 存在，且 import 真实存在  |  分支 @[181], import @[182]
+PASS L3  fsdp_worker 两处 HFModelWrapper(...) 均不传该关键字  |  调用点 @[70, 346], 传了该键的 @[]
+PASS L4  配置 dataclass 里没有 use_liger_kernel 字段  |  config.py 命中行 []
+PASS L5  声明文件之外的非测试 .py 里没有任何人传这个关键字  |  全仓非模型包装文件里命中 0 处 [], 生产者 []
+PASS R1  apply_monkey_patch 的分支是 `use_remove_padding or ulysses_sp_size > 1`  |  def @[127], 分支 @[153]
+PASS R2  唯一调用点在 sequence_parallel_size > 1 守卫内且不传该形参  |  守卫 @[167], 调用 @[169], 调用段含该名=False
+PASS S1  配置里有字段，worker 取局部变量后按关键字传给 forward  |  config 字段 @[1171], worker 赋值 @[1127], 关键字实参 4 处（期望 4）
+PASS P1  配置里有 enable_pd 字段，setup/main_base 读 `ie_cfg.enable_pd` 后显式传 True  |  config @[1531], setup 读 [94], 显式 True 3 处（期望 3）, main_base 读 @[297]
+PASS C1  基类形参默认 True，子类用位置参数传 False  |  基类 @[83], 子类 @[108], super @[116]
+PASS C2  生产构造点 Qwen4ExpGatedResidual(config) 走默认 True（只有 2 处）  |  生产构造点 [97, 98]
+PASS G1  形参 docstring 标 (Deprecated)，默认 False，所有调用点都用默认  |  签名 @[51], (Deprecated) @[57]
+PASS D1  pprint 是公开 helper：docstring 明写返回字符串而不是打印  |  def pprint @[113], docstring @[126]
+
+13/13 通过

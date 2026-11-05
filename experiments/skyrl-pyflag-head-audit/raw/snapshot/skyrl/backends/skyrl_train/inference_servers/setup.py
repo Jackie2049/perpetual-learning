@@ -1,0 +1,393 @@
+import copy
+from argparse import Namespace
+from dataclasses import dataclass, field
+from typing import Any, Callable, List, Optional, Tuple
+
+import ray
+from loguru import logger
+from ray.util.placement_group import placement_group as ray_placement_group
+
+from skyrl.env_vars import SKYRL_RAY_PG_TIMEOUT_IN_S
+from skyrl.train.config import (
+    InferenceEngineConfig,
+    SkyRLTrainConfig,
+    get_config_as_dict,
+)
+from skyrl.train.utils.utils import (
+    ResolvedPlacementGroup,
+    get_ray_pg_ready_with_timeout,
+)
+
+from .common import SERVER_PORT_STRIDE, VLLM_START_PORT
+from .remote_inference_client import RemoteInferenceClient
+from .server_group import ServerGroup
+from .utils import (
+    _uses_lora_weight_sync,
+    build_router_args,
+    build_vllm_cli_args,
+    get_pd_cli_args,
+    get_pd_p2p_connector_name,
+)
+from .vllm_router import VLLMRouter
+
+# NOTE: We use the same base port for NIXL and Mooncake since they will not be
+# used together
+MOONCAKE_BOOTSTRAP_BASE_PORT = NIXL_SIDE_CHANNEL_BASE_PORT = 20_000
+
+
+@dataclass
+class InferenceServerSetup:
+    """Inference server setup result with optional router and groups.
+
+    ``router`` is ``None`` when the caller reuses a fully-external
+    proxy (no internal ``VLLMRouter`` is started). The three
+    server-group lists default to empty when servers are external or
+    when the relevant branch (PD vs non-PD) is not active.
+    """
+
+    proxy_url: str
+    server_urls: List[str]
+    router: Optional[VLLMRouter] = None
+    server_groups: List[ServerGroup] = field(default_factory=list)
+    prefill_server_groups: List[ServerGroup] = field(default_factory=list)
+    decode_server_groups: List[ServerGroup] = field(default_factory=list)
+
+
+def create_inference_servers(
+    ie_cfg: InferenceEngineConfig,
+    cli_args: Namespace,
+    log_path: str,
+    placement_group=None,
+    *,
+    start_port: int = VLLM_START_PORT,
+) -> InferenceServerSetup:
+    """Build server groups and router from config.
+
+    Shared logic for ``main_base.py`` and test utilities.  Creates one
+    :class:`ServerGroup` per engine (each with ``data_parallel_size``
+    servers).  When ``enable_pd=True``, prefill and decode groups are
+    created separately and the router is configured for PD disaggregation.
+
+    Args:
+        ie_cfg: Inference engine config.
+        cli_args: vLLM CLI args from :func:`build_vllm_cli_args` (the policy)
+            or :func:`build_frozen_vllm_cli_args` (a frozen model).
+        log_path: Log path for SkyRL logs
+        placement_group: Optional resolved placement group for colocated
+            training.  ``None`` when not colocated.
+        start_port: Base of the first server's port window. Each server owns
+            ``SERVER_PORT_STRIDE`` ports from its base (HTTP port plus the DP
+            TCPStore probe range), so a second deployment on the same nodes
+            must start past the first one's ``num_engines * data_parallel_size``
+            windows.
+
+    Returns:
+        An :class:`InferenceServerSetup` with the router, URLs, and
+        server group references.
+    """
+    from skyrl.backends.skyrl_train.inference_servers.server_group import ServerGroup
+    from skyrl.backends.skyrl_train.inference_servers.vllm_router import VLLMRouter
+
+    gpus_per_server = ie_cfg.tensor_parallel_size * ie_cfg.pipeline_parallel_size
+    is_colocated = placement_group is not None
+
+    if ie_cfg.enable_pd:
+        # Role-specific engine kwargs (mutually exclusive with engine_init_kwargs;
+        # enforced in validate_inference_engine_cfg).
+        prefill_cli_args = get_pd_cli_args(
+            cli_args, role="prefill", role_init_kwargs=get_config_as_dict(ie_cfg.prefill_init_kwargs)
+        )
+        decode_cli_args = get_pd_cli_args(
+            cli_args, role="decode", role_init_kwargs=get_config_as_dict(ie_cfg.decode_init_kwargs)
+        )
+        num_prefill = ie_cfg.num_prefill
+        num_decode = ie_cfg.num_engines - num_prefill
+        servers_per_group = ie_cfg.data_parallel_size
+
+        # When not colocated, create separate shared PGs for prefill and
+        # decode groups so that bundle offsets index into a valid range.
+        if placement_group is None:
+            prefill_total_gpus = num_prefill * gpus_per_server * servers_per_group
+            prefill_bundles = [{"GPU": 1, "CPU": 1} for _ in range(prefill_total_gpus)]
+            raw_prefill_pg = ray_placement_group(prefill_bundles, strategy="PACK")
+            get_ray_pg_ready_with_timeout(raw_prefill_pg, timeout=SKYRL_RAY_PG_TIMEOUT_IN_S)
+            prefill_pg = ResolvedPlacementGroup(raw_prefill_pg)
+
+            decode_total_gpus = num_decode * gpus_per_server * servers_per_group
+            decode_bundles = [{"GPU": 1, "CPU": 1} for _ in range(decode_total_gpus)]
+            raw_decode_pg = ray_placement_group(decode_bundles, strategy="PACK")
+            get_ray_pg_ready_with_timeout(raw_decode_pg, timeout=SKYRL_RAY_PG_TIMEOUT_IN_S)
+            decode_pg = ResolvedPlacementGroup(raw_decode_pg)
+        else:
+            prefill_pg = placement_group
+            decode_pg = placement_group
+
+        prefill_server_groups = [
+            ServerGroup(
+                cli_args=copy.deepcopy(prefill_cli_args),
+                num_servers=ie_cfg.data_parallel_size,
+                start_port=start_port + i * servers_per_group * SERVER_PORT_STRIDE,
+                placement_group=prefill_pg,
+                placement_group_bundle_offset=i * gpus_per_server * servers_per_group,
+                enable_dp=ie_cfg.data_parallel_size > 1,
+                enable_pd=True,
+                metrics_role="prefill",
+                nixl_side_channel_base=NIXL_SIDE_CHANNEL_BASE_PORT + i * servers_per_group * SERVER_PORT_STRIDE,
+                mooncake_bootstrap_base_port=MOONCAKE_BOOTSTRAP_BASE_PORT + i * servers_per_group * SERVER_PORT_STRIDE,
+                distributed_executor_backend=ie_cfg.distributed_executor_backend,
+                enable_ray_prometheus_stats=ie_cfg.enable_ray_prometheus_stats,
+                use_expandable_segments=ie_cfg.use_expandable_segments,
+            )
+            for i in range(num_prefill)
+        ]
+
+        # When colocated, decode bundles follow prefill bundles in the shared PG.
+        # When not colocated, decode_pg is a separate PG so offset starts at 0.
+        decode_bundle_offset = num_prefill * gpus_per_server * servers_per_group if is_colocated else 0
+        decode_server_groups = [
+            ServerGroup(
+                cli_args=copy.deepcopy(decode_cli_args),
+                num_servers=ie_cfg.data_parallel_size,
+                start_port=start_port + (num_prefill + i) * servers_per_group * SERVER_PORT_STRIDE,
+                placement_group=decode_pg,
+                placement_group_bundle_offset=decode_bundle_offset + i * gpus_per_server * servers_per_group,
+                enable_dp=ie_cfg.data_parallel_size > 1,
+                enable_pd=True,
+                metrics_role="decode",
+                nixl_side_channel_base=NIXL_SIDE_CHANNEL_BASE_PORT
+                + (num_prefill + i) * servers_per_group * SERVER_PORT_STRIDE,
+                mooncake_bootstrap_base_port=MOONCAKE_BOOTSTRAP_BASE_PORT
+                + (num_prefill + i) * servers_per_group * SERVER_PORT_STRIDE,
+                distributed_executor_backend=ie_cfg.distributed_executor_backend,
+                enable_ray_prometheus_stats=ie_cfg.enable_ray_prometheus_stats,
+                use_expandable_segments=ie_cfg.use_expandable_segments,
+            )
+            for i in range(num_decode)
+        ]
+
+        # Start all prefill and decode groups in parallel (non-blocking)
+        all_refs = []
+        for g in prefill_server_groups:
+            all_refs.extend(g.start(blocking=False))
+
+        for g in decode_server_groups:
+            all_refs.extend(g.start(blocking=False))
+
+        # Wait for all servers to be ready in one shot
+        ray.get(all_refs)
+
+        # Collect URLs — refs are already resolved so lazy property returns immediately
+        prefill_urls = [info.url for g in prefill_server_groups for info in g.server_infos]
+        decode_urls = [info.url for g in decode_server_groups for info in g.server_infos]
+
+        server_urls = prefill_urls + decode_urls
+
+        # Route according to the P2P transfer flavor. For Mooncake, the router
+        # queries each prefill server's bootstrap server (engine_id discovery)
+        # and injects per-request transfer ids, so it needs the bootstrap port
+        # of every prefill server: group base + server_idx (the same value
+        # VLLMServerActor sets as VLLM_MOONCAKE_BOOTSTRAP_PORT per server).
+        p2p_connector = get_pd_p2p_connector_name(prefill_cli_args.kv_transfer_config)
+        prefill_bootstrap_ports = None
+        pd_kv_connector = None
+        if p2p_connector == "MooncakeConnector":
+            pd_kv_connector = "mooncake"
+            prefill_bootstrap_ports = [
+                info.mooncake_bootstrap_server_port for g in prefill_server_groups for info in g.server_infos
+            ]
+
+        router_args = build_router_args(
+            ie_cfg,
+            prefill_urls=prefill_urls,
+            decode_urls=decode_urls,
+            prefill_bootstrap_ports=prefill_bootstrap_ports,
+            pd_kv_connector=pd_kv_connector,
+        )
+        router = VLLMRouter(router_args, log_path=log_path)
+        proxy_url = router.start()
+        logger.info(
+            f"HTTP Inference (PD): prefill_urls={prefill_urls}, decode_urls={decode_urls}, "
+            f"proxy_url={proxy_url}, colocated={is_colocated}"
+        )
+        return InferenceServerSetup(
+            router=router,
+            proxy_url=proxy_url,
+            server_urls=server_urls,
+            server_groups=prefill_server_groups + decode_server_groups,
+            prefill_server_groups=prefill_server_groups,
+            decode_server_groups=decode_server_groups,
+        )
+    else:
+        # When not colocated, create a shared PG for all engine groups so
+        # that bundle offsets index into a valid range.
+        if placement_group is None:
+            total_gpus = ie_cfg.num_engines * gpus_per_server * ie_cfg.data_parallel_size
+            bundles = [{"GPU": 1, "CPU": 1} for _ in range(total_gpus)]
+            raw_pg = ray_placement_group(bundles, strategy="PACK")
+            get_ray_pg_ready_with_timeout(raw_pg, timeout=SKYRL_RAY_PG_TIMEOUT_IN_S)
+            placement_group = ResolvedPlacementGroup(raw_pg)
+
+        server_groups = [
+            ServerGroup(
+                cli_args=cli_args,
+                num_servers=ie_cfg.data_parallel_size,
+                placement_group=placement_group,
+                start_port=start_port + i * ie_cfg.data_parallel_size * SERVER_PORT_STRIDE,
+                enable_dp=ie_cfg.data_parallel_size > 1,
+                distributed_executor_backend=ie_cfg.distributed_executor_backend,
+                placement_group_bundle_offset=i * gpus_per_server * ie_cfg.data_parallel_size,
+                enable_ray_prometheus_stats=ie_cfg.enable_ray_prometheus_stats,
+                use_expandable_segments=ie_cfg.use_expandable_segments,
+            )
+            for i in range(ie_cfg.num_engines)
+        ]
+
+        # Start all engine groups in parallel (non-blocking)
+        all_refs = []
+        for g in server_groups:
+            all_refs.extend(g.start(blocking=False))
+
+        # Wait for all servers to be ready in one shot
+        ray.get(all_refs)
+
+        # Collect URLs — refs are already resolved so lazy property returns immediately
+        server_urls = [info.url for g in server_groups for info in g.server_infos]
+
+        router_args = build_router_args(ie_cfg, server_urls=server_urls)
+        router = VLLMRouter(router_args, log_path=log_path)
+        proxy_url = router.start()
+        logger.info(f"HTTP Inference: proxy_url={proxy_url}, server_urls={server_urls}, " f"colocated={is_colocated}")
+        return InferenceServerSetup(
+            router=router,
+            proxy_url=proxy_url,
+            server_urls=server_urls,
+            server_groups=server_groups,
+        )
+
+
+def build_new_inference_client(
+    cfg: SkyRLTrainConfig,
+    tokenizer,
+    placement_group: Optional[ResolvedPlacementGroup] = None,
+) -> Tuple[RemoteInferenceClient, InferenceServerSetup]:
+    """Build the new HTTP-based inference client and supporting state for the policy.
+
+    :func:`build_new_inference_client_impl` with the policy's engine block, model path and vLLM args,
+    plus the policy-only client fields (tokenizer, capture, score centering, LoRA sync).
+
+    Args:
+        cfg: SkyRL train config.
+        tokenizer: HF tokenizer for the policy model.
+        placement_group: Resolved placement group when colocated, ``None`` otherwise.
+
+    Returns:
+        Tuple of (client, server_setup); see :func:`build_new_inference_client_impl`.
+    """
+    ie_cfg = cfg.generator.inference_engine
+    return build_new_inference_client_impl(
+        ie_cfg,
+        model_path=cfg.trainer.policy.model.path,
+        log_path=cfg.trainer.log_path,
+        make_cli_args=lambda: build_vllm_cli_args(cfg),
+        placement_group=placement_group,
+        tokenizer=tokenizer,
+        enable_return_routed_experts=ie_cfg.enable_return_routed_experts,
+        enable_return_sample_support_set=ie_cfg.enable_return_sample_support_set,
+        enable_return_sample_support_logprobs=cfg.trainer.algorithm.enable_score_centering,
+        uses_lora_weight_sync=_uses_lora_weight_sync(cfg),
+    )
+
+
+def build_new_inference_client_impl(
+    ie_cfg: InferenceEngineConfig,
+    *,
+    model_path: str,
+    log_path: str,
+    make_cli_args: Callable[[], Namespace],
+    placement_group: Optional[ResolvedPlacementGroup] = None,
+    start_port: int = VLLM_START_PORT,
+    **client_kwargs: Any,
+) -> Tuple[RemoteInferenceClient, InferenceServerSetup]:
+    """Resolve a model's servers from its engine config and build the client that drives them.
+
+    Resolves the ``(external_proxy_url, external_server_urls)`` matrix:
+    both set means fully external (reuse both as-is); proxy only means
+    the external proxy serves both data and control planes; servers
+    only spawns an internal router over the external servers; neither
+    spawns internal server groups + router via
+    ``create_inference_servers``. Then builds the
+    ``RemoteInferenceClient`` against the resolved endpoints.
+
+    Used for the policy by :func:`build_new_inference_client` and for a frozen model (a
+    distillation teacher) by ``skyrl.train.opd``, so both share one resolution and one client.
+
+    Args:
+        ie_cfg: The model's inference engine config.
+        model_path: HF id or path of the model. The client sends ``ie_cfg.served_model_name``
+            when set, else this.
+        log_path: Log path for SkyRL logs.
+        make_cli_args: Builds the vLLM CLI args (:func:`build_vllm_cli_args` or
+            :func:`build_frozen_vllm_cli_args`). Called only when servers are launched here.
+        placement_group: Resolved placement group when colocated, ``None``
+            otherwise. Passed through to ``create_inference_servers`` in
+            the internal-servers branch; ignored on external branches.
+        start_port: Base of the first launched server's port window; see
+            :func:`create_inference_servers`.
+        **client_kwargs: Role-specific :class:`RemoteInferenceClient` fields.
+
+    Returns:
+        Tuple of (client, server_setup). ``server_setup.router`` is
+        ``None`` for fully external setups; the three group lists are
+        empty when servers are external or when their PD branch is
+        inactive.
+    """
+    external_proxy_url = ie_cfg.external_proxy_url
+    external_server_urls = ie_cfg.external_server_urls
+    has_external_proxy = external_proxy_url is not None
+    has_external_servers = external_server_urls is not None
+
+    if has_external_proxy and has_external_servers:
+        proxy_url = external_proxy_url
+        server_urls = list(external_server_urls)
+        logger.info(
+            f"HTTP Inference: Using fully external setup - " f"proxy_url={proxy_url}, server_urls={server_urls}"
+        )
+        server_setup = InferenceServerSetup(proxy_url=proxy_url, server_urls=server_urls)
+    elif has_external_proxy and not has_external_servers:
+        proxy_url = external_proxy_url
+        server_urls = [proxy_url]
+        logger.info(f"HTTP Inference: Using external proxy for both data and " f"control plane - proxy_url={proxy_url}")
+        server_setup = InferenceServerSetup(proxy_url=proxy_url, server_urls=server_urls)
+    elif has_external_servers and not has_external_proxy:
+        server_urls = list(external_server_urls)
+        router_args = build_router_args(ie_cfg, server_urls=server_urls)
+        router = VLLMRouter(router_args, log_path=log_path)
+        proxy_url = router.start()
+        logger.info(
+            f"HTTP Inference: Created router over external servers - "
+            f"server_urls={server_urls}, proxy_url={proxy_url}"
+        )
+        server_setup = InferenceServerSetup(proxy_url=proxy_url, server_urls=server_urls, router=router)
+    else:
+        if not ie_cfg.run_engines_locally:
+            raise ValueError(
+                "generator.inference_engine.run_engines_locally=false requires "
+                "external_proxy_url or external_server_urls."
+            )
+        server_setup = create_inference_servers(
+            ie_cfg,
+            make_cli_args(),
+            log_path=log_path,
+            placement_group=placement_group,
+            start_port=start_port,
+        )
+
+    client = RemoteInferenceClient(
+        proxy_url=server_setup.proxy_url,
+        server_urls=server_setup.server_urls,
+        model_name=ie_cfg.served_model_name or model_path,
+        data_parallel_size=ie_cfg.data_parallel_size,
+        **client_kwargs,
+    )
+
+    return client, server_setup
