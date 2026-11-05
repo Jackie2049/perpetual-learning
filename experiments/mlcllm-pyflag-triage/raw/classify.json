@@ -1,0 +1,111 @@
+{
+ "source": "experiments/mlcllm-pyflag-triage/raw/scan-py.json",
+ "n_flags": 7,
+ "rows": [
+  {
+   "flag": "disable_instrument",
+   "scanner_mode": null,
+   "scanner_silently_inert": false,
+   "scanner_producers": 0,
+   "verdict": "R5",
+   "note": "debug_chat CLI 辅助，生产者是 parsed.disable_instrument",
+   "consumers": []
+  },
+  {
+   "flag": "enable_debug",
+   "scanner_mode": null,
+   "scanner_silently_inert": false,
+   "scanner_producers": 1,
+   "verdict": "R1",
+   "note": "interface.serve → MLCEngine(enable_debug=...)",
+   "consumers": [
+    [
+     "python/mlc_llm/interface/serve.py",
+     24,
+     "serve"
+    ]
+   ]
+  },
+  {
+   "flag": "enable_disaggregation",
+   "scanner_mode": null,
+   "scanner_silently_inert": false,
+   "scanner_producers": 0,
+   "verdict": "R4",
+   "note": "create_generic 形参由 3 个模型显式传、其余 35 个吃默认 False",
+   "consumers": []
+  },
+  {
+   "flag": "enable_prefix_cache",
+   "scanner_mode": "mixed",
+   "scanner_silently_inert": true,
+   "scanner_producers": 0,
+   "verdict": "R1",
+   "note": "CLI→interface→Router→PopenServer 四跳齐全；扫描器报 mixed 是因为把 serve() 当成了消费者",
+   "consumers": [
+    [
+     "python/mlc_llm/router/router.py",
+     21,
+     "Router"
+    ],
+    [
+     "python/mlc_llm/router/router.py",
+     70,
+     "start_server"
+    ]
+   ]
+  },
+  {
+   "flag": "enable_tracing",
+   "scanner_mode": "mixed",
+   "scanner_silently_inert": true,
+   "scanner_producers": 0,
+   "verdict": "R1",
+   "note": "CLI→interface→MLCEngine/AsyncMLCEngine→super→EngineState 四跳齐全；CLI serve 有 --enable-tracing",
+   "consumers": [
+    [
+     "python/mlc_llm/serve/sync_engine.py",
+     89,
+     "SyncMLCEngine"
+    ],
+    [
+     "python/mlc_llm/serve/engine_base.py",
+     418,
+     "EngineState"
+    ]
+   ]
+  },
+  {
+   "flag": "no_debug_config",
+   "scanner_mode": null,
+   "scanner_silently_inert": false,
+   "scanner_producers": 0,
+   "verdict": "R5",
+   "note": "bench api_endpoint 内部，生产者是 no_debug_config=True",
+   "consumers": []
+  },
+  {
+   "flag": "with_scale",
+   "scanner_mode": null,
+   "scanner_silently_inert": false,
+   "scanner_producers": 2,
+   "verdict": "R5",
+   "note": "gemma4_audio 内部用例",
+   "consumers": [
+    [
+     "python/mlc_llm/model/gemma4/gemma4_audio.py",
+     19,
+     "Gemma4RMSNorm"
+    ]
+   ]
+  }
+ ],
+ "missing": [],
+ "counts": {
+  "R1": 3,
+  "R2": 0,
+  "R3": 0,
+  "R4": 1,
+  "R5": 3
+ }
+}

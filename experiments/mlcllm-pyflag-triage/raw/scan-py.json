@@ -1,0 +1,214 @@
+{
+ "flags": [
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "disable_instrument",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 4,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "serve",
+     "file": "python/mlc_llm/interface/serve.py",
+     "func": "serve",
+     "line": 24,
+     "param_default": "unspecified"
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "serve",
+     "file": "python/mlc_llm/interface/serve.py",
+     "func": "serve",
+     "line": 24,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "unspecified"
+   ],
+   "flag": "enable_debug",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "python/mlc_llm/cli/serve.py",
+     "how": "keyword",
+     "line": 230
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 18,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_disaggregation",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 8,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "Router",
+     "file": "python/mlc_llm/router/router.py",
+     "func": "__init__",
+     "line": 21,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "start_server",
+     "file": "python/mlc_llm/router/router.py",
+     "func": "start_server",
+     "line": 70,
+     "param_default": "unspecified"
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "Router",
+     "file": "python/mlc_llm/router/router.py",
+     "func": "__init__",
+     "line": 21,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "start_server",
+     "file": "python/mlc_llm/router/router.py",
+     "func": "start_server",
+     "line": 70,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "False",
+    "unspecified"
+   ],
+   "flag": "enable_prefix_cache",
+   "mode": "mixed",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 6,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "SyncMLCEngine",
+     "file": "python/mlc_llm/serve/sync_engine.py",
+     "func": "__init__",
+     "line": 89,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "EngineState",
+     "file": "python/mlc_llm/serve/engine_base.py",
+     "func": "__init__",
+     "line": 418,
+     "param_default": "unspecified"
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "SyncMLCEngine",
+     "file": "python/mlc_llm/serve/sync_engine.py",
+     "func": "__init__",
+     "line": 89,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "EngineState",
+     "file": "python/mlc_llm/serve/engine_base.py",
+     "func": "__init__",
+     "line": 418,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "False",
+    "unspecified"
+   ],
+   "flag": "enable_tracing",
+   "mode": "mixed",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 23,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "no_debug_config",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 4,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "Gemma4RMSNorm",
+     "file": "python/mlc_llm/model/gemma4/gemma4_audio.py",
+     "func": "__init__",
+     "line": 19,
+     "param_default": true
+    }
+   ],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "Gemma4RMSNorm",
+     "file": "python/mlc_llm/model/gemma4/gemma4_audio.py",
+     "func": "__init__",
+     "line": 19,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "with_scale",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "python/mlc_llm/model/gemma4/gemma4_model.py",
+     "how": "keyword",
+     "line": 129
+    },
+    {
+     "file": "python/mlc_llm/model/gemma4/gemma4_audio.py",
+     "how": "keyword",
+     "line": 364
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 6,
+   "silently_inert": false
+  }
+ ],
+ "root": "mlc-llm-probe",
+ "shadowed_arms": []
+}

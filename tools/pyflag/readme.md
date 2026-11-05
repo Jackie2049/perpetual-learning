@@ -342,10 +342,57 @@ python3 scan_cpp_flags.py /path/to/repo [--json <path>] [--min-members N]
 `params.sampling.reasoning_control`，没有 `x.field = ` 这样的形式 ⇒ 扫描器报 `unwritten`，
 实际完全接通。**这是第八类（签名里没有 ≠ 收不到）在 C++ 里的同族问题：绑定 ≠ 赋值。**
 
-### 第十三类：只认 `=` 会漏掉 `++` / `--` / 构造函数初始化列表
+### 第十三类（C++）：只认 `=` 会漏掉 `++` / `--` / 构造函数初始化列表
 
 `req_count++`、`n_attempts++`、`enabled_(enabled)`、`/*.shares_model =*/`（注释名带点号）
 这四种写法在 llama.cpp 里都存在。本批是人工复核补上的，尚未进扫描器默认判据。
+
+### 第十三类（Python 版）：工厂函数被当成消费者（2026-11-05 已修）
+
+**症状**：MLC-LLM `ab90…`/`44fd06d0` 批，`enable_prefix_cache` 被报 `mixed` + `silently_inert=True`，
+`producers_total=0`。翻个案：`python/mlc_llm/interface/router.py:17` 的 `serve()` 被扫成消费者——
+它的函数体里确实**没有** `if enable_prefix_cache:`，可扫描器把"名字出现在函数体里"就算成消费，
+而它出现在 `Router(..., enable_prefix_cache=enable_prefix_cache, ...)` 这个**实参位置**。
+
+**这就是工厂／包装函数的形状**：`serve()` 只是把 CLI 的值原样递给下一跳，决策在 `Router` 里。
+`probe_router_chain.py` 把三处真实源码在 CPU 上跑起来（真 `Router.__init__`、真
+`interface.router.serve`、真 argparse）：`True` → 两台 `PopenServer` 都拿到 `radix`，
+`False` → 都拿到 `disable`，CLI 两档都如实到达 `Router` ⇒ **接线是通的**。
+
+**修法（已进工具）**：
+- 名字作为**某个调用的关键字实参**出现也算消费（否则 `return Cls(f=flag)` 这类"选择"看不见）；
+- 形参只被"传给下游、从不被 `if` / 赋值 / 属性访问读到"的消费者标 `param_default='forwarded'`，
+  数据落 `deciding_consumers` 字段，`silently_inert` 只由**决策者**决定。
+
+**第一版的同类误判（同一批，同一个根）**：反事实注入写成
+`src.replace("enable_prefix_cache=enable_prefix_cache,", "")`，那条字符串同时命中转发行和**签名行**，
+注入后 `Router(...)` 照样收到关键字 ⇒ 探针自己报了 `CHAIN_BROKEN`。是 `--selftest` 的红灯
+暴露的："这是把读的路走成了死路"。⇒ **注入必须只改调用点**（按 AST 定位 `Router(...)` 再删实参）。
+
+**同族：容器键位写入**。`kwargs["enable_disaggregation"] = True` 这种写法原来既不算生产者、
+也不算消费（`If`/`Assign`/属性都不会匹配到它）。现在单独出 `container_writes` 字段**只作线索**，
+**不进 `producers_total`**——字典里写了键不等于下游真读到，判"写了没人读"仍然成立。
+
+### 已跑过的快照（2026-11-05 扩池第五批 + 第六批：llama.cpp C++ 版见上，MLC-LLM）
+
+| 仓库 | 快照 | 统计口径 | 发现开关 | 判为失效 / `unwritten` | 人工结论 |
+|---|---|---|---|---|---|
+| MLC-LLM | `44fd06d04f` | Python `scan_unwired_flags.py` | 7 | 2（修复前）→ **0**（修复后） | 两条都是**工厂转发误判**，见第十三类（Python 版）。真缺陷 0 条 |
+| MLC-LLM | `44fd06d04f` | C++ `scan_cpp_flags.py` | 89 个文件 / 22 个字段 | 1 | `PrefillInput::is_decode`：结构体字段 + hybrid 预填时置 `true` + 三处消费者，**接通** |
+
+扫描耗时：Python **4.0 秒**（415 个 `.py`）、C++ **0.5 秒**（88 个 C/C++ 文件）。
+C++ 侧只有 22 个"有消费者且按它分支"的结构体字段——MLC-LLM 的 C++ 部分是服务层
+（engine / request_state / engine_actions），配置面主要在 Python 与 `mlc-chat-config.json`，
+**C++ 版扫它的信息量本来就低**。
+
+同批另有两个"扫描器看不见但接通"的形状，一并记在这里：
+
+1. **属性包装**：`self.no_debug_config` 被赋值、后面 `if not self.no_debug_config:` 读——
+   消费者是 `__init__`，生产者是构造实参，扫描器看得见，但"读取点"里那条 `self.` 属性读不算消费。
+2. **编译期按模型接**：`PagedKVCache.create_generic(..., enable_disaggregation=...)` ——
+   38 个模型里只有 **3 个**（llama / llama4 / nemotron）显式传，其余 35 个吃形参默认 `False`；
+   `dispatch_kv_cache_creation.py` 里 `kwargs.pop(...)` 再 `kwargs[...] = ...` 的 `kwargs` 是
+   **具名形参**（不是 `**kwargs`），只改这个字典自己。⇒ 不是运行时开关，属设计面。
 
 ## 判定的分量
 
@@ -396,3 +443,19 @@ python3 scan_test_assertions.py <repo_root> [--json]
 rLLM 那个例子里，`test_python_tool` 之所以"过"，恰恰是因为缺陷吞掉了异常——
 **测试不但没覆盖缺陷，还依赖缺陷才通过**。这类"靠 bug 才绿"的测试，比没有测试更危险，
 因为它给出的是**错误的信心**。
+
+## 已跑过的快照（2026-11-05 扩池第六批：MLC-LLM）
+
+见上「第五批 + 第六批」那张表。结论一句话：**7 个开关 / 2 条候选 → 修复后 0 条；
+22 个 C++ 字段 / 1 条候选 → 0 条**。两条 Python 候选都是**工厂转发**误判
+（`interface.router.serve` 把 `enable_prefix_cache` 原样递给 `Router`、
+`interface.serve` 把 `enable_tracing` 递给引擎类），修法见第十三类（Python 版）。
+C++ 那条 `PrefillInput::is_decode` 是**聚合初始化里用注释写的字段名**（第二类写入形态）。
+
+六批合计（Python 统计口径，第一个数是开关数、第二个是 `silently_inert`）：
+SGLang 386→34、vLLM 263→12、TensorRT-LLM 352→35、LMDeploy 38→5、TRL 6→0、
+MLC-LLM 7→2（修复后 0）。C++ 口径：llama.cpp 1636 字段→37、MLC-LLM 22→1。
+**真缺陷合计 4 条**（SGLang 2、vLLM 1、TensorRT-LLM 1），其余全是结构原因或工具盲区。
+读数归档：[scan-mlc-llm-44fd06d04f.json](scan-mlc-llm-44fd06d04f.json)（修复后）、
+[scan-cpp-mlc-llm-44fd06d04f.json](scan-cpp-mlc-llm-44fd06d04f.json)；
+修复前那份在 [experiments/mlcllm-pyflag-triage/raw/scan-py.json](../../experiments/mlcllm-pyflag-triage/raw/scan-py.json)。

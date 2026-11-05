@@ -1,0 +1,60 @@
+{
+ "root": "/tmp/empty-tree",
+ "stubs": [
+  "tvm_ffi.get_global_func",
+  "fastapi.APIRouter",
+  "uvicorn",
+  "EngineConfig",
+  "PopenServer",
+  "Tokenizer",
+  "threading.Thread (真实标准库)"
+ ],
+ "c1": {
+  "source": "snapshot/router/router.py:21",
+  "readings": {
+   "True": {
+    "n_popen_server": 2,
+    "prefix_cache_mode": [
+     "radix",
+     "radix"
+    ],
+    "device": [
+     "cuda:0",
+     "cuda:1"
+    ]
+   },
+   "False": {
+    "n_popen_server": 2,
+    "prefix_cache_mode": [
+     "disable",
+     "disable"
+    ],
+    "device": [
+     "cuda:0",
+     "cuda:1"
+    ]
+   }
+  }
+ },
+ "c2": {
+  "source": "snapshot/interface/router.py:17",
+  "readings": {
+   "True": {
+    "n_router_calls": 1,
+    "router_kwargs_enable_prefix_cache": true
+   },
+   "False": {
+    "n_router_calls": 1,
+    "router_kwargs_enable_prefix_cache": false
+   }
+  }
+ },
+ "c3": {
+  "source": "snapshot/cli/router.py:8",
+  "readings": {
+   "--enable-prefix-cache": true,
+   "<no flag>": false
+  }
+ },
+ "verdict": "WIRED"
+}

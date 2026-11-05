@@ -1,0 +1,1512 @@
+{
+ "fields": [
+  {
+   "consumers": [
+    {
+     "file": "cpp/json_ffi/conv_template.cc",
+     "line": 289
+    }
+   ],
+   "decls": [
+    {
+     "default": "true",
+     "file": "cpp/json_ffi/conv_template.h",
+     "struct": "Conversation"
+    }
+   ],
+   "field": "add_role_after_system_message",
+   "forwarders": [
+    {
+     "file": "tests/cpp/conv_template_unittest.cc",
+     "how": "arg",
+     "line": 60
+    },
+    {
+     "file": "tests/cpp/conv_template_unittest.cc",
+     "how": "arg",
+     "line": 120
+    }
+   ],
+   "n_consumers": 1,
+   "n_forwarders": 2,
+   "n_writers": 1,
+   "unwritten": false,
+   "writers": [
+    {
+     "file": "cpp/json_ffi/conv_template.cc",
+     "how": "assigned",
+     "line": 469
+    }
+   ]
+  },
+  {
+   "consumers": [
+    {
+     "file": "cpp/serve/radix_tree.cc",
+     "line": 205
+    },
+    {
+     "file": "cpp/serve/radix_tree.cc",
+     "line": 206
+    },
+    {
+     "file": "cpp/support/progress_bar.h",
+     "line": 20
+    },
+    {
+     "file": "cpp/support/progress_bar.h",
+     "line": 32
+    }
+   ],
+   "decls": [
+    {
+     "default": null,
+     "file": "cpp/support/progress_bar.h",
+     "struct": "ProgressBar"
+    }
+   ],
+   "field": "cur",
+   "forwarders": [
+    {
+     "file": "cpp/serve/radix_tree.cc",
+     "how": "read-into-assign",
+     "line": 207
+    },
+    {
+     "file": "cpp/serve/radix_tree.cc",
+     "how": "arg",
+     "line": 208
+    },
+    {
+     "file": "cpp/serve/radix_tree.cc",
+     "how": "read-into-assign",
+     "line": 211
+    },
+    {
+     "file": "cpp/support/progress_bar.h",
+     "how": "read-into-assign",
+     "line": 17
+    },
+    {
+     "file": "cpp/support/progress_bar.h",
+     "how": "read-into-assign",
+     "line": 24
+    }
+   ],
+   "n_consumers": 4,
+   "n_forwarders": 5,
+   "n_writers": 2,
+   "unwritten": false,
+   "writers": [
+    {
+     "file": "cpp/serve/radix_tree.cc",
+     "how": "assigned",
+     "line": 204
+    },
+    {
+     "file": "cpp/serve/radix_tree.cc",
+     "how": "assigned",
+     "line": 212
+    }
+   ]
+  },
+  {
+   "consumers": [
+    {
+     "file": "cpp/serve/engine.cc",
+     "line": 410
+    },
+    {
+     "file": "cpp/serve/engine_actions/action_commons.cc",
+     "line": 101
+    },
+    {
+     "file": "cpp/serve/engine_actions/action_commons.cc",
+     "line": 125
+    },
+    {
+     "file": "cpp/serve/engine_actions/action_commons.cc",
+     "line": 349
+    }
+   ],
+   "decls": [
+    {
+     "default": null,
+     "file": "cpp/metadata/model.h",
+     "struct": "ModelMetadata"
+    }
+   ],
+   "field": "disaggregation",
+   "forwarders": [],
+   "n_consumers": 4,
+   "n_forwarders": 0,
+   "n_writers": 2,
+   "unwritten": false,
+   "writers": [
+    {
+     "file": "cpp/metadata/model.cc",
+     "how": "assigned",
+     "line": 96
+    },
+    {
+     "file": "cpp/serve/engine.cc",
+     "how": "assigned",
+     "line": 409
+    }
+   ]
+  },
+  {
+   "consumers": [
+    {
+     "file": "cpp/serve/engine_actions/batch_decode.cc",
+     "line": 257
+    },
+    {
+     "file": "cpp/serve/request_state.cc",
+     "line": 219
+    }
+   ],
+   "decls": [
+    {
+     "default": "false",
+     "file": "cpp/json_ffi/openai_api_protocol.h",
+     "struct": "ChatCompletionRequest"
+    },
+    {
+     "default": "false",
+     "file": "cpp/serve/config.h",
+     "struct": "DebugConfig"
+    }
+   ],
+   "field": "ignore_eos",
+   "forwarders": [
+    {
+     "file": "cpp/serve/config.cc",
+     "how": "arg",
+     "line": 208
+    },
+    {
+     "file": "cpp/serve/request_state.cc",
+     "how": "read-into-assign",
+     "line": 164
+    }
+   ],
+   "n_consumers": 2,
+   "n_forwarders": 2,
+   "n_writers": 1,
+   "unwritten": false,
+   "writers": [
+    {
+     "file": "cpp/serve/config.cc",
+     "how": "assigned",
+     "line": 173
+    }
+   ]
+  },
+  {
+   "consumers": [
+    {
+     "file": "cpp/support/dynamic_bitset.h",
+     "line": 90
+    },
+    {
+     "file": "cpp/support/dynamic_bitset.h",
+     "line": 105
+    }
+   ],
+   "decls": [
+    {
+     "default": null,
+     "file": "cpp/json_ffi/openai_api_protocol.h",
+     "struct": "ChatCompletionResponseChoice"
+    },
+    {
+     "default": null,
+     "file": "cpp/json_ffi/openai_api_protocol.h",
+     "struct": "ChatCompletionStreamResponseChoice"
+    }
+   ],
+   "field": "index",
+   "forwarders": [
+    {
+     "file": "cpp/json_ffi/openai_api_protocol.cc",
+     "how": "arg",
+     "line": 480
+    },
+    {
+     "file": "cpp/json_ffi/openai_api_protocol.cc",
+     "how": "arg",
+     "line": 501
+    },
+    {
+     "file": "cpp/support/dynamic_bitset.h",
+     "how": "arg",
+     "line": 120
+    },
+    {
+     "file": "cpp/support/json_parser.h",
+     "how": "read-into-assign",
+     "line": 245
+    },
+    {
+     "file": "cpp/support/json_parser.h",
+     "how": "arg",
+     "line": 258
+    },
+    {
+     "file": "cpp/support/json_parser.h",
+     "how": "arg",
+     "line": 277
+    }
+   ],
+   "n_consumers": 2,
+   "n_forwarders": 6,
+   "n_writers": 2,
+   "unwritten": false,
+   "writers": [
+    {
+     "file": "cpp/json_ffi/json_ffi_engine.cc",
+     "how": "assigned",
+     "line": 41
+    },
+    {
+     "file": "cpp/json_ffi/json_ffi_engine.cc",
+     "how": "assigned",
+     "line": 275
+    }
+   ]
+  },
+  {
+   "consumers": [
+    {
+     "file": "cpp/serve/engine_actions/disagg_prepare_recv.cc",
+     "line": 113
+    },
+    {
+     "file": "cpp/serve/engine_actions/disagg_remote_send.cc",
+     "line": 115
+    },
+    {
+     "file": "cpp/serve/engine_actions/new_request_prefill.cc",
+     "line": 107
+    }
+   ],
+   "decls": [
+    {
+     "default": "false",
+     "file": "cpp/serve/engine_actions/batch_prefill_base.h",
+     "struct": "PrefillInput"
+    }
+   ],
+   "field": "is_decode",
+   "forwarders": [],
+   "n_consumers": 3,
+   "n_forwarders": 0,
+   "n_writers": 0,
+   "unwritten": true,
+   "writers": []
+  },
+  {
+   "consumers": [
+    {
+     "file": "cpp/support/dynamic_bitset.h",
+     "line": 59
+    },
+    {
+     "file": "cpp/support/dynamic_bitset.h",
+     "line": 64
+    },
+    {
+     "file": "cpp/support/dynamic_bitset.h",
+     "line": 79
+    }
+   ],
+   "decls": [
+    {
+     "default": null,
+     "file": "cpp/support/dynamic_bitset.h",
+     "struct": "DynamicBitset"
+    }
+   ],
+   "field": "is_internal_",
+   "forwarders": [],
+   "n_consumers": 3,
+   "n_forwarders": 0,
+   "n_writers": 3,
+   "unwritten": false,
+   "writers": [
+    {
+     "file": "cpp/support/dynamic_bitset.h",
+     "how": "assigned",
+     "line": 50
+    },
+    {
+     "file": "cpp/support/dynamic_bitset.h",
+     "how": "assigned",
+     "line": 53
+    },
+    {
+     "file": "cpp/support/dynamic_bitset.h",
+     "how": "assigned",
+     "line": 78
+    }
+   ]
+  },
+  {
+   "consumers": [
+    {
+     "file": "cpp/serve/config.cc",
+     "line": 256
+    },
+    {
+     "file": "cpp/serve/engine_actions/batch_jumpforward.cc",
+     "line": 114
+    },
+    {
+     "file": "cpp/serve/request_state.cc",
+     "line": 282
+    }
+   ],
+   "decls": [
+    {
+     "default": "false",
+     "file": "cpp/json_ffi/openai_api_protocol.h",
+     "struct": "ChatCompletionRequest"
+    }
+   ],
+   "field": "logprobs",
+   "forwarders": [
+    {
+     "file": "cpp/serve/config.cc",
+     "how": "arg",
+     "line": 385
+    }
+   ],
+   "n_consumers": 3,
+   "n_forwarders": 1,
+   "n_writers": 3,
+   "unwritten": false,
+   "writers": [
+    {
+     "file": "cpp/json_ffi/json_ffi_engine.cc",
+     "how": "assigned",
+     "line": 111
+    },
+    {
+     "file": "cpp/serve/config.cc",
+     "how": "assigned",
+     "line": 282
+    },
+    {
+     "file": "cpp/serve/engine_actions/batch_draft.cc",
+     "how": "assigned",
+     "line": 200
+    }
+   ]
+  },
+  {
+   "consumers": [
+    {
+     "file": "cpp/serve/engine_actions/batch_prefill_base.cc",
+     "line": 340
+    },
+    {
+     "file": "cpp/serve/engine_actions/batch_prefill_base.cc",
+     "line": 345
+    }
+   ],
+   "decls": [
+    {
+     "default": null,
+     "file": "cpp/serve/engine_actions/batch_prefill_base.h",
+     "struct": "PrefillInput"
+    }
+   ],
+   "field": "max_prefill_length",
+   "forwarders": [
+    {
+     "file": "cpp/serve/engine_actions/batch_prefill_base.cc",
+     "how": "read-into-assign",
+     "line": 373
+    },
+    {
+     "file": "cpp/serve/engine_actions/disagg_prepare_recv.cc",
+     "how": "read-into-assign",
+     "line": 83
+    },
+    {
+     "file": "cpp/serve/engine_actions/disagg_prepare_recv.cc",
+     "how": "arg",
+     "line": 420
+    },
+    {
+     "file": "cpp/serve/engine_actions/disagg_remote_send.cc",
+     "how": "arg",
+     "line": 472
+    },
+    {
+     "file": "cpp/serve/engine_actions/eagle_new_request_prefill.cc",
+     "how": "arg",
+     "line": 478
+    },
+    {
+     "file": "cpp/serve/engine_actions/new_request_prefill.cc",
+     "how": "arg",
+     "line": 350
+    }
+   ],
+   "n_consumers": 2,
+   "n_forwarders": 6,
+   "n_writers": 6,
+   "unwritten": false,
+   "writers": [
+    {
+     "file": "cpp/serve/engine_actions/batch_prefill_base.cc",
+     "how": "assigned",
+     "line": 257
+    },
+    {
+     "file": "cpp/serve/engine_actions/disagg_prepare_recv.cc",
+     "how": "assigned",
+     "line": 419
+    },
+    {
+     "file": "cpp/serve/engine_actions/disagg_remote_send.cc",
+     "how": "assigned",
+     "line": 365
+    },
+    {
+     "file": "cpp/serve/engine_actions/disagg_remote_send.cc",
+     "how": "assigned",
+     "line": 471
+    },
+    {
+     "file": "cpp/serve/engine_actions/eagle_new_request_prefill.cc",
+     "how": "assigned",
+     "line": 477
+    },
+    {
+     "file": "cpp/serve/engine_actions/new_request_prefill.cc",
+     "how": "assigned",
+     "line": 349
+    }
+   ]
+  },
+  {
+   "consumers": [
+    {
+     "file": "cpp/serve/config.cc",
+     "line": 238
+    },
+    {
+     "file": "cpp/serve/engine.cc",
+     "line": 410
+    },
+    {
+     "file": "cpp/serve/engine.cc",
+     "line": 626
+    },
+    {
+     "file": "cpp/serve/engine.cc",
+     "line": 706
+    },
+    {
+     "file": "cpp/serve/engine_actions/action_commons.cc",
+     "line": 260
+    },
+    {
+     "file": "cpp/serve/request_state.cc",
+     "line": 282
+    },
+    {
+     "file": "cpp/tokenizers/tokenizers.cc",
+     "line": 257
+    },
+    {
+     "file": "cpp/tokenizers/tokenizers.cc",
+     "line": 262
+    },
+    {
+     "file": "cpp/tokenizers/tokenizers.cc",
+     "line": 304
+    },
+    {
+     "file": "cpp/tokenizers/tokenizers.cc",
+     "line": 346
+    }
+   ],
+   "decls": [
+    {
+     "default": null,
+     "file": "cpp/json_ffi/openai_api_protocol.h",
+     "struct": "ChatCompletionRequest"
+    }
+   ],
+   "field": "n",
+   "forwarders": [
+    {
+     "file": "cpp/json_ffi/json_ffi_engine.cc",
+     "how": "arg",
+     "line": 132
+    },
+    {
+     "file": "cpp/json_ffi/json_ffi_engine.cc",
+     "how": "read-into-assign",
+     "line": 133
+    },
+    {
+     "file": "cpp/metadata/model.cc",
+     "how": "read-into-assign",
+     "line": 122
+    },
+    {
+     "file": "cpp/serve/config.cc",
+     "how": "arg",
+     "line": 361
+    },
+    {
+     "file": "cpp/serve/config.cc",
+     "how": "read-into-assign",
+     "line": 368
+    },
+    {
+     "file": "cpp/serve/config.cc",
+     "how": "read-into-assign",
+     "line": 369
+    },
+    {
+     "file": "cpp/serve/config.cc",
+     "how": "arg",
+     "line": 374
+    },
+    {
+     "file": "cpp/serve/config.cc",
+     "how": "arg",
+     "line": 379
+    },
+    {
+     "file": "cpp/serve/config.cc",
+     "how": "read-into-assign",
+     "line": 463
+    },
+    {
+     "file": "cpp/serve/config.cc",
+     "how": "arg",
+     "line": 478
+    },
+    {
+     "file": "cpp/serve/data.cc",
+     "how": "read-into-assign",
+     "line": 82
+    },
+    {
+     "file": "cpp/serve/data.cc",
+     "how": "read-into-assign",
+     "line": 107
+    },
+    {
+     "file": "cpp/serve/data.cc",
+     "how": "read-into-assign",
+     "line": 113
+    },
+    {
+     "file": "cpp/serve/data.cc",
+     "how": "read-into-assign",
+     "line": 143
+    },
+    {
+     "file": "cpp/serve/data.cc",
+     "how": "read-into-assign",
+     "line": 236
+    },
+    {
+     "file": "cpp/serve/data.cc",
+     "how": "arg",
+     "line": 244
+    },
+    {
+     "file": "cpp/serve/engine.cc",
+     "how": "arg",
+     "line": 185
+    },
+    {
+     "file": "cpp/serve/engine.cc",
+     "how": "read-into-assign",
+     "line": 409
+    },
+    {
+     "file": "cpp/serve/engine.cc",
+     "how": "read-into-assign",
+     "line": 437
+    },
+    {
+     "file": "cpp/serve/engine.cc",
+     "how": "read-into-assign",
+     "line": 470
+    }
+   ],
+   "n_consumers": 10,
+   "n_forwarders": 49,
+   "n_writers": 27,
+   "unwritten": false,
+   "writers": [
+    {
+     "file": "cpp/json_ffi/json_ffi_engine.cc",
+     "how": "assigned",
+     "line": 105
+    },
+    {
+     "file": "cpp/json_ffi/openai_api_protocol.cc",
+     "how": "assigned",
+     "line": 327
+    },
+    {
+     "file": "cpp/serve/config.cc",
+     "how": "assigned",
+     "line": 271
+    },
+    {
+     "file": "cpp/serve/config.cc",
+     "how": "assigned",
+     "line": 272
+    },
+    {
+     "file": "cpp/serve/config.cc",
+     "how": "assigned",
+     "line": 366
+    },
+    {
+     "file": "cpp/serve/config.cc",
+     "how": "assigned",
+     "line": 428
+    },
+    {
+     "file": "cpp/serve/data.cc",
+     "how": "assigned",
+     "line": 80
+    },
+    {
+     "file": "cpp/serve/data.cc",
+     "how": "assigned",
+     "line": 105
+    },
+    {
+     "file": "cpp/serve/data.cc",
+     "how": "assigned",
+     "line": 111
+    },
+    {
+     "file": "cpp/serve/data.cc",
+     "how": "assigned",
+     "line": 140
+    },
+    {
+     "file": "cpp/serve/data.cc",
+     "how": "assigned",
+     "line": 230
+    },
+    {
+     "file": "cpp/serve/data.cc",
+     "how": "assigned",
+     "line": 241
+    },
+    {
+     "file": "cpp/serve/engine.cc",
+     "how": "assigned",
+     "line": 179
+    },
+    {
+     "file": "cpp/serve/engine.cc",
+     "how": "assigned",
+     "line": 355
+    },
+    {
+     "file": "cpp/serve/engine.cc",
+     "how": "assigned",
+     "line": 589
+    },
+    {
+     "file": "cpp/serve/engine.cc",
+     "how": "assigned",
+     "line": 899
+    },
+    {
+     "file": "cpp/serve/prefix_cache.cc",
+     "how": "assigned",
+     "line": 430
+    },
+    {
+     "file": "cpp/serve/prefix_cache.cc",
+     "how": "assigned",
+     "line": 436
+    },
+    {
+     "file": "cpp/serve/radix_tree.cc",
+     "how": "assigned",
+     "line": 342
+    },
+    {
+     "file": "cpp/serve/request.cc",
+     "how": "assigned",
+     "line": 39
+    }
+   ]
+  },
+  {
+   "consumers": [
+    {
+     "file": "cpp/serve/engine_actions/batch_prefill_base.cc",
+     "line": 157
+    },
+    {
+     "file": "cpp/serve/engine_actions/disagg_prepare_recv.cc",
+     "line": 290
+    },
+    {
+     "file": "cpp/serve/engine_actions/disagg_remote_send.cc",
+     "line": 278
+    }
+   ],
+   "decls": [
+    {
+     "default": null,
+     "file": "cpp/serve/engine_actions/batch_prefill_base.h",
+     "struct": "PrefillInput"
+    }
+   ],
+   "field": "num_child_to_activate",
+   "forwarders": [
+    {
+     "file": "cpp/serve/engine_actions/batch_prefill_base.cc",
+     "how": "arg",
+     "line": 162
+    },
+    {
+     "file": "cpp/serve/engine_actions/disagg_prepare_recv.cc",
+     "how": "read-into-assign",
+     "line": 293
+    },
+    {
+     "file": "cpp/serve/engine_actions/disagg_remote_send.cc",
+     "how": "arg",
+     "line": 283
+    },
+    {
+     "file": "cpp/serve/engine_actions/eagle_new_request_prefill.cc",
+     "how": "read-into-assign",
+     "line": 222
+    },
+    {
+     "file": "cpp/serve/engine_actions/new_request_prefill.cc",
+     "how": "read-into-assign",
+     "line": 199
+    }
+   ],
+   "n_consumers": 3,
+   "n_forwarders": 5,
+   "n_writers": 4,
+   "unwritten": false,
+   "writers": [
+    {
+     "file": "cpp/serve/engine_actions/batch_prefill_base.cc",
+     "how": "assigned",
+     "line": 250
+    },
+    {
+     "file": "cpp/serve/engine_actions/batch_prefill_base.cc",
+     "how": "assigned",
+     "line": 260
+    },
+    {
+     "file": "cpp/serve/engine_actions/disagg_remote_send.cc",
+     "how": "assigned",
+     "line": 358
+    },
+    {
+     "file": "cpp/serve/engine_actions/disagg_remote_send.cc",
+     "how": "assigned",
+     "line": 368
+    }
+   ]
+  },
+  {
+   "consumers": [
+    {
+     "file": "cpp/serve/engine_actions/action_commons.cc",
+     "line": 163
+    }
+   ],
+   "decls": [
+    {
+     "default": "false",
+     "file": "cpp/serve/config.h",
+     "struct": "DebugConfig"
+    }
+   ],
+   "field": "pinned_system_prompt",
+   "forwarders": [
+    {
+     "file": "cpp/serve/config.cc",
+     "how": "arg",
+     "line": 209
+    }
+   ],
+   "n_consumers": 1,
+   "n_forwarders": 1,
+   "n_writers": 1,
+   "unwritten": false,
+   "writers": [
+    {
+     "file": "cpp/serve/config.cc",
+     "how": "assigned",
+     "line": 174
+    }
+   ]
+  },
+  {
+   "consumers": [
+    {
+     "file": "cpp/metadata/model.cc",
+     "line": 49
+    }
+   ],
+   "decls": [
+    {
+     "default": null,
+     "file": "cpp/json_ffi/conv_template.h",
+     "struct": "ModelConfig"
+    }
+   ],
+   "field": "pipeline_parallel_stages",
+   "forwarders": [
+    {
+     "file": "cpp/serve/model.cc",
+     "how": "read-into-assign",
+     "line": 75
+    }
+   ],
+   "n_consumers": 1,
+   "n_forwarders": 1,
+   "n_writers": 2,
+   "unwritten": false,
+   "writers": [
+    {
+     "file": "cpp/json_ffi/conv_template.cc",
+     "how": "assigned",
+     "line": 120
+    },
+    {
+     "file": "cpp/metadata/model.cc",
+     "how": "assigned",
+     "line": 94
+    }
+   ]
+  },
+  {
+   "consumers": [
+    {
+     "file": "cpp/serve/config.cc",
+     "line": 785
+    },
+    {
+     "file": "cpp/serve/config.cc",
+     "line": 926
+    },
+    {
+     "file": "cpp/serve/engine_actions/batch_draft.cc",
+     "line": 139
+    },
+    {
+     "file": "cpp/serve/engine_actions/batch_draft.cc",
+     "line": 361
+    },
+    {
+     "file": "cpp/serve/engine_actions/batch_prefill_base.cc",
+     "line": 177
+    },
+    {
+     "file": "cpp/serve/engine_actions/batch_prefill_base.cc",
+     "line": 299
+    },
+    {
+     "file": "cpp/serve/engine_actions/disagg_remote_send.cc",
+     "line": 298
+    }
+   ],
+   "decls": [
+    {
+     "default": null,
+     "file": "cpp/json_ffi/conv_template.h",
+     "struct": "ModelConfig"
+    }
+   ],
+   "field": "prefill_chunk_size",
+   "forwarders": [
+    {
+     "file": "cpp/serve/config.cc",
+     "how": "arg",
+     "line": 533
+    },
+    {
+     "file": "cpp/serve/config.cc",
+     "how": "read-into-assign",
+     "line": 604
+    },
+    {
+     "file": "cpp/serve/engine.cc",
+     "how": "arg",
+     "line": 460
+    },
+    {
+     "file": "cpp/serve/engine.cc",
+     "how": "arg",
+     "line": 921
+    },
+    {
+     "file": "cpp/serve/engine_actions/batch_draft.cc",
+     "how": "arg",
+     "line": 212
+    },
+    {
+     "file": "cpp/serve/engine_actions/batch_draft.cc",
+     "how": "arg",
+     "line": 324
+    },
+    {
+     "file": "cpp/serve/engine_actions/batch_prefill_base.cc",
+     "how": "arg",
+     "line": 176
+    },
+    {
+     "file": "cpp/serve/engine_actions/batch_prefill_base.cc",
+     "how": "read-into-assign",
+     "line": 188
+    },
+    {
+     "file": "cpp/serve/engine_actions/disagg_remote_send.cc",
+     "how": "arg",
+     "line": 297
+    },
+    {
+     "file": "cpp/serve/engine_actions/disagg_remote_send.cc",
+     "how": "read-into-assign",
+     "line": 308
+    },
+    {
+     "file": "cpp/serve/model.cc",
+     "how": "read-into-assign",
+     "line": 1066
+    }
+   ],
+   "n_consumers": 7,
+   "n_forwarders": 11,
+   "n_writers": 11,
+   "unwritten": false,
+   "writers": [
+    {
+     "file": "cpp/json_ffi/conv_template.cc",
+     "how": "assigned",
+     "line": 108
+    },
+    {
+     "file": "cpp/metadata/model.cc",
+     "how": "assigned",
+     "line": 83
+    },
+    {
+     "file": "cpp/serve/config.cc",
+     "how": "assigned",
+     "line": 471
+    },
+    {
+     "file": "cpp/serve/config.cc",
+     "how": "assigned",
+     "line": 698
+    },
+    {
+     "file": "cpp/serve/config.cc",
+     "how": "assigned",
+     "line": 787
+    },
+    {
+     "file": "cpp/serve/config.cc",
+     "how": "assigned",
+     "line": 792
+    },
+    {
+     "file": "cpp/serve/config.cc",
+     "how": "assigned",
+     "line": 927
+    },
+    {
+     "file": "cpp/serve/config.cc",
+     "how": "assigned",
+     "line": 997
+    },
+    {
+     "file": "cpp/serve/config.h",
+     "how": "assigned",
+     "line": 280
+    },
+    {
+     "file": "cpp/serve/engine.cc",
+     "how": "assigned",
+     "line": 169
+    },
+    {
+     "file": "cpp/serve/engine.cc",
+     "how": "assigned",
+     "line": 914
+    }
+   ]
+  },
+  {
+   "consumers": [
+    {
+     "file": "cpp/support/dynamic_bitset.h",
+     "line": 59
+    },
+    {
+     "file": "cpp/support/dynamic_bitset.h",
+     "line": 90
+    },
+    {
+     "file": "cpp/support/dynamic_bitset.h",
+     "line": 105
+    }
+   ],
+   "decls": [
+    {
+     "default": null,
+     "file": "cpp/support/dynamic_bitset.h",
+     "struct": "DynamicBitset"
+    }
+   ],
+   "field": "size_",
+   "forwarders": [],
+   "n_consumers": 3,
+   "n_forwarders": 0,
+   "n_writers": 2,
+   "unwritten": false,
+   "writers": [
+    {
+     "file": "cpp/support/dynamic_bitset.h",
+     "how": "assigned",
+     "line": 62
+    },
+    {
+     "file": "cpp/support/dynamic_bitset.h",
+     "how": "assigned",
+     "line": 76
+    }
+   ]
+  },
+  {
+   "consumers": [
+    {
+     "file": "cpp/serve/function_table.cc",
+     "line": 240
+    },
+    {
+     "file": "cpp/serve/prefix_cache.cc",
+     "line": 72
+    }
+   ],
+   "decls": [
+    {
+     "default": null,
+     "file": "cpp/json_ffi/conv_template.h",
+     "struct": "ModelConfig"
+    }
+   ],
+   "field": "sliding_window_size",
+   "forwarders": [
+    {
+     "file": "cpp/serve/prefix_cache.cc",
+     "how": "arg",
+     "line": 51
+    }
+   ],
+   "n_consumers": 2,
+   "n_forwarders": 1,
+   "n_writers": 3,
+   "unwritten": false,
+   "writers": [
+    {
+     "file": "cpp/json_ffi/conv_template.cc",
+     "how": "assigned",
+     "line": 102
+    },
+    {
+     "file": "cpp/metadata/model.cc",
+     "how": "assigned",
+     "line": 86
+    },
+    {
+     "file": "cpp/metadata/model.cc",
+     "how": "assigned",
+     "line": 88
+    }
+   ]
+  },
+  {
+   "consumers": [
+    {
+     "file": "cpp/json_ffi/conv_template.cc",
+     "line": 362
+    }
+   ],
+   "decls": [
+    {
+     "default": "false",
+     "file": "cpp/json_ffi/conv_template.h",
+     "struct": "Conversation"
+    }
+   ],
+   "field": "strip_reasoning_in_history",
+   "forwarders": [],
+   "n_consumers": 1,
+   "n_forwarders": 0,
+   "n_writers": 1,
+   "unwritten": false,
+   "writers": [
+    {
+     "file": "cpp/json_ffi/conv_template.cc",
+     "how": "assigned",
+     "line": 604
+    }
+   ]
+  },
+  {
+   "consumers": [
+    {
+     "file": "cpp/serve/config.cc",
+     "line": 253
+    },
+    {
+     "file": "cpp/serve/config.cc",
+     "line": 256
+    }
+   ],
+   "decls": [
+    {
+     "default": null,
+     "file": "cpp/json_ffi/openai_api_protocol.h",
+     "struct": "ChatCompletionRequest"
+    }
+   ],
+   "field": "top_logprobs",
+   "forwarders": [
+    {
+     "file": "cpp/serve/config.cc",
+     "how": "arg",
+     "line": 284
+    },
+    {
+     "file": "cpp/serve/config.cc",
+     "how": "arg",
+     "line": 386
+    },
+    {
+     "file": "cpp/serve/sampler/gpu_sampler.cc",
+     "how": "read-into-assign",
+     "line": 570
+    }
+   ],
+   "n_consumers": 2,
+   "n_forwarders": 3,
+   "n_writers": 3,
+   "unwritten": false,
+   "writers": [
+    {
+     "file": "cpp/json_ffi/json_ffi_engine.cc",
+     "how": "assigned",
+     "line": 112
+    },
+    {
+     "file": "cpp/serve/config.cc",
+     "how": "assigned",
+     "line": 283
+    },
+    {
+     "file": "cpp/serve/engine_actions/batch_draft.cc",
+     "how": "assigned",
+     "line": 199
+    }
+   ]
+  },
+  {
+   "consumers": [
+    {
+     "file": "cpp/support/progress_bar.h",
+     "line": 20
+    },
+    {
+     "file": "cpp/support/progress_bar.h",
+     "line": 32
+    }
+   ],
+   "decls": [
+    {
+     "default": null,
+     "file": "cpp/support/progress_bar.h",
+     "struct": "ProgressBar"
+    }
+   ],
+   "field": "total",
+   "forwarders": [
+    {
+     "file": "cpp/support/progress_bar.h",
+     "how": "read-into-assign",
+     "line": 17
+    },
+    {
+     "file": "cpp/support/progress_bar.h",
+     "how": "read-into-assign",
+     "line": 24
+    }
+   ],
+   "n_consumers": 2,
+   "n_forwarders": 2,
+   "n_writers": 0,
+   "unwritten": false,
+   "writers": []
+  },
+  {
+   "consumers": [
+    {
+     "file": "cpp/serve/function_table.cc",
+     "line": 154
+    },
+    {
+     "file": "cpp/serve/function_table.cc",
+     "line": 224
+    },
+    {
+     "file": "cpp/serve/function_table.cc",
+     "line": 288
+    },
+    {
+     "file": "cpp/serve/function_table.cc",
+     "line": 301
+    },
+    {
+     "file": "cpp/serve/function_table.cc",
+     "line": 314
+    },
+    {
+     "file": "cpp/serve/function_table.cc",
+     "line": 357
+    },
+    {
+     "file": "cpp/serve/function_table.cc",
+     "line": 364
+    },
+    {
+     "file": "cpp/serve/model.cc",
+     "line": 165
+    },
+    {
+     "file": "cpp/serve/model.cc",
+     "line": 176
+    },
+    {
+     "file": "cpp/serve/model.cc",
+     "line": 193
+    },
+    {
+     "file": "cpp/serve/model.cc",
+     "line": 221
+    },
+    {
+     "file": "cpp/serve/model.cc",
+     "line": 234
+    },
+    {
+     "file": "cpp/serve/model.cc",
+     "line": 352
+    },
+    {
+     "file": "cpp/serve/model.cc",
+     "line": 398
+    },
+    {
+     "file": "cpp/serve/model.cc",
+     "line": 458
+    },
+    {
+     "file": "cpp/serve/model.cc",
+     "line": 528
+    },
+    {
+     "file": "cpp/serve/model.cc",
+     "line": 614
+    },
+    {
+     "file": "cpp/serve/model.cc",
+     "line": 693
+    },
+    {
+     "file": "cpp/serve/model.cc",
+     "line": 770
+    },
+    {
+     "file": "cpp/serve/model.cc",
+     "line": 869
+    }
+   ],
+   "decls": [
+    {
+     "default": "false",
+     "file": "cpp/serve/function_table.h",
+     "struct": "FunctionTable"
+    }
+   ],
+   "field": "use_disco",
+   "forwarders": [
+    {
+     "file": "cpp/serve/model.cc",
+     "how": "read-into-assign",
+     "line": 897
+    },
+    {
+     "file": "cpp/serve/model.cc",
+     "how": "read-into-assign",
+     "line": 906
+    },
+    {
+     "file": "cpp/serve/model.cc",
+     "how": "read-into-assign",
+     "line": 920
+    }
+   ],
+   "n_consumers": 25,
+   "n_forwarders": 3,
+   "n_writers": 2,
+   "unwritten": false,
+   "writers": [
+    {
+     "file": "cpp/serve/function_table.cc",
+     "how": "assigned",
+     "line": 76
+    },
+    {
+     "file": "cpp/serve/function_table.cc",
+     "how": "assigned",
+     "line": 129
+    }
+   ]
+  },
+  {
+   "consumers": [
+    {
+     "file": "cpp/serve/metrics.h",
+     "line": 38
+    }
+   ],
+   "decls": [
+    {
+     "default": "false",
+     "file": "cpp/serve/metrics.h",
+     "struct": "TimeCost"
+    }
+   ],
+   "field": "warmed_up",
+   "forwarders": [],
+   "n_consumers": 1,
+   "n_forwarders": 0,
+   "n_writers": 1,
+   "unwritten": false,
+   "writers": [
+    {
+     "file": "cpp/serve/metrics.h",
+     "how": "assigned",
+     "line": 42
+    }
+   ]
+  },
+  {
+   "consumers": [
+    {
+     "file": "cpp/json_ffi/image_utils.cc",
+     "line": 34
+    },
+    {
+     "file": "cpp/json_ffi/image_utils.cc",
+     "line": 35
+    },
+    {
+     "file": "cpp/json_ffi/image_utils.cc",
+     "line": 38
+    },
+    {
+     "file": "cpp/json_ffi/image_utils.cc",
+     "line": 39
+    }
+   ],
+   "decls": [
+    {
+     "default": null,
+     "file": "cpp/support/progress_bar.h",
+     "struct": "ProgressBar"
+    }
+   ],
+   "field": "width",
+   "forwarders": [
+    {
+     "file": "cpp/json_ffi/image_utils.cc",
+     "how": "read-into-assign",
+     "line": 24
+    },
+    {
+     "file": "cpp/json_ffi/image_utils.cc",
+     "how": "read-into-assign",
+     "line": 46
+    },
+    {
+     "file": "cpp/json_ffi/image_utils.cc",
+     "how": "read-into-assign",
+     "line": 55
+    },
+    {
+     "file": "cpp/json_ffi/image_utils.cc",
+     "how": "read-into-assign",
+     "line": 56
+    },
+    {
+     "file": "cpp/json_ffi/image_utils.cc",
+     "how": "read-into-assign",
+     "line": 57
+    },
+    {
+     "file": "cpp/json_ffi/image_utils.cc",
+     "how": "read-into-assign",
+     "line": 58
+    },
+    {
+     "file": "cpp/support/encoding.cc",
+     "how": "arg",
+     "line": 63
+    },
+    {
+     "file": "cpp/support/progress_bar.h",
+     "how": "read-into-assign",
+     "line": 23
+    },
+    {
+     "file": "cpp/support/vlm_utils.cc",
+     "how": "read-into-assign",
+     "line": 20
+    }
+   ],
+   "n_consumers": 4,
+   "n_forwarders": 9,
+   "n_writers": 0,
+   "unwritten": false,
+   "writers": []
+  }
+ ],
+ "files": 89,
+ "min_members": 1,
+ "root": "/tmp/mlc-llm-probe"
+}

@@ -1,0 +1,111 @@
+{
+ "snapshot": "44fd06d04f22c87820e205b0f2b2e5e6a1f6ca85",
+ "checks": [
+  {
+   "name": "S0 snapshot is 44fd06d0",
+   "ok": true,
+   "detail": "44fd06d04f22c87820e205b0f2b2e5e6a1f6ca85"
+  },
+  {
+   "name": "S0b tree is clean",
+   "ok": true,
+   "detail": "(clean)"
+  },
+  {
+   "name": "F1a CLI 声明 --enable-prefix-cache",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "F1b CLI 把它交给 serve()",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "F1c interface.serve 把它递给 Router()",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "F1d Router 用它决定 prefix_cache_mode",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "F1e 文档也在教这个参数",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "F2a CLI 声明 --enable-tracing",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "F2b interface.serve 接收并下传",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "F2c MLCEngine 转给 super()",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "F2d EngineState 真消费",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "F2e sync_engine 直接决定 trace_recorder",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "F3a 恰好 3 个模型显式传",
+   "ok": true,
+   "detail": "3"
+  },
+  {
+   "name": "F3b 其余 35 个省略",
+   "ok": true,
+   "detail": "35"
+  },
+  {
+   "name": "F3c C++ 侧真的按它分支",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "F3d dispatch 的 kwargs 是具名形参",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "F4a gsm8k --disable_cot 有生产者",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "F4b debug_chat --disable-instrument 有生产者",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "F5a 字段声明",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "F5b hybrid 模式下写 true",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "F5c 三个消费者",
+   "ok": true,
+   "detail": ""
+  }
+ ],
+ "failed": []
+}

@@ -269,6 +269,13 @@ def scan_many(root, flags):
                     for sub in ast.walk(node.test):
                         if isinstance(sub, ast.Name):
                             branched.add(sub.id)
+            # 名字作为**某个调用的关键字实参**出现也算被消费（`return Cls(f=flag)`），
+            # 否则"工厂"与"在分支里真用"分不开：`serve()` 靠这条才被判成转发。
+            for node in ast.walk(fn):
+                if isinstance(node, ast.Call):
+                    for k in node.keywords:
+                        if k.arg and isinstance(k.value, ast.Name):
+                            branched.add(k.value.id)
             cls = _enclosing_class(fn)
             call_name = cls if (fn.name == '__init__' and cls) else fn.name
             # 记录该形参的默认值：默认 False ⇒ 不传就是不启用（静默失效）
@@ -284,7 +291,7 @@ def scan_many(root, flags):
                 if isinstance(d, ast.Constant):
                     param_defaults[a.arg] = d.value
             defs.append((rel, fn.name, call_name, params, branched - rebound, fn.lineno,
-                         param_defaults))
+                         param_defaults, _forwarded_params(fn)))
         for node in ast.walk(tree):
             if not isinstance(node, ast.Call):
                 continue
@@ -298,7 +305,7 @@ def scan_many(root, flags):
 
     def sig_by_name():
         d = defaultdict(list)
-        for rel, _fn, call_name, params, _b, _l, _dflts in defs:
+        for rel, _fn, call_name, params, _b, _l, _dflts, _fwd in defs:
             d[call_name].append(params)
         return d
 
@@ -308,8 +315,10 @@ def scan_many(root, flags):
     for flag in flags:
         consumers = [{'file': rel, 'func': fn, 'call_name': cn, 'line': ln,
                       'branches_on_flag': 1,
-                      'param_default': dflts.get(flag, 'unspecified')}
-                     for (rel, fn, cn, params, branched, ln, dflts) in defs if flag in branched]
+                      'param_default': ('forwarded' if flag in fwd else
+                                        dflts.get(flag, 'unspecified'))}
+                     for (rel, fn, cn, params, branched, ln, dflts, fwd) in defs
+                     if flag in branched]
         names = {c['call_name'] for c in consumers}
         prods = []
         for rel, name, kw, nargs, line in calls:
@@ -326,8 +335,11 @@ def scan_many(root, flags):
                     for ln in lines if flag in ln and not ln.lstrip().startswith('#'))
         consumers = [c for c in consumers if not is_test_path(c['file'])]
         prods = [p for p in prods if not is_test_path(p['file'])]
-        inert = (len(consumers) > 0 and len(prods) == 0)
-        defaults = {c['param_default'] for c in consumers}
+        # 分两档（本批加）：消费者把形参**原样转给下一跳**时不构成"静默失效"——
+        # 工厂／包装函数都长这样，决策在下一跳。见 readme 第十三类易错点。
+        deciders = [c for c in consumers if c.get('param_default') != 'forwarded']
+        inert = (len(deciders) > 0 and len(prods) == 0)
+        defaults = {c['param_default'] for c in deciders}
         # 默认 False 且无人传 ⇒ 该分支永不执行（静默失效）
         # 默认 True  且无人传 ⇒ 该分支总是执行（静默生效，属另一类问题）
         mode = None
@@ -337,12 +349,68 @@ def scan_many(root, flags):
                     else 'mixed')
         report['flags'].append({
             'flag': flag, 'reads_nontest': reads,
-            'consumers_nontest': consumers, 'deciding_consumers': consumers,
+            'consumers_nontest': consumers, 'deciding_consumers': deciders,
             'producers_total': len(prods), 'producers_nontest': prods,
             'silently_inert': inert, 'defaults': sorted(
                 [str(d) for d in defaults]), 'mode': mode,
+            # 只作线索：容器键位写入不改变 producers 计数
+            'container_writes': [{'file': rel, 'line': ln}
+                                 for rel, lines in text_by_file.items()
+                                 for ln in container_sites('\n'.join(lines), flag)],
         })
     return report
+
+
+def container_sites(file_text, flag):
+    """容器键位写入点：`cfg["<flag>"] = ...`。
+
+    `scan_many` 的生产者只有"关键字实参 / 位置实参"两种，容器赋值不在其中，
+    而 MLC-LLM 那批两个候选恰好都是这个形状（`kwargs["enable_disaggregation"]
+    = True`、`cfg["enable_thing"] = ...`）。这里按行文本收集，供报告与人工
+    复核使用——**它不进 producers 计数**：字典里写了键不等于下游真读到，
+    所以"写了但没人读"这条仍然成立。见 readme 第十三类易错点。
+    """
+    import re as _re
+    pat = _re.compile(r"""(?<![\w.])[A-Za-z_][\w]*\s*\[\s*['\"]%s['\"]\s*\]\s*="""
+                      % _re.escape(flag))
+    out = []
+    for i, line in enumerate(file_text.splitlines(), 1):
+        code = line.split('#', 1)[0]
+        if pat.search(code):
+            out.append(i)
+    return out
+
+
+def _forwarded_params(fn):
+    """函数体里"只被转手传出去"的形参：它们在某个调用里作实参出现，
+    但从不被 `if` / 赋值 / 属性访问消费。工厂与包装函数都是这个形状——
+    `serve()` 把 `enable_prefix_cache` 原样递给 `Router(...)`，
+    `scan_many` 原来把它记成消费者，于是把"透传"读成"决策"。"""
+    params = [a.arg for a in fn.args.args + fn.args.kwonlyargs]
+    if not params:
+        return set()
+    passed = set()
+    consumed = set()
+    for node in ast.walk(fn):
+        if isinstance(node, (ast.If, ast.IfExp)):
+            for sub in ast.walk(node.test):
+                if isinstance(sub, ast.Name):
+                    consumed.add(sub.id)
+        elif isinstance(node, ast.Assign):
+            for t in node.targets:
+                for sub in ast.walk(t):
+                    if isinstance(sub, ast.Name):
+                        consumed.add(sub.id)
+        elif isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name):
+            consumed.add(node.value.id)
+        elif isinstance(node, ast.Call):
+            for a in node.args:
+                if isinstance(a, ast.Name):
+                    passed.add(a.id)
+            for k in node.keywords:
+                if isinstance(k.value, ast.Name):
+                    passed.add(k.value.id)
+    return {p for p in params if p in passed and p not in consumed}
 
 
 def shadowed_arms(path, tree):

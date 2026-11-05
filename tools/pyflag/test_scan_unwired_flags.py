@@ -249,6 +249,62 @@ class TestShadowedArms(unittest.TestCase):
         self.assertTrue(all(h['flag'] == 'use_split_scale' for h in hits), hits)
 
 
+
+class TestFactoryForwarding(unittest.TestCase):
+    """第十三类（Python 版）：工厂／包装函数不是消费者（MLC-LLM 批的真实形状）。"""
+
+    SRC = textwrap.dedent("""
+    class Cache:
+        @staticmethod
+        def create_generic(max_len: int, enable_thing: bool = False):
+            if enable_thing:
+                return "with"
+            return "without"
+    """)
+
+    def test_forwarding_shell_is_not_a_decider(self):
+        src = self.SRC + textwrap.dedent("""
+        def serve(enable_thing):
+            return Cache.create_generic(16, enable_thing=enable_thing)
+        """)
+        with tempfile.TemporaryDirectory() as d:
+            root = pathlib.Path(d)
+            (root / 'k.py').write_text(src)
+            r = m.scan_many(root, {'enable_thing'})['flags'][0]
+        self.assertEqual([c['param_default'] for c in r['consumers_nontest']].count('forwarded'), 1, r)
+        self.assertEqual([c['call_name'] for c in r['deciding_consumers']], ['create_generic'], r)
+        self.assertEqual(r['producers_total'], 1, r)
+
+    def test_decision_inside_branch_still_counts(self):
+        """反面对照：真在 `if` 里用的消费者不能被标成 forwarded。"""
+        src = self.SRC + textwrap.dedent("""
+        def decide(enable_thing):
+            if enable_thing:
+                return Cache.create_generic(16, enable_thing=True)
+            return None
+        """)
+        with tempfile.TemporaryDirectory() as d:
+            root = pathlib.Path(d)
+            (root / 'k.py').write_text(src)
+            r = m.scan_many(root, {'enable_thing'})['flags'][0]
+        self.assertIn('decide', [c['call_name'] for c in r['deciding_consumers']], r)
+
+    def test_container_write_is_a_hint_not_a_producer(self):
+        src = self.SRC + textwrap.dedent("""
+        def build(extra):
+            kwargs = {}
+            kwargs["enable_thing"] = bool(extra)
+            return Cache.create_generic(16, **kwargs)
+        """)
+        with tempfile.TemporaryDirectory() as d:
+            root = pathlib.Path(d)
+            (root / 'k.py').write_text(src)
+            r = m.scan_many(root, {'enable_thing'})['flags'][0]
+        self.assertEqual(r['producers_total'], 0, r)
+        self.assertEqual(len(r['container_writes']), 1, r)
+        self.assertEqual(r['container_writes'][0]['file'], 'k.py')
+
+
 class TestRealSnapshotsIfPresent(unittest.TestCase):
     """真实快照在我机器上时才跑；缺失就跳过，不让测试依赖网络。"""
 

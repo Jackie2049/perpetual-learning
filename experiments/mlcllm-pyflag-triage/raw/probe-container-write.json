@@ -1,0 +1,60 @@
+{
+ "root": "/tmp/mlc-llm-probe",
+ "d1": {
+  "pass": [
+   "python/mlc_llm/model/llama/llama_model.py",
+   "python/mlc_llm/model/llama4/llama4_model.py",
+   "python/mlc_llm/model/nemotron/nemotron_model.py"
+  ],
+  "omit": [
+   "python/mlc_llm/model/baichuan/baichuan_model.py",
+   "python/mlc_llm/model/chatglm3/chatglm3_model.py",
+   "python/mlc_llm/model/cohere/cohere_model.py",
+   "python/mlc_llm/model/deepseek/deepseek_model.py",
+   "python/mlc_llm/model/deepseek_v2/deepseek_v2_model.py",
+   "python/mlc_llm/model/eagle/eagle_model.py",
+   "python/mlc_llm/model/gemma/gemma_model.py",
+   "python/mlc_llm/model/gemma3/gemma3_model.py",
+   "python/mlc_llm/model/gemma3/gemma3v_model.py",
+   "python/mlc_llm/model/gemma4/gemma4_model.py",
+   "python/mlc_llm/model/gpt2/gpt2_model.py",
+   "python/mlc_llm/model/gpt_bigcode/gpt_bigcode_model.py",
+   "python/mlc_llm/model/gpt_j/gpt_j_model.py",
+   "python/mlc_llm/model/gpt_neox/gpt_neox_model.py",
+   "python/mlc_llm/model/internlm/internlm_model.py",
+   "python/mlc_llm/model/internlm2/internlm2_model.py",
+   "python/mlc_llm/model/llava/llava_model.py",
+   "python/mlc_llm/model/minicpm/minicpm_model.py",
+   "python/mlc_llm/model/ministral3/ministral3_model.py",
+   "python/mlc_llm/model/mistral/mistral_model.py",
+   "python/mlc_llm/model/olmo/olmo_model.py",
+   "python/mlc_llm/model/olmo2/olmo2_model.py",
+   "python/mlc_llm/model/orion/orion_model.py",
+   "python/mlc_llm/model/phi/phi_model.py",
+   "python/mlc_llm/model/phi3/phi3_model.py",
+   "python/mlc_llm/model/phi3v/phi3v_model.py",
+   "python/mlc_llm/model/qwen/qwen_model.py",
+   "python/mlc_llm/model/qwen2/qwen2_model.py",
+   "python/mlc_llm/model/qwen2_5_vl/qwen2_5_vl_model.py",
+   "python/mlc_llm/model/qwen2_moe/qwen2_moe_model.py",
+   "python/mlc_llm/model/qwen3/qwen3_model.py",
+   "python/mlc_llm/model/qwen35/qwen35_model.py",
+   "python/mlc_llm/model/qwen3_moe/qwen3_moe_model.py",
+   "python/mlc_llm/model/stable_lm/stablelm_model.py",
+   "python/mlc_llm/model/starcoder2/starcoder2_model.py"
+  ]
+ },
+ "d2": {
+  "file": "python/mlc_llm/compiler_pass/dispatch_kv_cache_creation.py",
+  "func": "create_tir_paged_kv_cache",
+  "line": 155,
+  "params": [
+   "self",
+   "bb",
+   "kwargs"
+  ],
+  "kwargs_is_named_param": true
+ },
+ "d2_excerpt": "def create_tir_paged_kv_cache(\n    self,\n    bb: relax.BlockBuilder,\n    kwargs: Dict[str, Any],  # noqa: UP006\n) -> List[tvm_ffi.Module]:  # noqa: UP006\n    \"\"\"Create the TIR-based PagedKVCache\"\"\"\n    max_batch_size = relax.Var(\"max_batch_size_\", relax.ShapeType([kwargs[\"max_batch_size\"]]))\n    max_total_seq_len = relax.Var(\n        \"max_total_seq_len_\", relax.ShapeType([kwargs[\"max_total_seq_len\"]])\n    )\n    prefill_chunk_size = relax.Var(\n        \"prefill_chunk_size_\", relax.ShapeType([kwargs[\"prefill_chunk_size\"]])\n    )\n    page_size = relax.Var(\"page_size_\", relax.ShapeType([kwargs[\"page_size\"]]))\n    support_sliding_window = relax.Var(\n        \"support_sliding_window_\",\n        relax.ShapeType([kwargs[\"support_sliding_window\"]]),\n    )\n\n    # Ensure 'enable_disaggregation' is optional\n    enable_disaggregation = kwargs.pop(\"enable_disaggregation\", False)\n    kwargs[\"enable_disaggregation\"] = enable_disaggregation\n\n    with bb.function(\n        name=\"create_tir_paged_kv_cache\",\n        params=[\n            max_batch_size,\n            max_total_seq_len,\n            prefill_chunk_size,\n            page_size,\n            support_sliding_window,\n        ],\n    ):\n        cache =",
+ "verdict": "COMPILE_TIME_PER_MODEL"
+}
