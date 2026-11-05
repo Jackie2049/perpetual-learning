@@ -47,8 +47,11 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
 POLL_PATCH = REPO / "experiments" / "verl-v1-poll-quantum" / "poll-interval-config.patch"
+COUNTER_PATCH = REPO / "experiments" / "verl-v1-poll-quantum-polls" / "poll-count.patch"
+SIM_LOOP = REPO / "experiments" / "verl-v1-poll-quantum-polls" / "sim-loop.py"
 WRAPPER = HERE / "run-poll-dapo.sh"
 BASE_SCRIPT_REL = "examples/grpo_trainer/run_qwen3_4b_fsdp.sh"
+COUNTER_FILES = ("verl/trainer/ppo/v1/replay_buffer.py", "verl/trainer/ppo/v1/utils.py")
 
 # The arm under test: four cards in the 2+2 placement the archived batch used.
 WRAPPER_ENV = {"MODE": "pf-g4i1", "GPUS": "0,1,4,5", "INFLIGHT": "1"}
@@ -158,7 +161,11 @@ def capture_from_wrapper(tree, workdir, name="ex", base_src=None):
     env = {"HOME": os.environ.get("HOME", "/tmp"),
            "PATH": str(stub_dir) + ":/usr/bin:/bin",
            "CAPTURE_OUT": str(out),
-           "SRC": str(stage)}
+           "SRC": str(stage),
+           # The stage carries only the base recipe, by design: this half checks the
+           # argv, not the runtime tree. The instrumentation guard is exercised on real
+           # trees further down (`wrapper_guard`).
+           "CHECK_TREE": "0"}
     env.update(WRAPPER_ENV)
     proc = subprocess.run(["bash", str(WRAPPER)], cwd=str(workdir), env=env,
                           capture_output=True, text=True)
@@ -250,11 +257,14 @@ def stage_patch_files(tree, workdir, name):
 
 
 def poll_patch_status(tree, workdir):
-    """Does the poll_interval patch still apply to this tree?"""
+    """Does the poll_interval patch still apply to this tree (or is it already on)?"""
+    already = instrumentation(tree)["present"]
+    already_applied = already["poll_interval_default"] and already["poll_interval_wiring"]
     stage = stage_patch_files(tree, workdir, "patchcheck")
     proc = subprocess.run(["patch", "-p1", "--dry-run", "--fuzz=0", "-i", str(POLL_PATCH)],
                           cwd=str(stage), capture_output=True, text=True)
     return {"applies": proc.returncode == 0, "returncode": proc.returncode,
+            "already_applied": already_applied, "usable": proc.returncode == 0 or already_applied,
             "files": ["verl/trainer/config/ppo_trainer.yaml",
                       "verl/trainer/ppo/v1/trainer_base.py",
                       "verl/trainer/ppo/v1/trainer_separate_async.py"],
@@ -263,6 +273,9 @@ def poll_patch_status(tree, workdir):
 
 def patched_config_dir(tree, workdir):
     """A config dir whose `ppo_trainer.yaml` carries the real patch hunk."""
+    if instrumentation(tree)["present"]["poll_interval_wiring"]:
+        # The tree already carries the key (an instrumented run tree): use it as is.
+        return Path(tree) / "verl" / "trainer" / "config"
     stage = stage_patch_files(tree, workdir, "patchapply")
     proc = subprocess.run(["patch", "-p1", "--fuzz=0", "-i", str(POLL_PATCH)],
                           cwd=str(stage), capture_output=True, text=True)
@@ -308,6 +321,85 @@ def negative_control(tree, overrides):
 # ------------------------------------------------------------------ selftest
 
 
+def counter_patch_status(tree, workdir):
+    """Does the poll-count patch still apply to this tree, unchanged?"""
+    stage = Path(workdir) / "countercheck"
+    shutil.rmtree(stage, ignore_errors=True)
+    for rel in COUNTER_FILES:
+        dst = stage / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(Path(tree) / rel, dst)
+    already = instrumentation(tree)["present"]
+    already_applied = already["counter_in_buffer"] and already["counter_aggregation"]
+    proc = subprocess.run(["patch", "-p1", "--dry-run", "--fuzz=0", "-i", str(COUNTER_PATCH)],
+                          cwd=str(stage), capture_output=True, text=True)
+    return {"applies": proc.returncode == 0, "returncode": proc.returncode,
+            "already_applied": already_applied, "usable": proc.returncode == 0 or already_applied,
+            "files": list(COUNTER_FILES), "stderr": proc.stderr.strip().splitlines()}
+
+
+def instrumentation(tree):
+    """Markers of the two patches on the tree that will actually run."""
+    root = Path(tree)
+
+    def has(rel, needle):
+        path = root / rel
+        return path.exists() and needle in path.read_text()
+
+    present = {
+        "poll_interval_default": has("verl/trainer/config/ppo_trainer.yaml", "poll_interval: 2.0"),
+        "poll_interval_wiring": has("verl/trainer/ppo/v1/trainer_base.py", "poll_interval=sampler_config.get"),
+        "counter_in_buffer": has("verl/trainer/ppo/v1/replay_buffer.py", "sampler/blocking_polls"),
+        "counter_aggregation": has("verl/trainer/ppo/v1/utils.py", '"training/sampler/blocking_polls"'),
+    }
+    return {"present": present, "instrumented": all(present.values())}
+
+
+def pick_sim_python(explicit=None):
+    """An interpreter that can exec the buffer source: `int | float` needs Python 3.10+."""
+    if explicit:
+        return explicit
+    local = Path("/tmp/m5-trf-venv/bin/python3")
+    return str(local) if local.exists() else sys.executable
+
+
+def sim_reading(tree, python=sys.executable):
+    """Run the counter harness on the exact tree that will run; it must be 12/12."""
+    proc = subprocess.run([str(python), str(SIM_LOOP), "--tree", str(tree), "--selftest"],
+                          capture_output=True, text=True)
+    lines = [line for line in proc.stdout.strip().splitlines() if line]
+    return {"python": str(python), "returncode": proc.returncode,
+            "tail": lines[-1] if lines else "",
+            "stderr": proc.stderr.strip().splitlines()[-3:]}
+
+
+def wrapper_guard(tree, expected):
+    """The wrapper must refuse an un-instrumented tree before touching GPUs."""
+    env = dict(os.environ, SRC=str(tree), CHECK_ONLY="1", MODE="guard")
+    proc = subprocess.run(["bash", str(WRAPPER)], env=env, capture_output=True, text=True)
+    return {"tree": str(tree), "expected": expected, "returncode": proc.returncode,
+            "ok": proc.returncode == expected,
+            "stdout": proc.stdout.strip().splitlines()[-2:],
+            "stderr": proc.stderr.strip().splitlines()[-2:]}
+
+
+def guard_control():
+    """Minimal tree with all four markers, then with the counter stripped: 0 then 65."""
+    tmp = Path(tempfile.mkdtemp(prefix="guard-control-"))
+    (tmp / "verl/trainer/config").mkdir(parents=True)
+    (tmp / "verl/trainer/ppo/v1").mkdir(parents=True)
+    (tmp / "verl/trainer/config/ppo_trainer.yaml").write_text("poll_interval: 2.0\n")
+    (tmp / "verl/trainer/ppo/v1/trainer_base.py").write_text("poll_interval=sampler_config.get\n")
+    (tmp / "verl/trainer/ppo/v1/replay_buffer.py").write_text("sampler/blocking_polls\n")
+    (tmp / "verl/trainer/ppo/v1/utils.py").write_text('"training/sampler/blocking_polls"\n')
+    with_markers = wrapper_guard(tmp, 0)
+    (tmp / "verl/trainer/ppo/v1/replay_buffer.py").write_text("counter removed\n")
+    stripped = wrapper_guard(tmp, 65)
+    shutil.rmtree(tmp, ignore_errors=True)
+    return {"with_markers": with_markers, "stripped": stripped,
+            "ok": with_markers["ok"] and stripped["ok"]}
+
+
 def selftest():
     """Prove the detectors fire, not just that the happy path prints zeros."""
     try:
@@ -349,6 +441,27 @@ def selftest():
     results.append(("clean_override_composes", clean))
     results.append(("negative_control_fires", negative_control(tmp, [])["fired"]))
 
+    # Instrumentation markers: all four -> instrumented, one missing -> not.
+    probe = Path(tempfile.mkdtemp())
+    (probe / "verl/trainer/config").mkdir(parents=True)
+    (probe / "verl/trainer/ppo/v1").mkdir(parents=True)
+    (probe / "verl/trainer/config/ppo_trainer.yaml").write_text("poll_interval: 2.0\n")
+    (probe / "verl/trainer/ppo/v1/trainer_base.py").write_text("poll_interval=sampler_config.get\n")
+    (probe / "verl/trainer/ppo/v1/replay_buffer.py").write_text("sampler/blocking_polls\n")
+    (probe / "verl/trainer/ppo/v1/utils.py").write_text('"training/sampler/blocking_polls"\n')
+    results.append(("instrumentation_all_markers", instrumentation(probe)["instrumented"]))
+    (probe / "verl/trainer/ppo/v1/utils.py").write_text('"something_else"\n')
+    results.append(("instrumentation_missing_marker", not instrumentation(probe)["instrumented"]))
+
+    # The wrapper guard: an instrumented tree passes, the same tree without one marker is
+    # refused before any GPU work. Restore the marker the previous check removed.
+    (probe / "verl/trainer/ppo/v1/utils.py").write_text('"training/sampler/blocking_polls"\n')
+    results.append(("guard_passes_instrumented", wrapper_guard(probe, 0)["ok"]))
+    (probe / "verl/trainer/ppo/v1/replay_buffer.py").write_text("no counter here\n")
+    refused = wrapper_guard(probe, 65)
+    results.append(("guard_blocks_uninstrumented", refused["ok"]))
+    shutil.rmtree(probe, ignore_errors=True)
+
     print(json.dumps({"selftest": [{"check": n, "ok": bool(v)} for n, v in results],
                       "ok": all(v for _, v in results)}, indent=2))
     return 0 if all(v for _, v in results) else 1
@@ -360,6 +473,10 @@ def selftest():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--tree", help="verl checkout to check (e.g. /tmp/verl-31cfccb4)")
+    ap.add_argument("--run-tree",
+                    help="the instrumented copy the window will actually run (prep-tree.sh); "
+                         "must carry both patches and is checked with the sim harness")
+    ap.add_argument("--sim-python", help="interpreter for sim-loop.py (needs Python 3.10+)")
     ap.add_argument("--compare-script",
                     help="the same base recipe from the tree the archive was produced on; "
                          "the two captured override lists are diffed")
@@ -371,6 +488,9 @@ def main():
         return selftest()
     if not args.tree:
         ap.error("--tree is required unless --selftest")
+    if not args.run_tree:
+        ap.error("--run-tree is required: the window must run on the instrumented copy "
+                 "(bash prep-tree.sh <clean-tree> <dst-tree>)")
 
     import hydra
     import omegaconf
@@ -383,6 +503,7 @@ def main():
     cap["check"] = check_capture(overrides)
 
     patch = poll_patch_status(tree, workdir)
+    counter = counter_patch_status(tree, workdir)
     arm_base = run_arm(tree, workdir, overrides, "base")
     arm_poll = run_arm(tree, workdir, overrides + ["trainer.v1.sampler.poll_interval=0.1"], "poll")
     for arm in (arm_base, arm_poll):
@@ -395,6 +516,7 @@ def main():
         "arm": WRAPPER_ENV,
         "capture": cap,
         "poll_patch": patch,
+        "counter_patch": counter,
         "arms": {"base": arm_base, "poll": arm_poll},
         "negative_control": negative_control(tree, overrides),
     }
@@ -408,20 +530,34 @@ def main():
             "drift": diff_overrides(old.get("overrides", []), overrides),
         }
 
-    # The baseline arm runs on the *unpatched* tree, where the key does not exist and
-    # ReplayBuffer keeps its constructor default of 2.0 — so "absent" is the correct
-    # baseline reading. The patched arm must resolve to the value we pass.
+    # Effective baseline interval must be 2.0 either way: an unpatched tree has no key and
+    # ReplayBuffer keeps its constructor default, an instrumented tree carries 2.0 in the
+    # yaml. The poll arm must resolve to the value we pass.
     base_poll = arm_base.get("readback", {}).get("trainer.v1.sampler.poll_interval")
     poll_poll = arm_poll.get("readback", {}).get("trainer.v1.sampler.poll_interval")
     base_absent = isinstance(base_poll, str) and base_poll.startswith("<missing")
+    base_default = base_absent or base_poll == 2.0
     result["poll_interval"] = {"base": base_poll, "poll": poll_poll,
-                               "base_absent_as_expected": base_absent}
-    result["poll_interval_reaches_trainer"] = bool(base_absent and poll_poll == 0.1)
+                               "base_absent_as_expected": base_absent,
+                               "base_effective_2s": base_default}
+    result["poll_interval_reaches_trainer"] = bool(base_default and poll_poll == 0.1)
 
-    ok = (cap["returncode"] == 0 and not cap["check"]["problems"] and patch["applies"]
+    # The run tree: the arm reads `training/sampler/blocking_polls`, so an un-instrumented
+    # tree wastes the window silently. Check its markers, run the counter harness on it,
+    # and prove the wrapper guard refuses a tree that lost one marker.
+    run_tree = Path(args.run_tree).resolve()
+    inst = instrumentation(run_tree)
+    sim = sim_reading(run_tree, pick_sim_python(args.sim_python))
+    guard = {"instrumented": wrapper_guard(run_tree, 0), "control": guard_control()}
+    result["run_tree"] = {"path": str(run_tree), "instrumentation": inst, "sim": sim, "guard": guard}
+
+    ok = (cap["returncode"] == 0 and not cap["check"]["problems"]
+          and patch["usable"] and counter["usable"]
           and not arm_base["problems"] and not arm_poll["problems"]
           and result["negative_control"]["fired"]
-          and result["poll_interval_reaches_trainer"])
+          and result["poll_interval_reaches_trainer"]
+          and inst["instrumented"] and sim["returncode"] == 0
+          and guard["instrumented"]["ok"] and guard["control"]["ok"])
     if "compare" in result:
         ok = ok and result["compare"]["drift"]["same"]
     result["ok"] = ok

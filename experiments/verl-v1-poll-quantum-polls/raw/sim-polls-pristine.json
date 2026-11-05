@@ -1,0 +1,153 @@
+{
+  "tree": "/tmp/m5-polls-verify/verl-31cfccb4dbad8f1f4aa41a34eb589afbe283e8fe",
+  "patched": false,
+  "checks": [
+    {
+      "check": "fast path takes 0 polls",
+      "ok": true,
+      "detail": {
+        "sleeps": [
+          0
+        ],
+        "metric": null
+      }
+    },
+    {
+      "check": "arrival inside first quantum -> 1 poll per step",
+      "ok": true,
+      "detail": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "check": "arrival at 5.0s with P=2.0 -> 3 polls",
+      "ok": true,
+      "detail": [
+        3
+      ]
+    },
+    {
+      "check": "DAPO refill: >1 blocking poll per step",
+      "ok": true,
+      "detail": {
+        "polls": [
+          3,
+          3,
+          3,
+          3
+        ],
+        "evicted": [
+          27,
+          28,
+          27,
+          25
+        ]
+      }
+    },
+    {
+      "check": "P=0.1 takes at least as many polls as P=2.0",
+      "ok": true,
+      "detail": {
+        "p010": [
+          18,
+          19,
+          21,
+          21
+        ],
+        "p200": [
+          3,
+          3,
+          3,
+          3
+        ]
+      }
+    },
+    {
+      "check": "inflight=2 polls <= inflight=1 polls",
+      "ok": true,
+      "detail": {
+        "inflight1": [
+          2,
+          3,
+          2,
+          2
+        ],
+        "inflight2": [
+          2,
+          3,
+          2,
+          2
+        ]
+      }
+    },
+    {
+      "check": "counter resets per step",
+      "ok": true,
+      "detail": [
+        3,
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "check": "metric key present iff tree is patched",
+      "ok": true,
+      "detail": {
+        "patched": false,
+        "metrics": [
+          null,
+          null,
+          null,
+          null
+        ]
+      }
+    },
+    {
+      "check": "aggregator reduces the poll key by sum",
+      "ok": true,
+      "detail": {
+        "reading": 2.5,
+        "expected": 2.5,
+        "patched": false
+      }
+    },
+    {
+      "check": "validation poll key registered only if val metrics are logged",
+      "ok": true,
+      "detail": {
+        "val_discards_metrics": true,
+        "validation_key_registered": false,
+        "val_call_site": "batch, _ = self.replay_buffer.sample("
+      }
+    },
+    {
+      "check": "async wait_for_sampleable counts its own polls",
+      "ok": true,
+      "detail": {
+        "polls": [
+          3,
+          3
+        ],
+        "metric": [
+          null,
+          null
+        ]
+      }
+    },
+    {
+      "check": "async metric key present iff tree is patched",
+      "ok": true,
+      "detail": {
+        "patched": false,
+        "metric": [
+          null,
+          null
+        ]
+      }
+    }
+  ],
+  "failed": 0
+}

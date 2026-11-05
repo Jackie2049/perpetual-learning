@@ -153,6 +153,30 @@ wait_idle() {  # 等 0,1,4,5 回到 ~1 MiB
 
 **本批三处自错（都已改）。** ① 本地适配写成 `set -xe pipefail`：`set` 把 `pipefail` 当成**位置参数**，`"$@"` 的 10 条尾部 override 被吃掉，捕获只剩 48 条——这正是"看起来在检查、其实换了对象"，现已是自检项 `eaten_tail_detected`；② 自检把注入打在 `rollout.n` 上，而受检键是 `actor_rollout_ref.rollout.n`，于是"值被改"这条判据**没被覆盖**却报绿；③ `+` 前缀检查拿 `key` 去比 `key=value` 列表，真实运行与自检双双击出误报。
 
+## 2026-11-05 无卡轮（续）：窗口里读不到计数器，等于没跑——补丁修正 + 受测树守卫 + preflight 接入
+
+**为什么做这个。** 这条臂存在的意义就是读 `training/sampler/blocking_polls`（判断一个训练步里有几次派发轮次）。上一轮做好了补丁，但 `run-poll-dapo.sh` 不检查树、preflight 不检查补丁，**未打补丁的树照样 exit 0**——4 张卡窗口最贵，跑完才发现没有计数器，问题一点没答。
+
+**一、上一版补丁有一条不可达的登记（已删）。** `validation/sampler/blocking_polls` 永远不会出现在任何 metrics 里：全仓 `partition_id="val"` 只有 `trainer_base.py::_validate()` 一处，且写的是 `batch, _ = self.replay_buffer.sample(...)`，buffer 返回的 metrics 被丢弃。补丁从 +9 行降到 **+8 行**（`sha256=4c142752…`），对 `31cfccb4` 的 `replay_buffer.py`／`utils.py` `--fuzz=0` 通过；与 `poll-interval-config.patch` 的文件集不相交，应用顺序无关。
+
+**二、上一版自检为什么没抓到：它数的是字符串。** 旧检查 ⑨ 是 `"training/..." in utils_source and "validation/..." in utils_source`——键写错规则、写进死路径都能过。现在把真实 `MetricsAggregator` 类源码 `exec` 出来喂两次迭代（2 与 3）：打补丁树得 **5.0**（sum），未打补丁树得 **2.5**（默认 weighted_avg）。另加一条不变量：**注册了 validation 键 ⇔ val 调用点保留 metrics**（现在两侧一真一假，成立；上游哪天改成记录 val metrics，这条会翻红）。
+
+**三、async 路径也覆盖了。** `sim-loop.py` 改成 exec 两个类（`ReplayBuffer`、`ReplayBufferAsync`），新增 async 场景：`wait_for_sampleable()` 按次清零、`sample()` 原样转发 metric，3 次轮询读数 3。自检 **12/12**（打补丁树与未打补丁树各一遍），惰性仍是 **120 场景 × 4 步 = 480 行逐字段相同**。
+
+**四、把"树必须是受测树"变成硬门槛。**
+
+| 关卡 | 行为 | 反例 |
+|---|---|---|
+| [prep-tree.sh](prep-tree.sh) | 从干净树复制 → 两补丁 `--fuzz=0` → 自检 4 个标记；dst 已存在拒绝（`FORCE=1` 覆盖） | 目的树已存在 → exit 3 |
+| `run-poll-dapo.sh` | `CHECK_TREE=1`（默认）检查 3 个标记，缺一即 **exit 65** 并打印补救命令；`CHECK_ONLY=1` 只查树 | 去掉 counter 标记 → 65；四标记齐 → 0 |
+| `preflight-g4.py` | 新增 `--run-tree`（必填）与 `--sim-python`：树标记 + 在**受测树本体**上跑 sim 12/12 + wrapper 守卫正/负对照；已打补丁的树按 `already_applied` 接受 | 不在受测树上跑 sim 就不给 ok |
+
+读数：[raw/preflight-g4-instrumented.json](raw/preflight-g4-instrumented.json) —— `ok=true`：58 条 override 不变、两臂组合 18 键全中、`poll_patch.usable`／`counter_patch.applies` 通过、受测树 4 标记齐、sim `12/12`、守卫 0/65 双通过；自检 **11/11**。计数器的树级验证读数：[sim-polls.json](../verl-v1-poll-quantum-polls/raw/sim-polls.json)。
+
+**五、口径变化（写进下一次窗口的解读）。** ① 基线臂现在也跑**同一个受测副本**（只是不传 `--poll_interval`，回读默认 2.0），与归档的"原树基線"只差一条惰性补丁 ⇒ 窗口内 A/B 仍自洽，但不要把跨批次绝对值直接混用。② `separate_async` 会对同一键记两次（switch-wait 与 `sample()` 各一次 `wait_for_sampleable`），本臂（sync）不涉及。
+
+**边界。** 零 GPU 读数；计数器仍未在服务器上执行过；`CHECK_TREE` 默认开启会挡住"在未打补丁树上重跑旧配置"，需要时显式 `CHECK_TREE=0`（preflight 的 argv 捕获就是这么做的，因为它只跑 recipe 不看运行树）。
+
 ## 材料
 
 | 文件 | 内容 |
@@ -163,13 +187,22 @@ wait_idle() {  # 等 0,1,4,5 回到 ~1 MiB
 | `summary-rerun.json` | 六跑 + 臂级合并（`--group=rerun`） |
 | `make-summary-g4.py` | 解析与汇总（`--group=main\|rerun`，同臂重复自动合并） |
 | `decompose-gen.py` | 等待/工作量拆分（共同斜率 + bootstrap CI） |
-| `run-poll-dapo.sh` | 运行脚本（`GPUS`／`MODE`／`POLL`／`SRC`／`INFLIGHT` 可覆盖） |
-| `preflight-g4.py` | 开窗前检查：捕获真实 argv（桩 `python3`）→ 逐键对齐归档树 → Hydra 组合两臂并回读 → 负向对照；`--selftest` 7/7 |
-| `raw/preflight-g4.json` | 本轮读数（`31cfccb4`，含与 `24f25b03` recipe 的逐键比对） |
+| `run-poll-dapo.sh` | 运行脚本（`GPUS`／`MODE`／`POLL`／`SRC`／`INFLIGHT` 可覆盖；`CHECK_TREE=1` 守卫，`CHECK_ONLY=1` 只查树） |
+| `prep-tree.sh` | 生成受测副本：复制干净树 → 打两个补丁 → 自检 4 标记（`FORCE=1` 覆盖已存在目录） |
+| `preflight-g4.py` | 开窗前检查：捕获真实 argv（桩 `python3`）→ 逐键对齐归档树 → Hydra 组合两臂并回读 → 负向对照 → 受测树标记 + sim + 守卫正/负对照；`--selftest` 11/11 |
+| `raw/preflight-g4.json` | 上一轮读数（`31cfccb4`，含与 `24f25b03` recipe 的逐键比对） |
+| `raw/preflight-g4-instrumented.json` | 本轮读数：`--run-tree` 上的标记／sim 12/12／守卫 0 与 65 双通过 |
 | `raw/preflight-g4-nopin.json` | 对照：去掉 `enable_chunked_prefill` 这个钉时的漂移与 main 上生效值 `true` |
 | `sha256sums.txt` | 本目录文件的 sha256；六份原始日志与服务器逐文件一致 |
 
 ## 下一步
 
-- 4 卡 DAPO 的 A/B 已闭环。未测只剩 **4 卡 `inflight=1`**（需 ≥4 张空闲卡），其开窗前检查已就绪：`/tmp/hydra-probe-venv/bin/python3 preflight-g4.py --tree <verl树> --compare-script <归档树同名脚本> --out raw/preflight-g4.json`。若要把生成量代价也定下来，需每臂 ≥4 跑（本批分辨力不够），判据是看 +6.4% 能否越过 2 SE。
+- 4 卡 DAPO 的 A/B 已闭环。未测只剩 **4 卡 `inflight=1`**（需 ≥4 张空闲卡）。开窗前流程（三条命令，任一检查失败都会在碰 GPU 前退出）：
+  ```bash
+  bash prep-tree.sh /home/zxw/venvs/rollout-g8-src/verl /tmp/m5-g4i1/verl
+  /tmp/hydra-probe-venv/bin/python3 preflight-g4.py --tree <干净树> --run-tree /tmp/m5-g4i1/verl \
+      --sim-python /home/zxw/venvs/rollout-g8/bin/python3 --compare-script <归档树同名脚本> --out raw/preflight-g4.json
+  MODE=g4i1 GPUS=0,1,4,5 INFLIGHT=1 SRC=/tmp/m5-g4i1/verl bash run-poll-dapo.sh
+  ```
+  跑后每步读 `training/sampler/blocking_polls`（预期 ≥2；若恒 1，斜率差不能归因轮数）。若要把生成量代价也定下来，需每臂 ≥4 跑（本批分辨力不够），判据是看 +6.4% 能否越过 2 SE。
 - TM-008 的 PR 风险段用 2 卡 +13.1% 的生成量代价与 4 卡 −4.0% 的整步收益，并注明"等待收益 ≈0.59×量子、随配置变"。**对外动作仍未做，待用户逐项授权。**
