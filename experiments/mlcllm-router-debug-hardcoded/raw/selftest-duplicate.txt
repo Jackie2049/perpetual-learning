@@ -1,0 +1,7 @@
+once 解析成功且 enable_debug=True                         PASS
+twice 解析成功且 enable_debug=True                        PASS
+zero 解析成功且 enable_debug=False                        PASS
+twice 与 once 的解析结果相同（重复幂等）                           PASS  — {'ok': True, 'enable_debug': True, 'model': 'm'} vs {'ok': True, 'enable_debug': True, 'model': 'm'}
+两次出现的开关没有被当成位置参数吃掉（model 仍是 m）                       PASS
+
+selftest: 5/5

@@ -1,0 +1,17 @@
+{
+  "once": {
+    "ok": true,
+    "enable_debug": true,
+    "model": "m"
+  },
+  "twice": {
+    "ok": true,
+    "enable_debug": true,
+    "model": "m"
+  },
+  "zero": {
+    "ok": true,
+    "enable_debug": false,
+    "model": "m"
+  }
+}

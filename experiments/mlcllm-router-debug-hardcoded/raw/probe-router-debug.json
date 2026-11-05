@@ -1,0 +1,82 @@
+{
+  "snapshot": "44fd06d04f22c87820e205b0f2b2e5e6a1f6ca85",
+  "stubs": [
+    "tvm_ffi.get_global_func",
+    "fastapi(FastAPI/APIRouter)",
+    "uvicorn.run",
+    "EngineConfig",
+    "PopenServer(仅 C2 用真源码)",
+    "Tokenizer",
+    "aiohttp",
+    "mlc_llm.protocol.openai_api_protocol",
+    "mlc_llm.serve.entrypoints.*",
+    "mlc_llm.serve.server.ServerContext"
+  ],
+  "C1": {
+    "True": [
+      {
+        "enable_debug": true,
+        "prefix_cache_mode": "radix",
+        "mode": "server"
+      }
+    ],
+    "False": [
+      {
+        "enable_debug": true,
+        "prefix_cache_mode": "disable",
+        "mode": "server"
+      }
+    ]
+  },
+  "C2": {
+    "True": {
+      "has_enable_debug": true,
+      "n_flags": 2
+    },
+    "False": {
+      "has_enable_debug": false,
+      "n_flags": 0
+    }
+  },
+  "C3": {
+    "True": {
+      "context_enable_debug": true,
+      "included": [
+        "debug"
+      ]
+    },
+    "False": {
+      "context_enable_debug": false,
+      "included": []
+    }
+  },
+  "cli": {
+    "router_cli_debug_flags": [],
+    "router_cli_flags": [
+      "model",
+      "--model-lib",
+      "--router-mode",
+      "--router-host",
+      "--router-port",
+      "--endpoint-hosts",
+      "--endpoint-ports",
+      "--endpoint-num-gpus",
+      "--enable-prefix-cache",
+      "--pd-balance-factor"
+    ],
+    "serve_cli_debug_flags": [
+      "--enable-debug"
+    ],
+    "router_serve_forwards_debug": [],
+    "router_pins_literal_in_body": true
+  },
+  "verdict": {
+    "router_pins_enable_debug_true": true,
+    "control_prefix_cache_mode_live": true,
+    "subprocess_gets_flag": true,
+    "duplicate_enable_debug_append": true,
+    "downstream_really_forks": true,
+    "router_cli_can_turn_it_off": false,
+    "finding_holds": true
+  }
+}

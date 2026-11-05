@@ -105,6 +105,14 @@ C++ 仓库用 `scan_cpp_flags.py`，见下文「C++ 版」。
 2. **调用点用「别的东西」代替了形参的语义**：`_get_logits(..., use_logits_buffer=True)` 的注释说
    「形状不匹配就跳过」，调用点却按「块数」传值。⇒ **形参有生产者、但语义被掏空**，
    这是 pyflag 结构上看不见的一类，只能读注释与调用点。
+3. **生产者把值钉成了字面量**（2026-11-05，TM-021 补）：MLC-LLM 的 `enable_debug` 被扫成
+   `producers_total=1`（生产者是 `cli/serve.py` 的 `enable_debug=parsed.enable_debug`），看着正常。
+   但同一名字的**另一处**生产者在 `router/router.py:82` 是 `PopenServer(..., enable_debug=True, ...)`
+   —— `Router` 的形参表里没有它、router 的 CLI 也没有 ⇒ **这条部署路径上恒真且用户关不掉**。
+   ⇒ 判据：同一形参的多个生产者里只要有一处是**字面量**，那条路径就不受配置控制；
+   `producers_total > 0` 只说明"有人传"，说明不了"配得动"。这一类要按**生产者的实参形态**分桶才看得见
+   （本工具现在只报 `how: keyword|positional`，不区分字面量与变量——**尚未自动化**）。
+   见 [证据页](../../open-source/mlcllm/evidence/router-debug-endpoints-always-on.md)。
 
 **跑 SGLang 的耗时**：`python3 scan_unwired_flags.py <sglang>` 约 **10.5 分钟**（8000+ 文件），且 `--json` 落盘到**脚本所在目录** `tools/pyflag/scan-<root>.json`，不是被测仓库里——第一次找错了地方。
 
@@ -384,6 +392,12 @@ python3 scan_cpp_flags.py /path/to/repo [--json <path>] [--min-members N]
 C++ 侧只有 22 个"有消费者且按它分支"的结构体字段——MLC-LLM 的 C++ 部分是服务层
 （engine / request_state / engine_actions），配置面主要在 Python 与 `mlc-chat-config.json`，
 **C++ 版扫它的信息量本来就低**。
+
+**第六批的后续（同日 TM-021）**：`enable_debug` 被本表判为"正常接线"（`producers_total=1`），
+但顺着这个生产者往下查发现**另一处生产者是字面量 `True`**，而那条路径（`mlc_llm router`）
+的形参表与 CLI 里都没有这个开关 ⇒ 恒开且关不掉。见上文「工具看不见的生产者」第 3 条
+与 [证据页](../../open-source/mlcllm/evidence/router-debug-endpoints-always-on.md)。
+⇒ **`producers_total > 0` 只能证明"有人传"，不能证明"配得动"。**
 
 同批另有两个"扫描器看不见但接通"的形状，一并记在这里：
 

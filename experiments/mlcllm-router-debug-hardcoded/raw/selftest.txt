@@ -1,0 +1,9 @@
+router_pins_enable_debug_true            router 不再钉 True（改成跟着 prefix_cache 走）         PASS  red=['router_pins_enable_debug_true', 'router_cli_can_turn_it_off']
+control_prefix_cache_mode_live           对照组也钉成常量                                     PASS  red=['control_prefix_cache_mode_live', 'router_cli_can_turn_it_off']
+downstream_really_forks                  下游 if enable_debug 改成 if True                PASS  red=['downstream_really_forks', 'router_cli_can_turn_it_off']
+router_cli_can_turn_it_off               只加 CLI 开关、不转发                                PASS  saw_flag=True can_off=False holds=True
+router_cli_can_turn_it_off               去掉钉死 + CLI 开关 + 转发进 Router                   PASS  red=['router_pins_enable_debug_true', 'router_cli_can_turn_it_off']
+duplicate_enable_debug_append            删掉后半段那次重复追加                                  PASS  dup=False holds=True
+
+基线 verdict: {"router_pins_enable_debug_true": true, "control_prefix_cache_mode_live": true, "subprocess_gets_flag": true, "duplicate_enable_debug_append": true, "downstream_really_forks": true, "router_cli_can_turn_it_off": false, "finding_holds": true}
+selftest: 5/5
