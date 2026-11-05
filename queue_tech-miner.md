@@ -321,6 +321,17 @@
 - **停止条件**：上游把 `enable_debug` 接成形参 / 给 router CLI 加开关 / 删掉那行 `enable_debug=True`（`probe_router_debug.py` 会返回 2 提示结论失效），或用户否决对外动作。
 - **成果入口**：[实验](experiments/mlcllm-router-debug-hardcoded/README.md) · [四跳探针（5 项 / 6 注入）](experiments/mlcllm-router-debug-hardcoded/probe_router_debug.py) · [重复 flag 探针（5/5）](experiments/mlcllm-router-debug-hardcoded/probe_duplicate_flag.py) · [读数](experiments/mlcllm-router-debug-hardcoded/raw/probe-router-debug.json) · [源文件快照](experiments/mlcllm-router-debug-hardcoded/raw/snapshot/) · [证据页](open-source/mlcllm/evidence/router-debug-endpoints-always-on.md) · [TM-019](queue_tech-miner.md) · [diary](diary/2026-11-05.md)。
 
+## TM-022 — AReaL `use_cpu` 回退路径：开关不可达，实现本身可用（B 类：主动发掘，负结论）
+
+- **渠道 / 仓库 / 来源**：B 类（主动发掘）；[areal-project/AReaL](https://github.com/areal-project/AReaL) `3b936798`（2026-10-19）；来源是 [TM-019](queue_tech-miner.md) 扩池第七批里唯一被判「真不可达」的 `use_cpu` 的后半句——上一批只证明"没有生产者"，没回答"那段 CPU 实现是不是好的"。
+- **问题与价值**：`archon/moe/kernels.py:155` 的 `generate_permute_indices(..., use_cpu=False)` 在 `:211` 有真分支，唯一调用点 `moe/utils.py:212` 传 5 个位置实参、不含它，全仓（含 `tests/`）零生产者。同时 `kernels.py:5-7` **顶层 `import triton`** ⇒ 没有 Triton 的机器连模块都进不来；其测试 `tests/experimental/archon/test_moe_common.py` 用 `skipif(not HAS_TRITON)` 静默跳过。
+- **优先级 / 负责人 / 状态**：B 类；M1；**已闭环（负结论，2026-11-05）**。
+- **读数（2026-11-05，纯 CPU）**：抄本（逐字，`check_snapshot.py` 双向断言）在上游自己的缓冲口径 `round_up(总 token + E×对齐, 对齐)`（`utils.py:204-205`）下与 GPU 排布**逐位相同**（A/B/C 三档 0 点差异 + 2550 组随机输入全对）；只有把缓冲压到 token 总数时才抛 `RuntimeError: upper bound and lower bound inconsistent with step sign`。⇒ **口径是「开关不可达 + 实现可用」，不是"坏掉的回退"**。
+- **价值评估**：**3/10** —— 无配置字段、无 CLI、默认关闭、开发期调试开关 ⇒ 无用户受影响。**不对外**。
+- **本批三处自错（都由对照抓出）**：① 用 `m_offsets[-1]`（对齐后总量）当缓冲 ⇒ 每档都崩，差点写成"一跑就崩"；换成上游真实口径后 0 差异。② 先入为主写"必须有差异"的判据 ⇒ 三档 0 差异、判据自己红。③ "与位置脱节"判据隐含 rank-major 假设，误伤正确实现。**方法教训：报"回退路径坏了"之前先对齐调用方实际给的缓冲口径。**
+- **停止条件**：上游删掉该形参与分支、或给它接线（`probe.py` 的 P1 会变红提示结论失效）。
+- **成果入口**：[实验](experiments/areal-use-cpu-fallback/README.md) · [探针（6 类 15 条）](experiments/areal-use-cpu-fallback/probe.py) · [抄本一致性（3/3 注入）](experiments/areal-use-cpu-fallback/check_snapshot.py) · [读数](experiments/areal-use-cpu-fallback/raw/probe.json) · [证据页](open-source/areal/evidence/use-cpu-fallback-2026-11.md) · [diary](diary/2026-11-05.md)。
+
 ## 已闭环与保留方向
 
 - **TM-004 — AReaL prompt_mean：终止修复候选。** M5 单一负责人；2026-10-20 实测跨 M 与 token_mean 一致，不构成 defect，修复撤销，不提 issue/PR。M1 不继续修改脚本或演化并行方案，用户明确的只读 review 除外。证据及分工：[handoff](open-source/areal/handoff-m5.md)、[tracker](open-source/areal/tracker.md)。AReaL 的长期学习偏好仍保留，新的问题应独立登记。

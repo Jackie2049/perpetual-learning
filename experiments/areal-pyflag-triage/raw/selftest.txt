@@ -1,0 +1,5 @@
+F.use_sapo_loss.produced_via_partial     删掉 partial 里的 use_sapo_loss        PASS  red=['F.use_sapo_loss.produced_via_partial', 'F.use_sapo_loss.read_from_config']
+F4.use_cpu.not_passed                    让调用点开始传 use_cpu                    PASS  red=['F4.use_cpu.not_passed', 'F4.use_cpu.no_producer_anywhere']
+F7.with_rng.never_passed                 让 load_checkpoint 传 with_rng       PASS  red=['F7.with_rng.never_passed']
+
+selftest: 3/3

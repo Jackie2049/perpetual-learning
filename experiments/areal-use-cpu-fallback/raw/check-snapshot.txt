@@ -1,0 +1,5 @@
+C1.snapshot_fingerprint                        PASS  — kernels.py sha256[:16]=d8f583c6e5aa1d0d
+C2a.cpu_impl_lines_present                     PASS  — 上游 12 行，缺 0 行
+C2b.no_unexpected_lines_in_transcript          PASS  — 多出 0 行
+C3.no_producer_at_call_site                    PASS  — 调用点里 use_cpu 出现 0 次
+C4.naive_offsets_traced                        PASS  — 上游与抄本都按 m_offsets - m_sizes 算起点

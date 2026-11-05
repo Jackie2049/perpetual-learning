@@ -98,7 +98,6 @@ C++ 仓库用 `scan_cpp_flags.py`，见下文「C++ 版」。
 | **`TOPIC_ESCAPE_FAILS_OPEN`** | **1** | **新发现：`use_logits_buffer` 默认值在唯一调用点不可达**（[证据](../../open-source/sglang/evidence/logits-buffer-escape-hatch.md)） |
 
 **新学到的两类"工具看不见的生产者"**（已能机械判出，不必逐条读）：
-
 1. **回调参数**：`cp_strategy.run_attention(q, forward_batch, dev, _inner_fn, backend=…)` 把内部函数
    当参数传下去，`srt/layers/cp/zigzag.py` 再 `use_zigzag_page_table=True` 调回来。⇒ 名字的生产者
    藏在一个**不透明实参**里。判据：消费者所在函数的名字是否作为实参出现在别的调用里。
@@ -113,6 +112,14 @@ C++ 仓库用 `scan_cpp_flags.py`，见下文「C++ 版」。
    `producers_total > 0` 只说明"有人传"，说明不了"配得动"。这一类要按**生产者的实参形态**分桶才看得见
    （本工具现在只报 `how: keyword|positional`，不区分字面量与变量——**尚未自动化**）。
    见 [证据页](../../open-source/mlcllm/evidence/router-debug-endpoints-always-on.md)。
+4. **`functools.partial` 隔了一层（2026-11-05，TM-022 补）**：AReaL 的三个 loss 开关
+   （`use_sapo_loss` / `use_cispo_loss` / `use_decoupled_loss`）被报 `producers_total=0`，
+   实际生产者在 `actor.py:612` 的 `loss_fn = functools.partial(grpo_loss_fn, ..., use_sapo_loss=self.config.use_sapo_loss, ...)`。
+   扫描器收集调用点时只看 `Call.func` 的名字是不是 `grpo_loss_fn`，而这里是
+   `partial` 的**第一个位置实参**。⇒ 判"没生产者"之前先看：这个函数有没有作为
+   `partial` / `lambda` / 装饰器的第一个实参出现过。**尚未进扫描器**（要做就得把
+   `partial(f, ...)` 展开成一次 `f(...)` 调用，位置实参的对应关系也会跟着变）。
+   见 [AReaL 批](../../experiments/areal-pyflag-triage/README.md)。
 
 **跑 SGLang 的耗时**：`python3 scan_unwired_flags.py <sglang>` 约 **10.5 分钟**（8000+ 文件），且 `--json` 落盘到**脚本所在目录** `tools/pyflag/scan-<root>.json`，不是被测仓库里——第一次找错了地方。
 
@@ -407,6 +414,34 @@ C++ 侧只有 22 个"有消费者且按它分支"的结构体字段——MLC-LLM
    38 个模型里只有 **3 个**（llama / llama4 / nemotron）显式传，其余 35 个吃形参默认 `False`；
    `dispatch_kv_cache_creation.py` 里 `kwargs.pop(...)` 再 `kwargs[...] = ...` 的 `kwargs` 是
    **具名形参**（不是 `**kwargs`），只改这个字典自己。⇒ 不是运行时开关，属设计面。
+
+## 训练侧（2026-11-05，扩池第七批：AReaL）
+
+推理引擎六批扫完后换到**训练侧**，第一个对象是 AReaL `3b936798`（2026-10-19，1141 个 `.py`、
+**32 秒**）：**42 个开关 / 7 条 `silently_inert`**。逐条归因后：**R1 真实接线 4 条**（全是同一个盲区：
+`functools.partial`，见上文第 4 条）、**R2 真不可达 1 条**（`use_cpu`）、**R3 内部默认 2 条**
+（`use_dist_ckpt` / `with_rng`，无配置字段）。⇒ **没有任何一条是"用户配了没反应"的开关**。
+
+| 仓库 | 快照 | 文件 | 开关 | 失效 | 人工结论 |
+|---|---|---|---|---|---|
+| AReaL | `3b936798` | 1141 | 42 | 7 | R1 4（`partial` 盲区）/ R2 1（`use_cpu`）/ R3 2（内部默认）；真缺陷 0 条 |
+
+**R2 那条值得单独记**：`archon/moe/kernels.py:155` 的 `generate_permute_indices(..., use_cpu=False)`
+在 `:211` 有 `if use_cpu: fill_indices_cpu(...) else: fill_indices_wrapper(...)`，
+而唯一调用点 `moe/utils.py:212` 只传 5 个位置实参、不传它，全仓（含 `tests/`）**零生产者**
+⇒ CPU 实现从未被执行过。docstring `:172` 仍写着 "whether to use CPU implementation"。
+但这条**不是用户配置**（没有 CLI、没有 config 字段），是开发期调试开关 ⇒ 对外价值低。
+**后续批已把后半句查完**（[use-cpu-fallback](../../experiments/areal-use-cpu-fallback/README.md)）：
+CPU 实现在上游缓冲口径下与 GPU 排布逐位相同（**不是**坏掉的回退），而 `kernels.py` 顶层
+`import triton` ⇒ 缺 Triton 的机器整模块进不来，测试又用 `skipif(not HAS_TRITON)` 静默跳过。
+⇒ 口径：**开关不可达 + 实现可用**。方法教训：判"回退路径坏了"之前先对齐调用方实际给的
+缓冲/参数口径——本批三次误判有两次栽在这里。
+
+**训练侧与推理引擎的形状差异**（下一批换框架时要注意）：训练框架的开关大多挂在
+**config dataclass 字段**上（`cli_args.py` 里 `field(...)`），而不是函数形参；
+本工具按"形参默认值"发现开关，所以**只能看见函数层面的那部分**——AReaL 42 个开关
+相对它数百个配置字段是很小的覆盖。⇒ 训练侧若要系统覆盖，得另做"配置字段 → 消费点"的扫描，
+不能照搬 pyflag 的口径。
 
 ## 判定的分量
 

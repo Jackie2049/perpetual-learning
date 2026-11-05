@@ -1,0 +1,1708 @@
+{
+ "flags": [
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_apply_pipeline_parallelism",
+     "file": "areal/experimental/engine/archon_engine.py",
+     "func": "_apply_pipeline_parallelism",
+     "line": 945,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_apply_parallelism",
+     "file": "areal/experimental/engine/archon_engine.py",
+     "func": "_apply_parallelism",
+     "line": 997,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "setup_deterministic_mode",
+     "file": "areal/experimental/engine/archon_utils.py",
+     "func": "setup_deterministic_mode",
+     "line": 214,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "force_pad_to_maximum",
+     "file": "areal/experimental/engine/archon_utils.py",
+     "func": "force_pad_to_maximum",
+     "line": 258,
+     "param_default": "unspecified"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "setup_deterministic_mode",
+     "file": "areal/experimental/engine/archon_utils.py",
+     "func": "setup_deterministic_mode",
+     "line": 214,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "force_pad_to_maximum",
+     "file": "areal/experimental/engine/archon_utils.py",
+     "func": "force_pad_to_maximum",
+     "line": 258,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "unspecified"
+   ],
+   "flag": "enable_compile",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "areal/experimental/engine/archon_utils.py",
+     "how": "keyword",
+     "line": 345
+    },
+    {
+     "file": "areal/experimental/engine/archon_utils.py",
+     "how": "positional",
+     "line": 344
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 52,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_print",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 3,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "trace_scope",
+     "file": "areal/utils/perf_tracer.py",
+     "func": "trace_scope",
+     "line": 1865,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "atrace_scope",
+     "file": "areal/utils/perf_tracer.py",
+     "func": "atrace_scope",
+     "line": 1885,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_Scope",
+     "file": "areal/utils/perf_tracer.py",
+     "func": "__init__",
+     "line": 1137,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_AsyncScope",
+     "file": "areal/utils/perf_tracer.py",
+     "func": "__init__",
+     "line": 1233,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_Scope",
+     "file": "areal/utils/perf_tracer.py",
+     "func": "__init__",
+     "line": 1137,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "enable_profiler",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "areal/utils/perf_tracer.py",
+     "how": "keyword",
+     "line": 1876
+    },
+    {
+     "file": "areal/utils/perf_tracer.py",
+     "how": "keyword",
+     "line": 1896
+    },
+    {
+     "file": "areal/utils/perf_tracer.py",
+     "how": "keyword",
+     "line": 1243
+    },
+    {
+     "file": "areal/utils/perf_tracer.py",
+     "how": "keyword",
+     "line": 1395
+    },
+    {
+     "file": "areal/utils/perf_tracer.py",
+     "how": "keyword",
+     "line": 1420
+    },
+    {
+     "file": "areal/trainer/sft_trainer.py",
+     "how": "keyword",
+     "line": 223
+    }
+   ],
+   "producers_total": 6,
+   "reads_nontest": 23,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "default_get_input_ids_fn",
+     "file": "areal/workflow/rlvr.py",
+     "func": "default_get_input_ids_fn",
+     "line": 32,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [
+    {
+     "file": "areal/dataset/swe_sft/tokenization.py",
+     "line": 431
+    }
+   ],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_thinking",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 78,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "BatchTaskDispatcher",
+     "file": "areal/infra/workflow_executor.py",
+     "func": "__init__",
+     "line": 350,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_tracing",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 14,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "force_pad_to_maximum",
+     "file": "areal/experimental/engine/archon_utils.py",
+     "func": "force_pad_to_maximum",
+     "line": 258,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "prepare_training_config",
+     "file": "areal/experimental/engine/archon_utils.py",
+     "func": "prepare_training_config",
+     "line": 309,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_validate_areal_lm_head_compatibility",
+     "file": "areal/engine/megatron_engine.py",
+     "func": "_validate_areal_lm_head_compatibility",
+     "line": 285,
+     "param_default": "unspecified"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "force_pad_to_maximum",
+     "file": "areal/experimental/engine/archon_utils.py",
+     "func": "force_pad_to_maximum",
+     "line": 258,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_validate_areal_lm_head_compatibility",
+     "file": "areal/engine/megatron_engine.py",
+     "func": "_validate_areal_lm_head_compatibility",
+     "line": 285,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "unspecified"
+   ],
+   "flag": "enable_tree_training",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "areal/experimental/engine/archon_engine.py",
+     "how": "keyword",
+     "line": 348
+    },
+    {
+     "file": "areal/experimental/engine/archon_utils.py",
+     "how": "keyword",
+     "line": 345
+    },
+    {
+     "file": "areal/engine/megatron_engine.py",
+     "how": "keyword",
+     "line": 442
+    }
+   ],
+   "producers_total": 3,
+   "reads_nontest": 67,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "no_kda_lora",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 25,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_tokenize_samples",
+     "file": "areal/dataset/swe_sft/pipeline.py",
+     "func": "_tokenize_samples",
+     "line": 506,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_process_swe_sft",
+     "file": "areal/dataset/swe_sft/pipeline.py",
+     "func": "_process_swe_sft",
+     "line": 609,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "get_swe_sft_dataset",
+     "file": "areal/dataset/swe_sft/pipeline.py",
+     "func": "get_swe_sft_dataset",
+     "line": 673,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_tokenize_samples",
+     "file": "areal/dataset/swe_sft/pipeline.py",
+     "func": "_tokenize_samples",
+     "line": 506,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "no_tools",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "areal/dataset/swe_sft/pipeline.py",
+     "how": "keyword",
+     "line": 658
+    },
+    {
+     "file": "areal/dataset/swe_sft/__main__.py",
+     "how": "keyword",
+     "line": 252
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 14,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_forward_post",
+     "file": "areal/v2/training_service/gateway/app.py",
+     "func": "_forward_post",
+     "line": 29,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_forward_post",
+     "file": "areal/v2/training_service/gateway/app.py",
+     "func": "_forward_post",
+     "line": 29,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_admin_auth_for_upstream",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "areal/v2/training_service/gateway/engine.py",
+     "how": "keyword",
+     "line": 64
+    },
+    {
+     "file": "areal/v2/training_service/gateway/engine.py",
+     "how": "keyword",
+     "line": 73
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 4,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_checkpoint_opt_param_scheduler",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 5,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "grpo_loss_fn",
+     "file": "areal/trainer/ppo/actor.py",
+     "func": "grpo_loss_fn",
+     "line": 857,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "grpo_loss_fn",
+     "file": "areal/trainer/ppo/actor.py",
+     "func": "grpo_loss_fn",
+     "line": 857,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_cispo_loss",
+   "mode": "never",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 12,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "generate_permute_indices",
+     "file": "areal/experimental/models/archon/moe/kernels.py",
+     "func": "generate_permute_indices",
+     "line": 155,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "generate_permute_indices",
+     "file": "areal/experimental/models/archon/moe/kernels.py",
+     "func": "generate_permute_indices",
+     "line": 155,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_cpu",
+   "mode": "never",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 17,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_cpu_offload",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 11,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "get_model",
+     "file": "areal/models/mcore/mcore_bridge_adapter.py",
+     "func": "get_model",
+     "line": 188,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "get_model",
+     "file": "areal/models/mcore/mcore_bridge_adapter.py",
+     "func": "get_model",
+     "line": 188,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_custom_fsdp",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "areal/models/mcore/registry.py",
+     "how": "keyword",
+     "line": 422
+    },
+    {
+     "file": "areal/models/mcore/registry.py",
+     "how": "keyword",
+     "line": 617
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 8,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_custom_rmsnorm",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 8,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "GPUStagedAdamW",
+     "file": "areal/engine/megatron_utils/gpu_staged_optimizer.py",
+     "func": "__init__",
+     "line": 241,
+     "param_default": true
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "GPUStagedAdamW",
+     "file": "areal/engine/megatron_utils/gpu_staged_optimizer.py",
+     "func": "__init__",
+     "line": 241,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_decoupled_grad",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "areal/engine/megatron_utils/gpu_staged_optimizer.py",
+     "how": "keyword",
+     "line": 945
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 3,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "grpo_loss_fn",
+     "file": "areal/trainer/ppo/actor.py",
+     "func": "grpo_loss_fn",
+     "line": 857,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "grpo_loss_fn",
+     "file": "areal/trainer/ppo/actor.py",
+     "func": "grpo_loss_fn",
+     "line": 857,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_decoupled_loss",
+   "mode": "never",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 44,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_dist_checkpointing",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 4,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "get_rng_state",
+     "file": "areal/engine/megatron_utils/checkpointer.py",
+     "func": "get_rng_state",
+     "line": 314,
+     "param_default": true
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "get_rng_state",
+     "file": "areal/engine/megatron_utils/checkpointer.py",
+     "func": "get_rng_state",
+     "line": 314,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_dist_ckpt",
+   "mode": "always",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 2,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_distributed_optimizer",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 17,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_grouped_mm",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 16,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_kahan_summation",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 7,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "extract_answer",
+     "file": "areal/reward/geometry3k.py",
+     "func": "extract_answer",
+     "line": 12,
+     "param_default": true
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "extract_answer",
+     "file": "areal/reward/geometry3k.py",
+     "func": "extract_answer",
+     "line": 12,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_last_number",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "areal/reward/geometry3k.py",
+     "how": "keyword",
+     "line": 34
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 5,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_prepare_output_fn",
+     "file": "areal/models/parallel_styles.py",
+     "func": "_prepare_output_fn",
+     "line": 66,
+     "param_default": "unspecified"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_prepare_output_fn",
+     "file": "areal/models/parallel_styles.py",
+     "func": "_prepare_output_fn",
+     "line": 66,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "unspecified"
+   ],
+   "flag": "use_local_output",
+   "mode": "mixed",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 9,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "make_mcore_model",
+     "file": "areal/models/mcore/registry.py",
+     "func": "make_mcore_model",
+     "line": 406,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "from_disk",
+     "file": "areal/api/io_struct.py",
+     "func": "from_disk",
+     "line": 220,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "from_megatron_xccl",
+     "file": "areal/api/io_struct.py",
+     "func": "from_megatron_xccl",
+     "line": 251,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "from_fsdp_xccl",
+     "file": "areal/api/io_struct.py",
+     "func": "from_fsdp_xccl",
+     "line": 271,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "from_awex",
+     "file": "areal/api/io_struct.py",
+     "func": "from_awex",
+     "line": 291,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "from_pretrained",
+     "file": "areal/engine/fsdp_engine.py",
+     "func": "from_pretrained",
+     "line": 278,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "validate_bailing_v3_weight_update",
+     "file": "areal/engine/megatron_utils/bailing_v3.py",
+     "func": "validate_bailing_v3_weight_update",
+     "line": 18,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "make_mcore_model",
+     "file": "areal/models/mcore/registry.py",
+     "func": "make_mcore_model",
+     "line": 406,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "validate_bailing_v3_weight_update",
+     "file": "areal/engine/megatron_utils/bailing_v3.py",
+     "func": "validate_bailing_v3_weight_update",
+     "line": 18,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_lora",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "areal/engine/megatron_engine.py",
+     "how": "keyword",
+     "line": 3397
+    },
+    {
+     "file": "areal/engine/megatron_engine.py",
+     "how": "keyword",
+     "line": 708
+    },
+    {
+     "file": "areal/engine/megatron_utils/megatron.py",
+     "how": "keyword",
+     "line": 1301
+    }
+   ],
+   "producers_total": 3,
+   "reads_nontest": 118,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "packed_context_parallel_forward",
+     "file": "areal/engine/megatron_utils/packed_context_parallel.py",
+     "func": "packed_context_parallel_forward",
+     "line": 505,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "packed_context_parallel_forward",
+     "file": "areal/engine/megatron_utils/packed_context_parallel.py",
+     "func": "packed_context_parallel_forward",
+     "line": 505,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_model_packed_seq",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "areal/engine/megatron_engine.py",
+     "how": "keyword",
+     "line": 2132
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 21,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_padded_seq",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 17,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_qk_l2norm",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 8,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_build_tool_call",
+     "file": "areal/experimental/openai/tool_call_parser.py",
+     "func": "_build_tool_call",
+     "line": 211,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_process_tool_calls_sglang",
+     "file": "areal/experimental/openai/tool_call_parser.py",
+     "func": "_process_tool_calls_sglang",
+     "line": 332,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_process_tool_calls_vllm",
+     "file": "areal/experimental/openai/tool_call_parser.py",
+     "func": "_process_tool_calls_vllm",
+     "line": 448,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_build_tool_call",
+     "file": "areal/experimental/openai/tool_call_parser.py",
+     "func": "_build_tool_call",
+     "line": 211,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_process_tool_calls_sglang",
+     "file": "areal/experimental/openai/tool_call_parser.py",
+     "func": "_process_tool_calls_sglang",
+     "line": 332,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_process_tool_calls_vllm",
+     "file": "areal/experimental/openai/tool_call_parser.py",
+     "func": "_process_tool_calls_vllm",
+     "line": 448,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False",
+    "unspecified"
+   ],
+   "flag": "use_responses",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "areal/experimental/openai/tool_call_parser.py",
+     "how": "positional",
+     "line": 585
+    },
+    {
+     "file": "areal/experimental/openai/tool_call_parser.py",
+     "how": "positional",
+     "line": 597
+    },
+    {
+     "file": "areal/experimental/openai/tool_call_parser.py",
+     "how": "positional",
+     "line": 309
+    }
+   ],
+   "producers_total": 3,
+   "reads_nontest": 24,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "grpo_loss_fn",
+     "file": "areal/trainer/ppo/actor.py",
+     "func": "grpo_loss_fn",
+     "line": 857,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "grpo_loss_fn",
+     "file": "areal/trainer/ppo/actor.py",
+     "func": "grpo_loss_fn",
+     "line": 857,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_sapo_loss",
+   "mode": "never",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 16,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "normalize_logical_rollout_rewards",
+     "file": "areal/experimental/openai/types.py",
+     "func": "normalize_logical_rollout_rewards",
+     "line": 455,
+     "param_default": true
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "normalize_logical_rollout_rewards",
+     "file": "areal/experimental/openai/types.py",
+     "func": "normalize_logical_rollout_rewards",
+     "line": 455,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_std",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "areal/infra/remote_inf_engine.py",
+     "how": "keyword",
+     "line": 304
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 91,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "build_target_cmd",
+     "file": "areal/infra/utils/proc.py",
+     "func": "build_target_cmd",
+     "line": 39,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "build_target_cmd",
+     "file": "areal/infra/utils/proc.py",
+     "func": "build_target_cmd",
+     "line": 39,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_stdbuf",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "areal/infra/launcher/local.py",
+     "how": "keyword",
+     "line": 147
+    },
+    {
+     "file": "areal/infra/utils/proc.py",
+     "how": "keyword",
+     "line": 117
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 4,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "make_mcore_layer_specs_bailing_v3",
+     "file": "areal/models/mcore/bailing_v3.py",
+     "func": "make_mcore_layer_specs_bailing_v3",
+     "line": 249,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "make_mcore_layer_specs_bailing_moe",
+     "file": "areal/models/mcore/bailing_moe.py",
+     "func": "make_mcore_layer_specs_bailing_moe",
+     "line": 221,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "make_mcore_layer_specs_qwen3_dense",
+     "file": "areal/models/mcore/qwen3.py",
+     "func": "make_mcore_layer_specs_qwen3_dense",
+     "line": 30,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "make_mcore_layer_specs_bailing_v3",
+     "file": "areal/models/mcore/bailing_v3.py",
+     "func": "make_mcore_layer_specs_bailing_v3",
+     "line": 249,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "make_mcore_layer_specs_bailing_moe",
+     "file": "areal/models/mcore/bailing_moe.py",
+     "func": "make_mcore_layer_specs_bailing_moe",
+     "line": 221,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_te",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "areal/models/mcore/bailing_moe_bridge.py",
+     "how": "keyword",
+     "line": 232
+    },
+    {
+     "file": "areal/models/mcore/registry.py",
+     "how": "keyword",
+     "line": 391
+    },
+    {
+     "file": "areal/models/mcore/registry.py",
+     "how": "keyword",
+     "line": 397
+    },
+    {
+     "file": "areal/models/mcore/registry.py",
+     "how": "keyword",
+     "line": 399
+    },
+    {
+     "file": "areal/models/mcore/bailing_v3_bridge.py",
+     "how": "keyword",
+     "line": 244
+    }
+   ],
+   "producers_total": 5,
+   "reads_nontest": 12,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "get_model",
+     "file": "areal/models/mcore/mcore_bridge_adapter.py",
+     "func": "get_model",
+     "line": 188,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "get_model",
+     "file": "areal/models/mcore/mcore_bridge_adapter.py",
+     "func": "get_model",
+     "line": 188,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_torch_fsdp2",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "areal/models/mcore/registry.py",
+     "how": "keyword",
+     "line": 422
+    },
+    {
+     "file": "areal/models/mcore/registry.py",
+     "how": "keyword",
+     "line": 617
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 8,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_triton",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 30,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "packed_context_parallel_forward",
+     "file": "areal/engine/megatron_utils/packed_context_parallel.py",
+     "func": "packed_context_parallel_forward",
+     "line": 505,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "packed_context_parallel_forward",
+     "file": "areal/engine/megatron_utils/packed_context_parallel.py",
+     "func": "packed_context_parallel_forward",
+     "line": 505,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_wrapper_packed_seq",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "areal/engine/megatron_engine.py",
+     "how": "keyword",
+     "line": 2132
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 13,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "with_labels",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 6,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_checkpoint_aware_context",
+     "file": "areal/engine/megatron_engine.py",
+     "func": "_checkpoint_aware_context",
+     "line": 1444,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "generate_state_dict",
+     "file": "areal/engine/megatron_utils/checkpointer.py",
+     "func": "generate_state_dict",
+     "line": 406,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "load_checkpoint",
+     "file": "areal/engine/megatron_utils/checkpointer.py",
+     "func": "load_checkpoint",
+     "line": 494,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_load_checkpoint",
+     "file": "areal/engine/megatron_utils/checkpointer.py",
+     "func": "_load_checkpoint",
+     "line": 543,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "checkpoint_residency",
+     "file": "areal/engine/megatron_utils/weight_residency.py",
+     "func": "checkpoint_residency",
+     "line": 52,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "checkpoint_awex_residency",
+     "file": "areal/engine/megatron_utils/optimizer_chain.py",
+     "func": "checkpoint_awex_residency",
+     "line": 105,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "checkpoint_residency",
+     "file": "areal/engine/awex/adapters/megatron_adapter.py",
+     "func": "checkpoint_residency",
+     "line": 1047,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_checkpoint_aware_context",
+     "file": "areal/engine/megatron_engine.py",
+     "func": "_checkpoint_aware_context",
+     "line": 1444,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "generate_state_dict",
+     "file": "areal/engine/megatron_utils/checkpointer.py",
+     "func": "generate_state_dict",
+     "line": 406,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_load_checkpoint",
+     "file": "areal/engine/megatron_utils/checkpointer.py",
+     "func": "_load_checkpoint",
+     "line": 543,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "checkpoint_awex_residency",
+     "file": "areal/engine/megatron_utils/optimizer_chain.py",
+     "func": "checkpoint_awex_residency",
+     "line": 105,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "True",
+    "unspecified"
+   ],
+   "flag": "with_model",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "areal/engine/megatron_engine.py",
+     "how": "keyword",
+     "line": 1451
+    },
+    {
+     "file": "areal/engine/megatron_engine.py",
+     "how": "keyword",
+     "line": 1348
+    },
+    {
+     "file": "areal/engine/megatron_engine.py",
+     "how": "keyword",
+     "line": 1416
+    },
+    {
+     "file": "areal/engine/megatron_utils/checkpointer.py",
+     "how": "positional",
+     "line": 562
+    },
+    {
+     "file": "areal/engine/megatron_utils/checkpointer.py",
+     "how": "positional",
+     "line": 659
+    },
+    {
+     "file": "areal/engine/megatron_utils/weight_residency.py",
+     "how": "keyword",
+     "line": 54
+    },
+    {
+     "file": "areal/engine/awex/adapters/megatron_adapter.py",
+     "how": "keyword",
+     "line": 1049
+    }
+   ],
+   "producers_total": 7,
+   "reads_nontest": 27,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_checkpoint_aware_context",
+     "file": "areal/engine/megatron_engine.py",
+     "func": "_checkpoint_aware_context",
+     "line": 1444,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "generate_state_dict",
+     "file": "areal/engine/megatron_utils/checkpointer.py",
+     "func": "generate_state_dict",
+     "line": 406,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "load_checkpoint",
+     "file": "areal/engine/megatron_utils/checkpointer.py",
+     "func": "load_checkpoint",
+     "line": 494,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_load_checkpoint",
+     "file": "areal/engine/megatron_utils/checkpointer.py",
+     "func": "_load_checkpoint",
+     "line": 543,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "checkpoint_residency",
+     "file": "areal/engine/megatron_utils/weight_residency.py",
+     "func": "checkpoint_residency",
+     "line": 52,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "checkpoint_awex_residency",
+     "file": "areal/engine/megatron_utils/optimizer_chain.py",
+     "func": "checkpoint_awex_residency",
+     "line": 105,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "checkpoint_residency",
+     "file": "areal/engine/awex/adapters/megatron_adapter.py",
+     "func": "checkpoint_residency",
+     "line": 1047,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "generate_state_dict",
+     "file": "areal/engine/megatron_utils/checkpointer.py",
+     "func": "generate_state_dict",
+     "line": 406,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_load_checkpoint",
+     "file": "areal/engine/megatron_utils/checkpointer.py",
+     "func": "_load_checkpoint",
+     "line": 543,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "checkpoint_awex_residency",
+     "file": "areal/engine/megatron_utils/optimizer_chain.py",
+     "func": "checkpoint_awex_residency",
+     "line": 105,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "True",
+    "unspecified"
+   ],
+   "flag": "with_optimizer",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "areal/engine/megatron_engine.py",
+     "how": "keyword",
+     "line": 1451
+    },
+    {
+     "file": "areal/engine/megatron_engine.py",
+     "how": "keyword",
+     "line": 1348
+    },
+    {
+     "file": "areal/engine/megatron_engine.py",
+     "how": "keyword",
+     "line": 1416
+    },
+    {
+     "file": "areal/engine/megatron_engine.py",
+     "how": "keyword",
+     "line": 1437
+    },
+    {
+     "file": "areal/engine/megatron_utils/checkpointer.py",
+     "how": "positional",
+     "line": 562
+    },
+    {
+     "file": "areal/engine/megatron_utils/checkpointer.py",
+     "how": "positional",
+     "line": 659
+    },
+    {
+     "file": "areal/engine/megatron_utils/weight_residency.py",
+     "how": "keyword",
+     "line": 54
+    },
+    {
+     "file": "areal/engine/awex/adapters/megatron_adapter.py",
+     "how": "keyword",
+     "line": 1049
+    }
+   ],
+   "producers_total": 8,
+   "reads_nontest": 35,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "generate_state_dict",
+     "file": "areal/engine/megatron_utils/checkpointer.py",
+     "func": "generate_state_dict",
+     "line": 406,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "load_checkpoint",
+     "file": "areal/engine/megatron_utils/checkpointer.py",
+     "func": "load_checkpoint",
+     "line": 494,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_load_checkpoint",
+     "file": "areal/engine/megatron_utils/checkpointer.py",
+     "func": "_load_checkpoint",
+     "line": 543,
+     "param_default": true
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "generate_state_dict",
+     "file": "areal/engine/megatron_utils/checkpointer.py",
+     "func": "generate_state_dict",
+     "line": 406,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_load_checkpoint",
+     "file": "areal/engine/megatron_utils/checkpointer.py",
+     "func": "_load_checkpoint",
+     "line": 543,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "with_rng",
+   "mode": "always",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 11,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "with_sampler",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 3,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "wait",
+     "file": "areal/infra/async_task_runner.py",
+     "func": "wait",
+     "line": 554,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "wait",
+     "file": "areal/infra/async_task_runner.py",
+     "func": "wait",
+     "line": 554,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "with_timing",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "areal/infra/workflow_executor.py",
+     "how": "keyword",
+     "line": 487
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 6,
+   "silently_inert": false
+  }
+ ],
+ "root": "AReaL",
+ "shadowed_arms": []
+}

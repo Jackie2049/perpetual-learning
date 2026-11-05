@@ -1,0 +1,22 @@
+/tmp/verify-py312/lib/python3.12/site-packages/torch/_subclasses/functional_tensor.py:377: UserWarning: Failed to initialize NumPy: No module named 'numpy' (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/utils/tensor_numpy.cpp:82.)
+  cpu = _conversion_method_template(device=torch.device("cpu"))
+P0.torch_version                                           PASS  — 2.15.0 (macOS-15.4.1-arm64-arm-64bit)
+P1.call_site_no_use_cpu                                    PASS  — 位置实参 5 个、关键字无 use_cpu
+P2.module_needs_triton                                     PASS  — 顶层 import triton=True；本机 triton=False
+P2b.tests_skip_when_absent                                 PASS  — test_moe_common.py 用 skipif(not HAS_TRITON)=True 把这批用例静默跳过
+P3a.offset_and_stride_differ[A.align8_4x2]                 PASS  — 起笔用 write_offsets=[0, 8, 16, 24]，累加用 length（[1, 2, 3, 4] 种取值）
+P3b.padding_holes[A.align8_4x2]                            PASS  — 上游缓冲 56 格里留 -1 36 个（token 总数 20）
+P4a.matches_gpu_at_upstream_capacity[A.align8_4x2]         PASS  — 56 格缓冲（总 token 20 + E*对齐）下与 GPU 排布差 0 点
+P4b.raises_at_token_total_capacity[A.align8_4x2]           PASS  — RuntimeError: upper bound and lower bound inconsistent with step sign
+P3a.offset_and_stride_differ[B.align16_4x2]                PASS  — 起笔用 write_offsets=[0, 16, 32, 48]，累加用 length（[1, 2, 3, 4] 种取值）
+P3b.padding_holes[B.align16_4x2]                           PASS  — 上游缓冲 96 格里留 -1 76 个（token 总数 20）
+P4a.matches_gpu_at_upstream_capacity[B.align16_4x2]        PASS  — 96 格缓冲（总 token 20 + E*对齐）下与 GPU 排布差 0 点
+P4b.raises_at_token_total_capacity[B.align16_4x2]          PASS  — RuntimeError: upper bound and lower bound inconsistent with step sign
+P3a.offset_and_stride_differ[C.E8R2_窄]                     PASS  — 起笔用 write_offsets=[0, 16, 32, 48, 64, 80, 96, 112]，累加用 length（[3, 5] 种取值）
+P3b.padding_holes[C.E8R2_窄]                                PASS  — 上游缓冲 192 格里留 -1 128 个（token 总数 64）
+P4a.matches_gpu_at_upstream_capacity[C.E8R2_窄]             PASS  — 192 格缓冲（总 token 64 + E*对齐）下与 GPU 排布差 0 点
+P4b.raises_at_token_total_capacity[C.E8R2_窄]               PASS  — RuntimeError: upper bound and lower bound inconsistent with step sign
+P5.control_index_shift_detected                            PASS  — 索引 +1
+P6.control_stride_switch_detected                          PASS  — 累加改用对齐格数
+
+verdict: SWITCH_UNREACHABLE__IMPL_CORRECT_AT_UPSTREAM_CAPACITY  → /Users/jackiemac/workspace/perpetual-learning/experiments/areal-use-cpu-fallback/raw/probe.json

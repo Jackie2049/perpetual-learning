@@ -1,0 +1,207 @@
+{
+  "verdict": "SWITCH_UNREACHABLE__IMPL_CORRECT_AT_UPSTREAM_CAPACITY",
+  "torch": "2.15.0",
+  "readings": {
+    "A.align8_4x2": {
+      "tokens_per_expert_group": [
+        3,
+        1,
+        2,
+        4,
+        1,
+        2,
+        3,
+        4
+      ],
+      "alignment": 8,
+      "m_sizes": [
+        8,
+        8,
+        8,
+        8
+      ],
+      "write_offsets": [
+        0,
+        8,
+        16,
+        24
+      ],
+      "token_total": 20,
+      "upstream_capacity": 56,
+      "aligned_total": 32,
+      "diff_vs_gpu_at_upstream_capacity": 0,
+      "padding_holes": 0,
+      "error_at_aligned_total": "RuntimeError: upper bound and lower bound inconsistent with step sign"
+    },
+    "B.align16_4x2": {
+      "tokens_per_expert_group": [
+        4,
+        2,
+        1,
+        3,
+        1,
+        2,
+        3,
+        4
+      ],
+      "alignment": 16,
+      "m_sizes": [
+        16,
+        16,
+        16,
+        16
+      ],
+      "write_offsets": [
+        0,
+        16,
+        32,
+        48
+      ],
+      "token_total": 20,
+      "upstream_capacity": 96,
+      "aligned_total": 64,
+      "diff_vs_gpu_at_upstream_capacity": 0,
+      "padding_holes": 0,
+      "error_at_aligned_total": "RuntimeError: upper bound and lower bound inconsistent with step sign"
+    },
+    "C.E8R2_窄": {
+      "tokens_per_expert_group": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "alignment": 16,
+      "m_sizes": [
+        16,
+        16,
+        16,
+        16,
+        16,
+        16,
+        16,
+        16
+      ],
+      "write_offsets": [
+        0,
+        16,
+        32,
+        48,
+        64,
+        80,
+        96,
+        112
+      ],
+      "token_total": 64,
+      "upstream_capacity": 192,
+      "aligned_total": 128,
+      "diff_vs_gpu_at_upstream_capacity": 0,
+      "padding_holes": 0,
+      "error_at_aligned_total": "RuntimeError: upper bound and lower bound inconsistent with step sign"
+    }
+  },
+  "checks": [
+    {
+      "check": "P0.torch_version",
+      "ok": true,
+      "detail": "2.15.0 (macOS-15.4.1-arm64-arm-64bit)"
+    },
+    {
+      "check": "P1.call_site_no_use_cpu",
+      "ok": true,
+      "detail": "位置实参 5 个、关键字无 use_cpu"
+    },
+    {
+      "check": "P2.module_needs_triton",
+      "ok": true,
+      "detail": "顶层 import triton=True；本机 triton=False"
+    },
+    {
+      "check": "P2b.tests_skip_when_absent",
+      "ok": true,
+      "detail": "test_moe_common.py 用 skipif(not HAS_TRITON)=True 把这批用例静默跳过"
+    },
+    {
+      "check": "P3a.offset_and_stride_differ[A.align8_4x2]",
+      "ok": true,
+      "detail": "起笔用 write_offsets=[0, 8, 16, 24]，累加用 length（[1, 2, 3, 4] 种取值）"
+    },
+    {
+      "check": "P3b.padding_holes[A.align8_4x2]",
+      "ok": true,
+      "detail": "上游缓冲 56 格里留 -1 36 个（token 总数 20）"
+    },
+    {
+      "check": "P4a.matches_gpu_at_upstream_capacity[A.align8_4x2]",
+      "ok": true,
+      "detail": "56 格缓冲（总 token 20 + E*对齐）下与 GPU 排布差 0 点"
+    },
+    {
+      "check": "P4b.raises_at_token_total_capacity[A.align8_4x2]",
+      "ok": true,
+      "detail": "RuntimeError: upper bound and lower bound inconsistent with step sign"
+    },
+    {
+      "check": "P3a.offset_and_stride_differ[B.align16_4x2]",
+      "ok": true,
+      "detail": "起笔用 write_offsets=[0, 16, 32, 48]，累加用 length（[1, 2, 3, 4] 种取值）"
+    },
+    {
+      "check": "P3b.padding_holes[B.align16_4x2]",
+      "ok": true,
+      "detail": "上游缓冲 96 格里留 -1 76 个（token 总数 20）"
+    },
+    {
+      "check": "P4a.matches_gpu_at_upstream_capacity[B.align16_4x2]",
+      "ok": true,
+      "detail": "96 格缓冲（总 token 20 + E*对齐）下与 GPU 排布差 0 点"
+    },
+    {
+      "check": "P4b.raises_at_token_total_capacity[B.align16_4x2]",
+      "ok": true,
+      "detail": "RuntimeError: upper bound and lower bound inconsistent with step sign"
+    },
+    {
+      "check": "P3a.offset_and_stride_differ[C.E8R2_窄]",
+      "ok": true,
+      "detail": "起笔用 write_offsets=[0, 16, 32, 48, 64, 80, 96, 112]，累加用 length（[3, 5] 种取值）"
+    },
+    {
+      "check": "P3b.padding_holes[C.E8R2_窄]",
+      "ok": true,
+      "detail": "上游缓冲 192 格里留 -1 128 个（token 总数 64）"
+    },
+    {
+      "check": "P4a.matches_gpu_at_upstream_capacity[C.E8R2_窄]",
+      "ok": true,
+      "detail": "192 格缓冲（总 token 64 + E*对齐）下与 GPU 排布差 0 点"
+    },
+    {
+      "check": "P4b.raises_at_token_total_capacity[C.E8R2_窄]",
+      "ok": true,
+      "detail": "RuntimeError: upper bound and lower bound inconsistent with step sign"
+    },
+    {
+      "check": "P5.control_index_shift_detected",
+      "ok": true,
+      "detail": "索引 +1"
+    },
+    {
+      "check": "P6.control_stride_switch_detected",
+      "ok": true,
+      "detail": "累加改用对齐格数"
+    }
+  ]
+}

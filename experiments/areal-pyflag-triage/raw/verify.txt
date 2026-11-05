@@ -1,0 +1,35 @@
+S0.snapshot_pristine                                 PASS  — clean
+S0.snapshot_commit                                   PASS  — 3b93679888e9
+F.use_sapo_loss.produced_via_partial                 PASS  — [('areal/trainer/ppo/actor.py', 612)]
+F.use_sapo_loss.appears_in_actor                     PASS  — line 622
+F.use_cispo_loss.produced_via_partial                PASS  — [('areal/trainer/ppo/actor.py', 612)]
+F.use_cispo_loss.appears_in_actor                    PASS  — line 625
+F.use_decoupled_loss.produced_via_partial            PASS  — [('areal/trainer/ppo/actor.py', 612)]
+F.use_decoupled_loss.appears_in_actor                PASS  — line 170
+F.use_sapo_loss.read_from_config                     PASS
+F.use_cispo_loss.read_from_config                    PASS
+F.use_decoupled_loss.read_from_config                PASS
+F.no_plain_direct_call                               PASS
+F.use_sapo_loss.config_field                         PASS
+F.use_cispo_loss.config_field                        PASS
+F.use_decoupled_loss.config_field                    PASS
+F4.use_cpu.declared                                  PASS
+F4.use_cpu.branch_exists                             PASS  — line 211
+F4.use_cpu.single_call_site                          PASS  — [('areal/experimental/models/archon/moe/utils.py', 212, [], 5)]
+F4.use_cpu.not_passed                                PASS
+F4.use_cpu.not_positional                            PASS  — 位置实参个数 [5]
+F4.use_cpu.no_producer_anywhere                      PASS
+F4.use_cpu.docstring_promises                        PASS
+F5.use_local_output.default_true                     PASS
+F5.use_local_output.stored                           PASS
+F5.use_local_output.produced_by_partial              PASS
+F5.use_local_output.constructed_default              PASS
+F6.use_dist_ckpt.declared                            PASS
+F6.use_dist_ckpt.single_call                         PASS  — [('areal/engine/megatron_utils/checkpointer.py', 459, [], 0)]
+F6.use_dist_ckpt.not_passed                          PASS
+F6.use_dist_ckpt.not_positional                      PASS
+F7.with_rng.declared_four_times                      PASS  — 次数 4
+F7.with_rng.prod_call_sites_exist                    PASS  — 2
+F7.with_rng.never_passed                             PASS  — [('areal/engine/megatron_engine.py', 1437, ['with_optimizer']), ('areal/engine/megatron_engine.py', 1406, [])]
+
+checks: 33, failed: 0

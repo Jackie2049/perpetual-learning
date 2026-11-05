@@ -1,0 +1,5 @@
+I1.transcript_extra_statement OK red=['C2a.cpu_impl_lines_present', 'C2b.no_unexpected_lines_in_transcript'] expect=['C2a.cpu_impl_lines_present', 'C2b.no_unexpected_lines_in_transcript']
+I2.producer_appears          OK red=['C3.no_producer_at_call_site'] expect=['C3.no_producer_at_call_site']
+I3.line_deleted              OK red=['C2a.cpu_impl_lines_present', 'C2b.no_unexpected_lines_in_transcript'] expect=['C2a.cpu_impl_lines_present', 'C2b.no_unexpected_lines_in_transcript']
+
+selftest: 3/3
