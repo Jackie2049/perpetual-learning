@@ -15,7 +15,31 @@ TOTAL_EPOCHS=${TOTAL_EPOCHS:-1}
 INFLIGHT=${INFLIGHT:-2}
 
 export PATH=/home/zxw/venvs/rollout-g8/bin:$PATH
-cd "$SRC"
+cd "$SRC" || { echo "FATAL: no tree at $SRC" >&2; exit 66; }
+
+# This arm exists to read `training/sampler/blocking_polls`; a tree without the two patches
+# runs to exit 0 with no counter, so the window is spent and the question stays open.
+# Check before any GPU work. CHECK_ONLY=1 stops here (used by preflight's control run).
+if [ "${CHECK_TREE:-1}" != 0 ]; then
+  # A string, not an array: macOS bash 3.2 treats an empty array as unset under `set -u`.
+  missing=""
+  grep -q "poll_interval=sampler_config.get" verl/trainer/ppo/v1/trainer_base.py 2>/dev/null \
+    || missing="$missing poll-interval-wiring"
+  grep -q "sampler/blocking_polls" verl/trainer/ppo/v1/replay_buffer.py 2>/dev/null \
+    || missing="$missing poll-counter"
+  grep -q '"training/sampler/blocking_polls"' verl/trainer/ppo/v1/utils.py 2>/dev/null \
+    || missing="$missing aggregation-rule"
+  if [ -n "$missing" ]; then
+    echo "FATAL: $SRC is not instrumented; missing:$missing" >&2
+    echo "Build it with: bash prep-tree.sh <clean-tree> <dst-tree>" >&2
+    exit 65
+  fi
+fi
+if [ "${CHECK_ONLY:-0}" = 1 ]; then
+  echo "tree checks passed: $SRC"
+  exit 0
+fi
+
 export VERL_USE_UV=0
 export HF_ENDPOINT=https://hf-mirror.com
 export CUDA_VISIBLE_DEVICES=${GPUS}

@@ -32,7 +32,7 @@ import ast
 from collections import Counter, defaultdict
 
 CLASS_START = "class ReplayBuffer:"
-CLASS_END = "class ReplayBufferAsync(ReplayBuffer):"
+CLASS_ASYNC = "class ReplayBufferAsync(ReplayBuffer):"
 
 
 # ----------------------------------------------------------------------------
@@ -140,18 +140,22 @@ class SkipManagerStub:
 
 
 def load_replay_buffer(tree):
-    """exec the real class source; nothing inside the class is reimplemented."""
+    """exec the real class source; nothing inside the class is reimplemented.
+
+    Both classes are loaded: the sync one counts polls inside `sample()`, the async one
+    inside `wait_for_sampleable()`, and the shipped patch touches both.
+    """
     path = f"{tree}/verl/trainer/ppo/v1/replay_buffer.py"
     source = open(path).read()
     start = source.index(CLASS_START)
-    end = source.index(CLASS_END)
+    source.index(CLASS_ASYNC)  # both classes must be present before the slice is trusted
     module = ast.parse(source)
     helpers = "\n\n".join(
         ast.get_source_segment(source, node)
         for node in module.body
         if isinstance(node, ast.FunctionDef)
     )
-    class_source = helpers + "\n\n" + source[start:end]
+    class_source = helpers + "\n\n" + source[start:]
 
     clock = Clock()
     tq = FakeTQ(clock)
@@ -173,15 +177,46 @@ def load_replay_buffer(tree):
         "FILTER_GROUPS_REWARD_METRIC": "reward",
     }
     exec(compile(class_source, path, "exec"), namespace)
-    return namespace["ReplayBuffer"], clock, tq
+    return {"sync": namespace["ReplayBuffer"], "async": namespace["ReplayBufferAsync"]}, clock, tq
+
+
+def load_aggregator(tree):
+    """exec the real `MetricsAggregator` class (utils.py), stubbing only torch tensors."""
+    path = f"{tree}/verl/trainer/ppo/v1/utils.py"
+    source = open(path).read()
+    module = ast.parse(source)
+    cls = next(
+        node for node in module.body if isinstance(node, ast.ClassDef) and node.name == "MetricsAggregator"
+    )
+    class_source = ast.get_source_segment(source, cls)
+
+    class StubTensor:
+        pass
+
+    class StubTorch:
+        Tensor = StubTensor
+
+    namespace = {
+        "Counter": Counter,
+        "defaultdict": defaultdict,
+        "Any": object,
+        "np": __import__("numpy"),
+        "torch": StubTorch,
+        "DAPO_FILTERED_REWARD_COUNTS_KEY": "_dapo_filtered_reward_counts",
+    }
+    exec(compile(class_source, path, "exec"), namespace)
+    return namespace["MetricsAggregator"]
 
 
 # ----------------------------------------------------------------------------
 # scenario driver
 # ----------------------------------------------------------------------------
 class Scenario:
-    def __init__(self, tree, poll_interval, inflight=1, dapo=True, train_batch_size=8, gen_batch_size=1):
-        self.cls, self.clock, self.tq = load_replay_buffer(tree)
+    def __init__(self, tree, poll_interval, inflight=1, dapo=True, train_batch_size=8, gen_batch_size=1,
+                 mode="sync"):
+        classes, self.clock, self.tq = load_replay_buffer(tree)
+        self.cls = classes[mode]
+        self.mode = mode
         self.poll_interval = poll_interval
         self.inflight = inflight
         self.dapo = dapo
@@ -194,7 +229,7 @@ class Scenario:
         self.keep_prob_if_not_filtered = 1.0
         self.dispatched = []
         self.buffer = self.cls(
-            trainer_mode="sync",
+            trainer_mode=self.mode,
             trainer_config={},
             max_off_policy_threshold=None,
             max_off_policy_strategy="drop",
@@ -238,8 +273,9 @@ class Scenario:
 
 
 def run_scenario(tree, name, *, poll_interval, inflight, dapo, duration, steps=6,
-                 train_batch_size=8, filtered_prob=0.0, train_time=1.0):
-    sc = Scenario(tree, poll_interval, inflight=inflight, dapo=dapo, train_batch_size=train_batch_size)
+                 train_batch_size=8, filtered_prob=0.0, train_time=1.0, mode="sync"):
+    sc = Scenario(tree, poll_interval, inflight=inflight, dapo=dapo, train_batch_size=train_batch_size,
+                  mode=mode)
     sc.duration = duration
     sc.filtered_prob = filtered_prob
     rows = []
@@ -337,11 +373,51 @@ def checks(tree, patched):
            all((r["metric_polls"] is not None) for r in dapo["rows"]) == patched,
            {"patched": patched, "metrics": [r["metric_polls"] for r in dapo["rows"]]})
 
-    # 9. The aggregator must sum the key across parameter_sync_step iterations,
-    #    otherwise a step-level value would be an average of per-call counts.
+    # 9. The aggregator must *sum* the key across parameter_sync_step iterations, otherwise a
+    #    step-level reading is the average of per-call counts. Checked by running the real
+    #    `MetricsAggregator` class source, not by looking for the key name: a key registered
+    #    under the wrong rule (or not at all) reads differently. Two iterations of 2 and 3
+    #    polls sum to 5; the unregistered default is a sample-weighted average of 2.5.
+    aggregator = load_aggregator(tree)
+    agg = aggregator()
+    for per_call in (2, 3):
+        agg.add_step_metrics({"training/sampler/blocking_polls": per_call}, sample_count=8)
+    reduced = agg.get_aggregated_metrics().get("training/sampler/blocking_polls")
+    want = 5.0 if patched else 2.5
+    record("aggregator reduces the poll key by sum", reduced == want,
+           {"reading": reduced, "expected": want, "patched": patched})
+
+    # 10. A registration is only worth carrying if some path logs it. `_validate()` is the only
+    #     user of partition "val" and it discards the buffer's metric dict (`batch, _ = ...`),
+    #     so a `validation/...` rule is dead wiring. The invariant asserted is the pair:
+    #     registered-for-validation iff the val call site keeps its metrics.
+    trainer_source = open(f"{tree}/verl/trainer/ppo/v1/trainer_base.py").read()
     utils_source = open(f"{tree}/verl/trainer/ppo/v1/utils.py").read()
-    registered = "training/sampler/blocking_polls" in utils_source and "validation/sampler/blocking_polls" in utils_source
-    record("aggregator sums the poll key", registered == patched, {"registered": registered, "patched": patched})
+    lines = trainer_source.splitlines()
+    val_idx = next(
+        (i for i, line in enumerate(lines) if 'partition_id="val"' in line and "batch_size=len(batch)" in line),
+        None,
+    )
+    val_call = lines[val_idx - 1].strip() if val_idx else ""
+    val_discards = bool(val_idx) and val_call.startswith("batch, _ =")
+    val_registered = "validation/sampler/blocking_polls" in utils_source
+    record("validation poll key registered only if val metrics are logged",
+           val_registered != val_discards,
+           {"val_discards_metrics": val_discards, "validation_key_registered": val_registered,
+            "val_call_site": val_call.strip()})
+
+    # 11. Async mode counts polls inside `wait_for_sampleable()`, and `sample()` forwards that
+    #     dict: the count must match the clock there too, and reset per call.
+    async_run = run_scenario(tree, "async-wait", poll_interval=2.0, inflight=1, dapo=False,
+                             duration=5.0, steps=2, train_batch_size=8, mode="async")
+    record("async wait_for_sampleable counts its own polls",
+           all(p == 3 for p in polls(async_run)) and metric_matches(async_run),
+           {"polls": polls(async_run), "metric": [r["metric_polls"] for r in async_run["rows"]]})
+
+    # 12. Same negative control as (8), on the async path.
+    record("async metric key present iff tree is patched",
+           all(r["metric_polls"] is not None for r in async_run["rows"]) == patched,
+           {"patched": patched, "metric": [r["metric_polls"] for r in async_run["rows"]]})
     return results
 
 

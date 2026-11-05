@@ -1,5 +1,5 @@
 {
-  "tree": "/tmp/m5-pollcount-tree",
+  "tree": "/tmp/m5-g4i1/verl",
   "patched": true,
   "checks": [
     {
@@ -106,11 +106,46 @@
       }
     },
     {
-      "check": "aggregator sums the poll key",
+      "check": "aggregator reduces the poll key by sum",
       "ok": true,
       "detail": {
-        "registered": true,
+        "reading": 5.0,
+        "expected": 5.0,
         "patched": true
+      }
+    },
+    {
+      "check": "validation poll key registered only if val metrics are logged",
+      "ok": true,
+      "detail": {
+        "val_discards_metrics": true,
+        "validation_key_registered": false,
+        "val_call_site": "batch, _ = self.replay_buffer.sample("
+      }
+    },
+    {
+      "check": "async wait_for_sampleable counts its own polls",
+      "ok": true,
+      "detail": {
+        "polls": [
+          3,
+          3
+        ],
+        "metric": [
+          3,
+          3
+        ]
+      }
+    },
+    {
+      "check": "async metric key present iff tree is patched",
+      "ok": true,
+      "detail": {
+        "patched": true,
+        "metric": [
+          3,
+          3
+        ]
       }
     }
   ],

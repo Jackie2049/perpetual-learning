@@ -1,5 +1,5 @@
---- a/verl/trainer/ppo/v1/replay_buffer.py	2026-11-04 20:54:41
-+++ b/verl/trainer/ppo/v1/replay_buffer.py	2026-11-05 07:06:34
+--- a/verl/trainer/ppo/v1/replay_buffer.py
++++ b/verl/trainer/ppo/v1/replay_buffer.py
 @@ -155,6 +155,8 @@
          self.max_off_policy_strategy = max_off_policy_strategy
          self.sampler_kwargs = sampler_kwargs
@@ -49,14 +49,13 @@
                  return sampleable_keys, eviction_metrics
  
              last_debug_time = self._wait_for_next_poll(partition_id, last_debug_time)
---- a/verl/trainer/ppo/v1/utils.py	2026-11-04 20:54:41
-+++ b/verl/trainer/ppo/v1/utils.py	2026-11-05 07:06:34
-@@ -47,6 +47,8 @@
+--- a/verl/trainer/ppo/v1/utils.py
++++ b/verl/trainer/ppo/v1/utils.py
+@@ -47,6 +47,7 @@
                  "validation/filter_groups/discarded_surplus_samples",
                  "training/rollout_failure/evicted_samples",
                  "validation/rollout_failure/evicted_samples",
 +                "training/sampler/blocking_polls",
-+                "validation/sampler/blocking_polls",
                  "training/rollout_logprobs_mismatch_count",
              ],
              "last": [

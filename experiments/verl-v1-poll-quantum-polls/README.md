@@ -71,23 +71,37 @@ gen_i(P) = ceil(D_i / P) * P + c
 
 ## 六、为下一次窗口准备的计数器（本轮的可执行产物）
 
-既然机制依赖"每步阻塞了几次轮询"，而归档里只有总时长，就没有办法把"轮数"和"每次的残余相位"分开。`poll-count.patch`（2 文件，+9 行）补上这个量：
+既然机制依赖"每步阻塞了几次轮询"，而归档里只有总时长，就没有办法把"轮数"和"每次的残余相位"分开。`poll-count.patch`（2 文件，**+8 行**——比 07:xx 版少一行，原因见下）补上这个量：
 
 - `_wait_for_next_poll` 计数，`sample()`／`wait_for_sampleable()` 入口清零、出口写 `{prefix}/sampler/blocking_polls`；
-- `MetricsAggregator` 的 `sum` 规则登记该键（`parameter_sync_step>1` 时按迭代求和；本系列 sync／colocate_async 的 `v1.*` 配置块为空、`parameter_sync_step` 取默认 1，一步一次 `sample()`，该读数即每步值）。
+- `MetricsAggregator` 的 `sum` 规则登记 `training/sampler/blocking_polls`（`parameter_sync_step>1` 时按迭代求和；本系列 sync／colocate_async 的 `v1.*` 配置块为空、`parameter_sync_step` 取默认 1，一步一次 `sample()`，该读数即每步值）。
 
-**验证（CPU，真实源码执行）**：[sim-loop.py](sim-loop.py) 从树里取出 `ReplayBuffer` 类源码原样 `exec`，只把数据层（`transfer_queue`）、时钟和 `KVBatchMeta` 换成桩，用虚拟时钟驱动真实 `sample()` 循环并数 sleep：
+**（2026-11-05 续）删掉 `validation/...` 那条登记：它是不可达的。** 全仓 `partition_id="val"` 只有 `trainer_base.py` 的 `_validate()` 一处，而那里写的是 `batch, _ = self.replay_buffer.sample(...)`——buffer 返回的 metrics 被丢掉，永远不会进 `MetricsAggregator`。登记它属于"写在配置里、但没有任何路径能读到"的死接线。上一版自检只检查 `"validation/sampler/blocking_polls" in utils_source`，所以这条**结构上就不可能被发现**；现在改成断言"注册了 validation 键 ⇔ val 调用点保留 metrics"这一对（sim 检查 10）。
 
-- 打补丁树 **9/9**、未打补丁树 **9/9**（负向对照：未打补丁时该键必须不存在）；
-- 结构自检包括：预填满 → 0 次轮询；到达在第一个量子内 → 1 次；到达 +5.0 s、P=2.0 → 3 次；DAPO 补发 → 每步 >1 次；P=0.1 ≥ P=2.0；inflight=2 ≤ inflight=1；计数按次清零；
+**验证（CPU，真实源码执行）**：[sim-loop.py](sim-loop.py) 从树里取出**两个类**（`ReplayBuffer` 与 `ReplayBufferAsync`）的源码原样 `exec`，只把数据层（`transfer_queue`）、时钟和 `KVBatchMeta` 换成桩，用虚拟时钟驱动真实 `sample()`／`wait_for_sampleable()` 并数 sleep：
+
+- 打补丁树 **12/12**、未打补丁树 **12/12**（负向对照：未打补丁时该键必须不存在）；
+- 结构自检：预填满 → 0 次轮询；到达在第一个量子内 → 1 次；到达 +5.0 s、P=2.0 → 3 次；DAPO 补发 → 每步 >1 次；P=0.1 ≥ P=2.0；inflight=2 ≤ inflight=1；计数按次清零；**async 路径**（`wait_for_sampleable`）同样按次清零并回填 metric；
+- **聚合是行为检查，不是字符串检查**：把真实 `MetricsAggregator` 类源码 `exec` 出来，喂两次迭代 2 与 3，断言打补丁树得 **5.0**（sum）、未打补丁树得 **2.5**（默认 weighted_avg）——上一版只看键名是否出现，换错规则也能过；
 - **补丁惰性**：120 个调度场景 × 4 步 = 480 行，打补丁与未打补丁树的 `gen_s`／`clock_sleeps`／`evicted`／`surplus` **逐字段相同**（`inert=true`）。
 
-读数：[sim-polls.json](raw/sim-polls.json)。用法：
+读数：[sim-polls.json](raw/sim-polls.json)（打补丁树，12 checks + inert）／[sim-polls-pristine.json](raw/sim-polls-pristine.json)（未打补丁树，12 checks）。补丁 `sha256=4c142752…`，对 `31cfccb4` 的 `replay_buffer.py`／`utils.py` `patch -p1 --fuzz=0 --dry-run` 通过，且与 `poll-interval-config.patch` 的**文件集不相交**（互不影响应用顺序）。
+
+用法（窗口前，两条命令都有硬检查，失败会在碰 GPU 之前退出）：
 
 ```bash
-# 服务器窗口：先把补丁打到受测树，再跑 4 卡 inflight=1 臂，读每步 training/sampler/blocking_polls
-patch -p1 --fuzz=0 < poll-count.patch
-# 本机：换树自检
+# 1. 从干净树生成受测副本（dst 已存在则拒绝；打完自检 4 个标记）
+bash ../verl-v1-poll-quantum-dapo-g4/prep-tree.sh /home/zxw/venvs/rollout-g8-src/verl /tmp/m5-g4i1/verl
+# 2. 开窗前检查（树标记 + sim 12/12 + wrapper 守卫正/负对照）
+/tmp/hydra-probe-venv/bin/python3 ../verl-v1-poll-quantum-dapo-g4/preflight-g4.py \
+    --tree <干净树> --run-tree /tmp/m5-g4i1/verl --sim-python <py>=3.10
+# 3. 跑臂：run-poll-dapo.sh 的 CHECK_TREE 默认 1，树缺任一补丁就 exit 65
+MODE=g4i1 GPUS=0,1,4,5 INFLIGHT=1 SRC=/tmp/m5-g4i1/verl bash ../verl-v1-poll-quantum-dapo-g4/run-poll-dapo.sh
+```
+
+本机复跑自检：
+
+```bash
 /tmp/m5-trf-venv/bin/python3 sim-loop.py --tree <树> --compare <未打补丁树> --selftest
 ```
 
@@ -102,7 +116,8 @@ patch -p1 --fuzz=0 < poll-count.patch
 - **零 GPU 读数。** 全部为归档日志重算 + CPU 上执行真实源码；"生效值"是虚拟时钟下的控制流，不是服务器实测。
 - **逐步配对假设同 workload**：2 卡臂 3 个边界步已证明该假设在 D 接近边界时会失效；4 卡臂的 D 方差小所以 12/12，但这不等于模型对任意配置都同样准。
 - **c 的归属未拆**：约 0.16 s 落在 `timing_s/gen` 内、最后一个 sleep 之后；本轮只测到它是常数，没做插桩区分（元数据回读／选择／materialise／计时边界）。
-- **计数器尚未在服务器上跑过**：4 卡 `inflight=1` 臂仍等 ≥4 卡空闲窗口；开窗前先跑 [preflight-g4.py](../verl-v1-poll-quantum-dapo-g4/preflight-g4.py)。届时预期：`blocking_polls ≥ 2`（每次补发轮次各需一次轮询；若实测恒为 1，则归档斜率差异不能用轮数解释，需另找来源）。
+- **计数器尚未在服务器上跑过**：4 卡 `inflight=1` 臂仍等 ≥4 卡空闲窗口；开窗前先跑 [preflight-g4.py](../verl-v1-poll-quantum-dapo-g4/preflight-g4.py)（现在要求 `--run-tree`，并跑 sim 12/12 + wrapper 守卫正/负对照）。届时预期：`blocking_polls ≥ 2`（每次补发轮次各需一次轮询；若实测恒为 1，则归档斜率差异不能用轮数解释，需另找来源）。
+- **`separate_async` 会对同一键记两次**：`prepare_step()` 的 switch-wait 与 `sample()` 各调一次 `wait_for_sampleable()`，聚合器按 sum 相加 ⇒ 该模式下读数含义是"训练步内两处等待的轮询总数"，不是单次 `sample()`。本系列 4 卡 DAPO 臂（sync）不涉及。
 - 未触上游；补丁只在本目录，未 push 到任何 verl 分支。
 
 ## 九、复现
@@ -110,7 +125,7 @@ patch -p1 --fuzz=0 < poll-count.patch
 ```bash
 python3 analyze-quantization.py --out raw/quantization.json --verify   # exit 0
 /tmp/m5-trf-venv/bin/python3 sim-loop.py --tree /tmp/m5-pollcount-tree \
-    --compare /tmp/verl-31cfccb4 --selftest --out raw/sim-polls.json    # 9/9, inert=true
+    --compare /tmp/verl-31cfccb4 --selftest --out raw/sim-polls.json    # 12/12, inert=true
 ```
 
 依赖：Python 3.12（类源码用到 `match`）、numpy；`sim-loop.py` 不需要 torch／verl 依赖，`transfer_queue`／`omegaconf` 均为桩。
