@@ -425,6 +425,14 @@ C++ 侧只有 22 个"有消费者且按它分支"的结构体字段——MLC-LLM
 | 仓库 | 快照 | 文件 | 开关 | 失效 | 人工结论 |
 |---|---|---|---|---|---|
 | AReaL | `3b936798` | 1141 | 42 | 7 | R1 4（`partial` 盲区）/ R2 1（`use_cpu`）/ R3 2（内部默认）；真缺陷 0 条 |
+| FastVideo | `36dc971d` | 2118 | 65 | 8 | R3 4（内部默认）/ R5 4（`fastvideo-kernel/` 子工程）；真缺陷 0 条 |
+
+**第八批的形状读数（FastVideo）**：① **多包仓库要按包分组**——`fastvideo-kernel/` 自带
+`pyproject.toml`，8 条里 4 条落在那里，与主包混在一起数会把子工程内部的包装算漏。
+② **backend impl 类工厂是内部默认的高发区**：接收端 `**extra_impl_args`、发送端只传公共参数，
+8 条里 3 条是这种形状，**不该按"失效"处理**（第七类易错点的接收侧镜像）。
+③ **`mode=always` 与 `producers_total` 回答的不是同一件事**：`use_128x4_sf_layout` 三个调用点
+都显式传 `True`，生产者存在、只是值不变。见 [FastVideo 批](../../experiments/fastvideo-pyflag-triage/README.md)。
 
 **R2 那条值得单独记**：`archon/moe/kernels.py:155` 的 `generate_permute_indices(..., use_cpu=False)`
 在 `:211` 有 `if use_cpu: fill_indices_cpu(...) else: fill_indices_wrapper(...)`，

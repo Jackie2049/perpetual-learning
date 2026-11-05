@@ -332,6 +332,17 @@
 - **停止条件**：上游删掉该形参与分支、或给它接线（`probe.py` 的 P1 会变红提示结论失效）。
 - **成果入口**：[实验](experiments/areal-use-cpu-fallback/README.md) · [探针（6 类 15 条）](experiments/areal-use-cpu-fallback/probe.py) · [抄本一致性（3/3 注入）](experiments/areal-use-cpu-fallback/check_snapshot.py) · [读数](experiments/areal-use-cpu-fallback/raw/probe.json) · [证据页](open-source/areal/evidence/use-cpu-fallback-2026-11.md) · [diary](diary/2026-11-05.md)。
 
+## TM-023 — FastVideo 扩池第八批：8 条候选没有一条是缺陷，产出是多包仓库的分组判据（B 类：方法收口／扩池第八批）
+
+- **渠道 / 仓库 / 来源**：B 类扩池；[hao-ai-lab/FastVideo](https://github.com/hao-ai-lab/FastVideo) `36dc971d`（2026-11-04，[#2001](https://github.com/hao-ai-lab/FastVideo/pull/2001)）；前七批为 SGLang → vLLM → LMDeploy → TensorRT-LLM → llama.cpp → MLC-LLM → AReaL（训练侧），本批换**视频生成**。
+- **优先级 / 负责人 / 状态**：B 类扩池；M1；**已闭环（负结论，2026-11-05）**。
+- **读数**：2118 个 `.py` → **65 个开关 / 8 条 `silently_inert`**；逐条绑行号后 **R3 内部默认 4**（`use_bf16`／`use_128x4_sf_layout`／`use_queue_mode`／`use_nvfp4`，后者是"有生产者但值恒默认"的转发型）、**R5 独立子工程内部 4**（`use_high_prec_o`／`use_qat_qkv_backward`／`enable_smoothing_k`／`enable_smoothing_q`，全在 `fastvideo-kernel/`）⇒ **真缺陷 0 条**。
+- **方法产出**：① **多包仓库按包分组**——`fastvideo-kernel/` 自带 `pyproject.toml`，混在一起数会把子工程内部包装算漏；② **backend impl 类工厂是内部默认的高发区**（接收端 `**extra_impl_args`、发送端只传公共参数），属第七类易错点的接收侧镜像；③ **`mode=always` 与 `producers_total` 回答不同问题**（`use_128x4_sf_layout` 三个调用点都显式传 `True`）。
+- **本批两处判据错（都由重跑抓出）**：① 用 `use_high_prec_o: bool = False` 当声明形态，实际是**位置默认参数** `use_high_prec_o=False,`（:1243）；② "外部生产者只应在测试里"把 `uniproc_executor.py` 的一行 **docstring 提及**算成生产者 ⇒ 改用 AST 只认真实赋值与调用关键字。
+- **价值评估**：**3/10** —— 没有可对外的缺陷。**不对外**。
+- **停止条件**：上游删掉这些形参或给它们接线（`verify_findings.py` 相应判据会变红）。
+- **成果入口**：[实验](experiments/fastvideo-pyflag-triage/README.md) · [判据 24 条](experiments/fastvideo-pyflag-triage/verify_findings.py) · [8 条归因](experiments/fastvideo-pyflag-triage/classify.py) · [读数](experiments/fastvideo-pyflag-triage/raw/scan-fastvideo.json) · [扫描归档](tools/pyflag/scan-fastvideo-36dc971d.json) · [证据页](open-source/fastvideo/evidence/pyflag-2026-11.md) · [diary](diary/2026-11-05.md)。
+
 ## 已闭环与保留方向
 
 - **TM-004 — AReaL prompt_mean：终止修复候选。** M5 单一负责人；2026-10-20 实测跨 M 与 token_mean 一致，不构成 defect，修复撤销，不提 issue/PR。M1 不继续修改脚本或演化并行方案，用户明确的只读 review 除外。证据及分工：[handoff](open-source/areal/handoff-m5.md)、[tracker](open-source/areal/tracker.md)。AReaL 的长期学习偏好仍保留，新的问题应独立登记。

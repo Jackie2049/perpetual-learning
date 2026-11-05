@@ -1,0 +1,2668 @@
+{
+ "flags": [
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "load_module_from_path",
+     "file": "fastvideo/train/utils/moduleloader.py",
+     "func": "load_module_from_path",
+     "line": 93,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "LTX2Model",
+     "file": "fastvideo/train/models/ltx2/ltx2.py",
+     "func": "__init__",
+     "line": 108,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_load_transformer",
+     "file": "fastvideo/train/models/ltx2/ltx2.py",
+     "func": "_load_transformer",
+     "line": 162,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "Hunyuan15Model",
+     "file": "fastvideo/train/models/hunyuan15/hunyuan15.py",
+     "func": "__init__",
+     "line": 50,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "CosmosModel",
+     "file": "fastvideo/train/models/cosmos/cosmos.py",
+     "func": "__init__",
+     "line": 51,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "HunyuanModel",
+     "file": "fastvideo/train/models/hunyuan/hunyuan.py",
+     "func": "__init__",
+     "line": 43,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "Kandinsky5Model",
+     "file": "fastvideo/train/models/kandinsky5/kandinsky5.py",
+     "func": "__init__",
+     "line": 84,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_load_transformer",
+     "file": "fastvideo/train/models/kandinsky5/kandinsky5.py",
+     "func": "_load_transformer",
+     "line": 140,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "MiniMaxH3Model",
+     "file": "fastvideo/train/models/minimax_h3/minimax_h3.py",
+     "func": "__init__",
+     "line": 103,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_load_transformer",
+     "file": "fastvideo/train/models/minimax_h3/minimax_h3.py",
+     "func": "_load_transformer",
+     "line": 194,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "MiniMaxH3LoraModel",
+     "file": "fastvideo/train/models/minimax_h3/minimax_h3.py",
+     "func": "__init__",
+     "line": 1126,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "WanCausalModel",
+     "file": "fastvideo/train/models/wan/wan_causal.py",
+     "func": "__init__",
+     "line": 40,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "WanModel",
+     "file": "fastvideo/train/models/wan/wan.py",
+     "func": "__init__",
+     "line": 66,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_load_transformer",
+     "file": "fastvideo/train/models/wan/wan.py",
+     "func": "_load_transformer",
+     "line": 128,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "load_module_from_path",
+     "file": "fastvideo/train/utils/moduleloader.py",
+     "func": "load_module_from_path",
+     "line": 93,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "disable_custom_init_weights",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "fastvideo/train/models/ltx2/ltx2.py",
+     "how": "keyword",
+     "line": 173
+    },
+    {
+     "file": "fastvideo/train/models/kandinsky5/kandinsky5.py",
+     "how": "keyword",
+     "line": 104
+    },
+    {
+     "file": "fastvideo/train/models/kandinsky5/kandinsky5.py",
+     "how": "keyword",
+     "line": 150
+    },
+    {
+     "file": "fastvideo/train/models/minimax_h3/minimax_h3.py",
+     "how": "keyword",
+     "line": 149
+    },
+    {
+     "file": "fastvideo/train/models/minimax_h3/minimax_h3.py",
+     "how": "keyword",
+     "line": 232
+    },
+    {
+     "file": "fastvideo/train/models/wan/wan.py",
+     "how": "keyword",
+     "line": 90
+    },
+    {
+     "file": "fastvideo/train/models/wan/wan.py",
+     "how": "keyword",
+     "line": 147
+    }
+   ],
+   "producers_total": 7,
+   "reads_nontest": 35,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "AudioInjector",
+     "file": "fastvideo/models/dits/wan_s2v_audio.py",
+     "func": "__init__",
+     "line": 205,
+     "param_default": true
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "AudioInjector",
+     "file": "fastvideo/models/dits/wan_s2v_audio.py",
+     "func": "__init__",
+     "line": 205,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "enable_adain",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "fastvideo/models/dits/wan_s2v.py",
+     "how": "keyword",
+     "line": 356
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 13,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_fps_modulation",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 31,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_keyboard",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 16,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "enable_mouse",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 16,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "SiglipAttention",
+     "file": "fastvideo/models/encoders/siglip.py",
+     "func": "__init__",
+     "line": 70,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "SiglipEncoderLayer",
+     "file": "fastvideo/models/encoders/siglip.py",
+     "func": "__init__",
+     "line": 172,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "SiglipEncoder",
+     "file": "fastvideo/models/encoders/siglip.py",
+     "func": "__init__",
+     "line": 214,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "SiglipAttention",
+     "file": "fastvideo/models/encoders/siglip.py",
+     "func": "__init__",
+     "line": 70,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "enable_scale",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "fastvideo/models/encoders/siglip.py",
+     "how": "keyword",
+     "line": 181
+    },
+    {
+     "file": "fastvideo/models/encoders/siglip.py",
+     "how": "keyword",
+     "line": 276
+    },
+    {
+     "file": "fastvideo/models/encoders/siglip.py",
+     "how": "keyword",
+     "line": 232
+    }
+   ],
+   "producers_total": 3,
+   "reads_nontest": 14,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "preprocess_qkv",
+     "file": "fastvideo-kernel/attn_qat_infer/api.py",
+     "func": "preprocess_qkv",
+     "line": 88,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "preprocess_qkv",
+     "file": "fastvideo-kernel/attn_qat_infer/api.py",
+     "func": "preprocess_qkv",
+     "line": 88,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "enable_smoothing_k",
+   "mode": "never",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 2,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "preprocess_qkv",
+     "file": "fastvideo-kernel/attn_qat_infer/api.py",
+     "func": "preprocess_qkv",
+     "line": 88,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "preprocess_qkv",
+     "file": "fastvideo-kernel/attn_qat_infer/api.py",
+     "func": "preprocess_qkv",
+     "line": 88,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "enable_smoothing_q",
+   "mode": "never",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 4,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "maybe_load_fsdp_model",
+     "file": "fastvideo/models/loader/fsdp_load.py",
+     "func": "maybe_load_fsdp_model",
+     "line": 328,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "create_job",
+     "file": "apps/fastvideo_studio/job_runner.py",
+     "func": "create_job",
+     "line": 475,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_get_or_create_generator",
+     "file": "apps/fastvideo_studio/job_runner.py",
+     "func": "_get_or_create_generator",
+     "line": 789,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "maybe_load_fsdp_model",
+     "file": "fastvideo/models/loader/fsdp_load.py",
+     "func": "maybe_load_fsdp_model",
+     "line": 328,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "enable_torch_compile",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "fastvideo/models/loader/component_loader.py",
+     "how": "keyword",
+     "line": 1336
+    },
+    {
+     "file": "apps/fastvideo_studio/server.py",
+     "how": "keyword",
+     "line": 346
+    },
+    {
+     "file": "apps/fastvideo_studio/job_runner.py",
+     "how": "keyword",
+     "line": 1083
+    }
+   ],
+   "producers_total": 3,
+   "reads_nontest": 116,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "no_fail_fast",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 2,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward",
+     "file": "fastvideo/layers/fp4linear.py",
+     "func": "forward",
+     "line": 36,
+     "param_default": true
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward",
+     "file": "fastvideo/layers/fp4linear.py",
+     "func": "forward",
+     "line": 36,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_128x4_sf_layout",
+   "mode": "always",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 3,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_register_ops_once",
+     "file": "fastvideo/layers/quantization/nvfp4_config.py",
+     "func": "_register_ops_once",
+     "line": 246,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_mm_fp4_row_split",
+     "file": "fastvideo/layers/quantization/nvfp4_config.py",
+     "func": "_mm_fp4_row_split",
+     "line": 475,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_mm_fp4_op",
+     "file": "fastvideo/layers/quantization/nvfp4_config.py",
+     "func": "_mm_fp4_op",
+     "line": 295,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_register_ops_once",
+     "file": "fastvideo/layers/quantization/nvfp4_config.py",
+     "func": "_register_ops_once",
+     "line": 246,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_mm_fp4_row_split",
+     "file": "fastvideo/layers/quantization/nvfp4_config.py",
+     "func": "_mm_fp4_row_split",
+     "line": 475,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "unspecified"
+   ],
+   "flag": "use_8x4_sf_layout",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "fastvideo/layers/quantization/nvfp4_config.py",
+     "how": "positional",
+     "line": 423
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 18,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "MotionConv2d",
+     "file": "fastvideo/models/dits/wan_animate_face.py",
+     "func": "__init__",
+     "line": 96,
+     "param_default": true
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "MotionConv2d",
+     "file": "fastvideo/models/dits/wan_animate_face.py",
+     "func": "__init__",
+     "line": 96,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_activation",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "fastvideo/models/dits/wan_animate_face.py",
+     "how": "keyword",
+     "line": 164
+    },
+    {
+     "file": "fastvideo/models/dits/wan_animate_face.py",
+     "how": "keyword",
+     "line": 166
+    },
+    {
+     "file": "fastvideo/models/dits/wan_animate_face.py",
+     "how": "keyword",
+     "line": 168
+    },
+    {
+     "file": "fastvideo/models/dits/wan_animate_face.py",
+     "how": "keyword",
+     "line": 194
+    },
+    {
+     "file": "fastvideo/models/dits/wan_animate_face.py",
+     "how": "keyword",
+     "line": 203
+    }
+   ],
+   "producers_total": 5,
+   "reads_nontest": 10,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "Gen3CTimestepEmbedding",
+     "file": "fastvideo/models/dits/gen3c.py",
+     "func": "__init__",
+     "line": 100,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "Gen3CEmbedding",
+     "file": "fastvideo/models/dits/gen3c.py",
+     "func": "__init__",
+     "line": 149,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "Gen3CTransformerBlock",
+     "file": "fastvideo/models/dits/gen3c.py",
+     "func": "__init__",
+     "line": 381,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "Gen3CFinalLayer",
+     "file": "fastvideo/models/dits/gen3c.py",
+     "func": "__init__",
+     "line": 653,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "Cosmos25TimestepEmbedding",
+     "file": "fastvideo/models/dits/cosmos2_5.py",
+     "func": "__init__",
+     "line": 69,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "Cosmos25Embedding",
+     "file": "fastvideo/models/dits/cosmos2_5.py",
+     "func": "__init__",
+     "line": 113,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "Cosmos25TransformerBlock",
+     "file": "fastvideo/models/dits/cosmos2_5.py",
+     "func": "__init__",
+     "line": 361,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "Cosmos25FinalLayer",
+     "file": "fastvideo/models/dits/cosmos2_5.py",
+     "func": "__init__",
+     "line": 652,
+     "param_default": true
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "Gen3CTimestepEmbedding",
+     "file": "fastvideo/models/dits/gen3c.py",
+     "func": "__init__",
+     "line": 100,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "Gen3CTransformerBlock",
+     "file": "fastvideo/models/dits/gen3c.py",
+     "func": "__init__",
+     "line": 381,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "Gen3CFinalLayer",
+     "file": "fastvideo/models/dits/gen3c.py",
+     "func": "__init__",
+     "line": 653,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "Cosmos25TimestepEmbedding",
+     "file": "fastvideo/models/dits/cosmos2_5.py",
+     "func": "__init__",
+     "line": 69,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "Cosmos25TransformerBlock",
+     "file": "fastvideo/models/dits/cosmos2_5.py",
+     "func": "__init__",
+     "line": 361,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "Cosmos25FinalLayer",
+     "file": "fastvideo/models/dits/cosmos2_5.py",
+     "func": "__init__",
+     "line": 652,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_adaln_lora",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "fastvideo/models/dits/gen3c.py",
+     "how": "keyword",
+     "line": 159
+    },
+    {
+     "file": "fastvideo/models/dits/gen3c.py",
+     "how": "keyword",
+     "line": 789
+    },
+    {
+     "file": "fastvideo/models/dits/gen3c.py",
+     "how": "keyword",
+     "line": 826
+    },
+    {
+     "file": "fastvideo/models/dits/gen3c.py",
+     "how": "keyword",
+     "line": 798
+    },
+    {
+     "file": "fastvideo/models/dits/gen3c.py",
+     "how": "keyword",
+     "line": 813
+    },
+    {
+     "file": "fastvideo/models/dits/cosmos2_5.py",
+     "how": "keyword",
+     "line": 123
+    },
+    {
+     "file": "fastvideo/models/dits/cosmos2_5.py",
+     "how": "keyword",
+     "line": 781
+    },
+    {
+     "file": "fastvideo/models/dits/cosmos2_5.py",
+     "how": "keyword",
+     "line": 811
+    },
+    {
+     "file": "fastvideo/models/dits/cosmos2_5.py",
+     "how": "keyword",
+     "line": 798
+    }
+   ],
+   "producers_total": 9,
+   "reads_nontest": 53,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_quantized_linear",
+     "file": "fastvideo/mlx_runtime/fastwan.py",
+     "func": "_quantized_linear",
+     "line": 391,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "linear",
+     "file": "fastvideo/mlx_runtime/fastwan.py",
+     "func": "linear",
+     "line": 427,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_quantized_linear",
+     "file": "fastvideo/mlx_runtime/fastwan.py",
+     "func": "_quantized_linear",
+     "line": 391,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_affine_dq_gemm",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "fastvideo/mlx_runtime/fastwan.py",
+     "how": "keyword",
+     "line": 428
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 5,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_beta_sigmas",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 13,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "SLAAttentionImpl",
+     "file": "fastvideo/attention/backends/sla.py",
+     "func": "__init__",
+     "line": 189,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "SageSLAAttentionImpl",
+     "file": "fastvideo/attention/backends/sla.py",
+     "func": "__init__",
+     "line": 393,
+     "param_default": true
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "SLAAttentionImpl",
+     "file": "fastvideo/attention/backends/sla.py",
+     "func": "__init__",
+     "line": 189,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "SageSLAAttentionImpl",
+     "file": "fastvideo/attention/backends/sla.py",
+     "func": "__init__",
+     "line": 393,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_bf16",
+   "mode": "always",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 6,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "Vocoder",
+     "file": "fastvideo/models/audio/ltx2_audio_vae.py",
+     "func": "__init__",
+     "line": 1345,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_bias_at_final",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "fastvideo/models/audio/ltx2_audio_vae.py",
+     "how": "keyword",
+     "line": 1791
+    },
+    {
+     "file": "fastvideo/models/audio/ltx2_audio_vae.py",
+     "how": "keyword",
+     "line": 1743
+    },
+    {
+     "file": "fastvideo/models/audio/ltx2_audio_vae.py",
+     "how": "keyword",
+     "line": 1761
+    }
+   ],
+   "producers_total": 3,
+   "reads_nontest": 11,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_btchw_layout",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 6,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward",
+     "file": "fastvideo/models/encoders/qwen2_5_vl_custom.py",
+     "func": "forward",
+     "line": 916,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward",
+     "file": "fastvideo/models/encoders/qwen2_5_vl_custom.py",
+     "func": "forward",
+     "line": 1040,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward",
+     "file": "fastvideo/models/encoders/qwen2_5_vl_custom.py",
+     "func": "forward",
+     "line": 1698,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward",
+     "file": "fastvideo/third_party/eval/glmasr/modeling_glmasr.py",
+     "func": "forward",
+     "line": 431,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward",
+     "file": "fastvideo/models/encoders/qwen2_5_vl_custom.py",
+     "func": "forward",
+     "line": 1040,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_cache",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "fastvideo/attention/layer.py",
+     "how": "positional",
+     "line": 298
+    },
+    {
+     "file": "fastvideo/models/dits/minimax_h3_vsa_fp4.py",
+     "how": "positional",
+     "line": 366
+    },
+    {
+     "file": "fastvideo/models/dits/ltx2.py",
+     "how": "positional",
+     "line": 1291
+    },
+    {
+     "file": "fastvideo/models/dits/ltx2.py",
+     "how": "positional",
+     "line": 1428
+    },
+    {
+     "file": "fastvideo/models/encoders/qwen2_5_vl_custom.py",
+     "how": "keyword",
+     "line": 933
+    }
+   ],
+   "producers_total": 5,
+   "reads_nontest": 50,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_cfg_trick",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 5,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "Downsample2D",
+     "file": "fastvideo/models/vaes/flux2_components.py",
+     "func": "__init__",
+     "line": 148,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "Upsample2D",
+     "file": "fastvideo/models/vaes/flux2_components.py",
+     "func": "__init__",
+     "line": 182,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "Downsample2D",
+     "file": "fastvideo/models/vaes/flux2_components.py",
+     "func": "__init__",
+     "line": 148,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "Upsample2D",
+     "file": "fastvideo/models/vaes/flux2_components.py",
+     "func": "__init__",
+     "line": 182,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_conv",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "fastvideo/models/vaes/flux2_components.py",
+     "how": "keyword",
+     "line": 397
+    },
+    {
+     "file": "fastvideo/models/vaes/flux2_components.py",
+     "how": "keyword",
+     "line": 466
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 16,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "BasicAVTransformerBlock",
+     "file": "fastvideo/models/dits/ltx2.py",
+     "func": "__init__",
+     "line": 1774,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "LTXModel",
+     "file": "fastvideo/models/dits/ltx2.py",
+     "func": "__init__",
+     "line": 2318,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_init_transformer_blocks",
+     "file": "fastvideo/models/dits/ltx2.py",
+     "func": "_init_transformer_blocks",
+     "line": 2573,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "BasicAVTransformerBlock",
+     "file": "fastvideo/models/dits/ltx2.py",
+     "func": "__init__",
+     "line": 1774,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_distributed_attention",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "fastvideo/models/dits/ltx2.py",
+     "how": "keyword",
+     "line": 2409
+    },
+    {
+     "file": "fastvideo/models/dits/ltx2.py",
+     "how": "keyword",
+     "line": 2754
+    },
+    {
+     "file": "fastvideo/models/dits/ltx2.py",
+     "how": "keyword",
+     "line": 2605
+    }
+   ],
+   "producers_total": 3,
+   "reads_nontest": 18,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "SD3JointTransformerBlock",
+     "file": "fastvideo/models/dits/sd3.py",
+     "func": "__init__",
+     "line": 647,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "SD3JointTransformerBlock",
+     "file": "fastvideo/models/dits/sd3.py",
+     "func": "__init__",
+     "line": 647,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_dual_attention",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "fastvideo/models/dits/sd3.py",
+     "how": "keyword",
+     "line": 879
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 8,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "FlowMatchEulerDiscreteScheduler",
+     "file": "fastvideo/models/schedulers/scheduling_flow_match_euler_discrete.py",
+     "func": "__init__",
+     "line": 112,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "FlowUniPCMultistepScheduler",
+     "file": "fastvideo/models/schedulers/scheduling_flow_unipc_multistep.py",
+     "func": "__init__",
+     "line": 75,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "FlowMatchEulerDiscreteScheduler",
+     "file": "fastvideo/models/schedulers/scheduling_flow_match_euler_discrete.py",
+     "func": "__init__",
+     "line": 112,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "FlowUniPCMultistepScheduler",
+     "file": "fastvideo/models/schedulers/scheduling_flow_unipc_multistep.py",
+     "func": "__init__",
+     "line": 75,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_dynamic_shifting",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "fastvideo/pipelines/basic/lingbotworld_fast/fast_pipeline.py",
+     "how": "keyword",
+     "line": 31
+    },
+    {
+     "file": "fastvideo/pipelines/basic/lingbotworld2/causal_fast_pipeline.py",
+     "how": "keyword",
+     "line": 345
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 27,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_ema",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 15,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_exponential_sigmas",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 13,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "preprocess_mmaudio_video",
+     "file": "fastvideo/pipelines/basic/mmaudio/stages.py",
+     "func": "preprocess_mmaudio_video",
+     "line": 158,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "preprocess_mmaudio_video",
+     "file": "fastvideo/pipelines/basic/mmaudio/stages.py",
+     "func": "preprocess_mmaudio_video",
+     "line": 158,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_ffmpeg_fps_filter",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "fastvideo/pipelines/preprocess/mmaudio/stages.py",
+     "how": "keyword",
+     "line": 170
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 5,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_flow_sigmas",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 8,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "create_job",
+     "file": "apps/fastvideo_studio/job_runner.py",
+     "func": "create_job",
+     "line": 475,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_get_or_create_generator",
+     "file": "apps/fastvideo_studio/job_runner.py",
+     "func": "_get_or_create_generator",
+     "line": 789,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [
+    {
+     "file": "fastvideo/tests/pipelines/test_direct_pipeline_unified_memory.py",
+     "line": 28
+    }
+   ],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_fsdp_inference",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "apps/fastvideo_studio/server.py",
+     "how": "keyword",
+     "line": 346
+    },
+    {
+     "file": "apps/fastvideo_studio/job_runner.py",
+     "how": "keyword",
+     "line": 1083
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 200,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_attention",
+     "file": "fastvideo/mlx_runtime/minimax_h3.py",
+     "func": "_attention",
+     "line": 1044,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_transformer_block",
+     "file": "fastvideo/mlx_runtime/minimax_h3.py",
+     "func": "_transformer_block",
+     "line": 1140,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_attention_target",
+     "file": "fastvideo/mlx_runtime/minimax_h3_prefix_kv_forward.py",
+     "func": "_attention_target",
+     "line": 30,
+     "param_default": "unspecified"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_attention",
+     "file": "fastvideo/mlx_runtime/minimax_h3.py",
+     "func": "_attention",
+     "line": 1044,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_attention_target",
+     "file": "fastvideo/mlx_runtime/minimax_h3_prefix_kv_forward.py",
+     "func": "_attention_target",
+     "line": 30,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "False",
+    "unspecified"
+   ],
+   "flag": "use_gate_compress",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/fused_attention.py",
+     "how": "positional",
+     "line": 36
+    },
+    {
+     "file": "fastvideo/mlx_runtime/minimax_h3.py",
+     "how": "keyword",
+     "line": 1166
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 8,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_compute_quant_and_scale",
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/nvfp4_utils.py",
+     "func": "_compute_quant_and_scale",
+     "line": 13,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "fake_quantize",
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/quant_utils.py",
+     "func": "fake_quantize",
+     "line": 8,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "fake_quantize_q",
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/quant_utils.py",
+     "func": "fake_quantize_q",
+     "line": 32,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "fake_quantize_kv",
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/quant_utils.py",
+     "func": "fake_quantize_kv",
+     "line": 70,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_compute_quant_and_scale",
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/nvfp4_utils.py",
+     "func": "_compute_quant_and_scale",
+     "line": 13,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_global_sf",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/quant_utils.py",
+     "how": "keyword",
+     "line": 17
+    },
+    {
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/quant_utils.py",
+     "how": "keyword",
+     "line": 60
+    },
+    {
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/quant_utils.py",
+     "how": "keyword",
+     "line": 107
+    },
+    {
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/quant_utils.py",
+     "how": "keyword",
+     "line": 113
+    },
+    {
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/attn_qat_train.py",
+     "how": "keyword",
+     "line": 240
+    },
+    {
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/attn_qat_train.py",
+     "how": "keyword",
+     "line": 741
+    },
+    {
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/attn_qat_train.py",
+     "how": "keyword",
+     "line": 171
+    },
+    {
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/attn_qat_train.py",
+     "how": "keyword",
+     "line": 579
+    },
+    {
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/attn_qat_train.py",
+     "how": "keyword",
+     "line": 958
+    }
+   ],
+   "producers_total": 9,
+   "reads_nontest": 55,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_attn_fwd_inner",
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/attn_qat_train.py",
+     "func": "_attn_fwd_inner",
+     "line": 112,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_attn_bwd_dkdv",
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/attn_qat_train.py",
+     "func": "_attn_bwd_dkdv",
+     "line": 519,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_attn_bwd_dkdv_full_tile",
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/attn_qat_train.py",
+     "func": "_attn_bwd_dkdv_full_tile",
+     "line": 718,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_attn_bwd_dkdv_cross",
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/attn_qat_train.py",
+     "func": "_attn_bwd_dkdv_cross",
+     "line": 860,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_attn_bwd",
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/attn_qat_train.py",
+     "func": "_attn_bwd",
+     "line": 986,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward",
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/attn_qat_train.py",
+     "func": "forward",
+     "line": 1230,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_global_sf_P",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/attn_qat_train.py",
+     "how": "keyword",
+     "line": 1105
+    },
+    {
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/attn_qat_train.py",
+     "how": "positional",
+     "line": 439
+    },
+    {
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/attn_qat_train.py",
+     "how": "keyword",
+     "line": 1069
+    },
+    {
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/attn_qat_train.py",
+     "how": "positional",
+     "line": 432
+    },
+    {
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/attn_qat_train.py",
+     "how": "keyword",
+     "line": 928
+    },
+    {
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/attn_qat_train.py",
+     "how": "keyword",
+     "line": 936
+    }
+   ],
+   "producers_total": 6,
+   "reads_nontest": 26,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward",
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/attn_qat_train.py",
+     "func": "forward",
+     "line": 1230,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_global_sf_QKV",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 6,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward",
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/attn_qat_train.py",
+     "func": "forward",
+     "line": 1230,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward",
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/attn_qat_train.py",
+     "func": "forward",
+     "line": 1230,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_high_prec_o",
+   "mode": "never",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 9,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_update_kv_cache_and_attend",
+     "file": "fastvideo/models/dits/matrixgame2/action_module.py",
+     "func": "_update_kv_cache_and_attend",
+     "line": 93,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_update_kv_cache_and_attend",
+     "file": "fastvideo/models/dits/matrixgame2/action_module.py",
+     "func": "_update_kv_cache_and_attend",
+     "line": 93,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_k_for_num_tokens",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "fastvideo/models/dits/matrixgame2/action_module.py",
+     "how": "keyword",
+     "line": 463
+    },
+    {
+     "file": "fastvideo/models/dits/matrixgame2/action_module.py",
+     "how": "keyword",
+     "line": 576
+    },
+    {
+     "file": "fastvideo/models/dits/matrixgame2/action_module.py",
+     "how": "keyword",
+     "line": 607
+    }
+   ],
+   "producers_total": 3,
+   "reads_nontest": 8,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [
+    {
+     "file": "fastvideo/pipelines/stages/timestep_preparation.py",
+     "line": 127
+    }
+   ],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_karras_sigmas",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 21,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_keyframes_abs_pos_embedding",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 22,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_light_vae_arg",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 7,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_mean_velocity",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 15,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "HunyuanVideo15TimeEmbedding",
+     "file": "fastvideo/models/dits/hunyuanvideo15.py",
+     "func": "__init__",
+     "line": 110,
+     "param_default": false
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "HunyuanVideo15TimeEmbedding",
+     "file": "fastvideo/models/dits/hunyuanvideo15.py",
+     "func": "__init__",
+     "line": 110,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_meanflow",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "fastvideo/models/dits/hunyuanvideo15.py",
+     "how": "keyword",
+     "line": 391
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 14,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_memory",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 13,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "init_model_parallel_group",
+     "file": "fastvideo/distributed/parallel_state.py",
+     "func": "init_model_parallel_group",
+     "line": 703,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_message_queue_broadcaster",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "fastvideo/distributed/parallel_state.py",
+     "how": "keyword",
+     "line": 849
+    },
+    {
+     "file": "fastvideo/distributed/parallel_state.py",
+     "how": "keyword",
+     "line": 1222
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 5,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_ltx_generate_freqs",
+     "file": "fastvideo/models/dits/ltx2.py",
+     "func": "_ltx_generate_freqs",
+     "line": 824,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_prepare_positional_embeddings",
+     "file": "fastvideo/models/dits/ltx2.py",
+     "func": "_prepare_positional_embeddings",
+     "line": 1022,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "MultiModalTransformerArgsPreprocessor",
+     "file": "fastvideo/models/dits/ltx2.py",
+     "func": "__init__",
+     "line": 1098,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_ltx_generate_freqs",
+     "file": "fastvideo/models/dits/ltx2.py",
+     "func": "_ltx_generate_freqs",
+     "line": 824,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "unspecified"
+   ],
+   "flag": "use_middle_indices_grid",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "fastvideo/models/dits/ltx2.py",
+     "how": "positional",
+     "line": 885
+    },
+    {
+     "file": "fastvideo/models/dits/ltx2.py",
+     "how": "keyword",
+     "line": 1072
+    },
+    {
+     "file": "fastvideo/models/dits/ltx2.py",
+     "how": "keyword",
+     "line": 1142
+    },
+    {
+     "file": "fastvideo/models/dits/ltx2.py",
+     "how": "keyword",
+     "line": 2502
+    },
+    {
+     "file": "fastvideo/models/dits/ltx2.py",
+     "how": "keyword",
+     "line": 2522
+    }
+   ],
+   "producers_total": 5,
+   "reads_nontest": 26,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_ms_ssim",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "scripts/lora_extraction/lora_inference_comparison.py",
+     "how": "keyword",
+     "line": 161
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 22,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "Kandinsky6Attention",
+     "file": "fastvideo/models/dits/kandinsky6.py",
+     "func": "__init__",
+     "line": 291,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "Kandinsky6TransformerDecoderBlock",
+     "file": "fastvideo/models/dits/kandinsky6.py",
+     "func": "__init__",
+     "line": 542,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "Kandinsky6FusedTransformerDecoderBlock",
+     "file": "fastvideo/models/dits/kandinsky6.py",
+     "func": "__init__",
+     "line": 644,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "Kandinsky5Attention",
+     "file": "fastvideo/models/dits/kandinsky5.py",
+     "func": "__init__",
+     "line": 262,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "Kandinsky5TransformerDecoderBlock",
+     "file": "fastvideo/models/dits/kandinsky5.py",
+     "func": "__init__",
+     "line": 491,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "Kandinsky6Attention",
+     "file": "fastvideo/models/dits/kandinsky6.py",
+     "func": "__init__",
+     "line": 291,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "Kandinsky5Attention",
+     "file": "fastvideo/models/dits/kandinsky5.py",
+     "func": "__init__",
+     "line": 262,
+     "param_default": false
+    }
+   ],
+   "defaults": [
+    "False"
+   ],
+   "flag": "use_nabla",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "fastvideo/models/dits/kandinsky6.py",
+     "how": "keyword",
+     "line": 561
+    },
+    {
+     "file": "fastvideo/models/dits/kandinsky6.py",
+     "how": "keyword",
+     "line": 663
+    },
+    {
+     "file": "fastvideo/models/dits/kandinsky6.py",
+     "how": "keyword",
+     "line": 671
+    },
+    {
+     "file": "fastvideo/models/dits/kandinsky6.py",
+     "how": "keyword",
+     "line": 863
+    },
+    {
+     "file": "fastvideo/models/dits/kandinsky5.py",
+     "how": "keyword",
+     "line": 510
+    },
+    {
+     "file": "fastvideo/models/dits/kandinsky5.py",
+     "how": "keyword",
+     "line": 628
+    }
+   ],
+   "producers_total": 6,
+   "reads_nontest": 18,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_norm",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 10,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_register_ops_once",
+     "file": "fastvideo/layers/quantization/nvfp4_config.py",
+     "func": "_register_ops_once",
+     "line": 246,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_mm_fp4_op",
+     "file": "fastvideo/layers/quantization/nvfp4_config.py",
+     "func": "_mm_fp4_op",
+     "line": 295,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_register_ops_once",
+     "file": "fastvideo/layers/quantization/nvfp4_config.py",
+     "func": "_register_ops_once",
+     "line": 246,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "unspecified"
+   ],
+   "flag": "use_nvfp4",
+   "mode": "mixed",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 11,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_prompt_adaln_single",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 20,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward",
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/attn_qat_train.py",
+     "func": "forward",
+     "line": 1230,
+     "param_default": true
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward",
+     "file": "fastvideo-kernel/python/fastvideo_kernel/triton_kernels/attn_qat_train.py",
+     "func": "forward",
+     "line": 1230,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_qat_qkv_backward",
+   "mode": "always",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 12,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "StreamingVideoGenerator",
+     "file": "fastvideo/entrypoints/streaming_generator.py",
+     "func": "__init__",
+     "line": 81,
+     "param_default": true
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "StreamingVideoGenerator",
+     "file": "fastvideo/entrypoints/streaming_generator.py",
+     "func": "__init__",
+     "line": 81,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_queue_mode",
+   "mode": "always",
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 14,
+   "silently_inert": true
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "apply_rotary_emb",
+     "file": "fastvideo/layers/rotary_embedding.py",
+     "func": "apply_rotary_emb",
+     "line": 50,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "get_1d_rotary_pos_embed",
+     "file": "fastvideo/layers/rotary_embedding.py",
+     "func": "get_1d_rotary_pos_embed",
+     "line": 290,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "get_nd_rotary_pos_embed",
+     "file": "fastvideo/layers/rotary_embedding.py",
+     "func": "get_nd_rotary_pos_embed",
+     "line": 349,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "get_rotary_pos_embed",
+     "file": "fastvideo/layers/rotary_embedding.py",
+     "func": "get_rotary_pos_embed",
+     "line": 468,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "apply_rotary_emb",
+     "file": "fastvideo/layers/rotary_embedding.py",
+     "func": "apply_rotary_emb",
+     "line": 50,
+     "param_default": true
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "get_1d_rotary_pos_embed",
+     "file": "fastvideo/layers/rotary_embedding.py",
+     "func": "get_1d_rotary_pos_embed",
+     "line": 290,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "use_real",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "fastvideo/layers/rotary_embedding.py",
+     "how": "keyword",
+     "line": 543
+    },
+    {
+     "file": "fastvideo/layers/rotary_embedding.py",
+     "how": "keyword",
+     "line": 437
+    },
+    {
+     "file": "fastvideo/mlx_runtime/fastwan.py",
+     "how": "positional",
+     "line": 664
+    },
+    {
+     "file": "fastvideo/mlx_runtime/fastwan.py",
+     "how": "positional",
+     "line": 665
+    },
+    {
+     "file": "fastvideo/mlx_runtime/wan22.py",
+     "how": "positional",
+     "line": 93
+    },
+    {
+     "file": "fastvideo/mlx_runtime/wan22.py",
+     "how": "positional",
+     "line": 94
+    },
+    {
+     "file": "fastvideo/models/dits/gen3c.py",
+     "how": "keyword",
+     "line": 287
+    },
+    {
+     "file": "fastvideo/models/dits/gen3c.py",
+     "how": "keyword",
+     "line": 288
+    },
+    {
+     "file": "fastvideo/models/dits/flux_2.py",
+     "how": "keyword",
+     "line": 299
+    },
+    {
+     "file": "fastvideo/models/dits/flux_2.py",
+     "how": "keyword",
+     "line": 306
+    },
+    {
+     "file": "fastvideo/models/dits/flux_2.py",
+     "how": "keyword",
+     "line": 438
+    },
+    {
+     "file": "fastvideo/models/dits/flux_2.py",
+     "how": "keyword",
+     "line": 439
+    },
+    {
+     "file": "fastvideo/models/dits/cosmos.py",
+     "how": "keyword",
+     "line": 192
+    },
+    {
+     "file": "fastvideo/models/dits/cosmos.py",
+     "how": "keyword",
+     "line": 193
+    },
+    {
+     "file": "fastvideo/models/dits/cosmos2_5.py",
+     "how": "keyword",
+     "line": 259
+    },
+    {
+     "file": "fastvideo/models/dits/cosmos2_5.py",
+     "how": "keyword",
+     "line": 260
+    },
+    {
+     "file": "fastvideo/models/dits/flux.py",
+     "how": "keyword",
+     "line": 54
+    },
+    {
+     "file": "fastvideo/models/encoders/qwen2_5_vl_custom.py",
+     "how": "positional",
+     "line": 242
+    }
+   ],
+   "producers_total": 18,
+   "reads_nontest": 45,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_reference_discrete_timesteps",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 7,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_forward_keyboard",
+     "file": "fastvideo/models/dits/matrixgame2/action_module.py",
+     "func": "_forward_keyboard",
+     "line": 483,
+     "param_default": "unspecified"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward",
+     "file": "fastvideo/models/dits/matrixgame2/action_module.py",
+     "func": "forward",
+     "line": 625,
+     "param_default": "forwarded"
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward",
+     "file": "fastvideo/models/dits/matrixgame2/causal_model.py",
+     "func": "forward",
+     "line": 439,
+     "param_default": "forwarded"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "_forward_keyboard",
+     "file": "fastvideo/models/dits/matrixgame2/action_module.py",
+     "func": "_forward_keyboard",
+     "line": 483,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "unspecified"
+   ],
+   "flag": "use_rope_keyboard",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "fastvideo/models/dits/matrixgame2/action_module.py",
+     "how": "keyword",
+     "line": 714
+    }
+   ],
+   "producers_total": 1,
+   "reads_nontest": 16,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_tanh_at_final",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 13,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "load_model",
+     "file": "fastvideo/models/loader/component_loader.py",
+     "func": "load_model",
+     "line": 375,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_resolve_text_encoder_checkpoint_path",
+     "file": "fastvideo/models/loader/text_encoder_quantization.py",
+     "func": "_resolve_text_encoder_checkpoint_path",
+     "line": 20,
+     "param_default": "unspecified"
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "load_model",
+     "file": "fastvideo/models/loader/component_loader.py",
+     "func": "load_model",
+     "line": 375,
+     "param_default": false
+    },
+    {
+     "branches_on_flag": 1,
+     "call_name": "_resolve_text_encoder_checkpoint_path",
+     "file": "fastvideo/models/loader/text_encoder_quantization.py",
+     "func": "_resolve_text_encoder_checkpoint_path",
+     "line": 20,
+     "param_default": "unspecified"
+    }
+   ],
+   "defaults": [
+    "False",
+    "unspecified"
+   ],
+   "flag": "use_text_encoder_override",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "fastvideo/models/loader/component_loader.py",
+     "how": "keyword",
+     "line": 366
+    },
+    {
+     "file": "fastvideo/models/loader/component_loader.py",
+     "how": "positional",
+     "line": 411
+    }
+   ],
+   "producers_total": 2,
+   "reads_nontest": 10,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_validation_media_conditioning",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 12,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "use_vmap",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 2,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "with_audio",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 28,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "with_byt5",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 4,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "with_dcp",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 5,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "with_gate",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 12,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "with_gates",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 8,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [],
+   "container_writes": [],
+   "deciding_consumers": [],
+   "defaults": [],
+   "flag": "with_indices",
+   "mode": null,
+   "producers_nontest": [],
+   "producers_total": 0,
+   "reads_nontest": 2,
+   "silently_inert": false
+  },
+  {
+   "consumers_nontest": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward",
+     "file": "fastvideo/models/encoders/bert.py",
+     "func": "forward",
+     "line": 24,
+     "param_default": true
+    }
+   ],
+   "container_writes": [],
+   "deciding_consumers": [
+    {
+     "branches_on_flag": 1,
+     "call_name": "forward",
+     "file": "fastvideo/models/encoders/bert.py",
+     "func": "forward",
+     "line": 24,
+     "param_default": true
+    }
+   ],
+   "defaults": [
+    "True"
+   ],
+   "flag": "with_mask",
+   "mode": null,
+   "producers_nontest": [
+    {
+     "file": "fastvideo/attention/layer.py",
+     "how": "positional",
+     "line": 203
+    },
+    {
+     "file": "fastvideo/attention/layer.py",
+     "how": "positional",
+     "line": 298
+    },
+    {
+     "file": "fastvideo/attention/layer.py",
+     "how": "positional",
+     "line": 381
+    },
+    {
+     "file": "fastvideo/models/dits/qwen_image21.py",
+     "how": "positional",
+     "line": 281
+    },
+    {
+     "file": "fastvideo/models/dits/minimax_h3_vsa_fp4.py",
+     "how": "positional",
+     "line": 366
+    },
+    {
+     "file": "fastvideo/models/dits/ltx2.py",
+     "how": "positional",
+     "line": 1341
+    },
+    {
+     "file": "fastvideo/models/dits/ltx2.py",
+     "how": "positional",
+     "line": 1291
+    },
+    {
+     "file": "fastvideo/models/dits/ltx2.py",
+     "how": "positional",
+     "line": 1428
+    },
+    {
+     "file": "fastvideo/models/dits/ltx2.py",
+     "how": "positional",
+     "line": 1431
+    },
+    {
+     "file": "fastvideo/models/vaes/minimax_h3_video.py",
+     "how": "positional",
+     "line": 415
+    },
+    {
+     "file": "fastvideo/models/vaes/minimax_h3_nvfp4_fused.py",
+     "how": "positional",
+     "line": 566
+    }
+   ],
+   "producers_total": 11,
+   "reads_nontest": 2,
+   "silently_inert": false
+  }
+ ],
+ "root": "fastvideo",
+ "shadowed_arms": []
+}

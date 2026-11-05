@@ -1,0 +1,26 @@
+S0.snapshot_pristine                                 PASS  — clean
+S0.snapshot_commit                                   PASS  — 36dc971dc6a8
+F1.use_bf16.two_params                               PASS  — 形参 2 处
+F1.use_bf16.real_branch                              PASS  — 赋值 2 处
+F1.use_bf16.downstream_uses                          PASS  — 下游使用 12 处
+F1.use_bf16.impl_via_kwargs                          PASS  — 构造走通用 impl_cls(..., **extra_impl_args)
+F1.use_bf16.no_direct_caller                         PASS  — 直接构造点 0
+F2.sf_layout.branch                                  PASS  — 按开关选 128x4 / 8x4
+F2.sf_layout.apply_true                              PASS  — 主调用点显式传 True
+F2.sf_layout.qat_true                                PASS  — QAT 调用点显式传 True
+F3.queue_mode.param                                  PASS  — 形参在
+F3.queue_mode.branch                                 PASS  — 两处真分支
+F3.queue_mode.prod_no_pass                           PASS  — from_fastvideo_args 不传
+F3.queue_mode.false_only_in_tests                    PASS  — 代码内外部生产者 0（测试参数化与 docstring 提及不算）
+F4.nvfp4.pop_default                                 PASS  — 调用端取默认
+F4.nvfp4.forwarded                                   PASS  — 原样转发
+F56.subproject_has_pyproject                         PASS  — fastvideo-kernel/pyproject.toml
+F5.use_high_prec_o.declared                          PASS  — 形参 :1243，分支 :1510
+F5.use_high_prec_o.branch                            PASS  — 真实分支
+F6.use_qat_qkv_backward.declared                     PASS  — 形参 :1237，分支 :1294/:1550
+F6.use_qat_qkv_backward.branch                       PASS  — 真实分支
+F7.enable_smoothing_k.declared                       PASS  — 形参在
+F8.enable_smoothing_q.declared                       PASS  — 形参在
+F78.same_function                                    PASS  — 同一个 preprocess_qkv
+
+checks: 24, failed: 0

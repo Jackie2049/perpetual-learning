@@ -32,6 +32,7 @@
 |---|---|---|
 | AReaL | [候选、方案与记录](areal/readme.md) · [tracker](areal/tracker.md) | [源码阅读](../notebook/frameworks/readme.md#areal) |
 | DeepSpeed | [候选、方案与记录](deepspeed/readme.md) | [源码阅读](../notebook/frameworks/readme.md#deepspeed) |
+| FastVideo | [扫描与证据](fastvideo/evidence/pyflag-2026-11.md) | — |
 | MoonshotAI | [候选、方案与记录](moonshot/readme.md) | — |
 | PyTorch | [候选、方案与记录](pytorch/readme.md) | [源码阅读](../notebook/frameworks/readme.md#pytorch) |
 | rLLM | [候选、方案与记录](rllm/readme.md) | [源码阅读](../notebook/frameworks/readme.md#rllm) |
