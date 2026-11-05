@@ -1,0 +1,98 @@
+{
+ "tree": "/tmp/m5-g4i1-local/verl",
+ "key": "training/sampler/blocking_polls",
+ "instrumented": true,
+ "checks": [
+  {
+   "check": "R1.prefix_train",
+   "ok": true,
+   "detail": {
+    "train": "training",
+    "val": "validation"
+   }
+  },
+  {
+   "check": "R2.state",
+   "ok": true,
+   "detail": {
+    "instrumented": true
+   }
+  },
+  {
+   "check": "R3.emit_in_sample",
+   "ok": true,
+   "detail": {
+    "pattern": "{self._metrics_prefix(partition_id)}/sampler/blocking_polls",
+    "in_sample": true
+   }
+  },
+  {
+   "check": "R4.reset_per_sample",
+   "ok": true,
+   "detail": {
+    "reset": true
+   }
+  },
+  {
+   "check": "R5.increment_in_wait",
+   "ok": true,
+   "detail": {
+    "in_wait_for_next_poll": true
+   }
+  },
+  {
+   "check": "R6.aggregation_rule",
+   "ok": true,
+   "detail": {
+    "key": "training/sampler/blocking_polls",
+    "in_sum_list": true
+   }
+  },
+  {
+   "check": "R7.reader_key",
+   "ok": true,
+   "detail": {
+    "reader": "/Volumes/Agent/workspace/projects/perpetual-learning/experiments/verl-v1-poll-quantum-dapo-g4/read-polls.py",
+    "POLL_KEY": "training/sampler/blocking_polls",
+    "computed": "training/sampler/blocking_polls"
+   }
+  },
+  {
+   "check": "R8.trainer_merge_path",
+   "ok": true,
+   "detail": {
+    "sample_returns_metrics": true,
+    "iter_metrics_updated": true,
+    "aggregator_added": true,
+    "aggregated_into_step": true,
+    "console_log": true
+   }
+  },
+  {
+   "check": "R9.one_sample_per_step",
+   "ok": true,
+   "detail": {
+    "default_is_1": true,
+    "sync_block": "v1.sync: {}"
+   }
+  },
+  {
+   "check": "R10.val_discards",
+   "ok": true,
+   "detail": {
+    "discarded": true
+   }
+  },
+  {
+   "check": "R11.archived_sibling_key",
+   "ok": true,
+   "detail": {
+    "log": "experiments/verl-v1-poll-quantum-dapo-g4/raw/rollout-poll-dapo-g4baseR.txt",
+    "sibling_present": true,
+    "counter_present": false,
+    "note": "sibling comes from the same eviction_metrics dict; counter is post-patch only"
+   }
+  }
+ ],
+ "failed": 0
+}

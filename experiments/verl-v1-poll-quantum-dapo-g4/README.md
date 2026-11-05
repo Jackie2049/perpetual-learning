@@ -218,6 +218,22 @@ wait_idle() {  # 等 0,1,4,5 回到 ~1 MiB
 
 **边界。** 零 GPU 读数；`read-polls.py` 在归档上验的是**解析**，不是计数器本身——计数器依然从未在 GPU 上执行过；第四节的判据是预登记，本轮无法执行。
 
+## 2026-11-05 无卡轮（四）：计数器补丁在窗口树上**根本打不上**——修好并把整条开窗链在 `24f25b03` 上跑绿
+
+**为什么做这个。** 前三轮把开窗流程做出了三道硬检查（`prep-tree.sh` → `preflight --run-tree` → `run-poll-dapo.sh`）。但所有验证都跑在 `31cfccb4` 的树上，而窗口实际用的是 `/home/zxw/venvs/rollout-g8-src/verl`＝`24f25b03`。本轮把那个副本在本地做出来（`git worktree add /tmp/verl-24f25b03 24f25b03`），第一次拿它跑 `prep-tree.sh`。
+
+**一、补丁的 `utils.py` 段打不上（真实拦路点）。** 原 hunk 把键插在 `"sum"` 列表**末尾**，上下文带着 `training/rollout_logprobs_mismatch_count`——这条只在 `31cfccb4` 有，`24f25b03` 的列表到 `validation/rollout_failure/evicted_samples` 就结束。`patch -p1 --fuzz=0` 在 `utils.py` 上 1/1 hunk 失败 ⇒ `prep-tree.sh` **exit 5**。好消息是失败发生在碰 GPU 之前；坏消息是**按本页原来的开窗命令，窗口会在第一步就丢掉**。负对照：[patch-matrix.txt](raw/patch-matrix.txt) 最后三行用本轮改前的补丁（`git show HEAD:` 取出）复现同一条 FATAL。
+
+**二、改成版本无关的锚点。** 插入点移到 `validation/filter_groups/discarded_surplus_samples` 与 `training/rollout_failure/evicted_samples` 之间——这两个相邻行在两个提交里**逐字相同**，前后各留 1 行上下文即可唯一定位。补丁仍是 **+8 行**，新 `sha256=8ba750d9…`；`24f25b03`、`c0e7551`（10-20）、`31cfccb4`（11-04 最新 main）三个提交 `--fuzz=0` 都通过。
+
+**三、sim 在两个版本上有两处漂移（都会让 preflight 在窗口里 exit 65）。** ① `24f25b03` 的 `ReplayBuffer.__init__` **不接受 `max_off_policy_threshold=None`**（`31cfccb4` 起才允许 null＝关闭 off-policy 控制），sim 原来传 `None` ⇒ 构造即 `AssertionError`；改传 yaml 默认值 **8**（对脚本里的新提示恒不触发）。② 该树的 DAPO 分类器经 `kv_batch_get(select_fields=["extra_fields"])` 读每条轨迹的 `reward_extra_info`；`31cfccb4` 起对 canonical 指标改走 `rm_scores` ⇒ 原来的桩只认 `rm_scores`，直接 `AssertionError: ['extra_fields']`。桩补上 `extra_fields` 形状后，**打补丁与未打补丁的 `24f25b03` 都是 12/12**，`31cfccb4` 也未回退。补丁在窗口树上同样 **inert**：120 场景 × 4 步 = 480 行、0 diffs（[sim-polls-24f25b03.json](raw/sim-polls-24f25b03.json)）。[patch-matrix.txt](raw/patch-matrix.txt) 是矩阵读数（三棵树：prep-tree OK / sim 12/12 / routing 0 failed）。
+
+**四、补上「键真的到日志里」这一段（[verify-counter-routing.py](verify-counter-routing.py)，自检 5/5）。** 补丁写得对、树也打得动，键仍可能在半路消失：`sample()` 的返回值 → `metrics` → `MetricsAggregator` → `logger.log(console)`，以及读侧用的字面量必须与写侧一致。检查 11 项：`_metrics_prefix("train")=="training"`（执行树里的真实函数）、emit 在 `sample()` 内、每次 sample 前清零、`_wait_for_next_poll` 里自增、`"sum"` 列表里有同一个键、`read-polls.py` 的 `POLL_KEY` 与计算出的键相同、trainer 的五段合并链、`v1.sync` 为空 ⇒ `parameter_sync_step=1`（一步一次 sample）、val 调用点丢弃 metrics；最后一顶是**归档日志里的兄弟键**`training/filter_groups/evicted_samples`（同一个 `eviction_metrics` 字典，实证这条路通）且计数器键不在（打补丁前）。5 条注入各让指定判据变红（前缀改名连带注册与读侧三条红，是真实联锁）。读数：[instrumented-24f25b03](raw/counter-routing-instrumented-24f25b03.json)／[pristine-24f25b03](raw/counter-routing-pristine-24f25b03.json)／[instrumented-31cfccb4](raw/counter-routing-instrumented-31cfccb4.json)／[selftest](raw/verify-counter-routing-selftest.txt)。
+
+**五、preflight 首次在窗口树上全绿。** `/tmp/py312`（一次性 3.12）＋ hydra 1.3.2：`--tree /tmp/verl-24f25b03 --run-tree <受测副本> --compare-script <该树自己的 recipe>` ⇒ 59 条 override、`drift.same=true`、两臂 0 problems、负向对照如期失败、受测树 sim 12/12、守卫 0/65 双通过、`ok=true`。读数 [preflight-g4-24f25b03.json](raw/preflight-g4-24f25b03.json)。**顺带去掉一个 /tmp 依赖**：preflight 只 require hydra/omegaconf，rollout venv 里本来就有，开窗命令不再指向 `/tmp/hydra-probe-venv`。
+
+**边界。** 仍是零 GPU 读数：计数器没有在 GPU 上执行过，路由验证是静态＋真实源码执行，不是"日志里真的出现了这一行"。`--compare-script` 用的是 `24f25b03` 自己的 recipe（它就是归档树），所以 `drift.same` 是恒等对照，真正有信息量的是 59 条 override 的捕获与两臂回读。矩阵覆盖三个提交（8-28／10-20／11-04），不是所有历史版本。
+
 ## 材料
 
 | 文件 | 内容 |
@@ -236,6 +252,13 @@ wait_idle() {  # 等 0,1,4,5 回到 ~1 MiB
 | `raw/preflight-g4.json` | 上一轮读数（`31cfccb4`，含与 `24f25b03` recipe 的逐键比对） |
 | `raw/preflight-g4-instrumented.json` | 本轮读数：`--run-tree` 上的标记／sim 12/12／守卫 0 与 65 双通过 |
 | `raw/preflight-g4-nopin.json` | 对照：去掉 `enable_chunked_prefill` 这个钉时的漂移与 main 上生效值 `true` |
+| `verify-counter-routing.py` | 键路由：`sample()` 返回值 → `metrics` → `MetricsAggregator` → `logger.log`，以及写侧字面量 = 读侧 `POLL_KEY`；`--selftest` 5/5（每条注入让指定判据变红） |
+| `raw/counter-routing-{instrumented,pristine}-24f25b03.json` · `raw/counter-routing-instrumented-31cfccb4.json` | 三棵树的路由读数（11 项全 PASS；pristine 记 `instrumented=false`） |
+| `raw/verify-counter-routing-selftest.txt` | 路由自检 5/5 |
+| `verify-patch-matrix.sh` | 对每棵干净树跑 prep-tree → sim → routing，一行一结果；`PYBIN` 需 ≥3.10 带 numpy |
+| `raw/patch-matrix.txt` | 三棵树矩阵 PASS，附改前补丁在 `24f25b03` 上 exit 5 的负对照 |
+| `raw/preflight-g4-24f25b03.json` | 本轮：窗口树 `24f25b03` 上 preflight `ok=true`（59 overrides／两臂 0 problems／sim 12/12／守卫 0/65） |
+| `raw/sim-polls-24f25b03.json` | 窗口树上的 sim 读数：12/12、`--compare` 480 行 **inert**、0 diffs |
 | `sha256sums.txt` | 本目录文件的 sha256；六份原始日志与服务器逐文件一致 |
 
 ## 下一步
@@ -243,8 +266,14 @@ wait_idle() {  # 等 0,1,4,5 回到 ~1 MiB
 - 4 卡 DAPO 的 A/B 已闭环。未测只剩 **4 卡 `inflight=1`**（需 ≥4 张空闲卡）。开窗前流程（任一检查失败都会在碰 GPU 前退出）：
   ```bash
   bash prep-tree.sh /home/zxw/venvs/rollout-g8-src/verl /tmp/m5-g4i1/verl
-  /tmp/hydra-probe-venv/bin/python3 preflight-g4.py --tree <干净树> --run-tree /tmp/m5-g4i1/verl \
-      --sim-python /home/zxw/venvs/rollout-g8/bin/python3 --compare-script <归档树同名脚本> --out raw/preflight-g4.json
+  # 侧证：受测副本的键路由（emit/sample/清零/自增/注册/读侧字面量/合并链）
+  /home/zxw/venvs/rollout-g8/bin/python3 verify-counter-routing.py --tree /tmp/m5-g4i1/verl
+  # 开窗检查：preflight 只 require hydra/omegaconf，rollout venv 里都有
+  /home/zxw/venvs/rollout-g8/bin/python3 preflight-g4.py \
+      --tree /home/zxw/venvs/rollout-g8-src/verl --run-tree /tmp/m5-g4i1/verl \
+      --sim-python /home/zxw/venvs/rollout-g8/bin/python3 \
+      --compare-script /home/zxw/venvs/rollout-g8-src/verl/examples/grpo_trainer/run_qwen3_4b_fsdp.sh \
+      --out raw/preflight-g4.json
   # 校准臂（墙钟已知：gen 应复现 6.791s）——先验计数器
   MODE=g4cal GPUS=0,1,4,5 INFLIGHT=2 SRC=/tmp/m5-g4i1/verl bash run-poll-dapo.sh
   # 正题臂
@@ -254,4 +283,5 @@ wait_idle() {  # 等 0,1,4,5 回到 ~1 MiB
       --log /tmp/rollout-poll-dapo-g4i1.log=2.0 --expect-counter --json raw/read-polls-window.json
   ```
   要跑跨臂恒等式，再补一个 `MODE=g4i1p010 POLL=0.1 INFLIGHT=1` 的细轮询臂（同一窗口，约 7–8 分钟/跑）。**读数的解释规则已换成「臂内回归系数 ≈ P + 跨臂恒等式残差 ≈ 0」；原来的「预期 ≥2／若恒 1 则不能归因轮数」已作废**（理由见上一节第三节）。若要把生成量代价也定下来，需每臂 ≥4 跑（本批分辨力不够），判据是看 +6.4% 能否越过 2 SE。
+  本地预演（无 GPU）：`PYBIN=<py312> bash verify-patch-matrix.sh /tmp/verl-24f25b03 /tmp/verl-31cfccb4`，应为 `matrix: PASS`（本轮读数 2/2）。
 - TM-008 的 PR 风险段用 2 卡 +13.1% 的生成量代价与 4 卡 −4.0% 的整步收益，并注明"等待收益 ≈0.59×量子、随配置变"。**对外动作仍未做，待用户逐项授权。**

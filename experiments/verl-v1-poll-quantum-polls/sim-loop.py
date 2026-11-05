@@ -83,6 +83,7 @@ class FakeTQ:
         self.prompts = {}  # uid -> {status, finish_at, global_steps, reward}
         self.traj = {}  # key -> reward value
         self.clears = 0
+        self.metric = "reward"  # key the DAPO classifier reads out of reward_extra_info
 
     def add_prompt(self, uid, finish_at, global_steps, reward, n_traj=4, filtered=None):
         # `filtered` decides DAPO filtering directly: a group is filtered when all
@@ -116,6 +117,14 @@ class FakeTQ:
         return {"train": items}
 
     def kv_batch_get(self, keys, partition_id, select_fields):
+        if select_fields == ["extra_fields"]:
+            # Trees without the canonical-reward shortcut classify a group by reading every
+            # trajectory's `reward_extra_info` (24f25b03). The metric key has to be in there.
+            return {
+                "extra_fields": [
+                    {"reward_extra_info": {self.metric: self.traj[key]}} for key in keys
+                ]
+            }
         assert select_fields == ["rm_scores"], select_fields
         return {"rm_scores": [FakeTensor(self.traj[key]) for key in keys]}
 
@@ -231,7 +240,10 @@ class Scenario:
         self.buffer = self.cls(
             trainer_mode=self.mode,
             trainer_config={},
-            max_off_policy_threshold=None,
+            # The trainer's yaml default. A positive int is inert for these scripts (fresh
+            # prompts are never stale); it cannot be None on trees before the `int | None`
+            # change (24f25b03 asserts), and the arm under test runs with the default anyway.
+            max_off_policy_threshold=8,
             max_off_policy_strategy="drop",
             sampler_kwargs={},
             poll_interval=poll_interval,

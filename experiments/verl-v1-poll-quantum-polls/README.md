@@ -85,7 +85,9 @@ gen_i(P) = ceil(D_i / P) * P + c
 - **聚合是行为检查，不是字符串检查**：把真实 `MetricsAggregator` 类源码 `exec` 出来，喂两次迭代 2 与 3，断言打补丁树得 **5.0**（sum）、未打补丁树得 **2.5**（默认 weighted_avg）——上一版只看键名是否出现，换错规则也能过；
 - **补丁惰性**：120 个调度场景 × 4 步 = 480 行，打补丁与未打补丁树的 `gen_s`／`clock_sleeps`／`evicted`／`surplus` **逐字段相同**（`inert=true`）。
 
-读数：[sim-polls.json](raw/sim-polls.json)（打补丁树，12 checks + inert）／[sim-polls-pristine.json](raw/sim-polls-pristine.json)（未打补丁树，12 checks）。补丁 `sha256=4c142752…`，对 `31cfccb4` 的 `replay_buffer.py`／`utils.py` `patch -p1 --fuzz=0 --dry-run` 通过，且与 `poll-interval-config.patch` 的**文件集不相交**（互不影响应用顺序）。
+读数：[sim-polls.json](raw/sim-polls.json)（打补丁树，12 checks + inert）／[sim-polls-pristine.json](raw/sim-polls-pristine.json)（未打补丁树，12 checks）。补丁 `sha256=8ba750d9…`，与 `poll-interval-config.patch` 的**文件集不相交**（互不影响应用顺序）。
+
+**（2026-11-05 续二）`utils.py` 那一段原来只在 `31cfccb4` 上验过，窗口树打不上。** 原 hunk 把 `"training/sampler/blocking_polls"` 插在 `"sum"` 列表**末尾**，上下文里带着只有 `31cfccb4` 才有的 `training/rollout_logprobs_mismatch_count`；窗口真正要跑的 `24f25b03`（`/home/zxw/venvs/rollout-g8-src/verl`）没有那条 ⇒ `patch -p1 --fuzz=0` **打不上**（`prep-tree.sh` exit 5，负对照见 [patch-matrix.txt](../verl-v1-poll-quantum-dapo-g4/raw/patch-matrix.txt)）。改成插在 `validation/filter_groups/discarded_surplus_samples` 与 `training/rollout_failure/evicted_samples` 之间（前后各 1 行上下文，两个提交逐字相同）⇒ 三个提交（`24f25b03`、`c0e7551`、`31cfccb4`）都通过。同时修了 sim 在 `24f25b03` 上的两处版本漂移：`max_off_policy_threshold` 在该树**不接受 `None`**（改传 yaml 默认值 8）；DAPO 分类器在该树经 `kv_batch_get(["extra_fields"])` 读每条轨迹的 `reward_extra_info`（桩补上这个形状）。矩阵读数：[patch-matrix.txt](../verl-v1-poll-quantum-dapo-g4/raw/patch-matrix.txt)（三棵树各 prep-tree OK / sim 12/12 / routing 0 failed）。 用新 harness 重跑 `31cfccb4` 的两份归档读数，`checks` 与 `compare`（120 场景／480 行 `inert`）**逐字段相同** ⇒ 上面两处桩改动没有改变任何结论。
 
 用法（窗口前，两条命令都有硬检查，失败会在碰 GPU 之前退出）：
 
@@ -93,16 +95,18 @@ gen_i(P) = ceil(D_i / P) * P + c
 # 1. 从干净树生成受测副本（dst 已存在则拒绝；打完自检 4 个标记）
 bash ../verl-v1-poll-quantum-dapo-g4/prep-tree.sh /home/zxw/venvs/rollout-g8-src/verl /tmp/m5-g4i1/verl
 # 2. 开窗前检查（树标记 + sim 12/12 + wrapper 守卫正/负对照）
-/tmp/hydra-probe-venv/bin/python3 ../verl-v1-poll-quantum-dapo-g4/preflight-g4.py \
-    --tree <干净树> --run-tree /tmp/m5-g4i1/verl --sim-python <py>=3.10
+#    用 rollout venv 的解释器即可（hydra 与 numpy 都在），不再依赖 /tmp 里的一次性 venv
+/home/zxw/venvs/rollout-g8/bin/python3 ../verl-v1-poll-quantum-dapo-g4/preflight-g4.py \
+    --tree /home/zxw/venvs/rollout-g8-src/verl --run-tree /tmp/m5-g4i1/verl \
+    --sim-python /home/zxw/venvs/rollout-g8/bin/python3
 # 3. 跑臂：run-poll-dapo.sh 的 CHECK_TREE 默认 1，树缺任一补丁就 exit 65
 MODE=g4i1 GPUS=0,1,4,5 INFLIGHT=1 SRC=/tmp/m5-g4i1/verl bash ../verl-v1-poll-quantum-dapo-g4/run-poll-dapo.sh
 ```
 
-本机复跑自检：
+本机复跑自检（`--tree` 里的 `replay_buffer.py` 用了 `match`，解释器需 ≥3.10 且装 numpy；本机 3.9 跑不了，本轮用一次性 3.12）：
 
 ```bash
-/tmp/m5-trf-venv/bin/python3 sim-loop.py --tree <树> --compare <未打补丁树> --selftest
+<py312> sim-loop.py --tree <树> --selftest
 ```
 
 ## 七、对 TM-008 三条读法的影响

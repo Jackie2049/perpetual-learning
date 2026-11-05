@@ -1,0 +1,21 @@
+# generated 2026-11-05T05:16:39Z
+# python: Python 3.12.16 (standalone build via api.github.com asset)
+# patch: patch 2.0-12u11-Apple
+
+== /tmp/verl-24f25b03
+   prep-tree   OK
+   sim         selftest: 12/12 passed
+   routing     key=training/sampler/blocking_polls instrumented=True failed=0
+== /tmp/verl-31cfccb4
+   prep-tree   OK
+   sim         selftest: 12/12 passed
+   routing     key=training/sampler/blocking_polls instrumented=True failed=0
+== /tmp/verl-mainhead
+   prep-tree   OK
+   sim         selftest: 12/12 passed
+   routing     key=training/sampler/blocking_polls instrumented=True failed=0
+matrix: PASS
+
+== negative control: patch as committed before this round (utils.py hunk authored against 31cfccb4)
+FATAL: /tmp/old-patches/verl-v1-poll-quantum-polls/poll-count.patch did not apply to /tmp/negctl4/verl with --fuzz=0 (upstream moved?)
+prep-tree rc=5 (fails before any GPU work)

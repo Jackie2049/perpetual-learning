@@ -1,0 +1,60 @@
+{
+ "selftest": [
+  {
+   "case": "prefix",
+   "expect_red": [
+    "R1.prefix_train",
+    "R6.aggregation_rule",
+    "R7.reader_key"
+   ],
+   "red": [
+    "R1.prefix_train",
+    "R6.aggregation_rule",
+    "R7.reader_key"
+   ],
+   "ok": true
+  },
+  {
+   "case": "emit",
+   "expect_red": [
+    "R3.emit_in_sample"
+   ],
+   "red": [
+    "R3.emit_in_sample"
+   ],
+   "ok": true
+  },
+  {
+   "case": "registration",
+   "expect_red": [
+    "R6.aggregation_rule"
+   ],
+   "red": [
+    "R6.aggregation_rule"
+   ],
+   "ok": true
+  },
+  {
+   "case": "merge",
+   "expect_red": [
+    "R8.trainer_merge_path"
+   ],
+   "red": [
+    "R8.trainer_merge_path"
+   ],
+   "ok": true
+  },
+  {
+   "case": "reader",
+   "expect_red": [
+    "R7.reader_key"
+   ],
+   "red": [
+    "R7.reader_key"
+   ],
+   "ok": true
+  }
+ ],
+ "failed": 0
+}
+selftest: 5/5 passed

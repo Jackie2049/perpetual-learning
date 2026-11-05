@@ -1,0 +1,78 @@
+{
+ "tree": "/tmp/verl-24f25b03",
+ "key": "training/sampler/blocking_polls",
+ "instrumented": false,
+ "checks": [
+  {
+   "check": "R1.prefix_train",
+   "ok": true,
+   "detail": {
+    "train": "training",
+    "val": "validation"
+   }
+  },
+  {
+   "check": "R2.state",
+   "ok": true,
+   "detail": {
+    "instrumented": false
+   }
+  },
+  {
+   "check": "R3.emit_in_sample",
+   "ok": true,
+   "detail": "pristine tree: counter not installed"
+  },
+  {
+   "check": "R4.reset_per_sample",
+   "ok": true,
+   "detail": "pristine tree"
+  },
+  {
+   "check": "R5.increment_in_wait",
+   "ok": true,
+   "detail": "pristine tree"
+  },
+  {
+   "check": "R6.aggregation_rule",
+   "ok": true,
+   "detail": "pristine tree"
+  },
+  {
+   "check": "R7.reader_key",
+   "ok": true,
+   "detail": {
+    "reader": "/Volumes/Agent/workspace/projects/perpetual-learning/experiments/verl-v1-poll-quantum-dapo-g4/read-polls.py",
+    "POLL_KEY": "training/sampler/blocking_polls",
+    "computed": "training/sampler/blocking_polls"
+   }
+  },
+  {
+   "check": "R8.trainer_merge_path",
+   "ok": true,
+   "detail": {
+    "sample_returns_metrics": true,
+    "iter_metrics_updated": true,
+    "aggregator_added": true,
+    "aggregated_into_step": true,
+    "console_log": true
+   }
+  },
+  {
+   "check": "R9.one_sample_per_step",
+   "ok": true,
+   "detail": {
+    "default_is_1": true,
+    "sync_block": "v1.sync: {}"
+   }
+  },
+  {
+   "check": "R10.val_discards",
+   "ok": true,
+   "detail": {
+    "discarded": true
+   }
+  }
+ ],
+ "failed": 0
+}
