@@ -113,29 +113,7 @@
 
 入口：[实验](experiments/mlcllm-router-debug-hardcoded/README.md) · [四跳探针](experiments/mlcllm-router-debug-hardcoded/probe_router_debug.py) · [重复 flag 探针](experiments/mlcllm-router-debug-hardcoded/probe_duplicate_flag.py) · [读数](experiments/mlcllm-router-debug-hardcoded/raw/probe-router-debug.json) · [证据页](open-source/mlcllm/evidence/router-debug-endpoints-always-on.md) · [pyflag 第三类](tools/pyflag/readme.md) · [TM-021](queue_tech-miner.md) · [diary](diary/2026-11-05.md)。
 
-### M1 上一轮（2026-11-05 09:2x）：TM-020——verl 组过滤指标的说明与实现对不上，**两个名字在 V1 上零写入点**
-
-**一、为什么做。** §13.49 结尾「顺带记一个文档不一致」只写了一句话（`FilterGroupsConfig.metric` 的注释举了 `seq_final_reward`，但 V1 reward manager 只写 `acc`），当时明确不构成 issue 提案、也没查证。本轮把它当独立问题查清：**是只有这一个名字错，还是一类**。
-
-**二、机制。** V1 的 `_dapo_filtered_keys`（`replay_buffer.py:263`）对除 `"reward"` 以外的所有名字，都按**字面键**去 `extra_fields.reward_extra_info` 取，取不到就整组进 `missing_metric_uids` ⇒ `RuntimeError: Finished groups are missing DAPO metric '<名字>'`。键的来源只有两处：reward manager 写死的五个（`acc`／`overlong`／`overlong_reward`／`timeout`／`error`），和「scorer 返回 dict 时原样塞进去」。官方 scorer 里只有 `math_dapo` 返回 dict（`score`／`acc`／`pred`），其余数据集都 `return float(res)` ⇒ **真实场景下只有 `acc`**。
-
-**三、三份说明互相不同。** 配置 docstring：`"reward"` / `"acc"` / `"score"` / **`"seq_reward"`**；yaml 注释：`reward` / `acc`；`docs/algo/dapo.md:80`：`score / seq_reward / seq_final_reward`；随仓库脚本 `grpo_qwen35_35b_megatron_async.sh:64`：**`response_filter`**。**`seq_reward`、`seq_final_reward`、`response_filter` 三个名字在 V1 里零写入点。**
-
-**四、真跑读数（CPU，零 GPU）。** `stub_env.py` 用 exec 加载真实 `replay_buffer.py`，只替身 `transfer_queue` 与 `SkipManager`（都不参与该判定），按**上游 CPU 测试同一套写盘顺序**（先每条轨迹、再把 prompt 标 finished）造「2 条同分轨迹的组」。`reward`／`acc` ran；`score` 在「只有 acc」的真实输入下 raised，在「能给的都给」下 ran；`seq_reward`／`seq_final_reward`／`response_filter` **两种输入都 raised** ⇒ 不是「scorer 没给」，是没有任何代码写。另测「两条轨迹一条缺键」→ 整组仍抛。
-
-**五、CI 为什么没抓到。** `tests/trainer/ppo/v1/` 里 `filter_groups_metric=` 的字面值只有 `acc`（13 处）与 `reward`（1 处），`seq_*` 一次没出现。
-
-**六、历史归属（决定对外措辞）。** docstring 的 `seq_reward` 从该文件拆出那天（`c936ec7`，2025-07-04）就在，一路到 `7e9875249`（2026-10-12）才改；**DAPO recipe 的 `dapo_ray_trainer.py:240` 真的有 `if metric_name == "seq_final_reward":` 分支**（verl-recipe 仓，2026-11-05 读取）⇒ 这些名字在 V1 之前有主；V1 自 `c88e875`（2026-07-23）引入起就只认字面键 ⇒ **名字搬进 V1 后语义没跟上，文档慢了两轮**；#7792（`7cb6501`，2026-09-08）在改注释那一轮**留了一个 `seq_reward`**，`docs/algo/dapo.md` 一字未改。
-
-**七、价值与判断。** **5/10**：影响面窄（仓内所有 recipe 脚本都用 `acc`，官方路径不触发），但崩在**第一个训练步**、报错信息会把人引向「我的 scorer 少返回一个键」这一错误结论，而修复成本极低。**只能写成「说明与实现没对齐」**，不能写「这些开关坏了」——最小对外动作应是改注释/文档或加一行加载期校验，**不该给 V1 补 `seq_*` 语义**（那是新增语义，得设计者定）。
-
-**八、本批两处自错（都由检查抓到并已改）。** ① 第一版抽 docstring 用「8 空格缩进」作参数块边界，而 `ast.get_docstring` 已剥掉公共缩进（参数行剩 4 空格）⇒ 只读到 `reward` 一个名字，差点据此判断「docstring 没问题」；② `negative_control.py` 第一版把破坏打在外层包装上，内层没被改到，B 组跑出「假通过」（期望失败项与实测不符才发现）。
-
-**核对产物**：`probe_metric_tables.py`（`--selftest` **8/8**）、`negative_control.py`（**4/4**，四种破坏各让指定检查变红）、读数 [metric-tables.json](experiments/verl-filter-groups-metric-names/raw/metric-tables.json)。纯 CPU、零 GPU、**未装 ray/torch、未跑训练、未触上游**。
-
-**留给下一轮**：① TM-020 **不对外**，对外动作待用户逐项授权（三个选项已列在队列条目里）；② TM-015（vLLM `enable_kv_events`）与 TM-005／TM-006／TM-007（verl／SkyRL 接线）仍待用户逐项授权；③ TS-001 仍停在「纯归档重算已到边际」，本条属 TM 侧不属于 TS-001。
-
-入口：[实验](experiments/verl-filter-groups-metric-names/README.md) · [三表扫描](experiments/verl-filter-groups-metric-names/probe_metric_tables.py) · [替身环境](experiments/verl-filter-groups-metric-names/stub_env.py) · [负向对照](experiments/verl-filter-groups-metric-names/negative_control.py) · [证据页](open-source/verl/evidence/filter-groups-metric-names.md) · [TM-020](queue_tech-miner.md) · [diary](diary/2026-11-05.md)。
+### M1（2026-11-05 09:2x）：TM-020——verl `algorithm.filter_groups.metric` 的三份说明互不自洽，`seq_reward`／`seq_final_reward`／`response_filter` 在 V1 零写入点（照填第一步就 `RuntimeError`）；上游单测只测过 `acc`/`reward` 所以 CI 抓不到。**价值 5/10，不对外**（只能写"说明与实现没对齐"）。自检 8/8、负向对照 4/4。完整叙述见 [实验](experiments/verl-filter-groups-metric-names/README.md) 与 [证据页](open-source/verl/evidence/filter-groups-metric-names.md)。
 
 ### M1 上一轮（2026-11-05 08:1x）：TM-019——MLC-LLM 扩池第六批，**两条候选都是扫描器自己的误判**
 
@@ -222,45 +200,9 @@
 入口：[实验](experiments/verl-inert-flags-runtime/readme.md) · [探针](experiments/verl-inert-flags-runtime/probe.py) · [文档面](experiments/verl-inert-flags-runtime/check_docs.py) · [读数](experiments/verl-inert-flags-runtime/raw/probe.json) · [TM-005 证据更新](open-source/verl/evidence/prefix-grouper-inert/readme.md) · [TM-005](queue_tech-miner.md) · [TM-006](queue_tech-miner.md) · [diary](diary/2026-11-05.md)。
 
 
-### M1 本轮（2026-11-05 05:5x）：TM-017——TensorRT-LLM 扩池，352 个开关里 35 条静默失效、真缺陷 1 条
+### M1（2026-11-05 05:5x）：TM-017——TensorRT-LLM 扩池，352 个开关 / 35 条静默失效、**真缺陷 1 条**（`use_split_scale_stages`：兄弟 constexpr 恒先命中，两处 `elif` 不可达；合入当天即如此、非回归）。方法产出：第十类 `**dict` 展开、第十一类兄弟开关恒先命中、「显式传 `None` 也算生产者」。35 条已全部归因。完整叙述见 [实验](experiments/trtllm-pyflag-triage/README.md) 与 [diary](diary/2026-11-05.md)。
 
-**一、为什么选 TensorRT-LLM。** LMDeploy 收口后，常规扫描池剩下的最大对象就是 TensorRT-LLM（6084 个 `.py`），本批只纳入它一个。
-
-**二、读数。** `f6405a5965`（2026-11-04 15:08 -0500，6084 个 `.py`、**12 分 39 秒**）：**352 个开关／35 条 `silently_inert`**（never 23 / always 8 / mixed 4）。逐条绑行号后：**真缺陷 1、结构原因 30、死代码与内部面 4**。原始读数靠不住这件事第四次复现。
-
-**三、真缺陷的形状是「加了没接，而且兄弟挡路」。** `use_split_scale_stages` 有声明、有分支、确实没生产者——这一半和普通误报长得一样。区别在两处 `elif` **永远轮不到**：同族四个兄弟 constexpr 在 QK 调用点全被显式置 `True`，且在 `if/elif` 链上优先。`probe_split_scale.py` 把那段真实源码文本抽出来按调用点实际常量执行九条判据：真实取值 → 两块都不取 split arm（B7）；兄弟关掉、开关打开 → split arm 真的活且偏移与 else arm 不同（B8/B9）。
-
-**四、历史归属：合入当天就是这样。** 文件由 #19070（`4bbe1af658`，2026-09-18）一次性新增 7859 行，同一开关在该 commit 里只有 2594（声明）／2674／2681（两处 `elif`）⇒ 不存在「曾经接上过」的版本。上游查重 `"use_split_scale_stages"` 0 条 issue。
-
-**五、本批方法读数（真产出）。** 第十类 **`**dict` 展开**（字典字面量写键、调用点不出现标识符，AST 的 `Call.keywords` 是空的——第八类 `**kwargs` 的发送端镜像）；第十一类 **兄弟开关恒先命中**（比"加错/丢线"更隐蔽：代码本身对、不崩、不出告警，只是那段优化永远走不到）；**「显式传 `None`」也是生产者**（`use_replay_state_update=None` 语义是"未指定"，结构上是实参）。
-
-**六、本批一处工具坑（已修）。** `--json` 不带值时写 `scan-<目录名>.json`，目标写成 `.` 时目录名是空串 ⇒ 落成 `scan-.json` 并互相覆盖；本批两次扫描都写进了同一个文件。现在 `--json <path>` 写指定路径、裸 `--json` 写 `scan-<dir|repo>.json`，readme 已同步。
-
-**七、本批一处真事故（比上面六个自错严重得多）。** 负向对照用 `sed -i ''`（macOS 写法）在 zsh 下 `''` 不是参数，备份与还原 `cp` 都没执行，**把快照里 QK 调用点的四兄弟 `True` 改成了 `False`**。更糟的是 26 checks 与 probe 9/9 **全部照绿**——判据只校验字面量形态，不校验"读的是不是那份快照"。我据此一度误判"README 写反了、主文件其实是 False"，比对 `git hash-object` 与 HEAD blob 后才定位。已 `git checkout` 还原（blob 与 HEAD 一致），加前置 `S0.snapshot_pristine`（`git status --porcelain` 非空即 `exit 2`、不产出结论），负向对照走完"故意污染 → exit 2 → 恢复 → 28 checks 0 failed"。同时补 `F1h.pv_dead_by_enclosing_guard`：PV `:4522` 传 `stage_s*f_from_smem=False`，整个 `if` 块进不去 ⇒ **PV 与 QK 是两种死法**，原记录折成"两个调用点都不传"会把修法藏掉。`shadowed_arms()` 已进扫描器并调了六轮判据（逐轮见 diary「后续补强」），最终此快照上**主文件命中 4 条**（`use_split_scale_stages` 两处 + `use_split_operand_stages` 两处）、孪生文件 4 条；非测试合计 9 条，人工复核 8 真 1 假（`has_bias`，同名不同函数的固有局限）。
-
-**核对产物**：`verify_findings.py` **28 checks 0 failed**（含 `S0` 前置）、`--selftest` **6/6**；`probe_split_scale.py` **9/9**、`--selftest` **2/2**；`classify.py` **35 条全覆盖**（缺一条 exit 1）；pyflag 单测 **14 passed**。**纯静态 + CPU 源码文本执行，未装 TensorRT-LLM、未编译、未起服务、未上 GPU/NPU、未触上游。**
-
-**留给下一轮**：① TM-017 对外（issue/PR）**待用户逐项授权**；② 下一批换池剩 llama.cpp／MLC-LLM（SGLang／vLLM／LMDeploy／TensorRT-LLM 均已扫）；③ TM-015（vLLM `enable_kv_events`）仍待用户逐项授权；④ TS-001 仍停在「等用户立项」，M5 侧 critic 三臂仍等单卡窗口。
-
-入口：[实验](experiments/trtllm-pyflag-triage/README.md) · [判定](experiments/trtllm-pyflag-triage/verify_findings.py) · [行为探针](experiments/trtllm-pyflag-triage/probe_split_scale.py) · [35 条归因](experiments/trtllm-pyflag-triage/classify.py) · [读数](experiments/trtllm-pyflag-triage/findings.json) · [扫描归档](tools/pyflag/scan-trtllm-f6405a5965.json) · [TM-017](queue_tech-miner.md) · [diary](diary/2026-11-05.md)。
-
-### M1 本轮（2026-11-05 07:4x）：TM-018——llama.cpp 扩池，**37 条候选没有一条是缺陷**
-
-**一、为什么先扫 Python 会得到空结果。** `scan_unwired_flags.py` 扫 `3de52ac3` 的 250 个 `.py`：**7 个开关、0 条 `silently_inert`**——这些是 `conversion/`（115 个模型格式转换）、`gguf-py/`、`scripts/` 与 server 测试。⇒ 对 llama.cpp 用 Python 版没有信息量，「已扫过五个框架」里它要按 C++ 重新计数。
-
-**二、C++ 的判定口径与读数。** 形态是结构体成员默认值（`struct X { bool f = false; }`），三步不变：**字段声明 → 消费者（`if`／三目／`&&`／`||`）→ 生产者（赋值／实参／聚合初始化）**。`3de52ac3`（1574 个 C/C++ 文件、约 4 分钟）：**1636 个有分支字段 → 37 条 `unwritten` → 真缺陷 0 条**。
-
-**三、三类 C++ 特有的写入形态（本批真正的方法产出，各写成一条判据，删掉对应行必须变红）。** ① **单行 `if` 里赋值**：`common/arg.cpp:3862` 的 `/**/ if (value == "jsonl") { params.batched_bench_output_jsonl = true; }` 既是条件行又是写入行，先判消费者会把整个字段记成只读（71 条里有 8 条出自这里）。② **`/* name */ value` 聚合初始化**：`server-context.cpp:1729-1736` 的 `chat_params = { /* allow_image */ mtmd_cap.vision, … }`，剥注释后整行只剩 `mtmd_cap.vision,`。③ **位置实参**：`drama3-gen.cpp:12` 的 `push_back({"tower_pos", 1, 1, true})`（第四项是 `in_place`），而同结构体在 `qwen3tts-gen.cpp:624` 只传三项 ⇒ 必须两个文件都看；这条没有通用修法，是「报没人写必须人读」的具体例证。
-
-**四、唯一被怀疑过的那条，复核后是接通的（也是本批最严重的一处自错）。** `reasoning_control` 被扫成 `unwritten`，因为看起来唯一的写入是 `server-common.cpp:1530` 写 JSON。实际 `server-schema.cpp:351` 用 `field_bool(name, bool &)` **按引用绑定**字段，写入在 `field_bool::eval`（`:636-647`）靠引用完成；`sampling.cpp:315` 的守卫真读它。第一版探针把「写不写该字段」当成守卫唯一变量，而守卫里还有 `!reasoning_budget_end.empty()`、其形状取决于模板有没有 thinking 标记 ⇒ 读数正好反过来，报了一个不存在的缺陷。重写成 6 档网格后 7 条判据全过。⇒ **第十二类易错点：绑定 ≠ 赋值**。
-
-**五、两条查过的负结论（都不建议对外）。** `filter_allowed_keys` 的配套白名单在 #24739（`552258c535`）被有意移除、上游 #27929 开放讨论中；`show_key_map_stats` 的唯一写入机会是构造函数而构造函数不收它，字段与 `if` 分支由 #19253（`b4d05a3d2f`）同一次提交引入、从未接命令行。
-
-**核对产物**：`scan_cpp_flags.py --selftest` **7/7**（含 3 条负向对照）、`classify.py` **37/37 exit 0**、`verify_findings.py` **15 checks 0 failed** / `--selftest` **4 注入全红**、`probe_reasoning_control.py` **7/7** / `--selftest` **6/6**、pyflag Python 单测 **14 passed**。**纯静态 + CPU 源码执行，未编译 llama.cpp、未起 server、未跑推理、未触上游。**
-
-**留给下一轮**：① TM-018 是负结论，**不对外**，无需授权动作；② 常规扫描池已扫五批（SGLang／vLLM／LMDeploy／TensorRT-LLM／llama.cpp），剩下 MLC-LLM 与训练侧（AReaL／NeMo-RL／slime 等）没扫；③ TM-015（vLLM `enable_kv_events`）、TM-017（TRT-LLM `use_split_scale_stages`）仍待用户逐项授权；④ TS-001 仍停在「等用户立项」，M5 侧 critic 三臂仍等单卡窗口。
-
-入口：[实验](experiments/llamacpp-pyflag-triage/README.md) · [扫描器](tools/pyflag/scan_cpp_flags.py) · [37 条归因](experiments/llamacpp-pyflag-triage/classify.py) · [判定](experiments/llamacpp-pyflag-triage/verify_findings.py) · [接线探针](experiments/llamacpp-pyflag-triage/probe_reasoning_control.py) · [证据页](open-source/llamacpp/evidence/cpp-fields-triage-2026-11.md) · [TM-018](queue_tech-miner.md) · [diary](diary/2026-11-05.md)。
+### M1（2026-11-05 07:4x）：TM-018——llama.cpp 扩池，1636 个 C++ 字段 / 37 条 `unwritten`、**真缺陷 0 条**。方法产出：单行 `if` 内赋值、`/* name */ value` 聚合初始化、位置实参、**第十二类「引用绑定 ≠ 赋值」**。完整叙述见 [实验](experiments/llamacpp-pyflag-triage/README.md) 与 [diary](diary/2026-11-05.md)。
 
 ## 当前现场
 
