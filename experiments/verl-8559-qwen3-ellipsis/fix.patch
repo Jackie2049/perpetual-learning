@@ -1,0 +1,84 @@
+diff --git a/tests/experimental/agent_loop/test_qwen3_tool_parser_on_cpu.py b/tests/experimental/agent_loop/test_qwen3_tool_parser_on_cpu.py
+index a45f1233..bf504f1c 100644
+--- a/tests/experimental/agent_loop/test_qwen3_tool_parser_on_cpu.py
++++ b/tests/experimental/agent_loop/test_qwen3_tool_parser_on_cpu.py
+@@ -19,8 +19,11 @@ non-primitive parameter (e.g. an ``array``) is parsed from untrusted model
+ output.
+ """
+ 
++import asyncio
+ import json
+ 
++import pytest
++
+ from verl.experimental.agent_loop.tool_parser import Qwen3XMLToolParser
+ from verl.tools.schemas import (
+     OpenAIFunctionParametersSchema,
+@@ -108,3 +111,36 @@ def test_missing_tools_defaults_to_empty_list():
+ 
+     assert result is not None
+     assert json.loads(result.arguments) == {"items": "value"}
++
++
++@pytest.mark.parametrize("raw_value", ["...", "{1, 2}", "b'abc'", "1+2j"])
++def test_non_json_literal_degenerates_to_string(raw_value):
++    """Python literals without a JSON representation must not crash the parser.
++
++    Regression test for the model emitting ``...`` as a parameter value: ``ast.literal_eval``
++    returns ``Ellipsis``, ``json.dumps`` raised ``TypeError`` and the whole tool call was dropped.
++    Sets, bytes and complex numbers take the same path.
++    """
++    result = _parse_single_param("array", raw_value)
++    assert json.loads(result.arguments)["items"] == raw_value
++
++
++def test_ellipsis_parameter_keeps_the_tool_call():
++    """End to end: one un-serialisable parameter must not drop the tool call.
++
++    ``extract_tool_calls`` swallows parser errors and returns no tool calls at all,
++    so a per-parameter failure used to cost the whole turn.
++    """
++    parser = Qwen3XMLToolParser(tokenizer=None)
++    tool = _make_tool("items", "array")
++
++    class _FixedTextTokenizer:
++        def decode(self, token_ids):
++            return "<tool_call><function=list_tool><parameter=items>...</parameter></function></tool_call>"
++
++    parser.tokenizer = _FixedTextTokenizer()
++
++    _, tool_calls = asyncio.run(parser.extract_tool_calls([0], [tool]))
++
++    assert len(tool_calls) == 1
++    assert json.loads(tool_calls[0].arguments)["items"] == "..."
+diff --git a/verl/experimental/agent_loop/tool_parser.py b/verl/experimental/agent_loop/tool_parser.py
+index 084dfcf5..8b87a9f0 100644
+--- a/verl/experimental/agent_loop/tool_parser.py
++++ b/verl/experimental/agent_loop/tool_parser.py
+@@ -285,6 +285,7 @@ class Qwen3XMLToolParser(ToolParser):
+                             f"Parsed value '{param_value}' of parameter '{param_name}' is not a valid "
+                             f"JSON object in tool '{func_name}', will try other methods to parse it."
+                         )
++                raw_param_value = param_value
+                 try:
+                     # Use ast.literal_eval instead of eval: the parameter value comes from
+                     # untrusted model output, and eval() would allow arbitrary code execution.
+@@ -295,6 +296,18 @@ class Qwen3XMLToolParser(ToolParser):
+                         f"Parsed value '{param_value}' of parameter '{param_name}' cannot be converted "
+                         f"via `ast.literal_eval()` in tool '{func_name}', degenerating to string."
+                     )
++                    return param_value
++                # literal_eval also accepts literals with no JSON representation
++                # (``...``, sets, bytes, complex); they would make the ``json.dumps`` below
++                # raise and drop the whole tool call, so degenerate to the raw string.
++                try:
++                    json.dumps(param_value)
++                except TypeError:
++                    logger.warning(
++                        f"Parsed value '{raw_param_value}' of parameter '{param_name}' is a Python literal "
++                        f"without a JSON representation in tool '{func_name}', degenerating to string."
++                    )
++                    return raw_param_value
+                 return param_value
+ 
+         # Extract function name. A truncated function header is not recoverable.

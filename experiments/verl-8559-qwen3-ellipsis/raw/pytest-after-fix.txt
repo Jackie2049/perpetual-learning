@@ -1,0 +1,8 @@
+..........                                                               [100%]
+=============================== warnings summary ===============================
+../../../tmp/verl-8559-venv/lib/python3.12/site-packages/ray/util/state/util.py:55
+  /tmp/verl-8559-venv/lib/python3.12/site-packages/ray/util/state/util.py:55: DeprecationWarning: Ray state API is no longer experimental. Please import from `ray.util.state`. instead. Importing from `ray.experimental` will be deprecated in future releases. 
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+10 passed, 1 warning in 2.84s

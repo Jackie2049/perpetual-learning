@@ -1,0 +1,84 @@
+{
+ "non_json": {
+  "ellipsis": {
+   "raw": "...",
+   "status": "raise",
+   "error": "TypeError: Object of type ellipsis is not JSON serializable"
+  },
+  "tuple": {
+   "raw": "(1, 2)",
+   "status": "ok",
+   "arguments": "{\"items\": [1, 2]}",
+   "value": [
+    1,
+    2
+   ]
+  },
+  "set": {
+   "raw": "{1, 2}",
+   "status": "raise",
+   "error": "TypeError: Object of type set is not JSON serializable"
+  },
+  "bytes": {
+   "raw": "b'abc'",
+   "status": "raise",
+   "error": "TypeError: Object of type bytes is not JSON serializable"
+  },
+  "complex": {
+   "raw": "1+2j",
+   "status": "raise",
+   "error": "TypeError: Object of type complex is not JSON serializable"
+  },
+  "frozenset": {
+   "raw": "frozenset([1])",
+   "status": "ok",
+   "arguments": "{\"items\": \"frozenset([1])\"}",
+   "value": "frozenset([1])"
+  }
+ },
+ "json_controls": {
+  "list": {
+   "raw": "[1, 2]",
+   "status": "ok",
+   "arguments": "{\"items\": [1, 2]}",
+   "value": [
+    1,
+    2
+   ]
+  },
+  "dict": {
+   "raw": "{'a': 1}",
+   "status": "ok",
+   "arguments": "{\"items\": {\"a\": 1}}",
+   "value": {
+    "a": 1
+   }
+  },
+  "int": {
+   "raw": "7",
+   "status": "ok",
+   "arguments": "{\"items\": 7}",
+   "value": 7
+  },
+  "bool": {
+   "raw": "True",
+   "status": "ok",
+   "arguments": "{\"items\": true}",
+   "value": true
+  },
+  "none": {
+   "raw": "None",
+   "status": "ok",
+   "arguments": "{\"items\": null}",
+   "value": null
+  },
+  "string": {
+   "raw": "hello",
+   "status": "ok",
+   "arguments": "{\"items\": \"hello\"}",
+   "value": "hello"
+  }
+ }
+}
+non-json literal types crashing: ['ellipsis', 'set', 'bytes', 'complex']
+json control cases ok: 6/6

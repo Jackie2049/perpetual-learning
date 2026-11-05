@@ -1,0 +1,300 @@
+.....FFFFF                                                               [100%]
+=================================== FAILURES ===================================
+_______________ test_non_json_literal_degenerates_to_string[...] _______________
+
+raw_value = '...'
+
+    @pytest.mark.parametrize("raw_value", ["...", "{1, 2}", "b'abc'", "1+2j"])
+    def test_non_json_literal_degenerates_to_string(raw_value):
+        """Python literals without a JSON representation must not crash the parser.
+    
+        Regression test for the model emitting ``...`` as a parameter value: ``ast.literal_eval``
+        returns ``Ellipsis``, ``json.dumps`` raised ``TypeError`` and the whole tool call was dropped.
+        Sets, bytes and complex numbers take the same path.
+        """
+>       result = _parse_single_param("array", raw_value)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/experimental/agent_loop/test_qwen3_tool_parser_on_cpu.py:124: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/experimental/agent_loop/test_qwen3_tool_parser_on_cpu.py:57: in _parse_single_param
+    result = parser._parse_xml_function_call(function_call_str, [tool])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+verl/experimental/agent_loop/tool_parser.py:329: in _parse_xml_function_call
+    return FunctionCall(name=function_name, arguments=json.dumps(param_dict, ensure_ascii=False))
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/jackiemac/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/json/__init__.py:238: in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+/Users/jackiemac/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/json/encoder.py:200: in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/jackiemac/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/json/encoder.py:258: in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <json.encoder.JSONEncoder object at 0x14cadaa50>, o = Ellipsis
+
+    def default(self, o):
+        """Implement this method in a subclass such that it returns
+        a serializable object for ``o``, or calls the base implementation
+        (to raise a ``TypeError``).
+    
+        For example, to support arbitrary iterators, you could
+        implement default like this::
+    
+            def default(self, o):
+                try:
+                    iterable = iter(o)
+                except TypeError:
+                    pass
+                else:
+                    return list(iterable)
+                # Let the base class default method raise the TypeError
+                return super().default(o)
+    
+        """
+>       raise TypeError(f'Object of type {o.__class__.__name__} '
+                        f'is not JSON serializable')
+E       TypeError: Object of type ellipsis is not JSON serializable
+
+/Users/jackiemac/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/json/encoder.py:180: TypeError
+_____________ test_non_json_literal_degenerates_to_string[{1, 2}] ______________
+
+raw_value = '{1, 2}'
+
+    @pytest.mark.parametrize("raw_value", ["...", "{1, 2}", "b'abc'", "1+2j"])
+    def test_non_json_literal_degenerates_to_string(raw_value):
+        """Python literals without a JSON representation must not crash the parser.
+    
+        Regression test for the model emitting ``...`` as a parameter value: ``ast.literal_eval``
+        returns ``Ellipsis``, ``json.dumps`` raised ``TypeError`` and the whole tool call was dropped.
+        Sets, bytes and complex numbers take the same path.
+        """
+>       result = _parse_single_param("array", raw_value)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/experimental/agent_loop/test_qwen3_tool_parser_on_cpu.py:124: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/experimental/agent_loop/test_qwen3_tool_parser_on_cpu.py:57: in _parse_single_param
+    result = parser._parse_xml_function_call(function_call_str, [tool])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+verl/experimental/agent_loop/tool_parser.py:329: in _parse_xml_function_call
+    return FunctionCall(name=function_name, arguments=json.dumps(param_dict, ensure_ascii=False))
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/jackiemac/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/json/__init__.py:238: in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+/Users/jackiemac/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/json/encoder.py:200: in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/jackiemac/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/json/encoder.py:258: in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <json.encoder.JSONEncoder object at 0x14cad9820>, o = {1, 2}
+
+    def default(self, o):
+        """Implement this method in a subclass such that it returns
+        a serializable object for ``o``, or calls the base implementation
+        (to raise a ``TypeError``).
+    
+        For example, to support arbitrary iterators, you could
+        implement default like this::
+    
+            def default(self, o):
+                try:
+                    iterable = iter(o)
+                except TypeError:
+                    pass
+                else:
+                    return list(iterable)
+                # Let the base class default method raise the TypeError
+                return super().default(o)
+    
+        """
+>       raise TypeError(f'Object of type {o.__class__.__name__} '
+                        f'is not JSON serializable')
+E       TypeError: Object of type set is not JSON serializable
+
+/Users/jackiemac/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/json/encoder.py:180: TypeError
+_____________ test_non_json_literal_degenerates_to_string[b'abc'] ______________
+
+raw_value = "b'abc'"
+
+    @pytest.mark.parametrize("raw_value", ["...", "{1, 2}", "b'abc'", "1+2j"])
+    def test_non_json_literal_degenerates_to_string(raw_value):
+        """Python literals without a JSON representation must not crash the parser.
+    
+        Regression test for the model emitting ``...`` as a parameter value: ``ast.literal_eval``
+        returns ``Ellipsis``, ``json.dumps`` raised ``TypeError`` and the whole tool call was dropped.
+        Sets, bytes and complex numbers take the same path.
+        """
+>       result = _parse_single_param("array", raw_value)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/experimental/agent_loop/test_qwen3_tool_parser_on_cpu.py:124: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/experimental/agent_loop/test_qwen3_tool_parser_on_cpu.py:57: in _parse_single_param
+    result = parser._parse_xml_function_call(function_call_str, [tool])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+verl/experimental/agent_loop/tool_parser.py:329: in _parse_xml_function_call
+    return FunctionCall(name=function_name, arguments=json.dumps(param_dict, ensure_ascii=False))
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/jackiemac/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/json/__init__.py:238: in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+/Users/jackiemac/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/json/encoder.py:200: in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/jackiemac/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/json/encoder.py:258: in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <json.encoder.JSONEncoder object at 0x14cadb590>, o = b'abc'
+
+    def default(self, o):
+        """Implement this method in a subclass such that it returns
+        a serializable object for ``o``, or calls the base implementation
+        (to raise a ``TypeError``).
+    
+        For example, to support arbitrary iterators, you could
+        implement default like this::
+    
+            def default(self, o):
+                try:
+                    iterable = iter(o)
+                except TypeError:
+                    pass
+                else:
+                    return list(iterable)
+                # Let the base class default method raise the TypeError
+                return super().default(o)
+    
+        """
+>       raise TypeError(f'Object of type {o.__class__.__name__} '
+                        f'is not JSON serializable')
+E       TypeError: Object of type bytes is not JSON serializable
+
+/Users/jackiemac/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/json/encoder.py:180: TypeError
+______________ test_non_json_literal_degenerates_to_string[1+2j] _______________
+
+raw_value = '1+2j'
+
+    @pytest.mark.parametrize("raw_value", ["...", "{1, 2}", "b'abc'", "1+2j"])
+    def test_non_json_literal_degenerates_to_string(raw_value):
+        """Python literals without a JSON representation must not crash the parser.
+    
+        Regression test for the model emitting ``...`` as a parameter value: ``ast.literal_eval``
+        returns ``Ellipsis``, ``json.dumps`` raised ``TypeError`` and the whole tool call was dropped.
+        Sets, bytes and complex numbers take the same path.
+        """
+>       result = _parse_single_param("array", raw_value)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/experimental/agent_loop/test_qwen3_tool_parser_on_cpu.py:124: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/experimental/agent_loop/test_qwen3_tool_parser_on_cpu.py:57: in _parse_single_param
+    result = parser._parse_xml_function_call(function_call_str, [tool])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+verl/experimental/agent_loop/tool_parser.py:329: in _parse_xml_function_call
+    return FunctionCall(name=function_name, arguments=json.dumps(param_dict, ensure_ascii=False))
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/jackiemac/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/json/__init__.py:238: in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+/Users/jackiemac/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/json/encoder.py:200: in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/jackiemac/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/json/encoder.py:258: in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <json.encoder.JSONEncoder object at 0x14cada870>, o = (1+2j)
+
+    def default(self, o):
+        """Implement this method in a subclass such that it returns
+        a serializable object for ``o``, or calls the base implementation
+        (to raise a ``TypeError``).
+    
+        For example, to support arbitrary iterators, you could
+        implement default like this::
+    
+            def default(self, o):
+                try:
+                    iterable = iter(o)
+                except TypeError:
+                    pass
+                else:
+                    return list(iterable)
+                # Let the base class default method raise the TypeError
+                return super().default(o)
+    
+        """
+>       raise TypeError(f'Object of type {o.__class__.__name__} '
+                        f'is not JSON serializable')
+E       TypeError: Object of type complex is not JSON serializable
+
+/Users/jackiemac/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/json/encoder.py:180: TypeError
+_________________ test_ellipsis_parameter_keeps_the_tool_call __________________
+
+    def test_ellipsis_parameter_keeps_the_tool_call():
+        """End to end: one un-serialisable parameter must not drop the tool call.
+    
+        ``extract_tool_calls`` swallows parser errors and returns no tool calls at all,
+        so a per-parameter failure used to cost the whole turn.
+        """
+        parser = Qwen3XMLToolParser(tokenizer=None)
+        tool = _make_tool("items", "array")
+    
+        class _FixedTextTokenizer:
+            def decode(self, token_ids):
+                return "<tool_call><function=list_tool><parameter=items>...</parameter></function></tool_call>"
+    
+        parser.tokenizer = _FixedTextTokenizer()
+    
+        _, tool_calls = asyncio.run(parser.extract_tool_calls([0], [tool]))
+    
+>       assert len(tool_calls) == 1
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/experimental/agent_loop/test_qwen3_tool_parser_on_cpu.py:145: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    /private/tmp/verl-954bd2/verl/experimental/agent_loop/tool_parser.py:tool_parser.py:373 Error in extracting tool call from response: Object of type ellipsis is not JSON serializable
+Traceback (most recent call last):
+  File "/private/tmp/verl-954bd2/verl/experimental/agent_loop/tool_parser.py", line 362, in extract_tool_calls
+    self._parse_xml_function_call(function_call_str, tools) for function_call_str in function_calls
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/verl-954bd2/verl/experimental/agent_loop/tool_parser.py", line 329, in _parse_xml_function_call
+    return FunctionCall(name=function_name, arguments=json.dumps(param_dict, ensure_ascii=False))
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jackiemac/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/json/__init__.py", line 238, in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+  File "/Users/jackiemac/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/json/encoder.py", line 200, in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jackiemac/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/json/encoder.py", line 258, in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/jackiemac/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/json/encoder.py", line 180, in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+TypeError: Object of type ellipsis is not JSON serializable
+=============================== warnings summary ===============================
+../../../tmp/verl-8559-venv/lib/python3.12/site-packages/ray/util/state/util.py:55
+  /tmp/verl-8559-venv/lib/python3.12/site-packages/ray/util/state/util.py:55: DeprecationWarning: Ray state API is no longer experimental. Please import from `ray.util.state`. instead. Importing from `ray.experimental` will be deprecated in future releases. 
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/experimental/agent_loop/test_qwen3_tool_parser_on_cpu.py::test_non_json_literal_degenerates_to_string[...]
+FAILED tests/experimental/agent_loop/test_qwen3_tool_parser_on_cpu.py::test_non_json_literal_degenerates_to_string[{1, 2}]
+FAILED tests/experimental/agent_loop/test_qwen3_tool_parser_on_cpu.py::test_non_json_literal_degenerates_to_string[b'abc']
+FAILED tests/experimental/agent_loop/test_qwen3_tool_parser_on_cpu.py::test_non_json_literal_degenerates_to_string[1+2j]
+FAILED tests/experimental/agent_loop/test_qwen3_tool_parser_on_cpu.py::test_ellipsis_parameter_keeps_the_tool_call
+5 failed, 5 passed, 1 warning in 3.10s
